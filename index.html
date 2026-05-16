@@ -36,7 +36,8 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
 .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:116px;height:32px;background:#1A2E22;border-radius:0 0 16px 16px;z-index:300}
 .bar{height:46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 8px;font-size:11px;color:var(--ink4);flex-shrink:0;z-index:10}
 .sc{display:none;flex-direction:column;overflow:hidden;position:absolute;top:0;left:0;right:0;bottom:0;height:100%}
-.sc.on{display:flex;flex-direction:column;height:100%}
+.sc.on{display:flex;flex-direction:column;height:100%;animation:scIn .22s cubic-bezier(.22,1,.36,1) both}
+@keyframes scIn{0%{opacity:0;transform:translateY(7px)}100%{opacity:1;transform:translateY(0)}}
 .scrl{flex:1;overflow-y:auto;scrollbar-width:none;min-height:0}
 .scrl::-webkit-scrollbar{display:none}
 
@@ -47,20 +48,14 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
 @keyframes waveIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
 @keyframes popIn{0%{transform:scale(0) rotate(-12deg)}65%{transform:scale(1.12)}100%{transform:scale(1)}}
 @keyframes sheetUp{0%{transform:translateY(100%);opacity:.5}100%{transform:translateY(0);opacity:1}}
-100%{opacity:1;transform:scale(1) translateY(0)}}
-50%{transform:translateY(-9px)}}
 @keyframes moonBreath{0%,100%{box-shadow:0 0 30px 10px rgba(240,225,140,.28),0 0 70px 25px rgba(200,185,100,.14)}50%{box-shadow:0 0 45px 16px rgba(240,225,140,.42),0 0 90px 35px rgba(200,185,100,.22)}}
-50%{box-shadow:0 0 60px 22px rgba(255,215,50,.9),0 0 110px 45px rgba(255,180,0,.55)}}
 @keyframes sunGlowPulse{0%,100%{opacity:.7}50%{opacity:1}}
 @keyframes fogDrift{0%,100%{transform:translateX(0);opacity:.6}50%{transform:translateX(18px);opacity:.9}}
-50%{opacity:1}}
 @keyframes shootingStarAnim{0%{transform:translate(0,0) scaleX(1);opacity:1}70%{opacity:.8}100%{transform:translate(-320px,160px) scaleX(.05);opacity:0}}
 @keyframes fireflyGlow{0%,100%{opacity:.08;transform:translate(0,0)}25%{opacity:.95}50%{opacity:.25;transform:translate(10px,-14px)}75%{opacity:.7;transform:translate(-6px,10px)}}
 @keyframes starPulse{0%,100%{opacity:.3}50%{opacity:1}}
-100%{opacity:1;transform:translateY(0)}}
 @keyframes logoEntrance{0%{opacity:0;transform:scale(.85) translateY(18px)}100%{opacity:1;transform:scale(1) translateY(0)}}
 @keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-50%{transform:translateY(-10px)}}
 @keyframes shootStar{0%{transform:translate(0,0) scaleX(1);opacity:1}100%{transform:translate(-300px,150px) scaleX(.05);opacity:0}}
 @keyframes firefly{0%,100%{opacity:.1;transform:translate(0,0)}25%{opacity:.9}50%{opacity:.3;transform:translate(8px,-12px)}75%{opacity:.7;transform:translate(-5px,8px)}}
 @keyframes waterWave{0%,100%{d:path("M0 10 Q50 0 100 10 Q150 20 200 10 Q250 0 300 10 Q350 20 393 10")}50%{d:path("M0 10 Q50 20 100 10 Q150 0 200 10 Q250 20 300 10 Q350 0 393 10")}}
@@ -89,6 +84,7 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
 @keyframes curtainOpenR{0%{transform:translateX(0)}100%{transform:translateX(102%)}}
 @keyframes fadeUp{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
 @keyframes shimmer{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
+@keyframes shimmerSlide{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* Common */
 .serif-i{font-family:'Cormorant Garamond',serif;font-style:italic}
@@ -100,6 +96,15 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
 .inp{width:100%;background:var(--white);border:1.5px solid var(--border);border-radius:15px;padding:12px 15px;color:var(--ink);font-family:'Jost',sans-serif;font-size:13.5px;outline:none;transition:all .2s}
 .inp:focus{border-color:var(--sage4);box-shadow:0 0 0 3px rgba(116,198,157,.1)}
 .inp::placeholder{color:var(--ink5)}
+.inp.error{border-color:#C03028!important;box-shadow:0 0 0 3px rgba(192,48,40,.1)!important}
+.ta.error{border-color:#C03028!important;box-shadow:0 0 0 3px rgba(192,48,40,.1)!important}
+.err-msg{font-size:11px;color:#C03028;margin-top:4px;display:none;font-weight:500}
+.err-msg.show{display:block}
+.shimmer-card{background:var(--cream2);border-radius:18px;padding:16px;margin-bottom:10px}
+.shimmer-line{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--cream3) 25%,var(--cream2) 50%,var(--cream3) 75%);background-size:200% 100%;animation:shimmerSlide 1.2s infinite}
+.shimmer-line+.shimmer-line{margin-top:8px}
+.shimmer-line.w60{width:60%}
+.shimmer-line.w40{width:40%}
 .ta{width:100%;background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;color:var(--ink);font-family:'Jost',sans-serif;font-size:13px;resize:none;outline:none;transition:all .2s;line-height:1.6}
 .ta:focus{border-color:var(--sage4)}
 .ta::placeholder{color:var(--ink5)}
@@ -226,7 +231,11 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
 
 /* ─── Home ─── */
 #home{background:linear-gradient(160deg,var(--cream),var(--cream2))}
-.home-hdr{padding:12px 18px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.home-hdr{padding:54px 18px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.widgets-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 17px;margin-bottom:9px}
+.widget-card{border-radius:22px;padding:17px 18px;cursor:pointer;transition:all .28s;box-shadow:var(--sh);position:relative;overflow:hidden;background:rgba(255,255,255,.85);border:1.5px solid rgba(45,106,79,.1)}
+.widget-card:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.widget-card:active{transform:scale(.98)}
 .status-pill{display:flex;align-items:center;gap:5px;padding:5px 11px;background:rgba(255,255,255,.85);border:1.5px solid rgba(45,106,79,.12);border-radius:100px;cursor:pointer;transition:all .2s;box-shadow:var(--sh)}
 .status-pill:hover{border-color:var(--sage4)}
 .greet-card{margin:0 17px 11px;background:rgba(255,255,255,.75);border:1.5px solid rgba(45,106,79,.1);border-radius:22px;padding:14px 16px;display:flex;align-items:center;gap:11px;flex-shrink:0;box-shadow:var(--sh)}
@@ -830,27 +839,26 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
           <div class="hcard-s">Clínicos · Bienestar · Creativos</div>
           <div class="hcard-foot"><span class="htag">🟢 5 online</span></div>
         </div>
-        <div class="hcard c-lav" onclick="goTo('calm')">
-          <span class="hcard-ic">🧘</span>
-          <div class="hcard-t">Bienestar y Calma</div>
-          <div class="hcard-s">Audios · respiración</div>
-          <div class="hcard-foot"><span class="htag">🎧 Escuchar</span></div>
+        <div class="hcard c-sky" onclick="goTo('respira')">
+          <span class="hcard-ic">🌬️</span>
+          <div class="hcard-t">Respirar</div>
+          <div class="hcard-s">Técnica 4-7-8 · Calma en 8 min</div>
+          <div class="hcard-foot"><span class="htag">💙 Respirar</span></div>
         </div>
       </div>
-      <!-- Podcast + Velo Vela por Ti -->
-      <div class="home-grid">
-        <div class="hcard" style="background:linear-gradient(135deg,#1A1A2E,#16213E);border:none" onclick="goTo('podcast')">
-          <span class="hcard-ic">🎙️</span>
-          <div class="hcard-t" style="color:rgba(255,255,255,.92)">Velo Podcast</div>
-          <div class="hcard-s" style="color:rgba(255,255,255,.5)">Voces reales · historias · poemas</div>
-          <div class="hcard-foot"><span class="htag" style="background:rgba(116,198,157,.12);border-color:rgba(116,198,157,.2);color:var(--sage4)">🎧 Escuchar</span></div>
-        </div>
-        <div class="hcard c-sky" onclick="goTo('vela')">
-          <span class="hcard-ic">🕊️</span>
-          <div class="hcard-t">Velo vela por ti</div>
-          <div class="hcard-s">Sesiones solidarias · lista de espera</div>
-          <div style="font-size:9px;color:#4A8FA8;margin-bottom:5px;line-height:1.35">Sujeto a disponibilidad de profesionales registrados</div>
-          <div class="hcard-foot"><span class="htag">💚 Solicitar</span></div>
+      <!-- Velo Vela por Ti — full width -->
+      <div class="home-full">
+        <div class="hcard c-sky" onclick="goTo('vela')" style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1">
+            <span class="hcard-ic">🕊️</span>
+            <div class="hcard-t">Velo vela por ti</div>
+            <div class="hcard-s">Sesiones solidarias · lista de espera</div>
+            <div class="hcard-foot"><span class="htag">💚 Solicitar sesión solidaria</span></div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:36px">🕊️</div>
+            <div style="font-size:9px;color:#4A8FA8;line-height:1.35">Sujeto a disponibilidad</div>
+          </div>
         </div>
       </div>
     </div></div>
@@ -1789,8 +1797,8 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
     </div>
   </div>
 <div class="sc" id="calm" style="background:linear-gradient(160deg,var(--sky3),var(--sky2),var(--sage7))">
-    <div style="padding:48px 20px 12px;text-align:center;flex-shrink:0;position:relative">
-      <button onclick="goTo('home')" style="position:absolute;top:52px;left:18px;background:none;border:none;color:#3A7090;font-family:'Jost',sans-serif;font-size:13px;cursor:pointer">← Inicio</button>
+    <div style="padding:max(54px,calc(env(safe-area-inset-top,0px) + 16px)) 20px 12px;text-align:center;flex-shrink:0;position:relative">
+      <button onclick="goTo('home')" style="position:absolute;top:max(56px,calc(env(safe-area-inset-top,0px) + 18px));left:18px;background:none;border:none;color:#3A7090;font-family:'Jost',sans-serif;font-size:13px;cursor:pointer">← Inicio</button>
       <div class="serif-i" style="font-size:26px;color:#2D6A8A;margin-bottom:4px">Cómo me siento hoy</div>
       <div style="font-size:13px;color:#4A8FA8;max-width:290px;margin:0 auto;line-height:1.5">Tu espacio emocional privado.</div>
     </div>
@@ -2004,7 +2012,7 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
     </div>
 
     <!-- Emojis rápidos + Input -->
-    <div style="padding:8px 14px 22px;background:rgba(255,255,255,.94);border-top:1px solid var(--border);flex-shrink:0">
+    <div style="padding:8px 14px calc(env(safe-area-inset-bottom,0px) + 18px);background:rgba(255,255,255,.94);border-top:1px solid var(--border);flex-shrink:0">
       <div style="display:flex;gap:6px;margin-bottom:7px;overflow-x:auto;scrollbar-width:none">
         <button onclick="addEmoji('💚')" style="background:none;border:none;font-size:18px;cursor:pointer;flex-shrink:0;padding:2px">💚</button>
         <button onclick="addEmoji('🌿')" style="background:none;border:none;font-size:18px;cursor:pointer;flex-shrink:0;padding:2px">🌿</button>
@@ -2110,6 +2118,12 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
       <div style="background:rgba(255,255,255,.82);border:1.5px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:10px;box-shadow:var(--sh)">
         <div style="padding:12px 14px 6px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--sage3)">MI ESTADO HOY</div>
 
+        <div onclick="goTo('calm')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer">
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--sage6),var(--sage7));border:1px solid rgba(116,198,157,.2);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">✨</div>
+          <div style="flex:1"><div style="font-size:11px;font-weight:600;color:var(--ink)">Cómo me siento hoy</div><div id="profMoodToday" style="font-size:13px;color:var(--sage2);margin-top:1px;font-weight:700">— Sin registrar aún</div></div>
+          <div style="font-size:14px;color:var(--ink5)">›</div>
+        </div>
+
         <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border)">
           <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.9);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">💬</div>
           <div style="flex:1"><div style="font-size:11px;font-weight:600;color:var(--ink)">Mensaje motivador</div><div id="profMensaje" style="font-size:11px;color:var(--ink4);margin-top:1px">"Aquí para escuchar sin juzgar"</div></div>
@@ -2154,7 +2168,7 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
           <div><div class="pe-t">Contáctanos</div><div class="pe-v">Respondemos a la mayor brevedad</div></div>
           <span style="font-size:18px;color:var(--ink5);margin-left:auto">›</span>
         </div>
-        <div class="pe-row" onclick="toast('Sesion cerrada')">
+        <div class="pe-row" onclick="toast('🚪','Sesión cerrada');setTimeout(function(){goTo('splash');},700)">
           <div class="pe-ic" style="background:rgba(192,48,40,.07)">🚪</div>
           <div><div class="pe-t" style="color:var(--sos)">Cerrar sesión</div></div>
           <span style="font-size:18px;color:var(--ink5);margin-left:auto">›</span>
@@ -2325,23 +2339,23 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
         <button onclick="goTo('home')" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Explorar Velo 🌿</button>
       </div>
 
-      <!-- DETALLE 3: podcast -->
+      <!-- DETALLE 3: respirar y bienestar -->
       <div id="msg-detail-3" style="display:none">
-        <div style="background:linear-gradient(135deg,rgba(255,255,255,.9),var(--lav3));border:1.5px solid rgba(196,181,232,.22);border-radius:22px;padding:20px;margin-bottom:14px;box-shadow:var(--sh)">
+        <div style="background:linear-gradient(135deg,rgba(255,255,255,.9),var(--sky3));border:1.5px solid rgba(168,212,232,.22);border-radius:22px;padding:20px;margin-bottom:14px;box-shadow:var(--sh)">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:15px">
-            <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#1A1A2E,#16213E);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🎙️</div>
+            <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--sky2),var(--sky3));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🌬️</div>
             <div>
-              <div style="font-size:14px;font-weight:700;color:#4A3080">Novedad: Velo Podcast</div>
-              <div style="font-size:11px;color:var(--ink5)">De: Velo · Hace 3 días</div>
+              <div style="font-size:14px;font-weight:700;color:#2D6A8A">Bienestar — Respiración guiada</div>
+              <div style="font-size:11px;color:var(--ink5)">De: Velo · Siempre disponible</div>
             </div>
           </div>
-          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:#4A3080;margin-bottom:12px;line-height:1.5">Tu voz también puede acompañar a alguien.</div>
-          <div style="font-size:13px;color:var(--ink3);line-height:1.75;margin-bottom:14px">Lanzamos <b>Velo Podcast</b>, un espacio donde podés compartir audios personales: historias, poemas, reflexiones, anécdotas o simplemente hablar.<br><br>Los audios pasan por revisión en 24-48hs y podés publicarlos con tu nombre o en modo incógnito. Las reacciones de la comunidad son solo emociones, sin likes ni métricas de popularidad.</div>
-          <div style="background:var(--lav3);border:1px solid rgba(196,181,232,.25);border-radius:14px;padding:12px;font-size:11px;color:#6E56A8;line-height:1.6">
-            🎙️ Mínimo 5 minutos · MP3 / WAV / M4A · Revisión en 24-48hs
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:#2D6A8A;margin-bottom:12px;line-height:1.5">La calma está a 8 minutos de distancia.</div>
+          <div style="font-size:13px;color:var(--ink3);line-height:1.75;margin-bottom:14px">La técnica <b>4-7-8</b> activa el sistema nervioso parasimpático, reduciendo la ansiedad en minutos. Podés hacerla en cualquier momento y lugar.</div>
+          <div style="background:var(--sky3);border:1px solid rgba(168,212,232,.25);border-radius:14px;padding:12px;font-size:11px;color:#3A7090;line-height:1.6">
+            💙 Inhalar 4 s · Sostener 7 s · Exhalar 8 s
           </div>
         </div>
-        <button onclick="goTo('podcast')" style="width:100%;padding:14px;background:linear-gradient(135deg,#1A1A2E,#16213E);border:none;border-radius:100px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Ir a Velo Podcast 🎙️</button>
+        <button onclick="goTo('respira')" style="width:100%;padding:14px;background:linear-gradient(135deg,#3A7090,#2D6A8A);border:none;border-radius:100px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Ir a Respiración guiada 🌬️</button>
       </div>
 
       <!-- DETALLE 4: mensaje especial -->
@@ -3874,7 +3888,7 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
       </div>
     </div>
     <!-- Input area — siempre visible -->
-    <div style="background:#fff;border-top:1px solid #e8e0d8;padding:10px 12px 20px;display:flex;gap:8px;align-items:flex-end;flex-shrink:0">
+    <div style="background:#fff;border-top:1px solid #e8e0d8;padding:10px 12px calc(env(safe-area-inset-bottom,0px) + 16px);display:flex;gap:8px;align-items:flex-end;flex-shrink:0">
       <textarea id="gcInput" placeholder="Escribí un mensaje..." maxlength="500"
         style="flex:1;border:1.5px solid #d4c9be;border-radius:18px;padding:10px 14px;font-family:'Jost',sans-serif;font-size:16px;color:#222;background:#faf8f5;resize:none;height:44px;max-height:120px;outline:none;line-height:1.4;-webkit-appearance:none;box-sizing:border-box;display:block;width:100%"></textarea>
       <button onclick="gcSend()" style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#2d6a4f,#52b788);border:none;color:#fff;font-size:22px;cursor:pointer;flex-shrink:0;box-shadow:0 3px 10px rgba(45,106,79,.3)">↑</button>
@@ -4771,7 +4785,7 @@ function finishRegister(){
 }
 
 // Nav — include register + groups in noNav = false (show nav), but not for register
-var noNav=['splash','guardian-chat','help-form','login-user','login-pro','pro-reg','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','podcast-subir','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending'];
+var noNav=['splash','guardian-chat','help-form','login-user','login-pro','pro-reg','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending'];
 
 // ── MOOD CHECK-IN ────────────────────────────────────────
 var todayMood=null;
@@ -5334,6 +5348,8 @@ setInterval(function(){
 },5000);
 
 var _bn=document.getElementById('bnav');if(_bn)_bn.style.display='none';
+// Init notifications from storage
+setTimeout(function(){ _loadNotifStorage(); updateBuzonDot(); updateInboxBadge(); },100);
 setTimeout(function(){ toast('🌿','Velo — Acompañamos emociones'); },5000);
 
 // ── DONATION MODAL ──────────────────────────────────────
@@ -5388,6 +5404,7 @@ function safeLS(action,key,val){
 function loginAndWelcome(){
   try{localStorage.removeItem('velo_banner_shown');}catch(e){}
   goTo('home');
+  setTimeout(function(){ loadTodayMood(); _loadNotifStorage(); updateInboxBadge(); updateBuzonDot(); }, 200);
 }
 function mockGoogleLogin(type){
   // Existing user: go directly to home or pro panel
@@ -6054,7 +6071,7 @@ function submitPodcast(){
   var title=document.getElementById('podTitle');
   if(!title||!title.value.trim()){toast('⚠️','Agregá un título a tu audio');return;}
   showSuc('🎙️','¡Audio enviado para revisión!','El equipo de Velo lo revisará en 24-48hs hábiles. Recibirás una notificación con el resultado. Gracias por compartir tu voz 💚');
-  goTo('podcast');
+  goTo('home');
 }
 
 // ── VELO VELA POR TI ─────────────────────────────────────
@@ -6133,11 +6150,6 @@ setTimeout(function(){try{applyIncognitoUI(isIncognitoActive());}catch(e){};},10
 // Extend navTo for per-screen init
 function navTo(id){
   goTo(id);
-  if(id==='diary') setTimeout(initDiary,50);
-  if(id==='bottle') setTimeout(renderBottleWall,50);
-  if(id==='help') setTimeout(renderSolicitudes,50);
-  if(id==='buzon') setTimeout(renderBuzon,50);
-  if(id==='feed') setTimeout(renderMyCircles,50);
 }
 
 function closeDonBanner(donate){ var b=document.getElementById('donBanner'); if(b)b.remove(); if(donate) openModal('donModal'); }
@@ -6145,8 +6157,12 @@ function closeDonBanner(donate){ var b=document.getElementById('donBanner'); if(
 function doLoginUser(){
   var em=document.getElementById('luEmail');
   var pw=document.getElementById('luPass');
-  if(!em||!em.value.trim()){toast('⚠️','Ingresa tu email');return;}
-  if(!pw||!pw.value.trim()){toast('⚠️','Ingresa tu contraseña');return;}
+  if(em) em.classList.remove('error');
+  if(pw) pw.classList.remove('error');
+  var ok=true;
+  if(!em||!em.value.trim()){if(em)em.classList.add('error');toast('⚠️','Ingresa tu email');ok=false;}
+  else if(pw&&!pw.value.trim()){pw.classList.add('error');toast('⚠️','Ingresa tu contraseña');ok=false;}
+  if(!ok)return;
   try{localStorage.setItem('velo_session','user');localStorage.removeItem('velo_banner_shown');}catch(err){}
   goTo('home');
   setTimeout(function(){toast('🌿','Bienvenido/a de vuelta');},400);
@@ -6154,8 +6170,12 @@ function doLoginUser(){
 function doLoginPro(){
   var em=document.getElementById('lpEmail');
   var pw=document.getElementById('lpPass');
-  if(!em||!em.value.trim()){toast('⚠️','Ingresa tu email');return;}
-  if(!pw||!pw.value.trim()){toast('⚠️','Ingresa tu contraseña');return;}
+  if(em) em.classList.remove('error');
+  if(pw) pw.classList.remove('error');
+  var ok=true;
+  if(!em||!em.value.trim()){if(em)em.classList.add('error');toast('⚠️','Ingresa tu email');ok=false;}
+  else if(pw&&!pw.value.trim()){pw.classList.add('error');toast('⚠️','Ingresa tu contraseña');ok=false;}
+  if(!ok)return;
   try{localStorage.setItem('velo_session','pro');localStorage.setItem('velo_pro_approved','true');}catch(err){}
   goTo('pro-panel');
   setTimeout(function(){toast('🌿','Bienvenido/a al panel');},400);
@@ -6178,7 +6198,7 @@ function closeBottleWrite(){
 }
 function sendBottle(){
   var txt=document.getElementById('bottleText');
-  if(!txt||!txt.value.trim()){toast('Escribi algo primero');return;}
+  if(!txt||!txt.value.trim()){toast('🍾','Escribí algo antes de lanzar la botella');return;}
   var msg=txt.value.trim();
   var isAnon=isIncognitoActive();
   bottleWall.unshift({
@@ -6334,6 +6354,17 @@ function gcEnd(){
   gcShowSurvey(gcRole);
 }
 
+function dejarResena(stars, tags, comment){
+  if(!stars) stars = 5;
+  if(!tags) tags = [];
+  if(!comment) comment = '';
+  var today = new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
+  addProfileReview(stars, tags, comment);
+  checkAndAwardBadge(totalCharlas + 1);
+  totalCharlas = totalCharlas + 1;
+  toast('⭐','¡Gracias por tu reseña! Ayuda a la comunidad 💚');
+}
+
 function gcShowSurvey(role){
   var ayudado  = document.getElementById('survey-ayudado');
   var guardian = document.getElementById('survey-guardian');
@@ -6418,13 +6449,17 @@ function submitSurvey(){
   var tagBtns=document.querySelectorAll('#survey-ayudado button');
   for(var ti=0;ti<tagBtns.length;ti++){if(tagBtns[ti].style.borderColor==='rgb(61, 109, 90)')tags.push(tagBtns[ti].textContent.trim());}
   var comment='';var cmt=document.getElementById('surveyComment');if(cmt)comment=cmt.value.trim();
-  addProfileReview(count||5,tags,comment);
+  dejarResena(count||5, tags, comment);
   goTo('home');
-  setTimeout(function(){toast('Resena guardada en el perfil');},300);
+  setTimeout(function(){toast('⭐','Reseña guardada en el perfil 💚');},300);
 }
 function submitGuardianSurvey(){
+  var feelings=[];
+  var feelBtns=document.querySelectorAll('#guardianFeelings button');
+  for(var fi=0;fi<feelBtns.length;fi++){if(feelBtns[fi].style.borderColor==='rgb(61, 109, 90)')feelings.push(feelBtns[fi].textContent.trim());}
+  dejarResena(5,feelings,'Sesión como guardián completada');
   goTo('home');
-  setTimeout(function(){ toast('🌿','Registrado. Gracias por acompanar!'); }, 300);
+  setTimeout(function(){ toast('🌿','Registrado. Gracias por acompañar! 💚'); }, 300);
 }
 
 var helpAnon = true;
@@ -6465,23 +6500,26 @@ var bottleWall = [
 function renderBottleWall(){
   var container = document.getElementById('bottleWallList');
   if(!container) return;
-  container.innerHTML = '';
-  var pending = bottleWall.filter(function(b){ return !b.answered; });
-  if(pending.length === 0){
-    container.innerHTML = '<div style="text-align:center;padding:30px;font-size:13px;color:#aaa;font-style:italic">No hay botellas flotando ahora. Sé el primero en lanzar una. 🍾</div>';
-    return;
-  }
-  pending.forEach(function(bottle){
-    var div = document.createElement('div');
-    div.style.cssText = 'background:rgba(255,255,255,.88);border:1.5px solid rgba(168,212,232,.3);border-left:4px solid #5A9DC0;border-radius:18px;padding:16px;margin-bottom:10px;box-shadow:0 2px 12px rgba(100,160,210,.08)';
-    div.innerHTML = '<div style="font-size:22px;margin-bottom:8px">'+bottle.emoji+'</div>'
-      +'<div style="font-family:Georgia,serif;font-style:italic;font-size:14px;color:#2a3a4a;line-height:1.6;margin-bottom:12px">"'+bottle.msg+'"</div>'
-      +'<div style="display:flex;align-items:center;justify-content:space-between">'
-      +'<div style="font-size:11px;color:#888">'+bottle.author+' · '+bottle.time+'</div>'
-      +'<button onclick="respondBottle('+bottle.id+')" style="padding:8px 18px;background:linear-gradient(135deg,#3A7090,#2D6A8A);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif">Responder 🌊</button>'
-      +'</div>';
-    container.appendChild(div);
-  });
+  container.innerHTML = '<div class="shimmer-card"><div class="shimmer-line"></div><div class="shimmer-line w80"></div><div class="shimmer-line w40"></div></div>';
+  setTimeout(function(){
+    container.innerHTML = '';
+    var pending = bottleWall.filter(function(b){ return !b.answered; });
+    if(pending.length === 0){
+      container.innerHTML = '<div style="text-align:center;padding:30px;font-size:13px;color:rgba(255,255,255,.4);font-style:italic">No hay botellas flotando ahora. Sé el primero en lanzar una. 🍾</div>';
+      return;
+    }
+    pending.forEach(function(bottle){
+      var div = document.createElement('div');
+      div.className = 'dark-bottle';
+      div.innerHTML = '<div style="font-size:22px;margin-bottom:8px">'+bottle.emoji+'</div>'
+        +'<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:14px;color:rgba(255,255,255,.82);line-height:1.6;margin-bottom:12px">"'+bottle.msg+'"</div>'
+        +'<div style="display:flex;align-items:center;justify-content:space-between">'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.4)">'+bottle.author+' · '+bottle.time+'</div>'
+        +'<button onclick="respondBottle(\''+bottle.id+'\')" class="dark-btn-w" style="width:auto;padding:8px 16px;font-size:12px;margin-bottom:0">Responder 🌊</button>'
+        +'</div>';
+      container.appendChild(div);
+    });
+  }, 200);
 }
 
 function respondBottle(id){
@@ -6521,7 +6559,7 @@ function closeBottleReply(){
 }
 function sendBottleReply(){
   var inp = document.getElementById('bottleReplyInput');
-  if(!inp||!inp.value.trim()){ toast('Escribí algo'); return; }
+  if(!inp||!inp.value.trim()){ toast('🌊','Escribí algo antes de responder'); return; }
   // Mark bottle as answered so it leaves the wall
   if(currentBottleId !== null){
     for(var i=0;i<bottleWall.length;i++){
@@ -6576,9 +6614,18 @@ var buzonMensajes = [
   }
 ];
 
+function _syncNotifStorage(){
+  try{safeLS('set','velo_notificaciones',JSON.stringify(buzonMensajes.slice(0,50)));}catch(e){}
+}
+function _loadNotifStorage(){
+  try{var s=safeLS('get','velo_notificaciones');if(s){var arr=JSON.parse(s);if(arr.length>buzonMensajes.length)buzonMensajes=arr;}}catch(e){}
+}
+
 function addBuzonMsg(msg){
   buzonMensajes.unshift(msg);
+  _syncNotifStorage();
   updateBuzonDot();
+  updateInboxBadge();
   if(document.getElementById('buzonList')) renderBuzon();
 }
 
@@ -6586,6 +6633,15 @@ function updateBuzonDot(){
   var dot = document.getElementById('buzonDot');
   var unread = buzonMensajes.filter(function(m){ return !m.leido; });
   if(dot) dot.style.display = unread.length > 0 ? 'block' : 'none';
+}
+
+function updateInboxBadge(){
+  var unread = buzonMensajes.filter(function(m){ return !m.leido; });
+  var n = unread.length;
+  var badge = document.getElementById('inboxBadge');
+  if(badge){badge.textContent = n > 9 ? '9+' : n; badge.style.display = n > 0 ? 'flex' : 'none';}
+  var pbadge = document.getElementById('profileInboxBadge');
+  if(pbadge){pbadge.textContent = n > 9 ? '9+' : n; pbadge.style.display = n > 0 ? 'flex' : 'none';}
 }
 
 function renderBuzon(){
@@ -6647,7 +6703,9 @@ function openBuzonMsg(id){
       break;
     }
   }
+  _syncNotifStorage();
   updateBuzonDot();
+  updateInboxBadge();
   renderBuzon();
 }
 
@@ -6702,31 +6760,33 @@ function aceptarSolicitud(id){
 function renderSolicitudes(){
   var container = document.getElementById('solicitudesList');
   if(!container) return;
-  container.innerHTML = '';
-
-  if(solicitudesActivas.length === 0){
-    container.innerHTML = '<div style="text-align:center;padding:30px;font-size:13px;color:#aaa;font-style:italic">'
-      +'No hay solicitudes activas ahora. 🌿<\/div>';
-    return;
-  }
-
-  solicitudesActivas.forEach(function(sol){
-    var card = document.createElement('div');
-    card.style.cssText = 'background:#fff;border:1.5px solid rgba(116,198,157,.2);border-left:4px solid var(--sage2);border-radius:18px;padding:16px;margin-bottom:10px;box-shadow:0 2px 12px rgba(45,106,79,.06)';
-    card.innerHTML =
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
-      +'<span style="font-size:22px">'+sol.emoji+'<\/span>'
-      +'<div>'
-      +'<div style="font-size:12px;font-weight:700;color:var(--sage)">'+sol.nombre+'<\/div>'
-      +'<div style="font-size:10px;color:#aaa">'+sol.tiempo+' · '+(sol.anonimo?'Anonimo/a':'Publico')+'<\/div>'
-      +'<\/div>'
-      +'<\/div>'
-      +'<div style="font-style:italic;font-size:14px;color:#333;line-height:1.6;margin-bottom:14px">"'+sol.msg+'"<\/div>'
-      // btn below
-      // style below
-      // end btn
-    container.appendChild(card);
-  });
+  container.innerHTML = '<div class="shimmer-card"><div class="shimmer-line"></div><div class="shimmer-line w60"></div></div>';
+  setTimeout(function(){
+    container.innerHTML = '';
+    if(solicitudesActivas.length === 0){
+      container.innerHTML = '<div style="text-align:center;padding:30px;font-size:13px;color:#aaa;font-style:italic">No hay solicitudes activas ahora. 🌿<\/div>';
+      return;
+    }
+    solicitudesActivas.forEach(function(sol){
+      var card = document.createElement('div');
+      card.className='dark-seeker';
+      card.style.cssText = 'background:#fff;border:1.5px solid rgba(116,198,157,.2);border-left:4px solid var(--sage2);border-radius:18px;padding:16px;margin-bottom:10px;box-shadow:0 2px 12px rgba(45,106,79,.06);animation:waveIn .35s ease both';
+      card.innerHTML =
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+        +'<span style="font-size:22px">'+sol.emoji+'<\/span>'
+        +'<div style="flex:1">'
+        +'<div style="font-size:12px;font-weight:700;color:var(--sage)">'+sol.nombre+'<\/div>'
+        +'<div style="font-size:10px;color:#aaa">'+sol.tiempo+' · '+(sol.anonimo?'Anónimo/a':'Público')+'<\/div>'
+        +'<\/div>'
+        +'<\/div>'
+        +'<div style="font-style:italic;font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:14px">"'+sol.msg+'"<\/div>'
+        +'<div style="display:flex;gap:8px">'
+        +'<button onclick="aceptarAyuda(\''+sol.id+'\')" style="flex:2;padding:10px;background:var(--sage2);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">Acompañar 💚<\/button>'
+        +'<button onclick="aceptarSolicitud(\''+sol.id+'\')" style="flex:1;padding:10px;background:rgba(192,48,40,.08);border:1.5px solid rgba(192,48,40,.2);border-radius:100px;color:#C03028;font-size:12px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">Rechazar<\/button>'
+        +'<\/div>';
+      container.appendChild(card);
+    });
+  }, 200);
 }
 
 // ── FIXES SOBRE v98 ──────────────────────────────────────────
@@ -6843,6 +6903,12 @@ function loadProfileData(){
   var map={calmMensaje:'profMensaje',calmAliento:'profAliento',calmCancion:'profCancion',calmPelicula:'profPelicula',calmLibro:'profLibro'};
   var keys=['calmMensaje','calmAliento','calmCancion','calmPelicula','calmLibro'];
   for(var ki=0;ki<keys.length;ki++){var k=keys[ki];var saved=safeLS('get','velo_calm_'+k);if(saved){var el=document.getElementById(map[k]);if(el)el.textContent=saved;}}
+  // Sync today's mood to profile
+  var moodKey='velo_mood_'+new Date().toISOString().slice(0,10);
+  var moodSaved=safeLS('get',moodKey);
+  if(moodSaved){try{var m=JSON.parse(moodSaved);var moodDisp=document.getElementById('profMoodToday');if(moodDisp)moodDisp.textContent=m.emoji+' '+m.label;}catch(e){}}
+  _loadNotifStorage();
+  updateInboxBadge();
   renderProfileBadges();
   renderProfileReviews();
   applyIncognitoUI(isIncognitoActive());
@@ -7235,10 +7301,11 @@ function deleteMyCircle(){
   currentCircleId=null;
   currentCircleIsOwner=false;
   goTo('feed');
-  setTimeout(function(){renderCommunityCircles();toast('Circulo eliminado');},200);
+  setTimeout(function(){renderCommunityCircles();toast('🌿','Círculo eliminado');},200);
 }
 
 // ── RENDERIZAR CÍRCULOS DE COMUNIDAD EN EL FEED ──────────────
+function renderMyCircles(){renderCommunityCircles();}
 function renderCommunityCircles(){
   var grid=document.getElementById('circlesCommunityGrid');
   if(!grid)return;
@@ -7323,7 +7390,7 @@ function confirmDeleteCircle(circleId){
   userCircles=userCircles.filter(function(c){return c.id!==circleId;});
   saveCircles();
   renderCommunityCircles();
-  toast('Circulo eliminado');
+  toast('🌿','Círculo eliminado');
 }
 
 // ── MIS CÍRCULOS — sidebar pequeño ───────────────────────────
