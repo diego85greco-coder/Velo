@@ -4,8 +4,8 @@
 //  2. Reemplazar las dos constantes de abajo con tus valores
 //     (Settings → API → Project URL y anon/public key)
 // ═══════════════════════════════════════════════════════════
-const SUPABASE_URL  = 'https://TU_PROYECTO.supabase.co';
-const SUPABASE_ANON = 'TU_ANON_KEY_PUBLICA';
+const SUPABASE_URL  = 'https://yuravtnjvvztsxdtggod.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_mBoqW2t3QoJvp5jFecEGgQ_1wrPiT9C';
 
 // Cargar cliente Supabase (cargado desde CDN en index.html)
 var supabase = null;
@@ -148,30 +148,40 @@ function loadLogos(){
 function initSplashTheme(){
   var h = new Date().getHours();
   var isNight = h >= 20 || h < 7;
+  var BASE = SUPABASE_URL + '/storage/v1/object/public/velo-assets/';
 
-  // Logo
-  var logoTag = document.getElementById('logoData');
+  // Logo desde Supabase Storage
   var logoImg = document.getElementById('splashLogoImg');
-  if(logoTag && logoImg){
-    logoImg.src = logoTag.getAttribute('data-logo');
+  if(logoImg){
+    var logoSrc = isNight ? BASE+'logo-night.png' : BASE+'logo-day.png';
+    var logoFallbackTag = document.getElementById('logoData');
+    var fallbackSrc = logoFallbackTag ? logoFallbackTag.getAttribute('data-logo') : '';
+    logoImg.onerror = function(){ if(fallbackSrc) this.src = fallbackSrc; this.onerror=null; };
+    logoImg.src = logoSrc;
     logoImg.style.mixBlendMode = isNight ? 'screen' : 'multiply';
   }
 
-  // Load images from hidden DOM tags (avoids iOS JS string size limit)
-  var domDay   = document.getElementById('__bgDay');
-  var domNight = document.getElementById('__bgNight');
+  // Fondos desde Supabase Storage (con fallback a canvas)
   var bgDay    = document.getElementById('splashBgDay');
   var bgNight  = document.getElementById('splashBgNight');
+  var birds    = document.getElementById('splashBirds');
+  var clouds   = document.getElementById('splashClouds');
 
-  var birds = document.getElementById('splashBirds');
-  var clouds = document.getElementById('splashClouds');
   if(isNight){
-    if(bgNight && domNight){ bgNight.src = domNight.src; bgNight.style.opacity = '1'; }
+    if(bgNight){
+      bgNight.onerror = function(){ this.style.display='none'; buildParticlesNight(); };
+      bgNight.onload  = function(){ this.style.opacity='1'; };
+      bgNight.src = BASE+'bg-night.jpg';
+    }
     if(birds) birds.style.display='none';
     if(clouds) clouds.style.opacity='.4';
     buildParticlesNight();
   } else {
-    if(bgDay && domDay){ bgDay.src = domDay.src; bgDay.style.opacity = '1'; }
+    if(bgDay){
+      bgDay.onerror = function(){ this.style.display='none'; buildParticlesDay(); };
+      bgDay.onload  = function(){ this.style.opacity='1'; };
+      bgDay.src = BASE+'bg-day.jpg';
+    }
     if(birds) birds.style.display='block';
     if(clouds) clouds.style.opacity='1';
     buildParticlesDay();
@@ -1232,14 +1242,27 @@ function openContactForm(type){
   if(attach) attach.style.display=type==='reporte'?'block':'none';
 }
 function sendContactForm(){
-  var email=document.getElementById('cEmail');
   var msg=document.getElementById('cMsg');
-  if(!email||!email.value.trim()){toast('📧','Ingresá tu email para que podamos responderte');return;}
   if(!msg||!msg.value.trim()){toast('✍️','Escribí tu mensaje antes de enviar');return;}
-  // Hide form
+  var topicEl=document.getElementById('cTopicRow');
+  var topic=topicEl?topicEl.textContent.trim():'Consulta general';
+  var texto=msg.value.trim();
+  // Enviar al buzón del admin como soporte interno
+  addBuzonMsg({
+    id:'contact-'+Date.now(),
+    tipo:'soporte',
+    icon:'💌',
+    titulo:'Mensaje enviado',
+    cuerpo:'Tu mensaje fue recibido. El equipo de Velo te responderá en tu buzón.',
+    leido:false,
+    fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})
+  });
+  // Guardar en Supabase si está disponible
+  sbEnviarReporte(texto, topic);
   var form=document.getElementById('contactForm');
   if(form)form.style.display='none';
-  showSuc('💌','¡Mensaje recibido!','Te respondemos en 24-48hs hábiles, de Lunes a Viernes. Gracias por escribirnos. 🌿');
+  if(msg) msg.value='';
+  showSuc('💌','¡Mensaje enviado!','Te responderemos en tu buzón de Velo a la mayor brevedad. 🌿');
 }
 
 function safeLS(action,key,val){
@@ -2204,15 +2227,176 @@ function gcEnd(){
   gcShowSurvey(gcRole);
 }
 
+// ═══════════════════════════════════════════════════════════
+//  BUSINESS LOGIC — Premium, Límites, Donaciones, Video
+// ═══════════════════════════════════════════════════════════
+
+// ── ESTADO DE USUARIO ────────────────────────────────────
+function isDonor(){
+  return safeLS('get','velo_monthly_donor')==='true';
+}
+function isPremiumUser(){
+  return safeLS('get','velo_premium_user')==='true';
+}
+function isProUser(){
+  return safeLS('get','velo_pro_active')==='true';
+}
+function setDonor(monthly){
+  if(monthly){
+    safeLS('set','velo_monthly_donor','true');
+    safeLS('set','velo_monthly_start',Date.now().toString());
+  }
+  safeLS('set','velo_last_donation',Date.now().toString());
+}
+function setPremiumUser(){
+  safeLS('set','velo_premium_user','true');
+  safeLS('set','velo_premium_start',Date.now().toString());
+}
+
+// ── LÍMITE MURO DE AYUDA (2 gratis, ilimitado premium) ───
+var FREE_HELP_LIMIT = 2;
+function getHelpWallCount(){
+  return parseInt(safeLS('get','velo_help_posts')||'0',10);
+}
+function incrementHelpWallCount(){
+  safeLS('set','velo_help_posts', String(getHelpWallCount()+1));
+}
+function canPostHelpWall(){
+  if(isPremiumUser()) return true;
+  return getHelpWallCount() < FREE_HELP_LIMIT;
+}
+function showHelpLimitModal(){
+  var existing = document.getElementById('helpLimitModal');
+  if(existing){ existing.style.display='flex'; return; }
+  var m = document.createElement('div');
+  m.id='helpLimitModal';
+  m.style.cssText='position:fixed;inset:0;z-index:9800;background:rgba(10,20,10,.6);backdrop-filter:blur(12px);display:flex;align-items:flex-end;justify-content:center';
+  m.innerHTML='<div style="width:100%;max-width:420px;background:#fff;border-radius:28px 28px 0 0;padding:28px 24px 40px;text-align:center">'+
+    '<div style="font-size:40px;margin-bottom:12px">🔒</div>'+
+    '<div style="font-size:19px;font-weight:800;color:var(--ink);margin-bottom:6px">Límite alcanzado</div>'+
+    '<div style="font-size:13px;color:var(--ink4);margin-bottom:20px;line-height:1.6">Usaste tus 2 publicaciones gratuitas en el muro de ayuda.<br>Con el plan Premium accedés ilimitado.</div>'+
+    '<div style="background:linear-gradient(135deg,var(--sage7),rgba(255,255,255,.8));border:1.5px solid rgba(116,198,157,.25);border-radius:20px;padding:18px;margin-bottom:18px">'+
+      '<div style="font-size:22px;font-weight:900;color:var(--sage)">$2.99<span style="font-size:13px;font-weight:400;color:var(--ink5)">/mes</span></div>'+
+      '<div style="font-size:12px;color:var(--ink4);margin-top:4px">✓ Publicaciones ilimitadas en el muro<br>✓ Crear círculos de paz sin esperar insignia</div>'+
+    '</div>'+
+    '<button onclick="subscribePremiumUser()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;margin-bottom:10px">Suscribirse por $2.99/mes</button>'+
+    '<button onclick="document.getElementById('helpLimitModal').style.display='none'" style="background:none;border:none;color:var(--ink5);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">Ahora no</button>'+
+  '</div>';
+  document.querySelector('.phone').appendChild(m);
+}
+function subscribePremiumUser(){
+  var m = document.getElementById('helpLimitModal');
+  if(m) m.style.display='none';
+  // PayPal / Stripe redirect — configurar con tu cuenta
+  setPremiumUser();
+  addBuzonMsg({id:'prem-'+Date.now(),tipo:'sistema',icon:'💎',titulo:'¡Plan Premium activado!',cuerpo:'Ya podés publicar ilimitado en el muro y crear círculos de paz. ¡Gracias por apoyar a Velo! 💚',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
+  toast('💎','¡Plan Premium activado! Gracias por tu apoyo 💚');
+}
+
+// ── DONACIÓN DESPUÉS DE RESEÑA ────────────────────────────
+function showPostReviewDonation(){
+  // No mostrar si ya es donor o premium
+  if(isDonor() || isPremiumUser()) return;
+  setTimeout(function(){
+    var m = document.createElement('div');
+    m.id='postReviewDonModal';
+    m.style.cssText='position:fixed;inset:0;z-index:9750;background:rgba(10,20,10,.55);backdrop-filter:blur(10px);display:flex;align-items:flex-end;justify-content:center';
+    m.innerHTML='<div style="width:100%;max-width:420px;background:#fff;border-radius:28px 28px 0 0;padding:24px 22px 40px">'+
+      '<div style="width:36px;height:4px;background:var(--sage5);border-radius:2px;margin:0 auto 18px"></div>'+
+      '<div style="text-align:center;margin-bottom:14px"><div style="font-size:32px;margin-bottom:6px">💚</div>'+
+        '<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:4px">¿Querés apoyar a Velo?</div>'+
+        '<div style="font-size:12px;color:var(--ink4);line-height:1.6">Ayudás a que la comunidad siga existiendo y a que más personas reciban apoyo gratuito.</div></div>'+
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">'+
+        '<div onclick="selectPostDon(this,5)" style="padding:10px 6px;border:1.5px solid var(--border);border-radius:12px;text-align:center;cursor:pointer;background:rgba(255,255,255,.9)"><div style="font-size:14px;font-weight:800;color:var(--sage)">$5</div></div>'+
+        '<div onclick="selectPostDon(this,10)" style="padding:10px 6px;border:1.5px solid var(--sage2);border-radius:12px;text-align:center;cursor:pointer;background:var(--sage7)"><div style="font-size:14px;font-weight:800;color:var(--sage)">$10</div></div>'+
+        '<div onclick="selectPostDon(this,15)" style="padding:10px 6px;border:1.5px solid var(--border);border-radius:12px;text-align:center;cursor:pointer;background:rgba(255,255,255,.9)"><div style="font-size:14px;font-weight:800;color:var(--sage)">$15</div></div>'+
+        '<div onclick="selectPostDon(this,0)" style="padding:10px 6px;border:1.5px solid var(--border);border-radius:12px;text-align:center;cursor:pointer;background:rgba(255,255,255,.9)"><div style="font-size:12px;font-weight:700;color:var(--ink4)">Otro</div></div>'+
+      '</div>'+
+      '<div id="postDonCustomWrap" style="display:none;margin-bottom:12px"><input id="postDonCustom" type="number" min="5" placeholder="Mínimo $5 USD" class="inp" style="font-size:15px"></div>'+
+      '<label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;cursor:pointer;padding:8px 0">'+
+        '<input type="checkbox" id="postDonMonthly" style="width:18px;height:18px;accent-color:var(--sage)">'+
+        '<span style="font-size:12px;color:var(--ink4)">Hacer esta donación mensual (podés cancelar cuando quieras)</span>'+
+      '</label>'+
+      '<button onclick="confirmPostDon()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;margin-bottom:10px">Donar ahora 💚</button>'+
+      '<button onclick="document.getElementById('postReviewDonModal').remove()" style="width:100%;padding:10px;background:none;border:none;color:var(--ink5);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">No por ahora</button>'+
+    '</div>';
+    var phone = document.querySelector('.phone');
+    if(phone) phone.appendChild(m);
+  }, 1800);
+}
+var _postDonAmt=10;
+function selectPostDon(el,amt){
+  document.querySelectorAll('#postReviewDonModal [onclick^="selectPostDon"]').forEach(function(d){
+    d.style.borderColor='var(--border)'; d.style.background='rgba(255,255,255,.9)';
+    var n=d.querySelector('div'); if(n){n.style.color='var(--ink4)';n.style.fontWeight='700';}
+  });
+  el.style.borderColor='var(--sage2)'; el.style.background='var(--sage7)';
+  var n=el.querySelector('div'); if(n){n.style.color='var(--sage)';n.style.fontWeight='800';}
+  _postDonAmt=amt;
+  var wrap=document.getElementById('postDonCustomWrap');
+  if(wrap) wrap.style.display=(amt===0)?'block':'none';
+}
+function confirmPostDon(){
+  var custom=document.getElementById('postDonCustom');
+  var amt=_postDonAmt;
+  if(amt===0 && custom){ amt=parseFloat(custom.value); if(!amt||amt<5){toast('⚠️','Mínimo $5 USD');return;} }
+  var monthly=document.getElementById('postDonMonthly');
+  var isMonthly=monthly&&monthly.checked;
+  setDonor(isMonthly);
+  var m=document.getElementById('postReviewDonModal'); if(m)m.remove();
+  addBuzonMsg({id:'don-'+Date.now(),tipo:'sistema',icon:'💚',titulo:'¡Gracias por tu donación!',cuerpo:'Recibimos tu donación de $'+amt+' USD'+(isMonthly?' mensual':'')+'. Tu apoyo mantiene a Velo vivo y ayuda a personas en todo el mundo. ¡Muchas gracias! 🌿',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
+  toast('💚','¡Gracias! Tu donación de $'+amt+' ayuda a la comunidad 🌿');
+  updateBuzonDot(); updateInboxBadge();
+}
+
+// ── VIDEOLLAMADA (Jitsi Meet — funciona en Safari/Chrome) ─
+function startVideoCall(roomId, displayName){
+  if(!roomId) roomId = 'velo-session-'+Date.now();
+  if(!displayName) displayName = getDisplayName() || 'Usuario Velo';
+  var phone = document.querySelector('.phone');
+  var existing = document.getElementById('jitsiModal');
+  if(existing) existing.remove();
+  var m = document.createElement('div');
+  m.id='jitsiModal';
+  m.style.cssText='position:absolute;inset:0;z-index:9600;background:#0a1a0a;display:flex;flex-direction:column';
+  var safeUrl='https://meet.jit.si/'+encodeURIComponent(roomId)+'#userInfo.displayName="'+encodeURIComponent(displayName)+'"&config.startWithVideoMuted=false&config.startWithAudioMuted=false&config.prejoinPageEnabled=false&config.toolbarButtons=["microphone","camera","hangup"]&interfaceConfig.SHOW_BRAND_WATERMARK=false';
+  m.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;padding:max(env(safe-area-inset-top,16px),16px) 16px 12px;background:#0a1a0a;flex-shrink:0">'+
+    '<div style="font-size:14px;font-weight:700;color:rgba(116,198,157,.9)">📹 Videollamada Velo</div>'+
+    '<button onclick="endVideoCall()" style="padding:7px 14px;background:rgba(192,48,40,.8);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Finalizar ✕</button>'+
+  '</div>'+
+  '<iframe src="'+safeUrl+'" allow="camera;microphone;display-capture;fullscreen;speaker" style="flex:1;border:none;width:100%;background:#000" allowfullscreen></iframe>';
+  if(phone) phone.appendChild(m);
+}
+function endVideoCall(){
+  var m=document.getElementById('jitsiModal'); if(m)m.remove();
+  toast('✅','Videollamada finalizada');
+}
+
+// ── COMISIÓN PROFESIONAL (20% Velo / 80% profesional) ─────
+function calcProCommission(tarifaTotal){
+  var velo = parseFloat((tarifaTotal * 0.20).toFixed(2));
+  var pro  = parseFloat((tarifaTotal * 0.80).toFixed(2));
+  return {velo:velo, pro:pro, total:tarifaTotal};
+}
+function showProCommissionInfo(tarifaEl){
+  var tarifa = parseFloat((tarifaEl?tarifaEl.value:0)||50);
+  if(!tarifa||tarifa<1) return;
+  var c = calcProCommission(tarifa);
+  toast('💰','Recibirás $'+c.pro+' por sesión (Velo retiene $'+c.velo+' - 20%)');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FIN BUSINESS LOGIC
+// ═══════════════════════════════════════════════════════════
 function dejarResena(stars, tags, comment){
   if(!stars) stars = 5;
   if(!tags) tags = [];
   if(!comment) comment = '';
-  var today = new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
   addProfileReview(stars, tags, comment);
   checkAndAwardBadge(totalCharlas + 1);
   totalCharlas = totalCharlas + 1;
   toast('⭐','¡Gracias por tu reseña! Ayuda a la comunidad 💚');
+  showPostReviewDonation();
 }
 
 function gcShowSurvey(role){
@@ -2675,6 +2859,7 @@ function togHelpAnon(){
   var knob=document.getElementById('helpAnonKnob');if(knob)knob.style.left=_helpAnonActivo?'21px':'3px';
 }
 function publicarSolicitud(){
+  if(!canPostHelpWall()){showHelpLimitModal();return;}
   var msgEl=document.getElementById('helpMsg');
   var msg=msgEl?msgEl.value.trim():'';
   if(!msg){toast('✍️','Escribí un mensaje');return;}
@@ -2690,9 +2875,12 @@ function publicarSolicitud(){
       msg:msg,
       tiempo:'ahora'
     });
+    incrementHelpWallCount();
     closeHelpSheet();
     renderSolicitudes();
-    toast(isAnon?'🕶️':'✅',isAnon?'Publicado en modo incógnito':'Tu solicitud está en el muro');
+    var remaining=canPostHelpWall()?FREE_HELP_LIMIT-getHelpWallCount():0;
+    var suffix=!isPremiumUser()&&remaining>=0?' ('+remaining+' publicación'+(remaining!==1?'es':'')+' gratuita'+(remaining!==1?'s':'')+' restante'+(remaining!==1?'s':'')+')':'';
+    toast(isAnon?'🕶️':'✅',isAnon?'Publicado en modo incógnito':'Tu solicitud está en el muro'+suffix);
   });
 }
 function aceptarAyuda(solId){

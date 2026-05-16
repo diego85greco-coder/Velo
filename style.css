@@ -413,3 +413,26 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
   .bnav{height:calc(60px + env(safe-area-inset-bottom,0px))!important;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))!important}
   .inp,.ta,input,textarea,select{font-size:16px!important}
 }
+
+/* ── SPLASH PREMIUM BUTTONS ────────────────────────────── */
+.splash-gbtn{
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  transition:transform .15s ease,box-shadow .15s ease;
+  letter-spacing:.2px;
+}
+.splash-gbtn:active{transform:scale(.96)}
+.splash-gbtn-primary{
+  background:rgba(255,255,255,.95);
+  box-shadow:0 8px 32px rgba(0,0,0,.25),0 0 0 1.5px rgba(255,255,255,.7),inset 0 1px 0 rgba(255,255,255,.9);
+  color:#1A5C32;
+}
+.splash-gbtn-secondary{
+  background:rgba(255,255,255,.15);
+  box-shadow:0 4px 24px rgba(0,0,0,.2),0 0 0 1px rgba(255,255,255,.28),inset 0 1px 0 rgba(255,255,255,.12);
+  color:rgba(255,255,255,.95);
+}
+.splash-gbtn-ghost{
+  background:rgba(255,255,255,.08);
+  box-shadow:0 2px 16px rgba(0,0,0,.12),0 0 0 1px rgba(255,255,255,.15),inset 0 1px 0 rgba(255,255,255,.06);
+  color:rgba(255,255,255,.75);
+}

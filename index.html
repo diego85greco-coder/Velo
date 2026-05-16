@@ -274,23 +274,18 @@
     </div>
 
     <!-- Botones glassmorphism -->
-    <div style="position:absolute;bottom:0;left:0;right:0;z-index:10;padding:0 40px 34px;display:flex;flex-direction:column;gap:11px">
-      <button onclick="splashBtnTap(this);obReset();goTo('onboarding')" class="splash-gbtn splash-gbtn-primary">
-        <span class="sbtn-icon">✦</span><span class="sbtn-label">Registrarme</span>
+    <div style="position:absolute;bottom:0;left:0;right:0;z-index:10;padding:0 32px calc(env(safe-area-inset-bottom,0px) + 38px);display:flex;flex-direction:column;gap:13px;align-items:center">
+      <button onclick="splashBtnTap(this);obReset();goTo('onboarding')" class="splash-gbtn splash-gbtn-primary" style="width:100%;max-width:340px">
+        <span class="sbtn-icon">✦</span><span class="sbtn-label" style="font-size:15px;letter-spacing:.3px">Comenzar ahora</span>
       </button>
-      <button onclick="splashBtnTap(this);openEntrarModal()" class="splash-gbtn splash-gbtn-secondary">
-        <span style="font-size:14px;margin-right:4px">👤</span><span class="sbtn-label">Entrar</span>
+      <button onclick="splashBtnTap(this);openEntrarModal()" class="splash-gbtn splash-gbtn-secondary" style="width:100%;max-width:340px">
+        <span style="font-size:15px;margin-right:6px">👤</span><span class="sbtn-label" style="font-size:15px">Iniciar sesión</span>
       </button>
-      <button onclick="splashBtnTap(this);goTo('contact')" class="splash-gbtn splash-gbtn-ghost">
-        <span style="font-size:14px;margin-right:4px">💬</span><span class="sbtn-label">Contáctanos</span>
+      <button onclick="splashBtnTap(this);goTo('contact')" class="splash-gbtn splash-gbtn-ghost" style="width:100%;max-width:340px">
+        <span style="font-size:15px;margin-right:6px">💬</span><span class="sbtn-label" style="font-size:14px;opacity:.85">Contáctanos</span>
       </button>
-      <div style="display:flex;justify-content:center;gap:9px;margin-top:2px">
-        <button onclick="selLang(this,'ES')" id="lang-ES" class="lang-pill lang-active">🇪🇸 ES</button>
-        <button onclick="selLang(this,'EN')" id="lang-EN" class="lang-pill">🇬🇧 EN</button>
-        <button onclick="selLang(this,'PT')" id="lang-PT" class="lang-pill">🇧🇷 PT</button>
-      </div>
-      <div style="text-align:center">
-        <span onclick="goTo('admin-login')" style="font-size:9px;color:rgba(255,255,255,.1);cursor:pointer;letter-spacing:1px">···</span>
+      <div style="text-align:center;margin-top:-2px">
+        <span onclick="goTo('admin-login')" style="font-size:9px;color:rgba(255,255,255,.08);cursor:pointer;letter-spacing:1px">···</span>
       </div>
     </div>
   </div>
@@ -2109,7 +2104,7 @@
         <div style="width:10px;height:10px;border-radius:50%;background:#4A8FA8;box-shadow:0 0 6px #4A8FA8;flex-shrink:0;animation:breathe 2s ease-in-out infinite"></div>
         <div>
           <div style="font-size:12px;font-weight:700;color:#2D6A8A">⏱️ Respondemos a la mayor brevedad posible</div>
-          <div style="font-size:11px;color:#4A8FA8">Generalmente en 24-48hs hábiles · hola@veloapp.com</div>
+          <div style="font-size:11px;color:#4A8FA8">Tu respuesta llegará a tu buzón de Velo</div>
         </div>
       </div>
 
@@ -2165,7 +2160,7 @@
         <div class="co-ic" style="background:linear-gradient(135deg,var(--sky3),var(--sky2))">📧</div>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:600;color:var(--ink)">Consulta general</div>
-          <div style="font-size:12px;color:var(--ink4)">Cualquier otra duda · hola@veloapp.com</div>
+          <div style="font-size:12px;color:var(--ink4)">El equipo de Velo te responderá en tu buzón</div>
         </div>
         <span style="font-size:18px;color:var(--ink5)">›</span>
       </div>
@@ -2183,15 +2178,14 @@
       <div id="contactForm" style="display:none;background:rgba(255,255,255,.85);border:1.5px solid rgba(168,212,232,.22);border-radius:20px;padding:16px;margin-top:10px;box-shadow:var(--sh)">
         <div style="font-size:12px;font-weight:700;color:#2D6A8A;margin-bottom:11px" id="contactFormTitle">✍️ Enviarnos un mensaje</div>
         <div style="display:flex;flex-direction:column;gap:9px">
-          <input class="inp" id="cName" placeholder="Tu nombre (opcional)">
-          <input class="inp" id="cEmail" placeholder="Tu email para responderte" type="email">
           <div id="cTopicRow" style="background:var(--sage7);border:1px solid rgba(116,198,157,.18);border-radius:12px;padding:9px 12px;font-size:12px;font-weight:600;color:var(--sage)"></div>
-          <textarea class="ta" id="cMsg" placeholder="Contanos en detalle cómo podemos ayudarte..." style="min-height:85px"></textarea>
-          <!-- Attachment hint for bug reports -->
-          <div id="cAttach" style="display:none;font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:10px;padding:8px 11px">💡 Podés adjuntar capturas de pantalla en el email a <b>hola@veloapp.com</b> si encontraste un error visual.</div>
+          <textarea class="ta" id="cMsg" placeholder="Contanos en detalle cómo podemos ayudarte..." style="min-height:90px;font-size:15px"></textarea>
         </div>
-        <button class="btn btn-sage" style="width:100%;padding:14px;font-size:14px;margin-top:12px" onclick="sendContactForm()">Enviar mensaje 💌</button>
-        <div style="font-size:11px;color:#4A8FA8;text-align:center;margin-top:9px;line-height:1.5">Respondemos a la mayor brevedad posible 💌</div>
+        <button class="btn btn-sage" style="width:100%;padding:15px;font-size:15px;font-weight:700;margin-top:13px" onclick="sendContactForm()">Enviar mensaje 💌</button>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;background:rgba(116,198,157,.08);border-radius:12px;border:1px solid rgba(116,198,157,.15)">
+          <span style="font-size:16px">🔒</span>
+          <div style="font-size:11px;color:var(--ink4);line-height:1.5">La respuesta te llegará directo a tu <b style="color:var(--sage2)">buzón de Velo</b>. No compartimos tu información con terceros.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -2942,6 +2936,14 @@
         </div>
         <button onclick="toast('💳','Conectando con Stripe...')" style="width:100%;padding:11px;background:rgba(212,168,100,.12);border:1.5px solid rgba(212,168,100,.25);border-radius:100px;font-size:12px;font-weight:700;color:var(--earth);cursor:pointer;font-family:'Jost',sans-serif">+ Agregar PayPal o Stripe</button>
       </div>
+      <!-- Comisión Velo -->
+      <div style="margin-top:11px;background:rgba(255,255,255,.78);border:1.5px solid rgba(212,168,100,.18);border-radius:18px;padding:14px;box-shadow:var(--sh)">
+        <div style="font-size:12px;font-weight:700;color:var(--earth);margin-bottom:9px">💰 Estructura de comisión</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(212,168,100,.1)"><span style="font-size:12px;color:var(--ink3)">Tu tarifa por sesión</span><span style="font-size:13px;font-weight:700;color:var(--sage)">100%</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(212,168,100,.1)"><span style="font-size:12px;color:var(--ink3)">Comisión plataforma Velo</span><span style="font-size:13px;font-weight:700;color:var(--sos)">−20%</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0"><span style="font-size:12px;font-weight:700;color:var(--ink)">Recibirás por sesión</span><span style="font-size:14px;font-weight:800;color:var(--sage)">80%</span></div>
+        <div style="margin-top:8px;padding:8px 10px;background:var(--sage7);border-radius:10px;font-size:11px;color:var(--ink4);line-height:1.5">Ejemplo: si cobrás $60/sesión → recibirás <b style="color:var(--sage2)">$48 USD</b> (Velo retiene $12)</div>
+      </div>
     </div>
   </div>
 <div class="sc" id="pro-panel-sesion-sol" style="background:linear-gradient(160deg,var(--sky3),var(--sky2))">
@@ -3566,7 +3568,8 @@
         <div id="gcName" style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px;color:#2d6a4f">Guardián</div>
         <div style="font-size:10px;color:#74c69d">● En línea · Verificado</div>
       </div>
-      <button onclick="gcEnd()" style="background:#fff0ee;border:1.5px solid #f4a09a;border-radius:100px;color:#c0392b;font-size:11px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;padding:6px 14px">Terminar</button>
+      <button onclick="startVideoCall('velo-guardian-'+Date.now())" style="background:linear-gradient(135deg,#2d6a4f,#52b788);border:none;border-radius:100px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;padding:6px 13px">📹 Video</button>
+      <button onclick="gcEnd()" style="background:#fff0ee;border:1.5px solid #f4a09a;border-radius:100px;color:#c0392b;font-size:11px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;padding:6px 14px">Finalizar</button>
     </div>
     <!-- Messages -->
     <div id="gcMsgs" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px 10px;display:flex;flex-direction:column;gap:10px">
