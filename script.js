@@ -549,7 +549,7 @@ function finishRegister(){
 }
 
 // Nav — include register + groups in noNav = false (show nav), but not for register
-var noNav=['splash','onboarding','guardian-chat','help-form','login-user','login-pro','pro-reg','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending'];
+var noNav=['splash','onboarding','pro-onboarding','guardian-chat','help-form','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending'];
 
 // ── MOOD CHECK-IN ────────────────────────────────────────
 var todayMood=null;
@@ -830,6 +830,50 @@ function _obRenderSlide(){
   if(back)back.style.visibility=_obSlide>0?'visible':'hidden';
 }
 
+// ── PRO ONBOARDING ───────────────────────────────────────
+var _pobSlide=0;
+var _pobTotal=5;
+function pobReset(){_pobSlide=0;setTimeout(_pobRenderSlide,50);}
+function pobNext(){
+  if(_pobSlide<_pobTotal-1){_pobSlide++;_pobRenderSlide();}
+  else{_pobSlide=0;goTo('pro-register');}
+}
+function pobBack(){if(_pobSlide>0){_pobSlide--;_pobRenderSlide();}}
+function pobSkip(){_pobSlide=0;goTo('pro-register');}
+function _pobRenderSlide(){
+  for(var i=0;i<_pobTotal;i++){
+    var d=document.getElementById('pob-dot-'+i);
+    if(d){d.className='ob-dot'+(_pobSlide===i?' ob-dot-a':'');}
+    var sl=document.getElementById('pob-slide-'+i);
+    if(sl){
+      if(i===_pobSlide){sl.style.display='flex';sl.style.animation='none';void sl.offsetWidth;sl.style.animation='onboardSlide .35s ease both';}
+      else sl.style.display='none';
+    }
+  }
+  var btn=document.getElementById('pobNextBtn');
+  if(btn)btn.textContent=_pobSlide===_pobTotal-1?'Registrarme 🌿':'Siguiente →';
+  var back=document.getElementById('pobBackBtn');
+  if(back)back.style.visibility=_pobSlide>0?'visible':'hidden';
+}
+
+function togProSpec(el){
+  var on=el.style.borderColor.indexOf('198')>=0;
+  el.style.borderColor=on?'rgba(200,200,200,.3)':'var(--sage2)';
+  el.style.background=on?'rgba(255,255,255,.7)':'var(--sage7)';
+  el.style.color=on?'var(--ink4)':'var(--sage2)';
+}
+function proDocSelected(inp,nameId,prevId){
+  var f=inp.files&&inp.files[0];
+  var nm=document.getElementById(nameId);
+  var pv=document.getElementById(prevId);
+  if(f&&nm){
+    nm.textContent='✅ '+f.name;
+    nm.style.color='var(--sage2)';
+    nm.style.fontWeight='600';
+    if(pv){pv.style.borderColor='rgba(116,198,157,.5)';pv.style.background='var(--sage7)';}
+  }
+}
+
 // ── CUSTOM DONATION ──────────────────────────────────────
 var selectedDonAmt='10';
 function selDonAmt(el,amt){
@@ -897,6 +941,8 @@ function goTo(id){
     var shown=safeLS('get','velo_banner_shown');
   }
   if(id==='onboarding') setTimeout(obReset,30);
+  if(id==='pro-onboarding') setTimeout(pobReset,30);
+  if(id==='pro-panel') setTimeout(renderProPendingBanner,50);
   if(id==='profile') setTimeout(checkMonthlyDonorUI,50);
   if(id==='bottle') setTimeout(renderBottleWall,50);
   if(id==='help') setTimeout(renderSolicitudes,50);
@@ -1794,6 +1840,103 @@ function saveProAvailability(){
 function openProProfile(name){
   toast('👤','Ver perfil de '+name+' (próximamente)');
 }
+
+// ── PRO REGISTRATION & APPROVAL ──────────────────────────────────────────────
+var _proApprovalStatus = safeLS('get','velo_pro_approval') || 'approved'; // 'pending'|'approved'|'rejected'
+
+function submitProRegistration(){
+  var name = document.getElementById('proRegName');
+  var license = document.getElementById('proLicenseInput');
+  if(!name||!name.value.trim()){ toast('⚠️','Ingresá tu nombre completo'); return; }
+  var consent = document.getElementById('proRegConsent');
+  if(!consent||!consent.checked){ toast('⚠️','Debés aceptar los términos para continuar'); return; }
+  _proApprovalStatus = 'pending';
+  safeLS('set','velo_pro_approval','pending');
+  // Show pending state card, hide form
+  var form = document.getElementById('proRegForm');
+  var done = document.getElementById('proRegDone');
+  if(form) form.style.display = 'none';
+  if(done) done.style.display = 'block';
+  // Notify admin (simulated)
+  _addToAdminProContactList({ from: name.value.trim(), subject: 'Nuevo registro', msg: 'Nuevo profesional pendiente de aprobación.', time: 'Ahora' });
+  goTo('pro-panel');
+  setTimeout(function(){ renderProPendingBanner(); }, 100);
+}
+
+function renderProPendingBanner(){
+  var banner = document.getElementById('proPendingBanner');
+  if(!banner) return;
+  var status = safeLS('get','velo_pro_approval') || 'approved';
+  banner.style.display = status === 'pending' ? 'flex' : 'none';
+  // Disable "Consulta completada" button if pending
+  var markBtn = document.querySelector('[onclick="openMarkSessionModal()"]');
+  if(markBtn){
+    markBtn.style.opacity = status==='pending'?'.35':'1';
+    markBtn.style.pointerEvents = status==='pending'?'none':'auto';
+  }
+}
+
+// ── PRO → ADMIN CONTACT ──────────────────────────────────────────────────────
+var _proContactMessages = [];
+
+function openProContactVelo(){
+  document.getElementById('proContactVeloModal').style.display = 'flex';
+}
+function closeProContactVelo(){
+  document.getElementById('proContactVeloModal').style.display = 'none';
+}
+function submitProContactVelo(){
+  var subj = document.getElementById('proContactSubj');
+  var msg  = document.getElementById('proContactMsg');
+  if(!msg||!msg.value.trim()){ toast('⚠️','Escribí tu consulta'); return; }
+  var proName = document.querySelector('#pro-panel .serif-i') ? 'Dra. Ana Martínez' : 'Profesional';
+  _addToAdminProContactList({ from: proName, subject: subj?subj.value:'Consulta', msg: msg.value.trim(), time: 'Ahora' });
+  closeProContactVelo();
+  if(msg) msg.value = '';
+  toast('✅','Consulta enviada al equipo de Velo 💌');
+}
+
+function _addToAdminProContactList(item){
+  _proContactMessages.unshift(item);
+  var list = document.getElementById('adminProContactList');
+  if(!list) return;
+  var html = '';
+  _proContactMessages.slice(0,5).forEach(function(m){
+    html += '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;margin-bottom:8px">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
+      '<div style="width:32px;height:32px;border-radius:10px;background:rgba(116,198,157,.15);display:flex;align-items:center;justify-content:center;font-size:14px">💬</div>'+
+      '<div><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">'+m.from+'</div>'+
+      '<div style="font-size:10px;color:rgba(116,198,157,.5)">'+m.subject+' · '+m.time+'</div></div></div>'+
+      '<div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.5;margin-bottom:8px">"'+m.msg+'"</div>'+
+      '<button onclick="toast(\'💌\',\'Respuesta enviada al profesional\')" class="a-btn-g" style="width:100%;padding:8px;justify-content:center">Responder</button>'+
+    '</div>';
+  });
+  list.innerHTML = html || '<div style="font-size:11px;color:rgba(255,255,255,.35);text-align:center;padding:12px">No hay consultas pendientes</div>';
+}
+
+function replyProContact(proId, proName){
+  toast('💌','Respuesta enviada a '+proName);
+}
+
+function approvePro(proId){
+  toast('✅','Perfil aprobado. Se notifica al profesional 🌿');
+  // Add buzón notification for the pro
+  var msgs = JSON.parse(localStorage.getItem('velo_buzon')||'[]');
+  msgs.unshift({id:Date.now(),from:'Equipo Velo',icon:'✅',title:'¡Tu perfil fue aprobado!',body:'Tu registro como profesional fue verificado. Ya podés publicarte y recibir consultas en Velo. Bienvenido/a 🌿',date:new Date().toLocaleDateString('es'),read:false,type:'sys'});
+  localStorage.setItem('velo_buzon', JSON.stringify(msgs));
+  if(proId==='self'){
+    safeLS('set','velo_pro_approval','approved');
+    renderProPendingBanner();
+  }
+}
+
+function rejectPro(proId){
+  toast('❌','Perfil rechazado. Se notifica al profesional con motivo.');
+  var msgs = JSON.parse(localStorage.getItem('velo_buzon')||'[]');
+  msgs.unshift({id:Date.now(),from:'Equipo Velo',icon:'❌',title:'Revisión de perfil',body:'Necesitamos información adicional para aprobar tu perfil. Por favor, revisá tu documentación y volvé a enviarla. Podés contactarnos por "Consultas a Velo".',date:new Date().toLocaleDateString('es'),read:false,type:'sys'});
+  localStorage.setItem('velo_buzon', JSON.stringify(msgs));
+}
+
 // ── ADMIN ────────────────────────────────────────────────
 var ADMIN_EMAIL = 'Diego.catalan.greco@gmail.com';
 var ADMIN_PASS  = 'Portugaloporto2026!';

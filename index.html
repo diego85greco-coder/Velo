@@ -365,7 +365,7 @@
       </div>
       <div style="margin-top:16px;width:100%;background:linear-gradient(135deg,rgba(116,198,157,.08),rgba(116,198,157,.04));border:1.5px solid rgba(116,198,157,.2);border-radius:16px;padding:14px;text-align:center">
         <div style="font-size:12px;color:var(--ink4);margin-bottom:8px">¿Primera vez en Velo como profesional?</div>
-        <button onclick="goTo('pro-register')" style="width:100%;padding:11px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.3);border-radius:100px;color:var(--sage2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Registrarse como profesional →</button>
+        <button onclick="goTo('pro-onboarding')" style="width:100%;padding:11px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.3);border-radius:100px;color:var(--sage2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Registrarse como profesional →</button>
       </div>
       <button onclick="openEntrarModal()" style="margin-top:14px;background:none;border:none;color:var(--ink4);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">← Volver</button>
     </div>
@@ -2764,6 +2764,149 @@
 
     </div>
   </div>
+<!-- PRO ONBOARDING ══════════════════════════════════════════════════════════ -->
+<div class="sc" id="pro-onboarding" style="background:linear-gradient(160deg,#0C1A11 0%,#081510 100%);overflow:hidden">
+  <div id="pob-slide-0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center;animation:onboardSlide .35s ease both">
+    <div style="font-size:62px;margin-bottom:18px">🌿</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:28px;color:var(--sage4);margin-bottom:8px">Bienvenido/a, profesional</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;max-width:300px">Velo conecta profesionales de salud mental y bienestar con personas que necesitan apoyo real. Tu perfil, tus términos, tu comunidad.</div>
+    <div style="margin-top:20px;padding:14px 18px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.15);border-radius:18px;font-size:12px;color:rgba(116,198,157,.75);line-height:1.6;max-width:300px">✦ Verificado · Seguro · Con propósito</div>
+  </div>
+  <div id="pob-slide-1" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center;animation:onboardSlide .35s ease both">
+    <div style="font-size:62px;margin-bottom:18px">🔒</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:28px;color:var(--sage4);margin-bottom:8px">Verificación segura</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;max-width:300px;margin-bottom:16px">Para proteger a los usuarios, todos los profesionales pasan por una revisión. El proceso tarda entre 48 y 72 horas.</div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:100%;max-width:300px">
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">📄</span><span style="font-size:12px;color:rgba(255,255,255,.65);text-align:left">Subís tu licencia o credencial profesional</span></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">🪪</span><span style="font-size:12px;color:rgba(255,255,255,.65);text-align:left">El equipo de Velo verifica en 48-72 hs</span></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">🔐</span><span style="font-size:12px;color:rgba(255,255,255,.65);text-align:left">Documentación encriptada, solo visible para Velo</span></div>
+    </div>
+  </div>
+  <div id="pob-slide-2" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center;animation:onboardSlide .35s ease both">
+    <div style="font-size:62px;margin-bottom:18px">💳</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:28px;color:var(--sage4);margin-bottom:8px">Sesiones y pagos</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;max-width:300px;margin-bottom:16px">Vos ponés el precio. El usuario paga con Stripe — los fondos quedan retenidos hasta confirmar la sesión.</div>
+    <div style="padding:16px 18px;background:rgba(212,168,100,.07);border:1px solid rgba(212,168,100,.15);border-radius:18px;max-width:300px">
+      <div style="font-size:13px;font-weight:700;color:var(--gold2);margin-bottom:8px">💰 Estructura de comisión</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.8">Tu tarifa: <b style="color:rgba(255,255,255,.8)">100%</b><br>Comisión Velo: <b style="color:rgba(255,120,100,.8)">−20%</b><br>Recibirás: <b style="color:var(--sage4)">80% por sesión</b></div>
+    </div>
+  </div>
+  <div id="pob-slide-3" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center;animation:onboardSlide .35s ease both">
+    <div style="font-size:62px;margin-bottom:18px">🕊️</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:28px;color:var(--sage4);margin-bottom:8px">Sesiones solidarias</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;max-width:300px;margin-bottom:16px">Podés donar 1 sesión mensual gratuita. Velo la asigna al usuario que más lo necesita del programa "Vela por Ti".</div>
+    <div style="padding:14px 18px;background:rgba(58,112,144,.12);border:1px solid rgba(168,212,232,.2);border-radius:18px;max-width:300px;font-size:12px;color:rgba(168,212,232,.85);line-height:1.6">🕊️ Ganás la insignia <b>Profesional Solidario</b> y aparecés primero en búsquedas. Totalmente opcional.</div>
+  </div>
+  <div id="pob-slide-4" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center;animation:onboardSlide .35s ease both">
+    <div style="font-size:62px;margin-bottom:18px">📅</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:28px;color:var(--sage4);margin-bottom:8px">Tu panel profesional</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;max-width:300px;margin-bottom:16px">Todo lo que necesitás en un lugar, diseñado para tu bienestar también.</div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:100%;max-width:300px">
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">📅</span><span style="font-size:12px;color:rgba(255,255,255,.65);text-align:left">Agenda y disponibilidad por horarios</span></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">🗂️</span><span style="font-size:12px;color:rgba(255,255,255,.65);text-align:left">Historial de pacientes con notas privadas</span></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">💳</span><span style="font-size:12px;color:rgba(255,255,255,.65);text-align:left">Finanzas e historial de pagos transparente</span></div>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:120px;left:0;right:0;display:flex;justify-content:center;gap:7px;z-index:5">
+    <div class="ob-dot ob-dot-a" id="pob-dot-0"></div>
+    <div class="ob-dot" id="pob-dot-1"></div>
+    <div class="ob-dot" id="pob-dot-2"></div>
+    <div class="ob-dot" id="pob-dot-3"></div>
+    <div class="ob-dot" id="pob-dot-4"></div>
+  </div>
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:0 28px 36px;display:flex;flex-direction:column;gap:10px;z-index:5">
+    <button id="pobNextBtn" onclick="pobNext()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;box-shadow:0 4px 20px rgba(45,106,79,.35)">Siguiente →</button>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <button id="pobBackBtn" onclick="pobBack()" style="visibility:hidden;background:none;border:none;color:rgba(255,255,255,.4);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">← Atrás</button>
+      <button onclick="pobSkip()" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;font-family:'Jost',sans-serif">Saltar →</button>
+    </div>
+  </div>
+</div>
+<!-- PRO REGISTRO ═════════════════════════════════════════════════════════════ -->
+<div class="sc" id="pro-register" style="background:linear-gradient(160deg,var(--sage7),var(--cream2))">
+  <div style="padding:48px 20px 14px;flex-shrink:0">
+    <button onclick="goTo('pro-onboarding')" style="background:none;border:none;color:var(--sage3);font-family:'Jost',sans-serif;font-size:13px;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;gap:5px">← Introducción</button>
+    <div class="serif-i" style="font-size:26px;color:var(--sage);margin-bottom:3px">Registro profesional 👤</div>
+    <div style="font-size:12px;color:var(--ink4)">Tu perfil es revisado por el equipo de Velo antes de publicarse.</div>
+  </div>
+  <div class="scrl" style="padding:0 17px 84px">
+    <div id="proRegForm">
+      <div style="background:rgba(255,255,255,.85);border:1.5px solid rgba(116,198,157,.18);border-radius:20px;padding:16px;margin-bottom:11px;box-shadow:var(--sh)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--sage3);margin-bottom:10px">Datos personales y profesionales</div>
+        <input class="inp" id="proRegName" placeholder="Nombre completo" style="margin-bottom:8px">
+        <select class="inp" id="proRegTitle" style="margin-bottom:8px">
+          <option value="">Título profesional</option>
+          <option>Psicólogo/a clínico/a</option>
+          <option>Psiquiatra</option>
+          <option>Psicoterapeuta</option>
+          <option>Terapeuta familiar</option>
+          <option>Coach emocional</option>
+          <option>Arte-terapeuta</option>
+          <option>Counselor</option>
+          <option>Otro</option>
+        </select>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <input class="inp" id="proRegYears" type="number" placeholder="Años de exp." min="0">
+          <input class="inp" id="proRegCountry" placeholder="País">
+        </div>
+        <textarea class="ta" id="proRegBio" placeholder="Descripción pública: ¿Con qué temáticas trabajás? ¿Cuál es tu enfoque?" style="min-height:70px"></textarea>
+      </div>
+      <div style="background:rgba(255,255,255,.82);border:1.5px solid rgba(116,198,157,.15);border-radius:18px;padding:13px;margin-bottom:11px;box-shadow:var(--sh)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--sage3);margin-bottom:8px">Especialidades (tocá para seleccionar)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span onclick="togProSpec(this)" style="padding:6px 13px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:rgba(255,255,255,.7);color:var(--ink4)">Ansiedad</span>
+          <span onclick="togProSpec(this)" style="padding:6px 13px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:rgba(255,255,255,.7);color:var(--ink4)">Autoestima</span>
+          <span onclick="togProSpec(this)" style="padding:6px 13px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:rgba(255,255,255,.7);color:var(--ink4)">Duelo</span>
+          <span onclick="togProSpec(this)" style="padding:6px 13px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:rgba(255,255,255,.7);color:var(--ink4)">Trauma</span>
+          <span onclick="togProSpec(this)" style="padding:6px 13px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:rgba(255,255,255,.7);color:var(--ink4)">Depresión</span>
+          <span onclick="togProSpec(this)" style="padding:6px 13px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:rgba(255,255,255,.7);color:var(--ink4)">LGBTQIA+</span>
+          <span onclick="togProSpec(this)" style="padding:6px 13px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:rgba(255,255,255,.7);color:var(--ink4)">Pareja</span>
+          <span onclick="togProSpec(this)" style="padding:6px 13px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:rgba(255,255,255,.7);color:var(--ink4)">Estrés laboral</span>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.85);border:1.5px solid rgba(116,198,157,.18);border-radius:20px;padding:16px;margin-bottom:11px;box-shadow:var(--sh)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--sage3);margin-bottom:8px">Documentación de verificación</div>
+        <div style="background:var(--sage7);border:1.5px solid rgba(116,198,157,.2);border-radius:14px;padding:11px;margin-bottom:12px;font-size:11px;color:var(--sage2);line-height:1.6">🔒 <b>Privacidad garantizada:</b> Tu documentación se usa <b>exclusivamente</b> para verificar tu identidad profesional. No es visible para usuarios. Solo el equipo de Velo tiene acceso. Se almacena de forma encriptada y segura.</div>
+        <div style="margin-bottom:10px">
+          <div style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:6px">📄 Licencia / Credencial profesional</div>
+          <div onclick="document.getElementById('proLicenseInput').click()" id="proLicensePreview" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(255,255,255,.7);border:1.5px dashed rgba(116,198,157,.3);border-radius:14px;cursor:pointer">
+            <span style="font-size:20px">📎</span>
+            <span id="proLicenseName" style="font-size:12px;color:var(--ink4)">Tocá para adjuntar (PDF, JPG, PNG)</span>
+          </div>
+          <input id="proLicenseInput" type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="proDocSelected(this,'proLicenseName','proLicensePreview')">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:6px">🪪 Documento de identidad (DNI / Pasaporte)</div>
+          <div onclick="document.getElementById('proIdInput').click()" id="proIdPreview" style="display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(255,255,255,.7);border:1.5px dashed rgba(116,198,157,.3);border-radius:14px;cursor:pointer">
+            <span style="font-size:20px">📎</span>
+            <span id="proIdName" style="font-size:12px;color:var(--ink4)">Tocá para adjuntar (PDF, JPG, PNG)</span>
+          </div>
+          <input id="proIdInput" type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="proDocSelected(this,'proIdName','proIdPreview')">
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.82);border:1.5px solid rgba(116,198,157,.15);border-radius:18px;padding:13px;margin-bottom:11px;box-shadow:var(--sh)">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+          <input type="checkbox" id="proRegConsent" style="margin-top:2px;accent-color:var(--sage2);width:16px;height:16px;flex-shrink:0">
+          <span style="font-size:12px;color:var(--ink3);line-height:1.6">Acepto los <b style="color:var(--sage2)">Términos y Condiciones para Profesionales de Velo</b> y entiendo que mi perfil estará en revisión por 48-72 hs antes de publicarse.</span>
+        </label>
+      </div>
+      <button onclick="submitProRegistration()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;box-shadow:0 4px 16px rgba(45,106,79,.3)">Enviar registro 🌿</button>
+    </div>
+    <div id="proRegDone" style="display:none">
+      <div style="background:linear-gradient(135deg,var(--sage7),rgba(255,255,255,.9));border:2px solid rgba(116,198,157,.3);border-radius:22px;padding:28px 20px;text-align:center;box-shadow:var(--sh2)">
+        <div style="font-size:54px;margin-bottom:14px">✅</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;color:var(--sage);margin-bottom:8px">Registro enviado</div>
+        <div style="font-size:13px;color:var(--ink3);line-height:1.7;max-width:280px;margin:0 auto 18px">Tu documentación está siendo revisada. En <b>48-72 hs</b> recibirás la confirmación en tu buzón de Velo y por email.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;text-align:left">
+          <div style="display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink3)"><span style="font-size:15px">📋</span>Tu perfil aparecerá como "En revisión"</div>
+          <div style="display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink3)"><span style="font-size:15px">🔔</span>Recibirás una notificación al ser aprobado/a</div>
+          <div style="display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink3)"><span style="font-size:15px">💌</span>Podés escribirnos con cualquier duda</div>
+        </div>
+        <button onclick="goTo('pro-panel')" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Ir a mi panel →</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="sc" id="pro-panel" style="background:linear-gradient(160deg,var(--sage7),var(--cream2))">
     <!-- Header profesional -->
     <div style="background:linear-gradient(135deg,var(--sage),var(--sage2));padding:42px 18px 14px;flex-shrink:0;position:relative">
@@ -2921,6 +3064,26 @@
           <div onclick="openModal('donModal')" style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--sage7);border:1px solid rgba(116,198,157,.15);border-radius:13px;cursor:pointer"><span style="font-size:16px">💝</span><div style="flex:1;font-size:12px;font-weight:600;color:var(--ink)">Donar a Velo</div><span style="font-size:14px;color:var(--ink5)">›</span></div>
           <div onclick="logoutPro()" style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:rgba(192,48,40,.05);border:1px solid rgba(192,48,40,.1);border-radius:13px;cursor:pointer"><span style="font-size:16px">🚪</span><div style="flex:1;font-size:12px;font-weight:600;color:var(--sos)">Cerrar sesión</div><span style="font-size:14px;color:var(--sos)">›</span></div>
         </div>
+      </div>
+    </div>
+    <!-- Modal Consulta a Velo (profesionales) -->
+    <div id="proContactVeloModal" style="display:none;position:absolute;inset:0;z-index:9600;background:rgba(10,20,10,.55);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center">
+      <div style="width:100%;max-width:460px;background:linear-gradient(160deg,var(--sage7),var(--cream2));border-radius:28px 28px 0 0;padding:22px 20px 40px">
+        <div style="width:36px;height:4px;background:rgba(116,198,157,.3);border-radius:2px;margin:0 auto 16px"></div>
+        <div style="font-size:17px;font-weight:800;color:var(--sage);margin-bottom:6px;text-align:center">💌 Consulta a Velo</div>
+        <div style="font-size:12px;color:var(--ink4);text-align:center;margin-bottom:18px">El equipo de Velo te responderá en tu buzón</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+          <select class="inp" id="proContactSubj">
+            <option value="Duda sobre mi perfil">Duda sobre mi perfil</option>
+            <option value="Consulta sobre pagos">Consulta sobre pagos</option>
+            <option value="Problema técnico">Problema técnico</option>
+            <option value="Sesión solidaria">Sesión solidaria</option>
+            <option value="Otro">Otro</option>
+          </select>
+          <textarea class="ta" id="proContactMsg" placeholder="Escribí tu consulta..." style="min-height:80px"></textarea>
+        </div>
+        <button onclick="submitProContactVelo()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;margin-bottom:10px">Enviar consulta 💌</button>
+        <button onclick="closeProContactVelo()" style="width:100%;padding:10px;background:none;border:none;color:var(--ink5);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">Cancelar</button>
       </div>
     </div>
     <!-- Modal Marcar Sesión Completada -->
@@ -3164,6 +3327,15 @@
         <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(168,212,232,.15)"><span style="font-size:12px;color:var(--ink3)">Sesiones donadas</span><span style="font-size:13px;font-weight:700;color:#2D6A8A">5 🕊️</span></div>
         <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(168,212,232,.15)"><span style="font-size:12px;color:var(--ink3)">Usuarios acompañados</span><span style="font-size:13px;font-weight:700;color:#2D6A8A">5</span></div>
         <div style="display:flex;justify-content:space-between;padding:7px 0"><span style="font-size:12px;color:var(--ink3)">Insignia</span><span style="font-size:12px;font-weight:700;color:#2D6A8A">Profesional Solidario 🕊️</span></div>
+      </div>
+
+      <!-- Asignación actual -->
+      <div id="solAsignacionActual" style="display:none; margin-top:11px; background:linear-gradient(135deg,rgba(255,255,255,.9),var(--sky3));border:2px solid rgba(168,212,232,.35);border-radius:18px;padding:15px">
+        <div style="font-size:12px;font-weight:700;color:#2D6A8A;margin-bottom:8px">📋 Asignación actual</div>
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:5px">Usuario: <b id="solAsignUsername">Anónimo·Luna</b></div>
+        <div style="font-size:11px;color:var(--ink4);margin-bottom:5px">Motivo: <span id="solAsignMotivo">Ansiedad severa</span></div>
+        <div style="font-size:11px;color:var(--ink4);margin-bottom:10px">Contacto coordinado por Velo. El equipo te enviará los detalles por buzón.</div>
+        <button onclick="toast('💌','Mensaje enviado a Velo para coordinar')" style="width:100%;padding:10px;background:linear-gradient(135deg,#3A7090,#2D5A72);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Confirmar disponibilidad al equipo 📩</button>
       </div>
     </div>
   </div>
@@ -3611,6 +3783,23 @@
           <div style="display:flex;gap:5px">
             <button class="a-btn-g" onclick="toast('✅','Sesión aprobada. Se notifica al usuario.')">Aprobar</button>
             <button class="a-btn-r" onclick="toast('⏳','En lista de espera')">Espera</button>
+          </div>
+        </div>
+
+        <!-- Consultas de profesionales -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;margin-top:12px">💌 Consultas de profesionales</div>
+        <div id="adminProContactList">
+          <!-- Demo message -->
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <div style="width:32px;height:32px;border-radius:10px;background:rgba(116,198,157,.15);display:flex;align-items:center;justify-content:center;font-size:14px">🧠</div>
+              <div>
+                <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">Dra. Ana Martínez</div>
+                <div style="font-size:10px;color:rgba(116,198,157,.5)">Consulta sobre pagos · hace 2 h</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.5;margin-bottom:8px">"¿Cuándo se acredita el pago de la sesión del día 10? Ya pasaron 5 días."</div>
+            <button onclick="replyProContact('ana','Dra. Ana Martínez')" class="a-btn-g" style="width:100%;padding:8px;justify-content:center">Responder</button>
           </div>
         </div>
       </div>
