@@ -2067,7 +2067,22 @@ function closeBottleWrite(){
   var m = document.getElementById('bottleWriteModal');
   if(m) m.style.display = 'none';
 }
+function canSendBottle(){
+  if(isPremiumUser()) return true;
+  var today = new Date().toDateString();
+  var count = parseInt(safeLS('get','velo_bottle_'+today)||'0',10);
+  return count < 2;
+}
+function _incBottleCount(){
+  var today = new Date().toDateString();
+  var count = parseInt(safeLS('get','velo_bottle_'+today)||'0',10);
+  safeLS('set','velo_bottle_'+today, String(count+1));
+}
 function sendBottle(){
+  if(!canSendBottle()){
+    toast('🍾','Límite diario: 2 botellas por día. Actualizate a Premium para ilimitado 💎');
+    return;
+  }
   var txt=document.getElementById('bottleText');
   if(!txt||!txt.value.trim()){toast('🍾','Escribí algo antes de lanzar la botella');return;}
   var msg=txt.value.trim();
@@ -2082,6 +2097,7 @@ function sendBottle(){
       time:'ahora',
       answered:false
     });
+    _incBottleCount();
     closeBottleWrite();
     txt.value='';
     renderBottleWall();
