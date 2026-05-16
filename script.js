@@ -153,7 +153,7 @@ function initSplashTheme(){
   // Logo desde Supabase Storage (PNG con fondo transparente)
   var logoImg = document.getElementById('splashLogoImg');
   if(logoImg){
-    var logoSrc = isNight ? BASE+'IMG_2624.png' : BASE+'IMG_2623.png';
+    var logoSrc = isNight ? BASE+'IMG_2639.png' : BASE+'IMG_2640.png';
     var logoFallbackTag = document.getElementById('logoData');
     var fallbackSrc = logoFallbackTag ? logoFallbackTag.getAttribute('data-logo') : '';
     logoImg.onerror = function(){ if(fallbackSrc) this.src = fallbackSrc; this.onerror=null; };
