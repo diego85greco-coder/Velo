@@ -3098,8 +3098,8 @@ function showHelpLimitModal(){
       '<div style="font-size:22px;font-weight:900;color:var(--sage)">$2.99<span style="font-size:13px;font-weight:400;color:var(--ink5)">/mes</span></div>'+
       '<div style="font-size:12px;color:var(--ink4);margin-top:4px">✓ Publicaciones ilimitadas en el muro<br>✓ Crear círculos de paz sin esperar insignia</div>'+
     '</div>'+
-    '<button onclick="subscribePremiumUser()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;margin-bottom:10px">Suscribirse por $2.99/mes</button>'+
-    '<button onclick="document.getElementById('helpLimitModal').style.display='none'" style="background:none;border:none;color:var(--ink5);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">Ahora no</button>'+
+    '<button onclick="subscribePremiumUser()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:Jost,sans-serif;margin-bottom:10px">Suscribirse por $2.99/mes</button>'+
+    '<button onclick="document.getElementById(\'helpLimitModal\').style.display=\'none\'" style="background:none;border:none;color:var(--ink5);font-size:13px;cursor:pointer;font-family:Jost,sans-serif">Ahora no</button>'+
   '</div>';
   document.querySelector('.phone').appendChild(m);
 }
@@ -3134,8 +3134,8 @@ function showPostReviewDonation(){
         '<input type="checkbox" id="postDonMonthly" style="width:18px;height:18px;accent-color:var(--sage)">'+
         '<span style="font-size:12px;color:var(--ink4)">Hacer esta donación mensual (podés cancelar cuando quieras)</span>'+
       '</label>'+
-      '<button onclick="confirmPostDon()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;margin-bottom:10px">Donar ahora 💚</button>'+
-      '<button onclick="document.getElementById('postReviewDonModal').remove()" style="width:100%;padding:10px;background:none;border:none;color:var(--ink5);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">No por ahora</button>'+
+      '<button onclick="confirmPostDon()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:Jost,sans-serif;margin-bottom:10px">Donar ahora 💚</button>'+
+      '<button onclick="document.getElementById(\'postReviewDonModal\').remove()" style="width:100%;padding:10px;background:none;border:none;color:var(--ink5);font-size:13px;cursor:pointer;font-family:Jost,sans-serif">No por ahora</button>'+
     '</div>';
     var phone = document.querySelector('.phone');
     if(phone) phone.appendChild(m);
@@ -3178,7 +3178,7 @@ function startVideoCall(roomId, displayName){
   var safeUrl='https://meet.jit.si/'+encodeURIComponent(roomId)+'#userInfo.displayName="'+encodeURIComponent(displayName)+'"&config.startWithVideoMuted=false&config.startWithAudioMuted=false&config.prejoinPageEnabled=false&config.toolbarButtons=["microphone","camera","hangup"]&interfaceConfig.SHOW_BRAND_WATERMARK=false';
   m.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;padding:max(env(safe-area-inset-top,16px),16px) 16px 12px;background:#0a1a0a;flex-shrink:0">'+
     '<div style="font-size:14px;font-weight:700;color:rgba(116,198,157,.9)">📹 Videollamada Velo</div>'+
-    '<button onclick="endVideoCall()" style="padding:7px 14px;background:rgba(192,48,40,.8);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Finalizar ✕</button>'+
+    '<button onclick="endVideoCall()" style="padding:7px 14px;background:rgba(192,48,40,.8);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:Jost,sans-serif">Finalizar ✕</button>'+
   '</div>'+
   '<iframe src="'+safeUrl+'" allow="camera;microphone;display-capture;fullscreen;speaker" style="flex:1;border:none;width:100%;background:#000" allowfullscreen></iframe>';
   if(phone) phone.appendChild(m);
