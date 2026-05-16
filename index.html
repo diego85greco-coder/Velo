@@ -1152,32 +1152,35 @@
   </div>
 <div class="sc" id="happy" style="background:linear-gradient(160deg,var(--sun3),var(--peach3))">
     <button onclick="goTo('home')" style="position:absolute;top:52px;left:18px;background:none;border:none;color:var(--earth2);font-family:'Jost',sans-serif;font-size:13px;cursor:pointer;z-index:10;display:flex;align-items:center;gap:5px">← Inicio</button>
-    <div style="padding:52px 20px 12px;text-align:center;flex-shrink:0">
-      <span style="font-size:40px;display:block;margin-bottom:9px;animation:breathe 3s ease-in-out infinite">☀️</span>
-      <div class="serif-i" style="font-size:24px;color:var(--earth);margin-bottom:4px">Muro de la Felicidad</div>
-      <div style="font-size:13px;color:var(--earth2);line-height:1.6;max-width:290px;margin:0 auto 11px">Momentos reales que te alegraron hoy. Sin pulir. Aquí no se compite.</div>
+    <div style="padding:52px 20px 10px;text-align:center;flex-shrink:0">
+      <span style="font-size:40px;display:block;margin-bottom:7px;animation:breathe 3s ease-in-out infinite">☀️</span>
+      <div class="serif-i" style="font-size:24px;color:var(--earth);margin-bottom:3px">Muro de la Felicidad</div>
+      <div style="font-size:12px;color:var(--earth2);line-height:1.6;max-width:290px;margin:0 auto 10px">Momentos reales que te alegraron hoy. Sin pulir. Aquí no se compite.</div>
     </div>
-    <div style="margin:0 17px 11px;padding:13px 17px;background:linear-gradient(135deg,var(--warm-tan3),var(--peach2));border:1.5px solid rgba(212,168,120,.28);border-radius:100px;display:flex;align-items:center;gap:12px;cursor:pointer;flex-shrink:0;box-shadow:var(--sh)" onclick="showSuc('☀️','Momento compartido','Tu alegría ya está en el Muro ✨')">
-      <div style="width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:19px">📸</div>
-      <div><div style="font-size:13px;font-weight:700;color:var(--earth)">Compartí un momento feliz</div><div style="font-size:11px;color:var(--earth2)">Foto o video corto · sin edición</div></div>
+    <!-- Compartir bar -->
+    <div style="margin:0 17px 11px;padding:12px 16px;background:linear-gradient(135deg,rgba(255,220,100,.25),rgba(255,180,80,.15));border:1.5px solid rgba(255,200,80,.3);border-radius:100px;display:flex;align-items:center;gap:11px;cursor:pointer;flex-shrink:0;box-shadow:var(--sh)" onclick="openHappyPost()">
+      <div style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-size:18px">📸</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--earth)">Compartí un momento feliz</div><div style="font-size:11px;color:var(--earth2)">Foto · Video · Texto · Reacciones</div></div>
+      <span style="font-size:18px;color:var(--earth2)">+</span>
     </div>
-    <div class="scrl" style="padding:0 17px 84px">
-      <div style="background:rgba(255,255,255,.82);border:1.5px solid rgba(255,200,100,.22);border-radius:22px;padding:15px;margin-bottom:11px;box-shadow:var(--sh);position:relative;overflow:hidden">
-        <div style="height:3px;background:linear-gradient(90deg,var(--warm-tan),var(--peach),transparent);position:absolute;top:0;left:0;right:0"></div>
-        <div style="padding-top:4px">
-          <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
-            <div style="width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--sun2),var(--peach2));border:1.5px solid rgba(255,200,80,.22);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">⭐</div>
-            <div><div style="font-size:12px;font-weight:600;color:var(--ink)">Estrella</div><div style="font-size:10px;color:var(--ink5)">hace 8 min · Madrid</div></div>
-            <button style="margin-left:auto;width:22px;height:22px;border-radius:50%;background:transparent;border:1px solid rgba(255,200,80,.22);font-size:10px;cursor:pointer" onclick="toast('🚩','Reportado')">🚩</button>
-          </div>
-          <div style="border-radius:14px;overflow:hidden;margin-bottom:10px;background:linear-gradient(135deg,var(--sun2),var(--peach));height:130px;display:flex;align-items:center;justify-content:center;font-size:52px">☕</div>
-          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:var(--ink2);line-height:1.6;margin-bottom:10px">"Mi café de la mañana con el sol entrando. Las cosas más pequeñas son las más perfectas."</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button style="padding:7px 12px;border-radius:100px;background:rgba(255,200,80,.1);border:1.5px solid rgba(255,200,80,.28);cursor:pointer;font-size:11px;font-family:'Jost',sans-serif;color:var(--earth)" onclick="this.style.background='rgba(255,200,80,.2)'">☀️ Me alegró</button>
-            <button style="padding:7px 12px;border-radius:100px;background:rgba(116,198,157,.1);border:1.5px solid rgba(116,198,157,.28);cursor:pointer;font-size:11px;font-family:'Jost',sans-serif;color:var(--sage2)" onclick="this.style.background='rgba(116,198,157,.2)'">💚 Me identifiqué</button>
-            <button style="padding:7px 12px;border-radius:100px;background:rgba(255,200,80,.1);border:1.5px solid rgba(255,200,80,.28);cursor:pointer;font-size:11px;font-family:'Jost',sans-serif;color:var(--earth)" onclick="this.style.background='rgba(255,200,80,.2)'">🥰 Qué bonito</button>
-          </div>
+    <div class="scrl" style="padding:0 17px 84px" id="happyFeed"></div>
+    <!-- Modal nueva publicación -->
+    <div id="happyPostModal" style="display:none;position:absolute;inset:0;z-index:9600;background:rgba(10,20,10,.5);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center">
+      <div style="width:100%;max-width:460px;background:linear-gradient(160deg,#FFF8E6,#FFEDC4);border-radius:28px 28px 0 0;padding:22px 20px 40px">
+        <div style="width:36px;height:4px;background:rgba(212,168,80,.3);border-radius:2px;margin:0 auto 16px"></div>
+        <div style="font-size:17px;font-weight:800;color:var(--earth);margin-bottom:14px;text-align:center">☀️ Compartí tu momento</div>
+        <!-- Media upload -->
+        <div style="display:flex;gap:9px;margin-bottom:13px">
+          <label style="flex:1;padding:11px;background:rgba(255,255,255,.7);border:1.5px dashed rgba(255,200,80,.4);border-radius:16px;text-align:center;cursor:pointer;font-size:12px;font-weight:700;color:var(--earth)">
+            📷 Foto / Video
+            <input type="file" accept="image/*,video/*" style="display:none" onchange="happyFileSelected(this)">
+          </label>
         </div>
+        <div id="happyMediaPreview" style="display:none;margin-bottom:10px;border-radius:14px;overflow:hidden"></div>
+        <textarea id="happyPostText" placeholder="¿Qué momento quieres compartir? (opcional si subís foto/video)" maxlength="400" style="width:100%;min-height:80px;border:1.5px solid rgba(255,200,80,.25);border-radius:16px;padding:11px 13px;font-family:'Jost',sans-serif;font-size:13px;color:var(--ink);background:rgba(255,255,255,.8);resize:none;outline:none;line-height:1.55;box-sizing:border-box;margin-bottom:12px"></textarea>
+        <div style="font-size:10px;color:var(--earth2);text-align:center;margin-bottom:14px;line-height:1.5">🤖 Moderación automática activa · Contenido respetuoso siempre</div>
+        <button onclick="submitHappyPost()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--sun),var(--peach));border:none;border-radius:100px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;margin-bottom:10px">Publicar ☀️</button>
+        <button onclick="closeHappyPost()" style="width:100%;padding:10px;background:none;border:none;color:var(--earth2);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">Cancelar</button>
       </div>
     </div>
   </div>
@@ -2722,6 +2725,16 @@
 
       <!-- Navegación del panel profesional -->
       <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);margin-bottom:7px">Panel profesional</div>
+        <div onclick="openMarkSessionModal()" style="background:linear-gradient(135deg,rgba(58,158,96,.2),rgba(116,198,157,.1));border:1.5px solid rgba(58,158,96,.3);border-radius:18px;padding:14px;cursor:pointer;box-shadow:var(--sh);margin-bottom:11px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--sage),var(--sage2));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">✅</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700;color:#fff">Consulta completada</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6)">Marcar sesión · Encuesta al usuario · Pago pendiente</div>
+            </div>
+            <span style="font-size:16px;color:rgba(255,255,255,.4)">›</span>
+          </div>
+        </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px">
         <div onclick="goTo('pro-panel-agenda')" style="background:rgba(255,255,255,.85);border:1.5px solid rgba(116,198,157,.18);border-radius:18px;padding:14px;cursor:pointer;box-shadow:var(--sh)">
           <div style="font-size:24px;margin-bottom:6px">📅</div>
@@ -2774,6 +2787,31 @@
           <div onclick="openModal('donModal')" style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--sage7);border:1px solid rgba(116,198,157,.15);border-radius:13px;cursor:pointer"><span style="font-size:16px">💝</span><div style="flex:1;font-size:12px;font-weight:600;color:var(--ink)">Donar a Velo</div><span style="font-size:14px;color:var(--ink5)">›</span></div>
           <div onclick="logoutPro()" style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:rgba(192,48,40,.05);border:1px solid rgba(192,48,40,.1);border-radius:13px;cursor:pointer"><span style="font-size:16px">🚪</span><div style="flex:1;font-size:12px;font-weight:600;color:var(--sos)">Cerrar sesión</div><span style="font-size:14px;color:var(--sos)">›</span></div>
         </div>
+      </div>
+    </div>
+    <!-- Modal Marcar Sesión Completada -->
+    <div id="markSessionModal" style="display:none;position:absolute;inset:0;z-index:9600;background:rgba(10,20,10,.55);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center">
+      <div style="width:100%;max-width:460px;background:linear-gradient(160deg,var(--sage7),var(--cream2));border-radius:28px 28px 0 0;padding:22px 20px 40px">
+        <div style="width:36px;height:4px;background:rgba(116,198,157,.3);border-radius:2px;margin:0 auto 16px"></div>
+        <div style="font-size:17px;font-weight:800;color:var(--sage);margin-bottom:6px;text-align:center">✅ Marcar consulta completada</div>
+        <div style="font-size:12px;color:var(--ink4);text-align:center;margin-bottom:18px;line-height:1.5">El usuario recibirá una encuesta · El pago quedará pendiente de aprobación del administrador</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+          <input class="inp" id="msUserName" placeholder="Nombre del usuario / alias">
+          <div style="display:flex;gap:9px">
+            <input class="inp" id="msAmount" type="number" placeholder="Monto sesión (USD)" min="1" style="flex:1">
+            <select class="inp" id="msDuration" style="flex:1">
+              <option value="30">30 min</option>
+              <option value="45" selected>45 min</option>
+              <option value="60">60 min</option>
+              <option value="90">90 min</option>
+            </select>
+          </div>
+        </div>
+        <div style="padding:11px;background:rgba(116,198,157,.08);border:1.5px solid rgba(116,198,157,.2);border-radius:14px;margin-bottom:16px;font-size:11px;color:var(--sage2);line-height:1.6">
+          💡 <b>Cómo funciona:</b> Al confirmar, el usuario recibe una encuesta en su buzón. El pago queda retenido hasta que el administrador de Velo lo apruebe y transfiera tu 80%.
+        </div>
+        <button onclick="submitMarkSession()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;margin-bottom:10px">Confirmar sesión ✅</button>
+        <button onclick="closeMarkSessionModal()" style="width:100%;padding:10px;background:none;border:none;color:var(--ink5);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">Cancelar</button>
       </div>
     </div>
   </div>
@@ -3245,11 +3283,59 @@
       <button onclick="adminTab(this,'atab-msg')" class="atab" id="atab-btn-msg">💌 Mensajes</button>
       <button onclick="adminTab(this,'atab-wellness')" class="atab" id="atab-btn-wellness">🧘 Bienestar</button>
       <button onclick="adminTab(this,'atab-support')" class="atab" id="atab-btn-support">🎧 Soporte</button>
+      <button onclick="adminTab(this,'atab-pagos')" class="atab" id="atab-btn-pagos">💳 Pagos</button>
+      <button onclick="adminTab(this,'atab-solidarias')" class="atab" id="atab-btn-solidarias">🕊️ Solidarias</button>
       <button onclick="adminTab(this,'atab-config')" class="atab" id="atab-btn-config">⚙️ Config</button>
       <button onclick="adminTab(this,'atab-roles')" class="atab" id="atab-btn-roles">🛡️ Roles</button>
     </div>
 
     <div class="scrl" style="padding:12px 14px 30px">
+
+      <!-- TAB: PAGOS PENDIENTES -->
+      <div id="atab-pagos" style="display:none">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(212,168,100,.6)">Pagos pendientes de aprobación</div>
+          <div id="adminPayBadge" style="display:none;min-width:18px;height:18px;background:rgba(212,168,100,.7);border-radius:100px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center;padding:0 5px">0</div>
+        </div>
+        <div style="padding:11px;background:rgba(212,168,100,.08);border:1.5px solid rgba(212,168,100,.2);border-radius:14px;margin-bottom:12px;font-size:11px;color:rgba(212,168,100,.8);line-height:1.6">
+          💡 <b>Flujo escrow Velo:</b> El usuario paga → fondos retenidos en Stripe → profesional marca sesión completada → usuario responde encuesta → vos aprobás aquí → transferís el 80% al profesional desde Stripe dashboard.
+        </div>
+        <div id="adminPayQueueList"><div style="text-align:center;padding:14px;font-size:12px;color:rgba(116,198,157,.35)">Sin pagos pendientes ✓</div></div>
+        <div style="margin-top:14px;font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">Historial de pagos</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px">
+          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:11px;color:rgba(255,255,255,.5)">Dra. Ana M. → Lun23 · 8 may</span><span style="font-size:11px;font-weight:700;color:var(--sage2)">$48 ✓</span></div>
+          <div style="display:flex;justify-content:space-between;padding:7px 0"><span style="font-size:11px;color:rgba(255,255,255,.5)">Coach Lucas → Mar · 6 may</span><span style="font-size:11px;font-weight:700;color:var(--sage2)">$40 ✓</span></div>
+        </div>
+        <div style="margin-top:14px">
+          <a href="https://dashboard.stripe.com/payments" target="_blank" style="display:block;padding:12px;background:rgba(99,91,255,.12);border:1.5px solid rgba(99,91,255,.25);border-radius:14px;text-align:center;font-size:12px;font-weight:700;color:rgba(150,140,255,.9);text-decoration:none">Abrir Stripe Dashboard 💳</a>
+        </div>
+      </div>
+
+      <!-- TAB: SESIONES SOLIDARIAS -->
+      <div id="atab-solidarias" style="display:none">
+        <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(168,212,232,.6);margin-bottom:8px">Profesionales con sesión solidaria activa</div>
+        <div id="adminFreeSessionList"></div>
+        <div style="margin-top:14px;font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(168,212,232,.6);margin-bottom:8px">Solicitudes "Velo Vela por ti" en espera</div>
+        <div style="background:rgba(168,212,232,.06);border:1px solid rgba(168,212,232,.15);border-radius:14px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">Usuario·Anónimo_44</div><div style="font-size:10px;color:rgba(168,212,232,.5)">Ansiedad severa · Urgencia media · 3 días esperando</div></div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button onclick="toast('🕊️','Sesión asignada a Dra. Ana M. Ambos serán notificados.')" style="flex:1;padding:8px;background:rgba(168,212,232,.12);border:1px solid rgba(168,212,232,.25);border-radius:100px;font-size:10px;font-weight:700;color:rgba(168,212,232,.9);cursor:pointer;font-family:Jost,sans-serif">🕊️ Asignar sesión</button>
+            <button onclick="toast('💌','Contactando al usuario...')" style="padding:8px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:10px;font-weight:700;color:rgba(255,255,255,.5);cursor:pointer;font-family:Jost,sans-serif">💬</button>
+          </div>
+        </div>
+        <div style="background:rgba(168,212,232,.06);border:1px solid rgba(168,212,232,.15);border-radius:14px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">Luna_oscura</div><div style="font-size:10px;color:rgba(168,212,232,.5)">Duelo · Urgencia alta · 1 día esperando</div></div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button onclick="toast('🕊️','Sesión asignada a Coach Lucas. Ambos serán notificados.')" style="flex:1;padding:8px;background:rgba(168,212,232,.12);border:1px solid rgba(168,212,232,.25);border-radius:100px;font-size:10px;font-weight:700;color:rgba(168,212,232,.9);cursor:pointer;font-family:Jost,sans-serif">🕊️ Asignar sesión</button>
+            <button onclick="toast('💌','Contactando a Luna_oscura...')" style="padding:8px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:10px;font-weight:700;color:rgba(255,255,255,.5);cursor:pointer;font-family:Jost,sans-serif">💬</button>
+          </div>
+        </div>
+        <button onclick="renderFreeSessions()" style="width:100%;padding:11px;background:rgba(168,212,232,.08);border:1.5px solid rgba(168,212,232,.2);border-radius:100px;font-size:11px;font-weight:700;color:rgba(168,212,232,.7);cursor:pointer;font-family:Jost,sans-serif;margin-top:8px">↻ Actualizar disponibilidad</button>
+      </div>
 
       <!-- TAB: DASHBOARD -->
       <div id="atab-dash">
@@ -3259,6 +3345,14 @@
           <div id="adminQueueBadge" style="display:none;min-width:18px;height:18px;background:rgba(192,48,40,.75);border-radius:100px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center;padding:0 5px">0</div>
         </div>
         <div id="adminQueueList"><div style="text-align:center;padding:14px;font-size:12px;color:rgba(116,198,157,.35)">Sin alertas pendientes ✓</div></div>
+        <div class="admin-alert" id="adminPayAlert" style="display:none">
+          <div style="font-size:17px;flex-shrink:0">💳</div>
+          <div style="flex:1"><div class="admin-alert-t">Pagos pendientes de aprobación</div><div class="admin-alert-s">Sesiones completadas esperando tu OK</div>
+            <div style="display:flex;gap:6px;margin-top:7px">
+              <button class="a-btn-g" onclick="adminTab(document.getElementById('atab-btn-pagos'),'atab-pagos')">Ver pagos</button>
+            </div>
+          </div>
+        </div>
         <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;margin-top:12px">Alertas del sistema</div>
         <div class="admin-alert">
           <div style="font-size:17px;flex-shrink:0">🕊️</div>

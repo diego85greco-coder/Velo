@@ -491,6 +491,8 @@ function selLang(el,lang){
 
 loadLogos();
 initSplashTheme();
+renderHappyWall();
+renderSessionPayQueue();
 
 // Toast
 var tT;
@@ -2349,6 +2351,292 @@ function _checkPayPalReturn(){
     // Clean URL without reload
     try{ history.replaceState(null,'',window.location.pathname); }catch(e){}
   }catch(e){}
+}
+
+// ── SESSION PAYMENT QUEUE (escrow) ────────────────────────
+var _sessionPayQ = [];
+function _loadSPQ(){ try{ _sessionPayQ=JSON.parse(localStorage.getItem('velo_spq')||'[]'); }catch(e){ _sessionPayQ=[]; } }
+function _saveSPQ(){ try{ localStorage.setItem('velo_spq',JSON.stringify(_sessionPayQ)); }catch(e){} }
+
+function markSessionComplete(proName, userName, amtUSD, durationMin){
+  _loadSPQ();
+  var entry={
+    id:'sp-'+Date.now(),
+    proName:proName||getDisplayName()||'Profesional',
+    userName:userName||'Usuario',
+    amount:parseFloat(amtUSD)||60,
+    duration:durationMin||45,
+    date:new Date().toLocaleDateString('es'),
+    status:'pending',
+    proShare:((parseFloat(amtUSD)||60)*0.8).toFixed(2),
+    veloFee:((parseFloat(amtUSD)||60)*0.2).toFixed(2)
+  };
+  _sessionPayQ.push(entry);
+  _saveSPQ();
+  addBuzonMsg({id:'survey-'+Date.now(),tipo:'encuesta',icon:'⭐',titulo:'¿Cómo fue tu sesión con '+entry.proName+'?',cuerpo:'Tu opinión ayuda a mejorar la experiencia. Completá la breve encuesta 💚\n\n1. ¿El profesional fue puntual? ⏰\n2. ¿Sentiste que te escuchó? 👂\n3. ¿Recomendarías esta sesión? 💚\n\nRespondé directamente en este mensaje.',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
+  updateBuzonDot(); updateInboxBadge();
+  renderSessionPayQueue();
+  toast('✅','Sesión marcada como completada. El usuario recibió la encuesta 📋');
+}
+
+function openMarkSessionModal(){
+  var m=document.getElementById('markSessionModal');
+  if(m) m.style.display='flex';
+}
+function closeMarkSessionModal(){
+  var m=document.getElementById('markSessionModal');
+  if(m) m.style.display='none';
+}
+function submitMarkSession(){
+  var user=document.getElementById('msUserName');
+  var amt=document.getElementById('msAmount');
+  var dur=document.getElementById('msDuration');
+  if(!user||!user.value.trim()){toast('⚠️','Ingresá el nombre del usuario');return;}
+  if(!amt||!parseFloat(amt.value)){toast('⚠️','Ingresá el monto de la sesión');return;}
+  closeMarkSessionModal();
+  markSessionComplete(null, user.value.trim(), parseFloat(amt.value), parseInt((dur&&dur.value)||'45',10));
+}
+
+function renderSessionPayQueue(){
+  _loadSPQ();
+  var pending=_sessionPayQ.filter(function(s){return s.status==='pending';});
+  var el=document.getElementById('adminPayQueueList');
+  if(!el) return;
+  if(pending.length===0){
+    el.innerHTML='<div style="text-align:center;padding:14px;font-size:12px;color:rgba(116,198,157,.35)">Sin pagos pendientes ✓</div>';
+  } else {
+    el.innerHTML=pending.map(function(s){
+      return '<div style="background:rgba(255,255,255,.04);border:1.5px solid rgba(212,168,100,.2);border-radius:14px;padding:13px;margin-bottom:9px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px">'+
+          '<div><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">'+s.proName+' → '+s.userName+'</div>'+
+          '<div style="font-size:10px;color:rgba(255,255,255,.4)">'+s.date+' · '+s.duration+' min · $'+s.amount+' USD</div></div>'+
+          '<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--sage2)">$'+s.proShare+'</div>'+
+          '<div style="font-size:9px;color:rgba(255,255,255,.35)">pro · comisión $'+s.veloFee+'</div></div>'+
+        '</div>'+
+        '<div style="display:flex;gap:7px">'+
+          '<button onclick="approveSessionPayout(\''+s.id+'\')" style="flex:1;padding:9px;background:linear-gradient(135deg,rgba(58,158,96,.25),rgba(58,158,96,.15));border:1px solid rgba(58,158,96,.3);border-radius:100px;font-size:10px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:Jost,sans-serif">✓ Aprobar y pagar</button>'+
+          '<button onclick="rejectSessionPayout(\''+s.id+'\')" style="padding:9px 14px;background:rgba(192,48,40,.12);border:1px solid rgba(192,48,40,.25);border-radius:100px;font-size:10px;font-weight:700;color:#F87070;cursor:pointer;font-family:Jost,sans-serif">✕ Reembolsar</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+  var badge=document.getElementById('adminPayBadge');
+  if(badge){badge.style.display=pending.length>0?'flex':'none';badge.textContent=pending.length;}
+}
+
+function approveSessionPayout(id){
+  _loadSPQ();
+  var e=_sessionPayQ.find(function(s){return s.id===id;});
+  if(!e)return;
+  e.status='approved';
+  _saveSPQ();
+  toast('✅','Aprobado. Transferí $'+e.proShare+' a '+e.proName+' desde tu Stripe dashboard 💳');
+  renderSessionPayQueue();
+}
+function rejectSessionPayout(id){
+  _loadSPQ();
+  var e=_sessionPayQ.find(function(s){return s.id===id;});
+  if(!e)return;
+  e.status='rejected';
+  _saveSPQ();
+  toast('↩️','Rechazado. Emitir reembolso al usuario desde Stripe dashboard.');
+  renderSessionPayQueue();
+}
+
+// ── SESIONES SOLIDARIAS ADMIN ─────────────────────────────
+var _demoProsLibres=[
+  {id:'fs1',proName:'Dra. Ana Martínez',duration:45,available:true,specialty:'Psicología',emoji:'🧠'},
+  {id:'fs2',proName:'Coach Lucas',duration:60,available:true,specialty:'Bienestar',emoji:'🌿'},
+  {id:'fs3',proName:'Lic. Carolina',duration:45,available:false,specialty:'Terapia familiar',emoji:'👨‍👩‍👧'}
+];
+function renderFreeSessions(){
+  var el=document.getElementById('adminFreeSessionList');
+  if(!el)return;
+  el.innerHTML=_demoProsLibres.map(function(s){
+    return '<div style="background:rgba(168,212,232,.07);border:1px solid rgba(168,212,232,.2);border-radius:14px;padding:12px;margin-bottom:8px">'+
+      '<div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">'+
+        '<div style="font-size:20px">'+s.emoji+'</div>'+
+        '<div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">'+s.proName+'</div>'+
+        '<div style="font-size:10px;color:rgba(168,212,232,.6)">'+s.specialty+' · '+s.duration+' min</div></div>'+
+        '<span style="padding:3px 8px;border-radius:100px;font-size:9px;font-weight:700;background:'+(s.available?'rgba(58,158,96,.15)':'rgba(192,48,40,.1)')+';color:'+(s.available?'var(--sage2)':'#F87070')+';border:1px solid '+(s.available?'rgba(58,158,96,.25)':'rgba(192,48,40,.25)')+'">'+
+          (s.available?'Disponible':'Ocupado')+'</span>'+
+      '</div>'+
+      '<div style="display:flex;gap:6px">'+
+        '<button onclick="contactProAdmin(\''+s.id+'\',\''+s.proName+'\')" style="flex:1;padding:8px;background:rgba(168,212,232,.1);border:1px solid rgba(168,212,232,.25);border-radius:100px;font-size:10px;font-weight:700;color:rgba(168,212,232,.9);cursor:pointer;font-family:Jost,sans-serif">💬 Contactar</button>'+
+        '<button onclick="assignFreeSession(\''+s.id+'\',\''+s.proName+'\')" style="flex:1;padding:8px;background:rgba(58,158,96,.1);border:1px solid rgba(58,158,96,.25);border-radius:100px;font-size:10px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:Jost,sans-serif">🕊️ Asignar</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+function contactProAdmin(proId, proName){
+  var subj=document.getElementById('adminMsgSubject');
+  var body=document.getElementById('adminMsgBody');
+  if(subj) subj.value='Consulta disponibilidad sesión solidaria';
+  if(body) body.value='Hola '+proName+',\n\nTenemos un usuario esperando una sesión solidaria. ¿Podés confirmar disponibilidad esta semana?\n\nGracias por tu compromiso 💚\n— Equipo Velo';
+  adminTab(document.getElementById('atab-btn-msg'),'atab-msg');
+  toast('💌','Mensaje prellenado para '+proName+' · Revisá y enviá 📩');
+}
+function assignFreeSession(proId, proName){
+  toast('🕊️','Sesión asignada a '+proName+'. Usuario notificado en su buzón 💙');
+}
+
+// ── MURO DE FELICIDAD ─────────────────────────────────────
+var happyPosts=[];
+var happyReactions={};
+function _loadHappy(){
+  try{ happyPosts=JSON.parse(localStorage.getItem('velo_happy')||'[]'); }catch(e){ happyPosts=[]; }
+  try{ happyReactions=JSON.parse(localStorage.getItem('velo_happy_r')||'{}'); }catch(e){ happyReactions={}; }
+  if(happyPosts.length===0){
+    happyPosts=[
+      {id:'hp1',author:'Estrella',av:'⭐',time:'hace 8 min',city:'Madrid',text:'"Mi café de la mañana con el sol entrando. Las cosas pequeñas son las más perfectas."',mType:'emoji',mData:'☕',r:{sun:12,heart:8,wow:3,hug:5,spark:2},comments:[{author:'Luna',text:'¡Eso me alegró el día! 💚',time:'hace 5 min'}],flagged:false},
+      {id:'hp2',author:'Anónimo',av:'🌙',time:'hace 22 min',city:'Buenos Aires',text:'"Terminé mi primer dibujo en meses. No es perfecto pero es mío 🎨"',mType:'emoji',mData:'🎨',r:{sun:7,heart:14,wow:1,hug:9,spark:4},comments:[],flagged:false}
+    ];
+  }
+}
+function _saveHappy(){
+  try{ localStorage.setItem('velo_happy',JSON.stringify(happyPosts)); }catch(e){}
+  try{ localStorage.setItem('velo_happy_r',JSON.stringify(happyReactions)); }catch(e){}
+}
+function openHappyPost(){
+  var m=document.getElementById('happyPostModal');
+  if(m) m.style.display='flex';
+}
+function closeHappyPost(){
+  var m=document.getElementById('happyPostModal');
+  if(m) m.style.display='none';
+  var t=document.getElementById('happyPostText'); if(t) t.value='';
+  var p=document.getElementById('happyMediaPreview'); if(p){p.innerHTML='';p.style.display='none';}
+  _happyMData=null; _happyMType=null;
+}
+var _happyMData=null, _happyMType=null;
+function happyFileSelected(inp){
+  var f=inp.files[0]; if(!f)return;
+  if(f.size>30*1024*1024){toast('⚠️','Máximo 30MB');return;}
+  _happyMType=f.type.startsWith('video')?'video':'image';
+  var r=new FileReader();
+  r.onload=function(e){
+    _happyMData=e.target.result;
+    var p=document.getElementById('happyMediaPreview');
+    if(!p)return;
+    p.style.display='block';
+    p.innerHTML=_happyMType==='video'
+      ?'<video src="'+_happyMData+'" controls style="width:100%;border-radius:14px;max-height:180px"></video>'
+      :'<img src="'+_happyMData+'" style="width:100%;border-radius:14px;max-height:180px;object-fit:cover">';
+  };
+  r.readAsDataURL(f);
+}
+function submitHappyPost(){
+  var tEl=document.getElementById('happyPostText');
+  var text=(tEl?tEl.value.trim():'');
+  if(!text&&!_happyMData){toast('📸','Agregá una foto, video o texto antes de publicar');return;}
+  if(text){
+    moderateContent(text).then(function(ok){if(ok) _doHappyPost(text);});
+  } else { _doHappyPost(text); }
+}
+function _doHappyPost(text){
+  _loadHappy();
+  happyPosts.unshift({
+    id:'hp-'+Date.now(),
+    author:getDisplayName()||'Anónimo',
+    av:'🌟',
+    time:'ahora',
+    city:'',
+    text:text?'"'+text+'"':'',
+    mType:_happyMData?_happyMType:null,
+    mData:_happyMData||null,
+    r:{sun:0,heart:0,wow:0,hug:0,spark:0},
+    comments:[],
+    flagged:false
+  });
+  _saveHappy();
+  closeHappyPost();
+  renderHappyWall();
+  showSuc('☀️','¡Momento compartido!','Tu alegría ya está en el Muro de la Felicidad ✨');
+}
+function reactHappy(postId, key){
+  _loadHappy();
+  var p=happyPosts.find(function(x){return x.id===postId;});
+  if(!p)return;
+  if(!p.r) p.r={sun:0,heart:0,wow:0,hug:0,spark:0};
+  var prev=happyReactions[postId];
+  if(prev&&prev!==key){ p.r[prev]=Math.max(0,(p.r[prev]||1)-1); }
+  if(prev===key){ p.r[key]=Math.max(0,(p.r[key]||1)-1); happyReactions[postId]=null; }
+  else { p.r[key]=(p.r[key]||0)+1; happyReactions[postId]=key; }
+  _saveHappy();
+  renderHappyWall();
+}
+function addHappyComment(postId){
+  var inp=document.getElementById('hc-'+postId);
+  if(!inp||!inp.value.trim())return;
+  _loadHappy();
+  var p=happyPosts.find(function(x){return x.id===postId;});
+  if(!p)return;
+  if(!p.comments)p.comments=[];
+  p.comments.push({author:getDisplayName()||'Anónimo',text:inp.value.trim(),time:'ahora'});
+  _saveHappy();
+  inp.value='';
+  renderHappyWall();
+}
+function reportHappyPost(postId){
+  _loadHappy();
+  var p=happyPosts.find(function(x){return x.id===postId;});
+  if(!p)return;
+  p.flagged=true;
+  _saveHappy();
+  renderHappyWall();
+  flagForAdmin('Post Muro Felicidad: '+(p.text||'[media]'),'contenido','Reportado por usuario');
+  toast('🚩','Reportado. El equipo de Velo lo revisará 💙');
+}
+function renderHappyWall(){
+  _loadHappy();
+  var feed=document.getElementById('happyFeed');
+  if(!feed)return;
+  var visible=happyPosts.filter(function(p){return !p.flagged;});
+  if(visible.length===0){
+    feed.innerHTML='<div style="text-align:center;padding:28px;color:var(--earth2);font-size:13px">Sé el primero en compartir tu felicidad ☀️</div>';
+    return;
+  }
+  var rKeys=[{k:'sun',e:'☀️'},{k:'heart',e:'💚'},{k:'wow',e:'🥰'},{k:'hug',e:'🤗'},{k:'spark',e:'✨'}];
+  feed.innerHTML=visible.map(function(p){
+    var my=happyReactions[p.id]||null;
+    var mHtml='';
+    if(p.mType==='image'&&p.mData) mHtml='<div style="border-radius:14px;overflow:hidden;margin-bottom:10px"><img src="'+p.mData+'" style="width:100%;max-height:220px;object-fit:cover;display:block"></div>';
+    else if(p.mType==='video'&&p.mData) mHtml='<div style="border-radius:14px;overflow:hidden;margin-bottom:10px"><video src="'+p.mData+'" controls playsinline style="width:100%;max-height:220px;display:block"></video></div>';
+    else if(p.mType==='emoji') mHtml='<div style="border-radius:14px;overflow:hidden;margin-bottom:10px;background:linear-gradient(135deg,var(--sun2),var(--peach));height:130px;display:flex;align-items:center;justify-content:center;font-size:52px">'+p.mData+'</div>';
+    var cHtml='';
+    if(p.comments&&p.comments.length){
+      cHtml='<div style="margin-top:8px;border-top:1px solid rgba(212,168,100,.12);padding-top:8px">'+
+        p.comments.slice(-3).map(function(c){
+          return '<div style="display:flex;gap:7px;margin-bottom:5px;align-items:flex-start"><div style="width:20px;height:20px;border-radius:7px;background:var(--sun2);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">💬</div>'+
+            '<div><span style="font-size:11px;font-weight:600;color:var(--earth2)">'+c.author+'</span><span style="font-size:11px;color:var(--ink3);margin-left:5px">'+c.text+'</span><div style="font-size:9px;color:var(--ink5)">'+c.time+'</div></div></div>';
+        }).join('')+'</div>';
+    }
+    return '<div style="background:rgba(255,255,255,.82);border:1.5px solid rgba(255,200,100,.22);border-radius:22px;padding:15px;margin-bottom:11px;box-shadow:var(--sh);position:relative;overflow:hidden">'+
+      '<div style="height:3px;background:linear-gradient(90deg,var(--warm-tan),var(--peach),transparent);position:absolute;top:0;left:0;right:0"></div>'+
+      '<div style="padding-top:4px">'+
+        '<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">'+
+          '<div style="width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--sun2),var(--peach2));border:1.5px solid rgba(255,200,80,.22);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">'+p.av+'</div>'+
+          '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--ink)">'+p.author+'</div><div style="font-size:10px;color:var(--ink5)">'+p.time+(p.city?' · '+p.city:'')+'</div></div>'+
+          '<button style="width:22px;height:22px;border-radius:50%;background:transparent;border:1px solid rgba(255,200,80,.22);font-size:10px;cursor:pointer" onclick="reportHappyPost(\''+p.id+'\')">🚩</button>'+
+        '</div>'+
+        mHtml+
+        (p.text?'<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:14px;color:var(--ink2);line-height:1.6;margin-bottom:10px">'+p.text+'</div>':'')+
+        '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">'+
+          rKeys.map(function(r){
+            var cnt=p.r&&p.r[r.k]?p.r[r.k]:0;
+            var active=my===r.k;
+            return '<button onclick="reactHappy(\''+p.id+'\',\''+r.k+'\')" style="padding:6px 10px;border-radius:100px;background:'+(active?'rgba(255,200,80,.28)':'rgba(255,200,80,.1)')+';border:1.5px solid '+(active?'rgba(255,200,80,.55)':'rgba(255,200,80,.2)')+';cursor:pointer;font-size:12px;font-family:Jost,sans-serif;color:var(--earth)">'+
+              r.e+(cnt>0?' <span style="font-size:10px;font-weight:700">'+cnt+'</span>':'')+'</button>';
+          }).join('')+
+        '</div>'+
+        '<div style="display:flex;gap:7px;align-items:center">'+
+          '<input placeholder="Comentar..." style="flex:1;border:1.5px solid rgba(255,200,80,.2);border-radius:100px;padding:7px 13px;font-size:12px;font-family:Jost,sans-serif;background:rgba(255,255,255,.7);outline:none;color:var(--ink)" id="hc-'+p.id+'" maxlength="200" onkeypress="if(event.key===\'Enter\')addHappyComment(\''+p.id+'\')">'+
+          '<button onclick="addHappyComment(\''+p.id+'\')" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--sun),var(--peach));border:none;font-size:14px;cursor:pointer;flex-shrink:0">→</button>'+
+        '</div>'+
+        cHtml+
+      '</div>'+
+    '</div>';
+  }).join('');
 }
 
 // ── LÍMITE MURO DE AYUDA (2 gratis, ilimitado premium) ───
