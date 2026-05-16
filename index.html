@@ -113,7 +113,7 @@
 
       <!-- CTA -->
       <button style="width:100%;padding:16px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;box-shadow:0 6px 22px rgba(45,106,79,.28);margin-bottom:9px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="confirmDon()">🙏 Donar ahora · gracias</button>
-      <div style="font-size:11px;color:var(--ink5);text-align:center;margin-bottom:10px">🔒 Pago seguro Stripe · 256-bit · Cancelá cuando quieras</div>
+      <div style="font-size:11px;color:var(--ink5);text-align:center;margin-bottom:10px">🔒 Pago seguro PayPal · 256-bit · Cancelá cuando quieras</div>
       <button class="btn btn-outline" style="width:100%;padding:12px;font-size:13px" onclick="closeModal('donModal')">Ahora no · volver</button>
     </div>
   </div>
@@ -132,7 +132,7 @@
       <span style="animation:float 2s .6s ease-in-out infinite">💛</span>
     </div>
     <div style="padding:13px 20px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.22);border-radius:16px;margin-bottom:20px;font-size:12px;color:var(--sage2);line-height:1.6;animation:fadeUp .7s .7s ease both">
-      <b>Donación de <span id="donThanksAmt">$10 USD</span> registrada ✓</b><br>Recibirás un comprobante en tu email. Pago procesado con Stripe 🔒
+      <b>Donación de <span id="donThanksAmt">$10 USD</span> registrada ✓</b><br>Recibirás un comprobante en tu email de PayPal. Pago procesado con PayPal 🔒
     </div>
     <button class="btn btn-sage" style="padding:14px 36px;font-size:14px;animation:fadeUp .7s .8s ease both" onclick="closeDonThanks()">Volver a Velo 🌿</button>
   </div>
@@ -976,7 +976,7 @@
           <div style="display:flex;gap:8px"><span style="flex-shrink:0;font-size:14px">❌</span><div><b style="color:var(--ink)">No publicar contenido sexual, violento o ilegal.</b> Incluye cualquier material que dañe a menores.</div></div>
           <div style="display:flex;gap:8px"><span style="flex-shrink:0;font-size:14px">❌</span><div><b style="color:var(--ink)">No comercializar ni hacer publicidad.</b> Velo no es una plataforma de ventas ni derivación.</div></div>
           <div style="display:flex;gap:8px"><span style="flex-shrink:0;font-size:14px">❌</span><div><b style="color:var(--ink)">No intercambiar datos de contacto externo.</b> Las conversaciones deben darse dentro de la app.</div></div>
-          <div style="display:flex;gap:8px"><span style="flex-shrink:0;font-size:14px">🔒</span><div><b style="color:var(--ink)">Sección de donaciones protegida.</b> Los pagos se procesan mediante Stripe con cifrado 256-bit. Velo no accede ni almacena datos bancarios.</div></div>
+          <div style="display:flex;gap:8px"><span style="flex-shrink:0;font-size:14px">🔒</span><div><b style="color:var(--ink)">Sección de donaciones protegida.</b> Los pagos se procesan mediante PayPal con cifrado 256-bit. Velo no accede ni almacena datos bancarios.</div></div>
           <div style="display:flex;gap:8px"><span style="flex-shrink:0;font-size:14px">🔒</span><div><b style="color:var(--ink)">Acompañamiento profesional protegido.</b> Las sesiones con psicólogos son privadas, cifradas E2E y confidenciales. No compartimos datos con terceros.</div></div>
           <div style="display:flex;gap:8px"><span style="flex-shrink:0;font-size:14px">🌿</span><div><b style="color:var(--ink)">Velo es un espacio de apoyo mutuo.</b> No reemplaza la atención de salud mental profesional. En casos de crisis, activá el botón SOS.</div></div>
         </div>
@@ -1416,7 +1416,7 @@
         <div style="background:rgba(255,255,255,.82);border:1.5px solid rgba(116,198,157,.16);border-radius:20px;padding:15px;cursor:pointer;display:flex;align-items:center;gap:12px;box-shadow:var(--sh)" onclick="toast('💬','Reservando...')"><div style="width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--sky3),var(--sky2));display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0">💬</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--ink)">Chat escrito</div><div style="font-size:11px;color:var(--ink4)">60 min · anónimo opcional</div><div style="font-size:13px;font-weight:700;color:var(--sage);margin-top:3px">30€</div></div><div style="font-size:18px;color:var(--ink5)">›</div></div>
         <div style="background:rgba(255,255,255,.82);border:1.5px solid rgba(116,198,157,.16);border-radius:20px;padding:15px;cursor:pointer;display:flex;align-items:center;gap:12px;box-shadow:var(--sh)" onclick="toast('👥','Sesión grupal...')"><div style="width:44px;height:44px;border-radius:13px;background:var(--lav3);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0">👥</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--ink)">Sesión grupal</div><div style="font-size:11px;color:var(--ink4)">Hasta 6 personas · 75 min</div><div style="font-size:13px;font-weight:700;color:var(--sage);margin-top:3px">15€/persona</div></div><div style="font-size:18px;color:var(--ink5)">›</div></div>
       </div>
-      <div style="margin-top:13px;padding:12px;background:rgba(255,255,255,.6);border:1.5px solid rgba(116,198,157,.14);border-radius:15px;font-size:11px;color:var(--ink4);line-height:1.6;text-align:center">🔒 Pagos seguros Stripe · Cancelación hasta 24hs · Reembolso en 5 días</div>
+      <div style="margin-top:13px;padding:12px;background:rgba(255,255,255,.6);border:1.5px solid rgba(116,198,157,.14);border-radius:15px;font-size:11px;color:var(--ink4);line-height:1.6;text-align:center">🔒 Pagos seguros PayPal · Cancelación hasta 24hs · Reembolso en 5 días</div>
     </div>
   </div>
 <div class="sc" id="calm" style="background:linear-gradient(160deg,var(--sky3),var(--sky2),var(--sage7))">
@@ -1830,7 +1830,7 @@
             <button onclick="activateProfileDon(true)" style="flex:2;padding:12px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Donar mensualmente 💚</button>
             <button onclick="activateProfileDon(false)" style="flex:1;padding:12px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.22);border-radius:100px;color:var(--sage2);font-size:12px;font-weight:600;cursor:pointer;font-family:'Jost',sans-serif">Una vez</button>
           </div>
-          <div style="font-size:10px;color:var(--ink5);text-align:center;line-height:1.5">Podés cancelar en cualquier momento · Seguro via Stripe 🔒</div>
+          <div style="font-size:10px;color:var(--ink5);text-align:center;line-height:1.5">Podés cancelar en cualquier momento · Seguro via PayPal 🔒</div>
         </div>
       </div>
 
@@ -2085,7 +2085,7 @@
       </div>
       <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(255,255,255,.7);border:2px dashed rgba(116,198,157,.28);border-radius:17px;margin-bottom:13px;cursor:pointer" onclick="toast('💛','Mínimo $5 USD')"><span style="font-size:17px">✏️</span><div><div style="font-size:13px;font-weight:600;color:var(--ink)">Otro monto</div><div style="font-size:11px;color:var(--ink5)">Mínimo $5 USD</div></div></div>
       <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:15px">
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:rgba(255,255,255,.72);border:1.5px solid rgba(116,198,157,.14);border-radius:13px"><span style="font-size:17px">🔒</span><div style="font-size:12px;font-weight:600;color:var(--ink)">Pago seguro · Stripe · 256-bit SSL</div></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:rgba(255,255,255,.72);border:1.5px solid rgba(116,198,157,.14);border-radius:13px"><span style="font-size:17px">🔒</span><div style="font-size:12px;font-weight:600;color:var(--ink)">Pago seguro · PayPal · 256-bit SSL</div></div>
         <div style="display:flex;align-items:center;gap:10px;padding:10px 13px;background:rgba(255,255,255,.72);border:1.5px solid rgba(116,198,157,.14);border-radius:13px"><span style="font-size:17px">💚</span><div><div style="font-size:12px;font-weight:600;color:var(--ink)">Completamente voluntario</div><div style="font-size:11px;color:var(--ink5)">Velo siempre será gratis</div></div></div>
       </div>
       <button class="btn btn-sage" style="width:100%;padding:16px;font-size:15px;margin-bottom:10px" onclick="showSuc('💚','¡Gracias, Guardián/a!','Tu donación ayuda a que más personas tengan un lugar seguro. 🌿')">Donar ahora 💚</button>
@@ -2934,7 +2934,7 @@
           <div><div style="font-size:12px;font-weight:600;color:var(--ink)">Cuenta bancaria ···4872</div><div style="font-size:10px;color:var(--ink5)">Transferencias cada 7 días</div></div>
           <button onclick="toast('⚙️','Editar datos bancarios')" style="margin-left:auto;padding:5px 10px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.2);border-radius:100px;font-size:10px;font-weight:600;color:var(--sage2);cursor:pointer;font-family:'Jost',sans-serif">Editar</button>
         </div>
-        <button onclick="toast('💳','Conectando con Stripe...')" style="width:100%;padding:11px;background:rgba(212,168,100,.12);border:1.5px solid rgba(212,168,100,.25);border-radius:100px;font-size:12px;font-weight:700;color:var(--earth);cursor:pointer;font-family:'Jost',sans-serif">+ Agregar PayPal o Stripe</button>
+        <button onclick="toast('💳','Conectando con PayPal...')" style="width:100%;padding:11px;background:rgba(212,168,100,.12);border:1.5px solid rgba(212,168,100,.25);border-radius:100px;font-size:12px;font-weight:700;color:var(--earth);cursor:pointer;font-family:'Jost',sans-serif">+ Agregar PayPal o Stripe</button>
       </div>
       <!-- Comisión Velo -->
       <div style="margin-top:11px;background:rgba(255,255,255,.78);border:1.5px solid rgba(212,168,100,.18);border-radius:18px;padding:14px;box-shadow:var(--sh)">

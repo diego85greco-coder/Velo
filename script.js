@@ -128,7 +128,7 @@ function sbImageUrl(bucket, path){
 
 // ── INICIALIZAR SUPABASE AL CARGAR ────────────────────────
 document.addEventListener('DOMContentLoaded', _initSupabase);
-window.addEventListener('load', _initSupabase);
+window.addEventListener('load', function(){ _initSupabase(); _checkPayPalReturn(); });
 
 // ═══════════════════════════════════════════════════════════
 //  FIN BLOQUE SUPABASE
@@ -861,15 +861,9 @@ function confirmDon(){
     selectedDonAmt=custom.value;
   }
   closeModal('donModal');
-  document.getElementById('donThanks').style.display='flex';
-  document.getElementById('donThanksAmt').textContent='$'+selectedDonAmt+' USD';
-  if(isMonthlyDon){
-    safeLS('set','velo_monthly_donor','true');
-    safeLS('set','velo_monthly_start',Date.now().toString());
-    setTimeout(function(){ deliverInboxMsg('suscripcion-mensual'); }, 1500);
-  } else {
-    setTimeout(function(){ deliverInboxMsg('donacion'); }, 1500);
-  }
+  var desc = isMonthlyDon ? 'Donación mensual Velo' : 'Donación Velo';
+  openPayPalDonate(selectedDonAmt, isMonthlyDon, desc);
+  toast('💳','Redirigiendo a PayPal… completá el pago y volvé 🌿');
 }
 
 var darkSc=['help','bottle'];
@@ -1133,6 +1127,10 @@ function selPlan(el){
   toast('✅','Plan seleccionado');
 }
 function prStep(step){
+  // Step 4 = final confirmation → trigger PayPal $15/month first
+  if(step===4){
+    openPayPalPro();
+  }
   var steps=['prs1','prs2','prs3','prs4-contract','prs4'];
   steps.forEach(function(id){
     var el=document.getElementById(id);
@@ -1375,18 +1373,18 @@ function selProfileDon(el, amt){
   if(wrap) wrap.style.display=amt==='otro'?'block':'none';
 }
 function activateProfileDon(monthly){
-  safeLS('set','velo_monthly_donor','true');
-  safeLS('set','velo_monthly_start',Date.now().toString());
-  var active=document.getElementById('profileDonActiveBlock');
-  var inactive=document.getElementById('profileDonInactiveBlock');
-  if(active) active.style.display='block';
-  if(inactive) inactive.style.display='none';
-  setTimeout(function(){ deliverInboxMsg(monthly?'suscripcion-mensual':'donacion'); }, 800);
-  if(monthly){
-    showSuc('💚','¡Gracias por tu donación mensual!','Tu generosidad hace posible que más personas accedan a sesiones gratuitas. Podés cancelar cuando quieras desde tu perfil. 💙');
-  } else {
-    showSuc('💚','¡Gracias por tu donación!','Tu aporte ayuda a financiar el programa Velo vela por ti. Cada contribución cuenta. 💙');
+  var amtEl = document.getElementById('profileDonAmounts');
+  var selEl = amtEl ? amtEl.querySelector('[style*="sage7"]') : null;
+  var customEl = document.getElementById('profileDonCustom');
+  var amt = 10;
+  if(selEl){
+    var txt = selEl.querySelector('div');
+    if(txt) amt = parseFloat(txt.textContent.replace(/[^0-9.]/g,''))||10;
   }
+  if(customEl && customEl.value && parseFloat(customEl.value)>=5) amt = parseFloat(customEl.value);
+  var desc = monthly ? 'Donación mensual Velo' : 'Donación Velo';
+  openPayPalDonate(amt, monthly, desc);
+  toast('💳','Redirigiendo a PayPal… completá el pago y volvé 🌿');
 }
 function cancelDonSub(){
   try{localStorage.removeItem('velo_monthly_donor');localStorage.removeItem('velo_monthly_start');}catch(e){}
@@ -2256,6 +2254,85 @@ function setPremiumUser(){
   safeLS('set','velo_premium_start',Date.now().toString());
 }
 
+// ── PAYPAL ────────────────────────────────────────────────
+var PAYPAL_EMAIL = 'Diego.catalan.greco%40gmail.com';
+var PAYPAL_BASE  = 'https://www.paypal.com/donate?business='+PAYPAL_EMAIL+'&currency_code=USD&no_note=1&no_shipping=1';
+var PAYPAL_SUB   = 'https://www.paypal.com/cgi-bin/webscr?cmd=_xclick-subscriptions&business='+PAYPAL_EMAIL+'&currency_code=USD&no_note=1&no_shipping=1';
+
+function _ppReturnUrl(tag){
+  return encodeURIComponent(window.location.href.split('?')[0]+'?pp='+tag);
+}
+function openPayPalDonate(amtUSD, monthly, itemDesc){
+  var desc = encodeURIComponent(itemDesc||'Donación Velo');
+  var ret  = _ppReturnUrl(monthly?'don_m':'don_o');
+  if(monthly){
+    var url = PAYPAL_SUB
+      +'&a3='+amtUSD+'&p3=1&t3=M'
+      +'&item_name='+desc
+      +'&return='+ret;
+    window.open(url,'_blank');
+  } else {
+    var url = PAYPAL_BASE
+      +'&amount='+amtUSD
+      +'&item_name='+desc
+      +'&return='+ret;
+    window.open(url,'_blank');
+  }
+  // Mark pending so we can confirm on return
+  safeLS('set','velo_pp_pending', monthly?'donor_monthly':'donor_once');
+  safeLS('set','velo_pp_amt', String(amtUSD));
+}
+function openPayPalPremium(){
+  var desc = encodeURIComponent('Velo Premium - Muro ilimitado');
+  var ret  = _ppReturnUrl('premium');
+  var url  = PAYPAL_SUB
+    +'&a3=2.99&p3=1&t3=M'
+    +'&item_name='+desc
+    +'&return='+ret;
+  window.open(url,'_blank');
+  safeLS('set','velo_pp_pending','premium');
+}
+function openPayPalPro(){
+  var desc = encodeURIComponent('Velo Profesional - Plan mensual');
+  var ret  = _ppReturnUrl('pro');
+  var url  = PAYPAL_SUB
+    +'&a3=15&p3=1&t3=M'
+    +'&item_name='+desc
+    +'&return='+ret;
+  window.open(url,'_blank');
+  safeLS('set','velo_pp_pending','pro');
+  toast('💳','Completá el pago en PayPal y volvé a la app 🌿');
+}
+function _checkPayPalReturn(){
+  try{
+    var params = new URLSearchParams(window.location.search);
+    var tag = params.get('pp');
+    if(!tag) return;
+    var pending = safeLS('get','velo_pp_pending');
+    var amt     = safeLS('get','velo_pp_amt') || '0';
+    if(tag==='don_m' || (tag==='don_o' && pending)){
+      var monthly = tag==='don_m';
+      setDonor(monthly);
+      addBuzonMsg({id:'don-pp-'+Date.now(),tipo:'sistema',icon:'💚',titulo:'¡Gracias por tu donación!',cuerpo:'Recibimos tu donación de $'+amt+' USD'+(monthly?' mensual':'')+'. Tu apoyo mantiene a Velo vivo y ayuda a personas en todo el mundo. ¡Muchas gracias! 🌿',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
+      toast('💚','¡Gracias! Tu donación llegó. ¡La comunidad te lo agradece! 🌿');
+      updateBuzonDot(); updateInboxBadge();
+    } else if(tag==='premium'){
+      setPremiumUser();
+      addBuzonMsg({id:'prem-pp-'+Date.now(),tipo:'sistema',icon:'💎',titulo:'¡Plan Premium activado!',cuerpo:'Ya podés publicar ilimitado en el muro y crear círculos de paz. ¡Gracias por apoyar a Velo! 💚',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
+      toast('💎','¡Plan Premium activado! Gracias por tu apoyo 💚');
+      updateBuzonDot(); updateInboxBadge();
+    } else if(tag==='pro'){
+      safeLS('set','velo_pro_paid','true');
+      addBuzonMsg({id:'pro-pp-'+Date.now(),tipo:'sistema',icon:'🌿',titulo:'Pago profesional confirmado',cuerpo:'Recibimos tu pago de $15/mes. Tu solicitud está en revisión. Te avisamos en 24-48hs. ¡Bienvenido/a al equipo! 💚',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
+      toast('🌿','Pago recibido. Tu solicitud está en revisión 💚');
+      updateBuzonDot(); updateInboxBadge();
+    }
+    safeLS('set','velo_pp_pending','');
+    // Clean URL without reload
+    try{ history.replaceState(null,'',window.location.pathname); }catch(e){}
+  }catch(e){}
+}
+
 // ── LÍMITE MURO DE AYUDA (2 gratis, ilimitado premium) ───
 var FREE_HELP_LIMIT = 2;
 function getHelpWallCount(){
@@ -2290,10 +2367,8 @@ function showHelpLimitModal(){
 function subscribePremiumUser(){
   var m = document.getElementById('helpLimitModal');
   if(m) m.style.display='none';
-  // PayPal / Stripe redirect — configurar con tu cuenta
-  setPremiumUser();
-  addBuzonMsg({id:'prem-'+Date.now(),tipo:'sistema',icon:'💎',titulo:'¡Plan Premium activado!',cuerpo:'Ya podés publicar ilimitado en el muro y crear círculos de paz. ¡Gracias por apoyar a Velo! 💚',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
-  toast('💎','¡Plan Premium activado! Gracias por tu apoyo 💚');
+  openPayPalPremium();
+  toast('💳','Redirigiendo a PayPal… completá el pago y volvé 🌿');
 }
 
 // ── DONACIÓN DESPUÉS DE RESEÑA ────────────────────────────
@@ -2345,11 +2420,10 @@ function confirmPostDon(){
   if(amt===0 && custom){ amt=parseFloat(custom.value); if(!amt||amt<5){toast('⚠️','Mínimo $5 USD');return;} }
   var monthly=document.getElementById('postDonMonthly');
   var isMonthly=monthly&&monthly.checked;
-  setDonor(isMonthly);
   var m=document.getElementById('postReviewDonModal'); if(m)m.remove();
-  addBuzonMsg({id:'don-'+Date.now(),tipo:'sistema',icon:'💚',titulo:'¡Gracias por tu donación!',cuerpo:'Recibimos tu donación de $'+amt+' USD'+(isMonthly?' mensual':'')+'. Tu apoyo mantiene a Velo vivo y ayuda a personas en todo el mundo. ¡Muchas gracias! 🌿',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
-  toast('💚','¡Gracias! Tu donación de $'+amt+' ayuda a la comunidad 🌿');
-  updateBuzonDot(); updateInboxBadge();
+  var desc = isMonthly ? 'Donación mensual Velo' : 'Donación Velo';
+  openPayPalDonate(amt, isMonthly, desc);
+  toast('💳','Redirigiendo a PayPal… completá el pago y volvé 🌿');
 }
 
 // ── VIDEOLLAMADA (Jitsi Meet — funciona en Safari/Chrome) ─
