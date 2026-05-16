@@ -2089,6 +2089,7 @@ function sendBottle(){
   moderateContent(msg).then(function(ok){
     if(!ok) return;
     var isAnon=isIncognitoActive();
+    _loadBottleWall();
     bottleWall.unshift({
       id:'b-'+Date.now(),
       emoji:isAnon?'🕶️':'🍾',
@@ -2097,6 +2098,7 @@ function sendBottle(){
       time:'ahora',
       answered:false
     });
+    _saveBottleWall();
     _incBottleCount();
     closeBottleWrite();
     txt.value='';
@@ -2618,13 +2620,24 @@ function submitHelpForm(){
 // ── BOTELLAS EN EL MURO ──────────────────────────────────
 // Las botellas quedan visibles hasta que alguien las responda
 
-var bottleWall = [
+var _bottleDefaults = [
   {id:1, emoji:'😔', msg:'Hoy me siento invisible. Trabajo tanto pero nadie parece verme realmente.', author:'Anónima', time:'hace 2h', answered:false},
   {id:2, emoji:'😶', msg:'Tengo una decisión importante y no sé a quién pedirle consejo.', author:'Marcos', time:'hace 11 min', answered:false},
   {id:3, emoji:'🌧️', msg:'Extraño a alguien que ya no está. No sé cómo seguir sin esa presencia.', author:'Anónimo', time:'hace 45 min', answered:false}
 ];
+function _loadBottleWall(){
+  try{
+    var stored = JSON.parse(localStorage.getItem('velo_bottles')||'null');
+    bottleWall = stored && stored.length ? stored : _bottleDefaults.slice();
+  }catch(e){ bottleWall = _bottleDefaults.slice(); }
+}
+function _saveBottleWall(){
+  try{ localStorage.setItem('velo_bottles', JSON.stringify(bottleWall)); }catch(e){}
+}
+var bottleWall = _bottleDefaults.slice();
 
 function renderBottleWall(){
+  _loadBottleWall();
   var container = document.getElementById('bottleWallList');
   if(!container) return;
   container.innerHTML = '<div class="shimmer-card"><div class="shimmer-line"></div><div class="shimmer-line w80"></div><div class="shimmer-line w40"></div></div>';
@@ -2687,15 +2700,34 @@ function closeBottleReply(){
 function sendBottleReply(){
   var inp = document.getElementById('bottleReplyInput');
   if(!inp||!inp.value.trim()){ toast('🌊','Escribí algo antes de responder'); return; }
-  // Mark bottle as answered so it leaves the wall
+  var replyText = inp.value.trim();
+  var answeredBottle = null;
   if(currentBottleId !== null){
     for(var i=0;i<bottleWall.length;i++){
-      if(bottleWall[i].id===currentBottleId){ bottleWall[i].answered=true; break; }
+      if(bottleWall[i].id===currentBottleId){
+        bottleWall[i].answered=true;
+        answeredBottle = bottleWall[i];
+        break;
+      }
     }
+    _saveBottleWall();
     renderBottleWall();
   }
+  // Notify the sender in their buzón
+  if(answeredBottle){
+    addBuzonMsg({
+      id:'bottle-r-'+Date.now(),
+      tipo:'botella',
+      icon:'🍾',
+      titulo:'¡Tu botella fue respondida!',
+      cuerpo:'Alguien encontró tu mensaje en el mar y quiso responderte:\n\n"'+replyText+'"',
+      leido:false,
+      fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})
+    });
+    updateBuzonDot(); updateInboxBadge();
+  }
   closeBottleReply();
-  showSuc('Tu respuesta fue enviada. La persona la recibira de forma anonima. La botella ya fue recogida 🌊');
+  showSuc('🌊','Botella recogida','Tu respuesta fue enviada. El remitente la verá en su buzón de Velo 🍾');
 }
 
 // ── ESTADO DE USUARIO ─────────────────────────────────────
@@ -2838,34 +2870,26 @@ function openBuzonMsg(id){
 
 // ── BOTELLAS: cuando se responde, va al buzón del autor ──
 function responderBotella_buzon(botellaId, textoRespuesta){
-  // Find bottle in wall
   var botella = null;
   for(var i=0;i<bottleWall.length;i++){
     if(bottleWall[i].id===botellaId){ botella=bottleWall[i]; break; }
   }
   if(!botella) return;
-
-  // Mark as answered → disappears from wall
   botella.answered = true;
+  _saveBottleWall();
   renderBottleWall();
-
-  // Create buzón notification for bottle author
-  var notif = {
-    id: 'notif-'+Date.now(),
-    tipo: 'botella',
-    remitente: 'Alguien encontro tu botella',
-    asunto: 'Tu botella tiene una respuesta!',
-    extracto: textoRespuesta,
-    mensajeOriginal: botella.msg,
-    fecha: 'Ahora',
-    leido: false
-  };
-  addBuzonMsg(notif);
-
+  addBuzonMsg({
+    id:'bottle-r-'+Date.now(),
+    tipo:'botella',
+    icon:'🍾',
+    titulo:'¡Tu botella fue respondida!',
+    cuerpo:'Alguien encontró tu mensaje en el mar y quiso responderte:\n\n"'+textoRespuesta+'"',
+    leido:false,
+    fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})
+  });
+  updateBuzonDot(); updateInboxBadge();
   closeBottleReply();
-  toast('Tu respuesta fue enviada. La botella desaparecio del mar. 🌊');
-  // Show buzón notification hint
-  setTimeout(function(){ toast('📬 Revisa tu Buzon para ver la respuesta!'); }, 2500);
+  showSuc('🌊','Botella recogida','Tu respuesta fue enviada. El remitente la verá en su buzón de Velo 🍾');
 }
 
 
