@@ -134,33 +134,35 @@ window.addEventListener('load', function(){ _initSupabase(); _checkPayPalReturn(
 //  FIN BLOQUE SUPABASE
 // ═══════════════════════════════════════════════════════════
 
+function _tryLoadImg(el, primary, fallback){
+  if(!el) return;
+  el.onerror = function(){
+    if(this.src !== fallback){ this.src = fallback; }
+    else { this.onerror = null; }
+  };
+  el.src = primary;
+}
+
 function loadLogos(){
-  var src = document.getElementById('logoData') ? document.getElementById('logoData').getAttribute('data-logo') : '';
-  if(!src) return;
+  var BASE = SUPABASE_URL + '/storage/v1/object/public/velo-assets/';
+  var dayPrimary = BASE + 'IMG_2640.PNG';
+  var dayFallback = BASE + 'IMG_2640.png';
   ['splashLogo','loginLogo','homeLogo','regLogo','wbLogo','luLogo','lpLogo'].forEach(function(id){
-    var el=document.getElementById(id);
-    if(el) el.src=src;
+    _tryLoadImg(document.getElementById(id), dayPrimary, dayFallback);
   });
 }
-// Init logos & Splash curtains
-// ── SPLASH CINEMATOGRÁFICO DÍA/NOCHE ─────────────────────
-// ── SPLASH CON IMÁGENES REALES ────────────────────────────
+
 function initSplashTheme(){
   var h = new Date().getHours();
   var isNight = h >= 20 || h < 7;
   var BASE = SUPABASE_URL + '/storage/v1/object/public/velo-assets/';
 
-  // Logo desde Supabase Storage (PNG con fondo transparente)
+  var logoBase = isNight ? 'IMG_2639' : 'IMG_2640';
+  var logoPrimary = BASE + logoBase + '.PNG';
+  var logoFallback = BASE + logoBase + '.png';
+  _tryLoadImg(document.getElementById('splashLogoImg'), logoPrimary, logoFallback);
   var logoImg = document.getElementById('splashLogoImg');
   if(logoImg){
-    var logoBase = isNight ? 'IMG_2639' : 'IMG_2640';
-    var logoSrc = BASE + logoBase + '.PNG';
-    var logoSrcAlt = BASE + logoBase + '.png';
-    logoImg.onerror = function(){
-      if(this.src.indexOf('.PNG') !== -1){ this.src = logoSrcAlt; }
-      else { this.onerror = null; }
-    };
-    logoImg.src = logoSrc;
     logoImg.style.mixBlendMode = 'normal';
     logoImg.style.filter = isNight
       ? 'drop-shadow(0 2px 18px rgba(255,255,255,.22))'
