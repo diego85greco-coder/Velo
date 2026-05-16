@@ -1267,7 +1267,7 @@
           <span style="color:var(--ink5)">⚖️ Velo verifica documentación aportada pero no sustituye controles estatales ni garantiza resultados terapéuticos.</span>
         </div>
         <div style="display:flex;gap:7px">
-          <button class="btn btn-sage" style="flex:2;padding:11px;font-size:13px" onclick="event.stopPropagation();goTo('pro-session')">Reservar sesión 🌿</button>
+          <button class="btn btn-sage" style="flex:2;padding:11px;font-size:13px" onclick="event.stopPropagation();reservarSesion('Dra. Ana Martínez','👩‍⚕️',50,'Psicóloga clínica · 8 años','4.9',87)">Reservar sesión 🌿</button>
           <button style="flex:1;padding:11px;font-size:12px;border-radius:100px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.2);color:var(--sage2);font-family:'Jost',sans-serif;font-weight:600;cursor:pointer" onclick="event.stopPropagation();toast('💬','Consulta enviada')">Consultar</button>
           <button style="padding:11px 12px;border-radius:100px;background:rgba(192,48,40,.06);border:1.5px solid rgba(192,48,40,.15);color:#C63020;font-size:11px;cursor:pointer;font-family:'Jost',sans-serif" onclick="event.stopPropagation();reportPro('Dra. Ana Martínez')" title="Reportar">🚩</button>
         </div>
@@ -1305,7 +1305,7 @@
           <span style="color:var(--ink5)">⚖️ Velo verifica documentación pero no sustituye controles estatales ni garantiza resultados.</span>
         </div>
         <div style="display:flex;gap:7px">
-          <button class="btn btn-sage" style="flex:2;padding:11px;font-size:13px" onclick="event.stopPropagation();goTo('pro-session')">Reservar sesión 🌿</button>
+          <button class="btn btn-sage" style="flex:2;padding:11px;font-size:13px" onclick="event.stopPropagation();reservarSesion('Dr. Carlos Fuentes','👨‍⚕️',65,'Terapeuta familiar y de pareja · 12 años','4.8',64)">Reservar sesión 🌿</button>
           <button style="flex:1;padding:11px;font-size:12px;border-radius:100px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.2);color:var(--sage2);font-family:'Jost',sans-serif;font-weight:600;cursor:pointer" onclick="event.stopPropagation();toast('💬','Consulta enviada')">Consultar</button>
           <button style="padding:11px 12px;border-radius:100px;background:rgba(192,48,40,.06);border:1.5px solid rgba(192,48,40,.15);color:#C63020;font-size:11px;cursor:pointer;font-family:'Jost',sans-serif" onclick="event.stopPropagation();reportPro('Dr. Carlos Fuentes')" title="Reportar">🚩</button>
         </div>
@@ -1346,7 +1346,7 @@
           ⚠️ Este servicio corresponde a bienestar y acompañamiento complementario y no reemplaza atención médica o psicológica profesional.
         </div>
         <div style="display:flex;gap:7px">
-          <button class="btn btn-sage" style="flex:2;padding:11px;font-size:13px" onclick="event.stopPropagation();goTo('pro-session')">Reservar sesión 🌿</button>
+          <button class="btn btn-sage" style="flex:2;padding:11px;font-size:13px" onclick="event.stopPropagation();reservarSesion('Lucía Herrera','🧘',35,'Coach emocional · Mindfulness · 6 años','4.7',42)">Reservar sesión 🌿</button>
           <button style="flex:1;padding:11px;font-size:12px;border-radius:100px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.2);color:var(--sage2);font-family:'Jost',sans-serif;font-weight:600;cursor:pointer" onclick="event.stopPropagation();toast('💬','Consulta enviada')">Consultar</button>
           <button style="padding:11px 12px;border-radius:100px;background:rgba(192,48,40,.06);border:1.5px solid rgba(192,48,40,.15);color:#C63020;font-size:11px;cursor:pointer;font-family:'Jost',sans-serif" onclick="event.stopPropagation();reportPro('Lucía Herrera')" title="Reportar">🚩</button>
         </div>
@@ -1385,7 +1385,7 @@
           ⚠️ Este servicio corresponde a bienestar y acompañamiento complementario y no reemplaza atención médica o psicológica profesional.
         </div>
         <div style="display:flex;gap:7px">
-          <button class="btn btn-sage" style="flex:2;padding:11px;font-size:13px" onclick="event.stopPropagation();goTo('pro-session')">Reservar sesión 🌿</button>
+          <button class="btn btn-sage" style="flex:2;padding:11px;font-size:13px" onclick="event.stopPropagation();reservarSesion('Sofía Navarro','🎨',30,'Arte-terapia · Escritura expresiva · 5 años','4.8',31)">Reservar sesión 🌿</button>
           <button style="flex:1;padding:11px;font-size:12px;border-radius:100px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.2);color:var(--sage2);font-family:'Jost',sans-serif;font-weight:600;cursor:pointer" onclick="event.stopPropagation();toast('💬','Consulta enviada')">Consultar</button>
           <button style="padding:11px 12px;border-radius:100px;background:rgba(192,48,40,.06);border:1.5px solid rgba(192,48,40,.15);color:#C63020;font-size:11px;cursor:pointer;font-family:'Jost',sans-serif" onclick="event.stopPropagation();reportPro('Sofía Navarro')" title="Reportar">🚩</button>
         </div>
@@ -1405,34 +1405,32 @@
       <button onclick="goTo('pro')" style="background:none;border:none;color:var(--sage3);font-family:'Jost',sans-serif;font-size:13px;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;gap:5px">← Profesionales</button>
       <div class="serif-i" style="font-size:26px;color:var(--sage)">Reservar consulta</div>
     </div>
-    <!-- Card profesional -->
+    <!-- Card profesional — se rellena dinámicamente con reservarSesion() -->
     <div style="margin:0 17px;background:linear-gradient(135deg,var(--sage),var(--sage2));border-radius:22px;padding:20px;text-align:center;flex-shrink:0;box-shadow:var(--sh2)">
-      <div style="width:68px;height:68px;border-radius:22px;background:rgba(255,255,255,.14);border:3px solid rgba(255,255,255,.28);margin:0 auto 11px;display:flex;align-items:center;justify-content:center;font-size:32px">👩‍⚕️</div>
-      <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#fff;margin-bottom:2px">Dra. Ana Martínez</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.65);margin-bottom:9px">Psicóloga clínica · 8 años</div>
-      <div style="display:flex;gap:3px;justify-content:center;font-size:15px;margin-bottom:9px">⭐⭐⭐⭐⭐</div>
+      <div style="width:68px;height:68px;border-radius:22px;background:rgba(255,255,255,.14);border:3px solid rgba(255,255,255,.28);margin:0 auto 11px;display:flex;align-items:center;justify-content:center;font-size:32px" id="psProEmoji">👤</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#fff;margin-bottom:2px" id="psProNombre"></div>
+      <div style="font-size:12px;color:rgba(255,255,255,.65);margin-bottom:6px" id="psProEsp"></div>
+      <div style="font-size:12px;color:rgba(255,255,255,.8);margin-bottom:9px" id="psProRating">⭐ 5.0</div>
       <div style="display:inline-flex;align-items:center;gap:5px;padding:4px 13px;background:rgba(255,255,255,.14);border-radius:100px;font-size:11px;font-weight:600;color:rgba(255,255,255,.88)"><div style="width:7px;height:7px;border-radius:50%;background:#6EE7B7;animation:breathe 2s ease-in-out infinite"></div>Disponible ahora</div>
     </div>
     <div class="scrl" style="padding:14px 17px 84px">
-      <!-- Info sesión -->
       <div style="background:rgba(255,255,255,.82);border:1.5px solid rgba(116,198,157,.18);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:var(--sh)">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
           <div style="width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">📹</div>
           <div>
             <div style="font-size:15px;font-weight:700;color:var(--ink)">Videollamada privada</div>
-            <div style="font-size:12px;color:var(--ink4);margin-top:2px">50 minutos · Cifrada de extremo a extremo</div>
+            <div style="font-size:12px;color:var(--ink4);margin-top:2px">Cifrada · Podés activar o desactivar tu cámara</div>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink3)"><span style="font-size:15px">📷</span> Podés activar o desactivar tu cámara dentro de la llamada</div>
           <div style="display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink3)"><span style="font-size:15px">🔒</span> El pago queda retenido hasta confirmar que la sesión se realizó</div>
           <div style="display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink3)"><span style="font-size:15px">↩️</span> Reembolso completo si la sesión no ocurre</div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.2);border-radius:14px;margin-bottom:14px">
           <span style="font-size:13px;color:var(--ink3)">Precio de la sesión</span>
-          <span style="font-size:20px;font-weight:800;color:var(--sage)">$50 <span style="font-size:12px;font-weight:400;color:var(--ink4)">USD</span></span>
+          <span style="font-size:20px;font-weight:800;color:var(--sage)" id="psProTarifa">—</span>
         </div>
-        <button onclick="openStripeCheckout(50,'Dra. Ana Martínez','videollamada')" style="width:100%;padding:16px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;box-shadow:0 4px 16px rgba(45,106,79,.3)">Reservar y pagar · $50 USD 💳</button>
+        <button id="psProTarifaBtn" onclick="confirmarReservaStripe()" style="width:100%;padding:16px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;box-shadow:0 4px 16px rgba(45,106,79,.3)">Reservar y pagar 💳</button>
       </div>
       <div style="padding:11px;background:rgba(255,255,255,.6);border:1.5px solid rgba(116,198,157,.14);border-radius:14px;font-size:11px;color:var(--ink4);line-height:1.6;text-align:center">🔒 Pago seguro Stripe · Fondos retenidos hasta confirmar la sesión · Reembolso garantizado si la sesión no ocurre</div>
     </div>

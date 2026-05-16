@@ -1556,6 +1556,42 @@ function sendReportPro(){
   closeReportPro();
   showSuc('🛡️','Reporte recibido','Velo investigará el caso de '+(name?name.textContent:'este profesional')+'. Tu identidad es confidencial. Gracias por cuidar la comunidad. 💙');
 }
+// Datos del profesional seleccionado para la reserva
+var _currentPro = {nombre:'', emoji:'👤', tarifa:0, especialidad:'', rating:'', reviews:0};
+
+function reservarSesion(nombre, emoji, tarifa, especialidad, rating, reviews){
+  _currentPro = {
+    nombre:     nombre     || '',
+    emoji:      emoji      || '👤',
+    tarifa:     parseFloat(tarifa) || 0,
+    especialidad: especialidad || '',
+    rating:     rating     || '5.0',
+    reviews:    reviews    || 0
+  };
+  // Actualizar pantalla pro-session con datos reales
+  var elNombre   = document.getElementById('psProNombre');
+  var elEsp      = document.getElementById('psProEsp');
+  var elEmoji    = document.getElementById('psProEmoji');
+  var elTarifa   = document.getElementById('psProTarifa');
+  var elTarifaBtn= document.getElementById('psProTarifaBtn');
+  var elRating   = document.getElementById('psProRating');
+  if(elNombre)    elNombre.textContent    = nombre;
+  if(elEsp)       elEsp.textContent       = especialidad;
+  if(elEmoji)     elEmoji.textContent     = emoji;
+  if(elTarifa)    elTarifa.textContent    = '$'+_currentPro.tarifa+' USD';
+  if(elTarifaBtn) elTarifaBtn.textContent = 'Reservar y pagar · $'+_currentPro.tarifa+' USD 💳';
+  if(elRating)    elRating.textContent    = '⭐ '+rating+(reviews?' ('+reviews+')':'');
+  goTo('pro-session');
+}
+
+function confirmarReservaStripe(){
+  if(!_currentPro.tarifa){
+    toast('⚠️','No se pudo obtener el precio de la sesión');
+    return;
+  }
+  openStripeCheckout(_currentPro.tarifa, _currentPro.nombre, 'videollamada');
+}
+
 function openProProfile(name){
   toast('👤','Ver perfil de '+name+' (próximamente)');
 }
