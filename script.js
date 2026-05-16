@@ -150,40 +150,18 @@ function initSplashTheme(){
   var isNight = h >= 20 || h < 7;
   var BASE = SUPABASE_URL + '/storage/v1/object/public/velo-assets/';
 
-  // Logo desde Supabase Storage
+  // Logo desde Supabase Storage (PNG con fondo transparente)
   var logoImg = document.getElementById('splashLogoImg');
-  var logoWrap = document.getElementById('splashLogoWrap');
   if(logoImg){
-    var logoSrc = isNight ? BASE+'Logo-nigth.png.PNG' : BASE+'Logo-day.png.PNG';
+    var logoSrc = isNight ? BASE+'IMG_2624.png' : BASE+'IMG_2623.png';
     var logoFallbackTag = document.getElementById('logoData');
     var fallbackSrc = logoFallbackTag ? logoFallbackTag.getAttribute('data-logo') : '';
     logoImg.onerror = function(){ if(fallbackSrc) this.src = fallbackSrc; this.onerror=null; };
     logoImg.src = logoSrc;
-    // Día: multiply elimina fondo blanco sobre fondo claro/dorado
-    // Noche: sin blend mode, usamos contenedor glass para separar el logo del fondo oscuro
-    if(isNight){
-      logoImg.style.mixBlendMode = 'normal';
-      logoImg.style.filter = 'drop-shadow(0 0 18px rgba(255,255,255,.18))';
-      if(logoWrap){
-        logoWrap.style.background = 'rgba(255,255,255,.12)';
-        logoWrap.style.backdropFilter = 'blur(14px)';
-        logoWrap.style.webkitBackdropFilter = 'blur(14px)';
-        logoWrap.style.borderRadius = '24px';
-        logoWrap.style.padding = '14px 18px';
-        logoWrap.style.border = '1px solid rgba(255,255,255,.18)';
-      }
-    } else {
-      logoImg.style.mixBlendMode = 'multiply';
-      logoImg.style.filter = 'none';
-      if(logoWrap){
-        logoWrap.style.background = 'none';
-        logoWrap.style.backdropFilter = 'none';
-        logoWrap.style.webkitBackdropFilter = 'none';
-        logoWrap.style.borderRadius = '0';
-        logoWrap.style.padding = '0';
-        logoWrap.style.border = 'none';
-      }
-    }
+    logoImg.style.mixBlendMode = 'normal';
+    logoImg.style.filter = isNight
+      ? 'drop-shadow(0 2px 18px rgba(255,255,255,.22))'
+      : 'drop-shadow(0 2px 14px rgba(45,106,79,.25))';
   }
 
   // Fondos desde Supabase Storage (con fallback a canvas)
