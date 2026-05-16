@@ -719,15 +719,19 @@ async function showAISummary(){
 }
 
 // ── ADMIN SECRET TAP ─────────────────────────────────────
-var _adminTapCount=0, _adminTapTimer=null;
+var _adminTapCount=0, _adminTapTimer=null, _adminTapLast=0;
 function handleAdminTap(){
+  var now=Date.now();
+  if(now-_adminTapLast<300) return; // debounce: ignora ontouchstart + onclick dobles
+  _adminTapLast=now;
   _adminTapCount++;
   if(_adminTapTimer) clearTimeout(_adminTapTimer);
   if(_adminTapCount>=5){
     _adminTapCount=0;
     goTo('admin-login');
   } else {
-    _adminTapTimer=setTimeout(function(){_adminTapCount=0;},2500);
+    if(_adminTapCount>=3) toast('👑',_adminTapCount+'/5 — seguí tocando el logo');
+    _adminTapTimer=setTimeout(function(){_adminTapCount=0;},3000);
   }
 }
 
