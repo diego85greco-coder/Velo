@@ -905,6 +905,7 @@ function goTo(id){
   if(id==='diary') setTimeout(initDiary,50);
   if(id==='calm') setTimeout(loadCalmData,50);
   if(id==='profile') setTimeout(loadProfileData,100);
+  if(id==='pro-panel-perfil') setTimeout(initProAvailEditor,50);
   // Reset contact form when leaving
   if(id!=='contact'){var f=document.getElementById('contactForm');if(f)f.style.display='none';}
 }
@@ -1557,39 +1558,237 @@ function sendReportPro(){
   showSuc('🛡️','Reporte recibido','Velo investigará el caso de '+(name?name.textContent:'este profesional')+'. Tu identidad es confidencial. Gracias por cuidar la comunidad. 💙');
 }
 // Datos del profesional seleccionado para la reserva
-var _currentPro = {nombre:'', emoji:'👤', tarifa:0, especialidad:'', rating:'', reviews:0};
+// ── SISTEMA DE RESERVAS CON CALENDARIO ───────────────────
+var ALL_SLOTS   = ['08:00','09:00','10:00','11:00','12:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
+var DAY_SHORT   = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+var DAY_FULL    = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+var MONTH_SHORT = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
-function reservarSesion(nombre, emoji, tarifa, especialidad, rating, reviews){
+// Disponibilidad por defecto (índice 0=Lun…6=Dom)
+var _defaultAvail = {
+  0:['09:00','10:00','11:00','15:00','16:00'],
+  1:['09:00','10:00','14:00','15:00'],
+  2:['11:00','15:00','16:00','17:00'],
+  3:['09:00','10:00','11:00'],
+  4:['14:00','15:00','16:00'],
+  5:[], 6:[]
+};
+
+// Perfiles demo — override-ables por datos reales en Supabase/localStorage
+var _proProfiles = {
+  ana:    {nombre:'Dra. Ana Martínez',  emoji:'👩‍⚕️', tarifa:50, especialidad:'Psicóloga clínica · 8 años',   rating:'4.9', reviews:87},
+  carlos: {nombre:'Dr. Carlos Fuentes', emoji:'👨‍⚕️', tarifa:65, especialidad:'Terapeuta familiar · 12 años',  rating:'4.8', reviews:64},
+  lucia:  {nombre:'Lucía Herrera',       emoji:'🧘',   tarifa:35, especialidad:'Coach emocional · 6 años',       rating:'4.7', reviews:42},
+  sofia:  {nombre:'Sofía Navarro',       emoji:'🎨',   tarifa:30, especialidad:'Arte-terapia · 5 años',          rating:'4.8', reviews:31}
+};
+
+function _loadProData(proId){
+  try{
+    var raw = localStorage.getItem('velo_pro_data_'+proId);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {tarifa: (_proProfiles[proId]||{}).tarifa||0, availability: _defaultAvail};
+}
+function _saveProData(proId, data){
+  try{ localStorage.setItem('velo_pro_data_'+proId, JSON.stringify(data)); }catch(e){}
+}
+
+// Estado de la reserva actual
+var _currentPro = {id:'', nombre:'', emoji:'👤', tarifa:0, especialidad:'', rating:'', reviews:0, availability:{}};
+var _selectedBookingDay = null;  // { date:Date, dayOfWeek:0-6, label:'' }
+var _selectedSlot = null;        // '10:00'
+
+function reservarSesion(proId, nombre, emoji, tarifaDefault, especialidad, rating, reviews){
+  var stored = _loadProData(proId);
   _currentPro = {
-    nombre:     nombre     || '',
-    emoji:      emoji      || '👤',
-    tarifa:     parseFloat(tarifa) || 0,
-    especialidad: especialidad || '',
-    rating:     rating     || '5.0',
-    reviews:    reviews    || 0
+    id:           proId,
+    nombre:       nombre        || '',
+    emoji:        emoji         || '👤',
+    tarifa:       stored.tarifa || parseFloat(tarifaDefault) || 0,
+    especialidad: especialidad  || '',
+    rating:       rating        || '5.0',
+    reviews:      reviews       || 0,
+    availability: stored.availability || _defaultAvail
   };
-  // Actualizar pantalla pro-session con datos reales
-  var elNombre   = document.getElementById('psProNombre');
-  var elEsp      = document.getElementById('psProEsp');
-  var elEmoji    = document.getElementById('psProEmoji');
-  var elTarifa   = document.getElementById('psProTarifa');
-  var elTarifaBtn= document.getElementById('psProTarifaBtn');
-  var elRating   = document.getElementById('psProRating');
-  if(elNombre)    elNombre.textContent    = nombre;
-  if(elEsp)       elEsp.textContent       = especialidad;
-  if(elEmoji)     elEmoji.textContent     = emoji;
-  if(elTarifa)    elTarifa.textContent    = '$'+_currentPro.tarifa+' USD';
-  if(elTarifaBtn) elTarifaBtn.textContent = 'Reservar y pagar · $'+_currentPro.tarifa+' USD 💳';
-  if(elRating)    elRating.textContent    = '⭐ '+rating+(reviews?' ('+reviews+')':'');
+  _selectedBookingDay = null;
+  _selectedSlot       = null;
+
+  // Rellenar encabezado
+  var set = function(id, v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+  set('psProNombre', _currentPro.nombre);
+  set('psProEsp',    _currentPro.especialidad);
+  set('psProEmoji',  _currentPro.emoji);
+  set('psProTarifa', '$'+_currentPro.tarifa+' USD');
+  set('psProRating', '⭐ '+_currentPro.rating+(_currentPro.reviews?' ('+_currentPro.reviews+')':''));
+
+  renderBookingDayStrip();
+  _resetBookingBtn();
   goTo('pro-session');
 }
 
-function confirmarReservaStripe(){
-  if(!_currentPro.tarifa){
-    toast('⚠️','No se pudo obtener el precio de la sesión');
-    return;
+function _resetBookingBtn(){
+  var btn = document.getElementById('psProTarifaBtn');
+  if(!btn) return;
+  btn.textContent = 'Elegí un horario para continuar';
+  btn.style.opacity = '.45';
+  btn.style.pointerEvents = 'none';
+}
+
+function renderBookingDayStrip(){
+  var strip = document.getElementById('bookingDayStrip');
+  if(!strip) return;
+  var today = new Date();
+  var html = '';
+  for(var i=0; i<7; i++){
+    var d = new Date(today);
+    d.setDate(today.getDate()+i);
+    var dow = (d.getDay()+6)%7; // 0=Lun…6=Dom
+    var hasSlots = (_currentPro.availability[dow]||[]).length > 0;
+    var label = i===0 ? 'Hoy' : i===1 ? 'Mañana' : DAY_SHORT[dow];
+    var dayNum = d.getDate();
+    var mon = MONTH_SHORT[d.getMonth()];
+    html += '<div onclick="selectBookingDay('+i+')" id="bday-'+i+'" style="'+
+      'flex-shrink:0;width:52px;padding:9px 5px;border-radius:14px;text-align:center;cursor:'+(hasSlots?'pointer':'default')+';'+
+      'background:'+(hasSlots?'rgba(255,255,255,.82)':'rgba(255,255,255,.3)')+';'+
+      'border:1.5px solid '+(hasSlots?'rgba(116,198,157,.2)':'rgba(200,200,200,.2)')+';'+
+      'opacity:'+(hasSlots?'1':'.4')+'">'+
+      '<div style="font-size:9px;font-weight:700;color:var(--sage2);margin-bottom:2px">'+label+'</div>'+
+      '<div style="font-size:17px;font-weight:800;color:var(--ink)">'+dayNum+'</div>'+
+      '<div style="font-size:9px;color:var(--ink5)">'+mon+'</div>'+
+      (hasSlots?'<div style="width:5px;height:5px;border-radius:50%;background:var(--sage2);margin:3px auto 0"></div>':'<div style="height:8px"></div>')+
+    '</div>';
   }
-  openStripeCheckout(_currentPro.tarifa, _currentPro.nombre, 'videollamada');
+  strip.innerHTML = html;
+}
+
+function selectBookingDay(dayOffset){
+  var today = new Date();
+  var d = new Date(today);
+  d.setDate(today.getDate() + dayOffset);
+  var dow = (d.getDay()+6)%7;
+  var slots = (_currentPro.availability[dow]||[]);
+  if(!slots.length){ toast('📅','No hay horarios disponibles este día'); return; }
+
+  _selectedBookingDay = {date:d, dow:dow, offset:dayOffset};
+  _selectedSlot = null;
+
+  // Highlight selected day
+  for(var i=0; i<7; i++){
+    var el = document.getElementById('bday-'+i);
+    if(!el) continue;
+    el.style.background = i===dayOffset ? 'linear-gradient(135deg,var(--sage),var(--sage2))' : 'rgba(255,255,255,.82)';
+    el.style.borderColor = i===dayOffset ? 'transparent' : 'rgba(116,198,157,.2)';
+    var texts = el.querySelectorAll('div');
+    texts.forEach(function(t){ t.style.color = i===dayOffset ? '#fff' : ''; });
+  }
+
+  // Render time slots
+  var ts = document.getElementById('bookingTimeSlots');
+  if(!ts) return;
+  ts.style.display = 'block';
+  var dayLabel = (dayOffset===0?'Hoy':dayOffset===1?'Mañana':DAY_FULL[dow])+', '+d.getDate()+' '+MONTH_SHORT[d.getMonth()];
+  ts.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--ink4);margin-bottom:8px">'+dayLabel+'</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:7px">'+
+    slots.map(function(s){
+      return '<button id="bslot-'+s.replace(':','')+'" onclick="selectTimeSlot(\''+s+'\')" style="'+
+        'padding:9px 14px;border-radius:100px;background:rgba(255,255,255,.9);'+
+        'border:1.5px solid rgba(116,198,157,.25);font-size:13px;font-weight:700;'+
+        'color:var(--sage);cursor:pointer;font-family:Jost,sans-serif">'+s+' hs</button>';
+    }).join('')+
+    '</div>';
+  _resetBookingBtn();
+}
+
+function selectTimeSlot(time){
+  _selectedSlot = time;
+  document.querySelectorAll('#bookingTimeSlots button').forEach(function(b){
+    var isThis = b.id === 'bslot-'+time.replace(':','');
+    b.style.background   = isThis ? 'linear-gradient(135deg,var(--sage),var(--sage2))' : 'rgba(255,255,255,.9)';
+    b.style.color        = isThis ? '#fff' : 'var(--sage)';
+    b.style.borderColor  = isThis ? 'transparent' : 'rgba(116,198,157,.25)';
+  });
+  var btn = document.getElementById('psProTarifaBtn');
+  if(btn){
+    btn.textContent    = 'Reservar '+time+' hs · $'+_currentPro.tarifa+' USD 💳';
+    btn.style.opacity  = '1';
+    btn.style.pointerEvents = 'auto';
+  }
+}
+
+function confirmarReservaStripe(){
+  if(!_currentPro.tarifa){ toast('⚠️','No se pudo obtener el precio'); return; }
+  if(!_selectedSlot)      { toast('📅','Elegí un horario primero');     return; }
+  var slotLabel = _selectedSlot+' hs';
+  if(_selectedBookingDay){
+    var d=_selectedBookingDay.date;
+    slotLabel = DAY_FULL[_selectedBookingDay.dow]+' '+d.getDate()+' '+MONTH_SHORT[d.getMonth()]+' · '+_selectedSlot+' hs';
+  }
+  safeLS('set','velo_booking_slot', slotLabel);
+  openStripeCheckout(_currentPro.tarifa, _currentPro.nombre+' — '+slotLabel, 'videollamada');
+}
+
+// ── EDITOR DE DISPONIBILIDAD (panel pro) ─────────────────
+var _editingAvail = {};
+
+function initProAvailEditor(){
+  var myId = safeLS('get','velo_pro_id') || 'ana';
+  var stored = _loadProData(myId);
+  _editingAvail = JSON.parse(JSON.stringify(stored.availability || _defaultAvail));
+  // Load tarifa
+  var inp = document.getElementById('proTarifaInput');
+  if(inp) inp.value = stored.tarifa || '';
+  renderProAvailEditor();
+}
+
+function renderProAvailEditor(){
+  var el = document.getElementById('proAvailEditor');
+  if(!el) return;
+  var html = '';
+  for(var d=0; d<7; d++){
+    var daySlots = _editingAvail[d] || [];
+    html += '<div style="margin-bottom:10px">'+
+      '<div style="font-size:10px;font-weight:700;color:var(--sage3);margin-bottom:5px">'+DAY_FULL[d]+'</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:5px">'+
+      ALL_SLOTS.map(function(s){
+        var on = daySlots.indexOf(s) >= 0;
+        return '<button onclick="toggleAvailSlot('+d+',\''+s+'\')" id="aslot-'+d+'-'+s.replace(':','')+'" style="'+
+          'padding:5px 10px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;font-family:Jost,sans-serif;'+
+          'background:'+(on?'var(--sage7)':'rgba(255,255,255,.6)')+';'+
+          'border:1.5px solid '+(on?'var(--sage2)':'rgba(200,200,200,.3)')+';'+
+          'color:'+(on?'var(--sage2)':'var(--ink5)')+'">'+s+'</button>';
+      }).join('')+
+      '</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+function toggleAvailSlot(dayNum, time){
+  if(!_editingAvail[dayNum]) _editingAvail[dayNum]=[];
+  var idx = _editingAvail[dayNum].indexOf(time);
+  if(idx>=0) _editingAvail[dayNum].splice(idx,1);
+  else _editingAvail[dayNum].push(time);
+  _editingAvail[dayNum].sort();
+  // Update button style
+  var btn = document.getElementById('aslot-'+dayNum+'-'+time.replace(':',''));
+  if(btn){
+    var on = _editingAvail[dayNum].indexOf(time)>=0;
+    btn.style.background  = on?'var(--sage7)':'rgba(255,255,255,.6)';
+    btn.style.borderColor = on?'var(--sage2)':'rgba(200,200,200,.3)';
+    btn.style.color       = on?'var(--sage2)':'var(--ink5)';
+  }
+}
+
+function saveProAvailability(){
+  var myId = safeLS('get','velo_pro_id') || 'ana';
+  var tarifaInp = document.getElementById('proTarifaInput');
+  var tarifa = tarifaInp ? (parseFloat(tarifaInp.value)||0) : 0;
+  if(!tarifa){ toast('⚠️','Ingresá tu tarifa por sesión'); return; }
+  _saveProData(myId, {tarifa:tarifa, availability:_editingAvail});
+  // Update the demo profile in memory too
+  if(_proProfiles[myId]){
+    _proProfiles[myId].tarifa = tarifa;
+  }
+  toast('✅','Disponibilidad y tarifa guardadas 🌿');
 }
 
 function openProProfile(name){
