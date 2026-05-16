@@ -128,7 +128,7 @@ function sbImageUrl(bucket, path){
 
 // ── INICIALIZAR SUPABASE AL CARGAR ────────────────────────
 document.addEventListener('DOMContentLoaded', _initSupabase);
-window.addEventListener('load', function(){ _initSupabase(); _checkPayPalReturn(); });
+window.addEventListener('load', function(){ _initSupabase(); _checkPayPalReturn(); _checkStripeReturn(); });
 
 // ═══════════════════════════════════════════════════════════
 //  FIN BLOQUE SUPABASE
@@ -2349,6 +2349,61 @@ function _checkPayPalReturn(){
     }
     safeLS('set','velo_pp_pending','');
     // Clean URL without reload
+    try{ history.replaceState(null,'',window.location.pathname); }catch(e){}
+  }catch(e){}
+}
+
+// ── STRIPE CHECKOUT ──────────────────────────────────────
+var STRIPE_PK = 'pk_live_51TXmCcV05dCjGGP2F9YnbPBIantFoxurCpISx86i0DFNFcmM2sovtp5LcV5tOVxI72V4AfgY8sK5GtJVTyYnnI1L00QwkGS6P4';
+var _stripeObj = null;
+function _getStripe(){ if(!_stripeObj && window.Stripe) _stripeObj=Stripe(STRIPE_PK); return _stripeObj; }
+
+var SUPABASE_FN_URL = SUPABASE_URL + '/functions/v1/stripe-checkout';
+
+async function openStripeCheckout(amtUSD, proName, sessionType){
+  toast('💳','Preparando el pago seguro…');
+  try{
+    var baseUrl = window.location.href.split('?')[0];
+    var resp = await fetch(SUPABASE_FN_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json', 'apikey': SUPABASE_ANON, 'Authorization':'Bearer '+SUPABASE_ANON},
+      body: JSON.stringify({
+        amount: amtUSD,
+        proName: proName || '',
+        sessionType: sessionType || 'paid',
+        returnUrl: baseUrl,
+        cancelUrl: baseUrl
+      })
+    });
+    var data = await resp.json();
+    if(data.url){
+      safeLS('set','velo_stripe_pending', JSON.stringify({amt:amtUSD, pro:proName, type:sessionType||'paid'}));
+      window.location.href = data.url;
+    } else {
+      toast('⚠️', data.error || 'Error al conectar con Stripe');
+    }
+  }catch(err){
+    console.error('Stripe checkout error:', err);
+    toast('⚠️','Error de conexión. Intentá de nuevo.');
+  }
+}
+
+function _checkStripeReturn(){
+  try{
+    var params = new URLSearchParams(window.location.search);
+    var status = params.get('stripe');
+    if(!status) return;
+    var pending = JSON.parse(safeLS('get','velo_stripe_pending')||'null');
+    if(status==='ok' && pending){
+      var proName = pending.pro || 'el profesional';
+      addBuzonMsg({id:'stripe-ok-'+Date.now(),tipo:'sistema',icon:'💳',titulo:'¡Pago confirmado!',cuerpo:'Tu pago de $'+pending.amt+' USD para la sesión con '+proName+' fue procesado exitosamente. El monto queda retenido hasta confirmar que la sesión se realizó. 🔒',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
+      toast('✅','¡Pago recibido! La sesión está confirmada 💚');
+      updateBuzonDot(); updateInboxBadge();
+      safeLS('set','velo_stripe_pending','');
+    } else if(status==='cancel'){
+      toast('↩️','Pago cancelado. Tu dinero no fue cobrado.');
+      safeLS('set','velo_stripe_pending','');
+    }
     try{ history.replaceState(null,'',window.location.pathname); }catch(e){}
   }catch(e){}
 }
