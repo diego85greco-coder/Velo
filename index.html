@@ -56,6 +56,19 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
 @keyframes starPulse{0%,100%{opacity:.3}50%{opacity:1}}
 @keyframes logoEntrance{0%{opacity:0;transform:scale(.85) translateY(18px)}100%{opacity:1;transform:scale(1) translateY(0)}}
 @keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes ringPulse{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.05);opacity:1}}
+.logo-glass-ring{position:absolute;inset:-22px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.07) 0%,rgba(255,255,255,.02) 60%,transparent 100%);border:1px solid rgba(255,255,255,.13);box-shadow:0 0 40px rgba(255,255,255,.05),0 0 80px rgba(116,198,157,.09);animation:ringPulse 4s ease-in-out infinite;pointer-events:none}
+@keyframes birdPath1{0%{opacity:0;transform:translate(0,0)}5%{opacity:1}88%{opacity:.8}100%{opacity:0;transform:translate(310px,-65px)}}
+@keyframes birdPath2{0%{opacity:0;transform:translate(0,0) scaleX(-1)}5%{opacity:.85}88%{opacity:.7}100%{opacity:0;transform:translate(-260px,-45px) scaleX(-1)}}
+@keyframes birdPath3{0%{opacity:0;transform:translate(0,0)}5%{opacity:.7}88%{opacity:.55}100%{opacity:0;transform:translate(180px,-85px)}}
+.splash-bird{position:absolute;z-index:3;pointer-events:none;font-size:13px;will-change:transform,opacity}
+@keyframes cloudDriftR{0%{transform:translateX(-20px);opacity:0}15%{opacity:.38}85%{opacity:.3}100%{transform:translateX(20px);opacity:0}}
+@keyframes cloudDriftL{0%{transform:translateX(20px);opacity:0}15%{opacity:.35}85%{opacity:.28}100%{transform:translateX(-20px);opacity:0}}
+.splash-cloud{position:absolute;z-index:3;pointer-events:none;will-change:transform,opacity}
+.ob-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center}
+.ob-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.22);transition:all .3s}
+.ob-dot-a{width:22px;border-radius:100px;background:var(--sage4)}
+@keyframes onboardSlide{0%{opacity:0;transform:translateX(24px)}100%{opacity:1;transform:translateX(0)}}
 @keyframes shootStar{0%{transform:translate(0,0) scaleX(1);opacity:1}100%{transform:translate(-300px,150px) scaleX(.05);opacity:0}}
 @keyframes firefly{0%,100%{opacity:.1;transform:translate(0,0)}25%{opacity:.9}50%{opacity:.3;transform:translate(8px,-12px)}75%{opacity:.7;transform:translate(-5px,8px)}}
 @keyframes waterWave{0%,100%{d:path("M0 10 Q50 0 100 10 Q150 20 200 10 Q250 0 300 10 Q350 20 393 10")}50%{d:path("M0 10 Q50 20 100 10 Q150 0 200 10 Q250 20 300 10 Q350 0 393 10")}}
@@ -638,16 +651,32 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
     <!-- Partículas animadas encima del fondo -->
     <div id="splashParticleLayer" style="position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden"></div>
 
+    <!-- Birds (day only) -->
+    <div id="splashBirds" style="display:none;position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden">
+      <div class="splash-bird" style="top:30%;left:15%;animation:birdPath1 9s ease-in-out 1.2s infinite">🐦</div>
+      <div class="splash-bird" style="top:25%;left:70%;animation:birdPath2 11s ease-in-out 3s infinite">🐦</div>
+      <div class="splash-bird" style="top:38%;left:40%;animation:birdPath3 13s ease-in-out 5.5s infinite">🐦</div>
+    </div>
+    <!-- Clouds -->
+    <div id="splashClouds" style="position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden">
+      <div class="splash-cloud" style="top:12%;left:8%;font-size:28px;animation:cloudDriftR 18s ease-in-out 0s infinite">☁️</div>
+      <div class="splash-cloud" style="top:18%;right:6%;font-size:22px;animation:cloudDriftL 22s ease-in-out 4s infinite">☁️</div>
+      <div class="splash-cloud" style="top:8%;left:45%;font-size:18px;animation:cloudDriftR 25s ease-in-out 9s infinite">☁️</div>
+    </div>
     <!-- Logo centrado -->
-    <div style="position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;pointer-events:none;padding-top:28%">
-      <div style="animation:logoFloat 5s ease-in-out infinite,logoEntrance 1.8s ease both">
-        <img id="splashLogoImg" style="height:110px;width:auto;display:block;mix-blend-mode:multiply" alt="Velo">
+    <div style="position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;padding-top:28%">
+      <div onclick="handleAdminTap()" style="animation:logoFloat 5s ease-in-out infinite,logoEntrance 1.8s ease both;cursor:pointer;-webkit-tap-highlight-color:transparent">
+        <div style="position:relative;display:inline-flex;align-items:center;justify-content:center">
+          <div class="logo-glass-ring"></div>
+          <img id="splashLogoImg" style="height:110px;width:auto;display:block;mix-blend-mode:multiply;position:relative;z-index:2" alt="Velo">
+        </div>
       </div>
+      <div id="splashTagline" style="margin-top:16px;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.5);font-family:'Jost',sans-serif;font-weight:300;animation:logoEntrance 2.4s ease both;pointer-events:none">Tu espacio seguro</div>
     </div>
 
     <!-- Botones glassmorphism -->
     <div style="position:absolute;bottom:0;left:0;right:0;z-index:10;padding:0 40px 34px;display:flex;flex-direction:column;gap:11px">
-      <button onclick="splashBtnTap(this);goTo('register')" class="splash-gbtn splash-gbtn-primary">
+      <button onclick="splashBtnTap(this);obReset();goTo('onboarding')" class="splash-gbtn splash-gbtn-primary">
         <span class="sbtn-icon">✦</span><span class="sbtn-label">Registrarme</span>
       </button>
       <button onclick="splashBtnTap(this);openEntrarModal()" class="splash-gbtn splash-gbtn-secondary">
@@ -3492,6 +3521,78 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
       </div>
     </div>
   </div>
+<!-- ══════════════════════════════════════════ ONBOARDING ══════════ -->
+<div class="sc" id="onboarding" style="background:linear-gradient(160deg,#0e1f14 0%,#081510 100%);overflow:hidden">
+  <!-- Slide 0: What is Velo -->
+  <div id="ob-slide-0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center;animation:onboardSlide .35s ease both">
+    <div style="font-size:62px;margin-bottom:18px">🌙</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:30px;color:var(--sage4);margin-bottom:8px">Bienvenido/a a Velo</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;max-width:300px">Tu espacio seguro para el bienestar emocional. Un lugar donde encontrás apoyo real, comunidad y herramientas para tu salud mental.</div>
+    <div style="margin-top:22px;padding:14px 20px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.15);border-radius:18px;font-size:12px;color:rgba(116,198,157,.75);line-height:1.6;max-width:300px">✦ Anónimo cuando querés · Seguro siempre · Sin juicios</div>
+  </div>
+  <!-- Slide 1: Guardianes -->
+  <div id="ob-slide-1" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center;animation:onboardSlide .35s ease both">
+    <div style="font-size:62px;margin-bottom:18px">💚</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:28px;color:var(--sage4);margin-bottom:8px">Guardianes de Paz</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;max-width:300px">Personas de la comunidad que ofrecen escucha activa y acompañamiento. Cuando necesitás alguien que te escuche sin juzgar.</div>
+    <div style="margin-top:18px;display:flex;flex-direction:column;gap:9px;width:100%;max-width:300px">
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">🕊️</span><span style="font-size:12px;color:rgba(255,255,255,.65);text-align:left">Escucha activa y contención emocional</span></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">🔒</span><span style="font-size:12px;color:rgba(255,255,255,.65);text-align:left">Podés ser anónimo/a si querés</span></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">⭐</span><span style="font-size:12px;color:rgba(255,255,255,.65);text-align:left">Calificá cada sesión para mejorar la comunidad</span></div>
+    </div>
+  </div>
+  <!-- Slide 2: Círculos de Paz -->
+  <div id="ob-slide-2" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center;animation:onboardSlide .35s ease both">
+    <div style="font-size:62px;margin-bottom:18px">🌊</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:28px;color:var(--sage4);margin-bottom:8px">Círculos de Paz</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;max-width:300px">Grupos de apoyo temáticos donde compartir experiencias con personas que atraviesan situaciones similares.</div>
+    <div style="margin-top:18px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:300px">
+      <span style="padding:7px 14px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:100px;font-size:12px;color:var(--sage4)">💔 Duelo</span>
+      <span style="padding:7px 14px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:100px;font-size:12px;color:var(--sage4)">😰 Ansiedad</span>
+      <span style="padding:7px 14px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:100px;font-size:12px;color:var(--sage4)">🌱 Crecimiento</span>
+      <span style="padding:7px 14px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:100px;font-size:12px;color:var(--sage4)">🤝 Relaciones</span>
+      <span style="padding:7px 14px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:100px;font-size:12px;color:var(--sage4)">🧠 Salud mental</span>
+    </div>
+  </div>
+  <!-- Slide 3: Profesionales -->
+  <div id="ob-slide-3" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center;animation:onboardSlide .35s ease both">
+    <div style="font-size:62px;margin-bottom:18px">🌿</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:28px;color:var(--sage4);margin-bottom:8px">Profesionales</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;max-width:300px">Psicólogos, terapeutas y coaches verificados disponibles para sesiones individuales — algunas incluso gratuitas con Vela por Ti.</div>
+    <div style="margin-top:20px;padding:16px 18px;background:rgba(212,168,100,.07);border:1px solid rgba(212,168,100,.15);border-radius:18px;max-width:300px">
+      <div style="font-size:13px;font-weight:700;color:var(--gold2);margin-bottom:6px">✨ Vela por Ti</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.6">Sesiones solidarias gratuitas para quienes más lo necesitan, financiadas por la comunidad.</div>
+    </div>
+  </div>
+  <!-- Slide 4: Tu espacio íntimo -->
+  <div id="ob-slide-4" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center;animation:onboardSlide .35s ease both">
+    <div style="font-size:62px;margin-bottom:18px">📔</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:28px;color:var(--sage4);margin-bottom:8px">Tu espacio íntimo</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;max-width:300px">Un rincón solo tuyo para registrar emociones, escribir en tu diario, practicar respiración y recibir análisis de tu bienestar con IA.</div>
+    <div style="margin-top:18px;display:flex;flex-direction:column;gap:9px;width:100%;max-width:300px">
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">📔</span><span style="font-size:12px;color:rgba(255,255,255,.65);text-align:left">Diario íntimo encriptado</span></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">🌬️</span><span style="font-size:12px;color:rgba(255,255,255,.65);text-align:left">Ejercicios de respiración y calma</span></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.07)"><span style="font-size:18px">🤖</span><span style="font-size:12px;color:rgba(255,255,255,.65);text-align:left">Análisis emocional con IA mensual</span></div>
+    </div>
+  </div>
+  <!-- Progress dots -->
+  <div style="position:absolute;bottom:120px;left:0;right:0;display:flex;justify-content:center;gap:7px;z-index:5">
+    <div class="ob-dot ob-dot-a" id="ob-dot-0"></div>
+    <div class="ob-dot" id="ob-dot-1"></div>
+    <div class="ob-dot" id="ob-dot-2"></div>
+    <div class="ob-dot" id="ob-dot-3"></div>
+    <div class="ob-dot" id="ob-dot-4"></div>
+  </div>
+  <!-- Buttons -->
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:0 28px 36px;display:flex;flex-direction:column;gap:10px;z-index:5">
+    <button id="obNextBtn" onclick="obNext()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;box-shadow:0 4px 20px rgba(45,106,79,.35)">Siguiente →</button>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <button id="obBackBtn" onclick="obBack()" style="visibility:hidden;background:none;border:none;color:rgba(255,255,255,.4);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">← Atrás</button>
+      <button onclick="obSkip()" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;font-family:'Jost',sans-serif">Saltar →</button>
+    </div>
+  </div>
+</div>
+
 <div class="sc" id="admin-login" style="background:linear-gradient(160deg,#0C1A11,#0A1508)">
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px 28px">
       <div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,rgba(116,198,157,.2),rgba(116,198,157,.08));border:1.5px solid rgba(116,198,157,.25);display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:18px">👑</div>
@@ -3551,29 +3652,18 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
 
       <!-- TAB: DASHBOARD -->
       <div id="atab-dash">
-        <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">Alertas activas</div>
-        <div class="admin-alert">
-          <div style="font-size:17px;flex-shrink:0">🚩</div>
-          <div style="flex:1"><div class="admin-alert-t">Reporte de contenido · Feed</div><div class="admin-alert-s">@anon_882 reportado 3 veces por lenguaje ofensivo</div>
-            <div style="display:flex;gap:6px;margin-top:7px">
-              <button class="a-btn-g" onclick="toast('✅','Resuelto')">Resolver</button>
-              <button class="a-btn-r" onclick="toast('🚫','Cuenta suspendida')">Suspender</button>
-            </div>
-          </div>
+        <!-- IA Moderation queue -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.5)">Cola de moderación IA</div>
+          <div id="adminQueueBadge" style="display:none;min-width:18px;height:18px;background:rgba(192,48,40,.75);border-radius:100px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center;padding:0 5px">0</div>
         </div>
+        <div id="adminQueueList"><div style="text-align:center;padding:14px;font-size:12px;color:rgba(116,198,157,.35)">Sin alertas pendientes ✓</div></div>
+        <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;margin-top:12px">Alertas del sistema</div>
         <div class="admin-alert">
           <div style="font-size:17px;flex-shrink:0">🕊️</div>
           <div style="flex:1"><div class="admin-alert-t">3 solicitudes Vela por ti pendientes</div><div class="admin-alert-s">Usuarios esperando aprobación de sesión gratuita</div>
             <div style="display:flex;gap:6px;margin-top:7px">
               <button class="a-btn-g" onclick="goTo('admin');adminTab(document.getElementById('atab-btn-pros'),'atab-pros')">Revisar</button>
-            </div>
-          </div>
-        </div>
-        <div class="admin-alert">
-          <div style="font-size:17px;flex-shrink:0">🎙️</div>
-          <div style="flex:1"><div class="admin-alert-t">2 podcasts pendientes de revisión</div><div class="admin-alert-s">Audios subidos en las últimas 24hs esperando aprobación</div>
-            <div style="display:flex;gap:6px;margin-top:7px">
-              <button class="a-btn-g" onclick="adminTab(document.getElementById('atab-btn-content'),'atab-content')">Revisar</button>
             </div>
           </div>
         </div>
@@ -4420,11 +4510,17 @@ function initSplashTheme(){
   var bgDay    = document.getElementById('splashBgDay');
   var bgNight  = document.getElementById('splashBgNight');
 
+  var birds = document.getElementById('splashBirds');
+  var clouds = document.getElementById('splashClouds');
   if(isNight){
     if(bgNight && domNight){ bgNight.src = domNight.src; bgNight.style.opacity = '1'; }
+    if(birds) birds.style.display='none';
+    if(clouds) clouds.style.opacity='.4';
     buildParticlesNight();
   } else {
     if(bgDay && domDay){ bgDay.src = domDay.src; bgDay.style.opacity = '1'; }
+    if(birds) birds.style.display='block';
+    if(clouds) clouds.style.opacity='1';
     buildParticlesDay();
   }
 }
@@ -4785,7 +4881,7 @@ function finishRegister(){
 }
 
 // Nav — include register + groups in noNav = false (show nav), but not for register
-var noNav=['splash','guardian-chat','help-form','login-user','login-pro','pro-reg','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending'];
+var noNav=['splash','onboarding','guardian-chat','help-form','login-user','login-pro','pro-reg','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending'];
 
 // ── MOOD CHECK-IN ────────────────────────────────────────
 var todayMood=null;
@@ -4949,24 +5045,121 @@ async function showAISummary(){
   document.getElementById('aiContent').style.display='block';
 }
 
-// ── AI CONTENT MODERATION (feed posts) ──────────────────
+// ── ADMIN SECRET TAP ─────────────────────────────────────
+var _adminTapCount=0, _adminTapTimer=null;
+function handleAdminTap(){
+  _adminTapCount++;
+  if(_adminTapTimer) clearTimeout(_adminTapTimer);
+  if(_adminTapCount>=5){
+    _adminTapCount=0;
+    goTo('admin-login');
+  } else {
+    _adminTapTimer=setTimeout(function(){_adminTapCount=0;},2500);
+  }
+}
+
+// ── ADMIN MODERATION QUEUE ───────────────────────────────
+var adminReportQueue=[];
+var _adminReportId=0;
+function flagForAdmin(texto, categoria, detalles){
+  var report={
+    id:'rep-'+(++_adminReportId),
+    texto:texto,
+    categoria:categoria,
+    detalles:detalles||'',
+    fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}),
+    resuelto:false
+  };
+  adminReportQueue.unshift(report);
+  renderAdminQueue();
+}
+function resolveAdminReport(id){
+  for(var i=0;i<adminReportQueue.length;i++){
+    if(adminReportQueue[i].id===id){adminReportQueue[i].resuelto=true;break;}
+  }
+  renderAdminQueue();
+  toast('✅','Reporte resuelto');
+}
+function renderAdminQueue(){
+  var el=document.getElementById('adminQueueList');
+  var badge=document.getElementById('adminQueueBadge');
+  var pending=adminReportQueue.filter(function(r){return!r.resuelto;});
+  if(badge){badge.textContent=pending.length;badge.style.display=pending.length>0?'flex':'none';}
+  if(!el) return;
+  if(!pending.length){el.innerHTML='<div style="text-align:center;padding:14px;font-size:12px;color:rgba(116,198,157,.35)">Sin alertas pendientes ✓</div>';return;}
+  el.innerHTML=pending.map(function(r){
+    var col=r.categoria==='crisis'?'#F87070':r.categoria==='abuso'?'#FF9C5B':'#FFD859';
+    var ic=r.categoria==='crisis'?'🆘':r.categoria==='abuso'?'🚩':'⚠️';
+    return '<div class="admin-alert" style="border-left:3px solid '+col+'">'+
+      '<div style="font-size:17px;flex-shrink:0">'+ic+'</div>'+
+      '<div style="flex:1">'+
+        '<div class="admin-alert-t">'+r.categoria.toUpperCase()+' · '+r.fecha+'</div>'+
+        '<div class="admin-alert-s" style="margin-top:3px;font-style:italic">"'+r.texto.slice(0,80)+(r.texto.length>80?'…':'')+'"</div>'+
+        (r.detalles?'<div style="font-size:10px;color:rgba(255,210,100,.65);margin-top:2px">'+r.detalles+'</div>':'')+
+        '<div style="display:flex;gap:6px;margin-top:7px">'+
+          '<button class="a-btn-g" onclick="resolveAdminReport(\''+r.id+'\')">Resolver</button>'+
+          '<button class="a-btn-r" onclick="toast(\'🚫\',\'Contenido bloqueado\');resolveAdminReport(\''+r.id+'\')">Bloquear</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+// ── AI CONTENT MODERATION (enhanced) ────────────────────
 async function moderateContent(text){
-  // Simple keyword check first (fast, no API)
-  var dangerous=['suicidio','matarme','quiero morir','no quiero vivir','hacerme daño','cortarme'];
-  var isAlert=dangerous.some(function(k){ return text.toLowerCase().indexOf(k) >= 0; });
-  if(isAlert){
-    // Show SOS immediately
+  var t=text.toLowerCase();
+  var crisis=['suicidio','matarme','quiero morir','no quiero vivir','hacerme daño','cortarme','acabar con mi vida','quitarme la vida'];
+  if(crisis.some(function(k){return t.indexOf(k)>=0;})){
     openModal('sosModal');
     toast('🆘','Detectamos algo importante. Estamos aquí contigo.');
+    flagForAdmin(text,'crisis','Detección automática: palabras de crisis/suicidio');
     return false;
   }
-  var forbidden=['dato bancario','número de tarjeta','contraseña','instagram','whatsapp','teléfono','publicidad','ventas'];
-  var isForb=forbidden.some(function(k){ return text.toLowerCase().indexOf(k) >= 0; });
-  if(isForb){
-    toast('⚠️','Este contenido podría ir contra los términos de Velo. Por favor revisá las normas de la comunidad.');
+  var abuso=['te voy a matar','te voy a encontrar','me las vas a pagar','eres una puta','eres un puto','maricón','perra','prostituta','escoria','basura de persona'];
+  if(abuso.some(function(k){return t.indexOf(k)>=0;})){
+    toast('🚫','Contenido inapropiado detectado. No toleramos el acoso ni el odio en Velo.');
+    flagForAdmin(text,'abuso','Detección automática: lenguaje de acoso/odio');
     return false;
   }
-  return true; // Approved
+  var sexual=['foto de ti','mándame una foto','foto desnuda','sexo contigo','qué buena estás','qué bueno estás','te deseo mucho'];
+  if(sexual.some(function(k){return t.indexOf(k)>=0;})){
+    toast('⚠️','Este contenido podría ir contra los términos de Velo.');
+    flagForAdmin(text,'abuso','Detección automática: posible contenido sexual/predatorio');
+    return false;
+  }
+  var spam=['dato bancario','número de tarjeta','instagram.com','wa.me','whatsapp.com','compra ahora','oferta especial','link de pago'];
+  if(spam.some(function(k){return t.indexOf(k)>=0;})){
+    toast('⚠️','No se permite compartir datos personales o enlaces externos en Velo.');
+    flagForAdmin(text,'spam','Detección automática: posible spam o datos privados');
+    return false;
+  }
+  return true;
+}
+
+// ── ONBOARDING ───────────────────────────────────────────
+var _obSlide=0;
+var _obTotal=5;
+function obReset(){_obSlide=0;setTimeout(_obRenderSlide,50);}
+function obNext(){
+  if(_obSlide<_obTotal-1){_obSlide++;_obRenderSlide();}
+  else{_obSlide=0;goTo('register');}
+}
+function obBack(){if(_obSlide>0){_obSlide--;_obRenderSlide();}}
+function obSkip(){_obSlide=0;goTo('register');}
+function _obRenderSlide(){
+  for(var i=0;i<_obTotal;i++){
+    var d=document.getElementById('ob-dot-'+i);
+    if(d){d.className='ob-dot'+(_obSlide===i?' ob-dot-a':'');}
+    var sl=document.getElementById('ob-slide-'+i);
+    if(sl){
+      if(i===_obSlide){sl.style.display='flex';sl.style.animation='none';void sl.offsetWidth;sl.style.animation='onboardSlide .35s ease both';}
+      else sl.style.display='none';
+    }
+  }
+  var btn=document.getElementById('obNextBtn');
+  if(btn)btn.textContent=_obSlide===_obTotal-1?'Comenzar 🌿':'Siguiente →';
+  var back=document.getElementById('obBackBtn');
+  if(back)back.style.visibility=_obSlide>0?'visible':'hidden';
 }
 
 // ── CUSTOM DONATION ──────────────────────────────────────
@@ -5041,6 +5234,7 @@ function goTo(id){
   if(id==='home'){
     var shown=safeLS('get','velo_banner_shown');
   }
+  if(id==='onboarding') setTimeout(obReset,30);
   if(id==='profile') setTimeout(checkMonthlyDonorUI,50);
   if(id==='bottle') setTimeout(renderBottleWall,50);
   if(id==='help') setTimeout(renderSolicitudes,50);
@@ -6200,19 +6394,22 @@ function sendBottle(){
   var txt=document.getElementById('bottleText');
   if(!txt||!txt.value.trim()){toast('🍾','Escribí algo antes de lanzar la botella');return;}
   var msg=txt.value.trim();
-  var isAnon=isIncognitoActive();
-  bottleWall.unshift({
-    id:'b-'+Date.now(),
-    emoji:isAnon?'🕶️':'🍾',
-    msg:msg,
-    author:isAnon?'Anonima':getDisplayName(),
-    time:'ahora',
-    answered:false
+  moderateContent(msg).then(function(ok){
+    if(!ok) return;
+    var isAnon=isIncognitoActive();
+    bottleWall.unshift({
+      id:'b-'+Date.now(),
+      emoji:isAnon?'🕶️':'🍾',
+      msg:msg,
+      author:isAnon?'Anonima':getDisplayName(),
+      time:'ahora',
+      answered:false
+    });
+    closeBottleWrite();
+    txt.value='';
+    renderBottleWall();
+    showSuc('🍾','Botella lanzada!',isAnon?'Lanzada en modo incognito. Nadie sabra que es tuya.':'Tu botella fue lanzada al mar de Velo.');
   });
-  closeBottleWrite();
-  txt.value='';
-  renderBottleWall();
-  showSuc('🍾','Botella lanzada!',isAnon?'Lanzada en modo incognito. Nadie sabra que es tuya.':'Tu botella fue lanzada al mar de Velo.');
 }
 
 // ── URGENCY SELECTOR ──────────────────────────────────────
@@ -6827,20 +7024,23 @@ function togHelpAnon(){
 function publicarSolicitud(){
   var msgEl=document.getElementById('helpMsg');
   var msg=msgEl?msgEl.value.trim():'';
-  if(!msg){toast('Escribi un mensaje');return;}
-  var isAnon=isIncognitoActive()||_helpAnonActivo;
-  solicitudesActivas.unshift({
-    id:'sol-'+Date.now(),
-    emoji:isAnon?'🕶️':'😔',
-    nombre:isAnon?'Anonima':getDisplayName(),
-    anonimo:isAnon,
-    tema:_helpTopicSel||'General',
-    msg:msg,
-    tiempo:'ahora'
+  if(!msg){toast('✍️','Escribí un mensaje');return;}
+  moderateContent(msg).then(function(ok){
+    if(!ok) return;
+    var isAnon=isIncognitoActive()||_helpAnonActivo;
+    solicitudesActivas.unshift({
+      id:'sol-'+Date.now(),
+      emoji:isAnon?'🕶️':'😔',
+      nombre:isAnon?'Anonima':getDisplayName(),
+      anonimo:isAnon,
+      tema:_helpTopicSel||'General',
+      msg:msg,
+      tiempo:'ahora'
+    });
+    closeHelpSheet();
+    renderSolicitudes();
+    toast(isAnon?'🕶️':'✅',isAnon?'Publicado en modo incógnito':'Tu solicitud está en el muro');
   });
-  closeHelpSheet();
-  renderSolicitudes();
-  toast(isAnon?'Publicado en modo incognito':'Tu solicitud esta en el muro');
 }
 function aceptarAyuda(solId){
   var sol=null;
