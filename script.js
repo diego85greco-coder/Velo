@@ -549,7 +549,7 @@ function finishRegister(){
 }
 
 // Nav — include register + groups in noNav = false (show nav), but not for register
-var noNav=['splash','onboarding','pro-onboarding','guardian-chat','help-form','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending'];
+var noNav=['splash','onboarding','pro-onboarding','guardian-chat','guardian-detail','post-chat','help-form','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','pro-session','pro-session-room','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending','contact','vela'];
 
 // ── MOOD CHECK-IN ────────────────────────────────────────
 var todayMood=null;
@@ -998,6 +998,17 @@ function setStatus(s){
   var pd=document.getElementById('profileDot');
   if(pd)pd.className='profile-av-st '+dotC[s];
   toast('✅',labels[s]+' como guardián');
+}
+function togSt(){
+  var el=document.getElementById('profileStatusTag');
+  if(!el) return;
+  var states=[{label:'🟢 Disponible',key:'active'},{label:'🟡 Ocupado/a',key:'busy'},{label:'⭕ No disponible',key:'off'}];
+  var cur=el.getAttribute('data-st')||'active';
+  var idx=states.findIndex(function(s){return s.key===cur;});
+  var next=states[(idx+1)%states.length];
+  el.textContent=next.label;
+  el.setAttribute('data-st',next.key);
+  setStatus(next.key);
 }
 function setSt(s){
   var map={a:'active',b:'busy',o:'off'};
