@@ -152,13 +152,38 @@ function initSplashTheme(){
 
   // Logo desde Supabase Storage
   var logoImg = document.getElementById('splashLogoImg');
+  var logoWrap = document.getElementById('splashLogoWrap');
   if(logoImg){
-    var logoSrc = isNight ? BASE+'logo-night.png' : BASE+'logo-day.png';
+    var logoSrc = isNight ? BASE+'Logo-nigth.png.PNG' : BASE+'Logo-day.png.PNG';
     var logoFallbackTag = document.getElementById('logoData');
     var fallbackSrc = logoFallbackTag ? logoFallbackTag.getAttribute('data-logo') : '';
     logoImg.onerror = function(){ if(fallbackSrc) this.src = fallbackSrc; this.onerror=null; };
     logoImg.src = logoSrc;
-    logoImg.style.mixBlendMode = isNight ? 'screen' : 'multiply';
+    // Día: multiply elimina fondo blanco sobre fondo claro/dorado
+    // Noche: sin blend mode, usamos contenedor glass para separar el logo del fondo oscuro
+    if(isNight){
+      logoImg.style.mixBlendMode = 'normal';
+      logoImg.style.filter = 'drop-shadow(0 0 18px rgba(255,255,255,.18))';
+      if(logoWrap){
+        logoWrap.style.background = 'rgba(255,255,255,.12)';
+        logoWrap.style.backdropFilter = 'blur(14px)';
+        logoWrap.style.webkitBackdropFilter = 'blur(14px)';
+        logoWrap.style.borderRadius = '24px';
+        logoWrap.style.padding = '14px 18px';
+        logoWrap.style.border = '1px solid rgba(255,255,255,.18)';
+      }
+    } else {
+      logoImg.style.mixBlendMode = 'multiply';
+      logoImg.style.filter = 'none';
+      if(logoWrap){
+        logoWrap.style.background = 'none';
+        logoWrap.style.backdropFilter = 'none';
+        logoWrap.style.webkitBackdropFilter = 'none';
+        logoWrap.style.borderRadius = '0';
+        logoWrap.style.padding = '0';
+        logoWrap.style.border = 'none';
+      }
+    }
   }
 
   // Fondos desde Supabase Storage (con fallback a canvas)
@@ -171,7 +196,7 @@ function initSplashTheme(){
     if(bgNight){
       bgNight.onerror = function(){ this.style.display='none'; buildParticlesNight(); };
       bgNight.onload  = function(){ this.style.opacity='1'; };
-      bgNight.src = BASE+'bg-night.jpg';
+      bgNight.src = BASE+'bg-nigth.jpg.PNG';
     }
     if(birds) birds.style.display='none';
     if(clouds) clouds.style.opacity='.4';
@@ -180,7 +205,7 @@ function initSplashTheme(){
     if(bgDay){
       bgDay.onerror = function(){ this.style.display='none'; buildParticlesDay(); };
       bgDay.onload  = function(){ this.style.opacity='1'; };
-      bgDay.src = BASE+'bg-day.jpg';
+      bgDay.src = BASE+'bg-day.jpg.PNG';
     }
     if(birds) birds.style.display='block';
     if(clouds) clouds.style.opacity='1';
