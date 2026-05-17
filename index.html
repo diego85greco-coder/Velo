@@ -1824,7 +1824,10 @@
           <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--sage3);margin-bottom:6px">MI PLAN</div>
           <div id="profilePlanChip" style="font-size:12px;font-weight:700;color:var(--ink4)">Velo Free</div>
         </div>
-        <button id="profilePlanBtn" onclick="openPlanModal('profile')" style="padding:7px 14px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Ver Velo Plus →</button>
+        <div id="profilePlanActions" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <button id="profilePlanBtn" onclick="openPlanModal('profile')" style="padding:7px 14px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Ver Velo Plus →</button>
+          <button id="profileCancelBtn" onclick="cancelPlusSubscription()" style="display:none;background:none;border:none;color:var(--ink5);font-size:10px;cursor:pointer;font-family:'Jost',sans-serif;padding:2px 4px;text-decoration:underline">Cancelar suscripción</button>
+        </div>
       </div>
 
       <!-- ── INSIGNIAS ── -->
@@ -3725,6 +3728,15 @@
 
       <!-- TAB: PAGOS -->
       <div id="atab-pagos" style="display:none">
+        <!-- ── SUSCRIPCIONES VELO PLUS ── -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">Suscripciones Velo Plus — estado actual</div>
+        <div id="adminSubStats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+          <!-- dynamically rendered by renderAdminSubStats() -->
+        </div>
+        <div id="adminSubCancelled" style="margin-bottom:14px"></div>
+        <div style="padding:10px 12px;background:rgba(116,198,157,.07);border:1.5px solid rgba(116,198,157,.18);border-radius:14px;margin-bottom:16px;font-size:11px;color:rgba(116,198,157,.75);line-height:1.7">
+          💚 Las suscripciones <b>Velo Plus</b> financian sesiones solidarias, mantenimiento de la plataforma y acceso gratuito para personas sin recursos. <b>Cada $2.99 sostiene la comunidad.</b>
+        </div>
         <!-- Flujo info -->
         <div style="padding:11px;background:rgba(212,168,100,.08);border:1.5px solid rgba(212,168,100,.2);border-radius:14px;margin-bottom:12px;font-size:11px;color:rgba(212,168,100,.8);line-height:1.6">
           💡 <b>Flujo escrow:</b> Usuario paga → Stripe retiene fondos → Profesional marca sesión completada → Velo aprueba → 80% al profesional vía Stripe dashboard.

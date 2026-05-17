@@ -2287,6 +2287,7 @@ function adminTab(btn, tabId){
   if(tabId==='atab-msg') setTimeout(renderAdminContacts,50);
   if(tabId==='atab-solidarias') setTimeout(renderFreeSessions,50);
   if(tabId==='atab-wellness') setTimeout(renderBadgeCounts,50);
+  if(tabId==='atab-pagos') setTimeout(renderAdminSubStats,50);
 }
 function filterAdminUsers(el, filter){
   var p = el.parentElement;
@@ -3643,7 +3644,8 @@ function openPlanModal(trigger){
   }
   if(cta){
     if(isPlus){
-      cta.innerHTML = '<div style="text-align:center;padding:10px;background:var(--sage7);border-radius:14px;font-size:12px;font-weight:700;color:var(--sage2)">💎 Ya sos suscriptor/a de Velo Plus. ¡Gracias por apoyar la comunidad! 💚</div>';
+      cta.innerHTML = '<div style="text-align:center;padding:10px;background:var(--sage7);border-radius:14px;font-size:12px;font-weight:700;color:var(--sage2);margin-bottom:8px">💎 Ya sos suscriptor/a de Velo Plus. ¡Gracias por apoyar la comunidad! 💚</div>'+
+        '<div style="text-align:center"><button onclick="cancelPlusSubscription()" style="background:none;border:none;color:var(--ink5);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif;text-decoration:underline">Cancelar suscripción</button></div>';
     } else {
       cta.innerHTML = '<button onclick="subscribePremiumUser()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;margin-bottom:8px">Suscribirme a Velo Plus — $2.99/mes 💎</button><div style="text-align:center;font-size:10px;color:var(--ink5)">Cancelás cuando quieras · Pago seguro via PayPal 🔒</div>';
     }
@@ -3667,6 +3669,63 @@ function updatePlanBadge(){
     btn.style.border = '1.5px solid rgba(116,198,157,.2)';
     if(ico) ico.textContent = '💎';
     if(lbl) lbl.textContent = 'Plus';
+  }
+}
+
+// ── CANCEL SUBSCRIPTION ───────────────────────────────────
+function cancelPlusSubscription(){
+  if(!confirm('¿Seguro que querés cancelar Velo Plus?\n\nTu suscripción pasará a Velo Free y perderás el acceso ilimitado. Las personas que ayudás con tu $2.99/mes dependen de vos. 💙')) return;
+  safeLS('set','velo_premium_user','false');
+  var cancelled = JSON.parse(safeLS('get','velo_cancelled_subs')||'[]');
+  cancelled.push({date: new Date().toISOString(), plan:'plus'});
+  safeLS('set','velo_cancelled_subs', JSON.stringify(cancelled));
+  closeModal('planModal');
+  updatePlanBadge();
+  var chip = document.getElementById('profilePlanChip');
+  var planBtnEl = document.getElementById('profilePlanBtn');
+  var cancelBtnEl = document.getElementById('profileCancelBtn');
+  if(chip) chip.innerHTML = '<span style="font-size:12px;font-weight:600;color:var(--ink4)">Velo Free</span>';
+  if(planBtnEl){ planBtnEl.style.display = ''; planBtnEl.textContent = 'Ver Velo Plus →'; }
+  if(cancelBtnEl) cancelBtnEl.style.display = 'none';
+  showSuc('🙏','Suscripción cancelada','Volviste al plan Velo Free. Gracias por haber formado parte de la comunidad Plus. Tu apoyo ayudó a muchas personas. Si algún día querés volver, aquí estaremos. 💙');
+}
+
+// ── ADMIN: SUBSCRIPTION STATS ─────────────────────────────
+function renderAdminSubStats(){
+  var statsEl = document.getElementById('adminSubStats');
+  var cancelledEl = document.getElementById('adminSubCancelled');
+  if(!statsEl) return;
+  var isPlus = isPremiumUser();
+  var freeCount = isPlus ? 0 : 1;
+  var plusCount = isPlus ? 1 : 0;
+  var cancelled = JSON.parse(safeLS('get','velo_cancelled_subs')||'[]');
+  var cancelledCount = cancelled.length;
+  statsEl.innerHTML =
+    '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 8px;text-align:center">'+
+      '<div style="font-size:22px;font-weight:800;color:rgba(255,255,255,.8)">'+freeCount+'</div>'+
+      '<div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.4);margin-top:3px">Velo Free</div>'+
+    '</div>'+
+    '<div style="background:linear-gradient(135deg,rgba(116,198,157,.15),rgba(116,198,157,.08));border:1px solid rgba(116,198,157,.3);border-radius:14px;padding:12px 8px;text-align:center">'+
+      '<div style="font-size:22px;font-weight:800;color:var(--sage2)">'+plusCount+'</div>'+
+      '<div style="font-size:9px;font-weight:700;color:rgba(116,198,157,.6);margin-top:3px">💎 Velo Plus</div>'+
+    '</div>'+
+    '<div style="background:rgba(200,80,80,.07);border:1px solid rgba(200,80,80,.2);border-radius:14px;padding:12px 8px;text-align:center">'+
+      '<div style="font-size:22px;font-weight:800;color:rgba(220,100,100,.7)">'+cancelledCount+'</div>'+
+      '<div style="font-size:9px;font-weight:700;color:rgba(200,80,80,.5);margin-top:3px">Cancelaron</div>'+
+    '</div>';
+  if(cancelledCount > 0 && cancelledEl){
+    var rows = cancelled.slice(-3).reverse().map(function(c){
+      var d = new Date(c.date);
+      var label = d.toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'});
+      return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)">'+
+        '<span style="font-size:10px;color:rgba(255,255,255,.4)">Cancelación</span>'+
+        '<span style="font-size:10px;color:rgba(200,100,100,.6)">'+label+'</span>'+
+      '</div>';
+    }).join('');
+    cancelledEl.innerHTML = '<div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,80,80,.5);margin-bottom:6px">Últimas cancelaciones</div>'+
+      '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(200,80,80,.15);border-radius:12px;padding:8px 12px">'+rows+'</div>';
+  } else if(cancelledEl){
+    cancelledEl.innerHTML = '';
   }
 }
 
@@ -4475,12 +4534,15 @@ function loadProfileData(){
   // Update plan section
   var chip = document.getElementById('profilePlanChip');
   var planBtnEl = document.getElementById('profilePlanBtn');
+  var cancelBtnEl = document.getElementById('profileCancelBtn');
   if(isPremiumUser()){
     if(chip) chip.innerHTML = '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:linear-gradient(135deg,var(--sage),var(--sage2));border-radius:100px;color:#fff;font-size:11px;font-weight:700">💎 Velo Plus · Activo</span>';
     if(planBtnEl) planBtnEl.style.display = 'none';
+    if(cancelBtnEl) cancelBtnEl.style.display = '';
   } else {
     if(chip) chip.innerHTML = '<span style="font-size:12px;font-weight:600;color:var(--ink4)">Velo Free</span>';
     if(planBtnEl){ planBtnEl.style.display = ''; planBtnEl.textContent = 'Ver Velo Plus →'; }
+    if(cancelBtnEl) cancelBtnEl.style.display = 'none';
   }
 }
 function renderProfileBadges(){
