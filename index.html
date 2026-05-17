@@ -375,7 +375,7 @@
   <!-- ══ HOME ══ -->
   <div class="sc" id="home" style="background:linear-gradient(160deg,var(--cream),var(--cream2))">
     <div class="home-hdr">
-      <img id="homeLogo" style="height:25px;width:auto" alt="Velo">
+      <img id="homeLogo" style="height:44px;width:auto;max-width:100px" alt="Velo">
       <div style="display:flex;gap:7px;align-items:center">
         <div class="status-pill" onclick="openModal('statusModal')">
           <div class="st-dot st-on" id="hdrDot"></div>
@@ -814,35 +814,8 @@
       <div style="font-size:13px;font-weight:600;color:var(--ink)">Botellas flotando</div>
       <div style="font-size:12px;color:#3A7090;font-weight:600">12 ahora</div>
     </div>
-    <div class="scrl" style="padding:0 17px 84px">
+    <div class="scrl" style="padding:0 0 84px">
       <div id="bottleWallList"></div>
-      <!-- Bottle cards (static examples): white with blue-left border accent -->
-      <div style="background:#fff;border:1.5px solid rgba(90,157,192,.3);border-left:4px solid #3A7090;border-radius:18px;padding:14px;margin-bottom:9px;cursor:pointer;box-shadow:0 2px 14px rgba(58,112,144,.1);animation:waveIn .35s ease both" onclick="openBottleDetail(this)">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
-          <div style="font-size:24px">🍾</div>
-          <div style="flex:1"><div style="font-size:11px;font-weight:700;color:#2D5A78">Cápsula · hace 2h · Anónimo/a</div></div>
-          <div style="padding:3px 9px;background:#EAF4FB;border:1px solid rgba(58,112,144,.3);border-radius:100px;font-size:10px;font-weight:700;color:#2D5A78">⏳ Esperando</div>
-        </div>
-        <div style="font-size:22px;margin-bottom:6px">😔</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15px;color:#1A3348;line-height:1.55;margin-bottom:11px">"Hoy me siento invisible. Nadie nota que estoy mal. ¿Hay alguien?"</div>
-        <div style="display:flex;gap:7px">
-          <button style="flex:2;padding:11px;background:linear-gradient(135deg,#3A7090,#2D6A8A);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;box-shadow:0 3px 10px rgba(58,112,144,.3)" onclick="event.stopPropagation();toast('🍾','Abriendo...')">🍾 Abrir botella</button>
-          <button style="flex:1;padding:11px;background:#EAF4FB;border:1.5px solid rgba(58,112,144,.25);border-radius:100px;color:#2D5A78;font-size:11px;font-weight:600;cursor:pointer;font-family:'Jost',sans-serif" onclick="event.stopPropagation();toast('💌','Escribiendo...')">💌 Responder</button>
-        </div>
-      </div>
-      <div style="background:#fff;border:1.5px solid rgba(107,85,168,.25);border-left:4px solid #6855A8;border-radius:18px;padding:14px;margin-bottom:9px;cursor:pointer;box-shadow:0 2px 14px rgba(107,85,168,.1);animation:waveIn .42s ease both" onclick="toast('🍾','Abriendo...')">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
-          <div style="font-size:24px">🍾</div>
-          <div style="flex:1"><div style="font-size:11px;font-weight:700;color:#4A3080">Cápsula · hace 5h · Sebastián</div></div>
-          <div style="padding:3px 9px;background:#F0EDF8;border:1px solid rgba(107,85,168,.3);border-radius:100px;font-size:10px;font-weight:700;color:#4A3080">⏳ Esperando</div>
-        </div>
-        <div style="font-size:22px;margin-bottom:6px">😶</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15px;color:#2A1A50;line-height:1.55;margin-bottom:11px">"No duermo bien hace semanas. Me da miedo la oscuridad de mis pensamientos."</div>
-        <div style="display:flex;gap:7px">
-          <button style="flex:2;padding:11px;background:linear-gradient(135deg,#7B65B8,#6855A8);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;box-shadow:0 3px 10px rgba(107,85,168,.3)" onclick="event.stopPropagation()">🍾 Abrir botella</button>
-          <button style="flex:1;padding:11px;background:#F0EDF8;border:1.5px solid rgba(107,85,168,.25);border-radius:100px;color:#4A3080;font-size:11px;font-weight:600;cursor:pointer;font-family:'Jost',sans-serif" onclick="event.stopPropagation()">💌 Responder</button>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -3595,15 +3568,15 @@
 
     <!-- Stats grid -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:10px 14px;flex-shrink:0">
-      <div class="as-card"><div class="as-n">1.2k</div><div class="as-l">Usuarios</div></div>
-      <div class="as-card"><div class="as-n">38</div><div class="as-l">Profesionales</div></div>
-      <div class="as-card"><div class="as-n">247</div><div class="as-l">Online</div></div>
-      <div class="as-card"><div class="as-n">€4.2k</div><div class="as-l">Ingresos/mes</div></div>
-      <div class="as-card"><div class="as-n">$320</div><div class="as-l">Donaciones</div></div>
-      <div class="as-card"><div class="as-n">12</div><div class="as-l">Ses. solidarias</div></div>
-      <div class="as-card" style="background:rgba(192,48,40,.12)"><div class="as-n" style="color:#F87070">5</div><div class="as-l">Pend. aprob.</div></div>
-      <div class="as-card"><div class="as-n">89%</div><div class="as-l">Satisfacción</div></div>
-      <div class="as-card" style="background:rgba(200,146,10,.1)"><div class="as-n" style="color:var(--gold2)">3</div><div class="as-l">Reportes</div></div>
+      <div class="as-card" onclick="adminTab(document.getElementById('atab-btn-users'),'atab-users')" style="cursor:pointer"><div class="as-n">1.2k</div><div class="as-l">Usuarios</div></div>
+      <div class="as-card" onclick="adminTab(document.getElementById('atab-btn-pros'),'atab-pros')" style="cursor:pointer"><div class="as-n">38</div><div class="as-l">Profesionales</div></div>
+      <div class="as-card" onclick="adminTab(document.getElementById('atab-btn-wellness'),'atab-wellness')" style="cursor:pointer"><div class="as-n">247</div><div class="as-l">Online ahora</div></div>
+      <div class="as-card" onclick="adminTab(document.getElementById('atab-btn-pagos'),'atab-pagos')" style="cursor:pointer"><div class="as-n">€4.2k</div><div class="as-l">Ingresos/mes</div></div>
+      <div class="as-card" onclick="adminTab(document.getElementById('atab-btn-pagos'),'atab-pagos')" style="cursor:pointer"><div class="as-n">$320</div><div class="as-l">Donaciones</div></div>
+      <div class="as-card" onclick="adminTab(document.getElementById('atab-btn-solidarias'),'atab-solidarias')" style="cursor:pointer"><div class="as-n">12</div><div class="as-l">Ses. solidarias</div></div>
+      <div class="as-card" style="background:rgba(192,48,40,.12);cursor:pointer" onclick="adminTab(document.getElementById('atab-btn-pros'),'atab-pros')"><div class="as-n" style="color:#F87070">5</div><div class="as-l">Pend. aprob.</div></div>
+      <div class="as-card" onclick="adminTab(document.getElementById('atab-btn-content'),'atab-content')" style="cursor:pointer"><div class="as-n">18</div><div class="as-l">Reviews</div></div>
+      <div class="as-card" style="background:rgba(200,146,10,.1);cursor:pointer" onclick="adminTab(document.getElementById('atab-btn-content'),'atab-content')"><div class="as-n" style="color:var(--gold2)">3</div><div class="as-l">Reportes</div></div>
     </div>
 
     <!-- Nav tabs admin -->
@@ -3611,62 +3584,137 @@
       <button onclick="adminTab(this,'atab-dash')" class="atab on" id="atab-btn-dash">📊 Dashboard</button>
       <button onclick="adminTab(this,'atab-users')" class="atab" id="atab-btn-users">👥 Usuarios</button>
       <button onclick="adminTab(this,'atab-pros')" class="atab" id="atab-btn-pros">🌿 Profesionales</button>
-      <button onclick="adminTab(this,'atab-content')" class="atab" id="atab-btn-content">🎙️ Contenido</button>
-      <button onclick="adminTab(this,'atab-msg')" class="atab" id="atab-btn-msg">💌 Mensajes</button>
-      <button onclick="adminTab(this,'atab-wellness')" class="atab" id="atab-btn-wellness">🧘 Bienestar</button>
-      <button onclick="adminTab(this,'atab-support')" class="atab" id="atab-btn-support">🎧 Soporte</button>
       <button onclick="adminTab(this,'atab-pagos')" class="atab" id="atab-btn-pagos">💳 Pagos</button>
       <button onclick="adminTab(this,'atab-solidarias')" class="atab" id="atab-btn-solidarias">🕊️ Solidarias</button>
+      <button onclick="adminTab(this,'atab-msg')" class="atab" id="atab-btn-msg">💌 Mensajes</button>
+      <button onclick="adminTab(this,'atab-content')" class="atab" id="atab-btn-content">🛡️ Moderación</button>
+      <button onclick="adminTab(this,'atab-wellness')" class="atab" id="atab-btn-wellness">📈 Métricas</button>
+      <button onclick="adminTab(this,'atab-support')" class="atab" id="atab-btn-support">🎧 Soporte</button>
       <button onclick="adminTab(this,'atab-config')" class="atab" id="atab-btn-config">⚙️ Config</button>
-      <button onclick="adminTab(this,'atab-roles')" class="atab" id="atab-btn-roles">🛡️ Roles</button>
+      <button onclick="adminTab(this,'atab-roles')" class="atab" id="atab-btn-roles">👑 Roles</button>
     </div>
 
     <div class="scrl" style="padding:12px 14px 30px">
 
-      <!-- TAB: PAGOS PENDIENTES -->
+      <!-- TAB: PAGOS -->
       <div id="atab-pagos" style="display:none">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(212,168,100,.6)">Pagos pendientes de aprobación</div>
-          <div id="adminPayBadge" style="display:none;min-width:18px;height:18px;background:rgba(212,168,100,.7);border-radius:100px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center;padding:0 5px">0</div>
-        </div>
+        <!-- Flujo info -->
         <div style="padding:11px;background:rgba(212,168,100,.08);border:1.5px solid rgba(212,168,100,.2);border-radius:14px;margin-bottom:12px;font-size:11px;color:rgba(212,168,100,.8);line-height:1.6">
-          💡 <b>Flujo escrow Velo:</b> El usuario paga → fondos retenidos en Stripe → profesional marca sesión completada → usuario responde encuesta → vos aprobás aquí → transferís el 80% al profesional desde Stripe dashboard.
+          💡 <b>Flujo escrow:</b> Usuario paga → Stripe retiene fondos → Profesional marca sesión completada → Velo aprueba → 80% al profesional vía Stripe dashboard.
         </div>
-        <div id="adminPayQueueList"><div style="text-align:center;padding:14px;font-size:12px;color:rgba(116,198,157,.35)">Sin pagos pendientes ✓</div></div>
-        <div style="margin-top:14px;font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">Historial de pagos</div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px">
-          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:11px;color:rgba(255,255,255,.5)">Dra. Ana M. → Lun23 · 8 may</span><span style="font-size:11px;font-weight:700;color:var(--sage2)">$48 ✓</span></div>
-          <div style="display:flex;justify-content:space-between;padding:7px 0"><span style="font-size:11px;color:rgba(255,255,255,.5)">Coach Lucas → Mar · 6 may</span><span style="font-size:11px;font-weight:700;color:var(--sage2)">$40 ✓</span></div>
+        <!-- Pendientes de aprobación -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(212,168,100,.6)">Sesiones completadas — pendiente aprobar</div>
         </div>
-        <div style="margin-top:14px">
-          <a href="https://dashboard.stripe.com/payments" target="_blank" style="display:block;padding:12px;background:rgba(99,91,255,.12);border:1.5px solid rgba(99,91,255,.25);border-radius:14px;text-align:center;font-size:12px;font-weight:700;color:rgba(150,140,255,.9);text-decoration:none">Abrir Stripe Dashboard 💳</a>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(212,168,100,.2);border-radius:14px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+            <div><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">Dra. Ana Martínez</div><div style="font-size:10px;color:rgba(255,255,255,.4)">Sesión marcada completada · hace 2 días · Usuario: Anónimo_87</div><div style="font-size:10px;color:rgba(212,168,100,.7);margin-top:2px">Monto retenido: $60 · Tu parte: $12 · Pro: $48</div></div>
+            <span style="padding:3px 8px;background:rgba(212,168,100,.12);border:1px solid rgba(212,168,100,.25);border-radius:100px;font-size:9px;font-weight:700;color:var(--gold2)">⏳ Pendiente</span>
+          </div>
+          <div style="display:flex;gap:7px">
+            <button class="a-btn-g" style="flex:1;justify-content:center" onclick="toast('✅','Aprobado. Transferir $48 a Dra. Ana desde Stripe dashboard.')">✅ Aprobar pago</button>
+            <button class="a-btn-r" onclick="toast('🔍','Investigando...')">Disputar</button>
+          </div>
+        </div>
+        <div id="adminPayQueueList"></div>
+        <!-- Donaciones -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;margin-top:14px">Donaciones recibidas</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)"><div><span style="font-size:11px;color:rgba(255,255,255,.6)">Anónimo_442</span><span style="font-size:10px;color:rgba(116,198,157,.4);margin-left:6px">PayPal · única</span></div><span style="font-size:12px;font-weight:700;color:var(--sage2)">$20 💚</span></div>
+          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)"><div><span style="font-size:11px;color:rgba(255,255,255,.6)">Usuario·Luna</span><span style="font-size:10px;color:rgba(196,181,232,.4);margin-left:6px">Stripe · mensual</span></div><span style="font-size:12px;font-weight:700;color:var(--sage2)">$10/mes 💎</span></div>
+          <div style="display:flex;justify-content:space-between;padding:7px 0"><div><span style="font-size:11px;color:rgba(255,255,255,.6)">Anónimo_99</span><span style="font-size:10px;color:rgba(116,198,157,.4);margin-left:6px">PayPal · única</span></div><span style="font-size:12px;font-weight:700;color:var(--sage2)">$50 💚</span></div>
+        </div>
+        <!-- Suscripciones activas -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">Suscripciones mensuales activas</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:11px;color:rgba(255,255,255,.5)">Profesional Básico · 18 activos</span><span style="font-size:12px;font-weight:700;color:var(--sage2)">€270/mes</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:11px;color:rgba(255,255,255,.5)">Profesional Destacado · 12 activos</span><span style="font-size:12px;font-weight:700;color:var(--sage2)">€420/mes</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0"><span style="font-size:11px;color:rgba(255,255,255,.5)">Profesional Premium · 8 activos</span><span style="font-size:12px;font-weight:700;color:var(--sage2)">€560/mes</span></div>
+          <div style="margin-top:9px;padding-top:9px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between"><span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6)">Total suscripciones</span><span style="font-size:14px;font-weight:700;color:var(--sage2)">€1.250/mes</span></div>
+        </div>
+        <!-- Historial pagos sesiones -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">Historial — sesiones aprobadas</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)"><div><span style="font-size:11px;color:rgba(255,255,255,.5)">Dra. Ana M.</span><span style="font-size:10px;color:rgba(255,255,255,.3);margin-left:6px">8 may · Stripe</span></div><span style="font-size:11px;font-weight:700;color:var(--sage2)">$48 ✓</span></div>
+          <div style="display:flex;justify-content:space-between;padding:7px 0"><div><span style="font-size:11px;color:rgba(255,255,255,.5)">Coach Lucas</span><span style="font-size:10px;color:rgba(255,255,255,.3);margin-left:6px">6 may · Stripe</span></div><span style="font-size:11px;font-weight:700;color:var(--sage2)">$40 ✓</span></div>
+        </div>
+        <!-- Links externos -->
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <a href="https://dashboard.stripe.com/payments" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px;background:rgba(99,91,255,.1);border:1.5px solid rgba(99,91,255,.22);border-radius:14px;text-decoration:none">
+            <span style="font-size:18px">💳</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(150,140,255,.9)">Stripe Dashboard</div><div style="font-size:10px;color:rgba(150,140,255,.5)">Pagos · transferencias · disputas</div></div><span style="color:rgba(150,140,255,.5);font-size:13px">↗</span>
+          </a>
+          <a href="https://www.paypal.com/business/activity" target="_blank" style="display:flex;align-items:center;gap:10px;padding:13px;background:rgba(0,112,240,.08);border:1.5px solid rgba(0,112,240,.2);border-radius:14px;text-decoration:none">
+            <span style="font-size:18px">🅿️</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(100,160,255,.9)">PayPal Business</div><div style="font-size:10px;color:rgba(100,160,255,.5)">Donaciones · actividad · reportes</div></div><span style="color:rgba(100,160,255,.5);font-size:13px">↗</span>
+          </a>
         </div>
       </div>
 
       <!-- TAB: SESIONES SOLIDARIAS -->
       <div id="atab-solidarias" style="display:none">
-        <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(168,212,232,.6);margin-bottom:8px">Profesionales con sesión solidaria activa</div>
-        <div id="adminFreeSessionList"></div>
-        <div style="margin-top:14px;font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(168,212,232,.6);margin-bottom:8px">Solicitudes "Velo Vela por ti" en espera</div>
-        <div style="background:rgba(168,212,232,.06);border:1px solid rgba(168,212,232,.15);border-radius:14px;padding:12px;margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <div><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">Usuario·Anónimo_44</div><div style="font-size:10px;color:rgba(168,212,232,.5)">Ansiedad severa · Urgencia media · 3 días esperando</div></div>
+        <!-- Info -->
+        <div style="padding:11px;background:rgba(168,212,232,.07);border:1.5px solid rgba(168,212,232,.18);border-radius:14px;margin-bottom:12px;font-size:11px;color:rgba(168,212,232,.8);line-height:1.6">
+          🕊️ <b>Flujo:</b> Profesional dona sesiones desde su panel → aparecen aquí como disponibles → elegís usuario de la lista de espera → asignás → ambos son notificados.
+        </div>
+        <!-- Profesionales con sesiones donadas -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(168,212,232,.6);margin-bottom:8px">Profesionales con sesiones donadas</div>
+        <div id="adminFreeSessionList"><div style="text-align:center;padding:14px;font-size:12px;color:rgba(168,212,232,.35)">Cargando...</div></div>
+        <button onclick="renderFreeSessions()" style="width:100%;padding:10px;background:rgba(168,212,232,.07);border:1.5px solid rgba(168,212,232,.18);border-radius:100px;font-size:11px;font-weight:700;color:rgba(168,212,232,.6);cursor:pointer;font-family:Jost,sans-serif;margin-bottom:16px">↻ Actualizar</button>
+
+        <!-- Solicitudes Velo vela por ti -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(168,212,232,.6);margin-bottom:8px">Lista de espera — Velo vela por ti</div>
+
+        <!-- Request 1 -->
+        <div style="background:rgba(168,212,232,.06);border:1.5px solid rgba(192,48,40,.25);border-radius:14px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+                <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">Anónimo_44</div>
+                <span style="padding:2px 7px;background:rgba(192,48,40,.15);border:1px solid rgba(192,48,40,.3);border-radius:100px;font-size:9px;font-weight:700;color:#F87070">🔴 Urgencia alta</span>
+              </div>
+              <div style="font-size:10px;color:rgba(168,212,232,.5)">Ansiedad severa · 3 días esperando</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:3px;font-style:italic">"Necesito ayuda con ataques de pánico. No puedo solventarlo económicamente."</div>
+            </div>
           </div>
           <div style="display:flex;gap:6px">
-            <button onclick="toast('🕊️','Sesión asignada a Dra. Ana M. Ambos serán notificados.')" style="flex:1;padding:8px;background:rgba(168,212,232,.12);border:1px solid rgba(168,212,232,.25);border-radius:100px;font-size:10px;font-weight:700;color:rgba(168,212,232,.9);cursor:pointer;font-family:Jost,sans-serif">🕊️ Asignar sesión</button>
-            <button onclick="toast('💌','Contactando al usuario...')" style="padding:8px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:10px;font-weight:700;color:rgba(255,255,255,.5);cursor:pointer;font-family:Jost,sans-serif">💬</button>
+            <button onclick="assignVelaPorTi('Anónimo_44','Dra. Ana Martínez')" style="flex:1;padding:8px;background:rgba(168,212,232,.12);border:1px solid rgba(168,212,232,.25);border-radius:100px;font-size:10px;font-weight:700;color:rgba(168,212,232,.9);cursor:pointer;font-family:Jost,sans-serif">🕊️ Asignar sesión</button>
+            <button onclick="rejectVelaPorTi('Anónimo_44')" style="padding:8px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:10px;font-weight:700;color:rgba(255,255,255,.5);cursor:pointer;font-family:Jost,sans-serif">💙 Lista espera</button>
           </div>
         </div>
-        <div style="background:rgba(168,212,232,.06);border:1px solid rgba(168,212,232,.15);border-radius:14px;padding:12px;margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <div><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">Luna_oscura</div><div style="font-size:10px;color:rgba(168,212,232,.5)">Duelo · Urgencia alta · 1 día esperando</div></div>
+
+        <!-- Request 2 -->
+        <div style="background:rgba(168,212,232,.06);border:1.5px solid rgba(200,146,10,.2);border-radius:14px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+                <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">Luna_oscura</div>
+                <span style="padding:2px 7px;background:rgba(200,146,10,.12);border:1px solid rgba(200,146,10,.25);border-radius:100px;font-size:9px;font-weight:700;color:var(--gold2)">🟡 Urgencia media</span>
+              </div>
+              <div style="font-size:10px;color:rgba(168,212,232,.5)">Duelo · 1 día esperando</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:3px;font-style:italic">"Perdí a mi madre hace 3 meses. Estoy sola y necesito hablar con alguien."</div>
+            </div>
           </div>
           <div style="display:flex;gap:6px">
-            <button onclick="toast('🕊️','Sesión asignada a Coach Lucas. Ambos serán notificados.')" style="flex:1;padding:8px;background:rgba(168,212,232,.12);border:1px solid rgba(168,212,232,.25);border-radius:100px;font-size:10px;font-weight:700;color:rgba(168,212,232,.9);cursor:pointer;font-family:Jost,sans-serif">🕊️ Asignar sesión</button>
-            <button onclick="toast('💌','Contactando a Luna_oscura...')" style="padding:8px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:10px;font-weight:700;color:rgba(255,255,255,.5);cursor:pointer;font-family:Jost,sans-serif">💬</button>
+            <button onclick="assignVelaPorTi('Luna_oscura','Coach Lucas')" style="flex:1;padding:8px;background:rgba(168,212,232,.12);border:1px solid rgba(168,212,232,.25);border-radius:100px;font-size:10px;font-weight:700;color:rgba(168,212,232,.9);cursor:pointer;font-family:Jost,sans-serif">🕊️ Asignar sesión</button>
+            <button onclick="rejectVelaPorTi('Luna_oscura')" style="padding:8px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:10px;font-weight:700;color:rgba(255,255,255,.5);cursor:pointer;font-family:Jost,sans-serif">💙 Lista espera</button>
           </div>
         </div>
-        <button onclick="renderFreeSessions()" style="width:100%;padding:11px;background:rgba(168,212,232,.08);border:1.5px solid rgba(168,212,232,.2);border-radius:100px;font-size:11px;font-weight:700;color:rgba(168,212,232,.7);cursor:pointer;font-family:Jost,sans-serif;margin-top:8px">↻ Actualizar disponibilidad</button>
+
+        <!-- Request 3 -->
+        <div style="background:rgba(168,212,232,.06);border:1px solid rgba(168,212,232,.15);border-radius:14px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+                <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">Estrella_23</div>
+                <span style="padding:2px 7px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:100px;font-size:9px;font-weight:700;color:var(--sage2)">🟢 Urgencia baja</span>
+              </div>
+              <div style="font-size:10px;color:rgba(168,212,232,.5)">Depresión leve · 5 días esperando</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button onclick="assignVelaPorTi('Estrella_23','Lic. Sofía Vargas')" style="flex:1;padding:8px;background:rgba(168,212,232,.12);border:1px solid rgba(168,212,232,.25);border-radius:100px;font-size:10px;font-weight:700;color:rgba(168,212,232,.9);cursor:pointer;font-family:Jost,sans-serif">🕊️ Asignar sesión</button>
+            <button onclick="rejectVelaPorTi('Estrella_23')" style="padding:8px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:10px;font-weight:700;color:rgba(255,255,255,.5);cursor:pointer;font-family:Jost,sans-serif">💙 Lista espera</button>
+          </div>
+        </div>
       </div>
 
       <!-- TAB: DASHBOARD -->
@@ -3697,9 +3745,13 @@
         <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;margin-top:10px">Accesos rápidos</div>
         <div class="ar" onclick="adminTab(document.getElementById('atab-btn-users'),'atab-users')"><div class="ar-ic">👥</div><div><div class="ar-t">Gestión de usuarios</div><div class="ar-s">Ver, suspender, eliminar cuentas</div></div><span style="color:rgba(116,198,157,.5);font-size:14px">›</span></div>
         <div class="ar" onclick="adminTab(document.getElementById('atab-btn-pros'),'atab-pros')"><div class="ar-ic">🌿</div><div><div class="ar-t">Profesionales pendientes</div><div class="ar-s">5 perfiles esperando aprobación</div></div><span class="ar-badge-y" style="margin-left:auto">5 pend.</span></div>
+        <div class="ar" onclick="adminTab(document.getElementById('atab-btn-pagos'),'atab-pagos')"><div class="ar-ic">💳</div><div><div class="ar-t">Pagos y sesiones</div><div class="ar-s">Stripe · PayPal · sesiones completadas</div></div><span class="ar-badge-g" style="margin-left:auto">€4.2k</span></div>
+        <div class="ar" onclick="adminTab(document.getElementById('atab-btn-solidarias'),'atab-solidarias')"><div class="ar-ic">🕊️</div><div><div class="ar-t">Sesiones solidarias</div><div class="ar-s">Donaciones de profesionales · Velo vela por ti</div></div><span class="ar-badge-y" style="margin-left:auto">3 pend.</span></div>
+        <div class="ar" onclick="adminTab(document.getElementById('atab-btn-content'),'atab-content')"><div class="ar-ic">🛡️</div><div><div class="ar-t">Moderación</div><div class="ar-s">Reviews · Botellas · Círculos · Sala de ayuda</div></div><span class="ar-badge-y" style="margin-left:auto">3 rep.</span></div>
+        <div class="ar" onclick="adminTab(document.getElementById('atab-btn-msg'),'atab-msg')"><div class="ar-ic">💌</div><div><div class="ar-t">Mensajes masivos</div><div class="ar-s">Buzón interno · contáctanos</div></div><span style="color:rgba(116,198,157,.5);font-size:14px">›</span></div>
+        <div class="ar" onclick="adminTab(document.getElementById('atab-btn-roles'),'atab-roles')"><div class="ar-ic">👑</div><div><div class="ar-t">Roles y permisos</div><div class="ar-s">Admin · Moderadores · RBAC</div></div><span style="color:rgba(116,198,157,.5);font-size:14px">›</span></div>
         <div class="ar"><div class="ar-ic">🆘</div><div><div class="ar-t">Botón SOS global</div><div class="ar-s">Activo en todas las pantallas</div></div><div class="ar-tog on" onclick="event.stopPropagation()"><div class="ar-tog-k"></div></div></div>
         <div class="ar"><div class="ar-ic">🤖</div><div><div class="ar-t">Moderación IA</div><div class="ar-s">Detección automática de riesgo</div></div><div class="ar-tog on" onclick="event.stopPropagation()"><div class="ar-tog-k"></div></div></div>
-        <div class="ar" onclick="toast('💰','Finanzas...')"><div class="ar-ic">💰</div><div><div class="ar-t">Finanzas y donaciones</div><div class="ar-s">Stripe Connect · comisiones · €4.2k/mes</div></div><span class="ar-badge-g" style="margin-left:auto">€4.2k</span></div>
       </div>
 
       <!-- TAB: USUARIOS -->
@@ -3785,61 +3837,108 @@
             <button class="a-btn-r" style="flex:1;padding:9px;justify-content:center" onclick="toast('❌','Rechazado')">❌ Rechazar</button>
           </div>
         </div>
-        <!-- Solicitudes Vela por ti -->
-        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;margin-top:12px">🕊️ Solicitudes Vela por ti</div>
-        <div class="au-row">
-          <div class="au-av">🕊️</div>
-          <div style="flex:1"><div class="au-name">Usuario·Mar</div><div class="au-meta">Ansiedad · Urgencia Alta 🔴 · Disponible: Tardes</div></div>
-          <div style="display:flex;gap:5px">
-            <button class="a-btn-g" onclick="toast('✅','Sesión aprobada. Se notifica al usuario.')">Aprobar</button>
-            <button class="a-btn-r" onclick="toast('⏳','En lista de espera')">Espera</button>
+        <!-- Profesionales activos por especialidad -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;margin-top:14px">Activos — por especialidad</div>
+        <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px">
+          <div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;padding:11px;display:flex;align-items:center;gap:10px" onclick="toast('🧠','Ver psicólogos...')">
+            <span style="font-size:18px">🧠</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.75)">Psicología Clínica</div><div style="font-size:10px;color:rgba(116,198,157,.5)">14 profesionales activos</div></div><span style="color:rgba(116,198,157,.5);font-size:13px">›</span>
+          </div>
+          <div style="background:rgba(196,181,232,.06);border:1px solid rgba(196,181,232,.12);border-radius:12px;padding:11px;display:flex;align-items:center;gap:10px" onclick="toast('🧘','Ver coaches...')">
+            <span style="font-size:18px">🧘</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.75)">Coach / Bienestar</div><div style="font-size:10px;color:rgba(196,181,232,.5)">9 profesionales activos</div></div><span style="color:rgba(196,181,232,.5);font-size:13px">›</span>
+          </div>
+          <div style="background:rgba(168,212,232,.06);border:1px solid rgba(168,212,232,.12);border-radius:12px;padding:11px;display:flex;align-items:center;gap:10px" onclick="toast('🌱','Ver psicólogos infanto-juveniles...')">
+            <span style="font-size:18px">🌱</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.75)">Infanto-Juvenil</div><div style="font-size:10px;color:rgba(168,212,232,.5)">6 profesionales activos</div></div><span style="color:rgba(168,212,232,.5);font-size:13px">›</span>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:11px;display:flex;align-items:center;gap:10px" onclick="toast('🧩','Ver otros...')">
+            <span style="font-size:18px">🧩</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.75)">Otras especialidades</div><div style="font-size:10px;color:rgba(255,255,255,.35)">9 profesionales activos</div></div><span style="color:rgba(255,255,255,.3);font-size:13px">›</span>
           </div>
         </div>
 
         <!-- Consultas de profesionales -->
-        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;margin-top:12px">💌 Consultas de profesionales</div>
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">💌 Consultas de profesionales</div>
         <div id="adminProContactList">
-          <!-- Demo message -->
           <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;margin-bottom:8px">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
               <div style="width:32px;height:32px;border-radius:10px;background:rgba(116,198,157,.15);display:flex;align-items:center;justify-content:center;font-size:14px">🧠</div>
-              <div>
-                <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">Dra. Ana Martínez</div>
-                <div style="font-size:10px;color:rgba(116,198,157,.5)">Consulta sobre pagos · hace 2 h</div>
-              </div>
+              <div><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">Dra. Ana Martínez</div><div style="font-size:10px;color:rgba(116,198,157,.5)">Consulta sobre pagos · hace 2 h</div></div>
             </div>
             <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.5;margin-bottom:8px">"¿Cuándo se acredita el pago de la sesión del día 10? Ya pasaron 5 días."</div>
-            <button onclick="replyProContact('ana','Dra. Ana Martínez')" class="a-btn-g" style="width:100%;padding:8px;justify-content:center">Responder</button>
+            <button onclick="replyProContact('ana','Dra. Ana Martínez')" class="a-btn-g" style="width:100%;padding:8px;justify-content:center">Responder por Gmail</button>
           </div>
         </div>
       </div>
 
-      <!-- TAB: CONTENIDO -->
+      <!-- TAB: MODERACIÓN -->
       <div id="atab-content" style="display:none">
-        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">🎙️ Podcasts pendientes de revisión</div>
-        <!-- Podcast 1 -->
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:13px;margin-bottom:9px">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#C4B5E8,#9B8DD8);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🌊</div>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85)">"Carta a mi soledad"</div>
-              <div style="font-size:10px;color:rgba(255,255,255,.45)">Anónimo · Duelo · 8 min · Hace 3hs</div>
-            </div>
+        <!-- Reviews flagged -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">⭐ Reseñas — moderación</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-size:11px;color:rgba(255,255,255,.6)"><b>18</b> reseñas publicadas · <b style="color:#F87070">2 reportadas</b></div>
           </div>
-          <div style="display:flex;gap:7px">
-            <button class="a-btn-g" style="flex:1;padding:9px;justify-content:center" onclick="toast('✅','Podcast aprobado y publicado')">✅ Aprobar</button>
-            <button class="a-btn-r" style="flex:1;padding:9px;justify-content:center" onclick="toast('❌','Podcast rechazado')">❌ Rechazar</button>
-            <button style="padding:9px 12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:11px;font-weight:700;color:rgba(255,255,255,.6);cursor:pointer;font-family:'Jost',sans-serif" onclick="toast('▶','Escuchando...')">▶ Escuchar</button>
+          <div class="au-row" style="border-color:rgba(192,48,40,.2);padding:8px;border-radius:10px;margin-bottom:0">
+            <div style="font-size:16px">🚩</div>
+            <div style="flex:1"><div class="au-name" style="font-size:11px">Reseña de Coach Lucas — reportada</div><div class="au-meta">Lenguaje inapropiado · 2 reportes</div></div>
+            <div style="display:flex;gap:5px"><button class="a-btn-r" onclick="toast('🗑️','Reseña eliminada')">Eliminar</button><button class="a-btn-g" onclick="toast('✅','Sin acción')">Ignorar</button></div>
           </div>
         </div>
-        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;margin-top:12px">Reportes de contenido</div>
+
+        <!-- Botellas -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(168,212,232,.6);margin-bottom:8px;margin-top:14px">🍾 Botellas al mar — moderación</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:6px">
+          <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px"><b>84</b> botellas activas · <b style="color:#F87070">1 reportada</b></div>
+          <div class="au-row" style="border-color:rgba(192,48,40,.2);padding:8px;border-radius:10px;margin-bottom:0">
+            <div style="font-size:16px">🚩</div>
+            <div style="flex:1"><div class="au-name" style="font-size:11px">Botella reportada — contenido ofensivo</div><div class="au-meta">1 reporte · Hace 6 horas</div></div>
+            <div style="display:flex;gap:5px"><button class="a-btn-r" onclick="toast('🗑️','Botella eliminada')">Eliminar</button><button class="a-btn-g" onclick="toast('✅','Sin acción')">Ignorar</button></div>
+          </div>
+        </div>
+
+        <!-- Sala de ayuda -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(196,181,232,.6);margin-bottom:8px;margin-top:14px">🆘 Sala de ayuda — moderación</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:6px">
+          <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px"><b>12</b> mensajes activos · <b style="color:#F87070">1 alerta IA</b></div>
+          <div class="au-row" style="border-color:rgba(192,48,40,.35);background:rgba(192,48,40,.05);padding:8px;border-radius:10px;margin-bottom:0">
+            <div style="font-size:16px">🆘</div>
+            <div style="flex:1"><div class="au-name" style="font-size:11px;color:#F87070">Alerta IA — posible crisis</div><div class="au-meta">Usuario: Anónimo_11 · Hace 20 min</div></div>
+            <div style="display:flex;gap:5px"><button class="a-btn-r" onclick="toast('🆘','Contactando al equipo de crisis...')">Atender</button></div>
+          </div>
+        </div>
+
+        <!-- Círculos de Paz -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(212,168,100,.6);margin-bottom:8px;margin-top:14px">🕊️ Círculos de Paz — moderación</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:6px">
+          <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px"><b>7</b> círculos activos · <b style="color:var(--gold2)">2 con reportes</b></div>
+          <div style="background:rgba(200,146,10,.08);border:1px solid rgba(200,146,10,.2);border-radius:10px;padding:10px;margin-bottom:7px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <div style="font-size:16px">🕊️</div>
+              <div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.8)">Círculo: Ansiedad Compartida</div><div style="font-size:10px;color:rgba(200,146,10,.7)">3 reportes · 42 miembros</div></div>
+              <span style="padding:2px 7px;background:rgba(192,48,40,.15);border:1px solid rgba(192,48,40,.3);border-radius:100px;font-size:9px;font-weight:700;color:#F87070">⚠️ Acción req.</span>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button onclick="toast('💌','Mensaje enviado al creador del círculo.')" style="flex:1;padding:7px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:10px;font-weight:700;color:rgba(255,255,255,.6);cursor:pointer;font-family:Jost,sans-serif">💬 Msg al creador</button>
+              <button onclick="toast('🗑️','Círculo eliminado.')" style="padding:7px 12px;background:rgba(192,48,40,.1);border:1px solid rgba(192,48,40,.2);border-radius:100px;font-size:10px;font-weight:700;color:#F87070;cursor:pointer;font-family:Jost,sans-serif">🗑️ Eliminar</button>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <div style="font-size:16px">🌙</div>
+              <div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.75)">Círculo: Insomnio y Noche</div><div style="font-size:10px;color:rgba(255,255,255,.35)">1 reporte · 28 miembros</div></div>
+              <span style="padding:2px 7px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:9px;color:rgba(255,255,255,.4)">Monitorear</span>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button onclick="toast('💌','Mensaje enviado.')" style="flex:1;padding:7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:100px;font-size:10px;font-weight:700;color:rgba(255,255,255,.5);cursor:pointer;font-family:Jost,sans-serif">💬 Msg al creador</button>
+              <button onclick="toast('🗑️','Círculo eliminado.')" style="padding:7px 12px;background:rgba(192,48,40,.07);border:1px solid rgba(192,48,40,.15);border-radius:100px;font-size:10px;font-weight:700;color:rgba(248,112,112,.7);cursor:pointer;font-family:Jost,sans-serif">🗑️ Eliminar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reportes generales de contenido -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;margin-top:14px">🚩 Todos los reportes</div>
         <div class="au-row" style="border-color:rgba(192,48,40,.2)">
           <div style="font-size:18px">🚩</div>
-          <div style="flex:1"><div class="au-name">Comentario reportado · Feed</div><div class="au-meta">Lenguaje ofensivo · 3 reportes</div></div>
-          <div style="display:flex;gap:5px">
-            <button class="a-btn-g" onclick="toast('✅','Contenido eliminado')">Eliminar</button>
-            <button class="a-btn-g" onclick="toast('✅','Resuelto sin acción')">Ignorar</button>
-          </div>
+          <div style="flex:1"><div class="au-name">Comentario reportado · Feed</div><div class="au-meta">Lenguaje ofensivo · 3 reportes · hace 1h</div></div>
+          <div style="display:flex;gap:5px"><button class="a-btn-r" onclick="toast('🗑️','Contenido eliminado')">Eliminar</button><button class="a-btn-g" onclick="toast('✅','Sin acción')">Ignorar</button></div>
         </div>
       </div>
 
@@ -3883,17 +3982,47 @@
         </div>
       </div>
 
-      <!-- TAB: BIENESTAR / MÚSICA -->
+      <!-- TAB: MÉTRICAS / KPIs -->
       <div id="atab-wellness" style="display:none">
-        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">🎵 Música y audios de bienestar</div>
-        <div class="au-row"><div style="font-size:18px">🌧️</div><div style="flex:1"><div class="au-name">Lluvia suave — 30 min</div><div class="au-meta">Sonidos ambiente · activo</div></div><div style="display:flex;gap:5px"><button class="a-btn-g" onclick="toast('✏️','Editar...')">Editar</button><button class="a-btn-r" onclick="toast('🗑️','Eliminado')">Eliminar</button></div></div>
-        <div class="au-row"><div style="font-size:18px">🌊</div><div style="flex:1"><div class="au-name">Mar en calma — 20 min</div><div class="au-meta">Sonidos ambiente · activo</div></div><div style="display:flex;gap:5px"><button class="a-btn-g" onclick="toast('✏️','Editar...')">Editar</button><button class="a-btn-r" onclick="toast('🗑️','Eliminado')">Eliminar</button></div></div>
-        <div class="au-row"><div style="font-size:18px">🌬️</div><div style="flex:1"><div class="au-name">Respiración guiada 60s</div><div class="au-meta">Ejercicio de bienestar · activo</div></div><div style="display:flex;gap:5px"><button class="a-btn-g" onclick="toast('✏️','Editar...')">Editar</button></div></div>
-        <button onclick="toast('➕','Subir nuevo audio...')" style="width:100%;margin-top:10px;padding:12px;background:rgba(116,198,157,.08);border:1.5px dashed rgba(116,198,157,.25);border-radius:14px;color:rgba(116,198,157,.7);font-size:13px;font-weight:600;cursor:pointer;font-family:'Jost',sans-serif">+ Subir música o audio de bienestar</button>
-        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;margin-top:14px">🧘 Meditaciones y respiración</div>
-        <div class="au-row"><div style="font-size:18px">🌬️</div><div style="flex:1"><div class="au-name">Respiración 4-7-8</div><div class="au-meta">60 seg · Relajación · activo</div></div><button class="a-btn-g" onclick="toast('✏️','Editar...')">Editar</button></div>
-        <div class="au-row"><div style="font-size:18px">🌿</div><div style="flex:1"><div class="au-name">Meditación de consciencia plena</div><div class="au-meta">5 min · Mindfulness · activo</div></div><button class="a-btn-g" onclick="toast('✏️','Editar...')">Editar</button></div>
-        <button onclick="toast('➕','Crear nueva meditación...')" style="width:100%;margin-top:10px;padding:12px;background:rgba(116,198,157,.08);border:1.5px dashed rgba(116,198,157,.25);border-radius:14px;color:rgba(116,198,157,.7);font-size:13px;font-weight:600;cursor:pointer;font-family:'Jost',sans-serif">+ Crear meditación o ejercicio de respiración</button>
+        <!-- Usuarios online -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">📊 Usuarios activos</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">
+          <div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.15);border-radius:14px;padding:13px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--sage2)">247</div><div style="font-size:10px;color:rgba(116,198,157,.5);margin-top:2px">Online ahora</div></div>
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px;text-align:center"><div style="font-size:22px;font-weight:700;color:rgba(255,255,255,.8)">1.247</div><div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">Registrados total</div></div>
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px;text-align:center"><div style="font-size:22px;font-weight:700;color:rgba(255,255,255,.8)">18</div><div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">Nuevos hoy</div></div>
+          <div style="background:rgba(192,48,40,.08);border:1px solid rgba(192,48,40,.15);border-radius:14px;padding:13px;text-align:center"><div style="font-size:22px;font-weight:700;color:#F87070">14</div><div style="font-size:10px;color:rgba(248,112,112,.5);margin-top:2px">Eliminadas (mes)</div></div>
+        </div>
+
+        <!-- Sesión promedio -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">⏱️ Tiempo de sesión</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:11px;color:rgba(255,255,255,.5)">Tiempo promedio de sesión</span><span style="font-size:12px;font-weight:700;color:var(--sage2)">8 min 42s</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:11px;color:rgba(255,255,255,.5)">Pantallas más visitadas</span><span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6)">Home · Guardián · Diario</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0"><span style="font-size:11px;color:rgba(255,255,255,.5)">Retención a 7 días</span><span style="font-size:12px;font-weight:700;color:var(--sage2)">62%</span></div>
+        </div>
+
+        <!-- Origen de tráfico -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">🌐 Origen del tráfico</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:11px;color:rgba(255,255,255,.5)">Directo / App</span><span style="font-size:12px;font-weight:700;color:var(--sage2)">48%</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:11px;color:rgba(255,255,255,.5)">Redes sociales</span><span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7)">31%</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:11px;color:rgba(255,255,255,.5)">Búsqueda orgánica</span><span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7)">14%</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0"><span style="font-size:11px;color:rgba(255,255,255,.5)">Referidos / boca a boca</span><span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7)">7%</span></div>
+        </div>
+
+        <!-- SOS y seguridad -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(192,48,40,.5);margin-bottom:8px;margin-top:14px">🆘 Seguridad y SOS</div>
+        <div style="background:rgba(192,48,40,.06);border:1px solid rgba(192,48,40,.15);border-radius:14px;padding:12px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:11px;color:rgba(255,255,255,.5)">Clicks en botón SOS (sesión)</span><span style="font-size:12px;font-weight:700;color:#F87070" id="adminSosStat">0</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:11px;color:rgba(255,255,255,.5)">Alertas IA detectadas (mes)</span><span style="font-size:12px;font-weight:700;color:#F87070">7</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0"><span style="font-size:11px;color:rgba(255,255,255,.5)">Usuarios bloqueados (mes)</span><span style="font-size:12px;font-weight:700;color:rgba(248,112,112,.7)">3</span></div>
+        </div>
+
+        <!-- Insignias por nivel -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">🏅 Insignias — usuarios por nivel</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:6px" id="adminBadgeCounts">
+          <div style="text-align:center;padding:10px;font-size:11px;color:rgba(116,198,157,.35)">Cargando...</div>
+        </div>
       </div>
 
       <!-- TAB: SOPORTE (Contáctanos) -->
@@ -3934,13 +4063,34 @@
       <div id="atab-config" style="display:none">
         <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">General</div>
         <div class="ar"><div class="ar-ic">💰</div><div><div class="ar-t">Precios y suscripciones</div><div class="ar-s">Básico €15 · Destacado €35 · Premium €70</div></div><span style="font-size:14px;color:rgba(116,198,157,.5)">›</span></div>
-        <div class="ar"><div class="ar-ic">🎭</div><div><div class="ar-t">Categorías de contenido</div><div class="ar-s">Editar categorías del feed, podcast y filtros</div></div><span style="font-size:14px;color:rgba(116,198,157,.5)">›</span></div>
         <div class="ar"><div class="ar-ic">📢</div><div><div class="ar-t">Notificaciones globales</div><div class="ar-s">Push, email, mensajes internos</div></div><span style="font-size:14px;color:rgba(116,198,157,.5)">›</span></div>
-        <div class="ar"><div class="ar-ic">🔤</div><div><div class="ar-t">Textos de la app</div><div class="ar-s">Modificar copies y mensajes</div></div><span style="font-size:14px;color:rgba(116,198,157,.5)">›</span></div>
+        <div class="ar"><div class="ar-ic">🔤</div><div><div class="ar-t">Textos de la app</div><div class="ar-s">Modificar copies y mensajes del sistema</div></div><span style="font-size:14px;color:rgba(116,198,157,.5)">›</span></div>
         <div class="ar"><div class="ar-ic">🤖</div><div><div class="ar-t">Moderación IA</div><div class="ar-s">Sensibilidad · palabras clave · alertas</div></div><div class="ar-tog on" onclick="event.stopPropagation()"><div class="ar-tog-k"></div></div></div>
-        <div class="ar"><div class="ar-ic">🆘</div><div><div class="ar-t">Botón SOS</div><div class="ar-s">Activo globalmente</div></div><div class="ar-tog on" onclick="event.stopPropagation()"><div class="ar-tog-k"></div></div></div>
-        <div class="ar"><div class="ar-ic">🕊️</div><div><div class="ar-t">Sesiones solidarias</div><div class="ar-s">Activar / pausar programa Vela por ti</div></div><div class="ar-tog on" onclick="event.stopPropagation()"><div class="ar-tog-k"></div></div></div>
-        <div class="ar"><div class="ar-ic">💳</div><div><div class="ar-t">Pasarela de pago</div><div class="ar-s">Stripe Connect · comisión 20%</div></div><span style="font-size:14px;color:rgba(116,198,157,.5)">›</span></div>
+        <div class="ar"><div class="ar-ic">🆘</div><div><div class="ar-t">Botón SOS</div><div class="ar-s">Activo globalmente en todas las pantallas</div></div><div class="ar-tog on" onclick="event.stopPropagation()"><div class="ar-tog-k"></div></div></div>
+        <div class="ar"><div class="ar-ic">🕊️</div><div><div class="ar-t">Sesiones solidarias</div><div class="ar-s">Activar / pausar programa Velo vela por ti</div></div><div class="ar-tog on" onclick="event.stopPropagation()"><div class="ar-tog-k"></div></div></div>
+        <div class="ar"><div class="ar-ic">💳</div><div><div class="ar-t">Pasarela de pago</div><div class="ar-s">Stripe Connect · comisión 20% por sesión</div></div><span style="font-size:14px;color:rgba(116,198,157,.5)">›</span></div>
+
+        <!-- Breathing timer editor -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;margin-top:14px">🌬️ Editor — ejercicio de respiración</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:14px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:10px">Tiempos de ciclo (segundos)</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+            <div style="text-align:center">
+              <div style="font-size:10px;color:rgba(116,198,157,.6);margin-bottom:5px">Inhalar</div>
+              <input id="cfgBreathIn" type="number" value="4" min="1" max="10" style="width:100%;padding:8px;background:rgba(116,198,157,.08);border:1.5px solid rgba(116,198,157,.2);border-radius:10px;color:rgba(255,255,255,.85);font-size:16px;font-weight:700;text-align:center;font-family:Jost,sans-serif;outline:none">
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:10px;color:rgba(212,168,100,.6);margin-bottom:5px">Retener</div>
+              <input id="cfgBreathHold" type="number" value="7" min="0" max="10" style="width:100%;padding:8px;background:rgba(212,168,100,.08);border:1.5px solid rgba(212,168,100,.2);border-radius:10px;color:rgba(255,255,255,.85);font-size:16px;font-weight:700;text-align:center;font-family:Jost,sans-serif;outline:none">
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:10px;color:rgba(168,212,232,.6);margin-bottom:5px">Exhalar</div>
+              <input id="cfgBreathOut" type="number" value="8" min="1" max="15" style="width:100%;padding:8px;background:rgba(168,212,232,.08);border:1.5px solid rgba(168,212,232,.2);border-radius:10px;color:rgba(255,255,255,.85);font-size:16px;font-weight:700;text-align:center;font-family:Jost,sans-serif;outline:none">
+            </div>
+          </div>
+          <div style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:10px">Ciclo actual: 4-7-8 · Clásico de relajación</div>
+          <button onclick="saveBreathConfig()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Jost,sans-serif">Guardar configuración 🌬️</button>
+        </div>
       </div>
 
       <!-- TAB: ROLES Y PERMISOS -->
@@ -3964,10 +4114,10 @@
           <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:8px">Invitar administrador o moderador</div>
           <input class="inp" id="inviteEmail" placeholder="Email a invitar" type="email" style="background:rgba(116,198,157,.07);border-color:rgba(116,198,157,.15);color:rgba(255,255,255,.85);margin-bottom:7px">
           <div style="display:flex;gap:7px;margin-bottom:9px">
-            <div onclick="selInviteRole(this,'admin')" style="flex:1;padding:8px;border:1.5px solid rgba(200,146,10,.3);border-radius:11px;text-align:center;cursor:pointer;background:rgba(200,146,10,.08)">
+            <div onclick="selInviteRole(this,'admin')" data-role="admin" class="role-sel-active" style="flex:1;padding:8px;border:1.5px solid rgba(200,146,10,.3);border-radius:11px;text-align:center;cursor:pointer;background:rgba(200,146,10,.1)">
               <div style="font-size:14px;margin-bottom:2px">👑</div><div style="font-size:10px;font-weight:700;color:var(--gold2)">Admin</div>
             </div>
-            <div onclick="selInviteRole(this,'moderador')" style="flex:1;padding:8px;border:1.5px solid rgba(255,255,255,.12);border-radius:11px;text-align:center;cursor:pointer;background:rgba(255,255,255,.04)">
+            <div onclick="selInviteRole(this,'moderador')" data-role="moderador" style="flex:1;padding:8px;border:1.5px solid rgba(255,255,255,.12);border-radius:11px;text-align:center;cursor:pointer;background:rgba(255,255,255,.04)">
               <div style="font-size:14px;margin-bottom:2px">🛡️</div><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.55)">Moderador</div>
             </div>
           </div>
@@ -3983,12 +4133,29 @@
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" style="accent-color:var(--sage2)"><span style="font-size:11px;color:rgba(255,255,255,.4)">❌ Estadísticas financieras (solo admin)</span></label>
             </div>
           </div>
-          <button onclick="sendInvite()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Enviar invitación 📧</button>
+          <button onclick="sendInvite()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Crear acceso y notificar 📧</button>
+        </div>
+
+        <!-- Roles activos -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">Accesos activos</div>
+        <div id="adminRolesList" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:10px 12px;margin-bottom:12px">
+          <div style="font-size:11px;color:rgba(255,255,255,.3);text-align:center;padding:8px">Sin roles adicionales creados</div>
+        </div>
+
+        <!-- Permisos del moderador (info) -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">Permisos por rol</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;margin-bottom:12px">
+          <div style="display:flex;gap:10px;margin-bottom:10px">
+            <span style="font-size:14px">👑</span><div><div style="font-size:11px;font-weight:700;color:var(--gold2)">Super Admin</div><div style="font-size:10px;color:rgba(255,255,255,.4);line-height:1.5">Acceso total: usuarios, profesionales, pagos, ingresos, roles, configuración, moderación.</div></div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <span style="font-size:14px">🛡️</span><div><div style="font-size:11px;font-weight:700;color:rgba(196,181,232,.8)">Moderador</div><div style="font-size:10px;color:rgba(255,255,255,.4);line-height:1.5">Puede moderar contenido, reportes, círculos, salas. <b style="color:#F87070">No puede ver ingresos ni pagos.</b> No puede modificar roles.</div></div>
+          </div>
         </div>
 
         <!-- RBAC info -->
         <div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;padding:11px;font-size:11px;color:rgba(116,198,157,.5);line-height:1.7">
-          🛡️ <b style="color:rgba(116,198,157,.7)">RBAC activo</b> — Role Based Access Control. Los roles definen qué puede hacer cada persona dentro de Velo. Solo el Super Admin puede modificar roles de administradores.
+          🛡️ <b style="color:rgba(116,198,157,.7)">RBAC activo</b> — Role Based Access Control. Los roles definen qué puede hacer cada persona dentro de Velo. Solo el Super Admin puede crear o revocar accesos.
         </div>
       </div>
 
@@ -4009,6 +4176,23 @@
       <button onclick="closeForgotModal()" style="width:100%;padding:11px;background:none;border:none;color:var(--ink4);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">Cancelar</button>
     </div>
   </div>
+
+<div id="resetPassModal" style="display:none;position:absolute;inset:0;z-index:9700;align-items:flex-end;justify-content:center">
+    <div onclick="closeResetModal()" style="position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(8px)"></div>
+    <div style="position:relative;width:100%;max-width:480px;background:var(--cream);border-radius:28px 28px 0 0;padding:24px 22px 44px;animation:sheetUp .3s cubic-bezier(.22,1,.36,1) both;box-shadow:0 -8px 40px rgba(0,0,0,.2)">
+      <div style="width:36px;height:4px;border-radius:100px;background:rgba(0,0,0,.1);margin:0 auto 18px"></div>
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="font-size:30px;margin-bottom:8px">🔐</div>
+        <div class="serif-i" style="font-size:20px;color:var(--sage)">Crear nueva contraseña</div>
+        <div style="font-size:12px;color:var(--ink4);margin-top:6px">Cuenta: <b id="resetEmailDisplay">—</b></div>
+      </div>
+      <input class="inp" id="resetPass1" type="password" placeholder="Nueva contraseña (mín. 8 caracteres)" style="margin-bottom:10px">
+      <input class="inp" id="resetPass2" type="password" placeholder="Repetir nueva contraseña" style="margin-bottom:14px">
+      <button onclick="doResetPassword()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;margin-bottom:10px">Guardar contraseña 🔑</button>
+      <button onclick="closeResetModal()" style="width:100%;padding:11px;background:none;border:none;color:var(--ink4);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">Cancelar</button>
+    </div>
+  </div>
+
 <div class="sc" id="guardian-chat" style="background:#f5f0eb">
     <!-- Header -->
     <div id="gcHeader" style="padding:48px 16px 12px;background:#fff;border-bottom:1px solid #e8e0d8;flex-shrink:0;display:flex;align-items:center;gap:10px">
@@ -4480,9 +4664,12 @@
     <div style="position:relative;width:100%;background:linear-gradient(160deg,#E8F0FA,#EAF0F8);border-radius:28px 28px 0 0;padding:22px 20px 40px;animation:sheetUp .3s cubic-bezier(.22,1,.36,1) both">
       <div style="width:36px;height:4px;border-radius:100px;background:rgba(0,0,0,.1);margin:0 auto 14px"></div>
       <div id="bottleReplyText" style="font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--ink2);line-height:1.7;background:rgba(255,255,255,.7);border-radius:16px;padding:14px;margin-bottom:14px;border:1.5px solid rgba(168,212,232,.3)"></div>
-      <div style="font-size:12px;color:#3A7090;font-weight:700;margin-bottom:8px">Tu respuesta anónima:</div>
-      <textarea id="bottleReplyInput" placeholder="Escribí palabras de aliento..." maxlength="400" style="width:100%;min-height:90px;border:1.5px solid rgba(168,212,232,.4);border-radius:16px;padding:12px;font-family:'Jost',sans-serif;font-size:13px;color:var(--ink);background:rgba(255,255,255,.9);resize:none;outline:none;line-height:1.55;box-sizing:border-box;margin-bottom:12px"></textarea>
-      <button onclick="sendBottleReply()" style="width:100%;padding:13px;background:linear-gradient(135deg,#3A7090,#2D6A8A);border:none;border-radius:100px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;margin-bottom:9px">Enviar respuesta 🌊</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:12px;color:#3A7090;font-weight:700">Tu respuesta anónima:</div>
+        <div id="bottleCharCount" style="font-size:11px;color:#aaa">0/100 mín.</div>
+      </div>
+      <textarea id="bottleReplyInput" placeholder="Escribí palabras de aliento para quien lo necesita... (mínimo 100 caracteres)" maxlength="500" oninput="onBottleReplyInput(this)" style="width:100%;min-height:110px;border:1.5px solid rgba(168,212,232,.4);border-radius:16px;padding:12px;font-family:'Jost',sans-serif;font-size:13px;color:var(--ink);background:rgba(255,255,255,.9);resize:none;outline:none;line-height:1.55;box-sizing:border-box;margin-bottom:10px"></textarea>
+      <button id="bottleReplySendBtn" onclick="sendBottleReply()" disabled style="width:100%;padding:13px;background:rgba(58,112,144,.3);border:none;border-radius:100px;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;cursor:not-allowed;font-family:'Jost',sans-serif;margin-bottom:9px;transition:all .25s">Enviar respuesta 🌊</button>
       <button onclick="closeBottleReply()" style="width:100%;padding:10px;background:none;border:none;color:var(--ink4);font-size:12px;cursor:pointer;font-family:'Jost',sans-serif">Cancelar</button>
     </div>
   </div>

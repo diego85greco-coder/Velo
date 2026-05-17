@@ -1145,6 +1145,7 @@ function goTo(id){
   if(id==='admin') setTimeout(renderAdminContacts,50);
   if(id==='profile') setTimeout(checkMonthlyDonorUI,50);
   if(id==='bottle') setTimeout(renderBottleWall,50);
+  if(id==='happy') setTimeout(renderHappyWall,50);
   if(id==='help') setTimeout(renderSolicitudes,50);
   if(id==='buzon') setTimeout(renderBuzon,50);
   if(id==='feed') setTimeout(renderMyCircles,50);
@@ -1808,7 +1809,11 @@ function filterCircles(q){
     if(cSec) cSec.querySelector('div:first-child').style.display = '';
   }
 }
-function openSosModal(){openModal('sosModal');}
+function openSosModal(){
+  var count = parseInt(safeLS('get','velo_sos_count')||'0') + 1;
+  safeLS('set','velo_sos_count', String(count));
+  openModal('sosModal');
+}
 
 // ── PROFESIONALES — FILTROS ──────────────────────────────
 function selProCat(el, cat){
@@ -2240,11 +2245,14 @@ function adminLogout(){
 function adminTab(btn, tabId){
   document.querySelectorAll('.atab').forEach(function(b){ b.classList.remove('on'); });
   if(btn) btn.classList.add('on');
-  var tabs=['atab-dash','atab-users','atab-pros','atab-content','atab-msg','atab-wellness','atab-support','atab-config','atab-roles'];
+  var tabs=['atab-dash','atab-users','atab-pros','atab-content','atab-msg','atab-wellness','atab-support','atab-pagos','atab-solidarias','atab-config','atab-roles'];
   tabs.forEach(function(t){
     var el = document.getElementById(t);
     if(el) el.style.display = (t===tabId)?'block':'none';
   });
+  if(tabId==='atab-msg') setTimeout(renderAdminContacts,50);
+  if(tabId==='atab-solidarias') setTimeout(renderFreeSessions,50);
+  if(tabId==='atab-wellness') setTimeout(renderBadgeCounts,50);
 }
 function filterAdminUsers(el, filter){
   var p = el.parentElement;
@@ -2317,14 +2325,24 @@ function sendAdminMsg(){
 }
 function selInviteRole(el, role){
   var p = el.parentElement;
-  p.querySelectorAll('div').forEach(function(d){
+  p.querySelectorAll('[data-role]').forEach(function(d){
+    d.classList.remove('role-sel-active');
     d.style.borderColor='rgba(255,255,255,.12)';
     d.style.background='rgba(255,255,255,.04)';
   });
-  el.style.borderColor = role==='admin'?'rgba(200,146,10,.3)':'rgba(116,198,157,.3)';
-  el.style.background = role==='admin'?'rgba(200,146,10,.1)':'rgba(116,198,157,.08)';
+  el.classList.add('role-sel-active');
+  el.style.borderColor = role==='admin'?'rgba(200,146,10,.3)':'rgba(196,181,232,.3)';
+  el.style.background = role==='admin'?'rgba(200,146,10,.1)':'rgba(196,181,232,.08)';
   var mod = document.getElementById('modPermsSection');
   if(mod) mod.style.display = role==='moderador'?'block':'none';
+}
+function saveBreathConfig(){
+  var inVal = parseInt(document.getElementById('cfgBreathIn').value)||4;
+  var holdVal = parseInt(document.getElementById('cfgBreathHold').value)||7;
+  var outVal = parseInt(document.getElementById('cfgBreathOut').value)||8;
+  safeLS('set','velo_breath_config',JSON.stringify({in:inVal,hold:holdVal,out:outVal}));
+  if(window.breathSeq) breathSeq = [{p:'Inhala',d:inVal},{p:'Retén',d:holdVal},{p:'Exhala',d:outVal}];
+  showSuc('🌬️','Configuración guardada','Ciclo '+inVal+'-'+holdVal+'-'+outVal+' aplicado al ejercicio de respiración. 🌿');
 }
 function sendInvite(){
   var em = document.getElementById('inviteEmail');
@@ -2336,6 +2354,115 @@ function approvePro(name){
   safeLS('set','velo_pro_approved','true');
   toast('✅','Perfil aprobado. Se notifica al profesional y puede acceder a su panel.');
   deliverInboxMsg('pro-bienvenida');
+}
+function rejectPro(name, email){
+  var msg='Hola,\n\nRevisamos tu solicitud para unirte a Velo como profesional y lamentamos informarte que en este momento no podemos aprobar tu perfil.\n\nEsto puede deberse a que la documentación presentada está incompleta, o que el perfil no cumple con los criterios actuales de la plataforma.\n\nSi creés que es un error o querés corregir tu postulación, escribinos a '+VELO_EMAIL+'. Estaremos felices de ayudarte. Gracias por tu interés en Velo.\n\nEquipo Velo';
+  if(email){
+    var gmailUrl='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent('Tu solicitud en Velo — Información importante')+'&body='+encodeURIComponent(msg);
+    window.open(gmailUrl,'_blank');
+  }
+  toast('❌','Perfil rechazado. Se notifica al profesional.');
+}
+function rejectVelaPorTi(username){
+  var msg='Hola '+username+',\n\nLeemos tu solicitud para el programa Velo vela por ti con mucho cuidado y respeto.\n\nEn este momento, nuestros profesionales solidarios disponibles están completos y no podemos asignarte una sesión de forma inmediata. Esto no significa que tu situación sea menos importante — todo lo contrario.\n\nTe invitamos a:\n• Conectarte con nuestra comunidad de Guardianes\n• Usar el espacio de respiración y el diario personal\n• Volver a solicitar en 30 días cuando haya más disponibilidad\n\nVelo está aquí contigo. No estás sol@. 💙\n\nEquipo Velo · '+VELO_EMAIL;
+  deliverInboxMsg('vela-recibida');
+  showSuc('💙','Mensaje enviado a '+username,'Se le informó que está en lista de espera con un mensaje empático. 💙');
+}
+function assignVelaPorTi(username, proName){
+  deliverInboxMsg('sesion-aprobada');
+  var proEmail='profesional@ejemplo.com';
+  var gmailUrl='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(proEmail)+'&su='+encodeURIComponent('Sesión Solidaria asignada — Velo')+'&body='+encodeURIComponent('Hola '+proName+',\n\nTe asignamos una sesión solidaria para el usuario "'+username+'". Por favor coordiná el horario directamente con el equipo.\n\nGracias por tu compromiso.\nEquipo Velo · '+VELO_EMAIL);
+  window.open(gmailUrl,'_blank');
+  toast('🕊️','Sesión asignada. Notificando a '+proName+' y a '+username+'...');
+}
+function replyProContact(id, name){
+  var email=name.toLowerCase().replace(/[^a-z]/g,'')+'@profesional.com';
+  var gmailUrl='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(email)+'&su='+encodeURIComponent('Respuesta de Velo — '+name)+'&body='+encodeURIComponent('Hola '+name+',\n\nGracias por tu consulta. En respuesta:\n\n[Escribí tu respuesta aquí]\n\nSaludos,\nEquipo Velo\n'+VELO_EMAIL)+'&cc='+encodeURIComponent(VELO_EMAIL);
+  window.open(gmailUrl,'_blank');
+}
+// Velo admin stored roles
+function sendInvite(){
+  var em = document.getElementById('inviteEmail');
+  if(!em||!em.value.trim()){ toast('⚠️','Ingresá un email'); return; }
+  var selRole = document.querySelector('#atab-roles .role-sel-active');
+  var role = selRole ? selRole.dataset.role : 'moderador';
+  var emailVal = em.value.trim();
+  var roles = JSON.parse(safeLS('get','velo_admin_roles')||'[]');
+  var exists = roles.some(function(r){ return r.email===emailVal; });
+  if(exists){ toast('⚠️','Este email ya tiene un rol asignado'); return; }
+  var tempPass = 'Velo'+Math.random().toString(36).slice(2,8).toUpperCase()+'!';
+  roles.push({ email:emailVal, role:role, fecha:new Date().toLocaleDateString('es'), pass:tempPass });
+  safeLS('set','velo_admin_roles',JSON.stringify(roles));
+  var gmailUrl='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(emailVal)+'&su='+encodeURIComponent('Invitación al panel de Velo')+'&body='+encodeURIComponent('Hola,\n\nFuiste invitado/a como '+role+' en Velo.\n\nAccedé al panel en: https://diego85greco-coder.github.io/Velo/\nEmail: '+emailVal+'\nContraseña temporal: '+tempPass+'\n\nCambiá tu contraseña al ingresar por primera vez.\n\nEquipo Velo · '+VELO_EMAIL);
+  window.open(gmailUrl,'_blank');
+  em.value='';
+  renderAdminRoles();
+  showSuc('👑','Invitación enviada a '+emailVal,'El acceso fue creado internamente. Se abrió Gmail para notificar. 📧');
+}
+function renderAdminRoles(){
+  var list = document.getElementById('adminRolesList');
+  if(!list) return;
+  var roles = JSON.parse(safeLS('get','velo_admin_roles')||'[]');
+  if(!roles.length){ list.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.3);text-align:center;padding:12px">Sin roles adicionales creados</div>'; return; }
+  list.innerHTML = roles.map(function(r){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">'+
+      '<div style="font-size:18px">'+(r.role==='admin'?'👑':'🛡️')+'</div>'+
+      '<div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.75)">'+r.email+'</div><div style="font-size:10px;color:rgba(255,255,255,.35)">'+r.role+' · desde '+r.fecha+'</div></div>'+
+      '<button class="a-btn-r" onclick="removeRole(\''+r.email+'\')">Revocar</button>'+
+    '</div>';
+  }).join('');
+}
+function removeRole(email){
+  var roles = JSON.parse(safeLS('get','velo_admin_roles')||'[]');
+  roles = roles.filter(function(r){ return r.email!==email; });
+  safeLS('set','velo_admin_roles',JSON.stringify(roles));
+  renderAdminRoles();
+  toast('🗑️','Acceso revocado para '+email);
+}
+function renderFreeSessions(){
+  var el = document.getElementById('adminFreeSessionList');
+  if(!el) return;
+  var pros = [
+    {name:'Dra. Ana Martínez', esp:'Psicología Clínica', sesiones:2, activas:1, icono:'🧠'},
+    {name:'Coach Lucas Fernández', esp:'Bienestar · Mindfulness', sesiones:1, activas:1, icono:'🧘'},
+    {name:'Lic. Sofía Vargas', esp:'Psicología Infanto-Juvenil', sesiones:3, activas:0, icono:'🌱'}
+  ];
+  el.innerHTML = pros.map(function(p){
+    return '<div style="background:rgba(168,212,232,.06);border:1px solid rgba(168,212,232,.15);border-radius:14px;padding:12px;margin-bottom:8px">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
+        '<div style="width:36px;height:36px;border-radius:10px;background:rgba(168,212,232,.15);display:flex;align-items:center;justify-content:center;font-size:16px">'+p.icono+'</div>'+
+        '<div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85)">'+p.name+'</div>'+
+        '<div style="font-size:10px;color:rgba(168,212,232,.5)">'+p.esp+'</div></div>'+
+        '<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:rgba(168,212,232,.9)">'+p.sesiones+'</div><div style="font-size:9px;color:rgba(168,212,232,.5)">donadas</div></div>'+
+      '</div>'+
+      '<div style="display:flex;gap:6px">'+
+        (p.activas>0?'<span style="padding:3px 9px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);border-radius:100px;font-size:10px;font-weight:700;color:var(--sage2)">'+p.activas+' disponible'+(p.activas>1?'s':'')+'</span>':'<span style="padding:3px 9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:10px;color:rgba(255,255,255,.35)">Sin disponibilidad</span>')+
+        (p.sesiones>=3?'<span style="padding:3px 9px;background:rgba(212,168,100,.1);border:1px solid rgba(212,168,100,.2);border-radius:100px;font-size:10px;font-weight:700;color:var(--gold2)">🏅 Insignia Solidario</span>':'')+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+function renderBadgeCounts(){
+  var sosStat = document.getElementById('adminSosStat');
+  if(sosStat) sosStat.textContent = safeLS('get','velo_sos_count')||'0';
+  var el = document.getElementById('adminBadgeCounts');
+  if(!el) return;
+  var badges = [
+    {ico:'🥉',name:'Bronce',desc:'5+ charlas',count:342},
+    {ico:'🥈',name:'Plata',desc:'21+ charlas · alta valoración',count:128},
+    {ico:'🥇',name:'Oro',desc:'51+ charlas',count:47},
+    {ico:'💎',name:'Diamante',desc:'100+ charlas · 50+ reseñas',count:12},
+    {ico:'🏅',name:'Solidario',desc:'Profesional — 3+ sesiones donadas',count:8},
+    {ico:'💚',name:'Donador',desc:'Donación única',count:89},
+    {ico:'💎',name:'Donador mensual',desc:'Suscripción activa',count:31}
+  ];
+  el.innerHTML = badges.map(function(b){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)">'+
+      '<div style="font-size:20px;width:28px;text-align:center">'+b.ico+'</div>'+
+      '<div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.75)">'+b.name+'</div><div style="font-size:10px;color:rgba(255,255,255,.35)">'+b.desc+'</div></div>'+
+      '<div style="font-size:16px;font-weight:700;color:var(--sage2)">'+b.count+'</div>'+
+    '</div>';
+  }).join('');
 }
 
 // ── AUTO-MENSAJES DEL SISTEMA ─────────────────────────────
@@ -2701,12 +2828,20 @@ function doLoginUser(){
   if(em) em.classList.remove('error');
   if(pw) pw.classList.remove('error');
   var ok=true;
-  if(!em||!em.value.trim()){if(em)em.classList.add('error');toast('⚠️','Ingresa tu email');ok=false;}
-  else if(pw&&!pw.value.trim()){pw.classList.add('error');toast('⚠️','Ingresa tu contraseña');ok=false;}
+  if(!em||!em.value.trim()){if(em)em.classList.add('error');toast('⚠️','Ingresá tu email');ok=false;}
+  else if(pw&&!pw.value.trim()){pw.classList.add('error');toast('⚠️','Ingresá tu contraseña');ok=false;}
   if(!ok)return;
+  // Check stored password if one was set via reset
+  var storedEmail = safeLS('get','velo_user_pass_email')||'';
+  var storedPass = safeLS('get','velo_user_pass')||'';
+  if(storedEmail && storedPass && em.value.trim()===storedEmail && pw.value!==storedPass){
+    if(pw) pw.classList.add('error');
+    toast('❌','Contraseña incorrecta');
+    return;
+  }
   try{localStorage.setItem('velo_session','user');localStorage.removeItem('velo_banner_shown');}catch(err){}
   goTo('home');
-  setTimeout(function(){toast('🌿','Bienvenido/a de vuelta');},400);
+  setTimeout(function(){toast('🌿','Bienvenido/a de vuelta 💚');},400);
 }
 function doLoginPro(){
   var em=document.getElementById('lpEmail');
@@ -2834,10 +2969,43 @@ function closeForgotModal(){
 }
 function sendForgot(){
   var inp = document.getElementById('forgotEmail');
-  if(!inp || !inp.value.trim()){ toast('Ingresa tu email'); return; }
+  if(!inp || !inp.value.trim()){ toast('⚠️','Ingresá tu email'); return; }
   var email = inp.value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ toast('📧','Revisá que el email esté bien escrito'); return; }
+  var stored = safeLS('get','velo_user_email')||'';
   closeForgotModal();
-  showSuc('Enlace enviado a '+email+'. Revisa tu bandeja. Expira en 30 minutos.');
+  // Store pending reset email and show new password modal
+  safeLS('set','velo_reset_pending_email', email);
+  var m = document.getElementById('resetPassModal');
+  if(m){
+    m.style.display='flex';
+    var el = document.getElementById('resetEmailDisplay');
+    if(el) el.textContent = email;
+    var p1 = document.getElementById('resetPass1');
+    var p2 = document.getElementById('resetPass2');
+    if(p1) p1.value='';
+    if(p2) p2.value='';
+  } else {
+    showSuc('📧','Enlace enviado','Revisá tu bandeja de '+email+'. Expira en 30 minutos.');
+  }
+}
+function doResetPassword(){
+  var p1 = document.getElementById('resetPass1');
+  var p2 = document.getElementById('resetPass2');
+  if(!p1||!p2||!p1.value.trim()){ toast('⚠️','Ingresá la nueva contraseña'); return; }
+  if(p1.value.length < 8){ toast('⚠️','La contraseña debe tener al menos 8 caracteres'); return; }
+  if(p1.value !== p2.value){ toast('⚠️','Las contraseñas no coinciden'); return; }
+  var email = safeLS('get','velo_reset_pending_email')||'';
+  safeLS('set','velo_user_pass', p1.value);
+  safeLS('set','velo_user_pass_email', email);
+  safeLS('set','velo_reset_pending_email','');
+  var m = document.getElementById('resetPassModal');
+  if(m) m.style.display='none';
+  showSuc('🔑','Contraseña actualizada','Tu contraseña fue cambiada con éxito. Ya podés iniciar sesión con tu nueva contraseña. 💚');
+}
+function closeResetModal(){
+  var m = document.getElementById('resetPassModal');
+  if(m) m.style.display='none';
 }
 
 // ── BOTTLE REPLY ─────────────────────────────────────────
@@ -3691,18 +3859,24 @@ function renderBottleWall(){
       return;
     }
     var myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]');
-    pending.forEach(function(bottle){
+    pending.forEach(function(bottle, idx){
       var isMine = myBottles.indexOf(bottle.id) >= 0;
       var div = document.createElement('div');
-      div.className = 'dark-bottle';
-      var deleteBtn = isMine
-        ? '<button onclick="deleteMyBottle(\''+bottle.id+'\')" style="background:rgba(192,48,40,.2);border:1px solid rgba(192,48,40,.35);border-radius:100px;color:rgba(255,120,100,.85);font-size:10px;font-weight:700;padding:6px 12px;cursor:pointer;font-family:\'Jost\',sans-serif">Retirar 🗑️</button>'
-        : '<button onclick="respondBottle(\''+bottle.id+'\')" class="dark-btn-w" style="width:auto;padding:8px 16px;font-size:12px;margin-bottom:0">Responder 🌊</button>';
-      div.innerHTML = '<div style="font-size:22px;margin-bottom:8px">'+bottle.emoji+'</div>'
-        +'<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:14px;color:rgba(255,255,255,.82);line-height:1.6;margin-bottom:12px">"'+bottle.msg+'"</div>'
+      var colors = [
+        {bg:'#fff',border:'rgba(58,112,144,.25)',accent:'#3A7090',text:'#1A3A5A',sub:'#5A8FA8'},
+        {bg:'#fff',border:'rgba(107,85,168,.2)',accent:'#6855A8',text:'#2A1A50',sub:'#7B65B8'},
+        {bg:'#fff',border:'rgba(45,106,79,.2)',accent:'#2D6A4F',text:'#1A3A28',sub:'#4A9070'}
+      ];
+      var c = colors[idx % colors.length];
+      div.style.cssText = 'background:'+c.bg+';border:1.5px solid '+c.border+';border-left:4px solid '+c.accent+';border-radius:18px;padding:14px 16px;margin:0 17px 10px;box-shadow:0 2px 12px rgba(0,0,0,.06);animation:waveIn .35s ease both';
+      var actionBtn = isMine
+        ? '<button onclick="deleteMyBottle(\''+bottle.id+'\')" style="padding:9px 16px;background:#FFF0EE;border:1.5px solid rgba(192,48,40,.25);border-radius:100px;color:#C03028;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">Retirar 🗑️</button>'
+        : '<button onclick="respondBottle(\''+bottle.id+'\')" style="padding:9px 18px;background:linear-gradient(135deg,'+c.accent+','+c.sub+');border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;box-shadow:0 3px 10px rgba(0,0,0,.15)">🍾 Abrir botella</button>';
+      div.innerHTML = '<div style="font-size:22px;margin-bottom:7px">'+bottle.emoji+'</div>'
+        +'<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:15px;color:'+c.text+';line-height:1.6;margin-bottom:12px">"'+bottle.msg+'"</div>'
         +'<div style="display:flex;align-items:center;justify-content:space-between">'
-        +'<div style="font-size:11px;color:rgba(255,255,255,.4)">'+bottle.author+' · '+bottle.time+(isMine?' · <b style="color:rgba(116,198,157,.6)">Tu botella</b>':'')+'</div>'
-        +deleteBtn
+        +'<div style="font-size:11px;color:'+c.sub+'">'+bottle.author+' · '+bottle.time+(isMine?' · <b>Tu botella</b>':'')+'</div>'
+        +actionBtn
         +'</div>';
       container.appendChild(div);
     });
@@ -3744,9 +3918,34 @@ function openBottleReply(msg, bottleId){
   var txt = document.getElementById('bottleReplyText');
   var inp = document.getElementById('bottleReplyInput');
   var m   = document.getElementById('bottleReplyModal');
+  var cnt = document.getElementById('bottleCharCount');
+  var btn = document.getElementById('bottleReplySendBtn');
   if(txt) txt.textContent = msg || '';
   if(inp) inp.value = '';
+  if(cnt) cnt.textContent = '0/100 mín.';
+  if(btn){ btn.disabled=true; btn.style.background='rgba(58,112,144,.3)'; btn.style.color='rgba(255,255,255,.5)'; btn.style.cursor='not-allowed'; }
   if(m)   m.style.display = 'flex';
+}
+function onBottleReplyInput(el){
+  var len = el.value.length;
+  var cnt = document.getElementById('bottleCharCount');
+  var btn = document.getElementById('bottleReplySendBtn');
+  if(cnt){
+    if(len < 100){
+      cnt.textContent = len+'/100 mín.';
+      cnt.style.color = len > 60 ? '#e08a00' : '#aaa';
+    } else {
+      cnt.textContent = len+' ✓';
+      cnt.style.color = '#2D6A4F';
+    }
+  }
+  if(btn){
+    var ready = len >= 100;
+    btn.disabled = !ready;
+    btn.style.background = ready ? 'linear-gradient(135deg,#3A7090,#2D6A8A)' : 'rgba(58,112,144,.3)';
+    btn.style.color = ready ? '#fff' : 'rgba(255,255,255,.5)';
+    btn.style.cursor = ready ? 'pointer' : 'not-allowed';
+  }
 }
 function closeBottleReply(){
   var m = document.getElementById('bottleReplyModal');
@@ -3755,6 +3954,7 @@ function closeBottleReply(){
 function sendBottleReply(){
   var inp = document.getElementById('bottleReplyInput');
   if(!inp||!inp.value.trim()){ toast('🌊','Escribí algo antes de responder'); return; }
+  if(inp.value.trim().length < 100){ toast('💙','Tu respuesta debe tener al menos 100 caracteres. Tomate el tiempo de acompañar de verdad.'); return; }
   var replyText = inp.value.trim();
   var answeredBottle = null;
   if(currentBottleId !== null){
