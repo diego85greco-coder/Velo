@@ -2295,6 +2295,7 @@ function adminTab(btn, tabId){
   if(tabId==='atab-wellness') setTimeout(renderBadgeCounts,50);
   if(tabId==='atab-pagos') setTimeout(renderAdminSubStats,50);
   if(tabId==='atab-users') setTimeout(renderAdminTCRecords,50);
+  if(tabId==='atab-content') setTimeout(renderAdminCircleAudit,50);
 }
 function filterAdminUsers(el, filter){
   var p = el.parentElement;
@@ -3456,9 +3457,20 @@ function assignFreeSession(proId, proName){
 // ── MURO DE FELICIDAD ─────────────────────────────────────
 var happyPosts=[];
 var happyReactions={};
+var HAPPY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 function _loadHappy(){
   try{ happyPosts=JSON.parse(localStorage.getItem('velo_happy')||'[]'); }catch(e){ happyPosts=[]; }
   try{ happyReactions=JSON.parse(localStorage.getItem('velo_happy_r')||'{}'); }catch(e){ happyReactions={}; }
+  // Expire posts older than 24h that have media (photos/videos)
+  var now = Date.now();
+  var before = happyPosts.length;
+  happyPosts = happyPosts.filter(function(p){
+    if(!p.ts) return true; // demo posts without timestamp kept
+    var age = now - p.ts;
+    if(age > HAPPY_TTL_MS && (p.mType === 'image' || p.mType === 'video')) return false;
+    return true;
+  });
+  if(happyPosts.length !== before) _saveHappy();
   if(happyPosts.length===0){
     happyPosts=[
       {id:'hp1',author:'Estrella',av:'⭐',time:'hace 8 min',city:'Madrid',text:'"Mi café de la mañana con el sol entrando. Las cosas pequeñas son las más perfectas."',mType:'emoji',mData:'☕',r:{sun:12,heart:8,wow:3,hug:5,spark:2},comments:[{author:'Luna',text:'¡Eso me alegró el día! 💚',time:'hace 5 min'}],flagged:false},
@@ -3508,8 +3520,10 @@ function submitHappyPost(){
 }
 function _doHappyPost(text){
   _loadHappy();
+  var hasMedia = !!(_happyMData && (_happyMType==='image'||_happyMType==='video'));
   happyPosts.unshift({
     id:'hp-'+Date.now(),
+    ts: Date.now(),
     author:getDisplayName()||'Anónimo',
     av:'🌟',
     time:'ahora',
@@ -3519,7 +3533,8 @@ function _doHappyPost(text){
     mData:_happyMData||null,
     r:{sun:0,heart:0,wow:0,hug:0,spark:0},
     comments:[],
-    flagged:false
+    flagged:false,
+    expires24h: hasMedia
   });
   _saveHappy();
   closeHappyPost();
@@ -3631,8 +3646,6 @@ function showHelpLimitModal(){
 }
 function subscribePremiumUser(){
   closeModal('planModal');
-  var m = document.getElementById('helpLimitModal');
-  if(m) m.style.display='none';
   openPayPalPremium();
   toast('💳','Redirigiendo a PayPal… completá el pago y volvé 🌿');
 }
@@ -3677,6 +3690,88 @@ function updatePlanBadge(){
     if(ico) ico.textContent = '💎';
     if(lbl) lbl.textContent = 'Plus';
   }
+}
+
+// ── ADMIN: CIRCLE AUDIT ───────────────────────────────────
+function renderAdminCircleAudit(){
+  var el = document.getElementById('adminCircleAuditList');
+  if(!el) return;
+  var circles = JSON.parse(safeLS('get','velo_user_circles')||'[]');
+  // Add demo circles if none
+  var demos = [
+    {id:'demo-ansiedad', name:'Ansiedad Compartida', emoji:'🌊', members:42, msgs:18, reported:true},
+    {id:'demo-insomnio', name:'Insomnio y Noche', emoji:'🌙', members:28, msgs:7, reported:false},
+    {id:'demo-duelo', name:'Duelo y Pérdida', emoji:'🕊️', members:15, msgs:4, reported:false}
+  ];
+  var allCircles = demos.concat(circles.map(function(c){
+    return {id:c.id, name:c.name||'Círculo', emoji:c.emoji||'🕊️', members:c.members||2, msgs:c.messages?c.messages.length:0, reported:false, isUser:true};
+  }));
+  el.innerHTML = allCircles.map(function(c){
+    var badge = c.reported
+      ? '<span style="padding:2px 7px;background:rgba(192,48,40,.15);border:1px solid rgba(192,48,40,.3);border-radius:100px;font-size:9px;font-weight:700;color:#F87070">⚠️ Reportado</span>'
+      : (c.isUser ? '<span style="padding:2px 7px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:100px;font-size:9px;color:rgba(116,198,157,.7)">Usuario</span>' : '<span style="padding:2px 7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:9px;color:rgba(255,255,255,.35)">Demo</span>');
+    return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(168,212,232,.12);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px">'+
+      '<div style="font-size:22px">'+c.emoji+'</div>'+
+      '<div style="flex:1">'+
+        '<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.8)">'+c.name+'</div>'+
+        '<div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:1px">👥 '+c.members+' miembros · 💬 '+c.msgs+' mensajes</div>'+
+      '</div>'+
+      badge+
+      '<button onclick="adminAuditCircle(\''+c.id+'\',\''+c.name+'\',\''+c.emoji+'\')" style="padding:6px 10px;background:rgba(168,212,232,.1);border:1.5px solid rgba(168,212,232,.2);border-radius:100px;font-size:10px;font-weight:700;color:rgba(168,212,232,.8);cursor:pointer;font-family:Jost,sans-serif">👁️ Auditar</button>'+
+    '</div>';
+  }).join('');
+}
+
+function adminAuditCircle(circleId, circleName, circleEmoji){
+  var nameEl = document.getElementById('auditCircleName');
+  if(nameEl) nameEl.textContent = circleEmoji+' '+circleName;
+  var msgsEl = document.getElementById('auditCircleMsgs');
+  if(!msgsEl) return;
+  // Try to get real circle messages
+  var circles = JSON.parse(safeLS('get','velo_user_circles')||'[]');
+  var circle = circles.find(function(c){return c.id===circleId;});
+  var messages = (circle && circle.messages) ? circle.messages : [];
+  // If demo circle, show demo messages
+  if(!messages.length && circleId.startsWith('demo-')){
+    messages = _getDemoCircleMessages(circleId);
+  }
+  if(!messages.length){
+    msgsEl.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.3)">No hay mensajes registrados en este círculo.</div>';
+  } else {
+    msgsEl.innerHTML = messages.map(function(m){
+      var isUser = m.isUser;
+      return '<div style="display:flex;gap:8px;'+(isUser?'justify-content:flex-end':'')+'">'+
+        (!isUser?'<div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">'+( m.av||'🌿')+'</div>':'') +
+        '<div style="max-width:75%">'+
+          '<div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:2px">'+(m.author||'Anónimo')+' · '+(m.time||'')+' </div>'+
+          '<div style="background:'+(isUser?'rgba(116,198,157,.15)':'rgba(255,255,255,.07)')+';border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:8px 10px;font-size:12px;color:rgba(255,255,255,.75);line-height:1.5">'+m.text+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+  openModal('adminCircleAuditModal');
+}
+
+function _getDemoCircleMessages(circleId){
+  var base = {
+    'demo-ansiedad':[
+      {av:'🌊',author:'Luna_Verde',time:'hace 2 min',text:'Hoy me costó mucho salir de casa. Pero aquí estoy. Gracias por este espacio.'},
+      {av:'⭐',author:'Estrella',time:'hace 5 min',text:'Lo entiendo perfectamente. Pequeños pasos. Eso es lo que importa 💚'},
+      {av:'🌿',author:'Mar_Quieto',time:'hace 8 min',text:'¿Alguien más siente que los domingos son los días más difíciles?'},
+      {av:'🌸',author:'Flor',time:'hace 11 min',text:'Yo sí. La anticipación del lunes me genera mucha ansiedad.'},
+      {av:'🌊',author:'Luna_Verde',time:'hace 14 min',text:'Respiramos juntos. Inhala 4, sostén 4, exhala 6. ¿Me acompañan?'},
+    ],
+    'demo-insomnio':[
+      {av:'🌙',author:'Noche_Clara',time:'hace 1 min',text:'Son las 3am y mi cerebro no para. ¿Alguien despierto?'},
+      {av:'⭐',author:'Velita',time:'hace 4 min',text:'Aquí. Siempre hay alguien. No estás sola.'},
+      {av:'🌙',author:'Noche_Clara',time:'hace 7 min',text:'Gracias. Solo saber eso ya ayuda un poco.'},
+    ],
+    'demo-duelo':[
+      {av:'🕊️',author:'Paz',time:'hace 3 min',text:'Hoy fue un año. Extraño a mi mamá más que nunca.'},
+      {av:'💫',author:'Cielo',time:'hace 6 min',text:'El amor que sentís por ella sigue vivo en vos. Siempre. 🕊️'},
+    ]
+  };
+  return base[circleId]||[];
 }
 
 // ── TÉRMINOS Y CONDICIONES ────────────────────────────────
