@@ -498,6 +498,8 @@ loadLogos();
 initSplashTheme();
 renderHappyWall();
 renderSessionPayQueue();
+// IA: generar resumen mensual si corresponde
+setTimeout(iaGenerateMonthlySummary, 2000);
 
 // Toast
 var tT;
@@ -611,12 +613,28 @@ function addDiaryEmoji(em){
 function saveDiaryEntry(){
   var ta=document.getElementById('diaryEntry');
   if(!ta||!ta.value.trim()){toast('📓','Escribí algo antes de guardar');return;}
+  var text = ta.value.trim();
   var entries=getDiaryEntries();
-  entries.unshift({text:ta.value.trim(),date:new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),ts:Date.now()});
+  entries.unshift({text:text,date:new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),ts:Date.now()});
   safeLS('set','velo_diary',JSON.stringify(entries.slice(0,50)));
   ta.value='';
   loadDiaryEntries();
   toast('📓','Entrada guardada. Solo vos podés verla. 🔒');
+  // IA: detectar crisis en diario y dar tip de bienestar
+  var crisisEnDiario = _veloIA.crisis.some(function(k){ return text.toLowerCase().indexOf(k)>=0; });
+  if(crisisEnDiario){
+    setTimeout(function(){
+      openModal('sosModal');
+      addBuzonMsg({id:'ia-diary-crisis-'+Date.now(),tipo:'sistema',icon:'🆘',remitente:'Velo IA',titulo:'Detectamos algo importante en tu diario',cuerpo:'Lo que escribiste hoy sugiere que estás pasando un momento muy difícil.\n\nTu diario es privado — nadie en Velo puede leerlo. Pero la IA de Velo analizó el tono para cuidarte.\n\n📞 Centro de Asistencia al Suicida: 135 (Argentina, 24hs, gratis)\n📞 CAT: 0800-888-4673\n\nSi querés hablar con alguien ahora mismo, los Guardianes de Velo están disponibles. 💚',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
+      updateBuzonDot(); updateInboxBadge();
+    }, 800);
+  } else {
+    // Tip de bienestar según emoción detectada
+    var tip = iaAnalyzeDiary(text);
+    setTimeout(function(){
+      toast('🤖', tip);
+    }, 1200);
+  }
 }
 function getDiaryEntries(){try{var s=safeLS('get','velo_diary');return s?JSON.parse(s):[];}catch(e){return[];}}
 function loadDiaryEntries(){
@@ -784,34 +802,188 @@ function renderAdminQueue(){
 }
 
 // ── AI CONTENT MODERATION (enhanced) ────────────────────
+// ══════════════════════════════════════════════════════════
+// VELO IA — Moderación + Análisis de bienestar personalizado
+// 100% client-side. Sin API externa. Sin costos.
+// ══════════════════════════════════════════════════════════
+
+var _veloIA = {
+  crisis: ['suicidio','matarme','quiero morir','no quiero vivir','hacerme daño','cortarme','acabar con mi vida','quitarme la vida','mejor muerto','quitarme la existencia','no puedo más con esto','ya no quiero estar','lastimarme','hacerme daño'],
+  odio:   ['te voy a matar','te voy a encontrar','me las vas a pagar','eres una puta','eres un puto','maricón','perra','prostituta','escoria','basura de persona','hijo de puta','pelotudo del orto','andate a la mierda','te reviento','te voy a cagar','imbécil','retardado','subnormal'],
+  sexual: ['mándame una foto','foto desnuda','sexo contigo','qué buena estás','qué bueno estás','te deseo sexualmente','quiero hacerte','vení a mi casa','te quiero conocer en persona','soy mayor que vos','tengo años más','manda foto'],
+  spam:   ['dato bancario','número de tarjeta','instagram.com','wa.me','whatsapp.com','compra ahora','oferta especial','link de pago','transferime','alias de mercadopago','paypal.me','bit.ly','tinyurl','telegram.me','t.me/'],
+
+  // Detectores de emoción para análisis de diario
+  emocionesPositivas: ['bien','contento','feliz','alegre','tranquilo','tranquila','paz','esperanza','mejoré','mejor','agradecido','agradecida','logré','pude','orgulloso','orgullosa','disfruté','emocionado','emocionada','sonreí','amor','cariño','motivado','motivada','energía','descansé'],
+  emocionesNegativas: ['mal','triste','cansado','cansada','ansioso','ansiosa','agotado','agotada','frustrado','frustrada','solo','sola','lloré','asustado','asustada','miedo','angustia','culpa','vergüenza','enojado','enojada','no puedo','difícil','duro','pesado','desbordado','desbordada'],
+  emocionesAnsiedad:  ['ansiedad','pánico','ataque','nervios','temblé','corazón acelerado','respirar','nudo','pecho','no podía','paralizado','paralizada'],
+
+  scoreToxicity: function(text){
+    var t = text.toLowerCase();
+    var score = 0;
+    this.odio.forEach(function(k){ if(t.indexOf(k)>=0) score+=3; });
+    this.sexual.forEach(function(k){ if(t.indexOf(k)>=0) score+=3; });
+    this.spam.forEach(function(k){ if(t.indexOf(k)>=0) score+=2; });
+    // Mayúsculas excesivas = agresividad
+    var upper = (text.match(/[A-ZÁÉÍÓÚ]{3,}/g)||[]).length;
+    score += Math.min(upper, 3);
+    // Signos excesivos
+    var excl = (text.match(/!{2,}/g)||[]).length;
+    score += Math.min(excl, 2);
+    return score;
+  },
+
+  analyzeEmotion: function(text){
+    var t = text.toLowerCase();
+    var pos = 0, neg = 0, anx = 0;
+    this.emocionesPositivas.forEach(function(k){ if(t.indexOf(k)>=0) pos++; });
+    this.emocionesNegativas.forEach(function(k){ if(t.indexOf(k)>=0) neg++; });
+    this.emocionesAnsiedad.forEach(function(k){ if(t.indexOf(k)>=0) anx++; });
+    if(anx>=2) return 'ansiedad';
+    if(neg>pos+1) return 'negativo';
+    if(pos>neg) return 'positivo';
+    return 'neutro';
+  }
+};
+
 async function moderateContent(text){
-  var t=text.toLowerCase();
-  var crisis=['suicidio','matarme','quiero morir','no quiero vivir','hacerme daño','cortarme','acabar con mi vida','quitarme la vida'];
-  if(crisis.some(function(k){return t.indexOf(k)>=0;})){
+  var t = text.toLowerCase();
+
+  // 1. CRISIS — máxima prioridad
+  if(_veloIA.crisis.some(function(k){ return t.indexOf(k)>=0; })){
     openModal('sosModal');
     toast('🆘','Detectamos algo importante. Estamos aquí contigo.');
-    flagForAdmin(text,'crisis','Detección automática: palabras de crisis/suicidio');
+    flagForAdmin(text,'crisis','IA Velo: palabras de crisis/ideación');
+    addBuzonMsg({id:'ia-crisis-'+Date.now(),tipo:'sistema',icon:'🆘',remitente:'Velo IA',titulo:'Estamos contigo',cuerpo:'Detectamos que podés estar pasando un momento muy difícil. No estás solo/a.\n\nPodés llamar al Centro de Asistencia al Suicida: 135 (Argentina, 24hs, gratis).\n\nVelo está aquí para acompañarte. 💚',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
+    updateBuzonDot(); updateInboxBadge();
     return false;
   }
-  var abuso=['te voy a matar','te voy a encontrar','me las vas a pagar','eres una puta','eres un puto','maricón','perra','prostituta','escoria','basura de persona'];
-  if(abuso.some(function(k){return t.indexOf(k)>=0;})){
-    toast('🚫','Contenido inapropiado detectado. No toleramos el acoso ni el odio en Velo.');
-    flagForAdmin(text,'abuso','Detección automática: lenguaje de acoso/odio');
+
+  // 2. ODIO / ACOSO
+  if(_veloIA.odio.some(function(k){ return t.indexOf(k)>=0; })){
+    toast('🚫','Contenido con lenguaje agresivo. No toleramos el acoso en Velo.');
+    flagForAdmin(text,'abuso','IA Velo: lenguaje de odio/acoso detectado');
     return false;
   }
-  var sexual=['foto de ti','mándame una foto','foto desnuda','sexo contigo','qué buena estás','qué bueno estás','te deseo mucho'];
-  if(sexual.some(function(k){return t.indexOf(k)>=0;})){
-    toast('⚠️','Este contenido podría ir contra los términos de Velo.');
-    flagForAdmin(text,'abuso','Detección automática: posible contenido sexual/predatorio');
+
+  // 3. CONTENIDO SEXUAL / PREDATORIO
+  if(_veloIA.sexual.some(function(k){ return t.indexOf(k)>=0; })){
+    toast('⚠️','Este contenido podría ser inapropiado para la comunidad.');
+    flagForAdmin(text,'abuso','IA Velo: posible contenido sexual/predatorio');
     return false;
   }
-  var spam=['dato bancario','número de tarjeta','instagram.com','wa.me','whatsapp.com','compra ahora','oferta especial','link de pago'];
-  if(spam.some(function(k){return t.indexOf(k)>=0;})){
-    toast('⚠️','No se permite compartir datos personales o enlaces externos en Velo.');
-    flagForAdmin(text,'spam','Detección automática: posible spam o datos privados');
+
+  // 4. SPAM / LINKS / DATOS PERSONALES
+  if(_veloIA.spam.some(function(k){ return t.indexOf(k)>=0; })){
+    toast('⚠️','No se permite compartir datos personales o enlaces externos.');
+    flagForAdmin(text,'spam','IA Velo: spam/datos privados detectados');
     return false;
   }
+
+  // 5. TOXICIDAD GENERAL (score compuesto)
+  var toxScore = _veloIA.scoreToxicity(text);
+  if(toxScore >= 5){
+    toast('⚠️','Este mensaje podría no ser apropiado para la comunidad de Velo.');
+    flagForAdmin(text,'abuso','IA Velo: puntuación de toxicidad alta ('+toxScore+')');
+    return false;
+  }
+
   return true;
+}
+
+// ── ANÁLISIS DE DIARIO CON IA ─────────────────────────────
+function iaAnalyzeDiary(text){
+  var emotion = _veloIA.analyzeEmotion(text);
+  var tips = {
+    ansiedad: ['Notamos ansiedad en tu entrada. Probá 2 minutos de respiración 4-7-8 en Velo. 🌬️','La ansiedad avisa que algo importa. ¿Podés nombrar qué es lo que te preocupa? ✍️'],
+    negativo: ['Está bien no estar bien. Escribirlo ya es un paso. Seguí anotando. 💚','Días difíciles también pasan. Mañana podés releer esto con otros ojos. 🌿'],
+    positivo: ['¡Qué bien leer esto! Guardá esta sensación — te va a servir en días difíciles. ⭐','Tu energía positiva de hoy es un recurso real. 🌟'],
+    neutro:   ['Escribir sin filtros es la forma más honesta de conocerse. Seguí así. 📓','Cada entrada suma. Tu diario es tu mapa emocional. 🗺️']
+  };
+  var arr = tips[emotion] || tips.neutro;
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
+// ── RESUMEN MENSUAL DE IA ─────────────────────────────────
+function iaGenerateMonthlySummary(){
+  var lastKey = 'velo_ia_summary_last';
+  var last = safeLS('get', lastKey);
+  var now = Date.now();
+  // Solo generar si nunca se generó o pasaron 30 días
+  if(last && (now - parseInt(last)) < 30*24*60*60*1000) return;
+  safeLS('set', lastKey, String(now));
+
+  var entries = getDiaryEntries ? getDiaryEntries() : [];
+  var diaryCount = entries.length;
+
+  var breathSessions = parseInt(safeLS('get','velo_breath_sessions')||'0');
+  var helpSessions   = parseInt(safeLS('get','velo_help_sessions')||'0');
+  var bottlesSent    = parseInt(safeLS('get','velo_bottles_sent')||'0');
+
+  // Analizar emoción dominante en el diario
+  var allDiaryText = entries.map(function(e){ return e.text||''; }).join(' ');
+  var dominantEmotion = _veloIA.analyzeEmotion(allDiaryText);
+
+  var emotionLabel = {positivo:'positiva y con energía 🌟',negativo:'con altibajos — y eso es normal 🌊',ansiedad:'procesando momentos difíciles con valentía 💪',neutro:'equilibrada y reflexiva ✨'}[dominantEmotion] || 'en proceso 🌿';
+
+  var insights = [];
+  if(diaryCount>=5) insights.push('• 📓 Escribiste '+diaryCount+' entradas en tu diario — eso requiere constancia.');
+  else if(diaryCount>0) insights.push('• 📓 Empezaste tu diario con '+diaryCount+' entradas. Cada una cuenta.');
+  else insights.push('• 📓 Tu diario está esperando. Escribir 5 min al día cambia cómo procesás emociones.');
+
+  if(breathSessions>=3) insights.push('• 🌬️ Completaste '+breathSessions+' sesiones de respiración — tu sistema nervioso lo nota.');
+  else insights.push('• 🌬️ La respiración guiada es la herramienta más rápida para bajar la ansiedad. Probala esta semana.');
+
+  if(helpSessions>=1) insights.push('• 🤝 Pediste acompañamiento '+helpSessions+' vez/veces — pedir ayuda es un acto de valentía.');
+  if(bottlesSent>=1)  insights.push('• 🍾 Lanzaste '+bottlesSent+' botella(s) al mar. Tu voz llegó a alguien.');
+
+  var recomendacion = {
+    positivo: 'Tu energía positiva es contagiosa. Considerá compartirla en los Círculos de Paz — podrías hacer la diferencia en alguien más.',
+    negativo: 'Los meses difíciles enseñan mucho. Si sentís que necesitás más apoyo, los Guardianes de Velo están disponibles para vos.',
+    ansiedad: 'La ansiedad que describís merece atención. Probá hacer 3 sesiones de respiración esta semana y notá si algo cambia.',
+    neutro:   'La regularidad es tu mejor aliada. Seguí escribiendo en tu diario y conectando con la comunidad.'
+  }[dominantEmotion] || 'Seguís adelante — eso ya es mucho. 💚';
+
+  var cuerpo = '¡Hola! Soy la IA de Velo y analicé tu actividad del último mes. 🤖\n\n'
+    +'📊 TU MES EN VELO\n'
+    +insights.join('\n')
+    +'\n\n💡 CÓMO TE VEO\n'
+    +'Tu energía este mes fue '+emotionLabel+'.\n\n'
+    +'🎯 MI RECOMENDACIÓN\n'
+    +recomendacion+'\n\n'
+    +'Velo está aquí cada vez que lo necesitás. 💚';
+
+  setTimeout(function(){
+    addBuzonMsg({
+      id:'ia-summary-'+now,
+      tipo:'sistema',
+      icon:'🤖',
+      remitente:'Velo IA',
+      asunto:'Tu resumen de bienestar — '+new Date().toLocaleDateString('es-AR',{month:'long',year:'numeric'}),
+      titulo:'Tu resumen de bienestar — '+new Date().toLocaleDateString('es-AR',{month:'long',year:'numeric'}),
+      cuerpo:cuerpo,
+      extracto:'Analicé tu actividad este mes. Aquí tus insights personalizados...',
+      leido:false,
+      prioritario:false,
+      fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})
+    });
+    updateBuzonDot(); updateInboxBadge();
+    toast('🤖','Velo IA generó tu resumen mensual 📊');
+  }, 3000);
+}
+
+// ── CONTADOR DE SESIONES PARA IA ─────────────────────────
+function iaTrackBreathSession(){
+  var n = parseInt(safeLS('get','velo_breath_sessions')||'0') + 1;
+  safeLS('set','velo_breath_sessions', String(n));
+}
+function iaTrackHelpSession(){
+  var n = parseInt(safeLS('get','velo_help_sessions')||'0') + 1;
+  safeLS('set','velo_help_sessions', String(n));
+}
+function iaTrackBottleSent(){
+  var n = parseInt(safeLS('get','velo_bottles_sent')||'0') + 1;
+  safeLS('set','velo_bottles_sent', String(n));
 }
 
 // ── ONBOARDING ───────────────────────────────────────────
@@ -2215,6 +2387,7 @@ function breathTick(){
   }
   if(breathRemaining <= 0){
     stopBreath();
+    iaTrackBreathSession();
     showSuc('🌬️','¡Ejercicio completado!','Tomaste un momento para vos. Bien hecho. 💚');
   }
 }
@@ -2535,9 +2708,10 @@ function sendBottle(){
   moderateContent(msg).then(function(ok){
     if(!ok) return;
     var isAnon=_bottleAnonActivo;
+    var bottleId='b-'+Date.now();
     _loadBottleWall();
     bottleWall.unshift({
-      id:'b-'+Date.now(),
+      id:bottleId,
       emoji:isAnon?'🕶️':'🍾',
       msg:msg,
       author:isAnon?'Anónimo/a':getDisplayName(),
@@ -2546,6 +2720,11 @@ function sendBottle(){
     });
     _saveBottleWall();
     _incBottleCount();
+    iaTrackBottleSent();
+    // Registrar como botella propia para poder eliminarla
+    var myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]');
+    myBottles.push(bottleId);
+    safeLS('set','velo_my_bottles', JSON.stringify(myBottles.slice(-20)));
     closeBottleWrite();
     txt.value='';
     renderBottleWall();
@@ -2609,6 +2788,7 @@ var gcRole = null; // variable global de rol
 function openGuardianChat(name, av, role){
   // Contexto: guardian_directo — chat vacío, solo sistema
   gcRole = role || 'helped';
+  if(gcRole === 'helped') iaTrackHelpSession();
   var gcN = document.getElementById('gcName');
   var gcA = document.getElementById('gcAv');
   var gcAm = document.getElementById('gcAvMsg');
@@ -3402,6 +3582,14 @@ function toggleAnon(el){
 }
 
 function submitHelpForm(){
+  var msgEl = document.getElementById('helpMsg');
+  var text = msgEl ? msgEl.value.trim() : '';
+  // IA: detectar crisis en solicitud de ayuda
+  if(text && _veloIA.crisis.some(function(k){ return text.toLowerCase().indexOf(k)>=0; })){
+    openModal('sosModal');
+    addBuzonMsg({id:'ia-help-crisis-'+Date.now(),tipo:'sistema',icon:'🆘',remitente:'Velo IA',titulo:'Pedido de ayuda urgente detectado',cuerpo:'Detectamos palabras de crisis en tu mensaje de la Sala de Ayuda.\n\nEstamos conectándote con un Guardián ahora mismo. Mientras tanto:\n\n📞 Centro de Asistencia al Suicida: 135 (24hs, gratis)\n📞 SAME: 107\n\nNo estás solo/a. 💚',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
+    updateBuzonDot(); updateInboxBadge();
+  }
   openGuardianChat('Guardian Velo', '🌿', 'helped');
 }
 
@@ -3436,14 +3624,19 @@ function renderBottleWall(){
       container.innerHTML = '<div style="text-align:center;padding:30px;font-size:13px;color:rgba(255,255,255,.4);font-style:italic">No hay botellas flotando ahora. Sé el primero en lanzar una. 🍾</div>';
       return;
     }
+    var myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]');
     pending.forEach(function(bottle){
+      var isMine = myBottles.indexOf(bottle.id) >= 0;
       var div = document.createElement('div');
       div.className = 'dark-bottle';
+      var deleteBtn = isMine
+        ? '<button onclick="deleteMyBottle(\''+bottle.id+'\')" style="background:rgba(192,48,40,.2);border:1px solid rgba(192,48,40,.35);border-radius:100px;color:rgba(255,120,100,.85);font-size:10px;font-weight:700;padding:6px 12px;cursor:pointer;font-family:\'Jost\',sans-serif">Retirar 🗑️</button>'
+        : '<button onclick="respondBottle(\''+bottle.id+'\')" class="dark-btn-w" style="width:auto;padding:8px 16px;font-size:12px;margin-bottom:0">Responder 🌊</button>';
       div.innerHTML = '<div style="font-size:22px;margin-bottom:8px">'+bottle.emoji+'</div>'
         +'<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:14px;color:rgba(255,255,255,.82);line-height:1.6;margin-bottom:12px">"'+bottle.msg+'"</div>'
         +'<div style="display:flex;align-items:center;justify-content:space-between">'
-        +'<div style="font-size:11px;color:rgba(255,255,255,.4)">'+bottle.author+' · '+bottle.time+'</div>'
-        +'<button onclick="respondBottle(\''+bottle.id+'\')" class="dark-btn-w" style="width:auto;padding:8px 16px;font-size:12px;margin-bottom:0">Responder 🌊</button>'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.4)">'+bottle.author+' · '+bottle.time+(isMine?' · <b style="color:rgba(116,198,157,.6)">Tu botella</b>':'')+'</div>'
+        +deleteBtn
         +'</div>';
       container.appendChild(div);
     });
@@ -3457,6 +3650,14 @@ function respondBottle(id){
   }
   if(!bottle) return;
   openBottleReply(bottle.msg, id);
+}
+function deleteMyBottle(id){
+  bottleWall = bottleWall.filter(function(b){ return b.id !== id; });
+  _saveBottleWall();
+  var myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]');
+  safeLS('set','velo_my_bottles', JSON.stringify(myBottles.filter(function(x){ return x!==id; })));
+  renderBottleWall();
+  toast('🍾','Tu botella fue retirada del mar.');
 }
 
 function openBottleDetail(card){
