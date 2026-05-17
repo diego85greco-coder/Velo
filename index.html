@@ -860,7 +860,7 @@
     <!-- STEP 1: Basic data -->
     <div id="rgs1" style="display:flex;flex:1;flex-direction:column;overflow-y:auto;scrollbar-width:none;padding:0 20px 20px">
       <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);margin-bottom:10px">Paso 1 de 3 · Tus datos</div>
-      <div class="div-txt">o completá tus datos</div><div class="div-line"></div></div>
+      <div class="div-txt">o completá tus datos</div><div class="div-line"></div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:13px">
         <div>
           <span class="lbl">Nombre o apodo</span>
@@ -2269,6 +2269,7 @@
         <div style="font-size:12px;font-weight:700;color:#2D6A8A;margin-bottom:11px" id="contactFormTitle">✍️ Enviarnos un mensaje</div>
         <div style="display:flex;flex-direction:column;gap:9px">
           <div id="cTopicRow" style="background:var(--sage7);border:1px solid rgba(116,198,157,.18);border-radius:12px;padding:9px 12px;font-size:12px;font-weight:600;color:var(--sage)"></div>
+          <input class="inp" id="cEmail" type="email" placeholder="Tu email (para que podamos responderte)" autocomplete="email" style="font-size:14px">
           <textarea class="ta" id="cMsg" placeholder="Contanos en detalle cómo podemos ayudarte..." style="min-height:90px;font-size:15px"></textarea>
         </div>
         <button class="btn btn-sage" style="width:100%;padding:15px;font-size:15px;font-weight:700;margin-top:13px" onclick="sendContactForm()">Enviar mensaje 💌</button>
@@ -3443,6 +3444,51 @@
     </div>
   </div>
 <!-- ══════════════════════════════════════════ ONBOARDING ══════════ -->
+
+<!-- ══════════════════════════════════════════ REGISTER TYPE ══════════ -->
+<div class="sc" id="register-type" style="background:linear-gradient(160deg,#0e1f14 0%,#081510 100%);overflow:hidden">
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px 60px;text-align:center">
+    <div style="font-size:64px;margin-bottom:18px">🌿</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:30px;color:var(--sage4);margin-bottom:8px">¿Cómo querés sumarte?</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.55);line-height:1.65;max-width:290px;margin-bottom:40px">Elegí tu tipo de cuenta. Podés cambiarlo después desde tu perfil.</div>
+
+    <!-- Usuario -->
+    <div onclick="goTo('register')" style="width:100%;max-width:320px;background:rgba(255,255,255,.07);border:1.5px solid rgba(116,198,157,.3);border-radius:22px;padding:20px 22px;margin-bottom:14px;cursor:pointer;text-align:left;transition:all .2s;-webkit-tap-highlight-color:transparent">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(116,198,157,.1));border:1.5px solid rgba(116,198,157,.3);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🙋</div>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">Soy usuario/a</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.45">Busco apoyo, conexión y herramientas de bienestar emocional.</div>
+        </div>
+        <span style="font-size:20px;color:rgba(116,198,157,.6);margin-left:auto">›</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px">
+        <span style="padding:4px 10px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:100px;font-size:10px;color:rgba(116,198,157,.8)">💚 Gratis</span>
+        <span style="padding:4px 10px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:100px;font-size:10px;color:rgba(116,198,157,.8)">🔒 Anónimo</span>
+        <span style="padding:4px 10px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:100px;font-size:10px;color:rgba(116,198,157,.8)">🌊 Comunidad</span>
+      </div>
+    </div>
+
+    <!-- Profesional -->
+    <div onclick="goTo('pro-onboarding')" style="width:100%;max-width:320px;background:rgba(255,255,255,.07);border:1.5px solid rgba(212,168,100,.3);border-radius:22px;padding:20px 22px;cursor:pointer;text-align:left;transition:all .2s;-webkit-tap-highlight-color:transparent">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,rgba(212,168,100,.25),rgba(212,168,100,.1));border:1.5px solid rgba(212,168,100,.3);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">👨‍⚕️</div>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">Soy profesional</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.45">Psicólogo/a, terapeuta o coach. Quiero acompañar a quienes más lo necesitan.</div>
+        </div>
+        <span style="font-size:20px;color:rgba(212,168,100,.6);margin-left:auto">›</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px">
+        <span style="padding:4px 10px;background:rgba(212,168,100,.1);border:1px solid rgba(212,168,100,.2);border-radius:100px;font-size:10px;color:rgba(212,168,100,.8)">✨ Verificado</span>
+        <span style="padding:4px 10px;background:rgba(212,168,100,.1);border:1px solid rgba(212,168,100,.2);border-radius:100px;font-size:10px;color:rgba(212,168,100,.8)">💰 Honorarios</span>
+        <span style="padding:4px 10px;background:rgba(212,168,100,.1);border:1px solid rgba(212,168,100,.2);border-radius:100px;font-size:10px;color:rgba(212,168,100,.8)">🌿 Vela por Ti</span>
+      </div>
+    </div>
+
+    <button onclick="goTo('splash')" style="margin-top:28px;background:none;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;font-family:'Jost',sans-serif">← Volver al inicio</button>
+  </div>
+</div>
 <div class="sc" id="onboarding" style="background:linear-gradient(160deg,#0e1f14 0%,#081510 100%);overflow:hidden">
   <!-- Slide 0: What is Velo -->
   <div id="ob-slide-0" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center;animation:onboardSlide .35s ease both">
@@ -3824,6 +3870,13 @@
         <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">Historial de envíos</div>
         <div class="au-row"><div style="font-size:18px">💚</div><div style="flex:1"><div class="au-name">Mensaje de salud mental</div><div class="au-meta">Enviado a todos · hace 3 días · 1.2k usuarios</div></div><span class="ar-badge-g" style="margin-left:auto">Enviado</span></div>
         <div class="au-row"><div style="font-size:18px">🌿</div><div style="flex:1"><div class="au-name">Bienvenida nuevos usuarios (batch)</div><div class="au-meta">Enviado a nuevos · hace 1 semana · 89 usuarios</div></div><span class="ar-badge-g" style="margin-left:auto">Enviado</span></div>
+
+        <div style="margin-top:18px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--sage);margin-bottom:10px">📩 Mensajes de Contáctanos</div>
+          <div id="adminContactList">
+            <div style="text-align:center;padding:24px;color:var(--ink4);font-size:13px">Cargando...</div>
+          </div>
+        </div>
       </div>
 
       <!-- TAB: BIENESTAR / MÚSICA -->

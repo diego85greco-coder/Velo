@@ -566,7 +566,7 @@ function finishRegister(){
 }
 
 // Nav — include register + groups in noNav = false (show nav), but not for register
-var noNav=['splash','onboarding','pro-onboarding','guardian-chat','guardian-detail','post-chat','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','pro-session','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending','contact','vela','buzon-detail','all-reviews','donation-exit','groups'];
+var noNav=['splash','onboarding','register-type','pro-onboarding','guardian-chat','guardian-detail','post-chat','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','pro-session','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending','contact','vela','buzon-detail','all-reviews','donation-exit','groups'];
 
 // ── MOOD CHECK-IN ────────────────────────────────────────
 var todayMood=null;
@@ -1004,10 +1004,10 @@ var _obTotal=5;
 function obReset(){_obSlide=0;setTimeout(_obRenderSlide,50);}
 function obNext(){
   if(_obSlide<_obTotal-1){_obSlide++;_obRenderSlide();}
-  else{_obSlide=0;goTo('register');}
+  else{_obSlide=0;goTo('register-type');}
 }
 function obBack(){if(_obSlide>0){_obSlide--;_obRenderSlide();}}
-function obSkip(){_obSlide=0;goTo('register');}
+function obSkip(){_obSlide=0;goTo('register-type');}
 function _obRenderSlide(){
   for(var i=0;i<_obTotal;i++){
     var d=document.getElementById('ob-dot-'+i);
@@ -1137,6 +1137,7 @@ function goTo(id){
   if(id==='onboarding') setTimeout(obReset,30);
   if(id==='pro-onboarding') setTimeout(pobReset,30);
   if(id==='pro-panel') setTimeout(renderProPendingBanner,50);
+  if(id==='admin') setTimeout(renderAdminContacts,50);
   if(id==='profile') setTimeout(checkMonthlyDonorUI,50);
   if(id==='bottle') setTimeout(renderBottleWall,50);
   if(id==='help') setTimeout(renderSolicitudes,50);
@@ -1513,28 +1514,57 @@ function openContactForm(type){
 }
 function sendContactForm(){
   var msg=document.getElementById('cMsg');
+  var emailEl=document.getElementById('cEmail');
   if(!msg||!msg.value.trim()){toast('✍️','Escribí tu mensaje antes de enviar');return;}
   var topicEl=document.getElementById('cTopicRow');
-  var topic=topicEl?topicEl.textContent.trim():'Consulta general';
+  var topic=topicEl?topicEl.textContent.replace('📌 Tema: ','').trim():'Consulta general';
   var texto=msg.value.trim();
-  // Enviar al buzón del admin como soporte interno
+  var emailVal=emailEl?emailEl.value.trim():'';
+  var ts=Date.now();
+  // Save to admin inbox (localStorage)
+  var adminMsgs=JSON.parse(safeLS('get','velo_admin_contacts')||'[]');
+  adminMsgs.unshift({id:'c-'+ts,topic:topic,mensaje:texto,email:emailVal,fecha:new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),leido:false});
+  safeLS('set','velo_admin_contacts',JSON.stringify(adminMsgs.slice(0,100)));
+  // Confirm to user in their buzón
   addBuzonMsg({
-    id:'contact-'+Date.now(),
-    tipo:'soporte',
+    id:'contact-'+ts,
+    tipo:'sistema',
     icon:'💌',
-    titulo:'Mensaje enviado',
-    cuerpo:'Tu mensaje fue recibido. El equipo de Velo te responderá en tu buzón.',
+    remitente:'Equipo Velo',
+    asunto:'Recibimos tu mensaje',
+    titulo:'Recibimos tu mensaje',
+    cuerpo:'Hola! Recibimos tu consulta sobre "'+topic+'".\n\nEl equipo de Velo te responderá'+(emailVal?' a '+emailVal:' por aquí')+' a la mayor brevedad. 🌿\n\nGracias por escribirnos.',
+    extracto:'Tu consulta fue recibida. Te responderemos pronto.',
     leido:false,
+    prioritario:false,
     fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})
   });
-  // Guardar en Supabase si está disponible
+  updateBuzonDot(); updateInboxBadge();
   sbEnviarReporte(texto, topic);
   var form=document.getElementById('contactForm');
   if(form)form.style.display='none';
   if(msg) msg.value='';
+  if(emailEl) emailEl.value='';
   showSuc('💌','¡Mensaje enviado!','Te responderemos en tu buzón de Velo a la mayor brevedad. 🌿');
 }
 
+function renderAdminContacts(){
+  var list=document.getElementById('adminContactList');
+  if(!list) return;
+  var msgs=JSON.parse(safeLS('get','velo_admin_contacts')||'[]');
+  if(!msgs.length){list.innerHTML='<div style="text-align:center;padding:24px;color:var(--ink4);font-size:13px">No hay mensajes de contacto aún.</div>';return;}
+  list.innerHTML=msgs.map(function(m){
+    return '<div style="background:rgba(255,255,255,.85);border:1.5px solid rgba(116,198,157,.2);border-radius:16px;padding:13px;margin-bottom:9px;'+(m.leido?'opacity:.7':'')+'">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--sage)">'+m.topic+'</div>'+
+        '<div style="font-size:10px;color:var(--ink5)">'+m.fecha+'</div>'+
+      '</div>'+
+      '<div style="font-size:12px;color:var(--ink3);line-height:1.55;margin-bottom:8px">'+m.mensaje+'</div>'+
+      (m.email?'<a href="mailto:'+m.email+'?subject=Re: '+encodeURIComponent(m.topic)+'&body=Hola%2C%0A%0AGracias por escribirnos.%0A%0AEl equipo de Velo." style="display:inline-block;padding:6px 14px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.3);border-radius:100px;font-size:11px;font-weight:700;color:var(--sage2);text-decoration:none">📧 Responder a '+m.email+'</a>':
+        '<div style="font-size:11px;color:var(--ink5);font-style:italic">Sin email de contacto</div>')+
+    '</div>';
+  }).join('');
+}
 function safeLS(action,key,val){
   try{
     if(action==='get') return localStorage.getItem(key);
