@@ -556,7 +556,7 @@ function finishRegister(){
 }
 
 // Nav — include register + groups in noNav = false (show nav), but not for register
-var noNav=['splash','onboarding','pro-onboarding','guardian-chat','guardian-detail','post-chat','help-form','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','pro-session','pro-session-room','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending','contact','vela','buzon-detail'];
+var noNav=['splash','onboarding','pro-onboarding','guardian-chat','guardian-detail','post-chat','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','pro-session','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending','contact','vela','buzon-detail','all-reviews','donation-exit','groups'];
 
 // ── MOOD CHECK-IN ────────────────────────────────────────
 var todayMood=null;
@@ -620,21 +620,7 @@ function saveDiaryEntry(){
   ta.value='';
   loadDiaryEntries();
   toast('📓','Entrada guardada. Solo vos podés verla. 🔒');
-  // IA: detectar crisis en diario y dar tip de bienestar
-  var crisisEnDiario = _veloIA.crisis.some(function(k){ return text.toLowerCase().indexOf(k)>=0; });
-  if(crisisEnDiario){
-    setTimeout(function(){
-      openModal('sosModal');
-      addBuzonMsg({id:'ia-diary-crisis-'+Date.now(),tipo:'sistema',icon:'🆘',remitente:'Velo IA',titulo:'Detectamos algo importante en tu diario',cuerpo:'Lo que escribiste hoy sugiere que estás pasando un momento muy difícil.\n\nTu diario es privado — nadie en Velo puede leerlo. Pero la IA de Velo analizó el tono para cuidarte.\n\n📞 Centro de Asistencia al Suicida: 135 (Argentina, 24hs, gratis)\n📞 CAT: 0800-888-4673\n\nSi querés hablar con alguien ahora mismo, los Guardianes de Velo están disponibles. 💚',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
-      updateBuzonDot(); updateInboxBadge();
-    }, 800);
-  } else {
-    // Tip de bienestar según emoción detectada
-    var tip = iaAnalyzeDiary(text);
-    setTimeout(function(){
-      toast('🤖', tip);
-    }, 1200);
-  }
+  // El diario es completamente privado — la IA no lo lee ni analiza
 }
 function getDiaryEntries(){try{var s=safeLS('get','velo_diary');return s?JSON.parse(s):[];}catch(e){return[];}}
 function loadDiaryEntries(){
@@ -913,23 +899,39 @@ function iaGenerateMonthlySummary(){
   if(last && (now - parseInt(last)) < 30*24*60*60*1000) return;
   safeLS('set', lastKey, String(now));
 
-  var entries = getDiaryEntries ? getDiaryEntries() : [];
-  var diaryCount = entries.length;
+  // Leer check-ins de estado de ánimo de los últimos 30 días (NUNCA el diario)
+  var moodCounts = {positivo:0, negativo:0, ansiedad:0, neutro:0};
+  var moodCheckIns = 0;
+  var today = new Date();
+  for(var d=0; d<30; d++){
+    var dd = new Date(today); dd.setDate(today.getDate()-d);
+    var mKey = 'velo_mood_'+dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
+    var mRaw = safeLS('get', mKey);
+    if(mRaw){ try{
+      var mObj = JSON.parse(mRaw);
+      var lbl = mObj.label||'';
+      moodCheckIns++;
+      if(lbl==='Muy bien'||lbl==='Bien') moodCounts.positivo++;
+      else if(lbl==='Triste') moodCounts.negativo++;
+      else if(lbl==='Ansioso/a') moodCounts.ansiedad++;
+      else moodCounts.neutro++;
+    }catch(e){} }
+  }
+  // Emoción dominante según los check-ins
+  var dominantEmotion = 'neutro';
+  var maxCount = 0;
+  Object.keys(moodCounts).forEach(function(k){ if(moodCounts[k]>maxCount){ maxCount=moodCounts[k]; dominantEmotion=k; } });
 
   var breathSessions = parseInt(safeLS('get','velo_breath_sessions')||'0');
   var helpSessions   = parseInt(safeLS('get','velo_help_sessions')||'0');
   var bottlesSent    = parseInt(safeLS('get','velo_bottles_sent')||'0');
 
-  // Analizar emoción dominante en el diario
-  var allDiaryText = entries.map(function(e){ return e.text||''; }).join(' ');
-  var dominantEmotion = _veloIA.analyzeEmotion(allDiaryText);
-
   var emotionLabel = {positivo:'positiva y con energía 🌟',negativo:'con altibajos — y eso es normal 🌊',ansiedad:'procesando momentos difíciles con valentía 💪',neutro:'equilibrada y reflexiva ✨'}[dominantEmotion] || 'en proceso 🌿';
 
   var insights = [];
-  if(diaryCount>=5) insights.push('• 📓 Escribiste '+diaryCount+' entradas en tu diario — eso requiere constancia.');
-  else if(diaryCount>0) insights.push('• 📓 Empezaste tu diario con '+diaryCount+' entradas. Cada una cuenta.');
-  else insights.push('• 📓 Tu diario está esperando. Escribir 5 min al día cambia cómo procesás emociones.');
+  if(moodCheckIns>=10) insights.push('• 😊 Registraste tu estado de ánimo '+moodCheckIns+' veces — eso es autoconciencia real.');
+  else if(moodCheckIns>=3) insights.push('• 😊 Hiciste '+moodCheckIns+' check-ins de cómo te sentías. Cada registro cuenta.');
+  else insights.push('• 😊 El check-in diario de ánimo te ayuda a ver tus patrones emocionales. Intentá hacerlo cada día.');
 
   if(breathSessions>=3) insights.push('• 🌬️ Completaste '+breathSessions+' sesiones de respiración — tu sistema nervioso lo nota.');
   else insights.push('• 🌬️ La respiración guiada es la herramienta más rápida para bajar la ansiedad. Probala esta semana.');
@@ -940,8 +942,8 @@ function iaGenerateMonthlySummary(){
   var recomendacion = {
     positivo: 'Tu energía positiva es contagiosa. Considerá compartirla en los Círculos de Paz — podrías hacer la diferencia en alguien más.',
     negativo: 'Los meses difíciles enseñan mucho. Si sentís que necesitás más apoyo, los Guardianes de Velo están disponibles para vos.',
-    ansiedad: 'La ansiedad que describís merece atención. Probá hacer 3 sesiones de respiración esta semana y notá si algo cambia.',
-    neutro:   'La regularidad es tu mejor aliada. Seguí escribiendo en tu diario y conectando con la comunidad.'
+    ansiedad: 'La ansiedad que registraste merece atención. Probá hacer 3 sesiones de respiración esta semana y notá si algo cambia.',
+    neutro:   'La regularidad es tu mejor aliada. Seguí haciendo tu check-in diario y conectando con la comunidad.'
   }[dominantEmotion] || 'Seguís adelante — eso ya es mucho. 💚';
 
   var cuerpo = '¡Hola! Soy la IA de Velo y analicé tu actividad del último mes. 🤖\n\n'
@@ -1669,7 +1671,7 @@ function checkMonthlyDonorUI(){
 }
 
 // ── CÍRCULOS DE PAZ ──────────────────────────────────────
-var hasGoldBadge = false; // se actualiza en renderProfileBadges y al startup
+var hasGoldBadge = (safeLS('get','velo_can_create_group')==='1') || false;
 
 function sendCircleMsg(){
   var inp = document.getElementById('circleMsgInput');
