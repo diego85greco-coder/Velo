@@ -436,3 +436,8 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
   box-shadow:0 2px 16px rgba(0,0,0,.12),0 0 0 1px rgba(255,255,255,.15),inset 0 1px 0 rgba(255,255,255,.06);
   color:rgba(255,255,255,.75);
 }
+.amr-btn.on{
+  border-color:var(--sage2)!important;
+  background:var(--sage7)!important;
+  color:var(--sage2)!important;
+}

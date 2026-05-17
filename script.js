@@ -134,6 +134,266 @@ window.addEventListener('load', function(){ _initSupabase(); _checkPayPalReturn(
 //  FIN BLOQUE SUPABASE
 // ═══════════════════════════════════════════════════════════
 
+// ── CLOUD PERSISTENCE — DIARY & MOOD ────────────────────────
+// Genera o recupera la contraseña estable de Supabase para este dispositivo.
+// Esto vincula las entradas del diario y estado de ánimo a un auth.uid() real.
+function _getSbPass(){
+  var p = safeLS('get','velo_sb_pass');
+  if(!p){
+    p = 'velo_' + Date.now() + '_' + Math.random().toString(36).slice(2,10) + Math.random().toString(36).slice(2,10);
+    safeLS('set','velo_sb_pass', p);
+  }
+  return p;
+}
+
+async function _ensureSbSession(){
+  if(!supabase) return false;
+  try{
+    var {data:sd} = await supabase.auth.getSession();
+    if(sd && sd.session) return true;
+    var email = safeLS('get','velo_user_email');
+    var pass = safeLS('get','velo_sb_pass');
+    if(!email || !pass) return false;
+    var {error} = await supabase.auth.signInWithPassword({email:email, password:pass});
+    return !error;
+  }catch(e){ return false; }
+}
+
+async function sbSaveDiaryEntry(text, dateLabel, ts){
+  if(!supabase) return;
+  try{
+    var ok = await _ensureSbSession();
+    if(!ok) return;
+    var {data:ud} = await supabase.auth.getUser();
+    if(!ud || !ud.user) return;
+    await supabase.from('diary_entries').insert({
+      user_id: ud.user.id,
+      text: text,
+      date_label: dateLabel,
+      ts: ts
+    });
+  }catch(e){}
+}
+
+async function sbDeleteDiaryEntry(ts){
+  if(!supabase) return;
+  try{
+    var ok = await _ensureSbSession();
+    if(!ok) return;
+    var {data:ud} = await supabase.auth.getUser();
+    if(!ud || !ud.user) return;
+    await supabase.from('diary_entries').delete().eq('user_id', ud.user.id).eq('ts', ts);
+  }catch(e){}
+}
+
+async function sbLoadDiaryEntries(){
+  if(!supabase) return null;
+  try{
+    var ok = await _ensureSbSession();
+    if(!ok) return null;
+    var {data:ud} = await supabase.auth.getUser();
+    if(!ud || !ud.user) return null;
+    var {data, error} = await supabase.from('diary_entries')
+      .select('text,date_label,ts').eq('user_id', ud.user.id)
+      .order('ts',{ascending:false}).limit(200);
+    return error ? null : data;
+  }catch(e){ return null; }
+}
+
+async function sbSaveMoodEntry(dateKey, emoji, label, note){
+  if(!supabase) return;
+  try{
+    var ok = await _ensureSbSession();
+    if(!ok) return;
+    var {data:ud} = await supabase.auth.getUser();
+    if(!ud || !ud.user) return;
+    await supabase.from('mood_entries').upsert({
+      user_id: ud.user.id,
+      date_key: dateKey,
+      emoji: emoji,
+      label: label,
+      note: note || ''
+    },{onConflict:'user_id,date_key'});
+  }catch(e){}
+}
+
+async function sbLoadMoodEntry(dateKey){
+  if(!supabase) return null;
+  try{
+    var ok = await _ensureSbSession();
+    if(!ok) return null;
+    var {data:ud} = await supabase.auth.getUser();
+    if(!ud || !ud.user) return null;
+    var {data, error} = await supabase.from('mood_entries')
+      .select('emoji,label,note,date_key').eq('user_id', ud.user.id).eq('date_key', dateKey).maybeSingle();
+    return error ? null : data;
+  }catch(e){ return null; }
+}
+
+async function sbLoadAllMoods(year, month){
+  if(!supabase) return null;
+  try{
+    var ok = await _ensureSbSession();
+    if(!ok) return null;
+    var {data:ud} = await supabase.auth.getUser();
+    if(!ud || !ud.user) return null;
+    var prefix = year+'-'+String(month).padStart(2,'0');
+    var {data, error} = await supabase.from('mood_entries')
+      .select('emoji,label,note,date_key').eq('user_id', ud.user.id)
+      .like('date_key', prefix+'%').order('date_key',{ascending:true});
+    return error ? null : data;
+  }catch(e){ return null; }
+}
+
+// ── ADMIN METRICS — DATE RANGE ────────────────────────────
+var _adminMetricsRange = 'month'; // 'today' | 'week' | 'month' | 'all'
+
+function setAdminMetricsRange(btn, range){
+  _adminMetricsRange = range;
+  document.querySelectorAll('.amr-btn').forEach(function(b){ b.classList.remove('on'); });
+  if(btn) btn.classList.add('on');
+  renderAdminMetrics();
+}
+
+function renderAdminMetrics(){
+  var now = new Date();
+  var cutoff;
+  if(_adminMetricsRange === 'today'){
+    cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  } else if(_adminMetricsRange === 'week'){
+    cutoff = now.getTime() - 7*24*60*60*1000;
+  } else if(_adminMetricsRange === 'month'){
+    cutoff = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  } else {
+    cutoff = 0;
+  }
+
+  // Registrations from TC records
+  var tcRecs = [];
+  try{ tcRecs = JSON.parse(safeLS('get','velo_tc_records')||'[]'); }catch(e){}
+  var newUsers = tcRecs.filter(function(r){
+    var t = new Date(r.timestamp).getTime();
+    return t >= cutoff;
+  }).length;
+
+  // Subscriptions
+  var subs = [];
+  try{ subs = JSON.parse(safeLS('get','velo_subscribers')||'[]'); }catch(e){}
+  var plusActive = subs.filter(function(s){ return s.status==='active'; }).length;
+  var freeCount = Math.max(0, tcRecs.length - plusActive);
+
+  // Cancellations
+  var cancelled = [];
+  try{ cancelled = JSON.parse(safeLS('get','velo_cancelled_subs')||'[]'); }catch(e){}
+  var cancelledPeriod = cancelled.filter(function(c){
+    var t = new Date(c.cancelledAt||0).getTime();
+    return t >= cutoff;
+  }).length;
+
+  // SOS clicks (session-level counter)
+  var sosClicks = parseInt(safeLS('get','velo_sos_clicks')||'0',10);
+
+  // Happy wall posts
+  var happy = [];
+  try{ happy = JSON.parse(safeLS('get','velo_happy')||'[]'); }catch(e){}
+  var happyPeriod = happy.filter(function(p){
+    return p.ts && p.ts >= cutoff;
+  }).length;
+
+  // Diary entries count (local, content stays private)
+  var diary = [];
+  try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
+  var diaryPeriod = diary.filter(function(e){
+    return e.ts && e.ts >= cutoff;
+  }).length;
+
+  // Mood check-ins for the period
+  var moodCount = 0;
+  var moodEmojis = {};
+  var d = new Date(cutoff);
+  var end = new Date(now);
+  for(var dd = new Date(d); dd <= end; dd.setDate(dd.getDate()+1)){
+    var k = 'velo_mood_' + dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
+    var ms = safeLS('get',k);
+    if(ms){
+      moodCount++;
+      try{
+        var mo = JSON.parse(ms);
+        moodEmojis[mo.emoji] = (moodEmojis[mo.emoji]||0)+1;
+      }catch(ex){}
+    }
+  }
+
+  var topMood = '—';
+  var topCount = 0;
+  Object.keys(moodEmojis).forEach(function(em){
+    if(moodEmojis[em] > topCount){ topCount=moodEmojis[em]; topMood=em; }
+  });
+
+  var label = {today:'Hoy', week:'Esta semana', month:'Este mes', all:'Histórico'}[_adminMetricsRange];
+
+  var el = document.getElementById('adminMetricsGrid');
+  if(!el) return;
+  el.innerHTML = [
+    _metricCard('👥','Nuevos usuarios',newUsers,label,'var(--sage2)'),
+    _metricCard('💎','Velo Plus activos',plusActive,'total','#c8a23e'),
+    _metricCard('🆓','Usuarios Free',freeCount,'total','rgba(255,255,255,.7)'),
+    _metricCard('❌','Cancelaciones',cancelledPeriod,label,'#F87070'),
+    _metricCard('📓','Entradas de diario',diaryPeriod,label,'#9b8ecf'),
+    _metricCard('😊','Check-ins de ánimo',moodCount,label,'#74c69d'),
+    _metricCard('🆘','Clicks en SOS',sosClicks,'sesión','#F87070'),
+    _metricCard('🌸','Posts en Muro',happyPeriod,label,'#f4a261'),
+    _metricCard('🌟','Estado ánimo top',topMood,topCount>0?topCount+' veces':'—','#ffd700'),
+  ].join('');
+}
+
+function _metricCard(icon, label, value, sublabel, color){
+  return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:12px;text-align:center">'
+    +'<div style="font-size:20px;margin-bottom:2px">'+icon+'</div>'
+    +'<div style="font-size:20px;font-weight:700;color:'+color+'">'+value+'</div>'
+    +'<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px;line-height:1.3">'+label+'</div>'
+    +'<div style="font-size:8px;color:rgba(255,255,255,.25);margin-top:1px">'+sublabel+'</div>'
+    +'</div>';
+}
+
+// ── METRICS CSV EXPORT ────────────────────────────────────
+function exportAdminMetrics(){
+  var rows = [['Métrica','Valor','Período']];
+  var el = document.getElementById('adminMetricsGrid');
+  if(!el){ toast('📊','Cargá las métricas primero'); return; }
+  var label = {today:'Hoy', week:'Esta semana', month:'Este mes', all:'Histórico'}[_adminMetricsRange];
+  // Re-compute values for export
+  var now = new Date();
+  var cutoff;
+  if(_adminMetricsRange==='today') cutoff=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  else if(_adminMetricsRange==='week') cutoff=now.getTime()-7*24*60*60*1000;
+  else if(_adminMetricsRange==='month') cutoff=new Date(now.getFullYear(),now.getMonth(),1).getTime();
+  else cutoff=0;
+
+  var tcRecs=[]; try{tcRecs=JSON.parse(safeLS('get','velo_tc_records')||'[]');}catch(e){}
+  var subs=[]; try{subs=JSON.parse(safeLS('get','velo_subscribers')||'[]');}catch(e){}
+  var cancelled=[]; try{cancelled=JSON.parse(safeLS('get','velo_cancelled_subs')||'[]');}catch(e){}
+  var diary=[]; try{diary=JSON.parse(safeLS('get','velo_diary')||'[]');}catch(e){}
+  var happy=[]; try{happy=JSON.parse(safeLS('get','velo_happy')||'[]');}catch(e){}
+
+  rows.push(['Nuevos usuarios', tcRecs.filter(function(r){return new Date(r.timestamp).getTime()>=cutoff;}).length, label]);
+  rows.push(['Velo Plus activos', subs.filter(function(s){return s.status==='active';}).length, 'Total']);
+  rows.push(['Cancelaciones', cancelled.filter(function(c){return new Date(c.cancelledAt||0).getTime()>=cutoff;}).length, label]);
+  rows.push(['Entradas de diario', diary.filter(function(e){return e.ts&&e.ts>=cutoff;}).length, label]);
+  rows.push(['Posts en Muro', happy.filter(function(p){return p.ts&&p.ts>=cutoff;}).length, label]);
+  rows.push(['Exportado el', new Date().toLocaleString('es-AR'), '']);
+
+  var csv = rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href=url; a.download='velo_metricas_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
+  toast('📊','Métricas exportadas como CSV');
+}
+// ── FIN CLOUD PERSISTENCE & METRICS ─────────────────────────
+
 function _tryLoadImg(el, primary, fallback){
   if(!el) return;
   el.onerror = function(){
@@ -568,6 +828,15 @@ function finishRegister(){
   if(uName) safeLS('set','velo_user_name', uName);
   if(uEmail) safeLS('set','velo_user_email', uEmail);
   recordTCAcceptance(uName, uEmail);
+  // Create Supabase account for cloud persistence of diary & mood
+  if(uEmail && supabase){
+    var sbPass = _getSbPass();
+    sbSignUp(uEmail, sbPass, uName).then(function(res){
+      if(res.error && res.error.message && res.error.message.toLowerCase().includes('already')){
+        supabase.auth.signInWithPassword({email:uEmail, password:sbPass}).catch(function(){});
+      }
+    }).catch(function(){});
+  }
   loginAndWelcome();
   setTimeout(function(){ toast('🌿','¡Bienvenido/a a Velo! Tu cuenta fue creada 💚'); }, 400);
   setTimeout(function(){ deliverInboxMsg('bienvenida-usuario'); }, 2200);
@@ -589,8 +858,10 @@ function saveMood(){
   if(!todayMood) return;
   var txt=document.getElementById('moodTxt').value||'';
   var today=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long'});
-  var key='velo_mood_'+new Date().toISOString().slice(0,10);
+  var dateKey=new Date().toISOString().slice(0,10);
+  var key='velo_mood_'+dateKey;
   safeLS('set',key,JSON.stringify({emoji:todayMood.emoji,label:todayMood.label,note:txt,date:today}));
+  sbSaveMoodEntry(dateKey, todayMood.emoji, todayMood.label, txt).catch(function(){});
   // Update home greeting
   updateHomeGreeting(todayMood.emoji,todayMood.label);
   document.getElementById('moodNote').style.display='none';
@@ -612,17 +883,42 @@ function updateHomeGreeting(emoji,label){
   if(sg)sg.textContent='Check-in registrado · tocá para ver tu bienestar';
   if(mg)mg.textContent=emoji;
 }
-// Load today's mood on startup
+// Load today's mood on startup — local first, then try cloud sync
 function loadTodayMood(){
-  var key='velo_mood_'+new Date().toISOString().slice(0,10);
+  var dateKey=new Date().toISOString().slice(0,10);
+  var key='velo_mood_'+dateKey;
   var saved=safeLS('get',key);
-  if(saved){try{var m=JSON.parse(saved);updateHomeGreeting(m.emoji,m.label);todayMood=m;document.getElementById('moodDone').style.display='block';document.getElementById('moodDoneEmoji').textContent=m.emoji;}catch(e){}}
+  if(saved){try{var m=JSON.parse(saved);updateHomeGreeting(m.emoji,m.label);todayMood=m;var md=document.getElementById('moodDone');if(md)md.style.display='block';var me=document.getElementById('moodDoneEmoji');if(me)me.textContent=m.emoji;}catch(e){}}
+  // Try to sync today's mood from cloud if not cached locally
+  if(!saved){
+    sbLoadMoodEntry(dateKey).then(function(cm){
+      if(!cm) return;
+      safeLS('set',key,JSON.stringify({emoji:cm.emoji,label:cm.label,note:cm.note,date:new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long'})}));
+      updateHomeGreeting(cm.emoji,cm.label);
+      todayMood={emoji:cm.emoji,label:cm.label};
+      var md=document.getElementById('moodDone');if(md)md.style.display='block';
+      var me=document.getElementById('moodDoneEmoji');if(me)me.textContent=cm.emoji;
+    }).catch(function(){});
+  }
 }
 // Set diary date
 function initDiary(){
   var el=document.getElementById('diaryDate');
   if(el)el.textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
   loadDiaryEntries();
+  // Sync from cloud in background — merges cloud entries with local cache
+  sbLoadDiaryEntries().then(function(cloudEntries){
+    if(!cloudEntries || !cloudEntries.length) return;
+    var local = getDiaryEntries();
+    var localTs = new Set(local.map(function(e){return e.ts;}));
+    var merged = local.slice();
+    cloudEntries.forEach(function(ce){
+      if(!localTs.has(ce.ts)) merged.push({text:ce.text, date:ce.date_label||'', ts:ce.ts});
+    });
+    merged.sort(function(a,b){return b.ts-a.ts;});
+    safeLS('set','velo_diary', JSON.stringify(merged.slice(0,200)));
+    loadDiaryEntries();
+  }).catch(function(){});
 }
 function addDiaryEmoji(em){
   var ta=document.getElementById('diaryEntry');
@@ -632,13 +928,16 @@ function saveDiaryEntry(){
   var ta=document.getElementById('diaryEntry');
   if(!ta||!ta.value.trim()){toast('📓','Escribí algo antes de guardar');return;}
   var text = ta.value.trim();
+  var dateLabel = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  var ts = Date.now();
   var entries=getDiaryEntries();
-  entries.unshift({text:text,date:new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),ts:Date.now()});
-  safeLS('set','velo_diary',JSON.stringify(entries.slice(0,50)));
+  entries.unshift({text:text, date:dateLabel, ts:ts});
+  safeLS('set','velo_diary',JSON.stringify(entries.slice(0,200)));
+  // El diario es completamente privado — la IA no lo lee ni analiza
+  sbSaveDiaryEntry(text, dateLabel, ts).catch(function(){});
   ta.value='';
   loadDiaryEntries();
   toast('📓','Entrada guardada. Solo vos podés verla. 🔒');
-  // El diario es completamente privado — la IA no lo lee ni analiza
 }
 function getDiaryEntries(){try{var s=safeLS('get','velo_diary');return s?JSON.parse(s):[];}catch(e){return[];}}
 function loadDiaryEntries(){
@@ -659,8 +958,11 @@ function loadDiaryEntries(){
   });
 }
 function deleteDiaryEntry(i){
-  var entries=getDiaryEntries();entries.splice(i,1);
+  var entries=getDiaryEntries();
+  var entry=entries[i];
+  entries.splice(i,1);
   safeLS('set','velo_diary',JSON.stringify(entries));
+  if(entry && entry.ts) sbDeleteDiaryEntry(entry.ts).catch(function(){});
   loadDiaryEntries();
   toast('🗑️','Entrada eliminada');
 }
@@ -1637,6 +1939,7 @@ function safeLS(action,key,val){
 }
 function loginAndWelcome(){
   try{localStorage.removeItem('velo_banner_shown');}catch(e){}
+  _ensureSbSession().catch(function(){});
   goTo('home');
   setTimeout(function(){ loadTodayMood(); _loadNotifStorage(); updateInboxBadge(); updateBuzonDot(); }, 200);
 }
@@ -2298,7 +2601,7 @@ function adminTab(btn, tabId){
   });
   if(tabId==='atab-msg') setTimeout(renderAdminContacts,50);
   if(tabId==='atab-solidarias') setTimeout(renderFreeSessions,50);
-  if(tabId==='atab-wellness') setTimeout(renderBadgeCounts,50);
+  if(tabId==='atab-wellness'){ setTimeout(renderBadgeCounts,50); setTimeout(renderAdminMetrics,80); }
   if(tabId==='atab-pagos') setTimeout(renderAdminSubStats,50);
   if(tabId==='atab-users') setTimeout(renderAdminTCRecords,50);
   if(tabId==='atab-content') setTimeout(renderAdminCircleAudit,50);

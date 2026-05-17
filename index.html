@@ -4155,13 +4155,21 @@
 
       <!-- TAB: MÉTRICAS / KPIs -->
       <div id="atab-wellness" style="display:none">
-        <!-- Usuarios online -->
-        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">📊 Usuarios activos</div>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">
-          <div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.15);border-radius:14px;padding:13px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--sage2)">247</div><div style="font-size:10px;color:rgba(116,198,157,.5);margin-top:2px">Online ahora</div></div>
-          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px;text-align:center"><div style="font-size:22px;font-weight:700;color:rgba(255,255,255,.8)">1.247</div><div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">Registrados total</div></div>
-          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px;text-align:center"><div style="font-size:22px;font-weight:700;color:rgba(255,255,255,.8)">18</div><div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">Nuevos hoy</div></div>
-          <div style="background:rgba(192,48,40,.08);border:1px solid rgba(192,48,40,.15);border-radius:14px;padding:13px;text-align:center"><div style="font-size:22px;font-weight:700;color:#F87070">14</div><div style="font-size:10px;color:rgba(248,112,112,.5);margin-top:2px">Eliminadas (mes)</div></div>
+        <!-- MÉTRICAS REALES CON FILTRO DE PERÍODO -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px">📊 Métricas del piloto</div>
+
+        <!-- Date range selector -->
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+          <button class="amr-btn" onclick="setAdminMetricsRange(this,'today')" style="padding:5px 11px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);font-family:Jost,sans-serif">Hoy</button>
+          <button class="amr-btn" onclick="setAdminMetricsRange(this,'week')" style="padding:5px 11px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);font-family:Jost,sans-serif">7 días</button>
+          <button class="amr-btn on" onclick="setAdminMetricsRange(this,'month')" style="padding:5px 11px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid var(--sage2);background:var(--sage7);color:var(--sage2);font-family:Jost,sans-serif">Este mes</button>
+          <button class="amr-btn" onclick="setAdminMetricsRange(this,'all')" style="padding:5px 11px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);font-family:Jost,sans-serif">Histórico</button>
+          <button onclick="exportAdminMetrics()" style="margin-left:auto;padding:5px 11px;border-radius:100px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid rgba(116,198,157,.3);background:rgba(116,198,157,.08);color:var(--sage2);font-family:Jost,sans-serif">↓ CSV</button>
+        </div>
+
+        <!-- Dynamic metrics grid -->
+        <div id="adminMetricsGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+          <div style="text-align:center;padding:18px;grid-column:1/-1;font-size:11px;color:rgba(116,198,157,.35)">Cargando métricas...</div>
         </div>
 
         <!-- Sesión promedio -->
