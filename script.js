@@ -166,7 +166,17 @@ function initSplashTheme(){
     logoImg.style.mixBlendMode = 'normal';
     logoImg.style.filter = isNight
       ? 'drop-shadow(0 6px 28px rgba(255,255,255,.45)) drop-shadow(0 0 60px rgba(100,220,160,.25))'
-      : 'drop-shadow(0 4px 22px rgba(45,106,79,.4)) drop-shadow(0 0 40px rgba(45,106,79,.2))';
+      : 'drop-shadow(0 8px 30px rgba(0,0,0,.35)) drop-shadow(0 0 50px rgba(45,106,79,.5))';
+  }
+  var tagline = document.getElementById('splashTagline');
+  if(tagline){
+    if(isNight){
+      tagline.style.color = 'rgba(255,255,255,.92)';
+      tagline.style.textShadow = '0 1px 18px rgba(0,0,0,.8), 0 0 40px rgba(100,200,160,.4)';
+    } else {
+      tagline.style.color = 'rgba(255,255,255,1)';
+      tagline.style.textShadow = '0 2px 12px rgba(0,0,0,.7), 0 4px 28px rgba(0,0,0,.5), 0 0 50px rgba(30,80,50,.6)';
+    }
   }
 
   // Fondos desde Supabase Storage (con fallback a canvas)
