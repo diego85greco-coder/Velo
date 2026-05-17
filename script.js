@@ -1138,13 +1138,14 @@ function goTo(id){
   // Show welcome banner the first time user reaches home after login
   if(id==='home'){
     var shown=safeLS('get','velo_banner_shown');
+    setTimeout(updatePlanBadge, 50);
   }
   if(id==='onboarding') setTimeout(obReset,30);
   if(id==='pro-onboarding') setTimeout(pobReset,30);
   if(id==='pro-panel') setTimeout(renderProPendingBanner,50);
   if(id==='admin') setTimeout(renderAdminContacts,50);
   if(id==='profile') setTimeout(checkMonthlyDonorUI,50);
-  if(id==='bottle') setTimeout(renderBottleWall,50);
+  if(id==='bottle'){ setTimeout(renderBottleWall,50); setTimeout(updateBottleCounter,60); }
   if(id==='happy') setTimeout(renderHappyWall,50);
   if(id==='help') setTimeout(renderSolicitudes,50);
   if(id==='buzon') setTimeout(renderBuzon,50);
@@ -2933,7 +2934,7 @@ function _incBottleCount(){
 }
 function sendBottle(){
   if(!canSendBottle()){
-    toast('🍾','Límite diario: 2 botellas por día. Actualizate a Premium para ilimitado 💎');
+    openPlanModal('bottle');
     return;
   }
   var txt=document.getElementById('bottleText');
@@ -2962,8 +2963,24 @@ function sendBottle(){
     closeBottleWrite();
     txt.value='';
     renderBottleWall();
+    updateBottleCounter();
     showSuc('🍾','Botella lanzada!',isAnon?'Lanzada en modo incognito. Nadie sabra que es tuya.':'Tu botella fue lanzada al mar de Velo.');
   });
+}
+
+function updateBottleCounter(){
+  var el = document.getElementById('bottleCounter');
+  if(!el) return;
+  if(isPremiumUser()){
+    el.style.display = 'none';
+  } else {
+    var today = new Date().toDateString();
+    var used = parseInt(safeLS('get','velo_bottle_'+today)||'0',10);
+    var remaining = Math.max(0, 2 - used);
+    el.style.display = '';
+    el.textContent = remaining + '/2 botellas hoy · ' + (remaining > 0 ? 'Podés lanzar más' : 'Límite alcanzado · Velo Plus es ilimitado');
+    el.style.color = remaining > 0 ? '#3A7090' : '#c0392b';
+  }
 }
 
 // ── URGENCY SELECTOR ──────────────────────────────────────
@@ -3163,6 +3180,7 @@ function setDonor(monthly){
 function setPremiumUser(){
   safeLS('set','velo_premium_user','true');
   safeLS('set','velo_premium_start',Date.now().toString());
+  updatePlanBadge();
 }
 
 // ── PAYPAL ────────────────────────────────────────────────
@@ -3232,6 +3250,7 @@ function _checkPayPalReturn(){
       addBuzonMsg({id:'prem-pp-'+Date.now(),tipo:'sistema',icon:'💎',titulo:'¡Plan Premium activado!',cuerpo:'Ya podés publicar ilimitado en el muro y crear círculos de paz. ¡Gracias por apoyar a Velo! 💚',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
       toast('💎','¡Plan Premium activado! Gracias por tu apoyo 💚');
       updateBuzonDot(); updateInboxBadge();
+      setTimeout(updatePlanBadge, 100);
     } else if(tag==='pro'){
       safeLS('set','velo_pro_paid','true');
       addBuzonMsg({id:'pro-pp-'+Date.now(),tipo:'sistema',icon:'🌿',titulo:'Pago profesional confirmado',cuerpo:'Recibimos tu pago de $15/mes. Tu solicitud está en revisión. Te avisamos en 24-48hs. ¡Bienvenido/a al equipo! 💚',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
@@ -3585,42 +3604,70 @@ function renderHappyWall(){
   }).join('');
 }
 
-// ── LÍMITE MURO DE AYUDA (2 gratis, ilimitado premium) ───
+// ── LÍMITE MURO DE AYUDA (2 gratis/día, ilimitado premium) ───
 var FREE_HELP_LIMIT = 2;
 function getHelpWallCount(){
-  return parseInt(safeLS('get','velo_help_posts')||'0',10);
+  var today = new Date().toDateString();
+  return parseInt(safeLS('get','velo_help_'+today)||'0',10);
 }
 function incrementHelpWallCount(){
-  safeLS('set','velo_help_posts', String(getHelpWallCount()+1));
+  var today = new Date().toDateString();
+  safeLS('set','velo_help_'+today, String(getHelpWallCount()+1));
 }
 function canPostHelpWall(){
   if(isPremiumUser()) return true;
   return getHelpWallCount() < FREE_HELP_LIMIT;
 }
 function showHelpLimitModal(){
-  var existing = document.getElementById('helpLimitModal');
-  if(existing){ existing.style.display='flex'; return; }
-  var m = document.createElement('div');
-  m.id='helpLimitModal';
-  m.style.cssText='position:fixed;inset:0;z-index:9800;background:rgba(10,20,10,.6);backdrop-filter:blur(12px);display:flex;align-items:flex-end;justify-content:center';
-  m.innerHTML='<div style="width:100%;max-width:420px;background:#fff;border-radius:28px 28px 0 0;padding:28px 24px 40px;text-align:center">'+
-    '<div style="font-size:40px;margin-bottom:12px">🔒</div>'+
-    '<div style="font-size:19px;font-weight:800;color:var(--ink);margin-bottom:6px">Límite alcanzado</div>'+
-    '<div style="font-size:13px;color:var(--ink4);margin-bottom:20px;line-height:1.6">Usaste tus 2 publicaciones gratuitas en el muro de ayuda.<br>Con el plan Premium accedés ilimitado.</div>'+
-    '<div style="background:linear-gradient(135deg,var(--sage7),rgba(255,255,255,.8));border:1.5px solid rgba(116,198,157,.25);border-radius:20px;padding:18px;margin-bottom:18px">'+
-      '<div style="font-size:22px;font-weight:900;color:var(--sage)">$2.99<span style="font-size:13px;font-weight:400;color:var(--ink5)">/mes</span></div>'+
-      '<div style="font-size:12px;color:var(--ink4);margin-top:4px">✓ Publicaciones ilimitadas en el muro<br>✓ Crear círculos de paz sin esperar insignia</div>'+
-    '</div>'+
-    '<button onclick="subscribePremiumUser()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:Jost,sans-serif;margin-bottom:10px">Suscribirse por $2.99/mes</button>'+
-    '<button onclick="document.getElementById(\'helpLimitModal\').style.display=\'none\'" style="background:none;border:none;color:var(--ink5);font-size:13px;cursor:pointer;font-family:Jost,sans-serif">Ahora no</button>'+
-  '</div>';
-  document.querySelector('.phone').appendChild(m);
+  openPlanModal('help');
 }
 function subscribePremiumUser(){
+  closeModal('planModal');
   var m = document.getElementById('helpLimitModal');
   if(m) m.style.display='none';
   openPayPalPremium();
   toast('💳','Redirigiendo a PayPal… completá el pago y volvé 🌿');
+}
+
+// ── PLAN MODAL ────────────────────────────────────────────
+function openPlanModal(trigger){
+  var badge = document.getElementById('planCurrentBadge');
+  var cta = document.getElementById('planModalCTA');
+  var isPlus = isPremiumUser();
+  if(badge){
+    if(isPlus){
+      badge.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;padding:6px 16px;background:linear-gradient(135deg,var(--sage),var(--sage2));border-radius:100px;color:#fff;font-size:13px;font-weight:700">💎 Velo Plus · Activo ✓</span>';
+    } else {
+      badge.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;padding:6px 16px;background:rgba(0,0,0,.06);border-radius:100px;color:var(--ink3);font-size:13px;font-weight:600">Velo Free</span>';
+    }
+  }
+  if(cta){
+    if(isPlus){
+      cta.innerHTML = '<div style="text-align:center;padding:10px;background:var(--sage7);border-radius:14px;font-size:12px;font-weight:700;color:var(--sage2)">💎 Ya sos suscriptor/a de Velo Plus. ¡Gracias por apoyar la comunidad! 💚</div>';
+    } else {
+      cta.innerHTML = '<button onclick="subscribePremiumUser()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;margin-bottom:8px">Suscribirme a Velo Plus — $2.99/mes 💎</button><div style="text-align:center;font-size:10px;color:var(--ink5)">Cancelás cuando quieras · Pago seguro via PayPal 🔒</div>';
+    }
+  }
+  openModal('planModal');
+}
+function updatePlanBadge(){
+  var btn = document.getElementById('planBtn');
+  var ico = document.getElementById('planBtnIco');
+  var lbl = document.getElementById('planBtnLbl');
+  if(!btn) return;
+  if(isPremiumUser()){
+    btn.style.background = 'linear-gradient(135deg,var(--sage),var(--sage2))';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+    if(ico) ico.textContent = '✓';
+    if(lbl) lbl.textContent = 'Plus';
+  } else {
+    btn.style.background = 'rgba(255,255,255,.75)';
+    btn.style.color = 'var(--sage2)';
+    btn.style.border = '1.5px solid rgba(116,198,157,.2)';
+    if(ico) ico.textContent = '💎';
+    if(lbl) lbl.textContent = 'Plus';
+  }
 }
 
 // ── DONACIÓN DESPUÉS DE RESEÑA ────────────────────────────
@@ -4425,6 +4472,16 @@ function loadProfileData(){
   renderProfileBadges();
   renderProfileReviews();
   applyIncognitoUI(isIncognitoActive());
+  // Update plan section
+  var chip = document.getElementById('profilePlanChip');
+  var planBtnEl = document.getElementById('profilePlanBtn');
+  if(isPremiumUser()){
+    if(chip) chip.innerHTML = '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:linear-gradient(135deg,var(--sage),var(--sage2));border-radius:100px;color:#fff;font-size:11px;font-weight:700">💎 Velo Plus · Activo</span>';
+    if(planBtnEl) planBtnEl.style.display = 'none';
+  } else {
+    if(chip) chip.innerHTML = '<span style="font-size:12px;font-weight:600;color:var(--ink4)">Velo Free</span>';
+    if(planBtnEl){ planBtnEl.style.display = ''; planBtnEl.textContent = 'Ver Velo Plus →'; }
+  }
 }
 function renderProfileBadges(){
   var charlas=totalCharlas;
