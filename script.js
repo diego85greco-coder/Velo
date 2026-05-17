@@ -554,7 +554,7 @@ function finishRegister(){
 }
 
 // Nav — include register + groups in noNav = false (show nav), but not for register
-var noNav=['splash','onboarding','pro-onboarding','guardian-chat','guardian-detail','post-chat','help-form','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','pro-session','pro-session-room','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending','contact','vela'];
+var noNav=['splash','onboarding','pro-onboarding','guardian-chat','guardian-detail','post-chat','help-form','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','pro-session','pro-session-room','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending','contact','vela','podcast'];
 
 // ── MOOD CHECK-IN ────────────────────────────────────────
 var todayMood=null;
@@ -976,7 +976,9 @@ function sendReq(){
   if(Math.random()<.3){
     document.getElementById('declinedModal').classList.add('show');
   } else {
-    showSuc('🌿','¡Luna Verde te está esperando!','Se abrió la sala de chat. Estás acompañado/a. 💚');
+    var nm = (document.getElementById('reqName')||{}).textContent || 'Guardián';
+    var av = (document.getElementById('reqAv')||{}).textContent || '🌿';
+    openGuardianChat(nm, av, 'helped');
   }
 }
 function sendReqDetail(){
@@ -984,7 +986,7 @@ function sendReqDetail(){
   if(Math.random()<.35){
     document.getElementById('declinedDetail').classList.add('show');
   } else {
-    showSuc('🌿','¡Luna Verde te está esperando!','Se abrió la sala de chat. Estás acompañado/a. 💚');
+    openGuardianChat('Luna Verde', '🌙', 'helped');
   }
 }
 function closeDeclined(){document.getElementById('declinedModal').classList.remove('show');}
