@@ -1465,7 +1465,11 @@ function goTo(id){
 }
 function openModal(id){
   document.getElementById(id).classList.add('show');
-  if(id==='sosModal') setTimeout(renderSOSCountry,30);
+  if(id==='sosModal'){
+    setTimeout(renderSOSCountry,30);
+    var c = parseInt(safeLS('get','velo_sos_clicks')||'0',10);
+    safeLS('set','velo_sos_clicks', String(c+1));
+  }
 }
 function closeModal(id){document.getElementById(id).classList.remove('show');}
 
