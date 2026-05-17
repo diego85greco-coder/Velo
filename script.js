@@ -3673,8 +3673,7 @@ function renderSolicitudes(){
         +'<\/div>'
         +'<div style="font-style:italic;font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:14px">"'+sol.msg+'"<\/div>'
         +'<div style="display:flex;gap:8px">'
-        +'<button onclick="aceptarAyuda(\''+sol.id+'\')" style="flex:2;padding:10px;background:var(--sage2);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">Acompañar 💚<\/button>'
-        +'<button onclick="aceptarSolicitud(\''+sol.id+'\')" style="flex:1;padding:10px;background:rgba(192,48,40,.08);border:1.5px solid rgba(192,48,40,.2);border-radius:100px;color:#C03028;font-size:12px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">Rechazar<\/button>'
+        +'<button onclick="aceptarAyuda(\''+sol.id+'\')" style="width:100%;padding:10px;background:var(--sage2);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">Acompañar 💚<\/button>'
         +'<\/div>';
       container.appendChild(card);
     });
@@ -3748,7 +3747,8 @@ function aceptarAyuda(solId){
   solicitudesActivas=solicitudesActivas.filter(function(sx){return sx.id!==solId;});
   renderSolicitudes();
   var hc=document.getElementById('helpCount');if(hc)hc.textContent=solicitudesActivas.length+' ahora';
-  openHelperChat(sol.anonimo?'Anonima':sol.nombre,sol.emoji,sol.msg,null);
+  closeHelpSheet();
+  setTimeout(function(){ openHelperChat(sol.anonimo?'Anónimo/a':sol.nombre,sol.emoji,sol.msg,null); },100);
 }
 
 // ── EDICION DE CAMPOS CALM ────────────────────────────────────
