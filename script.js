@@ -1070,7 +1070,11 @@ function applyIncognitoUI(active){
     }
     var badge=document.getElementById('incogBadge');
     if(badge)badge.style.display=active?'block':'none';
-    var profName=document.getElementById('profileName');
+    var incogToggle=document.getElementById('incogToggle');
+    if(incogToggle)incogToggle.style.background=active?'#2d6a4f':'#ccc';
+    var incogKnob=document.getElementById('incogKnob');
+    if(incogKnob)incogKnob.style.left=active?'22px':'3px';
+    var profName=document.getElementById('profileNameDisplay');
     if(profName)profName.style.opacity=active?'0.4':'1';
   }catch(e){}
 }
@@ -3622,6 +3626,23 @@ function openBuzonMsg(id){
   updateBuzonDot();
   updateInboxBadge();
   renderBuzon();
+}
+
+function buzonTab(tab){
+  var panelVelo=document.getElementById('buzonPanelVelo');
+  var panelPro=document.getElementById('buzonPanelPro');
+  var tabVelo=document.getElementById('buzonTabVelo');
+  var tabPro=document.getElementById('buzonTabPro');
+  if(!panelVelo||!panelPro||!tabVelo||!tabPro)return;
+  if(tab==='velo'){
+    panelVelo.style.display='';panelPro.style.display='none';
+    tabVelo.style.background='var(--sage2)';tabVelo.style.color='#fff';tabVelo.style.border='none';
+    tabPro.style.background='#fff';tabPro.style.color='var(--ink4)';tabPro.style.border='1.5px solid var(--border)';
+  }else{
+    panelVelo.style.display='none';panelPro.style.display='';
+    tabPro.style.background='var(--sage2)';tabPro.style.color='#fff';tabPro.style.border='none';
+    tabVelo.style.background='#fff';tabVelo.style.color='var(--ink4)';tabVelo.style.border='1.5px solid var(--border)';
+  }
 }
 
 // ── BOTELLAS: cuando se responde, va al buzón del autor ──

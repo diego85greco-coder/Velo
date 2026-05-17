@@ -1808,6 +1808,23 @@
         </div>
       </div>
 
+      <!-- ── AGENDA ── -->
+      <div style="background:rgba(255,255,255,.82);border:1.5px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:10px;box-shadow:var(--sh)">
+        <div style="padding:12px 14px 6px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--sage3)">📅 MI AGENDA</div>
+        <!-- Próxima sesión -->
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border)">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--sky3),var(--sky2));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📹</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;color:var(--ink)">Dra. Lucía Varela</div>
+            <div style="font-size:11px;color:var(--ink4)">Viernes 23 · 15:00 · Video · 50 min</div>
+            <div style="font-size:10px;font-weight:700;color:var(--sage2);margin-top:2px">✅ Confirmada</div>
+          </div>
+          <button onclick="toast('📅','Sesión agendada confirmada')" style="padding:6px 12px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.22);border-radius:100px;font-size:10px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:'Jost',sans-serif">Ver</button>
+        </div>
+        <!-- Sin más sesiones -->
+        <div style="padding:10px 14px;text-align:center;font-size:11px;color:var(--ink5)">No tenés más sesiones agendadas · <span onclick="goTo('pro')" style="color:var(--sage2);cursor:pointer;font-weight:600">Reservar consulta →</span></div>
+      </div>
+
       <!-- ── RESEÑAS ── -->
       <div style="background:rgba(255,255,255,.82);border:1.5px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:10px;box-shadow:var(--sh)">
         <div style="padding:12px 14px 6px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--sage3)">⭐ RESEÑAS RECIBIDAS</div>
@@ -4385,10 +4402,51 @@
       <div style="font-size:13px;color:#888">Mensajes y notificaciones</div>
     </div>
     <div class="scrl" style="padding:12px 20px 80px">
-      <div id="buzonList"></div>
-      <div id="buzonEmpty" style="display:none;text-align:center;padding:60px 20px;color:#bbb">
-        <div style="font-size:48px;margin-bottom:12px">📭</div>
-        <div style="font-size:14px">No tenés mensajes nuevos</div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button id="buzonTabVelo" onclick="buzonTab('velo')" style="flex:1;padding:8px 0;border-radius:100px;border:none;font-size:12px;font-weight:700;font-family:'Jost',sans-serif;background:var(--sage2);color:#fff;cursor:pointer">De Velo</button>
+        <button id="buzonTabPro" onclick="buzonTab('pro')" style="flex:1;padding:8px 0;border-radius:100px;border:1.5px solid var(--border);font-size:12px;font-weight:700;font-family:'Jost',sans-serif;background:#fff;color:var(--ink4);cursor:pointer">Profesionales</button>
+      </div>
+      <!-- De Velo tab -->
+      <div id="buzonPanelVelo">
+        <div class="inbox-msg unread">
+          <div class="inbox-dot"></div>
+          <div class="inbox-ic" style="background:linear-gradient(135deg,var(--sage6),var(--sage7))">🌿</div>
+          <div style="flex:1;min-width:0">
+            <div class="inbox-title">Bienvenido/a a Velo</div>
+            <div class="inbox-preview">Gracias por unirte. Este es tu espacio seguro.</div>
+            <div class="inbox-time">Hace 2 días</div>
+          </div>
+        </div>
+        <div class="inbox-msg unread">
+          <div class="inbox-dot"></div>
+          <div class="inbox-ic" style="background:linear-gradient(135deg,var(--sky3),var(--sky2))">🕊️</div>
+          <div style="flex:1;min-width:0">
+            <div class="inbox-title">Tu sesión solidaria fue aprobada</div>
+            <div class="inbox-preview">Te asignamos un profesional. Pronto recibirás confirmación.</div>
+            <div class="inbox-time">Hoy</div>
+          </div>
+        </div>
+        <div class="inbox-msg">
+          <div class="inbox-ic" style="background:linear-gradient(135deg,var(--lav3),var(--lav2))">🔔</div>
+          <div style="flex:1;min-width:0">
+            <div class="inbox-title">Actualización de privacidad</div>
+            <div class="inbox-preview">Actualizamos nuestra política. Entrará en vigor el 1 de junio.</div>
+            <div class="inbox-time">Hace 1 semana</div>
+          </div>
+        </div>
+      </div>
+      <!-- Profesionales tab (hidden by default) -->
+      <div id="buzonPanelPro" style="display:none">
+        <div class="inbox-msg">
+          <div class="inbox-ic" style="background:linear-gradient(135deg,var(--sage6),var(--sage7))">👩‍⚕️</div>
+          <div style="flex:1;min-width:0">
+            <div class="inbox-title">Dra. Lucía Varela</div>
+            <div class="inbox-preview">Hola, confirmando tu sesión del viernes 23 a las 15:00. ¿Te viene bien?</div>
+            <div class="inbox-time">Hoy</div>
+          </div>
+          <button onclick="toast('💌','Respondiendo...')" style="margin-left:8px;padding:6px 12px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.22);border-radius:100px;font-size:10px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:'Jost',sans-serif;flex-shrink:0">Responder</button>
+        </div>
       </div>
     </div>
   </div>
