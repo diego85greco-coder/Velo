@@ -1184,6 +1184,37 @@ function sendReqDetail(){
 }
 function closeDeclined(){document.getElementById('declinedModal').classList.remove('show');}
 
+// ── CHAT INVITATION SYSTEM ────────────────────────────────────
+var _chatInviteGuardian = {name:'Guardián', av:'🌿'};
+var _chatInviteTimer = null;
+function requestChatInvite(name, av){
+  _chatInviteGuardian = {name:name||'Guardián', av:av||'🌿'};
+  var el = document.getElementById('crsGuardianName');
+  if(el) el.textContent = name||'Guardián';
+  document.getElementById('chatRequestSent').classList.add('show');
+  _chatInviteTimer = setTimeout(function(){
+    document.getElementById('chatRequestSent').classList.remove('show');
+    var nEl = document.getElementById('cipGuardianName');
+    var aEl = document.getElementById('cipGuardianAv');
+    if(nEl) nEl.textContent = _chatInviteGuardian.name;
+    if(aEl) aEl.textContent = _chatInviteGuardian.av;
+    document.getElementById('chatInvitePopup').classList.add('show');
+  }, 2500);
+}
+function cancelChatRequest(){
+  if(_chatInviteTimer){ clearTimeout(_chatInviteTimer); _chatInviteTimer=null; }
+  document.getElementById('chatRequestSent').classList.remove('show');
+}
+function acceptChatInvite(){
+  document.getElementById('chatInvitePopup').classList.remove('show');
+  setStatus('busy');
+  openGuardianChat(_chatInviteGuardian.name, _chatInviteGuardian.av, 'helped');
+}
+function rejectChatInvite(){
+  document.getElementById('chatInvitePopup').classList.remove('show');
+  showSuc('🙏','No estaba disponible',''+_chatInviteGuardian.name+' no pudo atenderte en este momento. Podés intentar con otro Guardián o volver más tarde. 💙');
+}
+
 // Status
 var curStatus='active';
 function setStatus(s){
@@ -1275,18 +1306,19 @@ function applyIncognitoUI(active){
 }
 
 function getDisplayName(){
-  return isIncognitoActive()?'Anonima':'Luna Verde';
+  if(isIncognitoActive()) return 'Anonima/o';
+  return safeLS('get','velo_user_name')||'Velo User';
 }
 
 // Avatar
 function setAv(el,em){
-  // Only deselect within same av-grid container
+  if(!el||!em){ toast('✏️','Tocá un emoji abajo para cambiar tu avatar'); return; }
   var grid = el.closest('.av-grid') || el.parentElement;
   if(grid) grid.querySelectorAll('.av-opt').forEach(function(a){ a.classList.remove('sel'); })
   el.classList.add('sel');
+  safeLS('set','velo_user_avatar',em);
   var d=document.getElementById('profileAvDisplay');
   if(d){d.textContent=em;var dot=document.getElementById('profileDot');if(dot)d.appendChild(dot);}
-  // Update avatar preview boxes
   var userPrev=document.getElementById('userAvatarPreview');
   if(userPrev && !userPrev.querySelector('img')){ userPrev.textContent=em; }
   var regPrev=document.getElementById('regAvatarPreview');
@@ -3134,7 +3166,7 @@ function setPremiumUser(){
 }
 
 // ── PAYPAL ────────────────────────────────────────────────
-var PAYPAL_EMAIL = 'Diego.catalan.greco%40gmail.com';
+var PAYPAL_EMAIL = 'wearevelo.app%40gmail.com';
 var PAYPAL_BASE  = 'https://www.paypal.com/donate?business='+PAYPAL_EMAIL+'&currency_code=USD&no_note=1&no_shipping=1';
 var PAYPAL_SUB   = 'https://www.paypal.com/cgi-bin/webscr?cmd=_xclick-subscriptions&business='+PAYPAL_EMAIL+'&currency_code=USD&no_note=1&no_shipping=1';
 
@@ -4368,6 +4400,19 @@ var _profileReviewsDefaults = [
 ];
 var totalCharlas = 47;
 function loadProfileData(){
+  // Load saved name
+  var savedName = safeLS('get','velo_user_name');
+  if(savedName){
+    var nameEl = document.getElementById('profileNameDisplay');
+    if(nameEl) nameEl.textContent = savedName;
+  }
+  // Load saved avatar
+  var savedAv = safeLS('get','velo_user_avatar');
+  if(savedAv){
+    var avEl = document.getElementById('profileAvDisplay');
+    if(avEl){ var dot = document.getElementById('profileDot'); avEl.textContent = savedAv; if(dot) avEl.appendChild(dot); }
+  }
+  // Load calm data
   var map={calmMensaje:'profMensaje',calmAliento:'profAliento',calmCancion:'profCancion',calmPelicula:'profPelicula',calmLibro:'profLibro'};
   var keys=['calmMensaje','calmAliento','calmCancion','calmPelicula','calmLibro'];
   for(var ki=0;ki<keys.length;ki++){var k=keys[ki];var saved=safeLS('get','velo_calm_'+k);if(saved){var el=document.getElementById(map[k]);if(el)el.textContent=saved;}}

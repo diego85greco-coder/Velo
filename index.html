@@ -42,22 +42,46 @@
   <div class="modal-ov" id="sosModal">
     <div class="msheet" style="background:linear-gradient(160deg,#FFF6F4,#FFFAF8)">
       <div class="mhandle" style="background:rgba(192,48,40,.15)"></div>
-      <div style="font-size:44px;text-align:center;margin-bottom:11px;animation:breathe 1.5s ease-in-out infinite">🆘</div>
-      <div class="serif-i" style="font-size:24px;color:var(--sos);text-align:center;margin-bottom:5px">Estamos aquí contigo</div>
-      <div style="font-size:13px;color:var(--ink3);text-align:center;line-height:1.65;margin-bottom:14px">Si estás en crisis estas líneas atienden 24hs. No estás solo/a.</div>
-      <div style="display:flex;align-items:center;gap:11px;padding:12px 14px;background:rgba(192,48,40,.05);border:1.5px solid rgba(192,48,40,.12);border-radius:17px;cursor:pointer;margin-bottom:8px" onclick="toast('📞','Conectando...')">
-        <span style="font-size:21px">📞</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--sos)">Línea de Crisis · 024</div><div style="font-size:11px;color:var(--ink5)">España · gratuito · 24hs</div></div>
-        <button style="padding:7px 13px;background:var(--sos);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Llamar</button>
+      <div style="font-size:44px;text-align:center;margin-bottom:9px;animation:breathe 1.5s ease-in-out infinite">🆘</div>
+      <div class="serif-i" style="font-size:22px;color:var(--sos);text-align:center;margin-bottom:4px">Estamos aquí contigo</div>
+      <div style="font-size:12px;color:var(--ink3);text-align:center;line-height:1.6;margin-bottom:12px">Servicios de emergencia gratuitos · 24 horas · Llamadas no quedan registradas en Velo</div>
+
+      <!-- 🇦🇷 Argentina -->
+      <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--ink4);margin-bottom:6px;display:flex;align-items:center;gap:6px">🇦🇷 ARGENTINA <span style="flex:1;height:1px;background:rgba(192,48,40,.12);display:block"></span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+        <a href="tel:911" style="display:flex;align-items:center;gap:7px;padding:9px 10px;background:rgba(192,48,40,.05);border:1.5px solid rgba(192,48,40,.14);border-radius:13px;text-decoration:none">
+          <span style="font-size:16px">🚨</span><div><div style="font-size:11px;font-weight:700;color:var(--sos)">Emergencias 911</div><div style="font-size:9px;color:var(--ink5)">Policía · Bomberos · SAME</div></div></a>
+        <a href="tel:107" style="display:flex;align-items:center;gap:7px;padding:9px 10px;background:rgba(192,48,40,.05);border:1.5px solid rgba(192,48,40,.14);border-radius:13px;text-decoration:none">
+          <span style="font-size:16px">🚑</span><div><div style="font-size:11px;font-weight:700;color:var(--sos)">SAME 107</div><div style="font-size:9px;color:var(--ink5)">Ambulancias · Capital Federal</div></div></a>
+        <a href="tel:135" style="display:flex;align-items:center;gap:7px;padding:9px 10px;background:rgba(192,48,40,.05);border:1.5px solid rgba(192,48,40,.14);border-radius:13px;text-decoration:none">
+          <span style="font-size:16px">🧠</span><div><div style="font-size:11px;font-weight:700;color:var(--sos)">Crisis 135</div><div style="font-size:9px;color:var(--ink5)">Salud mental · gratuito · 24hs</div></div></a>
+        <a href="tel:144" style="display:flex;align-items:center;gap:7px;padding:9px 10px;background:rgba(192,48,40,.05);border:1.5px solid rgba(192,48,40,.14);border-radius:13px;text-decoration:none">
+          <span style="font-size:16px">👩</span><div><div style="font-size:11px;font-weight:700;color:var(--sos)">Violencia 144</div><div style="font-size:9px;color:var(--ink5)">Mujer en situación de riesgo</div></div></a>
       </div>
-      <div style="display:flex;align-items:center;gap:11px;padding:12px 14px;background:rgba(192,48,40,.05);border:1.5px solid rgba(192,48,40,.12);border-radius:17px;cursor:pointer;margin-bottom:8px" onclick="toast('🚨','Llamando...')">
-        <span style="font-size:21px">🚨</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--sos)">Emergencias · 112</div><div style="font-size:11px;color:var(--ink5)">Europa · gratuito</div></div>
-        <button style="padding:7px 13px;background:var(--sos);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Llamar</button>
+
+      <!-- 🇪🇸 España -->
+      <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--ink4);margin-bottom:6px;display:flex;align-items:center;gap:6px">🇪🇸 ESPAÑA <span style="flex:1;height:1px;background:rgba(192,48,40,.12);display:block"></span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+        <a href="tel:112" style="display:flex;align-items:center;gap:7px;padding:9px 10px;background:rgba(192,48,40,.05);border:1.5px solid rgba(192,48,40,.14);border-radius:13px;text-decoration:none">
+          <span style="font-size:16px">🚨</span><div><div style="font-size:11px;font-weight:700;color:var(--sos)">Emergencias 112</div><div style="font-size:9px;color:var(--ink5)">Policía · Bomberos · Médico</div></div></a>
+        <a href="tel:024" style="display:flex;align-items:center;gap:7px;padding:9px 10px;background:rgba(192,48,40,.05);border:1.5px solid rgba(192,48,40,.14);border-radius:13px;text-decoration:none">
+          <span style="font-size:16px">🧠</span><div><div style="font-size:11px;font-weight:700;color:var(--sos)">Crisis 024</div><div style="font-size:9px;color:var(--ink5)">Salud mental · gratuito · 24hs</div></div></a>
+        <a href="tel:016" style="display:flex;align-items:center;gap:7px;padding:9px 10px;background:rgba(192,48,40,.05);border:1.5px solid rgba(192,48,40,.14);border-radius:13px;text-decoration:none">
+          <span style="font-size:16px">👩</span><div><div style="font-size:11px;font-weight:700;color:var(--sos)">Violencia 016</div><div style="font-size:9px;color:var(--ink5)">Violencia de género · 24hs</div></div></a>
+        <a href="tel:061" style="display:flex;align-items:center;gap:7px;padding:9px 10px;background:rgba(192,48,40,.05);border:1.5px solid rgba(192,48,40,.14);border-radius:13px;text-decoration:none">
+          <span style="font-size:16px">🚑</span><div><div style="font-size:11px;font-weight:700;color:var(--sos)">Médico 061</div><div style="font-size:9px;color:var(--ink5)">Urgencias médicas</div></div></a>
       </div>
-      <div style="display:flex;align-items:center;gap:11px;padding:12px 14px;background:rgba(192,48,40,.05);border:1.5px solid rgba(192,48,40,.12);border-radius:17px;cursor:pointer;margin-bottom:14px" onclick="toast('💬','Abriendo chat...')">
-        <span style="font-size:21px">💬</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--sos)">Chat de crisis anónimo</div><div style="font-size:11px;color:var(--ink5)">Sin espera · 24hs</div></div>
-        <button style="padding:7px 13px;background:var(--sos);border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">Chatear</button>
+
+      <!-- Otros países LATAM -->
+      <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--ink4);margin-bottom:6px;display:flex;align-items:center;gap:6px">🌎 OTROS PAÍSES <span style="flex:1;height:1px;background:rgba(192,48,40,.12);display:block"></span></div>
+      <div style="background:rgba(192,48,40,.04);border:1.5px solid rgba(192,48,40,.1);border-radius:13px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--ink3);line-height:1.8">
+        🇨🇱 Chile: <b>149</b> (policía) · <b>131</b> (ambulancia) · <b>800 200 818</b> (crisis) · <b>1455</b> (mujer)<br>
+        🇲🇽 México: <b>911</b> (emergencias) · <b>800 290 0024</b> (crisis mental)<br>
+        🇺🇾 Uruguay: <b>911</b> (emergencias) · <b>0800 5050</b> (salud mental)<br>
+        🇨🇴 Colombia: <b>123</b> (emergencias) · <b>106</b> (línea vida · crisis)
       </div>
-      <button class="btn btn-outline" style="width:100%;padding:13px;font-size:13px" onclick="closeModal('sosModal')">Volver a Velo</button>
+
+      <button class="btn btn-outline" style="width:100%;padding:13px;font-size:13px" onclick="closeModal('sosModal')">Volver a Velo 💚</button>
     </div>
   </div>
 
@@ -227,7 +251,7 @@
           <div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--ink)">Mar Tranquilo</div><div style="font-size:10px;color:var(--ink5)">🥈 Plata · 4.7 ⭐ · disponible</div></div>
           <span style="font-size:12px;color:var(--sage2);font-weight:600">Pedir →</span>
         </div>
-        <div style="display:flex;align-items:center;gap:9px;padding:8px 0;cursor:pointer" onclick="closeDeclined();document.getElementById('reqName').textContent='Estrella del Sur';document.getElementById('reqAv').textContent='⭐';openReq()">
+        <div style="display:flex;align-items:center;gap:9px;padding:8px 0;cursor:pointer" onclick="closeDeclined();requestChatInvite('Estrella del Sur','⭐')">
           <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--sun2),var(--sun3));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;position:relative"><div style="position:absolute;bottom:-2px;right:-2px;width:11px;height:11px;border-radius:50%;background:var(--st-on);border:2px solid var(--cream)"></div></div>
           <div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--ink)">Estrella del Sur</div><div style="font-size:10px;color:var(--ink5)">🥉 Bronce · 4.5 ⭐ · disponible</div></div>
           <span style="font-size:12px;color:var(--sage2);font-weight:600">Pedir →</span>
@@ -235,6 +259,47 @@
       </div>
       <button class="btn btn-sage" style="width:100%;padding:13px;font-size:13px;margin-bottom:8px" onclick="closeDeclined();goTo('guardians')">Ver todos los guardianes</button>
       <button class="btn btn-outline" style="width:100%;padding:11px;font-size:12px" onclick="closeDeclined()">Volver</button>
+    </div>
+  </div>
+
+  <!-- CHAT REQUEST SENT (requester waiting state) -->
+  <div class="modal-ov" id="chatRequestSent" style="z-index:650">
+    <div class="msheet">
+      <div class="mhandle"></div>
+      <div style="text-align:center;padding:10px 0 6px">
+        <div style="font-size:52px;animation:float 2s ease-in-out infinite;margin-bottom:10px">🌿</div>
+        <div class="serif-i" style="font-size:21px;color:var(--sage);margin-bottom:6px">Solicitud enviada</div>
+        <div style="font-size:13px;color:var(--ink4);margin-bottom:18px">Esperando respuesta de <b id="crsGuardianName">Guardián</b>...</div>
+        <div style="display:flex;justify-content:center;gap:9px;margin-bottom:22px">
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--sage4);animation:breathe 1s ease-in-out 0s infinite"></div>
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--sage4);animation:breathe 1s ease-in-out .33s infinite"></div>
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--sage4);animation:breathe 1s ease-in-out .66s infinite"></div>
+        </div>
+        <div style="font-size:11px;color:var(--ink5);font-style:italic">Tu solicitud llega en tiempo real 🔔</div>
+      </div>
+      <button onclick="cancelChatRequest()" style="width:100%;margin-top:18px;padding:13px;background:none;border:1.5px solid var(--border);border-radius:100px;color:var(--ink4);font-size:13px;font-weight:600;cursor:pointer;font-family:'Jost',sans-serif">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- CHAT INVITE POPUP (simulates guardian receiving the invite) -->
+  <div class="modal-ov" id="chatInvitePopup" style="z-index:660">
+    <div class="msheet">
+      <div class="mhandle"></div>
+      <div style="text-align:center;margin-bottom:14px;padding-top:4px">
+        <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(45,106,79,.08);border:1px solid rgba(45,106,79,.18);border-radius:100px;font-size:10px;font-weight:700;color:var(--sage2);margin-bottom:10px;letter-spacing:.5px">🎭 VISTA DEL GUARDIÁN (DEMO)</div>
+        <div style="font-size:44px;animation:breathe 1.5s ease-in-out infinite;margin-bottom:8px" id="cipGuardianAv">🌙</div>
+        <div class="serif-i" style="font-size:22px;color:var(--sage);margin-bottom:4px" id="cipGuardianName">Luna Verde</div>
+        <div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:5px">💬 Alguien quiere acompañarte</div>
+        <div style="font-size:12px;color:var(--ink4);line-height:1.6">Un usuario en tu comunidad necesita apoyo ahora mismo. ¿Podés escucharle?</div>
+      </div>
+      <div style="background:var(--sage7);border:1.5px solid rgba(116,198,157,.2);border-radius:14px;padding:11px 13px;margin-bottom:16px;font-size:12px;color:var(--ink3);line-height:1.6">
+        🔒 <b>Identidad del usuario:</b> protegida · Solo se revela si aceptás<br>
+        ⏱️ La solicitud expira en <b>60 segundos</b>
+      </div>
+      <div style="display:flex;gap:9px">
+        <button onclick="rejectChatInvite()" style="flex:1;padding:14px;background:rgba(192,48,40,.07);border:1.5px solid rgba(192,48,40,.2);border-radius:100px;color:#c0392b;font-size:13px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">🚫 No puedo</button>
+        <button onclick="acceptChatInvite()" style="flex:2;padding:14px;background:linear-gradient(135deg,var(--sage),var(--sage2));border:none;border-radius:100px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif">💚 Aceptar</button>
+      </div>
     </div>
   </div>
 
@@ -543,7 +608,7 @@
         </div>
         <!-- Actions -->
         <div style="display:flex;gap:7px">
-          <button class="btn-ask" onclick="event.stopPropagation();openGuardianChat('Luna Verde','🌙')">🌿 Pedir acompañamiento</button>
+          <button class="btn-ask" onclick="event.stopPropagation();requestChatInvite('Luna Verde','🌙')">🌿 Pedir acompañamiento</button>
           <button class="btn-view" onclick="event.stopPropagation();goTo('guardian-detail')">Ver perfil</button>
         </div>
       </div>
@@ -578,7 +643,7 @@
         </div>
         <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:var(--ink3);line-height:1.5;margin-bottom:9px;padding:0 2px">"El mar siempre vuelve a la calma. Yo también puedo ayudarte a encontrar la tuya. 🌊"</div>
         <div style="display:flex;gap:7px">
-          <button class="btn-ask" onclick="openGuardianChat('Mar Tranquilo','🌊')">🌿 Pedir acompañamiento</button>
+          <button class="btn-ask" onclick="requestChatInvite('Mar Tranquilo','🌊')">🌿 Pedir acompañamiento</button>
           <button class="btn-view" onclick="toast('🌊','Cargando perfil...')">Ver perfil</button>
         </div>
       </div>
@@ -1697,7 +1762,7 @@
       <div class="stats-row" style="margin-bottom:10px">
         <div class="stat-c"><div class="stat-n" id="statCharlas">47</div><div class="stat-l">Charlas</div></div>
         <div class="stat-c"><div class="stat-n" id="statRating">4.9</div><div class="stat-l">Rating</div></div>
-        <div class="stat-c" onclick="openAllReviews()" style="cursor:pointer"><div class="stat-n" id="statResenas">38</div><div class="stat-l" style="color:var(--sage2)">Reseñas ›</div></div></div>
+        <div class="stat-c" onclick="openAllReviews()" style="cursor:pointer"><div class="stat-n" id="statResenas">38</div><div class="stat-l" style="color:var(--sage2)">Reseñas ›</div></div>
       </div>
 
       <!-- ── INSIGNIAS ── -->
