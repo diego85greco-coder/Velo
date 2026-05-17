@@ -1877,7 +1877,7 @@ function sendContactForm(){
   var texto=msg.value.trim();
   var ts=Date.now();
   // Save to admin inbox (localStorage)
-  var adminMsgs=JSON.parse(safeLS('get','velo_admin_contacts')||'[]');
+  var adminMsgs=[]; try{adminMsgs=JSON.parse(safeLS('get','velo_admin_contacts')||'[]');}catch(e){}
   adminMsgs.unshift({id:'c-'+ts,topic:topic,mensaje:texto,email:emailVal,fecha:new Date().toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),leido:false});
   safeLS('set','velo_admin_contacts',JSON.stringify(adminMsgs.slice(0,100)));
   // Confirm to user in their buzón
@@ -1906,7 +1906,7 @@ function sendContactForm(){
 function renderAdminContacts(){
   var list=document.getElementById('adminContactList');
   if(!list) return;
-  var msgs=JSON.parse(safeLS('get','velo_admin_contacts')||'[]');
+  var msgs=[]; try{msgs=JSON.parse(safeLS('get','velo_admin_contacts')||'[]');}catch(e){}
   if(!msgs.length){list.innerHTML='<div style="text-align:center;padding:24px;color:var(--ink4);font-size:13px">No hay mensajes de contacto aún.</div>';return;}
   list.innerHTML=msgs.map(function(m){
     var body='Hola!%0A%0AGracias por escribirnos a Velo.%0A%0AEn respuesta a tu consulta sobre "'+encodeURIComponent(m.topic)+'"%3A%0A%0A[Escribí tu respuesta aquí]%0A%0ASaludos,%0AEquipo Velo%0A'+VELO_EMAIL;
@@ -2737,7 +2737,7 @@ function sendInvite(){
   var selRole = document.querySelector('#atab-roles .role-sel-active');
   var role = selRole ? selRole.dataset.role : 'moderador';
   var emailVal = em.value.trim();
-  var roles = JSON.parse(safeLS('get','velo_admin_roles')||'[]');
+  var roles=[]; try{roles=JSON.parse(safeLS('get','velo_admin_roles')||'[]');}catch(e){}
   var exists = roles.some(function(r){ return r.email===emailVal; });
   if(exists){ toast('⚠️','Este email ya tiene un rol asignado'); return; }
   var tempPass = 'Velo'+Math.random().toString(36).slice(2,8).toUpperCase()+'!';
@@ -2752,7 +2752,7 @@ function sendInvite(){
 function renderAdminRoles(){
   var list = document.getElementById('adminRolesList');
   if(!list) return;
-  var roles = JSON.parse(safeLS('get','velo_admin_roles')||'[]');
+  var roles=[]; try{roles=JSON.parse(safeLS('get','velo_admin_roles')||'[]');}catch(e){}
   if(!roles.length){ list.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.3);text-align:center;padding:12px">Sin roles adicionales creados</div>'; return; }
   list.innerHTML = roles.map(function(r){
     return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">'+
@@ -2763,7 +2763,7 @@ function renderAdminRoles(){
   }).join('');
 }
 function removeRole(email){
-  var roles = JSON.parse(safeLS('get','velo_admin_roles')||'[]');
+  var roles=[]; try{roles=JSON.parse(safeLS('get','velo_admin_roles')||'[]');}catch(e){}
   roles = roles.filter(function(r){ return r.email!==email; });
   safeLS('set','velo_admin_roles',JSON.stringify(roles));
   renderAdminRoles();
@@ -3273,7 +3273,7 @@ function sendBottle(){
     _incBottleCount();
     iaTrackBottleSent();
     // Registrar como botella propia para poder eliminarla
-    var myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]');
+    var myBottles=[]; try{myBottles=JSON.parse(safeLS('get','velo_my_bottles')||'[]');}catch(e){}
     myBottles.push(bottleId);
     safeLS('set','velo_my_bottles', JSON.stringify(myBottles.slice(-20)));
     closeBottleWrite();
@@ -3619,7 +3619,7 @@ function _checkStripeReturn(){
     var params = new URLSearchParams(window.location.search);
     var status = params.get('stripe');
     if(!status) return;
-    var pending = JSON.parse(safeLS('get','velo_stripe_pending')||'null');
+    var pending=null; try{pending=JSON.parse(safeLS('get','velo_stripe_pending')||'null');}catch(e){}
     if(status==='ok' && pending){
       var proName = pending.pro || 'el profesional';
       addBuzonMsg({id:'stripe-ok-'+Date.now(),tipo:'sistema',icon:'💳',titulo:'¡Pago confirmado!',cuerpo:'Tu pago de $'+pending.amt+' USD para la sesión con '+proName+' fue procesado exitosamente. El monto queda retenido hasta confirmar que la sesión se realizó. 🔒',leido:false,fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
@@ -4011,7 +4011,7 @@ function updatePlanBadge(){
 function renderAdminCircleAudit(){
   var el = document.getElementById('adminCircleAuditList');
   if(!el) return;
-  var circles = JSON.parse(safeLS('get','velo_user_circles')||'[]');
+  var circles=[]; try{circles=JSON.parse(safeLS('get','velo_user_circles')||'[]');}catch(e){}
   // Add demo circles if none
   var demos = [
     {id:'demo-ansiedad', name:'Ansiedad Compartida', emoji:'🌊', members:42, msgs:18, reported:true},
@@ -4043,7 +4043,7 @@ function adminAuditCircle(circleId, circleName, circleEmoji){
   var msgsEl = document.getElementById('auditCircleMsgs');
   if(!msgsEl) return;
   // Try to get real circle messages
-  var circles = JSON.parse(safeLS('get','velo_user_circles')||'[]');
+  var circles=[]; try{circles=JSON.parse(safeLS('get','velo_user_circles')||'[]');}catch(e){}
   var circle = circles.find(function(c){return c.id===circleId;});
   var messages = (circle && circle.messages) ? circle.messages : [];
   // If demo circle, show demo messages
@@ -4181,14 +4181,14 @@ function _fetchUserIP(cb){
 }
 
 function recordTCAcceptance(name, email){
-  var records = JSON.parse(safeLS('get','velo_tc_records')||'[]');
+  var records=[]; try{records=JSON.parse(safeLS('get','velo_tc_records')||'[]');}catch(e){}
   var existing = records.findIndex(function(r){ return r.email && r.email===email; });
   var ts = new Date().toISOString();
   var record = { name: name||'N/D', email: email||'N/D', timestamp: ts, ip: 'obteniendo…', tcVersion: TC_VERSION, status: 'ACCEPTED' };
   if(existing>=0) records[existing] = record; else records.push(record);
   safeLS('set','velo_tc_records', JSON.stringify(records));
   _fetchUserIP(function(ip){
-    var recs = JSON.parse(safeLS('get','velo_tc_records')||'[]');
+    var recs=[]; try{recs=JSON.parse(safeLS('get','velo_tc_records')||'[]');}catch(e){}
     var idx = recs.findIndex(function(r){ return r.email===email && r.timestamp===ts; });
     if(idx>=0){ recs[idx].ip = ip; safeLS('set','velo_tc_records', JSON.stringify(recs)); }
   });
@@ -4197,7 +4197,7 @@ function recordTCAcceptance(name, email){
 function renderAdminTCRecords(){
   var el = document.getElementById('adminTCRecords');
   if(!el) return;
-  var records = JSON.parse(safeLS('get','velo_tc_records')||'[]');
+  var records=[]; try{records=JSON.parse(safeLS('get','velo_tc_records')||'[]');}catch(e){}
   if(!records.length){
     el.innerHTML = '<div style="text-align:center;padding:14px;font-size:11px;color:rgba(255,255,255,.3)">Sin registros de aceptación aún.</div>';
     return;
@@ -4224,7 +4224,7 @@ function renderAdminTCRecords(){
 }
 
 function exportTCRecords(){
-  var records = JSON.parse(safeLS('get','velo_tc_records')||'[]');
+  var records=[]; try{records=JSON.parse(safeLS('get','velo_tc_records')||'[]');}catch(e){}
   if(!records.length){ toast('📄','Sin registros que exportar'); return; }
   var csv = 'Nombre,Email,Timestamp (UTC),IP,Version TC,Estado\n';
   csv += records.map(function(r){
@@ -4346,7 +4346,7 @@ function renderSOSCountry(){
 function cancelPlusSubscription(){
   if(!confirm('¿Seguro que querés cancelar Velo Plus?\n\nTu suscripción pasará a Velo Free y perderás el acceso ilimitado. Las personas que ayudás con tu $2.99/mes dependen de vos. 💙')) return;
   safeLS('set','velo_premium_user','false');
-  var cancelled = JSON.parse(safeLS('get','velo_cancelled_subs')||'[]');
+  var cancelled=[]; try{cancelled=JSON.parse(safeLS('get','velo_cancelled_subs')||'[]');}catch(e){}
   cancelled.push({date: new Date().toISOString(), plan:'plus'});
   safeLS('set','velo_cancelled_subs', JSON.stringify(cancelled));
   closeModal('planModal');
@@ -4368,7 +4368,7 @@ function renderAdminSubStats(){
   var isPlus = isPremiumUser();
   var freeCount = isPlus ? 0 : 1;
   var plusCount = isPlus ? 1 : 0;
-  var cancelled = JSON.parse(safeLS('get','velo_cancelled_subs')||'[]');
+  var cancelled=[]; try{cancelled=JSON.parse(safeLS('get','velo_cancelled_subs')||'[]');}catch(e){}
   var cancelledCount = cancelled.length;
   statsEl.innerHTML =
     '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 8px;text-align:center">'+
@@ -4667,7 +4667,7 @@ function renderBottleWall(){
       container.innerHTML = '<div style="text-align:center;padding:30px;font-size:13px;color:rgba(255,255,255,.4);font-style:italic">No hay botellas flotando ahora. Sé el primero en lanzar una. 🍾</div>';
       return;
     }
-    var myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]');
+    var myBottles=[]; try{myBottles=JSON.parse(safeLS('get','velo_my_bottles')||'[]');}catch(e){}
     pending.forEach(function(bottle, idx){
       var isMine = myBottles.indexOf(bottle.id) >= 0;
       var div = document.createElement('div');
@@ -4703,7 +4703,7 @@ function respondBottle(id){
 function deleteMyBottle(id){
   bottleWall = bottleWall.filter(function(b){ return b.id !== id; });
   _saveBottleWall();
-  var myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]');
+  var myBottles=[]; try{myBottles=JSON.parse(safeLS('get','velo_my_bottles')||'[]');}catch(e){}
   safeLS('set','velo_my_bottles', JSON.stringify(myBottles.filter(function(x){ return x!==id; })));
   renderBottleWall();
   toast('🍾','Tu botella fue retirada del mar.');
