@@ -2256,23 +2256,29 @@ function rejectPro(proId){
 }
 
 // ── ADMIN ────────────────────────────────────────────────
-var ADMIN_EMAIL = 'Diego.catalan.greco@gmail.com';
 var VELO_EMAIL  = 'wearevelo.app@gmail.com';
-var ADMIN_PASS  = 'Portugaloporto2026!';
 // Note: Admin authentication must be validated server-side. Never store credentials in client JS.
+var _ADMINS = [
+  {email:'Diego.catalan.greco@gmail.com', pass:'Portugaloporto2026!', name:'Super Admin'},
+  {email:'Wearevelo.app@gmail.com',       pass:'Portugaloporto2026!', name:'Velo Admin'}
+];
 var adminAuthed = false;
+var _adminCurrentEmail = '';
 function adminLogin(){
   var em = document.getElementById('adminEmail');
   var pw = document.getElementById('adminPass');
   if(!em||!pw) return;
-  if(em.value.trim()===ADMIN_EMAIL && pw.value===ADMIN_PASS){
+  var entered = em.value.trim().toLowerCase();
+  var match = _ADMINS.find(function(a){ return a.email.toLowerCase()===entered && a.pass===pw.value; });
+  if(match){
     adminAuthed = true;
+    _adminCurrentEmail = match.email;
     var d = document.getElementById('adminUserDisplay');
-    if(d) d.textContent = ADMIN_EMAIL;
+    if(d) d.textContent = match.email;
     var r = document.getElementById('adminRoleEmail');
-    if(r) r.textContent = ADMIN_EMAIL;
+    if(r) r.textContent = match.email;
     goTo('admin');
-    toast('👑','Bienvenido, Super Admin');
+    toast('👑','Bienvenido/a, '+match.name);
   } else {
     toast('❌','Email o contraseña incorrectos');
   }
