@@ -37,7 +37,7 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
 @keyframes breathe{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.05);opacity:1}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(192,48,40,.4)}70%{box-shadow:0 0 0 10px rgba(192,48,40,0)}}
-@keyframes waveIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes waveIn{0%{transform:translateY(10px)}100%{transform:translateY(0)}}
 @keyframes popIn{0%{transform:scale(0) rotate(-12deg)}65%{transform:scale(1.12)}100%{transform:scale(1)}}
 @keyframes sheetUp{0%{transform:translateY(100%);opacity:.5}100%{transform:translateY(0);opacity:1}}
 @keyframes moonBreath{0%,100%{box-shadow:0 0 30px 10px rgba(240,225,140,.28),0 0 70px 25px rgba(200,185,100,.14)}50%{box-shadow:0 0 45px 16px rgba(240,225,140,.42),0 0 90px 35px rgba(200,185,100,.22)}}
@@ -60,7 +60,7 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
 .ob-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0 28px;text-align:center}
 .ob-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.22);transition:all .3s}
 .ob-dot-a{width:22px;border-radius:100px;background:var(--sage4)}
-@keyframes onboardSlide{0%{opacity:0;transform:translateX(24px)}100%{opacity:1;transform:translateX(0)}}
+@keyframes onboardSlide{0%{transform:translateX(24px)}100%{transform:translateX(0)}}
 @keyframes shootStar{0%{transform:translate(0,0) scaleX(1);opacity:1}100%{transform:translate(-300px,150px) scaleX(.05);opacity:0}}
 @keyframes firefly{0%,100%{opacity:.1;transform:translate(0,0)}25%{opacity:.9}50%{opacity:.3;transform:translate(8px,-12px)}75%{opacity:.7;transform:translate(-5px,8px)}}
 @keyframes waterWave{0%,100%{d:path("M0 10 Q50 0 100 10 Q150 20 200 10 Q250 0 300 10 Q350 20 393 10")}50%{d:path("M0 10 Q50 20 100 10 Q150 0 200 10 Q250 20 300 10 Q350 0 393 10")}}

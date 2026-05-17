@@ -45,7 +45,7 @@
       sp.style.top='0';sp.style.left='0';sp.style.right='0';sp.style.bottom='0';
       sp.classList.add('on');
     }
-    console.log('[Velo] v20260517c OK — pantallas:',all.length);
+    console.log('[Velo] v20260517d OK — pantallas:',all.length);
   }catch(e){ console.error('[_initScreens]',e); }
 })();
 
