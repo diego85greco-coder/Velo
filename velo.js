@@ -1,4 +1,32 @@
 // ═══════════════════════════════════════════════════════════
+//  MANEJADOR GLOBAL DE ERRORES — diagnóstico visible
+// ═══════════════════════════════════════════════════════════
+(function(){
+  var _errBox=null;
+  function _showErr(msg){
+    try{
+      if(!_errBox){
+        _errBox=document.createElement('div');
+        _errBox.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;background:rgba(180,30,30,.96);color:#fff;font:12px/1.45 system-ui,sans-serif;padding:11px 13px;border-radius:12px;max-height:36vh;overflow:auto;box-shadow:0 4px 22px rgba(0,0,0,.45);word-break:break-all';
+        _errBox.onclick=function(){_errBox.style.display='none';};
+        (document.body||document.documentElement).appendChild(_errBox);
+      }
+      _errBox.style.display='block';
+      _errBox.textContent='⚠️ ERROR: '+msg+' · tocá para cerrar';
+      console.error('[Velo error overlay]',msg);
+    }catch(x){}
+  }
+  window.addEventListener('error',function(e){
+    _showErr((e.message||'Error JS')+' @ '+(e.filename||'?').split('/').pop()+':'+(e.lineno||'?'));
+  });
+  window.addEventListener('unhandledrejection',function(e){
+    var r=e.reason;
+    _showErr('Promise rechazada: '+(r&&r.message?r.message:String(r)));
+  });
+  window._veloShowErr=_showErr;
+})();
+
+// ═══════════════════════════════════════════════════════════
 //  SUPABASE INTEGRATION — Velo App
 // ═══════════════════════════════════════════════════════════
 const SUPABASE_URL  = 'https://yuravtnjvvztsxdtggod.supabase.co';
@@ -1441,52 +1469,71 @@ var darkSc=['help','bottle'];
 var prevScreen='home';
 var contactFrom='home';
 function goTo(id){
-  // Track origin for contact back button
-  var cur=document.querySelector('.sc.on');
-  if(cur&&cur.id&&cur.id!==id) prevScreen=cur.id;
-  if(id==='contact') contactFrom=prevScreen;
+  try{
+    // Track origin for contact back button
+    var cur=document.querySelector('.sc.on');
+    if(cur&&cur.id&&cur.id!==id) prevScreen=cur.id;
+    if(id==='contact') contactFrom=prevScreen;
 
-  document.querySelectorAll('.sc').forEach(function(s){ s.classList.remove('on'); });
-  var _sc=document.getElementById(id);
-  if(!_sc){ console.warn('[Velo] goTo: pantalla no existe →',id); return; }
-  _sc.classList.add('on');
-  var bn=document.getElementById('bnav');
-  if(bn){
-    bn.style.display=(noNav.indexOf(id)>=0||id==='admin')?'none':'flex';
-    if(darkSc.indexOf(id)>=0){
-      bn.style.background='rgba(10,22,12,.9)';
-      bn.style.borderTopColor='rgba(116,198,157,.09)';
-    } else {
-      bn.style.background='rgba(255,255,255,.94)';
-      bn.style.borderTopColor='rgba(180,215,195,.28)';
+    var _sc=document.getElementById(id);
+    if(!_sc){
+      console.warn('[Velo] goTo: pantalla no existe →',id,' — fallback a home');
+      _sc=document.getElementById('home');
+      if(!_sc){ console.error('[Velo] goTo: no existe ni home'); return; }
+      id='home';
     }
-    document.querySelectorAll('.ni').forEach(function(n){ n.classList.remove('on','on-dark'); });
-    var nv=document.getElementById('nv-'+id);
-    if(nv)nv.classList.add(darkSc.indexOf(id)>=0?'on-dark':'on');
-  }
+    document.querySelectorAll('.sc').forEach(function(s){ s.classList.remove('on'); });
+    _sc.classList.add('on');
 
-  // Show welcome banner the first time user reaches home after login
-  if(id==='home'){
-    var shown=safeLS('get','velo_banner_shown');
-    setTimeout(updatePlanBadge, 50);
+    try{
+      var bn=document.getElementById('bnav');
+      if(bn){
+        bn.style.display=(noNav.indexOf(id)>=0||id==='admin')?'none':'flex';
+        if(darkSc.indexOf(id)>=0){
+          bn.style.background='rgba(10,22,12,.9)';
+          bn.style.borderTopColor='rgba(116,198,157,.09)';
+        } else {
+          bn.style.background='rgba(255,255,255,.94)';
+          bn.style.borderTopColor='rgba(180,215,195,.28)';
+        }
+        document.querySelectorAll('.ni').forEach(function(n){ n.classList.remove('on','on-dark'); });
+        var nv=document.getElementById('nv-'+id);
+        if(nv)nv.classList.add(darkSc.indexOf(id)>=0?'on-dark':'on');
+      }
+    }catch(navErr){ console.warn('[goTo] nav bar error',navErr); }
+
+    // Show welcome banner the first time user reaches home after login
+    if(id==='home'){
+      safeLS('get','velo_banner_shown');
+      setTimeout(function(){ try{ updatePlanBadge(); }catch(e){ console.warn('[goTo] updatePlanBadge',e); } }, 50);
+    }
+    if(id==='onboarding') setTimeout(function(){ try{ obReset(); }catch(e){ console.warn('[goTo] obReset',e); } },30);
+    if(id==='pro-onboarding') setTimeout(function(){ try{ pobReset(); }catch(e){ console.warn('[goTo] pobReset',e); } },30);
+    if(id==='pro-panel') setTimeout(function(){ try{ renderProPendingBanner(); }catch(e){ console.warn('[goTo] renderProPendingBanner',e); } },50);
+    if(id==='admin') setTimeout(function(){ try{ renderAdminContacts(); }catch(e){ console.warn('[goTo] renderAdminContacts',e); } },50);
+    if(id==='profile') setTimeout(function(){ try{ checkMonthlyDonorUI(); }catch(e){ console.warn('[goTo] checkMonthlyDonorUI',e); } },50);
+    if(id==='bottle'){ setTimeout(function(){ try{ renderBottleWall(); }catch(e){ console.warn('[goTo] renderBottleWall',e); } },50); setTimeout(function(){ try{ updateBottleCounter(); }catch(e){} },60); }
+    if(id==='happy') setTimeout(function(){ try{ renderHappyWall(); }catch(e){ console.warn('[goTo] renderHappyWall',e); } },50);
+    if(id==='help') setTimeout(function(){ try{ renderSolicitudes(); }catch(e){ console.warn('[goTo] renderSolicitudes',e); } },50);
+    if(id==='buzon') setTimeout(function(){ try{ renderBuzon(); }catch(e){ console.warn('[goTo] renderBuzon',e); } },50);
+    if(id==='feed') setTimeout(function(){ try{ renderMyCircles(); }catch(e){ console.warn('[goTo] renderMyCircles',e); } },50);
+    if(id==='pro') setTimeout(function(){ try{ document.querySelectorAll('.pro-card').forEach(function(c){ c.style.display='block'; }); }catch(e){} },50);
+    if(id==='diary') setTimeout(function(){ try{ initDiary(); }catch(e){ console.warn('[goTo] initDiary',e); } },50);
+    if(id==='calm') setTimeout(function(){ try{ loadCalmData(); }catch(e){ console.warn('[goTo] loadCalmData',e); } },50);
+    if(id==='profile') setTimeout(function(){ try{ loadProfileData(); }catch(e){ console.warn('[goTo] loadProfileData',e); } },100);
+    if(id==='pro-panel-perfil') setTimeout(function(){ try{ initProAvailEditor(); }catch(e){ console.warn('[goTo] initProAvailEditor',e); } },50);
+    // Reset contact form when leaving
+    if(id!=='contact'){ try{ var f=document.getElementById('contactForm');if(f)f.style.display='none'; }catch(e){} }
+  }catch(e){
+    console.error('[goTo] error crítico',e);
+    // Garantía: si todo falla, asegurar que al menos home sea visible
+    try{
+      if(!document.querySelector('.sc.on')){
+        var homeEl=document.getElementById('home');
+        if(homeEl) homeEl.classList.add('on');
+      }
+    }catch(x){}
   }
-  if(id==='onboarding') setTimeout(obReset,30);
-  if(id==='pro-onboarding') setTimeout(pobReset,30);
-  if(id==='pro-panel') setTimeout(renderProPendingBanner,50);
-  if(id==='admin') setTimeout(renderAdminContacts,50);
-  if(id==='profile') setTimeout(checkMonthlyDonorUI,50);
-  if(id==='bottle'){ setTimeout(renderBottleWall,50); setTimeout(updateBottleCounter,60); }
-  if(id==='happy') setTimeout(renderHappyWall,50);
-  if(id==='help') setTimeout(renderSolicitudes,50);
-  if(id==='buzon') setTimeout(renderBuzon,50);
-  if(id==='feed') setTimeout(renderMyCircles,50);
-  if(id==='pro') setTimeout(function(){ document.querySelectorAll('.pro-card').forEach(function(c){ c.style.display='block'; }); },50);
-  if(id==='diary') setTimeout(initDiary,50);
-  if(id==='calm') setTimeout(loadCalmData,50);
-  if(id==='profile') setTimeout(loadProfileData,100);
-  if(id==='pro-panel-perfil') setTimeout(initProAvailEditor,50);
-  // Reset contact form when leaving
-  if(id!=='contact'){var f=document.getElementById('contactForm');if(f)f.style.display='none';}
 }
 function openModal(id){
   document.getElementById(id).classList.add('show');
@@ -1930,6 +1977,7 @@ function sendContactForm(){
 }
 
 function renderAdminContacts(){
+  try{
   var list=document.getElementById('adminContactList');
   if(!list) return;
   var msgs=[]; try{msgs=JSON.parse(safeLS('get','velo_admin_contacts')||'[]');}catch(e){}
@@ -1954,6 +2002,7 @@ function renderAdminContacts(){
         '<div style="font-size:11px;color:var(--ink5);font-style:italic">Sin email de contacto — respondé por el buzón de la app</div>')+
     '</div>';
   }).join('');
+  }catch(e){ console.warn('[renderAdminContacts]',e); }
 }
 function safeLS(action,key,val){
   try{
@@ -4920,6 +4969,7 @@ function updateInboxBadge(){
 }
 
 function renderBuzon(){
+  try{
   var list = document.getElementById('buzonList');
   var empty = document.getElementById('buzonEmpty');
   if(!list) return;
@@ -4971,6 +5021,7 @@ function renderBuzon(){
 
     list.appendChild(card);
   });
+  }catch(e){ console.warn('[renderBuzon]',e); }
 }
 
 function openBuzonMsg(id){
@@ -5210,7 +5261,7 @@ var _profileReviewsDefaults = [
   {stars:5,tags:['Sabe escuchar'],comment:'Gracias por tu tiempo.',date:'4 de mayo de 2026'},
   {stars:5,tags:['Sin juzgarme'],comment:'',date:'2 de mayo de 2026'}
 ];
-var totalCharlas = (typeof totalCharlas === 'number' && !isNaN(totalCharlas)) ? totalCharlas : 47;
+var totalCharlas = (function(){ try{ var v=safeLS('get','velo_total_charlas'); var n=parseInt(v,10); return isNaN(n)?47:n; }catch(e){ return 47; } })();
 function loadProfileData(){
   try{ loadProfileReviewsFromStorage(); }catch(e){ console.warn('[profile] loadProfileReviewsFromStorage',e); }
   try{
@@ -5478,7 +5529,6 @@ var currentCircleId = null;
 var currentCircleIsOwner = false;
 
 // Cargar círculos de comunidad desde localStorage
-var userCircles = [];
 
 // Persistir
 function saveCircles(){
@@ -5641,8 +5691,9 @@ function deleteMyCircle(){
 }
 
 // ── RENDERIZAR CÍRCULOS DE COMUNIDAD EN EL FEED ──────────────
-function renderMyCircles(){renderCommunityCircles();}
+function renderMyCircles(){try{renderCommunityCircles();}catch(e){console.warn('[renderMyCircles]',e);}}
 function renderCommunityCircles(){
+  try{
   var grid=document.getElementById('circlesCommunityGrid');
   if(!grid)return;
 
@@ -5670,6 +5721,7 @@ function renderCommunityCircles(){
 
   // Actualizar sección "Mis Círculos" en sidebar
   renderMyCirclesSidebar();
+  }catch(e){ console.warn('[renderCommunityCircles]',e); }
 }
 
 function createCommunityCircleCard(circle){
