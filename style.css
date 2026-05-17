@@ -28,8 +28,7 @@ body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-ite
 .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:116px;height:32px;background:#1A2E22;border-radius:0 0 16px 16px;z-index:300}
 .bar{height:46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 8px;font-size:11px;color:var(--ink4);flex-shrink:0;z-index:10}
 .sc{display:none;flex-direction:column;overflow:hidden;position:absolute;top:0;left:0;right:0;bottom:0;height:100%}
-.sc.on{display:flex;flex-direction:column;height:100%;animation:scIn .22s cubic-bezier(.22,1,.36,1) both}
-@keyframes scIn{0%{opacity:0;transform:translateY(7px)}100%{opacity:1;transform:translateY(0)}}
+.sc.on{display:flex;flex-direction:column;height:100%}
 .scrl{flex:1;overflow-y:auto;scrollbar-width:none;min-height:0}
 .scrl::-webkit-scrollbar{display:none}
 

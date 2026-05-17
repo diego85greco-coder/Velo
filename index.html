@@ -390,7 +390,7 @@
     <!-- Greeting — connects to check-in -->
     <div class="greet-card" onclick="goTo('calm')" style="cursor:pointer">
       <div style="width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--sage6),var(--sage7));border:1.5px solid rgba(116,198,157,.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0" id="homeGreetEmoji">🌿</div>
-      <div><div style="font-size:14px;font-weight:600;color:var(--sage);margin-bottom:1px" id="homeGreetTxt">Hola, ¿cómo estás hoy?</div><div style="font-size:11px;color:var(--ink4)" id="homeGreetSub">Tocá para registrar tu estado · Bienestar y Calma</div></div>
+      <div><div style="font-size:14px;font-weight:600;color:var(--sage);margin-bottom:1px" id="homeGreetTxt">Hola, ¿cómo estás hoy?</div><div style="font-size:11px;color:var(--ink4)" id="homeGreetSub">Tocá para registrar tu estado · Respira y Sana</div></div>
       <div style="margin-left:auto;font-size:20px;animation:float 4s ease-in-out infinite" id="homeGreetMood">💚</div>
     </div>
     <!-- Status strip — warm, consistent tones -->
@@ -466,26 +466,25 @@
           <div class="hcard-s">Clínicos · Bienestar · Creativos</div>
           <div class="hcard-foot"><span class="htag">🟢 5 online</span></div>
         </div>
-        <div class="hcard c-lav" onclick="goTo('calm')">
-          <span class="hcard-ic">🧘</span>
-          <div class="hcard-t">Bienestar y Calma</div>
-          <div class="hcard-s">Audios · respiración</div>
-          <div class="hcard-foot"><span class="htag">💙 Escuchar</span></div>
+        <div class="hcard c-lav" onclick="goTo('diary')">
+          <span class="hcard-ic">📓</span>
+          <div class="hcard-t">Diario</div>
+          <div class="hcard-s">Anotá tus emociones y pensamientos</div>
+          <div class="hcard-foot"><span class="htag">✍️ Escribir</span></div>
         </div>
       </div>
-      <!-- Velo Vela por Ti — full width -->
-      <div class="home-full">
-        <div class="hcard c-sky" onclick="goTo('vela')" style="display:flex;align-items:center;gap:12px">
-          <div style="flex:1">
-            <span class="hcard-ic">🕊️</span>
-            <div class="hcard-t">Velo vela por ti</div>
-            <div class="hcard-s">Sesiones solidarias · lista de espera</div>
-            <div class="hcard-foot"><span class="htag">💚 Solicitar sesión solidaria</span></div>
-          </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div style="font-size:36px">🕊️</div>
-            <div style="font-size:9px;color:#4A8FA8;line-height:1.35">Sujeto a disponibilidad</div>
-          </div>
+      <div class="home-grid">
+        <div class="hcard c-night" style="background:linear-gradient(135deg,#1B3A4B,#0D2233)" onclick="goTo('respira')">
+          <span class="hcard-ic">🌬️</span>
+          <div class="hcard-t" style="color:#fff">Respira</div>
+          <div class="hcard-s" style="color:rgba(255,255,255,.7)">Ejercicios de respiración guiada</div>
+          <div class="hcard-foot"><span class="htag" style="color:rgba(255,255,255,.6)">🧘 Calmar</span></div>
+        </div>
+        <div class="hcard c-sky" onclick="goTo('vela')">
+          <span class="hcard-ic">🕊️</span>
+          <div class="hcard-t">Velo vela por ti</div>
+          <div class="hcard-s">Sesiones solidarias</div>
+          <div class="hcard-foot"><span class="htag">💚 Solicitar</span></div>
         </div>
       </div>
     </div></div>

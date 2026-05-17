@@ -145,10 +145,10 @@ function _tryLoadImg(el, primary, fallback){
 
 function loadLogos(){
   var BASE = SUPABASE_URL + '/storage/v1/object/public/velo-assets/';
-  var dayPrimary = BASE + 'IMG_2640.PNG';
-  var dayFallback = BASE + 'IMG_2640.png';
+  var primary = BASE + 'IMG_2184.PNG';
+  var fallback = BASE + 'IMG_2184.png';
   ['splashLogo','loginLogo','homeLogo','regLogo','wbLogo','luLogo','lpLogo'].forEach(function(id){
-    _tryLoadImg(document.getElementById(id), dayPrimary, dayFallback);
+    _tryLoadImg(document.getElementById(id), primary, fallback);
   });
 }
 
@@ -157,16 +157,15 @@ function initSplashTheme(){
   var isNight = h >= 20 || h < 7;
   var BASE = SUPABASE_URL + '/storage/v1/object/public/velo-assets/';
 
-  var logoBase = isNight ? 'IMG_2639' : 'IMG_2640';
-  var logoPrimary = BASE + logoBase + '.PNG';
-  var logoFallback = BASE + logoBase + '.png';
+  var logoPrimary = BASE + 'IMG_2184.PNG';
+  var logoFallback = BASE + 'IMG_2184.png';
   _tryLoadImg(document.getElementById('splashLogoImg'), logoPrimary, logoFallback);
   var logoImg = document.getElementById('splashLogoImg');
   if(logoImg){
     logoImg.style.background = 'transparent';
-    logoImg.style.mixBlendMode = isNight ? 'screen' : 'multiply';
+    logoImg.style.mixBlendMode = 'normal';
     logoImg.style.filter = isNight
-      ? 'drop-shadow(0 2px 18px rgba(255,255,255,.22))'
+      ? 'drop-shadow(0 4px 20px rgba(255,255,255,.3))'
       : 'drop-shadow(0 2px 14px rgba(45,106,79,.25))';
   }
 
@@ -721,9 +720,10 @@ async function showAISummary(){
 
 // ── ADMIN SECRET TAP ─────────────────────────────────────
 var _adminTapCount=0, _adminTapTimer=null, _adminTapLast=0;
-function handleAdminTap(){
+function handleAdminTap(e){
+  if(e && e.type==='click' && _adminTapLast && (Date.now()-_adminTapLast)<500) return;
   var now=Date.now();
-  if(now-_adminTapLast<300) return; // debounce: ignora ontouchstart + onclick dobles
+  if(now-_adminTapLast<80) return;
   _adminTapLast=now;
   _adminTapCount++;
   if(_adminTapTimer) clearTimeout(_adminTapTimer);
@@ -732,7 +732,7 @@ function handleAdminTap(){
     goTo('admin-login');
   } else {
     if(_adminTapCount>=2) toast('👑',_adminTapCount+'/4 — seguí tocando el logo');
-    _adminTapTimer=setTimeout(function(){_adminTapCount=0;},3000);
+    _adminTapTimer=setTimeout(function(){_adminTapCount=0;},4000);
   }
 }
 
