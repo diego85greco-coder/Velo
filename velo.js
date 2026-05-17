@@ -27,6 +27,29 @@
 })();
 
 // ═══════════════════════════════════════════════════════════
+//  INICIALIZACIÓN DE PANTALLAS — inline styles, no depende de CSS
+// ═══════════════════════════════════════════════════════════
+(function _initScreens(){
+  try{
+    var all=document.querySelectorAll('.sc');
+    for(var i=0;i<all.length;i++){
+      all[i].style.display='none';
+      all[i].classList.remove('on');
+    }
+    var sp=document.getElementById('splash');
+    if(sp){
+      sp.style.display='flex';
+      sp.style.flexDirection='column';
+      sp.style.height='100%';
+      sp.style.position='absolute';
+      sp.style.top='0';sp.style.left='0';sp.style.right='0';sp.style.bottom='0';
+      sp.classList.add('on');
+    }
+    console.log('[Velo] v20260517c OK — pantallas:',all.length);
+  }catch(e){ console.error('[_initScreens]',e); }
+})();
+
+// ═══════════════════════════════════════════════════════════
 //  SUPABASE INTEGRATION — Velo App
 // ═══════════════════════════════════════════════════════════
 const SUPABASE_URL  = 'https://yuravtnjvvztsxdtggod.supabase.co';
@@ -1482,7 +1505,18 @@ function goTo(id){
       if(!_sc){ console.error('[Velo] goTo: no existe ni home'); return; }
       id='home';
     }
-    document.querySelectorAll('.sc').forEach(function(s){ s.classList.remove('on'); });
+    // Ocultar TODAS via inline style (no depende de CSS)
+    var _allSc=document.querySelectorAll('.sc');
+    for(var _si=0;_si<_allSc.length;_si++){
+      _allSc[_si].style.display='none';
+      _allSc[_si].classList.remove('on');
+    }
+    // Mostrar target via inline style + clase (doble garantía)
+    _sc.style.display='flex';
+    _sc.style.flexDirection='column';
+    _sc.style.height='100%';
+    _sc.style.position='absolute';
+    _sc.style.top='0';_sc.style.left='0';_sc.style.right='0';_sc.style.bottom='0';
     _sc.classList.add('on');
 
     try{
@@ -1530,7 +1564,12 @@ function goTo(id){
     try{
       if(!document.querySelector('.sc.on')){
         var homeEl=document.getElementById('home');
-        if(homeEl) homeEl.classList.add('on');
+        if(homeEl){
+          homeEl.style.display='flex';homeEl.style.flexDirection='column';
+          homeEl.style.height='100%';homeEl.style.position='absolute';
+          homeEl.style.top='0';homeEl.style.left='0';homeEl.style.right='0';homeEl.style.bottom='0';
+          homeEl.classList.add('on');
+        }
       }
     }catch(x){}
   }
