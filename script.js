@@ -147,7 +147,7 @@ function loadLogos(){
   var BASE = SUPABASE_URL + '/storage/v1/object/public/velo-assets/';
   var primary = BASE + 'IMG_2184.PNG';
   var fallback = BASE + 'IMG_2184.png';
-  ['splashLogo','loginLogo','homeLogo','regLogo','wbLogo','luLogo','lpLogo'].forEach(function(id){
+  ['splashLogoImg','homeLogo','regLogo','wbLogo','luLogo','lpLogo'].forEach(function(id){
     _tryLoadImg(document.getElementById(id), primary, fallback);
   });
 }
