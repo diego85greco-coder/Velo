@@ -978,8 +978,7 @@ function offerAISummary(){
   if(document.getElementById('aiMonth'))document.getElementById('aiMonth').textContent=m;
   // Only offer if we have at least 5 mood records this month
   var prefix='velo_mood_'+new Date().getFullYear()+'-'+(String(new Date().getMonth()+1).padStart(2,'0'));
-  // Show offer
-  toast('🤖','Tu resumen de '+m+' está listo. Miralo en Bienestar y Calma.');
+  // Silently make the summary available — no intrusive notification
 }
 async function showAISummary(){
   var overlay=document.getElementById('aiSummary');
@@ -1290,7 +1289,7 @@ function iaGenerateMonthlySummary(){
       fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})
     });
     updateBuzonDot(); updateInboxBadge();
-    toast('🤖','Velo IA generó tu resumen mensual 📊');
+    updateBuzonDot(); // resumen mensual entregado al buzón
   }, 3000);
 }
 
@@ -1479,21 +1478,13 @@ function closeReq(){document.getElementById('reqModal').classList.remove('show')
 // Simulate: 70% accepted, 30% declined
 function sendReq(){
   closeReq();
-  if(Math.random()<.3){
-    document.getElementById('declinedModal').classList.add('show');
-  } else {
-    var nm = (document.getElementById('reqName')||{}).textContent || 'Guardián';
-    var av = (document.getElementById('reqAv')||{}).textContent || '🌿';
-    openGuardianChat(nm, av, 'helped');
-  }
+  var nm = (document.getElementById('reqName')||{}).textContent || 'Guardián';
+  var av = (document.getElementById('reqAv')||{}).textContent || '🌿';
+  openGuardianChat(nm, av, 'helped');
 }
 function sendReqDetail(){
   document.getElementById('reqModalDetail').classList.remove('show');
-  if(Math.random()<.35){
-    document.getElementById('declinedDetail').classList.add('show');
-  } else {
-    openGuardianChat('Luna Verde', '🌙', 'helped');
-  }
+  openGuardianChat('Luna Verde', '🌙', 'helped');
 }
 function closeDeclined(){document.getElementById('declinedModal').classList.remove('show');}
 
@@ -1835,6 +1826,9 @@ setTimeout(function(){ toast('🌿','Velo — Acompañamos emociones'); },5000);
 // ── DONATION MODAL ──────────────────────────────────────
 var isMonthlyDon=false;
 function openContactForm(type){
+  // Navigate to contact screen first if not already there
+  var cur = document.querySelector('.sc.on');
+  if(!cur || cur.id !== 'contact') goTo('contact');
   var form=document.getElementById('contactForm');
   var title=document.getElementById('contactFormTitle');
   var topicRow=document.getElementById('cTopicRow');
