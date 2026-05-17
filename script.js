@@ -1,30 +1,38 @@
 // ═══════════════════════════════════════════════════════════
 //  SUPABASE INTEGRATION — Velo App
-//  1. Crear proyecto en https://supabase.com
-//  2. Reemplazar las dos constantes de abajo con tus valores
-//     (Settings → API → Project URL y anon/public key)
 // ═══════════════════════════════════════════════════════════
 const SUPABASE_URL  = 'https://yuravtnjvvztsxdtggod.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_mBoqW2t3QoJvp5jFecEGgQ_1wrPiT9C';
 
-// Cargar cliente Supabase (cargado desde CDN en index.html)
-var _sbClient = null;
+// Cache the UMD library reference BEFORE any var could shadow window.supabase
+var _supabaseLib = (typeof window !== 'undefined') ? window.supabase : null;
+
+// Our client instance (sbClient ≠ window.supabase — no shadowing)
+var sbClient = null;
+
 function _initSupabase(){
-  if(typeof window.supabase !== 'undefined' && window.supabase.createClient){
-    _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  if(sbClient) return;
+  if(!_supabaseLib || !_supabaseLib.createClient){
+    _supabaseLib = (typeof window !== 'undefined') ? window.supabase : null;
+  }
+  if(_supabaseLib && _supabaseLib.createClient){
+    sbClient = _supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON);
+    window.__sbClient = sbClient;
+  } else {
+    console.warn('[Velo] Supabase UMD no disponible aún');
   }
 }
 
 // ── AUTH: REGISTRO ───────────────────────────────────────
 async function sbSignUp(email, password, nombre){
-  if(!_sbClient) return {error:{message:'Supabase no inicializado'}};
-  var {data, error} = await _sbClient.auth.signUp({
+  if(!sbClient) return {error:{message:'Supabase no inicializado'}};
+  var {data, error} = await sbClient.auth.signUp({
     email: email,
     password: password,
     options: { data: { nombre: nombre, role: 'user' } }
   });
   if(!error && data.user){
-    await _sbClient.from('profiles').insert({
+    await sbClient.from('profiles').insert({
       id: data.user.id,
       nombre: nombre,
       email: email,
@@ -38,24 +46,24 @@ async function sbSignUp(email, password, nombre){
 
 // ── AUTH: INICIO DE SESIÓN ────────────────────────────────
 async function sbSignIn(email, password){
-  if(!_sbClient) return {error:{message:'Supabase no inicializado'}};
-  var {data, error} = await _sbClient.auth.signInWithPassword({email, password});
+  if(!sbClient) return {error:{message:'Supabase no inicializado'}};
+  var {data, error} = await sbClient.auth.signInWithPassword({email, password});
   if(!error && data.user){
-    await _sbClient.from('profiles').update({last_login: new Date().toISOString()}).eq('id', data.user.id);
+    await sbClient.from('profiles').update({last_login: new Date().toISOString()}).eq('id', data.user.id);
   }
   return {data, error};
 }
 
 // ── AUTH: CERRAR SESIÓN ───────────────────────────────────
 async function sbSignOut(){
-  if(!_sbClient) return;
-  await _sbClient.auth.signOut();
+  if(!sbClient) return;
+  await sbClient.auth.signOut();
 }
 
 // ── AUTH: RECUPERACIÓN DE CONTRASEÑA ─────────────────────
 async function sbResetPassword(email){
-  if(!_sbClient) return {error:{message:'Supabase no inicializado'}};
-  var {data, error} = await _sbClient.auth.resetPasswordForEmail(email, {
+  if(!sbClient) return {error:{message:'Supabase no inicializado'}};
+  var {data, error} = await sbClient.auth.resetPasswordForEmail(email, {
     redirectTo: window.location.origin + '/reset'
   });
   return {data, error};
@@ -63,42 +71,42 @@ async function sbResetPassword(email){
 
 // ── AUTH: OBTENER USUARIO ACTUAL ──────────────────────────
 async function sbGetCurrentUser(){
-  if(!_sbClient) return null;
-  var {data} = await _sbClient.auth.getUser();
+  if(!sbClient) return null;
+  var {data} = await sbClient.auth.getUser();
   return data.user || null;
 }
 
 // ── AUTH: ROL DEL USUARIO ─────────────────────────────────
 async function sbGetUserRole(userId){
-  if(!_sbClient) return 'user';
-  var {data} = await _sbClient.from('profiles').select('role').eq('id', userId).single();
+  if(!sbClient) return 'user';
+  var {data} = await sbClient.from('profiles').select('role').eq('id', userId).single();
   return (data && data.role) || 'user';
 }
 
 // ── ADMIN: LISTAR USUARIOS ────────────────────────────────
 async function sbAdminListUsers(){
-  if(!_sbClient) return [];
-  var {data, error} = await _sbClient.from('profiles').select('*').order('created_at', {ascending: false});
+  if(!sbClient) return [];
+  var {data, error} = await sbClient.from('profiles').select('*').order('created_at', {ascending: false});
   return error ? [] : (data || []);
 }
 
 // ── ADMIN: SUSPENDER USUARIO ──────────────────────────────
 async function sbAdminSuspendUser(userId){
-  if(!_sbClient) return {error:{message:'No autorizado'}};
-  return await _sbClient.from('profiles').update({suspended: true, suspended_at: new Date().toISOString()}).eq('id', userId);
+  if(!sbClient) return {error:{message:'No autorizado'}};
+  return await sbClient.from('profiles').update({suspended: true, suspended_at: new Date().toISOString()}).eq('id', userId);
 }
 
 // ── ADMIN: ELIMINAR USUARIO ───────────────────────────────
 async function sbAdminDeleteUser(userId){
-  if(!_sbClient) return {error:{message:'No autorizado'}};
-  return await _sbClient.from('profiles').delete().eq('id', userId);
+  if(!sbClient) return {error:{message:'No autorizado'}};
+  return await sbClient.from('profiles').delete().eq('id', userId);
 }
 
 // ── SOPORTE/REPORTES: ENVIAR REPORTE ─────────────────────
 async function sbEnviarReporte(mensaje, categoria){
-  if(!_sbClient) return {error:{message:'Supabase no inicializado'}};
+  if(!sbClient) return {error:{message:'Supabase no inicializado'}};
   var user = await sbGetCurrentUser();
-  return await _sbClient.from('reportes').insert({
+  return await sbClient.from('reportes').insert({
     user_id: user ? user.id : null,
     mensaje: mensaje,
     categoria: categoria || 'bug',
@@ -109,15 +117,15 @@ async function sbEnviarReporte(mensaje, categoria){
 
 // ── SOPORTE/REPORTES: LISTAR REPORTES (ADMIN) ────────────
 async function sbAdminListReportes(){
-  if(!_sbClient) return [];
-  var {data, error} = await _sbClient.from('reportes').select('*, profiles(nombre, email)').order('created_at', {ascending: false});
+  if(!sbClient) return [];
+  var {data, error} = await sbClient.from('reportes').select('*, profiles(nombre, email)').order('created_at', {ascending: false});
   return error ? [] : (data || []);
 }
 
 // ── SOPORTE/REPORTES: RESOLVER REPORTE ───────────────────
 async function sbAdminResolverReporte(reporteId){
-  if(!_sbClient) return;
-  await _sbClient.from('reportes').update({estado: 'resuelto', resolved_at: new Date().toISOString()}).eq('id', reporteId);
+  if(!sbClient) return;
+  await sbClient.from('reportes').update({estado: 'resuelto', resolved_at: new Date().toISOString()}).eq('id', reporteId);
 }
 
 // ── STORAGE: URL DE IMAGEN ────────────────────────────────
@@ -147,26 +155,26 @@ function _getSbPass(){
 }
 
 async function _ensureSbSession(){
-  if(!_sbClient) return false;
+  if(!sbClient) return false;
   try{
-    var {data:sd} = await _sbClient.auth.getSession();
+    var {data:sd} = await sbClient.auth.getSession();
     if(sd && sd.session) return true;
     var email = safeLS('get','velo_user_email');
     var pass = safeLS('get','velo_sb_pass');
     if(!email || !pass) return false;
-    var {error} = await _sbClient.auth.signInWithPassword({email:email, password:pass});
+    var {error} = await sbClient.auth.signInWithPassword({email:email, password:pass});
     return !error;
   }catch(e){ return false; }
 }
 
 async function sbSaveDiaryEntry(text, dateLabel, ts){
-  if(!_sbClient) return;
+  if(!sbClient) return;
   try{
     var ok = await _ensureSbSession();
     if(!ok) return;
-    var {data:ud} = await _sbClient.auth.getUser();
+    var {data:ud} = await sbClient.auth.getUser();
     if(!ud || !ud.user) return;
-    await _sbClient.from('diary_entries').insert({
+    await sbClient.from('diary_entries').insert({
       user_id: ud.user.id,
       text: text,
       date_label: dateLabel,
@@ -176,24 +184,24 @@ async function sbSaveDiaryEntry(text, dateLabel, ts){
 }
 
 async function sbDeleteDiaryEntry(ts){
-  if(!_sbClient) return;
+  if(!sbClient) return;
   try{
     var ok = await _ensureSbSession();
     if(!ok) return;
-    var {data:ud} = await _sbClient.auth.getUser();
+    var {data:ud} = await sbClient.auth.getUser();
     if(!ud || !ud.user) return;
-    await _sbClient.from('diary_entries').delete().eq('user_id', ud.user.id).eq('ts', ts);
+    await sbClient.from('diary_entries').delete().eq('user_id', ud.user.id).eq('ts', ts);
   }catch(e){}
 }
 
 async function sbLoadDiaryEntries(){
-  if(!_sbClient) return null;
+  if(!sbClient) return null;
   try{
     var ok = await _ensureSbSession();
     if(!ok) return null;
-    var {data:ud} = await _sbClient.auth.getUser();
+    var {data:ud} = await sbClient.auth.getUser();
     if(!ud || !ud.user) return null;
-    var {data, error} = await _sbClient.from('diary_entries')
+    var {data, error} = await sbClient.from('diary_entries')
       .select('text,date_label,ts').eq('user_id', ud.user.id)
       .order('ts',{ascending:false}).limit(200);
     return error ? null : data;
@@ -201,13 +209,13 @@ async function sbLoadDiaryEntries(){
 }
 
 async function sbSaveMoodEntry(dateKey, emoji, label, note){
-  if(!_sbClient) return;
+  if(!sbClient) return;
   try{
     var ok = await _ensureSbSession();
     if(!ok) return;
-    var {data:ud} = await _sbClient.auth.getUser();
+    var {data:ud} = await sbClient.auth.getUser();
     if(!ud || !ud.user) return;
-    await _sbClient.from('mood_entries').upsert({
+    await sbClient.from('mood_entries').upsert({
       user_id: ud.user.id,
       date_key: dateKey,
       emoji: emoji,
@@ -218,27 +226,27 @@ async function sbSaveMoodEntry(dateKey, emoji, label, note){
 }
 
 async function sbLoadMoodEntry(dateKey){
-  if(!_sbClient) return null;
+  if(!sbClient) return null;
   try{
     var ok = await _ensureSbSession();
     if(!ok) return null;
-    var {data:ud} = await _sbClient.auth.getUser();
+    var {data:ud} = await sbClient.auth.getUser();
     if(!ud || !ud.user) return null;
-    var {data, error} = await _sbClient.from('mood_entries')
+    var {data, error} = await sbClient.from('mood_entries')
       .select('emoji,label,note,date_key').eq('user_id', ud.user.id).eq('date_key', dateKey).maybeSingle();
     return error ? null : data;
   }catch(e){ return null; }
 }
 
 async function sbLoadAllMoods(year, month){
-  if(!_sbClient) return null;
+  if(!sbClient) return null;
   try{
     var ok = await _ensureSbSession();
     if(!ok) return null;
-    var {data:ud} = await _sbClient.auth.getUser();
+    var {data:ud} = await sbClient.auth.getUser();
     if(!ud || !ud.user) return null;
     var prefix = year+'-'+String(month).padStart(2,'0');
-    var {data, error} = await _sbClient.from('mood_entries')
+    var {data, error} = await sbClient.from('mood_entries')
       .select('emoji,label,note,date_key').eq('user_id', ud.user.id)
       .like('date_key', prefix+'%').order('date_key',{ascending:true});
     return error ? null : data;
@@ -829,11 +837,11 @@ function finishRegister(){
   if(uEmail) safeLS('set','velo_user_email', uEmail);
   recordTCAcceptance(uName, uEmail);
   // Create Supabase account for cloud persistence of diary & mood
-  if(uEmail && _sbClient){
+  if(uEmail && sbClient){
     var sbPass = _getSbPass();
     sbSignUp(uEmail, sbPass, uName).then(function(res){
       if(res.error && res.error.message && res.error.message.toLowerCase().includes('already')){
-        _sbClient.auth.signInWithPassword({email:uEmail, password:sbPass}).catch(function(){});
+        sbClient.auth.signInWithPassword({email:uEmail, password:sbPass}).catch(function(){});
       }
     }).catch(function(){});
   }
@@ -4837,11 +4845,11 @@ function setUserStatus(status){
       badge.style.color=status==='ocupado'?'#e74c3c':'#27ae60';
     }
     // Sync to Supabase profile asynchronously — never blocks navigation
-    if(_sbClient){
-      _sbClient.auth.getUser().then(function(r){
+    if(sbClient){
+      sbClient.auth.getUser().then(function(r){
         var u=r&&r.data&&r.data.user;
         if(!u) return;
-        _sbClient.from('profiles').update({status:status}).eq('id',u.id).catch(function(e){ console.warn('[Velo] setUserStatus DB:',e); });
+        sbClient.from('profiles').update({status:status}).eq('id',u.id).catch(function(e){ console.warn('[Velo] setUserStatus DB:',e); });
       }).catch(function(e){ console.warn('[Velo] setUserStatus auth:',e); });
     }
   }catch(e){ console.warn('[Velo] setUserStatus:',e); }
