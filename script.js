@@ -1310,7 +1310,21 @@ function iaTrackBottleSent(){
 // ── ONBOARDING ───────────────────────────────────────────
 var _obSlide=0;
 var _obTotal=5;
-function obReset(){_obSlide=0;setTimeout(_obRenderSlide,50);}
+function obReset(){
+  _obSlide=0;
+  // Show slide 0 immediately so the screen isn't blank while CSS loads
+  for(var i=0;i<_obTotal;i++){
+    var sl=document.getElementById('ob-slide-'+i);
+    if(sl) sl.style.display=(i===0?'flex':'none');
+    var d=document.getElementById('ob-dot-'+i);
+    if(d) d.className='ob-dot'+(i===0?' ob-dot-a':'');
+  }
+  var btn=document.getElementById('obNextBtn');
+  if(btn) btn.textContent=(_obTotal===1?'Comenzar 🌿':'Siguiente →');
+  var back=document.getElementById('obBackBtn');
+  if(back) back.style.visibility='hidden';
+  setTimeout(_obRenderSlide,50);
+}
 function obNext(){
   if(_obSlide<_obTotal-1){_obSlide++;_obRenderSlide();}
   else{_obSlide=0;goTo('register-type');}
