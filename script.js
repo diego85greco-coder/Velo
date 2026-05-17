@@ -165,8 +165,8 @@ function initSplashTheme(){
     logoImg.style.background = 'transparent';
     logoImg.style.mixBlendMode = 'normal';
     logoImg.style.filter = isNight
-      ? 'drop-shadow(0 4px 20px rgba(255,255,255,.3))'
-      : 'drop-shadow(0 2px 14px rgba(45,106,79,.25))';
+      ? 'drop-shadow(0 6px 28px rgba(255,255,255,.45)) drop-shadow(0 0 60px rgba(100,220,160,.25))'
+      : 'drop-shadow(0 4px 22px rgba(45,106,79,.4)) drop-shadow(0 0 40px rgba(45,106,79,.2))';
   }
 
   // Fondos desde Supabase Storage (con fallback a canvas)
