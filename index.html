@@ -1262,7 +1262,8 @@
     <div style="padding:52px 20px 10px;text-align:center;flex-shrink:0">
       <span style="font-size:40px;display:block;margin-bottom:7px;animation:breathe 3s ease-in-out infinite">☀️</span>
       <div class="serif-i" style="font-size:24px;color:var(--earth);margin-bottom:3px">Muro de la Felicidad</div>
-      <div style="font-size:12px;color:var(--earth2);line-height:1.6;max-width:290px;margin:0 auto 10px">Momentos reales que te alegraron hoy. Sin pulir. Aquí no se compite.</div>
+      <div style="font-size:12px;color:var(--earth2);line-height:1.6;max-width:290px;margin:0 auto 6px">Momentos reales que te alegraron hoy. Sin pulir. Aquí no se compite.</div>
+      <div style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;background:rgba(255,180,80,.12);border:1px solid rgba(255,200,80,.25);border-radius:100px;font-size:10px;font-weight:700;color:var(--earth2);margin-bottom:10px">⏱️ Las fotos y videos duran 24 horas y se eliminan automáticamente</div>
     </div>
     <!-- Compartir bar -->
     <div style="margin:0 17px 11px;padding:12px 16px;background:linear-gradient(135deg,rgba(255,220,100,.25),rgba(255,180,80,.15));border:1.5px solid rgba(255,200,80,.3);border-radius:100px;display:flex;align-items:center;gap:11px;cursor:pointer;flex-shrink:0;box-shadow:var(--sh)" onclick="openHappyPost()">
@@ -1285,6 +1286,7 @@
         </div>
         <div id="happyMediaPreview" style="display:none;margin-bottom:10px;border-radius:14px;overflow:hidden"></div>
         <textarea id="happyPostText" placeholder="¿Qué momento quieres compartir? (opcional si subís foto/video)" maxlength="400" style="width:100%;min-height:80px;border:1.5px solid rgba(255,200,80,.25);border-radius:16px;padding:11px 13px;font-family:'Jost',sans-serif;font-size:13px;color:var(--ink);background:rgba(255,255,255,.8);resize:none;outline:none;line-height:1.55;box-sizing:border-box;margin-bottom:12px"></textarea>
+        <div style="padding:8px 12px;background:rgba(255,180,80,.1);border:1px solid rgba(255,200,80,.25);border-radius:10px;font-size:10px;color:var(--earth2);text-align:center;margin-bottom:10px;line-height:1.6">⏱️ <b>Las fotos y videos duran 24 horas</b> desde la publicación y luego se eliminan automáticamente · El texto permanece</div>
         <div style="font-size:10px;color:var(--earth2);text-align:center;margin-bottom:14px;line-height:1.5">🤖 Moderación automática activa · Contenido respetuoso siempre</div>
         <button onclick="submitHappyPost()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--sun),var(--peach));border:none;border-radius:100px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif;margin-bottom:10px">Publicar ☀️</button>
         <button onclick="closeHappyPost()" style="width:100%;padding:10px;background:none;border:none;color:var(--earth2);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">Cancelar</button>

@@ -3457,7 +3457,15 @@ function assignFreeSession(proId, proName){
 // ── MURO DE FELICIDAD ─────────────────────────────────────
 var happyPosts=[];
 var happyReactions={};
-var HAPPY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+var HAPPY_TTL_MS = 24 * 60 * 60 * 1000;
+function _happy24hLabel(ts){
+  var remaining = HAPPY_TTL_MS - (Date.now() - ts);
+  if(remaining <= 0) return ' · <span style="color:#c0392b">expirado</span>';
+  var h = Math.floor(remaining / 3600000);
+  var m = Math.floor((remaining % 3600000) / 60000);
+  var label = h > 0 ? h+'h '+m+'m' : m+'min';
+  return ' · <span style="color:var(--earth2)">⏱ expira en '+label+'</span>';
+}
 function _loadHappy(){
   try{ happyPosts=JSON.parse(localStorage.getItem('velo_happy')||'[]'); }catch(e){ happyPosts=[]; }
   try{ happyReactions=JSON.parse(localStorage.getItem('velo_happy_r')||'{}'); }catch(e){ happyReactions={}; }
@@ -3604,7 +3612,7 @@ function renderHappyWall(){
       '<div style="padding-top:4px">'+
         '<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">'+
           '<div style="width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--sun2),var(--peach2));border:1.5px solid rgba(255,200,80,.22);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">'+p.av+'</div>'+
-          '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--ink)">'+p.author+'</div><div style="font-size:10px;color:var(--ink5)">'+p.time+(p.city?' · '+p.city:'')+'</div></div>'+
+          '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:var(--ink)">'+p.author+'</div><div style="font-size:10px;color:var(--ink5)">'+p.time+(p.city?' · '+p.city:'')+(p.expires24h&&p.ts?_happy24hLabel(p.ts):'')+'</div></div>'+
           '<button style="width:22px;height:22px;border-radius:50%;background:transparent;border:1px solid rgba(255,200,80,.22);font-size:10px;cursor:pointer" onclick="reportHappyPost(\''+p.id+'\')">🚩</button>'+
         '</div>'+
         mHtml+
