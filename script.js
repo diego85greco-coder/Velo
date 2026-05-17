@@ -560,6 +560,11 @@ function finishRegister(){
   var tc2=document.getElementById('tcMay');
   if(!tc||!tc.classList.contains('on')){toast('⚠️','Aceptá los términos para continuar');return;}
   if(!tc2||!tc2.classList.contains('on')){toast('⚠️','Confirmá que sos mayor de 18 años');return;}
+  // Guardar nombre y email del usuario para auto-completar formularios
+  var nameEl=document.getElementById('rgName');
+  var emailEl=document.getElementById('rgEmail');
+  if(nameEl&&nameEl.value.trim()) safeLS('set','velo_user_name',nameEl.value.trim());
+  if(emailEl&&emailEl.value.trim()) safeLS('set','velo_user_email',emailEl.value.trim());
   loginAndWelcome();
   setTimeout(function(){ toast('🌿','¡Bienvenido/a a Velo! Tu cuenta fue creada 💚'); }, 400);
   setTimeout(function(){ deliverInboxMsg('bienvenida-usuario'); }, 2200);
@@ -1511,15 +1516,24 @@ function openContactForm(type){
   var ta=document.getElementById('cMsg');
   if(ta) ta.placeholder=placeholders[type]||'Contanos...';
   if(attach) attach.style.display=type==='reporte'?'block':'none';
+  // Auto-rellenar email si el usuario ya está registrado
+  var emailEl=document.getElementById('cEmail');
+  if(emailEl && !emailEl.value){
+    var storedEmail=safeLS('get','velo_user_email')||'';
+    if(storedEmail) emailEl.value=storedEmail;
+  }
 }
 function sendContactForm(){
   var msg=document.getElementById('cMsg');
   var emailEl=document.getElementById('cEmail');
   if(!msg||!msg.value.trim()){toast('✍️','Escribí tu mensaje antes de enviar');return;}
+  if(!emailEl||!emailEl.value.trim()){toast('📧','Ingresá tu email para que podamos responderte');return;}
+  var emailVal=emailEl.value.trim();
+  // Validación básica de email
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailVal)){toast('📧','Revisá que el email esté bien escrito');return;}
   var topicEl=document.getElementById('cTopicRow');
   var topic=topicEl?topicEl.textContent.replace('📌 Tema: ','').trim():'Consulta general';
   var texto=msg.value.trim();
-  var emailVal=emailEl?emailEl.value.trim():'';
   var ts=Date.now();
   // Save to admin inbox (localStorage)
   var adminMsgs=JSON.parse(safeLS('get','velo_admin_contacts')||'[]');

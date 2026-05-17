@@ -2194,7 +2194,7 @@
         <div style="width:10px;height:10px;border-radius:50%;background:#4A8FA8;box-shadow:0 0 6px #4A8FA8;flex-shrink:0;animation:breathe 2s ease-in-out infinite"></div>
         <div>
           <div style="font-size:12px;font-weight:700;color:#2D6A8A">⏱️ Respondemos a la mayor brevedad posible</div>
-          <div style="font-size:11px;color:#4A8FA8">Respondemos desde wearevelo.app@gmail.com a tu buzón y email</div>
+          <div style="font-size:11px;color:#4A8FA8">La respuesta llega a tu email personal y a tu buzón interno de Velo</div>
         </div>
       </div>
 
@@ -2269,13 +2269,17 @@
         <div style="font-size:12px;font-weight:700;color:#2D6A8A;margin-bottom:11px" id="contactFormTitle">✍️ Enviarnos un mensaje</div>
         <div style="display:flex;flex-direction:column;gap:9px">
           <div id="cTopicRow" style="background:var(--sage7);border:1px solid rgba(116,198,157,.18);border-radius:12px;padding:9px 12px;font-size:12px;font-weight:600;color:var(--sage)"></div>
-          <input class="inp" id="cEmail" type="email" placeholder="Tu email (para que podamos responderte)" autocomplete="email" style="font-size:14px">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:#2D6A8A;margin-bottom:5px">📧 Tu email de contacto <span style="color:#C03028">*</span></div>
+            <input class="inp" id="cEmail" type="email" placeholder="tumail@ejemplo.com" autocomplete="email" style="font-size:14px;border-color:rgba(168,212,232,.5)">
+            <div style="font-size:10px;color:var(--ink5);margin-top:4px;line-height:1.4">Necesario para responderte. Si estás registrado/a se completa automáticamente.</div>
+          </div>
           <textarea class="ta" id="cMsg" placeholder="Contanos en detalle cómo podemos ayudarte..." style="min-height:90px;font-size:15px"></textarea>
         </div>
         <button class="btn btn-sage" style="width:100%;padding:15px;font-size:15px;font-weight:700;margin-top:13px" onclick="sendContactForm()">Enviar mensaje 💌</button>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;background:rgba(116,198,157,.08);border-radius:12px;border:1px solid rgba(116,198,157,.15)">
-          <span style="font-size:16px">🔒</span>
-          <div style="font-size:11px;color:var(--ink4);line-height:1.5">Te responderemos desde <b style="color:var(--sage2)">wearevelo.app@gmail.com</b> a tu email y a tu buzón de Velo. 🔒</div>
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-top:10px;padding:11px 13px;background:rgba(116,198,157,.08);border-radius:12px;border:1px solid rgba(116,198,157,.18)">
+          <span style="font-size:18px;flex-shrink:0">🔒</span>
+          <div style="font-size:11px;color:var(--ink3);line-height:1.6">Tu respuesta llega siempre a tu <b style="color:var(--sage2)">email personal</b> y a tu <b style="color:var(--sage2)">buzón interno de Velo</b>. Si tu email está registrado en la app, lo usamos automáticamente. Respondemos desde <b style="color:#2D6A8A">wearevelo.app@gmail.com</b>.</div>
         </div>
       </div>
     </div>
