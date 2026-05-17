@@ -1425,19 +1425,23 @@ function goTo(id){
   if(id==='contact') contactFrom=prevScreen;
 
   document.querySelectorAll('.sc').forEach(function(s){ s.classList.remove('on'); });
-  var _sc=document.getElementById(id);if(!_sc)return;_sc.classList.add('on');
-  var bn=document.getElementById('bnav');if(!bn)return;
-  bn.style.display=(noNav.indexOf(id)>=0||id==='admin')?'none':'flex';
-  if(darkSc.indexOf(id)>=0){
-    bn.style.background='rgba(10,22,12,.9)';
-    bn.style.borderTopColor='rgba(116,198,157,.09)';
-  } else {
-    bn.style.background='rgba(255,255,255,.94)';
-    bn.style.borderTopColor='rgba(180,215,195,.28)';
+  var _sc=document.getElementById(id);
+  if(!_sc){ console.warn('[Velo] goTo: pantalla no existe →',id); return; }
+  _sc.classList.add('on');
+  var bn=document.getElementById('bnav');
+  if(bn){
+    bn.style.display=(noNav.indexOf(id)>=0||id==='admin')?'none':'flex';
+    if(darkSc.indexOf(id)>=0){
+      bn.style.background='rgba(10,22,12,.9)';
+      bn.style.borderTopColor='rgba(116,198,157,.09)';
+    } else {
+      bn.style.background='rgba(255,255,255,.94)';
+      bn.style.borderTopColor='rgba(180,215,195,.28)';
+    }
+    document.querySelectorAll('.ni').forEach(function(n){ n.classList.remove('on','on-dark'); });
+    var nv=document.getElementById('nv-'+id);
+    if(nv)nv.classList.add(darkSc.indexOf(id)>=0?'on-dark':'on');
   }
-  document.querySelectorAll('.ni').forEach(function(n){ n.classList.remove('on','on-dark'); });
-  var nv=document.getElementById('nv-'+id);
-  if(nv)nv.classList.add(darkSc.indexOf(id)>=0?'on-dark':'on');
 
   // Show welcome banner the first time user reaches home after login
   if(id==='home'){
@@ -3409,12 +3413,12 @@ function openGuardianChat(name, av, role){
 
   setUserStatus('ocupado');
   goTo('guardian-chat');
-
-  // Input listo inmediatamente
-  setTimeout(function(){
-    var inp = document.getElementById('gcInput');
-    if(inp){ inp.focus(); inp.value = ''; }
-  }, 300);
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      var inp=document.getElementById('gcInput');
+      if(inp){ inp.value=''; inp.focus({preventScroll:true}); }
+    });
+  });
 }
 
 function openHelperChat(seekerName, seekerEmoji, seekerMsg, solicitudId){
@@ -3454,11 +3458,12 @@ function openHelperChat(seekerName, seekerEmoji, seekerMsg, solicitudId){
 
   setUserStatus('ocupado');
   goTo('guardian-chat');
-
-  setTimeout(function(){
-    var inp = document.getElementById('gcInput');
-    if(inp){ inp.focus(); inp.value = ''; }
-  }, 300);
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      var inp=document.getElementById('gcInput');
+      if(inp){ inp.value=''; inp.focus({preventScroll:true}); }
+    });
+  });
 }
 
 function gcBack(){
@@ -4800,24 +4805,32 @@ function sendBottleReply(){
 var userStatus = 'disponible'; // 'disponible' | 'ocupado'
 
 function setUserStatus(status){
-  userStatus = status;
-  // Update all status indicators in guardian cards
-  var indicators = document.querySelectorAll('.status-dot');
-  for(var i=0;i<indicators.length;i++){
-    if(status === 'ocupado'){
-      indicators[i].style.background = '#e74c3c';
-      indicators[i].title = 'Ocupado';
-    } else {
-      indicators[i].style.background = '#2ecc71';
-      indicators[i].title = 'Disponible';
+  try{
+    userStatus = status;
+    var indicators = document.querySelectorAll('.status-dot');
+    for(var i=0;i<indicators.length;i++){
+      if(status==='ocupado'){
+        indicators[i].style.background='#e74c3c';
+        indicators[i].title='Ocupado';
+      } else {
+        indicators[i].style.background='#2ecc71';
+        indicators[i].title='Disponible';
+      }
     }
-  }
-  // Update profile badge if exists
-  var badge = document.getElementById('userStatusBadge');
-  if(badge){
-    badge.textContent = status === 'ocupado' ? '🔴 Ocupado' : '🟢 Disponible';
-    badge.style.color = status === 'ocupado' ? '#e74c3c' : '#27ae60';
-  }
+    var badge=document.getElementById('userStatusBadge');
+    if(badge){
+      badge.textContent=status==='ocupado'?'🔴 Ocupado':'🟢 Disponible';
+      badge.style.color=status==='ocupado'?'#e74c3c':'#27ae60';
+    }
+    // Sync to Supabase profile asynchronously — never blocks navigation
+    if(_sbClient){
+      _sbClient.auth.getUser().then(function(r){
+        var u=r&&r.data&&r.data.user;
+        if(!u) return;
+        _sbClient.from('profiles').update({status:status}).eq('id',u.id).catch(function(e){ console.warn('[Velo] setUserStatus DB:',e); });
+      }).catch(function(e){ console.warn('[Velo] setUserStatus auth:',e); });
+    }
+  }catch(e){ console.warn('[Velo] setUserStatus:',e); }
 }
 
 // ══════════════════════════════════════════════════════════
