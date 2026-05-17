@@ -1149,6 +1149,7 @@ function goTo(id){
   if(id==='help') setTimeout(renderSolicitudes,50);
   if(id==='buzon') setTimeout(renderBuzon,50);
   if(id==='feed') setTimeout(renderMyCircles,50);
+  if(id==='pro') setTimeout(function(){ document.querySelectorAll('.pro-card').forEach(function(c){ c.style.display='block'; }); },50);
   if(id==='diary') setTimeout(initDiary,50);
   if(id==='calm') setTimeout(loadCalmData,50);
   if(id==='profile') setTimeout(loadProfileData,100);
