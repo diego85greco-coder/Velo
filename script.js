@@ -4498,6 +4498,7 @@ function dejarResena(stars, tags, comment){
   if(!tags) tags = [];
   if(!comment) comment = '';
   addProfileReview(stars, tags, comment);
+  if(typeof totalCharlas!=='number'||isNaN(totalCharlas)) totalCharlas=0;
   checkAndAwardBadge(totalCharlas + 1);
   totalCharlas = totalCharlas + 1;
   toast('⭐','¡Gracias por tu reseña! Ayuda a la comunidad 💚');
@@ -5174,50 +5175,47 @@ var _profileReviewsDefaults = [
   {stars:5,tags:['Sabe escuchar'],comment:'Gracias por tu tiempo.',date:'4 de mayo de 2026'},
   {stars:5,tags:['Sin juzgarme'],comment:'',date:'2 de mayo de 2026'}
 ];
-var totalCharlas = 47;
+var totalCharlas = (typeof totalCharlas === 'number' && !isNaN(totalCharlas)) ? totalCharlas : 47;
 function loadProfileData(){
-  try{ loadProfileReviewsFromStorage(); }catch(e){}
-  // Load saved name
-  var savedName = safeLS('get','velo_user_name');
-  if(savedName){
-    var nameEl = document.getElementById('profileNameDisplay');
-    if(nameEl) nameEl.textContent = savedName;
-  }
-  // Load saved avatar
-  var savedAv = safeLS('get','velo_user_avatar');
-  if(savedAv){
-    var avEl = document.getElementById('profileAvDisplay');
-    if(avEl){ var dot = document.getElementById('profileDot'); avEl.textContent = savedAv; if(dot) avEl.appendChild(dot); }
-  }
-  // Load calm data
-  var map={calmMensaje:'profMensaje',calmAliento:'profAliento',calmCancion:'profCancion',calmPelicula:'profPelicula',calmLibro:'profLibro'};
-  var keys=['calmMensaje','calmAliento','calmCancion','calmPelicula','calmLibro'];
-  for(var ki=0;ki<keys.length;ki++){var k=keys[ki];var saved=safeLS('get','velo_calm_'+k);if(saved){var el=document.getElementById(map[k]);if(el)el.textContent=saved;}}
-  // Sync today's mood to profile
-  var moodKey='velo_mood_'+new Date().toISOString().slice(0,10);
-  var moodSaved=safeLS('get',moodKey);
-  if(moodSaved){try{var m=JSON.parse(moodSaved);var moodDisp=document.getElementById('profMoodToday');if(moodDisp)moodDisp.textContent=m.emoji+' '+m.label;}catch(e){}}
-  _loadNotifStorage();
-  updateInboxBadge();
-  try{ renderProfileBadges(); }catch(e){}
-  try{ renderProfileReviews(); }catch(e){}
-  try{ applyIncognitoUI(isIncognitoActive()); }catch(e){}
-  // Update plan section
-  var chip = document.getElementById('profilePlanChip');
-  var planBtnEl = document.getElementById('profilePlanBtn');
-  var cancelBtnEl = document.getElementById('profileCancelBtn');
-  if(isPremiumUser()){
-    if(chip) chip.innerHTML = '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:linear-gradient(135deg,var(--sage),var(--sage2));border-radius:100px;color:#fff;font-size:11px;font-weight:700">💎 Velo Plus · Activo</span>';
-    if(planBtnEl) planBtnEl.style.display = 'none';
-    if(cancelBtnEl) cancelBtnEl.style.display = '';
-  } else {
-    if(chip) chip.innerHTML = '<span style="font-size:12px;font-weight:600;color:var(--ink4)">Velo Free</span>';
-    if(planBtnEl){ planBtnEl.style.display = ''; planBtnEl.textContent = 'Ver Velo Plus →'; }
-    if(cancelBtnEl) cancelBtnEl.style.display = 'none';
-  }
+  try{ loadProfileReviewsFromStorage(); }catch(e){ console.warn('[profile] loadProfileReviewsFromStorage',e); }
+  try{
+    var savedName=safeLS('get','velo_user_name');
+    if(savedName){ var nameEl=document.getElementById('profileNameDisplay'); if(nameEl)nameEl.textContent=savedName; }
+    var savedAv=safeLS('get','velo_user_avatar');
+    if(savedAv){ var avEl=document.getElementById('profileAvDisplay'); if(avEl){ var dot=document.getElementById('profileDot'); avEl.textContent=savedAv; if(dot)avEl.appendChild(dot); } }
+  }catch(e){ console.warn('[profile] name/avatar',e); }
+  try{
+    var map={calmMensaje:'profMensaje',calmAliento:'profAliento',calmCancion:'profCancion',calmPelicula:'profPelicula',calmLibro:'profLibro'};
+    var keys=['calmMensaje','calmAliento','calmCancion','calmPelicula','calmLibro'];
+    for(var ki=0;ki<keys.length;ki++){var k=keys[ki];var sv=safeLS('get','velo_calm_'+k);if(sv){var el=document.getElementById(map[k]);if(el)el.textContent=sv;}}
+  }catch(e){ console.warn('[profile] calm data',e); }
+  try{
+    var moodKey='velo_mood_'+new Date().toISOString().slice(0,10);
+    var moodSaved=safeLS('get',moodKey);
+    if(moodSaved){var m=JSON.parse(moodSaved);var moodDisp=document.getElementById('profMoodToday');if(moodDisp)moodDisp.textContent=m.emoji+' '+m.label;}
+  }catch(e){ console.warn('[profile] mood',e); }
+  try{ _loadNotifStorage(); }catch(e){ console.warn('[profile] _loadNotifStorage',e); }
+  try{ updateInboxBadge(); }catch(e){ console.warn('[profile] updateInboxBadge',e); }
+  try{ renderProfileBadges(); }catch(e){ console.warn('[profile] renderProfileBadges',e); }
+  try{ renderProfileReviews(); }catch(e){ console.warn('[profile] renderProfileReviews',e); }
+  try{ applyIncognitoUI(isIncognitoActive()); }catch(e){ console.warn('[profile] applyIncognitoUI',e); }
+  try{
+    var chip=document.getElementById('profilePlanChip');
+    var planBtnEl=document.getElementById('profilePlanBtn');
+    var cancelBtnEl=document.getElementById('profileCancelBtn');
+    if(isPremiumUser()){
+      if(chip) chip.innerHTML='<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:linear-gradient(135deg,var(--sage),var(--sage2));border-radius:100px;color:#fff;font-size:11px;font-weight:700">💎 Velo Plus · Activo</span>';
+      if(planBtnEl) planBtnEl.style.display='none';
+      if(cancelBtnEl) cancelBtnEl.style.display='';
+    } else {
+      if(chip) chip.innerHTML='<span style="font-size:12px;font-weight:600;color:var(--ink4)">Velo Free</span>';
+      if(planBtnEl){ planBtnEl.style.display=''; planBtnEl.textContent='Ver Velo Plus →'; }
+      if(cancelBtnEl) cancelBtnEl.style.display='none';
+    }
+  }catch(e){ console.warn('[profile] plan section',e); }
 }
 function renderProfileBadges(){
-  var charlas=totalCharlas;
+  var charlas=(typeof totalCharlas==='number'&&!isNaN(totalCharlas))?totalCharlas:0;
   var badges=['bronce','plata','oro','diamante'];
   var thresholds=[5,20,40,100];
   var badgeLabels={bronce:'Bronce',plata:'Plata',oro:'Oro',diamante:'Diamante'};
