@@ -32,23 +32,10 @@
 (function _initScreens(){
   try{
     var all=document.querySelectorAll('.sc');
-    for(var i=0;i<all.length;i++){
-      all[i].style.setProperty('display','none','important');
-      all[i].classList.remove('on');
-    }
+    for(var i=0;i<all.length;i++){ all[i].classList.remove('on'); }
     var sp=document.getElementById('splash');
-    if(sp){
-      sp.style.setProperty('display','flex','important');
-      sp.style.setProperty('flex-direction','column','important');
-      sp.style.setProperty('height','100%','important');
-      sp.style.setProperty('position','absolute','important');
-      sp.style.setProperty('top','0','important');
-      sp.style.setProperty('left','0','important');
-      sp.style.setProperty('right','0','important');
-      sp.style.setProperty('bottom','0','important');
-      sp.classList.add('on');
-    }
-    console.log('[Velo] v20260517e OK — pantallas:',all.length);
+    if(sp){ sp.classList.add('on'); }
+    console.log('[Velo] v20260517f — pantallas:',all.length);
   }catch(e){ console.error('[_initScreens]',e); }
 })();
 
@@ -1496,9 +1483,6 @@ var prevScreen='home';
 var contactFrom='home';
 function goTo(id){
   try{
-    // DEBUG: confirmar que goTo se llama
-    try{ toast('🔄','→ '+id); }catch(te){}
-    // Track origin for contact back button
     var cur=document.querySelector('.sc.on');
     if(cur&&cur.id&&cur.id!==id) prevScreen=cur.id;
     if(id==='contact') contactFrom=prevScreen;
@@ -1510,22 +1494,9 @@ function goTo(id){
       if(!_sc){ console.error('[Velo] goTo: no existe ni home'); return; }
       id='home';
     }
-    // Ocultar TODAS — setProperty con !important supera cualquier CSS cacheado
-    var _allSc=document.querySelectorAll('.sc');
-    for(var _si=0;_si<_allSc.length;_si++){
-      _allSc[_si].style.setProperty('display','none','important');
-      _allSc[_si].classList.remove('on');
-    }
-    // Mostrar target — setProperty con !important garantiza visibilidad
-    _sc.style.setProperty('display','flex','important');
-    _sc.style.setProperty('flex-direction','column','important');
-    _sc.style.setProperty('height','100%','important');
-    _sc.style.setProperty('position','absolute','important');
-    _sc.style.setProperty('top','0','important');
-    _sc.style.setProperty('left','0','important');
-    _sc.style.setProperty('right','0','important');
-    _sc.style.setProperty('bottom','0','important');
+    document.querySelectorAll('.sc').forEach(function(s){ s.classList.remove('on'); });
     _sc.classList.add('on');
+    _sc.scrollTop=0;
 
     try{
       var bn=document.getElementById('bnav');
@@ -1568,21 +1539,10 @@ function goTo(id){
     if(id!=='contact'){ try{ var f=document.getElementById('contactForm');if(f)f.style.display='none'; }catch(e){} }
   }catch(e){
     console.error('[goTo] error crítico',e);
-    // Garantía: si todo falla, asegurar que al menos home sea visible
     try{
       if(!document.querySelector('.sc.on')){
         var homeEl=document.getElementById('home');
-        if(homeEl){
-          homeEl.style.setProperty('display','flex','important');
-          homeEl.style.setProperty('flex-direction','column','important');
-          homeEl.style.setProperty('height','100%','important');
-          homeEl.style.setProperty('position','absolute','important');
-          homeEl.style.setProperty('top','0','important');
-          homeEl.style.setProperty('left','0','important');
-          homeEl.style.setProperty('right','0','important');
-          homeEl.style.setProperty('bottom','0','important');
-          homeEl.classList.add('on');
-        }
+        if(homeEl){ homeEl.classList.add('on'); }
       }
     }catch(x){}
   }
@@ -5890,10 +5850,9 @@ function loadGuardianDetailReviews(){
   list.innerHTML=h;
 }
 
-// ── DIAGNÓSTICO: confirmar que velo.js cargó completo ───────
 (function(){
   try{
     var v=document.getElementById('veloVer');
-    if(v){ v.style.color='rgba(255,255,255,.55)'; v.style.fontSize='10px'; v.textContent='v20260517e ✓'; }
+    if(v){ v.textContent='v20260517f'; }
   }catch(e){}
 })();

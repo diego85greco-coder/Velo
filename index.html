@@ -13,10 +13,20 @@
 <title>Velo — Acompañamos emociones</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="velo.css?v=20260517e">
+<link rel="stylesheet" href="velo.css?v=20260517f">
 <style>
-@keyframes onboardSlide{0%{transform:translateX(24px)}100%{transform:translateX(0)}}
-@keyframes waveIn{0%{transform:translateY(10px)}100%{transform:translateY(0)}}
+/* ── LAYOUT CRÍTICO — inline para bypass de caché ── */
+html,body{height:100%;overflow:hidden;margin:0;padding:0}
+body{font-family:'Jost',sans-serif;display:flex;justify-content:center;align-items:center;background:linear-gradient(135deg,#C8DDD0,#B8CCD8,#C8D8C0)}
+.phone{width:393px;height:852px;background:var(--cream,#f5f0e8);overflow:hidden;position:relative;z-index:1;border-radius:52px;border:1.5px solid rgba(45,106,79,.1)}
+@media(max-width:500px){body{align-items:flex-start}.phone{width:100%;height:100dvh;border-radius:0;box-shadow:none;border:none}}
+/* ── NAVEGACIÓN — garantizada, nunca cacheada ── */
+.sc{display:none!important;overflow:hidden;flex-direction:column;position:absolute;top:0;left:0;right:0;bottom:0}
+.sc.on{display:flex!important;flex-direction:column;height:100%}
+/* ── ANIMACIONES SIN opacity:0 ── */
+@keyframes onboardSlide{0%{transform:translateX(20px)}100%{transform:translateX(0)}}
+@keyframes waveIn{0%{transform:translateY(8px)}100%{transform:translateY(0)}}
+@keyframes sheetUp{0%{transform:translateY(100%)}100%{transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -416,7 +426,7 @@
         <span onclick="goTo('admin-login')" style="font-size:9px;color:rgba(255,255,255,.08);cursor:pointer;letter-spacing:1px">···</span>
       </div>
     </div>
-    <div id="veloVer" style="position:absolute;bottom:6px;right:8px;font-size:9px;color:rgba(255,255,255,.18);z-index:20;pointer-events:none;letter-spacing:.5px">v20260517e</div>
+    <div id="veloVer" style="position:absolute;bottom:6px;right:8px;font-size:9px;color:rgba(255,255,255,.18);z-index:20;pointer-events:none;letter-spacing:.5px">v20260517f</div>
   </div>
 
 
@@ -4964,6 +4974,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <!-- Stripe.js -->
 <script src="https://js.stripe.com/v3/"></script>
-<script src="velo.js?v=20260517e"></script>
+<script src="velo.js?v=20260517f"></script>
 </body>
 </html>
