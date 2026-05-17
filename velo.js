@@ -1493,6 +1493,8 @@ var prevScreen='home';
 var contactFrom='home';
 function goTo(id){
   try{
+    // DEBUG: confirmar que goTo se llama
+    try{ toast('🔄','→ '+id); }catch(te){}
     // Track origin for contact back button
     var cur=document.querySelector('.sc.on');
     if(cur&&cur.id&&cur.id!==id) prevScreen=cur.id;
@@ -5876,3 +5878,11 @@ function loadGuardianDetailReviews(){
   }
   list.innerHTML=h;
 }
+
+// ── DIAGNÓSTICO: confirmar que velo.js cargó completo ───────
+(function(){
+  try{
+    var v=document.getElementById('veloVer');
+    if(v){ v.style.color='rgba(255,255,255,.55)'; v.style.fontSize='10px'; v.textContent='v20260517d ✓'; }
+  }catch(e){}
+})();
