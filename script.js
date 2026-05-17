@@ -563,8 +563,11 @@ function finishRegister(){
   // Guardar nombre y email del usuario para auto-completar formularios
   var nameEl=document.getElementById('rgName');
   var emailEl=document.getElementById('rgEmail');
-  if(nameEl&&nameEl.value.trim()) safeLS('set','velo_user_name',nameEl.value.trim());
-  if(emailEl&&emailEl.value.trim()) safeLS('set','velo_user_email',emailEl.value.trim());
+  var uName = (nameEl&&nameEl.value.trim()) ? nameEl.value.trim() : '';
+  var uEmail = (emailEl&&emailEl.value.trim()) ? emailEl.value.trim() : '';
+  if(uName) safeLS('set','velo_user_name', uName);
+  if(uEmail) safeLS('set','velo_user_email', uEmail);
+  recordTCAcceptance(uName, uEmail);
   loginAndWelcome();
   setTimeout(function(){ toast('🌿','¡Bienvenido/a a Velo! Tu cuenta fue creada 💚'); }, 400);
   setTimeout(function(){ deliverInboxMsg('bienvenida-usuario'); }, 2200);
@@ -2291,6 +2294,7 @@ function adminTab(btn, tabId){
   if(tabId==='atab-solidarias') setTimeout(renderFreeSessions,50);
   if(tabId==='atab-wellness') setTimeout(renderBadgeCounts,50);
   if(tabId==='atab-pagos') setTimeout(renderAdminSubStats,50);
+  if(tabId==='atab-users') setTimeout(renderAdminTCRecords,50);
 }
 function filterAdminUsers(el, filter){
   var p = el.parentElement;
@@ -3673,6 +3677,156 @@ function updatePlanBadge(){
     if(ico) ico.textContent = '💎';
     if(lbl) lbl.textContent = 'Plus';
   }
+}
+
+// ── TÉRMINOS Y CONDICIONES ────────────────────────────────
+var TC_VERSION = 'v1.0_2026-05-17';
+var TC_DATE    = '17 de mayo de 2026';
+
+function getTCContent(){
+  return '<div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--sage3);margin-bottom:4px">Versión '+TC_VERSION+' · '+TC_DATE+'</div>'+
+  '<p style="font-size:11px;color:var(--ink4);font-style:italic;margin-bottom:14px">Este documento constituye un contrato legalmente vinculante conforme al Derecho de la Unión Europea, el Reglamento General de Protección de Datos (RGPD — UE 2016/679) y la legislación portuguesa aplicable. Al pulsar "Aceptar", usted reconoce haberlo leído y comprende que queda vinculado por él.</p>'+
+
+  _tcSec('1','PARTES DEL CONTRATO Y OPERADOR',
+    '<p>La Plataforma <b>Velo</b> (en adelante, "la Plataforma" o "Velo") es operada por <b>Diego Catalan Greco</b>, persona física, en calidad de propietario individual de la marca Velo, domiciliado en Portugal y sujeto a la legislación de la Unión Europea.</p>'+
+    '<p>Al registrarse, el "Usuario" o "Profesional" (en adelante, "el Usuario") celebra este contrato con el operador mencionado. Si en el futuro Velo fuese operada por una persona jurídica constituida formalmente, este contrato continuará vigente y será novado automáticamente en favor de dicha entidad, sin que sea necesario el re-consentimiento del Usuario.</p>'+
+    '<p><b>Contacto del responsable del tratamiento:</b> wearevelo.app@gmail.com</p>'),
+
+  _tcSec('2','CAPACIDAD LEGAL Y EDAD MÍNIMA',
+    '<p>El uso de Velo está <b>estrictamente reservado a personas mayores de 18 años</b> con plena capacidad jurídica para contratar según la ley de su país de residencia. Al aceptar estos T&C, el Usuario declara bajo su exclusiva responsabilidad que cumple este requisito. Velo podrá requerir documentación acreditativa en cualquier momento. En caso de falsedad, la cuenta será eliminada y se reserva el derecho a emprender acciones legales.</p>'),
+
+  _tcSec('3','NATURALEZA DEL SERVICIO Y EXENCIÓN DE RESPONSABILIDAD MÉDICA',
+    '<p>Velo es exclusivamente un proveedor de <b>infraestructura tecnológica</b> que actúa como intermediario para conectar a Usuarios con otros Usuarios (Guardianes) y con Profesionales de la salud mental, y que proporciona herramientas digitales de gestión y comunicación.</p>'+
+    '<p>⚠️ <b>EXENCIÓN ABSOLUTA — SALUD:</b> Velo <u>no</u> es un centro médico, no presta servicios de salud, no emite diagnósticos, no receta ni valida tratamientos. La relación profesional-paciente se da de forma directa y exclusiva entre el Usuario y el Profesional. Velo queda completamente exenta de cualquier responsabilidad civil, penal o administrativa derivada de diagnósticos erróneos, negligencias médicas, daños físicos o psicológicos, empeoramiento de patologías o fallecimiento resultantes de las interacciones dentro de la Plataforma.</p>'+
+    '<p>El módulo de Diario Personal es de uso <b>estrictamente privado</b>. Ningún algoritmo ni persona de Velo accede, lee ni analiza su contenido. La información del Diario nunca será usada para detección de crisis ni para ningún otro fin.</p>'),
+
+  _tcSec('4','EXPEDIENTE CLÍNICO PRIVADO DEL PROFESIONAL',
+    '<p>Velo provee a los Profesionales un espacio privado para notas de seguimiento ("Expediente"). El Profesional es el único propietario y custodio legal de dichos expedientes conforme a la legislación de salud aplicable en su jurisdicción. Velo actúa como mero encargado del tratamiento automatizado (almacenamiento cifrado) y no accede, edita ni audita el contenido.</p>'+
+    '<p>El Profesional se obliga a (a) no compartir sus credenciales; (b) respetar el secreto profesional; (c) asumir responsabilidad exclusiva ante cualquier filtración provocada por descuido, hackeo local de su dispositivo o mal uso del Expediente.</p>'),
+
+  _tcSec('5','SUSCRIPCIONES, DONACIONES Y PASARELAS DE PAGO (PayPal · Stripe)',
+    '<p><b>Suscripciones:</b> El acceso a determinadas funciones de Velo (plan "Velo Plus") requiere el pago de una suscripción periódica de USD 2,99/mes gestionada a través de PayPal. El Usuario autoriza los cobros automáticos.</p>'+
+    '<p><b>Donaciones:</b> Los Usuarios pueden realizar aportaciones voluntarias a Profesionales gestionadas mediante Stripe. Velo actúa como agente de dispersión y retiene el 20% como comisión de plataforma.</p>'+
+    '<p><b>Datos de pago:</b> Velo <u>no</u> almacena datos de tarjetas de crédito ni credenciales bancarias. Las transacciones son procesadas de forma segura por PayPal Inc. y Stripe Inc. bajo sus propias políticas de seguridad y certificación PCI-DSS.</p>'+
+    '<p><b>Exención financiera:</b> Velo no se responsabiliza por retenciones de fondos, fallos en transacciones, contracargos ni comisiones aplicadas por las pasarelas de pago.</p>'+
+    '<p><b>Política de reembolsos:</b> Las suscripciones y donaciones voluntarias no son reembolsables, salvo error técnico directamente imputable al código de Velo, en cuyo caso el Usuario deberá notificarlo a wearevelo.app@gmail.com en un plazo máximo de 14 días desde la transacción.</p>'),
+
+  _tcSec('6','OBLIGACIONES Y RESPONSABILIDAD DEL PROFESIONAL',
+    '<p>Al registrarse como Profesional, el Usuario garantiza que sus títulos, licencias y certificaciones son <b>100% auténticos y vigentes</b>. La presentación de documentos falsos o la suplantación de identidad profesional constituye un ilícito penal. Velo denunciará activamente ante las autoridades competentes cualquier sospecha de fraude.</p>'+
+    '<p><b>Cláusula de indemnidad:</b> Si Velo fuere demandada, sancionada o incurriere en gastos de defensa jurídica como consecuencia directa de una acción, omisión, fraude o mala praxis de un Profesional, este último se obliga a indemnizar a Velo por la totalidad de dichos costes, incluyendo honorarios de abogados, tasas judiciales y el importe de cualquier multa o condena.</p>'),
+
+  _tcSec('7','PROTECCIÓN DE DATOS PERSONALES — RGPD (UE 2016/679)',
+    '<p><b>Responsable del tratamiento:</b> Diego Catalan Greco · wearevelo.app@gmail.com</p>'+
+    '<p><b>Datos recogidos:</b> nombre de usuario, dirección de correo electrónico, contraseña (cifrada), dirección IP en el momento del registro, avatar (opcional), y metadatos de uso de la Plataforma (fechas de acceso, preferencias de privacidad). No se recogen datos biométricos ni de categoría especial salvo los introducidos voluntariamente por el propio Usuario en el Diario o en el chat.</p>'+
+    '<p><b>Finalidades y base jurídica:</b></p>'+
+    '<ul style="padding-left:16px;margin:6px 0">'+
+    '<li>Ejecución del contrato (Art. 6.1.b RGPD): gestión de cuentas, suscripciones y comunicaciones dentro de la Plataforma.</li>'+
+    '<li>Cumplimiento de obligación legal (Art. 6.1.c RGPD): conservación de registros de aceptación de T&C durante el plazo legalmente exigible.</li>'+
+    '<li>Interés legítimo (Art. 6.1.f RGPD): seguridad de la Plataforma, prevención de fraude y moderación de contenido.</li>'+
+    '</ul>'+
+    '<p><b>Plazo de conservación:</b> Los datos de cuenta activa se conservan mientras la cuenta esté activa. Tras la baja, se eliminan los datos operativos en un plazo de 30 días. Los datos mínimos de reserva legal (email, nombre de usuario, IP de registro, timestamp y versión de T&C aceptada) se conservan de forma bloqueada durante <b>6 años</b> conforme al Art. 149.º del Código Civil Português (prescripción general) y para la defensa jurídica de Velo ante posibles reclamaciones.</p>'+
+    '<p><b>Derechos del interesado:</b> Conforme al RGPD, el Usuario tiene derecho a <b>acceder, rectificar, suprimir, portar, limitar y oponerse</b> al tratamiento de sus datos, así como a no ser objeto de decisiones automatizadas con efectos significativos. Para ejercer estos derechos, escriba a wearevelo.app@gmail.com. Tiene también derecho a presentar reclamación ante la <b>CNPD</b> (Comissão Nacional de Proteção de Dados, Portugal) — www.cnpd.pt.</p>'+
+    '<p><b>Transferencias internacionales:</b> Los datos pueden ser procesados por proveedores (Stripe, PayPal, Firebase) ubicados fuera de la UE. En todos los casos se utilizan mecanismos de transferencia adecuados conforme al Capítulo V del RGPD (Cláusulas Contractuales Tipo o decisiones de adecuación).</p>'),
+
+  _tcSec('8','MODERACIÓN DE CONTENIDO Y EXPULSIÓN',
+    '<p>Queda estrictamente prohibido el uso de chats, comentarios o mensajes para: insultos, acoso, amenazas, pornografía, venta de sustancias ilegales, spam o cualquier contenido que infrinja la legislación portuguesa o de la UE.</p>'+
+    '<p>Velo se reserva el derecho de cancelar, suspender o banear permanentemente cualquier cuenta sin previo aviso ni derecho a devolución si detecta incumplimientos de estos T&C o si recibe denuncias fundadas de la comunidad.</p>'),
+
+  _tcSec('9','DERECHO DE DESISTIMIENTO Y BAJA',
+    '<p>Conforme a la Directiva UE 2011/83 sobre derechos de los consumidores, los Usuarios residentes en la Unión Europea tienen <b>14 días naturales de derecho de desistimiento</b> desde la primera suscripción de pago, salvo que hayan solicitado expresamente comenzar el servicio antes del vencimiento de dicho plazo (acceso inmediato tras el pago), en cuyo caso el derecho de desistimiento se extingue.</p>'+
+    '<p>Para solicitar la baja de la cuenta y la supresión de datos operativos, el Usuario puede hacerlo desde la configuración de la app o escribiendo a wearevelo.app@gmail.com.</p>'),
+
+  _tcSec('10','PROPIEDAD INTELECTUAL',
+    '<p>El nombre "Velo", el logotipo, el diseño de la interfaz, los textos, imágenes y el código de la Plataforma son propiedad exclusiva de Diego Catalan Greco. Queda prohibida su reproducción, distribución o uso comercial sin autorización expresa y por escrito.</p>'+
+    '<p>El contenido generado por los Usuarios (publicaciones, mensajes) permanece en propiedad del Usuario, quien concede a Velo una licencia no exclusiva, gratuita y global para mostrarlo dentro de la Plataforma.</p>'),
+
+  _tcSec('11','LEY APLICABLE Y JURISDICCIÓN',
+    '<p>Este contrato se rige por el Derecho de la <b>República Portuguesa</b> y, en lo que le sea de aplicación, por el Derecho de la <b>Unión Europea</b>. Para cualquier controversia, las partes se someten a la jurisdicción de los <b>Tribunales de la cidade de Lisboa, Portugal</b>, renunciando a cualquier otro fuero que pudiera corresponderles.</p>'+
+    '<p>Nada de lo dispuesto en estos T&C limita los derechos que la legislación imperativa de protección al consumidor de la UE otorga a los consumidores que residan en Estados Miembros de la UE.</p>'),
+
+  _tcSec('12','MODIFICACIONES DE LOS TÉRMINOS',
+    '<p>Velo podrá modificar estos T&C en cualquier momento. Los cambios serán notificados con al menos <b>15 días de antelación</b> mediante aviso dentro de la Plataforma. El uso continuado de la Plataforma tras dicha notificación implica la aceptación de los nuevos términos. Si el Usuario no los acepta, deberá cesar el uso de la Plataforma y solicitar la baja.</p>'+
+    '<p>La versión vigente siempre estará disponible dentro de la app, en la sección de Configuración > Términos y Condiciones.</p>');
+}
+
+function _tcSec(num, title, body){
+  return '<div style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(0,0,0,.06)">'+
+    '<div style="font-size:12px;font-weight:800;color:var(--ink);margin-bottom:6px">'+num+'. '+title+'</div>'+
+    '<div style="font-size:11.5px;color:var(--ink3);line-height:1.75">'+body+'</div>'+
+  '</div>';
+}
+
+function openTCModal(){
+  var el = document.getElementById('tcDocContent');
+  if(el) el.innerHTML = getTCContent();
+  var vl = document.getElementById('tcVersionLabel');
+  if(vl) vl.textContent = TC_VERSION+' · Conforme al RGPD (UE 2016/679) y Derecho Portugués';
+  openModal('tcFullModal');
+}
+
+function _fetchUserIP(cb){
+  try{
+    fetch('https://api.ipify.org?format=json').then(function(r){return r.json();}).then(function(d){ cb(d.ip||'N/D'); }).catch(function(){ cb('N/D'); });
+  } catch(e){ cb('N/D'); }
+}
+
+function recordTCAcceptance(name, email){
+  var records = JSON.parse(safeLS('get','velo_tc_records')||'[]');
+  var existing = records.findIndex(function(r){ return r.email && r.email===email; });
+  var ts = new Date().toISOString();
+  var record = { name: name||'N/D', email: email||'N/D', timestamp: ts, ip: 'obteniendo…', tcVersion: TC_VERSION, status: 'ACCEPTED' };
+  if(existing>=0) records[existing] = record; else records.push(record);
+  safeLS('set','velo_tc_records', JSON.stringify(records));
+  _fetchUserIP(function(ip){
+    var recs = JSON.parse(safeLS('get','velo_tc_records')||'[]');
+    var idx = recs.findIndex(function(r){ return r.email===email && r.timestamp===ts; });
+    if(idx>=0){ recs[idx].ip = ip; safeLS('set','velo_tc_records', JSON.stringify(recs)); }
+  });
+}
+
+function renderAdminTCRecords(){
+  var el = document.getElementById('adminTCRecords');
+  if(!el) return;
+  var records = JSON.parse(safeLS('get','velo_tc_records')||'[]');
+  if(!records.length){
+    el.innerHTML = '<div style="text-align:center;padding:14px;font-size:11px;color:rgba(255,255,255,.3)">Sin registros de aceptación aún.</div>';
+    return;
+  }
+  el.innerHTML = records.slice().reverse().map(function(r){
+    var d = new Date(r.timestamp);
+    var dateStr = d.toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'});
+    var timeStr = d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    return '<div style="background:rgba(116,198,157,.05);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:10px 12px;margin-bottom:7px">'+
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px">'+
+        '<div>'+
+          '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.8)">'+r.name+'</div>'+
+          '<div style="font-size:10px;color:rgba(116,198,157,.7)">'+r.email+'</div>'+
+        '</div>'+
+        '<span style="padding:2px 8px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);border-radius:100px;font-size:9px;font-weight:700;color:rgba(116,198,157,.9);white-space:nowrap">✓ ACEPTADO</span>'+
+      '</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
+        '<span style="font-size:9px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.05);padding:2px 7px;border-radius:6px">📅 '+dateStr+' · '+timeStr+' UTC</span>'+
+        '<span style="font-size:9px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.05);padding:2px 7px;border-radius:6px">🌐 IP: '+r.ip+'</span>'+
+        '<span style="font-size:9px;color:rgba(116,198,157,.6);background:rgba(116,198,157,.08);padding:2px 7px;border-radius:6px">📄 '+r.tcVersion+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function exportTCRecords(){
+  var records = JSON.parse(safeLS('get','velo_tc_records')||'[]');
+  if(!records.length){ toast('📄','Sin registros que exportar'); return; }
+  var csv = 'Nombre,Email,Timestamp (UTC),IP,Version TC,Estado\n';
+  csv += records.map(function(r){
+    return ['"'+r.name+'"','"'+r.email+'"','"'+r.timestamp+'"','"'+r.ip+'"','"'+r.tcVersion+'"','"'+r.status+'"'].join(',');
+  }).join('\n');
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'velo_tc_records_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('✅','CSV exportado con '+records.length+' registros');
 }
 
 // ── SOS COUNTRY DETECTION ─────────────────────────────────

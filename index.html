@@ -38,6 +38,24 @@
     <button class="btn btn-sage" style="padding:13px 32px;font-size:14px" onclick="closeSuc()">Volver 🌿</button>
   </div>
 
+  <!-- ══ TÉRMINOS Y CONDICIONES MODAL ══ -->
+  <div class="modal-ov" id="tcFullModal" style="z-index:700">
+    <div class="msheet" style="max-height:92%;padding:0">
+      <div style="padding:14px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--sage3)">DOCUMENTO LEGAL</div>
+          <div style="font-size:15px;font-weight:800;color:var(--ink)">Términos y Condiciones de Velo</div>
+          <div id="tcVersionLabel" style="font-size:10px;color:var(--ink5)"></div>
+        </div>
+        <button onclick="closeModal('tcFullModal')" style="background:none;border:none;font-size:20px;color:var(--ink4);cursor:pointer;padding:4px 8px">✕</button>
+      </div>
+      <div id="tcDocContent" style="overflow-y:auto;padding:16px 18px 24px;flex:1;font-size:11.5px;color:var(--ink3);line-height:1.75"></div>
+      <div style="padding:10px 18px 18px;border-top:1px solid var(--border);flex-shrink:0">
+        <button onclick="closeModal('tcFullModal')" class="btn btn-sage" style="width:100%;padding:13px">He leído el documento — Cerrar 💚</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SOS MODAL -->
   <div class="modal-ov" id="sosModal">
     <div class="msheet" style="background:linear-gradient(160deg,#FFF6F4,#FFFAF8)">
@@ -1041,9 +1059,17 @@
         </div>
       </div>
       <!-- Checkboxes -->
+      <!-- Link to full T&C document -->
+      <div style="padding:11px 13px;background:rgba(58,112,144,.06);border:1.5px solid rgba(58,112,144,.15);border-radius:13px;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--ink);margin-bottom:1px">📄 Términos y Condiciones Completos</div>
+          <div style="font-size:10px;color:var(--ink5)">Conforme al Derecho de la Unión Europea · RGPD · Versión vigente</div>
+        </div>
+        <button onclick="openTCModal()" style="padding:7px 12px;background:rgba(58,112,144,.1);border:1.5px solid rgba(58,112,144,.2);border-radius:100px;font-size:10px;font-weight:700;color:#3A7090;cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap">Leer →</button>
+      </div>
       <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.2);border-radius:14px;cursor:pointer;margin-bottom:8px" onclick="tChk('tcVelo')">
         <div class="chk-box" id="tcVelo"></div>
-        <div style="font-size:12px;color:var(--ink3);line-height:1.5;padding-top:1px">Leí y acepto los <b style="color:var(--sage2)">Términos y condiciones de Velo</b>, incluyendo las reglas de la comunidad y la política de privacidad.</div>
+        <div style="font-size:12px;color:var(--ink3);line-height:1.5;padding-top:1px">Leí y acepto los <b style="color:var(--sage2)">Términos y condiciones de Velo</b>, incluyendo las reglas de la comunidad, la política de privacidad y el tratamiento de datos conforme al RGPD.</div>
       </div>
       <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.2);border-radius:14px;cursor:pointer;margin-bottom:14px" onclick="tChk('tcMay')">
         <div class="chk-box" id="tcMay"></div>
@@ -3896,6 +3922,15 @@
           </div>
         </div>
         <div style="font-size:11px;color:rgba(116,198,157,.35);text-align:center;padding:14px 0">Mostrando 3 de 1.200 usuarios</div>
+
+        <!-- ── REGISTROS DE ACEPTACIÓN T&C ── -->
+        <div style="margin-top:18px">
+          <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.5);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+            <span>📄 REGISTROS DE ACEPTACIÓN — TÉRMINOS Y CONDICIONES</span>
+            <button onclick="exportTCRecords()" style="padding:3px 9px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:100px;font-size:9px;font-weight:700;color:rgba(116,198,157,.8);cursor:pointer;font-family:Jost,sans-serif">Exportar</button>
+          </div>
+          <div id="adminTCRecords"><div style="text-align:center;padding:14px;font-size:11px;color:rgba(255,255,255,.3)">Sin registros aún.</div></div>
+        </div>
       </div>
 
       <!-- TAB: PROFESIONALES -->
