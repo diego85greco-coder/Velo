@@ -2459,9 +2459,24 @@ function doLoginPro(){
 
 
 // ── BOTTLE WRITE ──────────────────────────────────────────
+var _bottleAnonActivo = true;
+function togBottleAnon(){
+  _bottleAnonActivo = !_bottleAnonActivo;
+  var tog = document.getElementById('bottleAnonToggle');
+  var knob = document.getElementById('bottleAnonKnob');
+  if(tog) tog.style.background = _bottleAnonActivo ? '#3A7090' : '#ccc';
+  if(knob) knob.style.left = _bottleAnonActivo ? '21px' : '3px';
+}
 function openBottleWrite(){
   var m = document.getElementById('bottleWriteModal');
   if(m) m.style.display = 'flex';
+  var txt = document.getElementById('bottleText');
+  if(txt) txt.value = '';
+  _bottleAnonActivo = true;
+  var tog = document.getElementById('bottleAnonToggle');
+  var knob = document.getElementById('bottleAnonKnob');
+  if(tog) tog.style.background = '#3A7090';
+  if(knob) knob.style.left = '21px';
 }
 function closeBottleWrite(){
   var m = document.getElementById('bottleWriteModal');
@@ -2488,13 +2503,13 @@ function sendBottle(){
   var msg=txt.value.trim();
   moderateContent(msg).then(function(ok){
     if(!ok) return;
-    var isAnon=isIncognitoActive();
+    var isAnon=_bottleAnonActivo;
     _loadBottleWall();
     bottleWall.unshift({
       id:'b-'+Date.now(),
       emoji:isAnon?'🕶️':'🍾',
       msg:msg,
-      author:isAnon?'Anonima':getDisplayName(),
+      author:isAnon?'Anónimo/a':getDisplayName(),
       time:'ahora',
       answered:false
     });
