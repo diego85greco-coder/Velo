@@ -1252,8 +1252,17 @@ function selSolSesion(el, val){
   }
 }
 function selAmt(el){
-  document.querySelectorAll('#amountGrid .amt-o').forEach(function(a){ a.classList.remove('on'); })
+  document.querySelectorAll('#amountGrid .amt-o').forEach(function(a){ a.classList.remove('on'); });
   el.classList.add('on');
+  var txt = el.querySelector('div');
+  if(txt) selectedDonAmt = txt.textContent.replace(/[^0-9.]/g,'') || '10';
+}
+function confirmDonExit(){
+  var on = document.querySelector('#amountGrid .amt-o.on');
+  var amt = selectedDonAmt || '10';
+  if(on){ var t=on.querySelector('div'); if(t) amt=t.textContent.replace(/[^0-9.]/g,'')||'10'; }
+  openPayPalDonate(amt, false, 'Donación Velo');
+  toast('💳','Redirigiendo a PayPal… completá el pago y volvé 🌿');
 }
 function selStar(el,n){
   var stars=el.parentElement.querySelectorAll('.star-btn');
@@ -3342,8 +3351,9 @@ function submitSurvey(){
   for(var ti=0;ti<tagBtns.length;ti++){if(tagBtns[ti].style.borderColor==='rgb(61, 109, 90)')tags.push(tagBtns[ti].textContent.trim());}
   var comment='';var cmt=document.getElementById('surveyComment');if(cmt)comment=cmt.value.trim();
   dejarResena(count||5, tags, comment);
-  goTo('home');
-  setTimeout(function(){toast('⭐','Reseña guardada en el perfil 💚');},300);
+  toast('⭐','Reseña guardada. Gracias! 💚');
+  // Suggest donation after session
+  goTo('donation-exit');
 }
 function submitGuardianSurvey(){
   var feelings=[];
