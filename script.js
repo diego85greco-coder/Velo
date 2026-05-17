@@ -1158,7 +1158,10 @@ function goTo(id){
   // Reset contact form when leaving
   if(id!=='contact'){var f=document.getElementById('contactForm');if(f)f.style.display='none';}
 }
-function openModal(id){document.getElementById(id).classList.add('show');}
+function openModal(id){
+  document.getElementById(id).classList.add('show');
+  if(id==='sosModal') setTimeout(renderSOSCountry,30);
+}
 function closeModal(id){document.getElementById(id).classList.remove('show');}
 
 // Request help flow
@@ -3670,6 +3673,109 @@ function updatePlanBadge(){
     if(ico) ico.textContent = '💎';
     if(lbl) lbl.textContent = 'Plus';
   }
+}
+
+// ── SOS COUNTRY DETECTION ─────────────────────────────────
+var _SOS_COUNTRIES = {
+  AR:{flag:'🇦🇷',name:'Argentina',numbers:[
+    {icon:'🚨',num:'911',label:'Emergencias 911',sub:'Policía · Bomberos · SAME'},
+    {icon:'🚑',num:'107',label:'SAME 107',sub:'Ambulancias · Capital Federal'},
+    {icon:'🧠',num:'135',label:'Crisis 135',sub:'Salud mental · gratuito · 24hs'},
+    {icon:'👩',num:'144',label:'Violencia 144',sub:'Mujer en situación de riesgo'}
+  ]},
+  ES:{flag:'🇪🇸',name:'España',numbers:[
+    {icon:'🚨',num:'112',label:'Emergencias 112',sub:'Policía · Bomberos · Médico'},
+    {icon:'🧠',num:'024',label:'Crisis 024',sub:'Salud mental · gratuito · 24hs'},
+    {icon:'👩',num:'016',label:'Violencia 016',sub:'Violencia de género · 24hs'},
+    {icon:'🚑',num:'061',label:'Médico 061',sub:'Urgencias médicas'}
+  ]},
+  CL:{flag:'🇨🇱',name:'Chile',numbers:[
+    {icon:'🚨',num:'149',label:'Carabineros 149',sub:'Policía · emergencias'},
+    {icon:'🚑',num:'131',label:'SAMU 131',sub:'Ambulancia · urgencias'},
+    {icon:'🧠',num:'800200818',label:'Crisis 800 200 818',sub:'Salud mental · gratuito'},
+    {icon:'👩',num:'1455',label:'Mujer 1455',sub:'Violencia contra la mujer'}
+  ]},
+  MX:{flag:'🇲🇽',name:'México',numbers:[
+    {icon:'🚨',num:'911',label:'Emergencias 911',sub:'Policía · Bomberos · Médico'},
+    {icon:'🧠',num:'8002900024',label:'SAPTEL 800 290 0024',sub:'Crisis · salud mental · 24hs'},
+    {icon:'👩',num:'8004547839',label:'INMUJERES 800 454 TEVE',sub:'Violencia contra la mujer'}
+  ]},
+  UY:{flag:'🇺🇾',name:'Uruguay',numbers:[
+    {icon:'🚨',num:'911',label:'Emergencias 911',sub:'Policía · Bomberos · SIATE'},
+    {icon:'🧠',num:'08005050',label:'Salud Mental 0800 5050',sub:'Crisis · gratuito · 24hs'},
+    {icon:'👩',num:'08004141',label:'Mujer 0800 4141',sub:'Violencia de género · gratuito'}
+  ]},
+  CO:{flag:'🇨🇴',name:'Colombia',numbers:[
+    {icon:'🚨',num:'123',label:'Emergencias 123',sub:'Policía · Bomberos · CRUE'},
+    {icon:'🧠',num:'106',label:'Línea 106',sub:'Salud mental · crisis · 24hs'},
+    {icon:'👩',num:'155',label:'Mujer 155',sub:'Violencia de género · gratuito'}
+  ]},
+  PT:{flag:'🇵🇹',name:'Portugal',numbers:[
+    {icon:'🚨',num:'112',label:'Emergências 112',sub:'Polícia · Bombeiros · INEM'},
+    {icon:'🚑',num:'112',label:'INEM 112',sub:'Ambulância · urgências médicas'},
+    {icon:'🧠',num:'21354545',label:'SOS Voz Amiga 213 544 545',sub:'Crise · saúde mental · gratuito'},
+    {icon:'👩',num:'116006',label:'Apoio à Vítima 116 006',sub:'Violência doméstica · gratuito'}
+  ]},
+  BR:{flag:'🇧🇷',name:'Brasil',numbers:[
+    {icon:'🚨',num:'190',label:'Polícia 190',sub:'Emergências policiais'},
+    {icon:'🚑',num:'192',label:'SAMU 192',sub:'Urgências médicas · ambulância'},
+    {icon:'🧠',num:'18800006263',label:'CVV 188',sub:'Crise emocional · gratuito · 24hs'},
+    {icon:'👩',num:'180',label:'Ligue 180',sub:'Violência contra a mulher'}
+  ]}
+};
+var _langToCountry = {
+  'es-AR':'AR','es-419':'AR','ar':'AR',
+  'es-ES':'ES','es':'ES','ca':'ES','gl':'ES','eu':'ES',
+  'es-CL':'CL',
+  'es-MX':'MX',
+  'es-UY':'UY',
+  'es-CO':'CO',
+  'pt-PT':'PT','pt':'PT',
+  'pt-BR':'BR'
+};
+function _detectCountryCode(){
+  var langs = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language||'es'];
+  for(var i=0;i<langs.length;i++){
+    var l = langs[i];
+    if(_langToCountry[l]) return _langToCountry[l];
+    var short = l.split('-')[0]+'-'+l.split('-')[1];
+    if(_langToCountry[short]) return _langToCountry[short];
+    var prefix = l.split('-')[0];
+    if(_langToCountry[prefix]) return _langToCountry[prefix];
+  }
+  return 'AR'; // default
+}
+function _buildSOSSection(code, data, isDetected){
+  var link = function(n){ return 'tel:'+n.num; };
+  var cards = data.numbers.map(function(n){
+    return '<a href="'+link(n)+'" style="display:flex;align-items:center;gap:7px;padding:9px 10px;background:rgba(192,48,40,.05);border:1.5px solid rgba(192,48,40,.14);border-radius:13px;text-decoration:none">'+
+      '<span style="font-size:16px">'+n.icon+'</span>'+
+      '<div><div style="font-size:11px;font-weight:700;color:var(--sos)">'+n.label+'</div>'+
+      '<div style="font-size:9px;color:var(--ink5)">'+n.sub+'</div></div></a>';
+  }).join('');
+  var header = isDetected
+    ? '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--sos);margin-bottom:6px;display:flex;align-items:center;gap:6px">'+data.flag+' '+data.name.toUpperCase()+' <span style="font-size:8px;font-weight:600;padding:2px 7px;background:rgba(192,48,40,.08);border-radius:100px;color:var(--sos)">Detectado</span><span style="flex:1;height:1px;background:rgba(192,48,40,.12);display:block"></span></div>'
+    : '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--ink4);margin-bottom:6px;display:flex;align-items:center;gap:6px">'+data.flag+' '+data.name.toUpperCase()+' <span style="flex:1;height:1px;background:rgba(192,48,40,.12);display:block"></span></div>';
+  return header+'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'+cards+'</div>';
+}
+function renderSOSCountry(){
+  var el = document.getElementById('sosCountryContent');
+  if(!el) return;
+  var detected = _detectCountryCode();
+  var html = '';
+  // Detected country first
+  if(_SOS_COUNTRIES[detected]){
+    html += _buildSOSSection(detected, _SOS_COUNTRIES[detected], true);
+  }
+  // Divider for other countries
+  var othersHtml = '';
+  Object.keys(_SOS_COUNTRIES).forEach(function(code){
+    if(code !== detected) othersHtml += _buildSOSSection(code, _SOS_COUNTRIES[code], false);
+  });
+  if(othersHtml){
+    html += '<details style="margin-bottom:10px"><summary style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--ink4);cursor:pointer;margin-bottom:6px;list-style:none;display:flex;align-items:center;gap:6px">🌎 OTROS PAÍSES <span style="flex:1;height:1px;background:rgba(192,48,40,.12);display:block"></span> <span style="font-size:10px">›</span></summary>'+othersHtml+'</details>';
+  }
+  el.innerHTML = html;
 }
 
 // ── CANCEL SUBSCRIPTION ───────────────────────────────────
