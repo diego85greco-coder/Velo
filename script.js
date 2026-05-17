@@ -554,7 +554,7 @@ function finishRegister(){
 }
 
 // Nav — include register + groups in noNav = false (show nav), but not for register
-var noNav=['splash','onboarding','pro-onboarding','guardian-chat','guardian-detail','post-chat','help-form','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','pro-session','pro-session-room','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending','contact','vela'];
+var noNav=['splash','onboarding','pro-onboarding','guardian-chat','guardian-detail','post-chat','help-form','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','pro-session','pro-session-room','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending','contact','vela','buzon-detail'];
 
 // ── MOOD CHECK-IN ────────────────────────────────────────
 var todayMood=null;
@@ -2059,8 +2059,23 @@ function sendAdminMsg(){
   var body = document.getElementById('adminMsgBody');
   if(!subj||!subj.value.trim()){ toast('⚠️','Agregá un asunto'); return; }
   if(!body||!body.value.trim()){ toast('⚠️','Escribí el mensaje'); return; }
-  showSuc('💌','Mensaje enviado exitosamente','El mensaje fue enviado a los destinatarios seleccionados y llegará a sus bandejas internas de Velo. 💚');
+  var selType = document.querySelector('#atab-msg span[style*="sage7"],#atab-msg span[style*="sage2"]');
+  var icono = selType ? selType.textContent.trim().split(' ')[0] : '📢';
+  addBuzonMsg({
+    id: 'admin-'+Date.now(),
+    tipo: 'sistema',
+    icon: icono,
+    remitente: 'Equipo Velo',
+    asunto: subj.value.trim(),
+    titulo: subj.value.trim(),
+    cuerpo: body.value.trim(),
+    extracto: body.value.trim().substring(0,80),
+    leido: false,
+    prioritario: true,
+    fecha: new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})
+  });
   subj.value=''; body.value='';
+  showSuc('💌','Mensaje enviado','El mensaje llegará al buzón de los usuarios seleccionados. 💚');
 }
 function selInviteRole(el, role){
   var p = el.parentElement;
@@ -3535,14 +3550,30 @@ function setUserStatus(status){
 
 var buzonMensajes = [
   {
-    id: 'sys1',
+    id: 'sys-bienvenida',
     tipo: 'sistema',
+    icon: '🌿',
     remitente: 'Velo Oficial',
     asunto: 'Bienvenido/a a la comunidad',
-    extracto: 'Estamos aqui para acompanarte. Explora, conecta y cuídate.',
+    titulo: 'Bienvenido/a a la comunidad',
+    extracto: 'Estamos aquí para acompañarte. Explorá, conectá y cuídate.',
+    cuerpo: 'Bienvenido/a a Velo, tu espacio seguro de acompañamiento emocional.\n\nAquí podés:\n• 🤝 Buscar acompañamiento en la Sala de Ayuda\n• 🛡️ Conectarte con Guardianes disponibles\n• 📓 Llevar tu diario íntimo\n• 🌬️ Practicar ejercicios de respiración\n• 🍾 Dejar mensajes en botella\n• 💬 Unirte a Círculos de Paz\n\nVelo siempre será gratuito. Gracias por confiar en nosotros. 💚',
     fecha: 'Hoy',
     leido: false,
     prioritario: true
+  },
+  {
+    id: 'sys-ia-mes1',
+    tipo: 'sistema',
+    icon: '🤖',
+    remitente: 'Velo IA',
+    asunto: 'Tu resumen de bienestar del primer mes',
+    titulo: 'Tu resumen de bienestar del primer mes',
+    extracto: 'Llevas un mes con nosotros. Aquí tu resumen personalizado.',
+    cuerpo: 'Han pasado 30 días desde que te uniste a Velo. 🌿\n\nEste es tu resumen de bienestar:\n\n📊 Actividad del mes\n• Sesiones de respiración: 4\n• Entradas en tu diario: 7\n• Conexiones en la comunidad: 3\n\n💡 Lo que notamos\nTu mayor actividad fue entre las 20hs y 22hs. Muchos usuarios encuentran que ese momento es ideal para el autocuidado.\n\n🌟 Recomendación IA\nIntentá mantener al menos 5 min de respiración guiada por semana. Tiene un impacto real en la regulación emocional.\n\nSeguís haciendo un gran trabajo. Velo está aquí. 💚',
+    fecha: 'Hace 1 día',
+    leido: false,
+    prioritario: false
   }
 ];
 
@@ -3591,36 +3622,38 @@ function renderBuzon(){
   list.innerHTML = '';
   buzonMensajes.forEach(function(msg){
     var card = document.createElement('div');
-    var bg = msg.prioritario ? '#faf5ff' : '#fff';
-    var border = msg.prioritario ? '1px solid #ddd6fe' : '1px solid #f0f0f0';
-    var ring = !msg.leido ? ';outline:1.5px solid rgba(45,106,79,.15)' : '';
+    var bg = msg.prioritario ? 'rgba(196,181,232,.08)' : 'rgba(255,255,255,.92)';
+    var border = msg.prioritario ? '1.5px solid rgba(196,181,232,.3)' : '1px solid rgba(45,106,79,.08)';
+    var ring = !msg.leido ? ';box-shadow:0 2px 14px rgba(45,106,79,.1)' : '';
     card.style.cssText = 'background:'+bg+';border:'+border+';border-radius:20px;padding:16px;margin-bottom:10px;cursor:pointer;position:relative'+ring;
-    card.onclick = function(){ openBuzonMsg(msg.id); };
+    card.onclick = function(){ openBuzonDetail(msg.id); };
 
-    var iconos = {botella:'⚓',resena:'⭐',profesional:'🩺',sistema:'🛡️'};
-    var icono = iconos[msg.tipo] || '📬';
-    var dotHtml = !msg.leido ? '<div style="position:absolute;top:14px;right:14px;width:8px;height:8px;background:#27ae60;border-radius:50%;border:2px solid #fff"></div>' : '';
+    // Support both field naming conventions
+    var titulo = msg.asunto || msg.titulo || 'Mensaje de Velo';
+    var preview = msg.extracto || (msg.cuerpo ? msg.cuerpo.substring(0,90)+'…' : '');
+    var remitente = msg.remitente || 'Velo';
+    var icono = msg.icon || {botella:'🍾',resena:'⭐',profesional:'🩺',sistema:'🛡️',soporte:'💌',encuesta:'📋',donacion:'💚'}[msg.tipo] || '📬';
+    var dotHtml = !msg.leido ? '<div style="position:absolute;top:14px;right:14px;width:9px;height:9px;background:var(--sage3);border-radius:50%;border:2px solid #fff"></div>' : '';
 
     var botellaExtra = '';
-    if(msg.tipo === 'botella' && msg.mensajeOriginal){
-      botellaExtra = '<div style="margin-top:10px;padding:10px;background:#eff6ff;border-radius:12px;border:1px solid #dbeafe">'
-        +'<div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:4px">TU BOTELLA ORIGINAL:</div>'
-        +'<div style="font-size:12px;color:#555;font-style:italic;margin-bottom:8px">"'+msg.mensajeOriginal+'"<\/div>'
-        +'<div style="font-size:10px;font-weight:700;color:#16a34a;margin-bottom:4px">RESPUESTA RECIBIDA:<\/div>'
-        +'<div style="font-size:13px;color:#111;font-weight:500">"'+msg.extracto+'"<\/div>'
+    if(msg.tipo === 'botella'){
+      var resp = msg.cuerpo || msg.extracto || '';
+      botellaExtra = '<div style="margin-top:10px;padding:10px;background:rgba(168,212,232,.12);border-radius:12px;border:1px solid rgba(168,212,232,.25)">'
+        +'<div style="font-size:10px;font-weight:700;color:#3b82f6;margin-bottom:4px">RESPUESTA RECIBIDA<\/div>'
+        +'<div style="font-size:12px;color:var(--ink3);line-height:1.5">"'+resp.substring(0,120)+'"<\/div>'
         +'<\/div>';
     }
 
     card.innerHTML = dotHtml
       +'<div style="display:flex;gap:12px;align-items:flex-start">'
-      +'<div style="width:44px;height:44px;border-radius:14px;background:'+(msg.prioritario?'#fff':'#f5f5f5')+';display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">'+icono+'<\/div>'
+      +'<div style="width:44px;height:44px;border-radius:14px;background:var(--sage7);border:1px solid rgba(116,198,157,.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">'+icono+'<\/div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
-      +'<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:'+(msg.prioritario?'#7c3aed':'#888')+'">'+msg.remitente+'<\/span>'
-      +'<span style="font-size:10px;color:#aaa">'+msg.fecha+'<\/span>'
+      +'<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:'+(msg.prioritario?'#7c3aed':'var(--ink4)')+'">'+remitente+'<\/span>'
+      +'<span style="font-size:10px;color:var(--ink5)">'+msg.fecha+'<\/span>'
       +'<\/div>'
-      +'<div style="font-size:13px;font-weight:'+(msg.leido?'500':'700')+';color:'+(msg.leido?'#666':'#111')+';margin-bottom:3px">'+msg.asunto+'<\/div>'
-      +'<div style="font-size:12px;color:#888;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+msg.extracto+'<\/div>'
+      +'<div style="font-size:13px;font-weight:'+(msg.leido?'500':'700')+';color:'+(msg.leido?'var(--ink4)':'var(--ink)')+';margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+titulo+'<\/div>'
+      +'<div style="font-size:12px;color:var(--ink4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4">'+preview+'<\/div>'
       +botellaExtra
       +'<\/div><\/div>';
 
@@ -3638,6 +3671,25 @@ function openBuzonMsg(id){
   _syncNotifStorage();
   updateBuzonDot();
   updateInboxBadge();
+  renderBuzon();
+}
+function openBuzonDetail(id){
+  var msg = null;
+  for(var i=0;i<buzonMensajes.length;i++){
+    if(buzonMensajes[i].id===id){ msg=buzonMensajes[i]; msg.leido=true; break; }
+  }
+  if(!msg) return;
+  _syncNotifStorage(); updateBuzonDot(); updateInboxBadge();
+  var titulo = msg.asunto || msg.titulo || 'Mensaje';
+  var cuerpo = msg.cuerpo || msg.extracto || '';
+  var icono = msg.icon || '📬';
+  var remitente = msg.remitente || 'Velo';
+  var det = document.getElementById('buzonDetailContent');
+  if(det) det.innerHTML = '<div style="font-size:36px;margin-bottom:12px">'+icono+'<\/div>'
+    +'<div style="font-size:10px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">'+remitente+' · '+msg.fecha+'<\/div>'
+    +'<div style="font-size:20px;font-weight:700;color:var(--ink);margin-bottom:16px;line-height:1.3">'+titulo+'<\/div>'
+    +'<div style="font-size:14px;color:var(--ink2);line-height:1.75;white-space:pre-wrap">'+cuerpo+'<\/div>';
+  goTo('buzon-detail');
   renderBuzon();
 }
 

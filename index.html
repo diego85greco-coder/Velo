@@ -1963,14 +1963,14 @@
         </div>
       </div>
 
-      <!-- Mensaje 3: nueva función (no leído) -->
+      <!-- Mensaje 3: IA resumen bienestar -->
       <div class="inbox-msg unread" id="msg-3" onclick="openInboxMsg('msg-3','msg-detail-3')">
         <div class="inbox-dot"></div>
-        <div class="inbox-ic" style="background:linear-gradient(135deg,var(--lav3),var(--lav2))">🎙️</div>
+        <div class="inbox-ic" style="background:linear-gradient(135deg,var(--lav3),var(--lav2))">🤖</div>
         <div style="flex:1;min-width:0">
-          <div class="inbox-title">Novedad: Velo Podcast ya está disponible</div>
-          <div class="inbox-preview">Ahora podés compartir tu voz. Subí audios de historias, poemas y reflexiones para la comunidad...</div>
-          <div class="inbox-time">Hace 3 días</div>
+          <div class="inbox-title">Tu resumen de bienestar del primer mes</div>
+          <div class="inbox-preview">Llevás un mes con nosotros. Aquí tu resumen personalizado de bienestar...</div>
+          <div class="inbox-time">Hace 1 día</div>
         </div>
       </div>
 
@@ -3810,7 +3810,7 @@
             <span onclick="selMsgType(this,'💚')" style="padding:5px 11px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--sage2);background:var(--sage7);color:var(--sage2)">💚 Salud mental</span>
             <span onclick="selMsgType(this,'🌿')" style="padding:5px 11px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5)">🌿 Bienvenida</span>
             <span onclick="selMsgType(this,'🔔')" style="padding:5px 11px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5)">🔔 Novedad</span>
-            <span onclick="selMsgType(this,'🎙️')" style="padding:5px 11px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5)">🎙️ Podcast</span>
+            <span onclick="selMsgType(this,'🤖')" style="padding:5px 11px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5)">🤖 IA / Resumen</span>
             <span onclick="selMsgType(this,'💌')" style="padding:5px 11px;border-radius:100px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5)">💌 Especial</span>
           </div>
           <!-- Asunto y cuerpo -->
@@ -4441,47 +4441,40 @@
         <button id="buzonTabVelo" onclick="buzonTab('velo')" style="flex:1;padding:8px 0;border-radius:100px;border:none;font-size:12px;font-weight:700;font-family:'Jost',sans-serif;background:var(--sage2);color:#fff;cursor:pointer">De Velo</button>
         <button id="buzonTabPro" onclick="buzonTab('pro')" style="flex:1;padding:8px 0;border-radius:100px;border:1.5px solid var(--border);font-size:12px;font-weight:700;font-family:'Jost',sans-serif;background:#fff;color:var(--ink4);cursor:pointer">Profesionales</button>
       </div>
-      <!-- De Velo tab -->
+      <!-- De Velo tab — dynamic rendering via renderBuzon() -->
       <div id="buzonPanelVelo">
-        <div class="inbox-msg unread">
-          <div class="inbox-dot"></div>
-          <div class="inbox-ic" style="background:linear-gradient(135deg,var(--sage6),var(--sage7))">🌿</div>
-          <div style="flex:1;min-width:0">
-            <div class="inbox-title">Bienvenido/a a Velo</div>
-            <div class="inbox-preview">Gracias por unirte. Este es tu espacio seguro.</div>
-            <div class="inbox-time">Hace 2 días</div>
-          </div>
-        </div>
-        <div class="inbox-msg unread">
-          <div class="inbox-dot"></div>
-          <div class="inbox-ic" style="background:linear-gradient(135deg,var(--sky3),var(--sky2))">🕊️</div>
-          <div style="flex:1;min-width:0">
-            <div class="inbox-title">Tu sesión solidaria fue aprobada</div>
-            <div class="inbox-preview">Te asignamos un profesional. Pronto recibirás confirmación.</div>
-            <div class="inbox-time">Hoy</div>
-          </div>
-        </div>
-        <div class="inbox-msg">
-          <div class="inbox-ic" style="background:linear-gradient(135deg,var(--lav3),var(--lav2))">🔔</div>
-          <div style="flex:1;min-width:0">
-            <div class="inbox-title">Actualización de privacidad</div>
-            <div class="inbox-preview">Actualizamos nuestra política. Entrará en vigor el 1 de junio.</div>
-            <div class="inbox-time">Hace 1 semana</div>
-          </div>
+        <div id="buzonList"></div>
+        <div id="buzonEmpty" style="display:none;text-align:center;padding:40px 16px">
+          <div style="font-size:44px;margin-bottom:10px">📭</div>
+          <div style="font-size:16px;font-weight:700;color:var(--sage);margin-bottom:5px">Todo al día</div>
+          <div style="font-size:13px;color:var(--ink4)">No tenés mensajes nuevos de Velo.</div>
         </div>
       </div>
-      <!-- Profesionales tab (hidden by default) -->
+      <!-- Profesionales tab -->
       <div id="buzonPanelPro" style="display:none">
-        <div class="inbox-msg">
-          <div class="inbox-ic" style="background:linear-gradient(135deg,var(--sage6),var(--sage7))">👩‍⚕️</div>
-          <div style="flex:1;min-width:0">
-            <div class="inbox-title">Dra. Lucía Varela</div>
-            <div class="inbox-preview">Hola, confirmando tu sesión del viernes 23 a las 15:00. ¿Te viene bien?</div>
-            <div class="inbox-time">Hoy</div>
+        <div style="padding:10px 14px;background:rgba(255,255,255,.88);border:1px solid rgba(45,106,79,.08);border-radius:20px;margin-bottom:10px">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:44px;height:44px;border-radius:14px;background:var(--sage7);border:1px solid rgba(116,198,157,.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👩‍⚕️</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:10px;font-weight:700;color:var(--sage2);text-transform:uppercase">Dra. Lucía Varela</span><span style="font-size:10px;color:var(--ink5)">Hoy</span></div>
+              <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">Confirmación de sesión</div>
+              <div style="font-size:12px;color:var(--ink4)">Hola, confirmando tu sesión del viernes 23 a las 15:00. ¿Te viene bien?</div>
+              <button onclick="toast('💌','Función de respuesta próximamente disponible 🌿')" style="margin-top:9px;padding:6px 14px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.25);border-radius:100px;font-size:10px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:'Jost',sans-serif">Responder</button>
+            </div>
           </div>
-          <button onclick="toast('💌','Respondiendo...')" style="margin-left:8px;padding:6px 12px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.22);border-radius:100px;font-size:10px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:'Jost',sans-serif;flex-shrink:0">Responder</button>
         </div>
+        <div style="text-align:center;padding:20px 16px;color:var(--ink4);font-size:13px">Los mensajes de profesionales aparecen aquí cuando agendes una sesión. 🌿</div>
       </div>
+    </div>
+  </div>
+
+  <!-- ══ BUZÓN DETALLE ══ -->
+<div class="sc" id="buzon-detail" style="background:linear-gradient(160deg,var(--sage7),var(--cream2))">
+    <div style="padding:48px 20px 14px;flex-shrink:0">
+      <button onclick="goTo('buzon')" style="background:none;border:none;color:var(--sage3);font-family:'Jost',sans-serif;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px">← Buzón</button>
+    </div>
+    <div class="scrl" style="padding:0 20px 90px">
+      <div id="buzonDetailContent" style="padding-top:12px"></div>
     </div>
   </div>
 
