@@ -163,7 +163,8 @@ function initSplashTheme(){
   _tryLoadImg(document.getElementById('splashLogoImg'), logoPrimary, logoFallback);
   var logoImg = document.getElementById('splashLogoImg');
   if(logoImg){
-    logoImg.style.mixBlendMode = 'normal';
+    logoImg.style.background = 'transparent';
+    logoImg.style.mixBlendMode = isNight ? 'screen' : 'multiply';
     logoImg.style.filter = isNight
       ? 'drop-shadow(0 2px 18px rgba(255,255,255,.22))'
       : 'drop-shadow(0 2px 14px rgba(45,106,79,.25))';
@@ -554,7 +555,7 @@ function finishRegister(){
 }
 
 // Nav — include register + groups in noNav = false (show nav), but not for register
-var noNav=['splash','onboarding','pro-onboarding','guardian-chat','guardian-detail','post-chat','help-form','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','pro-session','pro-session-room','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending','contact','vela','podcast'];
+var noNav=['splash','onboarding','pro-onboarding','guardian-chat','guardian-detail','post-chat','help-form','login-user','login-pro','pro-reg','pro-register','register','diary','circles','aiSummary','pro-panel','pro-panel-agenda','pro-panel-pacientes','pro-panel-notas','pro-panel-finanzas','pro-panel-sesion-sol','pro-panel-perfil','pro-panel-config','pro-session','pro-session-room','inbox','inbox-detail','admin','admin-login','respira','caminar','pro-pending','contact','vela'];
 
 // ── MOOD CHECK-IN ────────────────────────────────────────
 var todayMood=null;
@@ -726,11 +727,11 @@ function handleAdminTap(){
   _adminTapLast=now;
   _adminTapCount++;
   if(_adminTapTimer) clearTimeout(_adminTapTimer);
-  if(_adminTapCount>=5){
+  if(_adminTapCount>=4){
     _adminTapCount=0;
     goTo('admin-login');
   } else {
-    if(_adminTapCount>=3) toast('👑',_adminTapCount+'/5 — seguí tocando el logo');
+    if(_adminTapCount>=2) toast('👑',_adminTapCount+'/4 — seguí tocando el logo');
     _adminTapTimer=setTimeout(function(){_adminTapCount=0;},3000);
   }
 }
