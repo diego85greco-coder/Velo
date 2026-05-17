@@ -1554,14 +1554,23 @@ function renderAdminContacts(){
   var msgs=JSON.parse(safeLS('get','velo_admin_contacts')||'[]');
   if(!msgs.length){list.innerHTML='<div style="text-align:center;padding:24px;color:var(--ink4);font-size:13px">No hay mensajes de contacto aún.</div>';return;}
   list.innerHTML=msgs.map(function(m){
-    return '<div style="background:rgba(255,255,255,.85);border:1.5px solid rgba(116,198,157,.2);border-radius:16px;padding:13px;margin-bottom:9px;'+(m.leido?'opacity:.7':'')+'">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'+
-        '<div style="font-size:11px;font-weight:700;color:var(--sage)">'+m.topic+'</div>'+
+    var body='Hola!%0A%0AGracias por escribirnos a Velo.%0A%0AEn respuesta a tu consulta sobre "'+encodeURIComponent(m.topic)+'"%3A%0A%0A[Escribí tu respuesta aquí]%0A%0ASaludos,%0AEquipo Velo%0A'+VELO_EMAIL;
+    var gmailUrl='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(m.email||'')+'&su='+encodeURIComponent('Re: '+m.topic+' — Velo')+'&body='+body+'&cc='+encodeURIComponent(VELO_EMAIL);
+    var mailtoUrl='mailto:'+encodeURIComponent(m.email||'')+'?subject='+encodeURIComponent('Re: '+m.topic+' — Velo')+'&body='+body+'&cc='+encodeURIComponent(VELO_EMAIL);
+    return '<div style="background:rgba(255,255,255,.85);border:1.5px solid rgba(116,198,157,.2);border-radius:16px;padding:13px;margin-bottom:9px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'+
+        '<div style="font-size:11px;font-weight:700;color:var(--sage2)">'+m.topic+'</div>'+
         '<div style="font-size:10px;color:var(--ink5)">'+m.fecha+'</div>'+
       '</div>'+
-      '<div style="font-size:12px;color:var(--ink3);line-height:1.55;margin-bottom:8px">'+m.mensaje+'</div>'+
-      (m.email?'<a href="mailto:'+m.email+'?subject=Re: '+encodeURIComponent(m.topic)+'&body=Hola%2C%0A%0AGracias por escribirnos.%0A%0AEl equipo de Velo." style="display:inline-block;padding:6px 14px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.3);border-radius:100px;font-size:11px;font-weight:700;color:var(--sage2);text-decoration:none">📧 Responder a '+m.email+'</a>':
-        '<div style="font-size:11px;color:var(--ink5);font-style:italic">Sin email de contacto</div>')+
+      (m.email?'<div style="font-size:10px;color:var(--ink4);margin-bottom:7px">📩 '+m.email+'</div>':'')+
+      '<div style="font-size:12px;color:var(--ink3);line-height:1.55;margin-bottom:10px;padding:9px 11px;background:rgba(0,0,0,.03);border-radius:10px">'+m.mensaje+'</div>'+
+      (m.email?
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+          '<a href="'+gmailUrl+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:linear-gradient(135deg,var(--sage),var(--sage2));border-radius:100px;font-size:11px;font-weight:700;color:#fff;text-decoration:none">📧 Responder por Gmail</a>'+
+          '<a href="'+mailtoUrl+'" style="display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:var(--sage7);border:1.5px solid rgba(116,198,157,.3);border-radius:100px;font-size:11px;font-weight:700;color:var(--sage2);text-decoration:none">✉️ Otro cliente</a>'+
+        '</div>'+
+        '<div style="font-size:10px;color:var(--ink5);margin-top:6px">Con copia a '+VELO_EMAIL+'</div>':
+        '<div style="font-size:11px;color:var(--ink5);font-style:italic">Sin email de contacto — respondé por el buzón de la app</div>')+
     '</div>';
   }).join('');
 }
@@ -2189,6 +2198,7 @@ function rejectPro(proId){
 
 // ── ADMIN ────────────────────────────────────────────────
 var ADMIN_EMAIL = 'Diego.catalan.greco@gmail.com';
+var VELO_EMAIL  = 'wearevelo.app@gmail.com';
 var ADMIN_PASS  = 'Portugaloporto2026!';
 // Note: Admin authentication must be validated server-side. Never store credentials in client JS.
 var adminAuthed = false;
