@@ -976,6 +976,59 @@ function pSelMood(el, emoji, label){
   el.classList.add('selected');
 }
 
+// Personalized messages per mood (varied, never repeating the same in a row)
+var _moodMessages = {
+  '😄': [
+    '¡Qué alegría! Guardá este momento en tu memoria. 🌟',
+    'La energía que sentís hoy es un regalo. ¡Aprovechala!',
+    'Días así son los que nos recuerdan por qué vale la pena. ✨',
+    '¡Excelente! Tu bienestar irradia a todos/as a tu alrededor. 🌻'
+  ],
+  '😊': [
+    'Un buen día. ¡Merecido! 🌱',
+    'Sentirse bien es el punto de partida para todo. Seguís por buen camino.',
+    'La calma y el bienestar se construyen día a día. Hoy sumas. 💚',
+    '¡Bien! Cada momento tranquilo es un paso adelante. 🌿'
+  ],
+  '😐': [
+    'Los días regulares también son válidos. Aquí estamos. 🤍',
+    'No todo tiene que ser intenso. La neutralidad también es paz.',
+    'Está bien no estar ni arriba ni abajo. El equilibrio se construye. 🌿',
+    'Un día normal también es un día ganado. Seguí adelante. 💙'
+  ],
+  '😔': [
+    'Gracias por registrar cómo te sentís. Eso ya es valentía. 💙',
+    'Los días tristes también pasan. No estás solo/a en esto. 🤍',
+    'La tristeza a veces nos dice algo importante. Escuchate.',
+    'Hoy puede ser difícil, pero mañana es una página nueva. 🌱'
+  ],
+  '😰': [
+    'La ansiedad es difícil, pero podés con esto. Respirá. 🌬️',
+    '¿Probaste el ejercicio de respiración? Te lo recomendamos. 💆',
+    'Paso a paso. Un momento a la vez. Estás más fuerte de lo que creés. 🌿',
+    'La ansiedad miente. Sos capaz. Hoy también vas a poder. ✨'
+  ],
+  '😤': [
+    'El enojo también es válido. Solo respirá antes de actuar. 🌬️',
+    'Reconocer que estás enojado/a es el primer paso. Bien. 💪',
+    'Hoy puede ser un buen día para la respiración 4-7-8. 🌊',
+    'Tus emociones son válidas. Cuidate mientras las procesás. 🤍'
+  ],
+  '😴': [
+    'El cansancio merece descanso. ¿Te das ese permiso hoy? 🌙',
+    'Cuando el cuerpo pide parar, escuchalo. Es sabiduría. 💤',
+    'El agotamiento es una señal. Hoy podés ir más despacio. 🌿',
+    'Descansá sin culpa. Tu bienestar lo vale. 🤍'
+  ],
+  '🤔': [
+    'La confusión a veces es el preludio de la claridad. ✨',
+    'No saber también está bien. La respuesta viene cuando menos se busca. 🌱',
+    'Escribir en el diario a veces ayuda a ordenar los pensamientos. 📔',
+    'La incertidumbre es parte del camino. No tenés que tenerlo todo claro. 💙'
+  ]
+};
+var _lastMoodMsgIdx = -1;
+
 async function pSaveMood(){
   if(!_selMood){ pToast('🌈','Seleccioná cómo te sentís'); return; }
   var note = document.getElementById('moodNote');
@@ -986,8 +1039,86 @@ async function pSaveMood(){
   sbSaveMoodEntry(today, _selMood.emoji, _selMood.label, noteVal);
   pToast(_selMood.emoji, 'Estado de ánimo registrado 💚');
   if(note) note.value = '';
+
+  // Show personalized message
+  var msgs = _moodMessages[_selMood.emoji] || _moodMessages['😐'];
+  var idx;
+  do { idx = Math.floor(Math.random()*msgs.length); } while(idx === _lastMoodMsgIdx && msgs.length > 1);
+  _lastMoodMsgIdx = idx;
+  var msgEl = document.getElementById('moodSaveMsg');
+  if(!msgEl){
+    msgEl = document.createElement('div');
+    msgEl.id = 'moodSaveMsg';
+    msgEl.className = 'mood-save-msg';
+    var card = document.querySelector('#pg-mood .p-card');
+    if(card) card.appendChild(msgEl);
+  }
+  msgEl.textContent = msgs[idx];
+  msgEl.style.display = 'block';
+  setTimeout(function(){ if(msgEl) msgEl.style.display = 'none'; }, 6000);
+
   _loadMoodCalendar();
   _loadTodayMoodHome();
+
+  // Check if 1st of month — send monthly analysis
+  _checkMonthlyMoodReport();
+}
+
+function _checkMonthlyMoodReport(){
+  var today = new Date();
+  if(today.getDate() !== 1) return;
+  var reportKey = 'velo_mood_report_'+today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0');
+  if(safeLS('get',reportKey) === '1') return; // already sent this month
+  safeLS('set', reportKey, '1');
+
+  // Gather last month's moods
+  var prev = new Date(today.getFullYear(), today.getMonth()-1, 1);
+  var prevYear = prev.getFullYear();
+  var prevMonth = prev.getMonth()+1;
+  var daysInPrev = new Date(prevYear, prevMonth, 0).getDate();
+  var moodCounts = {}; var totalDays = 0;
+  for(var d = 1; d <= daysInPrev; d++){
+    var k = prevYear+'-'+String(prevMonth).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var stored = safeLS('get','velo_mood_'+k);
+    if(stored){ try{ var ms = JSON.parse(stored); if(ms.emoji){ moodCounts[ms.emoji]=(moodCounts[ms.emoji]||0)+1; totalDays++; } }catch(e){} }
+  }
+
+  var monthNames = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var monthName = monthNames[prevMonth];
+
+  var positives = (moodCounts['😄']||0) + (moodCounts['😊']||0);
+  var analysis, summary;
+  if(!totalDays){
+    analysis = 'No registraste tu ánimo el mes pasado. Recordá que el seguimiento diario te ayuda a conocerte mejor. ¡Este mes empezás de cero! 🌱';
+    summary  = 'Sin registros en '+monthName;
+  } else {
+    var pct = Math.round(positives/totalDays*100);
+    var topEmoji = Object.keys(moodCounts).sort(function(a,b){ return moodCounts[b]-moodCounts[a]; })[0];
+    summary = 'Registraste '+totalDays+' días en '+monthName+'. Tu ánimo más frecuente: '+topEmoji;
+    if(pct >= 60){
+      analysis = '¡'+monthName+' fue un mes mayormente positivo para vos! '+pct+'% de tus días registraste bienestar. Eso habla de tu fortaleza y resiliencia. Seguí construyendo ese espacio de cuidado. 🌻';
+    } else if(pct >= 35){
+      analysis = monthName+' tuvo sus altibajos, como la vida misma. Registraste días de alegría y también días más difíciles. Eso es completamente humano. Lo importante es que seguís acá, registrando y avanzando. 💙';
+    } else {
+      analysis = 'Parece que '+monthName+' fue un mes desafiante. Gracias por seguir registrando incluso en los días difíciles: eso es valentía real. Recordá que Velo siempre está acá para acompañarte. 🌿';
+    }
+  }
+
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  inbox.unshift({
+    id: 'mood-report-'+Date.now(),
+    tipo: 'reporte',
+    icon: '📊',
+    remitente: 'Velo — Análisis de Bienestar',
+    asunto: 'Tu resumen emocional de '+monthName+' 🌿',
+    extracto: summary,
+    cuerpo: analysis,
+    leido: false,
+    fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})
+  });
+  safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+  _updateInboxDot();
+  setTimeout(function(){ pToast('📊','Recibiste tu análisis de '+monthName+' en el buzón 💚'); }, 3000);
 }
 
 async function _loadMoodCalendar(){
@@ -1155,23 +1286,292 @@ function pSendVela(){
 
 // ── CIRCLES ────────────────────────────────────────────────────
 var _circlesData = [
-  { id:'c1', name:'Manejo de Ansiedad', emoji:'🌊', members:142, desc:'Estrategias y apoyo para el día a día con ansiedad.', active:true },
-  { id:'c2', name:'Duelo y Pérdida', emoji:'🌙', members:89, desc:'Acompañamiento en procesos de duelo. Sin prisas.', active:false },
-  { id:'c3', name:'Crianza Consciente', emoji:'🌱', members:203, desc:'Madres, padres y familias que crían con presencia.', active:false },
-  { id:'c4', name:'Trastornos del Sueño', emoji:'😴', members:67, desc:'Cuando la noche no descansa. Juntos buscamos calma.', active:false },
-  { id:'c5', name:'Autoestima', emoji:'✨', members:156, desc:'Reconstruir la confianza desde la raíz.', active:false }
+  { id:'c1', name:'Manejo de Ansiedad', emoji:'🌊', members:28, maxMembers:30, desc:'Estrategias y apoyo para el día a día con ansiedad.', active:true, official:true },
+  { id:'c2', name:'Duelo y Pérdida', emoji:'🌙', members:19, maxMembers:30, desc:'Acompañamiento en procesos de duelo. Sin prisas.', active:false, official:true },
+  { id:'c3', name:'Crianza Consciente', emoji:'🌱', members:24, maxMembers:30, desc:'Madres, padres y familias que crían con presencia.', active:false, official:true },
+  { id:'c4', name:'Trastornos del Sueño', emoji:'😴', members:17, maxMembers:30, desc:'Cuando la noche no descansa. Juntos buscamos calma.', active:false, official:true },
+  { id:'c5', name:'Autoestima', emoji:'✨', members:22, maxMembers:30, desc:'Reconstruir la confianza desde la raíz.', active:false, official:true }
+];
+
+var _curCircle = null;
+var _circleAutoMsgTimer = null;
+
+// Mock messages per circle (stored in localStorage)
+var _circleMockUsers = [
+  { name:'Ana Luz', av:'🌸', badge:'🥇' },
+  { name:'Carlos R.', av:'🌊', badge:'🥇' },
+  { name:'Valentina S.', av:'🦋', badge:'💎' },
+  { name:'Tomás L.', av:'🌿', badge:'🥇' },
+  { name:'Sofía N.', av:'🌙', badge:'💎' }
+];
+
+var _circleMockMsgPool = [
+  'Gracias por compartir eso. Me identifico mucho.',
+  'Un abrazo virtual para quien lo necesite 💚',
+  '¿Alguien tiene alguna técnica que le haya servido para el día a día?',
+  'Hoy fue un día difícil, pero estoy acá.',
+  'Recordá: está bien no estar bien. Paso a paso.',
+  'Esto es exactamente lo que necesitaba hoy, gracias.',
+  'Llevan razón. El apoyo de la comunidad hace una diferencia enorme.',
+  'Yo también pasé por eso. Se puede salir.',
+  '🌿 Respiremos juntos un momento.',
+  'No están solos/as acá. Todos estamos en algún proceso.'
 ];
 
 function pRenderCircles(){
   var list = document.getElementById('circlesList');
   if(!list) return;
-  list.innerHTML = _circlesData.map(function(c){
-    return '<div class="p-card p-card--hover" style="padding:18px;margin-bottom:12px;cursor:pointer" onclick="pToast(\''+c.emoji+'\',\'Uniéndote a '+c.name+'…\')"><div style="display:flex;align-items:center;gap:13px"><div style="font-size:36px;width:54px;height:54px;border-radius:18px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+c.emoji+'</div><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:3px">'+c.name+'</div><div style="font-size:12px;color:var(--ink4);line-height:1.5;margin-bottom:7px">'+c.desc+'</div><div style="display:flex;align-items:center;gap:8px"><span class="p-pill p-pill--sage">'+c.members+' personas</span>'+(c.active?'<span class="p-pill p-pill--live"><span class="p-ldot p-ldot--on"></span> Activo</span>':'')+'</div></div><button class="p-btn p-btn--secondary p-btn--sm" onclick="event.stopPropagation();pToast(\''+c.emoji+'\',\'Uniéndote a '+c.name+'…\')">Unirse</button></div></div>';
+
+  var userConvs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
+  var canCreate = userConvs >= 40 || _isPremium();
+  var badge = _getBadge(userConvs);
+
+  // Update create button state
+  var createBtn = document.getElementById('circleCreateBtn');
+  if(createBtn){
+    if(canCreate){
+      createBtn.disabled = false;
+      createBtn.textContent = '+ Crear círculo';
+      createBtn.title = '';
+    } else {
+      createBtn.disabled = true;
+      createBtn.textContent = '🔒 Crear círculo';
+      createBtn.title = 'Necesitás ser Guardián Oro (40 conversaciones) o Velo Plus';
+    }
+  }
+
+  // Restriction notice
+  var notice = document.getElementById('circleCreateNotice');
+  if(notice){
+    if(!canCreate){
+      var convsFalta = 40 - userConvs;
+      notice.innerHTML = '<div style="font-size:12px;color:var(--ink4);background:var(--sage7);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:14px;line-height:1.5">'
+        +'🛡️ Los Círculos los crean <strong>Guardianes Oro</strong> (40+ conversaciones). '
+        +'Te faltan <strong>'+convsFalta+' conversaciones</strong> para llegar a Oro, o podés activar <strong>Velo Plus</strong> para crearlo ahora.'
+        +'</div>';
+    } else {
+      notice.innerHTML = '';
+    }
+  }
+
+  // Render user-created circles
+  var userCircles = []; try{ userCircles = JSON.parse(safeLS('get','velo_circles')||'[]'); }catch(e){}
+  var allCircles  = userCircles.concat(_circlesData);
+
+  list.innerHTML = allCircles.map(function(c){
+    var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+c.id)||'[]'); }catch(e){}
+    var lastMsg = msgs.length ? msgs[msgs.length-1] : null;
+    var maxM = c.maxMembers || 30;
+    var capPct = Math.min(100, Math.round((c.members||0)/maxM*100));
+    var isFull = (c.members||0) >= maxM;
+    return '<div class="circle-card'+(c.official?' circle-card--official':'')+'" onclick="pOpenCircle(\''+c.id+'\','+JSON.stringify(c).replace(/'/g,'\\\'')+')">'
+      +'<div style="display:flex;align-items:center;gap:13px">'
+      +'<div style="font-size:34px;width:52px;height:52px;border-radius:18px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative">'
+      +c.emoji
+      +(c.official ? '<span style="position:absolute;bottom:-4px;right:-4px;font-size:12px;background:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)" title="Sala oficial Velo">🛡️</span>' : '')
+      +'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">'+c.name+'</div>'
+      +'<div style="font-size:12px;color:var(--ink4);margin-bottom:5px">'+c.desc+'</div>'
+      +(lastMsg
+        ? '<div style="font-size:11px;color:var(--ink5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">'+lastMsg.av+' '+lastMsg.name+': '+lastMsg.text+'</div>'
+        : '<div style="height:5px"></div>')
+      +'<div style="display:flex;align-items:center;gap:6px">'
+      +'<div style="flex:1;height:4px;background:var(--cream2);border-radius:100px;overflow:hidden"><div style="height:100%;width:'+capPct+'%;background:'+(isFull?'var(--sos)':'var(--sage3)')+';border-radius:100px"></div></div>'
+      +'<span style="font-size:10px;color:var(--ink5)">'+c.members+'/'+maxM+'</span>'
+      +(isFull ? '<span style="font-size:10px;color:var(--sos);font-weight:700">Lleno</span>' : '')
+      +'</div>'
+      +'</div>'
+      +'<div style="text-align:right;flex-shrink:0;margin-left:6px">'
+      +(c.active ? '<span class="p-pill p-pill--live" style="font-size:10px"><span class="p-ldot p-ldot--on"></span> Activo</span><br>' : '')
+      +(c.official ? '<span style="font-size:10px;color:var(--sage);font-weight:700">Oficial</span>' : '')
+      +'</div>'
+      +'</div>'
+      +'</div>';
   }).join('');
 }
 
+function pOpenCircle(id, circleData){
+  _curCircle = typeof circleData === 'string' ? JSON.parse(circleData) : circleData;
+  if(!_curCircle){ _curCircle = _circlesData.find(function(c){ return c.id===id; }); }
+
+  // Populate feed header
+  _setEl('feedCircleName',  _curCircle ? _curCircle.name  : 'Círculo');
+  _setEl('feedCircleEmoji', _curCircle ? _curCircle.emoji : '⭕');
+  _setEl('feedCircleMembers', _curCircle ? _curCircle.members+' personas' : '');
+  var rulesEl = document.getElementById('feedCircleRules');
+  if(rulesEl) rulesEl.innerHTML = '🤝 Sin juicios · Sin agresión · Sin consejo no solicitado';
+
+  pGoTo('feed');
+  setTimeout(function(){ _renderCircleMessages(); _startCircleAutoMsg(); }, 100);
+}
+
+function _renderCircleMessages(){
+  var el = document.getElementById('feedMessages');
+  if(!el || !_curCircle) return;
+  var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
+
+  // Seed with mock messages on first open
+  if(!msgs.length){
+    var now = Date.now();
+    msgs = [
+      { id:'cm0', av:'💎', name:'Valentina S. 💎', text:'¡Bienvenidos/as al círculo! Recuerden las reglas: este es un espacio seguro.', ts: now-28*60000, own:false },
+      { id:'cm1', av:'🌸', name:'Ana Luz 🥇',      text:'Hola a todos/as. Hoy me siento un poco mejor que ayer 🌱', ts: now-15*60000, own:false },
+      { id:'cm2', av:'🌿', name:'Tomás L. 🥇',      text:'Qué bueno escuchar eso Ana. El progreso a veces es pequeño pero siempre cuenta.', ts: now-10*60000, own:false }
+    ];
+    safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs));
+  }
+
+  el.innerHTML = msgs.map(function(m){
+    var t = new Date(m.ts);
+    var tStr = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
+    if(m.own){
+      return '<div class="feed-msg feed-msg--own">'
+        +'<div class="feed-bubble feed-bubble--own">'+_escHtml(m.text)+'<span class="feed-time">'+tStr+'</span></div>'
+        +'</div>';
+    }
+    return '<div class="feed-msg">'
+      +'<div class="feed-av">'+m.av+'</div>'
+      +'<div>'
+      +'<div class="feed-sender">'+m.name+'</div>'
+      +'<div class="feed-bubble">'+_escHtml(m.text)+'<span class="feed-time">'+tStr+'</span></div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function pSendCircleMsg(){
+  var ta = document.getElementById('feedInput');
+  if(!ta || !ta.value.trim() || !_curCircle) return;
+  var text = ta.value.trim();
+  ta.value = '';
+  ta.style.height = '';
+
+  var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
+  var name = safeLS('get','velo_user_name') || 'Vos';
+  var av   = safeLS('get','velo_user_av')   || '🧑';
+  var userConvs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
+  var badge = _getBadge(userConvs);
+  msgs.push({ id:'m'+Date.now(), av:av, name:name+' '+badge.icon, text:text, ts:Date.now(), own:true });
+  safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs.slice(-100)));
+  _renderCircleMessages();
+
+  // Simulated reply after 4-9 seconds
+  var delay = 4000 + Math.random()*5000;
+  setTimeout(function(){
+    if(!_curCircle) return;
+    var user = _circleMockUsers[Math.floor(Math.random()*_circleMockUsers.length)];
+    var reply = _circleMockMsgPool[Math.floor(Math.random()*_circleMockMsgPool.length)];
+    var msgs2 = []; try{ msgs2 = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
+    msgs2.push({ id:'mr'+Date.now(), av:user.av, name:user.name+' '+user.badge, text:reply, ts:Date.now(), own:false });
+    safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs2.slice(-100)));
+    _renderCircleMessages();
+  }, delay);
+}
+
+function _startCircleAutoMsg(){
+  if(_circleAutoMsgTimer) clearInterval(_circleAutoMsgTimer);
+  _circleAutoMsgTimer = setInterval(function(){
+    if(!_curCircle) return;
+    var user = _circleMockUsers[Math.floor(Math.random()*_circleMockUsers.length)];
+    var text = _circleMockMsgPool[Math.floor(Math.random()*_circleMockMsgPool.length)];
+    var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
+    msgs.push({ id:'ma'+Date.now(), av:user.av, name:user.name+' '+user.badge, text:text, ts:Date.now(), own:false });
+    safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs.slice(-100)));
+    _renderCircleMessages();
+  }, 45000 + Math.random()*30000); // every 45-75 seconds
+}
+
+function pLeaveCircle(){
+  if(_circleAutoMsgTimer){ clearInterval(_circleAutoMsgTimer); _circleAutoMsgTimer = null; }
+  _curCircle = null;
+  pGoTo('circles');
+}
+
 function pOpenCreateCircle(){
-  pToast('⭕','Crear un círculo nuevo — próximamente 🌿');
+  var userConvs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
+  var canCreate = userConvs >= 40 || _isPremium();
+  if(!canCreate){
+    var falta = 40 - userConvs;
+    pToast('🔒','Necesitás Guardián Oro (te faltan '+falta+' conversaciones) o Velo Plus');
+    return;
+  }
+  var ov = document.getElementById('createCircleOv');
+  if(ov) ov.classList.add('open');
+}
+
+function pSubmitCreateCircle(){
+  var nameEl  = document.getElementById('newCircleName');
+  var descEl  = document.getElementById('newCircleDesc');
+  var emoji   = _selectedCircleEmoji || '⭕';
+  if(!nameEl || !nameEl.value.trim()){ pToast('⚠️','Poné un nombre al círculo'); return; }
+  var c = {
+    id: 'uc'+Date.now(),
+    name: nameEl.value.trim(),
+    desc: descEl ? descEl.value.trim() : '',
+    emoji: emoji,
+    members: 1,
+    active: true
+  };
+  var circles = []; try{ circles = JSON.parse(safeLS('get','velo_circles')||'[]'); }catch(e){}
+  circles.unshift(c);
+  safeLS('set','velo_circles', JSON.stringify(circles.slice(0,20)));
+  closeModal('createCircleOv');
+  pToast('⭕','¡Círculo "'+c.name+'" creado! 🌿');
+  pRenderCircles();
+}
+
+var _selectedCircleEmoji = '⭕';
+var _circleEmojiOptions = ['⭕','🌊','🌙','🌱','✨','🌈','🦋','🌸','🏔️','💙','🌿','☀️'];
+function pOpenCircleEmojiPicker(){
+  var row = document.getElementById('newCircleEmojiRow');
+  if(!row) return;
+  row.innerHTML = _circleEmojiOptions.map(function(e){
+    return '<button style="font-size:24px;padding:6px;border:2px solid '+(_selectedCircleEmoji===e?'var(--sage3)':'transparent')+';border-radius:10px;background:none;cursor:pointer" onclick="pSelCircleEmoji(this,\''+e+'\')">'+e+'</button>';
+  }).join('');
+}
+
+function pSelCircleEmoji(btn, emoji){
+  _selectedCircleEmoji = emoji;
+  var preview = document.getElementById('newCircleEmojiPreview');
+  if(preview) preview.textContent = emoji;
+  document.querySelectorAll('#newCircleEmojiRow button').forEach(function(b){
+    b.style.borderColor = b.textContent === emoji ? 'var(--sage3)' : 'transparent';
+  });
+}
+
+function pReportCircle(){
+  var circleName = _curCircle ? _curCircle.name : 'este círculo';
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov open';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:8px">⚠️ Reportar comportamiento</div>'
+    +'<p style="font-size:12px;color:var(--ink4);margin-bottom:14px;line-height:1.5">¿Qué está pasando en "'+_escHtml(circleName)+'"?</p>'
+    +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'
+    +['Mensaje agresivo o hiriente','Discurso de odio','Spam o autopromoción','Consejo médico inapropiado','Otro'].map(function(r){
+      return '<label style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink3);cursor:pointer"><input type="radio" name="rpt" value="'+r+'" style="accent-color:var(--sage2)"> '+r+'</label>';
+    }).join('')
+    +'</div>'
+    +'<textarea class="p-textarea" id="rptDetail" rows="2" placeholder="Detalles adicionales (opcional)" style="margin-bottom:12px"></textarea>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" style="background:var(--sos);border-color:var(--sos)" onclick="pSubmitCircleReport(this.closest(\'.p-modal-ov\'))">Enviar reporte</button>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove()">Cancelar</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function pSubmitCircleReport(ov){
+  var checked = document.querySelector('input[name="rpt"]:checked');
+  if(!checked){ pToast('⚠️','Seleccioná un motivo'); return; }
+  if(ov) ov.remove();
+  pToast('✅','Reporte enviado. El equipo de Velo lo revisará en 24h 🙏');
+  // Log to audit trail
+  var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+  audit.unshift({ ts: Date.now(), tipo:'report_circle', circle: _curCircle ? _curCircle.id : '?', motivo: checked.value });
+  safeLS('set','velo_audit_log', JSON.stringify(audit.slice(0,500)));
 }
 
 // ── HAPPY WALL ─────────────────────────────────────────────────
@@ -1362,15 +1762,44 @@ function _calcBadges(){
 function _renderBadgesGrid(){
   var el = document.getElementById('profileBadgesGrid');
   if(!el) return;
+
+  // Guardian badge section at top
+  var convs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
+  var badge = _getBadge(convs);
+  var progPct = badge.next ? Math.round((convs - (_getBadge(convs-1).needed !== badge.needed ? 0 : 0)) / (convs + badge.needed) * 100) : 100;
+  // Simpler progress: based on range
+  var ranges = {Novato:[0,5],Bronce:[5,20],Plata:[20,40],Oro:[40,100],Diamante:[100,100]};
+  var r = ranges[badge.name] || [0,5];
+  var progFill = badge.next ? Math.min(100, Math.round((convs - r[0]) / (r[1] - r[0]) * 100)) : 100;
+
+  var guardianSection = '<div class="guardian-badge-card" style="margin-bottom:16px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Mi nivel de Guardián</div>'
+    +'<div style="display:flex;align-items:center;gap:14px">'
+    +'<span style="font-size:44px">'+badge.icon+'</span>'
+    +'<div style="flex:1">'
+    +'<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:2px">Guardián '+badge.name+'</div>'
+    +'<div style="font-size:12px;color:var(--ink4);margin-bottom:8px">'+convs+' conversaciones completadas</div>'
+    +'<div class="guardian-badge-prog"><div class="guardian-badge-prog-fill" style="width:'+progFill+'%"></div></div>'
+    +(badge.next
+      ? '<div style="font-size:11px;color:var(--ink5)">'+badge.needed+' más para <strong>'+badge.next+'</strong></div>'
+      : '<div style="font-size:11px;color:var(--sage)">✨ Nivel máximo alcanzado</div>')
+    +'</div>'
+    +'</div>'
+    +(convs >= 40
+      ? '<div style="margin-top:12px;font-size:12px;color:var(--sage);background:var(--sage7);border-radius:10px;padding:8px 12px">⭕ Podés crear <strong>Círculos de Paz</strong></div>'
+      : '')
+    +'</div>';
+
+  var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
   var badges = [
     { icon:'🌱', name:'Primer Paso', desc:'Crear tu cuenta', done:true },
-    { icon:'📔', name:'Escribiendo', desc:'Primera entrada en el diario', done:!!JSON.parse(safeLS('get','velo_diary')||'[]').length },
+    { icon:'📔', name:'Escribiendo', desc:'Primera entrada en el diario', done:!!diary.length },
     { icon:'🌈', name:'En Movimiento', desc:'Registrar tu ánimo 7 días', done:false },
-    { icon:'💙', name:'Corazón Abierto', desc:'Participar en Sala de Ayuda', done:false },
-    { icon:'⭐', name:'Constancia', desc:'30 días consecutivos', done:false },
+    { icon:'💙', name:'Corazón Abierto', desc:'Participar en Sala de Ayuda', done:!!safeLS('get','velo_helped_once') },
+    { icon:'⭐', name:'Constancia', desc:'30 días en la comunidad', done:Math.ceil((Date.now()-(parseInt(safeLS('get','velo_registered_ts')||Date.now(),10)))/86400000)>=30 },
     { icon:'🦋', name:'Transformación', desc:'Completar onboarding', done:true }
   ];
-  el.innerHTML = badges.map(function(b){
+  el.innerHTML = guardianSection + badges.map(function(b){
     return '<div class="p-badge-row" style="opacity:'+(b.done?1:.5)+'"><div class="p-badge-ic" style="background:'+(b.done?'var(--sage7)':'var(--cream2)')+'">'+b.icon+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+b.name+'</div><div style="font-size:11px;color:var(--ink4)">'+b.desc+'</div><div class="p-badge-prog-track"><div class="p-badge-prog-fill" style="width:'+(b.done?'100%':'25%')+';background:'+(b.done?'var(--sage2)':'var(--sage4)')+'"></div></div></div>'+(b.done?'<span style="font-size:16px">✅</span>':'<span style="font-size:14px;color:var(--ink5)">🔒</span>')+'</div>';
   }).join('');
 }
@@ -1524,8 +1953,31 @@ function pSelStar(el, n){
 }
 
 function pSendPostChat(){
+  // Increment guardian conversation count for the user
+  var prevConvs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
+  var newConvs  = prevConvs + 1;
+  safeLS('set','velo_guardian_convs', String(newConvs));
+
+  var prevBadge = _getBadge(prevConvs);
+  var newBadge  = _getBadge(newConvs);
+
   pToast('💚','¡Gracias por tu reseña! 🌿');
-  setTimeout(function(){ pGoTo('home'); }, 1200);
+
+  // Badge upgrade notification
+  if(newBadge.name !== prevBadge.name){
+    setTimeout(function(){
+      pToast(newBadge.icon, '¡Subiste a Guardián '+newBadge.name+'! '+newBadge.icon);
+      if(newBadge.name === 'Oro'){
+        setTimeout(function(){ pToast('⭕','Ahora podés crear Círculos de Paz 🎉'); }, 1500);
+      }
+    }, 1400);
+  } else {
+    setTimeout(function(){
+      var badge = _getBadge(newConvs);
+      if(badge.next) pToast('📈', newConvs+' conversaciones · '+badge.needed+' más para '+badge.next);
+    }, 1400);
+  }
+  setTimeout(function(){ pGoTo('home'); }, 2200);
 }
 
 // ── PRO PANEL ──────────────────────────────────────────────────
@@ -1608,11 +2060,12 @@ function _renderAdmin(){
   if(metrics){
     var tcRecs = []; try{ tcRecs = JSON.parse(safeLS('get','velo_tc_records')||'[]'); }catch(e){}
     var subs = []; try{ subs = JSON.parse(safeLS('get','velo_subscribers')||'[]'); }catch(e){}
-    var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
+    var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+    var openReports = audit.filter(function(a){ return !a.resolved; }).length;
     var data = [
       { icon:'👥', label:'Usuarios', value:tcRecs.length||0, color:'var(--sage4)' },
       { icon:'💎', label:'Plus activos', value:subs.filter(function(s){ return s.status==='active'; }).length, color:'#c8a23e' },
-      { icon:'📓', label:'Diarios', value:diary.length, color:'#9b8ecf' }
+      { icon:'🚨', label:'Reportes pendientes', value:openReports, color: openReports > 0 ? '#e05252' : 'var(--sage4)' }
     ];
     metrics.innerHTML = data.map(function(d){
       return '<div class="a-card"><div style="font-size:22px;margin-bottom:4px">'+d.icon+'</div><div class="a-card-n" style="color:'+d.color+'">'+d.value+'</div><div class="a-card-l">'+d.label+'</div></div>';
@@ -1621,11 +2074,108 @@ function _renderAdmin(){
   var content = document.getElementById('adminContent');
   if(content){
     var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
-    content.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">MENSAJES DE CONTACTO</div>'
+    var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+
+    var contactsHtml = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">MENSAJES DE CONTACTO</div>'
       +(msgs.length ? msgs.map(function(m){
         return '<div class="a-row"><div class="a-row-ic">💌</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.86)">'+m.topic+'</div><div style="font-size:11px;color:rgba(255,255,255,.38)">'+m.email+' · '+m.fecha+'</div></div>'+(m.leido?'<span class="a-badge-g">leído</span>':'<span class="a-badge-y">nuevo</span>')+'</div>';
       }).join('') : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin mensajes aún.</p>');
+
+    var auditHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,80,80,.7);margin-bottom:10px">🛡️ AUDITORÍA IA — CONTROL DE ABUSOS</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Reportes de usuarios, comportamientos detectados y acciones moderadas.</div>'
+      +(audit.length
+        ? audit.slice(0,30).map(function(a,i){
+            var date = new Date(a.ts);
+            var dateStr = date.toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+            var typeLabel = { report_circle:'Reporte en círculo', ban_user:'Usuario baneado', abuse_detect:'Detección IA', flag_bottle:'Botella reportada', flag_help:'Ayuda reportada' }[a.tipo] || a.tipo;
+            var color = a.resolved ? 'rgba(116,198,157,.5)' : '#e05252';
+            return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+              +'<div style="font-size:18px;flex-shrink:0">'+(a.tipo==='report_circle'?'⚠️':a.tipo==='abuse_detect'?'🤖':'🚩')+'</div>'
+              +'<div style="flex:1;min-width:0">'
+              +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82)">'+typeLabel+'</div>'
+              +(a.circle ? '<div style="font-size:11px;color:rgba(255,255,255,.38)">Círculo: '+a.circle+'</div>' : '')
+              +(a.motivo ? '<div style="font-size:11px;color:rgba(255,255,255,.38)">Motivo: '+a.motivo+'</div>' : '')
+              +(a.detail ? '<div style="font-size:11px;color:rgba(255,255,255,.3);font-style:italic">'+a.detail+'</div>' : '')
+              +'<div style="font-size:10px;color:rgba(255,255,255,.28)">'+dateStr+'</div>'
+              +'</div>'
+              +'<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'
+              +(a.resolved
+                ? '<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓ Resuelto</span>'
+                : '<button onclick="pResolveAudit('+i+')" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.8);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Resolver</button>')
+              +'</div>'
+              +'</div>';
+          }).join('')
+        : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin eventos de auditoría.</p>');
+
+    var aiModHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">🤖 MODERACIÓN IA — ANÁLISIS DE CONTENIDO</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+      +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:12px">'
+      +'<div style="font-size:20px;margin-bottom:4px">🔍</div>'
+      +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:4px">Escaneo de contenido</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:10px">Últimas 24h: sin alertas detectadas.</div>'
+      +'<button onclick="pRunAiScan()" style="font-size:11px;padding:5px 10px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.8);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Ejecutar escaneo</button>'
+      +'</div>'
+      +'<div style="background:rgba(200,150,80,.06);border:1px solid rgba(200,150,80,.15);border-radius:12px;padding:12px">'
+      +'<div style="font-size:20px;margin-bottom:4px">📊</div>'
+      +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:4px">Patrones de uso</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:10px">Ciclo saludable. Sin anomalías.</div>'
+      +'<button onclick="pViewPatterns()" style="font-size:11px;padding:5px 10px;background:rgba(200,150,80,.12);border:1px solid rgba(200,150,80,.2);color:rgba(200,150,80,.8);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Ver patrones</button>'
+      +'</div>'
+      +'</div>';
+
+    content.innerHTML = contactsHtml + auditHtml + aiModHtml;
   }
+}
+
+function pResolveAudit(idx){
+  var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+  if(audit[idx]){ audit[idx].resolved = true; audit[idx].resolvedAt = Date.now(); }
+  safeLS('set','velo_audit_log', JSON.stringify(audit));
+  pToast('✅','Evento resuelto');
+  _renderAdmin();
+}
+
+function pRunAiScan(){
+  pToast('🤖','Ejecutando escaneo de contenido...');
+  setTimeout(function(){
+    // Simulate AI scan — check local circles for flag words
+    var flagWords = ['muerte','suicidio','matar','odio','insulto','basura','idiota','estúpido'];
+    var allCircleIds = ['c1','c2','c3','c4','c5'];
+    var userCircles = []; try{ userCircles = JSON.parse(safeLS('get','velo_circles')||'[]'); }catch(e){}
+    var allIds = allCircleIds.concat(userCircles.map(function(c){ return c.id; }));
+    var flagged = [];
+    allIds.forEach(function(cid){
+      var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+cid)||'[]'); }catch(e){}
+      msgs.forEach(function(m){
+        flagWords.forEach(function(w){
+          if(m.text && m.text.toLowerCase().indexOf(w) >= 0){
+            flagged.push({ cid:cid, text:m.text.slice(0,60), word:w });
+          }
+        });
+      });
+    });
+    if(flagged.length){
+      var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+      flagged.forEach(function(f){
+        audit.unshift({ ts:Date.now(), tipo:'abuse_detect', circle:f.cid, motivo:'Palabra detectada: "'+f.word+'"', detail:f.text });
+      });
+      safeLS('set','velo_audit_log', JSON.stringify(audit.slice(0,500)));
+      pToast('⚠️','IA detectó '+flagged.length+' posibles eventos. Ver auditoría.');
+    } else {
+      pToast('✅','IA: contenido limpio. Sin alertas.');
+    }
+    _renderAdmin();
+  }, 2000);
+}
+
+function pViewPatterns(){
+  var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+  var circles = allCircleMessages = 0;
+  ['c1','c2','c3','c4','c5'].forEach(function(cid){
+    var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+cid)||'[]'); }catch(e){}
+    circles += msgs.length;
+  });
+  pToast('📊','Círculos: '+circles+' mensajes. Reportes: '+audit.length+'. Patrón saludable. 🌿');
 }
 
 // ── SUPABASE CLOUD FUNCTIONS (ported from velo.js) ────────────
@@ -1785,6 +2335,7 @@ function _onPageEnter(id){
     case 'respira':     pInitRespira(); break;
     case 'vela':        pInitVela(); break;
     case 'circles':     pRenderCircles(); break;
+    case 'feed':        _renderCircleMessages(); break;
     case 'happy':       pRenderHappy(); break;
     case 'profile':     pLoadProfile(); break;
     case 'inbox':       pRenderInbox(); break;

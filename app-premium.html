@@ -951,11 +951,39 @@
                 <div class="p-label">Comunidad</div>
                 <h2 class="p-title">Círculos de Paz</h2>
               </div>
-              <button class="p-btn p-btn--primary p-btn--sm" onclick="pOpenCreateCircle()">+ Crear círculo</button>
+              <button class="p-btn p-btn--primary p-btn--sm" id="circleCreateBtn" onclick="pOpenCreateCircle()">+ Crear círculo</button>
             </div>
-            <p style="font-size:12px;color:var(--ink4);margin-bottom:18px;font-style:italic">Sin likes, solo conexión genuina.</p>
+            <p style="font-size:12px;color:var(--ink4);margin-bottom:10px;font-style:italic">Espacios seguros de escucha. Sin likes, solo conexión genuina. Máx. 30 personas por círculo.</p>
+            <div id="circleCreateNotice"></div>
             <div id="circlesList"></div>
           </div>
+        </div>
+      </div>
+
+      <!-- ══ FEED (Circle Chat) ════════════════════════════════════ -->
+      <div class="p-page" id="pg-feed" style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+        <div class="feed-header">
+          <button class="p-back-btn" onclick="pLeaveCircle()">←</button>
+          <div class="feed-header-info">
+            <span id="feedCircleEmoji" style="font-size:26px">⭕</span>
+            <div style="min-width:0">
+              <div id="feedCircleName" style="font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Círculo</div>
+              <div id="feedCircleMembers" style="font-size:11px;color:var(--ink4)"></div>
+            </div>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+            <div id="feedCircleRules" style="font-size:10px;color:var(--ink4);text-align:right;max-width:160px;line-height:1.4;display:none" class="d-md-block"></div>
+            <button style="background:rgba(192,48,40,.08);border:1.5px solid rgba(192,48,40,.15);color:rgba(192,48,40,.6);font-size:11px;font-weight:700;padding:5px 10px;border-radius:10px;cursor:pointer;font-family:'Jost',sans-serif" onclick="pReportCircle()" title="Reportar comportamiento">⚠️ Reportar</button>
+          </div>
+        </div>
+        <div id="feedCircleRulesBanner" style="background:rgba(116,198,157,.12);border-bottom:1px solid rgba(116,198,157,.2);padding:6px 20px;font-size:11px;color:var(--sage);font-style:italic;flex-shrink:0">
+          🤝 Sin juicios · Sin agresión · Sin consejo no solicitado · Espacio seguro
+        </div>
+        <div id="feedMessages" class="feed-messages"></div>
+        <div class="feed-input-area">
+          <textarea id="feedInput" class="feed-input" placeholder="Escribí algo con amor..." rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendCircleMsg()}"></textarea>
+          <button class="feed-send-btn" onclick="pSendCircleMsg()">↑</button>
         </div>
       </div>
 
@@ -1312,6 +1340,35 @@
       </div>
 
     </div><!-- /p-pages -->
+
+    <!-- ── CREATE CIRCLE MODAL ──────────────────────────────── -->
+    <div class="p-modal-ov" id="createCircleOv">
+      <div class="p-sheet">
+        <div class="p-sheet-handle"></div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:6px">Crear Círculo de Paz</div>
+        <p style="font-size:12px;color:var(--ink4);margin-bottom:14px;line-height:1.5">Creá un espacio seguro para tu comunidad. Máximo 30 participantes.</p>
+        <div class="p-field">
+          <label class="p-field-label">Emoji del círculo</label>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span id="newCircleEmojiPreview" style="font-size:32px">⭕</span>
+            <button class="p-btn p-btn--secondary p-btn--sm" onclick="pOpenCircleEmojiPicker()">Cambiar emoji</button>
+          </div>
+          <div id="newCircleEmojiRow" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px"></div>
+        </div>
+        <div class="p-field">
+          <label class="p-field-label">Nombre del círculo</label>
+          <input class="p-input" type="text" id="newCircleName" placeholder="Ej: Bienestar Cotidiano" maxlength="40">
+        </div>
+        <div class="p-field">
+          <label class="p-field-label">Descripción breve (opcional)</label>
+          <textarea class="p-textarea" id="newCircleDesc" rows="2" placeholder="¿De qué va este espacio?" maxlength="120"></textarea>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSubmitCreateCircle()">⭕ Crear círculo</button>
+          <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('createCircleOv')">Cancelar</button>
+        </div>
+      </div>
+    </div>
 
     <!-- BOTTOM NAV (mobile) -->
     <nav class="p-bottomnav" id="pBottomnav" style="display:none">

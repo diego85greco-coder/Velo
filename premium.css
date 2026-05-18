@@ -1915,3 +1915,229 @@ a { text-decoration: none; color: inherit; }
   background: rgba(200,165,100,.18); color: #C8A560;
   box-shadow: 0 1px 6px rgba(0,0,0,.2);
 }
+
+/* ── 58. CÍRCULOS — CIRCLE CARDS ─────────────────────────────────── */
+.circle-card {
+  background: rgba(255,255,255,.78);
+  backdrop-filter: blur(14px) saturate(1.2);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast);
+}
+.circle-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(45,106,79,.10);
+  border-color: var(--sage4);
+}
+.circle-card--official {
+  border-color: rgba(116,198,157,.35);
+  background: rgba(255,255,255,.85);
+}
+
+/* ── 59. FEED — CIRCLE CHAT ──────────────────────────────────────── */
+#pg-feed {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.feed-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(20px) saturate(1.3);
+  border-bottom: 1.5px solid var(--border);
+  flex-shrink: 0;
+  z-index: 10;
+}
+.feed-header-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.feed-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: transparent;
+}
+.feed-messages::-webkit-scrollbar { width: 4px; }
+.feed-messages::-webkit-scrollbar-thumb { background: rgba(116,198,157,.25); border-radius: 2px; }
+
+.feed-msg {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 76%;
+  align-self: flex-start;
+}
+.feed-msg--own {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+  max-width: 76%;
+}
+.feed-av {
+  font-size: 22px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--sage7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.feed-sender {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink4);
+  margin-bottom: 3px;
+  padding-left: 2px;
+}
+.feed-bubble {
+  background: rgba(255,255,255,.88);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid var(--border);
+  border-radius: 18px 18px 18px 4px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.55;
+  word-break: break-word;
+  position: relative;
+}
+.feed-bubble--own {
+  background: var(--sage2);
+  color: #fff;
+  border-color: transparent;
+  border-radius: 18px 18px 4px 18px;
+}
+.feed-time {
+  display: block;
+  font-size: 9px;
+  color: var(--ink5);
+  text-align: right;
+  margin-top: 4px;
+  opacity: .7;
+}
+.feed-bubble--own .feed-time { color: rgba(255,255,255,.7); }
+
+.feed-input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px 18px 16px;
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(20px) saturate(1.2);
+  border-top: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+.feed-input {
+  flex: 1;
+  min-height: 40px;
+  max-height: 96px;
+  resize: none;
+  border: 1.5px solid var(--border2);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-family: 'Jost', sans-serif;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: rgba(255,255,255,.9);
+  outline: none;
+  transition: border-color var(--t-fast);
+  overflow-y: auto;
+}
+.feed-input:focus { border-color: var(--sage3); }
+.feed-send-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: var(--sage2);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--t-fast), transform var(--t-fast);
+}
+.feed-send-btn:hover { background: var(--sage); transform: scale(1.05); }
+.feed-report-btn {
+  font-size: 11px;
+  color: rgba(192,48,40,.5);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  margin-top: 4px;
+  display: block;
+  font-family: 'Jost', sans-serif;
+  transition: color var(--t-fast);
+}
+.feed-report-btn:hover { color: var(--sos); }
+.feed-system-msg {
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink5);
+  padding: 4px 12px;
+  background: rgba(0,0,0,.04);
+  border-radius: 100px;
+  align-self: center;
+  font-style: italic;
+}
+
+/* ── 60. GUARDIAN BADGE LEVEL ─────────────────────────────────────── */
+.guardian-badge-card {
+  background: linear-gradient(135deg, rgba(255,255,255,.9), rgba(245,248,244,.85));
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.guardian-badge-icon {
+  font-size: 44px;
+  text-align: center;
+  display: block;
+  margin-bottom: 8px;
+}
+.guardian-badge-prog {
+  height: 8px;
+  background: var(--cream2);
+  border-radius: 100px;
+  overflow: hidden;
+  margin: 10px 0 6px;
+}
+.guardian-badge-prog-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--sage3), var(--sage));
+  transition: width .6s ease;
+}
+
+/* ── 61. MOOD MESSAGES (personalized) ────────────────────────────── */
+.mood-save-msg {
+  font-size: 13px;
+  color: var(--sage);
+  font-style: italic;
+  text-align: center;
+  padding: 10px 14px;
+  background: var(--sage7);
+  border-radius: 14px;
+  margin-top: 10px;
+  line-height: 1.5;
+  animation: fadeIn .5s ease;
+}
