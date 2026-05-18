@@ -383,7 +383,7 @@
             <button class="p-btn p-btn--primary p-btn--lg p-btn--full" id="regBtn" onclick="pSignUp()" style="margin-bottom:12px">
               <span id="regBtnTxt">Crear mi cuenta ✨</span>
             </button>
-            <p style="font-size:11px;color:var(--ink5);text-align:center;line-height:1.55">Al registrarte aceptás nuestros <span style="color:var(--sage3);cursor:pointer">Términos y Condiciones</span> y <span style="color:var(--sage3);cursor:pointer">Política de Privacidad</span></p>
+            <p style="font-size:11px;color:var(--ink5);text-align:center;line-height:1.55">Al registrarte aceptás nuestros <span style="color:var(--sage3);cursor:pointer;text-decoration:underline" onclick="pShowTerms()">Términos y Condiciones</span> y <span style="color:var(--sage3);cursor:pointer;text-decoration:underline" onclick="pShowPrivacy()">Política de Privacidad</span></p>
             <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
               <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('landing')" style="font-size:12px">← Volver al inicio</button>
             </div>
@@ -575,28 +575,45 @@
                   <p style="font-size:13px;color:var(--ink3);line-height:1.6;font-family:'Cormorant Garamond',serif;font-style:italic" id="gdBio">Bio del guardián</p>
                   <div class="gd-stat-grid">
                     <div class="gd-stat"><div style="font-size:18px;font-weight:800;color:var(--sage);line-height:1" id="gdRecommend">0</div><div style="font-size:9px;color:var(--ink5);text-transform:uppercase;letter-spacing:.3px">Recomend.</div></div>
-                    <div class="gd-stat"><div style="font-size:18px;font-weight:800;color:var(--sage);line-height:1" id="gdSessions">0</div><div style="font-size:9px;color:var(--ink5);text-transform:uppercase;letter-spacing:.3px">Sesiones</div></div>
+                    <div class="gd-stat"><div style="font-size:18px;font-weight:800;color:var(--sage);line-height:1" id="gdConvs">0</div><div style="font-size:9px;color:var(--ink5);text-transform:uppercase;letter-spacing:.3px">Conversaciones</div></div>
                     <div class="gd-stat"><div style="font-size:18px;font-weight:800;color:var(--sage);line-height:1" id="gdRating">5.0</div><div style="font-size:9px;color:var(--ink5);text-transform:uppercase;letter-spacing:.3px">Rating</div></div>
                   </div>
                 </div>
+                <!-- Badge level -->
+                <div id="gdBadge"></div>
               </div>
               <div class="gd-right">
                 <div class="p-card" style="padding:20px;margin-bottom:14px">
-                  <div class="p-label p-label-sage" style="margin-bottom:12px">Iniciar conexión</div>
-                  <p style="font-size:13px;color:var(--ink3);line-height:1.55;margin-bottom:14px" id="gdDesc">Descripción del guardián.</p>
+                  <div class="p-label p-label-sage" style="margin-bottom:8px">Sobre este guardián/a</div>
+                  <p style="font-size:13px;color:var(--ink3);line-height:1.55;margin-bottom:12px;font-style:italic" id="gdDesc">Descripción del guardián.</p>
                   <div id="gdMoodTags" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
+                  <p style="font-size:12px;color:var(--ink4);margin-bottom:14px;line-height:1.5">Los guardianes son miembros de la comunidad Velo que ofrecen escucha activa y acompañamiento entre pares. No son profesionales de salud mental.</p>
                   <button class="p-btn p-btn--primary p-btn--lg p-btn--full" id="gdAskBtn" onclick="pAskGuardian()">
-                    💬 Iniciar conversación
+                    💚 Pedir acompañamiento
                   </button>
                   <div style="height:8px"></div>
-                  <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('guardians')">Volver a Guardianes</button>
+                  <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('guardians')">← Volver a Guardianes</button>
                 </div>
                 <div class="p-card" style="padding:20px">
-                  <div class="p-label p-label-sage" style="margin-bottom:12px">Reseñas</div>
+                  <div class="p-label p-label-sage" style="margin-bottom:12px">Reseñas de la comunidad</div>
                   <div id="gdReviews"><p class="p-sm p-muted">Sin reseñas aún.</p></div>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+        <!-- Pedir acompañamiento modal -->
+        <div class="p-modal-ov" id="askGuardianOv">
+          <div class="p-sheet">
+            <div class="p-sheet-handle"></div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:6px">Pedir acompañamiento</div>
+            <p style="font-size:13px;color:var(--ink4);margin-bottom:4px">Vas a contactar a <strong id="askGuardianName">este guardián/a</strong>.</p>
+            <p style="font-size:12px;color:var(--ink5);margin-bottom:16px;line-height:1.5">Opcional: contá brevemente cómo te sentís para que pueda prepararse para escucharte.</p>
+            <textarea class="p-textarea" id="askGuardianTa" rows="4" placeholder="Ej: Estoy pasando por un momento difícil con el trabajo... (opcional)"></textarea>
+            <div style="height:12px"></div>
+            <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pConfirmAskGuardian()">💚 Enviar solicitud</button>
+            <div style="height:8px"></div>
+            <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('askGuardianOv')">Cancelar</button>
           </div>
         </div>
       </div><!-- /pg-guardian-detail -->
@@ -690,10 +707,16 @@
             <div class="dark-hero-card" style="border-color:rgba(200,165,100,.15)">
               <div class="dark-label" style="color:rgba(200,165,100,.8)">MENSAJE EN BOTELLA</div>
               <h2 class="dark-title">Lanzá un mensaje al mundo</h2>
-              <p class="dark-sub">Anónimo, sincero, sin filtros. Alguien en el mundo te escuchará.</p>
+              <p class="dark-sub">Anónimo, sincero, sin filtros. Alguien en su propia noche lo encuentra y te deja palabras de aliento.</p>
               <button class="p-btn p-btn--dark-white p-btn--lg p-btn--full" onclick="pOpenBottleForm()">🌊 Lanzar mi botella</button>
             </div>
+            <!-- Tabs -->
+            <div style="display:flex;gap:0;margin-bottom:14px;background:rgba(255,255,255,.05);border-radius:12px;padding:3px">
+              <button class="bottle-tab active" id="btab-mar" onclick="pBottleTab('mar',this)">🌊 Botellas del mar</button>
+              <button class="bottle-tab" id="btab-resp" onclick="pBottleTab('resp',this)">💌 Mis respuestas</button>
+            </div>
             <div id="bottleList"></div>
+            <div id="bottleRespList" style="display:none"></div>
           </div>
         </div>
         <!-- Bottle form sheet -->
@@ -835,13 +858,75 @@
 
       <!-- ══ VELA ═══════════════════════════════════════════════ -->
       <div class="p-page fade-in" id="pg-vela">
-        <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 60%,#2A1A08,#0C0804);padding:32px;text-align:center">
-          <button class="p-back-btn p-dark-back-btn" style="position:absolute;top:22px;left:22px;background:rgba(255,180,80,.1);border-color:rgba(255,180,80,.2)" onclick="pGoTo('calm')">←</button>
-          <div style="font-size:80px;animation:p-float 4s ease-in-out infinite" id="velaFlame">🕯️</div>
-          <div style="width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,rgba(255,160,40,.4),transparent 70%);margin:0 auto;margin-top:-10px;animation:p-breathe 3s ease-in-out infinite"></div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:26px;color:rgba(255,220,150,.9);margin-top:18px;margin-bottom:10px">Medita con la llama</div>
-          <p style="font-size:13px;color:rgba(255,200,100,.5);max-width:300px;line-height:1.65;font-style:italic">Observá la llama · Dejá ir los pensamientos · Sólo respira</p>
-          <div id="velaQuote" style="margin-top:24px;padding:16px 24px;background:rgba(255,160,40,.07);border:1px solid rgba(255,160,40,.15);border-radius:18px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:16px;color:rgba(255,220,150,.8);max-width:380px;line-height:1.65"></div>
+        <div class="p-page-scroll">
+          <div class="p-page-inner" style="max-width:640px;margin:auto">
+            <div class="p-page-hdr">
+              <div>
+                <div class="p-label">Programa solidario</div>
+                <h2 class="p-title">Vela por ti 🕯️</h2>
+              </div>
+              <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+            </div>
+            <div class="p-card" style="padding:22px;margin-bottom:18px;background:linear-gradient(135deg,rgba(183,228,199,.3),rgba(168,212,232,.2));border:1px solid rgba(45,106,79,.12)">
+              <p style="font-size:14px;color:var(--ink3);line-height:1.65;margin-bottom:0">
+                <strong style="color:var(--sage2)">Vela por ti</strong> conecta a usuarios con profesionales licenciados de salud mental para sesiones gratuitas o subsidiadas, financiadas por las donaciones de nuestra comunidad. No es terapia de emergencia — es acompañamiento profesional solidario.
+              </p>
+            </div>
+            <div class="p-card" style="padding:22px;margin-bottom:14px">
+              <div class="p-label p-label-sage" style="margin-bottom:14px">Tipo de profesional</div>
+              <select class="p-input" id="velaTipo" style="margin-bottom:0">
+                <option value="">Elegí el tipo de acompañamiento…</option>
+                <optgroup label="Clínico">
+                  <option value="psicologo">Psicólogo/a</option>
+                  <option value="terapeuta">Terapeuta</option>
+                  <option value="sexologo">Sexólogo/a</option>
+                </optgroup>
+                <optgroup label="Bienestar">
+                  <option value="coach">Coach de vida</option>
+                  <option value="mindfulness">Mindfulness / Meditación</option>
+                  <option value="arteterapia">Arte-terapia</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="p-card" style="padding:22px;margin-bottom:14px">
+              <div class="p-label p-label-sage" style="margin-bottom:14px">Especialización que buscás</div>
+              <select class="p-input" id="velaEspec" style="margin-bottom:0">
+                <option value="">Elegí la temática…</option>
+                <option value="ansiedad">Ansiedad</option>
+                <option value="depresion">Depresión</option>
+                <option value="duelo">Duelo / Pérdida</option>
+                <option value="autoestima">Autoestima</option>
+                <option value="trauma">Trauma</option>
+                <option value="pareja">Pareja / Relaciones</option>
+                <option value="soledad">Soledad</option>
+                <option value="crisis">Crisis emocional</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <div class="p-card" style="padding:22px;margin-bottom:14px">
+              <div class="p-label p-label-sage" style="margin-bottom:14px">Nivel de urgencia</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <label style="flex:1;min-width:100px;cursor:pointer"><input type="radio" name="velaUrgencia" value="bajo" style="margin-right:6px">🟢 Bajo</label>
+                <label style="flex:1;min-width:100px;cursor:pointer"><input type="radio" name="velaUrgencia" value="medio" style="margin-right:6px">🟡 Medio</label>
+                <label style="flex:1;min-width:100px;cursor:pointer"><input type="radio" name="velaUrgencia" value="alto" style="margin-right:6px">🔴 Alto</label>
+              </div>
+            </div>
+            <div class="p-card" style="padding:22px;margin-bottom:14px">
+              <div class="p-label p-label-sage" style="margin-bottom:14px">Horarios disponibles</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <label style="cursor:pointer;min-width:130px"><input type="checkbox" name="velaHorario" value="manana" style="margin-right:6px">🌅 Mañanas</label>
+                <label style="cursor:pointer;min-width:130px"><input type="checkbox" name="velaHorario" value="tarde" style="margin-right:6px">☀️ Tardes</label>
+                <label style="cursor:pointer;min-width:130px"><input type="checkbox" name="velaHorario" value="noche" style="margin-right:6px">🌙 Noches</label>
+                <label style="cursor:pointer;min-width:130px"><input type="checkbox" name="velaHorario" value="finde" style="margin-right:6px">📅 Fines de semana</label>
+              </div>
+            </div>
+            <div class="p-card" style="padding:22px;margin-bottom:22px">
+              <div class="p-label p-label-sage" style="margin-bottom:10px">Descripción breve <span style="font-weight:400;color:var(--ink5)">(opcional, confidencial)</span></div>
+              <textarea class="p-textarea" id="velaDesc" rows="4" placeholder="Contá brevemente tu situación para que podamos asignarte el profesional más adecuado…"></textarea>
+            </div>
+            <button class="p-btn p-btn--primary p-btn--xl p-btn--full" onclick="pSendVela()" style="margin-bottom:12px">🕯️ Enviar solicitud</button>
+            <p style="font-size:11px;color:var(--ink5);text-align:center;line-height:1.5;margin-bottom:32px">Procesamos en 7-14 días según urgencia y disponibilidad · Acompañamiento complementario — no reemplaza atención médica de emergencia</p>
+          </div>
         </div>
       </div>
 
@@ -1228,6 +1313,42 @@
 
   </div><!-- /p-main-content -->
 </div><!-- /p-app-shell -->
+
+<!-- ── TÉRMINOS Y CONDICIONES ───────────────────────────── -->
+<div class="p-modal-ov" id="termsOv">
+  <div class="p-sheet" style="max-height:80vh;overflow-y:auto">
+    <div class="p-sheet-handle"></div>
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:16px">Términos y Condiciones</h3>
+    <div style="font-size:13px;color:var(--ink3);line-height:1.7">
+      <p><strong>1. Uso de la plataforma</strong><br>Velo es una plataforma de apoyo emocional entre pares. No reemplaza la atención médica o psicológica profesional. Al usarla, aceptás hacerlo de forma responsable y respetuosa.</p>
+      <p><strong>2. Guardianes y acompañamiento</strong><br>Los guardianes son usuarios voluntarios de la comunidad, no profesionales de salud mental. El acompañamiento que ofrecen es entre pares, basado en escucha activa y empatía.</p>
+      <p><strong>3. Contenido y conducta</strong><br>Está prohibido el acoso, el discurso de odio, el contenido sexual no consentido y cualquier actividad ilegal. Velo se reserva el derecho de suspender cuentas que violen estas normas.</p>
+      <p><strong>4. Privacidad del diario</strong><br>Las entradas del Diario Íntimo se almacenan únicamente en tu dispositivo. Velo no accede ni puede leer ese contenido.</p>
+      <p><strong>5. Limitación de responsabilidad</strong><br>Velo no es responsable de las conversaciones entre usuarios ni de las decisiones tomadas a partir de ellas. En caso de crisis, comunicarse con los servicios de emergencia locales.</p>
+      <p><strong>6. Modificaciones</strong><br>Velo puede actualizar estos términos con previo aviso a los usuarios registrados.</p>
+      <p style="color:var(--ink5);font-size:11px">Última actualización: Mayo 2026</p>
+    </div>
+    <button class="p-btn p-btn--primary p-btn--md p-btn--full" style="margin-top:16px" onclick="closeModal('termsOv')">Entendido ✓</button>
+  </div>
+</div>
+
+<!-- ── POLÍTICA DE PRIVACIDAD ───────────────────────────── -->
+<div class="p-modal-ov" id="privacyOv">
+  <div class="p-sheet" style="max-height:80vh;overflow-y:auto">
+    <div class="p-sheet-handle"></div>
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:16px">Política de Privacidad</h3>
+    <div style="font-size:13px;color:var(--ink3);line-height:1.7">
+      <p><strong>Datos que recopilamos</strong><br>Nombre, correo electrónico y datos de uso (frecuencia de sesiones, emojis de humor, sesiones de respiración). No vendemos ni compartimos datos con terceros.</p>
+      <p><strong>Almacenamiento</strong><br>Tus datos se almacenan en servidores seguros de Supabase (cifrado en tránsito y en reposo). El Diario Íntimo se guarda <em>solo en tu dispositivo</em> — Velo no puede acceder a él.</p>
+      <p><strong>Comunicaciones anónimas</strong><br>Las botellas y las solicitudes anónimas de la Sala de Ayuda no están vinculadas a tu identidad visible para otros usuarios.</p>
+      <p><strong>Pagos</strong><br>Los pagos son procesados por Stripe o PayPal. Velo no almacena datos de tarjeta de crédito.</p>
+      <p><strong>Tus derechos</strong><br>Podés solicitar la eliminación de tu cuenta y todos tus datos escribiendo a wearevelo.app@gmail.com.</p>
+      <p><strong>Cookies</strong><br>Usamos localStorage para mantener tu sesión. No usamos cookies de rastreo de terceros.</p>
+      <p style="color:var(--ink5);font-size:11px">Última actualización: Mayo 2026</p>
+    </div>
+    <button class="p-btn p-btn--primary p-btn--md p-btn--full" style="margin-top:16px" onclick="closeModal('privacyOv')">Entendido ✓</button>
+  </div>
+</div>
 
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>

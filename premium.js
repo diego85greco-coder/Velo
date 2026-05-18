@@ -67,7 +67,7 @@ var _userType   = 'user'; // 'user' | 'pro' | 'admin'
 
 var P_NO_NAV = ['landing','login','register','register-type','onboarding',
                 'pro-reg','pro-onboarding','admin-login','pro-pending'];
-var P_DARK   = ['help','bottle','respira','vela'];
+var P_DARK   = ['help','bottle','respira'];
 var P_FADE   = ['landing','onboarding','register-type','donation-exit',
                 'post-chat','pro-pending','admin-login'];
 
@@ -206,7 +206,12 @@ async function pSignUp(){
       result = { error: null };
     }
     if(result.error){
-      pToast('⚠️', result.error.message || 'Error al registrar');
+      var errMsg = result.error.message || 'Error al registrar';
+      if(/rate.limit/i.test(errMsg))           errMsg = 'Demasiados intentos. Esperá unos minutos o iniciá sesión si ya creaste la cuenta.';
+      else if(/already.registered/i.test(errMsg)) errMsg = 'Este email ya tiene una cuenta. Usá "Iniciar sesión" 🔑';
+      else if(/invalid.email/i.test(errMsg))   errMsg = 'El email no es válido.';
+      else if(/password/i.test(errMsg))        errMsg = 'La contraseña debe tener al menos 6 caracteres.';
+      pToast('⚠️', errMsg);
     } else {
       safeLS('set','velo_user_email', email);
       safeLS('set','velo_sb_pass', pass);
@@ -281,6 +286,15 @@ async function pSignOut(){
   pToast('🌿','Sesión cerrada');
   pGoTo('landing');
   _updateNavState('landing', false);
+}
+
+function pShowTerms(){
+  var ov = document.getElementById('termsOv');
+  if(ov) ov.classList.add('open');
+}
+function pShowPrivacy(){
+  var ov = document.getElementById('privacyOv');
+  if(ov) ov.classList.add('open');
 }
 
 function pShowForgot(){
@@ -438,13 +452,23 @@ function _fmtDate(ts){
 }
 
 // ── GUARDIAN DATA ─────────────────────────────────────────────
-var _proProfiles = [
-  { id:'g1', name:'Ana Luz', av:'🌸', bio:'Paso por ansiedad y encontré el camino. Aquí para escucharte.', status:'on', recommend:142, sessions:89, rating:4.9, tags:['ansiedad','estrés','duelo'], review:{ txt:'Ana me ayudó a encontrar calma cuando más lo necesitaba.', auth:'Lucía M.' }, mood:'Disponible ahora' },
-  { id:'g2', name:'Carlos R.', av:'🌊', bio:'Ex-terapeuta en proceso de recovery. Empatía y presencia.', status:'on', recommend:98, sessions:63, rating:4.8, tags:['depresión','soledad','cambios'], review:{ txt:'Con Carlos pude hablar de cosas que nunca había dicho en voz alta.', auth:'Martín P.' }, mood:'Tranquilo hoy' },
-  { id:'g3', name:'Valentina S.', av:'🦋', bio:'Trabajo con familias y duelo. Cada historia merece ser escuchada.', status:'busy', recommend:215, sessions:134, rating:5.0, tags:['familia','pérdida','crianza'], review:{ txt:'Valentina tiene una capacidad enorme para sostener el dolor ajeno.', auth:'Ana G.' }, mood:'En sesión' },
-  { id:'g4', name:'Tomás L.', av:'🌿', bio:'Meditación y mindfulness. Presente en cada momento.', status:'on', recommend:76, sessions:45, rating:4.7, tags:['mindfulness','burnout','trabajo'], review:{ txt:'Tomás me enseñó a respirar antes de reaccionar.', auth:'Diego F.' }, mood:'Abierto a charlar' },
-  { id:'g5', name:'Sofía N.', av:'🌙', bio:'Noches difíciles, acompañadas. Especialmente disponible de noche.', status:'on', recommend:189, sessions:112, rating:4.9, tags:['insomnio','angustia','noche'], review:{ txt:'Encontrar a alguien disponible a las 3am fue un regalo.', auth:'Renata V.' }, mood:'Disponible de noche' },
-  { id:'g6', name:'Emilio T.', av:'🏔️', bio:'Situaciones de crisis, trauma y resiliencia. Paso a paso.', status:'off', recommend:54, sessions:38, rating:4.6, tags:['trauma','crisis','resiliencia'], review:{ txt:'Emilio me ayudó a entender que lo que sentía era válido.', auth:'Camila H.' }, mood:'Descansando' }
+// Guardianes = usuarios de la comunidad que se ofrecen a acompañar a otros.
+// No son profesionales. Su nivel (badge) sube con cada conversación completada.
+function _getBadge(convs){
+  if(convs >= 100) return { icon:'💎', name:'Diamante', color:'#7B68EE', next:null,   needed:0   };
+  if(convs >= 40)  return { icon:'🥇', name:'Oro',      color:'#C8A200', next:'Diamante', needed:100-convs };
+  if(convs >= 20)  return { icon:'🥈', name:'Plata',    color:'#8892A4', next:'Oro',      needed:40-convs  };
+  if(convs >= 5)   return { icon:'🥉', name:'Bronce',   color:'#C07840', next:'Plata',    needed:20-convs  };
+  return             { icon:'🌱', name:'Novato',   color:'var(--sage4)', next:'Bronce', needed:5-convs };
+}
+
+var _guardianProfiles = [
+  { id:'g1', name:'Ana Luz',     av:'🌸', bio:'Pasé por momentos muy difíciles con la ansiedad y encontré el camino. Aquí para escucharte sin juzgar.', status:'on',   convs:89,  recommend:142, rating:4.9, tags:['ansiedad','estrés','duelo'],        review:{ txt:'Ana me ayudó a encontrar calma cuando más lo necesitaba.',                   auth:'Lucía M.' },  mood:'Disponible ahora'    },
+  { id:'g2', name:'Carlos R.',   av:'🌊', bio:'Sé lo que es sentirse solo en la oscuridad. Acompaño desde la empatía real, sin rollos, sin apuro.',      status:'on',   convs:63,  recommend:98,  rating:4.8, tags:['depresión','soledad','cambios'],      review:{ txt:'Con Carlos pude hablar de cosas que nunca había dicho en voz alta.',          auth:'Martín P.' }, mood:'Tranquilo hoy'        },
+  { id:'g3', name:'Valentina S.',av:'🦋', bio:'Viví de cerca el duelo y los cambios de familia. Cada historia merece ser escuchada con el tiempo que necesita.', status:'busy', convs:134, recommend:215, rating:5.0, tags:['familia','pérdida','crianza'],      review:{ txt:'Valentina tiene una capacidad enorme para sostener el dolor ajeno.',        auth:'Ana G.' },    mood:'En conversación'     },
+  { id:'g4', name:'Tomás L.',    av:'🌿', bio:'Aprendí a parar la pelota con el mindfulness cuando el burnout me desbordó. Te ayudo a respirar antes de reaccionar.', status:'on', convs:45, recommend:76, rating:4.7, tags:['mindfulness','burnout','trabajo'],   review:{ txt:'Tomás me enseñó a respirar antes de reaccionar.',                          auth:'Diego F.' },  mood:'Abierto a charlar'   },
+  { id:'g5', name:'Sofía N.',    av:'🌙', bio:'Las noches difíciles no deberían atravesarse solas. Estoy especialmente disponible cuando el mundo duerme.', status:'on',   convs:112, recommend:189, rating:4.9, tags:['insomnio','angustia','noche'],        review:{ txt:'Encontrar a alguien disponible a las 3am fue un regalo.',                    auth:'Renata V.' }, mood:'Disponible de noche'  },
+  { id:'g6', name:'Emilio T.',   av:'🏔️', bio:'Entiendo el peso del trauma y la crisis. Acompaño sin prisa, paso a paso, desde un lugar que también conocí.',  status:'off',  convs:38,  recommend:54,  rating:4.6, tags:['trauma','crisis','resiliencia'],     review:{ txt:'Emilio me ayudó a entender que lo que sentía era válido.',                   auth:'Camila H.' }, mood:'Descansando'          }
 ];
 
 var _curGuardian = null;
@@ -460,7 +484,7 @@ function pFilterGuardians(filter, btn){
 function pRenderGuardians(){
   var list = document.getElementById('guardianList');
   if(!list) return;
-  var data = _proProfiles.filter(function(g){
+  var data = _guardianProfiles.filter(function(g){
     if(_guardianFilter === 'on') return g.status === 'on';
     if(_guardianFilter === 'busy') return g.status === 'busy';
     return true;
@@ -472,6 +496,8 @@ function pRenderGuardians(){
   list.innerHTML = data.map(function(g, i){
     var stClass = g.status === 'on' ? 'st-on' : g.status === 'busy' ? 'st-busy' : 'st-off';
     var stBg = g.status === 'on' ? 'rgba(58,158,96,.12)' : g.status === 'busy' ? 'rgba(212,128,32,.12)' : 'rgba(144,152,160,.1)';
+    var badge = _getBadge(g.convs);
+    var stLabel = g.status === 'on' ? 'Disponible' : g.status === 'busy' ? 'En conversación' : 'Descansando';
     return '<div class="p-guardian-card" style="animation-delay:'+i*.06+'s" onclick="pOpenGuardian(\''+g.id+'\')">'
       +'<div class="gc-row">'
       +'<div class="gc-av" style="background:'+stBg+'">'
@@ -479,12 +505,12 @@ function pRenderGuardians(){
       +'<div class="gc-st-ring '+stClass+'"></div>'
       +'</div>'
       +'<div style="flex:1;min-width:0">'
-      +'<div class="gc-name">'+g.name+'</div>'
+      +'<div class="gc-name">'+g.name+' <span style="font-size:14px" title="Guardián '+badge.name+'">'+badge.icon+'</span></div>'
       +'<div style="font-size:11px;color:var(--ink4)">'+g.mood+'</div>'
       +'</div>'
       +'<div style="text-align:right;flex-shrink:0">'
       +'<div style="font-size:11px;font-weight:700;color:var(--sage2);margin-bottom:3px">⭐ '+g.rating+'</div>'
-      +'<div style="font-size:10px;color:var(--ink5)">'+g.recommend+' recomend.</div>'
+      +'<div style="font-size:10px;color:var(--ink5)">'+g.convs+' conversaciones</div>'
       +'</div>'
       +'</div>'
       +'<div class="gc-review-box">'
@@ -493,7 +519,7 @@ function pRenderGuardians(){
       +'</div>'
       +'<div class="gc-tags">'+g.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div>'
       +'<div class="gc-actions">'
-      +'<button class="gc-btn-ask" onclick="event.stopPropagation();pOpenGuardian(\''+g.id+'\')">💬 Conectar</button>'
+      +'<button class="gc-btn-ask" onclick="event.stopPropagation();pOpenGuardian(\''+g.id+'\')">💚 Pedir acompañamiento</button>'
       +'<button class="gc-btn-view" onclick="event.stopPropagation();pOpenGuardian(\''+g.id+'\')">Ver perfil</button>'
       +'</div>'
       +'</div>';
@@ -501,7 +527,7 @@ function pRenderGuardians(){
 }
 
 function pOpenGuardian(id){
-  _curGuardian = _proProfiles.find(function(g){ return g.id === id; });
+  _curGuardian = _guardianProfiles.find(function(g){ return g.id === id; });
   if(!_curGuardian) return;
   var g = _curGuardian;
   _setEl('gdName', g.name);
@@ -510,20 +536,51 @@ function pOpenGuardian(id){
   _setEl('gdBio', '"'+g.bio+'"');
   _setEl('gdDesc', g.bio);
   _setEl('gdRecommend', g.recommend);
-  _setEl('gdSessions', g.sessions);
+  _setEl('gdConvs', g.convs);
   _setEl('gdRating', g.rating);
+  var badge = _getBadge(g.convs);
+  var pct = badge.next ? Math.round(((g.convs - (g.convs >= 40 ? (g.convs >= 100 ? 100 : 40) : (g.convs >= 20 ? 20 : (g.convs >= 5 ? 5 : 0)))) / badge.needed) * 100) : 100;
+  // simpler progress: show how far into current tier
+  var tierBase = g.convs >= 100 ? 100 : g.convs >= 40 ? 40 : g.convs >= 20 ? 20 : g.convs >= 5 ? 5 : 0;
+  var tierTop  = g.convs >= 100 ? 999 : g.convs >= 40 ? 100 : g.convs >= 20 ? 40 : g.convs >= 5 ? 20 : 5;
+  var tierPct  = badge.next ? Math.min(100, Math.round((g.convs - tierBase) / (tierTop - tierBase) * 100)) : 100;
+  var badgeHtml = '<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.07);border-radius:14px;padding:12px 16px;margin-bottom:14px">'
+    +'<span style="font-size:28px">'+badge.icon+'</span>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:13px;font-weight:700;color:var(--ink)">Guardián '+badge.name+'</div>'
+    +'<div style="font-size:11px;color:var(--ink4);margin-bottom:6px">'+g.convs+' conversaciones completadas</div>'
+    +'<div style="height:5px;background:var(--cream2);border-radius:99px;overflow:hidden">'
+    +'<div style="height:100%;width:'+tierPct+'%;background:'+badge.color+';border-radius:99px;transition:width .6s"></div>'
+    +'</div>'
+    +(badge.next ? '<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+badge.needed+' conversaciones para '+badge.next+'</div>' : '<div style="font-size:10px;color:var(--ink5);margin-top:4px">Nivel máximo ✨</div>')
+    +'</div></div>';
+  var badgeEl = document.getElementById('gdBadge');
+  if(badgeEl) badgeEl.innerHTML = badgeHtml;
   var stPill = document.getElementById('gdStatusPill');
   if(stPill){
     if(g.status === 'on'){
       stPill.innerHTML = '<span class="p-pill p-pill--live"><span class="p-ldot p-ldot--on"></span> Disponible</span>';
     } else if(g.status === 'busy'){
-      stPill.innerHTML = '<span class="p-pill" style="background:rgba(212,128,32,.1);color:var(--st-busy);border:1px solid rgba(212,128,32,.2)">⏳ En sesión</span>';
+      stPill.innerHTML = '<span class="p-pill" style="background:rgba(212,128,32,.1);color:var(--st-busy);border:1px solid rgba(212,128,32,.2)">⏳ En conversación</span>';
     } else {
       stPill.innerHTML = '<span class="p-pill" style="background:rgba(144,152,160,.1);color:var(--st-off)">● Descansando</span>';
     }
   }
   var tagsEl = document.getElementById('gdMoodTags');
   if(tagsEl) tagsEl.innerHTML = g.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('');
+  var askBtn = document.getElementById('gdAskBtn');
+  if(askBtn){
+    if(g.status === 'off'){
+      askBtn.disabled = true;
+      askBtn.textContent = '😴 No disponible ahora';
+    } else if(g.status === 'busy'){
+      askBtn.disabled = true;
+      askBtn.textContent = '⏳ En conversación';
+    } else {
+      askBtn.disabled = false;
+      askBtn.innerHTML = '💚 Pedir acompañamiento';
+    }
+  }
   var rvEl = document.getElementById('gdReviews');
   if(rvEl) rvEl.innerHTML = '<div class="p-review-card"><div class="p-row" style="margin-bottom:8px"><span style="font-size:14px">⭐⭐⭐⭐⭐</span></div><p class="p-rv-txt">"'+g.review.txt+'"</p><div style="font-size:11px;color:var(--ink5)">— '+g.review.auth+'</div></div>';
   pGoTo('guardian-detail');
@@ -532,10 +589,24 @@ function pOpenGuardian(id){
 function pAskGuardian(){
   if(!_curGuardian) return;
   if(_curGuardian.status === 'off'){ pToast('😴',_curGuardian.name+' está descansando ahora'); return; }
-  pToast('💬','Conectando con '+_curGuardian.name+'… 🌿');
+  if(_curGuardian.status === 'busy'){ pToast('⏳',_curGuardian.name+' está en conversación'); return; }
+  // Open the request modal
+  var ov = document.getElementById('askGuardianOv');
+  var lbl = document.getElementById('askGuardianName');
+  if(lbl) lbl.textContent = _curGuardian.name;
+  var ta = document.getElementById('askGuardianTa');
+  if(ta) ta.value = '';
+  if(ov) ov.classList.add('open');
+}
+
+function pConfirmAskGuardian(){
+  var ov = document.getElementById('askGuardianOv');
+  if(ov) ov.classList.remove('open');
+  pToast('💚','Solicitud enviada a '+(_curGuardian ? _curGuardian.name : 'el guardián')+'…');
   setTimeout(function(){
-    pGoTo('help');
-  }, 1200);
+    pToast('🌿',(_curGuardian ? _curGuardian.name : 'Tu guardián')+' aceptó acompañarte ✨');
+    setTimeout(function(){ pGoTo('post-chat'); }, 800);
+  }, 2200);
 }
 
 // ── PROFESSIONALS ──────────────────────────────────────────────
@@ -646,6 +717,45 @@ function _renderSOSResources(){
 
 // ── BOTTLE WALL ────────────────────────────────────────────────
 var _bottleMoods = ['😰','😢','😤','😔','🤗','💭','😊','🌊'];
+
+function pBottleTab(tab, btn){
+  document.querySelectorAll('.bottle-tab').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  var listEl = document.getElementById('bottleList');
+  var respEl = document.getElementById('bottleRespList');
+  if(tab === 'mar'){
+    if(listEl) listEl.style.display = '';
+    if(respEl) respEl.style.display = 'none';
+  } else {
+    if(listEl) listEl.style.display = 'none';
+    if(respEl){
+      respEl.style.display = '';
+      pRenderBottleResponses();
+    }
+  }
+}
+
+function pRenderBottleResponses(){
+  var el = document.getElementById('bottleRespList');
+  if(!el) return;
+  var mockResps = [
+    { myMood:'😔', myText:'A veces el silencio duele más que las palabras.', resp:'No estás solo/a en eso. Yo también lo sentí mucho tiempo. Un abrazo desde la distancia.', respTime:'hace 2 horas', respMood:'🤗' },
+    { myMood:'💭', myText:'¿Alguien más siente que no encaja en ningún lado?', resp:'Sí. Muchas veces. Pero encontré que encajar no es tan importante como sentirse en paz con uno mismo. Ánimo.', respTime:'ayer', respMood:'🌿' }
+  ];
+  if(!mockResps.length){
+    el.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.4)"><span class="p-empty-emoji">💌</span><div class="p-empty-title" style="color:rgba(255,255,255,.6)">Sin respuestas aún</div><div class="p-empty-sub">Cuando alguien responda tu botella, aparecerá aquí</div></div>';
+    return;
+  }
+  el.innerHTML = mockResps.map(function(r){
+    return '<div class="dark-bottle" style="border-left:3px solid rgba(116,198,157,.3);margin-bottom:12px">'
+      +'<div style="font-size:11px;color:rgba(200,165,100,.6);margin-bottom:6px">Tu botella ' + r.myMood + '</div>'
+      +'<p style="font-size:12px;color:rgba(255,255,255,.4);font-style:italic;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif">"'+r.myText+'"</p>'
+      +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;padding:12px">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:18px">'+r.respMood+'</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+r.respTime+'</span></div>'
+      +'<p style="font-size:13px;color:rgba(255,255,255,.8);line-height:1.6;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+r.resp+'"</p>'
+      +'</div></div>';
+  }).join('');
+}
 
 function pRenderBottle(){
   var moodRow = document.getElementById('bottleMoodRow');
@@ -947,16 +1057,27 @@ function _stopRespira(){
 }
 
 // ── VELA ───────────────────────────────────────────────────────
-var _velaQuotes = [
-  '"La llama no ilumina su propia base, pero alumbra todo lo demás." — Proverbio',
-  '"En el silencio está la mayor de las sabidurías." — Zen',
-  '"Respira. Estás aquí. Eso es suficiente."',
-  '"La calma es el refugio que llevamos adentro."',
-  '"Cada exhalación es una liberación."'
-];
+// Vela por ti — programa solidario que conecta usuarios con profesionales licenciados
+// en sesiones gratuitas o subsidiadas, financiado por donaciones de la comunidad.
 function pInitVela(){
-  var q = document.getElementById('velaQuote');
-  if(q) q.textContent = _velaQuotes[Math.floor(Math.random()*_velaQuotes.length)];
+  // Nothing to init — static form
+}
+
+function pSendVela(){
+  var tipo = document.getElementById('velaTipo');
+  var espec = document.getElementById('velaEspec');
+  var urgencia = document.querySelector('input[name="velaUrgencia"]:checked');
+  var desc = document.getElementById('velaDesc');
+  if(!tipo || !tipo.value){ pToast('⚠️','Elegí el tipo de profesional'); return; }
+  if(!espec || !espec.value){ pToast('⚠️','Elegí la especialización'); return; }
+  if(!urgencia){ pToast('⚠️','Indicá el nivel de urgencia'); return; }
+  pToast('🕯️','Solicitud enviada. Te contactaremos en 7-14 días 💚');
+  if(tipo) tipo.value = '';
+  if(espec) espec.value = '';
+  if(desc) desc.value = '';
+  document.querySelectorAll('input[name="velaUrgencia"]').forEach(function(r){ r.checked = false; });
+  document.querySelectorAll('input[name="velaHorario"]').forEach(function(r){ r.checked = false; });
+  setTimeout(function(){ pGoTo('home'); }, 1800);
 }
 
 // ── CIRCLES ────────────────────────────────────────────────────

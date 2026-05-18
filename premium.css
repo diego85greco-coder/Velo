@@ -1859,3 +1859,14 @@ a { text-decoration: none; color: inherit; }
   .p-bottomnav { display: none !important; }
   .p-topbar { display: none !important; }
 }
+
+/* ── 56. BOTTLE TABS ──────────────────────────────────────────────── */
+.bottle-tab {
+  flex: 1; padding: 8px 12px; background: none; border: none; cursor: pointer;
+  font-family: 'Jost', sans-serif; font-size: 12px; font-weight: 600;
+  color: rgba(255,255,255,.45); border-radius: 10px; transition: all var(--t-fast);
+}
+.bottle-tab.active {
+  background: rgba(200,165,100,.18); color: #C8A560;
+  box-shadow: 0 1px 6px rgba(0,0,0,.2);
+}
