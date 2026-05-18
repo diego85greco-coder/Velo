@@ -2739,6 +2739,34 @@ function pRenderInbox(){
     { id:'m2', tipo:'sistema', icon:'🌿', remitente:'Velo', asunto:'Consejo del día', extracto:'Recuerda: está bien no estar bien. El primer paso es reconocerlo.', leido:true, fecha:'Hoy' }
   ];
   var all = msgs.concat(mockMsgs);
+  // Load Supabase broadcasts async and prepend them
+  var userType = safeLS('get','velo_user_type') || 'user';
+  sbLoadBroadcasts(userType === 'pro' ? 'pros' : 'users').then(function(bcs){
+    if(!bcs || !bcs.length) return;
+    var el2 = document.getElementById('inboxList');
+    if(!el2) return;
+    // Filter out ones already shown (by id in localStorage inbox)
+    var localIds = msgs.map(function(m){ return m.id; });
+    var newBcs = bcs.filter(function(b){ return localIds.indexOf(b.id) < 0; });
+    if(!newBcs.length) return;
+    var bcMsgs = newBcs.map(function(b){
+      var readKey = 'velo_bcast_read_'+b.id;
+      var fecha = b.sent_at ? new Date(b.sent_at).toLocaleDateString('es',{day:'2-digit',month:'short'}) : '';
+      return '<div class="p-inbox-msg'+(safeLS('get',readKey)?'':' unread')+'" onclick="safeLS(\'set\',\''+readKey+'\',\'1\');this.classList.remove(\'unread\');this.querySelector(\'.p-inbox-dot\')&&this.querySelector(\'.p-inbox-dot\').remove()">'
+        +'<div style="display:flex;flex-shrink:0">'+(safeLS('get',readKey)?'':'<div class="p-inbox-dot"></div>')+'</div>'
+        +'<div class="p-inbox-ic">'+_escHtml(b.icon||'📢')+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(b.subject)+'</div>'
+        +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(b.body||'')+'</div>'
+        +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+'</div>'
+        +'</div></div>';
+    }).join('');
+    // Prepend broadcasts before existing inbox items, after contact banner
+    var banner = el2.querySelector('div[onclick*="contact"]');
+    if(banner){ banner.insertAdjacentHTML('afterend', bcMsgs); }
+    else { el2.innerHTML = bcMsgs + el2.innerHTML; }
+    _updateInboxDot();
+  });
   if(!all.length){
     el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">💌</span><div class="p-empty-title">Sin mensajes</div><div class="p-empty-sub">Tus notificaciones aparecerán aquí.</div></div>';
     return;
@@ -3405,45 +3433,52 @@ function pAdminMassMessage(target){
   setTimeout(function(){ var el=document.getElementById('massSubject'); if(el) el.focus(); }, 100);
 }
 
-function pSendMassMessage(target){
+async function pSendMassMessage(target){
   var subj = document.getElementById('massSubject');
   var body = document.getElementById('massBody');
   if(!subj || !subj.value.trim()){ pToast('⚠️','Ingresá un asunto'); return; }
   if(!body || !body.value.trim()){ pToast('⚠️','Escribí el mensaje'); return; }
   var subject = subj.value.trim();
   var message = body.value.trim();
-  var icon = target === 'pros' ? '🩺' : '📢';
-  var sender = 'Velo — Comunicado '+(target === 'pros' ? 'Profesionales' : 'Comunidad');
+  var icon    = target === 'pros' ? '🩺' : '📢';
+  var sender  = 'Velo — Comunicado '+(target === 'pros' ? 'Profesionales' : 'Comunidad');
 
-  // In production with Supabase this would fan-out to all user inboxes.
-  // Client-side: write to the current user's inbox as demo + log to admin record.
-  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
-  inbox.unshift({
-    id: 'mass-'+Date.now(),
-    tipo: 'admin',
-    icon: icon,
-    remitente: sender,
-    asunto: subject,
-    extracto: message.slice(0,80)+(message.length>80?'…':''),
-    cuerpo: message,
-    leido: false,
-    prioridad: true,
-    fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
-  });
-  safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
-  _updateInboxDot();
+  // Save to Supabase so ALL users receive it in their inbox
+  var saved = await sbSaveBroadcast(target, subject, message, icon, sender);
 
-  // Log in admin broadcast history
+  // Fallback: also save to localStorage broadcast history
   var broadcasts = []; try{ broadcasts = JSON.parse(safeLS('get','velo_broadcasts')||'[]'); }catch(e){}
-  broadcasts.unshift({ ts:Date.now(), target:target, subject:subject, body:message, sentBy: _ADMIN_EMAIL });
+  broadcasts.unshift({ id:'mass-'+Date.now(), ts:Date.now(), target:target, subject:subject, body:message, icon:icon, sender:sender, sentBy:_ADMIN_EMAIL });
   safeLS('set','velo_broadcasts', JSON.stringify(broadcasts.slice(0,200)));
 
   var ov = document.getElementById('massMessageOv');
   if(ov) ov.remove();
   var recipientLabel = target === 'pros' ? 'profesionales' : 'usuarios';
-  pToast('📤','Mensaje enviado a todos los '+recipientLabel+' ✅');
-  // Re-render admin to show broadcast history
+  pToast('📤', saved ? 'Mensaje enviado a todos los '+recipientLabel+' ✅' : 'Enviado localmente (sin conexión a Supabase)');
   _renderAdmin();
+}
+
+async function sbSaveBroadcast(target, subject, body, icon, sender){
+  if(!sbClient) return false;
+  try{
+    var {error} = await sbClient.from('broadcasts').insert({ target:target, subject:subject, body:body, icon:icon||'📢', sender:sender||'Velo', sent_at:new Date().toISOString() });
+    return !error;
+  }catch(e){ return false; }
+}
+
+async function sbLoadBroadcasts(userType){
+  if(!sbClient) return null;
+  try{
+    // Load broadcasts for this user type (target = their type or 'all'), last 90 days
+    var since = new Date(Date.now() - 90*24*3600*1000).toISOString();
+    var {data,error} = await sbClient.from('broadcasts')
+      .select('*')
+      .in('target', [userType, 'all'])
+      .gte('sent_at', since)
+      .order('sent_at',{ascending:false})
+      .limit(50);
+    return error ? null : (data||[]);
+  }catch(e){ return null; }
 }
 
 // ── SUPABASE CLOUD FUNCTIONS (ported from velo.js) ────────────
