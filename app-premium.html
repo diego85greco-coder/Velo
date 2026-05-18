@@ -364,9 +364,13 @@
               <p class="p-sm" style="margin-top:6px">¿Ya tenés cuenta? <span style="color:var(--sage2);font-weight:600;cursor:pointer" onclick="pGoTo('login')">Iniciá sesión</span></p>
             </div>
             <div class="p-field">
-              <label class="p-field-label">Tu nombre</label>
-              <input class="p-input" type="text" id="regName" placeholder="¿Cómo te llamás?" autocomplete="name">
-              <div class="p-err-msg" id="regNameErr">Ingresá tu nombre</div>
+              <label class="p-field-label">Nombre o apodo</label>
+              <input class="p-input" type="text" id="regName" placeholder="¿Cómo querés llamarte?" autocomplete="name" maxlength="40">
+              <div class="p-err-msg" id="regNameErr">Ingresá un nombre o apodo</div>
+              <div style="margin-top:6px;display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="regAnon" style="accent-color:var(--sage2);width:16px;height:16px;cursor:pointer" onchange="pToggleAnonReg(this)">
+                <label for="regAnon" style="font-size:12px;color:var(--ink4);cursor:pointer">Usar apodo anónimo — Velo generará uno automáticamente</label>
+              </div>
             </div>
             <div class="p-field">
               <label class="p-field-label">Correo electrónico</label>

@@ -651,7 +651,15 @@ function pOpenProSession(id){
   _setEl('pSessionTitle', 'Sesión con '+p.name);
   var content = document.getElementById('pSessionContent');
   if(content){
-    content.innerHTML = '<div class="p-card" style="padding:22px;margin-bottom:14px"><div style="display:flex;align-items:center;gap:14px;margin-bottom:16px"><div style="font-size:52px">'+p.av+'</div><div><div style="font-size:18px;font-weight:700;color:var(--ink)">'+p.name+'</div><div style="font-size:13px;color:var(--sage3);font-weight:600">'+p.spec+'</div><div style="font-size:13px;color:var(--ink4);margin-top:2px">⭐ '+p.rating+' · '+p.sessions+' sesiones</div></div></div><p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:18px">'+p.bio+'</p><div class="p-divider-line"></div><div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0"><span style="font-size:14px;color:var(--ink3)">Precio por sesión</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:28px;font-weight:700;color:var(--sage)">$'+p.rate+' '+p.currency+'</span></div><div class="p-divider-line"></div><div style="font-size:12px;color:var(--ink4);margin:12px 0">🔒 Pago seguro · Cancela hasta 24h antes · Videollamada privada</div><button class="p-btn p-btn--primary p-btn--xl p-btn--full" onclick="pStripeCheckout(\''+p.id+'\')">Reservar con Stripe 💳</button><div style="height:8px"></div><button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo(\'professionals\')">Volver</button></div>';
+    content.innerHTML =
+      // Anti-external-contact warning
+      '<div style="background:rgba(192,48,40,.07);border:1.5px solid rgba(192,48,40,.18);border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">'
+      +'<span style="font-size:18px;flex-shrink:0">⚠️</span>'
+      +'<div style="font-size:12px;color:var(--ink3);line-height:1.6">'
+      +'<strong>Política de protección de la plataforma:</strong> Queda estrictamente prohibido el intercambio de datos de contacto (teléfono, WhatsApp, Instagram, correo personal) entre usuarios y profesionales dentro de Velo. Todas las sesiones deben realizarse exclusivamente a través de la videollamada de Velo. El incumplimiento puede resultar en la suspensión de la cuenta.'
+      +'</div></div>'
+      // Pro info
+      +'<div class="p-card" style="padding:22px;margin-bottom:14px"><div style="display:flex;align-items:center;gap:14px;margin-bottom:16px"><div style="font-size:52px">'+p.av+'</div><div><div style="font-size:18px;font-weight:700;color:var(--ink)">'+p.name+'</div><div style="font-size:13px;color:var(--sage3);font-weight:600">'+p.spec+'</div><div style="font-size:13px;color:var(--ink4);margin-top:2px">⭐ '+p.rating+' · '+p.sessions+' sesiones</div></div></div><p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:18px">'+p.bio+'</p><div class="p-divider-line"></div><div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0"><span style="font-size:14px;color:var(--ink3)">Precio por sesión</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:28px;font-weight:700;color:var(--sage)">$'+p.rate+' '+p.currency+'</span></div><div class="p-divider-line"></div><div style="font-size:12px;color:var(--ink4);margin:12px 0">🔒 Pago seguro vía Stripe · Videollamada privada en Velo · 80% al profesional</div><button class="p-btn p-btn--primary p-btn--xl p-btn--full" onclick="pStripeCheckout(\''+p.id+'\')">Reservar con Stripe 💳</button><div style="height:8px"></div><button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo(\'professionals\')">Volver</button></div>';
   }
   pGoTo('pro-session');
 }
@@ -807,6 +815,8 @@ function pSendHelpChatMsg(){
   var ta = document.getElementById('helpChatInput');
   if(!ta || !ta.value.trim()) return;
   var text = ta.value.trim();
+  var blocked = _filterContactInfo(text, 'help-chat');
+  if(blocked){ ta.value = ''; pToast('🚫','No se permiten datos de contacto externos'); return; }
   ta.value = '';
   ta.style.height = '';
   _resetHelpInactivity();
@@ -1716,6 +1726,8 @@ function pSendCircleMsg(){
   var ta = document.getElementById('feedInput');
   if(!ta || !ta.value.trim() || !_curCircle) return;
   var text = ta.value.trim();
+  var blocked = _filterContactInfo(text, 'circle:'+(_curCircle?_curCircle.id:'?'));
+  if(blocked){ ta.value = ''; pToast('🚫', blocked.slice(2,60)); return; }
   ta.value = '';
   ta.style.height = '';
 
@@ -2889,6 +2901,52 @@ function _checkPayPalReturn(){
       safeLS('del','velo_pp_pending');
     }
   }
+}
+
+// ── ANON NICKNAME ─────────────────────────────────────────────
+var _anonNicknames = [
+  'Colibrí Sereno','Brisa del Valle','Luz de Luna','Piedra Tranquila','Viento del Sur',
+  'Nube Viajera','Mar Profundo','Bosque Quieto','Alba Dorada','Río Cristal',
+  'Estrella Errante','Tierra Firme','Pájaro Libre','Sombra Suave','Flor Silvestre'
+];
+
+function pToggleAnonReg(checkbox){
+  var nameInput = document.getElementById('regName');
+  if(!nameInput) return;
+  if(checkbox.checked){
+    var nick = _anonNicknames[Math.floor(Math.random()*_anonNicknames.length)];
+    nameInput.value = nick;
+    nameInput.readOnly = true;
+    nameInput.style.opacity = '.6';
+  } else {
+    nameInput.value = '';
+    nameInput.readOnly = false;
+    nameInput.style.opacity = '1';
+    nameInput.focus();
+  }
+}
+
+// Anti-contact-sharing detection in chat messages
+var _contactPatterns = [
+  /\b\d{8,15}\b/,                    // phone numbers
+  /whatsapp/i, /telegram/i, /signal/i,
+  /@gmail\.com|@hotmail|@yahoo/i,
+  /instagram\.com|ig:\s*@/i,
+  /facebook\.com|fb\.com/i,
+  /mi.n[uú]mero|mi.tel[eé]fono|mi.celular|mi.correo.personal/i
+];
+
+function _hasContactInfo(text){
+  return _contactPatterns.some(function(p){ return p.test(text); });
+}
+
+function _filterContactInfo(text, context){
+  if(!_hasContactInfo(text)) return null;
+  // Log to audit
+  var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+  audit.unshift({ ts:Date.now(), tipo:'contact_share_attempt', context:context, detail:text.slice(0,80) });
+  safeLS('set','velo_audit_log', JSON.stringify(audit.slice(0,500)));
+  return '⚠️ Mensaje bloqueado: Velo no permite el intercambio de datos de contacto externos. Todas las sesiones deben realizarse dentro de la plataforma.';
 }
 
 // ── LOGO ADMIN EASTER EGG ─────────────────────────────────────
