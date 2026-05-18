@@ -719,6 +719,20 @@
             <div id="bottleRespList" style="display:none"></div>
           </div>
         </div>
+        <!-- Bottle reply sheet -->
+        <div class="p-modal-ov" id="bottleReplyOv">
+          <div class="p-sheet p-sheet-dark">
+            <div class="p-sheet-handle" style="background:rgba(116,198,157,.3)"></div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:#fff;margin-bottom:6px">Responder botella</div>
+            <div style="font-size:12px;color:rgba(200,165,100,.7);font-style:italic;margin-bottom:14px;line-height:1.55" id="bottleReplyPreview"></div>
+            <p style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Al responder, la botella desaparece del mar y el autor recibe tu mensaje en su buzón Velo de forma anónima.</p>
+            <textarea class="p-textarea dark-ta" id="bottleReplyTa" rows="4" placeholder="Dejá palabras de aliento para esta persona…"></textarea>
+            <div style="height:12px"></div>
+            <button class="p-btn p-btn--dark-white p-btn--lg p-btn--full" onclick="pSendBottleReply()">💌 Enviar respuesta</button>
+            <div style="height:8px"></div>
+            <button class="p-btn p-btn--dark-outline p-btn--md p-btn--full" onclick="closeModal('bottleReplyOv')">Cancelar</button>
+          </div>
+        </div>
         <!-- Bottle form sheet -->
         <div class="p-modal-ov" id="bottleFormOv">
           <div class="p-sheet p-sheet-dark">
@@ -954,11 +968,26 @@
             <div class="p-page-hdr">
               <div>
                 <div class="p-label">Comunidad</div>
-                <h2 class="p-title">Muro Feliz ☀️</h2>
+                <h2 class="p-title">Muro de la Felicidad ☀️</h2>
               </div>
               <button class="p-btn p-btn--primary p-btn--sm" onclick="pOpenHappyPost()">+ Compartir</button>
             </div>
+            <p style="font-size:12px;color:var(--ink4);margin-bottom:16px;font-style:italic">✨ Cada publicación desaparece automáticamente después de 24 horas.</p>
             <div class="happy-grid" id="happyList"></div>
+          </div>
+        </div>
+        <!-- Happy post modal -->
+        <div class="p-modal-ov" id="happyPostOv">
+          <div class="p-sheet">
+            <div class="p-sheet-handle"></div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:6px">Compartí un momento de alegría</div>
+            <p style="font-size:12px;color:var(--ink4);margin-bottom:14px;line-height:1.5">Tu publicación desaparece en 24 horas. Sin likes, solo alegría genuina. ☀️</p>
+            <div id="happyEmojiRow" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px"></div>
+            <textarea class="p-textarea" id="happyPostTa" rows="4" placeholder="¿Qué momento de alegría querés compartir hoy?"></textarea>
+            <div style="height:12px"></div>
+            <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSubmitHappyPost()">☀️ Publicar en el muro</button>
+            <div style="height:8px"></div>
+            <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('happyPostOv')">Cancelar</button>
           </div>
         </div>
       </div>

@@ -765,20 +765,40 @@ function pRenderBottle(){
 
   var list = document.getElementById('bottleList');
   if(!list) return;
+
   var bottles = []; try{ bottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
+  // Each bottle from the wall (not the user's own) gets a stable id for removal
   var mockBottles = [
-    { mood:'😔', text:'A veces el silencio duele más que las palabras.', time:'hace 3 min', responses:2, color:'rgba(116,198,157,.12)' },
-    { mood:'💭', text:'¿Alguien más siente que no encaja en ningún lado?', time:'hace 8 min', responses:7, color:'rgba(200,165,100,.08)' },
-    { mood:'😢', text:'Hoy recordé a alguien que ya no está. Lo extraño tanto.', time:'hace 15 min', responses:4, color:'rgba(196,181,232,.12)' },
-    { mood:'🤗', text:'Para quien lo necesite: no estás solo/a. Esto también pasa.', time:'hace 22 min', responses:15, color:'rgba(116,198,157,.1)' }
+    { id:'mb1', mood:'😔', text:'A veces el silencio duele más que las palabras.',          responses:2,  color:'rgba(116,198,157,.12)',   ts: Date.now()-3*60000   },
+    { id:'mb2', mood:'💭', text:'¿Alguien más siente que no encaja en ningún lado?',         responses:7,  color:'rgba(200,165,100,.08)',   ts: Date.now()-8*60000   },
+    { id:'mb3', mood:'😢', text:'Hoy recordé a alguien que ya no está. Lo extraño tanto.',   responses:4,  color:'rgba(196,181,232,.12)',   ts: Date.now()-15*60000  },
+    { id:'mb4', mood:'🤗', text:'Para quien lo necesite: no estás solo/a. Esto también pasa.',responses:15, color:'rgba(116,198,157,.1)',   ts: Date.now()-22*60000  }
   ];
-  var allBottles = bottles.concat(mockBottles);
+
+  // Filter out mock bottles the user already responded to
+  var responded = []; try{ responded = JSON.parse(safeLS('get','velo_bottle_responded')||'[]'); }catch(e){}
+  var filteredMock = mockBottles.filter(function(b){ return responded.indexOf(b.id) < 0; });
+  var allBottles = bottles.concat(filteredMock);
+
   if(!allBottles.length){
     list.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.4)"><span class="p-empty-emoji">🌊</span><div class="p-empty-title" style="color:rgba(255,255,255,.6)">El mar está tranquilo</div><div class="p-empty-sub">Sé el primero en lanzar una botella</div></div>';
     return;
   }
+
   list.innerHTML = allBottles.map(function(b, i){
-    return '<div class="dark-bottle" style="animation-delay:'+i*.08+'s;border-left:3px solid '+(b.color||'rgba(200,165,100,.3)').replace('rgba','rgba')+'"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:20px">'+b.mood+'</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+b.time+'</span></div><p style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+b.text+'"</p><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;color:rgba(200,165,100,.6)">💬 '+(b.responses||0)+' respuestas</span><button style="padding:5px 11px;background:rgba(200,165,100,.12);border:1px solid rgba(200,165,100,.22);border-radius:100px;color:#C8A560;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pToast(\'💬\',\'Respondiendo botella…\')">Responder</button></div></div>';
+    var relTime = b.ts ? (function(){
+      var d = Date.now()-b.ts;
+      if(d<60000) return 'ahora mismo';
+      if(d<3600000) return 'hace '+Math.floor(d/60000)+' min';
+      return 'hace '+Math.floor(d/3600000)+'h';
+    })() : 'hace unos minutos';
+    return '<div class="dark-bottle" id="bottle-'+b.id+'" style="animation-delay:'+i*.08+'s;border-left:3px solid '+(b.color||'rgba(200,165,100,.3)')+'">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:20px">'+b.mood+'</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+relTime+'</span></div>'
+      +'<p style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+b.text+'"</p>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between">'
+      +'<span style="font-size:11px;color:rgba(200,165,100,.6)">💬 '+(b.responses||0)+' respuestas</span>'
+      +'<button style="padding:5px 11px;background:rgba(200,165,100,.12);border:1px solid rgba(200,165,100,.22);border-radius:100px;color:#C8A560;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply(\''+b.id+'\',\''+b.text.substring(0,40).replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'...\')">💌 Responder</button>'
+      +'</div></div>';
   }).join('');
 }
 
@@ -801,10 +821,63 @@ function pSendBottle(){
   ta.value = '';
   closeModal('bottleFormOv');
   var bottles = []; try{ bottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
-  bottles.unshift({ mood:_selectedBottleMood, text:text, time:'ahora mismo', responses:0, color:'rgba(116,198,157,.12)', ts:Date.now() });
+  var id = 'ub'+Date.now();
+  bottles.unshift({ id:id, mood:_selectedBottleMood, text:text, responses:0, color:'rgba(116,198,157,.12)', ts:Date.now() });
   safeLS('set','velo_my_bottles', JSON.stringify(bottles.slice(0,50)));
   pToast('🌊','¡Botella lanzada al mar! 🌿');
   pRenderBottle();
+}
+
+var _curBottleReplyId   = null;
+var _curBottleReplyText = '';
+
+function pOpenBottleReply(bottleId, bottlePreview){
+  _curBottleReplyId   = bottleId;
+  _curBottleReplyText = bottlePreview;
+  var preview = document.getElementById('bottleReplyPreview');
+  if(preview) preview.textContent = '"'+bottlePreview+'"';
+  var ta = document.getElementById('bottleReplyTa');
+  if(ta) ta.value = '';
+  openModal('bottleReplyOv');
+}
+
+function pSendBottleReply(){
+  var ta = document.getElementById('bottleReplyTa');
+  if(!ta || !ta.value.trim()){ pToast('✍️','Escribí tu respuesta antes de enviar'); return; }
+  if(ta.value.trim().length < 10){ pToast('✍️','Escribí al menos 10 caracteres'); return; }
+  var replyText = ta.value.trim();
+  closeModal('bottleReplyOv');
+
+  // 1. Mark bottle as responded (remove from wall)
+  var responded = []; try{ responded = JSON.parse(safeLS('get','velo_bottle_responded')||'[]'); }catch(e){}
+  if(_curBottleReplyId && responded.indexOf(_curBottleReplyId) < 0){
+    responded.push(_curBottleReplyId);
+    safeLS('set','velo_bottle_responded', JSON.stringify(responded));
+  }
+
+  // 2. Send inbox notification to "the bottle author" (simulated: goes to own inbox as demo)
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  inbox.unshift({
+    id: 'br-'+Date.now(),
+    tipo: 'botella',
+    icon: '🌊',
+    remitente: 'Velo — Botella al Mar',
+    asunto: '¡Tu botella recibió una respuesta!',
+    extracto: replyText,
+    cuerpo: 'Alguien encontró tu botella en el mar y te dejó estas palabras:\n\n"'+replyText+'"',
+    leido: false,
+    fecha: new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})
+  });
+  safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+
+  // 3. Animate out and re-render
+  var card = document.getElementById('bottle-'+_curBottleReplyId);
+  if(card){ card.style.transition = 'opacity .4s,transform .4s'; card.style.opacity='0'; card.style.transform='translateX(40px)'; }
+  setTimeout(function(){
+    pToast('💌','¡Respuesta enviada! La botella desapareció del mar 🌊');
+    setTimeout(function(){ pToast('📬','El autor recibió tu respuesta en su buzón Velo'); }, 1200);
+    pRenderBottle();
+  }, 450);
 }
 
 // ── DIARY ──────────────────────────────────────────────────────
@@ -1102,34 +1175,113 @@ function pOpenCreateCircle(){
 }
 
 // ── HAPPY WALL ─────────────────────────────────────────────────
-var _happyMock = [
-  { emoji:'🌻', text:'Hoy mi hijo me dijo "te quiero" sin que se lo pidiera.', av:'🌸', time:'hace 5 min', reactions:12 },
-  { emoji:'🎉', text:'Conseguí el trabajo que tanto quería. ¡Un año de espera!', av:'🌊', time:'hace 12 min', reactions:34 },
-  { emoji:'🌱', text:'Fui a terapia por primera vez. Me animé.', av:'🦋', time:'hace 20 min', reactions:28 },
-  { emoji:'☀️', text:'Salí a caminar sin el celular. El mundo sigue siendo hermoso.', av:'🌿', time:'hace 35 min', reactions:19 }
-];
+var HAPPY_TTL = 24 * 60 * 60 * 1000; // 24 horas en ms
+var _happyEmojis = ['☀️','🌻','🎉','🌈','💚','🌸','✨','🌱','🎵','🙌','🦋','💛'];
+var _selectedHappyEmoji = '☀️';
+
+// Mock posts con timestamps recientes para demo (dentro de las 24h)
+var _happyMock = (function(){
+  var now = Date.now();
+  return [
+    { id:'hm1', emoji:'🌻', text:'Hoy mi hijo me dijo "te quiero" sin que se lo pidiera.',      name:'Usuario Anónimo', reactions:12, ts: now - 5*60*1000    },
+    { id:'hm2', emoji:'🎉', text:'Conseguí el trabajo que tanto quería. ¡Un año de espera!',    name:'Usuario Anónimo', reactions:34, ts: now - 12*60*1000   },
+    { id:'hm3', emoji:'🌱', text:'Fui a terapia por primera vez. Me animé.',                    name:'Usuario Anónimo', reactions:28, ts: now - 20*60*1000   },
+    { id:'hm4', emoji:'☀️', text:'Salí a caminar sin el celular. El mundo sigue siendo hermoso.',name:'Usuario Anónimo', reactions:19, ts: now - 35*60*1000  }
+  ];
+})();
+
+function _happyTimeLeft(ts){
+  var ms = (ts + HAPPY_TTL) - Date.now();
+  if(ms <= 0) return null;
+  var h = Math.floor(ms / 3600000);
+  var m = Math.floor((ms % 3600000) / 60000);
+  if(h > 0) return 'expira en '+h+'h '+m+'m';
+  return 'expira en '+m+' min';
+}
+
+function _happyRelTime(ts){
+  var diff = Date.now() - ts;
+  if(diff < 60000)   return 'ahora mismo';
+  if(diff < 3600000) return 'hace '+Math.floor(diff/60000)+' min';
+  return 'hace '+Math.floor(diff/3600000)+'h';
+}
 
 function pRenderHappy(){
   var list = document.getElementById('happyList');
   if(!list) return;
-  var happy = []; try{ happy = JSON.parse(safeLS('get','velo_happy')||'[]'); }catch(e){}
-  var all = happy.concat(_happyMock);
+
+  // Cargar publicaciones del usuario y limpiar las expiradas
+  var userPosts = []; try{ userPosts = JSON.parse(safeLS('get','velo_happy')||'[]'); }catch(e){}
+  var now = Date.now();
+  userPosts = userPosts.filter(function(h){ return (h.ts + HAPPY_TTL) > now; });
+  safeLS('set','velo_happy', JSON.stringify(userPosts));
+
+  // Filtrar mocks expirados (no expiran en demo, siempre son "nuevos")
+  var all = userPosts.concat(_happyMock);
+
   if(!all.length){
-    list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">☀️</span><div class="p-empty-title">Aún no hay publicaciones</div><div class="p-empty-sub">Compartí un momento de alegría</div></div>';
+    list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">☀️</span><div class="p-empty-title">El muro está vacío</div><div class="p-empty-sub">¡Sé el primero en compartir un momento de alegría!</div></div>';
     return;
   }
+
   list.innerHTML = all.map(function(h){
-    return '<div class="happy-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="font-size:28px;width:40px;height:40px;border-radius:13px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div><div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--ink)">'+(h.name||'Usuario Anónimo')+'</div><div style="font-size:11px;color:var(--ink5)">'+h.time+'</div></div></div><p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+h.text+'"</p><div style="display:flex;align-items:center;gap:8px"><button style="padding:5px 11px;background:rgba(255,224,102,.15);border:1px solid rgba(255,224,102,.3);border-radius:100px;font-size:12px;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pToast(\'💛\',\'¡Alegría compartida!\')">💛 '+(h.reactions||0)+'</button></div></div>';
+    var timeLeft = _happyTimeLeft(h.ts);
+    var relTime  = _happyRelTime(h.ts);
+    var expColor = timeLeft && timeLeft.indexOf('min') > -1 ? 'var(--rose)' : 'var(--ink5)';
+    return '<div class="happy-card">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+      +'<div style="font-size:26px;width:42px;height:42px;border-radius:13px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--ink)">'+(h.name||'Usuario Anónimo')+'</div>'
+      +'<div style="font-size:10px;color:var(--ink5)">'+relTime+'</div>'
+      +'</div>'
+      +'</div>'
+      +'<p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+h.text+'"</p>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">'
+      +'<button style="padding:5px 11px;background:rgba(255,224,102,.15);border:1px solid rgba(255,224,102,.3);border-radius:100px;font-size:12px;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pHappyReact(this)">💛 '+(h.reactions||0)+'</button>'
+      +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600">⏳ '+timeLeft+'</span>' : '')
+      +'</div>'
+      +'</div>';
   }).join('');
 }
 
+function pHappyReact(btn){
+  var cur = parseInt(btn.textContent.replace(/[^0-9]/g,''),10)||0;
+  btn.textContent = '💛 '+(cur+1);
+  btn.style.background = 'rgba(255,224,102,.3)';
+  pToast('💛','¡Alegría compartida!');
+}
+
 function pOpenHappyPost(){
-  var text = prompt('Compartí un momento de alegría:');
-  if(!text || !text.trim()) return;
+  var ov = document.getElementById('happyPostOv');
+  if(ov){ ov.classList.add('open'); }
+  _selectedHappyEmoji = '☀️';
+  var ta = document.getElementById('happyPostTa');
+  if(ta) ta.value = '';
+  var emojiRow = document.getElementById('happyEmojiRow');
+  if(emojiRow) emojiRow.innerHTML = _happyEmojis.map(function(e){
+    return '<button style="font-size:22px;padding:6px;border:2px solid '+(e==='☀️'?'rgba(255,200,50,.6)':'transparent')+';border-radius:10px;background:none;cursor:pointer;transition:border-color .15s" onclick="pSelHappyEmoji(this,\''+e+'\')">'+e+'</button>';
+  }).join('');
+}
+
+function pSelHappyEmoji(el, emoji){
+  _selectedHappyEmoji = emoji;
+  var row = document.getElementById('happyEmojiRow');
+  if(row) row.querySelectorAll('button').forEach(function(b){
+    b.style.borderColor = b.textContent === emoji ? 'rgba(255,200,50,.6)' : 'transparent';
+  });
+}
+
+function pSubmitHappyPost(){
+  var ta = document.getElementById('happyPostTa');
+  if(!ta || !ta.value.trim()){ pToast('✍️','Escribí algo antes de publicar'); return; }
+  var name = safeLS('get','velo_user_name') || 'Usuario Anónimo';
+  var post = { id:'h'+Date.now(), emoji:_selectedHappyEmoji, text:ta.value.trim(), name:name, reactions:0, ts:Date.now() };
   var happy = []; try{ happy = JSON.parse(safeLS('get','velo_happy')||'[]'); }catch(e){}
-  happy.unshift({ emoji:'☀️', text:text.trim(), av:'🧑', time:'ahora mismo', reactions:0, ts:Date.now() });
+  happy.unshift(post);
   safeLS('set','velo_happy', JSON.stringify(happy.slice(0,50)));
-  pToast('☀️','¡Momento compartido! 💛');
+  closeModal('happyPostOv');
+  pToast('☀️','¡Momento compartido! Desaparece en 24h 💛');
   pRenderHappy();
 }
 
