@@ -13,6 +13,24 @@
   });
 })();
 
+// ── GEMINI AI CONFIG ────────────────────────────────────────
+var GEMINI_KEY    = 'AIzaSyBilVllciOwMx-OsGiWiy_Q10NmDEzD9s8';
+var GEMINI_URL    = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=';
+
+async function _geminiCall(prompt){
+  try{
+    var res = await fetch(GEMINI_URL + GEMINI_KEY, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }],
+        generationConfig:{ temperature:0.7, maxOutputTokens:300 } })
+    });
+    var json = await res.json();
+    return json.candidates && json.candidates[0] && json.candidates[0].content &&
+           json.candidates[0].content.parts && json.candidates[0].content.parts[0].text || null;
+  }catch(e){ return null; }
+}
+
 // ── SUPABASE CONFIG ─────────────────────────────────────────
 var SUPABASE_URL  = 'https://yuravtnjvvztsxdtggod.supabase.co';
 var SUPABASE_ANON = 'sb_publishable_mBoqW2t3QoJvp5jFecEGgQ_1wrPiT9C';
@@ -942,7 +960,7 @@ function pLeaveHelpChat(){
 
 function pOpenHelpForm(){ openModal('helpFormOv'); }
 
-function pSendHelp(){
+async function pSendHelp(){
   var ta = document.getElementById('helpMsgTa');
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí tu mensaje antes de enviar'); return; }
   var msg = ta.value.trim();
@@ -961,6 +979,43 @@ function pSendHelp(){
   inbox.unshift({ id:'help-'+ts, tipo:'sistema', icon:'💚', remitente:'Sala de Ayuda', asunto:'Tu mensaje fue publicado', cuerpo:'Tu mensaje fue publicado en la Sala de Ayuda. Alguien te acompañará pronto.\n\n"'+msg+'"', extracto:'Alguien te acompañará pronto.', leido:false, prioritario:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
   safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
   pRenderHelp();
+
+  // Gemini crisis detection — runs silently in background
+  _geminiCrisisCheck(msg);
+}
+
+async function _geminiCrisisCheck(msg){
+  var prompt = 'Sos el sistema de detección de crisis de una app de salud mental.\n'
+    +'Analizá este mensaje de un usuario y determiná si hay señales de crisis suicida, autolesión o peligro inmediato.\n'
+    +'Respondé SOLO con JSON: {"crisis": true/false, "nivel": "alto/medio/bajo/ninguno", "razon": "..."}\n\n'
+    +'Mensaje: "'+msg.replace(/"/g,"'")+'"';
+  var result = await _geminiCall(prompt);
+  if(!result) return;
+  try{
+    var match = result.match(/\{[\s\S]*\}/);
+    if(!match) return;
+    var data = JSON.parse(match[0]);
+    if(data.crisis && (data.nivel === 'alto' || data.nivel === 'medio')){
+      // Show SOS resources prominently
+      setTimeout(function(){
+        var inbox2 = []; try{ inbox2 = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+        inbox2.unshift({ id:'crisis-'+Date.now(), tipo:'sos', icon:'🆘',
+          remitente:'Velo — Apoyo Urgente',
+          asunto:'Estamos acá para vos 💙',
+          extracto:'Detectamos que podrías estar pasando un momento muy difícil.',
+          cuerpo:'Estamos acá para vos. Si sentís que no podés más, por favor contactá una línea de crisis. En Argentina: Centro de Asistencia al Suicida 135 (gratuito, 24hs). También podés tocar el botón SOS en la Sala de Ayuda.',
+          leido:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
+        safeLS('set','velo_inbox', JSON.stringify(inbox2.slice(0,100)));
+        _updateInboxDot();
+        pToast('💙','Recordá: no estás solo/a. El botón SOS siempre está disponible.');
+      }, 4000);
+      // Log in audit
+      var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+      audit.unshift({ ts:Date.now(), tipo:'abuse_detect', circle:'sala-ayuda',
+        motivo:'Gemini — crisis detectada ('+data.nivel+'): '+data.razon, detail:msg.slice(0,80) });
+      safeLS('set','velo_audit_log', JSON.stringify(audit.slice(0,500)));
+    }
+  }catch(e){}
 }
 
 
@@ -1581,67 +1636,86 @@ function _renderSurveyResults(){
     : '');
 }
 
-function _checkMonthlyMoodReport(){
+async function _checkMonthlyMoodReport(){
   var today = new Date();
   if(today.getDate() !== 1) return;
   var reportKey = 'velo_mood_report_'+today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0');
-  if(safeLS('get',reportKey) === '1') return; // already sent this month
+  if(safeLS('get',reportKey) === '1') return;
   safeLS('set', reportKey, '1');
 
-  // Gather last month's moods
   var prev = new Date(today.getFullYear(), today.getMonth()-1, 1);
   var prevYear = prev.getFullYear();
   var prevMonth = prev.getMonth()+1;
   var daysInPrev = new Date(prevYear, prevMonth, 0).getDate();
   var moodCounts = {}; var totalDays = 0;
+  var firstHalf = {}; var secondHalf = {};
   for(var d = 1; d <= daysInPrev; d++){
     var k = prevYear+'-'+String(prevMonth).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     var stored = safeLS('get','velo_mood_'+k);
-    if(stored){ try{ var ms = JSON.parse(stored); if(ms.emoji){ moodCounts[ms.emoji]=(moodCounts[ms.emoji]||0)+1; totalDays++; } }catch(e){} }
+    if(stored){ try{ var ms = JSON.parse(stored); if(ms.emoji){
+      moodCounts[ms.emoji]=(moodCounts[ms.emoji]||0)+1; totalDays++;
+      if(d <= 15){ firstHalf[ms.emoji]=(firstHalf[ms.emoji]||0)+1; }
+      else { secondHalf[ms.emoji]=(secondHalf[ms.emoji]||0)+1; }
+    }}catch(e){} }
   }
 
   var monthNames = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var monthName = monthNames[prevMonth];
-
   var positives = (moodCounts['😄']||0) + (moodCounts['😊']||0);
-  var analysis, summary;
-  if(!totalDays){
-    analysis = 'No registraste tu ánimo el mes pasado. Recordá que el seguimiento diario te ayuda a conocerte mejor. ¡Este mes empezás de cero! 🌱';
-    summary  = 'Sin registros en '+monthName;
-  } else {
-    var pct = Math.round(positives/totalDays*100);
-    var topEmoji = Object.keys(moodCounts).sort(function(a,b){ return moodCounts[b]-moodCounts[a]; })[0];
-    summary = 'Registraste '+totalDays+' días en '+monthName+'. Tu ánimo más frecuente: '+topEmoji;
-    if(pct >= 60){
-      analysis = '¡'+monthName+' fue un mes mayormente positivo para vos! '+pct+'% de tus días registraste bienestar. Eso habla de tu fortaleza y resiliencia. Seguí construyendo ese espacio de cuidado. 🌻';
-    } else if(pct >= 35){
-      analysis = monthName+' tuvo sus altibajos, como la vida misma. Registraste días de alegría y también días más difíciles. Eso es completamente humano. Lo importante es que seguís acá, registrando y avanzando. 💙';
-    } else {
-      analysis = 'Parece que '+monthName+' fue un mes desafiante. Gracias por seguir registrando incluso en los días difíciles: eso es valentía real. Recordá que Velo siempre está acá para acompañarte. 🌿';
-    }
-  }
+  var topEmoji = totalDays ? Object.keys(moodCounts).sort(function(a,b){ return moodCounts[b]-moodCounts[a]; })[0] : null;
+  var summary = totalDays ? 'Registraste '+totalDays+' días en '+monthName+'. Tu ánimo más frecuente: '+topEmoji : 'Sin registros en '+monthName;
 
-  // Append happy wall stats for prev month
+  // Happy wall stats
   var happyStats = _happyStatsGet(prev);
   var happyLine = '';
   if(happyStats.posts || happyStats.reactionsReceived || happyStats.commentsReceived){
     var parts = [];
-    if(happyStats.posts) parts.push('compartiste '+(happyStats.posts === 1 ? '1 momento de alegría' : happyStats.posts+' momentos de alegría')+' en el Muro de la Felicidad 🌻');
-    if(happyStats.reactionsReceived) parts.push('recibiste '+happyStats.reactionsReceived+(happyStats.reactionsReceived === 1 ? ' reacción' : ' reacciones')+' de la comunidad 💛');
-    if(happyStats.commentsReceived) parts.push('recibiste '+happyStats.commentsReceived+(happyStats.commentsReceived === 1 ? ' comentario' : ' comentarios')+' en tus publicaciones 💬');
-    if(parts.length) happyLine = ' Además, '+parts.join(', ')+'.';
+    if(happyStats.posts) parts.push((happyStats.posts===1?'1 momento de alegría':happyStats.posts+' momentos de alegría')+' en el Muro 🌻');
+    if(happyStats.reactionsReceived) parts.push(happyStats.reactionsReceived+(happyStats.reactionsReceived===1?' reacción':' reacciones')+' recibidas 💛');
+    if(happyStats.commentsReceived) parts.push(happyStats.commentsReceived+(happyStats.commentsReceived===1?' comentario':' comentarios')+' en tus publicaciones 💬');
+    if(parts.length) happyLine = '\n\nEn el Muro de la Felicidad: '+parts.join(', ')+'.';
+  }
+
+  var analysis;
+  if(!totalDays){
+    analysis = 'No registraste tu ánimo en '+monthName+'. Recordá que el seguimiento diario te ayuda a conocerte mejor. ¡Este mes es una nueva oportunidad! 🌱';
+  } else {
+    // Build Gemini prompt with real data
+    var moodList = Object.entries(moodCounts).map(function(e){ return e[0]+' ('+e[1]+' días)'; }).join(', ');
+    var topFirst  = Object.keys(firstHalf).sort(function(a,b){ return (firstHalf[b]||0)-(firstHalf[a]||0); })[0]||'variado';
+    var topSecond = Object.keys(secondHalf).sort(function(a,b){ return (secondHalf[b]||0)-(secondHalf[a]||0); })[0]||'variado';
+    var pct = Math.round(positives/totalDays*100);
+    var prompt = 'Sos un asistente empático de bienestar emocional de la app Velo.\n'
+      +'Analizá los registros de ánimo del usuario en '+monthName+' y escribí un mensaje personalizado, cálido y esperanzador en español rioplatense (usá "vos/te").\n\n'
+      +'Datos reales del mes:\n'
+      +'- Días registrados: '+totalDays+' de '+daysInPrev+' posibles\n'
+      +'- Distribución: '+moodList+'\n'
+      +'- Primera quincena: predominó '+topFirst+'\n'
+      +'- Segunda quincena: predominó '+topSecond+'\n'
+      +'- Días con ánimo positivo: '+pct+'%\n'
+      +(happyStats.posts?'- Compartió '+happyStats.posts+' momentos en el Muro de la Felicidad\n':'')
+      +'\nEscribí 3-4 oraciones que:\n'
+      +'1. Reconozcan cómo fue el mes con honestidad\n'
+      +'2. Destaquen algún patrón o tendencia real de los datos\n'
+      +'3. Terminen con un mensaje motivador sin ser cursi\n'
+      +'Sin asteriscos, sin markdown, sin listas. Solo texto corrido. Máximo 90 palabras.';
+
+    var aiText = await _geminiCall(prompt);
+    analysis = aiText || (pct >= 60
+      ? '¡'+monthName+' fue un mes mayormente positivo para vos! '+pct+'% de tus días registraste bienestar. Seguí construyendo ese espacio de cuidado. 🌻'
+      : pct >= 35
+        ? monthName+' tuvo sus altibajos. Lo importante es que seguís registrando y avanzando. 💙'
+        : 'Parece que '+monthName+' fue un mes desafiante. Gracias por seguir registrando incluso en los días difíciles. 🌿');
   }
 
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   inbox.unshift({
-    id: 'mood-report-'+Date.now(),
-    tipo: 'reporte',
-    icon: '📊',
-    remitente: 'Velo — Análisis de Bienestar',
-    asunto: 'Tu resumen emocional de '+monthName+' 🌿',
+    id: 'mood-report-'+Date.now(), tipo:'reporte', icon:'📊',
+    remitente:'Velo — Análisis de Bienestar ✨',
+    asunto:'Tu resumen emocional de '+monthName+' 🌿',
     extracto: summary,
     cuerpo: analysis + happyLine,
-    leido: false,
+    leido:false,
     fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})
   });
   safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
@@ -3359,37 +3433,59 @@ function pResolveAudit(idx){
   _renderAdmin();
 }
 
-function pRunAiScan(){
-  pToast('🤖','Ejecutando escaneo de contenido...');
-  setTimeout(function(){
-    // Simulate AI scan — check local circles for flag words
-    var flagWords = ['muerte','suicidio','matar','odio','insulto','basura','idiota','estúpido'];
-    var allCircleIds = ['c1','c2','c3','c4','c5'];
-    var userCircles = []; try{ userCircles = JSON.parse(safeLS('get','velo_circles')||'[]'); }catch(e){}
-    var allIds = allCircleIds.concat(userCircles.map(function(c){ return c.id; }));
-    var flagged = [];
-    allIds.forEach(function(cid){
-      var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+cid)||'[]'); }catch(e){}
-      msgs.forEach(function(m){
-        flagWords.forEach(function(w){
-          if(m.text && m.text.toLowerCase().indexOf(w) >= 0){
-            flagged.push({ cid:cid, text:m.text.slice(0,60), word:w });
-          }
-        });
-      });
+async function pRunAiScan(){
+  pToast('🤖','Gemini analizando contenido...');
+  var allCircleIds = ['c1','c2','c3','c4','c5'];
+  var userCircles = []; try{ userCircles = JSON.parse(safeLS('get','velo_circles')||'[]'); }catch(e){}
+  var allIds = allCircleIds.concat(userCircles.map(function(c){ return c.id; }));
+
+  // Collect recent messages
+  var samples = [];
+  allIds.forEach(function(cid){
+    var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+cid)||'[]'); }catch(e){}
+    msgs.slice(0,20).forEach(function(m){
+      if(m.text && m.text.trim()) samples.push({ cid:cid, text:m.text.slice(0,200) });
     });
-    if(flagged.length){
-      var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
-      flagged.forEach(function(f){
-        audit.unshift({ ts:Date.now(), tipo:'abuse_detect', circle:f.cid, motivo:'Palabra detectada: "'+f.word+'"', detail:f.text });
-      });
-      safeLS('set','velo_audit_log', JSON.stringify(audit.slice(0,500)));
-      pToast('⚠️','IA detectó '+flagged.length+' posibles eventos. Ver auditoría.');
-    } else {
-      pToast('✅','IA: contenido limpio. Sin alertas.');
-    }
-    _renderAdmin();
-  }, 2000);
+  });
+  // Also scan help chat messages
+  var helpMsgs = []; try{ helpMsgs = JSON.parse(safeLS('get','velo_help_msgs')||'[]'); }catch(e){}
+  helpMsgs.slice(0,20).forEach(function(m){
+    if(m.text) samples.push({ cid:'sala-ayuda', text:m.text.slice(0,200) });
+  });
+
+  if(!samples.length){ pToast('✅','Sin mensajes para analizar.'); _renderAdmin(); return; }
+
+  var prompt = 'Sos el sistema de moderación de Velo, una app de salud mental peer-to-peer.\n'
+    +'Analizá estos mensajes de usuarios y detectá: (1) crisis suicidas o autolesiones, (2) acoso o agresión, (3) contenido inapropiado.\n'
+    +'Para cada mensaje problemático respondé en formato JSON array:\n'
+    +'[{"idx": N, "tipo": "crisis|acoso|inapropiado", "gravedad": "alta|media|baja", "razon": "...breve..."}]\n'
+    +'Si no hay problemas respondé: []\n\n'
+    +'Mensajes (índice | sala | texto):\n'
+    + samples.map(function(s,i){ return i+'|'+s.cid+'|'+s.text; }).join('\n');
+
+  var aiResult = await _geminiCall(prompt);
+  var flagged = [];
+  if(aiResult){
+    try{
+      var match = aiResult.match(/\[[\s\S]*\]/);
+      if(match){ flagged = JSON.parse(match[0]); }
+    }catch(e){}
+  }
+
+  if(flagged.length){
+    var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+    flagged.forEach(function(f){
+      var sample = samples[f.idx] || {};
+      audit.unshift({ ts:Date.now(), tipo:'abuse_detect', circle:sample.cid||'?',
+        motivo:'Gemini IA — '+f.tipo+' (gravedad: '+f.gravedad+'): '+f.razon,
+        detail:(sample.text||'').slice(0,80) });
+    });
+    safeLS('set','velo_audit_log', JSON.stringify(audit.slice(0,500)));
+    pToast('⚠️','Gemini detectó '+flagged.length+' evento(s). Ver auditoría.');
+  } else {
+    pToast('✅','Gemini: contenido limpio. Sin alertas.');
+  }
+  _renderAdmin();
 }
 
 function pViewPatterns(){
