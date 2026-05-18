@@ -2743,7 +2743,14 @@ function pRenderInbox(){
     el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">💌</span><div class="p-empty-title">Sin mensajes</div><div class="p-empty-sub">Tus notificaciones aparecerán aquí.</div></div>';
     return;
   }
-  el.innerHTML = all.map(function(m){
+  var contactBanner = '<div onclick="pGoTo(\'contact\')" style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.07);border:1.5px solid rgba(116,198,157,.18);border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer">'
+    +'<div style="font-size:22px">✉️</div>'
+    +'<div><div style="font-size:13px;font-weight:700;color:var(--ink)">Escribinos a Velo</div>'
+    +'<div style="font-size:11px;color:var(--ink4)">Sugerencias, consultas o reportar un problema</div></div>'
+    +'<div style="margin-left:auto;color:var(--ink5);font-size:16px">›</div>'
+    +'</div>';
+
+  el.innerHTML = contactBanner + all.map(function(m){
     var actionBtn = '';
     if(m.accion && !m.leido){
       actionBtn = '<button onclick="'+m.accion+'" style="margin-top:6px;font-size:11px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
@@ -2765,13 +2772,19 @@ async function pSendContact(){
   var subject = document.getElementById('contactSubject');
   var msg     = document.getElementById('contactMsg');
   if(!subject||!msg||!msg.value.trim()){ pToast('✍️','Escribí tu mensaje'); return; }
-  var text = msg.value.trim();
-  var ts = Date.now();
-  var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
-  msgs.unshift({ id:'c-'+ts, topic: subject.value||'General', mensaje:text, email:safeLS('get','velo_user_email')||'', fecha:new Date().toLocaleString('es'), leido:false });
-  safeLS('set','velo_admin_contacts', JSON.stringify(msgs.slice(0,100)));
-  if(sbClient){ sbEnviarReporte(text, subject.value||'General').catch(function(){}); }
-  if(subject) subject.value = '';
+  var text    = msg.value.trim();
+  var topic   = subject ? subject.value||'General' : 'General';
+  var email   = safeLS('get','velo_user_email') || 'anónimo';
+
+  // Save to Supabase (primary) with localStorage fallback
+  var saved = await sbSaveContact(topic, text, email);
+  if(!saved){
+    var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
+    msgs.unshift({ id:'c-'+Date.now(), topic:topic, mensaje:text, email:email, fecha:new Date().toLocaleString('es'), leido:false });
+    safeLS('set','velo_admin_contacts', JSON.stringify(msgs.slice(0,100)));
+  }
+
+  if(subject) subject.value = 'General';
   if(msg) msg.value = '';
   pToast('💌','Mensaje enviado. Te respondemos pronto 🌿');
 }
@@ -3107,22 +3120,7 @@ function _renderAdmin(){
 
     var contactsHtml = provHtml
       +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px;margin-top:8px">💌 MENSAJES DE CONTACTO</div>'
-      +(msgs.length ? msgs.map(function(m,i){
-        var texto = m.mensaje || m.msg || '';
-        return '<div class="a-row" style="flex-direction:column;align-items:flex-start;gap:6px">'
-          +'<div style="display:flex;width:100%;align-items:center;gap:10px">'
-          +'<div class="a-row-ic">💌</div>'
-          +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.86)">'+_escHtml(m.topic||'Consulta')+'</div>'
-          +'<div style="font-size:11px;color:rgba(255,255,255,.38)">'+_escHtml(m.email)+' · '+m.fecha+'</div></div>'
-          +(m.leido?'<span class="a-badge-g">leído</span>':'<span class="a-badge-y">nuevo</span>')
-          +'</div>'
-          +(texto ? '<div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.5;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:8px;width:100%;box-sizing:border-box">'+_escHtml(texto)+'</div>' : '')
-          +'<div style="display:flex;gap:8px">'
-          +'<button onclick="pAdminMarkContactRead('+i+')" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.7);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">'+(m.leido?'✓ Leído':'Marcar leído')+'</button>'
-          +(m.email && m.email !== 'anónimo' ? '<a href="mailto:'+_escHtml(m.email)+'?subject=Re: '+_escHtml(m.topic||'Consulta')+'" style="font-size:10px;padding:3px 8px;background:rgba(200,162,0,.1);border:1px solid rgba(200,162,0,.2);color:rgba(200,162,0,.8);border-radius:6px;cursor:pointer;text-decoration:none;font-family:\'Jost\',sans-serif;font-weight:600">📧 Responder</a>' : '')
-          +'</div>'
-          +'</div>';
-      }).join('') : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin mensajes aún.</p>')
+      +'<div id="adminContactsList"><p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Cargando mensajes…</p></div>'
 
     // T&C acceptance log (legal audit)
       +'<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:8px">📜 ACEPTACIÓN DE TÉRMINOS (AUDITORÍA LEGAL)</div>'
@@ -3238,6 +3236,16 @@ function _renderAdmin(){
       + _renderSurveyResults();
 
     content.innerHTML = contactsHtml + surveyHtml + massHtml + transferHtml + auditHtml + aiModHtml;
+
+    // Load contacts async: try Supabase first, fallback to localStorage
+    sbLoadContacts().then(function(sbMsgs){
+      if(sbMsgs){
+        _renderAdminContactsList(sbMsgs);
+      } else {
+        var local = []; try{ local = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
+        _renderAdminContactsList(local);
+      }
+    });
   }
 }
 
@@ -3256,11 +3264,45 @@ function pCreateProvisionalPass(){
   pToast('🔑','Contraseña provisional creada');
 }
 
-function pAdminMarkContactRead(idx){
+function _renderAdminContactsList(msgs){
+  var el = document.getElementById('adminContactsList');
+  if(!el) return;
+  if(!msgs || !msgs.length){
+    el.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin mensajes aún.</p>';
+    return;
+  }
+  el.innerHTML = msgs.map(function(m){
+    var texto = m.mensaje || m.msg || '';
+    var mid   = m.id || '';
+    var fecha = m.fecha ? new Date(m.fecha).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    return '<div class="a-row" style="flex-direction:column;align-items:flex-start;gap:6px">'
+      +'<div style="display:flex;width:100%;align-items:center;gap:10px">'
+      +'<div class="a-row-ic">💌</div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.86)">'+_escHtml(m.topic||'Consulta')+'</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.38)">'+_escHtml(m.user_email||m.email||'anónimo')+' · '+fecha+'</div></div>'
+      +(m.leido?'<span class="a-badge-g">leído</span>':'<span class="a-badge-y">nuevo</span>')
+      +'</div>'
+      +(texto ? '<div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.5;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:8px;width:100%;box-sizing:border-box">'+_escHtml(texto)+'</div>' : '')
+      +'<div style="display:flex;gap:8px">'
+      +(!m.leido ? '<button onclick="pAdminMarkContactRead(\''+mid+'\')" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.7);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Marcar leído</button>' : '<span style="font-size:10px;color:rgba(116,198,157,.5)">✓ Leído</span>')
+      +((m.user_email||m.email) && (m.user_email||m.email) !== 'anónimo' ? '<a href="mailto:'+_escHtml(m.user_email||m.email)+'?subject=Re: '+_escHtml(m.topic||'Consulta')+'" style="font-size:10px;padding:3px 8px;background:rgba(200,162,0,.1);border:1px solid rgba(200,162,0,.2);color:rgba(200,162,0,.8);border-radius:6px;text-decoration:none;font-family:\'Jost\',sans-serif;font-weight:600">📧 Responder</a>' : '')
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+async function pAdminMarkContactRead(id){
+  // Try Supabase first
+  await sbMarkContactRead(id);
+  // Reload contacts
+  var sbMsgs = await sbLoadContacts();
+  if(sbMsgs){ _renderAdminContactsList(sbMsgs); return; }
+  // Fallback: localStorage
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
-  if(msgs[idx]) msgs[idx].leido = true;
+  var m = msgs.find(function(x){ return x.id === id; });
+  if(m) m.leido = true;
   safeLS('set','velo_admin_contacts', JSON.stringify(msgs));
-  _renderAdmin();
+  _renderAdminContactsList(msgs);
 }
 
 function pApproveTransfer(idx){
@@ -3483,6 +3525,27 @@ async function sbEnviarReporte(mensaje, categoria){
     var user = await sbClient.auth.getUser();
     await sbClient.from('reportes').insert({ user_id:user&&user.data&&user.data.user?user.data.user.id:null, mensaje:mensaje, categoria:categoria||'contacto', estado:'abierto', created_at:new Date().toISOString() });
   }catch(e){}
+}
+
+async function sbSaveContact(topic, mensaje, email){
+  if(!sbClient) return false;
+  try{
+    var {error} = await sbClient.from('contacts').insert({ topic:topic||'General', mensaje:mensaje, user_email:email||'anónimo', leido:false, fecha:new Date().toISOString() });
+    return !error;
+  }catch(e){ return false; }
+}
+
+async function sbLoadContacts(){
+  if(!sbClient) return null;
+  try{
+    var {data,error} = await sbClient.from('contacts').select('*').order('fecha',{ascending:false}).limit(100);
+    return error ? null : (data||[]);
+  }catch(e){ return null; }
+}
+
+async function sbMarkContactRead(id){
+  if(!sbClient) return;
+  try{ await sbClient.from('contacts').update({leido:true}).eq('id',id); }catch(e){}
 }
 
 // ── JITSI MEET — VIDEO CALL ────────────────────────────────────
