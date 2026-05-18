@@ -1000,24 +1000,38 @@ async function _geminiCrisisCheck(msg){
     if(!match) return;
     var data = JSON.parse(match[0]);
     if(data.crisis && (data.nivel === 'alto' || data.nivel === 'medio')){
-      // Show SOS resources prominently
-      setTimeout(function(){
-        var inbox2 = []; try{ inbox2 = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
-        inbox2.unshift({ id:'crisis-'+Date.now(), tipo:'sos', icon:'🆘',
-          remitente:'Velo — Apoyo Urgente',
-          asunto:'Estamos acá para vos 💙',
-          extracto:'Detectamos que podrías estar pasando un momento muy difícil.',
-          cuerpo:'Estamos acá para vos. Si sentís que no podés más, por favor contactá una línea de crisis. En Argentina: Centro de Asistencia al Suicida 135 (gratuito, 24hs). También podés tocar el botón SOS en la Sala de Ayuda.',
-          leido:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
-        safeLS('set','velo_inbox', JSON.stringify(inbox2.slice(0,100)));
-        _updateInboxDot();
-        pToast('💙','Recordá: no estás solo/a. El botón SOS siempre está disponible.');
-      }, 4000);
-      // Log in audit
+
+      // For high-level crisis: open SOS immediately, don't wait
+      if(data.nivel === 'alto'){
+        pOpenSOS();
+        pToast('🆘','Por favor contactá una línea de crisis ahora. Estamos acá para vos 💙');
+      } else {
+        setTimeout(function(){
+          pToast('💙','Recordá: no estás solo/a. El botón SOS siempre está disponible.');
+          _updateInboxDot();
+        }, 3000);
+      }
+
+      // Send to inbox
+      var inbox2 = []; try{ inbox2 = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+      inbox2.unshift({ id:'crisis-'+Date.now(), tipo:'sos', icon:'🆘',
+        remitente:'Velo — Apoyo Urgente',
+        asunto:'Estamos acá para vos 💙',
+        extracto:'Detectamos que podrías estar pasando un momento muy difícil.',
+        cuerpo:'Estamos acá para vos. Si sentís que no podés más, por favor contactá una línea de crisis.\n\nArgentina: Centro de Asistencia al Suicida 135 (gratuito, 24hs)\nUruguay: 0800 0767 (gratuito)\nChile: 800 104 024 (gratuito)\nEspaña: 024\n\nTambién podés tocar el botón SOS en la Sala de Ayuda.',
+        leido:false, prioritario:true, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
+      safeLS('set','velo_inbox', JSON.stringify(inbox2.slice(0,100)));
+      _updateInboxDot();
+
+      // Log in local audit
+      var ts = Date.now();
       var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
-      audit.unshift({ ts:Date.now(), tipo:'abuse_detect', circle:'sala-ayuda',
-        motivo:'Gemini — crisis detectada ('+data.nivel+'): '+data.razon, detail:msg.slice(0,80) });
+      audit.unshift({ ts:ts, tipo:'crisis_detect', circle:'detectado-por-ia',
+        nivel:data.nivel, motivo:data.razon, detail:msg.slice(0,80), resolved:false });
       safeLS('set','velo_audit_log', JSON.stringify(audit.slice(0,500)));
+
+      // Persist to Supabase reportes so admin always sees it
+      _sbSaveCrisisEvent(data.nivel, data.razon, msg.slice(0,200), ts);
     }
   }catch(e){}
 }
@@ -3387,10 +3401,12 @@ function _renderAdmin(){
     var subs = []; try{ subs = JSON.parse(safeLS('get','velo_subscribers')||'[]'); }catch(e){}
     var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
     var openReports = audit.filter(function(a){ return !a.resolved; }).length;
+    var crisisOpen = audit.filter(function(a){ return a.tipo === 'crisis_detect' && !a.resolved; }).length;
     var data = [
       { icon:'👥', label:'Usuarios', value:tcRecs.length||0, color:'var(--sage4)' },
       { icon:'💎', label:'Plus activos', value:subs.filter(function(s){ return s.status==='active'; }).length, color:'#c8a23e' },
-      { icon:'🚨', label:'Reportes pendientes', value:openReports, color: openReports > 0 ? '#e05252' : 'var(--sage4)' }
+      { icon:'🚨', label:'Reportes pendientes', value:openReports, color: openReports > 0 ? '#e05252' : 'var(--sage4)' },
+      { icon:'🆘', label:'Crisis activas', value:crisisOpen, color: crisisOpen > 0 ? '#ff4444' : 'var(--sage4)' }
     ];
     metrics.innerHTML = data.map(function(d){
       return '<div class="a-card"><div style="font-size:22px;margin-bottom:4px">'+d.icon+'</div><div class="a-card-n" style="color:'+d.color+'">'+d.value+'</div><div class="a-card-l">'+d.label+'</div></div>';
@@ -3436,6 +3452,29 @@ function _renderAdmin(){
               +'</div>';
           }).join('')
         : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">Sin registros aún.</p>');
+
+    var crisisEvents = audit.filter(function(a){ return a.tipo === 'crisis_detect'; });
+    var crisisHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,80,80,.85);margin-bottom:10px">🆘 ALERTAS DE CRISIS</div>'
+      +'<div id="adminCrisisSupabase"><p style="font-size:11px;color:rgba(255,255,255,.3)">Cargando desde servidor...</p></div>'
+      +(crisisEvents.length
+        ? crisisEvents.slice(0,10).map(function(a,i){
+            var date = new Date(a.ts);
+            var dateStr = date.toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+            var nivelColor = a.nivel==='alto' ? '#ff4444' : '#ffbb33';
+            var nivelLabel = a.nivel==='alto' ? '🔴 ALTO' : '🟡 MEDIO';
+            return '<div style="background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.25);border-radius:10px;padding:12px;margin-bottom:8px">'
+              +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
+              +'<span style="font-size:11px;font-weight:700;color:'+nivelColor+'">'+nivelLabel+'</span>'
+              +'<span style="font-size:10px;color:rgba(255,255,255,.3)">'+dateStr+'</span>'
+              +'</div>'
+              +(a.motivo ? '<div style="font-size:11px;color:rgba(255,255,255,.55);margin-bottom:4px">'+_escHtml(a.motivo)+'</div>' : '')
+              +(a.detail ? '<div style="font-size:11px;color:rgba(255,255,255,.35);font-style:italic;margin-bottom:8px">"'+_escHtml(a.detail)+'"</div>' : '')
+              +(a.resolved
+                ? '<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓ Atendida</span>'
+                : '<button onclick="pResolveCrisis('+i+')" style="font-size:10px;padding:4px 10px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.85);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Marcar como atendida</button>')
+              +'</div>';
+          }).join('')
+        : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">Sin alertas de crisis. 🌿</p>');
 
     var auditHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,80,80,.7);margin-bottom:10px">🛡️ AUDITORÍA IA — CONTROL DE ABUSOS</div>'
       +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Reportes de usuarios, comportamientos detectados y acciones moderadas.</div>'
@@ -3529,7 +3568,7 @@ function _renderAdmin(){
       +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">Resultados de encuestas trimestrales — escala 0 a 10. Las sugerencias se muestran de forma anónima.</div>'
       + _renderSurveyResults();
 
-    content.innerHTML = contactsHtml + surveyHtml + massHtml + transferHtml + auditHtml + aiModHtml;
+    content.innerHTML = contactsHtml + surveyHtml + massHtml + transferHtml + crisisHtml + auditHtml + aiModHtml;
 
     // Load contacts async: try Supabase first, fallback to localStorage
     sbLoadContacts().then(function(sbMsgs){
@@ -3540,6 +3579,8 @@ function _renderAdmin(){
         _renderAdminContactsList(local);
       }
     });
+    // Load crisis events from Supabase async
+    _loadAdminCrisisFromSupabase();
   }
 }
 
@@ -3623,6 +3664,60 @@ function pResolveAudit(idx){
   safeLS('set','velo_audit_log', JSON.stringify(audit));
   pToast('✅','Evento resuelto');
   _renderAdmin();
+}
+
+function pResolveCrisis(localIdx){
+  var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+  var crisisEvents = audit.filter(function(a){ return a.tipo === 'crisis_detect'; });
+  var target = crisisEvents[localIdx];
+  if(target){
+    var globalIdx = audit.indexOf(target);
+    if(globalIdx >= 0){ audit[globalIdx].resolved = true; audit[globalIdx].resolvedAt = Date.now(); }
+    safeLS('set','velo_audit_log', JSON.stringify(audit));
+  }
+  // Also try to update in Supabase
+  if(sbClient && target){
+    sbClient.from('reportes').update({estado:'resuelto'})
+      .like('categoria','crisis%')
+      .eq('created_at', new Date(target.ts).toISOString())
+      .then(function(){}).catch(function(){});
+  }
+  pToast('✅','Crisis marcada como atendida');
+  _renderAdmin();
+}
+
+async function _loadAdminCrisisFromSupabase(){
+  var el = document.getElementById('adminCrisisSupabase');
+  if(!el) return;
+  var events = await sbLoadCrisisEvents();
+  if(!events || !events.length){
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = '<div style="font-size:10px;color:rgba(255,180,80,.7);margin-bottom:8px;font-weight:600">📡 Desde servidor (todas las sesiones):</div>'
+    + events.map(function(e){
+        var date = new Date(e.created_at);
+        var dateStr = date.toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+        var isOpen = e.estado === 'abierto';
+        return '<div style="background:rgba(220,50,50,.06);border:1px solid rgba(220,50,50,.2);border-radius:8px;padding:10px;margin-bottom:6px">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+          +'<span style="font-size:10px;font-weight:700;color:'+(e.categoria==='crisis_alto'?'#ff4444':'#ffbb33')+'">'+e.categoria.replace('_',' ').toUpperCase()+'</span>'
+          +'<span style="font-size:10px;color:rgba(255,255,255,.3)">'+dateStr+'</span>'
+          +'</div>'
+          +'<div style="font-size:11px;color:rgba(255,255,255,.5);line-height:1.45">'+_escHtml((e.mensaje||'').slice(0,150))+'</div>'
+          +(isOpen ? '<button onclick="pSbResolveCrisis(\''+e.id+'\')" style="margin-top:8px;font-size:10px;padding:3px 10px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.85);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Marcar atendida</button>'
+            : '<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700;display:block;margin-top:6px">✓ Atendida</span>')
+          +'</div>';
+      }).join('');
+}
+
+async function pSbResolveCrisis(id){
+  if(!sbClient) return;
+  try{
+    await sbClient.from('reportes').update({estado:'resuelto'}).eq('id', id);
+    pToast('✅','Crisis atendida y registrada');
+    _loadAdminCrisisFromSupabase();
+  }catch(e){ pToast('⚠️','Error al actualizar'); }
 }
 
 async function pRunAiScan(){
@@ -3858,6 +3953,33 @@ async function sbEnviarReporte(mensaje, categoria){
     var user = await sbClient.auth.getUser();
     await sbClient.from('reportes').insert({ user_id:user&&user.data&&user.data.user?user.data.user.id:null, mensaje:mensaje, categoria:categoria||'contacto', estado:'abierto', created_at:new Date().toISOString() });
   }catch(e){}
+}
+
+async function _sbSaveCrisisEvent(nivel, razon, detalle, ts){
+  if(!sbClient) return;
+  try{
+    var user = await sbClient.auth.getUser();
+    var uid = user && user.data && user.data.user ? user.data.user.id : null;
+    await sbClient.from('reportes').insert({
+      user_id: uid,
+      mensaje: '[CRISIS '+nivel.toUpperCase()+'] '+razon+'\n\nMensaje: '+detalle,
+      categoria: 'crisis_'+nivel,
+      estado: 'abierto',
+      created_at: new Date(ts).toISOString()
+    });
+  }catch(e){}
+}
+
+async function sbLoadCrisisEvents(){
+  if(!sbClient) return [];
+  try{
+    var {data, error} = await sbClient.from('reportes')
+      .select('*')
+      .like('categoria','crisis%')
+      .order('created_at',{ascending:false})
+      .limit(50);
+    return error ? [] : (data||[]);
+  }catch(e){ return []; }
 }
 
 async function sbSaveContact(topic, mensaje, email){
