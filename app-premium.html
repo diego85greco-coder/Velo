@@ -1250,6 +1250,21 @@
         <div class="p-page-scroll">
           <div class="p-page-inner" style="max-width:600px;margin:auto;padding-top:40px">
 
+            <!-- Session rules banner -->
+            <div style="background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(45,106,79,.12));border:1.5px solid rgba(116,198,157,.3);border-radius:16px;padding:14px 18px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start">
+              <div style="font-size:22px;flex-shrink:0">📋</div>
+              <div>
+                <div style="font-size:12px;font-weight:800;color:var(--sage);letter-spacing:.5px;margin-bottom:6px">NORMAS DE LA SESIÓN</div>
+                <ul style="font-size:12px;color:var(--ink3);line-height:1.8;padding-left:16px;margin:0">
+                  <li>Esta sesión es <strong>confidencial</strong> — Velo no graba ni accede al contenido</li>
+                  <li>El/la profesional está <strong>habilitado/a y verificado/a</strong> por Velo</li>
+                  <li>El <strong>80%</strong> de tu pago va directo al profesional</li>
+                  <li>Si necesitás cancelar, escribinos a <strong>wearevelo.app@gmail.com</strong></li>
+                  <li>Ante una emergencia, usá el botón <strong>SOS</strong> de la app</li>
+                </ul>
+              </div>
+            </div>
+
             <!-- Professional info -->
             <div class="p-card" style="padding:24px;margin-bottom:16px;text-align:center">
               <div id="srProAv" style="font-size:64px;margin-bottom:10px">🩺</div>
@@ -1406,9 +1421,17 @@
             <div style="text-align:center;margin-bottom:24px">
               <div style="font-size:40px;margin-bottom:12px">🔐</div>
               <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink)">Panel Admin</h2>
+              <p style="font-size:12px;color:var(--ink4);margin-top:6px">Acceso restringido · Velo</p>
             </div>
-            <div class="p-field"><label class="p-field-label">Contraseña</label><input class="p-input" type="password" id="adminPass" placeholder="••••••••"></div>
-            <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pAdminLogin()">Acceder</button>
+            <div class="p-field">
+              <label class="p-field-label">Correo administrador</label>
+              <input class="p-input" type="email" id="adminEmail" placeholder="admin@velo.app" autocomplete="username">
+            </div>
+            <div class="p-field">
+              <label class="p-field-label">Contraseña</label>
+              <input class="p-input" type="password" id="adminPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') pAdminLogin()">
+            </div>
+            <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pAdminLogin()" id="adminLoginBtn">Acceder al panel</button>
             <div style="height:10px"></div>
             <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('landing')">← Volver</button>
           </div>

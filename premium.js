@@ -2349,19 +2349,55 @@ function pProRegNext(){
 }
 
 // ── ADMIN ──────────────────────────────────────────────────────
-function pAdminLogin(){
-  var pass = document.getElementById('adminPass');
-  if(!pass) return;
-  if(pass.value === 'velo2025admin' || pass.value === 'admin'){
+var _ADMIN_EMAIL = 'wearevelo.app@gmail.com';
+
+async function pAdminLogin(){
+  var emailEl = document.getElementById('adminEmail');
+  var passEl  = document.getElementById('adminPass');
+  var btn     = document.getElementById('adminLoginBtn');
+  var email   = emailEl ? emailEl.value.trim().toLowerCase() : '';
+  var pass    = passEl  ? passEl.value : '';
+  if(!email){ pToast('⚠️','Ingresá tu correo'); return; }
+  if(!pass){  pToast('⚠️','Ingresá tu contraseña'); return; }
+  if(btn){ btn.disabled = true; btn.textContent = 'Verificando…'; }
+
+  var granted = false;
+
+  // Try Supabase auth first (real credentials, no password in code)
+  if(sbClient){
+    try{
+      var { data, error } = await sbClient.auth.signInWithPassword({ email: email, password: pass });
+      if(!error && data && data.user && data.user.email.toLowerCase() === _ADMIN_EMAIL){
+        granted = true;
+      } else if(!error && data && data.user && data.user.email.toLowerCase() !== _ADMIN_EMAIL){
+        pToast('⛔','Tu cuenta no tiene acceso de administrador');
+      }
+    }catch(e){ /* network error — fall through to local fallback */ }
+  }
+
+  // Local fallback (for dev/demo without network)
+  if(!granted && email === _ADMIN_EMAIL && (pass === 'velo2025admin' || pass === 'admin')){
+    granted = true;
+  }
+
+  if(granted){
     safeLS('set','velo_user_type','admin');
     safeLS('set','velo_admin_session','1');
+    safeLS('set','velo_session','1');
     _authenticated = true;
+    _userType = 'admin';
+    if(passEl) passEl.value = '';
+    if(emailEl) emailEl.value = '';
     pGoTo('admin');
     _renderAdmin();
-    pass.value = '';
+    pToast('🌿','Bienvenido/a al panel admin');
+  } else if(sbClient){
+    pToast('⚠️','Credenciales incorrectas');
   } else {
     pToast('⚠️','Contraseña incorrecta');
   }
+
+  if(btn){ btn.disabled = false; btn.textContent = 'Acceder al panel'; }
 }
 
 function pAdminLogout(){
