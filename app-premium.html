@@ -1694,6 +1694,100 @@
   </div>
 </div>
 
+<!-- ══ SATISFACTION SURVEY MODAL ════════════════════════════ -->
+<div class="p-modal-ov" id="surveyOv">
+  <div class="p-sheet" style="max-height:90vh;overflow-y:auto">
+    <div class="p-sheet-handle"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span style="font-size:28px">📊</span>
+      <div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink)">Encuesta de satisfacción</div>
+        <p style="font-size:11px;color:var(--ink5);margin:0">Trimestral · Anónima · 2 minutos</p>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--ink4);margin-bottom:20px;line-height:1.55;margin-top:10px">Tu opinión nos ayuda a mejorar Velo para toda la comunidad. Todas las respuestas son anónimas.</p>
+
+    <!-- Q1: Satisfacción general -->
+    <div style="margin-bottom:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:2px">1. ¿Cómo calificarías Velo en general?</div>
+      <div style="font-size:11px;color:var(--ink5);margin-bottom:6px">1 = muy malo · 10 = excelente</div>
+      <div class="survey-score-group">
+        <button class="survey-btn" onclick="pSurveyRate('general',1,this)">1</button>
+        <button class="survey-btn" onclick="pSurveyRate('general',2,this)">2</button>
+        <button class="survey-btn" onclick="pSurveyRate('general',3,this)">3</button>
+        <button class="survey-btn" onclick="pSurveyRate('general',4,this)">4</button>
+        <button class="survey-btn" onclick="pSurveyRate('general',5,this)">5</button>
+        <button class="survey-btn" onclick="pSurveyRate('general',6,this)">6</button>
+        <button class="survey-btn" onclick="pSurveyRate('general',7,this)">7</button>
+        <button class="survey-btn" onclick="pSurveyRate('general',8,this)">8</button>
+        <button class="survey-btn" onclick="pSurveyRate('general',9,this)">9</button>
+        <button class="survey-btn" onclick="pSurveyRate('general',10,this)">10</button>
+      </div>
+    </div>
+
+    <!-- Q2: Utilidad -->
+    <div style="margin-bottom:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:2px">2. ¿Qué tan útil te parece para tu bienestar?</div>
+      <div style="font-size:11px;color:var(--ink5);margin-bottom:6px">1 = nada útil · 10 = muy útil</div>
+      <div class="survey-score-group">
+        <button class="survey-btn" onclick="pSurveyRate('utilidad',1,this)">1</button>
+        <button class="survey-btn" onclick="pSurveyRate('utilidad',2,this)">2</button>
+        <button class="survey-btn" onclick="pSurveyRate('utilidad',3,this)">3</button>
+        <button class="survey-btn" onclick="pSurveyRate('utilidad',4,this)">4</button>
+        <button class="survey-btn" onclick="pSurveyRate('utilidad',5,this)">5</button>
+        <button class="survey-btn" onclick="pSurveyRate('utilidad',6,this)">6</button>
+        <button class="survey-btn" onclick="pSurveyRate('utilidad',7,this)">7</button>
+        <button class="survey-btn" onclick="pSurveyRate('utilidad',8,this)">8</button>
+        <button class="survey-btn" onclick="pSurveyRate('utilidad',9,this)">9</button>
+        <button class="survey-btn" onclick="pSurveyRate('utilidad',10,this)">10</button>
+      </div>
+    </div>
+
+    <!-- Q3: NPS -->
+    <div style="margin-bottom:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:2px">3. ¿Con qué probabilidad recomendarías Velo?</div>
+      <div style="font-size:11px;color:var(--ink5);margin-bottom:6px">1 = nunca · 10 = definitivamente sí</div>
+      <div class="survey-score-group">
+        <button class="survey-btn" onclick="pSurveyRate('recomendaria',1,this)">1</button>
+        <button class="survey-btn" onclick="pSurveyRate('recomendaria',2,this)">2</button>
+        <button class="survey-btn" onclick="pSurveyRate('recomendaria',3,this)">3</button>
+        <button class="survey-btn" onclick="pSurveyRate('recomendaria',4,this)">4</button>
+        <button class="survey-btn" onclick="pSurveyRate('recomendaria',5,this)">5</button>
+        <button class="survey-btn" onclick="pSurveyRate('recomendaria',6,this)">6</button>
+        <button class="survey-btn" onclick="pSurveyRate('recomendaria',7,this)">7</button>
+        <button class="survey-btn" onclick="pSurveyRate('recomendaria',8,this)">8</button>
+        <button class="survey-btn" onclick="pSurveyRate('recomendaria',9,this)">9</button>
+        <button class="survey-btn" onclick="pSurveyRate('recomendaria',10,this)">10</button>
+      </div>
+    </div>
+
+    <!-- Q4: Función favorita -->
+    <div style="margin-bottom:18px">
+      <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:2px">4. ¿Qué función usás más? <span style="font-weight:400;color:var(--ink5)">(opcional)</span></div>
+      <div class="survey-func-row">
+        <button class="survey-func-btn" onclick="pSurveyFuncion('Guardianes',this)">🛡️ Guardianes</button>
+        <button class="survey-func-btn" onclick="pSurveyFuncion('Sala de Ayuda',this)">🤝 Sala de Ayuda</button>
+        <button class="survey-func-btn" onclick="pSurveyFuncion('Diario',this)">📔 Diario</button>
+        <button class="survey-func-btn" onclick="pSurveyFuncion('Estado de Ánimo',this)">🎭 Ánimo</button>
+        <button class="survey-func-btn" onclick="pSurveyFuncion('Círculos',this)">⭕ Círculos</button>
+        <button class="survey-func-btn" onclick="pSurveyFuncion('Botellas',this)">🌊 Botellas</button>
+        <button class="survey-func-btn" onclick="pSurveyFuncion('Profesionales',this)">🩺 Profesionales</button>
+        <button class="survey-func-btn" onclick="pSurveyFuncion('Vela por ti',this)">🕯️ Vela por ti</button>
+      </div>
+    </div>
+
+    <!-- Q5: Sugerencia libre -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:4px">5. ¿Qué mejorarías de Velo? <span style="font-weight:400;color:var(--ink5)">(opcional)</span></div>
+      <textarea class="p-textarea" id="surveyTa" rows="3" placeholder="Contanos tu sugerencia… Se muestra de forma anónima en el panel de administración."></textarea>
+    </div>
+
+    <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSubmitSurvey()">Enviar mi opinión 💚</button>
+    <div style="height:8px"></div>
+    <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('surveyOv')">Completar más tarde</button>
+  </div>
+</div>
+
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>

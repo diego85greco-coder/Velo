@@ -2155,3 +2155,61 @@ a { text-decoration: none; color: inherit; }
 }
 .mini-dash-card[onclick] { cursor: pointer; }
 .mini-dash-card[onclick]:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(45,106,79,.1); }
+
+/* ── 63. SATISFACTION SURVEY ────────────────────────────────── */
+.survey-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border2);
+  background: rgba(255,255,255,.7);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink3);
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  transition: all .15s;
+}
+.survey-btn:hover {
+  border-color: var(--sage2);
+  background: var(--sage7);
+  color: var(--sage);
+}
+.survey-btn.selected {
+  background: var(--sage);
+  border-color: var(--sage);
+  color: #fff;
+  transform: scale(1.1);
+}
+.survey-func-btn {
+  padding: 7px 12px;
+  border-radius: 100px;
+  border: 1.5px solid var(--border2);
+  background: rgba(255,255,255,.7);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink3);
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  transition: all .15s;
+}
+.survey-func-btn.selected {
+  background: var(--sage7);
+  border-color: var(--sage2);
+  color: var(--sage);
+}
+.survey-score-group {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.survey-func-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}

@@ -397,6 +397,7 @@ function _loginAndGo(){
     setTimeout(function(){
       _loadHomeData();
       _updateSidebarUser();
+      _checkSurveyDue(); // Check if quarterly survey is due
     }, 100);
   }
 }
@@ -1440,6 +1441,146 @@ async function pSaveMood(){
   _checkMonthlyMoodReport();
 }
 
+// ── SATISFACTION SURVEY (every 90 days) ──────────────────────
+var SURVEY_INTERVAL = 90 * 24 * 60 * 60 * 1000; // 90 days in ms
+var _surveyScores   = { general: 0, utilidad: 0, recomendaria: 0 };
+var _surveyFuncion  = '';
+
+function _checkSurveyDue(){
+  // Only for regular users (not admin, not pro)
+  if(safeLS('get','velo_user_type') === 'admin') return;
+  if(safeLS('get','velo_user_type') === 'pro') return;
+  var last = parseInt(safeLS('get','velo_last_survey')||'0', 10);
+  if(Date.now() - last < SURVEY_INTERVAL) return;
+  // Don't send twice in the same session
+  if(safeLS('get','velo_survey_sent_session') === '1') return;
+  safeLS('set','velo_survey_sent_session','1');
+  // Add inbox notification
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  if(inbox.some(function(m){ return m.tipo === 'encuesta' && !m.leido; })) return; // already pending
+  inbox.unshift({
+    id: 'survey-'+Date.now(),
+    tipo: 'encuesta',
+    icon: '📊',
+    remitente: 'Velo — Encuesta trimestral',
+    asunto: '¿Cómo ves a Velo? Tu opinión nos importa 🌿',
+    extracto: 'Tomá 2 minutos para contarnos qué tal te parece la app. Tu feedback es clave para mejorar.',
+    cuerpo: '',
+    accion: 'pOpenSurvey()',
+    leido: false,
+    fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})
+  });
+  safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+  _updateInboxDot();
+  setTimeout(function(){
+    pToast('📊','¡Tenemos una encuesta para vos! Revisá tu buzón 🌿');
+  }, 4000);
+}
+
+function pOpenSurvey(){
+  _surveyScores = { general: 0, utilidad: 0, recomendaria: 0 };
+  _surveyFuncion = '';
+  var ov = document.getElementById('surveyOv');
+  if(!ov) return;
+  // Reset UI
+  ov.querySelectorAll('.survey-btn').forEach(function(b){ b.classList.remove('selected'); });
+  var ta = ov.querySelector('#surveyTa');
+  if(ta) ta.value = '';
+  ov.querySelectorAll('.survey-func-btn').forEach(function(b){ b.classList.remove('selected'); });
+  ov.classList.add('open');
+}
+
+function pSurveyRate(q, val, el){
+  _surveyScores[q] = val;
+  var group = el.closest('.survey-score-group');
+  if(group) group.querySelectorAll('.survey-btn').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+}
+
+function pSurveyFuncion(val, el){
+  _surveyFuncion = val;
+  var group = el.closest('.survey-func-row');
+  if(group) group.querySelectorAll('.survey-func-btn').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+}
+
+function pSubmitSurvey(){
+  if(!_surveyScores.general){ pToast('⚠️','Calificá tu experiencia general (1-10)'); return; }
+  if(!_surveyScores.utilidad){ pToast('⚠️','Calificá qué tan útil te parece (1-10)'); return; }
+  if(!_surveyScores.recomendaria){ pToast('⚠️','¿Con qué probabilidad la recomendarías? (1-10)'); return; }
+  var ta = document.getElementById('surveyTa');
+  var sugerencia = ta ? ta.value.trim() : '';
+  var response = {
+    ts: Date.now(),
+    scores: { general: _surveyScores.general, utilidad: _surveyScores.utilidad, recomendaria: _surveyScores.recomendaria },
+    funcion: _surveyFuncion || 'No indicado',
+    sugerencia: sugerencia // stored generically, shown without attribution
+  };
+  var responses = []; try{ responses = JSON.parse(safeLS('get','velo_survey_responses')||'[]'); }catch(e){}
+  responses.unshift(response);
+  safeLS('set','velo_survey_responses', JSON.stringify(responses.slice(0,500)));
+  safeLS('set','velo_last_survey', String(Date.now()));
+  safeLS('del','velo_survey_sent_session');
+  // Mark inbox message as read
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  inbox = inbox.map(function(m){ return m.tipo==='encuesta' ? Object.assign({},m,{leido:true}) : m; });
+  safeLS('set','velo_inbox', JSON.stringify(inbox));
+  closeModal('surveyOv');
+  pToast('💚','¡Gracias por tu opinión! Nos ayudás a mejorar Velo 🌿');
+}
+
+function _renderSurveyResults(){
+  var responses = []; try{ responses = JSON.parse(safeLS('get','velo_survey_responses')||'[]'); }catch(e){}
+  if(!responses.length){
+    return '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin respuestas aún.</p>';
+  }
+  var total = responses.length;
+  var avgGeneral    = (responses.reduce(function(s,r){ return s + (r.scores.general||0); }, 0) / total).toFixed(1);
+  var avgUtilidad   = (responses.reduce(function(s,r){ return s + (r.scores.utilidad||0); }, 0) / total).toFixed(1);
+  var avgRecomend   = (responses.reduce(function(s,r){ return s + (r.scores.recomendaria||0); }, 0) / total).toFixed(1);
+  // Most used feature
+  var funcCount = {};
+  responses.forEach(function(r){ if(r.funcion) funcCount[r.funcion] = (funcCount[r.funcion]||0)+1; });
+  var topFunc = Object.keys(funcCount).sort(function(a,b){ return funcCount[b]-funcCount[a]; })[0] || '—';
+  // Suggestions (generic, no attribution)
+  var sugs = responses.filter(function(r){ return r.sugerencia && r.sugerencia.length > 3; }).slice(0,10);
+
+  function scoreBar(val){
+    var pct = Math.round((parseFloat(val)/10)*100);
+    var color = pct >= 70 ? 'rgba(116,198,157,.8)' : pct >= 40 ? 'rgba(200,162,0,.8)' : 'rgba(220,80,80,.8)';
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+      +'<div style="flex:1;height:7px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden">'
+      +'<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:99px;transition:width .5s"></div></div>'
+      +'<span style="font-size:13px;font-weight:800;color:'+color+';min-width:28px;text-align:right">'+val+'</span>'
+      +'</div>';
+  }
+
+  return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">'
+    +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:12px;text-align:center">'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px">Satisfacción general</div>'
+    +scoreBar(avgGeneral)+'</div>'
+    +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:12px;text-align:center">'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px">Utilidad</div>'
+    +scoreBar(avgUtilidad)+'</div>'
+    +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:12px;text-align:center">'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px">Recomendaría (NPS)</div>'
+    +scoreBar(avgRecomend)+'</div>'
+    +'</div>'
+    +'<div style="display:flex;gap:10px;margin-bottom:14px">'
+    +'<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px;flex:1">'
+    +'<span style="font-size:10px;color:rgba(255,255,255,.35);letter-spacing:1px">FUNCIÓN MÁS USADA</span>'
+    +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.8);margin-top:4px">'+_escHtml(topFunc)+'</div></div>'
+    +'<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px;flex:1">'
+    +'<span style="font-size:10px;color:rgba(255,255,255,.35);letter-spacing:1px">RESPUESTAS TOTALES</span>'
+    +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.8);margin-top:4px">'+total+'</div></div>'
+    +'</div>'
+    +(sugs.length ? '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:8px">SUGERENCIAS (anónimas)</div>'
+      + sugs.map(function(r){
+          return '<div style="background:rgba(255,255,255,.04);border-left:3px solid rgba(116,198,157,.4);border-radius:0 8px 8px 0;padding:8px 10px;margin-bottom:6px;font-size:12px;color:rgba(255,255,255,.6);line-height:1.5">'+_escHtml(r.sugerencia)+'</div>';
+        }).join('')
+    : '');
+}
+
 function _checkMonthlyMoodReport(){
   var today = new Date();
   if(today.getDate() !== 1) return;
@@ -2364,7 +2505,19 @@ function pRenderInbox(){
     return;
   }
   el.innerHTML = all.map(function(m){
-    return '<div class="p-inbox-msg'+(m.leido?'':' unread')+'"><div style="display:flex;flex-shrink:0">'+(m.leido?'':'<div class="p-inbox-dot"></div>')+'</div><div class="p-inbox-ic" style="background:var(--sage7)">'+m.icon+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m.asunto+'</div><div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+m.extracto+'</div><div style="font-size:10px;color:var(--ink5);margin-top:4px">'+m.fecha+'</div></div></div>';
+    var actionBtn = '';
+    if(m.accion && !m.leido){
+      actionBtn = '<button onclick="'+m.accion+'" style="margin-top:6px;font-size:11px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
+    }
+    return '<div class="p-inbox-msg'+(m.leido?'':' unread')+'">'
+      +'<div style="display:flex;flex-shrink:0">'+(m.leido?'':'<div class="p-inbox-dot"></div>')+'</div>'
+      +'<div class="p-inbox-ic" style="background:'+(m.tipo==='encuesta'?'rgba(116,198,157,.12)':'var(--sage7)')+'">'+m.icon+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m.asunto+'</div>'
+      +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+m.extracto+'</div>'
+      +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+m.fecha+'</div>'
+      +actionBtn
+      +'</div></div>';
   }).join('');
 }
 
@@ -2840,7 +2993,12 @@ function _renderAdmin(){
             }).join('')
         : '');
 
-    content.innerHTML = contactsHtml + massHtml + transferHtml + auditHtml + aiModHtml;
+    // Survey results section
+    var surveyHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📊 ENCUESTAS DE SATISFACCIÓN</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">Resultados de encuestas trimestrales — escala 0 a 10. Las sugerencias se muestran de forma anónima.</div>'
+      + _renderSurveyResults();
+
+    content.innerHTML = contactsHtml + surveyHtml + massHtml + transferHtml + auditHtml + aiModHtml;
   }
 }
 
