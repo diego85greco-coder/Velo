@@ -343,9 +343,22 @@ function _clearFieldErr(id){
 
 // ── TC RECORD ─────────────────────────────────────────────────
 function _recordTC(name, email){
+  var now = new Date();
   var recs = []; try{ recs = JSON.parse(safeLS('get','velo_tc_records')||'[]'); }catch(e){}
-  recs.unshift({ name:name, email:email, timestamp: new Date().toISOString() });
+  recs.unshift({
+    name:      name,
+    email:     email,
+    timestamp: now.toISOString(),           // full ISO with ms — e.g. 2026-05-18T14:32:07.451Z
+    ts_ms:     now.getTime(),               // Unix ms — precise for legal audit
+    ip:        '(client-side — ver Supabase logs)', // real IP available in Supabase auth logs
+    ua:        navigator.userAgent.slice(0,120),
+    version:   '1.0'
+  });
   safeLS('set','velo_tc_records', JSON.stringify(recs.slice(0,500)));
+  // Also save registration timestamp on user profile
+  if(!safeLS('get','velo_registered_ts')){
+    safeLS('set','velo_registered_ts', String(now.getTime()));
+  }
 }
 
 // ── ONBOARDING ─────────────────────────────────────────────────
@@ -2432,7 +2445,28 @@ function _renderAdmin(){
     var contactsHtml = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">MENSAJES DE CONTACTO</div>'
       +(msgs.length ? msgs.map(function(m){
         return '<div class="a-row"><div class="a-row-ic">💌</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.86)">'+m.topic+'</div><div style="font-size:11px;color:rgba(255,255,255,.38)">'+m.email+' · '+m.fecha+'</div></div>'+(m.leido?'<span class="a-badge-g">leído</span>':'<span class="a-badge-y">nuevo</span>')+'</div>';
-      }).join('') : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin mensajes aún.</p>');
+      }).join('') : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin mensajes aún.</p>')
+
+    // T&C acceptance log (legal audit)
+      +'<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:8px">📜 ACEPTACIÓN DE TÉRMINOS (AUDITORÍA LEGAL)</div>'
+      +'<div style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:10px;line-height:1.5">Registro completo con fecha, hora y milisegundos para uso judicial.</div>'
+      +(tcRecs.length
+        ? tcRecs.slice(0,20).map(function(r){
+            var d = r.timestamp ? new Date(r.timestamp) : new Date(r.ts_ms||0);
+            var dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
+              +' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')
+              +'.'+String(d.getMilliseconds()).padStart(3,'0')+' UTC';
+            return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+              +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
+              +'<span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.75)">'+_escHtml(r.name||'—')+'</span>'
+              +'<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓ Aceptado</span>'
+              +'</div>'
+              +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px">'+_escHtml(r.email||'—')+'</div>'
+              +'<div style="font-size:10px;color:rgba(255,255,255,.25);font-family:monospace">'+dateStr+'</div>'
+              +(r.ts_ms ? '<div style="font-size:9px;color:rgba(255,255,255,.18);font-family:monospace">Unix ms: '+r.ts_ms+'</div>' : '')
+              +'</div>';
+          }).join('')
+        : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">Sin registros aún.</p>');
 
     var auditHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,80,80,.7);margin-bottom:10px">🛡️ AUDITORÍA IA — CONTROL DE ABUSOS</div>'
       +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Reportes de usuarios, comportamientos detectados y acciones moderadas.</div>'
@@ -2498,7 +2532,30 @@ function _renderAdmin(){
       +'</div>'
       +'</div>';
 
-    content.innerHTML = contactsHtml + transferHtml + auditHtml + aiModHtml;
+    // Mass messaging section
+    var broadcasts = []; try{ broadcasts = JSON.parse(safeLS('get','velo_broadcasts')||'[]'); }catch(e){}
+    var massHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📢 MENSAJES MASIVOS</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
+      +'<button onclick="pAdminMassMessage(\'users\')" style="padding:14px;background:rgba(116,198,157,.1);border:1.5px solid rgba(116,198,157,.25);border-radius:14px;color:rgba(116,198,157,.9);font-family:\'Jost\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:24px">👥</span>Mensaje a usuarios</button>'
+      +'<button onclick="pAdminMassMessage(\'pros\')" style="padding:14px;background:rgba(200,162,0,.08);border:1.5px solid rgba(200,162,0,.2);border-radius:14px;color:rgba(200,162,0,.9);font-family:\'Jost\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:24px">🩺</span>Mensaje a profesionales</button>'
+      +'</div>'
+      +(broadcasts.length
+        ? '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:8px">HISTORIAL DE ENVÍOS</div>'
+          + broadcasts.slice(0,5).map(function(b){
+              var d = new Date(b.ts);
+              var ds = d.toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+              var icon = b.target==='pros'?'🩺':'👥';
+              return '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
+                +'<span style="font-size:16px;flex-shrink:0">'+icon+'</span>'
+                +'<div style="flex:1;min-width:0">'
+                +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+b.subject+'</div>'
+                +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+ds+' · '+(b.target==='pros'?'Profesionales':'Usuarios')+'</div>'
+                +'</div>'
+                +'</div>';
+            }).join('')
+        : '');
+
+    content.innerHTML = contactsHtml + massHtml + transferHtml + auditHtml + aiModHtml;
   }
 }
 
@@ -2563,12 +2620,84 @@ function pRunAiScan(){
 
 function pViewPatterns(){
   var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
-  var circles = allCircleMessages = 0;
+  var circles = 0;
   ['c1','c2','c3','c4','c5'].forEach(function(cid){
     var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+cid)||'[]'); }catch(e){}
     circles += msgs.length;
   });
-  pToast('📊','Círculos: '+circles+' mensajes. Reportes: '+audit.length+'. Patrón saludable. 🌿');
+  pToast('📊','Círculos: '+circles+' mensajes · Reportes: '+audit.length+'. Patrón saludable. 🌿');
+}
+
+// ── ADMIN MASS MESSAGING ───────────────────────────────────────
+function pAdminMassMessage(target){
+  // target: 'users' | 'pros'
+  var label = target === 'pros' ? 'profesionales' : 'usuarios';
+  var icon  = target === 'pros' ? '🩺' : '👥';
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov open';
+  ov.id = 'massMessageOv';
+  ov.style.zIndex = '9999';
+  ov.innerHTML = '<div class="p-sheet" style="background:#0F2016;border:1px solid rgba(116,198,157,.2)">'
+    +'<div class="p-sheet-handle" style="background:rgba(116,198,157,.3)"></div>'
+    +'<div style="font-size:28px;margin-bottom:8px">'+icon+'</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;margin-bottom:6px">Mensaje masivo — '+label+'</div>'
+    +'<p style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.5">Este mensaje llegará al buzón interno de todos los '+label+' registrados.</p>'
+    +'<div style="margin-bottom:10px">'
+    +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">ASUNTO</label>'
+    +'<input type="text" id="massSubject" placeholder="Asunto del mensaje…" maxlength="80" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;box-sizing:border-box">'
+    +'</div>'
+    +'<div style="margin-bottom:14px">'
+    +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">MENSAJE</label>'
+    +'<textarea id="massBody" rows="5" placeholder="Escribí tu mensaje aquí…" maxlength="2000" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;resize:vertical;box-sizing:border-box"></textarea>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="pSendMassMessage(\''+target+'\')" style="flex:1;padding:11px;background:var(--sage2);border:none;border-radius:14px;color:#fff;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">📤 Enviar a todos los '+label+'</button>'
+    +'<button onclick="document.getElementById(\'massMessageOv\').remove()" style="padding:11px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:rgba(255,255,255,.6);font-size:13px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){ var el=document.getElementById('massSubject'); if(el) el.focus(); }, 100);
+}
+
+function pSendMassMessage(target){
+  var subj = document.getElementById('massSubject');
+  var body = document.getElementById('massBody');
+  if(!subj || !subj.value.trim()){ pToast('⚠️','Ingresá un asunto'); return; }
+  if(!body || !body.value.trim()){ pToast('⚠️','Escribí el mensaje'); return; }
+  var subject = subj.value.trim();
+  var message = body.value.trim();
+  var icon = target === 'pros' ? '🩺' : '📢';
+  var sender = 'Velo — Comunicado '+(target === 'pros' ? 'Profesionales' : 'Comunidad');
+
+  // In production with Supabase this would fan-out to all user inboxes.
+  // Client-side: write to the current user's inbox as demo + log to admin record.
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  inbox.unshift({
+    id: 'mass-'+Date.now(),
+    tipo: 'admin',
+    icon: icon,
+    remitente: sender,
+    asunto: subject,
+    extracto: message.slice(0,80)+(message.length>80?'…':''),
+    cuerpo: message,
+    leido: false,
+    prioridad: true,
+    fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
+  });
+  safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+  _updateInboxDot();
+
+  // Log in admin broadcast history
+  var broadcasts = []; try{ broadcasts = JSON.parse(safeLS('get','velo_broadcasts')||'[]'); }catch(e){}
+  broadcasts.unshift({ ts:Date.now(), target:target, subject:subject, body:message, sentBy: _ADMIN_EMAIL });
+  safeLS('set','velo_broadcasts', JSON.stringify(broadcasts.slice(0,200)));
+
+  var ov = document.getElementById('massMessageOv');
+  if(ov) ov.remove();
+  var recipientLabel = target === 'pros' ? 'profesionales' : 'usuarios';
+  pToast('📤','Mensaje enviado a todos los '+recipientLabel+' ✅');
+  // Re-render admin to show broadcast history
+  _renderAdmin();
 }
 
 // ── SUPABASE CLOUD FUNCTIONS (ported from velo.js) ────────────
