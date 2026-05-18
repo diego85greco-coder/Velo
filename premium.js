@@ -1111,12 +1111,12 @@ function pRenderBottleResponses(){
     { myMood:'💭', myText:'¿Alguien más siente que no encaja en ningún lado?', resp:'Sí. Muchas veces. Pero encontré que encajar no es tan importante como sentirse en paz con uno mismo. Ánimo.', respTime:'ayer', respMood:'🌿' }
   ];
   if(!mockResps.length){
-    el.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.4)"><span class="p-empty-emoji">💌</span><div class="p-empty-title" style="color:rgba(255,255,255,.6)">Sin respuestas aún</div><div class="p-empty-sub">Cuando alguien responda tu botella, aparecerá aquí</div></div>';
+    el.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.4)"><span class="p-empty-emoji">💌</span><div class="p-empty-title" style="color:rgba(255,255,255,.6)">Sin respuestas aún</div><div class="p-empty-sub">Cuando alguien responda tu mensaje, aparecerá aquí</div></div>';
     return;
   }
   el.innerHTML = mockResps.map(function(r){
     return '<div class="dark-bottle" style="border-left:3px solid rgba(116,198,157,.3);margin-bottom:12px">'
-      +'<div style="font-size:11px;color:rgba(200,165,100,.6);margin-bottom:6px">Tu botella ' + r.myMood + '</div>'
+      +'<div style="font-size:11px;color:rgba(200,165,100,.6);margin-bottom:6px">Tu mensaje ' + r.myMood + '</div>'
       +'<p style="font-size:12px;color:rgba(255,255,255,.4);font-style:italic;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif">"'+r.myText+'"</p>'
       +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;padding:12px">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:18px">'+r.respMood+'</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+r.respTime+'</span></div>'
@@ -1149,7 +1149,7 @@ function pRenderBottle(){
   var allBottles = bottles.concat(filteredMock);
 
   if(!allBottles.length){
-    list.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.4)"><span class="p-empty-emoji">🌊</span><div class="p-empty-title" style="color:rgba(255,255,255,.6)">El mar está tranquilo</div><div class="p-empty-sub">Sé el primero en lanzar una botella</div></div>';
+    list.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.4)"><span class="p-empty-emoji">🌊</span><div class="p-empty-title" style="color:rgba(255,255,255,.6)">El mar está tranquilo</div><div class="p-empty-sub">Sé el primero en lanzar un mensaje</div></div>';
     return;
   }
 
@@ -1192,7 +1192,7 @@ function pSendBottle(){
   var id = 'ub'+Date.now();
   bottles.unshift({ id:id, mood:_selectedBottleMood, text:text, responses:0, color:'rgba(116,198,157,.12)', ts:Date.now() });
   safeLS('set','velo_my_bottles', JSON.stringify(bottles.slice(0,50)));
-  pToast('🌊','¡Botella lanzada al mar! 🌿');
+  pToast('🌊','¡Mensaje lanzado al mar! 🌿');
   pRenderBottle();
 }
 
@@ -1229,10 +1229,10 @@ function pSendBottleReply(){
     id: 'br-'+Date.now(),
     tipo: 'botella',
     icon: '🌊',
-    remitente: 'Velo — Botella al Mar',
-    asunto: '¡Tu botella recibió una respuesta!',
+    remitente: 'Velo — Mensajes al Mar',
+    asunto: '¡Tu mensaje recibió una respuesta!',
     extracto: replyText,
-    cuerpo: 'Alguien encontró tu botella en el mar y te dejó estas palabras:\n\n"'+replyText+'"',
+    cuerpo: 'Alguien encontró tu mensaje en el mar y te dejó estas palabras:\n\n"'+replyText+'"',
     leido: false,
     fecha: new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})
   });
@@ -1242,7 +1242,7 @@ function pSendBottleReply(){
   var card = document.getElementById('bottle-'+_curBottleReplyId);
   if(card){ card.style.transition = 'opacity .4s,transform .4s'; card.style.opacity='0'; card.style.transform='translateX(40px)'; }
   setTimeout(function(){
-    pToast('💌','¡Respuesta enviada! La botella desapareció del mar 🌊');
+    pToast('💌','¡Respuesta enviada! El mensaje desapareció del mar 🌊');
     setTimeout(function(){ pToast('📬','El autor recibió tu respuesta en su buzón Velo'); }, 1200);
     pRenderBottle();
   }, 450);
@@ -1621,6 +1621,17 @@ function _checkMonthlyMoodReport(){
     }
   }
 
+  // Append happy wall stats for prev month
+  var happyStats = _happyStatsGet(prev);
+  var happyLine = '';
+  if(happyStats.posts || happyStats.reactionsReceived || happyStats.commentsReceived){
+    var parts = [];
+    if(happyStats.posts) parts.push('compartiste '+(happyStats.posts === 1 ? '1 momento de alegría' : happyStats.posts+' momentos de alegría')+' en el Muro de la Felicidad 🌻');
+    if(happyStats.reactionsReceived) parts.push('recibiste '+happyStats.reactionsReceived+(happyStats.reactionsReceived === 1 ? ' reacción' : ' reacciones')+' de la comunidad 💛');
+    if(happyStats.commentsReceived) parts.push('recibiste '+happyStats.commentsReceived+(happyStats.commentsReceived === 1 ? ' comentario' : ' comentarios')+' en tus publicaciones 💬');
+    if(parts.length) happyLine = ' Además, '+parts.join(', ')+'.';
+  }
+
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   inbox.unshift({
     id: 'mood-report-'+Date.now(),
@@ -1629,7 +1640,7 @@ function _checkMonthlyMoodReport(){
     remitente: 'Velo — Análisis de Bienestar',
     asunto: 'Tu resumen emocional de '+monthName+' 🌿',
     extracto: summary,
-    cuerpo: analysis,
+    cuerpo: analysis + happyLine,
     leido: false,
     fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})
   });
@@ -2118,6 +2129,22 @@ function pSubmitCircleReport(ov){
 }
 
 // ── HAPPY WALL ─────────────────────────────────────────────────
+// ── MURO — STATS MENSUALES ────────────────────────────────────
+function _happyStatsKey(d){
+  d = d || new Date();
+  return 'velo_happy_stats_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+function _happyStatIncr(field){
+  var key = _happyStatsKey();
+  var s = {}; try{ s = JSON.parse(safeLS('get',key)||'{}'); }catch(e){}
+  s[field] = (s[field]||0) + 1;
+  safeLS('set', key, JSON.stringify(s));
+}
+function _happyStatsGet(monthDate){
+  var key = _happyStatsKey(monthDate);
+  try{ return JSON.parse(safeLS('get',key)||'{}'); }catch(e){ return {}; }
+}
+
 // ── MURO DE LA FELICIDAD ──────────────────────────────────────
 var HAPPY_TTL       = 24 * 60 * 60 * 1000; // 24 horas
 var HAPPY_MAX       = 50;                   // máximo de posts en el muro global
@@ -2345,10 +2372,8 @@ function pHappyReact(postId, emoji){
   _happySave(posts);
   safeLS('set','velo_happy_rx_'+postId, emoji);
 
-  // Notify owner if it's not me
-  if(post.userId !== _myUserId() && post.userId !== 'demo'){
-    // In a real app, this would push to the owner; here it's a demo so we skip cross-user notify
-  }
+  // Count reaction received if it's my own post
+  if(post.userId === _myUserId()) _happyStatIncr('reactionsReceived');
   pToast(emoji,'¡Alegría compartida!');
   pRenderHappy();
 }
@@ -2366,12 +2391,10 @@ function pHappyComment(postId){
   _happySave(posts);
   inp.value = '';
 
-  // Notify post owner (if it's my own post, notify self for demo)
   if(post.userId === _myUserId()){
-    // It's my own post — just re-render
+    _happyStatIncr('commentsReceived');
   } else {
     pToast('💬','Comentario enviado 🌿');
-    // In a real app would push inbox to owner; demo skips cross-user
   }
   pRenderHappy();
 }
@@ -2421,6 +2444,7 @@ function pSubmitHappyPost(){
   if(posts.length < HAPPY_MAX){
     posts.unshift(post);
     _happySave(posts);
+    _happyStatIncr('posts');
     closeModal('happyPostOv');
     pToast('☀️','¡Publicado en el Muro! Desaparece en 24h 💛');
   } else {
@@ -2428,6 +2452,7 @@ function pSubmitHappyPost(){
     var queue = _happyQueueLoad();
     queue.push(post);
     _happyQueueSave(queue);
+    _happyStatIncr('posts');
     closeModal('happyPostOv');
     pToast('⏳','El muro está lleno ('+HAPPY_MAX+'/'+HAPPY_MAX+'). Tu publicación queda en lista de espera y se publicará automáticamente 🌿');
     // Inbox notification
@@ -3858,7 +3883,10 @@ function _onPageEnter(id){
     case 'pro-panel':   switchProPanel('inicio', document.querySelector('.pro-nav-item')); break;
     case 'admin':          _renderAdmin(); break;
     case 'contact':        _initContactPage(); break;
-    case 'change-password': /* static page, no init needed */ break;
+    case 'change-password':
+      var cpBack = document.getElementById('changePassBackRow');
+      if(cpBack) cpBack.style.display = safeLS('get','velo_needs_pw_change') === '1' ? 'none' : 'block';
+      break;
   }
 }
 

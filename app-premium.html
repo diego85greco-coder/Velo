@@ -25,7 +25,7 @@
   <button class="p-mobile-nav-item" onclick="pGoTo('home');toggleMobileMenu()"><span class="p-mobile-nav-icon">🏠</span> Inicio</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('guardians');toggleMobileMenu()"><span class="p-mobile-nav-icon">🛡️</span> Guardianes</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('help');toggleMobileMenu()"><span class="p-mobile-nav-icon">🆘</span> Sala de Ayuda</button>
-  <button class="p-mobile-nav-item" onclick="pGoTo('bottle');toggleMobileMenu()"><span class="p-mobile-nav-icon">🌊</span> Botella</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('bottle');toggleMobileMenu()"><span class="p-mobile-nav-icon">🌊</span> Al Mar</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('professionals');toggleMobileMenu()"><span class="p-mobile-nav-icon">🩺</span> Profesionales</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('circles');toggleMobileMenu()"><span class="p-mobile-nav-icon">⭕</span> Círculos</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('diary');toggleMobileMenu()"><span class="p-mobile-nav-icon">📔</span> Diario</button>
@@ -60,7 +60,7 @@
       </button>
       <button class="p-sn-item" data-screen="bottle" onclick="pGoTo('bottle')">
         <span class="p-sn-icon">🌊</span>
-        <span class="p-sn-label">Botella</span>
+        <span class="p-sn-label">Al Mar</span>
       </button>
       <div class="p-sidebar-section">Comunidad</div>
       <button class="p-sn-item" data-screen="professionals" onclick="pGoTo('professionals')">
@@ -133,7 +133,7 @@
             <div class="land-hero-bg"></div>
             <div class="land-hero-content">
               <img src="assets/logo.png" alt="Velo" class="land-hero-logo" onclick="pLogoClick()">
-              <p class="land-hero-sub" style="max-width:520px;font-size:17px;margin-bottom:10px">Un espacio donde la comunidad se une para acompañarse. Guardianes, círculos, botellas y más — gratis, sin juicios, siempre disponible.</p>
+              <p class="land-hero-sub" style="max-width:520px;font-size:17px;margin-bottom:10px">Un espacio donde la comunidad se une para acompañarse. Guardianes, círculos, mensajes al mar y más — gratis, sin juicios, siempre disponible.</p>
               <div class="land-hero-btns">
                 <button class="p-btn p-btn--primary p-btn--xl" onclick="pGoTo('register')">Comenzar gratis ✨</button>
                 <button class="p-btn p-btn--secondary p-btn--xl" onclick="pGoTo('login')">Ya tengo cuenta</button>
@@ -514,7 +514,7 @@
             </div>
             <div class="p-card p-card--feature p-card--hover fc-ocean" onclick="pGoTo('bottle')">
               <span class="p-card-icon">🌊</span>
-              <div class="p-card-title">Botella</div>
+              <div class="p-card-title">Al Mar</div>
               <div class="p-card-sub">Mensajes al mundo</div>
               <div class="p-card-foot">
                 <span class="p-pill p-pill--ocean">Anónimo</span>
@@ -569,11 +569,15 @@
         <div class="p-page-scroll">
           <div class="p-page-inner">
             <div class="p-page-hdr">
-              <div>
-                <div class="p-label">Red de apoyo</div>
-                <h2 class="p-title">Guardianes</h2>
+              <div class="p-page-hdr-back">
+                <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+                <div>
+                  <div class="p-label">Red de apoyo</div>
+                  <h2 class="p-title">Guardianes</h2>
+                </div>
               </div>
             </div>
+            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Los Guardianes son miembros de la comunidad entrenados para escuchar sin juzgar. Podés pedir un acompañamiento anónimo cuando lo necesitás.</p>
             <div id="myGuardianStatus" style="margin-bottom:12px"></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="guardianStatusBar">
               <button class="p-filter-chip active" onclick="pFilterGuardians('all',this)">Todos</button>
@@ -657,11 +661,15 @@
         <div class="p-page-scroll">
           <div class="p-page-inner">
             <div class="p-page-hdr">
-              <div>
-                <div class="p-label">Salud mental</div>
-                <h2 class="p-title">Profesionales</h2>
+              <div class="p-page-hdr-back">
+                <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+                <div>
+                  <div class="p-label">Salud mental</div>
+                  <h2 class="p-title">Profesionales</h2>
+                </div>
               </div>
             </div>
+            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Psicólogos, terapeutas y especialistas en bienestar disponibles para sesiones desde la app. Las sesiones se realizan por videollamada integrada.</p>
             <div id="proList"></div>
           </div>
         </div>
@@ -756,7 +764,7 @@
         <div class="p-page-scroll" style="background:linear-gradient(160deg,#0C1C0E,#080E08)">
           <div style="padding:18px 18px 20px;position:sticky;top:0;z-index:10;background:rgba(12,28,14,.9);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(200,165,100,.1)">
             <button class="p-back-btn p-dark-back-btn" onclick="pGoTo('home')">←</button>
-            <span style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#fff">Botella al Mar</span>
+            <span style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#fff">Mensajes al Mar</span>
             <button class="p-btn" style="background:rgba(200,165,100,.15);border:1px solid rgba(200,165,100,.25);color:#C8A560;font-size:12px;font-weight:700;padding:7px 13px;border-radius:100px" onclick="pOpenBottleForm()">+ Enviar</button>
           </div>
           <div style="padding:16px">
@@ -764,11 +772,11 @@
               <div class="dark-label" style="color:rgba(200,165,100,.8)">MENSAJE EN BOTELLA</div>
               <h2 class="dark-title">Lanzá un mensaje al mundo</h2>
               <p class="dark-sub">Anónimo, sincero, sin filtros. Alguien en su propia noche lo encuentra y te deja palabras de aliento.</p>
-              <button class="p-btn p-btn--dark-white p-btn--lg p-btn--full" onclick="pOpenBottleForm()">🌊 Lanzar mi botella</button>
+              <button class="p-btn p-btn--dark-white p-btn--lg p-btn--full" onclick="pOpenBottleForm()">🌊 Lanzar mi mensaje</button>
             </div>
             <!-- Tabs -->
             <div style="display:flex;gap:0;margin-bottom:14px;background:rgba(255,255,255,.05);border-radius:12px;padding:3px">
-              <button class="bottle-tab active" id="btab-mar" onclick="pBottleTab('mar',this)">🌊 Botellas del mar</button>
+              <button class="bottle-tab active" id="btab-mar" onclick="pBottleTab('mar',this)">🌊 Del mar</button>
               <button class="bottle-tab" id="btab-resp" onclick="pBottleTab('resp',this)">💌 Mis respuestas</button>
             </div>
             <div id="bottleList"></div>
@@ -779,9 +787,9 @@
         <div class="p-modal-ov" id="bottleReplyOv">
           <div class="p-sheet p-sheet-dark">
             <div class="p-sheet-handle" style="background:rgba(116,198,157,.3)"></div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:#fff;margin-bottom:6px">Responder botella</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:#fff;margin-bottom:6px">Responder mensaje</div>
             <div style="font-size:12px;color:rgba(200,165,100,.7);font-style:italic;margin-bottom:14px;line-height:1.55" id="bottleReplyPreview"></div>
-            <p style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Al responder, la botella desaparece del mar y el autor recibe tu mensaje en su buzón Velo de forma anónima.</p>
+            <p style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Al responder, el mensaje desaparece del mar y el autor recibe tu respuesta en su buzón Velo de forma anónima.</p>
             <textarea class="p-textarea dark-ta" id="bottleReplyTa" rows="4" placeholder="Dejá palabras de aliento para esta persona…"></textarea>
             <div style="height:12px"></div>
             <button class="p-btn p-btn--dark-white p-btn--lg p-btn--full" onclick="pSendBottleReply()">💌 Enviar respuesta</button>
@@ -810,11 +818,15 @@
         <div class="p-page-scroll">
           <div class="p-page-inner">
             <div class="p-page-hdr">
-              <div>
-                <div class="p-label">Personal</div>
-                <h2 class="p-title">Diario</h2>
+              <div class="p-page-hdr-back">
+                <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+                <div>
+                  <div class="p-label">Personal</div>
+                  <h2 class="p-title">Diario</h2>
+                </div>
               </div>
             </div>
+            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Un espacio íntimo para escribir cómo te sentís. Solo vos podés leerlo — ni Velo tiene acceso a tus palabras.</p>
             <div class="diary-grid">
               <div>
                 <div class="diary-write">
@@ -905,11 +917,15 @@
         <div class="p-page-scroll">
           <div class="p-page-inner">
             <div class="p-page-hdr">
-              <div>
-                <div class="p-label p-label-sky" style="color:#3A7090">Bienestar</div>
-                <h2 class="p-title">Espacio de Calma</h2>
+              <div class="p-page-hdr-back">
+                <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+                <div>
+                  <div class="p-label p-label-sky" style="color:#3A7090">Bienestar</div>
+                  <h2 class="p-title">Espacio de Calma</h2>
+                </div>
               </div>
             </div>
+            <p style="font-size:12px;color:#3A7090;line-height:1.6;margin-bottom:14px;font-style:italic">Herramientas para momentos de tensión, ansiedad o agobio. Mensajes de aliento, respiración guiada, meditación y más.</p>
             <div class="calm-grid">
               <div class="calm-card" onclick="pCalmMsg()">
                 <div style="font-size:40px;margin-bottom:10px">💬</div>
@@ -1038,9 +1054,12 @@
         <div class="p-page-scroll">
           <div class="p-page-inner">
             <div class="p-page-hdr">
-              <div>
-                <div class="p-label">Comunidad</div>
-                <h2 class="p-title">Círculos de Paz</h2>
+              <div class="p-page-hdr-back">
+                <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+                <div>
+                  <div class="p-label">Comunidad</div>
+                  <h2 class="p-title">Círculos de Paz</h2>
+                </div>
               </div>
               <button class="p-btn p-btn--primary p-btn--sm" id="circleCreateBtn" onclick="pOpenCreateCircle()">+ Crear círculo</button>
             </div>
@@ -1083,9 +1102,12 @@
         <div class="p-page-scroll">
           <div class="p-page-inner">
             <div class="p-page-hdr">
-              <div>
-                <div class="p-label">Comunidad</div>
-                <h2 class="p-title">Muro de la Felicidad ☀️</h2>
+              <div class="p-page-hdr-back">
+                <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+                <div>
+                  <div class="p-label">Comunidad</div>
+                  <h2 class="p-title">Muro de la Felicidad ☀️</h2>
+                </div>
               </div>
               <button class="p-btn p-btn--primary p-btn--sm" onclick="pOpenHappyPost()">+ Compartir</button>
             </div>
@@ -1094,6 +1116,13 @@
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
               <p style="font-size:11px;color:var(--ink5);font-style:italic;margin:0">✨ Cada publicación dura 24 horas · Máx 50 activas</p>
               <span style="font-size:10px;color:var(--sage3);font-weight:700" id="happyCounter"></span>
+            </div>
+
+            <!-- Rules banner -->
+            <div style="background:rgba(255,224,102,.12);border:1.5px solid rgba(255,200,50,.3);border-radius:12px;padding:10px 14px;font-size:11.5px;color:var(--ink3);line-height:1.6;margin-bottom:12px">
+              <strong style="color:var(--ink2);display:block;margin-bottom:4px">☀️ Este espacio es para momentos de alegría</strong>
+              Compartí pequeñas situaciones cotidianas que te hicieron feliz: un logro, una sonrisa inesperada, algo que te llenó el corazón.<br>
+              <span style="color:var(--ink4)">No se permite negatividad ni pedidos de ayuda (para eso está la Sala de Ayuda) · No compartas datos personales</span>
             </div>
 
             <!-- Queue notice -->
@@ -1113,7 +1142,11 @@
           <div class="p-sheet">
             <div class="p-sheet-handle"></div>
             <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:6px">Compartí un momento de alegría</div>
-            <p style="font-size:12px;color:var(--ink4);margin-bottom:14px;line-height:1.5">Tu publicación vive 24 horas en el muro. Si está lleno, queda en lista de espera ☀️</p>
+            <div style="background:rgba(255,224,102,.15);border-left:3px solid rgba(255,200,50,.5);border-radius:0 8px 8px 0;padding:8px 12px;font-size:11.5px;color:var(--ink3);line-height:1.5;margin-bottom:12px">
+              <strong>Solo momentos felices:</strong> logros, sonrisas, pequeñas alegrías cotidianas.<br>
+              <span style="color:var(--ink5)">Sin negatividad · Sin datos personales · Para pedidos de apoyo usá la Sala de Ayuda</span>
+            </div>
+            <p style="font-size:11px;color:var(--ink5);margin-bottom:10px;margin-top:0">Tu publicación vive 24 horas en el muro. Si está lleno, queda en lista de espera ☀️</p>
             <div id="happyEmojiRow" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px"></div>
             <textarea class="p-textarea" id="happyPostTa" rows="4" placeholder="¿Qué momento de alegría querés compartir hoy?" maxlength="300"></textarea>
             <div style="height:12px"></div>
@@ -1285,11 +1318,15 @@
         <div class="p-page-scroll">
           <div class="p-page-inner">
             <div class="p-page-hdr">
-              <div>
-                <div class="p-label">Comunicaciones</div>
-                <h2 class="p-title">Mensajes</h2>
+              <div class="p-page-hdr-back">
+                <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+                <div>
+                  <div class="p-label">Comunicaciones</div>
+                  <h2 class="p-title">Mensajes</h2>
+                </div>
               </div>
             </div>
+            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Acá llegan tus notificaciones internas: análisis de ánimo mensuales, respuestas del mar, avisos del sistema y más. Solo vos podés verlos.</p>
             <div id="inboxList"></div>
           </div>
         </div>
@@ -1540,6 +1577,9 @@
       <div class="p-page fade-in" id="pg-change-password">
         <div style="height:100%;display:flex;align-items:center;justify-content:center;padding:24px">
           <div class="p-card" style="width:100%;max-width:420px;padding:32px">
+            <div id="changePassBackRow" style="margin-bottom:16px">
+              <button class="p-back-btn" onclick="pGoTo('profile')" style="font-size:13px">← Volver al perfil</button>
+            </div>
             <div style="text-align:center;margin-bottom:24px">
               <div style="font-size:44px;margin-bottom:10px">🔐</div>
               <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink)">Cambiar contraseña</h2>
@@ -1661,7 +1701,7 @@
       </button>
       <button class="p-bn-item" data-screen="bottle" onclick="pGoTo('bottle')">
         <span class="p-bn-icon">🌊</span>
-        <span class="p-bn-label">Botella</span>
+        <span class="p-bn-label">Al Mar</span>
       </button>
       <button class="p-bn-item" data-screen="profile" onclick="pGoTo('profile')">
         <span class="p-bn-icon">👤</span>
@@ -1699,7 +1739,7 @@
     <div style="font-size:13px;color:var(--ink3);line-height:1.7">
       <p><strong>Datos que recopilamos</strong><br>Nombre, correo electrónico y datos de uso (frecuencia de sesiones, emojis de humor, sesiones de respiración). No vendemos ni compartimos datos con terceros.</p>
       <p><strong>Almacenamiento</strong><br>Tus datos se almacenan en servidores seguros de Supabase (cifrado en tránsito y en reposo). El Diario Íntimo se guarda <em>solo en tu dispositivo</em> — Velo no puede acceder a él.</p>
-      <p><strong>Comunicaciones anónimas</strong><br>Las botellas y las solicitudes anónimas de la Sala de Ayuda no están vinculadas a tu identidad visible para otros usuarios.</p>
+      <p><strong>Comunicaciones anónimas</strong><br>Los mensajes al mar y las solicitudes anónimas de la Sala de Ayuda no están vinculadas a tu identidad visible para otros usuarios.</p>
       <p><strong>Pagos</strong><br>Los pagos son procesados por Stripe o PayPal. Velo no almacena datos de tarjeta de crédito.</p>
       <p><strong>Tus derechos</strong><br>Podés solicitar la eliminación de tu cuenta y todos tus datos escribiendo a wearevelo.app@gmail.com.</p>
       <p><strong>Cookies</strong><br>Usamos localStorage para mantener tu sesión. No usamos cookies de rastreo de terceros.</p>
@@ -1785,7 +1825,7 @@
         <button class="survey-func-btn" onclick="pSurveyFuncion('Diario',this)">📔 Diario</button>
         <button class="survey-func-btn" onclick="pSurveyFuncion('Estado de Ánimo',this)">🎭 Ánimo</button>
         <button class="survey-func-btn" onclick="pSurveyFuncion('Círculos',this)">⭕ Círculos</button>
-        <button class="survey-func-btn" onclick="pSurveyFuncion('Botellas',this)">🌊 Botellas</button>
+        <button class="survey-func-btn" onclick="pSurveyFuncion('Mensajes al Mar',this)">🌊 Mensajes al Mar</button>
         <button class="survey-func-btn" onclick="pSurveyFuncion('Profesionales',this)">🩺 Profesionales</button>
         <button class="survey-func-btn" onclick="pSurveyFuncion('Vela por ti',this)">🕯️ Vela por ti</button>
       </div>
