@@ -341,6 +341,37 @@
             </div>
           </div>
         </div>
+        <!-- Forgot password modal (within login page) -->
+        <div class="p-modal-ov" id="forgotPassOv">
+          <div class="p-sheet">
+            <div class="p-sheet-handle"></div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:6px">Recuperar contraseña</div>
+            <div id="forgotForm">
+              <p style="font-size:13px;color:var(--ink4);margin-bottom:16px;line-height:1.5">Ingresá tu correo y te enviamos un enlace para crear una nueva contraseña.</p>
+              <div class="p-field">
+                <label class="p-field-label">Correo electrónico</label>
+                <input class="p-input" type="email" id="forgotEmail" placeholder="tu@email.com">
+              </div>
+              <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSendPassReset()">📧 Enviar enlace de recuperación</button>
+              <div style="height:10px"></div>
+              <p style="font-size:11px;color:var(--ink5);text-align:center;line-height:1.5">Si no recibís el correo en 10 minutos, revisá tu carpeta de spam.</p>
+              <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+                <p style="font-size:12px;color:var(--ink4);text-align:center;margin-bottom:10px">¿No recibiste el correo?</p>
+                <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pForgotToContact()">✉️ Contactar soporte</button>
+              </div>
+            </div>
+            <div id="forgotSent" style="display:none">
+              <div style="text-align:center;padding:10px 0">
+                <div style="font-size:48px;margin-bottom:12px">📬</div>
+                <p style="font-size:14px;color:var(--ink2);font-weight:600;margin-bottom:8px">¡Correo enviado!</p>
+                <p style="font-size:13px;color:var(--ink4);line-height:1.6;margin-bottom:20px">Revisá tu bandeja de entrada y seguí el enlace para crear una nueva contraseña.<br><span style="font-size:11px;color:var(--ink5)">Si no llegó, revisá spam o contactá soporte.</span></p>
+                <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pForgotToContact()">✉️ No recibí el correo → Contactar soporte</button>
+                <div style="height:8px"></div>
+                <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('forgotPassOv')">Cerrar</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div><!-- /pg-login -->
 
       <!-- ══ REGISTER ═════════════════════════════════════════════ -->
@@ -1091,9 +1122,10 @@
             <div class="profile-layout">
               <div class="profile-left">
                 <div class="profile-hero-card">
-                  <div class="profile-av-lg" id="profileAv">
+                  <div class="profile-av-lg" id="profileAv" onclick="pShowAvatarPicker()" style="cursor:pointer;position:relative">
                     🧑
                     <div class="profile-av-st" id="profileAvSt"></div>
+                    <div style="position:absolute;bottom:2px;right:2px;background:var(--sage2);color:#fff;font-size:10px;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.2)">✎</div>
                   </div>
                   <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:4px" id="profileName">Usuario</h3>
                   <p style="font-size:12px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:12px" id="profileMotto">Tu lema aquí</p>
@@ -1145,6 +1177,10 @@
                     <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pGoTo('donation-exit')">💚 Hacer una donación</button>
                   </div>
                   <div class="p-card" style="padding:18px;margin-bottom:12px">
+                    <div class="p-label p-label-sage" style="margin-bottom:12px">Seguridad</div>
+                    <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('change-password')">🔐 Cambiar contraseña</button>
+                  </div>
+                  <div class="p-card" style="padding:18px;margin-bottom:12px">
                     <div class="p-label p-label-sage" style="margin-bottom:12px">Soporte</div>
                     <button class="p-btn p-btn--secondary p-btn--md p-btn--full" style="margin-bottom:8px" onclick="pContactUs()">✉️ Contactarnos</button>
                     <a href="mailto:wearevelo.app@gmail.com" style="display:block;text-align:center;font-size:12px;color:var(--sage);text-decoration:none;padding:8px">wearevelo.app@gmail.com</a>
@@ -1181,6 +1217,50 @@
               <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveProfile()">Guardar</button>
               <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('editProfileOv')">Cancelar</button>
             </div>
+          </div>
+        </div>
+        <!-- Avatar picker modal -->
+        <div class="p-modal-ov" id="avatarPickerOv">
+          <div class="p-sheet" style="max-height:85vh;overflow-y:auto">
+            <div class="p-sheet-handle"></div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink);margin-bottom:6px">Cambiar avatar</div>
+            <p style="font-size:12px;color:var(--ink4);margin-bottom:16px">Elegí un emoji o subí tu foto.</p>
+            <!-- Emoji grid -->
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:18px">
+              <div onclick="pSetAvatar('🌸')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌸</div>
+              <div onclick="pSetAvatar('🌊')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌊</div>
+              <div onclick="pSetAvatar('🦋')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🦋</div>
+              <div onclick="pSetAvatar('🌿')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌿</div>
+              <div onclick="pSetAvatar('🌙')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌙</div>
+              <div onclick="pSetAvatar('🏔️')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🏔️</div>
+              <div onclick="pSetAvatar('🌺')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌺</div>
+              <div onclick="pSetAvatar('🧑')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🧑</div>
+              <div onclick="pSetAvatar('🦊')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🦊</div>
+              <div onclick="pSetAvatar('🐋')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🐋</div>
+              <div onclick="pSetAvatar('🦅')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🦅</div>
+              <div onclick="pSetAvatar('🌵')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌵</div>
+              <div onclick="pSetAvatar('🍃')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🍃</div>
+              <div onclick="pSetAvatar('🌻')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌻</div>
+              <div onclick="pSetAvatar('🌈')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌈</div>
+              <div onclick="pSetAvatar('⭐')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">⭐</div>
+              <div onclick="pSetAvatar('🐢')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🐢</div>
+              <div onclick="pSetAvatar('🦜')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🦜</div>
+              <div onclick="pSetAvatar('🌾')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌾</div>
+              <div onclick="pSetAvatar('💎')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">💎</div>
+              <div onclick="pSetAvatar('🦋')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🫧</div>
+            </div>
+            <!-- Photo upload -->
+            <div style="border-top:1px solid var(--border);padding-top:14px">
+              <div class="p-label p-label-sage" style="margin-bottom:10px">O subí tu foto</div>
+              <label style="display:block;background:var(--cream2);border:1.5px dashed var(--border2);border-radius:12px;padding:16px;text-align:center;cursor:pointer">
+                <span style="font-size:24px;display:block;margin-bottom:6px">📷</span>
+                <span style="font-size:13px;color:var(--ink3);font-weight:600">Seleccionar imagen</span>
+                <span style="font-size:11px;color:var(--ink5);display:block;margin-top:4px">JPG, PNG · máx 2MB</span>
+                <input type="file" accept="image/*" style="display:none" onchange="pSetAvatarFromFile(this)">
+              </label>
+            </div>
+            <div style="height:12px"></div>
+            <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
           </div>
         </div>
       </div><!-- /pg-profile -->
@@ -1228,9 +1308,9 @@
                 </div>
               </div>
             </div>
-            <div class="contact-opt" onclick="window.open('mailto:contacto@velo.app')">
+            <div class="contact-opt" onclick="window.open('mailto:wearevelo.app@gmail.com')">
               <div class="co-ic" style="background:var(--sage7)">📧</div>
-              <div><div style="font-size:14px;font-weight:700;color:var(--ink)">Correo electrónico</div><div style="font-size:12px;color:var(--ink4)">contacto@velo.app</div></div>
+              <div><div style="font-size:14px;font-weight:700;color:var(--ink)">Correo electrónico</div><div style="font-size:12px;color:var(--ink4)">wearevelo.app@gmail.com</div></div>
             </div>
             <div class="contact-opt" onclick="pGoTo('help')">
               <div class="co-ic" style="background:rgba(58,158,96,.1)">🆘</div>
@@ -1238,9 +1318,20 @@
             </div>
             <div class="p-card" style="padding:20px;margin-top:14px">
               <div class="p-label p-label-sage" style="margin-bottom:12px">Enviar mensaje</div>
-              <div class="p-field"><label class="p-field-label">Asunto</label><input class="p-input" type="text" id="contactSubject" placeholder="¿En qué podemos ayudarte?"></div>
+              <div class="p-field">
+                <label class="p-field-label">Asunto</label>
+                <select class="p-input" id="contactSubject">
+                  <option value="Consulta general">Consulta general</option>
+                  <option value="Problema con contraseña">Problema con contraseña</option>
+                  <option value="Problema técnico">Problema técnico</option>
+                  <option value="Sugerencia de mejora">Sugerencia de mejora</option>
+                  <option value="Reporte de seguridad">Reporte de seguridad</option>
+                  <option value="Solicitud de datos">Solicitud de mis datos</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
               <div class="p-field"><label class="p-field-label">Mensaje</label><textarea class="p-textarea" id="contactMsg" rows="5" placeholder="Contanos tu consulta..."></textarea></div>
-              <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSendContact()">Enviar mensaje</button>
+              <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSendContact()">Enviar mensaje 💌</button>
             </div>
           </div>
         </div>
@@ -1429,6 +1520,31 @@
           </div>
         </div>
       </div><!-- /pg-pro-panel -->
+
+      <!-- ══ CHANGE PASSWORD ══════════════════════════════════ -->
+      <div class="p-page fade-in" id="pg-change-password">
+        <div style="height:100%;display:flex;align-items:center;justify-content:center;padding:24px">
+          <div class="p-card" style="width:100%;max-width:420px;padding:32px">
+            <div style="text-align:center;margin-bottom:24px">
+              <div style="font-size:44px;margin-bottom:10px">🔐</div>
+              <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink)">Cambiar contraseña</h2>
+              <p style="font-size:12px;color:var(--ink4);margin-top:6px;line-height:1.5">Por seguridad, establecé una nueva contraseña para tu cuenta.</p>
+            </div>
+            <div class="p-field">
+              <label class="p-field-label">Nueva contraseña</label>
+              <input class="p-input" type="password" id="newPassInput" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+            </div>
+            <div class="p-field">
+              <label class="p-field-label">Confirmar contraseña</label>
+              <input class="p-input" type="password" id="confPassInput" placeholder="Repetí la contraseña" autocomplete="new-password" onkeydown="if(event.key==='Enter') pChangePassword()">
+            </div>
+            <div style="height:4px"></div>
+            <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pChangePassword()">✅ Guardar nueva contraseña</button>
+            <div style="height:8px"></div>
+            <p style="font-size:11px;color:var(--ink5);text-align:center;line-height:1.5">Si tenés problemas, escribinos a <strong>wearevelo.app@gmail.com</strong></p>
+          </div>
+        </div>
+      </div>
 
       <!-- ══ ADMIN LOGIN ═══════════════════════════════════════ -->
       <div class="p-page fade-in" id="pg-admin-login">

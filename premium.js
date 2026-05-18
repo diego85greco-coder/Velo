@@ -259,7 +259,20 @@ async function pSignIn(){
       result = { error: null, data: { user: { email: email } } };
     }
     if(result.error){
-      pToast('⚠️', result.error.message || 'Credenciales incorrectas');
+      // Check provisional password created by admin
+      var provKey = 'velo_prov_'+email.toLowerCase().replace(/[^a-z0-9]/g,'_');
+      var provRaw = null; try{ provRaw = JSON.parse(localStorage.getItem(provKey)); }catch(e){}
+      if(provRaw && provRaw.pass === pass && provRaw.expiry > Date.now()){
+        safeLS('set','velo_user_email', email);
+        safeLS('set','velo_user_name', safeLS('get','velo_user_name') || email.split('@')[0]);
+        safeLS('set','velo_session','1');
+        safeLS('set','velo_needs_pw_change','1');
+        _authenticated = true;
+        pToast('🔑','Ingresaste con contraseña provisional. Por favor cambiá tu contraseña.');
+        setTimeout(function(){ pGoTo('change-password'); }, 900);
+      } else {
+        pToast('⚠️', result.error.message || 'Credenciales incorrectas. ¿Olvidaste tu contraseña?');
+      }
     } else {
       safeLS('set','velo_user_email', email);
       safeLS('set','velo_sb_pass', pass);
@@ -299,16 +312,79 @@ function pShowPrivacy(){
 
 function pShowForgot(){
   var email = document.getElementById('loginEmail');
-  var val = email ? email.value.trim() : '';
+  var val   = email ? email.value.trim() : '';
+  var ov    = document.getElementById('forgotPassOv');
+  if(!ov) return;
+  var fEmail  = document.getElementById('forgotEmail');
+  var sentDiv = document.getElementById('forgotSent');
+  var formDiv = document.getElementById('forgotForm');
+  if(fEmail && val) fEmail.value = val;
+  if(sentDiv) sentDiv.style.display = 'none';
+  if(formDiv) formDiv.style.display = '';
+  ov.classList.add('open');
+}
+
+async function pSendPassReset(){
+  var emailEl = document.getElementById('forgotEmail');
+  var val = emailEl ? emailEl.value.trim() : '';
   if(!val || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val)){
-    pToast('📧','Ingresá tu correo primero');
-    return;
+    pToast('📧','Ingresá un correo válido'); return;
   }
-  if(sbClient){ sbClient.auth.resetPasswordForEmail(val, {redirectTo: window.location.origin+'/app-premium.html'}); }
-  pToast('📧','Revisá tu correo para restablecer la contraseña');
+  _initSupabase();
+  if(sbClient){
+    try{ await sbClient.auth.resetPasswordForEmail(val, {redirectTo: window.location.href}); }catch(e){}
+  }
+  var sentDiv = document.getElementById('forgotSent');
+  var formDiv = document.getElementById('forgotForm');
+  if(formDiv) formDiv.style.display = 'none';
+  if(sentDiv) sentDiv.style.display = '';
+}
+
+function pForgotToContact(){
+  var emailEl = document.getElementById('forgotEmail');
+  var val = emailEl ? emailEl.value.trim() : '';
+  closeModal('forgotPassOv');
+  pGoTo('contact');
+  setTimeout(function(){
+    var sub = document.getElementById('contactSubject');
+    if(sub) sub.value = 'Problema con contraseña';
+    var msg = document.getElementById('contactMsg');
+    if(msg) msg.value = (val ? 'Mi correo es: '+val+'\n\n' : '')+'No recibí el correo de recuperación y necesito acceder a mi cuenta.';
+  }, 150);
+}
+
+async function pChangePassword(){
+  var newEl  = document.getElementById('newPassInput');
+  var confEl = document.getElementById('confPassInput');
+  if(!newEl || !confEl) return;
+  var newPass  = newEl.value;
+  var confPass = confEl.value;
+  if(newPass.length < 8){ pToast('⚠️','Mínimo 8 caracteres'); return; }
+  if(newPass !== confPass){ pToast('⚠️','Las contraseñas no coinciden'); return; }
+  _initSupabase();
+  var ok = false;
+  if(sbClient){
+    try{
+      var res = await sbClient.auth.updateUser({password: newPass});
+      if(!res.error) ok = true;
+    }catch(e){}
+  }
+  if(!ok){
+    // Demo fallback: update local only
+    ok = true;
+  }
+  var email = safeLS('get','velo_user_email');
+  if(email){
+    try{ localStorage.removeItem('velo_prov_'+email.toLowerCase().replace(/[^a-z0-9]/g,'_')); }catch(e){}
+  }
+  safeLS('del','velo_needs_pw_change');
+  safeLS('set','velo_sb_pass', newPass);
+  pToast('✅','¡Contraseña actualizada! 🔒');
+  setTimeout(function(){ _loginAndGo(); }, 1400);
 }
 
 function _loginAndGo(){
+  if(safeLS('get','velo_needs_pw_change') === '1'){ pGoTo('change-password'); return; }
   var type = safeLS('get','velo_user_type') || 'user';
   _userType = type;
   if(type === 'admin'){
@@ -443,7 +519,21 @@ function _updateSidebarUser(){
   var sa = document.getElementById('sidebarUserAv');
   var sp = document.getElementById('sidebarUserPlan');
   if(sn) sn.textContent = name;
-  if(sa) sa.textContent = av;
+  if(sa){
+    var isImg = av && (av.startsWith('data:') || av.startsWith('http'));
+    if(isImg){
+      sa.style.backgroundImage = 'url('+av+')';
+      sa.style.backgroundSize  = 'cover';
+      sa.style.backgroundPosition = 'center';
+      sa.style.backgroundRepeat = 'no-repeat';
+      sa.style.fontSize = '0';
+      sa.textContent = '';
+    } else {
+      sa.style.backgroundImage = '';
+      sa.style.fontSize = '';
+      sa.textContent = av;
+    }
+  }
   if(sp){ sp.textContent = plan; sp.className = 'p-user-plan' + (_isPremium() ? ' premium' : ''); }
 }
 
@@ -1438,7 +1528,12 @@ async function _loadMoodCalendar(){
     else {
       hist.innerHTML = '<div class="p-label" style="margin-bottom:10px">Últimos registros</div>'+entries.map(function(k){
         var e = moodMap[k];
-        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:20px">'+e.emoji+'</span><div><div style="font-size:13px;font-weight:600;color:var(--ink)">'+e.label+'</div><div style="font-size:11px;color:var(--ink5)">'+k+(e.note?' · '+e.note:'')+'</div></div></div>';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
+          +'<span style="font-size:20px">'+e.emoji+'</span>'
+          +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">'+e.label+'</div>'
+          +'<div style="font-size:11px;color:var(--ink5)">'+k+(e.note?' · '+e.note:'')+'</div></div>'
+          +'<button onclick="pDeleteMood(\''+k+'\')" style="font-size:14px;background:none;border:none;cursor:pointer;color:var(--ink5);padding:4px 6px;border-radius:6px;flex-shrink:0" title="Eliminar registro">🗑️</button>'
+          +'</div>';
       }).join('');
     }
   }
@@ -2016,12 +2111,63 @@ function _renderUserDashboard(){
 }
 
 // ── PROFILE ────────────────────────────────────────────────────
+function _renderAvatarEl(elId, av){
+  var el = document.getElementById(elId);
+  if(!el) return;
+  var isImg = av && (av.startsWith('data:') || av.startsWith('http'));
+  // Preserve child elements (status dot, etc.)
+  var children = Array.from(el.children);
+  if(isImg){
+    el.style.backgroundImage = 'url('+av+')';
+    el.style.backgroundSize = 'cover';
+    el.style.backgroundPosition = 'center';
+    el.style.fontSize = '0';
+    el.style.backgroundRepeat = 'no-repeat';
+    el.textContent = '';
+  } else {
+    el.style.backgroundImage = '';
+    el.style.fontSize = '';
+    el.style.backgroundSize = '';
+    el.textContent = av || '🧑';
+  }
+  children.forEach(function(c){ el.appendChild(c); });
+}
+
+function pShowAvatarPicker(){
+  var ov = document.getElementById('avatarPickerOv');
+  if(ov) ov.classList.add('open');
+}
+
+function pSetAvatar(emoji){
+  safeLS('set','velo_user_av', emoji);
+  pToast('✅','Avatar actualizado');
+  closeModal('avatarPickerOv');
+  pLoadProfile();
+  _updateSidebarUser();
+}
+
+function pSetAvatarFromFile(input){
+  if(!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  if(file.size > 2*1024*1024){ pToast('⚠️','Imagen demasiado grande (máx 2MB)'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var dataUrl = e.target.result;
+    safeLS('set','velo_user_av', dataUrl);
+    pToast('✅','Foto de perfil actualizada 🌿');
+    closeModal('avatarPickerOv');
+    pLoadProfile();
+    _updateSidebarUser();
+  };
+  reader.readAsDataURL(file);
+}
+
 function pLoadProfile(){
   var name  = safeLS('get','velo_user_name') || 'Usuario';
   var av    = safeLS('get','velo_user_av') || '🧑';
   var motto = safeLS('get','velo_user_motto') || 'Mi camino, mi ritmo.';
   _setEl('profileName', name);
-  _setEl('profileAv', av);
+  _renderAvatarEl('profileAv', av);
   _setEl('profileMotto', motto);
 
   // Plan badge
@@ -2556,9 +2702,34 @@ function _renderAdmin(){
     var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
     var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
 
-    var contactsHtml = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">MENSAJES DE CONTACTO</div>'
-      +(msgs.length ? msgs.map(function(m){
-        return '<div class="a-row"><div class="a-row-ic">💌</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.86)">'+m.topic+'</div><div style="font-size:11px;color:rgba(255,255,255,.38)">'+m.email+' · '+m.fecha+'</div></div>'+(m.leido?'<span class="a-badge-g">leído</span>':'<span class="a-badge-y">nuevo</span>')+'</div>';
+    // Provisional password section
+    var provHtml = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">🔑 CONTRASEÑAS PROVISIONALES</div>'
+      +'<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:14px;margin-bottom:8px">'
+      +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Creá una contraseña temporal para un usuario que no puede recuperar su cuenta. Válida 72 horas.</p>'
+      +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'
+      +'<input class="p-input" id="adminProvEmail" type="email" placeholder="correo@usuario.com" style="flex:1;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" />'
+      +'<button onclick="pCreateProvisionalPass()" style="padding:8px 14px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;white-space:nowrap">Crear contraseña</button>'
+      +'</div>'
+      +'<div id="adminProvResult" style="font-size:12px;color:rgba(116,198,157,.8)"></div>'
+      +'</div>';
+
+    var contactsHtml = provHtml
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px;margin-top:8px">💌 MENSAJES DE CONTACTO</div>'
+      +(msgs.length ? msgs.map(function(m,i){
+        var texto = m.mensaje || m.msg || '';
+        return '<div class="a-row" style="flex-direction:column;align-items:flex-start;gap:6px">'
+          +'<div style="display:flex;width:100%;align-items:center;gap:10px">'
+          +'<div class="a-row-ic">💌</div>'
+          +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.86)">'+_escHtml(m.topic||'Consulta')+'</div>'
+          +'<div style="font-size:11px;color:rgba(255,255,255,.38)">'+_escHtml(m.email)+' · '+m.fecha+'</div></div>'
+          +(m.leido?'<span class="a-badge-g">leído</span>':'<span class="a-badge-y">nuevo</span>')
+          +'</div>'
+          +(texto ? '<div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.5;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:8px;width:100%;box-sizing:border-box">'+_escHtml(texto)+'</div>' : '')
+          +'<div style="display:flex;gap:8px">'
+          +'<button onclick="pAdminMarkContactRead('+i+')" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.7);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">'+(m.leido?'✓ Leído':'Marcar leído')+'</button>'
+          +(m.email && m.email !== 'anónimo' ? '<a href="mailto:'+_escHtml(m.email)+'?subject=Re: '+_escHtml(m.topic||'Consulta')+'" style="font-size:10px;padding:3px 8px;background:rgba(200,162,0,.1);border:1px solid rgba(200,162,0,.2);color:rgba(200,162,0,.8);border-radius:6px;cursor:pointer;text-decoration:none;font-family:\'Jost\',sans-serif;font-weight:600">📧 Responder</a>' : '')
+          +'</div>'
+          +'</div>';
       }).join('') : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin mensajes aún.</p>')
 
     // T&C acceptance log (legal audit)
@@ -2671,6 +2842,28 @@ function _renderAdmin(){
 
     content.innerHTML = contactsHtml + massHtml + transferHtml + auditHtml + aiModHtml;
   }
+}
+
+function pCreateProvisionalPass(){
+  var emailEl = document.getElementById('adminProvEmail');
+  if(!emailEl || !emailEl.value.trim()){ pToast('⚠️','Ingresá el correo del usuario'); return; }
+  var email = emailEl.value.trim().toLowerCase();
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  var pass  = '';
+  for(var i = 0; i < 10; i++) pass += chars[Math.floor(Math.random()*chars.length)];
+  var expiry = Date.now() + 72*3600*1000;
+  var key = 'velo_prov_'+email.replace(/[^a-z0-9]/g,'_');
+  try{ localStorage.setItem(key, JSON.stringify({pass:pass, expiry:expiry})); }catch(e){}
+  var resEl = document.getElementById('adminProvResult');
+  if(resEl) resEl.innerHTML = '✅ Contraseña provisional: <code style="background:rgba(255,255,255,.12);padding:2px 8px;border-radius:4px;font-family:monospace;letter-spacing:1px">'+pass+'</code><br><span style="color:rgba(255,255,255,.4);font-size:10px">Válida 72 horas · Compartila de forma segura con el usuario</span>';
+  pToast('🔑','Contraseña provisional creada');
+}
+
+function pAdminMarkContactRead(idx){
+  var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
+  if(msgs[idx]) msgs[idx].leido = true;
+  safeLS('set','velo_admin_contacts', JSON.stringify(msgs));
+  _renderAdmin();
 }
 
 function pApproveTransfer(idx){
@@ -3221,7 +3414,7 @@ function pContactUs(){
     +'<div class="p-field"><label class="p-field-label">Mensaje</label>'
     +'<textarea class="p-textarea" id="contactMsg" rows="4" placeholder="Contanos qué necesitás..."></textarea></div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSendContact(this.closest(\'.p-modal-ov\'))">Enviar mensaje</button>'
+    +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSendContactModal(this.closest(\'.p-modal-ov\'))">Enviar mensaje</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove()">Cancelar</button>'
     +'</div>'
     +'<div style="height:8px"></div>'
@@ -3230,14 +3423,16 @@ function pContactUs(){
   document.body.appendChild(ov);
 }
 
-function pSendContact(ov){
-  var msg = document.getElementById('contactMsg');
+function pSendContactModal(ov){
+  var msg   = document.getElementById('contactMsg');
   var topic = document.getElementById('contactTopic');
   if(!msg || !msg.value.trim()){ pToast('✍️','Escribí tu mensaje'); return; }
+  var text = msg.value.trim();
+  var ts   = Date.now();
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
-  msgs.unshift({ email: safeLS('get','velo_user_email')||'anónimo', topic: topic?topic.value:'Consulta', msg: msg.value.trim(), fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}), leido:false });
+  msgs.unshift({ id:'c-'+ts, topic: topic?topic.value:'Consulta general', mensaje: text, email: safeLS('get','velo_user_email')||'anónimo', fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}), leido:false });
   safeLS('set','velo_admin_contacts', JSON.stringify(msgs.slice(0,200)));
-  sbEnviarReporte(msg.value.trim(), topic?topic.value:'contacto').catch(function(){});
+  try{ sbEnviarReporte(text, topic?topic.value:'contacto').catch(function(){}); }catch(e){}
   if(ov) ov.remove();
   pToast('💌','¡Mensaje enviado! Te respondemos pronto 💚');
 }
@@ -3289,8 +3484,16 @@ function _onPageEnter(id){
     case 'session-room': pInitSessionRoom(); break;
     case 'post-chat':   pInitPostChat(); break;
     case 'pro-panel':   switchProPanel('inicio', document.querySelector('.pro-nav-item')); break;
-    case 'admin':       _renderAdmin(); break;
+    case 'admin':          _renderAdmin(); break;
+    case 'contact':        _initContactPage(); break;
+    case 'change-password': /* static page, no init needed */ break;
   }
+}
+
+function _initContactPage(){
+  // Pre-select "Problema con contraseña" if user came from forgot-password flow
+  var sub = document.getElementById('contactSubject');
+  if(sub && !sub.value) sub.value = 'Consulta general';
 }
 
 // ── UTILITY ───────────────────────────────────────────────────
@@ -3311,6 +3514,25 @@ window.addEventListener('load', function(){
   _initSupabase();
   _checkStripeReturn();
   _checkPayPalReturn();
+
+  // Handle Supabase password recovery redirect (token in URL hash)
+  if(window.location.hash && window.location.hash.includes('type=recovery')){
+    _initSupabase();
+    if(sbClient){
+      sbClient.auth.onAuthStateChange(function(event, session){
+        if(event === 'PASSWORD_RECOVERY'){
+          if(session){ safeLS('set','velo_user_email', session.user.email||''); safeLS('set','velo_session','1'); _authenticated = true; }
+          safeLS('set','velo_needs_pw_change','1');
+          pGoTo('change-password');
+        }
+      });
+    } else {
+      // Fallback: go to change-password anyway
+      safeLS('set','velo_needs_pw_change','1');
+      pGoTo('change-password');
+    }
+    return;
+  }
 
   // Check auth state
   var session = safeLS('get','velo_session');
