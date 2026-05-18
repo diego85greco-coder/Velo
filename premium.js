@@ -519,6 +519,7 @@ function _loadHomeData(){
   // Today's mood
   _loadTodayMoodHome();
   _updateSidebarUser();
+  _renderPersonalizedSuggestions();
 }
 
 function _loadTodayMoodHome(){
@@ -846,6 +847,7 @@ function pRenderHelp(){
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">'
       +'<span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+h.name+'</span>'
       +'<span style="font-size:10px;color:rgba(255,255,255,.3)">'+timeStr+'</span>'
+      +(h.urgencia==='urgente'?'<span style="font-size:9px;background:rgba(220,50,50,.25);color:rgba(255,130,130,.9);border:1px solid rgba(220,50,50,.3);border-radius:6px;padding:1px 6px;margin-left:4px">🔴 Urgente</span>':h.urgencia==='media'?'<span style="font-size:9px;background:rgba(230,160,20,.2);color:rgba(255,200,80,.9);border:1px solid rgba(230,160,20,.25);border-radius:6px;padding:1px 6px;margin-left:4px">🟡 Media</span>':'')
       +'</div>'
       +'<div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.55;margin-bottom:10px;font-style:italic">'+_escHtml(h.preview)+'</div>'
       +'<div style="display:flex;gap:8px;align-items:center">'
@@ -937,6 +939,7 @@ function pSendHelpChatMsg(){
   div.innerHTML = '<div class="feed-bubble feed-bubble--own">'+_escHtml(text)+'<span class="feed-time">'+tStr+'</span></div>';
   msgEl.appendChild(div);
   msgEl.scrollTop = msgEl.scrollHeight;
+  _geminiCrisisCheck(text);
   // Simulated reply after 8-15 seconds
   setTimeout(function(){
     _resetHelpInactivity();
@@ -980,8 +983,9 @@ async function pSendHelp(){
   safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
   pRenderHelp();
 
-  // Gemini crisis detection — runs silently in background
+  // Gemini crisis detection and urgency classification — run silently in background
   _geminiCrisisCheck(msg);
+  _geminiClassifyUrgency(msg);
 }
 
 async function _geminiCrisisCheck(msg){
@@ -1018,6 +1022,192 @@ async function _geminiCrisisCheck(msg){
   }catch(e){}
 }
 
+
+async function _geminiClassifyUrgency(msg){
+  var prompt = 'Sos el sistema de clasificación de urgencia de Velo, una app de salud mental.\n'
+    +'Clasificá la urgencia de este mensaje:\n'
+    +'- urgente: crisis inmediata, riesgo de autolesión o suicidio, emergencia\n'
+    +'- media: situación difícil pero no emergencia inmediata\n'
+    +'- baja: desahogo emocional, apoyo general\n'
+    +'Respondé SOLO con JSON: {"urgencia": "urgente|media|baja"}\n\n'
+    +'Mensaje: "'+msg.replace(/"/g,"'")+'"';
+  var result = await _geminiCall(prompt);
+  if(!result) return;
+  try{
+    var match = result.match(/\{[\s\S]*\}/);
+    if(!match) return;
+    var data = JSON.parse(match[0]);
+    var urgencia = data.urgencia || 'baja';
+    var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
+    if(posts.length){
+      posts[0].urgencia = urgencia;
+      safeLS('set','velo_help_posts', JSON.stringify(posts.slice(0,50)));
+      pRenderHelp();
+    }
+  }catch(e){}
+}
+
+async function _geminiModerateContent(text, section){
+  var prompt = 'Sos el sistema de moderación de Velo, una app de salud mental peer-to-peer.\n'
+    +'Analizá este mensaje y detectá: acoso, agresión hacia otros o spam/publicidad.\n'
+    +'NO marques como problemático: expresiones de dolor, tristeza, crisis personal o pedidos de ayuda.\n'
+    +'Respondé SOLO con JSON: {"problema": true/false, "tipo": "acoso|spam|ninguno", "gravedad": "alta|baja"}\n\n'
+    +'Mensaje: "'+text.replace(/"/g,"'")+'"';
+  var result = await _geminiCall(prompt);
+  if(!result) return;
+  try{
+    var match = result.match(/\{[\s\S]*\}/);
+    if(!match) return;
+    var data = JSON.parse(match[0]);
+    if(data.problema && data.gravedad === 'alta'){
+      var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+      audit.unshift({ ts:Date.now(), tipo:'abuse_detect', circle:section,
+        motivo:'Gemini — '+data.tipo+' detectado (tiempo real)', detail:text.slice(0,80) });
+      safeLS('set','velo_audit_log', JSON.stringify(audit.slice(0,500)));
+      pToast('⚠️','Tu mensaje fue marcado para revisión por el equipo de Velo.');
+    }
+  }catch(e){}
+}
+
+// ── BUENAS NOTICIAS ────────────────────────────────────────────
+async function pRenderNews(){
+  var newsEl = document.getElementById('newsContainer');
+  if(!newsEl) return;
+  var today = new Date().toISOString().slice(0,10);
+  var cacheKey = 'velo_goodnews_'+today;
+  var cached = safeLS('get', cacheKey);
+  if(cached){
+    try{ var items = JSON.parse(cached); _renderNewsList(newsEl, items); return; }catch(e){}
+  }
+  newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando buenas noticias del día...</div>';
+  var prompt = 'Generá 5 buenas noticias positivas y reconfortantes para personas que atraviesan momentos difíciles. '
+    +'Usá historias de avances médicos, actos de solidaridad, logros ambientales, rescates de animales, innovaciones sociales o descubrimientos científicos. '
+    +'Escribilas en español rioplatense. '
+    +'Respondé SOLO con un JSON array: [{"emoji":"...","titulo":"...","cuerpo":"...2-3 oraciones inspiradoras..."}]';
+  var result = await _geminiCall(prompt);
+  var items = [];
+  if(result){
+    try{ var match = result.match(/\[[\s\S]*\]/); if(match) items = JSON.parse(match[0]); }catch(e){}
+  }
+  if(!items.length){
+    items = [
+      {emoji:'🌱',titulo:'La naturaleza se recupera',cuerpo:'Científicos reportan que varias especies en riesgo están aumentando en número gracias a programas de conservación. Es una victoria para todos.'},
+      {emoji:'💊',titulo:'Avances en el tratamiento del cáncer',cuerpo:'Investigadores desarrollaron terapias que en ensayos clínicos muestran resultados prometedores. La ciencia no para de avanzar.'},
+      {emoji:'🤝',titulo:'Comunidades unidas ante la adversidad',cuerpo:'En distintas partes del mundo, vecinos se organizan para ayudarse mutuamente, tejiendo redes de solidaridad que dan esperanza.'},
+      {emoji:'🐾',titulo:'Rescates que emocionan',cuerpo:'Organizaciones rescatan animales de condiciones difíciles y los reubican en hogares amorosos. Cada historia es única y hermosa.'},
+      {emoji:'🧠',titulo:'Nuevas esperanzas en salud mental',cuerpo:'Terapias basadas en evidencia logran resultados positivos en personas con depresión y ansiedad, abriendo caminos de recuperación.'}
+    ];
+  }
+  safeLS('set', cacheKey, JSON.stringify(items));
+  _renderNewsList(newsEl, items);
+}
+
+function _renderNewsList(el, items){
+  el.innerHTML = items.map(function(item){
+    return '<div class="p-card" style="margin-bottom:14px;padding:18px">'
+      +'<div style="display:flex;align-items:flex-start;gap:14px">'
+      +'<div style="font-size:36px;line-height:1;flex-shrink:0">'+item.emoji+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:17px;color:var(--ink);margin-bottom:6px;font-weight:600">'+_escHtml(item.titulo)+'</div>'
+      +'<div style="font-size:13px;color:var(--ink3);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
+      +'</div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ── ACOMPAÑANTE IA EN CALMA ──────────────────────────────────────
+var _calmAIMsgs = [];
+
+function pCalmAI(){
+  _calmAIMsgs = [];
+  openModal('calmAIOv');
+  var msgEl = document.getElementById('calmAIMessages');
+  if(msgEl) msgEl.innerHTML = '';
+  var ta = document.getElementById('calmAIInput');
+  if(ta) ta.value = '';
+  setTimeout(function(){
+    _calmAIAddMsg('Hola, estoy acá para acompañarte. ¿Cómo te sentís en este momento? Podés contarme lo que quieras, sin apuros.', false);
+  }, 300);
+}
+
+function _calmAIAddMsg(text, isUser){
+  _calmAIMsgs.push({text:text, user:isUser});
+  var msgEl = document.getElementById('calmAIMessages');
+  if(!msgEl) return;
+  var div = document.createElement('div');
+  var t = new Date();
+  var tStr = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
+  if(isUser){
+    div.className = 'feed-msg feed-msg--own';
+    div.innerHTML = '<div class="feed-bubble feed-bubble--own">'+_escHtml(text)+'<span class="feed-time">'+tStr+'</span></div>';
+  } else {
+    div.className = 'feed-msg';
+    div.innerHTML = '<div class="feed-av">🌿</div><div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">Acompañante Velo</div><div class="feed-bubble">'+_escHtml(text)+'<span class="feed-time">'+tStr+'</span></div></div>';
+  }
+  msgEl.appendChild(div);
+  msgEl.scrollTop = msgEl.scrollHeight;
+}
+
+async function pSendCalmAIMsg(){
+  var ta = document.getElementById('calmAIInput');
+  if(!ta || !ta.value.trim()) return;
+  var text = ta.value.trim();
+  ta.value = '';
+  ta.style.height = '';
+  _calmAIAddMsg(text, true);
+  var msgEl = document.getElementById('calmAIMessages');
+  var typingDiv = document.createElement('div');
+  typingDiv.id = 'calmAITyping';
+  typingDiv.className = 'feed-msg';
+  typingDiv.innerHTML = '<div class="feed-av">🌿</div><div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">Acompañante Velo</div><div class="feed-bubble" style="color:var(--ink4);font-style:italic">Escribiendo...</div></div>';
+  if(msgEl){ msgEl.appendChild(typingDiv); msgEl.scrollTop = msgEl.scrollHeight; }
+  var history = _calmAIMsgs.slice(-8).map(function(m){ return (m.user?'Usuario':'Acompañante')+': '+m.text; }).join('\n');
+  var prompt = 'Sos un acompañante empático y cálido de Velo, una app de salud mental. '
+    +'Tu rol es escuchar activamente, validar emociones y ofrecer apoyo emocional con calidez sin juzgar. '
+    +'No des consejos médicos ni diagnósticos. Usá español rioplatense (vos, te, estás). '
+    +'Si el usuario menciona crisis o riesgo de autolesión, invitalo a visitar la Sala de Ayuda o llamar al 135 (Argentina). '
+    +'Respondé en 2-4 oraciones máximo. Sin encabezados ni listas.\n\n'
+    +'Conversación:\n'+history+'\nAcompañante:';
+  var reply = await _geminiCall(prompt);
+  var typingEl = document.getElementById('calmAITyping');
+  if(typingEl) typingEl.remove();
+  _calmAIAddMsg(reply || 'Estoy acá con vos. Seguí contándome, te escucho sin juzgar.', false);
+  _geminiCrisisCheck(text);
+}
+
+// ── SUGERENCIAS PERSONALIZADAS ──────────────────────────────────
+async function _renderPersonalizedSuggestions(){
+  var el = document.getElementById('homeSuggestions');
+  if(!el) return;
+  var moods = []; try{ moods = JSON.parse(safeLS('get','velo_mood_log')||'[]'); }catch(e){}
+  if(moods.length < 3){ el.style.display='none'; return; }
+  var emojiList = moods.slice(0,7).map(function(m){ return m.emoji; }).join(', ');
+  var prompt = 'Sos el sistema de sugerencias de Velo, una app de salud mental peer-to-peer. '
+    +'El usuario registró estos estados de ánimo recientes (del más reciente al más antiguo): '+emojiList+'. '
+    +'Emojis: 😄=muy bien, 😊=bien, 😐=regular, 😞=mal, 😢=muy mal. '
+    +'Secciones disponibles: guardianes=conectarse con personas que escuchan, help=Sala de Ayuda, circles=grupos temáticos, diary=escritura reflexiva, calm=respiración y meditación, bottle=mensajes anónimos al mar, news=buenas noticias del día. '
+    +'Sugerí 2 secciones relevantes para este patrón de ánimo. Respondé en JSON: '
+    +'[{"icon":"emoji","titulo":"nombre","razon":"una oración breve","page":"guardianes|help|circles|diary|calm|bottle|news"}] '
+    +'Solo el array JSON.';
+  var result = await _geminiCall(prompt);
+  var sugs = [];
+  if(result){
+    try{ var match = result.match(/\[[\s\S]*\]/); if(match) sugs = JSON.parse(match[0]); }catch(e){}
+  }
+  if(!sugs.length){ el.style.display='none'; return; }
+  el.style.display = '';
+  el.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);margin-bottom:10px">Sugerido para vos 💡</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +sugs.map(function(s){
+      return '<div class="p-card p-card--hover" style="padding:14px;cursor:pointer" onclick="pGoTo(\''+_escHtml(s.page||'home')+'\')">'
+        +'<div style="font-size:22px;margin-bottom:6px">'+s.icon+'</div>'
+        +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:15px;color:var(--ink);margin-bottom:4px">'+_escHtml(s.titulo)+'</div>'
+        +'<div style="font-size:11px;color:var(--ink4);line-height:1.4">'+_escHtml(s.razon)+'</div>'
+        +'</div>';
+    }).join('')
+    +'</div>';
+}
 
 function pOpenSOS(){
   openModal('sosOv');
@@ -1248,6 +1438,7 @@ function pSendBottle(){
   bottles.unshift({ id:id, mood:_selectedBottleMood, text:text, responses:0, color:'rgba(116,198,157,.12)', ts:Date.now() });
   safeLS('set','velo_my_bottles', JSON.stringify(bottles.slice(0,50)));
   pToast('🌊','¡Mensaje lanzado al mar! 🌿');
+  _geminiModerateContent(text, 'mensajes-al-mar');
   pRenderBottle();
 }
 
@@ -2083,6 +2274,7 @@ function pSendCircleMsg(){
   var badge = _getBadge(userConvs);
   msgs.push({ id:'m'+Date.now(), av:av, name:name+' '+badge.icon, text:text, ts:Date.now(), own:true });
   safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs.slice(-100)));
+  _geminiModerateContent(text, 'circulo-'+_curCircle.id);
   _renderCircleMessages();
 
   // Simulated reply after 4-9 seconds
@@ -3452,6 +3644,16 @@ async function pRunAiScan(){
   helpMsgs.slice(0,20).forEach(function(m){
     if(m.text) samples.push({ cid:'sala-ayuda', text:m.text.slice(0,200) });
   });
+  // Also scan bottle messages (Mensajes al Mar)
+  var bottles = []; try{ bottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
+  bottles.slice(0,20).forEach(function(b){
+    if(b.text) samples.push({ cid:'mensajes-al-mar', text:b.text.slice(0,200) });
+  });
+  // Also scan help posts
+  var helpPosts = []; try{ helpPosts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
+  helpPosts.slice(0,20).forEach(function(p){
+    if(p.preview) samples.push({ cid:'sala-ayuda-posts', text:p.preview.slice(0,200) });
+  });
 
   if(!samples.length){ pToast('✅','Sin mensajes para analizar.'); _renderAdmin(); return; }
 
@@ -4077,6 +4279,7 @@ function _onPageEnter(id){
     case 'pro-panel':   switchProPanel('inicio', document.querySelector('.pro-nav-item')); break;
     case 'admin':          _renderAdmin(); break;
     case 'contact':        _initContactPage(); break;
+    case 'news':           pRenderNews(); break;
     case 'change-password':
       var cpBack = document.getElementById('changePassBackRow');
       if(cpBack) cpBack.style.display = safeLS('get','velo_needs_pw_change') === '1' ? 'none' : 'block';
