@@ -69,7 +69,7 @@ var P_NO_NAV = ['landing','login','register','register-type','onboarding',
                 'pro-reg','pro-onboarding','admin-login','pro-pending'];
 var P_DARK   = ['help','bottle','respira'];
 var P_FADE   = ['landing','onboarding','register-type','donation-exit',
-                'post-chat','pro-pending','admin-login'];
+                'session-room','post-chat','pro-pending','admin-login'];
 
 // ── NAVIGATE ─────────────────────────────────────────────────
 function pGoTo(id){
@@ -650,7 +650,8 @@ function pStripeCheckout(proId){
   var stripeAmount = Math.round(p.rate * 100);
   var proName = p.name;
   var proSpec = p.spec;
-  safeLS('set','velo_stripe_pending', JSON.stringify({ proId:proId, name:proName, amount:p.rate, ts:Date.now() }));
+  var sessionData = { proId:proId, name:proName, spec:proSpec, amount:p.rate, currency:p.currency, ts:Date.now() };
+  safeLS('set','velo_stripe_pending', JSON.stringify(sessionData));
   if(typeof Stripe !== 'undefined'){
     try{
       var stripe = Stripe(STRIPE_PK);
@@ -665,7 +666,8 @@ function pStripeCheckout(proId){
     }catch(e){ pToast('⚠️','Error al iniciar Stripe: '+e.message); }
   } else {
     pToast('💳','Stripe no disponible — demo mode');
-    setTimeout(function(){ pGoTo('post-chat'); }, 1500);
+    safeLS('set','velo_current_session', JSON.stringify(sessionData));
+    setTimeout(function(){ pGoTo('session-room'); }, 1500);
   }
 }
 
@@ -2422,6 +2424,28 @@ function _renderAdmin(){
           }).join('')
         : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin eventos de auditoría.</p>');
 
+    // Pending transfers
+    var transfers = []; try{ transfers = JSON.parse(safeLS('get','velo_pending_transfers')||'[]'); }catch(e){}
+    var transferHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💳 TRANSFERENCIAS PENDIENTES</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px">80% al profesional · 20% Velo. El botón se habilita solo cuando el profesional marcó la sesión como finalizada.</div>'
+      +(transfers.filter(function(t){ return t.ended && !t.paid; }).length
+        ? transfers.filter(function(t){ return t.ended && !t.paid; }).map(function(t,i){
+            var pro = _proData.find(function(p){ return p.id===t.proId; });
+            var proAmount = Math.round((t.amount||0)*0.8*100)/100;
+            var veloAmount = Math.round((t.amount||0)*0.2*100)/100;
+            return '<div style="background:rgba(200,162,0,.07);border:1px solid rgba(200,162,0,.2);border-radius:12px;padding:14px;margin-bottom:8px">'
+              +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+              +'<div style="font-size:22px">'+(pro?pro.av:'🩺')+'</div>'
+              +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.82)">'+(pro?pro.name:'Profesional')+'</div>'
+              +'<div style="font-size:11px;color:rgba(255,255,255,.4)">Sesión '+new Date(t.ts).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+'</div></div>'
+              +'<div style="text-align:right"><div style="font-size:16px;font-weight:800;color:rgba(200,162,0,.9)">$'+t.amount+' '+(t.currency||'USD')+'</div>'
+              +'<div style="font-size:10px;color:rgba(255,255,255,.3)">Pro: $'+proAmount+' · Velo: $'+veloAmount+'</div></div>'
+              +'</div>'
+              +'<button onclick="pApproveTransfer('+i+')" style="width:100%;padding:8px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700">✅ Aprobar transferencia al profesional</button>'
+              +'</div>';
+          }).join('')
+        : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">Sin transferencias pendientes.</p>');
+
     var aiModHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">🤖 MODERACIÓN IA — ANÁLISIS DE CONTENIDO</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
       +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:12px">'
@@ -2438,8 +2462,26 @@ function _renderAdmin(){
       +'</div>'
       +'</div>';
 
-    content.innerHTML = contactsHtml + auditHtml + aiModHtml;
+    content.innerHTML = contactsHtml + transferHtml + auditHtml + aiModHtml;
   }
+}
+
+function pApproveTransfer(idx){
+  var all = []; try{ all = JSON.parse(safeLS('get','velo_pending_transfers')||'[]'); }catch(e){}
+  var pending = all.filter(function(t){ return t.ended && !t.paid; });
+  if(!pending[idx]) return;
+  var t = pending[idx];
+  t.paid = true; t.paidAt = Date.now();
+  var updated = all.map(function(x){ return x.ts===t.ts ? t : x; });
+  safeLS('set','velo_pending_transfers', JSON.stringify(updated));
+  var pro = _proData.find(function(p){ return p.id===t.proId; });
+  var proAmt = Math.round((t.amount||0)*0.8*100)/100;
+  pToast('💸','Transferencia $'+proAmt+' aprobada para '+(pro?pro.name:'el profesional')+' ✅');
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  inbox.unshift({ id:'tr-'+Date.now(), tipo:'pago', icon:'💸', remitente:'Velo Admin', asunto:'Transferencia aprobada — $'+proAmt, extracto:'Tu pago de $'+proAmt+' fue aprobado.', cuerpo:'El pago por tu sesión del '+new Date(t.ts).toLocaleDateString('es')+' fue aprobado. Recibirás $'+proAmt+' '+(t.currency||'USD')+' en tu cuenta registrada.', leido:false, fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'}) });
+  safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+  _updateInboxDot();
+  _renderAdmin();
 }
 
 function pResolveAudit(idx){
@@ -2574,6 +2616,77 @@ async function sbEnviarReporte(mensaje, categoria){
   }catch(e){}
 }
 
+// ── JITSI MEET — VIDEO CALL ────────────────────────────────────
+function _jitsiRoomName(proId){
+  // Deterministic room per booking: velo + proId + date (YYYYMMDD) → same room all day
+  var d = new Date();
+  var dateStr = d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  return 'velo-'+proId+'-'+dateStr;
+}
+
+function pStartJitsiCall(){
+  var pending = null; try{ pending = JSON.parse(safeLS('get','velo_current_session')||'null'); }catch(e){}
+  var proId = pending ? pending.proId : 'sesion';
+  var room = _jitsiRoomName(proId);
+  var url = 'https://meet.jit.si/'+room;
+  pToast('📹','Abriendo videollamada…');
+  window.open(url, '_blank', 'noopener');
+  // Mark session as started for admin audit
+  var sessions = []; try{ sessions = JSON.parse(safeLS('get','velo_sessions')||'[]'); }catch(e){}
+  if(pending && !pending.callStarted){
+    pending.callStarted = true;
+    pending.callStartedAt = Date.now();
+    pending.room = room;
+    safeLS('set','velo_current_session', JSON.stringify(pending));
+    sessions.unshift(pending);
+    safeLS('set','velo_sessions', JSON.stringify(sessions.slice(0,200)));
+  }
+}
+
+function pInitSessionRoom(){
+  var pending = null; try{ pending = JSON.parse(safeLS('get','velo_current_session')||'null'); }catch(e){}
+  var pro = null;
+  if(pending && pending.proId){
+    pro = _proData.find(function(p){ return p.id === pending.proId; });
+  }
+  // Header
+  _setEl('srProName',   pro ? pro.name : 'Tu profesional');
+  _setEl('srProSpec',   pro ? pro.spec : '');
+  _setEl('srProAv',     pro ? pro.av   : '🩺');
+  _setEl('srProRating', pro ? '⭐ '+pro.rating : '');
+
+  // Room link preview
+  var room = pending ? _jitsiRoomName(pending.proId) : _jitsiRoomName('sesion');
+  var linkEl = document.getElementById('srRoomLink');
+  if(linkEl) linkEl.textContent = 'meet.jit.si/'+room;
+
+  // Tips
+  _setEl('srTips',
+    '<ul style="font-size:13px;color:var(--ink4);line-height:2;padding-left:18px">'
+    +'<li>Usá <strong>auriculares</strong> para mejor audio</li>'
+    +'<li>Buscá un espacio <strong>tranquilo y privado</strong></li>'
+    +'<li>La sala es <strong>privada</strong> — solo vos y tu profesional</li>'
+    +'<li>No se graba la sesión</li>'
+    +'</ul>'
+  );
+}
+
+function pEndSession(){
+  pToast('✅','¡Gracias! Ahora podés dejar tu reseña 🌿');
+  // Enable admin transfer approval for this session
+  var pending = null; try{ pending = JSON.parse(safeLS('get','velo_current_session')||'null'); }catch(e){}
+  if(pending){
+    pending.ended = true;
+    pending.endedAt = Date.now();
+    safeLS('set','velo_current_session', JSON.stringify(pending));
+    // Add to admin pending transfers
+    var transfers = []; try{ transfers = JSON.parse(safeLS('get','velo_pending_transfers')||'[]'); }catch(e){}
+    transfers.unshift(pending);
+    safeLS('set','velo_pending_transfers', JSON.stringify(transfers.slice(0,100)));
+  }
+  setTimeout(function(){ pGoTo('post-chat'); }, 800);
+}
+
 // ── STRIPE RETURN CHECK ───────────────────────────────────────
 function _checkStripeReturn(){
   var params = new URLSearchParams(window.location.search);
@@ -2582,8 +2695,9 @@ function _checkStripeReturn(){
     var pending = null; try{ pending = JSON.parse(safeLS('get','velo_stripe_pending')||'null'); }catch(e){}
     if(pending){
       pToast('✅','¡Pago confirmado! Tu sesión ha sido reservada 💚');
+      safeLS('set','velo_current_session', JSON.stringify(pending));
       safeLS('del','velo_stripe_pending');
-      setTimeout(function(){ pGoTo('post-chat'); }, 1000);
+      setTimeout(function(){ pGoTo('session-room'); }, 1000);
     }
   }
 }
@@ -2847,6 +2961,7 @@ function _onPageEnter(id){
     case 'profile':     pLoadProfile(); break;
     case 'inbox':       pRenderInbox(); break;
     case 'donation-exit': pInitDonation(); break;
+    case 'session-room': pInitSessionRoom(); break;
     case 'post-chat':   pInitPostChat(); break;
     case 'pro-panel':   switchProPanel('inicio', document.querySelector('.pro-nav-item')); break;
     case 'admin':       _renderAdmin(); break;

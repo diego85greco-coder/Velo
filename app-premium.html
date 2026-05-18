@@ -1245,6 +1245,49 @@
         </div>
       </div>
 
+      <!-- ══ SESSION ROOM ════════════════════════════════════════ -->
+      <div class="p-page fade-in" id="pg-session-room">
+        <div class="p-page-scroll">
+          <div class="p-page-inner" style="max-width:600px;margin:auto;padding-top:40px">
+
+            <!-- Professional info -->
+            <div class="p-card" style="padding:24px;margin-bottom:16px;text-align:center">
+              <div id="srProAv" style="font-size:64px;margin-bottom:10px">🩺</div>
+              <h2 style="font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--ink);margin-bottom:4px" id="srProName">Tu profesional</h2>
+              <div style="font-size:13px;color:var(--sage3);font-weight:600;margin-bottom:4px" id="srProSpec"></div>
+              <div style="font-size:13px;color:var(--ink4)" id="srProRating"></div>
+            </div>
+
+            <!-- Jitsi call card -->
+            <div class="p-card" style="padding:28px;margin-bottom:16px;text-align:center;border:2px solid rgba(116,198,157,.3);background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(245,252,248,.88))">
+              <div style="font-size:48px;margin-bottom:14px">📹</div>
+              <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:8px">Sala de videollamada lista</h3>
+              <p style="font-size:13px;color:var(--ink4);margin-bottom:8px;line-height:1.6">Tu sala privada en Jitsi Meet está preparada. Solo vos y tu profesional tienen acceso.</p>
+              <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:10px;padding:7px 12px;margin-bottom:20px;font-family:monospace" id="srRoomLink">meet.jit.si/…</div>
+              <button class="p-btn p-btn--primary p-btn--xl p-btn--full" onclick="pStartJitsiCall()" style="font-size:16px;padding:16px;margin-bottom:10px">
+                📹 Iniciar videollamada
+              </button>
+              <p style="font-size:11px;color:var(--ink5);margin:0">Se abrirá en una nueva pestaña · No se requiere cuenta</p>
+            </div>
+
+            <!-- Tips -->
+            <div class="p-card" style="padding:20px;margin-bottom:16px">
+              <div class="p-label p-label-sage" style="margin-bottom:10px">Antes de comenzar</div>
+              <div id="srTips"></div>
+            </div>
+
+            <!-- End session -->
+            <div style="text-align:center">
+              <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pEndSession()" style="margin-bottom:10px">
+                ✅ Finalizar sesión y dejar reseña
+              </button>
+              <p style="font-size:11px;color:var(--ink5);line-height:1.5">Finalizar la sesión habilita el pago al profesional y abre el formulario de reseña.</p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
       <!-- ══ POST CHAT ══════════════════════════════════════════ -->
       <div class="p-page fade-in" id="pg-post-chat">
         <div class="p-page-scroll">
