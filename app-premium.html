@@ -41,7 +41,7 @@
   <!-- SIDEBAR (desktop) -->
   <aside class="p-sidebar" id="pSidebar" style="display:none">
     <div class="p-sidebar-logo">
-      <img src="assets/logo.png" alt="Velo — Acompañamos emociones" class="p-sidebar-logo-img">
+      <img src="assets/logo.png" alt="Velo — Acompañamos emociones" class="p-sidebar-logo-img" onclick="pLogoClick()">
     </div>
     <nav class="p-sidebar-nav">
       <div class="p-sidebar-section">Principal</div>
@@ -132,7 +132,7 @@
           <section class="land-hero">
             <div class="land-hero-bg"></div>
             <div class="land-hero-content">
-              <img src="assets/logo.png" alt="Velo" class="land-hero-logo">
+              <img src="assets/logo.png" alt="Velo" class="land-hero-logo" onclick="pLogoClick()">
               <p class="land-hero-sub" style="max-width:520px;font-size:17px;margin-bottom:10px">Un espacio donde la comunidad se une para acompañarse. Guardianes, círculos, botellas y más — gratis, sin juicios, siempre disponible.</p>
               <div class="land-hero-btns">
                 <button class="p-btn p-btn--primary p-btn--xl" onclick="pGoTo('register')">Comenzar gratis ✨</button>
@@ -800,6 +800,27 @@
               <div style="height:12px"></div>
               <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSaveMood()">Registrar ánimo</button>
             </div>
+            <div class="p-card" style="padding:20px;margin-bottom:16px" id="dailyStatusCard">
+              <div class="p-label p-label-sage" style="margin-bottom:14px">¿Cómo va tu día? ✨</div>
+              <p style="font-size:11px;color:var(--ink5);margin-bottom:14px;line-height:1.5;font-style:italic">Opcional · Visible en tu perfil si no estás en modo anónimo</p>
+              <div class="p-field">
+                <label class="p-field-label">🎬 Película o serie</label>
+                <input class="p-input" type="text" id="statusMovie" placeholder="Ej: The Bear, Oppenheimer…" maxlength="60">
+              </div>
+              <div class="p-field">
+                <label class="p-field-label">🎵 Música</label>
+                <input class="p-input" type="text" id="statusMusic" placeholder="Artista o canción que escuchás hoy…" maxlength="60">
+              </div>
+              <div class="p-field">
+                <label class="p-field-label">📚 Libro</label>
+                <input class="p-input" type="text" id="statusBook" placeholder="¿Qué estás leyendo?" maxlength="60">
+              </div>
+              <div class="p-field">
+                <label class="p-field-label">💭 Frase del día</label>
+                <input class="p-input" type="text" id="statusPhrase" placeholder="Una frase que te inspire hoy…" maxlength="120">
+              </div>
+              <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pSaveDailyStatus()">✨ Guardar estado del día</button>
+            </div>
             <div class="p-card" style="padding:20px">
               <div class="p-label p-label-sage" style="margin-bottom:12px">Este mes</div>
               <div id="moodCalendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
@@ -1038,6 +1059,7 @@
                   <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:4px" id="profileName">Usuario</h3>
                   <p style="font-size:12px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:12px" id="profileMotto">Tu lema aquí</p>
                   <div id="profilePlanBadge" style="margin-bottom:12px"></div>
+                  <div id="profileDailyStatus" style="margin-bottom:12px"></div>
                   <div class="profile-stats">
                     <div class="profile-stat-box"><div class="profile-stat-n" id="profileChats">0</div><div class="profile-stat-l">Charlas</div></div>
                     <div class="profile-stat-box"><div class="profile-stat-n" id="profileDays">0</div><div class="profile-stat-l">Días</div></div>
@@ -1070,11 +1092,27 @@
                   <div id="profileBadgesGrid"></div>
                 </div>
                 <div class="p-tab-content" id="tab-config">
-                  <div class="p-card" style="padding:18px">
+                  <div class="p-card" style="padding:18px;margin-bottom:12px">
                     <div class="p-label p-label-sage" style="margin-bottom:12px">Configuración</div>
                     <div style="display:flex;flex-direction:column;gap:8px" id="profileConfig"></div>
                     <div style="height:14px"></div>
-                    <button class="p-btn p-btn--secondary p-btn--md" style="color:var(--sos);border-color:rgba(192,48,40,.2)" onclick="pSignOut()">↩️ Cerrar sesión</button>
+                    <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pSignOut()">↩️ Cerrar sesión</button>
+                  </div>
+                  <div class="p-card" style="padding:18px;margin-bottom:12px">
+                    <div class="p-label p-label-sage" style="margin-bottom:12px">Suscripción</div>
+                    <div id="subStatusDisplay" style="font-size:13px;color:var(--ink3);margin-bottom:12px"></div>
+                    <button class="p-btn p-btn--secondary p-btn--md p-btn--full" style="margin-bottom:8px" onclick="pCancelSubscription()">❌ Cancelar Velo Plus</button>
+                    <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pGoTo('donation-exit')">💚 Hacer una donación</button>
+                  </div>
+                  <div class="p-card" style="padding:18px;margin-bottom:12px">
+                    <div class="p-label p-label-sage" style="margin-bottom:12px">Soporte</div>
+                    <button class="p-btn p-btn--secondary p-btn--md p-btn--full" style="margin-bottom:8px" onclick="pContactUs()">✉️ Contactarnos</button>
+                    <a href="mailto:wearevelo.app@gmail.com" style="display:block;text-align:center;font-size:12px;color:var(--sage);text-decoration:none;padding:8px">wearevelo.app@gmail.com</a>
+                  </div>
+                  <div class="p-card" style="padding:18px;border:1.5px solid rgba(192,48,40,.15)">
+                    <div class="p-label" style="color:var(--sos);margin-bottom:12px">Zona de peligro</div>
+                    <p style="font-size:12px;color:var(--ink4);margin-bottom:12px;line-height:1.5">Eliminar tu cuenta borra todos tus datos permanentemente. Esta acción es irreversible.</p>
+                    <button class="p-btn p-btn--md p-btn--full" style="background:transparent;border:1.5px solid rgba(192,48,40,.3);color:var(--sos);font-family:'Jost',sans-serif;font-weight:700;padding:11px;border-radius:14px;cursor:pointer" onclick="pDeleteAccount()">🗑️ Eliminar mi cuenta</button>
                   </div>
                 </div>
                 <div class="p-tab-content" id="tab-donar">

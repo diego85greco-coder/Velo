@@ -473,11 +473,34 @@ var _guardianProfiles = [
 
 var _curGuardian = null;
 var _guardianFilter = 'all';
+var _myGuardianStatus = safeLS('get','velo_guardian_status') || 'disponible'; // disponible/ocupado/incognito
+
+function pSetMyGuardianStatus(status){
+  _myGuardianStatus = status;
+  safeLS('set','velo_guardian_status', status);
+  pRenderGuardians();
+  _renderMyStatusBar();
+  pToast(status==='disponible'?'🟢':status==='ocupado'?'🟡':'👤', 'Estado: '+(status==='disponible'?'Disponible':status==='ocupado'?'Ocupado':'Anónimo'));
+}
+
+function _renderMyStatusBar(){
+  var el = document.getElementById('myGuardianStatus');
+  if(!el) return;
+  var st = _myGuardianStatus;
+  el.innerHTML = '<div style="background:rgba(255,255,255,.7);border:1.5px solid var(--border);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--ink4);letter-spacing:.5px">MI ESTADO</div>'
+    +'<div style="display:flex;gap:6px;margin-left:auto">'
+    +'<button onclick="pSetMyGuardianStatus(\'disponible\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(st==='disponible'?'var(--sage2)':'var(--border2)')+';background:'+(st==='disponible'?'var(--sage7)':'none')+';color:'+(st==='disponible'?'var(--sage)':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">🟢 Disponible</button>'
+    +'<button onclick="pSetMyGuardianStatus(\'ocupado\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(st==='ocupado'?'#C8A200':'var(--border2)')+';background:'+(st==='ocupado'?'rgba(200,162,0,.1)':'none')+';color:'+(st==='ocupado'?'#C8A200':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">🟡 Ocupado</button>'
+    +'<button onclick="pSetMyGuardianStatus(\'incognito\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(st==='incognito'?'var(--ink3)':'var(--border2)')+';background:'+(st==='incognito'?'rgba(0,0,0,.06)':'none')+';color:'+(st==='incognito'?'var(--ink)':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">👤 Anónimo</button>'
+    +'</div>'
+    +'</div>';
+}
 
 function pFilterGuardians(filter, btn){
   _guardianFilter = filter;
-  document.querySelectorAll('.p-filter-chip').forEach(function(c){ c.classList.remove('active'); });
-  if(btn) btn.classList.add('active');
+  document.querySelectorAll('#guardianStatusBar button').forEach(function(b){ b.classList.remove('guardian-status-active'); b.style.borderColor=''; b.style.background=''; });
+  if(btn){ btn.style.borderColor='var(--sage2)'; btn.style.background='var(--sage7)'; }
   pRenderGuardians();
 }
 
@@ -701,18 +724,105 @@ function pSendHelp(){
 
 function pOpenSOS(){ openModal('sosOv'); _renderSOSResources(); }
 
+var _sosData = {
+  '🇦🇷 Argentina': [
+    { label:'Policía',               num:'911',           url:'tel:911' },
+    { label:'Ambulancia / SAME',     num:'107',           url:'tel:107' },
+    { label:'Bomberos',              num:'100',           url:'tel:100' },
+    { label:'Centro de Asistencia al Suicida', num:'135', url:'tel:135' },
+    { label:'Línea 144 — Violencia de género', num:'144', url:'tel:144' },
+    { label:'Ayuda LGBT+ (Buenos Aires)', num:'0800 333 IGUAL (44825)', url:'tel:08003334482' }
+  ],
+  '🇺🇾 Uruguay': [
+    { label:'Policía',               num:'911',           url:'tel:911' },
+    { label:'Ambulancia',            num:'105',           url:'tel:105' },
+    { label:'Crisis emocional (INAU)', num:'0800 5050',   url:'tel:08005050' },
+    { label:'Violencia doméstica',   num:'0800 4141',     url:'tel:08004141' }
+  ],
+  '🇨🇱 Chile': [
+    { label:'Policía (Carabineros)', num:'133',           url:'tel:133' },
+    { label:'Ambulancia (SAMU)',     num:'131',           url:'tel:131' },
+    { label:'Bomberos',              num:'132',           url:'tel:132' },
+    { label:'Fono Orientación — Salud Mental', num:'600 360 7777', url:'tel:6003607777' },
+    { label:'Violencia de género (SernamEG)', num:'1455', url:'tel:1455' }
+  ],
+  '🇨🇴 Colombia': [
+    { label:'Emergencias (todo)',    num:'123',           url:'tel:123' },
+    { label:'Policía',              num:'112',           url:'tel:112' },
+    { label:'Línea 106 — Salud Mental', num:'106',       url:'tel:106' },
+    { label:'Violencia de género',  num:'155',           url:'tel:155' }
+  ],
+  '🇲🇽 México': [
+    { label:'Emergencias',          num:'911',           url:'tel:911' },
+    { label:'SAPTEL — Crisis emocional (24h)', num:'55 5259-8121', url:'tel:5552598121' },
+    { label:'Violencia de género INMUJERES', num:'800 911 2000', url:'tel:8009112000' },
+    { label:'Línea de la Vida',     num:'800 911 2000',  url:'tel:8009112000' }
+  ],
+  '🇪🇸 España': [
+    { label:'Emergencias',          num:'112',           url:'tel:112' },
+    { label:'Policía Nacional',     num:'091',           url:'tel:091' },
+    { label:'Teléfono de la Esperanza', num:'717 003 717', url:'tel:717003717' },
+    { label:'Violencia de género',  num:'016',           url:'tel:016' },
+    { label:'Atención LGBT+',       num:'900 841 322',   url:'tel:900841322' }
+  ],
+  '🇵🇪 Perú': [
+    { label:'Emergencias',          num:'911',           url:'tel:911' },
+    { label:'Policía',              num:'105',           url:'tel:105' },
+    { label:'Ambulancia (SAMU)',    num:'106',           url:'tel:106' },
+    { label:'Línea 100 — Violencia', num:'100',          url:'tel:100' }
+  ],
+  '🇻🇪 Venezuela': [
+    { label:'Emergencias',          num:'911',           url:'tel:911' },
+    { label:'Defensa Civil',        num:'212',           url:'tel:212' }
+  ],
+  '🇧🇷 Brasil': [
+    { label:'Emergencias',          num:'190',           url:'tel:190' },
+    { label:'Ambulancia (SAMU)',    num:'192',           url:'tel:192' },
+    { label:'CVV — Crisis emocional', num:'188',         url:'tel:188' },
+    { label:'Violencia de género',  num:'180',           url:'tel:180' }
+  ],
+  '🌍 Internacional': [
+    { label:'Befrienders Worldwide', num:'befrienders.org', url:'https://www.befrienders.org' },
+    { label:'Crisis Text Line (EN)', num:'Texto HOME → 741741', url:'sms:741741' }
+  ]
+};
+
+var _sosCountry = null;
+
 function _renderSOSResources(){
   var el = document.getElementById('sosResources');
   if(!el) return;
-  el.innerHTML = [
-    { country:'🌍 Internacional', line:'Befrienders Worldwide', url:'https://www.befrienders.org' },
-    { country:'🇦🇷 Argentina', line:'Centro de Asistencia al Suicida: 135', url:'tel:135' },
-    { country:'🇲🇽 México', line:'SAPTEL: 55 5259-8121', url:'tel:5552598121' },
-    { country:'🇪🇸 España', line:'Teléfono de la Esperanza: 717 003 717', url:'tel:717003717' },
-    { country:'🇺🇸 Todos los países', line:'Crisis Text Line: texto HOME a 741741', url:'sms:741741' }
-  ].map(function(r){
-    return '<a href="'+r.url+'" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(192,48,40,.08);border:1px solid rgba(192,48,40,.18);border-radius:14px;margin-bottom:8px;text-decoration:none"><div><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.55);margin-bottom:2px">'+r.country+'</div><div style="font-size:13px;color:rgba(255,255,255,.85);font-weight:600">'+r.line+'</div></div><span style="font-size:18px">📞</span></a>';
+
+  var countries = Object.keys(_sosData);
+  var selectedCountry = _sosCountry || countries[0];
+
+  var selectorHtml = '<div style="margin-bottom:14px">'
+    +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:1px;display:block;margin-bottom:6px">SELECCIONÁ TU PAÍS</label>'
+    +'<select id="sosCountrySel" onchange="pSosCountry(this.value)" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:13px;font-weight:600;font-family:\'Jost\',sans-serif;cursor:pointer">'
+    +countries.map(function(c){
+      return '<option value="'+c+'" style="background:#0B1810;color:#fff"'+(c===selectedCountry?' selected':'')+'>'+c+'</option>';
+    }).join('')
+    +'</select>'
+    +'</div>';
+
+  var lines = _sosData[selectedCountry] || [];
+  var linesHtml = lines.map(function(r){
+    var isUrl = r.url.startsWith('http');
+    return '<a href="'+r.url+'" '+(isUrl?'target="_blank" rel="noopener"':'')+' style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(192,48,40,.08);border:1px solid rgba(192,48,40,.18);border-radius:14px;margin-bottom:8px;text-decoration:none">'
+      +'<div><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);margin-bottom:2px">'+r.label+'</div><div style="font-size:15px;color:#fff;font-weight:700">'+r.num+'</div></div>'
+      +'<span style="font-size:20px">'+(isUrl?'🌐':'📞')+'</span>'
+      +'</a>';
   }).join('');
+
+  el.innerHTML = selectorHtml + linesHtml
+    +'<div style="margin-top:14px;padding:12px;background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;text-align:center">'
+    +'<p style="font-size:11px;color:rgba(255,255,255,.4);line-height:1.5;margin:0">Esta información es de carácter informativo y se actualiza periódicamente. En caso de emergencia, contactá siempre al número de emergencias de tu país.</p>'
+    +'</div>';
+}
+
+function pSosCountry(country){
+  _sosCountry = country;
+  _renderSOSResources();
 }
 
 // ── BOTTLE WALL ────────────────────────────────────────────────
@@ -968,6 +1078,8 @@ function pInitMood(){
   if(stored){ try{ var ms = JSON.parse(stored); if(ms.emoji){ var orb = orbs.querySelector('[data-emoji="'+ms.emoji+'"]'); if(orb) orb.classList.add('selected'); _selMood = ms; } }catch(e){} }
   // Load month calendar
   _loadMoodCalendar();
+  // Load daily status fields
+  pInitDailyStatus();
 }
 
 function pSelMood(el, emoji, label){
@@ -2295,6 +2407,197 @@ function _checkPayPalReturn(){
       safeLS('del','velo_pp_pending');
     }
   }
+}
+
+// ── LOGO ADMIN EASTER EGG ─────────────────────────────────────
+var _logoClickCount = 0;
+var _logoClickTimer = null;
+function pLogoClick(){
+  _logoClickCount++;
+  if(_logoClickTimer) clearTimeout(_logoClickTimer);
+  _logoClickTimer = setTimeout(function(){ _logoClickCount = 0; }, 2500);
+  if(_logoClickCount >= 4){
+    _logoClickCount = 0;
+    clearTimeout(_logoClickTimer);
+    pGoTo('admin-login');
+  }
+}
+
+// ── DAILY STATUS ──────────────────────────────────────────────
+function _todayStatusKey(){
+  var d = new Date();
+  return 'velo_daily_status_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function pInitDailyStatus(){
+  var key = _todayStatusKey();
+  var saved = {}; try{ saved = JSON.parse(safeLS('get', key)||'{}'); }catch(e){}
+  var fields = ['statusMovie','statusMusic','statusBook','statusPhrase'];
+  fields.forEach(function(f){ var el = document.getElementById(f); if(el) el.value = saved[f]||''; });
+}
+
+function pSaveDailyStatus(){
+  var key = _todayStatusKey();
+  var data = {
+    movie:  (document.getElementById('statusMovie')  ? document.getElementById('statusMovie').value.trim()  : ''),
+    music:  (document.getElementById('statusMusic')  ? document.getElementById('statusMusic').value.trim()  : ''),
+    book:   (document.getElementById('statusBook')   ? document.getElementById('statusBook').value.trim()   : ''),
+    phrase: (document.getElementById('statusPhrase') ? document.getElementById('statusPhrase').value.trim() : ''),
+    ts: Date.now()
+  };
+  safeLS('set', key, JSON.stringify(data));
+  pToast('✨','Estado del día guardado 💚');
+}
+
+function _getDailyStatus(){
+  var key = _todayStatusKey();
+  try{ return JSON.parse(safeLS('get',key)||'{}'); }catch(e){ return {}; }
+}
+
+// ── GLOBAL CONTENT REPORT ─────────────────────────────────────
+function pReportContent(type, id, preview){
+  var reasons = ['Contenido agresivo o hiriente','Discurso de odio o discriminación','Spam o autopromoción','Información médica incorrecta o peligrosa','Acoso o bullying','Sugerencias de autolesión','Otro'];
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov open';
+  ov.id = 'globalReportOv';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="font-size:28px;text-align:center;margin-bottom:8px">⚠️</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);text-align:center;margin-bottom:8px">Reportar contenido</div>'
+    +(preview ? '<div style="font-size:12px;color:var(--ink4);background:var(--cream2);border-radius:10px;padding:10px;margin-bottom:14px;font-style:italic;line-height:1.5">'+_escHtml(preview.slice(0,120))+(preview.length>120?'…':'')+'</div>' : '')
+    +'<div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px">¿Por qué lo reportás?</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px" id="rptGlobalReasons">'
+    +reasons.map(function(r,i){
+      return '<label style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink3);cursor:pointer;padding:8px;border-radius:10px;border:1.5px solid var(--border);transition:border-color .15s" onclick="this.style.borderColor=\'var(--sage3)\'">'
+        +'<input type="radio" name="rptGlobal" value="'+r+'" style="accent-color:var(--sage2)"> '+r+'</label>';
+    }).join('')
+    +'</div>'
+    +'<textarea class="p-textarea" id="rptGlobalDetail" rows="2" placeholder="Descripción adicional (opcional)" style="margin-bottom:12px"></textarea>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="p-btn p-btn--md p-btn--full" style="background:var(--sos);border-color:var(--sos);color:#fff;font-family:\'Jost\',sans-serif;font-size:13px;font-weight:700;padding:11px;border-radius:14px;cursor:pointer" onclick="pSubmitGlobalReport(\''+type+'\',\''+id+'\')">Enviar reporte</button>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'globalReportOv\').remove()">Cancelar</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function pSubmitGlobalReport(type, id){
+  var checked = document.querySelector('input[name="rptGlobal"]:checked');
+  if(!checked){ pToast('⚠️','Seleccioná un motivo'); return; }
+  var detail = (document.getElementById('rptGlobalDetail') ? document.getElementById('rptGlobalDetail').value.trim() : '');
+  var ov = document.getElementById('globalReportOv');
+  if(ov) ov.remove();
+
+  // Save to audit log
+  var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+  var reportId = type+'-'+id;
+  audit.unshift({ ts:Date.now(), tipo:'report_'+type, contentId:id, motivo:checked.value, detail:detail, resolved:false });
+  safeLS('set','velo_audit_log', JSON.stringify(audit.slice(0,500)));
+
+  // Mark content as hidden until admin resolves
+  var hidden = []; try{ hidden = JSON.parse(safeLS('get','velo_hidden_content')||'[]'); }catch(e){}
+  if(hidden.indexOf(reportId) < 0){ hidden.push(reportId); safeLS('set','velo_hidden_content', JSON.stringify(hidden)); }
+
+  pToast('✅','Reporte enviado. El contenido quedó oculto hasta que lo revise el equipo de Velo 🙏');
+}
+
+function _isHidden(type, id){
+  try{ var h = JSON.parse(safeLS('get','velo_hidden_content')||'[]'); return h.indexOf(type+'-'+id) >= 0; }catch(e){ return false; }
+}
+
+// ── PROFILE EXTRAS: DELETE ACCOUNT, CANCEL SUB, CONTACT ────────
+function pDeleteAccount(){
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov open';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="font-size:32px;text-align:center;margin-bottom:10px">⚠️</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);text-align:center;margin-bottom:10px">¿Eliminar tu cuenta?</div>'
+    +'<p style="font-size:13px;color:var(--ink4);text-align:center;line-height:1.6;margin-bottom:18px">Esta acción es <strong>irreversible</strong>. Se eliminarán todos tus datos: diario, registros de ánimo, mensajes y participación en círculos.</p>'
+    +'<div class="p-field"><label class="p-field-label">Escribí "ELIMINAR" para confirmar</label>'
+    +'<input class="p-input" type="text" id="deleteConfirmInput" placeholder="ELIMINAR"></div>'
+    +'<div style="display:flex;gap:8px;margin-top:12px">'
+    +'<button class="p-btn p-btn--md p-btn--full" style="background:var(--sos);border-color:var(--sos);color:#fff;font-family:\'Jost\',sans-serif;font-weight:700;padding:11px;border-radius:14px;cursor:pointer" onclick="pConfirmDelete(this.closest(\'.p-modal-ov\'))">Eliminar cuenta</button>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove()">Cancelar</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function pConfirmDelete(ov){
+  var input = document.getElementById('deleteConfirmInput');
+  if(!input || input.value !== 'ELIMINAR'){ pToast('⚠️','Escribí ELIMINAR para confirmar'); return; }
+  if(ov) ov.remove();
+  // Clear all local data
+  var keysToRemove = ['velo_session','velo_user_name','velo_user_email','velo_user_av','velo_user_motto','velo_user_type',
+    'velo_diary','velo_inbox','velo_subscribers','velo_registered_ts','velo_guardian_convs','velo_circles','velo_helped_once'];
+  keysToRemove.forEach(function(k){ safeLS('del',k); });
+  if(sbClient){ try{ sbClient.auth.signOut(); }catch(e){} }
+  pToast('👋','Tu cuenta ha sido eliminada. Hasta pronto.');
+  setTimeout(function(){ _authenticated=false; pGoTo('landing'); }, 1800);
+}
+
+function pCancelSubscription(){
+  var hasSub = _isPremium();
+  if(!hasSub){ pToast('ℹ️','No tenés una suscripción activa'); return; }
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov open';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="font-size:32px;text-align:center;margin-bottom:10px">⭐</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);text-align:center;margin-bottom:10px">Cancelar Velo Plus</div>'
+    +'<p style="font-size:13px;color:var(--ink4);text-align:center;line-height:1.6;margin-bottom:18px">¿Seguro/a? Perderás acceso a las funciones Plus al final del período de facturación.</p>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="p-btn p-btn--md p-btn--full" style="background:#c87a3e;border-color:#c87a3e;color:#fff;font-family:\'Jost\',sans-serif;font-weight:700;padding:11px;border-radius:14px;cursor:pointer" onclick="pConfirmCancelSub(this.closest(\'.p-modal-ov\'))">Sí, cancelar</button>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove()">Mantener Plus</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function pConfirmCancelSub(ov){
+  if(ov) ov.remove();
+  var email = safeLS('get','velo_user_email');
+  var subs = []; try{ subs = JSON.parse(safeLS('get','velo_subscribers')||'[]'); }catch(e){}
+  subs = subs.map(function(s){ return s.email===email ? Object.assign({},s,{status:'cancelled'}) : s; });
+  safeLS('set','velo_subscribers', JSON.stringify(subs));
+  pToast('👋','Suscripción cancelada. Podés volver a activarla cuando quieras 🌿');
+  pLoadProfile();
+}
+
+function pContactUs(){
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov open';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:8px">Contactanos 💚</div>'
+    +'<p style="font-size:12px;color:var(--ink4);margin-bottom:16px;line-height:1.6">¿Tenés alguna pregunta, sugerencia o problema técnico? Escribinos y te respondemos a la brevedad.</p>'
+    +'<div class="p-field"><label class="p-field-label">Asunto</label>'
+    +'<select class="p-input" id="contactTopic" style="appearance:none">'
+    +'<option>Consulta general</option><option>Problema técnico</option><option>Sugerencia de mejora</option><option>Reporte de seguridad</option><option>Solicitud de datos</option>'
+    +'</select></div>'
+    +'<div class="p-field"><label class="p-field-label">Mensaje</label>'
+    +'<textarea class="p-textarea" id="contactMsg" rows="4" placeholder="Contanos qué necesitás..."></textarea></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSendContact(this.closest(\'.p-modal-ov\'))">Enviar mensaje</button>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove()">Cancelar</button>'
+    +'</div>'
+    +'<div style="height:8px"></div>'
+    +'<p style="font-size:11px;color:var(--ink5);text-align:center">También podés escribirnos a <strong>wearevelo.app@gmail.com</strong></p>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function pSendContact(ov){
+  var msg = document.getElementById('contactMsg');
+  var topic = document.getElementById('contactTopic');
+  if(!msg || !msg.value.trim()){ pToast('✍️','Escribí tu mensaje'); return; }
+  var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
+  msgs.unshift({ email: safeLS('get','velo_user_email')||'anónimo', topic: topic?topic.value:'Consulta', msg: msg.value.trim(), fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}), leido:false });
+  safeLS('set','velo_admin_contacts', JSON.stringify(msgs.slice(0,200)));
+  sbEnviarReporte(msg.value.trim(), topic?topic.value:'contacto').catch(function(){});
+  if(ov) ov.remove();
+  pToast('💌','¡Mensaje enviado! Te respondemos pronto 💚');
 }
 
 // ── LIVE COUNTERS ─────────────────────────────────────────────
