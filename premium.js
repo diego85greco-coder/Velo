@@ -3524,12 +3524,12 @@ function _renderAdmin(){
           }).join('')
         : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">Sin transferencias pendientes.</p>');
 
-    var aiModHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">🤖 MODERACIÓN IA — ANÁLISIS DE CONTENIDO</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    var aiModHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">🤖 ASISTENTE IA — MODERACIÓN Y ANÁLISIS</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
       +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:12px">'
       +'<div style="font-size:20px;margin-bottom:4px">🔍</div>'
       +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:4px">Escaneo de contenido</div>'
-      +'<div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:10px">Últimas 24h: sin alertas detectadas.</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:10px">Analiza círculos, botellas y sala de ayuda.</div>'
       +'<button onclick="pRunAiScan()" style="font-size:11px;padding:5px 10px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.8);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Ejecutar escaneo</button>'
       +'</div>'
       +'<div style="background:rgba(200,150,80,.06);border:1px solid rgba(200,150,80,.15);border-radius:12px;padding:12px">'
@@ -3538,6 +3538,17 @@ function _renderAdmin(){
       +'<div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:10px">Ciclo saludable. Sin anomalías.</div>'
       +'<button onclick="pViewPatterns()" style="font-size:11px;padding:5px 10px;background:rgba(200,150,80,.12);border:1px solid rgba(200,150,80,.2);color:rgba(200,150,80,.8);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Ver patrones</button>'
       +'</div>'
+      +'</div>'
+      // ── Situation analysis card ──
+      +'<div style="background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.2);border-radius:12px;padding:14px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+      +'<div>'
+      +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.75)">🧠 Análisis de situación</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.35)">Gemini lee el log y genera un resumen con recomendaciones.</div>'
+      +'</div>'
+      +'<button id="adminSituationBtn" onclick="pAdminAiSituationAnalysis()" style="flex-shrink:0;padding:7px 13px;background:rgba(180,140,220,.2);border:1px solid rgba(180,140,220,.35);border-radius:9px;color:rgba(180,140,220,.95);font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap">Analizar situación</button>'
+      +'</div>'
+      +'<div id="adminSituationResult"></div>'
       +'</div>';
 
     // Mass messaging section
@@ -3568,7 +3579,11 @@ function _renderAdmin(){
       +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">Resultados de encuestas trimestrales — escala 0 a 10. Las sugerencias se muestran de forma anónima.</div>'
       + _renderSurveyResults();
 
-    content.innerHTML = contactsHtml + surveyHtml + massHtml + transferHtml + crisisHtml + auditHtml + aiModHtml;
+    // AI pending tasks section (filled async)
+    var tasksHtml = '<div style="margin-bottom:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📋 TAREAS PENDIENTES</div>'
+      +'<div id="adminAITasks"><div style="font-size:12px;color:rgba(255,255,255,.3);padding:10px 0">Gemini está revisando las tareas...</div></div>';
+
+    content.innerHTML = tasksHtml + contactsHtml + surveyHtml + massHtml + transferHtml + crisisHtml + auditHtml + aiModHtml;
 
     // Load contacts async: try Supabase first, fallback to localStorage
     sbLoadContacts().then(function(sbMsgs){
@@ -3581,6 +3596,8 @@ function _renderAdmin(){
     });
     // Load crisis events from Supabase async
     _loadAdminCrisisFromSupabase();
+    // Generate AI task list async
+    _renderAdminAITasks();
   }
 }
 
@@ -3797,18 +3814,24 @@ function pViewPatterns(){
 
 // ── ADMIN MASS MESSAGING ───────────────────────────────────────
 function pAdminMassMessage(target){
-  // target: 'users' | 'pros'
   var label = target === 'pros' ? 'profesionales' : 'usuarios';
   var icon  = target === 'pros' ? '🩺' : '👥';
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov open';
   ov.id = 'massMessageOv';
   ov.style.zIndex = '9999';
-  ov.innerHTML = '<div class="p-sheet" style="background:#0F2016;border:1px solid rgba(116,198,157,.2)">'
+  ov.innerHTML = '<div class="p-sheet" style="background:#0F2016;border:1px solid rgba(116,198,157,.2);overflow-y:auto;max-height:90vh">'
     +'<div class="p-sheet-handle" style="background:rgba(116,198,157,.3)"></div>'
     +'<div style="font-size:28px;margin-bottom:8px">'+icon+'</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;margin-bottom:6px">Mensaje masivo — '+label+'</div>'
     +'<p style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.5">Este mensaje llegará al buzón interno de todos los '+label+' registrados.</p>'
+    // ── AI generator block ──
+    +'<div style="background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.2);border-radius:14px;padding:14px;margin-bottom:16px">'
+    +'<div style="font-size:11px;font-weight:700;color:rgba(180,140,220,.85);letter-spacing:.5px;margin-bottom:8px">✨ GENERAR CON GEMINI IA</div>'
+    +'<input type="text" id="massAiDesc" placeholder="Describí en una línea lo que querés comunicar…" maxlength="200" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.07);border:1px solid rgba(180,140,220,.25);border-radius:10px;color:#fff;font-size:12px;font-family:\'Jost\',sans-serif;box-sizing:border-box;margin-bottom:8px">'
+    +'<button id="massAiBtn" onclick="pAdminGenerateMassMessage(\''+target+'\')" style="width:100%;padding:9px;background:rgba(180,140,220,.18);border:1px solid rgba(180,140,220,.3);border-radius:10px;color:rgba(180,140,220,.95);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">✨ Generar asunto + mensaje con IA</button>'
+    +'</div>'
+    // ── Manual fields ──
     +'<div style="margin-bottom:10px">'
     +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">ASUNTO</label>'
     +'<input type="text" id="massSubject" placeholder="Asunto del mensaje…" maxlength="80" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;box-sizing:border-box">'
@@ -3823,7 +3846,140 @@ function pAdminMassMessage(target){
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
-  setTimeout(function(){ var el=document.getElementById('massSubject'); if(el) el.focus(); }, 100);
+  setTimeout(function(){ var el=document.getElementById('massAiDesc'); if(el) el.focus(); }, 100);
+}
+
+async function pAdminAiSituationAnalysis(){
+  var btn = document.getElementById('adminSituationBtn');
+  var resultEl = document.getElementById('adminSituationResult');
+  if(btn){ btn.disabled = true; btn.textContent = '🧠 Analizando…'; }
+  if(resultEl) resultEl.innerHTML = '<p style="font-size:11px;color:rgba(255,255,255,.4);padding:6px 0;font-style:italic">Gemini está revisando la situación de la plataforma…</p>';
+
+  var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+  var contacts = []; try{ contacts = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
+
+  var openCrisis  = audit.filter(function(a){ return a.tipo === 'crisis_detect' && !a.resolved; });
+  var openAbuse   = audit.filter(function(a){ return a.tipo === 'abuse_detect'  && !a.resolved; });
+  var unread      = contacts.filter(function(c){ return !c.leido; });
+
+  var context = 'Resumen del estado de la plataforma Velo:\n'
+    +'- Alertas de crisis sin atender: '+openCrisis.length+'\n'
+    +'- Reportes de abuso/acoso sin resolver: '+openAbuse.length+'\n'
+    +'- Mensajes de contacto sin leer: '+unread.length+'\n'
+    +'- Total de eventos en auditoría: '+audit.length+'\n\n';
+
+  if(audit.length){
+    context += 'Últimos 6 eventos:\n';
+    audit.slice(0,6).forEach(function(a,i){
+      var d = new Date(a.ts).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      context += (i+1)+'. ['+a.tipo+(a.nivel?' nivel '+a.nivel:'')+'] '+(a.motivo||'')+' — '+d+(a.resolved?' (resuelto)':' (PENDIENTE)')+'\n';
+    });
+  }
+
+  var prompt = 'Sos el asistente de moderación de Velo, una app de salud mental peer-to-peer.\n'
+    +'Analizá el estado de la plataforma y generá:\n'
+    +'1. Un resumen ejecutivo en 2-3 oraciones.\n'
+    +'2. Las 3 situaciones más urgentes, con prioridad (🔴 urgente, 🟡 atención, 🟢 ok).\n'
+    +'3. Una recomendación concreta para cada situación.\n'
+    +'Español rioplatense, directo y conciso. Sin títulos ni encabezados.\n\n'
+    +context;
+
+  var result = await _geminiCall(prompt);
+  if(btn){ btn.disabled = false; btn.textContent = 'Analizar situación'; }
+
+  if(resultEl){
+    resultEl.innerHTML = result
+      ? '<div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.7;padding:12px;background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.18);border-radius:10px;margin-top:8px;white-space:pre-line">'+_escHtml(result)+'</div>'
+      : '<p style="font-size:11px;color:rgba(255,100,100,.6);padding:6px 0">No se pudo conectar con Gemini. Revisá tu conexión.</p>';
+  }
+}
+
+async function _renderAdminAITasks(){
+  var el = document.getElementById('adminAITasks');
+  if(!el) return;
+
+  var audit      = []; try{ audit      = JSON.parse(safeLS('get','velo_audit_log')||'[]');   }catch(e){}
+  var contacts   = []; try{ contacts   = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
+  var broadcasts = []; try{ broadcasts = JSON.parse(safeLS('get','velo_broadcasts')||'[]');  }catch(e){}
+  var happy      = []; try{ happy      = JSON.parse(safeLS('get','velo_happy_queue')||'[]'); }catch(e){}
+
+  var openCrisis  = audit.filter(function(a){ return a.tipo === 'crisis_detect' && !a.resolved; });
+  var openAbuse   = audit.filter(function(a){ return a.tipo === 'abuse_detect'  && !a.resolved; });
+  var unread      = contacts.filter(function(c){ return !c.leido; });
+  var pendingPost = happy.filter(function(p){ return !p.approved; });
+  var recentBcast = broadcasts.filter(function(b){ return Date.now()-b.ts < 30*24*3600000; });
+
+  // Oldest unread contact
+  var oldestHours = 0;
+  unread.forEach(function(c){
+    var h = Math.floor((Date.now()-new Date(c.fecha))/3600000);
+    if(h > oldestHours) oldestHours = h;
+  });
+
+  var context = 'Estado actual de la plataforma Velo:\n'
+    +'- Alertas de crisis sin atender: '+openCrisis.length+'\n'
+    +'- Reportes de abuso sin resolver: '+openAbuse.length+'\n'
+    +'- Contactos sin responder: '+unread.length+(oldestHours>24?' (el más antiguo tiene '+Math.floor(oldestHours/24)+'d '+Math.floor(oldestHours%24)+'h sin respuesta)':'')+'\n'
+    +'- Posts de Muro Feliz por aprobar: '+pendingPost.length+'\n'
+    +'- Mensajes masivos enviados este mes: '+recentBcast.length+'\n';
+
+  var prompt = 'Sos el asistente de administración de Velo, una app de salud mental.\n'
+    +'Generá una lista de tareas pendientes priorizadas para el admin. Máximo 6 ítems.\n'
+    +'Usá: 🔴 urgente (requiere acción inmediata), 🟡 atención (esta semana), 🟢 ok (sin acción necesaria).\n'
+    +'Una sola línea por ítem, español rioplatense, muy directo.\n'
+    +'Respondé SOLO con la lista de ítems, sin texto adicional, sin encabezados.\n\n'
+    +context;
+
+  var result = await _geminiCall(prompt);
+
+  if(!result){
+    var fallback = [];
+    if(openCrisis.length)  fallback.push('🔴 '+openCrisis.length+' alerta'+(openCrisis.length>1?'s':'')+' de crisis sin atender');
+    if(openAbuse.length)   fallback.push('🔴 '+openAbuse.length+' reporte'+(openAbuse.length>1?'s':'')+' de abuso sin resolver');
+    if(unread.length)      fallback.push((oldestHours>48?'🔴':'🟡')+' '+unread.length+' mensaje'+(unread.length>1?'s':'')+' de contacto sin responder'+(oldestHours>48?' (+'+Math.floor(oldestHours/24)+'d de espera)':''));
+    if(pendingPost.length) fallback.push('🟡 '+pendingPost.length+' post'+(pendingPost.length>1?'s':'')+' del Muro Feliz esperando aprobación');
+    if(!fallback.length)   fallback.push('🟢 Todo al día. Sin tareas urgentes. ✅');
+    result = fallback.join('\n');
+  }
+
+  var lines = result.split('\n').filter(function(l){ return l.trim(); });
+  el.innerHTML = lines.map(function(line){
+    var bg     = line.startsWith('🔴') ? 'rgba(220,50,50,.12)'     : line.startsWith('🟡') ? 'rgba(230,160,20,.1)'   : 'rgba(116,198,157,.08)';
+    var border = line.startsWith('🔴') ? 'rgba(220,50,50,.3)'      : line.startsWith('🟡') ? 'rgba(230,160,20,.22)'  : 'rgba(116,198,157,.18)';
+    return '<div style="background:'+bg+';border:1px solid '+border+';border-radius:9px;padding:10px 13px;margin-bottom:7px;font-size:13px;color:rgba(255,255,255,.85);line-height:1.45">'+_escHtml(line)+'</div>';
+  }).join('');
+}
+
+async function pAdminGenerateMassMessage(target){
+  var descEl = document.getElementById('massAiDesc');
+  if(!descEl || !descEl.value.trim()){ pToast('✍️','Describí qué querés comunicar antes de generar'); return; }
+  var desc = descEl.value.trim();
+  var audience = target === 'pros' ? 'profesionales de salud mental que acompañan usuarios en la app' : 'usuarios de una app de salud mental peer-to-peer';
+  var btn = document.getElementById('massAiBtn');
+  if(btn){ btn.disabled = true; btn.textContent = '✨ Generando…'; }
+
+  var prompt = 'Sos el sistema de comunicación de Velo, una app de salud mental peer-to-peer.\n'
+    +'Redactá un mensaje institucional para enviar a '+audience+'.\n'
+    +'El admin quiere comunicar: "'+desc.replace(/"/g,"'")+'".\n'
+    +'El tono debe ser empático, cálido y profesional, en español rioplatense.\n'
+    +'El mensaje debe tener 2-4 párrafos cortos. Sin saludos genéricos tipo "Estimados".\n'
+    +'Respondé SOLO con JSON: {"asunto": "una línea", "cuerpo": "texto completo"}\n'
+    +'Sin texto adicional fuera del JSON.';
+
+  var result = await _geminiCall(prompt);
+  if(btn){ btn.disabled = false; btn.textContent = '✨ Generar asunto + mensaje con IA'; }
+
+  if(!result){ pToast('⚠️','No pude conectarme a Gemini. Escribí el mensaje manualmente.'); return; }
+  try{
+    var match = result.match(/\{[\s\S]*\}/);
+    if(!match){ pToast('⚠️','Respuesta inesperada de Gemini. Intentá de nuevo.'); return; }
+    var data = JSON.parse(match[0]);
+    var subj = document.getElementById('massSubject');
+    var body = document.getElementById('massBody');
+    if(subj && data.asunto) subj.value = data.asunto;
+    if(body && data.cuerpo) body.value = data.cuerpo;
+    pToast('✨','Listo. Revisá el texto antes de enviar.');
+  }catch(e){ pToast('⚠️','Error al procesar la respuesta. Intentá de nuevo.'); }
 }
 
 async function pSendMassMessage(target){
