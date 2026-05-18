@@ -815,8 +815,6 @@ function pSendHelpChatMsg(){
   var ta = document.getElementById('helpChatInput');
   if(!ta || !ta.value.trim()) return;
   var text = ta.value.trim();
-  var blocked = _filterContactInfo(text, 'help-chat');
-  if(blocked){ ta.value = ''; pToast('🚫','No se permiten datos de contacto externos'); return; }
   ta.value = '';
   ta.style.height = '';
   _resetHelpInactivity();
@@ -1227,6 +1225,13 @@ async function pDeleteDiary(ts){
   _loadDiaryEntries();
 }
 
+function pClearAllDiary(){
+  if(!confirm('¿Borrar todo el diario? Esta acción no se puede deshacer.')) return;
+  safeLS('del','velo_diary');
+  pToast('🗑️','Diario eliminado');
+  _loadDiaryEntries();
+}
+
 // ── MOOD ───────────────────────────────────────────────────────
 var _moodOpts = [
   { emoji:'😄', label:'Excelente' }, { emoji:'😊', label:'Bien' }, { emoji:'😐', label:'Regular' },
@@ -1437,6 +1442,27 @@ async function _loadMoodCalendar(){
       }).join('');
     }
   }
+}
+
+function pClearAllMoods(){
+  if(!confirm('¿Borrar todo el historial de ánimo? Esta acción no se puede deshacer.')) return;
+  // Remove all velo_mood_* and velo_daily_status_* keys
+  var toRemove = [];
+  for(var i = 0; i < localStorage.length; i++){
+    var k = localStorage.key(i);
+    if(k && (k.startsWith('velo_mood_') || k.startsWith('velo_daily_status_'))) toRemove.push(k);
+  }
+  toRemove.forEach(function(k){ localStorage.removeItem(k); });
+  pToast('🗑️','Historial de ánimo eliminado');
+  pInitMood();
+}
+
+function pDeleteMood(dateKey){
+  if(!confirm('¿Eliminar el registro del '+dateKey+'?')) return;
+  localStorage.removeItem('velo_mood_'+dateKey);
+  localStorage.removeItem('velo_daily_status_'+dateKey);
+  pToast('🗑️','Registro eliminado');
+  _loadMoodCalendar();
 }
 
 // ── CALM SCREEN ────────────────────────────────────────────────
@@ -1726,8 +1752,6 @@ function pSendCircleMsg(){
   var ta = document.getElementById('feedInput');
   if(!ta || !ta.value.trim() || !_curCircle) return;
   var text = ta.value.trim();
-  var blocked = _filterContactInfo(text, 'circle:'+(_curCircle?_curCircle.id:'?'));
-  if(blocked){ ta.value = ''; pToast('🚫', blocked.slice(2,60)); return; }
   ta.value = '';
   ta.style.height = '';
 
@@ -2338,13 +2362,91 @@ function switchProPanel(panel, btn){
   var panels = {
     inicio: '<div class="metric-cards"><div class="metric-card"><div class="metric-n" id="ppEarnings">$0</div><div class="metric-l">Ingresos</div></div><div class="metric-card"><div class="metric-n" id="ppSessions">0</div><div class="metric-l">Sesiones</div></div><div class="metric-card"><div class="metric-n" id="ppRating">5.0</div><div class="metric-l">Rating</div></div></div><div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:10px">Próximas sesiones</div><div id="ppNextSessions"><p class="p-sm p-muted">Sin sesiones programadas.</p></div></div>',
     agenda: '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Disponibilidad semanal</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(function(d){ return '<div style="padding:9px 14px;border:1.5px solid var(--border2);border-radius:11px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;transition:all .15s" onclick="pTogDay(this)">'+d+'</div>'; }).join('')+'</div></div>',
-    pacientes: '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Mis pacientes</div><p class="p-sm p-muted">Sin pacientes activos aún.</p></div>',
+    pacientes: _renderPatientList(),
     notas: '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Notas de sesión</div><textarea class="p-textarea" rows="6" placeholder="Escribí notas de tu sesión más reciente..."></textarea><div style="height:10px"></div><button class="p-btn p-btn--primary p-btn--md" onclick="pToast(\'📝\',\'Nota guardada\')">Guardar nota</button></div>',
     finanzas: '<div class="metric-cards"><div class="metric-card"><div class="metric-n">$0</div><div class="metric-l">Pendiente</div></div><div class="metric-card"><div class="metric-n">$0</div><div class="metric-l">Total recibido</div></div><div class="metric-card"><div class="metric-n">0</div><div class="metric-l">Sesiones pagadas</div></div></div><div class="p-card" style="padding:18px;margin-top:14px"><p class="p-sm p-muted">Los pagos se procesan automáticamente por Stripe. Comisión Velo: 20%.</p></div>',
     perfil: '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Mi perfil profesional</div><div class="p-field"><label class="p-field-label">Estado</label><div style="display:flex;gap:8px">'+[{v:'disponible',l:'🟢 Disponible'},{v:'ocupado',l:'🟡 Ocupado'},{v:'vacaciones',l:'🏖️ Vacaciones'}].map(function(s){ return '<button style="padding:7px 12px;border-radius:100px;border:1.5px solid var(--border2);background:rgba(255,255,255,.7);font-size:12px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pToast(\'✅\',\'Estado: '+s.l+'\')">'+s.l+'</button>'; }).join('')+'</div></div><button class="p-btn p-btn--secondary p-btn--md" onclick="pSignOut()">↩️ Cerrar sesión</button></div>'
   };
   content.innerHTML = panels[panel] || '<p class="p-sm p-muted">Sección en desarrollo 🌿</p>';
   if(panel === 'inicio') pInitProPanel();
+}
+
+function _renderPatientList(){
+  var proId = safeLS('get','velo_pro_id') || safeLS('get','velo_user_email') || 'pro';
+  var transfers = []; try{ transfers = JSON.parse(safeLS('get','velo_pending_transfers')||'[]'); }catch(e){}
+  // Group by user — last session per user
+  var byUser = {};
+  transfers.forEach(function(t){
+    if(!byUser[t.userId] || t.ts > byUser[t.userId].ts) byUser[t.userId] = t;
+  });
+  var patients = Object.values(byUser);
+  if(!patients.length){
+    return '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Mis pacientes</div>'
+      +'<p class="p-sm p-muted">Aún no tuviste sesiones. Cuando un usuario reserve una sesión aparecerá aquí.</p></div>';
+  }
+  var rows = patients.map(function(t){
+    var notesKey = 'velo_pro_notes_'+proId+'_'+t.userId;
+    var notes = []; try{ notes = JSON.parse(safeLS('get',notesKey)||'[]'); }catch(e){}
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="pOpenPatientNotes(\''+t.userId+'\',\''+_escHtml(t.userName || 'Usuario')+'\')">'
+      +'<div style="font-size:30px">🧑</div>'
+      +'<div style="flex:1;min-width:0"><div style="font-weight:700;color:var(--ink);font-size:14px">'+(t.userName||'Usuario')+'</div>'
+      +'<div style="font-size:11px;color:var(--ink5)">Última sesión · '+new Date(t.ts).toLocaleDateString('es')+'</div>'
+      +'<div style="font-size:11px;color:var(--sage3);margin-top:2px">'+notes.length+' nota'+(notes.length!==1?'s':'')+'</div></div>'
+      +'<div style="font-size:11px;font-weight:700;color:var(--sage3);white-space:nowrap">Ver notas →</div></div>';
+  }).join('');
+  return '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Mis pacientes</div>'
+    + rows
+    + '</div><div id="patientNotePanel" style="display:none;margin-top:12px"></div>';
+}
+
+function pOpenPatientNotes(userId, userName){
+  var proId = safeLS('get','velo_pro_id') || safeLS('get','velo_user_email') || 'pro';
+  var notesKey = 'velo_pro_notes_'+proId+'_'+userId;
+  var notes = []; try{ notes = JSON.parse(safeLS('get',notesKey)||'[]'); }catch(e){}
+  var panel = document.getElementById('patientNotePanel');
+  if(!panel) return;
+  panel.style.display = 'block';
+  panel.innerHTML = '<div class="p-card" style="padding:18px">'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
+    +'<button style="font-size:18px;background:none;border:none;cursor:pointer" onclick="document.getElementById(\'patientNotePanel\').style.display=\'none\'">←</button>'
+    +'<div class="p-label p-label-sage" style="margin:0">Notas privadas · '+(userName||userId)+'</div></div>'
+    +'<p style="font-size:11px;color:var(--ink5);margin-bottom:14px;line-height:1.5">🔒 Solo vos podés ver estas notas. No son visibles para el usuario ni para Velo.</p>'
+    +'<textarea class="p-textarea" id="patientNoteTa" rows="4" placeholder="Escribí una nota clínica o de seguimiento para este paciente…"></textarea>'
+    +'<div style="height:10px"></div>'
+    +'<button class="p-btn p-btn--primary p-btn--md" onclick="pSavePatientNote(\''+userId+'\',\''+_escHtml(userName || 'Usuario')+'\')">💾 Guardar nota</button>'
+    +'<div style="margin-top:16px" id="patientNotesList">'
+    +(notes.length ? notes.map(function(n,i){
+        return '<div style="background:var(--cream2);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px;color:var(--ink2);line-height:1.5;position:relative">'
+          +'<div style="font-size:10px;color:var(--ink5);margin-bottom:4px">'+new Date(n.ts).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})+'</div>'
+          +_escHtml(n.text)
+          +'<button onclick="pDeletePatientNote(\''+userId+'\',\''+_escHtml(userName||'Usuario')+'\','+i+')" style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:14px;cursor:pointer;color:var(--ink5)" title="Eliminar">🗑️</button>'
+          +'</div>';
+      }).join('')
+    : '<p class="p-sm p-muted">Sin notas para este paciente aún.</p>')
+    +'</div></div>';
+}
+
+function pSavePatientNote(userId, userName){
+  var ta = document.getElementById('patientNoteTa');
+  if(!ta || !ta.value.trim()){ pToast('⚠️','Escribí algo antes de guardar'); return; }
+  var proId = safeLS('get','velo_pro_id') || safeLS('get','velo_user_email') || 'pro';
+  var notesKey = 'velo_pro_notes_'+proId+'_'+userId;
+  var notes = []; try{ notes = JSON.parse(safeLS('get',notesKey)||'[]'); }catch(e){}
+  notes.unshift({ text: ta.value.trim(), ts: Date.now() });
+  safeLS('set', notesKey, JSON.stringify(notes.slice(0,200)));
+  pToast('💾','Nota guardada de forma privada');
+  pOpenPatientNotes(userId, userName);
+}
+
+function pDeletePatientNote(userId, userName, idx){
+  if(!confirm('¿Eliminar esta nota?')) return;
+  var proId = safeLS('get','velo_pro_id') || safeLS('get','velo_user_email') || 'pro';
+  var notesKey = 'velo_pro_notes_'+proId+'_'+userId;
+  var notes = []; try{ notes = JSON.parse(safeLS('get',notesKey)||'[]'); }catch(e){}
+  notes.splice(idx, 1);
+  safeLS('set', notesKey, JSON.stringify(notes));
+  pToast('🗑️','Nota eliminada');
+  pOpenPatientNotes(userId, userName);
 }
 
 function pTogDay(el){
