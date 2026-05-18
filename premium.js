@@ -520,6 +520,8 @@ function _loadHomeData(){
   _loadTodayMoodHome();
   _updateSidebarUser();
   _renderPersonalizedSuggestions();
+  // Daily greeting — only once per day, with a slight delay so the page renders first
+  setTimeout(_checkDailyGreeting, 900);
 }
 
 function _loadTodayMoodHome(){
@@ -1084,6 +1086,182 @@ async function _geminiModerateContent(text, section){
 }
 
 // ── BUENAS NOTICIAS ────────────────────────────────────────────
+// ── SALUDO DIARIO IA ────────────────────────────────────────────
+var _greetingFallbacks = [
+  'Cada día que abrís Velo es un paso hacia vos mismo/a. Ojalá hoy encuentres un momento de calma 🌿',
+  'Qué bueno tenerte acá. Este espacio es tuyo — sin apuros, sin juicios 💚',
+  'Hoy también cuenta, aunque sea un día difícil. Estamos acá siempre que lo necesités 🌱',
+  'Respirá. Este momento es tuyo. Nadie te exige nada acá adentro ✨',
+  'Bienvenido/a de vuelta. Espero que encuentres lo que necesitás hoy 🌸',
+  'Acá estamos, siempre. ¿Cómo llegás hoy? Podés contarlo cuando quieras 💙',
+  'Que este rato que le das a tu bienestar te haga bien de verdad. Te lo merecés 🌿',
+  'Cada pequeño paso que das hacia tu bienestar importa más de lo que creés ✨',
+  'No hace falta tener todo resuelto para estar acá. Solo llegar ya es suficiente 💚',
+  'Tu bienestar merece tiempo y atención. Gracias por dártelo hoy 🌱'
+];
+
+async function _checkDailyGreeting(){
+  var today = new Date().toISOString().slice(0,10);
+  if(safeLS('get','velo_greeting_shown_'+today)) return;
+
+  var cached = safeLS('get','velo_greeting_'+today);
+  if(cached){ _showDailyGreeting(cached); return; }
+
+  // Generate with Gemini
+  var d    = new Date();
+  var h    = d.getHours();
+  var momento = h < 12 ? 'mañana' : h < 19 ? 'tarde' : 'noche';
+  var dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  var dia  = dias[d.getDay()];
+  var name = safeLS('get','velo_user_name') || '';
+
+  var prompt = 'Sos el acompañante de bienestar de Velo, una app de salud mental peer-to-peer. '
+    +'Generá un mensaje de bienvenida muy corto y cálido para'+( name ? ' '+name : ' un usuario')
+    +' que acaba de abrir la app. Es '+momento+' del '+dia+'. '
+    +'El mensaje debe tener 1-2 oraciones cortas, ser genuino y empático sin ser exagerado, '
+    +'usar español rioplatense (vos, te), terminar con un emoji suave (🌿 💚 ✨ 🌱 🌸 💙). '
+    +'Varía el estilo cada vez: a veces reflexivo, a veces motivador, a veces simplemente cálido. '
+    +'Respondé SOLO con el mensaje, sin comillas ni explicaciones.';
+
+  var msg = await _geminiCall(prompt);
+  if(!msg || msg.length > 200){
+    msg = _greetingFallbacks[d.getDate() % _greetingFallbacks.length];
+  }
+
+  safeLS('set','velo_greeting_'+today, msg);
+  _showDailyGreeting(msg);
+}
+
+function _showDailyGreeting(msg){
+  var today = new Date().toISOString().slice(0,10);
+  safeLS('set','velo_greeting_shown_'+today, '1');
+
+  var card = document.createElement('div');
+  card.id  = 'veloGreetingCard';
+  card.style.cssText = [
+    'position:fixed',
+    'bottom:0',
+    'left:50%',
+    'transform:translateX(-50%) translateY(110%)',
+    'width:min(400px,calc(100vw - 24px))',
+    'z-index:9800',
+    'transition:transform .45s cubic-bezier(.34,1.56,.64,1)'
+  ].join(';');
+
+  card.innerHTML = ''
+    +'<div style="'
+      +'background:linear-gradient(150deg,rgba(248,253,250,.97),rgba(238,250,244,.95));'
+      +'backdrop-filter:blur(28px) saturate(1.5);'
+      +'-webkit-backdrop-filter:blur(28px) saturate(1.5);'
+      +'border:1.5px solid rgba(116,198,157,.32);'
+      +'border-bottom:none;'
+      +'border-radius:26px 26px 0 0;'
+      +'padding:10px 20px 26px;'
+      +'box-shadow:0 -10px 48px rgba(45,106,79,.14),0 -2px 12px rgba(45,106,79,.07),'
+        +'inset 0 1px 0 rgba(255,255,255,.7);'
+      +'position:relative'
+    +'">'
+
+    // drag handle
+    +'<div style="'
+      +'width:38px;height:4px;background:rgba(116,198,157,.35);border-radius:2px;'
+      +'margin:0 auto 16px'
+    +'"></div>'
+
+    // content row
+    +'<div style="display:flex;align-items:flex-start;gap:14px">'
+
+      // avatar
+      +'<div style="'
+        +'width:54px;height:54px;border-radius:18px;flex-shrink:0;'
+        +'background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(168,212,232,.2));'
+        +'border:2px solid rgba(116,198,157,.3);'
+        +'box-shadow:0 4px 18px rgba(116,198,157,.2);'
+        +'display:flex;align-items:center;justify-content:center;'
+        +'font-size:30px;'
+        +'animation:p-float 3.2s ease-in-out infinite'
+      +'">🌿</div>'
+
+      // text
+      +'<div style="flex:1;min-width:0;padding-top:2px">'
+        +'<div style="'
+          +'font-size:10px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;'
+          +'color:rgba(116,198,157,.75);margin-bottom:6px'
+        +'">Acompañante Velo</div>'
+        +'<div id="veloGreetingMsg" style="'
+          +'font-family:\'Cormorant Garamond\',serif;font-size:16.5px;'
+          +'color:var(--ink);line-height:1.58;font-weight:400;letter-spacing:-.1px'
+        +'"></div>'
+      +'</div>'
+
+      // close
+      +'<button onclick="pDismissGreeting()" style="'
+        +'flex-shrink:0;width:30px;height:30px;border-radius:50%;'
+        +'background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);'
+        +'color:var(--sage3);font-size:13px;cursor:pointer;'
+        +'display:flex;align-items:center;justify-content:center;'
+        +'font-family:\'Jost\',sans-serif;transition:all .15s;align-self:flex-start;margin-top:1px'
+      +'">✕</button>'
+    +'</div>'
+
+    // progress bar
+    +'<div style="margin-top:16px;height:3px;background:rgba(116,198,157,.12);border-radius:2px;overflow:hidden">'
+      +'<div id="veloGreetingBar" style="'
+        +'height:100%;width:100%;'
+        +'background:linear-gradient(90deg,rgba(116,198,157,.5),rgba(116,198,157,.8));'
+        +'border-radius:2px;transition:none'
+      +'"></div>'
+    +'</div>'
+    +'</div>';
+
+  document.body.appendChild(card);
+
+  var msgEl = document.getElementById('veloGreetingMsg');
+  if(msgEl) msgEl.textContent = msg;
+
+  // Slide up into view
+  requestAnimationFrame(function(){
+    setTimeout(function(){
+      card.style.transform = 'translateX(-50%) translateY(0)';
+      // Start countdown bar after card settles
+      setTimeout(function(){
+        var bar = document.getElementById('veloGreetingBar');
+        if(bar){
+          bar.style.transition = 'width 7s linear';
+          bar.style.width = '0%';
+        }
+      }, 500);
+    }, 60);
+  });
+
+  // Auto-dismiss at 7.8s
+  var _autoTimer = setTimeout(pDismissGreeting, 7800);
+  card.dataset.timer = _autoTimer;
+
+  // Drag to dismiss
+  var startY = null;
+  card.addEventListener('touchstart', function(e){ startY = e.touches[0].clientY; }, {passive:true});
+  card.addEventListener('touchmove', function(e){
+    if(startY === null) return;
+    var dy = e.touches[0].clientY - startY;
+    if(dy > 0) card.style.transform = 'translateX(-50%) translateY('+dy+'px)';
+  }, {passive:true});
+  card.addEventListener('touchend', function(e){
+    var dy = e.changedTouches[0].clientY - (startY||0);
+    if(dy > 60){ pDismissGreeting(); } else { card.style.transform = 'translateX(-50%) translateY(0)'; }
+    startY = null;
+  }, {passive:true});
+}
+
+function pDismissGreeting(){
+  var card = document.getElementById('veloGreetingCard');
+  if(!card) return;
+  clearTimeout(parseInt(card.dataset.timer));
+  card.style.transition = 'transform .32s cubic-bezier(.4,0,.6,1)';
+  card.style.transform  = 'translateX(-50%) translateY(110%)';
+  setTimeout(function(){ if(card.parentNode) card.parentNode.removeChild(card); }, 340);
+}
+
 async function pRenderNews(){
   var newsEl = document.getElementById('newsContainer');
   if(!newsEl) return;
