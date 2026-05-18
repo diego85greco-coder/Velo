@@ -850,7 +850,23 @@ function pSendHelp(){
 }
 
 
-function pOpenSOS(){ openModal('sosOv'); _renderSOSResources(); }
+function pOpenSOS(){
+  openModal('sosOv');
+  if(!_sosCountry){
+    // Try to detect country by IP
+    fetch('https://ipapi.co/json/')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var countryCode = d.country_code || '';
+        var codeMap = { AR:'🇦🇷 Argentina', UY:'🇺🇾 Uruguay', CL:'🇨🇱 Chile', CO:'🇨🇴 Colombia', MX:'🇲🇽 México', ES:'🇪🇸 España', PE:'🇵🇪 Perú', VE:'🇻🇪 Venezuela', BR:'🇧🇷 Brasil' };
+        _sosCountry = codeMap[countryCode] || '🌍 Internacional';
+        _renderSOSResources();
+      })
+      .catch(function(){ _renderSOSResources(); });
+  } else {
+    _renderSOSResources();
+  }
+}
 
 var _sosData = {
   '🇦🇷 Argentina': [
@@ -2254,6 +2270,13 @@ function pSendPostChat(){
   var newBadge  = _getBadge(newConvs);
 
   pToast('💚','¡Gracias por tu reseña! 🌿');
+
+  // Show donation prompt if not premium
+  if(!_isPremium()){
+    setTimeout(function(){
+      pToast('💚','¿Querés donar para ayudar a la comunidad? 🌻');
+    }, 3000);
+  }
 
   // Badge upgrade notification
   if(newBadge.name !== prevBadge.name){
