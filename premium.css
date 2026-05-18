@@ -2141,3 +2141,17 @@ a { text-decoration: none; color: inherit; }
   line-height: 1.5;
   animation: fadeIn .5s ease;
 }
+
+/* ── 62. MINI DASHBOARD CARDS ────────────────────────────────── */
+.mini-dash-card {
+  background: rgba(255,255,255,.78);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 8px;
+  text-align: center;
+  cursor: default;
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+}
+.mini-dash-card[onclick] { cursor: pointer; }
+.mini-dash-card[onclick]:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(45,106,79,.1); }

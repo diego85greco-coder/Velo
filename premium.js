@@ -505,47 +505,24 @@ function pFilterGuardians(filter, btn){
 }
 
 function pRenderGuardians(){
-  var list = document.getElementById('guardianList');
+  _renderMyStatusBar();
+  var list = document.getElementById('guardiansList');
   if(!list) return;
-  var data = _guardianProfiles.filter(function(g){
-    if(_guardianFilter === 'on') return g.status === 'on';
-    if(_guardianFilter === 'busy') return g.status === 'busy';
+  var filtered = _guardianProfiles.filter(function(g){
+    if(_guardianFilter === 'disponible') return g.status === 'disponible';
+    if(_guardianFilter === 'ocupado') return g.status === 'ocupado';
     return true;
   });
-  if(!data.length){
-    list.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">🔍</span><div class="p-empty-title">Sin resultados</div><div class="p-empty-sub">Probá otro filtro</div></div>';
+  if(!filtered.length){
+    list.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">Sin guardianes en este estado</div><div class="p-empty-sub">Probá otro filtro</div></div>';
     return;
   }
-  list.innerHTML = data.map(function(g, i){
-    var stClass = g.status === 'on' ? 'st-on' : g.status === 'busy' ? 'st-busy' : 'st-off';
-    var stBg = g.status === 'on' ? 'rgba(58,158,96,.12)' : g.status === 'busy' ? 'rgba(212,128,32,.12)' : 'rgba(144,152,160,.1)';
-    var badge = _getBadge(g.convs);
-    var stLabel = g.status === 'on' ? 'Disponible' : g.status === 'busy' ? 'En conversación' : 'Descansando';
-    return '<div class="p-guardian-card" style="animation-delay:'+i*.06+'s" onclick="pOpenGuardian(\''+g.id+'\')">'
-      +'<div class="gc-row">'
-      +'<div class="gc-av" style="background:'+stBg+'">'
-      +g.av
-      +'<div class="gc-st-ring '+stClass+'"></div>'
-      +'</div>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div class="gc-name">'+g.name+' <span style="font-size:14px" title="Guardián '+badge.name+'">'+badge.icon+'</span></div>'
-      +'<div style="font-size:11px;color:var(--ink4)">'+g.mood+'</div>'
-      +'</div>'
-      +'<div style="text-align:right;flex-shrink:0">'
-      +'<div style="font-size:11px;font-weight:700;color:var(--sage2);margin-bottom:3px">⭐ '+g.rating+'</div>'
-      +'<div style="font-size:10px;color:var(--ink5)">'+g.convs+' conversaciones</div>'
-      +'</div>'
-      +'</div>'
-      +'<div class="gc-review-box">'
-      +'<span class="gc-rv-txt">"'+g.review.txt+'"</span>'
-      +'<span class="gc-rv-auth">— '+g.review.auth+'</span>'
-      +'</div>'
-      +'<div class="gc-tags">'+g.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div>'
-      +'<div class="gc-actions">'
-      +'<button class="gc-btn-ask" onclick="event.stopPropagation();pOpenGuardian(\''+g.id+'\')">💚 Pedir acompañamiento</button>'
-      +'<button class="gc-btn-view" onclick="event.stopPropagation();pOpenGuardian(\''+g.id+'\')">Ver perfil</button>'
-      +'</div>'
-      +'</div>';
+  list.innerHTML = filtered.map(function(g){
+    var badge = _getBadge(g.convs||0);
+    var statusColor = g.status==='disponible'?'var(--st-on)':g.status==='ocupado'?'#C8A200':'rgba(150,150,150,.5)';
+    var statusLabel = g.status==='disponible'?'Disponible':g.status==='ocupado'?'Ocupado':'Anónimo';
+    var isAnon = g.status==='incognito';
+    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+(isAnon?'Guardián Anónimo':g.name)+'</span><span style="font-size:14px">'+badge.icon+'</span></div><div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0">'+(isAnon?'Disponible de forma anónima':g.bio)+'</p></div><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(g.status==='ocupado'?'pToast(\'🟡\',\''+g.name+' está ocupado/a ahora\')':'pAskGuardian(\''+g.id+'\')')+'">'+(g.status==='ocupado'?'Ocupado/a':'Acompañar')+'</button></div></div>';
   }).join('');
 }
 
@@ -623,12 +600,17 @@ function pAskGuardian(){
 }
 
 function pConfirmAskGuardian(){
+  // Set guardian as busy during chat
+  safeLS('set','velo_guardian_status','ocupado');
   var ov = document.getElementById('askGuardianOv');
   if(ov) ov.classList.remove('open');
   pToast('💚','Solicitud enviada a '+(_curGuardian ? _curGuardian.name : 'el guardián')+'…');
   setTimeout(function(){
     pToast('🌿',(_curGuardian ? _curGuardian.name : 'Tu guardián')+' aceptó acompañarte ✨');
-    setTimeout(function(){ pGoTo('post-chat'); }, 800);
+    setTimeout(function(){
+      pGoTo('post-chat');
+      // Restore status when chat completes (handled in pSendPostChat)
+    }, 800);
   }, 2200);
 }
 
@@ -688,21 +670,160 @@ function pStripeCheckout(proId){
 }
 
 // ── HELP ROOM ─────────────────────────────────────────────────
-var _helpMockData = [
-  { emoji:'😰', name:'Usuario Anónimo', time:'hace 2 min', preview:'No puedo dormir y no sé por qué me siento tan vacío/a…', urgent:false },
-  { emoji:'😢', name:'Usuario Anónimo', time:'hace 5 min', preview:'Tuve una pelea muy fuerte hoy y me siento muy solo/a…', urgent:false },
-  { emoji:'😔', name:'Usuario Anónimo', time:'hace 8 min', preview:'Llevo semanas sin poder levantarme de la cama.', urgent:false },
-  { emoji:'😞', name:'Usuario Anónimo', time:'hace 15 min', preview:'No sé si lo que me pasa es normal pero me pesa mucho.', urgent:false }
-];
+var _helpPosts = [];
+var _helpMockSeeded = false;
+
+function _seedHelpMock(){
+  if(_helpMockSeeded) return;
+  _helpMockSeeded = true;
+  var now = Date.now();
+  var mock = [
+    { id:'h1', emoji:'😰', anon:true,  name:'Usuario Anónimo', time: now-2*60000,  preview:'No puedo dormir y no sé por qué me siento tan vacío/a…' },
+    { id:'h2', emoji:'😢', anon:true,  name:'Usuario Anónimo', time: now-5*60000,  preview:'Tuve una pelea muy fuerte hoy y me siento muy solo/a…' },
+    { id:'h3', emoji:'😔', anon:false, name:'Valentina S.',    time: now-8*60000,  preview:'Llevo semanas sin poder levantarme de la cama.' },
+    { id:'h4', emoji:'😞', anon:true,  name:'Usuario Anónimo', time: now-15*60000, preview:'No sé si lo que me pasa es normal pero me pesa mucho.' }
+  ];
+  var stored = []; try{ stored = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
+  if(!stored.length){
+    safeLS('set','velo_help_posts', JSON.stringify(mock));
+  }
+}
 
 function pRenderHelp(){
+  _seedHelpMock();
   var list = document.getElementById('helpList');
   if(!list) return;
+  var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
+  var hidden = []; try{ hidden = JSON.parse(safeLS('get','velo_hidden_content')||'[]'); }catch(e){}
+  posts = posts.filter(function(h){ return !h.taken && hidden.indexOf('help-'+h.id)<0; });
+  _helpPosts = posts;
   var count = document.getElementById('helpActiveCount');
-  if(count) count.textContent = _helpMockData.length+' activos';
-  list.innerHTML = _helpMockData.map(function(h, i){
-    return '<div class="dark-seeker" style="animation-delay:'+i*.08+'s"><div style="display:flex;align-items:center;gap:11px"><div style="font-size:28px;flex-shrink:0">'+h.emoji+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+h.name+'</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+h.time+'</span></div><div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+h.preview+'</div></div><div style="width:7px;height:7px;border-radius:50%;background:var(--st-on);flex-shrink:0;box-shadow:0 0 4px var(--st-on)"></div></div></div>';
+  if(count) count.textContent = posts.length+' esperando acompañamiento';
+
+  if(!posts.length){
+    list.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.5)"><span class="p-empty-emoji">💚</span><div class="p-empty-title" style="color:rgba(255,255,255,.7)">Todo tranquilo por acá</div><div class="p-empty-sub">Nadie espera acompañamiento en este momento</div></div>';
+    return;
+  }
+  list.innerHTML = posts.map(function(h,i){
+    var elapsed = Math.floor((Date.now()-h.time)/60000);
+    var timeStr = elapsed<1?'ahora mismo':elapsed===1?'hace 1 min':'hace '+elapsed+' min';
+    return '<div class="dark-seeker" id="helppost-'+h.id+'" style="animation-delay:'+i*.08+'s">'
+      +'<div style="display:flex;align-items:flex-start;gap:11px">'
+      +'<div style="font-size:28px;flex-shrink:0">'+h.emoji+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">'
+      +'<span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+h.name+'</span>'
+      +'<span style="font-size:10px;color:rgba(255,255,255,.3)">'+timeStr+'</span>'
+      +'</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.55;margin-bottom:10px;font-style:italic">'+_escHtml(h.preview)+'</div>'
+      +'<div style="display:flex;gap:8px;align-items:center">'
+      +'<button class="p-btn p-btn--primary p-btn--sm" onclick="pAccompanyHelp(\''+h.id+'\')">💚 Acompañar</button>'
+      +'<button style="font-size:11px;color:rgba(192,48,40,.5);background:none;border:none;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportContent(\'help\',\''+h.id+'\')">⚠️ Reportar</button>'
+      +'</div>'
+      +'</div>'
+      +'</div>'
+      +'</div>';
   }).join('');
+}
+
+var _curHelpPost = null;
+var _helpChatInactivityTimer = null;
+var _helpChatAutoMsgPool = [
+  '¿Seguís ahí? No tenés que responder rápido, tomá tu tiempo 🌿',
+  'Estoy acá para escucharte, sin apuros 💙',
+  'Cuando quieras compartir más, acá estoy 🤍'
+];
+
+function pAccompanyHelp(postId){
+  var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
+  var post = posts.find(function(p){ return p.id===postId; });
+  if(!post){ pToast('⚠️','Esta solicitud ya fue tomada'); return; }
+  // Mark as taken — disappears from wall
+  posts = posts.map(function(p){ return p.id===postId ? Object.assign({},p,{taken:true}) : p; });
+  safeLS('set','velo_help_posts', JSON.stringify(posts));
+  _curHelpPost = post;
+  // Start the help chat
+  _openHelpChat(post);
+  // Increment helped count
+  safeLS('set','velo_helped_others', String(parseInt(safeLS('get','velo_helped_others')||'0',10)+1));
+  safeLS('set','velo_helped_once','1');
+}
+
+function _openHelpChat(post){
+  // Navigate to a help chat screen
+  _setEl('helpChatTitle', post.name + ' · ' + post.emoji);
+  _setEl('helpChatPreview', '"'+post.preview+'"');
+  var msgEl = document.getElementById('helpChatMessages');
+  if(msgEl){
+    var t = new Date();
+    var tStr = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
+    msgEl.innerHTML = '<div class="feed-system-msg">Chat de acompañamiento iniciado · '+ tStr +'</div>'
+      +'<div class="feed-msg"><div class="feed-av">'+post.emoji+'</div><div><div class="feed-sender">'+post.name+'</div><div class="feed-bubble">'+_escHtml(post.preview)+'</div></div></div>';
+    msgEl.scrollTop = msgEl.scrollHeight;
+  }
+  pGoTo('help-chat');
+  _resetHelpInactivity();
+}
+
+function _resetHelpInactivity(){
+  if(_helpChatInactivityTimer) clearTimeout(_helpChatInactivityTimer);
+  _helpChatInactivityTimer = setTimeout(function(){
+    // 5 minutes of inactivity
+    _closeHelpChatInactive();
+  }, 5 * 60 * 1000);
+}
+
+function _closeHelpChatInactive(){
+  var msgEl = document.getElementById('helpChatMessages');
+  if(msgEl){
+    var msg = document.createElement('div');
+    msg.className = 'feed-system-msg';
+    msg.textContent = 'Chat cerrado por inactividad (5 min). Podés enviar un mensaje al buzón.';
+    msgEl.appendChild(msg);
+    msgEl.scrollTop = msgEl.scrollHeight;
+  }
+  setTimeout(function(){
+    pToast('⏱️','Chat cerrado por inactividad. ¿Querés enviarle un mensaje al buzón?');
+    setTimeout(function(){ pGoTo('help'); }, 2000);
+  }, 2000);
+}
+
+function pSendHelpChatMsg(){
+  var ta = document.getElementById('helpChatInput');
+  if(!ta || !ta.value.trim()) return;
+  var text = ta.value.trim();
+  ta.value = '';
+  ta.style.height = '';
+  _resetHelpInactivity();
+  var msgEl = document.getElementById('helpChatMessages');
+  if(!msgEl) return;
+  var name = safeLS('get','velo_user_name')||'Vos';
+  var t = new Date();
+  var tStr = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
+  var div = document.createElement('div');
+  div.className = 'feed-msg feed-msg--own';
+  div.innerHTML = '<div class="feed-bubble feed-bubble--own">'+_escHtml(text)+'<span class="feed-time">'+tStr+'</span></div>';
+  msgEl.appendChild(div);
+  msgEl.scrollTop = msgEl.scrollHeight;
+  // Simulated reply after 8-15 seconds
+  setTimeout(function(){
+    _resetHelpInactivity();
+    var reply = _helpChatAutoMsgPool[Math.floor(Math.random()*_helpChatAutoMsgPool.length)];
+    var t2 = new Date();
+    var tStr2 = t2.getHours()+':'+(t2.getMinutes()<10?'0':'')+t2.getMinutes();
+    var div2 = document.createElement('div');
+    div2.className = 'feed-msg';
+    div2.innerHTML = '<div class="feed-av">'+(_curHelpPost?_curHelpPost.emoji:'💚')+'</div><div><div class="feed-sender">'+(_curHelpPost?_curHelpPost.name:'Usuario')+'</div><div class="feed-bubble">'+_escHtml(reply)+'<span class="feed-time">'+tStr2+'</span></div></div>';
+    msgEl.appendChild(div2);
+    msgEl.scrollTop = msgEl.scrollHeight;
+  }, 8000 + Math.random()*7000);
+}
+
+function pLeaveHelpChat(){
+  if(_helpChatInactivityTimer){ clearTimeout(_helpChatInactivityTimer); _helpChatInactivityTimer = null; }
+  _curHelpPost = null;
+  pGoTo('help');
+  pRenderHelp();
 }
 
 function pOpenHelpForm(){ openModal('helpFormOv'); }
@@ -711,16 +832,23 @@ function pSendHelp(){
   var ta = document.getElementById('helpMsgTa');
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí tu mensaje antes de enviar'); return; }
   var msg = ta.value.trim();
+  var anonEl = document.getElementById('helpAnonCheck');
+  var isAnon = !anonEl || anonEl.checked;
+  var name = isAnon ? 'Usuario Anónimo' : (safeLS('get','velo_user_name')||'Usuario');
   ta.value = '';
   closeModal('helpFormOv');
-  pToast('💌','Mensaje enviado. Un guardián/a responderá pronto 💚');
+  pToast('💌','Mensaje publicado. Alguien te acompañará pronto 💚');
+  var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
   var ts = Date.now();
-  var id = 'help-'+ts;
-  var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
-  msgs.unshift({ id:id, tipo:'sistema', icon:'💚', remitente:'Sala de Ayuda', asunto:'Recibimos tu mensaje', cuerpo:'Tu mensaje fue recibido y un guardián/a estará con vos pronto.\n\n"'+msg+'"', extracto:'Un guardián/a responderá pronto.', leido:false, prioritario:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
-  safeLS('set','velo_inbox', JSON.stringify(msgs.slice(0,100)));
-  safeLS('set','velo_sos_clicks', String(parseInt(safeLS('get','velo_sos_clicks')||'0',10)+1));
+  posts.unshift({ id:'hu'+ts, emoji:'💙', anon:isAnon, name:name, time:ts, preview:msg, taken:false });
+  safeLS('set','velo_help_posts', JSON.stringify(posts.slice(0,50)));
+  safeLS('set','velo_helped_once','1');
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  inbox.unshift({ id:'help-'+ts, tipo:'sistema', icon:'💚', remitente:'Sala de Ayuda', asunto:'Tu mensaje fue publicado', cuerpo:'Tu mensaje fue publicado en la Sala de Ayuda. Alguien te acompañará pronto.\n\n"'+msg+'"', extracto:'Alguien te acompañará pronto.', leido:false, prioritario:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
+  safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+  pRenderHelp();
 }
+
 
 function pOpenSOS(){ openModal('sosOv'); _renderSOSResources(); }
 
@@ -1797,6 +1925,29 @@ function pSubmitHappyPost(){
   pRenderHappy();
 }
 
+function _renderUserDashboard(){
+  var el = document.getElementById('userMiniDashboard');
+  if(!el) return;
+  var helped = parseInt(safeLS('get','velo_helped_others')||'0',10);
+  var helpedMe = parseInt(safeLS('get','velo_help_received')||'0',10);
+  var convs = parseInt(safeLS('get','velo_guardian_convs')||'0',10);
+  var badge = _getBadge(convs);
+  var reviews = []; try{ reviews = JSON.parse(safeLS('get','velo_my_reviews')||'[]'); }catch(e){}
+  el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'
+    +'<div class="mini-dash-card" onclick="switchProfileTab(\'logros\',document.querySelector(\'[onclick*=logros]\'))">' 
+    +'<div style="font-size:28px;margin-bottom:4px">'+badge.icon+'</div>'
+    +'<div style="font-size:11px;font-weight:800;color:var(--ink)">'+badge.name+'</div>'
+    +'<div style="font-size:10px;color:var(--ink4)">Nivel</div>'
+    +'</div>'
+    +'<div class="mini-dash-card"><div style="font-size:24px;font-weight:800;color:var(--sage);margin-bottom:2px">'+helped+'</div><div style="font-size:11px;color:var(--ink3)">Ayudé</div></div>'
+    +'<div class="mini-dash-card"><div style="font-size:24px;font-weight:800;color:var(--sage);margin-bottom:2px">'+helpedMe+'</div><div style="font-size:11px;color:var(--ink3)">Me ayudaron</div></div>'
+    +'<div class="mini-dash-card" onclick="switchProfileTab(\'reseñas\',document.querySelector(\'[onclick*=reseñas]\'))">' 
+    +'<div style="font-size:24px;font-weight:800;color:var(--sage);margin-bottom:2px">'+reviews.length+'</div>'
+    +'<div style="font-size:11px;color:var(--ink3)">Reseñas</div>'
+    +'</div>'
+    +'</div>';
+}
+
 // ── PROFILE ────────────────────────────────────────────────────
 function pLoadProfile(){
   var name  = safeLS('get','velo_user_name') || 'Usuario';
@@ -1861,6 +2012,35 @@ function pLoadProfile(){
   var don = document.getElementById('profileDonate');
   if(don) don.innerHTML = '<div class="p-card" style="padding:22px"><div style="text-align:center;margin-bottom:18px"><div style="font-size:48px;margin-bottom:10px">💚</div><h3 class="p-title" style="font-size:20px;margin-bottom:8px">Apoyá a Velo</h3><p class="p-sm" style="max-width:340px;margin:auto">Ayudanos a mantener este espacio gratuito para quienes más lo necesitan.</p></div><button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pGoTo(\'donation-exit\')" style="margin-bottom:8px">Donar ahora 🌻</button><button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pOpenPayPalPlus()">⭐ Obtener Velo Plus ($2.99/mes)</button></div>';
 }
+
+  // Mini dashboard
+  _renderUserDashboard();
+  // Daily status in profile
+  var incog = safeLS('get','velo_incognito') === 'true';
+  var statusEl = document.getElementById('profileDailyStatus');
+  if(statusEl){
+    if(incog){
+      statusEl.innerHTML = '';
+    } else {
+      var ds = _getDailyStatus();
+      var parts = [];
+      if(ds.movie)  parts.push('<span>🎬 '+_escHtml(ds.movie)+'</span>');
+      if(ds.music)  parts.push('<span>🎵 '+_escHtml(ds.music)+'</span>');
+      if(ds.book)   parts.push('<span>📚 '+_escHtml(ds.book)+'</span>');
+      if(ds.phrase) parts.push('<em style="display:block;font-style:italic;margin-top:6px;color:var(--sage)">"'+_escHtml(ds.phrase)+'"</em>');
+      if(parts.length){
+        statusEl.innerHTML = '<div style="font-size:12px;color:var(--ink4);background:var(--sage7);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:4px;line-height:1.6">'+parts.join('')+'</div>';
+      } else {
+        statusEl.innerHTML = '';
+      }
+    }
+  }
+  // Sub status
+  var subEl = document.getElementById('subStatusDisplay');
+  if(subEl){
+    subEl.textContent = _isPremium() ? '✅ Velo Plus activo' : 'Sin suscripción activa';
+    subEl.style.color = _isPremium() ? 'var(--sage)' : 'var(--ink4)';
+  }
 
 function _calcBadges(){
   var b = 0;
@@ -2632,6 +2812,7 @@ function _onPageEnter(id){
     case 'guardians':   pRenderGuardians(); break;
     case 'professionals': pRenderProfessionals(); break;
     case 'help':        pRenderHelp(); break;
+    case 'help-chat':   /* initialized by pAccompanyHelp */ break;
     case 'bottle':      pRenderBottle(); break;
     case 'diary':       pInitDiary(); break;
     case 'mood':        pInitMood(); break;

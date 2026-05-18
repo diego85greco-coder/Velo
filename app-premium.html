@@ -539,12 +539,13 @@
                 <h2 class="p-title">Guardianes</h2>
               </div>
             </div>
-            <div class="p-filter-bar">
+            <div id="myGuardianStatus" style="margin-bottom:12px"></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="guardianStatusBar">
               <button class="p-filter-chip active" onclick="pFilterGuardians('all',this)">Todos</button>
-              <button class="p-filter-chip" onclick="pFilterGuardians('on',this)">Disponibles</button>
-              <button class="p-filter-chip" onclick="pFilterGuardians('busy',this)">Ocupados</button>
+              <button class="p-filter-chip" onclick="pFilterGuardians('disponible',this)">🟢 Disponibles</button>
+              <button class="p-filter-chip" onclick="pFilterGuardians('ocupado',this)">🟡 Ocupados</button>
             </div>
-            <div id="guardianList" class="pg-guardian-list">
+            <div id="guardiansList" class="pg-guardian-list">
               <div class="p-skeleton"><div class="p-skel-line"></div><div class="p-skel-line w60"></div></div>
               <div class="p-skeleton"><div class="p-skel-line"></div><div class="p-skel-line w40"></div></div>
             </div>
@@ -662,6 +663,7 @@
             </div>
             <div style="margin-bottom:10px">
               <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px;padding:0 2px">Buscando apoyo <span id="helpActiveCount" style="color:var(--sage4)">•••</span></div>
+              <div id="helpDashboard" style="margin-bottom:14px"></div>
               <div id="helpList"></div>
             </div>
           </div>
@@ -692,6 +694,27 @@
           </div>
         </div>
       </div><!-- /pg-help -->
+
+      <!-- ══ HELP CHAT ════════════════════════════════════════════ -->
+      <div class="p-page" id="pg-help-chat" style="display:flex;flex-direction:column;height:100%;overflow:hidden;background:linear-gradient(160deg,#0B1C0E,#080E08)">
+        <div class="feed-header" style="background:rgba(8,20,10,.9);border-bottom:1px solid rgba(116,198,157,.15)">
+          <button class="p-back-btn p-dark-back-btn" onclick="pLeaveHelpChat()">←</button>
+          <div class="feed-header-info">
+            <span style="font-size:22px" id="helpChatEmoji">💚</span>
+            <div style="min-width:0">
+              <div id="helpChatTitle" style="font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Acompañamiento</div>
+              <div style="font-size:10px;color:rgba(116,198,157,.7)">Chat privado · Confidencial</div>
+            </div>
+          </div>
+          <div style="margin-left:auto;font-size:10px;color:rgba(255,255,255,.35);text-align:right;max-width:120px;line-height:1.4">⏱️ Cierra tras<br>5 min sin respuesta</div>
+        </div>
+        <div id="helpChatMessages" class="feed-messages" style="background:transparent"></div>
+        <div class="feed-input-area" style="background:rgba(8,20,10,.9);border-top:1px solid rgba(116,198,157,.12)">
+          <textarea id="helpChatInput" class="feed-input" placeholder="Escribí con amor y presencia…" rows="1" style="background:rgba(255,255,255,.06);color:#fff;border-color:rgba(116,198,157,.2)"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendHelpChatMsg()}"></textarea>
+          <button class="feed-send-btn" onclick="pSendHelpChatMsg()">↑</button>
+        </div>
+      </div>
 
       <!-- ══ BOTTLE ═══════════════════════════════════════════════ -->
       <div class="p-page" id="pg-bottle">
@@ -1060,6 +1083,7 @@
                   <p style="font-size:12px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:12px" id="profileMotto">Tu lema aquí</p>
                   <div id="profilePlanBadge" style="margin-bottom:12px"></div>
                   <div id="profileDailyStatus" style="margin-bottom:12px"></div>
+                  <div id="userMiniDashboard" style="margin-bottom:14px"></div>
                   <div class="profile-stats">
                     <div class="profile-stat-box"><div class="profile-stat-n" id="profileChats">0</div><div class="profile-stat-l">Charlas</div></div>
                     <div class="profile-stat-box"><div class="profile-stat-n" id="profileDays">0</div><div class="profile-stat-l">Días</div></div>
