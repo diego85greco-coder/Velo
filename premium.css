@@ -2213,3 +2213,39 @@ a { text-decoration: none; color: inherit; }
   flex-wrap: wrap;
   margin-top: 8px;
 }
+
+/* ── 64. HAPPY WALL REDESIGN ─────────────────────────────────── */
+.happy-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink4);
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  transition: all .15s;
+}
+.happy-tab.active {
+  background: #fff;
+  color: var(--sage);
+  box-shadow: 0 1px 6px rgba(0,0,0,.08);
+}
+.happy-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.happy-card {
+  background: rgba(255,255,255,.88);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  transition: box-shadow .2s;
+}
+.happy-card:hover {
+  box-shadow: 0 4px 20px rgba(45,106,79,.08);
+}

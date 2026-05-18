@@ -2118,18 +2118,26 @@ function pSubmitCircleReport(ov){
 }
 
 // ── HAPPY WALL ─────────────────────────────────────────────────
-var HAPPY_TTL = 24 * 60 * 60 * 1000; // 24 horas en ms
-var _happyEmojis = ['☀️','🌻','🎉','🌈','💚','🌸','✨','🌱','🎵','🙌','🦋','💛'];
+// ── MURO DE LA FELICIDAD ──────────────────────────────────────
+var HAPPY_TTL       = 24 * 60 * 60 * 1000; // 24 horas
+var HAPPY_MAX       = 50;                   // máximo de posts en el muro global
+var _happyEmojis    = ['☀️','🌻','🎉','🌈','💚','🌸','✨','🌱','🎵','🙌','🦋','💛'];
+var _happyReactEmojis = ['💛','🌸','🤗','🌿','✨'];
 var _selectedHappyEmoji = '☀️';
+var _happyActiveTab = 'all'; // 'all' | 'mine'
 
-// Mock posts con timestamps recientes para demo (dentro de las 24h)
+function _myUserId(){
+  return safeLS('get','velo_user_email') || 'guest-'+(safeLS('get','velo_user_name')||'user');
+}
+
+// Demo posts — richer structure
 var _happyMock = (function(){
   var now = Date.now();
   return [
-    { id:'hm1', emoji:'🌻', text:'Hoy mi hijo me dijo "te quiero" sin que se lo pidiera.',      name:'Usuario Anónimo', reactions:12, ts: now - 5*60*1000    },
-    { id:'hm2', emoji:'🎉', text:'Conseguí el trabajo que tanto quería. ¡Un año de espera!',    name:'Usuario Anónimo', reactions:34, ts: now - 12*60*1000   },
-    { id:'hm3', emoji:'🌱', text:'Fui a terapia por primera vez. Me animé.',                    name:'Usuario Anónimo', reactions:28, ts: now - 20*60*1000   },
-    { id:'hm4', emoji:'☀️', text:'Salí a caminar sin el celular. El mundo sigue siendo hermoso.',name:'Usuario Anónimo', reactions:19, ts: now - 35*60*1000  }
+    { id:'hm1', userId:'demo', emoji:'🌻', text:'Hoy mi hijo me dijo "te quiero" sin que se lo pidiera. El día se convirtió en el mejor del año.', name:'Lara M.', ts: now-5*60*1000,   reactions:{'💛':12,'🌸':4,'🤗':3,'🌿':1,'✨':2}, comments:[{name:'Sofía',text:'¡Eso es todo! 💛',ts:now-3*60*1000}] },
+    { id:'hm2', userId:'demo', emoji:'🎉', text:'Conseguí el trabajo que tanto quería después de un año de intentos. ¡Nunca me rendí!',          name:'Martín P.', ts: now-12*60*1000, reactions:{'💛':34,'🌸':8,'🤗':15,'🌿':5,'✨':10}, comments:[{name:'Ana',text:'¡Felicitaciones! 🎉',ts:now-10*60*1000},{name:'Tomás',text:'Te lo merecés 💪',ts:now-8*60*1000}] },
+    { id:'hm3', userId:'demo', emoji:'🌱', text:'Fui a terapia por primera vez. Me costó meses decidirme. Valió la pena dar ese paso.',           name:'Valentina S.', ts: now-20*60*1000, reactions:{'💛':28,'🌸':12,'🤗':9,'🌿':6,'✨':7}, comments:[] },
+    { id:'hm4', userId:'demo', emoji:'☀️', text:'Salí a caminar sin el celular. El mundo sigue siendo hermoso cuando lo mirás de verdad.',        name:'Emilio T.', ts: now-35*60*1000, reactions:{'💛':19,'🌸':3,'🤗':2,'🌿':8,'✨':5}, comments:[{name:'Lucía',text:'Necesito hacer eso también 🌿',ts:now-30*60*1000}] }
   ];
 })();
 
@@ -2138,8 +2146,7 @@ function _happyTimeLeft(ts){
   if(ms <= 0) return null;
   var h = Math.floor(ms / 3600000);
   var m = Math.floor((ms % 3600000) / 60000);
-  if(h > 0) return 'expira en '+h+'h '+m+'m';
-  return 'expira en '+m+' min';
+  return h > 0 ? 'Expira en '+h+'h '+m+'m' : 'Expira en '+m+' min';
 }
 
 function _happyRelTime(ts){
@@ -2149,53 +2156,235 @@ function _happyRelTime(ts){
   return 'hace '+Math.floor(diff/3600000)+'h';
 }
 
+function _happyLoad(){
+  var posts = []; try{ posts = JSON.parse(safeLS('get','velo_happy')||'[]'); }catch(e){}
+  return posts;
+}
+function _happySave(posts){
+  safeLS('set','velo_happy', JSON.stringify(posts));
+}
+function _happyQueueLoad(){
+  var q = []; try{ q = JSON.parse(safeLS('get','velo_happy_queue')||'[]'); }catch(e){}
+  return q;
+}
+function _happyQueueSave(q){
+  safeLS('set','velo_happy_queue', JSON.stringify(q));
+}
+
+// Called on every render: expire old posts and promote queue
+function _processHappyQueue(){
+  var now    = Date.now();
+  var posts  = _happyLoad();
+  var before = posts.length;
+  posts = posts.filter(function(p){ return (p.ts + HAPPY_TTL) > now; });
+  var freed  = before - posts.length;
+
+  var queue  = _happyQueueLoad();
+  var notified = [];
+  for(var i = 0; i < freed && queue.length > 0; i++){
+    var next = queue.shift();
+    next.ts = now;  // publish now
+    posts.unshift(next);
+    notified.push(next);
+  }
+  _happySave(posts);
+  _happyQueueSave(queue);
+
+  // Notify users whose posts just published
+  notified.forEach(function(p){
+    if(p.userId === _myUserId()){
+      pToast('☀️','¡Tu publicación se publicó en el Muro! 💛');
+      var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+      inbox.unshift({ id:'hpub-'+Date.now(), tipo:'muro', icon:'☀️', remitente:'Muro de la Felicidad',
+        asunto:'¡Tu publicación ya está en el Muro! ☀️',
+        extracto:'Se liberó un lugar y tu momento de alegría ya es visible para toda la comunidad.',
+        leido:false, fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'}) });
+      safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+      _updateInboxDot();
+    }
+  });
+
+  return posts;
+}
+
 function pRenderHappy(){
   var list = document.getElementById('happyList');
   if(!list) return;
+  var posts = _processHappyQueue();
+  var queue = _happyQueueLoad();
+  var myId  = _myUserId();
 
-  // Cargar publicaciones del usuario y limpiar las expiradas
-  var userPosts = []; try{ userPosts = JSON.parse(safeLS('get','velo_happy')||'[]'); }catch(e){}
-  var now = Date.now();
-  userPosts = userPosts.filter(function(h){ return (h.ts + HAPPY_TTL) > now; });
-  safeLS('set','velo_happy', JSON.stringify(userPosts));
+  // Queue notice
+  var queueNote = document.getElementById('happyQueueNote');
+  var myQueued  = queue.find(function(p){ return p.userId === myId; });
+  if(queueNote){
+    if(myQueued){
+      var pos = queue.indexOf(myQueued) + 1;
+      queueNote.style.display = '';
+      queueNote.innerHTML = '⏳ Tu publicación está en lista de espera (posición '+pos+' de '+queue.length+'). Se publicará automáticamente cuando se libere un lugar en el muro.';
+    } else {
+      queueNote.style.display = 'none';
+    }
+  }
 
-  // Filtrar mocks expirados (no expiran en demo, siempre son "nuevos")
-  var all = userPosts.concat(_happyMock);
+  // Counter
+  var counter = document.getElementById('happyCounter');
+  if(counter) counter.textContent = posts.length+'/'+HAPPY_MAX+' publicaciones activas';
 
+  if(_happyActiveTab === 'mine'){
+    _renderMyHappy(list, posts, queue, myId);
+  } else {
+    _renderAllHappy(list, posts);
+  }
+}
+
+function _renderAllHappy(list, posts){
+  var all = posts.concat(_happyMock);
   if(!all.length){
     list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">☀️</span><div class="p-empty-title">El muro está vacío</div><div class="p-empty-sub">¡Sé el primero en compartir un momento de alegría!</div></div>';
     return;
   }
-
-  list.innerHTML = all.map(function(h){
-    var timeLeft = _happyTimeLeft(h.ts);
-    var relTime  = _happyRelTime(h.ts);
-    var expColor = timeLeft && timeLeft.indexOf('min') > -1 ? 'var(--rose)' : 'var(--ink5)';
-    return '<div class="happy-card">'
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
-      +'<div style="font-size:26px;width:42px;height:42px;border-radius:13px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:13px;font-weight:600;color:var(--ink)">'+(h.name||'Usuario Anónimo')+'</div>'
-      +'<div style="font-size:10px;color:var(--ink5)">'+relTime+'</div>'
-      +'</div>'
-      +'</div>'
-      +'<p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+h.text+'"</p>'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">'
-      +'<button style="padding:5px 11px;background:rgba(255,224,102,.15);border:1px solid rgba(255,224,102,.3);border-radius:100px;font-size:12px;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pHappyReact(this)">💛 '+(h.reactions||0)+'</button>'
-      +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600">⏳ '+timeLeft+'</span>' : '')
-      +'</div>'
-      +'</div>';
-  }).join('');
+  list.innerHTML = all.map(function(h){ return _happyPostCard(h, false); }).join('');
 }
 
-function pHappyReact(btn){
-  var cur = parseInt(btn.textContent.replace(/[^0-9]/g,''),10)||0;
-  btn.textContent = '💛 '+(cur+1);
-  btn.style.background = 'rgba(255,224,102,.3)';
-  pToast('💛','¡Alegría compartida!');
+function _renderMyHappy(list, posts, queue, myId){
+  var mine = posts.filter(function(p){ return p.userId === myId; });
+  var myQueued = queue.filter(function(p){ return p.userId === myId; });
+
+  if(!mine.length && !myQueued.length){
+    list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">🌸</span>'
+      +'<div class="p-empty-title">Todavía no publicaste</div>'
+      +'<div class="p-empty-sub">Compartí un momento de alegría con la comunidad ☀️</div></div>';
+    return;
+  }
+
+  var html = '';
+  // Pending posts
+  myQueued.forEach(function(p){
+    html += '<div class="happy-card" style="border:1.5px dashed rgba(255,200,50,.4);opacity:.8">'
+      +'<div style="font-size:11px;font-weight:700;color:rgba(255,180,30,.8);margin-bottom:8px;display:flex;align-items:center;gap:6px">⏳ En lista de espera</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+      +'<div style="font-size:26px;width:42px;height:42px;border-radius:13px;background:var(--sun3);display:flex;align-items:center;justify-content:center">'+p.emoji+'</div>'
+      +'<div><div style="font-size:13px;font-weight:600;color:var(--ink)">'+_escHtml(p.name)+'</div>'
+      +'<div style="font-size:10px;color:var(--ink5)">Enviado '+_happyRelTime(p.ts)+'</div></div></div>'
+      +'<p style="font-size:13px;color:var(--ink3);line-height:1.6;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(p.text)+'"</p>'
+      +'</div>';
+  });
+  // Published mine
+  mine.forEach(function(h){ html += _happyPostCard(h, true); });
+  list.innerHTML = html;
+}
+
+function _happyPostCard(h, isOwn){
+  var timeLeft = _happyTimeLeft(h.ts);
+  var relTime  = _happyRelTime(h.ts);
+  var expColor = timeLeft && timeLeft.toLowerCase().indexOf('min') > -1 ? 'var(--rose)' : 'var(--ink5)';
+  var myReacted = safeLS('get','velo_happy_rx_'+h.id) || '';
+
+  // Reaction bar
+  var rxBar = _happyReactEmojis.map(function(e){
+    var cnt = (h.reactions && h.reactions[e]) || 0;
+    var active = myReacted === e;
+    return '<button onclick="pHappyReact(\''+h.id+'\',\''+e+'\')" style="padding:4px 9px;background:'+(active?'rgba(255,224,102,.35)':'rgba(255,255,255,.6)')+';border:1px solid '+(active?'rgba(255,200,50,.5)':'var(--border2)')+';border-radius:100px;font-size:12px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600;transition:all .15s">'+e+(cnt?' '+cnt:'')+'</button>';
+  }).join('');
+
+  // Comments
+  var comments = h.comments || [];
+  var commHtml = comments.slice(0,3).map(function(c){
+    return '<div style="display:flex;gap:7px;align-items:flex-start;margin-bottom:6px">'
+      +'<div style="font-size:14px;width:24px;height:24px;border-radius:50%;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0">🌿</div>'
+      +'<div style="background:var(--cream2);border-radius:0 10px 10px 10px;padding:6px 10px;flex:1">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:2px">'+_escHtml(c.name)+'</div>'
+      +'<div style="font-size:12px;color:var(--ink3);line-height:1.4">'+_escHtml(c.text)+'</div>'
+      +'</div></div>';
+  }).join('');
+  var moreComments = comments.length > 3 ? '<div style="font-size:11px;color:var(--sage);cursor:pointer;margin-bottom:8px">+ '+(comments.length-3)+' comentarios más</div>' : '';
+
+  return '<div class="happy-card">'
+    // header
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+    +'<div style="font-size:24px;width:40px;height:40px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:13px;font-weight:600;color:var(--ink)">'+_escHtml(h.name||'Usuario Anónimo')+'</div>'
+    +'<div style="font-size:10px;color:var(--ink5)">'+relTime+(isOwn?' · <strong style="color:var(--sage)">Tuya</strong>':'')+'</div>'
+    +'</div>'
+    +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap">⏳ '+timeLeft+'</span>' : '')
+    +'</div>'
+    // text
+    +'<p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:12px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(h.text)+'"</p>'
+    // reactions
+    +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+rxBar+'</div>'
+    // comments
+    +(commHtml ? '<div style="margin-bottom:8px">'+commHtml+moreComments+'</div>' : '')
+    // comment input (for published posts only — not demo)
+    +(h.id.startsWith('hm') ? '' :
+      '<div style="display:flex;gap:6px;align-items:center">'
+      +'<input id="cmt-'+h.id+'" class="p-input" style="flex:1;font-size:12px;padding:6px 10px;height:auto" placeholder="Agregar comentario…" maxlength="120" onkeydown="if(event.key===\'Enter\')pHappyComment(\''+h.id+'\')">'
+      +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:6px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:8px;font-size:12px;cursor:pointer;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700">💬</button>'
+      +'</div>')
+    +'</div>';
+}
+
+function pHappyTab(tab, el){
+  _happyActiveTab = tab;
+  document.querySelectorAll('.happy-tab').forEach(function(b){ b.classList.remove('active'); });
+  if(el) el.classList.add('active');
+  pRenderHappy();
+}
+
+function pHappyReact(postId, emoji){
+  var myReacted = safeLS('get','velo_happy_rx_'+postId);
+  if(myReacted === emoji){ pToast('💛','Ya reaccionaste con '+emoji); return; }
+  var posts = _happyLoad();
+  var post  = posts.find(function(p){ return p.id === postId; });
+  if(!post) return; // demo post — no persistence
+  if(!post.reactions) post.reactions = {};
+  // Remove previous reaction if switching
+  if(myReacted && post.reactions[myReacted] > 0) post.reactions[myReacted]--;
+  post.reactions[emoji] = (post.reactions[emoji] || 0) + 1;
+  _happySave(posts);
+  safeLS('set','velo_happy_rx_'+postId, emoji);
+
+  // Notify owner if it's not me
+  if(post.userId !== _myUserId() && post.userId !== 'demo'){
+    // In a real app, this would push to the owner; here it's a demo so we skip cross-user notify
+  }
+  pToast(emoji,'¡Alegría compartida!');
+  pRenderHappy();
+}
+
+function pHappyComment(postId){
+  var inp = document.getElementById('cmt-'+postId);
+  if(!inp || !inp.value.trim()) return;
+  var text = inp.value.trim();
+  var posts = _happyLoad();
+  var post  = posts.find(function(p){ return p.id === postId; });
+  if(!post) return;
+  if(!post.comments) post.comments = [];
+  var myName = safeLS('get','velo_user_name') || 'Vos';
+  post.comments.push({ name: myName, text: text, ts: Date.now() });
+  _happySave(posts);
+  inp.value = '';
+
+  // Notify post owner (if it's my own post, notify self for demo)
+  if(post.userId === _myUserId()){
+    // It's my own post — just re-render
+  } else {
+    pToast('💬','Comentario enviado 🌿');
+    // In a real app would push inbox to owner; demo skips cross-user
+  }
+  pRenderHappy();
 }
 
 function pOpenHappyPost(){
+  var posts = _processHappyQueue();
+  var queue = _happyQueueLoad();
+  var myId  = _myUserId();
+  var myQueued = queue.find(function(p){ return p.userId === myId; });
+  if(myQueued){
+    pToast('⏳','Ya tenés una publicación en lista de espera');
+    return;
+  }
   var ov = document.getElementById('happyPostOv');
   if(ov){ ov.classList.add('open'); }
   _selectedHappyEmoji = '☀️';
@@ -2218,13 +2407,38 @@ function pSelHappyEmoji(el, emoji){
 function pSubmitHappyPost(){
   var ta = document.getElementById('happyPostTa');
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí algo antes de publicar'); return; }
-  var name = safeLS('get','velo_user_name') || 'Usuario Anónimo';
-  var post = { id:'h'+Date.now(), emoji:_selectedHappyEmoji, text:ta.value.trim(), name:name, reactions:0, ts:Date.now() };
-  var happy = []; try{ happy = JSON.parse(safeLS('get','velo_happy')||'[]'); }catch(e){}
-  happy.unshift(post);
-  safeLS('set','velo_happy', JSON.stringify(happy.slice(0,50)));
-  closeModal('happyPostOv');
-  pToast('☀️','¡Momento compartido! Desaparece en 24h 💛');
+  var myId  = _myUserId();
+  var name  = safeLS('get','velo_user_name') || 'Usuario Anónimo';
+  var posts = _processHappyQueue();
+  var isAnon = safeLS('get','velo_incognito') === 'true';
+  var post  = {
+    id: 'h'+Date.now(), userId: myId,
+    emoji: _selectedHappyEmoji, text: ta.value.trim(),
+    name: isAnon ? 'Usuario Anónimo' : name,
+    ts: Date.now(), reactions: {'💛':0,'🌸':0,'🤗':0,'🌿':0,'✨':0}, comments: []
+  };
+
+  if(posts.length < HAPPY_MAX){
+    posts.unshift(post);
+    _happySave(posts);
+    closeModal('happyPostOv');
+    pToast('☀️','¡Publicado en el Muro! Desaparece en 24h 💛');
+  } else {
+    // Add to queue
+    var queue = _happyQueueLoad();
+    queue.push(post);
+    _happyQueueSave(queue);
+    closeModal('happyPostOv');
+    pToast('⏳','El muro está lleno ('+HAPPY_MAX+'/'+HAPPY_MAX+'). Tu publicación queda en lista de espera y se publicará automáticamente 🌿');
+    // Inbox notification
+    var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+    inbox.unshift({ id:'hqueue-'+Date.now(), tipo:'muro', icon:'⏳', remitente:'Muro de la Felicidad',
+      asunto:'Tu publicación está en lista de espera ⏳',
+      extracto:'El muro está lleno. Cuando expire una publicación de 24hs, la tuya se publicará automáticamente.',
+      leido:false, fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'}) });
+    safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+    _updateInboxDot();
+  }
   pRenderHappy();
 }
 
