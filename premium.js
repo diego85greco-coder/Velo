@@ -588,12 +588,54 @@ function _getBadge(convs){
 }
 
 var _guardianProfiles = [
-  { id:'g1', name:'Ana Luz',     av:'🌸', bio:'Pasé por momentos muy difíciles con la ansiedad y encontré el camino. Aquí para escucharte sin juzgar.', status:'on',   convs:89,  recommend:142, rating:4.9, tags:['ansiedad','estrés','duelo'],        review:{ txt:'Ana me ayudó a encontrar calma cuando más lo necesitaba.',                   auth:'Lucía M.' },  mood:'Disponible ahora'    },
-  { id:'g2', name:'Carlos R.',   av:'🌊', bio:'Sé lo que es sentirse solo en la oscuridad. Acompaño desde la empatía real, sin rollos, sin apuro.',      status:'on',   convs:63,  recommend:98,  rating:4.8, tags:['depresión','soledad','cambios'],      review:{ txt:'Con Carlos pude hablar de cosas que nunca había dicho en voz alta.',          auth:'Martín P.' }, mood:'Tranquilo hoy'        },
-  { id:'g3', name:'Valentina S.',av:'🦋', bio:'Viví de cerca el duelo y los cambios de familia. Cada historia merece ser escuchada con el tiempo que necesita.', status:'busy', convs:134, recommend:215, rating:5.0, tags:['familia','pérdida','crianza'],      review:{ txt:'Valentina tiene una capacidad enorme para sostener el dolor ajeno.',        auth:'Ana G.' },    mood:'En conversación'     },
-  { id:'g4', name:'Tomás L.',    av:'🌿', bio:'Aprendí a parar la pelota con el mindfulness cuando el burnout me desbordó. Te ayudo a respirar antes de reaccionar.', status:'on', convs:45, recommend:76, rating:4.7, tags:['mindfulness','burnout','trabajo'],   review:{ txt:'Tomás me enseñó a respirar antes de reaccionar.',                          auth:'Diego F.' },  mood:'Abierto a charlar'   },
-  { id:'g5', name:'Sofía N.',    av:'🌙', bio:'Las noches difíciles no deberían atravesarse solas. Estoy especialmente disponible cuando el mundo duerme.', status:'on',   convs:112, recommend:189, rating:4.9, tags:['insomnio','angustia','noche'],        review:{ txt:'Encontrar a alguien disponible a las 3am fue un regalo.',                    auth:'Renata V.' }, mood:'Disponible de noche'  },
-  { id:'g6', name:'Emilio T.',   av:'🏔️', bio:'Entiendo el peso del trauma y la crisis. Acompaño sin prisa, paso a paso, desde un lugar que también conocí.',  status:'off',  convs:38,  recommend:54,  rating:4.6, tags:['trauma','crisis','resiliencia'],     review:{ txt:'Emilio me ayudó a entender que lo que sentía era válido.',                   auth:'Camila H.' }, mood:'Descansando'          }
+  { id:'g1', name:'Ana Luz',     av:'🌸', bio:'Pasé por momentos muy difíciles con la ansiedad y encontré el camino. Estoy aquí para escucharte sin juzgar, desde la experiencia propia.', status:'on',   convs:89,  recommend:142, rating:4.9, tags:['ansiedad','estrés','duelo'],
+    reviews:[
+      { txt:'Ana me ayudó a encontrar calma cuando más lo necesitaba. Nunca me sentí sola.', auth:'Lucía M.', stars:5 },
+      { txt:'Escucha de verdad. No da consejos vacíos, simplemente está presente.', auth:'Valentina R.', stars:5 },
+      { txt:'Hablé cosas que nunca dije en voz alta. Fue un alivio enorme.', auth:'Paula S.', stars:5 },
+      { txt:'Muy empática y paciente. Me acompañó en un momento muy oscuro.', auth:'Marcela F.', stars:5 },
+      { txt:'No sé qué hubiera hecho sin este espacio. Gracias Ana.', auth:'Usuario Anónimo', stars:5 }
+    ], mood:'Disponible ahora' },
+  { id:'g2', name:'Carlos R.',   av:'🌊', bio:'Sé lo que es sentirse solo en la oscuridad. Acompaño desde la empatía real, sin rodeos, sin apuro. Viví situaciones difíciles y quiero ayudarte.',      status:'on',   convs:63,  recommend:98,  rating:4.8, tags:['depresión','soledad','cambios'],
+    reviews:[
+      { txt:'Con Carlos pude hablar de cosas que nunca había dicho en voz alta.', auth:'Martín P.', stars:5 },
+      { txt:'Me escuchó sin juzgar. Se notaba que entendía desde adentro.', auth:'Santiago G.', stars:5 },
+      { txt:'Muy honesto y directo. Exactamente lo que necesitaba.', auth:'Rodrigo M.', stars:4 },
+      { txt:'Gracias por estar disponible en ese momento tan duro.', auth:'Usuario Anónimo', stars:5 },
+      { txt:'Me ayudó a ver las cosas desde otro ángulo sin presionarme.', auth:'Nicolás V.', stars:4 }
+    ], mood:'Tranquilo hoy' },
+  { id:'g3', name:'Valentina S.',av:'🦋', bio:'Viví de cerca el duelo y los cambios de familia. Cada historia merece ser escuchada con el tiempo que necesita, sin apuro.', status:'busy', convs:134, recommend:215, rating:5.0, tags:['familia','pérdida','crianza'],
+    reviews:[
+      { txt:'Valentina tiene una capacidad enorme para sostener el dolor ajeno.', auth:'Ana G.', stars:5 },
+      { txt:'Hablar con ella fue como recibir un abrazo. Muy recomendada.', auth:'Florencia T.', stars:5 },
+      { txt:'Entendió mi situación de familia sin que tuviera que explicar demasiado.', auth:'Carla N.', stars:5 },
+      { txt:'Paciente, cálida y genuina. No puede pedir más en estos momentos.', auth:'Jimena L.', stars:5 },
+      { txt:'Me acompañó en el duelo de una manera que nunca esperé encontrar online.', auth:'Usuario Anónimo', stars:5 }
+    ], mood:'En conversación' },
+  { id:'g4', name:'Tomás L.',    av:'🌿', bio:'Aprendí a parar la pelota con mindfulness cuando el burnout me desbordó. Te ayudo a respirar antes de reaccionar, desde lo que a mí me funcionó.', status:'on', convs:45, recommend:76, rating:4.7, tags:['mindfulness','burnout','trabajo'],
+    reviews:[
+      { txt:'Tomás me enseñó a respirar antes de reaccionar.', auth:'Diego F.', stars:5 },
+      { txt:'Muy tranquilo y ordenado. Me ayudó a bajar la ansiedad laboral.', auth:'Facundo H.', stars:4 },
+      { txt:'Práctico y concreto. Sin vueltas. Justo lo que necesitaba.', auth:'Ignacio B.', stars:5 },
+      { txt:'Me dio herramientas reales que uso todos los días.', auth:'Usuario Anónimo', stars:4 },
+      { txt:'Hablar con él fue como darle un descanso a mi cabeza.', auth:'Matías C.', stars:5 }
+    ], mood:'Abierto a charlar' },
+  { id:'g5', name:'Sofía N.',    av:'🌙', bio:'Las noches difíciles no deberían atravesarse solas. Estoy especialmente disponible cuando el mundo duerme, porque yo también conocí esos momentos.', status:'on',   convs:112, recommend:189, rating:4.9, tags:['insomnio','angustia','noche'],
+    reviews:[
+      { txt:'Encontrar a alguien disponible a las 3am fue un regalo.', auth:'Renata V.', stars:5 },
+      { txt:'Sofía entiende lo que es la angustia nocturna. No hay que explicar mucho.', auth:'Agustina M.', stars:5 },
+      { txt:'Me ayudó a calmarme en una noche muy difícil. Eternamente agradecida.', auth:'Usuario Anónimo', stars:5 },
+      { txt:'Muy presente, muy cálida. Sabe cuándo hablar y cuándo simplemente escuchar.', auth:'Luciana P.', stars:5 },
+      { txt:'Gracias por existir en este espacio. Te salvé a mi lista de favoritos.', auth:'Daniela R.', stars:4 }
+    ], mood:'Disponible de noche' },
+  { id:'g6', name:'Emilio T.',   av:'🏔️', bio:'Entiendo el peso del trauma y la crisis desde adentro. Acompaño sin prisa, paso a paso, porque sé lo que cuesta dar el primer paso.',  status:'off',  convs:38,  recommend:54,  rating:4.6, tags:['trauma','crisis','resiliencia'],
+    reviews:[
+      { txt:'Emilio me ayudó a entender que lo que sentía era válido.', auth:'Camila H.', stars:5 },
+      { txt:'Muy serio y comprometido. Notás que lo hace de corazón.', auth:'Sebastián T.', stars:4 },
+      { txt:'Me acompañó en un momento de crisis sin juzgarme. Gracias.', auth:'Usuario Anónimo', stars:5 },
+      { txt:'Habla desde la experiencia propia. Eso hace toda la diferencia.', auth:'Gonzalo R.', stars:5 },
+      { txt:'Pausado, tranquilo, sin apuro. Exactamente lo que necesitaba.', auth:'Tomás A.', stars:4 }
+    ], mood:'Descansando' }
 ];
 
 var _curGuardian = null;
@@ -647,7 +689,7 @@ function pRenderGuardians(){
     var statusColor = g.status==='disponible'?'var(--st-on)':g.status==='ocupado'?'#C8A200':'rgba(150,150,150,.5)';
     var statusLabel = g.status==='disponible'?'Disponible':g.status==='ocupado'?'Ocupado':'Anónimo';
     var isAnon = g.status==='incognito';
-    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+(isAnon?'Guardián Anónimo':g.name)+'</span><span style="font-size:14px">'+badge.icon+'</span></div><div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0">'+(isAnon?'Disponible de forma anónima':g.bio)+'</p></div><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(g.status==='ocupado'?'pToast(\'🟡\',\''+g.name+' está ocupado/a ahora\')':'pAskGuardian(\''+g.id+'\')')+'">'+(g.status==='ocupado'?'Ocupado/a':'Acompañar')+'</button></div></div>';
+    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+(isAnon?'Guardián Anónimo':g.name)+'</span><span style="font-size:14px">'+badge.icon+'</span></div><div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0">'+(isAnon?'Disponible de forma anónima':g.bio)+'</p></div><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(g.status==='ocupado'?'pToast(\'🟡\',\''+g.name+' está ocupado/a ahora\')':'pOpenGuardian(\''+g.id+'\')')+'">'+(g.status==='ocupado'?'Ocupado/a':'Solicitar')+'</button></div></div>';
   }).join('');
 }
 
@@ -707,7 +749,14 @@ function pOpenGuardian(id){
     }
   }
   var rvEl = document.getElementById('gdReviews');
-  if(rvEl) rvEl.innerHTML = '<div class="p-review-card"><div class="p-row" style="margin-bottom:8px"><span style="font-size:14px">⭐⭐⭐⭐⭐</span></div><p class="p-rv-txt">"'+g.review.txt+'"</p><div style="font-size:11px;color:var(--ink5)">— '+g.review.auth+'</div></div>';
+  if(rvEl){
+    var rvs = g.reviews || (g.review ? [g.review] : []);
+    var maxShow = Math.min(rvs.length, 10);
+    var starsMap = function(n){ return '⭐'.repeat(n||5); };
+    rvEl.innerHTML = rvs.slice(0, maxShow).map(function(r){
+      return '<div class="p-review-card" style="margin-bottom:12px"><div class="p-row" style="margin-bottom:6px"><span style="font-size:13px">'+starsMap(r.stars)+'</span></div><p class="p-rv-txt">&#8220;'+r.txt+'&#8221;</p><div style="font-size:11px;color:var(--ink5)">— '+r.auth+'</div></div>';
+    }).join('') || '<p class="p-sm p-muted">Sin reseñas aún.</p>';
+  }
   pGoTo('guardian-detail');
 }
 
@@ -721,14 +770,14 @@ function pAskGuardian(){
   if(lbl) lbl.textContent = _curGuardian.name;
   var ta = document.getElementById('askGuardianTa');
   if(ta) ta.value = '';
-  if(ov) ov.classList.add('open');
+  if(ov) ov.classList.add('show');
 }
 
 function pConfirmAskGuardian(){
   // Set guardian as busy during chat
   safeLS('set','velo_guardian_status','ocupado');
   var ov = document.getElementById('askGuardianOv');
-  if(ov) ov.classList.remove('open');
+  if(ov) ov.classList.remove('show');
   pToast('💚','Solicitud enviada a '+(_curGuardian ? _curGuardian.name : 'el guardián')+'…');
   setTimeout(function(){
     pToast('🌿',(_curGuardian ? _curGuardian.name : 'Tu guardián')+' aceptó acompañarte ✨');
@@ -2617,7 +2666,7 @@ function pSelCircleEmoji(btn, emoji){
 function pReportCircle(){
   var circleName = _curCircle ? _curCircle.name : 'este círculo';
   var ov = document.createElement('div');
-  ov.className = 'p-modal-ov open';
+  ov.className = 'p-modal-ov show';
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:8px">⚠️ Reportar comportamiento</div>'
@@ -2928,7 +2977,7 @@ function pOpenHappyPost(){
     return;
   }
   var ov = document.getElementById('happyPostOv');
-  if(ov){ ov.classList.add('open'); }
+  if(ov){ ov.classList.add('show'); }
   _selectedHappyEmoji = '☀️';
   var ta = document.getElementById('happyPostTa');
   if(ta) ta.value = '';

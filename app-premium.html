@@ -105,6 +105,19 @@
         <span class="p-sn-icon">📞</span>
         <span class="p-sn-label">Contacto</span>
       </button>
+      <div class="p-sidebar-section">Bienestar</div>
+      <button class="p-sn-item" data-screen="calm-ai" onclick="pGoTo('calm-ai')">
+        <span class="p-sn-icon">🤖</span>
+        <span class="p-sn-label">Velo IA</span>
+      </button>
+      <button class="p-sn-item" data-screen="respira" onclick="pGoTo('respira')">
+        <span class="p-sn-icon">🌬️</span>
+        <span class="p-sn-label">Respira</span>
+      </button>
+      <button class="p-sn-item" data-screen="vela" onclick="pGoTo('vela')">
+        <span class="p-sn-icon">🕯️</span>
+        <span class="p-sn-label">Vela por Ti</span>
+      </button>
     </nav>
     <div class="p-sidebar-footer">
       <div class="p-user-mini" onclick="pGoTo('profile')">
@@ -188,13 +201,13 @@
               <div class="land-feat-card reveal" data-delay="1">
                 <div class="land-feat-icon" style="background:linear-gradient(135deg,var(--sage6),var(--sage5))">🛡️</div>
                 <h3 class="p-title" style="font-size:20px;margin-bottom:8px">Guardianes</h3>
-                <p class="p-body">Conectate con personas entrenadas para escuchar y acompañar. Disponibles cuando más los necesitás.</p>
+                <p class="p-body">Conectate con usuarios de la comunidad que, desde su experiencia vivida, quieren acompañarte y escucharte en momentos difíciles. Sin juicios, sin apuro.</p>
                 <p class="land-feat-quote">"Tener a alguien que me escuchara sin juzgar cambió todo para mí."</p>
               </div>
               <div class="land-feat-card reveal" data-delay="2">
                 <div class="land-feat-icon" style="background:linear-gradient(135deg,#1a4a2e,#2d6a4f)">🤝</div>
                 <h3 class="p-title" style="font-size:20px;margin-bottom:8px">Sala de Ayuda</h3>
-                <p class="p-body">Un espacio seguro y anónimo donde podés pedir apoyo en momentos difíciles. Siempre hay alguien.</p>
+                <p class="p-body">Publicá lo que te está pasando y un Guardián de la comunidad te acompañará. Apoyo entre pares, anónimo y sin juicios.</p>
                 <p class="land-feat-quote">"Cuando sentí que no podía más, encontré aquí la ayuda que necesitaba."</p>
               </div>
               <div class="land-feat-card reveal" data-delay="3">
@@ -320,7 +333,7 @@
               <img src="assets/logo.png" alt="Velo" style="height:72px;width:auto;object-fit:contain;object-position:left;margin-bottom:18px;filter:brightness(0) invert(1);">
               <p class="auth-left-tagline">Acompañamos emociones en cada paso del camino</p>
               <div class="auth-left-feat">
-                <div class="auth-feat-row"><div class="auth-feat-icon">🛡️</div><div class="auth-feat-text"><strong style="color:#fff">Guardianes disponibles</strong><br>Personas entrenadas para escuchar</div></div>
+                <div class="auth-feat-row"><div class="auth-feat-icon">🛡️</div><div class="auth-feat-text"><strong style="color:#fff">Guardianes disponibles</strong><br>Comunidad que escucha desde la experiencia</div></div>
                 <div class="auth-feat-row"><div class="auth-feat-icon">🔒</div><div class="auth-feat-text"><strong style="color:#fff">100% privado y seguro</strong><br>Tu espacio, tus reglas</div></div>
                 <div class="auth-feat-row"><div class="auth-feat-icon">💚</div><div class="auth-feat-text"><strong style="color:#fff">Comunidad de apoyo</strong><br>No estás solo/a</div></div>
               </div>
@@ -558,6 +571,38 @@
                 <span class="p-pill p-pill--sage">Relajación</span>
               </div>
             </div>
+            <div class="p-card p-card--feature p-card--hover fc-warm" onclick="pGoTo('news')" style="background:linear-gradient(135deg,rgba(255,200,80,.18),rgba(255,170,50,.10))">
+              <span class="p-card-icon">🌞</span>
+              <div class="p-card-title">Buenas Noticias</div>
+              <div class="p-card-sub">Historias que dan esperanza</div>
+              <div class="p-card-foot">
+                <span class="p-pill" style="background:rgba(255,200,80,.2);color:#8B6000;border:1px solid rgba(255,200,80,.3)">Diario · IA</span>
+              </div>
+            </div>
+            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('calm-ai')" style="background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(45,106,79,.12))">
+              <span class="p-card-icon">🤖</span>
+              <div class="p-card-title">Hablar con Velo IA</div>
+              <div class="p-card-sub">Tu acompañante inteligente</div>
+              <div class="p-card-foot">
+                <span class="p-pill p-pill--sage">Disponible 24h</span>
+              </div>
+            </div>
+            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('respira')" style="background:linear-gradient(135deg,rgba(135,206,235,.18),rgba(70,130,180,.10))">
+              <span class="p-card-icon">🌬️</span>
+              <div class="p-card-title">Respiración</div>
+              <div class="p-card-sub">Técnica 4-7-8 guiada</div>
+              <div class="p-card-foot">
+                <span class="p-pill p-pill--sky">Calma</span>
+              </div>
+            </div>
+            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('vela')" style="background:linear-gradient(135deg,rgba(183,228,199,.25),rgba(168,212,232,.15))">
+              <span class="p-card-icon">🕯️</span>
+              <div class="p-card-title">Velo Vela por Ti</div>
+              <div class="p-card-sub">Sesiones solidarias</div>
+              <div class="p-card-foot">
+                <span class="p-pill" style="background:rgba(45,106,79,.12);color:var(--sage2);border:1px solid rgba(45,106,79,.18)">Gratuito</span>
+              </div>
+            </div>
           </div>
           <!-- More options -->
           <div class="home-wide-card">
@@ -593,7 +638,7 @@
                 </div>
               </div>
             </div>
-            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Los Guardianes son miembros de la comunidad entrenados para escuchar sin juzgar. Podés pedir un acompañamiento anónimo cuando lo necesitás.</p>
+            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Los Guardianes son usuarios de Velo que, desde su propia experiencia y vivencias, eligen estar disponibles para escuchar y acompañar a otras personas en momentos difíciles. Sin juicios, sin apuro — solo presencia.</p>
             <div id="myGuardianStatus" style="margin-bottom:12px"></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="guardianStatusBar">
               <button class="p-filter-chip active" onclick="pFilterGuardians('all',this)">Todos</button>
@@ -641,7 +686,7 @@
                   <div class="p-label p-label-sage" style="margin-bottom:8px">Sobre este guardián/a</div>
                   <p style="font-size:13px;color:var(--ink3);line-height:1.55;margin-bottom:12px;font-style:italic" id="gdDesc">Descripción del guardián.</p>
                   <div id="gdMoodTags" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
-                  <p style="font-size:12px;color:var(--ink4);margin-bottom:14px;line-height:1.5">Los guardianes son miembros de la comunidad Velo que ofrecen escucha activa y acompañamiento entre pares. No son profesionales de salud mental.</p>
+                  <p style="font-size:12px;color:var(--ink4);margin-bottom:14px;line-height:1.5">Los Guardianes son usuarios de la comunidad que, desde su experiencia propia, eligen acompañar a otros en momentos difíciles. No son profesionales de salud mental — son personas que saben lo que es necesitar apoyo.</p>
                   <button class="p-btn p-btn--primary p-btn--lg p-btn--full" id="gdAskBtn" onclick="pAskGuardian()">
                     💚 Pedir acompañamiento
                   </button>
