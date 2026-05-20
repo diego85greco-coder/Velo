@@ -321,11 +321,11 @@ async function pSignOut(){
 
 function pShowTerms(){
   var ov = document.getElementById('termsOv');
-  if(ov) ov.classList.add('open');
+  if(ov) ov.classList.add('show');
 }
 function pShowPrivacy(){
   var ov = document.getElementById('privacyOv');
-  if(ov) ov.classList.add('open');
+  if(ov) ov.classList.add('show');
 }
 
 function pShowForgot(){
@@ -339,7 +339,7 @@ function pShowForgot(){
   if(fEmail && val) fEmail.value = val;
   if(sentDiv) sentDiv.style.display = 'none';
   if(formDiv) formDiv.style.display = '';
-  ov.classList.add('open');
+  ov.classList.add('show');
 }
 
 async function pSendPassReset(){
@@ -2220,7 +2220,7 @@ function pOpenSurvey(){
   var ta = ov.querySelector('#surveyTa');
   if(ta) ta.value = '';
   ov.querySelectorAll('.survey-func-btn').forEach(function(b){ b.classList.remove('selected'); });
-  ov.classList.add('open');
+  ov.classList.add('show');
 }
 
 function pSurveyRate(q, val, el){
@@ -2805,7 +2805,7 @@ function pOpenCreateCircle(){
     return;
   }
   var ov = document.getElementById('createCircleOv');
-  if(ov) ov.classList.add('open');
+  if(ov) ov.classList.add('show');
 }
 
 function pSubmitCreateCircle(){
@@ -3268,7 +3268,7 @@ function _renderAvatarEl(elId, av){
 
 function pShowAvatarPicker(){
   var ov = document.getElementById('avatarPickerOv');
-  if(ov) ov.classList.add('open');
+  if(ov) ov.classList.add('show');
 }
 
 function pSetAvatar(emoji){
@@ -4290,7 +4290,7 @@ function pAdminMassMessage(target){
   var label = target === 'pros' ? 'profesionales' : 'usuarios';
   var icon  = target === 'pros' ? '🩺' : '👥';
   var ov = document.createElement('div');
-  ov.className = 'p-modal-ov open';
+  ov.className = 'p-modal-ov show';
   ov.id = 'massMessageOv';
   ov.style.zIndex = '9999';
   ov.innerHTML = '<div class="p-sheet" style="background:#0F2016;border:1px solid rgba(116,198,157,.2);overflow-y:auto;max-height:90vh">'
@@ -4838,7 +4838,7 @@ function _getDailyStatus(){
 function pReportContent(type, id, preview){
   var reasons = ['Contenido agresivo o hiriente','Discurso de odio o discriminación','Spam o autopromoción','Información médica incorrecta o peligrosa','Acoso o bullying','Sugerencias de autolesión','Otro'];
   var ov = document.createElement('div');
-  ov.className = 'p-modal-ov open';
+  ov.className = 'p-modal-ov show';
   ov.id = 'globalReportOv';
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
@@ -4888,7 +4888,7 @@ function _isHidden(type, id){
 // ── PROFILE EXTRAS: DELETE ACCOUNT, CANCEL SUB, CONTACT ────────
 function pDeleteAccount(){
   var ov = document.createElement('div');
-  ov.className = 'p-modal-ov open';
+  ov.className = 'p-modal-ov show';
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-size:32px;text-align:center;margin-bottom:10px">⚠️</div>'
@@ -4921,7 +4921,7 @@ function pCancelSubscription(){
   var hasSub = _isPremium();
   if(!hasSub){ pToast('ℹ️','No tenés una suscripción activa'); return; }
   var ov = document.createElement('div');
-  ov.className = 'p-modal-ov open';
+  ov.className = 'p-modal-ov show';
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-size:32px;text-align:center;margin-bottom:10px">⭐</div>'
@@ -4947,7 +4947,7 @@ function pConfirmCancelSub(ov){
 
 function pContactUs(){
   var ov = document.createElement('div');
-  ov.className = 'p-modal-ov open';
+  ov.className = 'p-modal-ov show';
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:8px">Contactanos 💚</div>'
