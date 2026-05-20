@@ -17,13 +17,13 @@
 var GEMINI_KEY    = 'AIzaSyBilVllciOwMx-OsGiWiy_Q10NmDEzD9s8';
 var GEMINI_URL    = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=';
 
-async function _geminiCall(prompt){
+async function _geminiCall(prompt, cfg){
   try{
     var res = await fetch(GEMINI_URL + GEMINI_KEY, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }],
-        generationConfig:{ temperature:0.7, maxOutputTokens:300 } })
+        generationConfig: Object.assign({ temperature:0.7, maxOutputTokens:300 }, cfg||{}) })
     });
     var json = await res.json();
     return json.candidates && json.candidates[0] && json.candidates[0].content &&
@@ -1087,6 +1087,40 @@ async function _geminiModerateContent(text, section){
 
 // ── BUENAS NOTICIAS ────────────────────────────────────────────
 // ── SALUDO DIARIO IA ────────────────────────────────────────────
+// 30 rotating themes — one per day of the month, guarantees variety
+var _greetingTemas = [
+  'la gratitud por las pequeñas cosas cotidianas',
+  'el valor de pedir ayuda cuando uno lo necesita',
+  'los momentos de pausa y descanso consciente',
+  'la conexión genuina con otras personas',
+  'el autocuidado sin culpa ni excusas',
+  'la resiliencia y la fortaleza que no siempre se ve',
+  'la naturaleza y la calma que transmite',
+  'vivir el presente en vez de anticipar el futuro',
+  'los pequeños logros que merecen celebrarse',
+  'la importancia de escucharse a uno mismo',
+  'el descanso como acto de valentía',
+  'los vínculos que nos sostienen cuando flaquea la energía',
+  'la curiosidad como forma de sanar',
+  'cómo el cuerpo guarda las emociones',
+  'la creatividad y la expresión emocional',
+  'la esperanza aunque sea pequeña e incierta',
+  'los rituales simples que ordenan el día',
+  'la compasión hacia uno mismo',
+  'lo que nos inspira y nos mueve',
+  'la imperfección como parte hermosa de ser humano',
+  'el humor suave como alivio y medicina',
+  'los recuerdos buenos que dan fuerza hoy',
+  'el silencio y lo que uno descubre en él',
+  'los cambios como oportunidad disfrazada',
+  'la energía de los comienzos y las nuevas páginas',
+  'el acompañamiento mutuo en comunidad',
+  'el coraje de mostrarse vulnerable',
+  'soltar lo que no se puede controlar',
+  'los abrazos como forma de decir "estoy acá"',
+  'el significado único que cada persona le da a su vida'
+];
+
 var _greetingFallbacks = [
   'Cada día que abrís Velo es un paso hacia vos mismo/a. Ojalá hoy encuentres un momento de calma 🌿',
   'Qué bueno tenerte acá. Este espacio es tuyo — sin apuros, sin juicios 💚',
@@ -1097,7 +1131,27 @@ var _greetingFallbacks = [
   'Que este rato que le das a tu bienestar te haga bien de verdad. Te lo merecés 🌿',
   'Cada pequeño paso que das hacia tu bienestar importa más de lo que creés ✨',
   'No hace falta tener todo resuelto para estar acá. Solo llegar ya es suficiente 💚',
-  'Tu bienestar merece tiempo y atención. Gracias por dártelo hoy 🌱'
+  'Tu bienestar merece tiempo y atención. Gracias por dártelo hoy 🌱',
+  'Hoy tiene algo tuyo. Aprovechá aunque sea un minutito para vos 🌸',
+  'Que el día de hoy te sorprenda con algo bueno, aunque sea pequeño 💙',
+  'Cada vez que te cuidás, le enseñás a otros que también pueden hacerlo 🌿',
+  'Estamos acá, acompañándote sin juzgar. Siempre 💚',
+  'Lo que sentís hoy es válido. Todo es bienvenido acá ✨',
+  'Un día a la vez. Eso es suficiente 🌱',
+  'El hecho de que estés acá ya dice mucho de vos 🌸',
+  'Que la jornada de hoy te traiga aunque sea un momento de alivio 💙',
+  'No necesitás tener todo claro para avanzar. Solo seguir 🌿',
+  'Gracias por darte este espacio. Te lo merecés siempre 💚',
+  'Cada pequeña pausa cuenta. No lo subestimes ✨',
+  'Hoy es un buen día para ser un poco más amable con vos mismo/a 🌱',
+  'Lo mejor que podés hacer hoy es cuidarte. Empezá por acá 🌸',
+  'La calma no siempre llega sola — a veces hay que buscarla 💙',
+  'Que hoy encuentres algo que te recuerde por qué vale la pena 🌿',
+  'No estás solo/a. Nunca 💚',
+  'Tu presencia acá importa más de lo que creés ✨',
+  'Hoy, como ayer, este espacio es completamente tuyo 🌱',
+  'Que lo de hoy sea más liviano que lo de ayer 🌸',
+  'Gracias por volver. Siempre es bueno verte por acá 💙'
 ];
 
 async function _checkDailyGreeting(){
@@ -1107,24 +1161,31 @@ async function _checkDailyGreeting(){
   var cached = safeLS('get','velo_greeting_'+today);
   if(cached){ _showDailyGreeting(cached); return; }
 
-  // Generate with Gemini
-  var d    = new Date();
-  var h    = d.getHours();
-  var momento = h < 12 ? 'mañana' : h < 19 ? 'tarde' : 'noche';
-  var dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  var dia  = dias[d.getDay()];
-  var name = safeLS('get','velo_user_name') || '';
+  var d        = new Date();
+  var h        = d.getHours();
+  var momento  = h < 12 ? 'mañana' : h < 19 ? 'tarde' : 'noche';
+  var dias     = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  var dia      = dias[d.getDay()];
+  var meses    = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var fechaFull = d.getDate()+' de '+meses[d.getMonth()]+' de '+d.getFullYear();
+  var name     = safeLS('get','velo_user_name') || '';
 
-  var prompt = 'Sos el acompañante de bienestar de Velo, una app de salud mental peer-to-peer. '
-    +'Generá un mensaje de bienvenida muy corto y cálido para'+( name ? ' '+name : ' un usuario')
-    +' que acaba de abrir la app. Es '+momento+' del '+dia+'. '
-    +'El mensaje debe tener 1-2 oraciones cortas, ser genuino y empático sin ser exagerado, '
-    +'usar español rioplatense (vos, te), terminar con un emoji suave (🌿 💚 ✨ 🌱 🌸 💙). '
-    +'Varía el estilo cada vez: a veces reflexivo, a veces motivador, a veces simplemente cálido. '
+  // Pick today's theme using day-of-year so it rotates through all 30
+  var startOfYear = new Date(d.getFullYear(), 0, 0);
+  var dayOfYear   = Math.floor((d - startOfYear) / 86400000);
+  var tema        = _greetingTemas[dayOfYear % _greetingTemas.length];
+
+  var prompt = 'Sos el acompañante de bienestar de Velo, una app de salud mental peer-to-peer.\n'
+    +'Generá un mensaje de bienvenida breve y muy cálido para'+( name ? ' '+name : ' un usuario')
+    +'. Hoy es '+fechaFull+', '+momento+' del '+dia+'.\n'
+    +'El mensaje de HOY debe girar alrededor del tema: "'+tema+'".\n'
+    +'Reglas: 1-2 oraciones cortas. Genuino, empático, no exagerado. '
+    +'Español rioplatense (vos, te). Terminá con un emoji suave (🌿 💚 ✨ 🌱 🌸 💙 🫂). '
+    +'Cada día debe sentirse diferente — variá el tono, la estructura y las palabras. '
     +'Respondé SOLO con el mensaje, sin comillas ni explicaciones.';
 
-  var msg = await _geminiCall(prompt);
-  if(!msg || msg.length > 200){
+  var msg = await _geminiCall(prompt, { temperature: 0.92, maxOutputTokens: 80 });
+  if(!msg || msg.length > 220){
     msg = _greetingFallbacks[d.getDate() % _greetingFallbacks.length];
   }
 
@@ -4498,6 +4559,7 @@ var _logoClickCount = 0;
 var _logoClickTimer = null;
 function pLogoClick(){
   _logoClickCount++;
+  console.log('Clic en el logo: ' + _logoClickCount);
   if(_logoClickTimer) clearTimeout(_logoClickTimer);
   _logoClickTimer = setTimeout(function(){ _logoClickCount = 0; }, 2500);
   if(_logoClickCount >= 4){
