@@ -111,6 +111,20 @@ function _incDailyLimit(type){
   safeLS('set',k, String(parseInt(safeLS('get',k)||'0',10)+1));
 }
 
+// ── PRO CALENDAR & BOOKING ─────────────────────────────────────
+var _BOOKING_HOURS = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
+var _CAL_DAY_NAMES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+var _CAL_DAY_NAMES_LONG = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+var _CAL_MONTH_SHORT = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+var _CAL_MONTH_LONG = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+function _proAvailKey(id){ return 'velo_pro_avail_'+id; }
+function _proBookingsKey(id){ return 'velo_pro_bookings_'+id; }
+function _proAvailLoad(id){ try{ return JSON.parse(safeLS('get',_proAvailKey(id))||'{}'); }catch(e){ return {}; } }
+function _proAvailSave(id,a){ safeLS('set',_proAvailKey(id),JSON.stringify(a)); }
+function _proBookingsLoad(id){ try{ return JSON.parse(safeLS('get',_proBookingsKey(id))||'[]'); }catch(e){ return []; } }
+function _proBookingsSave(id,b){ safeLS('set',_proBookingsKey(id),JSON.stringify(b)); }
+
 // ── TOAST ───────────────────────────────────────────────────
 var _toastTimer = null;
 function pToast(emoji, msg){
