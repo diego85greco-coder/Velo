@@ -3664,10 +3664,19 @@ function _happyPostCard(h, isOwn){
   }).join('');
   var moreComments = comments.length > 3 ? '<div style="font-size:11px;color:var(--sage);cursor:pointer;margin-bottom:8px">+ '+(comments.length-3)+' comentarios más</div>' : '';
 
+  // Avatar: profile photo if available, else mood emoji
+  var hasPhoto = h.av && (h.av.startsWith('data:') || h.av.startsWith('http'));
+  var avatarHtml = hasPhoto
+    ? '<div style="position:relative;width:40px;height:40px;flex-shrink:0">'
+      +'<img src="'+_escHtml(h.av)+'" style="width:40px;height:40px;border-radius:12px;object-fit:cover;display:block">'
+      +'<span style="position:absolute;bottom:-3px;right:-3px;font-size:14px;line-height:1">'+h.emoji+'</span>'
+      +'</div>'
+    : '<div style="font-size:24px;width:40px;height:40px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>';
+
   return '<div class="happy-card">'
     // header
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
-    +'<div style="font-size:24px;width:40px;height:40px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>'
+    + avatarHtml
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:13px;font-weight:600;color:var(--ink)">'+_escHtml(h.name||'Usuario Anónimo')+'</div>'
     +'<div style="font-size:10px;color:var(--ink5)">'+relTime+(isOwn?' · <strong style="color:var(--sage)">Tuya</strong>':'')+'</div>'
@@ -3752,9 +3761,12 @@ function pOpenHappyPost(){
   var ta = document.getElementById('happyPostTa');
   if(ta) ta.value = '';
   var emojiRow = document.getElementById('happyEmojiRow');
-  if(emojiRow) emojiRow.innerHTML = _happyEmojis.map(function(e){
-    return '<button style="font-size:20px;padding:4px 5px;border:2px solid '+(e==='☀️'?'rgba(255,200,50,.6)':'transparent')+';border-radius:9px;background:none;cursor:pointer;transition:border-color .15s" onclick="pSelHappyEmoji(this,\''+e+'\')">'+e+'</button>';
-  }).join('');
+  if(emojiRow){
+    emojiRow.innerHTML = _happyEmojis.map(function(e){
+      return '<button style="font-size:18px;padding:3px 4px;border:2px solid '+(e==='☀️'?'rgba(255,200,50,.6)':'transparent')+';border-radius:8px;background:none;cursor:pointer;transition:border-color .15s;flex-shrink:0" onclick="pSelHappyEmoji(this,\''+e+'\')">'+e+'</button>';
+    }).join('');
+    emojiRow.style.cssText += ';-webkit-overflow-scrolling:touch';
+  }
   var preview = document.getElementById('happyPhotoPreview');
   if(preview) preview.style.display = 'none';
 }
@@ -3815,9 +3827,11 @@ function pSubmitHappyPost(){
   var name  = safeLS('get','velo_user_name') || 'Usuario Anónimo';
   var posts = _processHappyQueue();
   var isAnon = safeLS('get','velo_incognito') === 'true';
+  var userAv = isAnon ? '' : (safeLS('get','velo_user_av') || '');
   var post  = {
     id: 'h'+Date.now(), userId: myId,
     emoji: _selectedHappyEmoji,
+    av: userAv,
     text: ta ? ta.value.trim() : '',
     name: isAnon ? 'Usuario Anónimo' : name,
     ts: Date.now(), reactions: {'💛':0,'🌸':0,'🤗':0,'🌿':0,'✨':0}, comments: [],

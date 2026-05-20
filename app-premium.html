@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260520-27">
+  <link rel="stylesheet" href="premium.css?v=20260520-28">
 </head>
 <body>
 
@@ -1251,8 +1251,8 @@
           <!-- Compose box -->
           <div style="padding:12px 16px 14px">
             <div style="background:rgba(255,224,102,.12);border:1.5px solid rgba(255,200,50,.25);border-radius:14px;padding:12px 14px">
-              <!-- Emoji row -->
-              <div id="happyEmojiRow" style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:9px"></div>
+              <!-- Emoji row — single scrollable line -->
+              <div id="happyEmojiRow" style="display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;margin-bottom:9px;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:1px"></div>
               <!-- Text area -->
               <textarea class="p-textarea" id="happyPostTa" rows="2" placeholder="¿Qué momento de alegría querés compartir hoy? ✨" maxlength="300" style="background:rgba(255,255,255,.7);border-color:rgba(255,200,50,.2);font-size:13px;resize:none;margin-bottom:8px"></textarea>
               <!-- Photo preview -->
@@ -2135,6 +2135,6 @@
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-27"></script>
+<script src="premium.js?v=20260520-28"></script>
 </body>
 </html>
