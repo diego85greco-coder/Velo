@@ -1251,11 +1251,11 @@ a { text-decoration: none; color: inherit; }
 /* ── 23. HOME SCREEN ──────────────────────────────────────────────── */
 #pg-home {
   background:
-    radial-gradient(ellipse 90% 50% at 8% 0%,   rgba(116,198,157,.22) 0%, transparent 60%),
-    radial-gradient(ellipse 65% 40% at 92% 12%,  rgba(168,212,232,.18) 0%, transparent 55%),
-    radial-gradient(ellipse 75% 55% at 45% 105%, rgba(183,228,199,.16) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 35% at 70% 60%,  rgba(221,212,245,.10) 0%, transparent 50%),
-    linear-gradient(168deg, #F0F8F3 0%, #F9F5EC 55%, #EDF4F8 100%);
+    radial-gradient(ellipse 90% 50% at 8% 0%,   rgba(116,198,157,.28) 0%, transparent 60%),
+    radial-gradient(ellipse 65% 40% at 92% 12%,  rgba(168,212,232,.24) 0%, transparent 55%),
+    radial-gradient(ellipse 75% 55% at 45% 105%, rgba(183,228,199,.22) 0%, transparent 60%),
+    linear-gradient(168deg, rgba(240,248,243,.82) 0%, rgba(249,245,236,.78) 55%, rgba(237,244,248,.82) 100%),
+    url("https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/IMG_2791%20(1).png") center/cover no-repeat;
 }
 .home-header {
   padding: 28px 32px 16px;
@@ -1855,6 +1855,9 @@ a { text-decoration: none; color: inherit; }
   flex-direction: column;
   padding: 32px 24px;
   padding-top: calc(env(safe-area-inset-top, 0px) + 32px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
 }
 .p-mobile-menu.open { display: flex; animation: p-fadeIn var(--t-fast) ease; }
 .p-mobile-menu-close { align-self: flex-end; width: 40px; height: 40px; border-radius: 13px; background: rgba(255,255,255,.12); border: none; color: #fff; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-bottom: 28px; }

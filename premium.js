@@ -134,10 +134,10 @@ var _authenticated = false;
 var _userType   = 'user'; // 'user' | 'pro' | 'admin'
 
 var P_NO_NAV = ['landing','login','register','register-type','onboarding',
-                'pro-reg','pro-onboarding','admin-login','pro-pending'];
+                'pro-reg','pro-onboarding','admin-login','pro-pending','verify-email'];
 var P_DARK   = ['help','bottle','respira'];
 var P_FADE   = ['landing','onboarding','register-type','donation-exit',
-                'session-room','post-chat','donate-cta','pro-pending','admin-login','calm-ai','guardian-chat'];
+                'session-room','post-chat','donate-cta','pro-pending','admin-login','calm-ai','guardian-chat','verify-email'];
 
 // ── NAVIGATE ─────────────────────────────────────────────────
 function pGoTo(id){
@@ -240,6 +240,7 @@ async function pSignUp(){
   var nameEl  = document.getElementById('regName');
   var emailEl = document.getElementById('regEmail');
   var passEl  = document.getElementById('regPass');
+  var tcEl    = document.getElementById('regTcCheck');
   var btn     = document.getElementById('regBtn');
   var btnTxt  = document.getElementById('regBtnTxt');
   if(!nameEl||!emailEl||!passEl) return;
@@ -251,9 +252,12 @@ async function pSignUp(){
   // Validate
   var ok = true;
   _clearFieldErr('regNameErr'); _clearFieldErr('regEmailErr'); _clearFieldErr('regPassErr');
+  var tcErrEl = document.getElementById('regTcErr');
+  if(tcErrEl) tcErrEl.style.display = 'none';
   if(!name){ _showFieldErr('regNameErr'); ok=false; }
   if(!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ _showFieldErr('regEmailErr'); ok=false; }
   if(!pass || pass.length < 6){ _showFieldErr('regPassErr'); ok=false; }
+  if(tcEl && !tcEl.checked){ if(tcErrEl) tcErrEl.style.display='block'; ok=false; }
   if(!ok) return;
 
   if(btn) btn.disabled = true;
@@ -261,9 +265,13 @@ async function pSignUp(){
 
   try{
     _initSupabase();
+    var appURL = window.location.origin + window.location.pathname;
     var result;
     if(sbClient){
-      result = await sbClient.auth.signUp({ email:email, password:pass, options:{data:{nombre:name, role:'user'}} });
+      result = await sbClient.auth.signUp({
+        email:email, password:pass,
+        options:{ data:{ nombre:name, role:'user' }, emailRedirectTo: appURL }
+      });
       if(!result.error && result.data && result.data.user){
         await sbClient.from('profiles').upsert({
           id: result.data.user.id, nombre: name, email: email,
@@ -285,12 +293,10 @@ async function pSignUp(){
       safeLS('set','velo_sb_pass', pass);
       safeLS('set','velo_user_name', name);
       safeLS('set','velo_user_type','user');
-      safeLS('set','velo_session','1');
-      _authenticated = true;
       _recordTC(name, email);
-      _startGuardianHeartbeat();
-      pToast('🎉','¡Bienvenido/a '+name+'! 🌿');
-      _loginAndGo();
+      var veEl = document.getElementById('verifyEmailAddr');
+      if(veEl) veEl.textContent = email;
+      pGoTo('verify-email');
     }
   }catch(e){
     pToast('⚠️','Error de conexión');
@@ -475,7 +481,7 @@ function _loginAndGo(){
 function pSetType(type){
   safeLS('set','velo_user_type', type);
   pGoTo('onboarding');
-  _initOnboarding();
+  setTimeout(_initOnboarding, 60);
 }
 
 // ── FORM VALIDATION HELPERS ────────────────────────────────
@@ -510,12 +516,27 @@ function _recordTC(name, email){
 
 // ── ONBOARDING ─────────────────────────────────────────────────
 var _obStep = 0;
-var _obData = [
-  { emoji:'🌱', title:'Bienvenido/a a Velo', sub:'Tu espacio seguro de apoyo emocional. Aquí nadie te juzga.' },
-  { emoji:'🛡️', title:'Guardianes a tu lado', sub:'Personas entrenadas para escuchar y acompañar, disponibles 24/7.' },
-  { emoji:'💚', title:'Comenzá tu camino', sub:'Diario, ánimo, calma y comunidad. Todo para tu bienestar.' }
+var _obDataUser = [
+  { emoji:'🌿', title:'Bienvenido/a a Velo', sub:'Tu espacio de apoyo emocional. Personas reales que escuchan, sin juicios y sin costo.' },
+  { emoji:'🛡️', title:'Guardianes a tu lado', sub:'Personas de la comunidad con experiencia vivida, disponibles para escucharte cuando más lo necesitás.' },
+  { emoji:'📔', title:'Tus herramientas', sub:'Diario emocional, registro de ánimo, sesión de respiración y el Muro de la Felicidad — todo en un lugar.' },
+  { emoji:'🤝', title:'Una comunidad real', sub:'Sala de Ayuda, Mensajes al Mar, Círculos de Paz. Nadie debería atravesarlo solo/a.' }
 ];
-function _initOnboarding(){ _obStep = 0; _renderOb(); }
+var _obDataPro = [
+  { emoji:'🩺', title:'Bienvenido/a a Velo', sub:'Conectá tu expertise con personas que necesitan apoyo profesional. Seguro, simple y ético.' },
+  { emoji:'📅', title:'Sesiones 1:1 integradas', sub:'Videollamada incorporada, agenda propia y honorarios que vos fijás. Sin intermediarios.' },
+  { emoji:'💰', title:'Ingresos transparentes', sub:'El 80% de cada sesión es tuyo. Pagos vía Stripe. Retiro cuando quieras.' },
+  { emoji:'🌍', title:'Impacto real', sub:'Tu trabajo ayuda a construir una comunidad de salud mental más accesible para todos.' }
+];
+var _obData = _obDataUser;
+function _initOnboarding(){
+  _obStep = 0;
+  var type = safeLS('get','velo_user_type') || 'user';
+  _obData = type === 'pro' ? _obDataPro : _obDataUser;
+  var dotsEl = document.getElementById('obDots');
+  if(dotsEl) dotsEl.innerHTML = _obData.map(function(_,i){ return '<div class="ob-dot'+(i===0?' active':'')+'"></div>'; }).join('');
+  _renderOb();
+}
 function _renderOb(){
   var d = _obData[_obStep];
   if(!d) return;
@@ -542,10 +563,8 @@ function pNextOnboarding(){
   else { pFinishOnboarding(); }
 }
 function pFinishOnboarding(){
-  _authenticated = true;
-  safeLS('set','velo_session','1');
-  pGoTo('home');
-  setTimeout(function(){ _loadHomeData(); _updateSidebarUser(); }, 100);
+  var type = safeLS('get','velo_user_type') || 'user';
+  pGoTo(type === 'pro' ? 'pro-reg' : 'register');
 }
 
 // ── HOME DATA ──────────────────────────────────────────────────
@@ -3572,12 +3591,11 @@ function _happyPostCard(h, isOwn){
     +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+rxBar+'</div>'
     // comments
     +(commHtml ? '<div style="margin-bottom:8px">'+commHtml+moreComments+'</div>' : '')
-    // comment input (for published posts only — not demo)
-    +(h.id.startsWith('hm') ? '' :
-      '<div style="display:flex;gap:6px;align-items:center">'
-      +'<input id="cmt-'+h.id+'" class="p-input" style="flex:1;font-size:12px;padding:6px 10px;height:auto" placeholder="Agregar comentario…" maxlength="120" onkeydown="if(event.key===\'Enter\')pHappyComment(\''+h.id+'\')">'
-      +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:6px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:8px;font-size:12px;cursor:pointer;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700">💬</button>'
-      +'</div>')
+    // comment input
+    +'<div style="display:flex;gap:6px;align-items:center">'
+    +'<input id="cmt-'+h.id+'" class="p-input" style="flex:1;font-size:12px;padding:6px 10px;height:auto" placeholder="Agregar comentario…" maxlength="120" onkeydown="if(event.key===\'Enter\')pHappyComment(\''+h.id+'\')">'
+    +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:6px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:8px;font-size:12px;cursor:pointer;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700">💬</button>'
+    +'</div>'
     +'</div>';
 }
 
@@ -3593,16 +3611,20 @@ function pHappyReact(postId, emoji){
   if(myReacted === emoji){ pToast('💛','Ya reaccionaste con '+emoji); return; }
   var posts = _happyLoad();
   var post  = posts.find(function(p){ return p.id === postId; });
-  if(!post) return; // demo post — no persistence
+  var isMock = false;
+  if(!post){
+    post = _happyMock.find(function(p){ return p.id === postId; });
+    isMock = true;
+  }
+  if(!post) return;
   if(!post.reactions) post.reactions = {};
-  // Remove previous reaction if switching
   if(myReacted && post.reactions[myReacted] > 0) post.reactions[myReacted]--;
   post.reactions[emoji] = (post.reactions[emoji] || 0) + 1;
-  _happySave(posts);
+  if(!isMock){
+    _happySave(posts);
+    if(post.userId === _myUserId()) _happyStatIncr('reactionsReceived');
+  }
   safeLS('set','velo_happy_rx_'+postId, emoji);
-
-  // Count reaction received if it's my own post
-  if(post.userId === _myUserId()) _happyStatIncr('reactionsReceived');
   pToast(emoji,'¡Alegría compartida!');
   pRenderHappy();
 }
@@ -3613,18 +3635,21 @@ function pHappyComment(postId){
   var text = inp.value.trim();
   var posts = _happyLoad();
   var post  = posts.find(function(p){ return p.id === postId; });
+  var isMock = false;
+  if(!post){
+    post = _happyMock.find(function(p){ return p.id === postId; });
+    isMock = true;
+  }
   if(!post) return;
   if(!post.comments) post.comments = [];
   var myName = safeLS('get','velo_user_name') || 'Vos';
   post.comments.push({ name: myName, text: text, ts: Date.now() });
-  _happySave(posts);
-  inp.value = '';
-
-  if(post.userId === _myUserId()){
-    _happyStatIncr('commentsReceived');
-  } else {
-    pToast('💬','Comentario enviado 🌿');
+  if(!isMock){
+    _happySave(posts);
+    if(post.userId === _myUserId()) _happyStatIncr('commentsReceived');
   }
+  inp.value = '';
+  pToast('💬','Comentario enviado 🌿');
   pRenderHappy();
 }
 
@@ -3651,21 +3676,32 @@ function pSelHappyEmoji(el, emoji){
   });
 }
 
+function _compressImg(dataURL, cb){
+  var image = new Image();
+  image.onload = function(){
+    var maxPx = 900, w = image.width, h = image.height;
+    if(w > maxPx || h > maxPx){ var r = Math.min(maxPx/w, maxPx/h); w = Math.round(w*r); h = Math.round(h*r); }
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    c.getContext('2d').drawImage(image, 0, 0, w, h);
+    cb(c.toDataURL('image/jpeg', 0.72));
+  };
+  image.onerror = function(){ cb(dataURL); };
+  image.src = dataURL;
+}
+
 function pHappyPickMedia(inp){
   if(!inp || !inp.files || !inp.files[0]) return;
   var file = inp.files[0];
-  var isVideo = file.type.startsWith('video/');
-  if(file.size > 4 * 1024 * 1024 && !isVideo){ pToast('⚠️','La imagen es muy grande (máx 4MB). Intentá con una más pequeña.'); inp.value=''; return; }
-  if(file.size > 20 * 1024 * 1024){ pToast('⚠️','El archivo es muy grande (máx 20MB).'); inp.value=''; return; }
+  if(file.type.startsWith('video/')){ pToast('⚠️','Solo imágenes en el Muro.'); inp.value=''; return; }
+  if(file.size > 8 * 1024 * 1024){ pToast('⚠️','La imagen es muy grande (máx 8MB).'); inp.value=''; return; }
   var reader = new FileReader();
   reader.onload = function(e){
-    _happySelectedPhoto = e.target.result;
-    var preview = document.getElementById('happyPhotoPreview');
-    var img = document.getElementById('happyPhotoImg');
-    if(preview && img){
-      img.src = _happySelectedPhoto;
-      preview.style.display = 'block';
-    }
+    _compressImg(e.target.result, function(compressed){
+      _happySelectedPhoto = compressed;
+      var preview = document.getElementById('happyPhotoPreview');
+      var img = document.getElementById('happyPhotoImg');
+      if(preview && img){ img.src = compressed; preview.style.display = 'block'; }
+    });
   };
   reader.readAsDataURL(file);
   inp.value = '';
@@ -4499,16 +4535,21 @@ function pProRegNext(){
   var spec  = document.getElementById('prSpec');
   var email = document.getElementById('prEmail');
   var pass  = document.getElementById('prPass');
+  var tcEl  = document.getElementById('proTcCheck');
+  var tcErrEl = document.getElementById('proTcErr');
   if(!name||!name.value.trim()){ pToast('⚠️','Ingresá tu nombre'); return; }
   if(!spec||!spec.value.trim()){ pToast('⚠️','Ingresá tu especialidad'); return; }
   if(!email||!email.value.trim()){ pToast('⚠️','Ingresá tu correo'); return; }
   if(!pass||!pass.value||pass.value.length<6){ pToast('⚠️','Contraseña mínima de 6 caracteres'); return; }
+  if(tcEl && !tcEl.checked){ if(tcErrEl) tcErrEl.style.display='block'; return; }
+  if(tcErrEl) tcErrEl.style.display='none';
   safeLS('set','velo_pro_name', name.value.trim());
   safeLS('set','velo_pro_spec', spec.value.trim());
   safeLS('set','velo_user_email', email.value.trim());
   safeLS('set','velo_sb_pass', pass.value);
   safeLS('set','velo_user_type','pro');
   safeLS('set','velo_user_name', name.value.trim());
+  _recordTC(name.value.trim(), email.value.trim());
   pOpenPayPalPro();
   pGoTo('pro-pending');
 }
@@ -4541,7 +4582,13 @@ async function pAdminLogin(){
           authError = 'Tu cuenta no tiene acceso de administrador';
         }
       } else if(error){
-        authError = 'Credenciales incorrectas · ' + (error.message || '');
+        var em = error.message || '';
+        if(/email.*not.*confirm/i.test(em) || /not confirmed/i.test(em))
+          authError = 'El correo admin no está confirmado. Confirmá el email en ' + _ADMIN_EMAIL + ' primero.';
+        else if(/invalid.*credentials/i.test(em) || /invalid login/i.test(em))
+          authError = 'Credenciales incorrectas. Verificá el correo y la contraseña.';
+        else
+          authError = 'Error: ' + em;
       }
     }catch(e){
       authError = 'Error de red · Verificá tu conexión';
@@ -5901,6 +5948,30 @@ window.addEventListener('load', function(){
   _initSupabase();
   _checkStripeReturn();
   _checkPayPalReturn();
+
+  // Handle Supabase email confirmation redirect
+  if(window.location.hash && window.location.hash.includes('type=signup')){
+    _initSupabase();
+    if(sbClient){
+      sbClient.auth.onAuthStateChange(function(event, session){
+        if(event === 'SIGNED_IN' && session){
+          safeLS('set','velo_user_email', session.user.email||'');
+          safeLS('set','velo_user_name', safeLS('get','velo_user_name') || (session.user.email||'').split('@')[0]);
+          safeLS('set','velo_session','1');
+          safeLS('set','velo_user_type', safeLS('get','velo_user_type')||'user');
+          _authenticated = true;
+          _startGuardianHeartbeat();
+          pToast('🎉','¡Cuenta confirmada! Bienvenido/a a Velo 🌿');
+          _loginAndGo();
+        }
+      });
+    } else {
+      safeLS('set','velo_session','1');
+      _authenticated = true;
+      _loginAndGo();
+    }
+    return;
+  }
 
   // Handle Supabase password recovery redirect (token in URL hash)
   if(window.location.hash && window.location.hash.includes('type=recovery')){

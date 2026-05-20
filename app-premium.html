@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260520-23">
+  <link rel="stylesheet" href="premium.css?v=20260520-24">
 </head>
 <body>
 
@@ -154,7 +154,7 @@
               <img src="assets/logo.png" alt="Velo" class="land-hero-logo" onclick="pLogoClick()">
               <p class="land-hero-sub" style="max-width:520px;font-size:17px;margin-bottom:10px">Un espacio donde la comunidad se une para acompañarse. Guardianes, círculos, mensajes al mar y más — gratis, sin juicios, siempre disponible.</p>
               <div class="land-hero-btns">
-                <button class="p-btn p-btn--primary p-btn--xl" onclick="pGoTo('register')">Registrate ✨</button>
+                <button class="p-btn p-btn--primary p-btn--xl" onclick="pGoTo('register-type')">Registrate ✨</button>
                 <button class="p-btn p-btn--secondary p-btn--xl" onclick="pGoTo('login')">Ya tengo cuenta</button>
               </div>
               <div style="margin-top:18px">
@@ -282,7 +282,7 @@
                   <li>Herramientas de calma</li>
                   <li>Comunidad y círculos</li>
                 </ul>
-                <button class="p-btn p-btn--secondary p-btn--lg p-btn--full" onclick="pGoTo('register')">Empezar gratis</button>
+                <button class="p-btn p-btn--secondary p-btn--lg p-btn--full" onclick="pGoTo('register-type')">Empezar gratis</button>
               </div>
               <div class="land-plan land-plan--featured reveal" data-delay="2">
                 <div class="land-plan-badge">⭐ Más popular</div>
@@ -297,7 +297,7 @@
                   <li>Análisis de ánimo con IA</li>
                   <li>Acceso a todos los grupos</li>
                 </ul>
-                <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pGoTo('register')">Comenzar con Plus</button>
+                <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pGoTo('register-type')">Comenzar con Plus</button>
               </div>
             </div>
           </section>
@@ -308,7 +308,7 @@
               <h2 class="land-cta-title reveal">Tu bienestar<br><em>importa</em></h2>
               <p class="land-cta-sub reveal" data-delay="1">Unite a miles de personas que ya encontraron apoyo en Velo.</p>
               <div class="land-cta-btns reveal" data-delay="2">
-                <button class="p-btn p-btn--dark-white p-btn--xl" onclick="pGoTo('register')">Registrate gratis ✨</button>
+                <button class="p-btn p-btn--dark-white p-btn--xl" onclick="pGoTo('register-type')">Registrate gratis ✨</button>
                 <button class="p-btn p-btn--ghost p-btn--xl" onclick="pGoTo('pro-reg')">Soy profesional</button>
               </div>
               <div class="reveal" data-delay="3" style="margin-top:16px">
@@ -341,7 +341,7 @@
             <div style="margin-bottom:28px">
               <div class="p-label p-label-sage">Bienvenido/a de nuevo</div>
               <h2 class="p-title">Iniciá sesión</h2>
-              <p class="p-sm" style="margin-top:6px">¿No tenés cuenta? <span style="color:var(--sage2);font-weight:600;cursor:pointer" onclick="pGoTo('register')">Registrate gratis</span></p>
+              <p class="p-sm" style="margin-top:6px">¿No tenés cuenta? <span style="color:var(--sage2);font-weight:600;cursor:pointer" onclick="pGoTo('register-type')">Registrate gratis</span></p>
             </div>
             <div class="p-field">
               <label class="p-field-label">Correo electrónico</label>
@@ -360,7 +360,7 @@
               <span id="loginBtnTxt">Ingresar</span>
             </button>
             <div class="p-divider"><div class="p-div-line"></div><span class="p-div-txt">o</span><div class="p-div-line"></div></div>
-            <button class="p-btn p-btn--google p-btn--lg p-btn--full" onclick="pGoTo('register')">👩‍⚕️ Soy profesional de salud</button>
+            <button class="p-btn p-btn--google p-btn--lg p-btn--full" onclick="pSetType('pro')">👩‍⚕️ Soy profesional de salud</button>
             <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
               <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('landing')" style="font-size:12px">← Volver al inicio</button>
             </div>
@@ -438,12 +438,16 @@
               <div style="position:relative"><form style="display:contents" onsubmit="return false"><input class="p-input" type="password" id="regPass" placeholder="Mínimo 6 caracteres" autocomplete="new-password" style="padding-right:44px"></form><button type="button" onclick="pTogglePassVis('regPass',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;color:var(--ink4);padding:4px;line-height:1">👁️</button></div>
               <div class="p-err-msg" id="regPassErr">La contraseña debe tener al menos 6 caracteres</div>
             </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;background:var(--cream2);border-radius:12px;padding:12px 14px">
+              <input type="checkbox" id="regTcCheck" style="accent-color:var(--sage2);width:18px;height:18px;cursor:pointer;flex-shrink:0;margin-top:1px">
+              <label for="regTcCheck" style="font-size:12px;color:var(--ink3);cursor:pointer;line-height:1.5">Leí y acepto los <span style="color:var(--sage3);font-weight:600;text-decoration:underline;cursor:pointer" onclick="pShowTerms()">Términos y Condiciones</span> y la <span style="color:var(--sage3);font-weight:600;text-decoration:underline;cursor:pointer" onclick="pShowPrivacy()">Política de Privacidad</span> de Velo.</label>
+            </div>
+            <div class="p-err-msg" id="regTcErr" style="margin-bottom:10px">Debés aceptar los términos para continuar</div>
             <button class="p-btn p-btn--primary p-btn--lg p-btn--full" id="regBtn" onclick="pSignUp()" style="margin-bottom:12px">
               <span id="regBtnTxt">Crear mi cuenta ✨</span>
             </button>
-            <p style="font-size:11px;color:var(--ink5);text-align:center;line-height:1.55">Al registrarte aceptás nuestros <span style="color:var(--sage3);cursor:pointer;text-decoration:underline" onclick="pShowTerms()">Términos y Condiciones</span> y <span style="color:var(--sage3);cursor:pointer;text-decoration:underline" onclick="pShowPrivacy()">Política de Privacidad</span></p>
             <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-              <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('landing')" style="font-size:12px">← Volver al inicio</button>
+              <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('register-type')" style="font-size:12px">← Volver</button>
             </div>
           </div>
         </div>
@@ -452,28 +456,32 @@
       <!-- ══ REGISTER TYPE ════════════════════════════════════════ -->
       <div class="p-page fade-in" id="pg-register-type">
         <div class="p-page-scroll" style="overflow-y:auto">
-          <div class="p-page-inner" style="max-width:600px;margin:auto;padding-top:60px">
+          <div class="p-page-inner" style="max-width:480px;margin:auto;padding:60px 24px 40px">
             <div style="text-align:center;margin-bottom:36px">
-              <div style="font-size:48px;margin-bottom:14px">🌿</div>
-              <h2 class="p-hero-text" style="color:var(--sage);margin-bottom:10px">¿Cómo querés unirte?</h2>
-              <p class="p-subtitle">Elegí el tipo de cuenta que mejor te describe</p>
+              <div style="font-size:52px;margin-bottom:14px">🌿</div>
+              <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--ink);margin-bottom:8px;line-height:1.2">¿Cómo querés unirte a Velo?</h2>
+              <p style="font-size:14px;color:var(--ink4);line-height:1.5">Elegí el perfil que mejor te describe. Podés cambiar esto más adelante.</p>
             </div>
             <div style="display:flex;flex-direction:column;gap:14px">
-              <div class="p-card p-card--hover" style="padding:22px;cursor:pointer" onclick="pSetType('user')">
-                <div style="font-size:36px;margin-bottom:10px">🧑</div>
-                <h3 class="p-title" style="font-size:20px;margin-bottom:6px">Busco apoyo</h3>
-                <p class="p-body">Quiero conectar con guardianes, usar la sala de ayuda y las herramientas de bienestar.</p>
+              <!-- User card -->
+              <div onclick="pSetType('user')" style="background:var(--cream2);border:2px solid var(--border2);border-radius:18px;padding:22px 20px;cursor:pointer;transition:border-color .2s,box-shadow .2s;display:flex;align-items:center;gap:16px" onmouseover="this.style.borderColor='var(--sage2)';this.style.boxShadow='0 4px 20px rgba(100,160,100,.15)'" onmouseout="this.style.borderColor='var(--border2)';this.style.boxShadow='none'">
+                <div style="font-size:40px;flex-shrink:0;width:56px;height:56px;background:var(--sage7);border-radius:14px;display:flex;align-items:center;justify-content:center">🌱</div>
+                <div>
+                  <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">Busco apoyo emocional</div>
+                  <div style="font-size:12px;color:var(--ink4);line-height:1.5">Guardianes, Sala de Ayuda, diario emocional, Muro de la Felicidad y más herramientas de bienestar.</div>
+                </div>
               </div>
-              <div class="p-card p-card--hover" style="padding:22px;cursor:pointer" onclick="pGoTo('pro-reg')">
-                <div style="font-size:36px;margin-bottom:10px">🩺</div>
-                <h3 class="p-title" style="font-size:20px;margin-bottom:6px">Soy profesional de salud</h3>
-                <p class="p-body">Quiero ofrecer sesiones terapéuticas y brindar apoyo profesional a personas que lo necesitan.</p>
+              <!-- Pro card -->
+              <div onclick="pSetType('pro')" style="background:linear-gradient(135deg,rgba(200,165,100,.1),rgba(200,165,100,.04));border:2px solid rgba(200,165,100,.3);border-radius:18px;padding:22px 20px;cursor:pointer;transition:border-color .2s,box-shadow .2s;display:flex;align-items:center;gap:16px" onmouseover="this.style.borderColor='rgba(200,165,100,.7)';this.style.boxShadow='0 4px 20px rgba(200,165,100,.15)'" onmouseout="this.style.borderColor='rgba(200,165,100,.3)';this.style.boxShadow='none'">
+                <div style="font-size:40px;flex-shrink:0;width:56px;height:56px;background:rgba(200,165,100,.15);border-radius:14px;display:flex;align-items:center;justify-content:center">🩺</div>
+                <div>
+                  <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">Soy profesional de salud <span style="font-size:11px;background:rgba(200,165,100,.2);color:#C8A560;border-radius:6px;padding:2px 7px;font-weight:600;vertical-align:middle">PRO</span></div>
+                  <div style="font-size:12px;color:var(--ink4);line-height:1.5">Ofrecé sesiones terapéuticas, gestioná tu agenda y ayudá a personas que más lo necesitan.</div>
+                </div>
               </div>
-              <div class="p-card p-card--hover" style="padding:22px;cursor:pointer" onclick="pSetType('guardian')">
-                <div style="font-size:36px;margin-bottom:10px">🛡️</div>
-                <h3 class="p-title" style="font-size:20px;margin-bottom:6px">Quiero ser guardián/a</h3>
-                <p class="p-body">Tengo experiencia vivida y quiero acompañar y escuchar a personas que atraviesan momentos difíciles.</p>
-              </div>
+            </div>
+            <div style="text-align:center;margin-top:24px">
+              <button onclick="pGoTo('landing')" style="background:none;border:none;color:var(--ink5);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">← Volver</button>
             </div>
           </div>
         </div>
@@ -493,6 +501,28 @@
           <div style="display:flex;gap:10px;margin-top:28px">
             <button class="p-btn p-btn--ghost p-btn--md" id="obSkip" onclick="pFinishOnboarding()">Saltar</button>
             <button class="p-btn p-btn--dark-white p-btn--lg" id="obNext" onclick="pNextOnboarding()">Siguiente →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VERIFY EMAIL ════════════════════════════════════════ -->
+      <div class="p-page fade-in" id="pg-verify-email">
+        <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;background:linear-gradient(160deg,var(--sage),var(--sage2))">
+          <div style="max-width:420px">
+            <div style="font-size:72px;margin-bottom:16px;animation:p-float 3s ease-in-out infinite">📬</div>
+            <h2 style="font-family:'Cormorant Garamond',serif;font-size:30px;color:#fff;margin-bottom:12px;line-height:1.2">¡Ya casi estás!</h2>
+            <p style="font-size:15px;color:rgba(255,255,255,.85);line-height:1.65;margin-bottom:10px">Te enviamos un correo de confirmación a:</p>
+            <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:10px 18px;margin-bottom:20px;font-size:15px;font-weight:700;color:#fff" id="verifyEmailAddr">tu@email.com</div>
+            <div style="background:rgba(255,255,255,.12);border-radius:14px;padding:16px 18px;margin-bottom:24px;text-align:left">
+              <div style="font-size:13px;color:rgba(255,255,255,.9);line-height:1.8">
+                <div>✅ Revisá tu bandeja de entrada</div>
+                <div>📁 Si no llegó, revisá Spam o Promociones</div>
+                <div>⏱️ Puede tardar unos minutos</div>
+                <div>🔗 Hacé clic en el enlace del correo para activar tu cuenta</div>
+              </div>
+            </div>
+            <button onclick="pGoTo('login')" class="p-btn p-btn--dark-white p-btn--lg" style="width:100%;margin-bottom:12px">Ir a Iniciar Sesión →</button>
+            <button onclick="pGoTo('landing')" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">← Volver al inicio</button>
           </div>
         </div>
       </div>
@@ -1207,7 +1237,7 @@
             </div>
           </div>
           <!-- Collapsible info panel -->
-          <div id="happyInfoPanel" style="display:none;margin:8px 16px 0;background:rgba(255,224,102,.15);border:1.5px solid rgba(255,200,50,.3);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--ink3);line-height:1.6">
+          <div id="happyInfoPanel" style="margin:8px 16px 0;background:rgba(255,224,102,.15);border:1.5px solid rgba(255,200,50,.3);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--ink3);line-height:1.6">
             <strong style="display:block;margin-bottom:4px;color:var(--ink2)">☀️ Solo momentos de alegría</strong>
             Compartí logros, sonrisas y pequeñas alegrías cotidianas. No se permite negatividad ni pedidos de apoyo (para eso está la Sala de Ayuda).<br>
             <span style="color:var(--ink5)">📅 Cada publicación dura 24 horas · Máx 50 activas · Si está lleno, queda en lista de espera</span>
@@ -1489,10 +1519,6 @@
               <div class="co-ic" style="background:var(--sage7)">📧</div>
               <div><div style="font-size:14px;font-weight:700;color:var(--ink)">Correo electrónico</div><div style="font-size:12px;color:var(--ink4)">wearevelo.app@gmail.com</div></div>
             </div>
-            <div class="contact-opt" onclick="pGoTo('help')">
-              <div class="co-ic" style="background:rgba(58,158,96,.1)">🆘</div>
-              <div><div style="font-size:14px;font-weight:700;color:var(--ink)">Sala de Ayuda</div><div style="font-size:12px;color:var(--ink4)">Soporte inmediato</div></div>
-            </div>
             <div class="p-card" style="padding:20px;margin-top:14px">
               <div class="p-label p-label-sage" style="margin-bottom:12px">Enviar mensaje</div>
               <div class="p-field">
@@ -1693,9 +1719,14 @@
               <div class="p-field"><label class="p-field-label">Especialidad</label><input class="p-input" type="text" id="prSpec" placeholder="Ej: Psicología clínica"></div>
               <div class="p-field"><label class="p-field-label">Correo profesional</label><input class="p-input" type="email" id="prEmail" placeholder="tu@email.com"></div>
               <div class="p-field"><label class="p-field-label">Contraseña</label><div style="position:relative"><form style="display:contents" onsubmit="return false"><input class="p-input" type="password" id="prPass" placeholder="Mínimo 8 caracteres" style="padding-right:44px"></form><button type="button" onclick="pTogglePassVis('prPass',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;color:var(--ink4);padding:4px;line-height:1">👁️</button></div></div>
+              <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;background:var(--cream2);border-radius:12px;padding:12px 14px">
+                <input type="checkbox" id="proTcCheck" style="accent-color:var(--sage2);width:18px;height:18px;cursor:pointer;flex-shrink:0;margin-top:1px">
+                <label for="proTcCheck" style="font-size:12px;color:var(--ink3);cursor:pointer;line-height:1.5">Leí y acepto los <span style="color:var(--sage3);font-weight:600;text-decoration:underline;cursor:pointer" onclick="pShowTerms()">Términos y Condiciones</span> y la <span style="color:var(--sage3);font-weight:600;text-decoration:underline;cursor:pointer" onclick="pShowPrivacy()">Política de Privacidad</span> de Velo.</label>
+              </div>
+              <div class="p-err-msg" id="proTcErr" style="margin-bottom:10px">Debés aceptar los términos para continuar</div>
               <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pProRegNext()">Continuar →</button>
               <div style="height:10px"></div>
-              <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('landing')">← Volver</button>
+              <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('register-type')">← Volver</button>
             </div>
           </div>
         </div>
@@ -2084,6 +2115,6 @@
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-23"></script>
+<script src="premium.js?v=20260520-24"></script>
 </body>
 </html>
