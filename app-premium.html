@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260520-26">
+  <link rel="stylesheet" href="premium.css?v=20260520-27">
 </head>
 <body>
 
@@ -276,11 +276,14 @@
                 <div class="land-plan-price">$0</div>
                 <div class="land-plan-period">para siempre</div>
                 <ul class="land-plan-features">
-                  <li>Sala de ayuda</li>
-                  <li>Mensajes en botella</li>
-                  <li>Diario personal</li>
-                  <li>Herramientas de calma</li>
-                  <li>Comunidad y círculos</li>
+                  <li>Diario emocional</li>
+                  <li>Muro de la Felicidad</li>
+                  <li>Sala de Ayuda (2/día)</li>
+                  <li>Mensajes al Mar (2/día)</li>
+                  <li>Acompañante IA</li>
+                  <li>4 sesiones guardián/día</li>
+                  <li class="land-feat-no">Sin Círculos de Paz</li>
+                  <li class="land-feat-no">Sin sesiones con profesionales</li>
                 </ul>
                 <button class="p-btn p-btn--secondary p-btn--lg p-btn--full" onclick="pGoTo('register-type')">Empezar gratis</button>
               </div>
@@ -292,10 +295,13 @@
                 <div class="land-plan-period">por mes</div>
                 <ul class="land-plan-features">
                   <li>Todo lo gratuito +</li>
+                  <li>Ilimitado en todo</li>
+                  <li>Crear Círculos de Paz</li>
                   <li>Sesiones con profesionales</li>
-                  <li>Guardianes prioritarios</li>
-                  <li>Análisis de ánimo con IA</li>
-                  <li>Acceso a todos los grupos</li>
+                  <li>Guardianes prioritarios ∞</li>
+                  <li>Insignia dorada ✨</li>
+                  <li>Prioridad en lista</li>
+                  <li>Apoyás la comunidad 💚</li>
                 </ul>
                 <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pGoTo('register-type')">Comenzar con Plus</button>
               </div>
@@ -696,7 +702,7 @@
             </div>
             <div style="display:flex;gap:8px;margin-top:14px">
               <button class="p-btn p-btn--primary p-btn--sm" style="flex:1" onclick="pGoTo('donation-exit')">🌻 Donar</button>
-              <button class="p-btn p-btn--secondary p-btn--sm" style="flex:1" onclick="pOpenPayPalPlus()">⭐ Velo Plus $2.99/mes</button>
+              <button class="p-btn p-btn--secondary p-btn--sm" style="flex:1" onclick="pShowPlusModal()">⭐ Velo Plus $2.99/mes</button>
             </div>
           </div>
           <!-- Personalized suggestions (filled async by Gemini) -->
@@ -1352,7 +1358,7 @@
                 <p style="font-size:12px;color:var(--ink4);margin-top:4px;line-height:1.5">Ayudamos a mantener este espacio gratuito para quienes más lo necesitan.</p>
               </div>
               <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pGoTo('donation-exit')" style="margin-bottom:8px">🌻 Hacer una donación</button>
-              <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pOpenPayPalPlus()">⭐ Obtener Velo Plus ($2.99/mes)</button>
+              <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pShowPlusModal()">⭐ Obtener Velo Plus ($2.99/mes)</button>
               <div id="subStatusDisplay" style="font-size:11px;color:var(--ink5);text-align:center;margin-top:8px"></div>
             </div>
 
@@ -1771,6 +1777,7 @@
                 <button class="pro-nav-item" data-panel="notas" onclick="switchProPanel('notas',this)"><span style="font-size:18px">📝</span> Notas</button>
                 <button class="pro-nav-item" data-panel="finanzas" onclick="switchProPanel('finanzas',this)"><span style="font-size:18px">💰</span> Finanzas</button>
                 <button class="pro-nav-item" data-panel="mensajes" onclick="switchProPanel('mensajes',this)"><span style="font-size:18px">💬</span> Mensajes</button>
+                <button class="pro-nav-item" data-panel="solidario" onclick="switchProPanel('solidario',this)"><span style="font-size:18px">💙</span> Solidario</button>
                 <button class="pro-nav-item" data-panel="perfil" onclick="switchProPanel('perfil',this)"><span style="font-size:18px">⚙️</span> Mi perfil</button>
               </div>
               <div class="pro-panel-content" id="proPanelContent">
@@ -2128,6 +2135,6 @@
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-26"></script>
+<script src="premium.js?v=20260520-27"></script>
 </body>
 </html>

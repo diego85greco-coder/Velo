@@ -541,7 +541,8 @@ var _obDataPro = [
   { emoji:'🩺', title:'Bienvenido/a a Velo', sub:'Conectá tu expertise con personas que necesitan apoyo profesional. Seguro, simple y ético.' },
   { emoji:'📅', title:'Sesiones 1:1 integradas', sub:'Videollamada incorporada, agenda propia y honorarios que vos fijás. Sin intermediarios.' },
   { emoji:'💰', title:'Ingresos transparentes', sub:'El 80% de cada sesión es tuyo. Pagos vía Stripe. Retiro cuando quieras.' },
-  { emoji:'🌍', title:'Impacto real', sub:'Tu trabajo ayuda a construir una comunidad de salud mental más accesible para todos.' }
+  { emoji:'🌍', title:'Impacto real', sub:'Tu trabajo ayuda a construir una comunidad de salud mental más accesible para todos.' },
+  { emoji:'💙', title:'Programa Solidario', sub:'¿Querés donar 1 sesión gratuita por mes para acompañar a alguien que no puede pagarlo?\n\nLos usuarios en lista de espera te lo agradecen de corazón. Si aceptás, llevás la insignia 💙 Profesional Solidario/a.', solidarity: true }
 ];
 var _obData = _obDataUser;
 function _initOnboarding(){
@@ -560,22 +561,46 @@ function _renderOb(){
   var su = document.getElementById('obSub');
   if(em) em.textContent = d.emoji;
   if(ti) ti.textContent = d.title;
+  if(su) su.style.whiteSpace = 'pre-line';
   if(su) su.textContent = d.sub;
   var dots = document.querySelectorAll('#obDots .ob-dot');
   dots.forEach(function(dot, i){ dot.classList.toggle('active', i === _obStep); });
   var skip = document.getElementById('obSkip');
   var next = document.getElementById('obNext');
-  if(_obStep === _obData.length - 1){
-    if(next) next.textContent = 'Comenzar ✨';
+  var solBtns = document.getElementById('obSolidarityBtns');
+  if(d.solidarity){
+    // Solidarity slide: show YES/NO, hide normal navigation
+    if(next) next.style.display = 'none';
     if(skip) skip.style.display = 'none';
+    if(!solBtns){
+      var btnWrap = document.createElement('div');
+      btnWrap.id = 'obSolidarityBtns';
+      btnWrap.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-top:8px;width:100%';
+      btnWrap.innerHTML = '<button class="p-btn p-btn--dark-white p-btn--lg" style="width:100%" onclick="pSolidarityChoice(true)">💙 Sí, quiero participar</button>'
+        +'<button class="p-btn p-btn--ghost p-btn--md" style="width:100%;color:rgba(255,255,255,.6)" onclick="pSolidarityChoice(false)">Ahora no, gracias</button>';
+      if(next) next.parentNode.insertBefore(btnWrap, next);
+    } else {
+      solBtns.style.display = 'flex';
+    }
   } else {
-    if(next) next.textContent = 'Siguiente →';
-    if(skip) skip.style.display = '';
+    if(solBtns) solBtns.style.display = 'none';
+    if(_obStep === _obData.length - 1){
+      if(next){ next.textContent = 'Siguiente →'; next.style.display = ''; }
+      if(skip) skip.style.display = '';
+    } else {
+      if(next){ next.textContent = 'Siguiente →'; next.style.display = ''; }
+      if(skip) skip.style.display = '';
+    }
   }
 }
 function pNextOnboarding(){
   if(_obStep < _obData.length - 1){ _obStep++; _renderOb(); }
   else { pFinishOnboarding(); }
+}
+function pSolidarityChoice(yes){
+  safeLS('set','velo_pro_solidarity', yes ? '1' : '0');
+  if(yes) pToast('💙','¡Gracias! Llevás la insignia de Profesional Solidario/a');
+  pFinishOnboarding();
 }
 function pFinishOnboarding(){
   var type = safeLS('get','velo_user_type') || 'user';
@@ -1318,14 +1343,14 @@ function pEndGuardianChat(){
 // ── PROFESSIONALS ──────────────────────────────────────────────
 var _proData = [
   // ── SALUD MENTAL CLÍNICA (profesionales licenciados) ──────────
-  { id:'p1', type:'salud', name:'Lic. Ana García',  av:'👩‍⚕️', spec:'Psicología Clínica',   rate:50, currency:'USD', rating:4.9, sessions:134, bio:'Especializada en ansiedad, depresión y relaciones. 8 años de experiencia clínica.', tags:['ansiedad','depresión','pareja'] },
-  { id:'p2', type:'salud', name:'Dr. Carlos Méndez',av:'👨‍⚕️', spec:'Psiquiatría',           rate:65, currency:'USD', rating:4.8, sessions:89,  bio:'Psiquiatra con enfoque integral. Evaluación, medicación y psicoterapia combinada.', tags:['psiquiatría','TDAH','trastornos del sueño'] },
-  { id:'p3', type:'salud', name:'Lic. Lucía Torres',av:'🌺',    spec:'Psicología · Gestalt',  rate:35, currency:'USD', rating:5.0, sessions:201, bio:'Psicóloga. Acompaño procesos de autoconocimiento y crecimiento personal con enfoque humanista.', tags:['autoestima','identidad','creatividad'] },
-  { id:'p4', type:'salud', name:'Mg. Sofía Ramos',  av:'🌙',    spec:'Psicología Infantil',   rate:30, currency:'USD', rating:4.9, sessions:156, bio:'Psicóloga especializada en niños, adolescentes y familias. Crianza con apego y vínculo temprano.', tags:['niños','adolescentes','familia'] },
+  { id:'p1', type:'salud', name:'Lic. Ana García',  av:'👩‍⚕️', spec:'Psicología Clínica',   rate:50, currency:'USD', rating:4.9, sessions:134, solidarity:true,  bio:'Especializada en ansiedad, depresión y relaciones. 8 años de experiencia clínica.', tags:['ansiedad','depresión','pareja'] },
+  { id:'p2', type:'salud', name:'Dr. Carlos Méndez',av:'👨‍⚕️', spec:'Psiquiatría',           rate:65, currency:'USD', rating:4.8, sessions:89,  solidarity:false, bio:'Psiquiatra con enfoque integral. Evaluación, medicación y psicoterapia combinada.', tags:['psiquiatría','TDAH','trastornos del sueño'] },
+  { id:'p3', type:'salud', name:'Lic. Lucía Torres',av:'🌺',    spec:'Psicología · Gestalt',  rate:35, currency:'USD', rating:5.0, sessions:201, solidarity:true,  bio:'Psicóloga. Acompaño procesos de autoconocimiento y crecimiento personal con enfoque humanista.', tags:['autoestima','identidad','creatividad'] },
+  { id:'p4', type:'salud', name:'Mg. Sofía Ramos',  av:'🌙',    spec:'Psicología Infantil',   rate:30, currency:'USD', rating:4.9, sessions:156, solidarity:false, bio:'Psicóloga especializada en niños, adolescentes y familias. Crianza con apego y vínculo temprano.', tags:['niños','adolescentes','familia'] },
   // ── BIENESTAR (no son profesionales de salud mental) ──────────
-  { id:'b1', type:'bienestar', name:'Marcela V.',   av:'🌿',    spec:'Coach de Vida certificada', rate:20, currency:'USD', rating:4.8, sessions:98,  bio:'Acompaño procesos de cambio, metas personales y laborales. El coaching NO es psicoterapia.', tags:['metas','motivación','hábitos'] },
-  { id:'b2', type:'bienestar', name:'Tomás F.',     av:'🧘',    spec:'Mindfulness y Meditación',  rate:15, currency:'USD', rating:4.9, sessions:142, bio:'Instructor certificado de mindfulness y técnicas de reducción del estrés basadas en evidencia.', tags:['estrés','mindfulness','respiración'] },
-  { id:'b3', type:'bienestar', name:'Valeria R.',   av:'🎨',    spec:'Arte-terapia facilitada',   rate:18, currency:'USD', rating:4.7, sessions:67,  bio:'Facilitadora de arte-terapia. Técnica expresiva de bienestar — NO es tratamiento psicológico.', tags:['expresión','creatividad','bienestar'] }
+  { id:'b1', type:'bienestar', name:'Marcela V.',   av:'🌿',    spec:'Coach de Vida certificada', rate:20, currency:'USD', rating:4.8, sessions:98,  solidarity:true,  bio:'Acompaño procesos de cambio, metas personales y laborales. El coaching NO es psicoterapia.', tags:['metas','motivación','hábitos'] },
+  { id:'b2', type:'bienestar', name:'Tomás F.',     av:'🧘',    spec:'Mindfulness y Meditación',  rate:15, currency:'USD', rating:4.9, sessions:142, solidarity:false, bio:'Instructor certificado de mindfulness y técnicas de reducción del estrés basadas en evidencia.', tags:['estrés','mindfulness','respiración'] },
+  { id:'b3', type:'bienestar', name:'Valeria R.',   av:'🎨',    spec:'Arte-terapia facilitada',   rate:18, currency:'USD', rating:4.7, sessions:67,  solidarity:false, bio:'Facilitadora de arte-terapia. Técnica expresiva de bienestar — NO es tratamiento psicológico.', tags:['expresión','creatividad','bienestar'] }
 ];
 
 function pRenderProfessionals(){
@@ -1334,10 +1359,19 @@ function pRenderProfessionals(){
 
   function _proCard(p){
     var spec = p.spec || p.specialty || 'Especialista';
-    return '<div class="p-pro-card" onclick="pOpenProSession(\''+p.id+'\')"><div style="display:flex;align-items:flex-start;gap:14px"><div style="font-size:44px;flex-shrink:0">'+p.av+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+p.name+'</span><span class="pro-rate">$'+p.rate+' <span style="font-size:13px;color:var(--ink4)">'+p.currency+'</span></span></div><div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--sage3)">'+_escHtml(spec)+'</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin-bottom:10px">'+p.bio+'</p><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+p.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--ink4)">⭐ '+p.rating+' · '+p.sessions+' sesiones</span><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pOpenBookPro(\''+p.id+'\')">📅 Reservar</button></div></div></div></div>';
+    var solidBadge = p.solidarity ? '<span style="font-size:10px;font-weight:700;color:#3a7bd5;background:rgba(58,123,213,.1);border:1px solid rgba(58,123,213,.25);border-radius:100px;padding:2px 8px;margin-left:6px">💙 Solidario/a</span>' : '';
+    return '<div class="p-pro-card" onclick="pOpenProSession(\''+p.id+'\')"><div style="display:flex;align-items:flex-start;gap:14px"><div style="font-size:44px;flex-shrink:0">'+p.av+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+p.name+'</span>'+solidBadge+'</div><span class="pro-rate">$'+p.rate+' <span style="font-size:13px;color:var(--ink4)">'+p.currency+'</span></span></div><div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--sage3)">'+_escHtml(spec)+'</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin-bottom:10px">'+p.bio+'</p><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+p.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--ink4)">⭐ '+p.rating+' · '+p.sessions+' sesiones</span><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pOpenBookPro(\''+p.id+'\')">📅 Reservar</button></div></div></div></div>';
   }
 
-  list.innerHTML = _proData.map(_proCard).join('');
+  // Waitlist CTA for users who can't afford sessions
+  var waitlistBanner = '<div onclick="pJoinWaitlist()" style="display:flex;align-items:center;gap:12px;background:rgba(58,123,213,.07);border:1.5px solid rgba(58,123,213,.18);border-radius:14px;padding:13px 15px;margin-bottom:16px;cursor:pointer">'
+    +'<div style="font-size:24px">💙</div>'
+    +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--ink)">¿No podés pagarlo ahora?</div>'
+    +'<div style="font-size:11px;color:var(--ink4);margin-top:2px">Anotate en la lista de espera solidaria. Profesionales donan 1 sesión/mes para quienes más lo necesitan.</div></div>'
+    +'<div style="color:var(--ink5);font-size:16px;flex-shrink:0">›</div>'
+    +'</div>';
+
+  list.innerHTML = waitlistBanner + _proData.map(_proCard).join('');
 }
 var _curPro = null;
 function pOpenProSession(id){
@@ -4370,31 +4404,40 @@ function pShowPlusModal(){
   ov.id = 'plusCompareOv';
   ov.innerHTML = '<div class="p-sheet" style="max-height:92vh;overflow-y:auto">'
     +'<div class="p-sheet-handle"></div>'
-    +'<div style="text-align:center;margin-bottom:16px">'
-    +'<div style="font-size:32px;margin-bottom:6px">⭐</div>'
-    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:4px">Velo Plus</div>'
-    +'<div style="font-size:13px;color:var(--ink4)">Acceso completo a toda la comunidad</div>'
+    +'<div style="text-align:center;margin-bottom:18px">'
+    +'<div style="font-size:36px;margin-bottom:8px">⭐</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:var(--ink);margin-bottom:6px">Suscripción a Velo Plus</div>'
+    +'<div style="font-size:13px;color:var(--ink4);line-height:1.5">Al suscribirte recibís acceso completo a todo Velo por <strong>$2.99 USD/mes</strong>.<br>El pago se procesa por PayPal. Cancelá cuando quieras.</div>'
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
     +'<div style="background:var(--cream2);border-radius:14px;padding:13px;border:1.5px solid var(--border2)">'
-    +'<div style="font-size:11px;font-weight:700;color:var(--ink4);margin-bottom:10px;letter-spacing:.5px">GRATUITO</div>'
+    +'<div style="font-size:11px;font-weight:700;color:var(--ink4);margin-bottom:10px;letter-spacing:.5px">ACTUAL · GRATUITO</div>'
     +'<ul style="font-size:12px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
-    +'<li>✅ Diario emocional</li><li>✅ Muro de la Felicidad</li>'
-    +'<li>✅ 2 mensajes al Mar/día</li><li>✅ 2 pedidos de ayuda/día</li>'
+    +'<li>✅ Diario emocional</li>'
+    +'<li>✅ Muro de la Felicidad</li>'
+    +'<li>✅ 2 mensajes al Mar/día</li>'
+    +'<li>✅ 2 pedidos de ayuda/día</li>'
     +'<li>✅ 4 sesiones guardián/día</li>'
-    +'<li style="color:var(--ink5)">❌ Círculos de Paz</li><li style="color:var(--ink5)">❌ Insignia dorada</li>'
+    +'<li style="color:var(--ink5)">❌ Círculos de Paz</li>'
+    +'<li style="color:var(--ink5)">❌ Sesiones profesionales</li>'
+    +'<li style="color:var(--ink5)">❌ Insignia dorada</li>'
     +'</ul></div>'
     +'<div style="background:linear-gradient(135deg,rgba(200,165,100,.18),rgba(200,165,100,.08));border-radius:14px;padding:13px;border:1.5px solid rgba(200,165,100,.4)">'
-    +'<div style="font-size:11px;font-weight:700;color:#C8A560;margin-bottom:10px;letter-spacing:.5px">⭐ PLUS $2.99/mes</div>'
+    +'<div style="font-size:11px;font-weight:700;color:#C8A560;margin-bottom:10px;letter-spacing:.5px">CON PLUS · $2.99/mes</div>'
     +'<ul style="font-size:12px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
-    +'<li>✅ Todo lo gratuito</li><li>✅ Ilimitado en todo</li>'
-    +'<li>✅ Crear Círculos de Paz</li><li style="color:#C8A560">✅ Insignia dorada ✨</li>'
-    +'<li>✅ Sesiones guardián ∞</li><li>✅ Prioridad en lista</li>'
+    +'<li>✅ Todo lo gratuito</li>'
+    +'<li>✅ Ilimitado en todo</li>'
+    +'<li>✅ Círculos de Paz</li>'
+    +'<li>✅ Sesiones profesionales</li>'
+    +'<li style="color:#C8A560">✅ Insignia dorada ✨</li>'
+    +'<li>✅ Guardianes prioritarios ∞</li>'
     +'<li style="color:var(--sage2)">✅ Apoyás la comunidad 💚</li>'
     +'</ul></div>'
     +'</div>'
-    +'<p style="font-size:12px;color:var(--ink5);text-align:center;margin-bottom:18px;line-height:1.6">Tu suscripción mantiene Velo gratuito y subsidia sesiones para quienes más lo necesitan.</p>'
-    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove();pOpenPayPalPlus()" style="background:linear-gradient(135deg,#C8A560,#A07840);margin-bottom:10px">⭐ Suscribirme a Plus · $2.99/mes</button>'
+    +'<div style="background:var(--sage7);border-radius:12px;padding:12px 14px;margin-bottom:18px;border:1px solid var(--border2)">'
+    +'<p style="font-size:12px;color:var(--ink4);margin:0;line-height:1.6">💳 <strong>Pago seguro vía PayPal</strong> · $2.99 USD/mes · Se renueva automáticamente. Tu suscripción ayuda a mantener Velo gratuito y subsidia sesiones solidarias para quienes más lo necesitan.</p>'
+    +'</div>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove();pOpenPayPalPlus()" style="background:linear-gradient(135deg,#C8A560,#A07840);margin-bottom:10px">⭐ Suscribirme por $2.99/mes · PayPal</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove()">Ahora no</button>'
     +'</div>';
   document.body.appendChild(ov);
@@ -4739,6 +4782,7 @@ function switchProPanel(panel, btn){
     notas: '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Notas de sesión</div><textarea class="p-textarea" rows="6" placeholder="Escribí notas de tu sesión más reciente..."></textarea><div style="height:10px"></div><button class="p-btn p-btn--primary p-btn--md" onclick="pToast(\'📝\',\'Nota guardada\')">Guardar nota</button></div>',
     finanzas: '<div class="metric-cards"><div class="metric-card"><div class="metric-n">$0</div><div class="metric-l">Pendiente</div></div><div class="metric-card"><div class="metric-n">$0</div><div class="metric-l">Total recibido</div></div><div class="metric-card"><div class="metric-n">0</div><div class="metric-l">Sesiones pagadas</div></div></div><div class="p-card" style="padding:18px;margin-top:14px"><p class="p-sm p-muted">Los pagos se procesan automáticamente por Stripe. Comisión Velo: 20%.</p></div>',
     mensajes: _renderProMessages(),
+    solidario: _renderProSolidarity(),
     perfil: '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Mi perfil profesional</div><div class="p-field"><label class="p-field-label">Estado</label><div style="display:flex;gap:8px">'+[{v:'disponible',l:'🟢 Disponible'},{v:'ocupado',l:'🟡 Ocupado'},{v:'vacaciones',l:'🏖️ Vacaciones'}].map(function(s){ return '<button style="padding:7px 12px;border-radius:100px;border:1.5px solid var(--border2);background:rgba(255,255,255,.7);font-size:12px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pToast(\'✅\',\'Estado: '+s.l+'\')">'+s.l+'</button>'; }).join('')+'</div></div><button class="p-btn p-btn--secondary p-btn--md" onclick="pSignOut()">↩️ Cerrar sesión</button></div>'
   };
   content.innerHTML = panels[panel] || '<p class="p-sm p-muted">Sección en desarrollo 🌿</p>';
@@ -4950,6 +4994,119 @@ function pSendProReply(proId, proName){
   var inboxOv = document.getElementById('inboxMsgOv');
   if(inboxOv) inboxOv.remove();
   pToast('💌','Respuesta enviada a '+proName);
+}
+
+// ── SOLIDARITY WAITLIST ─────────────────────────────────────
+function pJoinWaitlist(){
+  // Check if already on waitlist
+  if(safeLS('get','velo_on_waitlist') === '1'){
+    pToast('💙','Ya estás en la lista de espera. Te avisaremos por buzón cuando haya un lugar.');
+    return;
+  }
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'waitlistOv';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="text-align:center;margin-bottom:16px">'
+    +'<div style="font-size:44px;margin-bottom:8px">💙</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:6px">Lista de espera solidaria</div>'
+    +'<p style="font-size:13px;color:var(--ink4);line-height:1.6">Profesionales Solidarios/as donan 1 sesión gratuita por mes. Te avisaremos por buzón cuando haya un lugar disponible para vos.</p>'
+    +'</div>'
+    +'<div class="p-field"><label class="p-field-label">¿En qué área necesitás ayuda? (opcional)</label>'
+    +'<input id="waitlistArea" class="p-input" type="text" placeholder="Ej: ansiedad, estrés laboral, duelo..."></div>'
+    +'<div style="height:14px"></div>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pConfirmWaitlist()">💙 Anotarme en la lista</button>'
+    +'<div style="height:8px"></div>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'waitlistOv\').remove()">Cancelar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+}
+
+function pConfirmWaitlist(){
+  var areaEl = document.getElementById('waitlistArea');
+  var area = areaEl ? areaEl.value.trim() : '';
+  var userName = safeLS('get','velo_user_name') || 'Usuario';
+  var ts = Date.now();
+  var waitlist = []; try{ waitlist = JSON.parse(safeLS('get','velo_waitlist')||'[]'); }catch(e){}
+  var pos = waitlist.length + 1;
+  waitlist.push({ id:'wl-'+ts, userName:userName, area:area, ts:ts });
+  safeLS('set','velo_waitlist', JSON.stringify(waitlist));
+  safeLS('set','velo_on_waitlist','1');
+  // Inbox confirmation
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  inbox.unshift({ id:'wl-conf-'+ts, tipo:'sistema', icon:'💙', remitente:'Programa Solidario',
+    asunto:'Estás en la lista de espera 💙',
+    extracto:'Posición '+pos+' en lista. Te avisaremos cuando un profesional esté disponible.',
+    cuerpo:'Hola '+userName+',\n\nTe anotamos en la lista de espera del Programa Solidario. Estás en la posición '+pos+'.\n\nCuando un Profesional Solidario/a tenga una sesión disponible, te avisaremos por este buzón y podrás confirmar la reserva.\n\nGracias por confiar en Velo 💙',
+    leido:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
+  safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+  _updateHomeBell();
+  var ov = document.getElementById('waitlistOv');
+  if(ov) ov.remove();
+  pToast('💙','¡Anotado/a! Te avisaremos cuando haya un lugar disponible 🌿');
+}
+
+function _renderProSolidarity(){
+  var proId = safeLS('get','velo_pro_id') || safeLS('get','velo_user_email') || 'pro';
+  var solidarity = safeLS('get','velo_pro_solidarity') === '1';
+  if(!solidarity){
+    return '<div class="p-card" style="padding:18px">'
+      +'<div class="p-label p-label-sage" style="margin-bottom:12px">Programa Solidario</div>'
+      +'<p style="font-size:13px;color:var(--ink4);line-height:1.6;margin-bottom:14px">¿Querés donar 1 sesión gratuita por mes para alguien que lo necesita? Obtenés la insignia 💙 Profesional Solidario/a.</p>'
+      +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pTogProSolidarity(true)">💙 Unirme al programa solidario</button>'
+      +'</div>';
+  }
+  var waitlist = []; try{ waitlist = JSON.parse(safeLS('get','velo_waitlist')||'[]'); }catch(e){}
+  var assigned = waitlist[0];
+  return '<div class="p-card" style="padding:18px">'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
+    +'<span style="font-size:11px;font-weight:700;color:#3a7bd5;background:rgba(58,123,213,.1);border:1px solid rgba(58,123,213,.2);border-radius:100px;padding:4px 12px">💙 Profesional Solidario/a</span>'
+    +'<button style="margin-left:auto;font-size:11px;color:var(--ink5);background:none;border:none;cursor:pointer" onclick="pTogProSolidarity(false)">Salir del programa</button>'
+    +'</div>'
+    +(assigned
+      ? '<div style="background:rgba(58,123,213,.07);border:1.5px solid rgba(58,123,213,.2);border-radius:12px;padding:14px;margin-bottom:14px">'
+        +'<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px">👤 '+_escHtml(assigned.userName)+'</div>'
+        +(assigned.area ? '<div style="font-size:12px;color:var(--ink4);margin-bottom:10px">Área: '+_escHtml(assigned.area)+'</div>' : '<div style="height:6px"></div>')
+        +'<div style="font-size:11px;color:var(--ink5);margin-bottom:10px">En lista desde '+new Date(assigned.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
+        +'<button class="p-btn p-btn--primary p-btn--sm" onclick="pAssignSolidarity(\''+assigned.id+'\',\''+_escHtml(assigned.userName)+'\')">💙 Contactar y asignar sesión</button>'
+        +'</div>'
+      : '<p class="p-sm p-muted">No hay usuarios en lista de espera en este momento.</p>')
+    +'<p style="font-size:11px;color:var(--ink5);line-height:1.5">La sesión solidaria se asigna manualmente. Velo coordina el contacto por buzón interno.</p>'
+    +'</div>';
+}
+
+function pTogProSolidarity(on){
+  safeLS('set','velo_pro_solidarity', on ? '1' : '0');
+  pToast(on ? '💙' : '✅', on ? '¡Bienvenido/a al programa solidario!' : 'Saliste del programa solidario');
+  switchProPanel('solidario', null);
+}
+
+function pAssignSolidarity(waitlistId, userName){
+  // Mark as assigned — remove from waitlist
+  var waitlist = []; try{ waitlist = JSON.parse(safeLS('get','velo_waitlist')||'[]'); }catch(e){}
+  var user = waitlist.find(function(w){ return w.id === waitlistId; });
+  waitlist = waitlist.filter(function(w){ return w.id !== waitlistId; });
+  safeLS('set','velo_waitlist', JSON.stringify(waitlist));
+
+  // Send notification to user inbox
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  var proName = safeLS('get','velo_user_name') || 'Profesional';
+  var proId   = safeLS('get','velo_pro_id') || safeLS('get','velo_user_email') || 'pro';
+  var ts = Date.now();
+  inbox.unshift({ id:'wl-assign-'+ts, tipo:'pro-msg', icon:'💙', remitente:proName,
+    proId:proId, proName:proName,
+    asunto:'¡Conseguiste una sesión solidaria! 💙',
+    extracto:'Un/a Profesional Solidario/a aceptó acompañarte. Respondé para coordinar.',
+    cuerpo:'Hola,\n\nSoy '+proName+' y me gustaría acompañarte en tu sesión solidaria gratuita.\n\nRespondé este mensaje para coordinar el día y horario que mejor te venga. Estoy acá para vos 💙',
+    leido:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
+  safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+  safeLS('set','velo_on_waitlist','0');
+  _updateHomeBell();
+
+  pToast('💙','Sesión asignada a '+userName+'. Le llegó una notificación en su buzón.');
+  switchProPanel('solidario', null);
 }
 
 function pTogDay(el){
