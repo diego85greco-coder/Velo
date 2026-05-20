@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260520-12">
+  <link rel="stylesheet" href="premium.css?v=20260520-13">
 </head>
 <body>
 
@@ -844,15 +844,17 @@
       <!-- ══ HELP CHAT ════════════════════════════════════════════ -->
       <div class="p-page" id="pg-help-chat" style="flex-direction:column;height:100%;overflow:hidden;background:linear-gradient(160deg,#0B1C0E,#080E08)">
         <div class="feed-header" style="background:rgba(8,20,10,.9);border-bottom:1px solid rgba(116,198,157,.15)">
-          <button class="p-back-btn p-dark-back-btn" onclick="pLeaveHelpChat()">←</button>
-          <div class="feed-header-info">
+          <div class="feed-header-info" style="flex:1;min-width:0">
             <span style="font-size:22px" id="helpChatEmoji">💚</span>
             <div style="min-width:0">
               <div id="helpChatTitle" style="font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Acompañamiento</div>
               <div style="font-size:10px;color:rgba(116,198,157,.7)">Chat privado · Confidencial</div>
             </div>
           </div>
-          <div style="margin-left:auto;font-size:10px;color:rgba(255,255,255,.35);text-align:right;max-width:120px;line-height:1.4">⏱️ Cierra tras<br>5 min sin respuesta</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+            <button onclick="pReportHelpChat()" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);border-radius:10px;padding:7px 11px;color:rgba(255,120,120,.9);font-size:11px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">⚠️ Reportar</button>
+            <button onclick="pLeaveHelpChat()" style="background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:10px;padding:7px 11px;color:rgba(116,198,157,.95);font-size:11px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">✓ Finalizar</button>
+          </div>
         </div>
         <div id="helpChatMessages" class="feed-messages" style="background:transparent"></div>
         <div class="feed-input-area" style="background:rgba(8,20,10,.9);border-top:1px solid rgba(116,198,157,.12)">
@@ -1610,7 +1612,24 @@
             <div style="height:14px"></div>
             <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSendPostChat()">Enviar reseña ✨</button>
             <div style="height:8px"></div>
-            <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('home')">Saltar</button>
+            <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('donate-cta')">Saltar →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ DONATE CTA ═════════════════════════════════════════════ -->
+      <div class="p-page fade-in" id="pg-donate-cta">
+        <div class="p-page-scroll">
+          <div class="p-page-inner" style="max-width:560px;margin:auto;padding-top:60px;text-align:center">
+            <div style="font-size:64px;margin-bottom:16px;animation:p-float 3s ease-in-out infinite">🌻</div>
+            <h2 class="p-hero-text" style="color:var(--sage);margin-bottom:10px">Gracias por estar aquí</h2>
+            <p class="p-subtitle" style="margin-bottom:24px;line-height:1.7">Velo es gratuito gracias a personas como vos. Con tu apoyo podemos mantener los guardianes activos y ofrecer sesiones subsidiadas a quienes más lo necesitan.</p>
+            <div class="p-card" style="padding:22px;margin-bottom:16px;background:linear-gradient(135deg,rgba(116,198,157,.12),rgba(45,106,79,.08));border:1.5px solid rgba(116,198,157,.25)">
+              <div style="font-size:13px;font-weight:700;color:var(--sage);margin-bottom:14px;letter-spacing:.5px">APOYAR A VELO</div>
+              <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pGoTo('home');setTimeout(function(){document.querySelector('[onclick*=donate]')&&document.querySelector('[onclick*=donate]').click()},300)" style="margin-bottom:10px">💚 Donar — lo que puedas</button>
+              <button class="p-btn" onclick="pGoTo('home');setTimeout(function(){document.querySelector('[onclick*=veloPlusOv],[onclick*=veloPlus]')&&document.querySelector('[onclick*=veloPlusOv],[onclick*=veloPlus]').click()},300)" style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(200,165,100,.12));border:1.5px solid rgba(200,165,100,.35);color:#C8A560;font-size:14px;font-weight:700;border-radius:100px;padding:13px 20px;width:100%;cursor:pointer">⭐ Velo Plus — desde $3/mes</button>
+            </div>
+            <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('home')">Volver al inicio</button>
           </div>
         </div>
       </div>
@@ -2028,6 +2047,6 @@
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-12"></script>
+<script src="premium.js?v=20260520-13"></script>
 </body>
 </html>

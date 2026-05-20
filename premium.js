@@ -87,7 +87,7 @@ var P_NO_NAV = ['landing','login','register','register-type','onboarding',
                 'pro-reg','pro-onboarding','admin-login','pro-pending'];
 var P_DARK   = ['help','bottle','respira'];
 var P_FADE   = ['landing','onboarding','register-type','donation-exit',
-                'session-room','post-chat','pro-pending','admin-login','calm-ai'];
+                'session-room','post-chat','donate-cta','pro-pending','admin-login','calm-ai'];
 
 // ── NAVIGATE ─────────────────────────────────────────────────
 function pGoTo(id){
@@ -500,7 +500,7 @@ function pFinishOnboarding(){
 function _loadHomeData(){
   var d = new Date();
   var h = d.getHours();
-  var greet = h < 12 ? 'Buenos días 🌿' : h < 18 ? 'Buenas tardes 🌤️' : 'Buenas noches 🌙';
+  var greet = (h < 6 || h >= 20) ? 'Buenas noches 🌙' : h < 12 ? 'Buenos días 🌿' : 'Buenas tardes 🌤️';
   var months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   var dateStr = d.getDate() + ' de ' + months[d.getMonth()];
 
@@ -1189,8 +1189,11 @@ function pSendHelpChatMsg(){
 function pLeaveHelpChat(){
   if(_helpChatInactivityTimer){ clearTimeout(_helpChatInactivityTimer); _helpChatInactivityTimer = null; }
   _curHelpPost = null;
-  pGoTo('help');
-  pRenderHelp();
+  pGoTo('post-chat');
+}
+
+function pReportHelpChat(){
+  pReportContent('chat', 'help-chat-'+Date.now(), 'Chat de acompañamiento');
 }
 
 function pOpenHelpForm(){ openModal('helpFormOv'); }
@@ -1393,7 +1396,7 @@ async function _checkDailyGreeting(){
 
   var d        = new Date();
   var h        = d.getHours();
-  var momento  = h < 12 ? 'mañana' : h < 19 ? 'tarde' : 'noche';
+  var momento  = (h < 6 || h >= 20) ? 'noche' : h < 12 ? 'mañana' : 'tarde';
   var dias     = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   var dia      = dias[d.getDay()];
   var meses    = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -3675,7 +3678,7 @@ function pSendPostChat(){
       if(badge.next) pToast('📈', newConvs+' conversaciones · '+badge.needed+' más para '+badge.next);
     }, 1400);
   }
-  setTimeout(function(){ pGoTo('home'); }, 2200);
+  setTimeout(function(){ pGoTo('donate-cta'); }, 2200);
 }
 
 // ── PRO PANEL ──────────────────────────────────────────────────
