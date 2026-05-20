@@ -518,8 +518,11 @@ function _loadHomeData(){
 
   // Today's mood
   _loadTodayMoodHome();
+  _updateHomeCurrentMoodLine();
   _updateSidebarUser();
   _renderPersonalizedSuggestions();
+  // Daily quote in home header (Gemini, cached per day)
+  setTimeout(_loadDailyMotivationalQuote, 200);
   // Daily greeting — only once per day, with a slight delay so the page renders first
   setTimeout(_checkDailyGreeting, 900);
 }
@@ -531,6 +534,143 @@ function _loadTodayMoodHome(){
   if(stored){ try{ var m = JSON.parse(stored); if(m.emoji) emoji = m.emoji; }catch(e){} }
   var me = document.getElementById('homeMoodEmoji');
   if(me) me.textContent = emoji;
+}
+
+// ── QUICK MOOD PICKER ─────────────────────────────────────────
+var _selectedQuickMoodEmoji = '';
+
+function pQuickMood(){
+  var picker = document.getElementById('quickMoodPicker');
+  if(!picker) return;
+  var isOpen = picker.style.display !== 'none';
+  if(isOpen){ pCloseQuickMood(); return; }
+  picker.style.display = '';
+  _selectedQuickMoodEmoji = '';
+  var saveBtn = document.getElementById('quickMoodSaveBtn');
+  if(saveBtn) saveBtn.disabled = true;
+  document.querySelectorAll('.quick-mood-emoji').forEach(function(b){ b.style.background=''; b.style.transform=''; });
+  var inp = document.getElementById('quickMoodPhrase');
+  if(inp) inp.value = '';
+}
+
+function pCloseQuickMood(){
+  var picker = document.getElementById('quickMoodPicker');
+  if(picker) picker.style.display = 'none';
+}
+
+function pSelectQuickMood(el, emoji, label){
+  _selectedQuickMoodEmoji = emoji;
+  document.querySelectorAll('.quick-mood-emoji').forEach(function(b){
+    b.style.background = '';
+    b.style.transform = '';
+    b.style.boxShadow = '';
+  });
+  el.style.background = 'rgba(45,106,79,.12)';
+  el.style.transform = 'scale(1.25)';
+  el.style.boxShadow = '0 0 0 2px var(--sage4)';
+  var saveBtn = document.getElementById('quickMoodSaveBtn');
+  if(saveBtn) saveBtn.disabled = false;
+}
+
+function pSaveQuickMood(){
+  if(!_selectedQuickMoodEmoji) return;
+  var phrase = (document.getElementById('quickMoodPhrase')||{}).value || '';
+  var today = _dateKey();
+  var labels = {'😄':'Muy bien','😊':'Bien','😐':'Regular','😞':'Mal','😢':'Muy mal'};
+  var moodObj = { emoji: _selectedQuickMoodEmoji, label: labels[_selectedQuickMoodEmoji]||'', note: phrase.trim(), ts: Date.now() };
+  safeLS('set','velo_mood_'+today, JSON.stringify(moodObj));
+  // Update mood log for suggestions
+  var log = []; try{ log = JSON.parse(safeLS('get','velo_mood_log')||'[]'); }catch(e){}
+  log.unshift(moodObj); safeLS('set','velo_mood_log', JSON.stringify(log.slice(0,90)));
+  // Update UI
+  var moodLine = document.getElementById('homeCurrentMoodLine');
+  if(moodLine) moodLine.textContent = _selectedQuickMoodEmoji + ' ' + (labels[_selectedQuickMoodEmoji]||'') + (phrase.trim() ? ' — ' + phrase.trim() : '');
+  pCloseQuickMood();
+  pToast(_selectedQuickMoodEmoji, 'Estado de ánimo guardado 💚');
+}
+
+// ── MI ESTADO VISIBLE ──────────────────────────────────────────
+function pOpenMyStatus(){
+  var music  = safeLS('get','velo_status_music')  || '';
+  var book   = safeLS('get','velo_status_book')   || '';
+  var phrase = safeLS('get','velo_status_phrase') || '';
+  var m = document.getElementById('statusMusic');
+  var b = document.getElementById('statusBook');
+  var p = document.getElementById('statusPhrase');
+  if(m) m.value = music;
+  if(b) b.value = book;
+  if(p) p.value = phrase;
+  openModal('myStatusOv');
+}
+
+function pSaveMyStatus(){
+  var music  = (document.getElementById('statusMusic')||{}).value  || '';
+  var book   = (document.getElementById('statusBook')||{}).value   || '';
+  var phrase = (document.getElementById('statusPhrase')||{}).value || '';
+  safeLS('set','velo_status_music',  music.trim());
+  safeLS('set','velo_status_book',   book.trim());
+  safeLS('set','velo_status_phrase', phrase.trim());
+  closeModal('myStatusOv');
+  pToast('✨', 'Estado actualizado y visible en tu perfil 💚');
+}
+
+// ── DAILY MOTIVATIONAL QUOTE (home, below greeting) ────────────
+var _dailyQuoteFallbacks = [
+  'Hoy es un nuevo comienzo. Cada momento es una oportunidad para ser amable con vos mismo/a 🌱',
+  'El coraje no es no tener miedo — es seguir adelante a pesar de él. Acá estamos con vos 💚',
+  'Pequeños pasos también son pasos. Todo avance cuenta, sin importar el tamaño ✨',
+  'Tu historia no terminó. Todavía quedan páginas hermosas por escribir 🌸',
+  'Está bien no estar bien. Lo importante es que no estás solo/a 🫂',
+  'La calma es una práctica, no un destino. Respirá, estás más cerca de lo que creés 🌿',
+  'Hoy, un solo gesto de amabilidad hacia vos mismo/a puede cambiarlo todo 💙',
+  'Las raíces más fuertes crecen en las tormentas. Confiá en tu proceso 🌳',
+  'Mereces exactamente el mismo amor que le das a los demás 🌺',
+  'Cada día que abrís los ojos es una nueva oportunidad. Ese es el regalo de hoy 🌅',
+  'La vulnerabilidad no es debilidad — es el punto de partida del verdadero cambio 💫',
+  'No tenés que tenerlo todo resuelto hoy. Solo el próximo paso 🌊',
+  'Tu bienestar importa. Cuidarte no es egoísta — es necesario 🌱',
+  'Hay fuerza en pedir ayuda. No lo olvidés 💚',
+  'Este momento, con todo lo que trae, también va a pasar. Y vos vas a estar bien ✨'
+];
+
+async function _loadDailyMotivationalQuote(){
+  var el = document.getElementById('homeDailyQuote');
+  if(!el) return;
+  var today = new Date().toISOString().slice(0,10);
+  var cacheKey = 'velo_daily_quote_'+today;
+  var cached = safeLS('get', cacheKey);
+  if(cached){ el.textContent = cached; return; }
+  // Generate with Gemini
+  var d = new Date();
+  var dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  var prompt = 'Escribí una frase corta, poética y motivadora para alguien que atraviesa un momento difícil. '
+    +'Hoy es '+dias[d.getDay()]+'. '
+    +'La frase debe ser genuina, cálida y esperanzadora — no un cliché. '
+    +'Español rioplatense. Máximo 20 palabras. Podés terminar con un emoji suave. '
+    +'Solo la frase, sin comillas.';
+  var msg = await _geminiCall(prompt, { temperature:0.95, maxOutputTokens:60 });
+  if(!msg || msg.length > 180){
+    var fallbackIdx = (new Date().getDate() + new Date().getMonth()) % _dailyQuoteFallbacks.length;
+    msg = _dailyQuoteFallbacks[fallbackIdx];
+  }
+  safeLS('set', cacheKey, msg);
+  el.textContent = msg;
+}
+
+function _updateHomeCurrentMoodLine(){
+  var el = document.getElementById('homeCurrentMoodLine');
+  if(!el) return;
+  var today = _dateKey();
+  var stored = safeLS('get','velo_mood_'+today);
+  if(stored){
+    try{
+      var m = JSON.parse(stored);
+      var labels = {'😄':'Muy bien','😊':'Bien','😐':'Regular','😞':'Mal','😢':'Muy mal'};
+      el.textContent = m.emoji + ' ' + (labels[m.emoji]||m.label||'') + (m.note ? ' — '+m.note : '');
+      return;
+    }catch(e){}
+  }
+  el.textContent = 'Tocá para registrar cómo te sentís ✨';
 }
 
 function _updateSidebarUser(){

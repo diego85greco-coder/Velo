@@ -2453,6 +2453,14 @@ a { text-decoration: none; color: inherit; }
 }
 .home-mood-btn:active { transform: scale(.94); }
 
+.quick-mood-emoji {
+  font-size: 28px; padding: 6px 8px; border: 2px solid transparent;
+  border-radius: 12px; background: none; cursor: pointer;
+  transition: transform .15s, box-shadow .15s, background .15s;
+}
+.quick-mood-emoji:hover { transform: scale(1.15); background: rgba(45,106,79,.08); }
+.quick-mood-emoji:active { transform: scale(.9); }
+
 /* ── Inputs: animated focus ring ─────────────────────────────── */
 .p-input {
   transition: border-color var(--t-fast) ease,
