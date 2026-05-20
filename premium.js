@@ -560,18 +560,16 @@ function _loadHomeData(){
 function _updateHomeBell(){
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   var unread = msgs.filter(function(m){ return !m.leido; }).length;
+  var label  = unread > 9 ? '9+' : String(unread);
   // Home bell badge
-  var badge = document.getElementById('homeBellBadge');
-  if(badge){
-    if(unread > 0){ badge.style.display = 'block'; badge.textContent = unread > 9 ? '9+' : unread; }
-    else { badge.style.display = 'none'; }
-  }
+  var bell = document.getElementById('homeBellBadge');
+  if(bell){ bell.style.display = unread > 0 ? 'block' : 'none'; bell.textContent = label; }
+  // Home buzón card badge
+  var buzón = document.getElementById('homeBuzónBadge');
+  if(buzón){ buzón.style.display = unread > 0 ? 'block' : 'none'; buzón.textContent = label; }
   // Sidebar inbox badge
   var snBadge = document.getElementById('sn-inbox-badge');
-  if(snBadge){
-    snBadge.textContent = unread > 0 ? '!' : '';
-    snBadge.classList.toggle('p-hidden', unread === 0);
-  }
+  if(snBadge){ snBadge.textContent = unread > 0 ? '!' : ''; snBadge.classList.toggle('p-hidden', unread === 0); }
 }
 
 function _updateInboxDot(){
