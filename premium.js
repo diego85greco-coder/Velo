@@ -87,7 +87,7 @@ var P_NO_NAV = ['landing','login','register','register-type','onboarding',
                 'pro-reg','pro-onboarding','admin-login','pro-pending'];
 var P_DARK   = ['help','bottle','respira'];
 var P_FADE   = ['landing','onboarding','register-type','donation-exit',
-                'session-room','post-chat','pro-pending','admin-login'];
+                'session-room','post-chat','pro-pending','admin-login','calm-ai'];
 
 // ── NAVIGATE ─────────────────────────────────────────────────
 function pGoTo(id){
@@ -790,20 +790,61 @@ function pConfirmAskGuardian(){
 
 // ── PROFESSIONALS ──────────────────────────────────────────────
 var _proData = [
-  { id:'p1', name:'Lic. Ana García', av:'👩‍⚕️', spec:'Psicología Clínica', rate:50, currency:'USD', rating:4.9, sessions:134, bio:'Especializada en ansiedad, depresión y relaciones. 8 años de experiencia.', tags:['ansiedad','depresión','pareja'] },
-  { id:'p2', name:'Dr. Carlos Méndez', av:'👨‍⚕️', spec:'Psiquiatría', rate:65, currency:'USD', rating:4.8, sessions:89, bio:'Psiquiatra con enfoque integral. Medicación y psicoterapia combinada.', tags:['psiquiatría','TDAH','trastornos del sueño'] },
-  { id:'p3', name:'Lic. Lucía Torres', av:'🌺', spec:'Terapia Gestalt', rate:35, currency:'USD', rating:5.0, sessions:201, bio:'Acompaño procesos de autoconocimiento y crecimiento personal.', tags:['autoestima','identidad','creatividad'] },
-  { id:'p4', name:'Mg. Sofía Ramos', av:'🌙', spec:'Psicología Infantil', rate:30, currency:'USD', rating:4.9, sessions:156, bio:'Trabajo con niños, adolescentes y familias. Crianza con apego.', tags:['niños','adolescentes','familia'] }
+  // ── SALUD MENTAL CLÍNICA (profesionales licenciados) ──────────
+  { id:'p1', type:'salud', name:'Lic. Ana García',  av:'👩‍⚕️', spec:'Psicología Clínica',   rate:50, currency:'USD', rating:4.9, sessions:134, bio:'Especializada en ansiedad, depresión y relaciones. 8 años de experiencia clínica.', tags:['ansiedad','depresión','pareja'] },
+  { id:'p2', type:'salud', name:'Dr. Carlos Méndez',av:'👨‍⚕️', spec:'Psiquiatría',           rate:65, currency:'USD', rating:4.8, sessions:89,  bio:'Psiquiatra con enfoque integral. Evaluación, medicación y psicoterapia combinada.', tags:['psiquiatría','TDAH','trastornos del sueño'] },
+  { id:'p3', type:'salud', name:'Lic. Lucía Torres',av:'🌺',    spec:'Psicología · Gestalt',  rate:35, currency:'USD', rating:5.0, sessions:201, bio:'Psicóloga. Acompaño procesos de autoconocimiento y crecimiento personal con enfoque humanista.', tags:['autoestima','identidad','creatividad'] },
+  { id:'p4', type:'salud', name:'Mg. Sofía Ramos',  av:'🌙',    spec:'Psicología Infantil',   rate:30, currency:'USD', rating:4.9, sessions:156, bio:'Psicóloga especializada en niños, adolescentes y familias. Crianza con apego y vínculo temprano.', tags:['niños','adolescentes','familia'] },
+  // ── BIENESTAR (no son profesionales de salud mental) ──────────
+  { id:'b1', type:'bienestar', name:'Marcela V.',   av:'🌿',    spec:'Coach de Vida certificada', rate:20, currency:'USD', rating:4.8, sessions:98,  bio:'Acompaño procesos de cambio, metas personales y laborales. El coaching NO es psicoterapia.', tags:['metas','motivación','hábitos'] },
+  { id:'b2', type:'bienestar', name:'Tomás F.',     av:'🧘',    spec:'Mindfulness y Meditación',  rate:15, currency:'USD', rating:4.9, sessions:142, bio:'Instructor certificado de mindfulness y técnicas de reducción del estrés basadas en evidencia.', tags:['estrés','mindfulness','respiración'] },
+  { id:'b3', type:'bienestar', name:'Valeria R.',   av:'🎨',    spec:'Arte-terapia facilitada',   rate:18, currency:'USD', rating:4.7, sessions:67,  bio:'Facilitadora de arte-terapia. Técnica expresiva de bienestar — NO es tratamiento psicológico.', tags:['expresión','creatividad','bienestar'] }
 ];
 
 function pRenderProfessionals(){
   var list = document.getElementById('proList');
   if(!list) return;
-  list.innerHTML = _proData.map(function(p){
-    return '<div class="p-pro-card" onclick="pOpenProSession(\''+p.id+'\')"><div style="display:flex;align-items:flex-start;gap:14px"><div style="font-size:44px;flex-shrink:0">'+p.av+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+p.name+'</span><span class="pro-rate">$'+p.rate+' <span style="font-size:13px;color:var(--ink4)">'+p.currency+'</span></span></div><div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:6px">'+p.spec+'</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin-bottom:10px">'+p.bio+'</p><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+p.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--ink4)">⭐ '+p.rating+' · '+p.sessions+' sesiones</span><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pOpenProSession(\''+p.id+'\')">Reservar sesión</button></div></div></div></div>';
-  }).join('');
-}
 
+  var salud = _proData.filter(function(p){ return p.type === 'salud'; });
+  var bien  = _proData.filter(function(p){ return p.type === 'bienestar'; });
+
+  function _proCard(p){
+    var isBien = p.type === 'bienestar';
+    var accentColor = isBien ? 'var(--sage3)' : '#2d6a8a';
+    return '<div class="p-pro-card" onclick="pOpenProSession(''+p.id+'')"><div style="display:flex;align-items:flex-start;gap:14px"><div style="font-size:44px;flex-shrink:0">'+p.av+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+p.name+'</span><span class="pro-rate">$'+p.rate+' <span style="font-size:13px;color:var(--ink4)">'+p.currency+'</span></span></div><div style="font-size:12px;font-weight:600;margin-bottom:6px;color:'+accentColor+'">'+p.spec+'</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin-bottom:10px">'+p.bio+'</p><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+p.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--ink4)">⭐ '+p.rating+' · '+p.sessions+' sesiones</span><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pOpenProSession(''+p.id+'')">Reservar sesión</button></div></div></div></div>';
+  }
+
+  var html = '';
+
+  // Section: Salud Mental Clínica
+  html += '<div style="background:rgba(45,106,138,.07);border:1.5px solid rgba(45,106,138,.18);border-radius:14px;padding:12px 14px;margin-bottom:14px">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+    +'<span style="font-size:18px">🩺</span>'
+    +'<span style="font-size:13px;font-weight:700;color:#2d6a8a">Profesionales de Salud Mental Clínica</span>'
+    +'</div>'
+    +'<p style="font-size:11.5px;color:#2d6a8a;line-height:1.55;margin:0">'
+    +'Psicólogos, psiquiatras y terapeutas <strong>licenciados</strong> que ejercen dentro del marco clínico regulado. '
+    +'Sus sesiones tienen carácter <strong>terapéutico o médico</strong>. Velo actúa solo como plataforma de conexión y videollamada.'
+    +'</p>'
+    +'</div>';
+  html += salud.map(_proCard).join('');
+
+  // Section: Bienestar
+  html += '<div style="background:rgba(116,198,157,.08);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;padding:12px 14px;margin:18px 0 14px">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+    +'<span style="font-size:18px">✨</span>'
+    +'<span style="font-size:13px;font-weight:700;color:var(--sage2)">Especialistas en Bienestar</span>'
+    +'</div>'
+    +'<p style="font-size:11.5px;color:var(--sage2);line-height:1.55;margin:0">'
+    +'<strong>⚠️ Importante:</strong> Estos especialistas <strong>NO son profesionales de salud mental</strong> ni ofrecen atención médica o psicológica. '
+    +'Sus servicios (coaching, mindfulness, arte-terapia) son prácticas de bienestar y desarrollo personal. '
+    +'Si necesitás atención clínica, consultá a los profesionales de la sección anterior o a servicios de salud de tu país.'
+    +'</p>'
+    +'</div>';
+  html += bien.map(_proCard).join('');
+
+  list.innerHTML = html;
+}
 var _curPro = null;
 function pOpenProSession(id){
   _curPro = _proData.find(function(p){ return p.id === id; });
@@ -1405,13 +1446,14 @@ async function pRenderNews(){
 }
 
 function _renderNewsList(el, items){
-  el.innerHTML = items.map(function(item){
-    return '<div class="p-card" style="margin-bottom:14px;padding:18px">'
+  el.innerHTML = items.map(function(item, i){
+    return '<div class="p-card p-card--hover" style="margin-bottom:14px;padding:18px;cursor:default">'
       +'<div style="display:flex;align-items:flex-start;gap:14px">'
       +'<div style="font-size:36px;line-height:1;flex-shrink:0">'+item.emoji+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:17px;color:var(--ink);margin-bottom:6px;font-weight:600">'+_escHtml(item.titulo)+'</div>'
       +'<div style="font-size:13px;color:var(--ink3);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
+      +'<div style="margin-top:12px;font-size:11px;color:var(--ink5);font-style:italic">✨ Velo IA · Actualizado hoy</div>'
       +'</div>'
       +'</div>'
       +'</div>';
@@ -1422,15 +1464,18 @@ function _renderNewsList(el, items){
 var _calmAIMsgs = [];
 
 function pCalmAI(){
+  pGoTo('calm-ai');
+}
+
+function _initCalmAIPage(){
   _calmAIMsgs = [];
-  openModal('calmAIOv');
   var msgEl = document.getElementById('calmAIMessages');
   if(msgEl) msgEl.innerHTML = '';
   var ta = document.getElementById('calmAIInput');
-  if(ta) ta.value = '';
+  if(ta){ ta.value = ''; ta.style.height = ''; }
   setTimeout(function(){
-    _calmAIAddMsg('Hola, estoy acá para acompañarte. ¿Cómo te sentís en este momento? Podés contarme lo que quieras, sin apuros.', false);
-  }, 300);
+    _calmAIAddMsg('Hola, estoy acá para acompañarte 🌿 ¿Cómo te sentís en este momento? Podés contarme lo que quieras, sin apuros.', false);
+  }, 400);
 }
 
 function _calmAIAddMsg(text, isUser){
@@ -2485,7 +2530,7 @@ function pRenderCircles(){
     var maxM = c.maxMembers || 30;
     var capPct = Math.min(100, Math.round((c.members||0)/maxM*100));
     var isFull = (c.members||0) >= maxM;
-    return '<div class="circle-card'+(c.official?' circle-card--official':'')+'" onclick="pOpenCircle(\''+c.id+'\','+JSON.stringify(c).replace(/'/g,'\\\'')+')">'
+    return '<div class="circle-card'+(c.official?' circle-card--official':'')+'" onclick="pOpenCircle(\''+c.id+'\')">'
       +'<div style="display:flex;align-items:center;gap:13px">'
       +'<div style="font-size:34px;width:52px;height:52px;border-radius:18px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative">'
       +c.emoji
@@ -4847,6 +4892,7 @@ function _onPageEnter(id){
     case 'admin':          _renderAdmin(); break;
     case 'contact':        _initContactPage(); break;
     case 'news':           pRenderNews(); break;
+    case 'calm-ai':        _initCalmAIPage(); break;
     case 'change-password':
       var cpBack = document.getElementById('changePassBackRow');
       if(cpBack) cpBack.style.display = safeLS('get','velo_needs_pw_change') === '1' ? 'none' : 'block';
