@@ -238,6 +238,7 @@ async function pSignUp(){
       safeLS('set','velo_session','1');
       _authenticated = true;
       _recordTC(name, email);
+      _startGuardianHeartbeat();
       pToast('🎉','¡Bienvenido/a '+name+'! 🌿');
       _loginAndGo();
     }
@@ -298,6 +299,7 @@ async function pSignIn(){
       safeLS('set','velo_user_name', storedName);
       safeLS('set','velo_session','1');
       _authenticated = true;
+      _startGuardianHeartbeat();
       pToast('💚','¡Bienvenido/a de vuelta! 🌿');
       _loginAndGo();
     }
@@ -781,6 +783,77 @@ var _guardianProfiles = [
 var _curGuardian = null;
 var _guardianFilter = 'all';
 var _myGuardianStatus = safeLS('get','velo_guardian_status') || 'disponible'; // disponible/ocupado/incognito
+var _guardianHeartbeatTimer = null;
+
+async function _updateGuardianPresence(status){
+  if(safeLS('get','velo_is_guardian') !== 'true') return;
+  _initSupabase();
+  if(!sbClient) return;
+  var uid  = _myUserId ? _myUserId() : (safeLS('get','velo_user_email')||'guest');
+  var name = safeLS('get','velo_user_name') || 'Guardián';
+  var av   = safeLS('get','velo_user_av')   || '💚';
+  var bio  = safeLS('get','velo_guardian_bio') || '';
+  var tagsRaw = safeLS('get','velo_guardian_tags') || '';
+  var tags = tagsRaw ? tagsRaw.split(',').map(function(t){ return t.trim(); }).filter(Boolean) : [];
+  var convs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
+  try{
+    await sbClient.from('guardian_presence').upsert(
+      { user_id: uid, name: name, avatar: av, bio: bio, tags: tags,
+        status: status, last_seen: new Date().toISOString(), convs: convs, rating: 5.0 },
+      { onConflict: 'user_id' }
+    );
+  }catch(e){}
+}
+
+function _startGuardianHeartbeat(){
+  if(safeLS('get','velo_is_guardian') !== 'true') return;
+  if(_guardianHeartbeatTimer) return;
+  _updateGuardianPresence('disponible');
+  _guardianHeartbeatTimer = setInterval(function(){ _updateGuardianPresence('disponible'); }, 60000);
+}
+
+function _stopGuardianHeartbeat(){
+  if(_guardianHeartbeatTimer){ clearInterval(_guardianHeartbeatTimer); _guardianHeartbeatTimer = null; }
+}
+
+function pToggleGuardianMode(){
+  var isOn = safeLS('get','velo_is_guardian') === 'true';
+  var next = !isOn;
+  safeLS('set','velo_is_guardian', next ? 'true' : 'false');
+  var tog = document.getElementById('guardianModeTog');
+  if(tog) tog.classList.toggle('on', next);
+  var details = document.getElementById('guardianModeDetails');
+  if(details) details.style.display = next ? '' : 'none';
+  if(next){
+    _startGuardianHeartbeat();
+    pToast('🛡️','¡Aparecés como guardián disponible!');
+  } else {
+    _updateGuardianPresence('offline');
+    _stopGuardianHeartbeat();
+    pToast('👤','Ya no aparecés en la lista de guardianes');
+  }
+}
+
+function pSaveGuardianBio(){
+  var bioEl  = document.getElementById('guardianBioInput');
+  var tagsEl = document.getElementById('guardianTagsInput');
+  if(bioEl)  safeLS('set','velo_guardian_bio',  bioEl.value.trim());
+  if(tagsEl) safeLS('set','velo_guardian_tags', tagsEl.value.trim());
+  _updateGuardianPresence('disponible');
+  pToast('💚','Perfil de guardián actualizado');
+}
+
+function _initGuardianToggleUI(){
+  var isOn = safeLS('get','velo_is_guardian') === 'true';
+  var tog = document.getElementById('guardianModeTog');
+  if(tog) tog.classList.toggle('on', isOn);
+  var details = document.getElementById('guardianModeDetails');
+  if(details) details.style.display = isOn ? '' : 'none';
+  var bioEl  = document.getElementById('guardianBioInput');
+  var tagsEl = document.getElementById('guardianTagsInput');
+  if(bioEl)  bioEl.value  = safeLS('get','velo_guardian_bio')  || '';
+  if(tagsEl) tagsEl.value = safeLS('get','velo_guardian_tags') || '';
+}
 
 function pSetMyGuardianStatus(status){
   _myGuardianStatus = status;
@@ -811,11 +884,32 @@ function pFilterGuardians(filter, btn){
   pRenderGuardians();
 }
 
-function pRenderGuardians(){
+async function pRenderGuardians(){
   _renderMyStatusBar();
   var list = document.getElementById('guardiansList');
   if(!list) return;
-  var filtered = _guardianProfiles.filter(function(g){
+
+  // Try to load live guardians from Supabase
+  var liveGuardians = [];
+  _initSupabase();
+  if(sbClient){
+    try{
+      var cutoff = new Date(Date.now() - 3*60*1000).toISOString(); // active in last 3 min
+      var { data } = await sbClient.from('guardian_presence')
+        .select('*').neq('status','offline').gte('last_seen', cutoff);
+      if(data && data.length){
+        liveGuardians = data.map(function(r, i){
+          return { id: 'live_'+i, name: r.name, av: r.avatar, bio: r.bio||'',
+            tags: Array.isArray(r.tags)?r.tags:[], status: r.status,
+            convs: r.convs||0, rating: r.rating||5.0, reviews:[], recommend: r.convs||0 };
+        });
+      }
+    }catch(e){}
+  }
+
+  // Merge: live users first, then demo profiles not duplicated
+  var combined = liveGuardians.length ? liveGuardians : _guardianProfiles;
+  var filtered = combined.filter(function(g){
     if(_guardianFilter === 'disponible') return g.status === 'disponible';
     if(_guardianFilter === 'ocupado') return g.status === 'ocupado';
     return true;
@@ -1127,6 +1221,8 @@ function _openHelpChat(post){
       +'<div class="feed-msg"><div class="feed-av">'+post.emoji+'</div><div><div class="feed-sender">'+post.name+'</div><div class="feed-bubble">'+_escHtml(post.preview)+'</div></div></div>';
     msgEl.scrollTop = msgEl.scrollHeight;
   }
+  _updateGuardianPresence('ocupado');
+  safeLS('set','velo_guardian_status','ocupado');
   pGoTo('help-chat');
   _resetHelpInactivity();
 }
@@ -1189,6 +1285,8 @@ function pSendHelpChatMsg(){
 function pLeaveHelpChat(){
   if(_helpChatInactivityTimer){ clearTimeout(_helpChatInactivityTimer); _helpChatInactivityTimer = null; }
   _curHelpPost = null;
+  _updateGuardianPresence('disponible');
+  safeLS('set','velo_guardian_status','disponible');
   pGoTo('post-chat');
 }
 
@@ -3324,6 +3422,7 @@ function pLoadProfile(){
   // Incognito toggle
   var inc = document.getElementById('incognitoTog');
   if(inc){ var isInc = safeLS('get','velo_incognito')==='true'; inc.classList.toggle('on', isInc); }
+  _initGuardianToggleUI();
 
   // Edit form pre-fill
   var en = document.getElementById('editName');
@@ -5095,6 +5194,7 @@ window.addEventListener('load', function(){
 
   if(session === '1'){
     _authenticated = true;
+    setTimeout(_startGuardianHeartbeat, 2000);
     if(type === 'admin' && safeLS('get','velo_admin_session') === '1'){
       pGoTo('admin');
     } else if(type === 'pro'){
@@ -5113,6 +5213,19 @@ window.addEventListener('load', function(){
   setTimeout(function(){
     if(!_authenticated){ pToast('🌿', 'Bienvenido/a a Velo'); }
   }, 3000);
+
+  // Mark guardian offline when closing the app
+  window.addEventListener('beforeunload', function(){
+    _stopGuardianHeartbeat();
+    if(safeLS('get','velo_is_guardian') === 'true' && sbClient){
+      try{
+        var uid = safeLS('get','velo_user_email')||'guest';
+        navigator.sendBeacon ? (function(){
+          sbClient.from('guardian_presence').update({ status:'offline', last_seen: new Date().toISOString() }).eq('user_id', uid);
+        })() : null;
+      }catch(e){}
+    }
+  });
 
   // Register timestamp
   if(!safeLS('get','velo_registered_ts')){

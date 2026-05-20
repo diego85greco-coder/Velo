@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260520-13">
+  <link rel="stylesheet" href="premium.css?v=20260520-14">
 </head>
 <body>
 
@@ -1329,9 +1329,29 @@
                   <div class="p-row-between" style="margin-bottom:10px">
                     <span class="p-label" style="margin:0">Privacidad</span>
                   </div>
-                  <div class="p-row-between">
+                  <div class="p-row-between" style="margin-bottom:10px">
                     <span style="font-size:13px;color:var(--ink3)">Modo incógnito</span>
                     <div class="p-tog" id="incognitoTog" onclick="pToggleIncognito()"></div>
+                  </div>
+                  <div style="border-top:1px solid var(--border);padding-top:12px">
+                    <div class="p-row-between" style="margin-bottom:6px">
+                      <div>
+                        <div style="font-size:13px;font-weight:600;color:var(--ink2)">🛡️ Modo guardián</div>
+                        <div style="font-size:11px;color:var(--ink5);margin-top:2px">Aparecer disponible para acompañar</div>
+                      </div>
+                      <div class="p-tog" id="guardianModeTog" onclick="pToggleGuardianMode()"></div>
+                    </div>
+                    <div id="guardianModeDetails" style="display:none;margin-top:10px">
+                      <div class="p-field" style="margin-bottom:8px">
+                        <label class="p-field-label" style="font-size:11px">Tu mensaje de bienvenida</label>
+                        <textarea class="p-textarea" id="guardianBioInput" rows="2" placeholder="¿Desde qué experiencia querés acompañar?"></textarea>
+                      </div>
+                      <div class="p-field" style="margin-bottom:10px">
+                        <label class="p-field-label" style="font-size:11px">Temas (separados por coma)</label>
+                        <input class="p-input" type="text" id="guardianTagsInput" placeholder="ej: ansiedad, duelo, soledad">
+                      </div>
+                      <button class="p-btn p-btn--primary p-btn--sm p-btn--full" onclick="pSaveGuardianBio()">Guardar perfil de guardián</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2047,6 +2067,6 @@
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-13"></script>
+<script src="premium.js?v=20260520-14"></script>
 </body>
 </html>
