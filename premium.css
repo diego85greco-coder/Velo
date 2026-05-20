@@ -374,6 +374,9 @@ a { text-decoration: none; color: inherit; }
 .p-page.active.fade-in {
   animation: p-fadeIn var(--t-slow) ease forwards;
 }
+/* Bulletproof: an inactive page can never become an invisible overlay,
+   even if it carries an inline display value. */
+.p-page:not(.active) { display: none !important; }
 .p-page-scroll {
   flex: 1;
   overflow-y: auto;
