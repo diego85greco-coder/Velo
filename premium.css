@@ -1755,6 +1755,9 @@ a { text-decoration: none; color: inherit; }
 .amt-opt { padding: 14px 10px; background: rgba(255,255,255,.88); border: 2px solid var(--border); border-radius: 18px; text-align: center; cursor: pointer; transition: all var(--t-fast); box-shadow: var(--sh); }
 .amt-opt:hover { border-color: var(--sage4); transform: scale(1.04); }
 .amt-opt.selected { border-color: var(--sage2); background: var(--sage7); }
+.p-donate-amt { padding: 8px 14px; background: var(--cream2); border: 1.5px solid var(--border2); border-radius: 100px; font-size: 13px; font-weight: 700; color: var(--ink3); cursor: pointer; font-family: 'Jost', sans-serif; transition: all .15s; }
+.p-donate-amt:hover { border-color: var(--sage4); background: var(--sage7); color: var(--sage2); }
+.p-donate-amt.selected { border-color: var(--sage2); background: var(--sage7); color: var(--sage2); }
 
 /* ── 40. PROGRESS STEPS ───────────────────────────────────────────── */
 .p-step { height: 4px; flex: 1; border-radius: 2px; background: var(--sage6); transition: background .4s; }
@@ -2014,6 +2017,7 @@ a { text-decoration: none; color: inherit; }
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 .feed-sender {
   font-size: 11px;

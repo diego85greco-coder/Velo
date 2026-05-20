@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260520-22">
+  <link rel="stylesheet" href="premium.css?v=20260520-23">
 </head>
 <body>
 
@@ -136,7 +136,6 @@
     <header class="p-topbar" id="pTopbar" style="display:none">
       <img src="assets/logo.png" alt="Velo" class="p-topbar-logo-img" onclick="pLogoClick()" style="cursor:pointer">
       <div class="p-topbar-actions">
-        <button class="p-btn p-btn--sos p-btn--sm" onclick="pGoTo('help')">SOS</button>
         <button class="p-topbar-btn" onclick="toggleMobileMenu()">☰</button>
       </div>
     </header>
@@ -513,12 +512,14 @@
               </div>
               <button onclick="pGoTo('inbox')" title="Notificaciones" style="font-size:18px;background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative" id="homeBellBtn">🔔<span id="homeBellBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
               <button onclick="pContactUs()" title="Contáctanos" style="font-size:18px;background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent">✉️</button>
-              <button class="p-btn p-btn--sos p-btn--sm" onclick="pGoTo('help')">🆘 SOS</button>
+              <button class="p-btn p-btn--sos p-btn--sm" onclick="pOpenSOS()">🆘 SOS</button>
               <button class="p-topbar-btn" style="display:none" id="homeMenuBtn" onclick="toggleMobileMenu()">☰</button>
             </div>
           </div>
           <!-- Daily motivational quote -->
-          <div id="homeDailyQuote" style="padding:4px 20px 16px;font-size:14px;color:var(--sage2);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.65;min-height:24px;opacity:.92;text-align:center;letter-spacing:.01em"></div>
+          <div style="padding:0 16px 14px">
+            <div id="homeDailyQuote" style="background:rgba(255,255,255,.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(116,198,157,.25);border-radius:16px;padding:14px 18px;font-size:14px;color:var(--sage2);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.7;text-align:center;letter-spacing:.01em;box-shadow:0 2px 12px rgba(116,198,157,.1)"></div>
+          </div>
           <!-- Greeting card -->
           <div class="home-greeting" style="flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden">
             <div style="display:flex;align-items:center;gap:12px;padding:14px 16px 10px">
@@ -773,10 +774,7 @@
             <div class="p-page-hdr">
               <div class="p-page-hdr-back">
                 <button class="p-back-btn" onclick="pGoTo('home')">←</button>
-                <div>
-                  <div class="p-label">Salud mental</div>
-                  <h2 class="p-title">Profesionales</h2>
-                </div>
+                <h2 class="p-title">Profesionales</h2>
               </div>
             </div>
             <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Psicólogos, terapeutas y especialistas en bienestar disponibles para sesiones desde la app. Las sesiones se realizan por videollamada integrada.</p>
@@ -811,8 +809,7 @@
               <div class="dark-label">EN VIVO AHORA</div>
               <h2 class="dark-title">¿Necesitás hablar?</h2>
               <p class="dark-sub">Este es tu espacio. Contá lo que sentís, sin juicios.</p>
-              <button class="p-btn p-btn--dark-white p-btn--lg p-btn--full" onclick="pOpenHelpForm()" style="margin-bottom:8px">✍️ Escribir mi situación</button>
-              <button class="p-btn p-btn--dark-outline p-btn--md p-btn--full" onclick="pOpenSOS()">🆘 Necesito ayuda urgente</button>
+              <button class="p-btn p-btn--dark-white p-btn--lg p-btn--full" onclick="pOpenHelpForm()">✍️ Escribir mi situación</button>
             </div>
             <div style="margin-bottom:10px">
               <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px;padding:0 2px">Buscando apoyo <span id="helpActiveCount" style="color:var(--sage4)">•••</span></div>
@@ -1647,8 +1644,22 @@
             <p class="p-subtitle" style="margin-bottom:24px;line-height:1.7">Velo es gratuito gracias a personas como vos. Con tu apoyo podemos mantener los guardianes activos y ofrecer sesiones subsidiadas a quienes más lo necesitan.</p>
             <div class="p-card" style="padding:22px;margin-bottom:16px;background:linear-gradient(135deg,rgba(116,198,157,.12),rgba(45,106,79,.08));border:1.5px solid rgba(116,198,157,.25)">
               <div style="font-size:13px;font-weight:700;color:var(--sage);margin-bottom:14px;letter-spacing:.5px">APOYAR A VELO</div>
-              <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pGoTo('home');setTimeout(function(){document.querySelector('[onclick*=donate]')&&document.querySelector('[onclick*=donate]').click()},300)" style="margin-bottom:10px">💚 Donar — lo que puedas</button>
-              <button class="p-btn" onclick="pGoTo('home');setTimeout(function(){document.querySelector('[onclick*=veloPlusOv],[onclick*=veloPlus]')&&document.querySelector('[onclick*=veloPlusOv],[onclick*=veloPlus]').click()},300)" style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(200,165,100,.12));border:1.5px solid rgba(200,165,100,.35);color:#C8A560;font-size:14px;font-weight:700;border-radius:100px;padding:13px 20px;width:100%;cursor:pointer">⭐ Velo Plus — desde $3/mes</button>
+              <div style="margin-bottom:14px">
+                <div style="font-size:12px;color:var(--ink4);font-weight:600;margin-bottom:8px">Elegí un monto (USD)</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                  <button class="p-donate-amt" onclick="pSetDonateAmt(5)">$5</button>
+                  <button class="p-donate-amt" onclick="pSetDonateAmt(10)">$10</button>
+                  <button class="p-donate-amt" onclick="pSetDonateAmt(20)">$20</button>
+                  <button class="p-donate-amt" onclick="pSetDonateAmt(50)">$50</button>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <span style="font-size:15px;color:var(--ink3);font-weight:700">$</span>
+                  <input id="donateCustomAmt" type="number" min="5" placeholder="Otro monto (mín. $5)" style="flex:1;background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--ink);outline:none;font-family:'Jost',sans-serif">
+                </div>
+                <div id="donateAmtErr" style="font-size:11px;color:#e74c3c;margin-top:5px;display:none">El monto mínimo es $5 USD.</div>
+              </div>
+              <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pDonateCTA()" style="margin-bottom:10px">💚 Donar ahora</button>
+              <button class="p-btn" onclick="pShowPlusModal()" style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(200,165,100,.12));border:1.5px solid rgba(200,165,100,.35);color:#C8A560;font-size:14px;font-weight:700;border-radius:100px;padding:13px 20px;width:100%;cursor:pointer">⭐ Velo Plus — $2.99/mes</button>
             </div>
             <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('home')">Volver al inicio</button>
           </div>
@@ -2073,6 +2084,6 @@
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-22"></script>
+<script src="premium.js?v=20260520-23"></script>
 </body>
 </html>

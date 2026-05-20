@@ -97,6 +97,20 @@ function safeLS(action, key, val){
   }catch(e){ return null; }
 }
 
+// ── DAILY LIMITS ────────────────────────────────────────────
+function _dailyKey(type){ return 'velo_daily_'+type+'_'+new Date().toISOString().slice(0,10); }
+function _checkDailyLimit(type){
+  var limits = { bottle:2, help:2, guardian:4 };
+  var plan = safeLS('get','velo_plan') || 'free';
+  if(plan === 'plus') return true;
+  var used = parseInt(safeLS('get',_dailyKey(type))||'0',10);
+  return used < (limits[type]||99);
+}
+function _incDailyLimit(type){
+  var k = _dailyKey(type);
+  safeLS('set',k, String(parseInt(safeLS('get',k)||'0',10)+1));
+}
+
 // ── TOAST ───────────────────────────────────────────────────
 var _toastTimer = null;
 function pToast(emoji, msg){
@@ -552,7 +566,7 @@ function _loadHomeData(){
   var un = document.getElementById('homeUserName');
   var ha = document.getElementById('homeAv');
   if(un) un.textContent = name;
-  if(ha){ var badge = ha.querySelector('div'); ha.textContent = av; if(badge) ha.appendChild(badge); }
+  if(ha){ _renderAvatarEl('homeAv', av); }
 
   // Guardian button in home header
   var gWrap = document.getElementById('homeGuardianWrap');
@@ -896,6 +910,15 @@ function _stopGuardianHeartbeat(){
 }
 
 function pHomeToggleGuardian(){
+  var wasOn = safeLS('get','velo_is_guardian') === 'true';
+  if(!wasOn){
+    // Turning ON — show profile setup modal if bio not filled yet
+    var bio = safeLS('get','velo_guardian_bio') || '';
+    if(!bio.trim()){
+      pShowGuardianSetupModal();
+      return;
+    }
+  }
   pToggleGuardianMode();
   setTimeout(function(){
     var isOn  = safeLS('get','velo_is_guardian') === 'true';
@@ -910,6 +933,61 @@ function pHomeToggleGuardian(){
     var gLabel = gWrap ? gWrap.querySelector('span') : null;
     if(gLabel) gLabel.textContent = isOn ? 'Activo' : 'Activarme';
   }, 50);
+}
+
+function pShowGuardianSetupModal(){
+  var existing = document.getElementById('guardianSetupOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'guardianSetupOv';
+  var savedBio  = safeLS('get','velo_guardian_bio')  || '';
+  var savedTags = safeLS('get','velo_guardian_tags') || '';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
+    +'<span style="font-size:26px">🛡️</span>'
+    +'<div>'
+    +'<div style="font-size:16px;font-weight:700;color:var(--ink)">Modo guardián</div>'
+    +'<div style="font-size:12px;color:var(--ink4)">Aparecer disponible para acompañar</div>'
+    +'</div>'
+    +'</div>'
+    +'<div style="font-size:10px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">Tu mensaje de bienvenida</div>'
+    +'<textarea id="guardianSetupBio" rows="4" placeholder="¿Desde qué experiencia querés acompañar?" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:12px;font-size:13px;color:var(--ink);font-family:\'Jost\',sans-serif;resize:none;box-sizing:border-box;margin-bottom:14px">'+_escHtml(savedBio)+'</textarea>'
+    +'<div style="font-size:10px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">Temas (separados por coma)</div>'
+    +'<input id="guardianSetupTags" type="text" placeholder="ej: ansiedad, duelo, soledad" value="'+_escHtml(savedTags)+'" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:12px;font-size:13px;color:var(--ink);font-family:\'Jost\',sans-serif;box-sizing:border-box;margin-bottom:20px">'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSaveGuardianSetup()" style="margin-bottom:10px">Guardar perfil de guardián</button>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'guardianSetupOv\').remove()">Cancelar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+  setTimeout(function(){ var t = document.getElementById('guardianSetupBio'); if(t) t.focus(); }, 200);
+}
+
+function pSaveGuardianSetup(){
+  var bio  = (document.getElementById('guardianSetupBio')  || {}).value || '';
+  var tags = (document.getElementById('guardianSetupTags') || {}).value || '';
+  safeLS('set','velo_guardian_bio',  bio.trim());
+  safeLS('set','velo_guardian_tags', tags.trim());
+  _updateGuardianPresence('disponible');
+  var existing = document.getElementById('guardianSetupOv');
+  if(existing) existing.remove();
+  // Now actually activate guardian mode
+  pToggleGuardianMode();
+  setTimeout(function(){
+    var isOn  = safeLS('get','velo_is_guardian') === 'true';
+    var gBtn  = document.getElementById('homeGuardianBtn');
+    var gWrap = document.getElementById('homeGuardianWrap');
+    if(gBtn){
+      gBtn.style.background  = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
+      gBtn.style.borderColor = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
+      gBtn.style.color       = isOn ? 'var(--sage2)' : 'var(--ink4)';
+      gBtn.textContent       = isOn ? '🟢 Guardián' : '🛡️ Guardián';
+    }
+    var gLabel = gWrap ? gWrap.querySelector('span') : null;
+    if(gLabel) gLabel.textContent = isOn ? 'Activo' : 'Activarme';
+  }, 80);
+  pToast('🛡️','Perfil guardado. ¡Aparecés como guardián disponible!');
 }
 
 function pToggleGuardianMode(){
@@ -1104,6 +1182,14 @@ function pAskGuardian(){
 }
 
 function pConfirmAskGuardian(){
+  if(!_checkDailyLimit('guardian')){
+    var ov2 = document.getElementById('askGuardianOv');
+    if(ov2) ov2.classList.remove('show');
+    pToast('🛡️','Límite gratuito: 4 sesiones de guardián por día. ¡Upgrade a Plus!');
+    setTimeout(pShowPlusModal, 1200);
+    return;
+  }
+  _incDailyLimit('guardian');
   safeLS('set','velo_guardian_status','ocupado');
   var ov = document.getElementById('askGuardianOv');
   if(ov) ov.classList.remove('show');
@@ -1212,45 +1298,12 @@ function pRenderProfessionals(){
   var list = document.getElementById('proList');
   if(!list) return;
 
-  var salud = _proData.filter(function(p){ return p.type === 'salud'; });
-  var bien  = _proData.filter(function(p){ return p.type === 'bienestar'; });
-
   function _proCard(p){
-    var isBien = p.type === 'bienestar';
-    var accentColor = isBien ? 'var(--sage3)' : '#2d6a8a';
-    return '<div class="p-pro-card" onclick="pOpenProSession(\''+p.id+'\')"><div style="display:flex;align-items:flex-start;gap:14px"><div style="font-size:44px;flex-shrink:0">'+p.av+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+p.name+'</span><span class="pro-rate">$'+p.rate+' <span style="font-size:13px;color:var(--ink4)">'+p.currency+'</span></span></div><div style="font-size:12px;font-weight:600;margin-bottom:6px;color:'+accentColor+'">'+p.spec+'</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin-bottom:10px">'+p.bio+'</p><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+p.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--ink4)">⭐ '+p.rating+' · '+p.sessions+' sesiones</span><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pOpenProSession(\''+p.id+'\')">Reservar sesión</button></div></div></div></div>';
+    var spec = p.spec || p.specialty || 'Especialista';
+    return '<div class="p-pro-card" onclick="pOpenProSession(\''+p.id+'\')"><div style="display:flex;align-items:flex-start;gap:14px"><div style="font-size:44px;flex-shrink:0">'+p.av+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+p.name+'</span><span class="pro-rate">$'+p.rate+' <span style="font-size:13px;color:var(--ink4)">'+p.currency+'</span></span></div><div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--sage3)">'+_escHtml(spec)+'</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin-bottom:10px">'+p.bio+'</p><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+p.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--ink4)">⭐ '+p.rating+' · '+p.sessions+' sesiones</span><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pOpenProSession(\''+p.id+'\')">Reservar sesión</button></div></div></div></div>';
   }
 
-  var html = '';
-
-  // Section: Salud Mental Clínica
-  html += '<div style="background:rgba(45,106,138,.07);border:1.5px solid rgba(45,106,138,.18);border-radius:14px;padding:12px 14px;margin-bottom:14px">'
-    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-    +'<span style="font-size:18px">🩺</span>'
-    +'<span style="font-size:13px;font-weight:700;color:#2d6a8a">Profesionales de Salud Mental Clínica</span>'
-    +'</div>'
-    +'<p style="font-size:11.5px;color:#2d6a8a;line-height:1.55;margin:0">'
-    +'Psicólogos, psiquiatras y terapeutas <strong>licenciados</strong> que ejercen dentro del marco clínico regulado. '
-    +'Sus sesiones tienen carácter <strong>terapéutico o médico</strong>. Velo actúa solo como plataforma de conexión y videollamada.'
-    +'</p>'
-    +'</div>';
-  html += salud.map(_proCard).join('');
-
-  // Section: Bienestar
-  html += '<div style="background:rgba(116,198,157,.08);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;padding:12px 14px;margin:18px 0 14px">'
-    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-    +'<span style="font-size:18px">✨</span>'
-    +'<span style="font-size:13px;font-weight:700;color:var(--sage2)">Especialistas en Bienestar</span>'
-    +'</div>'
-    +'<p style="font-size:11.5px;color:var(--sage2);line-height:1.55;margin:0">'
-    +'<strong>⚠️ Importante:</strong> Estos especialistas <strong>NO son profesionales de salud mental</strong> ni ofrecen atención médica o psicológica. '
-    +'Sus servicios (coaching, mindfulness, arte-terapia) son prácticas de bienestar y desarrollo personal. '
-    +'Si necesitás atención clínica, consultá a los profesionales de la sección anterior o a servicios de salud de tu país.'
-    +'</p>'
-    +'</div>';
-  html += bien.map(_proCard).join('');
-
-  list.innerHTML = html;
+  list.innerHTML = _proData.map(_proCard).join('');
 }
 var _curPro = null;
 function pOpenProSession(id){
@@ -1470,6 +1523,13 @@ function pOpenHelpForm(){ openModal('helpFormOv'); }
 async function pSendHelp(){
   var ta = document.getElementById('helpMsgTa');
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí tu mensaje antes de enviar'); return; }
+  if(!_checkDailyLimit('help')){
+    closeModal('helpFormOv');
+    pToast('💙','Límite gratuito: 2 pedidos de ayuda por día. ¡Upgrade a Plus!');
+    setTimeout(pShowPlusModal, 1200);
+    return;
+  }
+  _incDailyLimit('help');
   var msg = ta.value.trim();
   var anonEl = document.getElementById('helpAnonCheck');
   var isAnon = !anonEl || anonEl.checked;
@@ -2242,8 +2302,10 @@ function pRenderBottle(){
       +'<p style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+b.text+'"</p>'
       +'<div style="display:flex;align-items:center;justify-content:space-between">'
       +'<span style="font-size:11px;color:rgba(200,165,100,.6)">💬 '+(b.responses||0)+' respuestas</span>'
+      +'<div style="display:flex;gap:7px;align-items:center">'
+      +'<button style="padding:5px 11px;background:rgba(255,100,100,.08);border:1px solid rgba(255,100,100,.2);border-radius:100px;color:rgba(255,130,130,.75);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
       +'<button style="padding:5px 11px;background:rgba(200,165,100,.12);border:1px solid rgba(200,165,100,.22);border-radius:100px;color:#C8A560;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply(\''+b.id+'\',\''+b.text.substring(0,40).replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'...\')">💌 Responder</button>'
-      +'</div></div>';
+      +'</div></div></div>';
   }).join('');
 }
 
@@ -2262,9 +2324,16 @@ function pOpenBottleForm(){ openModal('bottleFormOv'); }
 function pSendBottle(){
   var ta = document.getElementById('bottleMsgTa');
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí algo antes de lanzar'); return; }
+  if(!_checkDailyLimit('bottle')){
+    closeModal('bottleFormOv');
+    pToast('🌊','Límite gratuito: 2 mensajes al Mar por día. ¡Upgrade a Plus para ilimitado!');
+    setTimeout(pShowPlusModal, 1200);
+    return;
+  }
   var text = ta.value.trim();
   ta.value = '';
   closeModal('bottleFormOv');
+  _incDailyLimit('bottle');
   var bottles = []; try{ bottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
   var id = 'ub'+Date.now();
   bottles.unshift({ id:id, mood:_selectedBottleMood, text:text, responses:0, color:'rgba(116,198,157,.12)', ts:Date.now() });
@@ -2324,6 +2393,15 @@ function pSendBottleReply(){
     setTimeout(function(){ pToast('📬','El autor recibió tu respuesta en su buzón Velo'); }, 1200);
     pRenderBottle();
   }, 450);
+}
+
+function pReportBottle(bottleId){
+  safeLS('set','velo_reported_bottle_'+bottleId,'1');
+  var responded = []; try{ responded = JSON.parse(safeLS('get','velo_bottle_responded')||'[]'); }catch(e){}
+  if(responded.indexOf(bottleId) < 0){ responded.push(bottleId); safeLS('set','velo_bottle_responded', JSON.stringify(responded)); }
+  var card = document.getElementById('bottle-'+bottleId);
+  if(card){ card.style.transition='opacity .35s'; card.style.opacity='0'; setTimeout(function(){ pRenderBottle(); }, 380); }
+  pToast('🚩','Reporte enviado. Gracias por mantener el espacio seguro.');
 }
 
 // ── DIARY ──────────────────────────────────────────────────────
@@ -2699,6 +2777,20 @@ async function _checkMonthlyMoodReport(){
     if(parts.length) happyLine = '\n\nEn el Muro de la Felicidad: '+parts.join(', ')+'.';
   }
 
+  // Community activity stats
+  var helpedOthers = parseInt(safeLS('get','velo_helped_others')||'0',10);
+  var myBottles = []; try{ myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
+  var bottleCount = myBottles.filter(function(b){ var d=new Date(b.ts); return b.ts && d.getFullYear()===prevYear && (d.getMonth()+1)===prevMonth; }).length;
+  var guardianConvs = parseInt(safeLS('get','velo_guardian_convs')||'0',10);
+
+  // Detect unused sections for invitation
+  var diaryArr = []; try{ diaryArr = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
+  var happyArr = []; try{ happyArr = JSON.parse(safeLS('get','velo_happy_posts')||'[]'); }catch(e){}
+  var unusedSections = [];
+  if(!diaryArr.length) unusedSections.push('el Diario Emocional 📔');
+  if(!happyArr.length) unusedSections.push('el Muro de la Felicidad 🌻');
+  if(!myBottles.length) unusedSections.push('Mensajes al Mar 🌊');
+
   var analysis;
   if(!totalDays){
     analysis = 'No registraste tu ánimo en '+monthName+'. Recordá que el seguimiento diario te ayuda a conocerte mejor. ¡Este mes es una nueva oportunidad! 🌱';
@@ -2716,7 +2808,11 @@ async function _checkMonthlyMoodReport(){
       +'- Primera quincena: predominó '+topFirst+'\n'
       +'- Segunda quincena: predominó '+topSecond+'\n'
       +'- Días con ánimo positivo: '+pct+'%\n'
-      +(happyStats.posts?'- Compartió '+happyStats.posts+' momentos en el Muro de la Felicidad\n':'')
+      +(happyStats.posts?'- Publicó '+happyStats.posts+' momentos en el Muro de la Felicidad\n':'')
+      +(happyStats.reactionsReceived?'- Recibió '+happyStats.reactionsReceived+' reacciones en el Muro\n':'')
+      +(helpedOthers?'- Acompañó a '+helpedOthers+' persona(s) como guardián/a\n':'')
+      +(bottleCount?'- Envió '+bottleCount+' mensaje(s) al Mar\n':'')
+      +(guardianConvs?'- Total de conversaciones como guardián: '+guardianConvs+'\n':'')
       +'\nEscribí 3-4 oraciones que:\n'
       +'1. Reconozcan cómo fue el mes con honestidad\n'
       +'2. Destaquen algún patrón o tendencia real de los datos\n'
@@ -2731,13 +2827,20 @@ async function _checkMonthlyMoodReport(){
         : 'Parece que '+monthName+' fue un mes desafiante. Gracias por seguir registrando incluso en los días difíciles. 🌿');
   }
 
+  // Build rich message body
+  var extraLines = '';
+  if(helpedOthers > 0) extraLines += '\n\n💙 Acompañaste a '+helpedOthers+' persona'+(helpedOthers>1?'s':'')+' este mes. Eso importa más de lo que imaginás.';
+  if(bottleCount > 0) extraLines += '\n\n🌊 Lanzaste '+bottleCount+' mensaje'+(bottleCount>1?'s':'')+' al Mar. Esas palabras llegaron a alguien que las necesitaba.';
+  if(unusedSections.length > 0 && unusedSections.length <= 2) extraLines += '\n\n✨ ¿Todavía no exploraste '+unusedSections.join(' ni ')+'? Este mes es un buen momento para descubrirlos.';
+  extraLines += '\n\n🌻 Si Velo te está siendo útil, considerá apoyar con una donación. Cada aporte ayuda a mantener este espacio gratuito para más personas.';
+
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   inbox.unshift({
     id: 'mood-report-'+Date.now(), tipo:'reporte', icon:'📊',
     remitente:'Velo — Análisis de Bienestar ✨',
     asunto:'Tu resumen emocional de '+monthName+' 🌿',
     extracto: summary,
-    cuerpo: analysis + happyLine,
+    cuerpo: analysis + happyLine + extraLines,
     leido:false,
     fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})
   });
@@ -2909,6 +3012,7 @@ function _stopRespira(){
   _setEl('respiraBtn','Comenzar');
   _setEl('respiraPhase','Preparate');
   _setEl('respiraCount','');
+  safeLS('set','velo_breathed_once','1');
 }
 
 // ── VELA ───────────────────────────────────────────────────────
@@ -3669,6 +3773,14 @@ function _renderAvatarEl(elId, av){
   children.forEach(function(c){ el.appendChild(c); });
 }
 
+function _avInline(av, px){
+  if(!av) return '🌿';
+  var s = (px||40)+'px';
+  if(av.startsWith('data:') || av.startsWith('http'))
+    return '<img src="'+_escHtml(av)+'" style="width:'+s+';height:'+s+';object-fit:cover;border-radius:50%;display:block;margin:0 auto;flex-shrink:0" alt="">';
+  return av;
+}
+
 function pShowAvatarPicker(){
   var ov = document.getElementById('avatarPickerOv');
   if(ov) ov.classList.add('show');
@@ -3804,7 +3916,7 @@ function pShowPublicProfile(){
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="text-align:center;padding:8px 0 16px">'
-    +'<div style="font-size:64px;margin-bottom:10px">'+displayAv+'</div>'
+    +'<div style="font-size:64px;margin-bottom:10px;display:flex;justify-content:center">'+_avInline(displayAv,72)+'</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:4px">'+displayName+'</div>'
     +'<div style="font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:10px">'+_escHtml(motto)+'</div>'
     +'<span style="font-size:22px">'+badge.icon+'</span> <span style="font-size:12px;color:var(--ink4)">Guardián '+badge.name+'</span>'
@@ -3878,13 +3990,23 @@ function _renderBadgesGrid(){
     +'</div>';
 
   var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
+  var happyPosts = []; try{ happyPosts = JSON.parse(safeLS('get','velo_happy_posts')||'[]'); }catch(e){}
+  var daysActive = Math.ceil((Date.now()-(parseInt(safeLS('get','velo_registered_ts')||Date.now(),10)))/86400000);
   var badges = [
-    { icon:'🌱', name:'Primer Paso', desc:'Crear tu cuenta', done:true },
-    { icon:'📔', name:'Escribiendo', desc:'Primera entrada en el diario', done:!!diary.length },
-    { icon:'🌈', name:'En Movimiento', desc:'Registrar tu ánimo 7 días', done:false },
-    { icon:'💙', name:'Corazón Abierto', desc:'Participar en Sala de Ayuda', done:!!safeLS('get','velo_helped_once') },
-    { icon:'⭐', name:'Constancia', desc:'30 días en la comunidad', done:Math.ceil((Date.now()-(parseInt(safeLS('get','velo_registered_ts')||Date.now(),10)))/86400000)>=30 },
-    { icon:'🦋', name:'Transformación', desc:'Completar onboarding', done:true }
+    { icon:'🌱', name:'Primer Paso',      desc:'Crear tu cuenta',                              done:true },
+    { icon:'📔', name:'Escribiendo',       desc:'Primera entrada en el diario',                 done:!!diary.length },
+    { icon:'🌈', name:'En Movimiento',     desc:'Registrar tu ánimo 7 días',                   done:false },
+    { icon:'💙', name:'Corazón Abierto',   desc:'Participar en Sala de Ayuda',                 done:!!safeLS('get','velo_helped_once') },
+    { icon:'⭐', name:'Constancia',        desc:'30 días en la comunidad',                     done:daysActive>=30 },
+    { icon:'🦋', name:'Transformación',    desc:'Completar onboarding',                        done:true },
+    { icon:'🌊', name:'Mensaje al Mar',    desc:'Enviar tu primer mensaje al Mar',             done:parseInt(safeLS('get','velo_bottle_count')||safeLS('get','velo_total_bottles')||'0',10)>0 || JSON.parse(safeLS('get','velo_my_bottles')||'[]').length>0 },
+    { icon:'🤝', name:'Primer Apoyo',      desc:'Acompañar a alguien en Sala de Ayuda',       done:!!safeLS('get','velo_helped_once') && parseInt(safeLS('get','velo_helped_others')||'0',10)>0 },
+    { icon:'🌻', name:'Muro en Flor',      desc:'Primera publicación en el Muro',              done:happyPosts.length>0 },
+    { icon:'💬', name:'Conversador/a',     desc:'Enviar 10 mensajes en chats',                 done:parseInt(safeLS('get','velo_total_msgs')||'0',10)>=10 },
+    { icon:'🧘', name:'Momento de Calma', desc:'Completar la sesión de respiración',          done:!!safeLS('get','velo_breathed_once') },
+    { icon:'🌟', name:'Velo Plus',         desc:'Suscribirse a Velo Plus',                     done:safeLS('get','velo_plan')==='plus' },
+    { icon:'🏡', name:'En Comunidad',      desc:'7 días activo en la app',                     done:daysActive>=7 },
+    { icon:'🗓️', name:'Semana Completa',   desc:'Registrar ánimo 7 días seguidos',             done:false }
   ];
   el.innerHTML = guardianSection + badges.map(function(b){
     return '<div class="p-badge-row" style="opacity:'+(b.done?1:.5)+'"><div class="p-badge-ic" style="background:'+(b.done?'var(--sage7)':'var(--cream2)')+'">'+b.icon+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+b.name+'</div><div style="font-size:11px;color:var(--ink4)">'+b.desc+'</div><div class="p-badge-prog-track"><div class="p-badge-prog-fill" style="width:'+(b.done?'100%':'25%')+';background:'+(b.done?'var(--sage2)':'var(--sage4)')+'"></div></div></div>'+(b.done?'<span style="font-size:16px">✅</span>':'<span style="font-size:14px;color:var(--ink5)">🔒</span>')+'</div>';
@@ -3983,18 +4105,87 @@ function pRenderInbox(){
   el.innerHTML = contactBanner + all.map(function(m){
     var actionBtn = '';
     if(m.accion && !m.leido){
-      actionBtn = '<button onclick="'+m.accion+'" style="margin-top:6px;font-size:11px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
+      actionBtn = '<button onclick="event.stopPropagation();'+m.accion+'" style="margin-top:6px;font-size:11px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
     }
-    return '<div class="p-inbox-msg'+(m.leido?'':' unread')+'">'
-      +'<div style="display:flex;flex-shrink:0">'+(m.leido?'':'<div class="p-inbox-dot"></div>')+'</div>'
+    var hasCuerpo = !!(m.cuerpo);
+    var readKey = 'velo_read_'+m.id;
+    var isRead = m.leido || !!safeLS('get', readKey);
+    return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" style="cursor:'+(hasCuerpo?'pointer':'default')+'"'
+      +(hasCuerpo ? ' onclick="pOpenInboxMsg(\''+m.id+'\',this)"' : '')+'>'
+      +'<div style="display:flex;flex-shrink:0">'+(isRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
       +'<div class="p-inbox-ic" style="background:'+(m.tipo==='encuesta'?'rgba(116,198,157,.12)':'var(--sage7)')+'">'+m.icon+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m.asunto+'</div>'
       +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+m.extracto+'</div>'
       +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+m.fecha+'</div>'
+      +(hasCuerpo&&!isRead?'<div style="font-size:10px;color:var(--sage);margin-top:4px">Toca para leer →</div>':'')
       +actionBtn
       +'</div></div>';
   }).join('');
+}
+
+function pOpenInboxMsg(msgId, rowEl){
+  var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  var mockMsgs = [
+    { id:'m1', icon:'💚', remitente:'Equipo Velo', asunto:'¡Bienvenido/a a Velo!', cuerpo:'Gracias por unirte a nuestra comunidad. Aquí encontrarás apoyo, personas que escuchan y herramientas de bienestar.\n\nSi en algún momento sentís que necesitás hablar, accedé a la Sala de Guardianes o la Sala de Ayuda. Estamos acá para vos. 🌿', fecha:'Hoy' },
+    { id:'m2', icon:'🌿', remitente:'Velo', asunto:'Consejo del día', cuerpo:'Está bien no estar bien. El primer paso es reconocerlo. Cuidarte a vos mismo/a no es egoísmo, es necesidad. 💙', fecha:'Hoy' }
+  ];
+  var all = msgs.concat(mockMsgs);
+  var msg = all.find(function(m){ return m.id === msgId; });
+  if(!msg) return;
+  // Mark as read
+  safeLS('set','velo_read_'+msgId,'1');
+  var localMsgs = msgs.map(function(m){ return m.id === msgId ? Object.assign({},m,{leido:true}) : m; });
+  safeLS('set','velo_inbox', JSON.stringify(localMsgs));
+  if(rowEl){ rowEl.classList.remove('unread'); var dot = rowEl.querySelector('.p-inbox-dot'); if(dot) dot.remove(); }
+  _updateHomeBell();
+  // Show full message modal
+  var existing = document.getElementById('inboxMsgOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'inboxMsgOv';
+  ov.innerHTML = '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+    +'<div style="font-size:30px;width:46px;height:46px;border-radius:14px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+msg.icon+'</div>'
+    +'<div><div style="font-size:12px;font-weight:700;color:var(--sage)">'+_escHtml(msg.remitente||'Velo')+'</div>'
+    +'<div style="font-size:11px;color:var(--ink5)">'+_escHtml(msg.fecha||'')+'</div></div>'
+    +'</div>'
+    +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);margin-bottom:16px;line-height:1.3">'+_escHtml(msg.asunto)+'</h2>'
+    +(msg.cuerpo ? '<div style="font-size:14px;color:var(--ink3);line-height:1.85;white-space:pre-line;background:var(--cream2);border-radius:12px;padding:16px;margin-bottom:20px">'+_escHtml(msg.cuerpo)+'</div>' : '')
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'inboxMsgOv\').remove()">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+}
+
+function pQuickProfile(name, av, bio, guardianId){
+  var convs  = 0;
+  var badge  = _getBadge(convs);
+  if(guardianId){
+    var g = _guardianProfiles.find(function(x){ return x.id === guardianId; });
+    if(g){ convs = g.convs; badge = _getBadge(g.convs); bio = bio || g.bio; }
+  }
+  var isAnon = !name || name === 'Usuario Anónimo' || name === 'Anónimo';
+  var existing = document.getElementById('quickProfileOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'quickProfileOv';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="text-align:center;padding:8px 0 16px">'
+    +'<div style="font-size:60px;margin-bottom:10px;display:flex;justify-content:center">'+_avInline(isAnon?'👤':(av||'🧑'),68)+'</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:4px">'+(isAnon?'Usuario Anónimo':_escHtml(name||'Usuario'))+'</div>'
+    +(badge&&!isAnon ? '<div style="font-size:14px;color:var(--ink4);margin-bottom:8px">'+badge.icon+' Guardián '+badge.name+'</div>' : '')
+    +(bio&&!isAnon ? '<p style="font-size:13px;color:var(--ink3);line-height:1.65;font-style:italic;margin:0 0 12px">"'+_escHtml(bio)+'"</p>' : '')
+    +'</div>'
+    +(guardianId&&!isAnon ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove();pOpenGuardian(\''+guardianId+'\')">Solicitar acompañamiento 💚</button><div style="height:8px"></div>' : '')
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove()">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 }
 
 // ── CONTACT ────────────────────────────────────────────────────
@@ -4042,12 +4233,78 @@ function pDonate(){
   pOpenPayPalDonate(amt, false, 'Donación Velo');
 }
 
+function pSetDonateAmt(n){
+  var inp = document.getElementById('donateCustomAmt');
+  if(inp) inp.value = n;
+  var errEl = document.getElementById('donateAmtErr');
+  if(errEl) errEl.style.display = 'none';
+  document.querySelectorAll('.p-donate-amt').forEach(function(b){ b.classList.remove('selected'); });
+  var btns = document.querySelectorAll('.p-donate-amt');
+  btns.forEach(function(b){ if(b.textContent.replace('$','').trim() == n) b.classList.add('selected'); });
+}
+
+function pDonateCTA(){
+  var inp = document.getElementById('donateCustomAmt');
+  var errEl = document.getElementById('donateAmtErr');
+  var amt = inp ? parseFloat(inp.value) : 0;
+  if(inp && inp.value.trim() !== ''){
+    if(isNaN(amt) || amt < 5){
+      if(errEl) errEl.style.display = 'block';
+      if(inp) inp.focus();
+      return;
+    }
+    if(errEl) errEl.style.display = 'none';
+    pOpenPayPalDonate(amt.toFixed(2), false, 'Donación Velo');
+  } else {
+    pOpenPayPalDonate('10', false, 'Donación Velo');
+  }
+}
+
 function pOpenPayPalDonate(amount, monthly, description){
   var baseURL = 'https://www.paypal.com/donate/?business='+PAYPAL_EMAIL;
   var params = '&currency_code=USD&amount='+amount;
   if(description) params += '&item_name='+encodeURIComponent(description);
   if(monthly) params += '&no_recurring=0';
   window.open(baseURL+params, '_blank');
+}
+
+function pShowPlusModal(){
+  var existing = document.getElementById('plusCompareOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'plusCompareOv';
+  ov.innerHTML = '<div class="p-sheet" style="max-height:92vh;overflow-y:auto">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="text-align:center;margin-bottom:16px">'
+    +'<div style="font-size:32px;margin-bottom:6px">⭐</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:4px">Velo Plus</div>'
+    +'<div style="font-size:13px;color:var(--ink4)">Acceso completo a toda la comunidad</div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
+    +'<div style="background:var(--cream2);border-radius:14px;padding:13px;border:1.5px solid var(--border2)">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--ink4);margin-bottom:10px;letter-spacing:.5px">GRATUITO</div>'
+    +'<ul style="font-size:12px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
+    +'<li>✅ Diario emocional</li><li>✅ Muro de la Felicidad</li>'
+    +'<li>✅ 2 mensajes al Mar/día</li><li>✅ 2 pedidos de ayuda/día</li>'
+    +'<li>✅ 4 sesiones guardián/día</li>'
+    +'<li style="color:var(--ink5)">❌ Círculos de Paz</li><li style="color:var(--ink5)">❌ Insignia dorada</li>'
+    +'</ul></div>'
+    +'<div style="background:linear-gradient(135deg,rgba(200,165,100,.18),rgba(200,165,100,.08));border-radius:14px;padding:13px;border:1.5px solid rgba(200,165,100,.4)">'
+    +'<div style="font-size:11px;font-weight:700;color:#C8A560;margin-bottom:10px;letter-spacing:.5px">⭐ PLUS $2.99/mes</div>'
+    +'<ul style="font-size:12px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
+    +'<li>✅ Todo lo gratuito</li><li>✅ Ilimitado en todo</li>'
+    +'<li>✅ Crear Círculos de Paz</li><li style="color:#C8A560">✅ Insignia dorada ✨</li>'
+    +'<li>✅ Sesiones guardián ∞</li><li>✅ Prioridad en lista</li>'
+    +'<li style="color:var(--sage2)">✅ Apoyás la comunidad 💚</li>'
+    +'</ul></div>'
+    +'</div>'
+    +'<p style="font-size:12px;color:var(--ink5);text-align:center;margin-bottom:18px;line-height:1.6">Tu suscripción mantiene Velo gratuito y subsidia sesiones para quienes más lo necesitan.</p>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove();pOpenPayPalPlus()" style="background:linear-gradient(135deg,#C8A560,#A07840);margin-bottom:10px">⭐ Suscribirme a Plus · $2.99/mes</button>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove()">Ahora no</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 }
 
 function pOpenPayPalPlus(){
@@ -5617,14 +5874,16 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
   var quotePart = quoteText ? '<div class="reply-quote">'+_escHtml(quoteText.slice(0,80)+(quoteText.length>80?'…':''))+'</div>' : '';
   var actionBtn = '<button class="msg-action-btn" onclick="pShowMsgActions(this,\''+id+'\','+JSON.stringify(text)+',\''+inputId+'\',\''+replyBarId+'\')" aria-label="Acciones">•••</button>';
   if(isUser){
+    safeLS('set','velo_total_msgs', String(parseInt(safeLS('get','velo_total_msgs')||'0',10)+1));
     return '<div class="feed-msg feed-msg--own" id="'+id+'" style="position:relative">'
       +'<div class="msg-wrap">'
       +actionBtn
       +'<div class="feed-bubble feed-bubble--own">'+quotePart+_escHtml(text)+'<span class="feed-time">'+ts+'</span></div>'
       +'</div></div>';
   } else {
+    var avClick = senderName ? ' style="cursor:pointer" onclick="pQuickProfile('+JSON.stringify(senderName)+',' +JSON.stringify(av||'🌿')+')"' : '';
     return '<div class="feed-msg" id="'+id+'" style="position:relative">'
-      +'<div class="feed-av">'+(av||'🌿')+'</div>'
+      +'<div class="feed-av"'+avClick+'>'+_avInline(av||'🌿',36)+'</div>'
       +'<div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">'+(senderName||'')+'</div>'
       +'<div class="msg-wrap">'
       +'<div class="feed-bubble">'+quotePart+_escHtml(text)+'<span class="feed-time">'+ts+'</span></div>'
