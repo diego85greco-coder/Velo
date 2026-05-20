@@ -21,6 +21,30 @@ var GEMINI_URLS   = [
 ];
 var _geminiUrlIdx = 0;
 
+async function _geminiCallGrounded(prompt, cfg){
+  var url = GEMINI_URLS[0] + GEMINI_KEY; // grounding only available on 2.0-flash
+  try{
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{ parts:[{ text: prompt }] }],
+        tools:[{ googleSearch:{} }],
+        generationConfig: Object.assign({ temperature:0.5, maxOutputTokens:1200 }, cfg||{})
+      })
+    });
+    var json = await res.json();
+    if(json.candidates && json.candidates[0]){
+      var cand = json.candidates[0];
+      var text = cand.content && cand.content.parts && cand.content.parts[0] ? cand.content.parts[0].text : null;
+      var chunks = (cand.groundingMetadata && cand.groundingMetadata.groundingChunks) || [];
+      var urls = chunks.map(function(c){ return c.web || null; }).filter(Boolean);
+      return { text: text, urls: urls };
+    }
+  }catch(e){}
+  return { text: null, urls: [] };
+}
+
 async function _geminiCall(prompt, cfg){
   for(var attempt = 0; attempt < GEMINI_URLS.length; attempt++){
     var url = GEMINI_URLS[(_geminiUrlIdx + attempt) % GEMINI_URLS.length];
@@ -99,7 +123,7 @@ var P_NO_NAV = ['landing','login','register','register-type','onboarding',
                 'pro-reg','pro-onboarding','admin-login','pro-pending'];
 var P_DARK   = ['help','bottle','respira'];
 var P_FADE   = ['landing','onboarding','register-type','donation-exit',
-                'session-room','post-chat','donate-cta','pro-pending','admin-login','calm-ai'];
+                'session-room','post-chat','donate-cta','pro-pending','admin-login','calm-ai','guardian-chat'];
 
 // ── NAVIGATE ─────────────────────────────────────────────────
 function pGoTo(id){
@@ -1080,18 +1104,95 @@ function pAskGuardian(){
 }
 
 function pConfirmAskGuardian(){
-  // Set guardian as busy during chat
   safeLS('set','velo_guardian_status','ocupado');
   var ov = document.getElementById('askGuardianOv');
   if(ov) ov.classList.remove('show');
-  pToast('💚','Solicitud enviada a '+(_curGuardian ? _curGuardian.name : 'el guardián')+'…');
+  var guardian = _curGuardian;
+  pToast('💚','Solicitud enviada a '+(guardian ? guardian.name : 'el guardián')+'…');
   setTimeout(function(){
-    pToast('🌿',(_curGuardian ? _curGuardian.name : 'Tu guardián')+' aceptó acompañarte ✨');
+    pToast('🌿',(guardian ? guardian.name : 'Tu guardián')+' aceptó acompañarte ✨');
     setTimeout(function(){
-      pGoTo('post-chat');
-      // Restore status when chat completes (handled in pSendPostChat)
-    }, 800);
+      _gcGuardian = guardian;
+      pGoTo('guardian-chat');
+    }, 600);
   }, 2200);
+}
+
+// ── GUARDIAN CHAT ROOM ─────────────────────────────────────────
+var _gcMsgs = [];
+var _gcGuardian = null;
+
+function _gcInit(){
+  _gcMsgs = [];
+  var msgEl = document.getElementById('gcMessages');
+  if(msgEl) msgEl.innerHTML = '';
+  var g = _gcGuardian || { av:'🌿', name:'Tu Guardián/a', bio:'' };
+  var gcAv   = document.getElementById('gcAv');
+  var gcName = document.getElementById('gcName');
+  if(gcAv)   gcAv.textContent   = g.av   || '🌿';
+  if(gcName) gcName.textContent = g.name || 'Tu Guardián/a';
+  setTimeout(function(){
+    _gcAddMsg('¡Hola! Acá estoy, acepté tu solicitud. Estoy acá para escucharte, sin apuros. ¿Cómo te sentís?', false);
+  }, 500);
+}
+
+function _gcAddMsg(text, isUser){
+  _gcMsgs.push({ text:text, user:isUser });
+  var msgEl = document.getElementById('gcMessages');
+  if(!msgEl) return;
+  var g   = _gcGuardian || { av:'🌿', name:'Guardián/a' };
+  var div = document.createElement('div');
+  div.innerHTML = _buildMsgBubble(text, isUser, g.av||'🌿', g.name, 'gcInput', 'gcReplyBar', '');
+  var child = div.firstElementChild;
+  if(child) msgEl.appendChild(child);
+  msgEl.scrollTop = msgEl.scrollHeight;
+}
+
+async function pSendGuardianMsg(){
+  var ta = document.getElementById('gcInput');
+  if(!ta || !ta.value.trim()) return;
+  var text = ta.value.trim();
+  ta.value = ''; ta.style.height = '';
+  var gcQuote = _getReplyQuote('gcReplyBar');
+  pClearReplyBar('gcReplyBar');
+  _gcMsgs.push({ text:text, user:true });
+  var gcMsgEl = document.getElementById('gcMessages');
+  var gcDiv = document.createElement('div');
+  var gcG = _gcGuardian || { av:'🌿', name:'Guardián/a' };
+  gcDiv.innerHTML = _buildMsgBubble(text, true, '', '', 'gcInput', 'gcReplyBar', gcQuote);
+  var gcChild = gcDiv.firstElementChild; if(gcChild && gcMsgEl){ gcMsgEl.appendChild(gcChild); gcMsgEl.scrollTop = gcMsgEl.scrollHeight; }
+  var msgEl  = document.getElementById('gcMessages');
+  var typDiv = document.createElement('div');
+  typDiv.id  = 'gcTyping';
+  typDiv.className = 'feed-msg';
+  var g = _gcGuardian || { av:'🌿', name:'Guardián/a' };
+  typDiv.innerHTML = '<div class="feed-av" style="font-size:22px">'+_escHtml(g.av||'🌿')+'</div>'
+    +'<div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">'+_escHtml(g.name)+'</div>'
+    +'<div class="feed-bubble" style="color:var(--ink4);font-style:italic">Escribiendo…</div></div>';
+  if(msgEl){ msgEl.appendChild(typDiv); msgEl.scrollTop = msgEl.scrollHeight; }
+
+  var sys = 'Sos '+g.name+', un usuario real de la comunidad Velo que acompañás a personas en momentos difíciles. '
+    +'Tu bio: "'+( g.bio || 'Acompaño desde la empatía real, sin rodeos')+'". '
+    +'Hablás desde la experiencia personal, NO como terapeuta. '
+    +'Respondés en español rioplatense (vos, te, estás, querés). '
+    +'Sos cálido/a, humano/a, honesto/a y nunca repetís frases genéricas. '
+    +'Tus respuestas son breves (2-4 oraciones) y MUY específicas a lo que la persona dice. '
+    +'Si mencionan crisis o autolesión, con mucho cuidado sugerís llamar al 135 (Argentina) o usar el SOS de Velo.';
+
+  var reply = await _geminiChat(sys, _gcMsgs.slice(-12), { temperature:0.92, maxOutputTokens:200 });
+  var typEl = document.getElementById('gcTyping');
+  if(typEl) typEl.remove();
+  _gcAddMsg(reply || 'Estoy acá, puede que haya un problema de conexión. ¿Seguimos? 🌿', false);
+}
+
+function pEndGuardianChat(){
+  // Save conv stat
+  var convs = parseInt(safeLS('get','velo_guardian_convs')||'0',10);
+  safeLS('set','velo_guardian_convs', String(convs+1));
+  safeLS('del','velo_guardian_status');
+  // Record who we're reviewing
+  safeLS('set','velo_postchat_guardian', _gcGuardian ? JSON.stringify({ id:_gcGuardian.id, name:_gcGuardian.name }) : '');
+  pGoTo('post-chat');
 }
 
 // ── PROFESSIONALS ──────────────────────────────────────────────
@@ -1335,21 +1436,19 @@ function pSendHelpChatMsg(){
   var t = new Date();
   var tStr = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
   var div = document.createElement('div');
-  div.className = 'feed-msg feed-msg--own';
-  div.innerHTML = '<div class="feed-bubble feed-bubble--own">'+_escHtml(text)+'<span class="feed-time">'+tStr+'</span></div>';
-  msgEl.appendChild(div);
+  var quote = _getReplyQuote('helpChatReplyBar');
+  pClearReplyBar('helpChatReplyBar');
+  div.innerHTML = _buildMsgBubble(text, true, '', '', 'helpChatInput', 'helpChatReplyBar', quote);
+  var child = div.firstElementChild; if(child) msgEl.appendChild(child);
   msgEl.scrollTop = msgEl.scrollHeight;
   _geminiCrisisCheck(text);
   // Simulated reply after 8-15 seconds
   setTimeout(function(){
     _resetHelpInactivity();
     var reply = _helpChatAutoMsgPool[Math.floor(Math.random()*_helpChatAutoMsgPool.length)];
-    var t2 = new Date();
-    var tStr2 = t2.getHours()+':'+(t2.getMinutes()<10?'0':'')+t2.getMinutes();
     var div2 = document.createElement('div');
-    div2.className = 'feed-msg';
-    div2.innerHTML = '<div class="feed-av">'+(_curHelpPost?_curHelpPost.emoji:'💚')+'</div><div><div class="feed-sender">'+(_curHelpPost?_curHelpPost.name:'Usuario')+'</div><div class="feed-bubble">'+_escHtml(reply)+'<span class="feed-time">'+tStr2+'</span></div></div>';
-    msgEl.appendChild(div2);
+    div2.innerHTML = _buildMsgBubble(reply, false, _curHelpPost?_curHelpPost.emoji:'💚', _curHelpPost?_curHelpPost.name:'Usuario', 'helpChatInput', 'helpChatReplyBar', '');
+    var child2 = div2.firstElementChild; if(child2) msgEl.appendChild(child2);
     msgEl.scrollTop = msgEl.scrollHeight;
   }, 8000 + Math.random()*7000);
 }
@@ -1735,23 +1834,36 @@ async function pRenderNews(){
   if(cached){
     try{ var items = JSON.parse(cached); _renderNewsList(newsEl, items); return; }catch(e){}
   }
-  newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando buenas noticias del día...</div>';
-  var prompt = 'Generá 5 buenas noticias positivas y reconfortantes para personas que atraviesan momentos difíciles. '
-    +'Usá historias de avances médicos, actos de solidaridad, logros ambientales, rescates de animales, innovaciones sociales o descubrimientos científicos. '
-    +'Escribilas en español rioplatense. Que se actualicen diariamente con temas del mundo real. '
-    +'Respondé SOLO con un JSON array: [{"emoji":"...","titulo":"...","cuerpo":"...2-3 oraciones inspiradoras...","reflexion":"...una frase corta de reflexión personal..."}]';
-  var result = await _geminiCall(prompt);
+  newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
+
+  var prompt = 'Buscá 5 noticias positivas y reales del mundo publicadas en las últimas semanas. '
+    +'Temas: avances médicos, actos de solidaridad, logros ambientales, rescates, ciencia, innovación social, animales. '
+    +'Para cada noticia incluí: el título real de la noticia tal como aparece en el medio, '
+    +'un resumen en español rioplatense de 2-3 oraciones, el nombre del medio de comunicación, '
+    +'la URL directa al artículo original, y una reflexión corta. '
+    +'Respondé SOLO con JSON sin markdown: '
+    +'[{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"...","sourceUrl":"https://...","sourceName":"Nombre del medio"}]';
+
+  var result = await _geminiCallGrounded(prompt, { maxOutputTokens:1500 });
   var items = [];
-  if(result){
-    try{ var match = result.match(/\[[\s\S]*\]/); if(match) items = JSON.parse(match[0]); }catch(e){}
+  if(result.text){
+    try{ var match = result.text.match(/\[[\s\S]*\]/); if(match) items = JSON.parse(match[0]); }catch(e){}
+  }
+  // Enrich with real grounding URLs when AI-provided URL is missing
+  if(result.urls && result.urls.length){
+    items.forEach(function(item, i){
+      if(!item.sourceUrl || !item.sourceUrl.startsWith('http')){
+        if(result.urls[i]){ item.sourceUrl = result.urls[i].uri; item.sourceName = item.sourceName || result.urls[i].title || 'Fuente'; }
+      }
+    });
   }
   if(!items.length){
     items = [
-      {emoji:'🌱',titulo:'La naturaleza se recupera',cuerpo:'Científicos reportan que varias especies en riesgo están aumentando en número gracias a programas de conservación. Es una victoria para todos.'},
-      {emoji:'💊',titulo:'Avances en el tratamiento del cáncer',cuerpo:'Investigadores desarrollaron terapias que en ensayos clínicos muestran resultados prometedores. La ciencia no para de avanzar.'},
-      {emoji:'🤝',titulo:'Comunidades unidas ante la adversidad',cuerpo:'En distintas partes del mundo, vecinos se organizan para ayudarse mutuamente, tejiendo redes de solidaridad que dan esperanza.'},
-      {emoji:'🐾',titulo:'Rescates que emocionan',cuerpo:'Organizaciones rescatan animales de condiciones difíciles y los reubican en hogares amorosos. Cada historia es única y hermosa.'},
-      {emoji:'🧠',titulo:'Nuevas esperanzas en salud mental',cuerpo:'Terapias basadas en evidencia logran resultados positivos en personas con depresión y ansiedad, abriendo caminos de recuperación.'}
+      {emoji:'🌱',titulo:'La naturaleza se recupera',cuerpo:'Científicos reportan que varias especies en riesgo están aumentando en número gracias a programas de conservación. Es una victoria para todos.', reflexion:'La naturaleza tiene una capacidad de resiliencia que nos inspira.'},
+      {emoji:'💊',titulo:'Avances en el tratamiento del cáncer',cuerpo:'Investigadores desarrollaron terapias que en ensayos clínicos muestran resultados prometedores. La ciencia no para de avanzar.', reflexion:'Cada avance científico es esperanza para miles de familias.'},
+      {emoji:'🤝',titulo:'Comunidades unidas ante la adversidad',cuerpo:'En distintas partes del mundo, vecinos se organizan para ayudarse mutuamente, tejiendo redes de solidaridad que dan esperanza.', reflexion:'La solidaridad humana es la fuerza más poderosa que existe.'},
+      {emoji:'🐾',titulo:'Rescates que emocionan',cuerpo:'Organizaciones rescatan animales de condiciones difíciles y los reubican en hogares amorosos. Cada historia es única y hermosa.', reflexion:'Un acto de amor, sin importar cuán pequeño, cambia vidas.'},
+      {emoji:'🧠',titulo:'Nuevas esperanzas en salud mental',cuerpo:'Terapias basadas en evidencia logran resultados positivos en personas con depresión y ansiedad, abriendo caminos de recuperación.', reflexion:'Pedir ayuda y recibirla es un acto de valentía.'}
     ];
   }
   safeLS('set', cacheKey, JSON.stringify(items));
@@ -1761,13 +1873,17 @@ async function pRenderNews(){
 function _renderNewsList(el, items){
   _newsListCache = items;
   el.innerHTML = items.map(function(item, i){
+    var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
     return '<div class="p-card p-card--hover" style="margin-bottom:14px;padding:18px;cursor:pointer" onclick="pOpenNewsDetail('+i+')">'
       +'<div style="display:flex;align-items:flex-start;gap:14px">'
       +'<div style="font-size:36px;line-height:1;flex-shrink:0">'+item.emoji+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:17px;color:var(--ink);margin-bottom:6px;font-weight:600">'+_escHtml(item.titulo)+'</div>'
       +'<div style="font-size:13px;color:var(--ink3);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
-      +'<div style="margin-top:10px;font-size:11px;color:var(--ink5);font-style:italic">✨ Velo IA · Actualizado hoy &nbsp;›</div>'
+      +'<div style="margin-top:10px;font-size:11px;display:flex;align-items:center;gap:4px">'
+      +(hasLink ? '<span style="color:var(--sage);font-weight:700">'+_escHtml(item.sourceName||'Ver fuente')+'</span><span style="color:var(--ink5)"> · Actualizado hoy ›</span>'
+                : '<span style="color:var(--ink5);font-style:italic">✨ Velo IA · Actualizado hoy ›</span>')
+      +'</div>'
       +'</div>'
       +'</div>'
       +'</div>';
@@ -1778,6 +1894,7 @@ var _newsListCache = [];
 function pOpenNewsDetail(i){
   var item = _newsListCache[i];
   if(!item) return;
+  var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
   ov.id = 'newsDetailOv';
@@ -1790,6 +1907,7 @@ function pOpenNewsDetail(i){
     +'<div style="font-size:11px;font-weight:700;color:var(--sage3);letter-spacing:.5px;margin-bottom:6px">✨ REFLEXIÓN VELO IA</div>'
     +'<p style="font-size:13px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
     +'</div>'
+    +(hasLink ? '<a href="'+item.sourceUrl+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">🔗 Leer artículo en '+_escHtml(item.sourceName||'la fuente')+'</a>' : '')
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'newsDetailOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
@@ -1815,17 +1933,39 @@ function _calmAIAddMsg(text, isUser){
   var msgEl = document.getElementById('calmAIMessages');
   if(!msgEl) return;
   var div = document.createElement('div');
-  var t = new Date();
-  var tStr = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
-  if(isUser){
-    div.className = 'feed-msg feed-msg--own';
-    div.innerHTML = '<div class="feed-bubble feed-bubble--own">'+_escHtml(text)+'<span class="feed-time">'+tStr+'</span></div>';
-  } else {
-    div.className = 'feed-msg';
-    div.innerHTML = '<div class="feed-av">🌿</div><div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">Acompañante Velo</div><div class="feed-bubble">'+_escHtml(text)+'<span class="feed-time">'+tStr+'</span></div></div>';
-  }
-  msgEl.appendChild(div);
+  div.innerHTML = _buildMsgBubble(text, isUser, '🌿', 'Acompañante Velo', 'calmAIInput', 'calmAIReplyBar', '');
+  var child = div.firstElementChild;
+  if(child) msgEl.appendChild(child);
   msgEl.scrollTop = msgEl.scrollHeight;
+}
+
+async function _geminiChat(systemPrompt, msgs, cfg){
+  var contents = msgs.map(function(m){
+    return { role: m.user ? 'user' : 'model', parts: [{ text: m.text }] };
+  });
+  for(var attempt = 0; attempt < GEMINI_URLS.length; attempt++){
+    var url = GEMINI_URLS[(_geminiUrlIdx + attempt) % GEMINI_URLS.length];
+    try{
+      var res = await fetch(url + GEMINI_KEY, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: contents,
+          generationConfig: Object.assign({ temperature:0.88, maxOutputTokens:200 }, cfg||{})
+        })
+      });
+      var json = await res.json();
+      if(json.candidates && json.candidates[0] && json.candidates[0].content &&
+         json.candidates[0].content.parts && json.candidates[0].content.parts[0] &&
+         json.candidates[0].content.parts[0].text){
+        _geminiUrlIdx = (_geminiUrlIdx + attempt) % GEMINI_URLS.length;
+        return json.candidates[0].content.parts[0].text.trim();
+      }
+      if(json.error){ console.warn('[Velo CalmAI]', json.error.message); continue; }
+    }catch(e){ console.error('[Velo CalmAI]', e); continue; }
+  }
+  return null;
 }
 
 async function pSendCalmAIMsg(){
@@ -1834,32 +1974,37 @@ async function pSendCalmAIMsg(){
   var text = ta.value.trim();
   ta.value = '';
   ta.style.height = '';
-  _calmAIAddMsg(text, true);
+  var calmQuote = _getReplyQuote('calmAIReplyBar');
+  pClearReplyBar('calmAIReplyBar');
+  _calmAIMsgs.push({text:text, user:true});
+  var msgEl0 = document.getElementById('calmAIMessages');
+  var div0 = document.createElement('div');
+  div0.innerHTML = _buildMsgBubble(text, true, '', '', 'calmAIInput', 'calmAIReplyBar', calmQuote);
+  var child0 = div0.firstElementChild; if(child0 && msgEl0){ msgEl0.appendChild(child0); msgEl0.scrollTop = msgEl0.scrollHeight; }
   var msgEl = document.getElementById('calmAIMessages');
   var typingDiv = document.createElement('div');
   typingDiv.id = 'calmAITyping';
   typingDiv.className = 'feed-msg';
   typingDiv.innerHTML = '<div class="feed-av">🌿</div><div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">Acompañante Velo</div><div class="feed-bubble" style="color:var(--ink4);font-style:italic">Escribiendo…</div></div>';
   if(msgEl){ msgEl.appendChild(typingDiv); msgEl.scrollTop = msgEl.scrollHeight; }
-  var history = _calmAIMsgs.slice(-8).map(function(m){ return (m.user?'Usuario':'Acompañante')+': '+m.text; }).join('\n');
-  var prompt = 'Sos un acompañante empático y cálido de Velo, una app de salud mental. '
-    +'Tu rol es escuchar activamente, validar emociones y ofrecer apoyo emocional con calidez sin juzgar. '
-    +'No des consejos médicos ni diagnósticos. Usá español rioplatense (vos, te, estás). '
-    +'Si el usuario menciona crisis o riesgo de autolesión, invitalo a visitar la Sala de Ayuda o llamar al 135 (Argentina). '
-    +'Respondé en 2-4 oraciones máximo. Sin encabezados ni listas.\n\n'
-    +'Conversación:\n'+history+'\nAcompañante:';
-  var reply = await _geminiCall(prompt, {maxOutputTokens:150});
+
+  var systemPrompt = 'Sos Velo, un acompañante empático y cálido de una app de salud mental peer-to-peer. '
+    +'Tu rol es escuchar activamente, validar emociones genuinamente y ofrecer apoyo real sin juzgar ni diagnosticar. '
+    +'Respondés en español rioplatense (usás "vos", "te", "estás", "querés"). '
+    +'Tus respuestas son breves (2-4 oraciones), naturales, cálidas y SIEMPRE específicas a lo que el usuario dice. '
+    +'NUNCA repitas la misma frase. NUNCA des respuestas genéricas o de formulario. '
+    +'Contextualizá siempre tu respuesta con lo que el usuario mencionó. '
+    +'Si mencionan riesgo de autolesión o crisis, con calidez invitalos a la Sala de Ayuda o al 135 (Argentina). '
+    +'No sos médico ni terapeuta. Sos un acompañante que escucha de verdad.';
+
+  var reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-12), { temperature:0.88, maxOutputTokens:200 });
   var typingEl = document.getElementById('calmAITyping');
   if(typingEl) typingEl.remove();
-  var fallbacks = [
-    'Estoy acá con vos. Seguí contándome, te escucho.',
-    'Gracias por contarme. ¿Cómo te hace sentir eso?',
-    'Eso que vivís importa. ¿Querés contarme un poco más?',
-    'Te escucho. No tenés que pasar por esto solo/a.',
-    'Me alegra que lo compartas. ¿Desde cuándo te está pasando esto?',
-    'Entiendo. Es difícil. ¿Hay algo que hoy te haga sentir un poco mejor?'
-  ];
-  _calmAIAddMsg(reply || fallbacks[Math.floor(Math.random()*fallbacks.length)], false);
+  if(!reply){
+    _calmAIAddMsg('Hay un problema de conexión en este momento 🌿 ¿Podés intentarlo de nuevo en un instante? Estoy acá para vos.', false);
+  } else {
+    _calmAIAddMsg(reply, false);
+  }
   _geminiCrisisCheck(text);
 }
 
@@ -2931,18 +3076,7 @@ function _renderCircleMessages(){
   el.innerHTML = msgs.map(function(m){
     var t = new Date(m.ts);
     var tStr = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
-    if(m.own){
-      return '<div class="feed-msg feed-msg--own">'
-        +'<div class="feed-bubble feed-bubble--own">'+_escHtml(m.text)+'<span class="feed-time">'+tStr+'</span></div>'
-        +'</div>';
-    }
-    return '<div class="feed-msg">'
-      +'<div class="feed-av">'+m.av+'</div>'
-      +'<div>'
-      +'<div class="feed-sender">'+m.name+'</div>'
-      +'<div class="feed-bubble">'+_escHtml(m.text)+'<span class="feed-time">'+tStr+'</span></div>'
-      +'</div>'
-      +'</div>';
+    return _buildMsgBubble(m.text, !!m.own, m.av, m.name, 'feedInput', 'feedReplyBar', '');
   }).join('');
   el.scrollTop = el.scrollHeight;
 }
@@ -3104,7 +3238,13 @@ var HAPPY_MAX       = 50;                   // máximo de posts en el muro globa
 var _happyEmojis    = ['☀️','🌻','🎉','🌈','💚','🌸','✨','🌱','🎵','🙌','🦋','💛'];
 var _happyReactEmojis = ['💛','🌸','🤗','🌿','✨'];
 var _selectedHappyEmoji = '☀️';
-var _happyActiveTab = 'all'; // 'all' | 'mine'
+var _happyActiveTab = 'all'; // 'all' | 'mine' | 'history'
+
+function pToggleHappyInfo(){
+  var panel = document.getElementById('happyInfoPanel');
+  if(!panel) return;
+  panel.style.display = panel.style.display === 'none' ? '' : 'none';
+}
 
 function _myUserId(){
   return safeLS('get','velo_user_email') || 'guest-'+(safeLS('get','velo_user_name')||'user');
@@ -3214,6 +3354,8 @@ function pRenderHappy(){
 
   if(_happyActiveTab === 'mine'){
     _renderMyHappy(list, posts, queue, myId);
+  } else if(_happyActiveTab === 'history'){
+    _renderHappyHistory(list);
   } else {
     _renderAllHappy(list, posts);
   }
@@ -3254,6 +3396,33 @@ function _renderMyHappy(list, posts, queue, myId){
   // Published mine
   mine.forEach(function(h){ html += _happyPostCard(h, true); });
   list.innerHTML = html;
+}
+
+function _renderHappyHistory(list){
+  var history = []; try{ history = JSON.parse(safeLS('get','velo_happy_history')||'[]'); }catch(e){}
+  if(!history.length){
+    list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">📅</span>'
+      +'<div class="p-empty-title">Tu historial está vacío</div>'
+      +'<div class="p-empty-sub">Cuando publiques algo en el Muro, quedará guardado aquí para siempre 🌟</div></div>';
+    return;
+  }
+  list.innerHTML = history.map(function(h, i){
+    var date = new Date(h.ts);
+    var dateStr = date.toLocaleDateString('es', { day:'2-digit', month:'short', year:'numeric' });
+    var timeStr = date.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
+    return '<div class="happy-card" style="position:relative">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+      +'<div style="font-size:24px;width:40px;height:40px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--sage)">Mi publicación</div>'
+      +'<div style="font-size:10px;color:var(--ink5)">'+dateStr+' · '+timeStr+'</div>'
+      +'</div>'
+      +(i===0 ? '<span style="font-size:10px;background:var(--sage7);color:var(--sage);border-radius:100px;padding:2px 8px;font-weight:700;white-space:nowrap">Más reciente</span>' : '')
+      +'</div>'
+      +(h.photo ? '<img src="'+h.photo+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;display:block;margin-bottom:10px">' : '')
+      +(h.text ? '<p style="font-size:13px;color:var(--ink3);line-height:1.6;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(h.text)+'"</p>' : '')
+      +'</div>';
+  }).join('');
 }
 
 function _happyPostCard(h, isOwn){
@@ -3443,6 +3612,11 @@ function pSubmitHappyPost(){
     safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
     _updateInboxDot();
   }
+  // Save to persistent history (never expires)
+  var hist = []; try{ hist = JSON.parse(safeLS('get','velo_happy_history')||'[]'); }catch(e){}
+  hist.unshift({ id:post.id, emoji:post.emoji, text:post.text, photo:post.photo, ts:post.ts, name:post.name });
+  safeLS('set','velo_happy_history', JSON.stringify(hist.slice(0,200)));
+
   // Reset form
   pClearHappyPhoto();
   if(ta) ta.value = '';
@@ -3664,22 +3838,43 @@ function _renderBadgesGrid(){
   var r = ranges[badge.name] || [0,5];
   var progFill = badge.next ? Math.min(100, Math.round((convs - r[0]) / (r[1] - r[0]) * 100)) : 100;
 
+  var tiers = [
+    { name:'Novato',   icon:'🌱', min:0,   max:5,   color:'var(--sage4)', unlock:'Podés pedir acompañamiento a otros guardianes' },
+    { name:'Bronce',   icon:'🥉', min:5,   max:20,  color:'#C07840',      unlock:'Aparecés en el listado de guardianes disponibles' },
+    { name:'Plata',    icon:'🥈', min:20,  max:40,  color:'#8892A4',      unlock:'Insignia verificada en tu perfil público' },
+    { name:'Oro',      icon:'🥇', min:40,  max:100, color:'#C8A200',      unlock:'Podés crear Círculos de Paz ⭕ + prioridad en el listado' },
+    { name:'Diamante', icon:'💎', min:100, max:100, color:'#7B68EE',      unlock:'Estado top de la comunidad + descuento en Velo Plus ✨' }
+  ];
+  var tierRows = tiers.map(function(t){
+    var reached = convs >= t.min;
+    var isCurrent = badge.name === t.name;
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)">'
+      +'<span style="font-size:22px;opacity:'+(reached?1:.35)+'">'+(reached?t.icon:'⬜')+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:12px;font-weight:700;color:'+(reached?'var(--ink)':'var(--ink5)')+'">'+t.name
+      +(isCurrent?' <span style="font-size:10px;background:var(--sage6);color:var(--sage);border-radius:100px;padding:1px 7px;margin-left:4px">Actual</span>':'')
+      +(t.min>0?'  <span style="font-size:10px;color:var(--ink5)">'+t.min+' conv.</span>':'')+'</div>'
+      +'<div style="font-size:11px;color:'+(reached?'var(--sage)':'var(--ink5)')+'">'+t.unlock+'</div>'
+      +'</div>'
+      +(reached?'<span style="font-size:14px;color:var(--sage)">✅</span>':'<span style="font-size:12px;color:var(--ink5)">🔒</span>')
+      +'</div>';
+  }).join('');
+
   var guardianSection = '<div class="guardian-badge-card" style="margin-bottom:16px">'
     +'<div style="font-size:12px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Mi nivel de Guardián</div>'
-    +'<div style="display:flex;align-items:center;gap:14px">'
+    +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">'
     +'<span style="font-size:44px">'+badge.icon+'</span>'
     +'<div style="flex:1">'
     +'<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:2px">Guardián '+badge.name+'</div>'
     +'<div style="font-size:12px;color:var(--ink4);margin-bottom:8px">'+convs+' conversaciones completadas</div>'
     +'<div class="guardian-badge-prog"><div class="guardian-badge-prog-fill" style="width:'+progFill+'%"></div></div>'
     +(badge.next
-      ? '<div style="font-size:11px;color:var(--ink5)">'+badge.needed+' más para <strong>'+badge.next+'</strong></div>'
-      : '<div style="font-size:11px;color:var(--sage)">✨ Nivel máximo alcanzado</div>')
+      ? '<div style="font-size:11px;color:var(--ink5);margin-top:4px">'+badge.needed+' más para <strong style="color:var(--sage2)">'+badge.next+'</strong></div>'
+      : '<div style="font-size:11px;color:var(--sage);margin-top:4px">✨ Nivel máximo alcanzado</div>')
     +'</div>'
     +'</div>'
-    +(convs >= 40
-      ? '<div style="margin-top:12px;font-size:12px;color:var(--sage);background:var(--sage7);border-radius:10px;padding:8px 12px">⭕ Podés crear <strong>Círculos de Paz</strong></div>'
-      : '')
+    +'<div style="font-size:11px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Qué desbloquea cada nivel</div>'
+    +tierRows
     +'</div>';
 
   var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
@@ -5290,6 +5485,7 @@ function _onPageEnter(id){
     case 'contact':        _initContactPage(); break;
     case 'news':           pRenderNews(); break;
     case 'calm-ai':        _initCalmAIPage(); break;
+    case 'guardian-chat':  _gcInit(); break;
     case 'change-password':
       var cpBack = document.getElementById('changePassBackRow');
       if(cpBack) cpBack.style.display = safeLS('get','velo_needs_pw_change') === '1' ? 'none' : 'block';
@@ -5313,8 +5509,133 @@ function _escHtml(str){
 }
 
 // ── INIT ON LOAD ──────────────────────────────────────────────
+// ── MESSAGE REACTIONS + REPLY ────────────────────────────────────
+var _msgCounter  = 0;
+var _msgPopupData = null;
+
+function _nextMsgId(){ return 'vmsg-'+(++_msgCounter); }
+
+function _initMsgActions(){
+  if(document.getElementById('msgActionsPopup')) return;
+  var pop = document.createElement('div');
+  pop.id = 'msgActionsPopup';
+  pop.className = 'msg-actions-popup';
+  pop.innerHTML = ['❤️','😢','💪','🙏','🌿','✨'].map(function(e){
+    return '<button onclick="_msgReact(\''+e+'\')" title="'+e+'">'+e+'</button>';
+  }).join('')
+    +'<span class="msg-actions-divider"></span>'
+    +'<button class="msg-reply-btn" onclick="_msgReplyAct()">↩ Responder</button>';
+  document.body.appendChild(pop);
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('#msgActionsPopup') && !e.target.closest('.msg-action-btn')){
+      pop.style.display = 'none'; _msgPopupData = null;
+    }
+  });
+}
+
+function pShowMsgActions(btn, msgId, text, inputId, replyBarId){
+  _initMsgActions();
+  _msgPopupData = { msgId:msgId, text:text, inputId:inputId, replyBarId:replyBarId };
+  var pop = document.getElementById('msgActionsPopup');
+  if(!pop) return;
+  pop.style.display = 'flex';
+  var rect = btn.getBoundingClientRect();
+  var top  = rect.top - 58;
+  if(top < 8) top = rect.bottom + 8;
+  var left = Math.max(8, Math.min(window.innerWidth - 280, rect.left - 80));
+  pop.style.top  = top + 'px';
+  pop.style.left = left + 'px';
+}
+
+function _msgReact(emoji){
+  var pop = document.getElementById('msgActionsPopup');
+  if(pop) pop.style.display = 'none';
+  if(!_msgPopupData) return;
+  var msgEl = document.getElementById(_msgPopupData.msgId);
+  if(!msgEl) return;
+  var rxBar = msgEl.querySelector('.msg-rx-bar');
+  if(!rxBar){
+    rxBar = document.createElement('div');
+    rxBar.className = 'msg-rx-bar';
+    var bubble = msgEl.querySelector('.feed-bubble');
+    if(bubble) bubble.after(rxBar); else msgEl.appendChild(rxBar);
+  }
+  var existing = rxBar.querySelector('[data-emoji="'+emoji+'"]');
+  if(existing){
+    var c = parseInt(existing.getAttribute('data-cnt')||'1',10)+1;
+    existing.setAttribute('data-cnt',c);
+    existing.textContent = emoji+' '+c;
+  } else {
+    var chip = document.createElement('span');
+    chip.className = 'msg-reaction mine';
+    chip.setAttribute('data-emoji', emoji);
+    chip.setAttribute('data-cnt', '1');
+    chip.textContent = emoji+' 1';
+    chip.onclick = function(){
+      var cc = parseInt(chip.getAttribute('data-cnt')||'1',10)+1;
+      chip.setAttribute('data-cnt',cc);
+      chip.textContent = emoji+' '+cc;
+    };
+    rxBar.appendChild(chip);
+  }
+  pToast(emoji,'¡Reaccionaste!');
+}
+
+function _msgReplyAct(){
+  var pop = document.getElementById('msgActionsPopup');
+  if(pop) pop.style.display = 'none';
+  if(!_msgPopupData) return;
+  var bar = document.getElementById(_msgPopupData.replyBarId);
+  if(bar){
+    bar.style.display = 'flex';
+    var textEl = bar.querySelector('.reply-preview-text');
+    var preview = _msgPopupData.text.length > 70 ? _msgPopupData.text.slice(0,70)+'…' : _msgPopupData.text;
+    if(textEl) textEl.textContent = '↩  '+preview;
+    bar.setAttribute('data-reply-text', _msgPopupData.text);
+  }
+  var inp = document.getElementById(_msgPopupData.inputId);
+  if(inp){ inp.focus(); }
+}
+
+function pClearReplyBar(barId){
+  var bar = document.getElementById(barId);
+  if(!bar) return;
+  bar.style.display = 'none';
+  bar.removeAttribute('data-reply-text');
+}
+
+function _getReplyQuote(barId){
+  var bar = document.getElementById(barId);
+  if(!bar || bar.style.display === 'none') return '';
+  return bar.getAttribute('data-reply-text') || '';
+}
+
+function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quoteText){
+  var id  = _nextMsgId();
+  var t   = new Date();
+  var ts  = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
+  var quotePart = quoteText ? '<div class="reply-quote">'+_escHtml(quoteText.slice(0,80)+(quoteText.length>80?'…':''))+'</div>' : '';
+  var actionBtn = '<button class="msg-action-btn" onclick="pShowMsgActions(this,\''+id+'\','+JSON.stringify(text)+',\''+inputId+'\',\''+replyBarId+'\')" aria-label="Acciones">•••</button>';
+  if(isUser){
+    return '<div class="feed-msg feed-msg--own" id="'+id+'" style="position:relative">'
+      +'<div class="msg-wrap">'
+      +actionBtn
+      +'<div class="feed-bubble feed-bubble--own">'+quotePart+_escHtml(text)+'<span class="feed-time">'+ts+'</span></div>'
+      +'</div></div>';
+  } else {
+    return '<div class="feed-msg" id="'+id+'" style="position:relative">'
+      +'<div class="feed-av">'+(av||'🌿')+'</div>'
+      +'<div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">'+(senderName||'')+'</div>'
+      +'<div class="msg-wrap">'
+      +'<div class="feed-bubble">'+quotePart+_escHtml(text)+'<span class="feed-time">'+ts+'</span></div>'
+      +actionBtn
+      +'</div></div></div>';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function(){
   _initSupabase();
+  _initMsgActions();
 });
 
 window.addEventListener('load', function(){

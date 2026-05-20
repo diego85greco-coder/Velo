@@ -2708,3 +2708,65 @@ a { text-decoration: none; color: inherit; }
   .calm-card  { padding: 20px 14px; }
   .feed-bubble { font-size: 14px; line-height: 1.65; }
 }
+
+/* ── Message actions: reactions + reply ──────────────────────── */
+.msg-wrap { position: relative; }
+.msg-action-btn {
+  opacity: 0; position: absolute; top: 50%; transform: translateY(-50%);
+  background: var(--cream); border: 1px solid var(--border2); border-radius: 50%;
+  width: 26px; height: 26px; cursor: pointer; font-size: 13px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,.1); transition: opacity .15s;
+  z-index: 10; color: var(--ink4);
+}
+.feed-msg:hover .msg-action-btn,
+.feed-msg:focus-within .msg-action-btn { opacity: 1; }
+.feed-msg--own .msg-action-btn { right: calc(100% + 6px); left: auto; }
+.feed-msg:not(.feed-msg--own) .msg-action-btn { left: calc(100% + 6px); right: auto; }
+
+.msg-actions-popup {
+  position: fixed; z-index: 9999; background: #fff; border-radius: 24px;
+  box-shadow: 0 6px 28px rgba(0,0,0,.18); padding: 8px 12px;
+  display: none; gap: 4px; align-items: center;
+}
+.msg-actions-popup button {
+  background: none; border: none; cursor: pointer; font-size: 22px;
+  padding: 5px; border-radius: 10px; line-height: 1; transition: background .1s;
+}
+.msg-actions-popup button:active { background: var(--cream2); }
+.msg-actions-divider { width: 1px; height: 22px; background: var(--border2); margin: 0 2px; }
+.msg-reply-btn {
+  font-size: 12px !important; background: var(--sage7) !important;
+  color: var(--sage) !important; border-radius: 10px !important;
+  padding: 5px 10px !important; font-weight: 700; font-family: 'Jost', sans-serif;
+}
+
+.msg-rx-bar { display: flex; flex-wrap: wrap; margin-top: 5px; gap: 4px; }
+.msg-reaction {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: var(--cream2); border: 1px solid var(--border2);
+  border-radius: 100px; padding: 2px 8px; font-size: 13px; cursor: pointer;
+  transition: background .1s;
+}
+.msg-reaction.mine { background: rgba(116,198,157,.2); border-color: rgba(116,198,157,.45); }
+
+.reply-preview-bar {
+  display: none; align-items: center; gap: 8px;
+  background: var(--cream2); border-left: 3px solid var(--sage2);
+  border-radius: 0 8px 8px 0; padding: 6px 10px 6px 12px;
+  margin: 0 8px 4px; flex-shrink: 0;
+}
+.reply-preview-text {
+  font-size: 12px; color: var(--ink4); flex: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.reply-preview-close {
+  background: none; border: none; cursor: pointer; font-size: 16px;
+  color: var(--ink5); padding: 0; line-height: 1; flex-shrink: 0;
+}
+.feed-bubble .reply-quote {
+  background: rgba(0,0,0,.07); border-left: 3px solid rgba(116,198,157,.7);
+  border-radius: 0 6px 6px 0; padding: 4px 8px; margin-bottom: 6px;
+  font-size: 11px; color: inherit; opacity: .75;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
