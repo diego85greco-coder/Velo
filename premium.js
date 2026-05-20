@@ -1390,31 +1390,31 @@ function pStripeCheckout(proId){
 
 // ── HELP ROOM ─────────────────────────────────────────────────
 var _helpPosts = [];
-var _helpMockSeeded = false;
 
-function _seedHelpMock(){
-  if(_helpMockSeeded) return;
-  _helpMockSeeded = true;
+// Mock posts live only in memory — taken state stored separately so they reset each session
+var _helpMockData = [
+  { id:'hm1', emoji:'😰', anon:true,  name:'Usuario Anónimo', time: 0, preview:'No puedo dormir y no sé por qué me siento tan vacío/a…' },
+  { id:'hm2', emoji:'😢', anon:true,  name:'Usuario Anónimo', time: 0, preview:'Tuve una pelea muy fuerte hoy y me siento muy solo/a…' },
+  { id:'hm3', emoji:'😔', anon:false, name:'Valentina S.',    time: 0, preview:'Llevo semanas sin poder levantarme de la cama.' },
+  { id:'hm4', emoji:'😞', anon:true,  name:'Usuario Anónimo', time: 0, preview:'No sé si lo que me pasa es normal pero me pesa mucho.' }
+];
+// Set relative timestamps fresh each time the array is accessed
+function _helpMockFresh(){
   var now = Date.now();
-  var mock = [
-    { id:'h1', emoji:'😰', anon:true,  name:'Usuario Anónimo', time: now-2*60000,  preview:'No puedo dormir y no sé por qué me siento tan vacío/a…' },
-    { id:'h2', emoji:'😢', anon:true,  name:'Usuario Anónimo', time: now-5*60000,  preview:'Tuve una pelea muy fuerte hoy y me siento muy solo/a…' },
-    { id:'h3', emoji:'😔', anon:false, name:'Valentina S.',    time: now-8*60000,  preview:'Llevo semanas sin poder levantarme de la cama.' },
-    { id:'h4', emoji:'😞', anon:true,  name:'Usuario Anónimo', time: now-15*60000, preview:'No sé si lo que me pasa es normal pero me pesa mucho.' }
-  ];
-  var stored = []; try{ stored = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
-  if(!stored.length){
-    safeLS('set','velo_help_posts', JSON.stringify(mock));
-  }
+  return _helpMockData.map(function(m,i){ return Object.assign({},m,{time:now-(i+1)*3*60000, _mock:true}); });
 }
 
 function pRenderHelp(){
-  _seedHelpMock();
   var list = document.getElementById('helpList');
   if(!list) return;
-  var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
+  var realPosts = []; try{ realPosts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
   var hidden = []; try{ hidden = JSON.parse(safeLS('get','velo_hidden_content')||'[]'); }catch(e){}
-  posts = posts.filter(function(h){ return !h.taken && hidden.indexOf('help-'+h.id)<0; });
+  var mockTaken = []; try{ mockTaken = JSON.parse(safeLS('get','velo_help_mock_taken')||'[]'); }catch(e){}
+
+  var realAvail = realPosts.filter(function(h){ return !h.taken && hidden.indexOf('help-'+h.id)<0; });
+  var mockAvail = _helpMockFresh().filter(function(m){ return mockTaken.indexOf(m.id)<0 && hidden.indexOf('help-'+m.id)<0; });
+
+  var posts = realAvail.concat(mockAvail);
   _helpPosts = posts;
   var count = document.getElementById('helpActiveCount');
   if(count) count.textContent = posts.length+' esperando acompañamiento';
@@ -1448,19 +1448,36 @@ function pRenderHelp(){
 
 var _curHelpPost = null;
 var _helpChatInactivityTimer = null;
+// Auto-replies simulating the seeker (person who asked for help)
 var _helpChatAutoMsgPool = [
-  '¿Seguís ahí? No tenés que responder rápido, tomá tu tiempo 🌿',
-  'Estoy acá para escucharte, sin apuros 💙',
-  'Cuando quieras compartir más, acá estoy 🤍'
+  'Gracias por responder… no esperaba que alguien lo hiciera tan rápido 🙏',
+  'Sí, acá estoy. No sé bien por dónde empezar.',
+  'Me ayuda saber que alguien me está leyendo, de verdad.',
+  'Es que es difícil explicarlo… hace tiempo que no se lo cuento a nadie.',
+  'Estoy bien, o eso intento decirme. Pero no siempre funciona.',
+  '¿Podemos hablar un poco? Necesito desahogarme.'
 ];
 
 function pAccompanyHelp(postId){
+  // Check real posts first, then mock
   var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
   var post = posts.find(function(p){ return p.id===postId; });
+  var isMock = false;
+  if(!post){
+    post = _helpMockFresh().find(function(m){ return m.id===postId; });
+    isMock = true;
+  }
   if(!post){ pToast('⚠️','Esta solicitud ya fue tomada'); return; }
-  // Mark as taken — disappears from wall
-  posts = posts.map(function(p){ return p.id===postId ? Object.assign({},p,{taken:true}) : p; });
-  safeLS('set','velo_help_posts', JSON.stringify(posts));
+
+  if(isMock){
+    // Mark mock as taken via separate key
+    var mockTaken = []; try{ mockTaken = JSON.parse(safeLS('get','velo_help_mock_taken')||'[]'); }catch(e){}
+    if(mockTaken.indexOf(postId)<0){ mockTaken.push(postId); safeLS('set','velo_help_mock_taken',JSON.stringify(mockTaken)); }
+  } else {
+    // Mark real post as taken
+    posts = posts.map(function(p){ return p.id===postId ? Object.assign({},p,{taken:true}) : p; });
+    safeLS('set','velo_help_posts', JSON.stringify(posts));
+  }
   _curHelpPost = post;
   // Start the help chat
   _openHelpChat(post);
@@ -2060,6 +2077,9 @@ async function _geminiChat(systemPrompt, msgs, cfg){
   var contents = msgs.map(function(m){
     return { role: m.user ? 'user' : 'model', parts: [{ text: m.text }] };
   });
+  // Gemini requires first turn to be 'user' — strip any leading model turns
+  while(contents.length && contents[0].role !== 'user') contents.shift();
+  if(!contents.length) return null;
   for(var attempt = 0; attempt < GEMINI_URLS.length; attempt++){
     var url = GEMINI_URLS[(_geminiUrlIdx + attempt) % GEMINI_URLS.length];
     try{
@@ -2331,10 +2351,10 @@ function pRenderBottle(){
   var bottles = []; try{ bottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
   // Each bottle from the wall (not the user's own) gets a stable id for removal
   var mockBottles = [
-    { id:'mb1', mood:'😔', text:'A veces el silencio duele más que las palabras.',          responses:2,  color:'rgba(116,198,157,.12)',   ts: Date.now()-3*60000   },
-    { id:'mb2', mood:'💭', text:'¿Alguien más siente que no encaja en ningún lado?',         responses:7,  color:'rgba(200,165,100,.08)',   ts: Date.now()-8*60000   },
-    { id:'mb3', mood:'😢', text:'Hoy recordé a alguien que ya no está. Lo extraño tanto.',   responses:4,  color:'rgba(196,181,232,.12)',   ts: Date.now()-15*60000  },
-    { id:'mb4', mood:'🤗', text:'Para quien lo necesite: no estás solo/a. Esto también pasa.',responses:15, color:'rgba(116,198,157,.1)',   ts: Date.now()-22*60000  }
+    { id:'mb1', mood:'😔', text:'A veces el silencio duele más que las palabras.',            color:'rgba(116,198,157,.12)',   ts: Date.now()-3*60000   },
+    { id:'mb2', mood:'💭', text:'¿Alguien más siente que no encaja en ningún lado?',           color:'rgba(200,165,100,.08)',   ts: Date.now()-8*60000   },
+    { id:'mb3', mood:'😢', text:'Hoy recordé a alguien que ya no está. Lo extraño tanto.',     color:'rgba(196,181,232,.12)',   ts: Date.now()-15*60000  },
+    { id:'mb4', mood:'🤗', text:'Para quien lo necesite: no estás solo/a. Esto también pasa.', color:'rgba(116,198,157,.1)',    ts: Date.now()-22*60000  }
   ];
 
   // Filter out mock bottles the user already responded to
@@ -2357,8 +2377,7 @@ function pRenderBottle(){
     return '<div class="dark-bottle" id="bottle-'+b.id+'" style="animation-delay:'+i*.08+'s;border-left:3px solid '+(b.color||'rgba(200,165,100,.3)')+'">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:20px">'+b.mood+'</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+relTime+'</span></div>'
       +'<p style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+b.text+'"</p>'
-      +'<div style="display:flex;align-items:center;justify-content:space-between">'
-      +'<span style="font-size:11px;color:rgba(200,165,100,.6)">💬 '+(b.responses||0)+' respuestas</span>'
+      +'<div style="display:flex;align-items:center;justify-content:flex-end">'
       +'<div style="display:flex;gap:7px;align-items:center">'
       +'<button style="padding:5px 11px;background:rgba(255,100,100,.08);border:1px solid rgba(255,100,100,.2);border-radius:100px;color:rgba(255,130,130,.75);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
       +'<button style="padding:5px 11px;background:rgba(200,165,100,.12);border:1px solid rgba(200,165,100,.22);border-radius:100px;color:#C8A560;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply(\''+b.id+'\',\''+b.text.substring(0,40).replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'...\')">💌 Responder</button>'
@@ -4228,7 +4247,8 @@ function pOpenInboxMsg(msgId, rowEl){
     +'</div>'
     +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);margin-bottom:16px;line-height:1.3">'+_escHtml(msg.asunto)+'</h2>'
     +(msg.cuerpo ? '<div style="font-size:14px;color:var(--ink3);line-height:1.85;white-space:pre-line;background:var(--cream2);border-radius:12px;padding:16px;margin-bottom:20px">'+_escHtml(msg.cuerpo)+'</div>' : '')
-    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'inboxMsgOv\').remove()">Cerrar</button>'
+    +(msg.tipo==='pro-msg' && msg.proId ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" style="margin-bottom:8px" onclick="document.getElementById(\'inboxMsgOv\').remove();pReplyToProMsg(\''+_escHtml(msg.proId)+'\',\''+_escHtml(msg.proName||msg.remitente||'Pro')+'\',\''+_escHtml(msg.remitente||'Pro')+'\')">💬 Responder</button>' : '')
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'inboxMsgOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
@@ -4718,6 +4738,7 @@ function switchProPanel(panel, btn){
     pacientes: _renderPatientList(),
     notas: '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Notas de sesión</div><textarea class="p-textarea" rows="6" placeholder="Escribí notas de tu sesión más reciente..."></textarea><div style="height:10px"></div><button class="p-btn p-btn--primary p-btn--md" onclick="pToast(\'📝\',\'Nota guardada\')">Guardar nota</button></div>',
     finanzas: '<div class="metric-cards"><div class="metric-card"><div class="metric-n">$0</div><div class="metric-l">Pendiente</div></div><div class="metric-card"><div class="metric-n">$0</div><div class="metric-l">Total recibido</div></div><div class="metric-card"><div class="metric-n">0</div><div class="metric-l">Sesiones pagadas</div></div></div><div class="p-card" style="padding:18px;margin-top:14px"><p class="p-sm p-muted">Los pagos se procesan automáticamente por Stripe. Comisión Velo: 20%.</p></div>',
+    mensajes: _renderProMessages(),
     perfil: '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Mi perfil profesional</div><div class="p-field"><label class="p-field-label">Estado</label><div style="display:flex;gap:8px">'+[{v:'disponible',l:'🟢 Disponible'},{v:'ocupado',l:'🟡 Ocupado'},{v:'vacaciones',l:'🏖️ Vacaciones'}].map(function(s){ return '<button style="padding:7px 12px;border-radius:100px;border:1.5px solid var(--border2);background:rgba(255,255,255,.7);font-size:12px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pToast(\'✅\',\'Estado: '+s.l+'\')">'+s.l+'</button>'; }).join('')+'</div></div><button class="p-btn p-btn--secondary p-btn--md" onclick="pSignOut()">↩️ Cerrar sesión</button></div>'
   };
   content.innerHTML = panels[panel] || '<p class="p-sm p-muted">Sección en desarrollo 🌿</p>';
@@ -4800,6 +4821,135 @@ function pDeletePatientNote(userId, userName, idx){
   safeLS('set', notesKey, JSON.stringify(notes));
   pToast('🗑️','Nota eliminada');
   pOpenPatientNotes(userId, userName);
+}
+
+// ── PRO MESSAGES ────────────────────────────────────────────
+function _renderProMessages(){
+  var proId   = safeLS('get','velo_pro_id') || safeLS('get','velo_user_email') || 'pro';
+  var proName = safeLS('get','velo_user_name') || 'Profesional';
+  var replies = []; try{ replies = JSON.parse(safeLS('get','velo_pro_inbox_'+proId)||'[]'); }catch(e){}
+
+  var transfers = []; try{ transfers = JSON.parse(safeLS('get','velo_pending_transfers')||'[]'); }catch(e){}
+  var byUser = {};
+  transfers.forEach(function(t){ if(!byUser[t.userId]) byUser[t.userId] = t; });
+  var patients = Object.values(byUser);
+
+  var composeSection = '<div class="p-card" style="padding:18px;margin-bottom:14px">'
+    +'<div class="p-label p-label-sage" style="margin-bottom:12px">Nuevo mensaje a paciente</div>'
+    +(patients.length
+      ? '<div style="display:flex;flex-direction:column;gap:8px">'
+        + patients.map(function(t){
+          return '<button style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;cursor:pointer;text-align:left;font-family:\'Jost\',sans-serif" onclick="pProComposeMsg(\''+_escHtml(t.userId)+'\',\''+_escHtml(t.userName||'Usuario')+'\')">'
+            +'<span style="font-size:22px">🧑</span>'
+            +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+(t.userName||'Usuario')+'</div>'
+            +'<div style="font-size:11px;color:var(--ink5)">Enviar mensaje interno</div></div>'
+            +'<span style="color:var(--sage3);font-size:16px">✉️</span></button>';
+        }).join('')
+        +'</div>'
+      : '<p class="p-sm p-muted">Cuando tengas pacientes podrás enviarles mensajes internos directamente desde aquí.</p>')
+    +'</div>';
+
+  var replySection = '<div class="p-card" style="padding:18px">'
+    +'<div class="p-label p-label-sage" style="margin-bottom:12px">Respuestas recibidas</div>'
+    +(replies.length
+      ? replies.map(function(r){
+          var readCls = r.leido ? '' : ' unread';
+          return '<div class="p-inbox-msg'+readCls+'" style="cursor:default">'
+            +'<div class="p-inbox-ic">💬</div>'
+            +'<div style="flex:1;min-width:0">'
+            +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">'+(r.userName||'Paciente')+'</div>'
+            +'<div style="font-size:12px;color:var(--ink3);line-height:1.5;white-space:pre-line">'+_escHtml(r.texto)+'</div>'
+            +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+r.fecha+'</div>'
+            +'</div></div>';
+        }).join('')
+      : '<p class="p-sm p-muted">Las respuestas de tus pacientes aparecerán aquí.</p>')
+    +'</div>';
+
+  return composeSection + replySection;
+}
+
+function pProComposeMsg(userId, userName){
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'proComposeMsgOv';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:4px">Mensaje para '+_escHtml(userName)+'</div>'
+    +'<p style="font-size:12px;color:var(--ink4);margin-bottom:14px">El usuario lo recibirá en su buzón de Velo y podrá responderle.</p>'
+    +'<textarea class="p-textarea" id="proComposeTa" rows="5" placeholder="Escribí tu mensaje..."></textarea>'
+    +'<div style="height:12px"></div>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pProSendMsg(\''+_escHtml(userId)+'\',\''+_escHtml(userName)+'\')">Enviar mensaje 💌</button>'
+    +'<div style="height:8px"></div>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'proComposeMsgOv\').remove()">Cancelar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+}
+
+function pProSendMsg(userId, userName){
+  var ta = document.getElementById('proComposeTa');
+  if(!ta || !ta.value.trim()){ pToast('✍️','Escribí tu mensaje antes de enviar'); return; }
+  var texto = ta.value.trim();
+  var proId   = safeLS('get','velo_pro_id') || safeLS('get','velo_user_email') || 'pro';
+  var proName = safeLS('get','velo_user_name') || 'Tu profesional';
+  var proAv   = safeLS('get','velo_user_av') || '🩺';
+  var fecha   = new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+
+  // Deliver to user inbox
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  var msgId = 'pm-'+Date.now();
+  inbox.unshift({
+    id: msgId, tipo:'pro-msg', icon:'🩺',
+    remitente: proName, proId: proId, proName: proName, proAv: proAv,
+    asunto: 'Mensaje de tu profesional '+proName,
+    extracto: texto.substring(0,80)+(texto.length>80?'…':''),
+    cuerpo: texto, leido: false, fecha: fecha
+  });
+  safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+  _updateHomeBell();
+
+  var existing = document.getElementById('proComposeMsgOv');
+  if(existing) existing.remove();
+  pToast('💌','Mensaje enviado a '+userName);
+}
+
+function pReplyToProMsg(proId, proName, userName){
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'proReplyMsgOv';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:4px">Responder a '+_escHtml(proName)+'</div>'
+    +'<p style="font-size:12px;color:var(--ink4);margin-bottom:14px">Tu respuesta llegará al buzón del profesional.</p>'
+    +'<textarea class="p-textarea" id="proReplyTa" rows="4" placeholder="Escribí tu respuesta..."></textarea>'
+    +'<div style="height:12px"></div>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSendProReply(\''+_escHtml(proId)+'\',\''+_escHtml(proName)+'\')">Enviar respuesta 💌</button>'
+    +'<div style="height:8px"></div>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'proReplyMsgOv\').remove()">Cancelar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+}
+
+function pSendProReply(proId, proName){
+  var ta = document.getElementById('proReplyTa');
+  if(!ta || !ta.value.trim()){ pToast('✍️','Escribí tu respuesta antes de enviar'); return; }
+  var texto = ta.value.trim();
+  var myName = safeLS('get','velo_user_name') || 'Paciente';
+  var fecha  = new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+
+  // Store reply in pro's inbox
+  var key = 'velo_pro_inbox_'+proId;
+  var replies = []; try{ replies = JSON.parse(safeLS('get',key)||'[]'); }catch(e){}
+  replies.unshift({ id:'rp-'+Date.now(), userName: myName, texto: texto, fecha: fecha, leido: false });
+  safeLS('set', key, JSON.stringify(replies.slice(0,100)));
+
+  var existing = document.getElementById('proReplyMsgOv');
+  if(existing) existing.remove();
+  // Also close any open inbox message sheet
+  var inboxOv = document.getElementById('inboxMsgOv');
+  if(inboxOv) inboxOv.remove();
+  pToast('💌','Respuesta enviada a '+proName);
 }
 
 function pTogDay(el){
