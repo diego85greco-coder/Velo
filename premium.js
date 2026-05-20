@@ -3820,6 +3820,7 @@ async function pAdminLogin(){
   if(!pass){  pToast('⚠️','Ingresá tu contraseña'); return; }
   if(btn){ btn.disabled = true; btn.textContent = 'Verificando…'; }
 
+  _initSupabase();
   var granted = false;
 
   // Try Supabase auth first (real credentials, no password in code)
