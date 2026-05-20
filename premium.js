@@ -15,20 +15,32 @@
 
 // ── GEMINI AI CONFIG ────────────────────────────────────────
 var GEMINI_KEY    = 'AIzaSyBilVllciOwMx-OsGiWiy_Q10NmDEzD9s8';
-var GEMINI_URL    = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=';
+var GEMINI_URLS   = [
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=',
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='
+];
+var _geminiUrlIdx = 0;
 
 async function _geminiCall(prompt, cfg){
-  try{
-    var res = await fetch(GEMINI_URL + GEMINI_KEY, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }],
-        generationConfig: Object.assign({ temperature:0.7, maxOutputTokens:300 }, cfg||{}) })
-    });
-    var json = await res.json();
-    return json.candidates && json.candidates[0] && json.candidates[0].content &&
-           json.candidates[0].content.parts && json.candidates[0].content.parts[0].text || null;
-  }catch(e){ return null; }
+  for(var attempt = 0; attempt < GEMINI_URLS.length; attempt++){
+    var url = GEMINI_URLS[(_geminiUrlIdx + attempt) % GEMINI_URLS.length];
+    try{
+      var res = await fetch(url + GEMINI_KEY, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }],
+          generationConfig: Object.assign({ temperature:0.7, maxOutputTokens:300 }, cfg||{}) })
+      });
+      var json = await res.json();
+      if(json.candidates && json.candidates[0] && json.candidates[0].content &&
+         json.candidates[0].content.parts && json.candidates[0].content.parts[0].text){
+        _geminiUrlIdx = (_geminiUrlIdx + attempt) % GEMINI_URLS.length;
+        return json.candidates[0].content.parts[0].text;
+      }
+      if(json.error){ continue; }
+    }catch(e){ continue; }
+  }
+  return null;
 }
 
 // ── SUPABASE CONFIG ─────────────────────────────────────────
@@ -1687,18 +1699,41 @@ async function pRenderNews(){
 }
 
 function _renderNewsList(el, items){
+  _newsListCache = items;
   el.innerHTML = items.map(function(item, i){
-    return '<div class="p-card p-card--hover" style="margin-bottom:14px;padding:18px;cursor:default">'
+    return '<div class="p-card p-card--hover" style="margin-bottom:14px;padding:18px;cursor:pointer" onclick="pOpenNewsDetail('+i+')">'
       +'<div style="display:flex;align-items:flex-start;gap:14px">'
       +'<div style="font-size:36px;line-height:1;flex-shrink:0">'+item.emoji+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:17px;color:var(--ink);margin-bottom:6px;font-weight:600">'+_escHtml(item.titulo)+'</div>'
       +'<div style="font-size:13px;color:var(--ink3);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
-      +'<div style="margin-top:12px;font-size:11px;color:var(--ink5);font-style:italic">✨ Velo IA · Actualizado hoy</div>'
+      +'<div style="margin-top:10px;font-size:11px;color:var(--ink5);font-style:italic">✨ Velo IA · Actualizado hoy &nbsp;›</div>'
       +'</div>'
       +'</div>'
       +'</div>';
   }).join('');
+}
+
+var _newsListCache = [];
+function pOpenNewsDetail(i){
+  var item = _newsListCache[i];
+  if(!item) return;
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'newsDetailOv';
+  ov.innerHTML = '<div class="p-sheet" style="max-height:85vh;overflow-y:auto">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="font-size:52px;text-align:center;margin-bottom:12px">'+item.emoji+'</div>'
+    +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:14px;line-height:1.3;text-align:center">'+_escHtml(item.titulo)+'</h2>'
+    +'<p style="font-size:14px;color:var(--ink3);line-height:1.75;margin-bottom:20px">'+_escHtml(item.cuerpo)+'</p>'
+    +'<div style="background:var(--sage7);border-radius:12px;padding:12px 14px;margin-bottom:20px">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--sage3);letter-spacing:.5px;margin-bottom:6px">✨ REFLEXIÓN VELO IA</div>'
+    +'<p style="font-size:13px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
+    +'</div>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'newsDetailOv\').remove()">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 }
 
 // ── ACOMPAÑANTE IA EN CALMA ──────────────────────────────────────
@@ -1760,7 +1795,15 @@ async function pSendCalmAIMsg(){
   var reply = await _geminiCall(prompt);
   var typingEl = document.getElementById('calmAITyping');
   if(typingEl) typingEl.remove();
-  _calmAIAddMsg(reply || 'Estoy acá con vos. Seguí contándome, te escucho sin juzgar.', false);
+  var fallbacks = [
+    'Estoy acá con vos. Seguí contándome, te escucho.',
+    'Gracias por contarme. ¿Cómo te hace sentir eso?',
+    'Eso que vivís importa. ¿Querés contarme un poco más?',
+    'Te escucho. No tenés que pasar por esto solo/a.',
+    'Me alegra que lo compartas. ¿Desde cuándo te está pasando esto?',
+    'Entiendo. Es difícil. ¿Hay algo que hoy te haga sentir un poco mejor?'
+  ];
+  _calmAIAddMsg(reply || fallbacks[Math.floor(Math.random()*fallbacks.length)], false);
   _geminiCrisisCheck(text);
 }
 
