@@ -33,8 +33,12 @@
   <button class="p-mobile-nav-item" onclick="pGoTo('diary');toggleMobileMenu()"><span class="p-mobile-nav-icon">📔</span> Diario</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('calm');toggleMobileMenu()"><span class="p-mobile-nav-icon">🌿</span> Calma</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('news');toggleMobileMenu()"><span class="p-mobile-nav-icon">🌞</span> Buenas Noticias</button>
-  <button class="p-mobile-nav-item" onclick="pGoTo('profile');toggleMobileMenu()"><span class="p-mobile-nav-icon">👤</span> Perfil</button>
-  <button class="p-mobile-nav-item" onclick="pGoTo('contact');toggleMobileMenu()"><span class="p-mobile-nav-icon">📞</span> Contáctanos</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('calm-ai');toggleMobileMenu()"><span class="p-mobile-nav-icon">🤖</span> Velo IA</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('respira');toggleMobileMenu()"><span class="p-mobile-nav-icon">🌬️</span> Respira</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('vela');toggleMobileMenu()"><span class="p-mobile-nav-icon">🕯️</span> Vela por Ti</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('profile');toggleMobileMenu()"><span class="p-mobile-nav-icon">👤</span> Mi Perfil</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('inbox');toggleMobileMenu()"><span class="p-mobile-nav-icon">💌</span> Mensajes</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('contact');toggleMobileMenu()"><span class="p-mobile-nav-icon">📞</span> Contacto</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
 </div>
@@ -1747,6 +1751,29 @@
         </div>
       </div>
 
+      <!-- ══ VELO IA — CALMA CHATBOT ═══════════════════════════════ -->
+      <div class="p-page" id="pg-calm-ai" style="flex-direction:column;height:100%;overflow:hidden;background:linear-gradient(160deg,#0e1f14,#0a1a10)">
+        <div class="feed-header" style="background:rgba(10,26,16,.92);border-bottom:1px solid rgba(116,198,157,.18)">
+          <button class="p-back-btn p-dark-back-btn" onclick="pGoTo('home')">←</button>
+          <div class="feed-header-info">
+            <span style="font-size:22px">🌿</span>
+            <div style="min-width:0">
+              <div style="font-size:14px;font-weight:700;color:#fff">Acompañante Velo IA</div>
+              <div style="font-size:10px;color:rgba(116,198,157,.7)">Escucha activa · No reemplaza atención profesional</div>
+            </div>
+          </div>
+          <button onclick="pGoTo('home')" style="margin-left:auto;background:none;border:none;font-size:18px;color:rgba(255,255,255,.5);cursor:pointer;padding:6px">✕</button>
+        </div>
+        <div id="calmAIMessages" class="feed-messages" style="background:transparent;flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px"></div>
+        <div class="feed-input-area" style="background:rgba(10,26,16,.92);border-top:1px solid rgba(116,198,157,.12)">
+          <textarea id="calmAIInput" class="feed-input" placeholder="Contame cómo te sentís…" rows="1"
+            style="background:rgba(255,255,255,.06);color:#fff;border-color:rgba(116,198,157,.2)"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendCalmAIMsg()}"
+            oninput="this.style.height='';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+          <button class="feed-send-btn" onclick="pSendCalmAIMsg()">↑</button>
+        </div>
+      </div>
+
     </div><!-- /p-pages -->
 
     <!-- ── CREATE CIRCLE MODAL ──────────────────────────────── -->
@@ -1933,29 +1960,6 @@
     <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSubmitSurvey()">Enviar mi opinión 💚</button>
     <div style="height:8px"></div>
     <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('surveyOv')">Completar más tarde</button>
-  </div>
-</div>
-
-<!-- ══ AI COMPANION MODAL ══════════════════════════════════════ -->
-<div class="p-modal-ov" id="calmAIOv">
-  <div class="p-modal" style="max-width:480px;padding:0;overflow:hidden;display:flex;flex-direction:column;height:min(85vh,600px)">
-    <div style="padding:18px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="font-size:28px">🌿</div>
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--ink)">Acompañante Velo</div>
-          <div style="font-size:11px;color:var(--sage2)">Impulsado por IA · No reemplaza atención profesional</div>
-        </div>
-      </div>
-      <button onclick="closeModal('calmAIOv')" style="background:none;border:none;font-size:20px;color:var(--ink4);cursor:pointer;padding:4px">✕</button>
-    </div>
-    <div id="calmAIMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px"></div>
-    <div style="padding:12px 14px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:10px;align-items:flex-end">
-      <textarea id="calmAIInput" class="p-textarea" rows="2" placeholder="Contame cómo te sentís..." style="flex:1;font-size:13px;resize:none"
-        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendCalmAIMsg()}"
-        oninput="this.style.height='';this.style.height=Math.min(this.scrollHeight,96)+'px'"></textarea>
-      <button class="p-btn p-btn--primary p-btn--sm" onclick="pSendCalmAIMsg()" style="flex-shrink:0;align-self:flex-end">Enviar</button>
-    </div>
   </div>
 </div>
 
