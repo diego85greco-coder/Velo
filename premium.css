@@ -629,6 +629,8 @@ a { text-decoration: none; color: inherit; }
   letter-spacing: .1px;
   position: relative;
   overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .p-btn::after {
   content: '';
@@ -905,6 +907,7 @@ a { text-decoration: none; color: inherit; }
   /* The body already has bg-day.jpg; add a soft vignette here */
   background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(240,248,240,.45) 100%);
   z-index: 0;
+  pointer-events: none;
 }
 .land-hero-bg::after {
   content: '';
@@ -912,6 +915,7 @@ a { text-decoration: none; color: inherit; }
   bottom: 0; left: 0; right: 0;
   height: 260px;
   background: linear-gradient(to bottom, transparent, rgba(245,250,245,.7));
+  pointer-events: none;
 }
 /* Hero logo */
 .land-hero-logo {
@@ -971,7 +975,7 @@ a { text-decoration: none; color: inherit; }
   gap: 12px;
   justify-content: center;
   flex-wrap: wrap;
-  animation: p-slideUp .8s .3s var(--ease-out) both;
+  animation: p-fadeIn .8s .3s ease both;
 }
 .land-hero-preview {
   margin-top: 60px;

@@ -4880,3 +4880,7 @@ window.addEventListener('load', function(){
     safeLS('set','velo_registered_ts', String(Date.now()));
   }
 });
+
+window.addEventListener('error', function(e){
+  console.error('[Velo] runtime error:', e.error || e.message, (e.filename||'')+(e.lineno?':'+e.lineno:''));
+});
