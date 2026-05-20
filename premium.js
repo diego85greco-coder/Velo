@@ -528,7 +528,18 @@ function _loadHomeData(){
   var un = document.getElementById('homeUserName');
   var ha = document.getElementById('homeAv');
   if(un) un.textContent = name;
-  if(ha) ha.textContent = av;
+  if(ha){ var badge = ha.querySelector('div'); ha.textContent = av; if(badge) ha.appendChild(badge); }
+
+  // Guardian button in home header
+  var gBtn = document.getElementById('homeGuardianBtn');
+  if(gBtn){
+    gBtn.style.display = '';
+    var isOn = safeLS('get','velo_is_guardian') === 'true';
+    gBtn.style.background = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
+    gBtn.style.borderColor = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
+    gBtn.style.color = isOn ? 'var(--sage2)' : 'var(--ink4)';
+    gBtn.textContent = isOn ? '🟢 Guardián' : '🛡️ Guardián';
+  }
 
   // Today's mood
   _loadTodayMoodHome();
@@ -826,6 +837,20 @@ function _startGuardianHeartbeat(){
 
 function _stopGuardianHeartbeat(){
   if(_guardianHeartbeatTimer){ clearInterval(_guardianHeartbeatTimer); _guardianHeartbeatTimer = null; }
+}
+
+function pHomeToggleGuardian(){
+  pToggleGuardianMode();
+  // Update home button appearance after toggle
+  setTimeout(function(){
+    var gBtn = document.getElementById('homeGuardianBtn');
+    if(!gBtn) return;
+    var isOn = safeLS('get','velo_is_guardian') === 'true';
+    gBtn.style.background = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
+    gBtn.style.borderColor = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
+    gBtn.style.color = isOn ? 'var(--sage2)' : 'var(--ink4)';
+    gBtn.textContent = isOn ? '🟢 Guardián' : '🛡️ Guardián';
+  }, 50);
 }
 
 function pToggleGuardianMode(){

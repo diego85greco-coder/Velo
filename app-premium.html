@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260520-15">
+  <link rel="stylesheet" href="premium.css?v=20260520-16">
 </head>
 <body>
 
@@ -511,20 +511,23 @@
               <div class="p-label">Hoy, <span id="homeDateTxt"></span></div>
               <h1 class="p-title" id="homeGreetTxt">Buenos días 🌿</h1>
             </div>
-            <div style="display:flex;align-items:center;gap:10px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="display:none;font-size:11px;font-weight:700;padding:6px 12px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:var(--sage7);color:var(--sage2);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Guardián</button>
               <button class="p-btn p-btn--sos p-btn--sm" onclick="pGoTo('help')">🆘 SOS</button>
               <button class="p-topbar-btn" style="display:none" id="homeMenuBtn" onclick="toggleMobileMenu()">☰</button>
             </div>
           </div>
           <!-- Daily motivational quote -->
-          <div id="homeDailyQuote" style="padding:0 2px 14px;font-size:13.5px;color:var(--sage2);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.6;min-height:22px;opacity:.9"></div>
+          <div id="homeDailyQuote" style="padding:4px 20px 16px;font-size:14px;color:var(--sage2);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.65;min-height:24px;opacity:.92;text-align:center;letter-spacing:.01em"></div>
           <!-- Greeting card -->
           <div class="home-greeting" style="flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden">
             <div style="display:flex;align-items:center;gap:12px;padding:14px 16px 10px">
-              <div class="home-av" id="homeAv" style="cursor:pointer" onclick="pQuickMood()" title="Clic para registrar tu estado">🧑</div>
-              <div style="flex:1;min-width:0" onclick="pQuickMood()" style="cursor:pointer">
+              <div class="home-av" id="homeAv" style="cursor:pointer" onclick="pGoTo('profile')" title="Ver mi perfil">🧑
+                <div style="position:absolute;bottom:-2px;right:-2px;background:var(--sage2);color:#fff;font-size:9px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.2);pointer-events:none">👤</div>
+              </div>
+              <div style="flex:1;min-width:0;cursor:pointer" onclick="pQuickMood()">
                 <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px" id="homeUserName">Hola!</div>
-                <div style="font-size:12px;color:var(--ink4);line-height:1.45;cursor:pointer" onclick="pQuickMood()">
+                <div style="font-size:12px;color:var(--ink4);line-height:1.45">
                   <span id="homeCurrentMoodLine">Tocá para registrar cómo te sentís ✨</span>
                 </div>
               </div>
@@ -1125,7 +1128,7 @@
             </div>
             <div class="p-card" style="padding:22px;margin-bottom:18px;background:linear-gradient(135deg,rgba(183,228,199,.3),rgba(168,212,232,.2));border:1px solid rgba(45,106,79,.12)">
               <p style="font-size:14px;color:var(--ink3);line-height:1.65;margin-bottom:0">
-                <strong style="color:var(--sage2)">Vela por ti</strong> conecta a usuarios con profesionales licenciados de salud mental para sesiones gratuitas o subsidiadas, financiadas por las donaciones de nuestra comunidad. No es terapia de emergencia — es acompañamiento profesional solidario.
+                <strong style="color:var(--sage2)">Vela por ti</strong> conecta a usuarios con profesionales certificados de salud mental y terapistas de bienestar para sesiones gratuitas o subsidiadas, financiadas por las donaciones de nuestra comunidad. Contamos con <strong>psicólogos y psiquiatras licenciados</strong> para salud mental clínica, y con <strong>coaches y terapistas de bienestar</strong> para el crecimiento personal. Cada profesional es verificado por el equipo Velo.
               </p>
             </div>
             <div class="p-card" style="padding:22px;margin-bottom:14px">
@@ -2067,6 +2070,6 @@
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-15"></script>
+<script src="premium.js?v=20260520-16"></script>
 </body>
 </html>
