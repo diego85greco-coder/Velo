@@ -1926,40 +1926,63 @@ async function pRenderNews(){
   var cacheKey = 'velo_goodnews_'+today;
   var cached = safeLS('get', cacheKey);
   if(cached){
-    try{ var items = JSON.parse(cached); _renderNewsList(newsEl, items); return; }catch(e){}
+    try{
+      var cachedItems = JSON.parse(cached);
+      // Skip static fallback cache — always re-fetch if we only have static content
+      var isLive = cachedItems.some(function(it){ return it._src === 'g' || it._src === 'ai'; });
+      if(isLive){ _renderNewsList(newsEl, cachedItems); return; }
+    }catch(e){}
   }
   newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
 
-  var prompt = 'Buscá 5 noticias positivas y reales del mundo publicadas en las últimas semanas. '
-    +'Temas: avances médicos, actos de solidaridad, logros ambientales, rescates, ciencia, innovación social, animales. '
-    +'Para cada noticia incluí: el título real de la noticia tal como aparece en el medio, '
-    +'un resumen en español rioplatense de 2-3 oraciones, el nombre del medio de comunicación, '
-    +'la URL directa al artículo original, y una reflexión corta. '
-    +'Respondé SOLO con JSON sin markdown: '
-    +'[{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"...","sourceUrl":"https://...","sourceName":"Nombre del medio"}]';
+  var monthYear = ['enero','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][new Date().getMonth()]+' '+new Date().getFullYear();
 
-  var result = await _geminiCallGrounded(prompt, { maxOutputTokens:1500 });
+  // Attempt 1: Grounded search (real web results)
+  var gPrompt = 'Buscá 5 noticias positivas y reales publicadas recientemente ('+monthYear+'). '
+    +'Temas: avances médicos, medio ambiente, solidaridad, ciencia, animales, innovación social. '
+    +'Para cada noticia: título real tal como aparece en el medio, resumen en español rioplatense 2-3 oraciones, nombre del medio, URL real al artículo, reflexión breve de bienestar. '
+    +'SOLO JSON sin markdown: [{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"...","sourceUrl":"https://...","sourceName":"..."}]';
+
+  var result = await _geminiCallGrounded(gPrompt, { maxOutputTokens:1800 });
   var items = [];
+
   if(result.text){
-    try{ var match = result.text.match(/\[[\s\S]*\]/); if(match) items = JSON.parse(match[0]); }catch(e){}
+    try{
+      var raw = result.text.replace(/```json\n?|```/g,'').trim();
+      var m = raw.match(/\[[\s\S]*\]/);
+      if(m) items = JSON.parse(m[0]);
+    }catch(e){}
+    // Enrich missing URLs from grounding metadata
+    if(result.urls && result.urls.length){
+      var ui = 0;
+      items.forEach(function(item){
+        if(!item.sourceUrl || !item.sourceUrl.startsWith('http')){
+          if(result.urls[ui]){ item.sourceUrl = result.urls[ui].uri; item.sourceName = item.sourceName || result.urls[ui].title || 'Fuente'; ui++; }
+        }
+      });
+    }
+    items.forEach(function(it){ it._src = 'g'; });
   }
-  // Enrich with real grounding URLs when AI-provided URL is missing
-  if(result.urls && result.urls.length){
-    items.forEach(function(item, i){
-      if(!item.sourceUrl || !item.sourceUrl.startsWith('http')){
-        if(result.urls[i]){ item.sourceUrl = result.urls[i].uri; item.sourceName = item.sourceName || result.urls[i].title || 'Fuente'; }
-      }
-    });
-  }
+
+  // Attempt 2: Regular Gemini fallback (no fake URLs)
   if(!items.length){
-    items = [
-      {emoji:'🌱',titulo:'La naturaleza se recupera',cuerpo:'Científicos reportan que varias especies en riesgo están aumentando en número gracias a programas de conservación. Es una victoria para todos.', reflexion:'La naturaleza tiene una capacidad de resiliencia que nos inspira.'},
-      {emoji:'💊',titulo:'Avances en el tratamiento del cáncer',cuerpo:'Investigadores desarrollaron terapias que en ensayos clínicos muestran resultados prometedores. La ciencia no para de avanzar.', reflexion:'Cada avance científico es esperanza para miles de familias.'},
-      {emoji:'🤝',titulo:'Comunidades unidas ante la adversidad',cuerpo:'En distintas partes del mundo, vecinos se organizan para ayudarse mutuamente, tejiendo redes de solidaridad que dan esperanza.', reflexion:'La solidaridad humana es la fuerza más poderosa que existe.'},
-      {emoji:'🐾',titulo:'Rescates que emocionan',cuerpo:'Organizaciones rescatan animales de condiciones difíciles y los reubican en hogares amorosos. Cada historia es única y hermosa.', reflexion:'Un acto de amor, sin importar cuán pequeño, cambia vidas.'},
-      {emoji:'🧠',titulo:'Nuevas esperanzas en salud mental',cuerpo:'Terapias basadas en evidencia logran resultados positivos en personas con depresión y ansiedad, abriendo caminos de recuperación.', reflexion:'Pedir ayuda y recibirla es un acto de valentía.'}
-    ];
+    var aiPrompt = 'Generá 5 noticias positivas e inspiradoras de bienestar, ciencia, naturaleza y solidaridad humana. '
+      +'Sé específico y detallado, no genérico. No inventes URLs. '
+      +'SOLO JSON: [{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"..."}]';
+    var aiText = await _geminiCall(aiPrompt, { temperature:0.85, maxOutputTokens:1200 });
+    if(aiText){
+      try{
+        var am = aiText.replace(/```json\n?|```/g,'').trim().match(/\[[\s\S]*\]/);
+        if(am){ items = JSON.parse(am[0]); items.forEach(function(it){ it._src='ai'; }); }
+      }catch(e){}
+    }
   }
+
+  if(!items.length){
+    newsEl.innerHTML = '<div style="text-align:center;padding:32px;color:var(--ink4)"><div style="font-size:36px;margin-bottom:10px">🌐</div>No se pudieron cargar noticias. Verificá tu conexión e intentá de nuevo.<br><br><button class="p-btn p-btn--secondary p-btn--md" onclick="safeLS(\'del\',\'velo_goodnews_'+today+'\');pRenderNews()">Reintentar</button></div>';
+    return;
+  }
+
   safeLS('set', cacheKey, JSON.stringify(items));
   _renderNewsList(newsEl, items);
 }
