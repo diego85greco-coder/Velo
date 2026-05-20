@@ -546,10 +546,40 @@ function _loadHomeData(){
   _updateHomeCurrentMoodLine();
   _updateSidebarUser();
   _renderPersonalizedSuggestions();
+  _updateHomeBell();
   // Daily quote in home header (Gemini, cached per day)
   setTimeout(_loadDailyMotivationalQuote, 200);
   // Daily greeting — only once per day, with a slight delay so the page renders first
   setTimeout(_checkDailyGreeting, 900);
+}
+
+function _updateHomeBell(){
+  var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  var unread = msgs.filter(function(m){ return !m.leido; }).length;
+  // Home bell badge
+  var badge = document.getElementById('homeBellBadge');
+  if(badge){
+    if(unread > 0){ badge.style.display = 'block'; badge.textContent = unread > 9 ? '9+' : unread; }
+    else { badge.style.display = 'none'; }
+  }
+  // Sidebar inbox badge
+  var snBadge = document.getElementById('sn-inbox-badge');
+  if(snBadge){
+    snBadge.textContent = unread > 0 ? '!' : '';
+    snBadge.classList.toggle('p-hidden', unread === 0);
+  }
+}
+
+function _updateInboxDot(){
+  _updateHomeBell();
+}
+
+function pTogglePassVis(id, btn){
+  var inp = document.getElementById(id);
+  if(!inp) return;
+  var isPass = inp.type === 'password';
+  inp.type = isPass ? 'text' : 'password';
+  if(btn) btn.textContent = isPass ? '🙈' : '👁️';
 }
 
 function _loadTodayMoodHome(){
@@ -1703,8 +1733,8 @@ async function pRenderNews(){
   newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando buenas noticias del día...</div>';
   var prompt = 'Generá 5 buenas noticias positivas y reconfortantes para personas que atraviesan momentos difíciles. '
     +'Usá historias de avances médicos, actos de solidaridad, logros ambientales, rescates de animales, innovaciones sociales o descubrimientos científicos. '
-    +'Escribilas en español rioplatense. '
-    +'Respondé SOLO con un JSON array: [{"emoji":"...","titulo":"...","cuerpo":"...2-3 oraciones inspiradoras..."}]';
+    +'Escribilas en español rioplatense. Que se actualicen diariamente con temas del mundo real. '
+    +'Respondé SOLO con un JSON array: [{"emoji":"...","titulo":"...","cuerpo":"...2-3 oraciones inspiradoras...","reflexion":"...una frase corta de reflexión personal..."}]';
   var result = await _geminiCall(prompt);
   var items = [];
   if(result){
@@ -1761,12 +1791,8 @@ function pOpenNewsDetail(i){
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 }
 
-// ── ACOMPAÑANTE IA EN CALMA ──────────────────────────────────────
+// ── ACOMPAÑANTE VELO IA ──────────────────────────────────────────
 var _calmAIMsgs = [];
-
-function pCalmAI(){
-  pGoTo('calm-ai');
-}
 
 function _initCalmAIPage(){
   _calmAIMsgs = [];
@@ -1808,7 +1834,7 @@ async function pSendCalmAIMsg(){
   var typingDiv = document.createElement('div');
   typingDiv.id = 'calmAITyping';
   typingDiv.className = 'feed-msg';
-  typingDiv.innerHTML = '<div class="feed-av">🌿</div><div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">Acompañante Velo</div><div class="feed-bubble" style="color:var(--ink4);font-style:italic">Escribiendo...</div></div>';
+  typingDiv.innerHTML = '<div class="feed-av">🌿</div><div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">Acompañante Velo</div><div class="feed-bubble" style="color:var(--ink4);font-style:italic">Escribiendo…</div></div>';
   if(msgEl){ msgEl.appendChild(typingDiv); msgEl.scrollTop = msgEl.scrollHeight; }
   var history = _calmAIMsgs.slice(-8).map(function(m){ return (m.user?'Usuario':'Acompañante')+': '+m.text; }).join('\n');
   var prompt = 'Sos un acompañante empático y cálido de Velo, una app de salud mental. '
@@ -1817,7 +1843,7 @@ async function pSendCalmAIMsg(){
     +'Si el usuario menciona crisis o riesgo de autolesión, invitalo a visitar la Sala de Ayuda o llamar al 135 (Argentina). '
     +'Respondé en 2-4 oraciones máximo. Sin encabezados ni listas.\n\n'
     +'Conversación:\n'+history+'\nAcompañante:';
-  var reply = await _geminiCall(prompt);
+  var reply = await _geminiCall(prompt, {maxOutputTokens:150});
   var typingEl = document.getElementById('calmAITyping');
   if(typingEl) typingEl.remove();
   var fallbacks = [
@@ -3159,6 +3185,7 @@ function _processHappyQueue(){
 function pRenderHappy(){
   var list = document.getElementById('happyList');
   if(!list) return;
+  pOpenHappyPost(); // initialize emoji row in inline form
   var posts = _processHappyQueue();
   var queue = _happyQueueLoad();
   var myId  = _myUserId();
@@ -3259,8 +3286,10 @@ function _happyPostCard(h, isOwn){
     +'</div>'
     +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap">⏳ '+timeLeft+'</span>' : '')
     +'</div>'
+    // photo
+    +(h.photo ? '<img src="'+h.photo+'" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;display:block;margin-bottom:10px">' : '')
     // text
-    +'<p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:12px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(h.text)+'"</p>'
+    +(h.text ? '<p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:12px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(h.text)+'"</p>' : '')
     // reactions
     +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+rxBar+'</div>'
     // comments
@@ -3321,63 +3350,86 @@ function pHappyComment(postId){
   pRenderHappy();
 }
 
+var _happySelectedPhoto = null;
+
 function pOpenHappyPost(){
-  var posts = _processHappyQueue();
-  var queue = _happyQueueLoad();
-  var myId  = _myUserId();
-  var myQueued = queue.find(function(p){ return p.userId === myId; });
-  if(myQueued){
-    pToast('⏳','Ya tenés una publicación en lista de espera');
-    return;
-  }
-  var ov = document.getElementById('happyPostOv');
-  if(ov){ ov.classList.add('show'); }
   _selectedHappyEmoji = '☀️';
+  _happySelectedPhoto = null;
   var ta = document.getElementById('happyPostTa');
   if(ta) ta.value = '';
   var emojiRow = document.getElementById('happyEmojiRow');
   if(emojiRow) emojiRow.innerHTML = _happyEmojis.map(function(e){
-    return '<button style="font-size:22px;padding:6px;border:2px solid '+(e==='☀️'?'rgba(255,200,50,.6)':'transparent')+';border-radius:10px;background:none;cursor:pointer;transition:border-color .15s" onclick="pSelHappyEmoji(this,\''+e+'\')">'+e+'</button>';
+    return '<button style="font-size:20px;padding:4px 5px;border:2px solid '+(e==='☀️'?'rgba(255,200,50,.6)':'transparent')+';border-radius:9px;background:none;cursor:pointer;transition:border-color .15s" onclick="pSelHappyEmoji(this,\''+e+'\')">'+e+'</button>';
   }).join('');
+  var preview = document.getElementById('happyPhotoPreview');
+  if(preview) preview.style.display = 'none';
 }
 
 function pSelHappyEmoji(el, emoji){
   _selectedHappyEmoji = emoji;
   var row = document.getElementById('happyEmojiRow');
   if(row) row.querySelectorAll('button').forEach(function(b){
-    b.style.borderColor = b.textContent === emoji ? 'rgba(255,200,50,.6)' : 'transparent';
+    b.style.borderColor = b.textContent.trim() === emoji ? 'rgba(255,200,50,.6)' : 'transparent';
   });
+}
+
+function pHappyPickMedia(inp){
+  if(!inp || !inp.files || !inp.files[0]) return;
+  var file = inp.files[0];
+  var isVideo = file.type.startsWith('video/');
+  if(file.size > 4 * 1024 * 1024 && !isVideo){ pToast('⚠️','La imagen es muy grande (máx 4MB). Intentá con una más pequeña.'); inp.value=''; return; }
+  if(file.size > 20 * 1024 * 1024){ pToast('⚠️','El archivo es muy grande (máx 20MB).'); inp.value=''; return; }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    _happySelectedPhoto = e.target.result;
+    var preview = document.getElementById('happyPhotoPreview');
+    var img = document.getElementById('happyPhotoImg');
+    if(preview && img){
+      img.src = _happySelectedPhoto;
+      preview.style.display = 'block';
+    }
+  };
+  reader.readAsDataURL(file);
+  inp.value = '';
+}
+
+function pClearHappyPhoto(){
+  _happySelectedPhoto = null;
+  var preview = document.getElementById('happyPhotoPreview');
+  var img = document.getElementById('happyPhotoImg');
+  if(preview) preview.style.display = 'none';
+  if(img) img.src = '';
 }
 
 function pSubmitHappyPost(){
   var ta = document.getElementById('happyPostTa');
-  if(!ta || !ta.value.trim()){ pToast('✍️','Escribí algo antes de publicar'); return; }
+  var hasText = ta && ta.value.trim();
+  var hasPhoto = !!_happySelectedPhoto;
+  if(!hasText && !hasPhoto){ pToast('✍️','Escribí algo o adjuntá una foto antes de publicar'); return; }
   var myId  = _myUserId();
   var name  = safeLS('get','velo_user_name') || 'Usuario Anónimo';
   var posts = _processHappyQueue();
   var isAnon = safeLS('get','velo_incognito') === 'true';
   var post  = {
     id: 'h'+Date.now(), userId: myId,
-    emoji: _selectedHappyEmoji, text: ta.value.trim(),
+    emoji: _selectedHappyEmoji,
+    text: ta ? ta.value.trim() : '',
     name: isAnon ? 'Usuario Anónimo' : name,
-    ts: Date.now(), reactions: {'💛':0,'🌸':0,'🤗':0,'🌿':0,'✨':0}, comments: []
+    ts: Date.now(), reactions: {'💛':0,'🌸':0,'🤗':0,'🌿':0,'✨':0}, comments: [],
+    photo: _happySelectedPhoto || null
   };
 
   if(posts.length < HAPPY_MAX){
     posts.unshift(post);
     _happySave(posts);
     _happyStatIncr('posts');
-    closeModal('happyPostOv');
     pToast('☀️','¡Publicado en el Muro! Desaparece en 24h 💛');
   } else {
-    // Add to queue
     var queue = _happyQueueLoad();
     queue.push(post);
     _happyQueueSave(queue);
     _happyStatIncr('posts');
-    closeModal('happyPostOv');
-    pToast('⏳','El muro está lleno ('+HAPPY_MAX+'/'+HAPPY_MAX+'). Tu publicación queda en lista de espera y se publicará automáticamente 🌿');
-    // Inbox notification
+    pToast('⏳','El muro está lleno ('+HAPPY_MAX+'/'+HAPPY_MAX+'). Tu publicación queda en lista de espera 🌿');
     var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
     inbox.unshift({ id:'hqueue-'+Date.now(), tipo:'muro', icon:'⏳', remitente:'Muro de la Felicidad',
       asunto:'Tu publicación está en lista de espera ⏳',
@@ -3386,6 +3438,9 @@ function pSubmitHappyPost(){
     safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
     _updateInboxDot();
   }
+  // Reset form
+  pClearHappyPhoto();
+  if(ta) ta.value = '';
   pRenderHappy();
 }
 
@@ -3480,12 +3535,31 @@ function pLoadProfile(){
       : '<span class="p-pill p-pill--sage">🌱 Gratuito</span>';
   }
 
+  // Email
+  _setEl('profileEmail', safeLS('get','velo_user_email') || '—');
+
   // Stats
   var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
   var daysReg = Math.ceil((Date.now() - (parseInt(safeLS('get','velo_registered_ts')||Date.now(),10))) / 86400000);
-  _setEl('profileChats', diary.length);
   _setEl('profileDays', Math.max(1, daysReg));
-  _setEl('profileBadges', _calcBadges());
+  _setEl('profileChats', diary.length);
+  _setEl('profileHelped', parseInt(safeLS('get','velo_helped_others')||'0', 10));
+  _setEl('profileReceived', parseInt(safeLS('get','velo_guardian_convs')||'0', 10));
+
+  // Mi estado inputs — pre-fill from saved values
+  var msEl = document.getElementById('profStatusMusic');
+  var mbEl = document.getElementById('profStatusBook');
+  var mpEl = document.getElementById('profStatusPhrase');
+  if(msEl) msEl.value = safeLS('get','velo_status_music')  || '';
+  if(mbEl) mbEl.value = safeLS('get','velo_status_book')   || '';
+  if(mpEl) mpEl.value = safeLS('get','velo_status_phrase') || '';
+
+  // Sub status display
+  var subEl = document.getElementById('subStatusDisplay');
+  if(subEl){
+    subEl.textContent = _isPremium() ? '✅ Velo Plus activo' : 'Sin suscripción activa';
+    subEl.style.color = _isPremium() ? 'var(--sage)' : 'var(--ink4)';
+  }
 
   // Incognito toggle
   var inc = document.getElementById('incognitoTog');
@@ -3505,58 +3579,63 @@ function pLoadProfile(){
     return '<div class="p-av-opt'+(a===av?' selected':'')+'" onclick="pPickAv(this,\''+a+'\')">'+a+'</div>';
   }).join('');
 
-  // Reviews tab
+  // Reviews
   var rvEl = document.getElementById('profileReviews');
-  if(rvEl) rvEl.innerHTML = diary.length > 0
-    ? '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Aún no hay reseñas</div><div class="p-empty-sub">Las reseñas aparecerán después de tus sesiones</div></div>'
-    : '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Aún no hay reseñas</div><div class="p-empty-sub">Las reseñas aparecerán después de tus sesiones</div></div>';
+  if(rvEl) rvEl.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Aún no hay reseñas</div><div class="p-empty-sub">Las reseñas aparecerán después de tus sesiones</div></div>';
 
-  // Badges tab
+  // Badges
   _renderBadgesGrid();
-
-  // Config tab
-  var cfg = document.getElementById('profileConfig');
-  if(cfg) cfg.innerHTML = [
-    { icon:'📧', label:'Correo', val: safeLS('get','velo_user_email')||'—' },
-    { icon:'🔔', label:'Notificaciones', val:'Activadas' },
-    { icon:'🌍', label:'Idioma', val:'Español' }
-  ].map(function(r){
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">'+r.icon+'</span><span style="font-size:13px;font-weight:600;color:var(--ink)">'+r.label+'</span></div><span style="font-size:12px;color:var(--ink4)">'+r.val+'</span></div>';
-  }).join('');
-
-  // Donate tab
-  var don = document.getElementById('profileDonate');
-  if(don) don.innerHTML = '<div class="p-card" style="padding:22px"><div style="text-align:center;margin-bottom:18px"><div style="font-size:48px;margin-bottom:10px">💚</div><h3 class="p-title" style="font-size:20px;margin-bottom:8px">Apoyá a Velo</h3><p class="p-sm" style="max-width:340px;margin:auto">Ayudanos a mantener este espacio gratuito para quienes más lo necesitan.</p></div><button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pGoTo(\'donation-exit\')" style="margin-bottom:8px">Donar ahora 🌻</button><button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pOpenPayPalPlus()">⭐ Obtener Velo Plus ($2.99/mes)</button></div>';
 }
 
-  // Mini dashboard
-  _renderUserDashboard();
-  // Daily status in profile
-  var incog = safeLS('get','velo_incognito') === 'true';
-  var statusEl = document.getElementById('profileDailyStatus');
-  if(statusEl){
-    if(incog){
-      statusEl.innerHTML = '';
-    } else {
-      var ds = _getDailyStatus();
-      var parts = [];
-      if(ds.movie)  parts.push('<span>🎬 '+_escHtml(ds.movie)+'</span>');
-      if(ds.music)  parts.push('<span>🎵 '+_escHtml(ds.music)+'</span>');
-      if(ds.book)   parts.push('<span>📚 '+_escHtml(ds.book)+'</span>');
-      if(ds.phrase) parts.push('<em style="display:block;font-style:italic;margin-top:6px;color:var(--sage)">"'+_escHtml(ds.phrase)+'"</em>');
-      if(parts.length){
-        statusEl.innerHTML = '<div style="font-size:12px;color:var(--ink4);background:var(--sage7);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:4px;line-height:1.6">'+parts.join('')+'</div>';
-      } else {
-        statusEl.innerHTML = '';
-      }
-    }
+function pSaveProfileStatus(){
+  var music  = (document.getElementById('profStatusMusic')||{}).value  || '';
+  var book   = (document.getElementById('profStatusBook')||{}).value   || '';
+  var phrase = (document.getElementById('profStatusPhrase')||{}).value || '';
+  safeLS('set','velo_status_music',  music.trim());
+  safeLS('set','velo_status_book',   book.trim());
+  safeLS('set','velo_status_phrase', phrase.trim());
+  pToast('✨', 'Estado actualizado y visible en tu perfil 💚');
+}
+
+function pShowPublicProfile(){
+  var name   = safeLS('get','velo_user_name')    || 'Usuario';
+  var av     = safeLS('get','velo_user_av')      || '🧑';
+  var motto  = safeLS('get','velo_user_motto')   || 'Mi camino, mi ritmo.';
+  var music  = safeLS('get','velo_status_music') || '';
+  var book   = safeLS('get','velo_status_book')  || '';
+  var phrase = safeLS('get','velo_status_phrase')|| '';
+  var isInc  = safeLS('get','velo_incognito') === 'true';
+  var convs  = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
+  var badge  = _getBadge(convs);
+  var displayName = isInc ? 'Anónimo/a 🎭' : _escHtml(name);
+  var displayAv   = isInc ? '🎭' : av;
+  var statusHtml  = '';
+  if(!isInc && (music || book || phrase)){
+    statusHtml = '<div style="background:var(--sage7);border-radius:12px;padding:12px;margin-top:12px;font-size:13px;color:var(--ink3);line-height:1.7">';
+    if(music)  statusHtml += '<div>🎵 '+_escHtml(music)+'</div>';
+    if(book)   statusHtml += '<div>📚 '+_escHtml(book)+'</div>';
+    if(phrase) statusHtml += '<div style="font-style:italic;margin-top:4px;color:var(--sage2)">✨ "'+_escHtml(phrase)+'"</div>';
+    statusHtml += '</div>';
   }
-  // Sub status
-  var subEl = document.getElementById('subStatusDisplay');
-  if(subEl){
-    subEl.textContent = _isPremium() ? '✅ Velo Plus activo' : 'Sin suscripción activa';
-    subEl.style.color = _isPremium() ? 'var(--sage)' : 'var(--ink4)';
-  }
+  var existing = document.getElementById('publicProfileOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'publicProfileOv';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="text-align:center;padding:8px 0 16px">'
+    +'<div style="font-size:64px;margin-bottom:10px">'+displayAv+'</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:4px">'+displayName+'</div>'
+    +'<div style="font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:10px">'+_escHtml(motto)+'</div>'
+    +'<span style="font-size:22px">'+badge.icon+'</span> <span style="font-size:12px;color:var(--ink4)">Guardián '+badge.name+'</span>'
+    +statusHtml
+    +(isInc ? '<div style="margin-top:12px;font-size:12px;color:var(--ink4);background:var(--cream2);border-radius:10px;padding:10px">🎭 Modo incógnito · tu nombre y avatar están ocultos</div>' : '')
+    +'</div>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'publicProfileOv\').remove()">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
 
 function _calcBadges(){
   var b = 0;
@@ -3992,22 +4071,26 @@ async function pAdminLogin(){
 
   _initSupabase();
   var granted = false;
+  var authError = '';
 
-  // Try Supabase auth first (real credentials, no password in code)
   if(sbClient){
     try{
-      var { data, error } = await sbClient.auth.signInWithPassword({ email: email, password: pass });
-      if(!error && data && data.user && data.user.email.toLowerCase() === _ADMIN_EMAIL){
-        granted = true;
-      } else if(!error && data && data.user && data.user.email.toLowerCase() !== _ADMIN_EMAIL){
-        pToast('⛔','Tu cuenta no tiene acceso de administrador');
+      var resp = await sbClient.auth.signInWithPassword({ email: email, password: pass });
+      var data = resp.data; var error = resp.error;
+      if(!error && data && data.user){
+        if(data.user.email.toLowerCase() === _ADMIN_EMAIL){
+          granted = true;
+        } else {
+          authError = 'Tu cuenta no tiene acceso de administrador';
+        }
+      } else if(error){
+        authError = 'Credenciales incorrectas · ' + (error.message || '');
       }
-    }catch(e){ /* network error — fall through to local fallback */ }
-  }
-
-  // Local fallback (for dev/demo without network)
-  if(!granted && email === _ADMIN_EMAIL && (pass === 'velo2025admin' || pass === 'admin')){
-    granted = true;
+    }catch(e){
+      authError = 'Error de red · Verificá tu conexión';
+    }
+  } else {
+    authError = 'Error al conectar con el servidor · Recargá la página';
   }
 
   if(granted){
@@ -4021,10 +4104,8 @@ async function pAdminLogin(){
     pGoTo('admin');
     _renderAdmin();
     pToast('🌿','Bienvenido/a al panel admin');
-  } else if(sbClient){
-    pToast('⚠️','Credenciales incorrectas');
   } else {
-    pToast('⚠️','Contraseña incorrecta');
+    pToast('⚠️', authError || 'Credenciales incorrectas');
   }
 
   if(btn){ btn.disabled = false; btn.textContent = 'Acceder al panel'; }
