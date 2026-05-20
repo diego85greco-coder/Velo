@@ -531,15 +531,19 @@ function _loadHomeData(){
   if(ha){ var badge = ha.querySelector('div'); ha.textContent = av; if(badge) ha.appendChild(badge); }
 
   // Guardian button in home header
-  var gBtn = document.getElementById('homeGuardianBtn');
+  var gWrap = document.getElementById('homeGuardianWrap');
+  var gBtn  = document.getElementById('homeGuardianBtn');
+  var isOn  = safeLS('get','velo_is_guardian') === 'true';
+  if(gWrap) gWrap.style.display = 'flex';
   if(gBtn){
-    gBtn.style.display = '';
-    var isOn = safeLS('get','velo_is_guardian') === 'true';
-    gBtn.style.background = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
-    gBtn.style.borderColor = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
-    gBtn.style.color = isOn ? 'var(--sage2)' : 'var(--ink4)';
-    gBtn.textContent = isOn ? '🟢 Guardián' : '🛡️ Guardián';
+    gBtn.style.background   = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
+    gBtn.style.borderColor  = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
+    gBtn.style.color        = isOn ? 'var(--sage2)' : 'var(--ink4)';
+    gBtn.textContent        = isOn ? '🟢 Guardián' : '🛡️ Guardián';
   }
+  // Update label
+  var gLabel = gWrap ? gWrap.querySelector('span') : null;
+  if(gLabel) gLabel.textContent = isOn ? 'Activo' : 'Activarme';
 
   // Today's mood
   _loadTodayMoodHome();
@@ -871,15 +875,18 @@ function _stopGuardianHeartbeat(){
 
 function pHomeToggleGuardian(){
   pToggleGuardianMode();
-  // Update home button appearance after toggle
   setTimeout(function(){
-    var gBtn = document.getElementById('homeGuardianBtn');
-    if(!gBtn) return;
-    var isOn = safeLS('get','velo_is_guardian') === 'true';
-    gBtn.style.background = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
-    gBtn.style.borderColor = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
-    gBtn.style.color = isOn ? 'var(--sage2)' : 'var(--ink4)';
-    gBtn.textContent = isOn ? '🟢 Guardián' : '🛡️ Guardián';
+    var isOn  = safeLS('get','velo_is_guardian') === 'true';
+    var gBtn  = document.getElementById('homeGuardianBtn');
+    var gWrap = document.getElementById('homeGuardianWrap');
+    if(gBtn){
+      gBtn.style.background  = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
+      gBtn.style.borderColor = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
+      gBtn.style.color       = isOn ? 'var(--sage2)' : 'var(--ink4)';
+      gBtn.textContent       = isOn ? '🟢 Guardián' : '🛡️ Guardián';
+    }
+    var gLabel = gWrap ? gWrap.querySelector('span') : null;
+    if(gLabel) gLabel.textContent = isOn ? 'Activo' : 'Activarme';
   }, 50);
 }
 

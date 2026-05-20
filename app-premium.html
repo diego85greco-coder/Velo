@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260520-18">
+  <link rel="stylesheet" href="premium.css?v=20260520-19">
 </head>
 <body>
 
@@ -506,8 +506,11 @@
               <div class="p-label">Hoy, <span id="homeDateTxt"></span></div>
               <h1 class="p-title" id="homeGreetTxt">Buenos días 🌿</h1>
             </div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="display:none;font-size:11px;font-weight:700;padding:6px 12px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:var(--sage7);color:var(--sage2);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Guardián</button>
+            <div style="display:flex;align-items:flex-end;gap:6px">
+              <div id="homeGuardianWrap" style="display:none;flex-direction:column;align-items:center;gap:2px">
+                <span style="font-size:8px;font-weight:700;color:var(--sage3);letter-spacing:.4px;text-transform:uppercase;white-space:nowrap">Activarme</span>
+                <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:6px 12px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:var(--sage7);color:var(--sage2);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Guardián</button>
+              </div>
               <button onclick="pGoTo('inbox')" title="Notificaciones" style="font-size:18px;background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative" id="homeBellBtn">🔔<span id="homeBellBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
               <button onclick="pContactUs()" title="Contáctanos" style="font-size:18px;background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent">✉️</button>
               <button class="p-btn p-btn--sos p-btn--sm" onclick="pGoTo('help')">🆘 SOS</button>
@@ -519,8 +522,11 @@
           <!-- Greeting card -->
           <div class="home-greeting" style="flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden">
             <div style="display:flex;align-items:center;gap:12px;padding:14px 16px 10px">
-              <div class="home-av" id="homeAv" style="cursor:pointer" onclick="pGoTo('profile')" title="Ver mi perfil">🧑
-                <div style="position:absolute;bottom:-2px;right:-2px;background:var(--sage2);color:#fff;font-size:9px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.2);pointer-events:none">👤</div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer" onclick="pGoTo('profile')" title="Ver mi perfil">
+                <span style="font-size:8px;font-weight:700;color:var(--sage3);letter-spacing:.4px;text-transform:uppercase;white-space:nowrap">Mi perfil</span>
+                <div class="home-av" id="homeAv">🧑
+                  <div style="position:absolute;bottom:-2px;right:-2px;background:var(--sage2);color:#fff;font-size:9px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.2);pointer-events:none">👤</div>
+                </div>
               </div>
               <div style="flex:1;min-width:0;cursor:pointer" onclick="pQuickMood()">
                 <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px" id="homeUserName">Hola!</div>
@@ -2000,6 +2006,6 @@
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-18"></script>
+<script src="premium.js?v=20260520-19"></script>
 </body>
 </html>
