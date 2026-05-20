@@ -4884,3 +4884,43 @@ window.addEventListener('load', function(){
 window.addEventListener('error', function(e){
   console.error('[Velo] runtime error:', e.error || e.message, (e.filename||'')+(e.lineno?':'+e.lineno:''));
 });
+
+// ── MOBILE TAP SAFETY NET ────────────────────────────────────
+// On iOS some stacking/overlay quirks can swallow taps. This document-level
+// handler resolves the real button at the touch point via elementsFromPoint
+// (which sees *through* invisible overlays) and triggers it.
+(function(){
+  var sx = 0, sy = 0, moved = false;
+
+  document.addEventListener('touchstart', function(e){
+    var t = e.touches[0]; if(!t) return;
+    sx = t.clientX; sy = t.clientY; moved = false;
+  }, {passive:true});
+
+  document.addEventListener('touchmove', function(e){
+    var t = e.touches[0]; if(!t) return;
+    if(Math.abs(t.clientX - sx) > 12 || Math.abs(t.clientY - sy) > 12) moved = true;
+  }, {passive:true});
+
+  document.addEventListener('touchend', function(e){
+    if(moved) return;
+    // Don't interfere while a modal / sheet / mobile menu is open.
+    if(document.querySelector('.p-modal-ov.show, .p-modal-ov.open, .p-mobile-menu.open')) return;
+    var t = e.changedTouches[0]; if(!t) return;
+
+    var stack = [];
+    try{ stack = document.elementsFromPoint(t.clientX, t.clientY) || []; }catch(err){ return; }
+
+    for(var i=0; i<stack.length; i++){
+      var el = stack[i];
+      var tag = el.tagName;
+      // Native interactive elements handle their own taps — stop before them.
+      if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'A') return;
+      if(tag === 'BUTTON' && el.hasAttribute('onclick')){
+        e.preventDefault();
+        try{ el.click(); }catch(err){ console.error('[Velo] tap nav error:', err); }
+        return;
+      }
+    }
+  }, {passive:false});
+})();

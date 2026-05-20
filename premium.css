@@ -311,8 +311,6 @@ a { text-decoration: none; color: inherit; }
   overflow: hidden;
   min-width: 0;
   background: rgba(250,248,244,.55); /* light veil so content stays readable */
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
 }
 
 /* ── 7. TOP BAR (mobile only) ─────────────────────────────────────── */
