@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260520-24">
+  <link rel="stylesheet" href="premium.css?v=20260520-25">
 </head>
 <body>
 
@@ -2112,9 +2112,21 @@
   </div>
 </div>
 
+<!-- ══ PRO BOOKING MODAL ══════════════════════════════════════ -->
+<div id="proBookModal" class="p-modal-ov">
+  <div class="p-sheet" style="max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div class="p-sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink)">Reservar sesión 📅</h3>
+      <button onclick="pCloseBookModal()" style="width:36px;height:36px;border-radius:50%;background:var(--cream2);border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink4)">✕</button>
+    </div>
+    <div id="proBookModalBody"></div>
+  </div>
+</div>
+
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-24"></script>
+<script src="premium.js?v=20260520-25"></script>
 </body>
 </html>

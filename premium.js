@@ -22,22 +22,23 @@ var GEMINI_URLS   = [
 var _geminiUrlIdx = 0;
 
 async function _geminiCallGrounded(prompt, cfg){
-  var url = GEMINI_URLS[0] + GEMINI_KEY; // grounding only available on 2.0-flash
+  var url = GEMINI_URLS[0] + GEMINI_KEY;
   try{
     var res = await fetch(url, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         contents:[{ parts:[{ text: prompt }] }],
-        tools:[{ googleSearch:{} }],
-        generationConfig: Object.assign({ temperature:0.5, maxOutputTokens:1200 }, cfg||{})
+        tools:[{ google_search:{} }],
+        generationConfig: Object.assign({ temperature:0.5, maxOutputTokens:1500 }, cfg||{})
       })
     });
     var json = await res.json();
     if(json.candidates && json.candidates[0]){
       var cand = json.candidates[0];
-      var text = cand.content && cand.content.parts && cand.content.parts[0] ? cand.content.parts[0].text : null;
+      var text = (cand.content && cand.content.parts && cand.content.parts[0]) ? cand.content.parts[0].text : null;
       var chunks = (cand.groundingMetadata && cand.groundingMetadata.groundingChunks) || [];
+      var supportChunks = (cand.groundingMetadata && cand.groundingMetadata.groundingSupports) || [];
       var urls = chunks.map(function(c){ return c.web || null; }).filter(Boolean);
       return { text: text, urls: urls };
     }
@@ -1333,7 +1334,7 @@ function pRenderProfessionals(){
 
   function _proCard(p){
     var spec = p.spec || p.specialty || 'Especialista';
-    return '<div class="p-pro-card" onclick="pOpenProSession(\''+p.id+'\')"><div style="display:flex;align-items:flex-start;gap:14px"><div style="font-size:44px;flex-shrink:0">'+p.av+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+p.name+'</span><span class="pro-rate">$'+p.rate+' <span style="font-size:13px;color:var(--ink4)">'+p.currency+'</span></span></div><div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--sage3)">'+_escHtml(spec)+'</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin-bottom:10px">'+p.bio+'</p><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+p.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--ink4)">⭐ '+p.rating+' · '+p.sessions+' sesiones</span><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pOpenProSession(\''+p.id+'\')">Reservar sesión</button></div></div></div></div>';
+    return '<div class="p-pro-card" onclick="pOpenProSession(\''+p.id+'\')"><div style="display:flex;align-items:flex-start;gap:14px"><div style="font-size:44px;flex-shrink:0">'+p.av+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+p.name+'</span><span class="pro-rate">$'+p.rate+' <span style="font-size:13px;color:var(--ink4)">'+p.currency+'</span></span></div><div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--sage3)">'+_escHtml(spec)+'</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin-bottom:10px">'+p.bio+'</p><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+p.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--ink4)">⭐ '+p.rating+' · '+p.sessions+' sesiones</span><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pOpenBookPro(\''+p.id+'\')">📅 Reservar</button></div></div></div></div>';
   }
 
   list.innerHTML = _proData.map(_proCard).join('');
@@ -4442,6 +4443,247 @@ function pInitProPanel(){
   _setEl('ppNextSessions', '<p class="p-sm p-muted">Sin sesiones programadas esta semana.</p>');
 }
 
+var _proAvailEditing = {};
+
+function pRenderProAgenda(){
+  var proId = safeLS('get','velo_pro_id') || safeLS('get','velo_user_email') || 'demo-pro';
+  var avail  = _proAvailLoad(proId);
+  _proAvailEditing = JSON.parse(JSON.stringify(avail));
+  var bookings = _proBookingsLoad(proId);
+  var now = Date.now();
+  var upcoming = bookings.filter(function(b){
+    return new Date(b.date+'T'+b.time+':00').getTime() > now && b.status !== 'cancelled';
+  }).sort(function(a,b){ return (a.date+a.time).localeCompare(b.date+b.time); });
+
+  var html = '<div class="p-card" style="padding:18px;margin-bottom:14px">'
+    +'<div class="p-label p-label-sage" style="margin-bottom:4px">Disponibilidad semanal</div>'
+    +'<p style="font-size:12px;color:var(--ink5);margin-bottom:14px;line-height:1.5">Seleccioná los días y horarios disponibles. Los usuarios los verán al reservar.</p>'
+    +'<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px">'
+    +[0,1,2,3,4,5,6].map(function(d){
+      var active = _proAvailEditing[d] && _proAvailEditing[d].length > 0;
+      return '<button id="proDay-'+d+'" onclick="pTogProDay('+d+',this)" style="padding:8px 13px;border-radius:100px;border:2px solid '+(active?'var(--sage2)':'var(--border2)')+';background:'+(active?'var(--sage7)':'rgba(255,255,255,.7)')+';color:'+(active?'var(--sage)':'var(--ink4)')+';font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'+_CAL_DAY_NAMES[d]+'</button>';
+    }).join('')
+    +'</div>'
+    +'<div id="proSlotEditor">'+_buildProSlotEditor()+'</div>'
+    +'<button class="p-btn p-btn--primary p-btn--md" style="margin-top:14px" onclick="pSaveProAvail()">💾 Guardar disponibilidad</button>'
+    +'</div>'
+    +'<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Próximas reservas</div>';
+
+  if(!upcoming.length){
+    html += '<p class="p-sm p-muted">No hay reservas próximas. Las reservas confirmadas aparecerán aquí.</p>';
+  } else {
+    html += upcoming.slice(0,10).map(function(b){
+      var d = new Date(b.date+'T00:00:00');
+      return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">'
+        +'<div style="width:44px;height:44px;background:var(--sage7);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">'
+        +'<div style="font-size:18px;font-weight:800;color:var(--sage);line-height:1">'+d.getDate()+'</div>'
+        +'<div style="font-size:9px;color:var(--sage3);font-weight:700;text-transform:uppercase">'+_CAL_MONTH_SHORT[d.getMonth()]+'</div>'
+        +'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:700;color:var(--ink)">'+_escHtml(b.userName||'Usuario')+'</div>'
+        +'<div style="font-size:11px;color:var(--ink4)">'+_CAL_DAY_NAMES_LONG[d.getDay()]+' · '+b.time+' hs</div>'
+        +'</div>'
+        +'<button onclick="pCancelProBooking(\''+b.id+'\',\''+proId+'\')" style="padding:5px 10px;background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.2);border-radius:8px;font-size:11px;color:rgba(200,60,60,.9);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">Cancelar</button>'
+        +'</div>';
+    }).join('');
+  }
+  html += '</div>';
+  return html;
+}
+
+function _buildProSlotEditor(){
+  var activeDays = [0,1,2,3,4,5,6].filter(function(d){ return _proAvailEditing[d] && _proAvailEditing[d].length > 0; });
+  if(!activeDays.length) return '<p style="font-size:12px;color:var(--ink5);font-style:italic">Seleccioná al menos un día para elegir los horarios.</p>';
+  return activeDays.map(function(d){
+    var slots = _proAvailEditing[d] || [];
+    return '<div style="margin-bottom:12px">'
+      +'<div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:7px">'+_CAL_DAY_NAMES_LONG[d]+'</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      +_BOOKING_HOURS.map(function(h){
+        var active = slots.indexOf(h) > -1;
+        return '<button id="slot-'+d+'-'+h.replace(':','')+'" onclick="pTogProSlot('+d+',\''+h+'\',this)" style="padding:5px 11px;border-radius:8px;border:1.5px solid '+(active?'var(--sage2)':'var(--border2)')+';background:'+(active?'var(--sage7)':'rgba(255,255,255,.7)')+';color:'+(active?'var(--sage)':'var(--ink4)')+';font-size:12px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'+h+'</button>';
+      }).join('')
+      +'</div></div>';
+  }).join('');
+}
+
+function pTogProDay(dayNum, btn){
+  if(_proAvailEditing[dayNum] && _proAvailEditing[dayNum].length > 0){
+    delete _proAvailEditing[dayNum];
+    if(btn){ btn.style.borderColor='var(--border2)'; btn.style.background='rgba(255,255,255,.7)'; btn.style.color='var(--ink4)'; }
+  } else {
+    _proAvailEditing[dayNum] = ['09:00','10:00','11:00','14:00','15:00','16:00'];
+    if(btn){ btn.style.borderColor='var(--sage2)'; btn.style.background='var(--sage7)'; btn.style.color='var(--sage)'; }
+  }
+  var ed = document.getElementById('proSlotEditor');
+  if(ed) ed.innerHTML = _buildProSlotEditor();
+}
+
+function pTogProSlot(dayNum, time, btn){
+  if(!_proAvailEditing[dayNum]) _proAvailEditing[dayNum] = [];
+  var idx = _proAvailEditing[dayNum].indexOf(time);
+  if(idx > -1){
+    _proAvailEditing[dayNum].splice(idx, 1);
+    if(btn){ btn.style.borderColor='var(--border2)'; btn.style.background='rgba(255,255,255,.7)'; btn.style.color='var(--ink4)'; }
+  } else {
+    _proAvailEditing[dayNum].push(time);
+    _proAvailEditing[dayNum].sort();
+    if(btn){ btn.style.borderColor='var(--sage2)'; btn.style.background='var(--sage7)'; btn.style.color='var(--sage)'; }
+  }
+}
+
+function pSaveProAvail(){
+  var proId = safeLS('get','velo_pro_id') || safeLS('get','velo_user_email') || 'demo-pro';
+  _proAvailSave(proId, _proAvailEditing);
+  pToast('💾','Disponibilidad guardada ✅');
+}
+
+function pCancelProBooking(bookingId, proId){
+  if(!confirm('¿Cancelar esta reserva?')) return;
+  var bks = _proBookingsLoad(proId);
+  bks = bks.map(function(b){ return b.id===bookingId ? Object.assign({},b,{status:'cancelled'}) : b; });
+  _proBookingsSave(proId, bks);
+  pToast('❌','Reserva cancelada');
+  var content = document.getElementById('proPanelContent');
+  if(content) content.innerHTML = pRenderProAgenda();
+}
+
+var _bookingProId = null;
+var _bookingDateStr = null;
+var _bookingSlotTime = null;
+var _bookingDays = [];
+
+function pOpenBookPro(proId){
+  _bookingProId = proId;
+  _bookingDateStr = null;
+  _bookingSlotTime = null;
+  var pro = _proData.find(function(p){ return p.id === proId; });
+  if(!pro){ pToast('⚠️','Profesional no encontrado'); return; }
+
+  var avail = _proAvailLoad(proId);
+  if(!Object.keys(avail).length){
+    avail = {1:['09:00','10:00','11:00','14:00','15:00','16:00','17:00'],
+             2:['09:00','10:00','11:00','14:00','15:00','16:00','17:00'],
+             3:['09:00','10:00','11:00','14:00','15:00','16:00','17:00'],
+             4:['09:00','10:00','11:00','14:00','15:00','16:00','17:00'],
+             5:['09:00','10:00','11:00','14:00','15:00','16:00']};
+  }
+  var bookings = _proBookingsLoad(proId);
+
+  _bookingDays = [];
+  var today = new Date(); today.setHours(0,0,0,0);
+  for(var i = 1; i <= 21; i++){
+    var d = new Date(today.getTime()+i*86400000);
+    var dow = d.getDay();
+    var dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    var slots = avail[dow] || [];
+    var bookedTimes = bookings.filter(function(b){ return b.date===dateStr && b.status!=='cancelled'; }).map(function(b){ return b.time; });
+    var freeSlots = slots.filter(function(s){ return bookedTimes.indexOf(s)<0; });
+    _bookingDays.push({d:d, dateStr:dateStr, dow:dow, freeSlots:freeSlots, hasAvail:freeSlots.length>0});
+  }
+
+  var modal = document.getElementById('proBookModal');
+  if(!modal) return;
+  var body  = document.getElementById('proBookModalBody');
+  if(!body) return;
+
+  var calStrip = _bookingDays.map(function(dy){
+    var a = dy.hasAvail;
+    return '<div id="bkday-'+dy.dateStr+'" onclick="'+(a?'pSelectBookDate(\''+dy.dateStr+'\')':'')+'" '
+      +'style="flex-shrink:0;width:54px;text-align:center;padding:10px 6px;border-radius:14px;border:1.5px solid '+(a?'var(--border2)':'var(--border)')+';background:rgba(255,255,255,'+(a?'.9':'.4')+');cursor:'+(a?'pointer':'default')+';opacity:'+(a?'1':'.45')+';transition:all .15s">'
+      +'<div style="font-size:10px;font-weight:600;color:var(--ink5);text-transform:uppercase;margin-bottom:4px">'+_CAL_DAY_NAMES[dy.dow]+'</div>'
+      +'<div style="font-size:18px;font-weight:800;color:'+(a?'var(--ink)':'var(--ink5)')+'">'+dy.d.getDate()+'</div>'
+      +'<div style="font-size:9px;color:var(--ink5);margin-top:2px">'+_CAL_MONTH_SHORT[dy.d.getMonth()]+'</div>'
+      +(a?'<div style="width:6px;height:6px;border-radius:50%;background:var(--sage2);margin:4px auto 0"></div>':'')
+      +'</div>';
+  }).join('');
+
+  body.innerHTML = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">'
+    +'<div style="font-size:44px;flex-shrink:0">'+pro.av+'</div>'
+    +'<div><div style="font-size:16px;font-weight:700;color:var(--ink)">'+_escHtml(pro.name)+'</div>'
+    +'<div style="font-size:12px;color:var(--sage3);font-weight:600">'+_escHtml(pro.spec)+'</div>'
+    +'<div style="font-size:12px;color:var(--ink4);margin-top:2px">$'+pro.rate+' '+pro.currency+' · sesión 1h</div></div></div>'
+    +'<div class="p-label p-label-sage" style="margin-bottom:10px">Elegí un día disponible</div>'
+    +'<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:20px;-webkit-overflow-scrolling:touch">'+calStrip+'</div>'
+    +'<div id="proBookSlots"><p style="font-size:13px;color:var(--ink4);text-align:center;padding:16px 0;font-style:italic">↑ Seleccioná un día para ver los horarios</p></div>'
+    +'<div id="proBookConfirmArea" style="display:none;margin-top:16px">'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pConfirmBookSlot()">Confirmar reserva ✅</button>'
+    +'</div>';
+
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function pCloseBookModal(){
+  var modal = document.getElementById('proBookModal');
+  if(modal) modal.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function pSelectBookDate(dateStr){
+  _bookingDateStr = dateStr;
+  _bookingSlotTime = null;
+  document.querySelectorAll('[id^="bkday-"]').forEach(function(el){
+    el.style.background='rgba(255,255,255,.9)'; el.style.borderColor='var(--border2)';
+  });
+  var selEl = document.getElementById('bkday-'+dateStr);
+  if(selEl){ selEl.style.background='var(--sage7)'; selEl.style.borderColor='var(--sage2)'; }
+  var dy = _bookingDays.find(function(x){ return x.dateStr===dateStr; });
+  var slotsEl = document.getElementById('proBookSlots');
+  if(!slotsEl) return;
+  if(!dy || !dy.freeSlots.length){
+    slotsEl.innerHTML='<p style="font-size:13px;color:var(--ink4);text-align:center;padding:16px 0">No hay horarios disponibles este día</p>';
+    return;
+  }
+  var dateLabel = _CAL_DAY_NAMES_LONG[dy.d.getDay()]+' '+dy.d.getDate()+' de '+_CAL_MONTH_LONG[dy.d.getMonth()];
+  slotsEl.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--ink4);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">'+dateLabel+'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    +dy.freeSlots.map(function(s){
+      return '<button id="bkslot-'+s.replace(':','')+'" onclick="pSelectBookSlot(\''+s+'\')" style="padding:9px 15px;border-radius:10px;border:1.5px solid var(--border2);background:rgba(255,255,255,.9);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'+s+'</button>';
+    }).join('')
+    +'</div>';
+  var ca = document.getElementById('proBookConfirmArea');
+  if(ca) ca.style.display='none';
+}
+
+function pSelectBookSlot(time){
+  _bookingSlotTime = time;
+  document.querySelectorAll('[id^="bkslot-"]').forEach(function(el){
+    el.style.background='rgba(255,255,255,.9)'; el.style.borderColor='var(--border2)'; el.style.color='var(--ink)';
+  });
+  var s = document.getElementById('bkslot-'+time.replace(':',''));
+  if(s){ s.style.background='var(--sage7)'; s.style.borderColor='var(--sage2)'; s.style.color='var(--sage)'; }
+  var ca = document.getElementById('proBookConfirmArea');
+  if(ca) ca.style.display='block';
+}
+
+function pConfirmBookSlot(){
+  if(!_bookingProId||!_bookingDateStr||!_bookingSlotTime){ pToast('⚠️','Elegí un día y horario'); return; }
+  var pro = _proData.find(function(p){ return p.id===_bookingProId; });
+  if(!pro) return;
+  var userName = safeLS('get','velo_user_name') || 'Usuario';
+  var userId   = safeLS('get','velo_user_email') || 'guest';
+  var bkId = 'bk-'+Date.now();
+  var bk = { id:bkId, proId:_bookingProId, proName:pro.name, date:_bookingDateStr, time:_bookingSlotTime, userId:userId, userName:userName, status:'confirmed', ts:Date.now() };
+  var bks = _proBookingsLoad(_bookingProId);
+  bks.push(bk);
+  _proBookingsSave(_bookingProId, bks);
+  var myBks = []; try{ myBks = JSON.parse(safeLS('get','velo_my_bookings')||'[]'); }catch(e){}
+  myBks.unshift({ id:bkId, proId:_bookingProId, proName:pro.name, proAv:pro.av, date:_bookingDateStr, time:_bookingSlotTime, status:'confirmed' });
+  safeLS('set','velo_my_bookings', JSON.stringify(myBks.slice(0,100)));
+  var d = new Date(_bookingDateStr+'T00:00:00');
+  var dl = _CAL_DAY_NAMES_LONG[d.getDay()]+' '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0');
+  var inbox=[]; try{ inbox=JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  inbox.unshift({id:'bk-n-'+Date.now(),tipo:'sesion',icon:'📅',remitente:'Velo Sesiones',
+    asunto:'Sesión reservada con '+pro.name,
+    extracto:'Confirmada para el '+dl+' a las '+_bookingSlotTime+' hs.',
+    leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
+  safeLS('set','velo_inbox',JSON.stringify(inbox.slice(0,100)));
+  _updateInboxDot();
+  pCloseBookModal();
+  pToast('📅','¡Reserva confirmada! '+dl+' · '+_bookingSlotTime+' ✅');
+}
+
 function switchProPanel(panel, btn){
   document.querySelectorAll('.pro-nav-item').forEach(function(i){ i.classList.remove('active'); });
   if(btn) btn.classList.add('active');
@@ -4449,7 +4691,7 @@ function switchProPanel(panel, btn){
   if(!content) return;
   var panels = {
     inicio: '<div class="metric-cards"><div class="metric-card"><div class="metric-n" id="ppEarnings">$0</div><div class="metric-l">Ingresos</div></div><div class="metric-card"><div class="metric-n" id="ppSessions">0</div><div class="metric-l">Sesiones</div></div><div class="metric-card"><div class="metric-n" id="ppRating">5.0</div><div class="metric-l">Rating</div></div></div><div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:10px">Próximas sesiones</div><div id="ppNextSessions"><p class="p-sm p-muted">Sin sesiones programadas.</p></div></div>',
-    agenda: '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Disponibilidad semanal</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(function(d){ return '<div style="padding:9px 14px;border:1.5px solid var(--border2);border-radius:11px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;transition:all .15s" onclick="pTogDay(this)">'+d+'</div>'; }).join('')+'</div></div>',
+    agenda: pRenderProAgenda(),
     pacientes: _renderPatientList(),
     notas: '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Notas de sesión</div><textarea class="p-textarea" rows="6" placeholder="Escribí notas de tu sesión más reciente..."></textarea><div style="height:10px"></div><button class="p-btn p-btn--primary p-btn--md" onclick="pToast(\'📝\',\'Nota guardada\')">Guardar nota</button></div>',
     finanzas: '<div class="metric-cards"><div class="metric-card"><div class="metric-n">$0</div><div class="metric-l">Pendiente</div></div><div class="metric-card"><div class="metric-n">$0</div><div class="metric-l">Total recibido</div></div><div class="metric-card"><div class="metric-n">0</div><div class="metric-l">Sesiones pagadas</div></div></div><div class="p-card" style="padding:18px;margin-top:14px"><p class="p-sm p-muted">Los pagos se procesan automáticamente por Stripe. Comisión Velo: 20%.</p></div>',
