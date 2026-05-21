@@ -24,6 +24,16 @@ var GEMINI_PROXY      = '/api/gemini';     // Vercel serverless proxy (hides key
 var SEND_EMAIL_PROXY  = '/api/send-email'; // Vercel serverless proxy for thank-you emails
 var _geminiUrlIdx = 0;
 
+// ── COMMUNITY REAL-TIME STATE ─────────────────────────────────
+var _sbHappy      = null;   // cached Supabase happy_posts
+var _sbHelp       = null;   // cached Supabase help_posts
+var _sbBottles    = null;   // cached Supabase bottles
+var _sbCircleMsgs = [];     // cached Supabase circle_messages
+var _happyRtCh    = null;   // realtime channel happy_posts
+var _helpRtCh     = null;   // realtime channel help_posts
+var _bottleRtCh   = null;   // realtime channel bottles
+var _circleRtCh   = null;   // realtime channel circle_messages
+
 async function _geminiCallGrounded(prompt, cfg){
   // Try Vercel serverless proxy first, fall back to direct call
   var sources = [
@@ -272,6 +282,53 @@ async function _ensureSbSession(){
     if(!error && rd && rd.user && rd.user.id) safeLS('set','velo_user_id', rd.user.id);
     return !error;
   }catch(e){ return false; }
+}
+
+// ── SUPABASE COMMUNITY HELPERS ────────────────────────────────
+async function _sbLoad(table, qFn){
+  _initSupabase();
+  if(!sbClient) return null;
+  try{
+    var q = sbClient.from(table).select('*');
+    if(qFn) q = qFn(q);
+    var res = await q;
+    if(res.error || !res.data) return null;
+    return res.data;
+  }catch(e){ return null; }
+}
+
+function _sbSub(channelName, table, callback){
+  _initSupabase();
+  if(!sbClient) return null;
+  try{
+    var ch = sbClient.channel(channelName)
+      .on('postgres_changes', { event: '*', schema: 'public', table: table }, callback)
+      .subscribe();
+    return ch;
+  }catch(e){ return null; }
+}
+
+function _sbUnsub(ch){
+  if(ch && sbClient){ try{ sbClient.removeChannel(ch); }catch(e){} }
+}
+
+function _sbHappyRow(r){
+  return { id:r.id, userId:r.user_id||'anon', av:r.user_av||'', name:r.anon?'Usuario Anónimo':r.user_name,
+    emoji:r.emoji||'☀️', text:r.text||'', photo:r.photo||null, ts:new Date(r.created_at).getTime(),
+    reactions:r.reactions||{'💛':0,'🌸':0,'🤗':0,'🌿':0,'✨':0} };
+}
+function _sbHelpRow(r){
+  return { id:r.id, emoji:r.emoji||'💙', anon:r.anon, name:r.anon?'Usuario Anónimo':r.user_name,
+    time:new Date(r.created_at).getTime(), preview:r.preview, taken:r.taken, urgencia:r.urgencia||'normal', isSB:true };
+}
+function _sbBottleRow(r){
+  return { id:r.id, mood:r.mood||'💭', text:r.text, color:r.color||'rgba(116,198,157,.12)',
+    ts:new Date(r.created_at).getTime(), isSB:true };
+}
+function _sbCircleMsgRow(r){
+  var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
+  return { id:String(r.id), av:r.user_av||'🌿', name:r.user_name||'Usuario',
+    text:r.text||'', ts:new Date(r.created_at).getTime(), own:r.user_id===myId };
 }
 
 async function pSignUp(){
@@ -1462,17 +1519,25 @@ function _helpMockFresh(){
   return _helpMockData.map(function(m,i){ return Object.assign({},m,{time:now-(i+1)*3*60000, _mock:true}); });
 }
 
-function pRenderHelp(){
+async function pRenderHelp(){
   var list = document.getElementById('helpList');
   if(!list) return;
-  var realPosts = []; try{ realPosts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
   var hidden = []; try{ hidden = JSON.parse(safeLS('get','velo_hidden_content')||'[]'); }catch(e){}
-  var mockTaken = []; try{ mockTaken = JSON.parse(safeLS('get','velo_help_mock_taken')||'[]'); }catch(e){}
 
-  var realAvail = realPosts.filter(function(h){ return !h.taken && hidden.indexOf('help-'+h.id)<0; });
-  var mockAvail = _helpMockFresh().filter(function(m){ return mockTaken.indexOf(m.id)<0 && hidden.indexOf('help-'+m.id)<0; });
-
-  var posts = realAvail.concat(mockAvail);
+  var posts, usingSB = false;
+  var sbRows = await _sbLoad('help_posts', function(q){
+    return q.eq('taken',false).order('created_at',{ascending:false}).limit(30);
+  });
+  if(sbRows !== null){
+    usingSB = true;
+    posts = sbRows.map(_sbHelpRow).filter(function(h){ return hidden.indexOf('help-'+h.id)<0; });
+  } else {
+    var realPosts = []; try{ realPosts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
+    var mockTaken = []; try{ mockTaken = JSON.parse(safeLS('get','velo_help_mock_taken')||'[]'); }catch(e){}
+    var realAvail = realPosts.filter(function(h){ return !h.taken && hidden.indexOf('help-'+h.id)<0; });
+    var mockAvail = _helpMockFresh().filter(function(m){ return mockTaken.indexOf(m.id)<0 && hidden.indexOf('help-'+m.id)<0; });
+    posts = realAvail.concat(mockAvail);
+  }
   _helpPosts = posts;
   var count = document.getElementById('helpActiveCount');
   if(count) count.textContent = posts.length+' esperando acompañamiento';
@@ -1528,13 +1593,17 @@ function pAccompanyHelp(postId){
   if(!post){ pToast('⚠️','Esta solicitud ya fue tomada'); return; }
 
   if(isMock){
-    // Mark mock as taken via separate key
     var mockTaken = []; try{ mockTaken = JSON.parse(safeLS('get','velo_help_mock_taken')||'[]'); }catch(e){}
     if(mockTaken.indexOf(postId)<0){ mockTaken.push(postId); safeLS('set','velo_help_mock_taken',JSON.stringify(mockTaken)); }
   } else {
-    // Mark real post as taken
     posts = posts.map(function(p){ return p.id===postId ? Object.assign({},p,{taken:true}) : p; });
     safeLS('set','velo_help_posts', JSON.stringify(posts));
+    // Mark as taken in Supabase so it disappears for all users
+    _initSupabase();
+    if(sbClient){
+      sbClient.from('help_posts').update({ taken:true, taken_by: safeLS('get','velo_user_id')||'' })
+        .eq('id', postId).then(function(){}).catch(function(){});
+    }
   }
   _curHelpPost = post;
   // Start the help chat
@@ -1651,6 +1720,14 @@ async function pSendHelp(){
   posts.unshift({ id:'hu'+ts, emoji:'💙', anon:isAnon, name:name, time:ts, preview:msg, taken:false });
   safeLS('set','velo_help_posts', JSON.stringify(posts.slice(0,50)));
   safeLS('set','velo_helped_once','1');
+  // Insert to Supabase so all users see it
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('help_posts').insert({ id:'hu'+ts,
+      user_id: safeLS('get','velo_user_id')||null, user_name: name,
+      emoji:'💙', preview:msg, urgencia:'normal', anon:isAnon, taken:false
+    }).then(function(){}).catch(function(){});
+  }
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   inbox.unshift({ id:'help-'+ts, tipo:'sistema', icon:'💚', remitente:'Sala de Ayuda', asunto:'Tu mensaje fue publicado', cuerpo:'Tu mensaje fue publicado en la Sala de Ayuda. Alguien te acompañará pronto.\n\n"'+msg+'"', extracto:'Alguien te acompañará pronto.', leido:false, prioritario:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
   safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
@@ -2433,7 +2510,7 @@ function pRenderBottleResponses(){
   }).join('');
 }
 
-function pRenderBottle(){
+async function pRenderBottle(){
   var moodRow = document.getElementById('bottleMoodRow');
   if(moodRow) moodRow.innerHTML = _bottleMoods.map(function(m){
     return '<button style="font-size:22px;padding:7px;border:2px solid transparent;border-radius:10px;background:none;cursor:pointer;transition:all .15s" onclick="pSelBottleMood(this,\''+m+'\')" data-mood="'+m+'">'+m+'</button>';
@@ -2442,19 +2519,29 @@ function pRenderBottle(){
   var list = document.getElementById('bottleList');
   if(!list) return;
 
-  var bottles = []; try{ bottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
-  // Each bottle from the wall (not the user's own) gets a stable id for removal
-  var mockBottles = [
-    { id:'mb1', mood:'😔', text:'A veces el silencio duele más que las palabras.',            color:'rgba(116,198,157,.12)',   ts: Date.now()-3*60000   },
-    { id:'mb2', mood:'💭', text:'¿Alguien más siente que no encaja en ningún lado?',           color:'rgba(200,165,100,.08)',   ts: Date.now()-8*60000   },
-    { id:'mb3', mood:'😢', text:'Hoy recordé a alguien que ya no está. Lo extraño tanto.',     color:'rgba(196,181,232,.12)',   ts: Date.now()-15*60000  },
-    { id:'mb4', mood:'🤗', text:'Para quien lo necesite: no estás solo/a. Esto también pasa.', color:'rgba(116,198,157,.1)',    ts: Date.now()-22*60000  }
-  ];
-
-  // Filter out mock bottles the user already responded to
-  var responded = []; try{ responded = JSON.parse(safeLS('get','velo_bottle_responded')||'[]'); }catch(e){}
-  var filteredMock = mockBottles.filter(function(b){ return responded.indexOf(b.id) < 0; });
-  var allBottles = bottles.concat(filteredMock);
+  var allBottles, usingSB = false;
+  var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
+  var sbRows = await _sbLoad('bottles', function(q){
+    var q2 = q.eq('replied',false).order('created_at',{ascending:false}).limit(30);
+    if(myId) q2 = q2.neq('user_id', myId); // don't show own bottles
+    return q2;
+  });
+  if(sbRows !== null){
+    usingSB = true;
+    allBottles = sbRows.map(_sbBottleRow);
+  } else {
+    // Fallback: localStorage + mock data
+    var mockBottles = [
+      { id:'mb1', mood:'😔', text:'A veces el silencio duele más que las palabras.',            color:'rgba(116,198,157,.12)',   ts: Date.now()-3*60000   },
+      { id:'mb2', mood:'💭', text:'¿Alguien más siente que no encaja en ningún lado?',           color:'rgba(200,165,100,.08)',   ts: Date.now()-8*60000   },
+      { id:'mb3', mood:'😢', text:'Hoy recordé a alguien que ya no está. Lo extraño tanto.',     color:'rgba(196,181,232,.12)',   ts: Date.now()-15*60000  },
+      { id:'mb4', mood:'🤗', text:'Para quien lo necesite: no estás solo/a. Esto también pasa.', color:'rgba(116,198,157,.1)',    ts: Date.now()-22*60000  }
+    ];
+    var responded = []; try{ responded = JSON.parse(safeLS('get','velo_bottle_responded')||'[]'); }catch(e){}
+    var filteredMock = mockBottles.filter(function(b){ return responded.indexOf(b.id) < 0; });
+    var myBottles = []; try{ myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
+    allBottles = myBottles.concat(filteredMock);
+  }
 
   if(!allBottles.length){
     list.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.4)"><span class="p-empty-emoji">🌊</span><div class="p-empty-title" style="color:rgba(255,255,255,.6)">El mar está tranquilo</div><div class="p-empty-sub">Sé el primero en lanzar un mensaje</div></div>';
@@ -2510,6 +2597,14 @@ function pSendBottle(){
   safeLS('set','velo_my_bottles', JSON.stringify(bottles.slice(0,50)));
   pToast('🌊','¡Mensaje lanzado al mar! 🌿');
   _geminiModerateContent(text, 'mensajes-al-mar');
+  // Insert to Supabase so other users see the bottle
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('bottles').insert({ id:id,
+      user_id: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||null,
+      mood:_selectedBottleMood, text:text, color:'rgba(116,198,157,.12)', replied:false
+    }).then(function(){}).catch(function(){});
+  }
   pRenderBottle();
 }
 
@@ -2533,11 +2628,16 @@ function pSendBottleReply(){
   var replyText = ta.value.trim();
   closeModal('bottleReplyOv');
 
-  // 1. Mark bottle as responded (remove from wall)
+  // 1. Mark bottle as responded (remove from wall locally and in Supabase)
   var responded = []; try{ responded = JSON.parse(safeLS('get','velo_bottle_responded')||'[]'); }catch(e){}
   if(_curBottleReplyId && responded.indexOf(_curBottleReplyId) < 0){
     responded.push(_curBottleReplyId);
     safeLS('set','velo_bottle_responded', JSON.stringify(responded));
+  }
+  _initSupabase();
+  if(sbClient && _curBottleReplyId){
+    sbClient.from('bottles').update({ replied:true, replied_by: safeLS('get','velo_user_id')||'' })
+      .eq('id', _curBottleReplyId).then(function(){}).catch(function(){});
   }
 
   // 2. Send inbox notification to "the bottle author" (simulated: goes to own inbox as demo)
@@ -3320,36 +3420,59 @@ function pOpenCircle(id, circleData){
   _curCircle = typeof circleData === 'string' ? JSON.parse(circleData) : circleData;
   if(!_curCircle){ _curCircle = _circlesData.find(function(c){ return c.id===id; }); }
 
-  // Populate feed header
   _setEl('feedCircleName',  _curCircle ? _curCircle.name  : 'Círculo');
   _setEl('feedCircleEmoji', _curCircle ? _curCircle.emoji : '⭕');
   _setEl('feedCircleMembers', _curCircle ? _curCircle.members+' personas' : '');
   var rulesEl = document.getElementById('feedCircleRules');
   if(rulesEl) rulesEl.innerHTML = '🤝 Sin juicios · Sin agresión · Sin consejo no solicitado';
 
+  // Subscribe to real-time messages for this circle
+  _initSupabase();
+  _sbUnsub(_circleRtCh);
+  _circleRtCh = null;
+  if(sbClient){
+    _circleRtCh = _sbSub('velo:circle:'+id, 'circle_messages', function(payload){
+      if(payload.new && payload.new.circle_id === id){ _renderCircleMessages(); }
+    });
+  }
+
   pGoTo('feed');
   setTimeout(function(){ _renderCircleMessages(); _startCircleAutoMsg(); }, 100);
 }
 
-function _renderCircleMessages(){
+async function _renderCircleMessages(){
   var el = document.getElementById('feedMessages');
   if(!el || !_curCircle) return;
-  var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
 
-  // Seed with mock messages on first open
-  if(!msgs.length){
-    var now = Date.now();
-    msgs = [
-      { id:'cm0', av:'💎', name:'Valentina S. 💎', text:'¡Bienvenidos/as al círculo! Recuerden las reglas: este es un espacio seguro.', ts: now-28*60000, own:false },
-      { id:'cm1', av:'🌸', name:'Ana Luz 🥇',      text:'Hola a todos/as. Hoy me siento un poco mejor que ayer 🌱', ts: now-15*60000, own:false },
-      { id:'cm2', av:'🌿', name:'Tomás L. 🥇',      text:'Qué bueno escuchar eso Ana. El progreso a veces es pequeño pero siempre cuenta.', ts: now-10*60000, own:false }
-    ];
-    safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs));
+  // Load from Supabase for real multi-user messages
+  var sbRows = await _sbLoad('circle_messages', function(q){
+    return q.eq('circle_id', _curCircle.id).order('created_at',{ascending:true}).limit(100);
+  });
+
+  var msgs;
+  if(sbRows !== null && sbRows.length){
+    msgs = sbRows.map(_sbCircleMsgRow);
+    _sbCircleMsgs = msgs;
+    // Only use mock auto-messages if no real messages exist
+    if(_circleAutoMsgTimer){ clearInterval(_circleAutoMsgTimer); _circleAutoMsgTimer = null; }
+  } else if(sbRows !== null && !sbRows.length){
+    // Supabase connected but circle is empty — show seed message, no mocks
+    msgs = [];
+  } else {
+    // Supabase unavailable — fall back to localStorage + seed
+    try{ msgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){ msgs = []; }
+    if(!msgs.length){
+      var now = Date.now();
+      msgs = [
+        { id:'cm0', av:'💎', name:'Valentina S. 💎', text:'¡Bienvenidos/as al círculo! Este es un espacio seguro.', ts:now-28*60000, own:false },
+        { id:'cm1', av:'🌸', name:'Ana Luz 🥇', text:'Hola a todos/as. Hoy me siento un poco mejor que ayer 🌱', ts:now-15*60000, own:false },
+        { id:'cm2', av:'🌿', name:'Tomás L. 🥇', text:'El progreso a veces es pequeño pero siempre cuenta.', ts:now-10*60000, own:false }
+      ];
+      safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs));
+    }
   }
 
   el.innerHTML = msgs.map(function(m){
-    var t = new Date(m.ts);
-    var tStr = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
     return _buildMsgBubble(m.text, !!m.own, m.av, m.name, 'feedInput', 'feedReplyBar', '');
   }).join('');
   el.scrollTop = el.scrollHeight;
@@ -3367,9 +3490,17 @@ function pSendCircleMsg(){
   var av   = safeLS('get','velo_user_av')   || '🧑';
   var userConvs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
   var badge = _getBadge(userConvs);
+  var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon';
   msgs.push({ id:'m'+Date.now(), av:av, name:name+' '+badge.icon, text:text, ts:Date.now(), own:true });
   safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs.slice(-100)));
   _geminiModerateContent(text, 'circulo-'+_curCircle.id);
+  // Insert to Supabase so all circle members see the message in real-time
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('circle_messages').insert({ circle_id:_curCircle.id,
+      user_id: myId, user_name: name+' '+badge.icon, user_av: av||'🌿', text:text, type:'text'
+    }).then(function(){}).catch(function(){});
+  }
   _renderCircleMessages();
 
   // Simulated reply after 4-9 seconds
@@ -3601,42 +3732,55 @@ function _processHappyQueue(){
   return posts;
 }
 
-function pRenderHappy(){
+async function pRenderHappy(){
   var list = document.getElementById('happyList');
   if(!list) return;
-  pOpenHappyPost(); // initialize emoji row in inline form
-  var posts = _processHappyQueue();
-  var queue = _happyQueueLoad();
-  var myId  = _myUserId();
+  pOpenHappyPost();
+  var myId = _myUserId();
 
-  // Queue notice
-  var queueNote = document.getElementById('happyQueueNote');
-  var myQueued  = queue.find(function(p){ return p.userId === myId; });
-  if(queueNote){
-    if(myQueued){
-      var pos = queue.indexOf(myQueued) + 1;
-      queueNote.style.display = '';
-      queueNote.innerHTML = '⏳ Tu publicación está en lista de espera (posición '+pos+' de '+queue.length+'). Se publicará automáticamente cuando se libere un lugar en el muro.';
-    } else {
-      queueNote.style.display = 'none';
-    }
+  // Load from Supabase (shared wall) or fall back to localStorage
+  var sbRows = await _sbLoad('happy_posts', function(q){
+    var cutoff = new Date(Date.now()-24*60*60*1000).toISOString();
+    return q.gte('created_at',cutoff).order('created_at',{ascending:false}).limit(50);
+  });
+  var posts, usingSB = false;
+  if(sbRows !== null){
+    usingSB = true;
+    posts = sbRows.map(_sbHappyRow);
+    _sbHappy = posts;
+  } else {
+    posts = _processHappyQueue();
   }
 
-  // Counter
-  var counter = document.getElementById('happyCounter');
-  if(counter) counter.textContent = posts.length+'/'+HAPPY_MAX+' publicaciones activas';
+  // Queue notice (only in localStorage mode)
+  var queueNote = document.getElementById('happyQueueNote');
+  if(queueNote){
+    if(!usingSB){
+      var queue = _happyQueueLoad();
+      var myQueued = queue.find(function(p){ return p.userId === myId; });
+      if(myQueued){
+        var pos = queue.indexOf(myQueued)+1;
+        queueNote.style.display='';
+        queueNote.innerHTML='⏳ Tu publicación está en lista de espera (posición '+pos+' de '+queue.length+').';
+      } else { queueNote.style.display='none'; }
+    } else { queueNote.style.display='none'; }
+  }
 
+  var counter = document.getElementById('happyCounter');
+  if(counter) counter.textContent = posts.length+' publicaciones activas';
+
+  var queue = usingSB ? [] : _happyQueueLoad();
   if(_happyActiveTab === 'mine'){
     _renderMyHappy(list, posts, queue, myId);
   } else if(_happyActiveTab === 'history'){
     _renderHappyHistory(list);
   } else {
-    _renderAllHappy(list, posts);
+    _renderAllHappy(list, posts, usingSB);
   }
 }
 
-function _renderAllHappy(list, posts){
-  var all = posts.concat(_happyMock);
+function _renderAllHappy(list, posts, skipMock){
+  var all = skipMock ? posts : posts.concat(_happyMock);
   if(!all.length){
     list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">☀️</span><div class="p-empty-title">El muro está vacío</div><div class="p-empty-sub">¡Sé el primero en compartir un momento de alegría!</div></div>';
     return;
@@ -3903,6 +4047,15 @@ function pSubmitHappyPost(){
     _happySave(posts);
     _happyStatIncr('posts');
     pToast('☀️','¡Publicado en el Muro! Desaparece en 24h 💛');
+    // Insert to Supabase so all users see it
+    _initSupabase();
+    if(sbClient){
+      sbClient.from('happy_posts').insert({ id:post.id,
+        user_id: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon',
+        user_name: post.name, user_av: post.av||'', emoji: post.emoji||'☀️',
+        text: post.text||'', photo: post.photo||'', anon: !!isAnon, reactions: post.reactions
+      }).then(function(){}).catch(function(){});
+    }
   } else {
     var queue = _happyQueueLoad();
     queue.push(post);
@@ -6571,16 +6724,28 @@ function _onPageEnter(id){
     case 'home':        _loadHomeData(); break;
     case 'guardians':   pRenderGuardians(); break;
     case 'professionals': pRenderProfessionals(); break;
-    case 'help':        pRenderHelp(); break;
+    case 'help':
+      _initSupabase();
+      if(sbClient && !_helpRtCh) _helpRtCh = _sbSub('velo:help', 'help_posts', function(){ pRenderHelp(); });
+      pRenderHelp();
+      break;
     case 'help-chat':   /* initialized by pAccompanyHelp */ break;
-    case 'bottle':      pRenderBottle(); break;
+    case 'bottle':
+      _initSupabase();
+      if(sbClient && !_bottleRtCh) _bottleRtCh = _sbSub('velo:bottles', 'bottles', function(){ pRenderBottle(); });
+      pRenderBottle();
+      break;
     case 'diary':       pInitDiary(); break;
     case 'mood':        pInitMood(); break;
     case 'respira':     pInitRespira(); break;
     case 'vela':        pInitVela(); break;
     case 'circles':     pRenderCircles(); break;
     case 'feed':        _renderCircleMessages(); break;
-    case 'happy':       pRenderHappy(); break;
+    case 'happy':
+      _initSupabase();
+      if(sbClient && !_happyRtCh) _happyRtCh = _sbSub('velo:happy', 'happy_posts', function(){ pRenderHappy(); });
+      pRenderHappy();
+      break;
     case 'profile':     pLoadProfile(); break;
     case 'inbox':       pRenderInbox(); break;
     case 'donation-exit': pInitDonation(); break;
