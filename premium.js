@@ -835,6 +835,9 @@ function _updateHomeBell(){
   // Home buzón card badge
   var buzón = document.getElementById('homeBuzónBadge');
   if(buzón){ buzón.style.display = unread > 0 ? 'block' : 'none'; buzón.textContent = label; }
+  // Topbar mail button badge
+  var mail = document.getElementById('homeMailBadge');
+  if(mail){ mail.style.display = unread > 0 ? 'block' : 'none'; mail.textContent = label; }
   // Sidebar inbox badge
   var snBadge = document.getElementById('sn-inbox-badge');
   if(snBadge){ snBadge.textContent = unread > 0 ? '!' : ''; snBadge.classList.toggle('p-hidden', unread === 0); }
