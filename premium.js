@@ -1275,15 +1275,18 @@ async function pRenderGuardians(){
     }catch(e){}
   }
 
-  // Merge: live users first, then demo profiles not duplicated
-  var combined = liveGuardians.length ? liveGuardians : _guardianProfiles;
+  // Only real live guardians — no fake fallback profiles
+  var combined = liveGuardians;
   var filtered = combined.filter(function(g){
     if(_guardianFilter === 'disponible') return g.status === 'disponible';
     if(_guardianFilter === 'ocupado') return g.status === 'ocupado';
     return true;
   });
   if(!filtered.length){
-    list.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">Sin guardianes en este estado</div><div class="p-empty-sub">Probá otro filtro</div></div>';
+    var emptyMsg = _guardianFilter !== 'todos'
+      ? '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">Ningún guardián en este estado</div><div class="p-empty-sub">Probá con "Todos"</div></div>'
+      : '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">No hay guardianes conectados ahora</div><div class="p-empty-sub">¡Sé el primero! Activá tu estado como Disponible arriba para aparecer aquí.</div></div>';
+    list.innerHTML = emptyMsg;
     return;
   }
   list.innerHTML = filtered.map(function(g){
@@ -1478,17 +1481,7 @@ function pEndGuardianChat(){
 }
 
 // ── PROFESSIONALS ──────────────────────────────────────────────
-var _proData = [
-  // ── SALUD MENTAL CLÍNICA (profesionales licenciados) ──────────
-  { id:'p1', type:'salud', name:'Lic. Ana García',  av:'👩‍⚕️', spec:'Psicología Clínica',   rate:50, currency:'USD', rating:4.9, sessions:134, solidarity:true,  bio:'Especializada en ansiedad, depresión y relaciones. 8 años de experiencia clínica.', tags:['ansiedad','depresión','pareja'] },
-  { id:'p2', type:'salud', name:'Dr. Carlos Méndez',av:'👨‍⚕️', spec:'Psiquiatría',           rate:65, currency:'USD', rating:4.8, sessions:89,  solidarity:false, bio:'Psiquiatra con enfoque integral. Evaluación, medicación y psicoterapia combinada.', tags:['psiquiatría','TDAH','trastornos del sueño'] },
-  { id:'p3', type:'salud', name:'Lic. Lucía Torres',av:'🌺',    spec:'Psicología · Gestalt',  rate:35, currency:'USD', rating:5.0, sessions:201, solidarity:true,  bio:'Psicóloga. Acompaño procesos de autoconocimiento y crecimiento personal con enfoque humanista.', tags:['autoestima','identidad','creatividad'] },
-  { id:'p4', type:'salud', name:'Mg. Sofía Ramos',  av:'🌙',    spec:'Psicología Infantil',   rate:30, currency:'USD', rating:4.9, sessions:156, solidarity:false, bio:'Psicóloga especializada en niños, adolescentes y familias. Crianza con apego y vínculo temprano.', tags:['niños','adolescentes','familia'] },
-  // ── BIENESTAR (no son profesionales de salud mental) ──────────
-  { id:'b1', type:'bienestar', name:'Marcela V.',   av:'🌿',    spec:'Coach de Vida certificada', rate:20, currency:'USD', rating:4.8, sessions:98,  solidarity:true,  bio:'Acompaño procesos de cambio, metas personales y laborales. El coaching NO es psicoterapia.', tags:['metas','motivación','hábitos'] },
-  { id:'b2', type:'bienestar', name:'Tomás F.',     av:'🧘',    spec:'Mindfulness y Meditación',  rate:15, currency:'USD', rating:4.9, sessions:142, solidarity:false, bio:'Instructor certificado de mindfulness y técnicas de reducción del estrés basadas en evidencia.', tags:['estrés','mindfulness','respiración'] },
-  { id:'b3', type:'bienestar', name:'Valeria R.',   av:'🎨',    spec:'Arte-terapia facilitada',   rate:18, currency:'USD', rating:4.7, sessions:67,  solidarity:false, bio:'Facilitadora de arte-terapia. Técnica expresiva de bienestar — NO es tratamiento psicológico.', tags:['expresión','creatividad','bienestar'] }
-];
+var _proData = []; // populated when real professionals register via admin
 
 function pRenderProfessionals(){
   var list = document.getElementById('proList');
@@ -1508,6 +1501,14 @@ function pRenderProfessionals(){
     +'<div style="color:var(--ink5);font-size:16px;flex-shrink:0">›</div>'
     +'</div>';
 
+  if(!_proData.length){
+    list.innerHTML = '<div class="p-empty" style="padding:40px 20px">'
+      +'<span class="p-empty-emoji">🌱</span>'
+      +'<div class="p-empty-title">Próximamente</div>'
+      +'<div class="p-empty-sub" style="max-width:280px;margin:0 auto">Actualmente no disponemos de profesionales. Estamos ampliando nuestro catálogo de servicios — volvé pronto.</div>'
+      +'</div>';
+    return;
+  }
   list.innerHTML = waitlistBanner + _proData.map(_proCard).join('');
 }
 var _curPro = null;
@@ -1560,18 +1561,6 @@ function pStripeCheckout(proId){
 // ── HELP ROOM ─────────────────────────────────────────────────
 var _helpPosts = [];
 
-// Mock posts live only in memory — taken state stored separately so they reset each session
-var _helpMockData = [
-  { id:'hm1', emoji:'😰', anon:true,  name:'Usuario Anónimo', time: 0, preview:'No puedo dormir y no sé por qué me siento tan vacío/a…' },
-  { id:'hm2', emoji:'😢', anon:true,  name:'Usuario Anónimo', time: 0, preview:'Tuve una pelea muy fuerte hoy y me siento muy solo/a…' },
-  { id:'hm3', emoji:'😔', anon:false, name:'Valentina S.',    time: 0, preview:'Llevo semanas sin poder levantarme de la cama.' },
-  { id:'hm4', emoji:'😞', anon:true,  name:'Usuario Anónimo', time: 0, preview:'No sé si lo que me pasa es normal pero me pesa mucho.' }
-];
-// Set relative timestamps fresh each time the array is accessed
-function _helpMockFresh(){
-  var now = Date.now();
-  return _helpMockData.map(function(m,i){ return Object.assign({},m,{time:now-(i+1)*3*60000, _mock:true}); });
-}
 
 async function pRenderHelp(){
   var list = document.getElementById('helpList');
@@ -1587,10 +1576,7 @@ async function pRenderHelp(){
     posts = sbRows.map(_sbHelpRow).filter(function(h){ return hidden.indexOf('help-'+h.id)<0; });
   } else {
     var realPosts = []; try{ realPosts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
-    var mockTaken = []; try{ mockTaken = JSON.parse(safeLS('get','velo_help_mock_taken')||'[]'); }catch(e){}
-    var realAvail = realPosts.filter(function(h){ return !h.taken && hidden.indexOf('help-'+h.id)<0; });
-    var mockAvail = _helpMockFresh().filter(function(m){ return mockTaken.indexOf(m.id)<0 && hidden.indexOf('help-'+m.id)<0; });
-    posts = realAvail.concat(mockAvail);
+    posts = realPosts.filter(function(h){ return !h.taken && hidden.indexOf('help-'+h.id)<0; });
   }
   _helpPosts = posts;
   var count = document.getElementById('helpActiveCount');
@@ -1636,29 +1622,18 @@ var _helpChatAutoMsgPool = [
 ];
 
 function pAccompanyHelp(postId){
-  // Check real posts first, then mock
   var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
   var post = posts.find(function(p){ return p.id===postId; });
-  var isMock = false;
-  if(!post){
-    post = _helpMockFresh().find(function(m){ return m.id===postId; });
-    isMock = true;
-  }
   if(!post){ pToast('⚠️','Esta solicitud ya fue tomada'); return; }
 
   _pendingGuardianPost = post;
 
-  if(!isMock){
-    posts = posts.map(function(p){ return p.id===postId ? Object.assign({},p,{taken:true}) : p; });
-    safeLS('set','velo_help_posts', JSON.stringify(posts));
-    _initSupabase();
-    if(sbClient){
-      sbClient.from('help_posts').update({ taken:true, taken_by: safeLS('get','velo_user_id')||'' })
-        .eq('id', postId).then(function(){}).catch(function(){});
-    }
-  } else {
-    var mockTaken = []; try{ mockTaken = JSON.parse(safeLS('get','velo_help_mock_taken')||'[]'); }catch(e){}
-    if(mockTaken.indexOf(postId)<0){ mockTaken.push(postId); safeLS('set','velo_help_mock_taken',JSON.stringify(mockTaken)); }
+  posts = posts.map(function(p){ return p.id===postId ? Object.assign({},p,{taken:true}) : p; });
+  safeLS('set','velo_help_posts', JSON.stringify(posts));
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('help_posts').update({ taken:true, taken_by: safeLS('get','velo_user_id')||'' })
+      .eq('id', postId).then(function(){}).catch(function(){});
   }
 
   safeLS('set','velo_helped_others', String(parseInt(safeLS('get','velo_helped_others')||'0',10)+1));
@@ -3661,37 +3636,15 @@ function pSendVela(){
 
 // ── CIRCLES ────────────────────────────────────────────────────
 var _circlesData = [
-  { id:'c1', name:'Manejo de Ansiedad', emoji:'🌊', members:28, maxMembers:30, desc:'Estrategias y apoyo para el día a día con ansiedad.', active:true, official:true },
-  { id:'c2', name:'Duelo y Pérdida', emoji:'🌙', members:19, maxMembers:30, desc:'Acompañamiento en procesos de duelo. Sin prisas.', active:false, official:true },
-  { id:'c3', name:'Crianza Consciente', emoji:'🌱', members:24, maxMembers:30, desc:'Madres, padres y familias que crían con presencia.', active:false, official:true },
-  { id:'c4', name:'Trastornos del Sueño', emoji:'😴', members:17, maxMembers:30, desc:'Cuando la noche no descansa. Juntos buscamos calma.', active:false, official:true },
-  { id:'c5', name:'Autoestima', emoji:'✨', members:22, maxMembers:30, desc:'Reconstruir la confianza desde la raíz.', active:false, official:true }
+  { id:'c1', name:'Manejo de Ansiedad', emoji:'🌊', members:0, maxMembers:30, desc:'Estrategias y apoyo para el día a día con ansiedad.', active:true, official:true },
+  { id:'c2', name:'Duelo y Pérdida', emoji:'🌙', members:0, maxMembers:30, desc:'Acompañamiento en procesos de duelo. Sin prisas.', active:false, official:true },
+  { id:'c3', name:'Crianza Consciente', emoji:'🌱', members:0, maxMembers:30, desc:'Madres, padres y familias que crían con presencia.', active:false, official:true },
+  { id:'c4', name:'Trastornos del Sueño', emoji:'😴', members:0, maxMembers:30, desc:'Cuando la noche no descansa. Juntos buscamos calma.', active:false, official:true },
+  { id:'c5', name:'Autoestima', emoji:'✨', members:0, maxMembers:30, desc:'Reconstruir la confianza desde la raíz.', active:false, official:true }
 ];
 
 var _curCircle = null;
 var _circleAutoMsgTimer = null;
-
-// Mock messages per circle (stored in localStorage)
-var _circleMockUsers = [
-  { name:'Ana Luz', av:'🌸', badge:'🥇' },
-  { name:'Carlos R.', av:'🌊', badge:'🥇' },
-  { name:'Valentina S.', av:'🦋', badge:'💎' },
-  { name:'Tomás L.', av:'🌿', badge:'🥇' },
-  { name:'Sofía N.', av:'🌙', badge:'💎' }
-];
-
-var _circleMockMsgPool = [
-  'Gracias por compartir eso. Me identifico mucho.',
-  'Un abrazo virtual para quien lo necesite 💚',
-  '¿Alguien tiene alguna técnica que le haya servido para el día a día?',
-  'Hoy fue un día difícil, pero estoy acá.',
-  'Recordá: está bien no estar bien. Paso a paso.',
-  'Esto es exactamente lo que necesitaba hoy, gracias.',
-  'Llevan razón. El apoyo de la comunidad hace una diferencia enorme.',
-  'Yo también pasé por eso. Se puede salir.',
-  '🌿 Respiremos juntos un momento.',
-  'No están solos/as acá. Todos estamos en algún proceso.'
-];
 
 function pRenderCircles(){
   var list = document.getElementById('circlesList');
@@ -3733,13 +3686,13 @@ function pRenderCircles(){
   var userCircles = []; try{ userCircles = JSON.parse(safeLS('get','velo_circles')||'[]'); }catch(e){}
   var allCircles  = userCircles.concat(_circlesData);
 
-  list.innerHTML = allCircles.map(function(c){
+  function _circleCardHtml(c){
     var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+c.id)||'[]'); }catch(e){}
     var lastMsg = msgs.length ? msgs[msgs.length-1] : null;
     var maxM = c.maxMembers || 30;
     var capPct = Math.min(100, Math.round((c.members||0)/maxM*100));
     var isFull = (c.members||0) >= maxM;
-    return '<div class="circle-card'+(c.official?' circle-card--official':'')+'" onclick="pOpenCircle(\''+c.id+'\')">'
+    return '<div class="circle-card'+(c.official?' circle-card--official':'')+'" id="circlecard-'+c.id+'" onclick="pOpenCircle(\''+c.id+'\')">'
       +'<div style="display:flex;align-items:center;gap:13px">'
       +'<div style="font-size:34px;width:52px;height:52px;border-radius:18px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative">'
       +c.emoji
@@ -3753,7 +3706,7 @@ function pRenderCircles(){
         : '<div style="height:5px"></div>')
       +'<div style="display:flex;align-items:center;gap:6px">'
       +'<div style="flex:1;height:4px;background:var(--cream2);border-radius:100px;overflow:hidden"><div style="height:100%;width:'+capPct+'%;background:'+(isFull?'var(--sos)':'var(--sage3)')+';border-radius:100px"></div></div>'
-      +'<span style="font-size:10px;color:var(--ink5)">'+c.members+'/'+maxM+'</span>'
+      +'<span class="circle-member-count-'+c.id+'" style="font-size:10px;color:var(--ink5)">'+c.members+'/'+maxM+'</span>'
       +(isFull ? '<span style="font-size:10px;color:var(--sos);font-weight:700">Lleno</span>' : '')
       +'</div>'
       +'</div>'
@@ -3763,7 +3716,30 @@ function pRenderCircles(){
       +'</div>'
       +'</div>'
       +'</div>';
-  }).join('');
+  }
+  list.innerHTML = allCircles.map(_circleCardHtml).join('');
+
+  // Fetch real member counts (distinct users who posted in last 30 days) from Supabase
+  _initSupabase();
+  if(sbClient){
+    var since = new Date(Date.now() - 30*24*3600000).toISOString();
+    sbClient.from('circle_messages').select('circle_id,user_id').gte('created_at', since)
+      .then(function(res){
+        if(!res.data || !res.data.length) return;
+        var counts = {};
+        res.data.forEach(function(r){
+          if(!counts[r.circle_id]) counts[r.circle_id] = new Set();
+          counts[r.circle_id].add(r.user_id || r.circle_id+'-anon-'+r.created_at);
+        });
+        allCircles.forEach(function(c){
+          var n = counts[c.id] ? counts[c.id].size : 0;
+          if(n === c.members) return;
+          c.members = n;
+          var span = document.querySelector('.circle-member-count-'+c.id);
+          if(span) span.textContent = n+'/'+(c.maxMembers||30);
+        });
+      }).catch(function(){});
+  }
 }
 
 function pOpenCircle(id, circleData){
@@ -3809,17 +3785,8 @@ async function _renderCircleMessages(){
     // Supabase connected but circle is empty — show seed message, no mocks
     msgs = [];
   } else {
-    // Supabase unavailable — fall back to localStorage + seed
+    // Supabase unavailable — use only real localStorage messages
     try{ msgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){ msgs = []; }
-    if(!msgs.length){
-      var now = Date.now();
-      msgs = [
-        { id:'cm0', av:'💎', name:'Valentina S. 💎', text:'¡Bienvenidos/as al círculo! Este es un espacio seguro.', ts:now-28*60000, own:false },
-        { id:'cm1', av:'🌸', name:'Ana Luz 🥇', text:'Hola a todos/as. Hoy me siento un poco mejor que ayer 🌱', ts:now-15*60000, own:false },
-        { id:'cm2', av:'🌿', name:'Tomás L. 🥇', text:'El progreso a veces es pequeño pero siempre cuenta.', ts:now-10*60000, own:false }
-      ];
-      safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs));
-    }
   }
 
   el.innerHTML = msgs.map(function(m){
@@ -3853,36 +3820,16 @@ function pSendCircleMsg(){
   }
   _renderCircleMessages();
 
-  // Simulated reply after 4-9 seconds
-  var delay = 4000 + Math.random()*5000;
-  setTimeout(function(){
-    if(!_curCircle) return;
-    var user = _circleMockUsers[Math.floor(Math.random()*_circleMockUsers.length)];
-    var reply = _circleMockMsgPool[Math.floor(Math.random()*_circleMockMsgPool.length)];
-    var msgs2 = []; try{ msgs2 = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
-    msgs2.push({ id:'mr'+Date.now(), av:user.av, name:user.name+' '+user.badge, text:reply, ts:Date.now(), own:false });
-    safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs2.slice(-100)));
-    _renderCircleMessages();
-  }, delay);
 }
 
-function _startCircleAutoMsg(){
-  if(_circleAutoMsgTimer) clearInterval(_circleAutoMsgTimer);
-  _circleAutoMsgTimer = setInterval(function(){
-    if(!_curCircle) return;
-    var user = _circleMockUsers[Math.floor(Math.random()*_circleMockUsers.length)];
-    var text = _circleMockMsgPool[Math.floor(Math.random()*_circleMockMsgPool.length)];
-    var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
-    msgs.push({ id:'ma'+Date.now(), av:user.av, name:user.name+' '+user.badge, text:text, ts:Date.now(), own:false });
-    safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs.slice(-100)));
-    _renderCircleMessages();
-  }, 45000 + Math.random()*30000); // every 45-75 seconds
-}
+function _startCircleAutoMsg(){ /* disabled — no fake auto-messages */ }
 
 function pLeaveCircle(){
   if(_circleAutoMsgTimer){ clearInterval(_circleAutoMsgTimer); _circleAutoMsgTimer = null; }
   _curCircle = null;
   pGoTo('circles');
+  // Refresh member counts after leaving so the list reflects current state
+  setTimeout(pRenderCircles, 300);
 }
 
 function pOpenCreateCircle(){
@@ -4125,12 +4072,12 @@ async function pRenderHappy(){
   } else if(_happyActiveTab === 'history'){
     _renderHappyHistory(list);
   } else {
-    _renderAllHappy(list, posts, usingSB);
+    _renderAllHappy(list, posts);
   }
 }
 
-function _renderAllHappy(list, posts, skipMock){
-  var all = skipMock ? posts : posts.concat(_happyMock);
+function _renderAllHappy(list, posts){
+  var all = posts;
   if(!all.length){
     list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">☀️</span><div class="p-empty-title">El muro está vacío</div><div class="p-empty-sub">¡Sé el primero en compartir un momento de alegría!</div></div>';
     return;
