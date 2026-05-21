@@ -2853,7 +2853,9 @@ async function pRenderBottle(){
   });
   if(sbRows !== null){
     usingSB = true;
-    allBottles = sbRows.map(_sbBottleRow);
+    allBottles = sbRows.map(_sbBottleRow).filter(function(b){
+      return safeLS('get','velo_bottle_replied_'+b.id) !== '1';
+    });
   } else {
     // Fallback: localStorage + mock data
     var mockBottles = [
@@ -2960,6 +2962,7 @@ function pSendBottleReply(){
     responded.push(_curBottleReplyId);
     safeLS('set','velo_bottle_responded', JSON.stringify(responded));
   }
+  if(_curBottleReplyId) safeLS('set','velo_bottle_replied_'+_curBottleReplyId,'1');
   _initSupabase();
   if(sbClient && _curBottleReplyId){
     sbClient.from('bottles').update({ replied:true, replied_by: safeLS('get','velo_user_id')||'' })
