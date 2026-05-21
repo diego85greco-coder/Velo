@@ -2987,13 +2987,16 @@ async function pRenderBottle(){
     var alreadyReplied = safeLS('get','velo_bottle_replied_'+b.id) === '1';
     var actions;
     if(isOwn){
-      actions = '<span style="font-size:11px;color:rgba(200,165,100,.6);font-style:italic">Tu mensaje 🌊</span>';
+      actions = '<div style="display:flex;gap:7px;align-items:center">'
+        +'<span style="font-size:11px;color:rgba(200,165,100,.6);font-style:italic">Tu mensaje 🌊</span>'
+        +'<button style="padding:4px 9px;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);border-radius:100px;color:rgba(255,120,120,.75);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pDeleteBottle(\''+b.id+'\')">🗑️</button>'
+        +'</div>';
     } else {
       actions = '<div style="display:flex;gap:7px;align-items:center">'
         +'<button style="padding:5px 11px;background:rgba(255,100,100,.08);border:1px solid rgba(255,100,100,.2);border-radius:100px;color:rgba(255,130,130,.75);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
         +(alreadyReplied
           ? '<span style="font-size:11px;color:rgba(116,198,157,.75);font-weight:700">💛 Ya respondiste</span>'
-          : '<button style="padding:5px 11px;background:rgba(200,165,100,.12);border:1px solid rgba(200,165,100,.22);border-radius:100px;color:#C8A560;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply(\''+b.id+'\',\''+b.text.substring(0,40).replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'...\')">💌 Responder</button>')
+          : '<button style="padding:5px 11px;background:rgba(200,165,100,.12);border:1px solid rgba(200,165,100,.22);border-radius:100px;color:#C8A560;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply(\''+b.id+'\',\''+b.text.substring(0,40).replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'...\',\''+( b.userId||b.user_id||'')+'\')">💌 Responder</button>')
         +'</div>';
     }
     return '<div class="dark-bottle" id="bottle-'+b.id+'" style="animation-delay:'+i*.08+'s;border-left:3px solid '+(b.color||'rgba(200,165,100,.3)')+'">'
@@ -3048,10 +3051,12 @@ function pSendBottle(){
 
 var _curBottleReplyId   = null;
 var _curBottleReplyText = '';
+var _curBottleUserId    = null;
 
-function pOpenBottleReply(bottleId, bottlePreview){
+function pOpenBottleReply(bottleId, bottlePreview, bottleUserId){
   _curBottleReplyId   = bottleId;
   _curBottleReplyText = bottlePreview;
+  _curBottleUserId    = bottleUserId || null;
   var preview = document.getElementById('bottleReplyPreview');
   if(preview) preview.textContent = '"'+bottlePreview+'"';
   var ta = document.getElementById('bottleReplyTa');
@@ -3075,25 +3080,35 @@ function pSendBottleReply(){
       .eq('id', _curBottleReplyId).then(function(){}).catch(function(){});
   }
 
-  // 2. Send inbox notification to "the bottle author" (simulated: goes to own inbox as demo)
-  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
-  inbox.unshift({
-    id: 'br-'+Date.now(),
-    tipo: 'botella',
-    icon: '🌊',
-    remitente: 'Velo — Mensajes al Mar',
-    asunto: '¡Tu mensaje recibió una respuesta!',
-    extracto: replyText,
-    cuerpo: 'Alguien encontró tu mensaje en el mar y te dejó estas palabras:\n\n"'+replyText+'"',
-    leido: false,
-    fecha: new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})
-  });
-  safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+  // 2. Deliver to the bottle author's inbox via Supabase broadcasts
+  _initSupabase();
+  if(sbClient && _curBottleUserId){
+    // Insert a broadcast targeted at 'user:<authorId>' so only they receive it
+    sbClient.from('broadcasts').insert({
+      target: 'user:'+_curBottleUserId,
+      subject: '¡Tu mensaje en el mar recibió una respuesta!',
+      body: 'Alguien encontró tu mensaje y te dejó estas palabras:\n\n"'+replyText+'"',
+      icon: '🌊',
+      sender: 'Velo — Al Mar',
+      sent_at: new Date().toISOString()
+    }).then(function(){}).catch(function(){});
+  }
 
   // 3. Re-render so the button updates to "Ya respondiste" (bottle stays in the sea)
   pToast('💌','¡Respuesta enviada! 🌊');
   setTimeout(function(){ pToast('📬','El autor recibió tu respuesta en su buzón Velo'); }, 1200);
   pRenderBottle();
+}
+
+function pDeleteBottle(bottleId){
+  if(!confirm('¿Eliminar este mensaje del mar?')) return;
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('bottles').delete().eq('id', bottleId).then(function(){}).catch(function(){});
+  }
+  var card = document.getElementById('bottle-'+bottleId);
+  if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ pRenderBottle(); },350); }
+  pToast('🌊','Mensaje eliminado');
 }
 
 function pReportBottle(bottleId){
@@ -4423,7 +4438,7 @@ function _happyPostCard(h, isOwn){
       +'</div>'
     : '<div style="font-size:24px;width:40px;height:40px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>';
 
-  return '<div class="happy-card">'
+  return '<div class="happy-card" data-id="'+h.id+'">'
     // header
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
     + avatarHtml
@@ -4431,6 +4446,7 @@ function _happyPostCard(h, isOwn){
     +'<div style="font-size:13px;font-weight:600;color:var(--ink)">'+_escHtml(h.name||'Usuario Anónimo')+'</div>'
     +'<div style="font-size:10px;color:var(--ink5)">'+relTime+(isOwn?' · <strong style="color:var(--sage)">Tuya</strong>':'')+'</div>'
     +'</div>'
+    +(isOwn ? '<button onclick="pDeleteHappyPost(\''+h.id+'\')" style="margin-left:auto;padding:4px 8px;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);border-radius:100px;color:rgba(220,60,60,.7);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif" title="Eliminar publicación">🗑️</button>' : '')
     +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap">⏳ '+timeLeft+'</span>' : '')
     +'</div>'
     // photo
@@ -4447,6 +4463,20 @@ function _happyPostCard(h, isOwn){
     +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:6px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:8px;font-size:12px;cursor:pointer;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700">💬</button>'
     +'</div>'
     +'</div>';
+}
+
+function pDeleteHappyPost(postId){
+  if(!confirm('¿Eliminar esta publicación del Muro?')) return;
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('happy_posts').delete().eq('id', postId).then(function(){}).catch(function(){});
+  }
+  // Remove from local cache
+  if(_sbHappy) _sbHappy = _sbHappy.filter(function(h){ return h.id !== postId; });
+  var card = document.querySelector('.happy-card[data-id="'+postId+'"]') || document.getElementById('hp-'+postId);
+  if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ pRenderHappy(); },350); }
+  else { setTimeout(function(){ pRenderHappy(); },50); }
+  pToast('✅','Publicación eliminada');
 }
 
 function pHappyTab(tab, el){
@@ -6992,11 +7022,14 @@ async function sbSaveBroadcast(target, subject, body, icon, sender){
 async function sbLoadBroadcasts(userType){
   if(!sbClient) return null;
   try{
-    // Load broadcasts for this user type (target = their type or 'all'), last 90 days
     var since = new Date(Date.now() - 90*24*3600*1000).toISOString();
+    var myId  = safeLS('get','velo_user_id') || '';
+    // Load role-based broadcasts AND personal ones (bottle replies, etc.)
+    var targets = [userType, 'all'];
+    if(myId) targets.push('user:'+myId);
     var {data,error} = await sbClient.from('broadcasts')
       .select('*')
-      .in('target', [userType, 'all'])
+      .in('target', targets)
       .gte('sent_at', since)
       .order('sent_at',{ascending:false})
       .limit(50);
