@@ -33,6 +33,7 @@ var _happyRtCh    = null;   // realtime channel happy_posts
 var _helpRtCh     = null;   // realtime channel help_posts
 var _bottleRtCh   = null;   // realtime channel bottles
 var _circleRtCh   = null;   // realtime channel circle_messages
+var _liveGuardians = [];    // cached live guardian rows from Supabase
 var _grReqCh      = null;   // guardian_requests realtime channel (guardian side)
 var _seekerGrCh   = null;   // guardian_requests realtime channel (seeker side)
 var _guardianWaitTimer = null; // 80s timeout when guardian is waiting for acceptance
@@ -1243,10 +1244,11 @@ async function pRenderGuardians(){
         .select('*').neq('status','offline').gte('last_seen', cutoff);
       if(data && data.length){
         liveGuardians = data.map(function(r, i){
-          return { id: 'live_'+i, name: r.name, av: r.avatar, bio: r.bio||'',
+          return { id: 'live_'+r.user_id, name: r.name, av: r.avatar, bio: r.bio||'',
             tags: Array.isArray(r.tags)?r.tags:[], status: r.status,
             convs: r.convs||0, rating: r.rating||5.0, reviews:[], recommend: r.convs||0 };
         });
+        _liveGuardians = liveGuardians;
       }
     }catch(e){}
   }
@@ -1272,7 +1274,8 @@ async function pRenderGuardians(){
 }
 
 function pOpenGuardian(id){
-  _curGuardian = _guardianProfiles.find(function(g){ return g.id === id; });
+  _curGuardian = _liveGuardians.find(function(g){ return g.id === id; })
+    || _guardianProfiles.find(function(g){ return g.id === id; });
   if(!_curGuardian) return;
   var g = _curGuardian;
   _setEl('gdName', g.name);

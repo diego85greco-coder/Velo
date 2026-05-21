@@ -99,3 +99,22 @@ CREATE POLICY "gr_select" ON public.guardian_requests FOR SELECT TO anon, authen
 CREATE POLICY "gr_insert" ON public.guardian_requests FOR INSERT TO anon, authenticated WITH CHECK (true);
 CREATE POLICY "gr_update" ON public.guardian_requests FOR UPDATE TO anon, authenticated USING (true);
 ALTER PUBLICATION supabase_realtime ADD TABLE public.guardian_requests;
+
+-- Guardian presence (who is online as guardian in real-time)
+CREATE TABLE IF NOT EXISTS public.guardian_presence (
+  user_id   TEXT        PRIMARY KEY,
+  name      TEXT        NOT NULL DEFAULT 'Guardián',
+  avatar    TEXT        DEFAULT '💚',
+  bio       TEXT        DEFAULT '',
+  tags      TEXT[]      DEFAULT '{}',
+  status    TEXT        DEFAULT 'disponible',
+  last_seen TIMESTAMPTZ DEFAULT NOW(),
+  convs     INT         DEFAULT 0,
+  rating    NUMERIC     DEFAULT 5.0
+);
+ALTER TABLE public.guardian_presence ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "gp_select" ON public.guardian_presence FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "gp_upsert" ON public.guardian_presence FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "gp_update" ON public.guardian_presence FOR UPDATE TO anon, authenticated USING (true);
+CREATE POLICY "gp_delete" ON public.guardian_presence FOR DELETE TO anon, authenticated USING (true);
+ALTER PUBLICATION supabase_realtime ADD TABLE public.guardian_presence;
