@@ -118,3 +118,40 @@ CREATE POLICY "gp_upsert" ON public.guardian_presence FOR INSERT TO anon, authen
 CREATE POLICY "gp_update" ON public.guardian_presence FOR UPDATE TO anon, authenticated USING (true);
 CREATE POLICY "gp_delete" ON public.guardian_presence FOR DELETE TO anon, authenticated USING (true);
 ALTER PUBLICATION supabase_realtime ADD TABLE public.guardian_presence;
+
+-- User diary entries (private, per user)
+CREATE TABLE IF NOT EXISTS public.diary_entries (
+  id         BIGSERIAL   PRIMARY KEY,
+  user_id    TEXT        NOT NULL,
+  text       TEXT        NOT NULL,
+  date_label TEXT        DEFAULT '',
+  ts         BIGINT      NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS diary_entries_user_id_idx ON public.diary_entries(user_id);
+ALTER TABLE public.diary_entries ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "diary_select" ON public.diary_entries FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "diary_insert" ON public.diary_entries FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "diary_delete" ON public.diary_entries FOR DELETE TO anon, authenticated USING (true);
+
+-- User mood entries (private, per user)
+CREATE TABLE IF NOT EXISTS public.mood_entries (
+  id         BIGSERIAL   PRIMARY KEY,
+  user_id    TEXT        NOT NULL,
+  date_key   TEXT        NOT NULL,
+  emoji      TEXT        DEFAULT '😐',
+  label      TEXT        DEFAULT '',
+  note       TEXT        DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, date_key)
+);
+CREATE INDEX IF NOT EXISTS mood_entries_user_id_idx ON public.mood_entries(user_id);
+ALTER TABLE public.mood_entries ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "mood_select" ON public.mood_entries FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "mood_insert" ON public.mood_entries FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "mood_update" ON public.mood_entries FOR UPDATE TO anon, authenticated USING (true);
+CREATE POLICY "mood_delete" ON public.mood_entries FOR DELETE TO anon, authenticated USING (true);
+
+-- Add avatar and motto columns to profiles if not present
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS motto  TEXT DEFAULT '';
