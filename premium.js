@@ -20,7 +20,8 @@ var GEMINI_URLS   = [
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=',
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='
 ];
-var GEMINI_PROXY  = '/api/gemini'; // Vercel serverless proxy (hides key)
+var GEMINI_PROXY      = '/api/gemini';     // Vercel serverless proxy (hides key)
+var SEND_EMAIL_PROXY  = '/api/send-email'; // Vercel serverless proxy for thank-you emails
 var _geminiUrlIdx = 0;
 
 async function _geminiCallGrounded(prompt, cfg){
@@ -4453,10 +4454,13 @@ function pDonateCTA(){
 }
 
 function pOpenPayPalDonate(amount, monthly, description){
+  var returnUrl = window.location.origin + window.location.pathname + '?pp=donation';
   var baseURL = 'https://www.paypal.com/donate/?business='+PAYPAL_EMAIL;
   var params = '&currency_code=USD&amount='+amount;
+  params += '&return='+encodeURIComponent(returnUrl);
   if(description) params += '&item_name='+encodeURIComponent(description);
   if(monthly) params += '&no_recurring=0';
+  safeLS('set','velo_pp_pending', JSON.stringify({ type:'donation', amount:amount, ts:Date.now() }));
   window.open(baseURL+params, '_blank');
 }
 
@@ -4510,11 +4514,15 @@ function pShowPlusModal(){
 
 function pOpenPayPalPlus(){
   var email = safeLS('get','velo_user_email');
+  var returnUrl = window.location.origin + window.location.pathname + '?pp=plus';
+  var cancelUrl = window.location.origin + window.location.pathname + '?pp=cancel';
   var baseURL = 'https://www.paypal.com/subscribe';
   var params = '?business='+PAYPAL_EMAIL+'&item_name='+encodeURIComponent('Velo Plus — Membresía Mensual')+'&currency_code=USD&a3=2.99&p3=1&t3=M&no_shipping=1';
   if(email) params += '&custom='+encodeURIComponent(email);
-  window.open(baseURL+params, '_blank');
+  params += '&return='+encodeURIComponent(returnUrl);
+  params += '&cancel_return='+encodeURIComponent(cancelUrl);
   safeLS('set','velo_pp_pending', JSON.stringify({ type:'plus', ts:Date.now() }));
+  window.open(baseURL+params, '_blank');
   pToast('⭐','Completá el pago y volvé. ¡Tu cuenta Plus se activará! 🌿');
 }
 
@@ -6229,10 +6237,12 @@ function _checkStripeReturn(){
 
 function _checkPayPalReturn(){
   var params = new URLSearchParams(window.location.search);
-  var ppTok = params.get('token') || params.get('paymentId') || params.get('subscription_id');
+  var ppTok = params.get('token') || params.get('paymentId') || params.get('subscription_id') || params.get('pp');
   if(!ppTok) return;
   var pending = null; try{ pending = JSON.parse(safeLS('get','velo_pp_pending')||'null'); }catch(e){}
-  if(pending && pending.type === 'plus'){
+  var ppParam = params.get('pp');
+  var effectiveType = (pending && pending.type) || ppParam || 'donation';
+  if(effectiveType === 'plus'){
     // Activate Plus locally
     safeLS('set','velo_plan','plus');
     var subs = []; try{ subs = JSON.parse(safeLS('get','velo_subscribers')||'[]'); }catch(e){}
@@ -6249,16 +6259,38 @@ function _checkPayPalReturn(){
     }
     safeLS('del','velo_pp_pending');
     pToast('⭐','¡Velo Plus activado! Bienvenido/a 🌿');
-    // Clean URL
+    // Send Plus welcome email (fire-and-forget)
+    var _ppEmail = safeLS('get','velo_user_email');
+    var _ppName  = safeLS('get','velo_user_name') || '';
+    if(_ppEmail){
+      fetch(SEND_EMAIL_PROXY, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email:_ppEmail, name:_ppName, type:'plus' })
+      }).catch(function(){});
+    }
     window.history.replaceState({}, '', window.location.pathname);
-  } else if(pending && pending.type === 'pro'){
+  } else if(effectiveType === 'pro'){
     safeLS('set','velo_pro_approved','true');
     safeLS('del','velo_pp_pending');
     pToast('🩺','¡Registro profesional completado! 💚');
     window.history.replaceState({}, '', window.location.pathname);
     pGoTo('pro-panel');
+  } else if(ppParam === 'cancel'){
+    safeLS('del','velo_pp_pending');
+    window.history.replaceState({}, '', window.location.pathname);
   } else {
+    // donation
     pToast('💚','¡Donación recibida! Gracias por apoyar Velo 🌿');
+    // Send donation thank-you email (fire-and-forget)
+    var _ppEmail = safeLS('get','velo_user_email');
+    var _ppName  = safeLS('get','velo_user_name') || '';
+    var _ppAmt   = pending && pending.amount ? pending.amount : '';
+    if(_ppEmail){
+      fetch(SEND_EMAIL_PROXY, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email:_ppEmail, name:_ppName, type:'donation', amount:_ppAmt })
+      }).catch(function(){});
+    }
     safeLS('del','velo_pp_pending');
     window.history.replaceState({}, '', window.location.pathname);
   }
