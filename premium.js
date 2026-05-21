@@ -270,6 +270,25 @@ function _getSbPass(){
   return p;
 }
 
+function _sbSyncProfile(userId){
+  _initSupabase();
+  if(!sbClient || !userId) return;
+  sbClient.from('profiles').select('nombre,avatar,motto,role').eq('id',userId).limit(1)
+    .then(function(res){
+      if(!res.data || !res.data.length) return;
+      var p = res.data[0];
+      if(p.nombre) safeLS('set','velo_user_name', p.nombre);
+      if(p.avatar) safeLS('set','velo_user_av',   p.avatar);
+      if(p.motto)  safeLS('set','velo_user_motto', p.motto);
+      if(p.role && p.role !== 'user') safeLS('set','velo_user_type', p.role);
+      // Refresh UI with synced data
+      var hn = document.getElementById('homeUserName');
+      if(hn) hn.textContent = p.nombre || safeLS('get','velo_user_name') || '';
+      _updateSidebarUser();
+      _updateTopbarMoodBadge();
+    }).catch(function(){});
+}
+
 async function _ensureSbSession(){
   if(!sbClient) return false;
   try{
@@ -455,7 +474,10 @@ async function pSignIn(){
       safeLS('set','velo_user_name', storedName);
       safeLS('set','velo_session','1');
       if(result.data && result.data.user && result.data.user.id){
-        safeLS('set','velo_user_id', result.data.user.id);
+        var uid = result.data.user.id;
+        safeLS('set','velo_user_id', uid);
+        // Load profile from Supabase so name/avatar/motto are always up to date
+        _sbSyncProfile(uid);
       }
       _authenticated = true;
       _startGuardianHeartbeat();
@@ -4699,9 +4721,17 @@ function pSaveProfile(){
   var name  = nameEl ? nameEl.value.trim() : '';
   var motto = mottoEl ? mottoEl.value.trim() : '';
   if(!name){ pToast('⚠️','Ingresá tu nombre'); return; }
-  if(name) safeLS('set','velo_user_name', name);
+  if(name)  safeLS('set','velo_user_name', name);
   if(motto) safeLS('set','velo_user_motto', motto);
   if(_selectedAv) safeLS('set','velo_user_av', _selectedAv);
+  // Sync to Supabase so profile persists across devices
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(sbClient && uid){
+    var av = safeLS('get','velo_user_av') || '';
+    sbClient.from('profiles').update({ nombre: name, avatar: av, motto: motto })
+      .eq('id', uid).then(function(){}).catch(function(){});
+  }
   closeModal('editProfileOv');
   pToast('✅','Perfil actualizado 💚');
   pLoadProfile();
@@ -7282,6 +7312,8 @@ window.addEventListener('load', function(){
 
   if(session === '1'){
     _authenticated = true;
+    // Sync profile from Supabase on every app start so name/avatar stay current
+    setTimeout(function(){ _sbSyncProfile(safeLS('get','velo_user_id')); }, 1500);
     setTimeout(_startGuardianHeartbeat, 2000);
     if(type === 'admin' && safeLS('get','velo_admin_session') === '1'){
       pGoTo('admin');
