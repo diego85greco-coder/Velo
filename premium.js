@@ -3231,6 +3231,72 @@ async function pSaveMood(){
   _checkMonthlyMoodReport();
 }
 
+// ── MOOD QUICK VIEW MODAL ─────────────────────────────────────
+function pOpenMoodQuickView(){
+  var existing = document.getElementById('moodQuickOv');
+  if(existing) existing.remove();
+
+  // Build calendar grid for current month
+  var now = new Date();
+  var year = now.getFullYear();
+  var month = now.getMonth();
+  var daysInMonth = new Date(year, month+1, 0).getDate();
+  var monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var moodColors = {'😄':'#74c69d','😊':'#a8dadc','😐':'#ffd166','😞':'#f4a261','😢':'#e76f51'};
+
+  var calHtml = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:16px">';
+  ['L','M','M','J','V','S','D'].forEach(function(d){
+    calHtml += '<div style="text-align:center;font-size:9px;font-weight:700;color:var(--ink5);padding:2px 0">'+d+'</div>';
+  });
+  var firstDay = new Date(year, month, 1).getDay();
+  firstDay = firstDay === 0 ? 6 : firstDay - 1;
+  for(var i=0; i<firstDay; i++) calHtml += '<div></div>';
+  for(var d=1; d<=daysInMonth; d++){
+    var dk = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var stored = safeLS('get','velo_mood_'+dk);
+    var emoji = ''; var color = 'var(--cream2)';
+    if(stored){ try{ var ms=JSON.parse(stored); emoji=ms.emoji||''; color=moodColors[emoji]||'rgba(116,198,157,.25)'; }catch(e){} }
+    var isToday = d === now.getDate();
+    calHtml += '<div style="aspect-ratio:1;border-radius:8px;background:'+(emoji?color:'var(--cream2)')+';display:flex;align-items:center;justify-content:center;font-size:'+(emoji?'16px':'11px')+';color:'+(emoji?'#fff':'var(--ink5)')+';font-weight:700;'+(isToday?'outline:2px solid var(--sage);outline-offset:1px':'')+'">'+(emoji||d)+'</div>';
+  }
+  calHtml += '</div>';
+
+  // Last 5 mood reports from inbox
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  var reports = inbox.filter(function(m){ return m.tipo==='reporte' && m.icon==='📊'; }).slice(0,5);
+  var reportsHtml = '';
+  if(reports.length){
+    reportsHtml = '<div style="margin-top:4px"><div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--ink5);text-transform:uppercase;margin-bottom:10px">Últimos reportes</div>'
+      + reports.map(function(r){
+        return '<div style="background:var(--cream2);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer" onclick="document.getElementById(\'moodQuickOv\').remove();pOpenInboxMsg(\''+r.id+'\',null)">'
+          +'<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(r.asunto||'Reporte mensual')+'</div>'
+          +'<div style="font-size:11px;color:var(--ink4);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5">'+_escHtml(r.extracto||'')+'</div>'
+          +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+_escHtml(r.fecha||'')+'</div>'
+          +'</div>';
+      }).join('')
+      + '</div>';
+  }
+
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'moodQuickOv';
+  ov.innerHTML = '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--sage3);text-transform:uppercase">Seguimiento</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink)">'+monthNames[month]+' '+year+'</div></div>'
+    +'<button onclick="document.getElementById(\'moodQuickOv\').remove()" style="width:32px;height:32px;border-radius:50%;background:var(--cream2);border:none;font-size:16px;cursor:pointer;color:var(--ink4)">✕</button>'
+    +'</div>'
+    +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:10px;padding:8px 12px;margin-bottom:16px;font-size:11px;color:var(--sage2)">🔒 Solo vos podés ver estos registros</div>'
+    + calHtml
+    + reportsHtml
+    +'<div style="height:8px"></div>'
+    +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="document.getElementById(\'moodQuickOv\').remove();pGoTo(\'mood\')">Registrar ánimo de hoy ✨</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+}
+
 // ── SATISFACTION SURVEY (every 90 days) ──────────────────────
 var SURVEY_INTERVAL = 90 * 24 * 60 * 60 * 1000; // 90 days in ms
 var _surveyScores   = { general: 0, utilidad: 0, recomendaria: 0 };
