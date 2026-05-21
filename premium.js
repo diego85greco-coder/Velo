@@ -39,7 +39,8 @@ var _grReqCh      = null;   // guardian_requests realtime channel (guardian side
 var _seekerGrCh   = null;   // guardian_requests realtime channel (seeker side)
 var _guardianWaitTimer = null; // 80s timeout when guardian is waiting for acceptance
 var _pendingGuardianPost = null; // post object guardian clicked "Acompañar" on
-var _dmRtCh      = null;   // realtime channel direct_messages
+var _dmRtCh      = null;   // realtime channel direct_messages (per-thread)
+var _dmInboxCh   = null;   // realtime channel direct_messages (global inbox listener)
 var _favsList     = null;   // cached favorites array (loaded lazily)
 
 async function _geminiCallGrounded(prompt, cfg){
@@ -4512,7 +4513,7 @@ function _happyPostCard(h, isOwn){
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
     +'<div'+authorClick+'>'+avatarHtml+'</div>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:13px;font-weight:600;color:var(--ink)"'+(canClick?' style="cursor:pointer" onclick="pQuickProfile('+JSON.stringify(h.name||'Usuario')+','+JSON.stringify(h.av||'')+',\'\',\'\',\''+h.userId+'\')"':'')+'>'+_escHtml(h.name||'Usuario Anónimo')+'</div>'
+    +'<div style="font-size:13px;font-weight:600;color:var(--ink)'+(canClick?';cursor:pointer':'')+'"'+(canClick?' onclick="pQuickProfile('+JSON.stringify(h.name||'Usuario')+','+JSON.stringify(h.av||'')+',\'\',\'\',\''+h.userId+'\')"':'')+'>'+_escHtml(h.name||'Usuario Anónimo')+'</div>'
     +'<div style="font-size:10px;color:var(--ink5)">'+relTime+(isOwn?' · <strong style="color:var(--sage)">Tuya</strong>':'')+'</div>'
     +'</div>'
     +(isOwn ? '<button onclick="pDeleteHappyPost(\''+h.id+'\')" style="margin-left:auto;padding:4px 8px;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);border-radius:100px;color:rgba(220,60,60,.7);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif" title="Eliminar publicación">🗑️</button>' : '')
@@ -5571,10 +5572,10 @@ async function pSendDM(){
 
 // Global DM listener — shows popup toast when a new DM arrives while in another section
 function _startGlobalDMListener(){
-  if(_dmRtCh) return; // already subscribed
+  if(_dmInboxCh) return; // already subscribed
   var myId = safeLS('get','velo_user_id')||'';
   if(!myId || !sbClient) return;
-  _dmRtCh = sbClient.channel('velo:dm:inbox:'+myId)
+  _dmInboxCh = sbClient.channel('velo:dm:inbox:'+myId)
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages',filter:'to_id=eq.'+myId},function(payload){
       var m = payload.new||{};
       var curPage = document.querySelector('.p-page.active');
