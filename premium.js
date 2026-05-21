@@ -1821,42 +1821,59 @@ async function _checkDailyGreeting(){
   var today = new Date().toISOString().slice(0,10);
   if(safeLS('get','velo_greeting_shown_'+today)) return;
 
-  var cached = safeLS('get','velo_greeting_'+today);
-  if(cached){ _showDailyGreeting(cached); return; }
-
   var d        = new Date();
   var h        = d.getHours();
   var momento  = (h < 6 || h >= 20) ? 'noche' : h < 12 ? 'mañana' : 'tarde';
-  var dias     = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  var dia      = dias[d.getDay()];
-  var meses    = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  var fechaFull = d.getDate()+' de '+meses[d.getMonth()]+' de '+d.getFullYear();
-  var name     = safeLS('get','velo_user_name') || '';
+  var saludoMap = { 'mañana':'¡Buenos días', 'tarde':'¡Buenas tardes', 'noche':'¡Buenas noches' };
+  var name     = (safeLS('get','velo_user_name')||'').split(' ')[0];
+  var saludo   = saludoMap[momento] + (name ? ', '+name : '') + '!';
 
-  // Pick today's theme using day-of-year so it rotates through all 30
-  var startOfYear = new Date(d.getFullYear(), 0, 0);
-  var dayOfYear   = Math.floor((d - startOfYear) / 86400000);
-  var tema        = _greetingTemas[dayOfYear % _greetingTemas.length];
+  // Show card immediately with saludo + loading dots — no waiting
+  _showDailyGreeting(saludo, null);
 
-  var prompt = 'Sos el acompañante de bienestar de Velo, una app de salud mental peer-to-peer.\n'
-    +'Generá un mensaje de bienvenida breve y muy cálido para'+( name ? ' '+name : ' un usuario')
-    +'. Hoy es '+fechaFull+', '+momento+' del '+dia+'.\n'
-    +'El mensaje de HOY debe girar alrededor del tema: "'+tema+'".\n'
-    +'Reglas: 1-2 oraciones cortas. Genuino, empático, no exagerado. '
-    +'Español rioplatense (vos, te). Terminá con un emoji suave (🌿 💚 ✨ 🌱 🌸 💙 🫂). '
-    +'Cada día debe sentirse diferente — variá el tono, la estructura y las palabras. '
-    +'Respondé SOLO con el mensaje, sin comillas ni explicaciones.';
+  // Now fetch Gemini message in background with 5s timeout
+  var cached = safeLS('get','velo_greeting_'+today);
+  var msg;
+  if(cached){
+    msg = cached;
+  } else {
+    var dias     = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+    var dia      = dias[d.getDay()];
+    var meses    = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    var fechaFull = d.getDate()+' de '+meses[d.getMonth()]+' de '+d.getFullYear();
+    var startOfYear = new Date(d.getFullYear(), 0, 0);
+    var dayOfYear   = Math.floor((d - startOfYear) / 86400000);
+    var tema        = _greetingTemas[dayOfYear % _greetingTemas.length];
 
-  var msg = await _geminiCall(prompt, { temperature: 0.92, maxOutputTokens: 80 });
-  if(!msg || msg.length > 220){
-    msg = _greetingFallbacks[d.getDate() % _greetingFallbacks.length];
+    var prompt = 'Sos el acompañante de bienestar de Velo, una app de salud mental peer-to-peer.\n'
+      +'Generá un mensaje de bienvenida breve y muy cálido. '
+      +'Hoy es '+fechaFull+', '+momento+' del '+dia+'.\n'
+      +'El mensaje de HOY debe girar alrededor del tema: "'+tema+'".\n'
+      +'Reglas: 1-2 oraciones cortas. Genuino, empático, no exagerado. '
+      +'Español rioplatense (vos, te). Terminá con un emoji suave (🌿 💚 ✨ 🌱 🌸 💙 🫂). '
+      +'NO incluyas saludo ni nombre — solo el mensaje. Sin comillas ni explicaciones.';
+
+    var timeoutP = new Promise(function(res){ setTimeout(function(){ res(null); }, 5000); });
+    msg = await Promise.race([_geminiCall(prompt, { temperature:0.92, maxOutputTokens:80 }), timeoutP]);
+    if(!msg || msg.length > 220){
+      msg = _greetingFallbacks[d.getDate() % _greetingFallbacks.length];
+    }
+    safeLS('set','velo_greeting_'+today, msg);
   }
 
-  safeLS('set','velo_greeting_'+today, msg);
-  _showDailyGreeting(msg);
+  // Inject message into already-visible card
+  var msgEl = document.getElementById('veloGreetingGemini');
+  if(msgEl){
+    msgEl.style.transition = 'opacity .4s';
+    msgEl.style.opacity = '0';
+    setTimeout(function(){
+      msgEl.textContent = msg;
+      msgEl.style.opacity = '1';
+    }, 150);
+  }
 }
 
-function _showDailyGreeting(msg){
+function _showDailyGreeting(saludo, msg){
   var today = new Date().toISOString().slice(0,10);
   safeLS('set','velo_greeting_shown_'+today, '1');
 
@@ -1912,10 +1929,16 @@ function _showDailyGreeting(msg){
           +'font-size:10px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;'
           +'color:rgba(116,198,157,.75);margin-bottom:6px'
         +'">Acompañante Velo</div>'
-        +'<div id="veloGreetingMsg" style="'
-          +'font-family:\'Cormorant Garamond\',serif;font-size:16.5px;'
-          +'color:var(--ink);line-height:1.58;font-weight:400;letter-spacing:-.1px'
-        +'"></div>'
+        // Fixed greeting line (Buenos días / tardes / noches)
+        +'<div style="'
+          +'font-family:\'Cormorant Garamond\',serif;font-size:19px;'
+          +'color:var(--sage);line-height:1.3;font-weight:600;letter-spacing:-.2px;margin-bottom:6px'
+        +'">'+_escHtml(saludo)+'</div>'
+        // Gemini message line — shows loading dots until ready
+        +'<div id="veloGreetingGemini" style="'
+          +'font-family:\'Cormorant Garamond\',serif;font-size:15.5px;'
+          +'color:var(--ink3);line-height:1.58;font-weight:400;letter-spacing:-.1px'
+        +'">'+( msg ? _escHtml(msg) : '…')+'</div>'
       +'</div>'
 
       // close
@@ -1940,8 +1963,7 @@ function _showDailyGreeting(msg){
 
   document.body.appendChild(card);
 
-  var msgEl = document.getElementById('veloGreetingMsg');
-  if(msgEl) msgEl.textContent = msg;
+  // Content already injected inline; veloGreetingGemini updated async by caller
 
   // Slide up into view
   requestAnimationFrame(function(){
