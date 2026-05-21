@@ -2123,6 +2123,29 @@
   </div>
 </div>
 
+<!-- ADMIN REPLY MODAL (global) -->
+<div class="p-modal-ov" id="adminReplyOv">
+  <div class="p-sheet" style="max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div class="p-sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink)">Responder mensaje</h3>
+      <button onclick="closeModal('adminReplyOv')" style="width:32px;height:32px;border-radius:50%;background:var(--cream2);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink4)">✕</button>
+    </div>
+    <div id="adminReplyPreview" style="background:var(--cream2);border-radius:10px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--ink4);line-height:1.5"></div>
+    <div class="p-field">
+      <label class="p-field-label">Tu respuesta</label>
+      <textarea class="p-textarea" id="adminReplyText" rows="5" placeholder="Escribí tu respuesta..."></textarea>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px;background:var(--cream2);border-radius:10px">
+      <input type="checkbox" id="adminReplyAllowToggle" style="width:16px;height:16px;cursor:pointer">
+      <label for="adminReplyAllowToggle" style="font-size:12px;color:var(--ink3);cursor:pointer;line-height:1.4">Permitir que el usuario responda a este email<br><span style="font-size:11px;color:var(--ink5)">Si está activado, el usuario puede responder directamente a wearevelo.app@gmail.com.</span></label>
+    </div>
+    <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pAdminSendReply()">Enviar respuesta 💌</button>
+    <div style="height:8px"></div>
+    <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('adminReplyOv')">Cancelar</button>
+  </div>
+</div>
+
 <!-- SOS sheet (global — works from any page) -->
 <div class="p-modal-ov" id="sosOv">
   <div class="p-sheet p-sheet-dark">
@@ -2139,6 +2162,6 @@
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-43"></script>
+<script src="premium.js?v=20260520-44"></script>
 </body>
 </html>

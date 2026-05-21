@@ -6076,17 +6076,22 @@ function pCreateProvisionalPass(){
   pToast('🔑','Contraseña provisional creada');
 }
 
+var _adminContactsCache = [];
+var _adminReplyTarget = null;
+
 function _renderAdminContactsList(msgs){
+  _adminContactsCache = msgs || [];
   var el = document.getElementById('adminContactsList');
   if(!el) return;
   if(!msgs || !msgs.length){
     el.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin mensajes aún.</p>';
     return;
   }
-  el.innerHTML = msgs.map(function(m){
+  el.innerHTML = msgs.map(function(m, idx){
     var texto = m.mensaje || m.msg || '';
     var mid   = m.id || '';
     var fecha = m.fecha ? new Date(m.fecha).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    var hasEmail = (m.user_email||m.email) && (m.user_email||m.email) !== 'anónimo';
     return '<div class="a-row" style="flex-direction:column;align-items:flex-start;gap:6px">'
       +'<div style="display:flex;width:100%;align-items:center;gap:10px">'
       +'<div class="a-row-ic">💌</div>'
@@ -6097,10 +6102,52 @@ function _renderAdminContactsList(msgs){
       +(texto ? '<div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.5;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:8px;width:100%;box-sizing:border-box">'+_escHtml(texto)+'</div>' : '')
       +'<div style="display:flex;gap:8px">'
       +(!m.leido ? '<button onclick="pAdminMarkContactRead(\''+mid+'\')" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.7);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Marcar leído</button>' : '<span style="font-size:10px;color:rgba(116,198,157,.5)">✓ Leído</span>')
-      +((m.user_email||m.email) && (m.user_email||m.email) !== 'anónimo' ? '<a href="mailto:'+_escHtml(m.user_email||m.email)+'?subject=Re: '+_escHtml(m.topic||'Consulta')+'" style="font-size:10px;padding:3px 8px;background:rgba(200,162,0,.1);border:1px solid rgba(200,162,0,.2);color:rgba(200,162,0,.8);border-radius:6px;text-decoration:none;font-family:\'Jost\',sans-serif;font-weight:600">📧 Responder</a>' : '')
+      +(hasEmail ? '<button onclick="pAdminOpenReply('+idx+')" style="font-size:10px;padding:3px 8px;background:rgba(200,162,0,.1);border:1px solid rgba(200,162,0,.2);color:rgba(200,162,0,.8);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">📧 Responder</button>' : '')
       +'</div>'
       +'</div>';
   }).join('');
+}
+
+function pAdminOpenReply(idx){
+  var m = _adminContactsCache[idx];
+  if(!m) return;
+  _adminReplyTarget = m;
+  var preview = document.getElementById('adminReplyPreview');
+  var txt     = document.getElementById('adminReplyText');
+  var toggle  = document.getElementById('adminReplyAllowToggle');
+  if(preview) preview.innerHTML = '<strong>Para:</strong> '+_escHtml(m.user_email||m.email||'anónimo')
+    +'<br><strong>Asunto:</strong> '+_escHtml(m.topic||'Consulta')
+    +'<br><br><em>Mensaje original:</em><br>'+_escHtml((m.mensaje||m.msg||'').slice(0,300));
+  if(txt)    txt.value = '';
+  if(toggle) toggle.checked = false;
+  openModal('adminReplyOv');
+}
+
+async function pAdminSendReply(){
+  if(!_adminReplyTarget){ pToast('⚠️','Sin destinatario'); return; }
+  var txt    = document.getElementById('adminReplyText');
+  var toggle = document.getElementById('adminReplyAllowToggle');
+  if(!txt || !txt.value.trim()){ pToast('✍️','Escribí tu respuesta'); return; }
+  var toEmail = _adminReplyTarget.user_email || _adminReplyTarget.email;
+  if(!toEmail || toEmail === 'anónimo'){ pToast('⚠️','Este usuario no tiene email registrado'); return; }
+  var btn = document.querySelector('#adminReplyOv .p-btn--primary');
+  if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
+  try{
+    var r = await fetch('/api/send-email',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email:toEmail, name:_adminReplyTarget.user_name||'', type:'admin-reply',
+        topic:_adminReplyTarget.topic||'Consulta', reply:txt.value.trim(), allowReply:!!(toggle&&toggle.checked) })
+    });
+    var json = await r.json();
+    if(json.ok){
+      pToast('💌','Respuesta enviada');
+      closeModal('adminReplyOv');
+      if(_adminReplyTarget.id) pAdminMarkContactRead(_adminReplyTarget.id);
+    } else {
+      pToast('⚠️','Error: '+(json.error||'desconocido'));
+    }
+  } catch(e){ pToast('⚠️','Error de conexión'); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='Enviar respuesta 💌'; } }
 }
 
 async function pAdminMarkContactRead(id){

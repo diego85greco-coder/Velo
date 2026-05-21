@@ -9,13 +9,39 @@ module.exports = async function handler(req, res) {
   const RESEND_KEY = process.env.RESEND_API_KEY;
   if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
 
-  const { email, name, type, amount } = req.body || {};
+  const { email, name, type, amount, topic, reply, allowReply } = req.body || {};
   if (!email || !type) return res.status(400).json({ error: 'Missing email or type' });
 
   const displayName = name || 'amigo/a';
-  let subject, html;
+  let subject, html, replyTo;
 
-  if (type === 'plus') {
+  if (type === 'admin-reply') {
+    const safeReply = (reply || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    const safeTopic = (topic || 'Consulta').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    subject = `Re: ${topic || 'Consulta'} — Velo`;
+    if (allowReply) replyTo = 'wearevelo.app@gmail.com';
+    html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f1eb;font-family:'Georgia',serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1eb;padding:32px 16px"><tr><td align="center">
+<table width="100%" style="max-width:520px;background:#fffef9;border-radius:18px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
+<tr><td style="background:linear-gradient(135deg,#2e5e35,#4a8a52);padding:24px 28px;text-align:center">
+<div style="font-size:30px;margin-bottom:6px">&#128140;</div>
+<div style="font-size:22px;color:#fffef9;font-weight:700">Respuesta de Velo</div>
+<div style="font-size:12px;color:rgba(255,254,249,.75);margin-top:4px">Re: ${safeTopic}</div>
+</td></tr>
+<tr><td style="padding:28px 28px 20px">
+<p style="font-size:17px;color:#1a2e1a;margin:0 0 14px;line-height:1.5">Hola, <strong>${displayName}</strong></p>
+<div style="background:#f0f7f1;border-radius:12px;padding:18px 20px;margin-bottom:20px;border:1px solid #c8e0c8;font-size:14px;color:#2a4a2e;line-height:1.7">${safeReply}</div>
+${allowReply ? '<p style="font-size:13px;color:#3d5a3e;line-height:1.6;margin:0 0 20px">Podes responder directamente a este correo si tenes alguna duda adicional.</p>' : '<p style="font-size:13px;color:#3d5a3e;line-height:1.6;margin:0 0 20px">Si tenes consultas adicionales, podes escribirnos desde la seccion Contacto en Velo.</p>'}
+<table cellpadding="0" cellspacing="0" width="100%"><tr><td align="center">
+<a href="https://velo-ashen-mu.vercel.app" style="display:inline-block;background:linear-gradient(135deg,#2e5e35,#4a8a52);color:#fffef9;text-decoration:none;padding:13px 28px;border-radius:100px;font-size:14px;font-weight:700">Ir a Velo &rarr;</a>
+</td></tr></table>
+</td></tr>
+<tr><td style="padding:20px 28px 28px;border-top:1px solid #e8e2d6;text-align:center">
+<p style="font-size:11px;color:#a09880;margin:0;line-height:1.7">Con gratitud<br><strong style="color:#3d5a3e">El equipo Velo</strong><br><a href="https://velo-ashen-mu.vercel.app" style="color:#7a9a7a;text-decoration:none">velo-ashen-mu.vercel.app</a></p>
+</td></tr>
+</table></td></tr></table></body></html>`;
+  } else if (type === 'plus') {
     subject = '⭐ ¡Bienvenido/a a Velo Plus!';
     html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f1eb;font-family:'Georgia',serif">
@@ -80,7 +106,7 @@ module.exports = async function handler(req, res) {
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + RESEND_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: 'Velo <onboarding@resend.dev>', to: email, subject, html })
+      body: JSON.stringify({ from: 'Velo <onboarding@resend.dev>', to: email, subject, html, ...(replyTo ? { reply_to: replyTo } : {}) })
     });
     const json = await r.json();
     if (!r.ok) return res.status(500).json({ error: json.message || 'Resend error' });
