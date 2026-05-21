@@ -14,39 +14,55 @@
 })();
 
 // ── GEMINI AI CONFIG ────────────────────────────────────────
+// Key kept as fallback for non-Vercel environments (e.g. local dev / GitHub Pages)
 var GEMINI_KEY    = 'AIzaSyBilVllciOwMx-OsGiWiy_Q10NmDEzD9s8';
 var GEMINI_URLS   = [
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=',
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='
 ];
+var GEMINI_PROXY  = '/api/gemini'; // Vercel serverless proxy (hides key)
 var _geminiUrlIdx = 0;
 
 async function _geminiCallGrounded(prompt, cfg){
-  var url = GEMINI_URLS[0] + GEMINI_KEY;
-  try{
-    var res = await fetch(url, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        contents:[{ parts:[{ text: prompt }] }],
-        tools:[{ google_search:{} }],
-        generationConfig: Object.assign({ temperature:0.5, maxOutputTokens:1500 }, cfg||{})
-      })
-    });
-    var json = await res.json();
-    if(json.candidates && json.candidates[0]){
-      var cand = json.candidates[0];
-      var text = (cand.content && cand.content.parts && cand.content.parts[0]) ? cand.content.parts[0].text : null;
-      var chunks = (cand.groundingMetadata && cand.groundingMetadata.groundingChunks) || [];
-      var supportChunks = (cand.groundingMetadata && cand.groundingMetadata.groundingSupports) || [];
-      var urls = chunks.map(function(c){ return c.web || null; }).filter(Boolean);
-      return { text: text, urls: urls };
-    }
-  }catch(e){}
+  // Try Vercel serverless proxy first, fall back to direct call
+  var sources = [
+    function(){ return fetch(GEMINI_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ type:'grounded', prompt:prompt, cfg:cfg||{} }) }); },
+    function(){ return fetch(GEMINI_URLS[0] + GEMINI_KEY, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ contents:[{ parts:[{ text:prompt }] }], tools:[{ google_search:{} }],
+        generationConfig: Object.assign({ temperature:0.5, maxOutputTokens:1500 }, cfg||{}) }) }); }
+  ];
+  for(var i=0; i<sources.length; i++){
+    try{
+      var res = await sources[i]();
+      if(!res.ok && i===0){ continue; }
+      var json = await res.json();
+      if(json.candidates && json.candidates[0]){
+        var cand = json.candidates[0];
+        var text = (cand.content && cand.content.parts && cand.content.parts[0]) ? cand.content.parts[0].text : null;
+        var chunks = (cand.groundingMetadata && cand.groundingMetadata.groundingChunks) || [];
+        var urls = chunks.map(function(c){ return c.web || null; }).filter(Boolean);
+        return { text: text, urls: urls };
+      }
+    }catch(e){ continue; }
+  }
   return { text: null, urls: [] };
 }
 
 async function _geminiCall(prompt, cfg){
+  // Try Vercel serverless proxy first
+  try{
+    var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ type:'generate', prompt:prompt, cfg:cfg||{} }) });
+    if(pr.ok){
+      var pj = await pr.json();
+      if(pj.candidates && pj.candidates[0] && pj.candidates[0].content &&
+         pj.candidates[0].content.parts && pj.candidates[0].content.parts[0].text){
+        return pj.candidates[0].content.parts[0].text;
+      }
+    }
+  }catch(e){}
+  // Fallback: direct call (non-Vercel environments)
   for(var attempt = 0; attempt < GEMINI_URLS.length; attempt++){
     var url = GEMINI_URLS[(_geminiUrlIdx + attempt) % GEMINI_URLS.length];
     try{
@@ -2108,6 +2124,20 @@ function _calmAIAddMsg(text, isUser){
 }
 
 async function _geminiChat(systemPrompt, msgs, cfg){
+  // Try Vercel serverless proxy first
+  try{
+    var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ type:'chat', systemPrompt:systemPrompt, msgs:msgs, cfg:cfg||{} }) });
+    if(pr.ok){
+      var pj = await pr.json();
+      if(pj.candidates && pj.candidates[0] && pj.candidates[0].content &&
+         pj.candidates[0].content.parts && pj.candidates[0].content.parts[0] &&
+         pj.candidates[0].content.parts[0].text){
+        return pj.candidates[0].content.parts[0].text.trim();
+      }
+    }
+  }catch(e){}
+  // Fallback: direct call
   var contents = msgs.map(function(m){
     return { role: m.user ? 'user' : 'model', parts: [{ text: m.text }] };
   });
