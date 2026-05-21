@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260520-28">
+  <link rel="stylesheet" href="premium.css?v=20260520-29">
 </head>
 <body>
 
@@ -1252,7 +1252,12 @@
           <div style="padding:12px 16px 14px">
             <div style="background:rgba(255,224,102,.12);border:1.5px solid rgba(255,200,50,.25);border-radius:14px;padding:12px 14px">
               <!-- Emoji row — single scrollable line -->
-              <div id="happyEmojiRow" style="display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;margin-bottom:9px;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:1px"></div>
+              <div id="happyEmojiRow" style="display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;margin-bottom:7px;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:1px"></div>
+              <!-- Support strip -->
+              <div style="display:flex;gap:6px;margin-bottom:9px">
+                <button onclick="pGoTo('donate-cta')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:5px 8px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.3);border-radius:100px;font-size:11px;font-weight:700;color:var(--sage);cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap">🙏 Donar aquí</button>
+                <button onclick="pShowPlusModal()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:5px 8px;background:rgba(200,165,100,.1);border:1px solid rgba(200,165,100,.3);border-radius:100px;font-size:11px;font-weight:700;color:#C8A560;cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap">⭐ Velo Plus</button>
+              </div>
               <!-- Text area -->
               <textarea class="p-textarea" id="happyPostTa" rows="2" placeholder="¿Qué momento de alegría querés compartir hoy? ✨" maxlength="300" style="background:rgba(255,255,255,.7);border-color:rgba(255,200,50,.2);font-size:13px;resize:none;margin-bottom:8px"></textarea>
               <!-- Photo preview -->
@@ -2135,6 +2140,6 @@
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-28"></script>
+<script src="premium.js?v=20260520-29"></script>
 </body>
 </html>
