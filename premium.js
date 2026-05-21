@@ -274,8 +274,22 @@ function _getSbPass(){
 function _sbSyncProfile(userId){
   _initSupabase();
   if(!sbClient || !userId) return;
-  sbClient.from('profiles').select('nombre,avatar,motto,role,status_music,status_book,status_phrase,plus_expires_at').eq('id',userId).limit(1)
+  // Select only stable columns (no fase-2 columns that may not exist yet)
+  sbClient.from('profiles').select('nombre,avatar,motto,role,status_music,status_book,status_phrase').eq('id',userId).limit(1)
     .then(function(res){
+      if(res.error){
+        // Table/column issue — still try to create row so future saves work
+        var curName  = safeLS('get','velo_user_name') || '';
+        var curEmail = safeLS('get','velo_user_email') || '';
+        if(curName || curEmail){
+          sbClient.from('profiles').upsert({
+            id:userId, nombre:curName, email:curEmail, role:'user',
+            avatar: safeLS('get','velo_user_av')||'',
+            motto:  safeLS('get','velo_user_motto')||''
+          },{ onConflict:'id' }).catch(function(){});
+        }
+        return;
+      }
       if(!res.data || !res.data.length){
         // No profile row yet — create one with current localStorage values
         var curName  = safeLS('get','velo_user_name') || '';
@@ -301,14 +315,18 @@ function _sbSyncProfile(userId){
       if(p.status_book)   safeLS('set','velo_status_book',   p.status_book);
       if(p.status_phrase) safeLS('set','velo_status_phrase', p.status_phrase);
       if(p.role === 'plus'){
-        // Free Plus grant expired → revert to Free
-        if(p.plus_expires_at && new Date(p.plus_expires_at).getTime() < Date.now()){
-          safeLS('del','velo_plan');
-          safeLS('set','velo_user_type','user');
-          sbClient.from('profiles').update({ role:'user', plus_expires_at:null }).eq('id',userId).then(function(){}).catch(function(){});
-        } else {
-          safeLS('set','velo_plan','plus');
-        }
+        // Try to check expiry — column only exists after supabase-fase2.sql
+        sbClient.from('profiles').select('plus_expires_at').eq('id',userId).limit(1)
+          .then(function(r2){
+            if(r2.data && r2.data[0] && r2.data[0].plus_expires_at &&
+               new Date(r2.data[0].plus_expires_at).getTime() < Date.now()){
+              safeLS('del','velo_plan');
+              safeLS('set','velo_user_type','user');
+              sbClient.from('profiles').update({ role:'user' }).eq('id',userId).catch(function(){});
+            } else {
+              safeLS('set','velo_plan','plus');
+            }
+          }).catch(function(){ safeLS('set','velo_plan','plus'); });
       }
       // Restore guardian bio/tags from guardian_presence
       sbClient.from('guardian_presence').select('bio,tags').eq('user_id', userId).limit(1)
@@ -4965,8 +4983,12 @@ function pSaveProfile(){
   if(sbClient && uid){
     var av    = safeLS('get','velo_user_av') || '';
     var email = safeLS('get','velo_user_email') || '';
-    sbClient.from('profiles').upsert({ id:uid, nombre:name, avatar:av, motto:motto, email:email },{ onConflict:'id' })
-      .then(function(){}).catch(function(){});
+    sbClient.from('profiles').upsert({
+      id:uid, nombre:name, avatar:av, motto:motto, email:email,
+      status_music:  safeLS('get','velo_status_music')||'',
+      status_book:   safeLS('get','velo_status_book')||'',
+      status_phrase: safeLS('get','velo_status_phrase')||''
+    },{ onConflict:'id' }).then(function(){}).catch(function(){});
   }
   closeModal('editProfileOv');
   pToast('✅','Perfil actualizado 💚');
