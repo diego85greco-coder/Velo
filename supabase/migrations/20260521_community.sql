@@ -80,3 +80,22 @@ CREATE POLICY "circle_msg_select" ON public.circle_messages FOR SELECT TO anon, 
 CREATE POLICY "circle_msg_insert" ON public.circle_messages FOR INSERT TO anon, authenticated WITH CHECK (true);
 
 ALTER PUBLICATION supabase_realtime ADD TABLE public.circle_messages;
+
+-- Guardian requests (real-time notification between seeker and guardian)
+CREATE TABLE IF NOT EXISTS public.guardian_requests (
+  id            TEXT        PRIMARY KEY,
+  post_id       TEXT        NOT NULL,
+  seeker_id     TEXT,
+  guardian_id   TEXT,
+  guardian_name TEXT        DEFAULT 'Guardián',
+  guardian_av   TEXT        DEFAULT '🌿',
+  status        TEXT        DEFAULT 'pending',
+  support_msg   TEXT,
+  rating        INT,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.guardian_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "gr_select" ON public.guardian_requests FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "gr_insert" ON public.guardian_requests FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "gr_update" ON public.guardian_requests FOR UPDATE TO anon, authenticated USING (true);
+ALTER PUBLICATION supabase_realtime ADD TABLE public.guardian_requests;

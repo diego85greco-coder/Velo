@@ -33,6 +33,10 @@ var _happyRtCh    = null;   // realtime channel happy_posts
 var _helpRtCh     = null;   // realtime channel help_posts
 var _bottleRtCh   = null;   // realtime channel bottles
 var _circleRtCh   = null;   // realtime channel circle_messages
+var _grReqCh      = null;   // guardian_requests realtime channel (guardian side)
+var _seekerGrCh   = null;   // guardian_requests realtime channel (seeker side)
+var _guardianWaitTimer = null; // 80s timeout when guardian is waiting for acceptance
+var _pendingGuardianPost = null; // post object guardian clicked "Acompañar" on
 
 async function _geminiCallGrounded(prompt, cfg){
   // Try Vercel serverless proxy first, fall back to direct call
@@ -728,6 +732,7 @@ function _loadHomeData(){
   // Today's mood
   _loadTodayMoodHome();
   _updateHomeCurrentMoodLine();
+  _updateTopbarMoodBadge();
   _updateSidebarUser();
   _renderPersonalizedSuggestions();
   _updateHomeBell();
@@ -823,6 +828,7 @@ function pSaveQuickMood(){
   var moodLine = document.getElementById('homeCurrentMoodLine');
   if(moodLine) moodLine.textContent = _selectedQuickMoodEmoji + ' ' + (labels[_selectedQuickMoodEmoji]||'') + (phrase.trim() ? ' — ' + phrase.trim() : '');
   pCloseQuickMood();
+  _updateTopbarMoodBadge();
   pToast(_selectedQuickMoodEmoji, 'Estado de ánimo guardado 💚');
 }
 
@@ -892,6 +898,28 @@ async function _loadDailyMotivationalQuote(){
   }
   safeLS('set', cacheKey, msg);
   el.textContent = msg;
+}
+
+function _updateTopbarMoodBadge(){
+  var emojiEl = document.getElementById('topbarMoodEmoji');
+  if(!emojiEl) return;
+  var today = _dateKey();
+  var stored = safeLS('get','velo_mood_'+today);
+  var emoji = '📊';
+  if(stored){ try{ var m=JSON.parse(stored); if(m.emoji) emoji=m.emoji; }catch(e){} }
+  emojiEl.textContent = emoji;
+  var streak = 0;
+  var d = new Date();
+  for(var i=0;i<90;i++){
+    var k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(safeLS('get','velo_mood_'+k)) streak++;
+    else if(i>0) break;
+    d.setDate(d.getDate()-1);
+  }
+  var streakEl = document.getElementById('topbarMoodStreak');
+  var streakNumEl = document.getElementById('topbarMoodStreakNum');
+  if(streakEl){ streakEl.style.display = streak>=2 ? '' : 'none'; }
+  if(streakNumEl) streakNumEl.textContent = streak;
 }
 
 function _updateHomeCurrentMoodLine(){
@@ -1592,25 +1620,257 @@ function pAccompanyHelp(postId){
   }
   if(!post){ pToast('⚠️','Esta solicitud ya fue tomada'); return; }
 
-  if(isMock){
-    var mockTaken = []; try{ mockTaken = JSON.parse(safeLS('get','velo_help_mock_taken')||'[]'); }catch(e){}
-    if(mockTaken.indexOf(postId)<0){ mockTaken.push(postId); safeLS('set','velo_help_mock_taken',JSON.stringify(mockTaken)); }
-  } else {
+  _pendingGuardianPost = post;
+
+  if(!isMock){
     posts = posts.map(function(p){ return p.id===postId ? Object.assign({},p,{taken:true}) : p; });
     safeLS('set','velo_help_posts', JSON.stringify(posts));
-    // Mark as taken in Supabase so it disappears for all users
     _initSupabase();
     if(sbClient){
       sbClient.from('help_posts').update({ taken:true, taken_by: safeLS('get','velo_user_id')||'' })
         .eq('id', postId).then(function(){}).catch(function(){});
     }
+  } else {
+    var mockTaken = []; try{ mockTaken = JSON.parse(safeLS('get','velo_help_mock_taken')||'[]'); }catch(e){}
+    if(mockTaken.indexOf(postId)<0){ mockTaken.push(postId); safeLS('set','velo_help_mock_taken',JSON.stringify(mockTaken)); }
   }
-  _curHelpPost = post;
-  // Start the help chat
-  _openHelpChat(post);
-  // Increment helped count
+
   safeLS('set','velo_helped_others', String(parseInt(safeLS('get','velo_helped_others')||'0',10)+1));
   safeLS('set','velo_helped_once','1');
+
+  // If Supabase available and real post: send notification to seeker and wait
+  if(!isMock && sbClient){
+    _guardianSendRequest(post);
+  } else {
+    // Mock post: open chat immediately (simulated)
+    _curHelpPost = post;
+    _openHelpChat(post);
+  }
+}
+
+function _guardianSendRequest(post){
+  _initSupabase();
+  if(!sbClient){ _curHelpPost = post; _openHelpChat(post); return; }
+  var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon';
+  var myName = safeLS('get','velo_user_name')||'Guardián';
+  var myAv   = safeLS('get','velo_user_av')||'🌿';
+  var reqId  = 'gr'+Date.now();
+  // Insert guardian_request row so seeker gets DB real-time event
+  sbClient.from('guardian_requests').insert({
+    id: reqId, post_id: post.id,
+    seeker_id: post.userId||null,
+    guardian_id: myId, guardian_name: myName, guardian_av: myAv,
+    status: 'pending'
+  }).then(function(){}).catch(function(){});
+  // Show waiting overlay with 80s countdown
+  _showGuardianWaitOverlay(post, myName);
+  // Subscribe to guardian_requests changes for this row
+  if(_grReqCh) try{ sbClient.removeChannel(_grReqCh); }catch(e){}
+  _grReqCh = sbClient.channel('velo:gr:'+post.id)
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'guardian_requests', filter:'post_id=eq.'+post.id}, function(payload){
+      var row = payload.new || {};
+      if(row.status === 'accepted'){
+        _guardianRequestAccepted(post);
+      } else if(row.status === 'declined'){
+        _guardianRequestDeclined(post);
+      }
+    })
+    .subscribe();
+  // 80 second timeout
+  if(_guardianWaitTimer) clearTimeout(_guardianWaitTimer);
+  _guardianWaitTimer = setTimeout(function(){ _guardianRequestExpired(post); }, 80000);
+}
+
+function _showGuardianWaitOverlay(post, myName){
+  var existing = document.getElementById('guardianWaitOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.id = 'guardianWaitOv';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = '<div style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center">'
+    +'<div style="font-size:44px;margin-bottom:12px">💙</div>'
+    +'<div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Esperando respuesta…</div>'
+    +'<div style="font-size:13px;color:var(--ink3);margin-bottom:18px">Le avisamos a <strong>'+_escHtml(post.name)+'</strong> que querés acompañarle. Si no responde en 80 segundos podrás dejarle un mensaje.</div>'
+    +'<div id="guardianWaitCountdown" style="font-size:32px;font-weight:800;color:var(--sage);margin-bottom:20px">80</div>'
+    +'<button onclick="_guardianCancelWait()" style="padding:10px 24px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:100px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  // Start countdown display
+  var secs = 80;
+  var cdEl = document.getElementById('guardianWaitCountdown');
+  var cdInt = setInterval(function(){
+    secs--;
+    if(cdEl) cdEl.textContent = secs;
+    if(secs <= 0) clearInterval(cdInt);
+  }, 1000);
+  ov.setAttribute('data-cd-int', cdInt);
+}
+
+function _guardianCancelWait(){
+  if(_guardianWaitTimer){ clearTimeout(_guardianWaitTimer); _guardianWaitTimer = null; }
+  _clearGuardianWaitOverlay();
+  if(_pendingGuardianPost && sbClient){
+    sbClient.from('guardian_requests').update({status:'declined'}).eq('post_id',_pendingGuardianPost.id).then(function(){}).catch(function(){});
+    sbClient.from('help_posts').update({taken:false, taken_by:null}).eq('id',_pendingGuardianPost.id).then(function(){}).catch(function(){});
+  }
+  _pendingGuardianPost = null;
+  pToast('↩️','Cancelado. El mensaje volvió a la sala.');
+}
+
+function _clearGuardianWaitOverlay(){
+  var ov = document.getElementById('guardianWaitOv');
+  if(ov){
+    var cdInt = ov.getAttribute('data-cd-int');
+    if(cdInt) clearInterval(parseInt(cdInt,10));
+    ov.remove();
+  }
+  if(_grReqCh && sbClient){ try{ sbClient.removeChannel(_grReqCh); }catch(e){} _grReqCh = null; }
+}
+
+function _guardianRequestAccepted(post){
+  if(_guardianWaitTimer){ clearTimeout(_guardianWaitTimer); _guardianWaitTimer = null; }
+  _clearGuardianWaitOverlay();
+  _curHelpPost = post;
+  _openHelpChat(post);
+}
+
+function _guardianRequestDeclined(post){
+  if(_guardianWaitTimer){ clearTimeout(_guardianWaitTimer); _guardianWaitTimer = null; }
+  _clearGuardianWaitOverlay();
+  _showLeaveMessageModal(post, 'La persona declinó el acompañamiento en este momento.');
+}
+
+function _guardianRequestExpired(post){
+  _clearGuardianWaitOverlay();
+  _showLeaveMessageModal(post, 'Esta persona publicó pero no está disponible ahora.');
+}
+
+function _showLeaveMessageModal(post, reason){
+  var existing = document.getElementById('leaveMessageOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.id = 'leaveMessageOv';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = '<div style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:340px;width:100%">'
+    +'<div style="font-size:32px;text-align:center;margin-bottom:10px">💌</div>'
+    +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;text-align:center">'+_escHtml(reason)+'</div>'
+    +'<div style="font-size:12px;color:var(--ink3);margin-bottom:14px;text-align:center">¿Querés dejarle un mensaje de apoyo para cuando vuelva?</div>'
+    +'<textarea id="leaveMessageTa" placeholder="Escribí unas palabras de aliento…" rows="3" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--ink);outline:none;resize:none;box-sizing:border-box;font-family:\'Jost\',sans-serif"></textarea>'
+    +'<div style="display:flex;gap:10px;margin-top:14px">'
+    +'<button onclick="document.getElementById(\'leaveMessageOv\').remove();pGoTo(\'help\')" style="flex:1;padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Omitir</button>'
+    +'<button onclick="_sendLeaveMessage('+JSON.stringify(post.id)+')" style="flex:1;padding:11px;background:var(--sage4);border:none;border-radius:12px;font-size:13px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif">💙 Enviar</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+}
+
+function _sendLeaveMessage(postId){
+  var ta = document.getElementById('leaveMessageTa');
+  var msg = ta ? ta.value.trim() : '';
+  var ov = document.getElementById('leaveMessageOv');
+  if(ov) ov.remove();
+  if(!msg){ pGoTo('help'); return; }
+  // Update guardian_requests with the support message
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('guardian_requests').update({support_msg:msg, status:'message_left'})
+      .eq('post_id',postId).then(function(){}).catch(function(){});
+  }
+  pToast('💌','Mensaje enviado. Lo verán cuando vuelvan 💚');
+  setTimeout(function(){ pGoTo('help'); }, 1200);
+}
+
+function _subscribeSeekerToGuardianRequest(postId){
+  _initSupabase();
+  if(!sbClient || !postId) return;
+  if(_seekerGrCh) try{ sbClient.removeChannel(_seekerGrCh); }catch(e){}
+  _seekerGrCh = sbClient.channel('velo:seeker:'+postId)
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'guardian_requests', filter:'post_id=eq.'+postId}, function(payload){
+      _showSeekerGuardianPopup(postId, payload.new||{});
+    })
+    .subscribe();
+}
+
+function _showSeekerGuardianPopup(postId, row){
+  var existing = document.getElementById('seekerGuardianOv');
+  if(existing) return; // already showing
+  var guardianName = row.guardian_name||'Guardián';
+  var guardianAv   = row.guardian_av||'🌿';
+  var reqId        = row.id||'';
+  var ov = document.createElement('div');
+  ov.id = 'seekerGuardianOv';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = '<div style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center">'
+    +'<div style="font-size:44px;margin-bottom:10px">'+_avInline(guardianAv,52)+'</div>'
+    +'<div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Un guardián quiere acompañarte 💙</div>'
+    +'<div style="font-size:14px;color:var(--ink3);margin-bottom:6px"><strong>'+_escHtml(guardianName)+'</strong> vio tu mensaje y está aquí para escucharte.</div>'
+    +'<div style="font-size:12px;color:var(--ink4);margin-bottom:22px">¿Aceptás el acompañamiento ahora?</div>'
+    +'<div style="display:flex;gap:10px">'
+    +'<button onclick="_seekerDeclineRequest(\''+reqId+'\',\''+postId+'\')" style="flex:1;padding:12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Ahora no</button>'
+    +'<button onclick="_seekerAcceptRequest(\''+reqId+'\',\''+postId+'\','+JSON.stringify(guardianName)+','+JSON.stringify(guardianAv)+')" style="flex:1;padding:12px;background:var(--sage4);border:none;border-radius:12px;font-size:14px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif">💚 Aceptar</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+  // Auto-dismiss after 80s if no action
+  setTimeout(function(){
+    var el = document.getElementById('seekerGuardianOv');
+    if(el) el.remove();
+  }, 80000);
+}
+
+function _seekerAcceptRequest(reqId, postId, guardianName, guardianAv){
+  var ov = document.getElementById('seekerGuardianOv');
+  if(ov) ov.remove();
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('guardian_requests').update({status:'accepted'}).eq('id',reqId).then(function(){}).catch(function(){});
+  }
+  // Open a seeker-side help chat
+  var fakePost = { id:postId, name:guardianName, emoji:guardianAv, preview:'Guardián conectado' };
+  _curHelpPost = fakePost;
+  _openHelpChat(fakePost);
+  pToast('💚','¡Conectado/a con '+guardianName+'!');
+}
+
+function _seekerDeclineRequest(reqId, postId){
+  var ov = document.getElementById('seekerGuardianOv');
+  if(ov) ov.remove();
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('guardian_requests').update({status:'declined'}).eq('id',reqId).then(function(){}).catch(function(){});
+    sbClient.from('help_posts').update({taken:false, taken_by:null}).eq('id',postId).then(function(){}).catch(function(){});
+  }
+  pToast('💙','De acuerdo. Tu mensaje sigue visible en la sala.');
+}
+
+// Re-subscribe seeker if they already have an active help post on page load
+function _restoreSeekerSubscription(){
+  var postId = safeLS('get','velo_my_help_post_id');
+  if(postId) _subscribeSeekerToGuardianRequest(postId);
+  // Also check if there are any pending support messages
+  _checkPendingSupportMessages();
+}
+
+function _checkPendingSupportMessages(){
+  var postId = safeLS('get','velo_my_help_post_id');
+  if(!postId || !sbClient) return;
+  _initSupabase();
+  sbClient.from('guardian_requests').select('*').eq('post_id',postId).eq('status','message_left').limit(1)
+    .then(function(res){
+      if(res.data && res.data.length){
+        var row = res.data[0];
+        var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+        var alreadyIn = inbox.some(function(m){ return m.id==='gr-msg-'+row.id; });
+        if(!alreadyIn){
+          inbox.unshift({ id:'gr-msg-'+row.id, tipo:'guardian', icon:'💙',
+            remitente:row.guardian_name||'Guardián', asunto:'Un guardián te dejó un mensaje 💙',
+            cuerpo:row.support_msg||'', extracto:(row.support_msg||'').slice(0,60),
+            leido:false, prioritario:false, fecha:new Date(row.created_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
+          safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+          _updateInboxDot();
+          pToast('💙','Tenés un mensaje de un guardián en tu buzón 💌');
+          safeLS('set','velo_my_help_post_id',''); // clear since it's been handled
+        }
+      }
+    }).catch(function(){});
 }
 
 function _openHelpChat(post){
@@ -1686,10 +1946,50 @@ function pSendHelpChatMsg(){
 
 function pLeaveHelpChat(){
   if(_helpChatInactivityTimer){ clearTimeout(_helpChatInactivityTimer); _helpChatInactivityTimer = null; }
+  var post = _curHelpPost;
   _curHelpPost = null;
   _updateGuardianPresence('disponible');
   safeLS('set','velo_guardian_status','disponible');
-  pGoTo('post-chat');
+  // Show rating survey before leaving
+  _showHelpChatRating(post);
+}
+
+function _showHelpChatRating(post){
+  var existing = document.getElementById('helpRatingOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.id = 'helpRatingOv';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  var postId = post ? post.id : '';
+  ov.innerHTML = '<div style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center">'
+    +'<div style="font-size:40px;margin-bottom:10px">🌟</div>'
+    +'<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px">¿Cómo fue el acompañamiento?</div>'
+    +'<div style="font-size:12px;color:var(--ink4);margin-bottom:18px">Tu opinión ayuda a mejorar la comunidad</div>'
+    +'<div id="helpRatingStars" style="display:flex;gap:8px;justify-content:center;margin-bottom:18px">'
+    +'<button onclick="_helpRateStar(this,1,\''+postId+'\')" style="font-size:28px;background:none;border:none;cursor:pointer;opacity:.4">⭐</button>'
+    +'<button onclick="_helpRateStar(this,2,\''+postId+'\')" style="font-size:28px;background:none;border:none;cursor:pointer;opacity:.4">⭐</button>'
+    +'<button onclick="_helpRateStar(this,3,\''+postId+'\')" style="font-size:28px;background:none;border:none;cursor:pointer;opacity:.4">⭐</button>'
+    +'<button onclick="_helpRateStar(this,4,\''+postId+'\')" style="font-size:28px;background:none;border:none;cursor:pointer;opacity:.4">⭐</button>'
+    +'<button onclick="_helpRateStar(this,5,\''+postId+'\')" style="font-size:28px;background:none;border:none;cursor:pointer;opacity:.4">⭐</button>'
+    +'</div>'
+    +'<button onclick="document.getElementById(\'helpRatingOv\').remove();pGoTo(\'post-chat\')" style="padding:11px 28px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:100px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Omitir</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function _helpRateStar(btn, rating, postId){
+  var stars = document.querySelectorAll('#helpRatingStars button');
+  stars.forEach(function(s,i){ s.style.opacity = i < rating ? '1' : '.4'; });
+  _initSupabase();
+  if(sbClient && postId){
+    sbClient.from('guardian_requests').update({rating:rating}).eq('post_id',postId).then(function(){}).catch(function(){});
+  }
+  setTimeout(function(){
+    var ov = document.getElementById('helpRatingOv');
+    if(ov) ov.remove();
+    pGoTo('post-chat');
+    pToast('🌟','¡Gracias por tu valoración! 💚');
+  }, 600);
 }
 
 function pReportHelpChat(){
@@ -1731,6 +2031,9 @@ async function pSendHelp(){
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   inbox.unshift({ id:'help-'+ts, tipo:'sistema', icon:'💚', remitente:'Sala de Ayuda', asunto:'Tu mensaje fue publicado', cuerpo:'Tu mensaje fue publicado en la Sala de Ayuda. Alguien te acompañará pronto.\n\n"'+msg+'"', extracto:'Alguien te acompañará pronto.', leido:false, prioritario:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
   safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+  // Store seeker's own post id so we can receive guardian notifications
+  safeLS('set','velo_my_help_post_id','hu'+ts);
+  _subscribeSeekerToGuardianRequest('hu'+ts);
   pRenderHelp();
 
   // Gemini crisis detection and urgency classification — run silently in background
@@ -2840,6 +3143,7 @@ async function pSaveMood(){
   var data = { emoji:_selMood.emoji, label:_selMood.label, note:noteVal, ts:Date.now() };
   safeLS('set','velo_mood_'+today, JSON.stringify(data));
   sbSaveMoodEntry(today, _selMood.emoji, _selMood.label, noteVal);
+  _updateTopbarMoodBadge();
   pToast(_selMood.emoji, 'Estado de ánimo registrado 💚');
   if(note) note.value = '';
 
@@ -6881,6 +7185,11 @@ function _getReplyQuote(barId){
   return bar.getAttribute('data-reply-text') || '';
 }
 
+function _highlightMentions(text){
+  var escaped = _escHtml(text);
+  return escaped.replace(/@([\wÀ-ɏ]+)/g, '<span class="msg-mention">@$1</span>');
+}
+
 function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quoteText){
   var id  = _nextMsgId();
   var t   = new Date();
@@ -6892,7 +7201,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
     return '<div class="feed-msg feed-msg--own" id="'+id+'" style="position:relative">'
       +'<div class="msg-wrap">'
       +actionBtn
-      +'<div class="feed-bubble feed-bubble--own">'+quotePart+_escHtml(text)+'<span class="feed-time">'+ts+'</span></div>'
+      +'<div class="feed-bubble feed-bubble--own">'+quotePart+_highlightMentions(text)+'<span class="feed-time">'+ts+'</span></div>'
       +'</div></div>';
   } else {
     var avClick = senderName ? ' style="cursor:pointer" onclick="pQuickProfile('+JSON.stringify(senderName)+',' +JSON.stringify(av||'🌿')+')"' : '';
@@ -6900,7 +7209,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
       +'<div class="feed-av"'+avClick+'>'+_avInline(av||'🌿',36)+'</div>'
       +'<div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">'+(senderName||'')+'</div>'
       +'<div class="msg-wrap">'
-      +'<div class="feed-bubble">'+quotePart+_escHtml(text)+'<span class="feed-time">'+ts+'</span></div>'
+      +'<div class="feed-bubble">'+quotePart+_highlightMentions(text)+'<span class="feed-time">'+ts+'</span></div>'
       +actionBtn
       +'</div></div></div>';
   }
@@ -6909,6 +7218,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
 document.addEventListener('DOMContentLoaded', function(){
   _initSupabase();
   _initMsgActions();
+  setTimeout(_restoreSeekerSubscription, 2000);
 });
 
 window.addEventListener('load', function(){

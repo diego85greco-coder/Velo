@@ -2779,3 +2779,7 @@ a { text-decoration: none; color: inherit; }
   font-size: 11px; color: inherit; opacity: .75;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.msg-mention {
+  color: var(--sage); font-weight: 700;
+  background: rgba(116,198,157,.12); border-radius: 4px; padding: 0 3px;
+}
