@@ -5223,28 +5223,109 @@ function pAdminLogout(){
   _updateNavState('landing', false);
 }
 
-function _renderAdmin(){
+async function _renderAdmin(){
   var metrics = document.getElementById('adminMetrics');
-  if(metrics){
-    var tcRecs = []; try{ tcRecs = JSON.parse(safeLS('get','velo_tc_records')||'[]'); }catch(e){}
-    var subs = []; try{ subs = JSON.parse(safeLS('get','velo_subscribers')||'[]'); }catch(e){}
-    var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
-    var openReports = audit.filter(function(a){ return !a.resolved; }).length;
-    var crisisOpen = audit.filter(function(a){ return a.tipo === 'crisis_detect' && !a.resolved; }).length;
-    var data = [
-      { icon:'👥', label:'Usuarios', value:tcRecs.length||0, color:'var(--sage4)' },
-      { icon:'💎', label:'Plus activos', value:subs.filter(function(s){ return s.status==='active'; }).length, color:'#c8a23e' },
-      { icon:'🚨', label:'Reportes pendientes', value:openReports, color: openReports > 0 ? '#e05252' : 'var(--sage4)' },
-      { icon:'🆘', label:'Crisis activas', value:crisisOpen, color: crisisOpen > 0 ? '#ff4444' : 'var(--sage4)' }
-    ];
-    metrics.innerHTML = data.map(function(d){
-      return '<div class="a-card"><div style="font-size:22px;margin-bottom:4px">'+d.icon+'</div><div class="a-card-n" style="color:'+d.color+'">'+d.value+'</div><div class="a-card-l">'+d.label+'</div></div>';
-    }).join('');
+
+  // Show loading skeleton while Supabase queries run
+  if(metrics) metrics.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:18px;font-size:12px;color:rgba(255,255,255,.35)">Cargando datos en tiempo real…</div>';
+
+  // ── Live Supabase queries ──────────────────────────────────
+  _initSupabase();
+  var totalUsers = 0, totalPros = 0, totalPlus = 0, recentReg = [];
+  var openReports = 0, crisisOpen = 0;
+
+  if(sbClient){
+    // Profiles: real registration count
+    try{
+      var profRes = await sbClient.from('profiles').select('role,created_at,nombre,email').order('created_at',{ascending:false}).limit(500);
+      if(!profRes.error && profRes.data){
+        var profiles = profRes.data;
+        totalPros  = profiles.filter(function(p){ return p.role==='pro'; }).length;
+        totalPlus  = profiles.filter(function(p){ return p.role==='plus'; }).length;
+        totalUsers = profiles.length - totalPros; // users includes plus users
+        recentReg  = profiles.slice(0,10);
+      }
+    }catch(e){}
+
+    // Reportes: open reports and crisis
+    try{
+      var repRes = await sbClient.from('reportes').select('estado,categoria').eq('estado','abierto');
+      if(!repRes.error && repRes.data){
+        openReports = repRes.data.length;
+        crisisOpen  = repRes.data.filter(function(r){ return r.categoria==='crisis'; }).length;
+      }
+    }catch(e){}
   }
-  var content = document.getElementById('adminContent');
+
+  // ── Fallback to localStorage estimates for community stats ──
+  var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+  if(!openReports) openReports = audit.filter(function(a){ return !a.resolved; }).length;
+  if(!crisisOpen)  crisisOpen  = audit.filter(function(a){ return a.tipo==='crisis_detect'&&!a.resolved; }).length;
+
+  var bottlesSent     = parseInt(safeLS('get','velo_bottle_count')||'0',10) || (function(){ try{ return JSON.parse(safeLS('get','velo_my_bottles')||'[]').length; }catch(e){ return 0; } })();
+  var bottlesReplied  = (function(){ try{ return JSON.parse(safeLS('get','velo_bottle_responded')||'[]').length; }catch(e){ return 0; } })();
+  var helpedOthers    = parseInt(safeLS('get','velo_helped_others')||'0',10);
+  var helpRequests    = (function(){ try{ return JSON.parse(safeLS('get','velo_help_posts')||'[]').filter(function(p){ return !p._mock; }).length; }catch(e){ return 0; } })();
+  var circlesCount    = (function(){ try{ return JSON.parse(safeLS('get','velo_circles')||'[]').length; }catch(e){ return 0; } })();
+  var waitlistCount   = (function(){ try{ return JSON.parse(safeLS('get','velo_waitlist')||'[]').length; }catch(e){ return 0; } })();
+  var tcRecs = []; try{ tcRecs = JSON.parse(safeLS('get','velo_tc_records')||'[]'); }catch(e){}
+
+  // If Supabase returned 0 users, fall back to T&C records as minimum estimate
+  if(totalUsers === 0 && tcRecs.length) totalUsers = tcRecs.length;
+
+  // ── Render metrics grid ────────────────────────────────────
+  if(metrics){
+    var data = [
+      { icon:'👥', label:'Usuarios registrados', value: totalUsers,    color:'var(--sage4)',      note:'Supabase' },
+      { icon:'🩺', label:'Profesionales',         value: totalPros,     color:'rgba(116,198,200,.8)', note:'Supabase' },
+      { icon:'⭐', label:'Velo Plus / Insignia dorada', value: totalPlus, color:'#c8a23e',        note:'Supabase' },
+      { icon:'💙', label:'Lista espera solidaria', value: waitlistCount, color:'rgba(58,123,213,.9)', note:'local' },
+      { icon:'🌊', label:'Mensajes al Mar lanzados', value: bottlesSent, color:'rgba(100,170,230,.8)', note:'local' },
+      { icon:'💌', label:'Botellas respondidas',   value: bottlesReplied, color:'rgba(116,198,157,.8)', note:'local' },
+      { icon:'🤝', label:'Personas acompañadas',   value: helpedOthers,  color:'var(--sage4)',     note:'local' },
+      { icon:'💬', label:'Pedidos de ayuda publicados', value: helpRequests, color:'rgba(180,140,220,.8)', note:'local' },
+      { icon:'🕊️', label:'Círculos de Paz creados', value: circlesCount, color:'rgba(200,165,100,.8)', note:'local' },
+      { icon:'🚨', label:'Reportes pendientes',    value: openReports,   color: openReports>0?'#e05252':'var(--sage4)', note:'Supabase' },
+      { icon:'🆘', label:'Crisis activas',          value: crisisOpen,    color: crisisOpen>0?'#ff4444':'var(--sage4)', note:'Supabase' }
+    ];
+    metrics.style.cssText = 'display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px';
+    metrics.innerHTML = data.map(function(d){
+      return '<div class="a-card" style="position:relative">'
+        +'<div style="font-size:20px;margin-bottom:2px">'+d.icon+'</div>'
+        +'<div class="a-card-n" style="color:'+d.color+';font-size:22px">'+d.value+'</div>'
+        +'<div class="a-card-l" style="font-size:10px;line-height:1.3">'+d.label+'</div>'
+        +'<div style="position:absolute;top:6px;right:8px;font-size:8px;color:rgba(255,255,255,.2);font-weight:600">'+d.note+'</div>'
+        +'</div>';
+    }).join('');
+
+    // Recent registrations
+    if(recentReg.length){
+      metrics.insertAdjacentHTML('afterend',
+        '<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;padding:12px 14px;margin-bottom:14px">'
+        +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">🆕 ÚLTIMOS REGISTROS (TIEMPO REAL)</div>'
+        + recentReg.map(function(p){
+            var fecha = p.created_at ? new Date(p.created_at).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+            var roleBadge = p.role==='pro' ? '<span style="font-size:9px;color:#74c6d0;border:1px solid rgba(116,198,210,.3);border-radius:4px;padding:1px 5px">PRO</span>'
+                          : p.role==='plus' ? '<span style="font-size:9px;color:#c8a23e;border:1px solid rgba(200,162,62,.3);border-radius:4px;padding:1px 5px">PLUS</span>'
+                          : '<span style="font-size:9px;color:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:1px 5px">USER</span>';
+            return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
+              +'<div style="flex:1;min-width:0">'
+              +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.nombre||p.email||'Usuario')+'</div>'
+              +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+_escHtml(p.email||'')+'</div>'
+              +'</div>'
+              +roleBadge
+              +'<div style="font-size:10px;color:rgba(255,255,255,.25);white-space:nowrap">'+fecha+'</div>'
+              +'</div>';
+          }).join('')
+        +'</div>'
+      );
+    }
+  }
+
+  // ── Admin content panels ───────────────────────────────────
   if(content){
     var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
-    var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+    audit = audit.length ? audit : (function(){ try{ return JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){ return []; } })();
 
     // Provisional password section
     var provHtml = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">🔑 CONTRASEÑAS PROVISIONALES</div>'
@@ -5805,9 +5886,24 @@ async function pAdminGenerateMassMessage(target){
     var data = JSON.parse(match[0]);
     var subj = document.getElementById('massSubject');
     var body = document.getElementById('massBody');
-    if(subj && data.asunto) subj.value = data.asunto;
-    if(body && data.cuerpo) body.value = data.cuerpo;
-    pToast('✨','Listo. Revisá el texto antes de enviar.');
+    if(subj && data.asunto){
+      subj.value = data.asunto;
+      subj.style.transition = 'border-color .4s,background .4s';
+      subj.style.borderColor = 'rgba(180,140,220,.7)';
+      subj.style.background  = 'rgba(180,140,220,.1)';
+      setTimeout(function(){ subj.style.borderColor=''; subj.style.background=''; }, 1800);
+    }
+    if(body && data.cuerpo){
+      body.value = data.cuerpo;
+      body.style.transition = 'border-color .4s,background .4s';
+      body.style.borderColor = 'rgba(180,140,220,.7)';
+      body.style.background  = 'rgba(180,140,220,.1)';
+      setTimeout(function(){ body.style.borderColor=''; body.style.background=''; }, 1800);
+      body.style.height = 'auto';
+      body.style.height = Math.min(body.scrollHeight, 280)+'px';
+    }
+    if(subj) subj.scrollIntoView({ behavior:'smooth', block:'center' });
+    pToast('✨','¡Listo! Revisá el texto antes de enviar.');
   }catch(e){ pToast('⚠️','Error al procesar la respuesta. Intentá de nuevo.'); }
 }
 
