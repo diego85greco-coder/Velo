@@ -6237,10 +6237,16 @@ function _checkStripeReturn(){
 
 function _checkPayPalReturn(){
   var params = new URLSearchParams(window.location.search);
-  var ppTok = params.get('token') || params.get('paymentId') || params.get('subscription_id') || params.get('pp');
-  if(!ppTok) return;
-  var pending = null; try{ pending = JSON.parse(safeLS('get','velo_pp_pending')||'null'); }catch(e){}
   var ppParam = params.get('pp');
+  var ppTok = params.get('token') || params.get('paymentId') || params.get('subscription_id') || ppParam;
+  if(!ppTok) return;
+  // Handle cancel before reading pending — avoids accidental Plus activation on cancelled payment
+  if(ppParam === 'cancel'){
+    safeLS('del','velo_pp_pending');
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+  var pending = null; try{ pending = JSON.parse(safeLS('get','velo_pp_pending')||'null'); }catch(e){}
   var effectiveType = (pending && pending.type) || ppParam || 'donation';
   if(effectiveType === 'plus'){
     // Activate Plus locally
@@ -6275,9 +6281,6 @@ function _checkPayPalReturn(){
     pToast('🩺','¡Registro profesional completado! 💚');
     window.history.replaceState({}, '', window.location.pathname);
     pGoTo('pro-panel');
-  } else if(ppParam === 'cancel'){
-    safeLS('del','velo_pp_pending');
-    window.history.replaceState({}, '', window.location.pathname);
   } else {
     // donation
     pToast('💚','¡Donación recibida! Gracias por apoyar Velo 🌿');
