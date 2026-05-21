@@ -1208,7 +1208,9 @@
           <span class="reply-preview-text"></span>
           <button class="reply-preview-close" onclick="pClearReplyBar('feedReplyBar')">✕</button>
         </div>
+        <div id="feedEmojiPanel" style="display:none;flex-wrap:wrap;gap:4px;padding:8px 12px;background:var(--cream2);border-top:1px solid var(--border2);flex-shrink:0"></div>
         <div class="feed-input-area">
+          <button type="button" onclick="pToggleCircleEmojis()" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px 6px;flex-shrink:0" title="Emojis">😊</button>
           <textarea id="feedInput" class="feed-input" placeholder="Escribí algo con amor..." rows="1"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendCircleMsg()}"></textarea>
           <button class="feed-send-btn" onclick="pSendCircleMsg()">↑</button>
@@ -1396,71 +1398,6 @@
               <button class="p-btn p-btn--md p-btn--full" style="background:transparent;border:1.5px solid rgba(192,48,40,.3);color:var(--sos);font-family:'Jost',sans-serif;font-weight:700;padding:11px;border-radius:14px;cursor:pointer" onclick="pDeleteAccount()">🗑️ Eliminar mi cuenta</button>
             </div>
 
-          </div>
-        </div>
-        <!-- Edit profile sheet -->
-        <div class="p-modal-ov" id="editProfileOv">
-          <div class="p-sheet">
-            <div class="p-sheet-handle"></div>
-            <div class="p-label p-label-sage" style="margin-bottom:14px">Editar perfil</div>
-            <div class="p-av-grid" id="editAvGrid"></div>
-            <div style="height:12px"></div>
-            <div class="p-field">
-              <label class="p-field-label">Nombre</label>
-              <input class="p-input" type="text" id="editName" placeholder="Tu nombre">
-            </div>
-            <div class="p-field">
-              <label class="p-field-label">Lema personal</label>
-              <input class="p-input" type="text" id="editMotto" placeholder="Una frase que te define">
-            </div>
-            <div style="display:flex;gap:8px">
-              <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveProfile()">Guardar</button>
-              <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('editProfileOv')">Cancelar</button>
-            </div>
-          </div>
-        </div>
-        <!-- Avatar picker modal -->
-        <div class="p-modal-ov" id="avatarPickerOv">
-          <div class="p-sheet" style="max-height:85vh;overflow-y:auto">
-            <div class="p-sheet-handle"></div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink);margin-bottom:6px">Cambiar avatar</div>
-            <p style="font-size:12px;color:var(--ink4);margin-bottom:16px">Elegí un emoji o subí tu foto.</p>
-            <!-- Emoji grid -->
-            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:18px">
-              <div onclick="pSetAvatar('🌸')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌸</div>
-              <div onclick="pSetAvatar('🌊')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌊</div>
-              <div onclick="pSetAvatar('🦋')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🦋</div>
-              <div onclick="pSetAvatar('🌿')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌿</div>
-              <div onclick="pSetAvatar('🌙')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌙</div>
-              <div onclick="pSetAvatar('🏔️')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🏔️</div>
-              <div onclick="pSetAvatar('🌺')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌺</div>
-              <div onclick="pSetAvatar('🧑')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🧑</div>
-              <div onclick="pSetAvatar('🦊')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🦊</div>
-              <div onclick="pSetAvatar('🐋')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🐋</div>
-              <div onclick="pSetAvatar('🦅')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🦅</div>
-              <div onclick="pSetAvatar('🌵')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌵</div>
-              <div onclick="pSetAvatar('🍃')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🍃</div>
-              <div onclick="pSetAvatar('🌻')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌻</div>
-              <div onclick="pSetAvatar('🌈')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌈</div>
-              <div onclick="pSetAvatar('⭐')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">⭐</div>
-              <div onclick="pSetAvatar('🐢')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🐢</div>
-              <div onclick="pSetAvatar('🦜')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🦜</div>
-              <div onclick="pSetAvatar('🌾')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌾</div>
-              <div onclick="pSetAvatar('💎')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">💎</div>
-              <div onclick="pSetAvatar('🦋')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🫧</div>
-            </div>
-            <!-- Photo upload -->
-            <div style="border-top:1px solid var(--border);padding-top:14px">
-              <div class="p-label p-label-sage" style="margin-bottom:10px">O subí tu foto</div>
-              <label style="display:block;background:var(--cream2);border:1.5px dashed var(--border2);border-radius:12px;padding:16px;text-align:center;cursor:pointer">
-                <span style="font-size:24px;display:block;margin-bottom:6px">📷</span>
-                <span style="font-size:13px;color:var(--ink3);font-weight:600">Seleccionar imagen</span>
-                <span style="font-size:11px;color:var(--ink5);display:block;margin-top:4px">JPG, PNG · máx 2MB</span>
-                <input type="file" accept="image/*" style="display:none" onchange="pSetAvatarFromFile(this)">
-              </label>
-            </div>
-            <div style="height:12px"></div>
-            <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
           </div>
         </div>
       </div><!-- /pg-profile -->
@@ -2146,6 +2083,39 @@
   </div>
 </div>
 
+<div class="p-modal-ov" id="adminNewsOv">
+  <div class="p-sheet" style="max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div class="p-sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink)">Nueva noticia</h3>
+      <button onclick="closeModal('adminNewsOv')" style="width:32px;height:32px;border-radius:50%;background:var(--cream2);border:none;font-size:16px;cursor:pointer;color:var(--ink4)">✕</button>
+    </div>
+    <div class="p-field">
+      <label class="p-field-label">Emoji</label>
+      <input class="p-input" id="adminNewsEmoji" type="text" placeholder="📰" maxlength="4" value="📰">
+    </div>
+    <div class="p-field">
+      <label class="p-field-label">Título</label>
+      <input class="p-input" id="adminNewsTitulo" type="text" placeholder="Título de la noticia..." maxlength="120">
+    </div>
+    <div class="p-field">
+      <label class="p-field-label">Resumen</label>
+      <textarea class="p-textarea" id="adminNewsCuerpo" rows="3" placeholder="Breve descripción de la noticia..."></textarea>
+    </div>
+    <div class="p-field">
+      <label class="p-field-label">Link de la fuente</label>
+      <input class="p-input" id="adminNewsUrl" type="url" placeholder="https://...">
+    </div>
+    <div class="p-field">
+      <label class="p-field-label">Nombre de la fuente</label>
+      <input class="p-input" id="adminNewsSource" type="text" placeholder="Ej: BBC, Infobae, Nature..." maxlength="60">
+    </div>
+    <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pAdminPublishNews()">Publicar noticia 🌟</button>
+    <div style="height:8px"></div>
+    <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('adminNewsOv')">Cancelar</button>
+  </div>
+</div>
+
 <!-- SOS sheet (global — works from any page) -->
 <div class="p-modal-ov" id="sosOv">
   <div class="p-sheet p-sheet-dark">
@@ -2162,6 +2132,68 @@
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-51"></script>
+<!-- PROFILE MODALS (global — moved out of pg-profile so position:fixed works on desktop) -->
+<div class="p-modal-ov" id="editProfileOv">
+  <div class="p-sheet">
+    <div class="p-sheet-handle"></div>
+    <div class="p-label p-label-sage" style="margin-bottom:14px">Editar perfil</div>
+    <div class="p-av-grid" id="editAvGrid"></div>
+    <div style="height:12px"></div>
+    <div class="p-field">
+      <label class="p-field-label">Nombre</label>
+      <input class="p-input" type="text" id="editName" placeholder="Tu nombre">
+    </div>
+    <div class="p-field">
+      <label class="p-field-label">Lema personal</label>
+      <input class="p-input" type="text" id="editMotto" placeholder="Una frase que te define">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveProfile()">Guardar</button>
+      <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('editProfileOv')">Cancelar</button>
+    </div>
+  </div>
+</div>
+<div class="p-modal-ov" id="avatarPickerOv">
+  <div class="p-sheet" style="max-height:85vh;overflow-y:auto">
+    <div class="p-sheet-handle"></div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink);margin-bottom:6px">Cambiar avatar</div>
+    <p style="font-size:12px;color:var(--ink4);margin-bottom:16px">Elegí un emoji o subí tu foto.</p>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:18px">
+      <div onclick="pSetAvatar('🌸')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌸</div>
+      <div onclick="pSetAvatar('🌊')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌊</div>
+      <div onclick="pSetAvatar('🦋')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🦋</div>
+      <div onclick="pSetAvatar('🌿')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌿</div>
+      <div onclick="pSetAvatar('🌙')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌙</div>
+      <div onclick="pSetAvatar('🏔️')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🏔️</div>
+      <div onclick="pSetAvatar('🌺')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌺</div>
+      <div onclick="pSetAvatar('🧑')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🧑</div>
+      <div onclick="pSetAvatar('🦊')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🦊</div>
+      <div onclick="pSetAvatar('🐋')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🐋</div>
+      <div onclick="pSetAvatar('🦅')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🦅</div>
+      <div onclick="pSetAvatar('🌵')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌵</div>
+      <div onclick="pSetAvatar('🍃')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🍃</div>
+      <div onclick="pSetAvatar('🌻')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌻</div>
+      <div onclick="pSetAvatar('🌈')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌈</div>
+      <div onclick="pSetAvatar('⭐')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">⭐</div>
+      <div onclick="pSetAvatar('🐢')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🐢</div>
+      <div onclick="pSetAvatar('🦜')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🦜</div>
+      <div onclick="pSetAvatar('🌾')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🌾</div>
+      <div onclick="pSetAvatar('💎')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">💎</div>
+      <div onclick="pSetAvatar('🫧')" style="font-size:26px;text-align:center;padding:8px;border-radius:10px;cursor:pointer;background:var(--cream2)">🫧</div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:14px">
+      <div class="p-label p-label-sage" style="margin-bottom:10px">O subí tu foto</div>
+      <label style="display:block;background:var(--cream2);border:1.5px dashed var(--border2);border-radius:12px;padding:16px;text-align:center;cursor:pointer">
+        <span style="font-size:24px;display:block;margin-bottom:6px">📷</span>
+        <span style="font-size:13px;color:var(--ink3);font-weight:600">Seleccionar imagen</span>
+        <span style="font-size:11px;color:var(--ink5);display:block;margin-top:4px">JPG, PNG · máx 2MB</span>
+        <input type="file" accept="image/*" style="display:none" onchange="pSetAvatarFromFile(this)">
+      </label>
+    </div>
+    <div style="height:12px"></div>
+    <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
+  </div>
+</div>
+<script src="premium.js?v=20260520-52"></script>
 </body>
 </html>

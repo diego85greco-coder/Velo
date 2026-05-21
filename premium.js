@@ -33,6 +33,7 @@ var _happyRtCh    = null;   // realtime channel happy_posts
 var _helpRtCh     = null;   // realtime channel help_posts
 var _bottleRtCh   = null;   // realtime channel bottles
 var _circleRtCh   = null;   // realtime channel circle_messages
+var _guardianRtCh = null;   // realtime channel guardian_presence
 var _liveGuardians = [];    // cached live guardian rows from Supabase
 var _grReqCh      = null;   // guardian_requests realtime channel (guardian side)
 var _seekerGrCh   = null;   // guardian_requests realtime channel (seeker side)
@@ -370,20 +371,20 @@ function _sbUnsub(ch){
 function _sbHappyRow(r){
   return { id:r.id, userId:r.user_id||'anon', av:r.user_av||'', name:r.anon?'Usuario Anónimo':r.user_name,
     emoji:r.emoji||'☀️', text:r.text||'', photo:r.photo||null, ts:new Date(r.created_at).getTime(),
-    reactions:r.reactions||{'💛':0,'🌸':0,'🤗':0,'🌿':0,'✨':0} };
+    reactions:r.reactions||{'💛':0,'🌸':0,'🤗':0,'🌿':0,'✨':0}, comments:r.comments||[] };
 }
 function _sbHelpRow(r){
   return { id:r.id, emoji:r.emoji||'💙', anon:r.anon, name:r.anon?'Usuario Anónimo':r.user_name,
-    time:new Date(r.created_at).getTime(), preview:r.preview, taken:r.taken, urgencia:r.urgencia||'normal', isSB:true };
+    userId:r.user_id||'', time:new Date(r.created_at).getTime(), preview:r.preview, taken:r.taken, urgencia:r.urgencia||'normal', isSB:true };
 }
 function _sbBottleRow(r){
   return { id:r.id, mood:r.mood||'💭', text:r.text, color:r.color||'rgba(116,198,157,.12)',
-    ts:new Date(r.created_at).getTime(), isSB:true };
+    userId:r.user_id||'', ts:new Date(r.created_at).getTime(), isSB:true };
 }
 function _sbCircleMsgRow(r){
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
   return { id:String(r.id), av:r.user_av||'🌿', name:r.user_name||'Usuario',
-    text:r.text||'', ts:new Date(r.created_at).getTime(), own:r.user_id===myId };
+    text:r.text||'', ts:new Date(r.created_at).getTime(), own:r.user_id===myId, type:r.type||'text' };
 }
 
 async function pSignUp(){
@@ -488,8 +489,9 @@ async function pSignIn(){
       var provKey = 'velo_prov_'+email.toLowerCase().replace(/[^a-z0-9]/g,'_');
       var provRaw = null; try{ provRaw = JSON.parse(localStorage.getItem(provKey)); }catch(e){}
       if(provRaw && provRaw.pass === pass && provRaw.expiry > Date.now()){
+        _clearSession();
         safeLS('set','velo_user_email', email);
-        safeLS('set','velo_user_name', safeLS('get','velo_user_name') || email.split('@')[0]);
+        safeLS('set','velo_user_name', email.split('@')[0]);
         safeLS('set','velo_session','1');
         safeLS('set','velo_needs_pw_change','1');
         _authenticated = true;
@@ -499,10 +501,10 @@ async function pSignIn(){
         pToast('⚠️', result.error.message || 'Credenciales incorrectas. ¿Olvidaste tu contraseña?');
       }
     } else {
+      _clearSession(); // fresh slate — no leftover data from a previous account
       safeLS('set','velo_user_email', email);
       safeLS('set','velo_sb_pass', pass);
-      var storedName = safeLS('get','velo_user_name') || email.split('@')[0];
-      safeLS('set','velo_user_name', storedName);
+      safeLS('set','velo_user_name', email.split('@')[0]);
       safeLS('set','velo_session','1');
       if(result.data && result.data.user && result.data.user.id){
         var uid = result.data.user.id;
@@ -523,9 +525,19 @@ async function pSignIn(){
   }
 }
 
+// Clears every session-scoped key so no data leaks between accounts (user ↔ admin ↔ pro)
+function _clearSession(){
+  ['velo_session','velo_admin_session','velo_user_email','velo_user_name','velo_user_id',
+   'velo_user_type','velo_user_av','velo_user_motto','velo_sb_pass','velo_plan',
+   'velo_status_music','velo_status_book','velo_status_phrase','velo_pro_id','velo_pro_name',
+   'velo_pro_spec','velo_pro_solidarity','velo_pro_approved','velo_is_guardian',
+   'velo_guardian_bio','velo_guardian_tags','velo_needs_pw_change'
+  ].forEach(function(k){ safeLS('del', k); });
+}
+
 async function pSignOut(){
   if(sbClient){ try{ await sbClient.auth.signOut(); }catch(e){} }
-  safeLS('del','velo_session');
+  _clearSession();
   _authenticated = false;
   _userType = 'user';
   pToast('🌿','Sesión cerrada');
@@ -1612,6 +1624,9 @@ async function pRenderHelp(){
     var realPosts = []; try{ realPosts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
     posts = realPosts.filter(function(h){ return !h.taken && hidden.indexOf('help-'+h.id)<0; });
   }
+  // Hide the current user's own post — they should not accompany themselves
+  var _myHelpId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
+  if(_myHelpId){ posts = posts.filter(function(h){ return (h.userId||'') !== _myHelpId; }); }
   _helpPosts = posts;
   var count = document.getElementById('helpActiveCount');
   if(count) count.textContent = posts.length+' esperando acompañamiento';
@@ -1656,12 +1671,18 @@ var _helpChatAutoMsgPool = [
 ];
 
 function pAccompanyHelp(postId){
-  var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
-  var post = posts.find(function(p){ return p.id===postId; });
-  if(!post){ pToast('⚠️','Esta solicitud ya fue tomada'); return; }
+  // Find the post in the rendered cache (covers Supabase posts), fall back to localStorage
+  var post = (_helpPosts||[]).find(function(p){ return p.id===postId; });
+  if(!post){
+    var lsPosts = []; try{ lsPosts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
+    post = lsPosts.find(function(p){ return p.id===postId; });
+  }
+  if(!post){ pToast('⚠️','Esta solicitud ya no está disponible'); return; }
+  if(post.taken){ pToast('⚠️','Esta solicitud ya fue tomada'); return; }
 
   _pendingGuardianPost = post;
 
+  var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
   posts = posts.map(function(p){ return p.id===postId ? Object.assign({},p,{taken:true}) : p; });
   safeLS('set','velo_help_posts', JSON.stringify(posts));
   _initSupabase();
@@ -1673,11 +1694,10 @@ function pAccompanyHelp(postId){
   safeLS('set','velo_helped_others', String(parseInt(safeLS('get','velo_helped_others')||'0',10)+1));
   safeLS('set','velo_helped_once','1');
 
-  // If Supabase available and real post: send notification to seeker and wait
-  if(!isMock && sbClient){
+  // Real Supabase post → notify the seeker and wait; local post → open chat directly
+  if(post.isSB && sbClient){
     _guardianSendRequest(post);
   } else {
-    // Mock post: open chat immediately (simulated)
     _curHelpPost = post;
     _openHelpChat(post);
   }
@@ -2056,7 +2076,8 @@ async function pSendHelp(){
   pToast('💌','Mensaje publicado. Alguien te acompañará pronto 💚');
   var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
   var ts = Date.now();
-  posts.unshift({ id:'hu'+ts, emoji:'💙', anon:isAnon, name:name, time:ts, preview:msg, taken:false });
+  posts.unshift({ id:'hu'+ts, emoji:'💙', anon:isAnon, name:name, time:ts, preview:msg, taken:false,
+    userId: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'' });
   safeLS('set','velo_help_posts', JSON.stringify(posts.slice(0,50)));
   safeLS('set','velo_helped_once','1');
   // Insert to Supabase so all users see it
@@ -2881,15 +2902,11 @@ async function pRenderBottle(){
   var allBottles, usingSB = false;
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
   var sbRows = await _sbLoad('bottles', function(q){
-    var q2 = q.eq('replied',false).order('created_at',{ascending:false}).limit(30);
-    if(myId) q2 = q2.neq('user_id', myId); // don't show own bottles
-    return q2;
+    return q.order('created_at',{ascending:false}).limit(40);
   });
   if(sbRows !== null){
     usingSB = true;
-    allBottles = sbRows.map(_sbBottleRow).filter(function(b){
-      return safeLS('get','velo_bottle_replied_'+b.id) !== '1';
-    });
+    allBottles = sbRows.map(_sbBottleRow);
   } else {
     // Fallback: localStorage + mock data
     var mockBottles = [
@@ -2916,14 +2933,23 @@ async function pRenderBottle(){
       if(d<3600000) return 'hace '+Math.floor(d/60000)+' min';
       return 'hace '+Math.floor(d/3600000)+'h';
     })() : 'hace unos minutos';
+    var isOwn = myId && (b.userId||'') === myId;
+    var alreadyReplied = safeLS('get','velo_bottle_replied_'+b.id) === '1';
+    var actions;
+    if(isOwn){
+      actions = '<span style="font-size:11px;color:rgba(200,165,100,.6);font-style:italic">Tu mensaje 🌊</span>';
+    } else {
+      actions = '<div style="display:flex;gap:7px;align-items:center">'
+        +'<button style="padding:5px 11px;background:rgba(255,100,100,.08);border:1px solid rgba(255,100,100,.2);border-radius:100px;color:rgba(255,130,130,.75);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
+        +(alreadyReplied
+          ? '<span style="font-size:11px;color:rgba(116,198,157,.75);font-weight:700">💛 Ya respondiste</span>'
+          : '<button style="padding:5px 11px;background:rgba(200,165,100,.12);border:1px solid rgba(200,165,100,.22);border-radius:100px;color:#C8A560;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply(\''+b.id+'\',\''+b.text.substring(0,40).replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'...\')">💌 Responder</button>')
+        +'</div>';
+    }
     return '<div class="dark-bottle" id="bottle-'+b.id+'" style="animation-delay:'+i*.08+'s;border-left:3px solid '+(b.color||'rgba(200,165,100,.3)')+'">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:20px">'+b.mood+'</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+relTime+'</span></div>'
       +'<p style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+b.text+'"</p>'
-      +'<div style="display:flex;align-items:center;justify-content:flex-end">'
-      +'<div style="display:flex;gap:7px;align-items:center">'
-      +'<button style="padding:5px 11px;background:rgba(255,100,100,.08);border:1px solid rgba(255,100,100,.2);border-radius:100px;color:rgba(255,130,130,.75);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
-      +'<button style="padding:5px 11px;background:rgba(200,165,100,.12);border:1px solid rgba(200,165,100,.22);border-radius:100px;color:#C8A560;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply(\''+b.id+'\',\''+b.text.substring(0,40).replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'...\')">💌 Responder</button>'
-      +'</div></div></div>';
+      +'<div style="display:flex;align-items:center;justify-content:flex-end">'+actions+'</div></div>';
   }).join('');
 }
 
@@ -2954,7 +2980,8 @@ function pSendBottle(){
   _incDailyLimit('bottle');
   var bottles = []; try{ bottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
   var id = 'ub'+Date.now();
-  bottles.unshift({ id:id, mood:_selectedBottleMood, text:text, responses:0, color:'rgba(116,198,157,.12)', ts:Date.now() });
+  bottles.unshift({ id:id, mood:_selectedBottleMood, text:text, responses:0, color:'rgba(116,198,157,.12)', ts:Date.now(),
+    userId: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'' });
   safeLS('set','velo_my_bottles', JSON.stringify(bottles.slice(0,50)));
   pToast('🌊','¡Mensaje lanzado al mar! 🌿');
   _geminiModerateContent(text, 'mensajes-al-mar');
@@ -2990,12 +3017,7 @@ function pSendBottleReply(){
   _geminiModerateContent(replyText, 'mensajes-al-mar-reply');
   closeModal('bottleReplyOv');
 
-  // 1. Mark bottle as responded (remove from wall locally and in Supabase)
-  var responded = []; try{ responded = JSON.parse(safeLS('get','velo_bottle_responded')||'[]'); }catch(e){}
-  if(_curBottleReplyId && responded.indexOf(_curBottleReplyId) < 0){
-    responded.push(_curBottleReplyId);
-    safeLS('set','velo_bottle_responded', JSON.stringify(responded));
-  }
+  // 1. Record that THIS user replied (bottle stays visible for others)
   if(_curBottleReplyId) safeLS('set','velo_bottle_replied_'+_curBottleReplyId,'1');
   _initSupabase();
   if(sbClient && _curBottleReplyId){
@@ -3018,14 +3040,10 @@ function pSendBottleReply(){
   });
   safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
 
-  // 3. Animate out and re-render
-  var card = document.getElementById('bottle-'+_curBottleReplyId);
-  if(card){ card.style.transition = 'opacity .4s,transform .4s'; card.style.opacity='0'; card.style.transform='translateX(40px)'; }
-  setTimeout(function(){
-    pToast('💌','¡Respuesta enviada! El mensaje desapareció del mar 🌊');
-    setTimeout(function(){ pToast('📬','El autor recibió tu respuesta en su buzón Velo'); }, 1200);
-    pRenderBottle();
-  }, 450);
+  // 3. Re-render so the button updates to "Ya respondiste" (bottle stays in the sea)
+  pToast('💌','¡Respuesta enviada! 🌊');
+  setTimeout(function(){ pToast('📬','El autor recibió tu respuesta en su buzón Velo'); }, 1200);
+  pRenderBottle();
 }
 
 function pReportBottle(bottleId){
@@ -3750,6 +3768,7 @@ var _circlesData = [
 
 var _curCircle = null;
 var _circleAutoMsgTimer = null;
+var _circleJoinedSession = {}; // tracks circles joined this session (for join/leave system messages)
 
 function pRenderCircles(){
   var list = document.getElementById('circlesList');
@@ -3865,6 +3884,14 @@ function pOpenCircle(id, circleData){
     _circleRtCh = _sbSub('velo:circle:'+id, 'circle_messages', function(payload){
       if(payload.new && payload.new.circle_id === id){ _renderCircleMessages(); }
     });
+    // Announce join once per session per circle
+    if(!_circleJoinedSession[id]){
+      _circleJoinedSession[id] = true;
+      var jName = safeLS('get','velo_user_name') || 'Alguien';
+      var jId   = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || 'anon';
+      sbClient.from('circle_messages').insert({ circle_id:id, user_id:jId, user_name:jName,
+        user_av:'', text:jName+' se unió al chat', type:'system' }).then(function(){}).catch(function(){});
+    }
   }
 
   pGoTo('feed');
@@ -3895,9 +3922,20 @@ async function _renderCircleMessages(){
   }
 
   el.innerHTML = msgs.map(function(m){
+    if(m.type === 'system'){
+      return '<div style="text-align:center;margin:10px 0"><span style="font-size:11px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
+    }
     return _buildMsgBubble(m.text, !!m.own, m.av, m.name, 'feedInput', 'feedReplyBar', '');
   }).join('');
   el.scrollTop = el.scrollHeight;
+
+  // Update member count in real-time from distinct senders
+  if(sbRows !== null){
+    var uids = {};
+    sbRows.forEach(function(r){ if(r.user_id) uids[r.user_id] = 1; });
+    var memberCount = Object.keys(uids).length || 1;
+    _setEl('feedCircleMembers', memberCount + (memberCount===1?' persona':' personas'));
+  }
 }
 
 function pSendCircleMsg(){
@@ -3906,6 +3944,8 @@ function pSendCircleMsg(){
   var text = ta.value.trim();
   ta.value = '';
   ta.style.height = '';
+  var emojiPanel = document.getElementById('feedEmojiPanel');
+  if(emojiPanel) emojiPanel.style.display = 'none';
 
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
   var name = safeLS('get','velo_user_name') || 'Vos';
@@ -3927,10 +3967,38 @@ function pSendCircleMsg(){
 
 }
 
+var _circleMsgEmojis = ['😊','😢','❤️','🙏','💪','🌿','✨','🤗','🌸','😌','🥺','💙','🌈','☀️','🦋','🕊️','🌊','💚','😔','🫂'];
+function pToggleCircleEmojis(){
+  var panel = document.getElementById('feedEmojiPanel');
+  if(!panel) return;
+  if(panel.style.display === 'flex'){ panel.style.display = 'none'; return; }
+  if(!panel.innerHTML){
+    panel.innerHTML = _circleMsgEmojis.map(function(e){
+      return '<button type="button" onclick="pInsertCircleEmoji(\''+e+'\')" style="font-size:22px;background:none;border:none;cursor:pointer;padding:4px;border-radius:8px">'+e+'</button>';
+    }).join('');
+  }
+  panel.style.display = 'flex';
+}
+function pInsertCircleEmoji(e){
+  var ta = document.getElementById('feedInput');
+  if(!ta) return;
+  ta.value = (ta.value || '') + e;
+  ta.focus();
+}
+
 function _startCircleAutoMsg(){ /* disabled — no fake auto-messages */ }
 
 function pLeaveCircle(){
   if(_circleAutoMsgTimer){ clearInterval(_circleAutoMsgTimer); _circleAutoMsgTimer = null; }
+  var leftCircle = _curCircle;
+  _initSupabase();
+  if(sbClient && leftCircle && _circleJoinedSession[leftCircle.id]){
+    delete _circleJoinedSession[leftCircle.id];
+    var lName = safeLS('get','velo_user_name') || 'Alguien';
+    var lId   = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || 'anon';
+    sbClient.from('circle_messages').insert({ circle_id:leftCircle.id, user_id:lId, user_name:lName,
+      user_av:'', text:lName+' salió del chat', type:'system' }).then(function(){}).catch(function(){});
+  }
   _curCircle = null;
   pGoTo('circles');
   // Refresh member counts after leaving so the list reflects current state
@@ -4054,7 +4122,7 @@ function pToggleHappyInfo(){
 }
 
 function _myUserId(){
-  return safeLS('get','velo_user_email') || 'guest-'+(safeLS('get','velo_user_name')||'user');
+  return safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || 'guest-'+(safeLS('get','velo_user_name')||'user');
 }
 
 // Demo posts — richer structure
@@ -4089,6 +4157,23 @@ function _happyLoad(){
 }
 function _happySave(posts){
   safeLS('set','velo_happy', JSON.stringify(posts));
+}
+function sbUpdateHappyPost(id, fields){
+  _initSupabase();
+  if(!sbClient) return;
+  try{ sbClient.from('happy_posts').update(fields).eq('id', id).then(function(){}).catch(function(){}); }catch(e){}
+}
+function pZoomPhoto(src){
+  if(!src) return;
+  var existing = document.getElementById('photoZoomOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.id = 'photoZoomOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out';
+  ov.innerHTML = '<img src="'+_escHtml(src)+'" style="max-width:100%;max-height:100%;border-radius:12px;object-fit:contain">'
+    +'<button style="position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;cursor:pointer">✕</button>';
+  ov.addEventListener('click', function(){ ov.remove(); });
+  document.body.appendChild(ov);
 }
 function _happyQueueLoad(){
   var q = []; try{ q = JSON.parse(safeLS('get','velo_happy_queue')||'[]'); }catch(e){}
@@ -4239,7 +4324,7 @@ function _renderHappyHistory(list){
       +'</div>'
       +(i===0 ? '<span style="font-size:10px;background:var(--sage7);color:var(--sage);border-radius:100px;padding:2px 8px;font-weight:700;white-space:nowrap">Más reciente</span>' : '')
       +'</div>'
-      +(h.photo ? '<img src="'+h.photo+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;display:block;margin-bottom:10px">' : '')
+      +(h.photo ? '<img src="'+h.photo+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;display:block;margin-bottom:10px;cursor:zoom-in">' : '')
       +(h.text ? '<p style="font-size:13px;color:var(--ink3);line-height:1.6;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(h.text)+'"</p>' : '')
       +'</div>';
   }).join('');
@@ -4290,7 +4375,7 @@ function _happyPostCard(h, isOwn){
     +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap">⏳ '+timeLeft+'</span>' : '')
     +'</div>'
     // photo
-    +(h.photo ? '<img src="'+h.photo+'" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;display:block;margin-bottom:10px">' : '')
+    +(h.photo ? '<img src="'+h.photo+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;display:block;margin-bottom:10px;cursor:zoom-in">' : '')
     // text
     +(h.text ? '<p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:12px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(h.text)+'"</p>' : '')
     // reactions
@@ -4315,6 +4400,18 @@ function pHappyTab(tab, el){
 function pHappyReact(postId, emoji){
   var myReacted = safeLS('get','velo_happy_rx_'+postId);
   if(myReacted === emoji){ pToast('💛','Ya reaccionaste con '+emoji); return; }
+  // Supabase-loaded post → update in memory + persist to Supabase
+  var sbPost = (_sbHappy||[]).find(function(p){ return p.id === postId; });
+  if(sbPost){
+    if(!sbPost.reactions) sbPost.reactions = {};
+    if(myReacted && sbPost.reactions[myReacted] > 0) sbPost.reactions[myReacted]--;
+    sbPost.reactions[emoji] = (sbPost.reactions[emoji] || 0) + 1;
+    sbUpdateHappyPost(postId, { reactions: sbPost.reactions });
+    safeLS('set','velo_happy_rx_'+postId, emoji);
+    pToast(emoji,'¡Alegría compartida!');
+    pRenderHappy();
+    return;
+  }
   var posts = _happyLoad();
   var post  = posts.find(function(p){ return p.id === postId; });
   var isMock = false;
@@ -4339,6 +4436,18 @@ function pHappyComment(postId){
   var inp = document.getElementById('cmt-'+postId);
   if(!inp || !inp.value.trim()) return;
   var text = inp.value.trim();
+  var myName = safeLS('get','velo_user_name') || 'Vos';
+  // Supabase-loaded post → update in memory + persist to Supabase
+  var sbPost = (_sbHappy||[]).find(function(p){ return p.id === postId; });
+  if(sbPost){
+    if(!sbPost.comments) sbPost.comments = [];
+    sbPost.comments.push({ name: myName, text: text, ts: Date.now() });
+    sbUpdateHappyPost(postId, { comments: sbPost.comments });
+    inp.value = '';
+    pToast('💬','Comentario enviado 🌿');
+    pRenderHappy();
+    return;
+  }
   var posts = _happyLoad();
   var post  = posts.find(function(p){ return p.id === postId; });
   var isMock = false;
@@ -4348,7 +4457,6 @@ function pHappyComment(postId){
   }
   if(!post) return;
   if(!post.comments) post.comments = [];
-  var myName = safeLS('get','velo_user_name') || 'Vos';
   post.comments.push({ name: myName, text: text, ts: Date.now() });
   if(!isMock){
     _happySave(posts);
@@ -5943,9 +6051,12 @@ async function pAdminLogin(){
   }
 
   if(granted){
+    _clearSession(); // wipe any prior user/pro data so sessions never mix
     safeLS('set','velo_user_type','admin');
     safeLS('set','velo_admin_session','1');
     safeLS('set','velo_session','1');
+    safeLS('set','velo_user_email', email);
+    if(resp && resp.data && resp.data.user && resp.data.user.id) safeLS('set','velo_user_id', resp.data.user.id);
     _authenticated = true;
     _userType = 'admin';
     if(passEl) passEl.value = '';
@@ -5961,14 +6072,17 @@ async function pAdminLogin(){
 }
 
 function pAdminLogout(){
-  safeLS('del','velo_admin_session');
-  safeLS('del','velo_session');
+  if(sbClient){ try{ sbClient.auth.signOut(); }catch(e){} }
+  _clearSession();
   _authenticated = false;
+  _userType = 'user';
   pGoTo('landing');
   _updateNavState('landing', false);
 }
 
 async function _renderAdmin(){
+  // Gate: only an authenticated admin session may render the panel
+  if(safeLS('get','velo_admin_session') !== '1'){ pGoTo('admin-login'); return; }
   var metrics = document.getElementById('adminMetrics');
 
   // Show loading skeleton while Supabase queries run
@@ -6909,6 +7023,36 @@ async function sbLoadContacts(){
   }catch(e){ return null; }
 }
 
+async function sbSaveAdminNews(item){
+  if(!sbClient) return false;
+  try{
+    var {error} = await sbClient.from('admin_news').insert({
+      titulo: item.titulo, cuerpo: item.cuerpo, emoji: item.emoji||'📰',
+      source_url: item.sourceUrl||'', source_name: item.sourceName||'', active: true
+    });
+    return !error;
+  }catch(e){ return false; }
+}
+
+async function sbLoadAdminNews(){
+  if(!sbClient) return [];
+  try{
+    var {data,error} = await sbClient.from('admin_news')
+      .select('*').eq('active',true).order('created_at',{ascending:false}).limit(20);
+    return error ? [] : (data||[]);
+  }catch(e){ return []; }
+}
+
+async function sbToggleAdminNews(id, active){
+  if(!sbClient) return;
+  try{ await sbClient.from('admin_news').update({active:active}).eq('id',id); }catch(e){}
+}
+
+async function sbDeleteAdminNews(id){
+  if(!sbClient) return;
+  try{ await sbClient.from('admin_news').delete().eq('id',id); }catch(e){}
+}
+
 async function sbMarkContactRead(id){
   if(!sbClient) return;
   try{ await sbClient.from('contacts').update({leido:true}).eq('id',id); }catch(e){}
@@ -7357,7 +7501,11 @@ function _onPageEnter(id){
   switch(id){
     case 'landing':     _initReveal(); break;
     case 'home':        _loadHomeData(); break;
-    case 'guardians':   pRenderGuardians(); break;
+    case 'guardians':
+      _initSupabase();
+      if(sbClient && !_guardianRtCh) _guardianRtCh = _sbSub('velo:guardians', 'guardian_presence', function(){ pRenderGuardians(); });
+      pRenderGuardians();
+      break;
     case 'professionals': pRenderProfessionals(); break;
     case 'help':
       _initSupabase();
