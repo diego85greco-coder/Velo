@@ -275,17 +275,26 @@ function _sbSyncProfile(userId){
   if(!sbClient || !userId) return;
   sbClient.from('profiles').select('nombre,avatar,motto,role').eq('id',userId).limit(1)
     .then(function(res){
-      if(!res.data || !res.data.length) return;
+      if(!res.data || !res.data.length){
+        // No profile row yet — create one with current localStorage values
+        var curName  = safeLS('get','velo_user_name') || '';
+        var curEmail = safeLS('get','velo_user_email') || '';
+        if(curName || curEmail){
+          sbClient.from('profiles').upsert({ id:userId, nombre:curName, email:curEmail, role:'user' },{ onConflict:'id' }).catch(function(){});
+        }
+        return;
+      }
       var p = res.data[0];
       if(p.nombre) safeLS('set','velo_user_name', p.nombre);
       if(p.avatar) safeLS('set','velo_user_av',   p.avatar);
       if(p.motto)  safeLS('set','velo_user_motto', p.motto);
-      if(p.role && p.role !== 'user') safeLS('set','velo_user_type', p.role);
-      // Refresh UI with synced data
+      if(p.role)   safeLS('set','velo_user_type',  p.role);
+      // Refresh all UI with synced data
       var hn = document.getElementById('homeUserName');
       if(hn) hn.textContent = p.nombre || safeLS('get','velo_user_name') || '';
       _updateSidebarUser();
       _updateTopbarMoodBadge();
+      pLoadProfile();
     }).catch(function(){});
 }
 
@@ -4700,9 +4709,10 @@ function pSaveProfile(){
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
   if(sbClient && uid){
-    var av = safeLS('get','velo_user_av') || '';
-    sbClient.from('profiles').update({ nombre: name, avatar: av, motto: motto })
-      .eq('id', uid).then(function(){}).catch(function(){});
+    var av    = safeLS('get','velo_user_av') || '';
+    var email = safeLS('get','velo_user_email') || '';
+    sbClient.from('profiles').upsert({ id:uid, nombre:name, avatar:av, motto:motto, email:email },{ onConflict:'id' })
+      .then(function(){}).catch(function(){});
   }
   closeModal('editProfileOv');
   pToast('✅','Perfil actualizado 💚');
