@@ -11,7 +11,8 @@ module.exports = async function handler(req, res) {
 
   const MODELS = [
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=',
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key='
   ];
 
   const { type, prompt, systemPrompt, msgs, cfg } = req.body || {};
