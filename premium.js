@@ -1823,8 +1823,9 @@ function _seekerAcceptRequest(reqId, postId, guardianName, guardianAv){
   if(sbClient){
     sbClient.from('guardian_requests').update({status:'accepted'}).eq('id',reqId).then(function(){}).catch(function(){});
   }
-  // Open a seeker-side help chat
-  var fakePost = { id:postId, name:guardianName, emoji:guardianAv, preview:'Guardián conectado' };
+  // Open a seeker-side help chat (use emoji, not image URL, for the chat header)
+  var safeEmoji = (guardianAv && !guardianAv.startsWith('data:') && !guardianAv.startsWith('http')) ? guardianAv : '💙';
+  var fakePost = { id:postId, name:guardianName, emoji:safeEmoji, preview:'Guardián conectado' };
   _curHelpPost = fakePost;
   _openHelpChat(fakePost);
   pToast('💚','¡Conectado/a con '+guardianName+'!');
@@ -1851,8 +1852,9 @@ function _restoreSeekerSubscription(){
 
 function _checkPendingSupportMessages(){
   var postId = safeLS('get','velo_my_help_post_id');
-  if(!postId || !sbClient) return;
+  if(!postId) return;
   _initSupabase();
+  if(!sbClient) return;
   sbClient.from('guardian_requests').select('*').eq('post_id',postId).eq('status','message_left').limit(1)
     .then(function(res){
       if(res.data && res.data.length){
@@ -7032,6 +7034,7 @@ function _onPageEnter(id){
       _initSupabase();
       if(sbClient && !_helpRtCh) _helpRtCh = _sbSub('velo:help', 'help_posts', function(){ pRenderHelp(); });
       pRenderHelp();
+      _checkPendingSupportMessages();
       break;
     case 'help-chat':   /* initialized by pAccompanyHelp */ break;
     case 'bottle':
