@@ -273,22 +273,41 @@ function _getSbPass(){
 function _sbSyncProfile(userId){
   _initSupabase();
   if(!sbClient || !userId) return;
-  sbClient.from('profiles').select('nombre,avatar,motto,role').eq('id',userId).limit(1)
+  sbClient.from('profiles').select('nombre,avatar,motto,role,status_music,status_book,status_phrase').eq('id',userId).limit(1)
     .then(function(res){
       if(!res.data || !res.data.length){
         // No profile row yet — create one with current localStorage values
         var curName  = safeLS('get','velo_user_name') || '';
         var curEmail = safeLS('get','velo_user_email') || '';
         if(curName || curEmail){
-          sbClient.from('profiles').upsert({ id:userId, nombre:curName, email:curEmail, role:'user' },{ onConflict:'id' }).catch(function(){});
+          sbClient.from('profiles').upsert({
+            id:userId, nombre:curName, email:curEmail, role:'user',
+            avatar: safeLS('get','velo_user_av')||'',
+            motto:  safeLS('get','velo_user_motto')||'',
+            status_music:  safeLS('get','velo_status_music')||'',
+            status_book:   safeLS('get','velo_status_book')||'',
+            status_phrase: safeLS('get','velo_status_phrase')||''
+          },{ onConflict:'id' }).catch(function(){});
         }
         return;
       }
       var p = res.data[0];
-      if(p.nombre) safeLS('set','velo_user_name', p.nombre);
-      if(p.avatar) safeLS('set','velo_user_av',   p.avatar);
-      if(p.motto)  safeLS('set','velo_user_motto', p.motto);
-      if(p.role)   safeLS('set','velo_user_type',  p.role);
+      if(p.nombre)        safeLS('set','velo_user_name',     p.nombre);
+      if(p.avatar)        safeLS('set','velo_user_av',       p.avatar);
+      if(p.motto)         safeLS('set','velo_user_motto',    p.motto);
+      if(p.role)          safeLS('set','velo_user_type',     p.role);
+      if(p.status_music)  safeLS('set','velo_status_music',  p.status_music);
+      if(p.status_book)   safeLS('set','velo_status_book',   p.status_book);
+      if(p.status_phrase) safeLS('set','velo_status_phrase', p.status_phrase);
+      if(p.role === 'plus'){ safeLS('set','velo_plan','plus'); }
+      // Restore guardian bio/tags from guardian_presence
+      sbClient.from('guardian_presence').select('bio,tags').eq('user_id', userId).limit(1)
+        .then(function(gr){
+          if(gr.data && gr.data[0]){
+            if(gr.data[0].bio)  safeLS('set','velo_guardian_bio', gr.data[0].bio);
+            if(gr.data[0].tags) safeLS('set','velo_guardian_tags', Array.isArray(gr.data[0].tags) ? gr.data[0].tags.join(', ') : gr.data[0].tags);
+          }
+        }).catch(function(){});
       // Refresh all UI with synced data
       var hn = document.getElementById('homeUserName');
       if(hn) hn.textContent = p.nombre || safeLS('get','velo_user_name') || '';
@@ -303,8 +322,11 @@ async function _ensureSbSession(){
   try{
     var {data:sd} = await sbClient.auth.getSession();
     if(sd && sd.session){
-      if(sd.session.user && sd.session.user.id && !safeLS('get','velo_user_id')){
-        safeLS('set','velo_user_id', sd.session.user.id);
+      if(sd.session.user && sd.session.user.id){
+        if(!safeLS('get','velo_user_id')){
+          safeLS('set','velo_user_id', sd.session.user.id);
+          _sbSyncProfile(sd.session.user.id);
+        }
       }
       return true;
     }
@@ -856,6 +878,7 @@ function pSaveQuickMood(){
   // Update mood log for suggestions
   var log = []; try{ log = JSON.parse(safeLS('get','velo_mood_log')||'[]'); }catch(e){}
   log.unshift(moodObj); safeLS('set','velo_mood_log', JSON.stringify(log.slice(0,90)));
+  sbSaveMoodEntry(today, _selectedQuickMoodEmoji, labels[_selectedQuickMoodEmoji]||'', phrase.trim());
   // Update UI
   var moodLine = document.getElementById('homeCurrentMoodLine');
   if(moodLine) moodLine.textContent = _selectedQuickMoodEmoji + ' ' + (labels[_selectedQuickMoodEmoji]||'') + (phrase.trim() ? ' — ' + phrase.trim() : '');
@@ -997,6 +1020,8 @@ function _updateSidebarUser(){
 }
 
 function _isPremium(){
+  if(safeLS('get','velo_user_type') === 'plus') return true;
+  if(safeLS('get','velo_plan') === 'plus') return true;
   var subs = []; try{ subs = JSON.parse(safeLS('get','velo_subscribers')||'[]'); }catch(e){}
   var email = safeLS('get','velo_user_email');
   return subs.some(function(s){ return s.email === email && s.status === 'active'; });
@@ -4454,6 +4479,7 @@ function pShowAvatarPicker(){
 
 function pSetAvatar(emoji){
   safeLS('set','velo_user_av', emoji);
+  _syncAvatarToSb(emoji);
   pToast('✅','Avatar actualizado');
   closeModal('avatarPickerOv');
   pLoadProfile();
@@ -4468,12 +4494,20 @@ function pSetAvatarFromFile(input){
   reader.onload = function(e){
     var dataUrl = e.target.result;
     safeLS('set','velo_user_av', dataUrl);
+    _syncAvatarToSb(dataUrl);
     pToast('✅','Foto de perfil actualizada 🌿');
     closeModal('avatarPickerOv');
     pLoadProfile();
     _updateSidebarUser();
   };
   reader.readAsDataURL(file);
+}
+
+function _syncAvatarToSb(av){
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(!sbClient || !uid) return;
+  sbClient.from('profiles').upsert({ id:uid, avatar:av },{ onConflict:'id' }).catch(function(){});
 }
 
 function pLoadProfile(){
@@ -4551,6 +4585,11 @@ function pSaveProfileStatus(){
   safeLS('set','velo_status_music',  music.trim());
   safeLS('set','velo_status_book',   book.trim());
   safeLS('set','velo_status_phrase', phrase.trim());
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(sbClient && uid){
+    sbClient.from('profiles').upsert({ id:uid, status_music:music.trim(), status_book:book.trim(), status_phrase:phrase.trim() },{ onConflict:'id' }).catch(function(){});
+  }
   pToast('✨', 'Estado actualizado y visible en tu perfil 💚');
 }
 
