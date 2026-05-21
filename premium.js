@@ -259,11 +259,17 @@ async function _ensureSbSession(){
   if(!sbClient) return false;
   try{
     var {data:sd} = await sbClient.auth.getSession();
-    if(sd && sd.session) return true;
+    if(sd && sd.session){
+      if(sd.session.user && sd.session.user.id && !safeLS('get','velo_user_id')){
+        safeLS('set','velo_user_id', sd.session.user.id);
+      }
+      return true;
+    }
     var email = safeLS('get','velo_user_email');
     var pass  = safeLS('get','velo_sb_pass');
     if(!email || !pass) return false;
-    var {error} = await sbClient.auth.signInWithPassword({email:email, password:pass});
+    var {data:rd, error} = await sbClient.auth.signInWithPassword({email:email, password:pass});
+    if(!error && rd && rd.user && rd.user.id) safeLS('set','velo_user_id', rd.user.id);
     return !error;
   }catch(e){ return false; }
 }
@@ -386,6 +392,9 @@ async function pSignIn(){
       var storedName = safeLS('get','velo_user_name') || email.split('@')[0];
       safeLS('set','velo_user_name', storedName);
       safeLS('set','velo_session','1');
+      if(result.data && result.data.user && result.data.user.id){
+        safeLS('set','velo_user_id', result.data.user.id);
+      }
       _authenticated = true;
       _startGuardianHeartbeat();
       pToast('💚','¡Bienvenido/a de vuelta! 🌿');
