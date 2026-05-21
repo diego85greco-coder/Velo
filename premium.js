@@ -274,7 +274,7 @@ function _getSbPass(){
 function _sbSyncProfile(userId){
   _initSupabase();
   if(!sbClient || !userId) return;
-  sbClient.from('profiles').select('nombre,avatar,motto,role,status_music,status_book,status_phrase').eq('id',userId).limit(1)
+  sbClient.from('profiles').select('nombre,avatar,motto,role,status_music,status_book,status_phrase,plus_expires_at').eq('id',userId).limit(1)
     .then(function(res){
       if(!res.data || !res.data.length){
         // No profile row yet — create one with current localStorage values
@@ -300,7 +300,16 @@ function _sbSyncProfile(userId){
       if(p.status_music)  safeLS('set','velo_status_music',  p.status_music);
       if(p.status_book)   safeLS('set','velo_status_book',   p.status_book);
       if(p.status_phrase) safeLS('set','velo_status_phrase', p.status_phrase);
-      if(p.role === 'plus'){ safeLS('set','velo_plan','plus'); }
+      if(p.role === 'plus'){
+        // Free Plus grant expired → revert to Free
+        if(p.plus_expires_at && new Date(p.plus_expires_at).getTime() < Date.now()){
+          safeLS('del','velo_plan');
+          safeLS('set','velo_user_type','user');
+          sbClient.from('profiles').update({ role:'user', plus_expires_at:null }).eq('id',userId).then(function(){}).catch(function(){});
+        } else {
+          safeLS('set','velo_plan','plus');
+        }
+      }
       // Restore guardian bio/tags from guardian_presence
       sbClient.from('guardian_presence').select('bio,tags').eq('user_id', userId).limit(1)
         .then(function(gr){
@@ -679,6 +688,14 @@ function _recordTC(name, email){
   // Also save registration timestamp on user profile
   if(!safeLS('get','velo_registered_ts')){
     safeLS('set','velo_registered_ts', String(now.getTime()));
+  }
+  // Persist to Supabase for the legal audit trail
+  _initSupabase();
+  if(sbClient){
+    try{
+      sbClient.from('terms_acceptance').insert({ email:email, nombre:name,
+        rol: safeLS('get','velo_user_type')||'user', accepted_at: now.toISOString() }).then(function(){}).catch(function(){});
+    }catch(e){}
   }
 }
 
@@ -2470,13 +2487,25 @@ async function pRenderNews(){
   if(!newsEl) return;
   var today = new Date().toISOString().slice(0,10);
   var cacheKey = 'velo_goodnews_'+today;
+
+  // Admin-published news take priority over AI-generated ones
+  _initSupabase();
+  var adminNews = (await sbLoadAdminNews()).map(function(n){
+    return { emoji:n.emoji||'📰', titulo:n.titulo, cuerpo:n.cuerpo, reflexion:'',
+      sourceUrl:n.source_url||'', sourceName:n.source_name||'Velo', _src:'admin' };
+  });
+  if(safeLS('get','velo_admin_news_only') === '1' && adminNews.length){
+    _renderNewsList(newsEl, adminNews);
+    return;
+  }
+
   var cached = safeLS('get', cacheKey);
   if(cached){
     try{
       var cachedItems = JSON.parse(cached);
       // Skip static fallback cache — always re-fetch if we only have static content
       var isLive = cachedItems.some(function(it){ return it._src === 'g' || it._src === 'ai'; });
-      if(isLive){ _renderNewsList(newsEl, cachedItems); return; }
+      if(isLive){ _renderNewsList(newsEl, adminNews.concat(cachedItems)); return; }
     }catch(e){}
   }
   newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
@@ -2536,7 +2565,7 @@ async function pRenderNews(){
   }
 
   safeLS('set', cacheKey, JSON.stringify(items));
-  _renderNewsList(newsEl, items);
+  _renderNewsList(newsEl, adminNews.concat(items));
 }
 
 function _renderNewsList(el, items){
@@ -3394,6 +3423,15 @@ function pSubmitSurvey(){
   responses.unshift(response);
   safeLS('set','velo_survey_responses', JSON.stringify(responses.slice(0,500)));
   safeLS('set','velo_last_survey', String(Date.now()));
+  // Persist to Supabase so admin sees aggregated results
+  _initSupabase();
+  if(sbClient){
+    try{
+      sbClient.from('surveys').insert({ user_id: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon',
+        general:_surveyScores.general, utilidad:_surveyScores.utilidad, recomendaria:_surveyScores.recomendaria,
+        funcion:_surveyFuncion||'', sugerencia:sugerencia }).then(function(){}).catch(function(){});
+    }catch(e){}
+  }
   safeLS('del','velo_survey_sent_session');
   // Mark inbox message as read
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
@@ -6096,7 +6134,7 @@ async function _renderAdmin(){
   if(sbClient){
     // Profiles: real registration count
     try{
-      var profRes = await sbClient.from('profiles').select('role,created_at,nombre,email').order('created_at',{ascending:false}).limit(500);
+      var profRes = await sbClient.from('profiles').select('id,role,created_at,nombre,email,terms_accepted_at').order('created_at',{ascending:false}).limit(500);
       if(!profRes.error && profRes.data){
         var profiles = profRes.data;
         totalPros  = profiles.filter(function(p){ return p.role==='pro'; }).length;
@@ -6164,16 +6202,25 @@ async function _renderAdmin(){
         +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">🆕 ÚLTIMOS REGISTROS (TIEMPO REAL)</div>'
         + recentReg.map(function(p){
             var fecha = p.created_at ? new Date(p.created_at).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+            var tcDate = p.terms_accepted_at ? new Date(p.terms_accepted_at).toLocaleString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : null;
             var roleBadge = p.role==='pro' ? '<span style="font-size:9px;color:#74c6d0;border:1px solid rgba(116,198,210,.3);border-radius:4px;padding:1px 5px">PRO</span>'
                           : p.role==='plus' ? '<span style="font-size:9px;color:#c8a23e;border:1px solid rgba(200,162,62,.3);border-radius:4px;padding:1px 5px">PLUS</span>'
                           : '<span style="font-size:9px;color:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:1px 5px">USER</span>';
-            return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
+            var em = (p.email||'').replace(/'/g,"\\'");
+            return '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
+              +'<div style="display:flex;align-items:center;gap:8px">'
               +'<div style="flex:1;min-width:0">'
-              +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.nombre||p.email||'Usuario')+'</div>'
+              +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(p.nombre||p.email||'Usuario')+'</div>'
               +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+_escHtml(p.email||'')+'</div>'
               +'</div>'
               +roleBadge
               +'<div style="font-size:10px;color:rgba(255,255,255,.25);white-space:nowrap">'+fecha+'</div>'
+              +'</div>'
+              +(tcDate?'<div style="font-size:9px;color:rgba(116,198,157,.5);margin-top:2px">📜 Términos aceptados: '+tcDate+'</div>':'')
+              +'<div style="display:flex;gap:6px;margin-top:5px">'
+              +(p.email?'<button onclick="pAdminSendPasswordReset(\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.8);border-radius:5px;cursor:pointer">🔑 Reset</button>':'')
+              +(p.id?'<button onclick="pAdminDeleteUser(\''+p.id+'\',\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.25);color:rgba(231,120,110,.85);border-radius:5px;cursor:pointer">🗑️ Eliminar</button>':'')
+              +'</div>'
               +'</div>';
           }).join('')
         +'</div>'
@@ -6196,13 +6243,18 @@ async function _renderAdmin(){
             +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,100,100,.8);margin-bottom:10px">🚨 ALERTAS DE MODERACIÓN IA ('+res.data.length+')</div>'
             + res.data.map(function(f){
                 var t = new Date(f.created_at).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-                return '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);display:flex;gap:8px;align-items:flex-start">'
-                  +'<div style="flex:1;min-width:0">'
+                var isPro = (f.section||'').indexOf('pro') > -1 || (f.section||'').indexOf('profesional') > -1;
+                var targetLabel = isPro ? 'profesional' : 'usuario';
+                return '<div id="modflag-'+f.id+'" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
                   +'<div style="font-size:11px;font-weight:700;color:rgba(255,150,150,.9)">'+_escHtml(f.tipo||'abuso')+' · '+_escHtml(f.section||'')+'</div>'
-                  +'<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml((f.content||'').slice(0,80))+'"</div>'
-                  +'<div style="font-size:10px;color:rgba(255,255,255,.25);margin-top:2px">'+t+(f.user_id?' · uid:'+f.user_id.slice(0,8):'')+'</div>'
+                  +'<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">"'+_escHtml((f.content||'').slice(0,100))+'"</div>'
+                  +'<div style="font-size:10px;color:rgba(255,255,255,.25);margin-top:2px">'+t+(f.user_id?' · uid:'+String(f.user_id).slice(0,8):'')+'</div>'
+                  +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">'
+                  +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'accept\')" style="font-size:10px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Aceptar</button>'
+                  +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'alert\')" style="font-size:10px;padding:4px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:6px;color:rgba(240,200,90,.9);cursor:pointer">⚠️ Alertar '+targetLabel+'</button>'
+                  +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'delete\')" style="font-size:10px;padding:4px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);border-radius:6px;color:rgba(231,120,110,.9);cursor:pointer">🗑️ Eliminar</button>'
+                  +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'alertdelete\')" style="font-size:10px;padding:4px 9px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.25);border-radius:6px;color:rgba(231,120,110,.75);cursor:pointer">⚠️+🗑️</button>'
                   +'</div>'
-                  +'<button onclick="pAdminResolveFlag(\''+f.id+'\')" style="flex-shrink:0;font-size:10px;padding:4px 8px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.8);cursor:pointer">✓ Resolver</button>'
                   +'</div>';
               }).join('')
             +'</div>';
@@ -6376,7 +6428,30 @@ async function _renderAdmin(){
     var tasksHtml = '<div style="margin-bottom:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📋 TAREAS PENDIENTES</div>'
       +'<div id="adminAITasks"><div style="font-size:12px;color:rgba(255,255,255,.3);padding:10px 0">Gemini está revisando las tareas...</div></div>';
 
-    content.innerHTML = tasksHtml + contactsHtml + surveyHtml + massHtml + transferHtml + crisisHtml + auditHtml + aiModHtml;
+    // Gestión: Plus gratis 30 días + noticias manuales
+    var gestionHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">⭐ ACTIVAR VELO PLUS GRATIS (30 DÍAS)</div>'
+      +'<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
+      +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Activá Velo Plus por 30 días para un usuario. Al vencer vuelve automáticamente a Free.</p>'
+      +'<div style="display:flex;gap:8px;align-items:center">'
+      +'<input class="p-input" id="adminGrantPlusEmail" type="email" placeholder="correo@usuario.com" style="flex:1;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" />'
+      +'<button onclick="pAdminGrantPlus()" style="padding:8px 14px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;white-space:nowrap">⭐ Activar Plus</button>'
+      +'</div></div>'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📰 NOTICIAS MANUALES</div>'
+      +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:14px;margin-bottom:18px">'
+      +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Publicá noticias propias con título, resumen y link. Aparecen primero en la sección Buenas Noticias.</p>'
+      +'<button onclick="pOpenAdminNews()" style="width:100%;padding:9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;margin-bottom:10px">+ Publicar noticia</button>'
+      +'<label style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:12px">'
+      +'<input type="checkbox" id="adminNewsOnlyToggle" '+(safeLS('get','velo_admin_news_only')==='1'?'checked':'')+' onchange="pAdminToggleNewsOnly(this.checked)" style="width:15px;height:15px;cursor:pointer">'
+      +'Mostrar solo noticias manuales hoy (desactiva las automáticas)</label>'
+      +'<div id="adminNewsList"></div>'
+      +'</div>';
+
+    var finanzasHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💰 DONACIONES E INGRESOS</div>'
+      +'<div id="adminDonations"><p style="font-size:11px;color:rgba(255,255,255,.3);padding:8px 0">Cargando…</p></div>';
+
+    content.innerHTML = tasksHtml + gestionHtml + contactsHtml + finanzasHtml + surveyHtml + massHtml + transferHtml + crisisHtml + auditHtml + aiModHtml;
+    pAdminRenderNewsList();
+    _renderAdminDonations();
 
     // Load contacts async: try Supabase first, fallback to localStorage
     sbLoadContacts().then(function(sbMsgs){
@@ -6500,15 +6575,20 @@ async function pAdminMarkContactRead(id){
   _renderAdminContactsList(msgs);
 }
 
-function pAdminResolveFlag(id){
+function pAdminResolveFlag(id){ pAdminModerateFlag(id, 'accept'); }
+
+// action: 'accept' (contenido OK) · 'alert' (alertar al usuario) · 'delete' (eliminar) · 'alertdelete'
+function pAdminModerateFlag(id, action){
   _initSupabase();
   if(!sbClient) return;
-  sbClient.from('moderation_flags').update({ resolved:true }).eq('id',id)
+  var labels = { accept:'Reporte aceptado — contenido OK', alert:'Usuario alertado ⚠️',
+    'delete':'Contenido eliminado 🗑️', alertdelete:'Usuario alertado y contenido eliminado' };
+  sbClient.from('moderation_flags').update({ resolved:true, resolution:action }).eq('id',id)
     .then(function(){
-      var el = document.querySelector('[onclick="pAdminResolveFlag(\''+id+'\')"]');
-      if(el) el.closest('div[style*="padding:8px"]').remove();
-      pToast('✅','Alerta resuelta');
-    }).catch(function(){});
+      var card = document.getElementById('modflag-'+id);
+      if(card) card.remove();
+      pToast('✅', labels[action] || 'Reporte resuelto');
+    }).catch(function(){ pToast('⚠️','Error — ¿corriste el SQL de Fase 2?'); });
 }
 
 function pApproveTransfer(idx){
@@ -7053,6 +7133,164 @@ async function sbDeleteAdminNews(id){
   try{ await sbClient.from('admin_news').delete().eq('id',id); }catch(e){}
 }
 
+// ── ADMIN: NOTICIAS MANUALES ──────────────────────────────────
+function pOpenAdminNews(){ openModal('adminNewsOv'); }
+
+async function pAdminPublishNews(){
+  var titulo = (document.getElementById('adminNewsTitulo')||{}).value||'';
+  var cuerpo = (document.getElementById('adminNewsCuerpo')||{}).value||'';
+  var url    = (document.getElementById('adminNewsUrl')||{}).value||'';
+  var source = (document.getElementById('adminNewsSource')||{}).value||'';
+  var emoji  = (document.getElementById('adminNewsEmoji')||{}).value||'📰';
+  if(!titulo.trim()){ pToast('⚠️','Escribí un título'); return; }
+  if(!cuerpo.trim()){ pToast('⚠️','Escribí un resumen'); return; }
+  var btn = document.querySelector('#adminNewsOv .p-btn--primary');
+  if(btn){ btn.disabled=true; btn.textContent='Publicando...'; }
+  _initSupabase();
+  var ok = await sbSaveAdminNews({ titulo:titulo.trim(), cuerpo:cuerpo.trim(), emoji:emoji.trim()||'📰', sourceUrl:url.trim(), sourceName:source.trim() });
+  if(btn){ btn.disabled=false; btn.textContent='Publicar noticia 🌟'; }
+  if(ok){
+    pToast('🌟','Noticia publicada');
+    closeModal('adminNewsOv');
+    ['adminNewsTitulo','adminNewsCuerpo','adminNewsUrl','adminNewsSource'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
+    safeLS('del','velo_goodnews_'+new Date().toISOString().slice(0,10));
+    pAdminRenderNewsList();
+  } else {
+    pToast('⚠️','Error al publicar — ¿corriste el SQL de Fase 2?');
+  }
+}
+
+async function pAdminRenderNewsList(){
+  var el = document.getElementById('adminNewsList');
+  if(!el) return;
+  el.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando...</div>';
+  _initSupabase();
+  var items = await sbLoadAdminNews();
+  if(!items.length){ el.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,.3);font-style:italic">Sin noticias publicadas aún.</div>'; return; }
+  el.innerHTML = items.map(function(n){
+    return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px">'
+      +'<div style="font-size:20px;flex-shrink:0">'+_escHtml(n.emoji||'📰')+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.8);margin-bottom:2px">'+_escHtml(n.titulo)+'</div>'
+      +(n.source_url?'<a href="'+_escHtml(n.source_url)+'" target="_blank" style="font-size:10px;color:rgba(116,198,157,.8)">'+_escHtml(n.source_name||n.source_url)+'</a>':'')
+      +'</div>'
+      +'<button onclick="pAdminDeleteNews(\''+n.id+'\')" style="font-size:11px;padding:3px 8px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);color:rgba(231,120,110,.9);border-radius:6px;cursor:pointer;flex-shrink:0">🗑️</button>'
+      +'</div>';
+  }).join('');
+}
+
+function pAdminDeleteNews(id){
+  sbDeleteAdminNews(id).then(function(){
+    safeLS('del','velo_goodnews_'+new Date().toISOString().slice(0,10));
+    pAdminRenderNewsList();
+    pToast('🗑️','Noticia eliminada');
+  });
+}
+
+function _adminFinCard(label, value){
+  return '<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:10px;padding:10px 12px">'
+    +'<div style="font-size:18px;font-weight:800;color:rgba(200,162,0,.95)">'+value+'</div>'
+    +'<div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">'+label+'</div>'
+    +'</div>';
+}
+
+async function _renderAdminDonations(){
+  var el = document.getElementById('adminDonations');
+  if(!el) return;
+  _initSupabase();
+  if(!sbClient){ el.innerHTML = '<p style="font-size:11px;color:rgba(255,255,255,.3)">Sin conexión</p>'; return; }
+  try{
+    var res = await sbClient.from('donations').select('*').order('created_at',{ascending:false}).limit(200);
+    var data = res.data || [];
+    var totalDon = 0, totalPlus = 0, totalPro = 0;
+    data.forEach(function(d){
+      var a = parseFloat(d.amount)||0;
+      if(d.tipo==='plus') totalPlus += a;
+      else if(d.tipo==='pro-sub') totalPro += a;
+      else totalDon += a;
+    });
+    // 20% commission on professional consultations (from bookings)
+    var commission = 0, pendingTransfer = 0;
+    try{
+      var bk = await sbClient.from('bookings').select('amount,commission,paid');
+      (bk.data||[]).forEach(function(b){
+        commission += parseFloat(b.commission)||0;
+        if(!b.paid) pendingTransfer += (parseFloat(b.amount)||0) - (parseFloat(b.commission)||0);
+      });
+    }catch(e){}
+    var grand = totalDon + totalPlus + totalPro + commission;
+    el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
+      + _adminFinCard('💚 Donaciones', '$'+totalDon.toFixed(2))
+      + _adminFinCard('⭐ Suscripciones Plus', '$'+totalPlus.toFixed(2))
+      + _adminFinCard('💼 Comisión 20% consultas', '$'+commission.toFixed(2))
+      + _adminFinCard('🏦 Pendiente transferir a pros', '$'+pendingTransfer.toFixed(2))
+      + _adminFinCard('💰 Ingreso total', '$'+grand.toFixed(2))
+      +'</div>'
+      + (data.length
+        ? '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:6px">ÚLTIMOS MOVIMIENTOS</div>'
+          + data.slice(0,10).map(function(d){
+              var fecha = d.created_at ? new Date(d.created_at).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+              var icon = d.tipo==='plus'?'⭐':d.tipo==='pro-sub'?'🩺':'💚';
+              return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
+                +'<span style="font-size:15px">'+icon+'</span>'
+                +'<div style="flex:1;min-width:0"><div style="font-size:11px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(d.user_email||'anónimo')+'</div>'
+                +'<div style="font-size:9px;color:rgba(255,255,255,.25)">'+fecha+'</div></div>'
+                +'<span style="font-size:12px;font-weight:700;color:rgba(200,162,0,.9)">$'+(parseFloat(d.amount)||0).toFixed(2)+'</span>'
+                +'</div>';
+            }).join('')
+        : '<p style="font-size:11px;color:rgba(255,255,255,.3);font-style:italic">Sin movimientos aún. Se registran automáticamente con cada donación o suscripción.</p>');
+  }catch(e){
+    el.innerHTML = '<p style="font-size:11px;color:rgba(255,255,255,.3)">Sin datos — ¿corriste el SQL de Fase 2?</p>';
+  }
+}
+
+function pAdminToggleNewsOnly(checked){
+  if(checked) safeLS('set','velo_admin_news_only','1');
+  else safeLS('del','velo_admin_news_only');
+  safeLS('del','velo_goodnews_'+new Date().toISOString().slice(0,10));
+  pToast(checked?'📰':'🤖', checked?'Hoy se muestran solo noticias manuales':'Noticias automáticas reactivadas');
+}
+
+// ── ADMIN: GESTIÓN DE USUARIOS ────────────────────────────────
+async function pAdminGrantPlus(){
+  var el = document.getElementById('adminGrantPlusEmail');
+  if(!el || !el.value.trim()){ pToast('⚠️','Ingresá el correo del usuario'); return; }
+  var email = el.value.trim().toLowerCase();
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión a Supabase'); return; }
+  var expires = new Date(Date.now()+30*24*3600*1000).toISOString();
+  try{
+    var profRes = await sbClient.from('profiles').select('id').eq('email',email).limit(1);
+    if(profRes.data && profRes.data[0]){
+      await sbClient.from('profiles').update({ role:'plus', plus_expires_at:expires }).eq('id',profRes.data[0].id);
+    }
+    await sbClient.from('plus_grants').insert({ email:email, expires_at:expires });
+    pToast('⭐','Velo Plus activado 30 días para '+email);
+    el.value = '';
+  }catch(e){ pToast('⚠️','Error al activar Plus'); }
+}
+
+async function pAdminDeleteUser(id, email){
+  if(!window.confirm('¿Eliminar al usuario '+(email||id)+'?\nEsta acción no se puede deshacer.')) return;
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  try{
+    await sbClient.from('profiles').delete().eq('id', id);
+    pToast('🗑️','Usuario eliminado');
+    _renderAdmin();
+  }catch(e){ pToast('⚠️','Error al eliminar'); }
+}
+
+async function pAdminSendPasswordReset(email){
+  if(!email){ pToast('⚠️','Sin correo'); return; }
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  try{
+    await sbClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    pToast('📧','Email de recuperación enviado a '+email);
+  }catch(e){ pToast('⚠️','Error al enviar recuperación'); }
+}
+
 async function sbMarkContactRead(id){
   if(!sbClient) return;
   try{ await sbClient.from('contacts').update({leido:true}).eq('id',id); }catch(e){}
@@ -7176,6 +7414,17 @@ function _checkStripeReturn(){
   }
 }
 
+function _recordDonation(tipo, amount){
+  _initSupabase();
+  if(!sbClient) return;
+  try{
+    sbClient.from('donations').insert({
+      user_email: safeLS('get','velo_user_email')||'anónimo',
+      amount: parseFloat(amount)||0, currency:'USD', tipo: tipo
+    }).then(function(){}).catch(function(){});
+  }catch(e){}
+}
+
 function _checkPayPalReturn(){
   var params = new URLSearchParams(window.location.search);
   var ppParam = params.get('pp');
@@ -7205,6 +7454,7 @@ function _checkPayPalReturn(){
       if(uid) sbClient.from('profiles').update({ role:'plus' }).eq('id', uid).then(function(){});
     }
     safeLS('del','velo_pp_pending');
+    _recordDonation('plus', 2.99);
     pToast('⭐','¡Velo Plus activado! Bienvenido/a 🌿');
     // Send Plus welcome email (fire-and-forget)
     var _ppEmail = safeLS('get','velo_user_email');
@@ -7219,6 +7469,7 @@ function _checkPayPalReturn(){
   } else if(effectiveType === 'pro'){
     safeLS('set','velo_pro_approved','true');
     safeLS('del','velo_pp_pending');
+    _recordDonation('pro-sub', 0);
     pToast('🩺','¡Registro profesional completado! 💚');
     window.history.replaceState({}, '', window.location.pathname);
     pGoTo('pro-panel');
@@ -7229,6 +7480,7 @@ function _checkPayPalReturn(){
     var _ppEmail = safeLS('get','velo_user_email');
     var _ppName  = safeLS('get','velo_user_name') || '';
     var _ppAmt   = pending && pending.amount ? pending.amount : '';
+    _recordDonation('donation', _ppAmt);
     if(_ppEmail){
       fetch(SEND_EMAIL_PROXY, {
         method:'POST', headers:{'Content-Type':'application/json'},
