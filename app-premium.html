@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260520-42">
+  <link rel="stylesheet" href="premium.css?v=20260520-43">
 </head>
 <body>
 
@@ -868,18 +868,6 @@
             <button class="p-btn p-btn--dark-white p-btn--lg p-btn--full" onclick="pSendHelp()">Enviar mensaje 💌</button>
             <div style="height:8px"></div>
             <button class="p-btn p-btn--dark-outline p-btn--md p-btn--full" onclick="closeModal('helpFormOv')">Cancelar</button>
-          </div>
-        </div>
-        <!-- SOS sheet -->
-        <div class="p-modal-ov" id="sosOv">
-          <div class="p-sheet p-sheet-dark">
-            <div class="p-sheet-handle" style="background:rgba(192,48,40,.4)"></div>
-            <div style="font-size:36px;text-align:center;margin-bottom:12px">🆘</div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:24px;color:#fff;text-align:center;margin-bottom:8px">Ayuda urgente</div>
-            <p style="font-size:13px;color:rgba(255,255,255,.55);text-align:center;line-height:1.6;margin-bottom:20px">Si estás en peligro, contactá a servicios de emergencia de tu país.</p>
-            <div id="sosResources"></div>
-            <div style="height:10px"></div>
-            <button class="p-btn p-btn--dark-outline p-btn--md p-btn--full" onclick="closeModal('sosOv')">Cerrar</button>
           </div>
         </div>
       </div><!-- /pg-help -->
@@ -2135,9 +2123,22 @@
   </div>
 </div>
 
+<!-- SOS sheet (global — works from any page) -->
+<div class="p-modal-ov" id="sosOv">
+  <div class="p-sheet p-sheet-dark">
+    <div class="p-sheet-handle" style="background:rgba(192,48,40,.4)"></div>
+    <div style="font-size:36px;text-align:center;margin-bottom:12px">🆘</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:24px;color:#fff;text-align:center;margin-bottom:8px">Ayuda urgente</div>
+    <p style="font-size:13px;color:rgba(255,255,255,.55);text-align:center;line-height:1.6;margin-bottom:20px">Si estás en peligro, contactá a servicios de emergencia de tu país.</p>
+    <div id="sosResources"></div>
+    <div style="height:10px"></div>
+    <button class="p-btn p-btn--dark-outline p-btn--md p-btn--full" onclick="closeModal('sosOv')">Cerrar</button>
+  </div>
+</div>
+
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-42"></script>
+<script src="premium.js?v=20260520-43"></script>
 </body>
 </html>

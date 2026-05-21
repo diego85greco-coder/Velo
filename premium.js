@@ -1434,6 +1434,7 @@ async function pSendGuardianMsg(){
   if(!ta || !ta.value.trim()) return;
   var text = ta.value.trim();
   ta.value = ''; ta.style.height = '';
+  _geminiModerateContent(text, 'guardian-chat');
   var gcQuote = _getReplyQuote('gcReplyBar');
   pClearReplyBar('gcReplyBar');
   _gcMsgs.push({ text:text, user:true });
@@ -1947,6 +1948,7 @@ function pSendHelpChatMsg(){
   var text = ta.value.trim();
   ta.value = '';
   ta.style.height = '';
+  _geminiModerateContent(text, 'sala-de-ayuda-chat');
   _resetHelpInactivity();
   var msgEl = document.getElementById('helpChatMessages');
   if(!msgEl) return;
@@ -2036,6 +2038,7 @@ async function pSendHelp(){
   }
   _incDailyLimit('help');
   var msg = ta.value.trim();
+  _geminiModerateContent(msg, 'sala-de-ayuda');
   var anonEl = document.getElementById('helpAnonCheck');
   var isAnon = !anonEl || anonEl.checked;
   var name = isAnon ? 'Usuario Anónimo' : (safeLS('get','velo_user_name')||'Usuario');
@@ -2154,10 +2157,19 @@ async function _geminiModerateContent(text, section){
     if(!match) return;
     var data = JSON.parse(match[0]);
     if(data.problema && data.gravedad === 'alta'){
+      var uid = safeLS('get','velo_user_id') || '';
+      var flagEntry = { ts:Date.now(), tipo:'abuse_detect', section:section, circle:section,
+        motivo:'Gemini — '+data.tipo+' detectado', detail:text.slice(0,120), resolved:false };
       var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
-      audit.unshift({ ts:Date.now(), tipo:'abuse_detect', circle:section,
-        motivo:'Gemini — '+data.tipo+' detectado (tiempo real)', detail:text.slice(0,80) });
+      audit.unshift(flagEntry);
       safeLS('set','velo_audit_log', JSON.stringify(audit.slice(0,500)));
+      _initSupabase();
+      if(sbClient){
+        sbClient.from('moderation_flags').insert({
+          section: section, tipo: data.tipo, gravedad: 'alta',
+          content: text.slice(0,300), user_id: uid, resolved: false
+        }).then(function(){}).catch(function(){});
+      }
       pToast('⚠️','Tu mensaje fue marcado para revisión por el equipo de Velo.');
     }
   }catch(e){}
@@ -2962,6 +2974,7 @@ function pSendBottleReply(){
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí tu respuesta antes de enviar'); return; }
   if(ta.value.trim().length < 10){ pToast('✍️','Escribí al menos 10 caracteres'); return; }
   var replyText = ta.value.trim();
+  _geminiModerateContent(replyText, 'mensajes-al-mar-reply');
   closeModal('bottleReplyOv');
 
   // 1. Mark bottle as responded (remove from wall locally and in Supabase)
@@ -4383,6 +4396,7 @@ function pSubmitHappyPost(){
     posts.unshift(post);
     _happySave(posts);
     _happyStatIncr('posts');
+    if(post.text) _geminiModerateContent(post.text, 'muro-felicidad');
     pToast('☀️','¡Publicado en el Muro! Desaparece en 24h 💛');
     // Insert to Supabase so all users see it
     _initSupabase();
@@ -5892,6 +5906,30 @@ async function _renderAdmin(){
     var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
     audit = audit.length ? audit : (function(){ try{ return JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){ return []; } })();
 
+    // 🚨 Moderation alerts from Supabase
+    _initSupabase();
+    if(sbClient){
+      sbClient.from('moderation_flags').select('*').eq('resolved',false).order('created_at',{ascending:false}).limit(20)
+        .then(function(res){
+          if(!res.data || !res.data.length) return;
+          var alertsHtml = '<div style="background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.2);border-radius:12px;padding:14px;margin-bottom:14px">'
+            +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,100,100,.8);margin-bottom:10px">🚨 ALERTAS DE MODERACIÓN IA ('+res.data.length+')</div>'
+            + res.data.map(function(f){
+                var t = new Date(f.created_at).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+                return '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);display:flex;gap:8px;align-items:flex-start">'
+                  +'<div style="flex:1;min-width:0">'
+                  +'<div style="font-size:11px;font-weight:700;color:rgba(255,150,150,.9)">'+_escHtml(f.tipo||'abuso')+' · '+_escHtml(f.section||'')+'</div>'
+                  +'<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml((f.content||'').slice(0,80))+'"</div>'
+                  +'<div style="font-size:10px;color:rgba(255,255,255,.25);margin-top:2px">'+t+(f.user_id?' · uid:'+f.user_id.slice(0,8):'')+'</div>'
+                  +'</div>'
+                  +'<button onclick="pAdminResolveFlag(\''+f.id+'\')" style="flex-shrink:0;font-size:10px;padding:4px 8px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.8);cursor:pointer">✓ Resolver</button>'
+                  +'</div>';
+              }).join('')
+            +'</div>';
+          content.insertAdjacentHTML('afterbegin', alertsHtml);
+        }).catch(function(){});
+    }
+
     // Provisional password section
     var provHtml = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">🔑 CONTRASEÑAS PROVISIONALES</div>'
       +'<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:14px;margin-bottom:8px">'
@@ -6130,6 +6168,17 @@ async function pAdminMarkContactRead(id){
   if(m) m.leido = true;
   safeLS('set','velo_admin_contacts', JSON.stringify(msgs));
   _renderAdminContactsList(msgs);
+}
+
+function pAdminResolveFlag(id){
+  _initSupabase();
+  if(!sbClient) return;
+  sbClient.from('moderation_flags').update({ resolved:true }).eq('id',id)
+    .then(function(){
+      var el = document.querySelector('[onclick="pAdminResolveFlag(\''+id+'\')"]');
+      if(el) el.closest('div[style*="padding:8px"]').remove();
+      pToast('✅','Alerta resuelta');
+    }).catch(function(){});
 }
 
 function pApproveTransfer(idx){

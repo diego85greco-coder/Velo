@@ -155,3 +155,19 @@ CREATE POLICY "mood_delete" ON public.mood_entries FOR DELETE TO anon, authentic
 -- Add avatar and motto columns to profiles if not present
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS motto  TEXT DEFAULT '';
+
+-- Moderation flags (AI-detected abuse, visible to admin in real time)
+CREATE TABLE IF NOT EXISTS public.moderation_flags (
+  id          BIGSERIAL   PRIMARY KEY,
+  section     TEXT        NOT NULL DEFAULT '',
+  tipo        TEXT        DEFAULT 'abuso',
+  gravedad    TEXT        DEFAULT 'alta',
+  content     TEXT        DEFAULT '',
+  user_id     TEXT        DEFAULT '',
+  resolved    BOOLEAN     DEFAULT FALSE,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.moderation_flags ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "mf_select" ON public.moderation_flags FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "mf_insert" ON public.moderation_flags FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "mf_update" ON public.moderation_flags FOR UPDATE TO anon, authenticated USING (true);
