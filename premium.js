@@ -1414,28 +1414,26 @@ function pStripeCheckout(proId){
   var p = _proData.find(function(x){ return x.id === proId; });
   if(!p) return;
   pToast('💳','Preparando pago seguro…');
-  var stripeAmount = Math.round(p.rate * 100);
-  var proName = p.name;
-  var proSpec = p.spec;
-  var sessionData = { proId:proId, name:proName, spec:proSpec, amount:p.rate, currency:p.currency, ts:Date.now() };
+  var sessionData = { proId:proId, name:p.name, spec:p.spec, amount:p.rate, currency:p.currency, ts:Date.now() };
   safeLS('set','velo_stripe_pending', JSON.stringify(sessionData));
-  if(typeof Stripe !== 'undefined'){
-    try{
-      var stripe = Stripe(STRIPE_PK);
-      fetch(SUPABASE_FN, {
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON},
-        body:JSON.stringify({ amount:stripeAmount, currency:'usd', description:'Sesión con '+proName+' — '+proSpec, email: safeLS('get','velo_user_email')||'' })
-      }).then(function(r){ return r.json(); }).then(function(data){
-        if(data && data.sessionId){ stripe.redirectToCheckout({sessionId:data.sessionId}); }
-        else { pToast('⚠️','Error al crear la sesión de pago'); }
-      }).catch(function(){ pToast('⚠️','Error de conexión con el servidor de pagos'); });
-    }catch(e){ pToast('⚠️','Error al iniciar Stripe: '+e.message); }
-  } else {
-    pToast('💳','Stripe no disponible — demo mode');
-    safeLS('set','velo_current_session', JSON.stringify(sessionData));
-    setTimeout(function(){ pGoTo('session-room'); }, 1500);
-  }
+  var baseUrl = window.location.origin + window.location.pathname;
+  fetch(SUPABASE_FN, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON},
+    body:JSON.stringify({
+      amount:      p.rate,       // dollars — edge function multiplies by 100
+      proName:     p.name,
+      sessionType: 'paid',
+      returnUrl:   baseUrl+'?stripe=ok',
+      cancelUrl:   baseUrl+'?stripe=cancel'
+    })
+  }).then(function(r){ return r.json(); }).then(function(data){
+    if(data && data.url){
+      window.location.href = data.url; // redirect to Stripe hosted checkout
+    } else {
+      pToast('⚠️','Error al crear la sesión de pago: '+(data && data.error ? data.error : 'intentá de nuevo'));
+    }
+  }).catch(function(){ pToast('⚠️','Error de conexión con el servidor de pagos'); });
 }
 
 // ── HELP ROOM ─────────────────────────────────────────────────
@@ -6210,13 +6208,20 @@ function pEndSession(){
 // ── STRIPE RETURN CHECK ───────────────────────────────────────
 function _checkStripeReturn(){
   var params = new URLSearchParams(window.location.search);
+  var stripeStatus = params.get('stripe');
   var session = params.get('session_id') || params.get('stripe_session');
-  if(session){
+  if(stripeStatus === 'cancel'){
+    pToast('ℹ️','Pago cancelado. Podés intentarlo de nuevo cuando quieras.');
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+  if(stripeStatus === 'ok' || session){
     var pending = null; try{ pending = JSON.parse(safeLS('get','velo_stripe_pending')||'null'); }catch(e){}
     if(pending){
       pToast('✅','¡Pago confirmado! Tu sesión ha sido reservada 💚');
       safeLS('set','velo_current_session', JSON.stringify(pending));
       safeLS('del','velo_stripe_pending');
+      window.history.replaceState({}, '', window.location.pathname);
       setTimeout(function(){ pGoTo('session-room'); }, 1000);
     }
   }
@@ -6224,25 +6229,38 @@ function _checkStripeReturn(){
 
 function _checkPayPalReturn(){
   var params = new URLSearchParams(window.location.search);
-  var ppTok = params.get('token') || params.get('paymentId');
-  if(ppTok){
-    var pending = null; try{ pending = JSON.parse(safeLS('get','velo_pp_pending')||'null'); }catch(e){}
-    if(pending && pending.type === 'plus'){
-      var subs = []; try{ subs = JSON.parse(safeLS('get','velo_subscribers')||'[]'); }catch(e){}
-      var email = safeLS('get','velo_user_email');
-      if(email) subs.push({ email:email, status:'active', ts:Date.now() });
+  var ppTok = params.get('token') || params.get('paymentId') || params.get('subscription_id');
+  if(!ppTok) return;
+  var pending = null; try{ pending = JSON.parse(safeLS('get','velo_pp_pending')||'null'); }catch(e){}
+  if(pending && pending.type === 'plus'){
+    // Activate Plus locally
+    safeLS('set','velo_plan','plus');
+    var subs = []; try{ subs = JSON.parse(safeLS('get','velo_subscribers')||'[]'); }catch(e){}
+    var email = safeLS('get','velo_user_email');
+    if(email && !subs.find(function(s){ return s.email===email; })){
+      subs.push({ email:email, status:'active', ts:Date.now() });
       safeLS('set','velo_subscribers', JSON.stringify(subs));
-      safeLS('del','velo_pp_pending');
-      pToast('⭐','¡Velo Plus activado! Bienvenido/a 🌿');
-    } else if(pending && pending.type === 'pro'){
-      safeLS('set','velo_pro_approved','true');
-      safeLS('del','velo_pp_pending');
-      pToast('🩺','¡Registro profesional completado! 💚');
-      pGoTo('pro-panel');
-    } else {
-      pToast('💚','¡Donación recibida! Gracias por apoyar Velo 🌿');
-      safeLS('del','velo_pp_pending');
     }
+    // Update Supabase profile role to 'plus'
+    _initSupabase();
+    if(sbClient){
+      var uid = safeLS('get','velo_user_id');
+      if(uid) sbClient.from('profiles').update({ role:'plus' }).eq('id', uid).then(function(){});
+    }
+    safeLS('del','velo_pp_pending');
+    pToast('⭐','¡Velo Plus activado! Bienvenido/a 🌿');
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+  } else if(pending && pending.type === 'pro'){
+    safeLS('set','velo_pro_approved','true');
+    safeLS('del','velo_pp_pending');
+    pToast('🩺','¡Registro profesional completado! 💚');
+    window.history.replaceState({}, '', window.location.pathname);
+    pGoTo('pro-panel');
+  } else {
+    pToast('💚','¡Donación recibida! Gracias por apoyar Velo 🌿');
+    safeLS('del','velo_pp_pending');
+    window.history.replaceState({}, '', window.location.pathname);
   }
 }
 
