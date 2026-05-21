@@ -4753,6 +4753,39 @@ function pRenderInbox(){
     else { el2.innerHTML = bcMsgs + el2.innerHTML; }
     _updateInboxDot();
   });
+  // Load admin replies from Supabase async and inject them
+  var userEmail = safeLS('get','velo_user_email');
+  if(userEmail){
+    sbLoadRepliedContacts(userEmail).then(function(replies){
+      if(!replies || !replies.length) return;
+      var el3 = document.getElementById('inboxList');
+      if(!el3) return;
+      var existingIds = [];
+      try{ existingIds = JSON.parse(safeLS('get','velo_inbox_reply_ids')||'[]'); }catch(e){}
+      var replyMsgs = replies.map(function(r){
+        var readKey = 'velo_reply_read_'+r.id;
+        var isRead = !!safeLS('get', readKey);
+        var fecha = r.reply_at ? new Date(r.reply_at).toLocaleDateString('es',{day:'2-digit',month:'short'}) : '';
+        var allowR = !!r.allow_reply;
+        return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" style="cursor:pointer" onclick="pOpenInboxAdminReply(\''+r.id+'\','+JSON.stringify(_escHtml(r.topic||'Consulta'))+','+JSON.stringify(_escHtml(r.mensaje||''))+','+JSON.stringify(_escHtml(r.reply||''))+','+allowR+',\''+_escHtml(fecha)+'\',this)">'
+          +'<div style="display:flex;flex-shrink:0">'+(isRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
+          +'<div class="p-inbox-ic" style="background:rgba(200,165,100,.12)">💌</div>'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Re: '+_escHtml(r.topic||'Consulta')+'</div>'
+          +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml((r.reply||'').slice(0,120))+'</div>'
+          +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+' · Equipo Velo</div>'
+          +(isRead?'':'<div style="font-size:10px;color:#C8A560;margin-top:4px">Toca para leer →</div>')
+          +'</div></div>';
+      }).join('');
+      if(replyMsgs){
+        var firstItem = el3.querySelector('.p-inbox-msg');
+        if(firstItem) firstItem.insertAdjacentHTML('beforebegin', replyMsgs);
+        else el3.innerHTML = replyMsgs + el3.innerHTML;
+        _updateInboxDot();
+      }
+    });
+  }
+
   if(!all.length){
     el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">💌</span><div class="p-empty-title">Sin mensajes</div><div class="p-empty-sub">Tus notificaciones aparecerán aquí.</div></div>';
     return;
@@ -4821,6 +4854,72 @@ function pOpenInboxMsg(msgId, rowEl){
     +'</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+}
+
+function pOpenInboxAdminReply(contactId, topic, originalMsg, replyText, allowReply, fecha, rowEl){
+  safeLS('set','velo_reply_read_'+contactId,'1');
+  if(rowEl){ rowEl.classList.remove('unread'); var dot = rowEl.querySelector('.p-inbox-dot'); if(dot) dot.remove(); }
+  _updateHomeBell();
+  var existing = document.getElementById('inboxAdminReplyOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'inboxAdminReplyOv';
+  ov.innerHTML = '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+    +'<div style="font-size:30px;width:46px;height:46px;border-radius:14px;background:rgba(200,165,100,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">💌</div>'
+    +'<div><div style="font-size:12px;font-weight:700;color:#C8A560">Equipo Velo</div>'
+    +'<div style="font-size:11px;color:var(--ink5)">'+fecha+'</div></div>'
+    +'</div>'
+    +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);margin-bottom:16px;line-height:1.3">Re: '+topic+'</h2>'
+    +'<div style="font-size:14px;color:var(--ink3);line-height:1.85;white-space:pre-line;background:var(--cream2);border-radius:12px;padding:16px;margin-bottom:16px">'+replyText+'</div>'
+    +(originalMsg ? '<details style="margin-bottom:20px"><summary style="font-size:11px;color:var(--ink5);cursor:pointer">Ver mensaje original</summary><div style="font-size:12px;color:var(--ink4);line-height:1.7;white-space:pre-line;margin-top:8px;padding:10px;background:var(--cream2);border-radius:10px">'+originalMsg+'</div></details>' : '')
+    +(allowReply ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" style="margin-bottom:8px" onclick="document.getElementById(\'inboxAdminReplyOv\').remove();pReplyToAdmin(\''+topic.replace(/'/g,"\\'")+'\')">💬 Responder</button>' : '')
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'inboxAdminReplyOv\').remove()">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+}
+
+function pReplyToAdmin(originalTopic){
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'replyToAdminOv';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:4px">Responder a Velo</div>'
+    +'<p style="font-size:12px;color:var(--ink4);margin-bottom:14px">Tu respuesta llegará al equipo. Asunto: <strong>Re: '+_escHtml(originalTopic)+'</strong></p>'
+    +'<textarea class="p-textarea" id="replyToAdminTa" rows="4" placeholder="Escribí tu respuesta..."></textarea>'
+    +'<div style="height:12px"></div>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSendReplyToAdmin(\''+_escHtml(originalTopic).replace(/'/g,"\\'")+'\')">Enviar 💌</button>'
+    +'<div style="height:8px"></div>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'replyToAdminOv\').remove()">Cancelar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+}
+
+async function pSendReplyToAdmin(originalTopic){
+  var ta = document.getElementById('replyToAdminTa');
+  if(!ta || !ta.value.trim()){ pToast('✍️','Escribí tu respuesta antes de enviar'); return; }
+  var texto = ta.value.trim();
+  var email = safeLS('get','velo_user_email') || '';
+  var name  = safeLS('get','velo_user_name') || '';
+  var topic = 'Re: ' + (originalTopic || 'Consulta');
+  var btn = document.querySelector('#replyToAdminOv .p-btn--primary');
+  if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
+  try{
+    var ok = await sbSaveContact(topic, texto, email);
+    if(ok || !email){
+      var existing = document.getElementById('replyToAdminOv');
+      if(existing) existing.remove();
+      pToast('💌','Respuesta enviada al equipo Velo');
+    } else {
+      pToast('⚠️','Error al enviar. Intentá de nuevo.');
+    }
+  } catch(e){ pToast('⚠️','Error de conexión'); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='Enviar 💌'; } }
 }
 
 function pQuickProfile(name, av, bio, guardianId){
@@ -6144,7 +6243,10 @@ async function pAdminSendReply(){
     if(json.ok){
       pToast('💌','Respuesta enviada');
       closeModal('adminReplyOv');
-      if(_adminReplyTarget.id) pAdminMarkContactRead(_adminReplyTarget.id);
+      if(_adminReplyTarget.id){
+        sbUpdateContactReply(_adminReplyTarget.id, txt.value.trim(), !!(toggle&&toggle.checked));
+        pAdminMarkContactRead(_adminReplyTarget.id);
+      }
     } else {
       pToast('⚠️','Error: '+(json.error||'desconocido'));
     }
@@ -6692,6 +6794,31 @@ async function sbLoadContacts(){
 async function sbMarkContactRead(id){
   if(!sbClient) return;
   try{ await sbClient.from('contacts').update({leido:true}).eq('id',id); }catch(e){}
+}
+
+async function sbUpdateContactReply(id, replyText, allowReply){
+  if(!sbClient) return false;
+  try{
+    var {error} = await sbClient.from('contacts').update({
+      reply: replyText,
+      allow_reply: !!allowReply,
+      reply_at: new Date().toISOString()
+    }).eq('id', id);
+    return !error;
+  }catch(e){ return false; }
+}
+
+async function sbLoadRepliedContacts(email){
+  if(!sbClient || !email) return [];
+  try{
+    var {data,error} = await sbClient.from('contacts')
+      .select('*')
+      .eq('user_email', email)
+      .not('reply', 'is', null)
+      .order('reply_at', {ascending:false})
+      .limit(20);
+    return error ? [] : (data||[]);
+  }catch(e){ return []; }
 }
 
 // ── JITSI MEET — VIDEO CALL ────────────────────────────────────
