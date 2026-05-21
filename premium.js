@@ -2494,9 +2494,10 @@ function _renderNewsList(el, items){
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:17px;color:var(--ink);margin-bottom:6px;font-weight:600">'+_escHtml(item.titulo)+'</div>'
       +'<div style="font-size:13px;color:var(--ink3);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
-      +'<div style="margin-top:10px;font-size:11px;display:flex;align-items:center;gap:4px">'
-      +(hasLink ? '<span style="color:var(--sage);font-weight:700">'+_escHtml(item.sourceName||'Ver fuente')+'</span><span style="color:var(--ink5)"> · Actualizado hoy ›</span>'
-                : '<span style="color:var(--ink5);font-style:italic">✨ Velo IA · Actualizado hoy ›</span>')
+      +'<div style="margin-top:10px;font-size:11px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+      +(hasLink
+        ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:var(--sage2);font-weight:700;text-decoration:none;background:var(--sage7);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.25)">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a><span style="color:var(--ink5)">· Actualizado hoy ›</span>'
+        : '<span style="color:var(--ink5);font-style:italic">✨ Velo IA · Actualizado hoy ›</span>')
       +'</div>'
       +'</div>'
       +'</div>'
@@ -2521,7 +2522,8 @@ function pOpenNewsDetail(i){
     +'<div style="font-size:11px;font-weight:700;color:var(--sage3);letter-spacing:.5px;margin-bottom:6px">✨ REFLEXIÓN VELO IA</div>'
     +'<p style="font-size:13px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
     +'</div>'
-    +(hasLink ? '<a href="'+item.sourceUrl+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px">🔗 Leer artículo en '+_escHtml(item.sourceName||'la fuente')+'</a>' : '')
+    +(hasLink ? '<a href="'+item.sourceUrl+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔗 Leer artículo completo en '+_escHtml(item.sourceName||'la fuente')+'</a>'
+      : '<p style="font-size:11px;color:var(--ink5);text-align:center;margin-bottom:10px;font-style:italic">✨ Historia generada por Velo IA · actualizada a diario</p>')
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'newsDetailOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
