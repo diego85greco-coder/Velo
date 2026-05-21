@@ -564,9 +564,19 @@ function _clearSession(){
    'velo_pro_spec','velo_pro_solidarity','velo_pro_approved','velo_is_guardian',
    'velo_guardian_bio','velo_guardian_tags','velo_needs_pw_change'
   ].forEach(function(k){ safeLS('del', k); });
+  // Stop guardian heartbeat and clear all RT channel refs so the next login can resubscribe
+  _stopGuardianHeartbeat();
+  [_guardianRtCh, _helpRtCh, _bottleRtCh, _happyRtCh, _circleRtCh, _dmRtCh, _dmInboxCh,
+   _grReqCh, _seekerGrCh].forEach(function(ch){ _sbUnsub(ch); });
+  _guardianRtCh = null; _helpRtCh = null; _bottleRtCh = null; _happyRtCh = null;
+  _circleRtCh = null; _dmRtCh = null; _dmInboxCh = null;
+  _grReqCh = null; _seekerGrCh = null;
+  _favsList = null; // reset favorites cache
 }
 
 async function pSignOut(){
+  // Mark guardian offline before clearing session data
+  if(safeLS('get','velo_is_guardian') === 'true') await _updateGuardianPresence('offline');
   if(sbClient){ try{ await sbClient.auth.signOut(); }catch(e){} }
   _clearSession();
   _authenticated = false;
@@ -1160,10 +1170,12 @@ var _myGuardianStatus = safeLS('get','velo_guardian_status') || 'disponible'; //
 var _guardianHeartbeatTimer = null;
 
 async function _updateGuardianPresence(status){
-  if(safeLS('get','velo_is_guardian') !== 'true') return;
+  // Allow 'offline' even when guardian mode is toggled off (to clear presence)
+  if(status !== 'offline' && safeLS('get','velo_is_guardian') !== 'true') return;
   _initSupabase();
   if(!sbClient) return;
   var uid  = _myUserId ? _myUserId() : (safeLS('get','velo_user_email')||'guest');
+  if(!uid || uid === 'guest') return;
   var name = safeLS('get','velo_user_name') || 'Guardián';
   var av   = safeLS('get','velo_user_av')   || '💚';
   var bio  = safeLS('get','velo_guardian_bio') || '';
@@ -1388,7 +1400,7 @@ async function pRenderGuardians(){
     return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+(isAnon?'Guardián Anónimo':g.name)+'</span><span style="font-size:14px">'+badge.icon+'</span></div><div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0">'+(isAnon?'Disponible de forma anónima':g.bio)+'</p></div>'
       +'<div style="display:flex;gap:6px;align-items:center">'
       +(!isAnon ? '<button onclick="event.stopPropagation();'+(isFav?'pRemoveFav':'pAddFav')+'(\''+rawId+'\','+JSON.stringify(g.name)+','+JSON.stringify(g.av||'🌿')+');pRenderGuardians()" style="padding:6px 8px;background:'+(isFav?'rgba(255,200,50,.18)':'rgba(255,200,50,.07)')+';border:1px solid rgba(255,200,50,'+(isFav?'.4':'.2')+');border-radius:10px;font-size:15px;cursor:pointer" title="'+(isFav?'Quitar favorito':'Guardar favorito')+'">'+(isFav?'⭐':'☆')+'</button>' : '')
-      +'<button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(g.status==='ocupado'?'pToast(\'🟡\',\''+g.name+' está ocupado/a ahora\')':'pOpenGuardian(\''+g.id+'\')')+'">'+(g.status==='ocupado'?'Ocupado/a':'Solicitar')+'</button>'
+      +'<button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(g.status==='ocupado'?'pToast(\'🟡\','+JSON.stringify(g.name+' está ocupado/a ahora')+')':'pOpenGuardian(\''+g.id+'\')')+'">'+(g.status==='ocupado'?'Ocupado/a':'Solicitar')+'</button>'
       +'</div></div></div>';
   }).join('');
 }
@@ -1670,10 +1682,10 @@ async function pRenderHelp(){
   });
   if(sbRows !== null){
     usingSB = true;
-    posts = sbRows.map(_sbHelpRow).filter(function(h){ return hidden.indexOf('help-'+h.id)<0; });
+    posts = sbRows.map(_sbHelpRow).filter(function(h){ return hidden.indexOf('help-'+h.id)<0 && !_isBlocked(h.userId); });
   } else {
     var realPosts = []; try{ realPosts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
-    posts = realPosts.filter(function(h){ return !h.taken && hidden.indexOf('help-'+h.id)<0; });
+    posts = realPosts.filter(function(h){ return !h.taken && hidden.indexOf('help-'+h.id)<0 && !_isBlocked(h.userId); });
   }
   // Hide the current user's own post — they should not accompany themselves
   var _myHelpId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
@@ -4364,7 +4376,9 @@ function _processHappyQueue(){
 async function pRenderHappy(){
   var list = document.getElementById('happyList');
   if(!list) return;
-  pOpenHappyPost();
+  // Only reset form if user hasn't started typing
+  var _ta = document.getElementById('happyPostTa');
+  if(!_ta || !_ta.value.trim()) pOpenHappyPost();
   var myId = _myUserId();
 
   // Load from Supabase (shared wall) or fall back to localStorage
@@ -4375,7 +4389,7 @@ async function pRenderHappy(){
   var posts, usingSB = false;
   if(sbRows !== null){
     usingSB = true;
-    posts = sbRows.map(_sbHappyRow);
+    posts = sbRows.map(_sbHappyRow).filter(function(h){ return !_isBlocked(h.userId); });
     _sbHappy = posts;
   } else {
     posts = _processHappyQueue();
@@ -5473,7 +5487,7 @@ async function pRenderContacts(){
       +'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:14px;font-weight:700;color:var(--ink)">'+_escHtml(f.name||'Usuario')+'</div>'
-      +'<div style="font-size:11px;color:'+(isOnline?'var(--sage)':'var(--ink5)');+'">'+( isOnline?'● En línea':'○ Desconectado')+'</div>'
+      +'<div style="font-size:11px;color:'+(isOnline?'var(--sage)':'var(--ink5)')+'">'+( isOnline?'● En línea':'○ Desconectado')+'</div>'
       +'</div>'
       +(unread>0?'<span style="background:var(--sage);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px;flex-shrink:0">'+unread+'</span>':'')
       +'<div style="display:flex;gap:6px;flex-shrink:0">'
