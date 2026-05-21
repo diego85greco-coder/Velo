@@ -20,7 +20,7 @@ var GEMINI_URLS   = [
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=',
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key='
 ];
-var GEMINI_PROXY      = '/api/gemini';     // Vercel serverless proxy (hides key)
+var GEMINI_PROXY      = '/api/groq';       // Groq LLM proxy (hides key)
 var SEND_EMAIL_PROXY  = '/api/send-email'; // Vercel serverless proxy for thank-you emails
 var _geminiUrlIdx = 0;
 
