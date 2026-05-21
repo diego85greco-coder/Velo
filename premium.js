@@ -6504,15 +6504,7 @@ function pSendContactModal(ov){
   pToast('💌','¡Mensaje enviado! Te respondemos pronto 💚');
 }
 
-// ── LIVE COUNTERS ─────────────────────────────────────────────
-var _liveH = 36, _liveG = 34;
-setInterval(function(){
-  _liveH = Math.max(22, Math.min(52, _liveH + (Math.random() > .5 ? 1 : -1)));
-  _liveG = Math.max(20, Math.min(50, _liveG + (Math.random() > .5 ? 1 : -1)));
-  _setEl('homeHelpCount', _liveH);
-  _setEl('homeGuardianCount', _liveG);
-  _setEl('helpActiveCount', Math.floor(_liveH/8)+' activos');
-}, 5000);
+// Fake live counters removed — real-time data requires Supabase presence channels
 
 // ── SCROLL REVEAL (landing) ───────────────────────────────────
 function _initReveal(){

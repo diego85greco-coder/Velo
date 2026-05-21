@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260520-34">
+  <link rel="stylesheet" href="premium.css?v=20260520-35">
 </head>
 <body>
 
@@ -601,7 +601,7 @@
               <div class="p-card-title">Guardianes</div>
               <div class="p-card-sub">Personas que escuchan</div>
               <div class="p-card-foot">
-                <span class="p-pill p-pill--live"><span class="p-ldot p-ldot--on"></span> <span id="homeGuardianCount">34</span> disponibles</span>
+                <span class="p-pill p-pill--live"><span class="p-ldot p-ldot--on"></span> Comunidad activa</span>
               </div>
             </div>
             <div class="p-card p-card--feature p-card--hover fc-sage" onclick="pGoTo('help')">
@@ -609,7 +609,7 @@
               <div class="p-card-title">Sala de Ayuda</div>
               <div class="p-card-sub">Apoyo en tiempo real</div>
               <div class="p-card-foot">
-                <span class="p-pill p-pill--live" style="background:rgba(116,198,157,.1);border-color:rgba(116,198,157,.2)"><span class="p-ldot p-ldot--on"></span> <span id="homeHelpCount">36</span> en vivo</span>
+                <span class="p-pill p-pill--live" style="background:rgba(116,198,157,.1);border-color:rgba(116,198,157,.2)"><span class="p-ldot p-ldot--on"></span> Siempre disponible</span>
               </div>
             </div>
             <div class="p-card p-card--feature p-card--hover fc-ocean" onclick="pGoTo('bottle')">
@@ -1244,22 +1244,17 @@
               <button onclick="pToggleHappyInfo()" title="Cómo funciona" style="font-size:16px;background:none;border:none;cursor:pointer;padding:4px;line-height:1;color:var(--ink4)">ℹ️</button>
             </div>
           </div>
-          <!-- Collapsible info panel -->
-          <div id="happyInfoPanel" style="margin:8px 16px 0;background:rgba(255,224,102,.15);border:1.5px solid rgba(255,200,50,.3);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--ink3);line-height:1.6">
+          <!-- Collapsible info panel — hidden by default -->
+          <div id="happyInfoPanel" style="display:none;margin:8px 16px 0;background:rgba(255,224,102,.15);border:1.5px solid rgba(255,200,50,.3);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--ink3);line-height:1.6">
             <strong style="display:block;margin-bottom:4px;color:var(--ink2)">☀️ Solo momentos de alegría</strong>
             Compartí logros, sonrisas y pequeñas alegrías cotidianas. No se permite negatividad ni pedidos de apoyo (para eso está la Sala de Ayuda).<br>
             <span style="color:var(--ink5)">📅 Cada publicación dura 24 horas · Máx 50 activas · Si está lleno, queda en lista de espera</span>
           </div>
           <!-- Compose box -->
-          <div style="padding:12px 16px 14px">
-            <div style="background:rgba(255,224,102,.12);border:1.5px solid rgba(255,200,50,.25);border-radius:14px;padding:12px 14px">
+          <div style="padding:10px 16px 12px">
+            <div style="background:rgba(255,224,102,.12);border:1.5px solid rgba(255,200,50,.25);border-radius:14px;padding:10px 12px">
               <!-- Emoji row — single scrollable line -->
-              <div id="happyEmojiRow" style="display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;margin-bottom:7px;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:1px"></div>
-              <!-- Support strip -->
-              <div style="display:flex;gap:6px;margin-bottom:9px">
-                <button onclick="pGoTo('donate-cta')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:5px 8px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.3);border-radius:100px;font-size:11px;font-weight:700;color:var(--sage);cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap">🙏 Donar aquí</button>
-                <button onclick="pShowPlusModal()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:5px 8px;background:rgba(200,165,100,.1);border:1px solid rgba(200,165,100,.3);border-radius:100px;font-size:11px;font-weight:700;color:#C8A560;cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap">⭐ Velo Plus</button>
-              </div>
+              <div id="happyEmojiRow" style="display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;margin-bottom:8px;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:1px"></div>
               <!-- Text area -->
               <textarea class="p-textarea" id="happyPostTa" rows="2" placeholder="¿Qué momento de alegría querés compartir hoy? ✨" maxlength="300" style="background:rgba(255,255,255,.7);border-color:rgba(255,200,50,.2);font-size:13px;resize:none;margin-bottom:8px"></textarea>
               <!-- Photo preview -->
@@ -2142,6 +2137,6 @@
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
-<script src="premium.js?v=20260520-34"></script>
+<script src="premium.js?v=20260520-35"></script>
 </body>
 </html>
