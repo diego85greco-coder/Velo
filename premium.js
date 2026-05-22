@@ -3754,7 +3754,7 @@ function pOpenMoodQuickView(){
   var monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var moodColors = {'😄':'#74c69d','😊':'#a8dadc','😐':'#ffd166','😞':'#f4a261','😢':'#e76f51'};
 
-  var calHtml = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:16px">';
+  var calHtml = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 auto 16px;max-width:330px">';
   ['L','M','M','J','V','S','D'].forEach(function(d){
     calHtml += '<div style="text-align:center;font-size:9px;font-weight:700;color:var(--ink5);padding:2px 0">'+d+'</div>';
   });
@@ -4930,11 +4930,17 @@ function _happyPostCard(h, isOwn){
     commHtml = '<div style="margin-bottom:10px">';
     commHtml += '<div style="font-size:11px;font-weight:700;color:var(--ink4);margin-bottom:8px;display:flex;align-items:center;gap:5px"><span>💬</span><span>'+commCount+' comentario'+(commCount>1?'s':'')+'</span></div>';
     shownComments.forEach(function(c){
-      var initials = _escHtml((c.name||'?').charAt(0).toUpperCase());
+      var cAnon = !c.userId || c.name === 'Usuario Anónimo' || c.name === 'Anónimo';
+      var cClickAttr = !cAnon
+        ? ' onclick="pQuickProfile('+_jsAttr(c.name||'Usuario')+','+_jsAttr(c.av||'🧑')+',\'\',\'\','+_jsAttr(c.userId)+')"'
+        : '';
+      var avHtml = cAnon
+        ? '<div style="font-size:13px;width:26px;height:26px;border-radius:50%;background:var(--cream2);display:flex;align-items:center;justify-content:center;flex-shrink:0">👤</div>'
+        : '<div style="flex-shrink:0;cursor:pointer"'+cClickAttr+'>'+_avInline(c.av||'🧑',26)+'</div>';
       commHtml += '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">'
-        +'<div style="font-size:12px;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--sage7),var(--sage5));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;color:var(--sage)">'+initials+'</div>'
+        + avHtml
         +'<div style="background:var(--cream2);border-radius:0 12px 12px 12px;padding:7px 11px;flex:1;min-width:0">'
-        +'<div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:2px">'+_escHtml(c.name||'Usuario')+'</div>'
+        +'<div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:2px'+(cAnon?'':';cursor:pointer')+'"'+cClickAttr+'>'+_escHtml(c.name||'Usuario')+'</div>'
         +'<div style="font-size:12px;color:var(--ink3);line-height:1.45;word-break:break-word">'+_escHtml(c.text)+'</div>'
         +'</div></div>';
     });
@@ -4982,6 +4988,7 @@ function _happyPostCard(h, isOwn){
     +'<input id="cmt-'+h.id+'" class="p-input" style="flex:1;font-size:12px;padding:7px 12px;height:auto;border-radius:100px" placeholder="Dejar un comentario…" maxlength="120" onkeydown="if(event.key===\'Enter\')pHappyComment(\''+h.id+'\')">'
     +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;font-size:12px;cursor:pointer;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;flex-shrink:0;white-space:nowrap">Enviar 💬</button>'
     +'</div>'
+    +(safeLS('get','velo_incognito')==='true' ? '<div style="font-size:10.5px;color:var(--ink5);line-height:1.5;margin-top:6px;font-style:italic">En tu perfil tenés activo el modo incógnito. Si querés comentar con tu perfil público, desactivá esa opción.</div>' : '')
     +'</div>';
 }
 
@@ -5047,12 +5054,17 @@ function pHappyComment(postId){
   var inp = document.getElementById('cmt-'+postId);
   if(!inp || !inp.value.trim()) return;
   var text = inp.value.trim();
-  var myName = safeLS('get','velo_user_name') || 'Vos';
+  // A comment is anonymous ONLY if the user has incognito mode enabled
+  var incognito = safeLS('get','velo_incognito') === 'true';
+  var myName = incognito ? 'Usuario Anónimo' : _myDisplayName();
+  var myAv   = incognito ? '' : (safeLS('get','velo_user_av')||'🧑');
+  var myId   = incognito ? '' : _myUserId();
+  var comment = { name:myName, text:text, ts:Date.now(), userId:myId, av:myAv };
   // Supabase-loaded post → update in memory + persist to Supabase
   var sbPost = (_sbHappy||[]).find(function(p){ return p.id === postId; });
   if(sbPost){
     if(!sbPost.comments) sbPost.comments = [];
-    sbPost.comments.push({ name: myName, text: text, ts: Date.now() });
+    sbPost.comments.push(comment);
     sbUpdateHappyPost(postId, { comments: sbPost.comments });
     inp.value = '';
     pToast('💬','Comentario enviado 🌿');
@@ -5070,7 +5082,7 @@ function pHappyComment(postId){
   }
   if(!post) return;
   if(!post.comments) post.comments = [];
-  post.comments.push({ name: myName, text: text, ts: Date.now() });
+  post.comments.push(comment);
   if(!isMock){
     _happySave(posts);
     if(post.userId === _myUserId()) _happyStatIncr('commentsReceived');
