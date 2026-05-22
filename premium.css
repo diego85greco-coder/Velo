@@ -373,7 +373,9 @@ a { text-decoration: none; color: inherit; }
   animation: p-slideRight var(--t-mid) var(--ease-out) forwards;
 }
 @media (min-width: 768px) {
-  .p-main-content { background: rgba(250,248,244,.96); }
+  .p-main-content { background: var(--cream); }
+  .p-page         { background: var(--cream); }
+  .p-page.active  { background: var(--cream); }
 }
 .p-page.active.fade-in {
   animation: p-fadeIn var(--t-slow) ease forwards;
