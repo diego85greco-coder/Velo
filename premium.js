@@ -642,7 +642,10 @@ function pForgotToContact(){
     var sub = document.getElementById('contactSubject');
     if(sub) sub.value = 'Problema con contraseña';
     var msg = document.getElementById('contactMsg');
-    if(msg) msg.value = (val ? 'Mi correo es: '+val+'\n\n' : '')+'No recibí el correo de recuperación y necesito acceder a mi cuenta.';
+    if(msg) msg.value = 'No recibí el correo de recuperación y necesito acceder a mi cuenta.';
+    // Pre-fill contact email with the forgot-password email if available
+    var contactEmailEl = document.getElementById('contactEmail');
+    if(contactEmailEl && val && !contactEmailEl.readOnly){ contactEmailEl.value = val; }
   }, 150);
 }
 
@@ -5985,13 +5988,38 @@ function _showDMToast(fromId, fromName, fromAv, text){
 }
 
 // ── CONTACT ────────────────────────────────────────────────────
+function pContactBack(){
+  pGoTo(_authenticated ? 'home' : 'landing');
+}
+
+function _initContactPage(){
+  var emailEl = document.getElementById('contactEmail');
+  if(!emailEl) return;
+  var stored = safeLS('get','velo_user_email') || '';
+  if(stored){
+    emailEl.value = stored;
+    emailEl.readOnly = true;
+    emailEl.style.opacity = '.7';
+    emailEl.style.cursor = 'default';
+  } else {
+    emailEl.value = '';
+    emailEl.readOnly = false;
+    emailEl.style.opacity = '';
+    emailEl.style.cursor = '';
+  }
+}
+
 async function pSendContact(){
-  var subject = document.getElementById('contactSubject');
-  var msg     = document.getElementById('contactMsg');
+  var subject  = document.getElementById('contactSubject');
+  var msg      = document.getElementById('contactMsg');
+  var emailEl  = document.getElementById('contactEmail');
+  var email    = (emailEl ? emailEl.value.trim() : '') || safeLS('get','velo_user_email') || '';
+
+  if(!email || !email.includes('@')){ pToast('📧','Ingresá un correo válido para poder responderte'); return; }
   if(!subject||!msg||!msg.value.trim()){ pToast('✍️','Escribí tu mensaje'); return; }
-  var text    = msg.value.trim();
-  var topic   = subject ? subject.value||'General' : 'General';
-  var email   = safeLS('get','velo_user_email') || 'anónimo';
+
+  var text  = msg.value.trim();
+  var topic = subject ? subject.value||'General' : 'General';
 
   // Save to Supabase (primary) with localStorage fallback
   var saved = await sbSaveContact(topic, text, email);
@@ -6003,7 +6031,12 @@ async function pSendContact(){
 
   if(subject) subject.value = 'General';
   if(msg) msg.value = '';
-  pToast('💌','Mensaje enviado. Te respondemos pronto 🌿');
+  if(emailEl && !safeLS('get','velo_user_email')) emailEl.value = '';
+
+  pToast('💌','Mensaje enviado. Te respondemos pronto a '+email+' 🌿');
+
+  // After sending, go back to the correct page based on auth state
+  setTimeout(function(){ pContactBack(); }, 1800);
 }
 
 // ── DONATION ───────────────────────────────────────────────────
@@ -8522,18 +8555,20 @@ function pConfirmCancelSub(ov){
 }
 
 function pContactUs(){
+  var userEmail = safeLS('get','velo_user_email') || '';
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:8px">Contactanos 💚</div>'
     +'<p style="font-size:12px;color:var(--ink4);margin-bottom:16px;line-height:1.6">¿Tenés alguna pregunta, sugerencia o problema técnico? Escribinos y te respondemos a la brevedad.</p>'
+    +(userEmail ? '<div style="font-size:12px;color:var(--ink3);background:var(--cream2);border-radius:10px;padding:8px 12px;margin-bottom:12px">📧 Responderemos a: <strong>'+_escHtml(userEmail)+'</strong></div>' : '<div class="p-field"><label class="p-field-label">Tu correo <span style="color:var(--sos)">*</span></label><input class="p-input" type="email" data-cus-email placeholder="para enviarte la respuesta"></div>')
     +'<div class="p-field"><label class="p-field-label">Asunto</label>'
-    +'<select class="p-input" id="contactTopic" style="appearance:none">'
+    +'<select class="p-input" data-cus-topic style="appearance:none">'
     +'<option>Consulta general</option><option>Problema técnico</option><option>Sugerencia de mejora</option><option>Reporte de seguridad</option><option>Solicitud de datos</option>'
     +'</select></div>'
     +'<div class="p-field"><label class="p-field-label">Mensaje</label>'
-    +'<textarea class="p-textarea" id="contactMsg" rows="4" placeholder="Contanos qué necesitás..."></textarea></div>'
+    +'<textarea class="p-textarea" data-cus-msg rows="4" placeholder="Contanos qué necesitás..."></textarea></div>'
     +'<div style="display:flex;gap:8px">'
     +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSendContactModal(this.closest(\'.p-modal-ov\'))">Enviar mensaje</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove()">Cancelar</button>'
@@ -8545,15 +8580,19 @@ function pContactUs(){
 }
 
 function pSendContactModal(ov){
-  var msg   = document.getElementById('contactMsg');
-  var topic = document.getElementById('contactTopic');
+  var msg   = ov ? ov.querySelector('[data-cus-msg]') : null;
+  var topic = ov ? ov.querySelector('[data-cus-topic]') : null;
+  var emailInput = ov ? ov.querySelector('[data-cus-email]') : null;
+  var email = safeLS('get','velo_user_email') || (emailInput ? emailInput.value.trim() : '');
+  if(emailInput && (!email || !email.includes('@'))){ pToast('📧','Ingresá un correo válido para responderte'); return; }
   if(!msg || !msg.value.trim()){ pToast('✍️','Escribí tu mensaje'); return; }
   var text = msg.value.trim();
-  var ts   = Date.now();
+  var topicVal = topic ? topic.value : 'Consulta general';
+  var ts = Date.now();
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
-  msgs.unshift({ id:'c-'+ts, topic: topic?topic.value:'Consulta general', mensaje: text, email: safeLS('get','velo_user_email')||'anónimo', fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}), leido:false });
+  msgs.unshift({ id:'c-'+ts, topic: topicVal, mensaje: text, email: email||'anónimo', fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}), leido:false });
   safeLS('set','velo_admin_contacts', JSON.stringify(msgs.slice(0,200)));
-  try{ sbEnviarReporte(text, topic?topic.value:'contacto').catch(function(){}); }catch(e){}
+  sbSaveContact(topicVal, text, email||'anónimo').catch(function(){});
   if(ov) ov.remove();
   pToast('💌','¡Mensaje enviado! Te respondemos pronto 💚');
 }

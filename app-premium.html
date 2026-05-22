@@ -1500,7 +1500,7 @@
           <div class="p-page-inner" style="max-width:580px;margin:auto">
             <div class="p-page-hdr">
               <div class="p-page-hdr-back">
-                <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+                <button class="p-back-btn" onclick="pContactBack()">←</button>
                 <div>
                   <div class="p-label">Soporte</div>
                   <h2 class="p-title">Contacto</h2>
@@ -1513,6 +1513,12 @@
             </div>
             <div class="p-card" style="padding:20px;margin-top:14px">
               <div class="p-label p-label-sage" style="margin-bottom:12px">Enviar mensaje</div>
+              <!-- Email field: shown always; pre-filled and read-only when logged in -->
+              <div class="p-field" id="contactEmailField">
+                <label class="p-field-label">Tu correo electrónico <span style="color:var(--sos)">*</span></label>
+                <input class="p-input" type="email" id="contactEmail" placeholder="para que podamos responderte" autocomplete="email">
+                <div style="font-size:11px;color:var(--ink5);margin-top:4px">Solo se usa para enviarte la respuesta. No se comparte.</div>
+              </div>
               <div class="p-field">
                 <label class="p-field-label">Asunto</label>
                 <select class="p-input" id="contactSubject">
@@ -2307,6 +2313,6 @@
     <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
   </div>
 </div>
-<script src="premium.js?v=20260522-88"></script>
+<script src="premium.js?v=20260522-89"></script>
 </body>
 </html>
