@@ -421,6 +421,12 @@ ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS guardian_av  text;
 ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS context      text;
 ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS created_at   timestamptz DEFAULT now();
 ALTER TABLE guardian_presence ADD COLUMN IF NOT EXISTS is_guardian  bool DEFAULT true;
+ALTER TABLE reviews   ADD COLUMN IF NOT EXISTS kind          text;
+ALTER TABLE reviews   ADD COLUMN IF NOT EXISTS reviewer_name text;
+ALTER TABLE reviews   ADD COLUMN IF NOT EXISTS reviewee_name text;
+ALTER TABLE help_posts ADD COLUMN IF NOT EXISTS user_av      text;
+ALTER TABLE profiles  ADD COLUMN IF NOT EXISTS helped_count   int DEFAULT 0;
+ALTER TABLE profiles  ADD COLUMN IF NOT EXISTS received_count int DEFAULT 0;
 
 -- ── REALTIME ──────────────────────────────────────────────────
 

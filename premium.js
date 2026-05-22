@@ -408,7 +408,8 @@ function _sbHappyRow(r){
     reactions:r.reactions||{'💛':0,'🌸':0,'🤗':0,'🌿':0,'✨':0}, comments:r.comments||[] };
 }
 function _sbHelpRow(r){
-  return { id:r.id, emoji:r.emoji||'💙', anon:r.anon, name:r.anon?'Usuario Anónimo':r.user_name,
+  return { id:r.id, emoji:r.emoji||'💙', anon:r.anon, name:r.anon?'Usuario Anónimo':(r.user_name||'Usuario'),
+    av:r.anon?'':(r.user_av||''),
     userId:r.user_id||'', time:new Date(r.created_at).getTime(), preview:r.preview, taken:r.taken,
     closed:r.closed||false, urgencia:r.urgencia||'normal', isSB:true };
 }
@@ -1502,8 +1503,8 @@ async function pRenderGuardians(){
     var isFav = !isAnon && pIsFav(rawId);
     return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+(isAnon?'Guardián Anónimo':g.name)+'</span><span style="font-size:14px">'+badge.icon+'</span></div><div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0">'+(isAnon?'Disponible de forma anónima':g.bio)+'</p></div>'
       +'<div style="display:flex;gap:6px;align-items:center">'
-      +(!isAnon ? '<button onclick="event.stopPropagation();'+(isFav?'pRemoveFav':'pAddFav')+'(\''+rawId+'\','+JSON.stringify(g.name)+','+JSON.stringify(g.av||'🌿')+');pRenderGuardians()" style="padding:6px 8px;background:'+(isFav?'rgba(255,200,50,.18)':'rgba(255,200,50,.07)')+';border:1px solid rgba(255,200,50,'+(isFav?'.4':'.2')+');border-radius:10px;font-size:15px;cursor:pointer" title="'+(isFav?'Quitar favorito':'Guardar favorito')+'">'+(isFav?'⭐':'☆')+'</button>' : '')
-      +'<button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(g.status==='ocupado'?'pToast(\'🟡\','+JSON.stringify(g.name+' está ocupado/a ahora')+')':'pOpenGuardian(\''+g.id+'\')')+'">'+(g.status==='ocupado'?'Ocupado/a':'Solicitar')+'</button>'
+      +(!isAnon ? '<button onclick="event.stopPropagation();'+(isFav?'pRemoveFav':'pAddFav')+'('+_jsAttr(rawId)+','+_jsAttr(g.name)+','+_jsAttr(g.av||'🌿')+');pRenderGuardians()" style="padding:6px 8px;background:'+(isFav?'rgba(255,200,50,.18)':'rgba(255,200,50,.07)')+';border:1px solid rgba(255,200,50,'+(isFav?'.4':'.2')+');border-radius:10px;font-size:15px;cursor:pointer" title="'+(isFav?'Quitar favorito':'Guardar favorito')+'">'+(isFav?'⭐':'☆')+'</button>' : '')
+      +'<button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(g.status==='ocupado'?'pToast(\'🟡\','+_jsAttr(g.name+' está ocupado/a ahora')+')':'pOpenGuardian('+_jsAttr(g.id)+')')+'">'+(g.status==='ocupado'?'Ocupado/a':'Solicitar')+'</button>'
       +'</div></div></div>';
   }).join('');
 }
@@ -1562,15 +1563,23 @@ function pOpenGuardian(id){
     }
   }
   var rvEl = document.getElementById('gdReviews');
-  if(rvEl){
-    var rvs = g.reviews || (g.review ? [g.review] : []);
-    var maxShow = Math.min(rvs.length, 10);
-    var starsMap = function(n){ return '⭐'.repeat(n||5); };
-    rvEl.innerHTML = rvs.slice(0, maxShow).map(function(r){
-      return '<div class="p-review-card" style="margin-bottom:12px"><div class="p-row" style="margin-bottom:6px"><span style="font-size:13px">'+starsMap(r.stars)+'</span></div><p class="p-rv-txt">&#8220;'+r.txt+'&#8221;</p><div style="font-size:11px;color:var(--ink5)">— '+r.auth+'</div></div>';
-    }).join('') || '<p class="p-sm p-muted">Sin reseñas aún.</p>';
-  }
+  if(rvEl) rvEl.innerHTML = '<p class="p-sm p-muted">Cargando reseñas…</p>';
   pGoTo('guardian-detail');
+  // Load real reviews for this guardian from Supabase
+  (function(){
+    var gUid = (g.id||'').replace('live_','');
+    _loadUserReviews(gUid).then(function(revs){
+      var el = document.getElementById('gdReviews');
+      if(!el) return;
+      if(!revs.length){ el.innerHTML = '<p class="p-sm p-muted">Sin reseñas aún.</p>'; return; }
+      el.innerHTML = revs.slice(0,10).map(function(r){
+        return '<div class="p-review-card" style="margin-bottom:12px">'
+          +'<div class="p-row" style="margin-bottom:6px"><span style="font-size:13px">'+'⭐'.repeat(r.stars||5)+'</span></div>'
+          +(r.texto ? '<p class="p-rv-txt">&#8220;'+_escHtml(r.texto)+'&#8221;</p>' : '')
+          +'<div style="font-size:11px;color:var(--ink5)">— '+_escHtml(r.reviewer_name||'Anónimo')+'</div></div>';
+      }).join('');
+    });
+  })();
 }
 
 function pAskGuardian(){
@@ -1637,7 +1646,7 @@ function _showGuardianWaitSheet(name, reqId){
     +'<p style="font-size:13px;color:var(--ink3);margin:0 0 18px;line-height:1.55">Le avisamos que pediste acompañamiento. Te abriremos el chat apenas acepte 🌿</p>'
     +'<div style="font-size:24px;margin-bottom:18px;letter-spacing:3px;color:var(--sage3)">• • •</div>'
     +'</div>'
-    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pCancelGuardianWait('+JSON.stringify(reqId)+')">Cancelar solicitud</button>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pCancelGuardianWait('+_jsAttr(reqId)+')">Cancelar solicitud</button>'
     +'</div>';
   document.body.appendChild(ov);
 }
@@ -1846,21 +1855,32 @@ function pSendGuardianMsg(){
   }
 }
 
+function _bumpProfileCounter(field, value){
+  _initSupabase();
+  if(!sbClient) return;
+  var uid = _myUserId();
+  if(!uid || uid === 'guest') return;
+  var upd = {}; upd[field] = value;
+  sbClient.from('profiles').update(upd).eq('id', uid).then(function(){}).catch(function(){});
+}
+
 function pEndGuardianChat(){
   if(_gcRtCh && sbClient){ try{ sbClient.removeChannel(_gcRtCh); }catch(e){} _gcRtCh = null; }
   if(_gcReqId && sbClient){
     sbClient.from('guardian_requests').update({status:'ended'}).eq('id',_gcReqId).then(function(){}).catch(function(){});
   }
   if(_gcRole === 'guardian'){
-    var convs = parseInt(safeLS('get','velo_guardian_convs')||'0',10);
-    safeLS('set','velo_guardian_convs', String(convs+1));
+    var convs = parseInt(safeLS('get','velo_guardian_convs')||'0',10) + 1;
+    safeLS('set','velo_guardian_convs', String(convs));
+    _bumpProfileCounter('helped_count', convs);
     _updateGuardianPresence(safeLS('get','velo_guardian_status')||'disponible');
-    var peer = _gcPeer;
     _gcPeer = null; _gcReqId = null; _gcRole = null;
     pToast('💚','Gracias por acompañar 🌿');
     pGoTo('guardians');
   } else {
-    safeLS('set','velo_help_received', String(parseInt(safeLS('get','velo_help_received')||'0',10)+1));
+    var received = parseInt(safeLS('get','velo_help_received')||'0',10) + 1;
+    safeLS('set','velo_help_received', String(received));
+    _bumpProfileCounter('received_count', received);
     var rGuardian = _gcPeer ? { id:_gcPeer.id, name:_gcPeer.name } : null;
     safeLS('set','velo_postchat_guardian', rGuardian ? JSON.stringify(rGuardian) : '');
     _gcPeer = null; _gcReqId = null; _gcRole = null;
@@ -1997,12 +2017,14 @@ async function pRenderHelp(){
       : '<button class="p-btn p-btn--primary p-btn--sm" onclick="pAccompanyHelp(\''+h.id+'\')">💚 Acompañar</button>'
         +'<button style="font-size:11px;color:rgba(192,48,40,.5);background:none;border:none;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportContent(\'help\',\''+h.id+'\')">⚠️ Reportar</button>';
     var canClickProfile = !h.anon && !isOwn && h.userId && h.name !== 'Usuario Anónimo';
+    var hAv = h.av || h.emoji || '💙';
+    var profCall = 'pQuickProfile('+_jsAttr(h.name)+','+_jsAttr(hAv)+',\'\',\'\','+_jsAttr(h.userId||'')+')';
     var nameHtml = canClickProfile
-      ? '<span style="font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" onclick="pQuickProfile('+JSON.stringify(h.name)+',\'\',\'\',\'\',\''+h.userId+'\')">'+_escHtml(h.name)+'</span>'
+      ? '<span style="font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" onclick="'+profCall+'">'+_escHtml(h.name)+'</span>'
       : '<span style="font-size:12px;font-weight:600;color:var(--ink)">'+_escHtml(h.name)+'</span>';
     return '<div class="dark-seeker" id="helppost-'+h.id+'">'
       +'<div style="display:flex;align-items:flex-start;gap:11px">'
-      +'<div style="font-size:28px;flex-shrink:0;'+(canClickProfile?'cursor:pointer" onclick="pQuickProfile('+JSON.stringify(h.name)+',\'\',\'\',\'\',\''+h.userId+'\')':'')+'">'+(h.emoji||'💙')+'</div>'
+      +'<div style="font-size:28px;flex-shrink:0;'+(canClickProfile?'cursor:pointer" onclick="'+profCall:'')+'">'+(canClickProfile && hAv && (hAv.indexOf('data:')===0||hAv.indexOf('http')===0) ? _avInline(hAv,32) : (h.emoji||'💙'))+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">'
       +nameHtml
@@ -2177,7 +2199,7 @@ function _showLeaveMessageModal(post, reason){
     +'<textarea id="leaveMessageTa" placeholder="Escribí unas palabras de aliento…" rows="3" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--ink);outline:none;resize:none;box-sizing:border-box;font-family:\'Jost\',sans-serif"></textarea>'
     +'<div style="display:flex;gap:10px;margin-top:14px">'
     +'<button onclick="document.getElementById(\'leaveMessageOv\').remove();pGoTo(\'help\')" style="flex:1;padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
-    +'<button onclick="_sendLeaveMessage('+JSON.stringify(post.id)+')" style="flex:1;padding:11px;background:var(--sage);border:none;border-radius:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💙 Enviar</button>'
+    +'<button onclick="_sendLeaveMessage('+_jsAttr(post.id)+')" style="flex:1;padding:11px;background:var(--sage);border:none;border-radius:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💙 Enviar</button>'
     +'</div></div>';
   document.body.appendChild(ov);
 }
@@ -2228,7 +2250,7 @@ function _showSeekerGuardianPopup(postId, row){
     +'<div id="seekerGuardianCountdown" style="font-size:28px;font-weight:800;color:var(--sage);margin-bottom:18px">80</div>'
     +'<div style="display:flex;gap:10px">'
     +'<button onclick="_seekerDeclineRequest(\''+reqId+'\',\''+postId+'\')" style="flex:1;padding:12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Ahora no</button>'
-    +'<button onclick="_seekerAcceptRequest(\''+reqId+'\',\''+postId+'\','+JSON.stringify(guardianName)+','+JSON.stringify(guardianAv)+')" style="flex:1;padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💚 Aceptar</button>'
+    +'<button onclick="_seekerAcceptRequest('+_jsAttr(reqId)+','+_jsAttr(postId)+','+_jsAttr(guardianName)+','+_jsAttr(guardianAv)+')" style="flex:1;padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💚 Aceptar</button>'
     +'</div></div>';
   document.body.appendChild(ov);
   // Countdown + auto-dismiss after 80s
@@ -2402,7 +2424,7 @@ function _showHelpChatRating(post){
     +'</div>'
     +(post && post.userId && post.userId !== 'anon' && !post.anon ? '<div style="margin-bottom:14px;padding:12px;background:var(--sage7);border-radius:14px;border:1px solid rgba(116,198,157,.2)">'
     +'<div style="font-size:12px;color:var(--ink3);margin-bottom:8px">¿Querés mantener contacto con esta persona?</div>'
-    +'<button onclick="pAddFav(\''+post.userId+'\','+JSON.stringify(post.name||'Usuario')+','+JSON.stringify(post.emoji||'🧑')+');" style="padding:8px 18px;background:var(--sage4);border:none;border-radius:100px;font-size:13px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif">⭐ Guardar en favoritos</button>'
+    +'<button onclick="pAddFav('+_jsAttr(post.userId)+','+_jsAttr(post.name||'Usuario')+','+_jsAttr(post.emoji||'🧑')+');" style="padding:8px 18px;background:var(--sage4);border:none;border-radius:100px;font-size:13px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif">⭐ Guardar en favoritos</button>'
     +'</div>' : '')
   +'<button onclick="document.getElementById(\'helpRatingOv\').remove();pGoTo(\'post-chat\')" style="padding:11px 28px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:100px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Omitir</button>'
     +'</div>';
@@ -2444,18 +2466,14 @@ async function pSendHelp(){
   _geminiModerateContent(msg, 'sala-de-ayuda');
   var showProfile = document.getElementById('helpShowProfile') && document.getElementById('helpShowProfile').checked;
   var isAnon = !showProfile;
-  // Reset toggle for next use
-  var tog = document.getElementById('helpProfileTog');
-  if(tog){ tog.classList.remove('on'); }
-  var cb = document.getElementById('helpShowProfile');
-  if(cb) cb.checked = false;
-  var name = isAnon ? 'Usuario Anónimo' : (safeLS('get','velo_user_name')||'Usuario');
+  var name = isAnon ? 'Usuario Anónimo' : _myDisplayName();
+  var userAv = isAnon ? '' : (safeLS('get','velo_user_av')||'🧑');
   ta.value = '';
   closeModal('helpFormOv');
   pToast('💌','Mensaje publicado. Alguien te acompañará pronto 💚');
   var posts = []; try{ posts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
   var ts = Date.now();
-  posts.unshift({ id:'hu'+ts, emoji:'💙', anon:isAnon, name:name, time:ts, preview:msg, taken:false,
+  posts.unshift({ id:'hu'+ts, emoji:'💙', anon:isAnon, name:name, av:userAv, time:ts, preview:msg, taken:false,
     userId: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'' });
   safeLS('set','velo_help_posts', JSON.stringify(posts.slice(0,50)));
   safeLS('set','velo_helped_once','1');
@@ -2463,7 +2481,7 @@ async function pSendHelp(){
   _initSupabase();
   if(sbClient){
     sbClient.from('help_posts').insert({ id:'hu'+ts,
-      user_id: safeLS('get','velo_user_id')||null, user_name: name,
+      user_id: safeLS('get','velo_user_id')||null, user_name: name, user_av: userAv,
       emoji:'💙', preview:msg, urgencia:'normal', anon:isAnon, taken:false
     }).then(function(){}).catch(function(){});
   }
@@ -3393,7 +3411,7 @@ async function pRenderBottle(){
     }
     var showAuthor = !b.anon && b.userName && !isOwn;
     var authorHtml = showAuthor
-      ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;cursor:pointer" onclick="pQuickProfile('+JSON.stringify(b.userName||'Usuario')+','+JSON.stringify(b.userAv||'🧑')+',\'\',\'\',\''+b.userId+'\')">'
+      ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;cursor:pointer" onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')">'
         +_avInline(b.userAv||'🧑',24)
         +'<span style="font-size:11px;color:#1E5A80;font-weight:600">'+_escHtml(b.userName)+'</span>'
         +'<span style="font-size:10px;color:var(--ink5)">· toca para ver perfil</span>'
@@ -3431,15 +3449,10 @@ function pSendBottle(){
   var text = ta.value.trim();
   var showProfile = document.getElementById('bottleShowProfile') && document.getElementById('bottleShowProfile').checked;
   var isAnon = !showProfile;
-  var myName = isAnon ? '' : (safeLS('get','velo_user_name')||'');
-  var myAv   = isAnon ? '' : (safeLS('get','velo_user_av')||'');
+  var myName = isAnon ? '' : _myDisplayName();
+  var myAv   = isAnon ? '' : (safeLS('get','velo_user_av')||'🧑');
   var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
   ta.value = '';
-  // Reset toggle for next use
-  var tog = document.getElementById('bottleProfileTog');
-  if(tog) tog.classList.remove('on');
-  var cb = document.getElementById('bottleShowProfile');
-  if(cb) cb.checked = false;
   closeModal('bottleFormOv');
   _incDailyLimit('bottle');
   var bottles = []; try{ bottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
@@ -4619,6 +4632,32 @@ function _myUserId(){
   return safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || 'guest-'+(safeLS('get','velo_user_name')||'user');
 }
 
+// Reliable display name — never empty, falls back to email prefix
+function _myDisplayName(){
+  return safeLS('get','velo_user_name') || (safeLS('get','velo_user_email')||'').split('@')[0] || 'Usuario';
+}
+
+// Produces a JS string literal safe to embed inside a double-quoted HTML
+// onclick="" attribute. Using JSON.stringify directly emits double quotes
+// that prematurely close the attribute — this wraps in single quotes and
+// escapes them, turning any inner double quote into &quot;.
+function _jsAttr(v){
+  return "'" + String(v == null ? '' : v)
+    .replace(/\\/g,'\\\\').replace(/'/g,"\\'")
+    .replace(/"/g,'&quot;').replace(/[\r\n]+/g,' ') + "'";
+}
+
+// Loads reviews written ABOUT a given user (most recent first)
+async function _loadUserReviews(userId){
+  _initSupabase();
+  if(!sbClient || !userId) return [];
+  try{
+    var res = await sbClient.from('reviews').select('*').eq('pro_id', userId)
+      .order('created_at',{ascending:false}).limit(20);
+    return res.data || [];
+  }catch(e){ return []; }
+}
+
 // Demo posts — richer structure
 var _happyMock = (function(){
   var now = Date.now();
@@ -4916,18 +4955,18 @@ function _happyPostCard(h, isOwn){
     : '<div style="font-size:24px;width:40px;height:40px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>';
 
   var canClick = !isOwn && h.userId && h.userId !== 'anon' && !h.anon;
-  var authorClick = canClick ? ' style="cursor:pointer" onclick="pQuickProfile('+JSON.stringify(h.name||'Usuario')+','+JSON.stringify(h.av||'')+',\'\',\'\',\''+h.userId+'\')"' : '';
+  var authorClick = canClick ? ' style="cursor:pointer" onclick="pQuickProfile('+_jsAttr(h.name||'Usuario')+','+_jsAttr(h.av||'')+',\'\',\'\','+_jsAttr(h.userId||'')+')"' : '';
   return '<div class="happy-card" data-id="'+h.id+'">'
     // header
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
     +'<div'+authorClick+'>'+avatarHtml+'</div>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:13px;font-weight:600;color:var(--ink)'+(canClick?';cursor:pointer':'')+'"'+(canClick?' onclick="pQuickProfile('+JSON.stringify(h.name||'Usuario')+','+JSON.stringify(h.av||'')+',\'\',\'\',\''+h.userId+'\')"':'')+'>'+_escHtml(h.name||'Usuario Anónimo')+'</div>'
+    +'<div style="font-size:13px;font-weight:600;color:var(--ink)'+(canClick?';cursor:pointer':'')+'"'+(canClick?' onclick="pQuickProfile('+_jsAttr(h.name||'Usuario')+','+_jsAttr(h.av||'')+',\'\',\'\','+_jsAttr(h.userId||'')+')"':'')+'>'+_escHtml(h.name||'Usuario Anónimo')+'</div>'
     +'<div style="font-size:10px;color:var(--ink5);margin-top:1px">'+relTime+(isOwn?' · <strong style="color:var(--sage)">Tuya</strong>':'')+'</div>'
     +'</div>'
     +(isOwn
       ? '<button onclick="pDeleteHappyPost(\''+h.id+'\')" style="padding:5px 10px;background:rgba(255,80,80,.07);border:1px solid rgba(255,80,80,.18);border-radius:100px;color:rgba(200,60,60,.7);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0" title="Eliminar publicación">🗑️</button>'
-      : '<button onclick="pReportContent(\'happy\',\''+h.id+'\','+JSON.stringify((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:100px;color:rgba(180,50,50,.6);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0">🚩</button>')
+      : '<button onclick="pReportContent(\'happy\','+_jsAttr(h.id)+','+_jsAttr((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:100px;color:rgba(180,50,50,.6);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0">🚩</button>')
     +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap;flex-shrink:0">⏳ '+timeLeft+'</span>' : '')
     +'</div>'
     // photo
@@ -5117,11 +5156,11 @@ function pSubmitHappyPost(){
   var hasPhoto = !!_happySelectedPhoto;
   if(!hasText && !hasPhoto){ pToast('✍️','Escribí algo o adjuntá una foto antes de publicar'); return; }
   var myId  = _myUserId();
-  var name  = safeLS('get','velo_user_name') || 'Usuario Anónimo';
+  var name  = _myDisplayName();
   var posts = _processHappyQueue();
   var happyShowProfile = document.getElementById('happyShowProfile');
   var isAnon = !(happyShowProfile && happyShowProfile.checked);
-  var userAv = isAnon ? '' : (safeLS('get','velo_user_av') || '');
+  var userAv = isAnon ? '' : (safeLS('get','velo_user_av') || '🧑');
   var post  = {
     id: 'h'+Date.now(), userId: myId,
     emoji: _selectedHappyEmoji,
@@ -5561,10 +5600,10 @@ function pRenderInbox(){
       var senderId   = senderInfo && senderInfo.i ? senderInfo.i : '';
       var senderAv   = senderInfo && senderInfo.a ? senderInfo.a : (b.icon||'📢');
       var iconHtml = senderId
-        ? '<div class="p-inbox-ic" style="cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+JSON.stringify(senderName)+','+JSON.stringify(senderAv)+',\'\',\'\','+JSON.stringify(senderId)+')">'+_avInline(senderAv,32)+'</div>'
+        ? '<div class="p-inbox-ic" style="cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_avInline(senderAv,32)+'</div>'
         : '<div class="p-inbox-ic">'+_escHtml(b.icon||'📢')+'</div>';
       var senderRow = (senderId && senderName)
-        ? '<div style="font-size:11px;color:var(--sage);font-weight:600;margin-bottom:2px;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+JSON.stringify(senderName)+','+JSON.stringify(senderAv)+',\'\',\'\','+JSON.stringify(senderId)+')">'+_escHtml(senderName)+' ›</div>'
+        ? '<div style="font-size:11px;color:var(--sage);font-weight:600;margin-bottom:2px;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_escHtml(senderName)+' ›</div>'
         : '';
       return '<div class="p-inbox-msg'+(safeLS('get',readKey)?'':' unread')+'" onclick="safeLS(\'set\',\''+readKey+'\',\'1\');this.classList.remove(\'unread\');this.querySelector(\'.p-inbox-dot\')&&this.querySelector(\'.p-inbox-dot\').remove()">'
         +'<div style="display:flex;flex-shrink:0">'+(safeLS('get',readKey)?'':'<div class="p-inbox-dot"></div>')+'</div>'
@@ -5596,7 +5635,7 @@ function pRenderInbox(){
         var isRead = !!safeLS('get', readKey);
         var fecha = r.reply_at ? new Date(r.reply_at).toLocaleDateString('es',{day:'2-digit',month:'short'}) : '';
         var allowR = !!r.allow_reply;
-        return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" style="cursor:pointer" onclick="pOpenInboxAdminReply(\''+r.id+'\','+JSON.stringify(_escHtml(r.topic||'Consulta'))+','+JSON.stringify(_escHtml(r.mensaje||''))+','+JSON.stringify(_escHtml(r.reply||''))+','+allowR+',\''+_escHtml(fecha)+'\',this)">'
+        return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" style="cursor:pointer" onclick="pOpenInboxAdminReply('+_jsAttr(r.id)+','+_jsAttr(r.topic||'Consulta')+','+_jsAttr(r.mensaje||'')+','+_jsAttr(r.reply||'')+','+allowR+','+_jsAttr(fecha)+',this)">'
           +'<div style="display:flex;flex-shrink:0">'+(isRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
           +'<div class="p-inbox-ic" style="background:rgba(200,165,100,.12)">💌</div>'
           +'<div style="flex:1;min-width:0">'
@@ -5699,12 +5738,12 @@ function pOpenInboxAdminReply(contactId, topic, originalMsg, replyText, allowRep
     +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
     +'<div style="font-size:30px;width:46px;height:46px;border-radius:14px;background:rgba(200,165,100,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">💌</div>'
     +'<div><div style="font-size:12px;font-weight:700;color:#C8A560">Equipo Velo</div>'
-    +'<div style="font-size:11px;color:var(--ink5)">'+fecha+'</div></div>'
+    +'<div style="font-size:11px;color:var(--ink5)">'+_escHtml(fecha||'')+'</div></div>'
     +'</div>'
-    +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);margin-bottom:16px;line-height:1.3">Re: '+topic+'</h2>'
-    +'<div style="font-size:14px;color:var(--ink3);line-height:1.85;white-space:pre-line;background:var(--cream2);border-radius:12px;padding:16px;margin-bottom:16px">'+replyText+'</div>'
-    +(originalMsg ? '<details style="margin-bottom:20px"><summary style="font-size:11px;color:var(--ink5);cursor:pointer">Ver mensaje original</summary><div style="font-size:12px;color:var(--ink4);line-height:1.7;white-space:pre-line;margin-top:8px;padding:10px;background:var(--cream2);border-radius:10px">'+originalMsg+'</div></details>' : '')
-    +(allowReply ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" style="margin-bottom:8px" onclick="document.getElementById(\'inboxAdminReplyOv\').remove();pReplyToAdmin(\''+topic.replace(/'/g,"\\'")+'\')">💬 Responder</button>' : '')
+    +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);margin-bottom:16px;line-height:1.3">Re: '+_escHtml(topic||'')+'</h2>'
+    +'<div style="font-size:14px;color:var(--ink3);line-height:1.85;white-space:pre-line;background:var(--cream2);border-radius:12px;padding:16px;margin-bottom:16px">'+_escHtml(replyText||'')+'</div>'
+    +(originalMsg ? '<details style="margin-bottom:20px"><summary style="font-size:11px;color:var(--ink5);cursor:pointer">Ver mensaje original</summary><div style="font-size:12px;color:var(--ink4);line-height:1.7;white-space:pre-line;margin-top:8px;padding:10px;background:var(--cream2);border-radius:10px">'+_escHtml(originalMsg)+'</div></details>' : '')
+    +(allowReply ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" style="margin-bottom:8px" onclick="document.getElementById(\'inboxAdminReplyOv\').remove();pReplyToAdmin('+_jsAttr(topic||'')+')">💬 Responder</button>' : '')
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'inboxAdminReplyOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
@@ -5751,36 +5790,93 @@ async function pSendReplyToAdmin(originalTopic){
   finally{ if(btn){ btn.disabled=false; btn.textContent='Enviar 💌'; } }
 }
 
-function pQuickProfile(name, av, bio, guardianId, userId){
-  var convs  = 0;
-  var badge  = _getBadge(convs);
-  if(guardianId){
-    var g = _guardianProfiles.find(function(x){ return x.id === guardianId; });
-    if(g){ convs = g.convs; badge = _getBadge(g.convs); bio = bio || g.bio; }
-  }
+async function pQuickProfile(name, av, bio, guardianId, userId){
   var isAnon = !name || name === 'Usuario Anónimo' || name === 'Anónimo';
   var uid = userId || (guardianId ? guardianId.replace('live_','') : '');
-  var isFav = uid ? pIsFav(uid) : false;
+
+  // Show the sheet immediately with a loading state, then enrich
   var existing = document.getElementById('quickProfileOv');
   if(existing) existing.remove();
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
   ov.id = 'quickProfileOv';
-  ov.innerHTML = '<div class="p-sheet">'
+  ov.innerHTML = '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
     +'<div class="p-sheet-handle"></div>'
-    +'<div style="text-align:center;padding:8px 0 16px">'
-    +'<div style="font-size:60px;margin-bottom:10px;display:flex;justify-content:center">'+_avInline(isAnon?'👤':(av||'🧑'),68)+'</div>'
-    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:4px">'+(isAnon?'Usuario Anónimo':_escHtml(name||'Usuario'))+'</div>'
-    +(badge&&!isAnon ? '<div style="font-size:14px;color:var(--ink4);margin-bottom:8px">'+badge.icon+' Guardián '+badge.name+'</div>' : '')
-    +(bio&&!isAnon ? '<p style="font-size:13px;color:var(--ink3);line-height:1.65;font-style:italic;margin:0 0 12px">"'+_escHtml(bio)+'"</p>' : '')
-    +'</div>'
-    +(guardianId&&!isAnon ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove();pOpenGuardian(\''+guardianId+'\')">Solicitar acompañamiento 💚</button><div style="height:8px"></div>' : '')
-    +(!isAnon && uid ? '<button id="qpFavBtn" class="p-btn p-btn--'+(isFav?'primary':'secondary')+' p-btn--md p-btn--full" onclick="pToggleFavFromProfile(\''+uid+'\','+JSON.stringify(name)+','+JSON.stringify(av||'🧑')+')">'+(isFav?'⭐ En tus favoritos':'☆ Guardar como favorito')+'</button><div style="height:8px"></div>' : '')
-    +(!isAnon && uid ? '<button class="p-btn p-btn--secondary p-btn--sm p-btn--full" onclick="pOpenDM(\''+uid+'\','+JSON.stringify(name)+','+JSON.stringify(av||'🧑')+');this.closest(\'.p-modal-ov\').remove()">💬 Enviar mensaje</button><div style="height:8px"></div>' : '')
-    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove()">Cerrar</button>'
+    +'<div id="qpBody" style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Cargando perfil…</div>'
     +'</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+
+  // Fetch full profile + reviews
+  var prof = null, reviews = [];
+  if(uid && !isAnon){
+    _initSupabase();
+    if(sbClient){
+      try{
+        var pr = await sbClient.from('profiles').select('*').eq('id', uid).limit(1);
+        if(pr.data && pr.data.length) prof = pr.data[0];
+      }catch(e){}
+      reviews = await _loadUserReviews(uid);
+    }
+  }
+  var body = document.getElementById('qpBody');
+  if(!body) return; // sheet was closed
+
+  var dispName = isAnon ? 'Usuario Anónimo' : ((prof && prof.nombre) || name || 'Usuario');
+  var dispAv   = isAnon ? '👤' : ((prof && prof.avatar) || av || '🧑');
+  var motto    = (!isAnon && prof && prof.motto) ? prof.motto : (isAnon ? '' : (bio||''));
+  var isFav    = uid ? pIsFav(uid) : false;
+  var presence = (uid && !isAnon) ? _presenceInfo(uid) : null;
+
+  var likeRows = (prof && !isAnon) ? [
+    prof.status_music  ? '🎵 '+_escHtml(prof.status_music)  : '',
+    prof.status_film   ? '🎬 '+_escHtml(prof.status_film)   : '',
+    prof.status_book   ? '📖 '+_escHtml(prof.status_book)   : '',
+    prof.status_phrase ? '💬 '+_escHtml(prof.status_phrase) : ''
+  ].filter(Boolean) : [];
+  var likes = likeRows.length
+    ? '<div style="text-align:left;background:var(--cream2);border-radius:12px;padding:10px 14px;margin-bottom:12px">'
+      +'<div style="font-size:10px;font-weight:700;color:var(--ink5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Le gusta</div>'
+      + likeRows.map(function(r){ return '<div style="font-size:12.5px;color:var(--ink3);padding:3px 0">'+r+'</div>'; }).join('')
+      +'</div>'
+    : '';
+  var helped   = (prof && prof.helped_count)   ? prof.helped_count   : 0;
+  var received = (prof && prof.received_count) ? prof.received_count : 0;
+  var counters = (!isAnon && prof)
+    ? '<div style="display:flex;justify-content:center;gap:24px;margin-bottom:14px">'
+      +'<div style="text-align:center"><div style="font-size:19px;font-weight:800;color:var(--sage)">'+helped+'</div><div style="font-size:10px;color:var(--ink5)">Acompañó</div></div>'
+      +'<div style="text-align:center"><div style="font-size:19px;font-weight:800;color:var(--sage)">'+received+'</div><div style="font-size:10px;color:var(--ink5)">Recibió apoyo</div></div>'
+      +'<div style="text-align:center"><div style="font-size:19px;font-weight:800;color:var(--sage)">'+reviews.length+'</div><div style="font-size:10px;color:var(--ink5)">Reseñas</div></div>'
+      +'</div>'
+    : '';
+  var revHtml = reviews.length
+    ? '<div style="text-align:left;margin-bottom:12px">'
+      +'<div style="font-size:10px;font-weight:700;color:var(--ink5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Reseñas recibidas</div>'
+      + reviews.slice(0,6).map(function(r){
+          return '<div style="background:var(--cream2);border-radius:10px;padding:8px 11px;margin-bottom:6px">'
+            +'<div style="font-size:12px">'+'⭐'.repeat(r.stars||5)+'</div>'
+            +(r.texto ? '<div style="font-size:12px;color:var(--ink3);font-style:italic;line-height:1.45;margin-top:2px">"'+_escHtml(r.texto)+'"</div>' : '')
+            +'<div style="font-size:10px;color:var(--ink5);margin-top:3px">— '+_escHtml(r.reviewer_name||'Anónimo')+'</div>'
+            +'</div>';
+        }).join('')
+      +'</div>'
+    : '';
+
+  body.style.cssText = '';
+  body.innerHTML = '<div style="text-align:center;padding:6px 0 14px">'
+    +'<div style="position:relative;display:inline-block;margin-bottom:8px">'
+    +'<div style="font-size:60px;display:flex;justify-content:center">'+_avInline(dispAv,68)+'</div>'
+    +(presence ? '<span style="position:absolute;bottom:3px;right:3px;width:15px;height:15px;border-radius:50%;background:'+presence.color+';border:2.5px solid var(--cream)"></span>' : '')
+    +'</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:3px">'+_escHtml(dispName)+'</div>'
+    +(presence ? '<div style="font-size:11px;color:'+(presence.on?presence.color:'var(--ink5)')+';margin-bottom:6px">● '+presence.label+'</div>' : '')
+    +(motto ? '<p style="font-size:13px;color:var(--ink3);line-height:1.6;font-style:italic;margin:6px 0 12px">"'+_escHtml(motto)+'"</p>' : '')
+    +'</div>'
+    + counters + likes + revHtml
+    +(guardianId&&!isAnon ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'quickProfileOv\').remove();pOpenGuardian('+_jsAttr(guardianId)+')">Solicitar acompañamiento 💚</button><div style="height:8px"></div>' : '')
+    +(!isAnon && uid ? '<button id="qpFavBtn" class="p-btn p-btn--'+(isFav?'primary':'secondary')+' p-btn--md p-btn--full" onclick="pToggleFavFromProfile('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+')">'+(isFav?'⭐ En tus favoritos':'☆ ¿Marcar como favorito? Activá la estrella')+'</button><div style="height:8px"></div>' : '')
+    +(!isAnon && uid ? '<button class="p-btn p-btn--secondary p-btn--sm p-btn--full" onclick="pOpenDM('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+');document.getElementById(\'quickProfileOv\').remove()">💬 Enviar mensaje</button><div style="height:8px"></div>' : '')
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'quickProfileOv\').remove()">Cerrar</button>';
 }
 
 // ── FAVOURITES SYSTEM ─────────────────────────────────────────
@@ -5855,7 +5951,7 @@ function pToggleFavFromProfile(userId, name, av){
   if(btn){
     var nowFav = pIsFav(userId);
     btn.className = 'p-btn p-btn--'+(nowFav?'primary':'secondary')+' p-btn--md p-btn--full';
-    btn.textContent = nowFav ? '⭐ En tus favoritos' : '☆ Guardar como favorito';
+    btn.textContent = nowFav ? '⭐ En tus favoritos' : '☆ ¿Marcar como favorito? Activá la estrella';
   }
 }
 
@@ -5931,9 +6027,9 @@ async function pRenderContacts(){
       +'</div>'
       +(unread>0?'<span style="background:var(--sage);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px;flex-shrink:0">'+unread+'</span>':'')
       +'<div style="display:flex;gap:6px;flex-shrink:0">'
-      +'<button onclick="pOpenDM(\''+f.id+'\','+JSON.stringify(f.name)+','+JSON.stringify(f.av)+')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif">💬</button>'
+      +'<button onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif">💬</button>'
       +'<button onclick="pRemoveFav(\''+f.id+'\');pRenderContacts()" style="padding:7px 9px;background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);border-radius:10px;font-size:13px;cursor:pointer">⭐</button>'
-      +'<button onclick="pBlockUser(\''+f.id+'\','+JSON.stringify(f.name)+');pRenderContacts()" style="padding:7px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:13px;cursor:pointer" title="Bloquear">🚫</button>'
+      +'<button onclick="pBlockUser('+_jsAttr(f.id)+','+_jsAttr(f.name)+');pRenderContacts()" style="padding:7px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:13px;cursor:pointer" title="Bloquear">🚫</button>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -5971,7 +6067,7 @@ async function _renderFavWidget(containerId){
     +'<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-ms-overflow-style:none">'
     +shownFavs.map(function(f){
       var isOnline = !!onlineIds[f.id];
-      return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer" onclick="pOpenDM(\''+f.id+'\','+JSON.stringify(f.name)+','+JSON.stringify(f.av||'🧑')+')">'
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer" onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av||'🧑')+')">'
         +'<div style="position:relative">'
         +_avInline(f.av||'🧑', 38)
         +'<span style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:'+(isOnline?'var(--st-on)':'rgba(150,150,150,.35)')+';border:2px solid var(--cream)"></span>'
@@ -6162,8 +6258,8 @@ function _showDMChatRequest(fromId, fromName, fromAv){
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:6px">'+_escHtml(fromName)+'</div>'
     +'<p style="font-size:13px;color:var(--ink3);margin:0 0 20px;line-height:1.5">quiere iniciar un chat privado contigo.<br>¿Querés aceptar?</p>'
     +'</div>'
-    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="_acceptDMRequest(\''+fromId+'\','+JSON.stringify(fromName)+','+JSON.stringify(fromAv||'🧑')+');document.getElementById(\'dmChatReqOv\').remove()" style="margin-bottom:8px">💬 Aceptar y chatear</button>'
-    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="_rejectDMRequest(\''+fromId+'\','+JSON.stringify(fromName)+');document.getElementById(\'dmChatReqOv\').remove()">No por ahora</button>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="_acceptDMRequest('+_jsAttr(fromId)+','+_jsAttr(fromName)+','+_jsAttr(fromAv||'🧑')+');document.getElementById(\'dmChatReqOv\').remove()" style="margin-bottom:8px">💬 Aceptar y chatear</button>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="_rejectDMRequest('+_jsAttr(fromId)+','+_jsAttr(fromName)+');document.getElementById(\'dmChatReqOv\').remove()">No por ahora</button>'
     +'</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
@@ -6483,38 +6579,42 @@ function pSelStar(el, n){
 }
 
 function pSendPostChat(){
-  // Increment guardian conversation count for the user
-  var prevConvs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
-  var newConvs  = prevConvs + 1;
-  safeLS('set','velo_guardian_convs', String(newConvs));
+  var stars = document.querySelectorAll('#postChatStars .star-btn.on').length;
+  if(!stars){ pToast('⭐','Elegí una valoración con estrellas'); return; }
+  var tags = [];
+  document.querySelectorAll('#postChatTags .p-tag-chip.on').forEach(function(c){ tags.push(c.textContent.trim()); });
+  var noteEl = document.getElementById('postChatNote');
+  var note = noteEl ? noteEl.value.trim() : '';
+  var texto = (tags.length ? tags.join(' · ') : '') + (note ? (tags.length?' — ':'')+note : '');
 
-  var prevBadge = _getBadge(prevConvs);
-  var newBadge  = _getBadge(newConvs);
+  var guardian = null;
+  try{ guardian = JSON.parse(safeLS('get','velo_postchat_guardian')||'null'); }catch(e){}
+  var myId   = _myUserId();
+  var myName = _myDisplayName();
+
+  _initSupabase();
+  if(sbClient && guardian && guardian.id){
+    // Save the review about the guardian
+    sbClient.from('reviews').insert({
+      kind:'guardian', pro_id:guardian.id, user_id:myId,
+      reviewer_name:myName, reviewee_name:guardian.name||'Guardián',
+      stars:stars, texto:texto
+    }).then(function(){}).catch(function(){});
+    // Deliver the review to the guardian's Buzón Velo
+    sbSaveBroadcast('user:'+guardian.id,
+      'Recibiste una reseña '+'⭐'.repeat(stars),
+      myName+' valoró tu acompañamiento con '+stars+' estrella'+(stars>1?'s':'')+'.'+(texto?'\n\n"'+texto+'"':''),
+      '⭐', 'Velo — Reseñas');
+  }
+  // Store locally so the seeker keeps a record of reviews they gave
+  if(noteEl) noteEl.value = '';
+  safeLS('set','velo_postchat_guardian','');
 
   pToast('💚','¡Gracias por tu reseña! 🌿');
-
-  // Show donation prompt if not premium
   if(!_isPremium()){
-    setTimeout(function(){
-      pToast('💚','¿Querés donar para ayudar a la comunidad? 🌻');
-    }, 3000);
+    setTimeout(function(){ pToast('💚','¿Querés donar para ayudar a la comunidad? 🌻'); }, 3000);
   }
-
-  // Badge upgrade notification
-  if(newBadge.name !== prevBadge.name){
-    setTimeout(function(){
-      pToast(newBadge.icon, '¡Subiste a Guardián '+newBadge.name+'! '+newBadge.icon);
-      if(newBadge.name === 'Oro'){
-        setTimeout(function(){ pToast('⭕','Ahora podés crear Círculos de Paz 🎉'); }, 1500);
-      }
-    }, 1400);
-  } else {
-    setTimeout(function(){
-      var badge = _getBadge(newConvs);
-      if(badge.next) pToast('📈', newConvs+' conversaciones · '+badge.needed+' más para '+badge.next);
-    }, 1400);
-  }
-  setTimeout(function(){ pGoTo('donate-cta'); }, 2200);
+  setTimeout(function(){ pGoTo('donate-cta'); }, 1700);
 }
 
 // ── PRO PANEL ──────────────────────────────────────────────────
@@ -9211,7 +9311,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
   var t   = new Date();
   var ts  = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
   var quotePart = quoteText ? '<div class="reply-quote">'+_escHtml(quoteText.slice(0,80)+(quoteText.length>80?'…':''))+'</div>' : '';
-  var actionBtn = '<button class="msg-action-btn" onclick="pShowMsgActions(this,\''+id+'\','+JSON.stringify(text)+',\''+inputId+'\',\''+replyBarId+'\')" aria-label="Acciones">•••</button>';
+  var actionBtn = '<button class="msg-action-btn" onclick="pShowMsgActions(this,'+_jsAttr(id)+','+_jsAttr(text)+','+_jsAttr(inputId)+','+_jsAttr(replyBarId)+')" aria-label="Acciones">•••</button>';
   var sbAttr = sbId ? ' data-sb-id="'+sbId+'"' : '';
   var rxHtml = '';
   if(reactions && typeof reactions === 'object'){
@@ -9231,10 +9331,10 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
   } else {
     var canProfile = !!(senderName && senderName !== 'Usuario Anónimo' && senderName !== 'Anónimo');
     var avClickAttr = canProfile
-      ? ' style="cursor:pointer" onclick="pQuickProfile('+JSON.stringify(senderName)+','+JSON.stringify(av||'🌿')+',\'\',\'\','+JSON.stringify(senderId||'')+')"'
+      ? ' style="cursor:pointer" onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(av||'🌿')+',\'\',\'\','+_jsAttr(senderId||'')+')"'
       : '';
     var senderHtml = canProfile
-      ? '<div class="feed-sender" style="font-size:11px;color:var(--ink4);cursor:pointer" onclick="pQuickProfile('+JSON.stringify(senderName)+','+JSON.stringify(av||'🌿')+',\'\',\'\','+JSON.stringify(senderId||'')+')">'+_escHtml(senderName)+'</div>'
+      ? '<div class="feed-sender" style="font-size:11px;color:var(--ink4);cursor:pointer" onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(av||'🌿')+',\'\',\'\','+_jsAttr(senderId||'')+')">'+_escHtml(senderName)+'</div>'
       : '<div class="feed-sender" style="font-size:11px;color:var(--ink4)">'+(senderName||'')+'</div>';
     return '<div class="feed-msg" id="'+id+'"'+sbAttr+' style="position:relative">'
       +'<div class="feed-av"'+avClickAttr+'>'+_avInline(av||'🌿',36)+'</div>'
