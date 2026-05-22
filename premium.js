@@ -347,12 +347,21 @@ function _sbSyncProfile(userId){
             }
           }).catch(function(){ safeLS('set','velo_plan','plus'); });
       }
-      // Restore guardian bio/tags from guardian_presence
-      sbClient.from('guardian_presence').select('bio,tags').eq('user_id', userId).limit(1)
+      // Restore guardian bio/tags/status from guardian_presence
+      sbClient.from('guardian_presence').select('bio,tags,is_guardian,status').eq('user_id', userId).limit(1)
         .then(function(gr){
           if(gr.data && gr.data[0]){
             if(gr.data[0].bio)  safeLS('set','velo_guardian_bio', gr.data[0].bio);
             if(gr.data[0].tags) safeLS('set','velo_guardian_tags', Array.isArray(gr.data[0].tags) ? gr.data[0].tags.join(', ') : gr.data[0].tags);
+            // Restore guardian active flag so the request listener starts on reload
+            if(gr.data[0].is_guardian === true){
+              safeLS('set','velo_is_guardian','true');
+              if(gr.data[0].status && gr.data[0].status !== 'offline'){
+                safeLS('set','velo_guardian_status', gr.data[0].status);
+              }
+              // Start listener now that we know user is guardian (may already be running — guard inside)
+              setTimeout(_startGuardianReqListener, 300);
+            }
           }
         }).catch(function(){});
       // Refresh all UI with synced data
