@@ -860,6 +860,9 @@ function _loadHomeData(){
   var gLabel = gWrap ? gWrap.querySelector('span') : null;
   if(gLabel) gLabel.textContent = isOn ? 'Activo' : 'Activarme';
 
+  // Availability status toggle
+  _renderHomeStatusToggle();
+
   // Today's mood
   _loadTodayMoodHome();
   _updateHomeCurrentMoodLine();
@@ -1178,33 +1181,68 @@ var _guardianFilter = 'all';
 var _myGuardianStatus = safeLS('get','velo_guardian_status') || 'disponible'; // disponible/ocupado/incognito
 var _guardianHeartbeatTimer = null;
 
-async function _updateGuardianPresence(status){
-  // Allow 'offline' even when guardian mode is toggled off (to clear presence)
-  if(status !== 'offline' && safeLS('get','velo_is_guardian') !== 'true') return;
-  _initSupabase();
-  if(!sbClient) return;
-  var uid  = _myUserId ? _myUserId() : (safeLS('get','velo_user_email')||'guest');
-  if(!uid || uid === 'guest') return;
-  var name = safeLS('get','velo_user_name') || 'Guardián';
-  var av   = safeLS('get','velo_user_av')   || '💚';
-  var bio  = safeLS('get','velo_guardian_bio') || '';
-  var tagsRaw = safeLS('get','velo_guardian_tags') || '';
-  var tags = tagsRaw ? tagsRaw.split(',').map(function(t){ return t.trim(); }).filter(Boolean) : [];
-  var convs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
-  try{
-    await sbClient.from('guardian_presence').upsert(
-      { user_id: uid, name: name, avatar: av, bio: bio, tags: tags, is_guardian: true,
-        status: status, last_seen: new Date().toISOString(), convs: convs, rating: 5.0 },
-      { onConflict: 'user_id' }
-    );
-  }catch(e){}
+// The user's general availability (disponible/ocupado). Guardians may also be 'incognito'.
+function _presenceStatus(){
+  if(safeLS('get','velo_is_guardian') === 'true') return safeLS('get','velo_guardian_status') || 'disponible';
+  return safeLS('get','velo_user_status') || 'disponible';
 }
 
+// Upserts the current user's presence row. Used for ALL logged-in users, not just guardians.
+async function _updateGuardianPresence(status){
+  _initSupabase();
+  if(!sbClient) return;
+  var uid = _myUserId ? _myUserId() : (safeLS('get','velo_user_email')||'guest');
+  if(!uid || uid === 'guest') return;
+  var isG  = safeLS('get','velo_is_guardian') === 'true';
+  var name = safeLS('get','velo_user_name') || 'Usuario';
+  var av   = safeLS('get','velo_user_av')   || (isG ? '💚' : '🧑');
+  var st   = status || _presenceStatus();
+  var row  = { user_id: uid, name: name, avatar: av, is_guardian: isG,
+    status: st, last_seen: new Date().toISOString() };
+  if(isG){
+    row.bio = safeLS('get','velo_guardian_bio') || '';
+    var tagsRaw = safeLS('get','velo_guardian_tags') || '';
+    row.tags = tagsRaw ? tagsRaw.split(',').map(function(t){ return t.trim(); }).filter(Boolean) : [];
+    row.convs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
+    row.rating = 5.0;
+  }
+  try{ await sbClient.from('guardian_presence').upsert(row, { onConflict: 'user_id' }); }catch(e){}
+}
+
+// ── PRESENCE CACHE (online dots everywhere) ────────────────────
+var _presenceCache = {};
+async function _refreshPresenceCache(){
+  _initSupabase();
+  if(!sbClient) return;
+  try{
+    var cutoff = new Date(Date.now() - 10*60*1000).toISOString();
+    var res = await sbClient.from('guardian_presence').select('user_id,status,last_seen').gte('last_seen', cutoff);
+    var fresh = {};
+    (res.data||[]).forEach(function(r){ fresh[r.user_id] = { status:r.status, last_seen:r.last_seen }; });
+    _presenceCache = fresh;
+  }catch(e){}
+}
+function _presenceInfo(userId){
+  var p = userId ? _presenceCache[userId] : null;
+  if(p && p.last_seen && (Date.now() - new Date(p.last_seen).getTime()) < 5*60*1000 && p.status !== 'offline'){
+    if(p.status === 'ocupado') return { color:'#E0A92E', label:'Ocupado/a', on:true };
+    return { color:'#5BBF87', label:'En línea', on:true };
+  }
+  return { color:'rgba(150,150,150,.45)', label:'Desconectado', on:false };
+}
+// Returns a small presence-dot HTML span. Empty string when no userId (anonymous).
+function _presenceDot(userId, size){
+  if(!userId) return '';
+  var s = size || 9;
+  var info = _presenceInfo(userId);
+  return '<span title="'+info.label+'" style="display:inline-block;width:'+s+'px;height:'+s+'px;border-radius:50%;background:'+info.color+';border:1.5px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.25);flex-shrink:0"></span>';
+}
+
+// Universal presence heartbeat — runs for every logged-in user, not only guardians.
 function _startGuardianHeartbeat(){
-  if(safeLS('get','velo_is_guardian') !== 'true') return;
   _startGuardianReqListener();
   if(_guardianHeartbeatTimer) return;
-  var beat = function(){ _updateGuardianPresence(safeLS('get','velo_guardian_status')||'disponible'); };
+  var beat = function(){ _updateGuardianPresence(_presenceStatus()); _refreshPresenceCache(); };
   beat();
   _guardianHeartbeatTimer = setInterval(beat, 60000);
 }
@@ -1305,10 +1343,13 @@ function pToggleGuardianMode(){
   if(details) details.style.display = next ? '' : 'none';
   if(next){
     _startGuardianHeartbeat();
+    _startGuardianReqListener();
+    _updateGuardianPresence();
     pToast('🛡️','¡Aparecés como guardián disponible!');
   } else {
-    _updateGuardianPresence('offline');
-    _stopGuardianHeartbeat();
+    // Turning guardian mode off — stay online as a regular user, just leave the guardian list
+    _stopGuardianReqListener();
+    _updateGuardianPresence();
     pToast('👤','Ya no aparecés en la lista de guardianes');
   }
 }
@@ -1337,9 +1378,47 @@ function _initGuardianToggleUI(){
 function pSetMyGuardianStatus(status){
   _myGuardianStatus = status;
   safeLS('set','velo_guardian_status', status);
+  if(status !== 'incognito') safeLS('set','velo_user_status', status);
+  _updateGuardianPresence(status);
   pRenderGuardians();
   _renderMyStatusBar();
+  _renderHomeStatusToggle();
   pToast(status==='disponible'?'🟢':status==='ocupado'?'🟡':'👤', 'Estado: '+(status==='disponible'?'Disponible':status==='ocupado'?'Ocupado':'Anónimo'));
+}
+
+// Home availability toggle (Disponible / Ocupado) — shown below the greeting
+function pSetUserStatus(status){
+  safeLS('set','velo_user_status', status);
+  var isGuardian = safeLS('get','velo_is_guardian') === 'true';
+  if(isGuardian){
+    safeLS('set','velo_guardian_status', status);
+    _myGuardianStatus = status;
+    if(status === 'ocupado'){
+      pToast('🟡','Aparecés como guardián ocupado. Desmarcá para volver a disponible.');
+    } else {
+      pToast('🟢','Volviste a estar disponible como guardián.');
+    }
+    if(document.getElementById('myGuardianStatus')) _renderMyStatusBar();
+  } else {
+    pToast(status==='ocupado'?'🟡':'🟢', status==='ocupado'?'Te marcaste como ocupado/a':'Estás disponible');
+  }
+  _updateGuardianPresence(status);
+  _renderHomeStatusToggle();
+}
+
+function _renderHomeStatusToggle(){
+  var el = document.getElementById('homeStatusToggle');
+  if(!el) return;
+  var st = safeLS('get','velo_user_status') || 'disponible';
+  var busy = st === 'ocupado';
+  var pill = function(val, emoji, label, activeColor, activeBg){
+    var active = st === val;
+    return '<button onclick="pSetUserStatus(\''+val+'\')" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;border:1.5px solid '
+      +(active?activeColor:'var(--border2)')+';background:'+(active?activeBg:'transparent')+';color:'+(active?activeColor:'var(--ink4)')+'">'+emoji+' '+label+'</button>';
+  };
+  el.innerHTML = '<span style="font-size:10px;font-weight:700;color:var(--ink5);letter-spacing:.5px;text-transform:uppercase">Mi estado</span>'
+    + pill('disponible','🟢','Disponible','var(--sage2)','var(--sage7)')
+    + pill('ocupado','🟡','Ocupado','#C8A200','rgba(200,162,0,.12)');
 }
 
 function _renderMyStatusBar(){
@@ -5818,15 +5897,9 @@ async function pRenderContacts(){
     }catch(e){}
   }
 
-  // Get online status from guardian_presence
-  var onlineIds = {};
-  if(sbClient){
-    try{
-      var cutoff = new Date(Date.now() - 5*60*1000).toISOString();
-      var {data:gd} = await sbClient.from('guardian_presence').select('user_id').gte('last_seen', cutoff);
-      if(gd) gd.forEach(function(r){ onlineIds[r.user_id] = true; });
-    }catch(e){}
-  }
+  // Refresh presence cache (online/busy/offline dots)
+  await _refreshPresenceCache();
+  var onlineCount = Object.keys(_presenceCache).filter(function(id){ return _presenceInfo(id).on; }).length;
 
   // Unread DM count
   var unreadIds = {}; try{ unreadIds = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
@@ -5836,7 +5909,7 @@ async function pRenderContacts(){
     +'<div style="width:1px;background:var(--border2)"></div>'
     +'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+favMeCount+'</div><div style="font-size:11px;color:var(--ink4)">Te tienen favorito</div></div>'
     +'<div style="width:1px;background:var(--border2)"></div>'
-    +'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+Object.keys(onlineIds).length+'</div><div style="font-size:11px;color:var(--ink4)">Online ahora</div></div>'
+    +'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+onlineCount+'</div><div style="font-size:11px;color:var(--ink4)">Online ahora</div></div>'
     +'</div>';
 
   if(!favs.length){
@@ -5845,16 +5918,16 @@ async function pRenderContacts(){
   }
 
   el.innerHTML += favs.map(function(f){
-    var isOnline = !!onlineIds[f.id];
+    var pInfo = _presenceInfo(f.id);
     var unread = unreadIds[f.id] || 0;
     return '<div data-fav-name="'+_escHtml(f.name||'')+ '" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--cream);border-radius:16px;margin-bottom:10px;box-shadow:var(--shadow-sm)">'
       +'<div style="position:relative;flex-shrink:0">'
       +_avInline(f.av||'🧑', 44)
-      +'<span style="position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;background:'+(isOnline?'var(--st-on)':'rgba(150,150,150,.4)')+';border:2px solid var(--cream)"></span>'
+      +'<span style="position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;background:'+pInfo.color+';border:2px solid var(--cream)"></span>'
       +'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:14px;font-weight:700;color:var(--ink)">'+_escHtml(f.name||'Usuario')+'</div>'
-      +'<div style="font-size:11px;color:'+(isOnline?'var(--sage)':'var(--ink5)')+'">'+( isOnline?'● En línea':'○ Desconectado')+'</div>'
+      +'<div style="font-size:11px;color:'+(pInfo.on?(pInfo.color):'var(--ink5)')+'">'+(pInfo.on?'● ':'○ ')+pInfo.label+'</div>'
       +'</div>'
       +(unread>0?'<span style="background:var(--sage);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px;flex-shrink:0">'+unread+'</span>':'')
       +'<div style="display:flex;gap:6px;flex-shrink:0">'
