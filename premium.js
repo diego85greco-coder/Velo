@@ -3313,6 +3313,7 @@ var _sosData = {
   ],
   '🇵🇹 Portugal': [
     { label:'Emergencias',                       num:'112',             url:'tel:112' },
+    { label:'SNS 24 — Serviço Nacional de Saúde (24h)', num:'808 24 24 24', url:'tel:808242424' },
     { label:'SOS Voz Amiga — Crisis emocional',  num:'213 544 545',     url:'tel:213544545' },
     { label:'SOS Voz Amiga — línea alternativa', num:'912 802 669',     url:'tel:912802669' },
     { label:'Violência no Namoro (APAV)',         num:'116 006',         url:'tel:116006' },
