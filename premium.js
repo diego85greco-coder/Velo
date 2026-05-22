@@ -1717,18 +1717,18 @@ async function pRenderHelp(){
         +'<button style="font-size:11px;color:rgba(192,48,40,.5);background:none;border:none;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportContent(\'help\',\''+h.id+'\')">⚠️ Reportar</button>';
     var canClickProfile = !h.anon && !isOwn && h.userId && h.name !== 'Usuario Anónimo';
     var nameHtml = canClickProfile
-      ? '<span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75);cursor:pointer" onclick="pQuickProfile('+JSON.stringify(h.name)+',\'\',\'\',\'\',\''+h.userId+'\')">'+_escHtml(h.name)+'</span>'
-      : '<span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(h.name)+'</span>';
+      ? '<span style="font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" onclick="pQuickProfile('+JSON.stringify(h.name)+',\'\',\'\',\'\',\''+h.userId+'\')">'+_escHtml(h.name)+'</span>'
+      : '<span style="font-size:12px;font-weight:600;color:var(--ink)">'+_escHtml(h.name)+'</span>';
     return '<div class="dark-seeker" id="helppost-'+h.id+'">'
       +'<div style="display:flex;align-items:flex-start;gap:11px">'
       +'<div style="font-size:28px;flex-shrink:0;'+(canClickProfile?'cursor:pointer" onclick="pQuickProfile('+JSON.stringify(h.name)+',\'\',\'\',\'\',\''+h.userId+'\')':'')+'">'+(h.emoji||'💙')+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">'
       +nameHtml
-      +'<span style="font-size:10px;color:rgba(255,255,255,.3)">'+timeStr+'</span>'
+      +'<span style="font-size:10px;color:var(--ink5)">'+timeStr+'</span>'
       +urgBadge
       +'</div>'
-      +'<div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.55;margin-bottom:10px;font-style:italic">'+_escHtml(h.preview)+'</div>'
+      +'<div style="font-size:13px;color:var(--ink3);line-height:1.55;margin-bottom:10px;font-style:italic">'+_escHtml(h.preview)+'</div>'
       +'<div style="display:flex;gap:8px;align-items:center">'+actions+'</div>'
       +'</div></div></div>';
   }
@@ -1895,8 +1895,8 @@ function _showLeaveMessageModal(post, reason){
     +'<div style="font-size:12px;color:var(--ink3);margin-bottom:14px;text-align:center">¿Querés dejarle un mensaje de apoyo para cuando vuelva?</div>'
     +'<textarea id="leaveMessageTa" placeholder="Escribí unas palabras de aliento…" rows="3" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--ink);outline:none;resize:none;box-sizing:border-box;font-family:\'Jost\',sans-serif"></textarea>'
     +'<div style="display:flex;gap:10px;margin-top:14px">'
-    +'<button onclick="document.getElementById(\'leaveMessageOv\').remove();pGoTo(\'help\')" style="flex:1;padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Omitir</button>'
-    +'<button onclick="_sendLeaveMessage('+JSON.stringify(post.id)+')" style="flex:1;padding:11px;background:var(--sage4);border:none;border-radius:12px;font-size:13px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif">💙 Enviar</button>'
+    +'<button onclick="document.getElementById(\'leaveMessageOv\').remove();pGoTo(\'help\')" style="flex:1;padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
+    +'<button onclick="_sendLeaveMessage('+JSON.stringify(post.id)+')" style="flex:1;padding:11px;background:var(--sage);border:none;border-radius:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💙 Enviar</button>'
     +'</div></div>';
   document.body.appendChild(ov);
 }
@@ -1904,9 +1904,9 @@ function _showLeaveMessageModal(post, reason){
 function _sendLeaveMessage(postId){
   var ta = document.getElementById('leaveMessageTa');
   var msg = ta ? ta.value.trim() : '';
+  if(!msg){ pToast('✍️','Escribí unas palabras antes de enviar'); return; }
   var ov = document.getElementById('leaveMessageOv');
   if(ov) ov.remove();
-  if(!msg){ pGoTo('help'); return; }
   _initSupabase();
   if(sbClient){
     // Save the support message in guardian_requests
@@ -1943,17 +1943,21 @@ function _showSeekerGuardianPopup(postId, row){
     +'<div style="font-size:44px;margin-bottom:10px">'+_avInline(guardianAv,52)+'</div>'
     +'<div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Un guardián quiere acompañarte 💙</div>'
     +'<div style="font-size:14px;color:var(--ink3);margin-bottom:6px"><strong>'+_escHtml(guardianName)+'</strong> vio tu mensaje y está aquí para escucharte.</div>'
-    +'<div style="font-size:12px;color:var(--ink4);margin-bottom:22px">¿Aceptás el acompañamiento ahora?</div>'
+    +'<div style="font-size:12px;color:var(--ink4);margin-bottom:10px">¿Aceptás el acompañamiento ahora?</div>'
+    +'<div id="seekerGuardianCountdown" style="font-size:28px;font-weight:800;color:var(--sage);margin-bottom:18px">80</div>'
     +'<div style="display:flex;gap:10px">'
     +'<button onclick="_seekerDeclineRequest(\''+reqId+'\',\''+postId+'\')" style="flex:1;padding:12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Ahora no</button>'
-    +'<button onclick="_seekerAcceptRequest(\''+reqId+'\',\''+postId+'\','+JSON.stringify(guardianName)+','+JSON.stringify(guardianAv)+')" style="flex:1;padding:12px;background:var(--sage4);border:none;border-radius:12px;font-size:14px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif">💚 Aceptar</button>'
+    +'<button onclick="_seekerAcceptRequest(\''+reqId+'\',\''+postId+'\','+JSON.stringify(guardianName)+','+JSON.stringify(guardianAv)+')" style="flex:1;padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💚 Aceptar</button>'
     +'</div></div>';
   document.body.appendChild(ov);
-  // Auto-dismiss after 80s if no action
-  setTimeout(function(){
-    var el = document.getElementById('seekerGuardianOv');
-    if(el) el.remove();
-  }, 80000);
+  // Countdown + auto-dismiss after 80s
+  var seekSecs = 80;
+  var seekCdEl = document.getElementById('seekerGuardianCountdown');
+  var seekCdInt = setInterval(function(){
+    seekSecs--;
+    if(seekCdEl) seekCdEl.textContent = seekSecs;
+    if(seekSecs <= 0){ clearInterval(seekCdInt); var el=document.getElementById('seekerGuardianOv'); if(el) el.remove(); }
+  }, 1000);
 }
 
 function _seekerAcceptRequest(reqId, postId, guardianName, guardianAv){

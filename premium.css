@@ -1443,7 +1443,7 @@ a { text-decoration: none; color: inherit; }
 .pro-rate { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--sage); }
 
 /* ── 26. DARK SCREENS ─────────────────────────────────────────────── */
-#pg-help { background: linear-gradient(160deg, #101C14, #080E08); }
+#pg-help   { background: linear-gradient(160deg, #e8f3ed, #f0f7f2); }
 #pg-bottle { background: linear-gradient(160deg, #dff0f8, #e8f3fa); }
 .dark-section-hdr {
   padding: 22px 20px 14px;
@@ -1897,9 +1897,15 @@ a { text-decoration: none; color: inherit; }
 /* Dark screens use the moonlit night image */
 #pg-help .p-page-scroll {
   background:
-    linear-gradient(160deg, rgba(8,20,12,.82), rgba(4,8,4,.88)),
-    url('assets/bg-night.jpg') center / cover fixed !important;
+    linear-gradient(160deg, rgba(232,248,240,.88), rgba(220,242,230,.82)),
+    url('assets/bg-day.jpg') center / cover fixed !important;
 }
+#pg-help .dark-seeker {
+  background: rgba(255,255,255,.75);
+  border-color: rgba(116,198,157,.22);
+  backdrop-filter: blur(8px);
+}
+#pg-help .dark-seeker:hover { background: rgba(255,255,255,.9); border-color: rgba(116,198,157,.4); transform: translateY(-1px); }
 #pg-bottle .p-page-scroll {
   background:
     linear-gradient(160deg, rgba(220,240,252,.85), rgba(200,230,248,.80)),
