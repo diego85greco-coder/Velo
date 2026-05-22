@@ -399,7 +399,9 @@ function _sbUnsub(ch){
 }
 
 function _sbHappyRow(r){
-  return { id:r.id, userId:r.user_id||'anon', av:r.user_av||'', name:r.anon?'Usuario Anónimo':r.user_name,
+  return { id:r.id, userId:r.user_id||'anon', av:r.user_av||'',
+    name:r.anon?'Usuario Anónimo':(r.user_name||'Usuario'),
+    anon:!!r.anon,
     emoji:r.emoji||'☀️', text:r.text||'', photo:r.photo||null, ts:new Date(r.created_at).getTime(),
     reactions:r.reactions||{'💛':0,'🌸':0,'🤗':0,'🌿':0,'✨':0}, comments:r.comments||[] };
 }
@@ -4466,6 +4468,23 @@ async function pRenderHappy(){
   var counter = document.getElementById('happyCounter');
   if(counter) counter.textContent = posts.length+' publicaciones activas';
 
+  // Update history entries with live stats from Supabase
+  if(usingSB && myId){
+    try{
+      var hist = JSON.parse(safeLS('get','velo_happy_history')||'[]');
+      var dirty = false;
+      hist.forEach(function(he){
+        var live = posts.find(function(p){ return p.id === he.id; });
+        if(live){
+          he.reactions = live.reactions;
+          he.commentCount = (live.comments||[]).length;
+          dirty = true;
+        }
+      });
+      if(dirty) safeLS('set','velo_happy_history', JSON.stringify(hist));
+    }catch(e){}
+  }
+
   var queue = usingSB ? [] : _happyQueueLoad();
   if(_happyActiveTab === 'mine'){
     _renderMyHappy(list, posts, queue, myId);
@@ -4487,19 +4506,27 @@ function _renderAllHappy(list, posts){
 
 function _renderMyHappy(list, posts, queue, myId){
   var mine = posts.filter(function(p){ return p.userId === myId; });
+  var active = mine[0]; // most recent active post (sorted desc)
   var myQueued = queue.filter(function(p){ return p.userId === myId; });
 
-  if(!mine.length && !myQueued.length){
-    list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">🌸</span>'
-      +'<div class="p-empty-title">Todavía no publicaste</div>'
-      +'<div class="p-empty-sub">Compartí un momento de alegría con la comunidad ☀️</div></div>';
+  if(!active && !myQueued.length){
+    list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">📌</span>'
+      +'<div class="p-empty-title">No tenés publicación activa</div>'
+      +'<div class="p-empty-sub">Publicá algo en el Muro de la Felicidad para verla aquí ☀️</div></div>';
     return;
   }
 
   var html = '';
-  // Pending posts
+  if(active){
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'
+      +'<span style="font-size:18px">📌</span>'
+      +'<span style="font-size:12px;font-weight:700;color:var(--sage);letter-spacing:.3px">Tu publicación activa</span>'
+      +'<span style="font-size:10px;color:var(--ink5);margin-left:auto">Visible por 24h · desaparece del muro al expirar</span>'
+      +'</div>';
+    html += _happyPostCard(active, true);
+  }
   myQueued.forEach(function(p){
-    html += '<div class="happy-card" style="border:1.5px dashed rgba(255,200,50,.4);opacity:.8">'
+    html += '<div class="happy-card" style="border:1.5px dashed rgba(255,200,50,.4);opacity:.8;margin-top:12px">'
       +'<div style="font-size:11px;font-weight:700;color:rgba(255,180,30,.8);margin-bottom:8px;display:flex;align-items:center;gap:6px">⏳ En lista de espera</div>'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
       +'<div style="font-size:26px;width:42px;height:42px;border-radius:13px;background:var(--sun3);display:flex;align-items:center;justify-content:center">'+p.emoji+'</div>'
@@ -4508,8 +4535,6 @@ function _renderMyHappy(list, posts, queue, myId){
       +'<p style="font-size:13px;color:var(--ink3);line-height:1.6;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(p.text)+'"</p>'
       +'</div>';
   });
-  // Published mine
-  mine.forEach(function(h){ html += _happyPostCard(h, true); });
   list.innerHTML = html;
 }
 
@@ -4521,12 +4546,24 @@ function _renderHappyHistory(list){
       +'<div class="p-empty-sub">Cuando publiques algo en el Muro, quedará guardado aquí para siempre 🌟</div></div>';
     return;
   }
-  list.innerHTML = history.map(function(h, i){
+  var clearBtn = '<div style="text-align:right;margin-bottom:14px">'
+    +'<button onclick="pClearHappyHistory()" style="padding:6px 14px;background:rgba(220,60,60,.06);border:1px solid rgba(220,60,60,.18);border-radius:100px;font-size:12px;color:rgba(200,60,60,.7);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">🗑️ Borrar historial</button>'
+    +'</div>';
+  list.innerHTML = clearBtn + history.map(function(h, i){
     var date = new Date(h.ts);
     var dateStr = date.toLocaleDateString('es', { day:'2-digit', month:'short', year:'numeric' });
     var timeStr = date.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
+    var rxTotal = 0;
+    if(h.reactions) rxTotal = Object.keys(h.reactions).reduce(function(a,k){ return a+(h.reactions[k]||0); }, 0);
+    var statsHtml = '';
+    if(rxTotal > 0 || (h.commentCount > 0)){
+      statsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">';
+      if(rxTotal > 0) statsHtml += '<span style="font-size:10px;background:rgba(255,224,102,.25);border-radius:100px;padding:3px 9px;font-weight:600;color:rgba(160,120,0,.8)">💛 '+rxTotal+' reaccion'+(rxTotal>1?'es':'')+'</span>';
+      if(h.commentCount > 0) statsHtml += '<span style="font-size:10px;background:rgba(116,198,157,.15);border-radius:100px;padding:3px 9px;font-weight:600;color:var(--sage)">💬 '+h.commentCount+' comentario'+(h.commentCount>1?'s':'')+'</span>';
+      statsHtml += '</div>';
+    }
     return '<div class="happy-card" style="position:relative">'
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
       +'<div style="font-size:24px;width:40px;height:40px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:11px;font-weight:700;color:var(--sage)">Mi publicación</div>'
@@ -4534,10 +4571,18 @@ function _renderHappyHistory(list){
       +'</div>'
       +(i===0 ? '<span style="font-size:10px;background:var(--sage7);color:var(--sage);border-radius:100px;padding:2px 8px;font-weight:700;white-space:nowrap">Más reciente</span>' : '')
       +'</div>'
-      +(h.photo ? '<img src="'+h.photo+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;display:block;margin-bottom:10px;cursor:zoom-in">' : '')
+      +(h.photo ? '<img src="'+h.photo+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;display:block;margin-bottom:12px;cursor:zoom-in">' : '')
       +(h.text ? '<p style="font-size:13px;color:var(--ink3);line-height:1.6;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(h.text)+'"</p>' : '')
+      +statsHtml
       +'</div>';
   }).join('');
+}
+
+function pClearHappyHistory(){
+  if(!confirm('¿Borrar todo tu historial del Muro de la Felicidad? Esta acción no se puede deshacer.')) return;
+  safeLS('set','velo_happy_history','[]');
+  pRenderHappy();
+  pToast('🗑️','Historial borrado');
 }
 
 function _happyPostCard(h, isOwn){
@@ -4555,15 +4600,27 @@ function _happyPostCard(h, isOwn){
 
   // Comments
   var comments = h.comments || [];
-  var commHtml = comments.slice(0,3).map(function(c){
-    return '<div style="display:flex;gap:7px;align-items:flex-start;margin-bottom:6px">'
-      +'<div style="font-size:14px;width:24px;height:24px;border-radius:50%;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0">🌿</div>'
-      +'<div style="background:var(--cream2);border-radius:0 10px 10px 10px;padding:6px 10px;flex:1">'
-      +'<div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:2px">'+_escHtml(c.name)+'</div>'
-      +'<div style="font-size:12px;color:var(--ink3);line-height:1.4">'+_escHtml(c.text)+'</div>'
-      +'</div></div>';
-  }).join('');
-  var moreComments = comments.length > 3 ? '<div style="font-size:11px;color:var(--sage);cursor:pointer;margin-bottom:8px">+ '+(comments.length-3)+' comentarios más</div>' : '';
+  var commCount = comments.length;
+  var shownComments = isOwn ? comments : comments.slice(0, 5);
+  var commHtml = '';
+  if(commCount > 0){
+    commHtml = '<div style="margin-bottom:10px">';
+    commHtml += '<div style="font-size:11px;font-weight:700;color:var(--ink4);margin-bottom:8px;display:flex;align-items:center;gap:5px"><span>💬</span><span>'+commCount+' comentario'+(commCount>1?'s':'')+'</span></div>';
+    shownComments.forEach(function(c){
+      var initials = _escHtml((c.name||'?').charAt(0).toUpperCase());
+      commHtml += '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">'
+        +'<div style="font-size:12px;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--sage7),var(--sage5));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;color:var(--sage)">'+initials+'</div>'
+        +'<div style="background:var(--cream2);border-radius:0 12px 12px 12px;padding:7px 11px;flex:1;min-width:0">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:2px">'+_escHtml(c.name||'Usuario')+'</div>'
+        +'<div style="font-size:12px;color:var(--ink3);line-height:1.45;word-break:break-word">'+_escHtml(c.text)+'</div>'
+        +'</div></div>';
+    });
+    if(!isOwn && commCount > 5){
+      commHtml += '<div style="font-size:11px;color:var(--sage);text-align:center;padding:4px 0;font-weight:600">+ '+(commCount-5)+' comentarios más</div>';
+    }
+    commHtml += '</div>';
+  }
+  var moreComments = '';
 
   // Avatar: profile photo if available, else mood emoji
   var hasPhoto = h.av && (h.av.startsWith('data:') || h.av.startsWith('http'));
@@ -4578,27 +4635,27 @@ function _happyPostCard(h, isOwn){
   var authorClick = canClick ? ' style="cursor:pointer" onclick="pQuickProfile('+JSON.stringify(h.name||'Usuario')+','+JSON.stringify(h.av||'')+',\'\',\'\',\''+h.userId+'\')"' : '';
   return '<div class="happy-card" data-id="'+h.id+'">'
     // header
-    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
     +'<div'+authorClick+'>'+avatarHtml+'</div>'
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:13px;font-weight:600;color:var(--ink)'+(canClick?';cursor:pointer':'')+'"'+(canClick?' onclick="pQuickProfile('+JSON.stringify(h.name||'Usuario')+','+JSON.stringify(h.av||'')+',\'\',\'\',\''+h.userId+'\')"':'')+'>'+_escHtml(h.name||'Usuario Anónimo')+'</div>'
-    +'<div style="font-size:10px;color:var(--ink5)">'+relTime+(isOwn?' · <strong style="color:var(--sage)">Tuya</strong>':'')+'</div>'
+    +'<div style="font-size:10px;color:var(--ink5);margin-top:1px">'+relTime+(isOwn?' · <strong style="color:var(--sage)">Tuya</strong>':'')+'</div>'
     +'</div>'
-    +(isOwn ? '<button onclick="pDeleteHappyPost(\''+h.id+'\')" style="margin-left:auto;padding:4px 8px;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);border-radius:100px;color:rgba(220,60,60,.7);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif" title="Eliminar publicación">🗑️</button>' : '')
-    +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap">⏳ '+timeLeft+'</span>' : '')
+    +(isOwn ? '<button onclick="pDeleteHappyPost(\''+h.id+'\')" style="padding:5px 10px;background:rgba(255,80,80,.07);border:1px solid rgba(255,80,80,.18);border-radius:100px;color:rgba(200,60,60,.7);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0" title="Eliminar publicación">🗑️</button>' : '')
+    +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap;flex-shrink:0">⏳ '+timeLeft+'</span>' : '')
     +'</div>'
     // photo
-    +(h.photo ? '<img src="'+h.photo+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;display:block;margin-bottom:10px;cursor:zoom-in">' : '')
+    +(h.photo ? '<img src="'+h.photo+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px;display:block;margin-bottom:14px;cursor:zoom-in">' : '')
     // text
-    +(h.text ? '<p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:12px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(h.text)+'"</p>' : '')
+    +(h.text ? '<p style="font-size:14px;color:var(--ink3);line-height:1.65;margin-bottom:14px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(h.text)+'"</p>' : '')
     // reactions
-    +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+rxBar+'</div>'
-    // comments
-    +(commHtml ? '<div style="margin-bottom:8px">'+commHtml+moreComments+'</div>' : '')
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">'+rxBar+'</div>'
+    // divider + comments
+    +(commHtml ? '<div style="border-top:1px solid var(--border2);padding-top:12px;margin-bottom:12px">'+commHtml+'</div>' : '<div style="border-top:1px solid var(--border2);margin-bottom:12px"></div>')
     // comment input
-    +'<div style="display:flex;gap:6px;align-items:center">'
-    +'<input id="cmt-'+h.id+'" class="p-input" style="flex:1;font-size:12px;padding:6px 10px;height:auto" placeholder="Agregar comentario…" maxlength="120" onkeydown="if(event.key===\'Enter\')pHappyComment(\''+h.id+'\')">'
-    +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:6px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:8px;font-size:12px;cursor:pointer;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700">💬</button>'
+    +'<div style="display:flex;gap:8px;align-items:center">'
+    +'<input id="cmt-'+h.id+'" class="p-input" style="flex:1;font-size:12px;padding:7px 12px;height:auto;border-radius:100px" placeholder="Dejar un comentario…" maxlength="120" onkeydown="if(event.key===\'Enter\')pHappyComment(\''+h.id+'\')">'
+    +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;font-size:12px;cursor:pointer;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;flex-shrink:0;white-space:nowrap">Enviar 💬</button>'
     +'</div>'
     +'</div>';
 }
@@ -4636,7 +4693,9 @@ function pHappyReact(postId, emoji){
     sbUpdateHappyPost(postId, { reactions: sbPost.reactions });
     safeLS('set','velo_happy_rx_'+postId, emoji);
     pToast(emoji,'¡Alegría compartida!');
-    pRenderHappy();
+    var _rxCard = document.querySelector('.happy-card[data-id="'+postId+'"]');
+    if(_rxCard){ _rxCard.outerHTML = _happyPostCard(sbPost, sbPost.userId === _myUserId()); }
+    else { setTimeout(pRenderHappy, 600); }
     return;
   }
   var posts = _happyLoad();
@@ -4672,7 +4731,9 @@ function pHappyComment(postId){
     sbUpdateHappyPost(postId, { comments: sbPost.comments });
     inp.value = '';
     pToast('💬','Comentario enviado 🌿');
-    pRenderHappy();
+    var _cmtCard = document.querySelector('.happy-card[data-id="'+postId+'"]');
+    if(_cmtCard){ _cmtCard.outerHTML = _happyPostCard(sbPost, sbPost.userId === _myUserId()); }
+    else { setTimeout(pRenderHappy, 600); }
     return;
   }
   var posts = _happyLoad();
