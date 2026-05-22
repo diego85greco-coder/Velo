@@ -893,7 +893,7 @@ function _loadHomeData(){
 
 function _updateHomeBell(){
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
-  var unread = msgs.filter(function(m){ return !m.leido; }).length;
+  var unread = msgs.filter(function(m){ return !m.leido && !safeLS('get','velo_read_'+m.id); }).length;
   var label  = unread > 9 ? '9+' : String(unread);
   // Home bell badge
   var bell = document.getElementById('homeBellBadge');
@@ -5866,12 +5866,12 @@ function pRenderInbox(){
   el.innerHTML = contactBanner + all.map(function(m){
     var actionBtn = '';
     if(m.accion && !m.leido){
-      actionBtn = '<button onclick="event.stopPropagation();safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');this.closest(\'.p-inbox-msg\').classList.remove(\'unread\');var d=this.closest(\'.p-inbox-msg\').querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();'+m.accion+'" style="margin-top:6px;font-size:11px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
+      actionBtn = '<button onclick="event.stopPropagation();(function(){var ms=[];try{ms=JSON.parse(safeLS(\'get\',\'velo_inbox\')||\'[]\');}catch(e){}safeLS(\'set\',\'velo_inbox\',JSON.stringify(ms.map(function(x){return x.id===\''+m.id+'\'?Object.assign({},x,{leido:true}):x;})));})();safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');this.closest(\'.p-inbox-msg\').classList.remove(\'unread\');var d=this.closest(\'.p-inbox-msg\').querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();'+m.accion+'" style="margin-top:6px;font-size:11px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
     }
     var hasCuerpo = !!(m.cuerpo);
     var readKey = 'velo_read_'+m.id;
     var isRead = m.leido || !!safeLS('get', readKey);
-    var markReadInline = 'safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');this.classList.remove(\'unread\');var d=this.querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();';
+    var markReadInline = '(function(el){var ms=[];try{ms=JSON.parse(safeLS(\'get\',\'velo_inbox\')||\'[]\');}catch(e){}safeLS(\'set\',\'velo_inbox\',JSON.stringify(ms.map(function(x){return x.id===\''+m.id+'\'?Object.assign({},x,{leido:true}):x;})));safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');el.classList.remove(\'unread\');var d=el.querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();})(this)';
     return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" style="cursor:pointer"'
       +' onclick="'+(hasCuerpo ? 'pOpenInboxMsg(\''+m.id+'\',this)' : markReadInline)+'">'
       +'<div style="display:flex;flex-shrink:0">'+(isRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
