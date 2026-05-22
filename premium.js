@@ -4349,7 +4349,7 @@ function pRenderCircles(){
   sbClient.from('circles').select('*').eq('official', false).order('created_at',{ascending:false}).limit(50)
     .then(function(res){
       var sbCircles = (res.data||[]).map(function(r){
-        return { id:r.id, name:r.name, desc:r.desc||'', emoji:r.emoji||'⭕', foto:r.foto||'',
+        return { id:r.id, name:r.name, desc:r.descripcion||'', emoji:r.emoji||'⭕', foto:r.foto||'',
           members:0, maxMembers:r.cap_max||30, active:true, official:false };
       });
       // Merge: Supabase circles take precedence over same-id localStorage ones
@@ -4628,7 +4628,7 @@ function pSubmitCreateCircle(){
   _initSupabase();
   if(sbClient){
     sbClient.from('circles').insert({
-      id: c.id, name: c.name, desc: c.desc, emoji: c.emoji, foto: c.foto,
+      id: c.id, name: c.name, descripcion: c.desc, emoji: c.emoji, foto: c.foto,
       cap_min: capMin, cap_max: capMax, creator_id: myId, official: false
     }).then(function(){}).catch(function(){});
   }
