@@ -697,13 +697,13 @@
             </div>
           </div>
           <!-- Velo IA wide card -->
-          <div class="p-card p-card--hover" onclick="pGoTo('calm-ai')" style="margin-top:4px;padding:18px 20px;background:linear-gradient(135deg,rgba(116,198,157,.15),rgba(45,106,79,.08));border:1.5px solid rgba(116,198,157,.25);cursor:pointer;display:flex;align-items:center;gap:16px">
+          <div class="p-card p-card--hover" onclick="pGoTo('calm-ai')" style="margin-top:4px;padding:18px 20px;background:linear-gradient(135deg,rgba(255,182,193,.22),rgba(255,160,180,.12));border:1.5px solid rgba(255,160,180,.3);cursor:pointer;display:flex;align-items:center;gap:16px">
             <div style="font-size:36px;flex-shrink:0">🤖</div>
             <div style="flex:1;min-width:0">
               <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);margin-bottom:3px">Hablar con Velo IA</div>
               <div style="font-size:11.5px;color:var(--ink4);line-height:1.4">Tu acompañante inteligente · disponible las 24h</div>
             </div>
-            <span class="p-pill p-pill--sage" style="flex-shrink:0">Disponible</span>
+            <span class="p-pill" style="flex-shrink:0;background:rgba(255,160,180,.2);color:#9B3A52;border:1px solid rgba(255,160,180,.35)">Disponible</span>
           </div>
           <!-- Donation / Velo Plus banner -->
           <div class="p-card" style="margin-top:4px;padding:18px;background:linear-gradient(135deg,rgba(183,228,199,.35),rgba(168,212,232,.2));border:1.5px solid rgba(45,106,79,.15)">
@@ -922,23 +922,23 @@
 
       <!-- ══ BOTTLE ═══════════════════════════════════════════════ -->
       <div class="p-page" id="pg-bottle">
-        <div class="p-page-scroll" style="background:linear-gradient(160deg,#0C1C0E,#080E08)">
-          <div style="padding:18px 18px 20px;position:sticky;top:0;z-index:10;background:rgba(12,28,14,.9);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(200,165,100,.1)">
-            <button class="p-back-btn p-dark-back-btn" onclick="pGoTo('home')">←</button>
-            <span style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#fff">Mensajes al Mar</span>
-            <button class="p-btn" style="background:rgba(200,165,100,.15);border:1px solid rgba(200,165,100,.25);color:#C8A560;font-size:12px;font-weight:700;padding:7px 13px;border-radius:100px" onclick="pOpenBottleForm()">+ Enviar</button>
+        <div class="p-page-scroll">
+          <div style="padding:18px 18px 20px;position:sticky;top:0;z-index:10;background:rgba(220,240,252,.92);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(80,150,200,.15)">
+            <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+            <span style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink)">Mensajes al Mar</span>
+            <button class="p-btn" style="background:rgba(80,150,200,.15);border:1px solid rgba(80,150,200,.3);color:#1E5A80;font-size:12px;font-weight:700;padding:7px 13px;border-radius:100px" onclick="pOpenBottleForm()">+ Enviar</button>
           </div>
           <div style="padding:16px">
-            <div class="dark-hero-card" style="border-color:rgba(200,165,100,.15)">
-              <div class="dark-label" style="color:rgba(200,165,100,.8)">MENSAJE EN BOTELLA</div>
-              <h2 class="dark-title">Lanzá un mensaje al mundo</h2>
-              <p class="dark-sub">Anónimo, sincero, sin filtros. Alguien en su propia noche lo encuentra y te deja palabras de aliento.</p>
-              <button class="p-btn p-btn--dark-white p-btn--lg p-btn--full" onclick="pOpenBottleForm()">🌊 Lanzar mi mensaje</button>
+            <div class="dark-hero-card" style="background:rgba(255,255,255,.65);border-color:rgba(80,150,200,.2)">
+              <div class="dark-label" style="color:rgba(30,90,128,.7)">MENSAJE EN BOTELLA</div>
+              <h2 class="dark-title" style="color:var(--ink)">Lanzá un mensaje al mundo</h2>
+              <p class="dark-sub" style="color:var(--ink4)">Anónimo, sincero, sin filtros. Alguien en su propia noche lo encuentra y te deja palabras de aliento.</p>
+              <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pOpenBottleForm()">🌊 Lanzar mi mensaje</button>
             </div>
             <div id="bottleStatsBar" style="text-align:center;font-size:11px;color:rgba(200,165,100,.6);padding:6px 0 10px;letter-spacing:.5px;display:none"></div>
             <div id="bottleFavWidget"></div>
             <!-- Tabs -->
-            <div style="display:flex;gap:0;margin-bottom:14px;background:rgba(255,255,255,.05);border-radius:12px;padding:3px">
+            <div style="display:flex;gap:0;margin-bottom:14px;background:rgba(80,150,200,.1);border-radius:12px;padding:3px">
               <button class="bottle-tab active" id="btab-mar" onclick="pBottleTab('mar',this)">🌊 Del mar</button>
               <button class="bottle-tab" id="btab-resp" onclick="pBottleTab('resp',this)">💌 Mis respuestas</button>
             </div>
@@ -970,7 +970,7 @@
             <textarea class="p-textarea dark-ta" id="bottleMsgTa" rows="5" placeholder="¿Qué querés decirle al mundo?"></textarea>
             <div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px">
               <span style="font-size:12px;color:rgba(255,255,255,.45);flex:1">Publicar con mi perfil visible</span>
-              <div id="bottleProfileTog" class="p-tog" onclick="this.classList.toggle('on');document.getElementById('bottleShowProfile').checked=this.classList.contains('on')" style="flex-shrink:0;background:rgba(255,255,255,.18)"></div>
+              <div id="bottleProfileTog" class="p-tog" onclick="this.classList.toggle('on');document.getElementById('bottleShowProfile').checked=this.classList.contains('on')" style="flex-shrink:0"><div class="p-tog-k"></div></div>
               <input type="checkbox" id="bottleShowProfile" style="display:none">
             </div>
             <div style="height:10px"></div>
@@ -1284,7 +1284,7 @@
               <!-- Anon toggle row -->
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,.5);border-radius:10px;border:1px solid var(--border2)">
                 <span style="font-size:11px;color:var(--ink4);flex:1;line-height:1.4">Publicar con mi perfil visible<br><span style="font-size:10px;color:var(--ink5)">Otros podrán ver tu perfil al hacer click en tu foto</span></span>
-                <div id="happyProfileTog" class="p-tog" onclick="this.classList.toggle('on');document.getElementById('happyShowProfile').checked=this.classList.contains('on')" style="flex-shrink:0"></div>
+                <div id="happyProfileTog" class="p-tog" onclick="this.classList.toggle('on');document.getElementById('happyShowProfile').checked=this.classList.contains('on')" style="flex-shrink:0"><div class="p-tog-k"></div></div>
                 <input type="checkbox" id="happyShowProfile" style="display:none">
               </div>
               <!-- Action row -->
@@ -1399,11 +1399,11 @@
               <div class="p-label p-label-sage" style="margin-bottom:12px">Privacidad</div>
               <div class="p-row-between" style="margin-bottom:12px">
                 <div><div style="font-size:13px;color:var(--ink3)">👤 Modo incógnito</div><div style="font-size:11px;color:var(--ink5)">Ocultás tu nombre y avatar</div></div>
-                <div class="p-tog" id="incognitoTog" onclick="pToggleIncognito()"></div>
+                <div class="p-tog" id="incognitoTog" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>
               </div>
               <div class="p-row-between" style="margin-bottom:8px">
                 <div><div style="font-size:13px;font-weight:600;color:var(--ink2)">🛡️ Modo guardián</div><div style="font-size:11px;color:var(--ink5)">Aparecer disponible para acompañar</div></div>
-                <div class="p-tog" id="guardianModeTog" onclick="pToggleGuardianMode()"></div>
+                <div class="p-tog" id="guardianModeTog" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>
               </div>
               <div id="guardianModeDetails" style="display:none;border-top:1px solid var(--border);padding-top:12px;margin-top:8px">
                 <div class="p-field" style="margin-bottom:8px">
@@ -2279,6 +2279,6 @@
     <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
   </div>
 </div>
-<script src="premium.js?v=20260522-79"></script>
+<script src="premium.js?v=20260522-80"></script>
 </body>
 </html>
