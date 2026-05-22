@@ -1588,6 +1588,13 @@ function pOpenGuardian(id){
   }
   var rvEl = document.getElementById('gdReviews');
   if(rvEl) rvEl.innerHTML = '<p class="p-sm p-muted">Cargando reseñas…</p>';
+  var favBtn = document.getElementById('gdFavBtn');
+  if(favBtn){
+    var gUidFav = (g.id||'').replace('live_','');
+    var isFavNow = gUidFav ? pIsFav(gUidFav) : false;
+    favBtn.textContent = isFavNow ? '⭐' : '☆';
+    favBtn.style.background = isFavNow ? 'rgba(255,200,50,.25)' : 'rgba(255,200,50,.15)';
+  }
   pGoTo('guardian-detail');
   // Load real reviews for this guardian from Supabase
   (function(){
@@ -1693,8 +1700,9 @@ function _subscribeSeekerRequest(reqId){
   if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
   if(!sbClient) return;
   _gcSeekerCh = sbClient.channel('velo:gdreq:'+reqId)
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'guardian_requests',filter:'id=eq.'+reqId},function(payload){
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'guardian_requests'},function(payload){
       var row = payload.new||{};
+      if(String(row.id) !== String(reqId)) return;
       if(row.status === 'accepted'){
         if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
         _closeGuardianWaitSheet();
@@ -3352,7 +3360,7 @@ async function _loadGuardianStats(){
     ]);
     var total  = (r1 && r1.count != null) ? r1.count : '—';
     var helped = (r2 && r2.count != null) ? r2.count : '—';
-    el.textContent = '🆘 '+total+' ayudas solicitadas · 💚 '+helped+' personas acompañadas';
+    el.textContent = '🕊️ '+total+' ayudas solicitadas · 💚 '+helped+' personas acompañadas';
     el.style.display = 'block';
   }catch(e){}
 }
@@ -3933,8 +3941,10 @@ function pSubmitSurvey(){
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   inbox = inbox.map(function(m){ return m.tipo==='encuesta' ? Object.assign({},m,{leido:true}) : m; });
   safeLS('set','velo_inbox', JSON.stringify(inbox));
+  _updateHomeBell();
   closeModal('surveyOv');
   pToast('💚','¡Gracias por tu opinión! Nos ayudás a mejorar Velo 🌿');
+  setTimeout(function(){ if(document.getElementById('inboxList')) pRenderInbox(); }, 300);
 }
 
 function _renderSurveyResults(){
@@ -5736,14 +5746,15 @@ function pRenderInbox(){
       var senderRow = (senderId && senderName)
         ? '<div style="font-size:11px;color:var(--sage);font-weight:600;margin-bottom:2px;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_escHtml(senderName)+' ›</div>'
         : '';
-      return '<div class="p-inbox-msg'+(safeLS('get',readKey)?'':' unread')+'" onclick="safeLS(\'set\',\''+readKey+'\',\'1\');this.classList.remove(\'unread\');this.querySelector(\'.p-inbox-dot\')&&this.querySelector(\'.p-inbox-dot\').remove()">'
-        +'<div style="display:flex;flex-shrink:0">'+(safeLS('get',readKey)?'':'<div class="p-inbox-dot"></div>')+'</div>'
+      var isAlreadyRead = !!safeLS('get',readKey);
+      return '<div class="p-inbox-msg'+(isAlreadyRead?'':' unread')+'" style="cursor:pointer" onclick="pOpenBroadcastMsg('+_jsAttr(readKey)+','+_jsAttr(b.subject||'')+','+_jsAttr(b.body||'')+','+_jsAttr(senderName||'')+','+_jsAttr(fecha||'')+',this)">'
+        +'<div style="display:flex;flex-shrink:0">'+(isAlreadyRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
         +iconHtml
         +'<div style="flex:1;min-width:0">'
         +senderRow
         +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(b.subject)+'</div>'
         +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(b.body||'')+'</div>'
-        +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+'</div>'
+        +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:var(--sage)">Toca para leer →</span>')+'</div>'
         +'</div></div>';
     }).join('');
     // Prepend broadcasts before existing inbox items, after contact banner
@@ -5799,23 +5810,47 @@ function pRenderInbox(){
   el.innerHTML = contactBanner + all.map(function(m){
     var actionBtn = '';
     if(m.accion && !m.leido){
-      actionBtn = '<button onclick="event.stopPropagation();'+m.accion+'" style="margin-top:6px;font-size:11px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
+      actionBtn = '<button onclick="event.stopPropagation();safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');this.closest(\'.p-inbox-msg\').classList.remove(\'unread\');var d=this.closest(\'.p-inbox-msg\').querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();'+m.accion+'" style="margin-top:6px;font-size:11px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
     }
     var hasCuerpo = !!(m.cuerpo);
     var readKey = 'velo_read_'+m.id;
     var isRead = m.leido || !!safeLS('get', readKey);
-    return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" style="cursor:'+(hasCuerpo?'pointer':'default')+'"'
-      +(hasCuerpo ? ' onclick="pOpenInboxMsg(\''+m.id+'\',this)"' : '')+'>'
+    var markReadInline = 'safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');this.classList.remove(\'unread\');var d=this.querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();';
+    return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" style="cursor:pointer"'
+      +' onclick="'+(hasCuerpo ? 'pOpenInboxMsg(\''+m.id+'\',this)' : markReadInline)+'">'
       +'<div style="display:flex;flex-shrink:0">'+(isRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
       +'<div class="p-inbox-ic" style="background:'+(m.tipo==='encuesta'?'rgba(116,198,157,.12)':'var(--sage7)')+'">'+m.icon+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m.asunto+'</div>'
       +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+m.extracto+'</div>'
-      +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+m.fecha+'</div>'
-      +(hasCuerpo&&!isRead?'<div style="font-size:10px;color:var(--sage);margin-top:4px">Toca para leer →</div>':'')
+      +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+m.fecha+(hasCuerpo&&!isRead?' · <span style="color:var(--sage)">Toca para leer →</span>':'')+'</div>'
       +actionBtn
       +'</div></div>';
   }).join('');
+}
+
+function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl){
+  safeLS('set', readKey, '1');
+  if(rowEl){ rowEl.classList.remove('unread'); var dot = rowEl.querySelector('.p-inbox-dot'); if(dot) dot.remove(); }
+  _updateHomeBell();
+  var existing = document.getElementById('inboxBcOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'inboxBcOv';
+  ov.innerHTML = '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+    +'<div style="font-size:30px;width:46px;height:46px;border-radius:14px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0">📢</div>'
+    +'<div><div style="font-size:12px;font-weight:700;color:var(--sage)">'+_escHtml(senderName||'Velo')+'</div>'
+    +'<div style="font-size:11px;color:var(--ink5)">'+_escHtml(fecha||'')+'</div></div>'
+    +'</div>'
+    +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);margin-bottom:16px;line-height:1.3">'+_escHtml(subject)+'</h2>'
+    +(body ? '<div style="font-size:14px;color:var(--ink3);line-height:1.85;white-space:pre-line;background:var(--cream2);border-radius:12px;padding:16px;margin-bottom:20px">'+_escHtml(body)+'</div>' : '')
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'inboxBcOv\').remove()">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 }
 
 function pOpenInboxMsg(msgId, rowEl){
@@ -6073,6 +6108,16 @@ function pRemoveFav(userId){
   }
   pToast('✓','Eliminado de favoritos');
   _updateFavBadge();
+}
+
+function pToggleGuardianFav(){
+  if(!_curGuardian) return;
+  var uid = (_curGuardian.id||'').replace('live_','');
+  var name = _curGuardian.name||'Guardián';
+  var av = _curGuardian.av||'🌿';
+  if(pIsFav(uid)){ pRemoveFav(uid); } else { pAddFav(uid, name, av); }
+  var btn = document.getElementById('gdFavBtn');
+  if(btn){ btn.textContent = pIsFav(uid) ? '⭐' : '☆'; btn.style.background = pIsFav(uid) ? 'rgba(255,200,50,.25)' : 'rgba(255,200,50,.15)'; }
 }
 
 function pToggleFavFromProfile(userId, name, av){
