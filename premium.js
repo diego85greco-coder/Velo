@@ -1725,10 +1725,11 @@ function _startGuardianReqListener(){
       if(res && res.data && res.data.length) _showGuardianRequest(res.data[0]);
     });
   if(_guardianReqCh) return;
-  _guardianReqCh = sbClient.channel('velo:gdreq:in:'+myId)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'guardian_requests',filter:'guardian_id=eq.'+myId},function(payload){
+  // No server-side filter — client-side check is more reliable without REPLICA IDENTITY FULL
+  _guardianReqCh = sbClient.channel('velo:gdreq:all')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'guardian_requests'},function(payload){
       var r = payload.new||{};
-      if(r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
+      if(r.guardian_id === myId && r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
     }).subscribe();
 }
 
