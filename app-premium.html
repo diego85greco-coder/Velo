@@ -333,7 +333,7 @@
             </div>
           </section>
           <footer class="land-footer">
-            <p class="land-footer-text">© 2026 Velo · Acompañamos emociones · <a href="mailto:wearevelo.app@gmail.com" style="color:rgba(255,255,255,.6)">wearevelo.app@gmail.com</a></p>
+            <p class="land-footer-text">© 2026 Velo · Acompañamos emociones · <a href="mailto:consultas@heyvelo.app" style="color:rgba(255,255,255,.6)">consultas@heyvelo.app</a></p>
           </footer>
 
         </div>
@@ -1509,9 +1509,9 @@
                 </div>
               </div>
             </div>
-            <div class="contact-opt" onclick="window.open('mailto:wearevelo.app@gmail.com')">
+            <div class="contact-opt" onclick="window.open('mailto:consultas@heyvelo.app')">
               <div class="co-ic" style="background:var(--sage7)">📧</div>
-              <div><div style="font-size:14px;font-weight:700;color:var(--ink)">Correo electrónico</div><div style="font-size:12px;color:var(--ink4)">wearevelo.app@gmail.com</div></div>
+              <div><div style="font-size:14px;font-weight:700;color:var(--ink)">Correo electrónico</div><div style="font-size:12px;color:var(--ink4)">consultas@heyvelo.app</div></div>
             </div>
             <div class="p-card" style="padding:20px;margin-top:14px">
               <div class="p-label p-label-sage" style="margin-bottom:12px">Enviar mensaje</div>
@@ -1605,7 +1605,7 @@
                   <li>Esta sesión es <strong>confidencial</strong> — Velo no graba ni accede al contenido</li>
                   <li>El/la profesional está <strong>habilitado/a y verificado/a</strong> por Velo</li>
                   <li>El <strong>80%</strong> de tu pago va directo al profesional</li>
-                  <li>Si necesitás cancelar, escribinos a <strong>wearevelo.app@gmail.com</strong></li>
+                  <li>Si necesitás cancelar, escribinos a <strong>consultas@heyvelo.app</strong></li>
                   <li>Ante una emergencia, usá el botón <strong>SOS</strong> de la app</li>
                 </ul>
               </div>
@@ -1750,7 +1750,7 @@
               <div style="display:flex;flex-direction:column;gap:10px">
                 <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink3)"><span>✅</span> Revisá tu correo para confirmación</div>
                 <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink3)"><span>📋</span> Preparate para subir tus credenciales</div>
-                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink3)"><span>💬</span> Podés contactarnos en contacto@velo.app</div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink3)"><span>💬</span> Podés contactarnos en consultas@heyvelo.app</div>
               </div>
             </div>
             <button class="p-btn p-btn--secondary p-btn--lg p-btn--full" onclick="pGoTo('landing')">← Volver al inicio</button>
@@ -1821,7 +1821,7 @@
             <div style="height:4px"></div>
             <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pChangePassword()">✅ Guardar nueva contraseña</button>
             <div style="height:8px"></div>
-            <p style="font-size:11px;color:var(--ink5);text-align:center;line-height:1.5">Si tenés problemas, escribinos a <strong>wearevelo.app@gmail.com</strong></p>
+            <p style="font-size:11px;color:var(--ink5);text-align:center;line-height:1.5">Si tenés problemas, escribinos a <strong>consultas@heyvelo.app</strong></p>
           </div>
         </div>
       </div>
@@ -1917,7 +1917,7 @@
       <div class="p-sheet">
         <div class="p-sheet-handle"></div>
         <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:6px">Crear Círculo de Paz</div>
-        <p style="font-size:12px;color:var(--ink4);margin-bottom:14px;line-height:1.5">Creá un espacio seguro para tu comunidad. Máximo 30 participantes.</p>
+        <p style="font-size:12px;color:var(--ink4);margin-bottom:14px;line-height:1.5">Creá un espacio seguro para tu comunidad.</p>
         <div class="p-field">
           <label class="p-field-label">Emoji del círculo</label>
           <div style="display:flex;align-items:center;gap:12px">
@@ -1927,12 +1927,37 @@
           <div id="newCircleEmojiRow" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px"></div>
         </div>
         <div class="p-field">
+          <label class="p-field-label">Foto del círculo (opcional)</label>
+          <div style="display:flex;align-items:center;gap:12px">
+            <img id="newCirclePhotoPreview" src="" alt="" style="display:none;width:52px;height:52px;border-radius:14px;object-fit:cover;border:2px solid var(--sage4)">
+            <label id="newCirclePhotoLabel" class="p-btn p-btn--secondary p-btn--sm" style="cursor:pointer">
+              📷 Subir foto
+              <input type="file" accept="image/*" style="display:none" onchange="pCirclePhotoUpload(this)">
+            </label>
+          </div>
+        </div>
+        <div class="p-field">
           <label class="p-field-label">Nombre del círculo</label>
           <input class="p-input" type="text" id="newCircleName" placeholder="Ej: Bienestar Cotidiano" maxlength="40">
         </div>
         <div class="p-field">
           <label class="p-field-label">Descripción breve (opcional)</label>
           <textarea class="p-textarea" id="newCircleDesc" rows="2" placeholder="¿De qué va este espacio?" maxlength="120"></textarea>
+        </div>
+        <div class="p-field">
+          <label class="p-field-label">Capacidad de participantes</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="flex:1">
+              <div style="font-size:11px;color:var(--ink4);margin-bottom:4px">Mínimo</div>
+              <input class="p-input" type="number" id="newCircleCapMin" value="5" min="5" max="30" style="text-align:center">
+            </div>
+            <div style="color:var(--ink4);font-size:14px;padding-top:18px">—</div>
+            <div style="flex:1">
+              <div style="font-size:11px;color:var(--ink4);margin-bottom:4px">Máximo</div>
+              <input class="p-input" type="number" id="newCircleCapMax" value="30" min="5" max="30" style="text-align:center">
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--ink5);margin-top:4px">Entre 5 y 30 personas</div>
         </div>
         <div style="display:flex;gap:8px">
           <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSubmitCreateCircle()">⭕ Crear círculo</button>
@@ -2047,7 +2072,7 @@
       <p><strong>Almacenamiento</strong><br>Tus datos se almacenan en servidores seguros de Supabase (cifrado en tránsito y en reposo). El Diario Íntimo se guarda <em>solo en tu dispositivo</em> — Velo no puede acceder a él.</p>
       <p><strong>Comunicaciones anónimas</strong><br>Los mensajes al mar y las solicitudes anónimas de la Sala de Ayuda no están vinculadas a tu identidad visible para otros usuarios.</p>
       <p><strong>Pagos</strong><br>Los pagos son procesados por Stripe o PayPal. Velo no almacena datos de tarjeta de crédito.</p>
-      <p><strong>Tus derechos</strong><br>Podés solicitar la eliminación de tu cuenta y todos tus datos escribiendo a wearevelo.app@gmail.com.</p>
+      <p><strong>Tus derechos</strong><br>Podés solicitar la eliminación de tu cuenta y todos tus datos escribiendo a consultas@heyvelo.app.</p>
       <p><strong>Cookies</strong><br>Usamos localStorage para mantener tu sesión. No usamos cookies de rastreo de terceros.</p>
       <p style="color:var(--ink5);font-size:11px">Última actualización: Mayo 2026</p>
     </div>
@@ -2200,7 +2225,7 @@
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px;background:var(--cream2);border-radius:10px">
       <input type="checkbox" id="adminReplyAllowToggle" style="width:16px;height:16px;cursor:pointer">
-      <label for="adminReplyAllowToggle" style="font-size:12px;color:var(--ink3);cursor:pointer;line-height:1.4">Permitir que el usuario responda a este email<br><span style="font-size:11px;color:var(--ink5)">Si está activado, el usuario puede responder directamente a wearevelo.app@gmail.com.</span></label>
+      <label for="adminReplyAllowToggle" style="font-size:12px;color:var(--ink3);cursor:pointer;line-height:1.4">Permitir que el usuario responda a este email<br><span style="font-size:11px;color:var(--ink5)">Si está activado, el usuario puede responder directamente a consultas@heyvelo.app.</span></label>
     </div>
     <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pAdminSendReply()">Enviar respuesta 💌</button>
     <div style="height:8px"></div>
@@ -2319,6 +2344,6 @@
     <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
   </div>
 </div>
-<script src="premium.js?v=20260522-95"></script>
+<script src="premium.js?v=20260522-96"></script>
 </body>
 </html>

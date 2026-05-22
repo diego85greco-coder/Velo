@@ -2644,7 +2644,7 @@ function rejectPro(proId){
 }
 
 // ── ADMIN ────────────────────────────────────────────────
-var VELO_EMAIL  = 'wearevelo.app@gmail.com';
+var VELO_EMAIL  = 'consultas@heyvelo.app';
 // Note: Admin authentication must be validated server-side. Never store credentials in client JS.
 var _ADMINS = [
   {email:'Diego.catalan.greco@gmail.com', pass:'Portugaloporto2026!', name:'Super Admin'},
@@ -4188,7 +4188,7 @@ function getTCContent(){
   _tcSec('1','PARTES DEL CONTRATO Y OPERADOR',
     '<p>La Plataforma <b>Velo</b> (en adelante, "la Plataforma" o "Velo") es operada por <b>Diego Catalan Greco</b>, persona física, en calidad de propietario individual de la marca Velo, domiciliado en Portugal y sujeto a la legislación de la Unión Europea.</p>'+
     '<p>Al registrarse, el "Usuario" o "Profesional" (en adelante, "el Usuario") celebra este contrato con el operador mencionado. Si en el futuro Velo fuese operada por una persona jurídica constituida formalmente, este contrato continuará vigente y será novado automáticamente en favor de dicha entidad, sin que sea necesario el re-consentimiento del Usuario.</p>'+
-    '<p><b>Contacto del responsable del tratamiento:</b> wearevelo.app@gmail.com</p>'),
+    '<p><b>Contacto del responsable del tratamiento:</b> consultas@heyvelo.app</p>'),
 
   _tcSec('2','CAPACIDAD LEGAL Y EDAD MÍNIMA',
     '<p>El uso de Velo está <b>estrictamente reservado a personas mayores de 18 años</b> con plena capacidad jurídica para contratar según la ley de su país de residencia. Al aceptar estos T&C, el Usuario declara bajo su exclusiva responsabilidad que cumple este requisito. Velo podrá requerir documentación acreditativa en cualquier momento. En caso de falsedad, la cuenta será eliminada y se reserva el derecho a emprender acciones legales.</p>'),
@@ -4207,14 +4207,14 @@ function getTCContent(){
     '<p><b>Donaciones:</b> Los Usuarios pueden realizar aportaciones voluntarias a Profesionales gestionadas mediante Stripe. Velo actúa como agente de dispersión y retiene el 20% como comisión de plataforma.</p>'+
     '<p><b>Datos de pago:</b> Velo <u>no</u> almacena datos de tarjetas de crédito ni credenciales bancarias. Las transacciones son procesadas de forma segura por PayPal Inc. y Stripe Inc. bajo sus propias políticas de seguridad y certificación PCI-DSS.</p>'+
     '<p><b>Exención financiera:</b> Velo no se responsabiliza por retenciones de fondos, fallos en transacciones, contracargos ni comisiones aplicadas por las pasarelas de pago.</p>'+
-    '<p><b>Política de reembolsos:</b> Las suscripciones y donaciones voluntarias no son reembolsables, salvo error técnico directamente imputable al código de Velo, en cuyo caso el Usuario deberá notificarlo a wearevelo.app@gmail.com en un plazo máximo de 14 días desde la transacción.</p>'),
+    '<p><b>Política de reembolsos:</b> Las suscripciones y donaciones voluntarias no son reembolsables, salvo error técnico directamente imputable al código de Velo, en cuyo caso el Usuario deberá notificarlo a consultas@heyvelo.app en un plazo máximo de 14 días desde la transacción.</p>'),
 
   _tcSec('6','OBLIGACIONES Y RESPONSABILIDAD DEL PROFESIONAL',
     '<p>Al registrarse como Profesional, el Usuario garantiza que sus títulos, licencias y certificaciones son <b>100% auténticos y vigentes</b>. La presentación de documentos falsos o la suplantación de identidad profesional constituye un ilícito penal. Velo denunciará activamente ante las autoridades competentes cualquier sospecha de fraude.</p>'+
     '<p><b>Cláusula de indemnidad:</b> Si Velo fuere demandada, sancionada o incurriere en gastos de defensa jurídica como consecuencia directa de una acción, omisión, fraude o mala praxis de un Profesional, este último se obliga a indemnizar a Velo por la totalidad de dichos costes, incluyendo honorarios de abogados, tasas judiciales y el importe de cualquier multa o condena.</p>'),
 
   _tcSec('7','PROTECCIÓN DE DATOS PERSONALES — RGPD (UE 2016/679)',
-    '<p><b>Responsable del tratamiento:</b> Diego Catalan Greco · wearevelo.app@gmail.com</p>'+
+    '<p><b>Responsable del tratamiento:</b> Diego Catalan Greco · consultas@heyvelo.app</p>'+
     '<p><b>Datos recogidos:</b> nombre de usuario, dirección de correo electrónico, contraseña (cifrada), dirección IP en el momento del registro, avatar (opcional), y metadatos de uso de la Plataforma (fechas de acceso, preferencias de privacidad). No se recogen datos biométricos ni de categoría especial salvo los introducidos voluntariamente por el propio Usuario en el Diario o en el chat.</p>'+
     '<p><b>Finalidades y base jurídica:</b></p>'+
     '<ul style="padding-left:16px;margin:6px 0">'+
@@ -4223,7 +4223,7 @@ function getTCContent(){
     '<li>Interés legítimo (Art. 6.1.f RGPD): seguridad de la Plataforma, prevención de fraude y moderación de contenido.</li>'+
     '</ul>'+
     '<p><b>Plazo de conservación:</b> Los datos de cuenta activa se conservan mientras la cuenta esté activa. Tras la baja, se eliminan los datos operativos en un plazo de 30 días. Los datos mínimos de reserva legal (email, nombre de usuario, IP de registro, timestamp y versión de T&C aceptada) se conservan de forma bloqueada durante <b>6 años</b> conforme al Art. 149.º del Código Civil Português (prescripción general) y para la defensa jurídica de Velo ante posibles reclamaciones.</p>'+
-    '<p><b>Derechos del interesado:</b> Conforme al RGPD, el Usuario tiene derecho a <b>acceder, rectificar, suprimir, portar, limitar y oponerse</b> al tratamiento de sus datos, así como a no ser objeto de decisiones automatizadas con efectos significativos. Para ejercer estos derechos, escriba a wearevelo.app@gmail.com. Tiene también derecho a presentar reclamación ante la <b>CNPD</b> (Comissão Nacional de Proteção de Dados, Portugal) — www.cnpd.pt.</p>'+
+    '<p><b>Derechos del interesado:</b> Conforme al RGPD, el Usuario tiene derecho a <b>acceder, rectificar, suprimir, portar, limitar y oponerse</b> al tratamiento de sus datos, así como a no ser objeto de decisiones automatizadas con efectos significativos. Para ejercer estos derechos, escriba a consultas@heyvelo.app. Tiene también derecho a presentar reclamación ante la <b>CNPD</b> (Comissão Nacional de Proteção de Dados, Portugal) — www.cnpd.pt.</p>'+
     '<p><b>Transferencias internacionales:</b> Los datos pueden ser procesados por proveedores (Stripe, PayPal, Firebase) ubicados fuera de la UE. En todos los casos se utilizan mecanismos de transferencia adecuados conforme al Capítulo V del RGPD (Cláusulas Contractuales Tipo o decisiones de adecuación).</p>'),
 
   _tcSec('8','MODERACIÓN DE CONTENIDO Y EXPULSIÓN',
@@ -4232,7 +4232,7 @@ function getTCContent(){
 
   _tcSec('9','DERECHO DE DESISTIMIENTO Y BAJA',
     '<p>Conforme a la Directiva UE 2011/83 sobre derechos de los consumidores, los Usuarios residentes en la Unión Europea tienen <b>14 días naturales de derecho de desistimiento</b> desde la primera suscripción de pago, salvo que hayan solicitado expresamente comenzar el servicio antes del vencimiento de dicho plazo (acceso inmediato tras el pago), en cuyo caso el derecho de desistimiento se extingue.</p>'+
-    '<p>Para solicitar la baja de la cuenta y la supresión de datos operativos, el Usuario puede hacerlo desde la configuración de la app o escribiendo a wearevelo.app@gmail.com.</p>'),
+    '<p>Para solicitar la baja de la cuenta y la supresión de datos operativos, el Usuario puede hacerlo desde la configuración de la app o escribiendo a consultas@heyvelo.app.</p>'),
 
   _tcSec('10','PROPIEDAD INTELECTUAL',
     '<p>El nombre "Velo", el logotipo, el diseño de la interfaz, los textos, imágenes y el código de la Plataforma son propiedad exclusiva de Diego Catalan Greco. Queda prohibida su reproducción, distribución o uso comercial sin autorización expresa y por escrito.</p>'+

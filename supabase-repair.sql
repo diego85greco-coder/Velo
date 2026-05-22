@@ -444,3 +444,52 @@ BEGIN
     END;
   END LOOP;
 END $$;
+
+-- ── PHASE 4: CIRCLES + CIRCLE MEMBERS ────────────────────────
+
+-- circle_members: tracks who is currently in a circle (for real-time count)
+CREATE TABLE IF NOT EXISTS circle_members (
+  circle_id  text NOT NULL,
+  user_id    text NOT NULL,
+  last_seen  timestamptz DEFAULT now(),
+  PRIMARY KEY (circle_id, user_id)
+);
+ALTER TABLE circle_members ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='circle_members' AND policyname='allow_all') THEN
+    CREATE POLICY "allow_all" ON circle_members FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
+-- circles: user-created circles stored in Supabase (multiuser)
+CREATE TABLE IF NOT EXISTS circles (
+  id          text PRIMARY KEY,
+  name        text NOT NULL,
+  desc        text,
+  emoji       text DEFAULT '⭕',
+  foto        text,
+  tema        text,
+  cap_min     int DEFAULT 5,
+  cap_max     int DEFAULT 30,
+  creator_id  text,
+  official    bool DEFAULT false,
+  created_at  timestamptz DEFAULT now()
+);
+ALTER TABLE circles ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='circles' AND policyname='allow_all') THEN
+    CREATE POLICY "allow_all" ON circles FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
+-- Add new tables to realtime publication
+DO $$
+DECLARE tbl text;
+BEGIN
+  FOREACH tbl IN ARRAY ARRAY['circle_members','circles'] LOOP
+    BEGIN
+      EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE ' || tbl;
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+  END LOOP;
+END $$;

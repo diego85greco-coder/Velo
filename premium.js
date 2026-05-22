@@ -109,7 +109,7 @@ var SUPABASE_URL  = 'https://yuravtnjvvztsxdtggod.supabase.co';
 var SUPABASE_ANON = 'sb_publishable_mBoqW2t3QoJvp5jFecEGgQ_1wrPiT9C';
 var STRIPE_PK     = 'pk_live_51TXmCcV05dCjGGP2F9YnbPBIantFoxurCpISx86i0DFNFcmM2sovtp5LcV5tOVxI72V4AfgY8sK5GtJVTyYnnI1L00QwkGS6P4';
 var PAYPAL_EMAIL  = 'wearevelo.app%40gmail.com';
-var VELO_EMAIL    = 'contacto@velo.app';
+var VELO_EMAIL    = 'consultas@heyvelo.app';
 var SUPABASE_FN   = SUPABASE_URL + '/functions/v1/stripe-checkout';
 
 var _supabaseLib = (typeof window !== 'undefined') ? window.supabase : null;
@@ -137,7 +137,7 @@ function safeLS(action, key, val){
 // ── DAILY LIMITS ────────────────────────────────────────────
 function _dailyKey(type){ return 'velo_daily_'+type+'_'+new Date().toISOString().slice(0,10); }
 function _checkDailyLimit(type){
-  var limits = { bottle:2, help:2, guardian:4 };
+  var limits = { bottle:4, help:4, guardian:4 };
   var plan = safeLS('get','velo_plan') || 'free';
   if(plan === 'plus') return true;
   var used = parseInt(safeLS('get',_dailyKey(type))||'0',10);
@@ -164,16 +164,30 @@ function _proBookingsSave(id,b){ safeLS('set',_proBookingsKey(id),JSON.stringify
 
 // ── TOAST ───────────────────────────────────────────────────
 var _toastTimer = null;
+var _toastQueue = [];
+var _toastBusy  = false;
+
 function pToast(emoji, msg){
+  _toastQueue.push({ emoji: emoji || '✓', msg: msg || '' });
+  if(!_toastBusy) _nextToast();
+}
+
+function _nextToast(){
+  if(!_toastQueue.length){ _toastBusy = false; return; }
+  _toastBusy = true;
+  var item = _toastQueue.shift();
   var el = document.getElementById('pToast');
   var em = document.getElementById('pToastEmoji');
   var tx = document.getElementById('pToastMsg');
-  if(!el) return;
-  if(em) em.textContent = emoji || '✓';
-  if(tx) tx.textContent = msg || '';
+  if(!el){ _toastBusy = false; return; }
+  if(em) em.textContent = item.emoji;
+  if(tx) tx.textContent = item.msg;
   el.classList.add('show');
   clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2800);
+  _toastTimer = setTimeout(function(){
+    el.classList.remove('show');
+    setTimeout(_nextToast, 300);
+  }, 3400);
 }
 // Alias for compatibility
 var toast = pToast;
@@ -1243,7 +1257,17 @@ function _presenceDot(userId, size){
 function _startGuardianHeartbeat(){
   _startGuardianReqListener();
   if(_guardianHeartbeatTimer) return;
-  var beat = function(){ _updateGuardianPresence(_presenceStatus()); _refreshPresenceCache(); };
+  var beat = function(){
+    _updateGuardianPresence(_presenceStatus());
+    _refreshPresenceCache();
+    if(_curCircle){
+      var _cmId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
+      if(_cmId && sbClient){
+        sbClient.from('circle_members').upsert({circle_id:_curCircle.id, user_id:_cmId, last_seen:new Date().toISOString()},
+          {onConflict:'circle_id,user_id'}).then(function(){}).catch(function(){});
+      }
+    }
+  };
   beat();
   _guardianHeartbeatTimer = setInterval(beat, 60000);
 }
@@ -4271,6 +4295,8 @@ var _circlesData = [
 var _curCircle = null;
 var _circleAutoMsgTimer = null;
 var _circleJoinedSession = {}; // tracks circles joined this session (for join/leave system messages)
+var _circleMembersCh  = null;  // realtime channel circle_members
+var _selectedCircleFoto = '';  // base64 photo for new circle
 
 function pRenderCircles(){
   var list = document.getElementById('circlesList');
@@ -4278,9 +4304,7 @@ function pRenderCircles(){
 
   var userConvs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
   var canCreate = userConvs >= 40 || _isPremium();
-  var badge = _getBadge(userConvs);
 
-  // Update create button state
   var createBtn = document.getElementById('circleCreateBtn');
   if(createBtn){
     if(canCreate){
@@ -4294,7 +4318,6 @@ function pRenderCircles(){
     }
   }
 
-  // Restriction notice
   var notice = document.getElementById('circleCreateNotice');
   if(notice){
     if(!canCreate){
@@ -4308,64 +4331,105 @@ function pRenderCircles(){
     }
   }
 
-  // Render user-created circles
-  var userCircles = []; try{ userCircles = JSON.parse(safeLS('get','velo_circles')||'[]'); }catch(e){}
-  var allCircles  = userCircles.concat(_circlesData);
+  var lsCircles = []; try{ lsCircles = JSON.parse(safeLS('get','velo_circles')||'[]'); }catch(e){}
+  var allCircles = lsCircles.concat(_circlesData);
+  _renderCircleCards(list, allCircles, {});
 
-  function _circleCardHtml(c){
-    var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+c.id)||'[]'); }catch(e){}
-    var lastMsg = msgs.length ? msgs[msgs.length-1] : null;
-    var maxM = c.maxMembers || 30;
-    var capPct = Math.min(100, Math.round((c.members||0)/maxM*100));
-    var isFull = (c.members||0) >= maxM;
-    return '<div class="circle-card'+(c.official?' circle-card--official':'')+'" id="circlecard-'+c.id+'" onclick="pOpenCircle(\''+c.id+'\')">'
-      +'<div style="display:flex;align-items:center;gap:13px">'
-      +'<div style="font-size:34px;width:52px;height:52px;border-radius:18px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative">'
+  _initSupabase();
+  if(!sbClient) return;
+
+  // Subscribe once to circle_members for live count updates
+  if(!_circleMembersCh){
+    _circleMembersCh = _sbSub('velo:circle_members', 'circle_members', function(){
+      _refreshCircleMemberCounts();
+    });
+  }
+
+  // Load user-created circles from Supabase (non-official)
+  sbClient.from('circles').select('*').eq('official', false).order('created_at',{ascending:false}).limit(50)
+    .then(function(res){
+      var sbCircles = (res.data||[]).map(function(r){
+        return { id:r.id, name:r.name, desc:r.desc||'', emoji:r.emoji||'⭕', foto:r.foto||'',
+          members:0, maxMembers:r.cap_max||30, active:true, official:false };
+      });
+      // Merge: Supabase circles take precedence over same-id localStorage ones
+      var merged = sbCircles.slice();
+      lsCircles.forEach(function(lc){
+        if(!merged.find(function(sc){ return sc.id === lc.id; })) merged.push(lc);
+      });
+      allCircles = merged.concat(_circlesData);
+      _renderCircleCards(list, allCircles, {});
+      _refreshCircleMemberCounts(allCircles);
+    }).catch(function(){
+      _refreshCircleMemberCounts(allCircles);
+    });
+}
+
+function _circleCardHtml(c, memberCounts){
+  var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+c.id)||'[]'); }catch(e){}
+  var lastMsg = msgs.length ? msgs[msgs.length-1] : null;
+  var maxM = c.maxMembers || 30;
+  var memberCount = memberCounts && memberCounts[c.id] !== undefined ? memberCounts[c.id] : (c.members||0);
+  var capPct = Math.min(100, Math.round(memberCount/maxM*100));
+  var isFull = memberCount >= maxM;
+  var imgHtml = c.foto
+    ? '<img src="'+c.foto+'" alt="" style="width:52px;height:52px;border-radius:18px;object-fit:cover;flex-shrink:0">'
+    : '<div style="font-size:34px;width:52px;height:52px;border-radius:18px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative">'
       +c.emoji
       +(c.official ? '<span style="position:absolute;bottom:-4px;right:-4px;font-size:12px;background:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)" title="Sala oficial Velo">🛡️</span>' : '')
-      +'</div>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">'+c.name+'</div>'
-      +'<div style="font-size:12px;color:var(--ink4);margin-bottom:5px">'+c.desc+'</div>'
-      +(lastMsg
-        ? '<div style="font-size:11px;color:var(--ink5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">'+lastMsg.av+' '+lastMsg.name+': '+lastMsg.text+'</div>'
-        : '<div style="height:5px"></div>')
-      +'<div style="display:flex;align-items:center;gap:6px">'
-      +'<div style="flex:1;height:4px;background:var(--cream2);border-radius:100px;overflow:hidden"><div style="height:100%;width:'+capPct+'%;background:'+(isFull?'var(--sos)':'var(--sage3)')+';border-radius:100px"></div></div>'
-      +'<span class="circle-member-count-'+c.id+'" style="font-size:10px;color:var(--ink5)">'+c.members+'/'+maxM+'</span>'
-      +(isFull ? '<span style="font-size:10px;color:var(--sos);font-weight:700">Lleno</span>' : '')
-      +'</div>'
-      +'</div>'
-      +'<div style="text-align:right;flex-shrink:0;margin-left:6px">'
-      +(c.active ? '<span class="p-pill p-pill--live" style="font-size:10px"><span class="p-ldot p-ldot--on"></span> Activo</span><br>' : '')
-      +(c.official ? '<span style="font-size:10px;color:var(--sage);font-weight:700">Oficial</span>' : '')
-      +'</div>'
-      +'</div>'
       +'</div>';
-  }
-  list.innerHTML = allCircles.map(_circleCardHtml).join('');
+  return '<div class="circle-card'+(c.official?' circle-card--official':'')+'" id="circlecard-'+c.id+'" onclick="pOpenCircle(\''+c.id+'\')">'
+    +'<div style="display:flex;align-items:center;gap:13px">'
+    +imgHtml
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">'+c.name+'</div>'
+    +'<div style="font-size:12px;color:var(--ink4);margin-bottom:5px">'+c.desc+'</div>'
+    +(lastMsg
+      ? '<div style="font-size:11px;color:var(--ink5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">'+lastMsg.av+' '+lastMsg.name+': '+lastMsg.text+'</div>'
+      : '<div style="height:5px"></div>')
+    +'<div style="display:flex;align-items:center;gap:6px">'
+    +'<div style="flex:1;height:4px;background:var(--cream2);border-radius:100px;overflow:hidden"><div style="height:100%;width:'+capPct+'%;background:'+(isFull?'var(--sos)':'var(--sage3)')+';border-radius:100px"></div></div>'
+    +'<span class="circle-member-count-'+c.id+'" style="font-size:10px;color:var(--ink5)">'+memberCount+'/'+maxM+'</span>'
+    +(isFull ? '<span style="font-size:10px;color:var(--sos);font-weight:700">Lleno</span>' : '')
+    +'</div>'
+    +'</div>'
+    +'<div style="text-align:right;flex-shrink:0;margin-left:6px">'
+    +(c.active ? '<span class="p-pill p-pill--live" style="font-size:10px"><span class="p-ldot p-ldot--on"></span> Activo</span><br>' : '')
+    +(c.official ? '<span style="font-size:10px;color:var(--sage);font-weight:700">Oficial</span>' : '')
+    +'</div>'
+    +'</div>'
+    +'</div>';
+}
 
-  // Fetch real member counts (distinct users who posted in last 30 days) from Supabase
+function _renderCircleCards(list, circles, memberCounts){
+  list.innerHTML = circles.map(function(c){ return _circleCardHtml(c, memberCounts); }).join('');
+}
+
+function _refreshCircleMemberCounts(circles){
   _initSupabase();
-  if(sbClient){
-    var since = new Date(Date.now() - 30*24*3600000).toISOString();
-    sbClient.from('circle_messages').select('circle_id,user_id').gte('created_at', since)
-      .then(function(res){
-        if(!res.data || !res.data.length) return;
-        var counts = {};
-        res.data.forEach(function(r){
-          if(!counts[r.circle_id]) counts[r.circle_id] = new Set();
-          counts[r.circle_id].add(r.user_id || r.circle_id+'-anon-'+r.created_at);
-        });
-        allCircles.forEach(function(c){
-          var n = counts[c.id] ? counts[c.id].size : 0;
-          if(n === c.members) return;
-          c.members = n;
-          var span = document.querySelector('.circle-member-count-'+c.id);
-          if(span) span.textContent = n+'/'+(c.maxMembers||30);
-        });
-      }).catch(function(){});
-  }
+  if(!sbClient) return;
+  var since = new Date(Date.now() - 30*60*1000).toISOString();
+  sbClient.from('circle_members').select('circle_id,user_id').gte('last_seen', since)
+    .then(function(res){
+      if(!res.data) return;
+      var counts = {};
+      res.data.forEach(function(r){ counts[r.circle_id] = (counts[r.circle_id]||0)+1; });
+      // Update all visible circle count spans
+      Object.keys(counts).forEach(function(cid){
+        var span = document.querySelector('.circle-member-count-'+cid);
+        if(span){
+          var maxM = 30;
+          var card = document.getElementById('circlecard-'+cid);
+          if(card){ var existing = span.textContent.split('/'); maxM = parseInt(existing[1])||30; }
+          span.textContent = counts[cid]+'/'+maxM;
+        }
+      });
+      // Update open circle header
+      if(_curCircle){
+        var n = counts[_curCircle.id] || 0;
+        _setEl('feedCircleMembers', n + (n===1?' persona activa':' personas activas'));
+      }
+    }).catch(function(){});
 }
 
 function pOpenCircle(id, circleData){
@@ -4386,6 +4450,12 @@ function pOpenCircle(id, circleData){
     _circleRtCh = _sbSub('velo:circle:'+id, 'circle_messages', function(payload){
       if(payload.new && payload.new.circle_id === id){ _renderCircleMessages(); }
     });
+    // Upsert user into circle_members for real-time presence counting
+    var _cmId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
+    if(_cmId){
+      sbClient.from('circle_members').upsert({circle_id:id, user_id:_cmId, last_seen:new Date().toISOString()},
+        {onConflict:'circle_id,user_id'}).then(function(){}).catch(function(){});
+    }
     // Announce join once per session per circle
     if(!_circleJoinedSession[id]){
       _circleJoinedSession[id] = true;
@@ -4506,6 +4576,12 @@ function pLeaveCircle(){
     sbClient.from('circle_messages').insert({ circle_id:leftCircle.id, user_id:lId, user_name:lName,
       user_av:'', text:lName+' salió del chat', type:'system' }).then(function(){}).catch(function(){});
   }
+  // Remove from circle_members
+  var _cmId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
+  if(sbClient && leftCircle && _cmId){
+    sbClient.from('circle_members').delete().eq('circle_id', leftCircle.id).eq('user_id', _cmId)
+      .then(function(){}).catch(function(){});
+  }
   _curCircle = null;
   pGoTo('circles');
   // Refresh member counts after leaving so the list reflects current state
@@ -4527,19 +4603,38 @@ function pOpenCreateCircle(){
 function pSubmitCreateCircle(){
   var nameEl  = document.getElementById('newCircleName');
   var descEl  = document.getElementById('newCircleDesc');
+  var capMinEl = document.getElementById('newCircleCapMin');
+  var capMaxEl = document.getElementById('newCircleCapMax');
   var emoji   = _selectedCircleEmoji || '⭕';
   if(!nameEl || !nameEl.value.trim()){ pToast('⚠️','Poné un nombre al círculo'); return; }
+  var capMin = Math.max(5, Math.min(30, parseInt((capMinEl&&capMinEl.value)||'5', 10)));
+  var capMax = Math.max(capMin, Math.min(30, parseInt((capMaxEl&&capMaxEl.value)||'30', 10)));
+  var myId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || 'anon';
   var c = {
     id: 'uc'+Date.now(),
     name: nameEl.value.trim(),
     desc: descEl ? descEl.value.trim() : '',
     emoji: emoji,
+    foto: _selectedCircleFoto || '',
     members: 1,
-    active: true
+    active: true,
+    maxMembers: capMax
   };
+  // Save to localStorage as fallback
   var circles = []; try{ circles = JSON.parse(safeLS('get','velo_circles')||'[]'); }catch(e){}
   circles.unshift(c);
   safeLS('set','velo_circles', JSON.stringify(circles.slice(0,20)));
+  // Save to Supabase for multiuser
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('circles').insert({
+      id: c.id, name: c.name, desc: c.desc, emoji: c.emoji, foto: c.foto,
+      cap_min: capMin, cap_max: capMax, creator_id: myId, official: false
+    }).then(function(){}).catch(function(){});
+  }
+  _selectedCircleFoto = '';
+  var prevEl = document.getElementById('newCirclePhotoPreview');
+  if(prevEl) prevEl.style.display = 'none';
   closeModal('createCircleOv');
   pToast('⭕','¡Círculo "'+c.name+'" creado! 🌿');
   pRenderCircles();
@@ -4562,6 +4657,22 @@ function pSelCircleEmoji(btn, emoji){
   document.querySelectorAll('#newCircleEmojiRow button').forEach(function(b){
     b.style.borderColor = b.textContent === emoji ? 'var(--sage3)' : 'transparent';
   });
+}
+
+function pCirclePhotoUpload(input){
+  if(!input || !input.files || !input.files[0]) return;
+  var file = input.files[0];
+  if(!file.type.startsWith('image/')){ pToast('⚠️','Solo imágenes'); return; }
+  if(file.size > 2*1024*1024){ pToast('⚠️','La imagen debe pesar menos de 2MB'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    _selectedCircleFoto = e.target.result;
+    var prevEl = document.getElementById('newCirclePhotoPreview');
+    if(prevEl){ prevEl.src = _selectedCircleFoto; prevEl.style.display = 'block'; }
+    var lbl = document.getElementById('newCirclePhotoLabel');
+    if(lbl) lbl.textContent = 'Foto cargada ✓';
+  };
+  reader.readAsDataURL(file);
 }
 
 function pReportCircle(){
@@ -6426,6 +6537,14 @@ async function pSendContact(){
     safeLS('set','velo_admin_contacts', JSON.stringify(msgs.slice(0,100)));
   }
 
+  // Notify admin via email (fire-and-forget)
+  fetch('/api/send-email', { method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ email:_ADMIN_EMAIL, name:name, type:'new-contact', topic:topic, message:text })
+  }).catch(function(){});
+
+  // Also add to admin buzón inside the app
+  sbSaveBroadcast('admin', '📬 Nueva consulta: '+topic, name+' ('+email+'): '+text.slice(0,120), '📬', 'Sistema').catch(function(){});
+
   if(subject) subject.value = 'General';
   if(msg) msg.value = '';
   if(nameEl  && !safeLS('get','velo_user_name'))  nameEl.value  = '';
@@ -7249,7 +7368,7 @@ function pProRegNext(){
 }
 
 // ── ADMIN ──────────────────────────────────────────────────────
-var _ADMIN_EMAIL = 'wearevelo.app@gmail.com';
+var _ADMIN_EMAIL = 'consultas@heyvelo.app';
 
 async function pAdminLogin(){
   var emailEl = document.getElementById('adminEmail');
@@ -9068,7 +9187,7 @@ function pContactUs(){
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove()">Cancelar</button>'
     +'</div>'
     +'<div style="height:8px"></div>'
-    +'<p style="font-size:11px;color:var(--ink5);text-align:center">También podés escribirnos a <strong>wearevelo.app@gmail.com</strong></p>'
+    +'<p style="font-size:11px;color:var(--ink5);text-align:center">También podés escribirnos a <strong>consultas@heyvelo.app</strong></p>'
     +'</div>';
   document.body.appendChild(ov);
 }
