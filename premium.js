@@ -819,6 +819,7 @@ function pFinishOnboarding(){
 
 // ── HOME DATA ──────────────────────────────────────────────────
 function _loadHomeData(){
+  _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
   var d = new Date();
   var h = d.getHours();
   var greet = (h < 6 || h >= 20) ? 'Buenas noches 🌙' : h < 12 ? 'Buenos días 🌿' : 'Buenas tardes 🌤️';
@@ -1023,9 +1024,11 @@ function _updateTopbarMoodBadge(){
   if(!emojiEl) return;
   var today = _dateKey();
   var stored = safeLS('get','velo_mood_'+today);
-  var emoji = '📊';
+  var emoji = '🤗';
   if(stored){ try{ var m=JSON.parse(stored); if(m.emoji) emoji=m.emoji; }catch(e){} }
   emojiEl.textContent = emoji;
+  var sidebarEmoji = document.getElementById('sidebarMoodEmoji');
+  if(sidebarEmoji) sidebarEmoji.textContent = emoji;
   var streak = 0;
   var d = new Date();
   for(var i=0;i<90;i++){
@@ -3506,7 +3509,8 @@ function pOpenMoodQuickView(){
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink)">'+monthNames[month]+' '+year+'</div></div>'
     +'<button onclick="document.getElementById(\'moodQuickOv\').remove()" style="width:32px;height:32px;border-radius:50%;background:var(--cream2);border:none;font-size:16px;cursor:pointer;color:var(--ink4)">✕</button>'
     +'</div>'
-    +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:10px;padding:8px 12px;margin-bottom:16px;font-size:11px;color:var(--sage2)">🔒 Solo vos podés ver estos registros</div>'
+    +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--sage2)">🔒 Solo vos podés ver estos registros</div>'
+    +'<div style="background:rgba(221,212,245,.15);border:1px solid rgba(196,181,232,.3);border-radius:10px;padding:9px 12px;margin-bottom:14px;font-size:11px;color:var(--ink3);line-height:1.55">✨ La IA genera un reporte mensual con análisis de tus ánimos registrados. Lo recibirás en tu <strong>Buzón Velo</strong> el día 1 de cada mes 💌</div>'
     + calHtml
     + reportsHtml
     +'<div style="height:8px"></div>'
@@ -5745,8 +5749,8 @@ async function pClearDMChat(){
       .or('and(from_id.eq.'+myId+',to_id.eq.'+_dmPeer.id+'),and(from_id.eq.'+_dmPeer.id+',to_id.eq.'+myId+')')
       .then(function(){}).catch(function(){});
   }
-  safeLS('remove','velo_dm_req_sent_'+_dmPeer.id);
-  safeLS('remove','velo_dm_accepted_'+_dmPeer.id);
+  safeLS('del','velo_dm_req_sent_'+_dmPeer.id);
+  safeLS('del','velo_dm_accepted_'+_dmPeer.id);
   pToast('🗑️','Conversación eliminada');
 }
 
@@ -5946,7 +5950,7 @@ function _startGlobalDMListener(){
         return;
       }
       if(m.text === '__velo_chat_rej__'){
-        safeLS('remove','velo_dm_req_sent_'+m.from_id);
+        safeLS('del','velo_dm_req_sent_'+m.from_id);
         pToast('💬',(m.from_name||'Usuario')+' no puede chatear ahora');
         return;
       }
