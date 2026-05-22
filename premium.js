@@ -3601,6 +3601,7 @@ function pReportBottle(bottleId){
 
 // ── DIARY ──────────────────────────────────────────────────────
 var _diaryEmojis = ['😊','😢','😰','😤','😴','🤔','💪','🌿','✨','💔'];
+var _diaryPrivacyShown = false;
 
 function pInitDiary(){
   var dateEl = document.getElementById('diaryDateLbl');
@@ -3609,6 +3610,12 @@ function pInitDiary(){
   if(row) row.innerHTML = _diaryEmojis.map(function(e){
     return '<button class="diary-emoji-btn" onclick="pSelDiaryEmoji(this,\''+e+'\')" data-emoji="'+e+'">'+e+'</button>';
   }).join('');
+  // Show privacy notice once per session
+  if(!_diaryPrivacyShown){
+    _diaryPrivacyShown = true;
+    var banner = document.getElementById('diaryPrivacyBanner');
+    if(banner) banner.style.display = 'flex';
+  }
   _loadDiaryEntries();
 }
 
@@ -3649,13 +3656,37 @@ async function _loadDiaryEntries(){
     var local = []; try{ local = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
     entries = local;
   }
+  _diaryEntries = entries;
   if(!entries.length){
     el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">📔</span><div class="p-empty-title">Aún no tenés entradas</div><div class="p-empty-sub">Este es tu espacio seguro. 🌙</div></div>';
     return;
   }
+  // Sort newest first
+  entries = entries.slice().sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
   el.innerHTML = entries.map(function(e, i){
-    return '<div class="diary-entry" style="animation-delay:'+i*.05+'s"><div class="diary-entry-date">'+e.dateLabel+'</div><div class="diary-entry-text">'+_escHtml(e.text)+'</div><div style="margin-top:8px;text-align:right"><button style="font-size:11px;color:var(--sos);background:none;border:none;cursor:pointer;padding:3px 7px" onclick="pDeleteDiary('+e.ts+')">🗑️ Borrar</button></div></div>';
+    var preview = (e.text||'').slice(0, 55) + ((e.text||'').length > 55 ? '…' : '');
+    return '<div class="diary-row" style="animation-delay:'+i*.04+'s" onclick="pOpenDiaryEntry('+e.ts+')">'
+      +'<div class="diary-row-date">'+_escHtml(e.dateLabel||'')+'</div>'
+      +'<div class="diary-row-preview">'+_escHtml(preview)+'</div>'
+      +'</div>';
   }).join('');
+}
+
+var _diaryEntries = [];
+function pOpenDiaryEntry(ts){
+  var entries = _diaryEntries;
+  if(!entries.length){ try{ entries = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){} }
+  var entry = entries.find(function(e){ return e.ts === ts; });
+  if(!entry) return;
+  var ov = document.getElementById('diaryEntryOv');
+  if(!ov) return;
+  var dateEl  = document.getElementById('diaryEntryDate');
+  var textEl  = document.getElementById('diaryEntryText');
+  var delBtn  = document.getElementById('diaryEntryDel');
+  if(dateEl)  dateEl.textContent  = entry.dateLabel || '';
+  if(textEl)  textEl.textContent  = entry.text || '';
+  if(delBtn)  delBtn.onclick = function(){ closeModal('diaryEntryOv'); pDeleteDiary(ts); };
+  openModal('diaryEntryOv');
 }
 
 async function pDeleteDiary(ts){

@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260522-108">
+  <link rel="stylesheet" href="premium.css?v=20260522-109">
 </head>
 <body>
 
@@ -990,6 +990,18 @@
             <button class="p-btn p-btn--dark-outline p-btn--md p-btn--full" onclick="closeModal('bottleReplyOv')">Cancelar</button>
           </div>
         </div>
+        <!-- Diary entry viewer -->
+        <div class="p-modal-ov" id="diaryEntryOv">
+          <div class="p-sheet" style="max-height:82vh;overflow-y:auto">
+            <div class="p-sheet-handle"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div id="diaryEntryDate" style="font-size:12px;font-weight:700;color:var(--ink4)"></div>
+              <button onclick="closeModal('diaryEntryOv')" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--ink4);line-height:1;padding:0">✕</button>
+            </div>
+            <div id="diaryEntryText" style="font-size:15px;color:var(--ink2);line-height:1.75;white-space:pre-wrap;margin-bottom:20px"></div>
+            <button id="diaryEntryDel" class="p-btn p-btn--secondary p-btn--sm" style="color:var(--sos);border-color:var(--sos)">🗑️ Borrar entrada</button>
+          </div>
+        </div>
         <!-- Bottle form sheet -->
         <div class="p-modal-ov" id="bottleFormOv">
           <div class="p-sheet p-sheet-dark">
@@ -1024,7 +1036,15 @@
                 </div>
               </div>
             </div>
-            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Un espacio íntimo para escribir cómo te sentís. Solo vos podés leerlo — ni Velo tiene acceso a tus palabras.</p>
+            <!-- Privacy banner — shown once per session via JS -->
+            <div id="diaryPrivacyBanner" style="display:none;align-items:flex-start;gap:10px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.28);border-radius:12px;padding:11px 14px;margin-bottom:16px">
+              <span style="font-size:18px;flex-shrink:0">🔒</span>
+              <div style="flex:1">
+                <div style="font-size:12px;font-weight:700;color:var(--sage2);margin-bottom:2px">Tu privacidad, nuestra prioridad</div>
+                <div style="font-size:11px;color:var(--ink3);line-height:1.55">Lo que escribas aquí vive en tu cuenta personal de Velo — nadie más puede leerlo. Nunca usamos el contenido de tu diario para análisis ni lo compartimos con terceros.</div>
+              </div>
+              <button onclick="document.getElementById('diaryPrivacyBanner').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink4);line-height:1;padding:0;flex-shrink:0">✕</button>
+            </div>
             <div class="diary-grid">
               <div>
                 <div class="diary-write">
@@ -2361,7 +2381,7 @@
     <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
   </div>
 </div>
-<script src="premium.js?v=20260522-108"></script>
+<script src="premium.js?v=20260522-109"></script>
 <script>var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();</script>
 </body>
 </html>

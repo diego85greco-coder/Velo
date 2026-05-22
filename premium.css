@@ -1551,6 +1551,23 @@ a { text-decoration: none; color: inherit; }
 .diary-entry:hover { border-color: var(--lav2); transform: translateX(3px); }
 .diary-entry-date { font-size: 10px; color: var(--ink5); font-weight: 600; margin-bottom: 6px; }
 .diary-entry-text { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+/* Compact date-row style (replaces full text display) */
+.diary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: rgba(255,255,255,.82);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  animation: p-waveIn .35s ease both;
+  transition: all var(--t-fast);
+}
+.diary-row:hover { border-color: var(--lav2); background: rgba(196,181,232,.08); transform: translateX(3px); }
+.diary-row-date { font-size: 11px; font-weight: 700; color: var(--sage2); }
+.diary-row-preview { font-size: 12px; color: var(--ink4); line-height: 1.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .diary-emoji-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
 .diary-emoji-btn { font-size: 18px; padding: 6px; border-radius: 10px; border: 1.5px solid transparent; cursor: pointer; background: none; transition: all .15s; }
 .diary-emoji-btn:hover { background: var(--cream2); border-color: var(--border); }
