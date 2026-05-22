@@ -772,7 +772,8 @@ function _recordTC(name, email){
   if(sbClient){
     try{
       sbClient.from('terms_acceptance').insert({ email:email, nombre:name,
-        rol: safeLS('get','velo_user_type')||'user', accepted_at: now.toISOString() }).then(function(){}).catch(function(){});
+        rol: safeLS('get','velo_user_type')||'user', accepted_at: now.toISOString(),
+        version: 'TOS-v1', ip_hint: navigator.language||'' }).then(function(){}).catch(function(){});
     }catch(e){}
   }
 }
@@ -7746,26 +7747,18 @@ async function _renderAdmin(){
       +'</div>'
       +'<div id="adminContactsList"><p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Cargando mensajes…</p></div>'
 
-    // T&C acceptance log (legal audit)
-      +'<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:8px">📜 ACEPTACIÓN DE TÉRMINOS (AUDITORÍA LEGAL)</div>'
-      +'<div style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:10px;line-height:1.5">Registro completo con fecha, hora y milisegundos para uso judicial.</div>'
-      +(tcRecs.length
-        ? tcRecs.slice(0,20).map(function(r){
-            var d = r.timestamp ? new Date(r.timestamp) : new Date(r.ts_ms||0);
-            var dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
-              +' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')
-              +'.'+String(d.getMilliseconds()).padStart(3,'0')+' UTC';
-            return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;margin-bottom:6px">'
-              +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
-              +'<span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.75)">'+_escHtml(r.name||'—')+'</span>'
-              +'<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓ Aceptado</span>'
-              +'</div>'
-              +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px">'+_escHtml(r.email||'—')+'</div>'
-              +'<div style="font-size:10px;color:rgba(255,255,255,.25);font-family:monospace">'+dateStr+'</div>'
-              +(r.ts_ms ? '<div style="font-size:9px;color:rgba(255,255,255,.18);font-family:monospace">Unix ms: '+r.ts_ms+'</div>' : '')
-              +'</div>';
-          }).join('')
-        : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">Sin registros aún.</p>');
+    // T&C acceptance log — dynamic section with search
+      +'<div style="margin-top:20px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6)">📜 ACEPTACIÓN DE TÉRMINOS (AUDITORÍA LEGAL)</div>'
+      +'<button onclick="pAdminLoadConsent()" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:6px;color:rgba(116,198,157,.6);cursor:pointer;font-family:\'Jost\',sans-serif">↻ Actualizar</button>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 12px">'
+      +'<span style="font-size:15px">🔍</span>'
+      +'<input id="consentSearch" type="text" placeholder="Buscar por nombre o email…" oninput="_filterConsentLog(this.value)" style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:12px;font-family:\'Jost\',sans-serif" />'
+      +'</div>'
+      +'<div id="adminConsentLog"><p style="font-size:12px;color:rgba(255,255,255,.3)">Cargando registros…</p></div>'
+      +'</div>';
 
     var crisisEvents = audit.filter(function(a){ return a.tipo === 'crisis_detect'; });
     var crisisHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,80,80,.85);margin-bottom:10px">🆘 ALERTAS DE CRISIS</div>'
@@ -7933,6 +7926,8 @@ async function _renderAdmin(){
     });
     // Load crisis events from Supabase async
     _loadAdminCrisisFromSupabase();
+    // Load consent log
+    pAdminLoadConsent();
     // Generate AI task list async
     _renderAdminAITasks();
   }
@@ -8123,6 +8118,59 @@ async function pAdminMarkContactRead(id){
 }
 
 function pAdminResolveFlag(id){ pAdminModerateFlag(id, 'accept'); }
+
+// ── CONSENT LOG ─────────────────────────────────────────────
+var _consentAllRecords = [];
+
+async function pAdminLoadConsent(){
+  _initSupabase();
+  var el = document.getElementById('adminConsentLog');
+  if(!el) return;
+  if(!sbClient){ el.innerHTML = '<p style="font-size:12px;color:rgba(255,80,80,.5)">Sin conexión a Supabase.</p>'; return; }
+  el.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,.3)">Cargando…</p>';
+  try{
+    var res = await sbClient.from('terms_acceptance').select('*').order('accepted_at',{ascending:false}).limit(500);
+    _consentAllRecords = res.data || [];
+    var inp = document.getElementById('consentSearch');
+    _filterConsentLog(inp ? inp.value : '');
+  }catch(e){
+    el.innerHTML = '<p style="font-size:12px;color:rgba(255,80,80,.5)">Error al cargar: '+_escHtml(String(e))+'</p>';
+  }
+}
+
+function _filterConsentLog(query){
+  var el = document.getElementById('adminConsentLog');
+  if(!el) return;
+  var q = (query||'').toLowerCase().trim();
+  var rows = q
+    ? _consentAllRecords.filter(function(r){
+        return (r.nombre||'').toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q);
+      })
+    : _consentAllRecords;
+  if(!rows.length){
+    el.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">'+(q?'Sin resultados para "'+_escHtml(q)+'"':'Sin registros aún.')+'</p>';
+    return;
+  }
+  var rolColor = { pro:'rgba(116,198,210,.8)', plus:'#c8a23e', user:'rgba(255,255,255,.3)' };
+  el.innerHTML = '<div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:8px">'+rows.length+' registro'+(rows.length!==1?'s':'')+'</div>'
+    + rows.map(function(r){
+      var d   = r.accepted_at ? new Date(r.accepted_at) : null;
+      var dateStr = d ? (d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
+        +' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')+' UTC') : '—';
+      var rol = r.rol||'user';
+      var ver = r.version||'TOS-v1';
+      return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:11px 13px;margin-bottom:7px">'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+        +'<span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.8);flex:1">'+_escHtml(r.nombre||'—')+'</span>'
+        +'<span style="font-size:9px;border:1px solid;border-radius:5px;padding:1px 6px;color:'+(rolColor[rol]||rolColor.user)+';border-color:'+(rolColor[rol]||rolColor.user)+'">'+rol.toUpperCase()+'</span>'
+        +'<span style="font-size:9px;background:rgba(116,198,157,.1);color:rgba(116,198,157,.7);border-radius:5px;padding:1px 6px">'+ver+'</span>'
+        +'<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓</span>'
+        +'</div>'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:3px">✉ '+_escHtml(r.email||'—')+'</div>'
+        +'<div style="font-size:10px;color:rgba(255,255,255,.22);font-family:monospace">🕐 '+dateStr+'</div>'
+        +'</div>';
+    }).join('');
+}
 
 // action: 'accept' (contenido OK) · 'alert' (alertar al usuario) · 'delete' (eliminar) · 'alertdelete'
 function pAdminModerateFlag(id, action){
