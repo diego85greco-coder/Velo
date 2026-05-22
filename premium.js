@@ -6277,6 +6277,18 @@ function pOpenDM(toId, toName, toAv){
   if(hdr) hdr.textContent = toName||'Usuario';
   var hdrAv = document.getElementById('dmPeerAv');
   if(hdrAv) hdrAv.innerHTML = _avInline(toAv||'🧑',36);
+  // Send chat request sentinel to the other user if never accepted before
+  var alreadyAccepted = safeLS('get','velo_dm_accepted_'+toId) === '1';
+  if(!alreadyAccepted){
+    var myId   = safeLS('get','velo_user_id')||'';
+    var myName = safeLS('get','velo_user_name')||'';
+    var myAv   = safeLS('get','velo_user_av')||'🧑';
+    if(myId && toId && sbClient){
+      sbClient.from('direct_messages').insert({
+        from_id:myId, from_name:myName, from_av:myAv, to_id:toId, text:'__velo_chat_req__'
+      }).then(function(){}).catch(function(){});
+    }
+  }
   pGoTo('dm-chat');
   setTimeout(function(){ _renderDMThread(); _subscribeToDMThread(); }, 100);
 }
@@ -6403,8 +6415,9 @@ function _startGlobalDMListener(){
   var myId = safeLS('get','velo_user_id')||'';
   if(!myId || !sbClient) return;
   _dmInboxCh = sbClient.channel('velo:dm:inbox:'+myId)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages',filter:'to_id=eq.'+myId},function(payload){
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages'},function(payload){
       var m = payload.new||{};
+      if(m.to_id !== myId) return;
       var curPage = document.querySelector('.p-page.active');
       var curId = curPage ? curPage.id : '';
       // Handle sentinel messages
