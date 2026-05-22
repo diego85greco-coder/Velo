@@ -3251,12 +3251,9 @@ function pDeleteBottle(bottleId){
 }
 
 function pReportBottle(bottleId){
-  safeLS('set','velo_reported_bottle_'+bottleId,'1');
-  var responded = []; try{ responded = JSON.parse(safeLS('get','velo_bottle_responded')||'[]'); }catch(e){}
-  if(responded.indexOf(bottleId) < 0){ responded.push(bottleId); safeLS('set','velo_bottle_responded', JSON.stringify(responded)); }
-  var card = document.getElementById('bottle-'+bottleId);
-  if(card){ card.style.transition='opacity .35s'; card.style.opacity='0'; setTimeout(function(){ pRenderBottle(); }, 380); }
-  pToast('🚩','Reporte enviado. Gracias por mantener el espacio seguro.');
+  var bottle = _sbBottles && _sbBottles.find(function(b){ return String(b.id) === String(bottleId); });
+  var preview = bottle && bottle.text ? bottle.text : '';
+  pReportContent('bottle', bottleId, preview);
 }
 
 // ── DIARY ──────────────────────────────────────────────────────
@@ -4650,7 +4647,9 @@ function _happyPostCard(h, isOwn){
     +'<div style="font-size:13px;font-weight:600;color:var(--ink)'+(canClick?';cursor:pointer':'')+'"'+(canClick?' onclick="pQuickProfile('+JSON.stringify(h.name||'Usuario')+','+JSON.stringify(h.av||'')+',\'\',\'\',\''+h.userId+'\')"':'')+'>'+_escHtml(h.name||'Usuario Anónimo')+'</div>'
     +'<div style="font-size:10px;color:var(--ink5);margin-top:1px">'+relTime+(isOwn?' · <strong style="color:var(--sage)">Tuya</strong>':'')+'</div>'
     +'</div>'
-    +(isOwn ? '<button onclick="pDeleteHappyPost(\''+h.id+'\')" style="padding:5px 10px;background:rgba(255,80,80,.07);border:1px solid rgba(255,80,80,.18);border-radius:100px;color:rgba(200,60,60,.7);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0" title="Eliminar publicación">🗑️</button>' : '')
+    +(isOwn
+      ? '<button onclick="pDeleteHappyPost(\''+h.id+'\')" style="padding:5px 10px;background:rgba(255,80,80,.07);border:1px solid rgba(255,80,80,.18);border-radius:100px;color:rgba(200,60,60,.7);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0" title="Eliminar publicación">🗑️</button>'
+      : '<button onclick="pReportContent(\'happy\',\''+h.id+'\','+JSON.stringify((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:100px;color:rgba(180,50,50,.6);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0">🚩</button>')
     +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap;flex-shrink:0">⏳ '+timeLeft+'</span>' : '')
     +'</div>'
     // photo
@@ -8360,7 +8359,9 @@ function _getDailyStatus(){
 }
 
 // ── GLOBAL CONTENT REPORT ─────────────────────────────────────
+var _rptPreview = '';
 function pReportContent(type, id, preview){
+  _rptPreview = preview || '';
   var reasons = ['Contenido agresivo o hiriente','Discurso de odio o discriminación','Spam o autopromoción','Información médica incorrecta o peligrosa','Acoso o bullying','Sugerencias de autolesión','Otro'];
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
@@ -8399,11 +8400,61 @@ function pSubmitGlobalReport(type, id){
   audit.unshift({ ts:Date.now(), tipo:'report_'+type, contentId:id, motivo:checked.value, detail:detail, resolved:false });
   safeLS('set','velo_audit_log', JSON.stringify(audit.slice(0,500)));
 
+  // AI review: verify if content truly violates rules, using preview stored at open time
+  _aiReviewReport(type, id, detail || _rptPreview, checked.value);
+
   // Mark content as hidden until admin resolves
   var hidden = []; try{ hidden = JSON.parse(safeLS('get','velo_hidden_content')||'[]'); }catch(e){}
   if(hidden.indexOf(reportId) < 0){ hidden.push(reportId); safeLS('set','velo_hidden_content', JSON.stringify(hidden)); }
 
+  // Hide the reported content from UI
+  if(type === 'bottle'){
+    safeLS('set','velo_reported_bottle_'+id,'1');
+    var bottleCard = document.getElementById('bottle-'+id) || document.querySelector('[data-id="'+id+'"]');
+    if(bottleCard){ bottleCard.style.transition='opacity .35s'; bottleCard.style.opacity='0'; setTimeout(function(){ pRenderBottle(); }, 380); }
+  } else if(type === 'happy'){
+    var happyCard = document.querySelector('.happy-card[data-id="'+id+'"]');
+    if(happyCard){ happyCard.style.transition='opacity .35s'; happyCard.style.opacity='0'; setTimeout(function(){ happyCard.remove(); }, 380); }
+  } else if(type === 'help'){
+    var helpCard = document.getElementById('help-'+id) || document.querySelector('[data-id="'+id+'"]');
+    if(helpCard){ helpCard.style.transition='opacity .35s'; helpCard.style.opacity='0'; setTimeout(function(){ helpCard.remove(); }, 380); }
+  }
+
   pToast('✅','Reporte enviado. El contenido quedó oculto hasta que lo revise el equipo de Velo 🙏');
+}
+
+function pReportDMChat(){
+  if(!_dmPeer) return;
+  pReportContent('dm', 'dm-'+_dmPeer.id, 'Chat con '+(_dmPeer.name||'usuario'));
+}
+
+async function _aiReviewReport(type, id, content, userReason){
+  if(!content || content.length < 5) return;
+  var prompt = 'Sos el sistema de moderación de Velo, una app de salud mental peer-to-peer.\n'
+    +'Un usuario reportó este contenido con el motivo: "'+userReason+'".\n'
+    +'Analizá el contenido y determiná si realmente viola las normas de la comunidad.\n'
+    +'Normas violadas: acoso, agresión, discriminación, spam, información médica peligrosa, incitación a autolesiones.\n'
+    +'NO es violación: expresiones de dolor, tristeza, crisis personal, pedidos de ayuda genuinos.\n'
+    +'Respondé SOLO con JSON: {"viola": true/false, "tipo": "acoso|spam|contenido_peligroso|ninguno", "gravedad": "alta|media|baja", "justificacion": "breve razon"}\n\n'
+    +'Contenido reportado: "'+content.replace(/"/g,"'").slice(0,300)+'"';
+  try{
+    var result = await _geminiCall(prompt);
+    if(!result) return;
+    var match = result.match(/\{[\s\S]*\}/);
+    if(!match) return;
+    var data = JSON.parse(match[0]);
+    _initSupabase();
+    if(data.viola && sbClient){
+      sbClient.from('moderation_flags').insert({
+        section: type, tipo: data.tipo, gravedad: data.gravedad||'media',
+        content: content.slice(0,300), user_id: safeLS('get','velo_user_id')||'',
+        resolved: false, resolution: null
+      }).then(function(){}).catch(function(){});
+    }
+    var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+    audit[0] = Object.assign(audit[0]||{}, { aiVerdict: data.viola ? 'VIOLA:'+data.tipo : 'ok', aiJustif: data.justificacion });
+    safeLS('set','velo_audit_log', JSON.stringify(audit.slice(0,500)));
+  }catch(e){}
 }
 
 function _isHidden(type, id){
