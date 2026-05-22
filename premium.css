@@ -563,9 +563,9 @@ a { text-decoration: none; color: inherit; }
 .fc-night { background: linear-gradient(145deg, #152B1F, #0C1C14); border-color: rgba(116,198,157,.12); }
 .fc-night .p-card-title { color: rgba(255,255,255,.94); }
 .fc-night .p-card-sub { color: rgba(255,255,255,.55); }
-.fc-ocean { background: linear-gradient(145deg, #0C1C0E, #080E08); border-color: rgba(200,165,100,.15); }
-.fc-ocean .p-card-title { color: rgba(255,255,255,.92); }
-.fc-ocean .p-card-sub { color: rgba(255,255,255,.5); }
+.fc-ocean { background: linear-gradient(145deg, rgba(100,175,220,.18), rgba(60,130,190,.10)); border-color: rgba(80,150,200,.22); }
+.fc-ocean .p-card-title { color: var(--ink); }
+.fc-ocean .p-card-sub { color: #3A6A8A; }
 .fc-sky { background: linear-gradient(145deg, var(--sky3), var(--sky2)); border-color: rgba(168,212,232,.35); }
 .fc-sky .p-card-sub { color: #3A7090; }
 .fc-sun { background: linear-gradient(145deg, var(--sun3), var(--sun2)); border-color: rgba(255,224,102,.4); }
@@ -593,7 +593,7 @@ a { text-decoration: none; color: inherit; }
 .p-pill--gold { background: rgba(200,146,10,.12); color: var(--gold); border: 1px solid rgba(200,146,10,.22); }
 .p-pill--sos { background: rgba(192,48,40,.1); color: var(--sos); border: 1px solid rgba(192,48,40,.2); }
 .p-pill--night { background: rgba(116,198,157,.1); color: var(--sage4); border: 1px solid rgba(116,198,157,.18); }
-.p-pill--ocean { background: rgba(200,165,100,.1); color: #C8A560; border: 1px solid rgba(200,165,100,.22); }
+.p-pill--ocean { background: rgba(80,150,200,.12); color: #2A6080; border: 1px solid rgba(80,150,200,.25); }
 .p-pill--sky { background: rgba(168,212,232,.2); color: #3A7090; border: 1px solid rgba(168,212,232,.35); }
 .p-pill--lav { background: rgba(196,181,232,.18); color: #6E56A8; border: 1px solid rgba(196,181,232,.3); }
 .p-pill--live { background: rgba(58,158,96,.1); color: var(--st-on); border: 1px solid rgba(58,158,96,.22); animation: p-breathe 2s ease-in-out infinite; }
@@ -1443,9 +1443,8 @@ a { text-decoration: none; color: inherit; }
 .pro-rate { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: var(--sage); }
 
 /* ── 26. DARK SCREENS ─────────────────────────────────────────────── */
-#pg-help, #pg-bottle {
-  background: linear-gradient(160deg, #101C14, #080E08);
-}
+#pg-help { background: linear-gradient(160deg, #101C14, #080E08); }
+#pg-bottle { background: linear-gradient(160deg, #dff0f8, #e8f3fa); }
 .dark-section-hdr {
   padding: 22px 20px 14px;
   flex-shrink: 0;
@@ -1473,8 +1472,8 @@ a { text-decoration: none; color: inherit; }
 }
 .dark-seeker:hover { background: rgba(255,255,255,.1); transform: translateX(3px); }
 .dark-bottle {
-  background: rgba(255,255,255,.065);
-  border: 1px solid rgba(200,165,100,.13);
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(80,150,200,.18);
   border-radius: 20px;
   padding: 14px;
   margin: 0 16px 9px;
@@ -1483,9 +1482,10 @@ a { text-decoration: none; color: inherit; }
   animation: p-waveIn .35s ease both;
   overflow: hidden;
   position: relative;
+  backdrop-filter: blur(8px);
 }
-.dark-bottle::before { content: ''; display: block; height: 2px; background: linear-gradient(90deg, rgba(200,165,100,.5), transparent); margin-bottom: 10px; }
-.dark-bottle:hover { border-color: rgba(200,165,100,.3); transform: translateY(-2px); }
+.dark-bottle::before { content: ''; display: block; height: 2px; background: linear-gradient(90deg, rgba(80,150,200,.45), transparent); margin-bottom: 10px; }
+.dark-bottle:hover { border-color: rgba(80,150,200,.35); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(80,150,200,.12); }
 
 /* ── 27. DIARY ────────────────────────────────────────────────────── */
 #pg-diary { background: linear-gradient(160deg, var(--lav3), var(--cream2)); }
@@ -1895,11 +1895,15 @@ a { text-decoration: none; color: inherit; }
 /* ── 56. NATURE BACKGROUND OVERRIDES ────────────────────────────── */
 
 /* Dark screens use the moonlit night image */
-#pg-help .p-page-scroll,
-#pg-bottle .p-page-scroll {
+#pg-help .p-page-scroll {
   background:
     linear-gradient(160deg, rgba(8,20,12,.82), rgba(4,8,4,.88)),
     url('assets/bg-night.jpg') center / cover fixed !important;
+}
+#pg-bottle .p-page-scroll {
+  background:
+    linear-gradient(160deg, rgba(220,240,252,.85), rgba(200,230,248,.80)),
+    url('assets/bg-day.jpg') center / cover fixed !important;
 }
 
 /* Landing hero shows the day image full-strength */
@@ -1935,11 +1939,11 @@ a { text-decoration: none; color: inherit; }
 .bottle-tab {
   flex: 1; padding: 8px 12px; background: none; border: none; cursor: pointer;
   font-family: 'Jost', sans-serif; font-size: 12px; font-weight: 600;
-  color: rgba(255,255,255,.45); border-radius: 10px; transition: all var(--t-fast);
+  color: rgba(40,90,120,.55); border-radius: 10px; transition: all var(--t-fast);
 }
 .bottle-tab.active {
-  background: rgba(200,165,100,.18); color: #C8A560;
-  box-shadow: 0 1px 6px rgba(0,0,0,.2);
+  background: rgba(80,150,200,.18); color: #1E5A80;
+  box-shadow: 0 1px 6px rgba(80,150,200,.15);
 }
 
 /* ── 58. CÍRCULOS — CIRCLE CARDS ─────────────────────────────────── */
