@@ -362,6 +362,36 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- ── CONTACTS TABLE (support/contact form submissions) ────────────
+
+CREATE TABLE IF NOT EXISTS contacts (
+  id          uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  topic       text NOT NULL DEFAULT 'General',
+  mensaje     text,
+  user_email  text,
+  user_name   text,
+  user_id     text,
+  source      text DEFAULT 'web',
+  leido       bool DEFAULT false,
+  reply       text,
+  allow_reply bool DEFAULT false,
+  fecha       timestamptz DEFAULT now(),
+  created_at  timestamptz DEFAULT now()
+);
+ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='contacts' AND policyname='allow_all') THEN
+    CREATE POLICY "allow_all" ON contacts FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
+-- Safe additions for contacts in case it already existed without some columns
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS user_name   text;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS user_id     text;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS source      text DEFAULT 'web';
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS reply       text;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS allow_reply bool DEFAULT false;
+
 -- ── SAFE COLUMN ADDITIONS (in case tables existed without them) ─
 
 ALTER TABLE profiles     ADD COLUMN IF NOT EXISTS status_music      text;
@@ -387,7 +417,7 @@ BEGIN
   FOREACH tbl IN ARRAY ARRAY[
     'bottles','broadcasts','circle_messages','guardian_presence',
     'guardian_requests','happy_posts','help_posts','moderation_flags',
-    'admin_news','user_favorites','direct_messages'
+    'admin_news','user_favorites','direct_messages','contacts'
   ] LOOP
     BEGIN
       EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE ' || tbl;

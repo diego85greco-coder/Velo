@@ -646,6 +646,9 @@ function pForgotToContact(){
     // Pre-fill contact email with the forgot-password email if available
     var contactEmailEl = document.getElementById('contactEmail');
     if(contactEmailEl && val && !contactEmailEl.readOnly){ contactEmailEl.value = val; }
+    // Pre-fill name if empty
+    var contactNameEl = document.getElementById('contactName');
+    if(contactNameEl && !contactNameEl.value) contactNameEl.value = val.split('@')[0];
   }, 150);
 }
 
@@ -5994,18 +5997,34 @@ function pContactBack(){
 
 function _initContactPage(){
   var emailEl = document.getElementById('contactEmail');
-  if(!emailEl) return;
-  var stored = safeLS('get','velo_user_email') || '';
-  if(stored){
-    emailEl.value = stored;
-    emailEl.readOnly = true;
-    emailEl.style.opacity = '.7';
-    emailEl.style.cursor = 'default';
-  } else {
-    emailEl.value = '';
-    emailEl.readOnly = false;
-    emailEl.style.opacity = '';
-    emailEl.style.cursor = '';
+  var nameEl  = document.getElementById('contactName');
+  var storedEmail = safeLS('get','velo_user_email') || '';
+  var storedName  = safeLS('get','velo_user_name')  || '';
+  if(emailEl){
+    if(storedEmail){
+      emailEl.value = storedEmail;
+      emailEl.readOnly = true;
+      emailEl.style.opacity = '.7';
+      emailEl.style.cursor  = 'default';
+    } else {
+      emailEl.value = '';
+      emailEl.readOnly = false;
+      emailEl.style.opacity = '';
+      emailEl.style.cursor  = '';
+    }
+  }
+  if(nameEl){
+    if(storedName){
+      nameEl.value = storedName;
+      nameEl.readOnly = true;
+      nameEl.style.opacity = '.7';
+      nameEl.style.cursor  = 'default';
+    } else {
+      nameEl.value = '';
+      nameEl.readOnly = false;
+      nameEl.style.opacity = '';
+      nameEl.style.cursor  = '';
+    }
   }
 }
 
@@ -6013,30 +6032,34 @@ async function pSendContact(){
   var subject  = document.getElementById('contactSubject');
   var msg      = document.getElementById('contactMsg');
   var emailEl  = document.getElementById('contactEmail');
+  var nameEl   = document.getElementById('contactName');
   var email    = (emailEl ? emailEl.value.trim() : '') || safeLS('get','velo_user_email') || '';
+  var name     = (nameEl  ? nameEl.value.trim()  : '') || safeLS('get','velo_user_name')  || '';
 
+  if(!name){ pToast('👤','Ingresá tu nombre para que podamos dirigirnos a vos'); return; }
   if(!email || !email.includes('@')){ pToast('📧','Ingresá un correo válido para poder responderte'); return; }
   if(!subject||!msg||!msg.value.trim()){ pToast('✍️','Escribí tu mensaje'); return; }
 
-  var text  = msg.value.trim();
-  var topic = subject ? subject.value||'General' : 'General';
+  var text   = msg.value.trim();
+  var topic  = subject ? subject.value||'General' : 'General';
+  var userId = safeLS('get','velo_user_id') || '';
+  var source = _authenticated ? 'logged-in' : 'pre-login';
 
   // Save to Supabase (primary) with localStorage fallback
-  var saved = await sbSaveContact(topic, text, email);
+  var saved = await sbSaveContact(topic, text, email, name, userId, source);
   if(!saved){
     var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
-    msgs.unshift({ id:'c-'+Date.now(), topic:topic, mensaje:text, email:email, fecha:new Date().toLocaleString('es'), leido:false });
+    msgs.unshift({ id:'c-'+Date.now(), topic:topic, mensaje:text, user_email:email, user_name:name, user_id:userId, source:source, fecha:new Date().toISOString(), leido:false });
     safeLS('set','velo_admin_contacts', JSON.stringify(msgs.slice(0,100)));
   }
 
   if(subject) subject.value = 'General';
   if(msg) msg.value = '';
+  if(nameEl  && !safeLS('get','velo_user_name'))  nameEl.value  = '';
   if(emailEl && !safeLS('get','velo_user_email')) emailEl.value = '';
 
-  pToast('💌','Mensaje enviado. Te respondemos pronto a '+email+' 🌿');
-
-  // After sending, go back to the correct page based on auth state
-  setTimeout(function(){ pContactBack(); }, 1800);
+  pToast('💌','Mensaje enviado, '+name+'. Te respondemos pronto a '+email+' 🌿');
+  setTimeout(function(){ pContactBack(); }, 2000);
 }
 
 // ── DONATION ───────────────────────────────────────────────────
@@ -7078,7 +7101,10 @@ async function _renderAdmin(){
       +'</div>';
 
     var contactsHtml = provHtml
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px;margin-top:8px">💌 MENSAJES DE CONTACTO</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;margin-bottom:10px">'
+        +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6)">💌 MENSAJES DE CONTACTO</div>'
+        +'<button onclick="sbLoadContacts().then(function(d){ _renderAdminContactsList(d||[]); })" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:6px;color:rgba(116,198,157,.6);cursor:pointer;font-family:\'Jost\',sans-serif">↻ Actualizar</button>'
+      +'</div>'
       +'<div id="adminContactsList"><p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Cargando mensajes…</p></div>'
 
     // T&C acceptance log (legal audit)
@@ -7290,34 +7316,104 @@ function pCreateProvisionalPass(){
 
 var _adminContactsCache = [];
 var _adminReplyTarget = null;
+var _adminContactFilter = 'all';
 
 function _renderAdminContactsList(msgs){
   _adminContactsCache = msgs || [];
   var el = document.getElementById('adminContactsList');
   if(!el) return;
-  if(!msgs || !msgs.length){
-    el.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin mensajes aún.</p>';
+
+  var unread = (msgs||[]).filter(function(m){ return !m.leido; }).length;
+  var preLogin = (msgs||[]).filter(function(m){ return m.source === 'pre-login'; }).length;
+  var loggedIn = (msgs||[]).filter(function(m){ return m.source === 'logged-in'; }).length;
+
+  // Tab bar
+  var tabs = [
+    { id:'all',      label:'Todos',          count:(msgs||[]).length },
+    { id:'unread',   label:'Sin leer',       count:unread },
+    { id:'pre-login',label:'Pre-login',      count:preLogin },
+    { id:'logged-in',label:'Usuarios',       count:loggedIn }
+  ];
+  var tabsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'
+    + tabs.map(function(t){
+        var active = _adminContactFilter === t.id;
+        return '<button onclick="pAdminFilterContacts(\''+t.id+'\')" style="font-size:10px;padding:4px 10px;border-radius:20px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s;'
+          +(active ? 'background:rgba(116,198,157,.25);border:1.5px solid rgba(116,198,157,.5);color:rgba(116,198,157,.9)'
+                   : 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.45)')
+          +'">'+t.label+(t.count ? ' <span style="opacity:.7">('+t.count+')</span>' : '')+'</button>';
+      }).join('')
+    +'</div>';
+
+  var filtered = (msgs||[]).filter(function(m){
+    if(_adminContactFilter === 'unread')    return !m.leido;
+    if(_adminContactFilter === 'pre-login') return m.source === 'pre-login';
+    if(_adminContactFilter === 'logged-in') return m.source === 'logged-in';
+    return true;
+  });
+
+  if(!filtered.length){
+    el.innerHTML = tabsHtml + '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin mensajes en esta categoría.</p>';
     return;
   }
-  el.innerHTML = msgs.map(function(m, idx){
-    var texto = m.mensaje || m.msg || '';
-    var mid   = m.id || '';
-    var fecha = m.fecha ? new Date(m.fecha).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-    var hasEmail = (m.user_email||m.email) && (m.user_email||m.email) !== 'anónimo';
-    return '<div class="a-row" style="flex-direction:column;align-items:flex-start;gap:6px">'
-      +'<div style="display:flex;width:100%;align-items:center;gap:10px">'
-      +'<div class="a-row-ic">💌</div>'
-      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.86)">'+_escHtml(m.topic||'Consulta')+'</div>'
-      +'<div style="font-size:11px;color:rgba(255,255,255,.38)">'+_escHtml(m.user_email||m.email||'anónimo')+' · '+fecha+'</div></div>'
-      +(m.leido?'<span class="a-badge-g">leído</span>':'<span class="a-badge-y">nuevo</span>')
+
+  el.innerHTML = tabsHtml + filtered.map(function(m, idx){
+    var realIdx = _adminContactsCache.indexOf(m);
+    var texto    = m.mensaje || m.msg || '';
+    var mid      = m.id || '';
+    var fecha    = m.fecha ? new Date(m.fecha).toLocaleString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    var email    = m.user_email || m.email || '';
+    var name     = m.user_name  || '';
+    var hasEmail = email && email !== 'anónimo';
+    var isPreLogin = m.source === 'pre-login';
+    var sourceBadge = isPreLogin
+      ? '<span style="font-size:9px;padding:2px 6px;background:rgba(200,162,0,.15);border:1px solid rgba(200,162,0,.3);border-radius:20px;color:rgba(200,162,0,.8);font-weight:700">Pre-login</span>'
+      : '<span style="font-size:9px;padding:2px 6px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);border-radius:20px;color:rgba(116,198,157,.7);font-weight:700">Usuario</span>';
+
+    return '<div class="a-row" style="flex-direction:column;align-items:flex-start;gap:8px;border-left:3px solid '+(m.leido?'rgba(255,255,255,.06)':'rgba(116,198,157,.5)')+';padding-left:10px;margin-bottom:2px">'
+      // Header row
+      +'<div style="display:flex;width:100%;align-items:flex-start;gap:10px">'
+      +'<div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">'+(m.leido?'✉️':'📬')+'</div>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'
+          +'<span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.9)">'+_escHtml(name || email.split('@')[0] || 'Sin nombre')+'</span>'
+          + sourceBadge
+          +(m.leido ? '' : '<span style="font-size:9px;padding:2px 6px;background:rgba(255,160,50,.15);border:1px solid rgba(255,160,50,.3);border-radius:20px;color:rgba(255,180,80,.9);font-weight:700">NUEVO</span>')
+        +'</div>'
+        +(hasEmail ? '<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px">📧 '+_escHtml(email)+'</div>' : '')
+        +'<div style="display:flex;align-items:center;gap:8px">'
+          +'<span style="font-size:11px;font-weight:700;color:rgba(180,150,255,.7)">'+_escHtml(m.topic||'Consulta')+'</span>'
+          +'<span style="font-size:10px;color:rgba(255,255,255,.25)">'+fecha+'</span>'
+        +'</div>'
       +'</div>'
-      +(texto ? '<div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.5;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:8px;width:100%;box-sizing:border-box">'+_escHtml(texto)+'</div>' : '')
-      +'<div style="display:flex;gap:8px">'
-      +(!m.leido ? '<button onclick="pAdminMarkContactRead(\''+mid+'\')" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.7);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Marcar leído</button>' : '<span style="font-size:10px;color:rgba(116,198,157,.5)">✓ Leído</span>')
-      +(hasEmail ? '<button onclick="pAdminOpenReply('+idx+')" style="font-size:10px;padding:3px 8px;background:rgba(200,162,0,.1);border:1px solid rgba(200,162,0,.2);color:rgba(200,162,0,.8);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">📧 Responder</button>' : '')
+      +'</div>'
+      // Message preview
+      +(texto ? '<div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.55;padding:9px 12px;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid rgba(255,255,255,.06);width:100%;box-sizing:border-box">'+_escHtml(texto.slice(0,300))+(texto.length>300?'…':'')+'</div>' : '')
+      // Admin reply preview
+      +(m.reply ? '<div style="font-size:11px;color:rgba(116,198,157,.7);padding:7px 10px;background:rgba(116,198,157,.06);border-radius:8px;width:100%;box-sizing:border-box"><strong>Tu respuesta:</strong> '+_escHtml(m.reply.slice(0,150))+'</div>' : '')
+      // Action buttons
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      +(!m.leido ? '<button onclick="pAdminMarkContactRead(\''+mid+'\')" style="font-size:10px;padding:4px 9px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);color:rgba(116,198,157,.7);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">✓ Marcar leído</button>' : '')
+      +(hasEmail ? '<button onclick="pAdminOpenReply('+realIdx+')" style="font-size:10px;padding:4px 9px;background:rgba(200,162,0,.12);border:1px solid rgba(200,162,0,.25);color:rgba(220,185,60,.85);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">📧 Responder</button>' : '<span style="font-size:10px;color:rgba(255,255,255,.2);padding:4px 0">Sin email de respuesta</span>')
+      +'<button onclick="pAdminDeleteContact(\''+mid+'\')" style="font-size:10px;padding:4px 9px;background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.18);color:rgba(220,100,100,.7);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️</button>'
       +'</div>'
       +'</div>';
   }).join('');
+}
+
+function pAdminFilterContacts(filter){
+  _adminContactFilter = filter;
+  _renderAdminContactsList(_adminContactsCache);
+}
+
+async function pAdminDeleteContact(id){
+  if(!confirm('¿Eliminar este mensaje de contacto?')) return;
+  _initSupabase();
+  if(sbClient){ sbClient.from('contacts').delete().eq('id',id).then(function(){}).catch(function(){}); }
+  _adminContactsCache = _adminContactsCache.filter(function(m){ return m.id !== id; });
+  // Also remove from localStorage
+  var local = []; try{ local = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
+  safeLS('set','velo_admin_contacts', JSON.stringify(local.filter(function(m){ return m.id !== id; })));
+  _renderAdminContactsList(_adminContactsCache);
 }
 
 function pAdminOpenReply(idx){
@@ -7327,10 +7423,17 @@ function pAdminOpenReply(idx){
   var preview = document.getElementById('adminReplyPreview');
   var txt     = document.getElementById('adminReplyText');
   var toggle  = document.getElementById('adminReplyAllowToggle');
-  if(preview) preview.innerHTML = '<strong>Para:</strong> '+_escHtml(m.user_email||m.email||'anónimo')
-    +'<br><strong>Asunto:</strong> '+_escHtml(m.topic||'Consulta')
-    +'<br><br><em>Mensaje original:</em><br>'+_escHtml((m.mensaje||m.msg||'').slice(0,300));
-  if(txt)    txt.value = '';
+  var name    = m.user_name || '';
+  var email   = m.user_email || m.email || 'anónimo';
+  var isPreLogin = m.source === 'pre-login';
+  if(preview) preview.innerHTML =
+    '<div style="margin-bottom:6px"><strong style="color:var(--ink)">Destinatario:</strong> '
+      +_escHtml(name ? name+' &lt;'+email+'&gt;' : email)
+      +' <span style="font-size:10px;background:'+(isPreLogin?'rgba(200,162,0,.15)':'rgba(116,198,157,.12)')+';border-radius:10px;padding:2px 6px;color:'+(isPreLogin?'#b8920a':'var(--sage)')+';">'+(isPreLogin?'Pre-login':'Usuario')+'</span></div>'
+    +'<div style="margin-bottom:6px"><strong style="color:var(--ink)">Asunto:</strong> '+_escHtml(m.topic||'Consulta')+'</div>'
+    +'<div style="border-top:1px solid var(--border2);padding-top:8px;margin-top:6px"><em style="font-size:11px;color:var(--ink4)">Mensaje original:</em><br>'
+      +'<span style="font-size:12px;color:var(--ink3)">'+_escHtml((m.mensaje||m.msg||'').slice(0,300))+'</span></div>';
+  if(txt)    txt.value = name ? 'Hola '+name+',\n\n' : '';
   if(toggle) toggle.checked = false;
   openModal('adminReplyOv');
 }
@@ -7341,13 +7444,14 @@ async function pAdminSendReply(){
   var toggle = document.getElementById('adminReplyAllowToggle');
   if(!txt || !txt.value.trim()){ pToast('✍️','Escribí tu respuesta'); return; }
   var toEmail = _adminReplyTarget.user_email || _adminReplyTarget.email;
+  var toName  = _adminReplyTarget.user_name  || '';
   if(!toEmail || toEmail === 'anónimo'){ pToast('⚠️','Este usuario no tiene email registrado'); return; }
   var btn = document.querySelector('#adminReplyOv .p-btn--primary');
   if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
   try{
     var r = await fetch('/api/send-email',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ email:toEmail, name:_adminReplyTarget.user_name||'', type:'admin-reply',
+      body: JSON.stringify({ email:toEmail, name:toName, type:'admin-reply',
         topic:_adminReplyTarget.topic||'Consulta', reply:txt.value.trim(), allowReply:!!(toggle&&toggle.checked) })
     });
     var json = await r.json();
@@ -7894,10 +7998,19 @@ async function sbLoadCrisisEvents(){
   }catch(e){ return []; }
 }
 
-async function sbSaveContact(topic, mensaje, email){
+async function sbSaveContact(topic, mensaje, email, userName, userId, source){
   if(!sbClient) return false;
   try{
-    var {error} = await sbClient.from('contacts').insert({ topic:topic||'General', mensaje:mensaje, user_email:email||'anónimo', leido:false, fecha:new Date().toISOString() });
+    var {error} = await sbClient.from('contacts').insert({
+      topic: topic||'General',
+      mensaje: mensaje,
+      user_email: email||'anónimo',
+      user_name: userName||'',
+      user_id: userId||null,
+      source: source||'web',
+      leido: false,
+      fecha: new Date().toISOString()
+    });
     return !error;
   }catch(e){ return false; }
 }
@@ -8556,13 +8669,17 @@ function pConfirmCancelSub(ov){
 
 function pContactUs(){
   var userEmail = safeLS('get','velo_user_email') || '';
+  var userName  = safeLS('get','velo_user_name')  || '';
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:8px">Contactanos 💚</div>'
     +'<p style="font-size:12px;color:var(--ink4);margin-bottom:16px;line-height:1.6">¿Tenés alguna pregunta, sugerencia o problema técnico? Escribinos y te respondemos a la brevedad.</p>'
-    +(userEmail ? '<div style="font-size:12px;color:var(--ink3);background:var(--cream2);border-radius:10px;padding:8px 12px;margin-bottom:12px">📧 Responderemos a: <strong>'+_escHtml(userEmail)+'</strong></div>' : '<div class="p-field"><label class="p-field-label">Tu correo <span style="color:var(--sos)">*</span></label><input class="p-input" type="email" data-cus-email placeholder="para enviarte la respuesta"></div>')
+    +(userName && userEmail
+      ? '<div style="font-size:12px;color:var(--ink3);background:var(--cream2);border-radius:10px;padding:8px 12px;margin-bottom:12px">👤 <strong>'+_escHtml(userName)+'</strong> · 📧 '+_escHtml(userEmail)+'</div>'
+      : '<div class="p-field"><label class="p-field-label">Tu nombre <span style="color:var(--sos)">*</span></label><input class="p-input" type="text" data-cus-name placeholder="¿Cómo te llamás?" maxlength="60"></div>'
+        +'<div class="p-field"><label class="p-field-label">Tu correo <span style="color:var(--sos)">*</span></label><input class="p-input" type="email" data-cus-email placeholder="para enviarte la respuesta"></div>')
     +'<div class="p-field"><label class="p-field-label">Asunto</label>'
     +'<select class="p-input" data-cus-topic style="appearance:none">'
     +'<option>Consulta general</option><option>Problema técnico</option><option>Sugerencia de mejora</option><option>Reporte de seguridad</option><option>Solicitud de datos</option>'
@@ -8580,21 +8697,26 @@ function pContactUs(){
 }
 
 function pSendContactModal(ov){
-  var msg   = ov ? ov.querySelector('[data-cus-msg]') : null;
-  var topic = ov ? ov.querySelector('[data-cus-topic]') : null;
+  var msg        = ov ? ov.querySelector('[data-cus-msg]')   : null;
+  var topic      = ov ? ov.querySelector('[data-cus-topic]') : null;
   var emailInput = ov ? ov.querySelector('[data-cus-email]') : null;
+  var nameInput  = ov ? ov.querySelector('[data-cus-name]')  : null;
   var email = safeLS('get','velo_user_email') || (emailInput ? emailInput.value.trim() : '');
+  var name  = safeLS('get','velo_user_name')  || (nameInput  ? nameInput.value.trim()  : '');
+  if(nameInput  && !name){ pToast('👤','Ingresá tu nombre'); return; }
   if(emailInput && (!email || !email.includes('@'))){ pToast('📧','Ingresá un correo válido para responderte'); return; }
   if(!msg || !msg.value.trim()){ pToast('✍️','Escribí tu mensaje'); return; }
-  var text = msg.value.trim();
+  var text     = msg.value.trim();
   var topicVal = topic ? topic.value : 'Consulta general';
+  var userId   = safeLS('get','velo_user_id') || '';
+  var source   = _authenticated ? 'logged-in' : 'pre-login';
   var ts = Date.now();
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
-  msgs.unshift({ id:'c-'+ts, topic: topicVal, mensaje: text, email: email||'anónimo', fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}), leido:false });
+  msgs.unshift({ id:'c-'+ts, topic:topicVal, mensaje:text, user_email:email||'anónimo', user_name:name, user_id:userId, source:source, fecha:new Date().toISOString(), leido:false });
   safeLS('set','velo_admin_contacts', JSON.stringify(msgs.slice(0,200)));
-  sbSaveContact(topicVal, text, email||'anónimo').catch(function(){});
+  sbSaveContact(topicVal, text, email||'anónimo', name, userId, source).catch(function(){});
   if(ov) ov.remove();
-  pToast('💌','¡Mensaje enviado! Te respondemos pronto 💚');
+  pToast('💌','¡Mensaje enviado'+(name ? ', '+name:'')+'! Te respondemos pronto 💚');
 }
 
 // Fake live counters removed — real-time data requires Supabase presence channels
