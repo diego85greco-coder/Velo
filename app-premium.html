@@ -952,10 +952,15 @@
           <div class="p-sheet p-sheet-dark">
             <div class="p-sheet-handle" style="background:rgba(200,165,100,.3)"></div>
             <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:#fff;margin-bottom:6px">Tu mensaje al mundo</div>
-            <p style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:16px">100% anónimo. Compartí sin filtros.</p>
+            <p style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:16px">Por defecto anónimo. Podés publicar con tu perfil visible.</p>
             <div id="bottleMoodRow" style="display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap"></div>
             <textarea class="p-textarea dark-ta" id="bottleMsgTa" rows="5" placeholder="¿Qué querés decirle al mundo?"></textarea>
-            <div style="height:12px"></div>
+            <div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px">
+              <span style="font-size:12px;color:rgba(255,255,255,.45);flex:1">Publicar con mi perfil visible</span>
+              <div id="bottleProfileTog" class="p-tog" onclick="this.classList.toggle('on');document.getElementById('bottleShowProfile').checked=this.classList.contains('on')" style="flex-shrink:0;background:rgba(255,255,255,.18)"></div>
+              <input type="checkbox" id="bottleShowProfile" style="display:none">
+            </div>
+            <div style="height:10px"></div>
             <button class="p-btn p-btn--dark-white p-btn--lg p-btn--full" onclick="pSendBottle()">🌊 Lanzar al mar</button>
             <div style="height:8px"></div>
             <button class="p-btn p-btn--dark-outline p-btn--md p-btn--full" onclick="closeModal('bottleFormOv')">Cancelar</button>
@@ -2250,6 +2255,6 @@
     <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
   </div>
 </div>
-<script src="premium.js?v=20260521-72"></script>
+<script src="premium.js?v=20260521-73"></script>
 </body>
 </html>

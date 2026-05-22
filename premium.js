@@ -405,11 +405,14 @@ function _sbHappyRow(r){
 }
 function _sbHelpRow(r){
   return { id:r.id, emoji:r.emoji||'💙', anon:r.anon, name:r.anon?'Usuario Anónimo':r.user_name,
-    userId:r.user_id||'', time:new Date(r.created_at).getTime(), preview:r.preview, taken:r.taken, urgencia:r.urgencia||'normal', isSB:true };
+    userId:r.user_id||'', time:new Date(r.created_at).getTime(), preview:r.preview, taken:r.taken,
+    closed:r.closed||false, urgencia:r.urgencia||'normal', isSB:true };
 }
 function _sbBottleRow(r){
   return { id:r.id, mood:r.mood||'💭', text:r.text, color:r.color||'rgba(116,198,157,.12)',
-    userId:r.user_id||'', ts:new Date(r.created_at).getTime(), isSB:true };
+    userId:r.user_id||'', userName:r.user_name||'', userAv:r.user_av||'',
+    anon: r.anon !== false, // default anon unless explicitly false
+    ts:new Date(r.created_at).getTime(), isSB:true };
 }
 function _sbCircleMsgRow(r){
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
@@ -545,6 +548,7 @@ async function pSignIn(){
       _authenticated = true;
       _startGuardianHeartbeat();
       setTimeout(_startGlobalDMListener, 2500);
+      setTimeout(_syncFavsFromSupabase, 3000);
       pToast('💚','¡Bienvenido/a de vuelta! 🌿');
       _loginAndGo();
     }
@@ -1675,50 +1679,80 @@ async function pRenderHelp(){
   var hidden = []; try{ hidden = JSON.parse(safeLS('get','velo_hidden_content')||'[]'); }catch(e){}
 
   var posts, usingSB = false;
+  var myHelpId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
   var sbRows = await _sbLoad('help_posts', function(q){
-    // Show all recent posts (no taken filter) — multiple helpers can accompany
     var since = new Date(Date.now() - 48*60*60*1000).toISOString();
-    return q.gte('created_at', since).order('created_at',{ascending:false}).limit(30);
+    // Exclude closed posts (received a support message)
+    return q.gte('created_at', since).or('closed.eq.false,closed.is.null')
+      .order('created_at',{ascending:false}).limit(30);
   });
   if(sbRows !== null){
     usingSB = true;
     posts = sbRows.map(_sbHelpRow).filter(function(h){ return hidden.indexOf('help-'+h.id)<0 && !_isBlocked(h.userId); });
   } else {
     var realPosts = []; try{ realPosts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
-    posts = realPosts.filter(function(h){ return !h.taken && hidden.indexOf('help-'+h.id)<0 && !_isBlocked(h.userId); });
+    posts = realPosts.filter(function(h){ return !h.closed && hidden.indexOf('help-'+h.id)<0 && !_isBlocked(h.userId); });
   }
-  // Hide the current user's own post — they should not accompany themselves
-  var _myHelpId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
-  if(_myHelpId){ posts = posts.filter(function(h){ return (h.userId||'') !== _myHelpId; }); }
-  _helpPosts = posts;
+  // Separate own post from others' posts (own post stays visible to author for deletion)
+  _helpPosts = posts.filter(function(h){ return (h.userId||'') !== myHelpId; });
+  var myOwnPost = myHelpId ? posts.find(function(h){ return (h.userId||'') === myHelpId; }) : null;
+
   var count = document.getElementById('helpActiveCount');
-  if(count) count.textContent = posts.length+' esperando acompañamiento';
+  if(count) count.textContent = _helpPosts.length+' esperando acompañamiento';
 
   if(!posts.length){
     list.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.5)"><span class="p-empty-emoji">💚</span><div class="p-empty-title" style="color:rgba(255,255,255,.7)">Todo tranquilo por acá</div><div class="p-empty-sub">Nadie espera acompañamiento en este momento</div></div>';
     return;
   }
-  list.innerHTML = posts.map(function(h,i){
+
+  function _helpCard(h, isOwn){
     var elapsed = Math.floor((Date.now()-h.time)/60000);
     var timeStr = elapsed<1?'ahora mismo':elapsed===1?'hace 1 min':'hace '+elapsed+' min';
-    return '<div class="dark-seeker" id="helppost-'+h.id+'" style="animation-delay:'+i*.08+'s">'
+    var urgBadge = h.urgencia==='urgente'
+      ? '<span style="font-size:9px;background:rgba(220,50,50,.25);color:rgba(255,130,130,.9);border:1px solid rgba(220,50,50,.3);border-radius:6px;padding:1px 6px;margin-left:4px">🔴 Urgente</span>'
+      : h.urgencia==='media'
+      ? '<span style="font-size:9px;background:rgba(230,160,20,.2);color:rgba(255,200,80,.9);border:1px solid rgba(230,160,20,.25);border-radius:6px;padding:1px 6px;margin-left:4px">🟡 Media</span>'
+      : '';
+    var actions = isOwn
+      ? '<span style="font-size:11px;color:rgba(116,198,157,.7);font-style:italic">Tu publicación 💙</span>'
+        +'<button onclick="pDeleteHelpPost(\''+h.id+'\')" style="margin-left:8px;padding:4px 10px;background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.2);border-radius:100px;color:rgba(255,120,120,.8);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️ Eliminar</button>'
+      : '<button class="p-btn p-btn--primary p-btn--sm" onclick="pAccompanyHelp(\''+h.id+'\')">💚 Acompañar</button>'
+        +'<button style="font-size:11px;color:rgba(192,48,40,.5);background:none;border:none;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportContent(\'help\',\''+h.id+'\')">⚠️ Reportar</button>';
+    var canClickProfile = !h.anon && !isOwn && h.userId && h.name !== 'Usuario Anónimo';
+    var nameHtml = canClickProfile
+      ? '<span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75);cursor:pointer" onclick="pQuickProfile('+JSON.stringify(h.name)+',\'\',\'\',\'\',\''+h.userId+'\')">'+_escHtml(h.name)+'</span>'
+      : '<span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(h.name)+'</span>';
+    return '<div class="dark-seeker" id="helppost-'+h.id+'">'
       +'<div style="display:flex;align-items:flex-start;gap:11px">'
-      +'<div style="font-size:28px;flex-shrink:0">'+h.emoji+'</div>'
+      +'<div style="font-size:28px;flex-shrink:0;'+(canClickProfile?'cursor:pointer" onclick="pQuickProfile('+JSON.stringify(h.name)+',\'\',\'\',\'\',\''+h.userId+'\')':'')+'">'+(h.emoji||'💙')+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">'
-      +'<span style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+h.name+'</span>'
+      +nameHtml
       +'<span style="font-size:10px;color:rgba(255,255,255,.3)">'+timeStr+'</span>'
-      +(h.urgencia==='urgente'?'<span style="font-size:9px;background:rgba(220,50,50,.25);color:rgba(255,130,130,.9);border:1px solid rgba(220,50,50,.3);border-radius:6px;padding:1px 6px;margin-left:4px">🔴 Urgente</span>':h.urgencia==='media'?'<span style="font-size:9px;background:rgba(230,160,20,.2);color:rgba(255,200,80,.9);border:1px solid rgba(230,160,20,.25);border-radius:6px;padding:1px 6px;margin-left:4px">🟡 Media</span>':'')
+      +urgBadge
       +'</div>'
       +'<div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.55;margin-bottom:10px;font-style:italic">'+_escHtml(h.preview)+'</div>'
-      +'<div style="display:flex;gap:8px;align-items:center">'
-      +'<button class="p-btn p-btn--primary p-btn--sm" onclick="pAccompanyHelp(\''+h.id+'\')">💚 Acompañar</button>'
-      +'<button style="font-size:11px;color:rgba(192,48,40,.5);background:none;border:none;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportContent(\'help\',\''+h.id+'\')">⚠️ Reportar</button>'
-      +'</div>'
-      +'</div>'
-      +'</div>'
-      +'</div>';
-  }).join('');
+      +'<div style="display:flex;gap:8px;align-items:center">'+actions+'</div>'
+      +'</div></div></div>';
+  }
+
+  // Show own post pinned at top (if exists), then others below
+  var ownHtml = myOwnPost ? _helpCard(myOwnPost, true) : '';
+  var othersHtml = _helpPosts.map(function(h){ return _helpCard(h, false); }).join('');
+  list.innerHTML = ownHtml + othersHtml;
+}
+
+function pDeleteHelpPost(postId){
+  if(!confirm('¿Eliminar tu publicación de la Sala de Ayuda?')) return;
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('help_posts').update({closed:true}).eq('id',postId).then(function(){}).catch(function(){});
+  }
+  safeLS('set','velo_my_help_post_id','');
+  var card = document.getElementById('helppost-'+postId);
+  if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ pRenderHelp(); },350); }
+  else { pRenderHelp(); }
+  pToast('💙','Publicación eliminada');
 }
 
 var _curHelpPost = null;
@@ -1876,11 +1910,13 @@ function _sendLeaveMessage(postId){
   var ov = document.getElementById('leaveMessageOv');
   if(ov) ov.remove();
   if(!msg){ pGoTo('help'); return; }
-  // Update guardian_requests with the support message
   _initSupabase();
   if(sbClient){
+    // Save the support message in guardian_requests
     sbClient.from('guardian_requests').update({support_msg:msg, status:'message_left'})
       .eq('post_id',postId).then(function(){}).catch(function(){});
+    // Close the help post — it received support (a message), remove it from the wall
+    sbClient.from('help_posts').update({closed:true}).eq('id',postId).then(function(){}).catch(function(){});
   }
   pToast('💌','Mensaje enviado. Lo verán cuando vuelvan 💚');
   setTimeout(function(){ pGoTo('help'); }, 1200);
@@ -3021,10 +3057,9 @@ async function pRenderBottle(){
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
   // Load stats
   _loadBottleStats();
-  // Load: unanswered bottles OR own bottles (always visible to author)
+  // Only show unreplied bottles — once replied it disappears for everyone including the author
   var sbRows = await _sbLoad('bottles', function(q){
-    var filter = myId ? 'replied.eq.false,user_id.eq.'+myId : 'replied.eq.false';
-    return q.or(filter).order('created_at',{ascending:false}).limit(40);
+    return q.eq('replied', false).order('created_at',{ascending:false}).limit(40);
   });
   if(sbRows !== null){
     usingSB = true;
@@ -3071,8 +3106,17 @@ async function pRenderBottle(){
           : '<button style="padding:5px 11px;background:rgba(200,165,100,.12);border:1px solid rgba(200,165,100,.22);border-radius:100px;color:#C8A560;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply(\''+b.id+'\',\''+b.text.substring(0,40).replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'...\',\''+( b.userId||b.user_id||'')+'\')">💌 Responder</button>')
         +'</div>';
     }
+    var showAuthor = !b.anon && b.userName && !isOwn;
+    var authorHtml = showAuthor
+      ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;cursor:pointer" onclick="pQuickProfile('+JSON.stringify(b.userName||'Usuario')+','+JSON.stringify(b.userAv||'🧑')+',\'\',\'\',\''+b.userId+'\')">'
+        +_avInline(b.userAv||'🧑',24)
+        +'<span style="font-size:11px;color:rgba(200,165,100,.75);font-weight:600">'+_escHtml(b.userName)+'</span>'
+        +'<span style="font-size:10px;color:rgba(255,255,255,.2)">· toca para ver perfil</span>'
+        +'</div>'
+      : '';
     return '<div class="dark-bottle" id="bottle-'+b.id+'" style="animation-delay:'+i*.08+'s;border-left:3px solid '+(b.color||'rgba(200,165,100,.3)')+'">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:20px">'+b.mood+'</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+relTime+'</span></div>'
+      +authorHtml
       +'<p style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+b.text+'"</p>'
       +'<div style="display:flex;align-items:center;justify-content:flex-end">'+actions+'</div></div>';
   }).join('');
@@ -3100,21 +3144,31 @@ function pSendBottle(){
     return;
   }
   var text = ta.value.trim();
+  var showProfile = document.getElementById('bottleShowProfile') && document.getElementById('bottleShowProfile').checked;
+  var isAnon = !showProfile;
+  var myName = isAnon ? '' : (safeLS('get','velo_user_name')||'');
+  var myAv   = isAnon ? '' : (safeLS('get','velo_user_av')||'');
+  var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
   ta.value = '';
+  // Reset toggle for next use
+  var tog = document.getElementById('bottleProfileTog');
+  if(tog) tog.classList.remove('on');
+  var cb = document.getElementById('bottleShowProfile');
+  if(cb) cb.checked = false;
   closeModal('bottleFormOv');
   _incDailyLimit('bottle');
   var bottles = []; try{ bottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
   var id = 'ub'+Date.now();
   bottles.unshift({ id:id, mood:_selectedBottleMood, text:text, responses:0, color:'rgba(116,198,157,.12)', ts:Date.now(),
-    userId: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'' });
+    userId:myId, userName:myName, userAv:myAv, anon:isAnon });
   safeLS('set','velo_my_bottles', JSON.stringify(bottles.slice(0,50)));
   pToast('🌊','¡Mensaje lanzado al mar! 🌿');
   _geminiModerateContent(text, 'mensajes-al-mar');
-  // Insert to Supabase so other users see the bottle
   _initSupabase();
   if(sbClient){
     sbClient.from('bottles').insert({ id:id,
-      user_id: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||null,
+      user_id: isAnon ? null : (myId||null),
+      user_name: myName||null, user_av: myAv||null, anon: isAnon,
       mood:_selectedBottleMood, text:text, color:'rgba(116,198,157,.12)', replied:false
     }).then(function(){}).catch(function(){});
   }
@@ -5364,6 +5418,26 @@ function pGetFavs(){
     try{ _favsList = JSON.parse(safeLS('get','velo_favs')||'[]'); }catch(e){ _favsList = []; }
   }
   return _favsList;
+}
+
+async function _syncFavsFromSupabase(){
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId || !sbClient) return;
+  try{
+    var {data} = await sbClient.from('user_favorites').select('*').eq('user_id', myId).order('created_at',{ascending:false}).limit(100);
+    if(!data || !data.length) return;
+    var local = pGetFavs();
+    var localIds = local.map(function(f){ return f.id; });
+    // Add remote favs not yet in local
+    data.forEach(function(r){
+      if(localIds.indexOf(r.fav_id) < 0){
+        local.push({ id:r.fav_id, name:r.fav_name||'Usuario', av:r.fav_av||'🧑', ts:new Date(r.created_at).getTime() });
+      }
+    });
+    _favsList = local;
+    safeLS('set','velo_favs', JSON.stringify(local.slice(0,100)));
+    _updateFavBadge();
+  }catch(e){}
 }
 
 function pIsFav(userId){
@@ -8428,6 +8502,7 @@ window.addEventListener('load', function(){
     setTimeout(function(){ _sbSyncProfile(safeLS('get','velo_user_id')); }, 1500);
     setTimeout(_startGuardianHeartbeat, 2000);
     setTimeout(_startGlobalDMListener, 3000);
+    setTimeout(_syncFavsFromSupabase, 3500);
     if(type === 'admin' && safeLS('get','velo_admin_session') === '1'){
       pGoTo('admin');
     } else if(type === 'pro'){
