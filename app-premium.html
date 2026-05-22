@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260522-112">
+  <link rel="stylesheet" href="premium.css?v=20260522-113">
 </head>
 <body>
 
@@ -345,7 +345,7 @@
               <nav class="land-footer-nav">
                 <a href="/politica-de-privacidad" class="land-footer-link">Política de Privacidad</a>
                 <span class="land-footer-sep">|</span>
-                <a href="/terminos-y-condiciones" class="land-footer-link">Términos y Condiciones</a>
+                <a href="#" onclick="pShowTerms();return false;" class="land-footer-link">Términos y Condiciones</a>
               </nav>
             </div>
           </footer>
@@ -2092,19 +2092,67 @@
 
 <!-- ── TÉRMINOS Y CONDICIONES ───────────────────────────── -->
 <div class="p-modal-ov" id="termsOv">
-  <div class="p-sheet" style="max-height:80vh;overflow-y:auto">
+  <div class="p-sheet" style="max-height:88vh;overflow-y:auto;max-width:640px">
     <div class="p-sheet-handle"></div>
-    <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:16px">Términos y Condiciones</h3>
-    <div style="font-size:13px;color:var(--ink3);line-height:1.7">
-      <p><strong>1. Uso de la plataforma</strong><br>Velo es una plataforma de apoyo emocional entre pares. No reemplaza la atención médica o psicológica profesional. Al usarla, aceptás hacerlo de forma responsable y respetuosa.</p>
-      <p><strong>2. Guardianes y acompañamiento</strong><br>Los guardianes son usuarios voluntarios de la comunidad, no profesionales de salud mental. El acompañamiento que ofrecen es entre pares, basado en escucha activa y empatía.</p>
-      <p><strong>3. Contenido y conducta</strong><br>Está prohibido el acoso, el discurso de odio, el contenido sexual no consentido y cualquier actividad ilegal. Velo se reserva el derecho de suspender cuentas que violen estas normas.</p>
-      <p><strong>4. Privacidad del diario</strong><br>Las entradas del Diario Íntimo se almacenan únicamente en tu dispositivo. Velo no accede ni puede leer ese contenido.</p>
-      <p><strong>5. Limitación de responsabilidad</strong><br>Velo no es responsable de las conversaciones entre usuarios ni de las decisiones tomadas a partir de ellas. En caso de crisis, comunicarse con los servicios de emergencia locales.</p>
-      <p><strong>6. Modificaciones</strong><br>Velo puede actualizar estos términos con previo aviso a los usuarios registrados.</p>
-      <p style="color:var(--ink5);font-size:11px">Última actualización: Mayo 2026</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div>
+        <div class="p-label p-label-sage" style="margin-bottom:2px">Legal</div>
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin:0">Términos y Condiciones</h3>
+      </div>
+      <button onclick="closeModal('termsOv')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink4);padding:0">✕</button>
     </div>
-    <button class="p-btn p-btn--primary p-btn--md p-btn--full" style="margin-top:16px" onclick="closeModal('termsOv')">Entendido ✓</button>
+    <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:8px;padding:8px 11px;margin-bottom:14px">Última actualización: 23 de mayo de 2026 · heyvelo.app</div>
+    <div style="font-size:13px;color:var(--ink3);line-height:1.75;display:flex;flex-direction:column;gap:14px">
+      <p style="color:var(--ink4);font-style:italic;font-size:12px">Al acceder o utilizar heyvelo.app, usted declara conocer y aceptar estas condiciones.</p>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">1. NATURALEZA DE HEYVELO: INTERMEDIACIÓN TECNOLÓGICA</div>
+        <p style="margin:0 0 6px">Heyvelo actúa única y exclusivamente como una aplicación intermediaria para la comunicación y facilitación de contactos.</p>
+        <p style="margin:0 0 6px"><strong>Rol de la Plataforma:</strong> Heyvelo provee la infraestructura tecnológica necesaria para que los Usuarios puedan comunicarse entre sí (ayuda mutua) y para que los Usuarios puedan conectar con Profesionales independientes.</p>
+        <p style="margin:0"><strong>Exención de Responsabilidad:</strong> Heyvelo no es una entidad médica, no presta servicios de salud, no supervisa la calidad de las consultas y no interviene en la relación profesional-paciente. Heyvelo no garantiza el resultado de las sesiones ni la veracidad de los consejos intercambiados en los chats grupales. Toda interacción es responsabilidad exclusiva de las partes involucradas.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">2. FUNCIONALIDADES Y MODERACIÓN (IA Y HUMANA)</div>
+        <p style="margin:0 0 6px"><strong>Comunidad y Chat:</strong> Heyvelo facilita canales de comunicación. El uso de la IA de moderación y la supervisión humana de administradores tiene como único objetivo mantener un entorno seguro, reservándose Heyvelo el derecho de eliminar contenido o banear usuarios que incumplan las normas.</p>
+        <p style="margin:0"><strong>Servicios de Terceros:</strong> La "Velo IA" (chatbot) y la sección de "Buenas Noticias" son servicios de terceros. Heyvelo no garantiza su precisión, disponibilidad o funcionamiento, y no se hace responsable por fallos derivados de estos sistemas.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">3. PRIVACIDAD Y DATOS EN SECCIONES ESPECIALES</div>
+        <p style="margin:0 0 6px">Heyvelo prioriza la privacidad bajo el modelo de minimización de datos:</p>
+        <p style="margin:0 0 6px"><strong>Diario Íntimo:</strong> No se almacena el contenido escrito; solo se procesan estados de ánimo estadísticos.</p>
+        <p style="margin:0 0 6px"><strong>Secciones Comunitarias (Al Mar, Muro de la Felicidad, etc.):</strong> No se retiene información sensible ni privada.</p>
+        <p style="margin:0"><strong>Responsabilidad del Usuario:</strong> Usted es responsable de la información que decide publicar o compartir en los espacios comunitarios.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">4. POLÍTICA DE RESERVAS DE CONSULTAS PROFESIONALES</div>
+        <p style="margin:0 0 6px">Esta política es vinculante para las sesiones programadas entre Usuario y Profesional:</p>
+        <p style="margin:0 0 4px">· <strong>Cancelación &gt; 72h:</strong> Reembolso del 90%.</p>
+        <p style="margin:0 0 4px">· <strong>Cancelación 48h–72h:</strong> Reembolso del 50%.</p>
+        <p style="margin:0 0 4px">· <strong>Cancelación &lt; 24h:</strong> Sin reembolso.</p>
+        <p style="margin:0"><strong>Comisión de Gestión:</strong> Heyvelo retiene el 20% del valor total de cada reserva como comisión por servicios de plataforma y gestión tecnológica, independientemente de la cancelación.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">5. SUSCRIPCIONES, DONACIONES E IMPACTO SOCIAL</div>
+        <p style="margin:0 0 6px"><strong>Pagos:</strong> Las suscripciones de Profesionales y "Velo Plus" son recurrentes y no reembolsables.</p>
+        <p style="margin:0 0 6px"><strong>Donaciones de Impacto Social:</strong> Los usuarios pueden donar fondos que Heyvelo destinará a: (1) Mantenimiento técnico o (2) Fondo de Acceso a Salud.</p>
+        <p style="margin:0">Heyvelo gestiona la asignación de sesiones solidarias de forma discrecional, sin que la donación garantice una sesión específica. Estas donaciones son voluntarias, definitivas y no reembolsables.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">6. RESPONSABILIDAD DEL PROFESIONAL</div>
+        <p style="margin:0 0 6px"><strong>Independencia:</strong> El Profesional opera de forma independiente a Heyvelo.</p>
+        <p style="margin:0 0 6px"><strong>Autenticidad:</strong> El Profesional garantiza la vigencia de sus títulos y licencias.</p>
+        <p style="margin:0"><strong>Indemnidad:</strong> Ante cualquier mala praxis o reclamo legal, el Profesional se obliga a mantener a Heyvelo indemne frente a cualquier sanción o gasto jurídico.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">7. SEGURIDAD Y PROTECCIÓN DE DATOS (RGPD)</div>
+        <p style="margin:0 0 6px"><strong>Custodia:</strong> Heyvelo es encargado del tratamiento; el Profesional es el responsable y único custodio de los expedientes clínicos.</p>
+        <p style="margin:0"><strong>Conservación:</strong> Tras la baja de la cuenta, se conservarán únicamente los datos mínimos exigidos legalmente (logs, IP, timestamp) para defensa ante reclamaciones.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">8. LEY APLICABLE Y JURISDICCIÓN</div>
+        <p style="margin:0">Este contrato se rige por la ley de la República Portuguesa. Para cualquier controversia, las partes se someten exclusivamente a los Tribunales de la Comarca de Oporto.</p>
+      </div>
+    </div>
+    <button class="p-btn p-btn--primary p-btn--md p-btn--full" style="margin-top:20px" onclick="closeModal('termsOv')">Entendido ✓</button>
   </div>
 </div>
 
@@ -2460,7 +2508,7 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260522-112"></script>
+<script src="premium.js?v=20260522-113"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
