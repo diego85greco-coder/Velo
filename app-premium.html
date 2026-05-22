@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260522-111">
+  <link rel="stylesheet" href="premium.css?v=20260522-112">
 </head>
 <body>
 
@@ -1767,6 +1767,12 @@
                 <label for="proTcCheck" style="font-size:12px;color:var(--ink3);cursor:pointer;line-height:1.5">Leí y acepto los <span style="color:var(--sage3);font-weight:600;text-decoration:underline;cursor:pointer" onclick="pShowTerms()">Términos y Condiciones</span> y la <span style="color:var(--sage3);font-weight:600;text-decoration:underline;cursor:pointer" onclick="pShowPrivacy()">Política de Privacidad</span> de Velo.</label>
               </div>
               <div class="p-err-msg" id="proTcErr" style="margin-bottom:10px">Debés aceptar los términos para continuar</div>
+              <!-- DPA — obligatorio para profesionales (RGPD Art.28) -->
+              <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:12px;padding:12px 14px">
+                <input type="checkbox" id="proDpaCheck" style="accent-color:var(--sage2);width:18px;height:18px;cursor:pointer;flex-shrink:0;margin-top:1px">
+                <label for="proDpaCheck" style="font-size:12px;color:var(--ink3);cursor:pointer;line-height:1.5">Leí y acepto el <span style="color:var(--sage2);font-weight:700;text-decoration:underline;cursor:pointer" onclick="pShowDPA()">Acuerdo de Procesamiento de Datos (DPA)</span> requerido por el RGPD para profesionales que acceden a datos de salud.</label>
+              </div>
+              <div class="p-err-msg" id="proDpaErr" style="margin-bottom:10px">Debés aceptar el DPA para continuar (obligatorio RGPD)</div>
               <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pProRegNext()">Continuar →</button>
               <div style="height:10px"></div>
               <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('register-type')">← Volver</button>
@@ -2384,7 +2390,92 @@
     <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
   </div>
 </div>
-<script src="premium.js?v=20260522-111"></script>
-<script>var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();</script>
+<!-- ═══ DPA MODAL ═══════════════════════════════════════════════ -->
+<div class="p-modal-ov" id="dpaOv">
+  <div class="p-sheet" style="max-height:88vh;overflow-y:auto;max-width:600px">
+    <div class="p-sheet-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div class="p-label p-label-sage" style="margin-bottom:2px">RGPD · Art. 28</div>
+        <h3 class="p-title" style="margin:0">Acuerdo de Procesamiento de Datos (DPA)</h3>
+      </div>
+      <button onclick="closeModal('dpaOv')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink4);padding:0">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--ink4);background:var(--cream2);border-radius:10px;padding:10px 12px;margin-bottom:16px;line-height:1.5">
+      Versión 1.0 · Mayo 2026 · Este documento es legalmente vinculante según el Reglamento (UE) 2016/679 (RGPD)
+    </div>
+    <div style="font-size:13px;color:var(--ink2);line-height:1.75;display:flex;flex-direction:column;gap:14px">
+      <div>
+        <div style="font-weight:700;color:var(--sage2);margin-bottom:4px">1. PARTES</div>
+        <div><strong>Responsable del tratamiento:</strong> HeyVelo (consultas@heyvelo.app)<br>
+        <strong>Encargado del tratamiento:</strong> El profesional registrado que acepta este acuerdo.</div>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--sage2);margin-bottom:4px">2. OBJETO Y DATOS PROCESADOS</div>
+        <div>El profesional, en el ejercicio de su actividad en la plataforma, puede acceder a datos de usuarios que constituyen categorías especiales según el Art. 9 RGPD: datos relativos a la salud mental y bienestar emocional.</div>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--sage2);margin-bottom:4px">3. BASE LEGAL</div>
+        <div>Art. 9.2(h) RGPD: asistencia sanitaria y gestión de sistemas sanitarios. El tratamiento se realiza bajo supervisión de un profesional sujeto a secreto profesional.</div>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--sage2);margin-bottom:4px">4. OBLIGACIONES DEL PROFESIONAL (ENCARGADO)</div>
+        <div>El profesional se compromete a:<br>
+        · Tratar los datos únicamente según instrucciones de HeyVelo<br>
+        · Mantener confidencialidad absoluta, incluso tras la baja en la plataforma<br>
+        · No ceder datos a terceros sin autorización expresa<br>
+        · Notificar cualquier brecha de seguridad en un máximo de 72 horas<br>
+        · Destruir o devolver los datos al finalizar el servicio</div>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--sage2);margin-bottom:4px">5. SUBENCARGADOS</div>
+        <div>La plataforma utiliza Supabase Inc. como subencargado de infraestructura, con Data Processing Agreement vigente y servidores en la Unión Europea.</div>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--sage2);margin-bottom:4px">6. DERECHOS DE LOS INTERESADOS</div>
+        <div>HeyVelo facilita el ejercicio de derechos ARCO (acceso, rectificación, cancelación, oposición) y el derecho al olvido. El profesional no obstruirá el ejercicio de estos derechos.</div>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--sage2);margin-bottom:4px">7. DURACIÓN Y JURISDICCIÓN</div>
+        <div>Este acuerdo está vigente mientras el profesional mantenga su cuenta activa. Se rige por el RGPD (UE) y la legislación española de protección de datos. La jurisdicción aplicable es la española.</div>
+      </div>
+    </div>
+    <div style="height:18px"></div>
+    <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="closeModal('dpaOv');document.getElementById('proDpaCheck').checked=true">✓ Entendido — cerrar</button>
+  </div>
+</div>
+
+<!-- ═══ COOKIE BANNER ════════════════════════════════════════════ -->
+<div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(28,46,34,.97);border-top:1px solid rgba(116,198,157,.2);padding:14px 20px;box-shadow:0 -4px 24px rgba(0,0,0,.3)">
+  <div style="max-width:900px;margin:auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <span style="font-size:20px">🍪</span>
+    <div style="flex:1;min-width:220px">
+      <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:3px">Política de Cookies</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.55);line-height:1.5">Usamos cookies esenciales para el funcionamiento de la app (sesión, preferencias). No usamos cookies de rastreo ni publicidad.</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button onclick="_cookieAccept('essential')" style="font-size:12px;font-weight:700;padding:9px 16px;border-radius:100px;background:none;border:1.5px solid rgba(255,255,255,.25);color:rgba(255,255,255,.6);cursor:pointer;font-family:'Jost',sans-serif">Solo esenciales</button>
+      <button onclick="_cookieAccept('all')" style="font-size:12px;font-weight:700;padding:9px 18px;border-radius:100px;background:var(--sage);border:none;color:#fff;cursor:pointer;font-family:'Jost',sans-serif">Aceptar ✓</button>
+    </div>
+  </div>
+</div>
+
+<script src="premium.js?v=20260522-112"></script>
+<script>
+  var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
+  // Cookie banner — show if not yet answered
+  (function(){
+    if(!localStorage.getItem('velo_cookie_consent')){
+      var b=document.getElementById('cookieBanner');
+      if(b) setTimeout(function(){ b.style.display='flex'; }, 1200);
+    }
+  })();
+  function _cookieAccept(type){
+    localStorage.setItem('velo_cookie_consent', type+'|'+new Date().toISOString());
+    var b=document.getElementById('cookieBanner');
+    if(b){ b.style.transition='opacity .4s'; b.style.opacity='0'; setTimeout(function(){ b.style.display='none'; }, 400); }
+  }
+  function pShowDPA(){ if(typeof openModal==='function') openModal('dpaOv'); }
+</script>
 </body>
 </html>

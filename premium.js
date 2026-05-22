@@ -512,7 +512,7 @@ async function pSignUp(){
       safeLS('set','velo_sb_pass', pass);
       safeLS('set','velo_user_name', name);
       safeLS('set','velo_user_type','user');
-      _recordTC(name, email);
+      _recordTC(name, email, 'TOS-v1');
       var veEl = document.getElementById('verifyEmailAddr');
       if(veEl) veEl.textContent = email;
       pGoTo('verify-email');
@@ -750,30 +750,43 @@ function _clearFieldErr(id){
 }
 
 // ── TC RECORD ─────────────────────────────────────────────────
-function _recordTC(name, email){
+async function _fetchClientIP(){
+  try{
+    var r = await fetch('https://api.ipify.org?format=json');
+    var j = await r.json();
+    return j.ip || '';
+  }catch(e){ return ''; }
+}
+
+async function _recordTC(name, email, version){
+  version = version || 'TOS-v1';
   var now = new Date();
+  var ip  = await _fetchClientIP();
   var recs = []; try{ recs = JSON.parse(safeLS('get','velo_tc_records')||'[]'); }catch(e){}
   recs.unshift({
     name:      name,
     email:     email,
-    timestamp: now.toISOString(),           // full ISO with ms — e.g. 2026-05-18T14:32:07.451Z
-    ts_ms:     now.getTime(),               // Unix ms — precise for legal audit
-    ip:        '(client-side — ver Supabase logs)', // real IP available in Supabase auth logs
+    timestamp: now.toISOString(),
+    ts_ms:     now.getTime(),
+    ip:        ip || '(no disponible)',
     ua:        navigator.userAgent.slice(0,120),
-    version:   '1.0'
+    version:   version
   });
   safeLS('set','velo_tc_records', JSON.stringify(recs.slice(0,500)));
-  // Also save registration timestamp on user profile
   if(!safeLS('get','velo_registered_ts')){
     safeLS('set','velo_registered_ts', String(now.getTime()));
   }
-  // Persist to Supabase for the legal audit trail
   _initSupabase();
   if(sbClient){
     try{
-      sbClient.from('terms_acceptance').insert({ email:email, nombre:name,
-        rol: safeLS('get','velo_user_type')||'user', accepted_at: now.toISOString(),
-        version: 'TOS-v1', ip_hint: navigator.language||'' }).then(function(){}).catch(function(){});
+      sbClient.from('terms_acceptance').insert({
+        email:       email,
+        nombre:      name,
+        rol:         safeLS('get','velo_user_type')||'user',
+        accepted_at: now.toISOString(),
+        version:     version,
+        ip_hint:     ip || navigator.language||''
+      }).then(function(){}).catch(function(){});
     }catch(e){}
   }
 }
@@ -7487,26 +7500,31 @@ function pTogDay(el){
 }
 
 // ── PRO REG ────────────────────────────────────────────────────
-function pProRegNext(){
-  var name  = document.getElementById('prName');
-  var spec  = document.getElementById('prSpec');
-  var email = document.getElementById('prEmail');
-  var pass  = document.getElementById('prPass');
-  var tcEl  = document.getElementById('proTcCheck');
+async function pProRegNext(){
+  var name    = document.getElementById('prName');
+  var spec    = document.getElementById('prSpec');
+  var email   = document.getElementById('prEmail');
+  var pass    = document.getElementById('prPass');
+  var tcEl    = document.getElementById('proTcCheck');
+  var dpaEl   = document.getElementById('proDpaCheck');
   var tcErrEl = document.getElementById('proTcErr');
+  var dpaErrEl= document.getElementById('proDpaErr');
   if(!name||!name.value.trim()){ pToast('⚠️','Ingresá tu nombre'); return; }
   if(!spec||!spec.value.trim()){ pToast('⚠️','Ingresá tu especialidad'); return; }
   if(!email||!email.value.trim()){ pToast('⚠️','Ingresá tu correo'); return; }
   if(!pass||!pass.value||pass.value.length<6){ pToast('⚠️','Contraseña mínima de 6 caracteres'); return; }
   if(tcEl && !tcEl.checked){ if(tcErrEl) tcErrEl.style.display='block'; return; }
   if(tcErrEl) tcErrEl.style.display='none';
+  if(dpaEl && !dpaEl.checked){ if(dpaErrEl) dpaErrEl.style.display='block'; return; }
+  if(dpaErrEl) dpaErrEl.style.display='none';
   safeLS('set','velo_pro_name', name.value.trim());
   safeLS('set','velo_pro_spec', spec.value.trim());
   safeLS('set','velo_user_email', email.value.trim());
   safeLS('set','velo_sb_pass', pass.value);
   safeLS('set','velo_user_type','pro');
   safeLS('set','velo_user_name', name.value.trim());
-  _recordTC(name.value.trim(), email.value.trim());
+  await _recordTC(name.value.trim(), email.value.trim(), 'TOS-v1');
+  await _recordTC(name.value.trim(), email.value.trim(), 'DPA-v1');
   pOpenPayPalPro();
   pGoTo('pro-pending');
 }
