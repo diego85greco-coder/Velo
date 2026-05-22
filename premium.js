@@ -420,8 +420,8 @@ function _sbBottleRow(r){
 }
 function _sbCircleMsgRow(r){
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
-  return { id:String(r.id), av:r.user_av||'🌿', name:r.user_name||'Usuario',
-    text:r.text||'', ts:new Date(r.created_at).getTime(), own:r.user_id===myId, type:r.type||'text' };
+  return { id:String(r.id), sbId:r.id, av:r.user_av||'🌿', name:r.user_name||'Usuario',
+    text:r.text||'', ts:new Date(r.created_at).getTime(), own:r.user_id===myId, type:r.type||'text', reactions:r.reactions||{} };
 }
 
 async function pSignUp(){
@@ -4132,7 +4132,7 @@ async function _renderCircleMessages(){
     if(m.type === 'system'){
       return '<div style="text-align:center;margin:10px 0"><span style="font-size:11px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
     }
-    return _buildMsgBubble(m.text, !!m.own, m.av, m.name, 'feedInput', 'feedReplyBar', '');
+    return _buildMsgBubble(m.text, !!m.own, m.av, m.name, 'feedInput', 'feedReplyBar', '', m.reactions, m.sbId);
   }).join('');
   el.scrollTop = el.scrollHeight;
 
@@ -8466,8 +8466,10 @@ function pShowMsgActions(btn, msgId, text, inputId, replyBarId){
 function _msgReact(emoji){
   var pop = document.getElementById('msgActionsPopup');
   if(pop) pop.style.display = 'none';
-  if(!_msgPopupData) return;
-  var msgEl = document.getElementById(_msgPopupData.msgId);
+  var msgId = _msgPopupData ? _msgPopupData.msgId : null;
+  // Also allow clicking existing reaction chips (msgId comes from data-sb-id parent)
+  if(!msgId) return;
+  var msgEl = document.getElementById(msgId);
   if(!msgEl) return;
   var rxBar = msgEl.querySelector('.msg-rx-bar');
   if(!rxBar){
@@ -8487,14 +8489,42 @@ function _msgReact(emoji){
     chip.setAttribute('data-emoji', emoji);
     chip.setAttribute('data-cnt', '1');
     chip.textContent = emoji+' 1';
-    chip.onclick = function(){
-      var cc = parseInt(chip.getAttribute('data-cnt')||'1',10)+1;
-      chip.setAttribute('data-cnt',cc);
-      chip.textContent = emoji+' '+cc;
-    };
+    chip.onclick = function(){ _msgReactFromChip(chip, msgId); };
     rxBar.appendChild(chip);
   }
+  // Save to Supabase if this is a circle message
+  var sbId = msgEl.getAttribute('data-sb-id');
+  if(sbId && sbClient){
+    var updatedReactions = {};
+    rxBar.querySelectorAll('.msg-reaction').forEach(function(ch){
+      var e2 = ch.getAttribute('data-emoji');
+      var c2 = parseInt(ch.getAttribute('data-cnt')||'1',10);
+      if(e2) updatedReactions[e2] = c2;
+    });
+    sbClient.from('circle_messages').update({ reactions: updatedReactions }).eq('id', sbId)
+      .then(function(){}).catch(function(){});
+  }
+  _msgPopupData = null;
   pToast(emoji,'¡Reaccionaste!');
+}
+
+function _msgReactFromChip(chip, msgId){
+  var cc = parseInt(chip.getAttribute('data-cnt')||'1',10)+1;
+  chip.setAttribute('data-cnt',cc);
+  chip.textContent = chip.getAttribute('data-emoji')+' '+cc;
+  var msgEl = document.getElementById(msgId);
+  var sbId = msgEl ? msgEl.getAttribute('data-sb-id') : null;
+  if(sbId && sbClient){
+    var updatedReactions = {};
+    var rxBar = msgEl.querySelector('.msg-rx-bar');
+    if(rxBar) rxBar.querySelectorAll('.msg-reaction').forEach(function(ch){
+      var e2 = ch.getAttribute('data-emoji');
+      var c2 = parseInt(ch.getAttribute('data-cnt')||'1',10);
+      if(e2) updatedReactions[e2] = c2;
+    });
+    sbClient.from('circle_messages').update({ reactions: updatedReactions }).eq('id', sbId)
+      .then(function(){}).catch(function(){});
+  }
 }
 
 function _msgReplyAct(){
@@ -8531,28 +8561,37 @@ function _highlightMentions(text){
   return escaped.replace(/@([\wÀ-ɏ]+)/g, '<span class="msg-mention">@$1</span>');
 }
 
-function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quoteText){
+function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quoteText, reactions, sbId){
   var id  = _nextMsgId();
   var t   = new Date();
   var ts  = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
   var quotePart = quoteText ? '<div class="reply-quote">'+_escHtml(quoteText.slice(0,80)+(quoteText.length>80?'…':''))+'</div>' : '';
   var actionBtn = '<button class="msg-action-btn" onclick="pShowMsgActions(this,\''+id+'\','+JSON.stringify(text)+',\''+inputId+'\',\''+replyBarId+'\')" aria-label="Acciones">•••</button>';
+  var sbAttr = sbId ? ' data-sb-id="'+sbId+'"' : '';
+  var rxHtml = '';
+  if(reactions && typeof reactions === 'object'){
+    var chips = Object.keys(reactions).map(function(e){
+      var cnt = reactions[e]||1;
+      return '<span class="msg-reaction" data-emoji="'+e+'" data-cnt="'+cnt+'" onclick="_msgReact(\''+e+'\')">'+e+' '+cnt+'</span>';
+    }).join('');
+    if(chips) rxHtml = '<div class="msg-rx-bar">'+chips+'</div>';
+  }
   if(isUser){
     safeLS('set','velo_total_msgs', String(parseInt(safeLS('get','velo_total_msgs')||'0',10)+1));
-    return '<div class="feed-msg feed-msg--own" id="'+id+'" style="position:relative">'
+    return '<div class="feed-msg feed-msg--own" id="'+id+'"'+sbAttr+' style="position:relative">'
       +'<div class="msg-wrap">'
       +actionBtn
       +'<div class="feed-bubble feed-bubble--own">'+quotePart+_highlightMentions(text)+'<span class="feed-time">'+ts+'</span></div>'
-      +'</div></div>';
+      +'</div>'+rxHtml+'</div>';
   } else {
     var avClick = senderName ? ' style="cursor:pointer" onclick="pQuickProfile('+JSON.stringify(senderName)+',' +JSON.stringify(av||'🌿')+')"' : '';
-    return '<div class="feed-msg" id="'+id+'" style="position:relative">'
+    return '<div class="feed-msg" id="'+id+'"'+sbAttr+' style="position:relative">'
       +'<div class="feed-av"'+avClick+'>'+_avInline(av||'🌿',36)+'</div>'
       +'<div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">'+(senderName||'')+'</div>'
       +'<div class="msg-wrap">'
       +'<div class="feed-bubble">'+quotePart+_highlightMentions(text)+'<span class="feed-time">'+ts+'</span></div>'
       +actionBtn
-      +'</div></div></div>';
+      +'</div>'+rxHtml+'</div></div>';
   }
 }
 
