@@ -347,6 +347,13 @@ function _sbSyncProfile(userId){
             }
           }).catch(function(){ safeLS('set','velo_plan','plus'); });
       }
+      // Check if new people have added us as favorite → show badge on star
+      sbClient.from('user_favorites').select('id',{count:'exact',head:true}).eq('fav_id', userId)
+        .then(function(fr){
+          var newTotal = fr.count || 0;
+          safeLS('set','velo_fav_me_count', String(newTotal));
+          _updateFavBadge();
+        }).catch(function(){});
       // Restore guardian bio/tags/status from guardian_presence
       sbClient.from('guardian_presence').select('bio,tags,is_guardian,status').eq('user_id', userId).limit(1)
         .then(function(gr){
@@ -6205,9 +6212,11 @@ function _isBlocked(userId){
 }
 
 function _updateFavBadge(){
-  var count = pGetFavs().length;
-  var badge = document.getElementById('favCountBadge');
-  if(badge){ badge.textContent = count > 0 ? count : ''; badge.style.display = count > 0 ? 'inline' : 'none'; }
+  var total  = parseInt(safeLS('get','velo_fav_me_count')||'0', 10);
+  var seen   = parseInt(safeLS('get','velo_fav_me_seen') ||'0', 10);
+  var newN   = Math.max(0, total - seen);
+  var badge  = document.getElementById('favCountBadge');
+  if(badge){ badge.textContent = newN > 0 ? newN : ''; badge.style.display = newN > 0 ? 'inline' : 'none'; }
 }
 
 // ── CONTACTS PAGE ─────────────────────────────────────────────
@@ -6226,6 +6235,10 @@ async function pRenderContacts(){
     try{
       var {count} = await sbClient.from('user_favorites').select('id',{count:'exact',head:true}).eq('fav_id', myId);
       favMeCount = count || 0;
+      // Persist count and mark as seen → clears the badge
+      safeLS('set','velo_fav_me_count', String(favMeCount));
+      safeLS('set','velo_fav_me_seen',  String(favMeCount));
+      _updateFavBadge();
     }catch(e){}
   }
 
