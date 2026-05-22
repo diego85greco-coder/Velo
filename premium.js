@@ -3181,7 +3181,7 @@ function pOpenSOS(){
       .then(function(r){ return r.json(); })
       .then(function(d){
         var countryCode = d.country_code || '';
-        var codeMap = { AR:'🇦🇷 Argentina', UY:'🇺🇾 Uruguay', CL:'🇨🇱 Chile', CO:'🇨🇴 Colombia', MX:'🇲🇽 México', ES:'🇪🇸 España', PE:'🇵🇪 Perú', VE:'🇻🇪 Venezuela', BR:'🇧🇷 Brasil' };
+        var codeMap = { AR:'🇦🇷 Argentina', UY:'🇺🇾 Uruguay', CL:'🇨🇱 Chile', CO:'🇨🇴 Colombia', MX:'🇲🇽 México', ES:'🇪🇸 España', PE:'🇵🇪 Perú', VE:'🇻🇪 Venezuela', BR:'🇧🇷 Brasil', DE:'🇩🇪 Alemania', IT:'🇮🇹 Italia', FR:'🇫🇷 Francia', US:'🇺🇸 Estados Unidos', CR:'🇨🇷 Costa Rica', PR:'🇵🇷 Puerto Rico', BO:'🇧🇴 Bolivia', SV:'🇸🇻 El Salvador', EC:'🇪🇨 Ecuador', PT:'🇵🇹 Portugal' };
         _sosCountry = codeMap[countryCode] || '🌍 Internacional';
         _renderSOSResources();
       })
@@ -3247,6 +3247,76 @@ var _sosData = {
     { label:'Ambulancia (SAMU)',    num:'192',           url:'tel:192' },
     { label:'CVV — Crisis emocional', num:'188',         url:'tel:188' },
     { label:'Violencia de género',  num:'180',           url:'tel:180' }
+  ],
+  '🇩🇪 Alemania': [
+    { label:'Emergencias',                       num:'112',             url:'tel:112' },
+    { label:'Policía',                           num:'110',             url:'tel:110' },
+    { label:'Telefonseelsorge — Crisis emocional (24h)', num:'0800 111 0 111', url:'tel:08001110111' },
+    { label:'Telefonseelsorge — línea alternativa', num:'0800 111 0 222', url:'tel:08001110222' },
+    { label:'Violencia doméstica',               num:'08000 116 016',   url:'tel:0800116016' }
+  ],
+  '🇮🇹 Italia': [
+    { label:'Emergencias',                       num:'112',             url:'tel:112' },
+    { label:'Ambulancia',                        num:'118',             url:'tel:118' },
+    { label:'Policía',                           num:'113',             url:'tel:113' },
+    { label:'Telefono Amico — Crisis emocional', num:'02 2327 2327',    url:'tel:0223272327' },
+    { label:'Telefono Azzurro (menores)',         num:'19696',           url:'tel:19696' },
+    { label:'Violencia de género',               num:'1522',            url:'tel:1522' }
+  ],
+  '🇫🇷 Francia': [
+    { label:'Emergencias',                       num:'112',             url:'tel:112' },
+    { label:'SAMU — Ambulancia',                 num:'15',              url:'tel:15' },
+    { label:'Policía',                           num:'17',              url:'tel:17' },
+    { label:'3114 — Prévention Suicide (24h)',   num:'3114',            url:'tel:3114' },
+    { label:'Violencia de género',               num:'3919',            url:'tel:3919' }
+  ],
+  '🇺🇸 Estados Unidos': [
+    { label:'Emergencias',                       num:'911',             url:'tel:911' },
+    { label:'988 Suicide & Crisis Lifeline (24h)', num:'988',           url:'tel:988' },
+    { label:'Crisis Text Line',                  num:'Texto HOME → 741741', url:'sms:741741' },
+    { label:'SAMHSA Helpline',                   num:'1-800-662-4357',  url:'tel:18006624357' },
+    { label:'Violencia doméstica (NDVH)',        num:'1-800-799-7233',  url:'tel:18007997233' },
+    { label:'Trevor Project (LGBT+)',            num:'1-866-488-7386',  url:'tel:18664887386' }
+  ],
+  '🇨🇷 Costa Rica': [
+    { label:'Emergencias',                       num:'911',             url:'tel:911' },
+    { label:'Cruz Roja',                         num:'128',             url:'tel:128' },
+    { label:'Línea de Crisis — CCSS',            num:'800 800 4000',    url:'tel:8008004000' },
+    { label:'Violencia doméstica',               num:'800 800 4010',    url:'tel:8008004010' }
+  ],
+  '🇵🇷 Puerto Rico': [
+    { label:'Emergencias',                       num:'911',             url:'tel:911' },
+    { label:'Línea PAS — Crisis emocional (24h)', num:'1-800-981-0023', url:'tel:18009810023' },
+    { label:'Crisis Text Line',                  num:'Texto HOME → 741741', url:'sms:741741' },
+    { label:'Violencia doméstica',               num:'787-765-2285',    url:'tel:7877652285' }
+  ],
+  '🇧🇴 Bolivia': [
+    { label:'Emergencias',                       num:'911',             url:'tel:911' },
+    { label:'Policía (DIPROVE)',                 num:'110',             url:'tel:110' },
+    { label:'Bomberos',                          num:'119',             url:'tel:119' },
+    { label:'Violencia de género (SLIM)',        num:'800 10 4100',     url:'tel:800104100' }
+  ],
+  '🇸🇻 El Salvador': [
+    { label:'Emergencias',                       num:'911',             url:'tel:911' },
+    { label:'Policía (PNC)',                     num:'911',             url:'tel:911' },
+    { label:'Cruz Roja',                         num:'2222-5155',       url:'tel:22225155' },
+    { label:'Línea Vida — Salud Mental',         num:'132',             url:'tel:132' },
+    { label:'Violencia de género',               num:'126',             url:'tel:126' }
+  ],
+  '🇪🇨 Ecuador': [
+    { label:'Emergencias',                       num:'911',             url:'tel:911' },
+    { label:'Policía',                           num:'101',             url:'tel:101' },
+    { label:'Bomberos',                          num:'102',             url:'tel:102' },
+    { label:'Cruz Roja',                         num:'131',             url:'tel:131' },
+    { label:'Salud Mental — MSP',               num:'171',             url:'tel:171' },
+    { label:'Violencia de género',               num:'1800 137 137',    url:'tel:1800137137' }
+  ],
+  '🇵🇹 Portugal': [
+    { label:'Emergencias',                       num:'112',             url:'tel:112' },
+    { label:'SOS Voz Amiga — Crisis emocional',  num:'213 544 545',     url:'tel:213544545' },
+    { label:'SOS Voz Amiga — línea alternativa', num:'912 802 669',     url:'tel:912802669' },
+    { label:'Violência no Namoro (APAV)',         num:'116 006',         url:'tel:116006' },
+    { label:'Violencia doméstica (UMAR)',         num:'800 202 148',     url:'tel:800202148' }
   ],
   '🌍 Internacional': [
     { label:'Befrienders Worldwide', num:'befrienders.org', url:'https://www.befrienders.org' },
