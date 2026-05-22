@@ -187,7 +187,7 @@ function _nextToast(){
   _toastTimer = setTimeout(function(){
     el.classList.remove('show');
     setTimeout(_nextToast, 300);
-  }, 3400);
+  }, 30000);
 }
 // Alias for compatibility
 var toast = pToast;
@@ -1588,20 +1588,23 @@ function pOpenGuardian(id){
   }
   var rvEl = document.getElementById('gdReviews');
   if(rvEl) rvEl.innerHTML = '<p class="p-sm p-muted">Cargando reseñas…</p>';
+  var favBtn = document.getElementById('gdFavBtn');
+  if(favBtn){
+    var gUidFav = (g.id||'').replace('live_','');
+    var isFavNow = gUidFav ? pIsFav(gUidFav) : false;
+    favBtn.textContent = isFavNow ? '⭐' : '☆';
+    favBtn.style.background = isFavNow ? 'rgba(255,200,50,.25)' : 'rgba(255,200,50,.15)';
+  }
   pGoTo('guardian-detail');
   // Load real reviews for this guardian from Supabase
   (function(){
     var gUid = (g.id||'').replace('live_','');
+    var myId = _myUserId();
     _loadUserReviews(gUid).then(function(revs){
       var el = document.getElementById('gdReviews');
       if(!el) return;
       if(!revs.length){ el.innerHTML = '<p class="p-sm p-muted">Sin reseñas aún.</p>'; return; }
-      el.innerHTML = revs.slice(0,10).map(function(r){
-        return '<div class="p-review-card" style="margin-bottom:12px">'
-          +'<div class="p-row" style="margin-bottom:6px"><span style="font-size:13px">'+'⭐'.repeat(r.stars||5)+'</span></div>'
-          +(r.texto ? '<p class="p-rv-txt">&#8220;'+_escHtml(r.texto)+'&#8221;</p>' : '')
-          +'<div style="font-size:11px;color:var(--ink5)">— '+_escHtml(r.reviewer_name||'Anónimo')+'</div></div>';
-      }).join('');
+      el.innerHTML = _renderReviewsList(revs, myId, gUid);
     });
   })();
 }
@@ -1693,8 +1696,9 @@ function _subscribeSeekerRequest(reqId){
   if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
   if(!sbClient) return;
   _gcSeekerCh = sbClient.channel('velo:gdreq:'+reqId)
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'guardian_requests',filter:'id=eq.'+reqId},function(payload){
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'guardian_requests'},function(payload){
       var row = payload.new||{};
+      if(String(row.id) !== String(reqId)) return;
       if(row.status === 'accepted'){
         if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
         _closeGuardianWaitSheet();
@@ -2134,8 +2138,9 @@ function _guardianSendRequest(post){
   // Subscribe to guardian_requests changes for this row
   if(_grReqCh) try{ sbClient.removeChannel(_grReqCh); }catch(e){}
   _grReqCh = sbClient.channel('velo:gr:'+post.id)
-    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'guardian_requests', filter:'post_id=eq.'+post.id}, function(payload){
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'guardian_requests'}, function(payload){
       var row = payload.new || {};
+      if(String(row.post_id) !== String(post.id)) return;
       if(row.status === 'accepted'){
         _guardianRequestAccepted(post);
       } else if(row.status === 'declined'){
@@ -2252,8 +2257,10 @@ function _subscribeSeekerToGuardianRequest(postId){
   if(!sbClient || !postId) return;
   if(_seekerGrCh) try{ sbClient.removeChannel(_seekerGrCh); }catch(e){}
   _seekerGrCh = sbClient.channel('velo:seeker:'+postId)
-    .on('postgres_changes', {event:'INSERT', schema:'public', table:'guardian_requests', filter:'post_id=eq.'+postId}, function(payload){
-      _showSeekerGuardianPopup(postId, payload.new||{});
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'guardian_requests'}, function(payload){
+      var r = payload.new||{};
+      if(String(r.post_id) !== String(postId)) return;
+      _showSeekerGuardianPopup(postId, r);
     })
     .subscribe();
 }
@@ -2482,7 +2489,7 @@ async function pSendHelp(){
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí tu mensaje antes de enviar'); return; }
   if(!_checkDailyLimit('help')){
     closeModal('helpFormOv');
-    pToast('💙','Límite gratuito: 2 pedidos de ayuda por día. ¡Upgrade a Plus!');
+    pToast('💙','Límite gratuito: 4 pedidos de ayuda por día. ¡Upgrade a Plus!');
     setTimeout(pShowPlusModal, 1200);
     return;
   }
@@ -3349,7 +3356,7 @@ async function _loadGuardianStats(){
     ]);
     var total  = (r1 && r1.count != null) ? r1.count : '—';
     var helped = (r2 && r2.count != null) ? r2.count : '—';
-    el.textContent = '🆘 '+total+' ayudas solicitadas · 💚 '+helped+' personas acompañadas';
+    el.textContent = '🕊️ '+total+' ayudas solicitadas · 💚 '+helped+' personas acompañadas';
     el.style.display = 'block';
   }catch(e){}
 }
@@ -3462,20 +3469,20 @@ function pSelBottleMood(el, mood){
 
 function pOpenBottleForm(){ openModal('bottleFormOv'); }
 
-function pSendBottle(){
+async function pSendBottle(){
   var ta = document.getElementById('bottleMsgTa');
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí algo antes de lanzar'); return; }
   if(!_checkDailyLimit('bottle')){
     closeModal('bottleFormOv');
-    pToast('🌊','Límite gratuito: 2 mensajes al Mar por día. ¡Upgrade a Plus para ilimitado!');
+    pToast('🌊','Límite gratuito: 4 mensajes al Mar por día. ¡Upgrade a Plus para ilimitado!');
     setTimeout(pShowPlusModal, 1200);
     return;
   }
   var text = ta.value.trim();
   var showProfile = document.getElementById('bottleShowProfile') && document.getElementById('bottleShowProfile').checked;
   var isAnon = !showProfile;
-  var myName = isAnon ? '' : _myDisplayName();
-  var myAv   = isAnon ? '' : (safeLS('get','velo_user_av')||'🧑');
+  var myName = isAnon ? null : _myDisplayName();
+  var myAv   = isAnon ? null : (safeLS('get','velo_user_av')||'🧑');
   var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
   ta.value = '';
   closeModal('bottleFormOv');
@@ -3489,11 +3496,12 @@ function pSendBottle(){
   _geminiModerateContent(text, 'mensajes-al-mar');
   _initSupabase();
   if(sbClient){
-    sbClient.from('bottles').insert({ id:id,
-      user_id: isAnon ? null : (myId||null),
+    // Always store user_id so delete button and reply notifications work for anon posts too
+    await sbClient.from('bottles').insert({ id:id,
+      user_id: myId||null,
       user_name: myName||null, user_av: myAv||null, anon: isAnon,
       mood:_selectedBottleMood, text:text, color:'rgba(116,198,157,.12)', replied:false
-    }).then(function(){}).catch(function(){});
+    }).catch(function(){});
   }
   pRenderBottle();
 }
@@ -3555,14 +3563,17 @@ function pSendBottleReply(){
   setTimeout(function(){ pRenderBottle(); }, 600);
 }
 
-function pDeleteBottle(bottleId){
+async function pDeleteBottle(bottleId){
   if(!confirm('¿Eliminar este mensaje del mar?')) return;
   _initSupabase();
   if(sbClient){
-    sbClient.from('bottles').delete().eq('id', bottleId).then(function(){}).catch(function(){});
+    await sbClient.from('bottles').delete().eq('id', bottleId).catch(function(){});
   }
+  var myBottles = []; try{ myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
+  safeLS('set','velo_my_bottles', JSON.stringify(myBottles.filter(function(b){ return b.id !== bottleId; })));
   var card = document.getElementById('bottle-'+bottleId);
   if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ pRenderBottle(); },350); }
+  else { pRenderBottle(); }
   pToast('🌊','Mensaje eliminado');
 }
 
@@ -3926,8 +3937,10 @@ function pSubmitSurvey(){
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   inbox = inbox.map(function(m){ return m.tipo==='encuesta' ? Object.assign({},m,{leido:true}) : m; });
   safeLS('set','velo_inbox', JSON.stringify(inbox));
+  _updateHomeBell();
   closeModal('surveyOv');
   pToast('💚','¡Gracias por tu opinión! Nos ayudás a mejorar Velo 🌿');
+  setTimeout(function(){ if(document.getElementById('inboxList')) pRenderInbox(); }, 300);
 }
 
 function _renderSurveyResults(){
@@ -4409,7 +4422,7 @@ function _renderCircleCards(list, circles, memberCounts){
 function _refreshCircleMemberCounts(circles){
   _initSupabase();
   if(!sbClient) return;
-  var since = new Date(Date.now() - 30*60*1000).toISOString();
+  var since = new Date(Date.now() - 10*60*1000).toISOString();
   sbClient.from('circle_members').select('circle_id,user_id').gte('last_seen', since)
     .then(function(res){
       if(!res.data) return;
@@ -4511,7 +4524,7 @@ async function _renderCircleMessages(){
         uids[r.user_id] = 1;
       }
     });
-    var memberCount = Math.max(Object.keys(uids).length, 1);
+    var memberCount = Object.keys(uids).length;
     _setEl('feedCircleMembers', memberCount + (memberCount===1?' persona activa':' personas activas'));
   }
 }
@@ -4524,6 +4537,9 @@ function pSendCircleMsg(){
   ta.style.height = '';
   var emojiPanel = document.getElementById('feedEmojiPanel');
   if(emojiPanel) emojiPanel.style.display = 'none';
+  var circleQuote = _getReplyQuote('feedReplyBar');
+  pClearReplyBar('feedReplyBar');
+  var fullText = circleQuote ? '↩ "'+circleQuote.slice(0,60)+(circleQuote.length>60?'…':'')+'"  \n'+text : text;
 
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
   var name = safeLS('get','velo_user_name') || 'Vos';
@@ -4531,18 +4547,17 @@ function pSendCircleMsg(){
   var userConvs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
   var badge = _getBadge(userConvs);
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon';
-  msgs.push({ id:'m'+Date.now(), av:av, name:name+' '+badge.icon, text:text, ts:Date.now(), own:true });
+  msgs.push({ id:'m'+Date.now(), av:av, name:name+' '+badge.icon, text:fullText, ts:Date.now(), own:true, userId:myId });
   safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs.slice(-100)));
-  _geminiModerateContent(text, 'circulo-'+_curCircle.id);
+  _geminiModerateContent(fullText, 'circulo-'+_curCircle.id);
   // Insert to Supabase so all circle members see the message in real-time
   _initSupabase();
   if(sbClient){
     sbClient.from('circle_messages').insert({ circle_id:_curCircle.id,
-      user_id: myId, user_name: name+' '+badge.icon, user_av: av||'🌿', text:text, type:'text'
+      user_id: myId, user_name: name+' '+badge.icon, user_av: av||'🌿', text:fullText, type:'text'
     }).then(function(){}).catch(function(){});
   }
   _renderCircleMessages();
-
 }
 
 var _circleMsgEmojis = ['😊','😢','❤️','🙏','💪','🌿','✨','🤗','🌸','😌','🥺','💙','🌈','☀️','🦋','🕊️','🌊','💚','😔','🫂'];
@@ -4765,9 +4780,53 @@ async function _loadUserReviews(userId){
   if(!sbClient || !userId) return [];
   try{
     var res = await sbClient.from('reviews').select('*').eq('pro_id', userId)
-      .order('created_at',{ascending:false}).limit(20);
+      .order('created_at',{ascending:false}).limit(50);
     return res.data || [];
   }catch(e){ return []; }
+}
+
+function _reviewCardHtml(r, myId, proId){
+  var canDel = myId && (r.user_id === myId || proId === myId);
+  var delBtn = canDel
+    ? '<button onclick="pDeleteReview(\''+_escHtml(String(r.id||''))+'\',this.closest(\'.p-review-card\'))" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink5);padding:0 0 0 8px;line-height:1;flex-shrink:0" title="Eliminar reseña">🗑️</button>'
+    : '';
+  return '<div class="p-review-card" style="margin-bottom:10px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
+    +'<span style="font-size:13px">'+'⭐'.repeat(Math.min(5,r.stars||5))+'</span>'
+    +delBtn+'</div>'
+    +(r.texto ? '<p class="p-rv-txt" style="margin:0 0 4px">&#8220;'+_escHtml(r.texto)+'&#8221;</p>' : '')
+    +'<div style="font-size:11px;color:var(--ink5)">— '+_escHtml(r.reviewer_name||'Anónimo')+'</div>'
+    +'</div>';
+}
+
+function _renderReviewsList(revs, myId, proId){
+  var LIMIT = 5;
+  var visible = revs.slice(0, LIMIT);
+  var rest = revs.slice(LIMIT);
+  var html = visible.map(function(r){ return _reviewCardHtml(r, myId, proId); }).join('');
+  if(rest.length){
+    var moreId = 'rvMore'+Math.random().toString(36).slice(2,7);
+    html += '<div id="'+moreId+'" style="display:none">'
+      + rest.map(function(r){ return _reviewCardHtml(r, myId, proId); }).join('')
+      +'</div>'
+      +'<button onclick="var m=document.getElementById(\''+moreId+'\');if(!m)return;var open=m.style.display!==\'none\';m.style.display=open?\'none\':\'block\';this.textContent=open?\'Ver más ('+(rest.length)+') ↓\':\'Ver menos ↑\';" style="background:none;border:none;color:var(--sage);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>';
+  }
+  return html;
+}
+
+async function pDeleteReview(reviewId, cardEl){
+  if(!reviewId) return;
+  if(!confirm('¿Eliminar esta reseña?')) return;
+  _initSupabase();
+  if(sbClient){
+    await sbClient.from('reviews').delete().eq('id', reviewId).catch(function(){});
+  }
+  if(cardEl){
+    cardEl.style.transition = 'opacity .3s';
+    cardEl.style.opacity = '0';
+    setTimeout(function(){ if(cardEl.parentNode) cardEl.parentNode.removeChild(cardEl); }, 350);
+  }
+  pToast('🗑️','Reseña eliminada');
 }
 
 // Demo posts — richer structure
@@ -5104,11 +5163,11 @@ function _happyPostCard(h, isOwn){
     +'</div>';
 }
 
-function pDeleteHappyPost(postId){
+async function pDeleteHappyPost(postId){
   if(!confirm('¿Eliminar esta publicación del Muro?')) return;
   _initSupabase();
   if(sbClient){
-    sbClient.from('happy_posts').delete().eq('id', postId).then(function(){}).catch(function(){});
+    await sbClient.from('happy_posts').delete().eq('id', postId).catch(function(){});
   }
   // Remove from local cache
   if(_sbHappy) _sbHappy = _sbHappy.filter(function(h){ return h.id !== postId; });
@@ -5451,8 +5510,8 @@ function pLoadProfile(){
   var daysReg = Math.ceil((Date.now() - (parseInt(safeLS('get','velo_registered_ts')||Date.now(),10))) / 86400000);
   _setEl('profileDays', Math.max(1, daysReg));
   _setEl('profileChats', diary.length);
-  _setEl('profileHelped', parseInt(safeLS('get','velo_helped_others')||'0', 10));
-  _setEl('profileReceived', parseInt(safeLS('get','velo_guardian_convs')||'0', 10));
+  _setEl('profileHelped', parseInt(safeLS('get','velo_guardian_convs')||'0', 10));
+  _setEl('profileReceived', parseInt(safeLS('get','velo_help_received')||'0', 10));
 
   // Mi estado inputs — pre-fill from saved values
   var msEl = document.getElementById('profStatusMusic');
@@ -5491,7 +5550,21 @@ function pLoadProfile(){
 
   // Reviews
   var rvEl = document.getElementById('profileReviews');
-  if(rvEl) rvEl.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Aún no hay reseñas</div><div class="p-empty-sub">Las reseñas aparecerán después de tus sesiones</div></div>';
+  if(rvEl){
+    var myProfileId = safeLS('get','velo_user_id')||'';
+    if(myProfileId){
+      rvEl.innerHTML = '<p class="p-sm p-muted">Cargando reseñas…</p>';
+      _loadUserReviews(myProfileId).then(function(revs){
+        if(!revs.length){
+          rvEl.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Aún no hay reseñas</div><div class="p-empty-sub">Las reseñas aparecerán después de tus sesiones</div></div>';
+          return;
+        }
+        rvEl.innerHTML = _renderReviewsList(revs, myProfileId, myProfileId);
+      });
+    } else {
+      rvEl.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Aún no hay reseñas</div><div class="p-empty-sub">Las reseñas aparecerán después de tus sesiones</div></div>';
+    }
+  }
 
   // Badges
   _renderBadgesGrid();
@@ -5729,14 +5802,15 @@ function pRenderInbox(){
       var senderRow = (senderId && senderName)
         ? '<div style="font-size:11px;color:var(--sage);font-weight:600;margin-bottom:2px;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_escHtml(senderName)+' ›</div>'
         : '';
-      return '<div class="p-inbox-msg'+(safeLS('get',readKey)?'':' unread')+'" onclick="safeLS(\'set\',\''+readKey+'\',\'1\');this.classList.remove(\'unread\');this.querySelector(\'.p-inbox-dot\')&&this.querySelector(\'.p-inbox-dot\').remove()">'
-        +'<div style="display:flex;flex-shrink:0">'+(safeLS('get',readKey)?'':'<div class="p-inbox-dot"></div>')+'</div>'
+      var isAlreadyRead = !!safeLS('get',readKey);
+      return '<div class="p-inbox-msg'+(isAlreadyRead?'':' unread')+'" style="cursor:pointer" onclick="pOpenBroadcastMsg('+_jsAttr(readKey)+','+_jsAttr(b.subject||'')+','+_jsAttr(b.body||'')+','+_jsAttr(senderName||'')+','+_jsAttr(fecha||'')+',this)">'
+        +'<div style="display:flex;flex-shrink:0">'+(isAlreadyRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
         +iconHtml
         +'<div style="flex:1;min-width:0">'
         +senderRow
         +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(b.subject)+'</div>'
         +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(b.body||'')+'</div>'
-        +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+'</div>'
+        +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:var(--sage)">Toca para leer →</span>')+'</div>'
         +'</div></div>';
     }).join('');
     // Prepend broadcasts before existing inbox items, after contact banner
@@ -5792,23 +5866,47 @@ function pRenderInbox(){
   el.innerHTML = contactBanner + all.map(function(m){
     var actionBtn = '';
     if(m.accion && !m.leido){
-      actionBtn = '<button onclick="event.stopPropagation();'+m.accion+'" style="margin-top:6px;font-size:11px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
+      actionBtn = '<button onclick="event.stopPropagation();safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');this.closest(\'.p-inbox-msg\').classList.remove(\'unread\');var d=this.closest(\'.p-inbox-msg\').querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();'+m.accion+'" style="margin-top:6px;font-size:11px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
     }
     var hasCuerpo = !!(m.cuerpo);
     var readKey = 'velo_read_'+m.id;
     var isRead = m.leido || !!safeLS('get', readKey);
-    return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" style="cursor:'+(hasCuerpo?'pointer':'default')+'"'
-      +(hasCuerpo ? ' onclick="pOpenInboxMsg(\''+m.id+'\',this)"' : '')+'>'
+    var markReadInline = 'safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');this.classList.remove(\'unread\');var d=this.querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();';
+    return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" style="cursor:pointer"'
+      +' onclick="'+(hasCuerpo ? 'pOpenInboxMsg(\''+m.id+'\',this)' : markReadInline)+'">'
       +'<div style="display:flex;flex-shrink:0">'+(isRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
       +'<div class="p-inbox-ic" style="background:'+(m.tipo==='encuesta'?'rgba(116,198,157,.12)':'var(--sage7)')+'">'+m.icon+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m.asunto+'</div>'
       +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+m.extracto+'</div>'
-      +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+m.fecha+'</div>'
-      +(hasCuerpo&&!isRead?'<div style="font-size:10px;color:var(--sage);margin-top:4px">Toca para leer →</div>':'')
+      +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+m.fecha+(hasCuerpo&&!isRead?' · <span style="color:var(--sage)">Toca para leer →</span>':'')+'</div>'
       +actionBtn
       +'</div></div>';
   }).join('');
+}
+
+function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl){
+  safeLS('set', readKey, '1');
+  if(rowEl){ rowEl.classList.remove('unread'); var dot = rowEl.querySelector('.p-inbox-dot'); if(dot) dot.remove(); }
+  _updateHomeBell();
+  var existing = document.getElementById('inboxBcOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'inboxBcOv';
+  ov.innerHTML = '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+    +'<div style="font-size:30px;width:46px;height:46px;border-radius:14px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0">📢</div>'
+    +'<div><div style="font-size:12px;font-weight:700;color:var(--sage)">'+_escHtml(senderName||'Velo')+'</div>'
+    +'<div style="font-size:11px;color:var(--ink5)">'+_escHtml(fecha||'')+'</div></div>'
+    +'</div>'
+    +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);margin-bottom:16px;line-height:1.3">'+_escHtml(subject)+'</h2>'
+    +(body ? '<div style="font-size:14px;color:var(--ink3);line-height:1.85;white-space:pre-line;background:var(--cream2);border-radius:12px;padding:16px;margin-bottom:20px">'+_escHtml(body)+'</div>' : '')
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'inboxBcOv\').remove()">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 }
 
 function pOpenInboxMsg(msgId, rowEl){
@@ -5973,16 +6071,11 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
       +'<div style="text-align:center"><div style="font-size:19px;font-weight:800;color:var(--sage)">'+reviews.length+'</div><div style="font-size:10px;color:var(--ink5)">Reseñas</div></div>'
       +'</div>'
     : '';
+  var _qpMyId = _myUserId();
   var revHtml = reviews.length
     ? '<div style="text-align:left;margin-bottom:12px">'
       +'<div style="font-size:10px;font-weight:700;color:var(--ink5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Reseñas recibidas</div>'
-      + reviews.slice(0,6).map(function(r){
-          return '<div style="background:var(--cream2);border-radius:10px;padding:8px 11px;margin-bottom:6px">'
-            +'<div style="font-size:12px">'+'⭐'.repeat(r.stars||5)+'</div>'
-            +(r.texto ? '<div style="font-size:12px;color:var(--ink3);font-style:italic;line-height:1.45;margin-top:2px">"'+_escHtml(r.texto)+'"</div>' : '')
-            +'<div style="font-size:10px;color:var(--ink5);margin-top:3px">— '+_escHtml(r.reviewer_name||'Anónimo')+'</div>'
-            +'</div>';
-        }).join('')
+      + _renderReviewsList(reviews, _qpMyId, userId||'')
       +'</div>'
     : '';
 
@@ -6066,6 +6159,16 @@ function pRemoveFav(userId){
   }
   pToast('✓','Eliminado de favoritos');
   _updateFavBadge();
+}
+
+function pToggleGuardianFav(){
+  if(!_curGuardian) return;
+  var uid = (_curGuardian.id||'').replace('live_','');
+  var name = _curGuardian.name||'Guardián';
+  var av = _curGuardian.av||'🌿';
+  if(pIsFav(uid)){ pRemoveFav(uid); } else { pAddFav(uid, name, av); }
+  var btn = document.getElementById('gdFavBtn');
+  if(btn){ btn.textContent = pIsFav(uid) ? '⭐' : '☆'; btn.style.background = pIsFav(uid) ? 'rgba(255,200,50,.25)' : 'rgba(255,200,50,.15)'; }
 }
 
 function pToggleFavFromProfile(userId, name, av){
@@ -6270,6 +6373,18 @@ function pOpenDM(toId, toName, toAv){
   if(hdr) hdr.textContent = toName||'Usuario';
   var hdrAv = document.getElementById('dmPeerAv');
   if(hdrAv) hdrAv.innerHTML = _avInline(toAv||'🧑',36);
+  // Send chat request sentinel to the other user if never accepted before
+  var alreadyAccepted = safeLS('get','velo_dm_accepted_'+toId) === '1';
+  if(!alreadyAccepted){
+    var myId   = safeLS('get','velo_user_id')||'';
+    var myName = safeLS('get','velo_user_name')||'';
+    var myAv   = safeLS('get','velo_user_av')||'🧑';
+    if(myId && toId && sbClient){
+      sbClient.from('direct_messages').insert({
+        from_id:myId, from_name:myName, from_av:myAv, to_id:toId, text:'__velo_chat_req__'
+      }).then(function(){}).catch(function(){});
+    }
+  }
   pGoTo('dm-chat');
   setTimeout(function(){ _renderDMThread(); _subscribeToDMThread(); }, 100);
 }
@@ -6396,8 +6511,9 @@ function _startGlobalDMListener(){
   var myId = safeLS('get','velo_user_id')||'';
   if(!myId || !sbClient) return;
   _dmInboxCh = sbClient.channel('velo:dm:inbox:'+myId)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages',filter:'to_id=eq.'+myId},function(payload){
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages'},function(payload){
       var m = payload.new||{};
+      if(m.to_id !== myId) return;
       var curPage = document.querySelector('.p-page.active');
       var curId = curPage ? curPage.id : '';
       // Handle sentinel messages
@@ -6608,8 +6724,8 @@ function pShowPlusModal(){
     +'<ul style="font-size:12px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
     +'<li>✅ Diario emocional</li>'
     +'<li>✅ Muro de la Felicidad</li>'
-    +'<li>✅ 2 mensajes al Mar/día</li>'
-    +'<li>✅ 2 pedidos de ayuda/día</li>'
+    +'<li>✅ 4 mensajes al Mar/día</li>'
+    +'<li>✅ 4 pedidos de ayuda/día</li>'
     +'<li>✅ 4 sesiones guardián/día</li>'
     +'<li style="color:var(--ink5)">❌ Círculos de Paz</li>'
     +'<li style="color:var(--ink5)">❌ Sesiones profesionales</li>'

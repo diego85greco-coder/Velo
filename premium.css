@@ -369,7 +369,11 @@ a { text-decoration: none; color: inherit; }
 }
 .p-page.active {
   display: flex;
+  opacity: 1; /* fallback if animation is skipped (prefers-reduced-motion, etc.) */
   animation: p-slideRight var(--t-mid) var(--ease-out) forwards;
+}
+@media (min-width: 768px) {
+  .p-main-content { background: rgba(250,248,244,.96); }
 }
 .p-page.active.fade-in {
   animation: p-fadeIn var(--t-slow) ease forwards;
@@ -784,9 +788,21 @@ a { text-decoration: none; color: inherit; }
 .p-toast.show {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
+  pointer-events: auto;
 }
 .p-toast-emoji { font-size: 18px; flex-shrink: 0; }
-.p-toast-msg { font-size: 13px; font-weight: 500; color: var(--ink2); }
+.p-toast-msg { font-size: 13px; font-weight: 500; color: var(--ink2); flex: 1; }
+.p-toast-close {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--ink4);
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
 @media (max-width: 767px) {
   .p-toast { top: auto; bottom: 90px; max-width: calc(100vw - 32px); }
   .p-toast.show { transform: translateX(-50%) translateY(0); }
@@ -1921,7 +1937,7 @@ a { text-decoration: none; color: inherit; }
 
 /* Topbar logo */
 .p-topbar-logo-img {
-  height: 30px;
+  height: 44px;
   width: auto;
   object-fit: contain;
 }

@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260522-46">
+  <link rel="stylesheet" href="premium.css?v=20260522-102">
 </head>
 <body>
 
@@ -19,6 +19,7 @@
 <div class="p-toast" id="pToast">
   <span class="p-toast-emoji" id="pToastEmoji">✓</span>
   <span class="p-toast-msg" id="pToastMsg"></span>
+  <button class="p-toast-close" onclick="clearTimeout(_toastTimer);document.getElementById('pToast').classList.remove('show');setTimeout(_nextToast,300)" title="Cerrar">✕</button>
 </div>
 
 <!-- MOBILE MENU OVERLAY -->
@@ -28,8 +29,9 @@
   <button class="p-mobile-nav-item" onclick="pGoTo('guardians');toggleMobileMenu()"><span class="p-mobile-nav-icon">🛡️</span> Guardianes</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('help');toggleMobileMenu()"><span class="p-mobile-nav-icon">🆘</span> Sala de Ayuda</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('bottle');toggleMobileMenu()"><span class="p-mobile-nav-icon">🌊</span> Al Mar</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('contacts');toggleMobileMenu()"><span class="p-mobile-nav-icon">⭐</span> Contactos</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('professionals');toggleMobileMenu()"><span class="p-mobile-nav-icon">🩺</span> Profesionales</button>
-  <button class="p-mobile-nav-item" onclick="pGoTo('circles');toggleMobileMenu()"><span class="p-mobile-nav-icon">⭕</span> Círculos</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('circles');toggleMobileMenu()"><span class="p-mobile-nav-icon">☮️</span> Círculos</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('diary');toggleMobileMenu()"><span class="p-mobile-nav-icon">📔</span> Diario</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('news');toggleMobileMenu()"><span class="p-mobile-nav-icon">🌞</span> Buenas Noticias</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('calm-ai');toggleMobileMenu()"><span class="p-mobile-nav-icon">🤖</span> Velo IA</button>
@@ -69,13 +71,17 @@
         <span class="p-sn-icon">🌊</span>
         <span class="p-sn-label">Al Mar</span>
       </button>
+      <button class="p-sn-item" data-screen="contacts" onclick="pGoTo('contacts')">
+        <span class="p-sn-icon">⭐</span>
+        <span class="p-sn-label">Contactos</span>
+      </button>
       <div class="p-sidebar-section">Comunidad</div>
       <button class="p-sn-item" data-screen="professionals" onclick="pGoTo('professionals')">
         <span class="p-sn-icon">🩺</span>
         <span class="p-sn-label">Profesionales</span>
       </button>
       <button class="p-sn-item" data-screen="circles" onclick="pGoTo('circles')">
-        <span class="p-sn-icon">⭕</span>
+        <span class="p-sn-icon">☮️</span>
         <span class="p-sn-label">Círculos</span>
       </button>
       <button class="p-sn-item" data-screen="happy" onclick="pGoTo('happy')">
@@ -777,7 +783,10 @@
             <div class="gd-layout">
               <div class="gd-left">
                 <div class="gd-hero-card">
-                  <div class="gd-av-lg" id="gdAv">🧑</div>
+                  <div style="position:relative;display:inline-block;margin-bottom:4px">
+                    <div class="gd-av-lg" id="gdAv" style="margin-bottom:0">🧑</div>
+                    <button id="gdFavBtn" onclick="pToggleGuardianFav()" title="Agregar a favoritos" style="position:absolute;top:-6px;right:-14px;width:34px;height:34px;border-radius:50%;background:rgba(255,200,50,.15);border:1.5px solid rgba(255,200,50,.35);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">☆</button>
+                  </div>
                   <h3 style="font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--ink);margin-bottom:4px" id="gdNameBig">Nombre</h3>
                   <div id="gdStatusPill" style="margin-bottom:10px">
                     <span class="p-pill p-pill--live"><span class="p-ldot p-ldot--on"></span> Disponible</span>
@@ -2344,6 +2353,6 @@
     <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
   </div>
 </div>
-<script src="premium.js?v=20260522-97"></script>
+<script src="premium.js?v=20260522-102"></script>
 </body>
 </html>
