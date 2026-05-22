@@ -1599,16 +1599,12 @@ function pOpenGuardian(id){
   // Load real reviews for this guardian from Supabase
   (function(){
     var gUid = (g.id||'').replace('live_','');
+    var myId = _myUserId();
     _loadUserReviews(gUid).then(function(revs){
       var el = document.getElementById('gdReviews');
       if(!el) return;
       if(!revs.length){ el.innerHTML = '<p class="p-sm p-muted">Sin reseñas aún.</p>'; return; }
-      el.innerHTML = revs.slice(0,10).map(function(r){
-        return '<div class="p-review-card" style="margin-bottom:12px">'
-          +'<div class="p-row" style="margin-bottom:6px"><span style="font-size:13px">'+'⭐'.repeat(r.stars||5)+'</span></div>'
-          +(r.texto ? '<p class="p-rv-txt">&#8220;'+_escHtml(r.texto)+'&#8221;</p>' : '')
-          +'<div style="font-size:11px;color:var(--ink5)">— '+_escHtml(r.reviewer_name||'Anónimo')+'</div></div>';
-      }).join('');
+      el.innerHTML = _renderReviewsList(revs, myId, gUid);
     });
   })();
 }
@@ -4784,9 +4780,53 @@ async function _loadUserReviews(userId){
   if(!sbClient || !userId) return [];
   try{
     var res = await sbClient.from('reviews').select('*').eq('pro_id', userId)
-      .order('created_at',{ascending:false}).limit(20);
+      .order('created_at',{ascending:false}).limit(50);
     return res.data || [];
   }catch(e){ return []; }
+}
+
+function _reviewCardHtml(r, myId, proId){
+  var canDel = myId && (r.user_id === myId || proId === myId);
+  var delBtn = canDel
+    ? '<button onclick="pDeleteReview(\''+_escHtml(String(r.id||''))+'\',this.closest(\'.p-review-card\'))" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink5);padding:0 0 0 8px;line-height:1;flex-shrink:0" title="Eliminar reseña">🗑️</button>'
+    : '';
+  return '<div class="p-review-card" style="margin-bottom:10px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
+    +'<span style="font-size:13px">'+'⭐'.repeat(Math.min(5,r.stars||5))+'</span>'
+    +delBtn+'</div>'
+    +(r.texto ? '<p class="p-rv-txt" style="margin:0 0 4px">&#8220;'+_escHtml(r.texto)+'&#8221;</p>' : '')
+    +'<div style="font-size:11px;color:var(--ink5)">— '+_escHtml(r.reviewer_name||'Anónimo')+'</div>'
+    +'</div>';
+}
+
+function _renderReviewsList(revs, myId, proId){
+  var LIMIT = 5;
+  var visible = revs.slice(0, LIMIT);
+  var rest = revs.slice(LIMIT);
+  var html = visible.map(function(r){ return _reviewCardHtml(r, myId, proId); }).join('');
+  if(rest.length){
+    var moreId = 'rvMore'+Math.random().toString(36).slice(2,7);
+    html += '<div id="'+moreId+'" style="display:none">'
+      + rest.map(function(r){ return _reviewCardHtml(r, myId, proId); }).join('')
+      +'</div>'
+      +'<button onclick="var m=document.getElementById(\''+moreId+'\');if(!m)return;var open=m.style.display!==\'none\';m.style.display=open?\'none\':\'block\';this.textContent=open?\'Ver más ('+(rest.length)+') ↓\':\'Ver menos ↑\';" style="background:none;border:none;color:var(--sage);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>';
+  }
+  return html;
+}
+
+async function pDeleteReview(reviewId, cardEl){
+  if(!reviewId) return;
+  if(!confirm('¿Eliminar esta reseña?')) return;
+  _initSupabase();
+  if(sbClient){
+    await sbClient.from('reviews').delete().eq('id', reviewId).catch(function(){});
+  }
+  if(cardEl){
+    cardEl.style.transition = 'opacity .3s';
+    cardEl.style.opacity = '0';
+    setTimeout(function(){ if(cardEl.parentNode) cardEl.parentNode.removeChild(cardEl); }, 350);
+  }
+  pToast('🗑️','Reseña eliminada');
 }
 
 // Demo posts — richer structure
@@ -5470,8 +5510,8 @@ function pLoadProfile(){
   var daysReg = Math.ceil((Date.now() - (parseInt(safeLS('get','velo_registered_ts')||Date.now(),10))) / 86400000);
   _setEl('profileDays', Math.max(1, daysReg));
   _setEl('profileChats', diary.length);
-  _setEl('profileHelped', parseInt(safeLS('get','velo_helped_others')||'0', 10));
-  _setEl('profileReceived', parseInt(safeLS('get','velo_guardian_convs')||'0', 10));
+  _setEl('profileHelped', parseInt(safeLS('get','velo_guardian_convs')||'0', 10));
+  _setEl('profileReceived', parseInt(safeLS('get','velo_help_received')||'0', 10));
 
   // Mi estado inputs — pre-fill from saved values
   var msEl = document.getElementById('profStatusMusic');
@@ -5510,7 +5550,21 @@ function pLoadProfile(){
 
   // Reviews
   var rvEl = document.getElementById('profileReviews');
-  if(rvEl) rvEl.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Aún no hay reseñas</div><div class="p-empty-sub">Las reseñas aparecerán después de tus sesiones</div></div>';
+  if(rvEl){
+    var myProfileId = safeLS('get','velo_user_id')||'';
+    if(myProfileId){
+      rvEl.innerHTML = '<p class="p-sm p-muted">Cargando reseñas…</p>';
+      _loadUserReviews(myProfileId).then(function(revs){
+        if(!revs.length){
+          rvEl.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Aún no hay reseñas</div><div class="p-empty-sub">Las reseñas aparecerán después de tus sesiones</div></div>';
+          return;
+        }
+        rvEl.innerHTML = _renderReviewsList(revs, myProfileId, myProfileId);
+      });
+    } else {
+      rvEl.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Aún no hay reseñas</div><div class="p-empty-sub">Las reseñas aparecerán después de tus sesiones</div></div>';
+    }
+  }
 
   // Badges
   _renderBadgesGrid();
@@ -6017,16 +6071,11 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
       +'<div style="text-align:center"><div style="font-size:19px;font-weight:800;color:var(--sage)">'+reviews.length+'</div><div style="font-size:10px;color:var(--ink5)">Reseñas</div></div>'
       +'</div>'
     : '';
+  var _qpMyId = _myUserId();
   var revHtml = reviews.length
     ? '<div style="text-align:left;margin-bottom:12px">'
       +'<div style="font-size:10px;font-weight:700;color:var(--ink5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Reseñas recibidas</div>'
-      + reviews.slice(0,6).map(function(r){
-          return '<div style="background:var(--cream2);border-radius:10px;padding:8px 11px;margin-bottom:6px">'
-            +'<div style="font-size:12px">'+'⭐'.repeat(r.stars||5)+'</div>'
-            +(r.texto ? '<div style="font-size:12px;color:var(--ink3);font-style:italic;line-height:1.45;margin-top:2px">"'+_escHtml(r.texto)+'"</div>' : '')
-            +'<div style="font-size:10px;color:var(--ink5);margin-top:3px">— '+_escHtml(r.reviewer_name||'Anónimo')+'</div>'
-            +'</div>';
-        }).join('')
+      + _renderReviewsList(reviews, _qpMyId, userId||'')
       +'</div>'
     : '';
 
