@@ -1450,7 +1450,7 @@ function _renderHomeStatusToggle(){
     return '<button onclick="pSetUserStatus(\''+val+'\')" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;border:1.5px solid '
       +(active?activeColor:'var(--border2)')+';background:'+(active?activeBg:'transparent')+';color:'+(active?activeColor:'var(--ink4)')+'">'+emoji+' '+label+'</button>';
   };
-  el.innerHTML = '<span style="font-size:10px;font-weight:700;color:var(--ink5);letter-spacing:.5px;text-transform:uppercase">Mi estado</span>'
+  el.innerHTML = '<span style="font-size:10px;font-weight:700;color:var(--ink2);letter-spacing:.5px;text-transform:uppercase">Mi estado</span>'
     + pill('disponible','🟢','Disponible','var(--sage2)','var(--sage7)')
     + pill('ocupado','🟡','Ocupado','#C8A200','rgba(200,162,0,.12)');
 }
@@ -1460,7 +1460,7 @@ function _renderMyStatusBar(){
   if(!el) return;
   var st = _myGuardianStatus;
   el.innerHTML = '<div style="background:rgba(255,255,255,.7);border:1.5px solid var(--border);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px">'
-    +'<div style="font-size:11px;font-weight:700;color:var(--ink4);letter-spacing:.5px">MI ESTADO</div>'
+    +'<div style="font-size:11px;font-weight:700;color:var(--ink2);letter-spacing:.5px">MI ESTADO</div>'
     +'<div style="display:flex;gap:6px;margin-left:auto">'
     +'<button onclick="pSetMyGuardianStatus(\'disponible\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(st==='disponible'?'var(--sage2)':'var(--border2)')+';background:'+(st==='disponible'?'var(--sage7)':'none')+';color:'+(st==='disponible'?'var(--sage)':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">🟢 Disponible</button>'
     +'<button onclick="pSetMyGuardianStatus(\'ocupado\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(st==='ocupado'?'#C8A200':'var(--border2)')+';background:'+(st==='ocupado'?'rgba(200,162,0,.1)':'none')+';color:'+(st==='ocupado'?'#C8A200':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">🟡 Ocupado</button>'
@@ -6311,9 +6311,9 @@ async function _renderFavWidget(containerId){
         +'<div style="font-size:10px;color:var(--ink3);font-weight:600;max-width:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml((f.name||'Usuario').split(' ')[0])+'</div>'
         +'</div>';
     }).join('')
-    +'<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer;opacity:.6" onclick="pGoTo(\'contacts\')">'
+    +'<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer" onclick="pGoTo(\'contacts\')">'
     +'<div style="width:38px;height:38px;border-radius:50%;background:var(--cream2);border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:16px">👥</div>'
-    +'<div style="font-size:10px;color:var(--ink5)">Ver todos</div>'
+    +'<div style="font-size:10px;color:var(--ink3);font-weight:600">Ver todos</div>'
     +'</div>'
     +'</div>'
     +'</div>';
