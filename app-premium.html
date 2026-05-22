@@ -631,12 +631,12 @@
                 <span class="p-pill" style="background:rgba(255,200,60,.2);color:#7A5800;border:1px solid rgba(255,200,60,.35)">Favoritos</span>
               </div>
             </div>
-            <div class="p-card p-card--feature p-card--hover fc-lav" onclick="pGoTo('diary')">
-              <span class="p-card-icon">📔</span>
-              <div class="p-card-title">Diario</div>
-              <div class="p-card-sub">Tu espacio íntimo</div>
+            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('circles')" style="background:linear-gradient(135deg,rgba(116,198,157,.15),rgba(45,106,79,.08));border-color:rgba(116,198,157,.25)">
+              <span class="p-card-icon">☮️</span>
+              <div class="p-card-title">Círculos de Paz</div>
+              <div class="p-card-sub">Sin likes, solo conexión</div>
               <div class="p-card-foot">
-                <span class="p-pill p-pill--lav">Privado</span>
+                <span class="p-pill p-pill--sage">Comunidad</span>
               </div>
             </div>
             <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('happy')" style="background:linear-gradient(135deg,rgba(255,230,100,.20),rgba(255,200,80,.12));border-color:rgba(255,210,60,.25)">
@@ -655,12 +655,21 @@
                 <span class="p-pill" style="background:rgba(255,200,80,.2);color:#8B6000;border:1px solid rgba(255,200,80,.3)">Diario · IA</span>
               </div>
             </div>
-            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('calm-ai')" style="background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(45,106,79,.12))">
-              <span class="p-card-icon">🤖</span>
-              <div class="p-card-title">Hablar con Velo IA</div>
-              <div class="p-card-sub">Tu acompañante inteligente</div>
+            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('inbox')" style="background:linear-gradient(135deg,rgba(221,212,245,.30),rgba(196,181,232,.18));border-color:rgba(196,181,232,.35);position:relative">
+              <div id="homeBuzónBadge" style="display:none;position:absolute;top:12px;right:12px;background:var(--sos);color:#fff;font-size:9px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;font-family:'Jost',sans-serif"></div>
+              <span class="p-card-icon">💌</span>
+              <div class="p-card-title">Buzón Velo</div>
+              <div class="p-card-sub">Mensajes y notificaciones</div>
               <div class="p-card-foot">
-                <span class="p-pill p-pill--sage">Disponible 24h</span>
+                <span class="p-pill" style="background:rgba(196,181,232,.2);color:#6B5BA0;border:1px solid rgba(196,181,232,.35)">Admin · Profesionales</span>
+              </div>
+            </div>
+            <div class="p-card p-card--feature p-card--hover fc-lav" onclick="pGoTo('diary')">
+              <span class="p-card-icon">📔</span>
+              <div class="p-card-title">Diario</div>
+              <div class="p-card-sub">Tu espacio íntimo</div>
+              <div class="p-card-foot">
+                <span class="p-pill p-pill--lav">Privado</span>
               </div>
             </div>
             <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('respira')" style="background:linear-gradient(135deg,rgba(135,206,235,.18),rgba(70,130,180,.10))">
@@ -671,36 +680,19 @@
                 <span class="p-pill p-pill--sky">Calma</span>
               </div>
             </div>
-            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('vela')" style="background:linear-gradient(135deg,rgba(183,228,199,.25),rgba(168,212,232,.15))">
-              <span class="p-card-icon">🕯️</span>
-              <div class="p-card-title">Velo Vela por Ti</div>
-              <div class="p-card-sub">Sesiones solidarias</div>
-              <div class="p-card-foot">
-                <span class="p-pill" style="background:rgba(45,106,79,.12);color:var(--sage2);border:1px solid rgba(45,106,79,.18)">Gratuito</span>
-              </div>
-            </div>
-            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('inbox')" style="background:linear-gradient(135deg,rgba(221,212,245,.30),rgba(196,181,232,.18));border-color:rgba(196,181,232,.35);position:relative">
-              <div id="homeBuzónBadge" style="display:none;position:absolute;top:12px;right:12px;background:var(--sos);color:#fff;font-size:9px;font-weight:800;min-width:18px;height:18px;border-radius:9px;line-height:18px;text-align:center;padding:0 4px;font-family:'Jost',sans-serif"></div>
-              <span class="p-card-icon">💌</span>
-              <div class="p-card-title">Buzón Velo</div>
-              <div class="p-card-sub">Mensajes y notificaciones</div>
-              <div class="p-card-foot">
-                <span class="p-pill" style="background:rgba(196,181,232,.2);color:#6B5BA0;border:1px solid rgba(196,181,232,.35)">Admin · Profesionales</span>
-              </div>
-            </div>
           </div>
           <!-- More options -->
           <div class="home-wide-card">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div class="p-card p-card--hover" style="padding:16px;cursor:pointer" onclick="pGoTo('circles')">
-                <span style="font-size:24px;display:block;margin-bottom:7px">☮️</span>
-                <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink);margin-bottom:3px">Círculos de Paz</div>
-                <div style="font-size:11px;color:var(--ink4)">Sin likes, solo conexión</div>
-              </div>
               <div class="p-card p-card--hover" style="padding:16px;cursor:pointer" onclick="pGoTo('professionals')">
                 <span style="font-size:24px;display:block;margin-bottom:7px">🩺</span>
                 <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink);margin-bottom:3px">Profesionales</div>
                 <div style="font-size:11px;color:var(--ink4)">Terapia · video sesiones</div>
+              </div>
+              <div class="p-card p-card--hover" style="padding:16px;cursor:pointer" onclick="pGoTo('vela')">
+                <span style="font-size:24px;display:block;margin-bottom:7px">🕯️</span>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink);margin-bottom:3px">Velo Vela por Ti</div>
+                <div style="font-size:11px;color:var(--ink4)">Sesiones solidarias · gratuito</div>
               </div>
             </div>
           </div>
@@ -2278,6 +2270,6 @@
     <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
   </div>
 </div>
-<script src="premium.js?v=20260522-76"></script>
+<script src="premium.js?v=20260522-77"></script>
 </body>
 </html>
