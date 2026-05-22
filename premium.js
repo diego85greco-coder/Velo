@@ -3060,9 +3060,10 @@ async function pRenderBottle(){
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
   // Load stats
   _loadBottleStats();
-  // Only show unreplied bottles — once replied it disappears for everyone including the author
+  // Show all bottles — stay visible after reply so multiple people can respond
+  var cutoff24h = new Date(Date.now() - 24*3600*1000).toISOString();
   var sbRows = await _sbLoad('bottles', function(q){
-    return q.eq('replied', false).order('created_at',{ascending:false}).limit(40);
+    return q.gte('created_at', cutoff24h).order('created_at',{ascending:false}).limit(60);
   });
   if(sbRows !== null){
     usingSB = true;
