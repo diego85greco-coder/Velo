@@ -3099,29 +3099,29 @@ async function pRenderBottle(){
     var actions;
     if(isOwn){
       actions = '<div style="display:flex;gap:7px;align-items:center">'
-        +'<span style="font-size:11px;color:rgba(200,165,100,.6);font-style:italic">Tu mensaje 🌊</span>'
+        +'<span style="font-size:11px;color:var(--ink4);font-style:italic">Tu mensaje 🌊</span>'
         +'<button style="padding:4px 9px;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);border-radius:100px;color:rgba(255,120,120,.75);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pDeleteBottle(\''+b.id+'\')">🗑️</button>'
         +'</div>';
     } else {
       actions = '<div style="display:flex;gap:7px;align-items:center">'
-        +'<button style="padding:5px 11px;background:rgba(255,100,100,.08);border:1px solid rgba(255,100,100,.2);border-radius:100px;color:rgba(255,130,130,.75);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
+        +'<button style="padding:5px 11px;background:rgba(200,50,50,.07);border:1px solid rgba(200,50,50,.18);border-radius:100px;color:rgba(180,50,50,.7);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
         +(alreadyReplied
-          ? '<span style="font-size:11px;color:rgba(116,198,157,.75);font-weight:700">💛 Ya respondiste</span>'
-          : '<button style="padding:5px 11px;background:rgba(200,165,100,.12);border:1px solid rgba(200,165,100,.22);border-radius:100px;color:#C8A560;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply(\''+b.id+'\',\''+b.text.substring(0,40).replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'...\',\''+( b.userId||b.user_id||'')+'\')">💌 Responder</button>')
+          ? '<span style="font-size:11px;color:var(--sage2);font-weight:700">💛 Ya respondiste</span>'
+          : '<button style="padding:5px 11px;background:rgba(80,150,200,.12);border:1px solid rgba(80,150,200,.28);border-radius:100px;color:#1E5A80;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply(\''+b.id+'\',\''+b.text.substring(0,40).replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'...\',\''+( b.userId||b.user_id||'')+'\')">💌 Responder</button>')
         +'</div>';
     }
     var showAuthor = !b.anon && b.userName && !isOwn;
     var authorHtml = showAuthor
       ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;cursor:pointer" onclick="pQuickProfile('+JSON.stringify(b.userName||'Usuario')+','+JSON.stringify(b.userAv||'🧑')+',\'\',\'\',\''+b.userId+'\')">'
         +_avInline(b.userAv||'🧑',24)
-        +'<span style="font-size:11px;color:rgba(200,165,100,.75);font-weight:600">'+_escHtml(b.userName)+'</span>'
-        +'<span style="font-size:10px;color:rgba(255,255,255,.2)">· toca para ver perfil</span>'
+        +'<span style="font-size:11px;color:#1E5A80;font-weight:600">'+_escHtml(b.userName)+'</span>'
+        +'<span style="font-size:10px;color:var(--ink5)">· toca para ver perfil</span>'
         +'</div>'
       : '';
-    return '<div class="dark-bottle" id="bottle-'+b.id+'" style="animation-delay:'+i*.08+'s;border-left:3px solid '+(b.color||'rgba(200,165,100,.3)')+'">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:20px">'+b.mood+'</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+relTime+'</span></div>'
+    return '<div class="dark-bottle" id="bottle-'+b.id+'" style="animation-delay:'+i*.08+'s;border-left:3px solid rgba(80,150,200,.3)">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:20px">'+b.mood+'</span><span style="font-size:10px;color:var(--ink5)">'+relTime+'</span></div>'
       +authorHtml
-      +'<p style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+b.text+'"</p>'
+      +'<p style="font-size:13px;color:var(--ink);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+b.text+'"</p>'
       +'<div style="display:flex;align-items:center;justify-content:flex-end">'+actions+'</div></div>';
   }).join('');
 }
