@@ -92,13 +92,18 @@ END $$;
 CREATE TABLE IF NOT EXISTS guardian_requests (
   id            text PRIMARY KEY,
   post_id       text,
+  kind          text,
   seeker_id     text,
+  seeker_name   text,
+  seeker_av     text,
   guardian_id   text,
   guardian_name text,
   guardian_av   text,
   status        text DEFAULT 'pending',
   support_msg   text,
-  rating        int
+  context       text,
+  rating        int,
+  created_at    timestamptz DEFAULT now()
 );
 ALTER TABLE guardian_requests ENABLE ROW LEVEL SECURITY;
 DO $$ BEGIN
@@ -408,6 +413,14 @@ ALTER TABLE direct_messages ADD COLUMN IF NOT EXISTS reactions      jsonb;
 ALTER TABLE moderation_flags ADD COLUMN IF NOT EXISTS resolution    text;
 ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS seeker_id    text;
 ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS guardian_id  text;
+ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS kind         text;
+ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS seeker_name  text;
+ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS seeker_av    text;
+ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS guardian_name text;
+ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS guardian_av  text;
+ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS context      text;
+ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS created_at   timestamptz DEFAULT now();
+ALTER TABLE guardian_presence ADD COLUMN IF NOT EXISTS is_guardian  bool DEFAULT true;
 
 -- ── REALTIME ──────────────────────────────────────────────────
 
