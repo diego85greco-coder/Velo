@@ -8789,12 +8789,6 @@ function _onPageEnter(id){
   }
 }
 
-function _initContactPage(){
-  // Pre-select "Problema con contraseña" if user came from forgot-password flow
-  var sub = document.getElementById('contactSubject');
-  if(sub && !sub.value) sub.value = 'Consulta general';
-}
-
 // ── UTILITY ───────────────────────────────────────────────────
 function _setEl(id, html){
   var el = document.getElementById(id);
