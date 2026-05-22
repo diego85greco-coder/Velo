@@ -549,8 +549,7 @@
                 <span style="font-size:8px;font-weight:700;color:var(--sage3);letter-spacing:.4px;text-transform:uppercase;white-space:nowrap">Activarme</span>
                 <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:6px 12px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:var(--sage7);color:var(--sage2);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Guardián</button>
               </div>
-              <button onclick="pGoTo('inbox')" title="Notificaciones" style="font-size:18px;background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative" id="homeBellBtn">🔔<span id="homeBellBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
-              <button onclick="pGoTo('inbox')" title="Buzón Velo" style="font-size:18px;background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative" id="homeMailBtn">✉️<span id="homeMailBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
+              <button onclick="pGoTo('inbox')" title="Notificaciones y buzón" style="font-size:18px;background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative" id="homeBellBtn">🔔<span id="homeBellBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
               <button onclick="pGoTo('contacts')" title="Contactos favoritos" style="font-size:18px;background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative">⭐<span id="favCountBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
               <button class="p-btn p-btn--sos p-btn--sm" onclick="pOpenSOS()">🆘 SOS</button>
               <button class="p-topbar-btn" style="display:none" id="homeMenuBtn" onclick="toggleMobileMenu()">☰</button>
@@ -558,8 +557,10 @@
           </div>
           <!-- Daily motivational quote -->
           <div style="padding:0 16px 14px">
-            <div id="homeDailyQuote" style="background:rgba(255,255,255,.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(116,198,157,.25);border-radius:16px;padding:14px 18px;font-size:14px;color:var(--sage2);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.7;text-align:center;letter-spacing:.01em;box-shadow:0 2px 12px rgba(116,198,157,.1)"></div>
+            <div id="homeDailyQuote" style="background:rgba(255,255,255,.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(116,198,157,.25);border-radius:16px;padding:14px 18px;min-height:52px;font-size:14px;color:var(--sage2);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.7;text-align:center;letter-spacing:.01em;box-shadow:0 2px 12px rgba(116,198,157,.1)"></div>
           </div>
+          <!-- Monthly report banner (shown only on 1st, hidden after 3s) -->
+          <div id="homeMonthlyBanner" style="display:none;margin:0 16px 12px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.3);border-radius:14px;padding:12px 16px;font-size:12px;color:var(--sage2);line-height:1.5"></div>
           <!-- Greeting card -->
           <div class="home-greeting" style="flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden">
             <div style="display:flex;align-items:center;gap:12px;padding:14px 16px 10px">
@@ -736,6 +737,7 @@
               <button class="p-filter-chip" onclick="pFilterGuardians('ocupado',this)">🟡 Ocupados</button>
             </div>
             <div id="guardianStatsBar" style="font-size:11px;color:var(--sage3);text-align:center;padding:4px 0 10px;letter-spacing:.5px;display:none"></div>
+            <div id="guardiansFavWidget"></div>
             <div id="guardiansList" class="pg-guardian-list">
               <div class="p-skeleton"><div class="p-skel-line"></div><div class="p-skel-line w60"></div></div>
               <div class="p-skeleton"><div class="p-skel-line"></div><div class="p-skel-line w40"></div></div>
@@ -853,6 +855,7 @@
               <button class="p-btn p-btn--dark-white p-btn--lg p-btn--full" onclick="pOpenHelpForm()">✍️ Escribir mi situación</button>
             </div>
             <div style="margin-bottom:10px">
+              <div id="helpFavWidget"></div>
               <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px;padding:0 2px">Buscando apoyo <span id="helpActiveCount" style="color:var(--sage4)">•••</span></div>
               <div id="helpDashboard" style="margin-bottom:14px"></div>
               <div id="helpList"></div>
@@ -924,6 +927,7 @@
               <button class="p-btn p-btn--dark-white p-btn--lg p-btn--full" onclick="pOpenBottleForm()">🌊 Lanzar mi mensaje</button>
             </div>
             <div id="bottleStatsBar" style="text-align:center;font-size:11px;color:rgba(200,165,100,.6);padding:6px 0 10px;letter-spacing:.5px;display:none"></div>
+            <div id="bottleFavWidget"></div>
             <!-- Tabs -->
             <div style="display:flex;gap:0;margin-bottom:14px;background:rgba(255,255,255,.05);border-radius:12px;padding:3px">
               <button class="bottle-tab active" id="btab-mar" onclick="pBottleTab('mar',this)">🌊 Del mar</button>
@@ -1268,6 +1272,12 @@
                 <img id="happyPhotoImg" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;display:block">
                 <button onclick="pClearHappyPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:50%;width:24px;height:24px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
               </div>
+              <!-- Anon toggle row -->
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,.5);border-radius:10px;border:1px solid var(--border2)">
+                <span style="font-size:11px;color:var(--ink4);flex:1;line-height:1.4">Publicar con mi perfil visible<br><span style="font-size:10px;color:var(--ink5)">Otros podrán ver tu perfil al hacer click en tu foto</span></span>
+                <div id="happyProfileTog" class="p-tog" onclick="this.classList.toggle('on');document.getElementById('happyShowProfile').checked=this.classList.contains('on')" style="flex-shrink:0"></div>
+                <input type="checkbox" id="happyShowProfile" style="display:none">
+              </div>
               <!-- Action row -->
               <div style="display:flex;align-items:center;gap:8px">
                 <label title="Subir foto" style="cursor:pointer;font-size:20px;line-height:1;padding:4px;flex-shrink:0">
@@ -1329,19 +1339,24 @@
             </div>
 
             <!-- ── Mi estado visible ── -->
-            <div class="p-card" style="padding:18px;margin-bottom:14px">
-              <div class="p-label p-label-sage" style="margin-bottom:12px">Mi estado · visible en tu perfil</div>
+            <div class="p-card" style="padding:18px;margin-bottom:14px" id="profileStatusCard">
+              <div class="p-label p-label-sage" style="margin-bottom:4px">Mi estado · visible en tu perfil</div>
+              <p style="font-size:11px;color:var(--ink5);margin-bottom:14px;line-height:1.5">Lo que compartís aparece en tu perfil público y cuando alguien te ve en la comunidad.</p>
               <div class="p-field" style="margin-bottom:8px">
                 <label class="p-field-label">🎵 Música que escucho</label>
-                <input class="p-input" type="text" id="profStatusMusic" placeholder="Ej: Sigur Rós — Hoppípolla">
+                <input class="p-input" type="text" id="profStatusMusic" placeholder="Ej: Sigur Rós — Hoppípolla" maxlength="80">
               </div>
               <div class="p-field" style="margin-bottom:8px">
                 <label class="p-field-label">📚 Libro que leo</label>
-                <input class="p-input" type="text" id="profStatusBook" placeholder="Ej: El Principito">
+                <input class="p-input" type="text" id="profStatusBook" placeholder="Ej: El Principito" maxlength="80">
+              </div>
+              <div class="p-field" style="margin-bottom:8px">
+                <label class="p-field-label">🎬 Película / serie que miro</label>
+                <input class="p-input" type="text" id="profStatusFilm" placeholder="Ej: The Bear, Oppenheimer…" maxlength="80">
               </div>
               <div class="p-field" style="margin-bottom:10px">
                 <label class="p-field-label">✨ Frase que me acompaña</label>
-                <input class="p-input" type="text" id="profStatusPhrase" placeholder="Una frase motivadora…">
+                <input class="p-input" type="text" id="profStatusPhrase" placeholder="Una frase motivadora…" maxlength="120">
               </div>
               <button class="p-btn p-btn--primary p-btn--sm p-btn--full" onclick="pSaveProfileStatus()">Guardar estado</button>
             </div>
@@ -2255,6 +2270,6 @@
     <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
   </div>
 </div>
-<script src="premium.js?v=20260522-74"></script>
+<script src="premium.js?v=20260522-75"></script>
 </body>
 </html>

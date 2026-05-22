@@ -278,7 +278,7 @@ function _sbSyncProfile(userId){
   _initSupabase();
   if(!sbClient || !userId) return;
   // Select only stable columns (no fase-2 columns that may not exist yet)
-  sbClient.from('profiles').select('nombre,avatar,motto,role,status_music,status_book,status_phrase').eq('id',userId).limit(1)
+  sbClient.from('profiles').select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film').eq('id',userId).limit(1)
     .then(function(res){
       if(res.error){
         // Table/column issue — still try to create row so future saves work
@@ -304,7 +304,8 @@ function _sbSyncProfile(userId){
             motto:  safeLS('get','velo_user_motto')||'',
             status_music:  safeLS('get','velo_status_music')||'',
             status_book:   safeLS('get','velo_status_book')||'',
-            status_phrase: safeLS('get','velo_status_phrase')||''
+            status_phrase: safeLS('get','velo_status_phrase')||'',
+            status_film:   safeLS('get','velo_status_film')||''
           },{ onConflict:'id' }).catch(function(){});
         }
         return;
@@ -317,6 +318,7 @@ function _sbSyncProfile(userId){
       if(p.status_music)  safeLS('set','velo_status_music',  p.status_music);
       if(p.status_book)   safeLS('set','velo_status_book',   p.status_book);
       if(p.status_phrase) safeLS('set','velo_status_phrase', p.status_phrase);
+      if(p.status_film)   safeLS('set','velo_status_film',   p.status_film);
       if(p.role === 'plus'){
         // Try to check expiry — column only exists after supabase-fase2.sql
         sbClient.from('profiles').select('plus_expires_at').eq('id',userId).limit(1)
@@ -566,7 +568,7 @@ async function pSignIn(){
 function _clearSession(){
   ['velo_session','velo_admin_session','velo_user_email','velo_user_name','velo_user_id',
    'velo_user_type','velo_user_av','velo_user_motto','velo_sb_pass','velo_plan',
-   'velo_status_music','velo_status_book','velo_status_phrase','velo_pro_id','velo_pro_name',
+   'velo_status_music','velo_status_book','velo_status_phrase','velo_status_film','velo_pro_id','velo_pro_name',
    'velo_pro_spec','velo_pro_solidarity','velo_pro_approved','velo_is_guardian',
    'velo_guardian_bio','velo_guardian_tags','velo_needs_pw_change'
   ].forEach(function(k){ safeLS('del', k); });
@@ -959,27 +961,18 @@ function pSaveQuickMood(){
 
 // ── MI ESTADO VISIBLE ──────────────────────────────────────────
 function pOpenMyStatus(){
-  var music  = safeLS('get','velo_status_music')  || '';
-  var book   = safeLS('get','velo_status_book')   || '';
-  var phrase = safeLS('get','velo_status_phrase') || '';
-  var m = document.getElementById('statusMusic');
-  var b = document.getElementById('statusBook');
-  var p = document.getElementById('statusPhrase');
-  if(m) m.value = music;
-  if(b) b.value = book;
-  if(p) p.value = phrase;
-  openModal('myStatusOv');
+  // Navigate to profile section and scroll to the estado card
+  pGoTo('profile');
+  setTimeout(function(){
+    var el = document.getElementById('profileStatusCard');
+    if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 350);
 }
 
 function pSaveMyStatus(){
-  var music  = (document.getElementById('statusMusic')||{}).value  || '';
-  var book   = (document.getElementById('statusBook')||{}).value   || '';
-  var phrase = (document.getElementById('statusPhrase')||{}).value || '';
-  safeLS('set','velo_status_music',  music.trim());
-  safeLS('set','velo_status_book',   book.trim());
-  safeLS('set','velo_status_phrase', phrase.trim());
+  // Legacy — now handled by pSaveProfileStatus in the profile section
   closeModal('myStatusOv');
-  pToast('✨', 'Estado actualizado y visible en tu perfil 💚');
+  pSaveProfileStatus();
 }
 
 // ── DAILY MOTIVATIONAL QUOTE (home, below greeting) ────────────
@@ -1361,6 +1354,7 @@ async function pRenderGuardians(){
   _renderMyStatusBar();
   var list = document.getElementById('guardiansList');
   if(!list) return;
+  _renderFavWidget('guardiansFavWidget');
   // Load guardian stats
   _loadGuardianStats();
   // Try to load live guardians from Supabase
@@ -1678,6 +1672,7 @@ var _helpPosts = [];
 async function pRenderHelp(){
   var list = document.getElementById('helpList');
   if(!list) return;
+  _renderFavWidget('helpFavWidget');
   var hidden = []; try{ hidden = JSON.parse(safeLS('get','velo_hidden_content')||'[]'); }catch(e){}
 
   var posts, usingSB = false;
@@ -3047,6 +3042,7 @@ async function _loadBottleStats(){
 }
 
 async function pRenderBottle(){
+  _renderFavWidget('bottleFavWidget');
   var moodRow = document.getElementById('bottleMoodRow');
   if(moodRow) moodRow.innerHTML = _bottleMoods.map(function(m){
     return '<button style="font-size:22px;padding:7px;border:2px solid transparent;border-radius:10px;background:none;cursor:pointer;transition:all .15s" onclick="pSelBottleMood(this,\''+m+'\')" data-mood="'+m+'">'+m+'</button>';
@@ -4762,6 +4758,11 @@ function pOpenHappyPost(){
   _happySelectedPhoto = null;
   var ta = document.getElementById('happyPostTa');
   if(ta) ta.value = '';
+  // Reset anon toggle to default off (anónimo)
+  var tog = document.getElementById('happyProfileTog');
+  var chk = document.getElementById('happyShowProfile');
+  if(tog) tog.classList.remove('on');
+  if(chk) chk.checked = false;
   var emojiRow = document.getElementById('happyEmojiRow');
   if(emojiRow){
     emojiRow.innerHTML = _happyEmojis.map(function(e){
@@ -4828,7 +4829,8 @@ function pSubmitHappyPost(){
   var myId  = _myUserId();
   var name  = safeLS('get','velo_user_name') || 'Usuario Anónimo';
   var posts = _processHappyQueue();
-  var isAnon = safeLS('get','velo_incognito') === 'true';
+  var happyShowProfile = document.getElementById('happyShowProfile');
+  var isAnon = !(happyShowProfile && happyShowProfile.checked);
   var userAv = isAnon ? '' : (safeLS('get','velo_user_av') || '');
   var post  = {
     id: 'h'+Date.now(), userId: myId,
@@ -5002,9 +5004,11 @@ function pLoadProfile(){
   // Mi estado inputs — pre-fill from saved values
   var msEl = document.getElementById('profStatusMusic');
   var mbEl = document.getElementById('profStatusBook');
+  var mfEl = document.getElementById('profStatusFilm');
   var mpEl = document.getElementById('profStatusPhrase');
   if(msEl) msEl.value = safeLS('get','velo_status_music')  || '';
   if(mbEl) mbEl.value = safeLS('get','velo_status_book')   || '';
+  if(mfEl) mfEl.value = safeLS('get','velo_status_film')   || '';
   if(mpEl) mpEl.value = safeLS('get','velo_status_phrase') || '';
 
   // Sub status display
@@ -5043,14 +5047,19 @@ function pLoadProfile(){
 function pSaveProfileStatus(){
   var music  = (document.getElementById('profStatusMusic')||{}).value  || '';
   var book   = (document.getElementById('profStatusBook')||{}).value   || '';
+  var film   = (document.getElementById('profStatusFilm')||{}).value   || '';
   var phrase = (document.getElementById('profStatusPhrase')||{}).value || '';
   safeLS('set','velo_status_music',  music.trim());
   safeLS('set','velo_status_book',   book.trim());
+  safeLS('set','velo_status_film',   film.trim());
   safeLS('set','velo_status_phrase', phrase.trim());
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
   if(sbClient && uid){
-    sbClient.from('profiles').upsert({ id:uid, status_music:music.trim(), status_book:book.trim(), status_phrase:phrase.trim() },{ onConflict:'id' }).catch(function(){});
+    sbClient.from('profiles').upsert({ id:uid,
+      status_music:music.trim(), status_book:book.trim(),
+      status_film:film.trim(), status_phrase:phrase.trim()
+    },{ onConflict:'id' }).catch(function(){});
   }
   pToast('✨', 'Estado actualizado y visible en tu perfil 💚');
 }
@@ -5638,6 +5647,48 @@ function pFilterContacts(q){
   var cards = document.querySelectorAll('#contactsContent [data-fav-name]');
   var lq = (q||'').toLowerCase();
   cards.forEach(function(c){ c.style.display = (!lq || c.dataset.favName.toLowerCase().indexOf(lq)>-1) ? '' : 'none'; });
+}
+
+// ── FAVORITES MINI WIDGET (shown in sections) ──────────────────
+async function _renderFavWidget(containerId){
+  var el = document.getElementById(containerId);
+  if(!el) return;
+  var favs = pGetFavs();
+  if(!favs.length){ el.innerHTML = ''; return; }
+
+  var onlineIds = {};
+  _initSupabase();
+  if(sbClient){
+    try{
+      var cutoff = new Date(Date.now()-5*60*1000).toISOString();
+      var {data:gd} = await sbClient.from('guardian_presence').select('user_id').gte('last_seen',cutoff);
+      if(gd) gd.forEach(function(r){ onlineIds[r.user_id]=true; });
+    }catch(e){}
+  }
+
+  var onlineFavs = favs.filter(function(f){ return onlineIds[f.id]; });
+  var shownFavs  = onlineFavs.length ? onlineFavs : favs.slice(0,5);
+  var label      = onlineFavs.length ? '🟢 Favoritos en línea' : '⭐ Mis favoritos';
+
+  el.innerHTML = '<div style="margin-bottom:14px">'
+    +'<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--sage3);text-transform:uppercase;margin-bottom:8px">'+label+'</div>'
+    +'<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-ms-overflow-style:none">'
+    +shownFavs.map(function(f){
+      var isOnline = !!onlineIds[f.id];
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer" onclick="pOpenDM(\''+f.id+'\','+JSON.stringify(f.name)+','+JSON.stringify(f.av||'🧑')+')">'
+        +'<div style="position:relative">'
+        +_avInline(f.av||'🧑', 38)
+        +'<span style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:'+(isOnline?'var(--st-on)':'rgba(150,150,150,.35)')+';border:2px solid var(--cream)"></span>'
+        +'</div>'
+        +'<div style="font-size:10px;color:var(--ink3);font-weight:600;max-width:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml((f.name||'Usuario').split(' ')[0])+'</div>'
+        +'</div>';
+    }).join('')
+    +'<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer;opacity:.6" onclick="pGoTo(\'contacts\')">'
+    +'<div style="width:38px;height:38px;border-radius:50%;background:var(--cream2);border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:16px">👥</div>'
+    +'<div style="font-size:10px;color:var(--ink5)">Ver todos</div>'
+    +'</div>'
+    +'</div>'
+    +'</div>';
 }
 
 // ── DIRECT MESSAGES ───────────────────────────────────────────
@@ -6668,6 +6719,7 @@ async function _renderAdmin(){
   // Gate: only an authenticated admin session may render the panel
   if(safeLS('get','velo_admin_session') !== '1'){ pGoTo('admin-login'); return; }
   var metrics = document.getElementById('adminMetrics');
+  var content = document.getElementById('adminContent');
 
   // Show loading skeleton while Supabase queries run
   if(metrics) metrics.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:18px;font-size:12px;color:rgba(255,255,255,.35)">Cargando datos en tiempo real…</div>';
@@ -6685,7 +6737,7 @@ async function _renderAdmin(){
         var profiles = profRes.data;
         totalPros  = profiles.filter(function(p){ return p.role==='pro'; }).length;
         totalPlus  = profiles.filter(function(p){ return p.role==='plus'; }).length;
-        totalUsers = profiles.length - totalPros; // users includes plus users
+        totalUsers = profiles.length; // total registered (all roles)
         recentReg  = profiles.slice(0,10);
       }
     }catch(e){}
