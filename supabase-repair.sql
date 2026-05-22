@@ -374,6 +374,7 @@ ALTER TABLE help_posts   ADD COLUMN IF NOT EXISTS closed            bool DEFAULT
 ALTER TABLE help_posts   ADD COLUMN IF NOT EXISTS user_id           text;
 ALTER TABLE circle_messages ADD COLUMN IF NOT EXISTS type           text DEFAULT 'text';
 ALTER TABLE circle_messages ADD COLUMN IF NOT EXISTS reactions      jsonb;
+ALTER TABLE direct_messages ADD COLUMN IF NOT EXISTS reactions      jsonb;
 ALTER TABLE moderation_flags ADD COLUMN IF NOT EXISTS resolution    text;
 ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS seeker_id    text;
 ALTER TABLE guardian_requests ADD COLUMN IF NOT EXISTS guardian_id  text;

@@ -420,7 +420,7 @@ function _sbBottleRow(r){
 }
 function _sbCircleMsgRow(r){
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
-  return { id:String(r.id), sbId:r.id, av:r.user_av||'🌿', name:r.user_name||'Usuario',
+  return { id:String(r.id), sbId:r.id, userId:r.user_id||'', av:r.user_av||'🌿', name:r.user_name||'Usuario',
     text:r.text||'', ts:new Date(r.created_at).getTime(), own:r.user_id===myId, type:r.type||'text', reactions:r.reactions||{} };
 }
 
@@ -1533,7 +1533,7 @@ function _gcAddMsg(text, isUser){
   if(!msgEl) return;
   var g   = _gcGuardian || { av:'🌿', name:'Guardián/a' };
   var div = document.createElement('div');
-  div.innerHTML = _buildMsgBubble(text, isUser, g.av||'🌿', g.name, 'gcInput', 'gcReplyBar', '');
+  div.innerHTML = _buildMsgBubble(text, isUser, g.av||'🌿', g.name, 'gcInput', 'gcReplyBar', '', {}, '', isUser ? '' : (g.id||'').replace('live_',''));
   var child = div.firstElementChild;
   if(child) msgEl.appendChild(child);
   msgEl.scrollTop = msgEl.scrollHeight;
@@ -2085,7 +2085,7 @@ function pSendHelpChatMsg(){
     _resetHelpInactivity();
     var reply = _helpChatAutoMsgPool[Math.floor(Math.random()*_helpChatAutoMsgPool.length)];
     var div2 = document.createElement('div');
-    div2.innerHTML = _buildMsgBubble(reply, false, _curHelpPost?_curHelpPost.emoji:'💚', _curHelpPost?_curHelpPost.name:'Usuario', 'helpChatInput', 'helpChatReplyBar', '');
+    div2.innerHTML = _buildMsgBubble(reply, false, _curHelpPost?_curHelpPost.emoji:'💚', _curHelpPost?_curHelpPost.name:'Usuario', 'helpChatInput', 'helpChatReplyBar', '', {}, '', _curHelpPost?_curHelpPost.userId:'');
     var child2 = div2.firstElementChild; if(child2) msgEl.appendChild(child2);
     msgEl.scrollTop = msgEl.scrollHeight;
   }, 8000 + Math.random()*7000);
@@ -3217,12 +3217,15 @@ function pSendBottleReply(){
 
   // 2. Deliver to the bottle author's inbox via Supabase broadcasts
   if(sbClient && _curBottleUserId){
+    var _rid = safeLS('get','velo_user_id')||'';
+    var _rName = safeLS('get','velo_user_name')||'';
+    var _rAv = safeLS('get','velo_user_av')||'🧑';
     sbClient.from('broadcasts').insert({
       target: 'user:'+_curBottleUserId,
       subject: '¡Tu mensaje en el mar recibió una respuesta!',
       body: 'Alguien encontró tu mensaje y te dejó estas palabras:\n\n"'+replyText+'"',
       icon: '🌊',
-      sender: 'Velo — Al Mar',
+      sender: _rid ? JSON.stringify({ n:_rName, i:_rid, a:_rAv }) : 'Velo — Al Mar',
       sent_at: new Date().toISOString()
     }).then(function(){}).catch(function(){});
   }
@@ -4132,7 +4135,7 @@ async function _renderCircleMessages(){
     if(m.type === 'system'){
       return '<div style="text-align:center;margin:10px 0"><span style="font-size:11px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
     }
-    return _buildMsgBubble(m.text, !!m.own, m.av, m.name, 'feedInput', 'feedReplyBar', '', m.reactions, m.sbId);
+    return _buildMsgBubble(m.text, !!m.own, m.av, m.name, 'feedInput', 'feedReplyBar', '', m.reactions, m.sbId, m.userId);
   }).join('');
   el.scrollTop = el.scrollHeight;
 
@@ -5271,10 +5274,22 @@ function pRenderInbox(){
     var bcMsgs = newBcs.map(function(b){
       var readKey = 'velo_bcast_read_'+b.id;
       var fecha = b.sent_at ? new Date(b.sent_at).toLocaleDateString('es',{day:'2-digit',month:'short'}) : '';
+      var senderInfo = null;
+      try { senderInfo = JSON.parse(b.sender); } catch(e) {}
+      var senderName = senderInfo && senderInfo.n ? senderInfo.n : (b.sender||'');
+      var senderId   = senderInfo && senderInfo.i ? senderInfo.i : '';
+      var senderAv   = senderInfo && senderInfo.a ? senderInfo.a : (b.icon||'📢');
+      var iconHtml = senderId
+        ? '<div class="p-inbox-ic" style="cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+JSON.stringify(senderName)+','+JSON.stringify(senderAv)+',\'\',\'\','+JSON.stringify(senderId)+')">'+_avInline(senderAv,32)+'</div>'
+        : '<div class="p-inbox-ic">'+_escHtml(b.icon||'📢')+'</div>';
+      var senderRow = (senderId && senderName)
+        ? '<div style="font-size:11px;color:var(--sage);font-weight:600;margin-bottom:2px;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+JSON.stringify(senderName)+','+JSON.stringify(senderAv)+',\'\',\'\','+JSON.stringify(senderId)+')">'+_escHtml(senderName)+' ›</div>'
+        : '';
       return '<div class="p-inbox-msg'+(safeLS('get',readKey)?'':' unread')+'" onclick="safeLS(\'set\',\''+readKey+'\',\'1\');this.classList.remove(\'unread\');this.querySelector(\'.p-inbox-dot\')&&this.querySelector(\'.p-inbox-dot\').remove()">'
         +'<div style="display:flex;flex-shrink:0">'+(safeLS('get',readKey)?'':'<div class="p-inbox-dot"></div>')+'</div>'
-        +'<div class="p-inbox-ic">'+_escHtml(b.icon||'📢')+'</div>'
+        +iconHtml
         +'<div style="flex:1;min-width:0">'
+        +senderRow
         +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(b.subject)+'</div>'
         +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(b.body||'')+'</div>'
         +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+'</div>'
@@ -5697,9 +5712,58 @@ async function _renderFavWidget(containerId){
     +'</div>';
 }
 
+// ── CLEAR CHAT HELPERS ────────────────────────────────────────
+
+function pClearHelpChat(){
+  if(!confirm('¿Limpiar el historial de este chat?')) return;
+  var el = document.getElementById('helpChatMessages');
+  if(el) el.innerHTML = '';
+}
+
+function pClearGuardianChat(){
+  if(!confirm('¿Limpiar el historial de este chat?')) return;
+  var el = document.getElementById('gcMessages');
+  if(el) el.innerHTML = '';
+  _gcMsgs = [];
+}
+
+function pClearCircleChat(){
+  if(!confirm('¿Limpiar la vista local? Los mensajes del círculo seguirán visibles para el resto.')) return;
+  var el = document.getElementById('feedMessages');
+  if(el) el.innerHTML = '';
+}
+
+async function pClearDMChat(){
+  if(!_dmPeer) return;
+  if(!confirm('¿Borrar toda la conversación con '+_dmPeer.name+'? Esta acción es permanente.')) return;
+  var myId = safeLS('get','velo_user_id')||'';
+  var el = document.getElementById('dmMessages');
+  if(el) el.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Conversación eliminada</div>';
+  _initSupabase();
+  if(sbClient && myId && _dmPeer){
+    sbClient.from('direct_messages').delete()
+      .or('and(from_id.eq.'+myId+',to_id.eq.'+_dmPeer.id+'),and(from_id.eq.'+_dmPeer.id+',to_id.eq.'+myId+')')
+      .then(function(){}).catch(function(){});
+  }
+  safeLS('remove','velo_dm_req_sent_'+_dmPeer.id);
+  safeLS('remove','velo_dm_accepted_'+_dmPeer.id);
+  pToast('🗑️','Conversación eliminada');
+}
+
+function pClearAIChat(){
+  if(!confirm('¿Limpiar la conversación con Velo IA?')) return;
+  var el = document.getElementById('calmAIMessages');
+  if(el) el.innerHTML = '';
+  pToast('✨','Chat limpiado');
+}
+
 // ── DIRECT MESSAGES ───────────────────────────────────────────
 
 var _dmPeer = null; // { id, name, av }
+
+function _dmOpenPeerProfile(){
+  if(_dmPeer) pQuickProfile(_dmPeer.name, _dmPeer.av, '', '', _dmPeer.id);
+}
 
 async function pOpenDM(toId, toName, toAv){
   _dmPeer = { id:toId, name:toName||'Usuario', av:toAv||'🧑' };
@@ -5712,6 +5776,37 @@ async function pOpenDM(toId, toName, toAv){
   if(hdr) hdr.textContent = toName||'Usuario';
   var hdrAv = document.getElementById('dmPeerAv');
   if(hdrAv) hdrAv.innerHTML = _avInline(toAv||'🧑',36);
+
+  // Check if first-ever contact — if so, send a chat request instead of opening directly
+  var myId = safeLS('get','velo_user_id')||'';
+  var accepted = safeLS('get','velo_dm_accepted_'+toId);
+  if(!accepted && myId && sbClient){
+    try{
+      var {data:prior} = await sbClient.from('direct_messages').select('id')
+        .or('and(from_id.eq.'+myId+',to_id.eq.'+toId+'),and(from_id.eq.'+toId+',to_id.eq.'+myId+')')
+        .limit(1);
+      if(!prior || !prior.length){
+        // First contact — send request if not already pending
+        var reqSent = safeLS('get','velo_dm_req_sent_'+toId);
+        var reqAge = reqSent ? (Date.now() - parseInt(reqSent,10)) : Infinity;
+        if(reqAge > 3600000){ // >1 hour ago or never
+          var myName2 = safeLS('get','velo_user_name')||'Usuario';
+          var myAv2 = safeLS('get','velo_user_av')||'🧑';
+          sbClient.from('direct_messages').insert({
+            from_id:myId, from_name:myName2, from_av:myAv2, to_id:toId, text:'__velo_chat_req__'
+          }).then(function(){}).catch(function(){});
+          safeLS('set','velo_dm_req_sent_'+toId, String(Date.now()));
+          pToast('💬','Solicitud enviada a '+(toName||'Usuario')+'. Te avisaremos si acepta.');
+        } else {
+          pToast('⏳','Ya enviaste una solicitud a '+(toName||'Usuario')+'. Esperá su respuesta.');
+        }
+        return;
+      }
+      // Prior messages exist — already established, open directly
+      safeLS('set','velo_dm_accepted_'+toId,'1');
+    }catch(e){}
+  }
+
   pGoTo('dm-chat');
   setTimeout(function(){ _renderDMThread(); _subscribeToDMThread(); }, 100);
 }
@@ -5731,9 +5826,10 @@ async function _renderDMThread(){
       el.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Iniciá la conversación 💬</div>';
       return;
     }
-    el.innerHTML = data.map(function(m){
+    var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__'];
+    el.innerHTML = data.filter(function(m){ return sentinels.indexOf(m.text) < 0; }).map(function(m){
       var isOwn = m.from_id === myId;
-      return _buildMsgBubble(m.text||'', isOwn, isOwn?'':(m.from_av||'🧑'), isOwn?'':(m.from_name||''), 'dmInput', 'dmReplyBar', '');
+      return _buildMsgBubble(m.text||'', isOwn, isOwn?'':(m.from_av||'🧑'), isOwn?'':(m.from_name||''), 'dmInput', 'dmReplyBar', '', m.reactions||{}, 'direct_messages:'+m.id, isOwn?'':(m.from_id||''));
     }).join('');
     el.scrollTop = el.scrollHeight;
   }catch(e){ el.innerHTML = '<div class="p-empty" style="padding:30px 0">Error al cargar mensajes</div>'; }
@@ -5757,23 +5853,74 @@ async function pSendDM(){
   if(!ta || !ta.value.trim() || !_dmPeer) return;
   var text = ta.value.trim();
   ta.value = '';
+  var dmQuote = _getReplyQuote('dmReplyBar');
+  pClearReplyBar('dmReplyBar');
   var myId   = safeLS('get','velo_user_id')||'';
   var myName = safeLS('get','velo_user_name')||'';
   var myAv   = safeLS('get','velo_user_av')||'';
+  var fullText = dmQuote ? '↩ "'+dmQuote.slice(0,60)+(dmQuote.length>60?'…':'')+'"  \n'+text : text;
   // Optimistic render
   var el = document.getElementById('dmMessages');
   if(el){
     var div = document.createElement('div');
-    div.innerHTML = _buildMsgBubble(text, true, '', '', 'dmInput', 'dmReplyBar', '');
+    div.innerHTML = _buildMsgBubble(text, true, '', '', 'dmInput', 'dmReplyBar', dmQuote);
     el.appendChild(div.firstChild);
     el.scrollTop = el.scrollHeight;
   }
   _initSupabase();
   if(sbClient){
     sbClient.from('direct_messages').insert({
-      from_id:myId, from_name:myName, from_av:myAv, to_id:_dmPeer.id, text:text
+      from_id:myId, from_name:myName, from_av:myAv, to_id:_dmPeer.id, text:fullText
     }).then(function(){}).catch(function(){});
   }
+}
+
+function _showDMChatRequest(fromId, fromName, fromAv){
+  var existing = document.getElementById('dmChatReqOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'dmChatReqOv';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="text-align:center;padding:8px 0 16px">'
+    +'<div style="font-size:50px;margin-bottom:10px">'+_avInline(fromAv||'🧑',56)+'</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:6px">'+_escHtml(fromName)+'</div>'
+    +'<p style="font-size:13px;color:var(--ink3);margin:0 0 20px;line-height:1.5">quiere iniciar un chat privado contigo.<br>¿Querés aceptar?</p>'
+    +'</div>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="_acceptDMRequest(\''+fromId+'\','+JSON.stringify(fromName)+','+JSON.stringify(fromAv||'🧑')+');document.getElementById(\'dmChatReqOv\').remove()" style="margin-bottom:8px">💬 Aceptar y chatear</button>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="_rejectDMRequest(\''+fromId+'\','+JSON.stringify(fromName)+');document.getElementById(\'dmChatReqOv\').remove()">No por ahora</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+}
+
+function _acceptDMRequest(fromId, fromName, fromAv){
+  var myId = safeLS('get','velo_user_id')||'';
+  var myName = safeLS('get','velo_user_name')||'';
+  var myAv = safeLS('get','velo_user_av')||'🧑';
+  safeLS('set','velo_dm_accepted_'+fromId,'1');
+  _initSupabase();
+  if(sbClient && myId){
+    sbClient.from('direct_messages').insert({
+      from_id:myId, from_name:myName, from_av:myAv, to_id:fromId, text:'__velo_chat_acc__'
+    }).then(function(){}).catch(function(){});
+  }
+  pToast('💬','Aceptaste el chat con '+_escHtml(fromName));
+  setTimeout(function(){ pOpenDM(fromId, fromName, fromAv); }, 300);
+}
+
+function _rejectDMRequest(fromId, fromName){
+  var myId = safeLS('get','velo_user_id')||'';
+  var myName = safeLS('get','velo_user_name')||'';
+  var myAv = safeLS('get','velo_user_av')||'🧑';
+  _initSupabase();
+  if(sbClient && myId){
+    sbClient.from('direct_messages').insert({
+      from_id:myId, from_name:myName, from_av:myAv, to_id:fromId, text:'__velo_chat_rej__'
+    }).then(function(){}).catch(function(){});
+  }
+  pToast('✓','Solicitud rechazada');
 }
 
 // Global DM listener — shows popup toast when a new DM arrives while in another section
@@ -5786,6 +5933,23 @@ function _startGlobalDMListener(){
       var m = payload.new||{};
       var curPage = document.querySelector('.p-page.active');
       var curId = curPage ? curPage.id : '';
+      // Handle sentinel messages
+      if(m.text === '__velo_chat_req__'){
+        _showDMChatRequest(m.from_id, m.from_name||'Usuario', m.from_av||'🧑');
+        return;
+      }
+      if(m.text === '__velo_chat_acc__'){
+        safeLS('set','velo_dm_accepted_'+m.from_id,'1');
+        pToast('💬',(m.from_name||'Usuario')+' aceptó tu solicitud de chat 🎉');
+        // Auto-open the DM
+        setTimeout(function(){ pOpenDM(m.from_id, m.from_name||'Usuario', m.from_av||'🧑'); }, 400);
+        return;
+      }
+      if(m.text === '__velo_chat_rej__'){
+        safeLS('remove','velo_dm_req_sent_'+m.from_id);
+        pToast('💬',(m.from_name||'Usuario')+' no puede chatear ahora');
+        return;
+      }
       if(curId === 'pg-dm-chat' && _dmPeer && _dmPeer.id === m.from_id) return; // already in this chat
       // Show floating notification
       _showDMToast(m.from_id, m.from_name||'Usuario', m.from_av||'🧑', m.text||'');
@@ -8492,7 +8656,7 @@ function _msgReact(emoji){
     chip.onclick = function(){ _msgReactFromChip(chip, msgId); };
     rxBar.appendChild(chip);
   }
-  // Save to Supabase if this is a circle message
+  // Save to Supabase (circle_messages or direct_messages)
   var sbId = msgEl.getAttribute('data-sb-id');
   if(sbId && sbClient){
     var updatedReactions = {};
@@ -8501,7 +8665,10 @@ function _msgReact(emoji){
       var c2 = parseInt(ch.getAttribute('data-cnt')||'1',10);
       if(e2) updatedReactions[e2] = c2;
     });
-    sbClient.from('circle_messages').update({ reactions: updatedReactions }).eq('id', sbId)
+    var sbParts = sbId.split(':');
+    var sbTable = sbParts.length > 1 ? sbParts[0] : 'circle_messages';
+    var sbRowId = sbParts.length > 1 ? sbParts.slice(1).join(':') : sbId;
+    sbClient.from(sbTable).update({ reactions: updatedReactions }).eq('id', sbRowId)
       .then(function(){}).catch(function(){});
   }
   _msgPopupData = null;
@@ -8522,7 +8689,10 @@ function _msgReactFromChip(chip, msgId){
       var c2 = parseInt(ch.getAttribute('data-cnt')||'1',10);
       if(e2) updatedReactions[e2] = c2;
     });
-    sbClient.from('circle_messages').update({ reactions: updatedReactions }).eq('id', sbId)
+    var sbParts2 = sbId.split(':');
+    var sbTable2 = sbParts2.length > 1 ? sbParts2[0] : 'circle_messages';
+    var sbRowId2 = sbParts2.length > 1 ? sbParts2.slice(1).join(':') : sbId;
+    sbClient.from(sbTable2).update({ reactions: updatedReactions }).eq('id', sbRowId2)
       .then(function(){}).catch(function(){});
   }
 }
@@ -8561,7 +8731,7 @@ function _highlightMentions(text){
   return escaped.replace(/@([\wÀ-ɏ]+)/g, '<span class="msg-mention">@$1</span>');
 }
 
-function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quoteText, reactions, sbId){
+function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quoteText, reactions, sbId, senderId){
   var id  = _nextMsgId();
   var t   = new Date();
   var ts  = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
@@ -8584,10 +8754,16 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
       +'<div class="feed-bubble feed-bubble--own">'+quotePart+_highlightMentions(text)+'<span class="feed-time">'+ts+'</span></div>'
       +'</div>'+rxHtml+'</div>';
   } else {
-    var avClick = senderName ? ' style="cursor:pointer" onclick="pQuickProfile('+JSON.stringify(senderName)+',' +JSON.stringify(av||'🌿')+')"' : '';
+    var canProfile = !!(senderName && senderName !== 'Usuario Anónimo' && senderName !== 'Anónimo');
+    var avClickAttr = canProfile
+      ? ' style="cursor:pointer" onclick="pQuickProfile('+JSON.stringify(senderName)+','+JSON.stringify(av||'🌿')+',\'\',\'\','+JSON.stringify(senderId||'')+')"'
+      : '';
+    var senderHtml = canProfile
+      ? '<div class="feed-sender" style="font-size:11px;color:var(--ink4);cursor:pointer" onclick="pQuickProfile('+JSON.stringify(senderName)+','+JSON.stringify(av||'🌿')+',\'\',\'\','+JSON.stringify(senderId||'')+')">'+_escHtml(senderName)+'</div>'
+      : '<div class="feed-sender" style="font-size:11px;color:var(--ink4)">'+(senderName||'')+'</div>';
     return '<div class="feed-msg" id="'+id+'"'+sbAttr+' style="position:relative">'
-      +'<div class="feed-av"'+avClick+'>'+_avInline(av||'🌿',36)+'</div>'
-      +'<div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">'+(senderName||'')+'</div>'
+      +'<div class="feed-av"'+avClickAttr+'>'+_avInline(av||'🌿',36)+'</div>'
+      +'<div>'+senderHtml
       +'<div class="msg-wrap">'
       +'<div class="feed-bubble">'+quotePart+_highlightMentions(text)+'<span class="feed-time">'+ts+'</span></div>'
       +actionBtn
