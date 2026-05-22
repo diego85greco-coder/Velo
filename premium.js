@@ -6259,7 +6259,7 @@ function _dmOpenPeerProfile(){
   if(_dmPeer) pQuickProfile(_dmPeer.name, _dmPeer.av, '', '', _dmPeer.id);
 }
 
-async function pOpenDM(toId, toName, toAv){
+function pOpenDM(toId, toName, toAv){
   _dmPeer = { id:toId, name:toName||'Usuario', av:toAv||'🧑' };
   // Clear unread badge for this contact
   var unread = {}; try{ unread = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
@@ -6270,37 +6270,6 @@ async function pOpenDM(toId, toName, toAv){
   if(hdr) hdr.textContent = toName||'Usuario';
   var hdrAv = document.getElementById('dmPeerAv');
   if(hdrAv) hdrAv.innerHTML = _avInline(toAv||'🧑',36);
-
-  // Check if first-ever contact — if so, send a chat request instead of opening directly
-  var myId = safeLS('get','velo_user_id')||'';
-  var accepted = safeLS('get','velo_dm_accepted_'+toId);
-  if(!accepted && myId && sbClient){
-    try{
-      var {data:prior} = await sbClient.from('direct_messages').select('id')
-        .or('and(from_id.eq.'+myId+',to_id.eq.'+toId+'),and(from_id.eq.'+toId+',to_id.eq.'+myId+')')
-        .limit(1);
-      if(!prior || !prior.length){
-        // First contact — send request if not already pending
-        var reqSent = safeLS('get','velo_dm_req_sent_'+toId);
-        var reqAge = reqSent ? (Date.now() - parseInt(reqSent,10)) : Infinity;
-        if(reqAge > 3600000){ // >1 hour ago or never
-          var myName2 = safeLS('get','velo_user_name')||'Usuario';
-          var myAv2 = safeLS('get','velo_user_av')||'🧑';
-          sbClient.from('direct_messages').insert({
-            from_id:myId, from_name:myName2, from_av:myAv2, to_id:toId, text:'__velo_chat_req__'
-          }).then(function(){}).catch(function(){});
-          safeLS('set','velo_dm_req_sent_'+toId, String(Date.now()));
-          pToast('💬','Solicitud enviada a '+(toName||'Usuario')+'. Te avisaremos si acepta.');
-        } else {
-          pToast('⏳','Ya enviaste una solicitud a '+(toName||'Usuario')+'. Esperá su respuesta.');
-        }
-        return;
-      }
-      // Prior messages exist — already established, open directly
-      safeLS('set','velo_dm_accepted_'+toId,'1');
-    }catch(e){}
-  }
-
   pGoTo('dm-chat');
   setTimeout(function(){ _renderDMThread(); _subscribeToDMThread(); }, 100);
 }
@@ -6317,7 +6286,11 @@ async function _renderDMThread(){
       .or('and(from_id.eq.'+myId+',to_id.eq.'+_dmPeer.id+'),and(from_id.eq.'+_dmPeer.id+',to_id.eq.'+myId+')')
       .order('created_at',{ascending:true}).limit(100);
     if(!data || !data.length){
-      el.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Iniciá la conversación 💬</div>';
+      el.innerHTML = '<div style="text-align:center;padding:40px 16px 20px">'
+        +'<div style="margin-bottom:12px">'+_avInline((_dmPeer&&_dmPeer.av)||'🧑',56)+'</div>'
+        +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;color:var(--ink);margin-bottom:8px">'+_escHtml((_dmPeer&&_dmPeer.name)||'Usuario')+'</div>'
+        +'<div style="font-size:12px;color:var(--ink5);line-height:1.6">Tu conversación es privada 🔒<br>Solo vos y '+_escHtml(((_dmPeer&&_dmPeer.name)||'esta persona').split(' ')[0])+' pueden leer estos mensajes.</div>'
+        +'</div>';
       return;
     }
     var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__'];
