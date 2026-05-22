@@ -623,12 +623,12 @@
                 <span class="p-pill p-pill--ocean">Anónimo</span>
               </div>
             </div>
-            <div class="p-card p-card--feature p-card--hover fc-sky" onclick="pGoTo('professionals')">
-              <span class="p-card-icon">🩺</span>
-              <div class="p-card-title">Profesionales</div>
-              <div class="p-card-sub">Terapia profesional</div>
+            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('contacts')" style="background:linear-gradient(135deg,rgba(255,215,80,.18),rgba(255,180,50,.10));border-color:rgba(255,200,60,.25)">
+              <span class="p-card-icon">⭐</span>
+              <div class="p-card-title">Contactos</div>
+              <div class="p-card-sub">Favoritos y presencia</div>
               <div class="p-card-foot">
-                <span class="p-pill p-pill--sky">Video sesiones</span>
+                <span class="p-pill" style="background:rgba(255,200,60,.2);color:#7A5800;border:1px solid rgba(255,200,60,.35)">Favoritos</span>
               </div>
             </div>
             <div class="p-card p-card--feature p-card--hover fc-lav" onclick="pGoTo('diary')">
@@ -637,6 +637,14 @@
               <div class="p-card-sub">Tu espacio íntimo</div>
               <div class="p-card-foot">
                 <span class="p-pill p-pill--lav">Privado</span>
+              </div>
+            </div>
+            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('happy')" style="background:linear-gradient(135deg,rgba(255,230,100,.20),rgba(255,200,80,.12));border-color:rgba(255,210,60,.25)">
+              <span class="p-card-icon">☀️</span>
+              <div class="p-card-title">Muro Feliz</div>
+              <div class="p-card-sub">Momentos de alegría</div>
+              <div class="p-card-foot">
+                <span class="p-pill" style="background:rgba(255,210,60,.2);color:#7A5800;border:1px solid rgba(255,210,60,.3)">Comunidad</span>
               </div>
             </div>
             <div class="p-card p-card--feature p-card--hover fc-warm" onclick="pGoTo('news')" style="background:linear-gradient(135deg,rgba(255,200,80,.18),rgba(255,170,50,.10))">
@@ -685,14 +693,14 @@
           <div class="home-wide-card">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
               <div class="p-card p-card--hover" style="padding:16px;cursor:pointer" onclick="pGoTo('circles')">
-                <span style="font-size:24px;display:block;margin-bottom:7px">⭕</span>
+                <span style="font-size:24px;display:block;margin-bottom:7px">☮️</span>
                 <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink);margin-bottom:3px">Círculos de Paz</div>
                 <div style="font-size:11px;color:var(--ink4)">Sin likes, solo conexión</div>
               </div>
-              <div class="p-card p-card--hover" style="padding:16px;cursor:pointer" onclick="pGoTo('happy')">
-                <span style="font-size:24px;display:block;margin-bottom:7px">☀️</span>
-                <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink);margin-bottom:3px">Muro Feliz</div>
-                <div style="font-size:11px;color:var(--ink4)">Momentos de alegría</div>
+              <div class="p-card p-card--hover" style="padding:16px;cursor:pointer" onclick="pGoTo('professionals')">
+                <span style="font-size:24px;display:block;margin-bottom:7px">🩺</span>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink);margin-bottom:3px">Profesionales</div>
+                <div style="font-size:11px;color:var(--ink4)">Terapia · video sesiones</div>
               </div>
             </div>
           </div>
@@ -2270,6 +2278,6 @@
     <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('avatarPickerOv')">Cancelar</button>
   </div>
 </div>
-<script src="premium.js?v=20260522-75"></script>
+<script src="premium.js?v=20260522-76"></script>
 </body>
 </html>
