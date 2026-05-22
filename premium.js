@@ -187,7 +187,7 @@ function _nextToast(){
   _toastTimer = setTimeout(function(){
     el.classList.remove('show');
     setTimeout(_nextToast, 300);
-  }, 3400);
+  }, 30000);
 }
 // Alias for compatibility
 var toast = pToast;
@@ -4426,7 +4426,7 @@ function _renderCircleCards(list, circles, memberCounts){
 function _refreshCircleMemberCounts(circles){
   _initSupabase();
   if(!sbClient) return;
-  var since = new Date(Date.now() - 30*60*1000).toISOString();
+  var since = new Date(Date.now() - 10*60*1000).toISOString();
   sbClient.from('circle_members').select('circle_id,user_id').gte('last_seen', since)
     .then(function(res){
       if(!res.data) return;
@@ -4528,7 +4528,7 @@ async function _renderCircleMessages(){
         uids[r.user_id] = 1;
       }
     });
-    var memberCount = Math.max(Object.keys(uids).length, 1);
+    var memberCount = Object.keys(uids).length;
     _setEl('feedCircleMembers', memberCount + (memberCount===1?' persona activa':' personas activas'));
   }
 }
@@ -4541,6 +4541,9 @@ function pSendCircleMsg(){
   ta.style.height = '';
   var emojiPanel = document.getElementById('feedEmojiPanel');
   if(emojiPanel) emojiPanel.style.display = 'none';
+  var circleQuote = _getReplyQuote('feedReplyBar');
+  pClearReplyBar('feedReplyBar');
+  var fullText = circleQuote ? '↩ "'+circleQuote.slice(0,60)+(circleQuote.length>60?'…':'')+'"  \n'+text : text;
 
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
   var name = safeLS('get','velo_user_name') || 'Vos';
@@ -4548,18 +4551,17 @@ function pSendCircleMsg(){
   var userConvs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
   var badge = _getBadge(userConvs);
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon';
-  msgs.push({ id:'m'+Date.now(), av:av, name:name+' '+badge.icon, text:text, ts:Date.now(), own:true });
+  msgs.push({ id:'m'+Date.now(), av:av, name:name+' '+badge.icon, text:fullText, ts:Date.now(), own:true, userId:myId });
   safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs.slice(-100)));
-  _geminiModerateContent(text, 'circulo-'+_curCircle.id);
+  _geminiModerateContent(fullText, 'circulo-'+_curCircle.id);
   // Insert to Supabase so all circle members see the message in real-time
   _initSupabase();
   if(sbClient){
     sbClient.from('circle_messages').insert({ circle_id:_curCircle.id,
-      user_id: myId, user_name: name+' '+badge.icon, user_av: av||'🌿', text:text, type:'text'
+      user_id: myId, user_name: name+' '+badge.icon, user_av: av||'🌿', text:fullText, type:'text'
     }).then(function(){}).catch(function(){});
   }
   _renderCircleMessages();
-
 }
 
 var _circleMsgEmojis = ['😊','😢','❤️','🙏','💪','🌿','✨','🤗','🌸','😌','🥺','💙','🌈','☀️','🦋','🕊️','🌊','💚','😔','🫂'];
