@@ -1192,7 +1192,26 @@ a { text-decoration: none; color: inherit; }
   padding: 28px 32px;
   text-align: center;
 }
-.land-footer-text { font-size: 12px; color: rgba(255,255,255,.5); }
+.land-footer-text { font-size: 12px; color: rgba(255,255,255,.5); margin-bottom: 12px; }
+.land-footer-legal {
+  font-size: 11px;
+  color: rgba(255,255,255,.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.land-footer-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.land-footer-sep { color: rgba(255,255,255,.25); }
+.land-footer-link { color: rgba(255,255,255,.55); text-decoration: none; transition: color .2s; }
+.land-footer-link:hover { color: #fff; }
 
 /* ── 22. AUTH SCREENS ─────────────────────────────────────────────── */
 #pg-login, #pg-register, #pg-register-type, #pg-onboarding,
