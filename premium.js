@@ -2134,8 +2134,9 @@ function _guardianSendRequest(post){
   // Subscribe to guardian_requests changes for this row
   if(_grReqCh) try{ sbClient.removeChannel(_grReqCh); }catch(e){}
   _grReqCh = sbClient.channel('velo:gr:'+post.id)
-    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'guardian_requests', filter:'post_id=eq.'+post.id}, function(payload){
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'guardian_requests'}, function(payload){
       var row = payload.new || {};
+      if(String(row.post_id) !== String(post.id)) return;
       if(row.status === 'accepted'){
         _guardianRequestAccepted(post);
       } else if(row.status === 'declined'){
@@ -2252,8 +2253,10 @@ function _subscribeSeekerToGuardianRequest(postId){
   if(!sbClient || !postId) return;
   if(_seekerGrCh) try{ sbClient.removeChannel(_seekerGrCh); }catch(e){}
   _seekerGrCh = sbClient.channel('velo:seeker:'+postId)
-    .on('postgres_changes', {event:'INSERT', schema:'public', table:'guardian_requests', filter:'post_id=eq.'+postId}, function(payload){
-      _showSeekerGuardianPopup(postId, payload.new||{});
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'guardian_requests'}, function(payload){
+      var r = payload.new||{};
+      if(String(r.post_id) !== String(postId)) return;
+      _showSeekerGuardianPopup(postId, r);
     })
     .subscribe();
 }
@@ -2482,7 +2485,7 @@ async function pSendHelp(){
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí tu mensaje antes de enviar'); return; }
   if(!_checkDailyLimit('help')){
     closeModal('helpFormOv');
-    pToast('💙','Límite gratuito: 2 pedidos de ayuda por día. ¡Upgrade a Plus!');
+    pToast('💙','Límite gratuito: 4 pedidos de ayuda por día. ¡Upgrade a Plus!');
     setTimeout(pShowPlusModal, 1200);
     return;
   }
@@ -3462,20 +3465,20 @@ function pSelBottleMood(el, mood){
 
 function pOpenBottleForm(){ openModal('bottleFormOv'); }
 
-function pSendBottle(){
+async function pSendBottle(){
   var ta = document.getElementById('bottleMsgTa');
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí algo antes de lanzar'); return; }
   if(!_checkDailyLimit('bottle')){
     closeModal('bottleFormOv');
-    pToast('🌊','Límite gratuito: 2 mensajes al Mar por día. ¡Upgrade a Plus para ilimitado!');
+    pToast('🌊','Límite gratuito: 4 mensajes al Mar por día. ¡Upgrade a Plus para ilimitado!');
     setTimeout(pShowPlusModal, 1200);
     return;
   }
   var text = ta.value.trim();
   var showProfile = document.getElementById('bottleShowProfile') && document.getElementById('bottleShowProfile').checked;
   var isAnon = !showProfile;
-  var myName = isAnon ? '' : _myDisplayName();
-  var myAv   = isAnon ? '' : (safeLS('get','velo_user_av')||'🧑');
+  var myName = isAnon ? null : _myDisplayName();
+  var myAv   = isAnon ? null : (safeLS('get','velo_user_av')||'🧑');
   var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
   ta.value = '';
   closeModal('bottleFormOv');
@@ -3489,11 +3492,12 @@ function pSendBottle(){
   _geminiModerateContent(text, 'mensajes-al-mar');
   _initSupabase();
   if(sbClient){
-    sbClient.from('bottles').insert({ id:id,
-      user_id: isAnon ? null : (myId||null),
+    // Always store user_id so delete button and reply notifications work for anon posts too
+    await sbClient.from('bottles').insert({ id:id,
+      user_id: myId||null,
       user_name: myName||null, user_av: myAv||null, anon: isAnon,
       mood:_selectedBottleMood, text:text, color:'rgba(116,198,157,.12)', replied:false
-    }).then(function(){}).catch(function(){});
+    }).catch(function(){});
   }
   pRenderBottle();
 }
@@ -3555,14 +3559,17 @@ function pSendBottleReply(){
   setTimeout(function(){ pRenderBottle(); }, 600);
 }
 
-function pDeleteBottle(bottleId){
+async function pDeleteBottle(bottleId){
   if(!confirm('¿Eliminar este mensaje del mar?')) return;
   _initSupabase();
   if(sbClient){
-    sbClient.from('bottles').delete().eq('id', bottleId).then(function(){}).catch(function(){});
+    await sbClient.from('bottles').delete().eq('id', bottleId).catch(function(){});
   }
+  var myBottles = []; try{ myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
+  safeLS('set','velo_my_bottles', JSON.stringify(myBottles.filter(function(b){ return b.id !== bottleId; })));
   var card = document.getElementById('bottle-'+bottleId);
   if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ pRenderBottle(); },350); }
+  else { pRenderBottle(); }
   pToast('🌊','Mensaje eliminado');
 }
 
@@ -5104,11 +5111,11 @@ function _happyPostCard(h, isOwn){
     +'</div>';
 }
 
-function pDeleteHappyPost(postId){
+async function pDeleteHappyPost(postId){
   if(!confirm('¿Eliminar esta publicación del Muro?')) return;
   _initSupabase();
   if(sbClient){
-    sbClient.from('happy_posts').delete().eq('id', postId).then(function(){}).catch(function(){});
+    await sbClient.from('happy_posts').delete().eq('id', postId).catch(function(){});
   }
   // Remove from local cache
   if(_sbHappy) _sbHappy = _sbHappy.filter(function(h){ return h.id !== postId; });
@@ -6608,8 +6615,8 @@ function pShowPlusModal(){
     +'<ul style="font-size:12px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
     +'<li>✅ Diario emocional</li>'
     +'<li>✅ Muro de la Felicidad</li>'
-    +'<li>✅ 2 mensajes al Mar/día</li>'
-    +'<li>✅ 2 pedidos de ayuda/día</li>'
+    +'<li>✅ 4 mensajes al Mar/día</li>'
+    +'<li>✅ 4 pedidos de ayuda/día</li>'
     +'<li>✅ 4 sesiones guardián/día</li>'
     +'<li style="color:var(--ink5)">❌ Círculos de Paz</li>'
     +'<li style="color:var(--ink5)">❌ Sesiones profesionales</li>'
