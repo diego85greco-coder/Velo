@@ -3040,8 +3040,9 @@ async function _loadBottleStats(){
     ]);
     var total    = (r1 && r1.count != null) ? r1.count : '—';
     var replied  = (r2 && r2.count != null) ? r2.count : '—';
-    el.textContent = '🌊 '+total+' mensajes enviados al mar · 💌 '+replied+' respondidos';
+    el.textContent = '🌊 '+total+' mensajes enviados al mar  ·  💌 '+replied+' respondidos';
     el.style.display = 'block';
+    el.style.color = 'var(--ink4)';
   }catch(e){}
 }
 
@@ -3081,7 +3082,7 @@ async function pRenderBottle(){
   }
 
   if(!allBottles.length){
-    list.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.4)"><span class="p-empty-emoji">🌊</span><div class="p-empty-title" style="color:rgba(255,255,255,.6)">El mar está tranquilo</div><div class="p-empty-sub">Sé el primero en lanzar un mensaje</div></div>';
+    list.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">🌊</span><div class="p-empty-title">El mar está tranquilo</div><div class="p-empty-sub">Sé el primero en lanzar un mensaje</div></div>';
     return;
   }
 
