@@ -6231,7 +6231,7 @@ async function pRenderContacts(){
 
   // Refresh presence cache (online/busy/offline dots)
   await _refreshPresenceCache();
-  var onlineCount = Object.keys(_presenceCache).filter(function(id){ return _presenceInfo(id).on; }).length;
+  var onlineCount = favs.filter(function(f){ return _presenceInfo(f.id).on; }).length;
 
   // Unread DM count
   var unreadIds = {}; try{ unreadIds = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
@@ -9418,9 +9418,9 @@ function _initMsgActions(){
   });
 }
 
-function pShowMsgActions(btn, msgId, text, inputId, replyBarId){
+function pShowMsgActions(btn, msgId, text, inputId, replyBarId, senderName){
   _initMsgActions();
-  _msgPopupData = { msgId:msgId, text:text, inputId:inputId, replyBarId:replyBarId };
+  _msgPopupData = { msgId:msgId, text:text, inputId:inputId, replyBarId:replyBarId, senderName:senderName||'' };
   var pop = document.getElementById('msgActionsPopup');
   if(!pop) return;
   pop.style.display = 'flex';
@@ -9477,7 +9477,6 @@ function _msgReact(emoji){
       .then(function(){}).catch(function(){});
   }
   _msgPopupData = null;
-  pToast(emoji,'¡Reaccionaste!');
 }
 
 function _msgReactFromChip(chip, msgId){
@@ -9511,8 +9510,10 @@ function _msgReplyAct(){
     bar.style.display = 'flex';
     var textEl = bar.querySelector('.reply-preview-text');
     var preview = _msgPopupData.text.length > 70 ? _msgPopupData.text.slice(0,70)+'…' : _msgPopupData.text;
-    if(textEl) textEl.textContent = '↩  '+preview;
+    var namePrefix = _msgPopupData.senderName ? _msgPopupData.senderName+': ' : '';
+    if(textEl) textEl.textContent = '↩  '+namePrefix+preview;
     bar.setAttribute('data-reply-text', _msgPopupData.text);
+    bar.setAttribute('data-reply-name', _msgPopupData.senderName||'');
   }
   var inp = document.getElementById(_msgPopupData.inputId);
   if(inp){ inp.focus(); }
@@ -9523,12 +9524,16 @@ function pClearReplyBar(barId){
   if(!bar) return;
   bar.style.display = 'none';
   bar.removeAttribute('data-reply-text');
+  bar.removeAttribute('data-reply-name');
 }
 
 function _getReplyQuote(barId){
   var bar = document.getElementById(barId);
   if(!bar || bar.style.display === 'none') return '';
-  return bar.getAttribute('data-reply-text') || '';
+  var text = bar.getAttribute('data-reply-text') || '';
+  var name = bar.getAttribute('data-reply-name') || '';
+  if(!text) return '';
+  return name ? name+': '+text : text;
 }
 
 function _highlightMentions(text){
@@ -9541,7 +9546,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
   var t   = new Date();
   var ts  = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
   var quotePart = quoteText ? '<div class="reply-quote">'+_escHtml(quoteText.slice(0,80)+(quoteText.length>80?'…':''))+'</div>' : '';
-  var actionBtn = '<button class="msg-action-btn" onclick="pShowMsgActions(this,'+_jsAttr(id)+','+_jsAttr(text)+','+_jsAttr(inputId)+','+_jsAttr(replyBarId)+')" aria-label="Acciones">•••</button>';
+  var actionBtn = '<button class="msg-action-btn" onclick="pShowMsgActions(this,'+_jsAttr(id)+','+_jsAttr(text)+','+_jsAttr(inputId)+','+_jsAttr(replyBarId)+','+_jsAttr(isUser?'':senderName||'')+',\'\')" aria-label="Acciones">•••</button>';
   var sbAttr = sbId ? ' data-sb-id="'+sbId+'"' : '';
   var rxHtml = '';
   if(reactions && typeof reactions === 'object'){
