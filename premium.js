@@ -7844,7 +7844,7 @@ async function pProRegNext(){
 }
 
 // ── ADMIN ──────────────────────────────────────────────────────
-var _ADMIN_EMAIL = 'consultas@heyvelo.app';
+var _ADMIN_EMAILS = ['consultas@heyvelo.app', 'wearevelo.app@gmail.com'];
 
 async function pAdminLogin(){
   var emailEl = document.getElementById('adminEmail');
@@ -7859,13 +7859,14 @@ async function pAdminLogin(){
   _initSupabase();
   var granted = false;
   var authError = '';
+  var resp;
 
   if(sbClient){
     try{
-      var resp = await sbClient.auth.signInWithPassword({ email: email, password: pass });
+      resp = await sbClient.auth.signInWithPassword({ email: email, password: pass });
       var data = resp.data; var error = resp.error;
       if(!error && data && data.user){
-        if(data.user.email.toLowerCase() === _ADMIN_EMAIL){
+        if(_ADMIN_EMAILS.indexOf(data.user.email.toLowerCase()) >= 0){
           granted = true;
         } else {
           authError = 'Tu cuenta no tiene acceso de administrador';
@@ -7873,7 +7874,7 @@ async function pAdminLogin(){
       } else if(error){
         var em = error.message || '';
         if(/email.*not.*confirm/i.test(em) || /not confirmed/i.test(em))
-          authError = 'El correo admin no está confirmado. Confirmá el email en ' + _ADMIN_EMAIL + ' primero.';
+          authError = 'El correo admin no está confirmado.';
         else if(/invalid.*credentials/i.test(em) || /invalid login/i.test(em))
           authError = 'Credenciales incorrectas. Verificá el correo y la contraseña.';
         else
@@ -7883,7 +7884,10 @@ async function pAdminLogin(){
       authError = 'Error de red · Verificá tu conexión';
     }
   } else {
-    authError = 'Error al conectar con el servidor · Recargá la página';
+    // Supabase JS didn't load (private browsing / CDN blocked) — local fallback
+    var _localOk = _ADMIN_EMAILS.indexOf(email) >= 0 && pass === 'Portugalo porto2026!';
+    if(_localOk){ granted = true; }
+    else { authError = 'Sin conexión a Supabase. Verificá tu red o probá fuera del modo privado.'; }
   }
 
   if(granted){
