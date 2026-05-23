@@ -347,12 +347,28 @@ function _sbSyncProfile(userId){
             }
           }).catch(function(){ safeLS('set','velo_plan','plus'); });
       }
-      // Restore guardian bio/tags from guardian_presence
-      sbClient.from('guardian_presence').select('bio,tags').eq('user_id', userId).limit(1)
+      // Check if new people have added us as favorite → show badge on star
+      sbClient.from('user_favorites').select('id',{count:'exact',head:true}).eq('fav_id', userId)
+        .then(function(fr){
+          var newTotal = fr.count || 0;
+          safeLS('set','velo_fav_me_count', String(newTotal));
+          _updateFavBadge();
+        }).catch(function(){});
+      // Restore guardian bio/tags/status from guardian_presence
+      sbClient.from('guardian_presence').select('bio,tags,is_guardian,status').eq('user_id', userId).limit(1)
         .then(function(gr){
           if(gr.data && gr.data[0]){
             if(gr.data[0].bio)  safeLS('set','velo_guardian_bio', gr.data[0].bio);
             if(gr.data[0].tags) safeLS('set','velo_guardian_tags', Array.isArray(gr.data[0].tags) ? gr.data[0].tags.join(', ') : gr.data[0].tags);
+            // Restore guardian active flag so the request listener starts on reload
+            if(gr.data[0].is_guardian === true){
+              safeLS('set','velo_is_guardian','true');
+              if(gr.data[0].status && gr.data[0].status !== 'offline'){
+                safeLS('set','velo_guardian_status', gr.data[0].status);
+              }
+              // Start listener now that we know user is guardian (may already be running — guard inside)
+              setTimeout(_startGuardianReqListener, 300);
+            }
           }
         }).catch(function(){});
       // Refresh all UI with synced data
@@ -462,6 +478,7 @@ async function pSignUp(){
   if(!pass || pass.length < 6){ _showFieldErr('regPassErr'); ok=false; }
   if(tcEl && !tcEl.checked){ if(tcErrEl) tcErrEl.style.display='block'; ok=false; }
   if(!ok) return;
+  if(!_botGuardCheck()) return;
 
   if(btn) btn.disabled = true;
   if(btnTxt) btnTxt.textContent = 'Creando cuenta…';
@@ -496,7 +513,7 @@ async function pSignUp(){
       safeLS('set','velo_sb_pass', pass);
       safeLS('set','velo_user_name', name);
       safeLS('set','velo_user_type','user');
-      _recordTC(name, email);
+      _recordTC(name, email, 'TOS-v1');
       var veEl = document.getElementById('verifyEmailAddr');
       if(veEl) veEl.textContent = email;
       pGoTo('verify-email');
@@ -619,6 +636,14 @@ function pShowPrivacy(){
   if(ov) ov.classList.add('show');
 }
 
+function pToggleFaq(btn){
+  var a = btn.nextElementSibling;
+  var isOpen = a.classList.contains('faq-open');
+  document.querySelectorAll('.land-faq-a.faq-open').forEach(function(el){ el.classList.remove('faq-open'); });
+  document.querySelectorAll('.land-faq-q.faq-open').forEach(function(el){ el.classList.remove('faq-open'); });
+  if(!isOpen){ a.classList.add('faq-open'); btn.classList.add('faq-open'); }
+}
+
 function pShowForgot(){
   var email = document.getElementById('loginEmail');
   var val   = email ? email.value.trim() : '';
@@ -733,30 +758,136 @@ function _clearFieldErr(id){
   if(el){ el.classList.remove('show'); var inp = el.previousElementSibling; if(inp) inp.classList.remove('error'); }
 }
 
+// ── TURNSTILE ──────────────────────────────────────────────────
+async function _verifyTurnstile(widgetId){
+  // Get token from the widget (Turnstile sets a hidden input)
+  var token = '';
+  var inputs = document.querySelectorAll('[name="cf-turnstile-response"]');
+  // If multiple widgets, pick the one from the active form
+  inputs.forEach(function(inp){
+    if(!token && inp.value) token = inp.value;
+  });
+  if(!token){
+    pToast('🛡️','Completá la verificación de seguridad antes de continuar.');
+    return false;
+  }
+  try{
+    var r = await fetch('/api/verify-turnstile', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ token: token })
+    });
+    var data = await r.json();
+    if(!data.success){
+      pToast('🛡️','Verificación de seguridad fallida. Intentá de nuevo.');
+      // Reset all widgets so user can retry
+      if(window.turnstile) window.turnstile.reset();
+      return false;
+    }
+    return true;
+  }catch(e){
+    // Network error — allow through (fail open) so genuine users aren't blocked
+    return true;
+  }
+}
+
+// ── BOT PROTECTION ─────────────────────────────────────────────
+var _botGuard = { openedAt:0, interacted:false };
+
+function _botGuardInit(){
+  _botGuard.openedAt   = Date.now();
+  _botGuard.interacted = false;
+}
+
+// Call once at app start — tracks any real human gesture globally
+function _botGuardStartListeners(){
+  var mark = function(){ _botGuard.interacted = true; };
+  ['mousemove','mousedown','keydown','touchstart','touchmove'].forEach(function(ev){
+    document.addEventListener(ev, mark, { once:true, passive:true });
+  });
+}
+
+// Returns null if human, or a reason string if bot-like
+function _botGuardCheck(){
+  // 1. Honeypot — any content means a bot filled the hidden field
+  var hp = document.getElementById('_vhp') || document.getElementById('_vhp2');
+  if(hp && hp.value){ _botGuardBlock('honeypot'); return false; }
+
+  // 2. Headless browser fingerprint
+  if(navigator.webdriver){ _botGuardBlock('headless'); return false; }
+  if(typeof navigator.plugins !== 'undefined' && navigator.plugins.length === 0
+     && !/firefox/i.test(navigator.userAgent)){ _botGuardBlock('no-plugins'); return false; }
+
+  // 3. Submitted too fast (< 2.5s since form opened)
+  var elapsed = Date.now() - _botGuard.openedAt;
+  if(_botGuard.openedAt && elapsed < 2500){ _botGuardBlock('too-fast:'+elapsed+'ms'); return false; }
+
+  // 4. No real human interaction detected
+  if(!_botGuard.interacted){ _botGuardBlock('no-interaction'); return false; }
+
+  // 5. Client-side rate limit: max 4 attempts per hour
+  var now = Date.now();
+  var attempts = [];
+  try{ attempts = JSON.parse(safeLS('get','velo_reg_attempts')||'[]'); }catch(e){}
+  attempts = attempts.filter(function(t){ return now - t < 3600000; });
+  if(attempts.length >= 4){
+    pToast('⏳','Demasiados intentos. Esperá unos minutos e intentá de nuevo.');
+    return false;
+  }
+  attempts.push(now);
+  safeLS('set','velo_reg_attempts', JSON.stringify(attempts));
+  return true;
+}
+
+function _botGuardBlock(reason){
+  // Log silently — don't reveal why to the bot
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('bot_attempts').insert({
+      reason: reason, ua: navigator.userAgent.slice(0,200), ts: new Date().toISOString()
+    }).then(function(){}).catch(function(){});
+  }
+  pToast('🛡️','Verificación de seguridad fallida. Intentá de nuevo.');
+}
+
 // ── TC RECORD ─────────────────────────────────────────────────
-function _recordTC(name, email){
+async function _fetchClientIP(){
+  try{
+    var r = await fetch('https://api.ipify.org?format=json');
+    var j = await r.json();
+    return j.ip || '';
+  }catch(e){ return ''; }
+}
+
+async function _recordTC(name, email, version){
+  version = version || 'TOS-v1';
   var now = new Date();
+  var ip  = await _fetchClientIP();
   var recs = []; try{ recs = JSON.parse(safeLS('get','velo_tc_records')||'[]'); }catch(e){}
   recs.unshift({
     name:      name,
     email:     email,
-    timestamp: now.toISOString(),           // full ISO with ms — e.g. 2026-05-18T14:32:07.451Z
-    ts_ms:     now.getTime(),               // Unix ms — precise for legal audit
-    ip:        '(client-side — ver Supabase logs)', // real IP available in Supabase auth logs
+    timestamp: now.toISOString(),
+    ts_ms:     now.getTime(),
+    ip:        ip || '(no disponible)',
     ua:        navigator.userAgent.slice(0,120),
-    version:   '1.0'
+    version:   version
   });
   safeLS('set','velo_tc_records', JSON.stringify(recs.slice(0,500)));
-  // Also save registration timestamp on user profile
   if(!safeLS('get','velo_registered_ts')){
     safeLS('set','velo_registered_ts', String(now.getTime()));
   }
-  // Persist to Supabase for the legal audit trail
   _initSupabase();
   if(sbClient){
     try{
-      sbClient.from('terms_acceptance').insert({ email:email, nombre:name,
-        rol: safeLS('get','velo_user_type')||'user', accepted_at: now.toISOString() }).then(function(){}).catch(function(){});
+      sbClient.from('terms_acceptance').insert({
+        email:       email,
+        nombre:      name,
+        rol:         safeLS('get','velo_user_type')||'user',
+        accepted_at: now.toISOString(),
+        version:     version,
+        ip_hint:     ip || navigator.language||''
+      }).then(function(){}).catch(function(){});
     }catch(e){}
   }
 }
@@ -1441,7 +1572,7 @@ function _renderHomeStatusToggle(){
     return '<button onclick="pSetUserStatus(\''+val+'\')" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;border:1.5px solid '
       +(active?activeColor:'var(--border2)')+';background:'+(active?activeBg:'transparent')+';color:'+(active?activeColor:'var(--ink4)')+'">'+emoji+' '+label+'</button>';
   };
-  el.innerHTML = '<span style="font-size:10px;font-weight:700;color:var(--ink5);letter-spacing:.5px;text-transform:uppercase">Mi estado</span>'
+  el.innerHTML = '<span style="font-size:10px;font-weight:700;color:var(--ink2);letter-spacing:.5px;text-transform:uppercase">Mi estado</span>'
     + pill('disponible','🟢','Disponible','var(--sage2)','var(--sage7)')
     + pill('ocupado','🟡','Ocupado','#C8A200','rgba(200,162,0,.12)');
 }
@@ -1451,7 +1582,7 @@ function _renderMyStatusBar(){
   if(!el) return;
   var st = _myGuardianStatus;
   el.innerHTML = '<div style="background:rgba(255,255,255,.7);border:1.5px solid var(--border);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px">'
-    +'<div style="font-size:11px;font-weight:700;color:var(--ink4);letter-spacing:.5px">MI ESTADO</div>'
+    +'<div style="font-size:11px;font-weight:700;color:var(--ink2);letter-spacing:.5px">MI ESTADO</div>'
     +'<div style="display:flex;gap:6px;margin-left:auto">'
     +'<button onclick="pSetMyGuardianStatus(\'disponible\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(st==='disponible'?'var(--sage2)':'var(--border2)')+';background:'+(st==='disponible'?'var(--sage7)':'none')+';color:'+(st==='disponible'?'var(--sage)':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">🟢 Disponible</button>'
     +'<button onclick="pSetMyGuardianStatus(\'ocupado\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(st==='ocupado'?'#C8A200':'var(--border2)')+';background:'+(st==='ocupado'?'rgba(200,162,0,.1)':'none')+';color:'+(st==='ocupado'?'#C8A200':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">🟡 Ocupado</button>'
@@ -3656,6 +3787,7 @@ function pReportBottle(bottleId){
 
 // ── DIARY ──────────────────────────────────────────────────────
 var _diaryEmojis = ['😊','😢','😰','😤','😴','🤔','💪','🌿','✨','💔'];
+var _diaryPrivacyShown = false;
 
 function pInitDiary(){
   var dateEl = document.getElementById('diaryDateLbl');
@@ -3664,6 +3796,12 @@ function pInitDiary(){
   if(row) row.innerHTML = _diaryEmojis.map(function(e){
     return '<button class="diary-emoji-btn" onclick="pSelDiaryEmoji(this,\''+e+'\')" data-emoji="'+e+'">'+e+'</button>';
   }).join('');
+  // Show privacy notice once per session
+  if(!_diaryPrivacyShown){
+    _diaryPrivacyShown = true;
+    var banner = document.getElementById('diaryPrivacyBanner');
+    if(banner) banner.style.display = 'flex';
+  }
   _loadDiaryEntries();
 }
 
@@ -3704,13 +3842,37 @@ async function _loadDiaryEntries(){
     var local = []; try{ local = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
     entries = local;
   }
+  _diaryEntries = entries;
   if(!entries.length){
     el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">📔</span><div class="p-empty-title">Aún no tenés entradas</div><div class="p-empty-sub">Este es tu espacio seguro. 🌙</div></div>';
     return;
   }
+  // Sort newest first
+  entries = entries.slice().sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
   el.innerHTML = entries.map(function(e, i){
-    return '<div class="diary-entry" style="animation-delay:'+i*.05+'s"><div class="diary-entry-date">'+e.dateLabel+'</div><div class="diary-entry-text">'+_escHtml(e.text)+'</div><div style="margin-top:8px;text-align:right"><button style="font-size:11px;color:var(--sos);background:none;border:none;cursor:pointer;padding:3px 7px" onclick="pDeleteDiary('+e.ts+')">🗑️ Borrar</button></div></div>';
+    var preview = (e.text||'').slice(0, 55) + ((e.text||'').length > 55 ? '…' : '');
+    return '<div class="diary-row" style="animation-delay:'+i*.04+'s" onclick="pOpenDiaryEntry('+e.ts+')">'
+      +'<div class="diary-row-date">'+_escHtml(e.dateLabel||'')+'</div>'
+      +'<div class="diary-row-preview">'+_escHtml(preview)+'</div>'
+      +'</div>';
   }).join('');
+}
+
+var _diaryEntries = [];
+function pOpenDiaryEntry(ts){
+  var entries = _diaryEntries;
+  if(!entries.length){ try{ entries = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){} }
+  var entry = entries.find(function(e){ return e.ts === ts; });
+  if(!entry) return;
+  var ov = document.getElementById('diaryEntryOv');
+  if(!ov) return;
+  var dateEl  = document.getElementById('diaryEntryDate');
+  var textEl  = document.getElementById('diaryEntryText');
+  var delBtn  = document.getElementById('diaryEntryDel');
+  if(dateEl)  dateEl.textContent  = entry.dateLabel || '';
+  if(textEl)  textEl.textContent  = entry.text || '';
+  if(delBtn)  delBtn.onclick = function(){ closeModal('diaryEntryOv'); pDeleteDiary(ts); };
+  openModal('diaryEntryOv');
 }
 
 async function pDeleteDiary(ts){
@@ -5727,7 +5889,7 @@ function _renderBadgesGrid(){
     { name:'Novato',   icon:'🌱', min:0,   max:5,   color:'var(--sage4)', unlock:'Podés pedir acompañamiento a otros guardianes' },
     { name:'Bronce',   icon:'🥉', min:5,   max:20,  color:'#C07840',      unlock:'Aparecés en el listado de guardianes disponibles' },
     { name:'Plata',    icon:'🥈', min:20,  max:40,  color:'#8892A4',      unlock:'Insignia verificada en tu perfil público' },
-    { name:'Oro',      icon:'🥇', min:40,  max:100, color:'#C8A200',      unlock:'Podés crear Círculos de Paz ⭕ + prioridad en el listado' },
+    { name:'Oro',      icon:'🥇', min:40,  max:100, color:'#C8A200',      unlock:'Podés crear Círculos de Paz ☮️ + prioridad en el listado' },
     { name:'Diamante', icon:'💎', min:100, max:100, color:'#7B68EE',      unlock:'Estado top de la comunidad + descuento en Velo Plus ✨' }
   ];
   var tierRows = tiers.map(function(t){
@@ -6267,9 +6429,11 @@ function _isBlocked(userId){
 }
 
 function _updateFavBadge(){
-  var count = pGetFavs().length;
-  var badge = document.getElementById('favCountBadge');
-  if(badge){ badge.textContent = count > 0 ? count : ''; badge.style.display = count > 0 ? 'inline' : 'none'; }
+  var total  = parseInt(safeLS('get','velo_fav_me_count')||'0', 10);
+  var seen   = parseInt(safeLS('get','velo_fav_me_seen') ||'0', 10);
+  var newN   = Math.max(0, total - seen);
+  var badge  = document.getElementById('favCountBadge');
+  if(badge){ badge.textContent = newN > 0 ? newN : ''; badge.style.display = newN > 0 ? 'inline' : 'none'; }
 }
 
 // ── CONTACTS PAGE ─────────────────────────────────────────────
@@ -6288,12 +6452,16 @@ async function pRenderContacts(){
     try{
       var {count} = await sbClient.from('user_favorites').select('id',{count:'exact',head:true}).eq('fav_id', myId);
       favMeCount = count || 0;
+      // Persist count and mark as seen → clears the badge
+      safeLS('set','velo_fav_me_count', String(favMeCount));
+      safeLS('set','velo_fav_me_seen',  String(favMeCount));
+      _updateFavBadge();
     }catch(e){}
   }
 
   // Refresh presence cache (online/busy/offline dots)
   await _refreshPresenceCache();
-  var onlineCount = Object.keys(_presenceCache).filter(function(id){ return _presenceInfo(id).on; }).length;
+  var onlineCount = favs.filter(function(f){ return _presenceInfo(f.id).on; }).length;
 
   // Unread DM count
   var unreadIds = {}; try{ unreadIds = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
@@ -6373,9 +6541,9 @@ async function _renderFavWidget(containerId){
         +'<div style="font-size:10px;color:var(--ink3);font-weight:600;max-width:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml((f.name||'Usuario').split(' ')[0])+'</div>'
         +'</div>';
     }).join('')
-    +'<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer;opacity:.6" onclick="pGoTo(\'contacts\')">'
+    +'<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer" onclick="pGoTo(\'contacts\')">'
     +'<div style="width:38px;height:38px;border-radius:50%;background:var(--cream2);border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:16px">👥</div>'
-    +'<div style="font-size:10px;color:var(--ink5)">Ver todos</div>'
+    +'<div style="font-size:10px;color:var(--ink3);font-weight:600">Ver todos</div>'
     +'</div>'
     +'</div>'
     +'</div>';
@@ -7504,26 +7672,32 @@ function pTogDay(el){
 }
 
 // ── PRO REG ────────────────────────────────────────────────────
-function pProRegNext(){
-  var name  = document.getElementById('prName');
-  var spec  = document.getElementById('prSpec');
-  var email = document.getElementById('prEmail');
-  var pass  = document.getElementById('prPass');
-  var tcEl  = document.getElementById('proTcCheck');
+async function pProRegNext(){
+  var name    = document.getElementById('prName');
+  var spec    = document.getElementById('prSpec');
+  var email   = document.getElementById('prEmail');
+  var pass    = document.getElementById('prPass');
+  var tcEl    = document.getElementById('proTcCheck');
+  var dpaEl   = document.getElementById('proDpaCheck');
   var tcErrEl = document.getElementById('proTcErr');
+  var dpaErrEl= document.getElementById('proDpaErr');
   if(!name||!name.value.trim()){ pToast('⚠️','Ingresá tu nombre'); return; }
   if(!spec||!spec.value.trim()){ pToast('⚠️','Ingresá tu especialidad'); return; }
   if(!email||!email.value.trim()){ pToast('⚠️','Ingresá tu correo'); return; }
   if(!pass||!pass.value||pass.value.length<6){ pToast('⚠️','Contraseña mínima de 6 caracteres'); return; }
   if(tcEl && !tcEl.checked){ if(tcErrEl) tcErrEl.style.display='block'; return; }
   if(tcErrEl) tcErrEl.style.display='none';
+  if(dpaEl && !dpaEl.checked){ if(dpaErrEl) dpaErrEl.style.display='block'; return; }
+  if(dpaErrEl) dpaErrEl.style.display='none';
+  if(!_botGuardCheck()) return;
   safeLS('set','velo_pro_name', name.value.trim());
   safeLS('set','velo_pro_spec', spec.value.trim());
   safeLS('set','velo_user_email', email.value.trim());
   safeLS('set','velo_sb_pass', pass.value);
   safeLS('set','velo_user_type','pro');
   safeLS('set','velo_user_name', name.value.trim());
-  _recordTC(name.value.trim(), email.value.trim());
+  await _recordTC(name.value.trim(), email.value.trim(), 'TOS-v1');
+  await _recordTC(name.value.trim(), email.value.trim(), 'DPA-v1');
   pOpenPayPalPro();
   pGoTo('pro-pending');
 }
@@ -7764,26 +7938,18 @@ async function _renderAdmin(){
       +'</div>'
       +'<div id="adminContactsList"><p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Cargando mensajes…</p></div>'
 
-    // T&C acceptance log (legal audit)
-      +'<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:8px">📜 ACEPTACIÓN DE TÉRMINOS (AUDITORÍA LEGAL)</div>'
-      +'<div style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:10px;line-height:1.5">Registro completo con fecha, hora y milisegundos para uso judicial.</div>'
-      +(tcRecs.length
-        ? tcRecs.slice(0,20).map(function(r){
-            var d = r.timestamp ? new Date(r.timestamp) : new Date(r.ts_ms||0);
-            var dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
-              +' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')
-              +'.'+String(d.getMilliseconds()).padStart(3,'0')+' UTC';
-            return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;margin-bottom:6px">'
-              +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
-              +'<span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.75)">'+_escHtml(r.name||'—')+'</span>'
-              +'<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓ Aceptado</span>'
-              +'</div>'
-              +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px">'+_escHtml(r.email||'—')+'</div>'
-              +'<div style="font-size:10px;color:rgba(255,255,255,.25);font-family:monospace">'+dateStr+'</div>'
-              +(r.ts_ms ? '<div style="font-size:9px;color:rgba(255,255,255,.18);font-family:monospace">Unix ms: '+r.ts_ms+'</div>' : '')
-              +'</div>';
-          }).join('')
-        : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">Sin registros aún.</p>');
+    // T&C acceptance log — dynamic section with search
+      +'<div style="margin-top:20px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6)">📜 ACEPTACIÓN DE TÉRMINOS (AUDITORÍA LEGAL)</div>'
+      +'<button onclick="pAdminLoadConsent()" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:6px;color:rgba(116,198,157,.6);cursor:pointer;font-family:\'Jost\',sans-serif">↻ Actualizar</button>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 12px">'
+      +'<span style="font-size:15px">🔍</span>'
+      +'<input id="consentSearch" type="text" placeholder="Buscar por nombre o email…" oninput="_filterConsentLog(this.value)" style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:12px;font-family:\'Jost\',sans-serif" />'
+      +'</div>'
+      +'<div id="adminConsentLog"><p style="font-size:12px;color:rgba(255,255,255,.3)">Cargando registros…</p></div>'
+      +'</div>';
 
     var crisisEvents = audit.filter(function(a){ return a.tipo === 'crisis_detect'; });
     var crisisHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,80,80,.85);margin-bottom:10px">🆘 ALERTAS DE CRISIS</div>'
@@ -7951,6 +8117,8 @@ async function _renderAdmin(){
     });
     // Load crisis events from Supabase async
     _loadAdminCrisisFromSupabase();
+    // Load consent log
+    pAdminLoadConsent();
     // Generate AI task list async
     _renderAdminAITasks();
   }
@@ -8141,6 +8309,59 @@ async function pAdminMarkContactRead(id){
 }
 
 function pAdminResolveFlag(id){ pAdminModerateFlag(id, 'accept'); }
+
+// ── CONSENT LOG ─────────────────────────────────────────────
+var _consentAllRecords = [];
+
+async function pAdminLoadConsent(){
+  _initSupabase();
+  var el = document.getElementById('adminConsentLog');
+  if(!el) return;
+  if(!sbClient){ el.innerHTML = '<p style="font-size:12px;color:rgba(255,80,80,.5)">Sin conexión a Supabase.</p>'; return; }
+  el.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,.3)">Cargando…</p>';
+  try{
+    var res = await sbClient.from('terms_acceptance').select('*').order('accepted_at',{ascending:false}).limit(500);
+    _consentAllRecords = res.data || [];
+    var inp = document.getElementById('consentSearch');
+    _filterConsentLog(inp ? inp.value : '');
+  }catch(e){
+    el.innerHTML = '<p style="font-size:12px;color:rgba(255,80,80,.5)">Error al cargar: '+_escHtml(String(e))+'</p>';
+  }
+}
+
+function _filterConsentLog(query){
+  var el = document.getElementById('adminConsentLog');
+  if(!el) return;
+  var q = (query||'').toLowerCase().trim();
+  var rows = q
+    ? _consentAllRecords.filter(function(r){
+        return (r.nombre||'').toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q);
+      })
+    : _consentAllRecords;
+  if(!rows.length){
+    el.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">'+(q?'Sin resultados para "'+_escHtml(q)+'"':'Sin registros aún.')+'</p>';
+    return;
+  }
+  var rolColor = { pro:'rgba(116,198,210,.8)', plus:'#c8a23e', user:'rgba(255,255,255,.3)' };
+  el.innerHTML = '<div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:8px">'+rows.length+' registro'+(rows.length!==1?'s':'')+'</div>'
+    + rows.map(function(r){
+      var d   = r.accepted_at ? new Date(r.accepted_at) : null;
+      var dateStr = d ? (d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
+        +' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')+' UTC') : '—';
+      var rol = r.rol||'user';
+      var ver = r.version||'TOS-v1';
+      return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:11px 13px;margin-bottom:7px">'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+        +'<span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.8);flex:1">'+_escHtml(r.nombre||'—')+'</span>'
+        +'<span style="font-size:9px;border:1px solid;border-radius:5px;padding:1px 6px;color:'+(rolColor[rol]||rolColor.user)+';border-color:'+(rolColor[rol]||rolColor.user)+'">'+rol.toUpperCase()+'</span>'
+        +'<span style="font-size:9px;background:rgba(116,198,157,.1);color:rgba(116,198,157,.7);border-radius:5px;padding:1px 6px">'+ver+'</span>'
+        +'<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓</span>'
+        +'</div>'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:3px">✉ '+_escHtml(r.email||'—')+'</div>'
+        +'<div style="font-size:10px;color:rgba(255,255,255,.22);font-family:monospace">🕐 '+dateStr+'</div>'
+        +'</div>';
+    }).join('');
+}
 
 // action: 'accept' (contenido OK) · 'alert' (alertar al usuario) · 'delete' (eliminar) · 'alertdelete'
 function pAdminModerateFlag(id, action){
@@ -9396,6 +9617,8 @@ function _initReveal(){
 function _onPageEnter(id){
   switch(id){
     case 'landing':     _initReveal(); break;
+    case 'register':    _botGuardInit(); break;
+    case 'pro-reg':     _botGuardInit(); break;
     case 'home':        _loadHomeData(); break;
     case 'guardians':
       _initSupabase();
@@ -9480,9 +9703,9 @@ function _initMsgActions(){
   });
 }
 
-function pShowMsgActions(btn, msgId, text, inputId, replyBarId){
+function pShowMsgActions(btn, msgId, text, inputId, replyBarId, senderName){
   _initMsgActions();
-  _msgPopupData = { msgId:msgId, text:text, inputId:inputId, replyBarId:replyBarId };
+  _msgPopupData = { msgId:msgId, text:text, inputId:inputId, replyBarId:replyBarId, senderName:senderName||'' };
   var pop = document.getElementById('msgActionsPopup');
   if(!pop) return;
   pop.style.display = 'flex';
@@ -9539,7 +9762,6 @@ function _msgReact(emoji){
       .then(function(){}).catch(function(){});
   }
   _msgPopupData = null;
-  pToast(emoji,'¡Reaccionaste!');
 }
 
 function _msgReactFromChip(chip, msgId){
@@ -9573,8 +9795,10 @@ function _msgReplyAct(){
     bar.style.display = 'flex';
     var textEl = bar.querySelector('.reply-preview-text');
     var preview = _msgPopupData.text.length > 70 ? _msgPopupData.text.slice(0,70)+'…' : _msgPopupData.text;
-    if(textEl) textEl.textContent = '↩  '+preview;
+    var namePrefix = _msgPopupData.senderName ? _msgPopupData.senderName+': ' : '';
+    if(textEl) textEl.textContent = '↩  '+namePrefix+preview;
     bar.setAttribute('data-reply-text', _msgPopupData.text);
+    bar.setAttribute('data-reply-name', _msgPopupData.senderName||'');
   }
   var inp = document.getElementById(_msgPopupData.inputId);
   if(inp){ inp.focus(); }
@@ -9585,12 +9809,16 @@ function pClearReplyBar(barId){
   if(!bar) return;
   bar.style.display = 'none';
   bar.removeAttribute('data-reply-text');
+  bar.removeAttribute('data-reply-name');
 }
 
 function _getReplyQuote(barId){
   var bar = document.getElementById(barId);
   if(!bar || bar.style.display === 'none') return '';
-  return bar.getAttribute('data-reply-text') || '';
+  var text = bar.getAttribute('data-reply-text') || '';
+  var name = bar.getAttribute('data-reply-name') || '';
+  if(!text) return '';
+  return name ? name+': '+text : text;
 }
 
 function _highlightMentions(text){
@@ -9603,7 +9831,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
   var t   = new Date();
   var ts  = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
   var quotePart = quoteText ? '<div class="reply-quote">'+_escHtml(quoteText.slice(0,80)+(quoteText.length>80?'…':''))+'</div>' : '';
-  var actionBtn = '<button class="msg-action-btn" onclick="pShowMsgActions(this,'+_jsAttr(id)+','+_jsAttr(text)+','+_jsAttr(inputId)+','+_jsAttr(replyBarId)+')" aria-label="Acciones">•••</button>';
+  var actionBtn = '<button class="msg-action-btn" onclick="pShowMsgActions(this,'+_jsAttr(id)+','+_jsAttr(text)+','+_jsAttr(inputId)+','+_jsAttr(replyBarId)+','+_jsAttr(isUser?'':senderName||'')+',\'\')" aria-label="Acciones">•••</button>';
   var sbAttr = sbId ? ' data-sb-id="'+sbId+'"' : '';
   var rxHtml = '';
   if(reactions && typeof reactions === 'object'){
@@ -9641,6 +9869,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
 document.addEventListener('DOMContentLoaded', function(){
   _initSupabase();
   _initMsgActions();
+  _botGuardStartListeners();
   setTimeout(_restoreSeekerSubscription, 2000);
 });
 
