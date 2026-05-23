@@ -43,6 +43,8 @@ var _pendingGuardianPost = null; // post object guardian clicked "Acompañar" on
 var _dmRtCh      = null;   // realtime channel direct_messages (per-thread)
 var _dmInboxCh   = null;   // realtime channel direct_messages (global inbox listener)
 var _favsList     = null;   // cached favorites array (loaded lazily)
+var _prevChatStatus = null; // status saved before entering any chat (restored on exit)
+var _inActiveChat   = false; // true while user is in any live chat session
 
 async function _geminiCallGrounded(prompt, cfg){
   // Try Vercel serverless proxy first, fall back to direct call
@@ -1390,7 +1392,7 @@ function _startGuardianHeartbeat(){
   _startGuardianReqListener();
   if(_guardianHeartbeatTimer) return;
   var beat = function(){
-    _updateGuardianPresence(_presenceStatus());
+    _updateGuardianPresence(_inActiveChat ? 'ocupado' : _presenceStatus());
     _refreshPresenceCache();
     if(_curCircle){
       var _cmId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
@@ -1931,6 +1933,9 @@ var _gcRtCh   = null;   // realtime channel
 var _gcSeekerCh = null; // seeker's request-status channel
 
 function _openGuardianChat(peerId, peerName, peerAv, reqId, role){
+  _prevChatStatus = _presenceStatus();
+  _inActiveChat = true;
+  _updateGuardianPresence('ocupado');
   _gcPeer  = { id:peerId, name:peerName||'Usuario', av:peerAv||'🌿' };
   _gcReqId = reqId;
   _gcRole  = role;
@@ -1959,7 +1964,7 @@ async function _gcRender(){
       .or('and(from_id.eq.'+myId+',to_id.eq.'+_gcPeer.id+'),and(from_id.eq.'+_gcPeer.id+',to_id.eq.'+myId+')')
       .order('created_at',{ascending:true}).limit(120);
     var data = res.data || [];
-    var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__'];
+    var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
     var msgs = data.filter(function(m){ return sentinels.indexOf(m.text) < 0; });
     if(!msgs.length){
       el.innerHTML = '<div id="gcPlaceholder" style="text-align:center;padding:34px 16px;color:var(--ink5);font-size:13px;line-height:1.6">Este es un espacio seguro 🌿<br>Escriban con presencia y cuidado.</div>';
@@ -2030,11 +2035,14 @@ function pEndGuardianChat(){
   if(_gcReqId && sbClient){
     sbClient.from('guardian_requests').update({status:'ended'}).eq('id',_gcReqId).then(function(){}).catch(function(){});
   }
+  var exitStatus = _prevChatStatus || _presenceStatus();
+  _inActiveChat = false;
+  _prevChatStatus = null;
   if(_gcRole === 'guardian'){
     var convs = parseInt(safeLS('get','velo_guardian_convs')||'0',10) + 1;
     safeLS('set','velo_guardian_convs', String(convs));
     _bumpProfileCounter('helped_count', convs);
-    _updateGuardianPresence(safeLS('get','velo_guardian_status')||'disponible');
+    _updateGuardianPresence(exitStatus);
     _gcPeer = null; _gcReqId = null; _gcRole = null;
     pToast('💚','Gracias por acompañar 🌿');
     pGoTo('guardians');
@@ -2044,6 +2052,7 @@ function pEndGuardianChat(){
     _bumpProfileCounter('received_count', received);
     var rGuardian = _gcPeer ? { id:_gcPeer.id, name:_gcPeer.name } : null;
     safeLS('set','velo_postchat_guardian', rGuardian ? JSON.stringify(rGuardian) : '');
+    _updateGuardianPresence(exitStatus);
     _gcPeer = null; _gcReqId = null; _gcRole = null;
     pGoTo('post-chat');
   }
@@ -2495,8 +2504,9 @@ function _openHelpChat(post){
     var tStr = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
     msgEl.innerHTML = '<div class="feed-system-msg">Chat de acompañamiento iniciado · '+ tStr +'</div>';
   }
+  _prevChatStatus = _presenceStatus();
+  _inActiveChat = true;
   _updateGuardianPresence('ocupado');
-  safeLS('set','velo_guardian_status','ocupado');
   pGoTo('help-chat');
   _resetHelpInactivity();
   _subscribeHelpChat(post);
@@ -2608,8 +2618,10 @@ function pLeaveHelpChat(){
   if(_helpChatRtCh && sbClient){ try{ sbClient.removeChannel(_helpChatRtCh); }catch(e){} _helpChatRtCh = null; }
   var post = _curHelpPost;
   _curHelpPost = null;
-  _updateGuardianPresence('disponible');
-  safeLS('set','velo_guardian_status','disponible');
+  var exitStatus = _prevChatStatus || _presenceStatus();
+  _inActiveChat = false;
+  _prevChatStatus = null;
+  _updateGuardianPresence(exitStatus);
   _showHelpChatRating(post);
 }
 
@@ -6539,7 +6551,8 @@ async function pRenderContacts(){
       +'</div>'
       +(unread>0?'<span style="background:var(--sage);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px;flex-shrink:0">'+unread+'</span>':'')
       +'<div style="display:flex;gap:6px;flex-shrink:0">'
-      +'<button onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif">💬</button>'
+      +'<button onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif" title="Chat directo">💬</button>'
+      +'<button onclick="pLeaveOfflineMsg('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 10px;background:rgba(200,165,100,.08);border:1px solid rgba(200,165,100,.25);border-radius:10px;font-size:13px;cursor:pointer" title="Dejar mensaje en buzón">✉️</button>'
       +'<button onclick="pRemoveFav(\''+f.id+'\');pRenderContacts()" style="padding:7px 9px;background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);border-radius:10px;font-size:13px;cursor:pointer">⭐</button>'
       +'<button onclick="pBlockUser('+_jsAttr(f.id)+','+_jsAttr(f.name)+');pRenderContacts()" style="padding:7px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:13px;cursor:pointer" title="Bloquear">🚫</button>'
       +'</div>'
@@ -6551,6 +6564,48 @@ function pFilterContacts(q){
   var cards = document.querySelectorAll('#contactsContent [data-fav-name]');
   var lq = (q||'').toLowerCase();
   cards.forEach(function(c){ c.style.display = (!lq || c.dataset.favName.toLowerCase().indexOf(lq)>-1) ? '' : 'none'; });
+}
+
+function pLeaveOfflineMsg(toId, toName, toAv){
+  var existing = document.getElementById('offlineMsgOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'offlineMsgOv';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="text-align:center;padding:4px 0 16px">'
+    +'<div style="font-size:36px;margin-bottom:8px">'+_avInline(toAv||'🧑',48)+'</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:19px;color:var(--ink);margin-bottom:4px">Mensaje para '+_escHtml(toName||'Usuario')+'</div>'
+    +'<p style="font-size:12px;color:var(--ink4);margin:0 0 14px;line-height:1.5">Le llegará en su Buzón Velo cuando esté disponible.</p>'
+    +'</div>'
+    +'<textarea id="offlineMsgTa" class="feed-textarea" rows="4" placeholder="Escribí tu mensaje…" style="width:100%;box-sizing:border-box;border-radius:12px;padding:12px;font-size:14px;border:1.5px solid var(--border2);background:var(--cream2);font-family:\'Jost\',sans-serif;resize:none;margin-bottom:12px"></textarea>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="_sendOfflineMsg('+_jsAttr(toId)+','+_jsAttr(toName)+','+_jsAttr(toAv||'🧑')+')">📬 Enviar mensaje</button>'
+    +'<div style="height:8px"></div>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'offlineMsgOv\').remove()">Cancelar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+  setTimeout(function(){ var ta=document.getElementById('offlineMsgTa'); if(ta) ta.focus(); }, 100);
+}
+
+function _sendOfflineMsg(toId, toName, toAv){
+  var ta = document.getElementById('offlineMsgTa');
+  if(!ta || !ta.value.trim()){ pToast('✍️','Escribí algo antes de enviar'); return; }
+  var text = ta.value.trim();
+  var myId   = safeLS('get','velo_user_id')||'';
+  var myName = safeLS('get','velo_user_name')||'';
+  var myAv   = safeLS('get','velo_user_av')||'🧑';
+  document.getElementById('offlineMsgOv').remove();
+  _initSupabase();
+  if(sbClient && myId){
+    sbClient.from('direct_messages').insert({
+      from_id:myId, from_name:myName, from_av:myAv, to_id:toId, text:text
+    }).then(function(){}).catch(function(){});
+    // Mark as accepted so future DMs don't need a handshake
+    safeLS('set','velo_dm_accepted_'+toId,'1');
+  }
+  pToast('📬','Mensaje enviado a '+_escHtml(toName||'Usuario'));
 }
 
 // ── FAVORITES MINI WIDGET (shown in sections) ──────────────────
@@ -6648,6 +6703,15 @@ function _dmOpenPeerProfile(){
 }
 
 function pOpenDM(toId, toName, toAv){
+  // Block if target user is currently busy in another chat
+  var tp = _presenceCache[toId];
+  if(tp && tp.status === 'ocupado' && tp.last_seen && (Date.now() - new Date(tp.last_seen).getTime()) < 5*60*1000){
+    pToast('⏳', (toName||'Este usuario') + ' está ocupado/a en otro chat, intentá más tarde');
+    return;
+  }
+  _prevChatStatus = _presenceStatus();
+  _inActiveChat = true;
+  _updateGuardianPresence('ocupado');
   _dmPeer = { id:toId, name:toName||'Usuario', av:toAv||'🧑' };
   // Clear unread badge for this contact
   var unread = {}; try{ unread = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
@@ -6693,7 +6757,7 @@ async function _renderDMThread(){
         +'</div>';
       return;
     }
-    var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__'];
+    var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
     el.innerHTML = data.filter(function(m){ return sentinels.indexOf(m.text) < 0; }).map(function(m){
       var isOwn = m.from_id === myId;
       return _buildMsgBubble(m.text||'', isOwn, isOwn?'':(m.from_av||'🧑'), isOwn?'':(m.from_name||''), 'dmInput', 'dmReplyBar', '', m.reactions||{}, 'direct_messages:'+m.id, isOwn?'':(m.from_id||''));
@@ -6713,6 +6777,15 @@ function _subscribeToDMThread(){
         _renderDMThread();
       }
     }).subscribe();
+}
+
+function pLeaveDM(){
+  if(_dmRtCh && sbClient){ try{ sbClient.removeChannel(_dmRtCh); }catch(e){} _dmRtCh = null; }
+  _dmPeer = null;
+  _inActiveChat = false;
+  _updateGuardianPresence(_prevChatStatus || _presenceStatus());
+  _prevChatStatus = null;
+  pGoTo('contacts');
 }
 
 async function pSendDM(){
@@ -6803,6 +6876,20 @@ function _startGlobalDMListener(){
       var curId = curPage ? curPage.id : '';
       // Handle sentinel messages
       if(m.text === '__velo_chat_req__'){
+        // Auto-reject if current user is in another active chat
+        if(_inActiveChat){
+          var busyMyId = safeLS('get','velo_user_id')||'';
+          var busyMyName = safeLS('get','velo_user_name')||'';
+          var busyMyAv = safeLS('get','velo_user_av')||'🧑';
+          _initSupabase();
+          if(sbClient && busyMyId){
+            sbClient.from('direct_messages').insert({
+              from_id:busyMyId, from_name:busyMyName, from_av:busyMyAv,
+              to_id:m.from_id, text:'__velo_chat_busy__'
+            }).then(function(){}).catch(function(){});
+          }
+          return;
+        }
         _showDMChatRequest(m.from_id, m.from_name||'Usuario', m.from_av||'🧑');
         return;
       }
@@ -6816,6 +6903,11 @@ function _startGlobalDMListener(){
       if(m.text === '__velo_chat_rej__'){
         safeLS('del','velo_dm_req_sent_'+m.from_id);
         pToast('💬',(m.from_name||'Usuario')+' no puede chatear ahora');
+        return;
+      }
+      if(m.text === '__velo_chat_busy__'){
+        safeLS('del','velo_dm_req_sent_'+m.from_id);
+        pToast('⏳',(m.from_name||'Este usuario')+' está ocupado/a en otro chat, intentá más tarde');
         return;
       }
       if(curId === 'pg-dm-chat' && _dmPeer && _dmPeer.id === m.from_id) return; // already in this chat
