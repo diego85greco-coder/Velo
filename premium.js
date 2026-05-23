@@ -291,96 +291,84 @@ function _getSbPass(){
   return p;
 }
 
-function _sbSyncProfile(userId){
+async function _sbSyncProfile(userId){
   _initSupabase();
   if(!sbClient || !userId) return;
-  // Select only stable columns (no fase-2 columns that may not exist yet)
-  sbClient.from('profiles').select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film').eq('id',userId).limit(1)
-    .then(function(res){
-      if(res.error){
-        // Table/column issue — still try to create row so future saves work
-        var curName  = safeLS('get','velo_user_name') || '';
-        var curEmail = safeLS('get','velo_user_email') || '';
-        if(curName || curEmail){
-          sbClient.from('profiles').upsert({
-            id:userId, nombre:curName, email:curEmail, role:'user',
-            avatar: safeLS('get','velo_user_av')||'',
-            motto:  safeLS('get','velo_user_motto')||''
-          },{ onConflict:'id' }).catch(function(){});
+  var res;
+  try{
+    res = await sbClient.from('profiles')
+      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film')
+      .eq('id',userId).limit(1);
+  }catch(e){ return; }
+
+  if(res.error){
+    // Query failed — don't overwrite Supabase with possibly-stale localStorage values
+    return;
+  }
+
+  if(!res.data || !res.data.length){
+    // No profile row yet — create a minimal one (let user fill in their name later)
+    var curEmail = safeLS('get','velo_user_email') || '';
+    if(curEmail){
+      sbClient.from('profiles').upsert({
+        id:userId, email:curEmail, role:'user',
+        avatar: safeLS('get','velo_user_av')||'',
+        motto:  safeLS('get','velo_user_motto')||''
+      },{ onConflict:'id' }).catch(function(){});
+    }
+    return;
+  }
+
+  var p = res.data[0];
+  if(p.nombre)        safeLS('set','velo_user_name',     p.nombre);
+  if(p.avatar)        safeLS('set','velo_user_av',       p.avatar);
+  if(p.motto)         safeLS('set','velo_user_motto',    p.motto);
+  if(p.role)          safeLS('set','velo_user_type',     p.role);
+  if(p.status_music)  safeLS('set','velo_status_music',  p.status_music);
+  if(p.status_book)   safeLS('set','velo_status_book',   p.status_book);
+  if(p.status_phrase) safeLS('set','velo_status_phrase', p.status_phrase);
+  if(p.status_film)   safeLS('set','velo_status_film',   p.status_film);
+  if(p.role === 'plus'){
+    sbClient.from('profiles').select('plus_expires_at').eq('id',userId).limit(1)
+      .then(function(r2){
+        if(r2.data && r2.data[0] && r2.data[0].plus_expires_at &&
+           new Date(r2.data[0].plus_expires_at).getTime() < Date.now()){
+          safeLS('del','velo_plan');
+          safeLS('set','velo_user_type','user');
+          sbClient.from('profiles').update({ role:'user' }).eq('id',userId).catch(function(){});
+        } else {
+          safeLS('set','velo_plan','plus');
         }
-        return;
-      }
-      if(!res.data || !res.data.length){
-        // No profile row yet — create one with current localStorage values
-        var curName  = safeLS('get','velo_user_name') || '';
-        var curEmail = safeLS('get','velo_user_email') || '';
-        if(curName || curEmail){
-          sbClient.from('profiles').upsert({
-            id:userId, nombre:curName, email:curEmail, role:'user',
-            avatar: safeLS('get','velo_user_av')||'',
-            motto:  safeLS('get','velo_user_motto')||'',
-            status_music:  safeLS('get','velo_status_music')||'',
-            status_book:   safeLS('get','velo_status_book')||'',
-            status_phrase: safeLS('get','velo_status_phrase')||'',
-            status_film:   safeLS('get','velo_status_film')||''
-          },{ onConflict:'id' }).catch(function(){});
-        }
-        return;
-      }
-      var p = res.data[0];
-      if(p.nombre)        safeLS('set','velo_user_name',     p.nombre);
-      if(p.avatar)        safeLS('set','velo_user_av',       p.avatar);
-      if(p.motto)         safeLS('set','velo_user_motto',    p.motto);
-      if(p.role)          safeLS('set','velo_user_type',     p.role);
-      if(p.status_music)  safeLS('set','velo_status_music',  p.status_music);
-      if(p.status_book)   safeLS('set','velo_status_book',   p.status_book);
-      if(p.status_phrase) safeLS('set','velo_status_phrase', p.status_phrase);
-      if(p.status_film)   safeLS('set','velo_status_film',   p.status_film);
-      if(p.role === 'plus'){
-        // Try to check expiry — column only exists after supabase-fase2.sql
-        sbClient.from('profiles').select('plus_expires_at').eq('id',userId).limit(1)
-          .then(function(r2){
-            if(r2.data && r2.data[0] && r2.data[0].plus_expires_at &&
-               new Date(r2.data[0].plus_expires_at).getTime() < Date.now()){
-              safeLS('del','velo_plan');
-              safeLS('set','velo_user_type','user');
-              sbClient.from('profiles').update({ role:'user' }).eq('id',userId).catch(function(){});
-            } else {
-              safeLS('set','velo_plan','plus');
-            }
-          }).catch(function(){ safeLS('set','velo_plan','plus'); });
-      }
-      // Check if new people have added us as favorite → show badge on star
-      sbClient.from('user_favorites').select('id',{count:'exact',head:true}).eq('fav_id', userId)
-        .then(function(fr){
-          var newTotal = fr.count || 0;
-          safeLS('set','velo_fav_me_count', String(newTotal));
-          _updateFavBadge();
-        }).catch(function(){});
-      // Restore guardian bio/tags/status from guardian_presence
-      sbClient.from('guardian_presence').select('bio,tags,is_guardian,status').eq('user_id', userId).limit(1)
-        .then(function(gr){
-          if(gr.data && gr.data[0]){
-            if(gr.data[0].bio)  safeLS('set','velo_guardian_bio', gr.data[0].bio);
-            if(gr.data[0].tags) safeLS('set','velo_guardian_tags', Array.isArray(gr.data[0].tags) ? gr.data[0].tags.join(', ') : gr.data[0].tags);
-            // Restore guardian active flag so the request listener starts on reload
-            if(gr.data[0].is_guardian === true){
-              safeLS('set','velo_is_guardian','true');
-              if(gr.data[0].status && gr.data[0].status !== 'offline'){
-                safeLS('set','velo_guardian_status', gr.data[0].status);
-              }
-              // Start listener now that we know user is guardian (may already be running — guard inside)
-              setTimeout(_startGuardianReqListener, 300);
-            }
-          }
-        }).catch(function(){});
-      // Refresh all UI with synced data
-      var hn = document.getElementById('homeUserName');
-      if(hn) hn.textContent = p.nombre || safeLS('get','velo_user_name') || '';
-      _updateSidebarUser();
-      _updateTopbarMoodBadge();
-      pLoadProfile();
+      }).catch(function(){ safeLS('set','velo_plan','plus'); });
+  }
+  // Check if new people have added us as favorite → show badge on star
+  sbClient.from('user_favorites').select('id',{count:'exact',head:true}).eq('fav_id', userId)
+    .then(function(fr){
+      var newTotal = fr.count || 0;
+      safeLS('set','velo_fav_me_count', String(newTotal));
+      _updateFavBadge();
     }).catch(function(){});
+  // Restore guardian bio/tags/status from guardian_presence
+  sbClient.from('guardian_presence').select('bio,tags,is_guardian,status').eq('user_id', userId).limit(1)
+    .then(function(gr){
+      if(gr.data && gr.data[0]){
+        if(gr.data[0].bio)  safeLS('set','velo_guardian_bio', gr.data[0].bio);
+        if(gr.data[0].tags) safeLS('set','velo_guardian_tags', Array.isArray(gr.data[0].tags) ? gr.data[0].tags.join(', ') : gr.data[0].tags);
+        if(gr.data[0].is_guardian === true){
+          safeLS('set','velo_is_guardian','true');
+          if(gr.data[0].status && gr.data[0].status !== 'offline'){
+            safeLS('set','velo_guardian_status', gr.data[0].status);
+          }
+          setTimeout(_startGuardianReqListener, 300);
+        }
+      }
+    }).catch(function(){});
+  // Refresh all UI with synced data
+  var hn = document.getElementById('homeUserName');
+  if(hn) hn.textContent = p.nombre || safeLS('get','velo_user_name') || '';
+  _updateSidebarUser();
+  _updateTopbarMoodBadge();
+  pLoadProfile();
 }
 
 async function _ensureSbSession(){
@@ -581,14 +569,13 @@ async function pSignIn(){
       if(result.data && result.data.user && result.data.user.id){
         var uid = result.data.user.id;
         safeLS('set','velo_user_id', uid);
-        // Load profile from Supabase so name/avatar/motto are always up to date
-        _sbSyncProfile(uid);
+        // Await profile sync so name/avatar/status are restored before home renders
+        await _sbSyncProfile(uid);
       }
       _authenticated = true;
       _startGuardianHeartbeat();
       setTimeout(_startGlobalDMListener, 2500);
-      setTimeout(_syncFavsFromSupabase, 3000);
-      pToast('💚','¡Bienvenido/a de vuelta! 🌿');
+      setTimeout(_syncFavsFromSupabase, 3500);
       _loginAndGo();
     }
   }catch(e){
@@ -1021,8 +1008,6 @@ function _loadHomeData(){
   _updateHomeBell();
   // Daily quote in home header (Gemini, cached per day)
   setTimeout(_loadDailyMotivationalQuote, 200);
-  // Daily greeting — only once per day, with a slight delay so the page renders first
-  setTimeout(_checkDailyGreeting, 900);
 }
 
 function _updateHomeBell(){
@@ -2446,7 +2431,8 @@ function _seekerAcceptRequest(reqId, postId, guardianName, guardianAv, guardianI
   }
   // Open a seeker-side help chat — guardianId is the peer to exchange messages with
   var safeEmoji = (guardianAv && !guardianAv.startsWith('data:') && !guardianAv.startsWith('http')) ? guardianAv : '💙';
-  var fakePost = { id:postId, name:guardianName, emoji:safeEmoji, preview:'Guardián conectado', userId: guardianId||'' };
+  var fakePost = { id:postId, name:guardianName, emoji:safeEmoji, preview:'Guardián conectado',
+    userId: guardianId||'', isSeeker:true };
   _curHelpPost = fakePost;
   _openHelpChat(fakePost);
   pToast('💚','¡Conectado/a con '+guardianName+'!');
@@ -2618,6 +2604,10 @@ function pLeaveHelpChat(){
   if(_helpChatRtCh && sbClient){ try{ sbClient.removeChannel(_helpChatRtCh); }catch(e){} _helpChatRtCh = null; }
   var post = _curHelpPost;
   _curHelpPost = null;
+  // Save guardian info for the post-chat review (seeker side only)
+  if(post && post.isSeeker && post.userId){
+    safeLS('set','velo_postchat_guardian', JSON.stringify({ id:post.userId, name:post.name||'Guardián' }));
+  }
   var exitStatus = _prevChatStatus || _presenceStatus();
   _inActiveChat = false;
   _prevChatStatus = null;
@@ -6042,7 +6032,8 @@ function pSaveProfile(){
       id:uid, nombre:name, avatar:av, motto:motto, email:email,
       status_music:  safeLS('get','velo_status_music')||'',
       status_book:   safeLS('get','velo_status_book')||'',
-      status_phrase: safeLS('get','velo_status_phrase')||''
+      status_phrase: safeLS('get','velo_status_phrase')||'',
+      status_film:   safeLS('get','velo_status_film')||''
     },{ onConflict:'id' }).then(function(){}).catch(function(){});
   }
   closeModal('editProfileOv');
@@ -6702,18 +6693,12 @@ function _dmOpenPeerProfile(){
   if(_dmPeer) pQuickProfile(_dmPeer.name, _dmPeer.av, '', '', _dmPeer.id);
 }
 
-function pOpenDM(toId, toName, toAv){
-  // Block if target user is currently busy in another chat
-  var tp = _presenceCache[toId];
-  if(tp && tp.status === 'ocupado' && tp.last_seen && (Date.now() - new Date(tp.last_seen).getTime()) < 5*60*1000){
-    pToast('⏳', (toName||'Este usuario') + ' está ocupado/a en otro chat, intentá más tarde');
-    return;
-  }
+// Internal: enter DM chat without busy-check (used when accepting a request)
+function _enterDMChat(toId, toName, toAv){
   _prevChatStatus = _presenceStatus();
   _inActiveChat = true;
   _updateGuardianPresence('ocupado');
   _dmPeer = { id:toId, name:toName||'Usuario', av:toAv||'🧑' };
-  // Clear unread badge for this contact
   var unread = {}; try{ unread = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
   delete unread[toId];
   safeLS('set','velo_dm_unread', JSON.stringify(unread));
@@ -6722,6 +6707,17 @@ function pOpenDM(toId, toName, toAv){
   if(hdr) hdr.textContent = toName||'Usuario';
   var hdrAv = document.getElementById('dmPeerAv');
   if(hdrAv) hdrAv.innerHTML = _avInline(toAv||'🧑',36);
+  pGoTo('dm-chat');
+  setTimeout(function(){ _renderDMThread(); _subscribeToDMThread(); }, 100);
+}
+
+function pOpenDM(toId, toName, toAv){
+  // Block if target user is currently busy in another chat
+  var tp = _presenceCache[toId];
+  if(tp && tp.status === 'ocupado' && tp.last_seen && (Date.now() - new Date(tp.last_seen).getTime()) < 5*60*1000){
+    pToast('⏳', (toName||'Este usuario') + ' está ocupado/a en otro chat, intentá más tarde');
+    return;
+  }
   // Send chat request sentinel to the other user if never accepted before
   var alreadyAccepted = safeLS('get','velo_dm_accepted_'+toId) === '1';
   if(!alreadyAccepted){
@@ -6734,8 +6730,7 @@ function pOpenDM(toId, toName, toAv){
       }).then(function(){}).catch(function(){});
     }
   }
-  pGoTo('dm-chat');
-  setTimeout(function(){ _renderDMThread(); _subscribeToDMThread(); }, 100);
+  _enterDMChat(toId, toName, toAv);
 }
 
 async function _renderDMThread(){
@@ -6847,7 +6842,7 @@ function _acceptDMRequest(fromId, fromName, fromAv){
     }).then(function(){}).catch(function(){});
   }
   pToast('💬','Aceptaste el chat con '+_escHtml(fromName));
-  setTimeout(function(){ pOpenDM(fromId, fromName, fromAv); }, 300);
+  setTimeout(function(){ _enterDMChat(fromId, fromName, fromAv); }, 300);
 }
 
 function _rejectDMRequest(fromId, fromName){
