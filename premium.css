@@ -2845,3 +2845,169 @@ a { text-decoration: none; color: inherit; }
   color: var(--sage); font-weight: 700;
   background: rgba(116,198,157,.12); border-radius: 4px; padding: 0 3px;
 }
+
+/* ── 57. NEW LANDING SECTIONS ────────────────────────────────────── */
+
+/* Qué es VELO */
+.land-what { padding: 72px 32px; background: var(--cream); }
+.land-what-inner { max-width: 820px; margin: 0 auto; text-align: center; }
+.land-what-quote {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(19px, 2.8vw, 26px);
+  color: var(--sage);
+  font-style: italic;
+  line-height: 1.55;
+  border-left: 4px solid var(--sage3);
+  padding: 20px 28px;
+  background: linear-gradient(120deg, var(--sage7), transparent 80%);
+  border-radius: 0 14px 14px 0;
+  margin: 0 auto 28px;
+  text-align: left;
+}
+.land-what-pills { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px; justify-content: center; }
+.land-what-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--white); border: 1.5px solid var(--border);
+  border-radius: 50px; padding: 9px 18px;
+  font-size: 13px; font-weight: 600; color: var(--ink2);
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+.land-what-desc {
+  font-size: clamp(15px, 1.6vw, 17px); color: var(--ink3);
+  line-height: 1.7;
+}
+
+/* Cómo funciona */
+.land-how { padding: 72px 32px; background: var(--cream2); }
+.land-how-steps {
+  display: flex; gap: 0; max-width: 900px; margin: 0 auto;
+  position: relative;
+}
+.land-how-steps::before {
+  content: ''; position: absolute; top: 27px;
+  left: calc(12.5% + 20px); right: calc(12.5% + 20px);
+  height: 2px; background: linear-gradient(90deg, var(--sage5), var(--sage3));
+}
+.land-how-step { flex: 1; text-align: center; padding: 0 12px; position: relative; }
+.land-how-num {
+  width: 54px; height: 54px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--sage3), var(--sage2));
+  color: #fff; font-size: 20px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px; position: relative; z-index: 1;
+  box-shadow: 0 4px 16px rgba(45,106,79,.3);
+}
+.land-how-ico { font-size: 22px; margin-bottom: 6px; }
+.land-how-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.land-how-desc { font-size: 12px; color: var(--ink4); line-height: 1.5; }
+@media (max-width: 640px) {
+  .land-how-steps { flex-direction: column; gap: 28px; }
+  .land-how-steps::before { display: none; }
+  .land-how-step { display: flex; align-items: flex-start; gap: 16px; text-align: left; padding: 0; }
+  .land-how-num { width: 44px; height: 44px; font-size: 16px; flex-shrink: 0; margin: 0; }
+}
+
+/* A quién ayuda */
+.land-forwhom { padding: 72px 32px; background: var(--cream); }
+.land-forwhom-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; max-width: var(--content-max); margin: 0 auto; }
+.land-whom-card {
+  background: var(--white); border: 1.5px solid var(--border);
+  border-radius: 20px; padding: 28px 18px; text-align: center;
+  transition: transform .25s, box-shadow .25s;
+}
+.land-whom-card:hover { transform: translateY(-4px); box-shadow: var(--sh-float); }
+.land-whom-av { font-size: 38px; margin-bottom: 12px; }
+.land-whom-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 8px; line-height: 1.3; }
+.land-whom-desc { font-size: 12px; color: var(--ink4); line-height: 1.55; }
+@media (max-width: 900px) { .land-forwhom-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .land-forwhom-grid { grid-template-columns: 1fr; } }
+
+/* Para qué sirve */
+.land-usecases { padding: 72px 32px; background: linear-gradient(150deg, #1a3c2a, #2d6a4f); }
+.land-usecases .p-hero-text { color: #fff !important; }
+.land-usecases-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; max-width: var(--content-max); margin: 0 auto; }
+.land-usecase-card {
+  background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.18);
+  border-radius: 16px; padding: 20px 18px;
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.land-usecase-ico { font-size: 26px; flex-shrink: 0; margin-top: 2px; }
+.land-usecase-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.land-usecase-desc { font-size: 12px; color: rgba(255,255,255,.72); line-height: 1.5; }
+@media (max-width: 800px) { .land-usecases-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .land-usecases-grid { grid-template-columns: 1fr; } }
+
+/* Por qué es seguro */
+.land-security { padding: 72px 32px; background: linear-gradient(145deg, #0e2319, #1c3d2b); }
+.land-security .p-hero-text { color: #fff !important; }
+.land-security-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: var(--content-max); margin: 0 auto; }
+.land-sec-card {
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 18px; padding: 24px 14px; text-align: center;
+}
+.land-sec-ico { font-size: 30px; margin-bottom: 10px; }
+.land-sec-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 6px; line-height: 1.3; }
+.land-sec-desc { font-size: 11px; color: rgba(255,255,255,.58); line-height: 1.5; }
+.land-sec-badge {
+  display: inline-block; background: rgba(100,210,140,.13); color: #7dd4a0;
+  border: 1px solid rgba(100,210,140,.28); border-radius: 50px;
+  font-size: 10px; font-weight: 700; letter-spacing: .5px;
+  padding: 3px 10px; text-transform: uppercase; margin-top: 8px;
+}
+@media (max-width: 800px) { .land-security-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .land-security-grid { grid-template-columns: 1fr; } }
+
+/* Qué hace diferente */
+.land-diff { padding: 72px 32px; background: var(--cream2); }
+.land-diff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: var(--content-max); margin: 0 auto; }
+.land-diff-card {
+  background: var(--white); border: 1.5px solid var(--border);
+  border-radius: 18px; padding: 24px 20px;
+  transition: transform .25s, box-shadow .25s;
+}
+.land-diff-card:hover { transform: translateY(-4px); box-shadow: var(--sh-float); }
+.land-diff-ico { font-size: 28px; margin-bottom: 10px; }
+.land-diff-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.land-diff-desc { font-size: 13px; color: var(--ink4); line-height: 1.55; }
+@media (max-width: 800px) { .land-diff-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .land-diff-grid { grid-template-columns: 1fr; } }
+
+/* Preguntas frecuentes */
+.land-faq { padding: 72px 32px; background: var(--cream); }
+.land-faq-list { max-width: 720px; margin: 0 auto; }
+.land-faq-item { border-bottom: 1px solid var(--border); }
+.land-faq-q {
+  width: 100%; text-align: left; background: none; border: none;
+  padding: 20px 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 15px; font-weight: 700; color: var(--ink);
+  font-family: 'Jost', sans-serif; gap: 12px;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.land-faq-q-icon {
+  font-size: 22px; flex-shrink: 0; transition: transform .25s;
+  color: var(--sage2); font-weight: 300; line-height: 1;
+}
+.land-faq-q.faq-open .land-faq-q-icon { transform: rotate(45deg); }
+.land-faq-a {
+  overflow: hidden; max-height: 0;
+  transition: max-height .35s ease, padding .35s ease;
+  font-size: 14px; color: var(--ink3); line-height: 1.65;
+}
+.land-faq-a.faq-open { max-height: 320px; padding-bottom: 20px; }
+
+/* Aviso Legal */
+.land-legal {
+  padding: 48px 32px; background: var(--cream2);
+  border-top: 1px solid var(--border);
+}
+.land-legal-inner { max-width: 760px; margin: 0 auto; }
+.land-legal-title {
+  font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--ink4); margin-bottom: 16px;
+}
+.land-legal-text {
+  font-size: 12px; color: var(--ink5); line-height: 1.75;
+}
+.land-legal-text strong { color: var(--ink4); }
+.land-legal-text a { color: var(--sage2); text-decoration: underline; text-underline-offset: 3px; }

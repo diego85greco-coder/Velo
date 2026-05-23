@@ -636,6 +636,14 @@ function pShowPrivacy(){
   if(ov) ov.classList.add('show');
 }
 
+function pToggleFaq(btn){
+  var a = btn.nextElementSibling;
+  var isOpen = a.classList.contains('faq-open');
+  document.querySelectorAll('.land-faq-a.faq-open').forEach(function(el){ el.classList.remove('faq-open'); });
+  document.querySelectorAll('.land-faq-q.faq-open').forEach(function(el){ el.classList.remove('faq-open'); });
+  if(!isOpen){ a.classList.add('faq-open'); btn.classList.add('faq-open'); }
+}
+
 function pShowForgot(){
   var email = document.getElementById('loginEmail');
   var val   = email ? email.value.trim() : '';
