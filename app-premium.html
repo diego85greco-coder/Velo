@@ -8,13 +8,15 @@
   <meta name="theme-color" content="#1B5E3A">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://api.ipify.org https://generativelanguage.googleapis.com https://newsdata.io https://api.paypal.com https://www.paypal.com; frame-src https://www.paypal.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://*.supabase.co https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://api.ipify.org https://generativelanguage.googleapis.com https://newsdata.io https://api.paypal.com https://www.paypal.com https://challenges.cloudflare.com; frame-src https://www.paypal.com https://challenges.cloudflare.com;">
   <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="apple-touch-icon" href="assets/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260523-115">
+  <link rel="stylesheet" href="premium.css?v=20260523-116">
+  <!-- Cloudflare Turnstile — bot protection -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 
@@ -480,6 +482,8 @@
             <div style="position:absolute;left:-9999px;height:0;overflow:hidden" aria-hidden="true" tabindex="-1">
               <input type="text" id="_vhp" name="website" autocomplete="off" tabindex="-1">
             </div>
+            <!-- Cloudflare Turnstile widget -->
+            <div class="cf-turnstile" data-sitekey="TURNSTILE_SITE_KEY_HERE" data-theme="light" data-size="flexible" style="margin-bottom:10px"></div>
             <button class="p-btn p-btn--primary p-btn--lg p-btn--full" id="regBtn" onclick="pSignUp()" style="margin-bottom:12px">
               <span id="regBtnTxt">Crear mi cuenta ✨</span>
             </button>
@@ -1784,6 +1788,8 @@
               <div style="position:absolute;left:-9999px;height:0;overflow:hidden" aria-hidden="true" tabindex="-1">
                 <input type="text" id="_vhp2" name="company" autocomplete="off" tabindex="-1">
               </div>
+              <!-- Cloudflare Turnstile widget -->
+              <div class="cf-turnstile" data-sitekey="TURNSTILE_SITE_KEY_HERE" data-theme="light" data-size="flexible" style="margin-bottom:10px"></div>
               <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pProRegNext()">Continuar →</button>
               <div style="height:10px"></div>
               <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('register-type')">← Volver</button>
@@ -2565,7 +2571,7 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260523-115"></script>
+<script src="premium.js?v=20260523-116"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

@@ -479,6 +479,7 @@ async function pSignUp(){
   if(tcEl && !tcEl.checked){ if(tcErrEl) tcErrEl.style.display='block'; ok=false; }
   if(!ok) return;
   if(!_botGuardCheck()) return;
+  if(!await _verifyTurnstile()) return;
 
   if(btn) btn.disabled = true;
   if(btnTxt) btnTxt.textContent = 'Creando cuenta…';
@@ -748,6 +749,39 @@ function _showFieldErr(id){
 function _clearFieldErr(id){
   var el = document.getElementById(id);
   if(el){ el.classList.remove('show'); var inp = el.previousElementSibling; if(inp) inp.classList.remove('error'); }
+}
+
+// ── TURNSTILE ──────────────────────────────────────────────────
+async function _verifyTurnstile(widgetId){
+  // Get token from the widget (Turnstile sets a hidden input)
+  var token = '';
+  var inputs = document.querySelectorAll('[name="cf-turnstile-response"]');
+  // If multiple widgets, pick the one from the active form
+  inputs.forEach(function(inp){
+    if(!token && inp.value) token = inp.value;
+  });
+  if(!token){
+    pToast('🛡️','Completá la verificación de seguridad antes de continuar.');
+    return false;
+  }
+  try{
+    var r = await fetch('/api/verify-turnstile', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ token: token })
+    });
+    var data = await r.json();
+    if(!data.success){
+      pToast('🛡️','Verificación de seguridad fallida. Intentá de nuevo.');
+      // Reset all widgets so user can retry
+      if(window.turnstile) window.turnstile.reset();
+      return false;
+    }
+    return true;
+  }catch(e){
+    // Network error — allow through (fail open) so genuine users aren't blocked
+    return true;
+  }
 }
 
 // ── BOT PROTECTION ─────────────────────────────────────────────
@@ -7578,6 +7612,7 @@ async function pProRegNext(){
   if(dpaEl && !dpaEl.checked){ if(dpaErrEl) dpaErrEl.style.display='block'; return; }
   if(dpaErrEl) dpaErrEl.style.display='none';
   if(!_botGuardCheck()) return;
+  if(!await _verifyTurnstile()) return;
   safeLS('set','velo_pro_name', name.value.trim());
   safeLS('set','velo_pro_spec', spec.value.trim());
   safeLS('set','velo_user_email', email.value.trim());
