@@ -479,7 +479,6 @@ async function pSignUp(){
   if(tcEl && !tcEl.checked){ if(tcErrEl) tcErrEl.style.display='block'; ok=false; }
   if(!ok) return;
   if(!_botGuardCheck()) return;
-  if(!await _verifyTurnstile()) return;
 
   if(btn) btn.disabled = true;
   if(btnTxt) btnTxt.textContent = 'Creando cuenta…';
@@ -7612,7 +7611,6 @@ async function pProRegNext(){
   if(dpaEl && !dpaEl.checked){ if(dpaErrEl) dpaErrEl.style.display='block'; return; }
   if(dpaErrEl) dpaErrEl.style.display='none';
   if(!_botGuardCheck()) return;
-  if(!await _verifyTurnstile()) return;
   safeLS('set','velo_pro_name', name.value.trim());
   safeLS('set','velo_pro_spec', spec.value.trim());
   safeLS('set','velo_user_email', email.value.trim());
