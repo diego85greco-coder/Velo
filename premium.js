@@ -478,6 +478,7 @@ async function pSignUp(){
   if(!pass || pass.length < 6){ _showFieldErr('regPassErr'); ok=false; }
   if(tcEl && !tcEl.checked){ if(tcErrEl) tcErrEl.style.display='block'; ok=false; }
   if(!ok) return;
+  if(!_botGuardCheck()) return;
 
   if(btn) btn.disabled = true;
   if(btnTxt) btnTxt.textContent = 'Creando cuenta…';
@@ -747,6 +748,65 @@ function _showFieldErr(id){
 function _clearFieldErr(id){
   var el = document.getElementById(id);
   if(el){ el.classList.remove('show'); var inp = el.previousElementSibling; if(inp) inp.classList.remove('error'); }
+}
+
+// ── BOT PROTECTION ─────────────────────────────────────────────
+var _botGuard = { openedAt:0, interacted:false };
+
+function _botGuardInit(){
+  _botGuard.openedAt   = Date.now();
+  _botGuard.interacted = false;
+}
+
+// Call once at app start — tracks any real human gesture globally
+function _botGuardStartListeners(){
+  var mark = function(){ _botGuard.interacted = true; };
+  ['mousemove','mousedown','keydown','touchstart','touchmove'].forEach(function(ev){
+    document.addEventListener(ev, mark, { once:true, passive:true });
+  });
+}
+
+// Returns null if human, or a reason string if bot-like
+function _botGuardCheck(){
+  // 1. Honeypot — any content means a bot filled the hidden field
+  var hp = document.getElementById('_vhp') || document.getElementById('_vhp2');
+  if(hp && hp.value){ _botGuardBlock('honeypot'); return false; }
+
+  // 2. Headless browser fingerprint
+  if(navigator.webdriver){ _botGuardBlock('headless'); return false; }
+  if(typeof navigator.plugins !== 'undefined' && navigator.plugins.length === 0
+     && !/firefox/i.test(navigator.userAgent)){ _botGuardBlock('no-plugins'); return false; }
+
+  // 3. Submitted too fast (< 2.5s since form opened)
+  var elapsed = Date.now() - _botGuard.openedAt;
+  if(_botGuard.openedAt && elapsed < 2500){ _botGuardBlock('too-fast:'+elapsed+'ms'); return false; }
+
+  // 4. No real human interaction detected
+  if(!_botGuard.interacted){ _botGuardBlock('no-interaction'); return false; }
+
+  // 5. Client-side rate limit: max 4 attempts per hour
+  var now = Date.now();
+  var attempts = [];
+  try{ attempts = JSON.parse(safeLS('get','velo_reg_attempts')||'[]'); }catch(e){}
+  attempts = attempts.filter(function(t){ return now - t < 3600000; });
+  if(attempts.length >= 4){
+    pToast('⏳','Demasiados intentos. Esperá unos minutos e intentá de nuevo.');
+    return false;
+  }
+  attempts.push(now);
+  safeLS('set','velo_reg_attempts', JSON.stringify(attempts));
+  return true;
+}
+
+function _botGuardBlock(reason){
+  // Log silently — don't reveal why to the bot
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('bot_attempts').insert({
+      reason: reason, ua: navigator.userAgent.slice(0,200), ts: new Date().toISOString()
+    }).then(function(){}).catch(function(){});
+  }
+  pToast('🛡️','Verificación de seguridad fallida. Intentá de nuevo.');
 }
 
 // ── TC RECORD ─────────────────────────────────────────────────
@@ -7517,6 +7577,7 @@ async function pProRegNext(){
   if(tcErrEl) tcErrEl.style.display='none';
   if(dpaEl && !dpaEl.checked){ if(dpaErrEl) dpaErrEl.style.display='block'; return; }
   if(dpaErrEl) dpaErrEl.style.display='none';
+  if(!_botGuardCheck()) return;
   safeLS('set','velo_pro_name', name.value.trim());
   safeLS('set','velo_pro_spec', spec.value.trim());
   safeLS('set','velo_user_email', email.value.trim());
@@ -9444,6 +9505,8 @@ function _initReveal(){
 function _onPageEnter(id){
   switch(id){
     case 'landing':     _initReveal(); break;
+    case 'register':    _botGuardInit(); break;
+    case 'pro-reg':     _botGuardInit(); break;
     case 'home':        _loadHomeData(); break;
     case 'guardians':
       _initSupabase();
@@ -9694,6 +9757,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
 document.addEventListener('DOMContentLoaded', function(){
   _initSupabase();
   _initMsgActions();
+  _botGuardStartListeners();
   setTimeout(_restoreSeekerSubscription, 2000);
 });
 

@@ -6,12 +6,15 @@
   <title>Velo — Acompañamos emociones</title>
   <meta name="description" content="Tu espacio seguro de apoyo emocional. Guardianes, sala de ayuda, diario personal y bienestar.">
   <meta name="theme-color" content="#1B5E3A">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://api.ipify.org https://generativelanguage.googleapis.com https://newsdata.io https://api.paypal.com https://www.paypal.com; frame-src https://www.paypal.com;">
   <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="apple-touch-icon" href="assets/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260523-114">
+  <link rel="stylesheet" href="premium.css?v=20260523-115">
 </head>
 <body>
 
@@ -473,6 +476,10 @@
               <label for="regTcCheck" style="font-size:12px;color:var(--ink3);cursor:pointer;line-height:1.5">Leí y acepto los <span style="color:var(--sage3);font-weight:600;text-decoration:underline;cursor:pointer" onclick="pShowTerms()">Términos y Condiciones</span> y la <span style="color:var(--sage3);font-weight:600;text-decoration:underline;cursor:pointer" onclick="pShowPrivacy()">Política de Privacidad</span> de Velo.</label>
             </div>
             <div class="p-err-msg" id="regTcErr" style="margin-bottom:10px">Debés aceptar los términos para continuar</div>
+            <!-- Honeypot anti-bot: visually hidden, never filled by humans -->
+            <div style="position:absolute;left:-9999px;height:0;overflow:hidden" aria-hidden="true" tabindex="-1">
+              <input type="text" id="_vhp" name="website" autocomplete="off" tabindex="-1">
+            </div>
             <button class="p-btn p-btn--primary p-btn--lg p-btn--full" id="regBtn" onclick="pSignUp()" style="margin-bottom:12px">
               <span id="regBtnTxt">Crear mi cuenta ✨</span>
             </button>
@@ -1773,6 +1780,10 @@
                 <label for="proDpaCheck" style="font-size:12px;color:var(--ink3);cursor:pointer;line-height:1.5">Leí y acepto el <span style="color:var(--sage2);font-weight:700;text-decoration:underline;cursor:pointer" onclick="pShowDPA()">Acuerdo de Procesamiento de Datos (DPA)</span> requerido por el RGPD para profesionales que acceden a datos de salud.</label>
               </div>
               <div class="p-err-msg" id="proDpaErr" style="margin-bottom:10px">Debés aceptar el DPA para continuar (obligatorio RGPD)</div>
+              <!-- Honeypot anti-bot -->
+              <div style="position:absolute;left:-9999px;height:0;overflow:hidden" aria-hidden="true" tabindex="-1">
+                <input type="text" id="_vhp2" name="company" autocomplete="off" tabindex="-1">
+              </div>
               <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pProRegNext()">Continuar →</button>
               <div style="height:10px"></div>
               <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('register-type')">← Volver</button>
@@ -2554,7 +2565,7 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260523-114"></script>
+<script src="premium.js?v=20260523-115"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
