@@ -2425,6 +2425,7 @@ function _showSeekerGuardianPopup(postId, row){
     if(seekCdEl) seekCdEl.textContent = seekSecs;
     if(seekSecs <= 0){ clearInterval(seekCdInt); var el=document.getElementById('seekerGuardianOv'); if(el) el.remove(); }
   }, 1000);
+  ov.setAttribute('data-cd-int', seekCdInt);
 }
 
 function _seekerAcceptRequest(reqId, postId, guardianName, guardianAv, guardianId){
@@ -2444,7 +2445,7 @@ function _seekerAcceptRequest(reqId, postId, guardianName, guardianAv, guardianI
 
 function _seekerDeclineRequest(reqId, postId){
   var ov = document.getElementById('seekerGuardianOv');
-  if(ov) ov.remove();
+  if(ov){ var cdi = ov.getAttribute('data-cd-int'); if(cdi) clearInterval(parseInt(cdi,10)); ov.remove(); }
   _initSupabase();
   if(sbClient){
     sbClient.from('guardian_requests').update({status:'declined'}).eq('id',reqId).then(function(){}).catch(function(){});
@@ -2685,13 +2686,13 @@ async function pSendHelp(){
     userId: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'' });
   safeLS('set','velo_help_posts', JSON.stringify(posts.slice(0,50)));
   safeLS('set','velo_helped_once','1');
-  // Insert to Supabase so all users see it
+  // Insert to Supabase so all users see it (await so pRenderHelp sees the new post)
   _initSupabase();
   if(sbClient){
-    sbClient.from('help_posts').insert({ id:'hu'+ts,
+    await sbClient.from('help_posts').insert({ id:'hu'+ts,
       user_id: safeLS('get','velo_user_id')||null, user_name: name, user_av: userAv,
       emoji:'💙', preview:msg, urgencia:'normal', anon:isAnon, taken:false
-    }).then(function(){}).catch(function(){});
+    }).catch(function(){});
   }
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   inbox.unshift({ id:'help-'+ts, tipo:'sistema', icon:'💚', remitente:'Sala de Ayuda', asunto:'Tu mensaje fue publicado', cuerpo:'Tu mensaje fue publicado en la Sala de Ayuda. Alguien te acompañará pronto.\n\n"'+msg+'"', extracto:'Alguien te acompañará pronto.', leido:false, prioritario:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
@@ -5611,7 +5612,7 @@ function pClearHappyPhoto(){
   if(img) img.src = '';
 }
 
-function pSubmitHappyPost(){
+async function pSubmitHappyPost(){
   var ta = document.getElementById('happyPostTa');
   var hasText = ta && ta.value.trim();
   var hasPhoto = !!_happySelectedPhoto;
@@ -5638,14 +5639,14 @@ function pSubmitHappyPost(){
     _happyStatIncr('posts');
     if(post.text) _geminiModerateContent(post.text, 'muro-felicidad');
     pToast('☀️','¡Publicado en el Muro! Desaparece en 24h 💛');
-    // Insert to Supabase so all users see it
+    // Insert to Supabase so all users see it (await so pRenderHappy sees the new post)
     _initSupabase();
     if(sbClient){
-      sbClient.from('happy_posts').insert({ id:post.id,
+      await sbClient.from('happy_posts').insert({ id:post.id,
         user_id: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon',
         user_name: post.name, user_av: post.av||'', emoji: post.emoji||'☀️',
         text: post.text||'', photo: post.photo||'', anon: !!isAnon, reactions: post.reactions
-      }).then(function(){}).catch(function(){});
+      }).catch(function(){});
     }
   } else {
     var queue = _happyQueueLoad();
@@ -10007,10 +10008,6 @@ window.addEventListener('load', function(){
     setTimeout(_initReveal, 100);
   }
 
-  // Welcome toast after a moment
-  setTimeout(function(){
-    if(!_authenticated){ pToast('🌿', 'Bienvenido/a a Velo'); }
-  }, 3000);
 
   // Mark guardian offline when closing the app
   window.addEventListener('beforeunload', function(){
