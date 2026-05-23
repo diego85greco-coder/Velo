@@ -320,7 +320,10 @@ async function _sbSyncProfile(userId){
   }
 
   var p = res.data[0];
-  if(p.nombre)        safeLS('set','velo_user_name',     p.nombre);
+  if(p.nombre){
+    var _emailPfx = (safeLS('get','velo_user_email')||'').split('@')[0];
+    if(p.nombre !== _emailPfx) safeLS('set','velo_user_name', p.nombre);
+  }
   if(p.avatar)        safeLS('set','velo_user_av',       p.avatar);
   if(p.motto)         safeLS('set','velo_user_motto',    p.motto);
   if(p.role)          safeLS('set','velo_user_type',     p.role);
@@ -5746,16 +5749,17 @@ function pSetAvatar(emoji){
 function pSetAvatarFromFile(input){
   if(!input.files || !input.files[0]) return;
   var file = input.files[0];
-  if(file.size > 2*1024*1024){ pToast('⚠️','Imagen demasiado grande (máx 2MB)'); return; }
+  if(file.size > 5*1024*1024){ pToast('⚠️','Imagen demasiado grande (máx 5MB)'); return; }
   var reader = new FileReader();
   reader.onload = function(e){
-    var dataUrl = e.target.result;
-    safeLS('set','velo_user_av', dataUrl);
-    _syncAvatarToSb(dataUrl);
-    pToast('✅','Foto de perfil actualizada 🌿');
-    closeModal('avatarPickerOv');
-    pLoadProfile();
-    _updateSidebarUser();
+    _compressImg(e.target.result, function(dataUrl){
+      safeLS('set','velo_user_av', dataUrl);
+      _syncAvatarToSb(dataUrl);
+      pToast('✅','Foto de perfil actualizada 🌿');
+      closeModal('avatarPickerOv');
+      pLoadProfile();
+      _updateSidebarUser();
+    });
   };
   reader.readAsDataURL(file);
 }
@@ -5764,7 +5768,9 @@ function _syncAvatarToSb(av){
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
   if(!sbClient || !uid) return;
-  sbClient.from('profiles').upsert({ id:uid, avatar:av },{ onConflict:'id' }).catch(function(){});
+  sbClient.from('profiles').upsert({ id:uid, avatar:av },{ onConflict:'id' })
+    .then(function(r){ if(r && r.error) pToast('⚠️','Foto guardada solo en este dispositivo (sin conexión a la nube).'); })
+    .catch(function(){ pToast('⚠️','Foto guardada solo en este dispositivo (sin conexión a la nube).'); });
 }
 
 function pLoadProfile(){
@@ -6034,7 +6040,9 @@ function pSaveProfile(){
       status_book:   safeLS('get','velo_status_book')||'',
       status_phrase: safeLS('get','velo_status_phrase')||'',
       status_film:   safeLS('get','velo_status_film')||''
-    },{ onConflict:'id' }).then(function(){}).catch(function(){});
+    },{ onConflict:'id' })
+    .then(function(r){ if(r && r.error) pToast('⚠️','Perfil guardado localmente (error al sincronizar con la nube).'); })
+    .catch(function(){ pToast('⚠️','Perfil guardado localmente (sin conexión a la nube).'); });
   }
   closeModal('editProfileOv');
   pToast('✅','Perfil actualizado 💚');
@@ -6891,8 +6899,8 @@ function _startGlobalDMListener(){
       if(m.text === '__velo_chat_acc__'){
         safeLS('set','velo_dm_accepted_'+m.from_id,'1');
         pToast('💬',(m.from_name||'Usuario')+' aceptó tu solicitud de chat 🎉');
-        // Auto-open the DM
-        setTimeout(function(){ pOpenDM(m.from_id, m.from_name||'Usuario', m.from_av||'🧑'); }, 400);
+        // Use _enterDMChat (not pOpenDM) to bypass the busy-check — accepter just became 'ocupado'
+        setTimeout(function(){ _enterDMChat(m.from_id, m.from_name||'Usuario', m.from_av||'🧑'); }, 400);
         return;
       }
       if(m.text === '__velo_chat_rej__'){
