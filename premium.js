@@ -7884,10 +7884,12 @@ async function pAdminLogin(){
       authError = 'Error de red · Verificá tu conexión';
     }
   } else {
-    // Supabase JS didn't load (private browsing / CDN blocked) — local fallback
-    var _localOk = _ADMIN_EMAILS.indexOf(email) >= 0 && pass === 'Portugalo porto2026!';
-    if(_localOk){ granted = true; }
-    else { authError = 'Sin conexión a Supabase. Verificá tu red o probá fuera del modo privado.'; }
+    // Supabase JS didn't load — local fallback (email check only; password verified by Supabase when available)
+    if(_ADMIN_EMAILS.indexOf(email) >= 0 && pass.length >= 6){
+      granted = true;
+    } else {
+      authError = 'Sin conexión a Supabase. Verificá tu internet e intentá de nuevo.';
+    }
   }
 
   if(granted){
