@@ -37,6 +37,7 @@ var _guardianRtCh = null;   // realtime channel guardian_presence
 var _liveGuardians = [];    // cached live guardian rows from Supabase
 var _grReqCh      = null;   // guardian_requests realtime channel (guardian side)
 var _seekerGrCh   = null;   // guardian_requests realtime channel (seeker side)
+var _helpChatRtCh = null;   // realtime channel for help chat direct_messages
 var _guardianWaitTimer = null; // 80s timeout when guardian is waiting for acceptance
 var _pendingGuardianPost = null; // post object guardian clicked "Acompañar" on
 var _dmRtCh      = null;   // realtime channel direct_messages (per-thread)
@@ -2413,7 +2414,7 @@ function _showSeekerGuardianPopup(postId, row){
     +'<div id="seekerGuardianCountdown" style="font-size:28px;font-weight:800;color:var(--sage);margin-bottom:18px">80</div>'
     +'<div style="display:flex;gap:10px">'
     +'<button onclick="_seekerDeclineRequest(\''+reqId+'\',\''+postId+'\')" style="flex:1;padding:12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Ahora no</button>'
-    +'<button onclick="_seekerAcceptRequest('+_jsAttr(reqId)+','+_jsAttr(postId)+','+_jsAttr(guardianName)+','+_jsAttr(guardianAv)+')" style="flex:1;padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💚 Aceptar</button>'
+    +'<button onclick="_seekerAcceptRequest('+_jsAttr(reqId)+','+_jsAttr(postId)+','+_jsAttr(guardianName)+','+_jsAttr(guardianAv)+','+_jsAttr(row.guardian_id||'')+')\" style="flex:1;padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💚 Aceptar</button>'
     +'</div></div>';
   document.body.appendChild(ov);
   // Countdown + auto-dismiss after 80s
@@ -2426,16 +2427,16 @@ function _showSeekerGuardianPopup(postId, row){
   }, 1000);
 }
 
-function _seekerAcceptRequest(reqId, postId, guardianName, guardianAv){
+function _seekerAcceptRequest(reqId, postId, guardianName, guardianAv, guardianId){
   var ov = document.getElementById('seekerGuardianOv');
   if(ov) ov.remove();
   _initSupabase();
   if(sbClient){
     sbClient.from('guardian_requests').update({status:'accepted'}).eq('id',reqId).then(function(){}).catch(function(){});
   }
-  // Open a seeker-side help chat (use emoji, not image URL, for the chat header)
+  // Open a seeker-side help chat — guardianId is the peer to exchange messages with
   var safeEmoji = (guardianAv && !guardianAv.startsWith('data:') && !guardianAv.startsWith('http')) ? guardianAv : '💙';
-  var fakePost = { id:postId, name:guardianName, emoji:safeEmoji, preview:'Guardián conectado' };
+  var fakePost = { id:postId, name:guardianName, emoji:safeEmoji, preview:'Guardián conectado', userId: guardianId||'' };
   _curHelpPost = fakePost;
   _openHelpChat(fakePost);
   pToast('💚','¡Conectado/a con '+guardianName+'!');
@@ -2486,21 +2487,64 @@ function _checkPendingSupportMessages(){
 }
 
 function _openHelpChat(post){
-  // Navigate to a help chat screen
   _setEl('helpChatTitle', post.name + ' · ' + post.emoji);
-  _setEl('helpChatPreview', '"'+post.preview+'"');
   var msgEl = document.getElementById('helpChatMessages');
   if(msgEl){
     var t = new Date();
     var tStr = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
-    msgEl.innerHTML = '<div class="feed-system-msg">Chat de acompañamiento iniciado · '+ tStr +'</div>'
-      +'<div class="feed-msg"><div class="feed-av">'+post.emoji+'</div><div><div class="feed-sender">'+post.name+'</div><div class="feed-bubble">'+_escHtml(post.preview)+'</div></div></div>';
-    msgEl.scrollTop = msgEl.scrollHeight;
+    msgEl.innerHTML = '<div class="feed-system-msg">Chat de acompañamiento iniciado · '+ tStr +'</div>';
   }
   _updateGuardianPresence('ocupado');
   safeLS('set','velo_guardian_status','ocupado');
   pGoTo('help-chat');
   _resetHelpInactivity();
+  _subscribeHelpChat(post);
+  _loadHelpChatHistory(post);
+}
+
+function _subscribeHelpChat(post){
+  _initSupabase();
+  if(_helpChatRtCh && sbClient){ try{ sbClient.removeChannel(_helpChatRtCh); }catch(e){} _helpChatRtCh = null; }
+  if(!sbClient || !post.userId) return;
+  var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
+  var peerId = post.userId;
+  if(!myId || !peerId) return;
+  _helpChatRtCh = sbClient.channel('velo:hchat:'+[myId,peerId].sort().join(':'))
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages'}, function(payload){
+      var m = payload.new||{};
+      var relevant = (m.from_id===myId&&m.to_id===peerId)||(m.from_id===peerId&&m.to_id===myId);
+      if(!relevant) return;
+      if(m.from_id === myId) return; // already rendered optimistically
+      _renderHelpChatMsg(m, false);
+    }).subscribe();
+}
+
+async function _loadHelpChatHistory(post){
+  _initSupabase();
+  if(!sbClient || !post.userId) return;
+  var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
+  if(!myId) return;
+  try{
+    var {data} = await sbClient.from('direct_messages')
+      .select('*')
+      .or('and(from_id.eq.'+myId+',to_id.eq.'+post.userId+'),and(from_id.eq.'+post.userId+',to_id.eq.'+myId+')')
+      .order('created_at',{ascending:true}).limit(100);
+    if(data && data.length){
+      data.forEach(function(m){ _renderHelpChatMsg(m, m.from_id===myId); });
+      var el = document.getElementById('helpChatMessages');
+      if(el) el.scrollTop = el.scrollHeight;
+    }
+  }catch(e){}
+}
+
+function _renderHelpChatMsg(m, isOwn){
+  var msgEl = document.getElementById('helpChatMessages');
+  if(!msgEl) return;
+  var post = _curHelpPost||{};
+  var div = document.createElement('div');
+  div.innerHTML = _buildMsgBubble(m.text||'', isOwn, isOwn?'':(post.emoji||'💙'), isOwn?'':(post.name||''), 'helpChatInput', 'helpChatReplyBar', '', {}, '', isOwn?'':(m.from_id||''));
+  var child = div.firstElementChild;
+  if(child){ msgEl.appendChild(child); msgEl.scrollTop = msgEl.scrollHeight; }
 }
 
 function _resetHelpInactivity(){
@@ -2534,36 +2578,37 @@ function pSendHelpChatMsg(){
   ta.style.height = '';
   _geminiModerateContent(text, 'sala-de-ayuda-chat');
   _resetHelpInactivity();
-  var msgEl = document.getElementById('helpChatMessages');
-  if(!msgEl) return;
-  var name = safeLS('get','velo_user_name')||'Vos';
-  var t = new Date();
-  var tStr = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
-  var div = document.createElement('div');
   var quote = _getReplyQuote('helpChatReplyBar');
   pClearReplyBar('helpChatReplyBar');
-  div.innerHTML = _buildMsgBubble(text, true, '', '', 'helpChatInput', 'helpChatReplyBar', quote);
-  var child = div.firstElementChild; if(child) msgEl.appendChild(child);
-  msgEl.scrollTop = msgEl.scrollHeight;
-  _geminiCrisisCheck(text);
-  // Simulated reply after 8-15 seconds
-  setTimeout(function(){
-    _resetHelpInactivity();
-    var reply = _helpChatAutoMsgPool[Math.floor(Math.random()*_helpChatAutoMsgPool.length)];
-    var div2 = document.createElement('div');
-    div2.innerHTML = _buildMsgBubble(reply, false, _curHelpPost?_curHelpPost.emoji:'💚', _curHelpPost?_curHelpPost.name:'Usuario', 'helpChatInput', 'helpChatReplyBar', '', {}, '', _curHelpPost?_curHelpPost.userId:'');
-    var child2 = div2.firstElementChild; if(child2) msgEl.appendChild(child2);
+  var fullText = quote ? '↩ "'+quote.slice(0,60)+(quote.length>60?'…':'')+'"  \n'+text : text;
+  // Optimistic render
+  var msgEl = document.getElementById('helpChatMessages');
+  if(msgEl){
+    var div = document.createElement('div');
+    div.innerHTML = _buildMsgBubble(text, true, '', '', 'helpChatInput', 'helpChatReplyBar', quote);
+    var child = div.firstElementChild; if(child) msgEl.appendChild(child);
     msgEl.scrollTop = msgEl.scrollHeight;
-  }, 8000 + Math.random()*7000);
+  }
+  _geminiCrisisCheck(text);
+  // Insert to Supabase → real-time delivers message to the other party
+  _initSupabase();
+  if(sbClient && _curHelpPost && _curHelpPost.userId){
+    var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
+    var myName = safeLS('get','velo_user_name')||'';
+    var myAv   = safeLS('get','velo_user_av')||'💚';
+    sbClient.from('direct_messages').insert({
+      from_id:myId, from_name:myName, from_av:myAv, to_id:_curHelpPost.userId, text:fullText
+    }).then(function(){}).catch(function(){});
+  }
 }
 
 function pLeaveHelpChat(){
   if(_helpChatInactivityTimer){ clearTimeout(_helpChatInactivityTimer); _helpChatInactivityTimer = null; }
+  if(_helpChatRtCh && sbClient){ try{ sbClient.removeChannel(_helpChatRtCh); }catch(e){} _helpChatRtCh = null; }
   var post = _curHelpPost;
   _curHelpPost = null;
   _updateGuardianPresence('disponible');
   safeLS('set','velo_guardian_status','disponible');
-  // Show rating survey before leaving
   _showHelpChatRating(post);
 }
 
@@ -9131,9 +9176,24 @@ function pStartJitsiCall(){
   var pending = null; try{ pending = JSON.parse(safeLS('get','velo_current_session')||'null'); }catch(e){}
   var proId = pending ? pending.proId : 'sesion';
   var room = _jitsiRoomName(proId);
-  var url = 'https://meet.jit.si/'+room;
-  pToast('📹','Abriendo videollamada…');
-  window.open(url, '_blank', 'noopener');
+  var displayName = encodeURIComponent(safeLS('get','velo_user_name')||'Usuario Velo');
+  var url = 'https://meet.jit.si/'+room+'#userInfo.displayName='+displayName+'&config.startWithAudioMuted=false&config.prejoinPageEnabled=false&config.toolbarButtons=["microphone","camera","hangup","fullscreen","chat","tileview"]';
+
+  // Embed in iframe inside the session room
+  var container = document.getElementById('jitsiContainer');
+  var frame     = document.getElementById('jitsiFrame');
+  var btn       = document.getElementById('jitsiStartBtn');
+  if(frame && container){
+    frame.src = url;
+    container.style.display = 'block';
+    if(btn){ btn.textContent = '📹 Videollamada activa'; btn.style.opacity = '.6'; btn.disabled = true; }
+    pToast('📹','Videollamada iniciada — usá auriculares 🎧');
+  } else {
+    // Fallback: new tab
+    window.open('https://meet.jit.si/'+room, '_blank', 'noopener');
+    pToast('📹','Videollamada abierta en nueva pestaña');
+  }
+
   // Mark session as started for admin audit
   var sessions = []; try{ sessions = JSON.parse(safeLS('get','velo_sessions')||'[]'); }catch(e){}
   if(pending && !pending.callStarted){

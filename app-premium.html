@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260523-118">
+  <link rel="stylesheet" href="premium.css?v=20260523-119">
 </head>
 <body>
 
@@ -1946,15 +1946,25 @@
             </div>
 
             <!-- Jitsi call card -->
-            <div class="p-card" style="padding:28px;margin-bottom:16px;text-align:center;border:2px solid rgba(116,198,157,.3);background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(245,252,248,.88))">
-              <div style="font-size:48px;margin-bottom:14px">📹</div>
-              <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:8px">Sala de videollamada lista</h3>
-              <p style="font-size:13px;color:var(--ink4);margin-bottom:8px;line-height:1.6">Tu sala privada en Jitsi Meet está preparada. Solo vos y tu profesional tienen acceso.</p>
-              <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:10px;padding:7px 12px;margin-bottom:20px;font-family:monospace" id="srRoomLink">meet.jit.si/…</div>
-              <button class="p-btn p-btn--primary p-btn--xl p-btn--full" onclick="pStartJitsiCall()" style="font-size:16px;padding:16px;margin-bottom:10px">
+            <div class="p-card" style="padding:24px;margin-bottom:16px;border:2px solid rgba(116,198,157,.3);background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(245,252,248,.88))">
+              <div style="text-align:center;margin-bottom:16px">
+                <div style="font-size:40px;margin-bottom:10px">📹</div>
+                <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:6px">Sala de videollamada lista</h3>
+                <p style="font-size:13px;color:var(--ink4);margin-bottom:8px;line-height:1.6">Tu sala privada está preparada. Solo vos y tu profesional tienen acceso.</p>
+                <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:10px;padding:7px 12px;margin-bottom:16px;font-family:monospace" id="srRoomLink">meet.jit.si/…</div>
+              </div>
+              <!-- Embedded Jitsi iframe (shown after clicking start) -->
+              <div id="jitsiContainer" style="display:none;border-radius:14px;overflow:hidden;margin-bottom:14px;background:#111">
+                <iframe id="jitsiFrame"
+                  allow="camera; microphone; fullscreen; display-capture; autoplay"
+                  style="width:100%;height:480px;border:none"
+                  src="about:blank">
+                </iframe>
+              </div>
+              <button id="jitsiStartBtn" class="p-btn p-btn--primary p-btn--xl p-btn--full" onclick="pStartJitsiCall()" style="font-size:16px;padding:16px;margin-bottom:8px">
                 📹 Iniciar videollamada
               </button>
-              <p style="font-size:11px;color:var(--ink5);margin:0">Se abrirá en una nueva pestaña · No se requiere cuenta</p>
+              <p style="font-size:11px;color:var(--ink5);margin:0;text-align:center">No se requiere cuenta · La sesión no se graba</p>
             </div>
 
             <!-- Tips -->
@@ -2847,7 +2857,7 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260523-118"></script>
+<script src="premium.js?v=20260523-119"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
