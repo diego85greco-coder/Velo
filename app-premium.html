@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260522-113">
+  <link rel="stylesheet" href="premium.css?v=20260523-114">
 </head>
 <body>
 
@@ -343,7 +343,7 @@
             <div class="land-footer-legal">
               <p>&copy; <span id="footerYear"></span> HeyVelo. Todos los derechos reservados.</p>
               <nav class="land-footer-nav">
-                <a href="/politica-de-privacidad" class="land-footer-link">Política de Privacidad</a>
+                <a href="#" onclick="pShowPrivacy();return false;" class="land-footer-link">Política de Privacidad</a>
                 <span class="land-footer-sep">|</span>
                 <a href="#" onclick="pShowTerms();return false;" class="land-footer-link">Términos y Condiciones</a>
               </nav>
@@ -2158,19 +2158,65 @@
 
 <!-- ── POLÍTICA DE PRIVACIDAD ───────────────────────────── -->
 <div class="p-modal-ov" id="privacyOv">
-  <div class="p-sheet" style="max-height:80vh;overflow-y:auto">
+  <div class="p-sheet" style="max-height:88vh;overflow-y:auto;max-width:640px">
     <div class="p-sheet-handle"></div>
-    <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin-bottom:16px">Política de Privacidad</h3>
-    <div style="font-size:13px;color:var(--ink3);line-height:1.7">
-      <p><strong>Datos que recopilamos</strong><br>Nombre, correo electrónico y datos de uso (frecuencia de sesiones, emojis de humor, sesiones de respiración). No vendemos ni compartimos datos con terceros.</p>
-      <p><strong>Almacenamiento</strong><br>Tus datos se almacenan en servidores seguros de Supabase (cifrado en tránsito y en reposo). El Diario Íntimo se guarda <em>solo en tu dispositivo</em> — Velo no puede acceder a él.</p>
-      <p><strong>Comunicaciones anónimas</strong><br>Los mensajes al mar y las solicitudes anónimas de la Sala de Ayuda no están vinculadas a tu identidad visible para otros usuarios.</p>
-      <p><strong>Pagos</strong><br>Los pagos son procesados por Stripe o PayPal. Velo no almacena datos de tarjeta de crédito.</p>
-      <p><strong>Tus derechos</strong><br>Podés solicitar la eliminación de tu cuenta y todos tus datos escribiendo a consultas@heyvelo.app.</p>
-      <p><strong>Cookies</strong><br>Usamos localStorage para mantener tu sesión. No usamos cookies de rastreo de terceros.</p>
-      <p style="color:var(--ink5);font-size:11px">Última actualización: Mayo 2026</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div>
+        <div class="p-label p-label-sage" style="margin-bottom:2px">RGPD · Ley 58/2019</div>
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);margin:0">Política de Privacidad</h3>
+      </div>
+      <button onclick="closeModal('privacyOv')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink4);padding:0">✕</button>
     </div>
-    <button class="p-btn p-btn--primary p-btn--md p-btn--full" style="margin-top:16px" onclick="closeModal('privacyOv')">Entendido ✓</button>
+    <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:8px;padding:8px 11px;margin-bottom:14px">Última actualización: 23 de mayo de 2026 · heyvelo.app</div>
+    <div style="font-size:13px;color:var(--ink3);line-height:1.75;display:flex;flex-direction:column;gap:14px">
+      <p style="color:var(--ink4);font-style:italic;font-size:12px;margin:0">En Heyvelo.app, la protección de sus datos personales es una prioridad. Esta política detalla cómo gestionamos su información de manera transparente y segura conforme al RGPD y la legislación portuguesa (Ley 58/2019).</p>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">1. RESPONSABLE DEL TRATAMIENTO</div>
+        <p style="margin:0">El responsable de la gestión de sus datos es Heyvelo, con sede en Oporto, Portugal. Para cualquier consulta, ejercicio de sus derechos o comunicación relativa a la protección de datos, puede escribir a: <strong>privacidad-datos@heyvelo.app</strong>.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">2. ¿QUÉ INFORMACIÓN RECOPILAMOS Y PARA QUÉ?</div>
+        <p style="margin:0 0 6px">Recopilamos únicamente los datos necesarios para operar nuestra plataforma de intermediación:</p>
+        <p style="margin:0 0 5px"><strong>Datos de cuenta:</strong> Nombre de usuario y correo electrónico para la gestión de su perfil.</p>
+        <p style="margin:0 0 5px"><strong>Datos profesionales:</strong> Información técnica y acreditaciones de los Profesionales para verificar su idoneidad en la plataforma.</p>
+        <p style="margin:0 0 5px"><strong>Datos de transacciones:</strong> Información necesaria para la gestión de pagos (procesada de forma segura mediante Stripe/PayPal; Heyvelo no almacena datos bancarios).</p>
+        <p style="margin:0 0 5px"><strong>Datos de salud y notas clínicas:</strong> Heyvelo actúa como encargado del tratamiento. El Profesional es el responsable y único custodio de estos expedientes; Heyvelo no accede, audita ni edita este contenido.</p>
+        <p style="margin:0"><strong>Datos de uso técnico:</strong> Dirección IP, logs de acceso y metadatos de aceptación de términos, necesarios para nuestra seguridad y defensa legal.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">3. PROTECCIÓN EN SECCIONES ESPECIALES (MINIMIZACIÓN DE DATOS)</div>
+        <p style="margin:0 0 6px">Heyvelo aplica principios de privacidad desde el diseño:</p>
+        <p style="margin:0 0 5px"><strong>Diario Íntimo:</strong> No almacenamos el contenido de sus escritos. Solo registramos sus estados de ánimo para fines estadísticos de seguimiento personal.</p>
+        <p style="margin:0 0 5px"><strong>Comunidad (Muro de la Felicidad, Al Mar, Sala de Ayuda, Guardianes):</strong> No almacenamos información sensible o personal en estas secciones. La información publicada en espacios comunitarios es responsabilidad del usuario.</p>
+        <p style="margin:0"><strong>Moderación:</strong> Utilizamos IA y supervisión humana para proteger la seguridad de los chats. Este procesamiento es necesario por nuestro interés legítimo en mantener una comunidad sana y libre de acoso.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">4. DERECHOS DE LOS USUARIOS (RGPD)</div>
+        <p style="margin:0 0 6px">Usted tiene derecho a:</p>
+        <p style="margin:0 0 4px">· <strong>Acceso y Rectificación:</strong> Consultar qué datos tenemos y actualizarlos.</p>
+        <p style="margin:0 0 4px">· <strong>Supresión ("Derecho al olvido"):</strong> Solicitar la eliminación total de su cuenta y sus datos personales.</p>
+        <p style="margin:0 0 4px">· <strong>Portabilidad:</strong> Obtener una copia de sus datos.</p>
+        <p style="margin:0 0 8px">· <strong>Oposición:</strong> Oponerse al tratamiento de datos personales para fines específicos.</p>
+        <p style="margin:0">Para ejercer estos derechos: <strong>privacidad-datos@heyvelo.app</strong>.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">5. CONSERVACIÓN Y SEGURIDAD</div>
+        <p style="margin:0 0 6px"><strong>Duración:</strong> Sus datos se conservan mientras su cuenta esté activa. Tras la baja, conservaremos de forma bloqueada únicamente los datos estrictamente necesarios (registros de aceptación de términos, logs de IP y timestamp) por el plazo que prescribe el Código Civil portugués.</p>
+        <p style="margin:0"><strong>Seguridad:</strong> Heyvelo implementa medidas técnicas de cifrado y control de acceso. En el uso de servicios de terceros (como nuestra IA de chatbot), limitamos al máximo la transferencia de información personal.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">6. TRANSFERENCIAS A TERCEROS</div>
+        <p style="margin:0 0 6px">No vendemos ni compartimos sus datos con fines publicitarios. Solo compartimos información cuando es estrictamente necesario:</p>
+        <p style="margin:0 0 4px">· <strong>Pasarelas de pago:</strong> Para procesar suscripciones y donaciones (Stripe/PayPal).</p>
+        <p style="margin:0 0 4px">· <strong>Autoridades:</strong> Ante órdenes judiciales vinculantes.</p>
+        <p style="margin:0">· <strong>Moderación:</strong> Uso de sistemas de IA para filtrar contenido nocivo.</p>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">7. ACTUALIZACIONES DE LA POLÍTICA</div>
+        <p style="margin:0">Esta política puede ser ajustada para reflejar nuevas funcionalidades o cambios legales. Las actualizaciones serán notificadas a través de la aplicación.</p>
+      </div>
+    </div>
+    <button class="p-btn p-btn--primary p-btn--md p-btn--full" style="margin-top:20px" onclick="closeModal('privacyOv')">Entendido ✓</button>
   </div>
 </div>
 
@@ -2508,7 +2554,7 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260522-113"></script>
+<script src="premium.js?v=20260523-114"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
