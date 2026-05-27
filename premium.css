@@ -3013,3 +3013,332 @@ a { text-decoration: none; color: inherit; }
 }
 .land-legal-text strong { color: var(--ink4); }
 .land-legal-text a { color: var(--sage2); text-decoration: underline; text-underline-offset: 3px; }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   PREMIUM VISUAL UPGRADE v128
+   Animaciones avanzadas, glassmorphism mejorado, micro-interacciones
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── NEW KEYFRAMES ───────────────────────────────────────────── */
+@keyframes p-orb-drift-1 {
+  0%,100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(40px, -30px) scale(1.08); }
+  66%      { transform: translate(-20px, 20px) scale(.95); }
+}
+@keyframes p-orb-drift-2 {
+  0%,100% { transform: translate(0, 0) scale(1); }
+  40%      { transform: translate(-35px, 25px) scale(1.06); }
+  70%      { transform: translate(25px, -20px) scale(.97); }
+}
+@keyframes p-text-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes p-btn-shimmer {
+  0%   { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(250%) skewX(-15deg); }
+}
+@keyframes p-pageEnter {
+  from { opacity: 0; transform: translateY(10px) scale(.996); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+@keyframes p-border-glow-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── HERO — AMBIENT FLOATING ORBS ───────────────────────────── */
+.land-hero-bg::before {
+  content: '';
+  position: absolute;
+  top: 8%; left: 5%;
+  width: clamp(220px, 28vw, 440px);
+  height: clamp(220px, 28vw, 440px);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(116,198,157,.20) 0%, rgba(183,228,199,.08) 50%, transparent 70%);
+  filter: blur(48px);
+  animation: p-orb-drift-1 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+.land-hero-orb {
+  position: absolute;
+  bottom: 12%; right: 4%;
+  width: clamp(180px, 22vw, 360px);
+  height: clamp(180px, 22vw, 360px);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(168,212,232,.18) 0%, rgba(196,181,232,.09) 50%, transparent 70%);
+  filter: blur(52px);
+  animation: p-orb-drift-2 24s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Hero title italic span — shimmer gradient */
+.land-hero-title span {
+  background: linear-gradient(
+    90deg,
+    var(--sage3) 0%, var(--sage4) 25%, #a8e6c0 48%,
+    var(--sage3) 65%, var(--sage2) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: p-text-shimmer 5.5s linear infinite;
+  display: inline-block;
+}
+
+/* Hero content staggered entrance */
+.land-hero-logo    { animation: p-slideUp .6s .00s var(--ease-out) both; }
+.land-hero-badge   { animation: p-slideUp .6s .10s var(--ease-out) both; }
+.land-hero-title   { animation: p-slideUp .7s .18s var(--ease-out) both; }
+.land-hero-sub     { animation: p-slideUp .7s .28s var(--ease-out) both; }
+.land-hero-btns    { animation: p-slideUp .6s .38s var(--ease-out) both; }
+.land-hero-preview { animation: p-slideUp .8s .52s var(--ease-out) both; }
+
+/* ── HERO BADGE — animated gradient border ───────────────────── */
+.land-hero-badge {
+  position: relative;
+  background: rgba(255,255,255,.78);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(45,106,79,.12), 0 1px 3px rgba(45,106,79,.08);
+  border-color: transparent;
+  isolation: isolate;
+}
+.land-hero-badge::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, rgba(116,198,157,.6), rgba(168,212,232,.4), rgba(196,181,232,.5), rgba(116,198,157,.6));
+  background-size: 200% 200%;
+  animation: p-gradient-shift 4s ease-in-out infinite;
+  z-index: -1;
+}
+
+/* ── PREVIEW CARD — richer glass ────────────────────────────── */
+.land-preview-card {
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(28px) saturate(1.6);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,.78);
+  box-shadow:
+    0 24px 64px rgba(45,106,79,.13),
+    0 6px 20px rgba(45,106,79,.08),
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -1px 0 rgba(45,106,79,.04);
+}
+
+/* Mobile preview grid — 2 columns on small screens */
+@media (max-width: 480px) {
+  .land-preview-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+}
+
+/* ── PRIMARY BUTTON — shimmer sweep + glow + press depth ────── */
+.p-btn--primary {
+  background: linear-gradient(135deg, var(--sage2) 0%, var(--sage3) 50%, var(--sage2) 100%);
+  background-size: 200% 100%;
+  color: #fff;
+  box-shadow:
+    0 4px 20px rgba(45,106,79,.28),
+    0 1px 3px rgba(45,106,79,.18),
+    inset 0 1px 0 rgba(255,255,255,.22),
+    inset 0 -1px 0 rgba(0,0,0,.08);
+  overflow: hidden;
+}
+.p-btn--primary::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 40%; height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.32) 50%, transparent 100%);
+  transform: translateX(-100%) skewX(-15deg);
+  pointer-events: none;
+  border-radius: inherit;
+}
+.p-btn--primary:hover::before {
+  animation: p-btn-shimmer .65s var(--ease-smooth) forwards;
+}
+.p-btn--primary:hover {
+  background: linear-gradient(135deg, var(--sage) 0%, var(--sage2) 50%, var(--sage3) 100%);
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 32px rgba(45,106,79,.36),
+    0 4px 12px rgba(45,106,79,.20),
+    inset 0 1px 0 rgba(255,255,255,.28),
+    inset 0 -1px 0 rgba(0,0,0,.08);
+}
+.p-btn--primary:active {
+  transform: translateY(1px) scale(.98);
+  box-shadow:
+    0 2px 8px rgba(45,106,79,.28),
+    inset 0 2px 4px rgba(0,0,0,.12),
+    inset 0 1px 0 rgba(255,255,255,.15);
+  transition-duration: 80ms;
+}
+
+/* Secondary button upgrade */
+.p-btn--secondary:hover {
+  background: rgba(255,255,255,.96);
+  border-color: var(--sage3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(45,106,79,.14), 0 0 0 3px rgba(116,198,157,.10);
+}
+.p-btn--secondary:active { transform: translateY(1px) scale(.98); }
+
+/* ── CARD GLOW HOVER SYSTEM ─────────────────────────────────── */
+.glass-card--hover,
+.p-card--hover,
+.land-feat-card {
+  position: relative;
+  isolation: isolate;
+  transition: transform var(--t-mid) var(--ease-spring), box-shadow var(--t-mid) ease;
+}
+.glass-card--hover::before,
+.p-card--hover::before,
+.land-feat-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--radius-card) + 1px);
+  background: linear-gradient(135deg, rgba(116,198,157,.0) 0%, rgba(116,198,157,.5) 40%, rgba(168,212,232,.4) 70%, rgba(196,181,232,.0) 100%);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity var(--t-mid) ease;
+  pointer-events: none;
+}
+.glass-card--hover:hover::before,
+.p-card--hover:hover::before,
+.land-feat-card:hover::before { opacity: 1; }
+
+/* Feature card — glassmorphism + deeper hover */
+.land-feat-card {
+  background: rgba(255,255,255,.84);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  border: 1px solid rgba(255,255,255,.72);
+  box-shadow: 0 4px 24px rgba(45,106,79,.08), 0 1px 3px rgba(45,106,79,.05), inset 0 1px 0 rgba(255,255,255,.9);
+}
+.land-feat-card:hover {
+  transform: translateY(-6px) scale(1.012);
+  box-shadow: 0 20px 48px rgba(45,106,79,.15), 0 6px 16px rgba(45,106,79,.09), 0 0 0 1px rgba(116,198,157,.22);
+}
+.p-card--hover:hover { transform: translateY(-3px); box-shadow: var(--sh-float); }
+
+/* Stat card hover */
+.land-stat-card {
+  transition: transform var(--t-mid) var(--ease-spring), box-shadow var(--t-mid) ease;
+}
+.land-stat-card:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 32px rgba(45,106,79,.12); }
+
+/* Stat number — gradient text */
+.land-stat-num {
+  background: linear-gradient(135deg, var(--sage) 0%, var(--sage3) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Testimonial card hover */
+.land-test-card {
+  transition: transform var(--t-mid) var(--ease-spring), box-shadow var(--t-mid) ease;
+}
+.land-test-card:hover { transform: translateY(-2px); box-shadow: var(--sh-float); }
+
+/* ── PAGE TRANSITION — enhanced entry ───────────────────────── */
+.p-page.active { animation: p-pageEnter 300ms var(--ease-out) both; }
+.p-page.active.fade-in { animation: p-pageEnter var(--t-slow) var(--ease-out) both; }
+
+/* ── SCROLL REVEAL — enhanced stagger ───────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 500ms ease, transform 500ms var(--ease-out);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal[data-reveal="scale"] {
+  opacity: 0; transform: scale(.94) translateY(14px);
+  transition: opacity 480ms ease, transform 480ms var(--ease-spring);
+}
+.reveal[data-reveal="scale"].visible { opacity: 1; transform: scale(1) translateY(0); }
+.reveal[data-delay="1"] { transition-delay: 80ms; }
+.reveal[data-delay="2"] { transition-delay: 160ms; }
+.reveal[data-delay="3"] { transition-delay: 240ms; }
+.reveal[data-delay="4"] { transition-delay: 320ms; }
+.reveal[data-delay="5"] { transition-delay: 400ms; }
+.reveal[data-delay="6"] { transition-delay: 480ms; }
+
+/* Section heading underline reveal */
+.land-section-head .p-hero-text { position: relative; display: inline-block; }
+.land-section-head .p-hero-text::after {
+  content: '';
+  position: absolute;
+  left: 50%; transform: translateX(-50%);
+  bottom: -6px; width: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--sage4), transparent);
+  border-radius: 2px;
+  transition: width 600ms var(--ease-out) 200ms;
+}
+.land-section-head.reveal.visible .p-hero-text::after { width: 55%; }
+
+/* ── FEATURES SECTION — gradient background ─────────────────── */
+.land-features {
+  background: linear-gradient(170deg, rgba(238,248,242,.95) 0%, rgba(245,240,230,.90) 50%, rgba(238,242,248,.95) 100%);
+  position: relative;
+}
+.land-features::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(116,198,157,.28), transparent);
+}
+
+/* ── SIDEBAR — deeper glass + edge accent ───────────────────── */
+.p-sidebar {
+  background: rgba(255,255,255,.74);
+  backdrop-filter: blur(32px) saturate(1.5);
+  -webkit-backdrop-filter: blur(32px) saturate(1.5);
+  border-right: 1px solid rgba(255,255,255,.62);
+  box-shadow: 3px 0 32px rgba(45,106,79,.09), inset -1px 0 0 rgba(255,255,255,.5);
+}
+
+/* Active sidebar item — deeper gradient */
+.p-sn-item.active {
+  background: linear-gradient(135deg, rgba(116,198,157,.22) 0%, rgba(183,228,199,.12) 100%);
+  box-shadow: 0 2px 12px rgba(45,106,79,.10), inset 0 1px 0 rgba(255,255,255,.6);
+}
+.p-sn-item.active::before {
+  background: linear-gradient(to bottom, var(--sage3), var(--sage2));
+  box-shadow: 2px 0 8px rgba(45,106,79,.28);
+}
+
+/* ── BOTTOM NAV — active icon bounce ───────────────────────── */
+.p-bn-item.active .p-bn-icon {
+  transform: scale(1.14);
+  transition: transform var(--t-fast) var(--ease-spring);
+}
+.p-bn-icon { transition: transform var(--t-fast) var(--ease-spring); }
+
+/* ── FORM FOCUS — stronger visible focus ────────────────────── */
+.p-field input:focus, .p-field textarea:focus, .p-field select:focus {
+  border-color: var(--sage3);
+  box-shadow: 0 0 0 3px rgba(116,198,157,.18);
+}
+
+/* Toggle glowing ON state */
+.p-tog.on { box-shadow: 0 0 0 3px rgba(116,198,157,.18); }
+
+/* ── LANDING CTA — animated gradient ───────────────────────── */
+.land-cta {
+  background: linear-gradient(135deg, var(--sage) 0%, var(--sage2) 40%, #1e6b4a 70%, var(--sage) 100%);
+  background-size: 200% 200%;
+  animation: p-gradient-shift 8s ease-in-out infinite;
+}
+
+/* ── PLAN BADGE — shimmer for featured plan ─────────────────── */
+.land-plan-badge {
+  animation: p-gradient-shift 3s ease-in-out infinite;
+  background-size: 200% 200%;
+}

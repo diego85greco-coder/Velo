@@ -40,6 +40,7 @@ var _seekerGrCh   = null;   // guardian_requests realtime channel (seeker side)
 var _helpChatRtCh = null;   // realtime channel for help chat direct_messages
 var _guardianWaitTimer = null; // 80s timeout when guardian is waiting for acceptance
 var _pendingGuardianPost = null; // post object guardian clicked "Acompañar" on
+var _pendingGuardianReqId = null; // ID of the guardian_request row sent (to cancel only that row)
 var _dmRtCh      = null;   // realtime channel direct_messages (per-thread)
 var _dmInboxCh   = null;   // realtime channel direct_messages (global inbox listener)
 var _favsList     = null;   // cached favorites array (loaded lazily)
@@ -1986,6 +1987,7 @@ function pSendGuardianMsg(){
   var ta = document.getElementById('gcInput');
   if(!ta || !ta.value.trim() || !_gcPeer) return;
   var text = ta.value.trim();
+  if(text.length > 2000){ pToast('⚠️','Mensaje demasiado largo (máx 2000 caracteres)'); return; }
   ta.value = ''; ta.style.height = '';
   _geminiModerateContent(text, 'guardian-chat');
   var quote = _getReplyQuote('gcReplyBar');
@@ -2251,20 +2253,25 @@ function pAccompanyHelp(postId){
   }
 }
 
-function _guardianSendRequest(post){
+async function _guardianSendRequest(post){
   _initSupabase();
   if(!sbClient){ _curHelpPost = post; _openHelpChat(post); return; }
   var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon';
   var myName = safeLS('get','velo_user_name')||'Guardián';
   var myAv   = safeLS('get','velo_user_av')||'🌿';
   var reqId  = 'gr'+Date.now();
-  // Insert guardian_request row so seeker gets DB real-time event
-  sbClient.from('guardian_requests').insert({
+  _pendingGuardianReqId = reqId; // store so _guardianCancelWait can target only this row
+  // Insert guardian_request row — await so we know it arrived before showing overlay
+  var insResult = await sbClient.from('guardian_requests').insert({
     id: reqId, post_id: post.id,
     seeker_id: post.userId||null,
     guardian_id: myId, guardian_name: myName, guardian_av: myAv,
     status: 'pending'
-  }).then(function(){}).catch(function(){});
+  }).catch(function(e){ return { error: e }; });
+  if(insResult && insResult.error){
+    pToast('⚠️','No se pudo enviar la solicitud. Verificá tu conexión.');
+    return;
+  }
   // Show waiting overlay with 80s countdown
   _showGuardianWaitOverlay(post, myName);
   // Subscribe to guardian_requests changes for this row
@@ -2313,10 +2320,12 @@ function _showGuardianWaitOverlay(post, myName){
 function _guardianCancelWait(){
   if(_guardianWaitTimer){ clearTimeout(_guardianWaitTimer); _guardianWaitTimer = null; }
   _clearGuardianWaitOverlay();
-  if(_pendingGuardianPost && sbClient){
-    sbClient.from('guardian_requests').update({status:'declined'}).eq('post_id',_pendingGuardianPost.id).then(function(){}).catch(function(){});
+  if(_pendingGuardianReqId && sbClient){
+    // Use the specific row ID — NOT post_id — to avoid cancelling other guardians' requests
+    sbClient.from('guardian_requests').update({status:'declined'}).eq('id',_pendingGuardianReqId).then(function(){}).catch(function(){});
   }
   _pendingGuardianPost = null;
+  _pendingGuardianReqId = null;
   pToast('↩️','Cancelado. La solicitud sigue disponible en la sala.');
 }
 
@@ -3174,7 +3183,7 @@ function _renderNewsList(el, items){
     var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
     return '<div class="p-card p-card--hover" style="margin-bottom:14px;padding:18px;cursor:pointer" onclick="pOpenNewsDetail('+i+')">'
       +'<div style="display:flex;align-items:flex-start;gap:14px">'
-      +'<div style="font-size:36px;line-height:1;flex-shrink:0">'+item.emoji+'</div>'
+      +'<div style="font-size:36px;line-height:1;flex-shrink:0">'+_escHtml(item.emoji||'📰')+'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:17px;color:var(--ink);margin-bottom:6px;font-weight:600">'+_escHtml(item.titulo)+'</div>'
       +'<div style="font-size:13px;color:var(--ink3);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
@@ -3199,12 +3208,12 @@ function pOpenNewsDetail(i){
   ov.id = 'newsDetailOv';
   ov.innerHTML = '<div class="p-sheet" style="max-height:85vh;overflow-y:auto">'
     +'<div class="p-sheet-handle"></div>'
-    +'<div style="font-size:52px;text-align:center;margin-bottom:12px">'+item.emoji+'</div>'
+    +'<div style="font-size:52px;text-align:center;margin-bottom:12px">'+_escHtml(item.emoji||'📰')+'</div>'
     +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:14px;line-height:1.3;text-align:center">'+_escHtml(item.titulo)+'</h2>'
     +'<p style="font-size:14px;color:var(--ink3);line-height:1.75;margin-bottom:20px">'+_escHtml(item.cuerpo)+'</p>'
     +'<div style="background:var(--sage7);border-radius:12px;padding:12px 14px;margin-bottom:20px">'
     +'<div style="font-size:11px;font-weight:700;color:var(--sage3);letter-spacing:.5px;margin-bottom:6px">✨ REFLEXIÓN VELO IA</div>'
-    +'<p style="font-size:13px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
+    +'<p style="font-size:13px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+_escHtml(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
     +'</div>'
     +(hasLink ? '<a href="'+item.sourceUrl+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔗 Leer artículo completo en '+_escHtml(item.sourceName||'la fuente')+'</a>'
       : '<p style="font-size:11px;color:var(--ink5);text-align:center;margin-bottom:10px;font-style:italic">✨ Historia generada por Velo IA · actualizada a diario</p>')
@@ -4820,6 +4829,7 @@ function pSendCircleMsg(){
   var ta = document.getElementById('feedInput');
   if(!ta || !ta.value.trim() || !_curCircle) return;
   var text = ta.value.trim();
+  if(text.length > 2000){ pToast('⚠️','Mensaje demasiado largo (máx 2000 caracteres)'); return; }
   ta.value = '';
   ta.style.height = '';
   var emojiPanel = document.getElementById('feedEmojiPanel');
@@ -6798,6 +6808,7 @@ async function pSendDM(){
   var ta = document.getElementById('dmInput');
   if(!ta || !ta.value.trim() || !_dmPeer) return;
   var text = ta.value.trim();
+  if(text.length > 2000){ pToast('⚠️','Mensaje demasiado largo (máx 2000 caracteres)'); return; }
   ta.value = '';
   var dmQuote = _getReplyQuote('dmReplyBar');
   pClearReplyBar('dmReplyBar');
@@ -6901,6 +6912,11 @@ function _startGlobalDMListener(){
       }
       if(m.text === '__velo_chat_acc__'){
         safeLS('set','velo_dm_accepted_'+m.from_id,'1');
+        // If already in an active chat, notify but don't overwrite the current session
+        if(_inActiveChat){
+          pToast('💬',(m.from_name||'Usuario')+' aceptó tu chat — terminá el actual primero');
+          return;
+        }
         pToast('💬',(m.from_name||'Usuario')+' aceptó tu solicitud de chat 🎉');
         // Use _enterDMChat (not pOpenDM) to bypass the busy-check — accepter just became 'ocupado'
         setTimeout(function(){ _enterDMChat(m.from_id, m.from_name||'Usuario', m.from_av||'🧑'); }, 400);
@@ -7887,12 +7903,9 @@ async function pAdminLogin(){
       authError = 'Error de red · Verificá tu conexión';
     }
   } else {
-    // Supabase JS didn't load — local fallback (email check only; password verified by Supabase when available)
-    if(_ADMIN_EMAILS.indexOf(email) >= 0 && pass.length >= 6){
-      granted = true;
-    } else {
-      authError = 'Sin conexión a Supabase. Verificá tu internet e intentá de nuevo.';
-    }
+    // Supabase JS didn't load — no local fallback, require real connection
+    // (never grant admin access without server-side verification)
+    authError = 'Sin conexión a Supabase. Verificá tu internet e intentá de nuevo.';
   }
 
   if(granted){
