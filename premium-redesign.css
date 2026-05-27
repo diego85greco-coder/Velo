@@ -1183,3 +1183,73 @@ body.r-dark #pg-register {
     radial-gradient(circle at 15% 20%, rgba(58,140,100,.25) 0%, transparent 45%),
     linear-gradient(180deg, #0f1a14 0%, #0c1510 100%) !important;
 }
+
+/* ── Hero dark mode toggle button ────────────────────────────────── */
+#rDarkToggleBtnHero {
+  font-size: 18px;
+  line-height: 1;
+}
+#rDarkToggleBtnHero:hover {
+  background: rgba(116,198,157,.12) !important;
+}
+
+/* ── Status row above greeting ───────────────────────────────────── */
+.r-hero-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+/* ── DM chat input row (missing base class) ──────────────────────── */
+.feed-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(20px) saturate(1.2);
+  border-top: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+.feed-textarea {
+  flex: 1;
+  min-height: 40px;
+  max-height: 96px;
+  resize: none;
+  border: 1.5px solid var(--border2);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-family: 'Jost', sans-serif;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: rgba(255,255,255,.9);
+  outline: none;
+  transition: border-color var(--t-fast);
+  overflow-y: auto;
+}
+.feed-textarea:focus { border-color: var(--sage3); }
+body.r-dark .feed-input-row {
+  background: rgba(15,26,18,.92) !important;
+  border-top-color: rgba(80,160,110,.18) !important;
+}
+body.r-dark .feed-textarea {
+  background: rgba(30,50,35,.9) !important;
+  color: var(--ink) !important;
+  border-color: rgba(80,160,110,.2) !important;
+}
+
+/* ── Sidebar icon centering fix (desktop) ───────────────────────── */
+@media (min-width: 1024px) {
+  .p-sn-item {
+    display: flex !important;
+    align-items: center !important;
+  }
+  .p-sn-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 22px !important;
+    flex-shrink: 0;
+  }
+}

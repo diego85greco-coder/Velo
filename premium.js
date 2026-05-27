@@ -1018,7 +1018,7 @@ function _loadHomeData(){
   _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
   var d = new Date();
   var h = d.getHours();
-  var greet = (h < 6 || h >= 20) ? 'Buenas noches 🌙' : h < 12 ? 'Buenos días 🌿' : 'Buenas tardes 🌤️';
+  var greet = (h < 6 || h >= 20) ? 'Buenas noches' : h < 12 ? 'Buenos días' : 'Buenas tardes';
   var months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   var dateStr = d.getDate() + ' de ' + months[d.getMonth()];
 
@@ -1737,6 +1737,7 @@ async function pRenderGuardians(){
               convs: r.convs||0, rating: r.rating||5.0, reviews:[], recommend: r.convs||0 };
           });
         _liveGuardians = liveGuardians;
+        if(typeof syncHeroStats === 'function') syncHeroStats();
       }
     }catch(e){}
   }
@@ -2906,10 +2907,12 @@ async function pSendHelp(){
   // Insert to Supabase so all users see it (await so pRenderHelp sees the new post)
   _initSupabase();
   if(sbClient){
-    await sbClient.from('help_posts').insert({ id:'hu'+ts,
-      user_id: safeLS('get','velo_user_id')||null, user_name: name, user_av: userAv,
-      emoji:'💙', preview:msg, urgencia:'normal', anon:isAnon, taken:false
-    }).catch(function(){});
+    try{
+      await sbClient.from('help_posts').insert({ id:'hu'+ts,
+        user_id: safeLS('get','velo_user_id')||null, user_name: name, user_av: userAv,
+        emoji:'💙', preview:msg, urgencia:'normal', anon:isAnon, taken:false
+      });
+    }catch(e){ console.error('[pSendHelp insert]', e); }
   }
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   inbox.unshift({ id:'help-'+ts, tipo:'sistema', icon:'💚', remitente:'Sala de Ayuda', asunto:'Tu mensaje fue publicado', cuerpo:'Tu mensaje fue publicado en la Sala de Ayuda. Alguien te acompañará pronto.\n\n"'+msg+'"', extracto:'Alguien te acompañará pronto.', leido:false, prioritario:false, fecha:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) });
@@ -3962,11 +3965,13 @@ async function pSendBottle(){
   _initSupabase();
   if(sbClient){
     // Always store user_id so delete button and reply notifications work for anon posts too
-    await sbClient.from('bottles').insert({ id:id,
-      user_id: myId||null,
-      user_name: myName||null, user_av: myAv||null, anon: isAnon,
-      mood:_selectedBottleMood, text:text, color:'rgba(116,198,157,.12)', replied:false
-    }).catch(function(){});
+    try{
+      await sbClient.from('bottles').insert({ id:id,
+        user_id: myId||null,
+        user_name: myName||null, user_av: myAv||null, anon: isAnon,
+        mood:_selectedBottleMood, text:text, color:'rgba(116,198,157,.12)', replied:false
+      });
+    }catch(e){ console.error('[pSendBottle insert]', e); }
   }
   pRenderBottle();
 }
@@ -4428,7 +4433,7 @@ function pSubmitSurvey(){
         funcion:_surveyFuncion||'', sugerencia:sugerencia }).then(function(){}).catch(function(){});
     }catch(e){}
   }
-  safeLS('del','velo_survey_sent_session');
+  safeLS('set','velo_survey_sent_session','1');
   // Mark inbox message as read
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   inbox = inbox.map(function(m){ return m.tipo==='encuesta' ? Object.assign({},m,{leido:true}) : m; });

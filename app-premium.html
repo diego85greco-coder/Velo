@@ -14,8 +14,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260527-139">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260527-139">
+  <link rel="stylesheet" href="premium.css?v=20260527-140">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260527-140">
 </head>
 <body>
 
@@ -136,10 +136,6 @@
           <div style="font-size:10px;color:var(--ink5)">Ver seguimiento</div>
         </div>
       </button>
-      <button class="r-dark-toggle" id="rDarkToggleBtn" onclick="rToggleDarkMode()" aria-label="Modo oscuro">
-        <span id="rDarkToggleLbl">🌙 Modo oscuro</span>
-        <span class="r-dark-toggle-pill" id="rDarkTogglePill"></span>
-      </button>
       <div class="p-user-mini" onclick="pGoTo('profile')">
         <div class="p-user-av" id="sidebarUserAv">🧑</div>
         <div class="p-user-info">
@@ -172,10 +168,11 @@
         <div class="p-page-scroll" style="overflow-y:auto">
 
           <!-- Hero -->
-          <section class="land-hero">
-            <div class="land-hero-content r-lhero-card">
+          <section class="land-hero" style="position:relative">
+            <canvas id="landingCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas>
+            <div class="land-hero-content r-lhero-card" style="position:relative;z-index:1">
               <img src="assets/logo.png" alt="Velo" class="land-hero-logo" onclick="pLogoClick()">
-              <p class="r-lhero-italic"><em>Un jardín donde acompañarse es posible.</em></p>
+              <p class="r-lhero-italic"><em>Un espacio donde acompañarse es posible.</em></p>
               <p class="land-hero-sub">Un espacio donde la comunidad se une para acompañarse. Guardianes, círculos, mensajes al mar y más — gratis, sin juicios, siempre disponible.</p>
               <div class="land-hero-btns">
                 <button class="p-btn p-btn--primary p-btn--xl" onclick="pGoTo('register-type')">Registrate ✨</button>
@@ -646,8 +643,9 @@
       <!-- ══ LOGIN ════════════════════════════════════════════════ -->
       <div class="p-page" id="pg-login">
         <div class="auth-split">
-          <div class="auth-left">
-            <div class="auth-left-content">
+          <div class="auth-left" style="position:relative">
+            <canvas id="loginCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas>
+            <div class="auth-left-content" style="position:relative;z-index:1">
               <img src="assets/logo.png" alt="Velo" style="height:72px;width:auto;object-fit:contain;object-position:left;margin-bottom:18px;filter:brightness(0) invert(1);">
               <p class="auth-left-tagline">Acompañamos emociones en cada paso del camino</p>
               <div class="auth-left-feat">
@@ -722,8 +720,9 @@
       <!-- ══ REGISTER ═════════════════════════════════════════════ -->
       <div class="p-page" id="pg-register">
         <div class="auth-split">
-          <div class="auth-left">
-            <div class="auth-left-content">
+          <div class="auth-left" style="position:relative">
+            <canvas id="registerCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas>
+            <div class="auth-left-content" style="position:relative;z-index:1">
               <img src="assets/logo.png" alt="Velo" style="height:72px;width:auto;object-fit:contain;object-position:left;margin-bottom:18px;filter:brightness(0) invert(1);">
               <p class="auth-left-tagline">Comenzá tu camino hacia el bienestar emocional</p>
               <div class="auth-left-feat">
@@ -881,7 +880,13 @@
         <div class="p-page-scroll">
           <div class="home-header r-hero-v2">
             <div class="r-hero-left">
-              <div class="p-label">— jardín de hoy &nbsp;·&nbsp; <span id="homeDateTxt"></span></div>
+              <div class="r-hero-status-row">
+                <div id="homeStatusToggle" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1"></div>
+                <div id="homeGuardianWrap" style="display:none;align-items:center;gap:6px">
+                  <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:6px 14px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:var(--sage7);color:var(--sage2);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Guardián</button>
+                </div>
+              </div>
+              <div class="p-label">— de hoy &nbsp;·&nbsp; <span id="homeDateTxt"></span></div>
               <h1 class="p-title" id="homeGreetTxt">Buenos días</h1>
               <h2 class="r-hero-italic"><em id="homeGreetSub">Hoy la comunidad está contigo.</em></h2>
               <p class="r-hero-sub" id="homeGreetParagraph">
@@ -894,10 +899,7 @@
             </div>
             <div class="r-hero-right">
               <div class="r-hero-actions-top">
-                <div id="homeGuardianWrap" style="display:none;flex-direction:column;align-items:center;gap:2px">
-                  <span style="font-size:8px;font-weight:700;color:var(--sage3);letter-spacing:.4px;text-transform:uppercase;white-space:nowrap">Activarme</span>
-                  <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:6px 12px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:var(--sage7);color:var(--sage2);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Guardián</button>
-                </div>
+                <button id="rDarkToggleBtnHero" onclick="rToggleDarkMode()" aria-label="Modo oscuro/claro" class="r-hero-icon-btn" title="Modo oscuro/claro"><span id="rDarkToggleIcon">🌙</span></button>
                 <button onclick="pGoTo('inbox')" title="Notificaciones y buzón" id="homeBellBtn" class="r-hero-icon-btn">🔔<span id="homeBellBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
                 <button onclick="pGoTo('contacts')" title="Contactos favoritos" class="r-hero-icon-btn">⭐<span id="favCountBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
                 <button class="p-btn p-btn--sos p-btn--sm" onclick="pOpenSOS()">🆘 SOS</button>
@@ -919,8 +921,6 @@
               </div>
             </div>
           </div>
-          <!-- Availability status toggle (below greeting) -->
-          <div id="homeStatusToggle" style="display:flex;align-items:center;gap:8px;padding:0 16px 12px;flex-wrap:wrap"></div>
           <!-- Daily motivational quote -->
           <div style="padding:0 16px 14px">
             <div id="homeDailyQuote" style="background:linear-gradient(135deg,rgba(255,230,102,.18) 0%,rgba(255,200,80,.12) 50%,rgba(255,240,180,.22) 100%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(200,146,10,.22);border-radius:18px;padding:16px 20px 14px;min-height:60px;box-shadow:0 4px 18px rgba(200,146,10,.10),inset 0 1px 0 rgba(255,255,255,.7)">
@@ -2927,8 +2927,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260527-139"></script>
-<script src="premium-redesign.js?v=20260527-139"></script>
+<script src="premium.js?v=20260527-140"></script>
+<script src="premium-redesign.js?v=20260527-140"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

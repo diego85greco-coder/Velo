@@ -142,6 +142,13 @@
     // Hero v2 stats — run immediately + every 5s
     syncHeroStats();
     setInterval(syncHeroStats, 5000);
+
+    // Particle animations
+    setTimeout(function() {
+      initParticles('landingCanvas', 60, 0.5);
+      initParticles('loginCanvas', 40, 0.4);
+      initParticles('registerCanvas', 40, 0.4);
+    }, 300);
   }
 
   /* ── 5. Sync valores dinámicos del hero v2 ──────────────────── */
@@ -195,9 +202,11 @@
     } else {
       document.body.classList.remove('r-dark');
     }
-    // update toggle label
+    // update toggle label (sidebar) and hero icon
     const lbl = document.getElementById('rDarkToggleLbl');
     if (lbl) lbl.textContent = dark ? '☀️ Modo claro' : '🌙 Modo oscuro';
+    const icon = document.getElementById('rDarkToggleIcon');
+    if (icon) icon.textContent = dark ? '☀️' : '🌙';
   }
 
   function initDarkMode() {
@@ -230,4 +239,53 @@ function rToggleDarkMode() {
   try { localStorage.setItem('velo-r-darkmode', isDark ? '1' : '0'); } catch(e) {}
   var lbl = document.getElementById('rDarkToggleLbl');
   if (lbl) lbl.textContent = isDark ? '☀️ Modo claro' : '🌙 Modo oscuro';
+  var icon = document.getElementById('rDarkToggleIcon');
+  if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+}
+
+/* ── Particle animation — firefly style ─────────────────────────── */
+function initParticles(canvasId, count, maxOpacity) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var particles = [];
+  function resize() {
+    canvas.width = canvas.offsetWidth || canvas.parentElement.offsetWidth || 600;
+    canvas.height = canvas.offsetHeight || canvas.parentElement.offsetHeight || 400;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  for (var i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: 1 + Math.random() * 2,
+      op: 0.08 + Math.random() * maxOpacity,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+  var frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    frame++;
+    particles.forEach(function(p) {
+      p.x += p.vx + Math.sin(frame * 0.01 + p.phase) * 0.2;
+      p.y += p.vy + Math.cos(frame * 0.013 + p.phase) * 0.15;
+      if (p.x < 0) p.x = canvas.width;
+      if (p.x > canvas.width) p.x = 0;
+      if (p.y < 0) p.y = canvas.height;
+      if (p.y > canvas.height) p.y = 0;
+      var gr = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3);
+      gr.addColorStop(0, 'rgba(232,213,163,' + p.op + ')');
+      gr.addColorStop(1, 'rgba(232,213,163,0)');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
+      ctx.fillStyle = gr;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
 }
