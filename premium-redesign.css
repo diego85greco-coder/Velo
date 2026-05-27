@@ -932,3 +932,245 @@ body.r-dark .p-section {
 .r-word-reveal:nth-child(5)  { animation-delay: .25s; }
 .r-word-reveal:nth-child(6)  { animation-delay: .3s; }
 .r-word-reveal:nth-child(7)  { animation-delay: .35s; }
+
+/* ══════════════════════════════════════════════════════════════════
+   LANDING PAGE — alineado con estilo interno (v137+)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* 1. Reemplazar foto por gradiente — mismo que interior de la app */
+#pg-landing .p-page-scroll {
+  background:
+    radial-gradient(circle at 12% 15%, rgba(116,198,157,.30) 0%, transparent 45%),
+    radial-gradient(circle at 88% 85%, rgba(232,200,121,.20) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(183,228,199,.12) 0%, transparent 60%),
+    linear-gradient(180deg, #f9f4e2 0%, #f6efd9 60%, #ece4c8 100%) !important;
+}
+
+/* 2. Hero section: sin foto, solo la card de cristal */
+.land-hero {
+  background: none !important;
+  min-height: 100vh;
+  padding: 72px 24px 60px;
+  position: relative;
+}
+.land-hero::before {
+  content: '';
+  position: absolute;
+  top: -10%; left: -5%;
+  width: 45%; height: 60%;
+  background: radial-gradient(ellipse at center, rgba(116,198,157,.22), transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+.land-hero::after {
+  content: '';
+  position: absolute;
+  bottom: 5%; right: -5%;
+  width: 40%; height: 55%;
+  background: radial-gradient(ellipse at center, rgba(232,200,121,.18), transparent 70%);
+  filter: blur(70px);
+  pointer-events: none;
+  z-index: 0;
+}
+.land-hero-bg,
+.land-hero-orb { display: none !important; }
+
+/* 3. Glass card wrapper */
+.r-lhero-card {
+  background: rgba(255,251,239,.82) !important;
+  border: 1px solid rgba(27,94,58,.10) !important;
+  border-radius: 32px !important;
+  padding: 52px 44px 44px !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.8) inset,
+    0 12px 48px rgba(40,45,30,.08),
+    0 2px 8px rgba(40,45,30,.04) !important;
+  backdrop-filter: blur(24px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+  max-width: 640px !important;
+  position: relative !important;
+  overflow: hidden;
+  z-index: 1;
+}
+.r-lhero-card::before {
+  content: '';
+  position: absolute;
+  top: -35%; right: -12%;
+  width: 55%; height: 200%;
+  background: radial-gradient(ellipse at center, rgba(116,198,157,.22), transparent 65%);
+  pointer-events: none;
+  animation: rHeroHalo 14s ease-in-out infinite;
+}
+
+/* 4. Logo más grande y visible */
+.land-hero-logo {
+  height: clamp(80px, 12vw, 120px) !important;
+  filter: drop-shadow(0 3px 20px rgba(27,94,58,.14)) !important;
+  margin-bottom: 18px !important;
+}
+
+/* 5. Línea italic Cormorant (nueva) */
+.r-lhero-italic {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(22px, 3.5vw, 38px);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--sage2);
+  margin: 0 0 18px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.r-lhero-italic em { font-style: italic; }
+
+/* 6. Subtexto legible sobre fondo claro */
+.land-hero-sub {
+  color: var(--ink2) !important;
+  font-size: 15px !important;
+  line-height: 1.65 !important;
+  max-width: 460px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-bottom: 32px !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* 7. Botones del hero — legibles */
+.land-hero-btns {
+  position: relative;
+  z-index: 1;
+}
+.land-hero-btns .p-btn--secondary {
+  background: rgba(255,251,239,.6) !important;
+  color: var(--sage2) !important;
+  border-color: rgba(45,106,79,.25) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* 8. Preview card — ya tiene glass, solo asegurar z-index */
+.land-hero-preview { position: relative; z-index: 1; }
+.land-preview-card {
+  border-color: rgba(27,94,58,.10) !important;
+  background: rgba(255,251,239,.72) !important;
+}
+
+/* 9. Secciones — fondo transparente (el gradiente de la página se ve) */
+.land-what,
+.land-how,
+.land-faq {
+  background: transparent !important;
+}
+.land-stats {
+  background: rgba(255,255,255,.35) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+/* 10. Cards de sección — glassmorphism */
+.land-feat-card {
+  background: rgba(255,251,239,.80) !important;
+  border: 1px solid rgba(27,94,58,.10) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+}
+.land-feat-card:hover {
+  border-color: rgba(45,106,79,.22) !important;
+  box-shadow: 0 8px 32px rgba(40,45,30,.10) !important;
+}
+.land-how-step,
+.land-stat-card,
+.land-test-card {
+  background: rgba(255,251,239,.78) !important;
+  border: 1px solid rgba(27,94,58,.10) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.land-whom-card {
+  background: rgba(255,251,239,.80) !important;
+  border: 1px solid rgba(27,94,58,.10) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* 11. Features section bg */
+.land-features {
+  background: transparent !important;
+}
+.land-features .land-section-head h2 {
+  color: var(--sage) !important;
+}
+
+/* ══ Páginas de login y registro — estilo interno ═════════════════ */
+
+/* Left panel: gradiente bosque en lugar de foto */
+.auth-left {
+  background:
+    radial-gradient(circle at 35% 35%, rgba(116,198,157,.40) 0%, transparent 55%),
+    radial-gradient(circle at 70% 70%, rgba(27,80,50,.60) 0%, transparent 50%),
+    linear-gradient(155deg, #0b1e13 0%, #12301d 35%, #1b5e3a 75%, #143d27 100%) !important;
+}
+.auth-left::before {
+  background: radial-gradient(ellipse at 50% 20%, rgba(116,198,157,.20), transparent 60%) !important;
+}
+
+/* Right panel: glass cream */
+.auth-right {
+  background: rgba(255,251,239,.96) !important;
+  backdrop-filter: blur(20px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+  border-left: 1px solid rgba(27,94,58,.10) !important;
+}
+
+/* Mobile: sin auth-left, la página del login/register tiene el gradiente */
+@media (max-width: 900px) {
+  #pg-login,
+  #pg-register {
+    background:
+      radial-gradient(circle at 15% 20%, rgba(116,198,157,.28) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(232,200,121,.18) 0%, transparent 50%),
+      linear-gradient(180deg, #f9f4e2 0%, #f6efd9 60%, #ece4c8 100%) !important;
+  }
+  .auth-right {
+    background: rgba(255,251,239,.94) !important;
+    border-radius: 0 !important;
+  }
+  .r-lhero-card {
+    padding: 40px 24px 36px !important;
+    border-radius: 24px !important;
+  }
+  .land-hero { padding: 48px 18px 48px !important; }
+}
+
+/* Dark mode overrides para landing */
+body.r-dark #pg-landing .p-page-scroll {
+  background:
+    radial-gradient(circle at 12% 15%, rgba(58,140,100,.30) 0%, transparent 45%),
+    radial-gradient(circle at 88% 85%, rgba(60,70,30,.25) 0%, transparent 50%),
+    linear-gradient(180deg, #0f1a14 0%, #111d17 60%, #0c1510 100%) !important;
+}
+body.r-dark .r-lhero-card {
+  background: rgba(12,24,16,.88) !important;
+  border-color: rgba(80,160,110,.18) !important;
+}
+body.r-dark .land-hero-sub { color: var(--ink2) !important; }
+body.r-dark .r-lhero-italic { color: #7ed4a8 !important; }
+body.r-dark .land-hero-btns .p-btn--secondary {
+  background: rgba(20,50,30,.7) !important;
+  color: #9de8bc !important;
+  border-color: rgba(80,160,110,.3) !important;
+}
+body.r-dark .auth-left {
+  background:
+    radial-gradient(circle at 35% 35%, rgba(58,140,100,.35) 0%, transparent 55%),
+    linear-gradient(155deg, #050f08 0%, #0a1c10 40%, #102a18 100%) !important;
+}
+body.r-dark .auth-right {
+  background: rgba(10,20,14,.96) !important;
+  border-left-color: rgba(80,160,110,.18) !important;
+}
+body.r-dark #pg-login,
+body.r-dark #pg-register {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(58,140,100,.25) 0%, transparent 45%),
+    linear-gradient(180deg, #0f1a14 0%, #0c1510 100%) !important;
+}
