@@ -984,13 +984,19 @@ body.r-dark .r-section-card {
 .land-hero-bg,
 .land-hero-orb { display: none !important; }
 
-/* 3. Hero: fondo oscuro directo, sin tarjeta de vidrio */
+/* 3. Hero: gradiente centrado — brillo sage en el centro, no en los bordes */
 #pg-landing .land-hero {
   background:
-    radial-gradient(circle at 20% 30%, rgba(116,198,157,.22) 0%, transparent 55%),
-    radial-gradient(circle at 80% 70%, rgba(27,80,50,.55) 0%, transparent 50%),
-    linear-gradient(155deg, #0b1e13 0%, #12301d 40%, #1b5e3a 80%, #0f2a1c 100%) !important;
+    radial-gradient(circle at 50% 42%, rgba(116,198,157,.28) 0%, transparent 62%),
+    radial-gradient(circle at 15% 80%, rgba(27,80,50,.40) 0%, transparent 48%),
+    radial-gradient(circle at 85% 15%, rgba(27,80,50,.35) 0%, transparent 45%),
+    linear-gradient(155deg, #0b1e13 0%, #122e1f 45%, #163a28 70%, #0f2218 100%) !important;
   min-height: 100vh;
+}
+
+/* Partículas por encima del contenido (pointer-events:none ya está en el canvas) */
+#pg-landing .land-hero canvas {
+  z-index: 3 !important;
 }
 
 /* Quitar la tarjeta glass — contenido directo sobre el fondo */
@@ -1018,26 +1024,30 @@ body.r-dark .r-section-card {
   margin-bottom: 22px !important;
 }
 
-/* 5. Línea italic Cormorant — blanca sobre oscuro */
+/* 5. Línea italic Cormorant — text-shadow fuerte para leer con partículas encima */
 .r-lhero-italic {
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(24px, 4vw, 40px);
   font-weight: 400;
   font-style: italic;
   line-height: 1.15;
-  color: rgba(255,255,255,.95) !important;
-  text-shadow: 0 1px 12px rgba(0,0,0,.4);
+  color: rgba(255,255,255,.98) !important;
+  text-shadow:
+    0 0 28px rgba(0,0,0,.75),
+    0 2px 16px rgba(0,0,0,.65),
+    0 0 60px rgba(0,0,0,.45) !important;
   margin: 0 0 20px;
   text-align: center;
 }
 .r-lhero-italic em { font-style: italic; }
 
-/* 6. Subtexto — blanco semitransparente */
+/* 6. Subtexto — sombra de texto para legibilidad */
 .land-hero-sub {
-  color: rgba(255,255,255,.78) !important;
+  color: rgba(255,255,255,.88) !important;
   font-size: 15px !important;
   line-height: 1.7 !important;
   max-width: 420px !important;
+  text-shadow: 0 1px 14px rgba(0,0,0,.60) !important;
   margin-left: auto !important;
   margin-right: auto !important;
   margin-bottom: 36px !important;
@@ -1172,8 +1182,8 @@ body.r-dark #pg-landing .p-page-scroll {
     linear-gradient(180deg, #0f1a14 0%, #111d17 60%, #0c1510 100%) !important;
 }
 body.r-dark .r-lhero-card {
-  background: rgba(12,24,16,.88) !important;
-  border-color: rgba(80,160,110,.18) !important;
+  background: transparent !important;
+  border: none !important;
 }
 body.r-dark .land-hero-sub { color: var(--ink2) !important; }
 body.r-dark .r-lhero-italic { color: #7ed4a8 !important; }
