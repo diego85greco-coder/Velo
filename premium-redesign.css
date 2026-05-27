@@ -787,10 +787,21 @@ body.r-dark .p-sidebar-section {
 body.r-dark .p-sn-item {
   color: var(--ink3) !important;
 }
-body.r-dark .p-sn-item:hover,
-body.r-dark .p-sn-item.active {
-  background: rgba(80,160,110,.12) !important;
+body.r-dark .p-sn-item:hover {
+  background: rgba(80,160,110,.14) !important;
   color: #9de8bc !important;
+}
+/* Dark mode active tab: keep visible on both mobile pill and desktop */
+body.r-dark .p-sn-item.active {
+  background: rgba(80,160,110,.22) !important;
+  color: #9de8bc !important;
+}
+/* Desktop: stronger fill so the active tab is clearly visible */
+@media (min-width: 1024px) {
+  body.r-dark .p-sn-item.active {
+    background: rgba(80,160,110,.42) !important;
+    color: #c5f5e0 !important;
+  }
 }
 body.r-dark .p-user-mini {
   background: rgba(40,70,50,.5) !important;
@@ -881,9 +892,9 @@ body.r-dark .r-phrase-card {
   border-color: rgba(80,160,110,.2) !important;
 }
 
-/* ── Consistent section card baseline (light + dark) ─────────────── */
-/* Every .p-section within .p-main-content gets a subtle glassmorphism card */
-.p-section {
+/* ── Glass section card (opt-in: add class r-section-card to any div) ── */
+/* NOT applied globally to avoid breaking existing layouts */
+.r-section-card {
   background: var(--r-glass-bg);
   border: 1px solid var(--r-glass-bord);
   border-radius: 22px;
@@ -893,7 +904,7 @@ body.r-dark .r-phrase-card {
   position: relative;
   overflow: hidden;
 }
-.p-section-title {
+.r-section-card-title {
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(22px, 2.8vw, 32px);
   font-weight: 400;
@@ -901,17 +912,15 @@ body.r-dark .r-phrase-card {
   color: var(--ink);
   margin: 0 0 6px;
 }
-.p-section-subtitle {
+.r-section-card-subtitle {
   font-size: 13px;
   color: var(--ink3);
   margin: 0 0 20px;
   line-height: 1.5;
 }
-
-/* Dark mode section override */
-body.r-dark .p-section {
-  background: var(--r-glass-bg) !important;
-  border-color: var(--r-glass-bord) !important;
+body.r-dark .r-section-card {
+  background: var(--r-glass-bg);
+  border-color: var(--r-glass-bord);
 }
 
 /* ── Word-reveal animation (from premium-redesign.js) ────────────── */

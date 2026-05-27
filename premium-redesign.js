@@ -68,7 +68,12 @@
       nameEl.setAttribute('contenteditable', 'false');
       const newName = nameEl.textContent.trim() || 'Hola!';
       nameEl.textContent = newName;
-      try { localStorage.setItem('velo-r-displayname', newName); } catch(e) {}
+      try {
+        localStorage.setItem('velo-r-displayname', newName);
+        // Also sync to velo_user_name so premium.js doesn't overwrite on next home load
+        if (typeof safeLS === 'function') safeLS('set', 'velo_user_name', newName);
+        else localStorage.setItem('velo_user_name', newName);
+      } catch(e) {}
     }
     editBtn.addEventListener('click', startEdit);
     nameEl.addEventListener('keydown', (e) => {
@@ -77,15 +82,14 @@
     });
     nameEl.addEventListener('blur', endEdit);
 
-    // restore saved
+    // restore saved — always apply user-edited name from velo-r-displayname
     try {
       const saved = localStorage.getItem('velo-r-displayname');
-      if (saved && !nameEl.textContent.trim().toLowerCase().includes(saved.toLowerCase())) {
-        // only override if it looks like a placeholder; don't fight the app's own value
-        // (the app already injects user name; we only restore on placeholder)
-        if (nameEl.textContent.trim() === 'Hola!' || nameEl.textContent.trim() === '') {
-          nameEl.textContent = saved;
-        }
+      if (saved && saved !== nameEl.textContent.trim()) {
+        nameEl.textContent = saved;
+        // Keep velo_user_name in sync so home refresh doesn't overwrite it
+        if (typeof safeLS === 'function') safeLS('set', 'velo_user_name', saved);
+        else localStorage.setItem('velo_user_name', saved);
       }
     } catch(e) {}
   }
@@ -142,6 +146,10 @@
 
   /* ── 5. Sync valores dinámicos del hero v2 ──────────────────── */
   function syncHeroStats() {
+    // Only run when home elements are present (skip on other pages)
+    if (!document.getElementById('homeStatGuardians') &&
+        !document.getElementById('homeGuardianCount')) return;
+
     // ── Guardian count ──────────────────────────────────────────
     // Read from premium.js global _liveGuardians (available after login)
     let guardianN = null;

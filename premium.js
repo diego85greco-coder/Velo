@@ -2022,7 +2022,7 @@ function _checkPendingGuardianRequests(){
     .order('created_at',{ascending:false}).limit(1)
     .then(function(res){
       if(res && res.data && res.data.length) _showGuardianRequest(res.data[0]);
-    }).catch(function(){});
+    }).catch(function(e){ console.error('[guardian req poll]', e); });
 }
 
 function _startGuardianReqListener(){
@@ -6296,16 +6296,17 @@ async function pSaveProfile(){
     .then(function(r){
       if(r && r.error){
         console.error('[pSaveProfile] Supabase error:', r.error);
-        pToast('⚠️','Perfil guardado localmente (error al sincronizar: '+r.error.message+')');
+        pToast('⚠️','Perfil guardado localmente (error al sincronizar)');
+      } else {
+        pToast('✅','Perfil actualizado 💚');
       }
     })
     .catch(function(e){
       console.error('[pSaveProfile] catch:', e);
-      pToast('⚠️','Perfil guardado localmente (sin conexión a la nube).');
+      pToast('⚠️','Perfil guardado localmente (sin conexión).');
     });
   }
   closeModal('editProfileOv');
-  pToast('✅','Perfil actualizado 💚');
   pLoadProfile();
   _updateSidebarUser();
 }
