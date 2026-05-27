@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260523-130">
+  <link rel="stylesheet" href="premium.css?v=20260527-131">
 </head>
 <body>
 
@@ -842,6 +842,32 @@
             </div>
             <button onclick="pGoTo('login')" class="p-btn p-btn--dark-white p-btn--lg" style="width:100%;margin-bottom:12px">Ir a Iniciar Sesión →</button>
             <button onclick="pGoTo('landing')" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">← Volver al inicio</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PICK USERNAME ═══════════════════════════════════════ -->
+      <div class="p-page fade-in" id="pg-pick-username">
+        <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;background:linear-gradient(160deg,var(--cream),var(--cream2))">
+          <div style="max-width:420px;width:100%">
+            <div style="font-size:52px;margin-bottom:12px;animation:p-float 3s ease-in-out infinite">✨</div>
+            <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--ink);margin-bottom:8px;line-height:1.2">Elegí tu @usuario</h2>
+            <p style="font-size:14px;color:var(--ink4);line-height:1.6;margin-bottom:28px">Así te van a encontrar en la comunidad Velo.<br>Podés cambiarlo después desde tu perfil.</p>
+            <div style="position:relative;margin-bottom:6px">
+              <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--sage2);font-weight:800;pointer-events:none">@</span>
+              <input id="pickUsernameInput" type="text" maxlength="12" placeholder="tuusuario"
+                oninput="pCheckUsername(this.value)" autocapitalize="none" autocorrect="off" spellcheck="false"
+                style="width:100%;padding:16px 16px 16px 38px;border-radius:14px;border:2px solid var(--border);font-size:18px;font-family:'Jost',sans-serif;font-weight:600;letter-spacing:.3px;background:var(--cream);color:var(--ink);box-sizing:border-box;transition:border-color .2s"
+                onfocus="this.style.borderColor='var(--sage2)'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+            <div id="pickUsernameStatus" style="font-size:12px;height:20px;margin-bottom:12px;padding-left:4px;text-align:left"></div>
+            <p style="font-size:11px;color:var(--ink5);margin-bottom:22px;line-height:1.5">5–12 caracteres · solo letras minúsculas, números, punto (.) y guión (-)</p>
+            <button id="pickUsernameBtn" onclick="pSaveUsername()" disabled
+              class="p-btn p-btn--primary"
+              style="width:100%;padding:16px;font-size:15px;border-radius:14px;opacity:.5;transition:opacity .2s"
+              onmouseover="if(!this.disabled) this.style.opacity='1'" onmouseout="if(!this.disabled) this.style.opacity=''">
+              Confirmar mi @usuario →
+            </button>
           </div>
         </div>
       </div>
@@ -1676,7 +1702,8 @@
                 <div id="profileAv" onclick="pShowAvatarPicker()" style="font-size:72px;cursor:pointer;width:88px;height:88px;border-radius:24px;background:linear-gradient(135deg,var(--sage5),var(--sage6));border:2.5px solid rgba(116,198,157,.35);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(116,198,157,.2);transition:transform .2s">🧑</div>
                 <div onclick="pShowAvatarPicker()" style="position:absolute;bottom:-4px;right:-4px;background:var(--sage2);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2)">📷</div>
               </div>
-              <h2 id="profileName" style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink);margin-bottom:4px">Usuario</h2>
+              <h2 id="profileName" style="font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink);margin-bottom:2px">Usuario</h2>
+              <div id="profileUsername" style="font-size:12px;margin-bottom:4px;min-height:18px"></div>
               <p id="profileMotto" style="font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:10px">Tu lema aquí</p>
               <div id="profilePlanBadge" style="margin-bottom:12px"></div>
               <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
@@ -2742,6 +2769,14 @@
       <label class="p-field-label">Lema personal</label>
       <input class="p-input" type="text" id="editMotto" placeholder="Una frase que te define">
     </div>
+    <div class="p-field">
+      <label class="p-field-label">@usuario · 5–12 caracteres</label>
+      <div style="position:relative">
+        <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--ink3);font-weight:700;pointer-events:none">@</span>
+        <input class="p-input" type="text" id="editUsername" maxlength="12" placeholder="tuusuario" oninput="pCheckEditUsername(this.value)" autocapitalize="none" autocorrect="off" spellcheck="false" style="padding-left:28px">
+      </div>
+      <div id="editUsernameStatus" style="font-size:11px;height:16px;margin-top:3px"></div>
+    </div>
     <div style="display:flex;gap:8px">
       <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveProfile()">Guardar</button>
       <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="closeModal('editProfileOv')">Cancelar</button>
@@ -2859,7 +2894,7 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260523-130"></script>
+<script src="premium.js?v=20260527-131"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

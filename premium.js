@@ -203,10 +203,10 @@ var _authenticated = false;
 var _userType   = 'user'; // 'user' | 'pro' | 'admin'
 
 var P_NO_NAV = ['landing','login','register','register-type','onboarding',
-                'pro-reg','pro-onboarding','admin-login','pro-pending','verify-email'];
+                'pro-reg','pro-onboarding','admin-login','pro-pending','verify-email','pick-username'];
 var P_DARK   = ['help','bottle','respira'];
 var P_FADE   = ['landing','onboarding','register-type','donation-exit',
-                'session-room','post-chat','donate-cta','pro-pending','admin-login','calm-ai','guardian-chat','verify-email'];
+                'session-room','post-chat','donate-cta','pro-pending','admin-login','calm-ai','guardian-chat','verify-email','pick-username'];
 
 // ── NAVIGATE ─────────────────────────────────────────────────
 function pGoTo(id){
@@ -298,7 +298,7 @@ async function _sbSyncProfile(userId){
   var res;
   try{
     res = await sbClient.from('profiles')
-      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film')
+      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username')
       .eq('id',userId).limit(1);
   }catch(e){ return; }
 
@@ -345,6 +345,7 @@ async function _sbSyncProfile(userId){
   if(p.status_book)   safeLS('set','velo_status_book',   p.status_book);
   if(p.status_phrase) safeLS('set','velo_status_phrase', p.status_phrase);
   if(p.status_film)   safeLS('set','velo_status_film',   p.status_film);
+  if(p.username)      safeLS('set','velo_username',       p.username);
   if(p.role === 'plus'){
     sbClient.from('profiles').select('plus_expires_at').eq('id',userId).limit(1)
       .then(function(r2){
@@ -418,9 +419,10 @@ async function _sbLoad(table, qFn){
     var q = sbClient.from(table).select('*');
     if(qFn) q = qFn(q);
     var res = await q;
-    if(res.error || !res.data) return null;
+    if(res.error){ console.error('[_sbLoad] '+table+':', res.error.message, res.error); return null; }
+    if(!res.data) return null;
     return res.data;
-  }catch(e){ return null; }
+  }catch(e){ console.error('[_sbLoad catch] '+table+':', e); return null; }
 }
 
 function _sbSub(channelName, table, callback){
@@ -609,7 +611,7 @@ function _clearSession(){
    'velo_user_type','velo_user_av','velo_user_motto','velo_sb_pass','velo_plan',
    'velo_status_music','velo_status_book','velo_status_phrase','velo_status_film','velo_pro_id','velo_pro_name',
    'velo_pro_spec','velo_pro_solidarity','velo_pro_approved','velo_is_guardian',
-   'velo_guardian_bio','velo_guardian_tags','velo_needs_pw_change'
+   'velo_guardian_bio','velo_guardian_tags','velo_needs_pw_change','velo_username'
   ].forEach(function(k){ safeLS('del', k); });
   // Stop guardian heartbeat and clear all RT channel refs so the next login can resubscribe
   _stopGuardianHeartbeat();
@@ -730,16 +732,36 @@ async function pChangePassword(){
   setTimeout(function(){ _loginAndGo(); }, 1400);
 }
 
-function _loginAndGo(){
+async function _loginAndGo(){
   if(safeLS('get','velo_needs_pw_change') === '1'){ pGoTo('change-password'); return; }
   var type = safeLS('get','velo_user_type') || 'user';
   _userType = type;
+  _trackVisitDay(); // Record today as an app visit (for Bronze badge)
   if(type === 'admin'){
     pGoTo('admin');
   } else if(type === 'pro'){
     var approved = safeLS('get','velo_pro_approved');
     pGoTo(approved ? 'pro-panel' : 'pro-pending');
   } else {
+    // Check for @username — redirect to picker if missing (new or existing users)
+    var _uname = safeLS('get','velo_username') || '';
+    if(!_uname){
+      _initSupabase();
+      var _uid = safeLS('get','velo_user_id');
+      if(sbClient && _uid){
+        try{
+          var _ur = await sbClient.from('profiles').select('username').eq('id',_uid).limit(1);
+          if(_ur.data && _ur.data[0] && _ur.data[0].username){
+            safeLS('set','velo_username', _ur.data[0].username);
+            _uname = _ur.data[0].username;
+          }
+        }catch(e){}
+      }
+    }
+    if(!_uname){
+      pGoTo('pick-username');
+      return;
+    }
     pGoTo('home');
     setTimeout(function(){
       _loadHomeData();
@@ -1312,15 +1334,33 @@ function _fmtDate(ts){
   return d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear()+' · '+d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
 }
 
+// ── VISIT DAY TRACKING ──────────────────────────────────────────
+// Records each unique calendar day the user opens the app (for Bronze badge)
+function _trackVisitDay(){
+  var today = new Date().toISOString().slice(0,10); // 'YYYY-MM-DD'
+  var days = []; try{ days = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
+  if(days.indexOf(today) < 0){
+    days.push(today);
+    safeLS('set','velo_visit_days', JSON.stringify(days));
+  }
+}
+function _getVisitDayCount(){
+  var days = []; try{ days = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
+  return days.length;
+}
+
 // ── GUARDIAN DATA ─────────────────────────────────────────────
 // Guardianes = usuarios de la comunidad que se ofrecen a acompañar a otros.
-// No son profesionales. Su nivel (badge) sube con cada conversación completada.
+// Nivel Bronce: 5 días distintos de uso de la app.
+// Niveles superiores: número de conversaciones completadas.
 function _getBadge(convs){
-  if(convs >= 100) return { icon:'💎', name:'Diamante', color:'#7B68EE', next:null,   needed:0   };
-  if(convs >= 40)  return { icon:'🥇', name:'Oro',      color:'#C8A200', next:'Diamante', needed:100-convs };
-  if(convs >= 20)  return { icon:'🥈', name:'Plata',    color:'#8892A4', next:'Oro',      needed:40-convs  };
-  if(convs >= 5)   return { icon:'🥉', name:'Bronce',   color:'#C07840', next:'Plata',    needed:20-convs  };
-  return             { icon:'🌱', name:'Novato',   color:'var(--sage4)', next:'Bronce', needed:5-convs };
+  var visitDays = _getVisitDayCount();
+  if(convs >= 100) return { icon:'💎', name:'Diamante', color:'#7B68EE', next:null,        needed:0,           visitBased:false };
+  if(convs >= 40)  return { icon:'🥇', name:'Oro',      color:'#C8A200', next:'Diamante',  needed:100-convs,   visitBased:false };
+  if(convs >= 20)  return { icon:'🥈', name:'Plata',    color:'#8892A4', next:'Oro',        needed:40-convs,    visitBased:false };
+  if(visitDays >= 5) return { icon:'🥉', name:'Bronce', color:'#C07840', next:'Plata',      needed:20-convs,    visitBased:false };
+  // Not yet Bronze: show days needed
+  return { icon:'🌱', name:'Novato', color:'var(--sage4)', next:'Bronce', needed:5-visitDays, visitBased:true, visitDays:visitDays };
 }
 
 var _guardianProfiles = [
@@ -1407,7 +1447,10 @@ async function _updateGuardianPresence(status){
     row.convs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
     row.rating = 5.0;
   }
-  try{ await sbClient.from('guardian_presence').upsert(row, { onConflict: 'user_id' }); }catch(e){}
+  try{
+    var _upRes = await sbClient.from('guardian_presence').upsert(row, { onConflict: 'user_id' });
+    if(_upRes && _upRes.error) console.error('[presence upsert]', _upRes.error.message, _upRes.error);
+  }catch(e){ console.error('[presence upsert catch]', e); }
 }
 
 // ── PRESENCE CACHE (online dots everywhere) ────────────────────
@@ -1665,10 +1708,11 @@ async function pRenderGuardians(){
   _initSupabase();
   if(sbClient){
     try{
-      var cutoff = new Date(Date.now() - 3*60*1000).toISOString(); // active in last 3 min
+      var cutoff = new Date(Date.now() - 10*60*1000).toISOString(); // active in last 10 min
       var myId = _myUserId();
-      var { data } = await sbClient.from('guardian_presence')
+      var { data, error: gpErr } = await sbClient.from('guardian_presence')
         .select('*').neq('status','offline').gte('last_seen', cutoff);
+      if(gpErr) console.error('[pRenderGuardians] query error:', gpErr.message, gpErr);
       if(data && data.length){
         liveGuardians = data
           .filter(function(r){ return r.user_id !== myId; }) // never list yourself
@@ -5850,9 +5894,26 @@ function pLoadProfile(){
   var name  = safeLS('get','velo_user_name') || 'Usuario';
   var av    = safeLS('get','velo_user_av') || '🧑';
   var motto = safeLS('get','velo_user_motto') || 'Mi camino, mi ritmo.';
+  var uname = safeLS('get','velo_username') || '';
   _setEl('profileName', name);
   _renderAvatarEl('profileAv', av);
   _setEl('profileMotto', motto);
+  // Show @username or prompt to set one
+  var unameEl = document.getElementById('profileUsername');
+  if(unameEl){
+    if(uname){
+      unameEl.innerHTML = '<span style="color:var(--sage2);font-weight:700">@'+uname+'</span>';
+      unameEl.onclick = null;
+      unameEl.style.cursor = 'default';
+    } else {
+      unameEl.innerHTML = '<span style="color:#E0A92E;font-weight:700;cursor:pointer" onclick="pGoTo(\'pick-username\')">⚠️ Elegí tu @usuario</span>';
+      unameEl.onclick = function(){ pGoTo('pick-username'); };
+      unameEl.style.cursor = 'pointer';
+    }
+  }
+  // Pre-fill username in edit modal
+  var euEl = document.getElementById('editUsername');
+  if(euEl) euEl.value = uname;
 
   // Plan badge
   var planBadge = document.getElementById('profilePlanBadge');
@@ -6092,7 +6153,7 @@ function pPickAv(el, av){
 
 function pOpenEditProfile(){ openModal('editProfileOv'); }
 
-function pSaveProfile(){
+async function pSaveProfile(){
   var nameEl  = document.getElementById('editName');
   var mottoEl = document.getElementById('editMotto');
   var name  = nameEl ? nameEl.value.trim() : '';
@@ -6101,10 +6162,28 @@ function pSaveProfile(){
   if(name)  safeLS('set','velo_user_name', name);
   if(motto) safeLS('set','velo_user_motto', motto);
   if(_selectedAv) safeLS('set','velo_user_av', _selectedAv);
+  // Handle @username change
+  var unameInput = document.getElementById('editUsername');
+  var newUname = unameInput ? unameInput.value.toLowerCase().replace(/[^a-z0-9.\-_]/g,'').trim() : '';
+  var curUname = safeLS('get','velo_username') || '';
   // Sync to Supabase so profile persists across devices
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
   if(sbClient && uid){
+    // Handle username update if changed
+    if(newUname && newUname !== curUname){
+      if(newUname.length < 5 || newUname.length > 12){
+        pToast('⚠️','El @usuario debe tener entre 5 y 12 caracteres'); return;
+      }
+      // Check uniqueness
+      try{
+        var _rU = await sbClient.from('profiles').select('id').eq('username', newUname).neq('id', uid).limit(1);
+        if(_rU.data && _rU.data.length){ pToast('⚠️','Ese @usuario ya está tomado, elegí otro'); return; }
+        var _rUpd = await sbClient.from('profiles').update({ username: newUname }).eq('id', uid);
+        if(!_rUpd.error){ safeLS('set','velo_username', newUname); }
+        else { console.error('[pSaveProfile username]', _rUpd.error); pToast('⚠️','Error al guardar @usuario'); return; }
+      }catch(e){ console.error('[pSaveProfile username catch]', e); }
+    }
     var _rawAv = safeLS('get','velo_user_av') || '';
     // Don't store huge base64 in the profiles text row — only store emoji/small values here
     // Large base64 avatars are stored via _syncAvatarToSb which handles them separately
@@ -6133,6 +6212,117 @@ function pSaveProfile(){
   pToast('✅','Perfil actualizado 💚');
   pLoadProfile();
   _updateSidebarUser();
+}
+
+// ── @USERNAME PICKER ──────────────────────────────────────────────
+var _usernameCheckTimer = null;
+function pCheckUsername(val){
+  var statusEl = document.getElementById('pickUsernameStatus');
+  var btn = document.getElementById('pickUsernameBtn');
+  if(btn) btn.disabled = true;
+  // Auto-sanitize: lowercase, only allowed chars
+  val = val.toLowerCase().replace(/[^a-z0-9.\-_]/g,'');
+  var inputEl = document.getElementById('pickUsernameInput');
+  if(inputEl && inputEl.value !== val) inputEl.value = val;
+  if(!val || val.length < 5){
+    if(statusEl) statusEl.innerHTML = val.length > 0 ? '<span style="color:#E05C5C">Mínimo 5 caracteres</span>' : '';
+    return;
+  }
+  if(val.length > 12){
+    if(statusEl) statusEl.innerHTML = '<span style="color:#E05C5C">Máximo 12 caracteres</span>';
+    return;
+  }
+  if(statusEl) statusEl.innerHTML = '<span style="color:var(--ink4)">Verificando…</span>';
+  clearTimeout(_usernameCheckTimer);
+  _usernameCheckTimer = setTimeout(async function(){
+    _initSupabase();
+    if(!sbClient){ if(btn) btn.disabled = false; return; }
+    try{
+      var r = await sbClient.from('profiles').select('id').eq('username', val).limit(1);
+      var taken = r.data && r.data.length > 0;
+      if(statusEl) statusEl.innerHTML = taken
+        ? '<span style="color:#E05C5C">❌ Ya está tomado, elegí otro</span>'
+        : '<span style="color:var(--sage2)">✓ Disponible</span>';
+      if(btn){ btn.disabled = taken; btn.style.opacity = taken ? '.5' : '1'; }
+    }catch(e){ if(btn){ btn.disabled = false; btn.style.opacity='1'; } }
+  }, 500);
+}
+
+async function pSaveUsername(){
+  var inputEl = document.getElementById('pickUsernameInput');
+  if(!inputEl) return;
+  var val = inputEl.value.toLowerCase().replace(/[^a-z0-9.\-_]/g,'').trim();
+  if(!val || val.length < 5 || val.length > 12){
+    pToast('⚠️','El @usuario debe tener entre 5 y 12 caracteres'); return;
+  }
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(sbClient && uid){
+    try{
+      // Final uniqueness check
+      var rChk = await sbClient.from('profiles').select('id').eq('username', val).neq('id', uid).limit(1);
+      if(rChk.data && rChk.data.length){ pToast('⚠️','Ese @usuario ya está tomado'); return; }
+      var rSave = await sbClient.from('profiles').update({ username: val }).eq('id', uid);
+      if(rSave.error){ console.error('[pSaveUsername]', rSave.error); pToast('⚠️','Error al guardar. Intentá de nuevo.'); return; }
+    }catch(e){ console.error('[pSaveUsername catch]', e); pToast('⚠️','Error de conexión'); return; }
+  }
+  safeLS('set','velo_username', val);
+  pToast('✨','@'+val+' guardado 🎉');
+  // Navigate: if came from registration flow → verify-email, else home
+  var fromReg = safeLS('get','velo_pick_username_from_reg');
+  if(fromReg === '1'){
+    safeLS('set','velo_pick_username_from_reg','');
+    var veEl = document.getElementById('verifyEmailAddr');
+    var em = safeLS('get','velo_user_email') || '';
+    if(veEl) veEl.textContent = em;
+    pGoTo('verify-email');
+  } else {
+    pGoTo('home');
+    setTimeout(function(){
+      _loadHomeData();
+      _updateSidebarUser();
+    }, 100);
+  }
+}
+
+// Variant for edit profile modal (uses editUsernameStatus element)
+var _editUsernameCheckTimer = null;
+function pCheckEditUsername(val){
+  var statusEl = document.getElementById('editUsernameStatus');
+  val = val.toLowerCase().replace(/[^a-z0-9.\-_]/g,'');
+  var inputEl = document.getElementById('editUsername');
+  if(inputEl && inputEl.value !== val) inputEl.value = val;
+  if(!val){ if(statusEl) statusEl.innerHTML = ''; return; }
+  if(val.length < 5){ if(statusEl) statusEl.innerHTML = '<span style="color:#E05C5C">Mínimo 5 caracteres</span>'; return; }
+  if(val.length > 12){ if(statusEl) statusEl.innerHTML = '<span style="color:#E05C5C">Máximo 12 caracteres</span>'; return; }
+  if(statusEl) statusEl.innerHTML = '<span style="color:var(--ink4)">Verificando…</span>';
+  clearTimeout(_editUsernameCheckTimer);
+  _editUsernameCheckTimer = setTimeout(async function(){
+    _initSupabase(); if(!sbClient) return;
+    var uid = safeLS('get','velo_user_id');
+    try{
+      var r = await sbClient.from('profiles').select('id').eq('username', val)
+        .neq('id', uid||'').limit(1);
+      var taken = r.data && r.data.length > 0;
+      if(statusEl) statusEl.innerHTML = taken
+        ? '<span style="color:#E05C5C">❌ Ya está tomado</span>'
+        : '<span style="color:var(--sage2)">✓ Disponible</span>';
+    }catch(e){}
+  }, 500);
+}
+
+// Search users by @username
+async function pSearchUsers(query){
+  if(!query || query.length < 2) return [];
+  _initSupabase();
+  if(!sbClient) return [];
+  try{
+    var r = await sbClient.from('profiles')
+      .select('id,nombre,avatar,username')
+      .ilike('username', query+'%')
+      .limit(10);
+    return r.data || [];
+  }catch(e){ return []; }
 }
 
 function pToggleIncognito(){
@@ -9915,6 +10105,15 @@ function _onPageEnter(id){
     case 'change-password':
       var cpBack = document.getElementById('changePassBackRow');
       if(cpBack) cpBack.style.display = safeLS('get','velo_needs_pw_change') === '1' ? 'none' : 'block';
+      break;
+    case 'pick-username':
+      // Reset form state when entering pick-username page
+      var puInp = document.getElementById('pickUsernameInput');
+      var puSt  = document.getElementById('pickUsernameStatus');
+      var puBtn = document.getElementById('pickUsernameBtn');
+      if(puInp) puInp.value = '';
+      if(puSt)  puSt.innerHTML = '';
+      if(puBtn){ puBtn.disabled = true; puBtn.style.opacity = '.5'; }
       break;
   }
 }
