@@ -1481,3 +1481,169 @@ body.r-dark #pg-dm-chat .feed-send-btn {
   flex-shrink: 0;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   LANDING — Diseño oscuro cohesivo (v143)
+   Toda la landing usa verde bosque uniforme, sin bloques crema.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* 1. Fondo oscuro para todos los bloques de landing restantes */
+#pg-landing .land-how     { background: linear-gradient(180deg, #0f2a1c 0%, #1a3c2a 100%) !important; }
+#pg-landing .land-forwhom { background: linear-gradient(180deg, #1a3c2a 0%, #122418 100%) !important; }
+#pg-landing .land-features{ background: linear-gradient(180deg, #122418 0%, #0f2a1c 100%) !important; }
+#pg-landing .land-diff    { background: linear-gradient(180deg, #0f2a1c 0%, #1a3c2a 100%) !important; }
+#pg-landing .land-faq     { background: linear-gradient(180deg, #1a3c2a 0%, #122418 100%) !important; }
+#pg-landing .land-stats   { background: linear-gradient(180deg, #122418 0%, #0f2318 100%) !important; }
+#pg-landing .land-pricing { background: linear-gradient(180deg, #0f2318 0%, #1a3c2a 100%) !important; }
+#pg-landing .land-legal   { background: linear-gradient(180deg, #0f2318 0%, #0c1c12 100%) !important; border-top-color: rgba(116,198,157,.15) !important; }
+
+/* 2. Encabezados — sage brillante sobre fondo oscuro */
+#pg-landing .land-how .p-hero-text,
+#pg-landing .land-forwhom .p-hero-text,
+#pg-landing .land-features .p-hero-text,
+#pg-landing .land-diff .p-hero-text,
+#pg-landing .land-faq .p-hero-text,
+#pg-landing .land-stats .p-hero-text,
+#pg-landing .land-pricing .p-hero-text { color: rgba(116,198,157,.98) !important; }
+
+#pg-landing .land-how .p-label,
+#pg-landing .land-forwhom .p-label,
+#pg-landing .land-features .p-label,
+#pg-landing .land-diff .p-label,
+#pg-landing .land-faq .p-label,
+#pg-landing .land-stats .p-label,
+#pg-landing .land-pricing .p-label { color: rgba(116,198,157,.68) !important; }
+
+/* 3. Step cards (Cómo funciona) */
+.land-how-step {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(116,198,157,.22) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.land-how-num {
+  background: rgba(116,198,157,.22) !important;
+  color: rgba(255,255,255,.95) !important;
+  border-color: rgba(116,198,157,.38) !important;
+}
+.land-how-title { color: rgba(255,255,255,.95) !important; }
+.land-how-desc  { color: rgba(255,255,255,.68) !important; }
+
+/* 4. Whom cards (¿Es VELO para mí?) */
+.land-whom-card {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(116,198,157,.20) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+.land-whom-title { color: rgba(255,255,255,.95) !important; }
+.land-whom-desc  { color: rgba(255,255,255,.68) !important; }
+
+/* 5. Feature cards (Todo lo que necesitás) */
+.land-feat-card {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(116,198,157,.20) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+#pg-landing .land-feat-card .p-title { color: rgba(255,255,255,.95) !important; }
+#pg-landing .land-feat-card .p-body  { color: rgba(255,255,255,.70) !important; }
+.land-feat-quote {
+  color: rgba(116,198,157,.88) !important;
+  border-left-color: rgba(116,198,157,.45) !important;
+  background: rgba(116,198,157,.08) !important;
+}
+
+/* 6. Diff cards (Qué hace diferente) */
+.land-diff-card {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(116,198,157,.20) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+.land-diff-title { color: rgba(255,255,255,.95) !important; }
+.land-diff-desc  { color: rgba(255,255,255,.68) !important; }
+
+/* 7. FAQ */
+.land-faq-item { border-color: rgba(116,198,157,.18) !important; }
+.land-faq-q {
+  color: rgba(255,255,255,.88) !important;
+  background: rgba(116,198,157,.08) !important;
+  border-color: rgba(116,198,157,.20) !important;
+}
+.land-faq-q:hover { background: rgba(116,198,157,.15) !important; color: #fff !important; }
+.land-faq-a {
+  color: rgba(255,255,255,.72) !important;
+  background: rgba(116,198,157,.05) !important;
+  border-left-color: rgba(116,198,157,.45) !important;
+}
+
+/* 8. Estadísticas y testimoniales */
+.land-stat-card {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(116,198,157,.22) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+.land-stat-num { color: rgba(116,198,157,.98) !important; }
+.land-stat-lbl { color: rgba(255,255,255,.68) !important; }
+.land-test-card {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(116,198,157,.20) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+.land-test-quote { color: rgba(255,255,255,.82) !important; }
+#pg-landing .land-test-author div { color: rgba(255,255,255,.75) !important; }
+
+/* 9. Planes */
+.land-plan {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(116,198,157,.22) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+.land-plan--featured {
+  background: rgba(116,198,157,.14) !important;
+  border-color: rgba(116,198,157,.42) !important;
+  box-shadow: 0 8px 32px rgba(116,198,157,.18) !important;
+}
+.land-plan h3.p-title  { color: rgba(255,255,255,.95) !important; }
+.land-plan-price       { color: rgba(116,198,157,.98) !important; }
+.land-plan-period      { color: rgba(255,255,255,.58) !important; }
+.land-plan-features li { color: rgba(255,255,255,.80) !important; }
+.land-plan-features li.land-feat-no { color: rgba(255,255,255,.35) !important; }
+.land-plan-features li::before { color: rgba(116,198,157,.90) !important; }
+.land-plan-features li.land-feat-no::before { color: rgba(255,255,255,.28) !important; }
+.land-plan-badge {
+  background: rgba(232,200,121,.16) !important;
+  color: rgba(232,200,121,.96) !important;
+  border-color: rgba(232,200,121,.30) !important;
+}
+.land-plan .p-btn--secondary {
+  background: rgba(255,255,255,.10) !important;
+  color: rgba(255,255,255,.88) !important;
+  border-color: rgba(255,255,255,.22) !important;
+}
+.land-plan .p-btn--secondary:hover { background: rgba(255,255,255,.18) !important; }
+
+/* 10. Aviso legal */
+.land-legal-title { color: rgba(116,198,157,.80) !important; }
+.land-legal-text  { color: rgba(255,255,255,.60) !important; }
+.land-legal-text strong { color: rgba(255,255,255,.80) !important; }
+.land-legal-text a { color: rgba(116,198,157,.90) !important; }
+
+/* 11. Preview tiles en hero — dark glass uniforme */
+.land-preview-tile,
+.land-preview-tile.fc-mint,
+.land-preview-tile.fc-lav,
+.land-preview-tile.fc-sky,
+.land-preview-tile.p-card--feature {
+  background: rgba(255,255,255,.10) !important;
+  border: 1.5px solid rgba(255,255,255,.16) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+.land-preview-tile .land-preview-tile-lbl { color: rgba(255,255,255,.92) !important; }
+/* Header "Tu espacio Velo" y "todo listo" */
+.land-preview-card > div:first-child span { color: rgba(255,255,255,.82) !important; }
+
