@@ -1253,3 +1253,217 @@ body.r-dark .feed-textarea {
     flex-shrink: 0;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   LEGIBILIDAD GLOBAL — Contraste de texto
+   ════════════════════════════════════════════════════════════════ */
+
+/* 1. Darkening ink variables for light backgrounds */
+:root {
+  --ink3: #2D5040;
+  --ink4: #3D6048;
+  --ink5: #4D7060;
+}
+
+/* 2. Home grid feature cards */
+.p-card--feature .p-card-title { color: var(--ink) !important; }
+.p-card--feature .p-card-sub   { color: var(--ink2) !important; }
+
+/* Pills inside feature cards */
+.p-card--feature .p-pill--live { color: #1B5E30 !important; font-weight: 700; }
+.p-card--feature .p-pill        { color: var(--ink2) !important; }
+
+/* 3. Circle cards (Círculos page) */
+.circle-card { color: var(--ink) !important; }
+
+/* 4. Landing — "Cómo funciona" and similar light sections */
+.land-how-title { color: var(--ink) !important; }
+.land-how-desc  { color: var(--ink2) !important; font-size: 13px !important; }
+.land-diff-title { color: var(--ink) !important; }
+.land-diff-desc  { color: var(--ink2) !important; }
+
+/* 5. Landing — "Qué es VELO" dark section */
+.land-what {
+  background: linear-gradient(145deg, #1a3c2a 0%, #2d6a4f 100%) !important;
+}
+.land-what .land-section-head .p-label { color: rgba(116,198,157,.9) !important; }
+.land-what h2.p-hero-text { color: #fff !important; }
+.land-what .land-what-quote {
+  color: rgba(255,255,255,.92) !important;
+  background: rgba(116,198,157,.18) !important;
+  border-left-color: rgba(116,198,157,.7) !important;
+}
+.land-what .land-what-pill {
+  background: rgba(255,255,255,.14) !important;
+  border-color: rgba(255,255,255,.28) !important;
+  color: rgba(255,255,255,.96) !important;
+}
+.land-what .land-what-desc { color: rgba(255,255,255,.82) !important; }
+
+/* 6. "PARA TODOS" and ¿Es VELO para mi? sections */
+.land-for { color: var(--ink) !important; }
+.land-for .land-section-head h2 { color: var(--ink) !important; }
+
+/* 7. Sub-headings and page labels */
+.p-card-sub  { color: var(--ink2) !important; }
+.p-subtitle  { color: var(--ink2) !important; }
+
+/* 8. Guardian page items */
+.p-guardian-card .p-card-sub { color: var(--ink2) !important; }
+
+/* 9. Donation page */
+#pg-donate-cta h2 { color: var(--ink) !important; }
+#pg-donate-cta .p-subtitle { color: var(--ink2) !important; }
+
+/* 10. Inbox list items */
+.inbox-item-body,
+.inbox-item-preview { color: var(--ink2) !important; }
+
+/* 11. News article cards in list */
+.p-card .p-card-body-text { color: var(--ink2) !important; }
+
+/* 12. Section labels (p-label) — darker */
+.p-label { color: var(--ink3) !important; }
+
+/* 13. Pill tags general improvement */
+.p-pill { color: var(--ink2) !important; }
+.p-pill--sage { color: var(--sage) !important; }
+.p-pill--gold { color: #8B6200 !important; }
+.p-pill--ocean { color: #1A5070 !important; }
+.p-pill--sky { color: #1A5070 !important; }
+.p-pill--lav { color: #5040A0 !important; }
+.p-pill--live { color: #1B5E30 !important; font-weight: 700 !important; }
+
+/* 14. Guardian status banner on Guardianes page */
+.guardian-status-banner { color: var(--ink) !important; }
+
+/* 15. Dark mode: restore lighter text on dark backgrounds */
+body.r-dark {
+  --ink:  #e8f5ee;
+  --ink2: #c8e2d4;
+  --ink3: #9dc8b0;
+  --ink4: #75a88e;
+  --ink5: #5a8872;
+}
+body.r-dark .p-card--feature .p-card-title { color: var(--ink) !important; }
+body.r-dark .p-card--feature .p-card-sub   { color: var(--ink2) !important; }
+body.r-dark .p-card-sub  { color: var(--ink2) !important; }
+body.r-dark .p-subtitle  { color: var(--ink2) !important; }
+body.r-dark .circle-card { color: var(--ink) !important; background: rgba(30,55,40,.9) !important; border-color: rgba(80,160,110,.2) !important; }
+body.r-dark .land-what { background: linear-gradient(145deg, #0e2319 0%, #1c3d2b 100%) !important; }
+
+/* ════════════════════════════════════════════════════════════════
+   CHAT UI — Estilo tipo Telegram/WhatsApp
+   ════════════════════════════════════════════════════════════════ */
+
+/* DM chat page background */
+#pg-dm-chat {
+  background: #ECE5DD !important;
+}
+body.r-dark #pg-dm-chat {
+  background: #0D1117 !important;
+}
+
+/* Chat header */
+#pg-dm-chat .feed-header {
+  background: #075E54 !important;
+  border-bottom: none !important;
+  padding: 10px 14px !important;
+}
+body.r-dark #pg-dm-chat .feed-header {
+  background: #1F2C34 !important;
+}
+#pg-dm-chat .feed-header #dmPeerName { color: #fff !important; font-size: 16px !important; font-weight: 600 !important; }
+#pg-dm-chat .feed-header > div > div { color: rgba(255,255,255,.75) !important; font-size: 12px !important; }
+#pg-dm-chat .p-back-btn { color: #fff !important; opacity: .9; }
+
+/* Message bubbles — own messages (right side) */
+#pg-dm-chat .feed-bubble--own {
+  background: #DCF8C6 !important;
+  color: #111 !important;
+  border-radius: 18px 18px 4px 18px !important;
+  border: none !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.13) !important;
+}
+body.r-dark #pg-dm-chat .feed-bubble--own {
+  background: #005C4B !important;
+  color: #e8f5ee !important;
+}
+
+/* Message bubbles — other person (left side) */
+#pg-dm-chat .feed-bubble:not(.feed-bubble--own) {
+  background: #fff !important;
+  color: #111 !important;
+  border-radius: 18px 18px 18px 4px !important;
+  border: none !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.13) !important;
+}
+body.r-dark #pg-dm-chat .feed-bubble:not(.feed-bubble--own) {
+  background: #1F2C34 !important;
+  color: #e8f5ee !important;
+}
+
+/* Message sender name */
+#pg-dm-chat .feed-sender { color: #075E54 !important; font-size: 12px !important; font-weight: 700 !important; }
+body.r-dark #pg-dm-chat .feed-sender { color: #25D366 !important; }
+
+/* Message time */
+#pg-dm-chat .feed-time { color: rgba(0,0,0,.45) !important; }
+body.r-dark #pg-dm-chat .feed-time { color: rgba(255,255,255,.5) !important; }
+
+/* Chat input area */
+#pg-dm-chat .feed-input-row {
+  background: #F0F0F0 !important;
+  border-top: 1px solid rgba(0,0,0,.08) !important;
+  padding: 8px 10px !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+body.r-dark #pg-dm-chat .feed-input-row {
+  background: #1F2C34 !important;
+  border-top-color: rgba(255,255,255,.08) !important;
+}
+#pg-dm-chat .feed-textarea {
+  background: #fff !important;
+  border-radius: 24px !important;
+  border: 1px solid rgba(0,0,0,.1) !important;
+  padding: 10px 16px !important;
+  font-size: 15px !important;
+  color: #111 !important;
+  min-height: 42px !important;
+  max-height: 120px !important;
+}
+body.r-dark #pg-dm-chat .feed-textarea {
+  background: #2A3942 !important;
+  color: #e8f5ee !important;
+  border-color: rgba(255,255,255,.1) !important;
+}
+#pg-dm-chat .feed-send-btn {
+  background: #25D366 !important;
+  border-radius: 50% !important;
+  width: 44px !important; height: 44px !important;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(37,211,102,.35) !important;
+  color: #fff !important;
+}
+#pg-dm-chat .feed-send-btn:hover {
+  background: #22C35E !important;
+  transform: scale(1.06) !important;
+}
+body.r-dark #pg-dm-chat .feed-send-btn {
+  background: #00A884 !important;
+}
+
+/* Help chat (guardian ↔ user) — same treatment */
+#pg-help-chat .feed-bubble--own {
+  background: #DCF8C6 !important;
+  color: #111 !important;
+  border: none !important;
+}
+#pg-help-chat .feed-send-btn {
+  background: #25D366 !important;
+  border-radius: 50% !important;
+  width: 44px !important; height: 44px !important;
+  flex-shrink: 0;
+}
+

@@ -1751,9 +1751,9 @@ async function pRenderGuardians(){
   });
   var selfBanner = '';
   if(safeLS('get','velo_is_guardian') === 'true'){
-    selfBanner = '<div style="background:rgba(116,198,157,.12);border:1.5px solid rgba(116,198,157,.35);border-radius:14px;padding:11px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">'
+    selfBanner = '<div style="background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.45);border-radius:14px;padding:11px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">'
       +'<span style="font-size:20px">🟢</span>'
-      +'<div style="font-size:12.5px;color:var(--ink2);font-weight:600;line-height:1.45">Estás visible como guardián. Las solicitudes de acompañamiento te llegarán acá.</div>'
+      +'<div style="font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.45">Estás visible como guardián. Las solicitudes de acompañamiento te llegarán acá.</div>'
       +'</div>';
   }
   if(!filtered.length){
@@ -3388,8 +3388,8 @@ function _renderNewsList(el, items){
       +'<div style="display:flex;align-items:flex-start;gap:14px">'
       +'<div style="font-size:36px;line-height:1;flex-shrink:0">'+_escHtml(item.emoji||'📰')+'</div>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:17px;color:var(--ink);margin-bottom:6px;font-weight:600">'+_escHtml(item.titulo)+'</div>'
-      +'<div style="font-size:13px;color:var(--ink3);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
+      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:17px;color:var(--ink);margin-bottom:6px;font-weight:700">'+_escHtml(item.titulo)+'</div>'
+      +'<div style="font-size:13px;color:var(--ink2);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
       +'<div style="margin-top:10px;font-size:11px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
       +(hasLink
         ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:var(--sage2);font-weight:700;text-decoration:none;background:var(--sage7);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.25)">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a><span style="color:var(--ink5)">· Actualizado hoy ›</span>'
@@ -3412,8 +3412,8 @@ function pOpenNewsDetail(i){
   ov.innerHTML = '<div class="p-sheet" style="max-height:85vh;overflow-y:auto">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-size:52px;text-align:center;margin-bottom:12px">'+_escHtml(item.emoji||'📰')+'</div>'
-    +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:14px;line-height:1.3;text-align:center">'+_escHtml(item.titulo)+'</h2>'
-    +'<p style="font-size:14px;color:var(--ink3);line-height:1.75;margin-bottom:20px">'+_escHtml(item.cuerpo)+'</p>'
+    +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:var(--ink);margin-bottom:14px;line-height:1.3;text-align:center">'+_escHtml(item.titulo)+'</h2>'
+    +'<p style="font-size:14px;color:var(--ink2);line-height:1.75;margin-bottom:20px">'+_escHtml(item.cuerpo)+'</p>'
     +'<div style="background:var(--sage7);border-radius:12px;padding:12px 14px;margin-bottom:20px">'
     +'<div style="font-size:11px;font-weight:700;color:var(--sage3);letter-spacing:.5px;margin-bottom:6px">✨ REFLEXIÓN VELO IA</div>'
     +'<p style="font-size:13px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+_escHtml(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
@@ -4898,13 +4898,13 @@ function _circleCardHtml(c, memberCounts){
     +imgHtml
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">'+c.name+'</div>'
-    +'<div style="font-size:12px;color:var(--ink4);margin-bottom:5px">'+c.desc+'</div>'
+    +'<div style="font-size:12px;color:var(--ink2);margin-bottom:5px">'+c.desc+'</div>'
     +(lastMsg
-      ? '<div style="font-size:11px;color:var(--ink5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">'+lastMsg.av+' '+lastMsg.name+': '+lastMsg.text+'</div>'
+      ? '<div style="font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">'+lastMsg.av+' '+lastMsg.name+': '+lastMsg.text+'</div>'
       : '<div style="height:5px"></div>')
     +'<div style="display:flex;align-items:center;gap:6px">'
     +'<div style="flex:1;height:4px;background:var(--cream2);border-radius:100px;overflow:hidden"><div style="height:100%;width:'+capPct+'%;background:'+(isFull?'var(--sos)':'var(--sage3)')+';border-radius:100px"></div></div>'
-    +'<span class="circle-member-count-'+c.id+'" style="font-size:10px;color:var(--ink5)">'+memberCount+'/'+maxM+'</span>'
+    +'<span class="circle-member-count-'+c.id+'" style="font-size:10px;color:var(--ink3);font-weight:600">'+memberCount+'/'+maxM+'</span>'
     +(isFull ? '<span style="font-size:10px;color:var(--sos);font-weight:700">Lleno</span>' : '')
     +'</div>'
     +'</div>'
