@@ -14,8 +14,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260527-133">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260527-133">
+  <link rel="stylesheet" href="premium.css?v=20260527-134">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260527-134">
 </head>
 <body>
 
@@ -875,20 +875,44 @@
       <!-- ══ HOME ════════════════════════════════════════════════ -->
       <div class="p-page" id="pg-home">
         <div class="p-page-scroll">
-          <div class="home-header">
-            <div>
-              <div class="p-label">Hoy, <span id="homeDateTxt"></span></div>
-              <h1 class="p-title" id="homeGreetTxt">Buenos días 🌿</h1>
-            </div>
-            <div style="display:flex;align-items:flex-end;gap:6px">
-              <div id="homeGuardianWrap" style="display:none;flex-direction:column;align-items:center;gap:2px">
-                <span style="font-size:8px;font-weight:700;color:var(--sage3);letter-spacing:.4px;text-transform:uppercase;white-space:nowrap">Activarme</span>
-                <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:6px 12px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:var(--sage7);color:var(--sage2);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Guardián</button>
+          <div class="home-header r-hero-v2">
+            <div class="r-hero-left">
+              <div class="p-label">— jardín de hoy &nbsp;·&nbsp; <span id="homeDateTxt"></span></div>
+              <h1 class="p-title" id="homeGreetTxt">Buenos días</h1>
+              <h2 class="r-hero-italic"><em id="homeGreetSub">Hoy la comunidad está contigo.</em></h2>
+              <p class="r-hero-sub" id="homeGreetParagraph">
+                <span id="homeGuardianCount">—</span> guardianes están en línea ahora mismo. Si necesitás escucha, escribir o solo respirar — todo está acá, a un toque.
+              </p>
+              <div class="r-hero-actions">
+                <button class="p-btn p-btn--primary p-btn--lg" onclick="pGoTo('help')">Pedir compañía →</button>
+                <button class="p-btn p-btn--secondary p-btn--lg" onclick="pGoTo('diary')">Escribir en mi diario</button>
               </div>
-              <button onclick="pGoTo('inbox')" title="Notificaciones y buzón" style="font-size:18px;background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative" id="homeBellBtn">🔔<span id="homeBellBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
-              <button onclick="pGoTo('contacts')" title="Contactos favoritos" style="font-size:18px;background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent;position:relative">⭐<span id="favCountBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
-              <button class="p-btn p-btn--sos p-btn--sm" onclick="pOpenSOS()">🆘 SOS</button>
-              <button class="p-topbar-btn" style="display:none" id="homeMenuBtn" onclick="toggleMobileMenu()">☰</button>
+            </div>
+            <div class="r-hero-right">
+              <div class="r-hero-actions-top">
+                <div id="homeGuardianWrap" style="display:none;flex-direction:column;align-items:center;gap:2px">
+                  <span style="font-size:8px;font-weight:700;color:var(--sage3);letter-spacing:.4px;text-transform:uppercase;white-space:nowrap">Activarme</span>
+                  <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:6px 12px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:var(--sage7);color:var(--sage2);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Guardián</button>
+                </div>
+                <button onclick="pGoTo('inbox')" title="Notificaciones y buzón" id="homeBellBtn" class="r-hero-icon-btn">🔔<span id="homeBellBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
+                <button onclick="pGoTo('contacts')" title="Contactos favoritos" class="r-hero-icon-btn">⭐<span id="favCountBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
+                <button class="p-btn p-btn--sos p-btn--sm" onclick="pOpenSOS()">🆘 SOS</button>
+                <button class="p-topbar-btn" style="display:none" id="homeMenuBtn" onclick="toggleMobileMenu()">☰</button>
+              </div>
+              <div class="r-hero-stats">
+                <div class="r-hero-stat">
+                  <div class="r-hero-stat-val"><em id="homeStatGuardians">—</em><span class="r-hero-stat-dot"></span></div>
+                  <div class="r-hero-stat-lbl">Guardianes en línea</div>
+                </div>
+                <div class="r-hero-stat">
+                  <div class="r-hero-stat-val" id="homeStatStreak">1</div>
+                  <div class="r-hero-stat-lbl">Días seguidos</div>
+                </div>
+                <div class="r-hero-stat">
+                  <div class="r-hero-stat-val" id="homeStatPlan">✦</div>
+                  <div class="r-hero-stat-lbl">Mi plan</div>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Availability status toggle (below greeting) -->
@@ -2899,8 +2923,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260527-133"></script>
-<script src="premium-redesign.js?v=20260527-133"></script>
+<script src="premium.js?v=20260527-134"></script>
+<script src="premium-redesign.js?v=20260527-134"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

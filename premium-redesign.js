@@ -134,6 +134,50 @@
       });
       mo.observe(greet, { childList: true, characterData: true, subtree: true });
     }
+
+    // Hero v2 stats — run immediately + every 5s
+    syncHeroStats();
+    setInterval(syncHeroStats, 5000);
+  }
+
+  /* ── 5. Sync valores dinámicos del hero v2 ──────────────────── */
+  function syncHeroStats() {
+    // ── Guardian count ──────────────────────────────────────────
+    // Read from premium.js global _liveGuardians (available after login)
+    let guardianN = null;
+    if (typeof _liveGuardians !== 'undefined' && Array.isArray(_liveGuardians)) {
+      guardianN = _liveGuardians.filter(g => g.status !== 'incognito').length;
+    }
+    // Fallback: count guardian cards in the DOM
+    if (guardianN === null) {
+      const cards = document.querySelectorAll('#guardiansList .p-guardian-card');
+      if (cards.length > 0) guardianN = cards.length;
+    }
+    const gcEl   = document.getElementById('homeGuardianCount');
+    const statEl = document.getElementById('homeStatGuardians');
+    if (gcEl && guardianN !== null) gcEl.textContent = guardianN;
+    if (statEl && guardianN !== null) statEl.textContent = guardianN;
+
+    // ── Visit streak ────────────────────────────────────────────
+    let streak = 1;
+    try {
+      const days = JSON.parse(
+        (typeof safeLS === 'function' ? safeLS('get','velo_visit_days') : localStorage.getItem('velo_visit_days')) || '[]'
+      );
+      streak = days.length || 1;
+    } catch(e) {}
+    const streakEl = document.getElementById('homeStatStreak');
+    if (streakEl) streakEl.textContent = streak;
+
+    // ── Plan label ──────────────────────────────────────────────
+    let planLabel = '✦';
+    try {
+      const plan = typeof safeLS === 'function' ? safeLS('get','velo_plan') : localStorage.getItem('velo_plan');
+      if (plan === 'plus' || plan === 'pro') planLabel = 'Plus';
+      else if (plan === 'free' || !plan) planLabel = 'Free';
+    } catch(e) {}
+    const planEl = document.getElementById('homeStatPlan');
+    if (planEl) planEl.textContent = planLabel;
   }
 
   if (document.readyState === 'loading') {
