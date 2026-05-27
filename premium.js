@@ -322,8 +322,21 @@ async function _sbSyncProfile(userId){
 
   var p = res.data[0];
   if(p.nombre){
-    var _emailPfx = (safeLS('get','velo_user_email')||'').split('@')[0];
-    if(p.nombre !== _emailPfx) safeLS('set','velo_user_name', p.nombre);
+    var _email    = safeLS('get','velo_user_email') || '';
+    var _emailPfx = _email.split('@')[0];
+    var _localName = safeLS('get','velo_user_name') || '';
+    // Detect auto-generated username patterns: no spaces + ends in 3+ digits OR matches email prefix
+    var _looksAutoGen = (p.nombre === _emailPfx) ||
+                        (p.nombre === _email) ||
+                        /^[a-zA-Z0-9._-]+\d{3,}$/.test(p.nombre) ||
+                        (p.nombre.indexOf(' ') < 0 && /^\w+\.\w+\d+$/.test(p.nombre));
+    if(!_looksAutoGen){
+      // Valid real name from Supabase — use it
+      safeLS('set','velo_user_name', p.nombre);
+    } else if(_localName && _localName !== _emailPfx && !(/^[a-zA-Z0-9._-]+\d{3,}$/.test(_localName))){
+      // Supabase has a corrupted auto-name but localStorage has a valid name — repair Supabase silently
+      sbClient.from('profiles').update({ nombre: _localName }).eq('id', userId).catch(function(){});
+    }
   }
   if(p.avatar)        safeLS('set','velo_user_av',       p.avatar);
   if(p.motto)         safeLS('set','velo_user_motto',    p.motto);
@@ -1125,46 +1138,81 @@ function pSaveMyStatus(){
 }
 
 // ── DAILY MOTIVATIONAL QUOTE (home, below greeting) ────────────
+// Each entry: { text, author }
 var _dailyQuoteFallbacks = [
-  'Hoy es un nuevo comienzo. Cada momento es una oportunidad para ser amable con vos mismo/a 🌱',
-  'El coraje no es no tener miedo — es seguir adelante a pesar de él. Acá estamos con vos 💚',
-  'Pequeños pasos también son pasos. Todo avance cuenta, sin importar el tamaño ✨',
-  'Tu historia no terminó. Todavía quedan páginas hermosas por escribir 🌸',
-  'Está bien no estar bien. Lo importante es que no estás solo/a 🫂',
-  'La calma es una práctica, no un destino. Respirá, estás más cerca de lo que creés 🌿',
-  'Hoy, un solo gesto de amabilidad hacia vos mismo/a puede cambiarlo todo 💙',
-  'Las raíces más fuertes crecen en las tormentas. Confiá en tu proceso 🌳',
-  'Mereces exactamente el mismo amor que le das a los demás 🌺',
-  'Cada día que abrís los ojos es una nueva oportunidad. Ese es el regalo de hoy 🌅',
-  'La vulnerabilidad no es debilidad — es el punto de partida del verdadero cambio 💫',
-  'No tenés que tenerlo todo resuelto hoy. Solo el próximo paso 🌊',
-  'Tu bienestar importa. Cuidarte no es egoísta — es necesario 🌱',
-  'Hay fuerza en pedir ayuda. No lo olvidés 💚',
-  'Este momento, con todo lo que trae, también va a pasar. Y vos vas a estar bien ✨'
+  { text: 'La vida es lo que pasa mientras estás ocupado haciendo otros planes.', author: 'John Lennon' },
+  { text: 'En el medio de la dificultad yace la oportunidad.', author: 'Albert Einstein' },
+  { text: 'Caer siete veces y levantarse ocho.', author: 'Proverbio japonés' },
+  { text: 'Sé el cambio que quieres ver en el mundo.', author: 'Mahatma Gandhi' },
+  { text: 'La felicidad no es algo hecho. Viene de tus propias acciones.', author: 'Dalai Lama' },
+  { text: 'Todo lo que puedas imaginar, la naturaleza ya lo ha creado.', author: 'Albert Einstein' },
+  { text: 'Dos cosas son infinitas: el universo y la estupidez humana. Y del universo no estoy seguro.', author: 'Albert Einstein' },
+  { text: 'El éxito es ir de fracaso en fracaso sin perder el entusiasmo.', author: 'Winston Churchill' },
+  { text: 'No llores porque terminó, sonríe porque sucedió.', author: 'Gabriel García Márquez' },
+  { text: 'Nunca es demasiado tarde para ser lo que podrías haber sido.', author: 'George Eliot' },
+  { text: 'La vida es muy peligrosa. No por las personas que hacen el mal, sino por las que se sientan a ver lo que pasa.', author: 'Albert Einstein' },
+  { text: 'Haz lo que puedas, con lo que tengas, donde estés.', author: 'Theodore Roosevelt' },
+  { text: 'El único modo de hacer un gran trabajo es amar lo que haces.', author: 'Steve Jobs' },
+  { text: 'No es la especie más fuerte la que sobrevive, sino la más adaptable al cambio.', author: 'Charles Darwin' },
+  { text: 'Lo que no te mata te hace más fuerte.', author: 'Friedrich Nietzsche' },
+  { text: 'Primero lo ignoran, después se ríen de ti, luego te atacan. Y entonces ganas.', author: 'Mahatma Gandhi' },
+  { text: 'El secreto de salir adelante es empezar.', author: 'Mark Twain' },
+  { text: 'La imaginación es más importante que el conocimiento.', author: 'Albert Einstein' },
+  { text: 'Sé tú mismo; los demás puestos ya están ocupados.', author: 'Oscar Wilde' },
+  { text: 'La vida es breve, y es pecado desperdiciarla.', author: 'Séneca' },
+  { text: 'No hay viento favorable para el barco que no sabe adónde va.', author: 'Séneca' },
+  { text: 'Vivir es la cosa más rara del mundo. La mayoría de la gente solo existe.', author: 'Oscar Wilde' },
+  { text: 'La esperanza es el sueño del hombre despierto.', author: 'Aristóteles' },
+  { text: 'El único lugar donde el éxito viene antes que el trabajo es en el diccionario.', author: 'Vidal Sassoon' },
+  { text: 'La mayor gloria no es nunca caer, sino levantarse cada vez que caemos.', author: 'Confucio' },
+  { text: 'Cree que puedes y ya estás a mitad de camino.', author: 'Theodore Roosevelt' },
+  { text: 'El dolor es temporal, la gloria es para siempre.', author: 'Lance Armstrong' },
+  { text: 'Nuestros sueños se pueden hacer realidad si tenemos el coraje de perseguirlos.', author: 'Walt Disney' },
+  { text: 'No importa cuán despacio vayas, siempre y cuando no te detengas.', author: 'Confucio' },
+  { text: 'En el corazón de cada invierno hay una primavera que tiembla.', author: 'Khalil Gibran' }
 ];
 
 async function _loadDailyMotivationalQuote(){
-  var el = document.getElementById('homeDailyQuote');
-  if(!el) return;
+  var textEl   = document.getElementById('homeDailyQuoteText');
+  var authorEl = document.getElementById('homeDailyQuoteAuthor');
+  if(!textEl) return;
   var today = new Date().toISOString().slice(0,10);
   var cacheKey = 'velo_daily_quote_'+today;
   var cached = safeLS('get', cacheKey);
-  if(cached){ el.textContent = cached; return; }
-  // Generate with Gemini
+  if(cached){
+    try{
+      var obj = JSON.parse(cached);
+      textEl.textContent   = obj.text   || cached;
+      if(authorEl) authorEl.textContent = obj.author ? '— ' + obj.author : '';
+    }catch(e){ textEl.textContent = cached; }
+    return;
+  }
+  // Pick a different quote each day (rotate by date)
   var d = new Date();
   var dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  var prompt = 'Escribí una frase corta, poética y motivadora para alguien que atraviesa un momento difícil. '
-    +'Hoy es '+dias[d.getDay()]+'. '
-    +'La frase debe ser genuina, cálida y esperanzadora — no un cliché. '
-    +'Español rioplatense. Máximo 20 palabras. Podés terminar con un emoji suave. '
-    +'Solo la frase, sin comillas.';
-  var msg = await _geminiCall(prompt, { temperature:0.95, maxOutputTokens:60 });
-  if(!msg || msg.length > 180){
-    var fallbackIdx = (new Date().getDate() + new Date().getMonth()) % _dailyQuoteFallbacks.length;
-    msg = _dailyQuoteFallbacks[fallbackIdx];
+  var prompt = 'Dame una frase célebre inspiradora, positiva y motivadora de un autor, escritor, filósofo, líder histórico, '
+    +'novelista famoso o personaje conocido. Hoy es '+dias[d.getDay()]+'. '
+    +'La frase debe ser sobre superación, vida, esperanza, alegría, coraje o amor. '
+    +'Devolvé SOLO un objeto JSON con este formato exacto (sin markdown, sin explicación): '
+    +'{"text":"la frase traducida al español","author":"Nombre del autor"}. '
+    +'La frase debe tener entre 10 y 30 palabras. Que sea una frase real, no inventada.';
+  var raw = await _geminiCall(prompt, { temperature:0.7, maxOutputTokens:120 });
+  var quote = null;
+  if(raw){
+    try{
+      // Extract JSON from response (may have extra text)
+      var jsonMatch = raw.match(/\{[\s\S]*"text"[\s\S]*"author"[\s\S]*\}/);
+      if(jsonMatch) quote = JSON.parse(jsonMatch[0]);
+    }catch(e){}
   }
-  safeLS('set', cacheKey, msg);
-  el.textContent = msg;
+  if(!quote || !quote.text || !quote.author){
+    // Rotate fallback by date so every day is different
+    var idx = (d.getDate() - 1 + d.getMonth() * 31) % _dailyQuoteFallbacks.length;
+    quote = _dailyQuoteFallbacks[idx];
+  }
+  safeLS('set', cacheKey, JSON.stringify(quote));
+  textEl.textContent   = quote.text;
+  if(authorEl) authorEl.textContent = '— ' + quote.author;
 }
 
 function _updateTopbarMoodBadge(){
@@ -1200,11 +1248,23 @@ function _updateHomeCurrentMoodLine(){
     try{
       var m = JSON.parse(stored);
       var labels = {'😄':'Muy bien','😊':'Bien','😐':'Regular','😞':'Mal','😢':'Muy mal'};
-      el.textContent = m.emoji + ' ' + (labels[m.emoji]||m.label||'') + (m.note ? ' — '+m.note : '');
+      var moodText = m.emoji + ' ' + (labels[m.emoji]||m.label||'') + (m.note ? ' — '+m.note.slice(0,40) : '');
+      // Mood registered — plain text, no blinking pill
+      el.style.animation = 'none';
+      el.style.background = 'transparent';
+      el.style.border = 'none';
+      el.style.padding = '0';
+      el.style.color = 'var(--ink4)';
+      el.style.fontSize = '12px';
+      el.style.fontWeight = '500';
+      el.style.borderRadius = '0';
+      el.textContent = moodText;
       return;
     }catch(e){}
   }
-  el.textContent = 'Tocá para registrar cómo te sentís ✨';
+  // Not registered yet — show animated pill
+  el.style.cssText = 'display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:4px 10px;animation:p-breathe 3s ease-in-out infinite';
+  el.textContent = '✨ Tocá para registrar cómo te sentís';
 }
 
 function _updateSidebarUser(){
@@ -6045,7 +6105,11 @@ function pSaveProfile(){
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
   if(sbClient && uid){
-    var av    = safeLS('get','velo_user_av') || '';
+    var _rawAv = safeLS('get','velo_user_av') || '';
+    // Don't store huge base64 in the profiles text row — only store emoji/small values here
+    // Large base64 avatars are stored via _syncAvatarToSb which handles them separately
+    var av = _rawAv.length > 8000 ? '' : _rawAv;
+    if(_rawAv.length > 8000) _syncAvatarToSb(_rawAv); // push large avatar to a separate column
     var email = safeLS('get','velo_user_email') || '';
     sbClient.from('profiles').upsert({
       id:uid, nombre:name, avatar:av, motto:motto, email:email,
@@ -6054,8 +6118,16 @@ function pSaveProfile(){
       status_phrase: safeLS('get','velo_status_phrase')||'',
       status_film:   safeLS('get','velo_status_film')||''
     },{ onConflict:'id' })
-    .then(function(r){ if(r && r.error) pToast('⚠️','Perfil guardado localmente (error al sincronizar con la nube).'); })
-    .catch(function(){ pToast('⚠️','Perfil guardado localmente (sin conexión a la nube).'); });
+    .then(function(r){
+      if(r && r.error){
+        console.error('[pSaveProfile] Supabase error:', r.error);
+        pToast('⚠️','Perfil guardado localmente (error al sincronizar: '+r.error.message+')');
+      }
+    })
+    .catch(function(e){
+      console.error('[pSaveProfile] catch:', e);
+      pToast('⚠️','Perfil guardado localmente (sin conexión a la nube).');
+    });
   }
   closeModal('editProfileOv');
   pToast('✅','Perfil actualizado 💚');
