@@ -595,7 +595,7 @@ async function pSignIn(){
       _startGuardianHeartbeat();
       setTimeout(_startGlobalDMListener, 2500);
       setTimeout(_syncFavsFromSupabase, 3500);
-      _loginAndGo();
+      await _loginAndGo();
     }
   }catch(e){
     pToast('⚠️','Error de conexión');
@@ -745,22 +745,35 @@ async function _loginAndGo(){
   } else {
     // Check for @username — redirect to picker if missing (new or existing users)
     var _uname = safeLS('get','velo_username') || '';
+    var _unameQueryOk = true; // false if DB query itself errors (column missing, etc.)
     if(!_uname){
       _initSupabase();
       var _uid = safeLS('get','velo_user_id');
       if(sbClient && _uid){
         try{
           var _ur = await sbClient.from('profiles').select('username').eq('id',_uid).limit(1);
-          if(_ur.data && _ur.data[0] && _ur.data[0].username){
+          if(_ur.error){
+            // Column may not exist yet (SQL migration pending) — don't block login
+            console.warn('[_loginAndGo] username query error (migration pending?):', _ur.error.message);
+            _unameQueryOk = false;
+          } else if(_ur.data && _ur.data[0] && _ur.data[0].username){
             safeLS('set','velo_username', _ur.data[0].username);
             _uname = _ur.data[0].username;
           }
-        }catch(e){}
+        }catch(e){
+          console.warn('[_loginAndGo] username fetch failed:', e);
+          _unameQueryOk = false;
+        }
       }
     }
-    if(!_uname){
-      pGoTo('pick-username');
-      return;
+    if(!_uname && _unameQueryOk){
+      // Only redirect to picker if the page actually exists in the DOM
+      // (guards against browser cache serving old HTML without pg-pick-username)
+      if(document.getElementById('pg-pick-username')){
+        pGoTo('pick-username');
+        return;
+      }
+      // Page not in DOM → fall through to home (user can set username from profile)
     }
     pGoTo('home');
     setTimeout(function(){
