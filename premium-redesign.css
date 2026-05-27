@@ -670,3 +670,265 @@ body::after {
   .r-hero-italic { font-size: clamp(20px, 5vw, 28px); }
   .r-hero-sub { font-size: 13px; }
 }
+
+/* ── Sidebar SVG icons ───────────────────────────────────────────── */
+.p-sn-icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+.p-sn-item {
+  color: var(--ink3);
+}
+.p-sn-item:hover .p-sn-icon svg,
+.p-sn-item.active .p-sn-icon svg {
+  stroke: var(--sage2);
+}
+
+/* ── Sidebar user avatar — circular photo when image set ─────────── */
+.p-user-av {
+  border-radius: 50% !important;
+  overflow: hidden;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+/* ── Dark mode toggle button in sidebar ─────────────────────────── */
+.r-dark-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(116,198,157,.05);
+  border: 1.5px solid rgba(116,198,157,.14);
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink3);
+  letter-spacing: .3px;
+  margin-bottom: 8px;
+  transition: background .2s, color .2s;
+}
+.r-dark-toggle:hover { background: rgba(116,198,157,.12); color: var(--ink2); }
+.r-dark-toggle-pill {
+  width: 32px;
+  height: 17px;
+  border-radius: 9px;
+  background: rgba(116,198,157,.2);
+  border: 1.5px solid rgba(116,198,157,.25);
+  position: relative;
+  transition: background .25s;
+  flex-shrink: 0;
+}
+.r-dark-toggle-pill::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background: var(--sage);
+  transition: transform .25s;
+}
+body.r-dark .r-dark-toggle-pill {
+  background: rgba(116,198,157,.45);
+}
+body.r-dark .r-dark-toggle-pill::after {
+  transform: translateX(15px);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MODO OSCURO — variables y overrides
+   ══════════════════════════════════════════════════════════════════ */
+body.r-dark {
+  /* Ambient background */
+  background:
+    radial-gradient(circle at 8% 12%, rgba(58, 110, 80, 0.35) 0%, transparent 45%),
+    radial-gradient(circle at 92% 88%, rgba(60, 70, 30, 0.25) 0%, transparent 50%),
+    linear-gradient(180deg, #0f1a14 0%, #111d17 60%, #0c1510 100%) !important;
+  color-scheme: dark;
+}
+body.r-dark::after {
+  display: none !important;
+}
+
+body.r-dark {
+  --r-glass-bg: rgba(15, 30, 20, 0.82);
+  --r-glass-bord: rgba(80, 160, 110, 0.18);
+  --r-glass-shadow: 0 1px 0 rgba(116,198,157,.08) inset, 0 8px 30px rgba(0,0,0,.35);
+  --r-sage-glow: rgba(58, 140, 100, 0.45);
+}
+
+/* ── Core text and surface overrides ─────────────────────────────── */
+body.r-dark,
+body.r-dark .p-main-content,
+body.r-dark .p-sidebar {
+  --ink:  #e8f2ec;
+  --ink2: #c8ddd0;
+  --ink3: #94b8a4;
+  --ink4: #6e9a84;
+  --ink5: #4a7060;
+  --border: rgba(80,160,110,.22);
+}
+
+/* sidebar */
+body.r-dark .p-sidebar {
+  background: rgba(10, 20, 14, 0.96) !important;
+  border-right-color: rgba(80,160,110,.18) !important;
+}
+body.r-dark .p-sidebar-section {
+  color: var(--ink4) !important;
+}
+body.r-dark .p-sn-item {
+  color: var(--ink3) !important;
+}
+body.r-dark .p-sn-item:hover,
+body.r-dark .p-sn-item.active {
+  background: rgba(80,160,110,.12) !important;
+  color: #9de8bc !important;
+}
+body.r-dark .p-user-mini {
+  background: rgba(40,70,50,.5) !important;
+  border-color: rgba(80,160,110,.2) !important;
+}
+body.r-dark .p-user-name { color: var(--ink2) !important; }
+
+/* cards */
+body.r-dark .p-card,
+body.r-dark .p-widget,
+body.r-dark [class*="r-card"],
+body.r-dark .r-hero-v2,
+body.r-dark .p-section-header {
+  background: var(--r-glass-bg) !important;
+  border-color: var(--r-glass-bord) !important;
+  color: var(--ink) !important;
+}
+body.r-dark .p-label {
+  color: var(--ink4) !important;
+}
+body.r-dark .p-title,
+body.r-dark h1, body.r-dark h2, body.r-dark h3 {
+  color: var(--ink) !important;
+}
+body.r-dark p, body.r-dark span {
+  color: inherit;
+}
+
+/* inputs */
+body.r-dark input,
+body.r-dark textarea,
+body.r-dark select {
+  background: rgba(20,40,28,.8) !important;
+  border-color: rgba(80,160,110,.25) !important;
+  color: var(--ink2) !important;
+}
+body.r-dark input::placeholder,
+body.r-dark textarea::placeholder {
+  color: var(--ink4) !important;
+  opacity: 1;
+}
+
+/* buttons */
+body.r-dark .p-btn--secondary {
+  background: rgba(40,80,55,.6) !important;
+  border-color: rgba(80,160,110,.3) !important;
+  color: #9de8bc !important;
+}
+body.r-dark .p-btn--secondary:hover {
+  background: rgba(60,110,75,.7) !important;
+}
+
+/* topbar (mobile) */
+body.r-dark .p-topbar {
+  background: rgba(10,20,14,.95) !important;
+  border-bottom-color: rgba(80,160,110,.18) !important;
+}
+
+/* overlays / modals */
+body.r-dark .p-overlay,
+body.r-dark [id$="Ov"],
+body.r-dark .p-modal-wrap {
+  background: rgba(8,18,12,.95) !important;
+}
+body.r-dark .p-modal,
+body.r-dark .p-ov-content,
+body.r-dark [class*="p-modal"] {
+  background: rgba(12,24,16,.96) !important;
+  border-color: rgba(80,160,110,.2) !important;
+}
+
+/* hero halo in dark mode */
+body.r-dark .r-hero-v2::before {
+  opacity: .5;
+}
+
+/* section pills / tags */
+body.r-dark .p-status-pill,
+body.r-dark .p-tag {
+  background: rgba(40,80,55,.5) !important;
+  border-color: rgba(80,160,110,.25) !important;
+  color: #9de8bc !important;
+}
+
+/* phrase of the day */
+body.r-dark .r-phrase-card {
+  background: rgba(15,30,20,.85) !important;
+  border-color: rgba(80,160,110,.2) !important;
+}
+
+/* ── Consistent section card baseline (light + dark) ─────────────── */
+/* Every .p-section within .p-main-content gets a subtle glassmorphism card */
+.p-section {
+  background: var(--r-glass-bg);
+  border: 1px solid var(--r-glass-bord);
+  border-radius: 22px;
+  padding: 28px 26px;
+  margin-bottom: 20px;
+  box-shadow: var(--r-glass-shadow);
+  position: relative;
+  overflow: hidden;
+}
+.p-section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(22px, 2.8vw, 32px);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+.p-section-subtitle {
+  font-size: 13px;
+  color: var(--ink3);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+/* Dark mode section override */
+body.r-dark .p-section {
+  background: var(--r-glass-bg) !important;
+  border-color: var(--r-glass-bord) !important;
+}
+
+/* ── Word-reveal animation (from premium-redesign.js) ────────────── */
+.r-word-reveal {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: rWordIn .5s var(--r-easing) forwards;
+}
+@keyframes rWordIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Stagger via nth-child with fallback JS index */
+.r-word-reveal:nth-child(1)  { animation-delay: .05s; }
+.r-word-reveal:nth-child(2)  { animation-delay: .1s; }
+.r-word-reveal:nth-child(3)  { animation-delay: .15s; }
+.r-word-reveal:nth-child(4)  { animation-delay: .2s; }
+.r-word-reveal:nth-child(5)  { animation-delay: .25s; }
+.r-word-reveal:nth-child(6)  { animation-delay: .3s; }
+.r-word-reveal:nth-child(7)  { animation-delay: .35s; }

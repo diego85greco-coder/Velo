@@ -180,9 +180,46 @@
     if (planEl) planEl.textContent = planLabel;
   }
 
+  /* ── 6. Dark mode init ──────────────────────────────────────────── */
+  function applyDarkMode(dark) {
+    if (dark) {
+      document.body.classList.add('r-dark');
+    } else {
+      document.body.classList.remove('r-dark');
+    }
+    // update toggle label
+    const lbl = document.getElementById('rDarkToggleLbl');
+    if (lbl) lbl.textContent = dark ? '☀️ Modo claro' : '🌙 Modo oscuro';
+  }
+
+  function initDarkMode() {
+    try {
+      const saved = localStorage.getItem('velo-r-darkmode');
+      if (saved === '1') {
+        applyDarkMode(true);
+      } else if (saved === null) {
+        // Auto-detect system preference on first visit
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyDarkMode(prefersDark);
+        localStorage.setItem('velo-r-darkmode', prefersDark ? '1' : '0');
+      }
+    } catch(e) {}
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => setTimeout(boot, 100));
+    // Apply dark mode immediately (before boot) to avoid flash
+    document.addEventListener('DOMContentLoaded', initDarkMode);
   } else {
     setTimeout(boot, 100);
+    initDarkMode();
   }
 })();
+
+/* ── Dark mode toggle — global (called from HTML onclick) ─────────── */
+function rToggleDarkMode() {
+  var isDark = document.body.classList.toggle('r-dark');
+  try { localStorage.setItem('velo-r-darkmode', isDark ? '1' : '0'); } catch(e) {}
+  var lbl = document.getElementById('rDarkToggleLbl');
+  if (lbl) lbl.textContent = isDark ? '☀️ Modo claro' : '🌙 Modo oscuro';
+}
