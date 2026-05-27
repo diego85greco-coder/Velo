@@ -402,6 +402,7 @@ ALTER TABLE contacts ADD COLUMN IF NOT EXISTS allow_reply bool DEFAULT false;
 ALTER TABLE profiles     ADD COLUMN IF NOT EXISTS status_music      text;
 ALTER TABLE profiles     ADD COLUMN IF NOT EXISTS status_book       text;
 ALTER TABLE profiles     ADD COLUMN IF NOT EXISTS status_phrase     text;
+ALTER TABLE profiles     ADD COLUMN IF NOT EXISTS status_film       text;
 ALTER TABLE profiles     ADD COLUMN IF NOT EXISTS terms_accepted_at timestamptz;
 ALTER TABLE profiles     ADD COLUMN IF NOT EXISTS plus_expires_at   timestamptz;
 ALTER TABLE happy_posts  ADD COLUMN IF NOT EXISTS comments          jsonb;

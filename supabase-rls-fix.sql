@@ -216,6 +216,10 @@ ALTER TABLE public.guardian_requests  REPLICA IDENTITY FULL;
 ALTER TABLE public.direct_messages    REPLICA IDENTITY FULL;
 ALTER TABLE public.profiles           REPLICA IDENTITY FULL;
 
+-- ─────────────────────────────────────────────────────────────
+-- COLUMNAS FALTANTES (seguro re-ejecutar)
+-- ─────────────────────────────────────────────────────────────
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS status_film text;
 
 -- ─────────────────────────────────────────────────────────────
 -- FIN — Verificar que no hubo errores y ejecutar en producción

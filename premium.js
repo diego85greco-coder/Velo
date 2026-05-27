@@ -1839,16 +1839,46 @@ function pOpenGuardian(id){
     favBtn.style.background = isFavNow ? 'rgba(255,200,50,.25)' : 'rgba(255,200,50,.15)';
   }
   pGoTo('guardian-detail');
-  // Load real reviews for this guardian from Supabase
+  // Load reviews + profile status data from Supabase
   (function(){
     var gUid = (g.id||'').replace('live_','');
     var myId = _myUserId();
+
+    // Clear cultural status while loading
+    var csEl = document.getElementById('gdCulturalStatus');
+    var csCard = document.getElementById('gdCulturalCard');
+    if(csEl) csEl.innerHTML = '';
+    if(csCard) csCard.style.display = 'none';
+
     _loadUserReviews(gUid).then(function(revs){
       var el = document.getElementById('gdReviews');
       if(!el) return;
       if(!revs.length){ el.innerHTML = '<p class="p-sm p-muted">Sin reseñas aún.</p>'; return; }
       el.innerHTML = _renderReviewsList(revs, myId, gUid);
     });
+
+    // Load cultural status (music, book, film, phrase) from profiles table
+    // Only attempt if gUid looks like a UUID (36-char hex)
+    _initSupabase();
+    if(sbClient && gUid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gUid)){
+      sbClient.from('profiles')
+        .select('status_music,status_book,status_phrase,status_film')
+        .eq('id', gUid).limit(1)
+        .then(function(res){
+          if(!res || !res.data || !res.data[0]) return;
+          var p = res.data[0];
+          var items = [
+            p.status_music  ? '<div style="display:flex;align-items:baseline;gap:6px;font-size:13px;color:var(--ink3);line-height:1.5"><span style="min-width:18px">🎵</span><span>'+_escHtml(p.status_music)+'</span></div>'  : '',
+            p.status_film   ? '<div style="display:flex;align-items:baseline;gap:6px;font-size:13px;color:var(--ink3);line-height:1.5"><span style="min-width:18px">🎬</span><span>'+_escHtml(p.status_film)+'</span></div>'   : '',
+            p.status_book   ? '<div style="display:flex;align-items:baseline;gap:6px;font-size:13px;color:var(--ink3);line-height:1.5"><span style="min-width:18px">📖</span><span>'+_escHtml(p.status_book)+'</span></div>'   : '',
+            p.status_phrase ? '<div style="display:flex;align-items:baseline;gap:6px;font-size:13px;color:var(--ink3);line-height:1.5"><span style="min-width:18px">💬</span><span style="font-style:italic">'+_escHtml(p.status_phrase)+'</span></div>' : ''
+          ].filter(Boolean);
+          if(items.length && csEl && csCard){
+            csEl.innerHTML = items.join('<div style="height:7px"></div>');
+            csCard.style.display = '';
+          }
+        }).catch(function(){});
+    }
   })();
 }
 
@@ -1955,33 +1985,51 @@ function _subscribeSeekerRequest(reqId){
 }
 
 // ── GUARDIAN REQUEST LISTENER (guardian side) ──────────────────
-var _guardianReqCh = null;
-var _pendingGdReq  = null;
+var _guardianReqCh   = null;
+var _guardianPollTimer = null;
+var _pendingGdReq    = null;
+
+function _checkPendingGuardianRequests(){
+  if(!sbClient || safeLS('get','velo_is_guardian') !== 'true') return;
+  if(document.getElementById('gdReqOv')) return; // already showing one
+  var myId = _myUserId();
+  if(!myId || myId.startsWith('guest')) return;
+  sbClient.from('guardian_requests').select('*')
+    .eq('guardian_id', myId).eq('kind','direct').eq('status','pending')
+    .order('created_at',{ascending:false}).limit(1)
+    .then(function(res){
+      if(res && res.data && res.data.length) _showGuardianRequest(res.data[0]);
+    }).catch(function(){});
+}
 
 function _startGuardianReqListener(){
   _initSupabase();
   if(!sbClient) return;
   if(safeLS('get','velo_is_guardian') !== 'true') return;
   var myId = _myUserId();
-  if(!myId || myId === 'guest') return;
-  // Catch pending requests that arrived while offline
-  sbClient.from('guardian_requests').select('*')
-    .eq('guardian_id', myId).eq('kind','direct').eq('status','pending')
-    .order('created_at',{ascending:false}).limit(1)
-    .then(function(res){
-      if(res && res.data && res.data.length) _showGuardianRequest(res.data[0]);
-    });
-  if(_guardianReqCh) return;
-  // No server-side filter — client-side check is more reliable without REPLICA IDENTITY FULL
-  _guardianReqCh = sbClient.channel('velo:gdreq:all')
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'guardian_requests'},function(payload){
-      var r = payload.new||{};
-      if(r.guardian_id === myId && r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
-    }).subscribe();
+  if(!myId || myId.startsWith('guest')) return;
+  // Immediate check for pending requests (catches requests that arrived while offline)
+  _checkPendingGuardianRequests();
+  // Realtime subscription for new requests
+  if(!_guardianReqCh){
+    _guardianReqCh = sbClient.channel('velo:gdreq:all')
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'guardian_requests'},function(payload){
+        var r = payload.new||{};
+        if(r.guardian_id === myId && r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
+      })
+      .subscribe(function(status, err){
+        if(status !== 'SUBSCRIBED') console.warn('[guardian req listener] status:', status, err||'');
+      });
+  }
+  // Polling fallback every 20s — catches requests if Realtime drops
+  if(!_guardianPollTimer){
+    _guardianPollTimer = setInterval(_checkPendingGuardianRequests, 20000);
+  }
 }
 
 function _stopGuardianReqListener(){
   if(_guardianReqCh && sbClient){ try{ sbClient.removeChannel(_guardianReqCh); }catch(e){} _guardianReqCh = null; }
+  if(_guardianPollTimer){ clearInterval(_guardianPollTimer); _guardianPollTimer = null; }
 }
 
 function _showGuardianRequest(req){
