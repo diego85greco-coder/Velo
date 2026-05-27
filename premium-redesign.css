@@ -1,0 +1,525 @@
+/* ══════════════════════════════════════════════════════════════════════
+   VELO PREMIUM — REDISEÑO EDITORIAL
+   premium-redesign.css
+   ───────────────────────────────────────────────────────────────────────
+   Capa visual que se monta ENCIMA de premium.css.
+   No cambia ningún ID ni handler de JS — solo reestiliza.
+   Cargar después de premium.css en <head>.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 0. tokens adicionales (no pisan los existentes) ────────────── */
+:root {
+  --r-ink: #1a201d;
+  --r-ink-soft: #4a5249;
+  --r-glass-bg: rgba(255,251,239,.72);
+  --r-glass-bord: rgba(27,94,58,.10);
+  --r-glass-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 8px 30px rgba(40, 45, 30, 0.06);
+  --r-sage-glow: rgba(116, 198, 157, 0.35);
+  --r-gold-soft: rgba(232, 200, 121, 0.16);
+  --r-rust: #b86b3a;
+  --r-easing: cubic-bezier(.2,.8,.2,1);
+}
+
+/* ── 1. ambient body — más calmo, menos foto bg ───────────────── */
+body {
+  background:
+    radial-gradient(circle at 8% 12%, var(--r-sage-glow) 0%, transparent 45%),
+    radial-gradient(circle at 92% 88%, var(--r-gold-soft) 0%, transparent 50%),
+    linear-gradient(180deg, #f9f4e2 0%, #f6efd9 60%, #ece4c8 100%) !important;
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(108deg, transparent 30%, rgba(255,255,255,.30) 38%, transparent 46%),
+    linear-gradient(118deg, transparent 50%, rgba(255,255,255,.20) 58%, transparent 66%);
+  mix-blend-mode: overlay;
+  z-index: -1;
+}
+
+/* ── 2. SIDEBAR — pill, colapsada por defecto, expande on hover ── */
+@media (min-width: 1024px) {
+  .p-sidebar {
+    width: 80px !important;
+    border-radius: 36px !important;
+    background: var(--r-glass-bg) !important;
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    border: 1px solid var(--r-glass-bord) !important;
+    box-shadow: var(--r-glass-shadow) !important;
+    margin: 20px 0 20px 20px;
+    height: calc(100vh - 40px) !important;
+    transition: width .35s var(--r-easing);
+    overflow: hidden;
+    padding: 18px 12px !important;
+    position: sticky;
+    top: 20px;
+  }
+  .p-sidebar:hover {
+    width: 240px !important;
+    box-shadow: 0 16px 50px rgba(40,45,30,.12) !important;
+  }
+  .p-sidebar-logo { justify-content: center; padding: 4px 0 18px !important; }
+  .p-sidebar-logo-img { max-width: 44px !important; }
+
+  .p-sidebar-section {
+    opacity: 0;
+    transition: opacity .25s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    padding: 14px 14px 6px !important;
+    font-size: 9.5px !important;
+    letter-spacing: 1.8px !important;
+  }
+  .p-sidebar:hover .p-sidebar-section { opacity: 1; transition-delay: .12s; }
+
+  .p-sn-item {
+    border-radius: 100px !important;
+    padding: 9px 14px !important;
+    gap: 14px !important;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: background .25s ease, color .2s ease !important;
+  }
+  .p-sn-icon {
+    width: 22px !important;
+    flex-shrink: 0;
+    font-size: 18px !important;
+  }
+  .p-sn-label {
+    opacity: 0;
+    transition: opacity .25s ease;
+    transition-delay: 0s;
+  }
+  .p-sidebar:hover .p-sn-label { opacity: 1; transition-delay: .1s; }
+  .p-sn-item.active {
+    background: var(--sage) !important;
+    color: white !important;
+    box-shadow: 0 4px 14px var(--r-sage-glow) !important;
+  }
+  .p-sn-item.active::before { display: none !important; } /* esconder la barrita lateral, ya no la necesitamos */
+  .p-sn-item:hover { background: rgba(116,198,157,.12) !important; }
+  .p-sn-item.active:hover { background: var(--sage) !important; }
+
+  .p-sidebar-footer {
+    opacity: 1;
+    padding: 12px 8px 0 !important;
+  }
+  .p-sidebar:not(:hover) .p-sidebar-footer > button:first-child { display: none !important; }
+  .p-sidebar:not(:hover) .p-user-info { display: none !important; }
+
+  .p-user-mini {
+    border-radius: 100px !important;
+    padding: 6px !important;
+  }
+  .p-user-av {
+    width: 36px !important; height: 36px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, var(--sage), var(--sage2)) !important;
+    color: white !important;
+    font-size: 14px !important;
+    font-weight: 600;
+  }
+
+  /* shift main content to make room for the pill sidebar */
+  .p-main-content { margin-left: 16px; }
+}
+
+/* ── 3. HOME — header editorial XXL + greeting ─────────────────── */
+.home-header {
+  padding: 18px 20px 14px !important;
+}
+.home-header h1.p-title#homeGreetTxt {
+  font-family: 'Cormorant Garamond', serif !important;
+  font-weight: 300 !important;
+  font-size: clamp(36px, 5vw, 64px) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -1.2px !important;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.home-header .p-label {
+  font-size: 11px !important;
+  letter-spacing: 2.5px !important;
+  text-transform: uppercase;
+  color: var(--sage3) !important;
+}
+.home-header .p-label::before { content: '— '; }
+
+/* Time-of-day icon next to greeting */
+.r-time-icon {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -10px;
+}
+.r-time-icon svg {
+  width: 48px; height: 48px;
+  animation: rTimeFloat 6s ease-in-out infinite;
+  filter: drop-shadow(0 4px 14px rgba(255, 217, 102, .4));
+}
+.r-time-icon.is-afternoon svg { filter: drop-shadow(0 4px 14px rgba(244, 142, 60, .4)); }
+.r-time-icon.is-night svg { filter: drop-shadow(0 4px 14px rgba(232, 200, 121, .35)); }
+@keyframes rTimeFloat {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-5px) rotate(3deg); }
+}
+
+/* ── 4. Greeting bar (avatar + mood + mi estado) ────────────────── */
+.home-greeting {
+  background: var(--r-glass-bg) !important;
+  border: 1px solid var(--r-glass-bord) !important;
+  border-radius: 22px !important;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: var(--r-glass-shadow) !important;
+  margin: 0 16px 16px;
+}
+.home-av {
+  width: 52px !important; height: 52px !important;
+  background: linear-gradient(135deg, var(--sage), var(--sage2)) !important;
+  color: white !important;
+  border-radius: 50% !important;
+  font-size: 22px !important;
+  font-weight: 600;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 14px var(--r-sage-glow);
+  position: relative;
+}
+
+/* edit pencil for name */
+.r-name-edit {
+  background: transparent;
+  border: none;
+  color: var(--ink4);
+  padding: 2px;
+  margin-left: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .2s ease, color .2s ease;
+  vertical-align: middle;
+}
+.home-greeting:hover .r-name-edit { opacity: 1; }
+.r-name-edit:hover { color: var(--sage); }
+.r-name-edit svg { width: 12px; height: 12px; }
+#homeUserName.editing {
+  background: rgba(116, 198, 157, .12);
+  border: 1px solid var(--sage);
+  border-radius: 5px;
+  outline: none;
+  padding: 1px 5px;
+}
+
+/* ── 5. Daily quote — más editorial ─────────────────────────────── */
+#homeDailyQuote {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(200,165,96,.18), transparent 50%),
+    var(--r-glass-bg) !important;
+  border: 1px solid var(--r-glass-bord) !important;
+  border-radius: 22px !important;
+  padding: 24px 28px 20px !important;
+  position: relative;
+  overflow: hidden;
+}
+#homeDailyQuote::after {
+  content: '';
+  position: absolute;
+  top: -20%; right: -10%;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,200,121,.18), transparent 60%);
+  pointer-events: none;
+}
+#homeDailyQuoteText {
+  font-size: 19px !important;
+  font-weight: 300 !important;
+  line-height: 1.35 !important;
+  text-align: left !important;
+  color: var(--ink) !important;
+  max-width: 85%;
+  position: relative; z-index: 1;
+}
+#homeDailyQuoteAuthor {
+  font-size: 11px !important;
+  text-align: left !important;
+  margin-top: 10px !important;
+  letter-spacing: 1.5px !important;
+}
+
+/* ── 6. SOS button — pulsing icon ────────────────────────────────── */
+.p-btn--sos.p-btn--sm {
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #d73a3a, #9b1f1f) !important;
+  color: white !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0 !important;
+  box-shadow: 0 4px 14px rgba(215, 58, 58, .3) !important;
+  position: relative;
+  border: none !important;
+}
+.p-btn--sos.p-btn--sm::before {
+  content: '🆘';
+  font-size: 18px !important;
+}
+.p-btn--sos.p-btn--sm::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid #d73a3a;
+  opacity: 0;
+  animation: rSosPulse 2.2s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes rSosPulse {
+  0% { opacity: .7; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+.p-btn--sos.p-btn--sm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(215, 58, 58, .45) !important;
+}
+
+/* ── 7. Bell & favorites — alineadas con el SOS ─────────────────── */
+.home-header #homeBellBtn,
+.home-header button[onclick="pGoTo('contacts')"] {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  background: var(--r-glass-bg) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--r-glass-bord) !important;
+  box-shadow: var(--r-glass-shadow) !important;
+  font-size: 18px !important;
+  transition: transform .2s ease;
+}
+.home-header #homeBellBtn:hover,
+.home-header button[onclick="pGoTo('contacts')"]:hover {
+  transform: translateY(-2px);
+}
+
+/* ── 8. Guardian toggle in header — pill segmented ───────────────── */
+#homeGuardianBtn {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 8px 14px !important;
+  border-radius: 100px !important;
+  border: 1px solid var(--r-glass-bord) !important;
+  background: var(--r-glass-bg) !important;
+  color: var(--ink) !important;
+  transition: all .25s ease;
+}
+#homeGuardianBtn.active,
+#homeGuardianBtn[data-active="true"] {
+  background: var(--sage) !important;
+  color: white !important;
+  border-color: var(--sage) !important;
+  box-shadow: 0 4px 14px var(--r-sage-glow) !important;
+}
+
+/* ── 9. Status toggle (homeStatusToggle) — segmented look ─────── */
+#homeStatusToggle {
+  margin: 0 16px 12px !important;
+  padding: 0 !important;
+}
+#homeStatusToggle button,
+#homeStatusToggle .status-pill,
+#homeStatusToggle [class*="status"] {
+  padding: 7px 16px !important;
+  border-radius: 100px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+/* ── 10. Feature cards — cristal smoke + sin emoji-frame ────────── */
+.p-card.p-card--feature {
+  background: var(--r-glass-bg) !important;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--r-glass-bord) !important;
+  border-radius: 22px !important;
+  box-shadow: var(--r-glass-shadow) !important;
+  padding: 22px 22px !important;
+  transition: transform .35s var(--r-easing), box-shadow .35s ease !important;
+}
+.p-card.p-card--feature.fc-mint,
+.p-card.p-card--feature.fc-sage {
+  background: linear-gradient(135deg, var(--r-glass-bg), rgba(207, 226, 211, .55)) !important;
+}
+.p-card.p-card--feature.fc-ocean {
+  background: linear-gradient(135deg, var(--r-glass-bg), rgba(168, 212, 232, .35)) !important;
+}
+.p-card.p-card--feature.fc-lav {
+  background: linear-gradient(135deg, var(--r-glass-bg), rgba(196, 181, 232, .35)) !important;
+}
+.p-card.p-card--feature.fc-warm {
+  background: linear-gradient(135deg, var(--r-glass-bg), rgba(255, 200, 80, .25)) !important;
+}
+.p-card.p-card--feature:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(40, 45, 30, .10) !important;
+}
+.p-card--feature .p-card-icon {
+  font-size: 28px !important;
+  display: inline-flex !important;
+  width: 44px; height: 44px;
+  align-items: center; justify-content: center;
+  background: rgba(255, 251, 239, .4);
+  border-radius: 14px;
+  margin-bottom: 14px !important;
+  border: 1px solid rgba(0,0,0,.04);
+}
+.p-card--feature .p-card-title {
+  font-family: 'Cormorant Garamond', serif !important;
+  font-weight: 400 !important;
+  font-size: 22px !important;
+  letter-spacing: -.3px;
+  margin-bottom: 6px !important;
+}
+.p-card--feature .p-card-sub {
+  font-size: 13px !important;
+  color: var(--ink3) !important;
+}
+
+/* ── 11. Wide cards (Velo IA, donation) — same treatment ───────── */
+.home-wide-card,
+.p-page#pg-home .p-card[onclick*="calm-ai"],
+.p-page#pg-home .p-card[onclick*="donate-cta"] {
+  border-radius: 22px !important;
+  border: 1px solid var(--r-glass-bord) !important;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+
+/* ── 12. Buttons — premium primary ───────────────────────────────── */
+.p-btn--primary {
+  background: var(--sage) !important;
+  box-shadow: 0 4px 16px var(--r-sage-glow) !important;
+  letter-spacing: .2px;
+}
+.p-btn--primary:hover {
+  background: var(--sage2) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--r-sage-glow) !important;
+}
+.p-btn--secondary {
+  background: var(--r-glass-bg) !important;
+  border: 1px solid var(--r-glass-bord) !important;
+  color: var(--ink) !important;
+}
+.p-btn--secondary:hover {
+  background: rgba(116, 198, 157, .10) !important;
+  border-color: var(--sage4) !important;
+}
+
+/* ── 13. Topbar mobile — más limpio ─────────────────────────────── */
+@media (max-width: 767px) {
+  .p-topbar {
+    backdrop-filter: blur(20px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
+    background: var(--r-glass-bg) !important;
+    border-bottom: 1px solid var(--r-glass-bord) !important;
+  }
+  .home-header h1.p-title#homeGreetTxt {
+    font-size: clamp(28px, 8vw, 38px) !important;
+  }
+  .r-time-icon svg { width: 36px; height: 36px; }
+}
+
+/* ── 14. Página interna headers (.p-page-hdr) — editorial ──────── */
+.p-page-hdr .p-title {
+  font-family: 'Cormorant Garamond', serif !important;
+  font-weight: 300 !important;
+  font-size: clamp(28px, 4vw, 44px) !important;
+  letter-spacing: -.8px !important;
+}
+.p-page-hdr .p-label {
+  font-size: 11px !important;
+  letter-spacing: 2.5px !important;
+  color: var(--sage3) !important;
+}
+
+/* ── 15. .p-back-btn — más sutil ─────────────────────────────────── */
+.p-back-btn {
+  background: var(--r-glass-bg) !important;
+  border: 1px solid var(--r-glass-bord) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  transition: transform .2s ease;
+}
+.p-back-btn:hover { transform: translateX(-2px); }
+
+/* ── 16. Landing hero — editorial XXL ────────────────────────────── */
+.land-hero-content {
+  text-align: center;
+}
+.land-hero-sub {
+  font-family: 'Cormorant Garamond', serif !important;
+  font-weight: 300;
+  font-size: clamp(20px, 2.5vw, 30px) !important;
+  line-height: 1.35 !important;
+  font-style: italic;
+  color: var(--ink2) !important;
+}
+
+/* ── 17. Inputs premium ──────────────────────────────────────────── */
+.p-input, .p-textarea {
+  background: var(--r-glass-bg) !important;
+  border: 1px solid var(--r-glass-bord) !important;
+  border-radius: 14px !important;
+  font-family: 'Jost', sans-serif !important;
+  transition: border-color .2s ease, box-shadow .2s ease !important;
+}
+.p-input:focus, .p-textarea:focus {
+  border-color: var(--sage) !important;
+  box-shadow: 0 0 0 3px rgba(116, 198, 157, .15) !important;
+}
+
+/* ── 18. Mood emoji breathing ────────────────────────────────────── */
+.quick-mood-emoji {
+  transition: transform .2s ease;
+}
+.quick-mood-emoji:hover {
+  transform: scale(1.15);
+}
+.quick-mood-emoji.selected {
+  transform: scale(1.25);
+  filter: drop-shadow(0 4px 8px var(--r-sage-glow));
+}
+
+/* ── 19. Reveal animation for hero greeting ──────────────────────── */
+.r-word-reveal {
+  display: inline-block;
+  opacity: 0;
+  filter: blur(8px);
+  transform: translateY(8px);
+  animation: rWordReveal .8s var(--r-easing) both;
+}
+.r-word-reveal:nth-child(1) { animation-delay: .15s; }
+.r-word-reveal:nth-child(2) { animation-delay: .30s; }
+.r-word-reveal:nth-child(3) { animation-delay: .45s; }
+@keyframes rWordReveal {
+  to { opacity: 1; filter: blur(0); transform: none; }
+}
+
+/* ── 20. Reduced motion ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
