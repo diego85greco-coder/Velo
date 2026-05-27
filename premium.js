@@ -43,6 +43,7 @@ var _pendingGuardianPost = null; // post object guardian clicked "Acompañar" on
 var _pendingGuardianReqId = null; // ID of the guardian_request row sent (to cancel only that row)
 var _dmRtCh      = null;   // realtime channel direct_messages (per-thread)
 var _dmInboxCh   = null;   // realtime channel direct_messages (global inbox listener)
+var _dmPollTmr   = null;   // polling fallback for global DM inbox
 var _favsList     = null;   // cached favorites array (loaded lazily)
 var _prevChatStatus = null; // status saved before entering any chat (restored on exit)
 var _inActiveChat   = false; // true while user is in any live chat session
@@ -1959,29 +1960,51 @@ function _closeGuardianWaitSheet(){
 function pCancelGuardianWait(reqId){
   _closeGuardianWaitSheet();
   if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
+  if(_seekerPollTmr){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; }
   if(sbClient && reqId){
     sbClient.from('guardian_requests').update({status:'cancelled'}).eq('id',reqId).then(function(){}).catch(function(){});
   }
   pToast('🌿','Solicitud cancelada');
 }
 
+function _handleSeekerReqRow(row, reqId){
+  if(String(row.id) !== String(reqId)) return;
+  if(row.status === 'accepted'){
+    if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
+    if(_seekerPollTmr){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; }
+    if(!document.getElementById('gdWaitOv')) return; // already handled
+    _closeGuardianWaitSheet();
+    _openGuardianChat(row.guardian_id, row.guardian_name||'Guardián', (_gcPeer&&_gcPeer.av)||'🌿', reqId, 'seeker');
+  } else if(row.status === 'rejected' || row.status === 'declined'){
+    if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
+    if(_seekerPollTmr){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; }
+    if(!document.getElementById('gdWaitOv')) return;
+    _closeGuardianWaitSheet();
+    pToast('🌿','El guardián no puede acompañarte ahora. Probá con otro 💚');
+  }
+}
+
 function _subscribeSeekerRequest(reqId){
   if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
+  if(_seekerPollTmr){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; }
   if(!sbClient) return;
+  // Realtime listener
   _gcSeekerCh = sbClient.channel('velo:gdreq:'+reqId)
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'guardian_requests'},function(payload){
-      var row = payload.new||{};
-      if(String(row.id) !== String(reqId)) return;
-      if(row.status === 'accepted'){
-        if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
-        _closeGuardianWaitSheet();
-        _openGuardianChat(row.guardian_id, row.guardian_name||'Guardián', (_gcPeer&&_gcPeer.av)||'🌿', reqId, 'seeker');
-      } else if(row.status === 'rejected'){
-        if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
-        _closeGuardianWaitSheet();
-        pToast('🌿','El guardián no puede acompañarte ahora. Probá con otro 💚');
-      }
-    }).subscribe();
+      _handleSeekerReqRow(payload.new||{}, reqId);
+    })
+    .subscribe(function(status, err){
+      if(status !== 'SUBSCRIBED') console.warn('[seeker req listener] status:', status, err||'');
+    });
+  // Polling fallback every 8s — catches acceptance if Realtime drops
+  _seekerPollTmr = setInterval(function(){
+    if(!document.getElementById('gdWaitOv')){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; return; }
+    if(!sbClient) return;
+    sbClient.from('guardian_requests').select('*').eq('id', reqId).limit(1)
+      .then(function(res){
+        if(res && res.data && res.data[0]) _handleSeekerReqRow(res.data[0], reqId);
+      }).catch(function(){});
+  }, 8000);
 }
 
 // ── GUARDIAN REQUEST LISTENER (guardian side) ──────────────────
@@ -2086,8 +2109,10 @@ function pRejectGuardianRequest(){
 var _gcPeer   = null;   // { id, name, av } — the other party
 var _gcReqId  = null;   // guardian_requests row id
 var _gcRole   = null;   // 'seeker' | 'guardian'
-var _gcRtCh   = null;   // realtime channel
-var _gcSeekerCh = null; // seeker's request-status channel
+var _gcRtCh        = null;   // realtime channel
+var _gcSeekerCh    = null;   // seeker's request-status channel
+var _seekerPollTmr = null;   // polling fallback for seeker wait
+var _gcPollTmr     = null;   // polling fallback for guardian chat messages
 
 function _openGuardianChat(peerId, peerName, peerAv, reqId, role){
   _prevChatStatus = _presenceStatus();
@@ -2137,15 +2162,24 @@ async function _gcRender(){
 
 function _gcSubscribe(){
   if(_gcRtCh && sbClient){ try{ sbClient.removeChannel(_gcRtCh); }catch(e){} _gcRtCh = null; }
+  if(_gcPollTmr){ clearInterval(_gcPollTmr); _gcPollTmr = null; }
   if(!sbClient || !_gcPeer) return;
   var myId = _myUserId();
   var rel = function(m){
     return (m.from_id===myId && m.to_id===_gcPeer.id) || (m.from_id===_gcPeer.id && m.to_id===myId);
   };
+  // Realtime channel
   _gcRtCh = sbClient.channel('velo:gc:'+myId+':'+_gcPeer.id)
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages'},function(p){ if(rel(p.new||{})) _gcRender(); })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'direct_messages'},function(p){ if(rel(p.new||{})) _gcRender(); })
-    .subscribe();
+    .subscribe(function(status, err){
+      if(status !== 'SUBSCRIBED') console.warn('[gc subscribe] status:', status, err||'');
+    });
+  // Polling fallback every 6s — reloads messages if Realtime drops
+  _gcPollTmr = setInterval(function(){
+    if(!_gcPeer || !sbClient){ clearInterval(_gcPollTmr); _gcPollTmr = null; return; }
+    _gcRender();
+  }, 6000);
 }
 
 function pSendGuardianMsg(){
@@ -2190,6 +2224,7 @@ function _bumpProfileCounter(field, value){
 
 function pEndGuardianChat(){
   if(_gcRtCh && sbClient){ try{ sbClient.removeChannel(_gcRtCh); }catch(e){} _gcRtCh = null; }
+  if(_gcPollTmr){ clearInterval(_gcPollTmr); _gcPollTmr = null; }
   if(_gcReqId && sbClient){
     sbClient.from('guardian_requests').update({status:'ended'}).eq('id',_gcReqId).then(function(){}).catch(function(){});
   }
@@ -7204,13 +7239,14 @@ function _rejectDMRequest(fromId, fromName){
 }
 
 // Global DM listener — shows popup toast when a new DM arrives while in another section
+var _dmLastChecked = null; // ISO timestamp of last poll (so we only surface new messages)
 function _startGlobalDMListener(){
   if(_dmInboxCh) return; // already subscribed
   var myId = safeLS('get','velo_user_id')||'';
   if(!myId || !sbClient) return;
-  _dmInboxCh = sbClient.channel('velo:dm:inbox:'+myId)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages'},function(payload){
-      var m = payload.new||{};
+  _dmLastChecked = new Date().toISOString();
+
+  function _handleDMPayload(m, myId){
       if(m.to_id !== myId) return;
       var curPage = document.querySelector('.p-page.active');
       var curId = curPage ? curPage.id : '';
@@ -7263,7 +7299,31 @@ function _startGlobalDMListener(){
       unread[m.from_id] = (unread[m.from_id]||0)+1;
       safeLS('set','velo_dm_unread', JSON.stringify(unread));
       _updateFavBadge();
-    }).subscribe();
+  }
+
+  _dmInboxCh = sbClient.channel('velo:dm:inbox:'+myId)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages'},function(payload){
+      _handleDMPayload(payload.new||{}, myId);
+    })
+    .subscribe(function(status, err){
+      if(status !== 'SUBSCRIBED') console.warn('[dm inbox listener] status:', status, err||'');
+    });
+
+  // Polling fallback every 15s — surfaces unread DMs if Realtime drops
+  if(_dmPollTmr){ clearInterval(_dmPollTmr); _dmPollTmr = null; }
+  _dmPollTmr = setInterval(function(){
+    if(!sbClient || !myId) return;
+    var since = _dmLastChecked || new Date(Date.now()-30000).toISOString();
+    _dmLastChecked = new Date().toISOString();
+    sbClient.from('direct_messages').select('*')
+      .eq('to_id', myId).eq('read', false)
+      .gte('created_at', since)
+      .order('created_at',{ascending:true}).limit(20)
+      .then(function(res){
+        if(!res || !res.data) return;
+        res.data.forEach(function(m){ _handleDMPayload(m, myId); });
+      }).catch(function(){});
+  }, 15000);
 }
 
 function _showDMToast(fromId, fromName, fromAv, text){
