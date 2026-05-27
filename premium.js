@@ -6233,8 +6233,8 @@ async function pSaveProfile(){
   if(sbClient && uid){
     // Handle username update if changed
     if(newUname && newUname !== curUname){
-      if(newUname.length < 5 || newUname.length > 12){
-        pToast('⚠️','El @usuario debe tener entre 5 y 12 caracteres'); return;
+      if(newUname.length < 5 || newUname.length > 20){
+        pToast('⚠️','El @usuario debe tener entre 5 y 20 caracteres'); return;
       }
       // Check uniqueness
       try{
@@ -6289,8 +6289,8 @@ function pCheckUsername(val){
     if(statusEl) statusEl.innerHTML = val.length > 0 ? '<span style="color:#E05C5C">Mínimo 5 caracteres</span>' : '';
     return;
   }
-  if(val.length > 12){
-    if(statusEl) statusEl.innerHTML = '<span style="color:#E05C5C">Máximo 12 caracteres</span>';
+  if(val.length > 20){
+    if(statusEl) statusEl.innerHTML = '<span style="color:#E05C5C">Máximo 20 caracteres</span>';
     return;
   }
   if(statusEl) statusEl.innerHTML = '<span style="color:var(--ink4)">Verificando…</span>';
@@ -6313,8 +6313,8 @@ async function pSaveUsername(){
   var inputEl = document.getElementById('pickUsernameInput');
   if(!inputEl) return;
   var val = inputEl.value.toLowerCase().replace(/[^a-z0-9.\-_]/g,'').trim();
-  if(!val || val.length < 5 || val.length > 12){
-    pToast('⚠️','El @usuario debe tener entre 5 y 12 caracteres'); return;
+  if(!val || val.length < 5 || val.length > 20){
+    pToast('⚠️','El @usuario debe tener entre 5 y 20 caracteres'); return;
   }
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
@@ -6355,7 +6355,7 @@ function pCheckEditUsername(val){
   if(inputEl && inputEl.value !== val) inputEl.value = val;
   if(!val){ if(statusEl) statusEl.innerHTML = ''; return; }
   if(val.length < 5){ if(statusEl) statusEl.innerHTML = '<span style="color:#E05C5C">Mínimo 5 caracteres</span>'; return; }
-  if(val.length > 12){ if(statusEl) statusEl.innerHTML = '<span style="color:#E05C5C">Máximo 12 caracteres</span>'; return; }
+  if(val.length > 20){ if(statusEl) statusEl.innerHTML = '<span style="color:#E05C5C">Máximo 20 caracteres</span>'; return; }
   if(statusEl) statusEl.innerHTML = '<span style="color:var(--ink4)">Verificando…</span>';
   clearTimeout(_editUsernameCheckTimer);
   _editUsernameCheckTimer = setTimeout(async function(){

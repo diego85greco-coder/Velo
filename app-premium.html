@@ -14,8 +14,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260527-134">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260527-134">
+  <link rel="stylesheet" href="premium.css?v=20260527-135">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260527-135">
 </head>
 <body>
 
@@ -856,13 +856,13 @@
             <p style="font-size:14px;color:var(--ink4);line-height:1.6;margin-bottom:28px">Así te van a encontrar en la comunidad Velo.<br>Podés cambiarlo después desde tu perfil.</p>
             <div style="position:relative;margin-bottom:6px">
               <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--sage2);font-weight:800;pointer-events:none">@</span>
-              <input id="pickUsernameInput" type="text" maxlength="12" placeholder="tuusuario"
+              <input id="pickUsernameInput" type="text" maxlength="20" placeholder="tuusuario"
                 oninput="pCheckUsername(this.value)" autocapitalize="none" autocorrect="off" spellcheck="false"
                 style="width:100%;padding:16px 16px 16px 38px;border-radius:14px;border:2px solid var(--border);font-size:18px;font-family:'Jost',sans-serif;font-weight:600;letter-spacing:.3px;background:var(--cream);color:var(--ink);box-sizing:border-box;transition:border-color .2s"
                 onfocus="this.style.borderColor='var(--sage2)'" onblur="this.style.borderColor='var(--border)'">
             </div>
             <div id="pickUsernameStatus" style="font-size:12px;height:20px;margin-bottom:12px;padding-left:4px;text-align:left"></div>
-            <p style="font-size:11px;color:var(--ink5);margin-bottom:22px;line-height:1.5">5–12 caracteres · solo letras minúsculas, números, punto (.) y guión (-)</p>
+            <p style="font-size:11px;color:var(--ink5);margin-bottom:22px;line-height:1.5">5–20 caracteres · solo letras minúsculas, números, punto (.) y guión (-)</p>
             <button id="pickUsernameBtn" onclick="pSaveUsername()" disabled
               class="p-btn p-btn--primary"
               style="width:100%;padding:16px;font-size:15px;border-radius:14px;opacity:.5;transition:opacity .2s">
@@ -2799,10 +2799,10 @@
       <input class="p-input" type="text" id="editMotto" placeholder="Una frase que te define">
     </div>
     <div class="p-field">
-      <label class="p-field-label">@usuario · 5–12 caracteres</label>
+      <label class="p-field-label">@usuario · 5–20 caracteres</label>
       <div style="position:relative">
         <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--ink3);font-weight:700;pointer-events:none">@</span>
-        <input class="p-input" type="text" id="editUsername" maxlength="12" placeholder="tuusuario" oninput="pCheckEditUsername(this.value)" autocapitalize="none" autocorrect="off" spellcheck="false" style="padding-left:28px">
+        <input class="p-input" type="text" id="editUsername" maxlength="20" placeholder="tuusuario" oninput="pCheckEditUsername(this.value)" autocapitalize="none" autocorrect="off" spellcheck="false" style="padding-left:28px">
       </div>
       <div id="editUsernameStatus" style="font-size:11px;height:16px;margin-top:3px"></div>
     </div>
@@ -2923,8 +2923,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260527-134"></script>
-<script src="premium-redesign.js?v=20260527-134"></script>
+<script src="premium.js?v=20260527-135"></script>
+<script src="premium-redesign.js?v=20260527-135"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
