@@ -1513,99 +1513,131 @@ body.r-dark #pg-dm-chat .feed-send-btn {
 #pg-landing .land-stats .p-label,
 #pg-landing .land-pricing .p-label { color: rgba(116,198,157,.68) !important; }
 
-/* 3. Step cards (Cómo funciona) */
+/* 3. Step cards (Cómo funciona) — glass curvado */
 .land-how-step {
-  background: rgba(255,255,255,.07) !important;
-  border: 1px solid rgba(116,198,157,.22) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  background: rgba(255,255,255,.09) !important;
+  border: 1px solid rgba(116,198,157,.28) !important;
+  border-radius: 22px !important;
+  padding: 20px 20px !important;
+  backdrop-filter: blur(22px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.5) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.14) inset,
+    0 8px 32px rgba(0,0,0,.22) !important;
 }
 .land-how-num {
-  background: rgba(116,198,157,.22) !important;
+  background: rgba(116,198,157,.28) !important;
   color: rgba(255,255,255,.95) !important;
-  border-color: rgba(116,198,157,.38) !important;
+  border-color: rgba(116,198,157,.45) !important;
 }
 .land-how-title { color: rgba(255,255,255,.95) !important; }
-.land-how-desc  { color: rgba(255,255,255,.68) !important; }
+.land-how-desc  { color: rgba(255,255,255,.70) !important; }
 
-/* 4. Whom cards (¿Es VELO para mí?) */
+/* 4. Whom cards (¿Es VELO para mí?) — glass curvado */
 .land-whom-card {
-  background: rgba(255,255,255,.07) !important;
-  border: 1px solid rgba(116,198,157,.20) !important;
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
+  background: rgba(255,255,255,.09) !important;
+  border: 1px solid rgba(116,198,157,.25) !important;
+  border-radius: 24px !important;
+  backdrop-filter: blur(22px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.5) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.13) inset,
+    0 8px 30px rgba(0,0,0,.20) !important;
 }
 .land-whom-title { color: rgba(255,255,255,.95) !important; }
-.land-whom-desc  { color: rgba(255,255,255,.68) !important; }
+.land-whom-desc  { color: rgba(255,255,255,.70) !important; }
 
-/* 5. Feature cards (Todo lo que necesitás) */
+/* 5. Feature cards (Todo lo que necesitás) — glass curvado */
 .land-feat-card {
-  background: rgba(255,255,255,.07) !important;
-  border: 1px solid rgba(116,198,157,.20) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  background: rgba(255,255,255,.09) !important;
+  border: 1px solid rgba(116,198,157,.25) !important;
+  border-radius: 28px !important;
+  backdrop-filter: blur(24px) saturate(1.6) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.15) inset,
+    0 12px 40px rgba(0,0,0,.24) !important;
 }
 #pg-landing .land-feat-card .p-title { color: rgba(255,255,255,.95) !important; }
-#pg-landing .land-feat-card .p-body  { color: rgba(255,255,255,.70) !important; }
+#pg-landing .land-feat-card .p-body  { color: rgba(255,255,255,.72) !important; }
 .land-feat-quote {
   color: rgba(116,198,157,.88) !important;
   border-left-color: rgba(116,198,157,.45) !important;
-  background: rgba(116,198,157,.08) !important;
+  background: rgba(116,198,157,.09) !important;
+  border-radius: 0 10px 10px 0 !important;
 }
 
-/* 6. Diff cards (Qué hace diferente) */
+/* 6. Diff cards (Qué hace diferente) — glass curvado */
 .land-diff-card {
-  background: rgba(255,255,255,.07) !important;
-  border: 1px solid rgba(116,198,157,.20) !important;
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
+  background: rgba(255,255,255,.09) !important;
+  border: 1px solid rgba(116,198,157,.25) !important;
+  border-radius: 22px !important;
+  backdrop-filter: blur(22px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.5) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.13) inset,
+    0 8px 28px rgba(0,0,0,.20) !important;
 }
 .land-diff-title { color: rgba(255,255,255,.95) !important; }
-.land-diff-desc  { color: rgba(255,255,255,.68) !important; }
+.land-diff-desc  { color: rgba(255,255,255,.70) !important; }
 
 /* 7. FAQ */
-.land-faq-item { border-color: rgba(116,198,157,.18) !important; }
+.land-faq-item {
+  border-color: rgba(116,198,157,.18) !important;
+  border-radius: 18px !important;
+  overflow: hidden;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.10) inset, 0 4px 18px rgba(0,0,0,.15) !important;
+}
 .land-faq-q {
   color: rgba(255,255,255,.88) !important;
-  background: rgba(116,198,157,.08) !important;
-  border-color: rgba(116,198,157,.20) !important;
+  background: rgba(255,255,255,.08) !important;
+  border-color: transparent !important;
+  border-radius: 18px !important;
 }
-.land-faq-q:hover { background: rgba(116,198,157,.15) !important; color: #fff !important; }
+.land-faq-q:hover { background: rgba(116,198,157,.14) !important; color: #fff !important; }
 .land-faq-a {
   color: rgba(255,255,255,.72) !important;
-  background: rgba(116,198,157,.05) !important;
+  background: rgba(116,198,157,.06) !important;
   border-left-color: rgba(116,198,157,.45) !important;
 }
 
 /* 8. Estadísticas y testimoniales */
 .land-stat-card {
-  background: rgba(255,255,255,.07) !important;
-  border: 1px solid rgba(116,198,157,.22) !important;
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
+  background: rgba(255,255,255,.09) !important;
+  border: 1px solid rgba(116,198,157,.25) !important;
+  border-radius: 22px !important;
+  backdrop-filter: blur(20px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.13) inset, 0 6px 24px rgba(0,0,0,.18) !important;
 }
 .land-stat-num { color: rgba(116,198,157,.98) !important; }
 .land-stat-lbl { color: rgba(255,255,255,.68) !important; }
 .land-test-card {
-  background: rgba(255,255,255,.07) !important;
-  border: 1px solid rgba(116,198,157,.20) !important;
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
+  background: rgba(255,255,255,.09) !important;
+  border: 1px solid rgba(116,198,157,.22) !important;
+  border-radius: 24px !important;
+  backdrop-filter: blur(20px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.13) inset, 0 8px 28px rgba(0,0,0,.20) !important;
 }
 .land-test-quote { color: rgba(255,255,255,.82) !important; }
 #pg-landing .land-test-author div { color: rgba(255,255,255,.75) !important; }
 
 /* 9. Planes */
 .land-plan {
-  background: rgba(255,255,255,.07) !important;
-  border: 1px solid rgba(116,198,157,.22) !important;
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
+  background: rgba(255,255,255,.09) !important;
+  border: 1px solid rgba(116,198,157,.25) !important;
+  border-radius: 26px !important;
+  backdrop-filter: blur(22px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.5) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.13) inset, 0 8px 32px rgba(0,0,0,.22) !important;
 }
 .land-plan--featured {
-  background: rgba(116,198,157,.14) !important;
-  border-color: rgba(116,198,157,.42) !important;
-  box-shadow: 0 8px 32px rgba(116,198,157,.18) !important;
+  background: rgba(116,198,157,.15) !important;
+  border-color: rgba(116,198,157,.45) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.15) inset, 0 12px 40px rgba(116,198,157,.22) !important;
 }
 .land-plan h3.p-title  { color: rgba(255,255,255,.95) !important; }
 .land-plan-price       { color: rgba(116,198,157,.98) !important; }
