@@ -1915,3 +1915,90 @@ body.r-dark #pg-help .p-card {
   z-index: 1;
 }
 
+
+/* ══════════════════════════════════════════════════════════════════════
+   v162 — Gold italic, warm CTA, large heading, teal sidebar, live dot
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── v162: Gold italic subtitle ──────────────────────────────────── */
+body.r-dark .r-hero-italic,
+body.r-dark .r-hero-italic em {
+  color: #c8a040 !important;
+  font-family: 'Crimson Pro', 'Cormorant Garamond', serif !important;
+  font-size: clamp(24px, 4.2vw, 52px) !important;
+  font-weight: 300 !important;
+}
+
+/* ── v162: Larger desktop hero heading ────────────────────────────── */
+@media (min-width: 860px) {
+  .r-hero-v2 h1.p-title {
+    font-size: clamp(42px, 5.5vw, 72px) !important;
+    font-family: 'Crimson Pro', 'Cormorant Garamond', serif !important;
+    font-weight: 300 !important;
+    letter-spacing: -1px !important;
+    line-height: 1.05 !important;
+    color: var(--ink) !important;
+  }
+}
+
+/* ── v162: Warm CTA button in dark mode hero ──────────────────────── */
+body.r-dark .r-hero-actions .p-btn--primary {
+  background: rgba(200,158,56,.85) !important;
+  color: #1a1000 !important;
+  border-color: rgba(200,158,56,.45) !important;
+  box-shadow: 0 4px 20px rgba(200,158,56,.28) !important;
+}
+body.r-dark .r-hero-actions .p-btn--primary:hover {
+  background: rgba(218,175,68,.95) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(200,158,56,.38) !important;
+}
+body.r-dark .r-hero-actions .p-btn--secondary {
+  background: rgba(255,255,255,.06) !important;
+  border: 1.5px solid rgba(255,255,255,.18) !important;
+  color: rgba(255,255,255,.88) !important;
+}
+
+/* ── v162: Teal active sidebar item ───────────────────────────────── */
+@media (min-width: 1024px) {
+  body.r-dark .p-sn-item.active {
+    background: rgba(79,158,168,.22) !important;
+    color: #5dcabb !important;
+    box-shadow: 0 0 0 1.5px rgba(79,158,168,.35), 0 4px 14px rgba(79,158,168,.22) !important;
+  }
+  body.r-dark .p-sn-item.active:hover {
+    background: rgba(79,158,168,.28) !important;
+  }
+  body.r-dark .p-sn-item:hover {
+    background: rgba(255,255,255,.06) !important;
+  }
+}
+
+/* ── v162: Live dot animation ─────────────────────────────────────── */
+.live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c8a040;
+  animation: pulse-dot 2.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.45; transform: scale(0.8); }
+}
+
+/* ── v162: "JARDÍN DE HOY" label style ───────────────────────────── */
+#homeHeroLabel {
+  font-family: 'Inter', 'Jost', sans-serif !important;
+}
+body.r-dark #homeHeroLabel {
+  color: rgba(200,158,56,.78) !important;
+}
+
+/* ── v162: Daily quote card label gold dot ────────────────────────── */
+#homeDailyQuote .p-label,
+#homeDailyQuote [style*="letter-spacing"] {
+  color: rgba(200,158,56,.80) !important;
+}

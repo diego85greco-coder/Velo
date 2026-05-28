@@ -148,13 +148,14 @@
       initParticles('landingCanvas',  60, 0.5);
       initParticles('loginCanvas',    40, 0.4);
       initParticles('registerCanvas', 40, 0.4);
-      initParticles('homeBgCanvas',   60, 0.48, '116,198,157');
+      initParticles('homeBgCanvas',   60, 0.35, '200,158,56');  // warm gold
       initParticles('profileBgCanvas', 45, 0.42, '109,204,63');
       initParticles('helpBgCanvas',    35, 0.38, '109,204,63');
     }, 300);
 
     initGuardianLabelObserver();
     initSurveyDismissal();
+    enrichGreeting();
   }
 
   /* ── 5. Sync valores dinámicos del hero v2 ──────────────────── */
@@ -320,6 +321,34 @@ function initGuardianLabelObserver() {
   }
   sync();
   new MutationObserver(sync).observe(gBtn, { childList: true, characterData: true, subtree: true });
+}
+
+/* ── Greeting enrichment: append user's first name ───────────────── */
+function enrichGreeting() {
+  var greetEl = document.getElementById('homeGreetTxt');
+  var nameEl  = document.getElementById('homeUserName');
+  if (!greetEl || !nameEl) return;
+
+  function tryAppend() {
+    var name = (nameEl.textContent || '').trim().split(' ')[0];
+    if (!name || name.length < 2) return;
+    var current = (greetEl.firstChild && greetEl.firstChild.nodeType === 3)
+      ? greetEl.firstChild.textContent.trim()
+      : greetEl.textContent.trim();
+    if (current.includes(name) || current.includes(',')) return;
+    var newText = current.replace(/\.$/, '') + ', ' + name + '.';
+    var icon = greetEl.querySelector('.r-time-icon');
+    if (greetEl.firstChild && greetEl.firstChild.nodeType === 3) {
+      greetEl.firstChild.textContent = newText + ' ';
+    } else {
+      greetEl.textContent = newText + ' ';
+      if (icon) greetEl.appendChild(icon);
+    }
+  }
+
+  new MutationObserver(function() { tryAppend(); })
+    .observe(nameEl, { childList: true, characterData: true, subtree: true });
+  setTimeout(tryAppend, 600);
 }
 
 /* ── Survey banner: cookie-based 24h dismissal ────────────────────── */
