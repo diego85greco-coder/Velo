@@ -2061,3 +2061,70 @@ body.r-dark .p-topbar-logo-img {
 #pg-help .p-card div {
   color: inherit;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v164 — Contraste global: legibilidad en todas las secciones
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── DARK MODE: Ink variables más claros para texto secundario ─────── */
+body.r-dark {
+  --ink3: #b0d4be !important;   /* era #94b8a4 — más legible en fondo oscuro */
+  --ink4: #8ab8a0 !important;   /* era #6e9a84 — sube contraste */
+  --ink5: #6a9e86 !important;   /* era #4a7060 — subía demasiado bajo */
+}
+
+/* ── DARK MODE: Tarjetas generales (dark-seeker en feeds, círculos) ── */
+body.r-dark .dark-seeker {
+  background: rgba(15,40,25,.72) !important;
+  border-color: rgba(80,160,110,.22) !important;
+  color: var(--ink) !important;
+}
+body.r-dark .dark-seeker:hover {
+  background: rgba(20,50,32,.82) !important;
+}
+
+/* ── LIGHT MODE: dark-seeker fuera de la página help (opacidad mínima) */
+.dark-seeker {
+  background: rgba(255,255,255,.80) !important;
+  border: 1px solid rgba(80,160,100,.18) !important;
+  color: var(--ink) !important;
+}
+.dark-seeker:hover {
+  background: rgba(255,255,255,.95) !important;
+}
+
+/* ── Feature cards: subtítulos más visibles en fondos oscuros (fc-night) */
+.p-card--feature.fc-night .p-card-title { color: rgba(255,255,255,.95) !important; }
+.p-card--feature.fc-night .p-card-sub   { color: rgba(255,255,255,.72) !important; }
+
+/* ── DARK MODE: Feature cards — texto siempre legible ─────────────── */
+body.r-dark .p-card--feature .p-card-title { color: var(--ink)  !important; }
+body.r-dark .p-card--feature .p-card-sub   { color: var(--ink3) !important; }
+body.r-dark .p-card--feature .p-label      { color: var(--ink4) !important; }
+
+/* ── DARK MODE: Texto de cuerpo en todas las páginas ──────────────── */
+body.r-dark .p-subtitle,
+body.r-dark .p-body,
+body.r-dark .p-sm           { color: var(--ink2) !important; }
+body.r-dark .p-xs,
+body.r-dark .p-muted        { color: var(--ink3) !important; }
+
+/* ── LIGHT MODE: párrafos y subtítulos en hero y cards ─────────────── */
+.r-hero-sub                 { color: var(--ink2) !important; }
+.p-card-sub, .p-card--feature .p-card-sub { color: var(--ink3) !important; }
+
+/* ── Home grid mini-cards: texto siempre legible ──────────────────── */
+body.r-dark [onclick*="pGoTo"] > div[style*="font-size:16px"],
+body.r-dark [onclick*="pGoTo"] > div[style*="font-size:18px"] {
+  color: var(--ink) !important;
+}
+body.r-dark [onclick*="pGoTo"] > div[style*="font-size:11px"] {
+  color: var(--ink3) !important;
+}
+
+/* ── DARK MODE: Citas diarias y misc text ─────────────────────────── */
+body.r-dark #homeDailyQuoteText { color: var(--ink2) !important; }
+
+/* ── Placeholder de textareas en dark mode — más visible ──────────── */
+body.r-dark .dark-ta::placeholder,
+body.r-dark textarea::placeholder { color: rgba(255,255,255,.50) !important; }
