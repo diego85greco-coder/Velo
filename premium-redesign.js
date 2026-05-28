@@ -181,14 +181,17 @@
     if (statEl && guardianN !== null) statEl.textContent = guardianN;
     // Async: query Supabase guardian_presence for real-time count
     if (typeof sbClient !== 'undefined' && sbClient && (gcEl || statEl)) {
-      var cutoff = new Date(Date.now() - 8*60*1000).toISOString();
+      var myUid = (typeof safeLS === 'function') ? safeLS('get','velo_user_id') : localStorage.getItem('velo_user_id');
+      var cutoff = new Date(Date.now() - 4*60*1000).toISOString(); // 4-min window — more accurate "right now"
       sbClient.from('guardian_presence')
         .select('user_id,status', {count:'exact'})
         .neq('status','offline')
         .gte('last_seen', cutoff)
         .then(function(res){
           if(res && res.data){
-            var n = res.data.filter(function(r){ return r.status !== 'incognito'; }).length;
+            var n = res.data.filter(function(r){
+              return r.status !== 'incognito' && r.user_id !== myUid; // exclude self
+            }).length;
             if(gcEl) gcEl.textContent = n;
             if(statEl) statEl.textContent = n;
           }

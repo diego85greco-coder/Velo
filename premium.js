@@ -368,7 +368,14 @@ async function _sbSyncProfile(userId){
   sbClient.from('user_favorites').select('id',{count:'exact',head:true}).eq('fav_id', userId)
     .then(function(fr){
       var newTotal = fr.count || 0;
+      var prevCount = parseInt(safeLS('get','velo_fav_me_count')||'-1', 10);
       safeLS('set','velo_fav_me_count', String(newTotal));
+      // Only show badge if count INCREASED vs last known value.
+      // If this is the first session after localStorage clear (prevCount === -1),
+      // auto-mark all as seen so stale favorites don't trigger a notification.
+      if(prevCount === -1 || newTotal <= prevCount){
+        safeLS('set','velo_fav_me_seen', String(newTotal));
+      }
       _updateFavBadge();
     }).catch(function(){});
   // Restore guardian bio/tags/status from guardian_presence
@@ -6974,7 +6981,7 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
     +'</div>'
     + counters + likes + revHtml
     +(guardianId&&!isAnon ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'quickProfileOv\').remove();pOpenGuardian('+_jsAttr(guardianId)+')">Solicitar acompañamiento 💚</button><div style="height:8px"></div>' : '')
-    +(!isAnon && uid ? '<button id="qpFavBtn" class="p-btn p-btn--'+(isFav?'primary':'secondary')+' p-btn--md p-btn--full" onclick="pToggleFavFromProfile('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+')">'+(isFav?'⭐ En tus favoritos':'☆ ¿Marcar como favorito? Activá la estrella')+'</button><div style="height:8px"></div>' : '')
+    +(!isAnon && uid && uid !== _qpMyId ? '<button id="qpFavBtn" class="p-btn p-btn--'+(isFav?'primary':'secondary')+' p-btn--md p-btn--full" onclick="pToggleFavFromProfile('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+')">'+(isFav?'⭐ En tus favoritos':'☆ Agregar a favoritos')+'</button><div style="height:8px"></div>' : '')
     +(!isAnon && uid ? '<button class="p-btn p-btn--secondary p-btn--sm p-btn--full" onclick="pOpenDM('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+');document.getElementById(\'quickProfileOv\').remove()">💬 Enviar mensaje</button><div style="height:8px"></div>' : '')
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'quickProfileOv\').remove()">Cerrar</button>';
 }
