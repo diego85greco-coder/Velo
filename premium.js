@@ -1229,30 +1229,44 @@ async function _loadDailyMotivationalQuote(){
     }catch(e){ textEl.textContent = cached; }
     return;
   }
-  // Pick a different quote each day (rotate by date)
+
+  // Load quote history to avoid repeating authors
+  var history = [];
+  try{ history = JSON.parse(safeLS('get','velo_quote_history')||'[]'); }catch(e){}
+  var usedAuthors = history.slice(0,14).map(function(q){ return q.author; }).filter(Boolean);
+
   var d = new Date();
   var dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  var avoidClause = usedAuthors.length
+    ? 'NO uses ninguno de estos autores que ya se mostraron recientemente: '+usedAuthors.join(', ')+'. '
+    : '';
   var prompt = 'Dame una frase célebre inspiradora, positiva y motivadora de un autor, escritor, filósofo, líder histórico, '
     +'novelista famoso o personaje conocido. Hoy es '+dias[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+'. '
-    +'Elige un autor DIFERENTE cada vez (no repitas los mismos). '
-    +'La frase debe ser sobre superación, vida, esperanza, alegría, coraje o amor. '
+    +avoidClause
+    +'Elige autores variados: filósofos griegos, escritores latinoamericanos, líderes históricos, científicos, artistas, '
+    +'poetas. La frase debe ser sobre superación, vida, esperanza, alegría, coraje o amor. '
     +'Devolvé SOLO un objeto JSON con este formato exacto (sin markdown, sin explicación): '
     +'{"text":"la frase traducida al español","author":"Nombre del autor"}. '
-    +'La frase debe tener entre 10 y 30 palabras. Que sea una frase real, no inventada.';
-  var raw = await _geminiCall(prompt, { temperature:0.7, maxOutputTokens:120 });
+    +'La frase debe tener entre 10 y 30 palabras. Que sea una frase real y conocida, no inventada.';
+
+  var raw = await _geminiCall(prompt, { temperature:0.85, maxOutputTokens:120 });
   var quote = null;
   if(raw){
     try{
-      // Extract JSON from response (may have extra text)
       var jsonMatch = raw.match(/\{[\s\S]*"text"[\s\S]*"author"[\s\S]*\}/);
       if(jsonMatch) quote = JSON.parse(jsonMatch[0]);
     }catch(e){}
   }
   if(!quote || !quote.text || !quote.author){
-    // Rotate fallback by date so every day is different
-    var idx = (d.getDate() - 1 + d.getMonth() * 31) % _dailyQuoteFallbacks.length;
+    // Rotate fallback by date — different day = different quote
+    var idx = (d.getDate() - 1 + d.getMonth() * 31 + d.getFullYear()) % _dailyQuoteFallbacks.length;
     quote = _dailyQuoteFallbacks[idx];
   }
+
+  // Save to history (keep last 30 days)
+  history.unshift({ text: quote.text, author: quote.author, date: today });
+  safeLS('set', 'velo_quote_history', JSON.stringify(history.slice(0,30)));
+
   safeLS('set', cacheKey, JSON.stringify(quote));
   textEl.textContent   = quote.text;
   if(authorEl) authorEl.textContent = '— ' + quote.author;
