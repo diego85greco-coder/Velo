@@ -26,6 +26,7 @@ var _geminiUrlIdx = 0;
 
 // ── COMMUNITY REAL-TIME STATE ─────────────────────────────────
 var _sbHappy      = null;   // cached Supabase happy_posts
+var _pendingHappyPost = null; // post just submitted, merged into render until Supabase confirms
 var _sbHelp       = null;   // cached Supabase help_posts
 var _sbBottles    = null;   // cached Supabase bottles
 var _sbCircleMsgs = [];     // cached Supabase circle_messages
@@ -5612,6 +5613,12 @@ async function pRenderHappy(){
   if(sbRows !== null){
     usingSB = true;
     posts = sbRows.map(_sbHappyRow).filter(function(h){ return !_isBlocked(h.userId); });
+    // Merge post that was just submitted; Supabase may not have returned it yet
+    if(_pendingHappyPost){
+      var alreadyIn = posts.some(function(p){ return p.id === _pendingHappyPost.id; });
+      if(!alreadyIn) posts.unshift(_pendingHappyPost);
+      else _pendingHappyPost = null;
+    }
     _sbHappy = posts;
   } else {
     posts = _processHappyQueue();
@@ -5969,11 +5976,11 @@ function pSelHappyEmoji(el, emoji){
 function _compressImg(dataURL, cb){
   var image = new Image();
   image.onload = function(){
-    var maxPx = 900, w = image.width, h = image.height;
+    var maxPx = 600, w = image.width, h = image.height;
     if(w > maxPx || h > maxPx){ var r = Math.min(maxPx/w, maxPx/h); w = Math.round(w*r); h = Math.round(h*r); }
     var c = document.createElement('canvas'); c.width = w; c.height = h;
     c.getContext('2d').drawImage(image, 0, 0, w, h);
-    cb(c.toDataURL('image/jpeg', 0.72));
+    cb(c.toDataURL('image/jpeg', 0.62));
   };
   image.onerror = function(){ cb(dataURL); };
   image.src = dataURL;
@@ -6032,15 +6039,20 @@ async function pSubmitHappyPost(){
     _happyStatIncr('posts');
     if(post.text) _geminiModerateContent(post.text, 'muro-felicidad');
     pToast('☀️','¡Publicado en el Muro! Desaparece en 24h 💛');
-    // Insert to Supabase so all users see it (await so pRenderHappy sees the new post)
+    // Insert to Supabase so all users see it
     _initSupabase();
     if(sbClient){
-      await sbClient.from('happy_posts').insert({ id:post.id,
+      // Never send base64 avatars to Supabase — just use emoji to keep payload small
+      var sbAv = (post.av||'').startsWith('data:') ? '🧑' : (post.av||'');
+      var ins = await sbClient.from('happy_posts').insert({ id:post.id,
         user_id: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon',
-        user_name: post.name, user_av: post.av||'', emoji: post.emoji||'☀️',
+        user_name: post.name, user_av: sbAv, emoji: post.emoji||'☀️',
         text: post.text||'', photo: post.photo||'', anon: !!isAnon, reactions: post.reactions
-      }).catch(function(){});
+      });
+      if(ins && ins.error) console.error('[happy insert]', ins.error.message, ins.error);
     }
+    // Inject into pending so pRenderHappy shows it instantly (even if Supabase is slow/fails)
+    _pendingHappyPost = post;
   } else {
     var queue = _happyQueueLoad();
     queue.push(post);
@@ -6354,7 +6366,7 @@ function _renderBadgesGrid(){
   var tierRows = tiers.map(function(t){
     var reached = t.name === 'Bronce' ? _getVisitDayCount() >= 5 : convs >= t.min;
     var isCurrent = badge.name === t.name;
-    var minLabel = t.name === 'Bronce' ? '5 días de uso' : (t.min > 0 ? t.min + ' conv.' : '');
+    var minLabel = t.name === 'Bronce' ? '' : (t.min > 0 ? t.min + ' conv.' : '');
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)">'
       +'<span style="font-size:22px;opacity:'+(reached?1:.35)+'">'+t.icon+'</span>'
       +'<div style="flex:1;min-width:0">'
