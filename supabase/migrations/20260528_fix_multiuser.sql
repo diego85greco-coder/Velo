@@ -69,8 +69,35 @@ ALTER TABLE public.help_posts
   ALTER COLUMN user_id TYPE text USING user_id::text;
 
 -- ─────────────────────────────────────────────────────────────
+-- 3b. direct_messages — chat 1-a-1 (Sala de Ayuda + Favoritos)
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.direct_messages (
+  id         uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  from_id    text NOT NULL,
+  from_name  text,
+  from_av    text,
+  to_id      text NOT NULL,
+  text       text,
+  read       boolean DEFAULT false,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.direct_messages
+  ALTER COLUMN from_id TYPE text USING from_id::text,
+  ALTER COLUMN to_id   TYPE text USING to_id::text;
+
+-- ─────────────────────────────────────────────────────────────
 -- 4. Open RLS policies — allow anon + authenticated everywhere
 -- ─────────────────────────────────────────────────────────────
+
+-- direct_messages
+ALTER TABLE public.direct_messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "allow_all"             ON public.direct_messages;
+DROP POLICY IF EXISTS "dm_select"             ON public.direct_messages;
+DROP POLICY IF EXISTS "dm_select_participant" ON public.direct_messages;
+DROP POLICY IF EXISTS "dm_insert"             ON public.direct_messages;
+DROP POLICY IF EXISTS "dm_insert_own"         ON public.direct_messages;
+CREATE POLICY "dm_all" ON public.direct_messages FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 -- guardian_requests
 ALTER TABLE public.guardian_requests ENABLE ROW LEVEL SECURITY;
@@ -136,6 +163,7 @@ BEGIN
   BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.help_posts;        EXCEPTION WHEN duplicate_object THEN NULL; END;
   BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.happy_posts;       EXCEPTION WHEN duplicate_object THEN NULL; END;
   BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.guardian_presence; EXCEPTION WHEN duplicate_object THEN NULL; END;
+  BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.direct_messages;   EXCEPTION WHEN duplicate_object THEN NULL; END;
 END $$;
 
 ALTER TABLE public.guardian_requests  REPLICA IDENTITY FULL;
@@ -143,3 +171,4 @@ ALTER TABLE public.bottles            REPLICA IDENTITY FULL;
 ALTER TABLE public.help_posts         REPLICA IDENTITY FULL;
 ALTER TABLE public.happy_posts        REPLICA IDENTITY FULL;
 ALTER TABLE public.guardian_presence  REPLICA IDENTITY FULL;
+ALTER TABLE public.direct_messages    REPLICA IDENTITY FULL;
