@@ -143,12 +143,12 @@
     syncHeroStats();
     setInterval(syncHeroStats, 5000);
 
-    // Particle animations
+    // Particle animations — green for light bg, warm gold for dark bg
     setTimeout(function() {
       initParticles('landingCanvas', 60, 0.5);
       initParticles('loginCanvas', 40, 0.4);
       initParticles('registerCanvas', 40, 0.4);
-      initParticles('homeHeroCanvas', 45, 0.38);
+      initParticles('homeBgCanvas', 55, 0.30, '116,198,157');
     }, 300);
   }
 
@@ -255,10 +255,11 @@ function rToggleDarkMode() {
 }
 
 /* ── Particle animation — firefly style ─────────────────────────── */
-function initParticles(canvasId, count, maxOpacity) {
+function initParticles(canvasId, count, maxOpacity, color) {
   var canvas = document.getElementById(canvasId);
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
+  var particleColor = color || '232,213,163';
   var particles = [];
   function resize() {
     canvas.width = canvas.offsetWidth || canvas.parentElement.offsetWidth || 600;
@@ -289,8 +290,8 @@ function initParticles(canvasId, count, maxOpacity) {
       if (p.y < 0) p.y = canvas.height;
       if (p.y > canvas.height) p.y = 0;
       var gr = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3);
-      gr.addColorStop(0, 'rgba(232,213,163,' + p.op + ')');
-      gr.addColorStop(1, 'rgba(232,213,163,0)');
+      gr.addColorStop(0, 'rgba(' + particleColor + ',' + p.op + ')');
+      gr.addColorStop(1, 'rgba(' + particleColor + ',0)');
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
       ctx.fillStyle = gr;

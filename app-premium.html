@@ -14,8 +14,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260527-156">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260527-156">
+  <link rel="stylesheet" href="premium.css?v=20260527-157">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260527-157">
 </head>
 <body>
 
@@ -877,17 +877,17 @@
 
       <!-- ══ HOME ════════════════════════════════════════════════ -->
       <div class="p-page" id="pg-home">
+        <canvas id="homeBgCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas>
         <div class="p-page-scroll">
-          <div class="home-header r-hero-v2" style="position:relative">
-            <canvas id="homeHeroCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;border-radius:inherit"></canvas>
+          <div class="home-header r-hero-v2">
             <div class="r-hero-left">
               <div class="r-hero-status-row">
                 <div id="homeStatusToggle" style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap"></div>
                 <div id="homeGuardianWrap" style="display:none;align-items:center;gap:6px;flex-shrink:0">
-                  <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:6px 14px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Actívame</button>
+                  <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;border:1.5px solid rgba(27,94,58,.22);background:rgba(255,255,255,.55);color:var(--ink3);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Actívame</button>
                 </div>
               </div>
-              <div class="p-label">— de hoy &nbsp;·&nbsp; <span id="homeDateTxt"></span></div>
+              <div style="font-size:9px;color:var(--ink5);letter-spacing:.5px;margin:-4px 0 8px;opacity:.8">Estado · activá el escudo para modo guardián</div>
               <h1 class="p-title" id="homeGreetTxt">Buenos días</h1>
               <h2 class="r-hero-italic"><em id="homeGreetSub">Hoy la comunidad está contigo.</em></h2>
               <p class="r-hero-sub" id="homeGreetParagraph">
@@ -903,7 +903,7 @@
                 <button id="rDarkToggleBtnHero" onclick="rToggleDarkMode()" aria-label="Modo oscuro/claro" class="r-hero-icon-btn" title="Modo oscuro/claro"><span id="rDarkToggleIcon">🌙</span></button>
                 <button onclick="pGoTo('inbox')" title="Notificaciones y buzón" id="homeBellBtn" class="r-hero-icon-btn">🔔<span id="homeBellBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
                 <button onclick="pGoTo('contacts')" title="Contactos favoritos" class="r-hero-icon-btn">⭐<span id="favCountBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
-                <button class="p-btn p-btn--sos p-btn--sm" onclick="pOpenSOS()">🆘 SOS</button>
+                <button class="r-hero-icon-btn r-sos-icon-btn" onclick="pOpenSOS()" title="SOS">🆘</button>
                 <button class="p-topbar-btn" style="display:none" id="homeMenuBtn" onclick="toggleMobileMenu()">☰</button>
               </div>
               <div class="r-hero-stats">
@@ -2928,8 +2928,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260527-156"></script>
-<script src="premium-redesign.js?v=20260527-156"></script>
+<script src="premium.js?v=20260527-157"></script>
+<script src="premium-redesign.js?v=20260527-157"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

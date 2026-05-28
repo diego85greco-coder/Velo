@@ -1040,10 +1040,11 @@ function _loadHomeData(){
   var isOn  = safeLS('get','velo_is_guardian') === 'true';
   if(gWrap) gWrap.style.display = 'flex';
   if(gBtn){
-    gBtn.style.background   = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
-    gBtn.style.borderColor  = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
-    gBtn.style.color        = isOn ? 'var(--sage2)' : 'var(--ink4)';
-    gBtn.textContent        = isOn ? '🛡️ Activado' : '🛡️ Actívame';
+    var _gs = _gBtnStyle(isOn);
+    gBtn.style.background  = _gs.bg;
+    gBtn.style.borderColor = _gs.border;
+    gBtn.style.color       = _gs.color;
+    gBtn.textContent       = isOn ? '🛡️ Activado' : '🛡️ Actívame';
   }
   // Update label
   var gLabel = gWrap ? gWrap.querySelector('span') : null;
@@ -1536,9 +1537,10 @@ function pHomeToggleGuardian(){
     var gBtn  = document.getElementById('homeGuardianBtn');
     var gWrap = document.getElementById('homeGuardianWrap');
     if(gBtn){
-      gBtn.style.background  = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
-      gBtn.style.borderColor = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
-      gBtn.style.color       = isOn ? 'var(--sage2)' : 'var(--ink4)';
+      var _gs = _gBtnStyle(isOn);
+      gBtn.style.background  = _gs.bg;
+      gBtn.style.borderColor = _gs.border;
+      gBtn.style.color       = _gs.color;
       gBtn.textContent       = isOn ? '🛡️ Activado' : '🛡️ Actívame';
     }
     var gLabel = gWrap ? gWrap.querySelector('span') : null;
@@ -1590,9 +1592,10 @@ function pSaveGuardianSetup(){
     var gBtn  = document.getElementById('homeGuardianBtn');
     var gWrap = document.getElementById('homeGuardianWrap');
     if(gBtn){
-      gBtn.style.background  = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
-      gBtn.style.borderColor = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
-      gBtn.style.color       = isOn ? 'var(--sage2)' : 'var(--ink4)';
+      var _gs = _gBtnStyle(isOn);
+      gBtn.style.background  = _gs.bg;
+      gBtn.style.borderColor = _gs.border;
+      gBtn.style.color       = _gs.color;
       gBtn.textContent       = isOn ? '🛡️ Activado' : '🛡️ Actívame';
     }
     var gLabel = gWrap ? gWrap.querySelector('span') : null;
@@ -1674,19 +1677,38 @@ function pSetUserStatus(status){
   _renderHomeStatusToggle();
 }
 
+
+function _gBtnStyle(isOn){
+  var dark = document.body.classList.contains('r-dark');
+  return {
+    bg:     isOn ? 'rgba(116,198,157,.18)' : (dark ? 'rgba(255,255,255,.07)'  : 'rgba(255,255,255,.55)'),
+    border: isOn ? 'rgba(116,198,157,.48)' : (dark ? 'rgba(255,255,255,.22)'  : 'rgba(27,94,58,.22)'),
+    color:  isOn ? (dark ? 'rgba(116,198,157,.95)' : 'var(--sage2)') : (dark ? 'rgba(255,255,255,.70)' : 'var(--ink3)')
+  };
+}
 function _renderHomeStatusToggle(){
   var el = document.getElementById('homeStatusToggle');
   if(!el) return;
   var st = safeLS('get','velo_user_status') || 'disponible';
-  var pill = function(val, emoji, label, activeColor, activeBg){
+  var dark = document.body.classList.contains('r-dark');
+  var pill = function(val, emoji, label, aColorD, aBgD, aColorL, aBgL){
     var active = st === val;
-    var border = active ? activeColor : 'rgba(255,255,255,.22)';
-    var bg     = active ? activeBg   : 'rgba(255,255,255,.07)';
-    var color  = active ? activeColor : 'rgba(255,255,255,.70)';
+    var border, bg, color;
+    if(dark){
+      border = active ? aColorD : 'rgba(255,255,255,.22)';
+      bg     = active ? aBgD   : 'rgba(255,255,255,.07)';
+      color  = active ? aColorD : 'rgba(255,255,255,.70)';
+    } else {
+      border = active ? aColorL : 'rgba(27,94,58,.20)';
+      bg     = active ? aBgL   : 'rgba(255,255,255,.55)';
+      color  = active ? aColorL : 'var(--ink3)';
+    }
     return '<button onclick="pSetUserStatus(\''+val+'\')" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap;border:1.5px solid '+border+';background:'+bg+';color:'+color+'">'+emoji+' '+label+'</button>';
   };
-  el.innerHTML = pill('disponible','🟢','Disponible','rgba(116,198,157,.85)','rgba(116,198,157,.18)')
-    + pill('ocupado','🟡','Ocupado','rgba(220,176,60,.85)','rgba(220,176,60,.14)');
+  el.innerHTML = pill('disponible','🟢','Disponible',
+    'rgba(116,198,157,.85)','rgba(116,198,157,.18)','var(--sage2)','var(--sage7)')
+    + pill('ocupado','🟡','Ocupado',
+    'rgba(220,176,60,.85)','rgba(220,176,60,.14)','#B89000','rgba(200,162,0,.12)');
 }
 
 function _renderMyStatusBar(){

@@ -1709,35 +1709,70 @@ body.r-dark #pg-dm-chat .feed-send-btn {
   white-space: nowrap !important;
 }
 
-/* ── SOS button: plain emoji, no red circle ──────────────────────── */
-#pg-home .p-btn--sos.p-btn--sm,
-.r-hero-actions-top .p-btn--sos.p-btn--sm {
-  width: 40px !important;
-  height: 40px !important;
-  background: rgba(255,255,255,.08) !important;
-  border: 1px solid rgba(255,255,255,.18) !important;
-  box-shadow: none !important;
-  animation: none !important;
+/* ── SOS icon button: red-tinted circle matching icon row ───────── */
+.r-sos-icon-btn {
+  background: rgba(180,40,40,.72) !important;
+  border-color: rgba(255,120,120,.28) !important;
+  color: #fff !important;
+  font-size: 20px !important;
 }
-#pg-home .p-btn--sos.p-btn--sm::after,
-.r-hero-actions-top .p-btn--sos.p-btn--sm::after {
-  display: none !important;
+.r-sos-icon-btn:hover {
+  background: rgba(180,40,40,.90) !important;
 }
 
-/* ── Hero stat: guardian count visible on dark bg ────────────────── */
-.r-hero-stat-val em { color: rgba(116,198,157,.95) !important; }
-.r-hero-stat-lbl { color: rgba(255,255,255,.55) !important; }
-.r-hero-stat { border-right-color: rgba(255,255,255,.15) !important; }
+/* ── Topbar logo: much bigger ────────────────────────────────────── */
+.p-topbar-logo-img {
+  height: 56px !important;
+  width: auto !important;
+  object-fit: contain !important;
+}
 
-/* ── ✨ Mood/status line: visible on dark hero ───────────────────── */
+/* ── Hero stats: adaptive light/dark ─────────────────────────────── */
+.r-hero-stat-val em { color: var(--sage2) !important; }
+.r-hero-stat-lbl { color: var(--ink4) !important; }
+.r-hero-stat { border-right-color: var(--r-glass-bord) !important; }
+body.r-dark .r-hero-stat-val em { color: rgba(116,198,157,.95) !important; }
+body.r-dark .r-hero-stat-lbl { color: rgba(255,255,255,.55) !important; }
+body.r-dark .r-hero-stat { border-right-color: rgba(255,255,255,.14) !important; }
+
+/* ── ✨ Mood line: adaptive light/dark ───────────────────────────── */
 #homeCurrentMoodLine {
+  color: var(--sage2) !important;
+  background: rgba(116,198,157,.10) !important;
+  border-color: rgba(116,198,157,.28) !important;
+}
+body.r-dark #homeCurrentMoodLine {
   color: rgba(255,255,255,.88) !important;
   background: rgba(116,198,157,.14) !important;
-  border-color: rgba(116,198,157,.32) !important;
 }
 
-/* ── Home hero canvas depth ──────────────────────────────────────── */
-.r-hero-v2 > *:not(canvas) { position: relative; z-index: 1; }
+/* ── Guardian button: adaptive light/dark ───────────────────────── */
+#homeGuardianBtn {
+  background: rgba(255,255,255,.55) !important;
+  border-color: rgba(27,94,58,.22) !important;
+  color: var(--ink3) !important;
+}
+#homeGuardianBtn.active, #homeGuardianBtn[data-on="true"] {
+  background: rgba(116,198,157,.18) !important;
+  border-color: rgba(116,198,157,.48) !important;
+  color: var(--sage2) !important;
+}
+body.r-dark #homeGuardianBtn {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.22) !important;
+  color: rgba(255,255,255,.70) !important;
+}
+body.r-dark #homeGuardianBtn.active,
+body.r-dark #homeGuardianBtn[data-on="true"] {
+  background: rgba(116,198,157,.18) !important;
+  border-color: rgba(116,198,157,.48) !important;
+  color: rgba(116,198,157,.95) !important;
+}
+
+/* ── Home page: bg canvas fills full page ───────────────────────── */
+#pg-home { overflow: hidden; }
+#pg-home > canvas { border-radius: 0; }
+.r-hero-v2 { overflow: visible; }
 
 /* ── Auth-left logo: proportional width for dark panel ───────────── */
 .auth-left-content img {
