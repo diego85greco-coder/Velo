@@ -1014,14 +1014,15 @@ body.r-dark .r-section-card {
 }
 .r-lhero-card::before { display: none !important; }
 
-/* 4. Logo — cuadrado 1024x1024, transparencia real */
+/* 4. Logo — cuadrado 1024x1024, high-res → escala sin pixelar */
 .land-hero-logo {
-  height: clamp(140px, 22vw, 210px) !important;
+  height: clamp(200px, 38vw, 320px) !important;
   width: auto !important;
+  image-rendering: -webkit-optimize-contrast;
   filter:
-    drop-shadow(0 0 24px rgba(116,198,157,.55))
-    drop-shadow(0 4px 12px rgba(0,0,0,.50)) !important;
-  margin-bottom: 28px !important;
+    drop-shadow(0 0 28px rgba(116,198,157,.55))
+    drop-shadow(0 4px 14px rgba(0,0,0,.50)) !important;
+  margin-bottom: 12px !important;
 }
 
 /* 5. Línea italic Cormorant — text-shadow fuerte para leer con partículas encima */
