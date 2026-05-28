@@ -14,8 +14,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260527-155">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260527-155">
+  <link rel="stylesheet" href="premium.css?v=20260527-156">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260527-156">
 </head>
 <body>
 
@@ -878,12 +878,13 @@
       <!-- ══ HOME ════════════════════════════════════════════════ -->
       <div class="p-page" id="pg-home">
         <div class="p-page-scroll">
-          <div class="home-header r-hero-v2">
+          <div class="home-header r-hero-v2" style="position:relative">
+            <canvas id="homeHeroCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;border-radius:inherit"></canvas>
             <div class="r-hero-left">
               <div class="r-hero-status-row">
-                <div id="homeStatusToggle" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1"></div>
-                <div id="homeGuardianWrap" style="display:none;align-items:center;gap:6px">
-                  <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:6px 14px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:var(--sage7);color:var(--sage2);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Guardián</button>
+                <div id="homeStatusToggle" style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap"></div>
+                <div id="homeGuardianWrap" style="display:none;align-items:center;gap:6px;flex-shrink:0">
+                  <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:6px 14px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Actívame</button>
                 </div>
               </div>
               <div class="p-label">— de hoy &nbsp;·&nbsp; <span id="homeDateTxt"></span></div>
@@ -1053,7 +1054,7 @@
           <div class="home-wide-card">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
               <div class="p-card p-card--hover" style="padding:16px;cursor:pointer" onclick="pGoTo('professionals')">
-                <span style="font-size:24px;display:block;margin-bottom:7px">🩺</span>
+                <span style="font-size:20px;display:flex;width:44px;height:44px;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.28);border-radius:12px;align-items:center;justify-content:center;margin-bottom:9px">🩺</span>
                 <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink);margin-bottom:3px">Profesionales</div>
                 <div style="font-size:11px;color:var(--ink4)">Terapia · video sesiones</div>
               </div>
@@ -2927,8 +2928,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260527-155"></script>
-<script src="premium-redesign.js?v=20260527-155"></script>
+<script src="premium.js?v=20260527-156"></script>
+<script src="premium-redesign.js?v=20260527-156"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

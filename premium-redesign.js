@@ -148,6 +148,7 @@
       initParticles('landingCanvas', 60, 0.5);
       initParticles('loginCanvas', 40, 0.4);
       initParticles('registerCanvas', 40, 0.4);
+      initParticles('homeHeroCanvas', 45, 0.38);
     }, 300);
   }
 
@@ -202,11 +203,16 @@
     } else {
       document.body.classList.remove('r-dark');
     }
-    // update toggle label (sidebar) and hero icon
     const lbl = document.getElementById('rDarkToggleLbl');
     if (lbl) lbl.textContent = dark ? '☀️ Modo claro' : '🌙 Modo oscuro';
     const icon = document.getElementById('rDarkToggleIcon');
     if (icon) icon.textContent = dark ? '☀️' : '🌙';
+    // Swap logo src based on background (light logo on dark bg, dark logo on light bg)
+    var logoSrc = dark ? 'assets/logo.png' : 'assets/logo-dark.png';
+    var topLogo = document.querySelector('.p-topbar-logo-img');
+    var sideLogo = document.querySelector('.p-sidebar-logo-img');
+    if (topLogo) topLogo.src = logoSrc;
+    if (sideLogo) sideLogo.src = logoSrc;
   }
 
   function initDarkMode() {
@@ -241,6 +247,11 @@ function rToggleDarkMode() {
   if (lbl) lbl.textContent = isDark ? '☀️ Modo claro' : '🌙 Modo oscuro';
   var icon = document.getElementById('rDarkToggleIcon');
   if (icon) icon.textContent = isDark ? '☀️' : '🌙';
+  var logoSrc = isDark ? 'assets/logo.png' : 'assets/logo-dark.png';
+  var topLogo = document.querySelector('.p-topbar-logo-img');
+  var sideLogo = document.querySelector('.p-sidebar-logo-img');
+  if (topLogo) topLogo.src = logoSrc;
+  if (sideLogo) sideLogo.src = logoSrc;
 }
 
 /* ── Particle animation — firefly style ─────────────────────────── */

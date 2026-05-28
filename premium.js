@@ -1043,7 +1043,7 @@ function _loadHomeData(){
     gBtn.style.background   = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
     gBtn.style.borderColor  = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
     gBtn.style.color        = isOn ? 'var(--sage2)' : 'var(--ink4)';
-    gBtn.textContent        = isOn ? '🟢 Guardián' : '🛡️ Guardián';
+    gBtn.textContent        = isOn ? '🛡️ Activado' : '🛡️ Actívame';
   }
   // Update label
   var gLabel = gWrap ? gWrap.querySelector('span') : null;
@@ -1539,7 +1539,7 @@ function pHomeToggleGuardian(){
       gBtn.style.background  = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
       gBtn.style.borderColor = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
       gBtn.style.color       = isOn ? 'var(--sage2)' : 'var(--ink4)';
-      gBtn.textContent       = isOn ? '🟢 Guardián' : '🛡️ Guardián';
+      gBtn.textContent       = isOn ? '🛡️ Activado' : '🛡️ Actívame';
     }
     var gLabel = gWrap ? gWrap.querySelector('span') : null;
     if(gLabel) gLabel.textContent = isOn ? 'Activo' : 'Activarme';
@@ -1593,7 +1593,7 @@ function pSaveGuardianSetup(){
       gBtn.style.background  = isOn ? 'rgba(116,198,157,.2)' : 'var(--sage7)';
       gBtn.style.borderColor = isOn ? 'rgba(116,198,157,.5)' : 'rgba(116,198,157,.25)';
       gBtn.style.color       = isOn ? 'var(--sage2)' : 'var(--ink4)';
-      gBtn.textContent       = isOn ? '🟢 Guardián' : '🛡️ Guardián';
+      gBtn.textContent       = isOn ? '🛡️ Activado' : '🛡️ Actívame';
     }
     var gLabel = gWrap ? gWrap.querySelector('span') : null;
     if(gLabel) gLabel.textContent = isOn ? 'Activo' : 'Activarme';
@@ -1678,15 +1678,15 @@ function _renderHomeStatusToggle(){
   var el = document.getElementById('homeStatusToggle');
   if(!el) return;
   var st = safeLS('get','velo_user_status') || 'disponible';
-  var busy = st === 'ocupado';
   var pill = function(val, emoji, label, activeColor, activeBg){
     var active = st === val;
-    return '<button onclick="pSetUserStatus(\''+val+'\')" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;border:1.5px solid '
-      +(active?activeColor:'var(--border2)')+';background:'+(active?activeBg:'transparent')+';color:'+(active?activeColor:'var(--ink4)')+'">'+emoji+' '+label+'</button>';
+    var border = active ? activeColor : 'rgba(255,255,255,.22)';
+    var bg     = active ? activeBg   : 'rgba(255,255,255,.07)';
+    var color  = active ? activeColor : 'rgba(255,255,255,.70)';
+    return '<button onclick="pSetUserStatus(\''+val+'\')" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap;border:1.5px solid '+border+';background:'+bg+';color:'+color+'">'+emoji+' '+label+'</button>';
   };
-  el.innerHTML = '<span style="font-size:10px;font-weight:700;color:var(--ink2);letter-spacing:.5px;text-transform:uppercase">Mi estado</span>'
-    + pill('disponible','🟢','Disponible','var(--sage2)','var(--sage7)')
-    + pill('ocupado','🟡','Ocupado','#C8A200','rgba(200,162,0,.12)');
+  el.innerHTML = pill('disponible','🟢','Disponible','rgba(116,198,157,.85)','rgba(116,198,157,.18)')
+    + pill('ocupado','🟡','Ocupado','rgba(220,176,60,.85)','rgba(220,176,60,.14)');
 }
 
 function _renderMyStatusBar(){

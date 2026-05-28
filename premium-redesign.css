@@ -61,7 +61,7 @@ body::after {
     box-shadow: 0 16px 50px rgba(40,45,30,.12) !important;
   }
   .p-sidebar-logo { justify-content: center; padding: 4px 0 18px !important; }
-  .p-sidebar-logo-img { max-width: 44px !important; }
+  .p-sidebar-logo-img { max-width: 68px !important; }
 
   .p-sidebar-section {
     opacity: 0;
@@ -1689,6 +1689,55 @@ body.r-dark #pg-dm-chat .feed-send-btn {
 .land-preview-tile .land-preview-tile-lbl { color: rgba(255,255,255,.92) !important; }
 /* Header "Tu espacio Velo" y "todo listo" */
 .land-preview-card > div:first-child span { color: rgba(255,255,255,.82) !important; }
+
+/* ── Status row: single line, all pills together ─────────────────── */
+.r-hero-status-row {
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-bottom: 8px !important;
+}
+#homeStatusToggle {
+  flex-wrap: nowrap !important;
+  flex: unset !important;
+  gap: 6px !important;
+}
+#homeStatusToggle button,
+#homeGuardianBtn {
+  font-size: 11px !important;
+  padding: 5px 12px !important;
+  white-space: nowrap !important;
+}
+
+/* ── SOS button: plain emoji, no red circle ──────────────────────── */
+#pg-home .p-btn--sos.p-btn--sm,
+.r-hero-actions-top .p-btn--sos.p-btn--sm {
+  width: 40px !important;
+  height: 40px !important;
+  background: rgba(255,255,255,.08) !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+#pg-home .p-btn--sos.p-btn--sm::after,
+.r-hero-actions-top .p-btn--sos.p-btn--sm::after {
+  display: none !important;
+}
+
+/* ── Hero stat: guardian count visible on dark bg ────────────────── */
+.r-hero-stat-val em { color: rgba(116,198,157,.95) !important; }
+.r-hero-stat-lbl { color: rgba(255,255,255,.55) !important; }
+.r-hero-stat { border-right-color: rgba(255,255,255,.15) !important; }
+
+/* ── ✨ Mood/status line: visible on dark hero ───────────────────── */
+#homeCurrentMoodLine {
+  color: rgba(255,255,255,.88) !important;
+  background: rgba(116,198,157,.14) !important;
+  border-color: rgba(116,198,157,.32) !important;
+}
+
+/* ── Home hero canvas depth ──────────────────────────────────────── */
+.r-hero-v2 > *:not(canvas) { position: relative; z-index: 1; }
 
 /* ── Auth-left logo: proportional width for dark panel ───────────── */
 .auth-left-content img {
