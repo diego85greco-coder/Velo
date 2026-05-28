@@ -2400,3 +2400,166 @@ body.r-dark .p-page-hdr h2,
 body.r-dark .p-page-hdr .p-title { color: rgba(255,255,255,.95) !important; }
 body.r-dark .p-page-hdr .p-label { color: rgba(200,158,56,.80) !important; }
 body.r-dark .p-page-hdr p { color: rgba(255,255,255,.60) !important; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v166: STATUS PILLS — segmented disponible/ocupado + guardian toggle
+   ══════════════════════════════════════════════════════════════════════ */
+.r-hero-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.r-status-combined-pill {
+  display: inline-flex;
+  background: rgba(255,255,255,.08);
+  border: 1.5px solid rgba(255,255,255,.18);
+  border-radius: 999px;
+  padding: 5px;
+  gap: 2px;
+}
+.r-status-seg {
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,.50);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Inter','Jost',sans-serif;
+  white-space: nowrap;
+  transition: all .2s;
+}
+.r-status-seg.active {
+  background: rgba(116,198,157,.22);
+  color: rgba(255,255,255,.92);
+  box-shadow: 0 0 0 1px rgba(116,198,157,.30);
+}
+.r-status-seg:hover:not(.active) { color: rgba(255,255,255,.72); }
+.r-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.r-status-dot--green {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34,197,94,.80), 0 0 16px rgba(34,197,94,.40);
+}
+.r-status-dot--yellow { background: #EAB308; }
+.r-status-dot--gray   { background: rgba(255,255,255,.28); }
+
+/* Guardian pill */
+.r-guardian-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  border: 1.5px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.68);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Inter','Jost',sans-serif;
+  white-space: nowrap;
+  transition: all .2s;
+}
+.r-guardian-pill:hover { color: rgba(255,255,255,.88); }
+.r-guardian-pill--on {
+  background: rgba(116,198,157,.20);
+  border-color: rgba(116,198,157,.55);
+  color: rgba(255,255,255,.92);
+  box-shadow: 0 0 16px rgba(116,198,157,.25);
+}
+.r-guardian-toggle {
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.20);
+  position: relative;
+  transition: background .22s;
+  flex-shrink: 0;
+}
+.r-guardian-pill--on .r-guardian-toggle { background: #22c55e; }
+.r-guardian-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform .22s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.22);
+}
+.r-guardian-pill--on .r-guardian-knob { transform: translateX(14px); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v166: PROFILE — dark mode badge cards
+   ══════════════════════════════════════════════════════════════════════ */
+body.r-dark .guardian-badge-card {
+  background: rgba(15,40,25,.80) !important;
+  border: 1px solid rgba(80,160,110,.22) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+}
+body.r-dark .guardian-badge-card [style*="color:var(--ink)"],
+body.r-dark .guardian-badge-card [style*="color:var(--sage)"],
+body.r-dark .guardian-badge-card [style*="color:var(--ink4)"],
+body.r-dark .guardian-badge-card [style*="color:var(--ink5)"] {
+  /* text colors are set via inline CSS vars which already resolve in dark mode */
+}
+body.r-dark .guardian-badge-prog {
+  background: rgba(255,255,255,.12) !important;
+}
+body.r-dark .p-badge-row {
+  background: transparent !important;
+}
+body.r-dark .p-badge-ic {
+  background: rgba(116,198,157,.15) !important;
+}
+body.r-dark #pg-profile #profileBadgesGrid {
+  background: transparent !important;
+}
+body.r-dark #pg-profile #profileBadgesGrid > div[class="guardian-badge-card"] {
+  background: rgba(15,40,25,.85) !important;
+}
+/* Status card dark mode */
+body.r-dark #pg-profile #profileStatusCard {
+  background: rgba(15,40,25,.80) !important;
+  border-color: rgba(80,160,110,.22) !important;
+}
+body.r-dark #pg-profile #profileStatusCard [style*="color:var(--ink)"] {
+  color: rgba(255,255,255,.88) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   v166: BOTTOM NAV — reduce height & tighten icon padding
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .p-bottomnav {
+    height: 58px !important;
+  }
+  .p-bn-item {
+    padding: 4px 8px !important;
+    gap: 2px !important;
+  }
+  .p-bn-icon {
+    font-size: 19px !important;
+    line-height: 1 !important;
+  }
+  .p-bn-label {
+    font-size: 7px !important;
+  }
+  /* SOS center button — keep prominent */
+  .p-bn-item.p-bn-sos {
+    padding: 6px 10px !important;
+  }
+}
