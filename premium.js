@@ -1692,25 +1692,28 @@ function _renderHomeStatusToggle(){
   var el = document.getElementById('homeStatusToggle');
   if(!el) return;
   var st = safeLS('get','velo_user_status') || 'disponible';
-  var dark = document.body.classList.contains('r-dark');
-  var pill = function(val, emoji, label, aColorD, aBgD, aColorL, aBgL){
-    var active = st === val;
-    var border, bg, color;
-    if(dark){
-      border = active ? aColorD : 'rgba(255,255,255,.22)';
-      bg     = active ? aBgD   : 'rgba(255,255,255,.07)';
-      color  = active ? aColorD : 'rgba(255,255,255,.70)';
-    } else {
-      border = active ? aColorL : 'rgba(27,94,58,.20)';
-      bg     = active ? aBgL   : 'rgba(255,255,255,.55)';
-      color  = active ? aColorL : 'var(--ink3)';
-    }
-    return '<button onclick="pSetUserStatus(\''+val+'\')" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap;border:1.5px solid '+border+';background:'+bg+';color:'+color+'">'+emoji+' '+label+'</button>';
-  };
-  el.innerHTML = pill('disponible','🟢','Disponible',
-    'rgba(116,198,157,.85)','rgba(116,198,157,.18)','var(--sage2)','var(--sage7)')
-    + pill('ocupado','🟡','Ocupado',
-    'rgba(220,176,60,.85)','rgba(220,176,60,.14)','#B89000','rgba(200,162,0,.12)');
+  var isGuardian = safeLS('get','velo_is_guardian') === 'true';
+
+  // Segmented pill: Disponible | Ocupado
+  var segPill = '<div class="r-status-combined-pill">'
+    +'<button class="r-status-seg'+(st==='disponible'?' active':'')+'" onclick="pSetUserStatus(\'disponible\')">'
+    +'<span class="r-status-dot r-status-dot--'+(st==='disponible'?'green':'gray')+'"></span>Disponible</button>'
+    +'<button class="r-status-seg'+(st==='ocupado'?' active':'')+'" onclick="pSetUserStatus(\'ocupado\')">'
+    +'<span class="r-status-dot r-status-dot--'+(st==='ocupado'?'yellow':'gray')+'"></span>Ocupado</button>'
+    +'</div>';
+
+  // Guardian toggle pill
+  var guardPill = '<button class="r-guardian-pill'+(isGuardian?' r-guardian-pill--on':'')+'" onclick="pHomeToggleGuardian()">'
+    +'<span style="font-size:14px">🛡️</span>'
+    +'<span>Modo Guardián</span>'
+    +'<span class="r-guardian-toggle"><span class="r-guardian-knob"></span></span>'
+    +'</button>';
+
+  el.innerHTML = segPill + guardPill;
+
+  // Hide the old separate guardian button (replaced by guardPill above)
+  var gWrap = document.getElementById('homeGuardianWrap');
+  if(gWrap) gWrap.style.display = 'none';
 }
 
 function _renderMyStatusBar(){
