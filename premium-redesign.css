@@ -2563,3 +2563,75 @@ body.r-dark #pg-profile #profileStatusCard [style*="color:var(--ink)"] {
     padding: 6px 10px !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v167: LOGO — 3× bigger on mobile topbar
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .p-topbar {
+    min-height: 175px !important;
+    padding-top: max(env(safe-area-inset-top,0px), 14px) !important;
+    padding-bottom: 14px !important;
+  }
+  .p-topbar-logo-img {
+    height: 150px !important;
+    max-width: 320px !important;
+    width: auto !important;
+    object-fit: contain !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   v167: LIGHT MODE — daily quote + status pills contrast fixes
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Daily quote author — gold is unreadable on cream in light mode */
+#homeDailyQuoteAuthor {
+  color: var(--sage2) !important;
+}
+body.r-dark #homeDailyQuoteAuthor {
+  color: rgba(200,158,56,.82) !important;
+}
+/* Override the generic letter-spacing rule for light mode only */
+body:not(.r-dark) #homeDailyQuote [style*="letter-spacing"] {
+  color: var(--sage2) !important;
+}
+
+/* Daily quote text — readable dark in light mode */
+body:not(.r-dark) #homeDailyQuoteText {
+  color: var(--ink) !important;
+}
+
+/* ── Status pills — light mode overrides ─────────────────────────── */
+body:not(.r-dark) .r-status-combined-pill {
+  background: rgba(27,94,58,.08) !important;
+  border-color: rgba(27,94,58,.22) !important;
+}
+body:not(.r-dark) .r-status-seg {
+  color: var(--ink3) !important;
+}
+body:not(.r-dark) .r-status-seg.active {
+  background: rgba(27,94,58,.14) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 0 0 1px rgba(27,94,58,.20) !important;
+}
+body:not(.r-dark) .r-status-seg:hover:not(.active) {
+  color: var(--ink2) !important;
+}
+body:not(.r-dark) .r-guardian-pill {
+  background: rgba(27,94,58,.07) !important;
+  border-color: rgba(27,94,58,.22) !important;
+  color: var(--ink3) !important;
+}
+body:not(.r-dark) .r-guardian-pill--on {
+  background: rgba(27,94,58,.14) !important;
+  border-color: rgba(27,94,58,.42) !important;
+  color: var(--ink) !important;
+  box-shadow: 0 0 12px rgba(27,94,58,.18) !important;
+}
+body:not(.r-dark) .r-guardian-toggle {
+  background: rgba(27,94,58,.20) !important;
+}
+body:not(.r-dark) .r-status-dot--gray {
+  background: rgba(27,94,58,.28) !important;
+}
