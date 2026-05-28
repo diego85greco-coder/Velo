@@ -2743,3 +2743,26 @@ body.r-dark #plusCompareOv [style*="--sage7"] p {
     overflow-x: hidden !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v168: INBOX / BUZÓN — dark mode readable cards
+   Cards used a white bg (rgba(255,255,255,.85)) that stayed white in dark
+   mode while text flipped to light via --ink → invisible. Text already uses
+   CSS vars that resolve light in dark mode, so we only fix the surfaces.
+   ══════════════════════════════════════════════════════════════════════ */
+body.r-dark .p-inbox-msg {
+  background: rgba(15,40,25,.80) !important;
+  border-color: rgba(80,160,110,.22) !important;
+}
+body.r-dark .p-inbox-msg:hover {
+  border-color: rgba(116,198,157,.45) !important;
+  background: rgba(18,48,30,.90) !important;
+}
+body.r-dark .p-inbox-msg.unread {
+  background: rgba(20,52,32,.92) !important;
+  border-color: rgba(116,198,157,.40) !important;
+}
+/* Icon tile — keep a soft sage glow instead of light --sage7 */
+body.r-dark .p-inbox-ic {
+  background: rgba(116,198,157,.16) !important;
+}
