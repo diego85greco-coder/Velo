@@ -2128,3 +2128,275 @@ body.r-dark #homeDailyQuoteText { color: var(--ink2) !important; }
 /* ── Placeholder de textareas en dark mode — más visible ──────────── */
 body.r-dark .dark-ta::placeholder,
 body.r-dark textarea::placeholder { color: rgba(255,255,255,.50) !important; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v165 — Legibilidad global: perfil, círculos, sidebar desktop, misc
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── v165: Profesionales card icon — bigger emoji ─────────────────── */
+#pg-home [onclick*="pGoTo('professionals')"] span[style*="font-size:18px"] {
+  font-size: 24px !important;
+}
+
+/* ── v165: Daily quote — remove orphan quote mark, show inline ─────── */
+#homeDailyQuote > div:first-child {
+  display: none !important;
+}
+
+/* ── v165: Guardian sub-label — hidden ─────────────────────────────── */
+#guardianSubLabel { display: none !important; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   PROFILE PAGE — Background & Contrast (light + dark)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Light mode profile: sky blue/celeste background */
+#pg-profile {
+  background: linear-gradient(170deg, #cde8f8 0%, #b8dff5 45%, #a8d4ef 100%) !important;
+}
+#pg-profile .p-page-scroll {
+  background: transparent !important;
+}
+#pg-profile .p-card {
+  background: rgba(255,255,255,.88) !important;
+  border-color: rgba(80,150,210,.20) !important;
+  box-shadow: 0 2px 16px rgba(80,150,210,.10) !important;
+}
+#pg-profile #profileName {
+  color: #0a2040 !important;
+}
+#pg-profile #profileMotto {
+  color: #2a5080 !important;
+}
+#pg-profile #profileUsername {
+  color: #3a6090 !important;
+}
+#pg-profile #profileAv {
+  border-color: rgba(80,150,210,.40) !important;
+}
+#pg-profile .p-field-label { color: #2a4060 !important; }
+#pg-profile .p-input { color: #0a2040 !important; background: rgba(255,255,255,.95) !important; }
+#pg-profile #profileDays, #pg-profile #profileChats,
+#pg-profile #profileHelped, #pg-profile #profileReceived {
+  color: #0a7040 !important;
+}
+
+/* Dark mode profile: deep forest green background */
+body.r-dark #pg-profile {
+  background: linear-gradient(170deg, #0b1c12 0%, #0e2318 55%, #0a1a10 100%) !important;
+}
+body.r-dark #pg-profile .p-card {
+  background: rgba(15,40,25,.75) !important;
+  border-color: rgba(80,160,110,.22) !important;
+  box-shadow: 0 2px 20px rgba(0,0,0,.30) !important;
+}
+body.r-dark #pg-profile #profileName {
+  color: rgba(255,255,255,.92) !important;
+  font-family: 'Crimson Pro', 'Cormorant Garamond', serif !important;
+}
+body.r-dark #pg-profile #profileMotto {
+  color: rgba(255,255,255,.62) !important;
+}
+body.r-dark #pg-profile #profileUsername {
+  color: rgba(255,255,255,.68) !important;
+}
+body.r-dark #pg-profile #profileDays,
+body.r-dark #pg-profile #profileChats,
+body.r-dark #pg-profile #profileHelped,
+body.r-dark #pg-profile #profileReceived {
+  color: #72e0a6 !important;
+}
+body.r-dark #pg-profile .p-label { color: rgba(200,158,56,.85) !important; }
+body.r-dark #pg-profile .p-field-label { color: rgba(255,255,255,.65) !important; }
+body.r-dark #pg-profile p,
+body.r-dark #pg-profile [style*="color:var(--ink5)"] { color: rgba(255,255,255,.50) !important; }
+body.r-dark #pg-profile .p-input {
+  background: rgba(15,40,25,.85) !important;
+  border-color: rgba(80,160,110,.30) !important;
+  color: rgba(255,255,255,.88) !important;
+}
+body.r-dark #pg-profile .p-input::placeholder { color: rgba(255,255,255,.35) !important; }
+body.r-dark #pg-profile .p-btn--secondary {
+  background: rgba(80,160,110,.18) !important;
+  border-color: rgba(80,160,110,.32) !important;
+  color: rgba(255,255,255,.85) !important;
+}
+body.r-dark #pg-profile .p-btn--primary {
+  background: rgba(200,158,56,.82) !important;
+  color: #1a1000 !important;
+  border-color: rgba(200,158,56,.40) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   CÍRCULOS DE PAZ — Chat feed legibility
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Feed header: always dark with light text */
+#pg-feed .feed-header {
+  background: #1a2e20 !important;
+  border-bottom: 1px solid rgba(80,160,80,.20) !important;
+}
+body.r-dark #pg-feed .feed-header {
+  background: #0e1e14 !important;
+  border-bottom-color: rgba(80,160,80,.15) !important;
+}
+#pg-feed #feedCircleName {
+  color: rgba(255,255,255,.95) !important;
+  font-weight: 700 !important;
+}
+#pg-feed #feedCircleMembers {
+  color: rgba(255,255,255,.68) !important;
+}
+#pg-feed .feed-header .p-back-btn {
+  color: rgba(255,255,255,.90) !important;
+}
+#pg-feed .feed-header button:not(.p-back-btn) {
+  color: rgba(255,255,255,.75) !important;
+}
+
+/* Received messages in circles — high contrast */
+#pg-feed .feed-bubble:not(.feed-bubble--own) {
+  background: rgba(240,250,245,.97) !important;
+  color: #0a2010 !important;
+  border-radius: 18px 18px 18px 4px !important;
+  border: 1px solid rgba(116,198,157,.25) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12) !important;
+}
+body.r-dark #pg-feed .feed-bubble:not(.feed-bubble--own) {
+  background: rgba(28,55,38,.95) !important;
+  color: rgba(232,245,238,.96) !important;
+  border-color: rgba(80,160,110,.20) !important;
+}
+/* Sent messages (own) in circles */
+#pg-feed .feed-bubble--own {
+  background: rgba(60,140,80,.90) !important;
+  color: #fff !important;
+  border-radius: 18px 18px 4px 18px !important;
+}
+body.r-dark #pg-feed .feed-bubble--own {
+  background: #1b5c30 !important;
+  color: #e8f5ee !important;
+}
+#pg-feed .feed-sender { color: #0a6040 !important; font-weight: 700 !important; font-size: 11px !important; }
+body.r-dark #pg-feed .feed-sender { color: #72e0a6 !important; }
+#pg-feed .feed-time { color: rgba(0,0,0,.45) !important; font-size: 10px !important; }
+body.r-dark #pg-feed .feed-time { color: rgba(255,255,255,.45) !important; }
+
+/* Circle rules banner */
+body.r-dark #feedCircleRulesBanner {
+  background: rgba(40,80,50,.60) !important;
+  color: rgba(180,230,200,.85) !important;
+  border-bottom-color: rgba(80,160,80,.20) !important;
+}
+
+/* Feed input area in circles */
+body.r-dark #pg-feed .feed-input-area {
+  background: #0e1e14 !important;
+  border-top: 1px solid rgba(80,160,80,.20) !important;
+}
+body.r-dark #pg-feed .feed-input {
+  background: rgba(20,50,30,.90) !important;
+  color: rgba(255,255,255,.90) !important;
+  border-color: rgba(80,160,80,.30) !important;
+}
+body.r-dark #pg-feed .feed-input::placeholder { color: rgba(255,255,255,.35) !important; }
+body.r-dark #pg-feed .feed-send-btn {
+  background: rgba(60,140,80,.90) !important;
+  color: #fff !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DESKTOP SIDEBAR — wider + bigger logo
+   ══════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  .p-sidebar {
+    width: 120px !important;
+  }
+  .p-sidebar:hover {
+    width: 270px !important;
+  }
+  .p-sidebar-logo {
+    padding: 8px 0 22px !important;
+  }
+  .p-sidebar-logo-img {
+    max-width: 96px !important;
+    height: auto !important;
+  }
+  /* Center icons better in wider sidebar */
+  .p-sn-item {
+    justify-content: center !important;
+  }
+  .p-sidebar:hover .p-sn-item {
+    justify-content: flex-start !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   "SIN RESPUESTA" MODAL — better contrast
+   ══════════════════════════════════════════════════════════════════════ */
+.p-sheet {
+  color: var(--ink) !important;
+}
+body.r-dark .p-sheet {
+  background: rgba(12,28,18,.96) !important;
+  color: rgba(255,255,255,.92) !important;
+  border-top: 1px solid rgba(80,160,110,.20) !important;
+}
+body.r-dark .p-sheet h2,
+body.r-dark .p-sheet h3,
+body.r-dark .p-sheet [style*="font-size:22px"],
+body.r-dark .p-sheet [style*="font-size:20px"] {
+  color: rgba(255,255,255,.95) !important;
+}
+body.r-dark .p-sheet p,
+body.r-dark .p-sheet [style*="color:var(--ink4)"],
+body.r-dark .p-sheet [style*="color:var(--ink5)"] {
+  color: rgba(255,255,255,.68) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   CONTACTS / FAVORITOS PAGE — dark mode
+   ══════════════════════════════════════════════════════════════════════ */
+body.r-dark #pg-contacts {
+  background: linear-gradient(170deg, #0b1c12 0%, #0e2318 100%) !important;
+}
+body.r-dark #contactsContent .p-card,
+body.r-dark #contactsContent [style*="background:var(--cream)"],
+body.r-dark #contactsContent [style*="background:var(--sage7)"] {
+  background: rgba(15,40,25,.75) !important;
+  border-color: rgba(80,160,110,.22) !important;
+  color: rgba(255,255,255,.90) !important;
+}
+body.r-dark #contactsContent [style*="color:var(--ink)"] { color: rgba(255,255,255,.90) !important; }
+body.r-dark #contactsContent [style*="color:var(--ink4)"] { color: rgba(255,255,255,.58) !important; }
+body.r-dark #contactsContent [style*="font-size:22px;font-weight:800;color:var(--sage)"] {
+  color: #72e0a6 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GLOBAL: All page backgrounds — dark mode forest green
+   ══════════════════════════════════════════════════════════════════════ */
+body.r-dark .p-page {
+  background: linear-gradient(170deg, #0b1c12 0%, #0e2318 55%, #0a1a10 100%) !important;
+}
+/* Exception: pages with their own backgrounds */
+body.r-dark #pg-home,
+body.r-dark #pg-feed,
+body.r-dark #pg-dm-chat,
+body.r-dark #pg-help-chat { background: unset !important; }
+body.r-dark #pg-home {
+  background: radial-gradient(circle at 14% 10%, rgba(20,90,50,.40) 0%, transparent 50%),
+    radial-gradient(circle at 86% 85%, rgba(25,65,35,.28) 0%, transparent 45%),
+    linear-gradient(170deg, #0b1c12 0%, #0e2318 55%, #0a1a10 100%) !important;
+}
+
+/* ── Global p-card dark mode ──────────────────────────────────────── */
+body.r-dark .p-card:not([class*="fc-"]) {
+  background: rgba(15,40,25,.68) !important;
+  border-color: rgba(80,160,110,.18) !important;
+  color: var(--ink) !important;
+}
+body.r-dark .p-page-hdr h2,
+body.r-dark .p-page-hdr .p-title { color: rgba(255,255,255,.95) !important; }
+body.r-dark .p-page-hdr .p-label { color: rgba(200,158,56,.80) !important; }
+body.r-dark .p-page-hdr p { color: rgba(255,255,255,.60) !important; }

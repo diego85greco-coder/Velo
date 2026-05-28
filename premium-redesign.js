@@ -149,7 +149,7 @@
       initParticles('loginCanvas',    40, 0.4);
       initParticles('registerCanvas', 40, 0.4);
       initParticles('homeBgCanvas',   60, 0.35, '200,158,56');  // warm gold
-      initParticles('profileBgCanvas', 45, 0.42, '109,204,63');
+      initParticles('profileBgCanvas', 40, 0.30, '80,170,220');  // sky blue for celeste bg
       initParticles('helpBgCanvas',    35, 0.38, '109,204,63');
     }, 300);
 
@@ -179,6 +179,21 @@
     const statEl = document.getElementById('homeStatGuardians');
     if (gcEl && guardianN !== null) gcEl.textContent = guardianN;
     if (statEl && guardianN !== null) statEl.textContent = guardianN;
+    // Async: query Supabase guardian_presence for real-time count
+    if (typeof sbClient !== 'undefined' && sbClient && (gcEl || statEl)) {
+      var cutoff = new Date(Date.now() - 8*60*1000).toISOString();
+      sbClient.from('guardian_presence')
+        .select('user_id,status', {count:'exact'})
+        .neq('status','offline')
+        .gte('last_seen', cutoff)
+        .then(function(res){
+          if(res && res.data){
+            var n = res.data.filter(function(r){ return r.status !== 'incognito'; }).length;
+            if(gcEl) gcEl.textContent = n;
+            if(statEl) statEl.textContent = n;
+          }
+        }).catch(function(){});
+    }
 
     // ── Visit streak ────────────────────────────────────────────
     let streak = 1;

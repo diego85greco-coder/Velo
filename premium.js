@@ -4459,6 +4459,13 @@ function pOpenSurvey(){
   if(ta) ta.value = '';
   ov.querySelectorAll('.survey-func-btn').forEach(function(b){ b.classList.remove('selected'); });
   ov.classList.add('show');
+  // Mark survey as read immediately when opened (don't require submit to clear badge)
+  try{
+    var inbx = JSON.parse(safeLS('get','velo_inbox')||'[]');
+    var changed = false;
+    inbx = inbx.map(function(m){ if(m.tipo==='encuesta' && !m.leido){ changed=true; return Object.assign({},m,{leido:true}); } return m; });
+    if(changed){ safeLS('set','velo_inbox', JSON.stringify(inbx)); _updateHomeBell(); }
+  }catch(e){}
 }
 
 function pSurveyRate(q, val, el){
@@ -6617,6 +6624,18 @@ function pRenderInbox(){
       +actionBtn
       +'</div></div>';
   }).join('');
+  // Auto-mark all non-cuerpo messages as read after 3s (clears badge after viewing inbox)
+  setTimeout(function(){
+    try{
+      var inbx2 = JSON.parse(safeLS('get','velo_inbox')||'[]');
+      var dirty = false;
+      inbx2 = inbx2.map(function(m){
+        if(!m.leido && !(m.cuerpo && m.cuerpo.trim())){ dirty=true; return Object.assign({},m,{leido:true}); }
+        return m;
+      });
+      if(dirty){ safeLS('set','velo_inbox', JSON.stringify(inbx2)); _updateHomeBell(); }
+    }catch(e){}
+  }, 3000);
 }
 
 function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl){
@@ -6949,10 +6968,12 @@ async function pRenderContacts(){
   // Count who has me as favorite (from Supabase)
   var favMeCount = 0;
   _initSupabase();
+  var favMeRows = [];
   if(sbClient && myId){
     try{
-      var {count} = await sbClient.from('user_favorites').select('id',{count:'exact',head:true}).eq('fav_id', myId);
-      favMeCount = count || 0;
+      var fmRes = await sbClient.from('user_favorites').select('user_id,user_name,user_av,created_at').eq('fav_id', myId).order('created_at',{ascending:false}).limit(50);
+      favMeRows = fmRes.data || [];
+      favMeCount = favMeRows.length;
       // Persist count and mark as seen → clears the badge
       safeLS('set','velo_fav_me_count', String(favMeCount));
       safeLS('set','velo_fav_me_seen',  String(favMeCount));
@@ -6974,6 +6995,23 @@ async function pRenderContacts(){
     +'<div style="width:1px;background:var(--border2)"></div>'
     +'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+onlineCount+'</div><div style="font-size:11px;color:var(--ink4)">Online ahora</div></div>'
     +'</div>';
+
+  // Show who has you as favorite (with chat button)
+  if(favMeRows.length){
+    el.innerHTML += '<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--sage3);margin-bottom:8px">⭐ Te tienen como favorito</div>'
+      +favMeRows.map(function(r){
+        var rId = r.user_id||''; var rName = r.user_name||'Usuario'; var rAv = r.user_av||'🧑';
+        var pInfo = _presenceInfo(rId);
+        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cream);border-radius:14px;margin-bottom:8px;border:1.5px solid rgba(116,198,157,.18)">'
+          +'<div style="position:relative;flex-shrink:0">'+_avInline(rAv,38)
+          +'<span style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:'+pInfo.color+';border:2px solid var(--cream)"></span></div>'
+          +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+_escHtml(rName)+'</div>'
+          +'<div style="font-size:11px;color:'+(pInfo.on?pInfo.color:'var(--ink5)')+'">'+(pInfo.on?'● En línea':'○ Desconectado')+'</div></div>'
+          +(pInfo.on?'<button onclick="pOpenDM('+_jsAttr(rId)+','+_jsAttr(rName)+','+_jsAttr(rAv)+')" style="padding:6px 11px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer">💬 Chat</button>':'')
+          +'<button onclick="pAddFav('+_jsAttr(rId)+','+_jsAttr(rName)+','+_jsAttr(rAv)+');pRenderContacts()" style="padding:6px 10px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.3);border-radius:10px;font-size:12px;cursor:pointer" title="Agregar como favorito">⭐</button>'
+          +'</div>';
+      }).join('')+'</div>';
+  }
 
   if(!favs.length){
     el.innerHTML += '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Sin contactos favoritos</div><div class="p-empty-sub">Cuando interactúes con alguien y lo marques como favorito, aparecerá aquí.</div></div>';
