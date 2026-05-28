@@ -1720,11 +1720,16 @@ body.r-dark #pg-dm-chat .feed-send-btn {
   background: rgba(180,40,40,.90) !important;
 }
 
-/* ── Topbar logo: much bigger ────────────────────────────────────── */
+/* ── Topbar logo: much bigger than nav buttons ───────────────────── */
+.p-topbar { min-height: 78px !important; }
 .p-topbar-logo-img {
-  height: 56px !important;
+  height: 72px !important;
   width: auto !important;
+  max-width: 200px !important;
   object-fit: contain !important;
+}
+body.r-dark .p-topbar-logo-img {
+  filter: brightness(1.15) drop-shadow(0 1px 12px rgba(116,198,157,.35)) !important;
 }
 
 /* ── Hero stats: adaptive light/dark ─────────────────────────────── */
@@ -1823,6 +1828,22 @@ body.r-dark #pg-home #homeDailyQuote {
   background: rgba(27,80,50,.96) !important;
   border-color: rgba(116,198,157,.62) !important;
 }
+
+/* ── Sala de Ayuda counter: visible on light bg ─────────────────── */
+#helpCounterLabel { color: var(--ink2) !important; }
+#helpActiveCount  { color: var(--sage2) !important; }
+body.r-dark #helpCounterLabel { color: rgba(116,198,157,.75) !important; }
+body.r-dark #helpActiveCount  { color: rgba(116,198,157,.95) !important; }
+
+/* ── Sala de Ayuda empty state: visible in both modes ───────────── */
+#pg-help .p-empty-title {
+  color: var(--ink) !important;
+}
+#pg-help .p-empty-sub {
+  color: var(--ink3) !important;
+}
+body.r-dark #pg-help .p-empty-title { color: rgba(255,255,255,.82) !important; }
+body.r-dark #pg-help .p-empty-sub   { color: rgba(255,255,255,.55) !important; }
 
 /* ── Toast: dark glass for legibility on any background ──────────── */
 .p-toast {
