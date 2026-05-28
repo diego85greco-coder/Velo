@@ -2819,6 +2819,8 @@ async function _loadHelpChatHistory(post){
 function _renderHelpChatMsg(m, isOwn){
   var msgEl = document.getElementById('helpChatMessages');
   if(!msgEl) return;
+  var _sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
+  if(_sentinels.indexOf(m.text) >= 0) return;
   var post = _curHelpPost||{};
   var div = document.createElement('div');
   div.innerHTML = _buildMsgBubble(m.text||'', isOwn, isOwn?'':(post.emoji||'💙'), isOwn?'':(post.name||''), 'helpChatInput', 'helpChatReplyBar', '', {}, '', isOwn?'':(m.from_id||''));
@@ -2900,26 +2902,33 @@ function pLeaveHelpChat(){
 function _showHelpChatRating(post){
   var existing = document.getElementById('helpRatingOv');
   if(existing) existing.remove();
+  var isDark = document.body.classList.contains('r-dark');
   var ov = document.createElement('div');
   ov.id = 'helpRatingOv';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
-  var postId = post ? post.id : '';
-  ov.innerHTML = '<div style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center">'
-    +'<div style="font-size:40px;margin-bottom:10px">🌟</div>'
-    +'<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px">¿Cómo fue el acompañamiento?</div>'
-    +'<div style="font-size:12px;color:var(--ink4);margin-bottom:18px">Tu opinión ayuda a mejorar la comunidad</div>'
-    +'<div id="helpRatingStars" style="display:flex;gap:8px;justify-content:center;margin-bottom:18px">'
-    +'<button onclick="_helpRateStar(this,1,\''+postId+'\')" style="font-size:28px;background:none;border:none;cursor:pointer;opacity:.4">⭐</button>'
-    +'<button onclick="_helpRateStar(this,2,\''+postId+'\')" style="font-size:28px;background:none;border:none;cursor:pointer;opacity:.4">⭐</button>'
-    +'<button onclick="_helpRateStar(this,3,\''+postId+'\')" style="font-size:28px;background:none;border:none;cursor:pointer;opacity:.4">⭐</button>'
-    +'<button onclick="_helpRateStar(this,4,\''+postId+'\')" style="font-size:28px;background:none;border:none;cursor:pointer;opacity:.4">⭐</button>'
-    +'<button onclick="_helpRateStar(this,5,\''+postId+'\')" style="font-size:28px;background:none;border:none;cursor:pointer;opacity:.4">⭐</button>'
-    +'</div>'
-    +(post && post.userId && post.userId !== 'anon' && !post.anon ? '<div style="margin-bottom:14px;padding:12px;background:var(--sage7);border-radius:14px;border:1px solid rgba(116,198,157,.2)">'
-    +'<div style="font-size:12px;color:var(--ink3);margin-bottom:8px">¿Querés mantener contacto con esta persona?</div>'
-    +'<button onclick="pAddFav('+_jsAttr(post.userId)+','+_jsAttr(post.name||'Usuario')+','+_jsAttr(post.emoji||'🧑')+');" style="padding:8px 18px;background:var(--sage4);border:none;border-radius:100px;font-size:13px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif">⭐ Guardar en favoritos</button>'
-    +'</div>' : '')
-  +'<button onclick="document.getElementById(\'helpRatingOv\').remove();pGoTo(\'post-chat\')" style="padding:11px 28px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:100px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Omitir</button>'
+  var cardBg   = isDark ? '#162a1e' : '#fff';
+  var cardBrd  = isDark ? 'border:1px solid rgba(116,198,157,.22);' : '';
+  var titleClr = isDark ? 'rgba(255,255,255,.95)' : '#1a2e1a';
+  var subClr   = isDark ? 'rgba(255,255,255,.60)' : '#6e9a84';
+  var favBg    = isDark ? 'rgba(116,198,157,.15)' : 'rgba(116,198,157,.12)';
+  var favBrd   = isDark ? 'rgba(116,198,157,.3)' : 'rgba(116,198,157,.25)';
+  var favTxtClr= isDark ? '#a8dfc0' : '#1B5E3A';
+  var favBtnBg = isDark ? 'rgba(116,198,157,.3)' : 'rgba(116,198,157,.18)';
+  var favBtnClr= isDark ? '#c0f0d8' : '#1B5E3A';
+  var skipBg   = isDark ? 'rgba(255,255,255,.08)' : 'rgba(245,240,230,.9)';
+  var skipBrd  = isDark ? 'rgba(255,255,255,.15)' : 'rgba(180,170,150,.4)';
+  var skipClr  = isDark ? 'rgba(255,255,255,.7)' : '#5a7060';
+  ov.innerHTML = '<div style="background:'+cardBg+';border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center;'+cardBrd+'">'
+    +'<div style="font-size:44px;margin-bottom:12px">💚</div>'
+    +'<div style="font-size:17px;font-weight:700;color:'+titleClr+';margin-bottom:6px;font-family:\'Cormorant Garamond\',serif">¡Conversación finalizada!</div>'
+    +'<div style="font-size:13px;color:'+subClr+';margin-bottom:20px;line-height:1.5">Gracias por acompañar y ser acompañado/a. 🌿</div>'
+    +(post && post.userId && post.userId !== 'anon' && !post.anon
+      ? '<div style="margin-bottom:16px;padding:14px;background:'+favBg+';border-radius:14px;border:1px solid '+favBrd+'">'
+        +'<div style="font-size:12px;color:'+favTxtClr+';margin-bottom:10px;font-weight:600">¿Querés mantener contacto con esta persona?</div>'
+        +'<button onclick="pAddFav('+_jsAttr(post.userId)+','+_jsAttr(post.name||'Usuario')+','+_jsAttr(post.emoji||'🧑')+');document.getElementById(\'helpRatingOv\').remove();pGoTo(\'post-chat\')" style="padding:11px 22px;background:'+favBtnBg+';border:1.5px solid '+favBrd+';border-radius:100px;font-size:14px;font-weight:700;color:'+favBtnClr+';cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">⭐ Guardar en favoritos</button>'
+        +'</div>'
+      : '')
+    +'<button onclick="document.getElementById(\'helpRatingOv\').remove();pGoTo(\'post-chat\')" style="padding:12px 28px;background:'+skipBg+';border:1.5px solid '+skipBrd+';border-radius:100px;font-size:13px;font-weight:600;color:'+skipClr+';cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Omitir</button>'
     +'</div>';
   document.body.appendChild(ov);
 }
@@ -4420,10 +4429,19 @@ var SURVEY_INTERVAL = 90 * 24 * 60 * 60 * 1000; // 90 days in ms
 var _surveyScores   = { general: 0, utilidad: 0, recomendaria: 0 };
 var _surveyFuncion  = '';
 
+// Stable id per calendar quarter so read-tracking survives re-renders/reloads
+function _surveyQuarterId(){
+  var n = new Date();
+  return 'survey-' + n.getFullYear() + 'Q' + (Math.floor(n.getMonth()/3)+1);
+}
+
 function _checkSurveyDue(){
   // Only for regular users (not admin, not pro)
   if(safeLS('get','velo_user_type') === 'admin') return;
   if(safeLS('get','velo_user_type') === 'pro') return;
+  var sid = _surveyQuarterId();
+  // Already opened/completed this quarter's survey → never re-add
+  if(safeLS('get','velo_read_'+sid) === '1') return;
   var last = parseInt(safeLS('get','velo_last_survey')||'0', 10);
   if(Date.now() - last < SURVEY_INTERVAL) return;
   // Don't send twice in the same session
@@ -4431,9 +4449,10 @@ function _checkSurveyDue(){
   safeLS('set','velo_survey_sent_session','1');
   // Add inbox notification
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
-  if(inbox.some(function(m){ return m.tipo === 'encuesta' && !m.leido; })) return; // already pending
+  // Skip if ANY survey already exists (read or unread) — avoids duplicate unread copies
+  if(inbox.some(function(m){ return m.tipo === 'encuesta'; })) return;
   inbox.unshift({
-    id: 'survey-'+Date.now(),
+    id: sid,
     tipo: 'encuesta',
     icon: '📊',
     remitente: 'Velo — Encuesta trimestral',
@@ -7258,12 +7277,13 @@ function _subscribeToDMThread(){
   if(_dmRtCh && sbClient){ try{ sbClient.removeChannel(_dmRtCh); }catch(e){} _dmRtCh = null; }
   if(!sbClient || !_dmPeer) return;
   var myId = safeLS('get','velo_user_id')||'';
+  var _dmRel = function(m){ return (m.from_id===myId&&m.to_id===_dmPeer.id)||(m.from_id===_dmPeer.id&&m.to_id===myId); };
   _dmRtCh = sbClient.channel('velo:dm:'+myId+':'+_dmPeer.id)
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages'},function(payload){
-      var m = payload.new||{};
-      if((m.from_id===myId&&m.to_id===_dmPeer.id)||(m.from_id===_dmPeer.id&&m.to_id===myId)){
-        _renderDMThread();
-      }
+      if(_dmRel(payload.new||{})) _renderDMThread();
+    })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'direct_messages'},function(payload){
+      if(_dmRel(payload.new||{})) _renderDMThread();
     }).subscribe();
 }
 
