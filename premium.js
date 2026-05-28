@@ -35,9 +35,11 @@ var _bottleRtCh   = null;   // realtime channel bottles
 var _circleRtCh   = null;   // realtime channel circle_messages
 var _guardianRtCh = null;   // realtime channel guardian_presence
 var _liveGuardians = [];    // cached live guardian rows from Supabase
-var _grReqCh      = null;   // guardian_requests realtime channel (guardian side)
-var _seekerGrCh   = null;   // guardian_requests realtime channel (seeker side)
-var _helpChatRtCh = null;   // realtime channel for help chat direct_messages
+var _grReqCh        = null;   // guardian_requests realtime channel (guardian side)
+var _seekerGrCh     = null;   // guardian_requests realtime channel (seeker side)
+var _seekerGrPollTmr= null;   // polling fallback for seeker waiting for guardian offer
+var _grReqPollTmr   = null;   // polling fallback for guardian waiting for acceptance
+var _helpChatRtCh   = null;   // realtime channel for help chat direct_messages
 var _guardianWaitTimer = null; // 2-min timeout when user waits for help-post acceptance
 var _seekerWaitTimer   = null; // 2-min timeout when user waits for direct guardian acceptance
 var _pendingGuardianPost = null; // post object guardian clicked "Acompañar" on
@@ -623,6 +625,8 @@ function _clearSession(){
   _guardianRtCh = null; _helpRtCh = null; _bottleRtCh = null; _happyRtCh = null;
   _circleRtCh = null; _dmRtCh = null; _dmInboxCh = null;
   _grReqCh = null; _seekerGrCh = null; _gcRtCh = null; _gcSeekerCh = null;
+  if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
+  if(_grReqPollTmr){ clearInterval(_grReqPollTmr); _grReqPollTmr = null; }
   _favsList = null; // reset favorites cache
 }
 
@@ -2531,6 +2535,7 @@ async function _guardianSendRequest(post){
   _showGuardianWaitOverlay(post, myName);
   // Subscribe to guardian_requests changes for this row
   if(_grReqCh) try{ sbClient.removeChannel(_grReqCh); }catch(e){}
+  if(_grReqPollTmr){ clearInterval(_grReqPollTmr); _grReqPollTmr = null; }
   _grReqCh = sbClient.channel('velo:gr:'+post.id)
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'guardian_requests'}, function(payload){
       var row = payload.new || {};
@@ -2541,8 +2546,23 @@ async function _guardianSendRequest(post){
         _guardianRequestDeclined(post);
       }
     })
-    .subscribe();
-  // 80 second timeout
+    .subscribe(function(status, err){
+      if(status !== 'SUBSCRIBED') console.warn('[guardian gr listener] status:', status, err||'');
+    });
+  // Polling fallback every 8s — catches seeker acceptance if Realtime drops
+  _grReqPollTmr = setInterval(function(){
+    if(!sbClient || !document.getElementById('guardianWaitOv')) {
+      clearInterval(_grReqPollTmr); _grReqPollTmr = null; return;
+    }
+    sbClient.from('guardian_requests').select('*').eq('id', reqId).limit(1)
+      .then(function(res){
+        if(!res || !res.data || !res.data[0]) return;
+        var row = res.data[0];
+        if(row.status === 'accepted') _guardianRequestAccepted(post);
+        else if(row.status === 'declined') _guardianRequestDeclined(post);
+      }).catch(function(){});
+  }, 8000);
+  // 120 second timeout
   if(_guardianWaitTimer) clearTimeout(_guardianWaitTimer);
   _guardianWaitTimer = setTimeout(function(){ _guardianRequestExpired(post); }, 120000);
 }
@@ -2592,6 +2612,7 @@ function _clearGuardianWaitOverlay(){
     ov.remove();
   }
   if(_grReqCh && sbClient){ try{ sbClient.removeChannel(_grReqCh); }catch(e){} _grReqCh = null; }
+  if(_grReqPollTmr){ clearInterval(_grReqPollTmr); _grReqPollTmr = null; }
 }
 
 function _guardianRequestAccepted(post){
@@ -2664,13 +2685,26 @@ function _subscribeSeekerToGuardianRequest(postId){
   _initSupabase();
   if(!sbClient || !postId) return;
   if(_seekerGrCh) try{ sbClient.removeChannel(_seekerGrCh); }catch(e){}
+  if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
   _seekerGrCh = sbClient.channel('velo:seeker:'+postId)
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'guardian_requests'}, function(payload){
       var r = payload.new||{};
       if(String(r.post_id) !== String(postId)) return;
       _showSeekerGuardianPopup(postId, r);
     })
-    .subscribe();
+    .subscribe(function(status, err){
+      if(status !== 'SUBSCRIBED') console.warn('[seeker gr listener] status:', status, err||'');
+    });
+  // Polling fallback every 10s — catches offers if Realtime drops
+  _seekerGrPollTmr = setInterval(function(){
+    if(!sbClient) return;
+    if(document.getElementById('seekerGuardianOv')) return; // already showing popup
+    sbClient.from('guardian_requests').select('*')
+      .eq('post_id', postId).eq('status','pending').order('created_at',{ascending:false}).limit(1)
+      .then(function(res){
+        if(res && res.data && res.data.length) _showSeekerGuardianPopup(postId, res.data[0]);
+      }).catch(function(){});
+  }, 10000);
 }
 
 function _showSeekerGuardianPopup(postId, row){
@@ -2679,18 +2713,28 @@ function _showSeekerGuardianPopup(postId, row){
   var guardianName = row.guardian_name||'Guardián';
   var guardianAv   = row.guardian_av||'🌿';
   var reqId        = row.id||'';
+  var isDark = document.body.classList.contains('r-dark');
+  var cardBg   = isDark ? '#162a1e' : '#fff';
+  var cardBrd  = isDark ? 'border:1px solid rgba(116,198,157,.22);' : '';
+  var titleClr = isDark ? 'rgba(255,255,255,.95)' : '#1a2e1a';
+  var bodyClr  = isDark ? 'rgba(210,240,222,.85)' : '#2D5040';
+  var subClr   = isDark ? 'rgba(255,255,255,.55)' : '#6e9a84';
+  var cdClr    = isDark ? '#72e0a6' : '#1B5E3A';
+  var skipBg   = isDark ? 'rgba(255,255,255,.08)' : 'rgba(245,240,230,.9)';
+  var skipBrd  = isDark ? 'rgba(255,255,255,.15)' : 'rgba(180,170,150,.4)';
+  var skipClr  = isDark ? 'rgba(255,255,255,.7)' : '#5a7060';
   var ov = document.createElement('div');
   ov.id = 'seekerGuardianOv';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
-  ov.innerHTML = '<div style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center">'
+  ov.innerHTML = '<div style="background:'+cardBg+';border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center;'+cardBrd+'">'
     +'<div style="font-size:44px;margin-bottom:10px">'+_avInline(guardianAv,52)+'</div>'
-    +'<div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Un guardián quiere acompañarte 💙</div>'
-    +'<div style="font-size:14px;color:var(--ink3);margin-bottom:6px"><strong>'+_escHtml(guardianName)+'</strong> vio tu mensaje y está aquí para escucharte.</div>'
-    +'<div style="font-size:12px;color:var(--ink4);margin-bottom:10px">¿Aceptás el acompañamiento ahora?</div>'
-    +'<div id="seekerGuardianCountdown" style="font-size:28px;font-weight:800;color:var(--sage);margin-bottom:18px">80</div>'
+    +'<div style="font-size:17px;font-weight:700;color:'+titleClr+';margin-bottom:8px;font-family:\'Cormorant Garamond\',serif">Un guardián quiere acompañarte 💙</div>'
+    +'<div style="font-size:14px;color:'+bodyClr+';margin-bottom:6px"><strong>'+_escHtml(guardianName)+'</strong> vio tu mensaje y está aquí para escucharte.</div>'
+    +'<div style="font-size:12px;color:'+subClr+';margin-bottom:10px">¿Aceptás el acompañamiento ahora?</div>'
+    +'<div id="seekerGuardianCountdown" style="font-size:28px;font-weight:800;color:'+cdClr+';margin-bottom:18px">80</div>'
     +'<div style="display:flex;gap:10px">'
-    +'<button onclick="_seekerDeclineRequest(\''+reqId+'\',\''+postId+'\')" style="flex:1;padding:12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Ahora no</button>'
-    +'<button onclick="_seekerAcceptRequest('+_jsAttr(reqId)+','+_jsAttr(postId)+','+_jsAttr(guardianName)+','+_jsAttr(guardianAv)+','+_jsAttr(row.guardian_id||'')+')\" style="flex:1;padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💚 Aceptar</button>'
+    +'<button onclick="_seekerDeclineRequest(\''+reqId+'\',\''+postId+'\')" style="flex:1;padding:12px;background:'+skipBg+';border:1.5px solid '+skipBrd+';border-radius:12px;font-size:13px;font-weight:600;color:'+skipClr+';cursor:pointer;font-family:\'Jost\',sans-serif">Ahora no</button>'
+    +'<button onclick="_seekerAcceptRequest('+_jsAttr(reqId)+','+_jsAttr(postId)+','+_jsAttr(guardianName)+','+_jsAttr(guardianAv)+','+_jsAttr(row.guardian_id||'')+')\" style="flex:1;padding:12px;background:#1B5E3A;border:none;border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💚 Aceptar</button>'
     +'</div></div>';
   document.body.appendChild(ov);
   // Countdown + auto-dismiss after 80s
@@ -2706,7 +2750,10 @@ function _showSeekerGuardianPopup(postId, row){
 
 function _seekerAcceptRequest(reqId, postId, guardianName, guardianAv, guardianId){
   var ov = document.getElementById('seekerGuardianOv');
-  if(ov) ov.remove();
+  if(ov){ var cdi = ov.getAttribute('data-cd-int'); if(cdi) clearInterval(parseInt(cdi,10)); ov.remove(); }
+  // Stop polling — no longer needed once connected
+  if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
+  if(_seekerGrCh && sbClient){ try{ sbClient.removeChannel(_seekerGrCh); }catch(e){} _seekerGrCh = null; }
   _initSupabase();
   if(sbClient){
     sbClient.from('guardian_requests').update({status:'accepted'}).eq('id',reqId).then(function(){}).catch(function(){});
@@ -2723,6 +2770,9 @@ function _seekerAcceptRequest(reqId, postId, guardianName, guardianAv, guardianI
 function _seekerDeclineRequest(reqId, postId){
   var ov = document.getElementById('seekerGuardianOv');
   if(ov){ var cdi = ov.getAttribute('data-cd-int'); if(cdi) clearInterval(parseInt(cdi,10)); ov.remove(); }
+  // Stop polling — no longer waiting for offers
+  if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
+  if(_seekerGrCh && sbClient){ try{ sbClient.removeChannel(_seekerGrCh); }catch(e){} _seekerGrCh = null; }
   _initSupabase();
   if(sbClient){
     sbClient.from('guardian_requests').update({status:'declined'}).eq('id',reqId).then(function(){}).catch(function(){});
@@ -2734,7 +2784,17 @@ function _seekerDeclineRequest(reqId, postId){
 // Re-subscribe seeker if they already have an active help post on page load
 function _restoreSeekerSubscription(){
   var postId = safeLS('get','velo_my_help_post_id');
-  if(postId) _subscribeSeekerToGuardianRequest(postId);
+  if(postId){
+    _subscribeSeekerToGuardianRequest(postId);
+    // Immediate check — catch offers that arrived while the tab was closed or offline
+    if(sbClient && !document.getElementById('seekerGuardianOv')){
+      sbClient.from('guardian_requests').select('*')
+        .eq('post_id', postId).eq('status','pending').order('created_at',{ascending:false}).limit(1)
+        .then(function(res){
+          if(res && res.data && res.data.length) _showSeekerGuardianPopup(postId, res.data[0]);
+        }).catch(function(){});
+    }
+  }
   // Also check if there are any pending support messages
   _checkPendingSupportMessages();
 }
