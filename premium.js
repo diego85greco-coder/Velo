@@ -204,6 +204,7 @@ var toast = pToast;
 // ── NAVIGATION STATE ─────────────────────────────────────────
 var _curPage    = 'landing';
 var _prevPage   = 'landing';
+var _navToken   = 0; // incremented on every pGoTo — lets async renders bail if page changed
 var _authenticated = false;
 var _userType   = 'user'; // 'user' | 'pro' | 'admin'
 
@@ -225,6 +226,7 @@ function pGoTo(id){
 
   if(_curPage !== id) _prevPage = _curPage;
   _curPage = id;
+  _navToken++;
 
   // Activate new page
   inPage.classList.add('active');
@@ -1764,6 +1766,7 @@ function pFilterGuardians(filter, btn){
 }
 
 async function pRenderGuardians(){
+  var _tok = _navToken;
   _renderMyStatusBar();
   var list = document.getElementById('guardiansList');
   if(!list) return;
@@ -1779,6 +1782,7 @@ async function pRenderGuardians(){
       var myId = _myUserId();
       var { data, error: gpErr } = await sbClient.from('guardian_presence')
         .select('*').neq('status','offline').gte('last_seen', cutoff);
+      if(_navToken !== _tok) return;
       if(gpErr) console.error('[pRenderGuardians] query error:', gpErr.message, gpErr);
       if(data && data.length){
         liveGuardians = data
@@ -1809,6 +1813,7 @@ async function pRenderGuardians(){
       +'<div style="font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.45">Estás visible como guardián. Las solicitudes de acompañamiento te llegarán acá.</div>'
       +'</div>';
   }
+  if(_navToken !== _tok) return;
   if(!filtered.length){
     var emptyMsg = _guardianFilter !== 'todos'
       ? '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">Ningún guardián en este estado</div><div class="p-empty-sub">Probá con "Todos"</div></div>'
@@ -2413,6 +2418,7 @@ var _helpPosts = [];
 
 
 async function pRenderHelp(){
+  var _tok = _navToken;
   var list = document.getElementById('helpList');
   if(!list) return;
   _renderFavWidget('helpFavWidget');
@@ -2426,6 +2432,7 @@ async function pRenderHelp(){
     return q.gte('created_at', since).or('closed.eq.false,closed.is.null')
       .order('created_at',{ascending:false}).limit(30);
   });
+  if(_navToken !== _tok) return;
   if(sbRows !== null){
     usingSB = true;
     posts = sbRows.map(_sbHelpRow).filter(function(h){ return hidden.indexOf('help-'+h.id)<0 && !_isBlocked(h.userId); });
@@ -4024,6 +4031,7 @@ async function _loadBottleStats(){
 }
 
 async function pRenderBottle(){
+  var _tok = _navToken;
   _renderFavWidget('bottleFavWidget');
   var moodRow = document.getElementById('bottleMoodRow');
   if(moodRow) moodRow.innerHTML = _bottleMoods.map(function(m){
@@ -4042,6 +4050,7 @@ async function pRenderBottle(){
   var sbRows = await _sbLoad('bottles', function(q){
     return q.gte('created_at', cutoff24h).order('created_at',{ascending:false}).limit(60);
   });
+  if(_navToken !== _tok) return;
   if(sbRows !== null){
     usingSB = true;
     allBottles = sbRows.map(_sbBottleRow);
@@ -4538,6 +4547,8 @@ async function pOpenMoodQuickView(){
     + reportsHtml
     +'<div style="height:8px"></div>'
     +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="document.getElementById(\'moodQuickOv\').remove();pGoTo(\'mood\')">Registrar ánimo de hoy ✨</button>'
+    +'<div style="height:8px"></div>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'moodQuickOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
@@ -4752,13 +4763,35 @@ async function _checkMonthlyMoodReport(){
   }
 
   // Community activity stats
-  var helpedOthers = parseInt(safeLS('get','velo_helped_others')||'0',10);
+  var helpedOthers  = parseInt(safeLS('get','velo_guardian_convs')||'0',10);
+  var helpReceived  = parseInt(safeLS('get','velo_help_received')||'0',10);
   var myBottles = []; try{ myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
-  var bottleCount = myBottles.filter(function(b){ var d=new Date(b.ts); return b.ts && d.getFullYear()===prevYear && (d.getMonth()+1)===prevMonth; }).length;
-  var guardianConvs = parseInt(safeLS('get','velo_guardian_convs')||'0',10);
+  var bottleCount = myBottles.filter(function(b){ var bd=new Date(b.ts); return b.ts && bd.getFullYear()===prevYear && (bd.getMonth()+1)===prevMonth; }).length;
+
+  // Diary activity for the month
+  var diaryArr = []; try{ diaryArr = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
+  var monthPrefix = prevYear+'-'+String(prevMonth).padStart(2,'0');
+  var diaryCount = diaryArr.filter(function(e){ return e.dateLabel && e.dateLabel.indexOf(monthPrefix) > -1 || (e.ts && new Date(e.ts).getFullYear()===prevYear && (new Date(e.ts).getMonth()+1)===prevMonth); }).length;
+
+  // Reviews received from Supabase
+  var reviewsReceived = 0; var reviewStars = 0;
+  _initSupabase();
+  var myUid = safeLS('get','velo_user_id')||'';
+  if(sbClient && myUid){
+    try{
+      await _ensureSbSession();
+      var cutoffStart = new Date(prevYear, prevMonth-1, 1).toISOString();
+      var cutoffEnd   = new Date(prevYear, prevMonth, 0, 23, 59, 59).toISOString();
+      var rvRes = await sbClient.from('reviews').select('stars')
+        .eq('pro_id', myUid).gte('created_at', cutoffStart).lte('created_at', cutoffEnd);
+      if(rvRes.data && rvRes.data.length){
+        reviewsReceived = rvRes.data.length;
+        reviewStars = Math.round(rvRes.data.reduce(function(s,r){ return s+(r.stars||5); },0) / reviewsReceived * 10) / 10;
+      }
+    }catch(e){}
+  }
 
   // Detect unused sections for invitation
-  var diaryArr = []; try{ diaryArr = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
   var happyArr = []; try{ happyArr = JSON.parse(safeLS('get','velo_happy_posts')||'[]'); }catch(e){}
   var unusedSections = [];
   if(!diaryArr.length) unusedSections.push('el Diario Emocional 📔');
@@ -4769,29 +4802,30 @@ async function _checkMonthlyMoodReport(){
   if(!totalDays){
     analysis = 'No registraste tu ánimo en '+monthName+'. Recordá que el seguimiento diario te ayuda a conocerte mejor. ¡Este mes es una nueva oportunidad! 🌱';
   } else {
-    // Build Gemini prompt with real data
     var moodList = Object.entries(moodCounts).map(function(e){ return e[0]+' ('+e[1]+' días)'; }).join(', ');
     var topFirst  = Object.keys(firstHalf).sort(function(a,b){ return (firstHalf[b]||0)-(firstHalf[a]||0); })[0]||'variado';
     var topSecond = Object.keys(secondHalf).sort(function(a,b){ return (secondHalf[b]||0)-(secondHalf[a]||0); })[0]||'variado';
     var pct = Math.round(positives/totalDays*100);
     var prompt = 'Sos un asistente empático de bienestar emocional de la app Velo.\n'
-      +'Analizá los registros de ánimo del usuario en '+monthName+' y escribí un mensaje personalizado, cálido y esperanzador en español rioplatense (usá "vos/te").\n\n'
+      +'Analizá los datos del usuario en '+monthName+' y escribí un mensaje personalizado, cálido y esperanzador en español rioplatense (usá "vos/te").\n\n'
       +'Datos reales del mes:\n'
       +'- Días registrados: '+totalDays+' de '+daysInPrev+' posibles\n'
-      +'- Distribución: '+moodList+'\n'
-      +'- Primera quincena: predominó '+topFirst+'\n'
-      +'- Segunda quincena: predominó '+topSecond+'\n'
+      +'- Distribución de ánimo: '+moodList+'\n'
+      +'- Primera quincena predominó: '+topFirst+'\n'
+      +'- Segunda quincena predominó: '+topSecond+'\n'
       +'- Días con ánimo positivo: '+pct+'%\n'
-      +(happyStats.posts?'- Publicó '+happyStats.posts+' momentos en el Muro de la Felicidad\n':'')
-      +(happyStats.reactionsReceived?'- Recibió '+happyStats.reactionsReceived+' reacciones en el Muro\n':'')
-      +(helpedOthers?'- Acompañó a '+helpedOthers+' persona(s) como guardián/a\n':'')
-      +(bottleCount?'- Envió '+bottleCount+' mensaje(s) al Mar\n':'')
-      +(guardianConvs?'- Total de conversaciones como guardián: '+guardianConvs+'\n':'')
+      +(diaryCount?'- Entradas en el Diario: '+diaryCount+'\n':'')
+      +(happyStats.posts?'- Momentos en el Muro de la Felicidad: '+happyStats.posts+'\n':'')
+      +(happyStats.reactionsReceived?'- Reacciones recibidas en el Muro: '+happyStats.reactionsReceived+'\n':'')
+      +(helpedOthers?'- Conversaciones como guardián/acompañante: '+helpedOthers+'\n':'')
+      +(helpReceived?'- Veces que recibió apoyo/acompañamiento: '+helpReceived+'\n':'')
+      +(bottleCount?'- Mensajes enviados al Mar: '+bottleCount+'\n':'')
+      +(reviewsReceived?'- Reseñas recibidas este mes: '+reviewsReceived+' (promedio '+reviewStars+'⭐)\n':'')
       +'\nEscribí 3-4 oraciones que:\n'
       +'1. Reconozcan cómo fue el mes con honestidad\n'
-      +'2. Destaquen algún patrón o tendencia real de los datos\n'
+      +'2. Destaquen algún patrón real de los datos (ánimo, conexión con otros, escritura)\n'
       +'3. Terminen con un mensaje motivador sin ser cursi\n'
-      +'Sin asteriscos, sin markdown, sin listas. Solo texto corrido. Máximo 90 palabras.';
+      +'Sin asteriscos, sin markdown, sin listas. Solo texto corrido. Máximo 100 palabras.';
 
     var aiText = await _geminiCall(prompt);
     analysis = aiText || (pct >= 60
@@ -4803,8 +4837,11 @@ async function _checkMonthlyMoodReport(){
 
   // Build rich message body
   var extraLines = '';
-  if(helpedOthers > 0) extraLines += '\n\n💙 Acompañaste a '+helpedOthers+' persona'+(helpedOthers>1?'s':'')+' este mes. Eso importa más de lo que imaginás.';
+  if(helpedOthers > 0) extraLines += '\n\n💙 Acompañaste a '+helpedOthers+' persona'+(helpedOthers>1?'s':'')+' como guardián/a en '+monthName+'. Eso importa más de lo que imaginás.';
+  if(helpReceived > 0) extraLines += '\n\n🌿 Recibiste acompañamiento '+helpReceived+' vez'+(helpReceived>1?'es':'')+'. Pedir apoyo también es valentía.';
   if(bottleCount > 0) extraLines += '\n\n🌊 Lanzaste '+bottleCount+' mensaje'+(bottleCount>1?'s':'')+' al Mar. Esas palabras llegaron a alguien que las necesitaba.';
+  if(reviewsReceived > 0) extraLines += '\n\n⭐ Recibiste '+reviewsReceived+' reseña'+(reviewsReceived>1?'s':'')+' este mes con un promedio de '+reviewStars+' estrellas. ¡La comunidad te valora!';
+  if(diaryCount > 0) extraLines += '\n\n📔 Escribiste '+diaryCount+' entrada'+(diaryCount>1?'s':'')+' en tu diario. Cada página es un paso hacia conocerte mejor.';
   if(unusedSections.length > 0 && unusedSections.length <= 2) extraLines += '\n\n✨ ¿Todavía no exploraste '+unusedSections.join(' ni ')+'? Este mes es un buen momento para descubrirlos.';
   extraLines += '\n\n🌻 Si Velo te está siendo útil, considerá apoyar con una donación. Cada aporte ayuda a mantener este espacio gratuito para más personas.';
 
@@ -4812,7 +4849,7 @@ async function _checkMonthlyMoodReport(){
   inbox.unshift({
     id: 'mood-report-'+Date.now(), tipo:'reporte', icon:'📊',
     remitente:'Velo — Análisis de Bienestar ✨',
-    asunto:'Tu resumen emocional de '+monthName+' 🌿',
+    asunto:'Tu resumen de '+monthName+' 🌿',
     extracto: summary,
     cuerpo: analysis + happyLine + extraLines,
     leido:false,
@@ -4820,7 +4857,7 @@ async function _checkMonthlyMoodReport(){
   });
   safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
   _updateInboxDot();
-  setTimeout(function(){ pToast('📊','Recibiste tu análisis de '+monthName+' en el buzón 💚'); }, 3000);
+  setTimeout(function(){ pToast('📊','Recibiste tu resumen de '+monthName+' en el buzón 💚'); }, 3000);
 }
 
 async function _loadMoodCalendar(){
@@ -4962,6 +4999,7 @@ function _runRespiraPhase(){
     _drawRespiraCircle(ph.color, 1 - elapsed/ph.dur);
     if(elapsed >= ph.dur){
       clearInterval(_respiraTimer);
+      _respiraTimer = null;
       _respiraPhaseIdx = (_respiraPhaseIdx+1) % _respiraPhases.length;
       if(_respiraRunning) _runRespiraPhase();
     }
@@ -4987,6 +5025,7 @@ function _drawRespiraCircle(color, scale){
 function _stopRespira(){
   _respiraRunning = false;
   clearInterval(_respiraTimer);
+  _respiraTimer = null;
   _setEl('respiraBtn','Comenzar');
   _setEl('respiraPhase','Preparate');
   _setEl('respiraCount','');
@@ -5205,6 +5244,7 @@ function pOpenCircle(id, circleData){
 }
 
 async function _renderCircleMessages(){
+  var _tok = _navToken;
   var el = document.getElementById('feedMessages');
   if(!el || !_curCircle) return;
 
@@ -5212,6 +5252,7 @@ async function _renderCircleMessages(){
   var sbRows = await _sbLoad('circle_messages', function(q){
     return q.eq('circle_id', _curCircle.id).order('created_at',{ascending:true}).limit(100);
   });
+  if(_navToken !== _tok) return;
 
   var msgs;
   if(sbRows !== null && sbRows.length){
@@ -5647,6 +5688,7 @@ function _processHappyQueue(){
 }
 
 async function pRenderHappy(){
+  var _tok = _navToken;
   var list = document.getElementById('happyList');
   if(!list) return;
   // Only reset form if user hasn't started typing
@@ -5659,6 +5701,7 @@ async function pRenderHappy(){
     var cutoff = new Date(Date.now()-24*60*60*1000).toISOString();
     return q.gte('created_at',cutoff).order('created_at',{ascending:false}).limit(50);
   });
+  if(_navToken !== _tok) return;
   var posts, usingSB = false;
   if(sbRows !== null){
     usingSB = true;
@@ -7174,6 +7217,7 @@ function _updateFavBadge(){
 // ── CONTACTS PAGE ─────────────────────────────────────────────
 
 async function pRenderContacts(){
+  var _tok = _navToken;
   var el = document.getElementById('contactsContent');
   if(!el) return;
 
@@ -7187,6 +7231,7 @@ async function pRenderContacts(){
   if(sbClient && myId){
     try{
       var fmRes = await sbClient.from('user_favorites').select('user_id,user_name,user_av,created_at').eq('fav_id', myId).order('created_at',{ascending:false}).limit(50);
+      if(_navToken !== _tok) return;
       favMeRows = fmRes.data || [];
       favMeCount = favMeRows.length;
       // Persist count and mark as seen → clears the badge
@@ -7198,6 +7243,7 @@ async function pRenderContacts(){
 
   // Refresh presence cache (online/busy/offline dots)
   await _refreshPresenceCache();
+  if(_navToken !== _tok) return;
   var onlineCount = favs.filter(function(f){ return _presenceInfo(f.id).on; }).length;
 
   // Unread DM count

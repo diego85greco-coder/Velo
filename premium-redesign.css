@@ -3481,3 +3481,73 @@ body.r-dark .p-sheet .p-muted { color: rgba(255,255,255,.45) !important; }
 body.r-dark .p-sheet .p-review-card [style*="font-size:13px"] {
   color: rgba(255,255,255,.75) !important;
 }
+
+/* ── v182: Diary dark mode ────────────────────────────────────── */
+body.r-dark .diary-write {
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(116,198,157,.25) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,.32) !important;
+}
+body.r-dark .diary-row {
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(255,255,255,.10) !important;
+}
+body.r-dark .diary-row:hover {
+  background: rgba(116,198,157,.10) !important;
+  border-color: rgba(116,198,157,.30) !important;
+}
+body.r-dark .diary-row-date  { color: rgba(116,198,157,.80) !important; }
+body.r-dark .diary-row-preview { color: rgba(255,255,255,.55) !important; }
+body.r-dark .diary-emoji-btn { color: rgba(255,255,255,.9); }
+body.r-dark .diary-emoji-btn:hover { background: rgba(255,255,255,.08) !important; }
+body.r-dark .diary-emoji-btn.sel {
+  background: rgba(116,198,157,.18) !important;
+  border-color: rgba(116,198,157,.45) !important;
+}
+body.r-dark #diaryDateLbl { color: rgba(255,255,255,.45) !important; }
+body.r-dark #pg-diary .p-label { color: rgba(116,198,157,.78) !important; }
+body.r-dark #pg-diary .p-label-sage { color: rgba(116,198,157,.85) !important; }
+body.r-dark #diaryPrivacyBanner {
+  background: rgba(116,198,157,.08) !important;
+  border-color: rgba(116,198,157,.22) !important;
+}
+body.r-dark #diaryPrivacyBanner div[style] { color: rgba(255,255,255,.60) !important; }
+
+/* ── v182: Diary entry viewer sheet dark mode ─────────────────── */
+body.r-dark #diaryEntryOv .p-sheet {
+  background: rgba(9,22,14,.97) !important;
+  border-top-color: rgba(116,198,157,.22) !important;
+}
+body.r-dark #diaryEntryOv #diaryEntryDate { color: rgba(116,198,157,.75) !important; }
+body.r-dark #diaryEntryOv #diaryEntryText { color: rgba(255,255,255,.85) !important; }
+
+/* ── v182: Inbox message sheet dark mode ──────────────────────── */
+body.r-dark #inboxMsgOv .p-sheet,
+body.r-dark #inboxAdminReplyOv .p-sheet,
+body.r-dark #replyToAdminOv .p-sheet,
+body.r-dark #offlineMsgOv .p-sheet {
+  background: rgba(9,22,14,.97) !important;
+  border-top-color: rgba(116,198,157,.22) !important;
+  --ink:    rgba(255,255,255,.93) !important;
+  --ink2:   rgba(255,255,255,.82) !important;
+  --ink3:   rgba(255,255,255,.70) !important;
+  --ink4:   rgba(255,255,255,.55) !important;
+  --ink5:   rgba(255,255,255,.38) !important;
+  --cream:  rgba(255,255,255,.07) !important;
+  --cream2: rgba(255,255,255,.05) !important;
+  --border: rgba(255,255,255,.13) !important;
+  --border2:rgba(255,255,255,.16) !important;
+  color: rgba(255,255,255,.92) !important;
+}
+
+/* ── v182: Guardian wait sheet dark ──────────────────────────── */
+body.r-dark #gdWaitOv .p-sheet {
+  background: rgba(9,22,14,.97) !important;
+  border-top-color: rgba(116,198,157,.22) !important;
+  --ink:    rgba(255,255,255,.93) !important;
+  --ink3:   rgba(255,255,255,.65) !important;
+  --cream2: rgba(255,255,255,.06) !important;
+  --border2:rgba(255,255,255,.16) !important;
+  --sage:   #72e0a6 !important;
+  color: rgba(255,255,255,.92) !important;
+}
