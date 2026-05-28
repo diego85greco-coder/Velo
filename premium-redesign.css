@@ -2565,17 +2565,17 @@ body.r-dark #pg-profile #profileStatusCard [style*="color:var(--ink)"] {
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   v167: LOGO — 3× bigger on mobile topbar
+   v168: MOBILE TOPBAR — compact (replaces oversized v167 rule)
    ══════════════════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
   .p-topbar {
-    min-height: 175px !important;
-    padding-top: max(env(safe-area-inset-top,0px), 14px) !important;
-    padding-bottom: 14px !important;
+    min-height: 58px !important;
+    height: auto !important;
+    padding: max(env(safe-area-inset-top,0px), 6px) 16px 6px !important;
   }
   .p-topbar-logo-img {
-    height: 150px !important;
-    max-width: 320px !important;
+    height: 40px !important;
+    max-width: 140px !important;
     width: auto !important;
     object-fit: contain !important;
   }
@@ -2634,4 +2634,112 @@ body:not(.r-dark) .r-guardian-toggle {
 }
 body:not(.r-dark) .r-status-dot--gray {
   background: rgba(27,94,58,.28) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   v168: SUBSCRIPTION MODAL — contrast fix (light + dark mode)
+   ══════════════════════════════════════════════════════════════════════ */
+/* Light mode: ❌ items use --ink5 (#A8C8B0) which is near-invisible on cream */
+#plusCompareOv ul li[style*="--ink5"] {
+  color: rgba(61,96,72,.50) !important;
+}
+/* Dark mode: left card --cream2 bg (light cream) → replace with dark surface */
+body.r-dark #plusCompareOv [style*="--cream2"] {
+  background: rgba(14,35,22,.92) !important;
+  border-color: rgba(80,160,110,.28) !important;
+}
+/* Dark mode: PayPal banner --sage7 bg (light mint) → replace with dark surface */
+body.r-dark #plusCompareOv [style*="--sage7"] {
+  background: rgba(10,28,18,.78) !important;
+  border-color: rgba(80,160,110,.20) !important;
+}
+/* Dark mode: list items in now-dark left card need light text */
+body.r-dark #plusCompareOv ul li {
+  color: rgba(200,225,212,.85) !important;
+}
+body.r-dark #plusCompareOv ul li[style*="--ink5"] {
+  color: rgba(200,225,212,.34) !important;
+}
+/* Dark mode: PayPal banner text */
+body.r-dark #plusCompareOv [style*="--sage7"] p {
+  color: rgba(200,225,212,.80) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   v168: GUARDIAN PILL — ocupado state (yellow toggle when guardian+ocupado)
+   ══════════════════════════════════════════════════════════════════════ */
+.r-guardian-pill--on.r-guardian-pill--ocupado {
+  background: rgba(234,179,8,.20) !important;
+  border-color: rgba(234,179,8,.55) !important;
+  color: rgba(255,255,255,.92) !important;
+  box-shadow: 0 0 16px rgba(234,179,8,.25) !important;
+}
+.r-guardian-pill--on.r-guardian-pill--ocupado .r-guardian-toggle {
+  background: #EAB308 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   v168: SIDEBAR LOGO — much bigger in landscape/desktop (~4× in hover)
+   ══════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  .p-sidebar-logo-img {
+    max-width: 90px !important;
+    height: 90px !important;
+    object-fit: contain !important;
+  }
+  .p-sidebar-logo {
+    padding: 16px 8px 22px !important;
+  }
+  .p-sidebar:hover .p-sidebar-logo-img {
+    max-width: 200px !important;
+    height: 200px !important;
+  }
+  .p-sidebar:hover .p-sidebar-logo {
+    padding: 20px 28px 24px !important;
+  }
+  /* Safari fix: position:sticky on flex child breaks layout — use relative */
+  .p-sidebar {
+    position: relative !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   v168: MOBILE STATUS PILLS — wrap + compact on phones
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* Allow the status row to wrap so pills don't overflow screen width */
+  .r-hero-status-row {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  /* Smaller pills to fit comfortably */
+  .r-status-seg {
+    padding: 5px 11px !important;
+    font-size: 11px !important;
+    gap: 5px !important;
+  }
+  .r-status-dot {
+    width: 6px !important;
+    height: 6px !important;
+  }
+  .r-guardian-pill {
+    padding: 6px 11px !important;
+    font-size: 11px !important;
+    gap: 5px !important;
+  }
+  .r-guardian-toggle {
+    width: 28px !important;
+    height: 16px !important;
+  }
+  .r-guardian-knob {
+    width: 12px !important;
+    height: 12px !important;
+  }
+  .r-guardian-pill--on .r-guardian-knob {
+    transform: translateX(12px) !important;
+  }
+  /* Hero section: prevent horizontal overflow */
+  .r-hero-v2 {
+    overflow-x: hidden !important;
+  }
 }

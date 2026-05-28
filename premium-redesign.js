@@ -387,3 +387,61 @@ function initSurveyDismissal() {
     });
   }).observe(document.body, { childList: true, subtree: true });
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v168: Modo Guardián — fix toggle re-render + ocupado (yellow) state
+   ══════════════════════════════════════════════════════════════════════ */
+(function() {
+  // Override pHomeToggleGuardian so the pill re-renders after every toggle
+  window.pHomeToggleGuardian = function() {
+    var wasOn = safeLS('get', 'velo_is_guardian') === 'true';
+    if (!wasOn) {
+      var bio = safeLS('get', 'velo_guardian_bio') || '';
+      if (!bio.trim()) {
+        if (typeof pShowGuardianSetupModal === 'function') pShowGuardianSetupModal();
+        return;
+      }
+    }
+    if (typeof pToggleGuardianMode === 'function') pToggleGuardianMode();
+    setTimeout(function() {
+      if (typeof _renderHomeStatusToggle === 'function') _renderHomeStatusToggle();
+    }, 60);
+  };
+
+  // Patch pSaveGuardianSetup so the pill also re-renders after bio is saved
+  var _origSaveSetup = window.pSaveGuardianSetup;
+  window.pSaveGuardianSetup = function() {
+    if (typeof _origSaveSetup === 'function') _origSaveSetup.apply(this, arguments);
+    setTimeout(function() {
+      if (typeof _renderHomeStatusToggle === 'function') _renderHomeStatusToggle();
+    }, 130);
+  };
+
+  // Override _renderHomeStatusToggle to add ocupado (yellow) state on guardian pill
+  window._renderHomeStatusToggle = function() {
+    var el = document.getElementById('homeStatusToggle');
+    if (!el) return;
+    var st = safeLS('get', 'velo_user_status') || 'disponible';
+    var isGuardian = safeLS('get', 'velo_is_guardian') === 'true';
+
+    var segPill = '<div class="r-status-combined-pill">'
+      + '<button class="r-status-seg' + (st === 'disponible' ? ' active' : '') + '" onclick="pSetUserStatus(\'disponible\')">'
+      + '<span class="r-status-dot r-status-dot--' + (st === 'disponible' ? 'green' : 'gray') + '"></span>Disponible</button>'
+      + '<button class="r-status-seg' + (st === 'ocupado' ? ' active' : '') + '" onclick="pSetUserStatus(\'ocupado\')">'
+      + '<span class="r-status-dot r-status-dot--' + (st === 'ocupado' ? 'yellow' : 'gray') + '"></span>Ocupado</button>'
+      + '</div>';
+
+    var guardClasses = 'r-guardian-pill'
+      + (isGuardian ? (st === 'ocupado' ? ' r-guardian-pill--on r-guardian-pill--ocupado' : ' r-guardian-pill--on') : '');
+
+    var guardPill = '<button class="' + guardClasses + '" onclick="pHomeToggleGuardian()">'
+      + '<span style="font-size:14px">🛡️</span>'
+      + '<span>Modo Guardián</span>'
+      + '<span class="r-guardian-toggle"><span class="r-guardian-knob"></span></span>'
+      + '</button>';
+
+    el.innerHTML = segPill + guardPill;
+    var gWrap = document.getElementById('homeGuardianWrap');
+    if (gWrap) gWrap.style.display = 'none';
+  };
+})();
