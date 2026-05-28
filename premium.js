@@ -1811,12 +1811,15 @@ async function pRenderGuardians(){
   }
   list.innerHTML = selfBanner + filtered.map(function(g){
     var badge = _getBadge(g.convs||0);
+    var gVerified = (badge.name==='Plata'||badge.name==='Oro'||badge.name==='Diamante');
     var statusColor = g.status==='disponible'?'var(--st-on)':g.status==='ocupado'?'#C8A200':'rgba(150,150,150,.5)';
     var statusLabel = g.status==='disponible'?'Disponible':g.status==='ocupado'?'Ocupado':'Anónimo';
     var isAnon = g.status==='incognito';
     var rawId = g.id.replace('live_','');
     var isFav = !isAnon && pIsFav(rawId);
-    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+(isAnon?'Guardián Anónimo':g.name)+'</span><span style="font-size:14px">'+badge.icon+'</span></div><div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0">'+(isAnon?'Disponible de forma anónima':g.bio)+'</p></div>'
+    var gVbadge = gVerified && !isAnon ? '<span class="velo-verified" title="Verificado — Plata o superior">✓</span>' : '';
+    var gVavBadge = gVerified && !isAnon ? '<span style="position:absolute;bottom:-2px;left:-2px;width:14px;height:14px;border-radius:50%;background:#1d9bf0;border:2px solid var(--bg-main,#fff);color:#fff;font-size:8px;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1">✓</span>' : '';
+    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span>'+gVavBadge+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+(isAnon?'Guardián Anónimo':g.name)+'</span>'+gVbadge+'<span style="font-size:14px">'+badge.icon+'</span></div><div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0">'+(isAnon?'Disponible de forma anónima':g.bio)+'</p></div>'
       +'<div style="display:flex;gap:6px;align-items:center">'
       +(!isAnon ? '<button onclick="event.stopPropagation();'+(isFav?'pRemoveFav':'pAddFav')+'('+_jsAttr(rawId)+','+_jsAttr(g.name)+','+_jsAttr(g.av||'🌿')+');pRenderGuardians()" style="padding:6px 8px;background:'+(isFav?'rgba(255,200,50,.18)':'rgba(255,200,50,.07)')+';border:1px solid rgba(255,200,50,'+(isFav?'.4':'.2')+');border-radius:10px;font-size:15px;cursor:pointer" title="'+(isFav?'Quitar favorito':'Guardar favorito')+'">'+(isFav?'⭐':'☆')+'</button>' : '')
       +'<button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(g.status==='ocupado'?'pToast(\'🟡\','+_jsAttr(g.name+' está ocupado/a ahora')+')':'pOpenGuardian('+_jsAttr(g.id)+')')+'">'+(g.status==='ocupado'?'Ocupado/a':'Solicitar')+'</button>'
@@ -6178,8 +6181,26 @@ function pLoadProfile(){
   var av    = safeLS('get','velo_user_av') || '🧑';
   var motto = safeLS('get','velo_user_motto') || 'Mi camino, mi ritmo.';
   var uname = safeLS('get','velo_username') || '';
-  _setEl('profileName', name);
+  var _pConvs = parseInt(safeLS('get','velo_guardian_convs')||'0',10);
+  var _pBadge = _getBadge(_pConvs);
+  var _pVerified = (_pBadge.name==='Plata'||_pBadge.name==='Oro'||_pBadge.name==='Diamante');
+  // Name with verified tick
+  var nameEl = document.getElementById('profileName');
+  if(nameEl) nameEl.innerHTML = _escHtml(name) + (_pVerified ? ' <span class="velo-verified" title="Verificado — Plata o superior">✓</span>' : '');
   _renderAvatarEl('profileAv', av);
+  // Verified badge on avatar photo (bottom-left, status dot is bottom-right)
+  var avWrap = document.getElementById('profileAv') && document.getElementById('profileAv').parentElement;
+  if(avWrap){
+    var old = avWrap.querySelector('.velo-verified-av');
+    if(old) old.parentElement.removeChild(old);
+    if(_pVerified){
+      var vb = document.createElement('div');
+      vb.className = 'velo-verified-av';
+      vb.title = 'Verificado — Guardián Plata o superior';
+      vb.textContent = '✓';
+      avWrap.appendChild(vb);
+    }
+  }
   _setEl('profileMotto', motto);
   // Show @username or prompt to set one
   var unameEl = document.getElementById('profileUsername');
@@ -6358,7 +6379,7 @@ function _renderBadgesGrid(){
 
   var tiers = [
     { name:'Novato',   icon:'🌱', min:0,   max:5,   color:'var(--sage4)', unlock:'Podés pedir acompañamiento a otros guardianes' },
-    { name:'Bronce',   icon:'🥉', min:5,   max:20,  color:'#C07840',      unlock:'Ingresá 5 días distintos a la app · Aparecés en el listado de guardianes disponibles' },
+    { name:'Bronce',   icon:'🥉', min:5,   max:20,  color:'#C07840',      unlock:'Ingresá 5 días distintos a la app' },
     { name:'Plata',    icon:'🥈', min:20,  max:40,  color:'#8892A4',      unlock:'Insignia verificada en tu perfil público' },
     { name:'Oro',      icon:'🥇', min:40,  max:100, color:'#C8A200',      unlock:'Podés crear Círculos de Paz ☮️ + prioridad en el listado' },
     { name:'Diamante', icon:'💎', min:100, max:100, color:'#7B68EE',      unlock:'Estado top de la comunidad + descuento en Velo Plus ✨' }

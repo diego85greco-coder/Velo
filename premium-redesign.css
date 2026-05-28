@@ -3219,3 +3219,48 @@ body.r-dark #guardianStatusBar .p-filter-chip.active {
   border-color: rgba(116,198,157,.50) !important;
   color: rgba(116,198,157,.95) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v177: Verified badge (Plata / Oro / Diamante) — Instagram-style blue ✓
+   ══════════════════════════════════════════════════════════════════════ */
+.velo-verified {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  background: #1d9bf0;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 900;
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-left: 2px;
+  line-height: 1;
+  user-select: none;
+  cursor: default;
+}
+/* Avatar overlay badge (profile page) */
+.velo-verified-av {
+  position: absolute;
+  bottom: -4px;
+  left: -4px;
+  width: 22px;
+  height: 22px;
+  background: #1d9bf0;
+  border-radius: 50%;
+  border: 2.5px solid var(--cream, #fff);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 3;
+  line-height: 1;
+}
+body.r-dark .velo-verified-av {
+  border-color: #0c1e12;
+}
