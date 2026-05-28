@@ -1014,14 +1014,13 @@ body.r-dark .r-section-card {
 }
 .r-lhero-card::before { display: none !important; }
 
-/* 4. Logo — ancho landscape con tagline integrado */
+/* 4. Logo — cuadrado 1024x1024, transparencia real */
 .land-hero-logo {
-  height: clamp(110px, 18vw, 160px) !important;
+  height: clamp(140px, 22vw, 210px) !important;
   width: auto !important;
-  max-width: 480px !important;
   filter:
-    drop-shadow(0 0 22px rgba(116,198,157,.50))
-    drop-shadow(0 2px 10px rgba(0,0,0,.55)) !important;
+    drop-shadow(0 0 24px rgba(116,198,157,.55))
+    drop-shadow(0 4px 12px rgba(0,0,0,.50)) !important;
   margin-bottom: 28px !important;
 }
 
