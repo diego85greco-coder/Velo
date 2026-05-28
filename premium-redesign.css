@@ -3106,3 +3106,35 @@ body.r-dark #newsDetailOv [style*="color:var(--sage3)"] {
 body.r-dark #newsDetailOv [style*="color:var(--ink3)"] {
   color: rgba(210,240,225,.88) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v173: HERO SHRINK-WRAP — eliminate phantom height on mobile
+   Root cause: flex-direction:column-reverse on .r-hero-right causes
+   iOS/Safari to miscalculate the flex container height, stretching
+   the grid row and thus the hero card well beyond actual content.
+   Fix: switch to flex-direction:column + explicit order properties,
+   force height:auto and overflow:hidden on the hero card and its right
+   column so the card ends immediately after the icon-button row.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 860px) {
+  /* Hero card: shrink-wrap to content — no phantom height, no scroll */
+  .r-hero-v2 {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    align-items: start !important;
+    align-content: start !important;
+  }
+  /* Right column: replace column-reverse with column + CSS order —
+     stats appear above icons, exact same visual, no reverse-direction
+     height quirks */
+  .r-hero-right {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    justify-content: flex-start !important;
+  }
+  .r-hero-right .r-hero-stats       { order: 0; }
+  .r-hero-right .r-hero-actions-top { order: 1; }
+}
