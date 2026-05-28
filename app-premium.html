@@ -9,13 +9,13 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://*.supabase.co https://www.paypal.com https://www.paypalobjects.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.ipify.org https://generativelanguage.googleapis.com https://newsdata.io https://api.paypal.com https://www.paypal.com https://challenges.cloudflare.com https://api.stripe.com; frame-src https://www.paypal.com https://challenges.cloudflare.com https://meet.jit.si; frame-ancestors 'none'; upgrade-insecure-requests">
-  <link rel="icon" type="image/png" href="assets/logo.png">
-  <link rel="apple-touch-icon" href="assets/logo.png">
+  <link rel="icon" type="image/png" href="assets/logo-dark.png">
+  <link rel="apple-touch-icon" href="assets/logo-dark.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260527-147">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260527-147">
+  <link rel="stylesheet" href="premium.css?v=20260527-148">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260527-148">
 </head>
 <body>
 
@@ -54,7 +54,7 @@
   <!-- SIDEBAR (desktop) -->
   <aside class="p-sidebar" id="pSidebar" style="display:none">
     <div class="p-sidebar-logo">
-      <img src="assets/logo.png" alt="Velo — Acompañamos emociones" class="p-sidebar-logo-img" onclick="pLogoClick()">
+      <img src="assets/logo-dark.png" alt="Velo — Acompañamos emociones" class="p-sidebar-logo-img" onclick="pLogoClick()">
     </div>
     <nav class="p-sidebar-nav">
       <div class="p-sidebar-section">Principal</div>
@@ -151,7 +151,7 @@
 
     <!-- TOPBAR (mobile) -->
     <header class="p-topbar" id="pTopbar" style="display:none">
-      <img src="assets/logo.png" alt="Velo" class="p-topbar-logo-img" onclick="pLogoClick()" style="cursor:pointer">
+      <img src="assets/logo-dark.png" alt="Velo" class="p-topbar-logo-img" onclick="pLogoClick()" style="cursor:pointer">
       <div class="p-topbar-actions" style="display:flex;align-items:center;gap:6px">
         <button id="topbarMoodBtn" onclick="pOpenMoodQuickView()" title="Tus ánimos registrados" style="display:flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(255,255,255,.06);border:1.5px solid var(--border2);border-radius:100px;font-size:13px;font-weight:700;color:var(--ink3);cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap"><span id="topbarMoodEmoji">🤗</span><span style="font-size:11px;color:var(--ink3)">Tus ánimos</span><span id="topbarMoodStreak" style="display:none;font-size:10px;color:var(--ink4)">🔥<span id="topbarMoodStreakNum"></span></span></button>
         <button onclick="pGoTo('donate-cta')" style="display:flex;align-items:center;gap:3px;padding:5px 10px;background:rgba(116,198,157,.12);border:1.5px solid rgba(116,198,157,.3);border-radius:100px;font-size:11px;font-weight:700;color:var(--sage);cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap">🙏 Donar</button>
@@ -2927,8 +2927,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260527-147"></script>
-<script src="premium-redesign.js?v=20260527-147"></script>
+<script src="premium.js?v=20260527-148"></script>
+<script src="premium-redesign.js?v=20260527-148"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
