@@ -38,7 +38,8 @@ var _liveGuardians = [];    // cached live guardian rows from Supabase
 var _grReqCh      = null;   // guardian_requests realtime channel (guardian side)
 var _seekerGrCh   = null;   // guardian_requests realtime channel (seeker side)
 var _helpChatRtCh = null;   // realtime channel for help chat direct_messages
-var _guardianWaitTimer = null; // 80s timeout when guardian is waiting for acceptance
+var _guardianWaitTimer = null; // 2-min timeout when user waits for help-post acceptance
+var _seekerWaitTimer   = null; // 2-min timeout when user waits for direct guardian acceptance
 var _pendingGuardianPost = null; // post object guardian clicked "Acompañar" on
 var _pendingGuardianReqId = null; // ID of the guardian_request row sent (to cancel only that row)
 var _dmRtCh      = null;   // realtime channel direct_messages (per-thread)
@@ -1954,6 +1955,27 @@ async function pConfirmAskGuardian(){
   _gcPeer = { id: guardianUid, name: guardian.name||'Guardián', av: guardian.av||'🌿' };
   _showGuardianWaitSheet(guardian.name||'el guardián', reqId);
   _subscribeSeekerRequest(reqId);
+  // 2-minute timeout: update overlay with disconnection message
+  if(_seekerWaitTimer) clearTimeout(_seekerWaitTimer);
+  _seekerWaitTimer = setTimeout(function(){
+    var ov = document.getElementById('gdWaitOv');
+    if(!ov) return;
+    var sheet = ov.querySelector('.p-sheet');
+    if(sheet){
+      sheet.innerHTML = '<div class="p-sheet-handle"></div>'
+        +'<div style="text-align:center;padding:20px 0 8px">'
+        +'<div style="font-size:40px;margin-bottom:10px">💤</div>'
+        +'<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:10px">Sin respuesta</div>'
+        +'<p style="font-size:13px;color:var(--ink3);margin:0 0 20px;line-height:1.6;padding:0 8px">Quizás el usuario que estás intentando conectar se desconectó y por eso no responde a la solicitud. Podés intentar en otro momento, o mandarle un mensaje al buzón Velo interno.</p>'
+        +'<div style="display:flex;flex-direction:column;gap:10px;padding:0 4px 8px">'
+        +'<button onclick="pCancelGuardianWait(\''+_jsAttr(reqId)+'\')" style="padding:12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Intentar en otro momento</button>'
+        +'<button onclick="pCancelGuardianWait(\''+_jsAttr(reqId)+'\');pGoTo(\'inbox\')" style="padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">💌 Ir al buzón Velo</button>'
+        +'</div></div>';
+    }
+    if(_seekerPollTmr){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; }
+    if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
+    _seekerWaitTimer = null;
+  }, 120000);
 }
 
 function _showGuardianWaitSheet(name, reqId){
@@ -1976,6 +1998,7 @@ function _showGuardianWaitSheet(name, reqId){
 }
 
 function _closeGuardianWaitSheet(){
+  if(_seekerWaitTimer){ clearTimeout(_seekerWaitTimer); _seekerWaitTimer = null; }
   var ov = document.getElementById('gdWaitOv');
   if(ov) ov.remove();
 }
@@ -2512,7 +2535,7 @@ async function _guardianSendRequest(post){
     .subscribe();
   // 80 second timeout
   if(_guardianWaitTimer) clearTimeout(_guardianWaitTimer);
-  _guardianWaitTimer = setTimeout(function(){ _guardianRequestExpired(post); }, 80000);
+  _guardianWaitTimer = setTimeout(function(){ _guardianRequestExpired(post); }, 120000);
 }
 
 function _showGuardianWaitOverlay(post, myName){
@@ -2521,20 +2544,20 @@ function _showGuardianWaitOverlay(post, myName){
   var ov = document.createElement('div');
   ov.id = 'guardianWaitOv';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
-  ov.innerHTML = '<div style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center">'
+  ov.innerHTML = '<div id="guardianWaitCard" style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center">'
     +'<div style="font-size:44px;margin-bottom:12px">💙</div>'
     +'<div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Esperando respuesta…</div>'
-    +'<div style="font-size:13px;color:var(--ink3);margin-bottom:18px">Le avisamos a <strong>'+_escHtml(post.name)+'</strong> que querés acompañarle. Si no responde en 80 segundos podrás dejarle un mensaje.</div>'
-    +'<div id="guardianWaitCountdown" style="font-size:32px;font-weight:800;color:var(--sage);margin-bottom:20px">80</div>'
+    +'<div style="font-size:13px;color:var(--ink3);margin-bottom:18px">Le avisamos a <strong>'+_escHtml(post.name)+'</strong> que querés acompañarle. Si no responde en 2 minutos te mostraremos opciones.</div>'
+    +'<div id="guardianWaitCountdown" style="font-size:32px;font-weight:800;color:var(--sage);margin-bottom:20px">2:00</div>'
     +'<button onclick="_guardianCancelWait()" style="padding:10px 24px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:100px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
     +'</div>';
   document.body.appendChild(ov);
-  // Start countdown display
-  var secs = 80;
+  // Start countdown display: 2 minutes (120s), shown as M:SS
+  var secs = 120;
   var cdEl = document.getElementById('guardianWaitCountdown');
   var cdInt = setInterval(function(){
     secs--;
-    if(cdEl) cdEl.textContent = secs;
+    if(cdEl){ var m=Math.floor(secs/60), s=secs%60; cdEl.textContent=m+':'+(s<10?'0':'')+s; }
     if(secs <= 0) clearInterval(cdInt);
   }, 1000);
   ov.setAttribute('data-cd-int', cdInt);
@@ -2576,8 +2599,20 @@ function _guardianRequestDeclined(post){
 }
 
 function _guardianRequestExpired(post){
-  _clearGuardianWaitOverlay();
-  _showLeaveMessageModal(post, 'Esta persona publicó pero no está disponible ahora.');
+  if(_grReqCh && sbClient){ try{ sbClient.removeChannel(_grReqCh); }catch(e){} _grReqCh = null; }
+  var card = document.getElementById('guardianWaitCard');
+  if(card){
+    card.innerHTML = '<div style="font-size:40px;margin-bottom:12px">💤</div>'
+      +'<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:10px">Sin respuesta</div>'
+      +'<p style="font-size:13px;color:var(--ink3);margin:0 0 18px;line-height:1.55">Quizás el usuario que estás intentando conectar se desconectó y por eso no responde a la solicitud. Podés intentar en otro momento, o dejarle un mensaje en su buzón.</p>'
+      +'<div style="display:flex;flex-direction:column;gap:10px">'
+      +'<button onclick="_guardianCancelWait();pGoTo(\'help\')" style="padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Intentar en otro momento</button>'
+      +'<button onclick="_guardianCancelWait();_showLeaveMessageModal('+JSON.stringify(post)+',\'Quizás no estaba disponible en ese momento.\')" style="padding:11px;background:var(--sage);border:none;border-radius:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💌 Enviar mensaje al buzón</button>'
+      +'</div>';
+  } else {
+    _clearGuardianWaitOverlay();
+    _showLeaveMessageModal(post, 'Quizás el usuario se desconectó y no pudo responder.');
+  }
 }
 
 function _showLeaveMessageModal(post, reason){
