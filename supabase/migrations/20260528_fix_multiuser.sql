@@ -97,6 +97,7 @@ DROP POLICY IF EXISTS "dm_select"             ON public.direct_messages;
 DROP POLICY IF EXISTS "dm_select_participant" ON public.direct_messages;
 DROP POLICY IF EXISTS "dm_insert"             ON public.direct_messages;
 DROP POLICY IF EXISTS "dm_insert_own"         ON public.direct_messages;
+DROP POLICY IF EXISTS "dm_all"                ON public.direct_messages;
 CREATE POLICY "dm_all" ON public.direct_messages FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 -- guardian_requests
@@ -108,6 +109,7 @@ DROP POLICY IF EXISTS "gr_update_auth" ON public.guardian_requests;
 DROP POLICY IF EXISTS "gr_select"      ON public.guardian_requests;
 DROP POLICY IF EXISTS "gr_insert"      ON public.guardian_requests;
 DROP POLICY IF EXISTS "gr_update"      ON public.guardian_requests;
+DROP POLICY IF EXISTS "gr_all"         ON public.guardian_requests;
 CREATE POLICY "gr_all" ON public.guardian_requests FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 -- bottles
@@ -119,6 +121,7 @@ DROP POLICY IF EXISTS "bottles_delete_own"  ON public.bottles;
 DROP POLICY IF EXISTS "bottles_select"      ON public.bottles;
 DROP POLICY IF EXISTS "bottles_insert"      ON public.bottles;
 DROP POLICY IF EXISTS "bottles_update"      ON public.bottles;
+DROP POLICY IF EXISTS "bottles_all"         ON public.bottles;
 CREATE POLICY "bottles_all" ON public.bottles FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 -- help_posts
@@ -131,6 +134,7 @@ DROP POLICY IF EXISTS "hp_delete_own"      ON public.help_posts;
 DROP POLICY IF EXISTS "help_select"        ON public.help_posts;
 DROP POLICY IF EXISTS "help_insert"        ON public.help_posts;
 DROP POLICY IF EXISTS "help_update"        ON public.help_posts;
+DROP POLICY IF EXISTS "help_all"           ON public.help_posts;
 CREATE POLICY "help_all" ON public.help_posts FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 -- guardian_presence
@@ -139,6 +143,7 @@ DROP POLICY IF EXISTS "allow_all"      ON public.guardian_presence;
 DROP POLICY IF EXISTS "gp_select_auth" ON public.guardian_presence;
 DROP POLICY IF EXISTS "gp_insert_own"  ON public.guardian_presence;
 DROP POLICY IF EXISTS "gp_update_own"  ON public.guardian_presence;
+DROP POLICY IF EXISTS "gp_all"         ON public.guardian_presence;
 CREATE POLICY "gp_all" ON public.guardian_presence FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 -- happy_posts
@@ -151,6 +156,7 @@ DROP POLICY IF EXISTS "happy_select"        ON public.happy_posts;
 DROP POLICY IF EXISTS "happy_insert"        ON public.happy_posts;
 DROP POLICY IF EXISTS "happy_update"        ON public.happy_posts;
 DROP POLICY IF EXISTS "happy_delete"        ON public.happy_posts;
+DROP POLICY IF EXISTS "happy_all"           ON public.happy_posts;
 CREATE POLICY "happy_all" ON public.happy_posts FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 -- ─────────────────────────────────────────────────────────────
