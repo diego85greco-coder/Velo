@@ -3955,7 +3955,7 @@ async function pRenderBottleResponses(){
         .or('target.eq.user:'+myId+',target.eq.all').eq('icon','🌊').order('sent_at',{ascending:false}).limit(20);
       if(data && data.length){
         resps = data.map(function(b){
-          return { asunto:b.subject, cuerpo:b.body, fecha: new Date(b.sent_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) };
+          return { id:b.id, asunto:b.subject, cuerpo:b.body, fecha: new Date(b.sent_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) };
         });
       }
     }catch(e){}
@@ -3965,13 +3965,31 @@ async function pRenderBottleResponses(){
     return;
   }
   el.innerHTML = resps.map(function(r){
-    return '<div class="dark-bottle" style="border-left:3px solid rgba(116,198,157,.3);margin-bottom:12px">'
-      +'<div style="font-size:11px;color:rgba(200,165,100,.6);margin-bottom:6px">'+( r.asunto||'Respuesta a tu mensaje')+'</div>'
+    var delFn = r.id ? 'pDeleteBottleResponse(\''+r.id+'\',this.closest(\'.bottle-resp-card\'))' : 'this.closest(\'.bottle-resp-card\').remove()';
+    return '<div class="dark-bottle bottle-resp-card" style="border-left:3px solid rgba(116,198,157,.3);margin-bottom:12px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      +'<div style="font-size:11px;color:rgba(200,165,100,.6)">'+( r.asunto||'Respuesta a tu mensaje')+'</div>'
+      +'<button onclick="'+delFn+'" style="background:none;border:none;cursor:pointer;font-size:13px;color:rgba(255,120,120,.6);padding:2px 4px;border-radius:6px" title="Eliminar">🗑️</button>'
+      +'</div>'
       +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;padding:12px">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:18px">💌</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+(r.fecha||'')+'</span></div>'
       +'<p style="font-size:13px;color:rgba(255,255,255,.8);line-height:1.6;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic">'+(r.cuerpo||r.body||'')+'</p>'
       +'</div></div>';
   }).join('');
+}
+
+async function pDeleteBottleResponse(broadcastId, cardEl){
+  if(!confirm('¿Eliminar esta respuesta?')) return;
+  if(cardEl){ cardEl.style.transition='opacity .3s'; cardEl.style.opacity='0'; setTimeout(function(){ if(cardEl.parentNode) cardEl.parentNode.removeChild(cardEl); },350); }
+  _initSupabase();
+  if(sbClient && broadcastId){
+    try{ await sbClient.from('broadcasts').delete().eq('id', broadcastId); }catch(e){}
+  }
+  // Also remove from localStorage inbox
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  inbox = inbox.filter(function(m){ return m.id !== broadcastId; });
+  safeLS('set','velo_inbox', JSON.stringify(inbox));
+  pToast('🗑️','Respuesta eliminada');
 }
 
 async function _loadGuardianStats(){
@@ -4443,17 +4461,32 @@ async function pSaveMood(){
 }
 
 // ── MOOD QUICK VIEW MODAL ─────────────────────────────────────
-function pOpenMoodQuickView(){
+async function pOpenMoodQuickView(){
   var existing = document.getElementById('moodQuickOv');
   if(existing) existing.remove();
 
-  // Build calendar grid for current month
+  // Build calendar grid for current month (merge localStorage + Supabase)
   var now = new Date();
   var year = now.getFullYear();
   var month = now.getMonth();
   var daysInMonth = new Date(year, month+1, 0).getDate();
   var monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  var moodColors = {'😄':'#74c69d','😊':'#a8dadc','😐':'#ffd166','😞':'#f4a261','😢':'#e76f51'};
+
+  // Build moodMap from localStorage first
+  var moodMap = {};
+  for(var _d=1; _d<=daysInMonth; _d++){
+    var _dk = year+'-'+String(month+1).padStart(2,'0')+'-'+String(_d).padStart(2,'0');
+    var _st = safeLS('get','velo_mood_'+_dk);
+    if(_st){ try{ var _ms=JSON.parse(_st); if(_ms.emoji) moodMap[_dk]=_ms; }catch(e){} }
+  }
+  // Merge from Supabase
+  try{
+    var sbMoods = await sbLoadAllMoods(year, month+1);
+    if(sbMoods) sbMoods.forEach(function(e){ if(e.emoji) moodMap[e.date_key]=e; });
+  }catch(e){}
+
+  // If modal was removed while loading, abort
+  if(document.getElementById('moodQuickOv')) return;
 
   var calHtml = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 auto 16px;max-width:330px">';
   ['L','M','M','J','V','S','D'].forEach(function(d){
@@ -4464,11 +4497,12 @@ function pOpenMoodQuickView(){
   for(var i=0; i<firstDay; i++) calHtml += '<div></div>';
   for(var d=1; d<=daysInMonth; d++){
     var dk = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    var stored = safeLS('get','velo_mood_'+dk);
-    var emoji = ''; var color = 'var(--cream2)';
-    if(stored){ try{ var ms=JSON.parse(stored); emoji=ms.emoji||''; color=moodColors[emoji]||'rgba(116,198,157,.25)'; }catch(e){} }
+    var entry = moodMap[dk];
     var isToday = d === now.getDate();
-    calHtml += '<div style="aspect-ratio:1;border-radius:8px;background:'+(emoji?color:'var(--cream2)')+';display:flex;align-items:center;justify-content:center;font-size:'+(emoji?'16px':'11px')+';color:'+(emoji?'#fff':'var(--ink5)')+';font-weight:700;'+(isToday?'outline:2px solid var(--sage);outline-offset:1px':'')+'">'+(emoji||d)+'</div>';
+    calHtml += '<div style="aspect-ratio:1;border-radius:8px;background:'+(entry?'rgba(116,198,157,.2)':'var(--cream2)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+(isToday?'outline:2px solid var(--sage);outline-offset:1px':'')+'">'
+      +'<span style="font-size:9px;color:'+(entry?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+d+'</span>'
+      +(entry?'<span style="font-size:13px;line-height:1">'+entry.emoji+'</span>':'')
+      +'</div>';
   }
   calHtml += '</div>';
 
@@ -4810,7 +4844,11 @@ async function _loadMoodCalendar(){
   for(var dd = 1; dd <= daysInMonth; dd++){
     var k = year+'-'+String(month).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
     var entry = moodMap[k];
-    html += '<div style="aspect-ratio:1;background:'+(entry?'rgba(116,198,157,.15)':'rgba(0,0,0,.04)')+';border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:'+(entry?'16px':'11px')+';color:var(--ink5)" title="'+k+'">'+(entry?entry.emoji:dd)+'</div>';
+    var isToday2 = dd === now.getDate();
+    html += '<div style="aspect-ratio:1;background:'+(entry?'rgba(116,198,157,.18)':'rgba(0,0,0,.04)')+';border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+(isToday2?'outline:2px solid var(--sage);outline-offset:1px;':'')+'" title="'+k+'">'
+      +'<span style="font-size:9px;color:'+(entry?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+dd+'</span>'
+      +(entry?'<span style="font-size:14px;line-height:1">'+entry.emoji+'</span>':'')
+      +'</div>';
   }
   cal.innerHTML = html;
   // History list
@@ -5462,10 +5500,12 @@ async function _loadUserReviews(userId){
   _initSupabase();
   if(!sbClient || !userId) return [];
   try{
+    await _ensureSbSession();
     var res = await sbClient.from('reviews').select('*').eq('pro_id', userId)
       .order('created_at',{ascending:false}).limit(50);
+    if(res.error) console.error('[reviews load]', res.error.message);
     return res.data || [];
-  }catch(e){ return []; }
+  }catch(e){ console.error('[reviews load catch]', e); return []; }
 }
 
 function _reviewCardHtml(r, myId, proId){
@@ -6237,13 +6277,32 @@ function pLoadProfile(){
   // Email
   _setEl('profileEmail', safeLS('get','velo_user_email') || '—');
 
-  // Stats
-  var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
-  var daysReg = Math.ceil((Date.now() - (parseInt(safeLS('get','velo_registered_ts')||Date.now(),10))) / 86400000);
+  // Stats — show from localStorage first, then sync from Supabase
+  var daysReg = _getVisitDayCount() || Math.ceil((Date.now() - (parseInt(safeLS('get','velo_registered_ts')||Date.now(),10))) / 86400000);
   _setEl('profileDays', Math.max(1, daysReg));
-  _setEl('profileChats', diary.length);
-  _setEl('profileHelped', parseInt(safeLS('get','velo_guardian_convs')||'0', 10));
-  _setEl('profileReceived', parseInt(safeLS('get','velo_help_received')||'0', 10));
+  var _locHelped = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
+  var _locRecv   = parseInt(safeLS('get','velo_help_received')||'0', 10);
+  _setEl('profileChats',    _locHelped + _locRecv);
+  _setEl('profileHelped',   _locHelped);
+  _setEl('profileReceived', _locRecv);
+  // Sync real counters from Supabase (source of truth after localStorage clears)
+  _initSupabase();
+  var _pUid = safeLS('get','velo_user_id');
+  if(sbClient && _pUid){
+    sbClient.from('profiles').select('helped_count,received_count').eq('id',_pUid).single()
+      .then(function(res){
+        if(!res || !res.data) return;
+        var sbH = res.data.helped_count || 0;
+        var sbR = res.data.received_count || 0;
+        var finalH = Math.max(_locHelped, sbH);
+        var finalR = Math.max(_locRecv,   sbR);
+        if(finalH !== _locHelped) safeLS('set','velo_guardian_convs', String(finalH));
+        if(finalR !== _locRecv)   safeLS('set','velo_help_received',  String(finalR));
+        _setEl('profileChats',    finalH + finalR);
+        _setEl('profileHelped',   finalH);
+        _setEl('profileReceived', finalR);
+      }).catch(function(){});
+  }
 
   // Mi estado inputs — pre-fill from saved values
   var msEl = document.getElementById('profStatusMusic');
@@ -6302,7 +6361,7 @@ function pLoadProfile(){
   _renderBadgesGrid();
 }
 
-function pSaveProfileStatus(){
+async function pSaveProfileStatus(){
   var music  = (document.getElementById('profStatusMusic')||{}).value  || '';
   var book   = (document.getElementById('profStatusBook')||{}).value   || '';
   var film   = (document.getElementById('profStatusFilm')||{}).value   || '';
@@ -6314,12 +6373,31 @@ function pSaveProfileStatus(){
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
   if(sbClient && uid){
-    sbClient.from('profiles').upsert({ id:uid,
-      status_music:music.trim(), status_book:book.trim(),
-      status_film:film.trim(), status_phrase:phrase.trim()
-    },{ onConflict:'id' }).catch(function(){});
+    try{
+      // Include name + email so the row is always complete, not just the 4 status fields
+      var upsertRes = await sbClient.from('profiles').upsert({
+        id:uid,
+        nombre: safeLS('get','velo_user_name')||'',
+        email:  safeLS('get','velo_user_email')||'',
+        motto:  safeLS('get','velo_user_motto')||'',
+        status_music:  music.trim(),
+        status_book:   book.trim(),
+        status_film:   film.trim(),
+        status_phrase: phrase.trim()
+      },{ onConflict:'id' });
+      if(upsertRes && upsertRes.error){
+        console.error('[pSaveProfileStatus]', upsertRes.error);
+        pToast('⚠️','Guardado solo en este dispositivo (error de red)');
+        return;
+      }
+      pToast('✨','Estado actualizado y visible para todos 💚');
+    }catch(e){
+      console.error('[pSaveProfileStatus catch]', e);
+      pToast('⚠️','Guardado solo en este dispositivo (sin conexión)');
+    }
+  } else {
+    pToast('✨', 'Estado actualizado 💚');
   }
-  pToast('✨', 'Estado actualizado y visible en tu perfil 💚');
 }
 
 function pShowPublicProfile(){
@@ -7156,21 +7234,23 @@ async function pRenderContacts(){
   }
 
   el.innerHTML += favs.map(function(f){
-    var pInfo = _presenceInfo(f.id);
+    var pInfo  = _presenceInfo(f.id);
     var unread = unreadIds[f.id] || 0;
+    var uname  = f.username ? '@'+f.username : ('@'+(f.name||'usuario').toLowerCase().replace(/\s+/g,'_').slice(0,16));
     return '<div data-fav-name="'+_escHtml(f.name||'')+ '" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--cream);border-radius:16px;margin-bottom:10px;box-shadow:var(--shadow-sm)">'
-      +'<div style="position:relative;flex-shrink:0">'
+      +'<div style="position:relative;flex-shrink:0;cursor:pointer" onclick="pQuickProfile('+_jsAttr(f.name||'Usuario')+','+_jsAttr(f.av||'🧑')+',\'\',\'\','+_jsAttr(f.id)+')">'
       +_avInline(f.av||'🧑', 44)
       +'<span style="position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;background:'+pInfo.color+';border:2px solid var(--cream)"></span>'
       +'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:14px;font-weight:700;color:var(--ink)">'+_escHtml(f.name||'Usuario')+'</div>'
-      +'<div style="font-size:11px;color:'+(pInfo.on?(pInfo.color):'var(--ink5)')+'">'+(pInfo.on?'● ':'○ ')+pInfo.label+'</div>'
+      +'<div style="font-size:10px;color:var(--sage3);font-weight:600;margin-bottom:1px">'+_escHtml(uname)+'</div>'
+      +'<div style="font-size:11px;color:'+(pInfo.on?pInfo.color:'var(--ink5)')+'">'+(pInfo.on?'● ':'○ ')+pInfo.label+'</div>'
       +'</div>'
       +(unread>0?'<span style="background:var(--sage);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px;flex-shrink:0">'+unread+'</span>':'')
       +'<div style="display:flex;gap:6px;flex-shrink:0">'
-      +'<button onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif" title="Chat directo">💬</button>'
-      +'<button onclick="pLeaveOfflineMsg('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 10px;background:rgba(200,165,100,.08);border:1px solid rgba(200,165,100,.25);border-radius:10px;font-size:13px;cursor:pointer" title="Dejar mensaje en buzón">✉️</button>'
+      +(pInfo.on?'<button onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif" title="Chat directo">💬</button>':'<button disabled style="padding:7px 12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;font-size:12px;font-weight:700;color:var(--ink5);cursor:not-allowed;opacity:.5" title="Desconectado">💬</button>')
+      +'<button onclick="pLeaveOfflineMsg('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 10px;background:rgba(200,165,100,.08);border:1px solid rgba(200,165,100,.25);border-radius:10px;font-size:13px;cursor:pointer" title="Mensaje al buzón">✉️</button>'
       +'<button onclick="pRemoveFav(\''+f.id+'\');pRenderContacts()" style="padding:7px 9px;background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);border-radius:10px;font-size:13px;cursor:pointer">⭐</button>'
       +'<button onclick="pBlockUser('+_jsAttr(f.id)+','+_jsAttr(f.name)+');pRenderContacts()" style="padding:7px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:13px;cursor:pointer" title="Bloquear">🚫</button>'
       +'</div>'
@@ -7403,6 +7483,16 @@ function _subscribeToDMThread(){
 }
 
 function pLeaveDM(){
+  // Notify peer that this user left the chat
+  var _dmMyName = safeLS('get','velo_user_name') || 'Alguien';
+  var _dmMyId   = safeLS('get','velo_user_id') || '';
+  _initSupabase();
+  if(sbClient && _dmPeer && _dmPeer.id && _dmMyId){
+    sbClient.from('direct_messages').insert({
+      from_id: _dmMyId, from_name: '—', from_av: '', to_id: _dmPeer.id,
+      text: '👋 ' + _dmMyName + ' salió del chat'
+    }).then(function(){}).catch(function(){});
+  }
   if(_dmRtCh && sbClient){ try{ sbClient.removeChannel(_dmRtCh); }catch(e){} _dmRtCh = null; }
   _dmPeer = null;
   _inActiveChat = false;
@@ -7846,12 +7936,14 @@ function pSendPostChat(){
 
   _initSupabase();
   if(sbClient && guardian && guardian.id){
-    // Save the review about the guardian
-    sbClient.from('reviews').insert({
-      kind:'guardian', pro_id:guardian.id, user_id:myId,
-      reviewer_name:myName, reviewee_name:guardian.name||'Guardián',
-      stars:stars, texto:texto
-    }).then(function(){}).catch(function(){});
+    // Save the review about the guardian (ensure session so RLS allows insert)
+    _ensureSbSession().then(function(){
+      sbClient.from('reviews').insert({
+        kind:'guardian', pro_id:guardian.id, user_id:myId,
+        reviewer_name:myName, reviewee_name:guardian.name||'Guardián',
+        stars:stars, texto:texto
+      }).then(function(){}).catch(function(e){ console.error('[review insert]', e); });
+    });
     // Deliver the review to the guardian's Buzón Velo
     sbSaveBroadcast('user:'+guardian.id,
       'Recibiste una reseña '+'⭐'.repeat(stars),

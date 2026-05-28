@@ -3264,3 +3264,52 @@ body.r-dark #guardianStatusBar .p-filter-chip.active {
 body.r-dark .velo-verified-av {
   border-color: #0c1e12;
 }
+
+/* ── v180: Mood orbs — dark mode fix ───────────────────────────── */
+body.r-dark .mood-orb {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.1) !important;
+}
+body.r-dark .mood-orb:hover {
+  background: rgba(255,255,255,.12) !important;
+  border-color: rgba(116,198,157,.4) !important;
+}
+body.r-dark .mood-orb.selected {
+  background: rgba(116,198,157,.22) !important;
+  border-color: var(--sage3) !important;
+  box-shadow: 0 0 0 2px rgba(116,198,157,.25) !important;
+}
+body.r-dark .mood-orb-lbl {
+  color: rgba(255,255,255,.75) !important;
+}
+body.r-dark #pg-mood .p-label {
+  color: rgba(255,255,255,.55) !important;
+}
+body.r-dark #pg-mood .p-card {
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+/* ── v180: Offline / DM compose textarea dark mode ─────────────── */
+body.r-dark #offlineMsgOv .feed-textarea,
+body.r-dark .p-sheet-dark .p-textarea,
+body.r-dark .p-sheet .feed-textarea {
+  background: rgba(255,255,255,.09) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  color: rgba(255,255,255,.92) !important;
+}
+body.r-dark #offlineMsgOv .feed-textarea::placeholder,
+body.r-dark .p-sheet-dark .p-textarea::placeholder,
+body.r-dark .p-sheet .feed-textarea::placeholder {
+  color: rgba(255,255,255,.32) !important;
+}
+
+/* ── v180: Profile page light mode note input readable ─────────── */
+body.r-dark #moodNote {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  color: rgba(255,255,255,.9) !important;
+}
+body.r-dark #moodNote::placeholder {
+  color: rgba(255,255,255,.3) !important;
+}
