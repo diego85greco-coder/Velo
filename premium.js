@@ -6338,14 +6338,15 @@ function _renderBadgesGrid(){
     { name:'Diamante', icon:'💎', min:100, max:100, color:'#7B68EE',      unlock:'Estado top de la comunidad + descuento en Velo Plus ✨' }
   ];
   var tierRows = tiers.map(function(t){
-    var reached = convs >= t.min;
+    var reached = t.name === 'Bronce' ? _getVisitDayCount() >= 5 : convs >= t.min;
     var isCurrent = badge.name === t.name;
+    var minLabel = t.name === 'Bronce' ? '5 días de uso' : (t.min > 0 ? t.min + ' conv.' : '');
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)">'
-      +'<span style="font-size:22px;opacity:'+(reached?1:.35)+'">'+(reached?t.icon:'⬜')+'</span>'
+      +'<span style="font-size:22px;opacity:'+(reached?1:.35)+'">'+t.icon+'</span>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:12px;font-weight:700;color:'+(reached?'var(--ink)':'var(--ink5)')+'">'+t.name
       +(isCurrent?' <span style="font-size:10px;background:var(--sage6);color:var(--sage);border-radius:100px;padding:1px 7px;margin-left:4px">Actual</span>':'')
-      +(t.min>0?'  <span style="font-size:10px;color:var(--ink5)">'+t.min+' conv.</span>':'')+'</div>'
+      +(minLabel?'  <span style="font-size:10px;color:var(--ink5)">'+minLabel+'</span>':'')+'</div>'
       +'<div style="font-size:11px;color:'+(reached?'var(--sage)':'var(--ink5)')+'">'+t.unlock+'</div>'
       +'</div>'
       +(reached?'<span style="font-size:14px;color:var(--sage)">✅</span>':'<span style="font-size:12px;color:var(--ink5)">🔒</span>')

@@ -3002,3 +3002,107 @@ body.r-dark #gdReviews [style*="color:var(--ink3)"],
 body.r-dark #gdReviews [style*="color:var(--ink2)"] { color: rgba(210,240,222,.88) !important; }
 body.r-dark #gdReviews [style*="color:var(--ink4)"],
 body.r-dark #gdReviews [style*="color:var(--ink5)"] { color: rgba(255,255,255,.52) !important; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v172: Double scroll fix · Al Mar/Sala de Ayuda full dark bg ·
+         Mood picker visual · Medal icons · Cache bust
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Mobile canvas: position:fixed removes it from scroll context,
+        eliminating the phantom 100vh vertical scroll area on iOS ─────── */
+@media (max-width: 767px) {
+  #homeBgCanvas,
+  #helpBgCanvas {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+/* ── 2. Al Mar: bg-day.jpg lives on .p-page-scroll, not #pg-bottle ─── */
+body.r-dark #pg-bottle .p-page-scroll {
+  background: linear-gradient(160deg, #061810 0%, #081a12 55%, #061210 100%) !important;
+}
+
+/* ── 3. Sala de Ayuda: bg-day.jpg lives on .p-page-scroll ───────────── */
+body.r-dark #pg-help .p-page-scroll {
+  background: linear-gradient(170deg, #0b1c12 0%, #0e2318 55%, #0a1a10 100%) !important;
+}
+
+/* ── 4. Sala de Ayuda sticky header (inline rgba(232,248,240,.92)) ───── */
+body.r-dark #pg-help [style*="rgba(232,248,240"] {
+  background: rgba(8,20,14,.97) !important;
+  border-bottom-color: rgba(116,198,157,.18) !important;
+}
+body.r-dark #pg-help [style*="rgba(232,248,240"] span,
+body.r-dark #pg-help [style*="rgba(232,248,240"] button:not(.p-btn) {
+  color: rgba(255,255,255,.90) !important;
+}
+/* Description bar */
+body.r-dark #pg-help [style*="rgba(116,198,157,.08)"] {
+  background: rgba(116,198,157,.06) !important;
+  color: rgba(200,238,216,.78) !important;
+}
+body.r-dark #pg-help [style*="rgba(116,198,157,.08)"] strong {
+  color: rgba(130,210,170,.95) !important;
+}
+
+/* ── 5. Sala de Ayuda hero card ──────────────────────────────────────── */
+body.r-dark #pg-help .dark-hero-card {
+  background: rgba(12,30,18,.88) !important;
+  border-color: rgba(116,198,157,.22) !important;
+}
+body.r-dark #pg-help .dark-label { color: rgba(116,198,157,.72) !important; }
+body.r-dark #pg-help .dark-title { color: rgba(255,255,255,.95) !important; }
+body.r-dark #pg-help .dark-sub   { color: rgba(255,255,255,.60) !important; }
+
+/* ── 6. Sala de Ayuda dark-seeker cards ─────────────────────────────── */
+body.r-dark #pg-help .dark-seeker {
+  background: rgba(14,36,22,.82) !important;
+  border-color: rgba(116,198,157,.25) !important;
+}
+body.r-dark #pg-help .dark-seeker:hover {
+  background: rgba(18,46,28,.92) !important;
+  border-color: rgba(116,198,157,.40) !important;
+}
+
+/* ── 7. Mood picker — deep forest glass in dark mode ────────────────── */
+body.r-dark #quickMoodPicker {
+  background: linear-gradient(160deg, rgba(10,28,16,.99), rgba(14,40,22,.99)) !important;
+  border-top: 1.5px solid rgba(116,198,157,.28) !important;
+}
+body.r-dark #quickMoodPicker > div:first-child {
+  color: rgba(140,210,168,.88) !important;
+  letter-spacing: .8px !important;
+}
+body.r-dark #quickMoodPicker [style*="background:var(--cream)"],
+body.r-dark #quickMoodPhrase {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(116,198,157,.28) !important;
+  color: rgba(255,255,255,.88) !important;
+}
+body.r-dark #quickMoodPhrase::placeholder { color: rgba(255,255,255,.35) !important; }
+body.r-dark #quickMoodPicker .p-btn--secondary {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.15) !important;
+  color: rgba(255,255,255,.62) !important;
+}
+
+/* ── 8. Al Mar bottle-tab strip background ──────────────────────────── */
+body.r-dark #pg-bottle [style*="rgba(80,150,200,.1)"] {
+  background: rgba(116,198,157,.08) !important;
+}
+
+/* ── 9. Good News article — reflexion card dark bg  ─────────────────── */
+body.r-dark #newsDetailOv [style*="background:var(--sage7)"] {
+  background: rgba(14,44,26,.92) !important;
+  border: 1px solid rgba(116,198,157,.22) !important;
+}
+body.r-dark #newsDetailOv [style*="color:var(--sage3)"] {
+  color: rgba(140,210,168,.92) !important;
+}
+body.r-dark #newsDetailOv [style*="color:var(--ink3)"] {
+  color: rgba(210,240,225,.88) !important;
+}
