@@ -1229,7 +1229,8 @@ async function _loadDailyMotivationalQuote(){
   var d = new Date();
   var dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   var prompt = 'Dame una frase célebre inspiradora, positiva y motivadora de un autor, escritor, filósofo, líder histórico, '
-    +'novelista famoso o personaje conocido. Hoy es '+dias[d.getDay()]+'. '
+    +'novelista famoso o personaje conocido. Hoy es '+dias[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+'. '
+    +'Elige un autor DIFERENTE cada vez (no repitas los mismos). '
     +'La frase debe ser sobre superación, vida, esperanza, alegría, coraje o amor. '
     +'Devolvé SOLO un objeto JSON con este formato exacto (sin markdown, sin explicación): '
     +'{"text":"la frase traducida al español","author":"Nombre del autor"}. '
@@ -2431,9 +2432,10 @@ async function pRenderHelp(){
     var nameHtml = canClickProfile
       ? '<span style="font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" onclick="'+profCall+'">'+_escHtml(h.name)+'</span>'
       : '<span style="font-size:12px;font-weight:600;color:var(--ink)">'+_escHtml(h.name)+'</span>';
+    var avHtml = (hAv && (hAv.indexOf('data:')===0||hAv.indexOf('http')===0)) ? _avInline(hAv,32) : (!h.anon ? hAv : (h.emoji||'💙'));
     return '<div class="dark-seeker" id="helppost-'+h.id+'">'
       +'<div style="display:flex;align-items:flex-start;gap:11px">'
-      +'<div style="font-size:28px;flex-shrink:0;'+(canClickProfile?'cursor:pointer" onclick="'+profCall:'')+'">'+(canClickProfile && hAv && (hAv.indexOf('data:')===0||hAv.indexOf('http')===0) ? _avInline(hAv,32) : (h.emoji||'💙'))+'</div>'
+      +'<div style="font-size:28px;flex-shrink:0;'+(canClickProfile?'cursor:pointer" onclick="'+profCall:'')+'">' + avHtml + '</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">'
       +nameHtml
@@ -2508,13 +2510,17 @@ async function _guardianSendRequest(post){
   var reqId  = 'gr'+Date.now();
   _pendingGuardianReqId = reqId; // store so _guardianCancelWait can target only this row
   // Insert guardian_request row — await so we know it arrived before showing overlay
-  var insResult = await sbClient.from('guardian_requests').insert({
-    id: reqId, post_id: post.id,
-    seeker_id: post.userId||null,
-    guardian_id: myId, guardian_name: myName, guardian_av: myAv,
-    status: 'pending'
-  }).catch(function(e){ return { error: e }; });
-  if(insResult && insResult.error){
+  var insErr = null;
+  try{
+    var insResult = await sbClient.from('guardian_requests').insert({
+      id: reqId, post_id: post.id,
+      seeker_id: post.userId||null,
+      guardian_id: myId, guardian_name: myName, guardian_av: myAv,
+      status: 'pending'
+    });
+    if(insResult && insResult.error) insErr = insResult.error;
+  }catch(e){ insErr = e; }
+  if(insErr){
     pToast('⚠️','No se pudo enviar la solicitud. Verificá tu conexión.');
     return;
   }
@@ -2967,7 +2973,7 @@ async function pSendHelp(){
     try{
       await sbClient.from('help_posts').insert({ id:'hu'+ts,
         user_id: safeLS('get','velo_user_id')||null, user_name: name, user_av: userAv,
-        emoji:'💙', preview:msg, urgencia:'normal', anon:isAnon, taken:false
+        emoji: isAnon ? '💙' : (userAv || '🧑'), preview:msg, urgencia:'normal', anon:isAnon, taken:false
       });
     }catch(e){ console.error('[pSendHelp insert]', e); }
   }
@@ -3924,6 +3930,10 @@ async function pRenderBottle(){
   if(sbRows !== null){
     usingSB = true;
     allBottles = sbRows.map(_sbBottleRow);
+    // Always include own localStorage bottles in case Supabase RLS excludes them
+    var myBottlesLS = []; try{ myBottlesLS = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
+    var sbIds = allBottles.reduce(function(s,b){ s[b.id]=1; return s; }, {});
+    myBottlesLS.forEach(function(b){ if(!sbIds[b.id] && b.ts > Date.now()-24*3600*1000) allBottles.unshift(b); });
   } else {
     // Fallback: localStorage + mock data
     var mockBottles = [
@@ -4094,7 +4104,7 @@ async function pDeleteBottle(bottleId){
   if(!confirm('¿Eliminar este mensaje del mar?')) return;
   _initSupabase();
   if(sbClient){
-    await sbClient.from('bottles').delete().eq('id', bottleId).catch(function(){});
+    try{ await sbClient.from('bottles').delete().eq('id', bottleId); }catch(e){}
   }
   var myBottles = []; try{ myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
   safeLS('set','velo_my_bottles', JSON.stringify(myBottles.filter(function(b){ return b.id !== bottleId; })));
@@ -5378,7 +5388,7 @@ async function pDeleteReview(reviewId, cardEl){
   if(!confirm('¿Eliminar esta reseña?')) return;
   _initSupabase();
   if(sbClient){
-    await sbClient.from('reviews').delete().eq('id', reviewId).catch(function(){});
+    try{ await sbClient.from('reviews').delete().eq('id', reviewId); }catch(e){}
   }
   if(cardEl){
     cardEl.style.transition = 'opacity .3s';
@@ -5726,7 +5736,7 @@ async function pDeleteHappyPost(postId){
   if(!confirm('¿Eliminar esta publicación del Muro?')) return;
   _initSupabase();
   if(sbClient){
-    await sbClient.from('happy_posts').delete().eq('id', postId).catch(function(){});
+    try{ await sbClient.from('happy_posts').delete().eq('id', postId); }catch(e){}
   }
   // Remove from local cache
   if(_sbHappy) _sbHappy = _sbHappy.filter(function(h){ return h.id !== postId; });
@@ -9382,7 +9392,7 @@ async function sbSignUp(email, password, nombre){
   if(!sbClient) return {error:{message:'Supabase no inicializado'}};
   var {data, error} = await sbClient.auth.signUp({ email:email, password:password, options:{data:{nombre:nombre, role:'user'}} });
   if(!error && data.user){
-    await sbClient.from('profiles').insert({ id:data.user.id, nombre:nombre, email:email, role:'user', created_at:new Date().toISOString() }).catch(function(){});
+    try{ await sbClient.from('profiles').insert({ id:data.user.id, nombre:nombre, email:email, role:'user', created_at:new Date().toISOString() }); }catch(e){}
   }
   return {data, error};
 }

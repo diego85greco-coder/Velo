@@ -2002,3 +2002,62 @@ body.r-dark #homeHeroLabel {
 #homeDailyQuote [style*="letter-spacing"] {
   color: rgba(200,158,56,.80) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v163 — Deep green dark home bg + guardian label cleanup
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── v163: Dark mode home background — deep forest green (no photo) ── */
+body.r-dark #pg-home {
+  background:
+    radial-gradient(circle at 14% 10%, rgba(20,90,50,.40) 0%, transparent 50%),
+    radial-gradient(circle at 86% 85%, rgba(25,65,35,.28) 0%, transparent 45%),
+    linear-gradient(170deg, #0b1c12 0%, #0e2318 55%, #0a1a10 100%) !important;
+}
+
+/* ── v163: Guardian sub-label — minimal text, no box appearance ─────── */
+#guardianSubLabel {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+body.r-dark #guardianSubLabel {
+  color: rgba(255,255,255,.30) !important;
+}
+
+/* ── v163: Status row — allow wrap on very small screens ────────────── */
+@media (max-width: 400px) {
+  .r-hero-status-row {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+}
+
+/* ── v163: Logo 2× bigger + taller topbar ───────────────────────── */
+.p-topbar {
+  height: auto !important;
+  min-height: 130px !important;
+  padding: max(env(safe-area-inset-top,0px),10px) 18px 10px !important;
+}
+.p-topbar-logo-img {
+  height: 110px !important;
+  width: auto !important;
+  max-width: 280px !important;
+  object-fit: contain !important;
+}
+body.r-dark .p-topbar-logo-img {
+  filter: brightness(1.15) drop-shadow(0 1px 14px rgba(116,198,157,.40)) !important;
+}
+
+/* ── v163: Light mode card text contrast ─────────────────────────── */
+#pg-help .dark-seeker,
+#pg-help .p-card {
+  color: var(--ink) !important;
+}
+#pg-help .dark-seeker span,
+#pg-help .dark-seeker div,
+#pg-help .p-card span,
+#pg-help .p-card div {
+  color: inherit;
+}
