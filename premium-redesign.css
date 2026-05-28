@@ -1690,3 +1690,36 @@ body.r-dark #pg-dm-chat .feed-send-btn {
 /* Header "Tu espacio Velo" y "todo listo" */
 .land-preview-card > div:first-child span { color: rgba(255,255,255,.82) !important; }
 
+/* ── Auth-left logo: proportional width for dark panel ───────────── */
+.auth-left-content img {
+  width: min(78%, 300px) !important;
+  height: auto !important;
+  margin-bottom: 20px !important;
+}
+
+/* ── "Soy profesional de salud" button: dark glass for contrast ──── */
+#pg-login .p-btn--google,
+#pg-register .p-btn--google {
+  background: rgba(18,46,28,.90) !important;
+  border: 1.5px solid rgba(116,198,157,.42) !important;
+  color: rgba(255,255,255,.96) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,.22) !important;
+}
+#pg-login .p-btn--google:hover,
+#pg-register .p-btn--google:hover {
+  background: rgba(27,80,50,.96) !important;
+  border-color: rgba(116,198,157,.62) !important;
+}
+
+/* ── Toast: dark glass for legibility on any background ──────────── */
+.p-toast {
+  background: rgba(10,24,16,.93) !important;
+  border-color: rgba(116,198,157,.38) !important;
+  backdrop-filter: blur(20px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.5) !important;
+}
+.p-toast-msg { color: rgba(255,255,255,.95) !important; }
+.p-toast-close { color: rgba(255,255,255,.65) !important; opacity: 1 !important; }
+
