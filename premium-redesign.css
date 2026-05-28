@@ -3313,3 +3313,171 @@ body.r-dark #moodNote {
 body.r-dark #moodNote::placeholder {
   color: rgba(255,255,255,.3) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v181 — ALL POPUPS: comprehensive dark mode readability
+   Strategy: override CSS variables AT the .p-sheet / .p-dialog scope
+   so every inline style using var(--ink), var(--cream) etc. auto-adapts
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* 1. Re-scope every surface + ink variable inside any dark-mode sheet */
+body.r-dark .p-sheet,
+body.r-dark .p-dialog,
+body.r-dark .p-modal-ov .p-sheet {
+  /* text tokens */
+  --ink:    rgba(255,255,255,.93) !important;
+  --ink2:   rgba(255,255,255,.82) !important;
+  --ink3:   rgba(255,255,255,.70) !important;
+  --ink4:   rgba(255,255,255,.55) !important;
+  --ink5:   rgba(255,255,255,.38) !important;
+  /* surface tokens — dark translucent */
+  --cream:  rgba(255,255,255,.07) !important;
+  --cream2: rgba(255,255,255,.05) !important;
+  /* borders */
+  --border:  rgba(255,255,255,.13) !important;
+  --border2: rgba(255,255,255,.16) !important;
+  /* accent */
+  --sage7:   rgba(116,198,157,.13) !important;
+  --sage:    #72e0a6 !important;
+  --sage2:   #5dcabb !important;
+  --sage3:   rgba(116,198,157,.72) !important;
+  --sage4:   rgba(116,198,157,.35) !important;
+  --sage5:   rgba(116,198,157,.25) !important;
+  /* background token */
+  background: rgba(9,22,14,.97) !important;
+  color: rgba(255,255,255,.92) !important;
+  border-top: 1px solid rgba(80,160,110,.22) !important;
+}
+
+/* 2. Drag handle */
+body.r-dark .p-sheet .p-sheet-handle,
+body.r-dark .p-modal-ov .p-sheet-handle {
+  background: rgba(255,255,255,.20) !important;
+}
+
+/* 3. Every input / textarea / select inside a sheet */
+body.r-dark .p-sheet input:not([type=checkbox]):not([type=radio]):not([type=range]),
+body.r-dark .p-sheet textarea,
+body.r-dark .p-sheet select,
+body.r-dark .p-dialog input:not([type=checkbox]):not([type=radio]):not([type=range]),
+body.r-dark .p-dialog textarea,
+body.r-dark .p-dialog select {
+  background: rgba(255,255,255,.09) !important;
+  border: 1.5px solid rgba(255,255,255,.16) !important;
+  color: rgba(255,255,255,.92) !important;
+}
+body.r-dark .p-sheet input::placeholder,
+body.r-dark .p-sheet textarea::placeholder,
+body.r-dark .p-dialog input::placeholder,
+body.r-dark .p-dialog textarea::placeholder {
+  color: rgba(255,255,255,.32) !important;
+}
+
+/* 4. Secondary / outline buttons inside sheets */
+body.r-dark .p-sheet .p-btn--secondary,
+body.r-dark .p-dialog .p-btn--secondary {
+  background: rgba(255,255,255,.09) !important;
+  border-color: rgba(255,255,255,.20) !important;
+  color: rgba(255,255,255,.88) !important;
+}
+body.r-dark .p-sheet .p-btn--secondary:hover,
+body.r-dark .p-dialog .p-btn--secondary:hover {
+  background: rgba(255,255,255,.14) !important;
+}
+
+/* 5. p-label (uppercase section labels) inside sheets */
+body.r-dark .p-sheet .p-label,
+body.r-dark .p-dialog .p-label {
+  color: rgba(116,198,157,.70) !important;
+  letter-spacing: 1px;
+}
+
+/* 6. p-review-card inside sheets */
+body.r-dark .p-sheet .p-review-card,
+body.r-dark .p-dialog .p-review-card {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.10) !important;
+  color: rgba(255,255,255,.85) !important;
+}
+body.r-dark .p-sheet .p-rv-txt { color: rgba(255,255,255,.80) !important; }
+
+/* 7. p-tag chips inside sheets */
+body.r-dark .p-sheet .p-tag,
+body.r-dark .p-dialog .p-tag {
+  background: rgba(116,198,157,.14) !important;
+  color: #72e0a6 !important;
+  border-color: rgba(116,198,157,.28) !important;
+}
+
+/* 8. p-empty (empty state) inside sheets */
+body.r-dark .p-sheet .p-empty-title { color: rgba(255,255,255,.75) !important; }
+body.r-dark .p-sheet .p-empty-sub   { color: rgba(255,255,255,.45) !important; }
+
+/* 9. Dividers / horizontal borders inside sheets */
+body.r-dark .p-sheet hr,
+body.r-dark .p-dialog hr { border-color: rgba(255,255,255,.10) !important; }
+
+/* 10. Toggle (on/off switch) inside sheets */
+body.r-dark .p-sheet .p-tog { background: rgba(255,255,255,.15) !important; }
+body.r-dark .p-sheet .p-tog.on { background: var(--sage) !important; }
+
+/* 11. Status pills inside sheets */
+body.r-dark .p-sheet .p-pill--sage {
+  background: rgba(116,198,157,.16) !important;
+  color: #72e0a6 !important;
+  border-color: rgba(116,198,157,.30) !important;
+}
+body.r-dark .p-sheet .p-pill--gold {
+  background: rgba(200,160,56,.18) !important;
+  color: #d4a843 !important;
+}
+
+/* 12. Avatar grid option buttons */
+body.r-dark .p-sheet .p-av-opt {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  color: rgba(255,255,255,.9) !important;
+}
+body.r-dark .p-sheet .p-av-opt.selected {
+  background: rgba(116,198,157,.22) !important;
+  border-color: var(--sage) !important;
+}
+
+/* 13. Info / notice boxes inside sheets */
+body.r-dark .p-sheet [style*="background:rgba(116,198,157,.07)"],
+body.r-dark .p-sheet [style*="background:rgba(116,198,157,.08)"],
+body.r-dark .p-sheet [style*="background:rgba(221,212,245"] {
+  background: rgba(116,198,157,.10) !important;
+  border-color: rgba(116,198,157,.22) !important;
+  color: rgba(255,255,255,.75) !important;
+}
+
+/* 14. Modal overlay backdrop stays dark-green blurred */
+.p-modal-ov {
+  background: rgba(5,16,10,.65) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+}
+
+/* 15. p-dialog (centered dialogs like confirm boxes) */
+body.r-dark .p-dialog {
+  border: 1px solid rgba(80,160,110,.22) !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,.65) !important;
+}
+
+/* 16. Sheet title font color */
+body.r-dark .p-sheet h2,
+body.r-dark .p-sheet h3,
+body.r-dark .p-dialog h2,
+body.r-dark .p-dialog h3 {
+  color: rgba(255,255,255,.95) !important;
+}
+
+/* 17. p-sm (small muted text) inside sheets */
+body.r-dark .p-sheet .p-sm,
+body.r-dark .p-sheet .p-muted { color: rgba(255,255,255,.45) !important; }
+
+/* 18. Star rating inside review cards */
+body.r-dark .p-sheet .p-review-card [style*="font-size:13px"] {
+  color: rgba(255,255,255,.75) !important;
+}
