@@ -1218,13 +1218,27 @@ body.r-dark #pg-register {
   background: rgba(116,198,157,.12) !important;
 }
 
-/* ── Status row above greeting ───────────────────────────────────── */
+/* ── Status row above greeting: all three pills on one line ──────── */
 .r-hero-status-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap !important;
   margin-bottom: 10px;
+  overflow: visible;
+}
+#homeStatusToggle {
+  flex-wrap: nowrap !important;
+  flex-shrink: 0 !important;
+}
+#homeGuardianWrap {
+  flex-shrink: 0 !important;
+}
+#homeStatusToggle button,
+#homeGuardianBtn {
+  min-height: 36px !important;
+  border-radius: 9999px !important;
+  font-weight: 600 !important;
 }
 
 /* ── DM chat input row (missing base class) ──────────────────────── */
@@ -1720,12 +1734,12 @@ body.r-dark #pg-dm-chat .feed-send-btn {
   background: rgba(180,40,40,.90) !important;
 }
 
-/* ── Topbar logo: much bigger than nav buttons ───────────────────── */
-.p-topbar { min-height: 78px !important; }
+/* ── Topbar logo: dominant over nav buttons ──────────────────────── */
+.p-topbar { min-height: 82px !important; }
 .p-topbar-logo-img {
-  height: 72px !important;
+  height: 80px !important;
   width: auto !important;
-  max-width: 200px !important;
+  max-width: 220px !important;
   object-fit: contain !important;
 }
 body.r-dark .p-topbar-logo-img {
@@ -1854,4 +1868,50 @@ body.r-dark #pg-help .p-empty-sub   { color: rgba(255,255,255,.55) !important; }
 }
 .p-toast-msg { color: rgba(255,255,255,.95) !important; }
 .p-toast-close { color: rgba(255,255,255,.65) !important; opacity: 1 !important; }
+
+/* ── Text contrast: ensure legibility in light mode ─────────────── */
+:root {
+  --ink:  #1a2e1a;
+  --ink2: #2d4a2d;
+  --ink3: #3d5e3d;
+}
+
+/* Profile stat labels: ink5 was too faint on light bg */
+#pg-profile .p-card [style*="font-size:10px"] {
+  color: var(--ink3) !important;
+}
+
+/* ── Profile page: lime-green particle glass cards ───────────────── */
+#pg-profile .p-card {
+  background: rgba(232,248,238,.68) !important;
+  border-color: rgba(109,204,63,.18) !important;
+  backdrop-filter: blur(18px) saturate(1.3) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.3) !important;
+  position: relative;
+  z-index: 1;
+}
+body.r-dark #pg-profile .p-card {
+  background: rgba(12,30,18,.55) !important;
+  border-color: rgba(109,204,63,.22) !important;
+}
+
+/* ── Sala de Ayuda: lime-green particle glass cards ──────────────── */
+#pg-help .p-card {
+  background: rgba(232,248,238,.68) !important;
+  border-color: rgba(109,204,63,.18) !important;
+  backdrop-filter: blur(16px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
+  position: relative;
+  z-index: 1;
+}
+body.r-dark #pg-help .p-card {
+  background: rgba(12,30,18,.55) !important;
+  border-color: rgba(109,204,63,.22) !important;
+}
+
+/* ── Help posts need to be above particle canvas ────────────────── */
+#helpDashboard, #helpList, #helpFavWidget {
+  position: relative;
+  z-index: 1;
+}
 

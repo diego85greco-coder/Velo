@@ -14,8 +14,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260527-159">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260527-159">
+  <link rel="stylesheet" href="premium.css?v=20260527-160">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260527-160">
 </head>
 <body>
 
@@ -890,7 +890,7 @@
                   <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;border:1.5px solid rgba(27,94,58,.22);background:rgba(255,255,255,.55);color:var(--ink3);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Actívame</button>
                 </div>
               </div>
-              <div style="font-size:9px;color:var(--ink5);letter-spacing:.5px;margin:-4px 0 8px;opacity:.8">Estado · activá el escudo para modo guardián</div>
+              <div id="guardianSubLabel" style="font-size:9px;color:var(--ink5);letter-spacing:.5px;margin:-4px 0 8px;opacity:.8">Estado · activá el escudo para modo guardián</div>
               <h1 class="p-title" id="homeGreetTxt">Buenos días</h1>
               <h2 class="r-hero-italic"><em id="homeGreetSub">Hoy la comunidad está contigo.</em></h2>
               <p class="r-hero-sub" id="homeGreetParagraph">
@@ -1231,6 +1231,10 @@
       <!-- ══ HELP ════════════════════════════════════════════════ -->
       <div class="p-page" id="pg-help">
         <div class="p-page-scroll">
+          <!-- Sticky viewport particle canvas for Sala de Ayuda -->
+          <div style="position:sticky;top:0;height:0;z-index:0;pointer-events:none;overflow:visible;flex-shrink:0">
+            <canvas id="helpBgCanvas" style="position:absolute;top:0;left:0;width:100vw;height:100vh;pointer-events:none"></canvas>
+          </div>
           <div style="padding:18px 18px 14px;position:sticky;top:0;z-index:10;background:rgba(232,248,240,.92);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(116,198,157,.2)">
             <button class="p-back-btn" onclick="pGoTo('home')">←</button>
             <span style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink)">Sala de Ayuda</span>
@@ -1726,6 +1730,10 @@
       <!-- ══ PROFILE ════════════════════════════════════════════ -->
       <div class="p-page" id="pg-profile">
         <div class="p-page-scroll">
+          <!-- Sticky viewport particle canvas for profile page -->
+          <div style="position:sticky;top:0;height:0;z-index:0;pointer-events:none;overflow:visible;flex-shrink:0">
+            <canvas id="profileBgCanvas" style="position:absolute;top:0;left:0;width:100vw;height:100vh;pointer-events:none"></canvas>
+          </div>
           <div style="max-width:580px;margin:0 auto;padding:0 16px 40px">
 
             <!-- ── Back button ── -->
@@ -2931,8 +2939,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260527-159"></script>
-<script src="premium-redesign.js?v=20260527-159"></script>
+<script src="premium.js?v=20260527-160"></script>
+<script src="premium-redesign.js?v=20260527-160"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

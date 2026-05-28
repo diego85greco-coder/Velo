@@ -145,11 +145,16 @@
 
     // Particle animations — green for light bg, warm gold for dark bg
     setTimeout(function() {
-      initParticles('landingCanvas', 60, 0.5);
-      initParticles('loginCanvas', 40, 0.4);
+      initParticles('landingCanvas',  60, 0.5);
+      initParticles('loginCanvas',    40, 0.4);
       initParticles('registerCanvas', 40, 0.4);
-      initParticles('homeBgCanvas', 60, 0.48, '116,198,157');
+      initParticles('homeBgCanvas',   60, 0.48, '116,198,157');
+      initParticles('profileBgCanvas', 45, 0.42, '109,204,63');
+      initParticles('helpBgCanvas',    35, 0.38, '109,204,63');
     }, 300);
+
+    initGuardianLabelObserver();
+    initSurveyDismissal();
   }
 
   /* ── 5. Sync valores dinámicos del hero v2 ──────────────────── */
@@ -300,4 +305,41 @@ function initParticles(canvasId, count, maxOpacity, color) {
     requestAnimationFrame(draw);
   }
   draw();
+}
+
+/* ── Guardian sub-label: "Modo guardián activo" when ON ───────────── */
+function initGuardianLabelObserver() {
+  var gBtn = document.getElementById('homeGuardianBtn');
+  var lbl  = document.getElementById('guardianSubLabel');
+  if (!gBtn || !lbl) return;
+  function sync() {
+    var on = gBtn.textContent.includes('Activado');
+    lbl.textContent  = on ? 'Modo guardián activo' : 'Estado · activá el escudo para modo guardián';
+    lbl.style.color  = on ? 'var(--sage2)' : 'var(--ink5)';
+    lbl.style.fontWeight = on ? '600' : '400';
+  }
+  sync();
+  new MutationObserver(sync).observe(gBtn, { childList: true, characterData: true, subtree: true });
+}
+
+/* ── Survey banner: cookie-based 24h dismissal ────────────────────── */
+function initSurveyDismissal() {
+  var dismissed = document.cookie.includes('velo_survey_dismissed=1');
+  new MutationObserver(function() {
+    document.querySelectorAll('.p-toast').forEach(function(t) {
+      var txt = t.textContent || '';
+      if (!txt.includes('encuesta') && !txt.includes('Encuesta')) return;
+      if (dismissed) { t.remove(); return; }
+      var btn = t.querySelector('.p-toast-close') ||
+                t.querySelector('button[aria-label*="close"]') ||
+                t.querySelector('button[onclick*="ose"]');
+      if (btn && !btn._surveyCookied) {
+        btn._surveyCookied = true;
+        btn.addEventListener('click', function() {
+          document.cookie = 'velo_survey_dismissed=1; Max-Age=86400; SameSite=Lax; path=/';
+          dismissed = true;
+        }, { once: true });
+      }
+    });
+  }).observe(document.body, { childList: true, subtree: true });
 }
