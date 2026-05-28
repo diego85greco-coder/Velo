@@ -6346,7 +6346,7 @@ function _renderBadgesGrid(){
 
   var tiers = [
     { name:'Novato',   icon:'🌱', min:0,   max:5,   color:'var(--sage4)', unlock:'Podés pedir acompañamiento a otros guardianes' },
-    { name:'Bronce',   icon:'🥉', min:5,   max:20,  color:'#C07840',      unlock:'Aparecés en el listado de guardianes disponibles' },
+    { name:'Bronce',   icon:'🥉', min:5,   max:20,  color:'#C07840',      unlock:'Ingresá 5 días distintos a la app · Aparecés en el listado de guardianes disponibles' },
     { name:'Plata',    icon:'🥈', min:20,  max:40,  color:'#8892A4',      unlock:'Insignia verificada en tu perfil público' },
     { name:'Oro',      icon:'🥇', min:40,  max:100, color:'#C8A200',      unlock:'Podés crear Círculos de Paz ☮️ + prioridad en el listado' },
     { name:'Diamante', icon:'💎', min:100, max:100, color:'#7B68EE',      unlock:'Estado top de la comunidad + descuento en Velo Plus ✨' }
@@ -6376,7 +6376,7 @@ function _renderBadgesGrid(){
     +'<div style="font-size:12px;color:var(--ink4);margin-bottom:8px">'+convs+' conversaciones completadas</div>'
     +'<div class="guardian-badge-prog"><div class="guardian-badge-prog-fill" style="width:'+progFill+'%"></div></div>'
     +(badge.next
-      ? '<div style="font-size:11px;color:var(--ink5);margin-top:4px">'+badge.needed+' más para <strong style="color:var(--sage2)">'+badge.next+'</strong></div>'
+      ? '<div style="font-size:11px;color:var(--ink5);margin-top:4px">'+badge.needed+(badge.visitBased?' días':' conv.')+' más para <strong style="color:var(--sage2)">'+badge.next+'</strong></div>'
       : '<div style="font-size:11px;color:var(--sage);margin-top:4px">✨ Nivel máximo alcanzado</div>')
     +'</div>'
     +'</div>'

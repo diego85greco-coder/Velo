@@ -3138,3 +3138,84 @@ body.r-dark #newsDetailOv [style*="color:var(--ink3)"] {
   .r-hero-right .r-hero-stats       { order: 0; }
   .r-hero-right .r-hero-actions-top { order: 1; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v175: COMUNIDAD + GUARDIANES — dark mode contrast fix
+   Neither page had dark overrides; cream/beige backgrounds made them
+   unreadable in dark mode. Added targeted overrides for all containers.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Comunidad / Muro de la Felicidad ──────────────────────────────── */
+body.r-dark #pg-happy {
+  background: linear-gradient(160deg, #081a10, #0b2218 60%, #071510) !important;
+}
+/* Fixed header area (background:var(--cream)) */
+body.r-dark #pg-happy > div:first-child {
+  background: rgba(8,22,14,.97) !important;
+  border-bottom-color: rgba(116,198,157,.18) !important;
+}
+/* Info panel */
+body.r-dark #pg-happy #happyInfoPanel {
+  background: rgba(14,40,22,.70) !important;
+  border-color: rgba(116,198,157,.25) !important;
+  color: rgba(200,240,218,.80) !important;
+}
+/* Compose box wrapper (yellow-tinted) */
+body.r-dark #pg-happy [style*="rgba(255,224,102"] {
+  background: rgba(12,34,20,.88) !important;
+  border-color: rgba(116,198,157,.22) !important;
+}
+/* Textarea */
+body.r-dark #pg-happy #happyPostTa {
+  background: rgba(8,24,14,.90) !important;
+  color: rgba(255,255,255,.88) !important;
+  border-color: rgba(116,198,157,.25) !important;
+}
+body.r-dark #pg-happy #happyPostTa::placeholder {
+  color: rgba(255,255,255,.35) !important;
+}
+/* Anon toggle card */
+body.r-dark #pg-happy [style*="rgba(255,255,255,.5)"] {
+  background: rgba(14,38,22,.72) !important;
+  border-color: rgba(116,198,157,.18) !important;
+}
+/* Tab bar container */
+body.r-dark #pg-happy [style*="var(--cream2)"] {
+  background: rgba(14,38,22,.82) !important;
+}
+/* Tab buttons */
+body.r-dark #pg-happy .happy-tab {
+  color: rgba(255,255,255,.52) !important;
+}
+body.r-dark #pg-happy .happy-tab.active {
+  background: rgba(116,198,157,.16) !important;
+  color: rgba(116,198,157,.95) !important;
+}
+/* Post cards */
+body.r-dark .happy-card {
+  background: rgba(12,34,20,.90) !important;
+  border-color: rgba(116,198,157,.18) !important;
+}
+
+/* ── Guardianes / Red de Apoyo ──────────────────────────────────────── */
+/* MI ESTADO card — dynamically rendered with rgba(255,255,255,.7) */
+body.r-dark #myGuardianStatus > div {
+  background: rgba(12,34,20,.88) !important;
+  border-color: rgba(116,198,157,.22) !important;
+}
+/* Status buttons inactive border */
+body.r-dark #myGuardianStatus button {
+  border-color: rgba(116,198,157,.22) !important;
+  color: rgba(255,255,255,.70) !important;
+}
+/* Filter chips */
+body.r-dark #guardianStatusBar .p-filter-chip {
+  background: rgba(12,34,20,.72) !important;
+  border-color: rgba(116,198,157,.20) !important;
+  color: rgba(255,255,255,.68) !important;
+}
+body.r-dark #guardianStatusBar .p-filter-chip.active {
+  background: rgba(116,198,157,.20) !important;
+  border-color: rgba(116,198,157,.50) !important;
+  color: rgba(116,198,157,.95) !important;
+}
