@@ -1016,12 +1016,12 @@ body.r-dark .r-section-card {
 
 /* 4. Logo — cuadrado 1024x1024, llena el ancho del hero */
 .land-hero-logo {
-  width: clamp(340px, 92vw, 520px) !important;
+  width: clamp(391px, calc(100vw - 20px), 598px) !important;
   height: auto !important;
   filter:
     drop-shadow(0 0 32px rgba(116,198,157,.58))
     drop-shadow(0 4px 16px rgba(0,0,0,.52)) !important;
-  margin-bottom: -18px !important;
+  margin-bottom: -32px !important;
 }
 
 /* 5. Línea italic Cormorant — text-shadow fuerte para leer con partículas encima */
@@ -1037,7 +1037,7 @@ body.r-dark .r-section-card {
     0 2px 16px rgba(0,0,0,.65),
     0 0 60px rgba(0,0,0,.45) !important;
   margin: 0 0 18px;
-  margin-top: -4px;
+  margin-top: -14px;
   text-align: center;
 }
 .r-lhero-italic em { font-style: italic; }
