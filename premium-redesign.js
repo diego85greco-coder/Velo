@@ -148,7 +148,7 @@
       initParticles('landingCanvas', 60, 0.5);
       initParticles('loginCanvas', 40, 0.4);
       initParticles('registerCanvas', 40, 0.4);
-      initParticles('homeBgCanvas', 55, 0.30, '116,198,157');
+      initParticles('homeBgCanvas', 60, 0.48, '116,198,157');
     }, 300);
   }
 
@@ -262,8 +262,8 @@ function initParticles(canvasId, count, maxOpacity, color) {
   var particleColor = color || '232,213,163';
   var particles = [];
   function resize() {
-    canvas.width = canvas.offsetWidth || canvas.parentElement.offsetWidth || 600;
-    canvas.height = canvas.offsetHeight || canvas.parentElement.offsetHeight || 400;
+    canvas.width  = canvas.offsetWidth  || window.innerWidth  || 600;
+    canvas.height = canvas.offsetHeight || window.innerHeight || 900;
   }
   resize();
   window.addEventListener('resize', resize);

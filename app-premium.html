@@ -14,8 +14,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260527-157">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260527-157">
+  <link rel="stylesheet" href="premium.css?v=20260527-158">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260527-158">
 </head>
 <body>
 
@@ -877,8 +877,11 @@
 
       <!-- ══ HOME ════════════════════════════════════════════════ -->
       <div class="p-page" id="pg-home">
-        <canvas id="homeBgCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas>
         <div class="p-page-scroll">
+          <!-- Sticky viewport particle canvas — inside scroll context so backdrop-filter works -->
+          <div style="position:sticky;top:0;height:0;z-index:0;pointer-events:none;overflow:visible;flex-shrink:0">
+            <canvas id="homeBgCanvas" style="position:absolute;top:0;left:0;width:100vw;height:100vh;pointer-events:none"></canvas>
+          </div>
           <div class="home-header r-hero-v2">
             <div class="r-hero-left">
               <div class="r-hero-status-row">
@@ -2928,8 +2931,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260527-157"></script>
-<script src="premium-redesign.js?v=20260527-157"></script>
+<script src="premium.js?v=20260527-158"></script>
+<script src="premium-redesign.js?v=20260527-158"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

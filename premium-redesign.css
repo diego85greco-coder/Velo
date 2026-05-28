@@ -758,8 +758,8 @@ body.r-dark::after {
 }
 
 body.r-dark {
-  --r-glass-bg: rgba(15, 30, 20, 0.82);
-  --r-glass-bord: rgba(80, 160, 110, 0.18);
+  --r-glass-bg: rgba(15, 30, 20, 0.48);
+  --r-glass-bord: rgba(80, 160, 110, 0.22);
   --r-glass-shadow: 0 1px 0 rgba(116,198,157,.08) inset, 0 8px 30px rgba(0,0,0,.35);
   --r-sage-glow: rgba(58, 140, 100, 0.45);
 }
@@ -1771,8 +1771,35 @@ body.r-dark #homeGuardianBtn[data-on="true"] {
 
 /* ── Home page: bg canvas fills full page ───────────────────────── */
 #pg-home { overflow: hidden; }
-#pg-home > canvas { border-radius: 0; }
 .r-hero-v2 { overflow: visible; }
+
+/* Make all home cards glass-transparent so particles show through */
+#pg-home .p-card,
+#pg-home .home-greeting,
+#pg-home .home-wide-card,
+#pg-home .r-hero-v2,
+#pg-home #homeDailyQuote {
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(18px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.4) !important;
+}
+/* Light mode: warm cream glass with particles visible */
+#pg-home .p-card,
+#pg-home .home-greeting {
+  background: rgba(249,244,230,.52) !important;
+}
+#pg-home #homeDailyQuote {
+  background: linear-gradient(135deg,rgba(255,230,102,.12),rgba(255,200,80,.08)) !important;
+}
+/* Dark mode: deep forest glass with particles visible */
+body.r-dark #pg-home .p-card,
+body.r-dark #pg-home .home-greeting {
+  background: rgba(12,26,17,.50) !important;
+}
+body.r-dark #pg-home #homeDailyQuote {
+  background: rgba(20,40,25,.48) !important;
+}
 
 /* ── Auth-left logo: proportional width for dark panel ───────────── */
 .auth-left-content img {
