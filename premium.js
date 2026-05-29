@@ -1089,6 +1089,9 @@ function _loadHomeData(){
   _updateSidebarUser();
   _renderPersonalizedSuggestions();
   _updateHomeBell();
+  // Hero entrance animation — retriggers on every navigation to home
+  var _ha = document.querySelector('#pg-home .r-hero-v2');
+  if(_ha){ _ha.classList.remove('r-greeting-anim'); requestAnimationFrame(function(){ requestAnimationFrame(function(){ _ha.classList.add('r-greeting-anim'); }); }); }
   // Daily quote in home header (Gemini, cached per day)
   setTimeout(_loadDailyMotivationalQuote, 200);
 }
@@ -3691,7 +3694,7 @@ function _calmAIAddMsg(text, isUser){
 }
 
 async function _geminiChat(systemPrompt, msgs, cfg){
-  // Try Vercel serverless proxy first
+  // Primary: proxy multi-turn chat
   try{
     var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ type:'chat', systemPrompt:systemPrompt, msgs:msgs, cfg:cfg||{} }) });
@@ -3704,36 +3707,15 @@ async function _geminiChat(systemPrompt, msgs, cfg){
       }
     }
   }catch(e){}
-  // Fallback: direct call
-  var contents = msgs.map(function(m){
-    return { role: m.user ? 'user' : 'model', parts: [{ text: m.text }] };
+  // Reliable fallback: format conversation as a single prompt and use the generate path
+  // (the generate path is confirmed working; the direct key fallback was broken — GEMINI_KEY is '')
+  var convLines = msgs.slice(-8).map(function(m){
+    return (m.user ? 'Usuario' : 'Acompañante Velo') + ': ' + m.text;
   });
-  // Gemini requires first turn to be 'user' — strip any leading model turns
-  while(contents.length && contents[0].role !== 'user') contents.shift();
-  if(!contents.length) return null;
-  for(var attempt = 0; attempt < GEMINI_URLS.length; attempt++){
-    var url = GEMINI_URLS[(_geminiUrlIdx + attempt) % GEMINI_URLS.length];
-    try{
-      var res = await fetch(url + GEMINI_KEY, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: contents,
-          generationConfig: Object.assign({ temperature:0.88, maxOutputTokens:200 }, cfg||{})
-        })
-      });
-      var json = await res.json();
-      if(json.candidates && json.candidates[0] && json.candidates[0].content &&
-         json.candidates[0].content.parts && json.candidates[0].content.parts[0] &&
-         json.candidates[0].content.parts[0].text){
-        _geminiUrlIdx = (_geminiUrlIdx + attempt) % GEMINI_URLS.length;
-        return json.candidates[0].content.parts[0].text.trim();
-      }
-      if(json.error){ console.warn('[Velo CalmAI]', json.error.message); continue; }
-    }catch(e){ console.error('[Velo CalmAI]', e); continue; }
-  }
-  return null;
+  var fallbackPrompt = systemPrompt
+    + '\n\nConversación hasta ahora:\n' + convLines.join('\n')
+    + '\n\nAcompañante Velo (respondé en 2-3 oraciones, cálido y específico a lo que el usuario dijo):';
+  return _geminiCall(fallbackPrompt, Object.assign({ temperature:0.88, maxOutputTokens:220 }, cfg||{}));
 }
 
 async function pSendCalmAIMsg(){
@@ -7377,7 +7359,15 @@ async function pRenderContacts(){
   // Unread DM count
   var unreadIds = {}; try{ unreadIds = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
 
-  el.innerHTML = '<div style="background:var(--sage7);border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;justify-content:space-between">'
+  el.innerHTML = '<div style="background:linear-gradient(135deg,rgba(116,198,157,.08),rgba(116,198,157,.04));border:1px solid rgba(116,198,157,.2);border-radius:14px;padding:12px 16px;margin-bottom:14px">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--sage3);margin-bottom:8px;letter-spacing:.3px">📋 Cómo funciona tu red</div>'
+    +'<div style="display:flex;flex-direction:column;gap:5px">'
+    +'<div style="font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:7px"><span style="color:#5BBF87;font-size:13px;flex-shrink:0">●</span><span><b>Verde</b> — disponible, podés chatear 💬</span></div>'
+    +'<div style="font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:7px"><span style="color:#E0A92E;font-size:13px;flex-shrink:0">●</span><span><b>Amarillo</b> — ocupado/a, dejá mensaje en el buzón ✉️</span></div>'
+    +'<div style="font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:7px"><span style="color:rgba(150,150,150,.6);font-size:13px;flex-shrink:0">○</span><span><b>Gris</b> — desconectado, solo buzón ✉️</span></div>'
+    +'<div style="font-size:11px;color:var(--ink5);margin-top:6px;padding-top:6px;border-top:1px solid var(--border2)">⭐ quita de favoritos &nbsp;·&nbsp; 🚫 bloquea al usuario</div>'
+    +'</div></div>'
+    +'<div style="background:var(--sage7);border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;justify-content:space-between">'
     +'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+favs.length+'</div><div style="font-size:11px;color:var(--ink4)">Mis favoritos</div></div>'
     +'<div style="width:1px;background:var(--border2)"></div>'
     +'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+favMeCount+'</div><div style="font-size:11px;color:var(--ink4)">Te tienen favorito</div></div>'
@@ -7423,7 +7413,11 @@ async function pRenderContacts(){
       +'</div>'
       +(unread>0?'<span style="background:var(--sage);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px;flex-shrink:0">'+unread+'</span>':'')
       +'<div style="display:flex;gap:6px;flex-shrink:0">'
-      +(pInfo.on?'<button onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif" title="Chat directo">💬</button>':'<button disabled style="padding:7px 12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;font-size:12px;font-weight:700;color:var(--ink5);cursor:not-allowed;opacity:.5" title="Desconectado">💬</button>')
+      +(function(){ var canChat = pInfo.on && pInfo.label !== 'Ocupado/a';
+        return canChat
+          ? '<button onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif" title="Chat directo">💬</button>'
+          : '<button disabled style="padding:7px 12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;font-size:12px;font-weight:700;color:var(--ink5);cursor:not-allowed;opacity:.45" title="'+(pInfo.on?'Ocupado/a':'Desconectado')+'">💬</button>';
+      })()
       +'<button onclick="pLeaveOfflineMsg('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 10px;background:rgba(200,165,100,.08);border:1px solid rgba(200,165,100,.25);border-radius:10px;font-size:13px;cursor:pointer" title="Mensaje al buzón">✉️</button>'
       +'<button onclick="pRemoveFav(\''+f.id+'\');pRenderContacts()" style="padding:7px 9px;background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);border-radius:10px;font-size:13px;cursor:pointer">⭐</button>'
       +'<button onclick="pBlockUser('+_jsAttr(f.id)+','+_jsAttr(f.name)+');pRenderContacts()" style="padding:7px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:13px;cursor:pointer" title="Bloquear">🚫</button>'
