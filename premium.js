@@ -6088,6 +6088,16 @@ function pHappyComment(postId){
 
 var _happySelectedPhoto = null;
 
+function pExpandHappyCompose(){
+  var bar = document.getElementById('happyComposeBar');
+  var body = document.getElementById('happyComposeBody');
+  if(bar) bar.style.display = 'none';
+  if(body) body.style.display = 'block';
+  pOpenHappyPost();
+  var ta = document.getElementById('happyPostTa');
+  if(ta) setTimeout(function(){ ta.focus(); }, 50);
+}
+
 function pOpenHappyPost(){
   _selectedHappyEmoji = '☀️';
   _happySelectedPhoto = null;
@@ -6216,9 +6226,13 @@ async function pSubmitHappyPost(){
   hist.unshift({ id:post.id, emoji:post.emoji, text:post.text, photo:post.photo, ts:post.ts, name:post.name });
   safeLS('set','velo_happy_history', JSON.stringify(hist.slice(0,200)));
 
-  // Reset form
+  // Reset form and collapse compose back to bar
   pClearHappyPhoto();
   if(ta) ta.value = '';
+  var bar = document.getElementById('happyComposeBar');
+  var body = document.getElementById('happyComposeBody');
+  if(body) body.style.display = 'none';
+  if(bar) bar.style.display = '';
   pRenderHappy();
 }
 
