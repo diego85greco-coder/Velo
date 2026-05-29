@@ -22,9 +22,9 @@
 
   function pickTimeIcon() {
     const h = new Date().getHours();
-    if (h >= 5 && h < 12)  return { svg: SUN_MORNING,   period: 'morning' };
-    if (h >= 12 && h < 19) return { svg: SUN_AFTERNOON, period: 'afternoon' };
-    return                       { svg: MOON,          period: 'night' };
+    if (h >= 6 && h < 12)  return { svg: SUN_MORNING,   period: 'morning' };    // Buenos días
+    if (h >= 12 && h < 20) return { svg: SUN_AFTERNOON, period: 'afternoon' };  // Buenas tardes
+    return                       { svg: MOON,          period: 'night' };       // Buenas noches
   }
 
   function injectTimeIcon() {
