@@ -1,7 +1,7 @@
 // Vercel serverless function — Gemini 2.0 Flash via direct REST API (no SDK dependency)
 // Accepts GEMINI_API_KEY or GEMINI_KEY env var name
 
-const BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash';
+const BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
