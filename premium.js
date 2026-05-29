@@ -3179,9 +3179,37 @@ function _subscribeHelpChat(post){
       var m = payload.new||{};
       var relevant = (m.from_id===myId&&m.to_id===peerId)||(m.from_id===peerId&&m.to_id===myId);
       if(!relevant) return;
+      if(m.text && m.text.startsWith('__velo_help_bye__:')){
+        if(m.id && sbClient) sbClient.from('direct_messages').delete().eq('id',m.id).then(function(){}).catch(function(){});
+        var _hBye = {}; try{ _hBye = JSON.parse(m.text.slice('__velo_help_bye__:'.length)); }catch(e){}
+        _showHelpExitBanner(_hBye.name || m.from_name || 'El otro usuario');
+        return;
+      }
       if(m.from_id === myId) return; // already rendered optimistically
       _renderHelpChatMsg(m, false);
-    }).subscribe();
+    })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'direct_messages'}, function(payload){
+      var m = payload.new||{};
+      var relevant = (m.from_id===myId&&m.to_id===peerId)||(m.from_id===peerId&&m.to_id===myId);
+      if(!relevant || !m.id) return;
+      var bubble = document.querySelector('[data-sb-id="direct_messages:'+m.id+'"]');
+      if(!bubble) return;
+      var oldBar = bubble.querySelector('.msg-rx-bar');
+      if(oldBar) oldBar.remove();
+      if(m.reactions && typeof m.reactions === 'object'){
+        var chips = Object.keys(m.reactions).map(function(e){
+          var cnt = m.reactions[e]||1;
+          return '<span class="msg-reaction" data-emoji="'+e+'" data-cnt="'+cnt+'" onclick="_msgReact(\''+e+'\')">'+e+' '+cnt+'</span>';
+        }).join('');
+        if(chips){
+          var newBar = document.createElement('div');
+          newBar.className = 'msg-rx-bar';
+          newBar.innerHTML = chips;
+          bubble.appendChild(newBar);
+        }
+      }
+    })
+    .subscribe();
 }
 
 async function _loadHelpChatHistory(post){
@@ -3209,7 +3237,7 @@ function _renderHelpChatMsg(m, isOwn){
   var _t=m.text||''; if(_sentinels.indexOf(_t)>=0||_t.startsWith('__velo_guardian_req__:')||_t.startsWith('__velo_guardian_acc__:')||_t.startsWith('__velo_guardian_rej__:')||_t.startsWith('__velo_guardian_bye__:')||_t.startsWith('__velo_dm_bye__:')||_t.startsWith('__velo_help_bye__:')) return;
   var post = _curHelpPost||{};
   var div = document.createElement('div');
-  div.innerHTML = _buildMsgBubble(m.text||'', isOwn, isOwn?'':(post.emoji||'💙'), isOwn?'':(post.name||''), 'helpChatInput', 'helpChatReplyBar', '', {}, '', isOwn?'':(m.from_id||''));
+  div.innerHTML = _buildMsgBubble(m.text||'', isOwn, isOwn?'':(post.emoji||'💙'), isOwn?'':(post.name||''), 'helpChatInput', 'helpChatReplyBar', '', m.reactions||{}, m.id?'direct_messages:'+m.id:'', isOwn?'':(m.from_id||''));
   var child = div.firstElementChild;
   if(child){ msgEl.appendChild(child); msgEl.scrollTop = msgEl.scrollHeight; }
 }
