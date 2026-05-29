@@ -8907,14 +8907,14 @@ async function _renderAdmin(){
     }
   }
 
-  // ── Admin content panels ───────────────────────────────────
+  // ── Admin content panels — tab-based ─────────────────────────
   if(content){
-    var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
-    audit = audit.length ? audit : (function(){ try{ return JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){ return []; } })();
 
-    // 🚨 Moderation alerts from Supabase
-    _initSupabase();
-    if(sbClient){
+    content.innerHTML = _adminTabBarHtml() + '<div id="adminTabPanel"></div>';
+    _switchAdminTab(_adminActiveTab || 'moderacion');
+
+    // ── DEAD CODE GUARD (unreachable — kept for linter) ──
+    if(false){
       sbClient.from('moderation_flags').select('*').eq('resolved',false).order('created_at',{ascending:false}).limit(20)
         .then(function(res){
           if(!res.data || !res.data.length) return;
@@ -8941,208 +8941,531 @@ async function _renderAdmin(){
         }).catch(function(){});
     }
 
-    // Provisional password section
-    var provHtml = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">🔑 CONTRASEÑAS PROVISIONALES</div>'
-      +'<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:14px;margin-bottom:8px">'
-      +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Creá una contraseña temporal para un usuario que no puede recuperar su cuenta. Válida 72 horas.</p>'
-      +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'
-      +'<input class="p-input" id="adminProvEmail" type="email" placeholder="correo@usuario.com" style="flex:1;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" />'
-      +'<button onclick="pCreateProvisionalPass()" style="padding:8px 14px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;white-space:nowrap">Crear contraseña</button>'
-      +'</div>'
-      +'<div id="adminProvResult" style="font-size:12px;color:rgba(116,198,157,.8)"></div>'
-      +'</div>';
-
-    var contactsHtml = provHtml
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;margin-bottom:10px">'
-        +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6)">💌 MENSAJES DE CONTACTO</div>'
-        +'<button onclick="sbLoadContacts().then(function(d){ _renderAdminContactsList(d||[]); })" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:6px;color:rgba(116,198,157,.6);cursor:pointer;font-family:\'Jost\',sans-serif">↻ Actualizar</button>'
-      +'</div>'
-      +'<div id="adminContactsList"><p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Cargando mensajes…</p></div>'
-
-    // T&C acceptance log — dynamic section with search
-      +'<div style="margin-top:20px">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6)">📜 ACEPTACIÓN DE TÉRMINOS (AUDITORÍA LEGAL)</div>'
-      +'<button onclick="pAdminLoadConsent()" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:6px;color:rgba(116,198,157,.6);cursor:pointer;font-family:\'Jost\',sans-serif">↻ Actualizar</button>'
-      +'</div>'
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 12px">'
-      +'<span style="font-size:15px">🔍</span>'
-      +'<input id="consentSearch" type="text" placeholder="Buscar por nombre o email…" oninput="_filterConsentLog(this.value)" style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:12px;font-family:\'Jost\',sans-serif" />'
-      +'</div>'
-      +'<div id="adminConsentLog"><p style="font-size:12px;color:rgba(255,255,255,.3)">Cargando registros…</p></div>'
-      +'</div>';
-
-    var crisisEvents = audit.filter(function(a){ return a.tipo === 'crisis_detect'; });
-    var crisisHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,80,80,.85);margin-bottom:10px">🆘 ALERTAS DE CRISIS</div>'
-      +'<div id="adminCrisisSupabase"><p style="font-size:11px;color:rgba(255,255,255,.3)">Cargando desde servidor...</p></div>'
-      +(crisisEvents.length
-        ? crisisEvents.slice(0,10).map(function(a,i){
-            var date = new Date(a.ts);
-            var dateStr = date.toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-            var nivelColor = a.nivel==='alto' ? '#ff4444' : '#ffbb33';
-            var nivelLabel = a.nivel==='alto' ? '🔴 ALTO' : '🟡 MEDIO';
-            return '<div style="background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.25);border-radius:10px;padding:12px;margin-bottom:8px">'
-              +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
-              +'<span style="font-size:11px;font-weight:700;color:'+nivelColor+'">'+nivelLabel+'</span>'
-              +'<span style="font-size:10px;color:rgba(255,255,255,.3)">'+dateStr+'</span>'
-              +'</div>'
-              +(a.motivo ? '<div style="font-size:11px;color:rgba(255,255,255,.55);margin-bottom:4px">'+_escHtml(a.motivo)+'</div>' : '')
-              +(a.detail ? '<div style="font-size:11px;color:rgba(255,255,255,.35);font-style:italic;margin-bottom:8px">"'+_escHtml(a.detail)+'"</div>' : '')
-              +(a.resolved
-                ? '<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓ Atendida</span>'
-                : '<button onclick="pResolveCrisis('+i+')" style="font-size:10px;padding:4px 10px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.85);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Marcar como atendida</button>')
-              +'</div>';
-          }).join('')
-        : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">Sin alertas de crisis. 🌿</p>');
-
-    var auditHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,80,80,.7);margin-bottom:10px">🛡️ AUDITORÍA IA — CONTROL DE ABUSOS</div>'
-      +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Reportes de usuarios, comportamientos detectados y acciones moderadas.</div>'
-      +(audit.length
-        ? audit.slice(0,30).map(function(a,i){
-            var date = new Date(a.ts);
-            var dateStr = date.toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-            var typeLabel = { report_circle:'Reporte en círculo', ban_user:'Usuario baneado', abuse_detect:'Detección IA', flag_bottle:'Botella reportada', flag_help:'Ayuda reportada' }[a.tipo] || a.tipo;
-            var color = a.resolved ? 'rgba(116,198,157,.5)' : '#e05252';
-            return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
-              +'<div style="font-size:18px;flex-shrink:0">'+(a.tipo==='report_circle'?'⚠️':a.tipo==='abuse_detect'?'🤖':'🚩')+'</div>'
-              +'<div style="flex:1;min-width:0">'
-              +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82)">'+typeLabel+'</div>'
-              +(a.circle ? '<div style="font-size:11px;color:rgba(255,255,255,.38)">Círculo: '+a.circle+'</div>' : '')
-              +(a.motivo ? '<div style="font-size:11px;color:rgba(255,255,255,.38)">Motivo: '+a.motivo+'</div>' : '')
-              +(a.detail ? '<div style="font-size:11px;color:rgba(255,255,255,.3);font-style:italic">'+a.detail+'</div>' : '')
-              +'<div style="font-size:10px;color:rgba(255,255,255,.28)">'+dateStr+'</div>'
-              +'</div>'
-              +'<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'
-              +(a.resolved
-                ? '<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓ Resuelto</span>'
-                : '<button onclick="pResolveAudit('+i+')" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.8);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Resolver</button>')
-              +'</div>'
-              +'</div>';
-          }).join('')
-        : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin eventos de auditoría.</p>');
-
-    // Pending transfers
-    var transfers = []; try{ transfers = JSON.parse(safeLS('get','velo_pending_transfers')||'[]'); }catch(e){}
-    var transferHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💳 TRANSFERENCIAS PENDIENTES</div>'
-      +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px">80% al profesional · 20% Velo. El botón se habilita solo cuando el profesional marcó la sesión como finalizada.</div>'
-      +(transfers.filter(function(t){ return t.ended && !t.paid; }).length
-        ? transfers.filter(function(t){ return t.ended && !t.paid; }).map(function(t,i){
-            var pro = _proData.find(function(p){ return p.id===t.proId; });
-            var proAmount = Math.round((t.amount||0)*0.8*100)/100;
-            var veloAmount = Math.round((t.amount||0)*0.2*100)/100;
-            return '<div style="background:rgba(200,162,0,.07);border:1px solid rgba(200,162,0,.2);border-radius:12px;padding:14px;margin-bottom:8px">'
-              +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
-              +'<div style="font-size:22px">'+(pro?pro.av:'🩺')+'</div>'
-              +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.82)">'+(pro?pro.name:'Profesional')+'</div>'
-              +'<div style="font-size:11px;color:rgba(255,255,255,.4)">Sesión '+new Date(t.ts).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+'</div></div>'
-              +'<div style="text-align:right"><div style="font-size:16px;font-weight:800;color:rgba(200,162,0,.9)">$'+t.amount+' '+(t.currency||'USD')+'</div>'
-              +'<div style="font-size:10px;color:rgba(255,255,255,.3)">Pro: $'+proAmount+' · Velo: $'+veloAmount+'</div></div>'
-              +'</div>'
-              +'<button onclick="pApproveTransfer('+i+')" style="width:100%;padding:8px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700">✅ Aprobar transferencia al profesional</button>'
-              +'</div>';
-          }).join('')
-        : '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">Sin transferencias pendientes.</p>');
-
-    var aiModHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">🤖 ASISTENTE IA — MODERACIÓN Y ANÁLISIS</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
-      +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:12px">'
-      +'<div style="font-size:20px;margin-bottom:4px">🔍</div>'
-      +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:4px">Escaneo de contenido</div>'
-      +'<div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:10px">Analiza círculos, botellas y sala de ayuda.</div>'
-      +'<button onclick="pRunAiScan()" style="font-size:11px;padding:5px 10px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.8);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Ejecutar escaneo</button>'
-      +'</div>'
-      +'<div style="background:rgba(200,150,80,.06);border:1px solid rgba(200,150,80,.15);border-radius:12px;padding:12px">'
-      +'<div style="font-size:20px;margin-bottom:4px">📊</div>'
-      +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7);margin-bottom:4px">Patrones de uso</div>'
-      +'<div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:10px">Ciclo saludable. Sin anomalías.</div>'
-      +'<button onclick="pViewPatterns()" style="font-size:11px;padding:5px 10px;background:rgba(200,150,80,.12);border:1px solid rgba(200,150,80,.2);color:rgba(200,150,80,.8);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Ver patrones</button>'
-      +'</div>'
-      +'</div>'
-      // ── Situation analysis card ──
-      +'<div style="background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.2);border-radius:12px;padding:14px">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-      +'<div>'
-      +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.75)">🧠 Análisis de situación</div>'
-      +'<div style="font-size:11px;color:rgba(255,255,255,.35)">Gemini lee el log y genera un resumen con recomendaciones.</div>'
-      +'</div>'
-      +'<button id="adminSituationBtn" onclick="pAdminAiSituationAnalysis()" style="flex-shrink:0;padding:7px 13px;background:rgba(180,140,220,.2);border:1px solid rgba(180,140,220,.35);border-radius:9px;color:rgba(180,140,220,.95);font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap">Analizar situación</button>'
-      +'</div>'
-      +'<div id="adminSituationResult"></div>'
-      +'</div>';
-
-    // Mass messaging section
-    var broadcasts = []; try{ broadcasts = JSON.parse(safeLS('get','velo_broadcasts')||'[]'); }catch(e){}
-    var massHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📢 MENSAJES MASIVOS</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
-      +'<button onclick="pAdminMassMessage(\'users\')" style="padding:14px;background:rgba(116,198,157,.1);border:1.5px solid rgba(116,198,157,.25);border-radius:14px;color:rgba(116,198,157,.9);font-family:\'Jost\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:24px">👥</span>Mensaje a usuarios</button>'
-      +'<button onclick="pAdminMassMessage(\'pros\')" style="padding:14px;background:rgba(200,162,0,.08);border:1.5px solid rgba(200,162,0,.2);border-radius:14px;color:rgba(200,162,0,.9);font-family:\'Jost\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:24px">🩺</span>Mensaje a profesionales</button>'
-      +'</div>'
-      +(broadcasts.length
-        ? '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:8px">HISTORIAL DE ENVÍOS</div>'
-          + broadcasts.slice(0,5).map(function(b){
-              var d = new Date(b.ts);
-              var ds = d.toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-              var icon = b.target==='pros'?'🩺':'👥';
-              return '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
-                +'<span style="font-size:16px;flex-shrink:0">'+icon+'</span>'
-                +'<div style="flex:1;min-width:0">'
-                +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+b.subject+'</div>'
-                +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+ds+' · '+(b.target==='pros'?'Profesionales':'Usuarios')+'</div>'
-                +'</div>'
-                +'</div>';
-            }).join('')
-        : '');
-
-    // Survey results section
-    var surveyHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📊 ENCUESTAS DE SATISFACCIÓN</div>'
-      +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">Resultados de encuestas trimestrales — escala 0 a 10. Las sugerencias se muestran de forma anónima.</div>'
-      + _renderSurveyResults();
-
-    // AI pending tasks section (filled async)
-    var tasksHtml = '<div style="margin-bottom:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📋 TAREAS PENDIENTES</div>'
-      +'<div id="adminAITasks"><div style="font-size:12px;color:rgba(255,255,255,.3);padding:10px 0">Gemini está revisando las tareas...</div></div>';
-
-    // Gestión: Plus gratis 30 días + noticias manuales
-    var gestionHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">⭐ ACTIVAR VELO PLUS GRATIS (30 DÍAS)</div>'
-      +'<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
-      +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Activá Velo Plus por 30 días para un usuario. Al vencer vuelve automáticamente a Free.</p>'
-      +'<div style="display:flex;gap:8px;align-items:center">'
-      +'<input class="p-input" id="adminGrantPlusEmail" type="email" placeholder="correo@usuario.com" style="flex:1;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" />'
-      +'<button onclick="pAdminGrantPlus()" style="padding:8px 14px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;white-space:nowrap">⭐ Activar Plus</button>'
-      +'</div></div>'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📰 NOTICIAS MANUALES</div>'
-      +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:14px;margin-bottom:18px">'
-      +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Publicá noticias propias con título, resumen y link. Aparecen primero en la sección Buenas Noticias.</p>'
-      +'<button onclick="pOpenAdminNews()" style="width:100%;padding:9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;margin-bottom:10px">+ Publicar noticia</button>'
-      +'<label style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:12px">'
-      +'<input type="checkbox" id="adminNewsOnlyToggle" '+(safeLS('get','velo_admin_news_only')==='1'?'checked':'')+' onchange="pAdminToggleNewsOnly(this.checked)" style="width:15px;height:15px;cursor:pointer">'
-      +'Mostrar solo noticias manuales hoy (desactiva las automáticas)</label>'
-      +'<div id="adminNewsList"></div>'
-      +'</div>';
-
-    var finanzasHtml = '<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💰 DONACIONES E INGRESOS</div>'
-      +'<div id="adminDonations"><p style="font-size:11px;color:rgba(255,255,255,.3);padding:8px 0">Cargando…</p></div>';
-
-    content.innerHTML = tasksHtml + gestionHtml + contactsHtml + finanzasHtml + surveyHtml + massHtml + transferHtml + crisisHtml + auditHtml + aiModHtml;
-    pAdminRenderNewsList();
-    _renderAdminDonations();
-
-    // Load contacts async: try Supabase first, fallback to localStorage
-    sbLoadContacts().then(function(sbMsgs){
-      if(sbMsgs){
-        _renderAdminContactsList(sbMsgs);
-      } else {
-        var local = []; try{ local = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
-        _renderAdminContactsList(local);
-      }
-    });
-    // Load crisis events from Supabase async
-    _loadAdminCrisisFromSupabase();
-    // Load consent log
-    pAdminLoadConsent();
-    // Generate AI task list async
-    _renderAdminAITasks();
   }
+}
+
+// ── ADMIN TAB SYSTEM ─────────────────────────────────────────────────────
+var _adminActiveTab = 'moderacion';
+
+function _adminTabBarHtml(){
+  var tabs = [
+    { id:'moderacion', icon:'🚨', label:'Moderación' },
+    { id:'mensajes',   icon:'📢', label:'Mensajes' },
+    { id:'usuarios',   icon:'👥', label:'Usuarios' },
+    { id:'finanzas',   icon:'💰', label:'Finanzas' },
+    { id:'privacidad', icon:'🔒', label:'Privacidad' },
+    { id:'gestion',    icon:'⚙️', label:'Gestión' },
+  ];
+  return '<div id="adminTabBar" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1)">'
+    + tabs.map(function(t){
+        var active = _adminActiveTab === t.id;
+        return '<button class="admin-tab-btn" data-tab="'+t.id+'" onclick="_switchAdminTab(\''+t.id+'\')" style="font-size:11px;padding:6px 13px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;white-space:nowrap;transition:all .18s;'
+          +(active
+            ? 'background:rgba(116,198,157,.22);border:1.5px solid rgba(116,198,157,.48);color:rgba(255,255,255,.9)'
+            : 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4)')
+          +'">'+t.icon+' '+t.label+'</button>';
+      }).join('')
+    +'</div>';
+}
+
+function _switchAdminTab(tab){
+  _adminActiveTab = tab;
+  document.querySelectorAll('.admin-tab-btn').forEach(function(b){
+    var act = b.dataset.tab === tab;
+    b.style.background  = act ? 'rgba(116,198,157,.22)' : 'rgba(255,255,255,.05)';
+    b.style.borderColor = act ? 'rgba(116,198,157,.48)'  : 'rgba(255,255,255,.1)';
+    b.style.color       = act ? 'rgba(255,255,255,.9)'   : 'rgba(255,255,255,.4)';
+  });
+  var panel = document.getElementById('adminTabPanel');
+  if(!panel) return;
+  panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando…</div>';
+  var map = {
+    moderacion: _adminTabModeracion,
+    mensajes:   _adminTabMensajes,
+    usuarios:   _adminTabUsuarios,
+    finanzas:   _adminTabFinanzas,
+    privacidad: _adminTabPrivacidad,
+    gestion:    _adminTabGestion,
+  };
+  if(map[tab]) map[tab](panel);
+}
+
+// ── TAB: MODERACIÓN ───────────────────────────────────────────────────
+async function _adminTabModeracion(panel){
+  _initSupabase();
+  var flags = [], reports = [];
+  if(sbClient){
+    try{ var fRes = await sbClient.from('moderation_flags').select('*').eq('resolved',false).order('created_at',{ascending:false}).limit(50); flags = (!fRes.error&&fRes.data)?fRes.data:[]; }catch(e){}
+    try{ var rRes = await sbClient.from('reportes').select('*').eq('estado','abierto').order('created_at',{ascending:false}).limit(50); reports = (!rRes.error&&rRes.data)?rRes.data:[]; }catch(e){}
+  }
+  var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
+  var crisisLocal = audit.filter(function(a){ return a.tipo==='crisis_detect'; });
+  var html = '';
+
+  if(flags.length){
+    html += '<div style="background:rgba(220,50,50,.07);border:1px solid rgba(220,50,50,.2);border-radius:14px;padding:14px;margin-bottom:14px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,100,100,.85);margin-bottom:10px">🤖 ALERTAS IA ('+flags.length+')</div>'
+      + flags.map(function(f){
+          var t = new Date(f.created_at).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+          var uid = _escHtml(f.user_id||'');
+          return '<div id="modflag-'+f.id+'" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
+            +'<div style="font-size:11px;font-weight:700;color:rgba(255,150,150,.9)">'+_escHtml(f.tipo||'abuso')+' · '+_escHtml(f.section||'')+'</div>'
+            +'<div style="font-size:11px;color:rgba(255,255,255,.5);margin:3px 0;font-style:italic">"'+_escHtml((f.content||'').slice(0,180))+'"</div>'
+            +'<div style="font-size:10px;color:rgba(255,255,255,.25)">'+t+(uid?' · uid:'+uid.slice(0,8):'')+'</div>'
+            +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">'
+            +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'accept\')" style="font-size:10px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Resolver</button>'
+            +(uid?'<button onclick="pAdminWarnUser(\''+uid+'\',\'\')" style="font-size:10px;padding:4px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:6px;color:rgba(240,200,90,.9);cursor:pointer">⚠️ Advertir</button>':'')
+            +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'delete\')" style="font-size:10px;padding:4px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);border-radius:6px;color:rgba(231,120,110,.9);cursor:pointer">🗑️ Eliminar</button>'
+            +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'alertdelete\')" style="font-size:10px;padding:4px 9px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.25);border-radius:6px;color:rgba(231,120,110,.75);cursor:pointer">⚠️+🗑️</button>'
+            +'</div></div>';
+        }).join('')+'</div>';
+  }
+
+  if(reports.length){
+    html += '<div style="background:rgba(230,130,40,.07);border:1px solid rgba(230,130,40,.2);border-radius:14px;padding:14px;margin-bottom:14px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(240,160,80,.85);margin-bottom:10px">🚩 REPORTADOS POR USUARIOS ('+reports.length+')</div>'
+      + reports.map(function(r){
+          var t = new Date(r.created_at||r.fecha||Date.now()).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+          var ruid = _escHtml(r.reported_user_id||r.user_id||'');
+          var cid  = _escHtml(r.content_id||'');
+          var ctype= _escHtml(r.content_type||r.categoria||'');
+          return '<div id="report-'+r.id+'" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
+            +'<div style="font-size:11px;font-weight:700;color:rgba(255,190,100,.9)">'+_escHtml(r.categoria||r.tipo||'reporte')+'</div>'
+            +'<div style="font-size:11px;color:rgba(255,255,255,.5);margin:3px 0">'+_escHtml((r.descripcion||r.motivo||r.texto||'').slice(0,180))+'</div>'
+            +'<div style="font-size:10px;color:rgba(255,255,255,.25)">'+t+(ruid?' · uid:'+ruid.slice(0,8):'')+'</div>'
+            +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">'
+            +'<button onclick="pAdminResolveReport(\''+r.id+'\')" style="font-size:10px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Resolver</button>'
+            +(ruid?'<button onclick="pAdminWarnUser(\''+ruid+'\',\'\')" style="font-size:10px;padding:4px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:6px;color:rgba(240,200,90,.9);cursor:pointer">⚠️ Advertir</button>':'')
+            +(cid?'<button onclick="pAdminDeleteContent(\''+cid+'\',\''+ctype+'\')" style="font-size:10px;padding:4px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);border-radius:6px;color:rgba(231,120,110,.9);cursor:pointer">🗑️ Eliminar</button>':'')
+            +'</div></div>';
+        }).join('')+'</div>';
+  }
+
+  if(!flags.length && !reports.length){
+    html += '<div style="text-align:center;padding:28px;font-size:13px;color:rgba(116,198,157,.7)">✅ Sin alertas ni reportes pendientes</div>';
+  }
+
+  html += '<div id="adminCrisisSupabase" style="margin-bottom:14px"><p style="font-size:11px;color:rgba(255,255,255,.3)">Cargando alertas de crisis…</p></div>';
+
+  if(crisisLocal.length){
+    html += '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,80,80,.85);margin-bottom:10px">🆘 CRISIS (local)</div>'
+      + crisisLocal.slice(0,10).map(function(a,i){
+          var ds = new Date(a.ts).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+          var nc = a.nivel==='alto'?'#ff4444':'#ffbb33';
+          return '<div style="background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.25);border-radius:10px;padding:12px;margin-bottom:8px">'
+            +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
+            +'<span style="font-size:11px;font-weight:700;color:'+nc+'">'+(a.nivel==='alto'?'🔴 ALTO':'🟡 MEDIO')+'</span>'
+            +'<span style="font-size:10px;color:rgba(255,255,255,.3)">'+ds+'</span></div>'
+            +(a.motivo?'<div style="font-size:11px;color:rgba(255,255,255,.55);margin-bottom:4px">'+_escHtml(a.motivo)+'</div>':'')
+            +(a.detail?'<div style="font-size:11px;color:rgba(255,255,255,.35);font-style:italic;margin-bottom:8px">"'+_escHtml(a.detail)+'"</div>':'')
+            +(a.resolved?'<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓ Atendida</span>'
+              :'<button onclick="pResolveCrisis('+i+')" style="font-size:10px;padding:4px 10px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.85);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Marcar atendida</button>')
+            +'</div>';
+        }).join('');
+  }
+
+  if(audit.length){
+    html += '<div style="margin-top:14px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,80,80,.7);margin-bottom:10px">🛡️ AUDITORÍA IA</div>'
+      + audit.slice(0,30).map(function(a,i){
+          var typeLabel = {report_circle:'Reporte en círculo',ban_user:'Usuario baneado',abuse_detect:'Detección IA',flag_bottle:'Botella reportada',flag_help:'Ayuda reportada'}[a.tipo]||a.tipo;
+          var ds = new Date(a.ts).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+          return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+            +'<div style="font-size:18px;flex-shrink:0">'+(a.tipo==='report_circle'?'⚠️':a.tipo==='abuse_detect'?'🤖':'🚩')+'</div>'
+            +'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82)">'+typeLabel+'</div>'
+            +(a.motivo?'<div style="font-size:11px;color:rgba(255,255,255,.38)">'+_escHtml(a.motivo)+'</div>':'')
+            +(a.detail?'<div style="font-size:11px;color:rgba(255,255,255,.3);font-style:italic">'+_escHtml(a.detail)+'</div>':'')
+            +'<div style="font-size:10px;color:rgba(255,255,255,.28)">'+ds+'</div></div>'
+            +'<div>'+(a.resolved?'<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓</span>'
+              :'<button onclick="pResolveAudit('+i+')" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.8);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Resolver</button>')
+            +'</div></div>';
+        }).join('');
+  }
+
+  html += '<div style="margin-top:14px;background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.2);border-radius:14px;padding:14px">'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">🤖 HERRAMIENTAS IA</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
+    +'<button onclick="pRunAiScan()" style="padding:10px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:10px;color:rgba(116,198,157,.8);font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">🔍 Escanear</button>'
+    +'<button onclick="pViewPatterns()" style="padding:10px;background:rgba(200,150,80,.1);border:1px solid rgba(200,150,80,.2);border-radius:10px;color:rgba(200,150,80,.8);font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">📊 Patrones</button>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+    +'<div><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7)">🧠 Análisis de situación</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.35)">Gemini revisa el estado general</div></div>'
+    +'<button id="adminSituationBtn" onclick="pAdminAiSituationAnalysis()" style="padding:7px 13px;background:rgba(180,140,220,.2);border:1px solid rgba(180,140,220,.35);border-radius:9px;color:rgba(180,140,220,.95);font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">Analizar</button>'
+    +'</div><div id="adminSituationResult"></div></div>';
+
+  panel.innerHTML = html;
+  _loadAdminCrisisFromSupabase();
+}
+
+// ── TAB: MENSAJES ─────────────────────────────────────────────────────
+function _adminTabMensajes(panel){
+  var broadcasts = []; try{ broadcasts = JSON.parse(safeLS('get','velo_broadcasts')||'[]'); }catch(e){}
+  panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">🔑 CONTRASEÑAS PROVISIONALES</div>'
+    +'<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:14px;margin-bottom:16px">'
+    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Contraseña temporal para usuario que no puede recuperar su cuenta. Válida 72 horas.</p>'
+    +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'
+    +'<input class="p-input" id="adminProvEmail" type="email" placeholder="correo@usuario.com" style="flex:1;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" />'
+    +'<button onclick="pCreateProvisionalPass()" style="padding:8px 14px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;white-space:nowrap">Crear</button>'
+    +'</div><div id="adminProvResult" style="font-size:12px;color:rgba(116,198,157,.8)"></div></div>'
+
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6)">💌 MENSAJES DE CONTACTO</div>'
+    +'<button onclick="sbLoadContacts().then(function(d){ _renderAdminContactsList(d||[]); })" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:6px;color:rgba(116,198,157,.6);cursor:pointer;font-family:\'Jost\',sans-serif">↻ Actualizar</button>'
+    +'</div>'
+    +'<div id="adminContactsList"><p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Cargando mensajes…</p></div>'
+
+    +'<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📢 MENSAJES MASIVOS</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
+    +'<button onclick="pAdminMassMessage(\'users\')" style="padding:14px;background:rgba(116,198,157,.1);border:1.5px solid rgba(116,198,157,.25);border-radius:14px;color:rgba(116,198,157,.9);font-family:\'Jost\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:24px">👥</span>Usuarios</button>'
+    +'<button onclick="pAdminMassMessage(\'pros\')" style="padding:14px;background:rgba(200,162,0,.08);border:1.5px solid rgba(200,162,0,.2);border-radius:14px;color:rgba(200,162,0,.9);font-family:\'Jost\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:24px">🩺</span>Profesionales</button>'
+    +'</div>'
+    +(broadcasts.length
+      ? '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:8px">HISTORIAL</div>'
+        + broadcasts.slice(0,8).map(function(b){
+            var ds = new Date(b.ts).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+            var imgTag = b.imageUrl ? '<img src="'+_escHtml(b.imageUrl)+'" style="width:100%;max-height:80px;object-fit:cover;border-radius:6px;margin-top:4px" onerror="this.remove()">' : '';
+            return '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
+              +'<div style="display:flex;align-items:flex-start;gap:8px"><span style="font-size:16px;flex-shrink:0">'+(b.target==='pros'?'🩺':'👥')+'</span>'
+              +'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(b.subject)+'</div>'
+              +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+ds+' · '+(b.target==='pros'?'Profesionales':'Usuarios')+'</div>'
+              +imgTag+'</div></div></div>';
+          }).join('')
+      : '');
+
+  sbLoadContacts().then(function(sbMsgs){
+    if(sbMsgs) _renderAdminContactsList(sbMsgs);
+    else{ var local=[]; try{local=JSON.parse(safeLS('get','velo_admin_contacts')||'[]');}catch(e){} _renderAdminContactsList(local); }
+  });
+}
+
+// ── TAB: USUARIOS ────────────────────────────────────────────────────
+async function _adminTabUsuarios(panel){
+  panel.innerHTML = '<p style="font-size:11px;color:rgba(255,255,255,.3);padding:10px 0">Cargando registros…</p>';
+  _initSupabase();
+  var allProfiles = [], deletedCount = 0;
+  if(sbClient){
+    try{ var pRes=await sbClient.from('profiles').select('id,role,created_at,nombre,email,username,terms_accepted_at').order('created_at',{ascending:false}).limit(500); if(!pRes.error&&pRes.data) allProfiles=pRes.data; }catch(e){}
+    try{ var dRes=await sbClient.from('deleted_accounts').select('id',{count:'exact',head:true}); if(!dRes.error) deletedCount=dRes.count||0; }catch(e){}
+  }
+  var users = allProfiles.filter(function(p){ return p.role!=='pro'; });
+  var pros  = allProfiles.filter(function(p){ return p.role==='pro'; });
+
+  function profileRow(p){
+    var fecha = p.created_at?new Date(p.created_at).toLocaleString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+    var tc = p.terms_accepted_at?new Date(p.terms_accepted_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'}):'—';
+    var em = (p.email||'').replace(/'/g,"\\'");
+    var roleBadge = p.role==='pro'?'<span style="font-size:9px;color:#74c6d0;border:1px solid rgba(116,198,210,.35);border-radius:4px;padding:1px 5px">PRO</span>'
+                  :p.role==='plus'?'<span style="font-size:9px;color:#c8a23e;border:1px solid rgba(200,162,62,.35);border-radius:4px;padding:1px 5px">PLUS</span>'
+                  :'<span style="font-size:9px;color:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:1px 5px">USER</span>';
+    return '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+      +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div style="flex:1;min-width:0">'
+      +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.8)">'+_escHtml(p.nombre||p.email||'—')+'</div>'
+      +'<div style="font-size:10px;color:rgba(255,255,255,.35)">@'+_escHtml(p.username||'—')+' · '+_escHtml(p.email||'')+'</div>'
+      +'<div style="font-size:9px;color:rgba(255,255,255,.22);margin-top:1px">Registro: '+fecha+' · 📜 T&C: '+tc+'</div>'
+      +'</div>'+roleBadge+'</div>'
+      +'<div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">'
+      +(p.email?'<button onclick="pAdminSendPasswordReset(\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.8);border-radius:5px;cursor:pointer">🔑 Reset</button>':'')
+      +(p.id?'<button onclick="pAdminWarnUser(\''+p.id+'\',\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(230,180,40,.12);border:1px solid rgba(230,180,40,.25);color:rgba(240,200,90,.8);border-radius:5px;cursor:pointer">⚠️ Advertir</button>':'')
+      +(p.id?'<button onclick="pAdminDeleteUser(\''+p.id+'\',\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.25);color:rgba(231,120,110,.85);border-radius:5px;cursor:pointer">🗑️ Eliminar</button>':'')
+      +'</div></div>';
+  }
+
+  var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">'
+    +'<div class="a-card"><div style="font-size:20px;margin-bottom:2px">👥</div><div class="a-card-n">'+users.length+'</div><div class="a-card-l">Usuarios</div></div>'
+    +'<div class="a-card"><div style="font-size:20px;margin-bottom:2px">🩺</div><div class="a-card-n" style="color:rgba(116,198,200,.8)">'+pros.length+'</div><div class="a-card-l">Profesionales</div></div>'
+    +'<div class="a-card"><div style="font-size:20px;margin-bottom:2px">🗑️</div><div class="a-card-n" style="color:rgba(220,80,80,.7)">'+deletedCount+'</div><div class="a-card-l">Eliminadas</div></div>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 12px">'
+    +'<span style="font-size:15px">🔍</span>'
+    +'<input id="userSearch" type="text" placeholder="Buscar por nombre, @usuario o email…" oninput="_filterUserList(this.value)" style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:12px;font-family:\'Jost\',sans-serif" />'
+    +'</div>'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:8px">👥 USUARIOS ('+users.length+')</div>'
+    +'<div id="adminUserList">'+(users.length?users.map(profileRow).join(''):'<p style="font-size:12px;color:rgba(255,255,255,.3);font-style:italic">Sin usuarios</p>')+'</div>'
+    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,200,.7);margin-bottom:8px">🩺 PROFESIONALES ('+pros.length+')</div>'
+    +'<div id="adminProList">'+(pros.length?pros.map(profileRow).join(''):'<p style="font-size:12px;color:rgba(255,255,255,.3);font-style:italic">Sin profesionales</p>')+'</div>'
+    +'<div style="margin-top:20px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6)">📜 ACEPTACIÓN DE TÉRMINOS</div>'
+    +'<button onclick="pAdminLoadConsent()" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:6px;color:rgba(116,198,157,.6);cursor:pointer;font-family:\'Jost\',sans-serif">↻ Actualizar</button>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 12px">'
+    +'<span style="font-size:15px">🔍</span>'
+    +'<input id="consentSearch" type="text" placeholder="Buscar por nombre o email…" oninput="_filterConsentLog(this.value)" style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:12px;font-family:\'Jost\',sans-serif" />'
+    +'</div>'
+    +'<div id="adminConsentLog"><p style="font-size:12px;color:rgba(255,255,255,.3)">Cargando registros…</p></div>'
+    +'</div>'
+    +'<div style="margin-top:16px;text-align:center">'
+    +'<button onclick="_switchAdminTab(\'privacidad\')" style="padding:10px 18px;background:rgba(180,140,220,.15);border:1.5px solid rgba(180,140,220,.3);border-radius:12px;color:rgba(180,140,220,.9);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">🔒 Solicitudes GDPR / Ley 25.326 →</button>'
+    +'</div>';
+
+  panel.innerHTML = html;
+  panel._allProfiles = allProfiles;
+  pAdminLoadConsent();
+}
+
+function _filterUserList(q){
+  var panel = document.getElementById('adminTabPanel');
+  if(!panel||!panel._allProfiles) return;
+  var all = panel._allProfiles;
+  q = (q||'').toLowerCase().trim();
+  function match(p){ return !q||(p.nombre||'').toLowerCase().includes(q)||(p.email||'').toLowerCase().includes(q)||(p.username||'').toLowerCase().includes(q); }
+  function row(p){
+    var fecha = p.created_at?new Date(p.created_at).toLocaleString('es',{day:'2-digit',month:'short',year:'numeric'}):'—';
+    var tc = p.terms_accepted_at?new Date(p.terms_accepted_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'}):'—';
+    var em = (p.email||'').replace(/'/g,"\\'");
+    return '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+      +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.8)">'+_escHtml(p.nombre||p.email||'—')+'</div>'
+      +'<div style="font-size:10px;color:rgba(255,255,255,.35)">@'+_escHtml(p.username||'—')+' · '+_escHtml(p.email||'')+'</div>'
+      +'<div style="font-size:9px;color:rgba(255,255,255,.22)">Registro: '+fecha+' · 📜 T&C: '+tc+'</div>'
+      +'<div style="display:flex;gap:5px;margin-top:5px">'
+      +(p.email?'<button onclick="pAdminSendPasswordReset(\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.8);border-radius:5px;cursor:pointer">🔑 Reset</button>':'')
+      +(p.id?'<button onclick="pAdminWarnUser(\''+p.id+'\',\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(230,180,40,.12);border:1px solid rgba(230,180,40,.25);color:rgba(240,200,90,.8);border-radius:5px;cursor:pointer">⚠️ Advertir</button>':'')
+      +(p.id?'<button onclick="pAdminDeleteUser(\''+p.id+'\',\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.25);color:rgba(231,120,110,.85);border-radius:5px;cursor:pointer">🗑️ Eliminar</button>':'')
+      +'</div></div>';
+  }
+  var users = all.filter(function(p){ return p.role!=='pro' && match(p); });
+  var pros  = all.filter(function(p){ return p.role==='pro'  && match(p); });
+  var uEl=document.getElementById('adminUserList'); var pEl=document.getElementById('adminProList');
+  if(uEl) uEl.innerHTML=users.length?users.map(row).join(''):'<p style="font-size:12px;color:rgba(255,255,255,.3);font-style:italic">Sin resultados</p>';
+  if(pEl) pEl.innerHTML=pros.length ?pros.map(row).join(''):'<p style="font-size:12px;color:rgba(255,255,255,.3);font-style:italic">Sin resultados</p>';
+}
+
+// ── TAB: FINANZAS ────────────────────────────────────────────────────
+function _adminTabFinanzas(panel){
+  panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💰 INGRESOS Y DONACIONES</div>'
+    +'<div id="adminDonations"><p style="font-size:11px;color:rgba(255,255,255,.3);padding:8px 0">Cargando…</p></div>'
+    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💳 TRANSFERENCIAS PENDIENTES</div>'
+    +'<div id="adminTransferList">'+_adminTransferHtml()+'</div>'
+    +'<div style="margin-top:18px">'+_adminMonthlyReportTracker()+'</div>'
+    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📊 ENCUESTAS DE SATISFACCIÓN</div>'
+    +_renderSurveyResults();
+  _renderAdminDonations();
+}
+
+function _adminTransferHtml(){
+  var transfers=[]; try{transfers=JSON.parse(safeLS('get','velo_pending_transfers')||'[]');}catch(e){}
+  var pending=transfers.filter(function(t){ return t.ended&&!t.paid; });
+  if(!pending.length) return '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">Sin transferencias pendientes.</p>';
+  return pending.map(function(t,i){
+    var pro=_proData.find(function(p){ return p.id===t.proId; });
+    var proAmt=Math.round((t.amount||0)*0.8*100)/100;
+    var veloAmt=Math.round((t.amount||0)*0.2*100)/100;
+    return '<div style="background:rgba(200,162,0,.07);border:1px solid rgba(200,162,0,.2);border-radius:12px;padding:14px;margin-bottom:8px">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="font-size:22px">'+(pro?pro.av:'🩺')+'</div>'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.82)">'+(pro?pro.name:'Profesional')+'</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.4)">'+new Date(t.ts).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+'</div></div>'
+      +'<div style="text-align:right"><div style="font-size:16px;font-weight:800;color:rgba(200,162,0,.9)">$'+t.amount+' '+(t.currency||'USD')+'</div>'
+      +'<div style="font-size:10px;color:rgba(255,255,255,.3)">Pro: $'+proAmt+' · Velo: $'+veloAmt+'</div></div></div>'
+      +'<button onclick="pApproveTransfer('+i+')" style="width:100%;padding:8px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700">✅ Aprobar transferencia</button></div>';
+  }).join('');
+}
+
+function _adminMonthlyReportTracker(){
+  var history=[]; try{history=JSON.parse(safeLS('get','velo_monthly_reports')||'[]');}catch(e){}
+  var now=new Date();
+  var months=[];
+  for(var i=0;i<12;i++){
+    var d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    var key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    var sent=history.find(function(r){ return r.month===key; });
+    months.push({key:key,label:d.toLocaleString('es',{month:'long',year:'numeric'}),sent:sent});
+  }
+  return '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📅 INFORME MENSUAL — HISTORIAL</div>'
+    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">El resumen mensual se envía el 1° de cada mes. Marcá manualmente cuando lo enviaste.</p>'
+    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">'
+    +months.map(function(m){
+        return '<div style="background:'+(m.sent?'rgba(116,198,157,.1)':'rgba(255,255,255,.04)')+';border:1px solid '+(m.sent?'rgba(116,198,157,.3)':'rgba(255,255,255,.1)')+';border-radius:10px;padding:10px;display:flex;align-items:center;justify-content:space-between">'
+          +'<div><div style="font-size:11px;font-weight:600;color:rgba(255,255,255,'+(m.sent?'.8':'.45')+')">'+m.label+'</div>'
+          +(m.sent?'<div style="font-size:9px;color:rgba(116,198,157,.6)">✓ Enviado '+new Date(m.sent.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
+            :'<div style="font-size:9px;color:rgba(255,255,255,.25)">Pendiente</div>')+'</div>'
+          +(m.sent?'<span style="font-size:16px">✅</span>'
+            :'<button onclick="pAdminMarkMonthlyReport(\''+m.key+'\')" style="font-size:9px;padding:3px 7px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.75);border-radius:5px;cursor:pointer">Marcar OK</button>')
+          +'</div>';
+      }).join('')+'</div>';
+}
+
+function pAdminMarkMonthlyReport(monthKey){
+  var history=[]; try{history=JSON.parse(safeLS('get','velo_monthly_reports')||'[]');}catch(e){}
+  if(!history.find(function(r){ return r.month===monthKey; })){
+    history.unshift({month:monthKey,ts:Date.now(),sentBy:_ADMIN_EMAIL||'admin'});
+    safeLS('set','velo_monthly_reports',JSON.stringify(history.slice(0,24)));
+  }
+  pToast('✅','Informe de '+monthKey+' marcado como enviado');
+  _switchAdminTab('finanzas');
+}
+
+// ── TAB: PRIVACIDAD (GDPR / Ley 25.326) ──────────────────────────────
+function _adminTabPrivacidad(panel){
+  panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.85);margin-bottom:12px">🔒 SOLICITUDES DE DATOS PERSONALES</div>'
+    +'<p style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.6">Cuando un usuario pide sus datos (Ley 25.326 / GDPR), Gemini prepara el informe. Lo revisás antes de confirmar el envío.</p>'
+    +'<div style="background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.2);border-radius:14px;padding:14px;margin-bottom:16px">'
+    +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);display:block;margin-bottom:6px">CORREO DEL USUARIO SOLICITANTE</label>'
+    +'<div style="display:flex;gap:8px">'
+    +'<input type="email" id="gdprEmail" placeholder="usuario@email.com" style="flex:1;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;box-sizing:border-box">'
+    +'<button onclick="pAdminPrepareGDPR()" id="gdprBtn" style="padding:10px 16px;background:rgba(180,140,220,.2);border:1.5px solid rgba(180,140,220,.35);border-radius:12px;color:rgba(180,140,220,.95);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0">🔍 Preparar informe</button>'
+    +'</div></div>'
+    +'<div id="gdprResult"></div>'
+    +'<div style="margin-top:20px"><div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px">📋 HISTORIAL DE SOLICITUDES</div>'
+    +'<div id="gdprHistory">'+_renderGDPRHistory()+'</div></div>';
+}
+
+async function pAdminPrepareGDPR(){
+  var emailEl=document.getElementById('gdprEmail');
+  if(!emailEl||!emailEl.value.trim()){ pToast('⚠️','Ingresá el correo del usuario'); return; }
+  var email=emailEl.value.trim().toLowerCase();
+  var btn=document.getElementById('gdprBtn'); var resultEl=document.getElementById('gdprResult');
+  if(btn){btn.disabled=true;btn.textContent='🔍 Preparando…';}
+  if(resultEl) resultEl.innerHTML='<p style="font-size:11px;color:rgba(255,255,255,.4);font-style:italic;padding:8px 0">Gemini está preparando el informe…</p>';
+
+  _initSupabase();
+  var userData={email:email,perfil:null,diarioCount:0,estadosCount:0};
+  if(sbClient){
+    try{ var pRes=await sbClient.from('profiles').select('*').eq('email',email).limit(1); if(pRes.data&&pRes.data[0]) userData.perfil=pRes.data[0]; }catch(e){}
+    if(userData.perfil){
+      var uid=userData.perfil.id;
+      try{ var dRes=await sbClient.from('diary_entries').select('id',{count:'exact',head:true}).eq('user_id',uid); userData.diarioCount=dRes.count||0; }catch(e){}
+      try{ var mRes=await sbClient.from('moods').select('id',{count:'exact',head:true}).eq('user_id',uid); userData.estadosCount=mRes.count||0; }catch(e){}
+    }
+  }
+  var p=userData.perfil;
+  var context='Datos del usuario en Velo:\n'
+    +'Email: '+email+'\nNombre: '+(p?p.nombre||'—':'No encontrado')+'\nUsuario: @'+(p?p.username||'—':'—')
+    +'\nRol: '+(p?p.role||'user':'—')+'\nRegistro: '+(p&&p.created_at?new Date(p.created_at).toLocaleDateString('es'):'—')
+    +'\nTérminos: '+(p&&p.terms_accepted_at?new Date(p.terms_accepted_at).toLocaleDateString('es'):'No registrado')
+    +'\nEntradas diario: '+userData.diarioCount+'\nRegistros de ánimo: '+userData.estadosCount+'\n';
+
+  var prompt='Sos el sistema de compliance de Velo, app de salud mental argentina.\n'
+    +'Un usuario solicitó sus datos bajo la Ley 25.326 / GDPR.\n'
+    +'Redactá un informe formal con:\n'
+    +'1. Responsable del tratamiento (Heyvelo / Velo App)\n'
+    +'2. Datos almacenados (con los datos reales del contexto)\n'
+    +'3. Finalidad del tratamiento\n'
+    +'4. Base legal\n'
+    +'5. Derechos: rectificación, cancelación, oposición, portabilidad\n'
+    +'6. Contacto: consultas@heyvelo.app\n'
+    +'Español formal, sin código, máximo 350 palabras.\n\n'+context;
+
+  var report=await _geminiCall(prompt,{maxOutputTokens:600});
+  if(btn){btn.disabled=false;btn.textContent='🔍 Preparar informe';}
+  if(!report){ if(resultEl) resultEl.innerHTML='<p style="font-size:11px;color:rgba(255,100,100,.6);padding:6px 0">No se pudo preparar. Verificá la conexión.</p>'; return; }
+
+  if(resultEl){
+    var encoded=encodeURIComponent(report).slice(0,2000);
+    resultEl.innerHTML='<div style="background:rgba(180,140,220,.07);border:1.5px solid rgba(180,140,220,.3);border-radius:14px;padding:16px;margin-top:8px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.8);margin-bottom:10px">📋 INFORME — REVISÁ ANTES DE CONFIRMAR</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.8);line-height:1.7;white-space:pre-line;max-height:300px;overflow-y:auto;margin-bottom:14px;padding-right:4px">'+_escHtml(report)+'</div>'
+      +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px">⚠️ Enviá este informe manualmente al usuario: <strong>'+_escHtml(email)+'</strong></p>'
+      +'<div style="display:flex;gap:8px">'
+      +'<button onclick="pAdminConfirmGDPR(\''+_escHtml(email)+'\',\''+encoded+'\')" style="flex:1;padding:10px;background:rgba(116,198,157,.2);border:1.5px solid rgba(116,198,157,.4);border-radius:12px;color:#fff;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">✅ Confirmar — registrar envío</button>'
+      +'<button onclick="document.getElementById(\'gdprResult\').innerHTML=\'\'" style="padding:10px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:rgba(255,255,255,.6);font-size:12px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
+      +'</div></div>';
+  }
+}
+
+async function pAdminConfirmGDPR(email, encoded){
+  var report=''; try{report=decodeURIComponent(encoded);}catch(e){report=encoded;}
+  _initSupabase();
+  if(sbClient){ try{await sbClient.from('data_requests').insert({email:email,report_summary:report.slice(0,500),sent_at:new Date().toISOString(),sent_by:_ADMIN_EMAIL||'admin'});}catch(e){} }
+  var history=[]; try{history=JSON.parse(safeLS('get','velo_gdpr_requests')||'[]');}catch(e){}
+  history.unshift({email:email,ts:Date.now(),sentBy:_ADMIN_EMAIL||'admin'});
+  safeLS('set','velo_gdpr_requests',JSON.stringify(history.slice(0,100)));
+  var resultEl=document.getElementById('gdprResult');
+  if(resultEl) resultEl.innerHTML='<div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;padding:12px;font-size:12px;color:rgba(116,198,157,.9)">✅ Registrado. Enviá el informe manualmente a: <strong>'+_escHtml(email)+'</strong></div>';
+  var histEl=document.getElementById('gdprHistory');
+  if(histEl) histEl.innerHTML=_renderGDPRHistory();
+  pToast('🔒','Solicitud GDPR registrada');
+}
+
+function _renderGDPRHistory(){
+  var history=[]; try{history=JSON.parse(safeLS('get','velo_gdpr_requests')||'[]');}catch(e){}
+  if(!history.length) return '<p style="font-size:11px;color:rgba(255,255,255,.25);font-style:italic">Sin solicitudes previas</p>';
+  return history.slice(0,20).map(function(r){
+    var d=new Date(r.ts).toLocaleString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
+      +'<span style="font-size:15px">📤</span>'
+      +'<div style="flex:1"><div style="font-size:12px;color:rgba(255,255,255,.65)">'+_escHtml(r.email)+'</div>'
+      +'<div style="font-size:10px;color:rgba(255,255,255,.25)">'+d+'</div></div>'
+      +'<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓ Enviado</span></div>';
+  }).join('');
+}
+
+// ── TAB: GESTIÓN ─────────────────────────────────────────────────────
+function _adminTabGestion(panel){
+  panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📋 TAREAS PENDIENTES</div>'
+    +'<div id="adminAITasks"><div style="font-size:12px;color:rgba(255,255,255,.3);padding:10px 0">Gemini está revisando las tareas…</div></div>'
+    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">⭐ ACTIVAR VELO PLUS GRATIS (30 DÍAS)</div>'
+    +'<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
+    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Activá Velo Plus 30 días para un usuario.</p>'
+    +'<div style="display:flex;gap:8px;align-items:center">'
+    +'<input class="p-input" id="adminGrantPlusEmail" type="email" placeholder="correo@usuario.com" style="flex:1;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" />'
+    +'<button onclick="pAdminGrantPlus()" style="padding:8px 14px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;white-space:nowrap">⭐ Activar Plus</button>'
+    +'</div></div>'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📰 NOTICIAS MANUALES</div>'
+    +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:14px;margin-bottom:18px">'
+    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Publicá noticias con título, resumen y link.</p>'
+    +'<button onclick="pOpenAdminNews()" style="width:100%;padding:9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;margin-bottom:10px">+ Publicar noticia</button>'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:12px">'
+    +'<input type="checkbox" id="adminNewsOnlyToggle" '+(safeLS('get','velo_admin_news_only')==='1'?'checked':'')+' onchange="pAdminToggleNewsOnly(this.checked)" style="width:15px;height:15px;cursor:pointer">'
+    +'Mostrar solo noticias manuales hoy</label>'
+    +'<div id="adminNewsList"></div></div>';
+  pAdminRenderNewsList();
+  _renderAdminAITasks();
+}
+
+// ── NEW: Warn user ────────────────────────────────────────────────────
+function pAdminWarnUser(userId, email){
+  var ov=document.createElement('div'); ov.className='p-modal-ov show'; ov.id='adminWarnOv'; ov.style.zIndex='9999';
+  ov.innerHTML='<div class="p-sheet" style="background:#0F2016;border:1px solid rgba(230,180,40,.2);overflow-y:auto;max-height:90vh">'
+    +'<div style="font-size:28px;margin-bottom:8px">⚠️</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;margin-bottom:6px">Advertencia formal</div>'
+    +'<p style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.5">El mensaje llegará al buzón del usuario como advertencia oficial de Velo.</p>'
+    +(email?'<p style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:12px">Usuario: '+_escHtml(email)+'</p>':'')
+    +'<div style="margin-bottom:12px"><label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);display:block;margin-bottom:6px">MOTIVO</label>'
+    +'<select id="warnReason" style="width:100%;padding:9px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif">'
+    +'<option value="acoso">Acoso o bullying hacia otro usuario</option>'
+    +'<option value="spam">Spam o autopromocción</option>'
+    +'<option value="lenguaje">Lenguaje agresivo o inapropiado</option>'
+    +'<option value="contenido">Contenido dañino o inapropiado</option>'
+    +'<option value="otro">Otro</option></select></div>'
+    +'<div style="margin-bottom:14px"><label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);display:block;margin-bottom:6px">MENSAJE ADICIONAL (opcional)</label>'
+    +'<textarea id="warnMessage" rows="3" placeholder="Detalle adicional…" maxlength="400" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;resize:vertical;box-sizing:border-box"></textarea></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="pAdminSendWarning(\''+_escHtml(userId||'')+'\',\''+_escHtml(email||'')+'\')" style="flex:1;padding:11px;background:rgba(230,180,40,.2);border:1.5px solid rgba(230,180,40,.4);border-radius:14px;color:#fff;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">⚠️ Enviar advertencia</button>'
+    +'<button onclick="document.getElementById(\'adminWarnOv\').remove()" style="padding:11px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:rgba(255,255,255,.6);font-size:13px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+}
+
+async function pAdminSendWarning(userId, email){
+  var reasonEl=document.getElementById('warnReason'); var msgEl=document.getElementById('warnMessage');
+  var reason=reasonEl?reasonEl.value:'otro'; var extra=msgEl?msgEl.value.trim():'';
+  var labels={acoso:'acoso o bullying',spam:'spam o autopromocción',lenguaje:'lenguaje agresivo',contenido:'contenido inapropiado',otro:'comportamiento contrario a las normas'};
+  var warnText='⚠️ Tu cuenta recibió una advertencia formal de Velo por '+(labels[reason]||reason)+'. '+(extra?extra+' ':'')+'Si el comportamiento continúa, tu cuenta puede ser suspendida. Consultas: consultas@heyvelo.app.';
+  var target=userId?'user:'+userId:(email?'email:'+email:'user');
+  var saved=await sbSaveBroadcast(target,'⚠️ Advertencia formal de Velo',warnText,'⚠️','Velo — Moderación');
+  var ov=document.getElementById('adminWarnOv'); if(ov) ov.remove();
+  pToast('⚠️',saved?'Advertencia enviada al usuario':'Guardado localmente (sin conexión)');
+}
+
+async function pAdminResolveReport(id){
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  try{
+    await sbClient.from('reportes').update({estado:'resuelto',resolved_at:new Date().toISOString()}).eq('id',id);
+    var card=document.getElementById('report-'+id); if(card) card.remove();
+    pToast('✅','Reporte resuelto');
+  }catch(e){ pToast('⚠️','Error al resolver el reporte'); }
+}
+
+async function pAdminDeleteContent(contentId, contentType){
+  if(!contentId){ pToast('⚠️','Sin ID de contenido'); return; }
+  if(!window.confirm('¿Eliminar este contenido? Esta acción no se puede deshacer.')) return;
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var tableMap={post:'posts',circle_message:'circle_messages',bottle:'bottles',help_post:'help_posts',review:'reviews'};
+  var table=tableMap[contentType]||contentType;
+  if(!table){ pToast('⚠️','Tipo desconocido: '+contentType); return; }
+  try{ await sbClient.from(table).delete().eq('id',contentId); pToast('🗑️','Contenido eliminado'); }
+  catch(e){ pToast('⚠️','Error: '+e.message); }
 }
 
 function pCreateProvisionalPass(){
@@ -9577,6 +9900,11 @@ function pAdminMassMessage(target){
     +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">ASUNTO</label>'
     +'<input type="text" id="massSubject" placeholder="Asunto del mensaje…" maxlength="80" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;box-sizing:border-box">'
     +'</div>'
+    +'<div style="margin-bottom:10px">'
+    +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">IMAGEN (URL opcional)</label>'
+    +'<input type="url" id="massImageUrl" placeholder="https://… (banner o foto de encabezado)" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;box-sizing:border-box" oninput="_previewMassImage()">'
+    +'<div id="massImgPreview" style="margin-top:6px"></div>'
+    +'</div>'
     +'<div style="margin-bottom:14px">'
     +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">MENSAJE</label>'
     +'<textarea id="massBody" rows="5" placeholder="Escribí tu mensaje aquí…" maxlength="2000" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;resize:vertical;box-sizing:border-box"></textarea>'
@@ -9738,35 +10066,45 @@ async function pAdminGenerateMassMessage(target){
   }catch(e){ pToast('⚠️','Error al procesar la respuesta. Intentá de nuevo.'); }
 }
 
+function _previewMassImage(){
+  var el=document.getElementById('massImageUrl');
+  var prev=document.getElementById('massImgPreview');
+  if(!prev) return;
+  var url=(el&&el.value.trim())||'';
+  prev.innerHTML=url?'<img src="'+_escHtml(url)+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.1)" onerror="this.parentElement.innerHTML=\'<span style=font-size:11px;color:rgba(255,100,100,.6)>URL de imagen no válida</span>\'">':'';
+}
+
 async function pSendMassMessage(target){
   var subj = document.getElementById('massSubject');
   var body = document.getElementById('massBody');
+  var imgEl= document.getElementById('massImageUrl');
   if(!subj || !subj.value.trim()){ pToast('⚠️','Ingresá un asunto'); return; }
   if(!body || !body.value.trim()){ pToast('⚠️','Escribí el mensaje'); return; }
-  var subject = subj.value.trim();
-  var message = body.value.trim();
-  var icon    = target === 'pros' ? '🩺' : '📢';
-  var sender  = 'Velo — Comunicado '+(target === 'pros' ? 'Profesionales' : 'Comunidad');
+  var subject  = subj.value.trim();
+  var message  = body.value.trim();
+  var imageUrl = imgEl ? imgEl.value.trim() : '';
+  var icon     = target === 'pros' ? '🩺' : '📢';
+  var sender   = 'Velo — Comunicado '+(target === 'pros' ? 'Profesionales' : 'Comunidad');
 
-  // Save to Supabase so ALL users receive it in their inbox
-  var saved = await sbSaveBroadcast(target, subject, message, icon, sender);
+  var saved = await sbSaveBroadcast(target, subject, message, icon, sender, imageUrl);
 
-  // Fallback: also save to localStorage broadcast history
   var broadcasts = []; try{ broadcasts = JSON.parse(safeLS('get','velo_broadcasts')||'[]'); }catch(e){}
-  broadcasts.unshift({ id:'mass-'+Date.now(), ts:Date.now(), target:target, subject:subject, body:message, icon:icon, sender:sender, sentBy:_ADMIN_EMAIL });
+  broadcasts.unshift({ id:'mass-'+Date.now(), ts:Date.now(), target:target, subject:subject, body:message, icon:icon, sender:sender, sentBy:_ADMIN_EMAIL, imageUrl:imageUrl||undefined });
   safeLS('set','velo_broadcasts', JSON.stringify(broadcasts.slice(0,200)));
 
   var ov = document.getElementById('massMessageOv');
   if(ov) ov.remove();
   var recipientLabel = target === 'pros' ? 'profesionales' : 'usuarios';
-  pToast('📤', saved ? 'Mensaje enviado a todos los '+recipientLabel+' ✅' : 'Enviado localmente (sin conexión a Supabase)');
+  pToast('📤', saved ? 'Mensaje enviado a todos los '+recipientLabel+' ✅' : 'Enviado localmente (sin conexión)');
   _renderAdmin();
 }
 
-async function sbSaveBroadcast(target, subject, body, icon, sender){
+async function sbSaveBroadcast(target, subject, body, icon, sender, imageUrl){
   if(!sbClient) return false;
   try{
-    var {error} = await sbClient.from('broadcasts').insert({ target:target, subject:subject, body:body, icon:icon||'📢', sender:sender||'Velo', sent_at:new Date().toISOString() });
+    var row = { target:target, subject:subject, body:body, icon:icon||'📢', sender:sender||'Velo', sent_at:new Date().toISOString() };
+    if(imageUrl) row.image_url = imageUrl;
+    var {error} = await sbClient.from('broadcasts').insert(row);
     return !error;
   }catch(e){ return false; }
 }
