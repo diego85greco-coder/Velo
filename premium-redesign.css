@@ -3564,3 +3564,36 @@ body.r-dark .contact-opt:hover {
 body.r-dark .co-ic {
   background: rgba(116,198,157,.18) !important;
 }
+
+/* ── v187: Donar button — legible in both light and dark modes ── */
+.r-donar-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  white-space: nowrap;
+  letter-spacing: .2px;
+  /* Light mode: solid amber fill with dark text for contrast */
+  background: rgba(185,130,10,.14);
+  border: 1.5px solid rgba(160,110,8,.45);
+  color: #7a5200;
+  transition: background .18s, border-color .18s;
+}
+.r-donar-btn:hover {
+  background: rgba(185,130,10,.24);
+  border-color: rgba(160,110,8,.65);
+}
+/* Dark mode: transparent gold with light gold text */
+body.r-dark .r-donar-btn {
+  background: rgba(200,158,56,.18) !important;
+  border-color: rgba(200,158,56,.55) !important;
+  color: #e8c96a !important;
+}
+body.r-dark .r-donar-btn:hover {
+  background: rgba(200,158,56,.28) !important;
+}
