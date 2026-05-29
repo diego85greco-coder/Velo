@@ -3551,3 +3551,16 @@ body.r-dark #gdWaitOv .p-sheet {
   --sage:   #72e0a6 !important;
   color: rgba(255,255,255,.92) !important;
 }
+
+/* ── v186: Contact page dark mode ──────────────────────────── */
+body.r-dark .contact-opt {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(116,198,157,.22) !important;
+}
+body.r-dark .contact-opt:hover {
+  background: rgba(116,198,157,.12) !important;
+  border-color: rgba(116,198,157,.40) !important;
+}
+body.r-dark .co-ic {
+  background: rgba(116,198,157,.18) !important;
+}
