@@ -2055,8 +2055,7 @@ async function pConfirmAskGuardian(){
   if(!_checkDailyLimit('guardian')){
     var ov2 = document.getElementById('askGuardianOv');
     if(ov2) ov2.classList.remove('show');
-    pToast('🛡️','Límite gratuito: 4 sesiones de guardián por día. ¡Upgrade a Plus!');
-    setTimeout(pShowPlusModal, 1200);
+    pShowDailyLimitModal('guardian');
     return;
   }
   var ctxTa = document.getElementById('askGuardianTa');
@@ -3244,8 +3243,7 @@ async function pSendHelp(){
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí tu mensaje antes de enviar'); return; }
   if(!_checkDailyLimit('help')){
     closeModal('helpFormOv');
-    pToast('💙','Límite gratuito: 4 pedidos de ayuda por día. ¡Upgrade a Plus!');
-    setTimeout(pShowPlusModal, 1200);
+    pShowDailyLimitModal('help');
     return;
   }
   _incDailyLimit('help');
@@ -4343,8 +4341,7 @@ async function pSendBottle(){
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí algo antes de lanzar'); return; }
   if(!_checkDailyLimit('bottle')){
     closeModal('bottleFormOv');
-    pToast('🌊','Límite gratuito: 4 mensajes al Mar por día. ¡Upgrade a Plus para ilimitado!');
-    setTimeout(pShowPlusModal, 1200);
+    pShowDailyLimitModal('bottle');
     return;
   }
   var text = ta.value.trim();
@@ -8276,6 +8273,40 @@ function pOpenPayPalDonate(amount, monthly, description){
   if(monthly) params += '&no_recurring=0';
   safeLS('set','velo_pp_pending', JSON.stringify({ type:'donation', amount:amount, ts:Date.now() }));
   window.open(baseURL+params, '_blank');
+}
+
+function pShowDailyLimitModal(type){
+  var labels = {
+    guardian: { icon:'🛡️', name:'sesiones con guardianes', limit:'4' },
+    help:     { icon:'💙', name:'pedidos de ayuda',         limit:'4' },
+    bottle:   { icon:'🌊', name:'mensajes al Mar',           limit:'4' }
+  };
+  var l = labels[type] || { icon:'⏰', name:'usos', limit:'4' };
+  var isDark = document.body.classList.contains('r-dark');
+  var existing = document.getElementById('dailyLimitOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'dailyLimitOv';
+  ov.innerHTML = '<div class="p-sheet">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="text-align:center;padding:8px 4px 4px">'
+    +'<div style="font-size:44px;margin-bottom:10px">'+l.icon+'</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',\'Crimson Pro\',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:10px;line-height:1.2">¡Llegaste al límite de hoy!</div>'
+    +'<p style="font-size:13.5px;color:var(--ink3);margin:0 0 6px;line-height:1.65;padding:0 8px">'
+    +'Se acabaron tus <strong>'+l.limit+' '+l.name+'</strong> gratis de hoy.'
+    +'</p>'
+    +'<p style="font-size:13px;color:var(--ink4);margin:0 0 22px;line-height:1.6;padding:0 8px">'
+    +'Volvé mañana para continuar, o suscribite a <strong>Velo Plus</strong> para acceso ilimitado a todo.'
+    +'</p>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
+    +'<button onclick="document.getElementById(\'dailyLimitOv\').remove();pShowPlusModal()" '
+    +'style="padding:13px;background:linear-gradient(135deg,#C8A560,#A07840);border:none;border-radius:14px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%;letter-spacing:.02em">⭐ Suscribirme a Velo Plus</button>'
+    +'<button onclick="document.getElementById(\'dailyLimitOv\').remove()" '
+    +'style="padding:12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:14px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Volver mañana 👋</button>'
+    +'</div></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 }
 
 function pShowPlusModal(){
