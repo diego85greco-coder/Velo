@@ -2420,14 +2420,16 @@ var _gcRtCh        = null;   // realtime channel
 var _gcSeekerCh    = null;   // seeker's request-status channel
 var _seekerPollTmr = null;   // polling fallback for seeker wait
 var _gcPollTmr     = null;   // polling fallback for guardian chat messages
+var _gcLastMsgId   = null;   // last rendered message DB id (prevents flicker on poll)
 
 function _openGuardianChat(peerId, peerName, peerAv, reqId, role){
   _prevChatStatus = _presenceStatus();
   _inActiveChat = true;
   _updateGuardianPresence('ocupado');
-  _gcPeer  = { id:peerId, name:peerName||'Usuario', av:peerAv||'🌿' };
-  _gcReqId = reqId;
-  _gcRole  = role;
+  _gcPeer      = { id:peerId, name:peerName||'Usuario', av:peerAv||'🌿' };
+  _gcReqId     = reqId;
+  _gcRole      = role;
+  _gcLastMsgId = null; // reset so first render is a clean full load
   pGoTo('guardian-chat');
 }
 
@@ -2456,13 +2458,39 @@ async function _gcRender(){
     var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
     var msgs = data.filter(function(m){ return sentinels.indexOf(m.text) < 0 && !(m.text||'').startsWith('__velo_guardian_req__:') && !(m.text||'').startsWith('__velo_guardian_acc__:') && !(m.text||'').startsWith('__velo_guardian_rej__:'); });
     if(!msgs.length){
-      el.innerHTML = '<div id="gcPlaceholder" style="text-align:center;padding:34px 16px;color:var(--ink5);font-size:13px;line-height:1.6">Este es un espacio seguro 🌿<br>Escriban con presencia y cuidado.</div>';
+      if(!document.getElementById('gcPlaceholder')){
+        el.innerHTML = '<div id="gcPlaceholder" style="text-align:center;padding:34px 16px;color:var(--ink5);font-size:13px;line-height:1.6">Este es un espacio seguro 🌿<br>Escriban con presencia y cuidado.</div>';
+        _gcLastMsgId = null;
+      }
       return;
     }
+    var lastId = msgs[msgs.length-1].id;
+    // Nothing new — skip re-render entirely (prevents polling flicker)
+    if(lastId === _gcLastMsgId) return;
+    var wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    // If we already have messages rendered, try to append only new ones
+    if(_gcLastMsgId){
+      var lastIdx = msgs.findIndex(function(m){ return m.id === _gcLastMsgId; });
+      if(lastIdx >= 0 && lastIdx < msgs.length - 1){
+        var ph = document.getElementById('gcPlaceholder');
+        if(ph) ph.remove();
+        msgs.slice(lastIdx + 1).forEach(function(m){
+          var tmp = document.createElement('div');
+          var isOwn = m.from_id === myId;
+          tmp.innerHTML = _buildMsgBubble(m.text||'', isOwn, isOwn?'':(m.from_av||'🌿'), isOwn?'':(m.from_name||''), 'gcInput', 'gcReplyBar', '', m.reactions||{}, 'direct_messages:'+m.id, isOwn?'':(m.from_id||''));
+          while(tmp.firstChild) el.appendChild(tmp.firstChild);
+        });
+        _gcLastMsgId = lastId;
+        if(wasAtBottom) el.scrollTop = el.scrollHeight;
+        return;
+      }
+    }
+    // Full render (first load or message not found in current DOM — e.g. reaction update)
     el.innerHTML = msgs.map(function(m){
       var isOwn = m.from_id === myId;
       return _buildMsgBubble(m.text||'', isOwn, isOwn?'':(m.from_av||'🌿'), isOwn?'':(m.from_name||''), 'gcInput', 'gcReplyBar', '', m.reactions||{}, 'direct_messages:'+m.id, isOwn?'':(m.from_id||''));
     }).join('');
+    _gcLastMsgId = lastId;
     el.scrollTop = el.scrollHeight;
   }catch(e){}
 }
