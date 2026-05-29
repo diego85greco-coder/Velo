@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260529-232">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260529-232">
+  <link rel="stylesheet" href="premium.css?v=20260529-233">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260529-233">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1516,7 +1516,8 @@
                 </div>
               </div>
             </div>
-            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:16px;font-style:italic">Historias positivas del mundo que nos recuerdan que hay luz, solidaridad y esperanza. Se renuevan cada día. 🌞 Para ver noticias nuevas, tocá nuevamente el botón 🔄 <strong style="font-style:normal;font-weight:600">Actualizar noticias</strong>.</p>
+            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:12px;font-style:italic">Historias positivas del mundo que nos recuerdan que hay luz, solidaridad y esperanza. Se renuevan cada día. 🌞</p>
+            <button onclick="safeLS('del','velo_goodnews_'+new Date().toISOString().slice(0,10));pRenderNews()" style="display:inline-flex;align-items:center;gap:7px;margin-bottom:16px;padding:8px 16px;background:rgba(116,198,157,.14);border:1.5px solid rgba(116,198,157,.35);border-radius:100px;font-size:12.5px;font-weight:600;color:var(--sage2);cursor:pointer;font-family:'Jost',sans-serif;transition:background .15s" onmouseover="this.style.background='rgba(116,198,157,.26)'" onmouseout="this.style.background='rgba(116,198,157,.14)'">🔄 Actualizar noticias</button>
             <div id="newsContainer">
               <div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Cargando buenas noticias...</div>
             </div>
@@ -2982,8 +2983,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260529-232"></script>
-<script src="premium-redesign.js?v=20260529-232"></script>
+<script src="premium.js?v=20260529-233"></script>
+<script src="premium-redesign.js?v=20260529-233"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
