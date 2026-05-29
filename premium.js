@@ -722,7 +722,7 @@ async function pSendPassReset(){
   }
   _initSupabase();
   if(sbClient){
-    try{ await sbClient.auth.resetPasswordForEmail(val, {redirectTo: window.location.href}); }catch(e){}
+    try{ await sbClient.auth.resetPasswordForEmail(val, {redirectTo: window.location.origin + '/app-premium.html'}); }catch(e){}
   }
   var sentDiv = document.getElementById('forgotSent');
   var formDiv = document.getElementById('forgotForm');
@@ -11768,8 +11768,16 @@ window.addEventListener('load', function(){
   _checkStripeReturn();
   _checkPayPalReturn();
 
-  // Handle Supabase email confirmation redirect
-  if(window.location.hash && window.location.hash.includes('type=signup')){
+  // Detect Supabase auth redirect type from both hash and query params
+  // (Supabase v2 may use either format depending on flow/version)
+  var _urlRaw = (window.location.hash || '') + '&' + (window.location.search || '');
+  var _urlAuthType = _urlRaw.includes('type=recovery')    ? 'recovery'
+                   : _urlRaw.includes('type=signup')      ? 'signup'
+                   : _urlRaw.includes('type=email_change') ? 'email_change'
+                   : null;
+
+  // Handle Supabase email confirmation redirect (type=signup)
+  if(_urlAuthType === 'signup'){
     _initSupabase();
     if(sbClient){
       sbClient.auth.onAuthStateChange(function(event, session){
@@ -11792,14 +11800,23 @@ window.addEventListener('load', function(){
     return;
   }
 
-  // Handle Supabase password recovery redirect (token in URL hash)
-  if(window.location.hash && window.location.hash.includes('type=recovery')){
+  // Handle password recovery link (type=recovery)
+  // SECURITY: always destroy any admin session before allowing password change
+  if(_urlAuthType === 'recovery'){
+    safeLS('set','velo_user_type','user');
+    safeLS('del','velo_admin_session');
+    _userType = 'user';
+    safeLS('set','velo_needs_pw_change','1');
     _initSupabase();
     if(sbClient){
       sbClient.auth.onAuthStateChange(function(event, session){
-        if(event === 'PASSWORD_RECOVERY'){
-          if(session){ safeLS('set','velo_user_email', session.user.email||''); safeLS('set','velo_session','1'); _authenticated = true; }
-          // SECURITY: password recovery must never preserve an admin session
+        // Handle both PASSWORD_RECOVERY and SIGNED_IN (Supabase may emit either)
+        if(event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN'){
+          if(session && session.user){
+            safeLS('set','velo_user_email', session.user.email||'');
+            safeLS('set','velo_session','1');
+            _authenticated = true;
+          }
           safeLS('set','velo_user_type','user');
           safeLS('del','velo_admin_session');
           _userType = 'user';
@@ -11808,9 +11825,32 @@ window.addEventListener('load', function(){
         }
       });
     } else {
-      // Fallback: go to change-password anyway
-      safeLS('set','velo_needs_pw_change','1');
       pGoTo('change-password');
+    }
+    return;
+  }
+
+  // Handle email change confirmation link (type=email_change)
+  if(_urlAuthType === 'email_change'){
+    safeLS('set','velo_user_type','user');
+    safeLS('del','velo_admin_session');
+    _userType = 'user';
+    _initSupabase();
+    if(sbClient){
+      sbClient.auth.onAuthStateChange(function(event, session){
+        if((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session && session.user){
+          safeLS('set','velo_user_email', session.user.email||'');
+          safeLS('set','velo_session','1');
+          safeLS('set','velo_user_type','user');
+          safeLS('del','velo_admin_session');
+          _authenticated = true;
+          pToast('✅','Email actualizado correctamente');
+          setTimeout(function(){ pGoTo('home'); }, 600);
+        }
+      });
+    } else {
+      pToast('✅','Email actualizado');
+      pGoTo('home');
     }
     return;
   }
