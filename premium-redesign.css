@@ -5038,3 +5038,88 @@ body:not(.r-dark) #pg-home #homeDailyQuote {
     velo-greet-spring 1.1s .18s cubic-bezier(.22,.68,.55,1.5) both,
     wind-sway-b 7.2s 1.30s ease-in-out infinite !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   v211: Light-mode glass luminous pills + heading legibility
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Light mode glow animations (lower intensity than dark) ────────── */
+@keyframes pill-amber-glow-lt {
+  0%, 100% { filter: drop-shadow(0 2px 6px rgba(160,120,20,.20)); }
+  50%       { filter: drop-shadow(0 0 18px rgba(180,140,30,.52)) drop-shadow(0 5px 16px rgba(160,120,20,.28)); }
+}
+@keyframes pill-sage-glow-lt {
+  0%, 100% { filter: drop-shadow(0 2px 6px rgba(45,106,79,.18)); }
+  50%       { filter: drop-shadow(0 0 16px rgba(45,106,79,.50)) drop-shadow(0 5px 14px rgba(27,94,58,.24)); }
+}
+
+/* ── Light mode: "Pedir compañía" — amber glass pill ─────────────── */
+body:not(.r-dark) .r-hero-actions .p-btn--primary {
+  background: linear-gradient(135deg, rgba(190,148,40,.16) 0%, rgba(218,175,55,.24) 55%, rgba(245,200,70,.16) 100%) !important;
+  backdrop-filter: blur(14px) saturate(1.5) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.5) !important;
+  color: #4a2d00 !important;
+  border: 1.5px solid rgba(160,118,28,.40) !important;
+  border-radius: 100px !important;
+  box-shadow: 0 4px 18px rgba(160,118,28,.20), inset 0 1.5px 0 rgba(255,240,160,.40), inset 0 -1px 0 rgba(100,60,0,.06) !important;
+  font-family: 'Cormorant Garamond', 'Crimson Pro', serif !important;
+  font-style: italic !important;
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  letter-spacing: .05em !important;
+  text-shadow: none !important;
+  animation: pill-amber-glow-lt 2.8s ease-in-out infinite !important;
+  transition: transform .22s cubic-bezier(.2,.8,.3,1), background .22s, border-color .22s !important;
+}
+body:not(.r-dark) .r-hero-actions .p-btn--primary:hover {
+  background: linear-gradient(135deg, rgba(190,148,40,.26) 0%, rgba(218,175,55,.36) 55%, rgba(245,200,70,.26) 100%) !important;
+  border-color: rgba(160,118,28,.58) !important;
+  filter: drop-shadow(0 0 22px rgba(180,140,30,.65)) !important;
+  animation-play-state: paused !important;
+  transform: translateY(-3px) scale(1.025) !important;
+}
+
+/* ── Light mode: "Escribir en mi diario" — sage glass pill ────────── */
+body:not(.r-dark) .r-hero-actions .p-btn--secondary {
+  background: linear-gradient(135deg, rgba(27,94,58,.12) 0%, rgba(116,198,157,.22) 55%, rgba(80,180,120,.12) 100%) !important;
+  backdrop-filter: blur(14px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.4) !important;
+  color: #1a4a2a !important;
+  border: 1.5px solid rgba(27,94,58,.32) !important;
+  border-radius: 100px !important;
+  box-shadow: 0 4px 16px rgba(27,94,58,.16), inset 0 1.5px 0 rgba(178,255,210,.30) !important;
+  font-family: 'Cormorant Garamond', 'Crimson Pro', serif !important;
+  font-style: italic !important;
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  letter-spacing: .05em !important;
+  text-shadow: none !important;
+  animation: pill-sage-glow-lt 2.6s ease-in-out 1.4s infinite !important;
+  transition: transform .22s cubic-bezier(.2,.8,.3,1), background .22s, border-color .22s !important;
+}
+body:not(.r-dark) .r-hero-actions .p-btn--secondary:hover {
+  background: linear-gradient(135deg, rgba(27,94,58,.20) 0%, rgba(116,198,157,.32) 55%, rgba(80,180,120,.20) 100%) !important;
+  border-color: rgba(27,94,58,.48) !important;
+  filter: drop-shadow(0 0 20px rgba(45,106,79,.58)) !important;
+  animation-play-state: paused !important;
+  transform: translateY(-2px) scale(1.02) !important;
+}
+
+/* ── Light mode: heading and subtitle legibility + warm color ───────── */
+body:not(.r-dark) .r-hero-v2 h1.p-title {
+  color: var(--ink) !important;
+}
+body:not(.r-dark) .r-hero-v2 .r-hero-italic {
+  color: var(--sage) !important;
+}
+
+/* ── Light mode: daily quote glass ─────────────────────────────────── */
+body:not(.r-dark) #pg-home #homeDailyQuote {
+  background: linear-gradient(135deg, rgba(190,148,40,.12) 0%, rgba(218,175,55,.18) 55%, rgba(245,200,70,.12) 100%) !important;
+  backdrop-filter: blur(14px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.4) !important;
+  border: 1.5px solid rgba(160,118,28,.30) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 4px 22px rgba(160,118,28,.14), inset 0 1.5px 0 rgba(255,240,160,.50) !important;
+  animation: pill-amber-glow-lt 3.5s ease-in-out 0.7s infinite !important;
+}
