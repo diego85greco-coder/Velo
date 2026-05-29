@@ -673,7 +673,7 @@ function _clearSession(){
    'velo_user_type','velo_user_av','velo_user_motto','velo_sb_pass','velo_plan',
    'velo_status_music','velo_status_book','velo_status_phrase','velo_status_film','velo_pro_id','velo_pro_name',
    'velo_pro_spec','velo_pro_solidarity','velo_pro_approved','velo_is_guardian',
-   'velo_guardian_bio','velo_guardian_tags','velo_needs_pw_change','velo_username'
+   'velo_guardian_bio','velo_guardian_tags','velo_guardian_setup_done','velo_needs_pw_change','velo_username'
   ].forEach(function(k){ safeLS('del', k); });
   // Stop guardian heartbeat and clear all RT channel refs so the next login can resubscribe
   _stopGuardianHeartbeat();
@@ -1644,9 +1644,9 @@ function _stopGuardianHeartbeat(){
 function pHomeToggleGuardian(){
   var wasOn = safeLS('get','velo_is_guardian') === 'true';
   if(!wasOn){
-    // Turning ON — show profile setup modal if bio not filled yet
-    var bio = safeLS('get','velo_guardian_bio') || '';
-    if(!bio.trim()){
+    // Show setup modal only on the very first activation (not every time bio is blank)
+    var setupDone = safeLS('get','velo_guardian_setup_done') === '1';
+    if(!setupDone){
       pShowGuardianSetupModal();
       return;
     }
@@ -1702,8 +1702,8 @@ function pSaveGuardianSetup(){
   var tags = (document.getElementById('guardianSetupTags') || {}).value || '';
   safeLS('set','velo_guardian_bio',  bio.trim());
   safeLS('set','velo_guardian_tags', tags.trim());
-  // Do NOT call _updateGuardianPresence here — pToggleGuardianMode() does it with is_guardian:true.
-  // Calling it now would race against that call and potentially write is_guardian:false to the DB.
+  // Mark setup as done so the modal never appears again (even if bio was left blank)
+  safeLS('set','velo_guardian_setup_done', '1');
   var existing = document.getElementById('guardianSetupOv');
   if(existing) existing.remove();
   // Activate guardian mode (sets localStorage + upserts presence with is_guardian:true)
