@@ -5379,3 +5379,81 @@ body:not(.r-dark) #pg-profile .p-card {
 body.r-dark #pg-profile #profileUsername span {
   color: #72e0a6 !important;
 }
+
+/* ── v226: Chat request overlays — dark mode legibility ─────────── */
+/* Override CSS variables locally so all inline var() refs resolve    */
+/* to dark values. Covers: guardianWaitCard, guardianRequestExpired,  */
+/* leaveMessageModal card.                                            */
+body.r-dark #guardianWaitCard,
+body.r-dark #leaveMessageOv > div {
+  --cream:   rgba(10,26,18,.98);
+  --cream2:  rgba(18,44,28,.92);
+  --border2: rgba(80,162,110,.30);
+  border: 1px solid rgba(80,160,110,.28) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,.60) !important;
+}
+
+/* ── v227: Review cards on profile page — dark mode ─────────────── */
+body.r-dark .p-page.active .p-review-card {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.10) !important;
+}
+body.r-dark .p-page.active .p-rv-txt,
+body.r-dark .p-page.active .p-review-card p {
+  color: rgba(232,242,236,.82) !important;
+}
+body.r-dark .p-page.active .p-review-card [style*="color:var(--ink5)"],
+body.r-dark .p-page.active .p-review-card div[style*="font-size:11px"] {
+  color: rgba(168,196,178,.72) !important;
+}
+
+/* ── v227: Pick-username screen — input legibility ───────────────── */
+#pg-pick-username input#pickUsernameInput {
+  background: rgba(255,255,255,.92) !important;
+  color: #1a2e1a !important;
+  border: 1.5px solid rgba(116,198,157,.45) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+#pg-pick-username input#pickUsernameInput::placeholder {
+  color: #8aab8a !important;
+}
+body.r-dark #pg-pick-username input#pickUsernameInput {
+  background: rgba(10,30,18,.90) !important;
+  color: rgba(232,242,236,.92) !important;
+  border-color: rgba(116,198,157,.35) !important;
+}
+
+/* ── v227: Light mode — softer pastel background ─────────────────── */
+body:not(.r-dark) {
+  --cream:  #F4F0E8;
+  --cream2: #EDE8DE;
+  --bg:     #EAE5D8;
+}
+body:not(.r-dark) .p-nav-top {
+  background: rgba(244,240,232,.95) !important;
+  border-bottom-color: rgba(180,170,150,.20) !important;
+}
+body:not(.r-dark) .p-nav-bot {
+  background: rgba(244,240,232,.97) !important;
+  border-top-color: rgba(180,170,150,.18) !important;
+}
+body:not(.r-dark) .p-page {
+  background: #EAE5D8 !important;
+}
+body:not(.r-dark) .p-card {
+  background: rgba(255,255,255,.88) !important;
+}
+
+/* ── v227: Sidebar desktop — reduce green highlight intensity ──────── */
+@media (min-width: 1024px) {
+  body:not(.r-dark) .p-sn-item.active {
+    background: rgba(116,198,157,.18) !important;
+    color: #1B5E3A !important;
+    box-shadow: 0 0 0 1.5px rgba(116,198,157,.30) !important;
+  }
+}
+
+/* ── v227: "Quienes quieren ayudar" — guardian landing card ──────── */
+#guardianes-intro-card .p-empty-title,
+.guardian-intro-card .p-empty-title { font-size: 18px !important; }

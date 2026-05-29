@@ -183,6 +183,8 @@ var _toastQueue = [];
 var _toastBusy  = false;
 
 function pToast(emoji, msg){
+  var last = _toastQueue[_toastQueue.length-1];
+  if(last && last.emoji === (emoji||'✓') && last.msg === (msg||'')) return;
   _toastQueue.push({ emoji: emoji || '✓', msg: msg || '' });
   if(!_toastBusy) _nextToast();
 }
@@ -202,7 +204,7 @@ function _nextToast(){
   _toastTimer = setTimeout(function(){
     el.classList.remove('show');
     setTimeout(_nextToast, 300);
-  }, 30000);
+  }, 5000);
 }
 // Alias for compatibility
 var toast = pToast;
@@ -3057,9 +3059,10 @@ function pLeaveHelpChat(){
   if(post && post.isSeeker && post.userId){
     safeLS('set','velo_postchat_guardian', JSON.stringify({ id:post.userId, name:post.name||'Guardián' }));
   }
-  var exitStatus = _prevChatStatus || _presenceStatus();
+  var exitStatus = safeLS('get','velo_is_guardian') === 'true' ? 'disponible' : (_prevChatStatus || _presenceStatus());
   _inActiveChat = false;
   _prevChatStatus = null;
+  if(safeLS('get','velo_is_guardian') === 'true') safeLS('set','velo_guardian_status','disponible');
   _updateGuardianPresence(exitStatus);
   _showHelpChatRating(post);
 }
@@ -3764,17 +3767,17 @@ async function pSendCalmAIMsg(){
   var systemPrompt = 'Sos Velo, un acompañante empático y cálido de una app de salud mental peer-to-peer. '
     +'Tu rol es escuchar activamente, validar emociones genuinamente y ofrecer apoyo real sin juzgar ni diagnosticar. '
     +'Respondés en español rioplatense (usás "vos", "te", "estás", "querés"). '
-    +'Tus respuestas son breves (2-4 oraciones), naturales, cálidas y SIEMPRE específicas a lo que el usuario dice. '
+    +'Tus respuestas tienen 3-5 oraciones: primero validás la emoción específica que mencionó la persona, luego ofrecés una reflexión o acompañamiento genuino, y terminás con una pregunta abierta que invite a seguir hablando. '
     +'NUNCA repitas la misma frase. NUNCA des respuestas genéricas o de formulario. '
-    +'Contextualizá siempre tu respuesta con lo que el usuario mencionó. '
-    +'Si mencionan riesgo de autolesión o crisis, con calidez invitalos a la Sala de Ayuda o al 135 (Argentina). '
+    +'Siempre respondés refiriéndote exactamente a lo que el usuario dijo, con detalles concretos de su situación. '
+    +'Si mencionan riesgo de autolesión o crisis, con calidez invitales a la Sala de Ayuda o al 135 (Argentina). '
     +'No sos médico ni terapeuta. Sos un acompañante que escucha de verdad.';
 
-  var reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-12), { temperature:0.88, maxOutputTokens:200 });
+  var reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-12), { temperature:0.88, maxOutputTokens:420 });
   if(!reply){
     // Auto-retry once after 1.5s (handles cold-start / transient failures)
     await new Promise(function(r){ setTimeout(r, 1500); });
-    reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-12), { temperature:0.88, maxOutputTokens:200 });
+    reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-12), { temperature:0.88, maxOutputTokens:420 });
   }
   var typingEl = document.getElementById('calmAITyping');
   if(typingEl) typingEl.remove();
@@ -5248,7 +5251,7 @@ function _circleCardHtml(c, memberCounts){
     +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">'+c.name+'</div>'
     +'<div style="font-size:12px;color:var(--ink2);margin-bottom:5px">'+c.desc+'</div>'
     +(lastMsg
-      ? '<div style="font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">'+lastMsg.av+' '+lastMsg.name+': '+lastMsg.text+'</div>'
+      ? '<div style="font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">'+lastMsg.av+' '+lastMsg.name+': '+(lastMsg.text&&lastMsg.text.startsWith('data:')? '📷 Imagen' : _escHtml(lastMsg.text||''))+'</div>'
       : '<div style="height:5px"></div>')
     +'<div style="display:flex;align-items:center;gap:6px">'
     +'<div style="flex:1;height:4px;background:var(--cream2);border-radius:100px;overflow:hidden"><div style="height:100%;width:'+capPct+'%;background:'+(isFull?'var(--sos)':'var(--sage3)')+';border-radius:100px"></div></div>'
@@ -5827,7 +5830,8 @@ async function pRenderHappy(){
   // Update history entries with live stats from Supabase
   if(usingSB && myId){
     try{
-      var hist = JSON.parse(safeLS('get','velo_happy_history')||'[]');
+      var _hKeyU = 'velo_happy_history_'+myId;
+      var hist = JSON.parse(safeLS('get',_hKeyU)||safeLS('get','velo_happy_history')||'[]');
       var dirty = false;
       hist.forEach(function(he){
         var live = posts.find(function(p){ return p.id === he.id; });
@@ -5837,7 +5841,7 @@ async function pRenderHappy(){
           dirty = true;
         }
       });
-      if(dirty) safeLS('set','velo_happy_history', JSON.stringify(hist));
+      if(dirty) safeLS('set',_hKeyU, JSON.stringify(hist));
     }catch(e){}
   }
 
@@ -5895,7 +5899,9 @@ function _renderMyHappy(list, posts, queue, myId){
 }
 
 function _renderHappyHistory(list){
-  var history = []; try{ history = JSON.parse(safeLS('get','velo_happy_history')||'[]'); }catch(e){}
+  var _hUid = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
+  var _hKey = _hUid ? 'velo_happy_history_'+_hUid : 'velo_happy_history';
+  var history = []; try{ history = JSON.parse(safeLS('get',_hKey)||'[]'); }catch(e){}
   if(!history.length){
     list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">📅</span>'
       +'<div class="p-empty-title">Tu historial está vacío</div>'
@@ -5936,7 +5942,9 @@ function _renderHappyHistory(list){
 
 function pClearHappyHistory(){
   if(!confirm('¿Borrar todo tu historial del Muro de la Felicidad? Esta acción no se puede deshacer.')) return;
-  safeLS('set','velo_happy_history','[]');
+  var _hUid2 = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
+  var _hKey2 = _hUid2 ? 'velo_happy_history_'+_hUid2 : 'velo_happy_history';
+  safeLS('set',_hKey2,'[]');
   pRenderHappy();
   pToast('🗑️','Historial borrado');
 }
@@ -6260,10 +6268,12 @@ async function pSubmitHappyPost(){
     safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
     _updateInboxDot();
   }
-  // Save to persistent history (never expires)
-  var hist = []; try{ hist = JSON.parse(safeLS('get','velo_happy_history')||'[]'); }catch(e){}
+  // Save to persistent history (never expires) — scoped to current user
+  var _hUid3 = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
+  var _hKey3 = _hUid3 ? 'velo_happy_history_'+_hUid3 : 'velo_happy_history';
+  var hist = []; try{ hist = JSON.parse(safeLS('get',_hKey3)||'[]'); }catch(e){}
   hist.unshift({ id:post.id, emoji:post.emoji, text:post.text, photo:post.photo, ts:post.ts, name:post.name });
-  safeLS('set','velo_happy_history', JSON.stringify(hist.slice(0,200)));
+  safeLS('set',_hKey3, JSON.stringify(hist.slice(0,200)));
 
   // Reset form and collapse compose back to bar
   pClearHappyPhoto();
@@ -6622,11 +6632,11 @@ function _renderBadgesGrid(){
   var progFill = badge.next ? Math.min(100, Math.round((convs - r[0]) / (r[1] - r[0]) * 100)) : 100;
 
   var tiers = [
-    { name:'Novato',   icon:'🌱', min:0,   max:5,   color:'var(--sage4)', unlock:'Podés pedir acompañamiento a otros guardianes' },
-    { name:'Bronce',   icon:'🥉', min:5,   max:20,  color:'#C07840',      unlock:'Ingresá 5 días distintos a la app' },
-    { name:'Plata',    icon:'🥈', min:20,  max:40,  color:'#8892A4',      unlock:'Insignia verificada en tu perfil público' },
-    { name:'Oro',      icon:'🥇', min:40,  max:100, color:'#C8A200',      unlock:'Podés crear Círculos de Paz ☮️ + prioridad en el listado' },
-    { name:'Diamante', icon:'💎', min:100, max:100, color:'#7B68EE',      unlock:'Estado top de la comunidad + descuento en Velo Plus ✨' }
+    { name:'Novato',   icon:'🌱', min:0,   max:5,   color:'var(--sage4)', unlock:'Nivel inicial — podés pedir acompañamiento a otros guardianes' },
+    { name:'Bronce',   icon:'🥉', min:5,   max:20,  color:'#C07840',      unlock:'Requiere: ingresar 5 días distintos a la app · Desbloqueá: insignia de Bronce en tu perfil' },
+    { name:'Plata',    icon:'🥈', min:20,  max:40,  color:'#8892A4',      unlock:'Requiere: 20 conversaciones completadas · Desbloqueá: insignia verificada visible en la comunidad' },
+    { name:'Oro',      icon:'🥇', min:40,  max:100, color:'#C8A200',      unlock:'Requiere: 40 conversaciones · Desbloqueá: crear Círculos de Paz ☮️ + prioridad en el listado' },
+    { name:'Diamante', icon:'💎', min:100, max:100, color:'#7B68EE',      unlock:'Requiere: 100 conversaciones · Desbloqueá: estado top de la comunidad + descuento en Velo Plus ✨' }
   ];
   var tierRows = tiers.map(function(t){
     var reached = t.name === 'Bronce' ? _getVisitDayCount() >= 5 : convs >= t.min;
@@ -6662,7 +6672,9 @@ function _renderBadgesGrid(){
     +'</div>';
 
   var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
-  var happyPosts = []; try{ happyPosts = JSON.parse(safeLS('get','velo_happy_posts')||'[]'); }catch(e){}
+  var _badgeUid = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
+  var _badgeHKey = _badgeUid ? 'velo_happy_history_'+_badgeUid : 'velo_happy_history';
+  var happyPosts = []; try{ happyPosts = JSON.parse(safeLS('get',_badgeHKey)||safeLS('get','velo_happy_posts')||'[]'); }catch(e){}
   var daysActive = Math.ceil((Date.now()-(parseInt(safeLS('get','velo_registered_ts')||Date.now(),10)))/86400000);
   var badges = [
     { icon:'🌱', name:'Primer Paso',      desc:'Crear tu cuenta',                              done:true },
@@ -6670,7 +6682,7 @@ function _renderBadgesGrid(){
     { icon:'🌈', name:'En Movimiento',     desc:'Registrar tu ánimo 7 días',                   done:false },
     { icon:'💙', name:'Corazón Abierto',   desc:'Participar en Sala de Ayuda',                 done:!!safeLS('get','velo_helped_once') },
     { icon:'⭐', name:'Constancia',        desc:'30 días en la comunidad',                     done:daysActive>=30 },
-    { icon:'🦋', name:'Transformación',    desc:'Completar onboarding',                        done:true },
+    { icon:'🦋', name:'Transformación',    desc:'Completar onboarding',                        done:!!safeLS('get','velo_onboarding_done') },
     { icon:'🌊', name:'Mensaje al Mar',    desc:'Enviar tu primer mensaje al Mar',             done:parseInt(safeLS('get','velo_bottle_count')||safeLS('get','velo_total_bottles')||'0',10)>0 || JSON.parse(safeLS('get','velo_my_bottles')||'[]').length>0 },
     { icon:'🤝', name:'Primer Apoyo',      desc:'Acompañar a alguien en Sala de Ayuda',       done:!!safeLS('get','velo_helped_once') && parseInt(safeLS('get','velo_helped_others')||'0',10)>0 },
     { icon:'🌻', name:'Muro en Flor',      desc:'Primera publicación en el Muro',              done:happyPosts.length>0 },
@@ -6817,6 +6829,7 @@ async function pSaveUsername(){
     }catch(e){ console.error('[pSaveUsername catch]', e); pToast('⚠️','Error de conexión'); return; }
   }
   safeLS('set','velo_username', val);
+  safeLS('set','velo_onboarding_done','1');
   pToast('✨','@'+val+' guardado 🎉');
   // Navigate: if came from registration flow → verify-email, else home
   var fromReg = safeLS('get','velo_pick_username_from_reg');
@@ -11786,6 +11799,10 @@ window.addEventListener('load', function(){
       sbClient.auth.onAuthStateChange(function(event, session){
         if(event === 'PASSWORD_RECOVERY'){
           if(session){ safeLS('set','velo_user_email', session.user.email||''); safeLS('set','velo_session','1'); _authenticated = true; }
+          // SECURITY: password recovery must never preserve an admin session
+          safeLS('set','velo_user_type','user');
+          safeLS('del','velo_admin_session');
+          _userType = 'user';
           safeLS('set','velo_needs_pw_change','1');
           pGoTo('change-password');
         }
