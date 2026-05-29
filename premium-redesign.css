@@ -5223,3 +5223,22 @@ body.r-dark #topbarMoodBtn {
   0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,.06);  outline-color: rgba(45,106,79,.00); }
   50%       { box-shadow: 0 0 0 1.5px rgba(45,106,79,.35), 0 4px 18px rgba(45,106,79,.12); outline-color: rgba(45,106,79,.28); }
 }
+
+/* ── v213: iOS scroll fix for all modal sheets ───────────────── */
+.p-modal-ov {
+  /* Prevent overlay backdrop from stealing touch pan gestures */
+  touch-action: none;
+  overscroll-behavior: none;
+}
+.p-sheet {
+  /* iOS: enable momentum scroll inside sheet */
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  /* Ensure overflow-y scroll is always active, not just auto */
+  overflow-y: scroll !important;
+}
+/* Overlay click-to-close should work; sheet itself stops propagation */
+.p-sheet * {
+  touch-action: auto;
+}

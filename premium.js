@@ -300,13 +300,22 @@ function toggleMobileMenu(){
 }
 
 // ── MODAL HELPERS ─────────────────────────────────────────────
+function _syncBodyScroll(){
+  var hasOpen = document.querySelector('.p-modal-ov.show');
+  document.body.style.overflow   = hasOpen ? 'hidden' : '';
+  document.body.style.touchAction = hasOpen ? 'none'   : '';
+}
 function openModal(id){
   var el = document.getElementById(id);
-  if(el) el.classList.add('show');
+  if(!el) return;
+  el.classList.add('show');
+  _syncBodyScroll();
 }
 function closeModal(id){
   var el = document.getElementById(id);
-  if(el) el.classList.remove('show');
+  if(!el) return;
+  el.classList.remove('show');
+  _syncBodyScroll();
 }
 
 // ── SUPABASE AUTH ─────────────────────────────────────────────
