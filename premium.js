@@ -7321,11 +7321,16 @@ function pBlockUser(userId, name, av){
   if(!confirm('¿Bloquear a '+(name||'este usuario')+'? Sus publicaciones dejarán de aparecer.')) return;
   var blocked = []; try{ blocked = JSON.parse(safeLS('get','velo_blocked')||'[]'); }catch(e){}
   if(blocked.indexOf(userId)<0){ blocked.push(userId); safeLS('set','velo_blocked', JSON.stringify(blocked)); }
-  // Store name/av for display in blocked list
   var bd = []; try{ bd = JSON.parse(safeLS('get','velo_blocked_data')||'[]'); }catch(e){}
   if(!bd.find(function(b){ return b.id===userId; })){
     bd.push({id:userId, name:name||'Usuario', av:av||'🧑'});
     safeLS('set','velo_blocked_data', JSON.stringify(bd));
+  }
+  // Sync to Supabase so the blocked user silently stops seeing us in their contacts
+  var myId = _myUserId();
+  if(sbClient && myId && myId !== 'guest'){
+    sbClient.from('user_blocks').upsert({blocker_id:myId, blocked_id:userId}, {onConflict:'blocker_id,blocked_id'})
+      .then(function(){}).catch(function(){});
   }
   pRemoveFav(userId);
   pToast('🚫','Usuario bloqueado');
@@ -7338,6 +7343,12 @@ function pUnblockUser(userId){
   var bd = []; try{ bd = JSON.parse(safeLS('get','velo_blocked_data')||'[]'); }catch(e){}
   bd = bd.filter(function(b){ return b.id !== userId; });
   safeLS('set','velo_blocked_data', JSON.stringify(bd));
+  // Sync removal to Supabase so the unblocked user can see us again
+  var myId = _myUserId();
+  if(sbClient && myId && myId !== 'guest'){
+    sbClient.from('user_blocks').delete().eq('blocker_id',myId).eq('blocked_id',userId)
+      .then(function(){}).catch(function(){});
+  }
   pToast('✅','Usuario desbloqueado');
   pRenderContacts();
 }
@@ -7390,6 +7401,24 @@ async function pRenderContacts(){
         (profRes.data||[]).forEach(function(p){ if(p.id && p.username) usernameMap[p.id] = p.username; });
       }catch(e){}
     }
+  }
+
+  // Cross-user block filter: silently remove contacts who have blocked me
+  if(sbClient && myId && (favs.length || favMeRows.length)){
+    try{
+      var allContactIds = favs.map(function(f){ return f.id; })
+        .concat(favMeRows.map(function(r){ return r.user_id; }))
+        .filter(function(id,i,a){ return id && a.indexOf(id)===i; });
+      if(allContactIds.length){
+        var blRes = await sbClient.from('user_blocks').select('blocker_id').eq('blocked_id', myId).in('blocker_id', allContactIds);
+        if(_navToken !== _tok) return;
+        var blockedByMe = {};
+        (blRes.data||[]).forEach(function(r){ blockedByMe[r.blocker_id]=1; });
+        // Silently filter out — the blocked user sees nothing, gets no explanation
+        favs = favs.filter(function(f){ return !blockedByMe[f.id]; });
+        favMeRows = favMeRows.filter(function(r){ return !blockedByMe[r.user_id]; });
+      }
+    }catch(e){} // table may not exist yet — fail silently
   }
 
   // Refresh presence cache
