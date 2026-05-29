@@ -8166,7 +8166,8 @@ function _startGlobalDMListener(){
         }
         return;
       }
-      if(curId === 'pg-dm-chat' && _dmPeer && _dmPeer.id === m.from_id) return; // already in this chat
+      if(curId === 'pg-dm-chat' && _dmPeer && _dmPeer.id === m.from_id) return; // already in DM chat
+      if(curId === 'pg-guardian-chat' && _gcPeer && _gcPeer.id === m.from_id) return; // already in guardian chat
       // Show floating notification
       _showDMToast(m.from_id, m.from_name||'Usuario', m.from_av||'🧑', m.text||'');
       // Update unread count
