@@ -432,10 +432,11 @@ async function _sbSyncProfile(userId){
         if(gr.data[0].is_guardian === true){
           safeLS('set','velo_is_guardian','true');
           if(gr.data[0].status && gr.data[0].status !== 'offline'){
-            // Keep both status keys in sync so UI and heartbeat agree
-            safeLS('set','velo_guardian_status', gr.data[0].status);
-            safeLS('set','velo_user_status', gr.data[0].status);
-            _myGuardianStatus = gr.data[0].status;
+            // Never restore incognito on session start — always wake up as disponible
+            var restoredStatus = gr.data[0].status === 'incognito' ? 'disponible' : gr.data[0].status;
+            safeLS('set','velo_guardian_status', restoredStatus);
+            safeLS('set','velo_user_status', restoredStatus);
+            _myGuardianStatus = restoredStatus;
           }
           setTimeout(_startGuardianReqListener, 300);
         }
@@ -1732,9 +1733,12 @@ function pToggleGuardianMode(){
   var details = document.getElementById('guardianModeDetails');
   if(details) details.style.display = next ? '' : 'none';
   if(next){
+    // Always reset to disponible when activating — clears any stuck incognito state
+    safeLS('set','velo_guardian_status','disponible');
+    _myGuardianStatus = 'disponible';
     _startGuardianHeartbeat();
     _startGuardianReqListener();
-    _updateGuardianPresence();
+    _updateGuardianPresence('disponible');
     pToast('🛡️','¡Aparecés como guardián disponible!');
   } else {
     // Turning guardian mode off — stay online as a regular user, just leave the guardian list
