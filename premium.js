@@ -2074,6 +2074,12 @@ async function pConfirmAskGuardian(){
   var reqId = 'gd'+Date.now();
   var myName = safeLS('get','velo_user_name')||'Usuario';
   var myAv   = safeLS('get','velo_user_av')||'🧑';
+  var reqPayload = {
+    id: reqId, kind:'direct', status:'pending',
+    seeker_id: myId, seeker_name: myName, seeker_av: myAv,
+    guardian_id: guardianUid, guardian_name: guardian.name||'Guardián',
+    context: context, created_at: new Date().toISOString()
+  };
   try{
     await sbClient.from('guardian_requests').insert({
       id: reqId, kind:'direct', status:'pending',
@@ -2082,6 +2088,17 @@ async function pConfirmAskGuardian(){
       context: context
     });
   }catch(e){ pToast('⚠️','No se pudo enviar la solicitud'); return; }
+
+  // Primary notification: DM sentinel — uses the same mechanism as __velo_chat_req__,
+  // which already works. This survives RLS on guardian_requests and doesn't depend on
+  // the guardian being subscribed at the exact moment of the broadcast.
+  try{
+    await sbClient.from('direct_messages').insert({
+      from_id: myId, from_name: myName, from_av: myAv,
+      to_id: guardianUid,
+      text: '__velo_guardian_req__:'+JSON.stringify(reqPayload)
+    });
+  }catch(e){}
 
   // Broadcast the full request object directly to the guardian via Realtime broadcast
   // (pure WebSocket — no RLS, no DB read required on the guardian side)
@@ -2406,7 +2423,7 @@ async function _gcRender(){
       .order('created_at',{ascending:true}).limit(120);
     var data = res.data || [];
     var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-    var msgs = data.filter(function(m){ return sentinels.indexOf(m.text) < 0; });
+    var msgs = data.filter(function(m){ return sentinels.indexOf(m.text) < 0 && !(m.text||'').startsWith('__velo_guardian_req__:'); });
     if(!msgs.length){
       el.innerHTML = '<div id="gcPlaceholder" style="text-align:center;padding:34px 16px;color:var(--ink5);font-size:13px;line-height:1.6">Este es un espacio seguro 🌿<br>Escriban con presencia y cuidado.</div>';
       return;
@@ -3087,7 +3104,7 @@ function _renderHelpChatMsg(m, isOwn){
   var msgEl = document.getElementById('helpChatMessages');
   if(!msgEl) return;
   var _sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-  if(_sentinels.indexOf(m.text) >= 0) return;
+  if(_sentinels.indexOf(m.text) >= 0 || (m.text||'').startsWith('__velo_guardian_req__:')) return;
   var post = _curHelpPost||{};
   var div = document.createElement('div');
   div.innerHTML = _buildMsgBubble(m.text||'', isOwn, isOwn?'':(post.emoji||'💙'), isOwn?'':(post.name||''), 'helpChatInput', 'helpChatReplyBar', '', {}, '', isOwn?'':(m.from_id||''));
@@ -7885,7 +7902,7 @@ async function _renderDMThread(){
       return;
     }
     var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-    el.innerHTML = data.filter(function(m){ return sentinels.indexOf(m.text) < 0; }).map(function(m){
+    el.innerHTML = data.filter(function(m){ return sentinels.indexOf(m.text) < 0 && !(m.text||'').startsWith('__velo_guardian_req__:'); }).map(function(m){
       var isOwn = m.from_id === myId;
       return _buildMsgBubble(m.text||'', isOwn, isOwn?'':(m.from_av||'🧑'), isOwn?'':(m.from_name||''), 'dmInput', 'dmReplyBar', '', m.reactions||{}, 'direct_messages:'+m.id, isOwn?'':(m.from_id||''));
     }).join('');
@@ -8053,6 +8070,16 @@ function _startGlobalDMListener(){
       if(m.text === '__velo_chat_busy__'){
         safeLS('del','velo_dm_req_sent_'+m.from_id);
         pToast('⏳',(m.from_name||'Este usuario')+' está ocupado/a en otro chat, intentá más tarde');
+        return;
+      }
+      if(m.text && m.text.startsWith('__velo_guardian_req__:')){
+        if(safeLS('get','velo_is_guardian') !== 'true') return;
+        try{
+          var _gReqParsed = JSON.parse(m.text.slice('__velo_guardian_req__:'.length));
+          if(_gReqParsed && _gReqParsed.kind === 'direct' && _gReqParsed.guardian_id === myId){
+            _showGuardianRequest(_gReqParsed);
+          }
+        }catch(e){}
         return;
       }
       if(curId === 'pg-dm-chat' && _dmPeer && _dmPeer.id === m.from_id) return; // already in this chat
