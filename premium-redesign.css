@@ -116,7 +116,7 @@ body::after {
   .p-user-av {
     width: 36px !important; height: 36px !important;
     border-radius: 50% !important;
-    background: linear-gradient(135deg, var(--sage), var(--sage2)) !important;
+    background: linear-gradient(135deg, var(--sage), var(--sage2));
     color: white !important;
     font-size: 14px !important;
     font-weight: 600;
