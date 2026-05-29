@@ -1228,7 +1228,9 @@ async function _loadDailyMotivationalQuote(){
   var textEl   = document.getElementById('homeDailyQuoteText');
   var authorEl = document.getElementById('homeDailyQuoteAuthor');
   if(!textEl) return;
-  var today = new Date().toISOString().slice(0,10);
+  // Use LOCAL date (not UTC) so quote rotates at local midnight, not UTC midnight
+  var _d0 = new Date();
+  var today = _d0.getFullYear()+'-'+String(_d0.getMonth()+1).padStart(2,'0')+'-'+String(_d0.getDate()).padStart(2,'0');
   var cacheKey = 'velo_daily_quote_'+today;
   var cached = safeLS('get', cacheKey);
   if(cached){
@@ -1331,7 +1333,7 @@ function _updateHomeCurrentMoodLine(){
   }
   // Not registered yet — show animated pill
   el.style.cssText = 'display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:4px 10px;animation:p-breathe 3s ease-in-out infinite';
-  el.textContent = '✨ Tocá para registrar cómo te sentís';
+  el.textContent = '✨ ¿Cómo te sentís hoy?';
 }
 
 function _updateSidebarUser(){
