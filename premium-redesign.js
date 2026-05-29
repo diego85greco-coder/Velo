@@ -198,13 +198,18 @@
         }).catch(function(){});
     }
 
-    // ── Visit streak ────────────────────────────────────────────
+    // ── Visit streak (consecutive days) ─────────────────────────
     let streak = 1;
     try {
-      const days = JSON.parse(
-        (typeof safeLS === 'function' ? safeLS('get','velo_visit_days') : localStorage.getItem('velo_visit_days')) || '[]'
-      );
-      streak = days.length || 1;
+      if (typeof _getConsecutiveStreak === 'function') {
+        streak = _getConsecutiveStreak() || 1;
+      } else {
+        // Fallback: manual calculation if premium.js not yet loaded
+        const days = JSON.parse(
+          (typeof safeLS === 'function' ? safeLS('get','velo_visit_days') : localStorage.getItem('velo_visit_days')) || '[]'
+        );
+        streak = days.length || 1;
+      }
     } catch(e) {}
     const streakEl = document.getElementById('homeStatStreak');
     if (streakEl) streakEl.textContent = streak;

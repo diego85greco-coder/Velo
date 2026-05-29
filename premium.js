@@ -1383,8 +1383,12 @@ function _fmtDate(ts){
 
 // ── VISIT DAY TRACKING ──────────────────────────────────────────
 // Records each unique calendar day the user opens the app (for Bronze badge)
+function _localDateStr(){
+  var d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 function _trackVisitDay(){
-  var today = new Date().toISOString().slice(0,10); // 'YYYY-MM-DD'
+  var today = _localDateStr();
   var days = []; try{ days = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
   if(days.indexOf(today) < 0){
     days.push(today);
@@ -1394,6 +1398,27 @@ function _trackVisitDay(){
 function _getVisitDayCount(){
   var days = []; try{ days = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
   return days.length;
+}
+// Returns the number of CONSECUTIVE days ending on today (or yesterday if not yet visited today)
+function _getConsecutiveStreak(){
+  var days = []; try{ days = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
+  if(!days.length) return 0;
+  // Sort descending
+  days.sort(function(a,b){ return a < b ? 1 : a > b ? -1 : 0; });
+  var today = _localDateStr();
+  var d = new Date(); d.setHours(12,0,0,0);
+  var yesterday = new Date(d); yesterday.setDate(d.getDate()-1);
+  var yesterdayStr = yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
+  // Streak must start from today or yesterday (if user hasn't visited yet today, keep streak alive)
+  if(days[0] !== today && days[0] !== yesterdayStr) return 1;
+  var streak = 1;
+  for(var i = 1; i < days.length; i++){
+    var prev = new Date(days[i-1]+'T12:00:00');
+    var curr = new Date(days[i]+'T12:00:00');
+    var diff = Math.round((prev - curr) / 86400000);
+    if(diff === 1){ streak++; } else { break; }
+  }
+  return streak;
 }
 
 // ── GUARDIAN DATA ─────────────────────────────────────────────
