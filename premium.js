@@ -20,7 +20,7 @@ var GEMINI_URLS   = [
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=',
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key='
 ];
-var GEMINI_PROXY      = '/api/groq';       // Groq LLM proxy (hides key)
+var GEMINI_PROXY      = '/api/gemini';     // Gemini 2.0 Flash proxy (Google AI, grounding enabled)
 var SEND_EMAIL_PROXY  = '/api/send-email'; // Vercel serverless proxy for thank-you emails
 var _geminiUrlIdx = 0;
 
@@ -3195,11 +3195,13 @@ async function _geminiClassifyUrgency(msg){
 }
 
 async function _geminiModerateContent(text, section){
-  var prompt = 'Sos el sistema de moderación de Velo, una app de salud mental peer-to-peer.\n'
-    +'Analizá este mensaje y detectá: acoso, agresión hacia otros o spam/publicidad.\n'
-    +'NO marques como problemático: expresiones de dolor, tristeza, crisis personal o pedidos de ayuda.\n'
-    +'Respondé SOLO con JSON: {"problema": true/false, "tipo": "acoso|spam|ninguno", "gravedad": "alta|baja"}\n\n'
-    +'Mensaje: "'+text.replace(/"/g,"'")+'"';
+  var prompt = 'You are the content moderation system for Velo, a peer-to-peer mental health support app.\n'
+    +'Analyze the following message (may be in Spanish or English) and detect ONLY: harassment/bullying toward others, aggression/threats, or spam/advertising/self-promotion.\n'
+    +'NEVER flag as problematic: expressions of pain, sadness, anxiety, personal crisis, suicidal ideation, requests for help, or emotional venting — these are exactly why this app exists.\n'
+    +'NEVER flag venting, profanity in self-expression (e.g. "me siento una mierda"), or dark/negative feelings.\n'
+    +'Only flag content directed aggressively AT others, or clear spam/advertising.\n'
+    +'Respond ONLY with valid JSON, no markdown: {"problema": true/false, "tipo": "acoso|spam|ninguno", "gravedad": "alta|media|baja"}\n\n'
+    +'Message: "'+text.replace(/"/g,"'")+'"';
   var result = await _geminiCall(prompt);
   if(!result) return;
   try{
@@ -3515,13 +3517,12 @@ async function pRenderNews(){
 
   var monthYear = ['enero','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][new Date().getMonth()]+' '+new Date().getFullYear();
 
-  // Attempt 1: Grounded search (real web results)
-  // NOTE: do NOT ask for sourceUrl in JSON — AI hallucinates plausible-but-fake URLs.
-  // Real URLs come exclusively from groundingChunks metadata returned by the API.
-  var gPrompt = 'Buscá 5 noticias positivas y reales publicadas recientemente ('+monthYear+'). '
-    +'Temas: avances médicos, medio ambiente, solidaridad, ciencia, animales, innovación social. '
-    +'Para cada noticia: título real tal como aparece en el medio, resumen en español rioplatense 2-3 oraciones, nombre exacto del medio de comunicación, reflexión breve de bienestar. '
-    +'SOLO JSON sin markdown: [{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"...","sourceName":"..."}]';
+  // Attempt 1: Grounded search — Gemini with Google Search finds real articles with verified URLs
+  var gPrompt = 'Search for 5 real positive news stories published recently ('+monthYear+'). '
+    +'Topics: medical breakthroughs, environment/nature wins, human solidarity, science, animals rescued, social innovation. '
+    +'For each story provide the real article title, a 2-3 sentence summary in Argentine Spanish (rioplatense), the exact news outlet name, and a short wellbeing reflection. '
+    +'Use Google Search to find real current articles — do NOT invent stories. '
+    +'Respond ONLY with valid JSON array, no markdown: [{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"...","sourceName":"..."}]';
 
   var result = await _geminiCallGrounded(gPrompt, { maxOutputTokens:1800 });
   var items = [];
