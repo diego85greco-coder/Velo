@@ -4055,3 +4055,173 @@ body.r-dark .r-plus-btn:hover {
 #homeCurrentMoodLine {
   text-shadow: 0 1px 3px rgba(0,0,0,.12);
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v195: Premium icon circles, editorial quote card, mood card glow
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Quick-action icon buttons — visible contrast, both modes ─────── */
+body:not(.r-dark) .r-hero-icon-btn {
+  background: rgba(255,255,255,.94) !important;
+  border: 1.5px solid rgba(27,94,58,.30) !important;
+  box-shadow: 0 3px 12px rgba(27,94,58,.18), inset 0 1px 0 rgba(255,255,255,.95) !important;
+}
+body:not(.r-dark) .r-hero-icon-btn:hover {
+  box-shadow: 0 5px 18px rgba(27,94,58,.24), inset 0 1px 0 rgba(255,255,255,.95) !important;
+  transform: translateY(-2px) !important;
+}
+body.r-dark .r-hero-icon-btn {
+  background: rgba(255,255,255,.12) !important;
+  border: 1.5px solid rgba(255,255,255,.22) !important;
+  box-shadow: 0 3px 12px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+body.r-dark .r-hero-icon-btn:hover {
+  background: rgba(255,255,255,.18) !important;
+  box-shadow: 0 5px 18px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.14) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* ── Daily quote — editorial, left gold accent, large decorative ❝ ── */
+#pg-home #homeDailyQuote {
+  border-radius: 22px !important;
+  padding: 20px 22px 16px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  border: 1.5px solid rgba(200,158,56,.24) !important;
+  border-left: 4px solid rgba(200,158,56,.60) !important;
+  backdrop-filter: blur(16px) saturate(1.3) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.3) !important;
+}
+body:not(.r-dark) #pg-home #homeDailyQuote {
+  background: linear-gradient(135deg, rgba(255,251,238,.98) 0%, rgba(255,243,215,.93) 100%) !important;
+  box-shadow: 0 8px 34px rgba(170,120,8,.14), 0 2px 6px rgba(0,0,0,.04) !important;
+}
+body.r-dark #pg-home #homeDailyQuote {
+  background: linear-gradient(135deg, rgba(26,50,34,.94) 0%, rgba(18,40,26,.96) 100%) !important;
+  border-color: rgba(200,158,56,.22) !important;
+  border-left-color: rgba(200,158,56,.52) !important;
+  box-shadow: 0 8px 34px rgba(0,0,0,.32), 0 2px 8px rgba(0,0,0,.20) !important;
+}
+/* Large decorative opening curly-quote */
+#pg-home #homeDailyQuote::before {
+  content: '\201C';
+  position: absolute;
+  top: -8px; left: 16px;
+  font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+  font-size: 100px;
+  line-height: 1;
+  pointer-events: none;
+  font-weight: 700;
+  z-index: 0;
+  color: rgba(200,158,56,.16);
+}
+body.r-dark #pg-home #homeDailyQuote::before {
+  color: rgba(200,158,56,.13);
+}
+#pg-home #homeDailyQuoteText {
+  font-size: 16.5px !important;
+  font-weight: 400 !important;
+  font-style: italic !important;
+  line-height: 1.68 !important;
+  text-align: left !important;
+  letter-spacing: -.005em !important;
+  position: relative; z-index: 1;
+}
+body:not(.r-dark) #pg-home #homeDailyQuoteText {
+  color: #1e3020 !important;
+}
+body.r-dark #pg-home #homeDailyQuoteText {
+  color: rgba(255,255,255,.90) !important;
+}
+#pg-home #homeDailyQuoteAuthor {
+  margin-top: 14px !important;
+  padding-top: 10px !important;
+  border-top: 1px solid rgba(200,158,56,.20) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1.8px !important;
+  text-align: left !important;
+  position: relative; z-index: 1;
+}
+body:not(.r-dark) #pg-home #homeDailyQuoteAuthor {
+  color: rgba(130,88,4,.72) !important;
+}
+body.r-dark #pg-home #homeDailyQuoteAuthor {
+  color: rgba(200,158,56,.78) !important;
+  border-top-color: rgba(200,158,56,.22) !important;
+}
+
+/* ── Greeting / mood card — elevated premium look ────────────────── */
+body:not(.r-dark) #pg-home .home-greeting {
+  background: rgba(255,255,255,.94) !important;
+  border: 1.5px solid rgba(27,94,58,.18) !important;
+  box-shadow: 0 6px 30px rgba(27,94,58,.10), 0 1px 4px rgba(0,0,0,.04) !important;
+}
+body.r-dark #pg-home .home-greeting {
+  background: rgba(10,26,17,.76) !important;
+  border: 1.5px solid rgba(116,198,157,.18) !important;
+  box-shadow: 0 6px 30px rgba(0,0,0,.28) !important;
+}
+/* Avatar ring glow */
+#pg-home .home-av {
+  box-shadow: 0 0 0 2.5px rgba(116,198,157,.40), 0 4px 14px rgba(116,198,157,.20) !important;
+  transition: box-shadow .3s ease !important;
+}
+#pg-home .home-greeting:hover .home-av {
+  box-shadow: 0 0 0 3px rgba(116,198,157,.58), 0 5px 20px rgba(116,198,157,.30) !important;
+}
+/* User name — bolder */
+#homeUserName {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+body.r-dark #homeUserName { color: rgba(255,255,255,.92) !important; }
+
+/* Mood pill — richer glow pulse */
+@keyframes velo-mood-pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(116,198,157,.18); transform: scale(1); }
+  50%       { box-shadow: 0 4px 18px rgba(116,198,157,.40); transform: scale(1.04); }
+}
+#homeCurrentMoodLine {
+  animation: velo-mood-pulse 3.2s ease-in-out infinite !important;
+  font-size: 12px !important;
+  padding: 5px 12px !important;
+}
+body:not(.r-dark) #homeCurrentMoodLine {
+  background: linear-gradient(135deg, rgba(27,94,58,.10), rgba(116,198,157,.18)) !important;
+  border-color: rgba(27,94,58,.30) !important;
+  color: #1a5233 !important;
+  text-shadow: none !important;
+}
+body.r-dark #homeCurrentMoodLine {
+  background: linear-gradient(135deg, rgba(116,198,157,.13), rgba(80,180,120,.20)) !important;
+  border-color: rgba(116,198,157,.36) !important;
+  color: rgba(145,228,185,.95) !important;
+  text-shadow: none !important;
+}
+/* Mi estado button — premium pill */
+.home-mood-btn {
+  border-radius: 14px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  transition: background .18s, transform .15s, box-shadow .18s !important;
+}
+body:not(.r-dark) .home-mood-btn {
+  background: rgba(27,94,58,.08) !important;
+  border: 1.5px solid rgba(27,94,58,.24) !important;
+  color: #1a5233 !important;
+}
+body:not(.r-dark) .home-mood-btn:hover {
+  background: rgba(27,94,58,.14) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(27,94,58,.16) !important;
+}
+body.r-dark .home-mood-btn {
+  background: rgba(116,198,157,.10) !important;
+  border: 1.5px solid rgba(116,198,157,.26) !important;
+  color: rgba(140,224,178,.92) !important;
+}
+body.r-dark .home-mood-btn:hover {
+  background: rgba(116,198,157,.18) !important;
+  transform: translateY(-1px) !important;
+}
