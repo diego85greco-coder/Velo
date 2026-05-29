@@ -2082,6 +2082,24 @@ async function pConfirmAskGuardian(){
       context: context
     });
   }catch(e){ pToast('⚠️','No se pudo enviar la solicitud'); return; }
+
+  // Broadcast the full request object directly to the guardian via Realtime broadcast
+  // (pure WebSocket — no RLS, no DB read required on the guardian side)
+  try{
+    var _bcastCh = sbClient.channel('velo:gnotify:'+guardianUid);
+    _bcastCh.subscribe(function(status){
+      if(status === 'SUBSCRIBED'){
+        _bcastCh.send({ type:'broadcast', event:'guardian_request', payload:{
+          id: reqId, kind:'direct', status:'pending',
+          seeker_id: myId, seeker_name: myName, seeker_av: myAv,
+          guardian_id: guardianUid, guardian_name: guardian.name||'Guardián',
+          context: context, created_at: new Date().toISOString()
+        }});
+        setTimeout(function(){ try{ sbClient.removeChannel(_bcastCh); }catch(e){} }, 3000);
+      }
+    });
+  }catch(e){}
+
   _gcPeer = { id: guardianUid, name: guardian.name||'Guardián', av: guardian.av||'🌿' };
   _showGuardianWaitSheet(guardian.name||'el guardián', reqId);
   _subscribeSeekerRequest(reqId);
@@ -2219,10 +2237,33 @@ function _startGuardianReqListener(){
   var myEmail = safeLS('get','velo_user_email') || '';
   // Immediate check — catches requests that arrived while offline or before listener started
   _checkPendingGuardianRequests();
-  // Realtime: per-guardian filtered channel so only this user's INSERTs arrive
+  // Primary channel: Realtime BROADCAST (no RLS, pure WebSocket pub-sub)
+  // The seeker sends the full request object here immediately after INSERT.
   if(!_guardianReqCh){
-    var chName = 'velo:gdreq:' + myId;
-    _guardianReqCh = sbClient.channel(chName)
+    _guardianReqCh = sbClient.channel('velo:gnotify:'+myId);
+    _guardianReqCh
+      .on('broadcast', { event: 'guardian_request' }, function(msg){
+        var r = msg.payload || {};
+        if(r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
+      })
+      .subscribe(function(status, err){
+        if(status === 'SUBSCRIBED'){
+          _checkPendingGuardianRequests(); // catch anything that arrived before subscribe
+        } else {
+          console.warn('[guardian notify] broadcast status:', status, err||'');
+        }
+      });
+    // Also subscribe on email key in case presence row used email as user_id
+    if(myEmail && myEmail !== myId){
+      sbClient.channel('velo:gnotify:'+myEmail)
+        .on('broadcast', { event: 'guardian_request' }, function(msg){
+          var r = msg.payload || {};
+          if(r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
+        })
+        .subscribe();
+    }
+    // Also keep a postgres_changes listener as secondary (works if table replication is enabled)
+    sbClient.channel('velo:gdreq:'+myId)
       .on('postgres_changes',{
         event:'INSERT', schema:'public', table:'guardian_requests',
         filter: 'guardian_id=eq.'+myId
@@ -2230,26 +2271,7 @@ function _startGuardianReqListener(){
         var r = payload.new||{};
         if(r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
       })
-      .subscribe(function(status, err){
-        if(status === 'SUBSCRIBED'){
-          // Subscription live — do one immediate poll to catch anything that slipped in
-          _checkPendingGuardianRequests();
-        } else {
-          console.warn('[guardian req listener] status:', status, err||'');
-        }
-      });
-    // Also listen on email-keyed channel in case presence was stored with email
-    if(myEmail && myEmail !== myId){
-      sbClient.channel('velo:gdreq:'+myEmail)
-        .on('postgres_changes',{
-          event:'INSERT', schema:'public', table:'guardian_requests',
-          filter: 'guardian_id=eq.'+myEmail
-        }, function(payload){
-          var r = payload.new||{};
-          if(r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
-        })
-        .subscribe();
-    }
+      .subscribe();
   }
   // Polling fallback every 5s — primary delivery mechanism since Realtime
   // requires the table to have replication enabled in Supabase dashboard
