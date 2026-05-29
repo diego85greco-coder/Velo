@@ -1333,7 +1333,7 @@ function _updateHomeCurrentMoodLine(){
   }
   // Not registered yet — show animated pill
   el.style.cssText = 'display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:4px 10px;animation:p-breathe 3s ease-in-out infinite';
-  el.textContent = '✨ ¿Cómo te sentís hoy?';
+  el.textContent = '🌷 ¿Cómo te sentís hoy?';
 }
 
 function _updateSidebarUser(){

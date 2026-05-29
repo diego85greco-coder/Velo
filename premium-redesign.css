@@ -4657,3 +4657,125 @@ body:not(.r-dark) #pg-home .home-greeting {
 body.r-dark #pg-home .home-greeting {
   animation: card-float-glow-dk 4s ease-in-out 0.8s infinite !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v202: FIXED animations — filter/transform/outline (no !important conflict)
+         + premium serif italic pill + 🌷 icon
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Root cause fix: box-shadow !important blocks animation.
+      Switch to filter:drop-shadow which has no !important conflicts. ── */
+
+/* Quote card: filter glow + outline ring (both animate freely) */
+@keyframes quote-filter-glow {
+  0%, 100% {
+    filter: drop-shadow(0 4px 14px rgba(200,158,56,.10));
+    outline-color: transparent;
+    outline-offset: 0px;
+  }
+  50% {
+    filter: drop-shadow(0 0 22px rgba(200,158,56,.55))
+            drop-shadow(0 8px 32px rgba(200,158,56,.25));
+    outline-color: rgba(200,158,56,.55);
+    outline-offset: 2px;
+  }
+}
+#pg-home #homeDailyQuote {
+  outline: 2px solid transparent;
+  outline-offset: 0px;
+  animation: quote-filter-glow 3.2s ease-in-out infinite !important;
+}
+
+/* Text shimmer: narrower gradient → more visible gold sweep */
+@keyframes shimmer-fast {
+  0%   { background-position: -140% center; }
+  100% { background-position: 140% center; }
+}
+#pg-home #homeDailyQuoteText {
+  background-size: 140% auto !important;
+  animation: shimmer-fast 2.4s linear infinite !important;
+}
+body.r-dark #pg-home #homeDailyQuoteText {
+  background-image: linear-gradient(
+    90deg,
+    rgba(210,210,210,.80) 0%,   rgba(210,210,210,.80) 25%,
+    rgba(255,215,35,1.0) 50%,
+    rgba(210,210,210,.80) 75%,  rgba(210,210,210,.80) 100%
+  ) !important;
+}
+body:not(.r-dark) #pg-home #homeDailyQuoteText {
+  background-image: linear-gradient(
+    90deg,
+    #1e3020 0%, #1e3020 25%,
+    rgba(190,125,0,1.0) 50%,
+    #1e3020 75%, #1e3020 100%
+  ) !important;
+}
+
+/* Author shimmer: faster */
+#pg-home #homeDailyQuoteAuthor {
+  background-size: 140% auto !important;
+  animation: shimmer-fast 1.8s linear infinite !important;
+  animation-delay: -0.9s !important;
+}
+
+/* Quote mark: opacity breath */
+#pg-home #homeDailyQuote::before {
+  animation: quote-mark-float 5s ease-in-out infinite !important;
+}
+
+/* ── Mood pill: filter + transform (both !important-safe) ────────── */
+@keyframes pill-live {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 2px 8px rgba(116,198,157,.22));
+  }
+  50% {
+    transform: scale(1.07);
+    filter: drop-shadow(0 4px 20px rgba(116,198,157,.65))
+            drop-shadow(0 0 10px rgba(116,198,157,.35));
+  }
+}
+#homeCurrentMoodLine {
+  animation: pill-live 2.2s ease-in-out infinite !important;
+  font-family: 'Cormorant Garamond', 'Crimson Pro', serif !important;
+  font-style: italic !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  letter-spacing: .03em !important;
+  padding: 6px 14px !important;
+  border: none !important;
+}
+body:not(.r-dark) #homeCurrentMoodLine {
+  background: linear-gradient(135deg, rgba(27,94,58,.11), rgba(116,198,157,.20)) !important;
+  color: #1a4a2a !important;
+}
+body.r-dark #homeCurrentMoodLine {
+  background: linear-gradient(135deg, rgba(116,198,157,.14), rgba(80,180,120,.22)) !important;
+  color: rgba(178,240,200,.92) !important;
+}
+
+/* ── Greeting card: float + filter glow ─────────────────────────── */
+@keyframes greeting-live {
+  0%, 100% {
+    transform: translateY(0px);
+    filter: drop-shadow(0 4px 14px rgba(116,198,157,.08));
+  }
+  50% {
+    transform: translateY(-4px);
+    filter: drop-shadow(0 10px 28px rgba(116,198,157,.30))
+            drop-shadow(0 2px 8px rgba(116,198,157,.15));
+  }
+}
+#pg-home .home-greeting {
+  animation: greeting-live 3.8s ease-in-out 0.6s infinite !important;
+}
+
+/* Avatar: filter glow pulse */
+@keyframes avatar-live {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(116,198,157,.30)); }
+  50%       { filter: drop-shadow(0 0 14px rgba(116,198,157,.75)) drop-shadow(0 0 6px rgba(116,198,157,.50)); }
+}
+#pg-home .home-av {
+  animation: avatar-live 2.8s ease-in-out infinite !important;
+}
