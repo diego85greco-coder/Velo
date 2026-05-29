@@ -4393,3 +4393,46 @@ body.r-dark #homeUserName {
 .home-mood-btn {
   animation: estado-btn-pulse 4s ease-in-out 1s infinite !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v200: "Apoyá a Velo" banner — legible title + premium card both modes
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Title: white in dark mode, deep forest in light mode */
+#homeDonateBannerTitle {
+  color: var(--ink) !important;
+  letter-spacing: .01em !important;
+}
+body.r-dark #homeDonateBannerTitle {
+  color: rgba(255,255,255,.94) !important;
+  text-shadow: 0 1px 8px rgba(116,198,157,.25) !important;
+}
+body:not(.r-dark) #homeDonateBannerTitle {
+  color: #1a3d28 !important;
+}
+
+/* Banner card — premium elevated look */
+#homeDonateBanner {
+  border-radius: 22px !important;
+  overflow: hidden !important;
+}
+body:not(.r-dark) #homeDonateBanner {
+  background: linear-gradient(135deg,
+    rgba(220,245,230,.92) 0%,
+    rgba(200,238,255,.70) 100%) !important;
+  border: 1.5px solid rgba(45,106,79,.22) !important;
+  box-shadow: 0 6px 26px rgba(45,106,79,.10) !important;
+}
+body.r-dark #homeDonateBanner {
+  background: linear-gradient(135deg,
+    rgba(18,52,32,.90) 0%,
+    rgba(14,42,58,.85) 100%) !important;
+  border: 1.5px solid rgba(116,198,157,.24) !important;
+  box-shadow: 0 6px 26px rgba(0,0,0,.28) !important;
+}
+
+/* Description text — readable in dark mode */
+body.r-dark #homeDonateBanner [style*="ink4"] ,
+body.r-dark #homeDonateBanner div:last-child > div:first-child {
+  color: rgba(255,255,255,.68) !important;
+}
