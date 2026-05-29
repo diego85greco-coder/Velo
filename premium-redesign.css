@@ -3597,3 +3597,94 @@ body.r-dark .r-donar-btn {
 body.r-dark .r-donar-btn:hover {
   background: rgba(200,158,56,.28) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v188: Premium SVG bottom nav — Apple SF Symbol style
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* SVG icon sizing & transitions */
+.p-bn-icon svg {
+  display: block;
+  width: 23px !important;
+  height: 23px !important;
+  transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), filter 0.18s ease;
+}
+
+/* Cancel old emoji scale-up (now handled on SVG) */
+.p-bn-item.active .p-bn-icon {
+  transform: none !important;
+}
+
+/* Active icon: lift + tint + glow */
+.p-bn-item.active .p-bn-icon svg {
+  transform: translateY(-2px) scale(1.1) !important;
+  filter: drop-shadow(0 2px 6px rgba(116,198,157,.5)) !important;
+}
+.p-bn-item.active {
+  background: transparent !important;
+  color: var(--sage2) !important;
+}
+
+/* Glass pill behind active icon */
+.p-bn-item.active::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 46px;
+  height: 30px;
+  border-radius: 14px;
+  background: rgba(116,198,157,.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+  z-index: 0;
+}
+body.r-dark .p-bn-item.active::before {
+  background: rgba(116,198,157,.22);
+}
+.p-bn-item .p-bn-icon,
+.p-bn-item .p-bn-label {
+  position: relative;
+  z-index: 1;
+}
+
+/* SOS — no glass pill, uses its own pill */
+.p-bn-item.p-bn-sos.active::before { display: none; }
+.p-bn-item.p-bn-sos.active .p-bn-icon svg { display: none; }
+
+/* SOS pill button */
+.p-sos-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 28px;
+  background: linear-gradient(145deg, #f03e3e, #c92a2a);
+  border-radius: 9px;
+  color: #fff !important;
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 1.8px;
+  font-family: 'Jost', sans-serif;
+  box-shadow: 0 3px 12px rgba(201,42,42,.45), 0 1px 3px rgba(201,42,42,.3), inset 0 1px 0 rgba(255,255,255,.22);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.p-bn-item.p-bn-sos:active .p-sos-pill {
+  transform: scale(0.94);
+  box-shadow: 0 1px 6px rgba(201,42,42,.35);
+}
+.p-bn-sos-label {
+  color: #e03131 !important;
+  font-weight: 900 !important;
+}
+
+/* Inactive icons — slightly muted */
+.p-bn-item:not(.active) .p-bn-icon svg {
+  opacity: 0.62;
+}
+.p-bn-item:not(.active):hover .p-bn-icon svg {
+  opacity: 0.85;
+  transform: translateY(-1px) scale(1.04);
+}

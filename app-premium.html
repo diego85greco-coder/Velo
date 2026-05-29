@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260529-187">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260529-187">
+  <link rel="stylesheet" href="premium.css?v=20260529-188">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260529-188">
 </head>
 <body>
 
@@ -2444,23 +2444,44 @@
     <!-- BOTTOM NAV (mobile) -->
     <nav class="p-bottomnav" id="pBottomnav" style="display:none">
       <button class="p-bn-item" data-screen="home" onclick="pGoTo('home')">
-        <span class="p-bn-icon">🏠</span>
+        <span class="p-bn-icon">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </span>
         <span class="p-bn-label">Inicio</span>
       </button>
       <button class="p-bn-item" data-screen="guardians" onclick="pGoTo('guardians')">
-        <span class="p-bn-icon">🛡️</span>
+        <span class="p-bn-icon">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </span>
         <span class="p-bn-label">Guardianes</span>
       </button>
-      <button class="p-bn-item" onclick="pOpenSOS()" style="color:var(--sos)">
-        <span class="p-bn-icon">🆘</span>
-        <span class="p-bn-label" style="color:var(--sos);font-weight:800">SOS</span>
+      <button class="p-bn-item p-bn-sos" onclick="pOpenSOS()">
+        <span class="p-bn-icon">
+          <span class="p-sos-pill">SOS</span>
+        </span>
+        <span class="p-bn-label p-bn-sos-label">SOS</span>
       </button>
       <button class="p-bn-item" data-screen="bottle" onclick="pGoTo('bottle')">
-        <span class="p-bn-icon">🌊</span>
+        <span class="p-bn-icon">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12C3.5 9 5.5 9 7 12C8.5 15 10.5 15 12 12C13.5 9 15.5 9 17 12C18.5 15 20.5 15 22 12"/>
+            <path d="M2 17C3.5 14 5.5 14 7 17C8.5 20 10.5 20 12 17C13.5 14 15.5 14 17 17C18.5 20 20.5 20 22 17"/>
+          </svg>
+        </span>
         <span class="p-bn-label">Al Mar</span>
       </button>
       <button class="p-bn-item" data-screen="profile" onclick="pGoTo('profile')">
-        <span class="p-bn-icon">👤</span>
+        <span class="p-bn-icon">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </span>
         <span class="p-bn-label">Perfil</span>
         <span class="p-bn-dot p-hidden" id="bn-profile-dot"></span>
       </button>
@@ -2941,8 +2962,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260529-187"></script>
-<script src="premium-redesign.js?v=20260529-187"></script>
+<script src="premium.js?v=20260529-188"></script>
+<script src="premium-redesign.js?v=20260529-188"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
