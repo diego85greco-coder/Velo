@@ -5586,3 +5586,61 @@ body.r-dark #homeDailyQuoteAuthor {
   font-weight: 600 !important;
   opacity: 1 !important;
 }
+
+/* ── v270: Guardian chat header — dark mode ────────────────────────────── */
+body.r-dark #pg-guardian-chat .feed-header {
+  background: rgba(18,46,28,.94) !important;
+  border-bottom-color: rgba(116,198,157,.18) !important;
+}
+body.r-dark #pg-guardian-chat #gcName {
+  color: #ffffff !important;
+  text-shadow: 0 1px 5px rgba(0,0,0,.5) !important;
+}
+/* Light mode guardian chat header */
+body:not(.r-dark) #pg-guardian-chat .feed-header {
+  background: rgba(215,240,228,.97) !important;
+  border-bottom-color: rgba(30,100,60,.28) !important;
+}
+body:not(.r-dark) #pg-guardian-chat #gcName {
+  color: #0a1810 !important;
+  text-shadow: none !important;
+}
+/* ── v270: Message sender names in guardian chat ───────────────────────── */
+body.r-dark #gcMessages .feed-sender {
+  color: rgba(200,158,56,.97) !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  text-shadow: 0 1px 4px rgba(0,0,0,.65) !important;
+}
+body:not(.r-dark) #gcMessages .feed-sender {
+  color: #0a3d1e !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+}
+
+/* ── v270: Light mode quote text — bigger + bold black ─────────────────── */
+body:not(.r-dark) #pg-home #homeDailyQuoteText,
+body:not(.r-dark) #homeDailyQuoteText {
+  -webkit-text-fill-color: #0a1810 !important;
+  color: #0a1810 !important;
+  background-image: none !important;
+  -webkit-background-clip: padding-box !important;
+  background-clip: padding-box !important;
+  animation: none !important;
+  font-size: clamp(17px, 4.8vw, 22px) !important;
+  font-weight: 800 !important;
+  font-style: italic !important;
+  line-height: 1.38 !important;
+  opacity: 1 !important;
+}
+body:not(.r-dark) #pg-home #homeDailyQuoteAuthor,
+body:not(.r-dark) #homeDailyQuoteAuthor {
+  -webkit-text-fill-color: #2d6a4f !important;
+  color: #2d6a4f !important;
+  background-image: none !important;
+  -webkit-background-clip: padding-box !important;
+  background-clip: padding-box !important;
+  animation: none !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+}

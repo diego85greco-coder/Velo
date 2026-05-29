@@ -2361,6 +2361,9 @@ async function pAcceptGuardianRequest(){
   var ov = document.getElementById('gdReqOv');
   if(ov) ov.remove();
   _initSupabase();
+  var myId   = _myUserId();
+  var myName = safeLS('get','velo_user_name') || 'Guardián';
+  var myAv   = safeLS('get','velo_user_av')   || '🌿';
   if(sbClient){
     try{ await sbClient.from('guardian_requests').update({status:'accepted'}).eq('id',req.id); }catch(e){}
     if(req.context){
@@ -2369,6 +2372,21 @@ async function pAcceptGuardianRequest(){
         to_id: req.guardian_id, text: req.context
       }).then(function(){}).catch(function(){});
     }
+    // Notify seeker via DM sentinel — bypasses RLS on guardian_requests
+    try{
+      var _accPayload = JSON.stringify({ req_id:req.id, guardian_id:myId, guardian_name:myName, guardian_av:myAv });
+      var _accRes = await sbClient.from('direct_messages').insert({
+        from_id:myId, from_name:myName, from_av:myAv,
+        to_id:req.seeker_id,
+        text:'__velo_guardian_acc__:'+_accPayload
+      }).select('id').single();
+      var _accSentId = _accRes && _accRes.data && _accRes.data.id;
+      if(_accSentId){
+        setTimeout(function(){
+          if(sbClient) sbClient.from('direct_messages').delete().eq('id',_accSentId).then(function(){}).catch(function(){});
+        }, 60000);
+      }
+    }catch(e){}
   }
   _pendingGdReq = null;
   _openGuardianChat(req.seeker_id, req.seeker_name||'Usuario', req.seeker_av||'🧑', req.id, 'guardian');
@@ -2380,6 +2398,15 @@ function pRejectGuardianRequest(){
   if(ov) ov.remove();
   if(req && sbClient){
     sbClient.from('guardian_requests').update({status:'rejected'}).eq('id',req.id).then(function(){}).catch(function(){});
+    // Notify seeker via DM sentinel
+    var _rMyId   = _myUserId();
+    var _rMyName = safeLS('get','velo_user_name') || 'Guardián';
+    var _rMyAv   = safeLS('get','velo_user_av')   || '🌿';
+    sbClient.from('direct_messages').insert({
+      from_id:_rMyId, from_name:_rMyName, from_av:_rMyAv,
+      to_id:req.seeker_id,
+      text:'__velo_guardian_rej__:'+req.id
+    }).then(function(){}).catch(function(){});
   }
   _pendingGdReq = null;
   pToast('🌿','Solicitud rechazada');
@@ -2427,7 +2454,7 @@ async function _gcRender(){
       .order('created_at',{ascending:true}).limit(120);
     var data = res.data || [];
     var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-    var msgs = data.filter(function(m){ return sentinels.indexOf(m.text) < 0 && !(m.text||'').startsWith('__velo_guardian_req__:'); });
+    var msgs = data.filter(function(m){ return sentinels.indexOf(m.text) < 0 && !(m.text||'').startsWith('__velo_guardian_req__:') && !(m.text||'').startsWith('__velo_guardian_acc__:') && !(m.text||'').startsWith('__velo_guardian_rej__:'); });
     if(!msgs.length){
       el.innerHTML = '<div id="gcPlaceholder" style="text-align:center;padding:34px 16px;color:var(--ink5);font-size:13px;line-height:1.6">Este es un espacio seguro 🌿<br>Escriban con presencia y cuidado.</div>';
       return;
@@ -3108,7 +3135,7 @@ function _renderHelpChatMsg(m, isOwn){
   var msgEl = document.getElementById('helpChatMessages');
   if(!msgEl) return;
   var _sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-  if(_sentinels.indexOf(m.text) >= 0 || (m.text||'').startsWith('__velo_guardian_req__:')) return;
+  if(_sentinels.indexOf(m.text) >= 0 || (m.text||'').startsWith('__velo_guardian_req__:') || (m.text||'').startsWith('__velo_guardian_acc__:') || (m.text||'').startsWith('__velo_guardian_rej__:')) return;
   var post = _curHelpPost||{};
   var div = document.createElement('div');
   div.innerHTML = _buildMsgBubble(m.text||'', isOwn, isOwn?'':(post.emoji||'💙'), isOwn?'':(post.name||''), 'helpChatInput', 'helpChatReplyBar', '', {}, '', isOwn?'':(m.from_id||''));
@@ -7904,7 +7931,7 @@ async function _renderDMThread(){
       return;
     }
     var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-    el.innerHTML = data.filter(function(m){ return sentinels.indexOf(m.text) < 0 && !(m.text||'').startsWith('__velo_guardian_req__:'); }).map(function(m){
+    el.innerHTML = data.filter(function(m){ return sentinels.indexOf(m.text) < 0 && !(m.text||'').startsWith('__velo_guardian_req__:') && !(m.text||'').startsWith('__velo_guardian_acc__:') && !(m.text||'').startsWith('__velo_guardian_rej__:'); }).map(function(m){
       var isOwn = m.from_id === myId;
       return _buildMsgBubble(m.text||'', isOwn, isOwn?'':(m.from_av||'🧑'), isOwn?'':(m.from_name||''), 'dmInput', 'dmReplyBar', '', m.reactions||{}, 'direct_messages:'+m.id, isOwn?'':(m.from_id||''));
     }).join('');
@@ -8086,6 +8113,29 @@ function _startGlobalDMListener(){
             _showGuardianRequest(_gReqParsed);
           }
         }catch(e){}
+        return;
+      }
+      if(m.text && m.text.startsWith('__velo_guardian_acc__:')){
+        if(m.id && sbClient) sbClient.from('direct_messages').delete().eq('id',m.id).then(function(){}).catch(function(){});
+        try{
+          var _gAccData = JSON.parse(m.text.slice('__velo_guardian_acc__:'.length));
+          if(document.getElementById('gdWaitOv') && _gAccData){
+            _closeGuardianWaitSheet();
+            if(_seekerPollTmr){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; }
+            if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e2){} _gcSeekerCh = null; }
+            _openGuardianChat(_gAccData.guardian_id, _gAccData.guardian_name||'Guardián', _gAccData.guardian_av||'🌿', _gAccData.req_id, 'seeker');
+          }
+        }catch(e){}
+        return;
+      }
+      if(m.text && m.text.startsWith('__velo_guardian_rej__:')){
+        if(m.id && sbClient) sbClient.from('direct_messages').delete().eq('id',m.id).then(function(){}).catch(function(){});
+        if(document.getElementById('gdWaitOv')){
+          _closeGuardianWaitSheet();
+          if(_seekerPollTmr){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; }
+          if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e2){} _gcSeekerCh = null; }
+          pToast('🌿','El guardián no puede acompañarte ahora. Probá con otro 💚');
+        }
         return;
       }
       if(curId === 'pg-dm-chat' && _dmPeer && _dmPeer.id === m.from_id) return; // already in this chat
