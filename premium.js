@@ -2622,19 +2622,24 @@ function pSendGuardianMsg(){
   var myAv   = safeLS('get','velo_user_av')||'🌿';
   // Optimistic render
   var el = document.getElementById('gcMessages');
+  var _gcLastBubble = null;
   if(el){
     var ph = document.getElementById('gcPlaceholder');
     if(ph) ph.remove();
     var div = document.createElement('div');
     div.innerHTML = _buildMsgBubble(text, true, '', '', 'gcInput', 'gcReplyBar', quote);
     var child = div.firstElementChild;
-    if(child){ el.appendChild(child); el.scrollTop = el.scrollHeight; }
+    if(child){ el.appendChild(child); el.scrollTop = el.scrollHeight; _gcLastBubble = child; }
   }
   _initSupabase();
   if(sbClient){
     sbClient.from('direct_messages').insert({
       from_id:myId, from_name:myName, from_av:myAv, to_id:_gcPeer.id, text:fullText
-    }).then(function(){}).catch(function(){});
+    }).select('id').single().then(function(res){
+      if(res && res.data && res.data.id && _gcLastBubble){
+        _gcLastBubble.setAttribute('data-sb-id', 'direct_messages:'+res.data.id);
+      }
+    }).catch(function(){});
   }
 }
 
@@ -8828,6 +8833,7 @@ function pSendPostChat(){
   try{ guardian = JSON.parse(safeLS('get','velo_postchat_guardian')||'null'); }catch(e){}
   var myId   = _myUserId();
   var myName = _myDisplayName();
+  var myAv   = safeLS('get','velo_user_av') || '🌿';
 
   _initSupabase();
   if(sbClient && guardian && guardian.id){
@@ -8839,11 +8845,12 @@ function pSendPostChat(){
         stars:stars, texto:texto
       }).then(function(){}).catch(function(e){ console.error('[review insert]', e); });
     });
-    // Deliver the review to the guardian's Buzón Velo
+    // Deliver the review to the guardian's Buzón Velo — sender as JSON so the buzón shows reviewer's name/avatar
+    var reviewSender = JSON.stringify({ n: myName, i: myId, a: myAv });
     sbSaveBroadcast('user:'+guardian.id,
       'Recibiste una reseña '+'⭐'.repeat(stars),
       myName+' valoró tu acompañamiento con '+stars+' estrella'+(stars>1?'s':'')+'.'+(texto?'\n\n"'+texto+'"':''),
-      '⭐', 'Velo — Reseñas');
+      '⭐', reviewSender);
   }
   // Store locally so the seeker keeps a record of reviews they gave
   if(noteEl) noteEl.value = '';

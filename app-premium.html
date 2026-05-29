@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260529-293">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260529-293">
+  <link rel="stylesheet" href="premium.css?v=20260529-294">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260529-294">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1993,17 +1993,16 @@
       <div class="p-page fade-in" id="pg-guardian-chat" style="flex-direction:column;height:100%;overflow:hidden">
         <div class="feed-header">
           <button class="p-back-btn" onclick="pEndGuardianChat()">←</button>
-          <div class="feed-header-info">
-            <span id="gcAv" style="font-size:26px">🌿</span>
-            <div style="min-width:0">
-              <div id="gcName" style="font-size:15px;font-weight:700;color:var(--ink)">Tu Guardián/a</div>
-              <div style="font-size:11px;color:var(--sage)">● Sesión privada · Escucha activa</div>
+          <div class="feed-header-info" style="min-width:0;flex:1;overflow:hidden">
+            <span id="gcAv" style="font-size:22px;flex-shrink:0">🌿</span>
+            <div style="min-width:0;overflow:hidden">
+              <div id="gcName" style="font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Tu Guardián/a</div>
+              <div style="font-size:10px;color:var(--sage)">● Sesión privada</div>
             </div>
           </div>
-          <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-            <button onclick="pClearGuardianChat()" style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:10px;padding:6px 10px;color:rgba(116,198,157,.5);font-size:14px;cursor:pointer" title="Limpiar chat">🗑️</button>
-            <button onclick="pReportContent('guardian-chat','gc-'+Date.now(),'Chat con guardián')" style="background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);border-radius:10px;padding:6px 10px;color:rgba(255,120,120,.8);font-size:11px;font-weight:700;cursor:pointer;font-family:'Jost',sans-serif" title="Reportar comportamiento">⚠️ Reportar</button>
-            <button onclick="pEndGuardianChat()" style="background:rgba(116,198,157,.1);border:1.5px solid rgba(116,198,157,.25);color:var(--sage);font-size:11px;font-weight:700;padding:6px 12px;border-radius:10px;cursor:pointer;font-family:'Jost',sans-serif">✅ Finalizar</button>
+          <div style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-shrink:0">
+            <button onclick="pReportContent('guardian-chat','gc-'+Date.now(),'Chat con guardián')" style="background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);border-radius:8px;padding:5px 8px;color:rgba(255,120,120,.85);font-size:13px;cursor:pointer;line-height:1" title="Reportar comportamiento">⚠️</button>
+            <button onclick="pEndGuardianChat()" style="background:rgba(116,198,157,.1);border:1.5px solid rgba(116,198,157,.25);color:var(--sage);font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap">✅ Fin</button>
           </div>
         </div>
         <div style="background:rgba(116,198,157,.1);border-bottom:1px solid rgba(116,198,157,.2);padding:6px 20px;font-size:11px;color:var(--sage);font-style:italic;flex-shrink:0">
@@ -2989,8 +2988,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260529-293"></script>
-<script src="premium-redesign.js?v=20260529-293"></script>
+<script src="premium.js?v=20260529-294"></script>
+<script src="premium-redesign.js?v=20260529-294"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
