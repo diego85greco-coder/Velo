@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260529-291">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260529-291">
+  <link rel="stylesheet" href="premium.css?v=20260529-292">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260529-292">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1373,11 +1373,14 @@
             <div class="p-sheet-handle" style="background:rgba(200,165,100,.3)"></div>
             <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:#fff;margin-bottom:6px">Tu mensaje al mundo</div>
             <p style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:16px">Por defecto anónimo. Podés publicar con tu perfil visible.</p>
-            <div id="bottleMoodRow" style="display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap"></div>
+            <div id="bottleEmojiSection" style="margin-bottom:12px">
+              <div style="font-size:10px;font-weight:700;color:rgba(200,165,100,.7);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px">Elegí un emoji para tu mensaje <span style="color:rgba(255,100,100,.8)">*</span></div>
+              <div id="bottleMoodRow" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+            </div>
             <textarea class="p-textarea dark-ta" id="bottleMsgTa" rows="5" placeholder="¿Qué querés decirle al mundo?"></textarea>
             <div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px">
               <span style="font-size:12px;color:rgba(255,255,255,.45);flex:1">Publicar con mi perfil visible</span>
-              <div id="bottleProfileTog" class="p-tog" onclick="this.classList.toggle('on');document.getElementById('bottleShowProfile').checked=this.classList.contains('on')" style="flex-shrink:0"><div class="p-tog-k"></div></div>
+              <div id="bottleProfileTog" class="p-tog" onclick="pToggleBottleProfile(this)" style="flex-shrink:0"><div class="p-tog-k"></div></div>
               <input type="checkbox" id="bottleShowProfile" style="display:none">
             </div>
             <div style="height:10px"></div>
@@ -2986,8 +2989,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260529-291"></script>
-<script src="premium-redesign.js?v=20260529-291"></script>
+<script src="premium.js?v=20260529-292"></script>
+<script src="premium-redesign.js?v=20260529-292"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

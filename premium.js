@@ -3356,9 +3356,16 @@ function pSendHelpChatMsg(){
     var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
     var myName = safeLS('get','velo_user_name')||'';
     var myAv   = safeLS('get','velo_user_av')||'💚';
+    // Capture the just-rendered bubble so we can stamp its data-sb-id once Supabase returns the row ID.
+    // Without this, reactions from the other user can't find the bubble via the UPDATE subscription.
+    var _hLastBubble = msgEl ? msgEl.lastElementChild : null;
     sbClient.from('direct_messages').insert({
       from_id:myId, from_name:myName, from_av:myAv, to_id:_curHelpPost.userId, text:fullText
-    }).then(function(){}).catch(function(){});
+    }).select('id').single().then(function(res){
+      if(res && res.data && res.data.id && _hLastBubble){
+        _hLastBubble.setAttribute('data-sb-id', 'direct_messages:'+res.data.id);
+      }
+    }).catch(function(){});
   }
 }
 
@@ -4488,8 +4495,12 @@ async function pRenderBottle(){
   if(sbRows !== null){
     usingSB = true;
     allBottles = sbRows.map(_sbBottleRow);
-    // Always include own localStorage bottles in case Supabase RLS excludes them
+    // Purge LS bottles that: (a) are older than 24h, or (b) belong to a different userId (old sessions)
     var myBottlesLS = []; try{ myBottlesLS = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
+    var cutoff24hMs = Date.now() - 24*3600*1000;
+    var cleanedLS = myBottlesLS.filter(function(b){ return b.ts > cutoff24hMs && (!b.userId || b.userId === myId); });
+    if(cleanedLS.length !== myBottlesLS.length) safeLS('set','velo_my_bottles', JSON.stringify(cleanedLS));
+    myBottlesLS = cleanedLS;
     var sbIds = allBottles.reduce(function(s,b){ s[b.id]=1; return s; }, {});
     myBottlesLS.forEach(function(b){ if(!sbIds[b.id] && b.ts > Date.now()-24*3600*1000) allBottles.unshift(b); });
   } else {
@@ -4531,7 +4542,7 @@ async function pRenderBottle(){
     if(isOwn){
       actions = '<div style="display:flex;gap:7px;align-items:center">'
         +'<span style="font-size:11px;color:var(--ink4);font-style:italic">Tu mensaje 🌊</span>'
-        +'<button style="padding:4px 9px;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);border-radius:100px;color:rgba(255,120,120,.75);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pDeleteBottle(\''+b.id+'\')">🗑️</button>'
+        +'<button data-del-btn="1" style="padding:4px 9px;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);border-radius:100px;color:rgba(255,120,120,.75);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pDeleteBottle(\''+b.id+'\')">🗑️</button>'
         +'</div>';
     } else {
       actions = '<div style="display:flex;gap:7px;align-items:center">'
@@ -4548,7 +4559,11 @@ async function pRenderBottle(){
         +'<span style="font-size:11px;color:#1E5A80;font-weight:600">'+_escHtml(b.userName)+'</span>'
         +'<span style="font-size:10px;color:var(--ink5)">· toca para ver perfil</span>'
         +'</div>'
-      : '';
+      : (b.anon
+        ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
+          +'<span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:.3px">👤 Usuario Anónimo</span>'
+          +'</div>'
+        : '');
     return '<div class="dark-bottle" id="bottle-'+b.id+'" style="animation-delay:'+i*.08+'s;border-left:3px solid rgba(80,150,200,.3)">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:20px">'+b.mood+'</span><span style="font-size:10px;color:var(--ink5)">'+relTime+'</span></div>'
       +authorHtml
@@ -4557,7 +4572,7 @@ async function pRenderBottle(){
   }).join('');
 }
 
-var _selectedBottleMood = '💭';
+var _selectedBottleMood = '';
 function pSelBottleMood(el, mood){
   _selectedBottleMood = mood;
   var parent = document.getElementById('bottleMoodRow');
@@ -4567,18 +4582,47 @@ function pSelBottleMood(el, mood){
   });
 }
 
-function pOpenBottleForm(){ openModal('bottleFormOv'); }
+function pToggleBottleProfile(tog){
+  tog.classList.toggle('on');
+  var isVisible = tog.classList.contains('on');
+  document.getElementById('bottleShowProfile').checked = isVisible;
+  // Hide emoji picker when profile is visible (avatar is used instead)
+  var emojiSec = document.getElementById('bottleEmojiSection');
+  if(emojiSec) emojiSec.style.display = isVisible ? 'none' : '';
+}
+
+function pOpenBottleForm(){
+  // Reset emoji selection so the user must pick one each time (when anonymous)
+  _selectedBottleMood = '';
+  var parent = document.getElementById('bottleMoodRow');
+  if(parent) parent.querySelectorAll('button').forEach(function(b){
+    b.style.borderColor = 'transparent';
+    b.style.background = 'none';
+  });
+  // Reset profile toggle to default (anonymous)
+  var tog = document.getElementById('bottleProfileTog');
+  if(tog) tog.classList.remove('on');
+  var cb = document.getElementById('bottleShowProfile');
+  if(cb) cb.checked = false;
+  var emojiSec = document.getElementById('bottleEmojiSection');
+  if(emojiSec) emojiSec.style.display = '';
+  openModal('bottleFormOv');
+}
 
 async function pSendBottle(){
   var ta = document.getElementById('bottleMsgTa');
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí algo antes de lanzar'); return; }
+  var showProfile = document.getElementById('bottleShowProfile') && document.getElementById('bottleShowProfile').checked;
+  // Require an emoji when posting anonymously — it's the only identifier shown
+  if(!showProfile && !_selectedBottleMood){
+    pToast('😊','Elegí un emoji para tu mensaje anónimo'); return;
+  }
   if(!_checkDailyLimit('bottle')){
     closeModal('bottleFormOv');
     pShowDailyLimitModal('bottle');
     return;
   }
   var text = ta.value.trim();
-  var showProfile = document.getElementById('bottleShowProfile') && document.getElementById('bottleShowProfile').checked;
   var isAnon = !showProfile;
   var myName = isAnon ? null : _myDisplayName();
   var myAv   = isAnon ? null : (safeLS('get','velo_user_av')||'🧑');
@@ -4670,8 +4714,33 @@ function pSendBottleReply(){
   setTimeout(function(){ pToast('📬','El autor recibió tu respuesta en su buzón Velo'); }, 1200);
 }
 
-async function pDeleteBottle(bottleId){
-  if(!confirm('¿Eliminar este mensaje del mar?')) return;
+function pDeleteBottle(bottleId){
+  // Two-tap confirm: first tap shows "¿Seguro?" state; second tap deletes
+  var btn = document.querySelector('#bottle-'+bottleId+' [data-del-btn]');
+  if(btn && btn.dataset.confirmPending === '1'){
+    _doDeleteBottle(bottleId);
+  } else {
+    if(btn){
+      btn.dataset.confirmPending = '1';
+      btn.textContent = '¿Seguro? 🗑️';
+      btn.style.background = 'rgba(255,80,80,.18)';
+      btn.style.borderColor = 'rgba(255,80,80,.4)';
+      btn.style.color = 'rgba(255,120,120,.95)';
+      setTimeout(function(){
+        if(btn && btn.dataset.confirmPending === '1'){
+          btn.dataset.confirmPending = '0';
+          btn.textContent = '🗑️';
+          btn.style.background = 'rgba(255,80,80,.08)';
+          btn.style.borderColor = 'rgba(255,80,80,.2)';
+          btn.style.color = 'rgba(255,120,120,.75)';
+        }
+      }, 3000);
+    } else {
+      _doDeleteBottle(bottleId); // fallback if button not found
+    }
+  }
+}
+async function _doDeleteBottle(bottleId){
   _initSupabase();
   if(sbClient){
     try{ await sbClient.from('bottles').delete().eq('id', bottleId); }catch(e){}
@@ -4681,7 +4750,7 @@ async function pDeleteBottle(bottleId){
   var card = document.getElementById('bottle-'+bottleId);
   if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ pRenderBottle(); },350); }
   else { pRenderBottle(); }
-  pToast('🌊','Mensaje eliminado');
+  pToast('🌊','Mensaje eliminado del mar');
 }
 
 function pReportBottle(bottleId){

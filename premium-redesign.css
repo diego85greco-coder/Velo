@@ -2384,8 +2384,11 @@ body.r-dark .p-page {
 /* Exception: pages with their own backgrounds */
 body.r-dark #pg-home,
 body.r-dark #pg-feed,
-body.r-dark #pg-dm-chat,
-body.r-dark #pg-help-chat { background: unset !important; }
+body.r-dark #pg-dm-chat { background: unset !important; }
+/* Help-chat keeps its own dark green gradient */
+body.r-dark #pg-help-chat {
+  background: linear-gradient(160deg, #0b1c0e 0%, #080e08 100%) !important;
+}
 body.r-dark #pg-home {
   background: radial-gradient(circle at 14% 10%, rgba(20,90,50,.40) 0%, transparent 50%),
     radial-gradient(circle at 86% 85%, rgba(25,65,35,.28) 0%, transparent 45%),
@@ -5818,3 +5821,34 @@ body.r-dark #gdBadge .gd-prog-bg,
 body.r-dark #gdBadge > div > div > div[style*="background:var(--cream2)"] {
   background: rgba(255,255,255,.12) !important;
 }
+
+/* ── v292: Post-chat rating — dark mode readability ─────────────── */
+body.r-dark #pg-post-chat .star-btn {
+  opacity: .45;
+  filter: grayscale(20%);
+}
+body.r-dark #pg-post-chat .star-btn.on {
+  opacity: 1;
+  filter: none;
+}
+body.r-dark #pg-post-chat .p-tag-chip {
+  background: rgba(255,255,255,.08) !important;
+  border-color: rgba(255,255,255,.18) !important;
+  color: rgba(255,255,255,.75) !important;
+}
+body.r-dark #pg-post-chat .p-tag-chip:hover {
+  border-color: rgba(116,198,157,.5) !important;
+}
+body.r-dark #pg-post-chat .p-tag-chip.on {
+  background: rgba(116,198,157,.22) !important;
+  border-color: rgba(116,198,157,.7) !important;
+  color: #7de0a8 !important;
+}
+body.r-dark #pg-post-chat .p-hero-text { color: rgba(116,198,157,.95) !important; }
+body.r-dark #pg-post-chat .p-subtitle  { color: rgba(255,255,255,.58) !important; }
+body.r-dark #pg-post-chat .p-textarea  {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.15) !important;
+  color: #fff !important;
+}
+body.r-dark #pg-post-chat .p-textarea::placeholder { color: rgba(255,255,255,.35) !important; }
