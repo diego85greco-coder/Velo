@@ -1091,7 +1091,7 @@ function _loadHomeData(){
   _updateHomeBell();
   // Hero entrance animation — retriggers on every navigation to home
   var _ha = document.querySelector('#pg-home .r-hero-v2');
-  if(_ha){ _ha.classList.remove('r-greeting-anim'); requestAnimationFrame(function(){ requestAnimationFrame(function(){ _ha.classList.add('r-greeting-anim'); }); }); }
+  if(_ha){ _ha.classList.remove('r-greeting-anim'); void _ha.offsetHeight; setTimeout(function(){ _ha.classList.add('r-greeting-anim'); }, 80); }
   // Daily quote in home header (Gemini, cached per day)
   setTimeout(_loadDailyMotivationalQuote, 200);
 }
