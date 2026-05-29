@@ -420,7 +420,10 @@ async function _sbSyncProfile(userId){
         if(gr.data[0].is_guardian === true){
           safeLS('set','velo_is_guardian','true');
           if(gr.data[0].status && gr.data[0].status !== 'offline'){
+            // Keep both status keys in sync so UI and heartbeat agree
             safeLS('set','velo_guardian_status', gr.data[0].status);
+            safeLS('set','velo_user_status', gr.data[0].status);
+            _myGuardianStatus = gr.data[0].status;
           }
           setTimeout(_startGuardianReqListener, 300);
         }
@@ -1785,8 +1788,12 @@ function _gBtnStyle(isOn){
 function _renderHomeStatusToggle(){
   var el = document.getElementById('homeStatusToggle');
   if(!el) return;
-  var st = safeLS('get','velo_user_status') || 'disponible';
   var isGuardian = safeLS('get','velo_is_guardian') === 'true';
+  // For guardians use the guardian status (what Supabase actually broadcasts),
+  // not velo_user_status which can lag behind after a profile sync.
+  var st = isGuardian
+    ? (safeLS('get','velo_guardian_status') || 'disponible')
+    : (safeLS('get','velo_user_status') || 'disponible');
 
   // Segmented pill: Disponible | Ocupado
   var segPill = '<div class="r-status-combined-pill">'
