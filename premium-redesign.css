@@ -5335,3 +5335,23 @@ body.r-dark .gc-username {
   color: rgba(116,198,157,.70) !important;
   opacity: 1;
 }
+
+/* ── v224: Profile stats — legible in both light and dark mode ───── */
+.profile-stat-num {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1B6B4A; /* dark vivid green — readable on white card */
+}
+.profile-stat-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  color: #3D6048; /* --ink3 equivalent — NOT the washed-out ink5 */
+  margin-top: 2px;
+}
+body.r-dark .profile-stat-num {
+  color: #72e0a6 !important; /* bright sage — high contrast on dark */
+}
+body.r-dark .profile-stat-lbl {
+  color: rgba(255,255,255,.60) !important;
+}
