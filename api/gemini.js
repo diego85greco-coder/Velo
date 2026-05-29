@@ -1,6 +1,6 @@
 // Vercel serverless function — Gemini via direct REST API (no SDK dependency)
-// Tries models in order: 2.5-flash → 2.5-flash-preview → 1.5-flash
-// Accepts GEMINI_API_KEY or GEMINI_KEY env var name
+// Tries models: 2.5-flash → 2.5-flash-preview → 1.5-flash → 1.5-flash-latest
+// Disables Gemini 2.5 thinking to save tokens/latency for app use cases
 
 const MODELS = [
   'gemini-2.5-flash',
@@ -8,8 +8,24 @@ const MODELS = [
   'gemini-1.5-flash',
   'gemini-1.5-flash-latest'
 ];
-const BASE_URL = (model) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${model}`;
+const BASE_URL = (m) => `https://generativelanguage.googleapis.com/v1beta/models/${m}`;
+
+// Merge in thinkingConfig: disable thinking (only accepted by 2.5 models, ignored by 1.5)
+function buildGenCfg(overrides) {
+  return Object.assign(
+    { temperature: 0.7, maxOutputTokens: 400, thinkingConfig: { thinkingBudget: 0 } },
+    overrides || {}
+  );
+}
+
+// Extract the first non-thought text part from candidates
+function extractText(json) {
+  const cand = json.candidates && json.candidates[0];
+  const parts = cand && cand.content && cand.content.parts;
+  if (!parts || !parts.length) return null;
+  const tp = parts.find(p => !p.thought && p.text);
+  return tp ? tp.text : null;
+}
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -23,7 +39,7 @@ module.exports = async function handler(req, res) {
 
   const { type, prompt, systemPrompt, msgs, cfg } = req.body || {};
 
-  // Try each model until one succeeds
+  // Call each model in order until one succeeds with actual text
   async function callGemini(body) {
     for (const model of MODELS) {
       try {
@@ -33,22 +49,10 @@ module.exports = async function handler(req, res) {
           body: JSON.stringify(body)
         });
         const json = await r.json();
-        if (!r.ok) {
-          console.log(`[Velo] ${model} HTTP ${r.status} — trying next`);
-          continue;
-        }
-        // Validate candidates exist and have text
-        const cand = json.candidates && json.candidates[0];
-        const parts = cand && cand.content && cand.content.parts;
-        if (!parts || !parts.length) {
-          console.log(`[Velo] ${model} returned no parts — trying next`);
-          continue;
-        }
-        return { json, model };
-      } catch (e) {
-        console.log(`[Velo] ${model} exception: ${e.message}`);
-        continue;
-      }
+        if (!r.ok) { console.log(`[Velo] ${model} HTTP ${r.status} — next`); continue; }
+        if (extractText(json)) return json;
+        console.log(`[Velo] ${model} no text (finishReason=${(json.candidates||[{}])[0].finishReason}) — next`);
+      } catch (e) { console.log(`[Velo] ${model} err: ${e.message}`); }
     }
     return null;
   }
@@ -64,18 +68,13 @@ module.exports = async function handler(req, res) {
         role: m.user ? 'user' : 'model',
         parts: [{ text: m.text }]
       }));
-
-      const body = {
-        contents,
-        generationConfig: Object.assign({ temperature: 0.88, maxOutputTokens: 200 }, cfg || {})
-      };
+      const body = { contents, generationConfig: buildGenCfg(Object.assign({ maxOutputTokens: 250 }, cfg || {})) };
       if (systemPrompt) body.system_instruction = { parts: [{ text: systemPrompt }] };
 
-      const result = await callGemini(body);
-      if (!result) return res.status(500).json({ error: 'All Gemini models failed' });
-      return res.json(result.json);
+      const json = await callGemini(body);
+      if (!json) return res.status(500).json({ error: 'All Gemini models failed' });
+      return res.json(json);
     } catch (e) {
-      console.error('[Velo] Gemini chat error:', e.message);
       return res.status(500).json({ error: e.message });
     }
   }
@@ -86,14 +85,12 @@ module.exports = async function handler(req, res) {
       const body = {
         contents: [{ role: 'user', parts: [{ text: prompt || '' }] }],
         tools: [{ google_search: {} }],
-        generationConfig: Object.assign({ temperature: 0.5, maxOutputTokens: 1500 }, cfg || {})
+        generationConfig: buildGenCfg(Object.assign({ temperature: 0.5, maxOutputTokens: 1800 }, cfg || {}))
       };
-
-      const result = await callGemini(body);
-      if (!result) return res.status(500).json({ error: 'All Gemini models failed' });
-      return res.json(result.json);
+      const json = await callGemini(body);
+      if (!json) return res.status(500).json({ error: 'All Gemini models failed' });
+      return res.json(json);
     } catch (e) {
-      console.error('[Velo] Gemini grounded error:', e.message);
       return res.status(500).json({ error: e.message });
     }
   }
@@ -102,14 +99,12 @@ module.exports = async function handler(req, res) {
   try {
     const body = {
       contents: [{ role: 'user', parts: [{ text: prompt || '' }] }],
-      generationConfig: Object.assign({ temperature: 0.7, maxOutputTokens: 300 }, cfg || {})
+      generationConfig: buildGenCfg(cfg || {})
     };
-
-    const result = await callGemini(body);
-    if (!result) return res.status(500).json({ error: 'All Gemini models failed' });
-    return res.json(result.json);
+    const json = await callGemini(body);
+    if (!json) return res.status(500).json({ error: 'All Gemini models failed' });
+    return res.json(json);
   } catch (e) {
-    console.error('[Velo] Gemini generate error:', e.message);
     return res.status(500).json({ error: e.message });
   }
 };
