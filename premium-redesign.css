@@ -5795,3 +5795,26 @@ body:not(.r-dark) #helpMsgTa::placeholder {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
 }
+
+/* ── v287: guardian detail — dark mode card readability ─────────── */
+body.r-dark .gd-hero-card {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(116,198,157,.18) !important;
+}
+body.r-dark .gd-stat {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(116,198,157,.15) !important;
+}
+body.r-dark .gd-av-lg {
+  background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(116,198,157,.15)) !important;
+  border-color: rgba(116,198,157,.25) !important;
+}
+/* Badge card generated in JS also uses hardcoded rgba(255,255,255,.7) */
+body.r-dark #gdBadge > div {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(116,198,157,.18) !important;
+}
+body.r-dark #gdBadge .gd-prog-bg,
+body.r-dark #gdBadge > div > div > div[style*="background:var(--cream2)"] {
+  background: rgba(255,255,255,.12) !important;
+}

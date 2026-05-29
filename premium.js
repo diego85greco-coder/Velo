@@ -1960,12 +1960,13 @@ function pOpenGuardian(id){
   var tierBase = g.convs >= 100 ? 100 : g.convs >= 40 ? 40 : g.convs >= 20 ? 20 : g.convs >= 5 ? 5 : 0;
   var tierTop  = g.convs >= 100 ? 999 : g.convs >= 40 ? 100 : g.convs >= 20 ? 40 : g.convs >= 5 ? 20 : 5;
   var tierPct  = badge.next ? Math.min(100, Math.round((g.convs - tierBase) / (tierTop - tierBase) * 100)) : 100;
-  var badgeHtml = '<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.07);border-radius:14px;padding:12px 16px;margin-bottom:14px">'
+  var _isDark = document.body.classList.contains('r-dark');
+  var badgeHtml = '<div style="display:flex;align-items:center;gap:10px;background:'+(_isDark?'rgba(255,255,255,.07)':'rgba(255,255,255,.7)')+';border:1px solid '+(_isDark?'rgba(116,198,157,.18)':'rgba(0,0,0,.07)')+';border-radius:14px;padding:12px 16px;margin-bottom:14px">'
     +'<span style="font-size:28px">'+badge.icon+'</span>'
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:13px;font-weight:700;color:var(--ink)">Guardián '+badge.name+'</div>'
     +'<div style="font-size:11px;color:var(--ink4);margin-bottom:6px">'+g.convs+' conversaciones completadas</div>'
-    +'<div style="height:5px;background:var(--cream2);border-radius:99px;overflow:hidden">'
+    +'<div style="height:5px;background:'+(_isDark?'rgba(255,255,255,.12)':'var(--cream2)')+';border-radius:99px;overflow:hidden">'
     +'<div style="height:100%;width:'+tierPct+'%;background:'+badge.color+';border-radius:99px;transition:width .6s"></div>'
     +'</div>'
     +(badge.next ? '<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+badge.needed+' conversaciones para '+badge.next+'</div>' : '<div style="font-size:10px;color:var(--ink5);margin-top:4px">Nivel máximo ✨</div>')
