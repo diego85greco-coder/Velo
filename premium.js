@@ -3575,6 +3575,15 @@ function pOpenNewsDetail(i){
   var item = _newsListCache[i];
   if(!item) return;
   var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
+  var _nd = new Date();
+  var _months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var _dateStr = _nd.getDate()+' de '+_months[_nd.getMonth()]+' de '+_nd.getFullYear();
+  var sourceBlock = '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-bottom:18px;padding:10px 14px;background:rgba(116,198,157,.07);border-radius:10px;border:1px solid rgba(116,198,157,.18)">'
+    +'<span style="font-size:12px;color:var(--ink4)">📅 '+_dateStr+'</span>'
+    +(hasLink
+      ? '<span style="color:var(--ink5);font-size:12px">·</span><a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="font-size:12px;color:var(--sage2);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a>'
+      : '<span style="color:var(--ink5);font-size:12px">·</span><span style="font-size:12px;color:var(--ink4);font-style:italic">✨ Velo IA</span>')
+    +'</div>';
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
   ov.id = 'newsDetailOv';
@@ -3582,13 +3591,14 @@ function pOpenNewsDetail(i){
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-size:52px;text-align:center;margin-bottom:12px">'+_escHtml(item.emoji||'📰')+'</div>'
     +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:var(--ink);margin-bottom:14px;line-height:1.3;text-align:center">'+_escHtml(item.titulo)+'</h2>'
+    +sourceBlock
     +'<p style="font-size:14px;color:var(--ink2);line-height:1.75;margin-bottom:20px">'+_escHtml(item.cuerpo)+'</p>'
     +'<div style="background:var(--sage7);border-radius:12px;padding:12px 14px;margin-bottom:20px">'
     +'<div style="font-size:11px;font-weight:700;color:var(--sage3);letter-spacing:.5px;margin-bottom:6px">✨ REFLEXIÓN VELO IA</div>'
     +'<p style="font-size:13px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+_escHtml(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
     +'</div>'
     +(hasLink ? '<a href="'+item.sourceUrl+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔗 Leer artículo completo en '+_escHtml(item.sourceName||'la fuente')+'</a>'
-      : '<p style="font-size:11px;color:var(--ink5);text-align:center;margin-bottom:10px;font-style:italic">✨ Historia generada por Velo IA · actualizada a diario</p>')
+      : '')
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'newsDetailOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
