@@ -1746,6 +1746,10 @@ function pToggleGuardianMode(){
     _updateGuardianPresence();
     pToast('👤','Ya no aparecés en la lista de guardianes');
   }
+  // Rebuild the home-page status pill immediately so the toggle reflects the new state
+  _renderHomeStatusToggle();
+  _renderMyStatusBar();
+  pRenderGuardians();
 }
 
 function pSaveGuardianBio(){
