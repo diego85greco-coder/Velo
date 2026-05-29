@@ -2100,10 +2100,13 @@ async function pConfirmAskGuardian(){
     });
   }catch(e){}
 
-  _gcPeer = { id: guardianUid, name: guardian.name||'Guardián', av: guardian.av||'🌿' };
-  _showGuardianWaitSheet(guardian.name||'el guardián', reqId);
+  var _noRespGuardianId   = guardianUid;
+  var _noRespGuardianName = guardian.name || 'Guardián';
+  var _noRespGuardianAv   = guardian.av   || '🌿';
+  _gcPeer = { id: guardianUid, name: _noRespGuardianName, av: _noRespGuardianAv };
+  _showGuardianWaitSheet(_noRespGuardianName, reqId);
   _subscribeSeekerRequest(reqId);
-  // 2-minute timeout: update overlay with disconnection message
+  // 2-minute timeout: show message compose screen for Buzón Velo
   if(_seekerWaitTimer) clearTimeout(_seekerWaitTimer);
   _seekerWaitTimer = setTimeout(function(){
     var ov = document.getElementById('gdWaitOv');
@@ -2111,14 +2114,40 @@ async function pConfirmAskGuardian(){
     var sheet = ov.querySelector('.p-sheet');
     if(sheet){
       sheet.innerHTML = '<div class="p-sheet-handle"></div>'
-        +'<div style="text-align:center;padding:20px 0 8px">'
-        +'<div style="font-size:40px;margin-bottom:10px">💤</div>'
-        +'<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:10px">Sin respuesta</div>'
-        +'<p style="font-size:13px;color:var(--ink3);margin:0 0 20px;line-height:1.6;padding:0 8px">Quizás el usuario que estás intentando conectar se desconectó y por eso no responde a la solicitud. Podés intentar en otro momento, o mandarle un mensaje al buzón Velo interno.</p>'
-        +'<div style="display:flex;flex-direction:column;gap:10px;padding:0 4px 8px">'
-        +'<button onclick="pCancelGuardianWait(\''+_jsAttr(reqId)+'\')" style="padding:12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Intentar en otro momento</button>'
-        +'<button onclick="pCancelGuardianWait(\''+_jsAttr(reqId)+'\');pGoTo(\'inbox\')" style="padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">💌 Ir al buzón Velo</button>'
+        +'<div style="padding:16px 4px 8px">'
+        +'<div style="text-align:center;margin-bottom:14px">'
+        +'<div style="font-size:36px;margin-bottom:8px">💤</div>'
+        +'<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px">Sin respuesta</div>'
+        +'<p style="font-size:12.5px;color:var(--ink3);margin:0;line-height:1.55">'+_escHtml(_noRespGuardianName)+' no está disponible ahora. Podés dejarle un mensaje y te responderá por el Buzón Velo.</p>'
+        +'</div>'
+        +'<textarea id="gdNoRespMsg" rows="3" placeholder="Escribí tu mensaje para '+_escHtml(_noRespGuardianName)+'…" maxlength="500" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-family:\'Jost\',sans-serif;background:var(--cream);color:var(--ink);resize:none;outline:none;margin-bottom:10px"></textarea>'
+        +'<div style="display:flex;flex-direction:column;gap:8px">'
+        +'<button id="gdSendNoRespBtn" style="padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">💌 Enviar mensaje al Buzón Velo</button>'
+        +'<button id="gdCancelNoRespBtn" style="padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Intentar en otro momento</button>'
         +'</div></div>';
+      // Wire buttons after DOM insertion
+      var sendBtn   = sheet.querySelector('#gdSendNoRespBtn');
+      var cancelBtn = sheet.querySelector('#gdCancelNoRespBtn');
+      if(cancelBtn) cancelBtn.addEventListener('click', function(){ pCancelGuardianWait(reqId); });
+      if(sendBtn) sendBtn.addEventListener('click', function(){
+        var ta = sheet.querySelector('#gdNoRespMsg');
+        var msg = ta ? ta.value.trim() : '';
+        if(!msg){ pToast('✏️','Escribí un mensaje primero'); return; }
+        _initSupabase();
+        var myId   = _myUserId();
+        var myName = safeLS('get','velo_user_name') || 'Usuario';
+        var myAv   = safeLS('get','velo_user_av')   || '🧑';
+        if(sbClient && myId && _noRespGuardianId){
+          sbClient.from('direct_messages').insert({
+            from_id: myId, from_name: myName, from_av: myAv,
+            to_id: _noRespGuardianId,
+            text: '💙 Solicité tu acompañamiento pero no pudiste responder. Te dejo este mensaje:\n\n' + msg
+          }).then(function(){
+            pToast('💌','Mensaje enviado al Buzón Velo de '+_noRespGuardianName);
+          }).catch(function(){ pToast('⚠️','No se pudo enviar el mensaje'); });
+        }
+        pCancelGuardianWait(reqId);
+      });
     }
     if(_seekerPollTmr){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; }
     if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
