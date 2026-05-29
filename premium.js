@@ -7463,7 +7463,7 @@ async function pRenderContacts(){
     {id:'online',  label:'● Online',         count:onlineList.length},
     {id:'fans',    label:'♥ Me agregaron',   count:favMeRows.length}
   ];
-  if(blockedList.length) tabs.push({id:'blocked', label:'🚫 Bloqueados', count:blockedList.length});
+  tabs.push({id:'blocked', label:'🚫 Bloqueados', count:blockedList.length});
 
   // ── Tab bar ──
   var tabsHtml = '<div class="r-contacts-tabs">'
@@ -7508,15 +7508,18 @@ async function pRenderContacts(){
 
   // ── Blocked content ──
   var blockedHtml = '<div id="contacts-blocked" style="display:none">'
-    +'<div style="font-size:11px;color:var(--ink5);margin-bottom:12px;font-style:italic">Podés desbloquear a cualquier persona en cualquier momento.</div>'
-    +blockedList.map(function(b){
-      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cream);border-radius:14px;margin-bottom:8px;border:1.5px solid rgba(200,50,50,.15);opacity:.75">'
-        +'<div style="flex-shrink:0;filter:grayscale(1);opacity:.7">'+_avInline(b.av||'🧑',36)+'</div>'
-        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+_escHtml(b.name||'Usuario')+'</div>'
-        +'<div style="font-size:11px;color:var(--ink5)">Bloqueado/a</div></div>'
-        +'<button onclick="pUnblockUser('+_jsAttr(b.id)+')" style="padding:6px 12px;background:rgba(116,198,157,.12);border:1.5px solid rgba(116,198,157,.35);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;flex-shrink:0">Desbloquear</button>'
-        +'</div>';
-    }).join('')
+    +(!blockedList.length
+      ? '<div class="p-empty"><span class="p-empty-emoji">🚫</span><div class="p-empty-title">Sin usuarios bloqueados</div><div class="p-empty-sub">Cuando bloqueés a alguien aparecerá aquí y podrás desbloquearlo.</div></div>'
+      : '<div style="font-size:11px;color:var(--ink5);margin-bottom:12px;font-style:italic">Podés desbloquear a cualquier persona en cualquier momento.</div>'
+        +blockedList.map(function(b){
+          return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cream);border-radius:14px;margin-bottom:8px;border:1.5px solid rgba(200,50,50,.15);opacity:.75">'
+            +'<div style="flex-shrink:0;filter:grayscale(1);opacity:.7">'+_avInline(b.av||'🧑',36)+'</div>'
+            +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+_escHtml(b.name||'Usuario')+'</div>'
+            +'<div style="font-size:11px;color:var(--ink5)">Bloqueado/a</div></div>'
+            +'<button onclick="pUnblockUser('+_jsAttr(b.id)+')" style="padding:6px 12px;background:rgba(116,198,157,.12);border:1.5px solid rgba(116,198,157,.35);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;flex-shrink:0">Desbloquear</button>'
+            +'</div>';
+        }).join('')
+    )
     +'</div>';
 
   el.innerHTML = tabsHtml + favsHtml + onlineHtml + fansHtml + blockedHtml;
