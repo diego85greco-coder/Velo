@@ -61,8 +61,14 @@ module.exports = async function handler(req, res) {
       });
       const result = await model.generateContent(prompt || '');
       const text = result.response.text();
+      // Pass through groundingMetadata so the client can extract real article URLs
+      const candidate = (result.response.candidates || [])[0] || {};
+      const groundingChunks = (candidate.groundingMetadata && candidate.groundingMetadata.groundingChunks) || [];
       return res.json({
-        candidates: [{ content: { parts: [{ text }] } }]
+        candidates: [{
+          content: { parts: [{ text }] },
+          groundingMetadata: { groundingChunks }
+        }]
       });
     } catch (e) {
       console.error('[Velo] Gemini grounded error:', e.message);
