@@ -498,3 +498,111 @@ function pCollapseHappyCompose() {
   bar.style.display = '';
   body.classList.remove('happy-compose--open');
 }
+
+// ── v192: "Mío" tab — expiry banner + mine card border + comment scroll ──
+(function() {
+  var _orig = window._renderMyHappy;
+  if (typeof _orig !== 'function') return;
+  window._renderMyHappy = function(list, posts, queue, myId) {
+    _orig.call(this, list, posts, queue, myId);
+    var mine = posts.filter(function(p) { return p.userId === myId; });
+    var active = mine[0];
+    if (!active) return;
+    var card = list.querySelector('.happy-card[data-id="' + active.id + '"]');
+    if (!card) return;
+    // Green border to distinguish from feed cards
+    card.classList.add('happy-mine-card');
+    // Scrollable comment section on desktop
+    var commSect = card.querySelector('div[style*="border-top"]');
+    if (commSect) commSect.classList.add('happy-mine-comments');
+    // Expiry warning banner
+    if (typeof _happyTimeLeft === 'function') {
+      var timeLeft = _happyTimeLeft(active.ts);
+      if (timeLeft) {
+        var banner = document.createElement('div');
+        banner.className = 'happy-expiry-banner';
+        banner.innerHTML = '🗑 Tu publicación se eliminará del muro en <strong>' + timeLeft
+          + '</strong> &nbsp;·&nbsp; <span style="opacity:.78">El historial se conserva</span>';
+        card.insertAdjacentElement('afterend', banner);
+      }
+    }
+  };
+})();
+
+// ── v192: History tab — row layout + per-item Ver/Borrar ─────────
+(function() {
+  if (typeof window._renderHappyHistory !== 'function') return;
+  window._renderHappyHistory = function(list) {
+    var history = [];
+    try { history = JSON.parse(safeLS('get','velo_happy_history') || '[]'); } catch(e) {}
+    if (!history.length) {
+      list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">📅</span>'
+        + '<div class="p-empty-title">Tu historial está vacío</div>'
+        + '<div class="p-empty-sub">Cuando publiques algo en el Muro, quedará guardado aquí para siempre 🌟</div></div>';
+      return;
+    }
+    list.innerHTML = '<div class="hh-list">'
+      + history.map(function(h, i) {
+          var date = new Date(h.ts);
+          var dateStr = date.toLocaleDateString('es', { day:'2-digit', month:'short', year:'numeric' });
+          var relStr = typeof _happyRelTime === 'function' ? _happyRelTime(h.ts) : '';
+          var text = (h.text || '');
+          var preview = text.length > 55 ? text.slice(0, 55) + '…' : text;
+          return '<div class="hh-row">'
+            + '<div class="hh-left"><div class="hh-date">' + dateStr + '</div>'
+            + (relStr ? '<div class="hh-rel">' + relStr + '</div>' : '')
+            + '</div>'
+            + '<div class="hh-mid"><span class="hh-emoji">' + (h.emoji || '☀️') + '</span>'
+            + '<span class="hh-text">' + (typeof _escHtml === 'function' ? _escHtml(preview) : preview) + '</span></div>'
+            + '<div class="hh-actions">'
+            + '<button class="hh-btn hh-btn-view" onclick="pHappyHistView(' + i + ')">👁 Ver</button>'
+            + '<button class="hh-btn hh-btn-del" onclick="pHappyHistDel(' + i + ')" title="Eliminar">🗑</button>'
+            + '</div></div>';
+        }).join('')
+      + '</div>';
+  };
+})();
+
+function pHappyHistView(idx) {
+  var history = [];
+  try { history = JSON.parse(safeLS('get','velo_happy_history') || '[]'); } catch(e) {}
+  var h = history[idx];
+  if (!h) return;
+  var date = new Date(h.ts);
+  var dateStr = date.toLocaleDateString('es', { day:'2-digit', month:'long', year:'numeric' });
+  var rxHtml = '';
+  if (h.reactions) {
+    Object.keys(h.reactions).forEach(function(e) {
+      if ((h.reactions[e] || 0) > 0)
+        rxHtml += '<span style="font-size:13px;background:rgba(255,224,102,.2);border-radius:100px;padding:4px 10px;font-weight:600">' + e + ' ' + h.reactions[e] + '</span>';
+    });
+  }
+  var existing = document.getElementById('happyHistOv');
+  if (existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.id = 'happyHistOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);animation:p-fadeIn .2s ease';
+  var esc = typeof _escHtml === 'function' ? _escHtml : function(s){ return s; };
+  ov.innerHTML = '<div class="hh-modal">'
+    + '<div class="hh-modal-hdr">'
+    +   '<div><div style="font-size:10px;font-weight:800;color:var(--sage);letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">Historial</div>'
+    +   '<div style="font-size:14px;font-weight:700;color:var(--ink)">' + dateStr + '</div></div>'
+    +   '<button onclick="document.getElementById(\'happyHistOv\').remove()" style="background:rgba(0,0,0,.06);border:none;font-size:18px;cursor:pointer;color:var(--ink4);line-height:1;padding:6px 9px;border-radius:50%">✕</button>'
+    + '</div>'
+    + (h.photo ? '<img src="' + h.photo + '" style="width:100%;max-height:260px;object-fit:cover;border-radius:12px;margin-bottom:16px;display:block">' : '')
+    + (h.text ? '<p style="font-size:15px;line-height:1.75;color:var(--ink);font-family:\'Cormorant Garamond\',serif;font-style:italic;margin:0 0 16px">"' + esc(h.text) + '"</p>' : '')
+    + (rxHtml ? '<div style="display:flex;gap:6px;flex-wrap:wrap">' + rxHtml + '</div>' : '')
+    + '</div>';
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
+function pHappyHistDel(idx) {
+  if (!confirm('¿Eliminar esta entrada del historial? Esta acción no se puede deshacer.')) return;
+  var history = [];
+  try { history = JSON.parse(safeLS('get','velo_happy_history') || '[]'); } catch(e) {}
+  history.splice(idx, 1);
+  safeLS('set','velo_happy_history', JSON.stringify(history));
+  if (typeof pRenderHappy === 'function') pRenderHappy();
+  if (typeof pToast === 'function') pToast('🗑️', 'Entrada eliminada del historial');
+}

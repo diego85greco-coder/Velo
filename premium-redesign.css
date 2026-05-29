@@ -3863,3 +3863,155 @@ body.r-dark #happyFixedHdr {
   background: rgba(8,20,12,.92) !important;
   border-bottom-color: rgba(116,198,157,.15) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v192: "Mío" tab + Historial — detailed polish
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Active "mine" post card — green border to distinguish from feed */
+.happy-mine-card {
+  border: 2px solid #3a9c55 !important;
+  box-shadow: 0 0 0 3px rgba(58,156,85,.10), 0 4px 20px rgba(0,0,0,.10) !important;
+}
+body.r-dark .happy-mine-card {
+  border-color: #4db870 !important;
+  box-shadow: 0 0 0 3px rgba(58,156,85,.18), 0 4px 20px rgba(0,0,0,.35) !important;
+}
+
+/* Expiry warning banner below mine card */
+.happy-expiry-banner {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 7px 14px;
+  margin: -6px 0 16px;
+  background: rgba(220,50,50,.08);
+  border: 1px solid rgba(220,50,50,.22);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  color: rgba(180,40,40,.90);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.4;
+}
+body.r-dark .happy-expiry-banner {
+  background: rgba(220,50,50,.15) !important;
+  border-color: rgba(220,50,50,.32) !important;
+  color: rgba(255,130,130,.92) !important;
+}
+
+/* Comment thread inside mine card — scroll on desktop */
+@media (min-width: 768px) {
+  .happy-mine-comments {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(116,198,157,.35) transparent;
+  }
+  .happy-mine-comments::-webkit-scrollbar { width: 4px; }
+  .happy-mine-comments::-webkit-scrollbar-thumb { background: rgba(116,198,157,.35); border-radius: 4px; }
+}
+
+/* ── History rows (hh-*) ─────────────────────────────────────────── */
+.hh-list { display: flex; flex-direction: column; gap: 8px; }
+
+.hh-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,.88);
+  border: 1px solid rgba(80,150,105,.18);
+  border-radius: 14px;
+  transition: border-color .18s, box-shadow .18s;
+}
+.hh-row:hover {
+  border-color: rgba(58,156,85,.45);
+  box-shadow: 0 2px 10px rgba(0,0,0,.08);
+}
+body.r-dark .hh-row {
+  background: rgba(18,42,28,.88) !important;
+  border-color: rgba(58,107,71,.55) !important;
+}
+body.r-dark .hh-row:hover {
+  border-color: #3a9c55 !important;
+}
+
+.hh-left { flex-shrink: 0; min-width: 72px; }
+.hh-date { font-size: 11px; font-weight: 700; color: var(--sage); line-height: 1.3; }
+.hh-rel  { font-size: 10px; color: var(--ink5); margin-top: 1px; }
+
+.hh-mid {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+}
+.hh-emoji { font-size: 18px; flex-shrink: 0; }
+.hh-text {
+  font-size: 12.5px;
+  color: var(--ink3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Jost', sans-serif;
+}
+body.r-dark .hh-text { color: rgba(255,255,255,.68) !important; }
+
+.hh-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.hh-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  min-height: 34px;
+  border: 1.5px solid;
+  transition: all .15s;
+}
+.hh-btn-view {
+  background: rgba(116,198,157,.10);
+  border-color: rgba(116,198,157,.35);
+  color: var(--sage);
+}
+.hh-btn-view:hover { background: rgba(116,198,157,.22); border-color: rgba(116,198,157,.6); }
+.hh-btn-del {
+  background: rgba(220,50,50,.06);
+  border-color: rgba(220,50,50,.22);
+  color: rgba(190,50,50,.80);
+  padding: 6px 9px;
+}
+.hh-btn-del:hover { background: rgba(220,50,50,.14); border-color: rgba(220,50,50,.50); }
+body.r-dark .hh-btn-view { color: #7de8b0 !important; border-color: rgba(116,198,157,.38) !important; background: rgba(116,198,157,.10) !important; }
+body.r-dark .hh-btn-del  { color: rgba(255,120,120,.85) !important; border-color: rgba(220,50,50,.30) !important; }
+
+/* ── History "Ver" modal ─────────────────────────────────────────── */
+.hh-modal {
+  background: var(--cream);
+  border-radius: 20px;
+  padding: 22px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,.38);
+  animation: p-fadeIn .2s ease;
+}
+body.r-dark .hh-modal {
+  background: rgba(10,26,16,.97) !important;
+  border: 1px solid rgba(116,198,157,.18);
+  color: rgba(255,255,255,.92) !important;
+}
+.hh-modal-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+body.r-dark .hh-modal-hdr { border-bottom-color: rgba(116,198,157,.15) !important; }
