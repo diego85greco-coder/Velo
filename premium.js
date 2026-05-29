@@ -2747,8 +2747,14 @@ async function pRenderHelp(){
   }
 
   function _helpCard(h, isOwn){
-    var elapsed = Math.floor((Date.now()-h.time)/60000);
-    var timeStr = elapsed<1?'ahora mismo':elapsed===1?'hace 1 min':'hace '+elapsed+' min';
+    var timeLeft = h.time + 48*3600*1000 - Date.now();
+    var timeStr = (function(){
+      if(timeLeft <= 0) return 'expirado';
+      var mins = Math.floor(timeLeft/60000);
+      if(mins < 60) return '⏳ '+mins+'min restantes';
+      var hrs = Math.floor(mins/60); var rem = mins%60;
+      return '⏳ '+(rem ? hrs+'h '+rem+'min' : hrs+'h')+' restantes';
+    })();
     var urgBadge = h.urgencia==='urgente'
       ? '<span style="font-size:9px;background:rgba(220,50,50,.25);color:rgba(255,130,130,.9);border:1px solid rgba(220,50,50,.3);border-radius:6px;padding:1px 6px;margin-left:4px">🔴 Urgente</span>'
       : h.urgencia==='media'
@@ -3215,6 +3221,7 @@ function _subscribeHelpChat(post){
 async function _loadHelpChatHistory(post){
   _initSupabase();
   if(!sbClient || !post.userId) return;
+  if(post.anon) return; // anonymous post → start fresh, never show previous history
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
   if(!myId) return;
   try{
@@ -4453,11 +4460,13 @@ async function pRenderBottle(){
 
   list.innerHTML = allBottles.map(function(b, i){
     var relTime = b.ts ? (function(){
-      var d = Date.now()-b.ts;
-      if(d<60000) return 'ahora mismo';
-      if(d<3600000) return 'hace '+Math.floor(d/60000)+' min';
-      return 'hace '+Math.floor(d/3600000)+'h';
-    })() : 'hace unos minutos';
+      var tl = b.ts + 24*3600*1000 - Date.now();
+      if(tl <= 0) return 'expirado';
+      var mins = Math.floor(tl/60000);
+      if(mins < 60) return '⏳ '+mins+'min restantes';
+      var hrs = Math.floor(mins/60); var rem = mins%60;
+      return '⏳ '+(rem ? hrs+'h '+rem+'min' : hrs+'h')+' restantes';
+    })() : '⏳ 24h restantes';
     var isOwn = myId && (b.userId||'') === myId;
     var alreadyReplied = safeLS('get','velo_bottle_replied_'+b.id) === '1';
     var actions;
