@@ -1,7 +1,15 @@
-// Vercel serverless function — Gemini 2.0 Flash via direct REST API (no SDK dependency)
+// Vercel serverless function — Gemini via direct REST API (no SDK dependency)
+// Tries models in order: 2.5-flash → 2.5-flash-preview → 1.5-flash
 // Accepts GEMINI_API_KEY or GEMINI_KEY env var name
 
-const BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash';
+const MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-preview-05-20',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-latest'
+];
+const BASE_URL = (model) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}`;
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,11 +23,40 @@ module.exports = async function handler(req, res) {
 
   const { type, prompt, systemPrompt, msgs, cfg } = req.body || {};
 
+  // Try each model until one succeeds
+  async function callGemini(body) {
+    for (const model of MODELS) {
+      try {
+        const r = await fetch(`${BASE_URL(model)}:generateContent?key=${KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const json = await r.json();
+        if (!r.ok) {
+          console.log(`[Velo] ${model} HTTP ${r.status} — trying next`);
+          continue;
+        }
+        // Validate candidates exist and have text
+        const cand = json.candidates && json.candidates[0];
+        const parts = cand && cand.content && cand.content.parts;
+        if (!parts || !parts.length) {
+          console.log(`[Velo] ${model} returned no parts — trying next`);
+          continue;
+        }
+        return { json, model };
+      } catch (e) {
+        console.log(`[Velo] ${model} exception: ${e.message}`);
+        continue;
+      }
+    }
+    return null;
+  }
+
   // ── Multi-turn chat ──────────────────────────────────────────
   if (type === 'chat') {
     try {
       let allMsgs = (msgs || []).filter(m => m.text && m.text.trim());
-      // First turn must be from user
       while (allMsgs.length && allMsgs[0].user === false) allMsgs.shift();
       if (!allMsgs.length) return res.status(400).json({ error: 'No user messages' });
 
@@ -34,17 +71,9 @@ module.exports = async function handler(req, res) {
       };
       if (systemPrompt) body.system_instruction = { parts: [{ text: systemPrompt }] };
 
-      const r = await fetch(`${BASE}:generateContent?key=${KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const json = await r.json();
-      if (!r.ok) {
-        console.error('[Velo] Gemini chat HTTP', r.status, JSON.stringify(json).slice(0, 200));
-        return res.status(r.status).json({ error: (json.error && json.error.message) || 'Gemini error' });
-      }
-      return res.json(json);
+      const result = await callGemini(body);
+      if (!result) return res.status(500).json({ error: 'All Gemini models failed' });
+      return res.json(result.json);
     } catch (e) {
       console.error('[Velo] Gemini chat error:', e.message);
       return res.status(500).json({ error: e.message });
@@ -60,18 +89,9 @@ module.exports = async function handler(req, res) {
         generationConfig: Object.assign({ temperature: 0.5, maxOutputTokens: 1500 }, cfg || {})
       };
 
-      const r = await fetch(`${BASE}:generateContent?key=${KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const json = await r.json();
-      if (!r.ok) {
-        console.error('[Velo] Gemini grounded HTTP', r.status, JSON.stringify(json).slice(0, 200));
-        return res.status(r.status).json({ error: (json.error && json.error.message) || 'Gemini error' });
-      }
-      // Pass through full response — client extracts groundingMetadata.groundingChunks
-      return res.json(json);
+      const result = await callGemini(body);
+      if (!result) return res.status(500).json({ error: 'All Gemini models failed' });
+      return res.json(result.json);
     } catch (e) {
       console.error('[Velo] Gemini grounded error:', e.message);
       return res.status(500).json({ error: e.message });
@@ -85,17 +105,9 @@ module.exports = async function handler(req, res) {
       generationConfig: Object.assign({ temperature: 0.7, maxOutputTokens: 300 }, cfg || {})
     };
 
-    const r = await fetch(`${BASE}:generateContent?key=${KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const json = await r.json();
-    if (!r.ok) {
-      console.error('[Velo] Gemini generate HTTP', r.status, JSON.stringify(json).slice(0, 200));
-      return res.status(r.status).json({ error: (json.error && json.error.message) || 'Gemini error' });
-    }
-    return res.json(json);
+    const result = await callGemini(body);
+    if (!result) return res.status(500).json({ error: 'All Gemini models failed' });
+    return res.json(result.json);
   } catch (e) {
     console.error('[Velo] Gemini generate error:', e.message);
     return res.status(500).json({ error: e.message });
