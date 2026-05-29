@@ -2457,7 +2457,7 @@ async function _gcRender(){
       .order('created_at',{ascending:true}).limit(120);
     var data = res.data || [];
     var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-    var msgs = data.filter(function(m){ return sentinels.indexOf(m.text) < 0 && !(m.text||'').startsWith('__velo_guardian_req__:') && !(m.text||'').startsWith('__velo_guardian_acc__:') && !(m.text||'').startsWith('__velo_guardian_rej__:') && !(m.text||'').startsWith('__velo_guardian_bye__:'); });
+    var msgs = data.filter(function(m){ var t=m.text||''; return sentinels.indexOf(t)<0&&!t.startsWith('__velo_guardian_req__:')&&!t.startsWith('__velo_guardian_acc__:')&&!t.startsWith('__velo_guardian_rej__:')&&!t.startsWith('__velo_guardian_bye__:')&&!t.startsWith('__velo_dm_bye__:')&&!t.startsWith('__velo_help_bye__:'); });
     if(!msgs.length){
       if(!document.getElementById('gcPlaceholder')){
         el.innerHTML = '<div id="gcPlaceholder" style="text-align:center;padding:34px 16px;color:var(--ink5);font-size:13px;line-height:1.6">Este es un espacio seguro 🌿<br>Escriban con presencia y cuidado.</div>';
@@ -2496,31 +2496,35 @@ async function _gcRender(){
   }catch(e){}
 }
 
-function _showGuardianExitBanner(peerName){
-  if(document.getElementById('gcExitBanner')) return; // already showing
-  var msgEl = document.getElementById('gcMessages');
+function _showChatExitBanner(bannerId, messagesElId, inputElId, exitFn, peerName){
+  if(document.getElementById(bannerId)) return;
+  var msgEl  = document.getElementById(messagesElId);
   var chatEl = msgEl ? msgEl.parentNode : null;
   if(!chatEl) return;
   var banner = document.createElement('div');
-  banner.id = 'gcExitBanner';
-  banner.style.cssText = 'position:sticky;bottom:0;left:0;right:0;background:rgba(30,60,40,.95);backdrop-filter:blur(12px);border-top:1.5px solid rgba(116,198,157,.35);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:50;flex-shrink:0';
+  banner.id = bannerId;
+  banner.style.cssText = 'position:sticky;bottom:0;left:0;right:0;background:rgba(20,48,30,.96);backdrop-filter:blur(14px);border-top:1.5px solid rgba(116,198,157,.32);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:50;flex-shrink:0';
   banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px">'
-    +'<span style="font-size:22px">👋</span>'
+    +'<span style="font-size:20px">👋</span>'
     +'<div>'
-    +'<div style="font-size:14px;font-weight:700;color:#fff">'+_escHtml(peerName)+' salió del chat</div>'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:2px">La sesión ha finalizado</div>'
+    +'<div style="font-size:14px;font-weight:700;color:#fff;line-height:1.2">'+_escHtml(peerName)+' salió del chat</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px">La sesión ha finalizado</div>'
     +'</div>'
     +'</div>'
-    +'<button onclick="pEndGuardianChat()" style="padding:9px 20px;background:rgba(116,198,157,.85);border:none;border-radius:100px;font-size:13px;font-weight:700;color:#0a1810;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">Salir ✓</button>';
-  // Append after gcMessages (inside the page flex column)
-  if(msgEl && msgEl.nextSibling){
-    chatEl.insertBefore(banner, msgEl.nextSibling);
-  } else {
-    chatEl.appendChild(banner);
-  }
-  // Also disable input so user can't send more messages
-  var gcInput = document.getElementById('gcInput');
-  if(gcInput){ gcInput.disabled = true; gcInput.placeholder = 'La sesión ha finalizado'; }
+    +'<button onclick="('+exitFn+')" style="padding:9px 20px;background:rgba(116,198,157,.88);border:none;border-radius:100px;font-size:13px;font-weight:700;color:#0a1810;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">Salir ✓</button>';
+  if(msgEl && msgEl.nextSibling){ chatEl.insertBefore(banner, msgEl.nextSibling); }
+  else { chatEl.appendChild(banner); }
+  var inp = document.getElementById(inputElId);
+  if(inp){ inp.disabled = true; inp.placeholder = 'La sesión ha finalizado'; }
+}
+function _showGuardianExitBanner(peerName){
+  _showChatExitBanner('gcExitBanner', 'gcMessages', 'gcInput', 'pEndGuardianChat()', peerName);
+}
+function _showDMExitBanner(peerName){
+  _showChatExitBanner('dmExitBanner', 'dmMessages', 'dmInput', 'pLeaveDM()', peerName);
+}
+function _showHelpExitBanner(peerName){
+  _showChatExitBanner('helpExitBanner', 'helpChatMessages', 'helpChatInput', 'pLeaveHelpChat()', peerName);
 }
 
 function _gcSubscribe(){
@@ -3202,7 +3206,7 @@ function _renderHelpChatMsg(m, isOwn){
   var msgEl = document.getElementById('helpChatMessages');
   if(!msgEl) return;
   var _sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-  if(_sentinels.indexOf(m.text) >= 0 || (m.text||'').startsWith('__velo_guardian_req__:') || (m.text||'').startsWith('__velo_guardian_acc__:') || (m.text||'').startsWith('__velo_guardian_rej__:') && !(m.text||'').startsWith('__velo_guardian_bye__:')) return;
+  var _t=m.text||''; if(_sentinels.indexOf(_t)>=0||_t.startsWith('__velo_guardian_req__:')||_t.startsWith('__velo_guardian_acc__:')||_t.startsWith('__velo_guardian_rej__:')||_t.startsWith('__velo_guardian_bye__:')||_t.startsWith('__velo_dm_bye__:')||_t.startsWith('__velo_help_bye__:')) return;
   var post = _curHelpPost||{};
   var div = document.createElement('div');
   div.innerHTML = _buildMsgBubble(m.text||'', isOwn, isOwn?'':(post.emoji||'💙'), isOwn?'':(post.name||''), 'helpChatInput', 'helpChatReplyBar', '', {}, '', isOwn?'':(m.from_id||''));
@@ -3267,6 +3271,19 @@ function pSendHelpChatMsg(){
 
 function pLeaveHelpChat(){
   if(_helpChatInactivityTimer){ clearTimeout(_helpChatInactivityTimer); _helpChatInactivityTimer = null; }
+  // Notify peer with exit sentinel before disconnecting
+  var _hPost = _curHelpPost;
+  if(sbClient && _hPost && _hPost.userId){
+    var _hMyId   = safeLS('get','velo_user_id')||'';
+    var _hMyName = safeLS('get','velo_user_name')||'Usuario';
+    var _hMyAv   = safeLS('get','velo_user_av')||'🧑';
+    if(_hMyId){
+      sbClient.from('direct_messages').insert({
+        from_id:_hMyId, from_name:_hMyName, from_av:_hMyAv, to_id:_hPost.userId,
+        text:'__velo_help_bye__:'+JSON.stringify({ name:_hMyName, av:_hMyAv })
+      }).then(function(){}).catch(function(){});
+    }
+  }
   if(_helpChatRtCh && sbClient){ try{ sbClient.removeChannel(_helpChatRtCh); }catch(e){} _helpChatRtCh = null; }
   var post = _curHelpPost;
   _curHelpPost = null;
@@ -8019,7 +8036,7 @@ async function _renderDMThread(){
       .or('and(from_id.eq.'+myId+',to_id.eq.'+_dmPeer.id+'),and(from_id.eq.'+_dmPeer.id+',to_id.eq.'+myId+')')
       .order('created_at',{ascending:true}).limit(100);
     var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-    var msgs = (data||[]).filter(function(m){ return sentinels.indexOf(m.text) < 0 && !(m.text||'').startsWith('__velo_guardian_req__:') && !(m.text||'').startsWith('__velo_guardian_acc__:') && !(m.text||'').startsWith('__velo_guardian_rej__:') && !(m.text||'').startsWith('__velo_guardian_bye__:'); });
+    var msgs = (data||[]).filter(function(m){ var t=m.text||''; return sentinels.indexOf(t)<0&&!t.startsWith('__velo_guardian_req__:')&&!t.startsWith('__velo_guardian_acc__:')&&!t.startsWith('__velo_guardian_rej__:')&&!t.startsWith('__velo_guardian_bye__:')&&!t.startsWith('__velo_dm_bye__:')&&!t.startsWith('__velo_help_bye__:'); });
     if(!msgs.length){
       if(!el.querySelector('.dm-empty-state')){
         el.innerHTML = '<div class="dm-empty-state" style="text-align:center;padding:40px 16px 20px">'
@@ -8077,18 +8094,20 @@ function _subscribeToDMThread(){
 }
 
 function pLeaveDM(){
-  // Notify peer that this user left the chat
   var _dmMyName = safeLS('get','velo_user_name') || 'Alguien';
+  var _dmMyAv   = safeLS('get','velo_user_av')   || '🧑';
   var _dmMyId   = safeLS('get','velo_user_id') || '';
   _initSupabase();
+  // Notify peer with sentinel (deleted on receipt — never shows in history)
   if(sbClient && _dmPeer && _dmPeer.id && _dmMyId){
     sbClient.from('direct_messages').insert({
-      from_id: _dmMyId, from_name: '—', from_av: '', to_id: _dmPeer.id,
-      text: '👋 ' + _dmMyName + ' salió del chat'
+      from_id: _dmMyId, from_name: _dmMyName, from_av: _dmMyAv, to_id: _dmPeer.id,
+      text: '__velo_dm_bye__:'+JSON.stringify({ name:_dmMyName, av:_dmMyAv })
     }).then(function(){}).catch(function(){});
   }
   if(_dmRtCh && sbClient){ try{ sbClient.removeChannel(_dmRtCh); }catch(e){} _dmRtCh = null; }
   _dmPeer = null;
+  _dmLastMsgId = null;
   _inActiveChat = false;
   _updateGuardianPresence(_prevChatStatus || _presenceStatus());
   _prevChatStatus = null;
@@ -8263,11 +8282,25 @@ function _startGlobalDMListener(){
       }
       if(m.text && m.text.startsWith('__velo_guardian_bye__:')){
         if(m.id && sbClient) sbClient.from('direct_messages').delete().eq('id',m.id).then(function(){}).catch(function(){});
-        // Show exit banner only if currently in the guardian chat with this person
         if(curId === 'pg-guardian-chat' && _gcPeer && _gcPeer.id === m.from_id){
           var _byeParsed = {}; try{ _byeParsed = JSON.parse(m.text.slice('__velo_guardian_bye__:'.length)); }catch(e){}
-          var _byeName = _byeParsed.name || m.from_name || 'El otro usuario';
-          _showGuardianExitBanner(_byeName);
+          _showGuardianExitBanner(_byeParsed.name || m.from_name || 'El otro usuario');
+        }
+        return;
+      }
+      if(m.text && m.text.startsWith('__velo_dm_bye__:')){
+        if(m.id && sbClient) sbClient.from('direct_messages').delete().eq('id',m.id).then(function(){}).catch(function(){});
+        if(curId === 'pg-dm-chat' && _dmPeer && _dmPeer.id === m.from_id){
+          var _dmByeParsed = {}; try{ _dmByeParsed = JSON.parse(m.text.slice('__velo_dm_bye__:'.length)); }catch(e){}
+          _showDMExitBanner(_dmByeParsed.name || m.from_name || 'El otro usuario');
+        }
+        return;
+      }
+      if(m.text && m.text.startsWith('__velo_help_bye__:')){
+        if(m.id && sbClient) sbClient.from('direct_messages').delete().eq('id',m.id).then(function(){}).catch(function(){});
+        if(curId === 'pg-help-chat'){
+          var _helpByeParsed = {}; try{ _helpByeParsed = JSON.parse(m.text.slice('__velo_help_bye__:'.length)); }catch(e){}
+          _showHelpExitBanner(_helpByeParsed.name || m.from_name || 'El otro usuario');
         }
         return;
       }
