@@ -5451,17 +5451,39 @@ body:not(.r-dark) .p-sidebar {
   border-right-color: rgba(220,170,110,.28) !important;
   box-shadow: 2px 0 24px rgba(180,120,60,.10) !important;
 }
-/* profile greeting bar */
+/* ── v231: Greeting card + quote card — same light warm cream ──────── */
+/* Use the lighter of the two: soft golden-cream, consistent on both */
 body:not(.r-dark) .home-greeting,
 body:not(.r-dark) #pg-home .home-greeting {
-  background: #FFE4BA !important;
-  border-color: rgba(210,155,80,.35) !important;
-  box-shadow: 0 4px 16px rgba(180,120,60,.12) !important;
+  background: rgba(255,244,200,.68) !important;
+  border-color: rgba(200,152,40,.28) !important;
+  box-shadow: 0 4px 18px rgba(160,110,20,.10) !important;
+}
+body:not(.r-dark) #pg-home #homeDailyQuote,
+body:not(.r-dark) #homeDailyQuote {
+  background: rgba(255,244,200,.68) !important;
+  border: 1.5px solid rgba(200,152,40,.28) !important;
+  box-shadow: 0 4px 18px rgba(160,110,20,.10), inset 0 1px 0 rgba(255,255,255,.60) !important;
+  animation: none !important;
 }
 /* mood picker inside greeting bar */
 body:not(.r-dark) #quickMoodPicker {
-  background: #F9D8A4 !important;
-  border-top-color: rgba(210,155,80,.25) !important;
+  background: rgba(248,232,160,.70) !important;
+  border-top-color: rgba(200,152,40,.22) !important;
+}
+/* ── v231: Quote text — darker amber to match author readability ─── */
+body:not(.r-dark) #pg-home #homeDailyQuoteText,
+body:not(.r-dark) #homeDailyQuoteText {
+  background-image: linear-gradient(
+    90deg,
+    rgba(120,78,4,.90) 0%, rgba(120,78,4,.90) 15%,
+    rgba(200,140,5,1.0) 50%,
+    rgba(120,78,4,.90) 85%, rgba(120,78,4,.90) 100%
+  ) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+  font-weight: 500 !important;
 }
 
 /* ── v227: Sidebar desktop — reduce green highlight intensity ──────── */
