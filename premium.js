@@ -10160,68 +10160,159 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
   if(readKey) safeLS('set',readKey,'1');
   if(cardEl){ cardEl.classList.remove('unread'); var dot=cardEl.querySelector('.p-inbox-dot'); if(dot) dot.remove(); }
   _updateInboxDot();
-  var parts=month.split('-'); var year=parts[0]; var mon=parseInt(parts[1])-1;
+  var parts=month.split('-'); var year=parseInt(parts[0]); var mon=parseInt(parts[1])-1;
   var MN=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   var mName=MN[mon]||month;
+  var name=safeLS('get','velo_user_name')||''; var firstName=name.split(' ')[0]||'';
   var ov=document.createElement('div'); ov.className='p-modal-ov show'; ov.id='monthlyReportOv'; ov.style.zIndex='9999';
-  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="-webkit-overflow-scrolling:touch;overflow-y:scroll;max-height:88vh;touch-action:pan-y">'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(180,140,220,.75);margin-bottom:8px">📊 RESUMEN MENSUAL VELO</div>'
-    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:#fff;font-weight:300;margin-bottom:18px">Tu '+mName+' '+year+'</div>'
-    +'<div id="monthlyReportBody" style="font-size:14px;color:rgba(255,255,255,.75);line-height:1.8;margin-bottom:22px">'
-    +'<div style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.4);font-size:12px"><span class="live-dot" style="background:rgba(180,140,220,.8)"></span>Gemini está analizando tu mes…</div>'
+  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="-webkit-overflow-scrolling:touch;overflow-y:scroll;max-height:92vh;touch-action:pan-y;padding-bottom:32px">'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(180,140,220,.75);margin-bottom:6px">📊 RESUMEN MENSUAL VELO</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:#fff;font-weight:300;margin-bottom:4px">Tu '+mName+' '+year+(firstName?' — '+firstName:'')+'</div>'
+    +'<div style="height:1px;background:rgba(255,255,255,.08);margin:12px 0"></div>'
+    +'<div id="monthlyReportBody">'
+    +'<div style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.4);font-size:12px;padding:16px 0"><span class="live-dot" style="background:rgba(180,140,220,.8)"></span>Gemini está analizando tu mes…</div>'
     +'</div>'
-    +'<button onclick="document.getElementById(\'monthlyReportOv\').remove();_syncBodyScroll()" style="width:100%;padding:11px;background:rgba(180,140,220,.15);border:1.5px solid rgba(180,140,220,.3);border-radius:14px;color:rgba(180,140,220,.9);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">Cerrar</button>'
+    +'<button onclick="document.getElementById(\'monthlyReportOv\').remove();_syncBodyScroll()" style="width:100%;padding:11px;background:rgba(180,140,220,.15);border:1.5px solid rgba(180,140,220,.3);border-radius:14px;color:rgba(180,140,220,.9);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;margin-top:6px">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov); _syncBodyScroll();
-  var summary=await _generateMonthlySummary(month,mName,year);
+  var data=await _generateMonthlySummary(month,mName,year);
   var bodyEl=document.getElementById('monthlyReportBody');
-  if(bodyEl){ bodyEl.style.whiteSpace='pre-line'; bodyEl.textContent=summary||'No encontramos datos suficientes de '+mName+'. ¡Registrá tus estados de ánimo y escribí en el diario para recibir un resumen personalizado el próximo mes!'; }
+  if(!bodyEl) return;
+  var html='';
+  // ── AI narrative ──
+  html+='<div style="font-size:14px;color:rgba(255,255,255,.8);line-height:1.8;white-space:pre-line;margin-bottom:18px">'+_escHtml(data.narrative||'')+'</div>';
+  // ── Stats row ──
+  if(data.moods||data.helped||data.received||data.diary){
+    html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:18px">';
+    if(data.moods)    html+=_mrStatCard('😊','Estados de ánimo',data.moods,'registros este mes');
+    if(data.diary)    html+=_mrStatCard('📔','Diario',data.diary,'entradas escritas');
+    if(data.helped)   html+=_mrStatCard('💙','Personas ayudadas',data.helped,'como guardián/a');
+    if(data.received) html+=_mrStatCard('🌿','Apoyos recibidos',data.received,'veces');
+    html+='</div>';
+  }
+  // ── Reviews ──
+  if(data.reviews && data.reviews.length){
+    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.8);margin-bottom:10px">⭐ RESEÑAS DEL MES ('+data.totalReviews+' en total)</div>';
+    data.reviews.forEach(function(r){
+      html+='<div style="background:rgba(200,162,0,.07);border:1px solid rgba(200,162,0,.2);border-radius:12px;padding:12px 14px;margin-bottom:8px">'
+        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
+        +'<span style="font-size:13px">'+'⭐'.repeat(r.stars||5)+'</span>'
+        +'<span style="font-size:11px;color:rgba(255,255,255,.4)">'+_escHtml(r.reviewer_name||'Usuario anónimo')+'</span>'
+        +'</div>'
+        +(r.texto?'<div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;font-style:italic">"'+_escHtml(r.texto)+'"</div>':'')
+        +'</div>';
+    });
+  }
+  // ── Medals ──
+  if(data.medals && data.medals.length){
+    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:8px">🏅 MEDALLAS DE '+mName.toUpperCase()+'</div>';
+    html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px">'
+      +data.medals.map(function(m){ return '<span style="padding:5px 12px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.25);border-radius:20px;font-size:12px;color:rgba(116,198,157,.9)">'+_escHtml(m.name||m.label||'🏅')+'</span>'; }).join('')
+      +'</div>';
+  }
+  // ── Gratitude footer ──
+  html+='<div style="background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.18);border-radius:14px;padding:14px;text-align:center;margin-top:8px">'
+    +'<div style="font-size:20px;margin-bottom:6px">💜</div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.6">Gracias por ser parte de la comunidad Velo. Tu presencia importa y hace la diferencia para alguien más.</div>'
+    +'</div>';
+  bodyEl.innerHTML=html;
+}
+
+function _mrStatCard(icon, label, value, sub){
+  return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;text-align:center">'
+    +'<div style="font-size:22px;margin-bottom:4px">'+icon+'</div>'
+    +'<div style="font-size:24px;font-weight:800;color:#fff;line-height:1">'+value+'</div>'
+    +'<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);margin-top:3px">'+label+'</div>'
+    +'<div style="font-size:9px;color:rgba(255,255,255,.3);margin-top:1px">'+sub+'</div>'
+    +'</div>';
 }
 
 async function _generateMonthlySummary(month, mName, year){
   var cacheKey='velo_monthly_summary_'+month;
-  var cached=safeLS('get',cacheKey); if(cached) return cached;
+  try{ var c=safeLS('get',cacheKey); if(c) return JSON.parse(c); }catch(e){}
   var name=safeLS('get','velo_user_name')||''; var firstName=name.split(' ')[0]||'vos';
-  var mon=parseInt(month.split('-')[1]);
-  var yr=parseInt(month.split('-')[0]);
-  // Moods
+  var mon=parseInt(month.split('-')[1]); var yr=parseInt(month.split('-')[0]);
+  var cutStart=new Date(yr,mon-1,1).toISOString(); var cutEnd=new Date(yr,mon,0,23,59,59).toISOString();
+  // ── Local mood log ──
   var moodLog=[]; try{moodLog=JSON.parse(safeLS('get','velo_mood_log')||'[]');}catch(e){}
   var monthMoods=moodLog.filter(function(m){ var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
-  // Diary
+  // ── Local diary ──
   var diaryAll=[]; try{diaryAll=JSON.parse(safeLS('get','velo_diary')||'[]');}catch(e){}
   var monthDiary=diaryAll.filter(function(e){ var d=new Date(e.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
-  // Medals (local)
+  // ── Local medals ──
   var medals=[]; try{medals=JSON.parse(safeLS('get','velo_medals')||'[]');}catch(e){}
   var monthMedals=medals.filter(function(m){ var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
-  if(!monthMoods.length&&!monthDiary.length){
-    return 'No encontramos registros de '+mName+' en tu app. Para el próximo mes, registrá cómo te sentís cada día y escribí en tu diario — así Gemini puede prepararte un resumen personalizado. 💚';
+  // ── Supabase: reviews received ──
+  var reviewsData=[]; var totalReviews=0;
+  _initSupabase();
+  var myId=_myUserId();
+  if(sbClient && myId && myId!=='guest'){
+    try{
+      await _ensureSbSession();
+      var rvRes=await sbClient.from('reviews').select('stars,texto,reviewer_name,created_at')
+        .eq('pro_id',myId).gte('created_at',cutStart).lte('created_at',cutEnd)
+        .order('stars',{ascending:false}).limit(20);
+      if(rvRes.data&&rvRes.data.length){
+        totalReviews=rvRes.data.length;
+        // Top 4 with text, or top 4 by stars
+        reviewsData=rvRes.data.filter(function(r){ return r.texto&&r.texto.trim(); }).slice(0,4);
+        if(!reviewsData.length) reviewsData=rvRes.data.slice(0,4);
+      }
+    }catch(e){}
+    // ── Supabase: guardian activity ──
+    var helpedOthers=0; var helpReceived=0;
+    try{
+      var ghRes=await sbClient.from('guardian_requests').select('id,guardian_id,seeker_id',{count:'exact'})
+        .eq('guardian_id',myId).eq('status','ended').gte('created_at',cutStart).lte('created_at',cutEnd);
+      helpedOthers=(ghRes.count)||0;
+    }catch(e){}
+    try{
+      var gsRes=await sbClient.from('guardian_requests').select('id',{count:'exact'})
+        .eq('seeker_id',myId).eq('status','ended').gte('created_at',cutStart).lte('created_at',cutEnd);
+      helpReceived=(gsRes.count)||0;
+    }catch(e){}
   }
+  if(!monthMoods.length&&!monthDiary.length&&!reviewsData.length){
+    var noData='No encontramos registros de '+mName+' en tu app. Para el próximo mes, registrá cómo te sentís cada día y escribí en tu diario — así Gemini puede prepararte un resumen personalizado. 💚';
+    return {narrative:noData,moods:0,diary:0,helped:helpedOthers||0,received:helpReceived||0,reviews:[],totalReviews:0,medals:[]};
+  }
+  // ── Build Gemini prompt ──
   var moodCtx='';
   if(monthMoods.length){
-    var mTexts=monthMoods.slice(0,25).map(function(m){ return (m.emoji||'')+(m.label?' '+m.label:'')+(m.note?' ("'+m.note.slice(0,60)+'")':''); });
-    moodCtx=monthMoods.length+' estados de ánimo registrados:\n'+mTexts.join('\n')+'\n\n';
+    var mTexts=monthMoods.slice(0,20).map(function(m){ return (m.emoji||'')+(m.label?' '+m.label:'')+(m.note?' ("'+m.note.slice(0,60)+'")':''); });
+    moodCtx=monthMoods.length+' estados de ánimo en '+mName+':\n'+mTexts.join('\n')+'\n\n';
   }
   var diaryCtx='';
   if(monthDiary.length){
-    var excerpts=monthDiary.slice(0,5).map(function(e,i){ return (i+1)+'. '+(e.text||'').slice(0,120); });
-    diaryCtx=monthDiary.length+' entradas en el diario:\n'+excerpts.join('\n')+'\n\n';
+    var exc=monthDiary.slice(0,4).map(function(e,i){ return (i+1)+'. '+(e.text||'').slice(0,100); });
+    diaryCtx=monthDiary.length+' entradas en el diario:\n'+exc.join('\n')+'\n\n';
   }
-  var medalCtx=monthMedals.length?'Medallas obtenidas: '+monthMedals.map(function(m){return m.name||m.label||'🏅';}).join(', ')+'\n\n':'';
+  var reviewCtx=reviewsData.length?'Reseñas recibidas ('+totalReviews+' en total): '+reviewsData.slice(0,3).map(function(r){ return r.stars+'★'+(r.texto?' "'+r.texto.slice(0,60)+'"':''); }).join('; ')+'\n\n':'';
+  var actCtx=(helpedOthers?'Conversaciones como guardián/a: '+helpedOthers+'\n':'')+(helpReceived?'Veces que recibiste acompañamiento: '+helpReceived+'\n':'');
+  var medalCtx=monthMedals.length?'Medallas obtenidas: '+monthMedals.map(function(m){ return m.name||m.label||'🏅'; }).join(', ')+'\n\n':'';
   var prompt='Sos el sistema de bienestar de Velo, una app de salud mental peer-to-peer.\n'
     +'Generá un resumen mensual cálido y personalizado para '+firstName+' sobre '+mName+' '+yr+'.\n\n'
-    +moodCtx+diaryCtx+medalCtx
-    +'El resumen debe:\n'
-    +'- Tener 4-6 oraciones cálidas y personalizadas, en párrafos\n'
-    +'- Destacar patrones de ánimo si los hay (ej: días más difíciles, mejoras)\n'
-    +'- Reconocer con compasión los momentos difíciles si los hubo\n'
-    +'- Celebrar los momentos positivos y el hábito de registrarse\n'
-    +'- Mencionar medallas si las hay, con orgullo\n'
-    +'- Terminar con un mensaje de aliento y gratitud por ser parte de la comunidad Velo\n'
-    +'- Usar "vos" (español rioplatense), tono empático y honesto\n'
-    +'Solo el texto, sin título ni bullets.';
-  var result=await _geminiCall(prompt,{temperature:0.82,maxOutputTokens:320});
-  if(result) safeLS('set',cacheKey,result);
-  return result||(firstName+', registraste '+monthMoods.length+' estados de ánimo y '+monthDiary.length+' entradas en '+mName+'. ¡Gracias por ser parte de la comunidad Velo! 💚');
+    +moodCtx+diaryCtx+reviewCtx+actCtx+medalCtx
+    +'Escribí 4-6 oraciones que:\n'
+    +'- Destaquen patrones de ánimo si los hay\n'
+    +'- Reconozcan con compasión los momentos difíciles\n'
+    +'- Celebren la actividad comunitaria (guardianes, reseñas) si la hubo\n'
+    +'- Terminen con aliento para el mes siguiente\n'
+    +'Usá "vos" (español rioplatense). Solo texto corrido, sin títulos ni bullets.';
+  var narrative=await _geminiCall(prompt,{temperature:0.82,maxOutputTokens:340});
+  if(!narrative) narrative=firstName+', registraste '+monthMoods.length+' estados de ánimo y '+monthDiary.length+' entradas en '+mName+'. ¡Gracias por ser parte de la comunidad Velo! 💚';
+  var result={
+    narrative:narrative,
+    moods:monthMoods.length||0,
+    diary:monthDiary.length||0,
+    helped:helpedOthers||0,
+    received:helpReceived||0,
+    reviews:reviewsData,
+    totalReviews:totalReviews,
+    medals:monthMedals
+  };
+  safeLS('set',cacheKey,JSON.stringify(result));
+  return result;
 }
 
 async function pAdminAiSituationAnalysis(){
