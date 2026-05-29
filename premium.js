@@ -1241,6 +1241,10 @@ async function _loadDailyMotivationalQuote(){
     }catch(e){ textEl.textContent = cached; }
     return;
   }
+  // Show loading skeleton while Gemini generates the quote
+  textEl.style.opacity = '.45';
+  textEl.textContent = 'Cargando frase del día...';
+  if(authorEl) authorEl.textContent = '✨ Velo IA';
 
   // Load quote history to avoid repeating authors
   var history = [];
@@ -1280,6 +1284,7 @@ async function _loadDailyMotivationalQuote(){
   safeLS('set', 'velo_quote_history', JSON.stringify(history.slice(0,30)));
 
   safeLS('set', cacheKey, JSON.stringify(quote));
+  textEl.style.opacity = '';
   textEl.textContent   = quote.text;
   if(authorEl) authorEl.textContent = '— ' + quote.author;
 }
@@ -3636,8 +3641,10 @@ function pOpenNewsDetail(i){
     +'<div style="font-size:11px;font-weight:700;color:var(--sage3);letter-spacing:.5px;margin-bottom:6px">✨ REFLEXIÓN VELO IA</div>'
     +'<p style="font-size:13px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+_escHtml(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
     +'</div>'
-    +(hasLink ? '<a href="'+item.sourceUrl+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔗 Leer artículo completo en '+_escHtml(item.sourceName||'la fuente')+'</a>'
-      : '')
+    +(hasLink
+      ? '<a href="'+item.sourceUrl+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔗 Leer artículo completo en '+_escHtml(item.sourceName||'la fuente')+'</a>'
+      : '<a href="https://www.google.com/search?q='+encodeURIComponent(item.titulo)+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔍 Buscar noticia en Google</a>'
+    )
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'newsDetailOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
@@ -3745,6 +3752,11 @@ async function pSendCalmAIMsg(){
     +'No sos médico ni terapeuta. Sos un acompañante que escucha de verdad.';
 
   var reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-12), { temperature:0.88, maxOutputTokens:200 });
+  if(!reply){
+    // Auto-retry once after 1.5s (handles cold-start / transient failures)
+    await new Promise(function(r){ setTimeout(r, 1500); });
+    reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-12), { temperature:0.88, maxOutputTokens:200 });
+  }
   var typingEl = document.getElementById('calmAITyping');
   if(typingEl) typingEl.remove();
   if(!reply){

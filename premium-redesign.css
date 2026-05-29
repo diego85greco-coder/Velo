@@ -3698,6 +3698,14 @@ body.r-dark .p-bottomnav {
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
 }
+body.r-dark .p-bottomnav::after {
+  background: rgba(8,18,12,.92) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+body.r-dark .p-bn-label {
+  color: rgba(255,255,255,.45) !important;
+}
 /* Inactive icons: white strokes, subtle glow (contorno de luz) */
 body.r-dark .p-bn-item {
   color: rgba(255,255,255,.60) !important;

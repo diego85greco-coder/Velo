@@ -419,6 +419,17 @@ a { text-decoration: none; color: inherit; }
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(116,198,157,.4), transparent);
 }
+/* Fill any gap between nav bar and browser chrome on iOS Safari */
+.p-bottomnav::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 0; right: 0;
+  height: 50px;
+  background: var(--glass-1);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  pointer-events: none;
+}
 .p-bn-item {
   display: flex;
   flex-direction: column;
@@ -431,12 +442,12 @@ a { text-decoration: none; color: inherit; }
   cursor: pointer;
   transition: all var(--t-fast);
   position: relative;
-  color: var(--ink4);
+  color: var(--ink2);
 }
 .p-bn-item:hover { background: var(--sage7); }
 .p-bn-item.active { background: var(--sage7); color: var(--sage2); }
 .p-bn-icon { font-size: 20px; line-height: 1; }
-.p-bn-label { font-size: 7.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
+.p-bn-label { font-size: 7.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--ink3); }
 .p-bn-item.active .p-bn-label { color: var(--sage2); }
 .p-bn-dot {
   position: absolute;
