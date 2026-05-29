@@ -5201,3 +5201,25 @@ body.r-dark #topbarMoodBtn {
   border-color: rgba(116,198,157,.45) !important;
   color: #7fdcaa !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   v213 — Universal card glow (white ring visible on all themes)
+═══════════════════════════════════════════════════════════════ */
+
+/* Override card-ring-dk: white border ring works on any card color */
+@keyframes card-ring-dk {
+  0%, 100% {
+    box-shadow: 0 2px 12px rgba(0,0,0,.30);
+    outline-color: rgba(255,255,255,.00);
+  }
+  50% {
+    box-shadow: 0 0 0 1.5px rgba(255,255,255,.32), 0 4px 22px rgba(116,198,157,.18);
+    outline-color: rgba(255,255,255,.28);
+  }
+}
+
+/* Light mode ring: green shadow, visible on any light card */
+@keyframes card-ring-lt {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,.06);  outline-color: rgba(45,106,79,.00); }
+  50%       { box-shadow: 0 0 0 1.5px rgba(45,106,79,.35), 0 4px 18px rgba(45,106,79,.12); outline-color: rgba(45,106,79,.28); }
+}

@@ -7308,12 +7308,29 @@ function pToggleFavFromProfile(userId, name, av){
   }
 }
 
-function pBlockUser(userId, name){
-  if(!confirm('¿Bloquear a '+( name||'este usuario')+'? Sus publicaciones dejarán de aparecer.')) return;
+function pBlockUser(userId, name, av){
+  if(!confirm('¿Bloquear a '+(name||'este usuario')+'? Sus publicaciones dejarán de aparecer.')) return;
   var blocked = []; try{ blocked = JSON.parse(safeLS('get','velo_blocked')||'[]'); }catch(e){}
   if(blocked.indexOf(userId)<0){ blocked.push(userId); safeLS('set','velo_blocked', JSON.stringify(blocked)); }
+  // Store name/av for display in blocked list
+  var bd = []; try{ bd = JSON.parse(safeLS('get','velo_blocked_data')||'[]'); }catch(e){}
+  if(!bd.find(function(b){ return b.id===userId; })){
+    bd.push({id:userId, name:name||'Usuario', av:av||'🧑'});
+    safeLS('set','velo_blocked_data', JSON.stringify(bd));
+  }
   pRemoveFav(userId);
   pToast('🚫','Usuario bloqueado');
+}
+
+function pUnblockUser(userId){
+  var blocked = []; try{ blocked = JSON.parse(safeLS('get','velo_blocked')||'[]'); }catch(e){}
+  blocked = blocked.filter(function(id){ return id !== userId; });
+  safeLS('set','velo_blocked', JSON.stringify(blocked));
+  var bd = []; try{ bd = JSON.parse(safeLS('get','velo_blocked_data')||'[]'); }catch(e){}
+  bd = bd.filter(function(b){ return b.id !== userId; });
+  safeLS('set','velo_blocked_data', JSON.stringify(bd));
+  pToast('✅','Usuario desbloqueado');
+  pRenderContacts();
 }
 
 function _isBlocked(userId){
@@ -7448,10 +7465,35 @@ async function pRenderContacts(){
         })()
         +'<button onclick="pLeaveOfflineMsg('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 10px;background:rgba(200,165,100,.08);border:1px solid rgba(200,165,100,.25);border-radius:10px;font-size:13px;cursor:pointer" title="Mensaje al buzón">✉️</button>'
         +'<button onclick="pRemoveFav(\''+f.id+'\');pRenderContacts()" style="padding:7px 9px;background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);border-radius:10px;font-size:13px;cursor:pointer">⭐</button>'
-        +'<button onclick="pBlockUser('+_jsAttr(f.id)+','+_jsAttr(f.name)+');pRenderContacts()" style="padding:7px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:13px;cursor:pointer" title="Bloquear">🚫</button>'
+        +'<button onclick="pBlockUser('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av||'🧑')+');pRenderContacts()" style="padding:7px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:13px;cursor:pointer" title="Bloquear">🚫</button>'
         +'</div>'
         +'</div>';
     }).join('');
+
+  // Blocked users section — collapsible, at the bottom
+  var blockedIds = []; try{ blockedIds = JSON.parse(safeLS('get','velo_blocked')||'[]'); }catch(e){}
+  var blockedData = []; try{ blockedData = JSON.parse(safeLS('get','velo_blocked_data')||'[]'); }catch(e){}
+  var blockedList = blockedIds.map(function(id){
+    return blockedData.find(function(b){ return b.id===id; }) || {id:id, name:'Usuario', av:'🧑'};
+  });
+  if(blockedList.length){
+    el.innerHTML += '<div id="blockedSection" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border2)">'
+      +'<div onclick="var bl=document.getElementById(\'blockedList\');bl.style.display=bl.style.display===\'none\'?\'\':\'none\'" style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink5);margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">'
+      +'<span>🚫 Usuarios bloqueados ('+blockedList.length+')</span><span style="font-size:14px">▾</span></div>'
+      +'<div id="blockedList" style="display:none">'
+      +'<div style="font-size:11px;color:var(--ink5);margin-bottom:10px;font-style:italic">Estas personas no ven tus publicaciones ni aparecen en tu red. Podés desbloquearlas en cualquier momento.</div>'
+      +blockedList.map(function(b){
+        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cream);border-radius:14px;margin-bottom:8px;border:1.5px solid rgba(200,50,50,.15);opacity:.75">'
+          +'<div style="flex-shrink:0;filter:grayscale(1);opacity:.7">'+_avInline(b.av||'🧑',36)+'</div>'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:13px;font-weight:700;color:var(--ink)">'+_escHtml(b.name||'Usuario')+'</div>'
+          +'<div style="font-size:11px;color:var(--ink5)">Bloqueado</div>'
+          +'</div>'
+          +'<button onclick="pUnblockUser('+_jsAttr(b.id)+')" style="padding:6px 11px;background:rgba(116,198,157,.1);border:1.5px solid rgba(116,198,157,.3);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;flex-shrink:0">Desbloquear</button>'
+          +'</div>';
+      }).join('')
+      +'</div></div>';
+  }
 }
 
 function pFilterContacts(q){
