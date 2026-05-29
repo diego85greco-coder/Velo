@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260529-292">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260529-292">
+  <link rel="stylesheet" href="premium.css?v=20260529-293">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260529-293">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1678,7 +1678,7 @@
       <!-- ══ HAPPY WALL ════════════════════════════════════════ -->
       <div class="p-page" id="pg-happy" style="flex-direction:column;overflow:hidden">
         <!-- ── Fixed header + compose + tabs ── -->
-        <div id="happyFixedHdr" style="flex-shrink:0;background:var(--cream);border-bottom:1px solid var(--border)">
+        <div id="happyFixedHdr" style="flex-shrink:0;background:var(--cream);border-bottom:1px solid var(--border);overflow-y:auto;max-height:80vh">
           <!-- Page header -->
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 0">
             <div style="display:flex;align-items:center;gap:10px">
@@ -1715,7 +1715,7 @@
                 <textarea class="p-textarea" id="happyPostTa" rows="2" placeholder="¿Qué momento de alegría querés compartir hoy? ✨" maxlength="300" style="background:rgba(255,255,255,.7);border-color:rgba(255,200,50,.2);font-size:13px;resize:none;margin-bottom:8px"></textarea>
                 <!-- Photo preview -->
                 <div id="happyPhotoPreview" style="display:none;margin-bottom:8px;position:relative">
-                  <img id="happyPhotoImg" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;display:block">
+                  <img id="happyPhotoImg" style="width:100%;max-height:130px;object-fit:cover;border-radius:10px;display:block">
                   <button onclick="pClearHappyPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:50%;width:24px;height:24px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
                 </div>
                 <!-- Anon toggle row -->
@@ -2989,8 +2989,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260529-292"></script>
-<script src="premium-redesign.js?v=20260529-292"></script>
+<script src="premium.js?v=20260529-293"></script>
+<script src="premium-redesign.js?v=20260529-293"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
