@@ -5481,19 +5481,16 @@ body:not(.r-dark) #quickMoodPicker {
   background: rgba(175,228,200,.70) !important;
   border-top-color: rgba(80,168,118,.22) !important;
 }
-/* ── v250: Quote text — deep forest green, legible on mint ──────── */
+/* ── v250: Quote text — solid dark green (gradient replaced by v260) ── */
 body:not(.r-dark) #pg-home #homeDailyQuoteText,
 body:not(.r-dark) #homeDailyQuoteText {
-  background-image: linear-gradient(
-    90deg,
-    rgba(14,72,38,.88) 0%, rgba(14,72,38,.88) 15%,
-    rgba(26,110,60,1.0) 50%,
-    rgba(14,72,38,.88) 85%, rgba(14,72,38,.88) 100%
-  ) !important;
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
-  color: transparent !important;
-  font-weight: 500 !important;
+  -webkit-text-fill-color: #0a2e15 !important;
+  color: #0a2e15 !important;
+  background-image: none !important;
+  -webkit-background-clip: padding-box !important;
+  background-clip: padding-box !important;
+  animation: none !important;
+  font-weight: 700 !important;
 }
 
 /* ── v250: "Pedir compañía" — sage glass pill in light mode ─────── */
@@ -5540,15 +5537,19 @@ body:not(.r-dark) #homeDailyQuote {
 }
 body:not(.r-dark) #pg-home #homeDailyQuoteText,
 body:not(.r-dark) #homeDailyQuoteText {
+  /* -webkit-text-fill-color overrides WebKit's background-clip:text paint */
+  -webkit-text-fill-color: #0a2e15 !important;
   color: #0a2e15 !important;
   background-image: none !important;
-  -webkit-background-clip: unset !important;
-  background-clip: unset !important;
+  -webkit-background-clip: padding-box !important;
+  background-clip: padding-box !important;
+  animation: none !important;
   font-weight: 700 !important;
   font-size: 15.5px !important;
   opacity: 1 !important;
 }
 body:not(.r-dark) #homeDailyQuoteAuthor {
+  -webkit-text-fill-color: #1a5e32 !important;
   color: #1a5e32 !important;
   opacity: 1 !important;
 }
