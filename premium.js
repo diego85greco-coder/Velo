@@ -2088,15 +2088,20 @@ async function pConfirmAskGuardian(){
     });
   }catch(e){ pToast('⚠️','No se pudo enviar la solicitud'); return; }
 
-  // Primary notification: DM sentinel — uses the same mechanism as __velo_chat_req__,
-  // which already works. This survives RLS on guardian_requests and doesn't depend on
-  // the guardian being subscribed at the exact moment of the broadcast.
+  // Primary notification: DM sentinel — same mechanism as __velo_chat_req__.
+  // Deleted by the guardian's _handleDMPayload on receipt, or after 60s if not picked up.
   try{
-    await sbClient.from('direct_messages').insert({
+    var _sentRes = await sbClient.from('direct_messages').insert({
       from_id: myId, from_name: myName, from_av: myAv,
       to_id: guardianUid,
       text: '__velo_guardian_req__:'+JSON.stringify(reqPayload)
-    });
+    }).select('id').single();
+    var _sentId = _sentRes && _sentRes.data && _sentRes.data.id;
+    if(_sentId){
+      setTimeout(function(){
+        if(sbClient) sbClient.from('direct_messages').delete().eq('id',_sentId).then(function(){}).catch(function(){});
+      }, 60000);
+    }
   }catch(e){}
 
   // Broadcast the full request object directly to the guardian via Realtime broadcast
@@ -8070,9 +8075,13 @@ function _startGlobalDMListener(){
         return;
       }
       if(m.text && m.text.startsWith('__velo_guardian_req__:')){
-        if(safeLS('get','velo_is_guardian') !== 'true') return;
+        // Always delete sentinel from DB so it never contaminates chat history
+        if(m.id && sbClient){
+          sbClient.from('direct_messages').delete().eq('id',m.id).then(function(){}).catch(function(){});
+        }
         try{
           var _gReqParsed = JSON.parse(m.text.slice('__velo_guardian_req__:'.length));
+          // Show popup only if I am the target guardian
           if(_gReqParsed && _gReqParsed.kind === 'direct' && _gReqParsed.guardian_id === myId){
             _showGuardianRequest(_gReqParsed);
           }

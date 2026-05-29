@@ -5524,6 +5524,35 @@ body:not(.r-dark) #homeDailyQuote {
   }
 }
 
+/* ── v260: "¿Cómo te sentís hoy?" pill — darker border in light mode ── */
+body:not(.r-dark) #homeCurrentMoodLine {
+  border: 1.5px solid rgba(20,80,45,.55) !important;
+  background: linear-gradient(135deg,rgba(180,230,200,.50),rgba(210,245,220,.60)) !important;
+  color: #0e3d1f !important;
+  font-weight: 500 !important;
+  box-shadow: 0 1px 6px rgba(20,80,45,.12) !important;
+}
+
+/* ── v260: Daily quote card — darker border + bolder legible text ──── */
+body:not(.r-dark) #homeDailyQuote {
+  border: 2px solid rgba(20,80,45,.45) !important;
+  box-shadow: 0 4px 18px rgba(20,80,45,.14), inset 0 1px 0 rgba(255,255,255,.55) !important;
+}
+body:not(.r-dark) #pg-home #homeDailyQuoteText,
+body:not(.r-dark) #homeDailyQuoteText {
+  color: #0a2e15 !important;
+  background-image: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  font-weight: 700 !important;
+  font-size: 15.5px !important;
+  opacity: 1 !important;
+}
+body:not(.r-dark) #homeDailyQuoteAuthor {
+  color: #1a5e32 !important;
+  opacity: 1 !important;
+}
+
 /* ── v227: "Quienes quieren ayudar" — guardian landing card ──────── */
 #guardianes-intro-card .p-empty-title,
 .guardian-intro-card .p-empty-title { font-size: 18px !important; }
