@@ -185,6 +185,7 @@ var _toastQueue = [];
 var _toastBusy  = false;
 
 function pToast(emoji, msg){
+  if(emoji !== '⚠️') return;
   var last = _toastQueue[_toastQueue.length-1];
   if(last && last.emoji === (emoji||'✓') && last.msg === (msg||'')) return;
   _toastQueue.push({ emoji: emoji || '✓', msg: msg || '' });
