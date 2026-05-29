@@ -49,6 +49,7 @@ var _pendingGuardianReqId = null; // ID of the guardian_request row sent (to can
 var _dmRtCh      = null;   // realtime channel direct_messages (per-thread)
 var _dmInboxCh   = null;   // realtime channel direct_messages (global inbox listener)
 var _dmPollTmr   = null;   // polling fallback for global DM inbox
+var _buzónRtCh   = null;   // realtime channel broadcasts (personal buzón alerts)
 var _dmLastMsgId = null;   // last rendered DM message DB id (prevents flicker)
 var _favsList     = null;   // cached favorites array (loaded lazily)
 var _prevChatStatus = null; // status saved before entering any chat (restored on exit)
@@ -653,6 +654,7 @@ async function pSignIn(){
       _authenticated = true;
       _startGuardianHeartbeat();
       setTimeout(_startGlobalDMListener, 2500);
+      setTimeout(_startBuzónListener, 3000);
       setTimeout(_syncFavsFromSupabase, 3500);
       await _loginAndGo();
     }
@@ -2527,6 +2529,57 @@ function _showHelpExitBanner(peerName){
   _showChatExitBanner('helpExitBanner', 'helpChatMessages', 'helpChatInput', 'pLeaveHelpChat()', peerName);
 }
 
+function _showBuzónAlert(subject, senderId, senderName, senderAv){
+  var existing = document.getElementById('buzónAlertPop');
+  if(existing) existing.remove();
+  var isDark = document.body.classList.contains('r-dark');
+  var pop = document.createElement('div');
+  pop.id = 'buzónAlertPop';
+  pop.style.cssText = 'position:fixed;bottom:76px;left:50%;transform:translateX(-50%) translateY(12px);background:'+(isDark?'rgba(14,36,22,.97)':'rgba(255,255,255,.97)')+';backdrop-filter:blur(16px);border:1.5px solid '+(isDark?'rgba(116,198,157,.38)':'rgba(30,90,55,.22)')+';border-radius:18px;padding:13px 16px;display:flex;align-items:center;gap:11px;z-index:8500;cursor:pointer;max-width:320px;width:calc(100% - 40px);box-shadow:0 6px 28px rgba(0,0,0,'+(isDark?'.45':'.14')+');opacity:0;transition:opacity .28s ease,transform .28s ease';
+  var avHtml = senderAv && senderAv.length <= 4
+    ? '<div style="width:34px;height:34px;border-radius:50%;background:'+(isDark?'rgba(116,198,157,.18)':'rgba(116,198,157,.14)')+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+_escHtml(senderAv)+'</div>'
+    : _avInline(senderAv||'🌿', 34);
+  pop.innerHTML = '<div style="width:34px;height:34px;border-radius:50%;background:'+(isDark?'rgba(116,198,157,.18)':'rgba(116,198,157,.14)')+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📣</div>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:12px;font-weight:700;color:'+(isDark?'rgba(116,198,157,.95)':'#1a6b3c')+';margin-bottom:2px;letter-spacing:.3px">Alerta Buzón Velo</div>'
+    +'<div style="font-size:13px;font-weight:600;color:'+(isDark?'rgba(255,255,255,.88)':'#0a1810')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(subject||'Nuevo mensaje')+'</div>'
+    +'</div>'
+    +'<div style="font-size:12px;font-weight:700;color:'+(isDark?'rgba(116,198,157,.85)':'#1a6b3c')+';flex-shrink:0;white-space:nowrap">Ver →</div>';
+  pop.onclick = function(){
+    pop.remove();
+    pGoTo('inbox');
+    setTimeout(pRenderInbox, 150);
+  };
+  document.body.appendChild(pop);
+  requestAnimationFrame(function(){
+    pop.style.opacity = '1';
+    pop.style.transform = 'translateX(-50%) translateY(0)';
+  });
+  setTimeout(function(){
+    if(!pop.parentNode) return;
+    pop.style.opacity = '0';
+    pop.style.transform = 'translateX(-50%) translateY(8px)';
+    setTimeout(function(){ if(pop.parentNode) pop.remove(); }, 300);
+  }, 5500);
+}
+
+function _startBuzónListener(){
+  if(_buzónRtCh) return;
+  _initSupabase();
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId || !sbClient) return;
+  var myTarget = 'user:'+myId;
+  _buzónRtCh = sbClient.channel('velo:buzon:'+myId)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'broadcasts'}, function(payload){
+      var b = payload.new||{};
+      if(b.target !== myTarget) return;
+      var sInfo = null; try{ sInfo = JSON.parse(b.sender); }catch(e){}
+      _showBuzónAlert(b.subject||'Nuevo mensaje', sInfo&&sInfo.i, sInfo&&sInfo.n, sInfo&&sInfo.a||b.icon||'💌');
+      _updateInboxDot();
+    })
+    .subscribe();
+}
+
 function _gcSubscribe(){
   if(_gcRtCh && sbClient){ try{ sbClient.removeChannel(_gcRtCh); }catch(e){} _gcRtCh = null; }
   if(_gcPollTmr){ clearInterval(_gcPollTmr); _gcPollTmr = null; }
@@ -2747,7 +2800,7 @@ async function pRenderHelp(){
   }
 
   function _helpCard(h, isOwn){
-    var timeLeft = h.time + 48*3600*1000 - Date.now();
+    var timeLeft = h.time + 24*3600*1000 - Date.now();
     var timeStr = (function(){
       if(timeLeft <= 0) return 'expirado';
       var mins = Math.floor(timeLeft/60000);
@@ -7917,13 +7970,17 @@ function _sendOfflineMsg(toId, toName, toAv){
   document.getElementById('offlineMsgOv').remove();
   _initSupabase();
   if(sbClient && myId){
-    sbClient.from('direct_messages').insert({
-      from_id:myId, from_name:myName, from_av:myAv, to_id:toId, text:text
+    // Route through broadcasts so recipient receives an inbox notification
+    sbClient.from('broadcasts').insert({
+      target: 'user:'+toId,
+      subject: myName + ' te envió un mensaje',
+      body: text,
+      icon: myAv||'💌',
+      sender: JSON.stringify({ n:myName, i:myId, a:myAv||'🧑' }),
+      sent_at: new Date().toISOString()
     }).then(function(){}).catch(function(){});
-    // Mark as accepted so future DMs don't need a handshake
-    safeLS('set','velo_dm_accepted_'+toId,'1');
   }
-  pToast('📬','Mensaje enviado a '+_escHtml(toName||'Usuario'));
+  pToast('📬','Mensaje enviado a '+_escHtml(toName||'Usuario')+'  💌');
 }
 
 // ── FAVORITES MINI WIDGET (shown in sections) ──────────────────
@@ -12285,6 +12342,7 @@ window.addEventListener('load', function(){
     setTimeout(function(){ _sbSyncProfile(safeLS('get','velo_user_id')); }, 1500);
     setTimeout(_startGuardianHeartbeat, 2000);
     setTimeout(_startGlobalDMListener, 3000);
+    setTimeout(_startBuzónListener, 3200);
     setTimeout(_syncFavsFromSupabase, 3500);
     if(type === 'admin' && safeLS('get','velo_admin_session') === '1'){
       pGoTo('admin');
