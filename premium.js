@@ -17,10 +17,10 @@
 // Key kept as fallback for non-Vercel environments (e.g. local dev / GitHub Pages)
 var GEMINI_KEY    = ''; // key removed — use Vercel proxy only (set GEMINI_KEY in Vercel env vars)
 var GEMINI_URLS   = [
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=',
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key='
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=',
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='
 ];
-var GEMINI_PROXY      = '/api/gemini';     // Gemini 2.0 Flash proxy (Google AI, grounding enabled)
+var GEMINI_PROXY      = '/api/gemini';     // Gemini 2.5 Flash proxy (Google AI, grounding enabled)
 var GROQ_PROXY        = '/api/groq';       // Groq proxy — llama-3.3-70b, same response shape as Gemini
 var SEND_EMAIL_PROXY  = '/api/send-email'; // Vercel serverless proxy for thank-you emails
 var _geminiUrlIdx = 0;

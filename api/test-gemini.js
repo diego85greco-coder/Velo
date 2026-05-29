@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
     });
     const json = await r.json();
     if (json.candidates) {
-      return res.json({ ok: true, model: 'gemini-2.0-flash', response: json.candidates[0].content.parts[0].text });
+      return res.json({ ok: true, model: 'gemini-2.5-flash', response: json.candidates[0].content.parts[0].text });
     }
     return res.json({ ok: false, step: 'api', httpStatus: r.status, error: json.error || json });
   } catch (e) {
