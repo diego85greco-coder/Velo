@@ -10169,147 +10169,220 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
     +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(180,140,220,.75);margin-bottom:6px">📊 RESUMEN MENSUAL VELO</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:#fff;font-weight:300;margin-bottom:4px">Tu '+mName+' '+year+(firstName?' — '+firstName:'')+'</div>'
     +'<div style="height:1px;background:rgba(255,255,255,.08);margin:12px 0"></div>'
-    +'<div id="monthlyReportBody">'
-    +'<div style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.4);font-size:12px;padding:16px 0"><span class="live-dot" style="background:rgba(180,140,220,.8)"></span>Gemini está analizando tu mes…</div>'
-    +'</div>'
-    +'<button onclick="document.getElementById(\'monthlyReportOv\').remove();_syncBodyScroll()" style="width:100%;padding:11px;background:rgba(180,140,220,.15);border:1.5px solid rgba(180,140,220,.3);border-radius:14px;color:rgba(180,140,220,.9);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;margin-top:6px">Cerrar</button>'
+    +'<div id="monthlyReportBody"><div style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.35);font-size:12px;padding:20px 0"><span class="live-dot" style="background:rgba(180,140,220,.8)"></span>Gemini está analizando tu mes…</div></div>'
+    +'<button onclick="document.getElementById(\'monthlyReportOv\').remove();_syncBodyScroll()" style="width:100%;padding:11px;background:rgba(180,140,220,.15);border:1.5px solid rgba(180,140,220,.3);border-radius:14px;color:rgba(180,140,220,.9);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;margin-top:8px">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov); _syncBodyScroll();
   var data=await _generateMonthlySummary(month,mName,year);
   var bodyEl=document.getElementById('monthlyReportBody');
   if(!bodyEl) return;
   var html='';
-  // ── AI narrative ──
-  html+='<div style="font-size:14px;color:rgba(255,255,255,.8);line-height:1.8;white-space:pre-line;margin-bottom:18px">'+_escHtml(data.narrative||'')+'</div>';
-  // ── Stats row ──
-  if(data.moods||data.helped||data.received||data.diary){
+
+  // ── Mood breakdown bar ──
+  if(data.happy||data.neutral||data.sad){
+    var total=data.happy+data.neutral+data.sad;
+    var pHappy=Math.round(data.happy/total*100); var pNeutral=Math.round(data.neutral/total*100); var pSad=100-pHappy-pNeutral;
+    html+='<div style="margin-bottom:18px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:10px">😊 TUS ÁNIMOS EN '+mName.toUpperCase()+'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">'
+      +_mrStatCard('☀️','Días felices',data.happy,'positivos')
+      +_mrStatCard('🌤️','Días tranquilos',data.neutral,'neutrales')
+      +_mrStatCard('🌧️','Días difíciles',data.sad,'con peso')
+      +'</div>'
+      +'<div style="height:8px;border-radius:8px;overflow:hidden;display:flex;background:rgba(255,255,255,.06)">'
+      +(data.happy?'<div style="width:'+pHappy+'%;background:rgba(116,198,157,.7);transition:width .8s"></div>':'')
+      +(data.neutral?'<div style="width:'+pNeutral+'%;background:rgba(200,162,56,.5);transition:width .8s"></div>':'')
+      +(pSad>0?'<div style="flex:1;background:rgba(180,140,220,.4);transition:width .8s"></div>':'')
+      +'</div>'
+      +'<div style="display:flex;gap:12px;margin-top:5px;font-size:9px;color:rgba(255,255,255,.35)">'
+      +'<span>■ Feliz</span><span style="color:rgba(200,162,56,.7)">■ Tranquilo</span><span style="color:rgba(180,140,220,.7)">■ Difícil</span>'
+      +'</div>'
+      +'</div>';
+  }
+
+  // ── Community stats ──
+  if(data.helped||data.received){
     html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:18px">';
-    if(data.moods)    html+=_mrStatCard('😊','Estados de ánimo',data.moods,'registros este mes');
-    if(data.diary)    html+=_mrStatCard('📔','Diario',data.diary,'entradas escritas');
-    if(data.helped)   html+=_mrStatCard('💙','Personas ayudadas',data.helped,'como guardián/a');
-    if(data.received) html+=_mrStatCard('🌿','Apoyos recibidos',data.received,'veces');
+    if(data.helped)   html+=_mrStatCard('💙','Personas que ayudaste',data.helped,'como guardián/a');
+    if(data.received) html+=_mrStatCard('🌿','Veces que recibiste apoyo',data.received,'acompañamientos');
     html+='</div>';
   }
-  // ── Reviews ──
-  if(data.reviews && data.reviews.length){
-    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.8);margin-bottom:10px">⭐ RESEÑAS DEL MES ('+data.totalReviews+' en total)</div>';
-    data.reviews.forEach(function(r){
-      html+='<div style="background:rgba(200,162,0,.07);border:1px solid rgba(200,162,0,.2);border-radius:12px;padding:12px 14px;margin-bottom:8px">'
-        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
-        +'<span style="font-size:13px">'+'⭐'.repeat(r.stars||5)+'</span>'
-        +'<span style="font-size:11px;color:rgba(255,255,255,.4)">'+_escHtml(r.reviewer_name||'Usuario anónimo')+'</span>'
-        +'</div>'
-        +(r.texto?'<div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6;font-style:italic">"'+_escHtml(r.texto)+'"</div>':'')
+
+  // ── AI narrative ──
+  html+='<div style="font-size:14px;color:rgba(255,255,255,.82);line-height:1.85;white-space:pre-line;margin-bottom:20px;border-left:2px solid rgba(180,140,220,.35);padding-left:14px">'+_escHtml(data.narrative||'')+'</div>';
+
+  // ── Recommendations ──
+  if(data.recs && data.recs.length){
+    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.75);margin-bottom:10px">✨ PARA ESTE MES</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px">';
+    data.recs.forEach(function(r){
+      html+='<div style="display:flex;align-items:flex-start;gap:10px;background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:10px 12px">'
+        +'<span style="font-size:20px;flex-shrink:0;line-height:1.2">'+(r.icon||'✨')+'</span>'
+        +'<span style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.55">'+_escHtml(r.text||'')+'</span>'
         +'</div>';
     });
+    html+='</div>';
   }
+
+  // ── Books ──
+  if(data.books && data.books.length){
+    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,56,.8);margin-bottom:10px">📚 LECTURAS RECOMENDADAS</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px">';
+    data.books.forEach(function(b){
+      html+='<div style="background:rgba(200,162,56,.06);border:1px solid rgba(200,162,56,.2);border-radius:12px;padding:10px 14px">'
+        +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85)">📖 '+_escHtml(b.title||'')+'</div>'
+        +'<div style="font-size:11px;color:rgba(200,162,56,.8);margin-top:2px">'+_escHtml(b.author||'')+'</div>'
+        +(b.why?'<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:4px;line-height:1.5">'+_escHtml(b.why)+'</div>':'')
+        +'</div>';
+    });
+    html+='</div>';
+  }
+
+  // ── Reviews ──
+  if(data.reviews && data.reviews.length){
+    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.8);margin-bottom:10px">⭐ LO QUE LA COMUNIDAD DICE DE VOS'+(data.totalReviews?' ('+data.totalReviews+' reseñas)':'')+'</div>';
+    data.reviews.forEach(function(r){
+      html+='<div style="background:rgba(200,162,0,.07);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:12px 14px;margin-bottom:8px">'
+        +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">'
+        +'<span style="font-size:12px;letter-spacing:1px">'+'⭐'.repeat(Math.min(r.stars||5,5))+'</span>'
+        +'<span style="font-size:11px;color:rgba(255,255,255,.35)">'+_escHtml(r.reviewer_name||'Usuario')+'</span>'
+        +'</div>'
+        +(r.texto?'<div style="font-size:13px;color:rgba(255,255,255,.78);line-height:1.6;font-style:italic">"'+_escHtml(r.texto)+'"</div>':'')
+        +'</div>';
+    });
+    html+='<div style="height:1px;background:rgba(255,255,255,.06);margin:4px 0 18px"></div>';
+  }
+
   // ── Medals ──
   if(data.medals && data.medals.length){
-    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:8px">🏅 MEDALLAS DE '+mName.toUpperCase()+'</div>';
+    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:8px">🏅 MEDALLAS GANADAS</div>';
     html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px">'
       +data.medals.map(function(m){ return '<span style="padding:5px 12px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.25);border-radius:20px;font-size:12px;color:rgba(116,198,157,.9)">'+_escHtml(m.name||m.label||'🏅')+'</span>'; }).join('')
       +'</div>';
   }
+
+  // ── Help hint (if many sad days) ──
+  if(data.help_hint){
+    html+='<div style="background:rgba(116,198,157,.07);border:1.5px solid rgba(116,198,157,.25);border-radius:14px;padding:14px;margin-bottom:14px">'
+      +'<div style="font-size:14px;font-weight:700;color:rgba(116,198,157,.9);margin-bottom:6px">💚 Un espacio para vos</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.65">'+_escHtml(data.help_hint)+'</div>'
+      +'<button onclick="document.getElementById(\'monthlyReportOv\').remove();_syncBodyScroll();pGoTo(\'guardianes\')" style="margin-top:10px;padding:8px 16px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:10px;color:rgba(116,198,157,.9);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">Hablar con alguien →</button>'
+      +'</div>';
+  }
+
   // ── Gratitude footer ──
-  html+='<div style="background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.18);border-radius:14px;padding:14px;text-align:center;margin-top:8px">'
-    +'<div style="font-size:20px;margin-bottom:6px">💜</div>'
-    +'<div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.6">Gracias por ser parte de la comunidad Velo. Tu presencia importa y hace la diferencia para alguien más.</div>'
+  html+='<div style="background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.15);border-radius:14px;padding:16px;text-align:center">'
+    +'<div style="font-size:22px;margin-bottom:8px">💜</div>'
+    +'<div style="font-size:14px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:6px">Gracias por ser parte de Velo</div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6">Tu presencia en esta comunidad importa y hace la diferencia para alguien que todavía no lo sabe. Nos vemos el próximo mes. 🌱</div>'
     +'</div>';
+
   bodyEl.innerHTML=html;
 }
 
 function _mrStatCard(icon, label, value, sub){
-  return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;text-align:center">'
-    +'<div style="font-size:22px;margin-bottom:4px">'+icon+'</div>'
-    +'<div style="font-size:24px;font-weight:800;color:#fff;line-height:1">'+value+'</div>'
-    +'<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);margin-top:3px">'+label+'</div>'
-    +'<div style="font-size:9px;color:rgba(255,255,255,.3);margin-top:1px">'+sub+'</div>'
+  return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px;text-align:center">'
+    +'<div style="font-size:20px;margin-bottom:4px">'+icon+'</div>'
+    +'<div style="font-size:26px;font-weight:800;color:#fff;line-height:1">'+value+'</div>'
+    +'<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.55);margin-top:3px">'+label+'</div>'
+    +'<div style="font-size:9px;color:rgba(255,255,255,.28);margin-top:1px">'+sub+'</div>'
     +'</div>';
 }
 
 async function _generateMonthlySummary(month, mName, year){
   var cacheKey='velo_monthly_summary_'+month;
-  try{ var c=safeLS('get',cacheKey); if(c) return JSON.parse(c); }catch(e){}
+  try{ var c=safeLS('get',cacheKey); if(c){ var p=JSON.parse(c); if(p&&p.narrative) return p; } }catch(e){}
   var name=safeLS('get','velo_user_name')||''; var firstName=name.split(' ')[0]||'vos';
   var mon=parseInt(month.split('-')[1]); var yr=parseInt(month.split('-')[0]);
   var cutStart=new Date(yr,mon-1,1).toISOString(); var cutEnd=new Date(yr,mon,0,23,59,59).toISOString();
-  // ── Local mood log ──
+
+  // ── Classify moods ──
   var moodLog=[]; try{moodLog=JSON.parse(safeLS('get','velo_mood_log')||'[]');}catch(e){}
   var monthMoods=moodLog.filter(function(m){ var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
-  // ── Local diary ──
-  var diaryAll=[]; try{diaryAll=JSON.parse(safeLS('get','velo_diary')||'[]');}catch(e){}
-  var monthDiary=diaryAll.filter(function(e){ var d=new Date(e.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
-  // ── Local medals ──
+  var positiveSet={'😊':1,'😄':1,'🥰':1,'😎':1,'🌈':1,'☀️':1,'🔥':1,'✨':1,'🌻':1};
+  var negativeSet={'😔':1,'😢':1,'😰':1,'😤':1,'🌧️':1,'😞':1,'😟':1,'😭':1,'😣':1};
+  var happy=0,sad=0,neutral=0;
+  monthMoods.forEach(function(m){
+    if(positiveSet[m.emoji]) happy++;
+    else if(negativeSet[m.emoji]) sad++;
+    else neutral++;
+  });
+
+  // ── Medals ──
   var medals=[]; try{medals=JSON.parse(safeLS('get','velo_medals')||'[]');}catch(e){}
   var monthMedals=medals.filter(function(m){ var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
-  // ── Supabase: reviews received ──
-  var reviewsData=[]; var totalReviews=0;
-  _initSupabase();
-  var myId=_myUserId();
-  if(sbClient && myId && myId!=='guest'){
+
+  // ── Supabase ──
+  var reviewsData=[],totalReviews=0,helpedOthers=0,helpReceived=0;
+  _initSupabase(); var myId=_myUserId();
+  if(sbClient&&myId&&myId!=='guest'){
     try{
       await _ensureSbSession();
-      var rvRes=await sbClient.from('reviews').select('stars,texto,reviewer_name,created_at')
+      var rvRes=await sbClient.from('reviews').select('stars,texto,reviewer_name')
         .eq('pro_id',myId).gte('created_at',cutStart).lte('created_at',cutEnd)
         .order('stars',{ascending:false}).limit(20);
       if(rvRes.data&&rvRes.data.length){
         totalReviews=rvRes.data.length;
-        // Top 4 with text, or top 4 by stars
         reviewsData=rvRes.data.filter(function(r){ return r.texto&&r.texto.trim(); }).slice(0,4);
-        if(!reviewsData.length) reviewsData=rvRes.data.slice(0,4);
+        if(!reviewsData.length) reviewsData=rvRes.data.slice(0,3);
       }
     }catch(e){}
-    // ── Supabase: guardian activity ──
-    var helpedOthers=0; var helpReceived=0;
-    try{
-      var ghRes=await sbClient.from('guardian_requests').select('id,guardian_id,seeker_id',{count:'exact'})
-        .eq('guardian_id',myId).eq('status','ended').gte('created_at',cutStart).lte('created_at',cutEnd);
-      helpedOthers=(ghRes.count)||0;
-    }catch(e){}
-    try{
-      var gsRes=await sbClient.from('guardian_requests').select('id',{count:'exact'})
-        .eq('seeker_id',myId).eq('status','ended').gte('created_at',cutStart).lte('created_at',cutEnd);
-      helpReceived=(gsRes.count)||0;
-    }catch(e){}
+    try{ var gh=await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('guardian_id',myId).eq('status','ended').gte('created_at',cutStart).lte('created_at',cutEnd); helpedOthers=gh.count||0; }catch(e){}
+    try{ var gs=await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('seeker_id',myId).eq('status','ended').gte('created_at',cutStart).lte('created_at',cutEnd); helpReceived=gs.count||0; }catch(e){}
   }
-  if(!monthMoods.length&&!monthDiary.length&&!reviewsData.length){
-    var noData='No encontramos registros de '+mName+' en tu app. Para el próximo mes, registrá cómo te sentís cada día y escribí en tu diario — así Gemini puede prepararte un resumen personalizado. 💚';
-    return {narrative:noData,moods:0,diary:0,helped:helpedOthers||0,received:helpReceived||0,reviews:[],totalReviews:0,medals:[]};
+
+  var sadPct=monthMoods.length?Math.round(sad/monthMoods.length*100):0;
+
+  if(!monthMoods.length&&!reviewsData.length){
+    return {narrative:'No encontramos registros de '+mName+'. Para el próximo mes, registrá cómo te sentís cada día — así Gemini puede prepararte tu resumen personal. 💚',
+      happy:0,neutral:0,sad:0,helped:helpedOthers,received:helpReceived,reviews:reviewsData,totalReviews:totalReviews,medals:monthMedals,recs:[],books:[],help_hint:null};
   }
-  // ── Build Gemini prompt ──
-  var moodCtx='';
-  if(monthMoods.length){
-    var mTexts=monthMoods.slice(0,20).map(function(m){ return (m.emoji||'')+(m.label?' '+m.label:'')+(m.note?' ("'+m.note.slice(0,60)+'")':''); });
-    moodCtx=monthMoods.length+' estados de ánimo en '+mName+':\n'+mTexts.join('\n')+'\n\n';
-  }
-  var diaryCtx='';
-  if(monthDiary.length){
-    var exc=monthDiary.slice(0,4).map(function(e,i){ return (i+1)+'. '+(e.text||'').slice(0,100); });
-    diaryCtx=monthDiary.length+' entradas en el diario:\n'+exc.join('\n')+'\n\n';
-  }
-  var reviewCtx=reviewsData.length?'Reseñas recibidas ('+totalReviews+' en total): '+reviewsData.slice(0,3).map(function(r){ return r.stars+'★'+(r.texto?' "'+r.texto.slice(0,60)+'"':''); }).join('; ')+'\n\n':'';
-  var actCtx=(helpedOthers?'Conversaciones como guardián/a: '+helpedOthers+'\n':'')+(helpReceived?'Veces que recibiste acompañamiento: '+helpReceived+'\n':'');
-  var medalCtx=monthMedals.length?'Medallas obtenidas: '+monthMedals.map(function(m){ return m.name||m.label||'🏅'; }).join(', ')+'\n\n':'';
+
+  // ── Gemini prompt → structured JSON ──
+  var moodCtx=monthMoods.length
+    ?'Datos de ánimo de '+mName+' '+yr+':\n- Días felices/positivos: '+happy+'\n- Días tranquilos/neutrales: '+neutral+'\n- Días difíciles/tristes: '+sad+'\n- Total registrado: '+monthMoods.length+' días\n\n'
+    :'';
+  var actCtx=(helpedOthers?'- Acompañó a '+helpedOthers+' personas como guardián/a\n':'')+(helpReceived?'- Recibió apoyo en '+helpReceived+' ocasiones\n':'');
+  var rvCtx=totalReviews?'- Recibió '+totalReviews+' reseña'+(totalReviews>1?'s':'')+' de la comunidad\n':'';
+  var medalCtx=monthMedals.length?'- Medallas ganadas: '+monthMedals.map(function(m){return m.name||m.label||'🏅';}).join(', ')+'\n':'';
   var prompt='Sos el sistema de bienestar de Velo, una app de salud mental peer-to-peer.\n'
-    +'Generá un resumen mensual cálido y personalizado para '+firstName+' sobre '+mName+' '+yr+'.\n\n'
-    +moodCtx+diaryCtx+reviewCtx+actCtx+medalCtx
-    +'Escribí 4-6 oraciones que:\n'
-    +'- Destaquen patrones de ánimo si los hay\n'
-    +'- Reconozcan con compasión los momentos difíciles\n'
-    +'- Celebren la actividad comunitaria (guardianes, reseñas) si la hubo\n'
-    +'- Terminen con aliento para el mes siguiente\n'
-    +'Usá "vos" (español rioplatense). Solo texto corrido, sin títulos ni bullets.';
-  var narrative=await _geminiCall(prompt,{temperature:0.82,maxOutputTokens:340});
-  if(!narrative) narrative=firstName+', registraste '+monthMoods.length+' estados de ánimo y '+monthDiary.length+' entradas en '+mName+'. ¡Gracias por ser parte de la comunidad Velo! 💚';
+    +'Generá el resumen mensual personalizado para '+firstName+' sobre '+mName+' '+yr+'.\n\n'
+    +moodCtx+(actCtx||rvCtx||medalCtx?'Actividad en la comunidad:\n'+actCtx+rvCtx+medalCtx+'\n':'')
+    +'Devolvé ÚNICAMENTE un JSON válido con esta estructura (sin markdown, sin explicación):\n'
+    +'{\n'
+    +'"narrative": "4-6 oraciones cálidas y empáticas sobre el mes. Analizá el balance de ánimos con honestidad y compasión. '+(sadPct>=50?'IMPORTANTE: tuvo muchos días difíciles, sé muy empático/a y reconfortante. ':'')+'Celebrá los logros. Terminá con aliento para el mes siguiente. Español rioplatense, usá \'vos\'.",\n'
+    +'"recs": [\n'
+    +'  {"icon":"emoji","text":"actividad recomendada concreta y cotidiana (ej: escuchar música que levante el ánimo, juntarse con una persona querida, ver una película que te haga reír, salir a caminar al sol, respirar profundo 5 minutos antes de dormir)"},\n'
+    +'  ... (3 o 4 recomendaciones breves y prácticas, del día a día)\n'
+    +'],\n'
+    +'"books": [\n'
+    +'  {"title":"Título del libro","author":"Autor","why":"Una oración de por qué es bueno para este usuario este mes"},\n'
+    +'  ... (2 libros de autoayuda, motivación o experiencias de vida, reales y conocidos)\n'
+    +'],\n'
+    +'"help_hint": '+(sadPct>=50?'"Una oración muy gentil y sin alarmismo que invite al usuario a hablar con alguien de la comunidad si lo necesita. No menciones terapia ni profesionales."':'null')+'\n'
+    +'}\n'
+    +'Todos los textos en español rioplatense (usá \'vos\', no \'tú\').';
+
+  var raw=await _geminiCall(prompt,{temperature:0.82,maxOutputTokens:800});
+  var parsed=null;
+  if(raw){ try{ var m=raw.replace(/```json\n?|```/g,'').trim().match(/\{[\s\S]*\}/); if(m) parsed=JSON.parse(m[0]); }catch(e){} }
+
+  if(!parsed) parsed={
+    narrative:firstName+', '+mName+' tuvo '+(happy?happy+' días positivos':'')+(sad?' y '+sad+' días más difíciles':'')+'. Cada día que registrás tu ánimo es un acto de cuidado hacia vos mismo/a. ¡Seguí adelante! 💚',
+    recs:[{icon:'🎵',text:'Escuchá música que te eleve el ánimo cuando llegues a casa'},{icon:'🫂',text:'Escribile a alguien querido esta semana'}],
+    books:[{title:'El poder del ahora',author:'Eckhart Tolle',why:'Para soltar el peso del pasado y el futuro'},{title:'Hábitos atómicos',author:'James Clear',why:'Para construir pequeños cambios que se acumulan'}],
+    help_hint:sadPct>=50?'Recordá que en Velo siempre hay alguien dispuesto a escucharte sin juzgarte.':null
+  };
+
   var result={
-    narrative:narrative,
-    moods:monthMoods.length||0,
-    diary:monthDiary.length||0,
-    helped:helpedOthers||0,
-    received:helpReceived||0,
-    reviews:reviewsData,
-    totalReviews:totalReviews,
-    medals:monthMedals
+    narrative:parsed.narrative||'',
+    happy:happy,neutral:neutral,sad:sad,
+    helped:helpedOthers,received:helpReceived,
+    reviews:reviewsData,totalReviews:totalReviews,
+    medals:monthMedals,
+    recs:Array.isArray(parsed.recs)?parsed.recs.slice(0,4):[],
+    books:Array.isArray(parsed.books)?parsed.books.slice(0,3):[],
+    help_hint:parsed.help_hint||null
   };
   safeLS('set',cacheKey,JSON.stringify(result));
   return result;
