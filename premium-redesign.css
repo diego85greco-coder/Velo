@@ -4436,3 +4436,224 @@ body.r-dark #homeDonateBanner [style*="ink4"] ,
 body.r-dark #homeDonateBanner div:last-child > div:first-child {
   color: rgba(255,255,255,.68) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v201: DRAMATIC — crystal glass card, fast bright shimmer, living pill
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Quote card: TRUE frosted crystal look ───────────────────────── */
+#pg-home #homeDailyQuote {
+  backdrop-filter: blur(32px) saturate(2.0) brightness(1.10) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(2.0) brightness(1.10) !important;
+  overflow: hidden !important;
+}
+/* Top glass-edge highlight + outer warm glow */
+body.r-dark #pg-home #homeDailyQuote {
+  background: linear-gradient(
+    150deg,
+    rgba(44,72,50,.82) 0%,
+    rgba(20,42,28,.76) 50%,
+    rgba(14,34,22,.90) 100%
+  ) !important;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.20),
+    inset 0 -1px 0 rgba(255,255,255,.06),
+    inset 1px 0 0 rgba(255,255,255,.08),
+    0 20px 60px rgba(0,0,0,.50) !important;
+  border-color: rgba(200,158,56,.28) !important;
+  border-left-color: rgba(200,158,56,.55) !important;
+}
+body:not(.r-dark) #pg-home #homeDailyQuote {
+  background: linear-gradient(
+    150deg,
+    rgba(255,252,240,.96) 0%,
+    rgba(255,244,216,.88) 50%,
+    rgba(255,238,200,.94) 100%
+  ) !important;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.90),
+    inset 0 -1px 0 rgba(200,158,56,.12),
+    0 16px 48px rgba(200,158,56,.20) !important;
+  border-color: rgba(200,158,56,.30) !important;
+  border-left-color: rgba(200,158,56,.65) !important;
+}
+
+/* Sweeping crystal light refraction (replaces old ::after glow) */
+#pg-home #homeDailyQuote::after {
+  content: '' !important;
+  position: absolute !important;
+  top: -10% !important; left: -90% !important;
+  width: 55% !important; height: 120% !important;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255,255,255,.03) 30%,
+    rgba(255,255,255,.24) 50%,
+    rgba(255,255,255,.03) 70%,
+    transparent 100%
+  ) !important;
+  transform: skewX(-12deg) !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+  animation: crystal-sweep 4.5s ease-in-out infinite !important;
+}
+@keyframes crystal-sweep {
+  0%, 10%  { left: -90%;  opacity: 0; }
+  18%       { opacity: 1; }
+  78%       { opacity: 1; }
+  86%, 100% { left: 160%; opacity: 0; }
+}
+
+/* Animated glowing border pulse — stronger + faster */
+@keyframes quote-border-pulse-dk {
+  0%, 100% {
+    box-shadow:
+      inset 0 2px 0 rgba(255,255,255,.20),
+      inset 0 -1px 0 rgba(255,255,255,.06),
+      0 20px 60px rgba(0,0,0,.50);
+    border-left-color: rgba(200,158,56,.55);
+  }
+  50% {
+    box-shadow:
+      inset 0 2px 0 rgba(255,255,255,.28),
+      inset 0 -1px 0 rgba(255,255,255,.10),
+      0 24px 70px rgba(0,0,0,.55),
+      0 0 50px rgba(200,158,56,.28),
+      0 0 90px rgba(200,158,56,.10);
+    border-left-color: rgba(255,210,50,1);
+  }
+}
+@keyframes quote-border-pulse-lt {
+  0%, 100% {
+    box-shadow:
+      inset 0 2px 0 rgba(255,255,255,.90),
+      0 16px 48px rgba(200,158,56,.20);
+    border-left-color: rgba(200,158,56,.65);
+  }
+  50% {
+    box-shadow:
+      inset 0 2px 0 rgba(255,255,255,.98),
+      0 22px 64px rgba(200,158,56,.38),
+      0 0 30px rgba(200,158,56,.15);
+    border-left-color: rgba(255,210,50,1);
+  }
+}
+body.r-dark #pg-home #homeDailyQuote {
+  animation: quote-border-pulse-dk 3.5s ease-in-out infinite !important;
+}
+body:not(.r-dark) #pg-home #homeDailyQuote {
+  animation: quote-border-pulse-lt 3.5s ease-in-out infinite !important;
+}
+
+/* Quote mark: faster float */
+#pg-home #homeDailyQuote::before {
+  animation: quote-mark-float 5s ease-in-out infinite !important;
+}
+
+/* Text shimmer: faster (3s) + MUCH brighter gold contrast */
+#pg-home #homeDailyQuoteText {
+  animation: velo-text-shimmer 3s ease-in-out infinite !important;
+}
+body.r-dark #pg-home #homeDailyQuoteText {
+  background-image: linear-gradient(
+    90deg,
+    rgba(225,225,225,.82) 0%, rgba(225,225,225,.82) 20%,
+    rgba(255,212,40,1.0) 50%,
+    rgba(225,225,225,.82) 80%, rgba(225,225,225,.82) 100%
+  ) !important;
+}
+body:not(.r-dark) #pg-home #homeDailyQuoteText {
+  background-image: linear-gradient(
+    90deg,
+    #1e3020 0%, #1e3020 20%,
+    rgba(195,130,0,1.0) 50%,
+    #1e3020 80%, #1e3020 100%
+  ) !important;
+}
+
+/* Author shimmer: faster */
+#pg-home #homeDailyQuoteAuthor {
+  animation: velo-text-shimmer 2.2s ease-in-out infinite !important;
+}
+body.r-dark #pg-home #homeDailyQuoteAuthor {
+  background-image: linear-gradient(
+    90deg,
+    rgba(200,158,56,.55) 0%, rgba(200,158,56,.55) 15%,
+    rgba(255,230,70,1.0) 50%,
+    rgba(200,158,56,.55) 85%, rgba(200,158,56,.55) 100%
+  ) !important;
+}
+body:not(.r-dark) #pg-home #homeDailyQuoteAuthor {
+  background-image: linear-gradient(
+    90deg,
+    rgba(120,78,4,.62) 0%, rgba(120,78,4,.62) 15%,
+    rgba(210,158,10,1.0) 50%,
+    rgba(120,78,4,.62) 85%, rgba(120,78,4,.62) 100%
+  ) !important;
+}
+
+/* ── Mood pill: dramatic living glow ring ────────────────────────── */
+@keyframes pill-ring-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(116,198,157,.38), 0 2px 10px rgba(116,198,157,.20);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2.5px rgba(116,198,157,.72),
+      0 0 0 5px rgba(116,198,157,.18),
+      0 6px 24px rgba(116,198,157,.52);
+    transform: scale(1.07);
+  }
+}
+#homeCurrentMoodLine {
+  animation: pill-ring-pulse 2.6s ease-in-out infinite !important;
+  border: none !important;
+}
+body:not(.r-dark) #homeCurrentMoodLine {
+  background: linear-gradient(135deg, rgba(27,94,58,.13), rgba(116,198,157,.22)) !important;
+}
+body.r-dark #homeCurrentMoodLine {
+  background: linear-gradient(135deg, rgba(116,198,157,.16), rgba(80,180,120,.24)) !important;
+}
+
+/* Avatar: pulsing glow ring */
+@keyframes avatar-glow {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(116,198,157,.42), 0 0 14px rgba(116,198,157,.16); }
+  50%       { box-shadow: 0 0 0 4px rgba(116,198,157,.72), 0 0 28px rgba(116,198,157,.42); }
+}
+#pg-home .home-av {
+  animation: avatar-glow 3s ease-in-out infinite !important;
+}
+
+/* Greeting card: subtle float + glow */
+@keyframes card-float-glow {
+  0%, 100% {
+    transform: translateY(0px);
+    box-shadow: 0 6px 30px rgba(27,94,58,.10), 0 1px 4px rgba(0,0,0,.04);
+    border-color: rgba(27,94,58,.18);
+  }
+  50% {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 46px rgba(116,198,157,.22), 0 4px 12px rgba(116,198,157,.10);
+    border-color: rgba(116,198,157,.42);
+  }
+}
+@keyframes card-float-glow-dk {
+  0%, 100% {
+    transform: translateY(0px);
+    box-shadow: 0 6px 30px rgba(0,0,0,.28);
+    border-color: rgba(116,198,157,.18);
+  }
+  50% {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 46px rgba(116,198,157,.20), 0 0 0 1px rgba(116,198,157,.32);
+    border-color: rgba(116,198,157,.40);
+  }
+}
+body:not(.r-dark) #pg-home .home-greeting {
+  animation: card-float-glow 4s ease-in-out 0.8s infinite !important;
+}
+body.r-dark #pg-home .home-greeting {
+  animation: card-float-glow-dk 4s ease-in-out 0.8s infinite !important;
+}
