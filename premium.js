@@ -3973,7 +3973,7 @@ function _renderSOSResources(){
 
   var selectorHtml = '<div style="margin-bottom:14px">'
     +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:1px;display:block;margin-bottom:6px">SELECCIONÁ TU PAÍS</label>'
-    +'<select id="sosCountrySel" onchange="pSosCountry(this.value)" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:13px;font-weight:600;font-family:\'Jost\',sans-serif;cursor:pointer">'
+    +'<select id="sosCountrySel" onchange="pSosCountry(this.value)" tabindex="-1" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:13px;font-weight:600;font-family:\'Jost\',sans-serif;cursor:pointer">'
     +countries.map(function(c){
       return '<option value="'+c+'" style="background:#0B1810;color:#fff"'+(c===selectedCountry?' selected':'')+'>'+c+'</option>';
     }).join('')
@@ -3993,6 +3993,14 @@ function _renderSOSResources(){
     +'<div style="margin-top:14px;padding:12px;background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;text-align:center">'
     +'<p style="font-size:11px;color:rgba(255,255,255,.4);line-height:1.5;margin:0">Esta información es de carácter informativo y se actualiza periódicamente. En caso de emergencia, contactá siempre al número de emergencias de tu país.</p>'
     +'</div>';
+  // iOS Safari scrolls the sheet to the first focusable element (<select>) when it's injected.
+  // Reset scrollTop immediately and again after the next paint so the header stays visible.
+  var _sheet = document.querySelector('#sosOv .p-sheet');
+  if(_sheet){
+    _sheet.scrollTop = 0;
+    requestAnimationFrame(function(){ _sheet.scrollTop = 0; });
+    setTimeout(function(){ _sheet.scrollTop = 0; }, 80);
+  }
 }
 
 function pSosCountry(country){
@@ -10275,7 +10283,12 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
     +'<div style="font-size:22px;margin-bottom:8px">💜</div>'
     +'<div style="font-size:14px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:6px">Gracias por ser parte de Velo</div>'
     +'<div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6">Tu presencia en esta comunidad importa y hace la diferencia para alguien que todavía no lo sabe. Nos vemos el próximo mes. 🌱</div>'
-    +'</div>';
+    +'</div>'
+  // ── Velo logo watermark ──
+  +'<div style="margin-top:22px;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:.35">'
+  +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:300;letter-spacing:3px;color:#fff">VELO</div>'
+  +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.6)">Bienestar colectivo</div>'
+  +'</div>';
 
   bodyEl.innerHTML=html;
 }
