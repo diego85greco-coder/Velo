@@ -5644,3 +5644,89 @@ body:not(.r-dark) #homeDailyQuoteAuthor {
   font-weight: 700 !important;
   opacity: 1 !important;
 }
+
+/* ── v272: Al Mar "Mis respuestas" — replied bottle cards ─────────────── */
+.bottle-replied-card {
+  cursor: default !important;
+}
+.bottle-replied-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a6fa8;
+}
+body.r-dark .bottle-replied-tag { color: rgba(100,180,240,.9) !important; }
+
+.bottle-replied-author {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0e4c78;
+}
+body.r-dark .bottle-replied-author { color: rgba(120,195,255,.88) !important; }
+
+.bottle-replied-meta {
+  font-size: 10px;
+  color: rgba(20,60,100,.55);
+}
+body.r-dark .bottle-replied-meta { color: rgba(255,255,255,.38) !important; }
+
+.bottle-original-block {
+  background: rgba(20,80,130,.07);
+  border: 1px solid rgba(20,80,130,.15);
+  border-radius: 10px;
+  padding: 10px 13px;
+  margin-bottom: 8px;
+}
+body.r-dark .bottle-original-block {
+  background: rgba(255,255,255,.04) !important;
+  border-color: rgba(255,255,255,.10) !important;
+}
+
+.bottle-block-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(20,70,120,.6);
+  margin-bottom: 5px;
+}
+body.r-dark .bottle-block-label { color: rgba(255,255,255,.4) !important; }
+
+.bottle-original-text {
+  font-size: 13px;
+  color: #1a3f60;
+  font-style: italic;
+  font-family: 'Cormorant Garamond', serif;
+  line-height: 1.55;
+  margin: 0;
+}
+body.r-dark .bottle-original-text { color: rgba(220,240,255,.65) !important; }
+
+.bottle-reply-block {
+  background: rgba(20,120,80,.08);
+  border: 1px solid rgba(20,120,80,.22);
+  border-radius: 10px;
+  padding: 10px 13px;
+}
+body.r-dark .bottle-reply-block {
+  background: rgba(80,200,150,.06) !important;
+  border-color: rgba(80,200,150,.18) !important;
+}
+
+.bottle-reply-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0e4a2e;
+  line-height: 1.55;
+  margin: 0;
+  font-family: 'Jost', sans-serif;
+}
+body.r-dark .bottle-reply-text { color: rgba(160,240,200,.92) !important; }
+
+/* ── v272: "Del mar" feed — stronger text contrast ────────────────────── */
+.dark-bottle p {
+  color: #0d2d44 !important;
+  font-size: 14px !important;
+}
+body.r-dark .dark-bottle p { color: rgba(220,245,235,.90) !important; }
+.dark-bottle [style*="color:var(--ink5)"],
+.dark-bottle [style*="color:var(--ink4)"] { opacity: 1 !important; }

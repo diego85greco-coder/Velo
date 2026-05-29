@@ -4191,76 +4191,55 @@ async function pRenderBottleResponses(){
   var el = document.getElementById('bottleRespList');
   if(!el) return;
 
-  // ── Section 1: Responses received for YOUR bottles ──────────────
-  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
-  var resps = inbox.filter(function(m){ return m.icon === '🌊' || (m.remitente && m.remitente.indexOf('Mar') > -1); });
-  _initSupabase();
-  if(sbClient){
-    var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
-    try{
-      var {data} = await sbClient.from('broadcasts').select('*')
-        .or('target.eq.user:'+myId+',target.eq.all').eq('icon','🌊').order('sent_at',{ascending:false}).limit(20);
-      if(data && data.length){
-        resps = data.map(function(b){
-          return { id:b.id, asunto:b.subject, cuerpo:b.body, fecha: new Date(b.sent_at).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) };
-        });
-      }
-    }catch(e){}
-  }
-  var respHtml = '';
-  if(resps.length){
-    respHtml = '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:rgba(200,165,100,.65);margin-bottom:10px;padding:0 2px">RESPUESTAS A TUS MENSAJES</div>'
-      + resps.map(function(r){
-        var delFn = r.id ? 'pDeleteBottleResponse(\''+r.id+'\',this.closest(\'.bottle-resp-card\'))' : 'this.closest(\'.bottle-resp-card\').remove()';
-        return '<div class="dark-bottle bottle-resp-card" style="border-left:3px solid rgba(116,198,157,.3);margin-bottom:12px">'
-          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
-          +'<div style="font-size:11px;color:rgba(200,165,100,.6)">'+(r.asunto||'Respuesta a tu mensaje')+'</div>'
-          +'<button onclick="'+delFn+'" style="background:none;border:none;cursor:pointer;font-size:13px;color:rgba(255,120,120,.6);padding:2px 4px;border-radius:6px" title="Eliminar">🗑️</button>'
-          +'</div>'
-          +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;padding:12px">'
-          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:18px">💌</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+(r.fecha||'')+'</span></div>'
-          +'<p style="font-size:13px;color:rgba(255,255,255,.8);line-height:1.6;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic">'+(r.cuerpo||r.body||'')+'</p>'
-          +'</div></div>';
-      }).join('');
-  }
-
-  // ── Section 2: Bottles YOU replied to (filtered by 24h expiry) ──
+  // Only show bottles YOU replied to — responses to your own go to Buzón Velo
   var cutoff24h = Date.now() - 24*3600*1000;
   var replied = []; try{ replied = JSON.parse(safeLS('get','velo_bottles_replied')||'[]'); }catch(e){}
-  // Remove expired entries (> 24h old) and save back
+  // Remove expired entries (> 24h) and persist
   replied = replied.filter(function(r){ return r.ts && r.ts > cutoff24h; });
   safeLS('set','velo_bottles_replied', JSON.stringify(replied));
-  var sentHtml = '';
-  if(replied.length){
-    sentHtml = '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:rgba(80,150,200,.75);margin:18px 0 10px;padding:0 2px">MENSAJES QUE RESPONDISTE</div>'
-      + replied.map(function(r){
-        var relTime = (function(){
-          var d = Date.now()-r.ts;
-          if(d<3600000) return 'hace '+Math.floor(d/60000)+' min';
-          return 'hace '+Math.floor(d/3600000)+'h';
-        })();
-        var expireMin = Math.round((r.ts + 24*3600*1000 - Date.now()) / 60000);
-        var expireLabel = expireMin > 60 ? Math.floor(expireMin/60)+'h' : expireMin+'min';
-        return '<div class="dark-bottle" style="border-left:3px solid rgba(80,150,200,.28);margin-bottom:12px">'
-          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-          +'<span style="font-size:11px;font-weight:700;color:rgba(80,150,200,.8)">💬 Respondiste</span>'
-          +'<span style="font-size:10px;color:rgba(255,255,255,.28)">'+relTime+' · expira en '+expireLabel+'</span>'
-          +'</div>'
-          +'<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;margin-bottom:8px">'
-          +'<p style="font-size:12px;color:rgba(255,255,255,.45);font-style:italic;margin:0;line-height:1.5">"'+(r.preview ? r.preview.slice(0,80)+(r.preview.length>80?'…':'') : '...')+'"</p>'
-          +'</div>'
-          +'<div style="background:rgba(80,150,200,.07);border:1px solid rgba(80,150,200,.18);border-radius:10px;padding:10px 12px">'
-          +'<p style="font-size:13px;color:rgba(255,255,255,.82);line-height:1.55;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic">'+(r.reply||'')+'</p>'
-          +'</div>'
-          +'</div>';
-      }).join('');
-  }
 
-  if(!respHtml && !sentHtml){
-    el.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.4)"><span class="p-empty-emoji">💌</span><div class="p-empty-title" style="color:rgba(255,255,255,.6)">Sin actividad aún</div><div class="p-empty-sub">Aquí verás los mensajes que respondiste y las respuestas a los tuyos 🌊</div></div>';
+  if(!replied.length){
+    el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">💬</span>'
+      +'<div class="p-empty-title" style="color:var(--ink2)">Aún no respondiste mensajes</div>'
+      +'<div class="p-empty-sub">Cuando respondas un mensaje del mar, aparecerá aquí 🌊</div></div>';
     return;
   }
-  el.innerHTML = respHtml + sentHtml;
+
+  el.innerHTML = replied.map(function(r){
+    var relTime = (function(){
+      var d = Date.now()-r.ts;
+      if(d<3600000) return 'hace '+Math.floor(d/60000)+'min';
+      return 'hace '+Math.floor(d/3600000)+'h';
+    })();
+    var expireMin = Math.round((r.ts + 24*3600*1000 - Date.now()) / 60000);
+    var expireLabel = expireMin > 60 ? Math.floor(expireMin/60)+'h' : expireMin+'min';
+    var authorHtml = (r.authorName)
+      ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;cursor:pointer" onclick="pQuickProfile('+_jsAttr(r.authorName)+','+_jsAttr(r.authorAv||'🧑')+',\'\',\'\','+_jsAttr(r.authorId||'')+')">'
+        +_avInline(r.authorAv||'🧑',22)
+        +'<span class="bottle-replied-author">'+_escHtml(r.authorName)+'</span>'
+        +'<span class="bottle-replied-meta">· ver perfil</span>'
+        +'</div>'
+      : '<div style="margin-bottom:10px"><span class="bottle-replied-meta">Mensaje anónimo 🌊</span></div>';
+    return '<div class="dark-bottle bottle-replied-card" style="border-left:3px solid rgba(80,150,200,.4)">'
+      // Header row
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+      +'<span class="bottle-replied-tag">💬 Respondiste</span>'
+      +'<span class="bottle-replied-meta">'+relTime+' · expira en '+expireLabel+'</span>'
+      +'</div>'
+      // Author
+      +authorHtml
+      // Original message
+      +'<div class="bottle-original-block">'
+      +'<div class="bottle-block-label">Mensaje del mar</div>'
+      +'<p class="bottle-original-text">"'+(r.preview ? _escHtml(r.preview.slice(0,120)+(r.preview.length>120?'…':'')) : '…')+'"</p>'
+      +'</div>'
+      // Your reply
+      +'<div class="bottle-reply-block">'
+      +'<div class="bottle-block-label" style="color:#1a6fa8">Tu respuesta</div>'
+      +'<p class="bottle-reply-text">'+_escHtml(r.reply||'')+'</p>'
+      +'</div>'
+      +'</div>';
+  }).join('');
 }
 
 async function pDeleteBottleResponse(broadcastId, cardEl){
@@ -4380,7 +4359,7 @@ async function pRenderBottle(){
         +'<button style="padding:5px 11px;background:rgba(200,50,50,.07);border:1px solid rgba(200,50,50,.18);border-radius:100px;color:rgba(180,50,50,.7);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
         +(alreadyReplied
           ? '<span style="font-size:11px;color:var(--sage2);font-weight:700">💛 Ya respondiste</span>'
-          : '<button style="padding:5px 11px;background:rgba(80,150,200,.12);border:1px solid rgba(80,150,200,.28);border-radius:100px;color:#1E5A80;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply(\''+b.id+'\',\''+b.text.substring(0,40).replace(/'/g,'\\\'').replace(/"/g,'&quot;')+'...\',\''+( b.userId||b.user_id||'')+'\')">💌 Responder</button>')
+          : '<button style="padding:5px 11px;background:rgba(80,150,200,.12);border:1px solid rgba(80,150,200,.28);border-radius:100px;color:#1E5A80;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply('+_jsAttr(b.id)+','+_jsAttr(b.text.substring(0,120))+','+_jsAttr(b.userId||b.user_id||'')+','+_jsAttr(b.anon?'':''+( b.userName||''))+','+_jsAttr(b.anon?'':''+( b.userAv||''))+')">💌 Responder</button>')
         +'</div>';
     }
     var showAuthor = !b.anon && b.userName && !isOwn;
@@ -4452,11 +4431,15 @@ async function pSendBottle(){
 var _curBottleReplyId   = null;
 var _curBottleReplyText = '';
 var _curBottleUserId    = null;
+var _curBottleAuthorName = '';
+var _curBottleAuthorAv   = '';
 
-function pOpenBottleReply(bottleId, bottlePreview, bottleUserId){
-  _curBottleReplyId   = bottleId;
-  _curBottleReplyText = bottlePreview;
-  _curBottleUserId    = bottleUserId || null;
+function pOpenBottleReply(bottleId, bottlePreview, bottleUserId, authorName, authorAv){
+  _curBottleReplyId    = bottleId;
+  _curBottleReplyText  = bottlePreview;
+  _curBottleUserId     = bottleUserId || null;
+  _curBottleAuthorName = authorName || '';
+  _curBottleAuthorAv   = authorAv   || '';
   var preview = document.getElementById('bottleReplyPreview');
   if(preview) preview.textContent = '"'+bottlePreview+'"';
   var ta = document.getElementById('bottleReplyTa');
@@ -4477,7 +4460,7 @@ function pSendBottleReply(){
     safeLS('set','velo_bottle_replied_'+_curBottleReplyId,'1');
     // Save replied bottle details so it appears in "Mis respuestas" tab
     var _rBottles = []; try{ _rBottles = JSON.parse(safeLS('get','velo_bottles_replied')||'[]'); }catch(e){}
-    _rBottles.unshift({ id:_curBottleReplyId, preview:_curBottleReplyText||'', reply:replyText, ts:Date.now() });
+    _rBottles.unshift({ id:_curBottleReplyId, preview:_curBottleReplyText||'', reply:replyText, ts:Date.now(), authorName:_curBottleAuthorName||'', authorAv:_curBottleAuthorAv||'', authorId:_curBottleUserId||'' });
     safeLS('set','velo_bottles_replied', JSON.stringify(_rBottles.slice(0,30)));
     // Optimistically fade out the bottle card immediately
     var card = document.getElementById('bottle-'+_curBottleReplyId);
