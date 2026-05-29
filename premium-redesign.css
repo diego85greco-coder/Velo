@@ -1756,13 +1756,15 @@ body.r-dark .r-hero-stat { border-right-color: rgba(255,255,255,.14) !important;
 
 /* ── ✨ Mood line: adaptive light/dark ───────────────────────────── */
 #homeCurrentMoodLine {
-  color: var(--sage2) !important;
-  background: rgba(116,198,157,.10) !important;
-  border-color: rgba(116,198,157,.28) !important;
+  color: #2a6644 !important;
+  background: linear-gradient(135deg, rgba(90,160,115,.22), rgba(116,198,157,.30)) !important;
+  border-color: rgba(80,150,105,.55) !important;
+  font-weight: 700 !important;
 }
 body.r-dark #homeCurrentMoodLine {
-  color: rgba(255,255,255,.88) !important;
-  background: rgba(116,198,157,.14) !important;
+  color: rgba(180,245,215,.92) !important;
+  background: rgba(116,198,157,.18) !important;
+  border-color: rgba(116,198,157,.45) !important;
 }
 
 /* ── Guardian button: adaptive light/dark ───────────────────────── */
