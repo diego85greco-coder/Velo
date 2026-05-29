@@ -5429,27 +5429,38 @@ body:not(.r-dark) {
   --cream:  #EDF7F1;
   --cream2: #DCF0E5;
   --bg:     #CDEADB;
+  /* Darker ink for legibility on light green bg */
+  --ink:    #0a1810;
+  --ink2:   #162419;
+  --ink3:   #243d2c;
+  --ink4:   #3d6048;
+  --ink5:   #6a9478;
+  /* Stronger borders so cards stand out */
+  --border:  rgba(30,90,55,.18);
+  --border2: rgba(30,90,55,.30);
+  --border3: rgba(30,90,55,.45);
 }
 body:not(.r-dark) .p-nav-top {
   background: rgba(237,247,241,.97) !important;
-  border-bottom-color: rgba(100,180,130,.22) !important;
+  border-bottom-color: rgba(30,100,60,.28) !important;
 }
 body:not(.r-dark) .p-nav-bot {
   background: rgba(237,247,241,.98) !important;
-  border-top-color: rgba(100,180,130,.20) !important;
+  border-top-color: rgba(30,100,60,.26) !important;
 }
 body:not(.r-dark) .p-page {
   background: #CDEADB !important;
 }
 body:not(.r-dark) .p-card {
   background: rgba(241,251,245,.97) !important;
-  border-color: rgba(100,185,135,.20) !important;
+  border-color: rgba(30,100,60,.32) !important;
+  box-shadow: 0 2px 12px rgba(30,100,60,.08) !important;
 }
 /* sidebar */
 body:not(.r-dark) .p-sidebar {
   background: rgba(220,242,230,.95) !important;
-  border-right-color: rgba(100,185,135,.30) !important;
-  box-shadow: 2px 0 24px rgba(50,140,85,.08) !important;
+  border-right-color: rgba(30,100,60,.35) !important;
+  box-shadow: 2px 0 24px rgba(30,100,60,.12) !important;
 }
 /* ── v250: Greeting card + quote card — soft sage green ─────────── */
 body:not(.r-dark) .home-greeting,
