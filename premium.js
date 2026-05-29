@@ -2154,15 +2154,18 @@ function _subscribeSeekerRequest(reqId){
   if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
   if(_seekerPollTmr){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; }
   if(!sbClient) return;
-  // Realtime listener
+  // Realtime listener (filtered by request id)
   _gcSeekerCh = sbClient.channel('velo:gdreq:'+reqId)
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'guardian_requests'},function(payload){
+    .on('postgres_changes',{
+      event:'UPDATE', schema:'public', table:'guardian_requests',
+      filter: 'id=eq.'+reqId
+    }, function(payload){
       _handleSeekerReqRow(payload.new||{}, reqId);
     })
     .subscribe(function(status, err){
       if(status !== 'SUBSCRIBED') console.warn('[seeker req listener] status:', status, err||'');
     });
-  // Polling fallback every 8s — catches acceptance if Realtime drops
+  // Polling fallback every 3s — primary delivery since Realtime needs replication enabled
   _seekerPollTmr = setInterval(function(){
     if(!document.getElementById('gdWaitOv')){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; return; }
     if(!sbClient) return;
@@ -2170,7 +2173,7 @@ function _subscribeSeekerRequest(reqId){
       .then(function(res){
         if(res && res.data && res.data[0]) _handleSeekerReqRow(res.data[0], reqId);
       }).catch(function(){});
-  }, 8000);
+  }, 3000);
 }
 
 // ── GUARDIAN REQUEST LISTENER (guardian side) ──────────────────
@@ -2183,12 +2186,18 @@ function _checkPendingGuardianRequests(){
   if(document.getElementById('gdReqOv')) return; // already showing one
   var myId = _myUserId();
   if(!myId || myId.startsWith('guest')) return;
-  sbClient.from('guardian_requests').select('*')
-    .eq('guardian_id', myId).eq('kind','direct').eq('status','pending')
-    .order('created_at',{ascending:false}).limit(1)
-    .then(function(res){
-      if(res && res.data && res.data.length) _showGuardianRequest(res.data[0]);
-    }).catch(function(e){ console.error('[guardian req poll]', e); });
+  var myEmail = safeLS('get','velo_user_email') || '';
+  // Check both UUID and email to handle cases where presence was stored with email before UUID sync
+  var query = sbClient.from('guardian_requests').select('*')
+    .eq('kind','direct').eq('status','pending')
+    .order('created_at',{ascending:false}).limit(5);
+  query.then(function(res){
+    if(!res || !res.data || !res.data.length) return;
+    var mine = res.data.filter(function(r){
+      return r.guardian_id === myId || (myEmail && r.guardian_id === myEmail);
+    });
+    if(mine.length) _showGuardianRequest(mine[0]);
+  }).catch(function(e){ console.error('[guardian req poll]', e); });
 }
 
 function _startGuardianReqListener(){
@@ -2197,22 +2206,45 @@ function _startGuardianReqListener(){
   if(safeLS('get','velo_is_guardian') !== 'true') return;
   var myId = _myUserId();
   if(!myId || myId.startsWith('guest')) return;
-  // Immediate check for pending requests (catches requests that arrived while offline)
+  var myEmail = safeLS('get','velo_user_email') || '';
+  // Immediate check — catches requests that arrived while offline or before listener started
   _checkPendingGuardianRequests();
-  // Realtime subscription for new requests
+  // Realtime: per-guardian filtered channel so only this user's INSERTs arrive
   if(!_guardianReqCh){
-    _guardianReqCh = sbClient.channel('velo:gdreq:all')
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'guardian_requests'},function(payload){
+    var chName = 'velo:gdreq:' + myId;
+    _guardianReqCh = sbClient.channel(chName)
+      .on('postgres_changes',{
+        event:'INSERT', schema:'public', table:'guardian_requests',
+        filter: 'guardian_id=eq.'+myId
+      }, function(payload){
         var r = payload.new||{};
-        if(r.guardian_id === myId && r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
+        if(r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
       })
       .subscribe(function(status, err){
-        if(status !== 'SUBSCRIBED') console.warn('[guardian req listener] status:', status, err||'');
+        if(status === 'SUBSCRIBED'){
+          // Subscription live — do one immediate poll to catch anything that slipped in
+          _checkPendingGuardianRequests();
+        } else {
+          console.warn('[guardian req listener] status:', status, err||'');
+        }
       });
+    // Also listen on email-keyed channel in case presence was stored with email
+    if(myEmail && myEmail !== myId){
+      sbClient.channel('velo:gdreq:'+myEmail)
+        .on('postgres_changes',{
+          event:'INSERT', schema:'public', table:'guardian_requests',
+          filter: 'guardian_id=eq.'+myEmail
+        }, function(payload){
+          var r = payload.new||{};
+          if(r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
+        })
+        .subscribe();
+    }
   }
-  // Polling fallback every 20s — catches requests if Realtime drops
+  // Polling fallback every 5s — primary delivery mechanism since Realtime
+  // requires the table to have replication enabled in Supabase dashboard
   if(!_guardianPollTimer){
-    _guardianPollTimer = setInterval(_checkPendingGuardianRequests, 20000);
+    _guardianPollTimer = setInterval(_checkPendingGuardianRequests, 5000);
   }
 }
 
