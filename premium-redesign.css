@@ -5355,3 +5355,27 @@ body.r-dark .profile-stat-num {
 body.r-dark .profile-stat-lbl {
   color: rgba(255,255,255,.60) !important;
 }
+
+/* ── v225: Profile header — explicit light + dark mode legibility ─ */
+/* Light mode: dark text on light background */
+body:not(.r-dark) #pg-profile #profileName {
+  color: #1C2E22 !important;
+}
+body:not(.r-dark) #pg-profile #profileUsername span {
+  color: #2D6A4F !important;
+  font-weight: 700;
+}
+body:not(.r-dark) #pg-profile #profileMotto {
+  color: #4A7A5A !important;
+}
+body:not(.r-dark) #pg-profile .p-label-sage {
+  color: #2D6A4F !important;
+}
+body:not(.r-dark) #pg-profile .p-card {
+  background: rgba(255,255,255,.92) !important;
+  border-color: rgba(116,198,157,.30) !important;
+}
+/* Dark mode: already handled — reinforce username color */
+body.r-dark #pg-profile #profileUsername span {
+  color: #72e0a6 !important;
+}

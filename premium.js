@@ -6434,7 +6434,7 @@ function pLoadProfile(){
   // Email
   _setEl('profileEmail', safeLS('get','velo_user_email') || '—');
 
-  // Stats — show from localStorage first, then sync from Supabase
+  // Stats — show from localStorage first for instant display
   var daysReg = _getVisitDayCount() || Math.ceil((Date.now() - (parseInt(safeLS('get','velo_registered_ts')||Date.now(),10))) / 86400000);
   _setEl('profileDays', Math.max(1, daysReg));
   var _locHelped = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
@@ -6442,23 +6442,25 @@ function pLoadProfile(){
   _setEl('profileChats',    _locHelped + _locRecv);
   _setEl('profileHelped',   _locHelped);
   _setEl('profileReceived', _locRecv);
-  // Sync real counters from Supabase (source of truth after localStorage clears)
+  // Count real conversations directly from guardian_requests (source of truth)
   _initSupabase();
   var _pUid = safeLS('get','velo_user_id');
   if(sbClient && _pUid){
-    sbClient.from('profiles').select('helped_count,received_count').eq('id',_pUid).single()
-      .then(function(res){
-        if(!res || !res.data) return;
-        var sbH = res.data.helped_count || 0;
-        var sbR = res.data.received_count || 0;
-        var finalH = Math.max(_locHelped, sbH);
-        var finalR = Math.max(_locRecv,   sbR);
-        if(finalH !== _locHelped) safeLS('set','velo_guardian_convs', String(finalH));
-        if(finalR !== _locRecv)   safeLS('set','velo_help_received',  String(finalR));
-        _setEl('profileChats',    finalH + finalR);
-        _setEl('profileHelped',   finalH);
-        _setEl('profileReceived', finalR);
-      }).catch(function(){});
+    Promise.all([
+      sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('guardian_id', _pUid).eq('status','ended'),
+      sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('seeker_id',   _pUid).eq('status','ended')
+    ]).then(function(results){
+      var realH = (results[0] && results[0].count != null) ? results[0].count : _locHelped;
+      var realR = (results[1] && results[1].count != null) ? results[1].count : _locRecv;
+      var finalH = Math.max(_locHelped, realH);
+      var finalR = Math.max(_locRecv,   realR);
+      // Sync localStorage and profiles table with the real counts
+      if(finalH !== _locHelped){ safeLS('set','velo_guardian_convs', String(finalH)); _bumpProfileCounter('helped_count', finalH); }
+      if(finalR !== _locRecv)  { safeLS('set','velo_help_received',  String(finalR)); _bumpProfileCounter('received_count', finalR); }
+      _setEl('profileChats',    finalH + finalR);
+      _setEl('profileHelped',   finalH);
+      _setEl('profileReceived', finalR);
+    }).catch(function(){});
   }
 
   // Mi estado inputs — pre-fill from saved values
