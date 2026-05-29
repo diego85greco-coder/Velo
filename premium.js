@@ -4190,10 +4190,10 @@ function pBottleTab(tab, btn){
 async function pRenderBottleResponses(){
   var el = document.getElementById('bottleRespList');
   if(!el) return;
-  // Load real responses from inbox (broadcasts targeted at this user with icon 🌊)
+
+  // ── Section 1: Responses received for YOUR bottles ──────────────
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   var resps = inbox.filter(function(m){ return m.icon === '🌊' || (m.remitente && m.remitente.indexOf('Mar') > -1); });
-  // Also check Supabase broadcasts
   _initSupabase();
   if(sbClient){
     var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
@@ -4207,22 +4207,60 @@ async function pRenderBottleResponses(){
       }
     }catch(e){}
   }
-  if(!resps.length){
-    el.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.4)"><span class="p-empty-emoji">💌</span><div class="p-empty-title" style="color:rgba(255,255,255,.6)">Sin respuestas aún</div><div class="p-empty-sub">Cuando alguien responda tu mensaje, aparecerá aquí 🌊</div></div>';
+  var respHtml = '';
+  if(resps.length){
+    respHtml = '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:rgba(200,165,100,.65);margin-bottom:10px;padding:0 2px">RESPUESTAS A TUS MENSAJES</div>'
+      + resps.map(function(r){
+        var delFn = r.id ? 'pDeleteBottleResponse(\''+r.id+'\',this.closest(\'.bottle-resp-card\'))' : 'this.closest(\'.bottle-resp-card\').remove()';
+        return '<div class="dark-bottle bottle-resp-card" style="border-left:3px solid rgba(116,198,157,.3);margin-bottom:12px">'
+          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+          +'<div style="font-size:11px;color:rgba(200,165,100,.6)">'+(r.asunto||'Respuesta a tu mensaje')+'</div>'
+          +'<button onclick="'+delFn+'" style="background:none;border:none;cursor:pointer;font-size:13px;color:rgba(255,120,120,.6);padding:2px 4px;border-radius:6px" title="Eliminar">🗑️</button>'
+          +'</div>'
+          +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;padding:12px">'
+          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:18px">💌</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+(r.fecha||'')+'</span></div>'
+          +'<p style="font-size:13px;color:rgba(255,255,255,.8);line-height:1.6;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic">'+(r.cuerpo||r.body||'')+'</p>'
+          +'</div></div>';
+      }).join('');
+  }
+
+  // ── Section 2: Bottles YOU replied to (filtered by 24h expiry) ──
+  var cutoff24h = Date.now() - 24*3600*1000;
+  var replied = []; try{ replied = JSON.parse(safeLS('get','velo_bottles_replied')||'[]'); }catch(e){}
+  // Remove expired entries (> 24h old) and save back
+  replied = replied.filter(function(r){ return r.ts && r.ts > cutoff24h; });
+  safeLS('set','velo_bottles_replied', JSON.stringify(replied));
+  var sentHtml = '';
+  if(replied.length){
+    sentHtml = '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:rgba(80,150,200,.75);margin:18px 0 10px;padding:0 2px">MENSAJES QUE RESPONDISTE</div>'
+      + replied.map(function(r){
+        var relTime = (function(){
+          var d = Date.now()-r.ts;
+          if(d<3600000) return 'hace '+Math.floor(d/60000)+' min';
+          return 'hace '+Math.floor(d/3600000)+'h';
+        })();
+        var expireMin = Math.round((r.ts + 24*3600*1000 - Date.now()) / 60000);
+        var expireLabel = expireMin > 60 ? Math.floor(expireMin/60)+'h' : expireMin+'min';
+        return '<div class="dark-bottle" style="border-left:3px solid rgba(80,150,200,.28);margin-bottom:12px">'
+          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+          +'<span style="font-size:11px;font-weight:700;color:rgba(80,150,200,.8)">💬 Respondiste</span>'
+          +'<span style="font-size:10px;color:rgba(255,255,255,.28)">'+relTime+' · expira en '+expireLabel+'</span>'
+          +'</div>'
+          +'<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;margin-bottom:8px">'
+          +'<p style="font-size:12px;color:rgba(255,255,255,.45);font-style:italic;margin:0;line-height:1.5">"'+(r.preview ? r.preview.slice(0,80)+(r.preview.length>80?'…':'') : '...')+'"</p>'
+          +'</div>'
+          +'<div style="background:rgba(80,150,200,.07);border:1px solid rgba(80,150,200,.18);border-radius:10px;padding:10px 12px">'
+          +'<p style="font-size:13px;color:rgba(255,255,255,.82);line-height:1.55;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic">'+(r.reply||'')+'</p>'
+          +'</div>'
+          +'</div>';
+      }).join('');
+  }
+
+  if(!respHtml && !sentHtml){
+    el.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.4)"><span class="p-empty-emoji">💌</span><div class="p-empty-title" style="color:rgba(255,255,255,.6)">Sin actividad aún</div><div class="p-empty-sub">Aquí verás los mensajes que respondiste y las respuestas a los tuyos 🌊</div></div>';
     return;
   }
-  el.innerHTML = resps.map(function(r){
-    var delFn = r.id ? 'pDeleteBottleResponse(\''+r.id+'\',this.closest(\'.bottle-resp-card\'))' : 'this.closest(\'.bottle-resp-card\').remove()';
-    return '<div class="dark-bottle bottle-resp-card" style="border-left:3px solid rgba(116,198,157,.3);margin-bottom:12px">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
-      +'<div style="font-size:11px;color:rgba(200,165,100,.6)">'+( r.asunto||'Respuesta a tu mensaje')+'</div>'
-      +'<button onclick="'+delFn+'" style="background:none;border:none;cursor:pointer;font-size:13px;color:rgba(255,120,120,.6);padding:2px 4px;border-radius:6px" title="Eliminar">🗑️</button>'
-      +'</div>'
-      +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;padding:12px">'
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:18px">💌</span><span style="font-size:10px;color:rgba(255,255,255,.3)">'+(r.fecha||'')+'</span></div>'
-      +'<p style="font-size:13px;color:rgba(255,255,255,.8);line-height:1.6;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic">'+(r.cuerpo||r.body||'')+'</p>'
-      +'</div></div>';
-  }).join('');
+  el.innerHTML = respHtml + sentHtml;
 }
 
 async function pDeleteBottleResponse(broadcastId, cardEl){
@@ -4311,6 +4349,11 @@ async function pRenderBottle(){
     var myBottles = []; try{ myBottles = JSON.parse(safeLS('get','velo_my_bottles')||'[]'); }catch(e){}
     allBottles = myBottles.concat(filteredMock);
   }
+
+  // Hide bottles already replied to by this user — they move to "Mis respuestas" tab
+  allBottles = allBottles.filter(function(b){
+    return safeLS('get','velo_bottle_replied_'+b.id) !== '1';
+  });
 
   if(!allBottles.length){
     list.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">🌊</span><div class="p-empty-title">El mar está tranquilo</div><div class="p-empty-sub">Sé el primero en lanzar un mensaje</div></div>';
@@ -4432,9 +4475,13 @@ function pSendBottleReply(){
   // 1. Record that THIS user replied and optimistically hide the bottle from their view
   if(_curBottleReplyId){
     safeLS('set','velo_bottle_replied_'+_curBottleReplyId,'1');
-    // Optimistically fade out the bottle card immediately (no race condition with Supabase)
+    // Save replied bottle details so it appears in "Mis respuestas" tab
+    var _rBottles = []; try{ _rBottles = JSON.parse(safeLS('get','velo_bottles_replied')||'[]'); }catch(e){}
+    _rBottles.unshift({ id:_curBottleReplyId, preview:_curBottleReplyText||'', reply:replyText, ts:Date.now() });
+    safeLS('set','velo_bottles_replied', JSON.stringify(_rBottles.slice(0,30)));
+    // Optimistically fade out the bottle card immediately
     var card = document.getElementById('bottle-'+_curBottleReplyId);
-    if(card){ card.style.transition='opacity .4s'; card.style.opacity='0'; }
+    if(card){ card.style.transition='opacity .4s'; card.style.opacity='0'; setTimeout(function(){ if(card.parentNode) card.parentNode.removeChild(card); }, 450); }
   }
   _initSupabase();
   if(sbClient && _curBottleReplyId){
@@ -4457,10 +4504,8 @@ function pSendBottleReply(){
     }).then(function(){}).catch(function(){});
   }
 
-  // 3. Re-render after a short delay so Supabase update propagates
   pToast('💌','¡Respuesta enviada! 🌊');
   setTimeout(function(){ pToast('📬','El autor recibió tu respuesta en su buzón Velo'); }, 1200);
-  setTimeout(function(){ pRenderBottle(); }, 600);
 }
 
 async function pDeleteBottle(bottleId){
