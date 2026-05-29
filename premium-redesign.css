@@ -4225,3 +4225,171 @@ body.r-dark .home-mood-btn:hover {
   background: rgba(116,198,157,.18) !important;
   transform: translateY(-1px) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v199: Animated premium quote card + mood greeting section
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Shared shimmer keyframe ─────────────────────────────────────── */
+@keyframes velo-text-shimmer {
+  0%   { background-position: -220% center; }
+  100% { background-position: 220% center; }
+}
+
+/* ── Quote card — glowing animated border ────────────────────────── */
+@keyframes quote-glow-light {
+  0%, 100% {
+    box-shadow: 0 8px 34px rgba(170,120,8,.13), 0 2px 6px rgba(0,0,0,.04);
+    border-left-color: rgba(200,158,56,.55);
+  }
+  50% {
+    box-shadow: 0 18px 56px rgba(200,158,56,.26), 0 4px 16px rgba(200,158,56,.10),
+                inset 0 0 32px rgba(200,158,56,.05);
+    border-left-color: rgba(245,198,65,.98);
+  }
+}
+@keyframes quote-glow-dark {
+  0%, 100% {
+    box-shadow: 0 8px 34px rgba(0,0,0,.30), 0 2px 8px rgba(0,0,0,.18);
+    border-left-color: rgba(200,158,56,.48);
+  }
+  50% {
+    box-shadow: 0 18px 56px rgba(0,0,0,.45), 0 0 36px rgba(200,158,56,.22);
+    border-left-color: rgba(245,198,65,.95);
+  }
+}
+@keyframes quote-mark-float {
+  0%, 100% { opacity: .14; transform: translateY(0) scale(1); }
+  50%       { opacity: .26; transform: translateY(-5px) scale(1.05); }
+}
+
+body:not(.r-dark) #pg-home #homeDailyQuote {
+  animation: quote-glow-light 5.5s ease-in-out infinite !important;
+}
+body.r-dark #pg-home #homeDailyQuote {
+  animation: quote-glow-dark 5.5s ease-in-out infinite !important;
+}
+#pg-home #homeDailyQuote::before {
+  animation: quote-mark-float 8s ease-in-out infinite !important;
+}
+
+/* Quote text — golden shimmer sweeps through the italic sentence */
+#pg-home #homeDailyQuoteText {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-size: 220% auto !important;
+  animation: velo-text-shimmer 7s ease-in-out infinite !important;
+  text-shadow: none !important;
+}
+body:not(.r-dark) #pg-home #homeDailyQuoteText {
+  background-image: linear-gradient(
+    90deg,
+    #1e3020 0%, #1e3020 26%,
+    rgba(148,95,4,.95) 50%,
+    #1e3020 74%, #1e3020 100%
+  ) !important;
+}
+body.r-dark #pg-home #homeDailyQuoteText {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255,255,255,.86) 0%, rgba(255,255,255,.86) 26%,
+    rgba(215,170,55,.98) 50%,
+    rgba(255,255,255,.86) 74%, rgba(255,255,255,.86) 100%
+  ) !important;
+}
+
+/* Author attribution — faster gold shimmer */
+#pg-home #homeDailyQuoteAuthor {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-size: 220% auto !important;
+  animation: velo-text-shimmer 4s ease-in-out infinite !important;
+}
+body:not(.r-dark) #pg-home #homeDailyQuoteAuthor {
+  background-image: linear-gradient(
+    90deg,
+    rgba(128,84,4,.64) 0%, rgba(128,84,4,.64) 18%,
+    rgba(215,168,50,1) 50%,
+    rgba(128,84,4,.64) 82%, rgba(128,84,4,.64) 100%
+  ) !important;
+}
+body.r-dark #pg-home #homeDailyQuoteAuthor {
+  background-image: linear-gradient(
+    90deg,
+    rgba(200,158,56,.58) 0%, rgba(200,158,56,.58) 18%,
+    rgba(255,228,80,1) 50%,
+    rgba(200,158,56,.58) 82%, rgba(200,158,56,.58) 100%
+  ) !important;
+}
+
+/* ── Greeting / mood card — animated border glow ─────────────────── */
+@keyframes mood-card-glow-light {
+  0%, 100% {
+    box-shadow: 0 6px 30px rgba(27,94,58,.10), 0 1px 4px rgba(0,0,0,.04);
+    border-color: rgba(27,94,58,.18);
+  }
+  50% {
+    box-shadow: 0 12px 46px rgba(116,198,157,.20), 0 2px 10px rgba(116,198,157,.10);
+    border-color: rgba(116,198,157,.42);
+  }
+}
+@keyframes mood-card-glow-dark {
+  0%, 100% {
+    box-shadow: 0 6px 30px rgba(0,0,0,.28);
+    border-color: rgba(116,198,157,.18);
+  }
+  50% {
+    box-shadow: 0 12px 46px rgba(116,198,157,.18), 0 0 0 1px rgba(116,198,157,.32);
+    border-color: rgba(116,198,157,.40);
+  }
+}
+body:not(.r-dark) #pg-home .home-greeting {
+  animation: mood-card-glow-light 5.5s ease-in-out 0.5s infinite !important;
+}
+body.r-dark #pg-home .home-greeting {
+  animation: mood-card-glow-dark 5.5s ease-in-out 0.5s infinite !important;
+}
+
+/* Mood pill — sweeping light shimmer + refined look */
+#homeCurrentMoodLine {
+  position: relative !important;
+  overflow: hidden !important;
+}
+@keyframes pill-light-sweep {
+  0%          { transform: translateX(-160%); opacity: 0; }
+  15%, 85%    { opacity: 1; }
+  100%        { transform: translateX(300%);  opacity: 0; }
+}
+#homeCurrentMoodLine::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  width: 48% !important;
+  background: linear-gradient(
+    90deg, transparent 0%, rgba(255,255,255,.38) 50%, transparent 100%
+  ) !important;
+  border-radius: 100px !important;
+  pointer-events: none !important;
+  animation: pill-light-sweep 3.8s ease-in-out infinite !important;
+}
+
+/* Username — subtle sage glow on hover/dark mode */
+@keyframes name-glow {
+  0%, 100% { text-shadow: none; }
+  50%       { text-shadow: 0 0 14px rgba(116,198,157,.32); }
+}
+body.r-dark #homeUserName {
+  animation: name-glow 6s ease-in-out infinite !important;
+  color: rgba(255,255,255,.94) !important;
+}
+
+/* Mi estado button — subtle pulse border */
+@keyframes estado-btn-pulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(116,198,157,.08); }
+  50%       { box-shadow: 0 4px 18px rgba(116,198,157,.28); }
+}
+.home-mood-btn {
+  animation: estado-btn-pulse 4s ease-in-out 1s infinite !important;
+}
