@@ -5299,9 +5299,7 @@ function _circleCardHtml(c, memberCounts){
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">'+c.name+'</div>'
     +'<div style="font-size:12px;color:var(--ink2);margin-bottom:5px">'+c.desc+'</div>'
-    +(lastMsg
-      ? '<div style="font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">'+lastMsg.av+' '+lastMsg.name+': '+(lastMsg.text&&lastMsg.text.startsWith('data:')? '📷 Imagen' : _escHtml(lastMsg.text||''))+'</div>'
-      : '<div style="height:5px"></div>')
+    +'<div style="height:5px"></div>'
     +'<div style="display:flex;align-items:center;gap:6px">'
     +'<div style="flex:1;height:4px;background:var(--cream2);border-radius:100px;overflow:hidden"><div style="height:100%;width:'+capPct+'%;background:'+(isFull?'var(--sos)':'var(--sage3)')+';border-radius:100px"></div></div>'
     +'<span class="circle-member-count-'+c.id+'" style="font-size:10px;color:var(--ink3);font-weight:600">'+memberCount+'/'+maxM+'</span>'
