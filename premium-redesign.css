@@ -2473,10 +2473,10 @@ body.r-dark .p-page-hdr p { color: rgba(255,255,255,.60) !important; }
 }
 .r-guardian-pill:hover { color: rgba(255,255,255,.88); }
 .r-guardian-pill--on {
-  background: rgba(116,198,157,.20);
-  border-color: rgba(116,198,157,.55);
-  color: rgba(255,255,255,.92);
-  box-shadow: 0 0 16px rgba(116,198,157,.25);
+  background: rgba(34,197,94,.20);
+  border-color: rgba(34,197,94,.70);
+  color: #ffffff;
+  box-shadow: 0 0 0 2.5px rgba(34,197,94,.22), 0 0 22px rgba(34,197,94,.45);
 }
 .r-guardian-toggle {
   width: 34px;
@@ -2487,7 +2487,7 @@ body.r-dark .p-page-hdr p { color: rgba(255,255,255,.60) !important; }
   transition: background .22s;
   flex-shrink: 0;
 }
-.r-guardian-pill--on .r-guardian-toggle { background: #22c55e; }
+.r-guardian-pill--on .r-guardian-toggle { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,.55); }
 .r-guardian-knob {
   position: absolute;
   top: 2px;
@@ -2624,10 +2624,10 @@ body:not(.r-dark) .r-guardian-pill {
   color: var(--ink3) !important;
 }
 body:not(.r-dark) .r-guardian-pill--on {
-  background: rgba(27,94,58,.14) !important;
-  border-color: rgba(27,94,58,.42) !important;
-  color: var(--ink) !important;
-  box-shadow: 0 0 12px rgba(27,94,58,.18) !important;
+  background: rgba(34,197,94,.15) !important;
+  border-color: rgba(34,197,94,.60) !important;
+  color: #1a4a1a !important;
+  box-shadow: 0 0 0 2px rgba(34,197,94,.18), 0 0 16px rgba(34,197,94,.32) !important;
 }
 body:not(.r-dark) .r-guardian-toggle {
   background: rgba(27,94,58,.20) !important;
