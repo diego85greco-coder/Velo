@@ -5730,3 +5730,59 @@ body.r-dark .bottle-reply-text { color: rgba(160,240,200,.92) !important; }
 body.r-dark .dark-bottle p { color: rgba(220,245,235,.90) !important; }
 .dark-bottle [style*="color:var(--ink5)"],
 .dark-bottle [style*="color:var(--ink4)"] { opacity: 1 !important; }
+
+/* ── v277: dark-ta textarea — solid contrast in both modes ────────────── */
+/* Dark mode: deep green-tinted background so white text is fully legible  */
+body.r-dark .p-textarea.dark-ta,
+body.r-dark textarea.dark-ta {
+  background: rgba(8,28,16,.88) !important;
+  border-color: rgba(116,198,157,.28) !important;
+  color: rgba(255,255,255,.93) !important;
+}
+body.r-dark .p-textarea.dark-ta::placeholder,
+body.r-dark textarea.dark-ta::placeholder {
+  color: rgba(255,255,255,.42) !important;
+}
+body.r-dark .p-textarea.dark-ta:focus,
+body.r-dark textarea.dark-ta:focus {
+  border-color: rgba(116,198,157,.55) !important;
+  box-shadow: 0 0 0 3px rgba(116,198,157,.12) !important;
+  background: rgba(10,34,20,.92) !important;
+}
+/* Light mode: clean white background, dark text */
+body:not(.r-dark) .p-textarea.dark-ta,
+body:not(.r-dark) textarea.dark-ta {
+  background: rgba(255,255,255,.94) !important;
+  border-color: rgba(30,90,50,.28) !important;
+  color: #0a1810 !important;
+}
+body:not(.r-dark) .p-textarea.dark-ta::placeholder,
+body:not(.r-dark) textarea.dark-ta::placeholder {
+  color: rgba(20,60,35,.45) !important;
+}
+body:not(.r-dark) .p-textarea.dark-ta:focus,
+body:not(.r-dark) textarea.dark-ta:focus {
+  border-color: rgba(30,100,55,.55) !important;
+  box-shadow: 0 0 0 3px rgba(30,100,55,.10) !important;
+}
+/* Same fix for the help chat input + Al Mar reply input */
+body.r-dark #helpChatInput,
+body.r-dark #helpMsgTa {
+  background: rgba(8,28,16,.88) !important;
+  color: rgba(255,255,255,.93) !important;
+  border-color: rgba(116,198,157,.28) !important;
+}
+body.r-dark #helpChatInput::placeholder,
+body.r-dark #helpMsgTa::placeholder {
+  color: rgba(255,255,255,.4) !important;
+}
+body:not(.r-dark) #helpChatInput,
+body:not(.r-dark) #helpMsgTa {
+  background: rgba(255,255,255,.94) !important;
+  color: #0a1810 !important;
+  border-color: rgba(30,90,50,.28) !important;
+}
+body:not(.r-dark) #helpChatInput::placeholder,
+body:not(.r-dark) #helpMsgTa::placeholder {
+  color: rgba(20,60,35,.45) !important;
+}
