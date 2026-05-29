@@ -236,6 +236,11 @@ function _trackPageView(id){
   }catch(e){}
 }
 
+// Screens that should NOT be saved for reload-restore (auth flows, active chats, sensitive)
+var _NO_RESTORE = ['landing','login','register','register-type','onboarding','pro-reg',
+  'pro-onboarding','admin-login','admin','pro-pending','verify-email','pick-username',
+  'change-password','guardian-chat','help-chat','session-room','post-chat','donate-cta'];
+
 function pGoTo(id){
   if(!id) return;
   var inPage = document.getElementById('pg-'+id);
@@ -248,6 +253,11 @@ function pGoTo(id){
   if(_curPage !== id) _prevPage = _curPage;
   _curPage = id;
   _navToken++;
+
+  // Remember where the user is so a browser refresh restores this screen
+  if(_authenticated && _NO_RESTORE.indexOf(id) < 0){
+    try{ sessionStorage.setItem('velo_last_screen', id); }catch(e){}
+  }
 
   // Activate new page
   inPage.classList.add('active');
@@ -11912,7 +11922,12 @@ window.addEventListener('load', function(){
       var approved = safeLS('get','velo_pro_approved');
       pGoTo(approved ? 'pro-panel' : 'pro-pending');
     } else {
-      pGoTo('home');
+      // Restore last visited screen on refresh; fall back to home
+      var _lastScreen = '';
+      try{ _lastScreen = sessionStorage.getItem('velo_last_screen') || ''; }catch(e){}
+      var _restoreTo = (_lastScreen && _NO_RESTORE.indexOf(_lastScreen) < 0 && document.getElementById('pg-'+_lastScreen))
+        ? _lastScreen : 'home';
+      pGoTo(_restoreTo);
       setTimeout(function(){ _loadHomeData(); _updateSidebarUser(); }, 100);
     }
   } else {
