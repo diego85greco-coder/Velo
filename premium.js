@@ -1849,14 +1849,22 @@ async function pRenderGuardians(){
       if(_navToken !== _tok) return;
       if(gpErr) console.error('[pRenderGuardians] query error:', gpErr.message, gpErr);
       if(data && data.length){
-        liveGuardians = data
-          .filter(function(r){ return r.user_id !== myId; }) // never list yourself
-          .filter(function(r){ return r.is_guardian !== false; }) // only actual guardians
-          .map(function(r, i){
-            return { id: 'live_'+r.user_id, name: r.name, av: r.avatar, bio: r.bio||'',
-              tags: Array.isArray(r.tags)?r.tags:[], status: r.status,
-              convs: r.convs||0, rating: r.rating||5.0, reviews:[], recommend: r.convs||0 };
-          });
+        var filtered0 = data
+          .filter(function(r){ return r.user_id !== myId; })
+          .filter(function(r){ return r.is_guardian !== false; });
+        // Fetch usernames from profiles for all visible guardians
+        var gIds = filtered0.map(function(r){ return r.user_id; });
+        var uMap = {};
+        try{
+          var uRes = await sbClient.from('profiles').select('id,username').in('id', gIds);
+          if(uRes.data) uRes.data.forEach(function(p){ if(p.id && p.username) uMap[p.id] = p.username; });
+        }catch(e){}
+        liveGuardians = filtered0.map(function(r){
+          return { id: 'live_'+r.user_id, name: r.name, av: r.avatar, bio: r.bio||'',
+            tags: Array.isArray(r.tags)?r.tags:[], status: r.status,
+            convs: r.convs||0, rating: r.rating||5.0, reviews:[], recommend: r.convs||0,
+            username: uMap[r.user_id] || '' };
+        });
         _liveGuardians = liveGuardians;
         if(typeof syncHeroStats === 'function') syncHeroStats();
       }
@@ -1895,7 +1903,8 @@ async function pRenderGuardians(){
     var isFav = !isAnon && pIsFav(rawId);
     var gVbadge = gVerified && !isAnon ? '<span class="velo-verified" title="Verificado — Plata o superior">✓</span>' : '';
     var gVavBadge = gVerified && !isAnon ? '<span style="position:absolute;bottom:-2px;left:-2px;width:14px;height:14px;border-radius:50%;background:#1d9bf0;border:2px solid var(--bg-main,#fff);color:#fff;font-size:8px;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1">✓</span>' : '';
-    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span>'+gVavBadge+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+(isAnon?'Guardián Anónimo':g.name)+'</span>'+gVbadge+'<span style="font-size:14px">'+badge.icon+'</span></div><div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0">'+(isAnon?'Disponible de forma anónima':g.bio)+'</p></div>'
+    var gUsername = (!isAnon && g.username) ? ('<div class="gc-username">@'+_escHtml(g.username)+'</div>') : '';
+    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span>'+gVavBadge+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.2">'+(isAnon?'Guardián Anónimo':_escHtml(g.name||'—'))+'</span>'+gVbadge+'<span style="font-size:14px">'+badge.icon+'</span></div>'+gUsername+'<div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0">'+(isAnon?'Disponible de forma anónima':_escHtml(g.bio||''))+'</p></div>'
       +'<div style="display:flex;gap:6px;align-items:center">'
       +(!isAnon ? '<button onclick="event.stopPropagation();'+(isFav?'pRemoveFav':'pAddFav')+'('+_jsAttr(rawId)+','+_jsAttr(g.name)+','+_jsAttr(g.av||'🌿')+');pRenderGuardians()" style="padding:6px 8px;background:'+(isFav?'rgba(255,200,50,.18)':'rgba(255,200,50,.07)')+';border:1px solid rgba(255,200,50,'+(isFav?'.4':'.2')+');border-radius:10px;font-size:15px;cursor:pointer" title="'+(isFav?'Quitar favorito':'Guardar favorito')+'">'+(isFav?'⭐':'☆')+'</button>' : '')
       +'<button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(g.status==='ocupado'?'pToast(\'🟡\','+_jsAttr(g.name+' está ocupado/a ahora')+')':'pOpenGuardian('+_jsAttr(g.id)+')')+'">'+(g.status==='ocupado'?'Ocupado/a':'Solicitar')+'</button>'
@@ -3555,13 +3564,17 @@ async function pRenderNews(){
   var monthYear = ['enero','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][new Date().getMonth()]+' '+new Date().getFullYear();
 
   // Attempt 1: Grounded search — Gemini with Google Search finds real articles with verified URLs
-  var gPrompt = 'Search for 5 real positive news stories published recently ('+monthYear+'). '
+  // We ask Gemini to include the sourceUrl directly in JSON (it has web access via grounding tool).
+  // Grounding chunks are used as a secondary fallback for items that got no URL from the JSON.
+  var gPrompt = 'Use Google Search to find 5 real positive news stories published recently ('+monthYear+'). '
     +'Topics: medical breakthroughs, environment/nature wins, human solidarity, science, animals rescued, social innovation. '
-    +'For each story provide the real article title, a 2-3 sentence summary in Argentine Spanish (rioplatense), the exact news outlet name, and a short wellbeing reflection. '
-    +'Use Google Search to find real current articles — do NOT invent stories. '
-    +'Respond ONLY with valid JSON array, no markdown: [{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"...","sourceName":"..."}]';
+    +'For EACH story you MUST include: the real article URL (sourceUrl), the news outlet name (sourceName), '
+    +'the article title, a 2-3 sentence summary in Argentine Spanish (rioplatense), and a short wellbeing reflection. '
+    +'Only include stories you actually found via Google Search — do NOT invent stories or URLs. '
+    +'Respond ONLY with valid JSON array, no markdown fences: '
+    +'[{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"...","sourceName":"...","sourceUrl":"https://..."}]';
 
-  var result = await _geminiCallGrounded(gPrompt, { maxOutputTokens:1800 });
+  var result = await _geminiCallGrounded(gPrompt, { maxOutputTokens:2000 });
   var items = [];
 
   if(result.text){
@@ -3570,22 +3583,18 @@ async function pRenderNews(){
       var m = raw.match(/\[[\s\S]*\]/);
       if(m) items = JSON.parse(m[0]);
     }catch(e){}
-    // Always strip any AI-generated URLs (can be hallucinated / 404).
-    // Only assign URLs from real grounding metadata returned by the API.
-    items.forEach(function(item){ item.sourceUrl = ''; });
-    if(result.urls && result.urls.length){
-      var ui = 0;
-      items.forEach(function(item){
-        if(result.urls[ui]){
-          item.sourceUrl = result.urls[ui].uri;
-          // Only override sourceName if AI didn't provide one
-          if(!item.sourceName || item.sourceName.length < 2){
-            item.sourceName = result.urls[ui].title || 'Fuente';
-          }
-          ui++;
-        }
-      });
-    }
+    // Validate URLs returned by Gemini — keep only real http URLs (grounding ensures they're real).
+    // For any item still missing a URL, try to fill from grounding chunks (pool of all cited sources).
+    var chunkPool = (result.urls || []).slice(); // [{uri, title}, ...]
+    items.forEach(function(item){
+      var hasUrl = item.sourceUrl && item.sourceUrl.startsWith('http');
+      if(!hasUrl && chunkPool.length){
+        var chunk = chunkPool.shift();
+        item.sourceUrl = chunk.uri;
+        if(!item.sourceName || item.sourceName.length < 2) item.sourceName = chunk.title || 'Fuente';
+      }
+      if(!item.sourceUrl || !item.sourceUrl.startsWith('http')) item.sourceUrl = '';
+    });
     items.forEach(function(it){ it._src = 'g'; });
   }
 

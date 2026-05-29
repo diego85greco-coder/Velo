@@ -5306,3 +5306,32 @@ body.r-dark .r-ctab-count {
 .r-ctab.active .r-ctab-count {
   background: rgba(116,198,157,.30);
 }
+
+/* ── v223: Guardian card — dark mode background + legible text ────── */
+body.r-dark .p-guardian-card {
+  background: var(--r-glass-bg) !important;
+  border-color: var(--r-glass-bord) !important;
+}
+body.r-dark .p-guardian-card [style*="color:var(--ink)"] {
+  color: rgba(232,242,236,.92) !important;
+}
+body.r-dark .p-guardian-card [style*="color:var(--ink4)"] {
+  color: rgba(148,184,164,.80) !important;
+}
+body.r-dark .p-guardian-card [style*="color:var(--sage3)"] {
+  color: rgba(116,198,157,.78) !important;
+}
+
+/* ── v223: @username label — guardian card ────────────────────────── */
+.gc-username {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .03em;
+  color: var(--sage3);
+  margin-bottom: 3px;
+  opacity: .9;
+}
+body.r-dark .gc-username {
+  color: rgba(116,198,157,.70) !important;
+  opacity: 1;
+}
