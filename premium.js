@@ -6178,20 +6178,30 @@ function _renderUserDashboard(){
   var helpedMe = parseInt(safeLS('get','velo_help_received')||'0',10);
   var convs = parseInt(safeLS('get','velo_guardian_convs')||'0',10);
   var badge = _getBadge(convs);
-  var reviews = []; try{ reviews = JSON.parse(safeLS('get','velo_my_reviews')||'[]'); }catch(e){}
   el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'
-    +'<div class="mini-dash-card" onclick="switchProfileTab(\'logros\',document.querySelector(\'[onclick*=logros]\'))">' 
+    +'<div class="mini-dash-card" onclick="switchProfileTab(\'logros\',document.querySelector(\'[onclick*=logros]\'))">'
     +'<div style="font-size:28px;margin-bottom:4px">'+badge.icon+'</div>'
     +'<div style="font-size:11px;font-weight:800;color:var(--ink)">'+badge.name+'</div>'
     +'<div style="font-size:10px;color:var(--ink4)">Nivel</div>'
     +'</div>'
     +'<div class="mini-dash-card"><div style="font-size:24px;font-weight:800;color:var(--sage);margin-bottom:2px">'+helped+'</div><div style="font-size:11px;color:var(--ink3)">Ayudé</div></div>'
     +'<div class="mini-dash-card"><div style="font-size:24px;font-weight:800;color:var(--sage);margin-bottom:2px">'+helpedMe+'</div><div style="font-size:11px;color:var(--ink3)">Me ayudaron</div></div>'
-    +'<div class="mini-dash-card" onclick="switchProfileTab(\'reseñas\',document.querySelector(\'[onclick*=reseñas]\'))">' 
-    +'<div style="font-size:24px;font-weight:800;color:var(--sage);margin-bottom:2px">'+reviews.length+'</div>'
+    +'<div class="mini-dash-card" onclick="switchProfileTab(\'reseñas\',document.querySelector(\'[onclick*=reseñas]\'))">'
+    +'<div id="miniDashReviewCount" style="font-size:24px;font-weight:800;color:var(--sage);margin-bottom:2px">…</div>'
     +'<div style="font-size:11px;color:var(--ink3)">Reseñas</div>'
     +'</div>'
     +'</div>';
+  // Load real count from Supabase (localStorage key was never written)
+  var myId = safeLS('get','velo_user_id')||'';
+  var countEl = document.getElementById('miniDashReviewCount');
+  if(myId){
+    _loadUserReviews(myId).then(function(revs){
+      var c = document.getElementById('miniDashReviewCount');
+      if(c) c.textContent = revs.length;
+    });
+  } else if(countEl) {
+    countEl.textContent = '0';
+  }
 }
 
 // ── PROFILE ────────────────────────────────────────────────────
