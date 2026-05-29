@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260529-231">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260529-231">
+  <link rel="stylesheet" href="premium.css?v=20260529-232">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260529-232">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1717,11 +1717,18 @@
                   <div id="happyProfileTog" class="p-tog" onclick="this.classList.toggle('on');document.getElementById('happyShowProfile').checked=this.classList.contains('on')" style="flex-shrink:0"><div class="p-tog-k"></div></div>
                   <input type="checkbox" id="happyShowProfile" style="display:none">
                 </div>
+                <!-- Photo upload button -->
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:rgba(255,255,255,.55);border:1.5px dashed rgba(200,150,30,.35);border-radius:12px;margin-bottom:10px;transition:background .15s" onmouseover="this.style.background='rgba(255,230,80,.18)'" onmouseout="this.style.background='rgba(255,255,255,.55)'" title="Subir foto">
+                  <span style="font-size:26px;flex-shrink:0">📷</span>
+                  <span style="flex:1;min-width:0">
+                    <span style="display:block;font-size:13px;font-weight:600;color:var(--ink);font-family:'Jost',sans-serif">Seleccionar imagen</span>
+                    <span style="display:block;font-size:11px;color:var(--ink4);margin-top:1px">JPG, PNG · máx 2MB</span>
+                  </span>
+                  <span style="font-size:11px;color:var(--sage2);font-weight:600;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:20px;padding:3px 10px;flex-shrink:0">Agregar</span>
+                  <input type="file" accept="image/*" style="display:none" onchange="pHappyPickMedia(this)">
+                </label>
                 <!-- Action row -->
                 <div style="display:flex;align-items:center;gap:8px">
-                  <label title="Subir foto" style="cursor:pointer;font-size:20px;line-height:1;padding:4px;flex-shrink:0">
-                    📷<input type="file" accept="image/*,video/*" style="display:none" onchange="pHappyPickMedia(this)">
-                  </label>
                   <div id="happyQueueNote" style="display:none;flex:1;font-size:11px;color:var(--ink4);font-style:italic"></div>
                   <div style="flex:1"></div>
                   <button class="p-btn p-btn--primary p-btn--sm" onclick="pSubmitHappyPost()" style="padding:8px 18px;font-size:13px">☀️ Publicar</button>
@@ -2975,8 +2982,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260529-231"></script>
-<script src="premium-redesign.js?v=20260529-231"></script>
+<script src="premium.js?v=20260529-232"></script>
+<script src="premium-redesign.js?v=20260529-232"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
