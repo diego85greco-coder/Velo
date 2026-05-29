@@ -4211,9 +4211,9 @@ function pSendBottleReply(){
     sbClient.from('broadcasts').insert({
       target: 'user:'+_curBottleUserId,
       subject: '¡Tu mensaje en el mar recibió una respuesta!',
-      body: 'Alguien encontró tu mensaje y te dejó estas palabras:\n\n"'+replyText+'"',
+      body: (_curBottleReplyText ? '🌊 Tu mensaje:\n"'+_curBottleReplyText+'"\n\n' : '')+'💬 Respuesta:\n"'+replyText+'"',
       icon: '🌊',
-      sender: _rid ? JSON.stringify({ n:_rName, i:_rid, a:_rAv }) : 'Velo — Al Mar',
+      sender: _rid ? JSON.stringify({ n:_rName, i:_rid, a:_rAv, u:safeLS('get','velo_username')||'' }) : 'Velo — Al Mar',
       sent_at: new Date().toISOString()
     }).then(function(){}).catch(function(){});
   }
@@ -6792,9 +6792,10 @@ function pRenderInbox(){
       var fecha = b.sent_at ? new Date(b.sent_at).toLocaleDateString('es',{day:'2-digit',month:'short'}) : '';
       var senderInfo = null;
       try { senderInfo = JSON.parse(b.sender); } catch(e) {}
-      var senderName = senderInfo && senderInfo.n ? senderInfo.n : (b.sender||'');
-      var senderId   = senderInfo && senderInfo.i ? senderInfo.i : '';
-      var senderAv   = senderInfo && senderInfo.a ? senderInfo.a : (b.icon||'📢');
+      var senderName     = senderInfo && senderInfo.n ? senderInfo.n : (b.sender||'');
+      var senderId       = senderInfo && senderInfo.i ? senderInfo.i : '';
+      var senderAv       = senderInfo && senderInfo.a ? senderInfo.a : (b.icon||'📢');
+      var senderUsername = senderInfo && senderInfo.u ? senderInfo.u : '';
       var iconHtml = senderId
         ? '<div class="p-inbox-ic" style="cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_avInline(senderAv,32)+'</div>'
         : '<div class="p-inbox-ic">'+_escHtml(b.icon||'📢')+'</div>';
@@ -6802,7 +6803,7 @@ function pRenderInbox(){
         ? '<div style="font-size:11px;color:var(--sage);font-weight:600;margin-bottom:2px;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_escHtml(senderName)+' ›</div>'
         : '';
       var isAlreadyRead = !!safeLS('get',readKey);
-      return '<div class="p-inbox-msg'+(isAlreadyRead?'':' unread')+'" style="cursor:pointer" onclick="pOpenBroadcastMsg('+_jsAttr(readKey)+','+_jsAttr(b.subject||'')+','+_jsAttr(b.body||'')+','+_jsAttr(senderName||'')+','+_jsAttr(fecha||'')+',this)">'
+      return '<div class="p-inbox-msg'+(isAlreadyRead?'':' unread')+'" style="cursor:pointer" onclick="pOpenBroadcastMsg('+_jsAttr(readKey)+','+_jsAttr(b.subject||'')+','+_jsAttr(b.body||'')+','+_jsAttr(senderName||'')+','+_jsAttr(fecha||'')+',this,'+_jsAttr(senderId||'')+','+_jsAttr(senderAv||'')+','+_jsAttr(senderUsername||'')+')">'
         +'<div style="display:flex;flex-shrink:0">'+(isAlreadyRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
         +iconHtml
         +'<div style="flex:1;min-width:0">'
@@ -6896,24 +6897,50 @@ function pRenderInbox(){
   }, 3000);
 }
 
-function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl){
+function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl, senderId, senderAv, senderUsername){
   safeLS('set', readKey, '1');
   if(rowEl){ rowEl.classList.remove('unread'); var dot = rowEl.querySelector('.p-inbox-dot'); if(dot) dot.remove(); }
   _updateHomeBell();
   var existing = document.getElementById('inboxBcOv');
   if(existing) existing.remove();
+
+  var isIdentified = !!(senderId && senderName && senderName !== 'Velo — Al Mar' && senderName.indexOf('Velo') !== 0);
+  var uname = senderUsername ? '@'+senderUsername : (isIdentified ? '@'+(senderName||'').toLowerCase().replace(/\s+/g,'_').slice(0,16) : '');
+  var isFav = isIdentified && pGetFavs().some(function(f){ return f.id === senderId; });
+
+  var senderCard = isIdentified
+    ? '<div style="display:flex;align-items:center;gap:12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:16px;padding:12px 14px;margin-bottom:16px">'
+      +'<div style="position:relative;flex-shrink:0;cursor:pointer" onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv||'🧑')+',\'\',\'\','+_jsAttr(senderId)+')">'
+      +_avInline(senderAv||'🧑', 48)
+      +'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;margin-bottom:2px" onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv||'🧑')+',\'\',\'\','+_jsAttr(senderId)+')">'+_escHtml(senderName)+'</div>'
+      +(uname ? '<div style="font-size:11px;color:var(--sage3);font-weight:600">'+_escHtml(uname)+'</div>' : '')
+      +'<div style="font-size:10px;color:var(--ink5);margin-top:2px">'+_escHtml(fecha||'')+'</div>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
+      +'<button onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv||'🧑')+',\'\',\'\','+_jsAttr(senderId)+')" style="padding:5px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;font-size:11px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">Ver perfil</button>'
+      +'<button id="bcFavBtn" onclick="'+(isFav?'pRemoveFav(\''+_escHtml(senderId)+'\')':'pAddFav('+_jsAttr(senderId)+','+_jsAttr(senderName)+','+_jsAttr(senderAv||'🧑')+')')+';this.textContent=\''+(isFav?'☆ Favorito':'⭐ Guardado')+'\';pToast(\''+(isFav?'☆':'⭐')+'\',\''+(isFav?'Quitado de favoritos':'¡Guardado como favorito!')+'\')" style="padding:5px 10px;background:rgba(255,200,50,'+(isFav?'.18':'.08')+');border:1.5px solid rgba(255,200,50,'+(isFav?'.45':'.25')+');border-radius:100px;font-size:11px;font-weight:700;color:'+(isFav?'#c8a040':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">'+(isFav?'⭐ Guardado':'☆ Favorito')+'</button>'
+      +'</div></div>'
+    : '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
+      +'<div style="font-size:30px;width:46px;height:46px;border-radius:14px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0">🌊</div>'
+      +'<div><div style="font-size:12px;font-weight:700;color:var(--sage)">Alguien de la comunidad</div>'
+      +'<div style="font-size:11px;color:var(--ink5)">'+_escHtml(fecha||'')+'</div></div>'
+      +'</div>';
+
+  var replyBtn = isIdentified
+    ? '<button class="p-btn p-btn--primary p-btn--md p-btn--full" style="margin-bottom:8px" onclick="document.getElementById(\'inboxBcOv\').remove();pLeaveOfflineMsg('+_jsAttr(senderId)+','+_jsAttr(senderName)+','+_jsAttr(senderAv||'🧑')+')">💌 Responder</button>'
+    : '';
+
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
   ov.id = 'inboxBcOv';
   ov.innerHTML = '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
     +'<div class="p-sheet-handle"></div>'
-    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
-    +'<div style="font-size:30px;width:46px;height:46px;border-radius:14px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0">📢</div>'
-    +'<div><div style="font-size:12px;font-weight:700;color:var(--sage)">'+_escHtml(senderName||'Velo')+'</div>'
-    +'<div style="font-size:11px;color:var(--ink5)">'+_escHtml(fecha||'')+'</div></div>'
-    +'</div>'
-    +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);margin-bottom:16px;line-height:1.3">'+_escHtml(subject)+'</h2>'
+    +senderCard
+    +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:14px;line-height:1.3">'+_escHtml(subject)+'</h2>'
     +(body ? '<div style="font-size:14px;color:var(--ink3);line-height:1.85;white-space:pre-line;background:var(--cream2);border-radius:12px;padding:16px;margin-bottom:20px">'+_escHtml(body)+'</div>' : '')
+    +replyBtn
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'inboxBcOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
