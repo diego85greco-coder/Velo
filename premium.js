@@ -1702,25 +1702,12 @@ function pSaveGuardianSetup(){
   var tags = (document.getElementById('guardianSetupTags') || {}).value || '';
   safeLS('set','velo_guardian_bio',  bio.trim());
   safeLS('set','velo_guardian_tags', tags.trim());
-  _updateGuardianPresence('disponible');
+  // Do NOT call _updateGuardianPresence here — pToggleGuardianMode() does it with is_guardian:true.
+  // Calling it now would race against that call and potentially write is_guardian:false to the DB.
   var existing = document.getElementById('guardianSetupOv');
   if(existing) existing.remove();
-  // Now actually activate guardian mode
+  // Activate guardian mode (sets localStorage + upserts presence with is_guardian:true)
   pToggleGuardianMode();
-  setTimeout(function(){
-    var isOn  = safeLS('get','velo_is_guardian') === 'true';
-    var gBtn  = document.getElementById('homeGuardianBtn');
-    var gWrap = document.getElementById('homeGuardianWrap');
-    if(gBtn){
-      var _gs = _gBtnStyle(isOn);
-      gBtn.style.background  = _gs.bg;
-      gBtn.style.borderColor = _gs.border;
-      gBtn.style.color       = _gs.color;
-      gBtn.textContent       = isOn ? '🛡️ Activado' : '🛡️ Actívame';
-    }
-    var gLabel = gWrap ? gWrap.querySelector('span') : null;
-    if(gLabel) gLabel.textContent = isOn ? 'Activo' : 'Activarme';
-  }, 80);
   pToast('🛡️','Perfil guardado. ¡Aparecés como guardián disponible!');
 }
 
@@ -1750,6 +1737,8 @@ function pToggleGuardianMode(){
   _renderHomeStatusToggle();
   _renderMyStatusBar();
   pRenderGuardians();
+  // Fallback re-render after a tick — covers edge cases where the DOM wasn't ready on first call
+  setTimeout(_renderHomeStatusToggle, 50);
 }
 
 function pSaveGuardianBio(){
@@ -2803,9 +2792,9 @@ async function pRenderHelp(){
     var realPosts = []; try{ realPosts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
     posts = realPosts.filter(function(h){ return !h.closed && hidden.indexOf('help-'+h.id)<0 && !_isBlocked(h.userId); });
   }
-  // Separate own post from others' posts (own post stays visible to author for deletion)
+  // Separate own posts from others' (own posts stay visible to author for deletion, even if anonymous)
   _helpPosts = posts.filter(function(h){ return (h.userId||'') !== myHelpId; });
-  var myOwnPost = myHelpId ? posts.find(function(h){ return (h.userId||'') === myHelpId; }) : null;
+  var myOwnPosts = myHelpId ? posts.filter(function(h){ return (h.userId||'') === myHelpId; }) : [];
 
   var count = document.getElementById('helpActiveCount');
   if(count) count.textContent = _helpPosts.length+' esperando acompañamiento';
@@ -2855,8 +2844,8 @@ async function pRenderHelp(){
       +'</div></div></div>';
   }
 
-  // Show own post pinned at top (if exists), then others below
-  var ownHtml = myOwnPost ? _helpCard(myOwnPost, true) : '';
+  // Show own posts pinned at top (public AND anonymous), then others below
+  var ownHtml = myOwnPosts.map(function(h){ return _helpCard(h, true); }).join('');
   var othersHtml = _helpPosts.map(function(h){ return _helpCard(h, false); }).join('');
   list.innerHTML = ownHtml + othersHtml;
 }
