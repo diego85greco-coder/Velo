@@ -5557,3 +5557,32 @@ body:not(.r-dark) #homeDailyQuoteAuthor {
 /* ── v227: "Quienes quieren ayudar" — guardian landing card ──────── */
 #guardianes-intro-card .p-empty-title,
 .guardian-intro-card .p-empty-title { font-size: 18px !important; }
+
+/* ── v269: Dark mode quote text — bold white, larger ──────────────────── */
+body.r-dark #pg-home #homeDailyQuoteText,
+body.r-dark #homeDailyQuoteText {
+  -webkit-text-fill-color: rgba(255,255,255,.93) !important;
+  color: rgba(255,255,255,.93) !important;
+  background-image: none !important;
+  -webkit-background-clip: padding-box !important;
+  background-clip: padding-box !important;
+  animation: none !important;
+  font-size: clamp(18px, 5vw, 23px) !important;
+  font-weight: 700 !important;
+  font-style: italic !important;
+  line-height: 1.38 !important;
+  letter-spacing: -0.01em !important;
+  text-shadow: 0 1px 8px rgba(0,0,0,.35) !important;
+  opacity: 1 !important;
+}
+body.r-dark #pg-home #homeDailyQuoteAuthor,
+body.r-dark #homeDailyQuoteAuthor {
+  -webkit-text-fill-color: rgba(200,158,56,.90) !important;
+  color: rgba(200,158,56,.90) !important;
+  background-image: none !important;
+  -webkit-background-clip: padding-box !important;
+  background-clip: padding-box !important;
+  animation: none !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
