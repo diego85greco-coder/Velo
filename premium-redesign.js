@@ -447,4 +447,54 @@ function initSurveyDismissal() {
     var gWrap = document.getElementById('homeGuardianWrap');
     if (gWrap) gWrap.style.display = 'none';
   };
+
+  // Happy wall: scroll-to-collapse compose + post-submit collapse
+  document.addEventListener('scroll', function(e) {
+    var feed = document.getElementById('happyFeedScroll');
+    if (feed && feed.contains(e.target)) pCollapseHappyCompose();
+  }, true);
+  // Collapse compose after a post is published
+  var _origSubmitHappy = window.pSubmitHappyPost;
+  if (typeof _origSubmitHappy === 'function') {
+    window.pSubmitHappyPost = async function() {
+      await _origSubmitHappy.apply(this, arguments);
+      setTimeout(pCollapseHappyCompose, 400);
+    };
+  }
+  // Populate compose bar avatar with user's avatar when available
+  var _happyCbarAv = document.getElementById('happyComposeAv');
+  if (_happyCbarAv) {
+    var _trySetComposeAv = function() {
+      var av = safeLS('get','velo_user_av') || '';
+      if (av && av.length > 1) {
+        if (av.startsWith('data:') || av.startsWith('http')) {
+          _happyCbarAv.innerHTML = '<img src="'+av+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover;display:block">';
+        } else {
+          _happyCbarAv.textContent = av;
+        }
+      }
+    };
+    _trySetComposeAv();
+    setTimeout(_trySetComposeAv, 1500);
+  }
 })();
+
+function pExpandHappyCompose() {
+  var bar  = document.getElementById('happyComposeBar');
+  var body = document.getElementById('happyComposeBody');
+  if (!bar || !body) return;
+  bar.style.display = 'none';
+  body.classList.add('happy-compose--open');
+  var ta = document.getElementById('happyPostTa');
+  if (ta) setTimeout(function(){ ta.focus(); }, 50);
+}
+
+function pCollapseHappyCompose() {
+  var ta = document.getElementById('happyPostTa');
+  if (ta && ta.value.trim()) return; // keep open if user is typing
+  var bar  = document.getElementById('happyComposeBar');
+  var body = document.getElementById('happyComposeBody');
+  if (!bar || !body) return;
+  bar.style.display = '';
+  body.classList.remove('happy-compose--open');
+}

@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260529-190">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260529-190">
+  <link rel="stylesheet" href="premium.css?v=20260529-191">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260529-191">
 </head>
 <body>
 
@@ -1665,8 +1665,8 @@
 
       <!-- ══ HAPPY WALL ════════════════════════════════════════ -->
       <div class="p-page" id="pg-happy" style="flex-direction:column;overflow:hidden">
-        <!-- ── Fixed header + compose form ── -->
-        <div style="flex-shrink:0;background:var(--cream);border-bottom:1px solid var(--border)">
+        <!-- ── Fixed header + compose + tabs ── -->
+        <div id="happyFixedHdr" style="flex-shrink:0;background:var(--cream);border-bottom:1px solid var(--border)">
           <!-- Page header -->
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 0">
             <div style="display:flex;align-items:center;gap:10px">
@@ -1681,50 +1681,58 @@
               <button onclick="pToggleHappyInfo()" title="Cómo funciona" style="font-size:16px;background:none;border:none;cursor:pointer;padding:4px;line-height:1;color:var(--ink4)">ℹ️</button>
             </div>
           </div>
-          <!-- Collapsible info panel — hidden by default -->
+          <!-- Info panel -->
           <div id="happyInfoPanel" style="display:none;margin:8px 16px 0;background:rgba(255,224,102,.15);border:1.5px solid rgba(255,200,50,.3);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--ink3);line-height:1.6">
             <strong style="display:block;margin-bottom:4px;color:var(--ink2)">☀️ Solo momentos de alegría</strong>
             Compartí logros, sonrisas y pequeñas alegrías cotidianas. No se permite negatividad ni pedidos de apoyo (para eso está la Sala de Ayuda).<br>
             <span style="color:var(--ink5)">📅 Cada publicación dura 24 horas · Máx 50 activas · Si está lleno, queda en lista de espera</span>
           </div>
-          <!-- Compose box -->
-          <div style="padding:10px 16px 12px">
-            <div style="background:rgba(255,224,102,.12);border:1.5px solid rgba(255,200,50,.25);border-radius:14px;padding:10px 12px">
-              <!-- Emoji row — single scrollable line -->
-              <div id="happyEmojiRow" style="display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;margin-bottom:8px;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:1px"></div>
-              <!-- Text area -->
-              <textarea class="p-textarea" id="happyPostTa" rows="2" placeholder="¿Qué momento de alegría querés compartir hoy? ✨" maxlength="300" style="background:rgba(255,255,255,.7);border-color:rgba(255,200,50,.2);font-size:13px;resize:none;margin-bottom:8px"></textarea>
-              <!-- Photo preview -->
-              <div id="happyPhotoPreview" style="display:none;margin-bottom:8px;position:relative">
-                <img id="happyPhotoImg" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;display:block">
-                <button onclick="pClearHappyPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:50%;width:24px;height:24px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
-              </div>
-              <!-- Anon toggle row -->
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,.5);border-radius:10px;border:1px solid var(--border2)">
-                <span style="font-size:11px;color:var(--ink4);flex:1;line-height:1.4">Publicar con mi perfil visible<br><span style="font-size:10px;color:var(--ink5)">Otros podrán ver tu perfil al hacer click en tu foto</span></span>
-                <div id="happyProfileTog" class="p-tog" onclick="this.classList.toggle('on');document.getElementById('happyShowProfile').checked=this.classList.contains('on')" style="flex-shrink:0"><div class="p-tog-k"></div></div>
-                <input type="checkbox" id="happyShowProfile" style="display:none">
-              </div>
-              <!-- Action row -->
-              <div style="display:flex;align-items:center;gap:8px">
-                <label title="Subir foto" style="cursor:pointer;font-size:20px;line-height:1;padding:4px;flex-shrink:0">
-                  📷<input type="file" accept="image/*,video/*" style="display:none" onchange="pHappyPickMedia(this)">
-                </label>
-                <div id="happyQueueNote" style="display:none;flex:1;font-size:11px;color:var(--ink4);font-style:italic"></div>
-                <div style="flex:1"></div>
-                <button class="p-btn p-btn--primary p-btn--sm" onclick="pSubmitHappyPost()" style="padding:8px 18px;font-size:13px">☀️ Publicar</button>
+          <!-- ── Collapsed compose bar (visible when collapsed) ── -->
+          <div id="happyComposeBar" class="happy-cbar" onclick="pExpandHappyCompose()">
+            <span id="happyComposeAv" style="font-size:22px;flex-shrink:0;line-height:1">☀️</span>
+            <span class="happy-cbar-placeholder">¿Qué momento de alegría compartís hoy? ✨</span>
+            <span style="font-size:18px;opacity:.55;flex-shrink:0">📷</span>
+          </div>
+          <!-- ── Expandable compose body ── -->
+          <div id="happyComposeBody" class="happy-compose-body">
+            <div style="padding:0 16px 12px">
+              <div style="background:rgba(255,224,102,.12);border:1.5px solid rgba(255,200,50,.25);border-radius:14px;padding:10px 12px">
+                <!-- Emoji row -->
+                <div id="happyEmojiRow" style="display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;margin-bottom:8px;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:1px"></div>
+                <!-- Text area -->
+                <textarea class="p-textarea" id="happyPostTa" rows="2" placeholder="¿Qué momento de alegría querés compartir hoy? ✨" maxlength="300" style="background:rgba(255,255,255,.7);border-color:rgba(255,200,50,.2);font-size:13px;resize:none;margin-bottom:8px"></textarea>
+                <!-- Photo preview -->
+                <div id="happyPhotoPreview" style="display:none;margin-bottom:8px;position:relative">
+                  <img id="happyPhotoImg" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;display:block">
+                  <button onclick="pClearHappyPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:50%;width:24px;height:24px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
+                </div>
+                <!-- Anon toggle row -->
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,.5);border-radius:10px;border:1px solid var(--border2)">
+                  <span style="font-size:11px;color:var(--ink4);flex:1;line-height:1.4">Publicar con mi perfil visible<br><span style="font-size:10px;color:var(--ink5)">Otros podrán ver tu perfil al hacer click en tu foto</span></span>
+                  <div id="happyProfileTog" class="p-tog" onclick="this.classList.toggle('on');document.getElementById('happyShowProfile').checked=this.classList.contains('on')" style="flex-shrink:0"><div class="p-tog-k"></div></div>
+                  <input type="checkbox" id="happyShowProfile" style="display:none">
+                </div>
+                <!-- Action row -->
+                <div style="display:flex;align-items:center;gap:8px">
+                  <label title="Subir foto" style="cursor:pointer;font-size:20px;line-height:1;padding:4px;flex-shrink:0">
+                    📷<input type="file" accept="image/*,video/*" style="display:none" onchange="pHappyPickMedia(this)">
+                  </label>
+                  <div id="happyQueueNote" style="display:none;flex:1;font-size:11px;color:var(--ink4);font-style:italic"></div>
+                  <div style="flex:1"></div>
+                  <button class="p-btn p-btn--primary p-btn--sm" onclick="pSubmitHappyPost()" style="padding:8px 18px;font-size:13px">☀️ Publicar</button>
+                </div>
               </div>
             </div>
           </div>
-          <!-- Tabs -->
-          <div style="display:flex;gap:0;margin:0 16px 12px;background:var(--cream2);border-radius:12px;padding:3px">
+          <!-- ── Tabs ── -->
+          <div class="happy-tabs-row" style="display:flex;gap:6px;padding:0 16px 12px">
             <button class="happy-tab active" id="htab-all" onclick="pHappyTab('all',this)">🌍 Todos</button>
             <button class="happy-tab" id="htab-mine" onclick="pHappyTab('mine',this)">📌 Mío</button>
             <button class="happy-tab" id="htab-history" onclick="pHappyTab('history',this)">📅 Historial</button>
           </div>
         </div>
         <!-- ── Scrollable feed ── -->
-        <div style="flex:1;overflow-y:auto;padding:14px 16px 40px">
+        <div id="happyFeedScroll" style="flex:1;overflow-y:auto;padding:14px 16px 40px">
           <div id="happyList" class="happy-feed"></div>
         </div>
       </div>
@@ -2962,8 +2970,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260529-190"></script>
-<script src="premium-redesign.js?v=20260529-190"></script>
+<script src="premium.js?v=20260529-191"></script>
+<script src="premium-redesign.js?v=20260529-191"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
