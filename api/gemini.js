@@ -1,4 +1,6 @@
-// Vercel serverless function — proxies Gemini API calls, keeping the key server-side
+// Vercel serverless function — Gemini 2.0 Flash via @google/generative-ai SDK
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -6,70 +8,81 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const GEMINI_KEY = process.env.GEMINI_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY;
-  if (!GEMINI_KEY) return res.status(500).json({ error: 'GEMINI_KEY not configured' });
-
-  const MODELS = [
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=',
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=',
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key='
-  ];
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  if (!GEMINI_API_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
 
   const { type, prompt, systemPrompt, msgs, cfg } = req.body || {};
+  const genCfg = Object.assign({ temperature: 0.7, maxOutputTokens: 300 }, cfg || {});
 
-  // ── Grounded search ──────────────────────────────────────────
-  if (type === 'grounded') {
+  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
+  // ── Multi-turn chat ──────────────────────────────────────────
+  if (type === 'chat') {
     try {
-      const r = await fetch(MODELS[0] + GEMINI_KEY, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          tools: [{ google_search: {} }],
-          generationConfig: Object.assign({ temperature: 0.5, maxOutputTokens: 1500 }, cfg || {})
-        })
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash',
+        systemInstruction: systemPrompt || '',
+        generationConfig: Object.assign({ temperature: 0.88, maxOutputTokens: 200 }, cfg || {})
       });
-      return res.json(await r.json());
+
+      // Build history (all turns except the last user message)
+      let allMsgs = (msgs || []).filter(m => m.text && m.text.trim());
+      // First message must be from user
+      while (allMsgs.length && allMsgs[0].user === false) allMsgs.shift();
+      if (!allMsgs.length) return res.status(400).json({ error: 'No user messages' });
+
+      const lastMsg = allMsgs[allMsgs.length - 1];
+      const history = allMsgs.slice(0, -1).map(m => ({
+        role: m.user ? 'user' : 'model',
+        parts: [{ text: m.text }]
+      }));
+
+      const chat = model.startChat({ history });
+      const result = await chat.sendMessage(lastMsg.text);
+      const text = result.response.text();
+
+      // Return in Gemini REST shape so existing client code (_gText) works unchanged
+      return res.json({
+        candidates: [{ content: { parts: [{ text }] } }]
+      });
     } catch (e) {
+      console.error('[Velo] Gemini chat error:', e.message);
       return res.status(500).json({ error: e.message });
     }
   }
 
-  // ── Multi-turn chat ──────────────────────────────────────────
-  if (type === 'chat') {
-    let contents = (msgs || []).map(m => ({ role: m.user ? 'user' : 'model', parts: [{ text: m.text }] }));
-    while (contents.length && contents[0].role !== 'user') contents.shift();
-    if (!contents.length) return res.json({ error: 'No user messages' });
-    const body = {
-      system_instruction: { parts: [{ text: systemPrompt || '' }] },
-      contents,
-      generationConfig: Object.assign({ temperature: 0.88, maxOutputTokens: 200 }, cfg || {})
-    };
-    for (const url of MODELS) {
-      try {
-        const r = await fetch(url + GEMINI_KEY, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-        });
-        const json = await r.json();
-        if (json.candidates) return res.json(json);
-      } catch (e) { continue; }
+  // ── Grounded search ──────────────────────────────────────────
+  if (type === 'grounded') {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash',
+        tools: [{ googleSearch: {} }],
+        generationConfig: Object.assign({ temperature: 0.5, maxOutputTokens: 1500 }, cfg || {})
+      });
+      const result = await model.generateContent(prompt || '');
+      const text = result.response.text();
+      return res.json({
+        candidates: [{ content: { parts: [{ text }] } }]
+      });
+    } catch (e) {
+      console.error('[Velo] Gemini grounded error:', e.message);
+      return res.status(500).json({ error: e.message });
     }
-    return res.status(500).json({ error: 'All models failed' });
   }
 
   // ── Single-turn generate (default) ──────────────────────────
-  const body = {
-    contents: [{ parts: [{ text: prompt || '' }] }],
-    generationConfig: Object.assign({ temperature: 0.7, maxOutputTokens: 300 }, cfg || {})
-  };
-  for (const url of MODELS) {
-    try {
-      const r = await fetch(url + GEMINI_KEY, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-      });
-      const json = await r.json();
-      if (json.candidates) return res.json(json);
-    } catch (e) { continue; }
+  try {
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      generationConfig: genCfg
+    });
+    const result = await model.generateContent(prompt || '');
+    const text = result.response.text();
+    return res.json({
+      candidates: [{ content: { parts: [{ text }] } }]
+    });
+  } catch (e) {
+    console.error('[Velo] Gemini generate error:', e.message);
+    return res.status(500).json({ error: e.message });
   }
-  return res.status(500).json({ error: 'All models failed' });
 };
