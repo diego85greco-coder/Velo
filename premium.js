@@ -21,6 +21,7 @@ var GEMINI_URLS   = [
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key='
 ];
 var GEMINI_PROXY      = '/api/gemini';     // Gemini 2.0 Flash proxy (Google AI, grounding enabled)
+var GROQ_PROXY        = '/api/groq';       // Groq proxy — llama-3.3-70b, same response shape as Gemini
 var SEND_EMAIL_PROXY  = '/api/send-email'; // Vercel serverless proxy for thank-you emails
 var _geminiUrlIdx = 0;
 
@@ -78,36 +79,41 @@ async function _geminiCallGrounded(prompt, cfg){
   return { text: null, urls: [] };
 }
 
+// Extract text from Gemini-or-Groq-shaped response object
+function _gText(json){
+  try{
+    var c = (json||{}).candidates;
+    if(!c||!c[0]) return null;
+    var p = ((c[0].content)||{}).parts;
+    return (p&&p[0]&&typeof p[0].text==='string'&&p[0].text.trim()) ? p[0].text.trim() : null;
+  }catch(e){ return null; }
+}
+
 async function _geminiCall(prompt, cfg){
-  // Try Vercel serverless proxy first
+  // 1. Gemini proxy
   try{
     var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ type:'generate', prompt:prompt, cfg:cfg||{} }) });
-    if(pr.ok){
-      var pj = await pr.json();
-      if(pj.candidates && pj.candidates[0] && pj.candidates[0].content &&
-         pj.candidates[0].content.parts && pj.candidates[0].content.parts[0].text){
-        return pj.candidates[0].content.parts[0].text;
-      }
-    }
+      body: JSON.stringify({ prompt:prompt, cfg:cfg||{} }) });
+    if(pr.ok){ var t1 = _gText(await pr.json()); if(t1) return t1; }
+    else { var e1={}; try{e1=await pr.json();}catch(x){} console.warn('[Velo] Gemini proxy',pr.status, e1.error||''); }
+  }catch(e){ console.warn('[Velo] Gemini proxy fetch error:', e.message); }
+  // 2. Groq proxy fallback (Llama 3.3-70b — returns Gemini-compatible shape)
+  try{
+    var gr = await fetch(GROQ_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ prompt:prompt, cfg:cfg||{} }) });
+    if(gr.ok){ var t2 = _gText(await gr.json()); if(t2) return t2; }
   }catch(e){}
-  // Fallback: direct call (non-Vercel environments)
+  // 3. Direct Gemini API (requires client-side key — likely empty in production)
   for(var attempt = 0; attempt < GEMINI_URLS.length; attempt++){
     var url = GEMINI_URLS[(_geminiUrlIdx + attempt) % GEMINI_URLS.length];
     try{
       var res = await fetch(url + GEMINI_KEY, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }],
-          generationConfig: Object.assign({ temperature:0.7, maxOutputTokens:300 }, cfg||{}) })
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ contents:[{parts:[{text:prompt}]}],
+          generationConfig: Object.assign({temperature:0.7,maxOutputTokens:300},cfg||{}) })
       });
-      var json = await res.json();
-      if(json.candidates && json.candidates[0] && json.candidates[0].content &&
-         json.candidates[0].content.parts && json.candidates[0].content.parts[0].text){
-        _geminiUrlIdx = (_geminiUrlIdx + attempt) % GEMINI_URLS.length;
-        return json.candidates[0].content.parts[0].text;
-      }
-      if(json.error){ continue; }
+      var t3 = _gText(await res.json());
+      if(t3){ _geminiUrlIdx = (_geminiUrlIdx+attempt)%GEMINI_URLS.length; return t3; }
     }catch(e){ continue; }
   }
   return null;
@@ -3694,21 +3700,20 @@ function _calmAIAddMsg(text, isUser){
 }
 
 async function _geminiChat(systemPrompt, msgs, cfg){
-  // Primary: proxy multi-turn chat
+  // 1. Gemini proxy — primary (multi-turn chat)
   try{
     var pr = await fetch(GEMINI_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ type:'chat', systemPrompt:systemPrompt, msgs:msgs, cfg:cfg||{} }) });
-    if(pr.ok){
-      var pj = await pr.json();
-      if(pj.candidates && pj.candidates[0] && pj.candidates[0].content &&
-         pj.candidates[0].content.parts && pj.candidates[0].content.parts[0] &&
-         pj.candidates[0].content.parts[0].text){
-        return pj.candidates[0].content.parts[0].text.trim();
-      }
-    }
+    if(pr.ok){ var t1 = _gText(await pr.json()); if(t1) return t1; }
+    else { var e1={}; try{e1=await pr.json();}catch(x){} console.warn('[Velo] Gemini chat',pr.status,e1.error||''); }
+  }catch(e){ console.warn('[Velo] Gemini chat error:',e.message); }
+  // 2. Groq proxy — fallback multi-turn chat (llama-3.3-70b)
+  try{
+    var gr = await fetch(GROQ_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ type:'chat', systemPrompt:systemPrompt, msgs:msgs, cfg:cfg||{} }) });
+    if(gr.ok){ var t2 = _gText(await gr.json()); if(t2) return t2; }
   }catch(e){}
-  // Reliable fallback: format conversation as a single prompt and use the generate path
-  // (the generate path is confirmed working; the direct key fallback was broken — GEMINI_KEY is '')
+  // 3. Last resort: embed conversation as single generate prompt
   var convLines = msgs.slice(-8).map(function(m){
     return (m.user ? 'Usuario' : 'Acompañante Velo') + ': ' + m.text;
   });
@@ -7334,8 +7339,6 @@ async function pRenderContacts(){
   var favs = pGetFavs();
   var myId = safeLS('get','velo_user_id')||'';
 
-  // Count who has me as favorite (from Supabase)
-  var favMeCount = 0;
   _initSupabase();
   var favMeRows = [];
   if(sbClient && myId){
@@ -7343,20 +7346,36 @@ async function pRenderContacts(){
       var fmRes = await sbClient.from('user_favorites').select('user_id,user_name,user_av,created_at').eq('fav_id', myId).order('created_at',{ascending:false}).limit(50);
       if(_navToken !== _tok) return;
       favMeRows = fmRes.data || [];
-      favMeCount = favMeRows.length;
-      // Persist count and mark as seen → clears the badge
-      safeLS('set','velo_fav_me_count', String(favMeCount));
-      safeLS('set','velo_fav_me_seen',  String(favMeCount));
+      safeLS('set','velo_fav_me_count', String(favMeRows.length));
+      safeLS('set','velo_fav_me_seen',  String(favMeRows.length));
       _updateFavBadge();
     }catch(e){}
   }
 
-  // Refresh presence cache (online/busy/offline dots)
+  // Batch-fetch real usernames from profiles (favs + fans)
+  var usernameMap = {};
+  if(sbClient){
+    var allIds = favs.map(function(f){ return f.id; }).concat(favMeRows.map(function(r){ return r.user_id; })).filter(Boolean);
+    var uniqueIds = allIds.filter(function(id,i){ return allIds.indexOf(id)===i; });
+    if(uniqueIds.length){
+      try{
+        var profRes = await sbClient.from('profiles').select('id,username').in('id', uniqueIds);
+        if(_navToken !== _tok) return;
+        (profRes.data||[]).forEach(function(p){ if(p.id && p.username) usernameMap[p.id] = p.username; });
+      }catch(e){}
+    }
+  }
+
+  // Refresh presence cache
   await _refreshPresenceCache();
   if(_navToken !== _tok) return;
-  var onlineCount = favs.filter(function(f){ return _presenceInfo(f.id).on; }).length;
 
-  // Unread DM count
+  // Online count from BOTH favs AND fans (deduped)
+  var onlineSet = {};
+  favs.forEach(function(f){ if(_presenceInfo(f.id).on) onlineSet[f.id]=1; });
+  favMeRows.forEach(function(r){ if(_presenceInfo(r.user_id).on) onlineSet[r.user_id]=1; });
+  var onlineCount = Object.keys(onlineSet).length;
+
   var unreadIds = {}; try{ unreadIds = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
 
   el.innerHTML = '<div style="background:linear-gradient(135deg,rgba(116,198,157,.08),rgba(116,198,157,.04));border:1px solid rgba(116,198,157,.2);border-radius:14px;padding:12px 16px;margin-bottom:14px">'
@@ -7370,26 +7389,34 @@ async function pRenderContacts(){
     +'<div style="background:var(--sage7);border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;justify-content:space-between">'
     +'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+favs.length+'</div><div style="font-size:11px;color:var(--ink4)">Mis favoritos</div></div>'
     +'<div style="width:1px;background:var(--border2)"></div>'
-    +'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+favMeCount+'</div><div style="font-size:11px;color:var(--ink4)">Te tienen favorito</div></div>'
+    +'<div style="text-align:center;cursor:pointer" onclick="var s=document.getElementById(\'fanSection\');if(s)s.scrollIntoView({behavior:\'smooth\',block:\'start\'});var fl=document.getElementById(\'fanList\');if(fl)fl.style.display=\'\'" title="Ver quiénes te tienen como favorito"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+favMeRows.length+'</div><div style="font-size:11px;color:var(--ink4);text-decoration:underline dotted">Te tienen favorito ↗</div></div>'
     +'<div style="width:1px;background:var(--border2)"></div>'
     +'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+onlineCount+'</div><div style="font-size:11px;color:var(--ink4)">Online ahora</div></div>'
     +'</div>';
 
-  // Show who has you as favorite (with chat button)
+  // Fans section — collapsible, always shown if fans exist
   if(favMeRows.length){
-    el.innerHTML += '<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--sage3);margin-bottom:8px">⭐ Te tienen como favorito</div>'
+    el.innerHTML += '<div id="fanSection" style="margin-bottom:14px">'
+      +'<div onclick="var fl=document.getElementById(\'fanList\');fl.style.display=fl.style.display===\'none\'?\'\':\'none\'" style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--sage3);margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">'
+      +'<span>⭐ Te tienen como favorito ('+favMeRows.length+')</span><span style="font-size:14px">▾</span></div>'
+      +'<div id="fanList">'
       +favMeRows.map(function(r){
         var rId = r.user_id||''; var rName = r.user_name||'Usuario'; var rAv = r.user_av||'🧑';
+        var rUname = usernameMap[rId] ? '@'+usernameMap[rId] : '';
         var pInfo = _presenceInfo(rId);
-        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cream);border-radius:14px;margin-bottom:8px;border:1.5px solid rgba(116,198,157,.18)">'
+        return '<div data-fav-name="'+_escHtml(rName)+'" data-fav-uname="'+_escHtml(rUname)+'" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cream);border-radius:14px;margin-bottom:8px;border:1.5px solid rgba(116,198,157,.18)">'
           +'<div style="position:relative;flex-shrink:0">'+_avInline(rAv,38)
           +'<span style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:'+pInfo.color+';border:2px solid var(--cream)"></span></div>'
-          +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+_escHtml(rName)+'</div>'
-          +'<div style="font-size:11px;color:'+(pInfo.on?pInfo.color:'var(--ink5)')+'">'+(pInfo.on?'● En línea':'○ Desconectado')+'</div></div>'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:13px;font-weight:700;color:var(--ink)">'+_escHtml(rName)+'</div>'
+          +(rUname?'<div style="font-size:10px;color:var(--sage3);font-weight:600">'+_escHtml(rUname)+'</div>':'')
+          +'<div style="font-size:11px;color:'+(pInfo.on?pInfo.color:'var(--ink5)')+'">'+(pInfo.on?'● En línea':'○ Desconectado')+'</div>'
+          +'</div>'
           +(pInfo.on?'<button onclick="pOpenDM('+_jsAttr(rId)+','+_jsAttr(rName)+','+_jsAttr(rAv)+')" style="padding:6px 11px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer">💬 Chat</button>':'')
           +'<button onclick="pAddFav('+_jsAttr(rId)+','+_jsAttr(rName)+','+_jsAttr(rAv)+');pRenderContacts()" style="padding:6px 10px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.3);border-radius:10px;font-size:12px;cursor:pointer" title="Agregar como favorito">⭐</button>'
           +'</div>';
-      }).join('')+'</div>';
+      }).join('')
+      +'</div></div>';
   }
 
   if(!favs.length){
@@ -7397,39 +7424,44 @@ async function pRenderContacts(){
     return;
   }
 
-  el.innerHTML += favs.map(function(f){
-    var pInfo  = _presenceInfo(f.id);
-    var unread = unreadIds[f.id] || 0;
-    var uname  = f.username ? '@'+f.username : ('@'+(f.name||'usuario').toLowerCase().replace(/\s+/g,'_').slice(0,16));
-    return '<div data-fav-name="'+_escHtml(f.name||'')+ '" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--cream);border-radius:16px;margin-bottom:10px;box-shadow:var(--shadow-sm)">'
-      +'<div style="position:relative;flex-shrink:0;cursor:pointer" onclick="pQuickProfile('+_jsAttr(f.name||'Usuario')+','+_jsAttr(f.av||'🧑')+',\'\',\'\','+_jsAttr(f.id)+')">'
-      +_avInline(f.av||'🧑', 44)
-      +'<span style="position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;background:'+pInfo.color+';border:2px solid var(--cream)"></span>'
-      +'</div>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:14px;font-weight:700;color:var(--ink)">'+_escHtml(f.name||'Usuario')+'</div>'
-      +'<div style="font-size:10px;color:var(--sage3);font-weight:600;margin-bottom:1px">'+_escHtml(uname)+'</div>'
-      +'<div style="font-size:11px;color:'+(pInfo.on?pInfo.color:'var(--ink5)')+'">'+(pInfo.on?'● ':'○ ')+pInfo.label+'</div>'
-      +'</div>'
-      +(unread>0?'<span style="background:var(--sage);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px;flex-shrink:0">'+unread+'</span>':'')
-      +'<div style="display:flex;gap:6px;flex-shrink:0">'
-      +(function(){ var canChat = pInfo.on && pInfo.label !== 'Ocupado/a';
-        return canChat
-          ? '<button onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif" title="Chat directo">💬</button>'
-          : '<button disabled style="padding:7px 12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;font-size:12px;font-weight:700;color:var(--ink5);cursor:not-allowed;opacity:.45" title="'+(pInfo.on?'Ocupado/a':'Desconectado')+'">💬</button>';
-      })()
-      +'<button onclick="pLeaveOfflineMsg('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 10px;background:rgba(200,165,100,.08);border:1px solid rgba(200,165,100,.25);border-radius:10px;font-size:13px;cursor:pointer" title="Mensaje al buzón">✉️</button>'
-      +'<button onclick="pRemoveFav(\''+f.id+'\');pRenderContacts()" style="padding:7px 9px;background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);border-radius:10px;font-size:13px;cursor:pointer">⭐</button>'
-      +'<button onclick="pBlockUser('+_jsAttr(f.id)+','+_jsAttr(f.name)+');pRenderContacts()" style="padding:7px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:13px;cursor:pointer" title="Bloquear">🚫</button>'
-      +'</div>'
-      +'</div>';
-  }).join('');
+  el.innerHTML += '<div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--sage3);margin-bottom:8px">MIS FAVORITOS</div>'
+    +favs.map(function(f){
+      var pInfo  = _presenceInfo(f.id);
+      var unread = unreadIds[f.id] || 0;
+      var uname  = usernameMap[f.id] ? '@'+usernameMap[f.id] : (f.username ? '@'+f.username : '');
+      return '<div data-fav-name="'+_escHtml(f.name||'')+'" data-fav-uname="'+_escHtml(uname)+'" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--cream);border-radius:16px;margin-bottom:10px;box-shadow:var(--shadow-sm)">'
+        +'<div style="position:relative;flex-shrink:0;cursor:pointer" onclick="pQuickProfile('+_jsAttr(f.name||'Usuario')+','+_jsAttr(f.av||'🧑')+',\'\',\'\','+_jsAttr(f.id)+')">'
+        +_avInline(f.av||'🧑', 44)
+        +'<span style="position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;background:'+pInfo.color+';border:2px solid var(--cream)"></span>'
+        +'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:14px;font-weight:700;color:var(--ink)">'+_escHtml(f.name||'Usuario')+'</div>'
+        +(uname?'<div style="font-size:10px;color:var(--sage3);font-weight:600;margin-bottom:1px">'+_escHtml(uname)+'</div>':'')
+        +'<div style="font-size:11px;color:'+(pInfo.on?pInfo.color:'var(--ink5)')+'">'+(pInfo.on?'● ':'○ ')+pInfo.label+'</div>'
+        +'</div>'
+        +(unread>0?'<span style="background:var(--sage);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px;flex-shrink:0">'+unread+'</span>':'')
+        +'<div style="display:flex;gap:6px;flex-shrink:0">'
+        +(function(){ var canChat = pInfo.on && pInfo.label !== 'Ocupado/a';
+          return canChat
+            ? '<button onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif" title="Chat directo">💬</button>'
+            : '<button disabled style="padding:7px 12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;font-size:12px;font-weight:700;color:var(--ink5);cursor:not-allowed;opacity:.45" title="'+(pInfo.on?'Ocupado/a':'Desconectado')+'">💬</button>';
+        })()
+        +'<button onclick="pLeaveOfflineMsg('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 10px;background:rgba(200,165,100,.08);border:1px solid rgba(200,165,100,.25);border-radius:10px;font-size:13px;cursor:pointer" title="Mensaje al buzón">✉️</button>'
+        +'<button onclick="pRemoveFav(\''+f.id+'\');pRenderContacts()" style="padding:7px 9px;background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);border-radius:10px;font-size:13px;cursor:pointer">⭐</button>'
+        +'<button onclick="pBlockUser('+_jsAttr(f.id)+','+_jsAttr(f.name)+');pRenderContacts()" style="padding:7px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:13px;cursor:pointer" title="Bloquear">🚫</button>'
+        +'</div>'
+        +'</div>';
+    }).join('');
 }
 
 function pFilterContacts(q){
   var cards = document.querySelectorAll('#contactsContent [data-fav-name]');
-  var lq = (q||'').toLowerCase();
-  cards.forEach(function(c){ c.style.display = (!lq || c.dataset.favName.toLowerCase().indexOf(lq)>-1) ? '' : 'none'; });
+  var lq = (q||'').toLowerCase().replace(/^@/,'');
+  cards.forEach(function(c){
+    var nm = (c.dataset.favName||'').toLowerCase().indexOf(lq)>-1;
+    var un = (c.dataset.favUname||'').toLowerCase().replace(/^@/,'').indexOf(lq)>-1;
+    c.style.display = (!lq || nm || un) ? '' : 'none';
+  });
 }
 
 function pLeaveOfflineMsg(toId, toName, toAv){
