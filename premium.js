@@ -6900,6 +6900,21 @@ function pRenderInbox(){
         ? '<div style="font-size:11px;color:var(--sage);font-weight:600;margin-bottom:2px;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_escHtml(senderName)+' ›</div>'
         : '';
       var isAlreadyRead = !!safeLS('get',readKey);
+      // Monthly report special card
+      if(b.body && b.body.indexOf('__MONTHLY_REPORT__')===0){
+        var rpMonth = b.body.slice('__MONTHLY_REPORT__'.length);
+        var rpMon = parseInt((rpMonth.split('-')[1]||'1'))-1;
+        var rpMN = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        var rpMName = rpMN[rpMon]||rpMonth;
+        return '<div class="p-inbox-msg'+(isAlreadyRead?'':' unread')+'" style="cursor:pointer" onclick="pOpenMonthlyReport('+_jsAttr(rpMonth)+','+_jsAttr(readKey)+',this)">'
+          +'<div style="display:flex;flex-shrink:0">'+(isAlreadyRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
+          +'<div class="p-inbox-ic" style="background:rgba(180,140,220,.14);font-size:18px">📊</div>'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">Tu resumen de '+rpMName+'</div>'
+          +'<div style="font-size:11px;color:var(--ink4);line-height:1.45">Gemini preparó un resumen personalizado de tu mes: ánimos, diario y más.</div>'
+          +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:rgba(180,140,220,.85)">Ver mi resumen →</span>')+'</div>'
+          +'</div></div>';
+      }
       return '<div class="p-inbox-msg'+(isAlreadyRead?'':' unread')+'" style="cursor:pointer" onclick="pOpenBroadcastMsg('+_jsAttr(readKey)+','+_jsAttr(b.subject||'')+','+_jsAttr(b.body||'')+','+_jsAttr(senderName||'')+','+_jsAttr(fecha||'')+',this,'+_jsAttr(senderId||'')+','+_jsAttr(senderAv||'')+','+_jsAttr(senderUsername||'')+')">'
         +'<div style="display:flex;flex-shrink:0">'+(isAlreadyRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
         +iconHtml
@@ -9485,6 +9500,23 @@ function pAdminMarkMonthlyReport(monthKey){
   _switchAdminTab('finanzas');
 }
 
+async function pAdminSendMonthlyReport(){
+  var d = new Date();
+  var month = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  var mn = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var mLabel = mn[d.getMonth()]+' '+d.getFullYear();
+  if(!confirm('¿Enviar el resumen personalizado de '+mLabel+' a todos los usuarios?\n\nCada usuario recibirá un análisis individual en su buzón generado con sus propios datos.')) return;
+  _initSupabase();
+  var saved = await sbSaveBroadcast('users','📊 Tu resumen de '+mLabel,'__MONTHLY_REPORT__'+month,'📊','Velo — Resumen Mensual','');
+  var history=[]; try{history=JSON.parse(safeLS('get','velo_monthly_reports')||'[]');}catch(e){}
+  if(!history.find(function(r){ return r.month===month; })){
+    history.unshift({month:month,ts:Date.now(),sentBy:_ADMIN_EMAIL||'admin'});
+    safeLS('set','velo_monthly_reports',JSON.stringify(history.slice(0,24)));
+  }
+  pToast('📊', saved ? 'Resumen de '+mLabel+' enviado a todos los usuarios ✅' : 'Guardado localmente (sin conexión)');
+  _switchAdminTab('gestion');
+}
+
 // ── TAB: PRIVACIDAD (GDPR / Ley 25.326) ──────────────────────────────
 function _adminTabPrivacidad(panel){
   panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.85);margin-bottom:12px">🔒 SOLICITUDES DE DATOS PERSONALES</div>'
@@ -9591,6 +9623,19 @@ function _adminTabGestion(panel){
     +'<input class="p-input" id="adminGrantPlusEmail" type="email" placeholder="correo@usuario.com" style="flex:1;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" />'
     +'<button onclick="pAdminGrantPlus()" style="padding:8px 14px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;white-space:nowrap">⭐ Activar Plus</button>'
     +'</div></div>'
+    +(function(){
+        var d=new Date(); var mn=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        var mLabel=mn[d.getMonth()]+' '+d.getFullYear();
+        var history=[]; try{history=JSON.parse(safeLS('get','velo_monthly_reports')||'[]');}catch(e){}
+        var sentThis=history.find(function(r){ return r.month===(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); });
+        return '<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">📊 RESUMEN MENSUAL IA</div>'
+          +'<div style="background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
+          +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">Gemini genera un resumen personalizado para cada usuario con sus propios estados de ánimo y diario del mes. Cada uno ve el suyo en su buzón.</p>'
+          +(sentThis
+            ? '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;font-size:11px;color:rgba(116,198,157,.85)">✅ Resumen de '+mLabel+' ya enviado el '+new Date(sentThis.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
+            : '<button onclick="pAdminSendMonthlyReport()" style="width:100%;padding:10px;background:rgba(180,140,220,.15);border:1px solid rgba(180,140,220,.3);color:rgba(180,140,220,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700">📊 Enviar resumen de '+mLabel+' a todos los usuarios</button>')
+          +'</div>';
+      }())
     +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📰 NOTICIAS MANUALES</div>'
     +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:14px;margin-bottom:18px">'
     +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Publicá noticias con título, resumen y link.</p>'
@@ -10108,6 +10153,75 @@ function pAdminMassMessage(target){
     +'</div>';
   document.body.appendChild(ov);
   setTimeout(function(){ var el=document.getElementById('massAiDesc'); if(el) el.focus(); }, 100);
+}
+
+// ── MONTHLY REPORT: open modal & generate per-user ────────────────────
+async function pOpenMonthlyReport(month, readKey, cardEl){
+  if(readKey) safeLS('set',readKey,'1');
+  if(cardEl){ cardEl.classList.remove('unread'); var dot=cardEl.querySelector('.p-inbox-dot'); if(dot) dot.remove(); }
+  _updateInboxDot();
+  var parts=month.split('-'); var year=parts[0]; var mon=parseInt(parts[1])-1;
+  var MN=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var mName=MN[mon]||month;
+  var ov=document.createElement('div'); ov.className='p-modal-ov show'; ov.id='monthlyReportOv'; ov.style.zIndex='9999';
+  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="-webkit-overflow-scrolling:touch;overflow-y:scroll;max-height:88vh;touch-action:pan-y">'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(180,140,220,.75);margin-bottom:8px">📊 RESUMEN MENSUAL VELO</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:#fff;font-weight:300;margin-bottom:18px">Tu '+mName+' '+year+'</div>'
+    +'<div id="monthlyReportBody" style="font-size:14px;color:rgba(255,255,255,.75);line-height:1.8;margin-bottom:22px">'
+    +'<div style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.4);font-size:12px"><span class="live-dot" style="background:rgba(180,140,220,.8)"></span>Gemini está analizando tu mes…</div>'
+    +'</div>'
+    +'<button onclick="document.getElementById(\'monthlyReportOv\').remove();_syncBodyScroll()" style="width:100%;padding:11px;background:rgba(180,140,220,.15);border:1.5px solid rgba(180,140,220,.3);border-radius:14px;color:rgba(180,140,220,.9);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(ov); _syncBodyScroll();
+  var summary=await _generateMonthlySummary(month,mName,year);
+  var bodyEl=document.getElementById('monthlyReportBody');
+  if(bodyEl){ bodyEl.style.whiteSpace='pre-line'; bodyEl.textContent=summary||'No encontramos datos suficientes de '+mName+'. ¡Registrá tus estados de ánimo y escribí en el diario para recibir un resumen personalizado el próximo mes!'; }
+}
+
+async function _generateMonthlySummary(month, mName, year){
+  var cacheKey='velo_monthly_summary_'+month;
+  var cached=safeLS('get',cacheKey); if(cached) return cached;
+  var name=safeLS('get','velo_user_name')||''; var firstName=name.split(' ')[0]||'vos';
+  var mon=parseInt(month.split('-')[1]);
+  var yr=parseInt(month.split('-')[0]);
+  // Moods
+  var moodLog=[]; try{moodLog=JSON.parse(safeLS('get','velo_mood_log')||'[]');}catch(e){}
+  var monthMoods=moodLog.filter(function(m){ var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
+  // Diary
+  var diaryAll=[]; try{diaryAll=JSON.parse(safeLS('get','velo_diary')||'[]');}catch(e){}
+  var monthDiary=diaryAll.filter(function(e){ var d=new Date(e.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
+  // Medals (local)
+  var medals=[]; try{medals=JSON.parse(safeLS('get','velo_medals')||'[]');}catch(e){}
+  var monthMedals=medals.filter(function(m){ var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
+  if(!monthMoods.length&&!monthDiary.length){
+    return 'No encontramos registros de '+mName+' en tu app. Para el próximo mes, registrá cómo te sentís cada día y escribí en tu diario — así Gemini puede prepararte un resumen personalizado. 💚';
+  }
+  var moodCtx='';
+  if(monthMoods.length){
+    var mTexts=monthMoods.slice(0,25).map(function(m){ return (m.emoji||'')+(m.label?' '+m.label:'')+(m.note?' ("'+m.note.slice(0,60)+'")':''); });
+    moodCtx=monthMoods.length+' estados de ánimo registrados:\n'+mTexts.join('\n')+'\n\n';
+  }
+  var diaryCtx='';
+  if(monthDiary.length){
+    var excerpts=monthDiary.slice(0,5).map(function(e,i){ return (i+1)+'. '+(e.text||'').slice(0,120); });
+    diaryCtx=monthDiary.length+' entradas en el diario:\n'+excerpts.join('\n')+'\n\n';
+  }
+  var medalCtx=monthMedals.length?'Medallas obtenidas: '+monthMedals.map(function(m){return m.name||m.label||'🏅';}).join(', ')+'\n\n':'';
+  var prompt='Sos el sistema de bienestar de Velo, una app de salud mental peer-to-peer.\n'
+    +'Generá un resumen mensual cálido y personalizado para '+firstName+' sobre '+mName+' '+yr+'.\n\n'
+    +moodCtx+diaryCtx+medalCtx
+    +'El resumen debe:\n'
+    +'- Tener 4-6 oraciones cálidas y personalizadas, en párrafos\n'
+    +'- Destacar patrones de ánimo si los hay (ej: días más difíciles, mejoras)\n'
+    +'- Reconocer con compasión los momentos difíciles si los hubo\n'
+    +'- Celebrar los momentos positivos y el hábito de registrarse\n'
+    +'- Mencionar medallas si las hay, con orgullo\n'
+    +'- Terminar con un mensaje de aliento y gratitud por ser parte de la comunidad Velo\n'
+    +'- Usar "vos" (español rioplatense), tono empático y honesto\n'
+    +'Solo el texto, sin título ni bullets.';
+  var result=await _geminiCall(prompt,{temperature:0.82,maxOutputTokens:320});
+  if(result) safeLS('set',cacheKey,result);
+  return result||(firstName+', registraste '+monthMoods.length+' estados de ánimo y '+monthDiary.length+' entradas en '+mName+'. ¡Gracias por ser parte de la comunidad Velo! 💚');
 }
 
 async function pAdminAiSituationAnalysis(){
