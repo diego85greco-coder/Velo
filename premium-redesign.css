@@ -5424,66 +5424,84 @@ body.r-dark #pg-pick-username input#pickUsernameInput {
   border-color: rgba(116,198,157,.35) !important;
 }
 
-/* ── v230: Light mode — warm peach-apricot pastel ────────────────── */
+/* ── v250: Light mode — soft pastel green palette ───────────────── */
 body:not(.r-dark) {
-  --cream:  #FDF3E7;
-  --cream2: #FAE8D2;
-  --bg:     #F7DFC4;
+  --cream:  #EDF7F1;
+  --cream2: #DCF0E5;
+  --bg:     #CDEADB;
 }
 body:not(.r-dark) .p-nav-top {
-  background: rgba(253,243,231,.97) !important;
-  border-bottom-color: rgba(220,170,110,.22) !important;
+  background: rgba(237,247,241,.97) !important;
+  border-bottom-color: rgba(100,180,130,.22) !important;
 }
 body:not(.r-dark) .p-nav-bot {
-  background: rgba(253,243,231,.98) !important;
-  border-top-color: rgba(220,170,110,.20) !important;
+  background: rgba(237,247,241,.98) !important;
+  border-top-color: rgba(100,180,130,.20) !important;
 }
 body:not(.r-dark) .p-page {
-  background: #F7DFC4 !important;
+  background: #CDEADB !important;
 }
 body:not(.r-dark) .p-card {
-  background: rgba(255,248,238,.96) !important;
-  border-color: rgba(220,170,110,.18) !important;
+  background: rgba(241,251,245,.97) !important;
+  border-color: rgba(100,185,135,.20) !important;
 }
 /* sidebar */
 body:not(.r-dark) .p-sidebar {
-  background: rgba(250,230,205,.94) !important;
-  border-right-color: rgba(220,170,110,.28) !important;
-  box-shadow: 2px 0 24px rgba(180,120,60,.10) !important;
+  background: rgba(220,242,230,.95) !important;
+  border-right-color: rgba(100,185,135,.30) !important;
+  box-shadow: 2px 0 24px rgba(50,140,85,.08) !important;
 }
-/* ── v231: Greeting card + quote card — same light warm cream ──────── */
-/* Use the lighter of the two: soft golden-cream, consistent on both */
+/* ── v250: Greeting card + quote card — soft sage green ─────────── */
 body:not(.r-dark) .home-greeting,
 body:not(.r-dark) #pg-home .home-greeting {
-  background: rgba(255,244,200,.68) !important;
-  border-color: rgba(200,152,40,.28) !important;
-  box-shadow: 0 4px 18px rgba(160,110,20,.10) !important;
+  background: rgba(195,232,212,.65) !important;
+  border-color: rgba(80,168,118,.28) !important;
+  box-shadow: 0 4px 18px rgba(40,130,75,.10) !important;
 }
 body:not(.r-dark) #pg-home #homeDailyQuote,
 body:not(.r-dark) #homeDailyQuote {
-  background: rgba(255,244,200,.68) !important;
-  border: 1.5px solid rgba(200,152,40,.28) !important;
-  box-shadow: 0 4px 18px rgba(160,110,20,.10), inset 0 1px 0 rgba(255,255,255,.60) !important;
+  background: rgba(195,232,212,.65) !important;
+  border: 1.5px solid rgba(80,168,118,.28) !important;
+  box-shadow: 0 4px 18px rgba(40,130,75,.10), inset 0 1px 0 rgba(255,255,255,.55) !important;
   animation: none !important;
 }
 /* mood picker inside greeting bar */
 body:not(.r-dark) #quickMoodPicker {
-  background: rgba(248,232,160,.70) !important;
-  border-top-color: rgba(200,152,40,.22) !important;
+  background: rgba(175,228,200,.70) !important;
+  border-top-color: rgba(80,168,118,.22) !important;
 }
-/* ── v231: Quote text — darker amber to match author readability ─── */
+/* ── v250: Quote text — deep forest green, legible on mint ──────── */
 body:not(.r-dark) #pg-home #homeDailyQuoteText,
 body:not(.r-dark) #homeDailyQuoteText {
   background-image: linear-gradient(
     90deg,
-    rgba(120,78,4,.90) 0%, rgba(120,78,4,.90) 15%,
-    rgba(200,140,5,1.0) 50%,
-    rgba(120,78,4,.90) 85%, rgba(120,78,4,.90) 100%
+    rgba(14,72,38,.88) 0%, rgba(14,72,38,.88) 15%,
+    rgba(26,110,60,1.0) 50%,
+    rgba(14,72,38,.88) 85%, rgba(14,72,38,.88) 100%
   ) !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
   color: transparent !important;
   font-weight: 500 !important;
+}
+
+/* ── v250: "Pedir compañía" — sage glass pill in light mode ─────── */
+body:not(.r-dark) .r-hero-actions .p-btn--primary {
+  background: linear-gradient(135deg, rgba(50,140,90,.14) 0%, rgba(80,170,120,.22) 55%, rgba(116,198,157,.14) 100%) !important;
+  color: #0e4826 !important;
+  border: 1.5px solid rgba(50,140,90,.38) !important;
+  box-shadow: 0 4px 18px rgba(50,140,90,.18), inset 0 1.5px 0 rgba(200,242,220,.50), inset 0 -1px 0 rgba(0,60,20,.06) !important;
+  animation: pill-sage-glow-lt 2.8s ease-in-out infinite !important;
+  text-shadow: none !important;
+}
+body:not(.r-dark) .r-hero-actions .p-btn--primary:hover {
+  background: linear-gradient(135deg, rgba(50,140,90,.24) 0%, rgba(80,170,120,.34) 55%, rgba(116,198,157,.24) 100%) !important;
+  border-color: rgba(50,140,90,.55) !important;
+}
+/* quote card: use sage glow not amber glow */
+body:not(.r-dark) #pg-home #homeDailyQuote,
+body:not(.r-dark) #homeDailyQuote {
+  animation: pill-sage-glow-lt 3.5s ease-in-out 0.7s infinite !important;
 }
 
 /* ── v227: Sidebar desktop — reduce green highlight intensity ──────── */
