@@ -7368,6 +7368,31 @@ function _updateFavBadge(){
 
 // ── CONTACTS PAGE ─────────────────────────────────────────────
 
+function _contactCard(id, name, av, uname, pInfo, unread, opts){
+  var canChat = pInfo.on && pInfo.label !== 'Ocupado/a';
+  var sz = opts.small ? 38 : 44;
+  return '<div data-fav-name="'+_escHtml(name||'')+'" data-fav-uname="'+_escHtml(uname||'')+'" style="display:flex;align-items:center;gap:10px;padding:'+(opts.small?'10px 12px':'12px')+';background:var(--cream);border-radius:'+(opts.small?'14':'16')+'px;margin-bottom:8px;'+(opts.small?'border:1.5px solid rgba(116,198,157,.18)':'box-shadow:var(--shadow-sm)')+'">'
+    +'<div style="position:relative;flex-shrink:0;cursor:pointer" onclick="pQuickProfile('+_jsAttr(name||'Usuario')+','+_jsAttr(av||'🧑')+',\'\',\'\','+_jsAttr(id)+')">'
+    +_avInline(av||'🧑', sz)
+    +'<span style="position:absolute;bottom:0;right:0;width:'+(opts.small?'10':'11')+'px;height:'+(opts.small?'10':'11')+'px;border-radius:50%;background:'+pInfo.color+';border:2px solid var(--cream)"></span>'
+    +'</div>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:'+(opts.small?'13':'14')+'px;font-weight:700;color:var(--ink)">'+_escHtml(name||'Usuario')+'</div>'
+    +(uname?'<div style="font-size:10px;color:var(--sage3);font-weight:600;margin-bottom:1px">'+_escHtml(uname)+'</div>':'')
+    +'<div style="font-size:11px;color:'+(pInfo.on?pInfo.color:'var(--ink5)')+'">'+(pInfo.on?'● ':'○ ')+pInfo.label+'</div>'
+    +'</div>'
+    +(unread>0?'<span style="background:var(--sage);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px;flex-shrink:0">'+unread+'</span>':'')
+    +'<div style="display:flex;gap:5px;flex-shrink:0">'
+    +(canChat
+      ?'<button onclick="pOpenDM('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" style="padding:6px 11px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer">💬</button>'
+      :'<button disabled style="padding:6px 10px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;font-size:12px;color:var(--ink5);cursor:not-allowed;opacity:.4">💬</button>')
+    +(opts.showMail?'<button onclick="pLeaveOfflineMsg('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" style="padding:6px 9px;background:rgba(200,165,100,.08);border:1px solid rgba(200,165,100,.25);border-radius:10px;font-size:12px;cursor:pointer" title="Buzón">✉️</button>':'')
+    +(opts.showRemove?'<button onclick="pRemoveFav(\''+id+'\');pRenderContacts()" style="padding:6px 9px;background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);border-radius:10px;font-size:12px;cursor:pointer">⭐</button>':'')
+    +(opts.showBlock?'<button onclick="pBlockUser('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" style="padding:6px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:12px;cursor:pointer" title="Bloquear">🚫</button>':'')
+    +(opts.showAddFav?'<button onclick="pAddFav('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" style="padding:6px 9px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.3);border-radius:10px;font-size:12px;cursor:pointer" title="Agregar favorito">⭐</button>':'')
+    +'</div></div>';
+}
+
 async function pRenderContacts(){
   var _tok = _navToken;
   var el = document.getElementById('contactsContent');
@@ -7389,158 +7414,130 @@ async function pRenderContacts(){
     }catch(e){}
   }
 
-  // Batch-fetch real usernames from profiles (favs + fans)
+  // Batch-fetch real usernames
   var usernameMap = {};
   if(sbClient){
-    var allIds = favs.map(function(f){ return f.id; }).concat(favMeRows.map(function(r){ return r.user_id; })).filter(Boolean);
-    var uniqueIds = allIds.filter(function(id,i){ return allIds.indexOf(id)===i; });
-    if(uniqueIds.length){
+    var _allIds = favs.map(function(f){ return f.id; }).concat(favMeRows.map(function(r){ return r.user_id; })).filter(Boolean);
+    var _uniqIds = _allIds.filter(function(id,i){ return _allIds.indexOf(id)===i; });
+    if(_uniqIds.length){
       try{
-        var profRes = await sbClient.from('profiles').select('id,username').in('id', uniqueIds);
+        var profRes = await sbClient.from('profiles').select('id,username').in('id', _uniqIds);
         if(_navToken !== _tok) return;
-        (profRes.data||[]).forEach(function(p){ if(p.id && p.username) usernameMap[p.id] = p.username; });
+        (profRes.data||[]).forEach(function(p){ if(p.id && p.username) usernameMap[p.id]=p.username; });
       }catch(e){}
     }
   }
 
-  // Cross-user block filter: silently remove contacts who have blocked me
+  // Cross-user block filter — silently hide contacts who have blocked me
   if(sbClient && myId && (favs.length || favMeRows.length)){
     try{
-      var allContactIds = favs.map(function(f){ return f.id; })
-        .concat(favMeRows.map(function(r){ return r.user_id; }))
-        .filter(function(id,i,a){ return id && a.indexOf(id)===i; });
-      if(allContactIds.length){
-        var blRes = await sbClient.from('user_blocks').select('blocker_id').eq('blocked_id', myId).in('blocker_id', allContactIds);
+      var _cIds = favs.map(function(f){ return f.id; }).concat(favMeRows.map(function(r){ return r.user_id; })).filter(function(id,i,a){ return id&&a.indexOf(id)===i; });
+      if(_cIds.length){
+        var blRes = await sbClient.from('user_blocks').select('blocker_id').eq('blocked_id', myId).in('blocker_id', _cIds);
         if(_navToken !== _tok) return;
-        var blockedByMe = {};
-        (blRes.data||[]).forEach(function(r){ blockedByMe[r.blocker_id]=1; });
-        // Silently filter out — the blocked user sees nothing, gets no explanation
-        favs = favs.filter(function(f){ return !blockedByMe[f.id]; });
-        favMeRows = favMeRows.filter(function(r){ return !blockedByMe[r.user_id]; });
+        var _hid = {}; (blRes.data||[]).forEach(function(r){ _hid[r.blocker_id]=1; });
+        favs = favs.filter(function(f){ return !_hid[f.id]; });
+        favMeRows = favMeRows.filter(function(r){ return !_hid[r.user_id]; });
       }
-    }catch(e){} // table may not exist yet — fail silently
+    }catch(e){}
   }
 
-  // Refresh presence cache
   await _refreshPresenceCache();
   if(_navToken !== _tok) return;
 
-  // Online count from BOTH favs AND fans (deduped)
-  var onlineSet = {};
-  favs.forEach(function(f){ if(_presenceInfo(f.id).on) onlineSet[f.id]=1; });
-  favMeRows.forEach(function(r){ if(_presenceInfo(r.user_id).on) onlineSet[r.user_id]=1; });
-  var onlineCount = Object.keys(onlineSet).length;
-
   var unreadIds = {}; try{ unreadIds = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
 
-  el.innerHTML = '<div style="background:linear-gradient(135deg,rgba(116,198,157,.08),rgba(116,198,157,.04));border:1px solid rgba(116,198,157,.2);border-radius:14px;padding:12px 16px;margin-bottom:14px">'
-    +'<div style="font-size:11px;font-weight:700;color:var(--sage3);margin-bottom:8px;letter-spacing:.3px">📋 Cómo funciona tu red</div>'
-    +'<div style="display:flex;flex-direction:column;gap:5px">'
-    +'<div style="font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:7px"><span style="color:#5BBF87;font-size:13px;flex-shrink:0">●</span><span><b>Verde</b> — disponible, podés chatear 💬</span></div>'
-    +'<div style="font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:7px"><span style="color:#E0A92E;font-size:13px;flex-shrink:0">●</span><span><b>Amarillo</b> — ocupado/a, dejá mensaje en el buzón ✉️</span></div>'
-    +'<div style="font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:7px"><span style="color:rgba(150,150,150,.6);font-size:13px;flex-shrink:0">○</span><span><b>Gris</b> — desconectado, solo buzón ✉️</span></div>'
-    +'<div style="font-size:11px;color:var(--ink5);margin-top:6px;padding-top:6px;border-top:1px solid var(--border2)">⭐ quita de favoritos &nbsp;·&nbsp; 🚫 bloquea al usuario</div>'
-    +'</div></div>'
-    +'<div style="background:var(--sage7);border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;justify-content:space-between">'
-    +'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+favs.length+'</div><div style="font-size:11px;color:var(--ink4)">Mis favoritos</div></div>'
-    +'<div style="width:1px;background:var(--border2)"></div>'
-    +'<div style="text-align:center;cursor:pointer" onclick="var s=document.getElementById(\'fanSection\');if(s)s.scrollIntoView({behavior:\'smooth\',block:\'start\'});var fl=document.getElementById(\'fanList\');if(fl)fl.style.display=\'\'" title="Ver quiénes te tienen como favorito"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+favMeRows.length+'</div><div style="font-size:11px;color:var(--ink4);text-decoration:underline dotted">Te tienen favorito ↗</div></div>'
-    +'<div style="width:1px;background:var(--border2)"></div>'
-    +'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--sage)">'+onlineCount+'</div><div style="font-size:11px;color:var(--ink4)">Online ahora</div></div>'
+  // Build online list (favs + fans, deduped, only online)
+  var _onlineMap = {};
+  favs.forEach(function(f){ var pi=_presenceInfo(f.id); if(pi.on) _onlineMap[f.id]={id:f.id,name:f.name,av:f.av||'🧑',uname:usernameMap[f.id]||f.username||'',pInfo:pi,unread:unreadIds[f.id]||0,isFav:true}; });
+  favMeRows.forEach(function(r){ var pi=_presenceInfo(r.user_id); if(pi.on&&!_onlineMap[r.user_id]) _onlineMap[r.user_id]={id:r.user_id,name:r.user_name||'Usuario',av:r.user_av||'🧑',uname:usernameMap[r.user_id]||'',pInfo:pi,unread:0,isFav:false}; });
+  var onlineList = Object.keys(_onlineMap).map(function(k){ return _onlineMap[k]; });
+
+  // Blocked list
+  var _bIds = []; try{ _bIds=JSON.parse(safeLS('get','velo_blocked')||'[]'); }catch(e){}
+  var _bData = []; try{ _bData=JSON.parse(safeLS('get','velo_blocked_data')||'[]'); }catch(e){}
+  var blockedList = _bIds.map(function(id){ return _bData.find(function(b){ return b.id===id; })||{id:id,name:'Usuario',av:'🧑'}; });
+
+  var tabs = [
+    {id:'favs',    label:'⭐ Favoritos',     count:favs.length},
+    {id:'online',  label:'● Online',         count:onlineList.length},
+    {id:'fans',    label:'♥ Me agregaron',   count:favMeRows.length}
+  ];
+  if(blockedList.length) tabs.push({id:'blocked', label:'🚫 Bloqueados', count:blockedList.length});
+
+  // ── Tab bar ──
+  var tabsHtml = '<div class="r-contacts-tabs">'
+    +tabs.map(function(t,i){
+      return '<button class="r-ctab'+(i===0?' active':'')+'" id="ctab-'+t.id+'" onclick="pContactsTab(\''+t.id+'\')">'
+        +(t.id==='online'?'<span style="color:#5BBF87;font-size:11px">●</span> Online':'')
+        +(t.id!=='online'?t.label:'')
+        +'<span class="r-ctab-count">'+t.count+'</span>'
+        +'</button>';
+    }).join('')
     +'</div>';
 
-  // Fans section — collapsible, always shown if fans exist
-  if(favMeRows.length){
-    el.innerHTML += '<div id="fanSection" style="margin-bottom:14px">'
-      +'<div onclick="var fl=document.getElementById(\'fanList\');fl.style.display=fl.style.display===\'none\'?\'\':\'none\'" style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--sage3);margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">'
-      +'<span>⭐ Te tienen como favorito ('+favMeRows.length+')</span><span style="font-size:14px">▾</span></div>'
-      +'<div id="fanList">'
-      +favMeRows.map(function(r){
-        var rId = r.user_id||''; var rName = r.user_name||'Usuario'; var rAv = r.user_av||'🧑';
-        var rUname = usernameMap[rId] ? '@'+usernameMap[rId] : '';
-        var pInfo = _presenceInfo(rId);
-        return '<div data-fav-name="'+_escHtml(rName)+'" data-fav-uname="'+_escHtml(rUname)+'" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cream);border-radius:14px;margin-bottom:8px;border:1.5px solid rgba(116,198,157,.18)">'
-          +'<div style="position:relative;flex-shrink:0">'+_avInline(rAv,38)
-          +'<span style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:'+pInfo.color+';border:2px solid var(--cream)"></span></div>'
-          +'<div style="flex:1;min-width:0">'
-          +'<div style="font-size:13px;font-weight:700;color:var(--ink)">'+_escHtml(rName)+'</div>'
-          +(rUname?'<div style="font-size:10px;color:var(--sage3);font-weight:600">'+_escHtml(rUname)+'</div>':'')
-          +'<div style="font-size:11px;color:'+(pInfo.on?pInfo.color:'var(--ink5)')+'">'+(pInfo.on?'● En línea':'○ Desconectado')+'</div>'
-          +'</div>'
-          +(pInfo.on?'<button onclick="pOpenDM('+_jsAttr(rId)+','+_jsAttr(rName)+','+_jsAttr(rAv)+')" style="padding:6px 11px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer">💬 Chat</button>':'')
-          +'<button onclick="pAddFav('+_jsAttr(rId)+','+_jsAttr(rName)+','+_jsAttr(rAv)+');pRenderContacts()" style="padding:6px 10px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.3);border-radius:10px;font-size:12px;cursor:pointer" title="Agregar como favorito">⭐</button>'
-          +'</div>';
-      }).join('')
-      +'</div></div>';
-  }
+  // ── Favs content ──
+  var favsHtml = '<div id="contacts-favs">'
+    +(!favs.length
+      ? '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Sin favoritos aún</div><div class="p-empty-sub">Agregá personas como favoritas para verlas aquí.</div></div>'
+      : favs.map(function(f){
+          var pi=_presenceInfo(f.id); var uname=usernameMap[f.id]?'@'+usernameMap[f.id]:(f.username?'@'+f.username:'');
+          return _contactCard(f.id,f.name,f.av||'🧑',uname,pi,unreadIds[f.id]||0,{showMail:true,showRemove:true,showBlock:true});
+        }).join(''))
+    +'</div>';
 
-  if(!favs.length){
-    el.innerHTML += '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Sin contactos favoritos</div><div class="p-empty-sub">Cuando interactúes con alguien y lo marques como favorito, aparecerá aquí.</div></div>';
-    return;
-  }
+  // ── Online content ──
+  var onlineHtml = '<div id="contacts-online" style="display:none">'
+    +(!onlineList.length
+      ? '<div class="p-empty"><span class="p-empty-emoji">💤</span><div class="p-empty-title">Nadie conectado ahora</div><div class="p-empty-sub">Aquí verás a tus favoritos y fans cuando estén online.</div></div>'
+      : onlineList.map(function(u){
+          var uname=u.uname?'@'+u.uname:'';
+          return _contactCard(u.id,u.name,u.av,uname,u.pInfo,u.unread,{showMail:true,showAddFav:!u.isFav,showBlock:u.isFav,showRemove:u.isFav});
+        }).join(''))
+    +'</div>';
 
-  el.innerHTML += '<div style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--sage3);margin-bottom:8px">MIS FAVORITOS</div>'
-    +favs.map(function(f){
-      var pInfo  = _presenceInfo(f.id);
-      var unread = unreadIds[f.id] || 0;
-      var uname  = usernameMap[f.id] ? '@'+usernameMap[f.id] : (f.username ? '@'+f.username : '');
-      return '<div data-fav-name="'+_escHtml(f.name||'')+'" data-fav-uname="'+_escHtml(uname)+'" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--cream);border-radius:16px;margin-bottom:10px;box-shadow:var(--shadow-sm)">'
-        +'<div style="position:relative;flex-shrink:0;cursor:pointer" onclick="pQuickProfile('+_jsAttr(f.name||'Usuario')+','+_jsAttr(f.av||'🧑')+',\'\',\'\','+_jsAttr(f.id)+')">'
-        +_avInline(f.av||'🧑', 44)
-        +'<span style="position:absolute;bottom:0;right:0;width:11px;height:11px;border-radius:50%;background:'+pInfo.color+';border:2px solid var(--cream)"></span>'
-        +'</div>'
-        +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:14px;font-weight:700;color:var(--ink)">'+_escHtml(f.name||'Usuario')+'</div>'
-        +(uname?'<div style="font-size:10px;color:var(--sage3);font-weight:600;margin-bottom:1px">'+_escHtml(uname)+'</div>':'')
-        +'<div style="font-size:11px;color:'+(pInfo.on?pInfo.color:'var(--ink5)')+'">'+(pInfo.on?'● ':'○ ')+pInfo.label+'</div>'
-        +'</div>'
-        +(unread>0?'<span style="background:var(--sage);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px;flex-shrink:0">'+unread+'</span>':'')
-        +'<div style="display:flex;gap:6px;flex-shrink:0">'
-        +(function(){ var canChat = pInfo.on && pInfo.label !== 'Ocupado/a';
-          return canChat
-            ? '<button onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif" title="Chat directo">💬</button>'
-            : '<button disabled style="padding:7px 12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;font-size:12px;font-weight:700;color:var(--ink5);cursor:not-allowed;opacity:.45" title="'+(pInfo.on?'Ocupado/a':'Desconectado')+'">💬</button>';
-        })()
-        +'<button onclick="pLeaveOfflineMsg('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av)+')" style="padding:7px 10px;background:rgba(200,165,100,.08);border:1px solid rgba(200,165,100,.25);border-radius:10px;font-size:13px;cursor:pointer" title="Mensaje al buzón">✉️</button>'
-        +'<button onclick="pRemoveFav(\''+f.id+'\');pRenderContacts()" style="padding:7px 9px;background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);border-radius:10px;font-size:13px;cursor:pointer">⭐</button>'
-        +'<button onclick="pBlockUser('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av||'🧑')+');pRenderContacts()" style="padding:7px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:13px;cursor:pointer" title="Bloquear">🚫</button>'
-        +'</div>'
+  // ── Fans content ──
+  var fansHtml = '<div id="contacts-fans" style="display:none">'
+    +(!favMeRows.length
+      ? '<div class="p-empty"><span class="p-empty-emoji">♥</span><div class="p-empty-title">Nadie te agregó aún</div></div>'
+      : favMeRows.map(function(r){
+          var pi=_presenceInfo(r.user_id); var uname=usernameMap[r.user_id]?'@'+usernameMap[r.user_id]:'';
+          return _contactCard(r.user_id,r.user_name||'Usuario',r.user_av||'🧑',uname,pi,0,{small:true,showAddFav:!pIsFav(r.user_id)});
+        }).join(''))
+    +'</div>';
+
+  // ── Blocked content ──
+  var blockedHtml = '<div id="contacts-blocked" style="display:none">'
+    +'<div style="font-size:11px;color:var(--ink5);margin-bottom:12px;font-style:italic">Podés desbloquear a cualquier persona en cualquier momento.</div>'
+    +blockedList.map(function(b){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cream);border-radius:14px;margin-bottom:8px;border:1.5px solid rgba(200,50,50,.15);opacity:.75">'
+        +'<div style="flex-shrink:0;filter:grayscale(1);opacity:.7">'+_avInline(b.av||'🧑',36)+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+_escHtml(b.name||'Usuario')+'</div>'
+        +'<div style="font-size:11px;color:var(--ink5)">Bloqueado/a</div></div>'
+        +'<button onclick="pUnblockUser('+_jsAttr(b.id)+')" style="padding:6px 12px;background:rgba(116,198,157,.12);border:1.5px solid rgba(116,198,157,.35);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;flex-shrink:0">Desbloquear</button>'
         +'</div>';
-    }).join('');
+    }).join('')
+    +'</div>';
 
-  // Blocked users section — collapsible, at the bottom
-  var blockedIds = []; try{ blockedIds = JSON.parse(safeLS('get','velo_blocked')||'[]'); }catch(e){}
-  var blockedData = []; try{ blockedData = JSON.parse(safeLS('get','velo_blocked_data')||'[]'); }catch(e){}
-  var blockedList = blockedIds.map(function(id){
-    return blockedData.find(function(b){ return b.id===id; }) || {id:id, name:'Usuario', av:'🧑'};
+  el.innerHTML = tabsHtml + favsHtml + onlineHtml + fansHtml + blockedHtml;
+}
+
+function pContactsTab(tab){
+  ['favs','online','fans','blocked'].forEach(function(t){
+    var c=document.getElementById('contacts-'+t); var b=document.getElementById('ctab-'+t);
+    if(c) c.style.display = t===tab?'':'none';
+    if(b) b.classList.toggle('active', t===tab);
   });
-  if(blockedList.length){
-    el.innerHTML += '<div id="blockedSection" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border2)">'
-      +'<div onclick="var bl=document.getElementById(\'blockedList\');bl.style.display=bl.style.display===\'none\'?\'\':\'none\'" style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink5);margin-bottom:8px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">'
-      +'<span>🚫 Usuarios bloqueados ('+blockedList.length+')</span><span style="font-size:14px">▾</span></div>'
-      +'<div id="blockedList" style="display:none">'
-      +'<div style="font-size:11px;color:var(--ink5);margin-bottom:10px;font-style:italic">Estas personas no ven tus publicaciones ni aparecen en tu red. Podés desbloquearlas en cualquier momento.</div>'
-      +blockedList.map(function(b){
-        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cream);border-radius:14px;margin-bottom:8px;border:1.5px solid rgba(200,50,50,.15);opacity:.75">'
-          +'<div style="flex-shrink:0;filter:grayscale(1);opacity:.7">'+_avInline(b.av||'🧑',36)+'</div>'
-          +'<div style="flex:1;min-width:0">'
-          +'<div style="font-size:13px;font-weight:700;color:var(--ink)">'+_escHtml(b.name||'Usuario')+'</div>'
-          +'<div style="font-size:11px;color:var(--ink5)">Bloqueado</div>'
-          +'</div>'
-          +'<button onclick="pUnblockUser('+_jsAttr(b.id)+')" style="padding:6px 11px;background:rgba(116,198,157,.1);border:1.5px solid rgba(116,198,157,.3);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;flex-shrink:0">Desbloquear</button>'
-          +'</div>';
-      }).join('')
-      +'</div></div>';
-  }
 }
 
 function pFilterContacts(q){
-  var cards = document.querySelectorAll('#contactsContent [data-fav-name]');
+  // Search within the currently visible tab
   var lq = (q||'').toLowerCase().replace(/^@/,'');
-  cards.forEach(function(c){
-    var nm = (c.dataset.favName||'').toLowerCase().indexOf(lq)>-1;
-    var un = (c.dataset.favUname||'').toLowerCase().replace(/^@/,'').indexOf(lq)>-1;
-    c.style.display = (!lq || nm || un) ? '' : 'none';
+  document.querySelectorAll('#contactsContent [data-fav-name]').forEach(function(c){
+    if(c.closest('[style*="display:none"]')) return; // skip hidden tabs
+    var nm=(c.dataset.favName||'').toLowerCase().indexOf(lq)>-1;
+    var un=(c.dataset.favUname||'').toLowerCase().replace(/^@/,'').indexOf(lq)>-1;
+    c.style.display=(!lq||nm||un)?'':'none';
   });
 }
 

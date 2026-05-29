@@ -5242,3 +5242,67 @@ body.r-dark #topbarMoodBtn {
 .p-sheet * {
   touch-action: auto;
 }
+
+/* ── v216: Contacts tab bar ──────────────────────────────────── */
+.r-contacts-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.r-contacts-tabs::-webkit-scrollbar { display: none; }
+.r-ctab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 13px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Jost', sans-serif;
+  border: 1.5px solid var(--border2);
+  background: var(--cream2);
+  color: var(--ink4);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.r-ctab.active {
+  background: rgba(116,198,157,.15);
+  border-color: rgba(116,198,157,.50);
+  color: var(--sage);
+}
+body.r-dark .r-ctab {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.55);
+}
+body.r-dark .r-ctab.active {
+  background: rgba(116,198,157,.18);
+  border-color: rgba(116,198,157,.55);
+  color: #7fdcaa;
+}
+.r-ctab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(116,198,157,.20);
+  color: var(--sage);
+}
+body.r-dark .r-ctab-count {
+  background: rgba(116,198,157,.18);
+  color: #7fdcaa;
+}
+.r-ctab.active .r-ctab-count {
+  background: rgba(116,198,157,.30);
+}
