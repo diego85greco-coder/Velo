@@ -215,6 +215,19 @@ var P_FADE   = ['landing','onboarding','register-type','donation-exit',
                 'session-room','post-chat','donate-cta','pro-pending','admin-login','calm-ai','guardian-chat','verify-email','pick-username'];
 
 // ── NAVIGATE ─────────────────────────────────────────────────
+function _trackPageView(id){
+  try{
+    var key = 'velo_page_views';
+    var data = {}; try{ data = JSON.parse(safeLS('get', key)||'{}'); }catch(e){}
+    data[id] = (data[id]||0) + 1;
+    data.__total = (data.__total||0) + 1;
+    data.__lastSeen = Date.now();
+    safeLS('set', key, JSON.stringify(data));
+    // Also fire Vercel Analytics custom event if available
+    if(window.va) window.va('event', { name: 'page_view', properties: { page: id } });
+  }catch(e){}
+}
+
 function pGoTo(id){
   if(!id) return;
   var inPage = document.getElementById('pg-'+id);
@@ -242,6 +255,7 @@ function pGoTo(id){
 
   // Per-page init
   _onPageEnter(id);
+  _trackPageView(id);
 }
 
 function _updateNavState(id, showNav){
@@ -9256,8 +9270,54 @@ function _filterUserList(q){
 }
 
 // ── TAB: FINANZAS ────────────────────────────────────────────────────
+function _adminPageViewStats(){
+  var data = {}; try{ data = JSON.parse(safeLS('get','velo_page_views')||'{}'); }catch(e){}
+  var labels = {
+    home:'🏠 Inicio', guardians:'🛡️ Guardianes', 'calm-ai':'🌿 Acompañante IA',
+    bottle:'🌊 Al Mar', help:'🤝 Sala de Ayuda', diary:'📔 Diario', news:'📰 Noticias',
+    circles:'⭕ Círculos', profile:'👤 Perfil', professionals:'🩺 Profesionales',
+    sos:'🆘 SOS', 'happy-wall':'☀️ Muro Felicidad'
+  };
+  var entries = Object.keys(data).filter(function(k){ return k !== '__total' && k !== '__lastSeen'; });
+  entries.sort(function(a,b){ return (data[b]||0)-(data[a]||0); });
+  if(!entries.length) return '<p style="font-size:11px;color:rgba(255,255,255,.3)">Sin datos aún — los registros se acumulan con el uso de la app.</p>';
+  var total = data.__total || 1;
+  var lastSeen = data.__lastSeen ? new Date(data.__lastSeen).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+  return '<div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:10px">Última actividad: '+lastSeen+' · Total navegaciones: '+total+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px">'
+    +entries.map(function(k){
+      var v = data[k]||0;
+      var pct = Math.round(v/total*100);
+      var label = labels[k]||k;
+      return '<div style="background:rgba(255,255,255,.04);border-radius:10px;padding:8px 12px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+        +'<span style="font-size:12px;color:rgba(255,255,255,.7)">'+label+'</span>'
+        +'<span style="font-size:12px;font-weight:700;color:rgba(116,198,157,.9)">'+v+' <span style="font-size:10px;color:rgba(255,255,255,.3)">('+pct+'%)</span></span>'
+        +'</div>'
+        +'<div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px">'
+        +'<div style="height:4px;background:rgba(116,198,157,.6);border-radius:2px;width:'+Math.min(pct,100)+'%"></div>'
+        +'</div></div>';
+    }).join('')
+    +'</div>';
+}
+
 function _adminTabFinanzas(panel){
-  panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💰 INGRESOS Y DONACIONES</div>'
+  panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:10px">📊 TRÁFICO WEB · VERCEL ANALYTICS</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'
+    +'<a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" style="display:block;padding:12px 14px;background:rgba(0,0,0,.4);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;text-decoration:none;text-align:center">'
+    +'<div style="font-size:20px;margin-bottom:4px">📈</div>'
+    +'<div style="font-size:11px;font-weight:700">Ver Analytics</div>'
+    +'<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px">Visitas · Países · Dispositivos</div>'
+    +'</a>'
+    +'<a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" style="display:block;padding:12px 14px;background:rgba(0,0,0,.4);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;text-decoration:none;text-align:center">'
+    +'<div style="font-size:20px;margin-bottom:4px">⚡</div>'
+    +'<div style="font-size:11px;font-weight:700">Speed Insights</div>'
+    +'<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px">Core Web Vitals · LCP · CLS</div>'
+    +'</a>'
+    +'</div>'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:10px">🗺️ SECCIONES MÁS VISITADAS (este dispositivo)</div>'
+    +'<div id="adminPageStats">'+_adminPageViewStats()+'</div>'
+    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💰 INGRESOS Y DONACIONES</div>'
     +'<div id="adminDonations"><p style="font-size:11px;color:rgba(255,255,255,.3);padding:8px 0">Cargando…</p></div>'
     +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💳 TRANSFERENCIAS PENDIENTES</div>'
     +'<div id="adminTransferList">'+_adminTransferHtml()+'</div>'
