@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260529-229">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260529-229">
+  <link rel="stylesheet" href="premium.css?v=20260529-230">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260529-230">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1016,7 +1016,7 @@
               <div class="p-card-title">Círculos de Paz</div>
               <div class="p-card-sub">Sin likes, solo conexión</div>
               <div class="p-card-foot">
-                <span class="p-pill p-pill--sage">Comunidad</span>
+                <span class="p-pill p-pill--live"><span class="p-ldot p-ldot--on"></span> Comunidad activa</span>
               </div>
             </div>
             <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('happy')" style="background:linear-gradient(135deg,rgba(255,230,100,.20),rgba(255,200,80,.12));border-color:rgba(255,210,60,.25)">
@@ -1024,7 +1024,7 @@
               <div class="p-card-title">Muro Feliz</div>
               <div class="p-card-sub">Momentos de alegría</div>
               <div class="p-card-foot">
-                <span class="p-pill" style="background:rgba(255,210,60,.2);color:#7A5800;border:1px solid rgba(255,210,60,.3)">Comunidad</span>
+                <span class="p-pill p-pill--live"><span class="p-ldot p-ldot--on"></span> Comunidad activa</span>
               </div>
             </div>
             <div class="p-card p-card--feature p-card--hover fc-warm" onclick="pGoTo('news')" style="background:linear-gradient(135deg,rgba(255,200,80,.18),rgba(255,170,50,.10))">
@@ -1032,7 +1032,7 @@
               <div class="p-card-title">Buenas Noticias</div>
               <div class="p-card-sub">Historias que dan esperanza</div>
               <div class="p-card-foot">
-                <span class="p-pill" style="background:rgba(255,200,80,.2);color:#8B6000;border:1px solid rgba(255,200,80,.3)">Diario · IA</span>
+                <span class="p-pill p-pill--live" style="background:rgba(255,200,80,.12);border-color:rgba(255,200,80,.25)"><span class="p-ldot p-ldot--on" style="background:#c8a040"></span> Actualidad</span>
               </div>
             </div>
             <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('inbox')" style="background:linear-gradient(135deg,rgba(221,212,245,.30),rgba(196,181,232,.18));border-color:rgba(196,181,232,.35);position:relative">
@@ -1041,7 +1041,7 @@
               <div class="p-card-title">Buzón Velo</div>
               <div class="p-card-sub">Mensajes y notificaciones</div>
               <div class="p-card-foot">
-                <span class="p-pill" style="background:rgba(196,181,232,.2);color:#6B5BA0;border:1px solid rgba(196,181,232,.35)">Admin · Profesionales</span>
+                <span class="p-pill" style="background:rgba(196,181,232,.2);color:#6B5BA0;border:1px solid rgba(196,181,232,.35)">Personal</span>
               </div>
             </div>
             <div class="p-card p-card--feature p-card--hover fc-lav" onclick="pGoTo('diary')">
@@ -1065,9 +1065,8 @@
           <div class="home-wide-card">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
               <div class="p-card p-card--hover" style="padding:16px;cursor:pointer" onclick="pGoTo('professionals')">
-                <span style="font-size:18px;display:flex;width:56px;height:44px;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.28);border-radius:12px;align-items:center;justify-content:center;margin-bottom:9px;gap:1px">👨‍⚕️👩‍⚕️</span>
+                <div style="display:flex;gap:4px;margin-bottom:9px"><span style="font-size:22px;display:flex;width:40px;height:40px;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.28);border-radius:10px;align-items:center;justify-content:center">👨‍⚕️</span><span style="font-size:22px;display:flex;width:40px;height:40px;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.28);border-radius:10px;align-items:center;justify-content:center">👩‍⚕️</span></div>
                 <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink);margin-bottom:3px">Profesionales</div>
-                <div style="font-size:11px;color:var(--ink4)">Terapia · video sesiones</div>
               </div>
               <div class="p-card p-card--hover" style="padding:16px;cursor:pointer" onclick="pGoTo('vela')">
                 <span style="font-size:24px;display:block;margin-bottom:7px">🕯️</span>
@@ -2976,8 +2975,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260529-229"></script>
-<script src="premium-redesign.js?v=20260529-229"></script>
+<script src="premium.js?v=20260529-230"></script>
+<script src="premium-redesign.js?v=20260529-230"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
