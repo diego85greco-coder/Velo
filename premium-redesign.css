@@ -5002,3 +5002,39 @@ body:not(.r-dark) #pg-home #homeDailyQuote {
   border: 1.5px solid rgba(200,158,56,.30) !important;
   border-radius: 20px !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   v210: Continuous wind-sway on greeting heading and subtitle
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Two offset wave patterns so heading and subtitle sway independently */
+@keyframes wind-sway-a {
+  0%   { transform: translateY(0px)    translateX(0px)    rotate(0deg);    }
+  20%  { transform: translateY(-3.5px) translateX(1.2px)  rotate(0.13deg); }
+  45%  { transform: translateY(-1.5px) translateX(-1.0px) rotate(-0.08deg);}
+  68%  { transform: translateY(-4.2px) translateX(0.6px)  rotate(0.17deg); }
+  85%  { transform: translateY(-2.0px) translateX(-0.4px) rotate(-0.05deg);}
+  100% { transform: translateY(0px)    translateX(0px)    rotate(0deg);    }
+}
+@keyframes wind-sway-b {
+  0%   { transform: translateY(0px)    translateX(0px)    rotate(0deg);    }
+  28%  { transform: translateY(-2.5px) translateX(-0.8px) rotate(-0.09deg);}
+  55%  { transform: translateY(-3.8px) translateX(0.9px)  rotate(0.14deg); }
+  78%  { transform: translateY(-1.2px) translateX(0.4px)  rotate(-0.06deg);}
+  100% { transform: translateY(0px)    translateX(0px)    rotate(0deg);    }
+}
+
+/* Chain: spring-in (1.1s) then wind sway runs forever.
+   Heading and subtitle use different durations so they drift
+   in and out of phase — organic, never mechanical.            */
+.r-hero-v2.r-greeting-anim h1.p-title,
+.r-hero-v2.r-greeting-anim h2.p-title {
+  animation:
+    velo-greet-spring 1.1s cubic-bezier(.22,.68,.55,1.5) both,
+    wind-sway-a 5.8s 1.12s ease-in-out infinite !important;
+}
+.r-hero-v2.r-greeting-anim .r-hero-italic {
+  animation:
+    velo-greet-spring 1.1s .18s cubic-bezier(.22,.68,.55,1.5) both,
+    wind-sway-b 7.2s 1.30s ease-in-out infinite !important;
+}
