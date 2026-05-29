@@ -3688,3 +3688,38 @@ body.r-dark .p-bn-item.active::before {
   opacity: 0.85;
   transform: translateY(-1px) scale(1.04);
 }
+
+/* ── v189: Bottom nav dark mode — light icons + luminous outline ── */
+body.r-dark .p-bottomnav {
+  background: rgba(8,18,12,.92) !important;
+  border-top-color: rgba(116,198,157,.18) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+/* Inactive icons: white strokes, subtle glow (contorno de luz) */
+body.r-dark .p-bn-item {
+  color: rgba(255,255,255,.60) !important;
+}
+body.r-dark .p-bn-item:not(.active) .p-bn-icon svg {
+  filter: drop-shadow(0 0 4px rgba(255,255,255,.18)) drop-shadow(0 1px 2px rgba(0,0,0,.6)) !important;
+  opacity: 1 !important;
+}
+body.r-dark .p-bn-item:not(.active):hover .p-bn-icon svg {
+  filter: drop-shadow(0 0 6px rgba(255,255,255,.28)) !important;
+  transform: translateY(-1px) scale(1.06) !important;
+}
+/* Active icon: bright sage + stronger glow */
+body.r-dark .p-bn-item.active {
+  color: #7de8b0 !important;
+}
+body.r-dark .p-bn-item.active .p-bn-icon svg {
+  filter: drop-shadow(0 0 8px rgba(116,230,157,.70)) drop-shadow(0 2px 6px rgba(116,198,157,.45)) !important;
+  opacity: 1 !important;
+}
+body.r-dark .p-bn-item.active .p-bn-label {
+  color: #7de8b0 !important;
+}
+/* SOS label stays red */
+body.r-dark .p-bn-sos-label {
+  color: #ff6b6b !important;
+}
