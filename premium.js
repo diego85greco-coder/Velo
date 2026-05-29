@@ -3559,12 +3559,12 @@ function _renderNewsList(el, items){
   _newsListCache = items;
   el.innerHTML = items.map(function(item, i){
     var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
-    var hasName = item.sourceName && item.sourceName.length > 1 && item.sourceName !== 'Velo';
-    var sourceTag = hasLink
+    // Only show a source name badge for admin-curated content with a real verified link.
+    // Groq-generated items have no web access so source names are AI-invented — show "Velo IA" instead.
+    var isAdminReal = item._src === 'admin' && hasLink;
+    var sourceTag = isAdminReal
       ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:var(--sage2);font-weight:700;text-decoration:none;background:var(--sage7);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.25)">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a>'
-      : (hasName
-          ? '<span style="color:var(--ink4);font-style:normal;font-weight:600;background:var(--sage7);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.18)">📰 '+_escHtml(item.sourceName)+'</span>'
-          : '<span style="color:var(--ink5);font-style:italic">✨ Velo IA</span>');
+      : '<span style="color:var(--ink5);font-style:italic">✨ Historia de bienestar · Velo IA</span>';
     return '<div class="p-card p-card--hover" style="margin-bottom:14px;padding:18px;cursor:pointer" onclick="pOpenNewsDetail('+i+')">'
       +'<div style="display:flex;align-items:flex-start;gap:14px">'
       +'<div style="font-size:36px;line-height:1;flex-shrink:0">'+_escHtml(item.emoji||'📰')+'</div>'
@@ -3588,12 +3588,10 @@ function pOpenNewsDetail(i){
   var _nd = new Date();
   var _months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   var _dateStr = _nd.getDate()+' de '+_months[_nd.getMonth()]+' de '+_nd.getFullYear();
-  var hasNameDetail = item.sourceName && item.sourceName.length > 1 && item.sourceName !== 'Velo';
-  var sourceRef = hasLink
+  var isAdminRealDetail = item._src === 'admin' && hasLink;
+  var sourceRef = isAdminRealDetail
     ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--sage2);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a>'
-    : (hasNameDetail
-        ? '<span style="font-size:12px;color:var(--ink3);font-weight:600">📰 '+_escHtml(item.sourceName)+'</span>'
-        : '<span style="font-size:12px;color:var(--ink4);font-style:italic">✨ Velo IA</span>');
+    : '<span style="font-size:12px;color:var(--ink4);font-style:italic">✨ Historia de bienestar · Velo IA</span>';
   var sourceBlock = '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-bottom:18px;padding:10px 14px;background:rgba(116,198,157,.07);border-radius:10px;border:1px solid rgba(116,198,157,.18)">'
     +'<span style="font-size:12px;color:var(--ink4)">📅 '+_dateStr+'</span>'
     +'<span style="color:var(--ink5);font-size:12px">·</span>'
