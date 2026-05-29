@@ -678,12 +678,19 @@ function _clearSession(){
   _stopGuardianHeartbeat();
   _stopGuardianReqListener();
   [_guardianRtCh, _helpRtCh, _bottleRtCh, _happyRtCh, _circleRtCh, _dmRtCh, _dmInboxCh,
-   _grReqCh, _seekerGrCh, _gcRtCh, _gcSeekerCh].forEach(function(ch){ _sbUnsub(ch); });
+   _grReqCh, _seekerGrCh, _gcRtCh, _gcSeekerCh, _buzónRtCh, _helpChatRtCh].forEach(function(ch){ _sbUnsub(ch); });
   _guardianRtCh = null; _helpRtCh = null; _bottleRtCh = null; _happyRtCh = null;
   _circleRtCh = null; _dmRtCh = null; _dmInboxCh = null;
   _grReqCh = null; _seekerGrCh = null; _gcRtCh = null; _gcSeekerCh = null;
+  _buzónRtCh = null; _helpChatRtCh = null;
   if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
   if(_grReqPollTmr){ clearInterval(_grReqPollTmr); _grReqPollTmr = null; }
+  if(_dmPollTmr){ clearInterval(_dmPollTmr); _dmPollTmr = null; }
+  // Clear per-user DM acceptance flags so they don't leak to the next session
+  try{
+    Object.keys(localStorage).filter(function(k){ return k.startsWith('velo_dm_accepted_'); })
+      .forEach(function(k){ localStorage.removeItem(k); });
+  }catch(e){}
   _favsList = null; // reset favorites cache
 }
 
@@ -8183,7 +8190,25 @@ function _subscribeToDMThread(){
       if(_dmRel(payload.new||{})) _renderDMThread();
     })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'direct_messages'},function(payload){
-      if(_dmRel(payload.new||{})) _renderDMThread();
+      var m = payload.new||{};
+      if(!_dmRel(m) || !m.id) return;
+      // Inline reaction chip update — avoids full re-render and scroll jump
+      var bubble = document.querySelector('[data-sb-id="direct_messages:'+m.id+'"]');
+      if(!bubble){ _renderDMThread(); return; } // fallback if bubble not found
+      var oldBar = bubble.querySelector('.msg-rx-bar');
+      if(oldBar) oldBar.remove();
+      if(m.reactions && typeof m.reactions === 'object'){
+        var chips = Object.keys(m.reactions).map(function(e){
+          var cnt = m.reactions[e]||1;
+          return '<span class="msg-reaction" data-emoji="'+e+'" data-cnt="'+cnt+'" onclick="_msgReact(\''+e+'\')">'+e+' '+cnt+'</span>';
+        }).join('');
+        if(chips){
+          var newBar = document.createElement('div');
+          newBar.className = 'msg-rx-bar';
+          newBar.innerHTML = chips;
+          bubble.appendChild(newBar);
+        }
+      }
     }).subscribe();
 }
 
