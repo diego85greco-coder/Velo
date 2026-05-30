@@ -6524,3 +6524,48 @@ body:not(.r-dark) .r-home-shortcut-grid button.r-home-shortcut .r-hs-icon {
   text-align: center !important;
   width: 100% !important;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   v316 — Smaller cards + centered greeting (layout-only, no style change)
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 860px) {
+
+  /* Center the whole hero-left content */
+  .r-hero-left {
+    align-items: center !important;
+  }
+
+  /* h1 was display:flex (legacy icon support) → text-align had no effect.
+     Changing to block so text-align:center actually centers the text. */
+  #homeGreetTxt {
+    display: block !important;
+    text-align: center !important;
+  }
+  .r-hero-italic,
+  .r-hero-italic em {
+    display: block !important;
+    text-align: center !important;
+  }
+  #homeGreetBlock {
+    text-align: center !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+    margin-bottom: 6px !important;
+    padding: 0 !important;
+  }
+
+  /* Remove square aspect-ratio — cards were ~165px tall.
+     Use a compact fixed height instead. */
+  .r-home-shortcut-grid button.r-home-shortcut {
+    aspect-ratio: unset !important;
+    min-height: 68px !important;
+    height: auto !important;
+    padding: 10px 8px !important;
+  }
+  /* Breathing room between greeting and grid */
+  .r-home-shortcut-grid {
+    margin-top: 28px !important;
+    margin-bottom: 12px !important;
+    gap: 8px !important;
+  }
+}
