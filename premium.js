@@ -6892,21 +6892,27 @@ function pLoadProfile(){
   _setEl('profileChats',    _locHelped + _locRecv);
   _setEl('profileHelped',   _locHelped);
   _setEl('profileReceived', _locRecv);
-  // Count real conversations directly from guardian_requests (source of truth)
+  // Count real conversations — three sources: localStorage, guardian_requests table, profiles table
   _initSupabase();
   var _pUid = safeLS('get','velo_user_id');
   if(sbClient && _pUid){
     Promise.all([
       sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('guardian_id', _pUid).eq('status','ended'),
-      sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('seeker_id',   _pUid).eq('status','ended')
+      sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('seeker_id',   _pUid).eq('status','ended'),
+      sbClient.from('profiles').select('helped_count,received_count').eq('id', _pUid).maybeSingle()
     ]).then(function(results){
-      var realH = (results[0] && results[0].count != null) ? results[0].count : _locHelped;
-      var realR = (results[1] && results[1].count != null) ? results[1].count : _locRecv;
-      var finalH = Math.max(_locHelped, realH);
-      var finalR = Math.max(_locRecv,   realR);
-      // Sync localStorage and profiles table with the real counts
-      if(finalH !== _locHelped){ safeLS('set','velo_guardian_convs', String(finalH)); _bumpProfileCounter('helped_count', finalH); }
-      if(finalR !== _locRecv)  { safeLS('set','velo_help_received',  String(finalR)); _bumpProfileCounter('received_count', finalR); }
+      var realH  = (results[0] && results[0].count  != null) ? results[0].count  : 0;
+      var realR  = (results[1] && results[1].count  != null) ? results[1].count  : 0;
+      var profH  = (results[2] && results[2].data   && results[2].data.helped_count)   ? parseInt(results[2].data.helped_count,  10) : 0;
+      var profR  = (results[2] && results[2].data   && results[2].data.received_count) ? parseInt(results[2].data.received_count,10) : 0;
+      var finalH = Math.max(_locHelped, realH, profH);
+      var finalR = Math.max(_locRecv,   realR, profR);
+      // Restore localStorage from highest known value (survives cache clears)
+      if(finalH > _locHelped){ safeLS('set','velo_guardian_convs', String(finalH)); }
+      if(finalR > _locRecv)  { safeLS('set','velo_help_received',  String(finalR)); }
+      // Keep profiles table in sync (write-back if guardian_requests has more data)
+      if(finalH > profH) _bumpProfileCounter('helped_count',   finalH);
+      if(finalR > profR) _bumpProfileCounter('received_count', finalR);
       _setEl('profileChats',    finalH + finalR);
       _setEl('profileHelped',   finalH);
       _setEl('profileReceived', finalR);
