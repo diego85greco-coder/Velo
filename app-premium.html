@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260529-296">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260529-296">
+  <link rel="stylesheet" href="premium.css?v=20260529-297">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260529-297">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -898,7 +898,24 @@
                   <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;border:1.5px solid rgba(27,94,58,.22);background:rgba(255,255,255,.55);color:var(--ink3);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Actívame</button>
                 </div>
               </div>
-              <div id="guardianSubLabel" style="font-size:9px;color:var(--ink5);letter-spacing:.5px;margin:-4px 0 8px;opacity:.8">Estado · activá el escudo para modo guardián</div>
+              <div id="guardianSubLabel" style="font-size:9px;color:var(--ink5);letter-spacing:.5px;margin:-4px 0 6px;opacity:.8">Estado · activá el escudo para modo guardián</div>
+              <!-- Quick controls: theme slider + bell — visible on mobile below guardian row -->
+              <div id="homeQuickControls" style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <button onclick="rToggleDarkMode()" title="Cambiar estilo" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;padding:6px 10px;cursor:pointer">
+                    <span style="font-size:12px;line-height:1">☀️</span>
+                    <span class="r-theme-track"><span class="r-theme-knob"></span></span>
+                    <span style="font-size:12px;line-height:1">🌙</span>
+                  </button>
+                  <span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45)">ESTILO</span>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <button onclick="pGoTo('inbox')" title="Buzón y notificaciones" style="position:relative;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;width:38px;height:38px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">
+                    🔔<span id="homeBellBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
+                  </button>
+                  <span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45)">BUZÓN</span>
+                </div>
+              </div>
               <h1 class="p-title" id="homeGreetTxt">Buenos días</h1>
               <h2 class="r-hero-italic"><em id="homeGreetSub">Hoy la comunidad está contigo.</em></h2>
               <p class="r-hero-sub" id="homeGreetParagraph">
@@ -911,8 +928,7 @@
             </div>
             <div class="r-hero-right">
               <div class="r-hero-actions-top">
-                <button id="rDarkToggleBtnHero" onclick="rToggleDarkMode()" aria-label="Modo oscuro/claro" class="r-hero-icon-btn" title="Modo oscuro/claro"><span id="rDarkToggleIcon">🌙</span></button>
-                <button onclick="pGoTo('inbox')" title="Notificaciones y buzón" id="homeBellBtn" class="r-hero-icon-btn">🔔<span id="homeBellBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
+                <span id="rDarkToggleIcon" style="display:none">🌙</span>
                 <button onclick="pGoTo('contacts')" title="Contactos favoritos" class="r-hero-icon-btn">⭐<span id="favCountBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
                 <button class="r-hero-icon-btn r-sos-icon-btn" onclick="pOpenSOS()" title="SOS">🆘</button>
                 <button class="p-topbar-btn" style="display:none" id="homeMenuBtn" onclick="toggleMobileMenu()">☰</button>
@@ -2988,8 +3004,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260529-296"></script>
-<script src="premium-redesign.js?v=20260529-296"></script>
+<script src="premium.js?v=20260529-297"></script>
+<script src="premium-redesign.js?v=20260529-297"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

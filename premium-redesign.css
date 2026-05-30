@@ -5853,3 +5853,51 @@ body.r-dark #pg-post-chat .p-textarea  {
   color: #fff !important;
 }
 body.r-dark #pg-post-chat .p-textarea::placeholder { color: rgba(255,255,255,.35) !important; }
+
+/* ── v297: Home quick controls — theme slider + bell ──────────── */
+.r-theme-track {
+  display: inline-block;
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.30);
+  position: relative;
+  transition: background .22s;
+  flex-shrink: 0;
+}
+.r-theme-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .22s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.35);
+}
+/* Knob slides right when dark mode is active — pure CSS, no JS needed */
+body.r-dark .r-theme-knob { transform: translateX(12px); }
+body.r-dark .r-theme-track { background: rgba(110,160,255,.45); }
+
+/* Quick controls button base (light/dark adaptive) */
+#homeQuickControls button {
+  border-color: rgba(255,255,255,.2);
+  background: rgba(255,255,255,.1);
+  transition: background .18s, border-color .18s;
+}
+#homeQuickControls button:hover {
+  background: rgba(255,255,255,.18);
+}
+body:not(.r-dark) #homeQuickControls button {
+  background: rgba(0,0,0,.07);
+  border-color: rgba(0,0,0,.12);
+}
+body:not(.r-dark) #homeQuickControls button:hover {
+  background: rgba(0,0,0,.13);
+}
+body:not(.r-dark) #homeQuickControls > div > span:last-child {
+  color: rgba(0,0,0,.38) !important;
+}
+body:not(.r-dark) .r-theme-track { background: rgba(0,0,0,.2); }
+body:not(.r-dark) .r-theme-knob { background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
