@@ -440,7 +440,14 @@ async function _sbSyncProfile(userId){
             _myGuardianStatus = restoredStatus;
           }
           setTimeout(_startGuardianReqListener, 300);
+        } else {
+          // DB says not guardian — keep LS in sync so the pill reflects reality
+          safeLS('set','velo_is_guardian','false');
         }
+        // Re-render the home pill now that the true DB state is known.
+        // The pill was first rendered 100ms after boot (before this async query returned),
+        // so it may show stale ON/OFF state without this second render.
+        _renderHomeStatusToggle();
       }
     }).catch(function(){});
   // Refresh all UI with synced data
@@ -1634,6 +1641,10 @@ function _startGuardianHeartbeat(){
     }
   };
   beat();
+  // Re-render home pill on first beat — by the time the boot heartbeat fires (+2s),
+  // the async guardian_presence DB sync has almost always completed, so this
+  // corrects any stale pill render from the 100ms _loadHomeData() call.
+  _renderHomeStatusToggle();
   _guardianHeartbeatTimer = setInterval(beat, 60000);
 }
 
