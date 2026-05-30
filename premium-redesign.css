@@ -6884,3 +6884,49 @@ body.r-dark .dark-seeker button[onclick*="pReport"] {
     margin-bottom: 14px !important;
   }
 }
+
+/* ── v328: Sidebar dark mode toggle button ──────────────────────── */
+.p-sidebar-theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  margin-top: 8px;
+  background: transparent;
+  border: 1.5px solid var(--border2);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Jost', sans-serif;
+  color: var(--ink4);
+  text-align: left;
+  transition: background .15s;
+}
+.p-sidebar-theme-btn:hover { background: rgba(116,198,157,.07); }
+.p-sidebar-theme-btn .r-tbar-sun,
+.p-sidebar-theme-btn .r-tbar-moon { flex-shrink: 0; display: flex; align-items: center; }
+body.r-dark .p-sidebar-theme-btn .r-tbar-sun { display: none; }
+body:not(.r-dark) .p-sidebar-theme-btn .r-tbar-moon { display: none; }
+body.r-dark .p-sidebar-theme-lbl::before { content: 'Modo claro'; }
+body:not(.r-dark) .p-sidebar-theme-lbl::before { content: 'Modo oscuro'; }
+.p-sidebar-theme-lbl { font-size: 0; }
+
+/* ── v328: Center hero greeting on desktop ──────────────────────── */
+@media (min-width: 860px) {
+  #homeGreetBlock,
+  #homeGreetTxt,
+  .r-hero-italic,
+  .r-hero-italic em {
+    text-align: center !important;
+    display: block !important;
+  }
+  .r-home-shortcut-grid {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .r-hero-actions {
+    justify-content: center !important;
+  }
+}

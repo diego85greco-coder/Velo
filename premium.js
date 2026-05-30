@@ -1537,11 +1537,13 @@ async function _pullVisitCountFromSB(){
     if(r.error || !r.data) return;
     var sbCount = parseInt(r.data.visit_day_count || 0, 10);
     if(sbCount > 0){
-      var localCount = _getVisitDayCount();
       safeLS('set','velo_visit_day_count_sb', String(sbCount));
-      // If Supabase has more days than local, push new days upward
-      if(sbCount > localCount) _updateHomeStreak();
+      // Push local if local days > Supabase (so Supabase always has the highest)
+      var localCount = _getVisitDayCount();
+      if(localCount > sbCount) _pushVisitCountToSB(localCount);
     }
+    // Always refresh the UI so both devices show the same number
+    _updateHomeStreak();
   }catch(e){} // Column may not exist yet — ignore
 }
 
