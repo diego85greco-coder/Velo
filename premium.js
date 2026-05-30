@@ -1822,7 +1822,7 @@ function _renderHomeStatusToggle(){
     ? (safeLS('get','velo_guardian_status') || 'disponible')
     : (safeLS('get','velo_user_status') || 'disponible');
 
-  var lbl = '<span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45);display:block;text-align:center;margin-top:4px">';
+  var lbl = '<span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;display:block;text-align:center;margin-top:4px">';
   var nextSt = st === 'disponible' ? 'ocupado' : 'disponible';
   el.style.alignItems = 'flex-start';
   el.innerHTML =
@@ -1833,14 +1833,15 @@ function _renderHomeStatusToggle(){
     +'<span class="r-strack"><span class="r-sknob'+(st==='ocupado'?' r-sknob--r':'')+'"></span></span>'
     +'<span class="r-sdot r-sdot--y"></span>'
     +'</button>'
-    +lbl+'ESTADOS</span>'
+    +lbl+'<span style="color:rgba(255,255,255,.45)">ESTADOS</span></span>'
     +'</div>'
-    // Guardian toggle
+    // Guardian mode button — gold inactive / green active
     +'<div style="display:flex;flex-direction:column;align-items:center">'
-    +'<button class="r-status-pill r-guardian-pill'+(isGuardian?' r-guardian-pill--on':'')+'" onclick="pHomeToggleGuardian()">'
-    +'<span style="font-size:13px">🛡️</span><span>Guardián</span>'
-    +'<span class="r-guardian-toggle"><span class="r-guardian-knob"></span></span></button>'
-    +lbl+'GUARDIÁN</span>'
+    +'<button class="r-status-pill r-gmode-btn'+(isGuardian?' r-gmode-btn--on':'')+'" onclick="pHomeToggleGuardian()">'
+    +(isGuardian?'<span style="font-size:14px">✅</span>':'<span style="font-size:14px">🛡️</span>')
+    +'<span>Modo Guardián</span>'
+    +'</button>'
+    +lbl+'<span style="color:'+(isGuardian?'rgba(34,197,94,.80)':'rgba(200,158,56,.75)')+'">'+(isGuardian?'ACTIVO':'ACTIVAR')+'</span></span>'
     +'</div>';
 
   // Hide the old separate guardian button (replaced by guardPill above)
