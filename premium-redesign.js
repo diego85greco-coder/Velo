@@ -365,55 +365,104 @@ function enrichGreeting() {
   setTimeout(tryAppend, 600);
 }
 
-/* ── Greeting ↔ daily quote rotation (5s / 6s cycle) ─────────────── */
+/* ── Greeting ↔ daily quote rotation (8s / 8s, elegant fade+slide) ── */
 function initGreetingRotation() {
-  var h1 = document.getElementById('homeGreetTxt');
-  var quoteWrap = document.getElementById('homeGreetQuote');
+  var greetBlock = document.getElementById('homeGreetBlock');
+  var h1         = document.getElementById('homeGreetTxt');
+  var subtitle   = document.getElementById('homeGreetSub');
+  var quoteWrap  = document.getElementById('homeGreetQuote');
   if (!h1 || !quoteWrap) return;
 
-  var greetText = null;
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var FADE = reduced ? 0 : 1400;   // transition ms
+  var SHOW = 8000;                  // visible ms
 
-  function fade(el, toOpacity, cb) {
-    el.style.transition = 'opacity .75s ease';
-    el.style.opacity = String(toOpacity);
-    setTimeout(cb || function(){}, 760);
+  var greetH1Text  = null;
+  var greetSubText = null;
+
+  var CSS_TRANS = 'opacity ' + FADE + 'ms cubic-bezier(.4,0,.2,1), transform ' + FADE + 'ms cubic-bezier(.4,0,.2,1)';
+
+  function applyFade(el, show) {
+    el.style.transition = reduced ? 'none' : CSS_TRANS;
+    el.style.opacity    = show ? '1' : '0';
+    el.style.transform  = show ? 'translateY(0)' : 'translateY(8px)';
+    el.style.pointerEvents = show ? '' : 'none';
   }
 
   function showQuote() {
     var quoteEl  = document.getElementById('homeDailyQuoteText');
     var authorEl = document.getElementById('homeDailyQuoteAuthor');
-    var q = (quoteEl  ? quoteEl.textContent.trim()  : '') || 'La comunidad está contigo.';
-    var a = authorEl ? authorEl.textContent.trim() : '';
-    greetText = h1.textContent.trim() || greetText;
+    var q = (quoteEl  ? quoteEl.textContent.trim()  : '') || 'La calma también es una forma de avanzar.';
+    var a = (authorEl ? authorEl.textContent.trim() : '') || '— Anónimo';
 
-    fade(h1, 0, function() {
-      h1.style.display = 'none';
+    greetH1Text  = h1.textContent.trim() || greetH1Text;
+    greetSubText = subtitle ? subtitle.textContent.trim() : greetSubText;
+
+    // Fade out greeting block
+    if (greetBlock) applyFade(greetBlock, false);
+    else {
+      applyFade(h1, false);
+      if (subtitle) applyFade(subtitle, false);
+    }
+
+    setTimeout(function() {
+      if (greetBlock) greetBlock.style.visibility = 'hidden';
+      else {
+        h1.style.visibility = 'hidden';
+        if (subtitle) subtitle.style.visibility = 'hidden';
+      }
+
+      // Prepare and fade in quote
       quoteWrap.innerHTML = '“' + q + '”'
-        + (a ? '<span class="r-greet-quote-author">' + a + '</span>' : '');
+        + (a ? '<span class=”r-greet-quote-author”>' + a + '</span>' : '');
       quoteWrap.style.display = 'block';
       quoteWrap.style.opacity = '0';
-      quoteWrap.style.transition = 'opacity .75s ease';
+      quoteWrap.style.transform = 'translateY(8px)';
+      quoteWrap.style.pointerEvents = '';
+
       requestAnimationFrame(function() {
-        requestAnimationFrame(function() { quoteWrap.style.opacity = '1'; });
+        requestAnimationFrame(function() { applyFade(quoteWrap, true); });
       });
-      setTimeout(showGreeting, 6000);
-    });
+
+      setTimeout(showGreeting, SHOW);
+    }, FADE + 50);
   }
 
   function showGreeting() {
-    fade(quoteWrap, 0, function() {
+    applyFade(quoteWrap, false);
+
+    setTimeout(function() {
       quoteWrap.style.display = 'none';
-      if (greetText) h1.textContent = greetText;
-      h1.style.display = '';
-      h1.style.opacity = '0';
-      fade(h1, 1, function() {
-        setTimeout(showQuote, 5000);
-      });
-    });
+      // Restore greeting text (enrichGreeting may have set name)
+      if (greetH1Text) h1.textContent = greetH1Text;
+      if (greetSubText && subtitle) subtitle.textContent = greetSubText;
+
+      if (greetBlock) {
+        greetBlock.style.visibility = '';
+        greetBlock.style.opacity = '0';
+        greetBlock.style.transform = 'translateY(8px)';
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() { applyFade(greetBlock, true); });
+        });
+      } else {
+        h1.style.visibility = '';
+        h1.style.opacity = '0';
+        h1.style.transform = 'translateY(8px)';
+        if (subtitle) { subtitle.style.visibility = ''; subtitle.style.opacity = '0'; subtitle.style.transform = 'translateY(8px)'; }
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            applyFade(h1, true);
+            if (subtitle) applyFade(subtitle, true);
+          });
+        });
+      }
+
+      setTimeout(showQuote, SHOW);
+    }, FADE + 50);
   }
 
-  // Start first cycle after 5 seconds (let enrichGreeting settle)
-  setTimeout(showQuote, 5000);
+  // First cycle after one full SHOW period
+  setTimeout(showQuote, SHOW);
 }
 
 /* ── Survey banner: cookie-based 24h dismissal ────────────────────── */

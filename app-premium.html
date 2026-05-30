@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-309">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-309">
+  <link rel="stylesheet" href="premium.css?v=20260530-311">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-311">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -893,7 +893,7 @@
             <div class="r-hero-left">
               <div id="homeHeroLabel" style="font-size:10px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:rgba(200,158,56,.72);margin-bottom:12px;display:flex;align-items:center;gap:6px"><span>—</span><span>JARDÍN DE HOY</span></div>
               <!-- Controls: theme toggle + guardian mode button -->
-              <div id="homeStatusToggle" style="display:flex;align-items:flex-start;gap:12px;flex-wrap:nowrap;margin-bottom:18px">
+              <div id="homeStatusToggle" style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:18px">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
                   <button onclick="rToggleDarkMode()" title="Cambiar estilo" style="height:42px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;padding:0 12px;cursor:pointer;box-sizing:border-box">
                     <span style="font-size:13px;line-height:1">☀️</span>
@@ -905,33 +905,37 @@
                 <div id="homeGuardianWrap"></div>
               </div>
               <div id="homeTimeIcon"></div>
-              <h1 class="p-title" id="homeGreetTxt">Buenos días</h1>
-              <div id="homeGreetQuote" style="display:none;opacity:0"></div>
-              <h2 class="r-hero-italic"><em id="homeGreetSub">Hoy la comunidad está contigo.</em></h2>
+              <div style="position:relative">
+                <div id="homeGreetBlock">
+                  <h1 class="p-title" id="homeGreetTxt">Buenos días</h1>
+                  <h2 class="r-hero-italic"><em id="homeGreetSub">Hoy la comunidad está contigo.</em></h2>
+                </div>
+                <div id="homeGreetQuote" style="display:none;position:absolute;top:0;left:0;right:0"></div>
+              </div>
               <!-- 2×2 shortcut grid -->
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 16px">
+              <div class="r-home-shortcut-grid">
                 <button class="r-home-shortcut r-home-shortcut--sos" onclick="pOpenSOS()">
-                  <span class="r-hs-icon">⚠️</span>
+                  <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
                   <span>SOS</span>
                 </button>
                 <button class="r-home-shortcut" onclick="pGoTo('contacts')" style="position:relative">
                   <span id="favCountBadge" style="display:none;position:absolute;top:8px;right:8px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
-                  <span class="r-hs-icon">⭐️</span>
+                  <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></span>
                   <span>FAVORITOS</span>
                 </button>
                 <button class="r-home-shortcut" onclick="pGoTo('inbox')" style="position:relative">
                   <span id="homeBellBadge" style="display:none;position:absolute;top:8px;right:8px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
-                  <span class="r-hs-icon">✉️</span>
+                  <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg></span>
                   <span>BUZÓN</span>
                 </button>
                 <button class="r-home-shortcut" onclick="pGoTo('circles')">
-                  <span class="r-hs-icon">🕊️</span>
-                  <span>CÍRCULOS</span>
+                  <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>
+                  <span>COMUNIDAD</span>
                 </button>
               </div>
               <div class="r-hero-actions">
-                <button class="p-btn p-btn--primary p-btn--lg" onclick="pGoTo('help')">Pedir ayuda →</button>
-                <button class="p-btn p-btn--secondary p-btn--lg" onclick="pGoTo('diary')">Escribir en mi diario →</button>
+                <button class="p-btn p-btn--primary p-btn--lg" onclick="pGoTo('guardians')">Guardianes →</button>
+                <button class="p-btn p-btn--secondary p-btn--lg" onclick="pGoTo('help')">Sala de Ayuda →</button>
               </div>
             </div>
             <div class="r-hero-right">
@@ -3010,8 +3014,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-309"></script>
-<script src="premium-redesign.js?v=20260530-309"></script>
+<script src="premium.js?v=20260530-311"></script>
+<script src="premium-redesign.js?v=20260530-311"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
