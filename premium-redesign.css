@@ -6846,3 +6846,26 @@ body.r-dark .velo-mention-item:hover { background: rgba(255,255,255,.07); }
   align-items: flex-end !important;
   gap: 8px !important;
 }
+
+/* ── v326: @username tag below display name ─────────────────────── */
+.p-uname-tag {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink5);
+  display: block;
+  line-height: 1.2;
+  margin-top: 1px;
+  opacity: .85;
+}
+body.r-dark .p-uname-tag {
+  color: rgba(116,198,157,.55) !important;
+  opacity: 1;
+}
+
+/* ── v326: Reportar button — dark mode legibility ─────────────────── */
+body.r-dark .dark-seeker button[onclick*="pReportContent"],
+body.r-dark .dark-seeker button[onclick*="pReport"] {
+  color: rgba(255,130,110,.85) !important;
+  border-color: rgba(220,80,60,.3) !important;
+  background: rgba(220,80,60,.12) !important;
+}

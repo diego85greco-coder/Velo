@@ -54,6 +54,13 @@ var _dmLastMsgId = null;   // last rendered DM message DB id (prevents flicker)
 var _favsList     = null;   // cached favorites array (loaded lazily)
 var _prevChatStatus = null; // status saved before entering any chat (restored on exit)
 var _inActiveChat   = false; // true while user is in any live chat session
+var _unameCache   = {};     // userId → @username string (no @ prefix stored)
+function _uFill(uid, uname){ if(uid && uname) _unameCache[uid] = uname; }
+function _uLook(uid){ return uid ? (_unameCache[uid]||'') : ''; }
+function _uAt(uid){
+  var u = _uLook(uid);
+  return u ? '<span class="p-uname-tag">@'+_escHtml(u)+'</span>' : '';
+}
 
 async function _geminiCallGrounded(prompt, cfg){
   // Try Vercel serverless proxy first, fall back to direct call
@@ -396,6 +403,7 @@ async function _sbSyncProfile(userId){
   if(p.status_phrase) safeLS('set','velo_status_phrase', p.status_phrase);
   if(p.status_film)   safeLS('set','velo_status_film',   p.status_film);
   if(p.username)      safeLS('set','velo_username',       p.username);
+  if(p.username)      _uFill(userId, p.username);
   if(p.role === 'plus'){
     sbClient.from('profiles').select('plus_expires_at').eq('id',userId).limit(1)
       .then(function(r2){
@@ -1972,7 +1980,7 @@ async function pRenderGuardians(){
         var uMap = {};
         try{
           var uRes = await sbClient.from('profiles').select('id,username').in('id', gIds);
-          if(uRes.data) uRes.data.forEach(function(p){ if(p.id && p.username) uMap[p.id] = p.username; });
+          if(uRes.data) uRes.data.forEach(function(p){ if(p.id && p.username){ uMap[p.id] = p.username; _uFill(p.id, p.username); } });
         }catch(e){}
         liveGuardians = filtered0.map(function(r){
           return { id: 'live_'+r.user_id, name: r.name, av: r.avatar, bio: r.bio||'',
@@ -2895,6 +2903,12 @@ async function pRenderHelp(){
 
   await _refreshPresenceCache();
 
+  // Batch-fetch usernames for non-anon help-post authors not yet cached
+  if(sbClient){
+    var _hUnknown = posts.filter(function(h){ return !h.anon && h.userId && !_uLook(h.userId); }).map(function(h){ return h.userId; });
+    if(_hUnknown.length){ try{ var _hur = await sbClient.from('profiles').select('id,username').in('id',_hUnknown); if(_hur.data) _hur.data.forEach(function(p){ _uFill(p.id, p.username); }); }catch(e){} }
+  }
+
   if(!posts.length){
     list.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.5)"><span class="p-empty-emoji">💚</span><div class="p-empty-title" style="color:rgba(255,255,255,.7)">Todo tranquilo por acá</div><div class="p-empty-sub">Nadie espera acompañamiento en este momento</div></div>';
     return;
@@ -2918,13 +2932,14 @@ async function pRenderHelp(){
       ? '<span style="font-size:11px;color:rgba(116,198,157,.7);font-style:italic">Tu publicación 💙</span>'
         +'<button onclick="pDeleteHelpPost(\''+h.id+'\')" style="margin-left:8px;padding:4px 10px;background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.2);border-radius:100px;color:rgba(255,120,120,.8);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️ Eliminar</button>'
       : '<button class="p-btn p-btn--primary p-btn--sm" onclick="pAccompanyHelp(\''+h.id+'\')">💚 Acompañar</button>'
-        +'<button style="font-size:11px;color:rgba(192,48,40,.5);background:none;border:none;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportContent(\'help\',\''+h.id+'\')">⚠️ Reportar</button>';
+        +'<button style="font-size:11px;font-weight:600;padding:4px 9px;background:rgba(200,50,50,.1);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(190,45,35,.9);cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportContent(\'help\',\''+h.id+'\')">⚠️ Reportar</button>';
     var canClickProfile = !h.anon && !isOwn && h.userId && h.name !== 'Usuario Anónimo';
     var hAv = h.av || h.emoji || '💙';
     var profCall = 'pQuickProfile('+_jsAttr(h.name)+','+_jsAttr(hAv)+',\'\',\'\','+_jsAttr(h.userId||'')+')';
+    var uAtTag = _uAt(h.anon ? '' : h.userId);
     var nameHtml = canClickProfile
-      ? '<span style="font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" onclick="'+profCall+'">'+_escHtml(h.name)+'</span>'
-      : '<span style="font-size:12px;font-weight:600;color:var(--ink)">'+_escHtml(h.name)+'</span>';
+      ? '<div><span style="font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" onclick="'+profCall+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>'
+      : '<div><span style="font-size:12px;font-weight:600;color:var(--ink)">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>';
     var avHtml = (hAv && (hAv.indexOf('data:')===0||hAv.indexOf('http')===0)) ? _avInline(hAv,32) : (!h.anon ? hAv : (h.emoji||'💙'));
     var pDot = (!h.anon && h.userId) ? _presenceDot(h.userId, 10) : '';
     var avDotHtml = pDot
@@ -2934,9 +2949,9 @@ async function pRenderHelp(){
       +'<div style="display:flex;align-items:flex-start;gap:11px">'
       +'<div style="font-size:28px;flex-shrink:0;'+(canClickProfile?'cursor:pointer" onclick="'+profCall:'')+'">' + avDotHtml + '</div>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:3px">'
       +nameHtml
-      +'<span style="font-size:10px;color:var(--ink5)">'+timeStr+'</span>'
+      +'<span style="font-size:10px;color:var(--ink5);margin-top:2px">'+timeStr+'</span>'
       +urgBadge
       +'</div>'
       +'<div style="font-size:13px;color:var(--ink3);line-height:1.55;margin-bottom:10px;font-style:italic">'+_escHtml(h.preview)+'</div>'
@@ -4622,6 +4637,9 @@ async function pRenderBottle(){
     return safeLS('get','velo_bottle_replied_'+b.id) !== '1';
   });
 
+  // Batch-fetch usernames for non-anon bottle authors not yet cached
+  if(sbClient){ var _bUnknown = allBottles.filter(function(b){ return !b.anon && b.userId && !_uLook(b.userId); }).map(function(b){ return b.userId; }); if(_bUnknown.length){ try{ var _br = await sbClient.from('profiles').select('id,username').in('id',_bUnknown); if(_br.data) _br.data.forEach(function(p){ _uFill(p.id,p.username); }); }catch(e){} } }
+
   if(!allBottles.length){
     list.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">🌊</span><div class="p-empty-title">El mar está tranquilo</div><div class="p-empty-sub">Sé el primero en lanzar un mensaje</div></div>';
     return;
@@ -4646,7 +4664,7 @@ async function pRenderBottle(){
         +'</div>';
     } else {
       actions = '<div style="display:flex;gap:7px;align-items:center">'
-        +'<button style="padding:5px 11px;background:rgba(200,50,50,.07);border:1px solid rgba(200,50,50,.18);border-radius:100px;color:rgba(180,50,50,.7);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
+        +'<button style="padding:5px 11px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.28);border-radius:100px;color:rgba(180,50,50,.9);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
         +(alreadyReplied
           ? '<span style="font-size:11px;color:var(--sage2);font-weight:700">💛 Ya respondiste</span>'
           : '<button style="padding:5px 11px;background:rgba(80,150,200,.12);border:1px solid rgba(80,150,200,.28);border-radius:100px;color:#1E5A80;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply('+_jsAttr(b.id)+','+_jsAttr(b.text.substring(0,120))+','+_jsAttr(b.userId||b.user_id||'')+','+_jsAttr(b.anon?'':''+( b.userName||''))+','+_jsAttr(b.anon?'':''+( b.userAv||''))+')">💌 Responder</button>')
@@ -4656,7 +4674,10 @@ async function pRenderBottle(){
     var authorHtml = showAuthor
       ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;cursor:pointer" onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')">'
         +_avInline(b.userAv||'🧑',24)
+        +'<div style="display:flex;flex-direction:column;line-height:1.2">'
         +'<span style="font-size:11px;color:#1E5A80;font-weight:600">'+_escHtml(b.userName)+'</span>'
+        +(_uAt(b.userId||''))
+        +'</div>'
         +'<span style="font-size:10px;color:var(--ink5)">· toca para ver perfil</span>'
         +'</div>'
       : (b.anon
@@ -6326,6 +6347,8 @@ async function pRenderHappy(){
       else _pendingHappyPost = null;
     }
     _sbHappy = posts;
+    // Batch-fetch usernames for non-anon authors not yet cached
+    if(sbClient){ var _hpUnknown = posts.filter(function(h){ return !h.anon && h.userId && h.userId!=='anon' && !_uLook(h.userId); }).map(function(h){ return h.userId; }); if(_hpUnknown.length){ try{ var _hpr = await sbClient.from('profiles').select('id,username').in('id',_hpUnknown); if(_hpr.data) _hpr.data.forEach(function(p){ _uFill(p.id,p.username); }); }catch(e){} } }
   } else {
     posts = _processHappyQueue();
   }
@@ -6529,11 +6552,12 @@ function _happyPostCard(h, isOwn){
     +'<div'+authorClick+'>'+avatarHtml+'</div>'
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:13px;font-weight:600;color:var(--ink)'+(canClick?';cursor:pointer':'')+'"'+(canClick?' onclick="pQuickProfile('+_jsAttr(h.name||'Usuario')+','+_jsAttr(h.av||'')+',\'\',\'\','+_jsAttr(h.userId||'')+')"':'')+'>'+_escHtml(h.name||'Usuario Anónimo')+'</div>'
+    +(!h.anon && h.userId && h.userId!=='anon' ? _uAt(h.userId) : '')
     +'<div style="font-size:10px;color:var(--ink5);margin-top:1px">'+relTime+(isOwn?' · <strong style="color:var(--sage)">Tuya</strong>':'')+'</div>'
     +'</div>'
     +(isOwn
       ? '<button onclick="pDeleteHappyPost(\''+h.id+'\')" style="padding:5px 10px;background:rgba(255,80,80,.07);border:1px solid rgba(255,80,80,.18);border-radius:100px;color:rgba(200,60,60,.7);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0" title="Eliminar publicación">🗑️</button>'
-      : '<button onclick="pReportContent(\'happy\','+_jsAttr(h.id)+','+_jsAttr((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:100px;color:rgba(180,50,50,.6);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0">🚩</button>')
+      : '<button onclick="pReportContent(\'happy\','+_jsAttr(h.id)+','+_jsAttr((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(180,50,50,.88);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0">🚩 Reportar</button>')
     +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap;flex-shrink:0">⏳ '+timeLeft+'</span>' : '')
     +'</div>'
     // photo
@@ -7995,7 +8019,7 @@ async function pRenderContacts(){
         var profRes = await sbClient.from('profiles').select('id,username,nombre,avatar').in('id', _uniqIds);
         if(_navToken !== _tok) return;
         (profRes.data||[]).forEach(function(p){
-          if(p.id && p.username) usernameMap[p.id] = p.username;
+          if(p.id && p.username){ usernameMap[p.id] = p.username; _uFill(p.id, p.username); }
           if(p.id) profileMap[p.id] = { name: p.nombre||'', av: p.avatar||'' };
         });
       }catch(e){}
@@ -12424,8 +12448,10 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
     var avClickAttr = canProfile
       ? ' style="cursor:pointer" onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(av||'🌿')+',\'\',\'\','+_jsAttr(senderId||'')+')"'
       : '';
+    var _sUname = senderId ? _uLook(senderId) : '';
+    var _sUnameTag = _sUname ? '<span style="font-size:9px;display:block;color:var(--ink5);font-weight:500;margin-top:0px;line-height:1.2">@'+_escHtml(_sUname)+'</span>' : '';
     var senderHtml = canProfile
-      ? '<div class="feed-sender" style="font-size:11px;color:var(--ink4);cursor:pointer" onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(av||'🌿')+',\'\',\'\','+_jsAttr(senderId||'')+')">'+_escHtml(senderName)+'</div>'
+      ? '<div class="feed-sender" style="font-size:11px;color:var(--ink4);cursor:pointer;line-height:1.2" onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(av||'🌿')+',\'\',\'\','+_jsAttr(senderId||'')+')">'+_escHtml(senderName)+_sUnameTag+'</div>'
       : '<div class="feed-sender" style="font-size:11px;color:var(--ink4)">'+(senderName||'')+'</div>';
     return '<div class="feed-msg" id="'+id+'"'+sbAttr+' style="position:relative">'
       +'<div class="feed-av"'+avClickAttr+'>'+_avInline(av||'🌿',36)+'</div>'
