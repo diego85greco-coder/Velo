@@ -185,7 +185,6 @@ var _toastQueue = [];
 var _toastBusy  = false;
 
 function pToast(emoji, msg){
-  if(emoji !== '⚠️') return;
   var last = _toastQueue[_toastQueue.length-1];
   if(last && last.emoji === (emoji||'✓') && last.msg === (msg||'')) return;
   _toastQueue.push({ emoji: emoji || '✓', msg: msg || '' });
@@ -207,7 +206,7 @@ function _nextToast(){
   _toastTimer = setTimeout(function(){
     el.classList.remove('show');
     setTimeout(_nextToast, 300);
-  }, 5000);
+  }, 2000);
 }
 // Alias for compatibility
 var toast = pToast;
