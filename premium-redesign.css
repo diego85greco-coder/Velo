@@ -6983,3 +6983,67 @@ body.r-dark .home-dqa-btn:hover {
 @media (max-width: 859px) {
   #homeDesktopQuickActs { display: none !important; }
 }
+
+/* ── v332: Desktop hero right column — vertical stat cards ──────── */
+@media (min-width: 860px) {
+  /* Stretch both grid columns to full card height */
+  .r-hero-v2 {
+    align-items: stretch !important;
+  }
+  /* Right panel fills height, hides empty actions-top row */
+  .r-hero-right {
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    min-width: 170px !important;
+    max-width: 200px !important;
+  }
+  /* Hide the empty actions-top slot (all its children are display:none) */
+  .r-hero-right .r-hero-actions-top {
+    display: none !important;
+  }
+  /* Stats become a vertical column that fills the right panel */
+  .r-hero-stats {
+    flex-direction: column !important;
+    gap: 10px !important;
+    flex: 1 !important;
+    align-items: stretch !important;
+    align-self: stretch !important;
+  }
+  /* Each stat: a tall glass card centered top→bottom */
+  .r-hero-stat,
+  .r-hero-stat:last-child {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    border-right: none !important;
+    padding: 14px 12px !important;
+    border-radius: 16px !important;
+    background: rgba(116,198,157,.07) !important;
+    border: 1.5px solid rgba(116,198,157,.16) !important;
+    transition: background .2s;
+  }
+  .r-hero-stat:hover {
+    background: rgba(116,198,157,.13) !important;
+  }
+  .r-hero-stat-val {
+    justify-content: center !important;
+    font-size: 28px !important;
+  }
+  .r-hero-stat-lbl {
+    font-size: 9px !important;
+    letter-spacing: 1.4px !important;
+    margin-top: 6px !important;
+  }
+  /* Dark mode cards */
+  body.r-dark .r-hero-stat,
+  body.r-dark .r-hero-stat:last-child {
+    background: rgba(116,198,157,.09) !important;
+    border-color: rgba(116,198,157,.20) !important;
+  }
+  body.r-dark .r-hero-stat:hover {
+    background: rgba(116,198,157,.16) !important;
+  }
+}
