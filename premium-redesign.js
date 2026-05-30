@@ -692,3 +692,226 @@ function pHappyHistDel(idx) {
   if (typeof pRenderHappy === 'function') pRenderHappy();
   if (typeof pToast === 'function') pToast('🗑️', 'Entrada eliminada del historial');
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v324: Unified Chat Template — emoji picker, @mentions, anon avatar
+   ══════════════════════════════════════════════════════════════════════ */
+(function(){
+  // ── 1. Override _buildMsgBubble for anonymous avatar + hint ───────
+  var _origBubble = window._buildMsgBubble;
+  if(typeof _origBubble === 'function'){
+    window._buildMsgBubble = function(text, isUser, av, senderName, inputId, replyBarId, quoteText, reactions, sbId, senderId){
+      if(!isUser){
+        var isAnon = !senderName
+          || senderName === 'Usuario Anónimo' || senderName === 'Anónimo'
+          || senderName === 'Anónimo/a' || senderName === 'Usuario anónimo';
+        if(isAnon){
+          av = '💙';
+          senderName = senderName || 'Usuario anónimo';
+        }
+      }
+      var html = _origBubble(text, isUser, av, senderName, inputId, replyBarId, quoteText, reactions, sbId, senderId);
+      // Inject anonymous CSS classes post-render via DOM after a tick
+      return html;
+    };
+  }
+
+  // ── 2. Emoji sets ─────────────────────────────────────────────────
+  var EMOJIS = ['❤️','💙','💚','💛','🧡','💜','🖤','🤍','😊','😂','😍','🥰','😘','🤗',
+    '😢','😅','😎','🥺','😴','🤔','😌','🤩','😤','😭','🥳','😇','🙏','✨','🌟','🌈',
+    '🌸','🌺','🌻','🍀','🌿','💐','🎉','🎊','👏','🤝','💪','🤞','👍','❓','‼️',
+    '💯','🔥','⭐','🌙','☀️','🌊','🦋','🕊️','🐾','💌','📖','🎵','🎶','🤍'];
+
+  // ── 3. Emoji panel toggle ─────────────────────────────────────────
+  window.vChatToggleEmoji = function(panelId, btnEl){
+    var panel = document.getElementById(panelId);
+    if(!panel) return;
+    var open = panel.style.display === 'flex';
+    panel.style.display = open ? 'none' : 'flex';
+    if(btnEl) btnEl.classList.toggle('active', !open);
+    if(!open && !panel.dataset.built){
+      panel.dataset.built = '1';
+      panel.innerHTML = EMOJIS.map(function(e){
+        var inp = panel.dataset.input || '';
+        return '<button type="button" onclick="vChatInsertEmoji('+JSON.stringify(e)+','+JSON.stringify(inp)+',this.closest(\'[id]\'))">'+ e +'</button>';
+      }).join('');
+    }
+  };
+
+  window.vChatInsertEmoji = function(emoji, inputId, panel){
+    var ta = document.getElementById(inputId);
+    if(!ta) return;
+    var start = ta.selectionStart || ta.value.length;
+    var end   = ta.selectionEnd   || start;
+    ta.value = ta.value.slice(0,start) + emoji + ta.value.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + emoji.length;
+    ta.focus();
+    // Trigger auto-resize
+    ta.dispatchEvent(new Event('input'));
+  };
+
+  // ── 4. @mention autocomplete ──────────────────────────────────────
+  var _mentionDrop = null;
+  var _mentionInput = null;
+  var _mentionAt = -1;
+
+  function _getMentionables(){
+    var list = [];
+    try{
+      // Guardian chat peer
+      if(typeof _gcPeer !== 'undefined' && _gcPeer && _gcPeer.name)
+        list.push({ name: _gcPeer.name, av: _gcPeer.av || '🌿' });
+      // DM peer
+      if(typeof _dmPeer !== 'undefined' && _dmPeer && _dmPeer.name)
+        list.push({ name: _dmPeer.name, av: _dmPeer.av || '🧑' });
+      // Help chat post owner
+      if(typeof _curHelpPost !== 'undefined' && _curHelpPost && _curHelpPost.name)
+        list.push({ name: _curHelpPost.name, av: _curHelpPost.emoji || '💙' });
+      // Self (for group chats)
+      var myName = (typeof safeLS === 'function' ? safeLS('get','velo_user_name') : localStorage.getItem('velo_user_name')) || '';
+      if(myName) list.push({ name: myName, av: (typeof safeLS === 'function' ? safeLS('get','velo_user_av') : '') || '🧑' });
+    }catch(e){}
+    return list;
+  }
+
+  function _buildMentionDrop(){
+    if(!_mentionDrop){
+      _mentionDrop = document.createElement('div');
+      _mentionDrop.className = 'velo-mention-drop';
+      _mentionDrop.id = 'velMentionDrop';
+      document.body.appendChild(_mentionDrop);
+    }
+    return _mentionDrop;
+  }
+
+  function _hideMentionDrop(){ if(_mentionDrop) _mentionDrop.style.display='none'; _mentionAt=-1; }
+
+  function _showMentionDrop(ta, query){
+    var drop = _buildMentionDrop();
+    var candidates = _getMentionables().filter(function(m){
+      return !query || m.name.toLowerCase().startsWith(query.toLowerCase());
+    });
+    if(!candidates.length){ _hideMentionDrop(); return; }
+    drop.innerHTML = candidates.slice(0,5).map(function(m){
+      return '<div class="velo-mention-item" data-name="'+_escHtmlSafe(m.name)+'">'
+        +'<span style="font-size:18px">'+m.av+'</span>'
+        +'@'+_escHtmlSafe(m.name)
+        +'</div>';
+    }).join('');
+    // Click handler
+    drop.querySelectorAll('.velo-mention-item').forEach(function(item){
+      item.addEventListener('mousedown', function(e){
+        e.preventDefault();
+        var name = item.dataset.name;
+        var val  = ta.value;
+        // Replace from @ position to current cursor
+        var before = val.slice(0, _mentionAt);
+        var after  = val.slice(ta.selectionStart || ta.value.length);
+        ta.value = before + '@' + name + ' ' + after;
+        ta.selectionStart = ta.selectionEnd = before.length + name.length + 2;
+        ta.focus();
+        _hideMentionDrop();
+      });
+    });
+    // Position drop above textarea
+    var rect = ta.getBoundingClientRect();
+    drop.style.display = 'block';
+    var dropH = drop.offsetHeight || 120;
+    drop.style.left = Math.max(8, rect.left) + 'px';
+    drop.style.top  = (rect.top - dropH - 6) + 'px';
+    drop.style.minWidth = Math.min(200, rect.width) + 'px';
+  }
+
+  function _escHtmlSafe(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // Attach @mention listener to a textarea
+  function _attachMentionListener(ta){
+    if(!ta || ta._mentionBound) return;
+    ta._mentionBound = true;
+    ta.addEventListener('input', function(){
+      var val = ta.value;
+      var cur = ta.selectionStart || val.length;
+      // Find last @ before cursor on the same line
+      var segment = val.slice(0, cur);
+      var atIdx = segment.lastIndexOf('@');
+      if(atIdx < 0){ _hideMentionDrop(); return; }
+      var after = segment.slice(atIdx+1);
+      if(after.indexOf(' ') >= 0 || after.indexOf('\n') >= 0){ _hideMentionDrop(); return; }
+      _mentionAt   = atIdx;
+      _mentionInput = ta;
+      _showMentionDrop(ta, after);
+    });
+    ta.addEventListener('keydown', function(e){
+      if(e.key === 'Escape'){ _hideMentionDrop(); }
+    });
+    ta.addEventListener('blur', function(){
+      setTimeout(_hideMentionDrop, 200);
+    });
+  }
+
+  // ── 5. Inject extras into chat rooms ─────────────────────────────
+  function _injectChatExtras(){
+    // Guardian chat: add emoji panel + button
+    var gcInput = document.getElementById('gcInput');
+    if(gcInput && !document.getElementById('gcEmojiPanel')){
+      // Panel
+      var gcPanel = document.createElement('div');
+      gcPanel.id = 'gcEmojiPanel';
+      gcPanel.className = 'velo-emoji-panel';
+      gcPanel.dataset.input = 'gcInput';
+      gcInput.closest('.feed-input-area').parentNode.insertBefore(gcPanel, gcInput.closest('.feed-input-area'));
+      // Emoji button in input area
+      var gcEmojiBtn = document.createElement('button');
+      gcEmojiBtn.type = 'button';
+      gcEmojiBtn.className = 'velo-emoji-btn';
+      gcEmojiBtn.title = 'Emojis';
+      gcEmojiBtn.textContent = '😊';
+      gcEmojiBtn.setAttribute('onclick','vChatToggleEmoji(\'gcEmojiPanel\',this)');
+      gcInput.closest('.feed-input-area').insertBefore(gcEmojiBtn, gcInput);
+    }
+    if(gcInput) _attachMentionListener(gcInput);
+
+    // DM chat: add emoji panel + button
+    var dmInput = document.getElementById('dmInput');
+    if(dmInput && !document.getElementById('dmEmojiPanel')){
+      var dmInputRow = dmInput.closest('.feed-input-row') || dmInput.parentElement;
+      var dmPanel = document.createElement('div');
+      dmPanel.id = 'dmEmojiPanel';
+      dmPanel.className = 'velo-emoji-panel';
+      dmPanel.dataset.input = 'dmInput';
+      dmInputRow.parentNode.insertBefore(dmPanel, dmInputRow);
+      var dmEmojiBtn = document.createElement('button');
+      dmEmojiBtn.type = 'button';
+      dmEmojiBtn.className = 'velo-emoji-btn';
+      dmEmojiBtn.title = 'Emojis';
+      dmEmojiBtn.textContent = '😊';
+      dmEmojiBtn.setAttribute('onclick','vChatToggleEmoji(\'dmEmojiPanel\',this)');
+      dmInputRow.insertBefore(dmEmojiBtn, dmInput);
+    }
+    if(dmInput) _attachMentionListener(dmInput);
+
+    // Help chat: attach @mention
+    var hcInput = document.getElementById('helpChatInput');
+    if(hcInput) _attachMentionListener(hcInput);
+
+    // Feed/circles: attach @mention (emoji button already exists)
+    var feedInput = document.getElementById('feedInput');
+    if(feedInput) _attachMentionListener(feedInput);
+  }
+
+  // Run on DOMContentLoaded and also when navigating to chat pages
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(_injectChatExtras, 500);
+  });
+
+  // Also hook into pGoTo to inject when entering a chat page
+  var _origPGoTo = window.pGoTo;
+  if(typeof _origPGoTo === 'function'){
+    window.pGoTo = function(page){
+      _origPGoTo.apply(this, arguments);
+      if(['guardian-chat','dm-chat','help-chat','feed'].indexOf(page) >= 0){
+        setTimeout(_injectChatExtras, 300);
+      }
+    };
+  }
+})();

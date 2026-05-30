@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-323">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-323">
+  <link rel="stylesheet" href="premium.css?v=20260530-324">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-324">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1310,7 +1310,7 @@
       </div><!-- /pg-help -->
 
       <!-- ══ HELP CHAT ════════════════════════════════════════════ -->
-      <div class="p-page" id="pg-help-chat" style="flex-direction:column;height:100%;overflow:hidden;background:linear-gradient(160deg,#0B1C0E,#080E08)">
+      <div class="p-page" id="pg-help-chat" data-chat-room="help" style="flex-direction:column;height:100%;overflow:hidden;background:linear-gradient(160deg,#0B1C0E,#080E08)">
         <div class="feed-header" style="background:rgba(8,20,10,.9);border-bottom:1px solid rgba(116,198,157,.15)">
           <div class="feed-header-info" style="flex:1;min-width:0">
             <span style="font-size:22px" id="helpChatEmoji">💚</span>
@@ -1663,7 +1663,7 @@
       </div>
 
       <!-- ══ FEED (Circle Chat) ════════════════════════════════════ -->
-      <div class="p-page" id="pg-feed" style="flex-direction:column;height:100%;overflow:hidden">
+      <div class="p-page" id="pg-feed" data-chat-room="circles" style="flex-direction:column;height:100%;overflow:hidden">
         <div class="feed-header">
           <button class="p-back-btn" onclick="pLeaveCircle()">←</button>
           <div class="feed-header-info">
@@ -2012,7 +2012,7 @@
 
       <!-- ══ SESSION ROOM ════════════════════════════════════════ -->
       <!-- ══ GUARDIAN CHAT ════════════════════════════════════════ -->
-      <div class="p-page fade-in" id="pg-guardian-chat" style="flex-direction:column;height:100%;overflow:hidden">
+      <div class="p-page fade-in" id="pg-guardian-chat" data-chat-room="guardian" style="flex-direction:column;height:100%;overflow:hidden">
         <div class="feed-header">
           <button class="p-back-btn" onclick="pEndGuardianChat()">←</button>
           <div class="feed-header-info" style="min-width:0;flex:1;overflow:hidden">
@@ -2463,7 +2463,7 @@
     </div><!-- /pg-contacts -->
 
     <!-- ══ DM CHAT ═══════════════════════════════════════════ -->
-    <div class="p-page" id="pg-dm-chat" style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+    <div class="p-page" id="pg-dm-chat" data-chat-room="dm" style="display:flex;flex-direction:column;height:100%;overflow:hidden">
       <div class="feed-header">
         <button class="p-back-btn" onclick="pLeaveDM()">←</button>
         <div class="feed-header-info" style="cursor:pointer" onclick="_dmOpenPeerProfile()">
@@ -3010,8 +3010,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-323"></script>
-<script src="premium-redesign.js?v=20260530-323"></script>
+<script src="premium.js?v=20260530-324"></script>
+<script src="premium-redesign.js?v=20260530-324"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

@@ -6600,3 +6600,249 @@ body:not(.r-dark) .r-status-seg--ocup.active {
 body:not(.r-dark) .r-guardian-hint {
   color: rgba(27,94,58,.50) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v324: UNIFIED CHAT TEMPLATE — WhatsApp-style bubbles, room themes,
+         emoji picker, anonymous badge, action bar, @mentions
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Per-room background (light mode pastel) ─────────────────── */
+body:not(.r-dark) [data-chat-room="guardian"] { background: #EEF7F1 !important; }
+body:not(.r-dark) [data-chat-room="help"]     { background: #FFF0F3 !important; }
+body:not(.r-dark) [data-chat-room="dm"]       { background: #EEF2FE !important; }
+body:not(.r-dark) [data-chat-room="circles"]  { background: #EEF9F2 !important; }
+
+/* ── 2. WhatsApp-style bubbles: always legible dark text ─────────── */
+.feed-bubble {
+  background: #FFFFFF !important;
+  color: #1a1a1a !important;
+  border: 1px solid rgba(0,0,0,.07) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.07) !important;
+  backdrop-filter: none !important;
+}
+.feed-bubble--own {
+  background: #D6EDDC !important;
+  color: #0e2b13 !important;
+  border-color: transparent !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06) !important;
+}
+.feed-time {
+  color: rgba(0,0,0,.38) !important;
+}
+.feed-bubble--own .feed-time {
+  color: rgba(0,0,0,.38) !important;
+}
+
+/* Dark mode bubble overrides */
+body.r-dark .feed-bubble {
+  background: rgba(255,255,255,.09) !important;
+  color: rgba(255,255,255,.92) !important;
+  border-color: rgba(255,255,255,.07) !important;
+  box-shadow: none !important;
+}
+body.r-dark .feed-bubble--own {
+  background: rgba(46,160,67,.28) !important;
+  color: rgba(255,255,255,.96) !important;
+}
+body.r-dark .feed-time { color: rgba(255,255,255,.38) !important; }
+body.r-dark .feed-bubble--own .feed-time { color: rgba(255,255,255,.38) !important; }
+
+/* ── 3. Reply quote legibility ───────────────────────────────────── */
+.feed-bubble .reply-quote {
+  background: rgba(0,0,0,.05) !important;
+  color: rgba(0,0,0,.55) !important;
+  border-left: 3px solid rgba(0,0,0,.2) !important;
+}
+.feed-bubble--own .reply-quote {
+  background: rgba(0,0,0,.08) !important;
+  color: rgba(0,0,0,.55) !important;
+  border-left-color: rgba(0,0,0,.25) !important;
+}
+body.r-dark .feed-bubble .reply-quote {
+  background: rgba(255,255,255,.06) !important;
+  color: rgba(255,255,255,.5) !important;
+  border-left-color: rgba(255,255,255,.25) !important;
+}
+
+/* ── 4. Avatar: circular, consistent size ────────────────────────── */
+.feed-av {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  background: rgba(0,0,0,.04) !important;
+  flex-shrink: 0 !important;
+}
+.feed-av img {
+  width: 36px !important;
+  height: 36px !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+  display: block !important;
+}
+/* Anonymous avatar */
+.feed-av--anon {
+  background: rgba(59,130,246,.12) !important;
+  border: 1.5px solid rgba(59,130,246,.25) !important;
+  font-size: 18px !important;
+}
+/* Anonymous sender name */
+.feed-sender--anon {
+  color: rgba(59,130,246,.75) !important;
+  font-style: italic !important;
+}
+
+/* ── 5. Sender name ──────────────────────────────────────────────── */
+.feed-sender {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: rgba(0,0,0,.45) !important;
+  margin-bottom: 2px !important;
+  line-height: 1.3 !important;
+}
+body.r-dark .feed-sender { color: rgba(255,255,255,.42) !important; }
+
+/* ── 6. @mention chip in messages ────────────────────────────────── */
+.msg-mention {
+  color: #1d4ed8;
+  font-weight: 600;
+  background: rgba(29,78,216,.08);
+  border-radius: 4px;
+  padding: 0 3px;
+}
+body.r-dark .msg-mention {
+  color: #93c5fd;
+  background: rgba(29,78,216,.18);
+}
+
+/* ── 7. Unified action bar (Clear · Finalize · Report) ───────────── */
+.velo-chat-bar {
+  display: flex;
+  gap: 7px;
+  padding: 7px 14px 7px;
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(0,0,0,.07);
+  flex-shrink: 0;
+}
+body.r-dark .velo-chat-bar {
+  background: rgba(5,15,8,.72);
+  border-bottom-color: rgba(255,255,255,.08);
+}
+.velo-chat-bar-btn {
+  flex: 1;
+  padding: 7px 4px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Jost', 'Inter', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  letter-spacing: .1px;
+  transition: opacity .15s, transform .1s;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.velo-chat-bar-btn:active { opacity: .7; transform: scale(.97); }
+.velo-chat-bar-btn--clear {
+  background: rgba(59,130,246,.10);
+  color: #1a4a96;
+  border-color: rgba(59,130,246,.22);
+}
+.velo-chat-bar-btn--end {
+  background: rgba(239,68,68,.10);
+  color: #7f1d1d;
+  border-color: rgba(239,68,68,.22);
+}
+.velo-chat-bar-btn--report {
+  background: rgba(234,88,12,.10);
+  color: #7c2d12;
+  border-color: rgba(234,88,12,.22);
+}
+body.r-dark .velo-chat-bar-btn--clear { background: rgba(59,130,246,.16); color: #93c5fd; border-color: rgba(59,130,246,.28); }
+body.r-dark .velo-chat-bar-btn--end   { background: rgba(239,68,68,.16);  color: #fca5a5; border-color: rgba(239,68,68,.28); }
+body.r-dark .velo-chat-bar-btn--report{ background: rgba(234,88,12,.16);  color: #fdba74; border-color: rgba(234,88,12,.28); }
+
+/* ── 8. Emoji picker ─────────────────────────────────────────────── */
+.velo-emoji-panel {
+  display: none;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,.95);
+  border-top: 1px solid rgba(0,0,0,.07);
+  flex-shrink: 0;
+  max-height: 130px;
+  overflow-y: auto;
+}
+body.r-dark .velo-emoji-panel {
+  background: rgba(8,18,10,.92);
+  border-top-color: rgba(255,255,255,.09);
+}
+.velo-emoji-panel button {
+  width: 34px; height: 34px;
+  background: none; border: none;
+  font-size: 20px; cursor: pointer;
+  border-radius: 7px;
+  transition: background .1s;
+  line-height: 1;
+}
+.velo-emoji-panel button:hover { background: rgba(0,0,0,.07); }
+body.r-dark .velo-emoji-panel button:hover { background: rgba(255,255,255,.1); }
+.velo-emoji-btn {
+  background: none; border: none;
+  font-size: 20px; cursor: pointer;
+  padding: 4px 6px; flex-shrink: 0;
+  opacity: .6; transition: opacity .15s, transform .15s;
+  border-radius: 8px;
+}
+.velo-emoji-btn:hover { opacity: 1; transform: scale(1.12); }
+.velo-emoji-btn.active { opacity: 1; }
+
+/* ── 9. @mention autocomplete ────────────────────────────────────── */
+.velo-mention-drop {
+  position: fixed;
+  background: #fff;
+  border: 1.5px solid rgba(0,0,0,.12);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.15);
+  z-index: 9998;
+  min-width: 150px;
+  overflow: hidden;
+  display: none;
+}
+body.r-dark .velo-mention-drop {
+  background: #14261a;
+  border-color: rgba(255,255,255,.14);
+}
+.velo-mention-item {
+  padding: 9px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-family: 'Jost', sans-serif;
+  font-weight: 600;
+}
+.velo-mention-item:hover { background: rgba(0,0,0,.05); }
+body.r-dark .velo-mention-item:hover { background: rgba(255,255,255,.07); }
+
+/* ── 10. Input area: consistent emoji + send layout ─────────────── */
+.feed-input-area,
+.feed-input-row {
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 8px !important;
+}
