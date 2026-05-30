@@ -7047,3 +7047,43 @@ body.r-dark .home-dqa-btn:hover {
     background: rgba(116,198,157,.16) !important;
   }
 }
+
+/* ── v334: Desktop hero — photo background (day/night) ──────────── */
+@media (min-width: 860px) {
+  .r-hero-v2 {
+    background-image: url('https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/IMG_2791%20(1).png') !important;
+    background-size: cover !important;
+    background-position: center top !important;
+    background-color: transparent !important;
+  }
+  /* Readability overlay — light mode: soft white wash */
+  .r-hero-v2::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(242,251,245,.60);
+    pointer-events: none;
+    z-index: 0;
+  }
+  /* Dark mode: deep green-black wash */
+  body.r-dark .r-hero-v2::after {
+    background: rgba(6,18,10,.65);
+  }
+  /* Keep text content and glow above the overlay */
+  .r-hero-v2::before,
+  .r-hero-left,
+  .r-hero-right {
+    position: relative;
+    z-index: 1;
+  }
+}
+/* Override the global dark-mode glass bg that fights the image */
+@media (min-width: 860px) {
+  body.r-dark .r-hero-v2 {
+    background-image: url('https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/IMG_2791%20(1).png') !important;
+    background-size: cover !important;
+    background-position: center top !important;
+    background-color: transparent !important;
+  }
+}
