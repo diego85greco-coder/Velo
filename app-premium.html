@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-298">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-298">
+  <link rel="stylesheet" href="premium.css?v=20260530-299">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-299">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -899,27 +899,33 @@
                 </div>
               </div>
               <div id="guardianSubLabel" style="font-size:9px;color:var(--ink5);letter-spacing:.5px;margin:-4px 0 6px;opacity:.8">Estado · activá el escudo para modo guardián</div>
-              <!-- Quick controls: theme slider + bell — visible on mobile below guardian row -->
-              <div id="homeQuickControls" style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-                <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-                  <button onclick="rToggleDarkMode()" title="Cambiar estilo" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;padding:6px 10px;cursor:pointer">
-                    <span style="font-size:12px;line-height:1">☀️</span>
+              <!-- Quick controls: theme slider + bell + contacts + SOS — all equal size -->
+              <div id="homeQuickControls" style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                  <button onclick="rToggleDarkMode()" title="Cambiar estilo" style="height:42px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;padding:0 12px;cursor:pointer;box-sizing:border-box">
+                    <span style="font-size:13px;line-height:1">☀️</span>
                     <span class="r-theme-track"><span class="r-theme-knob"></span></span>
-                    <span style="font-size:12px;line-height:1">🌙</span>
+                    <span style="font-size:13px;line-height:1">🌙</span>
                   </button>
                   <span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45)">ESTILO</span>
                 </div>
-                <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-                  <button onclick="pGoTo('inbox')" title="Buzón y notificaciones" style="position:relative;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;width:38px;height:38px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                  <button onclick="pGoTo('inbox')" title="Buzón y notificaciones" style="position:relative;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;width:42px;height:42px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
                     🔔<span id="homeBellBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
                   </button>
                   <span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45)">BUZÓN</span>
                 </div>
-                <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-                  <button onclick="pGoTo('contacts')" title="Contactos favoritos" style="position:relative;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;width:38px;height:38px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                  <button onclick="pGoTo('contacts')" title="Contactos favoritos" style="position:relative;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;width:42px;height:42px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
                     👥<span id="favCountBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
                   </button>
                   <span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45)">FAVORITOS</span>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                  <button onclick="pOpenSOS()" title="SOS emergencia" style="background:rgba(210,50,50,.28);border:1.5px solid rgba(220,60,60,.45);border-radius:999px;width:42px;height:42px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    🆘
+                  </button>
+                  <span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45)">SOS</span>
                 </div>
               </div>
               <h1 class="p-title" id="homeGreetTxt">Buenos días</h1>
@@ -3008,8 +3014,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-298"></script>
-<script src="premium-redesign.js?v=20260530-298"></script>
+<script src="premium.js?v=20260530-299"></script>
+<script src="premium-redesign.js?v=20260530-299"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
