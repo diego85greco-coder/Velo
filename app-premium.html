@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260529-297">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260529-297">
+  <link rel="stylesheet" href="premium.css?v=20260530-298">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-298">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -915,6 +915,12 @@
                   </button>
                   <span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45)">BUZÓN</span>
                 </div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <button onclick="pGoTo('contacts')" title="Contactos favoritos" style="position:relative;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;width:38px;height:38px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">
+                    👥<span id="favCountBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
+                  </button>
+                  <span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45)">FAVORITOS</span>
+                </div>
               </div>
               <h1 class="p-title" id="homeGreetTxt">Buenos días</h1>
               <h2 class="r-hero-italic"><em id="homeGreetSub">Hoy la comunidad está contigo.</em></h2>
@@ -929,8 +935,6 @@
             <div class="r-hero-right">
               <div class="r-hero-actions-top">
                 <span id="rDarkToggleIcon" style="display:none">🌙</span>
-                <button onclick="pGoTo('contacts')" title="Contactos favoritos" class="r-hero-icon-btn">⭐<span id="favCountBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span></button>
-                <button class="r-hero-icon-btn r-sos-icon-btn" onclick="pOpenSOS()" title="SOS">🆘</button>
                 <button class="p-topbar-btn" style="display:none" id="homeMenuBtn" onclick="toggleMobileMenu()">☰</button>
               </div>
               <div class="r-hero-stats">
@@ -3004,8 +3008,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260529-297"></script>
-<script src="premium-redesign.js?v=20260529-297"></script>
+<script src="premium.js?v=20260530-298"></script>
+<script src="premium-redesign.js?v=20260530-298"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

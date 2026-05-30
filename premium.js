@@ -440,14 +440,9 @@ async function _sbSyncProfile(userId){
             _myGuardianStatus = restoredStatus;
           }
           setTimeout(_startGuardianReqListener, 300);
-        } else {
-          // DB says not guardian — keep LS in sync so the pill reflects reality
-          safeLS('set','velo_is_guardian','false');
+          // Re-render only when DB confirms ON — never override a manual toggle the user made after this query was sent
+          _renderHomeStatusToggle();
         }
-        // Re-render the home pill now that the true DB state is known.
-        // The pill was first rendered 100ms after boot (before this async query returned),
-        // so it may show stale ON/OFF state without this second render.
-        _renderHomeStatusToggle();
       }
     }).catch(function(){});
   // Refresh all UI with synced data
