@@ -365,8 +365,8 @@ function enrichGreeting() {
   setTimeout(tryAppend, 600);
 }
 
-/* ── Greeting ↔ daily quote rotation (8s / 8s, elegant fade+slide) ── */
-function initGreetingRotation() {
+/* ── Greeting rotation — disabled; saludo es estático ─────────────── */
+function initGreetingRotation() { return; /* animation removed per v312 */
   var greetBlock = document.getElementById('homeGreetBlock');
   var h1         = document.getElementById('homeGreetTxt');
   var subtitle   = document.getElementById('homeGreetSub');

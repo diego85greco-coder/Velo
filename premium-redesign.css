@@ -6274,3 +6274,94 @@ body:not(.r-dark) .r-hs-icon { color: rgba(27, 94, 58, 0.75) !important; filter:
   box-sizing: border-box !important;
   overflow: hidden !important;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   v312 — Targeted fixes: icons, pills alignment, topbar toggle, no animation
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Topbar theme toggle button ──────────────────────────────── */
+.r-topbar-theme-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: rgba(200, 158, 56, 0.9);
+  padding: 0;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+body:not(.r-dark) .r-topbar-theme-btn { color: rgba(200, 140, 20, 0.85); }
+/* Sun shows in light mode, moon in dark mode */
+body.r-dark .r-tbar-sun { display: none; }
+body:not(.r-dark) .r-tbar-moon { display: none; }
+
+/* ── 2. Guardian control: centered column, consistent width ─────── */
+#homeStatusToggle {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 0 !important;
+  margin-bottom: 20px !important;
+}
+#homeGuardianWrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+#homeGuardianWrap > div {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100%;
+}
+/* The Modo Guardián pill button */
+.r-gmode-btn {
+  width: auto !important;
+  min-width: 160px !important;
+  max-width: 220px !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  font-size: 12px !important;
+}
+/* Status buttons (Disponible/Ocupado) when guardian active */
+#homeGuardianWrap button[onclick*="SetMyGuardianStatus"],
+#homeGuardianWrap button[onclick*="pSetMyGuardianStatus"] {
+  min-width: 160px !important;
+  max-width: 220px !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* ── 3. Shortcut grid: all 4 icons gold, no red on SOS ──────────── */
+/* Remove the red icon color — use gold for all icons */
+.r-home-shortcut--sos .r-hs-icon {
+  color: inherit !important;
+}
+/* Ensure all icons gold in dark mode */
+body.r-dark .r-hs-icon {
+  color: rgba(200, 158, 56, 0.9) !important;
+  filter: drop-shadow(0 0 6px rgba(200, 158, 56, 0.3)) !important;
+}
+/* Ensure all icons dark-green in light mode */
+body:not(.r-dark) .r-hs-icon {
+  color: rgba(27, 80, 50, 0.78) !important;
+  filter: none !important;
+}
+/* SOS border keeps its red tint but icon stays gold */
+.r-home-shortcut--sos { border-color: rgba(220, 60, 60, .38) !important; }
+
+/* ── 4. Greeting block: static, centered, spaced ───────────────── */
+#homeGreetBlock {
+  text-align: center !important;
+  margin-top: 20px !important;
+  margin-bottom: 28px !important;
+}
+/* Quote wrap hidden — no animation */
+#homeGreetQuote { display: none !important; }

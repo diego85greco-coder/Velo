@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-311">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-311">
+  <link rel="stylesheet" href="premium.css?v=20260530-312">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-312">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -164,6 +164,10 @@
         <button onclick="pGoTo('donate-cta')" class="r-donar-btn">💛 Donar</button>
         <button onclick="pShowPlusModal()" class="r-plus-btn">⭐ Plus</button>
         <button class="p-topbar-btn" onclick="toggleMobileMenu()">☰</button>
+        <button onclick="rToggleDarkMode()" class="r-topbar-theme-btn" title="Modo claro/oscuro">
+          <span class="r-tbar-sun"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
+          <span class="r-tbar-moon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></span>
+        </button>
       </div>
     </header>
 
@@ -892,16 +896,8 @@
           <div class="home-header r-hero-v2">
             <div class="r-hero-left">
               <div id="homeHeroLabel" style="font-size:10px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:rgba(200,158,56,.72);margin-bottom:12px;display:flex;align-items:center;gap:6px"><span>—</span><span>JARDÍN DE HOY</span></div>
-              <!-- Controls: theme toggle + guardian mode button -->
-              <div id="homeStatusToggle" style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:18px">
-                <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-                  <button onclick="rToggleDarkMode()" title="Cambiar estilo" style="height:42px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;padding:0 12px;cursor:pointer;box-sizing:border-box">
-                    <span style="font-size:13px;line-height:1">☀️</span>
-                    <span class="r-theme-track"><span class="r-theme-knob"></span></span>
-                    <span style="font-size:13px;line-height:1">🌙</span>
-                  </button>
-                  <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45)">CLARO/OSCURO</span>
-                </div>
+              <!-- Guardian mode control (theme toggle moved to topbar) -->
+              <div id="homeStatusToggle" style="display:flex;justify-content:center;margin-bottom:20px">
                 <div id="homeGuardianWrap"></div>
               </div>
               <div id="homeTimeIcon"></div>
@@ -920,7 +916,7 @@
                 </button>
                 <button class="r-home-shortcut" onclick="pGoTo('contacts')" style="position:relative">
                   <span id="favCountBadge" style="display:none;position:absolute;top:8px;right:8px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
-                  <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></span>
+                  <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
                   <span>FAVORITOS</span>
                 </button>
                 <button class="r-home-shortcut" onclick="pGoTo('inbox')" style="position:relative">
@@ -3014,8 +3010,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-311"></script>
-<script src="premium-redesign.js?v=20260530-311"></script>
+<script src="premium.js?v=20260530-312"></script>
+<script src="premium-redesign.js?v=20260530-312"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
