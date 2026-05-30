@@ -1254,35 +1254,56 @@ function pSaveMyStatus(){
 // Each entry: { text, author }
 var _dailyQuoteFallbacks = [
   { text: 'La vida es lo que pasa mientras estás ocupado haciendo otros planes.', author: 'John Lennon' },
-  { text: 'En el medio de la dificultad yace la oportunidad.', author: 'Albert Einstein' },
+  { text: 'El futuro pertenece a quienes creen en la belleza de sus sueños.', author: 'Eleanor Roosevelt' },
   { text: 'Caer siete veces y levantarse ocho.', author: 'Proverbio japonés' },
   { text: 'Sé el cambio que quieres ver en el mundo.', author: 'Mahatma Gandhi' },
   { text: 'La felicidad no es algo hecho. Viene de tus propias acciones.', author: 'Dalai Lama' },
-  { text: 'Todo lo que puedas imaginar, la naturaleza ya lo ha creado.', author: 'Albert Einstein' },
-  { text: 'Dos cosas son infinitas: el universo y la estupidez humana. Y del universo no estoy seguro.', author: 'Albert Einstein' },
   { text: 'El éxito es ir de fracaso en fracaso sin perder el entusiasmo.', author: 'Winston Churchill' },
   { text: 'No llores porque terminó, sonríe porque sucedió.', author: 'Gabriel García Márquez' },
   { text: 'Nunca es demasiado tarde para ser lo que podrías haber sido.', author: 'George Eliot' },
-  { text: 'La vida es muy peligrosa. No por las personas que hacen el mal, sino por las que se sientan a ver lo que pasa.', author: 'Albert Einstein' },
   { text: 'Haz lo que puedas, con lo que tengas, donde estés.', author: 'Theodore Roosevelt' },
   { text: 'El único modo de hacer un gran trabajo es amar lo que haces.', author: 'Steve Jobs' },
-  { text: 'No es la especie más fuerte la que sobrevive, sino la más adaptable al cambio.', author: 'Charles Darwin' },
   { text: 'Lo que no te mata te hace más fuerte.', author: 'Friedrich Nietzsche' },
-  { text: 'Primero lo ignoran, después se ríen de ti, luego te atacan. Y entonces ganas.', author: 'Mahatma Gandhi' },
   { text: 'El secreto de salir adelante es empezar.', author: 'Mark Twain' },
   { text: 'La imaginación es más importante que el conocimiento.', author: 'Albert Einstein' },
   { text: 'Sé tú mismo; los demás puestos ya están ocupados.', author: 'Oscar Wilde' },
-  { text: 'La vida es breve, y es pecado desperdiciarla.', author: 'Séneca' },
   { text: 'No hay viento favorable para el barco que no sabe adónde va.', author: 'Séneca' },
-  { text: 'Vivir es la cosa más rara del mundo. La mayoría de la gente solo existe.', author: 'Oscar Wilde' },
   { text: 'La esperanza es el sueño del hombre despierto.', author: 'Aristóteles' },
-  { text: 'El único lugar donde el éxito viene antes que el trabajo es en el diccionario.', author: 'Vidal Sassoon' },
-  { text: 'La mayor gloria no es nunca caer, sino levantarse cada vez que caemos.', author: 'Confucio' },
-  { text: 'Cree que puedes y ya estás a mitad de camino.', author: 'Theodore Roosevelt' },
-  { text: 'El dolor es temporal, la gloria es para siempre.', author: 'Lance Armstrong' },
   { text: 'Nuestros sueños se pueden hacer realidad si tenemos el coraje de perseguirlos.', author: 'Walt Disney' },
-  { text: 'No importa cuán despacio vayas, siempre y cuando no te detengas.', author: 'Confucio' },
-  { text: 'En el corazón de cada invierno hay una primavera que tiembla.', author: 'Khalil Gibran' }
+  { text: 'En el corazón de cada invierno hay una primavera que tiembla.', author: 'Khalil Gibran' },
+  { text: 'Solo en la oscuridad puedes ver las estrellas.', author: 'Martin Luther King Jr.' },
+  { text: 'La peor soledad es no estar cómodo con uno mismo.', author: 'Mark Twain' },
+  { text: 'Si puedes soñarlo, puedes hacerlo.', author: 'Walt Disney' },
+  { text: 'Todo lo que se puede imaginar es real.', author: 'Pablo Picasso' },
+  { text: 'La creatividad es la inteligencia divirtiéndose.', author: 'Albert Einstein' },
+  { text: 'Siempre parece imposible hasta que se hace.', author: 'Nelson Mandela' },
+  { text: 'No cuentes los días, haz que los días cuenten.', author: 'Muhammad Ali' },
+  { text: 'Cuando la vida te da razones para llorar, muéstrale que tienes mil razones para reír.', author: 'Paulo Coelho' },
+  { text: 'La belleza de vivir está en atreverse a vivirla plenamente.', author: 'Frida Kahlo' },
+  { text: 'Al final, lo que importa no son los años de vida, sino la vida en esos años.', author: 'Abraham Lincoln' },
+  { text: 'El coraje es resistencia al miedo, dominio del miedo, no ausencia del miedo.', author: 'Mark Twain' },
+  { text: 'Que tu vida sea la respuesta a tus oraciones.', author: 'Proverbio sufí' },
+  { text: 'Apunta a la luna. Aunque falles, aterrizarás entre las estrellas.', author: 'Les Brown' },
+  { text: 'No hay nada imposible para un corazón valiente.', author: 'Juana de Arco' },
+  { text: 'Vive como si fueras a morir mañana. Aprende como si fueras a vivir para siempre.', author: 'Mahatma Gandhi' },
+  { text: 'La gratitud convierte lo que tenemos en suficiente.', author: 'Melody Beattie' },
+  { text: 'La gentileza es el idioma que el sordo puede oír y el ciego puede ver.', author: 'Mark Twain' },
+  { text: 'Siempre parece imposible hasta que se hace.', author: 'Nelson Mandela' },
+  { text: 'Cada día es una segunda oportunidad.', author: 'Proverbio popular' },
+  { text: 'Donde hay voluntad, hay un camino.', author: 'Proverbio inglés' },
+  { text: 'Dios nunca cierra una puerta sin abrir una ventana.', author: 'Papa Francisco' },
+  { text: 'La paz no es solo ausencia de guerra; es una virtud, un estado mental.', author: 'Baruch Spinoza' },
+  { text: 'El amor soporta todo, cree todo, espera todo, aguanta todo.', author: '1 Corintios 13:7' },
+  { text: 'No temas, porque yo estoy contigo.', author: 'Isaías 41:10' },
+  { text: 'Ser feliz no significa que todo sea perfecto. Significa que decidiste ver más allá de las imperfecciones.', author: 'Gerard Way' },
+  { text: 'La música puede cambiar el mundo porque puede cambiar a las personas.', author: 'Bono' },
+  { text: 'Nunca camines por el camino trazado, pues te llevará solo a donde otros ya han ido.', author: 'Alexander Graham Bell' },
+  { text: 'No importa cuántas veces caes, sino cuántas te levantas.', author: 'Vince Lombardi' },
+  { text: 'Lo que el sol es para las flores, eres tú para mí.', author: 'Proverbio' },
+  { text: 'Eres tú quien decide qué tipo de persona ser hoy.', author: 'Viktor Frankl' },
+  { text: 'Nadie puede hacerte sentir inferior sin tu consentimiento.', author: 'Eleanor Roosevelt' },
+  { text: 'El sufrimiento que no te mata te hace más sabio y más fuerte.', author: 'Jorge Bucay' },
+  { text: 'Trata a los demás como quieras que te traten a ti.', author: 'Regla de oro universal' }
 ];
 
 async function _loadDailyMotivationalQuote(){
@@ -1292,7 +1313,7 @@ async function _loadDailyMotivationalQuote(){
   // Use LOCAL date so quote rotates at local midnight, not UTC midnight
   var _d0 = new Date();
   var today = _d0.getFullYear()+'-'+String(_d0.getMonth()+1).padStart(2,'0')+'-'+String(_d0.getDate()).padStart(2,'0');
-  var cacheKey = 'velo_daily_quote_'+today;
+  var cacheKey = 'velo_dq3_'+today; // v3 prefix forces regeneration if stale cache exists
 
   // Load history first — needed for dedup check and avoid clause
   var history = [];
@@ -1331,14 +1352,30 @@ async function _loadDailyMotivationalQuote(){
   var avoidTextClause = prevTexts.length
     ? 'NO repitas estas frases que ya aparecieron recientemente: '+prevTexts.map(function(t){ return '"'+t.slice(0,35)+'..."'; }).join('; ')+'. '
     : '';
-  var prompt = 'Dame una frase célebre inspiradora, positiva y motivadora de un autor, escritor, filósofo, líder histórico, '
-    +'novelista famoso o personaje conocido. Hoy es '+dias[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+'. '
+  // Pick a random source category each day using date as seed (forces variety)
+  var _cats = [
+    'un filósofo griego o estoico (Epicteto, Marco Aurelio, Sócrates, Platón, Aristóteles)',
+    'un escritor o poeta latinoamericano (Pablo Neruda, Gabriel García Márquez, Octavio Paz, Borges, Isabel Allende, Mario Benedetti)',
+    'un líder espiritual o religioso (Papa Francisco, Dalai Lama, Francisco de Asís, Martin Luther King Jr., Madre Teresa)',
+    'un científico, inventor o explorador (Marie Curie, Stephen Hawking, Carl Sagan, Leonardo da Vinci, Nikola Tesla)',
+    'un artista, músico o cantante (Frida Kahlo, Pablo Picasso, Beethoven, Bob Marley, Shakira, Mercedes Sosa)',
+    'un personaje de libro o película inspiradora (El Principito, El Alquimista de Paulo Coelho, Mufasa en El Rey León, Gandalf, Dumbledore)',
+    'un empresario, emprendedor o deportista (Muhammad Ali, Serena Williams, Roger Federer, Steve Jobs, Elon Musk)',
+    'un proverbio sabio de cultura africana, árabe, china, japonesa o indígena latinoamericana',
+    'un poeta o escritor universal (Rainer Maria Rilke, Walt Whitman, Emily Dickinson, Khalil Gibran, Antoine de Saint-Exupéry)',
+    'un líder histórico o activista de derechos humanos (Nelson Mandela, Eleanor Roosevelt, Simón Bolívar, Sor Juana, Rosa Parks)',
+    'una frase bíblica o de texto sagrado que sea de esperanza, amor o fortaleza',
+    'un psicólogo o autor de autoayuda (Viktor Frankl, Brené Brown, Wayne Dyer, Jorge Bucay, Louise Hay)'
+  ];
+  var _catIdx = (d.getDate() * 7 + d.getMonth() * 31 + d.getFullYear()) % _cats.length;
+  var _chosenCat = _cats[_catIdx];
+  var prompt = 'Dame UNA frase célebre, inspiradora y positiva de '+_chosenCat+'. '
+    +'Hoy es '+dias[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+'. '
     +avoidClause+avoidTextClause
-    +'Elige autores variados: filósofos griegos, escritores latinoamericanos, líderes históricos, científicos, artistas, '
-    +'poetas. La frase debe ser sobre superación, vida, esperanza, alegría, coraje o amor. '
-    +'Devolvé SOLO un objeto JSON con este formato exacto (sin markdown, sin explicación): '
-    +'{"text":"la frase traducida al español","author":"Nombre del autor"}. '
-    +'La frase debe tener entre 10 y 30 palabras. Que sea una frase real y conocida, no inventada.';
+    +'La frase debe transmitir esperanza, ánimo, superación, amor, bienestar, alegría o logro. '
+    +'Que sea una frase REAL y conocida, no inventada. Traducida al español si es en otro idioma. '
+    +'Entre 10 y 35 palabras. '
+    +'Devolvé SOLO un objeto JSON sin markdown: {"text":"frase en español","author":"Nombre completo del autor o fuente"}.';
 
   var raw = await _geminiCall(prompt, { temperature:0.92, maxOutputTokens:120 });
   var quote = null;
