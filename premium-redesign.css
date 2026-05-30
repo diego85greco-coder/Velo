@@ -6942,3 +6942,44 @@ body:not(.r-dark) .p-sidebar-theme-btn .r-tbar-moon { display: none; }
     justify-content: center !important;
   }
 }
+
+/* ── v331: Desktop quick-action strip (Ánimos / Donar / Plus) ───── */
+#homeDesktopQuickActs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.home-dqa-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: rgba(116,198,157,.08);
+  border: 1.5px solid rgba(116,198,157,.20);
+  border-radius: 12px;
+  padding: 9px 4px 7px;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--ink4);
+  font-family: 'Jost', sans-serif;
+  transition: background .15s, transform .1s;
+}
+.home-dqa-btn:hover {
+  background: rgba(116,198,157,.16);
+  transform: translateY(-1px);
+}
+body.r-dark .home-dqa-btn {
+  background: rgba(116,198,157,.10);
+  border-color: rgba(116,198,157,.22);
+  color: rgba(116,198,157,.70);
+}
+body.r-dark .home-dqa-btn:hover {
+  background: rgba(116,198,157,.18);
+}
+@media (max-width: 859px) {
+  #homeDesktopQuickActs { display: none !important; }
+}

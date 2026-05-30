@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-330">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-330">
+  <link rel="stylesheet" href="premium.css?v=20260530-331">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-331">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -901,6 +901,21 @@
           <div class="home-header r-hero-v2">
             <div class="r-hero-left">
               <div id="homeHeroLabel" style="font-size:10px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:rgba(200,158,56,.72);margin-bottom:12px;display:flex;align-items:center;gap:6px"><span>—</span><span>JARDÍN DE HOY</span></div>
+              <!-- Desktop quick-action strip — hidden on mobile via CSS -->
+              <div id="homeDesktopQuickActs">
+                <button onclick="pGoTo('mood')" class="home-dqa-btn">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                  <span>Ánimos</span>
+                </button>
+                <button onclick="pGoTo('donation-exit')" class="home-dqa-btn">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                  <span>Donar</span>
+                </button>
+                <button onclick="pGoTo('diary')" class="home-dqa-btn">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  <span>Plus</span>
+                </button>
+              </div>
               <!-- Guardian mode control (theme toggle moved to topbar) -->
               <div id="homeStatusToggle" style="display:flex;justify-content:center;margin-bottom:20px">
                 <div id="homeGuardianWrap"></div>
@@ -1922,7 +1937,7 @@
       <div class="p-page" id="pg-inbox">
         <div class="p-page-scroll">
           <div class="p-page-inner">
-            <div class="p-page-hdr">
+            <div class="p-page-hdr" style="display:flex;align-items:center;justify-content:space-between">
               <div class="p-page-hdr-back">
                 <button class="p-back-btn" onclick="pGoTo('home')">←</button>
                 <div>
@@ -1930,6 +1945,7 @@
                   <h2 class="p-title">Mensajes</h2>
                 </div>
               </div>
+              <button onclick="pInboxVaciar()" style="flex-shrink:0;background:transparent;border:1.5px solid var(--border2);font-size:11px;font-weight:700;color:var(--ink5);cursor:pointer;font-family:'Jost',sans-serif;padding:5px 11px;border-radius:10px;letter-spacing:.04em">Vaciar</button>
             </div>
             <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Acá llegan tus notificaciones internas: análisis de ánimo mensuales, respuestas del mar, avisos del sistema y más. Solo vos podés verlos.</p>
             <div id="inboxList"></div>
@@ -3015,8 +3031,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-330"></script>
-<script src="premium-redesign.js?v=20260530-330"></script>
+<script src="premium.js?v=20260530-331"></script>
+<script src="premium-redesign.js?v=20260530-331"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

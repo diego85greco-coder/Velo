@@ -7453,10 +7453,12 @@ function pRenderInbox(){
   var el = document.getElementById('inboxList');
   if(!el) return;
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  var _delSet = []; try{ _delSet = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
+  msgs = msgs.filter(function(m){ return _delSet.indexOf(m.id) < 0; });
   var mockMsgs = [
     { id:'m1', tipo:'sistema', icon:'💚', remitente:'Equipo Velo', asunto:'¡Bienvenido/a!', extracto:'Gracias por unirte a Velo. Aquí encontrarás apoyo.', leido:false, fecha:'Ahora' },
     { id:'m2', tipo:'sistema', icon:'🌿', remitente:'Velo', asunto:'Consejo del día', extracto:'Recuerda: está bien no estar bien. El primer paso es reconocerlo.', leido:true, fecha:'Hoy' }
-  ];
+  ].filter(function(m){ return _delSet.indexOf(m.id) < 0; });
   var all = msgs.concat(mockMsgs);
   // Load Supabase broadcasts async and prepend them
   var userType = safeLS('get','velo_user_type') || 'user';
@@ -7468,6 +7470,9 @@ function pRenderInbox(){
     var localIds = msgs.map(function(m){ return m.id; });
     var newBcs = bcs.filter(function(b){ return localIds.indexOf(b.id) < 0; });
     if(!newBcs.length) return;
+    var _del2 = []; try{ _del2 = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
+    newBcs = newBcs.filter(function(b){ return _del2.indexOf('bc_'+b.id) < 0; });
+    var _delBtnStyle = 'flex-shrink:0;background:transparent;border:none;color:var(--ink5);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;line-height:1;align-self:flex-start;opacity:.55';
     var bcMsgs = newBcs.map(function(b){
       var readKey = 'velo_bcast_read_'+b.id;
       var fecha = b.sent_at ? new Date(b.sent_at).toLocaleDateString('es',{day:'2-digit',month:'short'}) : '';
@@ -7484,22 +7489,23 @@ function pRenderInbox(){
         ? '<div style="font-size:11px;color:var(--sage);font-weight:600;margin-bottom:2px;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_escHtml(senderName)+' ›</div>'
         : '';
       var isAlreadyRead = !!safeLS('get',readKey);
+      var _xBtn = '<button onclick="event.stopPropagation();pDeleteInboxMsg(\'bc_'+b.id+'\',this)" style="'+_delBtnStyle+'">×</button>';
       // Monthly report special card
       if(b.body && b.body.indexOf('__MONTHLY_REPORT__')===0){
         var rpMonth = b.body.slice('__MONTHLY_REPORT__'.length);
         var rpMon = parseInt((rpMonth.split('-')[1]||'1'))-1;
         var rpMN = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
         var rpMName = rpMN[rpMon]||rpMonth;
-        return '<div class="p-inbox-msg'+(isAlreadyRead?'':' unread')+'" style="cursor:pointer" onclick="pOpenMonthlyReport('+_jsAttr(rpMonth)+','+_jsAttr(readKey)+',this)">'
+        return '<div class="p-inbox-msg'+(isAlreadyRead?'':' unread')+'" data-mid="bc_'+b.id+'" style="cursor:pointer" onclick="pOpenMonthlyReport('+_jsAttr(rpMonth)+','+_jsAttr(readKey)+',this)">'
           +'<div style="display:flex;flex-shrink:0">'+(isAlreadyRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
           +'<div class="p-inbox-ic" style="background:rgba(180,140,220,.14);font-size:18px">📊</div>'
           +'<div style="flex:1;min-width:0">'
           +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">Tu resumen de '+rpMName+'</div>'
           +'<div style="font-size:11px;color:var(--ink4);line-height:1.45">Gemini preparó un resumen personalizado de tu mes: ánimos, diario y más.</div>'
           +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:rgba(180,140,220,.85)">Ver mi resumen →</span>')+'</div>'
-          +'</div></div>';
+          +'</div>'+_xBtn+'</div>';
       }
-      return '<div class="p-inbox-msg'+(isAlreadyRead?'':' unread')+'" style="cursor:pointer" onclick="pOpenBroadcastMsg('+_jsAttr(readKey)+','+_jsAttr(b.subject||'')+','+_jsAttr(b.body||'')+','+_jsAttr(senderName||'')+','+_jsAttr(fecha||'')+',this,'+_jsAttr(senderId||'')+','+_jsAttr(senderAv||'')+','+_jsAttr(senderUsername||'')+')">'
+      return '<div class="p-inbox-msg'+(isAlreadyRead?'':' unread')+'" data-mid="bc_'+b.id+'" style="cursor:pointer" onclick="pOpenBroadcastMsg('+_jsAttr(readKey)+','+_jsAttr(b.subject||'')+','+_jsAttr(b.body||'')+','+_jsAttr(senderName||'')+','+_jsAttr(fecha||'')+',this,'+_jsAttr(senderId||'')+','+_jsAttr(senderAv||'')+','+_jsAttr(senderUsername||'')+')">'
         +'<div style="display:flex;flex-shrink:0">'+(isAlreadyRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
         +iconHtml
         +'<div style="flex:1;min-width:0">'
@@ -7507,7 +7513,7 @@ function pRenderInbox(){
         +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(b.subject)+'</div>'
         +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(b.body||'')+'</div>'
         +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:var(--sage)">Toca para leer →</span>')+'</div>'
-        +'</div></div>';
+        +'</div>'+_xBtn+'</div>';
     }).join('');
     // Prepend broadcasts before existing inbox items, after contact banner
     var banner = el2.querySelector('div[onclick*="contact"]');
@@ -7524,12 +7530,15 @@ function pRenderInbox(){
       if(!el3) return;
       var existingIds = [];
       try{ existingIds = JSON.parse(safeLS('get','velo_inbox_reply_ids')||'[]'); }catch(e){}
+      var _del3 = []; try{ _del3 = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
+      replies = replies.filter(function(r){ return _del3.indexOf('rp_'+r.id) < 0; });
+      var _xBtnRp = function(id){ return '<button onclick="event.stopPropagation();pDeleteInboxMsg(\'rp_'+id+'\',this)" style="flex-shrink:0;background:transparent;border:none;color:var(--ink5);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;line-height:1;align-self:flex-start;opacity:.55">×</button>'; };
       var replyMsgs = replies.map(function(r){
         var readKey = 'velo_reply_read_'+r.id;
         var isRead = !!safeLS('get', readKey);
         var fecha = r.reply_at ? new Date(r.reply_at).toLocaleDateString('es',{day:'2-digit',month:'short'}) : '';
         var allowR = !!r.allow_reply;
-        return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" style="cursor:pointer" onclick="pOpenInboxAdminReply('+_jsAttr(r.id)+','+_jsAttr(r.topic||'Consulta')+','+_jsAttr(r.mensaje||'')+','+_jsAttr(r.reply||'')+','+allowR+','+_jsAttr(fecha)+',this)">'
+        return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" data-mid="rp_'+r.id+'" style="cursor:pointer" onclick="pOpenInboxAdminReply('+_jsAttr(r.id)+','+_jsAttr(r.topic||'Consulta')+','+_jsAttr(r.mensaje||'')+','+_jsAttr(r.reply||'')+','+allowR+','+_jsAttr(fecha)+',this)">'
           +'<div style="display:flex;flex-shrink:0">'+(isRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
           +'<div class="p-inbox-ic" style="background:rgba(200,165,100,.12)">💌</div>'
           +'<div style="flex:1;min-width:0">'
@@ -7537,7 +7546,7 @@ function pRenderInbox(){
           +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml((r.reply||'').slice(0,120))+'</div>'
           +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+' · Equipo Velo</div>'
           +(isRead?'':'<div style="font-size:10px;color:#C8A560;margin-top:4px">Toca para leer →</div>')
-          +'</div></div>';
+          +'</div>'+_xBtnRp(r.id)+'</div>';
       }).join('');
       if(replyMsgs){
         var firstItem = el3.querySelector('.p-inbox-msg');
@@ -7568,7 +7577,8 @@ function pRenderInbox(){
     var readKey = 'velo_read_'+m.id;
     var isRead = m.leido || !!safeLS('get', readKey);
     var markReadInline = '(function(el){var ms=[];try{ms=JSON.parse(safeLS(\'get\',\'velo_inbox\')||\'[]\');}catch(e){}safeLS(\'set\',\'velo_inbox\',JSON.stringify(ms.map(function(x){return x.id===\''+m.id+'\'?Object.assign({},x,{leido:true}):x;})));safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');el.classList.remove(\'unread\');var d=el.querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();})(this)';
-    return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" style="cursor:pointer"'
+    var _xBtnL = '<button onclick="event.stopPropagation();pDeleteInboxMsg(\''+m.id+'\',this)" style="flex-shrink:0;background:transparent;border:none;color:var(--ink5);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;line-height:1;align-self:flex-start;opacity:.55">×</button>';
+    return '<div class="p-inbox-msg'+(isRead?'':' unread')+'" data-mid="'+m.id+'" style="cursor:pointer"'
       +' onclick="'+(hasCuerpo ? 'pOpenInboxMsg(\''+m.id+'\',this)' : markReadInline)+'">'
       +'<div style="display:flex;flex-shrink:0">'+(isRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
       +'<div class="p-inbox-ic" style="background:'+(m.tipo==='encuesta'?'rgba(116,198,157,.12)':'var(--sage7)')+'">'+m.icon+'</div>'
@@ -7577,7 +7587,7 @@ function pRenderInbox(){
       +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+m.extracto+'</div>'
       +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+m.fecha+(hasCuerpo&&!isRead?' · <span style="color:var(--sage)">Toca para leer →</span>':'')+'</div>'
       +actionBtn
-      +'</div></div>';
+      +'</div>'+_xBtnL+'</div>';
   }).join('');
   // Auto-mark all non-cuerpo messages as read after 3s (clears badge after viewing inbox)
   setTimeout(function(){
@@ -7591,6 +7601,29 @@ function pRenderInbox(){
       if(dirty){ safeLS('set','velo_inbox', JSON.stringify(inbx2)); _updateHomeBell(); }
     }catch(e){}
   }, 3000);
+}
+
+function pDeleteInboxMsg(id, el){
+  var del = []; try{ del = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
+  if(del.indexOf(id) < 0){ del.push(id); safeLS('set','velo_inbox_deleted', JSON.stringify(del)); }
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  var newInbox = inbox.filter(function(m){ return m.id !== id; });
+  if(newInbox.length !== inbox.length){ safeLS('set','velo_inbox', JSON.stringify(newInbox)); }
+  if(el){ var card = el.closest('.p-inbox-msg'); if(card) card.remove(); }
+  _updateHomeBell();
+}
+
+function pInboxVaciar(){
+  if(!confirm('¿Vaciar el buzón? Se eliminarán todos los mensajes visibles.')) return;
+  var el = document.getElementById('inboxList');
+  if(!el) return;
+  var del = []; try{ del = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
+  el.querySelectorAll('.p-inbox-msg[data-mid]').forEach(function(c){
+    var id = c.getAttribute('data-mid'); if(id && del.indexOf(id) < 0) del.push(id);
+  });
+  safeLS('set','velo_inbox_deleted', JSON.stringify(del));
+  safeLS('set','velo_inbox', JSON.stringify([]));
+  pRenderInbox();
 }
 
 function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl, senderId, senderAv, senderUsername){
