@@ -6047,3 +6047,40 @@ body:not(.r-dark) .r-gmode-btn--on {
   border-color: rgba(34,197,94,.45) !important;
   color: rgba(22,130,60,.90) !important;
 }
+
+/* ── v308: 2×2 home shortcut grid ──────────────────────────────── */
+.r-home-shortcut {
+  background: rgba(255,255,255,.07);
+  border: 1.5px solid rgba(255,255,255,.13);
+  border-radius: 18px;
+  padding: 20px 8px 15px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  color: rgba(255,255,255,.82);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  font-family: 'Jost', 'Inter', sans-serif;
+  transition: background .18s, transform .12s;
+  -webkit-tap-highlight-color: transparent;
+  width: 100%;
+  box-sizing: border-box;
+}
+.r-home-shortcut:hover,
+.r-home-shortcut:active { background: rgba(255,255,255,.14); transform: scale(.97); }
+.r-hs-icon { font-size: 26px; line-height: 1; filter: drop-shadow(0 0 7px rgba(200,158,56,.38)); }
+.r-home-shortcut--sos { border-color: rgba(220,60,60,.38) !important; }
+.r-home-shortcut--sos .r-hs-icon { filter: drop-shadow(0 0 7px rgba(220,60,60,.45)); }
+
+/* light mode */
+body:not(.r-dark) .r-home-shortcut {
+  background: rgba(27,94,58,.06);
+  border-color: rgba(27,94,58,.14);
+  color: var(--ink3);
+}
+body:not(.r-dark) .r-home-shortcut:hover { background: rgba(27,94,58,.11); }
+body:not(.r-dark) .r-hs-icon { filter: none; }

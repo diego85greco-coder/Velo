@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-307">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-307">
+  <link rel="stylesheet" href="premium.css?v=20260530-308">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-308">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -892,11 +892,8 @@
           <div class="home-header r-hero-v2">
             <div class="r-hero-left">
               <div id="homeHeroLabel" style="font-size:10px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:rgba(200,158,56,.72);margin-bottom:12px;display:flex;align-items:center;gap:6px"><span>—</span><span>JARDÍN DE HOY</span></div>
-              <div id="homeStatusToggle" style="display:flex;align-items:flex-start;gap:12px;flex-wrap:nowrap;margin-bottom:8px">
-                <div id="homeGuardianWrap" style="display:none"></div>
-              </div>
-              <!-- Quick controls: theme slider + bell + contacts + SOS — all equal size -->
-              <div id="homeQuickControls" style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
+              <!-- Controls: theme toggle + guardian mode button -->
+              <div id="homeStatusToggle" style="display:flex;align-items:flex-start;gap:12px;flex-wrap:nowrap;margin-bottom:18px">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
                   <button onclick="rToggleDarkMode()" title="Cambiar estilo" style="height:42px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;padding:0 12px;cursor:pointer;box-sizing:border-box">
                     <span style="font-size:13px;line-height:1">☀️</span>
@@ -905,33 +902,34 @@
                   </button>
                   <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45)">CLARO/OSCURO</span>
                 </div>
-                <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-                  <button onclick="pGoTo('inbox')" title="Buzón y notificaciones" style="position:relative;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;width:42px;height:42px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                    🔔<span id="homeBellBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
-                  </button>
-                  <span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45)">BUZÓN</span>
-                </div>
-                <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-                  <button onclick="pGoTo('contacts')" title="Contactos favoritos" style="position:relative;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;width:42px;height:42px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                    👥<span id="favCountBadge" style="display:none;position:absolute;top:2px;right:2px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
-                  </button>
-                  <span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45)">FAVORITOS</span>
-                </div>
-                <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-                  <button onclick="pOpenSOS()" title="SOS emergencia" style="background:rgba(210,50,50,.28);border:1.5px solid rgba(220,60,60,.45);border-radius:999px;width:42px;height:42px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                    🆘
-                  </button>
-                  <span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45)">SOS</span>
-                </div>
+                <div id="homeGuardianWrap"></div>
               </div>
               <h1 class="p-title" id="homeGreetTxt">Buenos días</h1>
               <h2 class="r-hero-italic"><em id="homeGreetSub">Hoy la comunidad está contigo.</em></h2>
-              <p class="r-hero-sub" id="homeGreetParagraph">
-                <span id="homeGuardianCount">—</span> guardianes están en línea ahora mismo. Si necesitás escucha, escribir o solo respirar — todo está acá, a un toque.
-              </p>
+              <!-- 2×2 shortcut grid -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 16px">
+                <button class="r-home-shortcut r-home-shortcut--sos" onclick="pOpenSOS()">
+                  <span class="r-hs-icon">⚠️</span>
+                  <span>SOS</span>
+                </button>
+                <button class="r-home-shortcut" onclick="pGoTo('contacts')" style="position:relative">
+                  <span id="favCountBadge" style="display:none;position:absolute;top:8px;right:8px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
+                  <span class="r-hs-icon">🤍</span>
+                  <span>FAVORITOS</span>
+                </button>
+                <button class="r-home-shortcut" onclick="pGoTo('inbox')" style="position:relative">
+                  <span id="homeBellBadge" style="display:none;position:absolute;top:8px;right:8px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
+                  <span class="r-hs-icon">✉️</span>
+                  <span>BUZÓN</span>
+                </button>
+                <button class="r-home-shortcut" onclick="pGoTo('guardians')">
+                  <span class="r-hs-icon">👥</span>
+                  <span>COMUNIDAD</span>
+                </button>
+              </div>
               <div class="r-hero-actions">
-                <button class="p-btn p-btn--primary p-btn--lg" onclick="pGoTo('help')">Pedir compañía →</button>
-                <button class="p-btn p-btn--secondary p-btn--lg" onclick="pGoTo('diary')">Escribir en mi diario</button>
+                <button class="p-btn p-btn--primary p-btn--lg" onclick="pGoTo('help')">Pedir ayuda →</button>
+                <button class="p-btn p-btn--secondary p-btn--lg" onclick="pGoTo('diary')">Escribir en mi diario →</button>
               </div>
             </div>
             <div class="r-hero-right">
@@ -941,15 +939,15 @@
               </div>
               <div class="r-hero-stats">
                 <div class="r-hero-stat">
-                  <div class="r-hero-stat-val"><em id="homeStatGuardians">—</em><span style="font-size:.78em;opacity:.72"> 👥</span></div>
+                  <div class="r-hero-stat-val"><span style="font-size:.80em;opacity:.68;margin-right:3px">👤</span><em id="homeStatGuardians">—</em></div>
                   <div class="r-hero-stat-lbl">Guardianes en línea</div>
                 </div>
                 <div class="r-hero-stat">
-                  <div class="r-hero-stat-val" id="homeStatStreak">1</div>
+                  <div class="r-hero-stat-val"><span style="font-size:.80em;opacity:.68;margin-right:3px">📅</span><em id="homeStatStreak">1</em></div>
                   <div class="r-hero-stat-lbl">Días seguidos</div>
                 </div>
                 <div class="r-hero-stat">
-                  <div class="r-hero-stat-val" id="homeStatPlan">✦</div>
+                  <div class="r-hero-stat-val"><em id="homeStatPlan">Free</em></div>
                   <div class="r-hero-stat-lbl">Mi plan</div>
                 </div>
               </div>
@@ -3010,8 +3008,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-307"></script>
-<script src="premium-redesign.js?v=20260530-307"></script>
+<script src="premium.js?v=20260530-308"></script>
+<script src="premium-redesign.js?v=20260530-308"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
