@@ -524,10 +524,8 @@ function initSurveyDismissal() {
     var isGuardian = safeLS('get', 'velo_is_guardian') === 'true';
 
     var segPill = '<div class="r-status-combined-pill">'
-      + '<button class="r-status-seg' + (st === 'disponible' ? ' active' : '') + '" onclick="pSetUserStatus(\'disponible\')">'
-      + '<span class="r-status-dot r-status-dot--' + (st === 'disponible' ? 'green' : 'gray') + '"></span>Disponible</button>'
-      + '<button class="r-status-seg' + (st === 'ocupado' ? ' active' : '') + '" onclick="pSetUserStatus(\'ocupado\')">'
-      + '<span class="r-status-dot r-status-dot--' + (st === 'ocupado' ? 'yellow' : 'gray') + '"></span>Ocupado</button>'
+      + '<button class="r-status-seg r-status-seg--disp' + (st === 'disponible' ? ' active' : '') + '" onclick="pSetUserStatus(\'disponible\')">Disponible</button>'
+      + '<button class="r-status-seg r-status-seg--ocup' + (st === 'ocupado' ? ' active' : '') + '" onclick="pSetUserStatus(\'ocupado\')">Ocupado</button>'
       + '</div>';
 
     var guardClasses = 'r-guardian-pill'
