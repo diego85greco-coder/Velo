@@ -1560,9 +1560,11 @@ function _trackVisitDay(){
   if(days.indexOf(today) < 0){
     days.push(today);
     safeLS('set','velo_visit_days', JSON.stringify(days));
-    // Push updated count to Supabase so other devices / future sessions pick it up
-    var total = _getVisitDayCount();
-    _pushVisitCountToSB(total);
+    // Delay push so _pullVisitCountFromSB (runs at 2500ms) can set the SB baseline first.
+    // _getVisitDayCount() then returns Math.max(local, sbCount) — never overwrites a higher SB value.
+    setTimeout(function(){
+      _pushVisitCountToSB(_getVisitDayCount());
+    }, 3200);
   }
 }
 
