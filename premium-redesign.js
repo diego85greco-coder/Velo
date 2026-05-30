@@ -198,13 +198,12 @@
         }).catch(function(){});
     }
 
-    // ── Visit streak (consecutive days) ─────────────────────────
+    // ── Visit days (total unique days, same metric as profile "DÍAS") ──
     let streak = 1;
     try {
-      if (typeof _getConsecutiveStreak === 'function') {
-        streak = _getConsecutiveStreak() || 1;
+      if (typeof _getVisitDayCount === 'function') {
+        streak = _getVisitDayCount() || 1;
       } else {
-        // Fallback: manual calculation if premium.js not yet loaded
         const days = JSON.parse(
           (typeof safeLS === 'function' ? safeLS('get','velo_visit_days') : localStorage.getItem('velo_visit_days')) || '[]'
         );

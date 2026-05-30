@@ -1289,44 +1289,58 @@ async function _loadDailyMotivationalQuote(){
   var textEl   = document.getElementById('homeDailyQuoteText');
   var authorEl = document.getElementById('homeDailyQuoteAuthor');
   if(!textEl) return;
-  // Use LOCAL date (not UTC) so quote rotates at local midnight, not UTC midnight
+  // Use LOCAL date so quote rotates at local midnight, not UTC midnight
   var _d0 = new Date();
   var today = _d0.getFullYear()+'-'+String(_d0.getMonth()+1).padStart(2,'0')+'-'+String(_d0.getDate()).padStart(2,'0');
   var cacheKey = 'velo_daily_quote_'+today;
+
+  // Load history first — needed for dedup check and avoid clause
+  var history = [];
+  try{ history = JSON.parse(safeLS('get','velo_quote_history')||'[]'); }catch(e){}
+  // Only look at PREVIOUS days (not today's entry) to avoid false positives on re-load
+  var prevHistory = history.filter(function(q){ return q.date !== today; });
+  var prevTexts   = prevHistory.slice(0,7).map(function(q){ return q.text; }).filter(Boolean);
+  var prevAuthors = prevHistory.slice(0,14).map(function(q){ return q.author; }).filter(Boolean);
+
   var cached = safeLS('get', cacheKey);
   if(cached){
     try{
       var obj = JSON.parse(cached);
-      textEl.textContent   = obj.text   || cached;
-      if(authorEl) authorEl.textContent = obj.author ? '— ' + obj.author : '';
-    }catch(e){ textEl.textContent = cached; }
-    return;
+      // If this exact quote appeared in the last 7 days → delete cache, regenerate
+      if(obj.text && prevTexts.indexOf(obj.text) !== -1){
+        safeLS('del', cacheKey);
+      } else {
+        textEl.textContent   = obj.text   || cached;
+        if(authorEl) authorEl.textContent = obj.author ? '— ' + obj.author : '';
+        return;
+      }
+    }catch(e){ textEl.textContent = cached; return; }
   }
+
   // Show loading skeleton while Gemini generates the quote
   textEl.style.opacity = '.45';
   textEl.textContent = 'Cargando frase del día...';
   if(authorEl) authorEl.textContent = '✨ Velo IA';
 
-  // Load quote history to avoid repeating authors
-  var history = [];
-  try{ history = JSON.parse(safeLS('get','velo_quote_history')||'[]'); }catch(e){}
-  var usedAuthors = history.slice(0,14).map(function(q){ return q.author; }).filter(Boolean);
-
   var d = new Date();
   var dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  var avoidClause = usedAuthors.length
-    ? 'NO uses ninguno de estos autores que ya se mostraron recientemente: '+usedAuthors.join(', ')+'. '
+  var avoidClause = prevAuthors.length
+    ? 'NO uses ninguno de estos autores que ya se mostraron recientemente: '+prevAuthors.join(', ')+'. '
+    : '';
+  // Also send recent quote texts so Gemini doesn't repeat word-for-word
+  var avoidTextClause = prevTexts.length
+    ? 'NO repitas estas frases que ya aparecieron recientemente: '+prevTexts.map(function(t){ return '"'+t.slice(0,35)+'..."'; }).join('; ')+'. '
     : '';
   var prompt = 'Dame una frase célebre inspiradora, positiva y motivadora de un autor, escritor, filósofo, líder histórico, '
     +'novelista famoso o personaje conocido. Hoy es '+dias[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+'. '
-    +avoidClause
+    +avoidClause+avoidTextClause
     +'Elige autores variados: filósofos griegos, escritores latinoamericanos, líderes históricos, científicos, artistas, '
     +'poetas. La frase debe ser sobre superación, vida, esperanza, alegría, coraje o amor. '
     +'Devolvé SOLO un objeto JSON con este formato exacto (sin markdown, sin explicación): '
     +'{"text":"la frase traducida al español","author":"Nombre del autor"}. '
     +'La frase debe tener entre 10 y 30 palabras. Que sea una frase real y conocida, no inventada.';
 
-  var raw = await _geminiCall(prompt, { temperature:0.85, maxOutputTokens:120 });
+  var raw = await _geminiCall(prompt, { temperature:0.92, maxOutputTokens:120 });
   var quote = null;
   if(raw){
     try{
@@ -1334,10 +1348,14 @@ async function _loadDailyMotivationalQuote(){
       if(jsonMatch) quote = JSON.parse(jsonMatch[0]);
     }catch(e){}
   }
-  if(!quote || !quote.text || !quote.author){
-    // Rotate fallback by date — different day = different quote
+  // Fallback if Gemini failed or returned a duplicate
+  if(!quote || !quote.text || !quote.author || prevTexts.indexOf(quote.text) !== -1){
     var idx = (d.getDate() - 1 + d.getMonth() * 31 + d.getFullYear()) % _dailyQuoteFallbacks.length;
     quote = _dailyQuoteFallbacks[idx];
+    // If that fallback is also a recent duplicate, use the next one
+    if(prevTexts.indexOf(quote.text) !== -1){
+      quote = _dailyQuoteFallbacks[(idx + 1) % _dailyQuoteFallbacks.length];
+    }
   }
 
   // Save to history (keep last 30 days)
