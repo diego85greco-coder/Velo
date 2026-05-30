@@ -7087,3 +7087,34 @@ body.r-dark .home-dqa-btn:hover {
     background-color: transparent !important;
   }
 }
+
+/* ── v335: Desktop sidebar — visible thin scrollbar ─────────────── */
+@media (min-width: 860px) {
+  .p-sidebar-nav {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(116,198,157,.38) transparent !important;
+  }
+  .p-sidebar-nav::-webkit-scrollbar {
+    display: block !important;
+    width: 4px !important;
+  }
+  .p-sidebar-nav::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+  .p-sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(116,198,157,.38) !important;
+    border-radius: 100px !important;
+  }
+  .p-sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(116,198,157,.65) !important;
+  }
+  body.r-dark .p-sidebar-nav {
+    scrollbar-color: rgba(116,198,157,.28) transparent !important;
+  }
+  body.r-dark .p-sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(116,198,157,.28) !important;
+  }
+  body.r-dark .p-sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(116,198,157,.55) !important;
+  }
+}
