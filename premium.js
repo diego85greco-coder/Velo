@@ -2893,6 +2893,8 @@ async function pRenderHelp(){
   var count = document.getElementById('helpActiveCount');
   if(count) count.textContent = _helpPosts.length+' esperando acompañamiento';
 
+  await _refreshPresenceCache();
+
   if(!posts.length){
     list.innerHTML = '<div class="p-empty" style="color:rgba(255,255,255,.5)"><span class="p-empty-emoji">💚</span><div class="p-empty-title" style="color:rgba(255,255,255,.7)">Todo tranquilo por acá</div><div class="p-empty-sub">Nadie espera acompañamiento en este momento</div></div>';
     return;
@@ -2924,9 +2926,13 @@ async function pRenderHelp(){
       ? '<span style="font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" onclick="'+profCall+'">'+_escHtml(h.name)+'</span>'
       : '<span style="font-size:12px;font-weight:600;color:var(--ink)">'+_escHtml(h.name)+'</span>';
     var avHtml = (hAv && (hAv.indexOf('data:')===0||hAv.indexOf('http')===0)) ? _avInline(hAv,32) : (!h.anon ? hAv : (h.emoji||'💙'));
+    var pDot = (!h.anon && h.userId) ? _presenceDot(h.userId, 10) : '';
+    var avDotHtml = pDot
+      ? '<div style="position:relative;display:inline-block">' + avHtml + '<span style="position:absolute;bottom:-1px;right:-3px">' + pDot + '</span></div>'
+      : avHtml;
     return '<div class="dark-seeker" id="helppost-'+h.id+'">'
       +'<div style="display:flex;align-items:flex-start;gap:11px">'
-      +'<div style="font-size:28px;flex-shrink:0;'+(canClickProfile?'cursor:pointer" onclick="'+profCall:'')+'">' + avHtml + '</div>'
+      +'<div style="font-size:28px;flex-shrink:0;'+(canClickProfile?'cursor:pointer" onclick="'+profCall:'')+'">' + avDotHtml + '</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">'
       +nameHtml
