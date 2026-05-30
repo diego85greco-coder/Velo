@@ -1651,9 +1651,11 @@ function _stopGuardianHeartbeat(){
 function pHomeToggleGuardian(){
   var wasOn = safeLS('get','velo_is_guardian') === 'true';
   if(!wasOn){
-    // Show setup modal only on the very first activation (not every time bio is blank)
-    var setupDone = safeLS('get','velo_guardian_setup_done') === '1';
-    if(!setupDone){
+    // Show setup modal on the first activation of each day
+    var today = new Date().toISOString().slice(0,10);
+    var lastDay = safeLS('get','velo_guardian_setup_day') || '';
+    if(lastDay !== today){
+      safeLS('set','velo_guardian_setup_day', today);
       pShowGuardianSetupModal();
       return;
     }
@@ -1735,8 +1737,8 @@ function pToggleGuardianMode(){
     _updateGuardianPresence('disponible');
     pToast('🛡️','¡Aparecés como guardián disponible!');
   } else {
-    // Turning guardian mode off — stay online as a regular user, just leave the guardian list
-    _stopGuardianReqListener();
+    // Stop heartbeat fully so re-activation can start fresh (clears timer + listener)
+    _stopGuardianHeartbeat();
     _updateGuardianPresence();
     pToast('👤','Ya no aparecés en la lista de guardianes');
   }
@@ -1751,10 +1753,11 @@ function pToggleGuardianMode(){
 function pSaveGuardianBio(){
   var bioEl  = document.getElementById('guardianBioInput');
   var tagsEl = document.getElementById('guardianTagsInput');
+  var saveBtn = document.querySelector('#guardianModeDetails .p-btn--primary');
   if(bioEl)  safeLS('set','velo_guardian_bio',  bioEl.value.trim());
   if(tagsEl) safeLS('set','velo_guardian_tags', tagsEl.value.trim());
-  _updateGuardianPresence('disponible');
-  pToast('💚','Perfil de guardián actualizado');
+  if(safeLS('get','velo_is_guardian') === 'true') _updateGuardianPresence('disponible');
+  if(saveBtn){ var orig = saveBtn.textContent; saveBtn.textContent = '✅ Guardado'; setTimeout(function(){ saveBtn.textContent = orig; }, 2000); }
 }
 
 function _initGuardianToggleUI(){
@@ -1819,15 +1822,26 @@ function _renderHomeStatusToggle(){
     ? (safeLS('get','velo_guardian_status') || 'disponible')
     : (safeLS('get','velo_user_status') || 'disponible');
 
-  // All 3 equal-size status pills in one row
+  var lbl = '<span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45);display:block;text-align:center;margin-top:4px">';
+  var nextSt = st === 'disponible' ? 'ocupado' : 'disponible';
+  el.style.alignItems = 'flex-start';
   el.innerHTML =
-    '<button class="r-status-pill'+(st==='disponible'?' r-spill--disp':'')+'" onclick="pSetUserStatus(\'disponible\')">'
-    +'<span class="r-status-dot r-status-dot--'+(st==='disponible'?'green':'gray')+'"></span>Disponible</button>'
-    +'<button class="r-status-pill'+(st==='ocupado'?' r-spill--ocup':'')+'" onclick="pSetUserStatus(\'ocupado\')">'
-    +'<span class="r-status-dot r-status-dot--'+(st==='ocupado'?'yellow':'gray')+'"></span>Ocupado</button>'
+    // Status slider: green 🟢 ---|--- 🟡 yellow
+    '<div style="display:flex;flex-direction:column;align-items:center">'
+    +'<button class="r-status-pill r-stt-btn'+(st==='ocupado'?' r-stt--ocup':' r-stt--disp')+'" onclick="pSetUserStatus(\''+nextSt+'\')">'
+    +'<span class="r-sdot r-sdot--g"></span>'
+    +'<span class="r-strack"><span class="r-sknob'+(st==='ocupado'?' r-sknob--r':'')+'"></span></span>'
+    +'<span class="r-sdot r-sdot--y"></span>'
+    +'</button>'
+    +lbl+'ESTADOS</span>'
+    +'</div>'
+    // Guardian toggle
+    +'<div style="display:flex;flex-direction:column;align-items:center">'
     +'<button class="r-status-pill r-guardian-pill'+(isGuardian?' r-guardian-pill--on':'')+'" onclick="pHomeToggleGuardian()">'
     +'<span style="font-size:13px">🛡️</span><span>Guardián</span>'
-    +'<span class="r-guardian-toggle"><span class="r-guardian-knob"></span></span></button>';
+    +'<span class="r-guardian-toggle"><span class="r-guardian-knob"></span></span></button>'
+    +lbl+'GUARDIÁN</span>'
+    +'</div>';
 
   // Hide the old separate guardian button (replaced by guardPill above)
   var gWrap = document.getElementById('homeGuardianWrap');
@@ -7876,7 +7890,7 @@ async function pRenderContacts(){
   var favMeRows = [];
   if(sbClient && myId){
     try{
-      var fmRes = await sbClient.from('user_favorites').select('user_id,user_name,user_av,created_at').eq('fav_id', myId).order('created_at',{ascending:false}).limit(50);
+      var fmRes = await sbClient.from('user_favorites').select('user_id,created_at').eq('fav_id', myId).order('created_at',{ascending:false}).limit(50);
       if(_navToken !== _tok) return;
       favMeRows = fmRes.data || [];
       safeLS('set','velo_fav_me_count', String(favMeRows.length));

@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-301">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-301">
+  <link rel="stylesheet" href="premium.css?v=20260530-302">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-302">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -892,13 +892,9 @@
           <div class="home-header r-hero-v2">
             <div class="r-hero-left">
               <div id="homeHeroLabel" style="font-size:10px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:rgba(200,158,56,.72);margin-bottom:12px;display:flex;align-items:center;gap:6px"><span>—</span><span>JARDÍN DE HOY</span></div>
-              <div class="r-hero-status-row">
-                <div id="homeStatusToggle" style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap"></div>
-                <div id="homeGuardianWrap" style="display:none;align-items:center;gap:6px;flex-shrink:0">
-                  <button id="homeGuardianBtn" onclick="pHomeToggleGuardian()" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;border:1.5px solid rgba(27,94,58,.22);background:rgba(255,255,255,.55);color:var(--ink3);font-family:'Jost',sans-serif;cursor:pointer;white-space:nowrap">🛡️ Actívame</button>
-                </div>
+              <div id="homeStatusToggle" style="display:flex;align-items:flex-start;gap:12px;flex-wrap:nowrap;margin-bottom:8px">
+                <div id="homeGuardianWrap" style="display:none"></div>
               </div>
-              <div id="guardianSubLabel" style="font-size:9px;color:var(--ink5);letter-spacing:.5px;margin:-4px 0 6px;opacity:.8">Estado · activá el escudo para modo guardián</div>
               <!-- Quick controls: theme slider + bell + contacts + SOS — all equal size -->
               <div id="homeQuickControls" style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
@@ -1883,11 +1879,11 @@
               </div>
               <div id="guardianModeDetails" style="display:none;border-top:1px solid var(--border);padding-top:12px;margin-top:8px">
                 <div class="p-field" style="margin-bottom:8px">
-                  <label class="p-field-label" style="font-size:11px">Tu mensaje de bienvenida</label>
-                  <textarea class="p-textarea" id="guardianBioInput" rows="2" placeholder="¿Desde qué experiencia querés acompañar?"></textarea>
+                  <label class="p-field-label" style="font-size:11px">Tu mensaje de bienvenida <span style="font-weight:400;opacity:.6">(opcional)</span></label>
+                  <textarea class="p-textarea" id="guardianBioInput" rows="2" placeholder="¿Desde qué experiencia querés acompañar? (opcional)"></textarea>
                 </div>
                 <div class="p-field" style="margin-bottom:10px">
-                  <label class="p-field-label" style="font-size:11px">Temas (separados por coma)</label>
+                  <label class="p-field-label" style="font-size:11px">Temas <span style="font-weight:400;opacity:.6">(opcional, separados por coma)</span></label>
                   <input class="p-input" type="text" id="guardianTagsInput" placeholder="ej: ansiedad, duelo, soledad">
                 </div>
                 <button class="p-btn p-btn--primary p-btn--sm p-btn--full" onclick="pSaveGuardianBio()">Guardar perfil de guardián</button>
@@ -3014,8 +3010,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-301"></script>
-<script src="premium-redesign.js?v=20260530-301"></script>
+<script src="premium.js?v=20260530-302"></script>
+<script src="premium-redesign.js?v=20260530-302"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
