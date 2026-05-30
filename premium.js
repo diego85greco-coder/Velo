@@ -810,6 +810,7 @@ async function _loginAndGo(){
   var type = safeLS('get','velo_user_type') || 'user';
   _userType = type;
   _trackVisitDay(); // Record today as an app visit (for Bronze badge)
+  setTimeout(_pullVisitCountFromSB, 2500); // Sync count from Supabase after login
   if(type === 'admin'){
     pGoTo('admin');
   } else if(type === 'pro'){
@@ -1470,17 +1471,58 @@ function _localDateStr(){
   var d = new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
+
+// Push current visit count to Supabase profiles.visit_day_count (fire-and-forget)
+function _pushVisitCountToSB(count){
+  _initSupabase();
+  var uid = _myUserId();
+  if(!sbClient || !uid || uid === 'guest') return;
+  sbClient.from('profiles').update({ visit_day_count: count }).eq('id', uid)
+    .then(function(){}).catch(function(){}); // silent — column may not exist yet
+}
+
+// On boot: read visit_day_count from Supabase and take the maximum with local count.
+// This restores count on new devices or after localStorage is cleared.
+async function _pullVisitCountFromSB(){
+  _initSupabase();
+  var uid = _myUserId();
+  if(!sbClient || !uid || uid === 'guest') return;
+  try{
+    var r = await sbClient.from('profiles').select('visit_day_count').eq('id', uid).maybeSingle();
+    if(r.error || !r.data) return;
+    var sbCount = parseInt(r.data.visit_day_count || 0, 10);
+    if(sbCount > 0){
+      var localCount = _getVisitDayCount();
+      safeLS('set','velo_visit_day_count_sb', String(sbCount));
+      // If Supabase has more days than local, push new days upward
+      if(sbCount > localCount) _updateHomeStreak();
+    }
+  }catch(e){} // Column may not exist yet — ignore
+}
+
+function _updateHomeStreak(){
+  var el = document.getElementById('homeStatStreak');
+  if(el) el.textContent = _getVisitDayCount();
+  var pEl = document.getElementById('profileDays');
+  if(pEl) pEl.textContent = Math.max(1, _getVisitDayCount());
+}
+
 function _trackVisitDay(){
   var today = _localDateStr();
   var days = []; try{ days = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
   if(days.indexOf(today) < 0){
     days.push(today);
     safeLS('set','velo_visit_days', JSON.stringify(days));
+    // Push updated count to Supabase so other devices / future sessions pick it up
+    var total = _getVisitDayCount();
+    _pushVisitCountToSB(total);
   }
 }
+
 function _getVisitDayCount(){
   var days = []; try{ days = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
-  return days.length;
+  var sbCount = parseInt(safeLS('get','velo_visit_day_count_sb')||'0', 10);
+  return Math.max(days.length, sbCount);
 }
 // Returns the number of CONSECUTIVE days ending on today (or yesterday if not yet visited today)
 function _getConsecutiveStreak(){
@@ -12461,6 +12503,8 @@ window.addEventListener('load', function(){
     _trackVisitDay(); // Record today — runs on every app open, not just explicit login
     // Sync profile from Supabase on every app start so name/avatar stay current
     setTimeout(function(){ _sbSyncProfile(safeLS('get','velo_user_id')); }, 1500);
+    // Pull visit count from Supabase to sync across devices / after localStorage clear
+    setTimeout(_pullVisitCountFromSB, 2500);
     setTimeout(_startGuardianHeartbeat, 2000);
     setTimeout(_startGlobalDMListener, 3000);
     setTimeout(_startBuzónListener, 3200);
