@@ -5901,3 +5901,73 @@ body:not(.r-dark) #homeQuickControls > div > span:last-child {
 }
 body:not(.r-dark) .r-theme-track { background: rgba(0,0,0,.2); }
 body:not(.r-dark) .r-theme-knob { background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+
+/* ── v301: Unified status row — all 3 pills same size & shape ─── */
+#homeStatusToggle { flex-wrap: nowrap !important; width: 100%; }
+.r-hero-status-row { flex-wrap: nowrap !important; }
+
+.r-status-pill {
+  flex: 1;
+  border-radius: 999px !important;
+  border: 1.5px solid rgba(255,255,255,.18) !important;
+  background: rgba(255,255,255,.08) !important;
+  color: rgba(255,255,255,.52) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 9px 6px !important;
+  cursor: pointer;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  font-family: 'Inter','Jost',sans-serif;
+  white-space: nowrap;
+  transition: all .2s;
+  min-width: 0;
+}
+/* Active states */
+.r-status-pill.r-spill--disp {
+  background: rgba(34,197,94,.16) !important;
+  border-color: rgba(34,197,94,.38) !important;
+  color: rgba(255,255,255,.92) !important;
+}
+.r-status-pill.r-spill--ocup {
+  background: rgba(234,179,8,.14) !important;
+  border-color: rgba(234,179,8,.40) !important;
+  color: rgba(255,220,100,.92) !important;
+}
+.r-status-pill.r-guardian-pill--on {
+  background: rgba(79,158,168,.20) !important;
+  border-color: rgba(79,158,168,.40) !important;
+  color: rgba(255,255,255,.92) !important;
+}
+/* Smaller toggle knob inside the unified pill */
+.r-status-pill .r-guardian-toggle {
+  width: 26px !important; height: 15px !important;
+}
+.r-status-pill .r-guardian-knob {
+  width: 11px !important; height: 11px !important;
+}
+.r-status-pill.r-guardian-pill--on .r-guardian-knob { transform: translateX(11px) !important; }
+
+/* Light mode */
+body:not(.r-dark) .r-status-pill {
+  background: rgba(27,94,58,.08) !important;
+  border-color: rgba(27,94,58,.18) !important;
+  color: rgba(27,94,58,.65) !important;
+}
+body:not(.r-dark) .r-status-pill.r-spill--disp {
+  background: rgba(34,197,94,.12) !important;
+  border-color: rgba(34,197,94,.30) !important;
+  color: rgba(22,120,60,.90) !important;
+}
+body:not(.r-dark) .r-status-pill.r-spill--ocup {
+  background: rgba(234,179,8,.10) !important;
+  border-color: rgba(234,179,8,.30) !important;
+  color: rgba(140,100,0,.90) !important;
+}
+body:not(.r-dark) .r-status-pill.r-guardian-pill--on {
+  background: rgba(79,158,168,.14) !important;
+  border-color: rgba(79,158,168,.30) !important;
+  color: rgba(30,100,110,.90) !important;
+}

@@ -1819,22 +1819,15 @@ function _renderHomeStatusToggle(){
     ? (safeLS('get','velo_guardian_status') || 'disponible')
     : (safeLS('get','velo_user_status') || 'disponible');
 
-  // Segmented pill: Disponible | Ocupado
-  var segPill = '<div class="r-status-combined-pill">'
-    +'<button class="r-status-seg'+(st==='disponible'?' active':'')+'" onclick="pSetUserStatus(\'disponible\')">'
+  // All 3 equal-size status pills in one row
+  el.innerHTML =
+    '<button class="r-status-pill'+(st==='disponible'?' r-spill--disp':'')+'" onclick="pSetUserStatus(\'disponible\')">'
     +'<span class="r-status-dot r-status-dot--'+(st==='disponible'?'green':'gray')+'"></span>Disponible</button>'
-    +'<button class="r-status-seg'+(st==='ocupado'?' active':'')+'" onclick="pSetUserStatus(\'ocupado\')">'
+    +'<button class="r-status-pill'+(st==='ocupado'?' r-spill--ocup':'')+'" onclick="pSetUserStatus(\'ocupado\')">'
     +'<span class="r-status-dot r-status-dot--'+(st==='ocupado'?'yellow':'gray')+'"></span>Ocupado</button>'
-    +'</div>';
-
-  // Guardian toggle pill
-  var guardPill = '<button class="r-guardian-pill'+(isGuardian?' r-guardian-pill--on':'')+'" onclick="pHomeToggleGuardian()">'
-    +'<span style="font-size:14px">🛡️</span>'
-    +'<span>Modo Guardián</span>'
-    +'<span class="r-guardian-toggle"><span class="r-guardian-knob"></span></span>'
-    +'</button>';
-
-  el.innerHTML = segPill + guardPill;
+    +'<button class="r-status-pill r-guardian-pill'+(isGuardian?' r-guardian-pill--on':'')+'" onclick="pHomeToggleGuardian()">'
+    +'<span style="font-size:13px">🛡️</span><span>Guardián</span>'
+    +'<span class="r-guardian-toggle"><span class="r-guardian-knob"></span></span></button>';
 
   // Hide the old separate guardian button (replaced by guardPill above)
   var gWrap = document.getElementById('homeGuardianWrap');
