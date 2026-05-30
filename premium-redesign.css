@@ -6869,3 +6869,18 @@ body.r-dark .dark-seeker button[onclick*="pReport"] {
   border-color: rgba(220,80,60,.3) !important;
   background: rgba(220,80,60,.12) !important;
 }
+
+/* ── v326: Desktop shortcut grid — remove square aspect-ratio ─────── */
+@media (min-width: 860px) {
+  .r-home-shortcut-grid button.r-home-shortcut {
+    aspect-ratio: unset !important;
+    height: 82px !important;
+    min-height: 0 !important;
+    max-height: 82px !important;
+  }
+  .r-home-shortcut-grid {
+    max-width: 360px !important;
+    margin-top: 16px !important;
+    margin-bottom: 14px !important;
+  }
+}
