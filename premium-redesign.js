@@ -28,16 +28,15 @@
   }
 
   function injectTimeIcon() {
-    const greet = document.getElementById('homeGreetTxt');
-    if (!greet) return;
-    // remove existing icon if any
-    const existing = greet.querySelector('.r-time-icon');
-    if (existing) existing.remove();
+    const iconWrap = document.getElementById('homeTimeIcon');
+    const greet    = document.getElementById('homeGreetTxt');
+    if (greet) { const old = greet.querySelector('.r-time-icon'); if (old) old.remove(); }
     const { svg, period } = pickTimeIcon();
     const span = document.createElement('span');
     span.className = 'r-time-icon is-' + period;
     span.innerHTML = svg;
-    greet.appendChild(span);
+    if (iconWrap) { iconWrap.innerHTML = ''; iconWrap.appendChild(span); }
+    else if (greet) { greet.appendChild(span); }
   }
 
   /* ── 2. Make user name editable (small pencil) ─────────────────── */
@@ -156,6 +155,7 @@
     initGuardianLabelObserver();
     initSurveyDismissal();
     enrichGreeting();
+    initGreetingRotation();
   }
 
   /* ── 5. Sync valores dinámicos del hero v2 ──────────────────── */
@@ -355,23 +355,65 @@ function enrichGreeting() {
   function tryAppend() {
     var name = (nameEl.textContent || '').trim().split(' ')[0];
     if (!name || name.length < 2) return;
-    var current = (greetEl.firstChild && greetEl.firstChild.nodeType === 3)
-      ? greetEl.firstChild.textContent.trim()
-      : greetEl.textContent.trim();
-    if (current.includes(name) || current.includes(',')) return;
-    var newText = current.replace(/\.$/, '') + ', ' + name + '.';
-    var icon = greetEl.querySelector('.r-time-icon');
-    if (greetEl.firstChild && greetEl.firstChild.nodeType === 3) {
-      greetEl.firstChild.textContent = newText + ' ';
-    } else {
-      greetEl.textContent = newText + ' ';
-      if (icon) greetEl.appendChild(icon);
-    }
+    var txt = greetEl.textContent.trim();
+    if (txt.includes(name) || txt.includes(',')) return;
+    greetEl.textContent = txt.replace(/\.$/, '') + ', ' + name + '.';
   }
 
   new MutationObserver(function() { tryAppend(); })
     .observe(nameEl, { childList: true, characterData: true, subtree: true });
   setTimeout(tryAppend, 600);
+}
+
+/* ── Greeting ↔ daily quote rotation (5s / 6s cycle) ─────────────── */
+function initGreetingRotation() {
+  var h1 = document.getElementById('homeGreetTxt');
+  var quoteWrap = document.getElementById('homeGreetQuote');
+  if (!h1 || !quoteWrap) return;
+
+  var greetText = null;
+
+  function fade(el, toOpacity, cb) {
+    el.style.transition = 'opacity .75s ease';
+    el.style.opacity = String(toOpacity);
+    setTimeout(cb || function(){}, 760);
+  }
+
+  function showQuote() {
+    var quoteEl  = document.getElementById('homeDailyQuoteText');
+    var authorEl = document.getElementById('homeDailyQuoteAuthor');
+    var q = (quoteEl  ? quoteEl.textContent.trim()  : '') || 'La comunidad está contigo.';
+    var a = authorEl ? authorEl.textContent.trim() : '';
+    greetText = h1.textContent.trim() || greetText;
+
+    fade(h1, 0, function() {
+      h1.style.display = 'none';
+      quoteWrap.innerHTML = '“' + q + '”'
+        + (a ? '<span class="r-greet-quote-author">' + a + '</span>' : '');
+      quoteWrap.style.display = 'block';
+      quoteWrap.style.opacity = '0';
+      quoteWrap.style.transition = 'opacity .75s ease';
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() { quoteWrap.style.opacity = '1'; });
+      });
+      setTimeout(showGreeting, 6000);
+    });
+  }
+
+  function showGreeting() {
+    fade(quoteWrap, 0, function() {
+      quoteWrap.style.display = 'none';
+      if (greetText) h1.textContent = greetText;
+      h1.style.display = '';
+      h1.style.opacity = '0';
+      fade(h1, 1, function() {
+        setTimeout(showQuote, 5000);
+      });
+    });
+  }
+
+  // Start first cycle after 5 seconds (let enrichGreeting settle)
+  setTimeout(showQuote, 5000);
 }
 
 /* ── Survey banner: cookie-based 24h dismissal ────────────────────── */

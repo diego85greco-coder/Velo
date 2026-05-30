@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-308">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-308">
+  <link rel="stylesheet" href="premium.css?v=20260530-309">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-309">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -904,7 +904,9 @@
                 </div>
                 <div id="homeGuardianWrap"></div>
               </div>
+              <div id="homeTimeIcon"></div>
               <h1 class="p-title" id="homeGreetTxt">Buenos días</h1>
+              <div id="homeGreetQuote" style="display:none;opacity:0"></div>
               <h2 class="r-hero-italic"><em id="homeGreetSub">Hoy la comunidad está contigo.</em></h2>
               <!-- 2×2 shortcut grid -->
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 16px">
@@ -914,7 +916,7 @@
                 </button>
                 <button class="r-home-shortcut" onclick="pGoTo('contacts')" style="position:relative">
                   <span id="favCountBadge" style="display:none;position:absolute;top:8px;right:8px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
-                  <span class="r-hs-icon">🤍</span>
+                  <span class="r-hs-icon">⭐️</span>
                   <span>FAVORITOS</span>
                 </button>
                 <button class="r-home-shortcut" onclick="pGoTo('inbox')" style="position:relative">
@@ -922,9 +924,9 @@
                   <span class="r-hs-icon">✉️</span>
                   <span>BUZÓN</span>
                 </button>
-                <button class="r-home-shortcut" onclick="pGoTo('guardians')">
-                  <span class="r-hs-icon">👥</span>
-                  <span>COMUNIDAD</span>
+                <button class="r-home-shortcut" onclick="pGoTo('circles')">
+                  <span class="r-hs-icon">🕊️</span>
+                  <span>CÍRCULOS</span>
                 </button>
               </div>
               <div class="r-hero-actions">
@@ -3008,8 +3010,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-308"></script>
-<script src="premium-redesign.js?v=20260530-308"></script>
+<script src="premium.js?v=20260530-309"></script>
+<script src="premium-redesign.js?v=20260530-309"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
