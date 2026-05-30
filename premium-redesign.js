@@ -491,29 +491,21 @@ function initSurveyDismissal() {
    v168: Modo Guardián — fix toggle re-render + ocupado (yellow) state
    ══════════════════════════════════════════════════════════════════════ */
 (function() {
-  // Override pHomeToggleGuardian so the pill re-renders after every toggle
+  // Activate guardian mode directly — no bio/form required
   window.pHomeToggleGuardian = function() {
-    var wasOn = safeLS('get', 'velo_is_guardian') === 'true';
-    if (!wasOn) {
-      var bio = safeLS('get', 'velo_guardian_bio') || '';
-      if (!bio.trim()) {
-        if (typeof pShowGuardianSetupModal === 'function') pShowGuardianSetupModal();
-        return;
-      }
-    }
     if (typeof pToggleGuardianMode === 'function') pToggleGuardianMode();
     setTimeout(function() {
       if (typeof _renderHomeStatusToggle === 'function') _renderHomeStatusToggle();
     }, 60);
   };
 
-  // Patch pSaveGuardianSetup so the pill also re-renders after bio is saved
-  var _origSaveSetup = window.pSaveGuardianSetup;
-  window.pSaveGuardianSetup = function() {
-    if (typeof _origSaveSetup === 'function') _origSaveSetup.apply(this, arguments);
+  // Suppress the setup modal everywhere — if called, just activate directly
+  window.pShowGuardianSetupModal = function() {
+    var isOn = safeLS('get', 'velo_is_guardian') === 'true';
+    if (!isOn && typeof pToggleGuardianMode === 'function') pToggleGuardianMode();
     setTimeout(function() {
       if (typeof _renderHomeStatusToggle === 'function') _renderHomeStatusToggle();
-    }, 130);
+    }, 60);
   };
 
   // Override _renderHomeStatusToggle to add ocupado (yellow) state on guardian pill

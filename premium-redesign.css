@@ -6452,6 +6452,10 @@ body:not(.r-dark) .r-home-shortcut-grid .r-home-shortcut {
   overflow-x: clip !important;
 }
 
+/* ── 6. Guardian setup form suppressed — activate directly ───────── */
+#guardianModeDetails { display: none !important; }
+#guardianSetupOv     { display: none !important; }
+
 /* ════════════════════════════════════════════════════════════════════
    v315 — Uniform square grid: FAVORITOS specificity fix + aspect-ratio
    ════════════════════════════════════════════════════════════════════ */
