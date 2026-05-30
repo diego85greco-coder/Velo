@@ -7899,16 +7899,20 @@ async function pRenderContacts(){
     }catch(e){}
   }
 
-  // Batch-fetch real usernames
+  // Batch-fetch real usernames + names + avatars for all contacts
   var usernameMap = {};
+  var profileMap  = {};  // id → {name, av}
   if(sbClient){
     var _allIds = favs.map(function(f){ return f.id; }).concat(favMeRows.map(function(r){ return r.user_id; })).filter(Boolean);
     var _uniqIds = _allIds.filter(function(id,i){ return _allIds.indexOf(id)===i; });
     if(_uniqIds.length){
       try{
-        var profRes = await sbClient.from('profiles').select('id,username').in('id', _uniqIds);
+        var profRes = await sbClient.from('profiles').select('id,username,nombre,avatar').in('id', _uniqIds);
         if(_navToken !== _tok) return;
-        (profRes.data||[]).forEach(function(p){ if(p.id && p.username) usernameMap[p.id]=p.username; });
+        (profRes.data||[]).forEach(function(p){
+          if(p.id && p.username) usernameMap[p.id] = p.username;
+          if(p.id) profileMap[p.id] = { name: p.nombre||'', av: p.avatar||'' };
+        });
       }catch(e){}
     }
   }
@@ -7935,7 +7939,7 @@ async function pRenderContacts(){
   // Build online list (favs + fans, deduped, only online)
   var _onlineMap = {};
   favs.forEach(function(f){ var pi=_presenceInfo(f.id); if(pi.on) _onlineMap[f.id]={id:f.id,name:f.name,av:f.av||'🧑',uname:usernameMap[f.id]||f.username||'',pInfo:pi,unread:unreadIds[f.id]||0,isFav:true}; });
-  favMeRows.forEach(function(r){ var pi=_presenceInfo(r.user_id); if(pi.on&&!_onlineMap[r.user_id]) _onlineMap[r.user_id]={id:r.user_id,name:r.user_name||'Usuario',av:r.user_av||'🧑',uname:usernameMap[r.user_id]||'',pInfo:pi,unread:0,isFav:false}; });
+  favMeRows.forEach(function(r){ var pi=_presenceInfo(r.user_id); if(pi.on&&!_onlineMap[r.user_id]){ var _fp=profileMap[r.user_id]||{}; _onlineMap[r.user_id]={id:r.user_id,name:_fp.name||usernameMap[r.user_id]||'Usuario',av:_fp.av||'🧑',uname:usernameMap[r.user_id]||'',pInfo:pi,unread:0,isFav:false}; } });
   var onlineList = Object.keys(_onlineMap).map(function(k){ return _onlineMap[k]; });
 
   // Blocked list
@@ -7986,8 +7990,12 @@ async function pRenderContacts(){
     +(!favMeRows.length
       ? '<div class="p-empty"><span class="p-empty-emoji">♥</span><div class="p-empty-title">Nadie te agregó aún</div></div>'
       : favMeRows.map(function(r){
-          var pi=_presenceInfo(r.user_id); var uname=usernameMap[r.user_id]?'@'+usernameMap[r.user_id]:'';
-          return _contactCard(r.user_id,r.user_name||'Usuario',r.user_av||'🧑',uname,pi,0,{small:true,showAddFav:!pIsFav(r.user_id)});
+          var pi=_presenceInfo(r.user_id);
+          var uname=usernameMap[r.user_id]?'@'+usernameMap[r.user_id]:'';
+          var prof=profileMap[r.user_id]||{};
+          var dName = prof.name || uname.replace('@','') || 'Usuario';
+          var dAv   = prof.av  || '🧑';
+          return _contactCard(r.user_id,dName,dAv,uname,pi,0,{small:true,showAddFav:!pIsFav(r.user_id)});
         }).join(''))
     +'</div>';
 
