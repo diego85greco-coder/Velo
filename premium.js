@@ -6985,19 +6985,17 @@ async function pSaveProfileStatus(){
   var uid = safeLS('get','velo_user_id');
   if(sbClient && uid){
     try{
-      // Include name + email so the row is always complete, not just the 4 status fields
-      var upsertRes = await sbClient.from('profiles').upsert({
-        id:uid,
-        nombre: safeLS('get','velo_user_name')||'',
-        email:  safeLS('get','velo_user_email')||'',
-        motto:  safeLS('get','velo_user_motto')||'',
-        status_music:  music.trim(),
-        status_book:   book.trim(),
-        status_film:   film.trim(),
-        status_phrase: phrase.trim()
-      },{ onConflict:'id' });
-      if(upsertRes && upsertRes.error){
-        console.error('[pSaveProfileStatus]', upsertRes.error);
+      // Update only the 4 status fields — avoids upsert conflicts with nombre/email constraints
+      var updateRes = await sbClient.from('profiles')
+        .update({
+          status_music:  music.trim(),
+          status_book:   book.trim(),
+          status_film:   film.trim(),
+          status_phrase: phrase.trim()
+        })
+        .eq('id', uid);
+      if(updateRes && updateRes.error){
+        console.error('[pSaveProfileStatus]', updateRes.error);
         pToast('⚠️','Guardado solo en este dispositivo (error de red)');
         return;
       }
@@ -12461,6 +12459,7 @@ window.addEventListener('load', function(){
 
   if(session === '1'){
     _authenticated = true;
+    _trackVisitDay(); // Record today — runs on every app open, not just explicit login
     // Sync profile from Supabase on every app start so name/avatar stay current
     setTimeout(function(){ _sbSyncProfile(safeLS('get','velo_user_id')); }, 1500);
     setTimeout(_startGuardianHeartbeat, 2000);

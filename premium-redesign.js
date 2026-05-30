@@ -526,7 +526,8 @@ function initSurveyDismissal() {
       + '<span style="font-size:14px">🛡️</span>'
       + '<span>Modo Guardián</span>'
       + '<span class="r-guardian-toggle"><span class="r-guardian-knob"></span></span>'
-      + '</button>';
+      + '</button>'
+      + '<p class="r-guardian-hint">Al activarlo aparecés en la lista de guardianes para brindar ayuda</p>';
 
     el.innerHTML = segPill + guardPill;
     var gWrap = document.getElementById('homeGuardianWrap');

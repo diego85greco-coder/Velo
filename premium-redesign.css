@@ -6585,3 +6585,18 @@ body:not(.r-dark) .r-status-seg--ocup.active {
   color: #2a1a00 !important;
   box-shadow: none !important;
 }
+
+/* ── v320: Guardian hint text ───────────────────────────────────── */
+.r-guardian-hint {
+  margin: 4px 0 0 0 !important;
+  padding: 0 4px !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  text-align: center !important;
+  color: rgba(255,255,255,.42) !important;
+  letter-spacing: .1px !important;
+  font-family: 'Jost', 'Inter', sans-serif !important;
+}
+body:not(.r-dark) .r-guardian-hint {
+  color: rgba(27,94,58,.50) !important;
+}
