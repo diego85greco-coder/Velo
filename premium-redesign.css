@@ -6885,33 +6885,45 @@ body.r-dark .dark-seeker button[onclick*="pReport"] {
   }
 }
 
-/* ── v328: Sidebar dark mode toggle button ──────────────────────── */
+/* ── v329: Sidebar dark mode toggle button — icon + "Estilo" label ── */
 .p-sidebar-theme-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 5px;
   width: 100%;
-  padding: 8px 12px;
-  margin-top: 8px;
-  background: transparent;
-  border: 1.5px solid var(--border2);
-  border-radius: 12px;
+  padding: 10px 8px 8px;
+  margin-top: 10px;
+  background: rgba(27,94,58,.13);
+  border: 1.5px solid rgba(27,94,58,.22);
+  border-radius: 14px;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
   font-family: 'Jost', sans-serif;
-  color: var(--ink4);
-  text-align: left;
-  transition: background .15s;
+  color: rgba(27,80,50,.72);
+  text-align: center;
+  transition: background .15s, transform .1s;
+  -webkit-tap-highlight-color: transparent;
 }
-.p-sidebar-theme-btn:hover { background: rgba(116,198,157,.07); }
+.p-sidebar-theme-btn:hover {
+  background: rgba(27,94,58,.20);
+  transform: scale(.98);
+}
+body.r-dark .p-sidebar-theme-btn {
+  background: rgba(116,198,157,.14);
+  border-color: rgba(116,198,157,.24);
+  color: rgba(116,198,157,.80);
+}
+body.r-dark .p-sidebar-theme-btn:hover { background: rgba(116,198,157,.22); }
 .p-sidebar-theme-btn .r-tbar-sun,
-.p-sidebar-theme-btn .r-tbar-moon { flex-shrink: 0; display: flex; align-items: center; }
+.p-sidebar-theme-btn .r-tbar-moon { display: flex; align-items: center; }
 body.r-dark .p-sidebar-theme-btn .r-tbar-sun { display: none; }
 body:not(.r-dark) .p-sidebar-theme-btn .r-tbar-moon { display: none; }
-body.r-dark .p-sidebar-theme-lbl::before { content: 'Modo claro'; }
-body:not(.r-dark) .p-sidebar-theme-lbl::before { content: 'Modo oscuro'; }
-.p-sidebar-theme-lbl { font-size: 0; }
+.p-sidebar-theme-lbl { font-size: 10px; }
 
 /* ── v328: Center hero greeting on desktop ──────────────────────── */
 @media (min-width: 860px) {
