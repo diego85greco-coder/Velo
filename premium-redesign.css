@@ -6451,3 +6451,76 @@ body:not(.r-dark) .r-home-shortcut-grid .r-home-shortcut {
   overflow: visible !important;
   overflow-x: clip !important;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   v315 — Uniform square grid: FAVORITOS specificity fix + aspect-ratio
+   ════════════════════════════════════════════════════════════════════ */
+
+/* The old rule has specificity 0,2,1 (class + attr + element).
+   By adding 'button' here we tie at 0,2,1 and win because this
+   rule appears later in the cascade. */
+.r-home-shortcut-grid button.r-home-shortcut {
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  border-radius: 20px !important;
+  background: rgba(255,255,255,.07) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1.8px !important;
+  text-transform: uppercase !important;
+  font-family: 'Jost', 'Inter', sans-serif !important;
+  color: rgba(255,255,255,.82) !important;
+  border: 1.5px solid rgba(255,255,255,.13) !important;
+  box-shadow: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  padding: 12px 6px !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+body:not(.r-dark) .r-home-shortcut-grid button.r-home-shortcut {
+  background: rgba(27,94,58,.06) !important;
+  border-color: rgba(27,94,58,.14) !important;
+  color: var(--ink3) !important;
+}
+.r-home-shortcut-grid button.r-home-shortcut--sos {
+  border-color: rgba(220,60,60,.38) !important;
+}
+/* Gold icons in dark, green in light */
+.r-home-shortcut-grid button.r-home-shortcut .r-hs-icon {
+  color: rgba(200,158,56,.9) !important;
+  filter: drop-shadow(0 0 6px rgba(200,158,56,.3)) !important;
+  font-size: 0 !important;
+}
+body:not(.r-dark) .r-home-shortcut-grid button.r-home-shortcut .r-hs-icon {
+  color: rgba(27,80,50,.78) !important;
+  filter: none !important;
+}
+.r-home-shortcut-grid .r-hs-icon svg {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+/* Greeting block: center all elements */
+#homeTimeIcon {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+#homeGreetBlock {
+  text-align: center !important;
+  width: 100% !important;
+}
+#homeGreetBlock h1,
+#homeGreetBlock h2 {
+  text-align: center !important;
+  width: 100% !important;
+}
