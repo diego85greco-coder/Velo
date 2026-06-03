@@ -3041,7 +3041,7 @@ async function _guardianSendRequest(post){
     pToast('⚠️','No se pudo enviar la solicitud. Verificá tu conexión.');
     return;
   }
-  // Show waiting overlay with 80s countdown
+  // Show waiting overlay with 60s countdown
   _showGuardianWaitOverlay(post, myName);
   // Subscribe to guardian_requests changes for this row
   if(_grReqCh) try{ sbClient.removeChannel(_grReqCh); }catch(e){}
@@ -3087,7 +3087,7 @@ function _showGuardianWaitOverlay(post, myName){
     +'<div style="font-size:44px;margin-bottom:12px">💙</div>'
     +'<div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Esperando respuesta…</div>'
     +'<div style="font-size:13px;color:var(--ink3);margin-bottom:18px">Le avisamos a <strong>'+_escHtml(post.name)+'</strong> que querés acompañarle. Si no responde en 1 minuto te mostraremos opciones.</div>'
-    +'<div id="guardianWaitCountdown" style="font-size:32px;font-weight:800;color:var(--sage);margin-bottom:20px">2:00</div>'
+    +'<div id="guardianWaitCountdown" style="font-size:32px;font-weight:800;color:var(--sage);margin-bottom:20px">1:00</div>'
     +'<button onclick="_guardianCancelWait()" style="padding:10px 24px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:100px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
     +'</div>';
   document.body.appendChild(ov);
@@ -4897,10 +4897,12 @@ var _diaryPrivacyShown = false;
 function pInitDiary(){
   var dateEl = document.getElementById('diaryDateLbl');
   if(dateEl){ var d = new Date(); dateEl.textContent = _fmtDate(d.getTime()).split('·')[0].trim(); }
-  var row = document.getElementById('diaryEmojiRow');
-  if(row) row.innerHTML = _diaryEmojis.map(function(e){
-    return '<button class="diary-emoji-btn" onclick="pSelDiaryEmoji(this,\''+e+'\')" data-emoji="'+e+'">'+e+'</button>';
-  }).join('');
+  // Reset form state on each visit
+  _selectedDiaryEmoji = '';
+  var chosenEl = document.getElementById('diaryEmojiChosen');
+  if(chosenEl) chosenEl.textContent = '';
+  var titleEl = document.getElementById('diaryTitleInput');
+  if(titleEl) titleEl.value = '';
   // Show privacy notice once per session
   if(!_diaryPrivacyShown){
     _diaryPrivacyShown = true;
@@ -4996,6 +4998,8 @@ async function _loadDiaryEntries(){
     var local = []; try{ local = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
     entries = local;
   }
+  // Normalize Supabase field names (date_label → dateLabel)
+  entries = entries.map(function(e){ return e.dateLabel ? e : Object.assign({}, e, { dateLabel: e.date_label || '' }); });
   _diaryEntries = entries;
   if(!entries.length){
     el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">📔</span><div class="p-empty-title">Aún no tenés entradas</div><div class="p-empty-sub">Este es tu espacio seguro. 🌙</div></div>';
