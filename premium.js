@@ -5122,15 +5122,24 @@ async function pSaveDiary(){
 async function _loadDiaryEntries(){
   var el = document.getElementById('diaryEntries');
   if(!el) return;
-  // Try Supabase first
+  // Local storage has full metadata (title, emoji) — prefer it
+  var local = []; try{ local = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
+  var localMap = {};
+  local.forEach(function(e){ if(e.ts != null) localMap[String(e.ts)] = e; });
+  // Supabase for cross-device sync — only add entries not already in local
   var sbEntries = await sbLoadDiaryEntries();
-  var entries = sbEntries || [];
-  if(!entries.length){
-    var local = []; try{ local = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
-    entries = local;
+  var entries = local.slice();
+  if(sbEntries && sbEntries.length){
+    sbEntries.forEach(function(se){
+      var k = String(se.ts);
+      if(!localMap[k]){
+        // Entry from another device — normalize and add
+        entries.push(Object.assign({}, se, { ts: Number(se.ts)||se.ts, dateLabel: se.date_label||se.dateLabel||'' }));
+      }
+    });
   }
-  // Normalize Supabase field names (date_label → dateLabel)
-  entries = entries.map(function(e){ return e.dateLabel ? e : Object.assign({}, e, { dateLabel: e.date_label || '' }); });
+  // Normalize any remaining field name differences
+  entries = entries.map(function(e){ return e.dateLabel != null ? e : Object.assign({}, e, { dateLabel: e.date_label || '' }); });
   _diaryEntries = entries;
   if(!entries.length){
     el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">📔</span><div class="p-empty-title">Aún no tenés entradas</div><div class="p-empty-sub">Este es tu espacio seguro. 🌙</div></div>';
@@ -5139,14 +5148,20 @@ async function _loadDiaryEntries(){
   // Sort newest first
   entries = entries.slice().sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
   el.innerHTML = entries.map(function(e, i){
-    var dateLabel = e.dateLabel || new Date(e.ts).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-    var emojiBadge = e.emoji ? '<span style="font-size:15px;margin-right:6px">'+e.emoji+'</span>' : '<span style="font-size:12px;margin-right:6px;opacity:.4">📜</span>';
-    var titleHint = e.title ? '<span style="font-size:11px;color:var(--ink4);font-style:italic;margin-left:6px">— '+_escHtml(e.title)+'</span>' : '';
-    return '<div class="diary-row" style="animation-delay:'+i*.04+'s;display:flex;align-items:center;gap:8px">'
-      +'<div style="flex:1;cursor:pointer;min-width:0" onclick="pOpenDiaryEntry('+e.ts+')">'
-      +'<div class="diary-row-date" style="display:flex;align-items:center">'+emojiBadge+_escHtml(dateLabel)+titleHint+'</div>'
+    // Date without time — strip everything after '·' from stored label, or format fresh
+    var rawLabel = e.dateLabel || '';
+    var dateOnly = rawLabel ? rawLabel.split('·')[0].trim() : new Date(Number(e.ts)).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
+    var emojiBadge = e.emoji ? '<span style="font-size:16px">'+e.emoji+'</span>' : '📜';
+    var titleLine = e.title ? '<div style="font-size:12px;color:var(--ink4);font-style:italic;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(e.title)+'</div>' : '';
+    return '<div class="diary-row" onclick="pOpenDiaryEntry('+e.ts+')" style="animation-delay:'+i*.04+'s;cursor:pointer">'
+      +'<div style="display:flex;align-items:center;gap:10px">'
+      +'<span style="font-size:20px;flex-shrink:0">'+emojiBadge+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div class="diary-row-date">'+_escHtml(dateOnly)+'</div>'
+      +titleLine
       +'</div>'
-      +'<button onclick="event.stopPropagation();pDeleteDiary('+e.ts+')" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink4);padding:4px 6px;flex-shrink:0" title="Eliminar">🗑️</button>'
+      +'<button onclick="event.stopPropagation();pDeleteDiary('+e.ts+')" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink4);padding:4px 6px;flex-shrink:0">🗑️</button>'
+      +'</div>'
       +'</div>';
   }).join('');
 }
@@ -5155,7 +5170,9 @@ var _diaryEntries = [];
 function pOpenDiaryEntry(ts){
   var entries = _diaryEntries;
   if(!entries.length){ try{ entries = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){} }
-  var entry = entries.find(function(e){ return e.ts === ts; });
+  // Use numeric comparison to handle string/number type mismatch from Supabase
+  var tsN = Number(ts);
+  var entry = entries.find(function(e){ return Number(e.ts) === tsN; });
   if(!entry) return;
   var ov = document.getElementById('diaryEntryOv');
   if(!ov) return;
@@ -5882,17 +5899,21 @@ function _pulseRespiraRing(phaseIdx, ph){
   var canvas = document.getElementById('respiraCanvas');
   if(!canvas) return;
   var rect = canvas.getBoundingClientRect();
-  var cx = rect.left + rect.width/2;
-  var cy = rect.top + rect.height/2;
+  // Use actual CSS-rendered size (not the HTML attribute)
+  var size = Math.round(rect.width);
+  var cx = rect.left + size / 2;
+  var cy = rect.top  + size / 2;
+  var dur = ph ? ph.dur : 4;
   var ring = document.createElement('div');
-  var size = 260;
+  // Position centered on the canvas using left/top — NO translate in keyframe
   ring.style.cssText = 'position:fixed;pointer-events:none;border-radius:50%;z-index:9998;'
     +'width:'+size+'px;height:'+size+'px;'
     +'left:'+(cx - size/2)+'px;top:'+(cy - size/2)+'px;'
+    +'transform-origin:center center;'
     +'border:2px solid '+(ph ? ph.colorA : 'rgba(116,198,157,.7)')+';'
-    +'animation:respiraRingPulse '+(ph ? ph.dur : 4)+'s ease-out forwards;';
+    +'animation:respiraRingExpand '+dur+'s ease-out forwards;';
   document.body.appendChild(ring);
-  setTimeout(function(){ ring.remove(); }, (ph ? ph.dur : 4)*1000 + 200);
+  setTimeout(function(){ ring.remove(); }, dur*1000 + 200);
 }
 
 function _startRespiraAmbient(){
@@ -5906,20 +5927,42 @@ function _startRespiraAmbient(){
   layer.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0';
   if(!inner.style.position) inner.style.position = 'relative';
   inner.insertBefore(layer, inner.firstChild);
-  // Floating petals and nature elements
-  var petals = ['🌸','🌼','🌸','✨','🍃','🌺','💫','🌿','🌸','🌼','✨','🍃','🌱','🌾'];
-  for(var i = 0; i < 14; i++){
-    var p = document.createElement('span');
-    p.textContent = petals[i];
-    var lft  = 4 + (i * 7) % 92;
-    var dur  = 12 + (i * 2.1) % 12;
-    var del  = -((i * 1.8) % 14);
-    var size = 14 + (i * 2.3) % 20;
-    p.style.cssText = 'position:absolute;left:'+lft+'%;bottom:-60px;font-size:'+size+'px;'
-      +'animation:respiraFloat '+dur+'s '+del+'s linear infinite;'
-      +'will-change:transform,opacity;opacity:0';
-    layer.appendChild(p);
-  }
+  // Two rAF frames so layout settles and getBoundingClientRect is accurate
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    var canvas = document.getElementById('respiraCanvas');
+    if(!canvas || !layer.isConnected) return;
+    var lr = layer.getBoundingClientRect();
+    var cr = canvas.getBoundingClientRect();
+    var cx = cr.left - lr.left + cr.width  / 2;
+    var cy = cr.top  - lr.top  + cr.height / 2;
+    var petals = ['🌸','🌼','🌺','✨','🍃','💫','🌿','🌸','✨','🍃','🌼','🌺','🌱','💫'];
+    var n = petals.length;
+    for(var i = 0; i < n; i++){
+      var r   = 148 + (i * 5.8) % 52;         // orbit radius 148–200px
+      var dur = (20 + (i * 3.7) % 18) * 1000; // 20–38s per full orbit
+      var sz  = 14 + (i * 2.1) % 18;          // emoji 14–32px
+      // Wrapper anchored at canvas center — this is what orbits
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:absolute;left:'+cx+'px;top:'+cy+'px;width:0;height:0;transform-origin:0 0;will-change:transform';
+      // Petal offset from center by orbit radius
+      var span = document.createElement('span');
+      span.textContent = petals[i];
+      span.style.cssText = 'position:absolute;font-size:'+sz+'px;display:block;opacity:0.82;'
+        +'left:'+r+'px;top:'+(-sz/2)+'px;will-change:transform';
+      wrap.appendChild(span);
+      layer.appendChild(wrap);
+      // Orbit the wrapper — negative delay staggers start angle around the circle
+      wrap.animate(
+        [{ transform:'rotate(0turn)' },{ transform:'rotate(1turn)' }],
+        { duration:dur, delay:-(i/n)*dur, iterations:Infinity, easing:'linear' }
+      );
+      // Slow self-spin on petal for organic feel
+      span.animate(
+        [{ transform:'rotate(0turn)' },{ transform:'rotate(1turn)' }],
+        { duration:dur*0.35, delay:-(i/n)*dur*0.35, iterations:Infinity, easing:'linear' }
+      );
+    }
+  }); });
 }
 
 function _stopRespiraAmbient(){

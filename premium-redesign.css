@@ -7602,8 +7602,14 @@ body.r-dark #pg-guardian-chat {
   100% { transform: translateY(-105vh) translateX(-10px) rotate(380deg); opacity: 0; }
 }
 @keyframes respiraRingPulse {
-  0%   { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
-  100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
+  0%   { transform: scale(1);   opacity: 0.75; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+/* Alias used by _pulseRespiraRing — starts at canvas edge, expands out */
+@keyframes respiraRingExpand {
+  0%   { transform: scale(1);   opacity: 0.72; }
+  15%  { opacity: 0.65; }
+  100% { transform: scale(2.8); opacity: 0; }
 }
 
 /* ── v368: Diary Papiro (parchment viewer) ──────────────────────── */
@@ -7765,4 +7771,67 @@ body.r-dark .diary-row-date { color: rgba(255,255,255,.75) !important; }
   .diary-papiro { padding: 36px 18px 24px !important; }
   .diary-papiro::after { display: none; } /* hide margin line on tiny phones */
   .diary-papiro-text { font-size: 15px !important; }
+}
+
+/* ── v370: Respira — ocean background ──────────────────────────── */
+.respira-ocean-bg {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 20%, rgba(20,80,140,.35) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 25% 75%, rgba(10,60,110,.25) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 35% at 80% 60%, rgba(15,70,120,.2) 0%, transparent 60%),
+    linear-gradient(180deg, #030d1a 0%, #061525 18%, #091e30 40%, #0b1f2e 65%, #071320 100%);
+}
+/* Light rays from above */
+.respira-ocean-bg::before {
+  content: '';
+  position: absolute;
+  top: -10%;
+  left: 30%;
+  width: 40%;
+  height: 70%;
+  background: linear-gradient(180deg,
+    rgba(80,160,220,.06) 0%,
+    rgba(60,140,200,.04) 40%,
+    transparent 100%);
+  transform: skewX(-8deg);
+  pointer-events: none;
+  animation: respiraRayShift 12s ease-in-out infinite alternate;
+}
+/* Second light ray */
+.respira-ocean-bg::after {
+  content: '';
+  position: absolute;
+  top: -10%;
+  left: 55%;
+  width: 25%;
+  height: 55%;
+  background: linear-gradient(180deg,
+    rgba(100,180,240,.04) 0%,
+    transparent 100%);
+  transform: skewX(6deg);
+  pointer-events: none;
+  animation: respiraRayShift 18s ease-in-out infinite alternate-reverse;
+}
+@keyframes respiraRayShift {
+  0%   { opacity: 0.6; transform: skewX(-8deg) translateX(0); }
+  100% { opacity: 1;   transform: skewX(-4deg) translateX(30px); }
+}
+/* Subtle bottom wave band */
+.respira-ocean-bg .respira-wave-band {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+  background: linear-gradient(0deg,
+    rgba(10,60,110,.22) 0%,
+    rgba(15,80,130,.10) 50%,
+    transparent 100%);
+  animation: respiraWavePulse 6s ease-in-out infinite;
+}
+@keyframes respiraWavePulse {
+  0%,100% { opacity: 0.7; transform: scaleY(1); }
+  50%     { opacity: 1;   transform: scaleY(1.12); }
 }
