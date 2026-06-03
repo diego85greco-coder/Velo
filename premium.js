@@ -2282,7 +2282,7 @@ async function pConfirmAskGuardian(){
     if(_seekerPollTmr){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; }
     if(_gcSeekerCh && sbClient){ try{ sbClient.removeChannel(_gcSeekerCh); }catch(e){} _gcSeekerCh = null; }
     _seekerWaitTimer = null;
-  }, 120000);
+  }, 60000);
 }
 
 function _showGuardianWaitSheet(name, reqId){
@@ -2636,6 +2636,7 @@ function _showHelpExitBanner(peerName){
 }
 
 function _showBuzónAlert(subject, senderId, senderName, senderAv){
+  if(_inActiveChat) return;
   var existing = document.getElementById('buzónAlertPop');
   if(existing) existing.remove();
   var isDark = document.body.classList.contains('r-dark');
@@ -3073,7 +3074,7 @@ async function _guardianSendRequest(post){
   }, 8000);
   // 120 second timeout
   if(_guardianWaitTimer) clearTimeout(_guardianWaitTimer);
-  _guardianWaitTimer = setTimeout(function(){ _guardianRequestExpired(post); }, 120000);
+  _guardianWaitTimer = setTimeout(function(){ _guardianRequestExpired(post); }, 60000);
 }
 
 function _showGuardianWaitOverlay(post, myName){
@@ -3085,13 +3086,13 @@ function _showGuardianWaitOverlay(post, myName){
   ov.innerHTML = '<div id="guardianWaitCard" style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center">'
     +'<div style="font-size:44px;margin-bottom:12px">💙</div>'
     +'<div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Esperando respuesta…</div>'
-    +'<div style="font-size:13px;color:var(--ink3);margin-bottom:18px">Le avisamos a <strong>'+_escHtml(post.name)+'</strong> que querés acompañarle. Si no responde en 2 minutos te mostraremos opciones.</div>'
+    +'<div style="font-size:13px;color:var(--ink3);margin-bottom:18px">Le avisamos a <strong>'+_escHtml(post.name)+'</strong> que querés acompañarle. Si no responde en 1 minuto te mostraremos opciones.</div>'
     +'<div id="guardianWaitCountdown" style="font-size:32px;font-weight:800;color:var(--sage);margin-bottom:20px">2:00</div>'
     +'<button onclick="_guardianCancelWait()" style="padding:10px 24px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:100px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
     +'</div>';
   document.body.appendChild(ov);
-  // Start countdown display: 2 minutes (120s), shown as M:SS
-  var secs = 120;
+  // Start countdown display: 1 minute (60s), shown as M:SS
+  var secs = 60;
   var cdEl = document.getElementById('guardianWaitCountdown');
   var cdInt = setInterval(function(){
     secs--;
@@ -4214,7 +4215,7 @@ async function pSendCalmAIMsg(){
   typingDiv.innerHTML = '<div class="feed-av">🌿</div><div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">Acompañante Velo</div><div class="feed-bubble" style="color:var(--ink4);font-style:italic">Escribiendo…</div></div>';
   if(msgEl){ msgEl.appendChild(typingDiv); msgEl.scrollTop = msgEl.scrollHeight; }
 
-  var systemPrompt = 'Sos Velo, un acompañante empático y cálido de una app de salud mental peer-to-peer. '
+  var systemPrompt = 'Sos Velo, un acompañante empático y cálido de una app de acompañamiento emocional entre pares. '
     +'Tu rol es escuchar activamente, validar emociones genuinamente y ofrecer apoyo real sin juzgar ni diagnosticar. '
     +'Respondés en español rioplatense (usás "vos", "te", "estás", "querés"). '
     +'Tus respuestas tienen 3-5 oraciones: primero validás la emoción específica que mencionó la persona, luego ofrecés una reflexión o acompañamiento genuino, y terminás con una pregunta abierta que invite a seguir hablando. '
@@ -4912,21 +4913,70 @@ function pSelDiaryEmoji(el, emoji){
   });
 }
 
+function _openDiaryEmojiPicker(){
+  var existing = document.getElementById('diaryEmojiPickerOv');
+  if(existing){ existing.remove(); return; }
+  var groups = [
+    { label:'Caras', emojis:['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','😐','😑','😶','🙄','😏','😒','😞','😔','😟','😕','🙃','😣','😖','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','😈','👿','😱','😨','😰','😥','😓','🤔','🤭','🤫','🤥','😶','😐','🥱','😴','🤤','😪'] },
+    { label:'Corazones', emojis:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','🫀','♥️'] },
+    { label:'Naturaleza', emojis:['🌸','🌺','🌻','🌹','🌷','🌼','💐','🌿','🍃','🍀','🌱','🌲','🌳','🌴','🌵','🎋','🌾','🍂','🍁','🌙','⭐','✨','💫','🌟','🌈','☁️','🌤️','⛅','🌦️','🌧️','⛈️','🌨️','❄️','🌊','💧','🔥','🌺'] },
+    { label:'Animales', emojis:['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🦆','🦅','🦉','🦇','🐝','🦋','🐛','🐌','🐞','🐜','🪲','🐢','🦎','🐍','🦕','🐙','🦑','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊'] },
+    { label:'Varios', emojis:['✨','🌈','⭐','🌟','💫','🎉','🎊','🎈','🎁','🏆','🥇','🎯','🎨','🎭','🎬','🎤','🎧','🎵','🎶','🎸','🎹','🎺','🎻','🥁','📚','📖','✏️','📝','💡','🔮','🌙','🕯️','💎','🌺','🧘','💪','🙏','👏','🤝'] }
+  ];
+  var ov = document.createElement('div');
+  ov.id = 'diaryEmojiPickerOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9100;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.5)';
+  var html = '<div style="background:var(--cream);border-radius:20px 20px 0 0;padding:20px 16px 28px;width:100%;max-width:560px;max-height:70vh;overflow-y:auto">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+    +'<div style="font-size:13px;font-weight:700;color:var(--ink)">Elegí un emoji</div>'
+    +'<button onclick="document.getElementById(\'diaryEmojiPickerOv\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--ink4)">✕</button>'
+    +'</div>';
+  groups.forEach(function(g){
+    html += '<div style="font-size:10px;font-weight:700;color:var(--ink4);letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px">'+g.label+'</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+    g.emojis.forEach(function(em){
+      html += '<button onclick="_setDiaryEmoji(\''+em+'\')" style="background:none;border:none;cursor:pointer;font-size:24px;padding:4px;border-radius:8px;line-height:1">'+em+'</button>';
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  ov.innerHTML = html;
+  ov.onclick = function(ev){ if(ev.target===ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+
+function _setDiaryEmoji(emoji){
+  _selectedDiaryEmoji = emoji;
+  var btn = document.getElementById('diaryEmojiBtn');
+  var chosen = document.getElementById('diaryEmojiChosen');
+  if(btn) btn.textContent = '😊 Elegir emoji';
+  if(chosen) chosen.textContent = emoji;
+  var ov = document.getElementById('diaryEmojiPickerOv');
+  if(ov) ov.remove();
+}
+
 async function pSaveDiary(){
   var ta = document.getElementById('diaryTa');
   if(!ta || !ta.value.trim()){ pToast('✍️','Escribí algo primero'); return; }
-  var text = (_selectedDiaryEmoji ? _selectedDiaryEmoji+' ' : '') + ta.value.trim();
+  var titleEl = document.getElementById('diaryTitleInput');
+  var title = titleEl ? titleEl.value.trim() : '';
+  var emoji = _selectedDiaryEmoji || '';
+  var rawText = ta.value.trim();
+  // Legacy combined text for sbSaveDiaryEntry compatibility
+  var text = (emoji ? emoji+' ' : '') + rawText;
   var ts = Date.now();
   var dateLabel = _fmtDate(ts);
   // Local storage
   var entries = []; try{ entries = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
-  entries.unshift({ text:text, dateLabel:dateLabel, ts:ts });
+  entries.unshift({ title:title, emoji:emoji, text:rawText, dateLabel:dateLabel, ts:ts });
   safeLS('set','velo_diary', JSON.stringify(entries.slice(0,200)));
   // Supabase
   sbSaveDiaryEntry(text, dateLabel, ts);
   ta.value = '';
+  if(titleEl) titleEl.value = '';
   _selectedDiaryEmoji = '';
-  document.querySelectorAll('.diary-emoji-btn').forEach(function(b){ b.classList.remove('sel'); });
+  var chosenEl = document.getElementById('diaryEmojiChosen');
+  if(chosenEl) chosenEl.textContent = '';
   pToast('📔','Entrada guardada 💚');
   _loadDiaryEntries();
 }
@@ -4949,10 +4999,15 @@ async function _loadDiaryEntries(){
   // Sort newest first
   entries = entries.slice().sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
   el.innerHTML = entries.map(function(e, i){
-    var preview = (e.text||'').slice(0, 55) + ((e.text||'').length > 55 ? '…' : '');
-    return '<div class="diary-row" style="animation-delay:'+i*.04+'s" onclick="pOpenDiaryEntry('+e.ts+')">'
+    // Show title if exists, else first 36 chars of text as display label
+    var displayTitle = e.title || (e.text||'').slice(0, 36) + ((e.text||'').length > 36 ? '…' : '');
+    var emojiPrefix = e.emoji ? e.emoji+' ' : '';
+    return '<div class="diary-row" style="animation-delay:'+i*.04+'s;display:flex;align-items:center;gap:8px">'
+      +'<div style="flex:1;cursor:pointer;min-width:0" onclick="pOpenDiaryEntry('+e.ts+')">'
       +'<div class="diary-row-date">'+_escHtml(e.dateLabel||'')+'</div>'
-      +'<div class="diary-row-preview">'+_escHtml(preview)+'</div>'
+      +'<div class="diary-row-preview" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(emojiPrefix+displayTitle)+'</div>'
+      +'</div>'
+      +'<button onclick="event.stopPropagation();pDeleteDiary('+e.ts+')" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink4);padding:4px 6px;flex-shrink:0" title="Eliminar">🗑️</button>'
       +'</div>';
   }).join('');
 }
@@ -4965,10 +5020,14 @@ function pOpenDiaryEntry(ts){
   if(!entry) return;
   var ov = document.getElementById('diaryEntryOv');
   if(!ov) return;
-  var dateEl  = document.getElementById('diaryEntryDate');
-  var textEl  = document.getElementById('diaryEntryText');
-  var delBtn  = document.getElementById('diaryEntryDel');
+  var dateEl   = document.getElementById('diaryEntryDate');
+  var emojiEl  = document.getElementById('diaryEntryEmoji');
+  var titleEl  = document.getElementById('diaryEntryTitle');
+  var textEl   = document.getElementById('diaryEntryText');
+  var delBtn   = document.getElementById('diaryEntryDel');
   if(dateEl)  dateEl.textContent  = entry.dateLabel || '';
+  if(emojiEl) emojiEl.textContent = entry.emoji || '';
+  if(titleEl){ titleEl.textContent = entry.title || ''; titleEl.style.display = entry.title ? '' : 'none'; }
   if(textEl)  textEl.textContent  = entry.text || '';
   if(delBtn)  delBtn.onclick = function(){ closeModal('diaryEntryOv'); pDeleteDiary(ts); };
   openModal('diaryEntryOv');
@@ -8464,6 +8523,8 @@ function pLeaveDM(){
     }).then(function(){}).catch(function(){});
   }
   if(_dmRtCh && sbClient){ try{ sbClient.removeChannel(_dmRtCh); }catch(e){} _dmRtCh = null; }
+  // Clear accepted flag so a new session requires a fresh chat request
+  if(_dmPeer && _dmPeer.id) safeLS('del', 'velo_dm_accepted_'+_dmPeer.id);
   _dmPeer = null;
   _dmLastMsgId = null;
   _inActiveChat = false;

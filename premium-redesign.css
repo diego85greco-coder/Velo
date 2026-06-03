@@ -7118,3 +7118,71 @@ body.r-dark .home-dqa-btn:hover {
     background: rgba(116,198,157,.55) !important;
   }
 }
+
+/* ── v336: Revert v332 broken stretch layout — restore original grid ─
+   align-items:stretch + vertical stats made the card too tall and pushed
+   all content to the right. Restore align-items:end + horizontal stats. */
+@media (min-width: 860px) {
+  /* Restore compact grid */
+  .r-hero-v2 {
+    align-items: end !important;
+  }
+  /* Restore right column */
+  .r-hero-right {
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: flex-end !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  .r-hero-right .r-hero-actions-top {
+    display: flex !important;
+  }
+  /* Restore horizontal stats row */
+  .r-hero-stats {
+    flex-direction: row !important;
+    flex: initial !important;
+    align-items: flex-end !important;
+    align-self: auto !important;
+    gap: 20px !important;
+  }
+  /* Restore each stat to original pill style */
+  .r-hero-stat,
+  .r-hero-stat:last-child {
+    flex: initial !important;
+    display: block !important;
+    align-items: initial !important;
+    justify-content: initial !important;
+    text-align: right !important;
+    padding: 0 20px 0 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-right: 1px solid var(--r-glass-bord) !important;
+  }
+  .r-hero-stat:last-child {
+    border-right: none !important;
+    padding-right: 0 !important;
+  }
+  .r-hero-stat-val {
+    justify-content: flex-end !important;
+    font-size: 30px !important;
+  }
+  .r-hero-stat-lbl {
+    font-size: 10px !important;
+    letter-spacing: 1.2px !important;
+    margin-top: 4px !important;
+  }
+  body.r-dark .r-hero-stat,
+  body.r-dark .r-hero-stat:last-child {
+    background: transparent !important;
+    border-color: rgba(255,255,255,.14) !important;
+  }
+  /* Reduce photo overlay — make image clearly visible */
+  .r-hero-v2::after {
+    background: rgba(242,251,245,.28) !important;
+  }
+  body.r-dark .r-hero-v2::after {
+    background: rgba(6,18,10,.42) !important;
+  }
+}
