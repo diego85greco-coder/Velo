@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-367">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-367">
+  <link rel="stylesheet" href="premium.css?v=20260530-368">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-368">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1428,13 +1428,15 @@
         </div>
         <!-- Diary entry viewer (papiro) -->
         <div class="p-modal-ov" id="diaryEntryOv" onclick="if(event.target===this)closeModal('diaryEntryOv')">
-          <div style="background:linear-gradient(145deg,#fdf6e3,#f2e4be);border-radius:20px;padding:28px 24px;max-width:560px;width:calc(100% - 32px);max-height:82vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.45);font-family:'Crimson Pro','Cormorant Garamond',serif;margin:auto">
-            <button onclick="closeModal('diaryEntryOv')" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:#7a5c2a;line-height:1;padding:4px">✕</button>
-            <div id="diaryEntryDate" style="font-size:11px;color:#9a7a3a;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px"></div>
-            <div id="diaryEntryEmoji" style="font-size:30px;margin-bottom:10px"></div>
-            <div id="diaryEntryTitle" style="font-size:21px;font-weight:600;color:#3d2a0a;margin-bottom:14px;display:none"></div>
-            <div id="diaryEntryText" style="font-size:16px;color:#4a3520;line-height:1.8;white-space:pre-wrap;margin-bottom:24px"></div>
-            <button id="diaryEntryDel" class="p-btn p-btn--secondary p-btn--sm" style="color:var(--sos);border-color:var(--sos)">🗑️ Borrar entrada</button>
+          <div class="diary-papiro">
+            <button onclick="closeModal('diaryEntryOv')" class="diary-papiro-close">✕</button>
+            <div id="diaryEntryDate" class="diary-papiro-date"></div>
+            <div id="diaryEntryEmoji" class="diary-papiro-emoji"></div>
+            <div id="diaryEntryTitle" class="diary-papiro-title"></div>
+            <div id="diaryEntryText" class="diary-papiro-text"></div>
+            <div class="diary-papiro-footer">
+              <button id="diaryEntryDel" class="diary-papiro-del">🗑️ Borrar entrada</button>
+            </div>
           </div>
         </div>
         <!-- Bottle form sheet -->
@@ -3062,8 +3064,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-367"></script>
-<script src="premium-redesign.js?v=20260530-367"></script>
+<script src="premium.js?v=20260530-368"></script>
+<script src="premium-redesign.js?v=20260530-368"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

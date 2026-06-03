@@ -5139,13 +5139,12 @@ async function _loadDiaryEntries(){
   // Sort newest first
   entries = entries.slice().sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
   el.innerHTML = entries.map(function(e, i){
-    // Show title if exists, else first 36 chars of text as display label
-    var displayTitle = e.title || (e.text||'').slice(0, 36) + ((e.text||'').length > 36 ? '…' : '');
-    var emojiPrefix = e.emoji ? e.emoji+' ' : '';
+    var dateLabel = e.dateLabel || new Date(e.ts).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    var emojiBadge = e.emoji ? '<span style="font-size:15px;margin-right:6px">'+e.emoji+'</span>' : '<span style="font-size:12px;margin-right:6px;opacity:.4">📜</span>';
+    var titleHint = e.title ? '<span style="font-size:11px;color:var(--ink4);font-style:italic;margin-left:6px">— '+_escHtml(e.title)+'</span>' : '';
     return '<div class="diary-row" style="animation-delay:'+i*.04+'s;display:flex;align-items:center;gap:8px">'
       +'<div style="flex:1;cursor:pointer;min-width:0" onclick="pOpenDiaryEntry('+e.ts+')">'
-      +'<div class="diary-row-date">'+_escHtml(e.dateLabel||'')+'</div>'
-      +'<div class="diary-row-preview" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(emojiPrefix+displayTitle)+'</div>'
+      +'<div class="diary-row-date" style="display:flex;align-items:center">'+emojiBadge+_escHtml(dateLabel)+titleHint+'</div>'
       +'</div>'
       +'<button onclick="event.stopPropagation();pDeleteDiary('+e.ts+')" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink4);padding:4px 6px;flex-shrink:0" title="Eliminar">🗑️</button>'
       +'</div>';
@@ -5165,8 +5164,9 @@ function pOpenDiaryEntry(ts){
   var titleEl  = document.getElementById('diaryEntryTitle');
   var textEl   = document.getElementById('diaryEntryText');
   var delBtn   = document.getElementById('diaryEntryDel');
-  if(dateEl)  dateEl.textContent  = entry.dateLabel || '';
-  if(emojiEl) emojiEl.textContent = entry.emoji || '';
+  var fullDate = entry.dateLabel || new Date(entry.ts).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if(dateEl)  dateEl.textContent  = fullDate;
+  if(emojiEl){ emojiEl.textContent = entry.emoji || ''; emojiEl.style.display = entry.emoji ? '' : 'none'; }
   if(titleEl){ titleEl.textContent = entry.title || ''; titleEl.style.display = entry.title ? '' : 'none'; }
   if(textEl)  textEl.textContent  = entry.text || '';
   if(delBtn)  delBtn.onclick = function(){ closeModal('diaryEntryOv'); pDeleteDiary(ts); };

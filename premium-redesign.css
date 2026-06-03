@@ -3521,13 +3521,7 @@ body.r-dark #diaryPrivacyBanner {
 }
 body.r-dark #diaryPrivacyBanner div[style] { color: rgba(255,255,255,.60) !important; }
 
-/* ── v182: Diary entry viewer sheet dark mode ─────────────────── */
-body.r-dark #diaryEntryOv .p-sheet {
-  background: rgba(9,22,14,.97) !important;
-  border-top-color: rgba(116,198,157,.22) !important;
-}
-body.r-dark #diaryEntryOv #diaryEntryDate { color: rgba(116,198,157,.75) !important; }
-body.r-dark #diaryEntryOv #diaryEntryText { color: rgba(255,255,255,.85) !important; }
+/* dark mode papiro overrides handled in v368 section at bottom of file */
 
 /* ── v182: Inbox message sheet dark mode ──────────────────────── */
 body.r-dark #inboxMsgOv .p-sheet,
@@ -7602,3 +7596,157 @@ body.r-dark #pg-guardian-chat {
   0%   { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
   100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
 }
+
+/* ── v368: Diary Papiro (parchment viewer) ──────────────────────── */
+.diary-papiro {
+  position: relative;
+  background:
+    radial-gradient(ellipse 90% 35% at 50% 0%,   rgba(200,160,70,.18) 0%, transparent 100%),
+    radial-gradient(ellipse 60% 40% at 15% 85%,  rgba(175,130,50,.14) 0%, transparent 100%),
+    radial-gradient(ellipse 50% 30% at 85% 20%,  rgba(210,175,90,.10) 0%, transparent 100%),
+    linear-gradient(172deg, #faf2d4 0%, #f0e2a4 25%, #ead896 55%, #f2e8b6 80%, #faf4d8 100%);
+  border-radius: 2px 2px 4px 4px;
+  padding: 40px 36px 32px;
+  max-width: 540px;
+  width: calc(100% - 32px);
+  max-height: 86vh;
+  overflow-y: auto;
+  box-shadow:
+    0 1px 0 #b8921e,
+    0 3px 0 #a07c10,
+    0 5px 0 rgba(130,95,10,.55),
+    0 8px 0 rgba(110,80,8,.3),
+    0 12px 0 rgba(90,65,5,.15),
+    0 24px 60px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,248,200,.7),
+    inset 0 0 120px rgba(160,120,30,.06);
+  font-family: 'Crimson Pro','Cormorant Garamond','Palatino Linotype',Georgia,serif;
+  margin: auto;
+  border-left:  1px solid rgba(170,130,45,.5);
+  border-right: 1px solid rgba(170,130,45,.5);
+  border-top:   2px solid rgba(185,145,55,.6);
+  /* Subtle top binding strip */
+}
+.diary-papiro::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 20%;
+  right: 20%;
+  height: 7px;
+  background: linear-gradient(90deg, transparent, rgba(160,110,30,.55) 20%, rgba(190,145,50,.7) 50%, rgba(160,110,30,.55) 80%, transparent);
+  border-radius: 2px;
+}
+/* Faint vertical red margin line */
+.diary-papiro::after {
+  content: '';
+  position: absolute;
+  top: 40px;
+  left: 68px;
+  bottom: 32px;
+  width: 1px;
+  background: rgba(200,80,60,.2);
+  pointer-events: none;
+}
+.diary-papiro-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #8a6028;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background .15s;
+}
+.diary-papiro-close:hover { background: rgba(0,0,0,.06); }
+.diary-papiro-date {
+  font-size: 10px;
+  font-weight: 700;
+  color: #7a5020;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+  font-family: 'Jost','Outfit',sans-serif;
+  padding-left: 2px;
+  border-bottom: 1px solid rgba(160,110,40,.2);
+  padding-bottom: 12px;
+}
+.diary-papiro-emoji {
+  font-size: 34px;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+.diary-papiro-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #2e1a04;
+  margin-bottom: 16px;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+}
+.diary-papiro-text {
+  font-size: 17px;
+  color: #251503;
+  line-height: 2.05;
+  white-space: pre-wrap;
+  font-style: italic;
+  letter-spacing: 0.018em;
+  text-shadow: 0.4px 0.4px 0 rgba(0,0,0,.10);
+  /* Ruled lines */
+  background: repeating-linear-gradient(
+    transparent,
+    transparent calc(2.05em - 1px),
+    rgba(140,100,30,.13) calc(2.05em - 1px),
+    rgba(140,100,30,.13) calc(2.05em)
+  );
+  background-size: 100% 2.05em;
+  padding-bottom: 4px;
+  margin-bottom: 24px;
+  word-break: break-word;
+}
+.diary-papiro-footer {
+  border-top: 1px solid rgba(160,110,40,.2);
+  padding-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+.diary-papiro-del {
+  background: none;
+  border: 1.5px solid rgba(200,70,50,.35);
+  border-radius: 10px;
+  color: rgba(180,55,35,.7);
+  font-size: 12px;
+  font-family: 'Jost','Outfit',sans-serif;
+  font-weight: 700;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.diary-papiro-del:hover { background: rgba(200,70,50,.08); border-color: rgba(200,70,50,.5); }
+
+/* Dark mode: papiro keeps light appearance (it IS a paper) */
+body.r-dark .diary-papiro {
+  background:
+    radial-gradient(ellipse 90% 35% at 50% 0%,   rgba(200,160,70,.18) 0%, transparent 100%),
+    radial-gradient(ellipse 60% 40% at 15% 85%,  rgba(175,130,50,.14) 0%, transparent 100%),
+    linear-gradient(172deg, #f5ecc8 0%, #e8d888 30%, #dece80 55%, #edd888 80%, #f5eec8 100%);
+  box-shadow:
+    0 1px 0 #8a6810,
+    0 3px 0 #705208,
+    0 8px 0 rgba(80,58,4,.35),
+    0 28px 70px rgba(0,0,0,.75),
+    inset 0 0 120px rgba(120,90,20,.08);
+}
+
+/* Diary entries: date-only rows */
+.diary-row-date {
+  font-size: 13px !important;
+  font-weight: 600;
+  color: var(--ink2);
+  padding: 2px 0;
+}
+body.r-dark .diary-row-date { color: rgba(255,255,255,.75) !important; }
