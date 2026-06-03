@@ -1868,18 +1868,18 @@ function pToggleGuardianMode(){
   var isOn = safeLS('get','velo_is_guardian') === 'true';
   var next = !isOn;
   safeLS('set','velo_is_guardian', next ? 'true' : 'false');
+  // Use remove+add instead of toggle(x,force) for full browser compatibility
   var tog = document.getElementById('guardianModeTog');
-  if(tog) tog.classList.toggle('on', next);
+  if(tog){ tog.classList.remove('on'); if(next) tog.classList.add('on'); }
   var tog2 = document.getElementById('homeGuardianModeTog');
-  if(tog2) tog2.classList.toggle('on', next);
+  if(tog2){ tog2.classList.remove('on'); if(next) tog2.classList.add('on'); }
   var details = document.getElementById('guardianModeDetails');
   if(details) details.style.display = next ? '' : 'none';
   if(next){
     // Always reset to disponible when activating — clears any stuck incognito state
     safeLS('set','velo_guardian_status','disponible');
     _myGuardianStatus = 'disponible';
-    _startGuardianHeartbeat();
-    _startGuardianReqListener();
+    _startGuardianHeartbeat(); // already calls _startGuardianReqListener internally
     _updateGuardianPresence('disponible');
     pToast('🛡️','¡Aparecés como guardián disponible!');
   } else {
@@ -1960,8 +1960,8 @@ function _renderHomeStatusToggle(){
   var isIncognito = safeLS('get','velo_incognito') === 'true';
   var togG = document.getElementById('homeGuardianModeTog');
   var togI = document.getElementById('homeIncognitoTog');
-  if(togG) togG.classList.toggle('on', isGuardian);
-  if(togI) togI.classList.toggle('on', isIncognito);
+  if(togG){ togG.classList.remove('on'); if(isGuardian) togG.classList.add('on'); }
+  if(togI){ togI.classList.remove('on'); if(isIncognito) togI.classList.add('on'); }
 }
 
 function _renderMyStatusBar(){
@@ -7548,11 +7548,12 @@ async function pSearchUsers(query){
 
 function pToggleIncognito(){
   var isOn = safeLS('get','velo_incognito') === 'true';
-  safeLS('set','velo_incognito', isOn ? 'false' : 'true');
+  var next = !isOn;
+  safeLS('set','velo_incognito', next ? 'true' : 'false');
   var tog = document.getElementById('incognitoTog');
-  if(tog) tog.classList.toggle('on', !isOn);
+  if(tog){ tog.classList.remove('on'); if(next) tog.classList.add('on'); }
   var tog2 = document.getElementById('homeIncognitoTog');
-  if(tog2) tog2.classList.toggle('on', !isOn);
+  if(tog2){ tog2.classList.remove('on'); if(next) tog2.classList.add('on'); }
   // Sync to Supabase so other users see the change immediately
   if(safeLS('get','velo_is_guardian') === 'true'){
     var newStatus = isOn ? 'disponible' : 'incognito';
@@ -8440,6 +8441,36 @@ function pClearAIChat(){
 // ── DIRECT MESSAGES ───────────────────────────────────────────
 
 var _dmPeer = null; // { id, name, av }
+var _dmPendingToId = null; // userId of pending outgoing request (waiting for acceptance)
+
+function _showDMSenderWaiting(toId, toName){
+  var existing = document.getElementById('dmWaitOv');
+  if(existing) existing.remove();
+  _dmPendingToId = toId;
+  var ov = document.createElement('div');
+  ov.id = 'dmWaitOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)';
+  ov.innerHTML = '<div style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:320px;width:90%;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,.3)">'
+    +'<div style="font-size:36px;margin-bottom:12px">💬</div>'
+    +'<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px">Solicitud enviada</div>'
+    +'<div style="font-size:13px;color:var(--ink4);line-height:1.5;margin-bottom:20px">Esperando que <strong>'+_escHtml(toName)+'</strong> acepte tu invitación a chatear…</div>'
+    +'<button onclick="_cancelDMRequest(\''+toId+'\')" style="width:100%;padding:12px;background:rgba(255,80,80,.1);border:1.5px solid rgba(255,80,80,.3);border-radius:12px;color:rgba(220,60,60,.85);font-size:13px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar solicitud</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function _cancelDMRequest(toId){
+  var myId = safeLS('get','velo_user_id')||'';
+  _initSupabase();
+  if(myId && sbClient){
+    sbClient.from('direct_messages').delete()
+      .eq('from_id', myId).eq('to_id', toId).eq('text','__velo_chat_req__')
+      .then(function(){}).catch(function(){});
+  }
+  var ov = document.getElementById('dmWaitOv');
+  if(ov) ov.remove();
+  _dmPendingToId = null;
+}
 
 function _dmOpenPeerProfile(){
   if(_dmPeer) pQuickProfile(_dmPeer.name, _dmPeer.av, '', '', _dmPeer.id);
@@ -8471,19 +8502,18 @@ function pOpenDM(toId, toName, toAv){
     pToast('⏳', (toName||'Este usuario') + ' está ocupado/a en otro chat, intentá más tarde');
     return;
   }
-  // Send chat request sentinel to the other user if never accepted before
-  var alreadyAccepted = safeLS('get','velo_dm_accepted_'+toId) === '1';
-  if(!alreadyAccepted){
-    var myId   = safeLS('get','velo_user_id')||'';
-    var myName = safeLS('get','velo_user_name')||'';
-    var myAv   = safeLS('get','velo_user_av')||'🧑';
-    if(myId && toId && sbClient){
-      sbClient.from('direct_messages').insert({
-        from_id:myId, from_name:myName, from_av:myAv, to_id:toId, text:'__velo_chat_req__'
-      }).then(function(){}).catch(function(){});
-    }
+  // Always send a fresh chat request — never bypass (flag cleared on leave but may be stale after refresh)
+  var myId   = safeLS('get','velo_user_id')||'';
+  var myName = safeLS('get','velo_user_name')||'';
+  var myAv   = safeLS('get','velo_user_av')||'🧑';
+  _initSupabase();
+  if(myId && toId && sbClient){
+    sbClient.from('direct_messages').insert({
+      from_id:myId, from_name:myName, from_av:myAv, to_id:toId, text:'__velo_chat_req__'
+    }).then(function(){}).catch(function(){});
   }
-  _enterDMChat(toId, toName, toAv);
+  // Show sender a waiting banner — don't enter chat until recipient accepts
+  _showDMSenderWaiting(toId, toName||'Usuario');
 }
 
 async function _renderDMThread(){
@@ -8585,11 +8615,12 @@ function pLeaveDM(){
       text: '__velo_dm_bye__:'+JSON.stringify({ name:_dmMyName, av:_dmMyAv })
     }).then(function(){}).catch(function(){});
   }
-  // Delete MY messages to this peer so history is clean if they chat again
+  // Delete ALL messages between both users so history is clean for next session
   if(sbClient && _dmMyId && _dmPeer && _dmPeer.id){
     var _delToId = _dmPeer.id;
+    var _delMyId = _dmMyId;
     sbClient.from('direct_messages').delete()
-      .eq('from_id', _dmMyId).eq('to_id', _delToId)
+      .or('and(from_id.eq.'+_delMyId+',to_id.eq.'+_delToId+'),and(from_id.eq.'+_delToId+',to_id.eq.'+_delMyId+')')
       .then(function(){}).catch(function(){});
   }
   if(_dmRtCh && sbClient){ try{ sbClient.removeChannel(_dmRtCh); }catch(e){} _dmRtCh = null; }
@@ -8712,6 +8743,10 @@ function _startGlobalDMListener(){
       }
       if(m.text === '__velo_chat_acc__'){
         safeLS('set','velo_dm_accepted_'+m.from_id,'1');
+        // Close sender waiting banner
+        var _waitOv = document.getElementById('dmWaitOv');
+        if(_waitOv) _waitOv.remove();
+        _dmPendingToId = null;
         // If already in an active chat, notify but don't overwrite the current session
         if(_inActiveChat){
           pToast('💬',(m.from_name||'Usuario')+' aceptó tu chat — terminá el actual primero');

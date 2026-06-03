@@ -7222,13 +7222,13 @@ body.r-dark .home-dqa-btn:hover {
   #pg-home .p-page-scroll {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
   }
   #pg-home .r-hero-v2 {
     grid-template-columns: 1fr !important;
     max-width: 820px !important;
     width: calc(100% - 48px) !important;
-    margin: 20px 24px 16px !important;
+    margin: 20px auto 16px !important;
   }
   #pg-home .r-hero-right {
     flex-direction: row !important;
@@ -7258,9 +7258,16 @@ body.r-dark .home-dqa-btn:hover {
   #pg-home #homeSuggestions {
     max-width: 820px !important;
     width: calc(100% - 48px) !important;
-    margin-left: 24px !important;
+    margin-left: auto !important;
     margin-right: auto !important;
     box-sizing: border-box;
+  }
+  /* Status/privacy card centered */
+  #homeStatusToggle {
+    max-width: 820px !important;
+    width: calc(100% - 48px) !important;
+    margin: 0 auto 20px !important;
+    justify-content: flex-start !important;
   }
 }
 
@@ -7338,12 +7345,10 @@ body.r-dark .home-dqa-btn:hover {
     z-index: 0 !important;
     pointer-events: none !important;
   }
-  /* Privacidad card in home: full width, left-aligned */
+  /* Privacidad card in home: centered in content column */
   #homeGuardianWrap {
     max-width: 820px !important;
-    width: calc(100% - 48px) !important;
-    margin-left: 24px !important;
-    margin-right: auto !important;
+    width: 100% !important;
     margin-bottom: 12px !important;
     justify-content: flex-start !important;
   }
