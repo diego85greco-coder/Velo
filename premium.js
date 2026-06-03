@@ -6875,31 +6875,37 @@ async function _renderHappyHistory(list){
     }
   }
 
-  // Cross-device sync: query Supabase with every possible user identifier
+  // Cross-device sync: query happy_history (permanent table, no 24h expiry)
   var sbUid   = safeLS('get','velo_user_id')||'';
   var sbEmail = safeLS('get','velo_user_email')||'';
   _initSupabase();
   if((sbUid||sbEmail) && sbClient){
     if(!history.length) list.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Sincronizando historial…</div>';
     try{
-      // Build OR so it finds posts regardless of whether user_id was stored as UUID or email
       var orParts = [];
       if(sbUid)   orParts.push('user_id.eq.'+sbUid);
       if(sbEmail) orParts.push('user_id.eq.'+sbEmail);
-      var q = sbClient.from('happy_posts').select('id,emoji,text,photo,created_at');
-      q = orParts.length === 1 ? q.eq('user_id', orParts[0].split('.eq.')[1]) : q.or(orParts.join(','));
-      var sr = await q.order('created_at',{ascending:false}).limit(200);
-      if(sr.error) console.warn('[history sb]', sr.error.message);
-      if(sr.data && sr.data.length){
+      // Primary: happy_history (permanent, cross-device)
+      var qh = sbClient.from('happy_history').select('id,emoji,text,created_at');
+      qh = orParts.length === 1 ? qh.eq('user_id', orParts[0].split('.eq.')[1]) : qh.or(orParts.join(','));
+      var sh = await qh.order('created_at',{ascending:false}).limit(500);
+      // Fallback: happy_posts (only last 24h, but covers very recent posts not yet in history)
+      var qp = sbClient.from('happy_posts').select('id,emoji,text,created_at');
+      qp = orParts.length === 1 ? qp.eq('user_id', orParts[0].split('.eq.')[1]) : qp.or(orParts.join(','));
+      var sp = await qp.order('created_at',{ascending:false}).limit(50);
+      var merged = [].concat(sh.error ? [] : (sh.data||[]), sp.error ? [] : (sp.data||[]));
+      if(merged.length){
         var existIds = {};
         history.forEach(function(e){ existIds[e.id]=true; });
-        sr.data.forEach(function(r){
+        merged.forEach(function(r){
           if(existIds[r.id]) return;
-          history.push({ id:r.id, emoji:r.emoji||'☀️', text:r.text||'', hasPhoto:!!(r.photo&&r.photo.length>10), ts:new Date(r.created_at).getTime(), name:'' });
+          existIds[r.id] = true;
+          history.push({ id:r.id, emoji:r.emoji||'☀️', text:r.text||'', ts:new Date(r.created_at).getTime(), name:'' });
         });
         history.sort(function(a,b){ return b.ts - a.ts; });
         try{ safeLS('set',_hKey, JSON.stringify(history.slice(0,500))); }catch(e){}
       }
+      if(sh.error) console.warn('[history happy_history]', sh.error.message);
     }catch(e){ console.warn('[history sb]', e); }
   }
 
@@ -7362,6 +7368,14 @@ async function pSubmitHappyPost(){
         text: post.text||'', photo: post.photo||'', anon: !!isAnon, reactions: post.reactions
       });
       if(ins && ins.error) console.error('[happy insert]', ins.error.message, ins.error);
+      // Also persist to happy_history (permanent — no 24h expiry)
+      var _hisUid = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
+      if(_hisUid){
+        sbClient.from('happy_history').insert({
+          id: post.id, user_id: _hisUid,
+          emoji: post.emoji||'☀️', text: post.text||''
+        }).then(function(){}).catch(function(){});
+      }
     }
     // Inject into pending so pRenderHappy shows it instantly (even if Supabase is slow/fails)
     _pendingHappyPost = post;
