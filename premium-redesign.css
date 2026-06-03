@@ -557,7 +557,21 @@ body::after {
   0%, 100% { transform: scale(1) rotate(0deg); opacity: .8; }
   50%       { transform: scale(1.1) rotate(8deg); opacity: 1; }
 }
-.r-hero-left { position: relative; z-index: 1; }
+.r-hero-left {
+  position: relative;
+  z-index: 1;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Visual reorder: greeting first, Jardín de hoy below */
+#homeTimeIcon         { order: 1; }
+#homeGreetWrapper     { order: 2; }
+.r-home-shortcut-grid { order: 3; }
+.r-hero-actions       { order: 4; }
+#homeHeroLabel        { order: 5; margin-top: 24px; }
+#homeDesktopQuickActs { order: 6; }
+#homeStatusToggle     { order: 7; }
 .r-hero-italic {
   font-family: 'Cormorant Garamond', serif;
   font-weight: 400;

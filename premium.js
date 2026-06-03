@@ -6737,6 +6737,25 @@ async function pRenderHappy(){
     posts = _processHappyQueue();
   }
 
+  // Auto-save own active posts to local history (cross-device: populates on first wall view)
+  if(usingSB && myId && myId.indexOf('guest-') !== 0){
+    try{
+      var _hKeyAuto = 'velo_happy_history_'+myId;
+      var _histAuto = []; try{ _histAuto = JSON.parse(safeLS('get',_hKeyAuto)||'[]'); }catch(e){}
+      var _histAutoIds = {};
+      _histAuto.forEach(function(e){ _histAutoIds[e.id]=true; });
+      var _ownWall = posts.filter(function(p){ return p.userId === myId; });
+      var _autoAdded = false;
+      _ownWall.forEach(function(p){
+        if(!_histAutoIds[p.id]){
+          _histAuto.unshift({ id:p.id, emoji:p.emoji, text:p.text, ts:p.ts, name:p.name });
+          _autoAdded = true;
+        }
+      });
+      if(_autoAdded){ try{ safeLS('set',_hKeyAuto, JSON.stringify(_histAuto.slice(0,500))); }catch(e){} }
+    }catch(e){}
+  }
+
   // Queue notice (only in localStorage mode)
   var queueNote = document.getElementById('happyQueueNote');
   if(queueNote){
@@ -6833,14 +6852,21 @@ async function _renderHappyHistory(list){
   history = history.map(function(e){ if(e.photo && String(e.photo).length > 100){ e.hasPhoto = true; delete e.photo; _migDirty = true; } return e; });
   if(_migDirty){ try{ safeLS('set',_hKey, JSON.stringify(history)); }catch(e){} }
 
-  // Cross-device sync: load all posts ever published by this user from Supabase
-  var sbUid = safeLS('get','velo_user_id')||'';
+  // Cross-device sync: query Supabase with every possible user identifier
+  var sbUid   = safeLS('get','velo_user_id')||'';
+  var sbEmail = safeLS('get','velo_user_email')||'';
   _initSupabase();
-  if(sbUid && sbClient){
-    // Show a subtle loading indicator while fetching
+  if((sbUid||sbEmail) && sbClient){
     if(!history.length) list.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Sincronizando historial…</div>';
     try{
-      var sr = await sbClient.from('happy_posts').select('id,emoji,text,photo,created_at').eq('user_id', sbUid).order('created_at',{ascending:false}).limit(200);
+      // Build OR so it finds posts regardless of whether user_id was stored as UUID or email
+      var orParts = [];
+      if(sbUid)   orParts.push('user_id.eq.'+sbUid);
+      if(sbEmail) orParts.push('user_id.eq.'+sbEmail);
+      var q = sbClient.from('happy_posts').select('id,emoji,text,photo,created_at');
+      q = orParts.length === 1 ? q.eq('user_id', orParts[0].split('.eq.')[1]) : q.or(orParts.join(','));
+      var sr = await q.order('created_at',{ascending:false}).limit(200);
+      if(sr.error) console.warn('[history sb]', sr.error.message);
       if(sr.data && sr.data.length){
         var existIds = {};
         history.forEach(function(e){ existIds[e.id]=true; });
@@ -6851,13 +6877,14 @@ async function _renderHappyHistory(list){
         history.sort(function(a,b){ return b.ts - a.ts; });
         try{ safeLS('set',_hKey, JSON.stringify(history.slice(0,500))); }catch(e){}
       }
-    }catch(e){}
+    }catch(e){ console.warn('[history sb]', e); }
   }
 
   if(!history.length){
+    var _noUid = !sbUid && !sbEmail;
     list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">📅</span>'
       +'<div class="p-empty-title">Tu historial está vacío</div>'
-      +'<div class="p-empty-sub">Cuando publiques algo en el Muro, quedará guardado aquí para siempre 🌟</div></div>';
+      +'<div class="p-empty-sub">'+(_noUid ? 'Iniciá sesión para sincronizar tu historial entre dispositivos 🔑' : 'Cuando publiques algo en el Muro, quedará guardado aquí para siempre 🌟')+'</div></div>';
     return;
   }
 
