@@ -6833,18 +6833,20 @@ async function _renderHappyHistory(list){
   history = history.map(function(e){ if(e.photo && String(e.photo).length > 100){ e.hasPhoto = true; delete e.photo; _migDirty = true; } return e; });
   if(_migDirty){ try{ safeLS('set',_hKey, JSON.stringify(history)); }catch(e){} }
 
-  // Supplement with Supabase posts by this user (cross-device sync)
-  // happy_posts only keeps last 24h; but this fills gaps on new devices
+  // Cross-device sync: load all posts ever published by this user from Supabase
   var sbUid = safeLS('get','velo_user_id')||'';
+  _initSupabase();
   if(sbUid && sbClient){
+    // Show a subtle loading indicator while fetching
+    if(!history.length) list.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Sincronizando historial…</div>';
     try{
-      var sr = await sbClient.from('happy_posts').select('id,emoji,text,photo,created_at,anon').eq('user_id', sbUid).order('created_at',{ascending:false}).limit(100);
+      var sr = await sbClient.from('happy_posts').select('id,emoji,text,photo,created_at').eq('user_id', sbUid).order('created_at',{ascending:false}).limit(200);
       if(sr.data && sr.data.length){
         var existIds = {};
         history.forEach(function(e){ existIds[e.id]=true; });
         sr.data.forEach(function(r){
           if(existIds[r.id]) return;
-          history.push({ id:r.id, emoji:r.emoji||'☀️', text:r.text||'', hasPhoto:!!r.photo, ts:new Date(r.created_at).getTime(), name:'' });
+          history.push({ id:r.id, emoji:r.emoji||'☀️', text:r.text||'', hasPhoto:!!(r.photo&&r.photo.length>10), ts:new Date(r.created_at).getTime(), name:'' });
         });
         history.sort(function(a,b){ return b.ts - a.ts; });
         try{ safeLS('set',_hKey, JSON.stringify(history.slice(0,500))); }catch(e){}
