@@ -7391,28 +7391,44 @@ body.r-dark .home-dqa-btn:hover {
     display: none !important;
   }
 }
+/* Both logos hidden on mobile */
+#desktopLogoBgLeft { display: none; }
+
 @media (min-width: 1024px) {
+  /* Right logo */
   #desktopLogoBg {
     display: block;
     position: fixed;
-    right: 4vw;
+    right: 3vw;
     top: 50%;
     transform: translateY(-50%);
     z-index: 1;
     pointer-events: none;
     user-select: none;
   }
-  #desktopLogoBg img {
-    width: clamp(140px, 14vw, 220px);
+  /* Left logo — mirror position (offset by sidebar ~64px) */
+  #desktopLogoBgLeft {
+    display: block;
+    position: fixed;
+    left: calc(64px + 1.5vw);
+    top: 50%;
+    transform: translateY(-50%) scaleX(-1); /* flip horizontally for symmetry */
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
+  }
+  #desktopLogoBg img,
+  #desktopLogoBgLeft img {
+    width: clamp(160px, 17vw, 260px);
     height: auto;
     display: block;
-    opacity: 0.22;
+    opacity: 0.20;
     transition: opacity .3s;
   }
-  /* Light mode: show logo.png (dark text logo), hide logo-dark.png */
-  body:not(.r-dark) .r-desk-logo-dark { display: none; }
-  body:not(.r-dark) .r-desk-logo-light { display: block; opacity: 0.22; }
-  /* Dark mode: show logo-dark.png (light logo), hide logo.png */
+  /* Light mode */
+  body:not(.r-dark) .r-desk-logo-dark  { display: none; }
+  body:not(.r-dark) .r-desk-logo-light { display: block; opacity: 0.20; }
+  /* Dark mode */
   body.r-dark .r-desk-logo-light { display: none; }
-  body.r-dark .r-desk-logo-dark  { display: block; opacity: 0.30; filter: brightness(1.6) saturate(0.7); }
+  body.r-dark .r-desk-logo-dark  { display: block; opacity: 0.28; filter: brightness(1.6) saturate(0.7); }
 }
