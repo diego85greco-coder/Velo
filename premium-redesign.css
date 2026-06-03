@@ -7265,16 +7265,19 @@ body.r-dark .home-dqa-btn:hover {
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   v348: Desktop hero — higher opacity + stats/buttons legibility
+   v348: Desktop hero — legibility without hiding flower background
+   Increase the existing ::after overlay opacity, not the card itself.
    ══════════════════════════════════════════════════════════════════════ */
+/* Stronger overlay so text is readable but photo still shows through */
+@media (min-width: 860px) {
+  .r-hero-v2::after {
+    background: rgba(242,251,245,.76) !important;
+  }
+  body.r-dark .r-hero-v2::after {
+    background: rgba(6,18,10,.74) !important;
+  }
+}
 @media (min-width: 1024px) {
-  /* Hero card more opaque so content is not washed out by flower bg */
-  #pg-home .r-hero-v2 {
-    background: rgba(248, 244, 232, 0.92) !important;
-  }
-  body.r-dark #pg-home .r-hero-v2 {
-    background: rgba(8, 22, 14, 0.91) !important;
-  }
   /* Stats strip: pill background so numbers stand out */
   #pg-home .r-hero-stats {
     background: rgba(255,255,255,.55);
