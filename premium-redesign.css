@@ -6325,10 +6325,7 @@ body:not(.r-dark) .r-tbar-moon { display: none; }
   gap: 0 !important;
   margin-bottom: 20px !important;
 }
-/* On desktop the sidebar always shows — hide the home privacy toggles */
-@media (min-width: 1024px) {
-  #homeStatusToggle { display: none !important; }
-}
+/* Privacy toggles visible on all screen sizes */
 #homeGuardianWrap {
   display: flex;
   justify-content: center;
@@ -7225,13 +7222,13 @@ body.r-dark .home-dqa-btn:hover {
   #pg-home .p-page-scroll {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
   }
   #pg-home .r-hero-v2 {
     grid-template-columns: 1fr !important;
     max-width: 820px !important;
     width: calc(100% - 48px) !important;
-    margin: 20px auto 16px !important;
+    margin: 20px 24px 16px !important;
   }
   #pg-home .r-hero-right {
     flex-direction: row !important;
@@ -7258,7 +7255,7 @@ body.r-dark .home-dqa-btn:hover {
   #pg-home #homeMonthlyBanner {
     max-width: 820px !important;
     width: calc(100% - 48px) !important;
-    margin-left: auto !important;
+    margin-left: 24px !important;
     margin-right: auto !important;
     box-sizing: border-box;
   }
@@ -7319,5 +7316,36 @@ body.r-dark .home-dqa-btn:hover {
   #homeHeroLabel {
     font-size: 11px !important;
     letter-spacing: 2px !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   v350: Desktop fixes
+   1. Particles cover full viewport (fixed position behind sidebar)
+   2. Home Privacidad card sizing
+   ══════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  /* Particles behind entire desktop background including sidebar area */
+  #homeBgCanvas {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+  }
+  /* Privacidad card in home: full width, left-aligned */
+  #homeGuardianWrap {
+    max-width: 820px !important;
+    width: calc(100% - 48px) !important;
+    margin-left: 24px !important;
+    margin-right: auto !important;
+    margin-bottom: 12px !important;
+    justify-content: flex-start !important;
+  }
+  #homeGuardianWrap .p-card {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }

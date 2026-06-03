@@ -1966,10 +1966,16 @@ function _renderHomeStatusToggle(){
   var el = document.getElementById('homeGuardianWrap');
   if(!el) return;
   var isGuardian = safeLS('get','velo_is_guardian') === 'true';
+  var isIncognito = safeLS('get','velo_incognito') === 'true';
   el.innerHTML =
-    '<div style="width:100%;background:rgba(255,255,255,.55);border:1.5px solid var(--border);border-radius:16px;padding:12px 16px;box-sizing:border-box">'
+    '<div class="p-card" style="padding:14px 16px;margin-bottom:0;width:100%;box-sizing:border-box">'
+    +'<div class="p-label p-label-sage" style="margin-bottom:10px">Privacidad</div>'
+    +'<div class="p-row-between" style="margin-bottom:10px">'
+    +'<div><div style="font-size:13px;color:var(--ink3)">👤 Modo incógnito</div><div style="font-size:11px;color:var(--ink5)">Ocultás tu nombre y avatar</div></div>'
+    +'<div class="p-tog'+(isIncognito?' on':'')+'" id="homeIncognitoTog" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>'
+    +'</div>'
     +'<div class="p-row-between">'
-    +'<div><div style="font-size:13px;font-weight:600;color:var(--ink2)">🛡️ Modo guardián</div><div style="font-size:11px;color:var(--ink5)">Al activarlo aparecés en la lista de guardianes para brindar ayuda</div></div>'
+    +'<div><div style="font-size:13px;font-weight:600;color:var(--ink2)">🛡️ Modo guardián</div><div style="font-size:11px;color:var(--ink5)">Aparecer disponible para acompañar</div></div>'
     +'<div class="p-tog'+(isGuardian?' on':'')+'" id="homeGuardianModeTog" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>'
     +'</div>'
     +'</div>';
