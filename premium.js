@@ -1927,7 +1927,7 @@ function _renderHomeStatusToggle(){
   var lbl = '<span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;display:block;text-align:center;margin-top:4px">';
   el.innerHTML =
     '<div style="display:flex;flex-direction:column;align-items:center">'
-    +'<button class="r-status-pill r-gmode-btn'+(isGuardian?' r-gmode-btn--on':'')+'" onclick="pHomeToggleGuardian()">'
+    +'<button class="r-status-pill r-gmode-btn'+(isGuardian?' r-gmode-btn--on':'')+'" onclick="pToggleGuardianMode()">'
     +(isGuardian?'<span style="font-size:14px">✅</span>':'<span style="font-size:14px">🛡️</span>')
     +'<span>Modo Guardián</span>'
     +'</button>'
@@ -4166,6 +4166,11 @@ function _calmAIAddMsg(text, isUser){
   if(!msgEl) return;
   var div = document.createElement('div');
   div.innerHTML = _buildMsgBubble(text, isUser, '🌿', 'Acompañante Velo', 'calmAIInput', 'calmAIReplyBar', '');
+  if(!isUser){
+    // Render **bold** markdown in bot responses (text is already HTML-escaped)
+    var bubble = div.querySelector('.feed-bubble');
+    if(bubble) bubble.innerHTML = bubble.innerHTML.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  }
   var child = div.firstElementChild;
   if(child) msgEl.appendChild(child);
   msgEl.scrollTop = msgEl.scrollHeight;
@@ -8116,7 +8121,7 @@ async function pRenderContacts(){
         if(_navToken !== _tok) return;
         (profRes.data||[]).forEach(function(p){
           if(p.id && p.username){ usernameMap[p.id] = p.username; _uFill(p.id, p.username); }
-          if(p.id) profileMap[p.id] = { name: p.nombre||'', av: p.avatar||'' };
+          if(p.id) profileMap[p.id] = { name: p.nombre || (p.username ? '@'+p.username : ''), av: p.avatar||'' };
         });
       }catch(e){}
     }
