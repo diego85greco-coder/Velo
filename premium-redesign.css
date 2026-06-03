@@ -7406,13 +7406,13 @@ body.r-dark .home-dqa-btn:hover {
     pointer-events: none;
     user-select: none;
   }
-  /* Left logo — mirror position (offset by sidebar ~64px) */
+  /* Left logo — centered in left gutter (sidebar 64px + half gutter width - half logo width) */
   #desktopLogoBgLeft {
     display: block;
     position: fixed;
-    left: calc(64px + 1.5vw);
+    left: calc(64px + (100vw - 884px) / 4 - clamp(80px, 8.5vw, 130px));
     top: 50%;
-    transform: translateY(-50%) scaleX(-1); /* flip horizontally for symmetry */
+    transform: translateY(-50%);
     z-index: 1;
     pointer-events: none;
     user-select: none;

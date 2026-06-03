@@ -2038,8 +2038,10 @@ async function pRenderGuardians(){
   // Only real live guardians — no fake fallback profiles
   var combined = liveGuardians;
   var filtered = combined.filter(function(g){
-    if(_guardianFilter === 'disponible') return g.status === 'disponible';
-    if(_guardianFilter === 'ocupado') return g.status === 'ocupado';
+    var _st = g.status || '';
+    var _base = _st.startsWith('incognito_') ? _st.replace('incognito_','') : (_st === 'incognito' ? 'disponible' : _st);
+    if(_guardianFilter === 'disponible') return _base === 'disponible';
+    if(_guardianFilter === 'ocupado') return _base === 'ocupado';
     return true;
   });
   var selfBanner = '';
@@ -2061,7 +2063,9 @@ async function pRenderGuardians(){
     var badge = _getBadge(g.convs||0);
     var gVerified = (badge.name==='Plata'||badge.name==='Oro'||badge.name==='Diamante');
     var isAnon = g.status === 'incognito' || (g.status && g.status.startsWith('incognito_'));
-    var realSt = isAnon ? (g.status.replace('incognito_','') || 'disponible') : (g.status || 'disponible');
+    var realSt = isAnon
+      ? (g.status.startsWith('incognito_') ? g.status.replace('incognito_','') : 'disponible')
+      : (g.status || 'disponible');
     var statusColor = realSt==='disponible'?'var(--st-on)':realSt==='ocupado'?'#C8A200':'rgba(150,150,150,.5)';
     var statusLabel = realSt==='disponible'?'Disponible':realSt==='ocupado'?'Ocupado':'Disponible';
     var rawId = g.id.replace('live_','');
