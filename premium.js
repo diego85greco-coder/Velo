@@ -8410,6 +8410,34 @@ async function _syncFavsFromSupabase(){
     _favsList = local;
     safeLS('set','velo_favs', JSON.stringify(local.slice(0,100)));
     _updateFavBadge();
+
+    // Resolve real names for any fav stored as 'Usuario' or empty
+    var needsName = local.filter(function(f){ return !f.name || f.name === 'Usuario'; });
+    if(needsName.length && sbClient){
+      try{
+        var nIds = needsName.map(function(f){ return f.id; });
+        var {data:pd} = await sbClient.from('profiles').select('id,nombre,avatar,username').in('id', nIds);
+        if(pd && pd.length){
+          var dirty = false;
+          pd.forEach(function(p){
+            var real = p.nombre || (p.username ? '@'+p.username : '');
+            if(!real) return;
+            _favsList.forEach(function(f){
+              if(f.id === p.id){
+                f.name = real;
+                if(p.avatar && (!f.av || f.av === '🧑')) f.av = p.avatar;
+                dirty = true;
+              }
+            });
+            // Update DB so next sync loads the real name
+            sbClient.from('user_favorites').update({ fav_name:real, fav_av:p.avatar||'' })
+              .eq('user_id', myId).eq('fav_id', p.id)
+              .then(function(){}).catch(function(){});
+          });
+          if(dirty) safeLS('set','velo_favs', JSON.stringify(_favsList.slice(0,100)));
+        }
+      }catch(e){}
+    }
   }catch(e){}
 }
 
@@ -8639,7 +8667,13 @@ async function pRenderContacts(){
       ? '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Sin favoritos aún</div><div class="p-empty-sub">Agregá personas como favoritas para verlas aquí.</div></div>'
       : favs.map(function(f){
           var pi=_presenceInfo(f.id); var uname=usernameMap[f.id]?'@'+usernameMap[f.id]:(f.username?'@'+f.username:'');
-          return _contactCard(f.id,f.name,f.av||'🧑',uname,pi,unreadIds[f.id]||0,{showMail:true,showRemove:true,showBlock:true});
+          // Prefer resolved name from profiles over stale localStorage value
+          var prof = profileMap[f.id] || {};
+          var dName = (prof.name && prof.name !== 'Usuario') ? prof.name : (f.name && f.name !== 'Usuario' ? f.name : (uname.replace('@','')||'Usuario'));
+          var dAv   = prof.av || f.av || '🧑';
+          // Silently update local cache with the real name so widget also benefits
+          if(prof.name && prof.name !== 'Usuario' && f.name !== prof.name){ f.name = prof.name; f.av = dAv; _favsList = pGetFavs(); safeLS('set','velo_favs',JSON.stringify(_favsList.slice(0,100))); }
+          return _contactCard(f.id,dName,dAv,uname,pi,unreadIds[f.id]||0,{showMail:true,showRemove:true,showBlock:true});
         }).join(''))
     +'</div>';
 
@@ -8773,17 +8807,35 @@ async function _renderFavWidget(containerId){
   var shownFavs  = onlineFavs.length ? onlineFavs : favs.slice(0,5);
   var label      = onlineFavs.length ? '🟢 Favoritos en línea' : '⭐ Mis favoritos';
 
+  // Resolve any stale 'Usuario' names from profiles before rendering
+  var _wStale = shownFavs.filter(function(f){ return !f.name || f.name === 'Usuario'; });
+  if(_wStale.length && sbClient){
+    try{
+      var _wIds = _wStale.map(function(f){ return f.id; });
+      var {data:_wPd} = await sbClient.from('profiles').select('id,nombre,username,avatar').in('id', _wIds);
+      if(_wPd) _wPd.forEach(function(p){
+        var real = p.nombre || (p.username ? '@'+p.username : '');
+        if(!real) return;
+        shownFavs.forEach(function(f){ if(f.id===p.id){ f.name=real; if(p.avatar) f.av=p.avatar; } });
+        // Also update persistent cache
+        if(_favsList) _favsList.forEach(function(f){ if(f.id===p.id){ f.name=real; if(p.avatar) f.av=p.avatar; } });
+        safeLS('set','velo_favs', JSON.stringify(pGetFavs().slice(0,100)));
+      });
+    }catch(e){}
+  }
+
   el.innerHTML = '<div style="margin-bottom:14px">'
     +'<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--sage3);text-transform:uppercase;margin-bottom:8px">'+label+'</div>'
     +'<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-ms-overflow-style:none">'
     +shownFavs.map(function(f){
       var isOnline = !!onlineIds[f.id];
+      var displayName = (f.name && f.name !== 'Usuario') ? f.name : '?';
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer" onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name)+','+_jsAttr(f.av||'🧑')+')">'
         +'<div style="position:relative">'
         +_avInline(f.av||'🧑', 38)
         +'<span style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:'+(isOnline?'var(--st-on)':'rgba(150,150,150,.35)')+';border:2px solid var(--cream)"></span>'
         +'</div>'
-        +'<div style="font-size:10px;color:var(--ink3);font-weight:600;max-width:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml((f.name||'Usuario').split(' ')[0])+'</div>'
+        +'<div style="font-size:10px;color:var(--ink3);font-weight:600;max-width:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(displayName.split(' ')[0])+'</div>'
         +'</div>';
     }).join('')
     +'<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer" onclick="pGoTo(\'contacts\')">'
