@@ -7612,6 +7612,12 @@ body.r-dark #pg-guardian-chat {
   100% { transform: scale(2.8); opacity: 0; }
 }
 
+/* ── v374: Diary papiro overlay — centered, not bottom-sheet ──── */
+#diaryEntryOv {
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 /* ── v368: Diary Papiro (parchment viewer) ──────────────────────── */
 .diary-papiro {
   position: relative;

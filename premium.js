@@ -718,7 +718,9 @@ function _clearSession(){
    'velo_user_type','velo_user_av','velo_user_motto','velo_sb_pass','velo_plan',
    'velo_status_music','velo_status_book','velo_status_phrase','velo_status_film','velo_pro_id','velo_pro_name',
    'velo_pro_spec','velo_pro_solidarity','velo_pro_approved','velo_is_guardian',
-   'velo_guardian_bio','velo_guardian_tags','velo_guardian_setup_done','velo_needs_pw_change','velo_username'
+   'velo_guardian_bio','velo_guardian_tags','velo_guardian_setup_done','velo_needs_pw_change','velo_username',
+   'velo_username_changes','velo_favs','velo_blocked','velo_blocked_data',
+   'velo_incognito','velo_user_status','velo_fav_me_count','velo_fav_me_seen','velo_dm_unread'
   ].forEach(function(k){ safeLS('del', k); });
   // Stop guardian heartbeat and clear all RT channel refs so the next login can resubscribe
   _stopGuardianHeartbeat();
@@ -5214,7 +5216,7 @@ function pOpenDiaryEntry(ts){
 
 async function pDeleteDiary(ts){
   var entries = []; try{ entries = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
-  entries = entries.filter(function(e){ return e.ts !== ts; });
+  entries = entries.filter(function(e){ return Number(e.ts) !== Number(ts); });
   safeLS('set','velo_diary', JSON.stringify(entries));
   sbDeleteDiaryEntry(ts);
   pToast('🗑️','Entrada eliminada');
@@ -8282,6 +8284,11 @@ async function _syncFavsFromSupabase(){
   try{
     var {data} = await sbClient.from('user_favorites').select('*').eq('user_id', myId).order('created_at',{ascending:false}).limit(100);
     if(!data || !data.length) return;
+    // Clean up stale self-favorites left in DB before our client-side guard was added
+    var selfRows = data.filter(function(r){ return r.fav_id === myId; });
+    if(selfRows.length){
+      sbClient.from('user_favorites').delete().eq('user_id', myId).eq('fav_id', myId).then(function(){}).catch(function(){});
+    }
     var local = pGetFavs().filter(function(f){ return f.id !== myId; });
     var localIds = local.map(function(f){ return f.id; });
     // Add remote favs not yet in local, excluding self
