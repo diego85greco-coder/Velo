@@ -7705,24 +7705,30 @@ body.r-dark #pg-guardian-chat {
 }
 .diary-papiro-text {
   font-size: 17px;
-  color: #251503;
-  line-height: 2.05;
-  white-space: pre-wrap;
+  font-weight: 700;
   font-style: italic;
-  letter-spacing: 0.018em;
-  text-shadow: 0.4px 0.4px 0 rgba(0,0,0,.10);
+  color: #1e1005;
+  line-height: 2.1;
+  letter-spacing: 0.02em;
+  text-shadow: 0.5px 0.5px 0 rgba(0,0,0,.12);
   /* Ruled lines */
   background: repeating-linear-gradient(
     transparent,
-    transparent calc(2.05em - 1px),
-    rgba(140,100,30,.13) calc(2.05em - 1px),
-    rgba(140,100,30,.13) calc(2.05em)
+    transparent calc(2.1em - 1px),
+    rgba(140,100,30,.12) calc(2.1em - 1px),
+    rgba(140,100,30,.12) calc(2.1em)
   );
-  background-size: 100% 2.05em;
+  background-size: 100% 2.1em;
   padding-bottom: 4px;
   margin-bottom: 24px;
   word-break: break-word;
 }
+/* Paragraph spacing inside text */
+.diary-papiro-text p {
+  margin: 0 0 0.6em;
+  text-indent: 1.2em;
+}
+.diary-papiro-text p:first-child { text-indent: 0; }
 .diary-papiro-footer {
   border-top: 1px solid rgba(160,110,40,.2);
   padding-top: 16px;

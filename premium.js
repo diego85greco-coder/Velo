@@ -5108,8 +5108,8 @@ async function pSaveDiary(){
   var entries = []; try{ entries = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
   entries.unshift({ title:title, emoji:emoji, text:rawText, dateLabel:dateLabel, ts:ts });
   safeLS('set','velo_diary', JSON.stringify(entries.slice(0,200)));
-  // Supabase
-  sbSaveDiaryEntry(text, dateLabel, ts);
+  // Supabase (include title so it syncs across devices)
+  sbSaveDiaryEntry(text, dateLabel, ts, title);
   ta.value = '';
   if(titleEl) titleEl.value = '';
   _selectedDiaryEmoji = '';
@@ -5176,16 +5176,38 @@ function pOpenDiaryEntry(ts){
   if(!entry) return;
   var ov = document.getElementById('diaryEntryOv');
   if(!ov) return;
+  // User avatar
+  var avEl = document.getElementById('diaryEntryAv');
+  if(avEl){
+    var _av = safeLS('get','velo_user_av') || '🧑';
+    var _uname = safeLS('get','velo_user_name') || '';
+    if(_av.startsWith('data:') || _av.startsWith('http')){
+      avEl.innerHTML = '<img src="'+_av+'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid rgba(170,130,45,.45)">'
+        + (_uname ? '<span style="font-size:11px;font-family:\'Jost\',sans-serif;color:#7a5020;font-weight:700;margin-top:4px;display:block;text-align:center">'+_escHtml(_uname)+'</span>' : '');
+    } else {
+      avEl.innerHTML = '<div style="width:52px;height:52px;border-radius:50%;background:rgba(200,160,60,.15);border:2px solid rgba(170,130,45,.45);display:flex;align-items:center;justify-content:center;font-size:28px">'+_av+'</div>'
+        + (_uname ? '<span style="font-size:11px;font-family:\'Jost\',sans-serif;color:#7a5020;font-weight:700;margin-top:4px;display:block;text-align:center">'+_escHtml(_uname)+'</span>' : '');
+    }
+  }
   var dateEl   = document.getElementById('diaryEntryDate');
   var emojiEl  = document.getElementById('diaryEntryEmoji');
   var titleEl  = document.getElementById('diaryEntryTitle');
   var textEl   = document.getElementById('diaryEntryText');
   var delBtn   = document.getElementById('diaryEntryDel');
-  var fullDate = entry.dateLabel || new Date(entry.ts).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  var fullDate = entry.dateLabel ? entry.dateLabel.split('·')[0].trim() : new Date(Number(entry.ts)).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   if(dateEl)  dateEl.textContent  = fullDate;
   if(emojiEl){ emojiEl.textContent = entry.emoji || ''; emojiEl.style.display = entry.emoji ? '' : 'none'; }
   if(titleEl){ titleEl.textContent = entry.title || ''; titleEl.style.display = entry.title ? '' : 'none'; }
-  if(textEl)  textEl.textContent  = entry.text || '';
+  // Format text as styled paragraphs
+  if(textEl){
+    var rawTxt = entry.text || '';
+    var paras = rawTxt.split(/\n\n+/).map(function(p){ return p.replace(/\n/g,'<br>'); });
+    textEl.innerHTML = paras.map(function(p){ return '<p>'+_escHtml(p).replace(/\n/g,'<br>')+'</p>'; }).join('');
+    // _escHtml already encoded the text; split then rejoin for paragraph structure
+    textEl.innerHTML = rawTxt.split(/\n\n+/).map(function(p){
+      return '<p>'+p.split('\n').map(function(l){ return _escHtml(l); }).join('<br>')+'</p>';
+    }).join('');
+  }
   if(delBtn)  delBtn.onclick = function(){ closeModal('diaryEntryOv'); pDeleteDiary(ts); };
   openModal('diaryEntryOv');
 }
@@ -11816,14 +11838,14 @@ async function sbSignIn(email, password){
   return await sbClient.auth.signInWithPassword({email, password});
 }
 
-async function sbSaveDiaryEntry(text, dateLabel, ts){
+async function sbSaveDiaryEntry(text, dateLabel, ts, title){
   if(!sbClient) return;
   try{
     var ok = await _ensureSbSession();
     if(!ok) return;
     var {data:ud} = await sbClient.auth.getUser();
     if(!ud || !ud.user) return;
-    await sbClient.from('diary_entries').insert({ user_id:ud.user.id, text:text, date_label:dateLabel, ts:ts });
+    await sbClient.from('diary_entries').insert({ user_id:ud.user.id, text:text, date_label:dateLabel, ts:ts, title:title||'' });
   }catch(e){}
 }
 
@@ -11845,7 +11867,7 @@ async function sbLoadDiaryEntries(){
     if(!ok) return null;
     var {data:ud} = await sbClient.auth.getUser();
     if(!ud || !ud.user) return null;
-    var {data, error} = await sbClient.from('diary_entries').select('text,date_label,ts').eq('user_id', ud.user.id).order('ts',{ascending:false}).limit(200);
+    var {data, error} = await sbClient.from('diary_entries').select('text,date_label,ts,title').eq('user_id', ud.user.id).order('ts',{ascending:false}).limit(200);
     return error ? null : data;
   }catch(e){ return null; }
 }

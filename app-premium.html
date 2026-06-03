@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-371">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-371">
+  <link rel="stylesheet" href="premium.css?v=20260530-372">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-372">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1430,8 +1430,14 @@
         <div class="p-modal-ov" id="diaryEntryOv" onclick="if(event.target===this)closeModal('diaryEntryOv')">
           <div class="diary-papiro">
             <button onclick="closeModal('diaryEntryOv')" class="diary-papiro-close">✕</button>
-            <div id="diaryEntryDate" class="diary-papiro-date"></div>
-            <div id="diaryEntryEmoji" class="diary-papiro-emoji"></div>
+            <!-- Avatar + date header -->
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;border-bottom:1px solid rgba(160,110,40,.2);padding-bottom:14px">
+              <div id="diaryEntryAv" style="flex-shrink:0;text-align:center"></div>
+              <div style="flex:1;min-width:0">
+                <div id="diaryEntryDate" class="diary-papiro-date" style="margin-bottom:4px;border-bottom:none;padding-bottom:0"></div>
+                <div id="diaryEntryEmoji" class="diary-papiro-emoji" style="font-size:22px;margin-bottom:0"></div>
+              </div>
+            </div>
             <div id="diaryEntryTitle" class="diary-papiro-title"></div>
             <div id="diaryEntryText" class="diary-papiro-text"></div>
             <div class="diary-papiro-footer">
@@ -3065,8 +3071,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-371"></script>
-<script src="premium-redesign.js?v=20260530-371"></script>
+<script src="premium.js?v=20260530-372"></script>
+<script src="premium-redesign.js?v=20260530-372"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
