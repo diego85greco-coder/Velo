@@ -6929,9 +6929,11 @@ async function _renderHappyHistory(list, wallPosts, wallMyId){
 
   if(!history.length){
     var _noUid = !sbUid && !sbEmail;
+    var _dbgSb = sbClient ? ('SB:uid='+!!sbUid+' email='+!!sbEmail) : 'SB:no-client';
     list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">📅</span>'
       +'<div class="p-empty-title">Tu historial está vacío</div>'
-      +'<div class="p-empty-sub">'+(_noUid ? 'Iniciá sesión para sincronizar tu historial entre dispositivos 🔑' : 'Cuando publiques algo en el Muro, quedará guardado aquí para siempre 🌟')+'</div></div>';
+      +'<div class="p-empty-sub">'+(_noUid ? 'Iniciá sesión para sincronizar tu historial entre dispositivos 🔑' : 'Cuando publiques algo en el Muro, quedará guardado aquí para siempre 🌟')+'</div>'
+      +'<div style="font-size:10px;color:var(--ink5);margin-top:8px;opacity:.5">'+_dbgSb+'</div></div>';
     return;
   }
 
@@ -7140,11 +7142,9 @@ function pToggleHappyFav(btn, userId, name, av){
   if(isFav){
     pRemoveFav(userId);
     if(btn){ btn.textContent = '☆'; btn.style.background = 'rgba(255,200,50,.06)'; btn.style.borderColor = 'rgba(255,200,50,.2)'; }
-    pToast('☆','Eliminado de favoritos');
   } else {
     pAddFav(userId, name, av);
     if(btn){ btn.textContent = '⭐'; btn.style.background = 'rgba(255,200,50,.2)'; btn.style.borderColor = 'rgba(255,200,50,.5)'; }
-    pToast('⭐','Agregado a favoritos');
   }
 }
 
@@ -8534,9 +8534,11 @@ async function _syncFavsFromSupabase(){
     }
     var local = pGetFavs().filter(function(f){ return f.id !== myId; });
     var localIds = local.map(function(f){ return f.id; });
-    // Add remote favs not yet in local, excluding self
+    // Don't re-add IDs the user explicitly removed (tombstone list)
+    var _rmList = []; try{ _rmList = JSON.parse(safeLS('get','velo_favs_removed')||'[]'); }catch(e){}
+    // Add remote favs not yet in local, excluding self and locally-deleted
     data.forEach(function(r){
-      if(r.fav_id !== myId && localIds.indexOf(r.fav_id) < 0){
+      if(r.fav_id !== myId && localIds.indexOf(r.fav_id) < 0 && _rmList.indexOf(r.fav_id) < 0){
         local.push({ id:r.fav_id, name:r.fav_name||'Usuario', av:r.fav_av||'🧑', ts:new Date(r.created_at).getTime() });
       }
     });
@@ -8598,14 +8600,19 @@ function pAddFav(userId, name, av){
   _updateFavBadge();
 }
 
-function pRemoveFav(userId){
+async function pRemoveFav(userId){
   var favs = pGetFavs().filter(function(f){ return f.id !== userId; });
   _favsList = favs;
   safeLS('set','velo_favs', JSON.stringify(favs));
+  // Track removed IDs so _syncFavsFromSupabase doesn't re-add them before the delete propagates
+  var _rmKey = 'velo_favs_removed';
+  var _rmList = []; try{ _rmList = JSON.parse(safeLS('get',_rmKey)||'[]'); }catch(e){}
+  if(_rmList.indexOf(userId) < 0){ _rmList.push(userId); }
+  safeLS('set', _rmKey, JSON.stringify(_rmList.slice(0,200)));
   _initSupabase();
   if(sbClient){
     var myId = safeLS('get','velo_user_id')||'';
-    if(myId) sbClient.from('user_favorites').delete().eq('user_id',myId).eq('fav_id',userId).then(function(){}).catch(function(){});
+    if(myId){ try{ await sbClient.from('user_favorites').delete().eq('user_id',myId).eq('fav_id',userId); }catch(e){} }
   }
   pToast('✓','Eliminado de favoritos');
   _updateFavBadge();

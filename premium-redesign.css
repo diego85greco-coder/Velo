@@ -7884,6 +7884,12 @@ body.r-dark #happyPhotoLabel:hover {
 body.r-dark #happyPhotoLabel span[style*="color:var(--ink)"] {
   color: rgba(255,255,255,.88) !important;
 }
+body.r-dark #happyPhotoLabel > span[style*="border-radius:20px"],
+body.r-dark #happyPhotoLabel > span[style*="border-radius: 20px"] {
+  background: rgba(116,198,157,.22) !important;
+  border-color: rgba(116,198,157,.45) !important;
+  color: rgba(180,240,200,.92) !important;
+}
 
 /* ── v390: Buenas Noticias — warm background + dark mode card readability ── */
 #pg-news .p-page-scroll {
