@@ -6320,10 +6320,15 @@ body:not(.r-dark) .r-tbar-moon { display: none; }
   gap: 0 !important;
   margin-bottom: 20px !important;
 }
+/* On desktop the sidebar always shows — hide the home privacy toggles */
+@media (min-width: 1024px) {
+  #homeStatusToggle { display: none !important; }
+}
 #homeGuardianWrap {
   display: flex;
   justify-content: center;
   width: 100%;
+  max-width: 420px;
 }
 #homeGuardianWrap > div:not(.p-card) {
   display: flex !important;

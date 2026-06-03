@@ -7562,6 +7562,15 @@ function pToggleIncognito(){
   if(tog) tog.classList.toggle('on', !isOn);
   var tog2 = document.getElementById('homeIncognitoTog');
   if(tog2) tog2.classList.toggle('on', !isOn);
+  // Sync to Supabase so other users see the change immediately
+  if(safeLS('get','velo_is_guardian') === 'true'){
+    var newStatus = isOn ? 'disponible' : 'incognito';
+    safeLS('set','velo_guardian_status', newStatus);
+    _myGuardianStatus = newStatus;
+    _updateGuardianPresence(newStatus);
+    _renderMyStatusBar();
+    _renderHomeStatusToggle();
+  }
   pToast(isOn ? '👁️' : '🕵️', isOn ? 'Modo incógnito desactivado' : 'Modo incógnito activado');
 }
 
