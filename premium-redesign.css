@@ -3155,7 +3155,7 @@ body.r-dark #newsDetailOv [style*="color:var(--ink3)"] {
 
 /* ── Comunidad / Muro de la Felicidad ──────────────────────────────── */
 body.r-dark #pg-happy {
-  background: linear-gradient(160deg, #081a10, #0b2218 60%, #071510) !important;
+  background: linear-gradient(150deg, #08141e 0%, #120d22 40%, #1a1208 65%, #1a0d15 100%) !important;
 }
 /* Fixed header area (background:var(--cream)) */
 body.r-dark #pg-happy > div:first-child {
