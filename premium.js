@@ -382,7 +382,7 @@ async function _sbSyncProfile(userId){
   var res;
   try{
     res = await sbClient.from('profiles')
-      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username')
+      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes')
       .eq('id',userId).limit(1);
   }catch(e){ return; }
 
@@ -437,6 +437,7 @@ async function _sbSyncProfile(userId){
   if(p.status_film)   safeLS('set','velo_status_film',   p.status_film);
   if(p.username)      safeLS('set','velo_username',       p.username);
   if(p.username)      _uFill(userId, p.username);
+  if(p.username_changes != null) safeLS('set','velo_username_changes', String(p.username_changes));
   if(p.role === 'plus'){
     sbClient.from('profiles').select('plus_expires_at').eq('id',userId).limit(1)
       .then(function(r2){
@@ -7261,7 +7262,16 @@ function pLoadProfile(){
   }
   // Pre-fill username in edit modal
   var euEl = document.getElementById('editUsername');
-  if(euEl) euEl.value = uname;
+  if(euEl){ euEl.value = uname; euEl.disabled = false; }
+  var _unCh = parseInt(safeLS('get','velo_username_changes')||'0', 10);
+  var _unLeft = Math.max(0, 3 - _unCh);
+  var _unHint = document.getElementById('usernameChangesHint');
+  if(_unHint){
+    if(_unLeft === 0) _unHint.innerHTML = ' · <span style="color:#E05C5C">sin cambios restantes</span>';
+    else if(_unLeft < 3) _unHint.innerHTML = ' · '+_unLeft+' cambio'+(_unLeft===1?'':'s')+' restante'+(_unLeft===1?'':'s');
+    else _unHint.innerHTML = '';
+  }
+  if(_unLeft === 0 && euEl) euEl.disabled = true;
 
   // Plan badge
   var planBadge = document.getElementById('profilePlanBadge');
@@ -7567,16 +7577,21 @@ async function pSaveProfile(){
   if(sbClient && uid){
     // Handle username update if changed
     if(newUname && newUname !== curUname){
+      var _unChanges = parseInt(safeLS('get','velo_username_changes')||'0', 10);
+      if(_unChanges >= 3){ pToast('⚠️','Has alcanzado el límite de 3 cambios de @usuario'); return; }
       if(newUname.length < 5 || newUname.length > 20){
         pToast('⚠️','El @usuario debe tener entre 5 y 20 caracteres'); return;
       }
-      // Check uniqueness
+      // Check uniqueness (always lowercase)
       try{
         var _rU = await sbClient.from('profiles').select('id').eq('username', newUname).neq('id', uid).limit(1);
         if(_rU.data && _rU.data.length){ pToast('⚠️','Ese @usuario ya está tomado, elegí otro'); return; }
-        var _rUpd = await sbClient.from('profiles').update({ username: newUname }).eq('id', uid);
-        if(!_rUpd.error){ safeLS('set','velo_username', newUname); }
-        else { console.error('[pSaveProfile username]', _rUpd.error); pToast('⚠️','Error al guardar @usuario'); return; }
+        var _newCount = _unChanges + 1;
+        var _rUpd = await sbClient.from('profiles').update({ username: newUname, username_changes: _newCount }).eq('id', uid);
+        if(!_rUpd.error){
+          safeLS('set','velo_username', newUname);
+          safeLS('set','velo_username_changes', String(_newCount));
+        } else { console.error('[pSaveProfile username]', _rUpd.error); pToast('⚠️','Error al guardar @usuario'); return; }
       }catch(e){ console.error('[pSaveProfile username catch]', e); }
     }
     var _rawAv = safeLS('get','velo_user_av') || '';
@@ -7686,10 +7701,19 @@ async function pSaveUsername(){
 var _editUsernameCheckTimer = null;
 function pCheckEditUsername(val){
   var statusEl = document.getElementById('editUsernameStatus');
-  val = val.toLowerCase().replace(/[^a-z0-9.\-_]/g,'');
   var inputEl = document.getElementById('editUsername');
+  // Always force lowercase
+  val = val.toLowerCase().replace(/[^a-z0-9.\-_]/g,'');
   if(inputEl && inputEl.value !== val) inputEl.value = val;
+  // Enforce change limit
+  var _ch = parseInt(safeLS('get','velo_username_changes')||'0', 10);
+  var curUname = safeLS('get','velo_username') || '';
+  if(_ch >= 3 && val !== curUname){
+    if(statusEl) statusEl.innerHTML = '<span style="color:#E05C5C">Límite de 3 cambios alcanzado</span>';
+    return;
+  }
   if(!val){ if(statusEl) statusEl.innerHTML = ''; return; }
+  if(val === curUname){ if(statusEl) statusEl.innerHTML = ''; return; }
   if(val.length < 5){ if(statusEl) statusEl.innerHTML = '<span style="color:#E05C5C">Mínimo 5 caracteres</span>'; return; }
   if(val.length > 20){ if(statusEl) statusEl.innerHTML = '<span style="color:#E05C5C">Máximo 20 caracteres</span>'; return; }
   if(statusEl) statusEl.innerHTML = '<span style="color:var(--ink4)">Verificando…</span>';
