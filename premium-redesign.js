@@ -507,31 +507,37 @@ function initSurveyDismissal() {
     }, 60);
   };
 
-  // Override _renderHomeStatusToggle to add ocupado (yellow) state on guardian pill
+  // Sync Home page toggles WITHOUT recreating DOM — same mechanism as Profile page
   window._renderHomeStatusToggle = function() {
     var el = document.getElementById('homeStatusToggle');
     if (!el) return;
     var st = safeLS('get', 'velo_user_status') || 'disponible';
     var isGuardian = safeLS('get', 'velo_is_guardian') === 'true';
+    var isIncognito = safeLS('get', 'velo_incognito') === 'true';
 
-    var segPill = '<div class="r-status-combined-pill">'
+    // Keep the Privacidad card (homeGuardianWrap) visible — never hide it
+    var gWrap = document.getElementById('homeGuardianWrap');
+    if (gWrap) gWrap.style.display = '';
+
+    // Sync guardian toggle using classList (identical to Profile page, no DOM recreation)
+    var togG = document.getElementById('homeGuardianModeTog');
+    if (togG) { togG.classList.remove('on'); if (isGuardian) togG.classList.add('on'); }
+
+    // Sync incógnito toggle using classList
+    var togI = document.getElementById('homeIncognitoTog');
+    if (togI) { togI.classList.remove('on'); if (isIncognito) togI.classList.add('on'); }
+
+    // Disponible/Ocupado status pills — create once, update innerHTML in place
+    var segEl = document.getElementById('homeStatusSegPill');
+    if (!segEl) {
+      segEl = document.createElement('div');
+      segEl.id = 'homeStatusSegPill';
+      el.insertBefore(segEl, gWrap || el.firstChild);
+    }
+    segEl.innerHTML = '<div class="r-status-combined-pill">'
       + '<button class="r-status-seg r-status-seg--disp' + (st === 'disponible' ? ' active' : '') + '" onclick="pSetUserStatus(\'disponible\')">Disponible</button>'
       + '<button class="r-status-seg r-status-seg--ocup' + (st === 'ocupado' ? ' active' : '') + '" onclick="pSetUserStatus(\'ocupado\')">Ocupado</button>'
       + '</div>';
-
-    var guardClasses = 'r-guardian-pill'
-      + (isGuardian ? (st === 'ocupado' ? ' r-guardian-pill--on r-guardian-pill--ocupado' : ' r-guardian-pill--on') : '');
-
-    var guardPill = '<button class="' + guardClasses + '" onclick="pHomeToggleGuardian()">'
-      + '<span style="font-size:14px">🛡️</span>'
-      + '<span>Modo Guardián</span>'
-      + '<span class="r-guardian-toggle"><span class="r-guardian-knob"></span></span>'
-      + '</button>'
-      + '<p class="r-guardian-hint">Al activarlo aparecés en la lista de guardianes para brindar ayuda</p>';
-
-    el.innerHTML = segPill + guardPill;
-    var gWrap = document.getElementById('homeGuardianWrap');
-    if (gWrap) gWrap.style.display = 'none';
   };
 
   // Happy wall: scroll-to-collapse compose + post-submit collapse

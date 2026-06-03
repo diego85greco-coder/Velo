@@ -6316,13 +6316,12 @@ body:not(.r-dark) .r-topbar-theme-btn { color: rgba(200, 140, 20, 0.85); }
 body.r-dark .r-tbar-sun { display: none; }
 body:not(.r-dark) .r-tbar-moon { display: none; }
 
-/* ── 2. Guardian control: centered column, consistent width ─────── */
+/* ── 2. Guardian control: stacked column so pills sit above Privacidad card ─────── */
 #homeStatusToggle {
   display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  flex-wrap: nowrap !important;
-  gap: 0 !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
   margin-bottom: 20px !important;
 }
 /* Privacy toggles visible on all screen sizes */
