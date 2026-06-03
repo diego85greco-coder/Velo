@@ -6715,8 +6715,24 @@ async function pRenderHappy(){
       else _pendingHappyPost = null;
     }
     _sbHappy = posts;
-    // Batch-fetch usernames for non-anon authors not yet cached
-    if(sbClient){ var _hpUnknown = posts.filter(function(h){ return !h.anon && h.userId && h.userId!=='anon' && !_uLook(h.userId); }).map(function(h){ return h.userId; }); if(_hpUnknown.length){ try{ var _hpr = await sbClient.from('profiles').select('id,username,avatar').in('id',_hpUnknown); if(_hpr.data) _hpr.data.forEach(function(p){ _uFill(p.id,p.username); if(p.avatar){ posts.forEach(function(h){ if(h.userId===p.id && !h.anon && !(h.av&&(h.av.startsWith('data:')||h.av.startsWith('http')))) h.av=p.avatar; }); } }); }catch(e){} } }
+    // Batch-fetch names/avatars for non-anon authors (also fixes posts saved with empty user_name)
+    if(sbClient){
+      var _hpUnknown = posts.filter(function(h){ return !h.anon && h.userId && h.userId!=='anon'; }).map(function(h){ return h.userId; }).filter(function(id,i,a){ return a.indexOf(id)===i; });
+      if(_hpUnknown.length){ try{
+        var _hpr = await sbClient.from('profiles').select('id,username,nombre,avatar').in('id',_hpUnknown);
+        if(_hpr.data) _hpr.data.forEach(function(p){
+          _uFill(p.id, p.username);
+          var realName = p.nombre || (p.username ? '@'+p.username : '');
+          posts.forEach(function(h){
+            if(h.userId !== p.id || h.anon) return;
+            // Update name if stored as empty / placeholder
+            if(realName && (!h.name || h.name === 'Usuario' || h.name === '')) h.name = realName;
+            // Update avatar if DB had emoji placeholder but profiles has a real photo
+            if(p.avatar && !(h.av && (h.av.startsWith('data:') || h.av.startsWith('http')))) h.av = p.avatar;
+          });
+        });
+      }catch(e){} }
+    }
   } else {
     posts = _processHappyQueue();
   }
