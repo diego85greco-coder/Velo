@@ -2053,15 +2053,21 @@ async function pRenderGuardians(){
         var filtered0 = data
           .filter(function(r){ return r.user_id !== myId; })
           .filter(function(r){ return r.is_guardian !== false; });
-        // Fetch usernames from profiles for all visible guardians
+        // Fetch usernames and mottos from profiles for all visible guardians
         var gIds = filtered0.map(function(r){ return r.user_id; });
-        var uMap = {};
+        var uMap = {}, mottoMap = {};
         try{
-          var uRes = await sbClient.from('profiles').select('id,username').in('id', gIds);
-          if(uRes.data) uRes.data.forEach(function(p){ if(p.id && p.username){ uMap[p.id] = p.username; _uFill(p.id, p.username); } });
+          var uRes = await sbClient.from('profiles').select('id,username,motto').in('id', gIds);
+          if(uRes.data) uRes.data.forEach(function(p){
+            if(p.id){
+              if(p.username){ uMap[p.id] = p.username; _uFill(p.id, p.username); }
+              if(p.motto) mottoMap[p.id] = p.motto;
+            }
+          });
         }catch(e){}
         liveGuardians = filtered0.map(function(r){
           return { id: 'live_'+r.user_id, name: r.name, av: r.avatar, bio: r.bio||'',
+            motto: mottoMap[r.user_id] || '',
             tags: Array.isArray(r.tags)?r.tags:[], status: r.status,
             convs: r.convs||0, rating: r.rating||5.0, reviews:[], recommend: r.convs||0,
             username: uMap[r.user_id] || '' };
@@ -2110,7 +2116,8 @@ async function pRenderGuardians(){
     var gVbadge = gVerified && !isAnon ? '<span class="velo-verified" title="Verificado — Plata o superior">✓</span>' : '';
     var gVavBadge = gVerified && !isAnon ? '<span style="position:absolute;bottom:-2px;left:-2px;width:14px;height:14px;border-radius:50%;background:#1d9bf0;border:2px solid var(--bg-main,#fff);color:#fff;font-size:8px;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1">✓</span>' : '';
     var gUsername = (!isAnon && g.username) ? ('<div class="gc-username">@'+_escHtml(g.username)+'</div>') : '';
-    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span>'+gVavBadge+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.2">'+(isAnon?'Guardián Anónimo':_escHtml(g.name||'—'))+'</span>'+gVbadge+'<span style="font-size:14px">'+badge.icon+'</span></div>'+gUsername+'<div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0">'+(isAnon?'Disponible de forma anónima':_escHtml(g.bio||''))+'</p></div>'
+    var gMotto = !isAnon ? (g.motto || g.bio || '') : '';
+    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span>'+gVavBadge+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.2">'+(isAnon?'Guardián Anónimo':_escHtml(g.name||'—'))+'</span>'+gVbadge+'<span style="font-size:14px">'+badge.icon+'</span></div>'+gUsername+'<div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div>'+(gMotto?'<p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0;font-style:italic">"'+_escHtml(gMotto)+'"</p>':'')+'</div>'
       +'<div style="display:flex;gap:6px;align-items:center">'
       +(!isAnon ? '<button onclick="event.stopPropagation();'+(isFav?'pRemoveFav':'pAddFav')+'('+_jsAttr(rawId)+','+_jsAttr(g.name)+','+_jsAttr(g.av||'🌿')+');pRenderGuardians()" style="padding:6px 8px;background:'+(isFav?'rgba(255,200,50,.18)':'rgba(255,200,50,.07)')+';border:1px solid rgba(255,200,50,'+(isFav?'.4':'.2')+');border-radius:10px;font-size:15px;cursor:pointer" title="'+(isFav?'Quitar favorito':'Guardar favorito')+'">'+(isFav?'⭐':'☆')+'</button>' : '')
       +'<button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(realSt==='ocupado'?'pToast(\'🟡\','+_jsAttr((isAnon?'Este guardián':''+g.name)+' está ocupado/a ahora')+')':'pOpenGuardian('+_jsAttr(g.id)+')')+'">'+(realSt==='ocupado'?'Ocupado/a':'Solicitar')+'</button>'
@@ -5780,25 +5787,19 @@ function pCalmBook(){ pToast('📖', _calmBooks[Math.floor(Math.random()*_calmBo
 var _respiraRunning = false;
 var _respiraTimer = null;
 var _respiraPhases = [
-  { name:'Inhala', color:'rgba(116,198,157,.8)', dur:4 },
-  { name:'Sostén', color:'rgba(168,212,232,.7)', dur:7 },
-  { name:'Exhala', color:'rgba(196,181,232,.7)', dur:8 }
+  { name:'Inhala…',  dur:4,  colorA:'rgba(116,198,157,.95)', colorB:'rgba(60,160,110,.6)' },
+  { name:'Sostén…',  dur:7,  colorA:'rgba(168,212,232,.90)', colorB:'rgba(80,160,200,.5)' },
+  { name:'Exhala…',  dur:8,  colorA:'rgba(196,181,232,.88)', colorB:'rgba(140,100,200,.45)' }
 ];
 var _respiraPhaseIdx = 0;
-var _respiraCount = 0;
+var _respiraCount    = 0;
+var _respiraRaf      = null;
+var _respiraAmbientItems = [];
 
 function pInitRespira(){
   var canvas = document.getElementById('respiraCanvas');
   if(!canvas) return;
-  var ctx = canvas.getContext('2d');
-  ctx.fillStyle = 'rgba(22,42,30,0.7)';
-  ctx.beginPath();
-  ctx.arc(130,130,120,0,Math.PI*2);
-  ctx.fill();
-  ctx.fillStyle = 'rgba(116,198,157,0.3)';
-  ctx.beginPath();
-  ctx.arc(130,130,80,0,Math.PI*2);
-  ctx.fill();
+  _drawRespiraCircleSmooth('rgba(116,198,157,.35)', 0.18);
   _setEl('respiraPhase','Prepárate');
   _setEl('respiraCount','');
   _setEl('respiraBtn','Comenzar');
@@ -5810,7 +5811,7 @@ function pStartRespira(){
   _respiraRunning = true;
   _setEl('respiraBtn','Detener');
   _respiraPhaseIdx = 0;
-  _respiraCount = _respiraPhases[0].dur;
+  _startRespiraAmbient();
   _runRespiraPhase();
 }
 
@@ -5819,47 +5820,118 @@ function _runRespiraPhase(){
   var ph = _respiraPhases[_respiraPhaseIdx];
   _setEl('respiraPhase', ph.name);
   _setEl('respiraCount', ph.dur);
-  _respiraCount = ph.dur;
-  _drawRespiraCircle(ph.color, ph.dur);
-  var elapsed = 0;
-  clearInterval(_respiraTimer);
-  _respiraTimer = setInterval(function(){
-    elapsed++;
-    var remaining = ph.dur - elapsed;
-    _setEl('respiraCount', remaining > 0 ? remaining : '');
-    _drawRespiraCircle(ph.color, 1 - elapsed/ph.dur);
-    if(elapsed >= ph.dur){
-      clearInterval(_respiraTimer);
-      _respiraTimer = null;
-      _respiraPhaseIdx = (_respiraPhaseIdx+1) % _respiraPhases.length;
+  _pulseRespiraRing(_respiraPhaseIdx, ph);
+  var startTime = null;
+  var lastTick = ph.dur;
+  cancelAnimationFrame(_respiraRaf);
+  function tick(now){
+    if(!_respiraRunning) return;
+    if(!startTime) startTime = now;
+    var elapsed = (now - startTime) / 1000;
+    var progress = Math.min(elapsed / ph.dur, 1);
+    var remaining = Math.ceil(ph.dur - elapsed);
+    if(remaining !== lastTick){ _setEl('respiraCount', remaining > 0 ? remaining : ''); lastTick = remaining; }
+    // Scale: inhale 0→1, hold stays at 1, exhale 1→0
+    var scale = (_respiraPhaseIdx === 0) ? progress
+              : (_respiraPhaseIdx === 1) ? 1
+              : (1 - progress);
+    // Smooth easing
+    var eased = _easeInOut(scale);
+    _drawRespiraCircleSmooth(ph.colorA, eased);
+    if(progress < 1){
+      _respiraRaf = requestAnimationFrame(tick);
+    } else {
+      _respiraPhaseIdx = (_respiraPhaseIdx + 1) % _respiraPhases.length;
       if(_respiraRunning) _runRespiraPhase();
     }
-  }, 1000);
+  }
+  _respiraRaf = requestAnimationFrame(tick);
 }
 
-function _drawRespiraCircle(color, scale){
+function _easeInOut(t){ return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+function _drawRespiraCircleSmooth(colorA, scale){
   var canvas = document.getElementById('respiraCanvas');
   if(!canvas) return;
   var ctx = canvas.getContext('2d');
   ctx.clearRect(0,0,260,260);
-  ctx.fillStyle = 'rgba(10,26,18,0.85)';
-  ctx.beginPath();
-  ctx.arc(130,130,128,0,Math.PI*2);
-  ctx.fill();
-  var s = 0.4 + (1-Math.max(0,Math.min(1,scale||1)))*0.6;
-  ctx.fillStyle = color || 'rgba(116,198,157,0.5)';
-  ctx.beginPath();
-  ctx.arc(130,130,110*s,0,Math.PI*2);
-  ctx.fill();
+  // Dark outer ring
+  ctx.fillStyle = 'rgba(8,20,14,0.92)';
+  ctx.beginPath(); ctx.arc(130,130,128,0,Math.PI*2); ctx.fill();
+  var r = 28 + scale * 90; // radius 28→118
+  // Outer glow halo
+  var grd = ctx.createRadialGradient(130,130, r*0.1, 130,130, r*1.6);
+  grd.addColorStop(0, colorA);
+  grd.addColorStop(0.5, colorA.replace(/[\d.]+\)$/, '0.25)'));
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath(); ctx.arc(130,130, r*1.6, 0, Math.PI*2); ctx.fill();
+  // Solid bright core
+  ctx.fillStyle = colorA;
+  ctx.beginPath(); ctx.arc(130,130, r, 0, Math.PI*2); ctx.fill();
+  // Bright specular highlight
+  var highlight = ctx.createRadialGradient(115,115, 2, 130,130, r*0.7);
+  highlight.addColorStop(0, 'rgba(255,255,255,0.28)');
+  highlight.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = highlight;
+  ctx.beginPath(); ctx.arc(130,130, r, 0, Math.PI*2); ctx.fill();
+}
+
+function _pulseRespiraRing(phaseIdx, ph){
+  var canvas = document.getElementById('respiraCanvas');
+  if(!canvas) return;
+  var rect = canvas.getBoundingClientRect();
+  var cx = rect.left + rect.width/2;
+  var cy = rect.top + rect.height/2;
+  var ring = document.createElement('div');
+  var size = 260;
+  ring.style.cssText = 'position:fixed;pointer-events:none;border-radius:50%;z-index:9998;'
+    +'width:'+size+'px;height:'+size+'px;'
+    +'left:'+(cx - size/2)+'px;top:'+(cy - size/2)+'px;'
+    +'border:2px solid '+(ph ? ph.colorA : 'rgba(116,198,157,.7)')+';'
+    +'animation:respiraRingPulse '+(ph ? ph.dur : 4)+'s ease-out forwards;';
+  document.body.appendChild(ring);
+  setTimeout(function(){ ring.remove(); }, (ph ? ph.dur : 4)*1000 + 200);
+}
+
+function _startRespiraAmbient(){
+  _stopRespiraAmbient();
+  var page = document.getElementById('pg-respira');
+  if(!page) return;
+  var inner = page.firstElementChild;
+  if(!inner) return;
+  var layer = document.createElement('div');
+  layer.id = 'respiraAmbient';
+  layer.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0';
+  if(!inner.style.position) inner.style.position = 'relative';
+  inner.insertBefore(layer, inner.firstChild);
+  // Floating petals and nature elements
+  var petals = ['🌸','🌼','🌸','✨','🍃','🌺','💫','🌿','🌸','🌼','✨','🍃','🌱','🌾'];
+  for(var i = 0; i < 14; i++){
+    var p = document.createElement('span');
+    p.textContent = petals[i];
+    var lft  = 4 + (i * 7) % 92;
+    var dur  = 12 + (i * 2.1) % 12;
+    var del  = -((i * 1.8) % 14);
+    var size = 14 + (i * 2.3) % 20;
+    p.style.cssText = 'position:absolute;left:'+lft+'%;bottom:-60px;font-size:'+size+'px;'
+      +'animation:respiraFloat '+dur+'s '+del+'s linear infinite;'
+      +'will-change:transform,opacity;opacity:0';
+    layer.appendChild(p);
+  }
+}
+
+function _stopRespiraAmbient(){
+  var layer = document.getElementById('respiraAmbient');
+  if(layer) layer.remove();
 }
 
 function _stopRespira(){
   _respiraRunning = false;
-  clearInterval(_respiraTimer);
-  _respiraTimer = null;
-  _setEl('respiraBtn','Comenzar');
-  _setEl('respiraPhase','Preparate');
-  _setEl('respiraCount','');
+  cancelAnimationFrame(_respiraRaf); _respiraRaf = null;
+  clearInterval(_respiraTimer);      _respiraTimer = null;
+  _stopRespiraAmbient();
+  pInitRespira();
   safeLS('set','velo_breathed_once','1');
 }
 

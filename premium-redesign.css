@@ -7585,7 +7585,20 @@ body.r-dark #pg-guardian-chat {
   0%,100% { box-shadow: 0 4px 20px rgba(0,0,0,.35), 0 0 0 0 rgba(37,168,106,.55); }
   50%      { box-shadow: 0 4px 20px rgba(0,0,0,.35), 0 0 0 8px rgba(37,168,106,0); }
 }
-/* Banner shifts app content down slightly on desktop */
+/* Desktop: offset banner past sidebar, add padding */
 @media (min-width: 1024px) {
-  #returnChatBadge { padding: 10px 24px !important; }
+  #returnChatBadge { left: 64px !important; padding: 10px 24px !important; }
+}
+
+/* ── v365: Respira ambient animations ───────────────────────────── */
+@keyframes respiraFloat {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+  5%   { opacity: 0.65; }
+  50%  { transform: translateY(-50vh) translateX(15px) rotate(210deg); opacity: 0.55; }
+  90%  { opacity: 0.35; }
+  100% { transform: translateY(-105vh) translateX(-10px) rotate(380deg); opacity: 0; }
+}
+@keyframes respiraRingPulse {
+  0%   { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
 }
