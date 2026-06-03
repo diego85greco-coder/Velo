@@ -587,7 +587,9 @@ function pExpandHappyCompose() {
   var body = document.getElementById('happyComposeBody');
   if (!bar || !body) return;
   bar.style.display = 'none';
+  body.style.display = '';  // clear any inline display:none set by pSubmitHappyPost
   body.classList.add('happy-compose--open');
+  if (typeof pOpenHappyPost === 'function') pOpenHappyPost(); // reset form state
   var ta = document.getElementById('happyPostTa');
   if (ta) setTimeout(function(){ ta.focus(); }, 50);
 }

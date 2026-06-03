@@ -6902,16 +6902,27 @@ function _happyPostCard(h, isOwn){
   }
   var moreComments = '';
 
-  // Avatar: profile photo if available, else mood emoji
+  // Avatar: profile photo or emoji avatar for non-anon; mood emoji for anon
   var hasPhoto = h.av && (h.av.startsWith('data:') || h.av.startsWith('http'));
-  var avatarHtml = hasPhoto
-    ? '<div style="position:relative;width:40px;height:40px;flex-shrink:0">'
-      +'<img src="'+_escHtml(h.av)+'" style="width:40px;height:40px;border-radius:12px;object-fit:cover;display:block">'
+  var hasEmojiAv = !h.anon && h.av && h.av !== '' && !hasPhoto;
+  var avatarHtml;
+  if(hasPhoto){
+    avatarHtml = '<div style="position:relative;width:44px;height:44px;flex-shrink:0">'
+      +'<img src="'+_escHtml(h.av)+'" style="width:44px;height:44px;border-radius:12px;object-fit:cover;display:block">'
       +'<span style="position:absolute;bottom:-3px;right:-3px;font-size:14px;line-height:1">'+h.emoji+'</span>'
-      +'</div>'
-    : '<div style="font-size:24px;width:40px;height:40px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>';
+      +'</div>';
+  } else if(hasEmojiAv){
+    avatarHtml = '<div style="position:relative;font-size:26px;width:44px;height:44px;border-radius:12px;background:rgba(255,224,102,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+      +h.av
+      +'<span style="position:absolute;bottom:-3px;right:-3px;font-size:12px;line-height:1">'+h.emoji+'</span>'
+      +'</div>';
+  } else {
+    avatarHtml = '<div style="font-size:26px;width:44px;height:44px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>';
+  }
 
   var canClick = !isOwn && h.userId && h.userId !== 'anon' && !h.anon;
+  var _hMyIdNow = _myUserId();
+  var _hIsFav = canClick ? pIsFav(h.userId) : false;
   var authorClick = canClick ? ' style="cursor:pointer" onclick="pQuickProfile('+_jsAttr(h.name||'Usuario')+','+_jsAttr(h.av||'')+',\'\',\'\','+_jsAttr(h.userId||'')+')"' : '';
   return '<div class="happy-card" data-id="'+h.id+'">'
     // header
@@ -6924,13 +6935,16 @@ function _happyPostCard(h, isOwn){
     +'</div>'
     +(isOwn
       ? '<button onclick="pDeleteHappyPost(\''+h.id+'\')" style="padding:5px 10px;background:rgba(255,80,80,.07);border:1px solid rgba(255,80,80,.18);border-radius:100px;color:rgba(200,60,60,.7);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0" title="Eliminar publicación">🗑️</button>'
-      : '<button onclick="pReportContent(\'happy\','+_jsAttr(h.id)+','+_jsAttr((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(180,50,50,.88);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0">🚩 Reportar</button>')
+      : '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
+        +(canClick ? '<button onclick="event.stopPropagation();pToggleHappyFav(this,'+_jsAttr(h.userId)+','+_jsAttr(h.name||'Usuario')+','+_jsAttr(h.av||'🧑')+')" style="padding:4px 9px;background:'+(_hIsFav?'rgba(255,200,50,.2)':'rgba(255,200,50,.06)')+';border:1px solid '+(_hIsFav?'rgba(255,200,50,.5)':'rgba(255,200,50,.2)')+';border-radius:100px;font-size:13px;cursor:pointer">'+(_hIsFav?'⭐':'☆')+'</button>' : '')
+        +'<button onclick="pReportContent(\'happy\','+_jsAttr(h.id)+','+_jsAttr((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(180,50,50,.88);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">🚩</button>'
+        +'</div>')
     +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap;flex-shrink:0">⏳ '+timeLeft+'</span>' : '')
     +'</div>'
     // photo
     +(h.photo ? '<img src="'+h.photo+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px;display:block;margin-bottom:14px;cursor:zoom-in">' : '')
     // text
-    +(h.text ? '<p style="font-size:14px;color:var(--ink3);line-height:1.65;margin-bottom:14px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(h.text)+'"</p>' : '')
+    +(h.text ? '<p style="font-size:16px;color:var(--ink2);line-height:1.7;margin-bottom:14px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500">"'+_escHtml(h.text)+'"</p>' : '')
     // reactions
     +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">'+rxBar+'</div>'
     // divider + comments
@@ -6956,6 +6970,50 @@ async function pDeleteHappyPost(postId){
   if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ pRenderHappy(); },350); }
   else { setTimeout(function(){ pRenderHappy(); },50); }
   pToast('✅','Publicación eliminada');
+}
+
+function pToggleHappyFav(btn, userId, name, av){
+  if(!userId) return;
+  var isFav = pIsFav(userId);
+  if(isFav){
+    pRemoveFav(userId);
+    if(btn){ btn.textContent = '☆'; btn.style.background = 'rgba(255,200,50,.06)'; btn.style.borderColor = 'rgba(255,200,50,.2)'; }
+    pToast('☆','Eliminado de favoritos');
+  } else {
+    pAddFav(userId, name, av);
+    if(btn){ btn.textContent = '⭐'; btn.style.background = 'rgba(255,200,50,.2)'; btn.style.borderColor = 'rgba(255,200,50,.5)'; }
+    pToast('⭐','Agregado a favoritos');
+  }
+}
+
+function pToggleHappyProfile(tog){
+  tog.classList.toggle('on');
+  var isOn = tog.classList.contains('on');
+  var chk = document.getElementById('happyShowProfile');
+  if(chk) chk.checked = isOn;
+  var emojiRow = document.getElementById('happyEmojiRow');
+  var profileAvRow = document.getElementById('happyProfileAvRow');
+  if(isOn){
+    if(emojiRow) emojiRow.style.display = 'none';
+    if(!profileAvRow){
+      profileAvRow = document.createElement('div');
+      profileAvRow.id = 'happyProfileAvRow';
+      profileAvRow.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:6px 10px;background:rgba(255,255,255,.6);border-radius:10px;border:1px solid rgba(255,200,50,.3)';
+      var av = safeLS('get','velo_user_av') || '🧑';
+      var name = safeLS('get','velo_user_name') || '';
+      var avHtml = (av.startsWith('data:') || av.startsWith('http'))
+        ? '<img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;display:block">'
+        : '<span style="font-size:26px;line-height:1">'+av+'</span>';
+      profileAvRow.innerHTML = avHtml + '<span style="font-size:12px;font-weight:600;color:var(--ink2)">'+_escHtml(name)+'</span>'
+        + '<span style="font-size:10px;color:var(--sage2);margin-left:auto;font-weight:600">Perfil visible</span>';
+      if(emojiRow && emojiRow.parentNode) emojiRow.parentNode.insertBefore(profileAvRow, emojiRow);
+    } else {
+      profileAvRow.style.display = 'flex';
+    }
+  } else {
+    if(emojiRow) emojiRow.style.display = '';
+    if(profileAvRow) profileAvRow.style.display = 'none';
+  }
 }
 
 function pHappyTab(tab, el){
@@ -7066,8 +7124,12 @@ function pOpenHappyPost(){
   var chk = document.getElementById('happyShowProfile');
   if(tog) tog.classList.remove('on');
   if(chk) chk.checked = false;
+  // Restore emoji row visibility (may have been hidden by pToggleHappyProfile)
   var emojiRow = document.getElementById('happyEmojiRow');
+  var profileAvRow = document.getElementById('happyProfileAvRow');
+  if(profileAvRow) profileAvRow.style.display = 'none';
   if(emojiRow){
+    emojiRow.style.display = '';
     emojiRow.innerHTML = _happyEmojis.map(function(e){
       return '<button style="font-size:18px;padding:3px 4px;border:2px solid '+(e==='☀️'?'rgba(255,200,50,.6)':'transparent')+';border-radius:8px;background:none;cursor:pointer;transition:border-color .15s;flex-shrink:0" onclick="pSelHappyEmoji(this,\''+e+'\')">'+e+'</button>';
     }).join('');

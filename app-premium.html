@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-374">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-374">
+  <link rel="stylesheet" href="premium.css?v=20260530-375">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-375">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1782,7 +1782,7 @@
                 <!-- Anon toggle row -->
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,.5);border-radius:10px;border:1px solid var(--border2)">
                   <span style="font-size:11px;color:var(--ink4);flex:1;line-height:1.4">Publicar con mi perfil visible<br><span style="font-size:10px;color:var(--ink5)">Otros podrán ver tu perfil al hacer click en tu foto</span></span>
-                  <div id="happyProfileTog" class="p-tog" onclick="this.classList.toggle('on');document.getElementById('happyShowProfile').checked=this.classList.contains('on')" style="flex-shrink:0"><div class="p-tog-k"></div></div>
+                  <div id="happyProfileTog" class="p-tog" onclick="pToggleHappyProfile(this)" style="flex-shrink:0"><div class="p-tog-k"></div></div>
                   <input type="checkbox" id="happyShowProfile" style="display:none">
                 </div>
                 <!-- Photo upload button -->
@@ -3072,8 +3072,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-374"></script>
-<script src="premium-redesign.js?v=20260530-374"></script>
+<script src="premium.js?v=20260530-375"></script>
+<script src="premium-redesign.js?v=20260530-375"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
