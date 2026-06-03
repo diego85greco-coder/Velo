@@ -7263,3 +7263,58 @@ body.r-dark .home-dqa-btn:hover {
     box-sizing: border-box;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v348: Desktop hero — higher opacity + stats/buttons legibility
+   ══════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  /* Hero card more opaque so content is not washed out by flower bg */
+  #pg-home .r-hero-v2 {
+    background: rgba(248, 244, 232, 0.92) !important;
+  }
+  body.r-dark #pg-home .r-hero-v2 {
+    background: rgba(8, 22, 14, 0.91) !important;
+  }
+  /* Stats strip: pill background so numbers stand out */
+  #pg-home .r-hero-stats {
+    background: rgba(255,255,255,.55);
+    border: 1px solid rgba(116,198,157,.22);
+    border-radius: 14px;
+    padding: 10px 18px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    gap: 20px !important;
+    align-items: center;
+  }
+  body.r-dark #pg-home .r-hero-stats {
+    background: rgba(10,30,18,.55) !important;
+    border-color: rgba(116,198,157,.20) !important;
+  }
+  /* Bigger, bolder stats numbers on desktop */
+  #pg-home .r-hero-stat-val {
+    font-size: 26px !important;
+    color: var(--ink) !important;
+  }
+  #pg-home .r-hero-stat-lbl {
+    color: var(--ink3) !important;
+    font-size: 9px !important;
+  }
+  /* More solid quick-action buttons on desktop */
+  #pg-home .home-dqa-btn {
+    background: rgba(255,255,255,.82) !important;
+    border-color: rgba(116,198,157,.45) !important;
+    color: var(--ink2) !important;
+    font-size: 10px !important;
+    padding: 11px 8px 9px !important;
+  }
+  body.r-dark #pg-home .home-dqa-btn {
+    background: rgba(10, 35, 20, 0.82) !important;
+    border-color: rgba(116,198,157,.40) !important;
+    color: rgba(200,230,210,.92) !important;
+  }
+  /* JARDÍN label — larger, more contrast */
+  #homeHeroLabel {
+    font-size: 11px !important;
+    letter-spacing: 2px !important;
+  }
+}
