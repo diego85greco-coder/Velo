@@ -6793,10 +6793,9 @@ function _renderAllHappy(list, posts){
 
 function _renderMyHappy(list, posts, queue, myId){
   var mine = posts.filter(function(p){ return p.userId === myId; });
-  var active = mine[0]; // most recent active post (sorted desc)
   var myQueued = queue.filter(function(p){ return p.userId === myId; });
 
-  if(!active && !myQueued.length){
+  if(!mine.length && !myQueued.length){
     list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">📌</span>'
       +'<div class="p-empty-title">No tenés publicación activa</div>'
       +'<div class="p-empty-sub">Publicá algo en el Muro de la Felicidad para verla aquí ☀️</div></div>';
@@ -6804,13 +6803,13 @@ function _renderMyHappy(list, posts, queue, myId){
   }
 
   var html = '';
-  if(active){
+  if(mine.length){
     html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'
       +'<span style="font-size:18px">📌</span>'
-      +'<span style="font-size:12px;font-weight:700;color:var(--sage);letter-spacing:.3px">Tu publicación activa</span>'
-      +'<span style="font-size:10px;color:var(--ink5);margin-left:auto">Visible por 24h · desaparece del muro al expirar</span>'
+      +'<span style="font-size:12px;font-weight:700;color:var(--sage);letter-spacing:.3px">Tus publicaciones activas</span>'
+      +'<span style="font-size:10px;color:var(--ink5);margin-left:auto">'+mine.length+' activa'+(mine.length>1?'s':(mine.length===1?'':'')+'')+' · desaparecen a las 24h</span>'
       +'</div>';
-    html += _happyPostCard(active, true);
+    mine.forEach(function(p){ html += _happyPostCard(p, true); html += '<div style="height:10px"></div>'; });
   }
   myQueued.forEach(function(p){
     html += '<div class="happy-card" style="border:1.5px dashed rgba(255,200,50,.4);opacity:.8;margin-top:12px">'
@@ -6825,7 +6824,7 @@ function _renderMyHappy(list, posts, queue, myId){
   list.innerHTML = html;
 }
 
-function _renderHappyHistory(list){
+async function _renderHappyHistory(list){
   var _hUid = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
   var _hKey = _hUid ? 'velo_happy_history_'+_hUid : 'velo_happy_history';
   var history = []; try{ history = JSON.parse(safeLS('get',_hKey)||'[]'); }catch(e){}
@@ -6833,6 +6832,26 @@ function _renderHappyHistory(list){
   var _migDirty = false;
   history = history.map(function(e){ if(e.photo && String(e.photo).length > 100){ e.hasPhoto = true; delete e.photo; _migDirty = true; } return e; });
   if(_migDirty){ try{ safeLS('set',_hKey, JSON.stringify(history)); }catch(e){} }
+
+  // Supplement with Supabase posts by this user (cross-device sync)
+  // happy_posts only keeps last 24h; but this fills gaps on new devices
+  var sbUid = safeLS('get','velo_user_id')||'';
+  if(sbUid && sbClient){
+    try{
+      var sr = await sbClient.from('happy_posts').select('id,emoji,text,photo,created_at,anon').eq('user_id', sbUid).order('created_at',{ascending:false}).limit(100);
+      if(sr.data && sr.data.length){
+        var existIds = {};
+        history.forEach(function(e){ existIds[e.id]=true; });
+        sr.data.forEach(function(r){
+          if(existIds[r.id]) return;
+          history.push({ id:r.id, emoji:r.emoji||'☀️', text:r.text||'', hasPhoto:!!r.photo, ts:new Date(r.created_at).getTime(), name:'' });
+        });
+        history.sort(function(a,b){ return b.ts - a.ts; });
+        try{ safeLS('set',_hKey, JSON.stringify(history.slice(0,500))); }catch(e){}
+      }
+    }catch(e){}
+  }
+
   if(!history.length){
     list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">📅</span>'
       +'<div class="p-empty-title">Tu historial está vacío</div>'
@@ -8389,15 +8408,11 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   var _showFavBtn = !isAnon && uid && uid !== _qpMyId;
   body.style.cssText = '';
   body.innerHTML =
-    // ── Sticky top-bar with close + fav ──────────────────────────
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 10px;border-bottom:1px solid var(--border2);margin-bottom:14px">'
+    // ── Avatar + info (fav star floats top-right) ────────────────
+    '<div style="position:relative;text-align:center;padding:6px 0 14px">'
     +(_showFavBtn
-      ? '<button id="qpFavBtn" onclick="pToggleFavFromProfile('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+')" style="display:flex;align-items:center;gap:5px;padding:7px 14px;background:'+(isFav?'rgba(255,200,50,.2)':'rgba(255,200,50,.07)')+';border:1.5px solid rgba(255,200,50,'+(isFav?'.5':'.25')+');border-radius:100px;font-size:13px;font-weight:700;color:'+(isFav?'#b88000':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif">'+(isFav?'⭐ Favorito':'☆ Favorito')+'</button>'
-      : '<div></div>')
-    +'<button onclick="document.getElementById(\'quickProfileOv\').remove()" style="width:30px;height:30px;border-radius:50%;background:var(--cream2);border:none;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink3)">✕</button>'
-    +'</div>'
-    // ── Avatar + info ────────────────────────────────────────────
-    +'<div style="text-align:center;padding:0 0 14px">'
+      ? '<button id="qpFavBtn" onclick="pToggleFavFromProfile('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+')" style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:4px;padding:6px 12px;background:'+(isFav?'rgba(255,200,50,.22)':'rgba(255,200,50,.08)')+';border:1.5px solid rgba(255,200,50,'+(isFav?'.55':'.3')+');border-radius:100px;font-size:14px;font-weight:700;color:'+(isFav?'#a07800':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;line-height:1">'+(isFav?'⭐':'☆')+'</button>'
+      : '')
     +'<div style="position:relative;display:inline-block;margin-bottom:8px">'
     +'<div style="font-size:60px;display:flex;justify-content:center">'+_avInline(dispAv,68)+'</div>'
     +(presence ? '<span style="position:absolute;bottom:3px;right:3px;width:15px;height:15px;border-radius:50%;background:'+presence.color+';border:2.5px solid var(--cream)"></span>' : '')
