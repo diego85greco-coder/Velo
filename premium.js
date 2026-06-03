@@ -8282,11 +8282,11 @@ async function _syncFavsFromSupabase(){
   try{
     var {data} = await sbClient.from('user_favorites').select('*').eq('user_id', myId).order('created_at',{ascending:false}).limit(100);
     if(!data || !data.length) return;
-    var local = pGetFavs();
+    var local = pGetFavs().filter(function(f){ return f.id !== myId; });
     var localIds = local.map(function(f){ return f.id; });
-    // Add remote favs not yet in local
+    // Add remote favs not yet in local, excluding self
     data.forEach(function(r){
-      if(localIds.indexOf(r.fav_id) < 0){
+      if(r.fav_id !== myId && localIds.indexOf(r.fav_id) < 0){
         local.push({ id:r.fav_id, name:r.fav_name||'Usuario', av:r.fav_av||'🧑', ts:new Date(r.created_at).getTime() });
       }
     });
@@ -8301,7 +8301,8 @@ function pIsFav(userId){
 }
 
 function pAddFav(userId, name, av){
-  if(!userId || pIsFav(userId)) return;
+  var _myId = safeLS('get','velo_user_id')||'';
+  if(!userId || userId === _myId || pIsFav(userId)) return;
   var favs = pGetFavs();
   favs.unshift({ id:userId, name:name||'Usuario', av:av||'🧑', ts:Date.now() });
   _favsList = favs;
@@ -8433,8 +8434,8 @@ async function pRenderContacts(){
   var el = document.getElementById('contactsContent');
   if(!el) return;
 
-  var favs = pGetFavs();
   var myId = safeLS('get','velo_user_id')||'';
+  var favs = pGetFavs().filter(function(f){ return f.id !== myId; });
 
   _initSupabase();
   var favMeRows = [];
@@ -8442,7 +8443,7 @@ async function pRenderContacts(){
     try{
       var fmRes = await sbClient.from('user_favorites').select('user_id,created_at').eq('fav_id', myId).order('created_at',{ascending:false}).limit(50);
       if(_navToken !== _tok) return;
-      favMeRows = fmRes.data || [];
+      favMeRows = (fmRes.data || []).filter(function(r){ return r.user_id !== myId; });
       safeLS('set','velo_fav_me_count', String(favMeRows.length));
       safeLS('set','velo_fav_me_seen',  String(favMeRows.length));
       _updateFavBadge();
@@ -8637,7 +8638,8 @@ function _sendOfflineMsg(toId, toName, toAv){
 async function _renderFavWidget(containerId){
   var el = document.getElementById(containerId);
   if(!el) return;
-  var favs = pGetFavs();
+  var _wMyId = safeLS('get','velo_user_id')||'';
+  var favs = pGetFavs().filter(function(f){ return f.id !== _wMyId; });
   if(!favs.length){ el.innerHTML = ''; return; }
 
   var onlineIds = {};
