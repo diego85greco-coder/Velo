@@ -8386,8 +8386,18 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
       +'</div>'
     : '';
 
+  var _showFavBtn = !isAnon && uid && uid !== _qpMyId;
   body.style.cssText = '';
-  body.innerHTML = '<div style="text-align:center;padding:6px 0 14px">'
+  body.innerHTML =
+    // ── Sticky top-bar with close + fav ──────────────────────────
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 10px;border-bottom:1px solid var(--border2);margin-bottom:14px">'
+    +(_showFavBtn
+      ? '<button id="qpFavBtn" onclick="pToggleFavFromProfile('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+')" style="display:flex;align-items:center;gap:5px;padding:7px 14px;background:'+(isFav?'rgba(255,200,50,.2)':'rgba(255,200,50,.07)')+';border:1.5px solid rgba(255,200,50,'+(isFav?'.5':'.25')+');border-radius:100px;font-size:13px;font-weight:700;color:'+(isFav?'#b88000':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif">'+(isFav?'⭐ Favorito':'☆ Favorito')+'</button>'
+      : '<div></div>')
+    +'<button onclick="document.getElementById(\'quickProfileOv\').remove()" style="width:30px;height:30px;border-radius:50%;background:var(--cream2);border:none;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink3)">✕</button>'
+    +'</div>'
+    // ── Avatar + info ────────────────────────────────────────────
+    +'<div style="text-align:center;padding:0 0 14px">'
     +'<div style="position:relative;display:inline-block;margin-bottom:8px">'
     +'<div style="font-size:60px;display:flex;justify-content:center">'+_avInline(dispAv,68)+'</div>'
     +(presence ? '<span style="position:absolute;bottom:3px;right:3px;width:15px;height:15px;border-radius:50%;background:'+presence.color+';border:2.5px solid var(--cream)"></span>' : '')
@@ -8397,8 +8407,8 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
     +(motto ? '<p style="font-size:13px;color:var(--ink3);line-height:1.6;font-style:italic;margin:6px 0 12px">"'+_escHtml(motto)+'"</p>' : '')
     +'</div>'
     + counters + likes + revHtml
+    // ── Action buttons ───────────────────────────────────────────
     +(guardianId&&!isAnon ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'quickProfileOv\').remove();pOpenGuardian('+_jsAttr(guardianId)+')">Solicitar acompañamiento 💚</button><div style="height:8px"></div>' : '')
-    +(!isAnon && uid && uid !== _qpMyId ? '<button id="qpFavBtn" class="p-btn p-btn--'+(isFav?'primary':'secondary')+' p-btn--md p-btn--full" onclick="pToggleFavFromProfile('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+')">'+(isFav?'⭐ En tus favoritos':'☆ Agregar a favoritos')+'</button><div style="height:8px"></div>' : '')
     +(!isAnon && uid ? '<button class="p-btn p-btn--secondary p-btn--sm p-btn--full" onclick="pOpenDM('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+');document.getElementById(\'quickProfileOv\').remove()">💬 Enviar mensaje</button><div style="height:8px"></div>' : '')
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'quickProfileOv\').remove()">Cerrar</button>';
 }
@@ -8514,12 +8524,13 @@ function pToggleGuardianFav(){
 
 function pToggleFavFromProfile(userId, name, av){
   if(pIsFav(userId)){ pRemoveFav(userId); } else { pAddFav(userId, name, av); }
-  // Update the button in the currently open profile sheet
   var btn = document.getElementById('qpFavBtn');
   if(btn){
     var nowFav = pIsFav(userId);
-    btn.className = 'p-btn p-btn--'+(nowFav?'primary':'secondary')+' p-btn--md p-btn--full';
-    btn.textContent = nowFav ? '⭐ En tus favoritos' : '☆ ¿Marcar como favorito? Activá la estrella';
+    btn.textContent = nowFav ? '⭐ Favorito' : '☆ Favorito';
+    btn.style.background    = nowFav ? 'rgba(255,200,50,.2)'  : 'rgba(255,200,50,.07)';
+    btn.style.borderColor   = nowFav ? 'rgba(255,200,50,.5)'  : 'rgba(255,200,50,.25)';
+    btn.style.color         = nowFav ? '#b88000' : 'var(--ink4)';
   }
 }
 
