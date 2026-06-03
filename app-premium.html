@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-390">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-390">
+  <link rel="stylesheet" href="premium.css?v=20260530-391">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-391">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1777,20 +1777,20 @@
                 <!-- Emoji row -->
                 <div id="happyEmojiRow" style="display:flex;gap:2px;flex-wrap:nowrap;overflow-x:auto;margin-bottom:8px;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:1px"></div>
                 <!-- Text area -->
-                <textarea class="p-textarea" id="happyPostTa" rows="2" placeholder="¿Qué momento de alegría querés compartir hoy? ✨" maxlength="300" style="background:rgba(255,255,255,.7);border-color:rgba(255,200,50,.2);font-size:13px;resize:none;margin-bottom:8px"></textarea>
+                <textarea class="p-textarea" id="happyPostTa" rows="2" placeholder="¿Qué momento de alegría querés compartir hoy? ✨" maxlength="300" style="border-color:rgba(255,200,50,.2);font-size:13px;resize:none;margin-bottom:8px"></textarea>
                 <!-- Photo preview -->
                 <div id="happyPhotoPreview" style="display:none;margin-bottom:8px;position:relative">
                   <img id="happyPhotoImg" style="width:100%;max-height:130px;object-fit:cover;border-radius:10px;display:block">
                   <button onclick="pClearHappyPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:50%;width:24px;height:24px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
                 </div>
                 <!-- Anon toggle row -->
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,.5);border-radius:10px;border:1px solid var(--border2)">
+                <div id="happyAnonRow" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 10px;border-radius:10px;border:1px solid var(--border2)">
                   <span style="font-size:11px;color:var(--ink4);flex:1;line-height:1.4">Publicar con mi perfil visible<br><span style="font-size:10px;color:var(--ink5)">Otros podrán ver tu perfil al hacer click en tu foto</span></span>
                   <div id="happyProfileTog" class="p-tog" onclick="pToggleHappyProfile(this)" style="flex-shrink:0"><div class="p-tog-k"></div></div>
                   <input type="checkbox" id="happyShowProfile" style="display:none">
                 </div>
                 <!-- Photo upload button -->
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:rgba(255,255,255,.55);border:1.5px dashed rgba(200,150,30,.35);border-radius:12px;margin-bottom:10px;transition:background .15s" onmouseover="this.style.background='rgba(255,230,80,.18)'" onmouseout="this.style.background='rgba(255,255,255,.55)'" title="Subir foto">
+                <label id="happyPhotoLabel" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;border:1.5px dashed rgba(200,150,30,.35);border-radius:12px;margin-bottom:10px;transition:background .15s" title="Subir foto">
                   <span style="font-size:26px;flex-shrink:0">📷</span>
                   <span style="flex:1;min-width:0">
                     <span style="display:block;font-size:13px;font-weight:600;color:var(--ink);font-family:'Jost',sans-serif">Seleccionar imagen</span>
@@ -3076,8 +3076,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-390"></script>
-<script src="premium-redesign.js?v=20260530-390"></script>
+<script src="premium.js?v=20260530-391"></script>
+<script src="premium-redesign.js?v=20260530-391"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
