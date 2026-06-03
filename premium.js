@@ -6829,6 +6829,10 @@ function _renderHappyHistory(list){
   var _hUid = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
   var _hKey = _hUid ? 'velo_happy_history_'+_hUid : 'velo_happy_history';
   var history = []; try{ history = JSON.parse(safeLS('get',_hKey)||'[]'); }catch(e){}
+  // Migrate legacy base64 photos and resave to free up localStorage space
+  var _migDirty = false;
+  history = history.map(function(e){ if(e.photo && String(e.photo).length > 100){ e.hasPhoto = true; delete e.photo; _migDirty = true; } return e; });
+  if(_migDirty){ try{ safeLS('set',_hKey, JSON.stringify(history)); }catch(e){} }
   if(!history.length){
     list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">📅</span>'
       +'<div class="p-empty-title">Tu historial está vacío</div>'
@@ -7308,9 +7312,13 @@ async function pSubmitHappyPost(){
   var _hUid3 = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
   var _hKey3 = _hUid3 ? 'velo_happy_history_'+_hUid3 : 'velo_happy_history';
   var hist = []; try{ hist = JSON.parse(safeLS('get',_hKey3)||'[]'); }catch(e){}
-  // Don't store base64 photos — they blow past localStorage's ~5MB limit
+  // Migrate legacy entries that still carry base64 photos (pre-v377) — frees quota
+  hist = hist.map(function(e){ if(e.photo && String(e.photo).length > 100){ e.hasPhoto = true; delete e.photo; } return e; });
   hist.unshift({ id:post.id, emoji:post.emoji, text:post.text, hasPhoto:!!post.photo, ts:post.ts, name:post.name });
-  try{ safeLS('set',_hKey3, JSON.stringify(hist.slice(0,500))); }catch(e){}
+  try{ safeLS('set',_hKey3, JSON.stringify(hist.slice(0,500))); }catch(e){
+    // Last resort: drop old entries until it fits
+    while(hist.length > 1){ hist.pop(); try{ safeLS('set',_hKey3, JSON.stringify(hist)); break; }catch(e2){} }
+  }
 
   // Reset form and collapse compose back to bar
   pClearHappyPhoto();
