@@ -1834,6 +1834,8 @@ function pToggleGuardianMode(){
   safeLS('set','velo_is_guardian', next ? 'true' : 'false');
   var tog = document.getElementById('guardianModeTog');
   if(tog) tog.classList.toggle('on', next);
+  var tog2 = document.getElementById('homeGuardianModeTog');
+  if(tog2) tog2.classList.toggle('on', next);
   var details = document.getElementById('guardianModeDetails');
   if(details) details.style.display = next ? '' : 'none';
   if(next){
@@ -1899,9 +1901,9 @@ function pSetUserStatus(status){
     safeLS('set','velo_guardian_status', status);
     _myGuardianStatus = status;
     if(status === 'ocupado'){
-      pToast('🟡','Aparecés como guardián ocupado. Desmarcá para volver a disponible.');
+      pToast('🟡','Guardián: ocupado');
     } else {
-      pToast('🟢','Volviste a estar disponible como guardián.');
+      pToast('🟢','Guardián: disponible');
     }
     if(document.getElementById('myGuardianStatus')) _renderMyStatusBar();
   } else {
@@ -1924,14 +1926,10 @@ function _renderHomeStatusToggle(){
   var el = document.getElementById('homeGuardianWrap');
   if(!el) return;
   var isGuardian = safeLS('get','velo_is_guardian') === 'true';
-  var lbl = '<span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;display:block;text-align:center;margin-top:4px">';
   el.innerHTML =
-    '<div style="display:flex;flex-direction:column;align-items:center">'
-    +'<button class="r-status-pill r-gmode-btn'+(isGuardian?' r-gmode-btn--on':'')+'" onclick="pToggleGuardianMode()">'
-    +(isGuardian?'<span style="font-size:14px">✅</span>':'<span style="font-size:14px">🛡️</span>')
-    +'<span>Modo Guardián</span>'
-    +'</button>'
-    +lbl+'<span style="color:'+(isGuardian?'rgba(34,197,94,.80)':'rgba(200,158,56,.75)')+'">'+(isGuardian?'ACTIVO':'ACTIVAR')+'</span></span>'
+    '<div style="display:flex;flex-direction:column;align-items:center;gap:5px">'
+    +'<span style="font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--ink4)">Modo Guardián</span>'
+    +'<div class="p-tog'+(isGuardian?' on':'')+'" id="homeGuardianModeTog" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>'
     +'</div>';
 }
 
@@ -7539,7 +7537,12 @@ function pRenderInbox(){
     var newBcs = bcs.filter(function(b){ return localIds.indexOf(b.id) < 0; });
     if(!newBcs.length) return;
     var _del2 = []; try{ _del2 = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
-    newBcs = newBcs.filter(function(b){ return _del2.indexOf('bc_'+b.id) < 0; });
+    var _clearedAt = parseInt(safeLS('get','velo_inbox_cleared_at')||'0');
+    newBcs = newBcs.filter(function(b){
+      if(_del2.indexOf('bc_'+b.id) >= 0) return false;
+      if(_clearedAt && b.sent_at && new Date(b.sent_at).getTime() <= _clearedAt) return false;
+      return true;
+    });
     var _delBtnStyle = 'flex-shrink:0;background:transparent;border:none;color:var(--ink5);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;line-height:1;align-self:flex-start;opacity:.55';
     var bcMsgs = newBcs.map(function(b){
       var readKey = 'velo_bcast_read_'+b.id;
@@ -7691,6 +7694,7 @@ function pInboxVaciar(){
   });
   safeLS('set','velo_inbox_deleted', JSON.stringify(del));
   safeLS('set','velo_inbox', JSON.stringify([]));
+  safeLS('set','velo_inbox_cleared_at', Date.now().toString());
   pRenderInbox();
 }
 
