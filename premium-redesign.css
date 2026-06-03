@@ -7580,8 +7580,17 @@ body.r-dark #pg-guardian-chat {
   50%      { box-shadow: 0 4px 20px rgba(0,0,0,.35), 0 0 0 8px rgba(37,168,106,0); }
 }
 /* Desktop: offset banner past sidebar, add padding */
+/* Mobile: banner goes below the 62px topbar so it doesn't cover it */
+@media (max-width: 767px) {
+  #returnChatBadge { top: 62px !important; left: 0 !important; }
+}
+/* Tablet: sidebar is 68px icon-only, no topbar */
+@media (min-width: 768px) and (max-width: 1023px) {
+  #returnChatBadge { left: 68px !important; top: 0 !important; }
+}
+/* Desktop: full 260px sidebar */
 @media (min-width: 1024px) {
-  #returnChatBadge { left: 64px !important; padding: 10px 24px !important; }
+  #returnChatBadge { left: 260px !important; top: 0 !important; padding: 10px 24px !important; }
 }
 
 /* ── v365: Respira ambient animations ───────────────────────────── */
@@ -7750,3 +7759,10 @@ body.r-dark .diary-papiro {
   padding: 2px 0;
 }
 body.r-dark .diary-row-date { color: rgba(255,255,255,.75) !important; }
+
+/* Papiro responsive tweaks */
+@media (max-width: 400px) {
+  .diary-papiro { padding: 36px 18px 24px !important; }
+  .diary-papiro::after { display: none; } /* hide margin line on tiny phones */
+  .diary-papiro-text { font-size: 15px !important; }
+}
