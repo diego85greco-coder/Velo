@@ -7364,34 +7364,31 @@ body.r-dark .home-dqa-btn:hover {
   display: none;
 }
 
-/* ── v356: "Apoya a Velo" gutter widget — desktop only ─────────────── */
+/* ── v357: "Apoya a Velo" — grid card (desktop) + remove corner widget ── */
+
+/* Corner widget: hidden always (replaced by grid card) */
 #desktopApoyaWidget {
+  display: none !important;
+}
+
+/* Grid card: hidden on mobile, spans 2 cols on desktop */
+.home-apoya-grid-card {
   display: none;
 }
-@media (min-width: 1280px) {
-  #desktopApoyaWidget {
+@media (min-width: 1024px) {
+  .home-apoya-grid-card {
     display: block;
-    position: fixed;
-    right: 2vw;
-    top: 38%;
-    transform: translateY(-50%);
-    z-index: 60;
-    width: 148px;
-    background: var(--cream);
-    border: 1.5px solid var(--border);
-    border-radius: 16px;
-    padding: 14px 12px 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,.10);
-    transition: box-shadow .2s, transform .2s;
+    grid-column: span 2;
   }
-  #desktopApoyaWidget:hover {
-    box-shadow: 0 8px 32px rgba(0,0,0,.18);
-    transform: translateY(calc(-50% - 2px));
+  .home-apoya-inner {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    height: 100%;
   }
-  body.r-dark #desktopApoyaWidget {
-    background: rgba(30,48,35,.92);
-    border-color: rgba(116,198,157,.22);
-    box-shadow: 0 4px 20px rgba(0,0,0,.35);
+  /* Hide the bottom donate banner on desktop — replaced by grid card */
+  #homeDonateBanner {
+    display: none !important;
   }
 }
 @media (min-width: 1024px) {

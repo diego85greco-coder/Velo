@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-356">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-356">
+  <link rel="stylesheet" href="premium.css?v=20260530-357">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-357">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1113,6 +1113,20 @@
               <div class="p-card-sub">Técnica 4-7-8 guiada</div>
               <div class="p-card-foot">
                 <span class="p-pill p-pill--sky">Calma</span>
+              </div>
+            </div>
+            <!-- "Apoya a Velo" — spans 2 cols on desktop to fill the empty row slot -->
+            <div class="p-card p-card--feature p-card--hover home-apoya-grid-card" onclick="pGoTo('donate-cta')" style="background:linear-gradient(135deg,rgba(116,198,157,.13),rgba(183,228,199,.08));border-color:rgba(116,198,157,.28)">
+              <div class="home-apoya-inner">
+                <span style="font-size:38px;line-height:1;flex-shrink:0">💚</span>
+                <div style="flex:1;min-width:0">
+                  <div class="p-card-title" style="margin-bottom:4px">Apoyá a Velo</div>
+                  <div class="p-card-sub" style="margin-bottom:14px">Mantenemos este espacio gratuito y seguro gracias a personas como vos.</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pGoTo('donate-cta')">🌻 Donar</button>
+                    <button class="p-btn p-btn--secondary p-btn--sm" onclick="event.stopPropagation();pShowPlusModal()">⭐ Velo Plus</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -3044,8 +3058,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-356"></script>
-<script src="premium-redesign.js?v=20260530-356"></script>
+<script src="premium.js?v=20260530-357"></script>
+<script src="premium-redesign.js?v=20260530-357"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

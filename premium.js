@@ -441,7 +441,8 @@ async function _sbSyncProfile(userId){
           safeLS('set','velo_is_guardian','true');
           if(gr.data[0].status && gr.data[0].status !== 'offline'){
             // Never restore incognito on session start — always wake up as disponible
-            var restoredStatus = gr.data[0].status === 'incognito' ? 'disponible' : gr.data[0].status;
+            var _rawSt = gr.data[0].status || '';
+            var restoredStatus = (_rawSt === 'incognito' || _rawSt.startsWith('incognito_')) ? 'disponible' : _rawSt;
             safeLS('set','velo_guardian_status', restoredStatus);
             safeLS('set','velo_user_status', restoredStatus);
             _myGuardianStatus = restoredStatus;
@@ -1918,21 +1919,26 @@ function _initGuardianToggleUI(){
 function pSetMyGuardianStatus(status){
   _myGuardianStatus = status;
   safeLS('set','velo_guardian_status', status);
-  if(status !== 'incognito') safeLS('set','velo_user_status', status);
+  var _isAnonSt = status === 'incognito' || (status && status.startsWith('incognito_'));
+  if(!_isAnonSt) safeLS('set','velo_user_status', status);
   _updateGuardianPresence(status);
   pRenderGuardians();
   _renderMyStatusBar();
   _renderHomeStatusToggle();
-  pToast(status==='disponible'?'🟢':status==='ocupado'?'🟡':'👤', 'Estado: '+(status==='disponible'?'Disponible':status==='ocupado'?'Ocupado':'Anónimo'));
+  var _stLbl = status==='disponible'?'Disponible':status==='ocupado'?'Ocupado':'Anónimo';
+  pToast(status==='disponible'?'🟢':status==='ocupado'?'🟡':'👤', 'Estado: '+_stLbl);
 }
 
 // Home availability toggle (Disponible / Ocupado) — shown below the greeting
 function pSetUserStatus(status){
   safeLS('set','velo_user_status', status);
   var isGuardian = safeLS('get','velo_is_guardian') === 'true';
+  var isIncognito = safeLS('get','velo_incognito') === 'true';
+  // When incognito is active, preserve anonymity while updating availability
+  var guardianStatus = isIncognito ? ('incognito_' + status) : status;
   if(isGuardian){
-    safeLS('set','velo_guardian_status', status);
-    _myGuardianStatus = status;
+    safeLS('set','velo_guardian_status', guardianStatus);
+    _myGuardianStatus = guardianStatus;
     if(status === 'ocupado'){
       pToast('🟡','Guardián: ocupado');
     } else {
@@ -1942,7 +1948,7 @@ function pSetUserStatus(status){
   } else {
     pToast(status==='ocupado'?'🟡':'🟢', status==='ocupado'?'Te marcaste como ocupado/a':'Estás disponible');
   }
-  _updateGuardianPresence(status);
+  _updateGuardianPresence(guardianStatus);
   _renderHomeStatusToggle();
 }
 
@@ -1967,13 +1973,15 @@ function _renderHomeStatusToggle(){
 function _renderMyStatusBar(){
   var el = document.getElementById('myGuardianStatus');
   if(!el) return;
-  var st = _myGuardianStatus;
+  var st = _myGuardianStatus || '';
+  var isAnonSt = st === 'incognito' || st.startsWith('incognito_');
+  var baseSt = isAnonSt ? st.replace('incognito_','') || 'disponible' : st;
   el.innerHTML = '<div style="background:rgba(255,255,255,.7);border:1.5px solid var(--border);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px">'
     +'<div style="font-size:11px;font-weight:700;color:var(--ink2);letter-spacing:.5px">MI ESTADO</div>'
     +'<div style="display:flex;gap:6px;margin-left:auto">'
-    +'<button onclick="pSetMyGuardianStatus(\'disponible\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(st==='disponible'?'var(--sage2)':'var(--border2)')+';background:'+(st==='disponible'?'var(--sage7)':'none')+';color:'+(st==='disponible'?'var(--sage)':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">🟢 Disponible</button>'
-    +'<button onclick="pSetMyGuardianStatus(\'ocupado\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(st==='ocupado'?'#C8A200':'var(--border2)')+';background:'+(st==='ocupado'?'rgba(200,162,0,.1)':'none')+';color:'+(st==='ocupado'?'#C8A200':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">🟡 Ocupado</button>'
-    +'<button onclick="pSetMyGuardianStatus(\'incognito\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(st==='incognito'?'var(--ink3)':'var(--border2)')+';background:'+(st==='incognito'?'rgba(0,0,0,.06)':'none')+';color:'+(st==='incognito'?'var(--ink)':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">👤 Anónimo</button>'
+    +'<button onclick="pSetMyGuardianStatus(\'disponible\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(baseSt==='disponible'?'var(--sage2)':'var(--border2)')+';background:'+(baseSt==='disponible'?'var(--sage7)':'none')+';color:'+(baseSt==='disponible'?'var(--sage)':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">🟢 Disponible</button>'
+    +'<button onclick="pSetMyGuardianStatus(\'ocupado\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(baseSt==='ocupado'?'#C8A200':'var(--border2)')+';background:'+(baseSt==='ocupado'?'rgba(200,162,0,.1)':'none')+';color:'+(baseSt==='ocupado'?'#C8A200':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">🟡 Ocupado</button>'
+    +'<button onclick="pSetMyGuardianStatus(\'incognito\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(isAnonSt?'var(--ink3)':'var(--border2)')+';background:'+(isAnonSt?'rgba(0,0,0,.06)':'none')+';color:'+(isAnonSt?'var(--ink)':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">👤 Anónimo</button>'
     +'</div>'
     +'</div>';
 }
@@ -2052,9 +2060,10 @@ async function pRenderGuardians(){
   list.innerHTML = selfBanner + filtered.map(function(g){
     var badge = _getBadge(g.convs||0);
     var gVerified = (badge.name==='Plata'||badge.name==='Oro'||badge.name==='Diamante');
-    var statusColor = g.status==='disponible'?'var(--st-on)':g.status==='ocupado'?'#C8A200':'rgba(150,150,150,.5)';
-    var statusLabel = g.status==='disponible'?'Disponible':g.status==='ocupado'?'Ocupado':'Anónimo';
-    var isAnon = g.status==='incognito';
+    var isAnon = g.status === 'incognito' || (g.status && g.status.startsWith('incognito_'));
+    var realSt = isAnon ? (g.status.replace('incognito_','') || 'disponible') : (g.status || 'disponible');
+    var statusColor = realSt==='disponible'?'var(--st-on)':realSt==='ocupado'?'#C8A200':'rgba(150,150,150,.5)';
+    var statusLabel = realSt==='disponible'?'Disponible':realSt==='ocupado'?'Ocupado':'Disponible';
     var rawId = g.id.replace('live_','');
     var isFav = !isAnon && pIsFav(rawId);
     var gVbadge = gVerified && !isAnon ? '<span class="velo-verified" title="Verificado — Plata o superior">✓</span>' : '';
@@ -2063,7 +2072,7 @@ async function pRenderGuardians(){
     return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span>'+gVavBadge+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.2">'+(isAnon?'Guardián Anónimo':_escHtml(g.name||'—'))+'</span>'+gVbadge+'<span style="font-size:14px">'+badge.icon+'</span></div>'+gUsername+'<div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0">'+(isAnon?'Disponible de forma anónima':_escHtml(g.bio||''))+'</p></div>'
       +'<div style="display:flex;gap:6px;align-items:center">'
       +(!isAnon ? '<button onclick="event.stopPropagation();'+(isFav?'pRemoveFav':'pAddFav')+'('+_jsAttr(rawId)+','+_jsAttr(g.name)+','+_jsAttr(g.av||'🌿')+');pRenderGuardians()" style="padding:6px 8px;background:'+(isFav?'rgba(255,200,50,.18)':'rgba(255,200,50,.07)')+';border:1px solid rgba(255,200,50,'+(isFav?'.4':'.2')+');border-radius:10px;font-size:15px;cursor:pointer" title="'+(isFav?'Quitar favorito':'Guardar favorito')+'">'+(isFav?'⭐':'☆')+'</button>' : '')
-      +'<button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(g.status==='ocupado'?'pToast(\'🟡\','+_jsAttr(g.name+' está ocupado/a ahora')+')':'pOpenGuardian('+_jsAttr(g.id)+')')+'">'+(g.status==='ocupado'?'Ocupado/a':'Solicitar')+'</button>'
+      +'<button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(realSt==='ocupado'?'pToast(\'🟡\','+_jsAttr((isAnon?'Este guardián':''+g.name)+' está ocupado/a ahora')+')':'pOpenGuardian('+_jsAttr(g.id)+')')+'">'+(realSt==='ocupado'?'Ocupado/a':'Solicitar')+'</button>'
       +'</div></div></div>';
   }).join('');
 }
@@ -7556,7 +7565,10 @@ function pToggleIncognito(){
   if(tog2){ tog2.classList.remove('on'); if(next) tog2.classList.add('on'); }
   // Sync to Supabase so other users see the change immediately
   if(safeLS('get','velo_is_guardian') === 'true'){
-    var newStatus = isOn ? 'disponible' : 'incognito';
+    var realAvail = safeLS('get','velo_user_status') || 'disponible';
+    // Turning incognito ON: keep real availability but hide identity → incognito_disponible / incognito_ocupado
+    // Turning incognito OFF: restore plain status
+    var newStatus = next ? ('incognito_' + realAvail) : realAvail;
     safeLS('set','velo_guardian_status', newStatus);
     _myGuardianStatus = newStatus;
     _updateGuardianPresence(newStatus);
