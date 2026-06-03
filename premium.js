@@ -1784,10 +1784,6 @@ function _startGuardianHeartbeat(){
     }
   };
   beat();
-  // Re-render home pill on first beat — by the time the boot heartbeat fires (+2s),
-  // the async guardian_presence DB sync has almost always completed, so this
-  // corrects any stale pill render from the 100ms _loadHomeData() call.
-  _renderHomeStatusToggle();
   _guardianHeartbeatTimer = setInterval(beat, 60000);
 }
 
@@ -1892,12 +1888,9 @@ function pToggleGuardianMode(){
     _updateGuardianPresence();
     pToast('👤','Ya no aparecés en la lista de guardianes');
   }
-  // Rebuild the home-page status pill immediately so the toggle reflects the new state
   _renderHomeStatusToggle();
   _renderMyStatusBar();
   pRenderGuardians();
-  // Fallback re-render after a tick — covers edge cases where the DOM wasn't ready on first call
-  setTimeout(_renderHomeStatusToggle, 50);
 }
 
 function pSaveGuardianBio(){
@@ -1963,22 +1956,12 @@ function _gBtnStyle(isOn){
   };
 }
 function _renderHomeStatusToggle(){
-  var el = document.getElementById('homeGuardianWrap');
-  if(!el) return;
   var isGuardian = safeLS('get','velo_is_guardian') === 'true';
   var isIncognito = safeLS('get','velo_incognito') === 'true';
-  el.innerHTML =
-    '<div class="p-card" style="padding:14px 16px;margin-bottom:0;width:100%;box-sizing:border-box">'
-    +'<div class="p-label p-label-sage" style="margin-bottom:10px">Privacidad</div>'
-    +'<div class="p-row-between" style="margin-bottom:10px">'
-    +'<div><div style="font-size:13px;color:var(--ink3)">👤 Modo incógnito</div><div style="font-size:11px;color:var(--ink5)">Ocultás tu nombre y avatar</div></div>'
-    +'<div class="p-tog'+(isIncognito?' on':'')+'" id="homeIncognitoTog" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>'
-    +'</div>'
-    +'<div class="p-row-between">'
-    +'<div><div style="font-size:13px;font-weight:600;color:var(--ink2)">🛡️ Modo guardián</div><div style="font-size:11px;color:var(--ink5)">Aparecer disponible para acompañar</div></div>'
-    +'<div class="p-tog'+(isGuardian?' on':'')+'" id="homeGuardianModeTog" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>'
-    +'</div>'
-    +'</div>';
+  var togG = document.getElementById('homeGuardianModeTog');
+  var togI = document.getElementById('homeIncognitoTog');
+  if(togG) togG.classList.toggle('on', isGuardian);
+  if(togI) togI.classList.toggle('on', isIncognito);
 }
 
 function _renderMyStatusBar(){
@@ -5962,6 +5945,8 @@ function pOpenCircle(id, circleData){
   _curCircle = typeof circleData === 'string' ? JSON.parse(circleData) : circleData;
   if(!_curCircle){ _curCircle = _circlesData.find(function(c){ return c.id===id; }); }
 
+  // Save join timestamp — messages from before this moment won't be shown on render
+  safeLS('set', 'velo_circle_joined_'+id, new Date().toISOString());
   _setEl('feedCircleName',  _curCircle ? _curCircle.name  : 'Círculo');
   _setEl('feedCircleEmoji', _curCircle ? _curCircle.emoji : '⭕');
   _setEl('feedCircleMembers', _curCircle ? _curCircle.members+' personas' : '');
@@ -6006,6 +5991,12 @@ async function _renderCircleMessages(){
     return q.eq('circle_id', _curCircle.id).order('created_at',{ascending:true}).limit(100);
   });
   if(_navToken !== _tok) return;
+
+  // Filter out messages from before the user's current join time
+  var _circleJoinTime = safeLS('get', 'velo_circle_joined_'+_curCircle.id);
+  if(_circleJoinTime && sbRows !== null){
+    sbRows = sbRows.filter(function(r){ return r.created_at >= _circleJoinTime; });
+  }
 
   var msgs;
   if(sbRows !== null && sbRows.length){
@@ -8593,6 +8584,13 @@ function pLeaveDM(){
       from_id: _dmMyId, from_name: _dmMyName, from_av: _dmMyAv, to_id: _dmPeer.id,
       text: '__velo_dm_bye__:'+JSON.stringify({ name:_dmMyName, av:_dmMyAv })
     }).then(function(){}).catch(function(){});
+  }
+  // Delete MY messages to this peer so history is clean if they chat again
+  if(sbClient && _dmMyId && _dmPeer && _dmPeer.id){
+    var _delToId = _dmPeer.id;
+    sbClient.from('direct_messages').delete()
+      .eq('from_id', _dmMyId).eq('to_id', _delToId)
+      .then(function(){}).catch(function(){});
   }
   if(_dmRtCh && sbClient){ try{ sbClient.removeChannel(_dmRtCh); }catch(e){} _dmRtCh = null; }
   // Clear accepted flag so a new session requires a fresh chat request

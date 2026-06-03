@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-350">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-350">
+  <link rel="stylesheet" href="premium.css?v=20260530-351">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-351">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -917,9 +917,21 @@
                   <span>Plus</span>
                 </button>
               </div>
-              <!-- Guardian mode control (theme toggle moved to topbar) -->
+              <!-- Guardian mode control — static HTML, state synced via _renderHomeStatusToggle() -->
               <div id="homeStatusToggle" style="display:flex;justify-content:center;margin-bottom:20px">
-                <div id="homeGuardianWrap"></div>
+                <div id="homeGuardianWrap">
+                  <div class="p-card" style="padding:14px 16px;margin-bottom:0;width:100%;box-sizing:border-box">
+                    <div class="p-label p-label-sage" style="margin-bottom:10px">Privacidad</div>
+                    <div class="p-row-between" style="margin-bottom:10px">
+                      <div><div style="font-size:13px;color:var(--ink3)">👤 Modo incógnito</div><div style="font-size:11px;color:var(--ink5)">Ocultás tu nombre y avatar</div></div>
+                      <div class="p-tog" id="homeIncognitoTog" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>
+                    </div>
+                    <div class="p-row-between">
+                      <div><div style="font-size:13px;font-weight:600;color:var(--ink2)">🛡️ Modo guardián</div><div style="font-size:11px;color:var(--ink5)">Aparecer disponible para acompañar</div></div>
+                      <div class="p-tog" id="homeGuardianModeTog" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div id="homeTimeIcon"></div>
               <div style="position:relative">
@@ -1106,7 +1118,7 @@
           </div>
           <!-- More options -->
           <div class="home-wide-card">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">
               <div class="p-card p-card--hover" style="padding:16px;cursor:pointer" onclick="pGoTo('professionals')">
                 <div style="display:flex;gap:4px;margin-bottom:9px"><span style="font-size:22px;display:flex;width:40px;height:40px;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.28);border-radius:10px;align-items:center;justify-content:center">👨‍⚕️</span><span style="font-size:22px;display:flex;width:40px;height:40px;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.28);border-radius:10px;align-items:center;justify-content:center">👩‍⚕️</span></div>
                 <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink);margin-bottom:3px">Profesionales</div>
@@ -1119,7 +1131,7 @@
             </div>
           </div>
           <!-- Velo IA wide card -->
-          <div class="p-card p-card--hover" onclick="pGoTo('calm-ai')" style="margin-top:4px;padding:18px 20px;background:linear-gradient(135deg,rgba(255,182,193,.22),rgba(255,160,180,.12));border:1.5px solid rgba(255,160,180,.3);cursor:pointer;display:flex;align-items:center;gap:16px">
+          <div id="homeVeloIACard" class="p-card p-card--hover" onclick="pGoTo('calm-ai')" style="margin-top:4px;padding:18px 20px;background:linear-gradient(135deg,rgba(255,182,193,.22),rgba(255,160,180,.12));border:1.5px solid rgba(255,160,180,.3);cursor:pointer;display:flex;align-items:center;gap:16px">
             <div style="font-size:36px;flex-shrink:0">🤖</div>
             <div style="flex:1;min-width:0">
               <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);margin-bottom:3px">Hablar con Velo IA</div>
@@ -3032,8 +3044,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-350"></script>
-<script src="premium-redesign.js?v=20260530-350"></script>
+<script src="premium.js?v=20260530-351"></script>
+<script src="premium-redesign.js?v=20260530-351"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
@@ -3050,5 +3062,11 @@
   }
   function pShowDPA(){ if(typeof openModal==='function') openModal('dpaOv'); }
 </script>
+
+<!-- Fixed Velo logo for desktop — right side background, adapts to light/dark mode -->
+<div id="desktopLogoBg" aria-hidden="true">
+  <img src="assets/logo.png" class="r-desk-logo-light" alt="">
+  <img src="assets/logo-dark.png" class="r-desk-logo-dark" alt="">
+</div>
 </body>
 </html>
