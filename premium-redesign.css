@@ -565,28 +565,31 @@ body::after {
 }
 
 /* Visual reorder: greeting first, Jardín de hoy below */
-/* Desktop side logos — hidden on mobile, positioned in the side gaps */
+/* Desktop side logos — direct children of #pg-home (position:absolute;inset:0)
+   so top:50% always = viewport center and they disappear when the page hides */
 .home-logo-side {
   display: none;
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 140px;
-  height: 140px;
+  width: 120px;
+  height: 120px;
   background: url('assets/logo-dark.png') center / contain no-repeat;
   opacity: 0.08;
   pointer-events: none;
   z-index: 0;
 }
-/* Show only on screens wide enough to have side gaps */
+/* Only show when viewport has real side gaps (sidebar 80px + content 820px + 2 gaps) */
 @media (min-width: 1200px) {
   .home-logo-side { display: block; }
-  /* 5% from each edge of #pg-home — lands in the gap between sidebar and content column */
-  .home-logo-side--left  { left: 5%; }
-  .home-logo-side--right { right: 5%; }
+  /* Center in left gap: sidebar(80px) + half the gap on each side */
+  .home-logo-side--left  { left: calc(80px + (100vw - 900px) / 4 - 60px); }
+  .home-logo-side--right { right: calc((100vw - 900px) / 4 - 60px); }
 }
 @media (min-width: 1440px) {
-  .home-logo-side { width: 170px; height: 170px; opacity: 0.09; }
+  .home-logo-side { width: 150px; height: 150px; }
+  .home-logo-side--left  { left: calc(80px + (100vw - 900px) / 4 - 75px); }
+  .home-logo-side--right { right: calc((100vw - 900px) / 4 - 75px); }
 }
 body.r-dark .home-logo-side {
   background-image: url('assets/logo.png');

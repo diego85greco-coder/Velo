@@ -6737,14 +6737,17 @@ async function pRenderHappy(){
     posts = _processHappyQueue();
   }
 
-  // Auto-save own active posts to local history (cross-device: populates on first wall view)
+  // Auto-save own active posts to local history + backfill happy_history in Supabase
+  var _hEmail2 = safeLS('get','velo_user_email')||'';
   if(usingSB && myId && myId.indexOf('guest-') !== 0){
     try{
       var _hKeyAuto = 'velo_happy_history_'+myId;
       var _histAuto = []; try{ _histAuto = JSON.parse(safeLS('get',_hKeyAuto)||'[]'); }catch(e){}
       var _histAutoIds = {};
       _histAuto.forEach(function(e){ _histAutoIds[e.id]=true; });
-      var _ownWall = posts.filter(function(p){ return p.userId === myId; });
+      var _ownWall = posts.filter(function(p){
+        return p.userId === myId || (_hEmail2 && p.userId === _hEmail2);
+      });
       var _autoAdded = false;
       _ownWall.forEach(function(p){
         if(!_histAutoIds[p.id]){
@@ -6753,6 +6756,18 @@ async function pRenderHappy(){
         }
       });
       if(_autoAdded){ try{ safeLS('set',_hKeyAuto, JSON.stringify(_histAuto.slice(0,500))); }catch(e){} }
+      // Backfill Supabase happy_history with own posts not yet stored there
+      _initSupabase();
+      if(sbClient && _ownWall.length){
+        var _hisUidB = safeLS('get','velo_user_id')||_hEmail2||'';
+        if(_hisUidB){
+          _ownWall.forEach(function(p){
+            sbClient.from('happy_history').upsert({
+              id:p.id, user_id:_hisUidB, emoji:p.emoji||'☀️', text:p.text||''
+            },{ onConflict:'id', ignoreDuplicates:true }).then(function(){}).catch(function(){});
+          });
+        }
+      }
     }catch(e){}
   }
 
