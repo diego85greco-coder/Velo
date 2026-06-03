@@ -6852,6 +6852,29 @@ async function _renderHappyHistory(list){
   history = history.map(function(e){ if(e.photo && String(e.photo).length > 100){ e.hasPhoto = true; delete e.photo; _migDirty = true; } return e; });
   if(_migDirty){ try{ safeLS('set',_hKey, JSON.stringify(history)); }catch(e){} }
 
+  // Immediate fallback: merge own active posts from the already-loaded wall (_sbHappy global)
+  // This covers the case where localStorage is empty but wall posts are loaded (same session)
+  var _hUidNow = _hUid || '';
+  var _hEmailNow = safeLS('get','velo_user_email')||'';
+  if(_sbHappy && _hUidNow && _hUidNow.indexOf('guest-') !== 0){
+    var _existIds = {};
+    history.forEach(function(e){ _existIds[e.id]=true; });
+    var _ownNow = _sbHappy.filter(function(p){
+      return p.userId === _hUidNow || (_hEmailNow && p.userId === _hEmailNow);
+    });
+    var _nowAdded = false;
+    _ownNow.forEach(function(p){
+      if(!_existIds[p.id]){
+        history.push({ id:p.id, emoji:p.emoji, text:p.text, ts:p.ts, name:p.name });
+        _nowAdded = true;
+      }
+    });
+    if(_nowAdded){
+      history.sort(function(a,b){ return b.ts - a.ts; });
+      try{ safeLS('set',_hKey, JSON.stringify(history.slice(0,500))); }catch(e){}
+    }
+  }
+
   // Cross-device sync: query Supabase with every possible user identifier
   var sbUid   = safeLS('get','velo_user_id')||'';
   var sbEmail = safeLS('get','velo_user_email')||'';

@@ -565,6 +565,34 @@ body::after {
 }
 
 /* Visual reorder: greeting first, Jardín de hoy below */
+/* Desktop side logos — hidden on mobile */
+.home-logo-side {
+  display: none;
+  position: fixed;
+  top: 50vh;
+  transform: translateY(-50%);
+  width: 130px;
+  height: 130px;
+  background: url('assets/logo-dark.png') center / contain no-repeat;
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 0;
+}
+@media (min-width: 1200px) {
+  .home-logo-side { display: block; }
+  .home-logo-side--left  { left: 14px; }
+  .home-logo-side--right { right: 14px; }
+}
+@media (min-width: 1440px) {
+  .home-logo-side { width: 160px; height: 160px; opacity: 0.08; }
+  .home-logo-side--left  { left: 32px; }
+  .home-logo-side--right { right: 32px; }
+}
+/* Dark mode: use lighter logo */
+body.r-dark .home-logo-side {
+  background-image: url('assets/logo.png');
+  opacity: 0.05;
+}
 #homeTimeIcon         { order: 1; }
 #homeGreetWrapper     { order: 2; }
 .r-home-shortcut-grid { order: 3; }
