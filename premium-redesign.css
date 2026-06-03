@@ -7363,6 +7363,37 @@ body.r-dark .home-dqa-btn:hover {
 #desktopLogoBg {
   display: none;
 }
+
+/* ── v356: "Apoya a Velo" gutter widget — desktop only ─────────────── */
+#desktopApoyaWidget {
+  display: none;
+}
+@media (min-width: 1280px) {
+  #desktopApoyaWidget {
+    display: block;
+    position: fixed;
+    right: 2vw;
+    top: 38%;
+    transform: translateY(-50%);
+    z-index: 60;
+    width: 148px;
+    background: var(--cream);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 12px 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.10);
+    transition: box-shadow .2s, transform .2s;
+  }
+  #desktopApoyaWidget:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    transform: translateY(calc(-50% - 2px));
+  }
+  body.r-dark #desktopApoyaWidget {
+    background: rgba(30,48,35,.92);
+    border-color: rgba(116,198,157,.22);
+    box-shadow: 0 4px 20px rgba(0,0,0,.35);
+  }
+}
 @media (min-width: 1024px) {
   #desktopLogoBg {
     display: block;

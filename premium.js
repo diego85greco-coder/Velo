@@ -12816,12 +12816,48 @@ window.addEventListener('load', function(){
   document.addEventListener('visibilitychange', function(){
     if(safeLS('get','velo_is_guardian') !== 'true') return;
     if(document.hidden){
-      // Page went to background — mark as ocupado so seekers don't ping an inactive guardian
       _updateGuardianPresence('ocupado');
     } else {
-      // Page is visible again — restore real status
       _updateGuardianPresence(_presenceStatus());
     }
+  });
+
+  // Detect window blur (PC screen lock, Alt+Tab to another app on Windows)
+  // visibilitychange alone doesn't fire on Windows lock screen — blur does
+  var _guardianBlurTimer = null;
+  window.addEventListener('blur', function(){
+    if(safeLS('get','velo_is_guardian') !== 'true') return;
+    // 4s grace period so focus loss from dialog/DevTools doesn't falsely trigger
+    _guardianBlurTimer = setTimeout(function(){
+      _guardianBlurTimer = null;
+      if(safeLS('get','velo_is_guardian') !== 'true') return;
+      _updateGuardianPresence('ocupado');
+    }, 4000);
+  });
+  window.addEventListener('focus', function(){
+    if(_guardianBlurTimer){ clearTimeout(_guardianBlurTimer); _guardianBlurTimer = null; }
+    if(safeLS('get','velo_is_guardian') !== 'true') return;
+    _updateGuardianPresence(_presenceStatus());
+  });
+
+  // Inactivity detection — 5 min without any user gesture → mark ocupado
+  var _guardianInactTimer = null;
+  var _guardianWasInactive = false;
+  function _resetGuardianInactivity(){
+    if(_guardianInactTimer){ clearTimeout(_guardianInactTimer); }
+    if(safeLS('get','velo_is_guardian') !== 'true') return;
+    if(_guardianWasInactive){
+      _guardianWasInactive = false;
+      _updateGuardianPresence(_presenceStatus());
+    }
+    _guardianInactTimer = setTimeout(function(){
+      if(safeLS('get','velo_is_guardian') !== 'true') return;
+      _guardianWasInactive = true;
+      _updateGuardianPresence('ocupado');
+    }, 5 * 60 * 1000);
+  }
+  ['mousemove','mousedown','keydown','touchstart','touchmove','scroll'].forEach(function(ev){
+    document.addEventListener(ev, _resetGuardianInactivity, { passive: true });
   });
 
   // Register timestamp
