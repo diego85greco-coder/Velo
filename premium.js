@@ -6416,7 +6416,7 @@ async function pRenderHappy(){
     }
     _sbHappy = posts;
     // Batch-fetch usernames for non-anon authors not yet cached
-    if(sbClient){ var _hpUnknown = posts.filter(function(h){ return !h.anon && h.userId && h.userId!=='anon' && !_uLook(h.userId); }).map(function(h){ return h.userId; }); if(_hpUnknown.length){ try{ var _hpr = await sbClient.from('profiles').select('id,username').in('id',_hpUnknown); if(_hpr.data) _hpr.data.forEach(function(p){ _uFill(p.id,p.username); }); }catch(e){} } }
+    if(sbClient){ var _hpUnknown = posts.filter(function(h){ return !h.anon && h.userId && h.userId!=='anon' && !_uLook(h.userId); }).map(function(h){ return h.userId; }); if(_hpUnknown.length){ try{ var _hpr = await sbClient.from('profiles').select('id,username,avatar').in('id',_hpUnknown); if(_hpr.data) _hpr.data.forEach(function(p){ _uFill(p.id,p.username); if(p.avatar){ posts.forEach(function(h){ if(h.userId===p.id && !h.anon && !(h.av&&(h.av.startsWith('data:')||h.av.startsWith('http')))) h.av=p.avatar; }); } }); }catch(e){} } }
   } else {
     posts = _processHappyQueue();
   }
@@ -7882,15 +7882,14 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   var presence = (uid && !isAnon) ? _presenceInfo(uid) : null;
 
   var likeRows = (prof && !isAnon) ? [
-    prof.status_music  ? '🎵 '+_escHtml(prof.status_music)  : '',
-    prof.status_film   ? '🎬 '+_escHtml(prof.status_film)   : '',
-    prof.status_book   ? '📖 '+_escHtml(prof.status_book)   : '',
-    prof.status_phrase ? '💬 '+_escHtml(prof.status_phrase) : ''
+    prof.status_music  ? { lbl:'🎶 Escucha',  val:_escHtml(prof.status_music)  } : null,
+    prof.status_film   ? { lbl:'🎬 Mira',     val:_escHtml(prof.status_film)   } : null,
+    prof.status_book   ? { lbl:'📖 Lee',      val:_escHtml(prof.status_book)   } : null,
+    prof.status_phrase ? { lbl:'✨ Frase',    val:_escHtml(prof.status_phrase) } : null
   ].filter(Boolean) : [];
   var likes = likeRows.length
     ? '<div style="text-align:left;background:var(--cream2);border-radius:12px;padding:10px 14px;margin-bottom:12px">'
-      +'<div style="font-size:10px;font-weight:700;color:var(--ink5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Le gusta</div>'
-      + likeRows.map(function(r){ return '<div style="font-size:12.5px;color:var(--ink3);padding:3px 0">'+r+'</div>'; }).join('')
+      + likeRows.map(function(r){ return '<div style="font-size:12px;color:var(--ink3);padding:3px 0"><span style="font-size:10px;font-weight:700;color:var(--ink5);text-transform:uppercase;letter-spacing:.4px;margin-right:6px">'+r.lbl+'</span>'+r.val+'</div>'; }).join('')
       +'</div>'
     : '';
   var helped   = (prof && prof.helped_count)   ? prof.helped_count   : 0;
