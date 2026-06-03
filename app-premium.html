@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-361">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-361">
+  <link rel="stylesheet" href="premium.css?v=20260530-362">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-362">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1377,7 +1377,9 @@
           <span class="reply-preview-text" style="color:rgba(255,255,255,.6)"></span>
           <button class="reply-preview-close" onclick="pClearReplyBar('helpChatReplyBar')" style="color:rgba(255,255,255,.4)">✕</button>
         </div>
+        <div id="helpChatEmojiPanel" class="feed-emoji-panel"></div>
         <div class="feed-input-area" style="background:rgba(8,20,10,.9);border-top:1px solid rgba(116,198,157,.12)">
+          <button type="button" class="feed-emoji-toggle" onclick="pToggleChatEmojis('helpChatEmojiPanel','helpChatInput')" title="Emojis">😊</button>
           <textarea id="helpChatInput" class="feed-input" placeholder="Escribí con amor y presencia…" rows="1" style="background:rgba(255,255,255,.06);color:#fff;border-color:rgba(116,198,157,.2)"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendHelpChatMsg()}"></textarea>
           <button class="feed-send-btn" onclick="pSendHelpChatMsg()">↑</button>
@@ -2083,7 +2085,9 @@
           <span class="reply-preview-text"></span>
           <button class="reply-preview-close" onclick="pClearReplyBar('gcReplyBar')">✕</button>
         </div>
+        <div id="gcEmojiPanel" class="feed-emoji-panel"></div>
         <div class="feed-input-area">
+          <button type="button" class="feed-emoji-toggle" onclick="pToggleChatEmojis('gcEmojiPanel','gcInput')" title="Emojis">😊</button>
           <textarea id="gcInput" class="feed-input" placeholder="Escribí lo que sentís..." rows="1"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendGuardianMsg()}"></textarea>
           <button class="feed-send-btn" onclick="pSendGuardianMsg()">↑</button>
@@ -3058,8 +3062,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-361"></script>
-<script src="premium-redesign.js?v=20260530-361"></script>
+<script src="premium.js?v=20260530-362"></script>
+<script src="premium-redesign.js?v=20260530-362"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

@@ -280,9 +280,33 @@ function pGoTo(id){
   var showNav = P_NO_NAV.indexOf(id) < 0 && _authenticated;
   _updateNavState(id, showNav);
 
+  // Show/hide "return to chat" badge when navigating away from an active chat
+  var _activeChatPages = ['help-chat', 'guardian-chat'];
+  if(_inActiveChat && _activeChatPages.indexOf(id) < 0 && (_prevPage === 'help-chat' || _prevPage === 'guardian-chat')){
+    _showReturnToChatBadge(_prevPage);
+  } else if(_activeChatPages.indexOf(id) >= 0){
+    _hideReturnToChatBadge();
+  }
+
   // Per-page init
   _onPageEnter(id);
   _trackPageView(id);
+}
+
+function _showReturnToChatBadge(pageId){
+  var existing = document.getElementById('returnChatBadge');
+  if(existing){ existing.dataset.page = pageId; return; }
+  var badge = document.createElement('button');
+  badge.id = 'returnChatBadge';
+  badge.dataset.page = pageId;
+  badge.onclick = function(){ pGoTo(this.dataset.page); };
+  badge.innerHTML = '💬 Volver al chat';
+  badge.style.cssText = 'position:fixed;bottom:80px;right:16px;z-index:8000;background:linear-gradient(135deg,#1b6636,#25a86a);color:#fff;border:none;border-radius:24px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.35),0 0 0 0 rgba(37,168,106,.6);font-family:\'Jost\',sans-serif;animation:returnChatPulse 2s ease-in-out infinite';
+  document.body.appendChild(badge);
+}
+function _hideReturnToChatBadge(){
+  var b = document.getElementById('returnChatBadge');
+  if(b) b.remove();
 }
 
 function _updateNavState(id, showNav){
@@ -2817,6 +2841,7 @@ function pEndGuardianChat(){
       text:'__velo_guardian_bye__:'+JSON.stringify({ name:_byeMyName, av:_byeMyAv })
     }).then(function(){}).catch(function(){});
   }
+  _hideReturnToChatBadge();
   var exitStatus = _prevChatStatus || _presenceStatus();
   _inActiveChat = false;
   _prevChatStatus = null;
@@ -3446,16 +3471,24 @@ function _subscribeHelpChat(post){
 async function _loadHelpChatHistory(post){
   _initSupabase();
   if(!sbClient || !post.userId) return;
-  if(post.anon) return; // anonymous post → start fresh, never show previous history
+  if(post.anon) return;
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
   if(!myId) return;
+  // Only load messages from the last 10 minutes — prevents old session history showing
+  var since = new Date(Date.now() - 10*60*1000).toISOString();
   try{
     var {data} = await sbClient.from('direct_messages')
       .select('*')
       .or('and(from_id.eq.'+myId+',to_id.eq.'+post.userId+'),and(from_id.eq.'+post.userId+',to_id.eq.'+myId+')')
+      .gte('created_at', since)
       .order('created_at',{ascending:true}).limit(100);
     if(data && data.length){
-      data.forEach(function(m){ _renderHelpChatMsg(m, m.from_id===myId); });
+      var _sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__'];
+      data.forEach(function(m){
+        var t = m.text||'';
+        if(_sentinels.indexOf(t)>=0||t.startsWith('__velo_help_bye__:')) return;
+        _renderHelpChatMsg(m, m.from_id===myId);
+      });
       var el = document.getElementById('helpChatMessages');
       if(el) el.scrollTop = el.scrollHeight;
     }
@@ -3551,7 +3584,15 @@ function pLeaveHelpChat(){
       }).then(function(){}).catch(function(){});
     }
   }
+  // Delete all messages between these two users so next session starts fresh
+  if(sbClient && _hPost && _hPost.userId && _hMyId){
+    var _delA = _hMyId, _delB = _hPost.userId;
+    sbClient.from('direct_messages').delete()
+      .or('and(from_id.eq.'+_delA+',to_id.eq.'+_delB+'),and(from_id.eq.'+_delB+',to_id.eq.'+_delA+')')
+      .then(function(){}).catch(function(){});
+  }
   if(_helpChatRtCh && sbClient){ try{ sbClient.removeChannel(_helpChatRtCh); }catch(e){} _helpChatRtCh = null; }
+  _hideReturnToChatBadge();
   var post = _curHelpPost;
   _curHelpPost = null;
   // Save guardian info for the post-chat review (seeker side only)
@@ -6084,22 +6125,30 @@ function pSendCircleMsg(){
 }
 
 var _circleMsgEmojis = ['😊','😢','❤️','🙏','💪','🌿','✨','🤗','🌸','😌','🥺','💙','🌈','☀️','🦋','🕊️','🌊','💚','😔','🫂'];
-function pToggleCircleEmojis(){
-  var panel = document.getElementById('feedEmojiPanel');
+function pInsertChatEmoji(e, inputId){
+  var ta = document.getElementById(inputId || 'feedInput');
+  if(!ta) return;
+  var start = ta.selectionStart || ta.value.length;
+  ta.value = ta.value.slice(0, start) + e + ta.value.slice(start);
+  ta.selectionStart = ta.selectionEnd = start + e.length;
+  ta.focus();
+}
+function pToggleChatEmojis(panelId, inputId){
+  var panel = document.getElementById(panelId);
   if(!panel) return;
   if(panel.style.display === 'flex'){ panel.style.display = 'none'; return; }
   if(!panel.innerHTML){
     panel.innerHTML = _circleMsgEmojis.map(function(e){
-      return '<button type="button" onclick="pInsertCircleEmoji(\''+e+'\')" style="font-size:22px;background:none;border:none;cursor:pointer;padding:4px;border-radius:8px">'+e+'</button>';
+      return '<button type="button" onclick="pInsertChatEmoji(\''+e+'\',\''+inputId+'\')" style="font-size:22px;background:none;border:none;cursor:pointer;padding:4px;border-radius:8px">'+e+'</button>';
     }).join('');
   }
   panel.style.display = 'flex';
 }
+function pToggleCircleEmojis(){
+  pToggleChatEmojis('feedEmojiPanel', 'feedInput');
+}
 function pInsertCircleEmoji(e){
-  var ta = document.getElementById('feedInput');
-  if(!ta) return;
-  ta.value = (ta.value || '') + e;
-  ta.focus();
+  pInsertChatEmoji(e, 'feedInput');
 }
 
 function _startCircleAutoMsg(){ /* disabled — no fake auto-messages */ }
