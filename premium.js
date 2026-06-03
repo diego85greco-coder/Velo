@@ -1745,7 +1745,7 @@ async function _refreshPresenceCache(){
   _initSupabase();
   if(!sbClient) return;
   try{
-    var cutoff = new Date(Date.now() - 10*60*1000).toISOString();
+    var cutoff = new Date(Date.now() - 3*60*1000).toISOString();
     var res = await sbClient.from('guardian_presence').select('user_id,status,last_seen').gte('last_seen', cutoff);
     var fresh = {};
     (res.data||[]).forEach(function(r){ fresh[r.user_id] = { status:r.status, last_seen:r.last_seen }; });
@@ -1784,7 +1784,7 @@ function _startGuardianHeartbeat(){
     }
   };
   beat();
-  _guardianHeartbeatTimer = setInterval(beat, 60000);
+  _guardianHeartbeatTimer = setInterval(beat, 30000);
 }
 
 function _stopGuardianHeartbeat(){
@@ -1998,7 +1998,7 @@ async function pRenderGuardians(){
   _initSupabase();
   if(sbClient){
     try{
-      var cutoff = new Date(Date.now() - 10*60*1000).toISOString(); // active in last 10 min
+      var cutoff = new Date(Date.now() - 3*60*1000).toISOString(); // active in last 3 min
       var myId = _myUserId();
       var { data, error: gpErr } = await sbClient.from('guardian_presence')
         .select('*').neq('status','offline').gte('last_seen', cutoff);
@@ -12806,11 +12806,21 @@ window.addEventListener('load', function(){
     _stopGuardianHeartbeat();
     if(safeLS('get','velo_is_guardian') === 'true' && sbClient){
       try{
-        var uid = safeLS('get','velo_user_email')||'guest';
-        navigator.sendBeacon ? (function(){
-          sbClient.from('guardian_presence').update({ status:'offline', last_seen: new Date().toISOString() }).eq('user_id', uid);
-        })() : null;
+        var uid = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'');
+        if(uid) sbClient.from('guardian_presence').delete().eq('user_id', uid).then(function(){}).catch(function(){});
       }catch(e){}
+    }
+  });
+
+  // Detect tab/window hidden (phone locked, minimized, other tab) — mark ocupado automatically
+  document.addEventListener('visibilitychange', function(){
+    if(safeLS('get','velo_is_guardian') !== 'true') return;
+    if(document.hidden){
+      // Page went to background — mark as ocupado so seekers don't ping an inactive guardian
+      _updateGuardianPresence('ocupado');
+    } else {
+      // Page is visible again — restore real status
+      _updateGuardianPresence(_presenceStatus());
     }
   });
 
