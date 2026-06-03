@@ -1756,6 +1756,10 @@ async function _refreshPresenceCache(){
 function _presenceInfo(userId){
   var p = userId ? _presenceCache[userId] : null;
   if(p && p.last_seen && (Date.now() - new Date(p.last_seen).getTime()) < 5*60*1000 && p.status !== 'offline'){
+    // Incognito users are completely invisible — show as offline to contacts and favorites
+    if(p.status === 'incognito' || (p.status && p.status.startsWith('incognito_'))){
+      return { color:'rgba(150,150,150,.45)', label:'Desconectado', on:false };
+    }
     if(p.status === 'ocupado') return { color:'#E0A92E', label:'Ocupado/a', on:true };
     return { color:'#5BBF87', label:'En línea', on:true };
   }
