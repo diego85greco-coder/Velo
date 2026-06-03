@@ -389,7 +389,7 @@ async function _sbSyncProfile(userId){
   }
 
   if(!res.data || !res.data.length){
-    // No profile row yet — create a minimal one (let user fill in their name later)
+    // No profile row — first login or post-deletion re-entry. Create minimal profile.
     var curEmail = safeLS('get','velo_user_email') || '';
     if(curEmail){
       sbClient.from('profiles').upsert({
@@ -397,6 +397,12 @@ async function _sbSyncProfile(userId){
         avatar: safeLS('get','velo_user_av')||'',
         motto:  safeLS('get','velo_user_motto')||''
       },{ onConflict:'id' }).catch(function(){});
+    }
+    // Prompt user to complete their profile (handles re-entry after account deletion)
+    if(!safeLS('get','velo_user_name')){
+      setTimeout(function(){
+        pToast('👋','¡Bienvenido/a! Completá tu perfil para comenzar 🌿');
+      }, 1500);
     }
     return;
   }
@@ -610,7 +616,7 @@ async function pSignUp(){
     if(result.error){
       var errMsg = result.error.message || 'Error al registrar';
       if(/rate.limit/i.test(errMsg))           errMsg = 'Demasiados intentos. Esperá unos minutos o iniciá sesión si ya creaste la cuenta.';
-      else if(/already.registered/i.test(errMsg)) errMsg = 'Este email ya tiene una cuenta. Usá "Iniciar sesión" 🔑';
+      else if(/already.registered/i.test(errMsg)) errMsg = 'Este email ya está registrado. Si eliminaste tu cuenta, iniciá sesión para continuar como usuario nuevo 🔑';
       else if(/invalid.email/i.test(errMsg))   errMsg = 'El email no es válido.';
       else if(/password/i.test(errMsg))        errMsg = 'La contraseña debe tener al menos 6 caracteres.';
       pToast('⚠️', errMsg);
@@ -12345,18 +12351,28 @@ function _isHidden(type, id){
 
 // ── PROFILE EXTRAS: DELETE ACCOUNT, CANCEL SUB, CONTACT ────────
 function pDeleteAccount(){
+  var isDark = document.body.classList.contains('r-dark');
+  var bg   = isDark ? '#162a1e' : '#fff';
+  var brd  = isDark ? 'border:1px solid rgba(255,80,80,.2);' : 'border:1px solid rgba(220,60,50,.12);';
+  var inkC = isDark ? 'rgba(255,255,255,.9)' : 'var(--ink)';
+  var sub  = isDark ? 'rgba(255,255,255,.55)' : 'var(--ink4)';
+  var inp  = isDark ? 'background:rgba(255,255,255,.06);color:#fff;border-color:rgba(255,255,255,.15)' : '';
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
-  ov.innerHTML = '<div class="p-sheet">'
+  ov.innerHTML = '<div class="p-sheet" style="background:'+bg+';'+brd+'max-width:440px;margin:auto">'
     +'<div class="p-sheet-handle"></div>'
-    +'<div style="font-size:32px;text-align:center;margin-bottom:10px">⚠️</div>'
-    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);text-align:center;margin-bottom:10px">¿Eliminar tu cuenta?</div>'
-    +'<p style="font-size:13px;color:var(--ink4);text-align:center;line-height:1.6;margin-bottom:18px">Esta acción es <strong>irreversible</strong>. Se eliminarán todos tus datos: diario, registros de ánimo, mensajes y participación en círculos.</p>'
-    +'<div class="p-field"><label class="p-field-label">Escribí "ELIMINAR" para confirmar</label>'
-    +'<input class="p-input" type="text" id="deleteConfirmInput" placeholder="ELIMINAR"></div>'
-    +'<div style="display:flex;gap:8px;margin-top:12px">'
-    +'<button class="p-btn p-btn--md p-btn--full" style="background:var(--sos);border-color:var(--sos);color:#fff;font-family:\'Jost\',sans-serif;font-weight:700;padding:11px;border-radius:14px;cursor:pointer" onclick="pConfirmDelete(this.closest(\'.p-modal-ov\'))">Eliminar cuenta</button>'
-    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove()">Cancelar</button>'
+    +'<div style="font-size:36px;text-align:center;margin-bottom:10px">🗑️</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:'+inkC+';text-align:center;margin-bottom:8px;font-weight:700">¿Eliminar tu cuenta?</div>'
+    +'<p style="font-size:13px;color:'+sub+';text-align:center;line-height:1.6;margin-bottom:18px">Esta acción es <strong>irreversible</strong>. Se eliminarán tu perfil, mensajes, publicaciones y presencia de los contactos de otros usuarios.<br><br>Si querés volver a usar Velo con el mismo correo, podés registrarte de nuevo como usuario nuevo.</p>'
+    +'<div class="p-field" style="margin-bottom:14px">'
+    +'<label class="p-field-label" style="color:'+inkC+'">¿Por qué te vas? <span style="color:'+sub+';font-weight:400">(opcional)</span></label>'
+    +'<textarea class="p-textarea" id="deleteReasonInput" rows="3" placeholder="Contanos el motivo para mejorar Velo…" style="'+inp+';resize:none;width:100%;box-sizing:border-box"></textarea></div>'
+    +'<div class="p-field" style="margin-bottom:16px">'
+    +'<label class="p-field-label" style="color:'+inkC+'">Escribí <strong>ELIMINAR</strong> para confirmar</label>'
+    +'<input class="p-input" type="text" id="deleteConfirmInput" placeholder="ELIMINAR" style="'+inp+'"></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="p-btn p-btn--md p-btn--full" style="background:#c0312a;border-color:#c0312a;color:#fff;font-family:\'Jost\',sans-serif;font-weight:700;padding:12px;border-radius:14px;cursor:pointer" onclick="pConfirmDelete(this.closest(\'.p-modal-ov\'))">Eliminar cuenta</button>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" style="padding:12px" onclick="this.closest(\'.p-modal-ov\').remove()">Cancelar</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
@@ -12364,15 +12380,54 @@ function pDeleteAccount(){
 
 function pConfirmDelete(ov){
   var input = document.getElementById('deleteConfirmInput');
-  if(!input || input.value !== 'ELIMINAR'){ pToast('⚠️','Escribí ELIMINAR para confirmar'); return; }
+  if(!input || input.value.trim().toUpperCase() !== 'ELIMINAR'){ pToast('⚠️','Escribí ELIMINAR para confirmar'); return; }
+  var reason = (document.getElementById('deleteReasonInput')||{}).value||'';
   if(ov) ov.remove();
-  // Clear all local data
-  var keysToRemove = ['velo_session','velo_user_name','velo_user_email','velo_user_av','velo_user_motto','velo_user_type',
-    'velo_diary','velo_inbox','velo_subscribers','velo_registered_ts','velo_guardian_convs','velo_circles','velo_helped_once'];
-  keysToRemove.forEach(function(k){ safeLS('del',k); });
-  if(sbClient){ try{ sbClient.auth.signOut(); }catch(e){} }
-  pToast('👋','Tu cuenta ha sido eliminada. Hasta pronto.');
-  setTimeout(function(){ _authenticated=false; pGoTo('landing'); }, 1800);
+  pToast('🗑️','Eliminando tu cuenta…');
+  _execDeleteAccount(reason.trim());
+}
+
+function _clearAllLocalData(){
+  var keys = [];
+  try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&k.startsWith('velo_')) keys.push(k); } }catch(e){}
+  keys.forEach(function(k){ safeLS('del',k); });
+}
+
+async function _execDeleteAccount(reason){
+  var userId = safeLS('get','velo_user_id') || '';
+  var email  = safeLS('get','velo_user_email') || '';
+
+  if(sbClient && userId){
+    // 1. Save feedback before deleting (fire-and-forget)
+    sbClient.from('deleted_accounts').insert({
+      email: email, user_id: userId,
+      reason: reason || null,
+      deleted_at: new Date().toISOString()
+    }).catch(function(){});
+
+    // 2. Remove user from every table that could surface them to other users
+    var uid = userId;
+    try{ await sbClient.from('user_favorites').delete().eq('user_id', uid); }catch(e){}
+    try{ await sbClient.from('user_favorites').delete().eq('fav_id', uid); }catch(e){}
+    try{ await sbClient.from('guardian_presence').delete().eq('user_id', uid); }catch(e){}
+    try{ await sbClient.from('direct_messages').delete().or('from_id.eq.'+uid+',to_id.eq.'+uid); }catch(e){}
+    try{ await sbClient.from('guardian_requests').delete().or('seeker_id.eq.'+uid+',guardian_id.eq.'+uid); }catch(e){}
+    try{ await sbClient.from('help_posts').delete().eq('user_id', uid); }catch(e){}
+    try{ await sbClient.from('happy_posts').delete().eq('user_id', uid); }catch(e){}
+    // Delete profile last so auth still works for the above queries
+    try{ await sbClient.from('profiles').delete().eq('id', uid); }catch(e){}
+
+    // 3. Sign out — auth user intentionally kept so same email can re-register as new user
+    try{ await sbClient.auth.signOut(); }catch(e){}
+  }
+
+  // 4. Wipe all local state
+  _clearAllLocalData();
+  _authenticated = false;
+  _favsList = null;
+
+  pToast('👋','Cuenta eliminada. Podés registrarte de nuevo cuando quieras 🌿');
+  setTimeout(function(){ pGoTo('landing'); }, 2000);
 }
 
 function pCancelSubscription(){
