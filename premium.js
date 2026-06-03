@@ -1560,6 +1560,7 @@ function _trackVisitDay(){
   if(days.indexOf(today) < 0){
     days.push(today);
     safeLS('set','velo_visit_days', JSON.stringify(days));
+    _checkAndNotifyBadge();
     // Delay push so _pullVisitCountFromSB (runs at 2500ms) can set the SB baseline first.
     // _getVisitDayCount() then returns Math.max(local, sbCount) — never overwrites a higher SB value.
     setTimeout(function(){
@@ -1607,6 +1608,45 @@ function _getBadge(convs){
   if(visitDays >= 5) return { icon:'🥉', name:'Bronce', color:'#C07840', next:'Plata',      needed:20-convs,    visitBased:false };
   // Not yet Bronze: show days needed
   return { icon:'🌱', name:'Novato', color:'var(--sage4)', next:'Bronce', needed:5-visitDays, visitBased:true, visitDays:visitDays };
+}
+
+function _checkAndNotifyBadge(){
+  var convs = parseInt(safeLS('get','velo_guardian_convs')||'0',10);
+  var badge = _getBadge(convs);
+  var lastNotified = safeLS('get','velo_badge_last_notified');
+  if(!lastNotified){
+    safeLS('set','velo_badge_last_notified', badge.name);
+    return;
+  }
+  if(badge.name === lastNotified) return;
+  safeLS('set','velo_badge_last_notified', badge.name);
+  _sendBadgeInboxMsg(badge);
+}
+
+function _sendBadgeInboxMsg(badge){
+  var catalog = {
+    Bronce:   { asunto:'¡Obtuviste la insignia Bronce! 🥉', cuerpo:'¡Felicitaciones! Ingresaste 5 días distintos a Velo. Como reconocimiento, te otorgamos la insignia Guardián Bronce, que ya aparece en tu perfil. ¡Gracias por ser parte de esta comunidad!' },
+    Plata:    { asunto:'¡Insignia Plata desbloqueada! 🥈', cuerpo:'¡Increíble! Completaste 20 conversaciones de acompañamiento. Tu perfil ahora muestra el badge de guardián verificado, visible en toda la comunidad. ¡Seguí así!' },
+    Oro:      { asunto:'¡Sos Guardián Oro! 🥇', cuerpo:'¡Felicitaciones! Completaste 40 conversaciones. Ahora podés crear Círculos de Paz y tenés prioridad en el listado de guardianes. ¡Sos un pilar de Velo!' },
+    Diamante: { asunto:'¡Insignia Diamante — Leyenda de Velo! 💎', cuerpo:'¡Extraordinario! Completaste 100 conversaciones y alcanzaste el nivel máximo. Sos parte de la élite de guardianes de Velo. ¡Gracias por tu dedicación y compromiso!' }
+  };
+  var info = catalog[badge.name];
+  if(!info) return;
+  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  var msgId = 'badge_'+badge.name.toLowerCase()+'_'+Date.now();
+  inbox.unshift({
+    id: msgId,
+    tipo: 'sistema',
+    icon: badge.icon,
+    remitente: 'Velo',
+    asunto: info.asunto,
+    extracto: info.cuerpo.slice(0, 80) + '…',
+    cuerpo: info.cuerpo,
+    leido: false,
+    fecha: new Date().toLocaleDateString('es', { day:'2-digit', month:'short' })
+  });
+  safeLS('set','velo_inbox', JSON.stringify(inbox));
+  _updateHomeBell();
 }
 
 var _guardianProfiles = [
@@ -2775,6 +2815,7 @@ function pEndGuardianChat(){
   if(_gcRole === 'guardian'){
     var convs = parseInt(safeLS('get','velo_guardian_convs')||'0',10) + 1;
     safeLS('set','velo_guardian_convs', String(convs));
+    _checkAndNotifyBadge();
     _bumpProfileCounter('helped_count', convs);
     _updateGuardianPresence(exitStatus);
     _gcPeer = null; _gcReqId = null; _gcRole = null;
