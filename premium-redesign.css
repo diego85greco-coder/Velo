@@ -6325,7 +6325,7 @@ body:not(.r-dark) .r-tbar-moon { display: none; }
   justify-content: center;
   width: 100%;
 }
-#homeGuardianWrap > div {
+#homeGuardianWrap > div:not(.p-card) {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;

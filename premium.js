@@ -1966,10 +1966,18 @@ function _renderHomeStatusToggle(){
   var el = document.getElementById('homeGuardianWrap');
   if(!el) return;
   var isGuardian = safeLS('get','velo_is_guardian') === 'true';
+  var isIncognito = safeLS('get','velo_incognito') === 'true';
   el.innerHTML =
-    '<div style="display:flex;flex-direction:column;align-items:center;gap:5px">'
-    +'<span style="font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--ink4)">Modo Guardián</span>'
+    '<div class="p-card" style="padding:14px 16px;margin-bottom:0;width:100%;box-sizing:border-box">'
+    +'<div class="p-label p-label-sage" style="margin-bottom:10px">Privacidad</div>'
+    +'<div class="p-row-between" style="margin-bottom:10px">'
+    +'<div><div style="font-size:13px;color:var(--ink3)">👤 Modo incógnito</div><div style="font-size:11px;color:var(--ink5)">Ocultás tu nombre y avatar</div></div>'
+    +'<div class="p-tog'+(isIncognito?' on':'')+'" id="homeIncognitoTog" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>'
+    +'</div>'
+    +'<div class="p-row-between">'
+    +'<div><div style="font-size:13px;font-weight:600;color:var(--ink2)">🛡️ Modo guardián</div><div style="font-size:11px;color:var(--ink5)">Aparecer disponible para acompañar</div></div>'
     +'<div class="p-tog'+(isGuardian?' on':'')+'" id="homeGuardianModeTog" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>'
+    +'</div>'
     +'</div>';
 }
 
@@ -7548,10 +7556,12 @@ async function pSearchUsers(query){
 }
 
 function pToggleIncognito(){
-  var tog = document.getElementById('incognitoTog');
-  var isOn = tog && tog.classList.contains('on');
+  var isOn = safeLS('get','velo_incognito') === 'true';
   safeLS('set','velo_incognito', isOn ? 'false' : 'true');
-  if(tog) tog.classList.toggle('on');
+  var tog = document.getElementById('incognitoTog');
+  if(tog) tog.classList.toggle('on', !isOn);
+  var tog2 = document.getElementById('homeIncognitoTog');
+  if(tog2) tog2.classList.toggle('on', !isOn);
   pToast(isOn ? '👁️' : '🕵️', isOn ? 'Modo incógnito desactivado' : 'Modo incógnito activado');
 }
 
