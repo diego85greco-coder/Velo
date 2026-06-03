@@ -6819,36 +6819,82 @@ function _renderHappyHistory(list){
       +'<div class="p-empty-sub">Cuando publiques algo en el Muro, quedará guardado aquí para siempre 🌟</div></div>';
     return;
   }
-  var clearBtn = '<div style="text-align:right;margin-bottom:14px">'
+
+  // Group by calendar date
+  var groups = {}; // { 'YYYY-MM-DD': { label, entries[] } }
+  var order  = [];
+  var today  = new Date(); today.setHours(0,0,0,0);
+  var yest   = new Date(today); yest.setDate(yest.getDate()-1);
+  history.forEach(function(h){
+    var d = new Date(h.ts);
+    var key = d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+    if(!groups[key]){
+      d.setHours(0,0,0,0);
+      var label;
+      if(d.getTime() === today.getTime())      label = 'Hoy';
+      else if(d.getTime() === yest.getTime())  label = 'Ayer';
+      else label = new Date(h.ts).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      // Capitalize first letter
+      label = label.charAt(0).toUpperCase()+label.slice(1);
+      groups[key] = { label:label, entries:[] };
+      order.push(key);
+    }
+    groups[key].entries.push(h);
+  });
+
+  var clearBtn = '<div style="text-align:right;margin-bottom:16px">'
     +'<button onclick="pClearHappyHistory()" style="padding:6px 14px;background:rgba(220,60,60,.06);border:1px solid rgba(220,60,60,.18);border-radius:100px;font-size:12px;color:rgba(200,60,60,.7);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">🗑️ Borrar historial</button>'
     +'</div>';
-  list.innerHTML = clearBtn + history.map(function(h, i){
-    var date = new Date(h.ts);
-    var dateStr = date.toLocaleDateString('es', { day:'2-digit', month:'short', year:'numeric' });
-    var timeStr = date.toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
-    var rxTotal = 0;
-    if(h.reactions) rxTotal = Object.keys(h.reactions).reduce(function(a,k){ return a+(h.reactions[k]||0); }, 0);
-    var statsHtml = '';
-    if(rxTotal > 0 || (h.commentCount > 0)){
-      statsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">';
-      if(rxTotal > 0) statsHtml += '<span style="font-size:10px;background:rgba(255,224,102,.25);border-radius:100px;padding:3px 9px;font-weight:600;color:rgba(160,120,0,.8)">💛 '+rxTotal+' reaccion'+(rxTotal>1?'es':'')+'</span>';
-      if(h.commentCount > 0) statsHtml += '<span style="font-size:10px;background:rgba(116,198,157,.15);border-radius:100px;padding:3px 9px;font-weight:600;color:var(--sage)">💬 '+h.commentCount+' comentario'+(h.commentCount>1?'s':'')+'</span>';
-      statsHtml += '</div>';
-    }
-    return '<div class="happy-card" style="position:relative">'
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
-      +'<div style="font-size:24px;width:40px;height:40px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:11px;font-weight:700;color:var(--sage)">Mi publicación</div>'
-      +'<div style="font-size:10px;color:var(--ink5)">'+dateStr+' · '+timeStr+'</div>'
-      +'</div>'
-      +(i===0 ? '<span style="font-size:10px;background:var(--sage7);color:var(--sage);border-radius:100px;padding:2px 8px;font-weight:700;white-space:nowrap">Más reciente</span>' : '')
-      +'</div>'
-      +(h.photo ? '<img src="'+h.photo+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;display:block;margin-bottom:12px;cursor:zoom-in">' : '')
-      +(h.text ? '<p style="font-size:13px;color:var(--ink3);line-height:1.6;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(h.text)+'"</p>' : '')
-      +statsHtml
-      +'</div>';
-  }).join('');
+
+  var html = clearBtn;
+  order.forEach(function(key, gi){
+    var g = groups[key];
+    var count = g.entries.length;
+    var isFirst = gi === 0;
+    html += '<details'+(isFirst?' open':'')+' style="margin-bottom:10px;border-radius:14px;overflow:hidden;'
+      +'background:rgba(255,255,255,.55);border:1.5px solid rgba(255,200,50,.2);backdrop-filter:blur(4px)">'
+      +'<summary style="list-style:none;cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:10px;user-select:none;'
+      +'font-size:13px;font-weight:700;color:var(--ink2)">'
+      +'<span style="font-size:16px">📅</span>'
+      +'<span style="flex:1">'+_escHtml(g.label)+'</span>'
+      +'<span style="font-size:11px;font-weight:600;color:var(--sage2);background:rgba(116,198,157,.15);'
+      +'border:1px solid rgba(116,198,157,.3);border-radius:100px;padding:2px 9px;flex-shrink:0">'
+      +count+' publicación'+(count>1?'es':'')+'</span>'
+      +'<span class="hist-chevron" style="font-size:12px;color:var(--ink4);flex-shrink:0;transition:transform .2s">▼</span>'
+      +'</summary>'
+      +'<div style="padding:0 12px 12px;display:flex;flex-direction:column;gap:8px">';
+
+    g.entries.forEach(function(h){
+      var timeStr = new Date(h.ts).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+      var rxTotal = 0;
+      if(h.reactions) rxTotal = Object.keys(h.reactions).reduce(function(a,k){ return a+(h.reactions[k]||0); }, 0);
+      html += '<div style="background:rgba(255,255,255,.7);border-radius:12px;padding:12px 14px;border:1px solid rgba(255,200,50,.15)">'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(h.text?'10':'0')+'px">'
+        +'<div style="font-size:22px;width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,rgba(255,224,102,.3),rgba(253,233,244,.5));'
+        +'display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:10px;color:var(--ink4);margin-bottom:1px">'+timeStr+'</div>'
+        +(h.hasPhoto ? '<div style="font-size:10px;color:var(--sage2);font-weight:600">📷 Incluyó foto</div>' : '')
+        +'</div>'
+        +(rxTotal>0 ? '<span style="font-size:10px;background:rgba(255,224,102,.25);border-radius:100px;padding:2px 8px;font-weight:600;color:rgba(140,100,0,.8);flex-shrink:0">💛 '+rxTotal+'</span>' : '')
+        +(h.commentCount>0 ? '<span style="font-size:10px;background:rgba(116,198,157,.15);border-radius:100px;padding:2px 8px;font-weight:600;color:var(--sage);flex-shrink:0;margin-left:4px">💬 '+h.commentCount+'</span>' : '')
+        +'</div>'
+        +(h.text ? '<p style="font-size:14px;color:var(--ink2);line-height:1.65;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500">"'+_escHtml(h.text)+'"</p>' : '')
+        +'</div>';
+    });
+
+    html += '</div></details>';
+  });
+
+  list.innerHTML = html;
+
+  // Rotate chevron when details opens/closes
+  list.querySelectorAll('details').forEach(function(det){
+    det.addEventListener('toggle', function(){
+      var ch = det.querySelector('.hist-chevron');
+      if(ch) ch.style.transform = det.open ? 'rotate(180deg)' : '';
+    });
+  });
 }
 
 function pClearHappyHistory(){
@@ -7246,8 +7292,9 @@ async function pSubmitHappyPost(){
   var _hUid3 = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
   var _hKey3 = _hUid3 ? 'velo_happy_history_'+_hUid3 : 'velo_happy_history';
   var hist = []; try{ hist = JSON.parse(safeLS('get',_hKey3)||'[]'); }catch(e){}
-  hist.unshift({ id:post.id, emoji:post.emoji, text:post.text, photo:post.photo, ts:post.ts, name:post.name });
-  safeLS('set',_hKey3, JSON.stringify(hist.slice(0,200)));
+  // Don't store base64 photos — they blow past localStorage's ~5MB limit
+  hist.unshift({ id:post.id, emoji:post.emoji, text:post.text, hasPhoto:!!post.photo, ts:post.ts, name:post.name });
+  try{ safeLS('set',_hKey3, JSON.stringify(hist.slice(0,500))); }catch(e){}
 
   // Reset form and collapse compose back to bar
   pClearHappyPhoto();
