@@ -1994,9 +1994,12 @@ body.r-dark .r-hero-actions .p-btn--secondary {
 /* ── v162: "JARDÍN DE HOY" label style ───────────────────────────── */
 #homeHeroLabel {
   font-family: 'Inter', 'Jost', sans-serif !important;
+  color: rgba(140, 95, 10, 0.92) !important;
+  text-shadow: 0 1px 8px rgba(255,255,255,.7) !important;
 }
 body.r-dark #homeHeroLabel {
-  color: rgba(200,158,56,.78) !important;
+  color: rgba(220, 170, 55, 0.95) !important;
+  text-shadow: 0 1px 10px rgba(0,0,0,.6) !important;
 }
 
 /* ── v162: Daily quote card label gold dot ────────────────────────── */
@@ -6076,13 +6079,15 @@ body:not(.r-dark) .r-gmode-btn--on {
 .r-home-shortcut--sos { border-color: rgba(220,60,60,.38) !important; }
 .r-home-shortcut--sos .r-hs-icon { filter: drop-shadow(0 0 7px rgba(220,60,60,.45)); }
 
-/* light mode */
+/* light mode — frosted glass so icons/text are legible on the flower bg */
 body:not(.r-dark) .r-home-shortcut {
-  background: rgba(27,94,58,.06);
-  border-color: rgba(27,94,58,.14);
-  color: var(--ink3);
+  background: rgba(255,255,255,.60) !important;
+  border-color: rgba(116,198,157,.38) !important;
+  color: var(--ink2) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
-body:not(.r-dark) .r-home-shortcut:hover { background: rgba(27,94,58,.11); }
+body:not(.r-dark) .r-home-shortcut:hover { background: rgba(255,255,255,.78) !important; }
 body:not(.r-dark) .r-hs-icon { filter: none; }
 
 /* ── v309: Time icon above heading ─────────────────────────────── */
@@ -6971,8 +6976,8 @@ body:not(.r-dark) .p-sidebar-theme-btn .r-tbar-moon { display: none; }
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  background: rgba(116,198,157,.08);
-  border: 1.5px solid rgba(116,198,157,.20);
+  background: rgba(255,255,255,.62);
+  border: 1.5px solid rgba(116,198,157,.40);
   border-radius: 12px;
   padding: 9px 4px 7px;
   cursor: pointer;
@@ -6980,21 +6985,29 @@ body:not(.r-dark) .p-sidebar-theme-btn .r-tbar-moon { display: none; }
   font-weight: 700;
   letter-spacing: .07em;
   text-transform: uppercase;
-  color: var(--ink4);
+  color: var(--ink2);
   font-family: 'Jost', sans-serif;
   transition: background .15s, transform .1s;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.home-dqa-btn svg {
+  color: var(--sage2);
 }
 .home-dqa-btn:hover {
-  background: rgba(116,198,157,.16);
+  background: rgba(255,255,255,.80);
   transform: translateY(-1px);
 }
 body.r-dark .home-dqa-btn {
-  background: rgba(116,198,157,.10);
-  border-color: rgba(116,198,157,.22);
-  color: rgba(116,198,157,.70);
+  background: rgba(10, 35, 20, 0.72);
+  border-color: rgba(116,198,157,.35);
+  color: rgba(200,230,210,.90);
+}
+body.r-dark .home-dqa-btn svg {
+  color: rgba(116,198,157,.90);
 }
 body.r-dark .home-dqa-btn:hover {
-  background: rgba(116,198,157,.18);
+  background: rgba(15, 50, 28, 0.85);
 }
 @media (max-width: 859px) {
   #homeDesktopQuickActs { display: none !important; }
