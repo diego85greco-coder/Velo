@@ -5927,40 +5927,53 @@ function _startRespiraAmbient(){
   layer.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0';
   if(!inner.style.position) inner.style.position = 'relative';
   inner.insertBefore(layer, inner.firstChild);
-  // Two rAF frames so layout settles and getBoundingClientRect is accurate
   requestAnimationFrame(function(){ requestAnimationFrame(function(){
     var canvas = document.getElementById('respiraCanvas');
     if(!canvas || !layer.isConnected) return;
     var lr = layer.getBoundingClientRect();
     var cr = canvas.getBoundingClientRect();
-    var cx = cr.left - lr.left + cr.width  / 2;
-    var cy = cr.top  - lr.top  + cr.height / 2;
+    var cx  = cr.left - lr.left + cr.width  / 2;
+    var cy  = cr.top  - lr.top  + cr.height / 2;
+    var canR = cr.width / 2; // actual canvas radius
     var petals = ['🌸','🌼','🌺','✨','🍃','💫','🌿','🌸','✨','🍃','🌼','🌺','🌱','💫'];
     var n = petals.length;
     for(var i = 0; i < n; i++){
-      var r   = 148 + (i * 5.8) % 52;         // orbit radius 148–200px
-      var dur = (20 + (i * 3.7) % 18) * 1000; // 20–38s per full orbit
-      var sz  = 14 + (i * 2.1) % 18;          // emoji 14–32px
-      // Wrapper anchored at canvas center — this is what orbits
+      var sz        = 14 + (i * 2.1) % 18;              // emoji size 14–32px
+      var dur       = (10 + (i * 2.3) % 10) * 1000;    // 10–20s per expansion cycle
+      var startAng  = (i / n) * Math.PI * 2;            // evenly distributed start angles
+      var driftAng  = (0.18 + (i * 0.06) % 0.25);      // small angular drift while expanding
+      var r0        = canR + sz * 0.4;                  // start just outside circle edge
+      var r1        = canR * 2.7 + (i * 12) % 70;      // expand to ~2.7× radius (matches ring)
+      var startDel  = -(i / n) * dur;                   // stagger so all aren't in sync
+
+      // Wrapper at canvas center sets the radial direction
       var wrap = document.createElement('div');
-      wrap.style.cssText = 'position:absolute;left:'+cx+'px;top:'+cy+'px;width:0;height:0;transform-origin:0 0;will-change:transform';
-      // Petal offset from center by orbit radius
+      wrap.style.cssText = 'position:absolute;left:'+cx+'px;top:'+cy+'px;'
+        +'width:0;height:0;transform-origin:0 0;will-change:transform';
+
+      // Petal sits at left:0 and is moved via translateX in animation
       var span = document.createElement('span');
       span.textContent = petals[i];
-      span.style.cssText = 'position:absolute;font-size:'+sz+'px;display:block;opacity:0.82;'
-        +'left:'+r+'px;top:'+(-sz/2)+'px;will-change:transform';
+      span.style.cssText = 'position:absolute;font-size:'+sz+'px;display:block;'
+        +'left:0px;top:'+(-sz/2)+'px;will-change:transform,opacity;transform-origin:center center';
+
       wrap.appendChild(span);
       layer.appendChild(wrap);
-      // Orbit the wrapper — negative delay staggers start angle around the circle
-      wrap.animate(
-        [{ transform:'rotate(0turn)' },{ transform:'rotate(1turn)' }],
-        { duration:dur, delay:-(i/n)*dur, iterations:Infinity, easing:'linear' }
-      );
-      // Slow self-spin on petal for organic feel
-      span.animate(
-        [{ transform:'rotate(0turn)' },{ transform:'rotate(1turn)' }],
-        { duration:dur*0.35, delay:-(i/n)*dur*0.35, iterations:Infinity, easing:'linear' }
-      );
+
+      // Wrapper slowly rotates from start angle + small drift (gives circular spread)
+      wrap.animate([
+        { transform:'rotate('+startAng+'rad)' },
+        { transform:'rotate('+(startAng + driftAng * Math.PI * 2)+'rad)' }
+      ], { duration:dur, delay:startDel, iterations:Infinity, easing:'linear' });
+
+      // Petal expands outward from circle edge → far out, fades in then fades out
+      span.animate([
+        { transform:'translateX('+r0+'px) rotate(0deg)',   opacity:0 },
+        { transform:'translateX('+r0+'px) rotate(20deg)',  opacity:0.88, offset:0.06 },
+        { transform:'translateX('+((r0+r1)/2)+'px) rotate(120deg)', opacity:0.7, offset:0.5 },
+        { transform:'translateX('+r1+'px) rotate(300deg)', opacity:0.3, offset:0.88 },
+        { transform:'translateX('+r1+'px) rotate(360deg)', opacity:0 }
+      ], { duration:dur, delay:startDel, iterations:Infinity, easing:'ease-out' });
     }
   }); });
 }
