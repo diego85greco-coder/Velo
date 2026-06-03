@@ -7202,3 +7202,51 @@ body.r-dark .home-dqa-btn:hover {
     background: rgba(6,18,10,.42) !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v345: Desktop home — centered, max-width, single-column hero
+   Hero card was expanding to full content-area width (900px+) on desktop
+   with a 2-col grid that left visual empty space. Now centered, compact.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  #pg-home .p-page-scroll {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #pg-home .r-hero-v2 {
+    grid-template-columns: 1fr !important;
+    max-width: 820px !important;
+    width: calc(100% - 48px) !important;
+    margin: 20px auto 16px !important;
+  }
+  #pg-home .r-hero-right {
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 28px !important;
+    order: -1;
+  }
+  #pg-home .r-hero-stats {
+    flex-direction: row !important;
+    gap: 20px !important;
+  }
+  #pg-home .r-hero-stat {
+    text-align: left !important;
+  }
+  /* Make shortcut grid 4 columns in one row on desktop */
+  #pg-home .r-home-shortcut-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  /* Full-width cards below hero */
+  #pg-home .home-greeting,
+  #pg-home .home-wide-card,
+  #pg-home #homeDailyQuote,
+  #pg-home #homeMonthlyBanner {
+    max-width: 820px !important;
+    width: calc(100% - 48px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box;
+  }
+}
