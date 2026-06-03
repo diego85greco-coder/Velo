@@ -583,12 +583,12 @@ body::after {
 @media (min-width: 1200px) {
   .home-logo-side { display: block; }
   /* Center in left gap: sidebar(80px) + half the gap on each side */
-  .home-logo-side--left  { left: calc(80px + (100vw - 900px) / 4 - 60px); }
+  .home-logo-side--left  { left: calc((100vw - 900px) / 4 - 60px); }
   .home-logo-side--right { right: calc((100vw - 900px) / 4 - 60px); }
 }
 @media (min-width: 1440px) {
   .home-logo-side { width: 150px; height: 150px; }
-  .home-logo-side--left  { left: calc(80px + (100vw - 900px) / 4 - 75px); }
+  .home-logo-side--left  { left: calc((100vw - 900px) / 4 - 75px); }
   .home-logo-side--right { right: calc((100vw - 900px) / 4 - 75px); }
 }
 body.r-dark .home-logo-side {
@@ -7445,60 +7445,6 @@ body.r-dark .home-dqa-btn:hover {
     display: none !important;
   }
 }
-/* Both logos hidden on mobile */
-#desktopLogoBgLeft { display: none; }
-
-@media (min-width: 1024px) {
-  /* Right logo */
-  #desktopLogoBg {
-    display: block;
-    position: fixed;
-    right: 3vw;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 1;
-    pointer-events: none;
-    user-select: none;
-  }
-  /* Left logo — centered in left gutter (sidebar 64px + half gutter width - half logo width) */
-  #desktopLogoBgLeft {
-    display: block;
-    position: fixed;
-    left: calc(64px + (100vw - 884px) / 4 - clamp(80px, 8.5vw, 130px));
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 1;
-    pointer-events: none;
-    user-select: none;
-  }
-  #desktopLogoBg img,
-  #desktopLogoBgLeft img {
-    width: clamp(160px, 17vw, 260px);
-    height: auto;
-    display: block;
-    opacity: 0.20;
-    transition: opacity .3s;
-  }
-  /* Light mode */
-  body:not(.r-dark) .r-desk-logo-dark  { display: none; }
-  body:not(.r-dark) .r-desk-logo-light { display: block; opacity: 0.20; }
-  /* Dark mode */
-  body.r-dark .r-desk-logo-light { display: none; }
-  body.r-dark .r-desk-logo-dark  { display: block; opacity: 0.28; filter: brightness(1.6) saturate(0.7); }
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   v362: Chat pages — readable backgrounds + z-index above desktop logos
-   Fixed logos (z-index:1) and body::after pattern showed through pages.
-   ══════════════════════════════════════════════════════════════════════ */
-
-/* Stack all chat pages above fixed z-index:1 desktop logos */
-#pg-guardian-chat,
-#pg-help-chat,
-#pg-dm-chat {
-  position: relative !important;
-  z-index: 3 !important;
-}
 
 /* ── Light mode: guardian chat — WhatsApp-style sage green ─────────── */
 body:not(.r-dark) #pg-guardian-chat {
@@ -7906,4 +7852,20 @@ body.r-dark .diary-row-date { color: rgba(255,255,255,.75) !important; }
 @keyframes respiraWavePulse {
   0%,100% { opacity: 0.7; transform: scaleY(1); }
   50%     { opacity: 1;   transform: scaleY(1.12); }
+}
+
+/* ── v390: Buenas Noticias — warm background + dark mode card readability ── */
+#pg-news .p-page-scroll {
+  background: linear-gradient(160deg, #fdf8ef 0%, #edf5f0 100%) !important;
+}
+body.r-dark #pg-news .p-page-scroll {
+  background: linear-gradient(160deg, #111a13 0%, #0c1820 100%) !important;
+}
+body.r-dark #pg-news .p-card {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.09) !important;
+  color: rgba(255,255,255,.85) !important;
+}
+#pg-news .p-card {
+  box-shadow: 0 2px 12px rgba(0,0,0,.06) !important;
 }

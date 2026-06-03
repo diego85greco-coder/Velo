@@ -4126,6 +4126,20 @@ async function pRenderNews(){
   var today = new Date().toISOString().slice(0,10);
   var cacheKey = 'velo_goodnews_'+today;
 
+  // Check cache FIRST — render immediately without waiting for network
+  var cached = safeLS('get', cacheKey);
+  if(cached){
+    try{
+      var cachedItems = JSON.parse(cached);
+      // Skip static fallback cache — always re-fetch if we only have static content
+      var isLive = cachedItems.some(function(it){ return it._src === 'g' || it._src === 'ai'; });
+      if(isLive){ _renderNewsList(newsEl, cachedItems); return; }
+    }catch(e){}
+  }
+
+  // No valid cache — show loading state, then fetch
+  newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
+
   // Admin-published news take priority over AI-generated ones
   _initSupabase();
   var adminNews = (await sbLoadAdminNews()).map(function(n){
@@ -4136,17 +4150,6 @@ async function pRenderNews(){
     _renderNewsList(newsEl, adminNews);
     return;
   }
-
-  var cached = safeLS('get', cacheKey);
-  if(cached){
-    try{
-      var cachedItems = JSON.parse(cached);
-      // Skip static fallback cache — always re-fetch if we only have static content
-      var isLive = cachedItems.some(function(it){ return it._src === 'g' || it._src === 'ai'; });
-      if(isLive){ _renderNewsList(newsEl, adminNews.concat(cachedItems)); return; }
-    }catch(e){}
-  }
-  newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
 
   var monthYear = ['enero','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][new Date().getMonth()]+' '+new Date().getFullYear();
 
@@ -6810,7 +6813,7 @@ async function pRenderHappy(){
   if(_happyActiveTab === 'mine'){
     _renderMyHappy(list, posts, queue, myId);
   } else if(_happyActiveTab === 'history'){
-    _renderHappyHistory(list);
+    _renderHappyHistory(list, posts, myId);
   } else {
     _renderAllHappy(list, posts);
   }
@@ -6858,8 +6861,8 @@ function _renderMyHappy(list, posts, queue, myId){
   list.innerHTML = html;
 }
 
-async function _renderHappyHistory(list){
-  var _hUid = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
+async function _renderHappyHistory(list, wallPosts, wallMyId){
+  var _hUid = wallMyId || (_myUserId ? _myUserId() : (safeLS('get','velo_user_id')||''));
   var _hKey = _hUid ? 'velo_happy_history_'+_hUid : 'velo_happy_history';
   var history = []; try{ history = JSON.parse(safeLS('get',_hKey)||'[]'); }catch(e){}
   // Migrate legacy base64 photos and resave to free up localStorage space
@@ -6867,14 +6870,14 @@ async function _renderHappyHistory(list){
   history = history.map(function(e){ if(e.photo && String(e.photo).length > 100){ e.hasPhoto = true; delete e.photo; _migDirty = true; } return e; });
   if(_migDirty){ try{ safeLS('set',_hKey, JSON.stringify(history)); }catch(e){} }
 
-  // Immediate fallback: merge own active posts from the already-loaded wall (_sbHappy global)
-  // This covers the case where localStorage is empty but wall posts are loaded (same session)
+  // Immediate fallback: merge own active posts from the already-loaded wall (passed or _sbHappy global)
+  var _activePosts = wallPosts || _sbHappy || [];
   var _hUidNow = _hUid || '';
   var _hEmailNow = safeLS('get','velo_user_email')||'';
-  if(_sbHappy && _hUidNow && _hUidNow.indexOf('guest-') !== 0){
+  if(_activePosts.length && _hUidNow && _hUidNow.indexOf('guest-') !== 0){
     var _existIds = {};
     history.forEach(function(e){ _existIds[e.id]=true; });
-    var _ownNow = _sbHappy.filter(function(p){
+    var _ownNow = _activePosts.filter(function(p){
       return p.userId === _hUidNow || (_hEmailNow && p.userId === _hEmailNow);
     });
     var _nowAdded = false;
