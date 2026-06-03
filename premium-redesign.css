@@ -7585,6 +7585,7 @@ body.r-dark #pg-guardian-chat {
   0%,100% { box-shadow: 0 4px 20px rgba(0,0,0,.35), 0 0 0 0 rgba(37,168,106,.55); }
   50%      { box-shadow: 0 4px 20px rgba(0,0,0,.35), 0 0 0 8px rgba(37,168,106,0); }
 }
+/* Banner shifts app content down slightly on desktop */
 @media (min-width: 1024px) {
-  #returnChatBadge { bottom: 24px !important; right: 24px !important; }
+  #returnChatBadge { padding: 10px 24px !important; }
 }

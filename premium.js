@@ -296,12 +296,15 @@ function pGoTo(id){
 function _showReturnToChatBadge(pageId){
   var existing = document.getElementById('returnChatBadge');
   if(existing){ existing.dataset.page = pageId; return; }
-  var badge = document.createElement('button');
+  var badge = document.createElement('div');
   badge.id = 'returnChatBadge';
   badge.dataset.page = pageId;
-  badge.onclick = function(){ pGoTo(this.dataset.page); };
-  badge.innerHTML = '💬 Volver al chat';
-  badge.style.cssText = 'position:fixed;bottom:80px;right:16px;z-index:8000;background:linear-gradient(135deg,#1b6636,#25a86a);color:#fff;border:none;border-radius:24px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.35),0 0 0 0 rgba(37,168,106,.6);font-family:\'Jost\',sans-serif;animation:returnChatPulse 2s ease-in-out infinite';
+  badge.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;max-width:700px;margin:0 auto">'
+    +'<span style="display:flex;align-items:center;gap:8px;font-size:14px"><span style="font-size:18px">💬</span><span>Tenés un chat activo</span></span>'
+    +'<button onclick="pGoTo(document.getElementById(\'returnChatBadge\').dataset.page)" style="background:rgba(255,255,255,.25);border:1.5px solid rgba(255,255,255,.5);border-radius:20px;color:#fff;padding:6px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">Volver →</button>'
+    +'</div>';
+  badge.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,#1b6636,#25a86a);color:#fff;padding:10px 16px;font-weight:600;font-family:\'Jost\',sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.25);cursor:pointer;';
+  badge.onclick = function(e){ if(e.target===badge||e.target.tagName==='SPAN') pGoTo(this.dataset.page); };
   document.body.appendChild(badge);
 }
 function _hideReturnToChatBadge(){
@@ -2256,8 +2259,9 @@ async function pConfirmAskGuardian(){
   }
   _incDailyLimit('guardian');
   var reqId = 'gd'+Date.now();
-  var myName = safeLS('get','velo_user_name')||'Usuario';
-  var myAv   = safeLS('get','velo_user_av')||'🧑';
+  var _iAmIncognito = safeLS('get','velo_incognito')==='true' || (safeLS('get','velo_user_status')||'').startsWith('incognito');
+  var myName = _iAmIncognito ? 'Usuario Anónimo' : (safeLS('get','velo_user_name')||'Usuario');
+  var myAv   = _iAmIncognito ? '🥸' : (safeLS('get','velo_user_av')||'🧑');
   var reqPayload = {
     id: reqId, kind:'direct', status:'pending',
     seeker_id: myId, seeker_name: myName, seeker_av: myAv,
@@ -2606,6 +2610,7 @@ var _gcSeekerCh    = null;   // seeker's request-status channel
 var _seekerPollTmr = null;   // polling fallback for seeker wait
 var _gcPollTmr     = null;   // polling fallback for guardian chat messages
 var _gcLastMsgId   = null;   // last rendered message DB id (prevents flicker on poll)
+var _gcSessionStart = 0;     // epoch ms when current guardian chat session began
 
 function _openGuardianChat(peerId, peerName, peerAv, reqId, role){
   _prevChatStatus = _presenceStatus();
@@ -2614,6 +2619,7 @@ function _openGuardianChat(peerId, peerName, peerAv, reqId, role){
   _gcPeer      = { id:peerId, name:peerName||'Usuario', av:peerAv||'🌿' };
   _gcReqId     = reqId;
   _gcRole      = role;
+  _gcSessionStart = Date.now();
   _gcLastMsgId = null; // reset so first render is a clean full load
   pGoTo('guardian-chat');
 }
@@ -2636,8 +2642,11 @@ async function _gcRender(){
   _initSupabase();
   if(!sbClient) return;
   try{
+    // Only load messages from the current session (prevents history from past sessions)
+    var _gcSince = new Date((_gcSessionStart || Date.now()) - 90000).toISOString();
     var res = await sbClient.from('direct_messages').select('*')
       .or('and(from_id.eq.'+myId+',to_id.eq.'+_gcPeer.id+'),and(from_id.eq.'+_gcPeer.id+',to_id.eq.'+myId+')')
+      .gte('created_at', _gcSince)
       .order('created_at',{ascending:true}).limit(120);
     var data = res.data || [];
     var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
@@ -2774,7 +2783,27 @@ function _gcSubscribe(){
   // Realtime channel
   _gcRtCh = sbClient.channel('velo:gc:'+myId+':'+_gcPeer.id)
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages'},function(p){ if(rel(p.new||{})) _gcRender(); })
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'direct_messages'},function(p){ if(rel(p.new||{})) _gcRender(); })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'direct_messages'},function(p){
+      var m = p.new||{};
+      if(!rel(m) || !m.id) return;
+      // Update reaction bar in-place without re-rendering whole chat
+      var bubble = document.querySelector('[data-sb-id="direct_messages:'+m.id+'"]');
+      if(!bubble) return;
+      var oldBar = bubble.querySelector('.msg-rx-bar');
+      if(oldBar) oldBar.remove();
+      if(m.reactions && typeof m.reactions === 'object'){
+        var chips = Object.keys(m.reactions).filter(function(e){ return m.reactions[e]; }).map(function(e){
+          var cnt = m.reactions[e]||1;
+          return '<span class="msg-reaction" data-emoji="'+e+'" data-cnt="'+cnt+'" onclick="_msgReact(\''+e+'\')">'+e+' '+cnt+'</span>';
+        }).join('');
+        if(chips){
+          var newBar = document.createElement('div');
+          newBar.className = 'msg-rx-bar';
+          newBar.innerHTML = chips;
+          bubble.appendChild(newBar);
+        }
+      }
+    })
     .subscribe(function(status, err){
       if(status !== 'SUBSCRIBED') console.warn('[gc subscribe] status:', status, err||'');
     });
@@ -6134,9 +6163,12 @@ var _circleMsgEmojis = ['😊','😢','❤️','🙏','💪','🌿','✨','🤗'
 function pInsertChatEmoji(e, inputId){
   var ta = document.getElementById(inputId || 'feedInput');
   if(!ta) return;
-  var start = ta.selectionStart || ta.value.length;
-  ta.value = ta.value.slice(0, start) + e + ta.value.slice(start);
-  ta.selectionStart = ta.selectionEnd = start + e.length;
+  // Append at cursor position when possible, fall back to end (iOS-safe)
+  try{
+    var s = (typeof ta.selectionStart === 'number') ? ta.selectionStart : ta.value.length;
+    var en = (typeof ta.selectionEnd === 'number') ? ta.selectionEnd : s;
+    ta.value = ta.value.slice(0,s) + e + ta.value.slice(en);
+  }catch(_){ ta.value = (ta.value||'') + e; }
   ta.focus();
 }
 function pToggleChatEmojis(panelId, inputId){
