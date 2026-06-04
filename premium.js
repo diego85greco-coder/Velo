@@ -392,12 +392,20 @@ async function _sbSyncProfile(userId){
     res = await sbClient.from('profiles')
       .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified')
       .eq('id',userId).limit(1);
+    // 400 = column doesn't exist yet — fall back to base columns so sync still works
+    if(res.error && res.status === 400){
+      res = await sbClient.from('profiles')
+        .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito')
+        .eq('id',userId).limit(1);
+      if(res.error && res.status === 400){
+        res = await sbClient.from('profiles')
+          .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes')
+          .eq('id',userId).limit(1);
+      }
+    }
   }catch(e){ return; }
 
-  if(res.error){
-    // Query failed — don't overwrite Supabase with possibly-stale localStorage values
-    return;
-  }
+  if(res.error) return;
 
   if(!res.data || !res.data.length){
     // No profile row — first login or post-deletion re-entry. Create minimal profile.
