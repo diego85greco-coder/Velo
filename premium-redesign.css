@@ -8363,3 +8363,11 @@ body:not(.r-dark) #homeProfileFab {
   .r-donar-btn, .r-plus-btn { font-size: 11px !important; padding: 5px 9px !important; }
   #topbarMoodBtn span:last-child:not(:first-child) { display: none; } /* hide streak on tiny screens */
 }
+
+/* ── v469: Stop mood pill animation ── */
+#homeCurrentMoodLine {
+  animation: none !important;
+}
+#homeCurrentMoodLine::after {
+  display: none !important;
+}
