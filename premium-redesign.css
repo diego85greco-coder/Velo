@@ -7390,13 +7390,23 @@ body.r-dark .home-dqa-btn:hover {
     color: var(--ink3) !important;
     font-size: 9px !important;
   }
-  /* More solid quick-action buttons on desktop */
+  /* More solid quick-action buttons on desktop — same height/grid as shortcut buttons */
+  #pg-home #homeDesktopQuickActs {
+    max-width: 360px !important;
+    align-self: center !important;
+    margin-top: 4px !important;
+    margin-bottom: 14px !important;
+  }
   #pg-home .home-dqa-btn {
+    aspect-ratio: unset !important;
+    height: 82px !important;
+    max-height: 82px !important;
     background: rgba(27,94,58,.06) !important;
     border-color: rgba(27,94,58,.14) !important;
     color: var(--ink2) !important;
     font-size: 11px !important;
     letter-spacing: 1.8px !important;
+    padding: 10px 6px !important;
   }
   body.r-dark #pg-home .home-dqa-btn {
     background: rgba(255,255,255,.07) !important;
