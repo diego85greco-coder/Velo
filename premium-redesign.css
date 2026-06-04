@@ -8232,3 +8232,12 @@ body.r-dark .r-velo-sig-logo {
   background-image: url('assets/logo-dark.png');
   opacity: .75 !important;
 }
+
+/* ── Topbar: compact layout on very small phones (≤380px) ── */
+@media (max-width: 380px) {
+  .r-topbar-theme-lbl { display: none !important; }
+  .r-topbar-theme-btn { padding: 4px 4px !important; min-width: 28px !important; }
+  .p-topbar-actions { gap: 5px !important; }
+  .r-donar-btn, .r-plus-btn { font-size: 11px !important; padding: 5px 9px !important; }
+  #topbarMoodBtn span:last-child:not(:first-child) { display: none; } /* hide streak on tiny screens */
+}
