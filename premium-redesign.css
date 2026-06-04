@@ -7895,12 +7895,14 @@ body.r-dark #happyPhotoLabel > span[style*="border-radius: 20px"] {
 /* ── v394: Particle stacking — all direct page children above canvas ── */
 .p-page > .p-page-scroll,
 .p-page > div[id]:not(.p-modal-ov),
-.p-page > div[class]:not(.p-modal-ov),
+.p-page > div[class]:not(.p-modal-ov):not(.home-logo-side),
 .p-page > header,
 .p-page > main {
   position: relative;
   z-index: 1;
 }
+/* Logo watermarks must stay position:absolute (vertically centered in gaps) */
+.home-logo-side { position: absolute !important; }
 
 /* ── v396: Mobile — page background cream so particles are visible ── */
 @media (max-width: 767px) {
