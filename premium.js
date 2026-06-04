@@ -8060,18 +8060,97 @@ function pCheckEditUsername(val){
   }, 500);
 }
 
-// Search users by @username
+// Search users by @username or display name
 async function pSearchUsers(query){
   if(!query || query.length < 2) return [];
   _initSupabase();
   if(!sbClient) return [];
   try{
+    var q = query.replace(/^@+/,'');
     var r = await sbClient.from('profiles')
-      .select('id,nombre,avatar,username')
-      .ilike('username', query+'%')
-      .limit(10);
+      .select('id,nombre,avatar,username,motto')
+      .or('username.ilike.'+q+'%,nombre.ilike.'+q+'%')
+      .limit(12);
     return r.data || [];
   }catch(e){ return []; }
+}
+
+// ── User search sheet (home search pill) ─────────────────────────────────
+function pOpenUserSearch(){
+  var ex = document.getElementById('userSearchOv');
+  if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'userSearchOv';
+  ov.innerHTML =
+    '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="padding:0 20px 8px">'
+    +'<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:14px;font-family:\'Cormorant Garamond\',serif;text-align:center;letter-spacing:.01em">Buscar personas en Velo</div>'
+    +'<div style="position:relative;margin-bottom:12px">'
+    +'<svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink5);pointer-events:none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+    +'<input id="userSearchInput" type="text" placeholder="@usuario o nombre…" maxlength="50" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"'
+    +' style="width:100%;box-sizing:border-box;padding:10px 12px 10px 36px;border:1.5px solid var(--border2);border-radius:12px;font-size:14px;font-family:\'Jost\',sans-serif;background:var(--cream);color:var(--ink);outline:none;-webkit-appearance:none"'
+    +' oninput="pUserSearchInput(this.value)">'
+    +'</div>'
+    +'<div id="userSearchResults"><div style="text-align:center;padding:24px 0;color:var(--ink5);font-size:13px">Escribí al menos 2 caracteres para buscar ✨</div></div>'
+    +'<div style="height:6px"></div>'
+    +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'userSearchOv\').remove()">Cerrar</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+  setTimeout(function(){
+    var inp = document.getElementById('userSearchInput');
+    if(inp) inp.focus();
+  }, 140);
+}
+
+var _usrSearchTimer = null;
+function pUserSearchInput(val){
+  clearTimeout(_usrSearchTimer);
+  var q = (val||'').replace(/^@+/,'').trim();
+  var res = document.getElementById('userSearchResults');
+  if(!res) return;
+  if(q.length < 2){
+    res.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--ink5);font-size:13px">'
+      +(q.length===0 ? 'Escribí al menos 2 caracteres para buscar ✨' : 'Seguí escribiendo…')+'</div>';
+    return;
+  }
+  res.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--ink5);font-size:13px">Buscando…</div>';
+  _usrSearchTimer = setTimeout(async function(){
+    var users = await pSearchUsers(q);
+    var el = document.getElementById('userSearchResults');
+    if(!el) return;
+    if(!users.length){
+      el.innerHTML = '<div style="text-align:center;padding:28px 0;color:var(--ink5);font-size:13px">No se encontraron usuarios con <strong>"'+_escHtml(q)+'"</strong></div>';
+      return;
+    }
+    var myId = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
+    el.innerHTML = users.map(function(u){
+      var isMe = u.id === myId;
+      var isFav = !isMe && pIsFav(u.id);
+      var avHtml = _avInline(u.avatar||'🌿', 42);
+      var nameTxt = _escHtml(u.nombre||'Usuario');
+      var handleTxt = u.username ? '@'+_escHtml(u.username) : '';
+      var mottoTxt = (u.motto||'').slice(0,60)+(u.motto&&u.motto.length>60?'…':'');
+      return '<div class="usr-search-card" onclick="pOpenFoundUserProfile('+_jsAttr(u.id)+','+_jsAttr(u.nombre||'Usuario')+','+_jsAttr(u.avatar||'🌿')+')">'
+        +'<div class="usr-search-av">'+avHtml+'</div>'
+        +'<div class="usr-search-info">'
+        +'<div class="usr-search-name">'+nameTxt+(isMe?' <span style="font-size:10px;background:var(--sage7);color:var(--sage2);padding:1px 6px;border-radius:6px;font-weight:700;vertical-align:middle">yo</span>':'')+'</div>'
+        +(handleTxt?'<div class="usr-search-handle">'+handleTxt+'</div>':'')
+        +(mottoTxt?'<div class="usr-search-motto">'+_escHtml(mottoTxt)+'</div>':'')
+        +'</div>'
+        +'<div class="usr-search-fav" title="'+(isFav?'En favoritos':'Agregar a favoritos')+'">'+(isFav?'⭐':'☆')+'</div>'
+        +'</div>';
+    }).join('');
+  }, 320);
+}
+
+function pOpenFoundUserProfile(userId, name, av){
+  var ov = document.getElementById('userSearchOv');
+  if(ov) ov.remove();
+  pQuickProfile(name, av, '', '', userId);
 }
 
 function pToggleIncognito(){

@@ -7949,3 +7949,93 @@ body.r-dark #pg-news .p-card {
 #pg-news .p-card {
   box-shadow: 0 2px 12px rgba(0,0,0,.06) !important;
 }
+
+/* ── User search pill (home greeting area) ───────────────────────────────── */
+.home-search-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 14px;
+  padding: 7px 16px;
+  background: rgba(116,198,157,.10);
+  border: 1.5px solid rgba(116,198,157,.25);
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sage2);
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  letter-spacing: .02em;
+  transition: background .18s, border-color .18s, transform .12s;
+}
+.home-search-pill:hover { background: rgba(116,198,157,.18); border-color: rgba(116,198,157,.40); }
+.home-search-pill:active { transform: scale(.97); }
+body.r-dark .home-search-pill {
+  background: rgba(116,198,157,.08);
+  border-color: rgba(116,198,157,.18);
+  color: var(--sage);
+}
+body.r-dark .home-search-pill:hover {
+  background: rgba(116,198,157,.16);
+  border-color: rgba(116,198,157,.35);
+}
+
+/* ── User search result cards (inside search sheet) ─────────────────────── */
+.usr-search-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background .15s;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+}
+.usr-search-card:hover, .usr-search-card:active {
+  background: rgba(116,198,157,.10);
+  border-color: rgba(116,198,157,.18);
+}
+body.r-dark .usr-search-card:hover, body.r-dark .usr-search-card:active {
+  background: rgba(116,198,157,.08);
+  border-color: rgba(116,198,157,.15);
+}
+.usr-search-av {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  border-radius: 50%;
+  background: var(--cream2);
+  overflow: hidden;
+}
+body.r-dark .usr-search-av { background: rgba(255,255,255,.06); }
+.usr-search-info { flex: 1; min-width: 0; }
+.usr-search-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.usr-search-handle {
+  font-size: 11px;
+  color: var(--sage2);
+  font-weight: 600;
+  letter-spacing: .01em;
+  margin-bottom: 2px;
+}
+.usr-search-motto {
+  font-size: 11px;
+  color: var(--ink4);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.usr-search-fav { font-size: 18px; flex-shrink: 0; }
