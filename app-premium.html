@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-428">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-428">
+  <link rel="stylesheet" href="premium.css?v=20260530-429">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-429">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -967,10 +967,14 @@
                   <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>
                   <span>COMUNIDAD</span>
                 </button>
-              </div>
-              <div class="r-hero-actions">
-                <button class="p-btn p-btn--primary p-btn--lg" onclick="pGoTo('guardians')">Guardianes →</button>
-                <button class="p-btn p-btn--secondary p-btn--lg" onclick="pGoTo('help')">Sala de Ayuda →</button>
+                <button class="r-home-shortcut r-home-shortcut--guardian" onclick="pGoTo('guardians')">
+                  <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+                  <span>GUARDIANES</span>
+                </button>
+                <button class="r-home-shortcut r-home-shortcut--help" onclick="pGoTo('help')">
+                  <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></span>
+                  <span>SALA DE AYUDA</span>
+                </button>
               </div>
             </div>
             <div class="r-hero-right">
@@ -3101,8 +3105,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-428"></script>
-<script src="premium-redesign.js?v=20260530-428"></script>
+<script src="premium.js?v=20260530-429"></script>
+<script src="premium-redesign.js?v=20260530-429"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

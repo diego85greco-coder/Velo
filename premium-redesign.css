@@ -6164,6 +6164,12 @@ body:not(.r-dark) .r-gmode-btn--on {
 .r-hs-icon { font-size: 26px; line-height: 1; filter: drop-shadow(0 0 7px rgba(200,158,56,.38)); }
 .r-home-shortcut--sos { border-color: rgba(220,60,60,.38) !important; }
 .r-home-shortcut--sos .r-hs-icon { filter: drop-shadow(0 0 7px rgba(220,60,60,.45)); }
+.r-home-shortcut--guardian { border-color: rgba(200,158,56,.40) !important; }
+.r-home-shortcut--guardian .r-hs-icon { filter: drop-shadow(0 0 7px rgba(200,158,56,.55)); color: rgba(200,158,56,.90) !important; }
+.r-home-shortcut--help { border-color: rgba(116,198,157,.40) !important; }
+.r-home-shortcut--help .r-hs-icon { filter: drop-shadow(0 0 7px rgba(116,198,157,.50)); color: rgba(116,198,157,.90) !important; }
+body:not(.r-dark) .r-home-shortcut--guardian .r-hs-icon { color: rgba(160,110,10,.80) !important; }
+body:not(.r-dark) .r-home-shortcut--help .r-hs-icon { color: rgba(27,94,58,.80) !important; }
 
 /* light mode — frosted glass so icons/text are legible on the flower bg */
 body:not(.r-dark) .r-home-shortcut {
