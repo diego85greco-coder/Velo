@@ -148,6 +148,7 @@
       initParticles('loginCanvas',       70, 0.55, '155,108,32',  '140,210,155');
       initParticles('registerCanvas',    70, 0.55, '155,108,32',  '140,210,155');
       initParticles('homeBgCanvas',     200, 0.72, '180,130,25',  '100,210,145');
+      initParticles('moodBgCanvas',        75, 0.50, '170,145,220', '145,190,230');
       initParticles('profileBgCanvas',   70, 0.38, '80,140,200',  '100,200,180');
       initParticles('helpBgCanvas',      65, 0.42, '60,140,90',   '120,200,240');
       initParticles('respiraBgCanvas',   60, 0.42, '80,190,210',  '80,190,215');
