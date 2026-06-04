@@ -6904,12 +6904,23 @@ async function _renderHappyHistory(list, wallPosts, wallMyId){
       if(sbUid)   orParts.push('user_id.eq.'+sbUid);
       if(sbEmail) orParts.push('user_id.eq.'+sbEmail);
       // Primary: happy_history (permanent, cross-device)
+      var _hUidFilter = sbUid || sbEmail;
+      var _hEmailFilter = sbUid ? sbEmail : '';
       var qh = sbClient.from('happy_history').select('id,emoji,text,created_at');
-      qh = orParts.length === 1 ? qh.eq('user_id', orParts[0].split('.eq.')[1]) : qh.or(orParts.join(','));
+      if(sbUid && sbEmail) qh = qh.or('user_id.eq.'+sbUid+',user_id.eq.'+sbEmail);
+      else qh = qh.eq('user_id', _hUidFilter);
       var sh = await qh.order('created_at',{ascending:false}).limit(500);
+      // If emoji column missing (schema mismatch), retry without it
+      if(sh.error && sh.error.message && sh.error.message.indexOf('emoji') >= 0){
+        var qh2 = sbClient.from('happy_history').select('id,text,created_at');
+        if(sbUid && sbEmail) qh2 = qh2.or('user_id.eq.'+sbUid+',user_id.eq.'+sbEmail);
+        else qh2 = qh2.eq('user_id', _hUidFilter);
+        sh = await qh2.order('created_at',{ascending:false}).limit(500);
+      }
       // Fallback: happy_posts (only last 24h, but covers very recent posts not yet in history)
       var qp = sbClient.from('happy_posts').select('id,emoji,text,created_at');
-      qp = orParts.length === 1 ? qp.eq('user_id', orParts[0].split('.eq.')[1]) : qp.or(orParts.join(','));
+      if(sbUid && sbEmail) qp = qp.or('user_id.eq.'+sbUid+',user_id.eq.'+sbEmail);
+      else qp = qp.eq('user_id', _hUidFilter);
       var sp = await qp.order('created_at',{ascending:false}).limit(50);
       var merged = [].concat(sh.error ? [] : (sh.data||[]), sp.error ? [] : (sp.data||[]));
       if(merged.length){
@@ -8532,10 +8543,11 @@ async function _syncFavsFromSupabase(){
     if(selfRows.length){
       sbClient.from('user_favorites').delete().eq('user_id', myId).eq('fav_id', myId).then(function(){}).catch(function(){});
     }
-    var local = pGetFavs().filter(function(f){ return f.id !== myId; });
-    var localIds = local.map(function(f){ return f.id; });
     // Don't re-add IDs the user explicitly removed (tombstone list)
     var _rmList = []; try{ _rmList = JSON.parse(safeLS('get','velo_favs_removed')||'[]'); }catch(e){}
+    // Build local list, filtering out self-favs AND tombstoned IDs
+    var local = pGetFavs().filter(function(f){ return f.id !== myId && _rmList.indexOf(f.id) < 0; });
+    var localIds = local.map(function(f){ return f.id; });
     // Add remote favs not yet in local, excluding self and locally-deleted
     data.forEach(function(r){
       if(r.fav_id !== myId && localIds.indexOf(r.fav_id) < 0 && _rmList.indexOf(r.fav_id) < 0){
@@ -8609,13 +8621,18 @@ async function pRemoveFav(userId){
   var _rmList = []; try{ _rmList = JSON.parse(safeLS('get',_rmKey)||'[]'); }catch(e){}
   if(_rmList.indexOf(userId) < 0){ _rmList.push(userId); }
   safeLS('set', _rmKey, JSON.stringify(_rmList.slice(0,200)));
+  pToast('✓','Eliminado de favoritos');
+  _updateFavBadge();
   _initSupabase();
   if(sbClient){
     var myId = safeLS('get','velo_user_id')||'';
-    if(myId){ try{ await sbClient.from('user_favorites').delete().eq('user_id',myId).eq('fav_id',userId); }catch(e){} }
+    if(myId){
+      try{
+        var _delRes = await sbClient.from('user_favorites').delete().eq('user_id',myId).eq('fav_id',userId);
+        if(_delRes && _delRes.error) console.error('[removeFav]', _delRes.error.message, 'myId='+myId, 'fav='+userId);
+      }catch(e){ console.error('[removeFav exception]', e); }
+    }
   }
-  pToast('✓','Eliminado de favoritos');
-  _updateFavBadge();
 }
 
 function pToggleGuardianFav(){
