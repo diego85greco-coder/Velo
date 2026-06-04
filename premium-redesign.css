@@ -7901,6 +7901,12 @@ body.r-dark #happyPhotoLabel > span[style*="border-radius: 20px"] {
   z-index: 1;
 }
 
+/* ── v396: Mobile — page background cream so particles are visible ── */
+@media (max-width: 767px) {
+  .p-page       { background: var(--cream); }
+  .p-page.active { background: var(--cream); }
+}
+
 /* ── v390: Buenas Noticias — warm background + dark mode card readability ── */
 #pg-news .p-page-scroll {
   background: linear-gradient(160deg, #fdf8ef 0%, #edf5f0 100%) !important;
