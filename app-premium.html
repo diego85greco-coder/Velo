@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-431">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-431">
+  <link rel="stylesheet" href="premium.css?v=20260530-432">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-432">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -924,12 +924,12 @@
                   <div class="p-card" style="padding:14px 16px;margin-bottom:0;width:100%;box-sizing:border-box">
                     <div class="p-label p-label-sage" style="margin-bottom:10px">Privacidad</div>
                     <div class="p-row-between" style="margin-bottom:10px">
-                      <div><div style="font-size:13px;color:var(--ink3)">👤 Modo incógnito</div><div style="font-size:11px;color:var(--ink5)">Activá para ocultar tu foto e información (anónimo)</div></div>
-                      <div class="p-tog" id="homeIncognitoTog" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>
+                      <div style="flex:1;min-width:0"><div style="font-size:13px;color:var(--ink3)">👤 Modo incógnito</div><div style="font-size:11px;color:var(--ink3);opacity:.7;margin-top:2px;line-height:1.4">Activá para ocultar tu foto e información (anónimo)</div></div>
+                      <div class="p-tog" id="homeIncognitoTog" onclick="pToggleIncognito()" style="flex-shrink:0;margin-left:10px"><div class="p-tog-k"></div></div>
                     </div>
                     <div class="p-row-between">
-                      <div><div style="font-size:13px;font-weight:600;color:var(--ink2)">🛡️ Modo guardián</div><div style="font-size:11px;color:var(--ink5)">Activá para aparecer en la lista de guardianes</div></div>
-                      <div class="p-tog" id="homeGuardianModeTog" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>
+                      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink2)">🛡️ Modo guardián</div><div style="font-size:11px;color:var(--ink3);opacity:.7;margin-top:2px;line-height:1.4">Activá para aparecer en la lista de guardianes</div></div>
+                      <div class="p-tog" id="homeGuardianModeTog" onclick="pToggleGuardianMode()" style="flex-shrink:0;margin-left:10px"><div class="p-tog-k"></div></div>
                     </div>
                   </div>
                 </div>
@@ -3102,8 +3102,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-431"></script>
-<script src="premium-redesign.js?v=20260530-431"></script>
+<script src="premium.js?v=20260530-432"></script>
+<script src="premium-redesign.js?v=20260530-432"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
