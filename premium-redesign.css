@@ -8377,3 +8377,11 @@ body:not(.r-dark) #homeProfileFab {
   animation: none !important;
   transform: none !important;
 }
+
+/* ── v472: Stop topbar button float animations ── */
+.r-donar-btn,
+.r-plus-btn,
+#topbarMoodBtn {
+  animation: none !important;
+  transform: none !important;
+}
