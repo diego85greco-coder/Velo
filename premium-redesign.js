@@ -321,11 +321,12 @@ function initParticles(canvasId, count, maxOpacity, color, darkColor) {
       requestAnimationFrame(draw);
       return;
     }
-    // Auto-resize: when the page first becomes visible the canvas may have been
-    // sized to 0 (hidden element) — resync buffer dimensions each frame
-    var dw = canvas.offsetWidth  || window.innerWidth  || 600;
-    var dh = canvas.offsetHeight || window.innerHeight || 900;
-    if (canvas.width !== dw || canvas.height !== dh) {
+    // Auto-resize: only when canvas has real layout dimensions (page is visible).
+    // Do NOT fall back to window.innerHeight — on mobile it changes constantly
+    // as the browser toolbar hides/shows, causing a flicker feedback loop.
+    var dw = canvas.offsetWidth;
+    var dh = canvas.offsetHeight;
+    if (dw && dh && (canvas.width !== dw || canvas.height !== dh)) {
       canvas.width  = dw;
       canvas.height = dh;
     }
