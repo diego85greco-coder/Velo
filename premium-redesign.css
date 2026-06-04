@@ -1476,6 +1476,14 @@ body.r-dark #pg-dm-chat .feed-header {
 #pg-dm-chat .feed-header #dmPeerName { color: #fff !important; font-size: 16px !important; font-weight: 600 !important; }
 #pg-dm-chat .feed-header > div > div { color: rgba(255,255,255,.75) !important; font-size: 12px !important; }
 #pg-dm-chat .p-back-btn { color: #fff !important; opacity: .9; }
+#pg-dm-chat .feed-header button:not(.p-back-btn) {
+  color: rgba(255,255,255,.9) !important;
+  border-color: rgba(255,255,255,.25) !important;
+  background: rgba(255,255,255,.12) !important;
+}
+#pg-dm-chat .feed-header button:not(.p-back-btn):hover {
+  background: rgba(255,255,255,.2) !important;
+}
 
 /* Message bubbles — own messages (right side) */
 #pg-dm-chat .feed-bubble--own {
