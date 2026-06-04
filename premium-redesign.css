@@ -8251,8 +8251,8 @@ body.r-dark .r-velo-sig-logo {
   display: none;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 7px 11px;
+  gap: 3px;
+  padding: 5px 8px;
   border-radius: 14px;
   border: 1px solid rgba(116,198,157,.30);
   background: rgba(0,0,0,.22);
@@ -8272,9 +8272,9 @@ body:not(.r-dark) .r-home-profile-fab {
 }
 /* Avatar inside profile FAB — compact, no scroll animation */
 #homeAvFab {
-  width: 30px !important;
-  height: 30px !important;
-  font-size: 16px !important;
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 12px !important;
   animation: none !important;
   box-shadow: 0 0 0 1.5px rgba(116,198,157,.45) !important;
 }
@@ -8289,7 +8289,7 @@ body:not(.r-dark) .r-home-profile-fab {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 7px 11px;
+  padding: 5px 8px;
   border-radius: 14px;
   border: 1px solid rgba(200,158,56,.28);
   background: rgba(0,0,0,.22);
@@ -8329,10 +8329,10 @@ body:not(.r-dark) .r-home-estilo-fab {
 }
 #homeEstiloFab {
   animation: estilo-fab-glow 3s ease-in-out infinite;
-  min-width: 72px;
+  min-width: 56px;
 }
 #homeProfileFab {
-  min-width: 72px;
+  min-width: 56px;
 }
 body:not(.r-dark) #homeEstiloFab {
   animation: none;
