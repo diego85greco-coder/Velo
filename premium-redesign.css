@@ -597,11 +597,12 @@ body.r-dark .home-logo-side {
 }
 #homeTimeIcon         { order: 1; }
 #homeGreetWrapper     { order: 2; }
-.r-home-shortcut-grid { order: 3; }
-.r-hero-actions       { order: 4; }
-#homeHeroLabel        { order: 5; margin-top: 24px; }
-#homeDesktopQuickActs { order: 6; }
-#homeStatusToggle     { order: 7; }
+#homeStatusToggle     { order: 3; }
+#homeSearchUsersBtn   { order: 4; }
+.r-home-shortcut-grid { order: 5; }
+.r-hero-actions       { order: 6; }
+#homeHeroLabel        { order: 7; margin-top: 24px; }
+#homeDesktopQuickActs { order: 8; }
 
 /* Daily quote: full width matching the feature grid on desktop */
 @media (min-width: 1024px) {
@@ -2820,6 +2821,26 @@ body.r-dark #plusCompareOv [style*="--sage7"] p {
   .r-guardian-pill--on .r-guardian-knob {
     transform: translateX(12px) !important;
   }
+}
+
+/* ── Home status section: compact everywhere (visible only on mobile) ── */
+#homeStatusToggle {
+  margin-bottom: 8px !important;
+}
+#homeGuardianWrap .p-card {
+  padding: 8px 12px !important;
+}
+#homeGuardianWrap .p-label {
+  margin-bottom: 4px !important;
+  font-size: 9px !important;
+  letter-spacing: 1.8px !important;
+}
+#homeGuardianWrap .p-row-between {
+  margin-bottom: 4px !important;
+}
+/* Hide description sub-text under each toggle — keep just the label */
+#homeGuardianWrap .p-row-between > div > div:nth-child(2) {
+  display: none !important;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -8066,11 +8087,13 @@ body.r-dark .r-desk-qlink:hover {
     border-right-color: rgba(116,198,157,.18) !important;
   }
   .r-hero-right .r-hero-stat-val { justify-content: flex-start !important; }
-  /* Main content: row 2, full width, left-aligned */
+  /* Main content: row 2, full width, centered */
   .r-hero-left {
     grid-row: 2 !important;
-    align-items: flex-start !important;
+    align-items: center !important;
   }
+  /* Status/privacy card lives in Profile on desktop — hide from home hero */
+  #homeStatusToggle { display: none !important; }
   /* Constrain shortcut grid and action buttons to sensible width */
   .r-home-shortcut-grid { max-width: 560px !important; }
   .r-hero-actions { max-width: 560px !important; }
@@ -8083,15 +8106,6 @@ body.r-dark .r-desk-qlink:hover {
     flex-wrap: wrap !important;
     justify-content: flex-end !important;
     max-width: 42% !important;       /* at most 42% of the bar so stats always fit */
-  }
-  /* Hero card: slightly more transparent on desktop so bg image shows through */
-  #pg-home .r-hero-v2 {
-    background: rgba(248,244,236,.52) !important;
-    backdrop-filter: blur(18px) saturate(130%) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
-  }
-  body.r-dark #pg-home .r-hero-v2 {
-    background: rgba(14,22,16,.52) !important;
   }
 }
 
