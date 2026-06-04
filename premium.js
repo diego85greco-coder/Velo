@@ -7097,8 +7097,6 @@ function _happyPostCard(h, isOwn){
   }
 
   var canClick = !isOwn && h.userId && h.userId !== 'anon' && !h.anon;
-  var _hMyIdNow = _myUserId();
-  var _hIsFav = canClick ? pIsFav(h.userId) : false;
   var authorClick = canClick ? ' style="cursor:pointer" onclick="pQuickProfile('+_jsAttr(h.name||'Usuario')+','+_jsAttr(h.av||'')+',\'\',\'\','+_jsAttr(h.userId||'')+')"' : '';
   return '<div class="happy-card" data-id="'+h.id+'">'
     // header
@@ -7111,10 +7109,7 @@ function _happyPostCard(h, isOwn){
     +'</div>'
     +(isOwn
       ? '<button onclick="pDeleteHappyPost(\''+h.id+'\')" style="padding:5px 10px;background:rgba(255,80,80,.07);border:1px solid rgba(255,80,80,.18);border-radius:100px;color:rgba(200,60,60,.7);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0" title="Eliminar publicación">🗑️</button>'
-      : '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
-        +(canClick ? '<button onclick="event.stopPropagation();pToggleHappyFav(this,'+_jsAttr(h.userId)+','+_jsAttr(h.name||'Usuario')+','+_jsAttr(h.av||'🧑')+')" style="padding:4px 9px;background:'+(_hIsFav?'rgba(255,200,50,.2)':'rgba(255,200,50,.06)')+';border:1px solid '+(_hIsFav?'rgba(255,200,50,.5)':'rgba(255,200,50,.2)')+';border-radius:100px;font-size:13px;cursor:pointer">'+(_hIsFav?'⭐':'☆')+'</button>' : '')
-        +'<button onclick="pReportContent(\'happy\','+_jsAttr(h.id)+','+_jsAttr((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(180,50,50,.88);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">🚩</button>'
-        +'</div>')
+      : '<button onclick="pReportContent(\'happy\','+_jsAttr(h.id)+','+_jsAttr((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(180,50,50,.88);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0">🚩</button>')
     +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap;flex-shrink:0">⏳ '+timeLeft+'</span>' : '')
     +'</div>'
     // photo
