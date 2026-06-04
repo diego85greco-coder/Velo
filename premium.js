@@ -9520,7 +9520,10 @@ function _subscribeToDMThread(){
   var _dmRel = function(m){ return (m.from_id===myId&&m.to_id===_dmPeer.id)||(m.from_id===_dmPeer.id&&m.to_id===myId); };
   _dmRtCh = sbClient.channel('velo:dm:'+myId+':'+_dmPeer.id)
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages'},function(payload){
-      if(_dmRel(payload.new||{})) _renderDMThread();
+      var m = payload.new||{};
+      if(!_dmRel(m)) return;
+      if(m.from_id === myId) return; // already rendered optimistically — skip to avoid duplicate
+      _renderDMThread();
     })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'direct_messages'},function(payload){
       var m = payload.new||{};
@@ -9606,7 +9609,10 @@ async function pSendDM(){
   if(sbClient){
     sbClient.from('direct_messages').insert({
       from_id:myId, from_name:myName, from_av:myAv, to_id:_dmPeer.id, text:fullText
-    }).then(function(){}).catch(function(){});
+    }).select('id').then(function(r){
+      // Update _dmLastMsgId so incremental render won't re-add this message
+      if(r&&r.data&&r.data[0]) _dmLastMsgId = r.data[0].id;
+    }).catch(function(){});
   }
 }
 
