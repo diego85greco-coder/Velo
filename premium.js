@@ -2706,21 +2706,24 @@ function _showChatExitBanner(bannerId, messagesElId, inputElId, exitFn, peerName
   var msgEl  = document.getElementById(messagesElId);
   var chatEl = msgEl ? msgEl.parentNode : null;
   if(!chatEl) return;
+  // Hide input area and any emoji panel so only the exit banner is shown
+  var inp = document.getElementById(inputElId);
+  if(inp){
+    inp.disabled = true;
+    var inputRow = inp.closest('.feed-input-area') || inp.closest('.feed-input-row');
+    if(inputRow) inputRow.style.display = 'none';
+  }
+  // Hide open emoji panel
+  chatEl.querySelectorAll('[id$="EmojiPanel"]').forEach(function(el){ el.style.display = 'none'; });
+  // Build exit banner
   var banner = document.createElement('div');
   banner.id = bannerId;
-  banner.style.cssText = 'position:sticky;bottom:0;left:0;right:0;background:rgba(20,48,30,.96);backdrop-filter:blur(14px);border-top:1.5px solid rgba(116,198,157,.32);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:50;flex-shrink:0';
-  banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px">'
-    +'<span style="font-size:20px">👋</span>'
-    +'<div>'
-    +'<div style="font-size:14px;font-weight:700;color:#fff;line-height:1.2">'+_escHtml(peerName)+' salió del chat</div>'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px">La sesión ha finalizado</div>'
-    +'</div>'
-    +'</div>'
-    +'<button onclick="('+exitFn+')" style="padding:9px 20px;background:rgba(116,198,157,.88);border:none;border-radius:100px;font-size:13px;font-weight:700;color:#0a1810;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">Salir ✓</button>';
-  if(msgEl && msgEl.nextSibling){ chatEl.insertBefore(banner, msgEl.nextSibling); }
-  else { chatEl.appendChild(banner); }
-  var inp = document.getElementById(inputElId);
-  if(inp){ inp.disabled = true; inp.placeholder = 'La sesión ha finalizado'; }
+  banner.style.cssText = 'flex-shrink:0;background:rgba(14,36,22,.97);border-top:1.5px solid rgba(116,198,157,.30);padding:20px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center';
+  banner.innerHTML = '<div style="font-size:32px;margin-bottom:2px">👋</div>'
+    +'<div style="font-size:15px;font-weight:700;color:#e8f2ec;line-height:1.3">'+_escHtml(peerName)+' abandonó el chat</div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,.50);margin-bottom:6px">La conversación ha finalizado</div>'
+    +'<button onclick="('+exitFn+')" style="width:100%;max-width:280px;padding:12px 24px;background:rgba(116,198,157,.85);border:none;border-radius:100px;font-size:14px;font-weight:700;color:#0a1810;cursor:pointer;font-family:\'Jost\',sans-serif">Salir ✓</button>';
+  chatEl.appendChild(banner);
 }
 function _showGuardianExitBanner(peerName){
   _showChatExitBanner('gcExitBanner', 'gcMessages', 'gcInput', 'pEndGuardianChat()', peerName);
@@ -9211,7 +9214,13 @@ function _enterDMChat(toId, toName, toAv){
   var oldBanner = document.getElementById('dmExitBanner');
   if(oldBanner) oldBanner.remove();
   var inp = document.getElementById('dmInput');
-  if(inp){ inp.disabled = false; inp.placeholder = 'Escribí un mensaje…'; inp.value = ''; }
+  if(inp){
+    inp.disabled = false;
+    inp.placeholder = 'Escribí algo con amor...';
+    inp.value = '';
+    var inputRow = inp.closest('.feed-input-area') || inp.closest('.feed-input-row');
+    if(inputRow) inputRow.style.display = '';
+  }
   var msgEl = document.getElementById('dmMessages');
   if(msgEl) msgEl.innerHTML = '';
   var hdr = document.getElementById('dmPeerName');
