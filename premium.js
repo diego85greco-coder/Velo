@@ -517,7 +517,7 @@ async function _sbSyncProfile(userId){
            new Date(r2.data[0].plus_expires_at).getTime() < Date.now()){
           safeLS('del','velo_plan');
           safeLS('set','velo_user_type','user');
-          sbClient.from('profiles').update({ role:'user' }).eq('id',userId).catch(function(){});
+          sbClient.from('profiles').update({ role:'user' }).eq('id',userId).then(function(){}).catch(function(){});
         } else {
           safeLS('set','velo_plan','plus');
         }
@@ -586,10 +586,10 @@ async function _ensureSbSession(){
     var {data:sd} = await sbClient.auth.getSession();
     if(sd && sd.session){
       if(sd.session.user && sd.session.user.id){
-        if(!safeLS('get','velo_user_id')){
-          safeLS('set','velo_user_id', sd.session.user.id);
-          _sbSyncProfile(sd.session.user.id);
-        }
+        var _esUid = sd.session.user.id;
+        safeLS('set','velo_user_id', _esUid);
+        // Always sync profile from Supabase on session restore so cross-device changes appear on refresh
+        setTimeout(function(){ _sbSyncProfile(_esUid); }, 300);
       }
       return true;
     }
@@ -1844,7 +1844,7 @@ function _sendBadgeInboxMsg(badge){
   _initSupabase();
   var _bnUid = safeLS('get','velo_user_id');
   if(sbClient && _bnUid){
-    sbClient.from('profiles').update({ badge_notified: badge.name }).eq('id', _bnUid).catch(function(){});
+    sbClient.from('profiles').update({ badge_notified: badge.name }).eq('id', _bnUid).then(function(){}).catch(function(){});
   }
 }
 
@@ -8710,7 +8710,7 @@ function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl, sen
     sbClient.from('profiles').select('read_bcast_ids').eq('id',_bcUid).limit(1)
       .then(function(r){
         var ids = (r.data && r.data[0] && Array.isArray(r.data[0].read_bcast_ids)) ? r.data[0].read_bcast_ids : [];
-        if(ids.indexOf(_bcId) < 0){ ids.push(_bcId); sbClient.from('profiles').update({read_bcast_ids:ids}).eq('id',_bcUid).catch(function(){}); }
+        if(ids.indexOf(_bcId) < 0){ ids.push(_bcId); sbClient.from('profiles').update({read_bcast_ids:ids}).eq('id',_bcUid).then(function(){}).catch(function(){}); }
       }).catch(function(){});
   }
   var existing = document.getElementById('inboxBcOv');
@@ -8786,7 +8786,7 @@ function pOpenInboxMsg(msgId, rowEl){
     sbClient.from('profiles').select('read_bcast_ids').eq('id',_oiUid).limit(1)
       .then(function(r){
         var ids = (r.data && r.data[0] && Array.isArray(r.data[0].read_bcast_ids)) ? r.data[0].read_bcast_ids : [];
-        if(ids.indexOf(msgId) < 0){ ids.push(msgId); sbClient.from('profiles').update({read_bcast_ids:ids}).eq('id',_oiUid).catch(function(){}); }
+        if(ids.indexOf(msgId) < 0){ ids.push(msgId); sbClient.from('profiles').update({read_bcast_ids:ids}).eq('id',_oiUid).then(function(){}).catch(function(){}); }
       }).catch(function(){});
   }
   // Show full message modal
@@ -14023,7 +14023,7 @@ window.addEventListener('load', function(){
                     !(_ln.indexOf(' ')<0 && /^\w+\.\w+\d+$/.test(_ln));
       if(_isReal && _uid && sbClient){
         sbClient.from('profiles').upsert({id:_uid, nombre:_ln},{onConflict:'id'})
-          .catch(function(){});
+          .then(function(){}).catch(function(){});
       }
     }, 6000);
     // Pull visit count from Supabase to sync across devices / after localStorage clear
