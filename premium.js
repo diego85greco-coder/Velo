@@ -390,7 +390,7 @@ async function _sbSyncProfile(userId){
   var res;
   try{
     res = await sbClient.from('profiles')
-      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes')
+      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito')
       .eq('id',userId).limit(1);
   }catch(e){ return; }
 
@@ -463,6 +463,21 @@ async function _sbSyncProfile(userId){
   if(p.username)      safeLS('set','velo_username',       p.username);
   if(p.username)      _uFill(userId, p.username);
   if(p.username_changes != null) safeLS('set','velo_username_changes', String(p.username_changes));
+  // user_status: restore on new device if local is empty; don't overwrite user's current session choice
+  if(p.user_status && !safeLS('get','velo_user_status')) safeLS('set','velo_user_status', p.user_status);
+  // incognito: restore on new device (treat missing/null as false)
+  if(p.incognito === true && safeLS('get','velo_incognito') !== 'true') safeLS('set','velo_incognito', 'true');
+  // blocked users: merge DB list into local so blocks carry over to new devices
+  sbClient.from('user_blocks').select('blocked_id').eq('blocker_id', userId)
+    .then(function(br){
+      if(!br.data || !br.data.length) return;
+      var _bl = []; try{ _bl = JSON.parse(safeLS('get','velo_blocked')||'[]'); }catch(e){}
+      var dirty = false;
+      br.data.forEach(function(row){
+        if(_bl.indexOf(row.blocked_id) < 0){ _bl.push(row.blocked_id); dirty = true; }
+      });
+      if(dirty) safeLS('set','velo_blocked', JSON.stringify(_bl));
+    }).catch(function(){});
   if(p.role === 'plus'){
     sbClient.from('profiles').select('plus_expires_at').eq('id',userId).limit(1)
       .then(function(r2){
@@ -730,6 +745,7 @@ async function pSignIn(){
       setTimeout(_startGlobalDMListener, 2500);
       setTimeout(_startBuzónListener, 3000);
       setTimeout(_syncFavsFromSupabase, 3500);
+      setTimeout(function(){ _startProfileSync(safeLS('get','velo_user_id')); }, 4000);
       await _loginAndGo();
     }
   }catch(e){
@@ -2063,6 +2079,13 @@ function pSetMyGuardianStatus(status){
 // Home availability toggle (Disponible / Ocupado) — shown below the greeting
 function pSetUserStatus(status){
   safeLS('set','velo_user_status', status);
+  // Sync availability to Supabase so all devices see current status
+  _initSupabase();
+  var _stUid = safeLS('get','velo_user_id');
+  if(sbClient && _stUid){
+    sbClient.from('profiles').update({ user_status: status }).eq('id', _stUid)
+      .then(function(){}).catch(function(){});
+  }
   var isGuardian = safeLS('get','velo_is_guardian') === 'true';
   var isIncognito = safeLS('get','velo_incognito') === 'true';
   // When incognito is active, preserve anonymity while updating availability
@@ -3638,9 +3661,11 @@ function _subscribeHelpChat(post){
       var m = payload.new||{};
       var relevant = (m.from_id===myId&&m.to_id===peerId)||(m.from_id===peerId&&m.to_id===myId);
       if(!relevant) return;
-      if(m.text && m.text.startsWith('__velo_help_bye__:')){
+      // Both help_bye (seeker leaving) and guardian_bye (guardian leaving) should show the exit banner
+      if(m.text && (m.text.startsWith('__velo_help_bye__:') || m.text.startsWith('__velo_guardian_bye__:'))){
         if(m.id && sbClient) sbClient.from('direct_messages').delete().eq('id',m.id).then(function(){}).catch(function(){});
-        var _hBye = {}; try{ _hBye = JSON.parse(m.text.slice('__velo_help_bye__:'.length)); }catch(e){}
+        var _byePfx = m.text.startsWith('__velo_help_bye__:') ? '__velo_help_bye__:' : '__velo_guardian_bye__:';
+        var _hBye = {}; try{ _hBye = JSON.parse(m.text.slice(_byePfx.length)); }catch(e){}
         _showHelpExitBanner(_hBye.name || m.from_name || 'El otro usuario');
         return;
       }
@@ -3781,18 +3806,29 @@ function pLeaveHelpChat(){
     var _hMyName = safeLS('get','velo_user_name')||'Usuario';
     var _hMyAv   = safeLS('get','velo_user_av')||'🧑';
     if(_hMyId){
+      var _byeA = _hMyId, _byeB = _hPost.userId;
+      // Delete all messages AFTER insert commits — inserting first ensures realtime event
+      // fires on the peer's side before the cleanup delete wipes the bye row.
       sbClient.from('direct_messages').insert({
-        from_id:_hMyId, from_name:_hMyName, from_av:_hMyAv, to_id:_hPost.userId,
+        from_id:_byeA, from_name:_hMyName, from_av:_hMyAv, to_id:_byeB,
         text:'__velo_help_bye__:'+JSON.stringify({ name:_hMyName, av:_hMyAv })
-      }).then(function(){}).catch(function(){});
+      }).then(function(){
+        setTimeout(function(){
+          if(sbClient){
+            sbClient.from('direct_messages').delete()
+              .or('and(from_id.eq.'+_byeA+',to_id.eq.'+_byeB+'),and(from_id.eq.'+_byeB+',to_id.eq.'+_byeA+')')
+              .then(function(){}).catch(function(){});
+          }
+        }, 1800);
+      }).catch(function(){
+        // Insert failed — still clean up existing messages
+        if(sbClient){
+          sbClient.from('direct_messages').delete()
+            .or('and(from_id.eq.'+_byeA+',to_id.eq.'+_byeB+'),and(from_id.eq.'+_byeB+',to_id.eq.'+_byeA+')')
+            .then(function(){}).catch(function(){});
+        }
+      });
     }
-  }
-  // Delete all messages between these two users so next session starts fresh
-  if(sbClient && _hPost && _hPost.userId && _hMyId){
-    var _delA = _hMyId, _delB = _hPost.userId;
-    sbClient.from('direct_messages').delete()
-      .or('and(from_id.eq.'+_delA+',to_id.eq.'+_delB+'),and(from_id.eq.'+_delB+',to_id.eq.'+_delA+')')
-      .then(function(){}).catch(function(){});
   }
   if(_helpChatRtCh && sbClient){ try{ sbClient.removeChannel(_helpChatRtCh); }catch(e){} _helpChatRtCh = null; }
   _hideReturnToChatBadge();
@@ -7721,22 +7757,58 @@ function pSetAvatarFromFile(input){
   var reader = new FileReader();
   reader.onload = function(e){
     _compressImg(e.target.result, function(dataUrl){
+      // Show preview immediately using local data URL
       safeLS('set','velo_user_av', dataUrl);
-      _syncAvatarToSb(dataUrl);
-      pToast('✅','Foto de perfil actualizada 🌿');
-      closeModal('avatarPickerOv');
       pLoadProfile();
       _updateSidebarUser();
+      // Upload to Supabase Storage (public URL, not base64 in DB)
+      _uploadAvatarToStorage(file, dataUrl, function(publicUrl){
+        var finalAv = publicUrl || dataUrl;
+        safeLS('set','velo_user_av', finalAv);
+        _syncAvatarToSb(finalAv);
+        pToast('✅','Foto de perfil actualizada 🌿');
+        closeModal('avatarPickerOv');
+        pLoadProfile();
+        _updateSidebarUser();
+      });
     });
   };
   reader.readAsDataURL(file);
+}
+
+function _uploadAvatarToStorage(file, dataUrl, callback){
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(!sbClient || !uid){ callback(null); return; }
+  try{
+    var mimeType = (file && file.type) || (dataUrl.split(',')[0].split(':')[1]||'').split(';')[0] || 'image/jpeg';
+    var ext = mimeType.split('/')[1]||'jpg';
+    var path = uid+'.'+ext;
+    // Convert data URL to Blob
+    var byteStr = atob(dataUrl.split(',')[1]);
+    var ab = new ArrayBuffer(byteStr.length);
+    var ia = new Uint8Array(ab);
+    for(var i=0;i<byteStr.length;i++) ia[i]=byteStr.charCodeAt(i);
+    var blob = new Blob([ab], {type:mimeType});
+    sbClient.storage.from('avatars').upload(path, blob, {contentType:mimeType, upsert:true})
+      .then(function(r){
+        if(r.error){ console.warn('[avatar storage]', r.error.message); callback(null); return; }
+        var urlRes = sbClient.storage.from('avatars').getPublicUrl(path);
+        var pub = urlRes && urlRes.data && urlRes.data.publicUrl;
+        // Append cache-bust so browsers reload the image on re-upload
+        if(pub) pub = pub.split('?')[0]+'?t='+Date.now();
+        callback(pub||null);
+      }).catch(function(e){ console.warn('[avatar storage catch]', e); callback(null); });
+  }catch(e){ console.warn('[avatar storage error]', e); callback(null); }
 }
 
 function _syncAvatarToSb(av){
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
   if(!sbClient || !uid) return;
-  sbClient.from('profiles').upsert({ id:uid, avatar:av },{ onConflict:'id' })
+  // Only store URL or emoji in profiles.avatar — never store large base64 strings
+  var stored = (av && av.length > 8000) ? '' : av;
+  sbClient.from('profiles').upsert({ id:uid, avatar:stored },{ onConflict:'id' })
     .then(function(r){ if(r && r.error) pToast('⚠️','Foto guardada solo en este dispositivo (sin conexión a la nube).'); })
     .catch(function(){ pToast('⚠️','Foto guardada solo en este dispositivo (sin conexión a la nube).'); });
 }
@@ -8353,6 +8425,13 @@ function pToggleIncognito(){
   var isOn = safeLS('get','velo_incognito') === 'true';
   var next = !isOn;
   safeLS('set','velo_incognito', next ? 'true' : 'false');
+  // Sync incognito preference to Supabase so other devices pick it up
+  _initSupabase();
+  var _incUid = safeLS('get','velo_user_id');
+  if(sbClient && _incUid){
+    sbClient.from('profiles').update({ incognito: next }).eq('id', _incUid)
+      .then(function(){}).catch(function(){});
+  }
   var tog = document.getElementById('incognitoTog');
   if(tog){ tog.classList.remove('on'); if(next) tog.classList.add('on'); }
   var tog2 = document.getElementById('homeIncognitoTog');
@@ -9666,6 +9745,39 @@ function _rejectDMRequest(fromId, fromName){
 
 // Global DM listener — shows popup toast when a new DM arrives while in another section
 var _dmLastChecked = null; // ISO timestamp of last poll (so we only surface new messages)
+// ── REALTIME PROFILE SYNC ──────────────────────────────────────
+// Subscribes to changes on the user's own profiles row so that when
+// the user edits their profile on another device, this session picks
+// it up without requiring a full page reload.
+var _profileRtCh = null;
+function _startProfileSync(userId){
+  if(_profileRtCh) return;
+  _initSupabase();
+  if(!sbClient || !userId) return;
+  _profileRtCh = sbClient.channel('velo:profile:'+userId)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'profiles',filter:'id=eq.'+userId},function(payload){
+      var p = payload.new||{};
+      if(p.nombre){
+        var em = safeLS('get','velo_user_email')||'';
+        var epfx = em.split('@')[0];
+        var looksAuto = p.nombre===epfx||p.nombre===em||/^[a-zA-Z0-9._-]+\d{3,}$/.test(p.nombre)||(p.nombre.indexOf(' ')<0&&/^\w+\.\w+\d+$/.test(p.nombre));
+        if(!looksAuto) safeLS('set','velo_user_name', p.nombre);
+      }
+      if(p.avatar) safeLS('set','velo_user_av', p.avatar);
+      if(p.motto)  safeLS('set','velo_user_motto', p.motto);
+      if(p.user_status) safeLS('set','velo_user_status', p.user_status);
+      if(p.incognito!=null) safeLS('set','velo_incognito', p.incognito ? 'true' : 'false');
+      if(p.status_music)  safeLS('set','velo_status_music',  p.status_music);
+      if(p.status_book)   safeLS('set','velo_status_book',   p.status_book);
+      if(p.status_phrase) safeLS('set','velo_status_phrase', p.status_phrase);
+      if(p.status_film)   safeLS('set','velo_status_film',   p.status_film);
+      _updateSidebarUser();
+      _renderHomeStatusToggle();
+      pRenderHomeGreet && pRenderHomeGreet();
+    })
+    .subscribe();
+}
+
 function _startGlobalDMListener(){
   if(_dmInboxCh) return; // already subscribed
   var myId = safeLS('get','velo_user_id')||'';
@@ -9760,9 +9872,12 @@ function _startGlobalDMListener(){
       }
       if(m.text && m.text.startsWith('__velo_guardian_bye__:')){
         if(m.id && sbClient) sbClient.from('direct_messages').delete().eq('id',m.id).then(function(){}).catch(function(){});
+        var _byeParsed = {}; try{ _byeParsed = JSON.parse(m.text.slice('__velo_guardian_bye__:'.length)); }catch(e){}
         if(curId === 'pg-guardian-chat' && _gcPeer && _gcPeer.id === m.from_id){
-          var _byeParsed = {}; try{ _byeParsed = JSON.parse(m.text.slice('__velo_guardian_bye__:'.length)); }catch(e){}
           _showGuardianExitBanner(_byeParsed.name || m.from_name || 'El otro usuario');
+        } else if(curId === 'pg-help-chat'){
+          // Seeker on help-chat page receiving guardian's exit — show help exit banner
+          _showHelpExitBanner(_byeParsed.name || m.from_name || 'El otro usuario');
         }
         return;
       }
@@ -9776,9 +9891,12 @@ function _startGlobalDMListener(){
       }
       if(m.text && m.text.startsWith('__velo_help_bye__:')){
         if(m.id && sbClient) sbClient.from('direct_messages').delete().eq('id',m.id).then(function(){}).catch(function(){});
+        var _helpByeParsed = {}; try{ _helpByeParsed = JSON.parse(m.text.slice('__velo_help_bye__:'.length)); }catch(e){}
         if(curId === 'pg-help-chat'){
-          var _helpByeParsed = {}; try{ _helpByeParsed = JSON.parse(m.text.slice('__velo_help_bye__:'.length)); }catch(e){}
           _showHelpExitBanner(_helpByeParsed.name || m.from_name || 'El otro usuario');
+        } else if(curId === 'pg-guardian-chat'){
+          // Guardian on guardian-chat page receiving seeker's exit — show guardian exit banner
+          _showGuardianExitBanner(_helpByeParsed.name || m.from_name || 'El otro usuario');
         }
         return;
       }
@@ -13831,6 +13949,7 @@ window.addEventListener('load', function(){
     setTimeout(_startGlobalDMListener, 3000);
     setTimeout(_startBuzónListener, 3200);
     setTimeout(_syncFavsFromSupabase, 3500);
+    setTimeout(function(){ _startProfileSync(safeLS('get','velo_user_id')); }, 4000);
     if(type === 'admin' && safeLS('get','velo_admin_session') === '1'){
       pGoTo('admin');
     } else if(type === 'pro'){
