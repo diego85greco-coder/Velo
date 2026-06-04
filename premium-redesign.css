@@ -8092,8 +8092,22 @@ body.r-dark .r-desk-qlink:hover {
     grid-row: 2 !important;
     align-items: center !important;
   }
-  /* Constrain status toggle width to match shortcuts grid */
-  #homeStatusToggle { max-width: 560px; width: 100%; }
+  /* Status toggle: compact centered column on desktop */
+  #homeStatusToggle {
+    width: 340px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    align-self: center !important;
+    margin-bottom: 12px !important;
+  }
+  #homeStatusSegPill .r-status-combined-pill {
+    width: 100% !important;
+  }
+  #homeStatusSegPill .r-status-seg {
+    flex: 1 !important;
+    justify-content: center !important;
+  }
   /* Constrain shortcut grid and action buttons to sensible width */
   .r-home-shortcut-grid { max-width: 560px !important; }
   .r-hero-actions { max-width: 560px !important; }
