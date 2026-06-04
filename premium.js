@@ -227,7 +227,8 @@ var _authenticated = false;
 var _userType   = 'user'; // 'user' | 'pro' | 'admin'
 
 var P_NO_NAV = ['landing','login','register','register-type','onboarding',
-                'pro-reg','pro-onboarding','admin-login','pro-pending','verify-email','pick-username'];
+                'pro-reg','pro-onboarding','admin-login','pro-pending','verify-email','pick-username',
+                'dm-chat'];
 var P_DARK   = ['help','bottle','respira'];
 var P_FADE   = ['landing','onboarding','register-type','donation-exit',
                 'session-room','post-chat','donate-cta','pro-pending','admin-login','calm-ai','guardian-chat','verify-email','pick-username'];
@@ -282,8 +283,8 @@ function pGoTo(id){
   _updateNavState(id, showNav);
 
   // Show/hide "return to chat" badge when navigating away from an active chat
-  var _activeChatPages = ['help-chat', 'guardian-chat'];
-  if(_inActiveChat && _activeChatPages.indexOf(id) < 0 && (_prevPage === 'help-chat' || _prevPage === 'guardian-chat')){
+  var _activeChatPages = ['help-chat', 'guardian-chat', 'dm-chat'];
+  if(_inActiveChat && _activeChatPages.indexOf(id) < 0 && _activeChatPages.indexOf(_prevPage) >= 0){
     _showReturnToChatBadge(_prevPage);
   } else if(_activeChatPages.indexOf(id) >= 0){
     _hideReturnToChatBadge();
@@ -9583,6 +9584,11 @@ function _showDMToast(fromId, fromName, fromAv, text){
     +'<button onclick="event.stopPropagation();document.getElementById(\'dmToastBanner\').remove()" style="font-size:16px;background:none;border:none;cursor:pointer;color:var(--ink4);padding:4px;flex-shrink:0">✕</button>';
   banner.onclick = function(){
     banner.remove();
+    // If already in an active DM session with this peer, just return to the chat
+    if(_inActiveChat && _dmPeer && _dmPeer.id === fromId){
+      pGoTo('dm-chat');
+      return;
+    }
     pOpenDM(fromId, fromName, fromAv);
   };
   document.body.appendChild(banner);
