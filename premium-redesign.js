@@ -151,6 +151,8 @@
       initParticles('profileBgCanvas',   70, 0.38, '80,140,200',  '100,200,180');
       initParticles('helpBgCanvas',      65, 0.42, '60,140,90',   '120,200,240');
       initParticles('respiraBgCanvas',   60, 0.42, '80,190,210',  '80,190,215');
+      // Help chat: always dark green bg — use green particles visible on dark
+      initParticles('helpChatBgCanvas',  55, 0.45, '80,185,120',  '100,220,155');
       setTimeout(initAllPageParticles, 200);
     }, 300);
 
