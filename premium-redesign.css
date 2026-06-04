@@ -8390,3 +8390,26 @@ body:not(.r-dark) #homeProfileFab {
 /* ── Monthly hint text: dark in light mode, white in dark mode ── */
 #homeMonthlyHint { color: rgba(0,0,0,.60); }
 body.r-dark #homeMonthlyHint { color: rgba(255,255,255,.78); }
+
+/* ── v486: Larger, more aesthetic greeting block ── */
+#homeTimeIcon .r-time-icon svg {
+  width: 88px !important;
+  height: 88px !important;
+  filter: drop-shadow(0 0 18px rgba(255,220,100,.38)) !important;
+}
+@media (max-width: 860px) {
+  #homeGreetBlock {
+    margin-top: 14px !important;
+    margin-bottom: 18px !important;
+    padding: 0 10px !important;
+  }
+  .r-hero-v2 h1.p-title {
+    font-size: clamp(52px, 15vw, 70px) !important;
+    letter-spacing: -.8px !important;
+    line-height: 1.0 !important;
+  }
+  .r-hero-italic {
+    font-size: clamp(22px, 6vw, 28px) !important;
+    margin-top: 4px !important;
+  }
+}
