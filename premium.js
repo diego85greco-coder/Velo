@@ -8285,7 +8285,7 @@ function pRenderInbox(){
           +'<div class="p-inbox-ic" style="background:rgba(180,140,220,.14);font-size:18px">📊</div>'
           +'<div style="flex:1;min-width:0">'
           +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">Tu resumen de '+rpMName+'</div>'
-          +'<div style="font-size:11px;color:var(--ink4);line-height:1.45">Gemini preparó un resumen personalizado de tu mes: ánimos, diario y más.</div>'
+          +'<div style="font-size:11px;color:var(--ink4);line-height:1.45">Velo preparó un resumen personalizado de tu mes: ánimos, diario y más.</div>'
           +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:rgba(180,140,220,.85)">Ver mi resumen →</span>')+'</div>'
           +'</div>'+_xBtn+'</div>';
       }
@@ -12083,7 +12083,7 @@ async function _generateMonthlySummary(month, mName, year){
   var sadPct=monthMoods.length?Math.round(sad/monthMoods.length*100):0;
 
   if(!monthMoods.length&&!reviewsData.length){
-    return {narrative:'No encontramos registros de '+mName+'. Para el próximo mes, registrá cómo te sentís cada día — así Gemini puede prepararte tu resumen personal. 💚',
+    return {narrative:'No encontramos registros de '+mName+'. Para el próximo mes, registrá cómo te sentís cada día — así Velo puede prepararte tu resumen personal. 💚',
       happy:0,neutral:0,sad:0,helped:helpedOthers,received:helpReceived,reviews:reviewsData,totalReviews:totalReviews,medals:monthMedals,recs:[],books:[],help_hint:null};
   }
 
