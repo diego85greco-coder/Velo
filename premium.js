@@ -9106,6 +9106,31 @@ function pClearCircleChat(){
   if(el) el.innerHTML = '';
 }
 
+var _dmEmojiList = ['😊','😂','❤️','🙏','💪','✨','🌿','🤗','😢','😔','💙','🌸','🍃','🌈','🕊️','💚'];
+function pToggleDMEmojis(){
+  var panel = document.getElementById('dmEmojiPanel');
+  if(!panel){
+    panel = document.createElement('div');
+    panel.id = 'dmEmojiPanel';
+    panel.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px;background:var(--cream2);border-top:1px solid var(--border2);flex-shrink:0';
+    _dmEmojiList.forEach(function(em){
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = em;
+      btn.style.cssText = 'font-size:22px;background:none;border:none;cursor:pointer;padding:4px';
+      btn.onclick = function(){
+        var inp = document.getElementById('dmInput');
+        if(inp){ inp.value += em; inp.focus(); }
+      };
+      panel.appendChild(btn);
+    });
+    var inputArea = document.querySelector('#pg-dm-chat .feed-input-area');
+    if(inputArea) inputArea.parentNode.insertBefore(panel, inputArea);
+  } else {
+    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+  }
+}
+
 async function pClearDMChat(){
   if(!_dmPeer) return;
   if(!confirm('¿Borrar toda la conversación con '+_dmPeer.name+'? Esta acción es permanente.')) return;
