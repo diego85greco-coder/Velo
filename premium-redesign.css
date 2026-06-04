@@ -8329,6 +8329,10 @@ body:not(.r-dark) .r-home-estilo-fab {
 }
 #homeEstiloFab {
   animation: estilo-fab-glow 3s ease-in-out infinite;
+  min-width: 72px;
+}
+#homeProfileFab {
+  min-width: 72px;
 }
 body:not(.r-dark) #homeEstiloFab {
   animation: none;
