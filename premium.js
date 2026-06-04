@@ -345,6 +345,12 @@ function toggleMobileMenu(){
   if(menu.classList.contains('open')){
     menu.classList.remove('open');
   } else {
+    // Update Estilo label to reflect current mode before opening
+    var lbl = document.getElementById('mobileEstiloLbl');
+    var icon = document.getElementById('mobileEstiloBtn');
+    var isDark = document.body.classList.contains('r-dark');
+    if(lbl) lbl.textContent = isDark ? 'Modo claro (Estilo)' : 'Modo oscuro (Estilo)';
+    if(icon) icon.querySelector('.p-mobile-nav-icon').textContent = isDark ? '☀️' : '🌙';
     menu.classList.add('open');
   }
 }
@@ -423,11 +429,16 @@ async function _sbSyncProfile(userId){
                         /^[a-zA-Z0-9._-]+\d{3,}$/.test(p.nombre) ||
                         (p.nombre.indexOf(' ') < 0 && /^\w+\.\w+\d+$/.test(p.nombre));
     if(!_looksAutoGen){
-      // Valid real name from Supabase — use it
+      // Valid real name from Supabase — always use it on new devices
       safeLS('set','velo_user_name', p.nombre);
     } else if(_localName && _localName !== _emailPfx && !(/^[a-zA-Z0-9._-]+\d{3,}$/.test(_localName))){
-      // Supabase has a corrupted auto-name but localStorage has a valid name — repair Supabase silently
+      // Supabase has auto-name but local has a real name — repair Supabase silently
       sbClient.from('profiles').update({ nombre: _localName }).eq('id', userId).catch(function(){});
+      // Keep the local real name (don't overwrite with auto-gen)
+    } else if(!_localName && p.nombre){
+      // Fresh device with no local name — use Supabase name even if it looks auto-gen
+      // (better than showing "Hola"; user can update profile later)
+      safeLS('set','velo_user_name', p.nombre);
     }
   }
   if(p.avatar)        safeLS('set','velo_user_av',       p.avatar);
@@ -692,13 +703,16 @@ async function pSignIn(){
       _clearSession(); // fresh slate — no leftover data from a previous account
       safeLS('set','velo_user_email', email);
       safeLS('set','velo_sb_pass', pass);
-      safeLS('set','velo_user_name', email.split('@')[0]);
+      // Don't preset email prefix — _sbSyncProfile will restore the real name from Supabase.
+      // If Supabase has no real name, the email prefix will be set as a fallback below.
       safeLS('set','velo_session','1');
       if(result.data && result.data.user && result.data.user.id){
         var uid = result.data.user.id;
         safeLS('set','velo_user_id', uid);
         // Await profile sync so name/avatar/status are restored before home renders
         await _sbSyncProfile(uid);
+        // If _sbSyncProfile found no valid name, fall back to email prefix
+        if(!safeLS('get','velo_user_name')) safeLS('set','velo_user_name', email.split('@')[0]);
       }
       _authenticated = true;
       _startGuardianHeartbeat();
@@ -5430,6 +5444,11 @@ async function pSaveMood(){
   var today = _dateKey();
   var data = { emoji:_selMood.emoji, label:_selMood.label, note:noteVal, ts:Date.now() };
   safeLS('set','velo_mood_'+today, JSON.stringify(data));
+  // Also append to mood_log so monthly summary can see it
+  var _mLog = []; try{ _mLog = JSON.parse(safeLS('get','velo_mood_log')||'[]'); }catch(e){}
+  _mLog = _mLog.filter(function(m){ return m.dateKey !== today; }); // dedupe today
+  _mLog.unshift(Object.assign({},data,{dateKey:today}));
+  safeLS('set','velo_mood_log', JSON.stringify(_mLog.slice(0,90)));
   sbSaveMoodEntry(today, _selMood.emoji, _selMood.label, noteVal);
   _updateTopbarMoodBadge();
   pToast(_selMood.emoji, 'Estado de ánimo registrado 💚');
@@ -12120,9 +12139,19 @@ async function _generateMonthlySummary(month, mName, year){
   var mon=parseInt(month.split('-')[1]); var yr=parseInt(month.split('-')[0]);
   var cutStart=new Date(yr,mon-1,1).toISOString(); var cutEnd=new Date(yr,mon,0,23,59,59).toISOString();
 
-  // ── Classify moods ──
+  // ── Classify moods (localStorage first, fallback to Supabase on new devices) ──
   var moodLog=[]; try{moodLog=JSON.parse(safeLS('get','velo_mood_log')||'[]');}catch(e){}
   var monthMoods=moodLog.filter(function(m){ var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
+  // If no local moods, try Supabase mood_entries
+  if(!monthMoods.length){
+    var sbMoods=await sbLoadAllMoods(yr,mon);
+    if(sbMoods&&sbMoods.length){
+      monthMoods=sbMoods.map(function(m){ return {emoji:m.emoji,label:m.label,ts:new Date(m.date_key).getTime(),note:m.note}; });
+      // Restore to local mood_log so future calls don't need to hit Supabase again
+      moodLog=monthMoods.concat(moodLog);
+      safeLS('set','velo_mood_log',JSON.stringify(moodLog.slice(0,90)));
+    }
+  }
   var positiveSet={'😊':1,'😄':1,'🥰':1,'😎':1,'🌈':1,'☀️':1,'🔥':1,'✨':1,'🌻':1};
   var negativeSet={'😔':1,'😢':1,'😰':1,'😤':1,'🌧️':1,'😞':1,'😟':1,'😭':1,'😣':1};
   var happy=0,sad=0,neutral=0;

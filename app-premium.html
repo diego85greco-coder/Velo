@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-441">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-441">
+  <link rel="stylesheet" href="premium.css?v=20260530-442">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-442">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -52,6 +52,7 @@
   <button class="p-mobile-nav-item" onclick="pGoTo('inbox');toggleMobileMenu()"><span class="p-mobile-nav-icon">💌</span> Mensajes</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('contact');toggleMobileMenu()"><span class="p-mobile-nav-icon">📞</span> Contacto</button>
   <div style="flex:1"></div>
+  <button class="p-mobile-nav-item" onclick="rToggleDarkMode();toggleMobileMenu()" id="mobileEstiloBtn"><span class="p-mobile-nav-icon">🌙</span> <span id="mobileEstiloLbl">Modo oscuro / claro</span></button>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
 </div>
 
@@ -3108,8 +3109,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-441"></script>
-<script src="premium-redesign.js?v=20260530-441"></script>
+<script src="premium.js?v=20260530-442"></script>
+<script src="premium-redesign.js?v=20260530-442"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
