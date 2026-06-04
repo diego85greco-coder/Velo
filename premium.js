@@ -432,7 +432,8 @@ async function _sbSyncProfile(userId){
   }
   if(p.avatar)        safeLS('set','velo_user_av',       p.avatar);
   if(p.motto)         safeLS('set','velo_user_motto',    p.motto);
-  if(p.role)          safeLS('set','velo_user_type',     p.role);
+  // Never let profile sync downgrade an active admin session
+  if(p.role && safeLS('get','velo_admin_session') !== '1') safeLS('set','velo_user_type', p.role);
   if(p.status_music)  safeLS('set','velo_status_music',  p.status_music);
   if(p.status_book)   safeLS('set','velo_status_book',   p.status_book);
   if(p.status_phrase) safeLS('set','velo_status_phrase', p.status_phrase);
@@ -2784,24 +2785,76 @@ function _showBuzónAlert(subject, senderId, senderName, senderAv){
   }, 5500);
 }
 
+var _buzónPollTmr  = null;
+var _buzónLastCheck = null; // ISO timestamp of last successful poll
+
 function _startBuzónListener(){
-  if(_buzónRtCh) return;
   _initSupabase();
   var myId = safeLS('get','velo_user_id')||'';
   if(!myId || !sbClient) return;
-  var myTarget = 'user:'+myId;
-  _buzónRtCh = sbClient.channel('velo:buzon:'+myId)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'broadcasts'}, function(payload){
-      var b = payload.new||{};
-      if(b.target !== myTarget) return;
-      var sInfo = null; try{ sInfo = JSON.parse(b.sender); }catch(e){}
-      _showBuzónAlert(b.subject||'Nuevo mensaje', sInfo&&sInfo.i, sInfo&&sInfo.n, sInfo&&sInfo.a||b.icon||'💌');
-      // Track unread broadcast so the badge lights up immediately (without waiting for pRenderInbox)
-      var _ubcIds = []; try{ _ubcIds = JSON.parse(safeLS('get','velo_bcast_unread')||'[]'); }catch(e){}
-      if(b.id && _ubcIds.indexOf(b.id) < 0){ _ubcIds.push(b.id); safeLS('set','velo_bcast_unread', JSON.stringify(_ubcIds)); }
-      _updateInboxDot();
-    })
-    .subscribe();
+
+  // ── Realtime channel (fires instantly if Supabase Realtime is configured for broadcasts) ──
+  if(!_buzónRtCh){
+    var myTarget = 'user:'+myId;
+    var userType = safeLS('get','velo_user_type')||'user';
+    var rtTargets = ['user:'+myId, 'all', userType==='pro'?'pros':'users'];
+    _buzónRtCh = sbClient.channel('velo:buzon:'+myId)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'broadcasts'}, function(payload){
+        var b = payload.new||{};
+        if(!b.id || rtTargets.indexOf(b.target) < 0) return;
+        _buzónHandleNew([b]);
+      })
+      .subscribe();
+  }
+
+  // ── Polling fallback every 60 s — reliable even if Realtime is not enabled on the table ──
+  if(_buzónPollTmr) return;
+  _buzónLastCheck = _buzónLastCheck || new Date(Date.now() - 5000).toISOString(); // first run: only last 5s
+  _buzónPollTmr = setInterval(function(){
+    _buzónPollOnce();
+  }, 60000);
+  // Run immediately after a short delay to catch anything sent while offline
+  setTimeout(_buzónPollOnce, 4000);
+}
+
+function _buzónPollOnce(){
+  _initSupabase();
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId || !sbClient) return;
+  var since = _buzónLastCheck || new Date(Date.now() - 65000).toISOString();
+  var userType = safeLS('get','velo_user_type')||'user';
+  var targets = ['user:'+myId, 'all', userType==='pro'?'pros':'users'];
+  _buzónLastCheck = new Date().toISOString();
+  sbClient.from('broadcasts')
+    .select('*')
+    .in('target', targets)
+    .gte('sent_at', since)
+    .order('sent_at',{ascending:false})
+    .limit(10)
+    .then(function(res){
+      var rows = (res&&res.data)||[];
+      if(rows.length) _buzónHandleNew(rows);
+    }).catch(function(){});
+}
+
+function _buzónHandleNew(rows){
+  // Deduplicate against already-shown IDs
+  var _shown = {}; try{ _shown = JSON.parse(safeLS('get','velo_bcast_shown')||'{}'); }catch(e){}
+  var fresh = rows.filter(function(b){ return b.id && !_shown[b.id] && !safeLS('get','velo_bcast_read_'+b.id); });
+  if(!fresh.length) return;
+  // Show popup for the newest item only
+  var newest = fresh[0];
+  var sInfo = null; try{ sInfo = JSON.parse(newest.sender); }catch(e){}
+  _showBuzónAlert(newest.subject||'Nuevo mensaje en Buzón', sInfo&&sInfo.i, sInfo&&sInfo.n, sInfo&&sInfo.a||newest.icon||'💌');
+  // Mark all fresh ones as shown + add to unread list
+  var _ubcIds = []; try{ _ubcIds = JSON.parse(safeLS('get','velo_bcast_unread')||'[]'); }catch(e){}
+  fresh.forEach(function(b){
+    _shown[b.id] = 1;
+    if(_ubcIds.indexOf(b.id) < 0) _ubcIds.push(b.id);
+  });
+  safeLS('set','velo_bcast_shown',  JSON.stringify(_shown));
+  safeLS('set','velo_bcast_unread', JSON.stringify(_ubcIds));
+  _updateInboxDot();
 }
 
 function _gcSubscribe(){
@@ -10682,8 +10735,7 @@ async function pAdminLogin(){
     _userType = 'admin';
     if(passEl) passEl.value = '';
     if(emailEl) emailEl.value = '';
-    pGoTo('admin');
-    _renderAdmin();
+    pGoTo('admin'); // pGoTo calls _renderAdmin() via the switch — no duplicate call needed
     pToast('🌿','Bienvenido/a al panel admin');
   } else {
     pToast('⚠️', authError || 'Credenciales incorrectas');
@@ -10743,11 +10795,30 @@ async function _renderAdmin(){
   if(!openReports) openReports = audit.filter(function(a){ return !a.resolved; }).length;
   if(!crisisOpen)  crisisOpen  = audit.filter(function(a){ return a.tipo==='crisis_detect'&&!a.resolved; }).length;
 
-  var bottlesSent     = parseInt(safeLS('get','velo_bottle_count')||'0',10) || (function(){ try{ return JSON.parse(safeLS('get','velo_my_bottles')||'[]').length; }catch(e){ return 0; } })();
-  var bottlesReplied  = (function(){ try{ return JSON.parse(safeLS('get','velo_bottle_responded')||'[]').length; }catch(e){ return 0; } })();
-  var helpedOthers    = parseInt(safeLS('get','velo_helped_others')||'0',10);
-  var helpRequests    = (function(){ try{ return JSON.parse(safeLS('get','velo_help_posts')||'[]').filter(function(p){ return !p._mock; }).length; }catch(e){ return 0; } })();
-  var circlesCount    = (function(){ try{ return JSON.parse(safeLS('get','velo_circles')||'[]').length; }catch(e){ return 0; } })();
+  var bottlesSent    = 0, bottlesReplied = 0, helpRequests = 0, circlesCount = 0, helpedOthers = 0;
+  if(sbClient){
+    try{
+      var bAll = await sbClient.from('bottles').select('id',{count:'exact',head:true});
+      if(!bAll.error) bottlesSent = bAll.count || 0;
+    }catch(e){}
+    try{
+      var bRep = await sbClient.from('bottles').select('id',{count:'exact',head:true}).eq('replied',true);
+      if(!bRep.error) bottlesReplied = bRep.count || 0;
+    }catch(e){}
+    try{
+      var hpRes = await sbClient.from('help_posts').select('id',{count:'exact',head:true});
+      if(!hpRes.error) helpRequests = hpRes.count || 0;
+    }catch(e){}
+    try{
+      var cirRes = await sbClient.from('circles').select('id',{count:'exact',head:true});
+      if(!cirRes.error) circlesCount = cirRes.count || 0;
+    }catch(e){}
+    try{
+      var grRes = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('status','completed');
+      if(!grRes.error) helpedOthers = grRes.count || 0;
+    }catch(e){}
+  }
+
   var waitlistCount   = (function(){ try{ return JSON.parse(safeLS('get','velo_waitlist')||'[]').length; }catch(e){ return 0; } })();
   var tcRecs = []; try{ tcRecs = JSON.parse(safeLS('get','velo_tc_records')||'[]'); }catch(e){}
 
@@ -10761,11 +10832,11 @@ async function _renderAdmin(){
       { icon:'🩺', label:'Profesionales',         value: totalPros,     color:'rgba(116,198,200,.8)', note:'Supabase' },
       { icon:'⭐', label:'Velo Plus / Insignia dorada', value: totalPlus, color:'#c8a23e',        note:'Supabase' },
       { icon:'💙', label:'Lista espera solidaria', value: waitlistCount, color:'rgba(58,123,213,.9)', note:'local' },
-      { icon:'🌊', label:'Mensajes al Mar lanzados', value: bottlesSent, color:'rgba(100,170,230,.8)', note:'local' },
-      { icon:'💌', label:'Botellas respondidas',   value: bottlesReplied, color:'rgba(116,198,157,.8)', note:'local' },
-      { icon:'🤝', label:'Personas acompañadas',   value: helpedOthers,  color:'var(--sage4)',     note:'local' },
-      { icon:'💬', label:'Pedidos de ayuda publicados', value: helpRequests, color:'rgba(180,140,220,.8)', note:'local' },
-      { icon:'🕊️', label:'Círculos de Paz creados', value: circlesCount, color:'rgba(200,165,100,.8)', note:'local' },
+      { icon:'🌊', label:'Mensajes al Mar lanzados', value: bottlesSent, color:'rgba(100,170,230,.8)', note:'Supabase' },
+      { icon:'💌', label:'Botellas respondidas',   value: bottlesReplied, color:'rgba(116,198,157,.8)', note:'Supabase' },
+      { icon:'🤝', label:'Personas acompañadas',   value: helpedOthers,  color:'var(--sage4)',     note:'Supabase' },
+      { icon:'💬', label:'Pedidos de ayuda publicados', value: helpRequests, color:'rgba(180,140,220,.8)', note:'Supabase' },
+      { icon:'🕊️', label:'Círculos de Paz creados', value: circlesCount, color:'rgba(200,165,100,.8)', note:'Supabase' },
       { icon:'🚨', label:'Reportes pendientes',    value: openReports,   color: openReports>0?'#e05252':'var(--sage4)', note:'Supabase' },
       { icon:'🆘', label:'Crisis activas',          value: crisisOpen,    color: crisisOpen>0?'#ff4444':'var(--sage4)', note:'Supabase' }
     ];
@@ -10779,37 +10850,31 @@ async function _renderAdmin(){
         +'</div>';
     }).join('');
 
-    // Recent registrations
+    // Compact "Últimos Registros" card — separate from KPI grid, no duplicate
     if(recentReg.length){
-      metrics.insertAdjacentHTML('afterend',
-        '<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;padding:12px 14px;margin-bottom:14px">'
-        +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">🆕 ÚLTIMOS REGISTROS (TIEMPO REAL)</div>'
-        + recentReg.map(function(p){
+      var recentHtml = '<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:14px;padding:14px;margin-bottom:14px">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+        +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7)">🆕 ÚLTIMOS REGISTROS</div>'
+        +'<button onclick="_switchAdminTab(\'usuarios\')" style="font-size:10px;padding:4px 10px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.3);border-radius:8px;color:rgba(116,198,157,.85);cursor:pointer;font-family:\'Jost\',sans-serif;display:flex;align-items:center;gap:4px">🔍 Ver todos →</button>'
+        +'</div>'
+        + recentReg.slice(0,5).map(function(p){
             var fecha = p.created_at ? new Date(p.created_at).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
-            var tcDate = p.terms_accepted_at ? new Date(p.terms_accepted_at).toLocaleString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : null;
             var roleBadge = p.role==='pro' ? '<span style="font-size:9px;color:#74c6d0;border:1px solid rgba(116,198,210,.3);border-radius:4px;padding:1px 5px">PRO</span>'
                           : p.role==='plus' ? '<span style="font-size:9px;color:#c8a23e;border:1px solid rgba(200,162,62,.3);border-radius:4px;padding:1px 5px">PLUS</span>'
-                          : '<span style="font-size:9px;color:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:1px 5px">USER</span>';
-            var em = (p.email||'').replace(/'/g,"\\'");
-            return '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
-              +'<div style="display:flex;align-items:center;gap:8px">'
+                          : '';
+            return '<div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:8px">'
               +'<div style="flex:1;min-width:0">'
-              +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(p.nombre||p.email||'Usuario')+'</div>'
+              +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(p.nombre||p.email||'Usuario')+'</div>'
               +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+_escHtml(p.email||'')+'</div>'
               +'</div>'
               +roleBadge
-              +'<div style="font-size:10px;color:rgba(255,255,255,.25);white-space:nowrap">'+fecha+'</div>'
-              +'</div>'
-              +(tcDate?'<div style="font-size:9px;color:rgba(116,198,157,.5);margin-top:2px">📜 Términos aceptados: '+tcDate+'</div>':'')
-              +'<div style="display:flex;gap:6px;margin-top:5px">'
-              +(p.email?'<button onclick="pAdminSendPasswordReset(\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.8);border-radius:5px;cursor:pointer">🔑 Reset</button>':'')
-              +(p.id?'<button onclick="pAdminDeleteUser(\''+p.id+'\',\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.25);color:rgba(231,120,110,.85);border-radius:5px;cursor:pointer">🗑️ Eliminar</button>':'')
-              +'</div>'
+              +'<div style="font-size:10px;color:rgba(255,255,255,.25);white-space:nowrap;flex-shrink:0">'+fecha+'</div>'
               +'</div>';
           }).join('')
-        +'</div>'
-      );
+        +'</div>';
+      metrics.insertAdjacentHTML('afterend', recentHtml);
     }
+
   }
 
   // ── Admin content panels — tab-based ─────────────────────────
@@ -10994,7 +11059,7 @@ async function _adminTabModeracion(panel){
     +'</div>'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
     +'<div><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7)">🧠 Análisis de situación</div>'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.35)">Gemini revisa el estado general</div></div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.35)">Velo IA revisa el estado general</div></div>'
     +'<button id="adminSituationBtn" onclick="pAdminAiSituationAnalysis()" style="padding:7px 13px;background:rgba(180,140,220,.2);border:1px solid rgba(180,140,220,.35);border-radius:9px;color:rgba(180,140,220,.95);font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">Analizar</button>'
     +'</div><div id="adminSituationResult"></div></div>';
 
@@ -11264,7 +11329,7 @@ async function pAdminSendMonthlyReport(){
 // ── TAB: PRIVACIDAD (GDPR / Ley 25.326) ──────────────────────────────
 function _adminTabPrivacidad(panel){
   panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.85);margin-bottom:12px">🔒 SOLICITUDES DE DATOS PERSONALES</div>'
-    +'<p style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.6">Cuando un usuario pide sus datos (Ley 25.326 / GDPR), Gemini prepara el informe. Lo revisás antes de confirmar el envío.</p>'
+    +'<p style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.6">Cuando un usuario pide sus datos (Ley 25.326 / GDPR), Velo IA prepara el informe. Lo revisás antes de confirmar el envío.</p>'
     +'<div style="background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.2);border-radius:14px;padding:14px;margin-bottom:16px">'
     +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);display:block;margin-bottom:6px">CORREO DEL USUARIO SOLICITANTE</label>'
     +'<div style="display:flex;gap:8px">'
@@ -11374,7 +11439,7 @@ function _adminTabGestion(panel){
         var sentThis=history.find(function(r){ return r.month===(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); });
         return '<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">📊 RESUMEN MENSUAL IA</div>'
           +'<div style="background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
-          +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">Gemini genera un resumen personalizado para cada usuario con sus propios estados de ánimo y diario del mes. Cada uno ve el suyo en su buzón.</p>'
+          +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">Velo IA genera un resumen personalizado para cada usuario con sus propios estados de ánimo y diario del mes. Cada uno ve el suyo en su buzón.</p>'
           +(sentThis
             ? '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;font-size:11px;color:rgba(116,198,157,.85)">✅ Resumen de '+mLabel+' ya enviado el '+new Date(sentThis.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
             : '<button onclick="pAdminSendMonthlyReport()" style="width:100%;padding:10px;background:rgba(180,140,220,.15);border:1px solid rgba(180,140,220,.3);color:rgba(180,140,220,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700">📊 Enviar resumen de '+mLabel+' a todos los usuarios</button>')
