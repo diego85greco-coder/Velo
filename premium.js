@@ -512,9 +512,9 @@ async function _sbSyncProfile(userId){
         }
       }
     }).catch(function(){});
-  // Refresh all UI with synced data
+  // Refresh all UI with synced data — use localStorage (already repaired) over raw Supabase value
   var hn = document.getElementById('homeUserName');
-  if(hn) hn.textContent = p.nombre || safeLS('get','velo_user_name') || '';
+  if(hn) hn.textContent = safeLS('get','velo_user_name') || p.nombre || '';
   _updateSidebarUser();
   _updateTopbarMoodBadge();
   pLoadProfile();
