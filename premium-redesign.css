@@ -8223,3 +8223,12 @@ body.r-dark .usr-search-av { background: rgba(255,255,255,.06); }
   white-space: nowrap;
 }
 .usr-search-fav { font-size: 18px; flex-shrink: 0; }
+
+/* ── Broadcast message: Velo logo signature ── */
+.r-velo-sig-logo {
+  background-image: url('assets/logo.png');
+}
+body.r-dark .r-velo-sig-logo {
+  background-image: url('assets/logo-dark.png');
+  opacity: .75 !important;
+}

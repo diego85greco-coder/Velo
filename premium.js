@@ -8510,7 +8510,12 @@ function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl, sen
     +'<div class="p-sheet-handle"></div>'
     +senderCard
     +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:14px;line-height:1.3">'+_escHtml(subject)+'</h2>'
-    +(body ? '<div style="font-size:14px;color:var(--ink3);line-height:1.85;white-space:pre-line;background:var(--cream2);border-radius:12px;padding:16px;margin-bottom:20px">'+_escHtml(body)+'</div>' : '')
+    +(body ? '<div style="font-size:14px;color:var(--ink3);line-height:1.85;white-space:pre-line;background:var(--cream2);border-radius:12px;padding:16px;margin-bottom:16px">'+_escHtml(body)+'</div>' : '')
+    // Velo logo signature — always shown on official broadcasts
+    +'<div style="display:flex;align-items:center;gap:10px;border-top:1px solid var(--border2);padding-top:14px;margin-bottom:18px">'
+    +'<div style="height:28px;width:72px;background:url(\'assets/logo.png\') left center / contain no-repeat;opacity:.55" class="r-velo-sig-logo"></div>'
+    +'<div style="font-size:11px;color:var(--ink5);line-height:1.4">Velo · Acompañamiento emocional entre pares<br><span style="font-size:10px;opacity:.6">Mensaje oficial del equipo de Velo</span></div>'
+    +'</div>'
     +replyBtn
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'inboxBcOv\').remove()">Cerrar</button>'
     +'</div>';
@@ -11954,6 +11959,11 @@ function pAdminMassMessage(target){
     +'<div style="margin-bottom:14px">'
     +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">MENSAJE</label>'
     +'<textarea id="massBody" rows="5" placeholder="Escribí tu mensaje aquí…" maxlength="2000" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;resize:vertical;box-sizing:border-box"></textarea>'
+    +'</div>'
+    // Signature preview — shown always
+    +'<div style="display:flex;align-items:center;gap:10px;border-top:1px solid rgba(255,255,255,.1);padding:10px 0;margin-bottom:14px;opacity:.7">'
+    +'<div style="height:22px;width:60px;background:url(\'assets/logo-dark.png\') left center / contain no-repeat;flex-shrink:0"></div>'
+    +'<div style="font-size:10px;color:rgba(255,255,255,.5);line-height:1.4">Velo · Acompañamiento emocional entre pares<br><span style="font-size:9px;opacity:.7">Firma automática incluida en todos los mensajes</span></div>'
     +'</div>'
     +'<div style="display:flex;gap:8px">'
     +'<button onclick="pSendMassMessage(\''+target+'\')" style="flex:1;padding:11px;background:var(--sage2);border:none;border-radius:14px;color:#fff;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">📤 Enviar a todos los '+label+'</button>'
