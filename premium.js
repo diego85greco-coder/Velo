@@ -439,6 +439,14 @@ async function _sbSyncProfile(userId){
       // Fresh device with no local name — use Supabase name even if it looks auto-gen
       // (better than showing "Hola"; user can update profile later)
       safeLS('set','velo_user_name', p.nombre);
+      // Nudge the user to complete their real name (once per day)
+      var _nudgeDay = 'velo_name_nudge_'+new Date().toISOString().slice(0,10);
+      if(!safeLS('get',_nudgeDay)){
+        safeLS('set',_nudgeDay,'1');
+        setTimeout(function(){
+          pToast('👋','Tu nombre se ve como usuario técnico. Actualizá tu Perfil con tu nombre real 🌿');
+        }, 2800);
+      }
     }
   }
   if(p.avatar)        safeLS('set','velo_user_av',       p.avatar);
