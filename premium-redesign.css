@@ -7891,8 +7891,12 @@ body.r-dark #happyPhotoLabel > span[style*="border-radius: 20px"] {
   color: rgba(180,240,200,.92) !important;
 }
 
-/* ── v393: Particle stacking — content scrolls above injected canvas ── */
-.p-page > .p-page-scroll {
+/* ── v394: Particle stacking — all direct page children above canvas ── */
+.p-page > .p-page-scroll,
+.p-page > div[id],
+.p-page > div[class],
+.p-page > header,
+.p-page > main {
   position: relative;
   z-index: 1;
 }

@@ -321,6 +321,14 @@ function initParticles(canvasId, count, maxOpacity, color, darkColor) {
       requestAnimationFrame(draw);
       return;
     }
+    // Auto-resize: when the page first becomes visible the canvas may have been
+    // sized to 0 (hidden element) — resync buffer dimensions each frame
+    var dw = canvas.offsetWidth  || window.innerWidth  || 600;
+    var dh = canvas.offsetHeight || window.innerHeight || 900;
+    if (canvas.width !== dw || canvas.height !== dh) {
+      canvas.width  = dw;
+      canvas.height = dh;
+    }
     var particleColor = document.body.classList.contains('r-dark') ? darkModeColor : lightColor;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     frame++;
@@ -352,13 +360,14 @@ function initAllPageParticles() {
   document.querySelectorAll('.p-page').forEach(function(page) {
     // Skip pages that already have a canvas (landing/login/register/home/help/profile/respira)
     if (page.querySelector('canvas')) return;
-    // Skip pages without .p-page-scroll (chat rooms, special overflow layouts)
-    if (!page.querySelector('.p-page-scroll')) return;
+    // Skip pure chat rooms (dark backgrounds with no .p-page-scroll AND have inline background style)
+    var hasBg = (page.getAttribute('style')||'').indexOf('background:') >= 0;
+    if (!page.querySelector('.p-page-scroll') && hasBg) return;
     var canvasId = 'pgBg_' + (page.id || Math.random().toString(36).slice(2));
     var cv = document.createElement('canvas');
     cv.id = canvasId;
     cv.setAttribute('aria-hidden', 'true');
-    cv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none';
+    cv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0';
     page.insertBefore(cv, page.firstChild);
     initParticles(canvasId, 55, 0.28, '232,213,163', '140,210,155');
   });
