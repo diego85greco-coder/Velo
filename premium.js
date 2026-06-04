@@ -1159,6 +1159,62 @@ function pFinishOnboarding(){
   pGoTo(type === 'pro' ? 'pro-reg' : 'register');
 }
 
+function _checkAndShowNameBanner(name){
+  var email = safeLS('get','velo_user_email')||'';
+  var emailPfx = email.split('@')[0];
+  var looksAutoGen = !name || name === emailPfx || name === email ||
+                     /^[a-zA-Z0-9._-]+\d{3,}$/.test(name) ||
+                     (name.indexOf(' ') < 0 && /^\w+\.\w+\d+$/.test(name));
+  var banner = document.getElementById('homeNameBanner');
+  if(!looksAutoGen){ if(banner) banner.remove(); return; }
+  if(banner) return; // already showing
+  var isDark = document.body.classList.contains('r-dark');
+  var b = document.createElement('div');
+  b.id = 'homeNameBanner';
+  b.style.cssText = 'margin:0 0 14px;padding:12px 14px;border-radius:14px;background:'+(isDark?'rgba(116,198,157,.13)':'rgba(116,198,157,.18)')+';border:1px solid rgba(116,198,157,.35);display:flex;flex-direction:column;gap:8px';
+  b.innerHTML = '<div style="font-size:12px;font-weight:700;color:'+(isDark?'rgba(116,198,157,.95)':'#1a6b3c')+'">👋 ¿Cuál es tu nombre real?</div>'
+    +'<div style="font-size:11.5px;color:var(--ink3);line-height:1.4">Tu nombre se muestra como usuario técnico. Ingresá tu nombre real para que se vea en todos tus dispositivos.</div>'
+    +'<div style="display:flex;gap:8px;align-items:center">'
+    +'<input id="homeNameInput" type="text" placeholder="Tu nombre o apodo" value="'+_escHtml(name !== emailPfx ? name : '')+'" style="flex:1;padding:8px 12px;border-radius:10px;border:1.5px solid rgba(116,198,157,.4);background:'+(isDark?'rgba(255,255,255,.07)':'rgba(255,255,255,.9)')+';color:var(--ink);font-size:13px;font-family:\'Jost\',sans-serif;outline:none">'
+    +'<button onclick="_saveNameFromBanner()" style="padding:8px 16px;border-radius:10px;border:none;background:var(--sage);color:#fff;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap">Guardar →</button>'
+    +'</div>';
+  var scrollEl = document.querySelector('#pg-home .p-page-scroll');
+  if(scrollEl) scrollEl.insertBefore(b, scrollEl.querySelector('.home-header') || scrollEl.firstChild);
+}
+
+function _saveNameFromBanner(){
+  var inp = document.getElementById('homeNameInput');
+  if(!inp) return;
+  var newName = inp.value.trim();
+  if(!newName || newName.length < 2){ pToast('⚠️','Ingresá un nombre válido'); return; }
+  safeLS('set','velo_user_name', newName);
+  // Update DOM immediately
+  var un = document.getElementById('homeUserName');
+  if(un) un.textContent = newName;
+  // Push to Supabase (same as pSaveProfile but from localStorage)
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  var email = safeLS('get','velo_user_email')||'';
+  var av = safeLS('get','velo_user_av')||'';
+  if(av.length > 8000) av = '';
+  if(sbClient && uid){
+    sbClient.from('profiles').upsert({
+      id: uid, nombre: newName, email: email, avatar: av,
+      motto: safeLS('get','velo_user_motto')||'',
+      status_music: safeLS('get','velo_status_music')||'',
+      status_book: safeLS('get','velo_status_book')||'',
+      status_phrase: safeLS('get','velo_status_phrase')||'',
+      status_film: safeLS('get','velo_status_film')||''
+    },{onConflict:'id'})
+    .then(function(r){
+      if(r&&r.error){ pToast('⚠️','Error al guardar: '+r.error.message); }
+      else { pToast('✅','¡Nombre guardado! Ya se verá en todos tus dispositivos 🌿'); var banner=document.getElementById('homeNameBanner'); if(banner) banner.remove(); _updateSidebarUser(); }
+    }).catch(function(e){ pToast('⚠️','Error de conexión'); });
+  } else {
+    pToast('⚠️','Sin conexión — intentá de nuevo');
+  }
+}
+
 // ── HOME DATA ──────────────────────────────────────────────────
 function _loadHomeData(){
   _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
@@ -1178,6 +1234,8 @@ function _loadHomeData(){
   var un = document.getElementById('homeUserName');
   var ha = document.getElementById('homeAv');
   if(un) un.textContent = name;
+  // Show name-fix banner if the displayed name looks like an email prefix
+  _checkAndShowNameBanner(name);
   if(ha){ _renderAvatarEl('homeAv', av); }
 
   // Guardian button in home header
