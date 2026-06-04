@@ -7979,10 +7979,6 @@ body.r-dark #pg-news .p-card {
   box-shadow: 0 3px 14px rgba(116,198,157,.18), inset 0 1px 0 rgba(255,255,255,.9);
 }
 .home-search-pill:active { transform: scale(.97); }
-@media (min-width: 900px) {
-  /* On desktop the left column is wide enough — stay compact/left */
-  .home-search-pill { align-self: flex-start; }
-}
 
 body.r-dark .home-search-pill {
   background: rgba(255,255,255,.07);
