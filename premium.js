@@ -6767,7 +6767,14 @@ async function pRenderHappy(){
           _ownWall.forEach(function(p){
             sbClient.from('happy_history').upsert({
               id:p.id, user_id:_hisUidB, emoji:p.emoji||'☀️', text:p.text||''
-            },{ onConflict:'id', ignoreDuplicates:true }).then(function(){}).catch(function(){});
+            },{ onConflict:'id', ignoreDuplicates:true }).then(function(){}).catch(function(err){
+              // Retry without emoji if the column doesn't exist yet
+              if(String((err&&err.message)||err).indexOf('emoji') >= 0){
+                sbClient.from('happy_history').upsert({
+                  id:p.id, user_id:_hisUidB, text:p.text||''
+                },{ onConflict:'id', ignoreDuplicates:true }).then(function(){}).catch(function(){});
+              }
+            });
           });
         }
       }
