@@ -7035,32 +7035,41 @@ body:not(.r-dark) .p-sidebar-theme-btn .r-tbar-moon { display: none; }
 
 /* ── v331: Desktop quick-action strip (Ánimos / Donar / Plus) ───── */
 #homeDesktopQuickActs {
-  display: flex;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
   margin-bottom: 16px;
+  max-width: 560px;
+  width: 100%;
+  align-self: center;
 }
 .home-dqa-btn {
-  flex: 1;
+  aspect-ratio: 1 / 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  gap: 10px;
   background: rgba(255,255,255,.62);
   border: 1.5px solid rgba(116,198,157,.40);
-  border-radius: 12px;
-  padding: 9px 4px 7px;
+  border-radius: 20px;
+  padding: 12px 6px;
   cursor: pointer;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: .07em;
+  letter-spacing: 1.8px;
   text-transform: uppercase;
   color: var(--ink2);
   font-family: 'Jost', sans-serif;
   transition: background .15s, transform .1s;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  box-sizing: border-box;
+  width: 100%;
 }
 .home-dqa-btn svg {
+  width: 28px !important;
+  height: 28px !important;
   color: var(--sage2);
 }
 .home-dqa-btn:hover {
@@ -7383,16 +7392,19 @@ body.r-dark .home-dqa-btn:hover {
   }
   /* More solid quick-action buttons on desktop */
   #pg-home .home-dqa-btn {
-    background: rgba(255,255,255,.82) !important;
-    border-color: rgba(116,198,157,.45) !important;
+    background: rgba(27,94,58,.06) !important;
+    border-color: rgba(27,94,58,.14) !important;
     color: var(--ink2) !important;
-    font-size: 10px !important;
-    padding: 11px 8px 9px !important;
+    font-size: 11px !important;
+    letter-spacing: 1.8px !important;
   }
   body.r-dark #pg-home .home-dqa-btn {
-    background: rgba(10, 35, 20, 0.82) !important;
-    border-color: rgba(116,198,157,.40) !important;
-    color: rgba(200,230,210,.92) !important;
+    background: rgba(255,255,255,.07) !important;
+    border-color: rgba(255,255,255,.13) !important;
+    color: rgba(255,255,255,.82) !important;
+  }
+  body.r-dark #pg-home .home-dqa-btn svg {
+    color: rgba(116,198,157,.90) !important;
   }
   /* JARDÍN label — larger, more contrast */
   #homeHeroLabel {
