@@ -8092,8 +8092,8 @@ body.r-dark .r-desk-qlink:hover {
     grid-row: 2 !important;
     align-items: center !important;
   }
-  /* Status/privacy card lives in Profile on desktop — hide from home hero */
-  #homeStatusToggle { display: none !important; }
+  /* Constrain status toggle width to match shortcuts grid */
+  #homeStatusToggle { max-width: 560px; width: 100%; }
   /* Constrain shortcut grid and action buttons to sensible width */
   .r-home-shortcut-grid { max-width: 560px !important; }
   .r-hero-actions { max-width: 560px !important; }
