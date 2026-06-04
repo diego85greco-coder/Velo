@@ -4140,7 +4140,7 @@ async function pRenderNews(){
   // No valid cache — show loading state, then fetch
   newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
 
-  // Admin-published news take priority over AI-generated ones
+  // Admin-published news — load first and show immediately, Gemini continues in background
   _initSupabase();
   var adminNews = (await sbLoadAdminNews()).map(function(n){
     return { emoji:n.emoji||'📰', titulo:n.titulo, cuerpo:n.cuerpo, reflexion:'',
@@ -4150,6 +4150,9 @@ async function pRenderNews(){
     _renderNewsList(newsEl, adminNews);
     return;
   }
+  // Show admin news right away so the user isn't staring at a spinner while Gemini fetches
+  if(adminNews.length) _renderNewsList(newsEl, adminNews);
+  else newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
 
   var monthYear = ['enero','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][new Date().getMonth()]+' '+new Date().getFullYear();
 

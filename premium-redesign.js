@@ -144,13 +144,13 @@
 
     // Particle animations — light color / dark mode color pairs
     setTimeout(function() {
-      initParticles('landingCanvas',    100, 0.55, '232,213,163', '140,210,155');
-      initParticles('loginCanvas',       70, 0.45, '232,213,163', '140,210,155');
-      initParticles('registerCanvas',    70, 0.45, '232,213,163', '140,210,155');
+      initParticles('landingCanvas',    100, 0.55, '155,108,32',  '140,210,155');
+      initParticles('loginCanvas',       70, 0.48, '155,108,32',  '140,210,155');
+      initParticles('registerCanvas',    70, 0.48, '155,108,32',  '140,210,155');
       initParticles('homeBgCanvas',     130, 0.42, '200,158,56',  '130,205,145');
-      initParticles('profileBgCanvas',   70, 0.34, '80,170,220',  '100,200,180');
-      initParticles('helpBgCanvas',      65, 0.42, '109,204,63',  '120,200,240');
-      initParticles('respiraBgCanvas',   60, 0.38, '120,210,220', '80,190,215');
+      initParticles('profileBgCanvas',   70, 0.38, '80,140,200',  '100,200,180');
+      initParticles('helpBgCanvas',      65, 0.42, '60,140,90',   '120,200,240');
+      initParticles('respiraBgCanvas',   60, 0.42, '80,190,210',  '80,190,215');
       setTimeout(initAllPageParticles, 200);
     }, 300);
 
@@ -371,7 +371,7 @@ function initAllPageParticles() {
     cv.setAttribute('aria-hidden', 'true');
     cv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0';
     page.insertBefore(cv, page.firstChild);
-    initParticles(canvasId, 55, 0.28, '232,213,163', '140,210,155');
+    initParticles(canvasId, 55, 0.42, '150,105,30',  '140,210,155');
   });
 }
 
