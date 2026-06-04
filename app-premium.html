@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-425">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-425">
+  <link rel="stylesheet" href="premium.css?v=20260530-426">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-426">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -2552,6 +2552,7 @@
         <span class="reply-preview-text"></span>
         <button onclick="pClearReplyBar('dmReplyBar')" class="reply-bar-close">✕</button>
       </div>
+      <div id="dmEmojiPanel" style="display:none;flex-wrap:wrap;gap:4px;padding:8px 12px;background:var(--cream2);border-top:1px solid var(--border2);flex-shrink:0"></div>
       <div class="feed-input-area">
         <button type="button" onclick="pToggleDMEmojis()" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px 6px;flex-shrink:0" title="Emojis">😊</button>
         <textarea id="dmInput" class="feed-input" rows="1" placeholder="Escribí algo con amor..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendDM();}"></textarea>
@@ -3100,8 +3101,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-425"></script>
-<script src="premium-redesign.js?v=20260530-425"></script>
+<script src="premium.js?v=20260530-426"></script>
+<script src="premium-redesign.js?v=20260530-426"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

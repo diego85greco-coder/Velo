@@ -9106,13 +9106,12 @@ function pClearCircleChat(){
   if(el) el.innerHTML = '';
 }
 
-var _dmEmojiList = ['😊','😂','❤️','🙏','💪','✨','🌿','🤗','😢','😔','💙','🌸','🍃','🌈','🕊️','💚'];
+var _dmEmojiList = ['😂','❤️','🙏','💪','✨','🌿','🤗','😢','😔','💙','🌸','🍃','🌈','🕊️','💚','🫂'];
 function pToggleDMEmojis(){
   var panel = document.getElementById('dmEmojiPanel');
-  if(!panel){
-    panel = document.createElement('div');
-    panel.id = 'dmEmojiPanel';
-    panel.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px;background:var(--cream2);border-top:1px solid var(--border2);flex-shrink:0';
+  if(!panel) return;
+  // Populate lazily on first open
+  if(!panel.hasChildNodes()){
     _dmEmojiList.forEach(function(em){
       var btn = document.createElement('button');
       btn.type = 'button';
@@ -9120,15 +9119,18 @@ function pToggleDMEmojis(){
       btn.style.cssText = 'font-size:22px;background:none;border:none;cursor:pointer;padding:4px';
       btn.onclick = function(){
         var inp = document.getElementById('dmInput');
-        if(inp){ inp.value += em; inp.focus(); }
+        if(!inp) return;
+        var pos = inp.selectionStart != null ? inp.selectionStart : inp.value.length;
+        inp.value = inp.value.slice(0, pos) + em + inp.value.slice(pos);
+        inp.selectionStart = inp.selectionEnd = pos + em.length;
+        inp.dispatchEvent(new Event('input', {bubbles:true}));
+        inp.focus();
       };
       panel.appendChild(btn);
     });
-    var inputArea = document.querySelector('#pg-dm-chat .feed-input-area');
-    if(inputArea) inputArea.parentNode.insertBefore(panel, inputArea);
-  } else {
-    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
   }
+  var hidden = !panel.style.display || panel.style.display === 'none';
+  panel.style.display = hidden ? 'flex' : 'none';
 }
 
 async function pClearDMChat(){
