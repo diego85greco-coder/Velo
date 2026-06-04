@@ -6910,28 +6910,19 @@ async function _renderHappyHistory(list, wallPosts, wallMyId){
   if((sbUid||sbEmail) && sbClient){
     if(!history.length) list.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Sincronizando historial…</div>';
     try{
-      var orParts = [];
-      if(sbUid)   orParts.push('user_id.eq.'+sbUid);
-      if(sbEmail) orParts.push('user_id.eq.'+sbEmail);
-      // Primary: happy_history (permanent, cross-device)
+      // Use UUID when available, fall back to email — no .or() to avoid PostgREST parse errors
       var _hUidFilter = sbUid || sbEmail;
-      var _hEmailFilter = sbUid ? sbEmail : '';
-      var qh = sbClient.from('happy_history').select('id,emoji,text,created_at');
-      if(sbUid && sbEmail) qh = qh.or('user_id.eq.'+sbUid+',user_id.eq.'+sbEmail);
-      else qh = qh.eq('user_id', _hUidFilter);
+      // Primary: happy_history (permanent, cross-device)
+      var qh = sbClient.from('happy_history').select('id,emoji,text,created_at').eq('user_id', _hUidFilter);
       var sh = await qh.order('created_at',{ascending:false}).limit(500);
       // If emoji column missing (schema mismatch), retry without it
       if(sh.error && sh.error.message && sh.error.message.indexOf('emoji') >= 0){
-        var qh2 = sbClient.from('happy_history').select('id,text,created_at');
-        if(sbUid && sbEmail) qh2 = qh2.or('user_id.eq.'+sbUid+',user_id.eq.'+sbEmail);
-        else qh2 = qh2.eq('user_id', _hUidFilter);
-        sh = await qh2.order('created_at',{ascending:false}).limit(500);
+        sh = await sbClient.from('happy_history').select('id,text,created_at')
+          .eq('user_id', _hUidFilter).order('created_at',{ascending:false}).limit(500);
       }
       // Fallback: happy_posts (only last 24h, but covers very recent posts not yet in history)
-      var qp = sbClient.from('happy_posts').select('id,emoji,text,created_at');
-      if(sbUid && sbEmail) qp = qp.or('user_id.eq.'+sbUid+',user_id.eq.'+sbEmail);
-      else qp = qp.eq('user_id', _hUidFilter);
-      var sp = await qp.order('created_at',{ascending:false}).limit(50);
+      var sp = await sbClient.from('happy_posts').select('id,emoji,text,created_at')
+        .eq('user_id', _hUidFilter).order('created_at',{ascending:false}).limit(50);
       var merged = [].concat(sh.error ? [] : (sh.data||[]), sp.error ? [] : (sp.data||[]));
       if(merged.length){
         var existIds = {};
@@ -7159,13 +7150,17 @@ async function pDeleteHappyPost(postId){
 
 function pToggleHappyFav(btn, userId, name, av){
   if(!userId) return;
-  var isFav = pIsFav(userId);
-  if(isFav){
+  if(pIsFav(userId)){
     pRemoveFav(userId);
-    if(btn){ btn.textContent = '☆'; btn.style.background = 'rgba(255,200,50,.06)'; btn.style.borderColor = 'rgba(255,200,50,.2)'; }
   } else {
     pAddFav(userId, name, av);
-    if(btn){ btn.textContent = '⭐'; btn.style.background = 'rgba(255,200,50,.2)'; btn.style.borderColor = 'rgba(255,200,50,.5)'; }
+  }
+  // Re-read actual state after toggle so the button always reflects reality
+  var nowFav = pIsFav(userId);
+  if(btn){
+    btn.textContent = nowFav ? '⭐' : '☆';
+    btn.style.background  = nowFav ? 'rgba(255,200,50,.2)'  : 'rgba(255,200,50,.06)';
+    btn.style.borderColor = nowFav ? 'rgba(255,200,50,.5)'  : 'rgba(255,200,50,.2)';
   }
 }
 

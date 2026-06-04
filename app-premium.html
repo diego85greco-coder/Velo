@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-404">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-404">
+  <link rel="stylesheet" href="premium.css?v=20260530-405">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-405">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1361,7 +1361,8 @@
       </div><!-- /pg-help -->
 
       <!-- ══ HELP CHAT ════════════════════════════════════════════ -->
-      <div class="p-page" id="pg-help-chat" data-chat-room="help" style="flex-direction:column;height:100%;overflow:hidden;background:linear-gradient(160deg,#0B1C0E,#080E08)">
+      <div class="p-page" id="pg-help-chat" data-chat-room="help" style="flex-direction:column;height:100%;overflow:hidden">
+        <canvas id="helpChatBgCanvas" aria-hidden="true" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas>
         <div class="feed-header" style="background:rgba(8,20,10,.9);border-bottom:1px solid rgba(116,198,157,.15)">
           <div class="feed-header-info" style="flex:1;min-width:0">
             <span style="font-size:22px" id="helpChatEmoji">💚</span>
@@ -3077,8 +3078,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-404"></script>
-<script src="premium-redesign.js?v=20260530-404"></script>
+<script src="premium.js?v=20260530-405"></script>
+<script src="premium-redesign.js?v=20260530-405"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

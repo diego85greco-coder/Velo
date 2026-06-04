@@ -7906,11 +7906,29 @@ body.r-dark #happyPhotoLabel > span[style*="border-radius: 20px"] {
 
 /* ── v396: Mobile — page background cream so particles are visible ── */
 @media (max-width: 767px) {
-  .p-page:not(#pg-respira):not(#pg-bottle)       { background: var(--cream); }
-  .p-page.active:not(#pg-respira):not(#pg-bottle) { background: var(--cream); }
+  .p-page:not(#pg-respira):not(#pg-bottle):not(#pg-help-chat)       { background: var(--cream); }
+  .p-page.active:not(#pg-respira):not(#pg-bottle):not(#pg-help-chat) { background: var(--cream); }
 }
 
 /* ── v390: Buenas Noticias — warm background + dark mode card readability ── */
+/* ── Help chat: dark bg in CSS so particles canvas can render above it ─────── */
+#pg-help-chat {
+  background: linear-gradient(160deg, #0B1C0E 0%, #080E08 100%) !important;
+}
+/* ── DM chat + Guardian chat: subtle tinted bg so particles show ─────────── */
+#pg-dm-chat {
+  background: var(--cream) !important;
+}
+body.r-dark #pg-dm-chat {
+  background: linear-gradient(160deg, #0e1410 0%, #0c1218 100%) !important;
+}
+#pg-guardian-chat {
+  background: var(--cream) !important;
+}
+body.r-dark #pg-guardian-chat {
+  background: linear-gradient(160deg, #0d1610 0%, #0a1012 100%) !important;
+}
+
 /* Backgrounds on #pg-news (not .p-page-scroll) so canvas particles show above them */
 #pg-news {
   background: linear-gradient(160deg, #fdf8ef 0%, #edf5f0 100%) !important;
