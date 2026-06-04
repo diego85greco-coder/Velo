@@ -5990,9 +5990,22 @@ async function _checkMonthlyMoodReport(){
   if(!happyArr.length) unusedSections.push('el Muro de la Felicidad 🌻');
   if(!myBottles.length) unusedSections.push('Mensajes al Mar 🌊');
 
+  var MIN_DAYS_FOR_ANALYSIS = 5;
   var analysis;
   if(!totalDays){
     analysis = 'No registraste tu ánimo en '+monthName+'. Recordá que el seguimiento diario te ayuda a conocerte mejor. ¡Este mes es una nueva oportunidad! 🌱';
+  } else if(totalDays < MIN_DAYS_FOR_ANALYSIS){
+    // Not enough data for a meaningful AI analysis
+    var communityLines = [];
+    if(helpedOthers > 0) communityLines.push('acompañaste a '+helpedOthers+' persona'+(helpedOthers>1?'s':'')+' como guardián/a 💙');
+    if(helpReceived > 0) communityLines.push('recibiste apoyo '+helpReceived+' vez'+(helpReceived>1?'es':'')+' 🌿');
+    if(bottleCount > 0) communityLines.push('lanzaste '+bottleCount+' mensaje'+(bottleCount>1?'s':'')+' al Mar 🌊');
+    if(happyStats.posts > 0) communityLines.push('compartiste '+happyStats.posts+' momento'+(happyStats.posts>1?'s':'')+' en el Muro 🌻');
+    if(diaryCount > 0) communityLines.push('escribiste '+diaryCount+' entrada'+(diaryCount>1?'s':'')+' en tu diario 📔');
+    var communityText = communityLines.length
+      ? ' Eso sí, este mes '+communityLines.join(', ')+'. ¡Eso también cuenta!'
+      : ' Animate a explorar más espacios de Velo: el Muro de la Felicidad, el Diario o los Mensajes al Mar te esperan. 🌿';
+    analysis = 'En '+monthName+' registraste solo '+totalDays+' día'+(totalDays>1?'s':'')+' de ánimo — necesitamos al menos '+MIN_DAYS_FOR_ANALYSIS+' para hacer un análisis emocional personalizado. No alcanzó esta vez, pero ¡ya sabés cómo funciona! Registrá a diario este mes y el 1° de '+monthNames[today.getMonth()+1 > 12 ? 1 : today.getMonth()+1]+' vas a recibir tu análisis completo. 📊'+communityText;
   } else {
     var moodList = Object.entries(moodCounts).map(function(e){ return e[0]+' ('+e[1]+' días)'; }).join(', ');
     var topFirst  = Object.keys(firstHalf).sort(function(a,b){ return (firstHalf[b]||0)-(firstHalf[a]||0); })[0]||'variado';
