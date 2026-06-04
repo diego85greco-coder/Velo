@@ -3089,10 +3089,8 @@ body.r-dark #gdReviews [style*="color:var(--ink5)"] { color: rgba(255,255,255,.5
   }
 }
 
-/* ── 2. Al Mar: bg-day.jpg lives on .p-page-scroll, not #pg-bottle ─── */
-body.r-dark #pg-bottle .p-page-scroll {
-  background: linear-gradient(160deg, #061810 0%, #081a12 55%, #061210 100%) !important;
-}
+/* ── 2. Al Mar: bg now on #pg-bottle so canvas particles show above it ─── */
+/* dark mode bg already set on body.r-dark #pg-bottle above — no .p-page-scroll rule needed */
 
 /* ── 3. Sala de Ayuda: bg-day.jpg lives on .p-page-scroll ───────────── */
 body.r-dark #pg-help .p-page-scroll {
@@ -7893,8 +7891,8 @@ body.r-dark #happyPhotoLabel > span[style*="border-radius: 20px"] {
 
 /* ── v394: Particle stacking — all direct page children above canvas ── */
 .p-page > .p-page-scroll,
-.p-page > div[id],
-.p-page > div[class],
+.p-page > div[id]:not(.p-modal-ov),
+.p-page > div[class]:not(.p-modal-ov),
 .p-page > header,
 .p-page > main {
   position: relative;
@@ -7908,10 +7906,11 @@ body.r-dark #happyPhotoLabel > span[style*="border-radius: 20px"] {
 }
 
 /* ── v390: Buenas Noticias — warm background + dark mode card readability ── */
-#pg-news .p-page-scroll {
+/* Backgrounds on #pg-news (not .p-page-scroll) so canvas particles show above them */
+#pg-news {
   background: linear-gradient(160deg, #fdf8ef 0%, #edf5f0 100%) !important;
 }
-body.r-dark #pg-news .p-page-scroll {
+body.r-dark #pg-news {
   background: linear-gradient(160deg, #111a13 0%, #0c1820 100%) !important;
 }
 body.r-dark #pg-news .p-card {
