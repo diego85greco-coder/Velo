@@ -8386,3 +8386,7 @@ body:not(.r-dark) #homeProfileFab {
   animation: none !important;
   transform: none !important;
 }
+
+/* ── Monthly hint text: dark in light mode, white in dark mode ── */
+#homeMonthlyHint { color: rgba(0,0,0,.60); }
+body.r-dark #homeMonthlyHint { color: rgba(255,255,255,.78); }
