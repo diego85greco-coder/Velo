@@ -144,12 +144,13 @@
 
     // Particle animations — light color / dark mode color pairs
     setTimeout(function() {
-      initParticles('landingCanvas',   100, 0.55, '232,213,163', '140,210,155');
-      initParticles('loginCanvas',      70, 0.45, '232,213,163', '140,210,155');
-      initParticles('registerCanvas',   70, 0.45, '232,213,163', '140,210,155');
-      initParticles('homeBgCanvas',    130, 0.42, '200,158,56',  '130,205,145');
-      initParticles('profileBgCanvas',  70, 0.34, '80,170,220',  '100,200,180');
-      initParticles('helpBgCanvas',     65, 0.42, '109,204,63',  '120,200,240');
+      initParticles('landingCanvas',    100, 0.55, '232,213,163', '140,210,155');
+      initParticles('loginCanvas',       70, 0.45, '232,213,163', '140,210,155');
+      initParticles('registerCanvas',    70, 0.45, '232,213,163', '140,210,155');
+      initParticles('homeBgCanvas',     130, 0.42, '200,158,56',  '130,205,145');
+      initParticles('profileBgCanvas',   70, 0.34, '80,170,220',  '100,200,180');
+      initParticles('helpBgCanvas',      65, 0.42, '109,204,63',  '120,200,240');
+      initParticles('respiraBgCanvas',   60, 0.38, '120,210,220', '80,190,215');
       setTimeout(initAllPageParticles, 200);
     }, 300);
 
