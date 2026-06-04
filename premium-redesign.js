@@ -142,14 +142,15 @@
     syncHeroStats();
     setInterval(syncHeroStats, 5000);
 
-    // Particle animations — green for light bg, warm gold for dark bg
+    // Particle animations — light color / dark mode color pairs
     setTimeout(function() {
-      initParticles('landingCanvas',   100, 0.55);
-      initParticles('loginCanvas',      70, 0.45);
-      initParticles('registerCanvas',   70, 0.45);
-      initParticles('homeBgCanvas',    130, 0.42, '200,158,56');  // warm gold
-      initParticles('profileBgCanvas',  70, 0.34, '80,170,220');  // sky blue
-      initParticles('helpBgCanvas',     65, 0.42, '109,204,63');
+      initParticles('landingCanvas',   100, 0.55, '232,213,163', '140,210,155');
+      initParticles('loginCanvas',      70, 0.45, '232,213,163', '140,210,155');
+      initParticles('registerCanvas',   70, 0.45, '232,213,163', '140,210,155');
+      initParticles('homeBgCanvas',    130, 0.42, '200,158,56',  '130,205,145');
+      initParticles('profileBgCanvas',  70, 0.34, '80,170,220',  '100,200,180');
+      initParticles('helpBgCanvas',     65, 0.42, '109,204,63',  '120,200,240');
+      setTimeout(initAllPageParticles, 200);
     }, 300);
 
     initGuardianLabelObserver();
@@ -283,11 +284,12 @@ function rToggleDarkMode() {
 }
 
 /* ── Particle animation — firefly + rising embers style ─────────── */
-function initParticles(canvasId, count, maxOpacity, color) {
+function initParticles(canvasId, count, maxOpacity, color, darkColor) {
   var canvas = document.getElementById(canvasId);
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
-  var particleColor = color || '232,213,163';
+  var lightColor = color || '232,213,163';
+  var darkModeColor = darkColor || '140,210,155';
   var particles = [];
   function resize() {
     canvas.width  = canvas.offsetWidth  || window.innerWidth  || 600;
@@ -296,7 +298,7 @@ function initParticles(canvasId, count, maxOpacity, color) {
   resize();
   window.addEventListener('resize', resize);
   for (var i = 0; i < count; i++) {
-    var kind = Math.random(); // 0-0.5 = firefly, 0.5-0.8 = rising ember, 0.8-1 = slow drifter
+    var kind = Math.random();
     var isRising = kind > 0.5 && kind <= 0.8;
     var isDrifter = kind > 0.8;
     particles.push({
@@ -308,23 +310,27 @@ function initParticles(canvasId, count, maxOpacity, color) {
       op:    0.06 + Math.random() * maxOpacity,
       phase: Math.random() * Math.PI * 2,
       pulse: Math.random() * Math.PI * 2,
-      pspd:  0.008 + Math.random() * 0.018  // pulse speed
+      pspd:  0.008 + Math.random() * 0.018
     });
   }
   var frame = 0;
   function draw() {
+    // Skip drawing when owning page is inactive (saves CPU on hidden pages)
+    var page = canvas.closest && canvas.closest('.p-page');
+    if (page && !page.classList.contains('active')) {
+      requestAnimationFrame(draw);
+      return;
+    }
+    var particleColor = document.body.classList.contains('r-dark') ? darkModeColor : lightColor;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     frame++;
     particles.forEach(function(p) {
-      // Organic drift motion
       p.x += p.vx + Math.sin(frame * 0.009 + p.phase) * 0.28;
       p.y += p.vy + Math.cos(frame * 0.011 + p.phase) * 0.22;
-      // Wrap with soft margin
       if (p.x < -20) p.x = canvas.width  + 20;
       if (p.x > canvas.width  + 20) p.x = -20;
       if (p.y < -20) p.y = canvas.height + 20;
       if (p.y > canvas.height + 20) p.y = -20;
-      // Gentle breathing opacity
       var pulseOp = p.op * (0.55 + 0.45 * Math.sin(frame * p.pspd + p.pulse));
       var radius = p.r * 3.2;
       var gr = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
@@ -339,6 +345,23 @@ function initParticles(canvasId, count, maxOpacity, color) {
     requestAnimationFrame(draw);
   }
   draw();
+}
+
+/* ── Inject particle canvas into every standard content page ─────── */
+function initAllPageParticles() {
+  document.querySelectorAll('.p-page').forEach(function(page) {
+    // Skip pages that already have a canvas (landing/login/register/home/help/profile/respira)
+    if (page.querySelector('canvas')) return;
+    // Skip pages without .p-page-scroll (chat rooms, special overflow layouts)
+    if (!page.querySelector('.p-page-scroll')) return;
+    var canvasId = 'pgBg_' + (page.id || Math.random().toString(36).slice(2));
+    var cv = document.createElement('canvas');
+    cv.id = canvasId;
+    cv.setAttribute('aria-hidden', 'true');
+    cv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none';
+    page.insertBefore(cv, page.firstChild);
+    initParticles(canvasId, 55, 0.28, '232,213,163', '140,210,155');
+  });
 }
 
 /* ── Guardian sub-label: "Modo guardián activo" when ON ───────────── */
