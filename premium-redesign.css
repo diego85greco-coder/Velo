@@ -7911,7 +7911,7 @@ body.r-dark #happyPhotoLabel > span[style*="border-radius: 20px"] {
   /* Home canvas: lift ABOVE glass cards so particles float over the interface */
   #homeBgCanvas {
     z-index: 2 !important;
-    opacity: 0.28;
+    opacity: 0.48;
   }
 }
 
