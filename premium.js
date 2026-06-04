@@ -4142,25 +4142,35 @@ function pDismissGreeting(){
   setTimeout(function(){ if(card.parentNode) card.parentNode.removeChild(card); }, 340);
 }
 
-async function pRenderNews(){
+function pForceRefreshNews(){
+  var today = new Date().toISOString().slice(0,10);
+  safeLS('del', 'velo_goodnews_'+today);
+  var newsEl = document.getElementById('newsContainer');
+  if(newsEl) newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🔄 Actualizando noticias...</div>';
+  pRenderNews(true);
+}
+
+async function pRenderNews(forceRefresh){
   var newsEl = document.getElementById('newsContainer');
   if(!newsEl) return;
   var today = new Date().toISOString().slice(0,10);
   var cacheKey = 'velo_goodnews_'+today;
 
-  // Check cache FIRST — render immediately without waiting for network
-  var cached = safeLS('get', cacheKey);
-  if(cached){
-    try{
-      var cachedItems = JSON.parse(cached);
-      // Skip static fallback cache — always re-fetch if we only have static content
-      var isLive = cachedItems.some(function(it){ return it._src === 'g' || it._src === 'ai'; });
-      if(isLive){ _renderNewsList(newsEl, cachedItems); return; }
-    }catch(e){}
+  // Check cache FIRST — render immediately without waiting for network (skip on force refresh)
+  if(!forceRefresh){
+    var cached = safeLS('get', cacheKey);
+    if(cached){
+      try{
+        var cachedItems = JSON.parse(cached);
+        // Skip static fallback cache — always re-fetch if we only have static content
+        var isLive = cachedItems.some(function(it){ return it._src === 'g' || it._src === 'ai'; });
+        if(isLive){ _renderNewsList(newsEl, cachedItems); return; }
+      }catch(e){}
+    }
   }
 
   // No valid cache — show loading state, then fetch
-  newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
+  if(!forceRefresh) newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
 
   // Admin-published news — load first and show immediately, Gemini continues in background
   _initSupabase();
@@ -4172,9 +4182,10 @@ async function pRenderNews(){
     _renderNewsList(newsEl, adminNews);
     return;
   }
-  // Show admin news right away so the user isn't staring at a spinner while Gemini fetches
-  if(adminNews.length) _renderNewsList(newsEl, adminNews);
-  else newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
+  // On force refresh: keep spinner visible while Gemini loads (don't show admin news early)
+  // On normal load: show admin news right away so user isn't staring at a spinner
+  if(!forceRefresh && adminNews.length) _renderNewsList(newsEl, adminNews);
+  else if(!forceRefresh) newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
 
   var monthYear = ['enero','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][new Date().getMonth()]+' '+new Date().getFullYear();
 
