@@ -530,6 +530,11 @@ async function _sbSyncProfile(userId){
   // Refresh all UI with synced data — use localStorage (already repaired) over raw Supabase value
   var hn = document.getElementById('homeUserName');
   if(hn) hn.textContent = safeLS('get','velo_user_name') || p.nombre || '';
+  // Remove the name banner if Supabase returned a real name (handles the race condition where
+  // the banner was shown before this async call completed)
+  if(typeof _checkAndShowNameBanner === 'function'){
+    _checkAndShowNameBanner(safeLS('get','velo_user_name') || '');
+  }
   _updateSidebarUser();
   _updateTopbarMoodBadge();
   pLoadProfile();
@@ -1245,13 +1250,20 @@ function _loadHomeData(){
   if(gt) gt.textContent = greet;
   if(dt) dt.textContent = dateStr;
 
-  var name = safeLS('get','velo_user_name') || 'Hola';
+  var name = safeLS('get','velo_user_name') || '';
   var av = safeLS('get','velo_user_av') || '🧑';
   var un = document.getElementById('homeUserName');
   var ha = document.getElementById('homeAv');
-  if(un) un.textContent = name;
-  // Show name-fix banner if the displayed name looks like an email prefix
-  _checkAndShowNameBanner(name);
+  if(un) un.textContent = name || 'Hola';
+  // Show name-fix banner only after Supabase sync has had time to run.
+  // If name is already in localStorage (returning user on same device), check immediately.
+  // If localStorage is empty (new device), wait 3s so _sbSyncProfile can populate it first —
+  // this prevents a flash of the banner when Supabase already has a valid real name.
+  if(name){
+    _checkAndShowNameBanner(name);
+  } else {
+    setTimeout(function(){ _checkAndShowNameBanner(safeLS('get','velo_user_name')||''); }, 3000);
+  }
   if(ha){ _renderAvatarEl('homeAv', av); }
 
   // Guardian button in home header
