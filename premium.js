@@ -50,7 +50,8 @@ var _dmRtCh      = null;   // realtime channel direct_messages (per-thread)
 var _dmInboxCh   = null;   // realtime channel direct_messages (global inbox listener)
 var _dmPollTmr   = null;   // polling fallback for global DM inbox
 var _buzónRtCh   = null;   // realtime channel broadcasts (personal buzón alerts)
-var _dmLastMsgId = null;   // last rendered DM message DB id (prevents flicker)
+var _dmLastMsgId    = null;   // last rendered DM message DB id (prevents flicker)
+var _dmSessionStart = null;   // ISO timestamp when current DM session began (filters old history)
 var _favsList     = null;   // cached favorites array (loaded lazily)
 var _prevChatStatus = null; // status saved before entering any chat (restored on exit)
 var _inActiveChat   = false; // true while user is in any live chat session
@@ -9172,11 +9173,19 @@ function _enterDMChat(toId, toName, toAv){
   _inActiveChat = true;
   _updateGuardianPresence('ocupado');
   _dmPeer = { id:toId, name:toName||'Usuario', av:toAv||'🧑' };
-  _dmLastMsgId = null; // reset so first render is a clean full load
+  _dmLastMsgId    = null;
+  _dmSessionStart = new Date().toISOString(); // only show messages from this session onward
   var unread = {}; try{ unread = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
   delete unread[toId];
   safeLS('set','velo_dm_unread', JSON.stringify(unread));
   _updateFavBadge();
+  // Clean up stale state from any previous session
+  var oldBanner = document.getElementById('dmExitBanner');
+  if(oldBanner) oldBanner.remove();
+  var inp = document.getElementById('dmInput');
+  if(inp){ inp.disabled = false; inp.placeholder = 'Escribí un mensaje…'; inp.value = ''; }
+  var msgEl = document.getElementById('dmMessages');
+  if(msgEl) msgEl.innerHTML = '';
   var hdr = document.getElementById('dmPeerName');
   if(hdr) hdr.textContent = toName||'Usuario';
   var hdrAv = document.getElementById('dmPeerAv');
@@ -9218,7 +9227,13 @@ async function _renderDMThread(){
       .or('and(from_id.eq.'+myId+',to_id.eq.'+_dmPeer.id+'),and(from_id.eq.'+_dmPeer.id+',to_id.eq.'+myId+')')
       .order('created_at',{ascending:true}).limit(100);
     var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-    var msgs = (data||[]).filter(function(m){ var t=m.text||''; return sentinels.indexOf(t)<0&&!t.startsWith('__velo_guardian_req__:')&&!t.startsWith('__velo_guardian_acc__:')&&!t.startsWith('__velo_guardian_rej__:')&&!t.startsWith('__velo_guardian_bye__:')&&!t.startsWith('__velo_dm_bye__:')&&!t.startsWith('__velo_help_bye__:'); });
+    var msgs = (data||[]).filter(function(m){
+      var t=m.text||'';
+      if(sentinels.indexOf(t)>=0||t.startsWith('__velo_guardian_req__:')||t.startsWith('__velo_guardian_acc__:')||t.startsWith('__velo_guardian_rej__:')||t.startsWith('__velo_guardian_bye__:')||t.startsWith('__velo_dm_bye__:')||t.startsWith('__velo_help_bye__:')) return false;
+      // Only show messages from this session onward (hides old chat history)
+      if(_dmSessionStart && m.created_at && m.created_at < _dmSessionStart) return false;
+      return true;
+    });
     if(!msgs.length){
       if(!el.querySelector('.dm-empty-state')){
         el.innerHTML = '<div class="dm-empty-state" style="text-align:center;padding:40px 16px 20px">'
