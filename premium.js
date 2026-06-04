@@ -66,11 +66,11 @@ function _uAt(uid){
 async function _geminiCallGrounded(prompt, cfg){
   // Try Vercel serverless proxy first, fall back to direct call
   var sources = [
-    function(){ return fetch(GEMINI_PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ type:'grounded', prompt:prompt, cfg:cfg||{} }) }); },
-    function(){ return fetch(GEMINI_URLS[0] + GEMINI_KEY, { method:'POST', headers:{'Content-Type':'application/json'},
+    function(){ return fetch(GEMINI_PROXY, { method:'POST', cache:'no-store', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ type:'grounded', prompt:prompt, cfg:Object.assign({ temperature:0.9 }, cfg||{}) }) }); },
+    function(){ return fetch(GEMINI_URLS[0] + GEMINI_KEY, { method:'POST', cache:'no-store', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ contents:[{ parts:[{ text:prompt }] }], tools:[{ google_search:{} }],
-        generationConfig: Object.assign({ temperature:0.5, maxOutputTokens:1500 }, cfg||{}) }) }); }
+        generationConfig: Object.assign({ temperature:0.9, maxOutputTokens:1500 }, cfg||{}) }) }); }
   ];
   for(var i=0; i<sources.length; i++){
     try{
@@ -4187,16 +4187,26 @@ async function pRenderNews(forceRefresh){
   if(!forceRefresh && adminNews.length) _renderNewsList(newsEl, adminNews);
   else if(!forceRefresh) newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
 
-  var monthYear = ['enero','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][new Date().getMonth()]+' '+new Date().getFullYear();
+  var _nd = new Date();
+  var monthYear = ['enero','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][_nd.getMonth()]+' '+_nd.getFullYear();
+  var todayFull = _nd.getDate()+' de '+['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][_nd.getMonth()]+' de '+_nd.getFullYear();
+  // Rotate topics daily so each refresh brings a different angle
+  var _topicSets = [
+    'avances médicos, nuevos tratamientos, salud mental positiva',
+    'naturaleza, conservación animal, reforestación, océanos limpios',
+    'solidaridad humana, voluntariado, comunidades que se ayudan',
+    'ciencia y tecnología para el bien, energía renovable, accesibilidad',
+    'educación, arte, cultura, deportes inspiradores'
+  ];
+  var _topicFocus = _topicSets[(_nd.getDate() + (forceRefresh ? Math.floor(Math.random()*5) : 0)) % _topicSets.length];
+  var _seed = forceRefresh ? ' Session:'+Date.now() : '';
 
   // Attempt 1: Grounded search — Gemini with Google Search finds real articles with verified URLs
-  // We ask Gemini to include the sourceUrl directly in JSON (it has web access via grounding tool).
-  // Grounding chunks are used as a secondary fallback for items that got no URL from the JSON.
-  var gPrompt = 'Use Google Search to find 5 real positive news stories published recently ('+monthYear+'). '
-    +'Topics: medical breakthroughs, environment/nature wins, human solidarity, science, animals rescued, social innovation. '
+  var gPrompt = 'Today is '+todayFull+'.'+_seed+' Use Google Search to find 5 DIFFERENT real positive news stories published in the last 7 days. '
+    +'Focus on: '+_topicFocus+'. '
     +'For EACH story you MUST include: the real article URL (sourceUrl), the news outlet name (sourceName), '
-    +'the article title, a 2-3 sentence summary in Argentine Spanish (rioplatense), and a short wellbeing reflection. '
-    +'Only include stories you actually found via Google Search — do NOT invent stories or URLs. '
+    +'the article title, a 2-3 sentence summary in Argentine Spanish (rioplatense, vos/vosotros), and a short wellbeing reflection. '
+    +'ONLY include stories actually found via Google Search today — do NOT repeat stories from previous searches, do NOT use training data. '
     +'Respond ONLY with valid JSON array, no markdown fences: '
     +'[{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"...","sourceName":"...","sourceUrl":"https://..."}]';
 
@@ -4239,14 +4249,22 @@ async function pRenderNews(forceRefresh){
   }
 
   if(!items.length){
-    // Static curated fallback — always show something positive
-    items = [
-      { emoji:'🌱', titulo:'Reforestación récord: 1.000 millones de árboles plantados en 2024', cuerpo:'Una coalición de países y organizaciones alcanzó el hito histórico de plantar mil millones de árboles en un solo año, contribuyendo a absorber millones de toneladas de CO₂ y restaurar ecosistemas degradados en cinco continentes.', reflexion:'Cada árbol es un acto de fe en el futuro. La humanidad puede regenerarse cuando actúa unida. 🌿', _src:'static' },
-      { emoji:'💊', titulo:'Nueva terapia elimina dolor crónico sin opioides en ensayo clínico', cuerpo:'Investigadores desarrollaron un tratamiento basado en neuromodulación que redujo el dolor crónico en un 80% de los participantes sin generar dependencia, abriendo una nueva era en el manejo del dolor.', reflexion:'El alivio del sufrimiento humano sigue avanzando. La ciencia trabaja para que vivir bien sea posible para todos. 💙', _src:'static' },
-      { emoji:'🤝', titulo:'Comunidades rurales en África logran autosuficiencia energética solar', cuerpo:'Más de 200 aldeas en África Subsahariana accedieron por primera vez a electricidad limpia gracias a micro-redes solares comunitarias, transformando la educación, la salud y la economía local.', reflexion:'La energía limpia no es solo tecnología — es dignidad y oportunidad. ✨', _src:'static' },
-      { emoji:'🐋', titulo:'Población de ballenas jorobadas se recuperó al 93% respecto a niveles históricos', cuerpo:'Después de décadas de protección internacional, las ballenas jorobadas del Atlántico Sur alcanzaron casi su población pre-cacería, en uno de los mayores éxitos de conservación marina de la historia.', reflexion:'La naturaleza sana cuando le damos tiempo y espacio. Esta historia nos recuerda que el daño puede revertirse. 🌊', _src:'static' },
-      { emoji:'📚', titulo:'País nórdico logra 100% de alfabetización digital en adultos mayores de 60', cuerpo:'Un programa nacional de inclusión digital capacitó a más de 400.000 personas mayores en el uso de internet, videollamadas y servicios en línea, reduciendo el aislamiento social en un 40%.', reflexion:'Aprender no tiene edad. Cada persona conectada es una vida más acompañada. 🌻', _src:'static' }
+    // Static curated pool — rotate so consecutive refreshes show different stories
+    var _pool = [
+      { emoji:'🌱', titulo:'Reforestación récord: 1.000 millones de árboles plantados', cuerpo:'Una coalición de países y organizaciones alcanzó el hito histórico de plantar mil millones de árboles en un solo año, contribuyendo a absorber millones de toneladas de CO₂ y restaurar ecosistemas degradados en cinco continentes.', reflexion:'Cada árbol es un acto de fe en el futuro. La humanidad puede regenerarse cuando actúa unida. 🌿', _src:'static' },
+      { emoji:'💊', titulo:'Nueva terapia elimina dolor crónico sin opioides', cuerpo:'Investigadores desarrollaron un tratamiento basado en neuromodulación que redujo el dolor crónico en un 80% de los participantes sin generar dependencia, abriendo una nueva era en el manejo del dolor.', reflexion:'El alivio del sufrimiento humano sigue avanzando. La ciencia trabaja para que vivir bien sea posible para todos. 💙', _src:'static' },
+      { emoji:'🤝', titulo:'Comunidades rurales logran autosuficiencia energética solar', cuerpo:'Más de 200 aldeas accedieron por primera vez a electricidad limpia gracias a micro-redes solares comunitarias, transformando la educación, la salud y la economía local.', reflexion:'La energía limpia no es solo tecnología — es dignidad y oportunidad. ✨', _src:'static' },
+      { emoji:'🐋', titulo:'Ballenas jorobadas se recuperaron al 93% de niveles históricos', cuerpo:'Después de décadas de protección internacional, las ballenas jorobadas del Atlántico Sur alcanzaron casi su población pre-cacería, en uno de los mayores éxitos de conservación marina.', reflexion:'La naturaleza sana cuando le damos tiempo y espacio. El daño puede revertirse. 🌊', _src:'static' },
+      { emoji:'📚', titulo:'100% de alfabetización digital en adultos mayores de 60', cuerpo:'Un programa nacional capacitó a más de 400.000 personas mayores en el uso de internet, videollamadas y servicios en línea, reduciendo el aislamiento social en un 40%.', reflexion:'Aprender no tiene edad. Cada persona conectada es una vida más acompañada. 🌻', _src:'static' },
+      { emoji:'🦁', titulo:'El guepardo vuelve a India después de 70 años de extinción local', cuerpo:'El ambicioso proyecto de reintroducción de guepardos africanos en el Parque Nacional Kuno resultó exitoso: ya nacieron las primeras crías en cautiverio semi-libre, consolidando la esperanza de recuperación de la especie.', reflexion:'Cuando la humanidad decide proteger la vida, los milagros ecológicos son posibles. 🌿', _src:'static' },
+      { emoji:'🧬', titulo:'Primer tratamiento de edición genética aprobado para enfermedad sanguínea', cuerpo:'La FDA aprobó la primera terapia basada en CRISPR para la anemia falciforme, una enfermedad dolorosa que afecta a millones. Los ensayos muestran remisión completa en el 90% de los pacientes tratados.', reflexion:'La ciencia convierte el sufrimiento de hoy en el alivio de mañana. Cada avance es una vida cambiada. 💙', _src:'static' },
+      { emoji:'🌊', titulo:'Gran Barrera de Coral muestra señales de recuperación sorprendente', cuerpo:'Científicos australianos registraron niveles de cobertura de coral más altos que en décadas en partes de la Gran Barrera, atribuido a reducción local de contaminantes y nuevas técnicas de restauración con corales resistentes al calor.', reflexion:'La resiliencia de la naturaleza nos enseña que siempre hay posibilidad de regeneración. 🌏', _src:'static' },
+      { emoji:'🤲', titulo:'Cocinas comunitarias alimentan a 2 millones de personas en América Latina', cuerpo:'Una red de voluntarios en 12 países organiza ollas populares que sirven más de dos millones de comidas semanales a personas en situación de vulnerabilidad, conectando a vecinos y fortaleciendo el tejido social.', reflexion:'La solidaridad transforma vecindarios en comunidades. Compartir una mesa es un acto de amor. ❤️', _src:'static' },
+      { emoji:'♻️', titulo:'Ciudad europea logra reciclar el 95% de sus residuos', cuerpo:'Ljubljana, en Eslovenia, alcanzó tasas de reciclaje del 95%, convirtiéndose en modelo mundial de economía circular gracias a su sistema de separación puerta a puerta y educación ambiental desde la escuela primaria.', reflexion:'Un futuro limpio se construye con pequeñas decisiones diarias y mucha voluntad colectiva. 🌍', _src:'static' }
     ];
+    var _offset = (Date.now() / 60000 | 0) % _pool.length; // rotates every minute
+    items = [];
+    for(var _pi=0; _pi<5; _pi++) items.push(_pool[(_offset+_pi) % _pool.length]);
   }
 
   safeLS('set', cacheKey, JSON.stringify(items));
