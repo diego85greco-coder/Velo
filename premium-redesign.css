@@ -7953,31 +7953,45 @@ body.r-dark #pg-news .p-card {
 /* ── User search pill (home greeting area) ───────────────────────────────── */
 .home-search-pill {
   display: inline-flex;
+  align-self: flex-start;       /* prevent stretching in flex-column parent */
   align-items: center;
-  gap: 6px;
-  margin: 6px 0 14px;
-  padding: 7px 16px;
-  background: rgba(116,198,157,.10);
-  border: 1.5px solid rgba(116,198,157,.25);
+  gap: 7px;
+  margin: 4px 0 14px;
+  padding: 8px 18px 8px 13px;
+  background: rgba(255,255,255,.58);
+  border: 1.5px solid rgba(116,198,157,.32);
   border-radius: 100px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: var(--sage2);
+  color: var(--sage);
   cursor: pointer;
   font-family: 'Jost', sans-serif;
-  letter-spacing: .02em;
-  transition: background .18s, border-color .18s, transform .12s;
+  letter-spacing: .025em;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 1px 8px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.8);
+  transition: background .18s, border-color .18s, box-shadow .18s, transform .12s;
 }
-.home-search-pill:hover { background: rgba(116,198,157,.18); border-color: rgba(116,198,157,.40); }
+.home-search-pill:hover {
+  background: rgba(255,255,255,.80);
+  border-color: rgba(116,198,157,.55);
+  box-shadow: 0 3px 14px rgba(116,198,157,.18), inset 0 1px 0 rgba(255,255,255,.9);
+}
 .home-search-pill:active { transform: scale(.97); }
+
 body.r-dark .home-search-pill {
-  background: rgba(116,198,157,.08);
-  border-color: rgba(116,198,157,.18);
-  color: var(--sage);
+  background: rgba(255,255,255,.07);
+  border-color: rgba(116,198,157,.22);
+  color: rgba(183,228,199,.82);
+  box-shadow: 0 1px 8px rgba(0,0,0,.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 body.r-dark .home-search-pill:hover {
-  background: rgba(116,198,157,.16);
-  border-color: rgba(116,198,157,.35);
+  background: rgba(255,255,255,.12);
+  border-color: rgba(116,198,157,.42);
+  box-shadow: 0 3px 14px rgba(0,0,0,.22), 0 0 12px rgba(116,198,157,.08);
 }
 
 /* ── User search result cards (inside search sheet) ─────────────────────── */
