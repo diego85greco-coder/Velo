@@ -1683,15 +1683,15 @@ function _updateHomeCurrentMoodLine(){
       var m = JSON.parse(stored);
       var labels = {'😄':'Muy bien','😊':'Bien','😐':'Regular','😞':'Mal','😢':'Muy mal'};
       var moodText = m.emoji + ' ' + (labels[m.emoji]||m.label||'') + (m.note ? ' — '+m.note.slice(0,40) : '');
-      // Mood registered — plain text, no blinking pill
+      // Mood registered — keep pill shape, just muted to show it's saved
       el.style.animation = 'none';
-      el.style.background = 'transparent';
-      el.style.border = 'none';
-      el.style.padding = '0';
-      el.style.color = 'var(--ink4)';
+      el.style.background = 'rgba(116,198,157,.10)';
+      el.style.border = '1px solid rgba(116,198,157,.25)';
+      el.style.padding = '7px 12px';
+      el.style.color = 'var(--ink3)';
       el.style.fontSize = '12px';
       el.style.fontWeight = '500';
-      el.style.borderRadius = '0';
+      el.style.borderRadius = '100px';
       el.textContent = moodText;
       return;
     }catch(e){}
