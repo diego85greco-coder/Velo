@@ -6194,7 +6194,7 @@ body:not(.r-dark) .r-hs-icon { filter: none; }
 /* (v311 overrides applied further below) */
 #homeTimeIcon { display: block; margin-bottom: 10px; line-height: 1; }
 #homeTimeIcon .r-time-icon { display: inline-flex; vertical-align: 0; }
-#homeTimeIcon .r-time-icon svg { width: 56px; height: 56px; }
+#homeTimeIcon .r-time-icon svg { width: 72px; height: 72px; }
 
 /* ── v309: Equal-height 2×2 shortcut buttons ────────────────────── */
 .r-home-shortcut { min-height: 100px !important; justify-content: center !important; }
@@ -6202,7 +6202,7 @@ body:not(.r-dark) .r-hs-icon { filter: none; }
 /* ── v309: Larger hero heading on mobile ────────────────────────── */
 @media (max-width: 860px) {
   .r-hero-v2 h1.p-title {
-    font-size: clamp(30px, 9vw, 42px) !important;
+    font-size: clamp(36px, 10.5vw, 50px) !important;
     font-family: 'Crimson Pro', 'Cormorant Garamond', serif !important;
     font-weight: 300 !important;
     letter-spacing: -.5px !important;
@@ -6326,11 +6326,11 @@ body:not(.r-dark) .r-hs-icon { color: rgba(27, 94, 58, 0.75) !important; filter:
     justify-content: center !important;
     margin-bottom: 6px !important;
   }
-  #homeTimeIcon .r-time-icon svg { width: 52px !important; height: 52px !important; }
+  #homeTimeIcon .r-time-icon svg { width: 68px !important; height: 68px !important; }
   #homeGreetBlock { text-align: center !important; }
   .r-hero-v2 h1.p-title {
     text-align: center !important;
-    font-size: clamp(28px, 8.5vw, 40px) !important;
+    font-size: clamp(34px, 10vw, 48px) !important;
     font-family: 'Crimson Pro', 'Cormorant Garamond', serif !important;
     font-weight: 300 !important;
     letter-spacing: -.4px !important;
@@ -6339,7 +6339,7 @@ body:not(.r-dark) .r-hs-icon { color: rgba(27, 94, 58, 0.75) !important; filter:
   #homeGreetQuote { text-align: center !important; }
   .r-hero-italic {
     text-align: center !important;
-    font-size: clamp(17px, 4.5vw, 22px) !important;
+    font-size: clamp(21px, 5.5vw, 27px) !important;
   }
   .r-home-shortcut {
     min-height: 82px !important;
