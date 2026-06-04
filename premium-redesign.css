@@ -8241,28 +8241,14 @@ body.r-dark .r-velo-sig-logo {
   opacity: .75 !important;
 }
 
-/* ── Home FABs group (Profile + Estilo) — sticky overlay, mobile only ── */
-#homeFabGroup {
+/* ── Home page FAB chips (Profile left, Estilo right) — mobile only ── */
+/* Profile FAB — left side */
+.r-home-profile-fab {
   position: absolute;
   top: 14px;
-  right: 14px;
+  left: 14px;
   z-index: 6;
   display: none;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 8px;
-}
-@media (max-width: 900px) {
-  #homeFabGroup { display: flex; }
-  /* Topbar Estilo button hidden on mobile — FAB chip on home + hamburger menu cover it */
-  .r-topbar-theme-btn { display: none !important; }
-  /* Wider hamburger button */
-  .p-topbar-btn { width: 52px !important; border-radius: 14px !important; font-size: 20px !important; }
-}
-
-/* Profile FAB — same glass pill as Estilo, sage/green tint */
-.r-home-profile-fab {
-  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
@@ -8284,7 +8270,7 @@ body:not(.r-dark) .r-home-profile-fab {
   color: rgba(50,130,70,.9);
   box-shadow: 0 2px 10px rgba(0,0,0,.10);
 }
-/* Avatar inside profile FAB — compact, no animation */
+/* Avatar inside profile FAB — compact, no scroll animation */
 #homeAvFab {
   width: 30px !important;
   height: 30px !important;
@@ -8293,9 +8279,13 @@ body:not(.r-dark) .r-home-profile-fab {
   box-shadow: 0 0 0 1.5px rgba(116,198,157,.45) !important;
 }
 
-/* Estilo FAB — no longer self-positioned (parent #homeFabGroup handles it) */
+/* Estilo FAB — right side (unchanged behaviour) */
 .r-home-estilo-fab {
-  display: flex;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 6;
+  display: none;
   flex-direction: column;
   align-items: center;
   gap: 3px;
@@ -8316,6 +8306,14 @@ body:not(.r-dark) .r-home-estilo-fab {
   border-color: rgba(180,120,8,.22);
   color: rgba(155,95,0,.9);
   box-shadow: 0 2px 10px rgba(0,0,0,.10);
+}
+@media (max-width: 900px) {
+  .r-home-profile-fab { display: flex; }
+  .r-home-estilo-fab  { display: flex; }
+  /* Topbar Estilo button hidden on mobile — FAB chip on home + hamburger menu cover it */
+  .r-topbar-theme-btn { display: none !important; }
+  /* Wider hamburger button */
+  .p-topbar-btn { width: 52px !important; border-radius: 14px !important; font-size: 20px !important; }
 }
 
 /* ── Topbar: compact layout on very small phones (≤380px) ── */
