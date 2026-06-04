@@ -11347,7 +11347,7 @@ async function pAdminPrepareGDPR(){
   var email=emailEl.value.trim().toLowerCase();
   var btn=document.getElementById('gdprBtn'); var resultEl=document.getElementById('gdprResult');
   if(btn){btn.disabled=true;btn.textContent='🔍 Preparando…';}
-  if(resultEl) resultEl.innerHTML='<p style="font-size:11px;color:rgba(255,255,255,.4);font-style:italic;padding:8px 0">Gemini está preparando el informe…</p>';
+  if(resultEl) resultEl.innerHTML='<p style="font-size:11px;color:rgba(255,255,255,.4);font-style:italic;padding:8px 0">Velo IA está preparando el informe…</p>';
 
   _initSupabase();
   var userData={email:email,perfil:null,diarioCount:0,estadosCount:0};
@@ -11424,7 +11424,7 @@ function _renderGDPRHistory(){
 // ── TAB: GESTIÓN ─────────────────────────────────────────────────────
 function _adminTabGestion(panel){
   panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📋 TAREAS PENDIENTES</div>'
-    +'<div id="adminAITasks"><div style="font-size:12px;color:rgba(255,255,255,.3);padding:10px 0">Gemini está revisando las tareas…</div></div>'
+    +'<div id="adminAITasks"><div style="font-size:12px;color:rgba(255,255,255,.3);padding:10px 0">Velo IA está revisando las tareas…</div></div>'
     +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">⭐ ACTIVAR VELO PLUS GRATIS (30 DÍAS)</div>'
     +'<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
     +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Activá Velo Plus 30 días para un usuario.</p>'
@@ -11460,7 +11460,7 @@ function _adminTabGestion(panel){
 // ── NEW: Warn user ────────────────────────────────────────────────────
 function pAdminWarnUser(userId, email){
   var ov=document.createElement('div'); ov.className='p-modal-ov show'; ov.id='adminWarnOv'; ov.style.zIndex='9999';
-  ov.innerHTML='<div class="p-sheet" style="background:#0F2016;border:1px solid rgba(230,180,40,.2);overflow-y:auto;max-height:90vh">'
+  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="background:#0F2016 !important;color:#fff;border:1px solid rgba(230,180,40,.2);overflow-y:auto;max-height:90vh">'
     +'<div style="font-size:28px;margin-bottom:8px">⚠️</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;margin-bottom:6px">Advertencia formal</div>'
     +'<p style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.5">El mensaje llegará al buzón del usuario como advertencia oficial de Velo.</p>'
@@ -11930,7 +11930,7 @@ function pAdminMassMessage(target){
   ov.className = 'p-modal-ov show';
   ov.id = 'massMessageOv';
   ov.style.zIndex = '9999';
-  ov.innerHTML = '<div class="p-sheet" style="background:#0F2016;border:1px solid rgba(116,198,157,.2);overflow-y:auto;max-height:90vh">'
+  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="background:#0F2016 !important;color:#fff;border:1px solid rgba(116,198,157,.2);overflow-y:auto;max-height:90vh">'
     +'<div class="p-sheet-handle" style="background:rgba(116,198,157,.3)"></div>'
     +'<div style="font-size:28px;margin-bottom:8px">'+icon+'</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;margin-bottom:6px">Mensaje masivo — '+label+'</div>'
@@ -11978,7 +11978,7 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
     +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(180,140,220,.75);margin-bottom:6px">📊 RESUMEN MENSUAL VELO</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:#fff;font-weight:300;margin-bottom:4px">Tu '+mName+' '+year+(firstName?' — '+firstName:'')+'</div>'
     +'<div style="height:1px;background:rgba(255,255,255,.08);margin:12px 0"></div>'
-    +'<div id="monthlyReportBody"><div style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.35);font-size:12px;padding:20px 0"><span class="live-dot" style="background:rgba(180,140,220,.8)"></span>Gemini está analizando tu mes…</div></div>'
+    +'<div id="monthlyReportBody"><div style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.35);font-size:12px;padding:20px 0"><span class="live-dot" style="background:rgba(180,140,220,.8)"></span>Velo IA está analizando tu mes…</div></div>'
     +'<button onclick="document.getElementById(\'monthlyReportOv\').remove();_syncBodyScroll()" style="width:100%;padding:11px;background:rgba(180,140,220,.15);border:1.5px solid rgba(180,140,220,.3);border-radius:14px;color:rgba(180,140,220,.9);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;margin-top:8px">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov); _syncBodyScroll();
@@ -12206,7 +12206,7 @@ async function pAdminAiSituationAnalysis(){
   var btn = document.getElementById('adminSituationBtn');
   var resultEl = document.getElementById('adminSituationResult');
   if(btn){ btn.disabled = true; btn.textContent = '🧠 Analizando…'; }
-  if(resultEl) resultEl.innerHTML = '<p style="font-size:11px;color:rgba(255,255,255,.4);padding:6px 0;font-style:italic">Gemini está revisando la situación de la plataforma…</p>';
+  if(resultEl) resultEl.innerHTML = '<p style="font-size:11px;color:rgba(255,255,255,.4);padding:6px 0;font-style:italic">Velo IA está revisando la situación de la plataforma…</p>';
 
   var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
   var contacts = []; try{ contacts = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
