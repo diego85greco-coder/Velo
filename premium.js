@@ -8730,6 +8730,7 @@ function _contactCard(id, name, av, uname, pInfo, unread, opts){
     +'<div style="font-size:'+(opts.small?'13':'14')+'px;font-weight:700;color:var(--ink)">'+_escHtml(name||'Usuario')+'</div>'
     +(uname?'<div style="font-size:10px;color:var(--sage3);font-weight:600;margin-bottom:1px">'+_escHtml(uname)+'</div>':'')
     +'<div style="font-size:11px;color:'+(pInfo.on?pInfo.color:'var(--ink5)')+'">'+(pInfo.on?'● ':'○ ')+pInfo.label+'</div>'
+    +(opts.motto?'<p style="font-size:11px;color:var(--ink4);line-height:1.4;margin:3px 0 0;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml(opts.motto)+'"</p>':'')
     +'</div>'
     +'<div style="display:flex;gap:5px;flex-shrink:0">'
     +(canChat
@@ -8771,11 +8772,11 @@ async function pRenderContacts(){
     var _uniqIds = _allIds.filter(function(id,i){ return _allIds.indexOf(id)===i; });
     if(_uniqIds.length){
       try{
-        var profRes = await sbClient.from('profiles').select('id,username,nombre,avatar').in('id', _uniqIds);
+        var profRes = await sbClient.from('profiles').select('id,username,nombre,avatar,motto').in('id', _uniqIds);
         if(_navToken !== _tok) return;
         (profRes.data||[]).forEach(function(p){
           if(p.id && p.username){ usernameMap[p.id] = p.username; _uFill(p.id, p.username); }
-          if(p.id) profileMap[p.id] = { name: p.nombre || (p.username ? '@'+p.username : ''), av: p.avatar||'' };
+          if(p.id) profileMap[p.id] = { name: p.nombre || (p.username ? '@'+p.username : ''), av: p.avatar||'', motto: p.motto||'' };
         });
       }catch(e){}
     }
@@ -8841,7 +8842,7 @@ async function pRenderContacts(){
           var dAv   = prof.av || f.av || '🧑';
           // Silently update local cache with the real name so widget also benefits
           if(prof.name && prof.name !== 'Usuario' && f.name !== prof.name){ f.name = prof.name; f.av = dAv; _favsList = pGetFavs(); safeLS('set','velo_favs',JSON.stringify(_favsList.slice(0,100))); }
-          return _contactCard(f.id,dName,dAv,uname,pi,unreadIds[f.id]||0,{showMail:true,showRemove:true,showBlock:true});
+          return _contactCard(f.id,dName,dAv,uname,pi,unreadIds[f.id]||0,{showMail:true,showRemove:true,showBlock:true,motto:prof.motto||''});
         }).join(''))
     +'</div>';
 
