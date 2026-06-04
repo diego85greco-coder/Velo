@@ -598,9 +598,9 @@ body.r-dark .home-logo-side {
 #homeTimeIcon         { order: 1; }
 #homeGreetWrapper     { order: 2; }
 #homeStatusToggle     { order: 3; }
-#homeSearchUsersBtn   { order: 4; }
-.r-home-shortcut-grid { order: 5; }
-.r-hero-actions       { order: 6; }
+.r-hero-actions       { order: 4; }
+#homeSearchUsersBtn   { order: 5; }
+.r-home-shortcut-grid { order: 6; }
 #homeHeroLabel        { order: 7; margin-top: 24px; }
 #homeDesktopQuickActs { order: 8; }
 
