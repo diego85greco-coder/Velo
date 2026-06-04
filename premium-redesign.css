@@ -8413,3 +8413,15 @@ body.r-dark #homeMonthlyHint { color: rgba(255,255,255,.78); }
     margin-top: 4px !important;
   }
 }
+
+/* ── v487: Stop all movement in the REGISTRA zone ── */
+#homeGreetWrapper,
+#homeStatusToggle,
+#pg-home .home-greeting,
+#pg-home .home-greeting *,
+#homeCurrentMoodLine,
+.home-mood-btn {
+  animation: none !important;
+  transform: none !important;
+  transition: background .18s ease, border-color .18s ease, color .18s ease !important;
+}
