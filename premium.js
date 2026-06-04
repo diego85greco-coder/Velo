@@ -390,7 +390,7 @@ async function _sbSyncProfile(userId){
   var res;
   try{
     res = await sbClient.from('profiles')
-      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids')
+      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified')
       .eq('id',userId).limit(1);
   }catch(e){ return; }
 
@@ -471,6 +471,20 @@ async function _sbSyncProfile(userId){
       else safeLS('set','velo_bcast_read_'+bid,'1');
     });
   }
+  // Badge notification cross-device: if Supabase shows a higher badge than local, show the inbox message
+  if(p.badge_notified){
+    var _badgeOrder = ['Novato','Bronce','Plata','Oro','Diamante'];
+    var _sbBadgeIdx = _badgeOrder.indexOf(p.badge_notified);
+    var _loBadgeIdx = _badgeOrder.indexOf(safeLS('get','velo_badge_last_notified') || 'Novato');
+    var _localBadgeSet = !!safeLS('get','velo_badge_last_notified');
+    if(_sbBadgeIdx > _loBadgeIdx && _localBadgeSet){
+      safeLS('set','velo_badge_last_notified', p.badge_notified);
+      var _nbIcons = {Bronce:'🥉',Plata:'🥈',Oro:'🥇',Diamante:'💎'};
+      _sendBadgeInboxMsg({ name: p.badge_notified, icon: _nbIcons[p.badge_notified] || '🏅' });
+    } else if(!_localBadgeSet){
+      safeLS('set','velo_badge_last_notified', p.badge_notified || 'Novato');
+    }
+  }
   if(p.motto)         safeLS('set','velo_user_motto',    p.motto);
   // Never let profile sync downgrade an active admin session
   if(p.role && safeLS('get','velo_admin_session') !== '1') safeLS('set','velo_user_type', p.role);
@@ -548,14 +562,22 @@ async function _sbSyncProfile(userId){
   // Refresh all UI with synced data — use localStorage (already repaired) over raw Supabase value
   var hn = document.getElementById('homeUserName');
   if(hn) hn.textContent = safeLS('get','velo_user_name') || p.nombre || '';
-  // Remove the name banner if Supabase returned a real name (handles the race condition where
-  // the banner was shown before this async call completed)
   if(typeof _checkAndShowNameBanner === 'function'){
     _checkAndShowNameBanner(safeLS('get','velo_user_name') || '');
   }
   _updateSidebarUser();
   _updateTopbarMoodBadge();
-  pLoadProfile();
+  // Update profile page elements in-place — avoids re-calling _sbSyncProfile (infinite loop fix)
+  _renderAvatarEl('profileAv', safeLS('get','velo_user_av') || '🧑');
+  var _pnEl = document.getElementById('profileName');
+  if(_pnEl) _pnEl.textContent = safeLS('get','velo_user_name') || 'Usuario';
+  var _pmEl = document.getElementById('profileMotto');
+  if(_pmEl) _pmEl.textContent = safeLS('get','velo_user_motto') || 'Mi camino, mi ritmo.';
+  [['profStatusMusic','velo_status_music'],['profStatusBook','velo_status_book'],
+   ['profStatusFilm','velo_status_film'],['profStatusPhrase','velo_status_phrase']].forEach(function(kv){
+    var _el = document.getElementById(kv[0]); if(_el) _el.value = safeLS('get',kv[1]) || '';
+  });
+  pRenderHomeGreet && pRenderHomeGreet();
 }
 
 async function _ensureSbSession(){
@@ -1818,6 +1840,12 @@ function _sendBadgeInboxMsg(badge){
   });
   safeLS('set','velo_inbox', JSON.stringify(inbox));
   _updateHomeBell();
+  // Persist badge level to Supabase so new browsers see the badge notification too
+  _initSupabase();
+  var _bnUid = safeLS('get','velo_user_id');
+  if(sbClient && _bnUid){
+    sbClient.from('profiles').update({ badge_notified: badge.name }).eq('id', _bnUid).catch(function(){});
+  }
 }
 
 var _guardianProfiles = [
@@ -7848,10 +7876,6 @@ function _syncAvatarToSb(av){
 }
 
 function pLoadProfile(){
-  // Re-sync profile from Supabase so this device always sees the latest saved data,
-  // and pushes the real name if Supabase still has an auto-generated one.
-  var _plUid = safeLS('get','velo_user_id');
-  if(_plUid) _sbSyncProfile(_plUid).then(function(){ _updateSidebarUser(); pRenderHomeGreet && pRenderHomeGreet(); }).catch(function(){});
   var name  = safeLS('get','velo_user_name') || 'Usuario';
   var av    = safeLS('get','velo_user_av') || '🧑';
   var motto = safeLS('get','velo_user_motto') || 'Mi camino, mi ritmo.';
@@ -13648,7 +13672,10 @@ function _onPageEnter(id){
       if(sbClient && !_happyRtCh) _happyRtCh = _sbSub('velo:happy', 'happy_posts', function(){ pRenderHappy(); });
       pRenderHappy();
       break;
-    case 'profile':     pLoadProfile(); break;
+    case 'profile':
+      pLoadProfile();
+      (function(){ var _pgUid = safeLS('get','velo_user_id'); if(_pgUid) _sbSyncProfile(_pgUid).then(function(){ pLoadProfile(); }).catch(function(){}); })();
+      break;
     case 'inbox':       pRenderInbox(); break;
     case 'contacts':    pRenderContacts(); break;
     case 'dm-chat':     /* initialized by pOpenDM */ break;
