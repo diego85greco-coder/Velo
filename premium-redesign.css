@@ -8000,12 +8000,12 @@ body.r-dark .home-search-pill:hover {
 .r-desk-qlink {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 16px;
+  gap: 6px;
+  padding: 7px 13px;
   background: rgba(116,198,157,.09);
   border: 1.5px solid rgba(116,198,157,.22);
   border-radius: 100px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--ink3);
   cursor: pointer;
@@ -8074,12 +8074,24 @@ body.r-dark .r-desk-qlink:hover {
   /* Constrain shortcut grid and action buttons to sensible width */
   .r-home-shortcut-grid { max-width: 560px !important; }
   .r-hero-actions { max-width: 560px !important; }
-  /* Show desktop quick links */
+  /* Show desktop quick links — allow wrap so they never overflow the card */
   .r-desk-quick-links {
     display: flex !important;
     align-items: center !important;
-    gap: 8px !important;
-    flex-shrink: 0 !important;
+    gap: 7px !important;
+    flex-shrink: 1 !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    max-width: 42% !important;       /* at most 42% of the bar so stats always fit */
+  }
+  /* Hero card: slightly more transparent on desktop so bg image shows through */
+  #pg-home .r-hero-v2 {
+    background: rgba(248,244,236,.52) !important;
+    backdrop-filter: blur(18px) saturate(130%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
+  }
+  body.r-dark #pg-home .r-hero-v2 {
+    background: rgba(14,22,16,.52) !important;
   }
 }
 
