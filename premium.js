@@ -3870,12 +3870,16 @@ function _showHelpChatRating(post){
     +'<div style="font-size:17px;font-weight:700;color:'+titleClr+';margin-bottom:6px;font-family:\'Cormorant Garamond\',serif">¡Conversación finalizada!</div>'
     +'<div style="font-size:13px;color:'+subClr+';margin-bottom:20px;line-height:1.5">Gracias por acompañar y ser acompañado/a. 🌿</div>'
     +(post && post.userId && post.userId !== 'anon' && !post.anon
-      ? '<div style="margin-bottom:16px;padding:14px;background:'+favBg+';border-radius:14px;border:1px solid '+favBrd+'">'
-        +'<div style="font-size:12px;color:'+favTxtClr+';margin-bottom:10px;font-weight:600">¿Querés mantener contacto con esta persona?</div>'
-        +'<button onclick="pAddFav('+_jsAttr(post.userId)+','+_jsAttr(post.name||'Usuario')+','+_jsAttr(post.emoji||'🧑')+');document.getElementById(\'helpRatingOv\').remove();pGoTo(\'post-chat\')" style="padding:11px 22px;background:'+favBtnBg+';border:1.5px solid '+favBrd+';border-radius:100px;font-size:14px;font-weight:700;color:'+favBtnClr+';cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">⭐ Guardar en favoritos</button>'
-        +'</div>'
+      ? pIsFav(post.userId)
+        // Already a favorite — skip the add prompt, go straight to review
+        ? '<div style="margin-bottom:16px;padding:12px 14px;background:'+favBg+';border-radius:14px;border:1px solid '+favBrd+';font-size:12px;color:'+favTxtClr+';font-weight:600">⭐ Ya tenés a esta persona en favoritos</div>'
+        // Not yet a favorite — show the add prompt
+        : '<div style="margin-bottom:16px;padding:14px;background:'+favBg+';border-radius:14px;border:1px solid '+favBrd+'">'
+          +'<div style="font-size:12px;color:'+favTxtClr+';margin-bottom:10px;font-weight:600">¿Querés mantener contacto con esta persona?</div>'
+          +'<button onclick="pAddFav('+_jsAttr(post.userId)+','+_jsAttr(post.name||'Usuario')+','+_jsAttr(post.emoji||'🧑')+');document.getElementById(\'helpRatingOv\').remove();pGoTo(\'post-chat\')" style="padding:11px 22px;background:'+favBtnBg+';border:1.5px solid '+favBrd+';border-radius:100px;font-size:14px;font-weight:700;color:'+favBtnClr+';cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">⭐ Guardar en favoritos</button>'
+          +'</div>'
       : '')
-    +'<button onclick="document.getElementById(\'helpRatingOv\').remove();pGoTo(\'post-chat\')" style="padding:12px 28px;background:'+skipBg+';border:1.5px solid '+skipBrd+';border-radius:100px;font-size:13px;font-weight:600;color:'+skipClr+';cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Omitir</button>'
+    +'<button onclick="document.getElementById(\'helpRatingOv\').remove();pGoTo(\'post-chat\')" style="padding:12px 28px;background:'+skipBg+';border:1.5px solid '+skipBrd+';border-radius:100px;font-size:13px;font-weight:600;color:'+skipClr+';cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">'+(post && post.userId && post.userId !== 'anon' && !post.anon && pIsFav(post.userId) ? 'Ir a la reseña →' : 'Omitir')+'</button>'
     +'</div>';
   document.body.appendChild(ov);
 }
