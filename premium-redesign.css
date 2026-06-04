@@ -8371,3 +8371,9 @@ body:not(.r-dark) #homeProfileFab {
 #homeCurrentMoodLine::after {
   display: none !important;
 }
+
+/* ── v470: Stop greeting card float animation ── */
+#pg-home .home-greeting {
+  animation: none !important;
+  transform: none !important;
+}
