@@ -390,7 +390,7 @@ async function _sbSyncProfile(userId){
   var res;
   try{
     res = await sbClient.from('profiles')
-      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito')
+      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids')
       .eq('id',userId).limit(1);
   }catch(e){ return; }
 
@@ -452,7 +452,25 @@ async function _sbSyncProfile(userId){
       }
     }
   }
-  if(p.avatar)        safeLS('set','velo_user_av',       p.avatar);
+  if(p.avatar){
+    safeLS('set','velo_user_av', p.avatar);
+  } else {
+    // Avatar migration: user had a base64 photo stored only in localStorage (pre-v449).
+    // If this device has the photo, silently upload it to Storage so all devices can sync it.
+    var _localAv = safeLS('get','velo_user_av') || '';
+    if(_localAv.startsWith('data:')){
+      _uploadAvatarToStorage(null, _localAv, function(pub){
+        if(pub){ safeLS('set','velo_user_av', pub); _syncAvatarToSb(pub); _updateSidebarUser(); }
+      });
+    }
+  }
+  // Restore inbox read state from Supabase so messages stay read on new devices
+  if(p.read_bcast_ids && Array.isArray(p.read_bcast_ids)){
+    p.read_bcast_ids.forEach(function(bid){
+      if(bid === 'm1' || bid === 'm2') safeLS('set','velo_read_'+bid,'1');
+      else safeLS('set','velo_bcast_read_'+bid,'1');
+    });
+  }
   if(p.motto)         safeLS('set','velo_user_motto',    p.motto);
   // Never let profile sync downgrade an active admin session
   if(p.role && safeLS('get','velo_admin_session') !== '1') safeLS('set','velo_user_type', p.role);
@@ -8207,10 +8225,11 @@ async function pSaveProfile(){
       }catch(e){ console.error('[pSaveProfile username catch]', e); }
     }
     var _rawAv = safeLS('get','velo_user_av') || '';
-    // Don't store huge base64 in the profiles text row — only store emoji/small values here
-    // Large base64 avatars are stored via _syncAvatarToSb which handles them separately
     var av = _rawAv.length > 8000 ? '' : _rawAv;
-    if(_rawAv.length > 8000) _syncAvatarToSb(_rawAv); // push large avatar to a separate column
+    // If user still has a base64 avatar, upload it to Storage now so it syncs cross-device
+    if(_rawAv.startsWith('data:')){
+      _uploadAvatarToStorage(null, _rawAv, function(pub){ if(pub){ safeLS('set','velo_user_av', pub); _syncAvatarToSb(pub); } });
+    }
     var email = safeLS('get','velo_user_email') || '';
     sbClient.from('profiles').upsert({
       id:uid, nombre:name, avatar:av, motto:motto, email:email,
@@ -8475,7 +8494,7 @@ function pRenderInbox(){
   var _delSet = []; try{ _delSet = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
   msgs = msgs.filter(function(m){ return _delSet.indexOf(m.id) < 0; });
   var mockMsgs = [
-    { id:'m1', tipo:'sistema', icon:'💚', remitente:'Equipo Velo', asunto:'¡Bienvenido/a!', extracto:'Gracias por unirte a Velo. Aquí encontrarás apoyo.', leido:false, fecha:'Ahora' },
+    { id:'m1', tipo:'sistema', icon:'💚', remitente:'Equipo Velo', asunto:'¡Bienvenido/a!', extracto:'Gracias por unirte a Velo. Aquí encontrarás apoyo.', leido:!!safeLS('get','velo_read_m1'), fecha:'Ahora' },
     { id:'m2', tipo:'sistema', icon:'🌿', remitente:'Velo', asunto:'Consejo del día', extracto:'Recuerda: está bien no estar bien. El primer paso es reconocerlo.', leido:true, fecha:'Hoy' }
   ].filter(function(m){ return _delSet.indexOf(m.id) < 0; });
   var all = msgs.concat(mockMsgs);
@@ -8659,6 +8678,17 @@ function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl, sen
   safeLS('set', readKey, '1');
   if(rowEl){ rowEl.classList.remove('unread'); var dot = rowEl.querySelector('.p-inbox-dot'); if(dot) dot.remove(); }
   _updateHomeBell();
+  // Persist read state to Supabase so new devices don't re-show this message as unread
+  var _bcId = readKey.replace('velo_bcast_read_','');
+  _initSupabase();
+  var _bcUid = safeLS('get','velo_user_id');
+  if(sbClient && _bcUid && _bcId){
+    sbClient.from('profiles').select('read_bcast_ids').eq('id',_bcUid).limit(1)
+      .then(function(r){
+        var ids = (r.data && r.data[0] && Array.isArray(r.data[0].read_bcast_ids)) ? r.data[0].read_bcast_ids : [];
+        if(ids.indexOf(_bcId) < 0){ ids.push(_bcId); sbClient.from('profiles').update({read_bcast_ids:ids}).eq('id',_bcUid).catch(function(){}); }
+      }).catch(function(){});
+  }
   var existing = document.getElementById('inboxBcOv');
   if(existing) existing.remove();
 
@@ -8725,6 +8755,16 @@ function pOpenInboxMsg(msgId, rowEl){
   safeLS('set','velo_inbox', JSON.stringify(localMsgs));
   if(rowEl){ rowEl.classList.remove('unread'); var dot = rowEl.querySelector('.p-inbox-dot'); if(dot) dot.remove(); }
   _updateHomeBell();
+  // Persist read state to Supabase (same pool as broadcast IDs) for cross-device sync
+  _initSupabase();
+  var _oiUid = safeLS('get','velo_user_id');
+  if(sbClient && _oiUid && msgId){
+    sbClient.from('profiles').select('read_bcast_ids').eq('id',_oiUid).limit(1)
+      .then(function(r){
+        var ids = (r.data && r.data[0] && Array.isArray(r.data[0].read_bcast_ids)) ? r.data[0].read_bcast_ids : [];
+        if(ids.indexOf(msgId) < 0){ ids.push(msgId); sbClient.from('profiles').update({read_bcast_ids:ids}).eq('id',_oiUid).catch(function(){}); }
+      }).catch(function(){});
+  }
   // Show full message modal
   var existing = document.getElementById('inboxMsgOv');
   if(existing) existing.remove();
