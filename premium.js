@@ -407,7 +407,7 @@ async function _sbSyncProfile(userId){
         id:userId, email:curEmail, role:'user',
         avatar: safeLS('get','velo_user_av')||'',
         motto:  safeLS('get','velo_user_motto')||''
-      },{ onConflict:'id' }).catch(function(){});
+      },{ onConflict:'id' }).then(function(){}).catch(function(){});
     }
     // Prompt user to complete their profile (handles re-entry after account deletion)
     if(!safeLS('get','velo_user_name')){
@@ -577,7 +577,7 @@ async function _sbSyncProfile(userId){
    ['profStatusFilm','velo_status_film'],['profStatusPhrase','velo_status_phrase']].forEach(function(kv){
     var _el = document.getElementById(kv[0]); if(_el) _el.value = safeLS('get',kv[1]) || '';
   });
-  pRenderHomeGreet && pRenderHomeGreet();
+  typeof pRenderHomeGreet === 'function' && pRenderHomeGreet();
 }
 
 async function _ensureSbSession(){
@@ -9853,7 +9853,7 @@ function _startProfileSync(userId){
       if(p.status_film)   safeLS('set','velo_status_film',   p.status_film);
       _updateSidebarUser();
       _renderHomeStatusToggle();
-      pRenderHomeGreet && pRenderHomeGreet();
+      typeof pRenderHomeGreet === 'function' && pRenderHomeGreet();
     })
     .subscribe();
 }
