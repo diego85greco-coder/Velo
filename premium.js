@@ -1189,7 +1189,9 @@ function _loadHomeData(){
 
 function _updateHomeBell(){
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
-  var unread = msgs.filter(function(m){ return !m.leido && !safeLS('get','velo_read_'+m.id); }).length;
+  var localUnread = msgs.filter(function(m){ return !m.leido && !safeLS('get','velo_read_'+m.id); }).length;
+  var _ubcIds = []; try{ _ubcIds = JSON.parse(safeLS('get','velo_bcast_unread')||'[]'); }catch(e){}
+  var unread = localUnread + _ubcIds.length;
   var label  = unread > 9 ? '9+' : String(unread);
   // Home bell badge
   var bell = document.getElementById('homeBellBadge');
@@ -1817,7 +1819,10 @@ function _startGuardianHeartbeat(){
   if(_guardianHeartbeatTimer) return;
   var beat = function(){
     _updateGuardianPresence(_inActiveChat ? 'ocupado' : _presenceStatus());
-    _refreshPresenceCache();
+    _refreshPresenceCache().then(function(){
+      if(_curPage === 'contacts') pRenderContacts();
+      else _updateFavBadge();
+    }).catch(function(){});
     if(_curCircle){
       var _cmId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
       if(_cmId && sbClient){
@@ -2642,6 +2647,15 @@ function _gcInit(){
   var gcName = document.getElementById('gcName');
   if(gcAv)   gcAv.textContent   = (g && g.av)   || '🌿';
   if(gcName) gcName.textContent = (g && g.name) || 'Acompañamiento';
+  // Clean up stale exit banner and restore input from any previous session
+  var oldBanner = document.getElementById('gcExitBanner');
+  if(oldBanner) oldBanner.remove();
+  var gcInp = document.getElementById('gcInput');
+  if(gcInp){
+    gcInp.disabled = false;
+    var gcInputRow = gcInp.closest('.feed-input-area') || gcInp.closest('.feed-input-row');
+    if(gcInputRow) gcInputRow.style.display = '';
+  }
   var msgEl = document.getElementById('gcMessages');
   if(msgEl) msgEl.innerHTML = '';
   if(g){ _gcRender(); _gcSubscribe(); }
@@ -2782,6 +2796,9 @@ function _startBuzónListener(){
       if(b.target !== myTarget) return;
       var sInfo = null; try{ sInfo = JSON.parse(b.sender); }catch(e){}
       _showBuzónAlert(b.subject||'Nuevo mensaje', sInfo&&sInfo.i, sInfo&&sInfo.n, sInfo&&sInfo.a||b.icon||'💌');
+      // Track unread broadcast so the badge lights up immediately (without waiting for pRenderInbox)
+      var _ubcIds = []; try{ _ubcIds = JSON.parse(safeLS('get','velo_bcast_unread')||'[]'); }catch(e){}
+      if(b.id && _ubcIds.indexOf(b.id) < 0){ _ubcIds.push(b.id); safeLS('set','velo_bcast_unread', JSON.stringify(_ubcIds)); }
       _updateInboxDot();
     })
     .subscribe();
@@ -2797,7 +2814,7 @@ function _gcSubscribe(){
   };
   // Realtime channel
   _gcRtCh = sbClient.channel('velo:gc:'+myId+':'+_gcPeer.id)
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages'},function(p){ if(rel(p.new||{})) _gcRender(); })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'direct_messages'},function(p){ var m=p.new||{}; if(!rel(m)||m.from_id===myId) return; _gcRender(); })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'direct_messages'},function(p){
       var m = p.new||{};
       if(!rel(m) || !m.id) return;
@@ -8257,6 +8274,10 @@ function pRenderInbox(){
     var banner = el2.querySelector('div[onclick*="contact"]');
     if(banner){ banner.insertAdjacentHTML('afterend', bcMsgs); }
     else { el2.innerHTML = bcMsgs + el2.innerHTML; }
+    // Clear unread broadcast IDs that are now rendered (inbox is open, user sees them)
+    var _shownIds = newBcs.map(function(b){ return b.id; });
+    var _ubcNow = []; try{ _ubcNow = JSON.parse(safeLS('get','velo_bcast_unread')||'[]'); }catch(e){}
+    safeLS('set','velo_bcast_unread', JSON.stringify(_ubcNow.filter(function(id){ return _shownIds.indexOf(id) < 0; })));
     _updateInboxDot();
   });
   // Load admin replies from Supabase async and inject them
@@ -9578,6 +9599,7 @@ function _startGlobalDMListener(){
       }
       if(curId === 'pg-dm-chat' && _dmPeer && _dmPeer.id === m.from_id) return; // already in DM chat
       if(curId === 'pg-guardian-chat' && _gcPeer && _gcPeer.id === m.from_id) return; // already in guardian chat
+      if(curId === 'pg-help-chat' && _curHelpPost && _curHelpPost.userId === m.from_id) return; // already in help chat
       // Show floating notification
       _showDMToast(m.from_id, m.from_name||'Usuario', m.from_av||'🧑', m.text||'');
       // Update unread count
