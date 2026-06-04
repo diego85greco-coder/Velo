@@ -7904,15 +7904,15 @@ body.r-dark #happyPhotoLabel > span[style*="border-radius: 20px"] {
 /* Logo watermarks must stay position:absolute (vertically centered in gaps) */
 .home-logo-side { position: absolute !important; }
 
-/* ── Mobile page backgrounds — warm gradient on home for particle contrast ── */
+/* ── Mobile page backgrounds ── */
 @media (max-width: 767px) {
-  .p-page:not(#pg-respira):not(#pg-bottle):not(#pg-help-chat):not(#pg-home)       { background: var(--cream); }
-  .p-page.active:not(#pg-respira):not(#pg-bottle):not(#pg-help-chat):not(#pg-home) { background: var(--cream); }
-  #pg-home       { background: linear-gradient(170deg, #f0ece3 0%, #e8f0e8 55%, #eef5ec 100%); }
-  #pg-home.active { background: linear-gradient(170deg, #f0ece3 0%, #e8f0e8 55%, #eef5ec 100%); }
-}
-body.r-dark #pg-home {
-  background: linear-gradient(170deg, #0e130c 0%, #0a1410 55%, #0c1510 100%) !important;
+  .p-page:not(#pg-respira):not(#pg-bottle):not(#pg-help-chat) { background: var(--cream); }
+  .p-page.active:not(#pg-respira):not(#pg-bottle):not(#pg-help-chat) { background: var(--cream); }
+  /* Home canvas: lift ABOVE glass cards so particles float over the interface */
+  #homeBgCanvas {
+    z-index: 2 !important;
+    opacity: 0.28;
+  }
 }
 
 /* ── v390: Buenas Noticias — warm background + dark mode card readability ── */
