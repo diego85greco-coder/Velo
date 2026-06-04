@@ -432,8 +432,11 @@ async function _sbSyncProfile(userId){
       // Valid real name from Supabase — always use it on new devices
       safeLS('set','velo_user_name', p.nombre);
     } else if(_localName && _localName !== _emailPfx && !(/^[a-zA-Z0-9._-]+\d{3,}$/.test(_localName))){
-      // Supabase has auto-name but local has a real name — repair Supabase silently
-      sbClient.from('profiles').update({ nombre: _localName }).eq('id', userId).catch(function(){});
+      // Supabase has auto-name but local has a real name — push real name to Supabase
+      // Use upsert (not update) so RLS INSERT policy covers it even if UPDATE fails
+      sbClient.from('profiles').upsert({ id: userId, nombre: _localName }, { onConflict: 'id' })
+        .then(function(r){ if(r&&r.error) console.warn('[nombre repair upsert]', r.error); })
+        .catch(function(e){ console.warn('[nombre repair catch]', e); });
       // Keep the local real name (don't overwrite with auto-gen)
     } else if(!_localName && p.nombre){
       // Fresh device with no local name — use Supabase name even if it looks auto-gen
@@ -7681,6 +7684,10 @@ function _syncAvatarToSb(av){
 }
 
 function pLoadProfile(){
+  // Re-sync profile from Supabase so this device always sees the latest saved data,
+  // and pushes the real name if Supabase still has an auto-generated one.
+  var _plUid = safeLS('get','velo_user_id');
+  if(_plUid) _sbSyncProfile(_plUid).then(function(){ _updateSidebarUser(); pRenderHomeGreet && pRenderHomeGreet(); }).catch(function(){});
   var name  = safeLS('get','velo_user_name') || 'Usuario';
   var av    = safeLS('get','velo_user_av') || '🧑';
   var motto = safeLS('get','velo_user_motto') || 'Mi camino, mi ritmo.';
@@ -13740,6 +13747,20 @@ window.addEventListener('load', function(){
     _trackVisitDay(); // Record today — runs on every app open, not just explicit login
     // Sync profile from Supabase on every app start so name/avatar stay current
     setTimeout(function(){ _sbSyncProfile(safeLS('get','velo_user_id')); }, 1500);
+    // Proactive push: if this device has a real name, ensure Supabase has it too
+    setTimeout(function(){
+      var _uid = safeLS('get','velo_user_id');
+      var _ln  = safeLS('get','velo_user_name')||'';
+      var _em  = safeLS('get','velo_user_email')||'';
+      var _epfx = _em.split('@')[0];
+      var _isReal = _ln && _ln !== _epfx && _ln !== _em &&
+                    !/^[a-zA-Z0-9._-]+\d{3,}$/.test(_ln) &&
+                    !(_ln.indexOf(' ')<0 && /^\w+\.\w+\d+$/.test(_ln));
+      if(_isReal && _uid && sbClient){
+        sbClient.from('profiles').upsert({id:_uid, nombre:_ln},{onConflict:'id'})
+          .catch(function(){});
+      }
+    }, 6000);
     // Pull visit count from Supabase to sync across devices / after localStorage clear
     setTimeout(_pullVisitCountFromSB, 2500);
     setTimeout(_startGuardianHeartbeat, 2000);
