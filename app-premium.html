@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-405">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-405">
+  <link rel="stylesheet" href="premium.css?v=20260530-406">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-406">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -894,15 +894,12 @@
 
       <!-- ══ HOME ════════════════════════════════════════════════ -->
       <div class="p-page" id="pg-home">
+        <canvas id="homeBgCanvas" aria-hidden="true" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas>
         <!-- Desktop side-logo watermarks: direct children of #pg-home (position:absolute, inset:0)
              so they stay viewport-centered regardless of scroll and disappear with the page -->
         <div class="home-logo-side home-logo-side--left" aria-hidden="true"></div>
         <div class="home-logo-side home-logo-side--right" aria-hidden="true"></div>
         <div class="p-page-scroll">
-          <!-- Sticky viewport particle canvas — inside scroll context so backdrop-filter works -->
-          <div style="position:sticky;top:0;height:0;z-index:0;pointer-events:none;overflow:visible;flex-shrink:0">
-            <canvas id="homeBgCanvas" style="position:absolute;top:0;left:0;width:100vw;height:100vh;pointer-events:none"></canvas>
-          </div>
           <div class="home-header r-hero-v2">
             <div class="r-hero-left">
               <div id="homeHeroLabel" style="font-size:10px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:rgba(200,158,56,.72);margin-bottom:12px;display:flex;align-items:center;gap:6px"><span>—</span><span>JARDÍN DE HOY</span></div>
@@ -3078,8 +3075,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-405"></script>
-<script src="premium-redesign.js?v=20260530-405"></script>
+<script src="premium.js?v=20260530-406"></script>
+<script src="premium-redesign.js?v=20260530-406"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
