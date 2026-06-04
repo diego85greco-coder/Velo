@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-481">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-481">
+  <link rel="stylesheet" href="premium.css?v=20260530-482">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-482">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -2652,6 +2652,33 @@
 </div>
 
 <!-- ── TÉRMINOS Y CONDICIONES ───────────────────────────── -->
+<!-- ── Mi estado modal (opened from home quick button) ── -->
+<div class="p-modal-ov" id="myStatusOv" onclick="if(event.target===this)closeModal('myStatusOv')">
+  <div class="p-sheet" style="max-width:480px">
+    <div class="p-sheet-handle"></div>
+    <div class="p-label p-label-sage" style="margin-bottom:4px;font-size:9px;letter-spacing:1px">MI ESTADO · VISIBLE EN TU PERFIL</div>
+    <p style="font-size:11px;color:var(--ink5);margin-bottom:14px;line-height:1.5">Lo que compartís aparece en tu perfil público y cuando alguien te ve en la comunidad.</p>
+    <div class="p-field" style="margin-bottom:8px">
+      <label class="p-field-label">🎵 Música que escucho</label>
+      <input class="p-input" type="text" id="modalStatusMusic" placeholder="Ej: Thalia — Arransando" maxlength="80">
+    </div>
+    <div class="p-field" style="margin-bottom:8px">
+      <label class="p-field-label">📚 Libro que leo</label>
+      <input class="p-input" type="text" id="modalStatusBook" placeholder="Ej: El Principito" maxlength="80">
+    </div>
+    <div class="p-field" style="margin-bottom:8px">
+      <label class="p-field-label">🎬 Película / serie que miro</label>
+      <input class="p-input" type="text" id="modalStatusFilm" placeholder="Ej: The Bear, Oppenheimer…" maxlength="80">
+    </div>
+    <div class="p-field" style="margin-bottom:12px">
+      <label class="p-field-label">✨ Frase que me acompaña</label>
+      <input class="p-input" type="text" id="modalStatusPhrase" placeholder="Una frase motivadora…" maxlength="120">
+    </div>
+    <button class="p-btn p-btn--primary p-btn--sm p-btn--full" onclick="pSaveStatusFromModal()">Guardar estado</button>
+    <button class="p-btn p-btn--secondary p-btn--sm p-btn--full" style="margin-top:8px" onclick="closeModal('myStatusOv');pGoTo('home')">← Volver a inicio</button>
+  </div>
+</div>
+
 <div class="p-modal-ov" id="termsOv">
   <div class="p-sheet" style="max-height:88vh;overflow-y:auto;max-width:640px">
     <div class="p-sheet-handle"></div>
@@ -3123,8 +3150,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-481"></script>
-<script src="premium-redesign.js?v=20260530-481"></script>
+<script src="premium.js?v=20260530-482"></script>
+<script src="premium-redesign.js?v=20260530-482"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

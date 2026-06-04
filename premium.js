@@ -1453,18 +1453,45 @@ function pSaveQuickMood(){
 
 // ── MI ESTADO VISIBLE ──────────────────────────────────────────
 function pOpenMyStatus(){
-  // Navigate to profile section and scroll to the estado card
-  pGoTo('profile');
-  setTimeout(function(){
-    var el = document.getElementById('profileStatusCard');
-    if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
-  }, 350);
+  // Pre-fill modal inputs from saved values
+  var fields = { modalStatusMusic:'velo_status_music', modalStatusBook:'velo_status_book', modalStatusFilm:'velo_status_film', modalStatusPhrase:'velo_status_phrase' };
+  Object.keys(fields).forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.value = safeLS('get', fields[id]) || '';
+  });
+  openModal('myStatusOv');
+}
+
+async function pSaveStatusFromModal(){
+  var music  = (document.getElementById('modalStatusMusic')||{}).value  || '';
+  var book   = (document.getElementById('modalStatusBook')||{}).value   || '';
+  var film   = (document.getElementById('modalStatusFilm')||{}).value   || '';
+  var phrase = (document.getElementById('modalStatusPhrase')||{}).value || '';
+  safeLS('set','velo_status_music',  music.trim());
+  safeLS('set','velo_status_book',   book.trim());
+  safeLS('set','velo_status_film',   film.trim());
+  safeLS('set','velo_status_phrase', phrase.trim());
+  // Sync profile page inputs if visible
+  var syncMap = { profStatusMusic: music, profStatusBook: book, profStatusFilm: film, profStatusPhrase: phrase };
+  Object.keys(syncMap).forEach(function(id){ var el=document.getElementById(id); if(el) el.value=syncMap[id]; });
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(sbClient && uid){
+    try{
+      await _ensureSbSession();
+      var res = await sbClient.from('profiles').update({ status_music:music.trim(), status_book:book.trim(), status_film:film.trim(), status_phrase:phrase.trim() }).eq('id',uid);
+      if(res && res.error){ pToast('⚠️','Guardado solo en este dispositivo'); return; }
+      pToast('✨','Estado actualizado y visible para todos 💚');
+    }catch(e){ pToast('✨','Estado actualizado 💚'); }
+  } else {
+    pToast('✨','Estado actualizado 💚');
+  }
+  closeModal('myStatusOv');
 }
 
 function pSaveMyStatus(){
-  // Legacy — now handled by pSaveProfileStatus in the profile section
-  closeModal('myStatusOv');
-  pSaveProfileStatus();
+  // Legacy alias
+  pSaveStatusFromModal();
 }
 
 // ── DAILY MOTIVATIONAL QUOTE (home, below greeting) ────────────
