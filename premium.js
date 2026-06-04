@@ -9350,20 +9350,26 @@ function pLeaveDM(){
   var _dmMyAv   = safeLS('get','velo_user_av')   || '🧑';
   var _dmMyId   = safeLS('get','velo_user_id') || '';
   _initSupabase();
-  // Notify peer with sentinel (deleted on receipt — never shows in history)
-  if(sbClient && _dmPeer && _dmPeer.id && _dmMyId){
-    sbClient.from('direct_messages').insert({
-      from_id: _dmMyId, from_name: _dmMyName, from_av: _dmMyAv, to_id: _dmPeer.id,
-      text: '__velo_dm_bye__:'+JSON.stringify({ name:_dmMyName, av:_dmMyAv })
-    }).then(function(){}).catch(function(){});
-  }
-  // Delete ALL messages between both users so history is clean for next session
+  // Insert bye sentinel, then delete all OTHER messages (exclude bye so recipient receives it)
   if(sbClient && _dmMyId && _dmPeer && _dmPeer.id){
     var _delToId = _dmPeer.id;
     var _delMyId = _dmMyId;
-    sbClient.from('direct_messages').delete()
-      .or('and(from_id.eq.'+_delMyId+',to_id.eq.'+_delToId+'),and(from_id.eq.'+_delToId+',to_id.eq.'+_delMyId+')')
-      .then(function(){}).catch(function(){});
+    var _delMyName = _dmMyName;
+    var _delMyAv   = _dmMyAv;
+    sbClient.from('direct_messages').insert({
+      from_id: _delMyId, from_name: _delMyName, from_av: _delMyAv, to_id: _delToId,
+      text: '__velo_dm_bye__:'+JSON.stringify({ name:_delMyName, av:_delMyAv })
+    }).select('id').then(function(res){
+      var byeId = (res && res.data && res.data[0]) ? res.data[0].id : null;
+      var q = sbClient.from('direct_messages').delete()
+        .or('and(from_id.eq.'+_delMyId+',to_id.eq.'+_delToId+'),and(from_id.eq.'+_delToId+',to_id.eq.'+_delMyId+')');
+      if(byeId) q = q.neq('id', byeId);
+      q.then(function(){}).catch(function(){});
+    }).catch(function(){
+      sbClient.from('direct_messages').delete()
+        .or('and(from_id.eq.'+_delMyId+',to_id.eq.'+_delToId+'),and(from_id.eq.'+_delToId+',to_id.eq.'+_delMyId+')')
+        .then(function(){}).catch(function(){});
+    });
   }
   if(_dmRtCh && sbClient){ try{ sbClient.removeChannel(_dmRtCh); }catch(e){} _dmRtCh = null; }
   // Clear accepted flag so a new session requires a fresh chat request
