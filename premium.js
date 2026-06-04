@@ -570,6 +570,9 @@ async function _sbSyncProfile(userId){
   // Refresh all UI with synced data — use localStorage (already repaired) over raw Supabase value
   var hn = document.getElementById('homeUserName');
   if(hn) hn.textContent = safeLS('get','velo_user_name') || p.nombre || '';
+  var hnf = document.getElementById('homeUserNameFab');
+  if(hnf) hnf.textContent = safeLS('get','velo_user_name') || p.nombre || '';
+  _renderAvatarEl('homeAvFab', safeLS('get','velo_user_av') || '🧑');
   if(typeof _checkAndShowNameBanner === 'function'){
     _checkAndShowNameBanner(safeLS('get','velo_user_name') || '');
   }
@@ -1260,6 +1263,8 @@ function _saveNameFromBanner(){
   // Update DOM immediately
   var un = document.getElementById('homeUserName');
   if(un) un.textContent = newName;
+  var unf = document.getElementById('homeUserNameFab');
+  if(unf) unf.textContent = newName;
   // Push to Supabase (same as pSaveProfile but from localStorage)
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
@@ -1303,6 +1308,8 @@ function _loadHomeData(){
   var un = document.getElementById('homeUserName');
   var ha = document.getElementById('homeAv');
   if(un) un.textContent = name || 'Hola';
+  var unf = document.getElementById('homeUserNameFab');
+  if(unf) unf.textContent = name || 'Perfil';
   // Show name-fix banner only after Supabase sync has had time to run.
   // If name is already in localStorage (returning user on same device), check immediately.
   // If localStorage is empty (new device), wait 3s so _sbSyncProfile can populate it first —
@@ -1313,6 +1320,7 @@ function _loadHomeData(){
     setTimeout(function(){ _checkAndShowNameBanner(safeLS('get','velo_user_name')||''); }, 3000);
   }
   if(ha){ _renderAvatarEl('homeAv', av); }
+  _renderAvatarEl('homeAvFab', av);
 
   // Guardian button in home header
   var gWrap = document.getElementById('homeGuardianWrap');

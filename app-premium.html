@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-458">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-458">
+  <link rel="stylesheet" href="premium.css?v=20260530-459">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-459">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -900,12 +900,18 @@
              so they stay viewport-centered regardless of scroll and disappear with the page -->
         <div class="home-logo-side home-logo-side--left" aria-hidden="true"></div>
         <div class="home-logo-side home-logo-side--right" aria-hidden="true"></div>
-        <!-- Estilo toggle chip — visible on mobile inside home content area -->
-        <button id="homeEstiloFab" onclick="rToggleDarkMode()" class="r-home-estilo-fab" aria-label="Cambiar modo oscuro/claro">
-          <span class="r-tbar-sun"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
-          <span class="r-tbar-moon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></span>
-          <span style="font-size:9px;font-weight:700;letter-spacing:.4px;line-height:1">Estilo</span>
-        </button>
+        <!-- FABs group: Profile + Estilo — float right, sticky on scroll (absolute to #pg-home) -->
+        <div id="homeFabGroup">
+          <button id="homeProfileFab" onclick="pGoTo('profile')" class="r-home-profile-fab" aria-label="Mi perfil">
+            <div class="home-av" id="homeAvFab">🧑</div>
+            <span id="homeUserNameFab" style="font-size:9px;font-weight:700;letter-spacing:.3px;line-height:1;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+          </button>
+          <button id="homeEstiloFab" onclick="rToggleDarkMode()" class="r-home-estilo-fab" aria-label="Cambiar modo oscuro/claro">
+            <span class="r-tbar-sun"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
+            <span class="r-tbar-moon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></span>
+            <span style="font-size:9px;font-weight:700;letter-spacing:.4px;line-height:1">Estilo</span>
+          </button>
+        </div>
         <div class="p-page-scroll">
           <div class="home-header r-hero-v2">
             <div class="r-hero-left">
@@ -951,23 +957,11 @@
                 </div>
                 <div id="homeGreetQuote" style="display:none;position:absolute;top:0;left:0;right:0"></div>
               </div>
-          <!-- Greeting card -->
+          <!-- Greeting card — mood + status actions (profile is now the floating FAB) -->
           <div class="home-greeting" style="flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden">
-            <div style="padding:14px 16px 12px;display:flex;flex-direction:column;gap:10px">
-              <!-- Profile pill: name above, avatar chip (like Estilo button) -->
-              <div onclick="pGoTo('profile')" title="Ver mi perfil" style="cursor:pointer;display:inline-flex;flex-direction:column;align-items:flex-start;gap:5px;align-self:flex-start">
-                <span style="font-size:14px;font-weight:700;color:var(--ink);padding-left:6px" id="homeUserName">Hola!</span>
-                <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:100px;padding:5px 14px 5px 5px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">
-                  <div class="home-av" id="homeAv" style="width:32px;height:32px;font-size:18px;flex-shrink:0">🧑<div style="position:absolute;bottom:-2px;right:-2px;background:var(--sage2);color:#fff;font-size:9px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.2);pointer-events:none">👤</div></div>
-                  <span style="font-size:10px;font-weight:600;color:var(--sage3);letter-spacing:.4px;text-transform:uppercase">Mi perfil</span>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.45;color:var(--ink3)"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
-              </div>
-              <!-- Action buttons -->
-              <div style="display:flex;gap:8px;align-items:center">
-                <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="flex:1;display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:8px 14px;letter-spacing:.02em;cursor:pointer;min-width:0">🌷 ¿Cómo te sentís hoy?</div>
-                <button class="home-mood-btn" onclick="pOpenMyStatus()"><span>📚</span> Mi estado</button>
-              </div>
+            <div style="padding:12px 16px;display:flex;gap:8px;align-items:center">
+              <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="flex:1;display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:8px 14px;letter-spacing:.02em;cursor:pointer;min-width:0">🌷 ¿Cómo te sentís hoy?</div>
+              <button class="home-mood-btn" onclick="pOpenMyStatus()"><span>📚</span> Mi estado</button>
             </div>
             <!-- Quick mood picker (hidden by default) -->
             <div id="quickMoodPicker" style="display:none;padding:12px 16px 14px;border-top:1px solid var(--border);background:var(--cream2);animation:p-fadeIn .2s ease">
@@ -3118,8 +3112,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-458"></script>
-<script src="premium-redesign.js?v=20260530-458"></script>
+<script src="premium.js?v=20260530-459"></script>
+<script src="premium-redesign.js?v=20260530-459"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
