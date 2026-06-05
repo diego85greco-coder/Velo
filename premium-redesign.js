@@ -61,29 +61,21 @@
   }
 
   function _renderWeatherInfo(text) {
-    var iconWrap = document.getElementById('homeTimeIcon');
-    if (!iconWrap) return;
-    var old = document.getElementById('homeWeatherInfo');
-    if (old) old.remove();
+    var info = document.getElementById('homeWeatherInfo');
+    if (!info) return;
     var isDark = document.body.classList.contains('r-dark');
-    var info = document.createElement('div');
-    info.id = 'homeWeatherInfo';
-    info.style.cssText = [
-      'margin-top:6px', 'font-size:12.5px',
-      'font-family:\'Jost\',sans-serif', 'font-weight:500',
-      'letter-spacing:.2px', 'text-align:center', 'line-height:1.4',
-      'color:' + (isDark ? 'rgba(210,235,220,.88)' : 'rgba(15,50,28,.78)')
-    ].join(';');
-    if (text) {
-      info.textContent = text;
-    } else {
-      var parts = [];
-      if (_weatherTemp !== null && _weatherTemp !== undefined) parts.push('🌡 ' + _weatherTemp + '°');
-      if (_weatherCity) parts.push('📍 ' + _weatherCity);
-      if (!parts.length) return;
-      info.textContent = parts.join('   ');
+    info.style.color = isDark ? 'rgba(210,235,220,.88)' : 'rgba(15,50,28,.78)';
+    if (text !== undefined) {
+      info.textContent = text || '';
+      info.style.display = text ? 'block' : 'none';
+      return;
     }
-    iconWrap.appendChild(info);
+    var parts = [];
+    if (_weatherTemp !== null && _weatherTemp !== undefined) parts.push('🌡 ' + _weatherTemp + '°');
+    if (_weatherCity) parts.push('📍 ' + _weatherCity);
+    if (!parts.length) { info.style.display = 'none'; return; }
+    info.textContent = parts.join('   ');
+    info.style.display = 'block';
   }
 
   function _doWeatherFetch(lat, lon) {
@@ -187,10 +179,12 @@
     span.className = 'r-time-icon is-' + result.period;
     span.innerHTML = result.svg;
     if (iconWrap) {
-      // Replace only the icon span — preserve #homeWeatherInfo below it
       var oldIcon = iconWrap.querySelector('.r-time-icon');
-      if (oldIcon) oldIcon.remove(); else iconWrap.innerHTML = '';
-      iconWrap.insertBefore(span, iconWrap.firstChild);
+      if (oldIcon) oldIcon.remove();
+      // Always insert icon before the static #homeWeatherInfo div
+      var weatherEl = document.getElementById('homeWeatherInfo');
+      if (weatherEl && weatherEl.parentNode === iconWrap) iconWrap.insertBefore(span, weatherEl);
+      else iconWrap.insertBefore(span, iconWrap.firstChild);
     } else if (greet) { greet.appendChild(span); }
   }
 
@@ -276,10 +270,8 @@
     // Greeting + icon
     wrapGreetingWords();
     injectTimeIcon();
-    // Fetch weather + location + temp (updates icon once geolocation resolves)
+    // Fetch weather + location + temp; renders info once resolved (or from cache)
     _fetchWeather();
-    // If cache already set, render weather info immediately
-    _renderWeatherInfo();
     // Re-inject icon every minute in case greeting text mutates
     setInterval(injectTimeIcon, 60000);
 
