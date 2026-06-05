@@ -65,14 +65,21 @@
     if (!iconWrap) return;
     var old = document.getElementById('homeWeatherInfo');
     if (old) old.remove();
-    if (!_weatherTemp && !_weatherCity) return;
+    if (_weatherTemp === null && !_weatherCity) return;
+    var isDark = document.body.classList.contains('r-dark');
     var info = document.createElement('div');
     info.id = 'homeWeatherInfo';
-    info.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:5px;margin-top:6px;font-size:11.5px;font-family:\'Jost\',sans-serif;font-weight:500;letter-spacing:.2px;opacity:.82;color:var(--ink3);text-align:center;line-height:1.3';
+    info.style.cssText = [
+      'display:flex', 'align-items:center', 'justify-content:center',
+      'gap:4px', 'margin-top:5px',
+      'font-size:12px', 'font-family:\'Jost\',sans-serif', 'font-weight:500',
+      'letter-spacing:.3px', 'text-align:center', 'line-height:1.3',
+      'color:' + (isDark ? 'rgba(220,240,228,.82)' : 'rgba(20,60,35,.72)')
+    ].join(';');
     var parts = [];
-    if (_weatherTemp !== null) parts.push(_weatherTemp + '°C');
-    if (_weatherCity)          parts.push(_weatherCity);
-    info.textContent = parts.join('  ·  ');
+    if (_weatherTemp !== null) parts.push('🌡 ' + _weatherTemp + '°');
+    if (_weatherCity)          parts.push('📍 ' + _weatherCity);
+    info.textContent = parts.join('   ');
     iconWrap.appendChild(info);
   }
 
@@ -130,13 +137,17 @@
   function injectTimeIcon() {
     var iconWrap = document.getElementById('homeTimeIcon');
     var greet    = document.getElementById('homeGreetTxt');
-    if (greet) { var old = greet.querySelector('.r-time-icon'); if (old) old.remove(); }
+    if (greet) { var oldG = greet.querySelector('.r-time-icon'); if (oldG) oldG.remove(); }
     var result = pickTimeIcon();
     var span = document.createElement('span');
     span.className = 'r-time-icon is-' + result.period;
     span.innerHTML = result.svg;
-    if (iconWrap) { iconWrap.innerHTML = ''; iconWrap.appendChild(span); }
-    else if (greet) { greet.appendChild(span); }
+    if (iconWrap) {
+      // Replace only the icon span — preserve #homeWeatherInfo below it
+      var oldIcon = iconWrap.querySelector('.r-time-icon');
+      if (oldIcon) oldIcon.remove(); else iconWrap.innerHTML = '';
+      iconWrap.insertBefore(span, iconWrap.firstChild);
+    } else if (greet) { greet.appendChild(span); }
   }
 
   /* ── 2. Make user name editable (small pencil) ─────────────────── */
