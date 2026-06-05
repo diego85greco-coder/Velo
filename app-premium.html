@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-501">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-501">
+  <link rel="stylesheet" href="premium.css?v=20260530-502">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-502">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1068,10 +1068,7 @@
                 </button>
                 <span class="r-desk-qlink-divider"></span>
                 <button id="homeProfileChip" onclick="pGoTo('profile')" class="r-desk-profile-chip">
-                  <div class="r-desk-profile-av">
-                    <img id="homeProfileChipImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%">
-                    <span id="homeProfileChipInit">?</span>
-                  </div>
+                  <div id="homeProfileChipAv" class="r-desk-profile-av">?</div>
                   <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
                     <span style="font-size:8px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;opacity:.55;line-height:1.2">Mi perfil</span>
                     <span id="homeProfileChipName" style="font-size:12px;font-weight:600;max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3">—</span>
@@ -3165,8 +3162,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-501"></script>
-<script src="premium-redesign.js?v=20260530-501"></script>
+<script src="premium.js?v=20260530-502"></script>
+<script src="premium-redesign.js?v=20260530-502"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

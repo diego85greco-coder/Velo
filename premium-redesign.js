@@ -337,26 +337,42 @@
     // Editable name
     makeNameEditable();
 
-    // Profile chip — populate avatar + first name; re-fill after _sbSyncProfile runs
-    function _fillProfileChip() {
-      var name = (typeof safeLS === 'function' ? safeLS('get','velo_user_name') : localStorage.getItem('velo_user_name')) || '';
-      var av   = (typeof safeLS === 'function' ? safeLS('get','velo_user_av')   : localStorage.getItem('velo_user_av'))   || '';
-      var nameEl = document.getElementById('homeProfileChipName');
-      var img    = document.getElementById('homeProfileChipImg');
-      var init   = document.getElementById('homeProfileChipInit');
-      if (!nameEl) return;
-      if (name) nameEl.textContent = name.split(' ')[0];
-      if (img && init) {
-        if (av && (av.startsWith('http') || av.startsWith('data:'))) {
-          img.src = av; img.style.display = 'block'; init.style.display = 'none';
-        } else if (name) {
-          init.textContent = name[0].toUpperCase();
-          init.style.display = '';
-        }
+    // Profile chip — mirrors #sidebarUserAv (same source, same approach)
+    function _syncChipAvatar(sidebarAv, chipAv) {
+      if (!sidebarAv || !chipAv) return;
+      var bgImg = sidebarAv.style.backgroundImage;
+      if (bgImg && bgImg !== 'none' && bgImg !== '') {
+        chipAv.style.backgroundImage    = bgImg;
+        chipAv.style.backgroundSize     = 'cover';
+        chipAv.style.backgroundPosition = 'center';
+        chipAv.style.backgroundRepeat   = 'no-repeat';
+        chipAv.style.fontSize = '0';
+        chipAv.textContent = '';
+      } else {
+        chipAv.style.backgroundImage = '';
+        chipAv.style.fontSize = '';
+        // fallback: first initial of name
+        var name = (typeof safeLS === 'function' ? safeLS('get','velo_user_name') : localStorage.getItem('velo_user_name')) || '';
+        chipAv.textContent = name ? name[0].toUpperCase() : (sidebarAv.textContent.trim()[0] || '?');
       }
+    }
+    function _fillProfileChip() {
+      var name   = (typeof safeLS === 'function' ? safeLS('get','velo_user_name') : localStorage.getItem('velo_user_name')) || '';
+      var nameEl = document.getElementById('homeProfileChipName');
+      var chipAv = document.getElementById('homeProfileChipAv');
+      var sidebarAv = document.getElementById('sidebarUserAv');
+      if (nameEl && name) nameEl.textContent = name.split(' ')[0];
+      _syncChipAvatar(sidebarAv, chipAv);
     }
     _fillProfileChip();
     setTimeout(_fillProfileChip, 3500);
+    // Watch sidebarUserAv for future updates (avatar upload, Supabase sync, etc.)
+    var _sbAv = document.getElementById('sidebarUserAv');
+    var _chipAv = document.getElementById('homeProfileChipAv');
+    if (_sbAv && _chipAv) {
+      new MutationObserver(function() { _syncChipAvatar(_sbAv, _chipAv); })
+        .observe(_sbAv, { attributes: true, attributeFilter: ['style'], childList: true, characterData: true, subtree: true });
+    }
 
     // Observe DOM mutations on greeting (app rewrites text on screen change)
     const greet = document.getElementById('homeGreetTxt');
