@@ -33,29 +33,47 @@
 
   const OVERCAST = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wOvC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c8d8e8"/><stop offset="100%" stop-color="#96b0c8"/></linearGradient></defs><circle cx="24" cy="30" r="15" fill="url(#wOvC)"/><circle cx="40" cy="28" r="14" fill="url(#wOvC)"/><circle cx="16" cy="36" r="11" fill="url(#wOvC)"/><circle cx="48" cy="34" r="10" fill="url(#wOvC)"/><rect x="5" y="30" width="54" height="18" rx="9" fill="url(#wOvC)"/></svg>`;
 
-  /* ── Weather detection via Open-Meteo (free, no key) ───────────── */
-  var _weatherIconType = null; // filled after geolocation
+  /* ── Weather detection via Open-Meteo + BigDataCloud (free, no key) ── */
+  var _weatherIconType = null;
+  var _weatherTemp     = null;
+  var _weatherCity     = null;
 
   function _wmoToType(code, isNight) {
-    if (code === 0)                     return isNight ? 'clear-night'  : 'clear-day';
-    if (code <= 2)                      return isNight ? 'moon-cloud'   : 'sun-cloud';
+    if (code === 0)                               return isNight ? 'clear-night' : 'clear-day';
+    if (code <= 2)                                return isNight ? 'moon-cloud'  : 'sun-cloud';
     if (code === 3 || code === 45 || code === 48) return 'overcast';
-    if (code >= 51 && code <= 82)       return 'rain';
-    if (code >= 71 && code <= 77)       return 'snow';
-    if (code >= 95)                     return 'storm';
+    if (code >= 71 && code <= 77)                 return 'snow';
+    if (code >= 95)                               return 'storm';
+    if (code >= 51 && code <= 82)                 return 'rain';
     return isNight ? 'clear-night' : 'clear-day';
   }
 
-  function _weatherSvg(type, h) {
+  function _weatherSvg(type) {
     switch(type) {
-      case 'sun-cloud':    return { svg: SUN_CLOUD,  period: 'morning' };
-      case 'moon-cloud':   return { svg: MOON_CLOUD, period: 'night' };
-      case 'rain':         return { svg: RAIN,       period: 'rain' };
-      case 'storm':        return { svg: STORM,      period: 'storm' };
-      case 'snow':         return { svg: SNOW,       period: 'snow' };
-      case 'overcast':     return { svg: OVERCAST,   period: 'overcast' };
-      default:             return null;
+      case 'sun-cloud':  return { svg: SUN_CLOUD,  period: 'morning' };
+      case 'moon-cloud': return { svg: MOON_CLOUD, period: 'night' };
+      case 'rain':       return { svg: RAIN,       period: 'rain' };
+      case 'storm':      return { svg: STORM,      period: 'storm' };
+      case 'snow':       return { svg: SNOW,       period: 'snow' };
+      case 'overcast':   return { svg: OVERCAST,   period: 'overcast' };
+      default:           return null;
     }
+  }
+
+  function _renderWeatherInfo() {
+    var iconWrap = document.getElementById('homeTimeIcon');
+    if (!iconWrap) return;
+    var old = document.getElementById('homeWeatherInfo');
+    if (old) old.remove();
+    if (!_weatherTemp && !_weatherCity) return;
+    var info = document.createElement('div');
+    info.id = 'homeWeatherInfo';
+    info.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:5px;margin-top:6px;font-size:11.5px;font-family:\'Jost\',sans-serif;font-weight:500;letter-spacing:.2px;opacity:.82;color:var(--ink3);text-align:center;line-height:1.3';
+    var parts = [];
+    if (_weatherTemp !== null) parts.push(_weatherTemp + '°C');
+    if (_weatherCity)          parts.push(_weatherCity);
+    info.textContent = parts.join('  ·  ');
+    iconWrap.appendChild(info);
   }
 
   function _fetchWeather() {
@@ -64,7 +82,10 @@
       var c = JSON.parse(localStorage.getItem('velo_weather_cache') || 'null');
       if (c && Date.now() - c.ts < 30 * 60 * 1000) {
         _weatherIconType = c.type;
+        _weatherTemp     = c.temp;
+        _weatherCity     = c.city;
         injectTimeIcon();
+        _renderWeatherInfo();
         return;
       }
     } catch(e) {}
@@ -73,40 +94,47 @@
     navigator.geolocation.getCurrentPosition(function(pos) {
       var lat = pos.coords.latitude.toFixed(4);
       var lon = pos.coords.longitude.toFixed(4);
-      fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true&timezone=auto')
-        .then(function(r){ return r.json(); })
-        .then(function(data) {
-          var cw   = data.current_weather;
-          var type = _wmoToType(cw.weathercode, cw.is_day === 0);
-          _weatherIconType = type;
-          try { localStorage.setItem('velo_weather_cache', JSON.stringify({ ts: Date.now(), type: type })); } catch(e) {}
-          injectTimeIcon();
-        })
-        .catch(function(){});
+
+      // Fetch weather + city in parallel
+      Promise.all([
+        fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true&timezone=auto').then(function(r){ return r.json(); }),
+        fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=es').then(function(r){ return r.json(); })
+      ]).then(function(results) {
+        var weather = results[0];
+        var geo     = results[1];
+        var cw      = weather.current_weather;
+        var type    = _wmoToType(cw.weathercode, cw.is_day === 0);
+        var temp    = Math.round(cw.temperature);
+        var city    = geo.city || geo.locality || geo.principalSubdivision || '';
+        _weatherIconType = type;
+        _weatherTemp     = temp;
+        _weatherCity     = city;
+        try { localStorage.setItem('velo_weather_cache', JSON.stringify({ ts: Date.now(), type: type, temp: temp, city: city })); } catch(e) {}
+        injectTimeIcon();
+        _renderWeatherInfo();
+      }).catch(function(){});
     }, function(){}, { timeout: 6000, maximumAge: 1800000 });
   }
 
   function pickTimeIcon() {
     var h = new Date().getHours();
-    // If weather data available, use it
     if (_weatherIconType) {
-      var weatherResult = _weatherSvg(_weatherIconType, h);
-      if (weatherResult) return weatherResult;
+      var wr = _weatherSvg(_weatherIconType);
+      if (wr) return wr;
     }
-    // Fallback: time-based
     if (h >= 6 && h < 12)  return { svg: SUN_MORNING,   period: 'morning' };
     if (h >= 12 && h < 20) return { svg: SUN_AFTERNOON, period: 'afternoon' };
     return                        { svg: MOON,           period: 'night' };
   }
 
   function injectTimeIcon() {
-    const iconWrap = document.getElementById('homeTimeIcon');
-    const greet    = document.getElementById('homeGreetTxt');
-    if (greet) { const old = greet.querySelector('.r-time-icon'); if (old) old.remove(); }
-    const { svg, period } = pickTimeIcon();
-    const span = document.createElement('span');
-    span.className = 'r-time-icon is-' + period;
-    span.innerHTML = svg;
+    var iconWrap = document.getElementById('homeTimeIcon');
+    var greet    = document.getElementById('homeGreetTxt');
+    if (greet) { var old = greet.querySelector('.r-time-icon'); if (old) old.remove(); }
+    var result = pickTimeIcon();
+    var span = document.createElement('span');
+    span.className = 'r-time-icon is-' + result.period;
+    span.innerHTML = result.svg;
     if (iconWrap) { iconWrap.innerHTML = ''; iconWrap.appendChild(span); }
     else if (greet) { greet.appendChild(span); }
   }
@@ -193,8 +221,10 @@
     // Greeting + icon
     wrapGreetingWords();
     injectTimeIcon();
-    // Fetch weather (updates icon once geolocation resolves)
+    // Fetch weather + location + temp (updates icon once geolocation resolves)
     _fetchWeather();
+    // If cache already set, render weather info immediately
+    _renderWeatherInfo();
     // Re-inject icon every minute in case greeting text mutates
     setInterval(injectTimeIcon, 60000);
 
