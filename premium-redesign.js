@@ -337,6 +337,27 @@
     // Editable name
     makeNameEditable();
 
+    // Profile chip — populate avatar + first name; re-fill after _sbSyncProfile runs
+    function _fillProfileChip() {
+      var name = (typeof safeLS === 'function' ? safeLS('get','velo_user_name') : localStorage.getItem('velo_user_name')) || '';
+      var av   = (typeof safeLS === 'function' ? safeLS('get','velo_user_av')   : localStorage.getItem('velo_user_av'))   || '';
+      var nameEl = document.getElementById('homeProfileChipName');
+      var img    = document.getElementById('homeProfileChipImg');
+      var init   = document.getElementById('homeProfileChipInit');
+      if (!nameEl) return;
+      if (name) nameEl.textContent = name.split(' ')[0];
+      if (img && init) {
+        if (av && (av.startsWith('http') || av.startsWith('data:'))) {
+          img.src = av; img.style.display = 'block'; init.style.display = 'none';
+        } else if (name) {
+          init.textContent = name[0].toUpperCase();
+          init.style.display = '';
+        }
+      }
+    }
+    _fillProfileChip();
+    setTimeout(_fillProfileChip, 3500);
+
     // Observe DOM mutations on greeting (app rewrites text on screen change)
     const greet = document.getElementById('homeGreetTxt');
     if (greet) {

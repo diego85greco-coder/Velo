@@ -8447,3 +8447,53 @@ body.r-dark #homeMonthlyHint { color: rgba(255,255,255,.78); }
     width: 100%;
   }
 }
+
+/* ── v501: Desktop profile chip in quick-links bar ── */
+.r-desk-qlink-divider {
+  display: none;
+  width: 1px; height: 20px;
+  background: rgba(116,198,157,.28);
+  flex-shrink: 0;
+  align-self: center;
+}
+.r-desk-profile-chip {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px 4px 4px;
+  background: rgba(116,198,157,.09);
+  border: 1.5px solid rgba(116,198,157,.22);
+  border-radius: 100px;
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  color: var(--ink3);
+  transition: background .18s, border-color .18s, transform .12s;
+  white-space: nowrap;
+}
+.r-desk-profile-chip:hover {
+  background: rgba(116,198,157,.18);
+  border-color: rgba(116,198,157,.42);
+  color: var(--sage);
+  transform: translateY(-1px);
+}
+body.r-dark .r-desk-profile-chip {
+  background: rgba(116,198,157,.06);
+  border-color: rgba(116,198,157,.16);
+}
+body.r-dark .r-desk-profile-chip:hover {
+  background: rgba(116,198,157,.14);
+  border-color: rgba(116,198,157,.32);
+}
+.r-desk-profile-av {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(116,198,157,.35), rgba(45,106,79,.22));
+  border: 1.5px solid rgba(116,198,157,.40);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
+  font-size: 11px; font-weight: 700; color: var(--sage2);
+}
+@media (min-width: 861px) {
+  .r-desk-qlink-divider { display: inline-block; }
+  .r-desk-profile-chip  { display: inline-flex; }
+}
