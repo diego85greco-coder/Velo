@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-499">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-499">
+  <link rel="stylesheet" href="premium.css?v=20260530-500">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-500">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -963,7 +963,7 @@
             <span style="font-size:8px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink4);opacity:.72">REGISTRA</span>
           </div>
           <div class="home-greeting" style="flex-direction:column;align-items:stretch;gap:0;padding:0;margin-left:94px;margin-right:94px">
-            <div style="padding:8px 10px;display:flex;flex-direction:column;gap:6px">
+            <div id="homeRegisterZone" style="padding:8px 10px;display:flex;flex-direction:column;gap:6px">
               <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:7px 12px;letter-spacing:.02em;cursor:pointer;white-space:nowrap;overflow:hidden">🌷 ¿Cómo te sentís hoy?</div>
               <button class="home-mood-btn" onclick="pOpenMyStatus()" style="font-size:11px;padding:6px 10px;white-space:nowrap;width:100%;justify-content:center"><span>📚</span> Mi estado</button>
             </div>
@@ -2689,9 +2689,9 @@
       </div>
       <button onclick="closeModal('termsOv')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink4);padding:0">✕</button>
     </div>
-    <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:8px;padding:8px 11px;margin-bottom:14px">Última actualización: 23 de mayo de 2026 · heyvelo.app</div>
+    <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:8px;padding:8px 11px;margin-bottom:14px">Última actualización: 5 de junio de 2026 · heyvelo.app</div>
     <div style="font-size:13px;color:var(--ink3);line-height:1.75;display:flex;flex-direction:column;gap:14px">
-      <p style="color:var(--ink4);font-style:italic;font-size:12px">Al acceder o utilizar heyvelo.app, usted declara conocer y aceptar estas condiciones.</p>
+      <p style="color:var(--ink4);font-style:italic;font-size:12px;margin:0">Al acceder o utilizar heyvelo.app, usted declara conocer y aceptar estas condiciones.</p>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">1. NATURALEZA DE HEYVELO: INTERMEDIACIÓN TECNOLÓGICA</div>
         <p style="margin:0 0 6px">Heyvelo actúa única y exclusivamente como una aplicación intermediaria para la comunicación y facilitación de contactos.</p>
@@ -2701,13 +2701,14 @@
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">2. FUNCIONALIDADES Y MODERACIÓN (IA Y HUMANA)</div>
         <p style="margin:0 0 6px"><strong>Comunidad y Chat:</strong> Heyvelo facilita canales de comunicación. El uso de la IA de moderación y la supervisión humana de administradores tiene como único objetivo mantener un entorno seguro, reservándose Heyvelo el derecho de eliminar contenido o banear usuarios que incumplan las normas.</p>
-        <p style="margin:0"><strong>Servicios de Terceros:</strong> La "Velo IA" (chatbot) y la sección de "Buenas Noticias" son servicios de terceros. Heyvelo no garantiza su precisión, disponibilidad o funcionamiento, y no se hace responsable por fallos derivados de estos sistemas.</p>
+        <p style="margin:0"><strong>Servicios de Terceros:</strong> La "Velo IA" (chatbot), la sección de "Buenas Noticias" y la función de clima son servicios de terceros de código abierto. Heyvelo no garantiza su precisión, disponibilidad o funcionamiento continuo.</p>
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">3. PRIVACIDAD Y DATOS EN SECCIONES ESPECIALES</div>
         <p style="margin:0 0 6px">Heyvelo prioriza la privacidad bajo el modelo de minimización de datos:</p>
         <p style="margin:0 0 6px"><strong>Diario Íntimo:</strong> No se almacena el contenido escrito; solo se procesan estados de ánimo estadísticos.</p>
         <p style="margin:0 0 6px"><strong>Secciones Comunitarias (Al Mar, Muro de la Felicidad, etc.):</strong> No se retiene información sensible ni privada.</p>
+        <p style="margin:0 0 6px"><strong>Función de clima:</strong> Heyvelo <em>no</em> utiliza geolocalización automática, GPS ni dirección IP para detectar la ubicación del usuario. La ciudad es ingresada de forma completamente voluntaria y manual por el usuario. Los datos meteorológicos se obtienen exclusivamente de la API pública Open-Meteo (open-meteo.com) a partir del nombre de ciudad indicado. Heyvelo no recopila, registra ni comparte datos de ubicación geográfica real. El usuario puede cambiar o eliminar su ciudad guardada en cualquier momento.</p>
         <p style="margin:0"><strong>Responsabilidad del Usuario:</strong> Usted es responsable de la información que decide publicar o compartir en los espacios comunitarios.</p>
       </div>
       <div>
@@ -2755,7 +2756,7 @@
       </div>
       <button onclick="closeModal('privacyOv')" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink4);padding:0">✕</button>
     </div>
-    <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:8px;padding:8px 11px;margin-bottom:14px">Última actualización: 23 de mayo de 2026 · heyvelo.app</div>
+    <div style="font-size:11px;color:var(--ink5);background:var(--cream2);border-radius:8px;padding:8px 11px;margin-bottom:14px">Última actualización: 5 de junio de 2026 · heyvelo.app</div>
     <div style="font-size:13px;color:var(--ink3);line-height:1.75;display:flex;flex-direction:column;gap:14px">
       <p style="color:var(--ink4);font-style:italic;font-size:12px;margin:0">En Heyvelo.app, la protección de sus datos personales es una prioridad. Esta política detalla cómo gestionamos su información de manera transparente y segura conforme al RGPD y la legislación portuguesa (Ley 58/2019).</p>
       <div>
@@ -2764,40 +2765,43 @@
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">2. ¿QUÉ INFORMACIÓN RECOPILAMOS Y PARA QUÉ?</div>
-        <p style="margin:0 0 6px">Recopilamos únicamente los datos necesarios para operar nuestra plataforma de intermediación:</p>
+        <p style="margin:0 0 6px">Recopilamos únicamente los datos mínimos necesarios para operar nuestra plataforma:</p>
         <p style="margin:0 0 5px"><strong>Datos de cuenta:</strong> Nombre de usuario y correo electrónico para la gestión de su perfil.</p>
         <p style="margin:0 0 5px"><strong>Datos profesionales:</strong> Información técnica y acreditaciones de los Profesionales para verificar su idoneidad en la plataforma.</p>
         <p style="margin:0 0 5px"><strong>Datos de transacciones:</strong> Información necesaria para la gestión de pagos (procesada de forma segura mediante Stripe/PayPal; Heyvelo no almacena datos bancarios).</p>
         <p style="margin:0 0 5px"><strong>Datos de salud y notas clínicas:</strong> Heyvelo actúa como encargado del tratamiento. El Profesional es el responsable y único custodio de estos expedientes; Heyvelo no accede, audita ni edita este contenido.</p>
+        <p style="margin:0 0 5px"><strong>Ciudad para el clima (opcional):</strong> Si el usuario activa la función de clima, la ciudad ingresada manualmente se almacena en su perfil para mostrar información meteorológica local. Esta información es proporcionada voluntariamente por el usuario; Heyvelo <em>no</em> utiliza geolocalización automática ni dirección IP para inferir la ubicación. El usuario puede modificar o eliminar esta preferencia en cualquier momento.</p>
         <p style="margin:0"><strong>Datos de uso técnico:</strong> Dirección IP, logs de acceso y metadatos de aceptación de términos, necesarios para nuestra seguridad y defensa legal.</p>
       </div>
       <div>
-        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">3. PROTECCIÓN EN SECCIONES ESPECIALES (MINIMIZACIÓN DE DATOS)</div>
-        <p style="margin:0 0 6px">Heyvelo aplica principios de privacidad desde el diseño:</p>
+        <div style="font-weight:700;color:var(--ink);margin-bottom:5px">3. PROTECCIÓN EN SECCIONES ESPECIALES (PRIVACIDAD POR DISEÑO)</div>
+        <p style="margin:0 0 6px">Heyvelo aplica principios de privacidad desde el diseño y por defecto (<em>privacy by design &amp; by default</em>):</p>
         <p style="margin:0 0 5px"><strong>Diario Íntimo:</strong> No almacenamos el contenido de sus escritos. Solo registramos sus estados de ánimo para fines estadísticos de seguimiento personal.</p>
         <p style="margin:0 0 5px"><strong>Comunidad (Muro de la Felicidad, Al Mar, Sala de Ayuda, Guardianes):</strong> No almacenamos información sensible o personal en estas secciones. La información publicada en espacios comunitarios es responsabilidad del usuario.</p>
-        <p style="margin:0"><strong>Moderación:</strong> Utilizamos IA y supervisión humana para proteger la seguridad de los chats. Este procesamiento es necesario por nuestro interés legítimo en mantener una comunidad sana y libre de acoso.</p>
+        <p style="margin:0 0 5px"><strong>Función de clima:</strong> Heyvelo <em>no</em> solicita acceso a la ubicación del dispositivo, no rastrea la dirección IP con fines de geolocalización, ni emplea ninguna tecnología de seguimiento o fingerprinting para determinar dónde se encuentra el usuario. La consulta meteorológica se realiza únicamente con el nombre de ciudad que el usuario introduce de forma explícita y voluntaria, enviando dicho nombre a la API pública Open-Meteo. En ningún caso se almacenan registros de ubicación, historiales de ciudades consultadas ni datos de posición geográfica real.</p>
+        <p style="margin:0"><strong>Moderación:</strong> Utilizamos IA y supervisión humana para proteger la seguridad de los chats. Este procesamiento responde a nuestro interés legítimo en mantener una comunidad sana y libre de acoso.</p>
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">4. DERECHOS DE LOS USUARIOS (RGPD)</div>
         <p style="margin:0 0 6px">Usted tiene derecho a:</p>
         <p style="margin:0 0 4px">· <strong>Acceso y Rectificación:</strong> Consultar qué datos tenemos y actualizarlos.</p>
         <p style="margin:0 0 4px">· <strong>Supresión ("Derecho al olvido"):</strong> Solicitar la eliminación total de su cuenta y sus datos personales.</p>
-        <p style="margin:0 0 4px">· <strong>Portabilidad:</strong> Obtener una copia de sus datos.</p>
-        <p style="margin:0 0 8px">· <strong>Oposición:</strong> Oponerse al tratamiento de datos personales para fines específicos.</p>
+        <p style="margin:0 0 4px">· <strong>Portabilidad:</strong> Obtener una copia de sus datos en formato estructurado.</p>
+        <p style="margin:0 0 8px">· <strong>Oposición y limitación:</strong> Oponerse al tratamiento de sus datos personales para fines específicos o solicitar su limitación temporal.</p>
         <p style="margin:0">Para ejercer estos derechos: <strong>privacidad-datos@heyvelo.app</strong>.</p>
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">5. CONSERVACIÓN Y SEGURIDAD</div>
         <p style="margin:0 0 6px"><strong>Duración:</strong> Sus datos se conservan mientras su cuenta esté activa. Tras la baja, conservaremos de forma bloqueada únicamente los datos estrictamente necesarios (registros de aceptación de términos, logs de IP y timestamp) por el plazo que prescribe el Código Civil portugués.</p>
-        <p style="margin:0"><strong>Seguridad:</strong> Heyvelo implementa medidas técnicas de cifrado y control de acceso. En el uso de servicios de terceros (como nuestra IA de chatbot), limitamos al máximo la transferencia de información personal.</p>
+        <p style="margin:0"><strong>Seguridad:</strong> Heyvelo implementa medidas técnicas de cifrado y control de acceso. En el uso de servicios de terceros, limitamos al máximo la transferencia de información personal.</p>
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">6. TRANSFERENCIAS A TERCEROS</div>
         <p style="margin:0 0 6px">No vendemos ni compartimos sus datos con fines publicitarios. Solo compartimos información cuando es estrictamente necesario:</p>
         <p style="margin:0 0 4px">· <strong>Pasarelas de pago:</strong> Para procesar suscripciones y donaciones (Stripe/PayPal).</p>
         <p style="margin:0 0 4px">· <strong>Autoridades:</strong> Ante órdenes judiciales vinculantes.</p>
-        <p style="margin:0">· <strong>Moderación:</strong> Uso de sistemas de IA para filtrar contenido nocivo.</p>
+        <p style="margin:0 0 4px">· <strong>Moderación:</strong> Uso de sistemas de IA para filtrar contenido nocivo.</p>
+        <p style="margin:0">· <strong>Open-Meteo (clima):</strong> Para obtener datos meteorológicos se envía únicamente el nombre de la ciudad elegida por el usuario. Open-Meteo es una API meteorológica de código abierto y acceso público que no recibe datos de identificación personal, dirección IP ni información de cuenta. Consulte su política en open-meteo.com.</p>
       </div>
       <div>
         <div style="font-weight:700;color:var(--ink);margin-bottom:5px">7. ACTUALIZACIONES DE LA POLÍTICA</div>
@@ -3150,8 +3154,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-499"></script>
-<script src="premium-redesign.js?v=20260530-499"></script>
+<script src="premium.js?v=20260530-500"></script>
+<script src="premium-redesign.js?v=20260530-500"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

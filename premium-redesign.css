@@ -8436,3 +8436,14 @@ body.r-dark #homeMonthlyHint { color: rgba(255,255,255,.78); }
   max-width: 200px;
   text-align: center;
 }
+
+/* ── v500: Register zone buttons — constrain width on desktop ── */
+@media (min-width: 861px) {
+  #homeRegisterZone {
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+    width: 100%;
+  }
+}
