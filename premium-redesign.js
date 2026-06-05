@@ -50,15 +50,17 @@
     return isNight ? 'clear-night' : 'clear-day';
   }
 
-  function _weatherSvg(type) {
+  function _weatherEmoji(type) {
     switch(type) {
-      case 'sun-cloud':  return { svg: SUN_CLOUD,  period: 'morning' };
-      case 'moon-cloud': return { svg: MOON_CLOUD, period: 'night' };
-      case 'rain':       return { svg: RAIN,       period: 'rain' };
-      case 'storm':      return { svg: STORM,      period: 'storm' };
-      case 'snow':       return { svg: SNOW,       period: 'snow' };
-      case 'overcast':   return { svg: OVERCAST,   period: 'overcast' };
-      default:           return null;
+      case 'clear-day':   return { emoji: '☀️',  period: 'morning' };
+      case 'sun-cloud':   return { emoji: '🌤️', period: 'morning' };
+      case 'moon-cloud':  return { emoji: '🌥️', period: 'night' };
+      case 'rain':        return { emoji: '🌧️', period: 'rain' };
+      case 'storm':       return { emoji: '⛈️',  period: 'storm' };
+      case 'snow':        return { emoji: '🌨️', period: 'snow' };
+      case 'overcast':    return { emoji: '☁️',  period: 'overcast' };
+      case 'clear-night': return { emoji: '🌙',  period: 'night' };
+      default: return null;
     }
   }
 
@@ -73,8 +75,9 @@
     if (!parts.length) { info.style.display = 'none'; return; }
     info.innerHTML = '';
     info.style.cssText += ';display:block;color:' + ink;
+    var row = document.createElement('div');
     var txt = document.createTextNode(parts.join('   '));
-    info.appendChild(txt);
+    row.appendChild(txt);
     var btn = document.createElement('span');
     btn.title = 'Cambiar ciudad';
     btn.textContent = ' ✎';
@@ -85,7 +88,12 @@
       injectTimeIcon();
       _showCityInput();
     };
-    info.appendChild(btn);
+    row.appendChild(btn);
+    info.appendChild(row);
+    var hint = document.createElement('div');
+    hint.textContent = 'Ciudad guardada — tocá ✎ para cambiarla cuando quieras';
+    hint.style.cssText = 'margin-top:4px;font-size:9px;opacity:.48;text-align:center;line-height:1.4;font-style:italic';
+    info.appendChild(hint);
   }
 
   function _showCityInput() {
@@ -204,6 +212,16 @@
       _fetchWeatherByCity(city);
     });
 
+    // Hint below input
+    var hint = document.createElement('div');
+    hint.textContent = '🌍 Elegí tu ciudad — la recordaremos para tus próximas sesiones. Podés cambiarla cuando quieras.';
+    hint.style.cssText = [
+      'margin-top:7px', 'font-size:9.5px', 'line-height:1.5',
+      'opacity:.58', 'text-align:center', 'max-width:210px',
+      'font-family:\'Jost\',sans-serif', 'font-style:italic'
+    ].join(';');
+    info.appendChild(hint);
+
     setTimeout(function(){ input.focus(); }, 80);
   }
 
@@ -310,12 +328,12 @@
   function pickTimeIcon() {
     var h = new Date().getHours();
     if (_weatherIconType) {
-      var wr = _weatherSvg(_weatherIconType);
+      var wr = _weatherEmoji(_weatherIconType);
       if (wr) return wr;
     }
-    if (h >= 6 && h < 12)  return { svg: SUN_MORNING,   period: 'morning' };
-    if (h >= 12 && h < 20) return { svg: SUN_AFTERNOON, period: 'afternoon' };
-    return                        { svg: MOON,           period: 'night' };
+    if (h >= 6 && h < 12)  return { emoji: '☀️', period: 'morning' };
+    if (h >= 12 && h < 20) return { emoji: '☀️', period: 'afternoon' };
+    return                        { emoji: '🌙', period: 'night' };
   }
 
   function injectTimeIcon() {
@@ -325,11 +343,12 @@
     var result = pickTimeIcon();
     var span = document.createElement('span');
     span.className = 'r-time-icon is-' + result.period;
-    span.innerHTML = result.svg;
+    span.textContent = result.emoji || '';
+    span.style.cssText = 'font-size:62px;line-height:1;display:block;text-align:center;' +
+      'filter:drop-shadow(0 4px 12px rgba(0,0,0,.20));cursor:default;user-select:none';
     if (iconWrap) {
       var oldIcon = iconWrap.querySelector('.r-time-icon');
       if (oldIcon) oldIcon.remove();
-      // Always insert icon before the static #homeWeatherInfo div
       var weatherEl = document.getElementById('homeWeatherInfo');
       if (weatherEl && weatherEl.parentNode === iconWrap) iconWrap.insertBefore(span, weatherEl);
       else iconWrap.insertBefore(span, iconWrap.firstChild);
