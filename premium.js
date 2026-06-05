@@ -390,7 +390,7 @@ async function _sbSyncProfile(userId){
   var res;
   try{
     res = await sbClient.from('profiles')
-      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified')
+      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city')
       .eq('id',userId).limit(1);
     // 400 = column doesn't exist yet — fall back to base columns so sync still works
     if(res.error && res.status === 400){
@@ -496,10 +496,11 @@ async function _sbSyncProfile(userId){
   if(p.motto)         safeLS('set','velo_user_motto',    p.motto);
   // Never let profile sync downgrade an active admin session
   if(p.role && safeLS('get','velo_admin_session') !== '1') safeLS('set','velo_user_type', p.role);
-  if(p.status_music)  safeLS('set','velo_status_music',  p.status_music);
-  if(p.status_book)   safeLS('set','velo_status_book',   p.status_book);
-  if(p.status_phrase) safeLS('set','velo_status_phrase', p.status_phrase);
-  if(p.status_film)   safeLS('set','velo_status_film',   p.status_film);
+  if(p.status_music)   safeLS('set','velo_status_music',   p.status_music);
+  if(p.status_book)    safeLS('set','velo_status_book',    p.status_book);
+  if(p.status_phrase)  safeLS('set','velo_status_phrase',  p.status_phrase);
+  if(p.status_film)    safeLS('set','velo_status_film',    p.status_film);
+  if(p.weather_city)   try{ localStorage.setItem('velo_weather_city', p.weather_city); }catch(e){}
   if(p.username)      safeLS('set','velo_username',       p.username);
   if(p.username)      _uFill(userId, p.username);
   if(p.username_changes != null) safeLS('set','velo_username_changes', String(p.username_changes));

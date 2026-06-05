@@ -33,10 +33,12 @@
 
   const OVERCAST = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wOvC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c8d8e8"/><stop offset="100%" stop-color="#96b0c8"/></linearGradient></defs><circle cx="24" cy="30" r="15" fill="url(#wOvC)"/><circle cx="40" cy="28" r="14" fill="url(#wOvC)"/><circle cx="16" cy="36" r="11" fill="url(#wOvC)"/><circle cx="48" cy="34" r="10" fill="url(#wOvC)"/><rect x="5" y="30" width="54" height="18" rx="9" fill="url(#wOvC)"/></svg>`;
 
-  /* ── Weather detection via Open-Meteo + BigDataCloud (free, no key) ── */
+  /* ── Weather via Open-Meteo geocoding — user enters city manually ── */
   var _weatherIconType = null;
   var _weatherTemp     = null;
   var _weatherCity     = null;
+  var _W_CACHE  = 'velo_weather_cache';
+  var _W_CITY   = 'velo_weather_city';
 
   function _wmoToType(code, isNight) {
     if (code === 0)                               return isNight ? 'clear-night' : 'clear-day';
@@ -60,55 +62,143 @@
     }
   }
 
-  function _renderWeatherInfo(text) {
+  function _renderWeatherInfo() {
     var info = document.getElementById('homeWeatherInfo');
     if (!info) return;
     var isDark = document.body.classList.contains('r-dark');
-    info.style.color = isDark ? 'rgba(210,235,220,.88)' : 'rgba(15,50,28,.78)';
-    if (text !== undefined) {
-      info.textContent = text || '';
-      info.style.display = text ? 'block' : 'none';
-      return;
-    }
+    var ink = isDark ? 'rgba(210,235,220,.88)' : 'rgba(15,50,28,.78)';
     var parts = [];
     if (_weatherTemp !== null && _weatherTemp !== undefined) parts.push('🌡 ' + _weatherTemp + '°');
     if (_weatherCity) parts.push('📍 ' + _weatherCity);
     if (!parts.length) { info.style.display = 'none'; return; }
-    info.textContent = parts.join('   ');
-    info.style.display = 'block';
+    info.innerHTML = '';
+    info.style.cssText += ';display:block;color:' + ink;
+    var txt = document.createTextNode(parts.join('   '));
+    info.appendChild(txt);
+    var btn = document.createElement('span');
+    btn.title = 'Cambiar ciudad';
+    btn.textContent = ' ✎';
+    btn.style.cssText = 'cursor:pointer;opacity:.42;font-size:10px;margin-left:3px;vertical-align:middle';
+    btn.onclick = function() {
+      try { localStorage.removeItem(_W_CACHE); localStorage.removeItem(_W_CITY); } catch(e) {}
+      _weatherTemp = null; _weatherCity = null; _weatherIconType = null;
+      injectTimeIcon();
+      _showCityInput();
+    };
+    info.appendChild(btn);
   }
 
-  function _doWeatherFetch(lat, lon) {
-    fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true&timezone=auto')
+  function _showCityInput() {
+    var info = document.getElementById('homeWeatherInfo');
+    if (!info) return;
+    var isDark = document.body.classList.contains('r-dark');
+    var ink = isDark ? 'rgba(210,235,220,.88)' : 'rgba(15,50,28,.78)';
+    var borderCol = isDark ? 'rgba(140,200,160,.30)' : 'rgba(60,120,80,.28)';
+    var bg = isDark ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.55)';
+    info.innerHTML = '';
+    info.style.cssText += ';display:block;color:' + ink;
+    var form = document.createElement('form');
+    form.style.cssText = 'display:flex;align-items:center;gap:4px;justify-content:center;margin-top:2px';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = '¿Tu ciudad?';
+    input.autocomplete = 'off';
+    input.style.cssText = [
+      'font-size:11.5px', 'padding:3px 9px', 'border-radius:20px',
+      'border:1px solid ' + borderCol, 'background:' + bg,
+      'color:inherit', 'outline:none', 'width:108px',
+      'font-family:\'Jost\',sans-serif'
+    ].join(';');
+    var submit = document.createElement('button');
+    submit.type = 'submit';
+    submit.textContent = '→';
+    submit.style.cssText = 'font-size:13px;border:none;background:transparent;cursor:pointer;padding:0 2px;color:inherit;opacity:.65';
+    form.appendChild(input);
+    form.appendChild(submit);
+    info.appendChild(form);
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var city = input.value.trim();
+      if (!city) return;
+      info.innerHTML = '';
+      info.appendChild(document.createTextNode('🔍…'));
+      _fetchWeatherByCity(city);
+    });
+    setTimeout(function(){ input.focus(); }, 80);
+  }
+
+  function _fetchWeatherByCity(cityName) {
+    var geoUrl = 'https://geocoding-api.open-meteo.com/v1/search?name=' +
+      encodeURIComponent(cityName) + '&count=1&language=es&format=json';
+    fetch(geoUrl)
       .then(function(r){ return r.json(); })
       .then(function(data) {
-        var cw   = data.current_weather;
-        var type = _wmoToType(cw.weathercode, cw.is_day === 0);
-        var temp = Math.round(cw.temperature);
-        _weatherIconType = type;
-        _weatherTemp     = temp;
-        injectTimeIcon();
-        _renderWeatherInfo();
-        // City lookup (non-blocking)
-        fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&accept-language=es&zoom=10')
+        if (!data.results || !data.results.length) {
+          var info = document.getElementById('homeWeatherInfo');
+          if (info) info.textContent = '❌ Ciudad no encontrada';
+          setTimeout(_showCityInput, 1800);
+          return;
+        }
+        var loc = data.results[0];
+        try { localStorage.setItem(_W_CITY, loc.name); } catch(e) {}
+        // Save city to Supabase so other devices can sync it
+        try {
+          var _wUid = typeof safeLS === 'function' ? safeLS('get','velo_user_id') : localStorage.getItem('velo_user_id');
+          if (_wUid && typeof sbClient !== 'undefined') {
+            sbClient.from('profiles').update({ weather_city: loc.name }).eq('id', _wUid).then(function(){}).catch(function(){});
+          }
+        } catch(e) {}
+        var forecastUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' +
+          loc.latitude + '&longitude=' + loc.longitude + '&current_weather=true&timezone=auto';
+        return fetch(forecastUrl)
           .then(function(r){ return r.json(); })
-          .then(function(geo) {
-            var addr = geo.address || {};
-            var city = addr.city || addr.town || addr.village || addr.county || addr.state || '';
-            _weatherCity = city;
-            try { localStorage.setItem('velo_weather_cache', JSON.stringify({ ts: Date.now(), type: type, temp: temp, city: city })); } catch(e) {}
+          .then(function(weather) {
+            var cw   = weather.current_weather;
+            var type = _wmoToType(cw.weathercode, cw.is_day === 0);
+            var temp = Math.round(cw.temperature);
+            _weatherIconType = type;
+            _weatherTemp     = temp;
+            _weatherCity     = loc.name;
+            try {
+              localStorage.setItem(_W_CACHE, JSON.stringify({
+                ts: Date.now(), type: type, temp: temp, city: loc.name
+              }));
+            } catch(e) {}
+            injectTimeIcon();
             _renderWeatherInfo();
-          }).catch(function(){
-            try { localStorage.setItem('velo_weather_cache', JSON.stringify({ ts: Date.now(), type: type, temp: temp, city: '' })); } catch(e) {}
           });
       })
-      .catch(function(e){ console.warn('[Velo weather]', e); });
+      .catch(function() {
+        var info = document.getElementById('homeWeatherInfo');
+        if (info) info.textContent = '⚠️ Sin conexión';
+        setTimeout(_showCityInput, 2000);
+      });
   }
 
-  function _fetchWeather() {
-    // Check cache (30-min TTL, must have temp field)
+  function _trySyncCityFromSupabase() {
+    // Runs in background on first visit — if Supabase has a city saved from another device,
+    // auto-populate without the user needing to type it again
+    setTimeout(function() {
+      try {
+        var uid = typeof safeLS === 'function' ? safeLS('get','velo_user_id') : localStorage.getItem('velo_user_id');
+        if (!uid || typeof sbClient === 'undefined') return;
+        sbClient.from('profiles').select('weather_city').eq('id', uid).limit(1)
+          .then(function(res) {
+            if (res && res.data && res.data[0] && res.data[0].weather_city) {
+              var city = res.data[0].weather_city;
+              try { localStorage.setItem(_W_CITY, city); } catch(e) {}
+              _fetchWeatherByCity(city);
+            }
+          })
+          .catch(function(){});
+      } catch(e) {}
+    }, 2500);
+  }
+
+  function _initWeather() {
+    // 1. Valid cache (30-min TTL) → show immediately, no network call
     try {
-      var c = JSON.parse(localStorage.getItem('velo_weather_cache') || 'null');
+      var c = JSON.parse(localStorage.getItem(_W_CACHE) || 'null');
       if (c && typeof c.temp === 'number' && Date.now() - c.ts < 30 * 60 * 1000) {
         _weatherIconType = c.type;
         _weatherTemp     = c.temp;
@@ -118,45 +208,14 @@
         return;
       }
     } catch(e) {}
-    try { localStorage.removeItem('velo_weather_cache'); } catch(e) {}
-
-    // Show loading state immediately
-    _renderWeatherInfo('📍 Detectando ubicación…');
-
-    // Try GPS geolocation first
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        function(pos) {
-          _doWeatherFetch(pos.coords.latitude.toFixed(4), pos.coords.longitude.toFixed(4));
-        },
-        function() {
-          // GPS denied/failed — fall back to IP-based location (no permission needed)
-          fetch('https://ipapi.co/json/')
-            .then(function(r){ return r.json(); })
-            .then(function(d) {
-              if (d.latitude && d.longitude) {
-                _weatherCity = d.city || d.region || '';
-                _doWeatherFetch(d.latitude.toFixed(4), d.longitude.toFixed(4));
-              } else {
-                var old = document.getElementById('homeWeatherInfo');
-                if (old) old.remove();
-              }
-            })
-            .catch(function(){ var old = document.getElementById('homeWeatherInfo'); if(old) old.remove(); });
-        },
-        { timeout: 6000, maximumAge: 1800000 }
-      );
-    } else {
-      // No geolocation API — use IP fallback directly
-      fetch('https://ipapi.co/json/')
-        .then(function(r){ return r.json(); })
-        .then(function(d) {
-          if (d.latitude && d.longitude) {
-            _weatherCity = d.city || d.region || '';
-            _doWeatherFetch(d.latitude.toFixed(4), d.longitude.toFixed(4));
-          }
-        }).catch(function(){});
-    }
+    // 2. Saved city in localStorage but stale cache → re-fetch weather silently
+    try {
+      var saved = localStorage.getItem(_W_CITY);
+      if (saved) { _fetchWeatherByCity(saved); return; }
+    } catch(e) {}
+    // 3. First visit on this device — show input, but also check Supabase in background
+    _showCityInput();
+    _trySyncCityFromSupabase();
   }
 
   function pickTimeIcon() {
@@ -270,8 +329,8 @@
     // Greeting + icon
     wrapGreetingWords();
     injectTimeIcon();
-    // Fetch weather + location + temp; renders info once resolved (or from cache)
-    _fetchWeather();
+    // Weather: load from cache, re-fetch saved city, or ask user to enter city
+    _initWeather();
     // Re-inject icon every minute in case greeting text mutates
     setInterval(injectTimeIcon, 60000);
 
