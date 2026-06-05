@@ -20,11 +20,83 @@
 
   const MOON = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="rMoonC" cx="38%" cy="35%"><stop offset="0%" stop-color="#fbf6dd"/><stop offset="60%" stop-color="#e8dfb3"/><stop offset="100%" stop-color="#a09575"/></radialGradient><radialGradient id="rMoonG" cx="50%" cy="50%"><stop offset="0%" stop-color="#fdf6dc" stop-opacity=".5"/><stop offset="60%" stop-color="#e8dfb3" stop-opacity=".12"/><stop offset="100%" stop-color="#e8dfb3" stop-opacity="0"/></radialGradient></defs><circle cx="32" cy="32" r="30" fill="url(#rMoonG)"/><circle cx="32" cy="32" r="17" fill="url(#rMoonC)"/><ellipse cx="26" cy="28" rx="2.2" ry="1.8" fill="#9a9078" opacity=".4"/><ellipse cx="35" cy="34" rx="1.8" ry="1.4" fill="#9a9078" opacity=".35"/><circle cx="32" cy="24" r="1.2" fill="#9a9078" opacity=".3"/><g fill="#fdf6dc"><circle cx="54" cy="14" r="0.9" opacity=".9"/><circle cx="58" cy="22" r="0.55" opacity=".7"/><circle cx="48" cy="54" r="0.7" opacity=".75"/><circle cx="10" cy="50" r="0.6" opacity=".7"/></g></svg>`;
 
+  /* ── Weather SVG icons ─────────────────────────────────────────── */
+  const SUN_CLOUD = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="wSunC" cx="42%" cy="38%"><stop offset="0%" stop-color="#ffe066"/><stop offset="100%" stop-color="#f4a93b"/></radialGradient><linearGradient id="wCld1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#deeaf5"/><stop offset="100%" stop-color="#b8cfea"/></linearGradient></defs><circle cx="22" cy="25" r="12" fill="url(#wSunC)" opacity=".92"/><g stroke="#f4b93b" stroke-width="1.4" stroke-linecap="round" opacity=".65"><line x1="22" y1="7" x2="22" y2="11"/><line x1="22" y1="39" x2="22" y2="43"/><line x1="4" y1="25" x2="8" y2="25"/><line x1="36" y1="25" x2="40" y2="25"/><line x1="9" y1="12" x2="12" y2="15"/><line x1="9" y1="38" x2="12" y2="35"/><line x1="32" y1="12" x2="35" y2="15"/></g><circle cx="30" cy="42" r="11" fill="url(#wCld1)"/><circle cx="42" cy="43" r="9" fill="url(#wCld1)"/><circle cx="20" cy="45" r="9" fill="url(#wCld1)"/><rect x="11" y="42" width="40" height="12" rx="6" fill="url(#wCld1)"/></svg>`;
+
+  const MOON_CLOUD = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="wMoonC" cx="38%" cy="35%"><stop offset="0%" stop-color="#fbf6dd"/><stop offset="100%" stop-color="#c8b87a"/></radialGradient><linearGradient id="wCld2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c5d4e8"/><stop offset="100%" stop-color="#8faac4"/></linearGradient></defs><circle cx="22" cy="22" r="13" fill="url(#wMoonC)" opacity=".88"/><ellipse cx="18" cy="18" rx="2" ry="1.6" fill="#9a9078" opacity=".35"/><g fill="#fdf6dc"><circle cx="48" cy="10" r="0.8" opacity=".9"/><circle cx="56" cy="18" r="0.5" opacity=".7"/></g><circle cx="32" cy="43" r="12" fill="url(#wCld2)"/><circle cx="44" cy="44" r="10" fill="url(#wCld2)"/><circle cx="22" cy="46" r="10" fill="url(#wCld2)"/><rect x="12" y="43" width="42" height="13" rx="6" fill="url(#wCld2)"/></svg>`;
+
+  const RAIN = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wRainC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8aaac5"/><stop offset="100%" stop-color="#5c82a0"/></linearGradient></defs><circle cx="26" cy="28" r="14" fill="url(#wRainC)"/><circle cx="40" cy="30" r="12" fill="url(#wRainC)"/><circle cx="18" cy="32" r="10" fill="url(#wRainC)"/><rect x="8" y="30" width="48" height="14" rx="7" fill="url(#wRainC)"/><g stroke="#4a9fd4" stroke-width="2.2" stroke-linecap="round" opacity=".82"><line x1="21" y1="49" x2="19" y2="58"/><line x1="31" y1="49" x2="29" y2="58"/><line x1="41" y1="49" x2="39" y2="58"/><line x1="26" y1="53" x2="24" y2="62"/><line x1="36" y1="53" x2="34" y2="62"/></g></svg>`;
+
+  const STORM = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wStormC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6a7a8e"/><stop offset="100%" stop-color="#3e5066"/></linearGradient></defs><circle cx="26" cy="26" r="14" fill="url(#wStormC)"/><circle cx="40" cy="28" r="12" fill="url(#wStormC)"/><circle cx="18" cy="30" r="10" fill="url(#wStormC)"/><rect x="8" y="28" width="48" height="13" rx="6" fill="url(#wStormC)"/><polygon points="34,42 28,52 33,52 29,62 42,47 36,47 40,42" fill="#f6c644" opacity=".92"/></svg>`;
+
+  const SNOW = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wSnowC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d8e8f5"/><stop offset="100%" stop-color="#a8c2da"/></linearGradient></defs><circle cx="26" cy="27" r="14" fill="url(#wSnowC)"/><circle cx="40" cy="29" r="12" fill="url(#wSnowC)"/><circle cx="18" cy="31" r="10" fill="url(#wSnowC)"/><rect x="8" y="29" width="48" height="13" rx="6" fill="url(#wSnowC)"/><g fill="#7ab8e0" opacity=".8"><circle cx="22" cy="50" r="2.5"/><circle cx="32" cy="54" r="2.5"/><circle cx="42" cy="50" r="2.5"/><circle cx="27" cy="58" r="2"/><circle cx="37" cy="58" r="2"/></g></svg>`;
+
+  const OVERCAST = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wOvC" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c8d8e8"/><stop offset="100%" stop-color="#96b0c8"/></linearGradient></defs><circle cx="24" cy="30" r="15" fill="url(#wOvC)"/><circle cx="40" cy="28" r="14" fill="url(#wOvC)"/><circle cx="16" cy="36" r="11" fill="url(#wOvC)"/><circle cx="48" cy="34" r="10" fill="url(#wOvC)"/><rect x="5" y="30" width="54" height="18" rx="9" fill="url(#wOvC)"/></svg>`;
+
+  /* ── Weather detection via Open-Meteo (free, no key) ───────────── */
+  var _weatherIconType = null; // filled after geolocation
+
+  function _wmoToType(code, isNight) {
+    if (code === 0)                     return isNight ? 'clear-night'  : 'clear-day';
+    if (code <= 2)                      return isNight ? 'moon-cloud'   : 'sun-cloud';
+    if (code === 3 || code === 45 || code === 48) return 'overcast';
+    if (code >= 51 && code <= 82)       return 'rain';
+    if (code >= 71 && code <= 77)       return 'snow';
+    if (code >= 95)                     return 'storm';
+    return isNight ? 'clear-night' : 'clear-day';
+  }
+
+  function _weatherSvg(type, h) {
+    switch(type) {
+      case 'sun-cloud':    return { svg: SUN_CLOUD,  period: 'morning' };
+      case 'moon-cloud':   return { svg: MOON_CLOUD, period: 'night' };
+      case 'rain':         return { svg: RAIN,       period: 'rain' };
+      case 'storm':        return { svg: STORM,      period: 'storm' };
+      case 'snow':         return { svg: SNOW,       period: 'snow' };
+      case 'overcast':     return { svg: OVERCAST,   period: 'overcast' };
+      default:             return null;
+    }
+  }
+
+  function _fetchWeather() {
+    // Cache: 30-min TTL
+    try {
+      var c = JSON.parse(localStorage.getItem('velo_weather_cache') || 'null');
+      if (c && Date.now() - c.ts < 30 * 60 * 1000) {
+        _weatherIconType = c.type;
+        injectTimeIcon();
+        return;
+      }
+    } catch(e) {}
+
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      var lat = pos.coords.latitude.toFixed(4);
+      var lon = pos.coords.longitude.toFixed(4);
+      fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true&timezone=auto')
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+          var cw   = data.current_weather;
+          var type = _wmoToType(cw.weathercode, cw.is_day === 0);
+          _weatherIconType = type;
+          try { localStorage.setItem('velo_weather_cache', JSON.stringify({ ts: Date.now(), type: type })); } catch(e) {}
+          injectTimeIcon();
+        })
+        .catch(function(){});
+    }, function(){}, { timeout: 6000, maximumAge: 1800000 });
+  }
+
   function pickTimeIcon() {
-    const h = new Date().getHours();
-    if (h >= 6 && h < 12)  return { svg: SUN_MORNING,   period: 'morning' };    // Buenos días
-    if (h >= 12 && h < 20) return { svg: SUN_AFTERNOON, period: 'afternoon' };  // Buenas tardes
-    return                       { svg: MOON,          period: 'night' };       // Buenas noches
+    var h = new Date().getHours();
+    // If weather data available, use it
+    if (_weatherIconType) {
+      var weatherResult = _weatherSvg(_weatherIconType, h);
+      if (weatherResult) return weatherResult;
+    }
+    // Fallback: time-based
+    if (h >= 6 && h < 12)  return { svg: SUN_MORNING,   period: 'morning' };
+    if (h >= 12 && h < 20) return { svg: SUN_AFTERNOON, period: 'afternoon' };
+    return                        { svg: MOON,           period: 'night' };
   }
 
   function injectTimeIcon() {
@@ -121,6 +193,8 @@
     // Greeting + icon
     wrapGreetingWords();
     injectTimeIcon();
+    // Fetch weather (updates icon once geolocation resolves)
+    _fetchWeather();
     // Re-inject icon every minute in case greeting text mutates
     setInterval(injectTimeIcon, 60000);
 
