@@ -8497,3 +8497,31 @@ body.r-dark .r-desk-profile-chip:hover {
   .r-desk-qlink-divider { display: inline-block; }
   .r-desk-profile-chip  { display: inline-flex; }
 }
+
+/* ── v503: Desktop home — transparent greeting card + centered mood text ── */
+@media (min-width: 861px) {
+  /* Greeting card: invisible container on desktop — flowers show through */
+  #pg-home .home-greeting,
+  body:not(.r-dark) #pg-home .home-greeting,
+  body.r-dark #pg-home .home-greeting {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  /* FABs: already replaced by the profile chip in the top bar */
+  .r-home-profile-fab,
+  .r-home-estilo-fab { display: none !important; }
+}
+/* Mood line text always centered (all screen sizes) */
+#homeCurrentMoodLine { justify-content: center !important; }
+
+/* ── v503b: Prevent profile chip from wrapping to a new line ── */
+@media (min-width: 861px) {
+  .r-desk-quick-links {
+    max-width: 100% !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+}
