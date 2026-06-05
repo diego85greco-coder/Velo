@@ -95,10 +95,16 @@
     var ink = isDark ? 'rgba(210,235,220,.88)' : 'rgba(15,50,28,.78)';
     var borderCol = isDark ? 'rgba(140,200,160,.30)' : 'rgba(60,120,80,.28)';
     var bg = isDark ? 'rgba(255,255,255,.07)' : 'rgba(255,255,255,.55)';
+    var dropBg = isDark ? 'rgba(18,38,26,.97)' : 'rgba(245,252,248,.98)';
     info.innerHTML = '';
     info.style.cssText += ';display:block;color:' + ink;
+
+    var wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:relative;display:inline-block';
+
     var form = document.createElement('form');
     form.style.cssText = 'display:flex;align-items:center;gap:4px;justify-content:center;margin-top:2px';
+
     var input = document.createElement('input');
     input.type = 'text';
     input.placeholder = '¿Tu ciudad?';
@@ -106,25 +112,134 @@
     input.style.cssText = [
       'font-size:11.5px', 'padding:3px 9px', 'border-radius:20px',
       'border:1px solid ' + borderCol, 'background:' + bg,
-      'color:inherit', 'outline:none', 'width:108px',
+      'color:inherit', 'outline:none', 'width:120px',
       'font-family:\'Jost\',sans-serif'
     ].join(';');
+
     var submit = document.createElement('button');
     submit.type = 'submit';
     submit.textContent = '→';
     submit.style.cssText = 'font-size:13px;border:none;background:transparent;cursor:pointer;padding:0 2px;color:inherit;opacity:.65';
+
+    // Autocomplete dropdown
+    var dropdown = document.createElement('div');
+    dropdown.style.cssText = [
+      'position:absolute', 'top:calc(100% + 4px)', 'left:0',
+      'min-width:170px', 'max-width:240px',
+      'background:' + dropBg,
+      'border:1px solid ' + borderCol,
+      'border-radius:10px', 'overflow:hidden',
+      'box-shadow:0 6px 20px rgba(0,0,0,.22)',
+      'z-index:9999', 'display:none'
+    ].join(';');
+
     form.appendChild(input);
     form.appendChild(submit);
-    info.appendChild(form);
+    wrapper.appendChild(form);
+    wrapper.appendChild(dropdown);
+    info.appendChild(wrapper);
+
+    var _debTimer = null;
+    var _lastQ = '';
+
+    function _showDropdown(results) {
+      dropdown.innerHTML = '';
+      if (!results || !results.length) { dropdown.style.display = 'none'; return; }
+      results.forEach(function(loc) {
+        var item = document.createElement('div');
+        var parts = [loc.name];
+        if (loc.admin1) parts.push(loc.admin1);
+        if (loc.country) parts.push(loc.country);
+        item.textContent = parts.join(', ');
+        item.style.cssText = [
+          'padding:6px 12px', 'font-size:11px', 'cursor:pointer',
+          'color:' + ink, 'font-family:\'Jost\',sans-serif',
+          'border-bottom:1px solid ' + (isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)'),
+          'transition:background .10s', 'white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis'
+        ].join(';');
+        item.addEventListener('mouseover', function() {
+          item.style.background = isDark ? 'rgba(116,198,157,.18)' : 'rgba(116,198,157,.22)';
+        });
+        item.addEventListener('mouseout', function() { item.style.background = 'transparent'; });
+        item.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          dropdown.style.display = 'none';
+          input.value = loc.name;
+          info.innerHTML = '';
+          info.appendChild(document.createTextNode('🔍…'));
+          // Pass lat/lon directly — skip geocoding round-trip
+          _fetchWeatherCoords(loc.name, loc.latitude, loc.longitude);
+        });
+        dropdown.appendChild(item);
+      });
+      dropdown.style.display = 'block';
+    }
+
+    input.addEventListener('input', function() {
+      clearTimeout(_debTimer);
+      var q = input.value.trim();
+      if (q.length < 2) { dropdown.style.display = 'none'; _lastQ = ''; return; }
+      if (q === _lastQ) return;
+      _debTimer = setTimeout(function() {
+        _lastQ = q;
+        fetch('https://geocoding-api.open-meteo.com/v1/search?name=' +
+          encodeURIComponent(q) + '&count=6&language=es&format=json')
+          .then(function(r){ return r.json(); })
+          .then(function(d){ _showDropdown(d.results); })
+          .catch(function(){ dropdown.style.display = 'none'; });
+      }, 350);
+    });
+
+    input.addEventListener('blur', function() {
+      setTimeout(function(){ dropdown.style.display = 'none'; }, 180);
+    });
+
     form.addEventListener('submit', function(e) {
       e.preventDefault();
       var city = input.value.trim();
       if (!city) return;
+      dropdown.style.display = 'none';
       info.innerHTML = '';
       info.appendChild(document.createTextNode('🔍…'));
       _fetchWeatherByCity(city);
     });
+
     setTimeout(function(){ input.focus(); }, 80);
+  }
+
+  // Fetch weather when we already have coordinates (from autocomplete selection)
+  function _fetchWeatherCoords(cityName, lat, lon) {
+    var forecastUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' +
+      lat + '&longitude=' + lon + '&current_weather=true&timezone=auto';
+    fetch(forecastUrl)
+      .then(function(r){ return r.json(); })
+      .then(function(weather) {
+        var cw   = weather.current_weather;
+        var type = _wmoToType(cw.weathercode, cw.is_day === 0);
+        var temp = Math.round(cw.temperature);
+        _weatherIconType = type;
+        _weatherTemp     = temp;
+        _weatherCity     = cityName;
+        try { localStorage.setItem(_W_CITY, cityName); } catch(e) {}
+        try {
+          localStorage.setItem(_W_CACHE, JSON.stringify({
+            ts: Date.now(), type: type, temp: temp, city: cityName
+          }));
+        } catch(e) {}
+        try {
+          var _wUid = typeof safeLS === 'function' ? safeLS('get','velo_user_id') : localStorage.getItem('velo_user_id');
+          if (_wUid && typeof sbClient !== 'undefined') {
+            sbClient.from('profiles').update({ weather_city: cityName }).eq('id', _wUid).then(function(){}).catch(function(){});
+          }
+        } catch(e) {}
+        injectTimeIcon();
+        _renderWeatherInfo();
+      })
+      .catch(function() {
+        var info = document.getElementById('homeWeatherInfo');
+        if (info) { info.innerHTML = ''; info.appendChild(document.createTextNode('⚠️ Sin conexión')); }
+        setTimeout(_showCityInput, 2200);
+      });
   }
 
   function _fetchWeatherByCity(cityName) {
@@ -135,43 +250,17 @@
       .then(function(data) {
         if (!data.results || !data.results.length) {
           var info = document.getElementById('homeWeatherInfo');
-          if (info) info.textContent = '❌ Ciudad no encontrada';
+          if (info) { info.innerHTML = ''; info.appendChild(document.createTextNode('❌ Ciudad no encontrada')); }
           setTimeout(_showCityInput, 1800);
           return;
         }
         var loc = data.results[0];
-        try { localStorage.setItem(_W_CITY, loc.name); } catch(e) {}
-        // Save city to Supabase so other devices can sync it
-        try {
-          var _wUid = typeof safeLS === 'function' ? safeLS('get','velo_user_id') : localStorage.getItem('velo_user_id');
-          if (_wUid && typeof sbClient !== 'undefined') {
-            sbClient.from('profiles').update({ weather_city: loc.name }).eq('id', _wUid).then(function(){}).catch(function(){});
-          }
-        } catch(e) {}
-        var forecastUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' +
-          loc.latitude + '&longitude=' + loc.longitude + '&current_weather=true&timezone=auto';
-        return fetch(forecastUrl)
-          .then(function(r){ return r.json(); })
-          .then(function(weather) {
-            var cw   = weather.current_weather;
-            var type = _wmoToType(cw.weathercode, cw.is_day === 0);
-            var temp = Math.round(cw.temperature);
-            _weatherIconType = type;
-            _weatherTemp     = temp;
-            _weatherCity     = loc.name;
-            try {
-              localStorage.setItem(_W_CACHE, JSON.stringify({
-                ts: Date.now(), type: type, temp: temp, city: loc.name
-              }));
-            } catch(e) {}
-            injectTimeIcon();
-            _renderWeatherInfo();
-          });
+        _fetchWeatherCoords(loc.name, loc.latitude, loc.longitude);
       })
       .catch(function() {
         var info = document.getElementById('homeWeatherInfo');
-        if (info) info.textContent = '⚠️ Sin conexión';
-        setTimeout(_showCityInput, 2000);
+        if (info) { info.innerHTML = ''; info.appendChild(document.createTextNode('⚠️ Sin conexión')); }
+        setTimeout(_showCityInput, 2200);
       });
   }
 
