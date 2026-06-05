@@ -54,12 +54,12 @@
     switch(type) {
       case 'clear-day':   return { emoji: '☀️',  period: 'morning' };
       case 'sun-cloud':   return { emoji: '🌤️', period: 'morning' };
-      case 'moon-cloud':  return { emoji: '🌥️', period: 'night' };
+      case 'clear-night': return { emoji: '🌙',  period: 'night' };
+      case 'moon-cloud':  return { emoji: '🌙',  period: 'night' };
       case 'rain':        return { emoji: '🌧️', period: 'rain' };
       case 'storm':       return { emoji: '⛈️',  period: 'storm' };
       case 'snow':        return { emoji: '🌨️', period: 'snow' };
       case 'overcast':    return { emoji: '☁️',  period: 'overcast' };
-      case 'clear-night': return { emoji: '🌙',  period: 'night' };
       default: return null;
     }
   }
@@ -67,33 +67,78 @@
   function _renderWeatherInfo() {
     var info = document.getElementById('homeWeatherInfo');
     if (!info) return;
+    if (_weatherTemp === null || _weatherTemp === undefined) { info.style.display = 'none'; return; }
     var isDark = document.body.classList.contains('r-dark');
-    var ink = isDark ? 'rgba(210,235,220,.88)' : 'rgba(15,50,28,.78)';
-    var parts = [];
-    if (_weatherTemp !== null && _weatherTemp !== undefined) parts.push('🌡 ' + _weatherTemp + '°');
-    if (_weatherCity) parts.push('📍 ' + _weatherCity);
-    if (!parts.length) { info.style.display = 'none'; return; }
+
+    // Solid colors — reliable on any background (dark green or cream)
+    var cardBg   = isDark ? 'rgba(10,40,22,.72)'    : 'rgba(255,255,255,.88)';
+    var cardBord = isDark ? 'rgba(116,198,157,.32)'  : 'rgba(60,140,85,.22)';
+    var tempClr  = isDark ? '#b8f0d0'                : '#14532d';
+    var cityClr  = isDark ? 'rgba(200,240,218,.90)'  : 'rgba(20,65,35,.85)';
+    var editClr  = isDark ? 'rgba(140,210,175,.60)'  : 'rgba(30,90,50,.45)';
+    var divClr   = isDark ? 'rgba(116,198,157,.22)'  : 'rgba(40,120,65,.14)';
+
     info.innerHTML = '';
-    info.style.cssText += ';display:block;color:' + ink;
-    var row = document.createElement('div');
-    var txt = document.createTextNode(parts.join('   '));
-    row.appendChild(txt);
-    var btn = document.createElement('span');
-    btn.title = 'Cambiar ciudad';
-    btn.textContent = ' ✎';
-    btn.style.cssText = 'cursor:pointer;opacity:.42;font-size:10px;margin-left:3px;vertical-align:middle';
-    btn.onclick = function() {
-      try { localStorage.removeItem(_W_CACHE); localStorage.removeItem(_W_CITY); } catch(e) {}
+    info.style.cssText += ';display:block;text-align:center';
+
+    var card = document.createElement('div');
+    card.style.cssText = [
+      'display:inline-flex', 'align-items:center', 'gap:0',
+      'background:' + cardBg,
+      'border:1.5px solid ' + cardBord,
+      'border-radius:100px',
+      'padding:8px 18px 8px 14px',
+      'box-shadow:0 4px 20px rgba(0,0,0,.18)',
+      'margin-top:6px'
+    ].join(';');
+
+    // Temperature — large, light weight
+    var tempEl = document.createElement('div');
+    tempEl.style.cssText = [
+      'font-size:30px', 'font-weight:300', 'letter-spacing:-.8px',
+      'color:' + tempClr,
+      'font-family:\'Jost\',sans-serif', 'line-height:1',
+      'padding-right:12px',
+      'border-right:1px solid ' + divClr
+    ].join(';');
+    tempEl.textContent = _weatherTemp + '°';
+
+    // City + edit button
+    var cityWrap = document.createElement('div');
+    cityWrap.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;padding-left:12px;gap:3px';
+
+    var cityEl = document.createElement('div');
+    cityEl.style.cssText = [
+      'font-size:15px', 'font-weight:600', 'letter-spacing:.1px',
+      'color:' + cityClr,
+      'font-family:\'Jost\',sans-serif', 'line-height:1.2'
+    ].join(';');
+    cityEl.textContent = _weatherCity || '';
+
+    var editBtn = document.createElement('div');
+    editBtn.textContent = 'Cambiar ciudad ✎';
+    editBtn.style.cssText = [
+      'font-size:9px', 'cursor:pointer',
+      'color:' + editClr,
+      'font-family:\'Jost\',sans-serif',
+      'letter-spacing:.3px', 'line-height:1',
+      'transition:opacity .15s', 'opacity:.75'
+    ].join(';');
+    editBtn.onmouseover = function(){ editBtn.style.opacity = '1'; };
+    editBtn.onmouseout  = function(){ editBtn.style.opacity = '.75'; };
+    editBtn.onclick = function(e) {
+      e.stopPropagation();
+      try { localStorage.removeItem(_W_CACHE); localStorage.removeItem(_W_CITY); } catch(e2) {}
       _weatherTemp = null; _weatherCity = null; _weatherIconType = null;
       injectTimeIcon();
       _showCityInput();
     };
-    row.appendChild(btn);
-    info.appendChild(row);
-    var hint = document.createElement('div');
-    hint.textContent = 'Ciudad guardada — tocá ✎ para cambiarla cuando quieras';
-    hint.style.cssText = 'margin-top:4px;font-size:9px;opacity:.48;text-align:center;line-height:1.4;font-style:italic';
-    info.appendChild(hint);
+
+    cityWrap.appendChild(cityEl);
+    cityWrap.appendChild(editBtn);
+    card.appendChild(tempEl);
+    card.appendChild(cityWrap);
+    info.appendChild(card);
   }
 
   function _showCityInput() {

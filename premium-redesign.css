@@ -8589,3 +8589,18 @@ body.r-dark #homeCurrentMoodLine {
   background: linear-gradient(135deg, rgba(116,198,157,.38), rgba(80,180,120,.50)) !important;
   color: rgba(200,245,225,.96) !important;
 }
+
+/* ── v512: REGISTRA label — legible in light + dark mode ── */
+#homeRegisterLabel {
+  color: var(--sage2) !important;
+  opacity: .90 !important;
+}
+body.r-dark #homeRegisterLabel {
+  color: rgba(160,220,190,.85) !important;
+  opacity: 1 !important;
+}
+
+/* ── v512: Weather info card — wider on desktop ── */
+@media (min-width: 861px) {
+  #homeWeatherInfo { max-width: 320px !important; }
+}
