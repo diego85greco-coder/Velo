@@ -65,7 +65,7 @@
     if (!iconWrap) return;
     var old = document.getElementById('homeWeatherInfo');
     if (old) old.remove();
-    if (_weatherTemp === null && !_weatherCity) return;
+    if ((_weatherTemp === null || _weatherTemp === undefined) && !_weatherCity) return;
     var isDark = document.body.classList.contains('r-dark');
     var info = document.createElement('div');
     info.id = 'homeWeatherInfo';
@@ -77,50 +77,59 @@
       'color:' + (isDark ? 'rgba(220,240,228,.82)' : 'rgba(20,60,35,.72)')
     ].join(';');
     var parts = [];
-    if (_weatherTemp !== null) parts.push('🌡 ' + _weatherTemp + '°');
+    if (_weatherTemp !== null && _weatherTemp !== undefined) parts.push('🌡 ' + _weatherTemp + '°');
     if (_weatherCity)          parts.push('📍 ' + _weatherCity);
     info.textContent = parts.join('   ');
     iconWrap.appendChild(info);
   }
 
   function _fetchWeather() {
-    // Cache: 30-min TTL
+    // Clear old cache format that had no temp/city
     try {
       var c = JSON.parse(localStorage.getItem('velo_weather_cache') || 'null');
-      if (c && Date.now() - c.ts < 30 * 60 * 1000) {
+      if (c && Date.now() - c.ts < 30 * 60 * 1000 && c.temp !== undefined) {
         _weatherIconType = c.type;
         _weatherTemp     = c.temp;
-        _weatherCity     = c.city;
+        _weatherCity     = c.city || '';
         injectTimeIcon();
         _renderWeatherInfo();
         return;
       }
     } catch(e) {}
+    // Clear stale cache
+    try { localStorage.removeItem('velo_weather_cache'); } catch(e) {}
 
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(function(pos) {
       var lat = pos.coords.latitude.toFixed(4);
       var lon = pos.coords.longitude.toFixed(4);
 
-      // Fetch weather + city in parallel
-      Promise.all([
-        fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true&timezone=auto').then(function(r){ return r.json(); }),
-        fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=es').then(function(r){ return r.json(); })
-      ]).then(function(results) {
-        var weather = results[0];
-        var geo     = results[1];
-        var cw      = weather.current_weather;
-        var type    = _wmoToType(cw.weathercode, cw.is_day === 0);
-        var temp    = Math.round(cw.temperature);
-        var city    = geo.city || geo.locality || geo.principalSubdivision || '';
-        _weatherIconType = type;
-        _weatherTemp     = temp;
-        _weatherCity     = city;
-        try { localStorage.setItem('velo_weather_cache', JSON.stringify({ ts: Date.now(), type: type, temp: temp, city: city })); } catch(e) {}
-        injectTimeIcon();
-        _renderWeatherInfo();
-      }).catch(function(){});
-    }, function(){}, { timeout: 6000, maximumAge: 1800000 });
+      // Step 1: fetch weather (temperature + condition)
+      fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true&timezone=auto')
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+          var cw   = data.current_weather;
+          var type = _wmoToType(cw.weathercode, cw.is_day === 0);
+          var temp = Math.round(cw.temperature);
+          _weatherIconType = type;
+          _weatherTemp     = temp;
+          injectTimeIcon();
+          _renderWeatherInfo();
+          // Step 2: fetch city name separately (non-blocking)
+          fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&accept-language=es&zoom=10')
+            .then(function(r){ return r.json(); })
+            .then(function(geo) {
+              var city = (geo.address && (geo.address.city || geo.address.town || geo.address.village || geo.address.county)) || '';
+              _weatherCity = city;
+              try { localStorage.setItem('velo_weather_cache', JSON.stringify({ ts: Date.now(), type: type, temp: temp, city: city })); } catch(e) {}
+              _renderWeatherInfo();
+            }).catch(function(){
+              // City lookup failed — still cache what we have
+              try { localStorage.setItem('velo_weather_cache', JSON.stringify({ ts: Date.now(), type: type, temp: temp, city: '' })); } catch(e) {}
+            });
+        })
+        .catch(function(err){ console.warn('[Velo weather]', err); });
+    }, function(err){ console.warn('[Velo geo]', err); }, { timeout: 8000, maximumAge: 1800000 });
   }
 
   function pickTimeIcon() {
