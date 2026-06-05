@@ -8425,3 +8425,14 @@ body.r-dark #homeMonthlyHint { color: rgba(255,255,255,.78); }
   transform: none !important;
   transition: background .18s ease, border-color .18s ease, color .18s ease !important;
 }
+
+/* ── v494: Weather info stacked below icon ── */
+#homeTimeIcon {
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0 !important;
+}
+#homeWeatherInfo {
+  max-width: 200px;
+  text-align: center;
+}
