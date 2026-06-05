@@ -595,8 +595,8 @@ body.r-dark .home-logo-side {
   background-image: url('assets/logo.png');
   opacity: 0.06;
 }
-#homeTimeIcon         { order: 1; }
-#homeGreetWrapper     { order: 2; }
+#homeGreetWrapper     { order: 1; }
+#homeTimeIcon         { order: 2; }
 #homeStatusToggle     { order: 3; }
 #homeDailyQuoteWrap   { order: 4; }
 .r-hero-actions       { order: 5; }
