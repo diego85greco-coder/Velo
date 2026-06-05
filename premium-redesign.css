@@ -8525,3 +8525,25 @@ body.r-dark .r-desk-profile-chip:hover {
     align-items: center !important;
   }
 }
+
+/* ── v504: Profile chip — legible colors + overflow guard ── */
+@media (min-width: 861px) {
+  .r-desk-profile-chip {
+    color: var(--ink) !important;
+    overflow: hidden;
+    max-width: 180px;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+  body.r-dark .r-desk-profile-chip {
+    color: rgba(220,240,230,.95) !important;
+  }
+  #homeProfileChip > div {
+    min-width: 0;
+    overflow: hidden;
+  }
+  /* "Mi perfil" label: slightly more visible */
+  #homeProfileChip > div > span:first-child {
+    opacity: .78 !important;
+  }
+}
