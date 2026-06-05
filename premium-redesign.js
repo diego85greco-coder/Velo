@@ -60,34 +60,64 @@
     }
   }
 
-  function _renderWeatherInfo() {
+  function _renderWeatherInfo(text) {
     var iconWrap = document.getElementById('homeTimeIcon');
     if (!iconWrap) return;
     var old = document.getElementById('homeWeatherInfo');
     if (old) old.remove();
-    if ((_weatherTemp === null || _weatherTemp === undefined) && !_weatherCity) return;
     var isDark = document.body.classList.contains('r-dark');
     var info = document.createElement('div');
     info.id = 'homeWeatherInfo';
     info.style.cssText = [
-      'display:flex', 'align-items:center', 'justify-content:center',
-      'gap:4px', 'margin-top:5px',
-      'font-size:12px', 'font-family:\'Jost\',sans-serif', 'font-weight:500',
-      'letter-spacing:.3px', 'text-align:center', 'line-height:1.3',
-      'color:' + (isDark ? 'rgba(220,240,228,.82)' : 'rgba(20,60,35,.72)')
+      'margin-top:6px', 'font-size:12.5px',
+      'font-family:\'Jost\',sans-serif', 'font-weight:500',
+      'letter-spacing:.2px', 'text-align:center', 'line-height:1.4',
+      'color:' + (isDark ? 'rgba(210,235,220,.88)' : 'rgba(15,50,28,.78)')
     ].join(';');
-    var parts = [];
-    if (_weatherTemp !== null && _weatherTemp !== undefined) parts.push('🌡 ' + _weatherTemp + '°');
-    if (_weatherCity)          parts.push('📍 ' + _weatherCity);
-    info.textContent = parts.join('   ');
+    if (text) {
+      info.textContent = text;
+    } else {
+      var parts = [];
+      if (_weatherTemp !== null && _weatherTemp !== undefined) parts.push('🌡 ' + _weatherTemp + '°');
+      if (_weatherCity) parts.push('📍 ' + _weatherCity);
+      if (!parts.length) return;
+      info.textContent = parts.join('   ');
+    }
     iconWrap.appendChild(info);
   }
 
+  function _doWeatherFetch(lat, lon) {
+    fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true&timezone=auto')
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        var cw   = data.current_weather;
+        var type = _wmoToType(cw.weathercode, cw.is_day === 0);
+        var temp = Math.round(cw.temperature);
+        _weatherIconType = type;
+        _weatherTemp     = temp;
+        injectTimeIcon();
+        _renderWeatherInfo();
+        // City lookup (non-blocking)
+        fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&accept-language=es&zoom=10')
+          .then(function(r){ return r.json(); })
+          .then(function(geo) {
+            var addr = geo.address || {};
+            var city = addr.city || addr.town || addr.village || addr.county || addr.state || '';
+            _weatherCity = city;
+            try { localStorage.setItem('velo_weather_cache', JSON.stringify({ ts: Date.now(), type: type, temp: temp, city: city })); } catch(e) {}
+            _renderWeatherInfo();
+          }).catch(function(){
+            try { localStorage.setItem('velo_weather_cache', JSON.stringify({ ts: Date.now(), type: type, temp: temp, city: '' })); } catch(e) {}
+          });
+      })
+      .catch(function(e){ console.warn('[Velo weather]', e); });
+  }
+
   function _fetchWeather() {
-    // Clear old cache format that had no temp/city
+    // Check cache (30-min TTL, must have temp field)
     try {
       var c = JSON.parse(localStorage.getItem('velo_weather_cache') || 'null');
-      if (c && Date.now() - c.ts < 30 * 60 * 1000 && c.temp !== undefined) {
+      if (c && typeof c.temp === 'number' && Date.now() - c.ts < 30 * 60 * 1000) {
         _weatherIconType = c.type;
         _weatherTemp     = c.temp;
         _weatherCity     = c.city || '';
@@ -96,40 +126,45 @@
         return;
       }
     } catch(e) {}
-    // Clear stale cache
     try { localStorage.removeItem('velo_weather_cache'); } catch(e) {}
 
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(function(pos) {
-      var lat = pos.coords.latitude.toFixed(4);
-      var lon = pos.coords.longitude.toFixed(4);
+    // Show loading state immediately
+    _renderWeatherInfo('📍 Detectando ubicación…');
 
-      // Step 1: fetch weather (temperature + condition)
-      fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true&timezone=auto')
-        .then(function(r){ return r.json(); })
-        .then(function(data) {
-          var cw   = data.current_weather;
-          var type = _wmoToType(cw.weathercode, cw.is_day === 0);
-          var temp = Math.round(cw.temperature);
-          _weatherIconType = type;
-          _weatherTemp     = temp;
-          injectTimeIcon();
-          _renderWeatherInfo();
-          // Step 2: fetch city name separately (non-blocking)
-          fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lon+'&accept-language=es&zoom=10')
+    // Try GPS geolocation first
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          _doWeatherFetch(pos.coords.latitude.toFixed(4), pos.coords.longitude.toFixed(4));
+        },
+        function() {
+          // GPS denied/failed — fall back to IP-based location (no permission needed)
+          fetch('https://ipapi.co/json/')
             .then(function(r){ return r.json(); })
-            .then(function(geo) {
-              var city = (geo.address && (geo.address.city || geo.address.town || geo.address.village || geo.address.county)) || '';
-              _weatherCity = city;
-              try { localStorage.setItem('velo_weather_cache', JSON.stringify({ ts: Date.now(), type: type, temp: temp, city: city })); } catch(e) {}
-              _renderWeatherInfo();
-            }).catch(function(){
-              // City lookup failed — still cache what we have
-              try { localStorage.setItem('velo_weather_cache', JSON.stringify({ ts: Date.now(), type: type, temp: temp, city: '' })); } catch(e) {}
-            });
-        })
-        .catch(function(err){ console.warn('[Velo weather]', err); });
-    }, function(err){ console.warn('[Velo geo]', err); }, { timeout: 8000, maximumAge: 1800000 });
+            .then(function(d) {
+              if (d.latitude && d.longitude) {
+                _weatherCity = d.city || d.region || '';
+                _doWeatherFetch(d.latitude.toFixed(4), d.longitude.toFixed(4));
+              } else {
+                var old = document.getElementById('homeWeatherInfo');
+                if (old) old.remove();
+              }
+            })
+            .catch(function(){ var old = document.getElementById('homeWeatherInfo'); if(old) old.remove(); });
+        },
+        { timeout: 6000, maximumAge: 1800000 }
+      );
+    } else {
+      // No geolocation API — use IP fallback directly
+      fetch('https://ipapi.co/json/')
+        .then(function(r){ return r.json(); })
+        .then(function(d) {
+          if (d.latitude && d.longitude) {
+            _weatherCity = d.city || d.region || '';
+            _doWeatherFetch(d.latitude.toFixed(4), d.longitude.toFixed(4));
+          }
+        }).catch(function(){});
+    }
   }
 
   function pickTimeIcon() {
