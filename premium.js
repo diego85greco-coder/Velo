@@ -12918,6 +12918,34 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
       +'</div>';
   }
 
+  // ── 3-month trend ──
+  if(data.trend3 && data.trend3.length > 1){
+    html+='<div style="margin-bottom:18px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:12px">📈 TENDENCIA DE 3 MESES — DÍAS POSITIVOS</div>'
+      +'<div style="display:flex;gap:10px;align-items:flex-end;height:90px">';
+    data.trend3.forEach(function(t){
+      var barH=Math.max(8,Math.round(t.happyPct*60/100));
+      var isCur=!!t.current;
+      html+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">'
+        +'<div style="font-size:11px;color:rgba(255,255,255,'+(isCur?'.85':'.45')+');font-weight:'+(isCur?'700':'400')+'">'+t.happyPct+'%</div>'
+        +'<div style="width:100%;background:rgba(116,198,157,'+(isCur?'.75':'.3')+');border-radius:6px 6px 0 0;height:'+barH+'px"></div>'
+        +'<div style="font-size:10px;color:rgba(255,255,255,'+(isCur?'.8':'.35')+');font-weight:'+(isCur?'700':'400')+'">'+t.month+'</div>'
+        +'</div>';
+    });
+    html+='</div></div>';
+  }
+
+  // ── Weekly pattern ──
+  if(data.weekPattern){
+    html+='<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:14px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:14px">'
+      +'<span style="font-size:26px;flex-shrink:0;line-height:1">📅</span>'
+      +'<div>'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:5px">TU PATRÓN SEMANAL</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.82);line-height:1.6">Tu mejor día fue el <strong>'+_escHtml(data.weekPattern.bestDay)+'</strong>. Los <strong>'+_escHtml(data.weekPattern.worstDay)+'</strong> tendieron a ser más desafiantes.</div>'
+      +'</div>'
+      +'</div>';
+  }
+
   // ── Community stats ──
   if(data.helped||data.received){
     html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:18px">';
@@ -12942,6 +12970,15 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
       +'</div>';
   }
 
+  // ── Tu momento del mes (user's own words) ──
+  if(data.momentoNote){
+    html+='<div style="border-left:3px solid rgba(200,162,56,.5);padding:14px 16px;margin-bottom:18px;background:rgba(200,162,56,.04);border-radius:0 12px 12px 0">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,56,.85);margin-bottom:8px">✨ TU MOMENTO DE '+mName.toUpperCase()+'</div>'
+      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-style:italic;color:rgba(255,255,255,.88);line-height:1.65">"'+_escHtml(data.momentoNote)+'"</div>'
+      +'<div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:8px">Lo escribiste vos, en tus propias palabras.</div>'
+      +'</div>';
+  }
+
   // ── AI narrative ──
   html+='<div style="font-size:14px;color:rgba(255,255,255,.78);line-height:1.85;white-space:pre-line;margin-bottom:20px;border-left:2px solid rgba(180,140,220,.3);padding-left:14px">'+_escHtml(data.narrative||'')+'</div>';
 
@@ -12950,6 +12987,14 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
     html+='<div style="text-align:center;padding:18px 12px;margin-bottom:18px;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)">'
       +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(255,255,255,.78);font-style:italic;line-height:1.45">"'+_escHtml(data.affirmation)+'"</div>'
       +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.28);margin-top:8px;text-transform:uppercase">Tu frase de '+mName+'</div>'
+      +'</div>';
+  }
+
+  // ── Carta a tu yo futuro ──
+  if(data.letter){
+    html+='<div style="background:rgba(180,140,220,.08);border:1.5px solid rgba(180,140,220,.25);border-radius:16px;padding:18px;margin-bottom:18px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:rgba(180,140,220,.85);margin-bottom:10px">📮 CARTA A TU YO DE '+(nextMName?nextMName.toUpperCase():'EL MES QUE VIENE')+'</div>'
+      +'<div style="font-size:14px;color:rgba(255,255,255,.82);line-height:1.85;font-style:italic;white-space:pre-line">'+_escHtml(data.letter)+'</div>'
       +'</div>';
   }
 
@@ -12989,6 +13034,33 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
         +'</div>';
     });
     html+='</div>';
+  }
+
+  // ── Movies ──
+  if(data.movies && data.movies.length){
+    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.75);margin-bottom:10px">🎬 PELÍCULAS PARA ESTE MOMENTO</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px">';
+    data.movies.forEach(function(mv){
+      html+='<div style="background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.18);border-radius:12px;padding:10px 14px">'
+        +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85)">🎬 '+_escHtml(mv.title||'')+'</div>'
+        +'<div style="font-size:11px;color:rgba(180,140,220,.7);margin-top:2px">'+_escHtml(mv.director||'')+'</div>'
+        +(mv.why?'<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:4px;line-height:1.5">'+_escHtml(mv.why)+'</div>':'')
+        +'</div>';
+    });
+    html+='</div>';
+  }
+
+  // ── Song of the month ──
+  if(data.song && data.song.title){
+    html+='<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.2);border-radius:14px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:flex-start;gap:14px">'
+      +'<span style="font-size:32px;flex-shrink:0;line-height:1;margin-top:2px">🎵</span>'
+      +'<div>'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:6px">CANCIÓN DEL MES</div>'
+      +'<div style="font-size:15px;font-weight:700;color:#fff;line-height:1.3">'+_escHtml(data.song.title)+'</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:3px">'+_escHtml(data.song.artist||'')+'</div>'
+      +(data.song.why?'<div style="font-size:12px;color:rgba(255,255,255,.48);margin-top:7px;line-height:1.55">'+_escHtml(data.song.why)+'</div>':'')
+      +'</div>'
+      +'</div>';
   }
 
   // ── Reviews ──
@@ -13127,6 +13199,38 @@ async function _generateMonthlySummary(month, mName, year){
   var nextMonIdx=mon===12?0:mon; var MN2=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   var nextMName=MN2[nextMonIdx];
 
+  // ── Weekly pattern (best/worst day of week) ──
+  var _dayNames=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  var _dayGroups={};
+  monthMoods.forEach(function(m){
+    var d=new Date(m.ts||0).getDay();
+    if(!_dayGroups[d]) _dayGroups[d]={happy:0,sad:0,total:0,name:_dayNames[d]};
+    _dayGroups[d].total++;
+    if(positiveSet[m.emoji]) _dayGroups[d].happy++;
+    else if(negativeSet[m.emoji]) _dayGroups[d].sad++;
+  });
+  var _validDays=Object.values(_dayGroups).filter(function(d){ return d.total>=2; });
+  var weekPattern=null;
+  if(_validDays.length>=2){
+    _validDays.sort(function(a,b){ return (b.happy/b.total)-(a.happy/a.total); });
+    weekPattern={bestDay:_validDays[0].name,worstDay:_validDays[_validDays.length-1].name};
+  }
+
+  // ── Momento del mes (most meaningful mood note) ──
+  var _allNotes=monthMoods.filter(function(m){ return m.note&&m.note.trim().length>15; });
+  _allNotes.sort(function(a,b){ return b.note.trim().length-a.note.trim().length; });
+  var momentoNote=_allNotes.length?_allNotes[0].note.trim():'';
+
+  // ── 3-month trend ──
+  var _MN3=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var _prev2Mon=mon<=2?mon+10:mon-2; var _prev2Yr=mon<=2?yr-1:yr;
+  var _prev2CK='velo_monthly_summary_'+_prev2Yr+'-'+(_prev2Mon<10?'0':'')+_prev2Mon;
+  var prev2Data=null; try{ var _pc2=safeLS('get',_prev2CK); if(_pc2) prev2Data=JSON.parse(_pc2); }catch(e){}
+  var trend3=[];
+  if(prev2Data){ var _t2=(prev2Data.happy||0)+(prev2Data.neutral||0)+(prev2Data.sad||0); if(_t2>0) trend3.push({month:_MN3[_prev2Mon-1],happyPct:Math.round((prev2Data.happy||0)/_t2*100),total:_t2}); }
+  if(prevData2){ var _t1=(prevData2.happy||0)+(prevData2.neutral||0)+(prevData2.sad||0); if(_t1>0) trend3.push({month:_MN3[prevMon2-1],happyPct:Math.round((prevData2.happy||0)/_t1*100),total:_t1}); }
+  if(monthMoods.length) trend3.push({month:_MN3[mon-1],happyPct:Math.round(happy/monthMoods.length*100),total:monthMoods.length,current:true});
+
   // ── Gemini prompt → structured JSON ──
   var moodCtx=monthMoods.length
     ?'Ánimos de '+mName+' '+yr+':\n- Días positivos/felices: '+happy+'\n- Días tranquilos/neutrales: '+neutral+'\n- Días difíciles/tristes: '+sad+'\n- Total registrado: '+monthMoods.length+' días\n'
@@ -13138,7 +13242,9 @@ async function _generateMonthlySummary(month, mName, year){
   var medalCtx=monthMedals.length?'- Medallas: '+monthMedals.map(function(m){return m.name||m.label||'🏅';}).join(', ')+'\n':'';
   var extraCtx=(diaryCount?'- Escribió '+diaryCount+' entrada'+(diaryCount>1?'s':'')+' en su diario\n':'')
     +(streak>1?'- Lleva '+streak+' días usando Velo en total\n':'')
-    +(moodNotes.length?'- Lo que escribió al registrar sus ánimos: '+moodNotes.join(', ')+'\n':'');
+    +(moodNotes.length?'- Lo que escribió al registrar sus ánimos: '+moodNotes.join(', ')+'\n':'')
+    +(weekPattern?'- Día con mejor ánimo esta semana: '+weekPattern.bestDay+'; día más difícil: '+weekPattern.worstDay+'\n':'')
+    +(momentoNote?'- La nota más significativa que escribió este mes: "'+momentoNote.slice(0,100)+'"\n':'');
 
   var prompt='Sos Velo, el acompañante de bienestar emocional más cálido y genuino del mundo.\n'
     +'Creá el resumen mensual profundamente personalizado para '+firstName+' sobre '+mName+' '+yr+'.\n\n'
@@ -13166,11 +13272,16 @@ async function _generateMonthlySummary(month, mName, year){
     +'{"icon":"emoji","text":"otra actividad"},'
     +'{"icon":"emoji","text":"tercera actividad"}],\n'
     +'"books": [{"title":"Título real","author":"Autor real","why":"Por qué es ideal para '+firstName+' ahora"},{"title":"Título real","author":"Autor real","why":"Por qué es ideal"}],\n'
-    +'"help_hint": '+(sadPct>=50?'"Frase muy gentil invitando a hablar con alguien de la comunidad. Cálida, sin alarmar, mencioná que hay personas reales que ya pasaron por algo parecido."':'null')+'\n'
+    +'"help_hint": '+(sadPct>=50?'"Frase muy gentil invitando a hablar con alguien de la comunidad. Cálida, sin alarmar, mencioná que hay personas reales que ya pasaron por algo parecido."':'null')+',\n'
+    +'"song": {"title":"Título real de una canción existente","artist":"Artista real","why":"Por qué esta canción representa emocionalmente el mes de '+firstName+'. Sé específico."},\n'
+    +'"movies": [{"title":"Título real de una película existente","director":"Director real","why":"Por qué es ideal para este momento emocional de '+firstName+'"}],\n'
+    +'"letter": "Carta breve (3-4 oraciones) de vos-ahora a vos-en-'+nextMName+'. '
+    +'Primera persona, comenzá con Querido/a '+firstName+': (sin comillas). '
+    +'Mencioná algo concreto del mes que terminó. Cerrá con una frase de aliento específica para '+nextMName+'."\n'
     +'}\n'
     +'Español rioplatense (vos, te, estás, querés). Nunca uses "tú". Sé genuinamente cálido/a y específico/a.';
 
-  var raw=await _geminiCall(prompt,{temperature:0.85,maxOutputTokens:1200});
+  var raw=await _geminiCall(prompt,{temperature:0.85,maxOutputTokens:1800});
   var parsed=null;
   if(raw){ try{ var m=raw.replace(/```json\n?|```/g,'').trim().match(/\{[\s\S]*\}/); if(m) parsed=JSON.parse(m[0]); }catch(e){} }
 
@@ -13197,10 +13308,17 @@ async function _generateMonthlySummary(month, mName, year){
     medals:monthMedals,
     recs:Array.isArray(parsed.recs)?parsed.recs.slice(0,3):[],
     books:Array.isArray(parsed.books)?parsed.books.slice(0,2):[],
+    movies:Array.isArray(parsed.movies)?parsed.movies.slice(0,2):[],
+    song:(parsed.song&&parsed.song.title)?parsed.song:null,
+    letter:parsed.letter||'',
     help_hint:parsed.help_hint||null,
     diaryCount:diaryCount,
     streak:streak,
-    nextMName:nextMName
+    nextMName:nextMName,
+    weekPattern:weekPattern,
+    momentoNote:momentoNote,
+    trend3:trend3,
+    mName:mName
   };
   safeLS('set',cacheKey,JSON.stringify(result));
   return result;
