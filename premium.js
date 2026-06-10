@@ -594,6 +594,10 @@ async function _sbSyncProfile(userId){
     var _el = document.getElementById(kv[0]); if(_el) _el.value = safeLS('get',kv[1]) || '';
   });
   typeof pRenderHomeGreet === 'function' && pRenderHomeGreet();
+  // Trigger buzón poll NOW that _syncedReadIds is populated — avoids the race where
+  // the 4s setTimeout fires before profile sync completes on first load
+  if(typeof _buzónPollOnce === 'function') _buzónPollOnce();
+  if(typeof _updateInboxDot === 'function') _updateInboxDot();
 }
 
 async function _ensureSbSession(){
@@ -1680,7 +1684,7 @@ function _updateTopbarMoodBadge(){
 
 function _showMoodLineData(el, m){
   var labels = {'😄':'Muy bien','😊':'Bien','😐':'Regular','😞':'Mal','😢':'Muy mal'};
-  var moodText = m.emoji + ' ' + (labels[m.emoji]||m.label||'') + (m.note ? ' — '+m.note.slice(0,40) : '');
+  var labelText = (labels[m.emoji]||m.label||'') + (m.note ? ' — '+_escHtml(m.note.slice(0,40)) : '');
   el.style.animation = 'none';
   el.style.background = 'rgba(116,198,157,.10)';
   el.style.border = '1px solid rgba(116,198,157,.25)';
@@ -1689,7 +1693,9 @@ function _showMoodLineData(el, m){
   el.style.fontSize = '12px';
   el.style.fontWeight = '500';
   el.style.borderRadius = '100px';
-  el.textContent = moodText;
+  // Use a dedicated emoji span with proper font so it renders crisply on all OS/browsers
+  el.innerHTML = '<span style="font-family:\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif;font-size:15px;line-height:1;vertical-align:middle">'
+    + m.emoji + '</span> ' + labelText;
 }
 
 async function _updateHomeCurrentMoodLine(){
@@ -3047,8 +3053,8 @@ function _startBuzónListener(){
   _buzónPollTmr = setInterval(function(){
     _buzónPollOnce();
   }, 60000);
-  // Run immediately after a short delay to catch anything sent while offline
-  setTimeout(_buzónPollOnce, 4000);
+  // Run after a delay — profile sync must complete first so _syncedReadIds is populated
+  setTimeout(_buzónPollOnce, 8000);
 }
 
 function _buzónPollOnce(){

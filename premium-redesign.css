@@ -8522,14 +8522,18 @@ body.r-dark .r-desk-profile-chip:hover {
   .r-desk-qlink-divider { display: none; }
   .r-desk-profile-chip  { display: inline-flex; }
 }
-/* Profile chip inside paired-quick: full-width third row */
-.r-paired-quick > .r-desk-profile-chip {
-  display: flex !important;
-  width: 100%;
-  border-radius: 12px;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px 14px;
+/* Profile chip below paired-quick: full-width row with spacing */
+@media (min-width: 861px) {
+  .r-hero-right > .r-desk-profile-chip {
+    display: flex !important;
+    width: 100%;
+    border-radius: 12px;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 14px;
+    margin-top: 8px;
+    box-sizing: border-box;
+  }
 }
 
 /* ── v503: Desktop home — transparent greeting card + centered mood text ── */
