@@ -11784,8 +11784,14 @@ async function _renderAdmin(){
       if(!cirRes.error) circlesCount = cirRes.count || 0;
     }catch(e){}
     try{
+      // Guardian sessions completed
       var grRes = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('status','completed');
-      if(!grRes.error) helpedOthers = grRes.count || 0;
+      if(!grRes.error) helpedOthers += grRes.count || 0;
+    }catch(e){}
+    try{
+      // Sala de Ayuda posts where someone was accompanied (taken=true)
+      var hpTaken = await sbClient.from('help_posts').select('id',{count:'exact',head:true}).eq('taken',true);
+      if(!hpTaken.error) helpedOthers += hpTaken.count || 0;
     }catch(e){}
   }
 
