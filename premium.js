@@ -11964,6 +11964,10 @@ function pAdminLogout(){
 async function _renderAdmin(){
   // Gate: only an authenticated admin session may render the panel
   if(safeLS('get','velo_admin_session') !== '1'){ pGoTo('admin-login'); return; }
+  // Always ensure user nav is hidden inside the admin panel
+  var _atb = document.getElementById('pTopbar');     if(_atb) _atb.style.display='none';
+  var _asb = document.querySelector('.p-sidebar');   if(_asb) _asb.style.display='none';
+  var _abn = document.querySelector('.p-bottomnav'); if(_abn) _abn.style.display='none';
   var metrics = document.getElementById('adminMetrics');
   var content = document.getElementById('adminContent');
 
@@ -15619,6 +15623,12 @@ window.addEventListener('load', function(){
     setTimeout(function(){ _startProfileSync(safeLS('get','velo_user_id')); }, 4000);
     if(type === 'admin' && safeLS('get','velo_admin_session') === '1'){
       pGoTo('admin');
+      // Hide regular user nav elements — same as pAdminLogin does on initial login
+      (function(){
+        var _tb = document.getElementById('pTopbar');     if(_tb) _tb.style.display='none';
+        var _sb = document.querySelector('.p-sidebar');   if(_sb) _sb.style.display='none';
+        var _bn = document.querySelector('.p-bottomnav'); if(_bn) _bn.style.display='none';
+      })();
     } else if(type === 'pro'){
       var approved = safeLS('get','velo_pro_approved');
       pGoTo(approved ? 'pro-panel' : 'pro-pending');
