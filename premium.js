@@ -8870,6 +8870,7 @@ function pRenderInbox(){
   // Single upfront fresh-fetch of read_bcast_ids directly (no _ensureSbSession —
   // calling it here triggers _sbSyncProfile which calls pRenderInbox again → loop).
   // The sbClient session is already active for a logged-in user.
+  // Fallback: if profiles.read_bcast_ids column is missing, use auth.user_metadata (always available).
   var userType = safeLS('get','velo_user_type') || 'user';
   _initSupabase();
   var _rsUid = safeLS('get','velo_user_id');
@@ -8877,22 +8878,48 @@ function pRenderInbox(){
     .select('read_bcast_ids').eq('id',_rsUid).limit(1)
     .then(function(r){
       if(r && r.error){
-        console.warn('[buzón] read_bcast_ids SELECT failed:', r.error.message, 'code:', r.error.code);
-        return;
+        console.warn('[buzón] profiles SELECT error:', r.error.message, 'code:', r.error.code);
+        // Fallback: read from auth.user_metadata (no column needed)
+        return sbClient.auth.getUser().then(function(ar){
+          var meta = ar && ar.data && ar.data.user && ar.data.user.user_metadata;
+          var ids = (meta && Array.isArray(meta.read_bcast_ids)) ? meta.read_bcast_ids : [];
+          _applyReadIds(ids, '[buzón:auth_meta fallback]');
+        });
       }
       if(r && r.data && r.data[0] && Array.isArray(r.data[0].read_bcast_ids)){
-        var ids = r.data[0].read_bcast_ids;
-        console.log('[buzón] fresh read_bcast_ids:', ids.length, 'IDs from Supabase');
-        ids.forEach(function(bid){
-          if(!bid) return;
-          _syncedReadIds[bid] = 1;
-          safeLS('set','velo_bcast_read_'+bid,'1');
-        });
+        _applyReadIds(r.data[0].read_bcast_ids, '[buzón:profiles]');
       } else {
-        console.log('[buzón] read_bcast_ids empty or missing in profile row');
+        // profiles row exists but column empty — also check auth.user_metadata
+        return sbClient.auth.getUser().then(function(ar){
+          var meta = ar && ar.data && ar.data.user && ar.data.user.user_metadata;
+          var ids = (meta && Array.isArray(meta.read_bcast_ids)) ? meta.read_bcast_ids : [];
+          _applyReadIds(ids, '[buzón:auth_meta]');
+        });
       }
-    }).catch(function(e){ console.warn('[buzón] read_bcast_ids exception:', e); })
+    }).catch(function(e){ console.warn('[buzón] read state exception:', e); })
   : Promise.resolve();
+
+  function _applyReadIds(ids, source){
+    if(!ids.length){ console.log(source, 'no read IDs in Supabase — sync may not be working'); return; }
+    console.log(source, 'loaded', ids.length, 'read IDs from Supabase');
+    ids.forEach(function(bid){
+      if(!bid) return;
+      _syncedReadIds[bid] = 1;
+      safeLS('set','velo_bcast_read_'+bid,'1');
+    });
+    // Show a subtle status strip in inbox so user can confirm sync works on mobile
+    var _strip = document.getElementById('_inboxSyncStrip');
+    if(!_strip){
+      var inboxEl = document.getElementById('inboxList');
+      if(inboxEl){
+        _strip = document.createElement('div');
+        _strip.id = '_inboxSyncStrip';
+        _strip.style.cssText = 'font-size:10px;color:var(--ink5);text-align:center;padding:4px 0 8px;letter-spacing:.02em';
+        inboxEl.parentNode.insertBefore(_strip, inboxEl);
+      }
+    }
+    if(_strip) _strip.textContent = '🔄 ' + ids.length + ' eliminados sincronizados';
+  }
 
   // Load broadcasts AFTER fresh read state is ready
   _readStateProm.then(function(){
@@ -9080,8 +9107,8 @@ function pRenderInbox(){
 // messages handled before v529 (before per-action sync was added) don't re-appear on new devices.
 // Updates _syncedReadIds synchronously so _buzónPollOnce immediately has the correct state.
 function _migrateBcastLocalToSb(){
-  if(safeLS('get','velo_bcast_sb_push_v2')) return;
-  safeLS('set','velo_bcast_sb_push_v2','1'); // set flag immediately to prevent double-run
+  if(safeLS('get','velo_bcast_sb_push_v3')) return;
+  safeLS('set','velo_bcast_sb_push_v3','1'); // set flag immediately to prevent double-run
   // Collect all locally-known broadcast IDs synchronously and write them to
   // velo_bcast_read_* so pRenderInbox's new filter catches them immediately
   var newIds = [];
@@ -9118,12 +9145,16 @@ function _migrateBcastLocalToSb(){
       var uid = safeLS('get','velo_user_id');
       if(!uid) return;
       var cur = await sbClient.from('profiles').select('read_bcast_ids').eq('id',uid).limit(1);
-      if(cur.data && cur.data[0] && Array.isArray(cur.data[0].read_bcast_ids)){
+      if(!cur.error && cur.data && cur.data[0] && Array.isArray(cur.data[0].read_bcast_ids)){
         cur.data[0].read_bcast_ids.forEach(function(id){ if(id) _syncedReadIds[id] = 1; });
       }
       var merged = Object.keys(_syncedReadIds);
-      var r = await sbClient.from('profiles').update({read_bcast_ids: merged}).eq('id', uid);
-      if(r && r.error) console.warn('[migrate bcast] UPDATE error:', r.error.message);
+      if(!cur.error){
+        var r = await sbClient.from('profiles').update({read_bcast_ids: merged}).eq('id', uid);
+        if(r && r.error) console.warn('[migrate bcast] profiles UPDATE error:', r.error.message);
+      }
+      // Always also save to auth.user_metadata
+      try{ await sbClient.auth.updateUser({ data: { read_bcast_ids: merged } }); }catch(e){}
     }catch(e){}
   })();
 }
@@ -9145,21 +9176,40 @@ function _syncBroadcastRead(bcId){
       if(!uid){ console.warn('[sync bcast] no uid — delete not synced to Supabase'); return; }
       // SELECT first — merge remote IDs so we never overwrite another device's deletions
       var cur = await sbClient.from('profiles').select('read_bcast_ids').eq('id',uid).limit(1);
+      var _profilesColOk = false;
       if(cur.error){
-        console.warn('[sync bcast] SELECT error:', cur.error.message, 'code:', cur.error.code,
-          '— read_bcast_ids column may not exist in profiles table');
-      } else if(cur.data && cur.data[0] && Array.isArray(cur.data[0].read_bcast_ids)){
-        cur.data[0].read_bcast_ids.forEach(function(id){ if(id) _syncedReadIds[id] = 1; });
-        console.log('[sync bcast] merged remote ids, now have', Object.keys(_syncedReadIds).length);
+        console.warn('[sync bcast] profiles SELECT error:', cur.error.message, 'code:', cur.error.code);
+        // Also check auth.user_metadata for IDs saved by fallback path
+        try{
+          var _ar0 = await sbClient.auth.getUser();
+          var _meta0 = _ar0 && _ar0.data && _ar0.data.user && _ar0.data.user.user_metadata;
+          if(_meta0 && Array.isArray(_meta0.read_bcast_ids)){
+            _meta0.read_bcast_ids.forEach(function(id){ if(id) _syncedReadIds[id] = 1; });
+          }
+        }catch(e){}
+      } else {
+        _profilesColOk = true;
+        if(cur.data && cur.data[0] && Array.isArray(cur.data[0].read_bcast_ids)){
+          cur.data[0].read_bcast_ids.forEach(function(id){ if(id) _syncedReadIds[id] = 1; });
+        }
       }
       var merged = Object.keys(_syncedReadIds);
-      var r = await sbClient.from('profiles').update({read_bcast_ids: merged}).eq('id', uid);
-      if(r && r.error){
-        console.warn('[sync bcast] UPDATE error:', r.error.message, 'code:', r.error.code,
-          '— cross-device sync FAILED. Check Supabase: profiles table needs read_bcast_ids text[] column');
-      } else {
-        console.log('[sync bcast] ✓ saved', merged.length, 'IDs to Supabase profiles.read_bcast_ids');
+      // Save to profiles if column exists, always save to auth.user_metadata as fallback
+      if(_profilesColOk){
+        var r = await sbClient.from('profiles').update({read_bcast_ids: merged}).eq('id', uid);
+        if(r && r.error){
+          console.warn('[sync bcast] profiles UPDATE error:', r.error.message, 'code:', r.error.code);
+          _profilesColOk = false;
+        } else {
+          console.log('[sync bcast] ✓ profiles.read_bcast_ids saved', merged.length, 'IDs');
+        }
       }
+      // Always save to auth.user_metadata (works even if profiles column missing)
+      try{
+        var _ar = await sbClient.auth.updateUser({ data: { read_bcast_ids: merged } });
+        if(_ar.error) console.warn('[sync bcast] auth.updateUser error:', _ar.error.message);
+        else console.log('[sync bcast] ✓ auth.user_metadata saved', merged.length, 'IDs' + (_profilesColOk ? '' : ' (profiles column missing — using auth fallback)'));
+      }catch(e){ console.warn('[sync bcast] auth.updateUser exception:', e); }
     }catch(e){ console.warn('[sync bcast] exception:', e); }
   })();
 }
