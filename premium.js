@@ -31,6 +31,7 @@ var _pendingHappyPost = null; // post just submitted, merged into render until S
 var _sbHelp       = null;   // cached Supabase help_posts
 var _syncedReadIds = {};    // broadcast IDs synced as read from Supabase profile (cross-device)
 var _profileSelectTier = parseInt(safeLS('get','velo_prof_tier')||'0'); // persisted so 400s don't repeat on reload
+var _inboxAsyncPending = false; // prevents concurrent broadcast/reply injections
 var _sbBottles    = null;   // cached Supabase bottles
 var _sbCircleMsgs = [];     // cached Supabase circle_messages
 var _happyRtCh    = null;   // realtime channel happy_posts
@@ -8852,8 +8853,12 @@ function pToggleIncognito(){
 
 // ── INBOX ──────────────────────────────────────────────────────
 function pRenderInbox(){
+  // Guard: if async injection is already in progress, skip to avoid duplicate DOM inserts
+  if(_inboxAsyncPending){ return; }
+  _inboxAsyncPending = true;
+  setTimeout(function(){ _inboxAsyncPending = false; }, 8000); // reset after 8s worst-case
   var el = document.getElementById('inboxList');
-  if(!el) return;
+  if(!el){ _inboxAsyncPending = false; return; }
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   var _delSet = []; try{ _delSet = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
   msgs = msgs.filter(function(m){ return _delSet.indexOf(m.id) < 0; });
@@ -8862,27 +8867,32 @@ function pRenderInbox(){
     { id:'m2', tipo:'sistema', icon:'🌿', remitente:'Velo', asunto:'Consejo del día', extracto:'Recuerda: está bien no estar bien. El primer paso es reconocerlo.', leido:true, fecha:'Hoy' }
   ].filter(function(m){ return _delSet.indexOf(m.id) < 0; });
   var all = msgs.concat(mockMsgs);
-  // Single upfront fresh-fetch of read_bcast_ids — both broadcasts and replies
-  // callbacks wait for this before filtering, guaranteeing cross-device deletions
-  // are applied regardless of whether _sbSyncProfile has completed yet.
+  // Single upfront fresh-fetch of read_bcast_ids directly (no _ensureSbSession —
+  // calling it here triggers _sbSyncProfile which calls pRenderInbox again → loop).
+  // The sbClient session is already active for a logged-in user.
   var userType = safeLS('get','velo_user_type') || 'user';
   _initSupabase();
-  var _readStateProm = sbClient ? (async function(){
-    try{
-      var _rsOk = await _ensureSbSession();
-      var _rsUid = safeLS('get','velo_user_id');
-      if(_rsOk && _rsUid){
-        var _rsR = await sbClient.from('profiles').select('read_bcast_ids').eq('id',_rsUid).limit(1);
-        if(_rsR.data && _rsR.data[0] && Array.isArray(_rsR.data[0].read_bcast_ids)){
-          _rsR.data[0].read_bcast_ids.forEach(function(bid){
-            if(!bid) return;
-            _syncedReadIds[bid] = 1;
-            safeLS('set','velo_bcast_read_'+bid,'1');
-          });
-        }
+  var _rsUid = safeLS('get','velo_user_id');
+  var _readStateProm = (sbClient && _rsUid) ? sbClient.from('profiles')
+    .select('read_bcast_ids').eq('id',_rsUid).limit(1)
+    .then(function(r){
+      if(r && r.error){
+        console.warn('[buzón] read_bcast_ids SELECT failed:', r.error.message, 'code:', r.error.code);
+        return;
       }
-    }catch(e){}
-  })() : Promise.resolve();
+      if(r && r.data && r.data[0] && Array.isArray(r.data[0].read_bcast_ids)){
+        var ids = r.data[0].read_bcast_ids;
+        console.log('[buzón] fresh read_bcast_ids:', ids.length, 'IDs from Supabase');
+        ids.forEach(function(bid){
+          if(!bid) return;
+          _syncedReadIds[bid] = 1;
+          safeLS('set','velo_bcast_read_'+bid,'1');
+        });
+      } else {
+        console.log('[buzón] read_bcast_ids empty or missing in profile row');
+      }
+    }).catch(function(e){ console.warn('[buzón] read_bcast_ids exception:', e); })
+  : Promise.resolve();
 
   // Load broadcasts AFTER fresh read state is ready
   _readStateProm.then(function(){
@@ -8976,6 +8986,7 @@ function pRenderInbox(){
     var _ubcNow = []; try{ _ubcNow = JSON.parse(safeLS('get','velo_bcast_unread')||'[]'); }catch(e){}
     safeLS('set','velo_bcast_unread', JSON.stringify(_ubcNow.filter(function(id){ return _shownIds.indexOf(id) < 0; })));
     _updateInboxDot();
+    _inboxAsyncPending = false;
    }); // end sbLoadBroadcasts
   }); // end _readStateProm (broadcasts)
 
@@ -9129,17 +9140,26 @@ function _syncBroadcastRead(bcId){
   (async function(){
     try{
       var ok = await _ensureSbSession();
-      if(!ok){ console.warn('[sync bcast] no session'); return; }
+      if(!ok){ console.warn('[sync bcast] no session — delete not synced to Supabase'); return; }
       var uid = safeLS('get','velo_user_id');
-      if(!uid){ console.warn('[sync bcast] no uid'); return; }
+      if(!uid){ console.warn('[sync bcast] no uid — delete not synced to Supabase'); return; }
       // SELECT first — merge remote IDs so we never overwrite another device's deletions
       var cur = await sbClient.from('profiles').select('read_bcast_ids').eq('id',uid).limit(1);
-      if(cur.data && cur.data[0] && Array.isArray(cur.data[0].read_bcast_ids)){
+      if(cur.error){
+        console.warn('[sync bcast] SELECT error:', cur.error.message, 'code:', cur.error.code,
+          '— read_bcast_ids column may not exist in profiles table');
+      } else if(cur.data && cur.data[0] && Array.isArray(cur.data[0].read_bcast_ids)){
         cur.data[0].read_bcast_ids.forEach(function(id){ if(id) _syncedReadIds[id] = 1; });
+        console.log('[sync bcast] merged remote ids, now have', Object.keys(_syncedReadIds).length);
       }
       var merged = Object.keys(_syncedReadIds);
       var r = await sbClient.from('profiles').update({read_bcast_ids: merged}).eq('id', uid);
-      if(r && r.error) console.warn('[sync bcast] UPDATE error:', r.error.message, r.error.code);
+      if(r && r.error){
+        console.warn('[sync bcast] UPDATE error:', r.error.message, 'code:', r.error.code,
+          '— cross-device sync FAILED. Check Supabase: profiles table needs read_bcast_ids text[] column');
+      } else {
+        console.log('[sync bcast] ✓ saved', merged.length, 'IDs to Supabase profiles.read_bcast_ids');
+      }
     }catch(e){ console.warn('[sync bcast] exception:', e); }
   })();
 }
