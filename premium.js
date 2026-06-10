@@ -6752,7 +6752,7 @@ function pInitVela(){
   // Nothing to init — static form
 }
 
-function pSendVela(){
+async function pSendVela(){
   var tipo = document.getElementById('velaTipo');
   var espec = document.getElementById('velaEspec');
   var urgencia = document.querySelector('input[name="velaUrgencia"]:checked');
@@ -6760,6 +6760,22 @@ function pSendVela(){
   if(!tipo || !tipo.value){ pToast('⚠️','Elegí el tipo de profesional'); return; }
   if(!espec || !espec.value){ pToast('⚠️','Elegí la especialización'); return; }
   if(!urgencia){ pToast('⚠️','Indicá el nivel de urgencia'); return; }
+  var horarios = [];
+  document.querySelectorAll('input[name="velaHorario"]:checked').forEach(function(h){ horarios.push(h.value); });
+  var userName  = safeLS('get','velo_user_name')  || safeLS('get','velo_username') || '';
+  var userEmail = safeLS('get','velo_user_email') || '';
+  var userId    = safeLS('get','velo_user_id')    || '';
+  _initSupabase();
+  if(sbClient){
+    try{
+      await sbClient.from('solidarity_requests').insert({
+        user_id: userId || null, email: userEmail, user_name: userName,
+        tipo: tipo.value, espec: espec.value, urgencia: urgencia.value,
+        horarios: horarios, description: desc ? desc.value.trim() : '',
+        status: 'pending', created_at: new Date().toISOString()
+      });
+    }catch(e){ console.error('[pSendVela]', e); }
+  }
   pToast('🕯️','Solicitud enviada. Te contactaremos en 7-14 días 💚');
   if(tipo) tipo.value = '';
   if(espec) espec.value = '';
@@ -8505,6 +8521,7 @@ function pShowPublicProfile(){
   var motto  = safeLS('get','velo_user_motto')   || 'Mi camino, mi ritmo.';
   var music  = safeLS('get','velo_status_music') || '';
   var book   = safeLS('get','velo_status_book')  || '';
+  var film   = safeLS('get','velo_status_film')  || '';
   var phrase = safeLS('get','velo_status_phrase')|| '';
   var isInc  = safeLS('get','velo_incognito') === 'true';
   var convs  = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
@@ -8512,15 +8529,17 @@ function pShowPublicProfile(){
   var displayName = isInc ? 'Anónimo/a 🎭' : _escHtml(name);
   var displayAv   = isInc ? '🎭' : av;
   var statusHtml  = '';
-  if(!isInc && (music || book || phrase)){
-    statusHtml = '<div style="background:var(--sage7);border-radius:12px;padding:12px;margin-top:12px;font-size:13px;color:var(--ink3);line-height:1.7">';
+  if(!isInc && (music || book || film || phrase)){
+    statusHtml = '<div style="background:var(--sage7);border-radius:12px;padding:12px;margin-top:12px;font-size:13px;color:var(--ink3);line-height:1.7;text-align:left">';
     if(music)  statusHtml += '<div>🎵 '+_escHtml(music)+'</div>';
     if(book)   statusHtml += '<div>📚 '+_escHtml(book)+'</div>';
+    if(film)   statusHtml += '<div>🎬 '+_escHtml(film)+'</div>';
     if(phrase) statusHtml += '<div style="font-style:italic;margin-top:4px;color:var(--sage2)">✨ "'+_escHtml(phrase)+'"</div>';
     statusHtml += '</div>';
   }
   var existing = document.getElementById('publicProfileOv');
   if(existing) existing.remove();
+  var myId = safeLS('get','velo_user_id') || '';
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
   ov.id = 'publicProfileOv';
@@ -8534,9 +8553,29 @@ function pShowPublicProfile(){
     +statusHtml
     +(isInc ? '<div style="margin-top:12px;font-size:12px;color:var(--ink4);background:var(--cream2);border-radius:10px;padding:10px">🎭 Modo incógnito · tu nombre y avatar están ocultos</div>' : '')
     +'</div>'
+    +'<div id="pubProfReviews" style="margin:0 0 12px"><div style="font-size:11px;color:var(--ink4);text-align:center;padding:6px">Cargando reseñas…</div></div>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'publicProfileOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
+  // Load reviews asynchronously after overlay is in DOM
+  if(myId){
+    _loadUserReviews(myId).then(function(revs){
+      var rvEl = document.getElementById('pubProfReviews');
+      if(!rvEl) return;
+      if(!revs.length){
+        rvEl.innerHTML = '<div style="font-size:11px;color:var(--ink4);text-align:center;padding:6px">Sin reseñas aún — aparecerán después de tus sesiones 💬</div>';
+        return;
+      }
+      rvEl.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS</div>'
+        + _renderReviewsList(revs, myId, myId);
+    }).catch(function(){
+      var rvEl = document.getElementById('pubProfReviews');
+      if(rvEl) rvEl.innerHTML = '';
+    });
+  } else {
+    var rvEl = document.getElementById('pubProfReviews');
+    if(rvEl) rvEl.innerHTML = '';
+  }
 }
 
 function _calcBadges(){
@@ -8606,24 +8645,42 @@ function _renderBadgesGrid(){
   var _badgeHKey = _badgeUid ? 'velo_happy_history_'+_badgeUid : 'velo_happy_history';
   var happyPosts = []; try{ happyPosts = JSON.parse(safeLS('get',_badgeHKey)||safeLS('get','velo_happy_posts')||'[]'); }catch(e){}
   var daysActive = Math.ceil((Date.now()-(parseInt(safeLS('get','velo_registered_ts')||Date.now(),10)))/86400000);
+  // Count total days with registered mood (up to last 365)
+  var moodDaysTotal = 0;
+  var moodStreak = 0;
+  (function(){
+    var d = new Date();
+    var streakBroken = false;
+    for(var mi=0; mi<365; mi++){
+      var mk = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      if(safeLS('get','velo_mood_'+mk)){
+        moodDaysTotal++;
+        if(!streakBroken) moodStreak++;
+      } else if(mi > 0) {
+        streakBroken = true;
+      }
+      d.setDate(d.getDate()-1);
+    }
+  }());
   var badges = [
-    { icon:'🌱', name:'Primer Paso',      desc:'Crear tu cuenta',                              done:true },
-    { icon:'📔', name:'Escribiendo',       desc:'Primera entrada en el diario',                 done:!!diary.length },
-    { icon:'🌈', name:'En Movimiento',     desc:'Registrar tu ánimo 7 días',                   done:false },
-    { icon:'💙', name:'Corazón Abierto',   desc:'Participar en Sala de Ayuda',                 done:!!safeLS('get','velo_helped_once') },
-    { icon:'⭐', name:'Constancia',        desc:'30 días en la comunidad',                     done:daysActive>=30 },
-    { icon:'🦋', name:'Transformación',    desc:'Completar onboarding',                        done:!!safeLS('get','velo_onboarding_done') },
-    { icon:'🌊', name:'Mensaje al Mar',    desc:'Enviar tu primer mensaje al Mar',             done:parseInt(safeLS('get','velo_bottle_count')||safeLS('get','velo_total_bottles')||'0',10)>0 || JSON.parse(safeLS('get','velo_my_bottles')||'[]').length>0 },
-    { icon:'🤝', name:'Primer Apoyo',      desc:'Acompañar a alguien en Sala de Ayuda',       done:!!safeLS('get','velo_helped_once') && parseInt(safeLS('get','velo_helped_others')||'0',10)>0 },
-    { icon:'🌻', name:'Muro en Flor',      desc:'Primera publicación en el Muro',              done:happyPosts.length>0 },
-    { icon:'💬', name:'Conversador/a',     desc:'Enviar 10 mensajes en chats',                 done:parseInt(safeLS('get','velo_total_msgs')||'0',10)>=10 },
-    { icon:'🧘', name:'Momento de Calma', desc:'Completar la sesión de respiración',          done:!!safeLS('get','velo_breathed_once') },
-    { icon:'🌟', name:'Velo Plus',         desc:'Suscribirse a Velo Plus',                     done:safeLS('get','velo_plan')==='plus' },
-    { icon:'🏡', name:'En Comunidad',      desc:'7 días activo en la app',                     done:daysActive>=7 },
-    { icon:'🗓️', name:'Semana Completa',   desc:'Registrar ánimo 7 días seguidos',             done:false }
+    { icon:'🌱', name:'Primer Paso',      desc:'Crear tu cuenta',                              done:true,            prog:100 },
+    { icon:'📔', name:'Escribiendo',       desc:'Primera entrada en el diario',                 done:!!diary.length,  prog:diary.length?100:0 },
+    { icon:'🌈', name:'En Movimiento',     desc:'Registrar tu ánimo 7 días',                   done:moodDaysTotal>=7, prog:Math.min(100,Math.round(moodDaysTotal/7*100)) },
+    { icon:'💙', name:'Corazón Abierto',   desc:'Participar en Sala de Ayuda',                 done:!!safeLS('get','velo_helped_once'), prog:safeLS('get','velo_helped_once')?100:0 },
+    { icon:'⭐', name:'Constancia',        desc:'30 días en la comunidad',                     done:daysActive>=30,  prog:Math.min(100,Math.round(daysActive/30*100)) },
+    { icon:'🦋', name:'Transformación',    desc:'Completar onboarding',                        done:!!safeLS('get','velo_onboarding_done'), prog:safeLS('get','velo_onboarding_done')?100:0 },
+    { icon:'🌊', name:'Mensaje al Mar',    desc:'Enviar tu primer mensaje al Mar',             done:parseInt(safeLS('get','velo_bottle_count')||safeLS('get','velo_total_bottles')||'0',10)>0 || JSON.parse(safeLS('get','velo_my_bottles')||'[]').length>0, prog:null },
+    { icon:'🤝', name:'Primer Apoyo',      desc:'Acompañar a alguien en Sala de Ayuda',       done:!!safeLS('get','velo_helped_once') && parseInt(safeLS('get','velo_helped_others')||'0',10)>0, prog:null },
+    { icon:'🌻', name:'Muro en Flor',      desc:'Primera publicación en el Muro',              done:happyPosts.length>0, prog:happyPosts.length?100:0 },
+    { icon:'💬', name:'Conversador/a',     desc:'Enviar 10 mensajes en chats',                 done:parseInt(safeLS('get','velo_total_msgs')||'0',10)>=10, prog:Math.min(100,Math.round(parseInt(safeLS('get','velo_total_msgs')||'0',10)/10*100)) },
+    { icon:'🧘', name:'Momento de Calma', desc:'Completar la sesión de respiración',          done:!!safeLS('get','velo_breathed_once'), prog:safeLS('get','velo_breathed_once')?100:0 },
+    { icon:'🌟', name:'Velo Plus',         desc:'Suscribirse a Velo Plus',                     done:safeLS('get','velo_plan')==='plus', prog:safeLS('get','velo_plan')==='plus'?100:0 },
+    { icon:'🏡', name:'En Comunidad',      desc:'7 días activo en la app',                     done:daysActive>=7,   prog:Math.min(100,Math.round(daysActive/7*100)) },
+    { icon:'🗓️', name:'Semana Completa',   desc:'Registrar ánimo 7 días seguidos',             done:moodStreak>=7,   prog:Math.min(100,Math.round(moodStreak/7*100)) }
   ];
   el.innerHTML = guardianSection + badges.map(function(b){
-    return '<div class="p-badge-row" style="opacity:'+(b.done?1:.5)+'"><div class="p-badge-ic" style="background:'+(b.done?'var(--sage7)':'var(--cream2)')+'">'+b.icon+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+b.name+'</div><div style="font-size:11px;color:var(--ink4)">'+b.desc+'</div><div class="p-badge-prog-track"><div class="p-badge-prog-fill" style="width:'+(b.done?'100%':'25%')+';background:'+(b.done?'var(--sage2)':'var(--sage4)')+'"></div></div></div>'+(b.done?'<span style="font-size:16px">✅</span>':'<span style="font-size:14px;color:var(--ink5)">🔒</span>')+'</div>';
+    var progPct = b.done ? 100 : (b.prog != null ? b.prog : 0);
+    return '<div class="p-badge-row" style="opacity:'+(b.done?1:(progPct>0?.75:.45))+'"><div class="p-badge-ic" style="background:'+(b.done?'var(--sage7)':'var(--cream2)')+'">'+b.icon+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+b.name+'</div><div style="font-size:11px;color:var(--ink4)">'+b.desc+'</div><div class="p-badge-prog-track"><div class="p-badge-prog-fill" style="width:'+progPct+'%;background:'+(b.done?'var(--sage2)':'var(--sage4)')+'"></div></div></div>'+(b.done?'<span style="font-size:16px">✅</span>':'<span style="font-size:14px;color:var(--ink5)">🔒</span>')+'</div>';
   }).join('');
 }
 
@@ -11784,18 +11841,17 @@ async function _renderAdmin(){
       if(!cirRes.error) circlesCount = cirRes.count || 0;
     }catch(e){}
     try{
-      // Guardian sessions completed
-      var grRes = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('status','completed');
-      if(!grRes.error) helpedOthers += grRes.count || 0;
-    }catch(e){}
-    try{
-      // Sala de Ayuda posts where someone was accompanied (taken=true)
-      var hpTaken = await sbClient.from('help_posts').select('id',{count:'exact',head:true}).eq('taken',true);
-      if(!hpTaken.error) helpedOthers += hpTaken.count || 0;
+      // Guardian sessions ended + Sala de Ayuda messages left
+      var grRes = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).in('status',['ended','message_left']);
+      if(!grRes.error) helpedOthers = grRes.count || 0;
     }catch(e){}
   }
 
-  var waitlistCount   = (function(){ try{ return JSON.parse(safeLS('get','velo_waitlist')||'[]').length; }catch(e){ return 0; } })();
+  var waitlistCount = 0;
+  try{
+    var wlRes = await sbClient.from('solidarity_requests').select('id',{count:'exact',head:true});
+    if(!wlRes.error) waitlistCount = wlRes.count || 0;
+  }catch(e){}
   var tcRecs = []; try{ tcRecs = JSON.parse(safeLS('get','velo_tc_records')||'[]'); }catch(e){}
 
   // If Supabase returned 0 users, fall back to T&C records as minimum estimate
@@ -11807,7 +11863,7 @@ async function _renderAdmin(){
       { icon:'👥', label:'Usuarios registrados', value: totalUsers,    color:'var(--sage4)',      note:'Supabase' },
       { icon:'🩺', label:'Profesionales',         value: totalPros,     color:'rgba(116,198,200,.8)', note:'Supabase' },
       { icon:'⭐', label:'Velo Plus / Insignia dorada', value: totalPlus, color:'#c8a23e',        note:'Supabase' },
-      { icon:'💙', label:'Lista espera solidaria', value: waitlistCount, color:'rgba(58,123,213,.9)', note:'local' },
+      { icon:'💙', label:'Lista espera solidaria', value: waitlistCount, color:'rgba(58,123,213,.9)', note:'Supabase' },
       { icon:'🌊', label:'Mensajes al Mar lanzados', value: bottlesSent, color:'rgba(100,170,230,.8)', note:'Supabase' },
       { icon:'💌', label:'Botellas respondidas',   value: bottlesReplied, color:'rgba(116,198,157,.8)', note:'Supabase' },
       { icon:'🤝', label:'Personas acompañadas',   value: helpedOthers,  color:'var(--sage4)',     note:'Supabase' },
@@ -12433,10 +12489,22 @@ function _adminTabGestion(panel){
     +'<label style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:12px">'
     +'<input type="checkbox" id="adminNewsOnlyToggle" '+(safeLS('get','velo_admin_news_only')==='1'?'checked':'')+' onchange="pAdminToggleNewsOnly(this.checked)" style="width:15px;height:15px;cursor:pointer">'
     +'Mostrar solo noticias manuales hoy</label>'
-    +'<div id="adminNewsList"></div></div>';
+    +'<div id="adminNewsList"></div></div>'
+    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(58,123,213,.8);margin-bottom:10px">🕯️ SOLICITUDES VELA POR TI</div>'
+    +'<div style="background:rgba(58,123,213,.06);border:1px solid rgba(58,123,213,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
+    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Solicitudes de conexión con profesionales solidarios enviadas por usuarios.</p>'
+    +'<div id="adminSolidarityList"><div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando…</div></div>'
+    +'</div>'
+    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📅 USUARIOS ACTIVOS POR DÍA</div>'
+    +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:14px;margin-bottom:18px">'
+    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Usuarios que se conectaron a la app cada día (últimos 14 días).</p>'
+    +'<div id="adminDailyUsersChart"><div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando…</div></div>'
+    +'</div>';
   pAdminRenderNewsList();
   _renderAdminAITasks();
   _adminLoadDiamanteRewards();
+  _adminLoadSolidarityRequests();
+  _adminLoadDailyActiveUsers();
 }
 
 async function _adminLoadDiamanteRewards(){
@@ -12468,6 +12536,120 @@ async function _adminLoadDiamanteRewards(){
         +'<div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">'+_escHtml(p.email||'')+(grantedDate!=='—'?' · Ganado: '+grantedDate:'')+'</div>'
         +'</div>';
     }).join('');
+  }catch(e){
+    el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Error al cargar datos.</div>';
+  }
+}
+
+async function _adminLoadSolidarityRequests(){
+  var el = document.getElementById('adminSolidarityList');
+  if(!el) return;
+  _initSupabase();
+  if(!sbClient){ el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  try{
+    var r = await sbClient.from('solidarity_requests')
+      .select('*')
+      .order('created_at',{ascending:false})
+      .limit(100);
+    if(!r.data || !r.data.length){
+      el.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">No hay solicitudes aún.</div>';
+      return;
+    }
+    var statusColors = { pending:'rgba(200,162,0,.85)', assigned:'rgba(58,123,213,.85)', completed:'rgba(116,198,157,.85)', cancelled:'rgba(200,100,100,.7)' };
+    var statusLabels = { pending:'⏳ Pendiente', assigned:'🔗 Asignada', completed:'✅ Completada', cancelled:'❌ Cancelada' };
+    el.innerHTML = r.data.map(function(req){
+      var fecha = req.created_at ? new Date(req.created_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      var sc = statusColors[req.status] || 'rgba(255,255,255,.4)';
+      var sl = statusLabels[req.status] || req.status;
+      var horList = Array.isArray(req.horarios) ? req.horarios.join(', ') : (req.horarios||'');
+      return '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px">'
+        +'<div style="font-size:12px;color:rgba(255,255,255,.82);font-weight:600">'+_escHtml(req.user_name||req.email||'Anónimo')+'</div>'
+        +'<span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;color:'+sc+';border:1px solid '+sc+';white-space:nowrap">'+sl+'</span>'
+        +'</div>'
+        +'<div style="font-size:10px;color:rgba(255,255,255,.45);line-height:1.6">'
+        +(req.tipo?'<span>🩺 '+_escHtml(req.tipo)+'</span> · ':'')
+        +(req.espec?'<span>'+_escHtml(req.espec)+'</span> · ':'')
+        +(req.urgencia?'<span style="color:rgba(230,160,60,.8)">'+_escHtml(req.urgencia)+'</span>':'')
+        +'</div>'
+        +(horList?'<div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">🕐 '+_escHtml(horList)+'</div>':'')
+        +(req.description?'<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:4px;font-style:italic">'+_escHtml(req.description.slice(0,120))+(req.description.length>120?'…':'')+'</div>':'')
+        +'<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">'
+        +['pending','assigned','completed','cancelled'].filter(function(s){ return s!==req.status; }).map(function(s){
+          return '<button onclick="_adminSetSolidarityStatus(\''+_escHtml(String(req.id))+'\',\''+s+'\',this)" style="font-size:9px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.55);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">→ '+(statusLabels[s]||s)+'</button>';
+        }).join('')
+        +'</div>'
+        +'<div style="font-size:9px;color:rgba(255,255,255,.2);margin-top:4px">'+fecha+(req.email?' · '+_escHtml(req.email):'')+'</div>'
+        +'</div>';
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Error al cargar solicitudes.</div>';
+  }
+}
+
+async function _adminSetSolidarityStatus(reqId, newStatus, btn){
+  _initSupabase();
+  if(!sbClient || !reqId) return;
+  try{
+    btn.disabled = true; btn.textContent = '…';
+    await sbClient.from('solidarity_requests').update({ status: newStatus }).eq('id', reqId);
+    _adminLoadSolidarityRequests();
+  }catch(e){
+    btn.disabled = false; btn.textContent = '⚠️ Error';
+  }
+}
+
+async function _adminLoadDailyActiveUsers(){
+  var el = document.getElementById('adminDailyUsersChart');
+  if(!el) return;
+  _initSupabase();
+  if(!sbClient){ el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  try{
+    var cutoff = new Date(Date.now() - 14*24*3600*1000).toISOString();
+    var r = await sbClient.from('guardian_presence')
+      .select('last_seen')
+      .gte('last_seen', cutoff)
+      .order('last_seen',{ascending:false});
+    if(!r.data || !r.data.length){
+      el.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.3)">Sin datos de actividad reciente.</div>';
+      return;
+    }
+    // Group by date
+    var counts = {};
+    r.data.forEach(function(row){
+      if(!row.last_seen) return;
+      var d = row.last_seen.slice(0,10);
+      counts[d] = (counts[d]||0) + 1;
+    });
+    // Build last 14 days array
+    var days = [];
+    for(var i=13;i>=0;i--){
+      var dt = new Date(Date.now() - i*24*3600*1000);
+      var dk = dt.toISOString().slice(0,10);
+      var label = dt.toLocaleDateString('es',{day:'2-digit',month:'short'});
+      days.push({ key:dk, label:label, count:counts[dk]||0 });
+    }
+    var maxCount = Math.max(1, Math.max.apply(null, days.map(function(d){ return d.count; })));
+    el.innerHTML = '<div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-bottom:8px">'
+      + days.map(function(d){
+          var h = Math.max(4, Math.round((d.count/maxCount)*72));
+          var isToday = d.key === new Date().toISOString().slice(0,10);
+          var col = isToday ? 'rgba(116,198,157,.85)' : 'rgba(116,198,157,.4)';
+          return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">'
+            +'<div title="'+d.count+' usuarios" style="width:100%;height:'+h+'px;background:'+col+';border-radius:3px 3px 0 0"></div>'
+            +'</div>';
+        }).join('')
+      +'</div>'
+      +'<div style="display:flex;gap:4px">'
+      + days.map(function(d){
+          return '<div style="flex:1;font-size:8px;color:rgba(255,255,255,.3);text-align:center;overflow:hidden;white-space:nowrap">'+d.label+'</div>';
+        }).join('')
+      +'</div>'
+      +'<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">'
+      + days.slice().reverse().slice(0,7).map(function(d){
+          return '<div style="font-size:10px;color:rgba(255,255,255,.55)">'+d.label+': <strong style="color:rgba(116,198,157,.85)">'+d.count+'</strong></div>';
+        }).join('')
+      +'</div>';
   }catch(e){
     el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Error al cargar datos.</div>';
   }
@@ -12963,8 +13145,13 @@ function pAdminMassMessage(target){
     +'<input type="text" id="massSubject" placeholder="Asunto del mensaje…" maxlength="80" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;box-sizing:border-box">'
     +'</div>'
     +'<div style="margin-bottom:10px">'
-    +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">IMAGEN (URL opcional)</label>'
-    +'<input type="url" id="massImageUrl" placeholder="https://… (banner o foto de encabezado)" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;box-sizing:border-box" oninput="_previewMassImage()">'
+    +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">IMAGEN (opcional)</label>'
+    +'<div style="display:flex;gap:8px;align-items:center">'
+    +'<input type="url" id="massImageUrl" placeholder="https://… (URL de imagen)" style="flex:1;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;box-sizing:border-box" oninput="_previewMassImage()">'
+    +'<label for="massBcastImgFile" style="padding:9px 12px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(116,198,157,.9);white-space:nowrap;font-family:\'Jost\',sans-serif">📎 Subir foto</label>'
+    +'<input type="file" id="massBcastImgFile" accept="image/*" style="display:none" onchange="_onBcastImgPick(this)">'
+    +'</div>'
+    +'<div id="massImgUploadStatus" style="font-size:10px;color:rgba(116,198,157,.7);margin-top:4px;display:none"></div>'
     +'<div id="massImgPreview" style="margin-top:6px"></div>'
     +'</div>'
     +'<div style="margin-bottom:14px">'
@@ -13599,7 +13786,59 @@ function _previewMassImage(){
   var prev=document.getElementById('massImgPreview');
   if(!prev) return;
   var url=(el&&el.value.trim())||'';
-  prev.innerHTML=url?'<img src="'+_escHtml(url)+'" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.1)" onerror="this.parentElement.innerHTML=\'<span style=font-size:11px;color:rgba(255,100,100,.6)>URL de imagen no válida</span>\'">':'';
+  prev.innerHTML=url?'<img src="'+_escHtml(url)+'" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.1)" onerror="this.parentElement.innerHTML=\'<span style=font-size:11px;color:rgba(255,100,100,.6)>URL de imagen no válida</span>\'">':'';
+}
+
+async function _onBcastImgPick(input){
+  var file = input && input.files && input.files[0];
+  if(!file) return;
+  var statusEl = document.getElementById('massImgUploadStatus');
+  var urlEl    = document.getElementById('massImageUrl');
+  if(statusEl){ statusEl.textContent = '⏳ Subiendo imagen…'; statusEl.style.display='block'; }
+  try{
+    // Resize to max 1000px wide using Canvas
+    var dataUrl = await new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(e){
+        var img = new Image();
+        img.onload = function(){
+          var maxW = 1000;
+          var w = img.width, h = img.height;
+          if(w > maxW){ h = Math.round(h * maxW / w); w = maxW; }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    // Upload to Supabase storage
+    _initSupabase();
+    if(!sbClient) throw new Error('No Supabase');
+    var byteStr = atob(dataUrl.split(',')[1]);
+    var ab = new ArrayBuffer(byteStr.length);
+    var ia = new Uint8Array(ab);
+    for(var i=0;i<byteStr.length;i++) ia[i]=byteStr.charCodeAt(i);
+    var blob = new Blob([ab], {type:'image/jpeg'});
+    var path = 'broadcast/'+Date.now()+'.jpg';
+    var r = await sbClient.storage.from('avatars').upload(path, blob, {contentType:'image/jpeg', upsert:true});
+    if(r.error) throw r.error;
+    var urlRes = sbClient.storage.from('avatars').getPublicUrl(path);
+    var pub = urlRes && urlRes.data && urlRes.data.publicUrl;
+    if(!pub) throw new Error('No public URL');
+    if(urlEl){ urlEl.value = pub; }
+    if(statusEl){ statusEl.textContent = '✅ Imagen subida'; }
+    _previewMassImage();
+  }catch(e){
+    if(statusEl){ statusEl.textContent = '⚠️ Error al subir. Intentá con una URL directa.'; }
+    console.error('[bcast img upload]', e);
+  }
+  // Reset file input so same file can be re-selected
+  input.value = '';
 }
 
 async function pSendMassMessage(target){
