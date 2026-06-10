@@ -8874,9 +8874,34 @@ function pRenderInbox(){
     if(!newBcs.length) return;
     var _del2 = []; try{ _del2 = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
     var _clearedAt = parseInt(safeLS('get','velo_inbox_cleared_at')||'0');
+
+    // ── Fresh fetch of read_bcast_ids from Supabase ───────────────────────────
+    // Do this here (not rely on _sbSyncProfile timing) so cross-device deletions
+    // are always applied regardless of when profile sync ran.
+    try{
+      var _freshOk = await _ensureSbSession();
+      var _freshUid = safeLS('get','velo_user_id');
+      if(_freshOk && sbClient && _freshUid){
+        var _freshR = await sbClient.from('profiles').select('read_bcast_ids').eq('id',_freshUid).limit(1);
+        if(_freshR.data && _freshR.data[0] && Array.isArray(_freshR.data[0].read_bcast_ids)){
+          _freshR.data[0].read_bcast_ids.forEach(function(bid){
+            if(!bid) return;
+            _syncedReadIds[bid] = 1;
+            safeLS('set','velo_bcast_read_'+bid,'1');
+            // rp_ IDs also need to be in velo_inbox_deleted for the reply filter
+            if(bid.indexOf('rp_') === 0){
+              if(_del2.indexOf(bid) < 0) _del2.push(bid);
+              var _dArr=[]; try{_dArr=JSON.parse(safeLS('get','velo_inbox_deleted')||'[]');}catch(e){}
+              if(_dArr.indexOf(bid)<0){_dArr.push(bid);safeLS('set','velo_inbox_deleted',JSON.stringify(_dArr));}
+            }
+          });
+        }
+      }
+    }catch(e){}
+    // ─────────────────────────────────────────────────────────────────────────
+
     newBcs = newBcs.filter(function(b){
       if(_del2.indexOf('bc_'+b.id) >= 0) return false;
-      // Also hide messages that were read/deleted on another device (synced via Supabase)
       if(safeLS('get','velo_bcast_read_'+b.id)) return false;
       if(_syncedReadIds[b.id]) return false;
       if(_clearedAt && b.sent_at && new Date(b.sent_at).getTime() <= _clearedAt) return false;
@@ -8954,13 +8979,28 @@ function pRenderInbox(){
   // Load admin replies from Supabase async and inject them
   var userEmail = safeLS('get','velo_user_email');
   if(userEmail){
-    sbLoadRepliedContacts(userEmail).then(function(replies){
+    sbLoadRepliedContacts(userEmail).then(async function(replies){
       if(!replies || !replies.length) return;
       var el3 = document.getElementById('inboxList');
       if(!el3) return;
       var existingIds = [];
       try{ existingIds = JSON.parse(safeLS('get','velo_inbox_reply_ids')||'[]'); }catch(e){}
       var _del3 = []; try{ _del3 = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
+      // Ensure _syncedReadIds is fresh (may have been updated by broadcast callback above)
+      // Also do our own fetch in case this callback runs first
+      try{
+        var _rOk2 = await _ensureSbSession();
+        var _rUid2 = safeLS('get','velo_user_id');
+        if(_rOk2 && sbClient && _rUid2 && !Object.keys(_syncedReadIds).length){
+          var _rr2 = await sbClient.from('profiles').select('read_bcast_ids').eq('id',_rUid2).limit(1);
+          if(_rr2.data && _rr2.data[0] && Array.isArray(_rr2.data[0].read_bcast_ids)){
+            _rr2.data[0].read_bcast_ids.forEach(function(bid){
+              if(bid){ _syncedReadIds[bid]=1; safeLS('set','velo_bcast_read_'+bid,'1');
+                if(bid.indexOf('rp_')===0 && _del3.indexOf(bid)<0) _del3.push(bid); }
+            });
+          }
+        }
+      }catch(e){}
       replies = replies.filter(function(r){ return _del3.indexOf('rp_'+r.id) < 0 && !_syncedReadIds['rp_'+r.id]; });
       var _xBtnRp = function(id){ return '<button onclick="event.stopPropagation();pDeleteInboxMsg(\'rp_'+id+'\',this)" style="flex-shrink:0;background:transparent;border:none;color:var(--ink5);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;line-height:1;align-self:flex-start;opacity:.55">×</button>'; };
       var replyMsgs = replies.map(function(r){
