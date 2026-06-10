@@ -488,8 +488,16 @@ async function _sbSyncProfile(userId){
         _restoredDel.push(bid); _delChanged = true;
       }
       _syncedReadIds[bid] = 1;
+      // Surveys: set velo_read_ key so _checkSurveyDue skips on next load
+      if(bid.indexOf('survey-') === 0) safeLS('set','velo_read_'+bid,'1');
     });
     if(_delChanged) safeLS('set','velo_inbox_deleted', JSON.stringify(_restoredDel));
+    // Remove any surveys from velo_inbox that were deleted on another device
+    try{
+      var _ib=[]; try{_ib=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e2){}
+      var _ibf=_ib.filter(function(m){ return !(m.tipo==='encuesta' && m.id && _syncedReadIds[m.id]); });
+      if(_ibf.length !== _ib.length) safeLS('set','velo_inbox',JSON.stringify(_ibf));
+    }catch(e){}
   }
   // Badge notification cross-device: if Supabase shows a higher badge than local, show the inbox message
   if(p.badge_notified){
@@ -9256,7 +9264,11 @@ function pDeleteInboxMsg(id, el){
   if(id && id.indexOf('bc_') === 0) _syncBroadcastRead(id.replace('bc_',''));
   else if(id && id.indexOf('rp_') === 0) _syncBroadcastRead(id);
   else if(id === 'm1' || id === 'm2') _syncBroadcastRead(id);
-  else if(id && id.indexOf('survey-') === 0){ safeLS('set','velo_read_'+id,'1'); _syncBroadcastRead(id); }
+  else if(id && id.indexOf('survey-') === 0){
+    safeLS('set','velo_read_'+id,'1');
+    safeLS('set','velo_last_survey', String(Date.now())); // 90-day cooldown on dismiss
+    _syncBroadcastRead(id);
+  }
 }
 
 function pInboxVaciar(){
@@ -9270,7 +9282,7 @@ function pInboxVaciar(){
     if(id.indexOf('bc_') === 0) _syncBroadcastRead(id.replace('bc_',''));
     else if(id.indexOf('rp_') === 0) _syncBroadcastRead(id);
     else if(id === 'm1' || id === 'm2') _syncBroadcastRead(id);
-    else if(id.indexOf('survey-') === 0){ safeLS('set','velo_read_'+id,'1'); _syncBroadcastRead(id); }
+    else if(id.indexOf('survey-') === 0){ safeLS('set','velo_read_'+id,'1'); safeLS('set','velo_last_survey',String(Date.now())); _syncBroadcastRead(id); }
   });
   safeLS('set','velo_inbox_deleted', JSON.stringify(del));
   safeLS('set','velo_inbox', JSON.stringify([]));

@@ -8523,19 +8523,32 @@ body.r-dark .r-desk-profile-chip:hover {
   .r-desk-qlink-divider { display: none; }
   .r-desk-profile-chip  { display: inline-flex; }
 }
-/* Profile chip below paired-quick: full-width row with spacing */
+/* Profile chip inside paired-quick: horizontal row below quick-action buttons */
 @media (min-width: 861px) {
-  .r-hero-right > .r-desk-profile-chip {
+  .r-paired-quick > .r-desk-profile-chip {
     display: flex !important;
-    width: 100%;
-    border-radius: 12px;
-    justify-content: center;
-    gap: 8px;
-    padding: 8px 14px;
-    margin-top: 8px;
-    margin-bottom: 16px !important;
-    box-sizing: border-box;
+    flex-direction: row !important;
+    width: 100% !important;
+    min-height: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    padding: 7px 12px !important;
+    border-radius: 10px !important;
+    margin-top: 4px !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
   }
+  /* Reorder label so avatar comes first visually */
+  .r-paired-quick > .r-desk-profile-chip .r-desk-profile-label {
+    font-size: 9px;
+    opacity: .70;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    order: 2;
+  }
+  .r-paired-quick > .r-desk-profile-chip .r-desk-profile-av { order: 1; }
+  .r-paired-quick > .r-desk-profile-chip .r-desk-profile-name { order: 3; }
 }
 
 /* ── v503: Desktop home — transparent greeting card + centered mood text ── */
@@ -8643,4 +8656,22 @@ body.r-dark #homeRegisterLabel {
 /* ── v512: Weather info card — wider on desktop ── */
 @media (min-width: 861px) {
   #homeWeatherInfo { max-width: 320px !important; }
+}
+
+/* ── v541: Profile chip inside paired-quick — override square-card defaults ── */
+@media (min-width: 861px) {
+  .r-paired-quick > .r-desk-profile-chip {
+    flex-direction: row !important;
+    width: 100% !important;
+    min-height: auto !important;
+    height: auto !important;
+    flex-shrink: 1 !important;
+    text-align: left !important;
+  }
+  .r-paired-quick > .r-desk-profile-chip .r-desk-profile-av {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 16px !important;
+    flex-shrink: 0 !important;
+  }
 }
