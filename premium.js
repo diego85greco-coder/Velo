@@ -4846,41 +4846,40 @@ function _drawShareCanvas(quote, author, logoImg){
   _filigree(fp,   fy2,  1, -1);
   _filigree(W-fp, fy2, -1, -1);
 
-  // ── Brand header: logo (centered, stacked above "Velo") ──────
-  var logoSz = 110;
+  // ── Brand header: large logo only (no "Velo" text) ───────────
+  var logoSz = 200;
   var logoX  = (W - logoSz) / 2;
-  var logoY  = 88;
+  var logoY  = 80;
 
   if(logoImg){
-    // Soft sage glow behind logo so it reads on any bg
+    // Invert to white so logo pops on any dark bg, plus sage glow halo
     ctx.save();
-    ctx.shadowColor = 'rgba(116,198,157,.55)';
-    ctx.shadowBlur  = 28;
+    ctx.filter = 'brightness(0) invert(1)';
+    ctx.shadowColor = 'rgba(180,240,200,.80)';
+    ctx.shadowBlur  = 55;
     ctx.drawImage(logoImg, logoX, logoY, logoSz, logoSz);
     ctx.restore();
-    // Second pass without shadow for crisp pixels
-    ctx.drawImage(logoImg, logoX, logoY, logoSz, logoSz);
   }
 
-  // "Velo" text directly below logo
-  var veloY = logoY + logoSz + 56;
-  ctx.textAlign = 'center';
-  ctx.font = '300 88px Georgia,serif';
-  ctx.fillStyle = 'rgba(200,158,56,.90)';
-  ctx.fillText('Velo', W/2, veloY);
-
-  // Thin divider
-  var divY = veloY + 28;
-  ctx.strokeStyle = 'rgba(200,158,56,.28)'; ctx.lineWidth = 1;
+  // Thin gold divider below logo
+  var divY = logoY + logoSz + 36;
+  ctx.strokeStyle = 'rgba(200,158,56,.30)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(150, divY); ctx.lineTo(W-150, divY); ctx.stroke();
 
   // Tagline
-  ctx.font = '300 27px Arial,sans-serif'; ctx.fillStyle = 'rgba(140,210,170,.50)'; ctx.textAlign = 'center';
-  ctx.fillText('A C O M P A Ñ A M O S  E M O C I O N E S', W/2, divY + 38);
+  ctx.font = '300 26px Arial,sans-serif'; ctx.fillStyle = 'rgba(140,210,170,.50)'; ctx.textAlign = 'center';
+  ctx.fillText('A C O M P A Ñ A M O S  E M O C I O N E S', W/2, divY + 40);
+
+  // ── "Mi frase del día" label ──────────────────────────────────
+  var labelY = divY + 120;
+  ctx.font = '300 32px Arial,sans-serif'; ctx.fillStyle = 'rgba(160,215,185,.55)'; ctx.textAlign = 'center';
+  ctx.fillText('M I  F R A S E  D E L  D Í A', W/2, labelY);
+  ctx.strokeStyle = 'rgba(116,198,157,.22)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W/2-160, labelY+18); ctx.lineTo(W/2+160, labelY+18); ctx.stroke();
 
   // ── Large decorative quote mark ───────────────────────────────
   ctx.font='300 220px Georgia,serif'; ctx.fillStyle='rgba(200,158,56,.12)'; ctx.textAlign='left';
-  ctx.fillText('“', 100, 570);
+  ctx.fillText('”', 100, 630);
 
   // ── Quote text (word-wrap, centered) ─────────────────────────
   ctx.font='italic 400 72px Georgia,serif'; ctx.fillStyle='rgba(248,246,240,.94)'; ctx.textAlign='center';
@@ -4894,39 +4893,51 @@ function _drawShareCanvas(quote, author, logoImg){
   var qY=Math.round((H-tH)/2)-50;
   lines.forEach(function(l,i){ ctx.fillText(l,W/2,qY+i*lh); });
 
-  // ── Author area ───────────────────────────────────────────────
-  var aY = qY + tH + 75;
-  // Short gold divider
-  ctx.strokeStyle='rgba(200,158,56,.40)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(W/2-100,aY-28); ctx.lineTo(W/2+100,aY-28); ctx.stroke();
+  // ── Author area — ornamental divider + name ───────────────────
+  var aY = qY + tH + 90;
+  var lineLen = 220;
+  ctx.strokeStyle='rgba(200,158,56,.45)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(W/2-lineLen, aY-38); ctx.lineTo(W/2-26, aY-38); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W/2+26, aY-38); ctx.lineTo(W/2+lineLen, aY-38); ctx.stroke();
+  ctx.fillStyle='rgba(200,158,56,.65)';
+  ctx.beginPath(); ctx.arc(W/2, aY-38, 4.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(W/2-lineLen, aY-38, 3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(W/2+lineLen, aY-38, 3, 0, Math.PI*2); ctx.fill();
   if(author){
-    ctx.font='600 38px Arial,sans-serif'; ctx.fillStyle='rgba(200,158,56,.82)'; ctx.textAlign='center';
+    ctx.font='300 40px Arial,sans-serif'; ctx.fillStyle='rgba(220,180,80,.90)'; ctx.textAlign='center';
     ctx.fillText(author.toUpperCase(), W/2, aY);
   }
 
   // ── Bottom CTA pill ───────────────────────────────────────────
-  var ctaBaseY = H - 250;
-  // Divider
-  ctx.strokeStyle='rgba(200,158,56,.22)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(120,ctaBaseY-50); ctx.lineTo(W-120,ctaBaseY-50); ctx.stroke();
+  var ctaBaseY = H - 240;
+  // Ornamental divider with end dots
+  ctx.strokeStyle='rgba(200,158,56,.25)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(160,ctaBaseY-60); ctx.lineTo(W-160,ctaBaseY-60); ctx.stroke();
+  ctx.fillStyle='rgba(200,158,56,.40)';
+  ctx.beginPath(); ctx.arc(160,ctaBaseY-60, 3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(W-160,ctaBaseY-60, 3, 0, Math.PI*2); ctx.fill();
 
   // Pill background
-  var pillW=620, pillH=100, pillX=(W-pillW)/2, pillY=ctaBaseY-18;
-  ctx.beginPath();
-  ctx.roundRect(pillX, pillY, pillW, pillH, 50);
-  var pillGrad=ctx.createLinearGradient(pillX,0,pillX+pillW,0);
-  pillGrad.addColorStop(0,'rgba(56,188,106,.22)');
-  pillGrad.addColorStop(1,'rgba(14,120,148,.22)');
+  var pillW=680, pillH=116, pillX=(W-pillW)/2, pillY=ctaBaseY-22;
+  ctx.beginPath(); ctx.roundRect(pillX, pillY, pillW, pillH, 58);
+  var pillGrad=ctx.createLinearGradient(pillX,pillY,pillX+pillW,pillY+pillH);
+  pillGrad.addColorStop(0,'rgba(22,160,80,.30)');
+  pillGrad.addColorStop(0.5,'rgba(14,120,148,.26)');
+  pillGrad.addColorStop(1,'rgba(22,160,80,.30)');
   ctx.fillStyle=pillGrad; ctx.fill();
-  ctx.strokeStyle='rgba(116,198,157,.35)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.save();
+  ctx.shadowColor='rgba(116,198,157,.35)'; ctx.shadowBlur=18;
+  ctx.strokeStyle='rgba(116,198,157,.55)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.roundRect(pillX, pillY, pillW, pillH, 58); ctx.stroke();
+  ctx.restore();
 
   // “Únete a nuestra comunidad”
-  ctx.font='400 30px Arial,sans-serif'; ctx.fillStyle='rgba(160,230,195,.72)'; ctx.textAlign='center';
-  ctx.fillText('Únete a nuestra comunidad', W/2, pillY+38);
+  ctx.font='300 31px Arial,sans-serif'; ctx.fillStyle='rgba(180,235,205,.75)'; ctx.textAlign='center';
+  ctx.fillText('Únete a nuestra comunidad', W/2, pillY+44);
 
   // “heyvelo.app”
-  ctx.font='700 46px Arial,sans-serif'; ctx.fillStyle='rgba(200,158,56,.92)'; ctx.textAlign='center';
-  ctx.fillText('heyvelo.app', W/2, pillY+82);
+  ctx.font='700 50px Arial,sans-serif'; ctx.fillStyle='rgba(200,158,56,.94)'; ctx.textAlign='center';
+  ctx.fillText('heyvelo.app', W/2, pillY+92);
 
   // ── Share ─────────────────────────────────────────────────────
   canvas.toBlob(function(blob){
