@@ -8758,6 +8758,7 @@ body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
   .r-hero-right .r-hero-stats {
     flex-wrap: wrap !important;
     align-items: flex-end !important;
+    align-content: flex-start !important;
     gap: 0 !important;
   }
   .r-hero-stat-val {
@@ -8779,7 +8780,7 @@ body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
     flex-direction: row !important;
     gap: 6px !important;
     width: 100% !important;
-    margin-top: 6px !important;
+    margin-top: 4px !important;
   }
   #homeDesktopUtilBtns .r-util-row-btn {
     flex: 1 !important;

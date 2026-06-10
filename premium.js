@@ -5085,7 +5085,7 @@ function pOpenGuide(){
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:#fff;font-weight:300;line-height:1.2">¿Qué hace cada sección?</div>'
     +'<div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;margin-top:4px">Todo lo que podés hacer dentro de la app.</div>'
     +'</div>'
-    +'<button onclick="document.getElementById(\'veloGuideOv\').remove();_syncBodyScroll()" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);font-size:16px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px">✕</button>'
+    +'<button onclick="document.getElementById(\'veloGuideOv\').remove();_syncBodyScroll()" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);font-size:16px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:10px">✕</button>'
     +'</div>'
     +'<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:0 20px 24px;display:flex;flex-direction:column;gap:8px">'
     +cards
