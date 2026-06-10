@@ -4751,7 +4751,7 @@ function pShareDailyQuote(){
   logoImg.crossOrigin = 'anonymous';
   logoImg.onload  = function(){ _drawShareCanvas(quote, author, logoImg); };
   logoImg.onerror = function(){ _drawShareCanvas(quote, author, null); };
-  logoImg.src = 'assets/logo-dark.png';
+  logoImg.src = 'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png';
 }
 
 function _drawShareCanvas(quote, author, logoImg){
@@ -4847,7 +4847,7 @@ function _drawShareCanvas(quote, author, logoImg){
   _filigree(W-fp, fy2, -1, -1);
 
   // ── Brand header: large dark-mode logo ───────────────────────
-  var logoW = 560;
+  var logoW = 640;
   var logoH = logoImg ? Math.round(logoW * logoImg.naturalHeight / logoImg.naturalWidth) : 240;
   var logoX = (W - logoW) / 2;
   var logoY = 60;
@@ -4866,10 +4866,13 @@ function _drawShareCanvas(quote, author, logoImg){
   // ── "Mi frase del día" label ──────────────────────────────────
   var logoBottom = logoY + (logoImg ? logoH : 240);
   var labelY = logoBottom + 100;
-  ctx.font = '400 40px Arial,sans-serif'; ctx.fillStyle = 'rgba(200,235,215,.88)'; ctx.textAlign = 'center';
+  ctx.font = 'italic 300 44px Georgia,serif'; ctx.fillStyle = 'rgba(220,190,110,.82)'; ctx.textAlign = 'center';
   ctx.fillText('Mi frase del día', W/2, labelY);
-  ctx.strokeStyle = 'rgba(116,198,157,.35)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(W/2-220, labelY+24); ctx.lineTo(W/2+220, labelY+24); ctx.stroke();
+  // Thin dot-line ornament beneath label
+  ctx.strokeStyle = 'rgba(200,158,56,.32)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W/2-240, labelY+28); ctx.lineTo(W/2-12, labelY+28); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W/2+12, labelY+28); ctx.lineTo(W/2+240, labelY+28); ctx.stroke();
+  ctx.fillStyle='rgba(200,158,56,.55)'; ctx.beginPath(); ctx.arc(W/2, labelY+28, 3.5, 0, Math.PI*2); ctx.fill();
 
   // ── Large decorative quote mark ───────────────────────────────
   ctx.font='300 220px Georgia,serif'; ctx.fillStyle='rgba(200,158,56,.12)'; ctx.textAlign='left';
@@ -4884,7 +4887,7 @@ function _drawShareCanvas(quote, author, logoImg){
   });
   if(cur)lines.push(cur);
   var lh=96, tH=lines.length*lh;
-  var qY=Math.round((H-tH)/2)-50;
+  var qY=Math.max(labelY + 100, Math.round((H-tH)/2)-50);
   lines.forEach(function(l,i){ ctx.fillText(l,W/2,qY+i*lh); });
 
   // ── Author area — ornamental divider + name ───────────────────
