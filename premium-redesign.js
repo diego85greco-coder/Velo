@@ -68,15 +68,13 @@
     var info = document.getElementById('homeWeatherInfo');
     if (!info) return;
     if (_weatherTemp === null || _weatherTemp === undefined) { info.style.display = 'none'; return; }
-    var isDark = document.body.classList.contains('r-dark');
-
-    // Solid colors — reliable on any background (dark green or cream)
-    var cardBg   = isDark ? 'rgba(10,40,22,.72)'    : 'rgba(255,255,255,.88)';
-    var cardBord = isDark ? 'rgba(116,198,157,.32)'  : 'rgba(60,140,85,.22)';
-    var tempClr  = isDark ? '#b8f0d0'                : '#14532d';
-    var cityClr  = isDark ? 'rgba(200,240,218,.90)'  : 'rgba(20,65,35,.85)';
-    var editClr  = isDark ? 'rgba(140,210,175,.60)'  : 'rgba(30,90,50,.45)';
-    var divClr   = isDark ? 'rgba(116,198,157,.22)'  : 'rgba(40,120,65,.14)';
+    // Home page always has dark green background — always use dark palette
+    var cardBg   = 'rgba(8,32,18,.70)';
+    var cardBord = 'rgba(116,198,157,.38)';
+    var tempClr  = '#b8f0d0';
+    var cityClr  = 'rgba(200,240,218,.92)';
+    var editClr  = 'rgba(140,210,175,.62)';
+    var divClr   = 'rgba(116,198,157,.28)';
 
     info.innerHTML = '';
     info.style.cssText += ';display:block;text-align:center';
@@ -85,10 +83,11 @@
     card.style.cssText = [
       'display:inline-flex', 'align-items:center', 'gap:0',
       'background:' + cardBg,
+      'backdrop-filter:blur(12px)', '-webkit-backdrop-filter:blur(12px)',
       'border:1.5px solid ' + cardBord,
       'border-radius:100px',
       'padding:8px 18px 8px 14px',
-      'box-shadow:0 4px 20px rgba(0,0,0,.18)',
+      'box-shadow:0 4px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(116,198,157,.12)',
       'margin-top:6px'
     ].join(';');
 
