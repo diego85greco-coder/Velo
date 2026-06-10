@@ -4746,6 +4746,15 @@ function pShareDailyQuote(){
   var author = (authorEl ? authorEl.textContent.trim() : '').replace(/^—\s*/,'');
   if(!quote){ pToast('🌟','Esperá un momento mientras carga la frase'); return; }
 
+  // Load logo first, then draw (fallback: draw without logo on error)
+  var logoImg = new Image();
+  logoImg.crossOrigin = 'anonymous';
+  logoImg.onload  = function(){ _drawShareCanvas(quote, author, logoImg); };
+  logoImg.onerror = function(){ _drawShareCanvas(quote, author, null); };
+  logoImg.src = 'assets/logo-dark.png';
+}
+
+function _drawShareCanvas(quote, author, logoImg){
   var W = 1080, H = 1920;
   var canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
@@ -4837,22 +4846,32 @@ function pShareDailyQuote(){
   _filigree(fp,   fy2,  1, -1);
   _filigree(W-fp, fy2, -1, -1);
 
-  // ── Brand header ─────────────────────────────────────────────
-  // Thin divider
-  ctx.strokeStyle='rgba(200,158,56,.30)'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(150,225); ctx.lineTo(W-150,225); ctx.stroke();
+  // ── Brand header: logo + Velo lockup ─────────────────────────
+  var logoSz = 80;
+  ctx.font = '300 90px Georgia,serif';
+  var veloW = ctx.measureText('Velo').width;
+  var gap   = 18;
+  var lockupW = (logoImg ? logoSz + gap : 0) + veloW;
+  var lockupX = (W - lockupW) / 2;
+  var lockupY = 105; // top of logo / text block
 
-  // Small leaf ornament centre-top
-  ctx.font='400 32px serif'; ctx.fillStyle='rgba(116,198,157,.55)'; ctx.textAlign='center';
-  ctx.fillText('✦', W/2, 185);
+  if(logoImg){
+    // Draw logo aligned to text baseline
+    ctx.drawImage(logoImg, lockupX, lockupY, logoSz, logoSz);
+  }
+  ctx.textAlign = 'left';
+  ctx.font = '300 90px Georgia,serif';
+  ctx.fillStyle = 'rgba(200,158,56,.90)';
+  ctx.fillText('Velo', logoImg ? lockupX + logoSz + gap : lockupX, lockupY + logoSz * 0.80);
+  ctx.textAlign = 'center';
 
-  // “VELO” in wide-spaced elegant caps
-  ctx.font='300 88px Georgia,serif'; ctx.fillStyle='rgba(200,158,56,.88)'; ctx.textAlign='center';
-  ctx.fillText('Velo', W/2, 165);
+  // Thin divider below brand
+  ctx.strokeStyle = 'rgba(200,158,56,.28)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(150, lockupY + logoSz + 26); ctx.lineTo(W-150, lockupY + logoSz + 26); ctx.stroke();
 
   // Tagline
-  ctx.font='300 28px Arial,sans-serif'; ctx.fillStyle='rgba(140,210,170,.52)'; ctx.textAlign='center';
-  ctx.fillText('A C O M P A Ñ A M O S  E M O C I O N E S', W/2, 258);
+  ctx.font = '300 27px Arial,sans-serif'; ctx.fillStyle = 'rgba(140,210,170,.50)'; ctx.textAlign = 'center';
+  ctx.fillText('A C O M P A Ñ A M O S  E M O C I O N E S', W/2, lockupY + logoSz + 60);
 
   // ── Large decorative quote mark ───────────────────────────────
   ctx.font='300 220px Georgia,serif'; ctx.fillStyle='rgba(200,158,56,.12)'; ctx.textAlign='left';
