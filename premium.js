@@ -594,8 +594,10 @@ async function _sbSyncProfile(userId){
     var _el = document.getElementById(kv[0]); if(_el) _el.value = safeLS('get',kv[1]) || '';
   });
   typeof pRenderHomeGreet === 'function' && pRenderHomeGreet();
-  // Trigger buzón poll NOW that _syncedReadIds is populated — avoids the race where
-  // the 4s setTimeout fires before profile sync completes on first load
+  // One-time migration: merge any locally-cached shown/deleted IDs into _syncedReadIds
+  // (synchronous update) so the poll below has the full picture, then pushes to Supabase async
+  if(typeof _migrateBcastLocalToSb === 'function') _migrateBcastLocalToSb();
+  // Trigger buzón poll NOW that _syncedReadIds is fully populated
   if(typeof _buzónPollOnce === 'function') _buzónPollOnce();
   if(typeof _updateInboxDot === 'function') _updateInboxDot();
 }
@@ -8848,7 +8850,7 @@ function pRenderInbox(){
   var all = msgs.concat(mockMsgs);
   // Load Supabase broadcasts async and prepend them
   var userType = safeLS('get','velo_user_type') || 'user';
-  sbLoadBroadcasts(userType === 'pro' ? 'pros' : 'users').then(function(bcs){
+  sbLoadBroadcasts(userType === 'pro' ? 'pros' : 'users').then(async function(bcs){
     if(!bcs || !bcs.length) return;
     var el2 = document.getElementById('inboxList');
     if(!el2) return;
@@ -8863,15 +8865,31 @@ function pRenderInbox(){
       if(_clearedAt && b.sent_at && new Date(b.sent_at).getTime() <= _clearedAt) return false;
       return true;
     });
+    // Resolve real sender names from Supabase profiles (stored name may be a username)
+    var _senderIds = newBcs.map(function(b){
+      try{ var si = JSON.parse(b.sender); return si && si.i ? si.i : null; }catch(e){ return null; }
+    }).filter(function(id,i,arr){ return id && arr.indexOf(id) === i; });
+    var _senderProfiles = {};
+    if(_senderIds.length && sbClient){
+      try{
+        var _spRes = await sbClient.from('profiles').select('id,nombre,avatar').in('id', _senderIds);
+        if(_spRes.data) _spRes.data.forEach(function(p){
+          _senderProfiles[p.id] = {n: p.nombre||'', a: p.avatar||''};
+        });
+      }catch(e){}
+    }
     var _delBtnStyle = 'flex-shrink:0;background:transparent;border:none;color:var(--ink5);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;line-height:1;align-self:flex-start;opacity:.55';
     var bcMsgs = newBcs.map(function(b){
       var readKey = 'velo_bcast_read_'+b.id;
       var fecha = b.sent_at ? new Date(b.sent_at).toLocaleDateString('es',{day:'2-digit',month:'short'}) : '';
       var senderInfo = null;
       try { senderInfo = JSON.parse(b.sender); } catch(e) {}
-      var senderName     = senderInfo && senderInfo.n ? senderInfo.n : (b.sender||'');
       var senderId       = senderInfo && senderInfo.i ? senderInfo.i : '';
-      var senderAv       = senderInfo && senderInfo.a ? senderInfo.a : (b.icon||'📢');
+      // Use live profile name if available (may differ from name stored at send time)
+      var _liveP = senderId && _senderProfiles[senderId];
+      var senderName = (_liveP && _liveP.n && _liveP.n !== 'Usuario') ? _liveP.n
+                     : (senderInfo && senderInfo.n ? senderInfo.n : (b.sender||''));
+      var senderAv       = (_liveP && _liveP.a) ? _liveP.a : (senderInfo && senderInfo.a ? senderInfo.a : (b.icon||'📢'));
       var senderUsername = senderInfo && senderInfo.u ? senderInfo.u : '';
       var iconHtml = senderId
         ? '<div class="p-inbox-ic" style="cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_avInline(senderAv,32)+'</div>'
@@ -8996,6 +9014,50 @@ function pRenderInbox(){
       if(dirty){ safeLS('set','velo_inbox', JSON.stringify(inbx2)); _updateHomeBell(); }
     }catch(e){}
   }, 3000);
+}
+
+// One-time migration: push all locally-known shown/deleted broadcast IDs to Supabase so
+// messages handled before v529 (before per-action sync was added) don't re-appear on new devices.
+// Updates _syncedReadIds synchronously so _buzónPollOnce immediately has the correct state.
+function _migrateBcastLocalToSb(){
+  if(safeLS('get','velo_bcast_sb_push_v1')) return;
+  safeLS('set','velo_bcast_sb_push_v1','1'); // set flag immediately to prevent double-run
+  // Collect all locally-known broadcast IDs synchronously
+  var newIds = [];
+  try{
+    var shown = JSON.parse(safeLS('get','velo_bcast_shown') || '{}');
+    Object.keys(shown).forEach(function(bid){ if(bid && !_syncedReadIds[bid]){ _syncedReadIds[bid]=1; newIds.push(bid); } });
+  }catch(e){}
+  try{
+    Object.keys(localStorage).forEach(function(k){
+      if(k.indexOf('velo_bcast_read_') === 0){
+        var bid = k.replace('velo_bcast_read_','');
+        if(bid && !_syncedReadIds[bid]){ _syncedReadIds[bid]=1; newIds.push(bid); }
+      }
+    });
+  }catch(e){}
+  try{
+    var del = JSON.parse(safeLS('get','velo_inbox_deleted') || '[]');
+    del.forEach(function(id){
+      if(id && id.indexOf('bc_') === 0){
+        var bid = id.replace('bc_','');
+        if(bid && !_syncedReadIds[bid]){ _syncedReadIds[bid]=1; newIds.push(bid); }
+      }
+    });
+  }catch(e){}
+  if(!newIds.length) return;
+  // Async push to Supabase in background
+  var uid = safeLS('get','velo_user_id');
+  _initSupabase();
+  if(!sbClient || !uid) return;
+  (async function(){
+    try{
+      var ok = await _ensureSbSession();
+      if(!ok) return;
+      var allIds = Object.keys(_syncedReadIds);
+      await sbClient.from('profiles').update({read_bcast_ids: allIds}).eq('id', uid);
+    }catch(e){}
+  })();
 }
 
 // Persist a broadcast ID as read/deleted to both localStorage and Supabase profiles.read_bcast_ids.
@@ -9629,7 +9691,7 @@ async function pRenderContacts(){
           var prof=profileMap[r.user_id]||{};
           var dName = prof.name || uname.replace('@','') || 'Usuario';
           var dAv   = prof.av  || '🧑';
-          return _contactCard(r.user_id,dName,dAv,uname,pi,0,{small:true,showAddFav:!pIsFav(r.user_id)});
+          return _contactCard(r.user_id,dName,dAv,uname,pi,0,{small:true,showAddFav:!pIsFav(r.user_id),showBlock:true,showMail:true});
         }).join(''))
     +'</div>';
 
