@@ -8810,3 +8810,20 @@ body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
     display: none !important;
   }
 }
+
+/* ── v560: Desktop — show scrollbar on sheets (hidden by default for mobile) ── */
+@media (min-width: 861px) {
+  .p-sheet {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(116,198,157,.45) transparent !important;
+  }
+  .p-sheet::-webkit-scrollbar {
+    display: block !important;
+    width: 5px !important;
+  }
+  .p-sheet::-webkit-scrollbar-track { background: transparent !important; }
+  .p-sheet::-webkit-scrollbar-thumb {
+    background: rgba(116,198,157,.45) !important;
+    border-radius: 4px !important;
+  }
+}
