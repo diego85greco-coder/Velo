@@ -435,7 +435,7 @@ async function _sbSyncProfile(userId){
   // Each tier drops more optional columns; _profileSelectTier is cached so we skip
   // known-failing queries on every subsequent call (avoids 400 flood in console).
   var _selTiers = [
-    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city',
+    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city,pro_trial_expires_at,pro_subscription_expires_at',
     'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids',
     'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes',
     'nombre,avatar,motto,role,username,username_changes',
@@ -593,6 +593,16 @@ async function _sbSyncProfile(userId){
           safeLS('set','velo_plan','plus');
         }
       }).catch(function(){ safeLS('set','velo_plan','plus'); });
+  }
+  // Sync pro trial and subscription dates
+  if(p.role === 'pro'){
+    if(p.pro_trial_expires_at)        safeLS('set','velo_pro_trial_expires_at',        p.pro_trial_expires_at);
+    if(p.pro_subscription_expires_at) safeLS('set','velo_pro_subscription_expires_at', p.pro_subscription_expires_at);
+    // Mark as approved if any subscription window is still open
+    var _proNow = Date.now();
+    var _trialOk  = p.pro_trial_expires_at        && new Date(p.pro_trial_expires_at).getTime()        > _proNow;
+    var _subOk    = p.pro_subscription_expires_at && new Date(p.pro_subscription_expires_at).getTime() > _proNow;
+    if(_trialOk || _subOk) safeLS('set','velo_pro_approved','true');
   }
   // Check if new people have added us as favorite → show badge on star
   sbClient.from('user_favorites').select('id',{count:'exact',head:true}).eq('fav_id', userId)
@@ -11131,11 +11141,59 @@ function pSendPostChat(){
 }
 
 // ── PRO PANEL ──────────────────────────────────────────────────
+function _proSubscriptionStatus(){
+  var now = Date.now();
+  var trialExp = safeLS('get','velo_pro_trial_expires_at');
+  var subExp   = safeLS('get','velo_pro_subscription_expires_at');
+  var trialActive = trialExp && new Date(trialExp).getTime() > now;
+  var subActive   = subExp   && new Date(subExp).getTime()   > now;
+  return { trialActive: !!trialActive, subActive: !!subActive, trialExp: trialExp, subExp: subExp };
+}
+
 function pInitProPanel(){
   _setEl('ppEarnings', '$'+Math.floor(Math.random()*500+200));
   _setEl('ppSessions', Math.floor(Math.random()*20+5));
   _setEl('ppRating', (4.7 + Math.random()*0.3).toFixed(1));
   _setEl('ppNextSessions', '<p class="p-sm p-muted">Sin sesiones programadas esta semana.</p>');
+
+  // Check trial / subscription status
+  var status = _proSubscriptionStatus();
+  var panel  = document.getElementById('pg-pro-panel');
+  // Remove any stale overlay first
+  var stale = document.getElementById('proSubExpiredOv');
+  if(stale) stale.remove();
+
+  if(!status.trialActive && !status.subActive && safeLS('get','velo_pro_approved') === 'true'){
+    // Trial AND subscription both expired (or never had one set yet — treat as active during first session)
+    var trialWasSet = !!safeLS('get','velo_pro_trial_expires_at');
+    if(trialWasSet){
+      var ov = document.createElement('div');
+      ov.id = 'proSubExpiredOv';
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(5,20,12,.97);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px';
+      ov.innerHTML = '<div style="font-size:60px;margin-bottom:16px">⏰</div>'
+        +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:#fff;margin-bottom:10px">Tu período de prueba expiró</div>'
+        +'<div style="font-size:14px;color:rgba(255,255,255,.6);margin-bottom:28px;max-width:320px;line-height:1.7">Para seguir usando el panel profesional de Velo, activá tu suscripción mensual.<br><br><span style="font-size:13px;color:rgba(116,198,157,.7)">Suscripción mensual · USD 15/mes</span></div>'
+        +'<a href="mailto:consultas@heyvelo.app?subject=Quiero suscribirme a Velo Profesional&body=Hola, quiero activar mi suscripción profesional.%0A%0ANombre: '+encodeURIComponent(safeLS('get','velo_pro_name')||'')+'%0AEmail: '+encodeURIComponent(safeLS('get','velo_user_email')||'')+'" style="display:block;padding:14px 28px;background:rgba(116,198,157,.9);border:none;border-radius:14px;color:#0D2B1C;font-family:\'Jost\',sans-serif;font-size:15px;font-weight:800;cursor:pointer;text-decoration:none;margin-bottom:12px">💳 Suscribirme</a>'
+        +'<button onclick="pSignOut()" style="padding:12px 24px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:rgba(255,255,255,.7);font-family:\'Jost\',sans-serif;font-size:14px;font-weight:600;cursor:pointer">↩️ Salir</button>';
+      document.body.appendChild(ov);
+      return;
+    }
+  }
+
+  // Show trial banner if trial is active
+  if(status.trialActive){
+    var daysLeft = Math.max(1, Math.ceil((new Date(status.trialExp).getTime() - Date.now()) / 86400000));
+    var banner = document.getElementById('proTrialBanner');
+    if(!banner){
+      banner = document.createElement('div');
+      banner.id = 'proTrialBanner';
+      banner.style.cssText = 'background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);border-radius:12px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
+      var panelInner = document.querySelector('#pg-pro-panel .p-page-inner');
+      if(panelInner) panelInner.insertBefore(banner, panelInner.firstChild);
+    }
+    banner.innerHTML = '<div style="font-size:12px;color:rgba(116,198,157,.9);font-weight:700">🩺 Período de prueba gratuita · <strong>'+daysLeft+' día'+(daysLeft!==1?'s':'')+' restante'+(daysLeft!==1?'s':'')+'</strong></div>'
+      +'<a href="mailto:consultas@heyvelo.app?subject=Quiero suscribirme a Velo Profesional" style="font-size:11px;padding:5px 12px;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.4);border-radius:8px;color:rgba(116,198,157,.9);text-decoration:none;font-family:\'Jost\',sans-serif;font-weight:700;white-space:nowrap">Activar suscripción →</a>';
+  }
 }
 
 var _proAvailEditing = {};
@@ -11743,16 +11801,61 @@ async function pProRegNext(){
   if(dpaEl && !dpaEl.checked){ if(dpaErrEl) dpaErrEl.style.display='block'; return; }
   if(dpaErrEl) dpaErrEl.style.display='none';
   if(!_botGuardCheck()) return;
-  safeLS('set','velo_pro_name', name.value.trim());
-  safeLS('set','velo_pro_spec', spec.value.trim());
-  safeLS('set','velo_user_email', email.value.trim());
-  safeLS('set','velo_sb_pass', pass.value);
-  safeLS('set','velo_user_type','pro');
-  safeLS('set','velo_user_name', name.value.trim());
-  await _recordTC(name.value.trim(), email.value.trim(), 'TOS-v1');
-  await _recordTC(name.value.trim(), email.value.trim(), 'DPA-v1');
-  pOpenPayPalPro();
-  pGoTo('pro-pending');
+  var nameVal  = name.value.trim();
+  var specVal  = spec.value.trim();
+  var emailVal = email.value.trim().toLowerCase();
+  var passVal  = pass.value;
+  safeLS('set','velo_pro_name',   nameVal);
+  safeLS('set','velo_pro_spec',   specVal);
+  safeLS('set','velo_user_email', emailVal);
+  safeLS('set','velo_sb_pass',    passVal);
+  safeLS('set','velo_user_type',  'pro');
+  safeLS('set','velo_user_name',  nameVal);
+  await _recordTC(nameVal, emailVal, 'TOS-v1');
+  await _recordTC(nameVal, emailVal, 'DPA-v1');
+  await pStartProTrial(nameVal, specVal, emailVal, passVal);
+}
+
+async function pStartProTrial(nameVal, specVal, emailVal, passVal){
+  var trialEnd = new Date(Date.now() + 30*24*3600*1000).toISOString();
+  _initSupabase();
+  var regBtn = document.getElementById('proRegBtn');
+  if(regBtn){ regBtn.disabled = true; regBtn.textContent = 'Activando prueba…'; }
+  if(sbClient){
+    try{
+      var result = await sbClient.auth.signUp({
+        email: emailVal, password: passVal,
+        options:{ data:{ nombre: nameVal, role:'pro' } }
+      });
+      if(!result.error && result.data && result.data.user){
+        var uid = result.data.user.id;
+        safeLS('set','velo_user_id', uid);
+        await sbClient.from('profiles').upsert({
+          id: uid, nombre: nameVal, email: emailVal,
+          role: 'pro', pro_spec: specVal,
+          pro_trial_expires_at: trialEnd,
+          created_at: new Date().toISOString()
+        }, {onConflict:'id'});
+        // Log the trial grant
+        try{ await sbClient.from('plus_grants').insert({ email: emailVal, expires_at: trialEnd, note:'pro_trial_30d' }); }catch(e){}
+      } else if(result.error && result.error.message && result.error.message.indexOf('already registered') > -1){
+        // Existing account — update profile
+        var profRes = await sbClient.from('profiles').select('id').eq('email',emailVal).limit(1);
+        if(profRes.data && profRes.data[0]){
+          var uid2 = profRes.data[0].id;
+          safeLS('set','velo_user_id', uid2);
+          await sbClient.from('profiles').update({ role:'pro', pro_spec:specVal, pro_trial_expires_at:trialEnd }).eq('id', uid2);
+        }
+      }
+    }catch(e){ console.error('[pStartProTrial]', e); }
+  }
+  safeLS('set','velo_pro_approved',           'true');
+  safeLS('set','velo_pro_trial',              'true');
+  safeLS('set','velo_pro_trial_expires_at',   trialEnd);
+  safeLS('set','velo_plan',                   'pro');
+  if(regBtn){ regBtn.disabled = false; regBtn.textContent = 'Registrarme'; }
+  pToast('🩺','¡Bienvenido/a! 30 días de prueba gratuita activados 🌿');
+  setTimeout(function(){ pGoTo('pro-panel'); }, 1400);
 }
 
 // ── ADMIN ──────────────────────────────────────────────────────
@@ -11938,14 +12041,20 @@ async function _renderAdmin(){
         +'</div>';
     }).join('');
 
-    // Compact "Últimos Registros" card — separate from KPI grid, no duplicate
+    // Collapsible "Últimos Registros" — remove stale instance first to prevent duplicates
+    var _oldRec = document.getElementById('adminRecentRegs');
+    if(_oldRec) _oldRec.remove();
     if(recentReg.length){
-      var recentHtml = '<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:14px;padding:14px;margin-bottom:14px">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-        +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7)">🆕 ÚLTIMOS REGISTROS</div>'
-        +'<button onclick="_switchAdminTab(\'usuarios\')" style="font-size:10px;padding:4px 10px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.3);border-radius:8px;color:rgba(116,198,157,.85);cursor:pointer;font-family:\'Jost\',sans-serif;display:flex;align-items:center;gap:4px">🔍 Ver todos →</button>'
+      var recentHtml = '<div id="adminRecentRegs" style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:14px;margin-bottom:14px;overflow:hidden">'
+        +'<button onclick="var b=this.nextElementSibling;var open=b.style.display!==\'none\';b.style.display=open?\'none\':\'\';this.querySelector(\'.arr\').textContent=open?\'▶\':\'▼\';" style="width:100%;padding:12px 14px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:\'Jost\',sans-serif">'
+        +'<span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7)">🆕 ÚLTIMOS REGISTROS ('+recentReg.length+')</span>'
+        +'<span class="arr" style="font-size:10px;color:rgba(116,198,157,.5)">▶</span>'
+        +'</button>'
+        +'<div style="display:none;padding:0 14px 14px">'
+        +'<div style="display:flex;justify-content:flex-end;margin-bottom:8px">'
+        +'<button onclick="_switchAdminTab(\'usuarios\')" style="font-size:10px;padding:4px 10px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.3);border-radius:8px;color:rgba(116,198,157,.85);cursor:pointer;font-family:\'Jost\',sans-serif">🔍 Ver todos →</button>'
         +'</div>'
-        + recentReg.slice(0,5).map(function(p){
+        + recentReg.slice(0,8).map(function(p){
             var fecha = p.created_at ? new Date(p.created_at).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
             var roleBadge = p.role==='pro' ? '<span style="font-size:9px;color:#74c6d0;border:1px solid rgba(116,198,210,.3);border-radius:4px;padding:1px 5px">PRO</span>'
                           : p.role==='plus' ? '<span style="font-size:9px;color:#c8a23e;border:1px solid rgba(200,162,62,.3);border-radius:4px;padding:1px 5px">PLUS</span>'
@@ -11959,6 +12068,7 @@ async function _renderAdmin(){
               +'<div style="font-size:10px;color:rgba(255,255,255,.25);white-space:nowrap;flex-shrink:0">'+fecha+'</div>'
               +'</div>';
           }).join('')
+        +'</div>'
         +'</div>';
       metrics.insertAdjacentHTML('afterend', recentHtml);
     }
@@ -12600,6 +12710,17 @@ function _renderGDPRHistory(){
 function _adminTabGestion(panel){
   panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📋 TAREAS PENDIENTES</div>'
     +'<div id="adminAITasks"><div style="font-size:12px;color:rgba(255,255,255,.3);padding:10px 0">Velo IA está revisando las tareas…</div></div>'
+    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,200,.8);margin-bottom:10px">⚕️ SUSCRIPCIÓN PROFESIONAL</div>'
+    +'<div style="background:rgba(116,198,200,.06);border:1px solid rgba(116,198,200,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
+    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Activá o extendé la suscripción de un profesional (30 o 90 días).</p>'
+    +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'
+    +'<input class="p-input" id="adminGrantProEmail" type="email" placeholder="correo@profesional.com" style="flex:1;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" />'
+    +'<select id="adminGrantProDays" style="padding:8px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-family:\'Jost\',sans-serif;font-size:12px">'
+    +'<option value="30">30 días</option>'
+    +'<option value="90">90 días</option>'
+    +'</select>'
+    +'<button onclick="pAdminGrantProSubscription()" style="padding:8px 14px;background:rgba(116,198,200,.2);border:1px solid rgba(116,198,200,.35);color:rgba(116,198,200,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;white-space:nowrap">⚕️ Activar</button>'
+    +'</div><div id="adminGrantProResult" style="font-size:11px;color:rgba(116,198,157,.8)"></div></div>'
     +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">⭐ ACTIVAR VELO PLUS GRATIS (30 DÍAS)</div>'
     +'<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
     +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Activá Velo Plus 30 días para un usuario.</p>'
@@ -14319,6 +14440,47 @@ function pAdminToggleNewsOnly(checked){
 }
 
 // ── ADMIN: GESTIÓN DE USUARIOS ────────────────────────────────
+async function pAdminGrantProSubscription(){
+  var emailEl  = document.getElementById('adminGrantProEmail');
+  var daysEl   = document.getElementById('adminGrantProDays');
+  var resultEl = document.getElementById('adminGrantProResult');
+  if(!emailEl || !emailEl.value.trim()){ pToast('⚠️','Ingresá el correo del profesional'); return; }
+  var email = emailEl.value.trim().toLowerCase();
+  var days  = parseInt((daysEl && daysEl.value)||'30', 10);
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión a Supabase'); return; }
+  var expires = new Date(Date.now() + days*24*3600*1000).toISOString();
+  if(resultEl) resultEl.textContent = 'Activando…';
+  try{
+    var profRes = await sbClient.from('profiles').select('id,nombre,role').eq('email',email).limit(1);
+    if(profRes.data && profRes.data[0]){
+      var uid = profRes.data[0].id;
+      await sbClient.from('profiles').update({
+        role: 'pro',
+        pro_subscription_expires_at: expires
+      }).eq('id', uid);
+      // Notify pro via inbox
+      try{
+        await sbClient.from('broadcasts').insert({
+          target: 'user:'+uid,
+          subject: '✅ Tu suscripción profesional fue activada',
+          body: 'El equipo de Velo activó tu suscripción profesional por '+days+' días (vence el '+new Date(expires).toLocaleDateString('es',{day:'2-digit',month:'long',year:'numeric'})+'). ¡Bienvenido/a a la plataforma! 💚\n\nCualquier consulta: consultas@heyvelo.app',
+          icon: '⚕️',
+          sender: JSON.stringify({n:'Velo',i:'velo-system',a:'⚕️'}),
+          sent_at: new Date().toISOString()
+        });
+      }catch(e){}
+    } else {
+      if(resultEl) resultEl.textContent = '⚠️ No se encontró ese correo en Supabase.';
+      return;
+    }
+    try{ await sbClient.from('plus_grants').insert({ email:email, expires_at:expires, note:'pro_subscription_'+days+'d' }); }catch(e){}
+    if(resultEl) resultEl.textContent = '✅ Suscripción pro activada '+days+' días para '+email;
+    emailEl.value = '';
+    pToast('⚕️','Suscripción pro activada '+days+' días para '+email);
+  }catch(e){ if(resultEl) resultEl.textContent = '⚠️ Error al activar'; pToast('⚠️','Error al activar suscripción'); }
+}
+
 async function pAdminGrantPlus(){
   var el = document.getElementById('adminGrantPlusEmail');
   if(!el || !el.value.trim()){ pToast('⚠️','Ingresá el correo del usuario'); return; }
