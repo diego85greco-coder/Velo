@@ -4746,12 +4746,22 @@ function pShareDailyQuote(){
   var author = (authorEl ? authorEl.textContent.trim() : '').replace(/^—\s*/,'');
   if(!quote){ pToast('🌟','Esperá un momento mientras carga la frase'); return; }
 
-  // Load logo first, then draw (fallback: draw without logo on error)
-  var logoImg = new Image();
-  logoImg.crossOrigin = 'anonymous';
-  logoImg.onload  = function(){ _drawShareCanvas(quote, author, logoImg); };
-  logoImg.onerror = function(){ _drawShareCanvas(quote, author, null); };
-  logoImg.src = 'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png';
+  // Try logo URLs in order; first success wins, last failure draws without logo
+  var _logoUrls = [
+    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png',
+    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.PNG',
+    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-night.png',
+    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/logo-night.png',
+    'assets/logo-dark.png'
+  ];
+  (function _nextLogo(i){
+    if(i >= _logoUrls.length){ _drawShareCanvas(quote, author, null); return; }
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = function(){ _drawShareCanvas(quote, author, img); };
+    img.onerror = function(){ _nextLogo(i+1); };
+    img.src = _logoUrls[i];
+  })(0);
 }
 
 function _drawShareCanvas(quote, author, logoImg){
