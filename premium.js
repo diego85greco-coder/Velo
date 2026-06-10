@@ -393,16 +393,22 @@ async function _sbSyncProfile(userId){
     res = await sbClient.from('profiles')
       .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city')
       .eq('id',userId).limit(1);
-    // 400 = column doesn't exist yet — fall back to base columns so sync still works
-    if(res.error && res.status === 400){
+    // 400 = a column doesn't exist yet — progressively strip optional columns
+    if(res.error){
       res = await sbClient.from('profiles')
         .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito')
         .eq('id',userId).limit(1);
-      if(res.error && res.status === 400){
-        res = await sbClient.from('profiles')
-          .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes')
-          .eq('id',userId).limit(1);
-      }
+    }
+    if(res.error){
+      res = await sbClient.from('profiles')
+        .select('nombre,avatar,motto,role,username,username_changes,user_status,incognito')
+        .eq('id',userId).limit(1);
+    }
+    if(res.error){
+      // Ultra-minimal: only guaranteed-core columns
+      res = await sbClient.from('profiles')
+        .select('nombre,avatar,motto,role,username')
+        .eq('id',userId).limit(1);
     }
   }catch(e){ return; }
 
@@ -8562,23 +8568,29 @@ async function pSaveProfile(){
       _uploadAvatarToStorage(null, _rawAv, function(pub){ if(pub){ safeLS('set','velo_user_av', pub); _syncAvatarToSb(pub); } });
     }
     var email = safeLS('get','velo_user_email') || '';
-    sbClient.from('profiles').upsert({
+    // Upsert with full fields; on 400 (missing column) retry with core fields only
+    var _fullRow = {
       id:uid, nombre:name, avatar:av, motto:motto, email:email,
       status_music:  safeLS('get','velo_status_music')||'',
       status_book:   safeLS('get','velo_status_book')||'',
       status_phrase: safeLS('get','velo_status_phrase')||'',
       status_film:   safeLS('get','velo_status_film')||''
-    },{ onConflict:'id' })
+    };
+    var _coreRow = { id:uid, nombre:name, avatar:av, motto:motto };
+    sbClient.from('profiles').upsert(_fullRow,{ onConflict:'id' })
     .then(function(r){
       if(r && r.error){
-        console.error('[pSaveProfile] Supabase error:', r.error);
-        pToast('⚠️','Perfil guardado localmente (error al sincronizar)');
+        // Retry with minimal columns — extended columns may not exist in schema yet
+        return sbClient.from('profiles').upsert(_coreRow,{ onConflict:'id' })
+          .then(function(r2){
+            if(!r2 || !r2.error){ pToast('✅','Perfil actualizado 💚'); }
+            else { pToast('⚠️','Perfil guardado localmente (error de sincronización)'); }
+          });
       } else {
         pToast('✅','Perfil actualizado 💚');
       }
     })
-    .catch(function(e){
-      console.error('[pSaveProfile] catch:', e);
+    .catch(function(){
       pToast('⚠️','Perfil guardado localmente (sin conexión).');
     });
   }
@@ -8989,6 +9001,21 @@ function pDeleteInboxMsg(id, el){
   if(newInbox.length !== inbox.length){ safeLS('set','velo_inbox', JSON.stringify(newInbox)); }
   if(el){ var card = el.closest('.p-inbox-msg'); if(card) card.remove(); }
   _updateHomeBell();
+  // Sync deleted broadcast to Supabase read_bcast_ids so it stays hidden on new devices
+  if(id && id.indexOf('bc_') === 0){
+    var _bcId = id.replace('bc_','');
+    safeLS('set','velo_bcast_read_'+_bcId,'1');
+    _syncedReadIds[_bcId] = 1;
+    var _dUid = safeLS('get','velo_user_id');
+    _initSupabase();
+    if(sbClient && _dUid){
+      sbClient.from('profiles').select('read_bcast_ids').eq('id',_dUid).limit(1)
+        .then(function(r){
+          var ids = (r.data&&r.data[0]&&Array.isArray(r.data[0].read_bcast_ids))?r.data[0].read_bcast_ids:[];
+          if(ids.indexOf(_bcId)<0){ ids.push(_bcId); sbClient.from('profiles').update({read_bcast_ids:ids}).eq('id',_dUid).then(function(){}).catch(function(){}); }
+        }).catch(function(){});
+    }
+  }
 }
 
 function pInboxVaciar(){

@@ -8519,8 +8519,17 @@ body.r-dark .r-desk-profile-chip:hover {
   font-size: 11px; font-weight: 700; color: var(--sage2);
 }
 @media (min-width: 861px) {
-  .r-desk-qlink-divider { display: inline-block; }
+  .r-desk-qlink-divider { display: none; }
   .r-desk-profile-chip  { display: inline-flex; }
+}
+/* Profile chip inside paired-quick: full-width third row */
+.r-paired-quick > .r-desk-profile-chip {
+  display: flex !important;
+  width: 100%;
+  border-radius: 12px;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
 }
 
 /* ── v503: Desktop home — transparent greeting card + centered mood text ── */
