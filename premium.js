@@ -1936,6 +1936,31 @@ function _checkAndNotifyBadge(){
   if(badge.name === lastNotified) return;
   safeLS('set','velo_badge_last_notified', badge.name);
   _sendBadgeInboxMsg(badge);
+  if(badge.name === 'Diamante') _grantDiamanteReward();
+}
+
+async function _grantDiamanteReward(){
+  if(safeLS('get','velo_diamante_plus_granted')) return; // prevent double-grant
+  _initSupabase();
+  if(!sbClient) return;
+  try{
+    var ok = await _ensureSbSession();
+    if(!ok) return;
+    var ud = await sbClient.auth.getUser();
+    if(!ud.data || !ud.data.user) return;
+    var uid = ud.data.user.id;
+    var email = ud.data.user.email || '';
+    var expires = new Date(Date.now() + 90*24*3600*1000).toISOString(); // 3 months
+    await sbClient.from('profiles').update({
+      role: 'plus',
+      plus_expires_at: expires,
+      diamante_plus_granted_at: new Date().toISOString()
+    }).eq('id', uid);
+    await sbClient.from('plus_grants').insert({ email: email, expires_at: expires });
+    safeLS('set','velo_plan','plus');
+    safeLS('set','velo_diamante_plus_granted','1');
+    _updatePlanUI && _updatePlanUI();
+  }catch(e){}
 }
 
 function _sendBadgeInboxMsg(badge){
@@ -1943,7 +1968,7 @@ function _sendBadgeInboxMsg(badge){
     Bronce:   { asunto:'¡Obtuviste la insignia Bronce! 🥉', cuerpo:'¡Felicitaciones! Ingresaste 5 días distintos a Velo. Como reconocimiento, te otorgamos la insignia Guardián Bronce, que ya aparece en tu perfil. ¡Gracias por ser parte de esta comunidad!' },
     Plata:    { asunto:'¡Insignia Plata desbloqueada! 🥈', cuerpo:'¡Increíble! Completaste 20 conversaciones de acompañamiento. Tu perfil ahora muestra el badge de guardián verificado, visible en toda la comunidad. ¡Seguí así!' },
     Oro:      { asunto:'¡Sos Guardián Oro! 🥇', cuerpo:'¡Felicitaciones! Completaste 40 conversaciones. Ahora podés crear Círculos de Paz y tenés prioridad en el listado de guardianes. ¡Sos un pilar de Velo!' },
-    Diamante: { asunto:'¡Insignia Diamante — Leyenda de Velo! 💎', cuerpo:'¡Extraordinario! Completaste 100 conversaciones y alcanzaste el nivel máximo. Sos parte de la élite de guardianes de Velo. ¡Gracias por tu dedicación y compromiso!' }
+    Diamante: { asunto:'¡Insignia Diamante — Leyenda de Velo! 💎🎁', cuerpo:'¡Extraordinario! Completaste 100 conversaciones y alcanzaste el nivel máximo de Velo.\n\nComo reconocimiento especial, te regalamos 3 meses de Velo Plus completamente gratis 🎁 — ya está activado en tu cuenta.\n\nCon Velo Plus tenés acceso ilimitado al acompañante IA Calma, sin restricciones en la Sala de Ayuda, Al Mar y Círculos de Paz, y muchas funciones exclusivas más.\n\n¡Gracias por tu dedicación. Sos una leyenda de nuestra comunidad! 💎' }
   };
   var info = catalog[badge.name];
   if(!info) return;
@@ -8541,7 +8566,7 @@ function _renderBadgesGrid(){
     { name:'Bronce',   icon:'🥉', min:5,   max:20,  color:'#C07840',      unlock:'Requiere: ingresar 5 días distintos a la app · Desbloqueá: insignia de Bronce en tu perfil' },
     { name:'Plata',    icon:'🥈', min:20,  max:40,  color:'#8892A4',      unlock:'Requiere: 20 conversaciones completadas · Desbloqueá: insignia verificada visible en la comunidad' },
     { name:'Oro',      icon:'🥇', min:40,  max:100, color:'#C8A200',      unlock:'Requiere: 40 conversaciones · Desbloqueá: crear Círculos de Paz ☮️ + prioridad en el listado' },
-    { name:'Diamante', icon:'💎', min:100, max:100, color:'#7B68EE',      unlock:'Requiere: 100 conversaciones · Desbloqueá: estado top de la comunidad + descuento en Velo Plus ✨' }
+    { name:'Diamante', icon:'💎', min:100, max:100, color:'#7B68EE',      unlock:'Requiere: 100 conversaciones · Desbloqueá: estado top de la comunidad + 3 meses de Velo Plus gratis 🎁' }
   ];
   var tierRows = tiers.map(function(t){
     var reached = t.name === 'Bronce' ? _getVisitDayCount() >= 5 : convs >= t.min;
@@ -12388,6 +12413,11 @@ function _adminTabGestion(panel){
             : '<button onclick="pAdminSendMonthlyReport()" style="width:100%;padding:10px;background:rgba(180,140,220,.15);border:1px solid rgba(180,140,220,.3);color:rgba(180,140,220,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700">📊 Enviar resumen de '+mLabel+' a todos los usuarios</button>')
           +'</div>';
       }())
+    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(123,104,238,.7);margin-bottom:10px">💎 RECOMPENSAS DIAMANTE — PLUS AUTOMÁTICO</div>'
+    +'<div style="background:rgba(123,104,238,.06);border:1px solid rgba(123,104,238,.2);border-radius:12px;padding:14px;margin-bottom:18px">'
+    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Usuarios que ganaron 3 meses de Velo Plus al alcanzar el nivel Diamante (100 conversaciones).</p>'
+    +'<div id="adminDiamanteList"><div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando…</div></div>'
+    +'</div>'
     +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📰 NOTICIAS MANUALES</div>'
     +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:14px;margin-bottom:18px">'
     +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Publicá noticias con título, resumen y link.</p>'
@@ -12398,6 +12428,41 @@ function _adminTabGestion(panel){
     +'<div id="adminNewsList"></div></div>';
   pAdminRenderNewsList();
   _renderAdminAITasks();
+  _adminLoadDiamanteRewards();
+}
+
+async function _adminLoadDiamanteRewards(){
+  var el = document.getElementById('adminDiamanteList');
+  if(!el) return;
+  _initSupabase();
+  if(!sbClient){ el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  try{
+    var r = await sbClient.from('profiles')
+      .select('email,nombre,plus_expires_at,diamante_plus_granted_at,role')
+      .eq('badge_notified','Diamante')
+      .order('diamante_plus_granted_at',{ascending:false})
+      .limit(100);
+    if(!r.data || !r.data.length){
+      el.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">Ningún usuario ha alcanzado Diamante aún.</div>';
+      return;
+    }
+    el.innerHTML = r.data.map(function(p){
+      var grantedDate = p.diamante_plus_granted_at ? new Date(p.diamante_plus_granted_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      var expiresDate = p.plus_expires_at ? new Date(p.plus_expires_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      var active = p.role==='plus' && p.plus_expires_at && new Date(p.plus_expires_at)>new Date();
+      var statusStyle = active ? 'background:rgba(116,198,157,.15);color:rgba(116,198,157,.85)' : 'background:rgba(255,100,100,.12);color:rgba(255,130,130,.7)';
+      var statusLabel = active ? '✅ Plus activo hasta '+expiresDate : (p.plus_expires_at ? '🔒 Expiró '+expiresDate : '⏳ Pendiente');
+      return '<div style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'
+        +'<div style="font-size:12px;color:rgba(255,255,255,.82);font-weight:600">'+_escHtml(p.nombre||p.email||'—')+'</div>'
+        +'<span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;'+statusStyle+'">'+statusLabel+'</span>'
+        +'</div>'
+        +'<div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">'+_escHtml(p.email||'')+(grantedDate!=='—'?' · Ganado: '+grantedDate:'')+'</div>'
+        +'</div>';
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Error al cargar datos.</div>';
+  }
 }
 
 // ── NEW: Warn user ────────────────────────────────────────────────────
