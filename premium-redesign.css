@@ -8532,6 +8532,7 @@ body.r-dark .r-desk-profile-chip:hover {
     gap: 8px;
     padding: 8px 14px;
     margin-top: 8px;
+    margin-bottom: 10px;
     box-sizing: border-box;
   }
 }

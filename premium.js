@@ -8865,7 +8865,7 @@ function pRenderInbox(){
   var mockMsgs = [
     { id:'m1', tipo:'sistema', icon:'💚', remitente:'Equipo Velo', asunto:'¡Bienvenido/a!', extracto:'Gracias por unirte a Velo. Aquí encontrarás apoyo.', leido:!!safeLS('get','velo_read_m1'), fecha:'Ahora' },
     { id:'m2', tipo:'sistema', icon:'🌿', remitente:'Velo', asunto:'Consejo del día', extracto:'Recuerda: está bien no estar bien. El primer paso es reconocerlo.', leido:true, fecha:'Hoy' }
-  ].filter(function(m){ return _delSet.indexOf(m.id) < 0; });
+  ].filter(function(m){ return _delSet.indexOf(m.id) < 0 && !_syncedReadIds[m.id]; });
   var all = msgs.concat(mockMsgs);
   // Single upfront fresh-fetch of read_bcast_ids directly (no _ensureSbSession —
   // calling it here triggers _sbSyncProfile which calls pRenderInbox again → loop).
