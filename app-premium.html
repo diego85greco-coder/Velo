@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-549">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-549">
+  <link rel="stylesheet" href="premium.css?v=20260530-550">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-550">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1050,18 +1050,30 @@
                 <span id="rDarkToggleIcon" style="display:none">🌙</span>
                 <button class="p-topbar-btn" style="display:none" id="homeMenuBtn" onclick="toggleMobileMenu()">☰</button>
               </div>
-              <div class="r-hero-stats">
-                <div class="r-hero-stat">
-                  <div class="r-hero-stat-val"><span style="font-size:.80em;opacity:.68;margin-right:3px">👤</span><em id="homeStatGuardians">—</em></div>
-                  <div class="r-hero-stat-lbl">Guardianes en línea</div>
+              <div class="r-stats-col">
+                <div class="r-hero-stats">
+                  <div class="r-hero-stat">
+                    <div class="r-hero-stat-val"><span style="font-size:.80em;opacity:.68;margin-right:3px">👤</span><em id="homeStatGuardians">—</em></div>
+                    <div class="r-hero-stat-lbl">Guardianes en línea</div>
+                  </div>
+                  <div class="r-hero-stat">
+                    <div class="r-hero-stat-val"><span style="font-size:.80em;opacity:.68;margin-right:3px">📅</span><em id="homeStatStreak">1</em></div>
+                    <div class="r-hero-stat-lbl">Días seguidos</div>
+                  </div>
+                  <div class="r-hero-stat">
+                    <div class="r-hero-stat-val"><em id="homeStatPlan">Free</em></div>
+                    <div class="r-hero-stat-lbl">Mi plan</div>
+                  </div>
                 </div>
-                <div class="r-hero-stat">
-                  <div class="r-hero-stat-val"><span style="font-size:.80em;opacity:.68;margin-right:3px">📅</span><em id="homeStatStreak">1</em></div>
-                  <div class="r-hero-stat-lbl">Días seguidos</div>
-                </div>
-                <div class="r-hero-stat">
-                  <div class="r-hero-stat-val"><em id="homeStatPlan">Free</em></div>
-                  <div class="r-hero-stat-lbl">Mi plan</div>
+                <div id="homeDesktopUtilBtns" style="display:none">
+                  <button onclick="pOpenMoodQuickView()" class="home-dqa-btn">
+                    <span id="homeDesktopMoodEmoji" style="font-size:22px;line-height:1">🤗</span>
+                    <span>Mis ánimos</span>
+                  </button>
+                  <button onclick="pOpenGuide()" class="home-dqa-btn">
+                    <span style="font-size:22px;line-height:1">ℹ️</span>
+                    <span>Guía Velo</span>
+                  </button>
                 </div>
               </div>
               <!-- Desktop-only quick access links (hidden on mobile via CSS) -->
@@ -1101,17 +1113,6 @@
                   <span class="r-desk-profile-label">Mi perfil</span>
                   <span id="homeProfileChipName" class="r-desk-profile-name">—</span>
                 </button>
-                <!-- Utility row: mood tracker + guide -->
-                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">
-                  <button onclick="pOpenMoodQuickView()" class="home-dqa-btn">
-                    <span id="homeDesktopMoodEmoji" style="font-size:22px;line-height:1">🤗</span>
-                    <span>Mis ánimos</span>
-                  </button>
-                  <button onclick="pOpenGuide()" class="home-dqa-btn">
-                    <span style="font-size:22px;line-height:1">ℹ️</span>
-                    <span>Guía Velo</span>
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -3200,8 +3201,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-549"></script>
-<script src="premium-redesign.js?v=20260530-549"></script>
+<script src="premium.js?v=20260530-550"></script>
+<script src="premium-redesign.js?v=20260530-550"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

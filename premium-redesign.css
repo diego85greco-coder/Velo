@@ -8675,3 +8675,27 @@ body.r-dark #homeRegisterLabel {
     flex-shrink: 0 !important;
   }
 }
+
+/* ── v550: Stats column — utility buttons below stats on desktop ── */
+.r-stats-col {
+  display: contents; /* transparent on mobile — r-hero-stats behaves as before */
+}
+@media (min-width: 861px) {
+  .r-stats-col {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: flex-start !important;
+  }
+  #homeDesktopUtilBtns {
+    display: flex !important;
+    gap: 6px !important;
+  }
+  #homeDesktopUtilBtns .home-dqa-btn {
+    flex: 1 !important;
+    aspect-ratio: auto !important;
+    padding: 8px 10px !important;
+    gap: 6px !important;
+    min-width: 80px !important;
+  }
+}
