@@ -6070,6 +6070,7 @@ function _checkSurveyDue(){
   var sid = _surveyQuarterId();
   // Already opened/completed this quarter's survey → never re-add
   if(safeLS('get','velo_read_'+sid) === '1') return;
+  if(_syncedReadIds[sid]) return; // deleted on another device
   var last = parseInt(safeLS('get','velo_last_survey')||'0', 10);
   if(Date.now() - last < SURVEY_INTERVAL) return;
   // Don't send twice in the same session
@@ -8906,9 +8907,9 @@ function pRenderInbox(){
       if(!bid) return;
       _syncedReadIds[bid] = 1;
       safeLS('set','velo_bcast_read_'+bid,'1');
+      if(bid.indexOf('survey-') === 0) safeLS('set','velo_read_'+bid,'1'); // prevent re-creation of surveys
     });
-    // Remove m1/m2 from DOM if they're in the synced list — the synchronous render
-    // may have already drawn them before this async callback completed.
+    // Remove m1/m2 and survey messages from DOM if they're in the synced list
     ['m1','m2'].forEach(function(mid){
       if(_syncedReadIds[mid]){
         var mEl = document.querySelector('#inboxList [data-mid="'+mid+'"]');
@@ -8916,6 +8917,15 @@ function pRenderInbox(){
         var _d=[]; try{_d=JSON.parse(safeLS('get','velo_inbox_deleted')||'[]');}catch(e){}
         if(_d.indexOf(mid)<0){_d.push(mid);safeLS('set','velo_inbox_deleted',JSON.stringify(_d));}
       }
+    });
+    // Remove survey messages synced from another device
+    ids.forEach(function(bid){
+      if(!bid || bid.indexOf('survey-') !== 0) return;
+      var sEl = document.querySelector('#inboxList [data-mid="'+bid+'"]');
+      if(sEl) sEl.remove();
+      var _inbox2=[]; try{_inbox2=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e){}
+      _inbox2 = _inbox2.filter(function(m){ return m.id !== bid; });
+      safeLS('set','velo_inbox', JSON.stringify(_inbox2));
     });
     // Show a subtle status strip in inbox so user can confirm sync works on mobile
     var _strip = document.getElementById('_inboxSyncStrip');
@@ -9117,8 +9127,8 @@ function pRenderInbox(){
 // messages handled before v529 (before per-action sync was added) don't re-appear on new devices.
 // Updates _syncedReadIds synchronously so _buzónPollOnce immediately has the correct state.
 function _migrateBcastLocalToSb(){
-  if(safeLS('get','velo_bcast_sb_push_v4')) return;
-  safeLS('set','velo_bcast_sb_push_v4','1'); // set flag immediately to prevent double-run
+  if(safeLS('get','velo_bcast_sb_push_v5')) return;
+  safeLS('set','velo_bcast_sb_push_v5','1'); // set flag immediately to prevent double-run
   // Collect all locally-known broadcast IDs synchronously and write them to
   // velo_bcast_read_* so pRenderInbox's new filter catches them immediately
   var newIds = [];
@@ -9142,7 +9152,17 @@ function _migrateBcastLocalToSb(){
     del.forEach(function(id){
       if(id && id.indexOf('bc_') === 0) _addMigrId(id.replace('bc_',''));
       else if(id && id.indexOf('rp_') === 0) _addMigrId(id);
-      else if(id === 'm1' || id === 'm2') _addMigrId(id); // system messages never had bc_ prefix
+      else if(id === 'm1' || id === 'm2') _addMigrId(id);
+      else if(id && id.indexOf('survey-') === 0){ safeLS('set','velo_read_'+id,'1'); _addMigrId(id); }
+    });
+  }catch(e){}
+  // Also migrate completed/dismissed surveys stored as velo_read_survey-* keys
+  try{
+    Object.keys(localStorage).forEach(function(k){
+      if(k.indexOf('velo_read_survey-') === 0){
+        var sid2 = k.replace('velo_read_','');
+        if(safeLS('get',k) === '1') _addMigrId(sid2);
+      }
     });
   }catch(e){}
   if(!newIds.length) return;
@@ -9235,7 +9255,8 @@ function pDeleteInboxMsg(id, el){
   _updateHomeBell();
   if(id && id.indexOf('bc_') === 0) _syncBroadcastRead(id.replace('bc_',''));
   else if(id && id.indexOf('rp_') === 0) _syncBroadcastRead(id);
-  else if(id === 'm1' || id === 'm2') _syncBroadcastRead(id); // system messages: also sync cross-device
+  else if(id === 'm1' || id === 'm2') _syncBroadcastRead(id);
+  else if(id && id.indexOf('survey-') === 0){ safeLS('set','velo_read_'+id,'1'); _syncBroadcastRead(id); }
 }
 
 function pInboxVaciar(){
@@ -9249,6 +9270,7 @@ function pInboxVaciar(){
     if(id.indexOf('bc_') === 0) _syncBroadcastRead(id.replace('bc_',''));
     else if(id.indexOf('rp_') === 0) _syncBroadcastRead(id);
     else if(id === 'm1' || id === 'm2') _syncBroadcastRead(id);
+    else if(id.indexOf('survey-') === 0){ safeLS('set','velo_read_'+id,'1'); _syncBroadcastRead(id); }
   });
   safeLS('set','velo_inbox_deleted', JSON.stringify(del));
   safeLS('set','velo_inbox', JSON.stringify([]));

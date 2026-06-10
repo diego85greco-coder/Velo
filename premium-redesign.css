@@ -8146,7 +8146,7 @@ body.r-dark .r-desk-qlink:hover {
     justify-content: space-between !important;
     width: 100% !important;
     border-bottom: 1px solid rgba(116,198,157,.14) !important;
-    padding-bottom: 20px !important;
+    padding-bottom: 28px !important;
     gap: 20px !important;
     min-width: 0 !important;
   }
@@ -8533,7 +8533,7 @@ body.r-dark .r-desk-profile-chip:hover {
     gap: 8px;
     padding: 8px 14px;
     margin-top: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 16px !important;
     box-sizing: border-box;
   }
 }
