@@ -1708,6 +1708,8 @@ function _updateTopbarMoodBadge(){
   emojiEl.textContent = emoji;
   var sidebarEmoji = document.getElementById('sidebarMoodEmoji');
   if(sidebarEmoji) sidebarEmoji.textContent = emoji;
+  var desktopEmoji = document.getElementById('homeDesktopMoodEmoji');
+  if(desktopEmoji) desktopEmoji.textContent = emoji;
   var streak = 0;
   var d = new Date();
   for(var i=0;i<90;i++){
