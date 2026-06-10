@@ -6315,15 +6315,37 @@ function pSubmitSurvey(){
   setTimeout(function(){ if(document.getElementById('inboxList')) pRenderInbox(); }, 300);
 }
 
-function _renderSurveyResults(){
-  var responses = []; try{ responses = JSON.parse(safeLS('get','velo_survey_responses')||'[]'); }catch(e){}
+async function _adminLoadSurveys(){
+  var el = document.getElementById('adminSurveyResults');
+  if(!el) return;
+  var responses = [];
+  _initSupabase();
+  if(sbClient){
+    try{
+      var r = await sbClient.from('surveys').select('general,utilidad,recomendaria,funcion,sugerencia,created_at').order('created_at',{ascending:false}).limit(500);
+      if(!r.error && r.data && r.data.length){
+        // Supabase rows have flat shape: { general, utilidad, recomendaria, funcion, sugerencia }
+        responses = r.data.map(function(row){
+          return { scores:{ general:row.general||0, utilidad:row.utilidad||0, recomendaria:row.recomendaria||0 }, funcion:row.funcion||'', sugerencia:row.sugerencia||'' };
+        });
+      }
+    }catch(e){}
+  }
+  // Fallback to localStorage (own device responses)
   if(!responses.length){
+    try{ responses = JSON.parse(safeLS('get','velo_survey_responses')||'[]'); }catch(e){}
+  }
+  el.innerHTML = _renderSurveyResults(responses);
+}
+
+function _renderSurveyResults(responses){
+  if(!responses || !responses.length){
     return '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin respuestas aún.</p>';
   }
   var total = responses.length;
-  var avgGeneral    = (responses.reduce(function(s,r){ return s + (r.scores.general||0); }, 0) / total).toFixed(1);
-  var avgUtilidad   = (responses.reduce(function(s,r){ return s + (r.scores.utilidad||0); }, 0) / total).toFixed(1);
-  var avgRecomend   = (responses.reduce(function(s,r){ return s + (r.scores.recomendaria||0); }, 0) / total).toFixed(1);
+  var avgGeneral    = (responses.reduce(function(s,r){ return s + ((r.scores&&r.scores.general)||r.general||0); }, 0) / total).toFixed(1);
+  var avgUtilidad   = (responses.reduce(function(s,r){ return s + ((r.scores&&r.scores.utilidad)||r.utilidad||0); }, 0) / total).toFixed(1);
+  var avgRecomend   = (responses.reduce(function(s,r){ return s + ((r.scores&&r.scores.recomendaria)||r.recomendaria||0); }, 0) / total).toFixed(1);
   // Most used feature
   var funcCount = {};
   responses.forEach(function(r){ if(r.funcion) funcCount[r.funcion] = (funcCount[r.funcion]||0)+1; });
@@ -12542,7 +12564,8 @@ function _adminTabFinanzas(panel){
     +'<div id="adminTransferList">'+_adminTransferHtml()+'</div>'
     +'<div style="margin-top:18px">'+_adminMonthlyReportTracker()+'</div>'
     +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📊 ENCUESTAS DE SATISFACCIÓN</div>'
-    +_renderSurveyResults();
+    +'<div id="adminSurveyResults"><p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando respuestas…</p></div>';
+  _adminLoadSurveys();
   _renderAdminDonations();
 }
 
@@ -14050,6 +14073,8 @@ async function pAdminGenerateMassMessage(target){
   }catch(e){ pToast('⚠️','Error al procesar la respuesta. Intentá de nuevo.'); }
 }
 
+var _pendingBcastImg = null; // { base64, mime } — holds AI-generated image pending confirmation
+
 async function pAdminGenerateBcastImage(){
   var descEl = document.getElementById('massAiDesc');
   var desc = descEl ? descEl.value.trim() : '';
@@ -14072,31 +14097,64 @@ async function pAdminGenerateBcastImage(){
     if(!imgPart) throw new Error('Gemini no devolvió imagen. Intentá una descripción diferente.');
     var base64 = imgPart.inlineData.data;
     var mime = imgPart.inlineData.mimeType || 'image/png';
-    // Upload to Supabase storage
+    _pendingBcastImg = { base64: base64, mime: mime };
+    // Show confirmation overlay with large preview — don't upload until confirmed
+    var prevOv = document.getElementById('bcastImgPreviewOv');
+    if(prevOv) prevOv.remove();
+    var ov = document.createElement('div');
+    ov.id = 'bcastImgPreviewOv';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(5,18,10,.96);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box';
+    ov.innerHTML = '<div style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(116,198,157,.7);margin-bottom:14px">IMAGEN GENERADA CON IA</div>'
+      +'<img src="data:'+mime+';base64,'+base64+'" style="max-width:100%;max-height:55vh;border-radius:16px;border:2px solid rgba(116,198,157,.3);box-shadow:0 8px 40px rgba(0,0,0,.6);object-fit:contain">'
+      +'<p style="font-size:12px;color:rgba(255,255,255,.5);margin:14px 0 18px;text-align:center;line-height:1.5">¿Querés usar esta imagen en el mensaje?</p>'
+      +'<div style="display:flex;gap:12px;width:100%;max-width:320px">'
+      +'<button onclick="pBcastImgConfirm()" style="flex:1;padding:13px;background:var(--sage2);border:none;border-radius:14px;color:#fff;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">✅ Usar esta imagen</button>'
+      +'<button onclick="pBcastImgDiscard()" style="padding:13px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:rgba(255,255,255,.6);font-size:13px;font-family:\'Jost\',sans-serif;cursor:pointer">🗑️ Descartar</button>'
+      +'</div>';
+    document.body.appendChild(ov);
+    if(statusEl){ statusEl.textContent=''; statusEl.style.display='none'; }
+  }catch(e){
+    if(statusEl){ statusEl.textContent = '⚠️ No se pudo generar: '+e.message; statusEl.style.display='block'; }
+    pToast('⚠️','Error al generar imagen');
+  }
+  if(btn){ btn.disabled=false; btn.textContent='🎨 Generar imagen con IA (opcional)'; }
+}
+
+async function pBcastImgConfirm(){
+  var ov = document.getElementById('bcastImgPreviewOv');
+  if(ov) ov.innerHTML = '<div style="color:#fff;font-size:13px">⏳ Subiendo imagen…</div>';
+  var pending = _pendingBcastImg;
+  _pendingBcastImg = null;
+  try{
     _initSupabase();
     if(!sbClient) throw new Error('No Supabase');
-    var byteStr = atob(base64);
+    var byteStr = atob(pending.base64);
     var ab = new ArrayBuffer(byteStr.length);
     var ia = new Uint8Array(ab);
     for(var i=0;i<byteStr.length;i++) ia[i]=byteStr.charCodeAt(i);
-    var ext = mime.indexOf('png')>-1 ? 'png' : 'jpg';
-    var blob = new Blob([ab], {type:mime});
+    var ext = pending.mime.indexOf('png')>-1 ? 'png' : 'jpg';
+    var blob = new Blob([ab], {type:pending.mime});
     var path = 'broadcast/ai-'+Date.now()+'.'+ext;
-    var uploadRes = await sbClient.storage.from('avatars').upload(path, blob, {contentType:mime, upsert:true});
+    var uploadRes = await sbClient.storage.from('avatars').upload(path, blob, {contentType:pending.mime, upsert:true});
     if(uploadRes.error) throw uploadRes.error;
     var urlRes = sbClient.storage.from('avatars').getPublicUrl(path);
     var pub = urlRes && urlRes.data && urlRes.data.publicUrl;
     if(!pub) throw new Error('No public URL');
     var urlEl = document.getElementById('massImageUrl');
     if(urlEl) urlEl.value = pub;
-    if(statusEl){ statusEl.textContent = '✅ Imagen generada y subida'; }
     _previewMassImage();
-    pToast('🎨','¡Imagen generada con IA! ✅');
+    pToast('🎨','¡Imagen añadida al mensaje! ✅');
   }catch(e){
-    if(statusEl){ statusEl.textContent = '⚠️ No se pudo generar: '+e.message; statusEl.style.display='block'; }
-    pToast('⚠️','Error al generar imagen');
+    pToast('⚠️','Error al subir: '+e.message);
   }
-  if(btn){ btn.disabled=false; btn.textContent='🎨 Generar imagen con IA (opcional)'; }
+  if(ov) ov.remove();
+}
+
+function pBcastImgDiscard(){
+  _pendingBcastImg = null;
+  var ov = document.getElementById('bcastImgPreviewOv');
+  if(ov) ov.remove();
+  pToast('🗑️','Imagen descartada');
 }
 
 function _previewMassImage(){
