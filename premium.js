@@ -9786,10 +9786,16 @@ function pGetFavs(){
 
 async function _syncFavsFromSupabase(){
   var myId = safeLS('get','velo_user_id')||'';
+  _initSupabase();
   if(!myId || !sbClient) return;
   try{
-    var {data} = await sbClient.from('user_favorites').select('*').eq('user_id', myId).order('created_at',{ascending:false}).limit(100);
-    if(!data || !data.length) return;
+    var {data, error} = await sbClient.from('user_favorites').select('*').eq('user_id', myId).order('created_at',{ascending:false}).limit(100);
+    if(error){ console.error('[syncFavs] query error:', error.message); return; }
+    if(!data) return;
+    if(!data.length){
+      // No remote favs — ensure local cache is clean but don't wipe user's localStorage
+      return;
+    }
     // Clean up stale self-favorites left in DB before our client-side guard was added
     var selfRows = data.filter(function(r){ return r.fav_id === myId; });
     if(selfRows.length){
@@ -9856,9 +9862,11 @@ function pAddFav(userId, name, av){
   if(sbClient){
     var myId = safeLS('get','velo_user_id')||'';
     if(myId) sbClient.from('user_favorites').upsert(
-      { user_id:myId, fav_id:userId, fav_name:name||'', fav_av:av||'' },
+      { user_id:myId, fav_id:userId, fav_name:name||'', fav_av:av||'', created_at:new Date().toISOString() },
       { onConflict:'user_id,fav_id' }
-    ).then(function(){}).catch(function(){});
+    ).then(function(res){
+      if(res && res.error) console.error('[pAddFav] upsert error:', res.error.message);
+    }).catch(function(e){ console.error('[pAddFav] upsert exception:', e); });
   }
   pToast('⭐',_escHtml(name||'Usuario')+' guardado en favoritos');
   _updateFavBadge();
@@ -15831,6 +15839,10 @@ window.addEventListener('load', function(){
 
   // Detect tab/window hidden (phone locked, minimized, other tab) — mark ocupado automatically
   document.addEventListener('visibilitychange', function(){
+    if(!document.hidden && _authenticated){
+      // Re-sync favorites when user returns to the tab (picks up cross-device changes)
+      _syncFavsFromSupabase();
+    }
     if(safeLS('get','velo_is_guardian') !== 'true') return;
     if(document.hidden){
       _updateGuardianPresence('ocupado');
