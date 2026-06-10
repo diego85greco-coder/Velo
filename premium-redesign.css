@@ -105,8 +105,10 @@ body::after {
   .p-sidebar-footer {
     opacity: 1;
     padding: 12px 8px 0 !important;
+    overflow: hidden;
   }
-  .p-sidebar:not(:hover) .p-sidebar-footer > button:first-child { display: none !important; }
+  /* When collapsed: hide all footer buttons except the theme toggle */
+  .p-sidebar:not(:hover) .p-sidebar-footer > button:not(.p-sidebar-theme-btn) { display: none !important; }
   .p-sidebar:not(:hover) .p-user-info { display: none !important; }
 
   .p-user-mini {
