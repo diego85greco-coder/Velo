@@ -372,8 +372,14 @@
 
   function pickTimeIcon() {
     var h = new Date().getHours();
+    var isNight = (h >= 20 || h < 6);
     if (_weatherIconType) {
-      var wr = _weatherEmoji(_weatherIconType);
+      var effectiveType = _weatherIconType;
+      if (isNight) {
+        if (effectiveType === 'clear-day')  effectiveType = 'clear-night';
+        else if (effectiveType === 'sun-cloud') effectiveType = 'moon-cloud';
+      }
+      var wr = _weatherEmoji(effectiveType);
       if (wr) return wr;
     }
     if (h >= 6 && h < 12)  return { emoji: '☀️', period: 'morning' };

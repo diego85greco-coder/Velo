@@ -29,6 +29,7 @@ var _geminiUrlIdx = 0;
 var _sbHappy      = null;   // cached Supabase happy_posts
 var _pendingHappyPost = null; // post just submitted, merged into render until Supabase confirms
 var _sbHelp       = null;   // cached Supabase help_posts
+var _syncedReadIds = {};    // broadcast IDs synced as read from Supabase profile (cross-device)
 var _sbBottles    = null;   // cached Supabase bottles
 var _sbCircleMsgs = [];     // cached Supabase circle_messages
 var _happyRtCh    = null;   // realtime channel happy_posts
@@ -477,6 +478,7 @@ async function _sbSyncProfile(userId){
     p.read_bcast_ids.forEach(function(bid){
       if(bid === 'm1' || bid === 'm2') safeLS('set','velo_read_'+bid,'1');
       else safeLS('set','velo_bcast_read_'+bid,'1');
+      _syncedReadIds[bid] = 1; // in-memory cache to fix timing race with _buzónHandleNew
     });
   }
   // Badge notification cross-device: if Supabase shows a higher badge than local, show the inbox message
@@ -496,10 +498,11 @@ async function _sbSyncProfile(userId){
   if(p.motto)         safeLS('set','velo_user_motto',    p.motto);
   // Never let profile sync downgrade an active admin session
   if(p.role && safeLS('get','velo_admin_session') !== '1') safeLS('set','velo_user_type', p.role);
-  if(p.status_music)   safeLS('set','velo_status_music',   p.status_music);
-  if(p.status_book)    safeLS('set','velo_status_book',    p.status_book);
-  if(p.status_phrase)  safeLS('set','velo_status_phrase',  p.status_phrase);
-  if(p.status_film)    safeLS('set','velo_status_film',    p.status_film);
+  // Restore status fields unconditionally (null check only, so empty strings also clear old data)
+  if(p.status_music  != null) safeLS('set','velo_status_music',   p.status_music);
+  if(p.status_book   != null) safeLS('set','velo_status_book',    p.status_book);
+  if(p.status_phrase != null) safeLS('set','velo_status_phrase',  p.status_phrase);
+  if(p.status_film   != null) safeLS('set','velo_status_film',    p.status_film);
   if(p.weather_city)   try{ localStorage.setItem('velo_weather_city', p.weather_city); }catch(e){}
   if(p.username)      safeLS('set','velo_username',       p.username);
   if(p.username)      _uFill(userId, p.username);
@@ -1674,27 +1677,49 @@ function _updateTopbarMoodBadge(){
   if(streakNumEl) streakNumEl.textContent = streak;
 }
 
-function _updateHomeCurrentMoodLine(){
+function _showMoodLineData(el, m){
+  var labels = {'😄':'Muy bien','😊':'Bien','😐':'Regular','😞':'Mal','😢':'Muy mal'};
+  var moodText = m.emoji + ' ' + (labels[m.emoji]||m.label||'') + (m.note ? ' — '+m.note.slice(0,40) : '');
+  el.style.animation = 'none';
+  el.style.background = 'rgba(116,198,157,.10)';
+  el.style.border = '1px solid rgba(116,198,157,.25)';
+  el.style.padding = '7px 12px';
+  el.style.color = 'var(--ink3)';
+  el.style.fontSize = '12px';
+  el.style.fontWeight = '500';
+  el.style.borderRadius = '100px';
+  el.textContent = moodText;
+}
+
+async function _updateHomeCurrentMoodLine(){
   var el = document.getElementById('homeCurrentMoodLine');
   if(!el) return;
   var today = _dateKey();
   var stored = safeLS('get','velo_mood_'+today);
   if(stored){
+    try{ var m = JSON.parse(stored); _showMoodLineData(el, m); return; }catch(e){}
+  }
+  // Cross-device: try Supabase if localStorage has no entry for today
+  _initSupabase();
+  if(sbClient){
     try{
-      var m = JSON.parse(stored);
-      var labels = {'😄':'Muy bien','😊':'Bien','😐':'Regular','😞':'Mal','😢':'Muy mal'};
-      var moodText = m.emoji + ' ' + (labels[m.emoji]||m.label||'') + (m.note ? ' — '+m.note.slice(0,40) : '');
-      // Mood registered — keep pill shape, just muted to show it's saved
-      el.style.animation = 'none';
-      el.style.background = 'rgba(116,198,157,.10)';
-      el.style.border = '1px solid rgba(116,198,157,.25)';
-      el.style.padding = '7px 12px';
-      el.style.color = 'var(--ink3)';
-      el.style.fontSize = '12px';
-      el.style.fontWeight = '500';
-      el.style.borderRadius = '100px';
-      el.textContent = moodText;
-      return;
+      var ok = await _ensureSbSession();
+      if(ok){
+        var uRes = await sbClient.auth.getUser();
+        var ud = uRes && uRes.data;
+        if(ud && ud.user){
+          var r = await sbClient.from('mood_entries')
+            .select('emoji,label,note')
+            .eq('user_id', ud.user.id).eq('date_key', today).limit(1);
+          if(r.data && r.data.length){
+            var m = r.data[0];
+            var mObj = {emoji:m.emoji, label:m.label||'', note:m.note||'', ts:Date.now()};
+            safeLS('set','velo_mood_'+today, JSON.stringify(mObj));
+            _showMoodLineData(el, mObj);
+            return;
+          }
+        }
+      }
     }catch(e){}
   }
   // Not registered yet — show animated pill
@@ -3048,7 +3073,7 @@ function _buzónPollOnce(){
 function _buzónHandleNew(rows){
   // Deduplicate against already-shown IDs
   var _shown = {}; try{ _shown = JSON.parse(safeLS('get','velo_bcast_shown')||'{}'); }catch(e){}
-  var fresh = rows.filter(function(b){ return b.id && !_shown[b.id] && !safeLS('get','velo_bcast_read_'+b.id); });
+  var fresh = rows.filter(function(b){ return b.id && !_shown[b.id] && !safeLS('get','velo_bcast_read_'+b.id) && !_syncedReadIds[b.id]; });
   if(!fresh.length) return;
   // Show popup for the newest item only
   var newest = fresh[0];
@@ -4688,14 +4713,14 @@ async function pSendCalmAIMsg(){
   typingDiv.innerHTML = '<div class="feed-av">🌿</div><div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">Acompañante Velo</div><div class="feed-bubble" style="color:var(--ink4);font-style:italic">Escribiendo…</div></div>';
   if(msgEl){ msgEl.appendChild(typingDiv); msgEl.scrollTop = msgEl.scrollHeight; }
 
-  var systemPrompt = 'Sos Velo, un acompañante empático y cálido de una app de acompañamiento emocional entre pares. '
-    +'Tu rol es escuchar activamente, validar emociones genuinamente y ofrecer apoyo real sin juzgar ni diagnosticar. '
-    +'Respondés en español rioplatense (usás "vos", "te", "estás", "querés"). '
-    +'Tus respuestas tienen 3-5 oraciones: primero validás la emoción específica que mencionó la persona, luego ofrecés una reflexión o acompañamiento genuino, y terminás con una pregunta abierta que invite a seguir hablando. '
-    +'NUNCA repitas la misma frase. NUNCA des respuestas genéricas o de formulario. '
-    +'Siempre respondés refiriéndote exactamente a lo que el usuario dijo, con detalles concretos de su situación. '
-    +'Si mencionan riesgo de autolesión o crisis, con calidez invitales a la Sala de Ayuda o al 135 (Argentina). '
-    +'No sos médico ni terapeuta. Sos un acompañante que escucha de verdad.';
+  var systemPrompt = 'Sos Velo, un acompañante emocional especializado, entrenado en técnicas de psicología clínica y humanista. '
+    +'Aplicás escucha activa profunda, técnicas rogerianas de reflejo y validación, y preguntas socráticas para facilitar la reflexión genuina. '
+    +'Tenés experiencia y sensibilidad especial en: ansiedad y ataques de pánico, tristeza y depresión, duelo y pérdidas, problemas de pareja y familia, maltrato emocional y violencia doméstica, autoestima herida y trauma. '
+    +'Respondés siempre en español rioplatense (usás "vos", "te", "estás", "querés"). '
+    +'Estructura de cada respuesta: (1) Validación empática específica — nombrás exactamente lo que dijo la persona, sin frases genéricas. (2) Reflejo o reformulación que demuestre comprensión profunda de su situación. (3) Una pregunta abierta y reflexiva que invite a explorar más, sin presionar. '
+    +'Usás entre 4-6 oraciones por respuesta. NUNCA dés consejos directivos antes de explorar cómo se siente. NUNCA repetís frases. NUNCA minimizás el dolor ("todo pasa", "hay gente peor"). '
+    +'Si la persona menciona violencia activa, maltrato o situación de peligro: con calidez y sin alarmismo, reconocé el valor que tuvo en contarlo y mencioná recursos concretos: la Sala de Ayuda de Velo y el 0800-222-1002 (línea nacional Argentina contra violencia), o la Sala de Ayuda de Velo y el 135 para crisis emocionales. '
+    +'Siempre recordá: no sos terapeuta ni médico. Sos un espacio seguro, humano y sin juicios donde la persona puede explorar sus emociones con acompañamiento genuino.';
 
   var reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-12), { temperature:0.88, maxOutputTokens:420 });
   if(!reply){
@@ -4711,6 +4736,107 @@ async function pSendCalmAIMsg(){
     _calmAIAddMsg(reply, false);
   }
   _geminiCrisisCheck(text);
+}
+
+// ── COMPARTIR FRASE DEL DÍA ────────────────────────────────────
+function pShareDailyQuote(){
+  var quoteEl  = document.getElementById('homeDailyQuoteText');
+  var authorEl = document.getElementById('homeDailyQuoteAuthor');
+  var quote  = quoteEl  ? quoteEl.textContent.trim()  : '';
+  var author = authorEl ? authorEl.textContent.trim() : '';
+  if(!quote){ pToast('🌟','Esperá un momento mientras carga la frase'); return; }
+
+  var W = 1080, H = 1920;
+  var canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+
+  // Background gradient
+  var grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, '#0D2B1C');
+  grad.addColorStop(1, '#0a1f14');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle dot pattern
+  ctx.fillStyle = 'rgba(116,198,157,.06)';
+  for(var i=0; i<W; i+=40){ for(var j=0; j<H; j+=40){ ctx.beginPath(); ctx.arc(i,j,1.5,0,Math.PI*2); ctx.fill(); } }
+
+  // Top gold line
+  ctx.strokeStyle = 'rgba(200,158,56,.45)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(120,200); ctx.lineTo(W-120,200); ctx.stroke();
+
+  // Velo wordmark
+  ctx.font = '700 72px sans-serif';
+  ctx.fillStyle = 'rgba(200,158,56,.85)';
+  ctx.textAlign = 'center';
+  ctx.fillText('Velo', W/2, 160);
+
+  // Quote mark
+  ctx.font = '400 180px serif';
+  ctx.fillStyle = 'rgba(116,198,157,.22)';
+  ctx.textAlign = 'left';
+  ctx.fillText('“', 110, 560);
+
+  // Quote text — word-wrap
+  ctx.font = 'italic 400 68px Georgia, serif';
+  ctx.fillStyle = 'rgba(255,255,255,.92)';
+  ctx.textAlign = 'center';
+  var words = quote.split(' ');
+  var lines = [];
+  var line = '';
+  var maxW = W - 240;
+  words.forEach(function(w){
+    var test = line ? line+' '+w : w;
+    if(ctx.measureText(test).width > maxW){ lines.push(line); line = w; }
+    else line = test;
+  });
+  if(line) lines.push(line);
+  var lineH = 88;
+  var totalH = lines.length * lineH;
+  var startY = (H - totalH) / 2 - 60;
+  lines.forEach(function(l, i){ ctx.fillText(l, W/2, startY + i*lineH); });
+
+  // Author
+  if(author){
+    ctx.font = '700 44px sans-serif';
+    ctx.fillStyle = 'rgba(200,158,56,.75)';
+    ctx.textAlign = 'center';
+    ctx.fillText('— ' + author.replace(/^—\s*/,''), W/2, startY + totalH + 80);
+  }
+
+  // Bottom watermark
+  ctx.font = '400 36px sans-serif';
+  ctx.fillStyle = 'rgba(116,198,157,.50)';
+  ctx.textAlign = 'center';
+  ctx.fillText('heyvelo.app', W/2, H - 140);
+
+  // Bottom gold line
+  ctx.strokeStyle = 'rgba(200,158,56,.45)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(120, H-180); ctx.lineTo(W-120, H-180); ctx.stroke();
+
+  canvas.toBlob(function(blob){
+    if(!blob){ pToast('⚠️','No se pudo generar la imagen'); return; }
+    var file = new File([blob], 'frase-velo.png', {type:'image/png'});
+    var shareData = {
+      title: 'Frase del día · Velo',
+      text: '"' + quote + '"' + (author ? '\n— ' + author.replace(/^—\s*/,'') : '') + '\n\nheyvelo.app',
+      files: [file]
+    };
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share(shareData).catch(function(){});
+    } else if(navigator.share){
+      navigator.share({ title: shareData.title, text: shareData.text }).catch(function(){});
+    } else {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'frase-velo.png';
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 3000);
+    }
+  }, 'image/png');
 }
 
 // ── SUGERENCIAS PERSONALIZADAS ──────────────────────────────────
@@ -11094,6 +11220,8 @@ async function pAdminLogin(){
     if(passEl) passEl.value = '';
     if(emailEl) emailEl.value = '';
     pGoTo('admin'); // pGoTo calls _renderAdmin() via the switch — no duplicate call needed
+    var _adminTb = document.getElementById('pTopbar'); if(_adminTb) _adminTb.style.display='none';
+    var _adminSb = document.querySelector('.p-sidebar'); if(_adminSb) _adminSb.style.display='none';
     pToast('🌿','Bienvenido/a al panel admin');
   } else {
     pToast('⚠️', authError || 'Credenciales incorrectas');
@@ -11104,6 +11232,8 @@ async function pAdminLogin(){
 
 function pAdminLogout(){
   if(sbClient){ try{ sbClient.auth.signOut(); }catch(e){} }
+  var _adminTb = document.getElementById('pTopbar'); if(_adminTb) _adminTb.style.removeProperty('display');
+  var _adminSb = document.querySelector('.p-sidebar'); if(_adminSb) _adminSb.style.removeProperty('display');
   _clearSession();
   _authenticated = false;
   _userType = 'user';

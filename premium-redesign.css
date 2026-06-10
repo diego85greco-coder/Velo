@@ -603,7 +603,32 @@ body.r-dark .home-logo-side {
 #homeSearchUsersBtn   { order: 6; }
 .r-home-shortcut-grid { order: 7; }
 #homeHeroLabel        { order: 7; margin-top: 24px; }
-#homeDesktopQuickActs { order: 8; }
+
+/* ── Paired quick-actions (desktop): Diario/Muro/Al Mar + Ánimos/Donar/Plus ── */
+.r-paired-quick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+.r-paired-quick .r-desk-quick-links {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 4px !important;
+}
+#homeDesktopQuickActs {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 4px !important;
+}
+#homeDesktopQuickActs .home-dqa-btn {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 4px;
+  font-size: 10px;
+}
 
 /* Daily quote: full width matching the feature grid on desktop */
 @media (min-width: 1024px) {

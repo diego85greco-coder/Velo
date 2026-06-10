@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-514">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-514">
+  <link rel="stylesheet" href="premium.css?v=20260530-515">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-515">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -917,21 +917,6 @@
           <div class="home-header r-hero-v2">
             <div class="r-hero-left">
               <div id="homeHeroLabel" style="font-size:10px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:rgba(200,158,56,.72);margin-bottom:12px;display:flex;align-items:center;gap:6px"><span>—</span><span>JARDÍN DE HOY</span></div>
-              <!-- Desktop quick-action strip — hidden on mobile via CSS -->
-              <div id="homeDesktopQuickActs">
-                <button onclick="pGoTo('mood')" class="home-dqa-btn">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-                  <span>Ánimos</span>
-                </button>
-                <button onclick="pGoTo('donation-exit')" class="home-dqa-btn">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-                  <span>Donar</span>
-                </button>
-                <button onclick="pShowPlusModal()" class="home-dqa-btn">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                  <span>Plus</span>
-                </button>
-              </div>
               <!-- Guardian mode control — static HTML, state synced via _renderHomeStatusToggle() -->
               <div id="homeStatusToggle" style="display:flex;justify-content:center;margin-bottom:20px">
                 <div id="homeGuardianWrap">
@@ -992,8 +977,9 @@
           </div>
               <!-- Daily motivational quote widget -->
               <div id="homeDailyQuoteWrap" style="padding:0 0 10px;width:100%">
-                <div style="padding:0 4px 6px;padding-left:6px">
+                <div style="padding:0 4px 6px;padding-left:6px;display:flex;align-items:center;justify-content:space-between">
                   <span style="font-size:8px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);opacity:.85">✨ Frase del día</span>
+                  <button onclick="pShareDailyQuote()" title="Compartir como imagen" style="background:none;border:none;cursor:pointer;font-size:14px;opacity:.60;padding:2px 4px;line-height:1;color:var(--gold)">📤</button>
                 </div>
                 <div id="homeDailyQuote" style="background:linear-gradient(135deg,rgba(255,230,102,.18) 0%,rgba(255,200,80,.12) 50%,rgba(255,240,180,.22) 100%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(200,146,10,.22);border-radius:18px;padding:14px 18px 12px;min-height:50px;box-shadow:0 4px 18px rgba(200,146,10,.10),inset 0 1px 0 rgba(255,255,255,.7)">
                   <div style="font-size:18px;line-height:1;margin-bottom:6px;opacity:.7">❝</div>
@@ -1053,26 +1039,43 @@
                 </div>
               </div>
               <!-- Desktop-only quick access links (hidden on mobile via CSS) -->
-              <div class="r-desk-quick-links">
-                <button onclick="pGoTo('diary')" class="r-desk-qlink">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                  Diario
-                </button>
-                <button onclick="pGoTo('happy')" class="r-desk-qlink">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                  Muro
-                </button>
-                <button onclick="pGoTo('bottle')" class="r-desk-qlink">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                  Al Mar
-                </button>
-                <span class="r-desk-qlink-divider"></span>
-                <button id="homeProfileChip" onclick="pGoTo('profile')" class="r-desk-profile-chip">
-                  <span class="r-desk-profile-label">Mi perfil</span>
-                  <div id="homeProfileChipAv" class="r-desk-profile-av"></div>
-                  <span id="homeProfileChipName" class="r-desk-profile-name">—</span>
-                </button>
+              <div class="r-paired-quick">
+                <div class="r-desk-quick-links">
+                  <button onclick="pGoTo('diary')" class="r-desk-qlink">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    Diario
+                  </button>
+                  <button onclick="pGoTo('happy')" class="r-desk-qlink">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    Muro
+                  </button>
+                  <button onclick="pGoTo('bottle')" class="r-desk-qlink">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Al Mar
+                  </button>
+                </div>
+                <!-- Action shortcuts paired below nav links -->
+                <div id="homeDesktopQuickActs">
+                  <button onclick="pGoTo('mood')" class="home-dqa-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                    <span>Ánimos</span>
+                  </button>
+                  <button onclick="pGoTo('donation-exit')" class="home-dqa-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                    <span>Donar</span>
+                  </button>
+                  <button onclick="pShowPlusModal()" class="home-dqa-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    <span>Plus</span>
+                  </button>
+                </div>
               </div>
+              <span class="r-desk-qlink-divider"></span>
+              <button id="homeProfileChip" onclick="pGoTo('profile')" class="r-desk-profile-chip">
+                <span class="r-desk-profile-label">Mi perfil</span>
+                <div id="homeProfileChipAv" class="r-desk-profile-av"></div>
+                <span id="homeProfileChipName" class="r-desk-profile-name">—</span>
+              </button>
             </div>
           </div>
           <!-- Monthly report banner (shown only on 1st, hidden after 3s) -->
@@ -1359,7 +1362,7 @@
           <div style="padding:18px 18px 14px;position:sticky;top:0;z-index:10;background:rgba(232,248,240,.92);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(116,198,157,.2)">
             <button class="p-back-btn" onclick="pGoTo('home')">←</button>
             <span style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink)">Sala de Ayuda</span>
-            <button class="p-btn p-btn--sos p-btn--sm" onclick="pOpenSOS()">🆘 SOS</button>
+            <button onclick="pOpenSOS()" style="width:40px;height:40px;border-radius:50%;background:#e53935;border:none;color:#fff;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(229,57,53,.4)">SOS</button>
           </div>
           <div style="padding:12px 16px 6px;font-size:11.5px;color:var(--ink4);line-height:1.6;background:rgba(116,198,157,.08);border-bottom:1px solid rgba(116,198,157,.12)">
             Publicá cómo te sentís y un Guardián voluntario te acompañará en tiempo real · Las publicaciones duran <strong>24 horas</strong> · Anónimo por defecto
@@ -3160,8 +3163,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-514"></script>
-<script src="premium-redesign.js?v=20260530-514"></script>
+<script src="premium.js?v=20260530-515"></script>
+<script src="premium-redesign.js?v=20260530-515"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
