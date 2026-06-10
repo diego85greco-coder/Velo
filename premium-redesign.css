@@ -8676,17 +8676,9 @@ body.r-dark #homeRegisterLabel {
   }
 }
 
-/* ── v550: Stats column — utility buttons below stats on desktop ── */
-.r-stats-col {
-  display: contents; /* transparent on mobile — r-hero-stats behaves as before */
-}
-@media (min-width: 861px) {
-  .r-stats-col {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-    align-items: flex-start !important;
-  }
+/* ── v552: Utility buttons — hidden on mobile, wraps below stats on desktop ── */
+#homeDesktopUtilBtns {
+  display: none;
 }
 
 /* ── v551: Desktop utility row buttons (Mis ánimos / Guía Velo) ── */
@@ -8754,10 +8746,16 @@ body.r-dark .r-util-sub   { color: rgba(255,255,255,.38); }
 body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
 
 @media (min-width: 861px) {
+  .r-hero-right .r-hero-stats {
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    gap: 0 !important;
+  }
   #homeDesktopUtilBtns {
     display: flex !important;
     flex-direction: column !important;
     gap: 6px !important;
     width: 100% !important;
+    margin-top: 10px !important;
   }
 }

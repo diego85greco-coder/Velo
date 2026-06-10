@@ -5078,12 +5078,18 @@ function pOpenGuide(){
   ov.id='veloGuideOv';
   ov.className='p-modal-ov show';
   ov.style.zIndex='9998';
-  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="-webkit-overflow-scrolling:touch;overflow-y:scroll;max-height:92vh;touch-action:pan-y;padding-bottom:32px">'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:6px">GUÍA DE VELO</div>'
-    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:#fff;font-weight:300;margin-bottom:4px">¿Qué hace cada sección?</div>'
-    +'<div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:16px">Todo lo que podés hacer dentro de la app.</div>'
-    +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">'+cards+'</div>'
-    +'<button onclick="document.getElementById(\'veloGuideOv\').remove();_syncBodyScroll()" style="width:100%;padding:11px;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.3);border-radius:14px;color:rgba(116,198,157,.9);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">Entendido 💚</button>'
+  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="display:flex;flex-direction:column;max-height:92vh;padding:0;overflow:hidden">'
+    +'<div style="flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 14px">'
+    +'<div>'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:4px">GUÍA DE VELO</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:#fff;font-weight:300;line-height:1.2">¿Qué hace cada sección?</div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;margin-top:4px">Todo lo que podés hacer dentro de la app.</div>'
+    +'</div>'
+    +'<button onclick="document.getElementById(\'veloGuideOv\').remove();_syncBodyScroll()" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);font-size:16px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px">✕</button>'
+    +'</div>'
+    +'<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:0 20px 24px;display:flex;flex-direction:column;gap:8px">'
+    +cards
+    +'</div>'
     +'</div>';
   document.body.appendChild(ov);
   _syncBodyScroll();
