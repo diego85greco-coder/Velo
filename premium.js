@@ -77,7 +77,7 @@ async function _moderateImage(dataUrl){
       method:'POST', cache:'no-store',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ type:'vision', image:base64, mimeType:mime,
-        prompt:'¿Esta imagen contiene desnudez, contenido sexual explícito, pornografía u otro contenido inapropiado para una app de salud mental? Respondé SOLO con una línea: "safe" o "unsafe: <motivo breve en español>".' })
+        prompt:'¿Esta imagen contiene desnudez, contenido sexual explícito, pornografía u otro contenido inapropiado para una app de bienestar emocional? Respondé SOLO con una línea: "safe" o "unsafe: <motivo breve en español>".' })
     });
     if(!res.ok) return {safe:true};
     var data = await res.json();
@@ -1251,7 +1251,7 @@ var _obDataPro = [
   { emoji:'🩺', title:'Bienvenido/a a Velo', sub:'Conectá tu expertise con personas que necesitan apoyo profesional. Seguro, simple y ético.' },
   { emoji:'📅', title:'Sesiones 1:1 integradas', sub:'Videollamada incorporada, agenda propia y honorarios que vos fijás. Sin intermediarios.' },
   { emoji:'💰', title:'Ingresos transparentes', sub:'El 80% de cada sesión es tuyo. Pagos vía Stripe. Retiro cuando quieras.' },
-  { emoji:'🌍', title:'Impacto real', sub:'Tu trabajo ayuda a construir una comunidad de salud mental más accesible para todos.' },
+  { emoji:'🌍', title:'Impacto real', sub:'Tu trabajo ayuda a construir una comunidad de bienestar emocional más accesible para todos.' },
   { emoji:'💙', title:'Programa Solidario', sub:'¿Querés donar 1 sesión gratuita por mes para acompañar a alguien que no puede pagarlo?\n\nLos usuarios en lista de espera te lo agradecen de corazón. Si aceptás, llevás la insignia 💙 Profesional Solidario/a.', solidarity: true }
 ];
 var _obData = _obDataUser;
@@ -4208,7 +4208,7 @@ async function pSendHelp(){
 }
 
 async function _geminiCrisisCheck(msg){
-  var prompt = 'Sos el sistema de detección de crisis de una app de salud mental.\n'
+  var prompt = 'Sos el sistema de detección de crisis de una app de bienestar emocional.\n'
     +'Analizá este mensaje de un usuario y determiná si hay señales de crisis suicida, autolesión o peligro inmediato.\n'
     +'Respondé SOLO con JSON: {"crisis": true/false, "nivel": "alto/medio/bajo/ninguno", "razon": "..."}\n\n'
     +'Mensaje: "'+msg.replace(/"/g,"'")+'"';
@@ -4257,7 +4257,7 @@ async function _geminiCrisisCheck(msg){
 
 
 async function _geminiClassifyUrgency(msg){
-  var prompt = 'Sos el sistema de clasificación de urgencia de Velo, una app de salud mental.\n'
+  var prompt = 'Sos el sistema de clasificación de urgencia de Velo, una app de bienestar emocional.\n'
     +'Clasificá la urgencia de este mensaje:\n'
     +'- urgente: crisis inmediata, riesgo de autolesión o suicidio, emergencia\n'
     +'- media: situación difícil pero no emergencia inmediata\n'
@@ -4410,7 +4410,7 @@ async function _checkDailyGreeting(){
     var dayOfYear   = Math.floor((d - startOfYear) / 86400000);
     var tema        = _greetingTemas[dayOfYear % _greetingTemas.length];
 
-    var prompt = 'Sos el acompañante de bienestar de Velo, una app de salud mental peer-to-peer.\n'
+    var prompt = 'Sos el acompañante de bienestar de Velo, una app de bienestar emocional entre pares.\n'
       +'Generá un mensaje de bienvenida breve y muy cálido. '
       +'Hoy es '+fechaFull+', '+momento+' del '+dia+'.\n'
       +'El mensaje de HOY debe girar alrededor del tema: "'+tema+'".\n'
@@ -4623,7 +4623,7 @@ async function pRenderNews(forceRefresh){
   var todayFull = _nd.getDate()+' de '+['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][_nd.getMonth()]+' de '+_nd.getFullYear();
   // Rotate topics daily so each refresh brings a different angle
   var _topicSets = [
-    'avances médicos, nuevos tratamientos, salud mental positiva',
+    'avances médicos, nuevos tratamientos, bienestar emocional positivo',
     'naturaleza, conservación animal, reforestación, océanos limpios',
     'solidaridad humana, voluntariado, comunidades que se ayudan',
     'ciencia y tecnología para el bien, energía renovable, accesibilidad',
@@ -5098,7 +5098,7 @@ async function _renderPersonalizedSuggestions(){
   var moods = []; try{ moods = JSON.parse(safeLS('get','velo_mood_log')||'[]'); }catch(e){}
   if(moods.length < 3){ el.style.display='none'; return; }
   var emojiList = moods.slice(0,7).map(function(m){ return m.emoji; }).join(', ');
-  var prompt = 'Sos el sistema de sugerencias de Velo, una app de salud mental peer-to-peer. '
+  var prompt = 'Sos el sistema de sugerencias de Velo, una app de bienestar emocional entre pares. '
     +'El usuario registró estos estados de ánimo recientes (del más reciente al más antiguo): '+emojiList+'. '
     +'Emojis: 😄=muy bien, 😊=bien, 😐=regular, 😞=mal, 😢=muy mal. '
     +'Secciones disponibles: guardianes=conectarse con personas que escuchan, help=Sala de Ayuda, circles=grupos temáticos, diary=escritura reflexiva, calm=respiración y meditación, bottle=mensajes anónimos al mar, news=buenas noticias del día. '
@@ -12918,7 +12918,7 @@ async function pAdminPrepareGDPR(){
     +'\nTérminos: '+(p&&p.terms_accepted_at?new Date(p.terms_accepted_at).toLocaleDateString('es'):'No registrado')
     +'\nEntradas diario: '+userData.diarioCount+'\nRegistros de ánimo: '+userData.estadosCount+'\n';
 
-  var prompt='Sos el sistema de compliance de Velo, app de salud mental argentina.\n'
+  var prompt='Sos el sistema de compliance de Velo, app de bienestar emocional argentina.\n'
     +'Un usuario solicitó sus datos bajo la Ley 25.326 / GDPR.\n'
     +'Redactá un informe formal con:\n'
     +'1. Responsable del tratamiento (Heyvelo / Velo App)\n'
@@ -13608,7 +13608,7 @@ async function pRunAiScan(){
 
   if(!samples.length){ pToast('✅','Sin mensajes para analizar.'); _renderAdmin(); return; }
 
-  var prompt = 'Sos el sistema de moderación de Velo, una app de salud mental peer-to-peer.\n'
+  var prompt = 'Sos el sistema de moderación de Velo, una app de bienestar emocional entre pares.\n'
     +'Analizá estos mensajes de usuarios y detectá: (1) crisis suicidas o autolesiones, (2) acoso o agresión, (3) contenido inapropiado.\n'
     +'Para cada mensaje problemático respondé en formato JSON array:\n'
     +'[{"idx": N, "tipo": "crisis|acoso|inapropiado", "gravedad": "alta|media|baja", "razon": "...breve..."}]\n'
@@ -14192,7 +14192,7 @@ async function pAdminAiSituationAnalysis(){
     });
   }
 
-  var prompt = 'Sos el asistente de moderación de Velo, una app de salud mental peer-to-peer.\n'
+  var prompt = 'Sos el asistente de moderación de Velo, una app de bienestar emocional entre pares.\n'
     +'Analizá el estado de la plataforma y generá:\n'
     +'1. Un resumen ejecutivo en 2-3 oraciones.\n'
     +'2. Las 3 situaciones más urgentes, con prioridad (🔴 urgente, 🟡 atención, 🟢 ok).\n'
@@ -14239,7 +14239,7 @@ async function _renderAdminAITasks(){
     +'- Posts de Muro Feliz por aprobar: '+pendingPost.length+'\n'
     +'- Mensajes masivos enviados este mes: '+recentBcast.length+'\n';
 
-  var prompt = 'Sos el asistente de administración de Velo, una app de salud mental.\n'
+  var prompt = 'Sos el asistente de administración de Velo, una app de bienestar emocional.\n'
     +'Generá una lista de tareas pendientes priorizadas para el admin. Máximo 6 ítems.\n'
     +'Usá: 🔴 urgente (requiere acción inmediata), 🟡 atención (esta semana), 🟢 ok (sin acción necesaria).\n'
     +'Una sola línea por ítem, español rioplatense, muy directo.\n'
@@ -14270,11 +14270,11 @@ async function pAdminGenerateMassMessage(target){
   var descEl = document.getElementById('massAiDesc');
   if(!descEl || !descEl.value.trim()){ pToast('✍️','Describí qué querés comunicar antes de generar'); return; }
   var desc = descEl.value.trim();
-  var audience = target === 'pros' ? 'profesionales de salud mental que acompañan usuarios en la app' : 'usuarios de una app de salud mental peer-to-peer';
+  var audience = target === 'pros' ? 'profesionales de acompañamiento emocional que acompañan usuarios en la app' : 'usuarios de una app de bienestar emocional entre pares';
   var btn = document.getElementById('massAiBtn');
   if(btn){ btn.disabled = true; btn.textContent = '✨ Generando…'; }
 
-  var prompt = 'Sos el sistema de comunicación de Velo, una app de salud mental peer-to-peer.\n'
+  var prompt = 'Sos el sistema de comunicación de Velo, una app de bienestar emocional entre pares.\n'
     +'Redactá un mensaje institucional para enviar a '+audience+'.\n'
     +'El admin quiere comunicar: "'+desc.replace(/"/g,"'")+'".\n'
     +'El tono debe ser empático, cálido y profesional, en español rioplatense.\n'
@@ -15252,7 +15252,7 @@ function pReportDMChat(){
 
 async function _aiReviewReport(type, id, content, userReason){
   if(!content || content.length < 5) return;
-  var prompt = 'Sos el sistema de moderación de Velo, una app de salud mental peer-to-peer.\n'
+  var prompt = 'Sos el sistema de moderación de Velo, una app de bienestar emocional entre pares.\n'
     +'Un usuario reportó este contenido con el motivo: "'+userReason+'".\n'
     +'Analizá el contenido y determiná si realmente viola las normas de la comunidad.\n'
     +'Normas violadas: acoso, agresión, discriminación, spam, información médica peligrosa, incitación a autolesiones.\n'
