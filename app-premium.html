@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-516">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-516">
+  <link rel="stylesheet" href="premium.css?v=20260530-517">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-517">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -977,14 +977,29 @@
           </div>
               <!-- Daily motivational quote widget -->
               <div id="homeDailyQuoteWrap" style="padding:0 0 10px;width:100%">
-                <div style="padding:0 4px 6px;padding-left:6px;display:flex;align-items:center;justify-content:space-between">
+                <div style="padding:0 4px 6px;padding-left:6px">
                   <span style="font-size:8px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);opacity:.85">✨ Frase del día</span>
-                  <button onclick="pShareDailyQuote()" title="Compartir como imagen" style="background:none;border:none;cursor:pointer;font-size:14px;opacity:.60;padding:2px 4px;line-height:1;color:var(--gold)">📤</button>
                 </div>
-                <div id="homeDailyQuote" style="background:linear-gradient(135deg,rgba(255,230,102,.18) 0%,rgba(255,200,80,.12) 50%,rgba(255,240,180,.22) 100%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(200,146,10,.22);border-radius:18px;padding:14px 18px 12px;min-height:50px;box-shadow:0 4px 18px rgba(200,146,10,.10),inset 0 1px 0 rgba(255,255,255,.7)">
+                <div id="homeDailyQuote" style="background:linear-gradient(135deg,rgba(255,230,102,.18) 0%,rgba(255,200,80,.12) 50%,rgba(255,240,180,.22) 100%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(200,146,10,.22);border-radius:18px;padding:14px 18px 14px;min-height:50px;box-shadow:0 4px 18px rgba(200,146,10,.10),inset 0 1px 0 rgba(255,255,255,.7)">
                   <div style="font-size:18px;line-height:1;margin-bottom:6px;opacity:.7">❝</div>
                   <div id="homeDailyQuoteText" style="font-size:14px;color:var(--ink2);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.6;text-align:center;letter-spacing:.01em"></div>
-                  <div id="homeDailyQuoteAuthor" style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.8px;text-align:right;margin-top:6px;text-transform:uppercase"></div>
+                  <!-- Author + share row -->
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px">
+                    <div id="homeDailyQuoteAuthor" style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.8px;text-transform:uppercase;flex:1"></div>
+                    <!-- Share button with platform hints -->
+                    <button onclick="pShareDailyQuote()" title="Compartir frase" style="display:flex;align-items:center;gap:5px;background:rgba(200,146,10,.14);border:1px solid rgba(200,146,10,.30);border-radius:20px;padding:5px 10px 5px 8px;cursor:pointer;color:var(--gold);font-size:9.5px;font-weight:700;letter-spacing:.4px;font-family:'Jost',sans-serif;flex-shrink:0;white-space:nowrap;transition:background .15s" onmouseover="this.style.background='rgba(200,146,10,.24)'" onmouseout="this.style.background='rgba(200,146,10,.14)'">
+                      <!-- Share SVG icon -->
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                      Compartir
+                      <!-- Platform micro-icons -->
+                      <span style="display:flex;align-items:center;gap:3px;opacity:.70">
+                        <!-- Instagram -->
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></svg>
+                        <!-- WhatsApp -->
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
               <!-- Guardianes + Sala de Ayuda — above search pill -->
@@ -3163,8 +3178,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-516"></script>
-<script src="premium-redesign.js?v=20260530-516"></script>
+<script src="premium.js?v=20260530-517"></script>
+<script src="premium-redesign.js?v=20260530-517"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
