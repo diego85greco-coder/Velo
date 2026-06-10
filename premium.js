@@ -13402,6 +13402,7 @@ function pAdminMassMessage(target){
     +'<div style="font-size:11px;font-weight:700;color:rgba(180,140,220,.85);letter-spacing:.5px;margin-bottom:8px">✨ GENERAR CON GEMINI IA</div>'
     +'<input type="text" id="massAiDesc" placeholder="Describí en una línea lo que querés comunicar…" maxlength="200" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.07);border:1px solid rgba(180,140,220,.25);border-radius:10px;color:#fff;font-size:12px;font-family:\'Jost\',sans-serif;box-sizing:border-box;margin-bottom:8px">'
     +'<button id="massAiBtn" onclick="pAdminGenerateMassMessage(\''+target+'\')" style="width:100%;padding:9px;background:rgba(180,140,220,.18);border:1px solid rgba(180,140,220,.3);border-radius:10px;color:rgba(180,140,220,.95);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">✨ Generar asunto + mensaje con IA</button>'
+    +'<button id="massAiImgBtn" onclick="pAdminGenerateBcastImage()" style="width:100%;padding:9px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.25);border-radius:10px;color:rgba(116,198,157,.9);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;margin-top:6px">🎨 Generar imagen con IA (opcional)</button>'
     +'</div>'
     // ── Manual fields ──
     +'<div style="margin-bottom:10px">'
@@ -14043,6 +14044,55 @@ async function pAdminGenerateMassMessage(target){
     if(subj) subj.scrollIntoView({ behavior:'smooth', block:'center' });
     pToast('✨','¡Listo! Revisá el texto antes de enviar.');
   }catch(e){ pToast('⚠️','Error al procesar la respuesta. Intentá de nuevo.'); }
+}
+
+async function pAdminGenerateBcastImage(){
+  var descEl = document.getElementById('massAiDesc');
+  var desc = descEl ? descEl.value.trim() : '';
+  if(!desc){ pToast('✍️','Describí el mensaje o la ocasión antes de generar la imagen'); return; }
+  var btn = document.getElementById('massAiImgBtn');
+  var statusEl = document.getElementById('massImgUploadStatus');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Generando imagen…'; }
+  if(statusEl){ statusEl.textContent='⏳ Generando imagen con IA…'; statusEl.style.display='block'; }
+  try{
+    var prompt = 'Generá una imagen para una app de bienestar emocional llamada Velo. Estilo: ilustración digital minimalista y cálida, paleta de colores verdes suaves y oscuros (#0D2B1C, #74C69D, crema), fondo oscuro elegante, composición centrada, formato cuadrado. La imagen debe representar: '+desc+'. Sin texto en la imagen.';
+    var res = await fetch(GEMINI_PROXY, {
+      method:'POST', cache:'no-store',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ type:'image-gen', prompt: prompt })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    var data = await res.json();
+    var parts = (((data.candidates||[])[0]||{}).content||{}).parts||[];
+    var imgPart = parts.find(function(p){ return p.inlineData && p.inlineData.data; });
+    if(!imgPart) throw new Error('Gemini no devolvió imagen. Intentá una descripción diferente.');
+    var base64 = imgPart.inlineData.data;
+    var mime = imgPart.inlineData.mimeType || 'image/png';
+    // Upload to Supabase storage
+    _initSupabase();
+    if(!sbClient) throw new Error('No Supabase');
+    var byteStr = atob(base64);
+    var ab = new ArrayBuffer(byteStr.length);
+    var ia = new Uint8Array(ab);
+    for(var i=0;i<byteStr.length;i++) ia[i]=byteStr.charCodeAt(i);
+    var ext = mime.indexOf('png')>-1 ? 'png' : 'jpg';
+    var blob = new Blob([ab], {type:mime});
+    var path = 'broadcast/ai-'+Date.now()+'.'+ext;
+    var uploadRes = await sbClient.storage.from('avatars').upload(path, blob, {contentType:mime, upsert:true});
+    if(uploadRes.error) throw uploadRes.error;
+    var urlRes = sbClient.storage.from('avatars').getPublicUrl(path);
+    var pub = urlRes && urlRes.data && urlRes.data.publicUrl;
+    if(!pub) throw new Error('No public URL');
+    var urlEl = document.getElementById('massImageUrl');
+    if(urlEl) urlEl.value = pub;
+    if(statusEl){ statusEl.textContent = '✅ Imagen generada y subida'; }
+    _previewMassImage();
+    pToast('🎨','¡Imagen generada con IA! ✅');
+  }catch(e){
+    if(statusEl){ statusEl.textContent = '⚠️ No se pudo generar: '+e.message; statusEl.style.display='block'; }
+    pToast('⚠️','Error al generar imagen');
+  }
+  if(btn){ btn.disabled=false; btn.textContent='🎨 Generar imagen con IA (opcional)'; }
 }
 
 function _previewMassImage(){

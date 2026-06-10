@@ -115,6 +115,27 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  // ── Image generation ─────────────────────────────────────────
+  if (type === 'image-gen') {
+    try {
+      const imgModel = 'gemini-2.0-flash-preview-image-generation';
+      const body = {
+        contents: [{ role: 'user', parts: [{ text: prompt || '' }] }],
+        generationConfig: { responseModalities: ['IMAGE', 'TEXT'] }
+      };
+      const r = await fetch(`${BASE_URL(imgModel)}:generateContent?key=${KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const json = await r.json();
+      if (!r.ok) return res.status(r.status).json({ error: (json.error && json.error.message) || 'Image generation failed' });
+      return res.json(json);
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
   // ── Single-turn generate (default) ──────────────────────────
   try {
     const body = {
