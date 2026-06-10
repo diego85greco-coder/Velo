@@ -1688,14 +1688,18 @@ function _showMoodLineData(el, m){
   el.style.animation = 'none';
   el.style.background = 'rgba(116,198,157,.10)';
   el.style.border = '1px solid rgba(116,198,157,.25)';
-  el.style.padding = '7px 12px';
-  el.style.color = 'var(--ink3)';
-  el.style.fontSize = '12px';
+  el.style.padding = '7px 14px';
+  el.style.color = 'var(--ink2)';
+  el.style.fontSize = '13px';
   el.style.fontWeight = '500';
+  el.style.fontStyle = 'normal';
+  el.style.fontFamily = "'Jost','Instrument Sans',sans-serif";
   el.style.borderRadius = '100px';
-  // Use a dedicated emoji span with proper font so it renders crisply on all OS/browsers
-  el.innerHTML = '<span style="font-family:\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif;font-size:15px;line-height:1;vertical-align:middle">'
-    + m.emoji + '</span> ' + labelText;
+  el.style.gap = '8px';
+  // Emoji in a large dedicated span; text label separate so font applies cleanly
+  el.innerHTML = '<span style="font-family:\'Apple Color Emoji\',\'Segoe UI Emoji\',\'Noto Color Emoji\',sans-serif;font-size:20px;line-height:1;flex-shrink:0">'
+    + m.emoji + '</span>'
+    + '<span style="letter-spacing:.01em">' + labelText + '</span>';
 }
 
 async function _updateHomeCurrentMoodLine(){
@@ -8994,6 +8998,26 @@ function pRenderInbox(){
   }, 3000);
 }
 
+// Persist a broadcast ID as read/deleted to both localStorage and Supabase profiles.read_bcast_ids.
+// Uses _syncedReadIds as the source-of-truth array (populated from Supabase at login) to avoid
+// the read-modify-write race that caused 400 errors and lost IDs on concurrent deletes.
+function _syncBroadcastRead(bcId){
+  if(!bcId) return;
+  safeLS('set','velo_bcast_read_'+bcId,'1');
+  _syncedReadIds[bcId] = 1;
+  var uid = safeLS('get','velo_user_id');
+  _initSupabase();
+  if(!sbClient || !uid) return;
+  (async function(){
+    try{
+      var ok = await _ensureSbSession();
+      if(!ok) return;
+      var allIds = Object.keys(_syncedReadIds);
+      await sbClient.from('profiles').update({read_bcast_ids: allIds}).eq('id', uid);
+    }catch(e){}
+  })();
+}
+
 function pDeleteInboxMsg(id, el){
   var del = []; try{ del = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
   if(del.indexOf(id) < 0){ del.push(id); safeLS('set','velo_inbox_deleted', JSON.stringify(del)); }
@@ -9002,21 +9026,7 @@ function pDeleteInboxMsg(id, el){
   if(newInbox.length !== inbox.length){ safeLS('set','velo_inbox', JSON.stringify(newInbox)); }
   if(el){ var card = el.closest('.p-inbox-msg'); if(card) card.remove(); }
   _updateHomeBell();
-  // Sync deleted broadcast to Supabase read_bcast_ids so it stays hidden on new devices
-  if(id && id.indexOf('bc_') === 0){
-    var _bcId = id.replace('bc_','');
-    safeLS('set','velo_bcast_read_'+_bcId,'1');
-    _syncedReadIds[_bcId] = 1;
-    var _dUid = safeLS('get','velo_user_id');
-    _initSupabase();
-    if(sbClient && _dUid){
-      sbClient.from('profiles').select('read_bcast_ids').eq('id',_dUid).limit(1)
-        .then(function(r){
-          var ids = (r.data&&r.data[0]&&Array.isArray(r.data[0].read_bcast_ids))?r.data[0].read_bcast_ids:[];
-          if(ids.indexOf(_bcId)<0){ ids.push(_bcId); sbClient.from('profiles').update({read_bcast_ids:ids}).eq('id',_dUid).then(function(){}).catch(function(){}); }
-        }).catch(function(){});
-    }
-  }
+  if(id && id.indexOf('bc_') === 0) _syncBroadcastRead(id.replace('bc_',''));
 }
 
 function pInboxVaciar(){
@@ -9025,7 +9035,9 @@ function pInboxVaciar(){
   if(!el) return;
   var del = []; try{ del = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
   el.querySelectorAll('.p-inbox-msg[data-mid]').forEach(function(c){
-    var id = c.getAttribute('data-mid'); if(id && del.indexOf(id) < 0) del.push(id);
+    var id = c.getAttribute('data-mid'); if(!id) return;
+    if(del.indexOf(id) < 0) del.push(id);
+    if(id.indexOf('bc_') === 0) _syncBroadcastRead(id.replace('bc_',''));
   });
   safeLS('set','velo_inbox_deleted', JSON.stringify(del));
   safeLS('set','velo_inbox', JSON.stringify([]));
@@ -9038,16 +9050,7 @@ function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl, sen
   if(rowEl){ rowEl.classList.remove('unread'); var dot = rowEl.querySelector('.p-inbox-dot'); if(dot) dot.remove(); }
   _updateHomeBell();
   // Persist read state to Supabase so new devices don't re-show this message as unread
-  var _bcId = readKey.replace('velo_bcast_read_','');
-  _initSupabase();
-  var _bcUid = safeLS('get','velo_user_id');
-  if(sbClient && _bcUid && _bcId){
-    sbClient.from('profiles').select('read_bcast_ids').eq('id',_bcUid).limit(1)
-      .then(function(r){
-        var ids = (r.data && r.data[0] && Array.isArray(r.data[0].read_bcast_ids)) ? r.data[0].read_bcast_ids : [];
-        if(ids.indexOf(_bcId) < 0){ ids.push(_bcId); sbClient.from('profiles').update({read_bcast_ids:ids}).eq('id',_bcUid).then(function(){}).catch(function(){}); }
-      }).catch(function(){});
-  }
+  _syncBroadcastRead(readKey.replace('velo_bcast_read_',''));
   var existing = document.getElementById('inboxBcOv');
   if(existing) existing.remove();
 
@@ -9115,15 +9118,7 @@ function pOpenInboxMsg(msgId, rowEl){
   if(rowEl){ rowEl.classList.remove('unread'); var dot = rowEl.querySelector('.p-inbox-dot'); if(dot) dot.remove(); }
   _updateHomeBell();
   // Persist read state to Supabase (same pool as broadcast IDs) for cross-device sync
-  _initSupabase();
-  var _oiUid = safeLS('get','velo_user_id');
-  if(sbClient && _oiUid && msgId){
-    sbClient.from('profiles').select('read_bcast_ids').eq('id',_oiUid).limit(1)
-      .then(function(r){
-        var ids = (r.data && r.data[0] && Array.isArray(r.data[0].read_bcast_ids)) ? r.data[0].read_bcast_ids : [];
-        if(ids.indexOf(msgId) < 0){ ids.push(msgId); sbClient.from('profiles').update({read_bcast_ids:ids}).eq('id',_oiUid).then(function(){}).catch(function(){}); }
-      }).catch(function(){});
-  }
+  if(msgId) _syncBroadcastRead(msgId);
   // Show full message modal
   var existing = document.getElementById('inboxMsgOv');
   if(existing) existing.remove();
