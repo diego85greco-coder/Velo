@@ -8907,6 +8907,16 @@ function pRenderInbox(){
       _syncedReadIds[bid] = 1;
       safeLS('set','velo_bcast_read_'+bid,'1');
     });
+    // Remove m1/m2 from DOM if they're in the synced list — the synchronous render
+    // may have already drawn them before this async callback completed.
+    ['m1','m2'].forEach(function(mid){
+      if(_syncedReadIds[mid]){
+        var mEl = document.querySelector('#inboxList [data-mid="'+mid+'"]');
+        if(mEl) mEl.remove();
+        var _d=[]; try{_d=JSON.parse(safeLS('get','velo_inbox_deleted')||'[]');}catch(e){}
+        if(_d.indexOf(mid)<0){_d.push(mid);safeLS('set','velo_inbox_deleted',JSON.stringify(_d));}
+      }
+    });
     // Show a subtle status strip in inbox so user can confirm sync works on mobile
     var _strip = document.getElementById('_inboxSyncStrip');
     if(!_strip){
@@ -9107,8 +9117,8 @@ function pRenderInbox(){
 // messages handled before v529 (before per-action sync was added) don't re-appear on new devices.
 // Updates _syncedReadIds synchronously so _buzónPollOnce immediately has the correct state.
 function _migrateBcastLocalToSb(){
-  if(safeLS('get','velo_bcast_sb_push_v3')) return;
-  safeLS('set','velo_bcast_sb_push_v3','1'); // set flag immediately to prevent double-run
+  if(safeLS('get','velo_bcast_sb_push_v4')) return;
+  safeLS('set','velo_bcast_sb_push_v4','1'); // set flag immediately to prevent double-run
   // Collect all locally-known broadcast IDs synchronously and write them to
   // velo_bcast_read_* so pRenderInbox's new filter catches them immediately
   var newIds = [];
@@ -9131,7 +9141,8 @@ function _migrateBcastLocalToSb(){
     var del = JSON.parse(safeLS('get','velo_inbox_deleted') || '[]');
     del.forEach(function(id){
       if(id && id.indexOf('bc_') === 0) _addMigrId(id.replace('bc_',''));
-      else if(id && id.indexOf('rp_') === 0) _addMigrId(id); // admin reply: store full rp_ ID
+      else if(id && id.indexOf('rp_') === 0) _addMigrId(id);
+      else if(id === 'm1' || id === 'm2') _addMigrId(id); // system messages never had bc_ prefix
     });
   }catch(e){}
   if(!newIds.length) return;
@@ -9223,7 +9234,8 @@ function pDeleteInboxMsg(id, el){
   if(el){ var card = el.closest('.p-inbox-msg'); if(card) card.remove(); }
   _updateHomeBell();
   if(id && id.indexOf('bc_') === 0) _syncBroadcastRead(id.replace('bc_',''));
-  if(id && id.indexOf('rp_') === 0) _syncBroadcastRead(id); // admin replies: store full rp_ ID
+  else if(id && id.indexOf('rp_') === 0) _syncBroadcastRead(id);
+  else if(id === 'm1' || id === 'm2') _syncBroadcastRead(id); // system messages: also sync cross-device
 }
 
 function pInboxVaciar(){
@@ -9236,6 +9248,7 @@ function pInboxVaciar(){
     if(del.indexOf(id) < 0) del.push(id);
     if(id.indexOf('bc_') === 0) _syncBroadcastRead(id.replace('bc_',''));
     else if(id.indexOf('rp_') === 0) _syncBroadcastRead(id);
+    else if(id === 'm1' || id === 'm2') _syncBroadcastRead(id);
   });
   safeLS('set','velo_inbox_deleted', JSON.stringify(del));
   safeLS('set','velo_inbox', JSON.stringify([]));

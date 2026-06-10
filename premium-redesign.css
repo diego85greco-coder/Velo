@@ -674,6 +674,7 @@ body.r-dark .home-logo-side {
   position: relative;
   z-index: 1;
   min-width: 0;
+  padding-bottom: 14px;
 }
 .r-hero-actions-top {
   display: flex;
