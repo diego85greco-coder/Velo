@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-547">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-547">
+  <link rel="stylesheet" href="premium.css?v=20260530-548">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-548">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -173,7 +173,7 @@
     <header class="p-topbar" id="pTopbar" style="display:none">
       <img src="assets/logo-dark.png" alt="Velo" class="p-topbar-logo-img" onclick="pLogoClick()" style="cursor:pointer">
       <div class="p-topbar-actions" style="display:flex;align-items:center;gap:6px">
-        <button id="topbarMoodBtn" onclick="pOpenMoodQuickView()" title="Tus ánimos registrados" style="display:flex;align-items:center;gap:4px;padding:5px 9px;background:rgba(255,255,255,.06);border:1.5px solid var(--border2);border-radius:100px;cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap;flex-shrink:0"><span id="topbarMoodEmoji" style="font-size:18px;line-height:1">🤗</span><span id="topbarMoodStreak" style="display:none;font-size:10px;color:var(--ink4)">🔥<span id="topbarMoodStreakNum"></span></span></button>
+        <button id="topbarMoodBtn" onclick="pOpenMoodQuickView()" title="Tus ánimos registrados" style="display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 8px;background:rgba(255,255,255,.06);border:1.5px solid var(--border2);border-radius:12px;cursor:pointer;font-family:'Jost',sans-serif;flex-shrink:0"><span style="font-size:7px;font-weight:700;color:var(--ink4);letter-spacing:.2px;text-transform:uppercase;white-space:nowrap">mis registros</span><span id="topbarMoodEmoji" style="font-size:17px;line-height:1">🤗</span><span style="font-size:7px;font-weight:700;color:var(--ink4);letter-spacing:.2px;text-transform:uppercase">ánimos</span></button>
         <button onclick="pGoTo('donate-cta')" class="r-donar-btn">💛 Donar</button>
         <button onclick="pShowPlusModal()" class="r-plus-btn">⭐ Plus</button>
         <button onclick="pOpenGuide()" title="Guía de Velo" style="display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 7px;background:transparent;border:none;cursor:pointer;font-family:'Jost',sans-serif;flex-shrink:0">
@@ -3189,8 +3189,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-547"></script>
-<script src="premium-redesign.js?v=20260530-547"></script>
+<script src="premium.js?v=20260530-548"></script>
+<script src="premium-redesign.js?v=20260530-548"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
