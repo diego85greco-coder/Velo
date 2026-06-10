@@ -11981,7 +11981,7 @@ async function _renderAdmin(){
   if(!openReports) openReports = audit.filter(function(a){ return !a.resolved; }).length;
   if(!crisisOpen)  crisisOpen  = audit.filter(function(a){ return a.tipo==='crisis_detect'&&!a.resolved; }).length;
 
-  var bottlesSent    = 0, bottlesReplied = 0, helpRequests = 0, circlesCount = 0, helpedOthers = 0;
+  var bottlesSent    = 0, bottlesReplied = 0, helpRequests = 0, circlesCount = 0, guardianTotal = 0, guardianHelped = 0;
   if(sbClient){
     try{
       var bAll = await sbClient.from('bottles').select('id',{count:'exact',head:true});
@@ -12000,9 +12000,12 @@ async function _renderAdmin(){
       if(!cirRes.error) circlesCount = cirRes.count || 0;
     }catch(e){}
     try{
-      // Guardian sessions ended + Sala de Ayuda messages left
+      var grAllRes = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true});
+      if(!grAllRes.error) guardianTotal = grAllRes.count || 0;
+    }catch(e){}
+    try{
       var grRes = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).in('status',['ended','message_left']);
-      if(!grRes.error) helpedOthers = grRes.count || 0;
+      if(!grRes.error) guardianHelped = grRes.count || 0;
     }catch(e){}
   }
 
@@ -12025,7 +12028,8 @@ async function _renderAdmin(){
       { icon:'💙', label:'Lista espera solidaria', value: waitlistCount, color:'rgba(58,123,213,.9)', note:'Supabase' },
       { icon:'🌊', label:'Mensajes al Mar lanzados', value: bottlesSent, color:'rgba(100,170,230,.8)', note:'Supabase' },
       { icon:'💌', label:'Botellas respondidas',   value: bottlesReplied, color:'rgba(116,198,157,.8)', note:'Supabase' },
-      { icon:'🤝', label:'Personas acompañadas',   value: helpedOthers,  color:'var(--sage4)',     note:'Supabase' },
+      { icon:'🤝', label:'Ayudas pedidas en Guardianes', value: guardianTotal,  color:'var(--sage4)',     note:'Supabase' },
+      { icon:'💚', label:'Personas ayudadas / mensajes', value: guardianHelped, color:'rgba(116,198,157,.9)', note:'Supabase' },
       { icon:'💬', label:'Pedidos de ayuda publicados', value: helpRequests, color:'rgba(180,140,220,.8)', note:'Supabase' },
       { icon:'🕊️', label:'Círculos de Paz creados', value: circlesCount, color:'rgba(200,165,100,.8)', note:'Supabase' },
       { icon:'🚨', label:'Reportes pendientes',    value: openReports,   color: openReports>0?'#e05252':'var(--sage4)', note:'Supabase' },
