@@ -8687,15 +8687,77 @@ body.r-dark #homeRegisterLabel {
     gap: 10px !important;
     align-items: flex-start !important;
   }
+}
+
+/* ── v551: Desktop utility row buttons (Mis ánimos / Guía Velo) ── */
+.r-util-row-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 13px;
+  background: rgba(116,198,157,.07);
+  border: 1.5px solid rgba(116,198,157,.2);
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  text-align: left;
+  transition: background .15s, border-color .15s, transform .1s;
+  box-sizing: border-box;
+}
+.r-util-row-btn:hover {
+  background: rgba(116,198,157,.14);
+  border-color: rgba(116,198,157,.38);
+  transform: translateY(-1px);
+}
+.r-util-row-btn:active { transform: none; }
+.r-util-icon {
+  font-size: 19px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.r-util-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.r-util-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink2);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.r-util-sub {
+  font-size: 10px;
+  color: var(--ink4);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.r-util-arrow {
+  flex-shrink: 0;
+  opacity: .3;
+  color: var(--ink3);
+}
+body.r-dark .r-util-row-btn {
+  background: rgba(116,198,157,.06);
+  border-color: rgba(116,198,157,.15);
+}
+body.r-dark .r-util-row-btn:hover {
+  background: rgba(116,198,157,.12);
+  border-color: rgba(116,198,157,.32);
+}
+body.r-dark .r-util-title { color: rgba(255,255,255,.82); }
+body.r-dark .r-util-sub   { color: rgba(255,255,255,.38); }
+body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
+
+@media (min-width: 861px) {
   #homeDesktopUtilBtns {
     display: flex !important;
+    flex-direction: column !important;
     gap: 6px !important;
-  }
-  #homeDesktopUtilBtns .home-dqa-btn {
-    flex: 1 !important;
-    aspect-ratio: auto !important;
-    padding: 8px 10px !important;
-    gap: 6px !important;
-    min-width: 80px !important;
+    width: 100% !important;
   }
 }

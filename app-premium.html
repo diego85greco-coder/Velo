@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-550">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-550">
+  <link rel="stylesheet" href="premium.css?v=20260530-551">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-551">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1066,13 +1066,21 @@
                   </div>
                 </div>
                 <div id="homeDesktopUtilBtns" style="display:none">
-                  <button onclick="pOpenMoodQuickView()" class="home-dqa-btn">
-                    <span id="homeDesktopMoodEmoji" style="font-size:22px;line-height:1">🤗</span>
-                    <span>Mis ánimos</span>
+                  <button onclick="pOpenMoodQuickView()" class="r-util-row-btn">
+                    <span id="homeDesktopMoodEmoji" class="r-util-icon">🤗</span>
+                    <span class="r-util-text">
+                      <span class="r-util-title">Mis ánimos</span>
+                      <span class="r-util-sub">Ver seguimiento</span>
+                    </span>
+                    <svg class="r-util-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                   </button>
-                  <button onclick="pOpenGuide()" class="home-dqa-btn">
-                    <span style="font-size:22px;line-height:1">ℹ️</span>
-                    <span>Guía Velo</span>
+                  <button onclick="pOpenGuide()" class="r-util-row-btn">
+                    <span class="r-util-icon">ℹ️</span>
+                    <span class="r-util-text">
+                      <span class="r-util-title">Guía Velo</span>
+                      <span class="r-util-sub">Qué hace cada sección</span>
+                    </span>
+                    <svg class="r-util-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                   </button>
                 </div>
               </div>
@@ -3201,8 +3209,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-550"></script>
-<script src="premium-redesign.js?v=20260530-550"></script>
+<script src="premium.js?v=20260530-551"></script>
+<script src="premium-redesign.js?v=20260530-551"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
