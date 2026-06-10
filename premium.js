@@ -4748,10 +4748,7 @@ function pShareDailyQuote(){
 
   // Try logo URLs in order; first success wins, last failure draws without logo
   var _logoUrls = [
-    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png',
-    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.PNG',
-    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-night.png',
-    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/logo-night.png',
+    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png.PNG',
     'assets/logo-dark.png'
   ];
   (function _nextLogo(i){
