@@ -95,6 +95,26 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  // ── Vision / image moderation ────────────────────────────────
+  if (type === 'vision') {
+    try {
+      const { image, mimeType } = req.body || {};
+      if (!image) return res.status(400).json({ error: 'No image data' });
+      const body = {
+        contents: [{ role: 'user', parts: [
+          { inlineData: { mimeType: mimeType || 'image/jpeg', data: image } },
+          { text: prompt || '¿Esta imagen contiene desnudez, contenido sexual explícito, pornografía u otro contenido inapropiado? Respondé SOLO con una línea: "safe" o "unsafe: <motivo breve en español>".' }
+        ]}],
+        generationConfig: buildGenCfg({ temperature: 0, maxOutputTokens: 80 })
+      };
+      const json = await callGemini(body);
+      if (!json) return res.status(500).json({ error: 'All Gemini models failed' });
+      return res.json(json);
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
   // ── Single-turn generate (default) ──────────────────────────
   try {
     const body = {

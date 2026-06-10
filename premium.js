@@ -67,6 +67,46 @@ function _uAt(uid){
   return u ? '<span class="p-uname-tag">@'+_escHtml(u)+'</span>' : '';
 }
 
+// ── IMAGE MODERATION ─────────────────────────────────────────
+async function _moderateImage(dataUrl){
+  try{
+    var base64 = (dataUrl||'').split(',')[1];
+    if(!base64) return {safe:true};
+    var mime = (dataUrl.match(/^data:([^;]+);/)||[])[1] || 'image/jpeg';
+    var res = await fetch(GEMINI_PROXY, {
+      method:'POST', cache:'no-store',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ type:'vision', image:base64, mimeType:mime,
+        prompt:'¿Esta imagen contiene desnudez, contenido sexual explícito, pornografía u otro contenido inapropiado para una app de salud mental? Respondé SOLO con una línea: "safe" o "unsafe: <motivo breve en español>".' })
+    });
+    if(!res.ok) return {safe:true};
+    var data = await res.json();
+    var parts = ((data.candidates||[])[0]||{});
+    parts = ((parts.content||{}).parts||[]);
+    var text = ((parts.find(function(p){ return !p.thought && p.text; })||{}).text||'').toLowerCase().trim();
+    if(text.startsWith('unsafe')){
+      var reason = text.replace(/^unsafe\s*:\s*/,'').trim() || 'contenido no permitido';
+      return {safe:false, reason:reason};
+    }
+    return {safe:true};
+  }catch(e){ return {safe:true}; }
+}
+
+async function _sendContentWarning(userId, reason){
+  _initSupabase();
+  if(!sbClient || !userId) return;
+  try{
+    await sbClient.from('broadcasts').insert({
+      target: 'user:'+userId,
+      subject: '⚠️ Imagen bloqueada — Advertencia de Velo',
+      body: 'Tu imagen fue bloqueada automáticamente por nuestro sistema de moderación porque contiene: '+reason+'.\n\nRecordá que Velo es un espacio seguro y respetuoso. El incumplimiento reiterado puede resultar en la suspensión de tu cuenta.\n\n¿Creés que fue un error? Escribinos a consultas@heyvelo.app 💚',
+      icon: '⚠️',
+      sender: JSON.stringify({n:'Velo',i:'velo-system',a:'⚠️'}),
+      sent_at: new Date().toISOString()
+    });
+  }catch(e){}
+}
+
 async function _geminiCallGrounded(prompt, cfg){
   // Try Vercel serverless proxy first, fall back to direct call
   var sources = [
@@ -8078,7 +8118,15 @@ function pHappyPickMedia(inp){
   if(file.size > 8 * 1024 * 1024){ pToast('⚠️','La imagen es muy grande (máx 8MB).'); inp.value=''; return; }
   var reader = new FileReader();
   reader.onload = function(e){
-    _compressImg(e.target.result, function(compressed){
+    _compressImg(e.target.result, async function(compressed){
+      pToast('🔍','Verificando imagen…');
+      var mod = await _moderateImage(compressed);
+      if(!mod.safe){
+        pToast('🚫','Imagen no permitida: '+mod.reason);
+        var _warnId = safeLS('get','velo_user_id');
+        if(_warnId) _sendContentWarning(_warnId, mod.reason);
+        return;
+      }
       _happySelectedPhoto = compressed;
       var preview = document.getElementById('happyPhotoPreview');
       var img = document.getElementById('happyPhotoImg');
@@ -8266,7 +8314,15 @@ function pSetAvatarFromFile(input){
   if(file.size > 5*1024*1024){ pToast('⚠️','Imagen demasiado grande (máx 5MB)'); return; }
   var reader = new FileReader();
   reader.onload = function(e){
-    _compressImg(e.target.result, function(dataUrl){
+    _compressImg(e.target.result, async function(dataUrl){
+      pToast('🔍','Verificando imagen…');
+      var mod = await _moderateImage(dataUrl);
+      if(!mod.safe){
+        pToast('🚫','Imagen no permitida: '+mod.reason);
+        var _warnId = safeLS('get','velo_user_id');
+        if(_warnId) _sendContentWarning(_warnId, mod.reason);
+        return;
+      }
       // Show preview immediately using local data URL
       safeLS('set','velo_user_av', dataUrl);
       pLoadProfile();
@@ -12083,6 +12139,14 @@ async function _adminTabModeracion(panel){
         }).join('');
   }
 
+  html += '<div style="margin-top:14px;background:rgba(100,170,230,.07);border:1px solid rgba(100,170,230,.18);border-radius:14px;padding:14px;margin-bottom:14px">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(100,170,230,.85)">🫂 GRUPOS DE USUARIOS</div>'
+    +'<button onclick="_adminLoadUserCircles()" style="font-size:10px;padding:3px 8px;background:rgba(100,170,230,.1);border:1px solid rgba(100,170,230,.25);border-radius:6px;color:rgba(100,170,230,.75);cursor:pointer;font-family:\'Jost\',sans-serif">↻</button>'
+    +'</div>'
+    +'<div id="adminCirclesList"><p style="font-size:11px;color:rgba(255,255,255,.3)">Cargando grupos…</p></div>'
+    +'</div>';
+
   html += '<div style="margin-top:14px;background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.2);border-radius:14px;padding:14px">'
     +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">🤖 HERRAMIENTAS IA</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
@@ -12097,6 +12161,85 @@ async function _adminTabModeracion(panel){
 
   panel.innerHTML = html;
   _loadAdminCrisisFromSupabase();
+  _adminLoadUserCircles();
+}
+
+async function _adminLoadUserCircles(){
+  var el = document.getElementById('adminCirclesList');
+  if(!el) return;
+  _initSupabase();
+  if(!sbClient){ el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  try{
+    var r = await sbClient.from('circles')
+      .select('*')
+      .eq('official', false)
+      .order('created_at', {ascending:false})
+      .limit(100);
+    if(!r.data || !r.data.length){
+      el.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">No hay grupos creados por usuarios.</div>';
+      return;
+    }
+    // Get member counts for each circle
+    var ids = r.data.map(function(c){ return c.id; });
+    var memberCounts = {};
+    try{
+      var mcRes = await sbClient.from('circle_members').select('circle_id').in('circle_id', ids);
+      if(mcRes.data) mcRes.data.forEach(function(m){ memberCounts[m.circle_id] = (memberCounts[m.circle_id]||0)+1; });
+    }catch(e){}
+
+    el.innerHTML = r.data.map(function(c){
+      var fecha = c.created_at ? new Date(c.created_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      var members = memberCounts[c.id] || 0;
+      var capLabel = (c.cap_min||0)+' – '+(c.cap_max||'∞')+' personas';
+      return '<div id="admCirc-'+_escHtml(String(c.id))+'" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.88)">'+(c.emoji||'🫂')+' '+_escHtml(c.name||'Sin nombre')+'</div>'
+        +(c.descripcion?'<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">'+_escHtml(c.descripcion.slice(0,100))+'</div>':'')
+        +'<div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">'
+        +'👥 '+members+' miembro'+(members!==1?'s':'')+' · '+capLabel+' · '+fecha
+        +(c.creator_id?'<br>creador: <span style="color:rgba(255,255,255,.4)">'+_escHtml(c.creator_id.slice(0,8))+'…</span>':'')
+        +'</div>'
+        +'</div>'
+        +'<button onclick="_adminDeleteCircle(\''+_escHtml(String(c.id))+'\',\''+_escHtml(c.creator_id||'')+'\',this)" style="flex-shrink:0;padding:6px 11px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);border-radius:8px;color:rgba(231,120,110,.9);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️ Eliminar</button>'
+        +'</div>'
+        +'</div>';
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Error al cargar grupos.</div>';
+  }
+}
+
+async function _adminDeleteCircle(circleId, creatorId, btn){
+  if(!confirm('¿Eliminar este grupo y todos sus miembros?')) return;
+  _initSupabase();
+  if(!sbClient || !circleId) return;
+  try{
+    btn.disabled = true; btn.textContent = '…';
+    // Remove members first, then circle
+    await sbClient.from('circle_members').delete().eq('circle_id', circleId);
+    await sbClient.from('circles').delete().eq('id', circleId);
+    // Notify creator via inbox if we have their id
+    if(creatorId){
+      try{
+        await sbClient.from('broadcasts').insert({
+          target: 'user:'+creatorId,
+          subject: '⚠️ Tu grupo fue eliminado por infracción',
+          body: 'El grupo que creaste fue eliminado por el equipo de Velo por incumplir nuestras normas de comunidad. Si creés que fue un error, escribinos a consultas@heyvelo.app. 💚',
+          icon: '⚠️',
+          sender: JSON.stringify({n:'Velo',i:'velo-system',a:'⚠️'}),
+          sent_at: new Date().toISOString()
+        });
+      }catch(e){}
+    }
+    // Remove from DOM
+    var card = document.getElementById('admCirc-'+circleId);
+    if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ card.remove(); },350); }
+    pToast('✅','Grupo eliminado');
+  }catch(e){
+    btn.disabled=false; btn.textContent='🗑️ Eliminar';
+    pToast('⚠️','Error al eliminar');
+  }
 }
 
 // ── TAB: MENSAJES ─────────────────────────────────────────────────────
