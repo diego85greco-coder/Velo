@@ -301,6 +301,13 @@ function pGoTo(id){
   var inPage = document.getElementById('pg-'+id);
   if(!inPage){ console.warn('[Premium] page not found: pg-'+id); return; }
 
+  // Admin sessions must stay in the admin panel — never cross into user-facing pages
+  if(safeLS('get','velo_admin_session') === '1' && ['admin','admin-login','landing'].indexOf(id) < 0){
+    id = 'admin';
+    inPage = document.getElementById('pg-admin');
+    if(!inPage) return;
+  }
+
   // Deactivate current
   var outPage = document.getElementById('pg-'+_curPage);
   if(outPage){ outPage.classList.remove('active','fade-in'); }
