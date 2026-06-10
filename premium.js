@@ -5053,7 +5053,7 @@ function pOpenGuide(){
   if(existing){ existing.remove(); _syncBodyScroll(); return; }
   var sections=[
     {icon:'🛡️',name:'Guardianes',desc:'Al activar "Modo Guardián" aparecés en la lista de guardianes disponibles. Si alguien necesita apoyo puede pedirte ayuda para iniciar un chat contigo en tiempo real.'},
-    {icon:'🆘',name:'Sala de Ayuda',desc:'Las personas publican con lo que necesitan ayuda. Podés acompañarlas sin necesitar estar en modo guardián. Si la persona está online puede aceptar el chat, o bien podés dejarle un mensaje de aliento. Las publicaciones se eliminan automáticamente a las 24 hs.'},
+    {icon:'🤝',name:'Sala de Ayuda',desc:'Las personas publican con lo que necesitan ayuda. Podés acompañarlas sin necesitar estar en modo guardián. Si la persona está online puede aceptar el chat, o bien podés dejarle un mensaje de aliento. Las publicaciones se eliminan automáticamente a las 24 hs.'},
     {icon:'🌊',name:'Al Mar',desc:'Publicás algo que necesitás soltar o con lo que necesitás apoyo. Otros usuarios pueden responderte con mensajes de aliento y podés responderles por privado. Las publicaciones se eliminan automáticamente a las 24 hs.'},
     {icon:'☮️',name:'Círculos de Paz',desc:'Grupos de chat comunitarios creados por Velo donde podés hablar y debatir sobre distintos temas. Con insignia dorada o plan Plus podés crear tu propio grupo de chat.'},
     {icon:'🌞',name:'Buenas Noticias',desc:'Noticias positivas que pasan en el mundo 🌍. Un canal para leer y descubrir buenas noticias reales que elevan el ánimo.'},
