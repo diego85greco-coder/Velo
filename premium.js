@@ -12885,6 +12885,16 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
   var bodyEl=document.getElementById('monthlyReportBody');
   if(!bodyEl) return;
   var html='';
+  var nextMName = data.nextMName || '';
+
+  // ── Celebration ──
+  if(data.celebration){
+    html+='<div style="background:linear-gradient(135deg,rgba(116,198,157,.13),rgba(180,140,220,.09));border:1.5px solid rgba(116,198,157,.35);border-radius:16px;padding:18px;margin-bottom:18px;text-align:center">'
+      +'<div style="font-size:30px;margin-bottom:8px">🎉</div>'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:rgba(116,198,157,.85);margin-bottom:9px">TU LOGRO DE '+mName.toUpperCase()+'</div>'
+      +'<div style="font-size:14px;color:rgba(255,255,255,.88);line-height:1.7;font-weight:500">'+_escHtml(data.celebration)+'</div>'
+      +'</div>';
+  }
 
   // ── Mood breakdown bar ──
   if(data.happy||data.neutral||data.sad){
@@ -12916,12 +12926,47 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
     html+='</div>';
   }
 
+  // ── Diary & streak mini-stats ──
+  if(data.diaryCount || data.streak > 1){
+    html+='<div style="display:flex;gap:8px;margin-bottom:18px">';
+    if(data.diaryCount) html+=_mrStatCard('📔','Entradas en el diario',data.diaryCount,'escritas este mes');
+    if(data.streak > 1) html+=_mrStatCard('🔥','Días en Velo',data.streak,'días en total');
+    html+='</div>';
+  }
+
+  // ── Personal message from Velo ──
+  if(data.personal_message){
+    html+='<div style="background:rgba(180,140,220,.1);border:1.5px solid rgba(180,140,220,.32);border-radius:16px;padding:18px;margin-bottom:18px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:rgba(180,140,220,.85);margin-bottom:10px">💌 MENSAJE PERSONAL DE VELO</div>'
+      +'<div style="font-size:14px;color:rgba(255,255,255,.84);line-height:1.85;font-style:italic">'+_escHtml(data.personal_message)+'</div>'
+      +'</div>';
+  }
+
   // ── AI narrative ──
-  html+='<div style="font-size:14px;color:rgba(255,255,255,.82);line-height:1.85;white-space:pre-line;margin-bottom:20px;border-left:2px solid rgba(180,140,220,.35);padding-left:14px">'+_escHtml(data.narrative||'')+'</div>';
+  html+='<div style="font-size:14px;color:rgba(255,255,255,.78);line-height:1.85;white-space:pre-line;margin-bottom:20px;border-left:2px solid rgba(180,140,220,.3);padding-left:14px">'+_escHtml(data.narrative||'')+'</div>';
+
+  // ── Affirmation / mantra ──
+  if(data.affirmation){
+    html+='<div style="text-align:center;padding:18px 12px;margin-bottom:18px;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)">'
+      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(255,255,255,.78);font-style:italic;line-height:1.45">"'+_escHtml(data.affirmation)+'"</div>'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.28);margin-top:8px;text-transform:uppercase">Tu frase de '+mName+'</div>'
+      +'</div>';
+  }
+
+  // ── Challenge for next month ──
+  if(data.challenge && data.challenge.text){
+    html+='<div style="background:rgba(116,198,157,.08);border:1.5px solid rgba(116,198,157,.25);border-radius:14px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:14px">'
+      +'<span style="font-size:28px;flex-shrink:0;line-height:1">'+(data.challenge.icon||'🎯')+'</span>'
+      +'<div>'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:4px">🎯 TU DESAFÍO PARA '+(nextMName?nextMName.toUpperCase():mName.toUpperCase())+'</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.82);line-height:1.55">'+_escHtml(data.challenge.text)+'</div>'
+      +'</div>'
+      +'</div>';
+  }
 
   // ── Recommendations ──
   if(data.recs && data.recs.length){
-    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.75);margin-bottom:10px">✨ PARA ESTE MES</div>';
+    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.75);margin-bottom:10px">✨ PARA '+(nextMName?nextMName.toUpperCase():'ESTE MES')+'</div>';
     html+='<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px">';
     data.recs.forEach(function(r){
       html+='<div style="display:flex;align-items:flex-start;gap:10px;background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:10px 12px">'
@@ -13061,51 +13106,101 @@ async function _generateMonthlySummary(month, mName, year){
       happy:0,neutral:0,sad:0,helped:helpedOthers,received:helpReceived,reviews:reviewsData,totalReviews:totalReviews,medals:monthMedals,recs:[],books:[],help_hint:null};
   }
 
+  // ── Extra context: diary, streak, mood notes, prev month ──
+  var diaryAll=[]; try{diaryAll=JSON.parse(safeLS('get','velo_diary')||'[]');}catch(e){}
+  var diaryCount=diaryAll.filter(function(e){ var d=new Date(e.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); }).length;
+  var streak=parseInt(safeLS('get','velo_visit_day_count_sb')||'0')||_getVisitDayCount()||1;
+  var moodNotes=monthMoods.filter(function(m){ return m.note&&m.note.trim(); }).map(function(m){ return '"'+m.note.trim().slice(0,80)+'"'; }).slice(0,3);
+  var emojiCounts={}; monthMoods.forEach(function(m){ if(m.emoji) emojiCounts[m.emoji]=(emojiCounts[m.emoji]||0)+1; });
+  var dominantEmoji=Object.keys(emojiCounts).sort(function(a,b){ return emojiCounts[b]-emojiCounts[a]; })[0]||'';
+  var prevMon2=mon===1?12:mon-1; var prevYr2=mon===1?yr-1:yr;
+  var prevCK='velo_monthly_summary_'+prevYr2+'-'+(prevMon2<10?'0':'')+prevMon2;
+  var prevData2=null; try{ var _pc=safeLS('get',prevCK); if(_pc) prevData2=JSON.parse(_pc); }catch(e){}
+  var prevCmp='';
+  if(prevData2&&monthMoods.length){
+    var _pt=(prevData2.happy||0)+(prevData2.neutral||0)+(prevData2.sad||0);
+    if(_pt>0){ var _php=Math.round((prevData2.happy||0)/_pt*100); var _chp=Math.round(happy/monthMoods.length*100);
+      if(_chp>_php+10) prevCmp='mejor que el mes anterior (más días positivos)';
+      else if(_chp<_php-10) prevCmp='más difícil que el mes anterior';
+      else prevCmp='con un equilibrio similar al mes anterior'; }
+  }
+  var nextMonIdx=mon===12?0:mon; var MN2=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var nextMName=MN2[nextMonIdx];
+
   // ── Gemini prompt → structured JSON ──
   var moodCtx=monthMoods.length
-    ?'Datos de ánimo de '+mName+' '+yr+':\n- Días felices/positivos: '+happy+'\n- Días tranquilos/neutrales: '+neutral+'\n- Días difíciles/tristes: '+sad+'\n- Total registrado: '+monthMoods.length+' días\n\n'
-    :'';
+    ?'Ánimos de '+mName+' '+yr+':\n- Días positivos/felices: '+happy+'\n- Días tranquilos/neutrales: '+neutral+'\n- Días difíciles/tristes: '+sad+'\n- Total registrado: '+monthMoods.length+' días\n'
+    +'- Emoción predominante: '+(dominantEmoji||'variada')+'\n'
+    +(prevCmp?'- Tendencia vs mes anterior: '+prevCmp+'\n':'')
+    +'\n':'';
   var actCtx=(helpedOthers?'- Acompañó a '+helpedOthers+' personas como guardián/a\n':'')+(helpReceived?'- Recibió apoyo en '+helpReceived+' ocasiones\n':'');
   var rvCtx=totalReviews?'- Recibió '+totalReviews+' reseña'+(totalReviews>1?'s':'')+' de la comunidad\n':'';
-  var medalCtx=monthMedals.length?'- Medallas ganadas: '+monthMedals.map(function(m){return m.name||m.label||'🏅';}).join(', ')+'\n':'';
-  var prompt='Sos el sistema de bienestar de Velo, una app de salud mental peer-to-peer.\n'
-    +'Generá el resumen mensual personalizado para '+firstName+' sobre '+mName+' '+yr+'.\n\n'
-    +moodCtx+(actCtx||rvCtx||medalCtx?'Actividad en la comunidad:\n'+actCtx+rvCtx+medalCtx+'\n':'')
-    +'Devolvé ÚNICAMENTE un JSON válido con esta estructura (sin markdown, sin explicación):\n'
-    +'{\n'
-    +'"narrative": "4-6 oraciones cálidas y empáticas sobre el mes. Analizá el balance de ánimos con honestidad y compasión. '+(sadPct>=50?'IMPORTANTE: tuvo muchos días difíciles, sé muy empático/a y reconfortante. ':'')+'Celebrá los logros. Terminá con aliento para el mes siguiente. Español rioplatense, usá \'vos\'.",\n'
-    +'"recs": [\n'
-    +'  {"icon":"emoji","text":"actividad recomendada concreta y cotidiana (ej: escuchar música que levante el ánimo, juntarse con una persona querida, ver una película que te haga reír, salir a caminar al sol, respirar profundo 5 minutos antes de dormir)"},\n'
-    +'  ... (3 o 4 recomendaciones breves y prácticas, del día a día)\n'
-    +'],\n'
-    +'"books": [\n'
-    +'  {"title":"Título del libro","author":"Autor","why":"Una oración de por qué es bueno para este usuario este mes"},\n'
-    +'  ... (2 libros de autoayuda, motivación o experiencias de vida, reales y conocidos)\n'
-    +'],\n'
-    +'"help_hint": '+(sadPct>=50?'"Una oración muy gentil y sin alarmismo que invite al usuario a hablar con alguien de la comunidad si lo necesita. No menciones terapia ni profesionales."':'null')+'\n'
-    +'}\n'
-    +'Todos los textos en español rioplatense (usá \'vos\', no \'tú\').';
+  var medalCtx=monthMedals.length?'- Medallas: '+monthMedals.map(function(m){return m.name||m.label||'🏅';}).join(', ')+'\n':'';
+  var extraCtx=(diaryCount?'- Escribió '+diaryCount+' entrada'+(diaryCount>1?'s':'')+' en su diario\n':'')
+    +(streak>1?'- Lleva '+streak+' días usando Velo en total\n':'')
+    +(moodNotes.length?'- Lo que escribió al registrar sus ánimos: '+moodNotes.join(', ')+'\n':'');
 
-  var raw=await _geminiCall(prompt,{temperature:0.82,maxOutputTokens:800});
+  var prompt='Sos Velo, el acompañante de bienestar emocional más cálido y genuino del mundo.\n'
+    +'Creá el resumen mensual profundamente personalizado para '+firstName+' sobre '+mName+' '+yr+'.\n\n'
+    +'DATOS DE '+firstName.toUpperCase()+':\n'
+    +moodCtx
+    +(extraCtx?extraCtx+'\n':'')
+    +((actCtx||rvCtx||medalCtx)?'En la comunidad:\n'+actCtx+rvCtx+medalCtx+'\n':'')
+    +'INSTRUCCIONES:\n'
+    +'- Usá el nombre '+firstName+' naturalmente en el texto\n'
+    +'- Sé específico/a con los datos reales (días, emojis, actividades)\n'
+    +(sadPct>=50?'- IMPORTANTE: fue un mes muy difícil. Validá el dolor con ternura extrema, sin positivismo forzado\n':'')
+    +(happy>sad+neutral?'- Fue un mes predominantemente positivo. Celebralo con genuina alegría\n':'')
+    +'\nDevolvé ÚNICAMENTE JSON válido sin markdown:\n'
+    +'{\n'
+    +'"celebration": "1-2 oraciones celebrando el logro más concreto de este mes. '
+    +'Mencioná datos específicos: si registró moods, si escribió en el diario, si ayudó a alguien, los días positivos. '
+    +'Hacé que '+firstName+' sienta orgullo genuino por lo que logró.",\n'
+    +'"personal_message": "3-4 oraciones íntimas como una carta personal de Velo a '+firstName+'. '
+    +'Mostrá que conocés su mes en detalle. Validá sus emociones con profundidad. '+(sadPct>=50?'Acompañalo/a en el dolor con ternura real — no lo minimices ni te apures a animarlo/a. ':'')
+    +'Transmití que Velo está con '+firstName+' incondicionalmente.",\n'
+    +'"narrative": "4-5 oraciones de análisis empático del mes. Identificá patrones reales. '+(prevCmp?'Mencioná la comparación con el mes anterior. ':'')+'Cerrá con motivación genuina y específica para '+nextMName+'.",\n'
+    +'"affirmation": "Una frase poderosa de máximo 10 palabras que capture la esencia de este mes de '+firstName+' o sirva de mantra para '+nextMName+'. Memorable, personal, en primera persona.",\n'
+    +'"challenge": {"icon":"emoji","text":"Un desafío concreto, divertido y alcanzable para '+nextMName+'. Específico para '+firstName+' según sus datos: si escribió poco en el diario animalo a escribir más, si tuvo días difíciles que se enfoque en una rutina de bienestar, etc."},\n'
+    +'"recs": [{"icon":"emoji","text":"actividad cotidiana concreta para '+firstName+' en '+nextMName+'"},'
+    +'{"icon":"emoji","text":"otra actividad"},'
+    +'{"icon":"emoji","text":"tercera actividad"}],\n'
+    +'"books": [{"title":"Título real","author":"Autor real","why":"Por qué es ideal para '+firstName+' ahora"},{"title":"Título real","author":"Autor real","why":"Por qué es ideal"}],\n'
+    +'"help_hint": '+(sadPct>=50?'"Frase muy gentil invitando a hablar con alguien de la comunidad. Cálida, sin alarmar, mencioná que hay personas reales que ya pasaron por algo parecido."':'null')+'\n'
+    +'}\n'
+    +'Español rioplatense (vos, te, estás, querés). Nunca uses "tú". Sé genuinamente cálido/a y específico/a.';
+
+  var raw=await _geminiCall(prompt,{temperature:0.85,maxOutputTokens:1200});
   var parsed=null;
   if(raw){ try{ var m=raw.replace(/```json\n?|```/g,'').trim().match(/\{[\s\S]*\}/); if(m) parsed=JSON.parse(m[0]); }catch(e){} }
 
   if(!parsed) parsed={
-    narrative:firstName+', '+mName+' tuvo '+(happy?happy+' días positivos':'')+(sad?' y '+sad+' días más difíciles':'')+'. Cada día que registrás tu ánimo es un acto de cuidado hacia vos mismo/a. ¡Seguí adelante! 💚',
-    recs:[{icon:'🎵',text:'Escuchá música que te eleve el ánimo cuando llegues a casa'},{icon:'🫂',text:'Escribile a alguien querido esta semana'}],
-    books:[{title:'El poder del ahora',author:'Eckhart Tolle',why:'Para soltar el peso del pasado y el futuro'},{title:'Hábitos atómicos',author:'James Clear',why:'Para construir pequeños cambios que se acumulan'}],
-    help_hint:sadPct>=50?'Recordá que en Velo siempre hay alguien dispuesto a escucharte sin juzgarte.':null
+    celebration:firstName+(monthMoods.length?' registraste tus ánimos '+monthMoods.length+' días este mes':'')+' — eso es cuidarte de verdad.'+(diaryCount?' Y escribiste '+diaryCount+' veces en tu diario.':''),
+    personal_message:'Velo estuvo con vos cada vez que abriste la app. Tu presencia acá, en los días buenos y en los difíciles, importa más de lo que creés. 💚',
+    narrative:firstName+', '+(happy?happy+' días positivos':'')+(sad?' y '+sad+' días más difíciles':'')+'. Cada día que aparecés es un logro. El mes que viene, seguí apareciendo. 💚',
+    affirmation:'Cada paso que doy importa, aunque sea pequeño.',
+    challenge:{icon:'📔',text:'Registrá cómo te sentís todos los días de la primera semana de '+nextMName+'.'},
+    recs:[{icon:'🎵',text:'Escuchá música que te eleve'},{icon:'🫂',text:'Escribile a alguien querido'},{icon:'🚶',text:'Salí a caminar 10 minutos al sol'}],
+    books:[{title:'El poder del ahora',author:'Eckhart Tolle',why:'Para estar presente y soltar el peso'},{title:'Hábitos atómicos',author:'James Clear',why:'Para construir pequeños cambios sostenibles'}],
+    help_hint:sadPct>=50?'Recordá que en Velo hay personas reales que ya pasaron por algo parecido y están para escucharte.':null
   };
 
   var result={
+    celebration:parsed.celebration||'',
+    personal_message:parsed.personal_message||'',
     narrative:parsed.narrative||'',
+    affirmation:parsed.affirmation||'',
+    challenge:parsed.challenge||null,
     happy:happy,neutral:neutral,sad:sad,
     helped:helpedOthers,received:helpReceived,
     reviews:reviewsData,totalReviews:totalReviews,
     medals:monthMedals,
-    recs:Array.isArray(parsed.recs)?parsed.recs.slice(0,4):[],
-    books:Array.isArray(parsed.books)?parsed.books.slice(0,3):[],
-    help_hint:parsed.help_hint||null
+    recs:Array.isArray(parsed.recs)?parsed.recs.slice(0,3):[],
+    books:Array.isArray(parsed.books)?parsed.books.slice(0,2):[],
+    help_hint:parsed.help_hint||null,
+    diaryCount:diaryCount,
+    streak:streak,
+    nextMName:nextMName
   };
   safeLS('set',cacheKey,JSON.stringify(result));
   return result;
