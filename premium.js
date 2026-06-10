@@ -5161,8 +5161,8 @@ function pOpenGuide(){
   ov.id='veloGuideOv';
   ov.className='p-modal-ov show';
   ov.style.zIndex='9998';
-  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="display:flex;flex-direction:column;max-height:92vh;padding:0;overflow:hidden">'
-    +'<div style="flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 14px">'
+  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="padding:0">'
+    +'<div style="position:sticky;top:0;z-index:2;background:#0E1C14;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07)">'
     +'<div>'
     +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:4px">GUÍA DE VELO</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:#fff;font-weight:300;line-height:1.2">¿Qué hace cada sección?</div>'
@@ -5170,7 +5170,7 @@ function pOpenGuide(){
     +'</div>'
     +'<button onclick="document.getElementById(\'veloGuideOv\').remove();_syncBodyScroll()" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);font-size:16px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:10px">✕</button>'
     +'</div>'
-    +'<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:0 20px 24px;display:flex;flex-direction:column;gap:8px">'
+    +'<div style="padding:16px 20px 32px;display:flex;flex-direction:column;gap:8px">'
     +cards
     +'</div>'
     +'</div>';
