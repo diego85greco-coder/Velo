@@ -5135,7 +5135,7 @@ function pOpenGuide(){
     {icon:'🌞',name:'Buenas Noticias',desc:'Noticias positivas que pasan en el mundo 🌍. Un canal para leer y descubrir buenas noticias reales que elevan el ánimo.'},
     {icon:'📔',name:'Diario',desc:'Tu espacio privado de escritura. Anotá pensamientos, emociones y reflexiones personales. Solo vos podés leerlo — nunca se comparte.'},
     {icon:'🤖',name:'Velo IA (Chatbot Calma)',desc:'Un acompañante emocional disponible 24/7 entrenado en técnicas de psicología humanista. Podés hablar de lo que sentís, explorar emociones y recibir apoyo empático en cualquier momento.'},
-    {icon:'🕯️',name:'Velo Vela por Ti',desc:'Encendé una vela virtual y mandá buena energía a alguien de la comunidad. Una forma simbólica y colectiva de acompañar a quienes más lo necesitan.'},
+    {icon:'🕯️',name:'Velo Vela por Ti',desc:'Pedí una sesión gratuita o subsidiada con un profesional de salud mental de la comunidad Velo. Completás un breve formulario con tu situación, el tipo de apoyo que necesitás y tu disponibilidad horaria. En 7-14 días te contactamos para coordinar. Los profesionales de Velo donan 1 sesión mensual como parte del programa solidario 💙'},
     {icon:'🆘',name:'SOS',desc:'Acceso rápido a recursos de crisis emocional: líneas de ayuda, información de emergencia y contacto inmediato. Para cuando el momento es urgente.'},
     {icon:'🩺',name:'Profesionales',desc:'Directorio de profesionales que forman parte de la comunidad Velo. Podés ver sus perfiles, reseñas de la comunidad y contactarlos.'},
     {icon:'🌬️',name:'Respiración',desc:'Ejercicios guiados de respiración y técnicas de mindfulness para calmar la ansiedad y bajar el estrés en momentos difíciles.'},
