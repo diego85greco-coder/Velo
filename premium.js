@@ -476,11 +476,19 @@ async function _sbSyncProfile(userId){
   }
   // Restore inbox read state from Supabase so messages stay read on new devices
   if(p.read_bcast_ids && Array.isArray(p.read_bcast_ids)){
+    var _restoredDel = []; try{ _restoredDel = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
+    var _delChanged = false;
     p.read_bcast_ids.forEach(function(bid){
-      if(bid === 'm1' || bid === 'm2') safeLS('set','velo_read_'+bid,'1');
-      else safeLS('set','velo_bcast_read_'+bid,'1');
-      _syncedReadIds[bid] = 1; // in-memory cache to fix timing race with _buzónHandleNew
+      if(!bid) return;
+      if(bid === 'm1' || bid === 'm2'){ safeLS('set','velo_read_'+bid,'1'); }
+      else { safeLS('set','velo_bcast_read_'+bid,'1'); }
+      // rp_ IDs (admin replies) need to be in velo_inbox_deleted so pRenderInbox filters them
+      if(bid.indexOf('rp_') === 0 && _restoredDel.indexOf(bid) < 0){
+        _restoredDel.push(bid); _delChanged = true;
+      }
+      _syncedReadIds[bid] = 1;
     });
+    if(_delChanged) safeLS('set','velo_inbox_deleted', JSON.stringify(_restoredDel));
   }
   // Badge notification cross-device: if Supabase shows a higher badge than local, show the inbox message
   if(p.badge_notified){
@@ -8953,7 +8961,7 @@ function pRenderInbox(){
       var existingIds = [];
       try{ existingIds = JSON.parse(safeLS('get','velo_inbox_reply_ids')||'[]'); }catch(e){}
       var _del3 = []; try{ _del3 = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
-      replies = replies.filter(function(r){ return _del3.indexOf('rp_'+r.id) < 0; });
+      replies = replies.filter(function(r){ return _del3.indexOf('rp_'+r.id) < 0 && !_syncedReadIds['rp_'+r.id]; });
       var _xBtnRp = function(id){ return '<button onclick="event.stopPropagation();pDeleteInboxMsg(\'rp_'+id+'\',this)" style="flex-shrink:0;background:transparent;border:none;color:var(--ink5);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;line-height:1;align-self:flex-start;opacity:.55">×</button>'; };
       var replyMsgs = replies.map(function(r){
         var readKey = 'velo_reply_read_'+r.id;
@@ -9029,8 +9037,8 @@ function pRenderInbox(){
 // messages handled before v529 (before per-action sync was added) don't re-appear on new devices.
 // Updates _syncedReadIds synchronously so _buzónPollOnce immediately has the correct state.
 function _migrateBcastLocalToSb(){
-  if(safeLS('get','velo_bcast_sb_push_v1')) return;
-  safeLS('set','velo_bcast_sb_push_v1','1'); // set flag immediately to prevent double-run
+  if(safeLS('get','velo_bcast_sb_push_v2')) return;
+  safeLS('set','velo_bcast_sb_push_v2','1'); // set flag immediately to prevent double-run
   // Collect all locally-known broadcast IDs synchronously and write them to
   // velo_bcast_read_* so pRenderInbox's new filter catches them immediately
   var newIds = [];
@@ -9053,6 +9061,7 @@ function _migrateBcastLocalToSb(){
     var del = JSON.parse(safeLS('get','velo_inbox_deleted') || '[]');
     del.forEach(function(id){
       if(id && id.indexOf('bc_') === 0) _addMigrId(id.replace('bc_',''));
+      else if(id && id.indexOf('rp_') === 0) _addMigrId(id); // admin reply: store full rp_ ID
     });
   }catch(e){}
   if(!newIds.length) return;
@@ -9099,6 +9108,7 @@ function pDeleteInboxMsg(id, el){
   if(el){ var card = el.closest('.p-inbox-msg'); if(card) card.remove(); }
   _updateHomeBell();
   if(id && id.indexOf('bc_') === 0) _syncBroadcastRead(id.replace('bc_',''));
+  if(id && id.indexOf('rp_') === 0) _syncBroadcastRead(id); // admin replies: store full rp_ ID
 }
 
 function pInboxVaciar(){
