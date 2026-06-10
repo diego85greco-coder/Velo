@@ -30,6 +30,7 @@ var _sbHappy      = null;   // cached Supabase happy_posts
 var _pendingHappyPost = null; // post just submitted, merged into render until Supabase confirms
 var _sbHelp       = null;   // cached Supabase help_posts
 var _syncedReadIds = {};    // broadcast IDs synced as read from Supabase profile (cross-device)
+var _buzónAlertedSession = false; // show unread alert once per session
 var _profileSelectTier = parseInt(safeLS('get','velo_prof_tier')||'0'); // persisted so 400s don't repeat on reload
 var _inboxAsyncPending = false; // prevents concurrent broadcast/reply injections
 var _sbBottles    = null;   // cached Supabase bottles
@@ -1382,6 +1383,20 @@ function _loadHomeData(){
   _updateSidebarUser();
   _renderPersonalizedSuggestions();
   _updateHomeBell();
+  // Show unread alert once per session if there are pending messages
+  if(!_buzónAlertedSession){
+    setTimeout(function(){
+      var _msgs=[]; try{_msgs=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e){}
+      var _localUnread = _msgs.filter(function(m){ return !m.leido && !safeLS('get','velo_read_'+m.id); }).length;
+      var _ubcUnread=[]; try{_ubcUnread=JSON.parse(safeLS('get','velo_bcast_unread')||'[]');}catch(e){}
+      var _total = _localUnread + _ubcUnread.length;
+      if(_total > 0){
+        _buzónAlertedSession = true;
+        var _label = _total === 1 ? 'Tenés 1 mensaje sin leer' : 'Tenés '+_total+' mensajes sin leer';
+        _showBuzónAlert(_label, null, null, '📬');
+      }
+    }, 2000);
+  }
   // Hero entrance animation — retriggers on every navigation to home
   var _ha = document.querySelector('#pg-home .r-hero-v2');
   if(_ha){ _ha.classList.remove('r-greeting-anim'); void _ha.offsetHeight; setTimeout(function(){ _ha.classList.add('r-greeting-anim'); }, 80); }
@@ -3030,12 +3045,11 @@ function _showBuzónAlert(subject, senderId, senderName, senderAv){
   var avHtml = senderAv && senderAv.length <= 4
     ? '<div style="width:34px;height:34px;border-radius:50%;background:'+(isDark?'rgba(116,198,157,.18)':'rgba(116,198,157,.14)')+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+_escHtml(senderAv)+'</div>'
     : _avInline(senderAv||'🌿', 34);
-  pop.innerHTML = '<div style="width:34px;height:34px;border-radius:50%;background:'+(isDark?'rgba(116,198,157,.18)':'rgba(116,198,157,.14)')+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📣</div>'
+  pop.innerHTML = '<div style="width:34px;height:34px;border-radius:50%;background:'+(isDark?'rgba(116,198,157,.22)':'rgba(116,198,157,.18)')+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📬</div>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:12px;font-weight:700;color:'+(isDark?'rgba(116,198,157,.95)':'#1a6b3c')+';margin-bottom:2px;letter-spacing:.3px">Alerta Buzón Velo</div>'
-    +'<div style="font-size:13px;font-weight:600;color:'+(isDark?'rgba(255,255,255,.88)':'#0a1810')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(subject||'Nuevo mensaje')+'</div>'
-    +'</div>'
-    +'<div style="font-size:12px;font-weight:700;color:'+(isDark?'rgba(116,198,157,.85)':'#1a6b3c')+';flex-shrink:0;white-space:nowrap">Ver →</div>';
+    +'<div style="font-size:11px;font-weight:700;color:'+(isDark?'rgba(116,198,157,.90)':'#1a6b3c')+';margin-bottom:2px;letter-spacing:.4px;text-transform:uppercase">Buzón Velo</div>'
+    +'<div style="font-size:13px;font-weight:600;color:'+(isDark?'rgba(255,255,255,.88)':'#0a1810')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(subject||'Tenés un nuevo mensaje')+'</div>'
+    +'</div>';
   pop.onclick = function(){
     pop.remove();
     pGoTo('inbox');
@@ -3051,7 +3065,7 @@ function _showBuzónAlert(subject, senderId, senderName, senderAv){
     pop.style.opacity = '0';
     pop.style.transform = 'translateX(-50%) translateY(8px)';
     setTimeout(function(){ if(pop.parentNode) pop.remove(); }, 300);
-  }, 5500);
+  }, 3000);
 }
 
 var _buzónPollTmr  = null;
