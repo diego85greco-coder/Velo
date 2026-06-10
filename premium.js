@@ -11702,6 +11702,7 @@ async function pAdminLogin(){
     pGoTo('admin'); // pGoTo calls _renderAdmin() via the switch — no duplicate call needed
     var _adminTb = document.getElementById('pTopbar'); if(_adminTb) _adminTb.style.display='none';
     var _adminSb = document.querySelector('.p-sidebar'); if(_adminSb) _adminSb.style.display='none';
+    var _adminBn = document.querySelector('.p-bottomnav'); if(_adminBn) _adminBn.style.display='none';
     pToast('🌿','Bienvenido/a al panel admin');
   } else {
     pToast('⚠️', authError || 'Credenciales incorrectas');
@@ -11714,6 +11715,7 @@ function pAdminLogout(){
   if(sbClient){ try{ sbClient.auth.signOut(); }catch(e){} }
   var _adminTb = document.getElementById('pTopbar'); if(_adminTb) _adminTb.style.removeProperty('display');
   var _adminSb = document.querySelector('.p-sidebar'); if(_adminSb) _adminSb.style.removeProperty('display');
+  var _adminBn = document.querySelector('.p-bottomnav'); if(_adminBn) _adminBn.style.removeProperty('display');
   _clearSession();
   _authenticated = false;
   _userType = 'user';
