@@ -4846,36 +4846,30 @@ function _drawShareCanvas(quote, author, logoImg){
   _filigree(fp,   fy2,  1, -1);
   _filigree(W-fp, fy2, -1, -1);
 
-  // ── Brand header: large logo only (no "Velo" text) ───────────
-  var logoSz = 200;
-  var logoX  = (W - logoSz) / 2;
-  var logoY  = 80;
+  // ── Brand header: large dark-mode logo ───────────────────────
+  var logoW = 560;
+  var logoH = logoImg ? Math.round(logoW * logoImg.naturalHeight / logoImg.naturalWidth) : 240;
+  var logoX = (W - logoW) / 2;
+  var logoY = 60;
 
   if(logoImg){
-    // Invert to white so logo pops on any dark bg, plus sage glow halo
+    // Soft sage glow — render at natural colors (dark-mode logo)
     ctx.save();
-    ctx.filter = 'brightness(0) invert(1)';
-    ctx.shadowColor = 'rgba(180,240,200,.80)';
-    ctx.shadowBlur  = 55;
-    ctx.drawImage(logoImg, logoX, logoY, logoSz, logoSz);
+    ctx.shadowColor = 'rgba(116,198,157,.55)';
+    ctx.shadowBlur  = 70;
+    ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
     ctx.restore();
+    // Crisp pass
+    ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
   }
 
-  // Thin gold divider below logo
-  var divY = logoY + logoSz + 36;
-  ctx.strokeStyle = 'rgba(200,158,56,.30)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(150, divY); ctx.lineTo(W-150, divY); ctx.stroke();
-
-  // Tagline
-  ctx.font = '300 26px Arial,sans-serif'; ctx.fillStyle = 'rgba(140,210,170,.50)'; ctx.textAlign = 'center';
-  ctx.fillText('A C O M P A Ñ A M O S  E M O C I O N E S', W/2, divY + 40);
-
   // ── "Mi frase del día" label ──────────────────────────────────
-  var labelY = divY + 120;
-  ctx.font = '300 32px Arial,sans-serif'; ctx.fillStyle = 'rgba(160,215,185,.55)'; ctx.textAlign = 'center';
-  ctx.fillText('M I  F R A S E  D E L  D Í A', W/2, labelY);
-  ctx.strokeStyle = 'rgba(116,198,157,.22)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(W/2-160, labelY+18); ctx.lineTo(W/2+160, labelY+18); ctx.stroke();
+  var logoBottom = logoY + (logoImg ? logoH : 240);
+  var labelY = logoBottom + 100;
+  ctx.font = '400 40px Arial,sans-serif'; ctx.fillStyle = 'rgba(200,235,215,.88)'; ctx.textAlign = 'center';
+  ctx.fillText('Mi frase del día', W/2, labelY);
+  ctx.strokeStyle = 'rgba(116,198,157,.35)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W/2-220, labelY+24); ctx.lineTo(W/2+220, labelY+24); ctx.stroke();
 
   // ── Large decorative quote mark ───────────────────────────────
   ctx.font='300 220px Georgia,serif'; ctx.fillStyle='rgba(200,158,56,.12)'; ctx.textAlign='left';
