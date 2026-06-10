@@ -4846,32 +4846,37 @@ function _drawShareCanvas(quote, author, logoImg){
   _filigree(fp,   fy2,  1, -1);
   _filigree(W-fp, fy2, -1, -1);
 
-  // ── Brand header: logo + Velo lockup ─────────────────────────
-  var logoSz = 80;
-  ctx.font = '300 90px Georgia,serif';
-  var veloW = ctx.measureText('Velo').width;
-  var gap   = 18;
-  var lockupW = (logoImg ? logoSz + gap : 0) + veloW;
-  var lockupX = (W - lockupW) / 2;
-  var lockupY = 105; // top of logo / text block
+  // ── Brand header: logo (centered, stacked above "Velo") ──────
+  var logoSz = 110;
+  var logoX  = (W - logoSz) / 2;
+  var logoY  = 88;
 
   if(logoImg){
-    // Draw logo aligned to text baseline
-    ctx.drawImage(logoImg, lockupX, lockupY, logoSz, logoSz);
+    // Soft sage glow behind logo so it reads on any bg
+    ctx.save();
+    ctx.shadowColor = 'rgba(116,198,157,.55)';
+    ctx.shadowBlur  = 28;
+    ctx.drawImage(logoImg, logoX, logoY, logoSz, logoSz);
+    ctx.restore();
+    // Second pass without shadow for crisp pixels
+    ctx.drawImage(logoImg, logoX, logoY, logoSz, logoSz);
   }
-  ctx.textAlign = 'left';
-  ctx.font = '300 90px Georgia,serif';
-  ctx.fillStyle = 'rgba(200,158,56,.90)';
-  ctx.fillText('Velo', logoImg ? lockupX + logoSz + gap : lockupX, lockupY + logoSz * 0.80);
-  ctx.textAlign = 'center';
 
-  // Thin divider below brand
+  // "Velo" text directly below logo
+  var veloY = logoY + logoSz + 56;
+  ctx.textAlign = 'center';
+  ctx.font = '300 88px Georgia,serif';
+  ctx.fillStyle = 'rgba(200,158,56,.90)';
+  ctx.fillText('Velo', W/2, veloY);
+
+  // Thin divider
+  var divY = veloY + 28;
   ctx.strokeStyle = 'rgba(200,158,56,.28)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(150, lockupY + logoSz + 26); ctx.lineTo(W-150, lockupY + logoSz + 26); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(150, divY); ctx.lineTo(W-150, divY); ctx.stroke();
 
   // Tagline
   ctx.font = '300 27px Arial,sans-serif'; ctx.fillStyle = 'rgba(140,210,170,.50)'; ctx.textAlign = 'center';
-  ctx.fillText('A C O M P A Ñ A M O S  E M O C I O N E S', W/2, lockupY + logoSz + 60);
+  ctx.fillText('A C O M P A Ñ A M O S  E M O C I O N E S', W/2, divY + 38);
 
   // ── Large decorative quote mark ───────────────────────────────
   ctx.font='300 220px Georgia,serif'; ctx.fillStyle='rgba(200,158,56,.12)'; ctx.textAlign='left';
