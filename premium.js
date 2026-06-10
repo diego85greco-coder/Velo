@@ -4743,7 +4743,7 @@ function pShareDailyQuote(){
   var quoteEl  = document.getElementById('homeDailyQuoteText');
   var authorEl = document.getElementById('homeDailyQuoteAuthor');
   var quote  = quoteEl  ? quoteEl.textContent.trim()  : '';
-  var author = authorEl ? authorEl.textContent.trim() : '';
+  var author = (authorEl ? authorEl.textContent.trim() : '').replace(/^—\s*/,'');
   if(!quote){ pToast('🌟','Esperá un momento mientras carga la frase'); return; }
 
   var W = 1080, H = 1920;
@@ -4751,80 +4751,165 @@ function pShareDailyQuote(){
   canvas.width = W; canvas.height = H;
   var ctx = canvas.getContext('2d');
 
-  // Background gradient
-  var grad = ctx.createLinearGradient(0, 0, W, H);
-  grad.addColorStop(0, '#0D2B1C');
-  grad.addColorStop(1, '#0a1f14');
-  ctx.fillStyle = grad;
+  // ── Deep forest-to-midnight gradient background ──────────────
+  var bg = ctx.createLinearGradient(0, 0, W*0.6, H);
+  bg.addColorStop(0,    '#0C2E1A');
+  bg.addColorStop(0.45, '#092535');
+  bg.addColorStop(1,    '#0A1E12');
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  // Subtle dot pattern
-  ctx.fillStyle = 'rgba(116,198,157,.06)';
-  for(var i=0; i<W; i+=40){ for(var j=0; j<H; j+=40){ ctx.beginPath(); ctx.arc(i,j,1.5,0,Math.PI*2); ctx.fill(); } }
+  // ── Ambient light blobs (wellness glow) ──────────────────────
+  // Emerald glow — top right
+  var ga = ctx.createRadialGradient(W*0.88, H*0.10, 0, W*0.88, H*0.10, 560);
+  ga.addColorStop(0,   'rgba(56,188,106,.26)');
+  ga.addColorStop(0.5, 'rgba(22,101,52,.10)');
+  ga.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.fillStyle = ga; ctx.fillRect(0, 0, W, H);
 
-  // Top gold line
-  ctx.strokeStyle = 'rgba(200,158,56,.45)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(120,200); ctx.lineTo(W-120,200); ctx.stroke();
+  // Teal glow — bottom left
+  var gb = ctx.createRadialGradient(W*0.12, H*0.90, 0, W*0.12, H*0.90, 520);
+  gb.addColorStop(0,   'rgba(14,120,148,.22)');
+  gb.addColorStop(0.5, 'rgba(8,70,90,.08)');
+  gb.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.fillStyle = gb; ctx.fillRect(0, 0, W, H);
 
-  // Velo wordmark
-  ctx.font = '700 72px sans-serif';
-  ctx.fillStyle = 'rgba(200,158,56,.85)';
-  ctx.textAlign = 'center';
-  ctx.fillText('Velo', W/2, 160);
+  // Soft lavender haze — center-right
+  var gc = ctx.createRadialGradient(W*0.78, H*0.52, 0, W*0.78, H*0.52, 380);
+  gc.addColorStop(0,   'rgba(130,80,180,.10)');
+  gc.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.fillStyle = gc; ctx.fillRect(0, 0, W, H);
 
-  // Quote mark
-  ctx.font = '400 180px serif';
-  ctx.fillStyle = 'rgba(116,198,157,.22)';
-  ctx.textAlign = 'left';
-  ctx.fillText('“', 110, 560);
+  // Warm gold glow — center (behind quote)
+  var gd = ctx.createRadialGradient(W*0.50, H*0.50, 0, W*0.50, H*0.50, 350);
+  gd.addColorStop(0,   'rgba(200,158,56,.07)');
+  gd.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.fillStyle = gd; ctx.fillRect(0, 0, W, H);
 
-  // Quote text — word-wrap
-  ctx.font = 'italic 400 68px Georgia, serif';
-  ctx.fillStyle = 'rgba(255,255,255,.92)';
-  ctx.textAlign = 'center';
-  var words = quote.split(' ');
-  var lines = [];
-  var line = '';
-  var maxW = W - 240;
-  words.forEach(function(w){
-    var test = line ? line+' '+w : w;
-    if(ctx.measureText(test).width > maxW){ lines.push(line); line = w; }
-    else line = test;
-  });
-  if(line) lines.push(line);
-  var lineH = 88;
-  var totalH = lines.length * lineH;
-  var startY = (H - totalH) / 2 - 60;
-  lines.forEach(function(l, i){ ctx.fillText(l, W/2, startY + i*lineH); });
-
-  // Author
-  if(author){
-    ctx.font = '700 44px sans-serif';
-    ctx.fillStyle = 'rgba(200,158,56,.75)';
-    ctx.textAlign = 'center';
-    ctx.fillText('— ' + author.replace(/^—\s*/,''), W/2, startY + totalH + 80);
+  // ── Organic star-like particles ───────────────────────────────
+  var seed = 42;
+  function _rnd(){ seed=(seed*16807+0)%2147483647; return(seed-1)/2147483646; }
+  for(var pi=0; pi<220; pi++){
+    var px=_rnd()*W, py=_rnd()*H, pr=_rnd()*1.8+0.3, pa=_rnd()*.18+.04;
+    ctx.beginPath(); ctx.arc(px,py,pr,0,Math.PI*2);
+    ctx.fillStyle='rgba(200,230,215,'+pa+')'; ctx.fill();
   }
 
-  // Bottom watermark
-  ctx.font = '400 36px sans-serif';
-  ctx.fillStyle = 'rgba(116,198,157,.50)';
-  ctx.textAlign = 'center';
-  ctx.fillText('heyvelo.app', W/2, H - 140);
+  // ── Leaf / botanical accent (top-left) ───────────────────────
+  ctx.save();
+  ctx.translate(90, 330);
+  ctx.rotate(-0.35);
+  ctx.strokeStyle = 'rgba(116,198,157,.22)';
+  ctx.lineWidth = 2;
+  // Simple leaf outline
+  ctx.beginPath();
+  ctx.moveTo(0, 80); ctx.bezierCurveTo(-50, 40, -55, -30, 0, -80);
+  ctx.bezierCurveTo(55, -30, 50, 40, 0, 80);
+  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, 80); ctx.lineTo(0, -80); ctx.stroke();
+  ctx.restore();
 
-  // Bottom gold line
-  ctx.strokeStyle = 'rgba(200,158,56,.45)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(120, H-180); ctx.lineTo(W-120, H-180); ctx.stroke();
+  // Mirror leaf — bottom-right
+  ctx.save();
+  ctx.translate(W-90, H-320);
+  ctx.rotate(2.80);
+  ctx.strokeStyle = 'rgba(116,198,157,.18)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, 80); ctx.bezierCurveTo(-50, 40, -55, -30, 0, -80);
+  ctx.bezierCurveTo(55, -30, 50, 40, 0, 80);
+  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, 80); ctx.lineTo(0, -80); ctx.stroke();
+  ctx.restore();
 
+  // ── Corner filigree accents ───────────────────────────────────
+  function _filigree(x, y, sx, sy){
+    ctx.strokeStyle = 'rgba(200,158,56,.30)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x, y+sy*50); ctx.lineTo(x, y); ctx.lineTo(x+sx*50, y); ctx.stroke();
+    ctx.strokeStyle = 'rgba(200,158,56,.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x+sx*8, y+sy*50); ctx.lineTo(x+sx*8, y+sy*8); ctx.lineTo(x+sx*50, y+sy*8); ctx.stroke();
+  }
+  var fp=110, fy1=290, fy2=H-290;
+  _filigree(fp,   fy1,  1,  1);
+  _filigree(W-fp, fy1, -1,  1);
+  _filigree(fp,   fy2,  1, -1);
+  _filigree(W-fp, fy2, -1, -1);
+
+  // ── Brand header ─────────────────────────────────────────────
+  // Thin divider
+  ctx.strokeStyle='rgba(200,158,56,.30)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(150,225); ctx.lineTo(W-150,225); ctx.stroke();
+
+  // Small leaf ornament centre-top
+  ctx.font='400 32px serif'; ctx.fillStyle='rgba(116,198,157,.55)'; ctx.textAlign='center';
+  ctx.fillText('✦', W/2, 185);
+
+  // “VELO” in wide-spaced elegant caps
+  ctx.font='300 88px Georgia,serif'; ctx.fillStyle='rgba(200,158,56,.88)'; ctx.textAlign='center';
+  ctx.fillText('Velo', W/2, 165);
+
+  // Tagline
+  ctx.font='300 28px Arial,sans-serif'; ctx.fillStyle='rgba(140,210,170,.52)'; ctx.textAlign='center';
+  ctx.fillText('A C O M P A Ñ A M O S  E M O C I O N E S', W/2, 258);
+
+  // ── Large decorative quote mark ───────────────────────────────
+  ctx.font='300 220px Georgia,serif'; ctx.fillStyle='rgba(200,158,56,.12)'; ctx.textAlign='left';
+  ctx.fillText('“', 100, 570);
+
+  // ── Quote text (word-wrap, centered) ─────────────────────────
+  ctx.font='italic 400 72px Georgia,serif'; ctx.fillStyle='rgba(248,246,240,.94)'; ctx.textAlign='center';
+  var words=quote.split(' '), lines=[], cur='', maxTW=W-200;
+  words.forEach(function(w){
+    var t=cur?cur+' '+w:w;
+    if(ctx.measureText(t).width>maxTW){lines.push(cur);cur=w;}else cur=t;
+  });
+  if(cur)lines.push(cur);
+  var lh=96, tH=lines.length*lh;
+  var qY=Math.round((H-tH)/2)-50;
+  lines.forEach(function(l,i){ ctx.fillText(l,W/2,qY+i*lh); });
+
+  // ── Author area ───────────────────────────────────────────────
+  var aY = qY + tH + 75;
+  // Short gold divider
+  ctx.strokeStyle='rgba(200,158,56,.40)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(W/2-100,aY-28); ctx.lineTo(W/2+100,aY-28); ctx.stroke();
+  if(author){
+    ctx.font='600 38px Arial,sans-serif'; ctx.fillStyle='rgba(200,158,56,.82)'; ctx.textAlign='center';
+    ctx.fillText(author.toUpperCase(), W/2, aY);
+  }
+
+  // ── Bottom CTA pill ───────────────────────────────────────────
+  var ctaBaseY = H - 250;
+  // Divider
+  ctx.strokeStyle='rgba(200,158,56,.22)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(120,ctaBaseY-50); ctx.lineTo(W-120,ctaBaseY-50); ctx.stroke();
+
+  // Pill background
+  var pillW=620, pillH=100, pillX=(W-pillW)/2, pillY=ctaBaseY-18;
+  ctx.beginPath();
+  ctx.roundRect(pillX, pillY, pillW, pillH, 50);
+  var pillGrad=ctx.createLinearGradient(pillX,0,pillX+pillW,0);
+  pillGrad.addColorStop(0,'rgba(56,188,106,.22)');
+  pillGrad.addColorStop(1,'rgba(14,120,148,.22)');
+  ctx.fillStyle=pillGrad; ctx.fill();
+  ctx.strokeStyle='rgba(116,198,157,.35)'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // “Únete a nuestra comunidad”
+  ctx.font='400 30px Arial,sans-serif'; ctx.fillStyle='rgba(160,230,195,.72)'; ctx.textAlign='center';
+  ctx.fillText('Únete a nuestra comunidad', W/2, pillY+38);
+
+  // “heyvelo.app”
+  ctx.font='700 46px Arial,sans-serif'; ctx.fillStyle='rgba(200,158,56,.92)'; ctx.textAlign='center';
+  ctx.fillText('heyvelo.app', W/2, pillY+82);
+
+  // ── Share ─────────────────────────────────────────────────────
   canvas.toBlob(function(blob){
     if(!blob){ pToast('⚠️','No se pudo generar la imagen'); return; }
     var file = new File([blob], 'frase-velo.png', {type:'image/png'});
-    var shareData = {
-      title: 'Frase del día · Velo',
-      text: '"' + quote + '"' + (author ? '\n— ' + author.replace(/^—\s*/,'') : '') + '\n\nheyvelo.app',
-      files: [file]
-    };
+    var shareText = '“' + quote + '”' + (author ? '\n— ' + author : '') + '\n\n✨ Únete a heyvelo.app';
+    var shareData = { title: 'Frase del día · Velo', text: shareText, files: [file] };
     if(navigator.canShare && navigator.canShare({files:[file]})){
       navigator.share(shareData).catch(function(){});
     } else if(navigator.share){
