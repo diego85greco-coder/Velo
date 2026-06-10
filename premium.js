@@ -30,7 +30,7 @@ var _sbHappy      = null;   // cached Supabase happy_posts
 var _pendingHappyPost = null; // post just submitted, merged into render until Supabase confirms
 var _sbHelp       = null;   // cached Supabase help_posts
 var _syncedReadIds = {};    // broadcast IDs synced as read from Supabase profile (cross-device)
-var _profileSelectTier = 0; // cached tier so _sbSyncProfile skips known-failing queries
+var _profileSelectTier = parseInt(safeLS('get','velo_prof_tier')||'0'); // persisted so 400s don't repeat on reload
 var _sbBottles    = null;   // cached Supabase bottles
 var _sbCircleMsgs = [];     // cached Supabase circle_messages
 var _happyRtCh    = null;   // realtime channel happy_posts
@@ -402,7 +402,7 @@ async function _sbSyncProfile(userId){
   try{
     for(var _ti = _profileSelectTier; _ti < _selTiers.length; _ti++){
       res = await sbClient.from('profiles').select(_selTiers[_ti]).eq('id',userId).limit(1);
-      if(!res.error){ _profileSelectTier = _ti; break; }
+      if(!res.error){ _profileSelectTier = _ti; safeLS('set','velo_prof_tier', String(_ti)); break; }
     }
     if(res.error) return; // all tiers failed
   }catch(e){ return; }
@@ -9066,15 +9066,17 @@ function _migrateBcastLocalToSb(){
   }catch(e){}
   if(!newIds.length) return;
   // Async push to Supabase in background
-  var uid = safeLS('get','velo_user_id');
   _initSupabase();
-  if(!sbClient || !uid) return;
+  if(!sbClient) return;
   (async function(){
     try{
       var ok = await _ensureSbSession();
       if(!ok) return;
+      var uid = safeLS('get','velo_user_id'); // read AFTER session refresh
+      if(!uid) return;
       var allIds = Object.keys(_syncedReadIds);
-      await sbClient.from('profiles').update({read_bcast_ids: allIds}).eq('id', uid);
+      var r = await sbClient.from('profiles').update({read_bcast_ids: allIds}).eq('id', uid);
+      if(r && r.error) console.warn('[migrate bcast]', r.error.message);
     }catch(e){}
   })();
 }
@@ -9086,15 +9088,18 @@ function _syncBroadcastRead(bcId){
   if(!bcId) return;
   safeLS('set','velo_bcast_read_'+bcId,'1');
   _syncedReadIds[bcId] = 1;
-  var uid = safeLS('get','velo_user_id');
   _initSupabase();
-  if(!sbClient || !uid) return;
+  if(!sbClient) return;
   (async function(){
     try{
       var ok = await _ensureSbSession();
       if(!ok) return;
+      // Read UID AFTER session is established — _ensureSbSession refreshes velo_user_id
+      var uid = safeLS('get','velo_user_id');
+      if(!uid) return;
       var allIds = Object.keys(_syncedReadIds);
-      await sbClient.from('profiles').update({read_bcast_ids: allIds}).eq('id', uid);
+      var r = await sbClient.from('profiles').update({read_bcast_ids: allIds}).eq('id', uid);
+      if(r && r.error) console.warn('[sync bcast]', r.error.message);
     }catch(e){}
   })();
 }
@@ -9120,6 +9125,7 @@ function pInboxVaciar(){
     var id = c.getAttribute('data-mid'); if(!id) return;
     if(del.indexOf(id) < 0) del.push(id);
     if(id.indexOf('bc_') === 0) _syncBroadcastRead(id.replace('bc_',''));
+    else if(id.indexOf('rp_') === 0) _syncBroadcastRead(id);
   });
   safeLS('set','velo_inbox_deleted', JSON.stringify(del));
   safeLS('set','velo_inbox', JSON.stringify([]));
