@@ -600,6 +600,12 @@ async function _sbSyncProfile(userId){
   // Trigger buzón poll NOW that _syncedReadIds is fully populated
   if(typeof _buzónPollOnce === 'function') _buzónPollOnce();
   if(typeof _updateInboxDot === 'function') _updateInboxDot();
+  // If the inbox is open right now, re-render so synced read IDs take effect immediately
+  // (the broadcast cards were rendered before this sync completed — need a second pass)
+  var _inPage = document.getElementById('pPage-inbox');
+  if(_inPage && _inPage.classList && _inPage.classList.contains('show') && typeof pRenderInbox === 'function'){
+    pRenderInbox();
+  }
 }
 
 async function _ensureSbSession(){
@@ -8862,6 +8868,9 @@ function pRenderInbox(){
     var _clearedAt = parseInt(safeLS('get','velo_inbox_cleared_at')||'0');
     newBcs = newBcs.filter(function(b){
       if(_del2.indexOf('bc_'+b.id) >= 0) return false;
+      // Also hide messages that were read/deleted on another device (synced via Supabase)
+      if(safeLS('get','velo_bcast_read_'+b.id)) return false;
+      if(_syncedReadIds[b.id]) return false;
       if(_clearedAt && b.sent_at && new Date(b.sent_at).getTime() <= _clearedAt) return false;
       return true;
     });
@@ -9022,27 +9031,28 @@ function pRenderInbox(){
 function _migrateBcastLocalToSb(){
   if(safeLS('get','velo_bcast_sb_push_v1')) return;
   safeLS('set','velo_bcast_sb_push_v1','1'); // set flag immediately to prevent double-run
-  // Collect all locally-known broadcast IDs synchronously
+  // Collect all locally-known broadcast IDs synchronously and write them to
+  // velo_bcast_read_* so pRenderInbox's new filter catches them immediately
   var newIds = [];
+  function _addMigrId(bid){
+    if(!bid || _syncedReadIds[bid]) return;
+    _syncedReadIds[bid] = 1;
+    safeLS('set','velo_bcast_read_'+bid,'1'); // ensure render filter sees it now
+    newIds.push(bid);
+  }
   try{
     var shown = JSON.parse(safeLS('get','velo_bcast_shown') || '{}');
-    Object.keys(shown).forEach(function(bid){ if(bid && !_syncedReadIds[bid]){ _syncedReadIds[bid]=1; newIds.push(bid); } });
+    Object.keys(shown).forEach(function(bid){ _addMigrId(bid); });
   }catch(e){}
   try{
     Object.keys(localStorage).forEach(function(k){
-      if(k.indexOf('velo_bcast_read_') === 0){
-        var bid = k.replace('velo_bcast_read_','');
-        if(bid && !_syncedReadIds[bid]){ _syncedReadIds[bid]=1; newIds.push(bid); }
-      }
+      if(k.indexOf('velo_bcast_read_') === 0) _addMigrId(k.replace('velo_bcast_read_',''));
     });
   }catch(e){}
   try{
     var del = JSON.parse(safeLS('get','velo_inbox_deleted') || '[]');
     del.forEach(function(id){
-      if(id && id.indexOf('bc_') === 0){
-        var bid = id.replace('bc_','');
-        if(bid && !_syncedReadIds[bid]){ _syncedReadIds[bid]=1; newIds.push(bid); }
-      }
+      if(id && id.indexOf('bc_') === 0) _addMigrId(id.replace('bc_',''));
     });
   }catch(e){}
   if(!newIds.length) return;
