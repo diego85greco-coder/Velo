@@ -271,7 +271,7 @@ var _authenticated = false;
 var _userType   = 'user'; // 'user' | 'pro' | 'admin'
 
 var P_NO_NAV = ['landing','login','register','register-type','onboarding',
-                'pro-reg','pro-onboarding','admin-login','pro-pending','verify-email','pick-username',
+                'pro-reg','pro-onboarding','admin-login','admin','pro-pending','verify-email','pick-username',
                 'dm-chat'];
 var P_DARK   = ['help','bottle','respira'];
 var P_FADE   = ['landing','onboarding','register-type','donation-exit',
