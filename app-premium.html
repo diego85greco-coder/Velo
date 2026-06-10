@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-544">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-544">
+  <link rel="stylesheet" href="premium.css?v=20260530-545">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-545">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -137,6 +137,13 @@
       </button>
     </nav>
     <div class="p-sidebar-footer">
+      <button onclick="pOpenGuide()" style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 12px;background:transparent;border:1.5px solid rgba(116,198,157,.18);border-radius:12px;cursor:pointer;margin-bottom:8px;font-family:'Jost',sans-serif;color:var(--ink3)">
+        <span style="width:22px;height:22px;border-radius:50%;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;color:var(--sage)">?</span>
+        <div style="text-align:left">
+          <div style="font-size:11px;font-weight:700;color:var(--ink2)">Guía de Velo</div>
+          <div style="font-size:10px;color:var(--ink5)">Qué hace cada sección</div>
+        </div>
+      </button>
       <button onclick="pOpenMoodQuickView()" style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(116,198,157,.07);border:1.5px solid rgba(116,198,157,.18);border-radius:12px;cursor:pointer;margin-bottom:10px;font-family:'Jost',sans-serif">
         <span id="sidebarMoodEmoji" style="font-size:20px">🤗</span>
         <div style="min-width:0;text-align:left">
@@ -169,6 +176,7 @@
         <button id="topbarMoodBtn" onclick="pOpenMoodQuickView()" title="Tus ánimos registrados" style="display:flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(255,255,255,.06);border:1.5px solid var(--border2);border-radius:100px;font-size:13px;font-weight:700;color:var(--ink3);cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap"><span id="topbarMoodEmoji">🤗</span><span style="font-size:11px;color:var(--ink3)">Tus ánimos</span><span id="topbarMoodStreak" style="display:none;font-size:10px;color:var(--ink4)">🔥<span id="topbarMoodStreakNum"></span></span></button>
         <button onclick="pGoTo('donate-cta')" class="r-donar-btn">💛 Donar</button>
         <button onclick="pShowPlusModal()" class="r-plus-btn">⭐ Plus</button>
+        <button class="p-topbar-btn" onclick="pOpenGuide()" title="Guía de Velo" style="font-size:14px;font-weight:700">?</button>
         <button class="p-topbar-btn" onclick="toggleMobileMenu()">☰</button>
         <button onclick="rToggleDarkMode()" class="r-topbar-theme-btn" title="Modo claro/oscuro">
           <span class="r-tbar-sun"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
@@ -3178,8 +3186,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-544"></script>
-<script src="premium-redesign.js?v=20260530-544"></script>
+<script src="premium.js?v=20260530-545"></script>
+<script src="premium-redesign.js?v=20260530-545"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
