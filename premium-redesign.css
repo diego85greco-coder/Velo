@@ -6322,6 +6322,8 @@ body:not(.r-dark) .r-hs-icon { color: rgba(27, 94, 58, 0.75) !important; filter:
     order: 99 !important;
   }
   .r-hero-actions-top { display: none !important; }
+  /* Hide quick links on mobile — only keep stats bar */
+  .r-hero-right .r-paired-quick { display: none !important; }
   .r-hero-stats {
     flex-direction: row !important;
     width: 100% !important;
