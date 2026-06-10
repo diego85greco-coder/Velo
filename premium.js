@@ -792,7 +792,8 @@ async function pSignUp(){
       if(!result.error && result.data && result.data.user){
         await sbClient.from('profiles').upsert({
           id: result.data.user.id, nombre: name, email: email,
-          role: 'user', created_at: new Date().toISOString()
+          role: 'user', terms_accepted_at: new Date().toISOString(),
+          created_at: new Date().toISOString()
         });
       }
     } else {
@@ -11822,6 +11823,7 @@ async function pProRegNext(){
   if(tcErrEl) tcErrEl.style.display='none';
   if(dpaEl && !dpaEl.checked){ if(dpaErrEl) dpaErrEl.style.display='block'; return; }
   if(dpaErrEl) dpaErrEl.style.display='none';
+  if(!_proCertDataUrl){ pToast('📎','Adjuntá tu certificado o matrícula profesional'); return; }
   if(!_botGuardCheck()) return;
   var nameVal  = name.value.trim();
   var specVal  = spec.value.trim();
@@ -11849,13 +11851,19 @@ async function pStartProTrial(nameVal, specVal, emailVal, passVal){
         email: emailVal, password: passVal,
         options:{ data:{ nombre: nameVal, role:'pro' } }
       });
+      var termsTs = new Date().toISOString();
       if(!result.error && result.data && result.data.user){
         var uid = result.data.user.id;
         safeLS('set','velo_user_id', uid);
+        var certUrl = await _uploadProCert(uid);
         await sbClient.from('profiles').upsert({
           id: uid, nombre: nameVal, email: emailVal,
           role: 'pro', pro_spec: specVal,
           pro_trial_expires_at: trialEnd,
+          pro_cert_url: certUrl || null,
+          pro_verified: false,
+          terms_accepted_at: termsTs,
+          dpa_accepted_at: termsTs,
           created_at: new Date().toISOString()
         }, {onConflict:'id'});
         // Log the trial grant
@@ -11866,7 +11874,10 @@ async function pStartProTrial(nameVal, specVal, emailVal, passVal){
         if(profRes.data && profRes.data[0]){
           var uid2 = profRes.data[0].id;
           safeLS('set','velo_user_id', uid2);
-          await sbClient.from('profiles').update({ role:'pro', pro_spec:specVal, pro_trial_expires_at:trialEnd }).eq('id', uid2);
+          var certUrl2 = await _uploadProCert(uid2);
+          var upd2 = { role:'pro', pro_spec:specVal, pro_trial_expires_at:trialEnd, terms_accepted_at:termsTs, dpa_accepted_at:termsTs };
+          if(certUrl2) upd2.pro_cert_url = certUrl2;
+          await sbClient.from('profiles').update(upd2).eq('id', uid2);
         }
       }
     }catch(e){ console.error('[pStartProTrial]', e); }
@@ -12147,12 +12158,13 @@ var _adminActiveTab = 'moderacion';
 
 function _adminTabBarHtml(){
   var tabs = [
-    { id:'moderacion', icon:'🚨', label:'Moderación' },
-    { id:'mensajes',   icon:'📢', label:'Mensajes' },
-    { id:'usuarios',   icon:'👥', label:'Usuarios' },
-    { id:'finanzas',   icon:'💰', label:'Finanzas' },
-    { id:'privacidad', icon:'🔒', label:'Privacidad' },
-    { id:'gestion',    icon:'⚙️', label:'Gestión' },
+    { id:'moderacion',    icon:'🚨', label:'Moderación' },
+    { id:'mensajes',      icon:'📢', label:'Mensajes' },
+    { id:'usuarios',      icon:'👥', label:'Usuarios' },
+    { id:'profesionales', icon:'🩺', label:'Profesionales' },
+    { id:'finanzas',      icon:'💰', label:'Finanzas' },
+    { id:'privacidad',    icon:'🔒', label:'Privacidad' },
+    { id:'gestion',       icon:'⚙️', label:'Gestión' },
   ];
   return '<div id="adminTabBar" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1)">'
     + tabs.map(function(t){
@@ -12178,14 +12190,173 @@ function _switchAdminTab(tab){
   if(!panel) return;
   panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando…</div>';
   var map = {
-    moderacion: _adminTabModeracion,
-    mensajes:   _adminTabMensajes,
-    usuarios:   _adminTabUsuarios,
-    finanzas:   _adminTabFinanzas,
-    privacidad: _adminTabPrivacidad,
-    gestion:    _adminTabGestion,
+    moderacion:    _adminTabModeracion,
+    mensajes:      _adminTabMensajes,
+    usuarios:      _adminTabUsuarios,
+    profesionales: _adminTabProfesionales,
+    finanzas:      _adminTabFinanzas,
+    privacidad:    _adminTabPrivacidad,
+    gestion:       _adminTabGestion,
   };
   if(map[tab]) map[tab](panel);
+}
+
+// ── PRO REGISTRATION: cert upload helper ─────────────────────────────
+var _proCertDataUrl = null; // base64 cert, held until pStartProTrial uploads it
+
+function pProCertPicked(input){
+  var file = input && input.files && input.files[0];
+  if(!file) return;
+  var statusEl = document.getElementById('prCertStatus');
+  if(statusEl){ statusEl.textContent='✅ '+file.name+' seleccionado'; statusEl.style.display='block'; statusEl.style.color='var(--sage3)'; }
+  var reader = new FileReader();
+  reader.onload = function(e){ _proCertDataUrl = e.target.result; };
+  reader.readAsDataURL(file);
+}
+
+// Upload cert to Supabase storage, returns public URL or null
+async function _uploadProCert(userId){
+  if(!_proCertDataUrl || !userId) return null;
+  try{
+    _initSupabase();
+    if(!sbClient) return null;
+    var base64 = _proCertDataUrl.split(',')[1];
+    var mime = (_proCertDataUrl.match(/^data:([^;]+);/)||[])[1] || 'image/jpeg';
+    var ext = mime.includes('pdf') ? 'pdf' : (mime.includes('png') ? 'png' : 'jpg');
+    var byteStr = atob(base64);
+    var ab = new ArrayBuffer(byteStr.length);
+    var ia = new Uint8Array(ab);
+    for(var i=0;i<byteStr.length;i++) ia[i]=byteStr.charCodeAt(i);
+    var blob = new Blob([ab], {type:mime});
+    var path = 'pro-certs/'+userId+'-'+Date.now()+'.'+ext;
+    var r = await sbClient.storage.from('avatars').upload(path, blob, {contentType:mime, upsert:true});
+    if(r.error) return null;
+    var urlRes = sbClient.storage.from('avatars').getPublicUrl(path);
+    return (urlRes && urlRes.data && urlRes.data.publicUrl) || null;
+  }catch(e){ return null; }
+}
+
+// ── TAB: PROFESIONALES ────────────────────────────────────────────────
+async function _adminTabProfesionales(panel){
+  _initSupabase();
+  panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando profesionales…</div>';
+  var pros = [];
+  if(sbClient){
+    try{
+      var r = await sbClient.from('profiles')
+        .select('id,nombre,email,pro_spec,pro_cert_url,pro_verified,pro_trial_expires_at,pro_subscription_expires_at,created_at,user_status')
+        .eq('role','pro').order('created_at',{ascending:false}).limit(200);
+      if(!r.error && r.data) pros = r.data;
+    }catch(e){}
+  }
+
+  function proCard(p){
+    var certLink = p.pro_cert_url
+      ? '<a href="'+_escHtml(p.pro_cert_url)+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:rgba(116,198,157,.9);border:1px solid rgba(116,198,157,.3);border-radius:8px;padding:4px 10px;text-decoration:none;margin-top:6px">📎 Ver documento</a>'
+      : '<span style="font-size:11px;color:rgba(255,100,100,.6)">⚠️ Sin documento adjunto</span>';
+    var verifiedBadge = p.pro_verified
+      ? '<span style="font-size:9px;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.4);border-radius:4px;padding:2px 7px;color:rgba(116,198,157,.9);font-weight:700">✓ VERIFICADO</span>'
+      : '<span style="font-size:9px;background:rgba(220,162,0,.12);border:1px solid rgba(220,162,0,.35);border-radius:4px;padding:2px 7px;color:rgba(220,162,0,.85);font-weight:700">⏳ PENDIENTE</span>';
+    var now = Date.now();
+    var trialExp = p.pro_trial_expires_at ? new Date(p.pro_trial_expires_at).getTime() : 0;
+    var subExp   = p.pro_subscription_expires_at ? new Date(p.pro_subscription_expires_at).getTime() : 0;
+    var accessBadge = (trialExp > now || subExp > now)
+      ? '<span style="font-size:9px;color:rgba(116,198,200,.8);border:1px solid rgba(116,198,200,.3);border-radius:4px;padding:2px 7px">Acceso activo</span>'
+      : '<span style="font-size:9px;color:rgba(220,80,80,.7);border:1px solid rgba(220,80,80,.25);border-radius:4px;padding:2px 7px">Sin acceso</span>';
+    var regDate = p.created_at ? new Date(p.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px;margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px">'
+      +'<div>'
+      +'<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:2px">'+_escHtml(p.nombre||'Sin nombre')+'</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.5)">'+_escHtml(p.pro_spec||'Sin especialidad')+'</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">'+_escHtml(p.email||'')+'</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">'+verifiedBadge+' '+accessBadge+'</div>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">'
+      +certLink
+      +'<span style="font-size:10px;color:rgba(255,255,255,.25)">Reg. '+regDate+'</span>'
+      +'</div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      +(p.pro_verified
+        ? '<button onclick="_adminProRevoke(\''+p.id+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(220,162,0,.12);border:1px solid rgba(220,162,0,.3);color:rgba(220,162,0,.8)">↩️ Revocar verificación</button>'
+        : '<button onclick="_adminProVerify(\''+p.id+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.35);color:rgba(116,198,157,.95)">✅ Verificar</button>'
+      )
+      +'<button onclick="_adminProMoreInfo(\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(116,198,200,.1);border:1px solid rgba(116,198,200,.25);color:rgba(116,198,200,.8)">📧 Pedir más info</button>'
+      +'<button onclick="_adminProWarn(\''+p.id+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(220,120,0,.1);border:1px solid rgba(220,120,0,.25);color:rgba(220,120,0,.8)">⚠️ Advertir</button>'
+      +'<button onclick="_adminProDelete(\''+p.id+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(220,60,60,.1);border:1px solid rgba(220,60,60,.25);color:rgba(220,80,80,.8)">🗑️ Eliminar</button>'
+      +'</div>'
+      +'</div>';
+  }
+
+  panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(116,198,200,.7);margin-bottom:12px">🩺 PROFESIONALES REGISTRADOS ('+pros.length+')</div>'
+    + (pros.length ? pros.map(proCard).join('') : '<p style="font-size:12px;color:rgba(255,255,255,.3)">No hay profesionales registrados.</p>');
+}
+
+async function _adminProVerify(proId, email, nombre){
+  _initSupabase(); if(!sbClient) return;
+  try{
+    await sbClient.from('profiles').update({ pro_verified: true }).eq('id', proId);
+    await sbClient.from('broadcasts').insert({
+      target: 'user:'+proId, icon:'✅',
+      subject: '¡Tus credenciales fueron verificadas!',
+      body: 'Hola '+nombre+', el equipo de Velo revisó tu documentación y tus credenciales profesionales fueron verificadas. Ya podés acceder a todas las funciones de tu panel profesional. ¡Bienvenido/a!',
+      sender: JSON.stringify({n:'Velo — Equipo',i:'velo-system',a:'✅'}),
+      sent_at: new Date().toISOString()
+    });
+    pToast('✅', nombre+' verificado/a');
+    _switchAdminTab('profesionales');
+  }catch(e){ pToast('⚠️','Error: '+e.message); }
+}
+
+async function _adminProRevoke(proId, email, nombre){
+  _initSupabase(); if(!sbClient) return;
+  try{
+    await sbClient.from('profiles').update({ pro_verified: false }).eq('id', proId);
+    pToast('↩️','Verificación revocada para '+nombre);
+    _switchAdminTab('profesionales');
+  }catch(e){ pToast('⚠️','Error: '+e.message); }
+}
+
+function _adminProMoreInfo(email, nombre){
+  if(!email) return;
+  var subject = encodeURIComponent('Velo — Documentación profesional requerida');
+  var body = encodeURIComponent('Hola '+nombre+',\n\nPara completar la verificación de tu perfil profesional en Velo, necesitamos que nos envíes la siguiente información o documentación adicional:\n\n- \n\nQuedamos a tu disposición.\n\nEquipo Velo\ncontacto@heyvelo.app');
+  window.open('mailto:'+email+'?subject='+subject+'&body='+body, '_blank');
+}
+
+async function _adminProWarn(proId, nombre){
+  var msg = prompt('Escribí el motivo de la advertencia para '+nombre+':');
+  if(!msg || !msg.trim()) return;
+  _initSupabase(); if(!sbClient) return;
+  try{
+    await sbClient.from('broadcasts').insert({
+      target: 'user:'+proId, icon:'⚠️',
+      subject: '⚠️ Advertencia oficial de Velo',
+      body: 'Hola '+nombre+', tu cuenta profesional recibió una advertencia oficial:\n\n"'+msg.trim()+'"\n\nEsta advertencia queda registrada. Ante reincidencia, tu cuenta puede ser suspendida.',
+      sender: JSON.stringify({n:'Velo — Moderación',i:'velo-system',a:'⚠️'}),
+      sent_at: new Date().toISOString()
+    });
+    pToast('⚠️','Advertencia enviada a '+nombre);
+  }catch(e){ pToast('⚠️','Error: '+e.message); }
+}
+
+async function _adminProDelete(proId, email, nombre){
+  if(!confirm('¿Eliminar el perfil profesional de '+nombre+' ('+email+')? Esta acción es irreversible.')) return;
+  _initSupabase(); if(!sbClient) return;
+  try{
+    // Notify before deleting
+    await sbClient.from('broadcasts').insert({
+      target: 'user:'+proId, icon:'🚫',
+      subject: 'Tu cuenta profesional fue eliminada',
+      body: 'Tu cuenta profesional en Velo fue eliminada por el equipo de administración. Si creés que es un error, escribinos a contacto@heyvelo.app.',
+      sender: JSON.stringify({n:'Velo — Administración',i:'velo-system',a:'🚫'}),
+      sent_at: new Date().toISOString()
+    });
+    await sbClient.from('profiles').delete().eq('id', proId);
+    pToast('🗑️','Perfil de '+nombre+' eliminado');
+    _switchAdminTab('profesionales');
+  }catch(e){ pToast('⚠️','Error: '+e.message); }
 }
 
 // ── TAB: MODERACIÓN ───────────────────────────────────────────────────

@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-571">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-571">
+  <link rel="stylesheet" href="premium.css?v=20260530-572">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-572">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -2335,6 +2335,16 @@
                 <label for="proDpaCheck" style="font-size:12px;color:var(--ink3);cursor:pointer;line-height:1.5">Leí y acepto el <span style="color:var(--sage2);font-weight:700;text-decoration:underline;cursor:pointer" onclick="pShowDPA()">Acuerdo de Procesamiento de Datos (DPA)</span> requerido por el RGPD para profesionales que acceden a datos de salud.</label>
               </div>
               <div class="p-err-msg" id="proDpaErr" style="margin-bottom:10px">Debés aceptar el DPA para continuar (obligatorio RGPD)</div>
+              <!-- Certificado / matrícula profesional -->
+              <div class="p-field" style="margin-bottom:10px">
+                <label class="p-field-label">Certificado o matrícula profesional <span style="color:var(--sage3)">(requerido)</span></label>
+                <div style="background:rgba(116,198,157,.06);border:1.5px dashed rgba(116,198,157,.3);border-radius:12px;padding:12px 14px">
+                  <p style="font-size:11px;color:var(--ink4);margin:0 0 8px;line-height:1.5">Adjuntá una foto o PDF de tu título, matrícula o certificación. Será revisada por nuestro equipo para verificar tus credenciales.</p>
+                  <label for="prCertFile" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:10px;cursor:pointer;font-size:12px;font-weight:700;color:var(--sage3);font-family:'Jost',sans-serif">📎 Seleccionar archivo</label>
+                  <input type="file" id="prCertFile" accept="image/*,application/pdf" style="display:none" onchange="pProCertPicked(this)">
+                  <div id="prCertStatus" style="font-size:11px;color:var(--ink4);margin-top:6px;display:none"></div>
+                </div>
+              </div>
               <!-- Honeypot anti-bot -->
               <div style="position:absolute;left:-9999px;height:0;overflow:hidden" aria-hidden="true" tabindex="-1">
                 <input type="text" id="_vhp2" name="company" autocomplete="off" tabindex="-1">
@@ -3228,8 +3238,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-571"></script>
-<script src="premium-redesign.js?v=20260530-571"></script>
+<script src="premium.js?v=20260530-572"></script>
+<script src="premium-redesign.js?v=20260530-572"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
