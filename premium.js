@@ -30,6 +30,7 @@ var _sbHappy      = null;   // cached Supabase happy_posts
 var _pendingHappyPost = null; // post just submitted, merged into render until Supabase confirms
 var _sbHelp       = null;   // cached Supabase help_posts
 var _syncedReadIds = {};    // broadcast IDs synced as read from Supabase profile (cross-device)
+var _profileSelectTier = 0; // cached tier so _sbSyncProfile skips known-failing queries
 var _sbBottles    = null;   // cached Supabase bottles
 var _sbCircleMsgs = [];     // cached Supabase circle_messages
 var _happyRtCh    = null;   // realtime channel happy_posts
@@ -389,27 +390,21 @@ async function _sbSyncProfile(userId){
   _initSupabase();
   if(!sbClient || !userId) return;
   var res;
+  // Each tier drops more optional columns; _profileSelectTier is cached so we skip
+  // known-failing queries on every subsequent call (avoids 400 flood in console).
+  var _selTiers = [
+    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city',
+    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids',
+    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes',
+    'nombre,avatar,motto,role,username,username_changes',
+    'nombre,avatar,motto,role,username'
+  ];
   try{
-    res = await sbClient.from('profiles')
-      .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city')
-      .eq('id',userId).limit(1);
-    // 400 = a column doesn't exist yet — progressively strip optional columns
-    if(res.error){
-      res = await sbClient.from('profiles')
-        .select('nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito')
-        .eq('id',userId).limit(1);
+    for(var _ti = _profileSelectTier; _ti < _selTiers.length; _ti++){
+      res = await sbClient.from('profiles').select(_selTiers[_ti]).eq('id',userId).limit(1);
+      if(!res.error){ _profileSelectTier = _ti; break; }
     }
-    if(res.error){
-      res = await sbClient.from('profiles')
-        .select('nombre,avatar,motto,role,username,username_changes,user_status,incognito')
-        .eq('id',userId).limit(1);
-    }
-    if(res.error){
-      // Ultra-minimal: only guaranteed-core columns
-      res = await sbClient.from('profiles')
-        .select('nombre,avatar,motto,role,username')
-        .eq('id',userId).limit(1);
-    }
+    if(res.error) return; // all tiers failed
   }catch(e){ return; }
 
   if(res.error) return;
