@@ -8604,7 +8604,7 @@ async function pSaveProfileStatus(){
   }
 }
 
-function pShowPublicProfile(){
+async function pShowPublicProfile(){
   var name   = safeLS('get','velo_user_name')    || 'Usuario';
   var av     = safeLS('get','velo_user_av')      || '🧑';
   var motto  = safeLS('get','velo_user_motto')   || 'Mi camino, mi ritmo.';
@@ -8613,22 +8613,49 @@ function pShowPublicProfile(){
   var film   = safeLS('get','velo_status_film')  || '';
   var phrase = safeLS('get','velo_status_phrase')|| '';
   var isInc  = safeLS('get','velo_incognito') === 'true';
+  var myId   = safeLS('get','velo_user_id') || '';
+  var myRole = safeLS('get','velo_user_type') || 'user';
   var convs  = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
+
+  // If status fields empty, fetch fresh from Supabase before rendering (cross-device sync)
+  if(!isInc && !music && !book && !film && !phrase && myId){
+    _initSupabase();
+    if(sbClient){
+      try{
+        await _ensureSbSession();
+        var _sr = await sbClient.from('profiles')
+          .select('status_music,status_book,status_film,status_phrase,nombre,motto,avatar')
+          .eq('id', myId).limit(1);
+        if(!_sr.error && _sr.data && _sr.data.length){
+          var _sp = _sr.data[0];
+          if(_sp.status_music  != null){ safeLS('set','velo_status_music',  _sp.status_music);  music  = _sp.status_music||'';  }
+          if(_sp.status_book   != null){ safeLS('set','velo_status_book',   _sp.status_book);   book   = _sp.status_book||'';   }
+          if(_sp.status_film   != null){ safeLS('set','velo_status_film',   _sp.status_film);   film   = _sp.status_film||'';   }
+          if(_sp.status_phrase != null){ safeLS('set','velo_status_phrase', _sp.status_phrase); phrase = _sp.status_phrase||''; }
+          if(_sp.nombre)  { safeLS('set','velo_user_name',  _sp.nombre);  name  = _sp.nombre; }
+          if(_sp.motto)   { safeLS('set','velo_user_motto', _sp.motto);   motto = _sp.motto;  }
+          if(_sp.avatar)  { safeLS('set','velo_user_av',    _sp.avatar);  av    = _sp.avatar; }
+        }
+      }catch(e){}
+    }
+  }
+
   var badge  = _getBadge(convs);
   var displayName = isInc ? 'Anónimo/a 🎭' : _escHtml(name);
   var displayAv   = isInc ? '🎭' : av;
-  var statusHtml  = '';
+
+  var statusHtml = '';
   if(!isInc && (music || book || film || phrase)){
-    statusHtml = '<div style="background:var(--sage7);border-radius:12px;padding:12px;margin-top:12px;font-size:13px;color:var(--ink3);line-height:1.7;text-align:left">';
-    if(music)  statusHtml += '<div>🎵 '+_escHtml(music)+'</div>';
-    if(book)   statusHtml += '<div>📚 '+_escHtml(book)+'</div>';
-    if(film)   statusHtml += '<div>🎬 '+_escHtml(film)+'</div>';
-    if(phrase) statusHtml += '<div style="font-style:italic;margin-top:4px;color:var(--sage2)">✨ "'+_escHtml(phrase)+'"</div>';
+    statusHtml = '<div style="background:var(--sage7);border-radius:12px;padding:12px;margin-top:12px;font-size:13px;color:var(--ink3);line-height:1.9;text-align:left">';
+    if(music)  statusHtml += '<div><span style="color:var(--ink4);font-size:12px">🎵 Música</span> · '+_escHtml(music)+'</div>';
+    if(book)   statusHtml += '<div><span style="color:var(--ink4);font-size:12px">📚 Libro</span> · '+_escHtml(book)+'</div>';
+    if(film)   statusHtml += '<div><span style="color:var(--ink4);font-size:12px">🎬 Película</span> · '+_escHtml(film)+'</div>';
+    if(phrase) statusHtml += '<div style="font-style:italic;margin-top:4px;color:var(--sage2)">✨ &ldquo;'+_escHtml(phrase)+'&rdquo;</div>';
     statusHtml += '</div>';
   }
+
   var existing = document.getElementById('publicProfileOv');
   if(existing) existing.remove();
-  var myId = safeLS('get','velo_user_id') || '';
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
   ov.id = 'publicProfileOv';
@@ -8642,29 +8669,59 @@ function pShowPublicProfile(){
     +statusHtml
     +(isInc ? '<div style="margin-top:12px;font-size:12px;color:var(--ink4);background:var(--cream2);border-radius:10px;padding:10px">🎭 Modo incógnito · tu nombre y avatar están ocultos</div>' : '')
     +'</div>'
-    +'<div id="pubProfReviews" style="margin:0 0 12px"><div style="font-size:11px;color:var(--ink4);text-align:center;padding:6px">Cargando reseñas…</div></div>'
+    +'<div id="pubProfStats" style="margin:0 0 8px"></div>'
+    +'<div id="pubProfReviews" style="margin:0 0 12px"></div>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'publicProfileOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
-  // Load reviews asynchronously after overlay is in DOM
-  if(myId){
-    _loadUserReviews(myId).then(function(revs){
-      var rvEl = document.getElementById('pubProfReviews');
-      if(!rvEl) return;
-      if(!revs.length){
-        rvEl.innerHTML = '<div style="font-size:11px;color:var(--ink4);text-align:center;padding:6px">Sin reseñas aún — aparecerán después de tus sesiones 💬</div>';
-        return;
-      }
-      rvEl.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS</div>'
-        + _renderReviewsList(revs, myId, myId);
-    }).catch(function(){
-      var rvEl = document.getElementById('pubProfReviews');
-      if(rvEl) rvEl.innerHTML = '';
-    });
-  } else {
+
+  if(!myId) return;
+
+  // Load guardian stats + reviews in parallel
+  var statsPromise = (async function(){
+    try{
+      _initSupabase(); await _ensureSbSession();
+      var rHelped = await sbClient.from('guardian_requests')
+        .select('id',{count:'exact',head:true})
+        .eq('guardian_id', myId)
+        .in('status',['ended','message_left']);
+      var rReceived = await sbClient.from('guardian_requests')
+        .select('id',{count:'exact',head:true})
+        .eq('user_id', myId)
+        .in('status',['ended','message_left']);
+      var helped   = (!rHelped.error   ? rHelped.count   : convs) || 0;
+      var received = (!rReceived.error ? rReceived.count : 0)     || 0;
+      return { helped: helped, received: received };
+    }catch(e){ return { helped: convs, received: 0 }; }
+  })();
+
+  var reviewsPromise = myRole === 'pro' ? _loadUserReviews(myId) : Promise.resolve([]);
+
+  statsPromise.then(function(st){
+    var el = document.getElementById('pubProfStats');
+    if(!el) return;
+    if(st.helped > 0 || st.received > 0){
+      el.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:8px">'
+        +'<div style="flex:1;background:rgba(116,198,157,.08);border-radius:10px;padding:10px;text-align:center">'
+        +'<div style="font-size:20px;font-weight:700;color:var(--sage2)">'+st.helped+'</div>'
+        +'<div style="font-size:10px;color:var(--ink4);margin-top:2px">personas acompañadas</div></div>'
+        +'<div style="flex:1;background:rgba(116,198,157,.08);border-radius:10px;padding:10px;text-align:center">'
+        +'<div style="font-size:20px;font-weight:700;color:var(--sage2)">'+st.received+'</div>'
+        +'<div style="font-size:10px;color:var(--ink4);margin-top:2px">veces que me apoyaron</div></div>'
+        +'</div>';
+    }
+  }).catch(function(){});
+
+  reviewsPromise.then(function(revs){
     var rvEl = document.getElementById('pubProfReviews');
-    if(rvEl) rvEl.innerHTML = '';
-  }
+    if(!rvEl) return;
+    if(!revs.length){
+      rvEl.innerHTML = '<div style="font-size:11px;color:var(--ink4);text-align:center;padding:4px">Sin reseñas aún 💬</div>';
+      return;
+    }
+    rvEl.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS</div>'
+      + _renderReviewsList(revs, myId, myId);
+  }).catch(function(){});
 }
 
 function _calcBadges(){
