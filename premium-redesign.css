@@ -8763,6 +8763,12 @@ body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
     align-content: flex-start !important;
     gap: 0 !important;
   }
+  /* Force all 3 stat cards onto one row — equal width, never wrap individually */
+  .r-hero-right .r-hero-stats > .r-hero-stat {
+    flex: 1 !important;
+    min-width: 0 !important;
+    text-align: left !important;
+  }
   .r-hero-stat-val {
     font-size: 22px !important;
     gap: 4px !important;
