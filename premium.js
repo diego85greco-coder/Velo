@@ -15654,18 +15654,33 @@ function pEndSession(){
 }
 
 // ── WEEKLY MOOD MINI-GRAPH ────────────────────────────────────
-function _renderHomeWeekMoodGraph(){
+async function _renderHomeWeekMoodGraph(){
   var container = document.getElementById('homeWeekMoodGraph');
   if(!container) return;
   var today = new Date();
   var dayNames = ['D','L','M','M','J','V','S'];
   var moodColors = {'😄':'rgba(116,198,157,.9)','😊':'rgba(116,198,157,.65)','😐':'rgba(200,160,80,.7)','😞':'rgba(180,90,90,.7)','😢':'rgba(160,70,70,.8)'};
   var moodBgs    = {'😄':'rgba(116,198,157,.22)','😊':'rgba(116,198,157,.14)','😐':'rgba(200,160,80,.14)','😞':'rgba(180,90,90,.11)','😢':'rgba(160,70,70,.14)'};
+  // Build set of months covered by last 7 days (may span two months)
+  var _months = {};
+  for(var _mi=0; _mi<7; _mi++){
+    var _md = new Date(today.getFullYear(), today.getMonth(), today.getDate()-_mi);
+    var _mk = _md.getFullYear()+'-'+String(_md.getMonth()+1).padStart(2,'0');
+    if(!_months[_mk]) _months[_mk] = {year:_md.getFullYear(), month:_md.getMonth()+1};
+  }
+  // Load from Supabase for each relevant month and build fallback map
+  var _sbMap = {};
+  await Promise.all(Object.values(_months).map(async function(m){
+    var sbData = await sbLoadAllMoods(m.year, m.month);
+    if(sbData) sbData.forEach(function(e){ _sbMap[e.date_key] = e; });
+  }));
   var days = [];
   for(var i=6; i>=0; i--){
     var d = new Date(today.getFullYear(), today.getMonth(), today.getDate()-i);
     var key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    var mood = null; try{ mood = JSON.parse(safeLS('get','velo_mood_'+key)||'null'); }catch(e){}
+    var mood = null;
+    try{ mood = JSON.parse(safeLS('get','velo_mood_'+key)||'null'); }catch(e){}
+    if(!mood && _sbMap[key]) mood = _sbMap[key];
     days.push({ dayName:dayNames[d.getDay()], mood:mood, isToday:i===0 });
   }
   container.innerHTML = days.map(function(d){
@@ -15736,7 +15751,7 @@ function _initDiaryPromptPreview(){
 }
 
 // ── WEEKLY SUMMARY ────────────────────────────────────────────
-function _checkWeeklySummary(){
+async function _checkWeeklySummary(){
   var lastKey = safeLS('get','velo_last_weekly_summary')||'';
   var today = new Date();
   var todayKey = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
@@ -15746,13 +15761,27 @@ function _checkWeeklySummary(){
   // Only run on Sundays, OR if it's been 7+ days since last summary (not on first ever load)
   if(!isSunday && daysSince < 7) return;
 
-  // Count moods via date keys (same source as mini-graph — more reliable than mood_log array)
+  // Build Supabase fallback map for last 7 days (covers localStorage gaps)
+  var _wsMonths = {};
+  for(var _wmi=0; _wmi<7; _wmi++){
+    var _wmd = new Date(today.getFullYear(), today.getMonth(), today.getDate()-_wmi);
+    var _wmk = _wmd.getFullYear()+'-'+String(_wmd.getMonth()+1).padStart(2,'0');
+    if(!_wsMonths[_wmk]) _wsMonths[_wmk] = {year:_wmd.getFullYear(), month:_wmd.getMonth()+1};
+  }
+  var _wsSbMap = {};
+  await Promise.all(Object.values(_wsMonths).map(async function(m){
+    var sbData = await sbLoadAllMoods(m.year, m.month);
+    if(sbData) sbData.forEach(function(e){ _wsSbMap[e.date_key] = e; });
+  }));
+
+  // Count moods via date keys + Supabase fallback
   var weekMoods = [];
   var _today = new Date();
   for(var _i=0; _i<7; _i++){
     var _d = new Date(_today.getFullYear(), _today.getMonth(), _today.getDate()-_i);
     var _k = _d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');
     var _m = null; try{ _m = JSON.parse(safeLS('get','velo_mood_'+_k)||'null'); }catch(e){}
+    if(!_m && _wsSbMap[_k]) _m = _wsSbMap[_k];
     if(_m) weekMoods.push(_m);
   }
   var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
@@ -15768,6 +15797,7 @@ function _checkWeeklySummary(){
     var _dj = new Date(_today.getFullYear(), _today.getMonth(), _today.getDate()-_j);
     var _kj = _dj.getFullYear()+'-'+String(_dj.getMonth()+1).padStart(2,'0')+'-'+String(_dj.getDate()).padStart(2,'0');
     var _mj = null; try{ _mj = JSON.parse(safeLS('get','velo_mood_'+_kj)||'null'); }catch(e){}
+    if(!_mj && _wsSbMap[_kj]) _mj = _wsSbMap[_kj];
     timeline.push({ dayName: dayNamesShort[_dj.getDay()], mood: _mj, isToday: _j===0 });
   }
 
