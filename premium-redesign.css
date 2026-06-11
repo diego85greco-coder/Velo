@@ -8505,9 +8505,8 @@ input.p-input, textarea.p-textarea, .p-input, .p-textarea {
   .p-sheet { max-height: 85vh !important; }
 }
 
-/* ── v674: Meteocons Lottie — 3D hero weather icon ── */
-.weather-hero-img,
-lottie-player.weather-hero-img {
+/* ── v675: Meteocons animated SVG — hero weather icon ── */
+.weather-hero-img {
   display: block !important;
   width: 190px !important;
   height: 190px !important;
@@ -8517,16 +8516,13 @@ lottie-player.weather-hero-img {
     drop-shadow(0 0 50px rgba(255,195,50,.22)) !important;
 }
 /* Period-specific depth glows */
-.r-time-icon.is-morning   .weather-hero-img,
-.r-time-icon.is-morning   lottie-player.weather-hero-img {
+.r-time-icon.is-morning   .weather-hero-img {
   filter: drop-shadow(0 28px 55px rgba(0,0,0,.52)) drop-shadow(0 0 55px rgba(255,185,40,.30)) !important;
 }
-.r-time-icon.is-afternoon .weather-hero-img,
-.r-time-icon.is-afternoon lottie-player.weather-hero-img {
+.r-time-icon.is-afternoon .weather-hero-img {
   filter: drop-shadow(0 28px 55px rgba(0,0,0,.52)) drop-shadow(0 0 55px rgba(255,155,25,.34)) !important;
 }
-.r-time-icon.is-night     .weather-hero-img,
-.r-time-icon.is-night     lottie-player.weather-hero-img {
+.r-time-icon.is-night     .weather-hero-img {
   filter: drop-shadow(0 28px 55px rgba(0,0,0,.65)) drop-shadow(0 0 45px rgba(160,140,255,.24)) !important;
 }
 /* Container: icon floats, pill overlaps from below */
@@ -10214,37 +10210,37 @@ body:not(.r-dark) #homeHappyFeed .momento-card {
   border-radius: 14px !important;
   padding: 8px 6px !important;
 }
-/* Light mode overrides */
+/* v675: REGISTRA always uses dark forest green — same as PARA VOS panel */
 body:not(.r-dark) #homeRegisterZone {
-  background: linear-gradient(155deg, rgba(248,244,230,.96) 0%, rgba(238,232,210,.92) 100%) !important;
-  border-color: rgba(175,135,38,.60) !important;
-  box-shadow: 0 0 0 1px rgba(175,135,38,.12) inset, 0 6px 24px rgba(80,60,10,.12) !important;
+  background: linear-gradient(155deg, rgba(18,46,32,.96) 0%, rgba(11,34,22,.92) 100%) !important;
+  border-color: rgba(200,158,56,.72) !important;
+  box-shadow: 0 0 0 1px rgba(200,158,56,.14) inset, inset 0 1px 0 rgba(255,215,80,.10), 0 10px 36px rgba(0,0,0,.42), 0 3px 10px rgba(0,0,0,.24) !important;
 }
 body:not(.r-dark) #homeRegisterZone::before,
 body:not(.r-dark) #homeRegisterZone::after {
-  border-color: rgba(155,115,28,.48) !important;
+  border-color: rgba(200,158,56,.58) !important;
 }
 body:not(.r-dark) #homeRegisterLabel {
-  color: rgba(130,95,18,.80) !important;
+  color: rgba(200,158,56,.88) !important;
 }
 body:not(.r-dark) .home-mood-btn {
-  background: rgba(116,198,157,.14) !important;
-  border-color: rgba(116,198,157,.38) !important;
-  color: rgba(30,70,50,.82) !important;
+  background: rgba(255,255,255,.10) !important;
+  border-color: rgba(255,255,255,.20) !important;
+  color: rgba(255,255,255,.80) !important;
 }
 body:not(.r-dark) #homeCurrentMoodLine {
-  background: linear-gradient(135deg, rgba(220,175,40,.22), rgba(200,155,18,.16)) !important;
-  border-color: rgba(200,158,20,.42) !important;
-  color: rgba(140,90,10,.88) !important;
+  background: linear-gradient(135deg, rgba(200,155,35,.42), rgba(178,132,18,.34)) !important;
+  border-color: rgba(222,178,55,.58) !important;
+  color: rgba(255,225,120,.95) !important;
 }
 body:not(.r-dark) #homeMottoLine {
-  background: linear-gradient(135deg, rgba(215,130,30,.18), rgba(188,108,18,.12)) !important;
-  border-color: rgba(200,128,20,.38) !important;
-  color: rgba(140,80,10,.85) !important;
+  background: linear-gradient(135deg, rgba(200,158,56,.18), rgba(178,138,18,.13)) !important;
+  border-color: rgba(200,158,56,.45) !important;
+  color: rgba(200,158,56,.90) !important;
 }
 body:not(.r-dark) #homeWeekMoodGraph {
-  background: rgba(0,0,0,.06) !important;
-  border: 1px solid rgba(0,0,0,.08) !important;
+  background: rgba(0,0,0,.20) !important;
+  border: none !important;
 }
 
 /* ── v666: PARA VOS ornate panel ────────────────────────────────── */

@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="674">
+  <meta name="app-version" content="675">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -28,8 +28,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-674">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-674">
+  <link rel="stylesheet" href="premium.css?v=20260611-675">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-675">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1156,14 +1156,14 @@
                   </div>
                   <!-- Bottom cream strip: Buscar personas + Favoritos -->
                   <div id="homeSearchRow" class="para-vos-bottom">
-                    <button id="homeSearchUsersBtn" onclick="pOpenUserSearch()" class="para-vos-bottom-btn" title="Buscar personas">
+                    <button id="homeSearchUsersBtn" onclick="pOpenUserSearch()" class="para-vos-bottom-btn" title="Buscar personas" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:10px 8px 11px;width:100%;border:none;background:transparent;cursor:pointer;border-radius:0;box-sizing:border-box;font-size:12px;font-weight:600;letter-spacing:.2px;color:rgba(190,148,50,.90)">
                       <span style="font-size:22px;line-height:1;display:block;text-align:center">🔍</span>
-                      Buscar personas
+                      <span>Buscar personas</span>
                     </button>
-                    <button onclick="pGoTo('contacts')" class="para-vos-bottom-btn" title="Contactos favoritos" style="position:relative">
+                    <button onclick="pGoTo('contacts')" class="para-vos-bottom-btn" title="Contactos favoritos" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:10px 8px 11px;width:100%;border:none;background:transparent;cursor:pointer;border-radius:0;box-sizing:border-box;font-size:12px;font-weight:600;letter-spacing:.2px;color:rgba(190,148,50,.90);position:relative">
                       <span id="favCountBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
                       <span style="font-size:22px;line-height:1;display:block;text-align:center">⭐️</span>
-                      Favoritos
+                      <span>Favoritos</span>
                     </button>
                   </div>
                 </div>
@@ -3523,9 +3523,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
-<script src="premium.js?v=20260611-674"></script>
-<script src="premium-redesign.js?v=20260611-674"></script>
+<script src="premium.js?v=20260611-675"></script>
+<script src="premium-redesign.js?v=20260611-675"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
