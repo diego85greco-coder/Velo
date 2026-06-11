@@ -5161,11 +5161,11 @@ function pOpenGuide(){
   ov.id='veloGuideOv';
   ov.className='p-modal-ov show';
   ov.style.zIndex='9998';
-  // CSS Grid layout: rows = auto (header) + 1fr (scrollable cards) + auto (footer).
-  // More reliable than flex for fixed-header/footer sheets on iOS Safari.
-  ov.innerHTML=''
-    +'<div style="width:100%;background:#0E1C14;border-radius:30px 30px 0 0;border-top:1px solid rgba(116,198,157,.12);height:88vh;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden">'
-    +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07)">'
+  var entendidoBtn = '<div style="padding:4px 0 8px">'
+    +'<button onclick="document.getElementById(\'veloGuideOv\').remove();_syncBodyScroll()" style="width:100%;padding:14px;border-radius:14px;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.3);color:#74c69d;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.3px">Entendido ✓</button>'
+    +'</div>';
+  ov.innerHTML='<div class="p-sheet p-sheet-dark" id="veloGuideSheet" style="padding:0">'
+    +'<div style="position:sticky;top:0;z-index:2;background:#0E1C14;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07)">'
     +'<div>'
     +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:4px">GUÍA DE VELO</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:#fff;font-weight:300;line-height:1.2">¿Qué hace cada sección?</div>'
@@ -5173,26 +5173,14 @@ function pOpenGuide(){
     +'</div>'
     +'<button onclick="document.getElementById(\'veloGuideOv\').remove();_syncBodyScroll()" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);font-size:16px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:10px">✕</button>'
     +'</div>'
-    +'<div id="veloGuideCards" style="overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none;padding:16px 20px 20px;display:flex;flex-direction:column;gap:8px">'
+    +'<div style="padding:16px 20px 32px;display:flex;flex-direction:column;gap:8px">'
     +cards
-    +'</div>'
-    +'<div style="padding:12px 20px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px);border-top:1px solid rgba(255,255,255,.07)">'
-    +'<button onclick="document.getElementById(\'veloGuideOv\').remove();_syncBodyScroll()" style="width:100%;padding:14px;border-radius:14px;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.3);color:#74c69d;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.3px">Entendido ✓</button>'
+    +entendidoBtn
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
-  // Attach bounce-prevention only to the scrollable cards div
-  var cardsEl = document.getElementById('veloGuideCards');
-  if(cardsEl){
-    var _gyStart = 0;
-    cardsEl.addEventListener('touchstart', function(e){ _gyStart = e.touches[0].clientY; }, {passive:true});
-    cardsEl.addEventListener('touchmove', function(e){
-      var atTop    = cardsEl.scrollTop <= 0;
-      var atBottom = cardsEl.scrollTop + cardsEl.clientHeight >= cardsEl.scrollHeight - 1;
-      var pullDown = e.touches[0].clientY > _gyStart; // finger moving down = scroll toward top
-      if((atTop && pullDown) || (atBottom && !pullDown)) e.preventDefault();
-    }, {passive:false});
-  }
+  var sheetEl = document.getElementById('veloGuideSheet');
+  if(sheetEl){ sheetEl.scrollTop = 0; requestAnimationFrame(function(){ sheetEl.scrollTop = 0; }); }
   _syncBodyScroll();
 }
 
