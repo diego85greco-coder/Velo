@@ -10769,3 +10769,115 @@ body.r-dark .r-bell-btn {
 .p-bn-item[data-screen="profile"].active .p-bn-icon svg {
   filter: drop-shadow(0 2px 7px rgba(116,198,157,.50)) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v692 — Momentos & Muro Feliz redesign + Mi lema label
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Tab pills: active = gold amber, inactive = outlined ── */
+
+/* Dark mode active tab */
+body.r-dark .home-feed-tab--active {
+  background: linear-gradient(135deg, rgba(220,178,45,.92), rgba(195,150,22,.85)) !important;
+  border-color: rgba(235,192,55,.68) !important;
+  color: rgba(255,255,255,.97) !important;
+  box-shadow: 0 2px 10px rgba(200,155,30,.40) !important;
+}
+/* Dark mode inactive tab */
+body.r-dark .home-feed-tab:not(.home-feed-tab--active) {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.22) !important;
+  color: rgba(255,255,255,.52) !important;
+  box-shadow: none !important;
+}
+
+/* Light mode: override v683 nth-child specificity — active tabs → gold */
+body:not(.r-dark) .home-feed-tabs button:nth-child(1).home-feed-tab--active,
+body:not(.r-dark) .home-feed-tabs button:nth-child(2).home-feed-tab--active {
+  background: linear-gradient(135deg, rgba(210,168,35,.92), rgba(188,142,18,.85)) !important;
+  border-color: rgba(222,178,45,.70) !important;
+  color: rgba(255,255,255,.97) !important;
+  box-shadow: 0 2px 10px rgba(200,155,30,.35) !important;
+}
+/* Light mode: inactive tabs → clean outlined */
+body:not(.r-dark) .home-feed-tabs button:nth-child(1):not(.home-feed-tab--active),
+body:not(.r-dark) .home-feed-tabs button:nth-child(2):not(.home-feed-tab--active) {
+  background: rgba(255,255,255,.50) !important;
+  border-color: rgba(60,50,20,.28) !important;
+  color: rgba(60,50,20,.62) !important;
+  box-shadow: none !important;
+}
+
+/* ── Momento cards: warm cream/white backgrounds ── */
+/* Light mode */
+body:not(.r-dark) #homeMomentoFeed .momento-card,
+body:not(.r-dark) #homeHappyFeed .momento-card {
+  background: rgba(255,252,240,.95) !important;
+  border-color: rgba(200,175,80,.28) !important;
+  color: rgba(55,40,8,.88) !important;
+  box-shadow: 0 1px 7px rgba(180,150,40,.10) !important;
+}
+body:not(.r-dark) #homeMomentoFeed .momento-card .momento-meta,
+body:not(.r-dark) #homeHappyFeed .momento-card .momento-meta {
+  color: rgba(100,80,20,.55) !important;
+}
+/* Dark mode: warm-tinted cards instead of flat dark */
+body.r-dark #homeMomentoFeed .momento-card,
+body.r-dark #homeHappyFeed .momento-card {
+  background: rgba(50,40,18,.72) !important;
+  border-color: rgba(220,185,80,.20) !important;
+  color: rgba(240,228,188,.90) !important;
+}
+body.r-dark #homeMomentoFeed .momento-card .momento-meta,
+body.r-dark #homeHappyFeed .momento-card .momento-meta {
+  color: rgba(210,190,130,.58) !important;
+}
+
+/* ── Compose button: amber gradient wrapper + right CTA pill ── */
+/* Light mode */
+body:not(.r-dark) .home-happy-compose-btn {
+  background: linear-gradient(135deg, rgba(218,172,38,.15), rgba(195,150,22,.10)) !important;
+  border-color: rgba(200,162,32,.42) !important;
+  color: rgba(75,55,6,.82) !important;
+  box-shadow: 0 2px 8px rgba(180,140,25,.10) !important;
+}
+/* Dark mode */
+body.r-dark .home-happy-compose-btn {
+  background: linear-gradient(135deg, rgba(220,178,45,.14), rgba(195,150,22,.09)) !important;
+  border-color: rgba(225,182,48,.34) !important;
+  color: rgba(235,215,138,.85) !important;
+}
+
+/* CTA pill inside compose button */
+.home-compose-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: 100px;
+  background: linear-gradient(135deg, rgba(218,172,38,.96), rgba(192,148,20,.90));
+  border: 1px solid rgba(228,185,48,.72);
+  color: rgba(255,255,255,.97);
+  font-size: 10px;
+  font-weight: 800;
+  font-family: 'Jost', sans-serif;
+  letter-spacing: .3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 1px 7px rgba(180,138,22,.32);
+  margin-left: 4px;
+}
+
+/* ── Mi lema label ── */
+.home-motto-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  font-family: 'Jost', sans-serif;
+  margin-bottom: 3px;
+  padding-left: 4px;
+  color: rgba(230,192,90,.60);
+}
+body:not(.r-dark) .home-motto-label {
+  color: rgba(90,65,10,.48) !important;
+}
