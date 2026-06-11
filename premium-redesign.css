@@ -9592,3 +9592,29 @@ body.r-dark #homeMottoLine {
   border-color: rgba(200,158,56,.50) !important;
   background: linear-gradient(135deg,rgba(200,158,56,.24),rgba(180,130,40,.16)) !important;
 }
+
+/* ── v655: Momentos compose card — dark glass aesthetic ─────────── */
+body.r-dark #momentoPostBox {
+  background: rgba(255,255,255,.055) !important;
+  border-color: rgba(116,198,157,.20) !important;
+}
+/* Light mode: ensure card uses soft sage glass, not warm cream */
+body:not(.r-dark) #momentoPostBox {
+  background: rgba(116,198,157,.06) !important;
+  border-color: rgba(116,198,157,.28) !important;
+}
+
+/* ── v655: Diary emoji button — legible in both modes ───────────── */
+#diaryEmojiBtn {
+  background: rgba(116,198,157,.10) !important;
+  border-color: rgba(116,198,157,.32) !important;
+  color: rgba(40,110,70,.90) !important;
+}
+body.r-dark #diaryEmojiBtn {
+  background: rgba(116,198,157,.10) !important;
+  border-color: rgba(116,198,157,.28) !important;
+  color: rgba(116,198,157,.88) !important;
+}
+body.r-dark #diaryEmojiBtn:hover {
+  background: rgba(116,198,157,.18) !important;
+}
