@@ -7523,9 +7523,14 @@ function pZoomPhoto(src){
   ov.id = 'photoZoomOv';
   ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out';
   ov.innerHTML = '<img src="'+_escHtml(src)+'" style="max-width:100%;max-height:100%;border-radius:12px;object-fit:contain">'
-    +'<button style="position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;cursor:pointer">✕</button>';
+    +'<button id="photoZoomClose" style="position:absolute;top:64px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.25);color:#fff;font-size:20px;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:center">✕</button>';
   ov.addEventListener('click', function(){ ov.remove(); });
   document.body.appendChild(ov);
+  var btn = document.getElementById('photoZoomClose');
+  if(btn){
+    btn.addEventListener('click', function(e){ e.stopPropagation(); ov.remove(); });
+    btn.addEventListener('touchend', function(e){ e.preventDefault(); e.stopPropagation(); ov.remove(); });
+  }
 }
 function _happyQueueLoad(){
   var q = []; try{ q = JSON.parse(safeLS('get','velo_happy_queue')||'[]'); }catch(e){}
