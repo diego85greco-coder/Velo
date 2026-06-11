@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="653">
+  <meta name="app-version" content="654">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -28,8 +28,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-653">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-653">
+  <link rel="stylesheet" href="premium.css?v=20260611-654">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-654">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1099,15 +1099,11 @@
                     <button onclick="pGoTo('momento')" class="home-momento-btn-all">Ver todos →</button>
                   </div>
                   <div id="homeMomentoFeed" style="max-height:220px;overflow-y:auto;padding-right:2px"></div>
-                  <div class="home-momento-input-row">
-                    <select id="momentoHomeEmoji" class="home-momento-emoji-sel">
-                      <option>💭</option><option>😊</option><option>😔</option><option>❤️</option><option>🌱</option><option>✨</option><option>😌</option><option>🙏</option><option>😤</option><option>🌧️</option>
-                    </select>
-                    <input type="text" id="momentoHomeInput" placeholder="Compartí algo…" maxlength="180"
-                      class="home-momento-input"
-                      onkeydown="if(event.key==='Enter')pPostMomentoHome()">
-                    <button onclick="pPostMomentoHome()" id="momentoHomeBtn" class="home-momento-post-btn">Publicar ✨</button>
-                  </div>
+                  <button onclick="pGoTo('momento')" class="home-happy-compose-btn">
+                    <span style="font-size:15px">✨</span>
+                    <span>¿Qué momento del día querés compartir?</span>
+                    <span style="margin-left:auto;font-size:11px;opacity:.7">Publicar →</span>
+                  </button>
                 </div>
                 <!-- Muro Feliz tab content -->
                 <div id="homeTabHappy" style="display:none">
@@ -3530,8 +3526,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-653"></script>
-<script src="premium-redesign.js?v=20260611-653"></script>
+<script src="premium.js?v=20260611-654"></script>
+<script src="premium-redesign.js?v=20260611-654"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
