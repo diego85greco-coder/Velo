@@ -8505,21 +8505,30 @@ input.p-input, textarea.p-textarea, .p-input, .p-textarea {
   .p-sheet { max-height: 85vh !important; }
 }
 
-/* ── v672: Weather hero icon — large, 3D depth effect ── */
-.weather-hero-img {
+/* ── v674: Meteocons Lottie — 3D hero weather icon ── */
+.weather-hero-img,
+lottie-player.weather-hero-img {
   display: block !important;
   width: 190px !important;
   height: 190px !important;
   animation: rTimeFloat 5s ease-in-out infinite !important;
-  /* Day: warm golden-sun glow + deep cast shadow */
   filter:
-    drop-shadow(0 28px 55px rgba(0,0,0,.55))
+    drop-shadow(0 28px 55px rgba(0,0,0,.52))
     drop-shadow(0 0 50px rgba(255,195,50,.22)) !important;
 }
-/* Period-specific glows */
-.r-time-icon.is-morning   .weather-hero-img { filter: drop-shadow(0 28px 55px rgba(0,0,0,.55)) drop-shadow(0 0 55px rgba(255,185,40,.28)) !important; }
-.r-time-icon.is-afternoon .weather-hero-img { filter: drop-shadow(0 28px 55px rgba(0,0,0,.55)) drop-shadow(0 0 55px rgba(255,160,30,.32)) !important; }
-.r-time-icon.is-night     .weather-hero-img { filter: drop-shadow(0 28px 55px rgba(0,0,0,.65)) drop-shadow(0 0 45px rgba(160,140,255,.22)) !important; }
+/* Period-specific depth glows */
+.r-time-icon.is-morning   .weather-hero-img,
+.r-time-icon.is-morning   lottie-player.weather-hero-img {
+  filter: drop-shadow(0 28px 55px rgba(0,0,0,.52)) drop-shadow(0 0 55px rgba(255,185,40,.30)) !important;
+}
+.r-time-icon.is-afternoon .weather-hero-img,
+.r-time-icon.is-afternoon lottie-player.weather-hero-img {
+  filter: drop-shadow(0 28px 55px rgba(0,0,0,.52)) drop-shadow(0 0 55px rgba(255,155,25,.34)) !important;
+}
+.r-time-icon.is-night     .weather-hero-img,
+.r-time-icon.is-night     lottie-player.weather-hero-img {
+  filter: drop-shadow(0 28px 55px rgba(0,0,0,.65)) drop-shadow(0 0 45px rgba(160,140,255,.24)) !important;
+}
 /* Container: icon floats, pill overlaps from below */
 #homeTimeIcon {
   flex-direction: column !important;

@@ -386,9 +386,9 @@
     return                        { emoji: '🌙', period: 'night',      type: 'clear-night' };
   }
 
-  /* ── Hyperrealistic animated weather icons (Meteocons by Bas Milius) ── */
+  /* ── Meteocons Lottie — 3D animated weather icons (MIT, free CDN) ── */
   function _weatherAnimSvg(period, type) {
-    var base = 'https://cdn.jsdelivr.net/gh/basmilius/weather-icons@dev/production/fill/svg/';
+    var base = 'https://cdn.jsdelivr.net/npm/@meteocons/lottie/fill/';
     var map = {
       'clear-day':   'clear-day',
       'clear-night': 'clear-night',
@@ -400,7 +400,7 @@
       'snow':        'snow'
     };
     var file = map[type] || (period === 'night' ? 'clear-night' : 'clear-day');
-    return '<img src="' + base + file + '.svg" class="weather-hero-img" alt="" data-period="' + period + '">';
+    return '<lottie-player src="' + base + file + '.json" background="transparent" speed="1" loop autoplay class="weather-hero-img" data-period="' + period + '"></lottie-player>';
   }
 
   function injectTimeIcon() {
