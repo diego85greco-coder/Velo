@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="668">
+  <meta name="app-version" content="669">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -28,8 +28,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-668">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-668">
+  <link rel="stylesheet" href="premium.css?v=20260611-669">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-669">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1008,10 +1008,10 @@
           <!-- Greeting card — mood + status + lema actions -->
           <div id="homeRegisterOuter" style="margin:0 16px 6px">
             <div id="homeRegisterZone">
-              <!-- Header: REGISTRA · Tu estado de hoy: -->
-              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:13px;padding-bottom:11px;border-bottom:1px solid rgba(255,255,255,.10)">
+              <!-- Header: centered like PARA VOS -->
+              <div style="text-align:center;margin-bottom:13px;padding-bottom:11px;border-bottom:1px solid rgba(200,158,56,.22)">
                 <div id="homeRegisterLabel">REGISTRA</div>
-                <div style="font-size:12px;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(255,255,255,.48);letter-spacing:.15px">Tu estado de hoy:</div>
+                <div style="font-size:11px;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(200,158,56,.52);letter-spacing:.15px;margin-top:2px">Tu estado de hoy:</div>
               </div>
               <!-- Row 1: Mi estado input pill + mood gold pill -->
               <div style="display:flex;gap:8px;margin-bottom:8px">
@@ -1022,7 +1022,7 @@
                 <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="flex:1;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(255,225,120,.95);background:linear-gradient(135deg,rgba(200,155,35,.42),rgba(178,132,18,.34));border:1.5px solid rgba(222,178,55,.58);border-radius:100px;padding:7px 10px;letter-spacing:.02em;cursor:pointer;overflow:hidden;white-space:nowrap">🌷 <span id="homeCurrentMoodText">¿Cómo te sentís?</span><span style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.8px;font-style:normal;font-family:'Jost',sans-serif;opacity:.62;flex-shrink:0;padding-left:4px">OK</span></div>
               </div>
               <!-- Row 2: Motto pill with OK -->
-              <div id="homeMottoLine" onclick="pOpenEditProfile()" style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(200,158,56,.90);background:linear-gradient(135deg,rgba(200,158,56,.18),rgba(178,138,18,.13));border:1.5px solid rgba(200,158,56,.45);border-radius:100px;padding:8px 12px;letter-spacing:.01em;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:background .15s">✏️ <span id="homeMottoText">Agregá tu lema →</span><span style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.8px;font-style:normal;font-family:'Jost',sans-serif;opacity:.55;flex-shrink:0;padding-left:4px">OK</span></div>
+              <div id="homeMottoLine" onclick="pOpenEditProfile()" style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(200,158,56,.90);background:linear-gradient(135deg,rgba(200,158,56,.18),rgba(178,138,18,.13));border:1.5px solid rgba(200,158,56,.45);border-radius:100px;padding:8px 12px;letter-spacing:.01em;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:background .15s">✏️ <span id="homeMottoText">Agregá tu lema →</span></div>
               <!-- Row 3: Weekly emoji history in dark strip -->
               <div id="homeWeekMoodGraph" style="display:flex;gap:4px;justify-content:center;align-items:flex-end;margin-top:12px;min-height:54px;background:rgba(0,0,0,.20);border-radius:14px;padding:8px 6px"></div>
             </div>
@@ -1166,7 +1166,7 @@
                   <!-- Bottom cream strip: Buscar personas + Favoritos -->
                   <div id="homeSearchRow" class="para-vos-bottom">
                     <button id="homeSearchUsersBtn" onclick="pOpenUserSearch()" class="para-vos-bottom-btn" title="Buscar personas">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      <span style="font-size:22px;line-height:1;display:block;text-align:center">🔍</span>
                       Buscar personas
                     </button>
                     <button onclick="pGoTo('contacts')" class="para-vos-bottom-btn" title="Contactos favoritos" style="position:relative">
@@ -3532,8 +3532,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-668"></script>
-<script src="premium-redesign.js?v=20260611-668"></script>
+<script src="premium.js?v=20260611-669"></script>
+<script src="premium-redesign.js?v=20260611-669"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

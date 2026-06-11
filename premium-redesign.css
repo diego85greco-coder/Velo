@@ -8098,11 +8098,7 @@ body.r-dark #pg-news .p-card {
   box-shadow: 0 3px 14px rgba(116,198,157,.18), inset 0 1px 0 rgba(255,255,255,.9);
 }
 .home-search-pill:active { transform: scale(.97); }
-/* Fix: override inline-flex → flex inside the row so flex:1 works */
 .home-search-row .home-search-pill { display: flex; }
-/* Buscar personas takes remaining space; Favoritos stays compact */
-#homeSearchUsersBtn { flex: 1; min-width: 0; }
-.home-search-pill--fav { flex-shrink: 0; padding-left: 12px; padding-right: 14px; white-space: nowrap; }
 
 /* ── v645: Discover cards — Buenas Noticias + Diario íntimo ── */
 #homeDiscoverCards { margin: 4px 0 8px; }
@@ -10110,19 +10106,40 @@ body:not(.r-dark) #homeHappyFeed .momento-card {
 
 /* ── v665: Meteocons weather icons ─ no custom CSS needed (pre-animated SVGs) ── */
 
-/* ── v665: REGISTRA zone redesign ───────────────────────────────── */
+/* ── v669: REGISTRA zone — PARA VOS frame aesthetic ─────────────── */
 #homeRegisterZone {
-  background: linear-gradient(140deg, rgba(30,40,60,.72) 0%, rgba(20,30,50,.68) 100%) !important;
-  border: 1.5px solid rgba(255,255,255,.12) !important;
-  border-radius: 20px !important;
-  padding: 16px 14px 14px !important;
-  box-shadow: 0 4px 24px rgba(0,0,0,.28), 0 1px 0 rgba(255,255,255,.06) inset !important;
+  background: linear-gradient(155deg, rgba(18,46,32,.96) 0%, rgba(11,34,22,.92) 100%) !important;
+  border: 1.5px solid rgba(200,158,56,.72) !important;
+  border-radius: 18px !important;
+  padding: 14px 13px 13px !important;
+  box-shadow:
+    0 0 0 1px rgba(200,158,56,.14) inset,
+    inset 0 1px 0 rgba(255,215,80,.10),
+    0 10px 36px rgba(0,0,0,.42),
+    0 3px 10px rgba(0,0,0,.24) !important;
+  position: relative !important;
+  overflow: visible !important;
 }
+/* Corner L-brackets matching PARA VOS */
+#homeRegisterZone::before,
+#homeRegisterZone::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 7px !important;
+  width: 14px !important;
+  height: 14px !important;
+  border-color: rgba(200,158,56,.58) !important;
+  border-style: solid !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+#homeRegisterZone::before { left: 7px  !important; border-width: 1.5px 0 0 1.5px !important; border-radius: 4px 0 0 0 !important; }
+#homeRegisterZone::after  { right: 7px !important; border-width: 1.5px 1.5px 0 0 !important; border-radius: 0 4px 0 0 !important; }
 #homeRegisterLabel {
-  font-size: 11px !important;
+  font-size: 10px !important;
   font-weight: 800 !important;
-  letter-spacing: 1.8px !important;
-  color: rgba(255,255,255,.95) !important;
+  letter-spacing: 2.8px !important;
+  color: rgba(200,158,56,.88) !important;
   text-transform: uppercase !important;
   font-family: 'Jost', sans-serif !important;
 }
@@ -10161,12 +10178,16 @@ body:not(.r-dark) #homeHappyFeed .momento-card {
 }
 /* Light mode overrides */
 body:not(.r-dark) #homeRegisterZone {
-  background: linear-gradient(140deg, rgba(255,255,255,.88) 0%, rgba(248,246,240,.82) 100%) !important;
-  border: 1.5px solid rgba(116,198,157,.38) !important;
-  box-shadow: 0 4px 18px rgba(40,90,60,.10), 0 1px 0 rgba(255,255,255,.8) inset !important;
+  background: linear-gradient(155deg, rgba(248,244,230,.96) 0%, rgba(238,232,210,.92) 100%) !important;
+  border-color: rgba(175,135,38,.60) !important;
+  box-shadow: 0 0 0 1px rgba(175,135,38,.12) inset, 0 6px 24px rgba(80,60,10,.12) !important;
+}
+body:not(.r-dark) #homeRegisterZone::before,
+body:not(.r-dark) #homeRegisterZone::after {
+  border-color: rgba(155,115,28,.48) !important;
 }
 body:not(.r-dark) #homeRegisterLabel {
-  color: rgba(30,70,50,.92) !important;
+  color: rgba(130,95,18,.80) !important;
 }
 body:not(.r-dark) .home-mood-btn {
   background: rgba(116,198,157,.14) !important;
