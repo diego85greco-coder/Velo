@@ -1465,9 +1465,9 @@ function _loadHomeData(){
   // Daily quote in home header (Gemini, cached per day)
   setTimeout(_loadDailyMotivationalQuote, 200);
   // 7-day mood mini-graph
-  _renderHomeWeekMoodGraph();
-  // Weekly summary (runs on Sundays or every 7 days)
-  _checkWeeklySummary();
+  _renderHomeWeekMoodGraph().catch(function(){});
+  // Weekly summary (runs on Sundays — Buzón message only, no overlay popup)
+  _checkWeeklySummary().catch(function(){});
   // Momento feed (gracefully hidden if table missing)
   setTimeout(_initHomeMomento, 400);
 }
@@ -15821,11 +15821,9 @@ async function _checkWeeklySummary(){
     return;
   }
 
-  // Generate AI analysis then show overlay + Buzón
+  // Generate AI analysis and send to Buzón — overlay removed from auto-trigger
   setTimeout(async function(){
     var aiText = await _generateWeeklySummaryAI(timeline, dominantMood, streak, weekMoods.length, weekDiary.length, userName);
-    var summaryData = { timeline:timeline, checkIns:weekMoods.length, diaryEntries:weekDiary.length, streak:streak, dominantMood:dominantMood, aiText:aiText, userName:userName };
-    pShowWeeklySummary(summaryData);
     // Send to Buzón (with AI text)
     if(!alreadySent){
       var _inbox2=[]; try{_inbox2=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e){}
@@ -17133,6 +17131,16 @@ window.addEventListener('load', function(){
     setTimeout(_initReveal, 100);
   }
 
+
+  // iOS Safari bfcache restore — close any stuck overlays so the page never
+  // shows a dark/gray screen after navigating back
+  window.addEventListener('pageshow', function(ev){
+    if(ev.persisted){
+      document.querySelectorAll('.p-modal-ov.show').forEach(function(el){ el.classList.remove('show'); });
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+  });
 
   // Mark guardian offline when closing the app
   window.addEventListener('beforeunload', function(){
