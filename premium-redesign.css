@@ -600,10 +600,10 @@ body.r-dark .home-logo-side {
 #homeGreetWrapper     { order: 1; }
 #homeTimeIcon         { order: 2; }
 #homeStatusToggle     { order: 3; }
-#homeRegisterOuter    { order: 4; }
-#quickMoodPicker      { order: 4; }
-#homeMonthlyHint      { order: 5; }
-#homeWeekMoodGraph    { order: 5; }
+#homeMonthlyHint      { order: 4; }
+#homeWeekMoodGraph    { order: 4; }
+#homeRegisterOuter    { order: 5; }
+#quickMoodPicker      { order: 5; }
 #homeDailyQuoteWrap   { order: 6; }
 #homeMomentoSection   { order: 7; }
 .r-hero-actions       { order: 8; }
@@ -8344,9 +8344,9 @@ body:not(.r-dark) .r-home-estilo-fab {
   box-shadow: 0 2px 10px rgba(0,0,0,.10);
 }
 @media (max-width: 900px) {
-  .r-home-profile-fab { display: flex; }
-  .r-home-estilo-fab  { display: flex; }
-  /* Topbar Estilo button hidden on mobile — FAB chip on home + hamburger menu cover it */
+  .r-home-profile-fab,
+  .r-home-estilo-fab  { display: none !important; }
+  /* Topbar Estilo button hidden on mobile — bottom nav Estilo tab covers it */
   .r-topbar-theme-btn { display: none !important; }
   /* Wider hamburger button */
   .p-topbar-btn { width: 52px !important; border-radius: 14px !important; font-size: 20px !important; }
@@ -8920,7 +8920,7 @@ body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
 .mc-time { color: rgba(255,255,255,.30); }
 .mc-heart-count { color: rgba(255,255,255,.40); }
 .mc-mine { color: #74c69d; }
-.mc-report { color: rgba(255,255,255,.22); }
+.mc-report { color: rgba(220,90,70,.65); }
 body:not(.r-dark) .momento-card {
   background: rgba(255,255,255,.80);
   border-color: rgba(80,160,100,.20);
@@ -8931,7 +8931,7 @@ body:not(.r-dark) .mc-label { color: rgba(40,120,70,.80); }
 body:not(.r-dark) .mc-time { color: var(--ink4); }
 body:not(.r-dark) .mc-heart-count { color: var(--ink4); }
 body:not(.r-dark) .mc-mine { color: rgba(40,120,70,.90); }
-body:not(.r-dark) .mc-report { color: var(--ink4); }
+body:not(.r-dark) .mc-report { color: rgba(200,60,40,.70); }
 
 /* ── v609: Momento cards ──────────────────────────────────────── */
 #homeMomentoSection .momento-card,
