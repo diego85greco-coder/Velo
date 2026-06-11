@@ -12607,6 +12607,16 @@ async function _adminTabCirculos(panel){
   _initSupabase();
   if(!sbClient){ panel.innerHTML='<div style="padding:20px;text-align:center;font-size:12px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
   try{
+    // Seed _circlesData into Supabase as official circles (upsert by id — safe to run every time)
+    if(_circlesData && _circlesData.length){
+      try{
+        var toSeed = _circlesData.map(function(c){
+          return { id:c.id, name:c.name, descripcion:c.desc||'', emoji:c.emoji||'🕊️',
+            official:true, cap_min:5, cap_max:c.maxMembers||200, creator_id:'velo-admin' };
+        });
+        await sbClient.from('circles').upsert(toSeed, {onConflict:'id', ignoreDuplicates:false});
+      }catch(e){}
+    }
     var cRes = await sbClient.from('circles').select('*').order('created_at',{ascending:false}).limit(300);
     var allCircles = (!cRes.error && cRes.data) ? cRes.data : [];
     var officialCircles = allCircles.filter(function(c){ return c.official; });
