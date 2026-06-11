@@ -10091,91 +10091,82 @@ body:not(.r-dark) #homeHappyFeed .momento-card {
   border-color: rgba(200,158,20,.38) !important;
 }
 
-/* ── v664: Animated SVG weather icons ───────────────────────────── */
-.w-ic { display:block; width:72px; height:72px; overflow:visible; }
+/* ── v665: Meteocons weather icons ─ no custom CSS needed (pre-animated SVGs) ── */
 
-/* Sun — rays rotate slowly, outer glow pulses */
-.w-ic-sun .w-rays {
-  animation: w-spin 20s linear infinite;
-  transform-origin: 32px 32px;
-  transform-box: fill-box;
+/* ── v665: REGISTRA zone redesign ───────────────────────────────── */
+#homeRegisterZone {
+  background: linear-gradient(140deg, rgba(30,40,60,.72) 0%, rgba(20,30,50,.68) 100%) !important;
+  border: 1.5px solid rgba(255,255,255,.12) !important;
+  border-radius: 20px !important;
+  padding: 16px 14px 14px !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,.28), 0 1px 0 rgba(255,255,255,.06) inset !important;
 }
-.w-ic-sun .w-glow {
-  animation: w-glow-pulse 3.2s ease-in-out infinite;
-  transform-origin: 32px 32px;
-  transform-box: fill-box;
+#homeRegisterLabel {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 1.8px !important;
+  color: rgba(255,255,255,.95) !important;
+  text-transform: uppercase !important;
+  font-family: 'Jost', sans-serif !important;
 }
-@keyframes w-spin { to { transform: rotate(360deg); } }
-@keyframes w-glow-pulse {
-  0%,100% { opacity:.18; transform:scale(1); }
-  50%     { opacity:.45; transform:scale(1.12); }
+/* Mi estado pill */
+.home-mood-btn {
+  background: rgba(255,255,255,.10) !important;
+  border: 1.5px solid rgba(255,255,255,.22) !important;
+  border-radius: 100px !important;
+  color: rgba(255,255,255,.75) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  transition: background .15s !important;
 }
-
-/* Sun-behind-cloud: sun rays spin, cloud floats gently */
-.w-ic-suncld .w-sun-behind {
-  animation: w-spin 24s linear infinite;
-  transform-origin: 18px 23px;
-  transform-box: fill-box;
+.home-mood-btn:hover {
+  background: rgba(255,255,255,.18) !important;
 }
-.w-ic-suncld .w-cloud-fg {
-  animation: w-float 4s ease-in-out infinite;
-  transform-box: fill-box;
+/* Current mood gold pill */
+#homeCurrentMoodLine {
+  background: linear-gradient(135deg, rgba(200,155,35,.42), rgba(178,132,18,.34)) !important;
+  border: 1.5px solid rgba(222,178,55,.58) !important;
+  border-radius: 100px !important;
+  color: rgba(255,225,120,.92) !important;
 }
-
-/* Moon — star twinkle */
-.w-ic-moon .w-star  { animation: w-twinkle 2.8s ease-in-out infinite; }
-.w-ic-moon .w-star2 { animation: w-twinkle 2.2s ease-in-out infinite .7s; }
-.w-ic-moon .w-star3 { animation: w-twinkle 3.1s ease-in-out infinite .4s; }
-.w-ic-moon .w-star4 { animation: w-twinkle 2.6s ease-in-out infinite 1.1s; }
-.w-ic-mooncld .w-star  { animation: w-twinkle 2.8s ease-in-out infinite; }
-.w-ic-mooncld .w-star2 { animation: w-twinkle 2.4s ease-in-out infinite .9s; }
-.w-ic-mooncld .w-cloud-fg { animation: w-float 4s ease-in-out infinite; transform-box: fill-box; }
-@keyframes w-twinkle { 0%,100% { opacity:.9; } 50% { opacity:.12; } }
-
-/* Cloud — gentle vertical float */
-.w-ic-cloud .w-cloud-body,
-.w-ic-rain  .w-cloud-body,
-.w-ic-storm .w-cloud-body,
-.w-ic-snow  .w-cloud-body {
-  animation: w-float 3.8s ease-in-out infinite;
-  transform-box: fill-box;
+/* Motto amber pill */
+#homeMottoLine {
+  background: linear-gradient(135deg, rgba(215,130,30,.32), rgba(188,108,18,.26)) !important;
+  border: 1.5px solid rgba(222,155,55,.44) !important;
+  border-radius: 100px !important;
+  color: rgba(255,200,100,.88) !important;
 }
-@keyframes w-float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-3.5px); } }
-
-/* Rain drops — staggered fall, loop */
-.w-ic-rain .w-drop  { animation: w-drop-fall 1.4s ease-in infinite; opacity:0; }
-.w-ic-rain .w-drop1 { animation-delay:0s; }
-.w-ic-rain .w-drop2 { animation-delay:.28s; }
-.w-ic-rain .w-drop3 { animation-delay:.56s; }
-.w-ic-rain .w-drop4 { animation-delay:.84s; }
-.w-ic-rain .w-drop5 { animation-delay:1.12s; }
-@keyframes w-drop-fall {
-  0%   { transform:translateY(-4px); opacity:0; }
-  15%  { opacity:1; }
-  80%  { opacity:.9; }
-  100% { transform:translateY(10px); opacity:0; }
+/* Weekly graph strip */
+#homeWeekMoodGraph {
+  background: rgba(0,0,0,.22) !important;
+  border-radius: 14px !important;
+  padding: 8px 6px !important;
 }
-
-/* Storm — lightning bolt flash */
-.w-ic-storm .w-bolt { animation: w-flash 2.8s ease-in-out infinite; }
-@keyframes w-flash {
-  0%,100% { opacity:1; }
-  38%     { opacity:.2; }
-  42%     { opacity:1; }
-  46%     { opacity:.2; }
-  50%     { opacity:1; }
+/* Light mode overrides */
+body:not(.r-dark) #homeRegisterZone {
+  background: linear-gradient(140deg, rgba(255,255,255,.88) 0%, rgba(248,246,240,.82) 100%) !important;
+  border: 1.5px solid rgba(116,198,157,.38) !important;
+  box-shadow: 0 4px 18px rgba(40,90,60,.10), 0 1px 0 rgba(255,255,255,.8) inset !important;
 }
-
-/* Snow — flakes drift down with rotation stagger */
-.w-ic-snow .w-flake  { animation: w-snow-fall 2.2s ease-in-out infinite; opacity:0; }
-.w-ic-snow .w-flake1 { animation-delay:0s; }
-.w-ic-snow .w-flake2 { animation-delay:.44s; }
-.w-ic-snow .w-flake3 { animation-delay:.88s; }
-.w-ic-snow .w-flake4 { animation-delay:.22s; }
-.w-ic-snow .w-flake5 { animation-delay:.66s; }
-@keyframes w-snow-fall {
-  0%   { transform:translateY(-4px) rotate(0deg); opacity:0; }
-  15%  { opacity:1; }
-  80%  { opacity:.85; }
-  100% { transform:translateY(12px) rotate(120deg); opacity:0; }
+body:not(.r-dark) #homeRegisterLabel {
+  color: rgba(30,70,50,.92) !important;
+}
+body:not(.r-dark) .home-mood-btn {
+  background: rgba(116,198,157,.14) !important;
+  border-color: rgba(116,198,157,.38) !important;
+  color: rgba(30,70,50,.82) !important;
+}
+body:not(.r-dark) #homeCurrentMoodLine {
+  background: linear-gradient(135deg, rgba(220,175,40,.22), rgba(200,155,18,.16)) !important;
+  border-color: rgba(200,158,20,.42) !important;
+  color: rgba(140,90,10,.88) !important;
+}
+body:not(.r-dark) #homeMottoLine {
+  background: linear-gradient(135deg, rgba(215,130,30,.18), rgba(188,108,18,.12)) !important;
+  border-color: rgba(200,128,20,.38) !important;
+  color: rgba(140,80,10,.85) !important;
+}
+body:not(.r-dark) #homeWeekMoodGraph {
+  background: rgba(0,0,0,.06) !important;
+  border: 1px solid rgba(0,0,0,.08) !important;
 }

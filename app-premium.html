@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="664">
+  <meta name="app-version" content="665">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -28,8 +28,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-664">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-664">
+  <link rel="stylesheet" href="premium.css?v=20260611-665">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-665">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -41,7 +41,6 @@
     #homeMonthlyHint      { order: 6; }
     #homeRegisterOuter    { order: 7; }
     #quickMoodPicker      { order: 7; }
-    #homeWeekMoodGraph    { order: 8; }
     #homeMomentoSection   { order: 9 !important; }
     #homeDiscoverCards    { order: 10 !important; }
     #homeSearchRow        { order: 11 !important; }
@@ -1009,15 +1008,24 @@
               <div id="homeTimeIcon" style="display:flex;flex-direction:column;align-items:center;gap:0"><div id="homeWeatherInfo" style="display:none;margin-top:6px;font-size:12.5px;font-family:'Jost',sans-serif;font-weight:500;letter-spacing:.2px;text-align:center;line-height:1.4;color:rgba(15,50,28,.78)"></div></div>
           <!-- Greeting card — mood + status + lema actions -->
           <div id="homeRegisterOuter" style="margin:0 16px 6px">
-            <div id="homeRegisterZone" style="background:linear-gradient(135deg,rgba(255,255,255,.065) 0%,rgba(255,255,255,.03) 100%);border:1.5px solid rgba(255,255,255,.13);border-radius:20px;padding:11px 12px 11px;overflow:hidden">
-              <div style="font-size:8px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.32);margin-bottom:9px" id="homeRegisterLabel">REGISTRA</div>
-              <!-- Row 1: Mi estado + current mood side by side -->
-              <div style="display:flex;gap:6px;margin-bottom:6px">
-                <button class="home-mood-btn" onclick="pOpenMyStatus()" style="flex:1;font-size:11px;padding:6px 8px;white-space:nowrap;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> Mi estado</button>
-                <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:7px 10px;letter-spacing:.02em;cursor:pointer;overflow:hidden;white-space:nowrap">🌷 <span id="homeCurrentMoodText">¿Cómo te sentís?</span></div>
+            <div id="homeRegisterZone">
+              <!-- Header: REGISTRA · Tu estado de hoy: -->
+              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:13px;padding-bottom:11px;border-bottom:1px solid rgba(255,255,255,.10)">
+                <div id="homeRegisterLabel">REGISTRA</div>
+                <div style="font-size:12px;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(255,255,255,.48);letter-spacing:.15px">Tu estado de hoy:</div>
               </div>
-              <!-- Row 2: Lema full width -->
-              <div id="homeMottoLine" onclick="pOpenEditProfile()" style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(200,158,56,.92);background:linear-gradient(135deg,rgba(200,158,56,.16),rgba(180,140,40,.10));border:1px solid rgba(200,158,56,.38);border-radius:100px;padding:7px 12px;letter-spacing:.01em;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:background .15s">✏️ <span id="homeMottoText">Agregá tu lema →</span></div>
+              <!-- Row 1: Mi estado input pill + mood gold pill -->
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <button class="home-mood-btn" onclick="pOpenMyStatus()" style="flex:1.1;background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.20);border-radius:100px;padding:9px 12px;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:rgba(255,255,255,.72);cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap;transition:background .15s">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.65"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+                  Mi estado
+                </button>
+                <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="flex:1;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(255,225,120,.95);background:linear-gradient(135deg,rgba(200,155,35,.42),rgba(178,132,18,.34));border:1.5px solid rgba(222,178,55,.58);border-radius:100px;padding:7px 10px;letter-spacing:.02em;cursor:pointer;overflow:hidden;white-space:nowrap">🌷 <span id="homeCurrentMoodText">¿Cómo te sentís?</span><span style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.8px;font-style:normal;font-family:'Jost',sans-serif;opacity:.62;flex-shrink:0;padding-left:4px">OK</span></div>
+              </div>
+              <!-- Row 2: Motto pill with OK -->
+              <div id="homeMottoLine" onclick="pOpenEditProfile()" style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(200,158,56,.90);background:linear-gradient(135deg,rgba(200,158,56,.18),rgba(178,138,18,.13));border:1.5px solid rgba(200,158,56,.45);border-radius:100px;padding:8px 12px;letter-spacing:.01em;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:background .15s">✏️ <span id="homeMottoText">Agregá tu lema →</span><span style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.8px;font-style:normal;font-family:'Jost',sans-serif;opacity:.55;flex-shrink:0;padding-left:4px">OK</span></div>
+              <!-- Row 3: Weekly emoji history in dark strip -->
+              <div id="homeWeekMoodGraph" style="display:flex;gap:4px;justify-content:center;align-items:flex-end;margin-top:12px;min-height:54px;background:rgba(0,0,0,.20);border-radius:14px;padding:8px 6px"></div>
             </div>
           </div>
           <!-- Quick mood picker (hidden by default) -->
@@ -1053,8 +1061,6 @@
               </div>
             </div>
           </div>
-              <!-- Weekly mood mini-graph (7 days) -->
-              <div id="homeWeekMoodGraph" style="display:flex;gap:4px;justify-content:center;align-items:flex-end;margin:0 16px 14px;min-height:54px"></div>
               <!-- Daily motivational quote widget -->
               <div id="homeDailyQuoteWrap" style="padding:0 0 10px;width:100%">
                 <div style="padding:0 4px 6px;padding-left:6px">
@@ -3522,8 +3528,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-664"></script>
-<script src="premium-redesign.js?v=20260611-664"></script>
+<script src="premium.js?v=20260611-665"></script>
+<script src="premium-redesign.js?v=20260611-665"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

@@ -386,141 +386,21 @@
     return                        { emoji: '🌙', period: 'night',      type: 'clear-night' };
   }
 
-  /* ── Animated SVG weather icons ────────────────────────────────── */
-  function _wSvgSun() {
-    var c = '#FFD84D';
-    return '<svg class="w-ic w-ic-sun" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">'
-      + '<circle class="w-glow" cx="32" cy="32" r="22" fill="none" stroke="'+c+'" stroke-width="1.5" opacity=".22"/>'
-      + '<g class="w-rays">'
-      + '<line x1="32" y1="4" x2="32" y2="13" stroke="'+c+'" stroke-width="3.5" stroke-linecap="round"/>'
-      + '<line x1="32" y1="51" x2="32" y2="60" stroke="'+c+'" stroke-width="3.5" stroke-linecap="round"/>'
-      + '<line x1="4" y1="32" x2="13" y2="32" stroke="'+c+'" stroke-width="3.5" stroke-linecap="round"/>'
-      + '<line x1="51" y1="32" x2="60" y2="32" stroke="'+c+'" stroke-width="3.5" stroke-linecap="round"/>'
-      + '<line x1="11" y1="11" x2="17.5" y2="17.5" stroke="'+c+'" stroke-width="3.5" stroke-linecap="round"/>'
-      + '<line x1="46.5" y1="46.5" x2="53" y2="53" stroke="'+c+'" stroke-width="3.5" stroke-linecap="round"/>'
-      + '<line x1="53" y1="11" x2="46.5" y2="17.5" stroke="'+c+'" stroke-width="3.5" stroke-linecap="round"/>'
-      + '<line x1="17.5" y1="46.5" x2="11" y2="53" stroke="'+c+'" stroke-width="3.5" stroke-linecap="round"/>'
-      + '</g>'
-      + '<circle cx="32" cy="32" r="13.5" fill="'+c+'"/>'
-      + '<circle cx="27" cy="27" r="5" fill="rgba(255,255,255,.22)"/>'
-      + '</svg>';
-  }
-  function _wSvgSunCloud() {
-    return '<svg class="w-ic w-ic-suncld" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">'
-      + '<g class="w-sun-behind">'
-      + '<line x1="18" y1="10" x2="18" y2="16" stroke="#FFD84D" stroke-width="3" stroke-linecap="round"/>'
-      + '<line x1="18" y1="34" x2="18" y2="40" stroke="#FFD84D" stroke-width="3" stroke-linecap="round"/>'
-      + '<line x1="6" y1="22" x2="12" y2="22" stroke="#FFD84D" stroke-width="3" stroke-linecap="round"/>'
-      + '<line x1="24" y1="22" x2="30" y2="22" stroke="#FFD84D" stroke-width="3" stroke-linecap="round"/>'
-      + '<line x1="9.5" y1="13.5" x2="13.8" y2="17.8" stroke="#FFD84D" stroke-width="3" stroke-linecap="round"/>'
-      + '<line x1="22.2" y1="26.2" x2="26.5" y2="30.5" stroke="#FFD84D" stroke-width="3" stroke-linecap="round"/>'
-      + '<line x1="26.5" y1="13.5" x2="22.2" y2="17.8" stroke="#FFD84D" stroke-width="3" stroke-linecap="round"/>'
-      + '<line x1="13.8" y1="26.2" x2="9.5" y2="30.5" stroke="#FFD84D" stroke-width="3" stroke-linecap="round"/>'
-      + '<circle cx="18" cy="23" r="9" fill="#FFD84D"/>'
-      + '</g>'
-      + '<g class="w-cloud-fg">'
-      + '<ellipse cx="34" cy="36" rx="13" ry="10" fill="#78909C"/>'
-      + '<ellipse cx="46" cy="38" rx="11" ry="9" fill="#78909C"/>'
-      + '<ellipse cx="40" cy="32" rx="10" ry="9" fill="#78909C"/>'
-      + '<ellipse cx="30" cy="39" rx="9" ry="7" fill="#90A4AE"/>'
-      + '<ellipse cx="48" cy="39" rx="9" ry="7" fill="#90A4AE"/>'
-      + '<ellipse cx="40" cy="43" rx="18" ry="7" fill="#90A4AE"/>'
-      + '</g>'
-      + '</svg>';
-  }
-  function _wSvgMoon() {
-    return '<svg class="w-ic w-ic-moon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">'
-      + '<circle class="w-star" cx="12" cy="14" r="2.2" fill="#E8C870"/>'
-      + '<circle class="w-star w-star2" cx="52" cy="18" r="1.8" fill="#E8C870"/>'
-      + '<circle class="w-star w-star3" cx="46" cy="8" r="2" fill="#E8C870"/>'
-      + '<circle class="w-star w-star4" cx="56" cy="38" r="1.5" fill="#E8C870"/>'
-      + '<path d="M40,32 A16,16 0 1,1 32,16 A12,12 0 1,0 40,32 Z" fill="#E8C870"/>'
-      + '<circle cx="27" cy="25" r="4" fill="rgba(255,255,255,.18)"/>'
-      + '</svg>';
-  }
-  function _wSvgMoonCloud() {
-    return '<svg class="w-ic w-ic-mooncld" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">'
-      + '<circle class="w-star" cx="10" cy="12" r="1.8" fill="#E8C870"/>'
-      + '<circle class="w-star w-star2" cx="52" cy="16" r="1.5" fill="#E8C870"/>'
-      + '<path d="M30,26 A12,12 0 1,1 24,16 A9,9 0 1,0 30,26 Z" fill="#E8C870" opacity=".85"/>'
-      + '<g class="w-cloud-fg">'
-      + '<ellipse cx="34" cy="38" rx="13" ry="10" fill="#546E7A"/>'
-      + '<ellipse cx="46" cy="40" rx="11" ry="9" fill="#546E7A"/>'
-      + '<ellipse cx="40" cy="34" rx="10" ry="9" fill="#546E7A"/>'
-      + '<ellipse cx="30" cy="41" rx="9" ry="7" fill="#607D8B"/>'
-      + '<ellipse cx="48" cy="41" rx="9" ry="7" fill="#607D8B"/>'
-      + '<ellipse cx="40" cy="45" rx="18" ry="7" fill="#607D8B"/>'
-      + '</g>'
-      + '</svg>';
-  }
-  function _wSvgCloud() {
-    return '<svg class="w-ic w-ic-cloud" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">'
-      + '<g class="w-cloud-body">'
-      + '<ellipse cx="24" cy="28" rx="14" ry="11" fill="#78909C"/>'
-      + '<ellipse cx="40" cy="30" rx="13" ry="10" fill="#78909C"/>'
-      + '<ellipse cx="32" cy="24" rx="12" ry="11" fill="#78909C"/>'
-      + '<ellipse cx="20" cy="33" rx="11" ry="8" fill="#90A4AE"/>'
-      + '<ellipse cx="44" cy="33" rx="11" ry="8" fill="#90A4AE"/>'
-      + '<ellipse cx="32" cy="37" rx="22" ry="8" fill="#90A4AE"/>'
-      + '</g>'
-      + '</svg>';
-  }
-  function _wSvgRain() {
-    return '<svg class="w-ic w-ic-rain" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">'
-      + '<g class="w-cloud-body">'
-      + '<ellipse cx="24" cy="24" rx="13" ry="10" fill="#607D8B"/>'
-      + '<ellipse cx="38" cy="25" rx="12" ry="9" fill="#607D8B"/>'
-      + '<ellipse cx="30" cy="20" rx="11" ry="10" fill="#607D8B"/>'
-      + '<ellipse cx="22" cy="29" rx="11" ry="7" fill="#78909C"/>'
-      + '<ellipse cx="40" cy="29" rx="11" ry="7" fill="#78909C"/>'
-      + '<ellipse cx="31" cy="33" rx="20" ry="7" fill="#78909C"/>'
-      + '</g>'
-      + '<line class="w-drop w-drop1" x1="20" y1="42" x2="17" y2="52" stroke="#81D4FA" stroke-width="2.5" stroke-linecap="round"/>'
-      + '<line class="w-drop w-drop2" x1="31" y1="43" x2="28" y2="53" stroke="#81D4FA" stroke-width="2.5" stroke-linecap="round"/>'
-      + '<line class="w-drop w-drop3" x1="42" y1="42" x2="39" y2="52" stroke="#81D4FA" stroke-width="2.5" stroke-linecap="round"/>'
-      + '<line class="w-drop w-drop4" x1="25" y1="46" x2="22" y2="56" stroke="#81D4FA" stroke-width="2.2" stroke-linecap="round" opacity=".75"/>'
-      + '<line class="w-drop w-drop5" x1="37" y1="46" x2="34" y2="56" stroke="#81D4FA" stroke-width="2.2" stroke-linecap="round" opacity=".75"/>'
-      + '</svg>';
-  }
-  function _wSvgStorm() {
-    return '<svg class="w-ic w-ic-storm" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">'
-      + '<g class="w-cloud-body">'
-      + '<ellipse cx="24" cy="22" rx="13" ry="10" fill="#455A64"/>'
-      + '<ellipse cx="40" cy="23" rx="12" ry="9" fill="#455A64"/>'
-      + '<ellipse cx="30" cy="18" rx="11" ry="10" fill="#455A64"/>'
-      + '<ellipse cx="31" cy="29" rx="20" ry="7" fill="#546E7A"/>'
-      + '</g>'
-      + '<polygon class="w-bolt" points="36,33 29,46 34,46 30,60 44,42 38,42 42,33" fill="#FFE500"/>'
-      + '</svg>';
-  }
-  function _wSvgSnow() {
-    return '<svg class="w-ic w-ic-snow" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">'
-      + '<g class="w-cloud-body">'
-      + '<ellipse cx="24" cy="24" rx="13" ry="10" fill="#78909C"/>'
-      + '<ellipse cx="38" cy="25" rx="12" ry="9" fill="#78909C"/>'
-      + '<ellipse cx="30" cy="20" rx="11" ry="10" fill="#78909C"/>'
-      + '<ellipse cx="31" cy="31" rx="20" ry="7" fill="#90A4AE"/>'
-      + '</g>'
-      + '<circle class="w-flake w-flake1" cx="20" cy="44" r="3" fill="#E3F2FD"/>'
-      + '<circle class="w-flake w-flake2" cx="32" cy="47" r="3" fill="#E3F2FD"/>'
-      + '<circle class="w-flake w-flake3" cx="44" cy="44" r="3" fill="#E3F2FD"/>'
-      + '<circle class="w-flake w-flake4" cx="26" cy="54" r="2.2" fill="#E3F2FD" opacity=".75"/>'
-      + '<circle class="w-flake w-flake5" cx="38" cy="54" r="2.2" fill="#E3F2FD" opacity=".75"/>'
-      + '</svg>';
-  }
+  /* ── Hyperrealistic animated weather icons (Meteocons by Bas Milius) ── */
   function _weatherAnimSvg(period, type) {
-    if (type === 'sun-cloud')  return _wSvgSunCloud();
-    if (type === 'moon-cloud') return _wSvgMoonCloud();
-    switch(period) {
-      case 'morning':   return _wSvgSun();
-      case 'afternoon': return _wSvgSun();
-      case 'night':     return _wSvgMoon();
-      case 'rain':      return _wSvgRain();
-      case 'storm':     return _wSvgStorm();
-      case 'snow':      return _wSvgSnow();
-      case 'overcast':  return _wSvgCloud();
-      default:          return _wSvgSun();
-    }
+    var base = 'https://cdn.jsdelivr.net/gh/basmilius/weather-icons@dev/production/fill/svg/';
+    var map = {
+      'clear-day':   'clear-day',
+      'clear-night': 'clear-night',
+      'sun-cloud':   'partly-cloudy-day',
+      'moon-cloud':  'partly-cloudy-night',
+      'overcast':    'overcast',
+      'rain':        'rain',
+      'storm':       'thunderstorms',
+      'snow':        'snow'
+    };
+    var file = map[type] || (period === 'night' ? 'clear-night' : 'clear-day');
+    return '<img src="' + base + file + '.svg" width="88" height="88" alt="" style="display:block;animation:rTimeFloat 6s ease-in-out infinite">';
   }
 
   function injectTimeIcon() {
