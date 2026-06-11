@@ -15761,62 +15761,144 @@ function _checkWeeklySummary(){
 
   safeLS('set','velo_last_weekly_summary', todayKey);
 
-  var moodCount = {}; weekMoods.forEach(function(m){ if(m.emoji){ moodCount[m.emoji]=(moodCount[m.emoji]||0)+1; } });
+  // Build full 7-day timeline (ordered Mon→Sun, with nulls for missing days)
+  var dayNamesShort = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
+  var timeline = [];
+  for(var _j=6; _j>=0; _j--){
+    var _dj = new Date(_today.getFullYear(), _today.getMonth(), _today.getDate()-_j);
+    var _kj = _dj.getFullYear()+'-'+String(_dj.getMonth()+1).padStart(2,'0')+'-'+String(_dj.getDate()).padStart(2,'0');
+    var _mj = null; try{ _mj = JSON.parse(safeLS('get','velo_mood_'+_kj)||'null'); }catch(e){}
+    timeline.push({ dayName: dayNamesShort[_dj.getDay()], mood: _mj, isToday: _j===0 });
+  }
+
+  var moodCount = {}; weekMoods.forEach(function(m){ if(m && m.emoji){ moodCount[m.emoji]=(moodCount[m.emoji]||0)+1; } });
   var dominantMood = Object.keys(moodCount).sort(function(a,b){ return moodCount[b]-moodCount[a]; })[0]||null;
   var userName = (safeLS('get','velo_user_name')||'').split(' ')[0]||'';
   var sinRegistros = weekMoods.length === 0 && weekDiary.length === 0;
   var inbox=[]; try{ inbox=JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  var alreadySent = inbox.find(function(m){ return m.id==='weekly-'+todayKey; });
 
   if(sinRegistros){
-    // Send encouragement message
-    var encBody = 'Hola'+(userName?' '+userName:'')+', esta semana no registraste cómo te sentiste — y está bien, todos los ritmos son válidos. 💙\n\n'
-      +'Cuando quieras, tocá "¿Cómo te sentís hoy?" en la pantalla principal. Son 5 segundos y te ayuda a conocerte mejor.\n\n'
-      +'📊 Con más registros, tu resumen semanal de cada domingo se vuelve más rico.\n'
-      +'📋 Y el 1° de cada mes, el equipo de Velo te envía un análisis completo y detallado de todos tus registros del mes — mucho más rico que el resumen semanal.\n\n'
-      +'¡Cada pequeño paso cuenta! 🌱';
-    if(!inbox.find(function(m){ return m.id==='weekly-'+todayKey; })){
-      inbox.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'💙',remitente:'Velo — Resumen Semanal',asunto:'Esta semana todavía no registraste nada 🌱',extracto:'¡Animáte a registrar cómo te sentís!',cuerpo:encBody,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
+    if(!alreadySent){
+      var encBody = 'Hola'+(userName?' '+userName:'')+', esta semana no registraste cómo te sentiste — y está bien, todos los ritmos son válidos. 💙\n\n'
+        +'Cuando quieras, tocá "¿Cómo te sentís hoy?" en la pantalla principal. Son 5 segundos y te ayuda a conocerte mejor.\n\n'
+        +'📊 Con más registros, tu resumen semanal de cada domingo se vuelve más rico y personalizado.\n'
+        +'📋 El 1° de cada mes el equipo de Velo te envía un análisis completo y detallado de todos tus registros del mes.\n\n'
+        +'¡Cada pequeño paso cuenta! 🌱';
+      inbox.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'💙',remitente:'Velo — Resumen Semanal',asunto:'Esta semana todavía no registraste nada 🌱',extracto:'Animáte a registrar cómo te sentís esta semana',cuerpo:encBody,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
       safeLS('set','velo_inbox',JSON.stringify(inbox.slice(0,100)));
       if(typeof _updateInboxDot==='function') _updateInboxDot();
     }
-    return; // no overlay if no data
+    return;
   }
 
-  // Send summary to Buzón
-  var bodyTxt = 'Hola'+(userName?' '+userName:'')+', tu resumen de esta semana:\n\n';
-  if(weekMoods.length) bodyTxt += '📊 Registraste tu ánimo '+weekMoods.length+' vez'+(weekMoods.length>1?'es':'')+' esta semana'+(dominantMood?' — más frecuente: '+dominantMood:'')+'.\n';
-  if(weekDiary.length) bodyTxt += '📔 Escribiste en tu diario '+weekDiary.length+' vez'+(weekDiary.length>1?'es':'')+'.\n';
-  bodyTxt += '📅 Llevás '+streak+' día'+(streak>1?'s':'')+' seguidos en Velo.\n\n'
-    +'📋 El 1° de cada mes el equipo de Velo te envía un análisis completo de todo tu mes — más detallado y rico que este resumen.\n\n¡Seguí así! 🌱';
-  if(!inbox.find(function(m){ return m.id==='weekly-'+todayKey; })){
-    inbox.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'📊',remitente:'Velo — Resumen Semanal',asunto:'Tu semana en Velo 🌱',extracto:weekMoods.length+' registro'+(weekMoods.length!==1?'s':'')+' esta semana'+(dominantMood?' · '+dominantMood:''),cuerpo:bodyTxt,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
-    safeLS('set','velo_inbox',JSON.stringify(inbox.slice(0,100)));
-    if(typeof _updateInboxDot==='function') _updateInboxDot();
-  }
+  // Generate AI analysis then show overlay + Buzón
+  setTimeout(async function(){
+    var aiText = await _generateWeeklySummaryAI(timeline, dominantMood, streak, weekMoods.length, weekDiary.length, userName);
+    var summaryData = { timeline:timeline, checkIns:weekMoods.length, diaryEntries:weekDiary.length, streak:streak, dominantMood:dominantMood, aiText:aiText, userName:userName };
+    pShowWeeklySummary(summaryData);
+    // Send to Buzón (with AI text)
+    if(!alreadySent){
+      var _inbox2=[]; try{_inbox2=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e){}
+      var bodyTxt = 'Hola'+(userName?' '+userName:'')+', tu resumen de esta semana en Velo:\n\n'
+        +(aiText ? aiText+'\n\n' : '')
+        +'📊 '+weekMoods.length+' registro'+(weekMoods.length!==1?'s de ánimo':' de ánimo')+' esta semana'+(dominantMood?' — más frecuente: '+dominantMood:'')+'.\n'
+        +(weekDiary.length?'📔 '+weekDiary.length+' entrada'+(weekDiary.length!==1?'s':'')+ ' en tu diario.\n':'')
+        +'📅 '+streak+' día'+(streak!==1?'s':'')+' seguidos en Velo.\n\n'
+        +'📋 El 1° de cada mes el equipo de Velo te envía un análisis completo de todo tu mes.\n\n¡Hasta el próximo domingo! 🌱';
+      _inbox2.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'📊',remitente:'Velo — Resumen Semanal',asunto:'Tu semana en Velo 🌱'+(dominantMood?' '+dominantMood:''),extracto:aiText?aiText.slice(0,80)+'…':weekMoods.length+' registros esta semana',cuerpo:bodyTxt,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
+      safeLS('set','velo_inbox',JSON.stringify(_inbox2.slice(0,100)));
+      if(typeof _updateInboxDot==='function') _updateInboxDot();
+    }
+  }, 3000);
+}
 
-  // Show overlay after 3s
-  setTimeout(function(){
-    pShowWeeklySummary({ checkIns:weekMoods.length, diaryEntries:weekDiary.length, streak:streak, dominantMood:dominantMood });
-  }, 3500);
+async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns, diaryCount, userName){
+  try{
+    var moodLines = timeline.map(function(d){
+      return d.dayName+': '+(d.mood ? d.mood.emoji+' '+d.mood.label : '—');
+    }).join('\n');
+    var prompt = 'Sos un acompañante empático de Velo, una app de bienestar emocional. '
+      +(userName?'El usuario se llama '+userName+'. ':'')
+      +'Esta semana registró los siguientes ánimos:\n'+moodLines+'\n\n'
+      +'Racha: '+streak+' días seguidos en la app. '
+      +(diaryCount>0?'Escribió en su diario '+diaryCount+' vez'+(diaryCount>1?'es':'')+' esta semana. ':'')
+      +'Escribí un párrafo cálido y genuino de 3 oraciones que:\n'
+      +'1. Observe algo específico y real de su semana (no genérico)\n'
+      +'2. Valide sus emociones sin exagerar\n'
+      +'3. Cierre con algo alentador pero concreto\n\n'
+      +'Tono: como alguien que realmente los conoce, cercano y humano. Sin hashtags. NUNCA uses "salud mental".';
+    var text = await _geminiCall(prompt, { temperature:0.88, maxOutputTokens:180 });
+    return text || null;
+  }catch(e){ return null; }
 }
 
 function pShowWeeklySummary(data){
   var ov = document.getElementById('weeklySummaryOv');
   var cnt = document.getElementById('weeklySummaryContent');
   if(!ov||!cnt) return;
+
+  // 7-day emoji timeline
+  var moodColors = {'😄':'#74c69d','😊':'#95d5b2','😐':'#e9b949','😞':'#e07a5f','😢':'#d45b5b'};
+  var moodBgs    = {'😄':'rgba(116,198,157,.22)','😊':'rgba(149,213,178,.18)','😐':'rgba(233,185,73,.18)','😞':'rgba(224,122,95,.15)','😢':'rgba(212,91,91,.18)'};
+  var timelineHtml = (data.timeline||[]).map(function(d){
+    var col = d.mood ? (moodColors[d.mood.emoji]||'#74c69d') : 'rgba(200,200,200,.3)';
+    var bg  = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.15)') : 'transparent';
+    var ring = d.isToday ? 'box-shadow:0 0 0 2.5px '+col+',0 0 12px '+col+'55;' : '';
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1">'
+      +'<div style="width:36px;height:36px;border-radius:50%;border:2px solid '+col+';background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'18':'8')+'px;'+ring+'">'+(d.mood?d.mood.emoji:'·')+'</div>'
+      +'<span style="font-size:8px;font-weight:700;letter-spacing:.3px;color:rgba(255,255,255,.5)">'+d.dayName+'</span>'
+      +'</div>';
+  }).join('');
+
+  // Trend arrow
+  var moods7 = (data.timeline||[]).map(function(d){ return d.mood?{'😄':5,'😊':4,'😐':3,'😞':2,'😢':1}[d.mood.emoji]||3:null; });
+  var filled = moods7.filter(function(v){ return v!==null; });
+  var firstHalf = filled.slice(0, Math.ceil(filled.length/2));
+  var secondHalf = filled.slice(Math.ceil(filled.length/2));
+  var avg = function(arr){ return arr.length?arr.reduce(function(a,b){return a+b;},0)/arr.length:0; };
+  var trend = filled.length<2?'→':avg(secondHalf)>avg(firstHalf)+0.3?'↗':avg(firstHalf)>avg(secondHalf)+0.3?'↘':'→';
+  var trendColor = trend==='↗'?'#74c69d':trend==='↘'?'#e07a5f':'#e9b949';
+  var trendLabel = trend==='↗'?'Semana en mejora':trend==='↘'?'Semana desafiante':'Semana estable';
+
+  // AI text or fallback
+  var aiParagraph = data.aiText
+    ? '<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.7;text-align:center;margin:20px 0;padding:0 4px">'+_escHtml(data.aiText)+'</div>'
+    : '<div style="font-size:13px;color:rgba(255,255,255,.55);text-align:center;margin:18px 0;font-style:italic">¡Cada registro es un acto de cuidado hacia vos. Seguí así! 🌱</div>';
+
   cnt.innerHTML =
-    '<div style="text-align:center;margin-bottom:20px">'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:6px">RESUMEN SEMANAL</div>'
-    +'<div style="font-size:24px;font-weight:700;font-family:\'Cormorant Garamond\',serif;color:var(--ink)">Tu semana en Velo</div>'
-    +(data.dominantMood?'<div style="font-size:48px;margin:12px 0 4px">'+data.dominantMood+'</div><div style="font-size:11px;color:var(--ink4)">Emoción más frecuente</div>':'')
+    // Header
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
+    +'<div>'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(200,158,56,.8);margin-bottom:4px">✨ RESUMEN SEMANAL</div>'
+    +'<div style="font-size:26px;font-weight:700;font-family:\'Cormorant Garamond\',serif;color:#fff;line-height:1">Tu semana</div>'
     +'</div>'
-    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px">'
-    +'<div style="text-align:center;background:rgba(116,198,157,.1);border-radius:12px;padding:14px 8px"><div style="font-size:24px;font-weight:800;color:var(--sage)">'+data.checkIns+'</div><div style="font-size:10px;color:var(--ink4);margin-top:2px">Registros</div></div>'
-    +'<div style="text-align:center;background:rgba(200,146,10,.1);border-radius:12px;padding:14px 8px"><div style="font-size:24px;font-weight:800;color:var(--gold)">'+data.diaryEntries+'</div><div style="font-size:10px;color:var(--ink4);margin-top:2px">Entradas diario</div></div>'
-    +'<div style="text-align:center;background:rgba(116,180,220,.1);border-radius:12px;padding:14px 8px"><div style="font-size:24px;font-weight:800;color:var(--sage3)">'+data.streak+'</div><div style="font-size:10px;color:var(--ink4);margin-top:2px">Días seguidos</div></div>'
+    +(data.dominantMood?'<div style="text-align:center"><div style="font-size:44px;line-height:1">'+data.dominantMood+'</div><div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:3px">más frecuente</div></div>':'')
     +'</div>'
-    +'<p style="font-size:12px;color:var(--ink3);line-height:1.65;text-align:center;font-style:italic;margin-bottom:22px">¡Cada día que abrís Velo y registrás cómo te sentís es un acto de cuidado hacia vos mismo/a! 🌱</p>'
-    +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pCloseWeeklySummary()">¡Gracias! 🙌</button>';
+    // Timeline
+    +'<div style="display:flex;gap:4px;margin-bottom:6px">'+timelineHtml+'</div>'
+    // Trend
+    +'<div style="display:flex;justify-content:center;margin-bottom:4px"><span style="font-size:11px;font-weight:700;color:'+trendColor+';letter-spacing:.5px">'+trend+' '+trendLabel+'</span></div>'
+    // AI paragraph
+    + aiParagraph
+    // Stats row
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:22px">'
+    +'<div style="text-align:center;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.2);border-radius:14px;padding:14px 8px"><div style="font-size:26px;font-weight:800;color:#74c69d">'+data.checkIns+'</div><div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Registros</div></div>'
+    +'<div style="text-align:center;background:rgba(200,146,10,.1);border:1px solid rgba(200,146,10,.18);border-radius:14px;padding:14px 8px"><div style="font-size:26px;font-weight:800;color:#e9b949">'+data.diaryEntries+'</div><div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Diario</div></div>'
+    +'<div style="text-align:center;background:rgba(116,165,210,.1);border:1px solid rgba(116,165,210,.18);border-radius:14px;padding:14px 8px"><div style="font-size:26px;font-weight:800;color:#7ab4d8">'+data.streak+'</div><div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Días racha</div></div>'
+    +'</div>'
+    // Footer note
+    +'<div style="text-align:center;font-size:10px;color:rgba(255,255,255,.3);margin-bottom:18px">El 1° de cada mes recibís un análisis completo del mes 📋</div>'
+    // CTA
+    +'<button onclick="pCloseWeeklySummary()" style="width:100%;padding:14px;background:rgba(116,198,157,.22);border:1px solid rgba(116,198,157,.45);border-radius:14px;color:#74c69d;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">¡Hasta el próximo domingo! 🌱</button>';
+
+  // Style the overlay itself for dark background
+  var sheet = ov.querySelector('.p-sheet');
+  if(sheet){
+    sheet.style.background = 'linear-gradient(160deg,rgba(18,38,28,.97) 0%,rgba(12,28,22,.98) 100%)';
+    sheet.style.border = '1px solid rgba(116,198,157,.15)';
+    sheet.style.boxShadow = '0 30px 80px rgba(0,0,0,.6)';
+  }
   if(typeof openModal==='function') openModal('weeklySummaryOv');
   else { ov.classList.add('show'); ov.style.display='flex'; }
 }
