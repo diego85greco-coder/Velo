@@ -15992,6 +15992,11 @@ function pCloseWeeklySummary(){
 var _ambCtx = null, _ambSource = null, _ambGain = null, _ambLfo = null, _ambActive = null;
 var _AMB_META = { lluvia:{icon:'🌧️',label:'Lluvia'}, bosque:{icon:'🌲',label:'Bosque'}, fuego:{icon:'🔥',label:'Fuego'}, mar:{icon:'🌊',label:'Mar'} };
 
+// Minimal silent WAV — playing this <audio> element forces iOS to move the
+// audio session from "ambient" (muted by silent switch) to "playback"
+// (ignores silent switch). Web Audio API then inherits "playback" category.
+var _AMB_UNLOCK_SRC = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+
 function _buildNoiseBuffer(ctx, type){
   // Short buffer (3 s) — avoids blocking the main thread on mobile
   var rate = ctx.sampleRate, secs = 3;
@@ -16022,6 +16027,17 @@ function _buildNoiseBuffer(ctx, type){
 async function pPlayAmbient(type){
   pStopAmbient(true);
   try{
+    // iOS silent-switch bypass: play a silent <audio> element first.
+    // This moves the iOS audio session from "ambient" (muted by silent switch)
+    // to "playback" category. The AudioContext inherits "playback" and is audible
+    // even when the hardware mute switch is on.
+    try{
+      var _ul = new Audio(_AMB_UNLOCK_SRC);
+      _ul.volume = 0.001;
+      _ul.setAttribute('playsinline', '');
+      await _ul.play();
+    }catch(e){}
+
     if(!_ambCtx || _ambCtx.state === 'closed'){
       _ambCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
@@ -16034,13 +16050,13 @@ async function pPlayAmbient(type){
     _ambSource.loop = true;
 
     var filt = ctx.createBiquadFilter();
-    if(type === 'lluvia'){ filt.type='highpass'; filt.frequency.value=2200; filt.Q.value=0.5; }
-    else if(type === 'bosque'){ filt.type='lowpass'; filt.frequency.value=1400; filt.Q.value=0.8; }
-    else if(type === 'fuego'){ filt.type='lowpass'; filt.frequency.value=900; filt.Q.value=0.5; }
-    else { filt.type='lowpass'; filt.frequency.value=520; filt.Q.value=0.6; }
+    if(type === 'lluvia'){ filt.type='bandpass'; filt.frequency.value=1800; filt.Q.value=0.4; }
+    else if(type === 'bosque'){ filt.type='lowpass'; filt.frequency.value=1600; filt.Q.value=0.7; }
+    else if(type === 'fuego'){ filt.type='lowpass'; filt.frequency.value=1000; filt.Q.value=0.5; }
+    else { filt.type='lowpass'; filt.frequency.value=600; filt.Q.value=0.5; }
 
     _ambGain = ctx.createGain();
-    _ambGain.gain.value = 0.72; // high enough to be clearly audible on phone speakers
+    _ambGain.gain.value = 0.9;
 
     _ambSource.connect(filt);
     filt.connect(_ambGain);
