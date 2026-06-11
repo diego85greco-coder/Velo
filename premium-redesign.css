@@ -9966,3 +9966,127 @@ body:not(.r-dark) #ambBtn-mar {
 body:not(.r-dark) .r-hero-actions > div:first-child > div:first-child {
   color: rgba(25,95,55,.80) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v663: Accesos Rápidos by ID (selector fix) + REGISTRA overhaul
+         + Muro Feliz visible cards
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Accesos Rápidos — targeted by ID so cascade actually applies ── */
+#quickBtn-almar {
+  background: linear-gradient(145deg, rgba(48,130,220,.52) 0%, rgba(30,105,195,.44) 100%) !important;
+  border-color: rgba(90,170,255,.68) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,.38) !important;
+  box-shadow: 0 5px 22px rgba(40,120,210,.40), inset 0 1px 0 rgba(160,210,255,.22) !important;
+}
+#quickBtn-almar:active { background: linear-gradient(145deg,rgba(48,130,220,.72) 0%,rgba(30,105,195,.64) 100%) !important; }
+
+#quickBtn-veloia {
+  background: linear-gradient(145deg, rgba(128,68,215,.52) 0%, rgba(102,45,188,.44) 100%) !important;
+  border-color: rgba(180,115,255,.68) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,.38) !important;
+  box-shadow: 0 5px 22px rgba(120,60,205,.40), inset 0 1px 0 rgba(200,155,255,.18) !important;
+}
+#quickBtn-veloia:active { background: linear-gradient(145deg,rgba(128,68,215,.72) 0%,rgba(102,45,188,.64) 100%) !important; }
+
+#quickBtn-buzon {
+  background: linear-gradient(145deg, rgba(212,155,35,.54) 0%, rgba(185,128,16,.46) 100%) !important;
+  border-color: rgba(248,190,65,.68) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,.38) !important;
+  box-shadow: 0 5px 22px rgba(198,148,28,.40), inset 0 1px 0 rgba(255,220,100,.18) !important;
+}
+#quickBtn-buzon:active { background: linear-gradient(145deg,rgba(212,155,35,.74) 0%,rgba(185,128,16,.66) 100%) !important; }
+
+#quickBtn-comunidad {
+  background: linear-gradient(145deg, rgba(32,182,165,.52) 0%, rgba(18,152,138,.44) 100%) !important;
+  border-color: rgba(68,220,200,.68) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,.38) !important;
+  box-shadow: 0 5px 22px rgba(28,172,155,.40), inset 0 1px 0 rgba(100,240,222,.18) !important;
+}
+#quickBtn-comunidad:active { background: linear-gradient(145deg,rgba(32,182,165,.72) 0%,rgba(18,152,138,.64) 100%) !important; }
+
+/* Light mode */
+body:not(.r-dark) #quickBtn-almar {
+  background: linear-gradient(145deg,rgba(38,108,200,.56) 0%,rgba(24,88,180,.48) 100%) !important;
+  border-color: rgba(38,115,210,.58) !important; color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,.30) !important;
+  box-shadow: 0 4px 16px rgba(38,108,200,.32) !important;
+}
+body:not(.r-dark) #quickBtn-veloia {
+  background: linear-gradient(145deg,rgba(108,45,198,.52) 0%,rgba(86,28,170,.44) 100%) !important;
+  border-color: rgba(128,62,210,.55) !important; color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,.30) !important;
+  box-shadow: 0 4px 16px rgba(108,45,198,.28) !important;
+}
+body:not(.r-dark) #quickBtn-buzon {
+  background: linear-gradient(145deg,rgba(195,142,15,.56) 0%,rgba(168,118,6,.48) 100%) !important;
+  border-color: rgba(210,158,20,.58) !important; color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,.28) !important;
+  box-shadow: 0 4px 16px rgba(190,140,12,.28) !important;
+}
+body:not(.r-dark) #quickBtn-comunidad {
+  background: linear-gradient(145deg,rgba(20,155,140,.54) 0%,rgba(10,128,115,.46) 100%) !important;
+  border-color: rgba(20,158,144,.56) !important; color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,.28) !important;
+  box-shadow: 0 4px 16px rgba(18,148,132,.28) !important;
+}
+
+/* ── REGISTRA zone — complete visual overhaul ─────────────────────── */
+#homeRegisterZone {
+  background: linear-gradient(140deg, rgba(116,198,157,.18) 0%, rgba(75,155,108,.13) 100%) !important;
+  border: 1.5px solid rgba(116,198,157,.52) !important;
+  box-shadow: 0 6px 28px rgba(0,0,0,.20), inset 0 1px 0 rgba(116,198,157,.18) !important;
+  padding: 14px 13px 13px !important;
+}
+body:not(.r-dark) #homeRegisterZone {
+  background: linear-gradient(140deg, rgba(116,198,157,.22) 0%, rgba(75,155,108,.17) 100%) !important;
+  border-color: rgba(68,158,95,.48) !important;
+  box-shadow: 0 4px 20px rgba(45,125,75,.14), inset 0 1px 0 rgba(255,255,255,.78) !important;
+}
+#homeRegisterLabel {
+  font-size: 10px !important;
+  letter-spacing: 2.5px !important;
+  color: rgba(116,198,157,.98) !important;
+  margin-bottom: 11px !important;
+}
+body:not(.r-dark) #homeRegisterLabel { color: rgba(28,105,58,.85) !important; }
+
+/* Mi estado — elevated gradient tile */
+.home-mood-btn {
+  background: linear-gradient(135deg, rgba(116,198,157,.32) 0%, rgba(75,160,112,.26) 100%) !important;
+  border: 1.5px solid rgba(116,198,157,.58) !important;
+  color: rgba(195,248,222,.98) !important;
+  box-shadow: 0 4px 16px rgba(80,180,130,.24), inset 0 1px 0 rgba(200,255,230,.12) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  padding: 9px 10px !important;
+  letter-spacing: .3px !important;
+}
+body:not(.r-dark) .home-mood-btn {
+  background: linear-gradient(135deg, rgba(48,148,85,.54) 0%, rgba(32,125,65,.46) 100%) !important;
+  border-color: rgba(42,145,78,.58) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,.24) !important;
+  box-shadow: 0 4px 14px rgba(38,132,68,.26) !important;
+}
+
+/* ── Muro Feliz — visible card borders on posts ──────────────────── */
+#homeHappyFeed .momento-card {
+  background: rgba(200,152,32,.12) !important;
+  border: 1.5px solid rgba(220,178,55,.44) !important;
+  border-radius: 14px !important;
+  padding: 11px 13px !important;
+  margin-bottom: 8px !important;
+}
+#homeHappyFeed .momento-card:hover {
+  background: rgba(200,152,32,.18) !important;
+  border-color: rgba(230,188,65,.58) !important;
+}
+body:not(.r-dark) #homeHappyFeed .momento-card {
+  background: rgba(255,215,50,.10) !important;
+  border-color: rgba(200,158,20,.38) !important;
+}
