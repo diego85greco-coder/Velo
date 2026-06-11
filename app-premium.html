@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="649">
+  <meta name="app-version" content="650">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -28,8 +28,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-649">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-649">
+  <link rel="stylesheet" href="premium.css?v=20260611-650">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-650">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -48,11 +48,40 @@
     .r-home-quick-panel   { order: 12; }
     .r-home-shortcut-grid { order: 12; }
     #homeHeroLabel        { order: 13; margin-top: 24px; }
-    /* Search row overlap fix */
-    .home-search-row { display: flex !important; gap: 8px; align-self: stretch; }
-    .home-search-row .home-search-pill { display: flex !important; }
-    #homeSearchUsersBtn { flex: 1 !important; min-width: 0 !important; }
-    .home-search-pill--fav { flex-shrink: 0 !important; white-space: nowrap !important; }
+    /* Search row: 2-column grid — icon above, label below — no overlap possible */
+    #homeSearchRow {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 10px !important;
+      margin: 4px 0 10px !important;
+      align-items: stretch !important;
+    }
+    #homeSearchRow .home-search-pill {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 7px !important;
+      padding: 16px 10px 14px !important;
+      border-radius: 18px !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      text-align: center !important;
+      min-height: 76px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      white-space: normal !important;
+      letter-spacing: .01em !important;
+      order: unset !important;
+      flex: unset !important;
+    }
+    #homeSearchRow .home-search-pill svg {
+      width: 22px !important;
+      height: 22px !important;
+      flex-shrink: 0 !important;
+    }
+    #homeSearchUsersBtn { order: 0 !important; }
+    .home-search-pill--fav { order: 1 !important; flex-shrink: unset !important; padding-left: 10px !important; padding-right: 10px !important; }
   </style>
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
@@ -3481,8 +3510,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-649"></script>
-<script src="premium-redesign.js?v=20260611-649"></script>
+<script src="premium.js?v=20260611-650"></script>
+<script src="premium-redesign.js?v=20260611-650"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
