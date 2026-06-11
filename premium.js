@@ -15863,6 +15863,44 @@ async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns
   }catch(e){ return null; }
 }
 
+var _WEEKLY_QUOTES = {
+  feliz: [
+    { q: 'Cuando quieres algo, todo el universo conspira para que puedas conseguirlo.', a: 'Paulo Coelho', b: 'El Alquimista' },
+    { q: 'Solo se ve bien con el corazón; lo esencial es invisible a los ojos.', a: 'Antoine de Saint-Exupéry', b: 'El Principito' },
+    { q: 'La vida es o una aventura atrevida o no es nada.', a: 'Helen Keller', b: 'La historia de mi vida' },
+    { q: 'Somos lo que hacemos repetidamente. La excelencia no es un acto sino un hábito.', a: 'Aristóteles', b: 'Ética a Nicómaco' },
+    { q: 'El secreto es que no hay secreto; solo se trata de amar lo que sos.', a: 'Gabriel García Márquez', b: 'El amor en los tiempos del cólera' },
+    { q: 'Haz de tu vida un sueño y de tu sueño una realidad.', a: 'Antoine de Saint-Exupéry', b: 'El Principito' },
+    { q: 'No llores porque se terminó, sonríe porque sucedió.', a: 'Gabriel García Márquez', b: '' }
+  ],
+  neutral: [
+    { q: 'En el medio del invierno, descubrí que había en mí un verano invencible.', a: 'Albert Camus', b: 'Regreso a Tívoli' },
+    { q: 'El viaje de mil millas comienza con un solo paso.', a: 'Lao-Tse', b: 'Tao Te Ching' },
+    { q: 'Hay una grieta en todo; así es como entra la luz.', a: 'Leonard Cohen', b: 'Anthem' },
+    { q: 'No busques que las cosas sucedan como deseas; desea lo que sucede y estarás en paz.', a: 'Epicteto', b: 'Enquiridión' },
+    { q: 'Conocerse a uno mismo es el principio de toda sabiduría.', a: 'Aristóteles', b: 'Ética a Nicómaco' },
+    { q: 'El momento presente siempre habrá sido.', a: 'Eckhart Tolle', b: 'El poder del ahora' },
+    { q: 'Uno no ve el mundo tal como es; lo ve tal como uno es.', a: 'Anaïs Nin', b: 'Seducción del Minotauro' }
+  ],
+  dificil: [
+    { q: 'Incluso la noche más oscura terminará y el sol volverá a salir.', a: 'Victor Hugo', b: 'Los Miserables' },
+    { q: 'El dolor es inevitable, el sufrimiento es opcional.', a: 'Haruki Murakami', b: 'De qué hablo cuando hablo de correr' },
+    { q: 'La herida es el lugar por donde la luz entra en ti.', a: 'Rumi', b: '' },
+    { q: 'En el medio del invierno, descubrí que había en mí un verano invencible.', a: 'Albert Camus', b: 'Regreso a Tívoli' },
+    { q: 'Lo que no te mata te hace más fuerte.', a: 'Friedrich Nietzsche', b: 'El crepúsculo de los ídolos' },
+    { q: 'El hombre puede soportar casi cualquier "cómo" si tiene un "por qué".', a: 'Viktor Frankl', b: 'El hombre en busca de sentido' },
+    { q: 'Cae siete veces, levántate ocho.', a: 'Proverbio japonés', b: '' }
+  ]
+};
+
+function _pickWeeklyQuote(dominantMood){
+  var cat = (dominantMood==='😄'||dominantMood==='😊') ? 'feliz'
+          : (dominantMood==='😞'||dominantMood==='😢') ? 'dificil'
+          : 'neutral';
+  var pool = _WEEKLY_QUOTES[cat];
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
 function pShowWeeklySummary(data){
   var ov = document.getElementById('weeklySummaryOv');
   var cnt = document.getElementById('weeklySummaryContent');
@@ -15896,6 +15934,15 @@ function pShowWeeklySummary(data){
     ? '<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.7;text-align:center;margin:20px 0;padding:0 4px">'+_escHtml(data.aiText)+'</div>'
     : '<div style="font-size:13px;color:rgba(255,255,255,.55);text-align:center;margin:18px 0;font-style:italic">¡Cada registro es un acto de cuidado hacia vos. Seguí así! 🌱</div>';
 
+  // Literary quote matched to dominant mood
+  var _wq = _pickWeeklyQuote(data.dominantMood);
+  var quoteHtml = _wq
+    ? '<div style="margin:2px 0 18px;padding:14px 16px;border-left:2px solid rgba(233,185,73,.38);background:rgba(233,185,73,.05);border-radius:0 12px 12px 0">'
+      +'<div style="font-size:13px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.72);line-height:1.65;margin-bottom:7px">&#10077; '+_escHtml(_wq.q)+'</div>'
+      +'<div style="font-size:9.5px;font-weight:700;color:rgba(200,158,56,.7);letter-spacing:.4px">&#8212; '+_escHtml(_wq.a)+(_wq.b?', <em style="font-weight:400;opacity:.8">'+_escHtml(_wq.b)+'</em>':'')+'</div>'
+      +'</div>'
+    : '';
+
   cnt.innerHTML =
     // Header
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
@@ -15911,6 +15958,8 @@ function pShowWeeklySummary(data){
     +'<div style="display:flex;justify-content:center;margin-bottom:4px"><span style="font-size:11px;font-weight:700;color:'+trendColor+';letter-spacing:.5px">'+trend+' '+trendLabel+'</span></div>'
     // AI paragraph
     + aiParagraph
+    // Literary quote
+    + quoteHtml
     // Stats row
     +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:22px">'
     +'<div style="text-align:center;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.2);border-radius:14px;padding:14px 8px"><div style="font-size:26px;font-weight:800;color:#74c69d">'+data.checkIns+'</div><div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Registros</div></div>'
