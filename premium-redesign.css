@@ -10437,3 +10437,40 @@ body:not(.r-dark) .home-momento-post-btn {
   background: rgba(116,198,157,.26) !important; border-color: rgba(116,198,157,.50) !important; color: rgba(190,245,215,.90) !important;
 }
 
+
+/* ── v680: Greeting — ornate editorial style with ✦ sparkles ── */
+#homeGreetTxt {
+  color: rgba(226,196,128,.96) !important;
+  text-align: center !important;
+}
+#homeGreetTxt::before {
+  content: '✦  ' !important;
+  font-family: sans-serif !important;
+  font-size: .48em !important;
+  vertical-align: .18em !important;
+  color: rgba(220,182,95,.72) !important;
+  letter-spacing: 0 !important;
+}
+#homeGreetTxt::after {
+  content: '  ✦' !important;
+  font-family: sans-serif !important;
+  font-size: .48em !important;
+  vertical-align: .18em !important;
+  color: rgba(220,182,95,.72) !important;
+  letter-spacing: 0 !important;
+}
+#homeGreetWrapper .r-hero-italic {
+  color: rgba(210,178,105,.68) !important;
+  text-align: center !important;
+}
+/* Light mode — dark warm amber, fully legible */
+body:not(.r-dark) #homeGreetTxt {
+  color: rgba(88,55,10,.92) !important;
+}
+body:not(.r-dark) #homeGreetTxt::before,
+body:not(.r-dark) #homeGreetTxt::after {
+  color: rgba(130,82,12,.60) !important;
+}
+body:not(.r-dark) #homeGreetWrapper .r-hero-italic {
+  color: rgba(105,65,12,.72) !important;
+}
