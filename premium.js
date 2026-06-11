@@ -8824,7 +8824,7 @@ function _renderBadgesGrid(){
     { icon:'🧘', name:'Momento de Calma', desc:'Completar la sesión de respiración',          done:!!safeLS('get','velo_breathed_once'), prog:safeLS('get','velo_breathed_once')?100:0 },
     { icon:'🌟', name:'Velo Plus',         desc:'Suscribirse a Velo Plus',                     done:safeLS('get','velo_plan')==='plus', prog:safeLS('get','velo_plan')==='plus'?100:0 },
     { icon:'🏡', name:'En Comunidad',      desc:'7 días activo en la app',                     done:daysActive>=7,   prog:Math.min(100,Math.round(daysActive/7*100)) },
-    { icon:'🗓️', name:'Semana Completa',   desc:'Registrar ánimo 7 días seguidos',             done:moodStreak>=7,   prog:Math.min(100,Math.round(moodStreak/7*100)) }
+    { icon:'🗓️', name:'Semana Completa',   desc:'Abrir la app 7 días distintos',               done:_getVisitDayCount()>=7, prog:Math.min(100,Math.round(_getVisitDayCount()/7*100)) }
   ];
   el.innerHTML = guardianSection + badges.map(function(b){
     var progPct = b.done ? 100 : (b.prog != null ? b.prog : 0);
