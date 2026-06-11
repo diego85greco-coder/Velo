@@ -10737,3 +10737,15 @@ body:not(.r-dark) .r-hero-actions [onclick="pGoTo('circles')"] {
   color: rgba(18,75,38,.92) !important;
   box-shadow: 0 3px 12px rgba(35,110,65,.12) !important;
 }
+
+/* ── v688 — Topbar bell button ── */
+body:not(.r-dark) .r-bell-btn {
+  background: rgba(0,0,0,.05) !important;
+  border-color: rgba(0,0,0,.14) !important;
+  color: rgba(40,40,40,.80) !important;
+}
+body.r-dark .r-bell-btn {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.15) !important;
+  color: rgba(255,255,255,.82) !important;
+}
