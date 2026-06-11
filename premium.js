@@ -9775,15 +9775,22 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
       // Seed from profiles columns (always available, may be slightly stale)
       _qpHelped   = (prof && prof.helped_count)   ? parseInt(prof.helped_count,10)   : 0;
       _qpReceived = (prof && prof.received_count) ? parseInt(prof.received_count,10) : 0;
-      // Cross-check with guardian_requests for accuracy (profiles cache can be 0 if
-      // the counter was never synced for older accounts)
+      // Use RPC to bypass RLS and get accurate counts from guardian_requests.
+      // Direct table queries on guardian_requests are blocked by RLS when viewing
+      // another user's data — the RPC runs SECURITY DEFINER so it can count freely.
       try{
-        var rH = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true})
-          .eq('guardian_id', uid).in('status',['ended','message_left']);
-        if(!rH.error && rH.count != null && rH.count > _qpHelped) _qpHelped = rH.count;
-        var rR = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true})
-          .eq('seeker_id', uid).in('status',['ended','message_left']);
-        if(!rR.error && rR.count != null && rR.count > _qpReceived) _qpReceived = rR.count;
+        var rpc = await sbClient.rpc('get_user_session_counts', { p_user_id: uid });
+        if(!rpc.error && rpc.data && rpc.data.length){
+          var rpcH = parseInt(rpc.data[0].helped,  10) || 0;
+          var rpcR = parseInt(rpc.data[0].received,10) || 0;
+          if(rpcH > _qpHelped)   _qpHelped   = rpcH;
+          if(rpcR > _qpReceived) _qpReceived = rpcR;
+          // Write back to profiles so future reads are fast (no RPC needed)
+          if(rpcH > (prof && prof.helped_count   ? parseInt(prof.helped_count,10)   : 0))
+            sbClient.from('profiles').update({helped_count:rpcH}).eq('id',uid).then(function(){}).catch(function(){});
+          if(rpcR > (prof && prof.received_count ? parseInt(prof.received_count,10) : 0))
+            sbClient.from('profiles').update({received_count:rpcR}).eq('id',uid).then(function(){}).catch(function(){});
+        }
       }catch(e){}
       reviews = await _loadUserReviews(uid);
     }
