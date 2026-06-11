@@ -64,6 +64,27 @@
     }
   }
 
+  // Moon phase — pure math, no API needed
+  // Reference new moon: 6 Jan 2000 18:14 UTC; synodic period ≈ 29.530589 days
+  function _getMoonPhase() {
+    var ref  = 947182440000; // Jan 6 2000 18:14 UTC in ms
+    var syn  = 29.530589 * 86400000;
+    var age  = ((Date.now() - ref) % syn + syn) % syn;
+    var frac = age / syn; // 0–1
+    var idx  = Math.round(frac * 8) % 8;
+    var phases = [
+      { emoji:'🌑', name:'Luna nueva' },
+      { emoji:'🌒', name:'Creciente' },
+      { emoji:'🌓', name:'Cuarto creciente' },
+      { emoji:'🌔', name:'Gibosa creciente' },
+      { emoji:'🌕', name:'Luna llena' },
+      { emoji:'🌖', name:'Gibosa menguante' },
+      { emoji:'🌗', name:'Cuarto menguante' },
+      { emoji:'🌘', name:'Menguante' }
+    ];
+    return { emoji: phases[idx].emoji, name: phases[idx].name, isFull: idx === 4 };
+  }
+
   function _renderWeatherInfo() {
     var info = document.getElementById('homeWeatherInfo');
     if (!info) return;
@@ -133,10 +154,42 @@
       _showCityInput();
     };
 
+    cityWrap.style.cssText += ';padding-right:12px';
+
     cityWrap.appendChild(cityEl);
     cityWrap.appendChild(editBtn);
+
+    // Moon phase section
+    var moon = _getMoonPhase();
+    var moonWrap = document.createElement('div');
+    moonWrap.style.cssText = [
+      'display:flex', 'flex-direction:column', 'align-items:center',
+      'justify-content:center', 'gap:3px',
+      'padding-left:12px',
+      'border-left:1px solid ' + divClr,
+      'min-width:48px'
+    ].join(';');
+
+    var moonEmoji = document.createElement('div');
+    moonEmoji.style.cssText = 'font-size:22px;line-height:1' + (moon.isFull ? ';filter:drop-shadow(0 0 6px rgba(255,230,120,.70))' : '');
+    moonEmoji.textContent = moon.emoji;
+
+    var moonLbl = document.createElement('div');
+    moonLbl.style.cssText = [
+      'font-size:8px',
+      'color:' + (moon.isFull ? 'rgba(255,228,110,.88)' : 'rgba(200,230,215,.55)'),
+      'font-family:\'Jost\',sans-serif',
+      'letter-spacing:.3px', 'line-height:1',
+      'text-align:center', 'white-space:nowrap'
+    ].join(';');
+    moonLbl.textContent = moon.name;
+
+    moonWrap.appendChild(moonEmoji);
+    moonWrap.appendChild(moonLbl);
+
     card.appendChild(tempEl);
     card.appendChild(cityWrap);
+    card.appendChild(moonWrap);
     info.appendChild(card);
   }
 
