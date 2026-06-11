@@ -1393,10 +1393,11 @@ function _loadHomeData(){
 
   var gt = document.getElementById('homeGreetTxt');
   var dt = document.getElementById('homeDateTxt');
-  if(gt) gt.textContent = greet;
   if(dt) dt.textContent = dateStr;
 
   var name = safeLS('get','velo_user_name') || '';
+  var firstName = name ? name.trim().split(/\s+/)[0] : '';
+  if(gt) gt.textContent = firstName ? greet + ', ' + firstName : greet;
   var av = safeLS('get','velo_user_av') || '🧑';
   var un = document.getElementById('homeUserName');
   var ha = document.getElementById('homeAv');
