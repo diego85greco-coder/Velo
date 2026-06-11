@@ -386,21 +386,20 @@
     return                        { emoji: '🌙', period: 'night',      type: 'clear-night' };
   }
 
-  /* ── Basmilius weather-icons animated SVG — free CDN via jsDelivr ── */
+  /* ── Hero weather: large native emoji — renders photorealistic 3D on iOS ── */
   function _weatherAnimSvg(period, type) {
     var map = {
-      'clear-day':   'clear-day',
-      'clear-night': 'clear-night',
-      'sun-cloud':   'partly-cloudy-day',
-      'moon-cloud':  'partly-cloudy-night',
-      'overcast':    'overcast',
-      'rain':        'rain',
-      'storm':       'thunderstorms',
-      'snow':        'snow'
+      'clear-day':   '☀️',
+      'clear-night': '🌕',
+      'sun-cloud':   '⛅',
+      'moon-cloud':  '🌙',
+      'overcast':    '☁️',
+      'rain':        '🌧️',
+      'storm':       '⛈️',
+      'snow':        '🌨️'
     };
-    var file = map[type] || (period === 'night' ? 'clear-night' : 'clear-day');
-    var url = 'https://cdn.jsdelivr.net/gh/basmilius/weather-icons@dev/production/fill/svg/' + file + '.svg';
-    return '<img src="' + url + '" class="weather-hero-img" data-period="' + period + '" alt="" draggable="false">';
+    var emoji = map[type] || (period === 'night' ? '🌕' : '☀️');
+    return '<span class="weather-hero-img weather-hero-emoji" data-period="' + period + '">' + emoji + '</span>';
   }
 
   function injectTimeIcon() {

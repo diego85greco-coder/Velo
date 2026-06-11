@@ -8505,25 +8505,29 @@ input.p-input, textarea.p-textarea, .p-input, .p-textarea {
   .p-sheet { max-height: 85vh !important; }
 }
 
-/* ── v675: Meteocons animated SVG — hero weather icon ── */
+/* ── v678: Hero weather — large native emoji (photorealistic 3D on iOS) ── */
 .weather-hero-img {
-  display: block !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   width: 190px !important;
   height: 190px !important;
   animation: rTimeFloat 5s ease-in-out infinite !important;
-  filter:
-    drop-shadow(0 28px 55px rgba(0,0,0,.52))
-    drop-shadow(0 0 50px rgba(255,195,50,.22)) !important;
 }
-/* Period-specific depth glows */
-.r-time-icon.is-morning   .weather-hero-img {
-  filter: drop-shadow(0 28px 55px rgba(0,0,0,.52)) drop-shadow(0 0 55px rgba(255,185,40,.30)) !important;
+.weather-hero-emoji {
+  font-size: 130px !important;
+  line-height: 1 !important;
+  filter: drop-shadow(0 18px 36px rgba(0,0,0,.45)) !important;
 }
-.r-time-icon.is-afternoon .weather-hero-img {
-  filter: drop-shadow(0 28px 55px rgba(0,0,0,.52)) drop-shadow(0 0 55px rgba(255,155,25,.34)) !important;
+/* Period-specific ambient glow on emoji */
+.r-time-icon.is-morning   .weather-hero-emoji {
+  filter: drop-shadow(0 18px 36px rgba(0,0,0,.40)) drop-shadow(0 0 50px rgba(255,185,40,.22)) !important;
 }
-.r-time-icon.is-night     .weather-hero-img {
-  filter: drop-shadow(0 28px 55px rgba(0,0,0,.65)) drop-shadow(0 0 45px rgba(160,140,255,.24)) !important;
+.r-time-icon.is-afternoon .weather-hero-emoji {
+  filter: drop-shadow(0 18px 36px rgba(0,0,0,.40)) drop-shadow(0 0 50px rgba(255,145,20,.26)) !important;
+}
+.r-time-icon.is-night     .weather-hero-emoji {
+  filter: drop-shadow(0 18px 36px rgba(0,0,0,.55)) drop-shadow(0 0 40px rgba(155,130,255,.20)) !important;
 }
 /* Container: icon floats, pill overlaps from below */
 #homeTimeIcon {
