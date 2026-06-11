@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="608">
+  <meta name="app-version" content="609">
   <title>Velo — Acompañamos emociones</title>
   <!-- Auto-update: if server has a newer version, force a hard reload -->
   <script>(function(){try{fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){var cur=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');if(d&&d.v&&d.v>cur){window.location.reload(true);}}).catch(function(){});}catch(e){}})();</script>
@@ -21,8 +21,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260530-608">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260530-608">
+  <link rel="stylesheet" href="premium.css?v=20260530-609">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260530-609">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -992,6 +992,8 @@
           <div style="margin-left:20px;margin-right:20px;margin-top:8px;margin-bottom:12px;text-align:center">
             <span id="homeMonthlyHint" style="font-size:17px;line-height:1.6;font-family:'Cormorant Garamond',serif;font-style:italic;letter-spacing:.02em;font-weight:600">Registrá tus ánimos a diario y recibirás un análisis emocional personalizado el 1° de cada mes.</span>
           </div>
+              <!-- Weekly mood mini-graph (7 days) -->
+              <div id="homeWeekMoodGraph" style="display:flex;gap:4px;justify-content:center;align-items:flex-end;margin:0 16px 14px;min-height:54px"></div>
               <!-- Daily motivational quote widget -->
               <div id="homeDailyQuoteWrap" style="padding:0 0 10px;width:100%">
                 <div style="padding:0 4px 6px;padding-left:6px">
@@ -1267,6 +1269,36 @@
           </div>
           <!-- Personalized suggestions (filled async by Gemini) -->
           <div id="homeSuggestions" style="display:none;margin-top:16px"></div>
+          <!-- Sonidos ambientales -->
+          <div style="margin:4px 16px 14px">
+            <div style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px;opacity:.75">🎵 SONIDOS AMBIENTALES</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button onclick="pTogAmbient('lluvia')" id="ambBtn-lluvia" class="amb-sound-btn">🌧️ Lluvia</button>
+              <button onclick="pTogAmbient('bosque')" id="ambBtn-bosque" class="amb-sound-btn">🌲 Bosque</button>
+              <button onclick="pTogAmbient('cafe')" id="ambBtn-cafe" class="amb-sound-btn">☕ Café</button>
+              <button onclick="pTogAmbient('mar')" id="ambBtn-mar" class="amb-sound-btn">🌊 Mar</button>
+            </div>
+          </div>
+          <!-- Momentos del día -->
+          <div id="homeMomentoSection" style="margin:0 16px 16px;display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div>
+                <div style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4)">✨ MOMENTOS DEL DÍA</div>
+                <div style="font-size:10px;color:var(--ink4);opacity:.65;margin-top:1px">Anónimos · desaparecen en 24hs</div>
+              </div>
+              <button onclick="pGoTo('momento')" style="font-size:11px;font-weight:700;color:var(--sage2);background:none;border:none;cursor:pointer;font-family:'Jost',sans-serif">Ver todos →</button>
+            </div>
+            <div id="homeMomentoFeed"></div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:10px;background:var(--cream2);border:1px solid var(--border);border-radius:14px;padding:10px 12px">
+              <select id="momentoHomeEmoji" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink);padding:0 2px;-webkit-appearance:none">
+                <option>💭</option><option>😊</option><option>😔</option><option>❤️</option><option>🌱</option><option>✨</option><option>😌</option><option>🙏</option><option>😤</option><option>🌧️</option>
+              </select>
+              <input type="text" id="momentoHomeInput" placeholder="Compartí algo anónimo (24h)…" maxlength="180"
+                style="flex:1;background:none;border:none;outline:none;font-size:13px;font-family:'Jost',sans-serif;color:var(--ink)"
+                onkeydown="if(event.key==='Enter')pPostMomentoHome()">
+              <button onclick="pPostMomentoHome()" id="momentoHomeBtn" style="background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.35);border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap;flex-shrink:0">✨</button>
+            </div>
+          </div>
           <div style="height:20px"></div>
         </div>
       </div><!-- /pg-home -->
@@ -1579,6 +1611,11 @@
                   <div style="font-size:12px;color:var(--ink4);margin-bottom:10px" id="diaryDateLbl"></div>
                   <input class="p-input" id="diaryTitleInput" type="text" maxlength="80" placeholder="Título (opcional)…" style="width:100%;box-sizing:border-box;margin-bottom:10px">
                   <div style="margin-bottom:10px"><button onclick="_openDiaryEmojiPicker()" id="diaryEmojiBtn" style="background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--ink3);font-family:'Jost',sans-serif">😊 Elegir emoji</button> <span id="diaryEmojiChosen" style="font-size:22px;vertical-align:middle"></span></div>
+                  <!-- Diary prompt of the day -->
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                    <button onclick="pInjectDiaryPrompt()" style="display:flex;align-items:center;gap:5px;white-space:nowrap;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.3);border-radius:10px;padding:6px 12px;font-size:11px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:'Jost',sans-serif;flex-shrink:0">💡 Prompt del día</button>
+                    <span id="diaryPromptPreview" style="font-size:11px;color:var(--ink4);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0"></span>
+                  </div>
                   <textarea class="p-textarea" id="diaryTa" rows="6" placeholder="¿Cómo te sentís hoy? Escribí libremente..."></textarea>
                   <div style="height:10px"></div>
                   <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveDiary()">Guardar entrada 📔</button>
@@ -1598,6 +1635,62 @@
           </div>
         </div>
       </div><!-- /pg-diary -->
+
+      <!-- ══ MOMENTOS ════════════════════════════════════════════ -->
+      <div class="p-page" id="pg-momento">
+        <div class="p-page-scroll">
+          <div class="p-page-inner">
+            <div class="p-page-hdr">
+              <div class="p-page-hdr-back">
+                <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+                <div>
+                  <div class="p-label">Comunidad</div>
+                  <h2 class="p-title">Momentos</h2>
+                </div>
+              </div>
+              <button onclick="_loadMomentoPageFeed()" style="background:none;border:none;cursor:pointer;font-size:18px;opacity:.6" title="Actualizar">↻</button>
+            </div>
+            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:16px;font-style:italic">Compartí algo anónimo que dura 24 horas. Sin nombres, sin fotos — solo palabras. Nadie sabe quién sos.</p>
+            <!-- Post input -->
+            <div style="background:var(--cream2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:18px">
+              <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+                <select id="momentoEmoji" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--ink);padding:0;-webkit-appearance:none;flex-shrink:0">
+                  <option>💭</option><option>😊</option><option>😔</option><option>❤️</option><option>🌱</option><option>✨</option><option>😌</option><option>🙏</option><option>😤</option><option>🌧️</option><option>🌟</option><option>😢</option>
+                </select>
+                <textarea id="momentoTa" rows="3" maxlength="200" placeholder="¿Qué querés compartir hoy?"
+                  style="flex:1;background:none;border:none;outline:none;font-size:14px;font-family:'Jost',sans-serif;color:var(--ink);resize:none;line-height:1.5"
+                  oninput="var c=document.getElementById('momentoCharCount');if(c){c.textContent=this.value.length+' / 200';c.style.color=this.value.length>180?'var(--sos)':'var(--ink4)';}"></textarea>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                <span id="momentoCharCount" style="font-size:10px;color:var(--ink4);opacity:.6">0 / 200</span>
+                <span style="font-size:10px;color:var(--ink4);opacity:.6;flex:1;text-align:center">Nombre aleatorio — identidad protegida</span>
+                <button id="momentoPostBtn" onclick="pPostMomento()" class="p-btn p-btn--primary p-btn--sm">Compartir ✨</button>
+              </div>
+            </div>
+            <!-- Feed label -->
+            <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);margin-bottom:12px">MOMENTOS ACTIVOS</div>
+            <div id="momentoFullFeed"><div style="text-align:center;padding:20px;font-size:12px;color:var(--ink4)">Cargando…</div></div>
+            <!-- SQL migration note (shown if table missing) -->
+            <div id="momentoMigrationNote" style="display:none;background:rgba(200,162,0,.08);border:1px solid rgba(200,162,0,.22);border-radius:12px;padding:14px;font-size:11px;color:var(--ink3);line-height:1.7;margin-top:10px">
+              <strong>Tabla Supabase requerida:</strong><br>
+              <pre style="font-size:9.5px;background:rgba(0,0,0,.06);padding:10px;border-radius:8px;overflow-x:auto;margin:8px 0;white-space:pre-wrap">CREATE TABLE momentos (
+  id TEXT PRIMARY KEY,
+  text TEXT,
+  emoji TEXT,
+  anon_label TEXT,
+  hearts INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ,
+  user_hash TEXT
+);
+ALTER TABLE momentos ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "read_active" ON momentos FOR SELECT USING (expires_at &gt; NOW());
+CREATE POLICY "insert_all" ON momentos FOR INSERT WITH CHECK (true);
+CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
+            </div>
+          </div>
+        </div>
+      </div><!-- /pg-momento -->
 
       <!-- ══ MOOD ══════════════════════════════════════════════ -->
       <div class="p-page" id="pg-mood">
@@ -3268,8 +3361,8 @@
   </div>
 </div>
 
-<script src="premium.js?v=20260530-608"></script>
-<script src="premium-redesign.js?v=20260530-608"></script>
+<script src="premium.js?v=20260530-609"></script>
+<script src="premium-redesign.js?v=20260530-609"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
@@ -3287,6 +3380,26 @@
   function pShowDPA(){ if(typeof openModal==='function') openModal('dpaOv'); }
 </script>
 
+
+<!-- ══ WEEKLY SUMMARY OVERLAY ══════════════════════════════════ -->
+<div class="p-modal-ov" id="weeklySummaryOv" onclick="if(event.target===this)pCloseWeeklySummary()">
+  <div class="p-sheet" style="max-width:380px;padding:28px 24px;border-radius:24px">
+    <div id="weeklySummaryContent"></div>
+  </div>
+</div>
+
+<!-- ══ AMBIENT PLAYER BAR (fixed, hidden when no sound) ════════ -->
+<div id="ambientPlayerBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:8500;background:var(--cream2);border-top:1px solid var(--border);padding:10px 16px;align-items:center;gap:12px;max-width:600px;margin:0 auto">
+  <span id="ambientPlayerIcon" style="font-size:20px">🎵</span>
+  <span id="ambientPlayerName" style="font-size:12px;font-weight:600;color:var(--ink2);flex:1"></span>
+  <div style="display:flex;gap:6px;flex-wrap:wrap" id="ambientPlayerBtns">
+    <button onclick="pTogAmbient('lluvia')" id="apBtn-lluvia" class="amb-sound-btn" style="font-size:11px">🌧️</button>
+    <button onclick="pTogAmbient('bosque')" id="apBtn-bosque" class="amb-sound-btn" style="font-size:11px">🌲</button>
+    <button onclick="pTogAmbient('cafe')" id="apBtn-cafe" class="amb-sound-btn" style="font-size:11px">☕</button>
+    <button onclick="pTogAmbient('mar')" id="apBtn-mar" class="amb-sound-btn" style="font-size:11px">🌊</button>
+  </div>
+  <button onclick="pStopAmbient()" style="background:none;border:none;cursor:pointer;font-size:16px;opacity:.5;padding:4px" title="Detener">⏹</button>
+</div>
 
 <!-- "Apoya a Velo" desktop gutter widget — visible only on wide screens -->
 <div id="desktopApoyaWidget">

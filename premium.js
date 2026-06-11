@@ -1464,6 +1464,12 @@ function _loadHomeData(){
   if(_ha){ _ha.classList.remove('r-greeting-anim'); void _ha.offsetHeight; setTimeout(function(){ _ha.classList.add('r-greeting-anim'); }, 80); }
   // Daily quote in home header (Gemini, cached per day)
   setTimeout(_loadDailyMotivationalQuote, 200);
+  // 7-day mood mini-graph
+  _renderHomeWeekMoodGraph();
+  // Weekly summary (runs on Sundays or every 7 days)
+  _checkWeeklySummary();
+  // Momento feed (gracefully hidden if table missing)
+  setTimeout(_initHomeMomento, 400);
 }
 
 function _updateHomeBell(){
@@ -5819,6 +5825,7 @@ function pInitDiary(){
     if(banner) banner.style.display = 'flex';
   }
   _loadDiaryEntries();
+  _initDiaryPromptPreview();
 }
 
 var _selectedDiaryEmoji = '';
@@ -15646,6 +15653,375 @@ function pEndSession(){
   setTimeout(function(){ pGoTo('post-chat'); }, 800);
 }
 
+// ── WEEKLY MOOD MINI-GRAPH ────────────────────────────────────
+function _renderHomeWeekMoodGraph(){
+  var container = document.getElementById('homeWeekMoodGraph');
+  if(!container) return;
+  var today = new Date();
+  var dayNames = ['D','L','M','M','J','V','S'];
+  var moodColors = {'😄':'rgba(116,198,157,.9)','😊':'rgba(116,198,157,.65)','😐':'rgba(200,160,80,.7)','😞':'rgba(180,90,90,.7)','😢':'rgba(160,70,70,.8)'};
+  var moodBgs    = {'😄':'rgba(116,198,157,.22)','😊':'rgba(116,198,157,.14)','😐':'rgba(200,160,80,.14)','😞':'rgba(180,90,90,.11)','😢':'rgba(160,70,70,.14)'};
+  var days = [];
+  for(var i=6; i>=0; i--){
+    var d = new Date(today.getFullYear(), today.getMonth(), today.getDate()-i);
+    var key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    var mood = null; try{ mood = JSON.parse(safeLS('get','velo_mood_'+key)||'null'); }catch(e){}
+    days.push({ dayName:dayNames[d.getDay()], mood:mood, isToday:i===0 });
+  }
+  container.innerHTML = days.map(function(d){
+    var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.5)') : 'rgba(200,200,200,.18)';
+    var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.1)') : 'transparent';
+    var ring  = d.isToday ? 'border:2.5px solid '+color+';box-shadow:0 0 8px '+color+';' : 'border:1.5px solid '+color+';';
+    var emoji = d.mood ? d.mood.emoji : '·';
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:'Sin registro')+'">'
+      +'<div style="width:34px;height:34px;border-radius:50%;'+ring+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'17':'9')+'px;transition:.2s">'+emoji+'</div>'
+      +'<span style="font-size:8px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+// ── DIARY PROMPTS ─────────────────────────────────────────────
+var _DIARY_PROMPTS = [
+  '¿Qué fue lo más difícil de hoy y cómo lo manejaste?',
+  '¿Qué pequeña cosa te alegró hoy?',
+  '¿De qué te sentís orgulloso/a esta semana?',
+  '¿Qué emoción sentiste más fuerte hoy?',
+  '¿Qué necesitás que aún no te diste?',
+  '¿Hay algo que querías decirle a alguien y no te animaste?',
+  '¿Qué harías diferente si pudieras repetir el día de hoy?',
+  '¿Qué persona te hizo sentir acompañado/a últimamente?',
+  '¿Qué te preocupa más ahora y qué podés hacer al respecto?',
+  '¿Qué le dirías a la versión de vos de hace un año?',
+  '¿Dónde sentís la tensión en tu cuerpo hoy?',
+  '¿Qué límite necesitás poner que aún no pusiste?',
+  '¿Qué emoción estás evitando sentir?',
+  '¿Qué te gustaría que alguien notara de vos hoy?',
+  '¿Qué situación te robó energía esta semana?',
+  '¿Cuándo fue la última vez que te reíste de verdad?',
+  '¿Qué significa para vos estar bien hoy?',
+  '¿Qué aprendiste sobre vos mismo/a esta semana?',
+  '¿Hay algo que ya no querés cargar? ¿Qué pasaría si lo soltaras?',
+  '¿Qué parte de tu historia te cuesta contar?',
+  '¿Qué cosa simple te da paz?',
+  '¿Qué expectativa tuya te está pesando?',
+  '¿Qué vínculo necesitás cuidar más?',
+  '¿Qué estás esperando que llegue para estar bien?',
+  '¿En qué momento del día te sentís más vos?',
+  '¿Qué no dijiste hoy que querías decir?',
+  '¿Qué estás postergando y por qué?',
+  '¿Qué emoción te acompaña al cerrar este día?',
+  '¿Qué es algo que hacés por los demás pero no por vos?',
+  '¿Qué te da miedo reconocer?'
+];
+
+function _getDiaryPrompt(){
+  var day0 = new Date(new Date().getFullYear(),0,0);
+  var dayOfYear = Math.floor((Date.now()-day0.getTime())/86400000);
+  return _DIARY_PROMPTS[dayOfYear % _DIARY_PROMPTS.length];
+}
+
+function pInjectDiaryPrompt(){
+  var ta = document.getElementById('diaryTa');
+  if(!ta) return;
+  var prompt = _getDiaryPrompt();
+  ta.value = prompt + '\n\n';
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+  pToast('💡','Prompt del día cargado');
+}
+
+function _initDiaryPromptPreview(){
+  var el = document.getElementById('diaryPromptPreview');
+  if(el) el.textContent = _getDiaryPrompt();
+}
+
+// ── WEEKLY SUMMARY ────────────────────────────────────────────
+function _checkWeeklySummary(){
+  var lastKey = safeLS('get','velo_last_weekly_summary')||'';
+  var today = new Date();
+  var todayKey = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  if(lastKey === todayKey) return;
+  var isSunday = today.getDay() === 0;
+  var daysSince = lastKey ? Math.floor((Date.now()-new Date(lastKey).getTime())/86400000) : 999;
+  if(!isSunday && daysSince < 7) return;
+
+  var moodLog = []; try{ moodLog = JSON.parse(safeLS('get','velo_mood_log')||'[]'); }catch(e){}
+  var weekMoods = moodLog.filter(function(m){ return m.ts && (Date.now()-m.ts)<7*86400000; });
+  var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
+  var weekDiary = diary.filter(function(e){ return e.ts && (Date.now()-e.ts)<7*86400000; });
+  var streak = _getVisitDayCount ? _getVisitDayCount() : 1;
+
+  if(weekMoods.length < 2 && weekDiary.length === 0) return;
+
+  safeLS('set','velo_last_weekly_summary', todayKey);
+
+  var moodCount = {}; weekMoods.forEach(function(m){ if(m.emoji){ moodCount[m.emoji]=(moodCount[m.emoji]||0)+1; } });
+  var dominantMood = Object.keys(moodCount).sort(function(a,b){ return moodCount[b]-moodCount[a]; })[0]||null;
+  var userName = (safeLS('get','velo_user_name')||'').split(' ')[0]||'';
+
+  // Send to Buzón
+  var bodyTxt = 'Hola'+(userName?' '+userName:'')+', tu resumen de esta semana:\n\n';
+  if(weekMoods.length) bodyTxt += '📊 Registraste tu ánimo '+weekMoods.length+' vez'+(weekMoods.length>1?'es':'')+' esta semana'+(dominantMood?' — más frecuente: '+dominantMood:'')+'.\n';
+  if(weekDiary.length) bodyTxt += '📔 Escribiste en tu diario '+weekDiary.length+' vez'+(weekDiary.length>1?'es':'')+'.\n';
+  bodyTxt += '📅 Llevas '+streak+' día'+(streak>1?'s':'')+' seguidos en Velo.\n\n¡Cada pequeño registro importa. Seguí así! 🌱';
+  var inbox=[]; try{ inbox=JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  if(!inbox.find(function(m){ return m.id==='weekly-'+todayKey; })){
+    inbox.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'📊',remitente:'Velo — Resumen Semanal',asunto:'Tu semana en Velo 🌱',extracto:'Tu resumen de esta semana',cuerpo:bodyTxt,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
+    safeLS('set','velo_inbox',JSON.stringify(inbox.slice(0,100)));
+    if(typeof _updateInboxDot==='function') _updateInboxDot();
+  }
+
+  // Show overlay after 3s
+  setTimeout(function(){
+    pShowWeeklySummary({ checkIns:weekMoods.length, diaryEntries:weekDiary.length, streak:streak, dominantMood:dominantMood });
+  }, 3500);
+}
+
+function pShowWeeklySummary(data){
+  var ov = document.getElementById('weeklySummaryOv');
+  var cnt = document.getElementById('weeklySummaryContent');
+  if(!ov||!cnt) return;
+  cnt.innerHTML =
+    '<div style="text-align:center;margin-bottom:20px">'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:6px">RESUMEN SEMANAL</div>'
+    +'<div style="font-size:24px;font-weight:700;font-family:\'Cormorant Garamond\',serif;color:var(--ink)">Tu semana en Velo</div>'
+    +(data.dominantMood?'<div style="font-size:48px;margin:12px 0 4px">'+data.dominantMood+'</div><div style="font-size:11px;color:var(--ink4)">Emoción más frecuente</div>':'')
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px">'
+    +'<div style="text-align:center;background:rgba(116,198,157,.1);border-radius:12px;padding:14px 8px"><div style="font-size:24px;font-weight:800;color:var(--sage)">'+data.checkIns+'</div><div style="font-size:10px;color:var(--ink4);margin-top:2px">Registros</div></div>'
+    +'<div style="text-align:center;background:rgba(200,146,10,.1);border-radius:12px;padding:14px 8px"><div style="font-size:24px;font-weight:800;color:var(--gold)">'+data.diaryEntries+'</div><div style="font-size:10px;color:var(--ink4);margin-top:2px">Entradas diario</div></div>'
+    +'<div style="text-align:center;background:rgba(116,180,220,.1);border-radius:12px;padding:14px 8px"><div style="font-size:24px;font-weight:800;color:var(--sage3)">'+data.streak+'</div><div style="font-size:10px;color:var(--ink4);margin-top:2px">Días seguidos</div></div>'
+    +'</div>'
+    +'<p style="font-size:12px;color:var(--ink3);line-height:1.65;text-align:center;font-style:italic;margin-bottom:22px">¡Cada día que abrís Velo y registrás cómo te sentís es un acto de cuidado hacia vos mismo/a! 🌱</p>'
+    +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pCloseWeeklySummary()">¡Gracias! 🙌</button>';
+  if(typeof openModal==='function') openModal('weeklySummaryOv');
+  else { ov.classList.add('show'); ov.style.display='flex'; }
+}
+
+function pCloseWeeklySummary(){
+  if(typeof closeModal==='function') closeModal('weeklySummaryOv');
+  else { var ov=document.getElementById('weeklySummaryOv'); if(ov){ ov.classList.remove('show'); ov.style.display='none'; } }
+}
+
+// ── AMBIENT SOUNDS (Web Audio API) ───────────────────────────
+var _ambCtx = null, _ambSource = null, _ambGain = null, _ambLfo = null, _ambActive = null;
+var _AMB_META = { lluvia:{icon:'🌧️',label:'Lluvia'}, bosque:{icon:'🌲',label:'Bosque'}, cafe:{icon:'☕',label:'Café'}, mar:{icon:'🌊',label:'Mar'} };
+
+function _getAmbCtx(){
+  if(!_ambCtx||_ambCtx.state==='closed') _ambCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if(_ambCtx.state==='suspended') _ambCtx.resume();
+  return _ambCtx;
+}
+
+function _buildNoiseBuffer(ctx, type){
+  var rate=ctx.sampleRate, secs=12;
+  var buf=ctx.createBuffer(2, rate*secs, rate);
+  for(var ch=0;ch<2;ch++){
+    var data=buf.getChannelData(ch);
+    var b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0,lo=0;
+    for(var i=0;i<data.length;i++){
+      var w=Math.random()*2-1;
+      if(type==='cafe'||type==='bosque'){ lo=(lo+.02*w)/1.02; data[i]=lo*3.5; }
+      else { b0=.99886*b0+w*.0555179;b1=.99332*b1+w*.0750759;b2=.969*b2+w*.153852;b3=.8665*b3+w*.3104856;b4=.55*b4+w*.5329522;b5=-.7616*b5-w*.016898; data[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*.11; b6=w*.115926; }
+    }
+  }
+  return buf;
+}
+
+function pPlayAmbient(type){
+  pStopAmbient(true);
+  try{
+    var ctx=_getAmbCtx();
+    _ambSource=ctx.createBufferSource();
+    _ambSource.buffer=_buildNoiseBuffer(ctx,type);
+    _ambSource.loop=true;
+    var filt=ctx.createBiquadFilter();
+    if(type==='lluvia'){filt.type='bandpass';filt.frequency.value=3500;filt.Q.value=0.6;}
+    else if(type==='bosque'){filt.type='lowpass';filt.frequency.value=900;}
+    else if(type==='cafe'){filt.type='lowpass';filt.frequency.value=700;}
+    else{filt.type='lowpass';filt.frequency.value=500;}
+    _ambGain=ctx.createGain(); _ambGain.gain.value=0.28;
+    _ambSource.connect(filt); filt.connect(_ambGain);
+    if(type==='mar'){
+      _ambLfo=ctx.createOscillator(); _ambLfo.type='sine'; _ambLfo.frequency.value=0.1;
+      var lg=ctx.createGain(); lg.gain.value=0.18;
+      _ambLfo.connect(lg); lg.connect(_ambGain.gain); _ambLfo.start();
+    }
+    _ambGain.connect(ctx.destination);
+    _ambSource.start();
+    _ambActive=type;
+    _updateAmbientUI();
+  }catch(e){ pToast('⚠️','Audio no disponible en este dispositivo'); }
+}
+
+function pStopAmbient(silent){
+  try{ if(_ambSource){_ambSource.stop();_ambSource.disconnect();_ambSource=null;} }catch(e){}
+  try{ if(_ambLfo){_ambLfo.stop();_ambLfo.disconnect();_ambLfo=null;} }catch(e){}
+  try{ if(_ambGain){_ambGain.disconnect();_ambGain=null;} }catch(e){}
+  _ambActive=null;
+  _updateAmbientUI();
+  if(!silent) pToast('🔇','Sonido detenido');
+}
+
+function pTogAmbient(type){
+  if(_ambActive===type){ pStopAmbient(); return; }
+  pPlayAmbient(type);
+}
+
+function _updateAmbientUI(){
+  // Update home buttons
+  Object.keys(_AMB_META).forEach(function(t){
+    var btn=document.getElementById('ambBtn-'+t);
+    if(btn){ btn.classList.toggle('amb-active', _ambActive===t); }
+    var apb=document.getElementById('apBtn-'+t);
+    if(apb){ apb.classList.toggle('amb-active', _ambActive===t); }
+  });
+  // Update player bar
+  var bar=document.getElementById('ambientPlayerBar');
+  if(!bar) return;
+  if(!_ambActive){ bar.style.display='none'; return; }
+  bar.style.display='flex';
+  var meta=_AMB_META[_ambActive]||{icon:'🎵',label:_ambActive};
+  var iconEl=document.getElementById('ambientPlayerIcon');
+  var nameEl=document.getElementById('ambientPlayerName');
+  if(iconEl) iconEl.textContent=meta.icon;
+  if(nameEl) nameEl.textContent=meta.label+' — reproduciendo';
+}
+
+// ── MOMENTOS ──────────────────────────────────────────────────
+var _MOMENTO_NAMES=['Flor silvestre','Cielo nublado','Río quieto','Hoja en el viento','Estrella fugaz','Luna nueva','Brisa suave','Tierra húmeda','Piedra en el agua','Nube de paso','Fuego lento','Noche clara','Sol de invierno','Primer pétalo','Marea baja','Viento frío','Raíz profunda','Rocío al alba'];
+
+function _momentoAnonLabel(){ return _MOMENTO_NAMES[Math.floor(Math.random()*_MOMENTO_NAMES.length)]; }
+
+function _momentoUserHash(){
+  var e=safeLS('get','velo_user_email')||safeLS('get','velo_user_id')||'anon';
+  var h=0; for(var i=0;i<e.length;i++){h=(h*31+e.charCodeAt(i))&0xFFFFFF;}
+  return 'm'+h.toString(16).padStart(6,'0');
+}
+
+function _momentoAgo(ts){
+  var m=Math.floor((Date.now()-new Date(ts).getTime())/60000);
+  if(m<1) return 'ahora'; if(m<60) return m+'m'; return Math.floor(m/60)+'h';
+}
+
+async function _fetchMomentos(limit){
+  _initSupabase(); if(!sbClient) return [];
+  try{
+    var now=new Date().toISOString();
+    var res=await sbClient.from('momentos').select('id,text,emoji,anon_label,hearts,created_at,expires_at,user_hash').gt('expires_at',now).order('created_at',{ascending:false}).limit(limit||20);
+    if(res.error){ if(res.error.code==='42P01') return null; return []; }
+    return res.data||[];
+  }catch(e){ return []; }
+}
+
+function _renderMomentoCards(momentos, feedId){
+  var feed=document.getElementById(feedId);
+  if(!feed) return;
+  var myHash=_momentoUserHash();
+  if(!momentos||!momentos.length){
+    feed.innerHTML='<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink4);font-style:italic">Sé el primero en compartir un momento hoy ✨</div>';
+    return;
+  }
+  feed.innerHTML=momentos.map(function(m){
+    var liked=safeLS('get','velo_mheart_'+m.id)==='1';
+    var mine=m.user_hash===myHash;
+    var timeLeft=Math.max(0,Math.round((new Date(m.expires_at).getTime()-Date.now())/3600000));
+    return '<div style="background:var(--cream2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;animation:p-fadeIn .3s ease">'
+      +'<div style="display:flex;align-items:flex-start;gap:10px">'
+      +'<span style="font-size:26px;flex-shrink:0;line-height:1">'+(m.emoji||'💭')+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:14px;color:var(--ink2);line-height:1.6;margin-bottom:8px">'+_escHtml(m.text||'')+'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+      +'<span style="font-size:10px;color:var(--ink4);font-style:italic">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
+      +'<span style="font-size:9px;color:var(--ink4);opacity:.5">'+_momentoAgo(m.created_at)+'</span>'
+      +'<span style="font-size:9px;color:var(--ink4);opacity:.4">⏱ '+timeLeft+'h</span>'
+      +(mine?'<span style="font-size:9px;color:var(--sage2);font-weight:700">· tuyo</span>':'')
+      +'</div>'
+      +'</div>'
+      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;cursor:pointer;color:'+(liked?'#e0446a':'var(--ink4)')+';padding:4px;flex-shrink:0">'
+      +'<span style="font-size:20px">'+(liked?'❤️':'🤍')+'</span>'
+      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px">'+(m.hearts||0)+'</span>'
+      +'</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+async function _initHomeMomento(){
+  var section=document.getElementById('homeMomentoSection');
+  if(!section) return;
+  var momentos=await _fetchMomentos(4);
+  if(momentos===null){ section.style.display='none'; return; }
+  section.style.display='block';
+  _renderMomentoCards(momentos,'homeMomentoFeed');
+}
+
+async function _loadMomentoPageFeed(){
+  var feed=document.getElementById('momentoFullFeed');
+  var note=document.getElementById('momentoMigrationNote');
+  if(feed) feed.innerHTML='<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink4)">Cargando…</div>';
+  var momentos=await _fetchMomentos(30);
+  if(momentos===null){
+    if(feed) feed.innerHTML='';
+    if(note) note.style.display='block';
+    return;
+  }
+  if(note) note.style.display='none';
+  _renderMomentoCards(momentos,'momentoFullFeed');
+}
+
+async function pPostMomento(){
+  var ta=document.getElementById('momentoTa');
+  var emojiSel=document.getElementById('momentoEmoji');
+  if(!ta||!ta.value.trim()){pToast('💭','Escribí algo antes de compartir');return;}
+  var text=ta.value.trim().slice(0,200);
+  var emoji=emojiSel?emojiSel.value:'💭';
+  var id='mo-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
+  var now=new Date();
+  var expires=new Date(now.getTime()+24*3600000).toISOString();
+  _initSupabase(); if(!sbClient){pToast('⚠️','Sin conexión');return;}
+  var btn=document.getElementById('momentoPostBtn');
+  if(btn){btn.disabled=true;btn.textContent='…';}
+  try{
+    var res=await sbClient.from('momentos').insert({id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()});
+    if(res.error&&res.error.code==='42P01'){var n=document.getElementById('momentoMigrationNote');if(n)n.style.display='block';if(btn){btn.disabled=false;btn.textContent='Compartir ✨';}return;}
+    ta.value=''; pToast('✨','¡Momento compartido! Vivirá 24 horas');
+    _loadMomentoPageFeed();
+  }catch(e){pToast('⚠️','Error: '+e.message);}
+  if(btn){btn.disabled=false;btn.textContent='Compartir ✨';}
+}
+
+async function pPostMomentoHome(){
+  var inp=document.getElementById('momentoHomeInput');
+  var emojiSel=document.getElementById('momentoHomeEmoji');
+  if(!inp||!inp.value.trim()){pToast('💭','Escribí algo antes de compartir');return;}
+  var text=inp.value.trim().slice(0,180);
+  var emoji=emojiSel?emojiSel.value:'💭';
+  var id='mo-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
+  var now=new Date();
+  var expires=new Date(now.getTime()+24*3600000).toISOString();
+  _initSupabase(); if(!sbClient){pToast('⚠️','Sin conexión');return;}
+  var btn=document.getElementById('momentoHomeBtn');
+  if(btn){btn.disabled=true;btn.textContent='…';}
+  try{
+    var res=await sbClient.from('momentos').insert({id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()});
+    if(!res.error){ inp.value=''; pToast('✨','¡Momento compartido!'); _initHomeMomento(); }
+    else if(res.error.code==='42P01'){pToast('ℹ️','Función próximamente disponible');}
+  }catch(e){pToast('⚠️','Error: '+e.message);}
+  if(btn){btn.disabled=false;btn.textContent='✨';}
+}
+
+async function pHeartMomento(id, btn){
+  var k='velo_mheart_'+id;
+  if(safeLS('get',k)==='1'){pToast('💭','Ya le diste ❤️ a este momento');return;}
+  safeLS('set',k,'1');
+  var cEl=document.getElementById('mheart-'+id);
+  if(cEl) cEl.textContent=parseInt(cEl.textContent||0)+1;
+  if(btn){ btn.style.color='#e0446a'; var sp=btn.querySelector('span'); if(sp) sp.textContent='❤️'; }
+  _initSupabase(); if(!sbClient) return;
+  try{ await sbClient.from('momentos').update({hearts:parseInt((document.getElementById('mheart-'+id)||{}).textContent||1)}).eq('id',id); }catch(e){}
+}
+
 // ── STRIPE RETURN CHECK ───────────────────────────────────────
 function _checkStripeReturn(){
   var params = new URLSearchParams(window.location.search);
@@ -16160,6 +16536,7 @@ function _onPageEnter(id){
       pRenderBottle();
       break;
     case 'diary':       pInitDiary(); break;
+    case 'momento':     _loadMomentoPageFeed(); break;
     case 'mood':        pInitMood(); break;
     case 'respira':     pInitRespira(); break;
     case 'vela':        pInitVela(); break;
