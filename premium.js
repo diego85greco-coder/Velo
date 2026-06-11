@@ -1856,15 +1856,15 @@ function _updateHomeMottoLine(){
   var motto = safeLS('get','velo_user_motto') || '';
   if(motto.trim()){
     txt.textContent = motto.trim();
-    el.style.color = 'var(--ink3)';
-    el.style.borderColor = 'rgba(200,158,56,.22)';
-    el.style.background = 'rgba(200,158,56,.07)';
+    el.style.color = 'rgba(200,158,56,.92)';
+    el.style.borderColor = 'rgba(200,158,56,.38)';
+    el.style.background = 'linear-gradient(135deg,rgba(200,158,56,.16),rgba(180,140,40,.10))';
     el.title = 'Editar mi lema';
   } else {
     txt.textContent = 'Agregá tu lema →';
-    el.style.color = 'var(--ink5)';
-    el.style.borderColor = 'rgba(255,255,255,.10)';
-    el.style.background = 'rgba(255,255,255,.04)';
+    el.style.color = 'rgba(200,158,56,.75)';
+    el.style.borderColor = 'rgba(200,158,56,.28)';
+    el.style.background = 'rgba(200,158,56,.07)';
     el.title = 'Agregá tu lema personal';
   }
 }
@@ -8609,13 +8609,6 @@ function pLoadProfile(){
   var em = document.getElementById('editMotto');
   if(en) en.value = name;
   if(em) em.value = motto;
-
-  // Avatar grid
-  var avatarList = ['🧑','👩','👨','🧑‍🦱','👩‍🦱','👩‍🦰','🧔','🧑‍🦳','🌸','🌊','🦋','🌿','🌙','⭐','🦁','🐺'];
-  var avGrid = document.getElementById('editAvGrid');
-  if(avGrid) avGrid.innerHTML = avatarList.map(function(a){
-    return '<div class="p-av-opt'+(a===av?' selected':'')+'" onclick="pPickAv(this,\''+a+'\')">'+a+'</div>';
-  }).join('');
 
   // Reviews
   var rvEl = document.getElementById('profileReviews');
@@ -16082,14 +16075,14 @@ async function pPlayAmbient(type){
     _ambLfo2.type = 'sine';
 
     if(type === 'lluvia'){
-      // Soft rain: brown noise shaped to the 1–5 kHz sweet spot where
-      // raindrops sound natural. Very low master gain avoids harshness.
-      f1.type='highpass'; f1.frequency.value=900;  f1.Q.value=0.4;
-      f2.type='lowpass';  f2.frequency.value=5500; f2.Q.value=0.5;
-      f3.type='peaking';  f3.frequency.value=2800; f3.gain.value=5; f3.Q.value=0.7;
-      _ambGain.gain.value = 0.20;
-      _ambLfo.frequency.value  = 0.35; lfoG.gain.value  = 0.05;  // gentle patter rhythm
-      _ambLfo2.frequency.value = 1.10; lfoG2.gain.value = 0.03;  // subtle intensity bursts
+      // Soft rain: broad mid-band (180–2800 Hz) keeps warmth of drops
+      // hitting surfaces; cutting above 2.8 kHz removes the TV-static harshness.
+      f1.type='highpass'; f1.frequency.value=180;  f1.Q.value=0.5;
+      f2.type='lowpass';  f2.frequency.value=2800; f2.Q.value=0.4;
+      f3.type='peaking';  f3.frequency.value=900;  f3.gain.value=3; f3.Q.value=1.2;
+      _ambGain.gain.value = 0.14;
+      _ambLfo.frequency.value  = 0.12; lfoG.gain.value  = 0.035; // gentle intensity swell
+      _ambLfo2.frequency.value = 0.38; lfoG2.gain.value = 0.020; // light random variation
 
     } else if(type === 'bosque'){
       // Forest: gentle low-freq wind (brown noise 60–900 Hz) with
@@ -16102,14 +16095,15 @@ async function pPlayAmbient(type){
       _ambLfo2.frequency.value = 0.19; lfoG2.gain.value = 0.07;  // secondary layer
 
     } else if(type === 'fuego'){
-      // Fire: brown noise shaped to 60–500 Hz (wood crackle and rumble)
-      // Two LFOs: slow base flicker + faster micro-crackle
-      f1.type='highpass'; f1.frequency.value=55;  f1.Q.value=0.4;
-      f2.type='lowpass';  f2.frequency.value=500; f2.Q.value=0.7;
-      f3.type='peaking';  f3.frequency.value=140; f3.gain.value=6; f3.Q.value=0.9;
-      _ambGain.gain.value = 0.28;
-      _ambLfo.frequency.value  = 1.60; lfoG.gain.value  = 0.14;  // fire base flicker
-      _ambLfo2.frequency.value = 4.20; lfoG2.gain.value = 0.06;  // micro-crackle
+      // Fire: sawtooth LFO creates sharp amplitude spikes that mimic wood-crack
+      // pops; slow sine LFO adds the "breathing" base-flame swell.
+      _ambLfo.type = 'sawtooth';
+      f1.type='highpass'; f1.frequency.value=38;  f1.Q.value=0.3;
+      f2.type='lowpass';  f2.frequency.value=750; f2.Q.value=0.8;
+      f3.type='peaking';  f3.frequency.value=160; f3.gain.value=8; f3.Q.value=1.1;
+      _ambGain.gain.value = 0.22;
+      _ambLfo.frequency.value  = 3.50; lfoG.gain.value  = 0.10;  // sawtooth crackle pops
+      _ambLfo2.frequency.value = 0.18; lfoG2.gain.value = 0.09;  // slow base-flame breathing
 
     } else { // mar — ocean waves
       // The key to convincing waves: deep, SLOW LFO (0.1 Hz ≈ 10-second cycle)

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="629">
+  <meta name="app-version" content="630">
   <title>Velo — Acompañamos emociones</title>
   <!-- Auto-update: if server has a newer version, force a hard reload -->
   <script>(function(){try{fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){var cur=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');if(d&&d.v&&d.v>cur){window.location.reload(true);}}).catch(function(){});}catch(e){}})();</script>
@@ -21,8 +21,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-629">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-629">
+  <link rel="stylesheet" href="premium.css?v=20260611-630">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-630">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -960,33 +960,33 @@
                 <div id="homeGreetQuote" style="display:none;position:absolute;top:0;left:0;right:0"></div>
               </div>
               <div id="homeTimeIcon" style="display:flex;flex-direction:column;align-items:center;gap:0"><div id="homeWeatherInfo" style="display:none;margin-top:6px;font-size:12.5px;font-family:'Jost',sans-serif;font-weight:500;letter-spacing:.2px;text-align:center;line-height:1.4;color:rgba(15,50,28,.78)"></div></div>
-          <!-- Greeting card — mood + status actions (profile is now the floating FAB) -->
-          <div style="margin-left:94px;margin-right:94px;margin-bottom:2px;padding-left:4px">
-            <span id="homeRegisterLabel" style="font-size:8px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink4);opacity:.72">REGISTRA</span>
-          </div>
-          <div class="home-greeting" style="flex-direction:column;align-items:stretch;gap:0;padding:0;margin-left:94px;margin-right:94px">
-            <div id="homeRegisterZone" style="padding:8px 10px;display:flex;flex-direction:column;gap:6px">
+          <!-- Greeting card — mood + status + lema actions -->
+          <div style="margin:0 16px 6px">
+            <div id="homeRegisterZone" style="background:linear-gradient(135deg,rgba(255,255,255,.065) 0%,rgba(255,255,255,.03) 100%);border:1.5px solid rgba(255,255,255,.13);border-radius:20px;padding:11px 12px 11px;overflow:hidden">
+              <div style="font-size:8px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.32);margin-bottom:9px" id="homeRegisterLabel">REGISTRA</div>
+              <div style="display:flex;flex-direction:column;gap:7px">
               <button class="home-mood-btn" onclick="pOpenMyStatus()" style="font-size:11px;padding:6px 10px;white-space:nowrap;width:100%;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> Mi estado</button>
               <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:7px 12px;letter-spacing:.02em;cursor:pointer;white-space:nowrap;overflow:hidden">🌷 ¿Cómo te sentís hoy?</div>
-              <div id="homeMottoLine" onclick="pGoTo('profile')" style="display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:var(--ink4);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:100px;padding:6px 12px;letter-spacing:.01em;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">✏️ <span id="homeMottoText">Agregá tu lema →</span></div>
+              <div id="homeMottoLine" onclick="pOpenEditProfile()" style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(200,158,56,.92);background:linear-gradient(135deg,rgba(200,158,56,.16),rgba(180,140,40,.10));border:1px solid rgba(200,158,56,.38);border-radius:100px;padding:7px 12px;letter-spacing:.01em;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:background .15s">✏️ <span id="homeMottoText">Agregá tu lema →</span></div>
+              </div>
             </div>
-            <!-- Quick mood picker (hidden by default) -->
-            <div id="quickMoodPicker" style="display:none;padding:12px 16px 14px;border-top:1px solid var(--border);background:var(--cream2);animation:p-fadeIn .2s ease">
-              <div style="font-size:11px;font-weight:700;color:var(--ink4);letter-spacing:.5px;margin-bottom:10px">¿CÓMO TE SENTÍS AHORA?</div>
-              <div style="display:flex;gap:5px;justify-content:center;margin-bottom:12px" id="quickMoodEmojis">
-                <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😄','Muy bien')">😄</button>
-                <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😊','Bien')">😊</button>
-                <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😐','Regular')">😐</button>
-                <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😞','Mal')">😞</button>
-                <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😢','Muy mal')">😢</button>
-              </div>
-              <input type="text" id="quickMoodPhrase" placeholder="Agregá una frase (opcional)…" maxlength="80"
-                style="width:100%;box-sizing:border-box;padding:8px 12px;border:1.5px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Jost',sans-serif;background:var(--cream);color:var(--ink);outline:none"
-                onkeydown="if(event.key==='Enter')pSaveQuickMood()">
-              <div style="display:flex;gap:8px;margin-top:10px">
-                <button class="p-btn p-btn--primary p-btn--sm" style="flex:1" onclick="pSaveQuickMood()" id="quickMoodSaveBtn" disabled>Guardar</button>
-                <button class="p-btn p-btn--secondary p-btn--sm" onclick="pCloseQuickMood()">Cancelar</button>
-              </div>
+          </div>
+          <!-- Quick mood picker (hidden by default) -->
+          <div id="quickMoodPicker" style="display:none;margin:0 16px 6px;padding:12px 14px 14px;background:var(--cream2);border:1.5px solid rgba(116,198,157,.25);border-radius:18px;animation:p-fadeIn .2s ease">
+            <div style="font-size:11px;font-weight:700;color:var(--ink4);letter-spacing:.5px;margin-bottom:10px">¿CÓMO TE SENTÍS AHORA?</div>
+            <div style="display:flex;gap:5px;justify-content:center;margin-bottom:12px" id="quickMoodEmojis">
+              <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😄','Muy bien')">😄</button>
+              <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😊','Bien')">😊</button>
+              <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😐','Regular')">😐</button>
+              <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😞','Mal')">😞</button>
+              <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😢','Muy mal')">😢</button>
+            </div>
+            <input type="text" id="quickMoodPhrase" placeholder="Agregá una frase (opcional)…" maxlength="80"
+              style="width:100%;box-sizing:border-box;padding:8px 12px;border:1.5px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Jost',sans-serif;background:var(--cream);color:var(--ink);outline:none"
+              onkeydown="if(event.key==='Enter')pSaveQuickMood()">
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="p-btn p-btn--primary p-btn--sm" style="flex:1" onclick="pSaveQuickMood()" id="quickMoodSaveBtn" disabled>Guardar</button>
+              <button class="p-btn p-btn--secondary p-btn--sm" onclick="pCloseQuickMood()">Cancelar</button>
             </div>
           </div>
           <!-- Hint: monthly mood analysis — card -->
@@ -1064,26 +1064,37 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="opacity:.8;flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 Buscar personas
               </button>
-              <!-- 2×2 shortcut grid -->
-              <div class="r-home-shortcut-grid">
-                <button class="r-home-shortcut r-home-shortcut--sos" onclick="pOpenSOS()">
-                  <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-                  <span>SOS</span>
-                </button>
-                <button class="r-home-shortcut" onclick="pGoTo('contacts')" style="position:relative">
-                  <span id="favCountBadge" style="display:none;position:absolute;top:8px;right:8px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
-                  <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon fill="none" points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
-                  <span>FAVORITOS</span>
-                </button>
-                <button class="r-home-shortcut" onclick="pGoTo('inbox')" style="position:relative">
-                  <span id="homeBellBadge" style="display:none;position:absolute;top:8px;right:8px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
-                  <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg></span>
-                  <span>BUZÓN</span>
-                </button>
-                <button class="r-home-shortcut" onclick="pGoTo('circles')">
-                  <span class="r-hs-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>
-                  <span>COMUNIDAD</span>
-                </button>
+              <!-- Accesos rápidos + Sonidos combinados -->
+              <div class="r-home-quick-panel">
+                <div class="r-home-quick-label">ACCESOS RÁPIDOS</div>
+                <div class="r-home-quick-row">
+                  <button class="r-home-quick-btn r-home-quick-btn--sos" onclick="pOpenSOS()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span>SOS</span>
+                  </button>
+                  <button class="r-home-quick-btn" onclick="pGoTo('contacts')" style="position:relative">
+                    <span id="favCountBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon fill="none" points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span>Favoritos</span>
+                  </button>
+                  <button class="r-home-quick-btn" onclick="pGoTo('inbox')" style="position:relative">
+                    <span id="homeBellBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--sos);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg>
+                    <span>Buzón</span>
+                  </button>
+                  <button class="r-home-quick-btn" onclick="pGoTo('circles')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                    <span>Comunidad</span>
+                  </button>
+                </div>
+                <div class="r-home-quick-divider"></div>
+                <div class="r-home-quick-label r-home-quick-label--sound">🎵 SONIDOS AMBIENTALES</div>
+                <div class="r-home-quick-row">
+                  <button onclick="pTogAmbient('lluvia')" id="ambBtn-lluvia" class="r-home-quick-btn r-home-quick-btn--amb">🌧️<span>Lluvia</span></button>
+                  <button onclick="pTogAmbient('bosque')" id="ambBtn-bosque" class="r-home-quick-btn r-home-quick-btn--amb">🌲<span>Bosque</span></button>
+                  <button onclick="pTogAmbient('fuego')" id="ambBtn-fuego" class="r-home-quick-btn r-home-quick-btn--amb">🔥<span>Fuego</span></button>
+                  <button onclick="pTogAmbient('mar')" id="ambBtn-mar" class="r-home-quick-btn r-home-quick-btn--amb">🌊<span>Mar</span></button>
+                </div>
               </div>
             </div>
             <div class="r-hero-right">
@@ -1302,16 +1313,6 @@
           </div>
           <!-- Personalized suggestions (filled async by Gemini) -->
           <div id="homeSuggestions" style="display:none;margin-top:16px"></div>
-          <!-- Sonidos ambientales -->
-          <div style="margin:4px 16px 16px;background:linear-gradient(135deg,rgba(14,36,24,.80) 0%,rgba(10,28,20,.85) 100%);border:1.5px solid rgba(116,198,157,.30);border-radius:18px;padding:14px 14px 13px;box-shadow:0 2px 12px rgba(0,0,0,.25)">
-            <div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.90);margin-bottom:11px">🎵 Sonidos Ambientales</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <button onclick="pTogAmbient('lluvia')" id="ambBtn-lluvia" class="amb-sound-btn amb-sound-btn--card">🌧️<span>Lluvia</span></button>
-              <button onclick="pTogAmbient('bosque')" id="ambBtn-bosque" class="amb-sound-btn amb-sound-btn--card">🌲<span>Bosque</span></button>
-              <button onclick="pTogAmbient('fuego')" id="ambBtn-fuego" class="amb-sound-btn amb-sound-btn--card">🔥<span>Fuego</span></button>
-              <button onclick="pTogAmbient('mar')" id="ambBtn-mar" class="amb-sound-btn amb-sound-btn--card">🌊<span>Mar</span></button>
-            </div>
-          </div>
           <div style="height:20px"></div>
         </div>
       </div><!-- /pg-home -->
@@ -3254,8 +3255,6 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   <div class="p-sheet">
     <div class="p-sheet-handle"></div>
     <div class="p-label p-label-sage" style="margin-bottom:14px">Editar perfil</div>
-    <div class="p-av-grid" id="editAvGrid"></div>
-    <div style="height:12px"></div>
     <div class="p-field">
       <label class="p-field-label">Nombre</label>
       <input class="p-input" type="text" id="editName" placeholder="Tu nombre">
@@ -3414,8 +3413,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-629"></script>
-<script src="premium-redesign.js?v=20260611-629"></script>
+<script src="premium.js?v=20260611-630"></script>
+<script src="premium-redesign.js?v=20260611-630"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
