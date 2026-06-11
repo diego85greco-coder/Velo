@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="636">
+  <meta name="app-version" content="637">
   <title>Velo — Acompañamos emociones</title>
-  <!-- Auto-update: always check server version; redirect to ?_v=N so iOS Safari cannot serve stale HTML from cache -->
-  <script>(function(){try{var _cv=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){if(d&&d.v&&d.v>_cv){var _base=location.href.replace(/([?&])_v=\d+/,'').replace(/[?&]$/,'');location.replace(_base+(_base.indexOf('?')>=0?'&':'?')+'_v='+d.v);}}).catch(function(){});}catch(e){}})();</script>
+  <!-- Auto-update: redirect with _v+_t so GitHub Pages CDN (Fastly) cannot serve a cached response -->
+  <script>(function(){try{var _cv=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){if(d&&d.v&&d.v>_cv){var _base=location.href.replace(/[?&]?(_v|_t)=\d+/g,'').replace(/[?&]$/,'');var _sep=_base.indexOf('?')>=0?'&':'?';location.replace(_base+_sep+'_v='+d.v+'&_t='+Date.now());}}).catch(function(){});}catch(e){}})();</script>
   <meta name="description" content="Tu espacio seguro de apoyo emocional. Guardianes, sala de ayuda, diario personal y bienestar.">
   <meta name="theme-color" content="#1B5E3A">
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -21,8 +21,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-636">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-636">
+  <link rel="stylesheet" href="premium.css?v=20260611-637">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-637">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -3405,8 +3405,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-636"></script>
-<script src="premium-redesign.js?v=20260611-636"></script>
+<script src="premium.js?v=20260611-637"></script>
+<script src="premium-redesign.js?v=20260611-637"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
