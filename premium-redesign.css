@@ -10881,3 +10881,53 @@ body.r-dark .home-happy-compose-btn {
 body:not(.r-dark) .home-motto-label {
   color: rgba(90,65,10,.48) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v693 — Momentos section color harmony (dark mode)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Both tabs: gold when active — overrides v676 indigo for tab 1 ── */
+/* Specificity (0,4,0,2) beats v676's (0,3,0,1) */
+body.r-dark .home-feed-tabs button:nth-child(1).home-feed-tab--active,
+body.r-dark .home-feed-tabs button:nth-child(2).home-feed-tab--active {
+  background: linear-gradient(135deg, rgba(222,178,42,.92), rgba(196,152,22,.84)) !important;
+  border-color: rgba(235,192,55,.68) !important;
+  color: rgba(255,255,255,.97) !important;
+  box-shadow: 0 2px 12px rgba(200,158,28,.42) !important;
+}
+
+/* ── Both tabs: neutral subtle outline when inactive ── */
+body.r-dark .home-feed-tabs button:nth-child(1):not(.home-feed-tab--active),
+body.r-dark .home-feed-tabs button:nth-child(2):not(.home-feed-tab--active) {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.22) !important;
+  color: rgba(255,255,255,.55) !important;
+  box-shadow: none !important;
+}
+
+/* ── Section wrapper: warm amber accent border, darker bg ── */
+body.r-dark .home-momento-wrap {
+  background: linear-gradient(140deg, rgba(35,27,10,.90) 0%, rgba(26,20,6,.94) 100%) !important;
+  border-color: rgba(210,170,42,.38) !important;
+  box-shadow: 0 0 0 1px rgba(210,170,42,.10), 0 4px 28px rgba(0,0,0,.28), inset 0 1px 0 rgba(220,178,48,.12) !important;
+}
+
+/* ── Compose button: white/cream question text (not amber-yellow) ── */
+body.r-dark .home-happy-compose-btn {
+  color: rgba(255,248,220,.90) !important;
+}
+
+/* ── Section header badge: warm gold tint in dark mode ── */
+body.r-dark .home-momento-badge,
+body.r-dark .home-momento-badge--happy {
+  color: rgba(235,192,60,.92) !important;
+  background: rgba(220,178,42,.14) !important;
+  border-color: rgba(220,178,42,.32) !important;
+}
+body.r-dark .home-momento-sub {
+  color: rgba(210,190,120,.52) !important;
+}
+body.r-dark .home-momento-btn-all {
+  color: rgba(220,190,100,.72) !important;
+  border-color: rgba(200,165,50,.35) !important;
+}

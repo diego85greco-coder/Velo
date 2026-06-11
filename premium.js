@@ -1953,7 +1953,7 @@ async function _pullVisitCountFromSB(){
 
 function _updateHomeStreak(){
   var el = document.getElementById('homeStatStreak');
-  if(el) el.textContent = _getVisitDayCount();
+  if(el) el.textContent = _getConsecutiveStreak();
   var pEl = document.getElementById('profileDays');
   if(pEl) pEl.textContent = Math.max(1, _getVisitDayCount());
 }
@@ -2061,7 +2061,10 @@ function _sendBadgeInboxMsg(badge){
   var info = catalog[badge.name];
   if(!info) return;
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
-  var msgId = 'badge_'+badge.name.toLowerCase()+'_'+Date.now();
+  // Prevent duplicate badge inbox messages for the same level
+  var badgePrefix = 'badge_'+badge.name.toLowerCase()+'_';
+  if(inbox.some(function(m){ return m.id && m.id.indexOf(badgePrefix) === 0; })) return;
+  var msgId = badgePrefix+Date.now();
   inbox.unshift({
     id: msgId,
     tipo: 'sistema',
