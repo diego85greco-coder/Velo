@@ -10474,3 +10474,17 @@ body:not(.r-dark) #homeGreetTxt::after {
 body:not(.r-dark) #homeGreetWrapper .r-hero-italic {
   color: rgba(105,65,12,.72) !important;
 }
+
+/* ── v680: PARA VOS always dark green — consistent with REGISTRA & Momentos ── */
+body:not(.r-dark) .para-vos-frame {
+  background: linear-gradient(155deg, rgba(18,46,32,.96) 0%, rgba(11,34,22,.92) 100%) !important;
+  border-color: rgba(200,158,56,.72) !important;
+  box-shadow: 0 0 0 1px rgba(200,158,56,.14) inset, 0 10px 36px rgba(0,0,0,.42), 0 3px 10px rgba(0,0,0,.24) !important;
+}
+body:not(.r-dark) .para-vos-frame::before,
+body:not(.r-dark) .para-vos-frame::after {
+  border-color: rgba(200,158,56,.58) !important;
+}
+body:not(.r-dark) .para-vos-hdr {
+  color: rgba(200,158,56,.88) !important;
+}
