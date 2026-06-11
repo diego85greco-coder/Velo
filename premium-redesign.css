@@ -10238,8 +10238,9 @@ body:not(.r-dark) #homeWeekMoodGraph {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: 8px 6px;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
   background: transparent;
   border: none;
   color: rgba(190,148,50,.90);
@@ -10250,6 +10251,8 @@ body:not(.r-dark) #homeWeekMoodGraph {
   border-radius: 10px;
   transition: background .15s, color .15s;
   white-space: nowrap;
+  width: 100%;
+  text-align: center;
 }
 .para-vos-bottom-btn:hover {
   background: rgba(200,158,56,.15);
