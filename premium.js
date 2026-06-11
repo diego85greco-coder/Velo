@@ -1973,13 +1973,12 @@ function _getConsecutiveStreak(){
 // Guardianes = usuarios de la comunidad que se ofrecen a acompañar a otros.
 // Nivel Bronce: 5 días distintos de uso de la app.
 // Niveles superiores: número de conversaciones completadas.
-function _getBadge(convs){
-  var visitDays = _getVisitDayCount();
+function _getBadge(convs, visitDaysOverride){
+  var visitDays = (visitDaysOverride !== undefined) ? visitDaysOverride : _getVisitDayCount();
   if(convs >= 100) return { icon:'💎', name:'Diamante', color:'#7B68EE', next:null,        needed:0,           visitBased:false };
   if(convs >= 40)  return { icon:'🥇', name:'Oro',      color:'#C8A200', next:'Diamante',  needed:100-convs,   visitBased:false };
   if(convs >= 20)  return { icon:'🥈', name:'Plata',    color:'#8892A4', next:'Oro',        needed:40-convs,    visitBased:false };
   if(visitDays >= 5) return { icon:'🥉', name:'Bronce', color:'#C07840', next:'Plata',      needed:20-convs,    visitBased:false };
-  // Not yet Bronze: show days needed
   return { icon:'🌱', name:'Novato', color:'var(--sage4)', next:'Bronce', needed:5-visitDays, visitBased:true, visitDays:visitDays };
 }
 
@@ -5161,8 +5160,8 @@ function pOpenGuide(){
   ov.id='veloGuideOv';
   ov.className='p-modal-ov show';
   ov.style.zIndex='9998';
-  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="padding:0">'
-    +'<div style="position:sticky;top:0;z-index:2;background:#0E1C14;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07)">'
+  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="padding:0;display:flex;flex-direction:column;max-height:88vh;overflow:hidden">'
+    +'<div style="flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07)">'
     +'<div>'
     +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:4px">GUÍA DE VELO</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:#fff;font-weight:300;line-height:1.2">¿Qué hace cada sección?</div>'
@@ -5170,7 +5169,7 @@ function pOpenGuide(){
     +'</div>'
     +'<button onclick="document.getElementById(\'veloGuideOv\').remove();_syncBodyScroll()" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);font-size:16px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:10px">✕</button>'
     +'</div>'
-    +'<div style="padding:16px 20px 32px;display:flex;flex-direction:column;gap:8px">'
+    +'<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:16px 20px 32px;display:flex;flex-direction:column;gap:8px">'
     +cards
     +'</div>'
     +'</div>';
@@ -9764,14 +9763,27 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   document.body.appendChild(ov);
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 
-  // Fetch full profile + reviews
-  var prof = null, reviews = [];
+  // Fetch full profile + reviews + accurate session counts
+  var prof = null, reviews = [], _qpHelped = 0, _qpReceived = 0;
   if(uid && !isAnon){
     _initSupabase();
     if(sbClient){
       try{
         var pr = await sbClient.from('profiles').select('*').eq('id', uid).limit(1);
         if(pr.data && pr.data.length) prof = pr.data[0];
+      }catch(e){}
+      // Seed from profiles columns (always available, may be slightly stale)
+      _qpHelped   = (prof && prof.helped_count)   ? parseInt(prof.helped_count,10)   : 0;
+      _qpReceived = (prof && prof.received_count) ? parseInt(prof.received_count,10) : 0;
+      // Cross-check with guardian_requests for accuracy (profiles cache can be 0 if
+      // the counter was never synced for older accounts)
+      try{
+        var rH = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true})
+          .eq('guardian_id', uid).in('status',['ended','message_left']);
+        if(!rH.error && rH.count != null && rH.count > _qpHelped) _qpHelped = rH.count;
+        var rR = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true})
+          .eq('seeker_id', uid).in('status',['ended','message_left']);
+        if(!rR.error && rR.count != null && rR.count > _qpReceived) _qpReceived = rR.count;
       }catch(e){}
       reviews = await _loadUserReviews(uid);
     }
@@ -9785,9 +9797,11 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   var isFav    = uid ? pIsFav(uid) : false;
   var presence = (uid && !isAnon) ? _presenceInfo(uid) : null;
 
-  var helped   = (prof && prof.helped_count)   ? parseInt(prof.helped_count,10)   : 0;
-  var received = (prof && prof.received_count) ? parseInt(prof.received_count,10) : 0;
-  var badge    = _getBadge(helped);
+  var helped   = _qpHelped;
+  var received = _qpReceived;
+  // Use profile owner's visit days (not the viewer's) for accurate badge tier
+  var profVisitDays = (prof && prof.visit_day_count) ? parseInt(prof.visit_day_count,10) : 0;
+  var badge    = _getBadge(helped, profVisitDays);
 
   // Status block — same format as "Como me ven"
   var statusLines = '';
