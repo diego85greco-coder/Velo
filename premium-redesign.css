@@ -8415,8 +8415,8 @@ body:not(.r-dark) #homeProfileFab {
 }
 
 /* ── Monthly hint text: dark in light mode, white in dark mode ── */
-#homeMonthlyHint { color: rgba(15,50,28,.82); }
-body.r-dark #homeMonthlyHint { color: rgba(255,255,255,.90); }
+#homeMonthlyHint { color: #1a5c35 !important; }
+body.r-dark #homeMonthlyHint { color: rgba(255,255,255,.95) !important; }
 
 /* ── v486: Larger, more aesthetic greeting block ── */
 #homeTimeIcon .r-time-icon svg {
