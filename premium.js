@@ -15742,7 +15742,7 @@ function pInjectDiaryPrompt(){
   ta.value = prompt + '\n\n';
   ta.focus();
   ta.setSelectionRange(ta.value.length, ta.value.length);
-  pToast('💡','Prompt del día cargado');
+  pToast('✨','Reflexión del día ▸ Escribí libremente');
 }
 
 function _initDiaryPromptPreview(){
@@ -15989,7 +15989,7 @@ function pCloseWeeklySummary(){
 }
 
 // ── AMBIENT SOUNDS (Web Audio API) ───────────────────────────
-var _ambCtx = null, _ambSource = null, _ambGain = null, _ambLfo = null, _ambActive = null;
+var _ambCtx = null, _ambSource = null, _ambGain = null, _ambLfo = null, _ambLfo2 = null, _ambActive = null;
 var _AMB_META = { lluvia:{icon:'🌧️',label:'Lluvia'}, bosque:{icon:'🌲',label:'Bosque'}, fuego:{icon:'🔥',label:'Fuego'}, mar:{icon:'🌊',label:'Mar'} };
 
 // Minimal silent WAV — playing this <audio> element forces iOS to move the
@@ -15997,19 +15997,25 @@ var _AMB_META = { lluvia:{icon:'🌧️',label:'Lluvia'}, bosque:{icon:'🌲',la
 // (ignores silent switch). Web Audio API then inherits "playback" category.
 var _AMB_UNLOCK_SRC = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
 
-function _buildNoiseBuffer(ctx){
-  // Stereo pink noise buffer (4 s, loops seamlessly)
-  var rate = ctx.sampleRate, secs = 4;
+function _buildBrownNoiseBuffer(ctx){
+  // Stereo brown noise (1/f² — deeper and softer than pink, no harsh highs)
+  var rate = ctx.sampleRate, secs = 8;
   var buf = ctx.createBuffer(2, rate * secs, rate);
   for(var ch = 0; ch < 2; ch++){
     var data = buf.getChannelData(ch);
-    var b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+    var last = 0;
+    // Slightly different seed per channel for natural stereo width
+    var seed = ch * 0.37;
     for(var i = 0; i < data.length; i++){
-      var w = Math.random() * 2 - 1;
-      b0=.99886*b0+w*.0555179; b1=.99332*b1+w*.0750759; b2=.969*b2+w*.153852;
-      b3=.8665*b3+w*.3104856; b4=.55*b4+w*.5329522; b5=-.7616*b5-w*.016898;
-      data[i] = (b0+b1+b2+b3+b4+b5+b6+w*.5362) * 0.22;
-      b6 = w*.115926;
+      var w = Math.random() * 2 - 1 + seed * 0.001 * Math.sin(i * 0.0001);
+      last = (last + 0.02 * w) / 1.02;
+      data[i] = last * 3.5;
+    }
+    // Ensure loop point is smooth (fade first/last 512 samples)
+    for(var j = 0; j < 512; j++){
+      var t = j / 512;
+      data[j] *= t;
+      data[data.length - 1 - j] *= t;
     }
   }
   return buf;
@@ -16018,8 +16024,7 @@ function _buildNoiseBuffer(ctx){
 async function pPlayAmbient(type){
   pStopAmbient(true);
   try{
-    // iOS silent-switch bypass: playing a silent <audio> element upgrades the
-    // audio session from "ambient" (muted by silent switch) to "playback".
+    // iOS silent-switch bypass: silent <audio> upgrades session to "playback"
     try{
       var _ul = new Audio(_AMB_UNLOCK_SRC);
       _ul.volume = 0.001; _ul.setAttribute('playsinline','');
@@ -16033,54 +16038,71 @@ async function pPlayAmbient(type){
     var ctx = _ambCtx;
 
     _ambSource = ctx.createBufferSource();
-    _ambSource.buffer = _buildNoiseBuffer(ctx);
+    _ambSource.buffer = _buildBrownNoiseBuffer(ctx);
     _ambSource.loop = true;
 
-    // Each sound uses a 2-stage filter chain + LFO for natural variation.
-    // Stage 1: shape the spectrum. Stage 2: smooth harsh edges.
+    // 3-stage filter chain for natural frequency shaping
     var f1 = ctx.createBiquadFilter();
     var f2 = ctx.createBiquadFilter();
-    _ambGain = ctx.createGain();
-    _ambLfo  = ctx.createOscillator();
-    var lfoG = ctx.createGain();
-    _ambLfo.type = 'sine';
+    var f3 = ctx.createBiquadFilter();
+    _ambGain  = ctx.createGain();
+    _ambLfo   = ctx.createOscillator();
+    _ambLfo2  = ctx.createOscillator();
+    var lfoG  = ctx.createGain();
+    var lfoG2 = ctx.createGain();
+    _ambLfo.type  = 'sine';
+    _ambLfo2.type = 'sine';
 
     if(type === 'lluvia'){
-      // Soft rain: bandpass 400→4000 Hz, slight shimmer
-      f1.type='highpass';  f1.frequency.value=380;  f1.Q.value=0.5;
-      f2.type='lowpass';   f2.frequency.value=4200; f2.Q.value=0.4;
-      _ambGain.gain.value = 0.75;
-      _ambLfo.frequency.value = 0.4; lfoG.gain.value = 0.06; // gentle amplitude ripple
+      // Soft rain: brown noise shaped to the 1–5 kHz sweet spot where
+      // raindrops sound natural. Very low master gain avoids harshness.
+      f1.type='highpass'; f1.frequency.value=900;  f1.Q.value=0.4;
+      f2.type='lowpass';  f2.frequency.value=5500; f2.Q.value=0.5;
+      f3.type='peaking';  f3.frequency.value=2800; f3.gain.value=5; f3.Q.value=0.7;
+      _ambGain.gain.value = 0.20;
+      _ambLfo.frequency.value  = 0.35; lfoG.gain.value  = 0.05;  // gentle patter rhythm
+      _ambLfo2.frequency.value = 1.10; lfoG2.gain.value = 0.03;  // subtle intensity bursts
 
     } else if(type === 'bosque'){
-      // Deep forest wind: very low rumble, very soft
-      f1.type='lowpass';   f1.frequency.value=500;  f1.Q.value=1.0;
-      f2.type='lowpass';   f2.frequency.value=700;  f2.Q.value=0.5;
-      _ambGain.gain.value = 0.7;
-      _ambLfo.frequency.value = 0.12; lfoG.gain.value = 0.15; // slow wind swell
+      // Forest: gentle low-freq wind (brown noise 60–900 Hz) with
+      // very slow gusts — sounds like wind through leaves
+      f1.type='highpass'; f1.frequency.value=60;  f1.Q.value=0.3;
+      f2.type='lowpass';  f2.frequency.value=900; f2.Q.value=0.5;
+      f3.type='peaking';  f3.frequency.value=220; f3.gain.value=4; f3.Q.value=0.5;
+      _ambGain.gain.value = 0.24;
+      _ambLfo.frequency.value  = 0.08; lfoG.gain.value  = 0.14;  // slow wind gusts
+      _ambLfo2.frequency.value = 0.19; lfoG2.gain.value = 0.07;  // secondary layer
 
     } else if(type === 'fuego'){
-      // Warm fire: low rumble 80–900 Hz, slow flicker
-      f1.type='highpass';  f1.frequency.value=80;   f1.Q.value=0.7;
-      f2.type='lowpass';   f2.frequency.value=900;  f2.Q.value=1.2;
-      _ambGain.gain.value = 0.72;
-      _ambLfo.frequency.value = 2.8; lfoG.gain.value = 0.09; // fire flicker rhythm
+      // Fire: brown noise shaped to 60–500 Hz (wood crackle and rumble)
+      // Two LFOs: slow base flicker + faster micro-crackle
+      f1.type='highpass'; f1.frequency.value=55;  f1.Q.value=0.4;
+      f2.type='lowpass';  f2.frequency.value=500; f2.Q.value=0.7;
+      f3.type='peaking';  f3.frequency.value=140; f3.gain.value=6; f3.Q.value=0.9;
+      _ambGain.gain.value = 0.28;
+      _ambLfo.frequency.value  = 1.60; lfoG.gain.value  = 0.14;  // fire base flicker
+      _ambLfo2.frequency.value = 4.20; lfoG2.gain.value = 0.06;  // micro-crackle
 
-    } else { // mar
-      // Deep ocean: subsonic rumble + slow wave swell
-      f1.type='lowpass';   f1.frequency.value=380;  f1.Q.value=0.8;
-      f2.type='lowpass';   f2.frequency.value=550;  f2.Q.value=0.5;
-      _ambGain.gain.value = 0.78;
-      _ambLfo.frequency.value = 0.07; lfoG.gain.value = 0.28; // ocean wave cycle
+    } else { // mar — ocean waves
+      // The key to convincing waves: deep, SLOW LFO (0.1 Hz ≈ 10-second cycle)
+      // with large modulation depth. Brown noise filtered to 50–400 Hz = water rumble.
+      f1.type='lowpass';  f1.frequency.value=400; f1.Q.value=0.5;
+      f2.type='highpass'; f2.frequency.value=45;  f2.Q.value=0.3;
+      f3.type='peaking';  f3.frequency.value=100; f3.gain.value=7; f3.Q.value=0.6;
+      _ambGain.gain.value = 0.35;
+      _ambLfo.frequency.value  = 0.10; lfoG.gain.value  = 0.32;  // main wave swell
+      _ambLfo2.frequency.value = 0.07; lfoG2.gain.value = 0.18;  // secondary wave
     }
 
-    _ambLfo.connect(lfoG);
-    lfoG.connect(_ambGain.gain);
+    // Both LFOs modulate master gain for natural amplitude variation
+    _ambLfo.connect(lfoG);    lfoG.connect(_ambGain.gain);
+    _ambLfo2.connect(lfoG2);  lfoG2.connect(_ambGain.gain);
     _ambLfo.start();
+    _ambLfo2.start(ctx.currentTime + 1.7); // slight offset for non-periodic feel
 
+    // Source → 3-stage filter → master gain → output
     _ambSource.connect(f1);
-    f1.connect(f2);
-    f2.connect(_ambGain);
+    f1.connect(f2); f2.connect(f3); f3.connect(_ambGain);
     _ambGain.connect(ctx.destination);
     _ambSource.start();
     _ambActive = type;
@@ -16091,6 +16113,7 @@ async function pPlayAmbient(type){
 function pStopAmbient(silent){
   try{ if(_ambSource){_ambSource.stop();_ambSource.disconnect();_ambSource=null;} }catch(e){}
   try{ if(_ambLfo){_ambLfo.stop();_ambLfo.disconnect();_ambLfo=null;} }catch(e){}
+  try{ if(_ambLfo2){_ambLfo2.stop();_ambLfo2.disconnect();_ambLfo2=null;} }catch(e){}
   try{ if(_ambGain){_ambGain.disconnect();_ambGain=null;} }catch(e){}
   _ambActive=null;
   _updateAmbientUI();
@@ -16169,6 +16192,9 @@ function _renderMomentoCards(momentos, feedId){
     var liked=safeLS('get','velo_mheart_'+m.id)==='1';
     var mine=m.user_hash===myHash;
     var timeLeft=Math.max(0,Math.round((new Date(m.expires_at).getTime()-Date.now())/3600000));
+    // Use locally cached count if higher than DB value (handles Supabase UPDATE lag/failure)
+    var cachedCnt=parseInt(safeLS('get','velo_mheart_'+m.id+'_cnt')||'0');
+    var heartCount=Math.max(m.hearts||0, cachedCnt);
     return '<div class="momento-card" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:14px;margin-bottom:10px;animation:p-fadeIn .3s ease">'
       +'<div style="display:flex;align-items:flex-start;gap:10px">'
       +'<span style="font-size:26px;flex-shrink:0;line-height:1">'+(m.emoji||'💭')+'</span>'
@@ -16183,7 +16209,7 @@ function _renderMomentoCards(momentos, feedId){
       +'</div>'
       +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;cursor:pointer;color:'+(liked?'#e0446a':'rgba(255,255,255,.35)')+';padding:4px;flex-shrink:0">'
       +'<span style="font-size:20px">'+(liked?'❤️':'🤍')+'</span>'
-      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:rgba(255,255,255,.4)">'+(m.hearts||0)+'</span>'
+      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:rgba(255,255,255,.4)">'+heartCount+'</span>'
       +'</button>'
       +'</div>'
       +'</div>';
@@ -16266,11 +16292,26 @@ async function pHeartMomento(id, btn){
   var k='velo_mheart_'+id;
   if(safeLS('get',k)==='1'){pToast('💭','Ya le diste ❤️ a este momento');return;}
   safeLS('set',k,'1');
+  // Increment DOM count and persist locally so re-renders don't reset it
   var cEl=document.getElementById('mheart-'+id);
-  if(cEl) cEl.textContent=parseInt(cEl.textContent||0)+1;
-  if(btn){ btn.style.color='#e0446a'; var sp=btn.querySelector('span'); if(sp) sp.textContent='❤️'; }
+  var newCount=(parseInt((cEl&&cEl.textContent)||'0')||0)+1;
+  if(cEl) cEl.textContent=newCount;
+  safeLS('set','velo_mheart_'+id+'_cnt', String(newCount));
+  // Update button appearance
+  if(btn){
+    btn.style.color='#e0446a';
+    var sp=btn.querySelector('span:first-child');
+    if(sp) sp.textContent='❤️';
+  }
+  // Persist to Supabase using atomic SQL increment so concurrent likes don't collide
   _initSupabase(); if(!sbClient) return;
-  try{ await sbClient.from('momentos').update({hearts:parseInt((document.getElementById('mheart-'+id)||{}).textContent||1)}).eq('id',id); }catch(e){}
+  try{
+    var r=await sbClient.rpc('increment_momento_hearts',{post_id:id});
+    // If RPC doesn't exist, fall back to direct update
+    if(r&&r.error&&r.error.code==='42883'){
+      await sbClient.from('momentos').update({hearts:newCount}).eq('id',id);
+    }
+  }catch(e){}
 }
 
 // ── STRIPE RETURN CHECK ───────────────────────────────────────

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="625">
+  <meta name="app-version" content="626">
   <title>Velo — Acompañamos emociones</title>
   <!-- Auto-update: if server has a newer version, force a hard reload -->
   <script>(function(){try{fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){var cur=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');if(d&&d.v&&d.v>cur){window.location.reload(true);}}).catch(function(){});}catch(e){}})();</script>
@@ -21,8 +21,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-625">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-625">
+  <link rel="stylesheet" href="premium.css?v=20260611-626">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-626">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1612,10 +1612,14 @@
                   <div style="font-size:12px;color:var(--ink4);margin-bottom:10px" id="diaryDateLbl"></div>
                   <input class="p-input" id="diaryTitleInput" type="text" maxlength="80" placeholder="Título (opcional)…" style="width:100%;box-sizing:border-box;margin-bottom:10px">
                   <div style="margin-bottom:10px"><button onclick="_openDiaryEmojiPicker()" id="diaryEmojiBtn" style="background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--ink3);font-family:'Jost',sans-serif">😊 Elegir emoji</button> <span id="diaryEmojiChosen" style="font-size:22px;vertical-align:middle"></span></div>
-                  <!-- Diary prompt of the day -->
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                    <button onclick="pInjectDiaryPrompt()" style="display:flex;align-items:center;gap:5px;white-space:nowrap;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.3);border-radius:10px;padding:6px 12px;font-size:11px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:'Jost',sans-serif;flex-shrink:0">💡 Prompt del día</button>
-                    <span id="diaryPromptPreview" style="font-size:11px;color:var(--ink4);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0"></span>
+                  <!-- Diary: Reflexión del día card -->
+                  <div class="diary-prompt-card" onclick="pInjectDiaryPrompt()">
+                    <div class="diary-prompt-icon">✨</div>
+                    <div class="diary-prompt-inner">
+                      <div class="diary-prompt-label">Reflexión del día</div>
+                      <div id="diaryPromptPreview" class="diary-prompt-text"></div>
+                    </div>
+                    <div class="diary-prompt-arrow">→</div>
                   </div>
                   <textarea class="p-textarea" id="diaryTa" rows="6" placeholder="¿Cómo te sentís hoy? Escribí libremente..."></textarea>
                   <div style="height:10px"></div>
@@ -3362,8 +3366,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-625"></script>
-<script src="premium-redesign.js?v=20260611-625"></script>
+<script src="premium.js?v=20260611-626"></script>
+<script src="premium-redesign.js?v=20260611-626"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

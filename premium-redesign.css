@@ -601,10 +601,11 @@ body.r-dark .home-logo-side {
 #homeTimeIcon         { order: 2; }
 #homeStatusToggle     { order: 3; }
 #homeDailyQuoteWrap   { order: 4; }
-.r-hero-actions       { order: 5; }
-#homeSearchUsersBtn   { order: 6; }
-.r-home-shortcut-grid { order: 7; }
-#homeHeroLabel        { order: 7; margin-top: 24px; }
+#homeMomentoSection   { order: 5; }
+.r-hero-actions       { order: 6; }
+#homeSearchUsersBtn   { order: 7; }
+.r-home-shortcut-grid { order: 8; }
+#homeHeroLabel        { order: 8; margin-top: 24px; }
 
 /* ── Paired quick-actions (desktop): Diario/Muro/Al Mar + Ánimos/Donar/Plus ── */
 .r-paired-quick {
@@ -6175,17 +6176,17 @@ body:not(.r-dark) .r-gmode-btn--on {
 .r-home-shortcut {
   background: rgba(255,255,255,.07);
   border: 1.5px solid rgba(255,255,255,.13);
-  border-radius: 18px;
-  padding: 20px 8px 15px;
+  border-radius: 14px;
+  padding: 13px 6px 11px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 9px;
+  gap: 6px;
   color: rgba(255,255,255,.82);
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 1.8px;
+  letter-spacing: 1.4px;
   text-transform: uppercase;
   font-family: 'Jost', 'Inter', sans-serif;
   transition: background .18s, transform .12s;
@@ -6195,7 +6196,7 @@ body:not(.r-dark) .r-gmode-btn--on {
 }
 .r-home-shortcut:hover,
 .r-home-shortcut:active { background: rgba(255,255,255,.14); transform: scale(.97); }
-.r-hs-icon { font-size: 26px; line-height: 1; filter: drop-shadow(0 0 7px rgba(200,158,56,.38)); }
+.r-hs-icon { font-size: 20px; line-height: 1; filter: drop-shadow(0 0 5px rgba(200,158,56,.30)); }
 .r-home-shortcut--sos { border-color: rgba(220,60,60,.38) !important; }
 .r-home-shortcut--sos .r-hs-icon { filter: drop-shadow(0 0 7px rgba(220,60,60,.45)); }
 .r-home-shortcut--guardian { border-color: rgba(200,158,56,.40) !important; }
@@ -6223,7 +6224,7 @@ body:not(.r-dark) .r-hs-icon { filter: none; }
 #homeTimeIcon .r-time-icon svg { width: 72px; height: 72px; }
 
 /* ── v309: Equal-height 2×2 shortcut buttons ────────────────────── */
-.r-home-shortcut { min-height: 100px !important; justify-content: center !important; }
+.r-home-shortcut { min-height: 70px !important; justify-content: center !important; }
 
 /* ── v309: Larger hero heading on mobile ────────────────────────── */
 @media (max-width: 860px) {
@@ -6282,8 +6283,8 @@ body { overflow-x: hidden !important; max-width: 100vw !important; }
 
 /* ── 3. SVG icon sizing + color ─────────────────────────────────── */
 .r-hs-icon svg {
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   display: block;
   flex-shrink: 0;
 }
@@ -6370,8 +6371,8 @@ body:not(.r-dark) .r-hs-icon { color: rgba(27, 94, 58, 0.75) !important; filter:
     font-size: clamp(17px, 4.5vw, 21px) !important;
   }
   .r-home-shortcut {
-    min-height: 82px !important;
-    padding: 14px 6px 12px !important;
+    min-height: 62px !important;
+    padding: 10px 5px 9px !important;
     justify-content: center !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -9020,3 +9021,24 @@ body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
 #homeMomentoFeed .momento-card .momento-meta {
   color: rgba(255,255,255,.32);
 }
+
+/* ── v626: diary prompt card ─────────────────────────────────────── */
+.diary-prompt-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(200,158,56,.14), rgba(255,215,80,.07));
+  border: 1px solid rgba(200,158,56,.28);
+  border-radius: 14px;
+  padding: 11px 14px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: background .15s, border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.diary-prompt-card:hover { background: linear-gradient(135deg, rgba(200,158,56,.22), rgba(255,215,80,.12)); border-color: rgba(200,158,56,.45); }
+.diary-prompt-icon { font-size: 20px; flex-shrink: 0; line-height: 1; }
+.diary-prompt-inner { flex: 1; min-width: 0; }
+.diary-prompt-label { font-size: 8.5px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(200,158,56,.80); margin-bottom: 3px; font-family: 'Jost', sans-serif; }
+.diary-prompt-text { font-size: 13px; font-style: italic; color: var(--ink2); line-height: 1.4; font-family: 'Cormorant Garamond', serif; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.diary-prompt-arrow { font-size: 14px; color: rgba(200,158,56,.55); flex-shrink: 0; margin-left: 4px; }
