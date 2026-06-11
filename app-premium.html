@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="648">
+  <meta name="app-version" content="649">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -28,8 +28,32 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-648">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-648">
+  <link rel="stylesheet" href="premium.css?v=20260611-649">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-649">
+  <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
+  <style>
+    /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
+    #homeGreetWrapper     { order: 1; }
+    #homeTimeIcon         { order: 2; }
+    #homeDailyQuoteWrap   { order: 3; }
+    #homeStatusToggle     { order: 4 !important; }
+    .r-hero-actions       { order: 5 !important; }
+    #homeMonthlyHint      { order: 6; }
+    #homeRegisterOuter    { order: 7; }
+    #quickMoodPicker      { order: 7; }
+    #homeWeekMoodGraph    { order: 8; }
+    #homeMomentoSection   { order: 9 !important; }
+    #homeDiscoverCards    { order: 10 !important; }
+    #homeSearchRow        { order: 11 !important; }
+    .r-home-quick-panel   { order: 12; }
+    .r-home-shortcut-grid { order: 12; }
+    #homeHeroLabel        { order: 13; margin-top: 24px; }
+    /* Search row overlap fix */
+    .home-search-row { display: flex !important; gap: 8px; align-self: stretch; }
+    .home-search-row .home-search-pill { display: flex !important; }
+    #homeSearchUsersBtn { flex: 1 !important; min-width: 0 !important; }
+    .home-search-pill--fav { flex-shrink: 0 !important; white-space: nowrap !important; }
+  </style>
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -3457,8 +3481,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-648"></script>
-<script src="premium-redesign.js?v=20260611-648"></script>
+<script src="premium.js?v=20260611-649"></script>
+<script src="premium-redesign.js?v=20260611-649"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
