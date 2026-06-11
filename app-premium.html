@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="660">
+  <meta name="app-version" content="661">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -28,8 +28,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-660">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-660">
+  <link rel="stylesheet" href="premium.css?v=20260611-661">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-661">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1956,9 +1956,9 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
           <div style="font-size:48px;font-weight:800;color:var(--sage4);line-height:1" id="respiraCount"></div>
           <p style="font-size:13px;color:rgba(255,255,255,.45);margin-top:16px;line-height:1.6">Respirá suavemente · Enfocate en el presente</p>
           <button class="p-btn p-btn--dark-white p-btn--lg" style="margin-top:28px" id="respiraBtn" onclick="pStartRespira()">Comenzar</button>
-          <div id="respiraSoundWrap" style="display:none;flex-direction:column;align-items:center;gap:5px;margin-top:18px">
-            <button id="respiraSoundBtn" onclick="pTogRespiraMusic()" style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.22);cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;transition:background .15s" title="Silenciar música">🔉</button>
-            <span style="font-size:9px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.45);font-family:'Jost',sans-serif">Sonido</span>
+          <div id="respiraSoundWrap" style="display:none;flex-direction:column;align-items:center;gap:4px;position:absolute;top:20px;right:20px;z-index:10">
+            <button id="respiraSoundBtn" onclick="pTogRespiraMusic()" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:background .18s;backdrop-filter:blur(6px)" title="Silenciar música">🔉</button>
+            <span style="font-size:8px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.42);font-family:'Jost',sans-serif">Sonido</span>
           </div>
         </div>
       </div>
@@ -3522,8 +3522,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-660"></script>
-<script src="premium-redesign.js?v=20260611-660"></script>
+<script src="premium.js?v=20260611-661"></script>
+<script src="premium-redesign.js?v=20260611-661"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
