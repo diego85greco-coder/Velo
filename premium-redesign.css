@@ -608,6 +608,7 @@ body.r-dark .home-logo-side {
 #homeMomentoSection   { order: 8; }
 .r-hero-actions       { order: 9; }
 #homeSearchUsersBtn   { order: 10; }
+#homeSearchRow        { order: 10; }
 .r-home-quick-panel   { order: 11; }
 .r-home-shortcut-grid { order: 11; }
 #homeHeroLabel        { order: 12; margin-top: 24px; }
@@ -8057,12 +8058,18 @@ body.r-dark #pg-news .p-card {
 }
 
 /* ── User search pill (home greeting area) ───────────────────────────────── */
+.home-search-row {
+  display: flex;
+  gap: 8px;
+  align-self: stretch;
+  margin: 16px 0 14px;
+}
 .home-search-pill {
   display: inline-flex;
-  align-self: center;            /* centered on mobile to match stats widget above */
+  align-self: center;
   align-items: center;
   gap: 7px;
-  margin: 16px 0 14px;
+  margin: 0;
   padding: 8px 18px 8px 13px;
   background: rgba(255,255,255,.58);
   border: 1.5px solid rgba(116,198,157,.32);
@@ -8085,6 +8092,9 @@ body.r-dark #pg-news .p-card {
   box-shadow: 0 3px 14px rgba(116,198,157,.18), inset 0 1px 0 rgba(255,255,255,.9);
 }
 .home-search-pill:active { transform: scale(.97); }
+/* Buscar personas takes remaining space; Favoritos stays compact */
+#homeSearchUsersBtn { flex: 1; }
+.home-search-pill--fav { flex-shrink: 0; padding-left: 12px; padding-right: 14px; }
 
 body.r-dark .home-search-pill {
   background: rgba(255,255,255,.07);
