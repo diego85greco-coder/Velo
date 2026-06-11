@@ -15751,22 +15751,37 @@ function _checkWeeklySummary(){
   var weekDiary = diary.filter(function(e){ return e.ts && (Date.now()-e.ts)<7*86400000; });
   var streak = _getVisitDayCount ? _getVisitDayCount() : 1;
 
-  if(weekMoods.length < 2 && weekDiary.length === 0) return;
-
   safeLS('set','velo_last_weekly_summary', todayKey);
 
   var moodCount = {}; weekMoods.forEach(function(m){ if(m.emoji){ moodCount[m.emoji]=(moodCount[m.emoji]||0)+1; } });
   var dominantMood = Object.keys(moodCount).sort(function(a,b){ return moodCount[b]-moodCount[a]; })[0]||null;
   var userName = (safeLS('get','velo_user_name')||'').split(' ')[0]||'';
+  var sinRegistros = weekMoods.length === 0 && weekDiary.length === 0;
+  var inbox=[]; try{ inbox=JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
 
-  // Send to Buzón
+  if(sinRegistros){
+    // Send encouragement message
+    var encBody = 'Hola'+(userName?' '+userName:'')+', esta semana no registraste cómo te sentiste — y está bien, todos los ritmos son válidos. 💙\n\n'
+      +'Cuando quieras, tocá "¿Cómo te sentís hoy?" en la pantalla principal. Son 5 segundos y te ayuda a conocerte mejor.\n\n'
+      +'📊 Con más registros, tu resumen semanal de cada domingo se vuelve más rico.\n'
+      +'📋 Y el 1° de cada mes, el equipo de Velo envía un análisis personalizado a quienes tienen registros de esa semana.\n\n'
+      +'¡Cada pequeño paso cuenta! 🌱';
+    if(!inbox.find(function(m){ return m.id==='weekly-'+todayKey; })){
+      inbox.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'💙',remitente:'Velo — Resumen Semanal',asunto:'Esta semana todavía no registraste nada 🌱',extracto:'¡Animáte a registrar cómo te sentís!',cuerpo:encBody,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
+      safeLS('set','velo_inbox',JSON.stringify(inbox.slice(0,100)));
+      if(typeof _updateInboxDot==='function') _updateInboxDot();
+    }
+    return; // no overlay if no data
+  }
+
+  // Send summary to Buzón
   var bodyTxt = 'Hola'+(userName?' '+userName:'')+', tu resumen de esta semana:\n\n';
   if(weekMoods.length) bodyTxt += '📊 Registraste tu ánimo '+weekMoods.length+' vez'+(weekMoods.length>1?'es':'')+' esta semana'+(dominantMood?' — más frecuente: '+dominantMood:'')+'.\n';
   if(weekDiary.length) bodyTxt += '📔 Escribiste en tu diario '+weekDiary.length+' vez'+(weekDiary.length>1?'es':'')+'.\n';
-  bodyTxt += '📅 Llevas '+streak+' día'+(streak>1?'s':'')+' seguidos en Velo.\n\n¡Cada pequeño registro importa. Seguí así! 🌱';
-  var inbox=[]; try{ inbox=JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+  bodyTxt += '📅 Llevás '+streak+' día'+(streak>1?'s':'')+' seguidos en Velo.\n\n'
+    +'📋 Recordá que el 1° de cada mes el equipo de Velo envía un análisis personalizado basado en tus registros.\n\n¡Seguí así! 🌱';
   if(!inbox.find(function(m){ return m.id==='weekly-'+todayKey; })){
-    inbox.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'📊',remitente:'Velo — Resumen Semanal',asunto:'Tu semana en Velo 🌱',extracto:'Tu resumen de esta semana',cuerpo:bodyTxt,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
+    inbox.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'📊',remitente:'Velo — Resumen Semanal',asunto:'Tu semana en Velo 🌱',extracto:weekMoods.length+' registro'+(weekMoods.length!==1?'s':'')+' esta semana'+(dominantMood?' · '+dominantMood:''),cuerpo:bodyTxt,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
     safeLS('set','velo_inbox',JSON.stringify(inbox.slice(0,100)));
     if(typeof _updateInboxDot==='function') _updateInboxDot();
   }
