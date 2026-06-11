@@ -10657,3 +10657,10 @@ body:not(.r-dark) #homeHappyFeed .momento-card { background: rgba(255,255,255,.7
 body:not(.r-dark) .home-momento-input { color: rgba(22,72,38,.90) !important; background: rgba(255,255,255,.72) !important; border-color: rgba(40,110,60,.35) !important; }
 body:not(.r-dark) .home-momento-input::placeholder { color: rgba(35,82,48,.48) !important; }
 body:not(.r-dark) .home-momento-post-btn { background: rgba(40,110,60,.18) !important; border-color: rgba(40,110,60,.45) !important; color: rgba(22,80,42,.92) !important; }
+
+/* ── v686 — Mis Registros btn inside REGISTRA: light-mode override ── */
+body:not(.r-dark) #homeRegisterZone #topbarMoodBtn {
+  background: rgba(255,255,255,.65) !important;
+  border-color: rgba(40,110,60,.38) !important;
+  color: rgba(22,80,42,.88) !important;
+}

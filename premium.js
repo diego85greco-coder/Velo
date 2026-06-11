@@ -16252,7 +16252,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       +'</div>'
       +'<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0">'
       +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;cursor:pointer;padding:3px">'
-      +'<span style="font-size:18px">'+(liked?'❤️':'🤍')+'</span>'
+      +'<span style="font-size:18px">'+(liked?'❤️':'🩶')+'</span>'
       +'<span id="mheart-'+_escHtml(m.id)+'" class="mc-heart-count" style="font-size:10px">'+heartCount+'</span>'
       +'</button>'
       +(!isHome&&!mine ? '<button onclick="pReportMomento(\''+_escHtml(m.id)+'\',this)" title="Reportar" class="mc-report" style="background:none;border:none;cursor:pointer;padding:4px 3px;margin-top:4px;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span style="font-size:7.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase">Reportar</span></button>' : '')
