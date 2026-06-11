@@ -15764,7 +15764,7 @@ function _checkWeeklySummary(){
     var encBody = 'Hola'+(userName?' '+userName:'')+', esta semana no registraste cómo te sentiste — y está bien, todos los ritmos son válidos. 💙\n\n'
       +'Cuando quieras, tocá "¿Cómo te sentís hoy?" en la pantalla principal. Son 5 segundos y te ayuda a conocerte mejor.\n\n'
       +'📊 Con más registros, tu resumen semanal de cada domingo se vuelve más rico.\n'
-      +'📋 Y el 1° de cada mes, el equipo de Velo envía un análisis personalizado a quienes tienen registros de esa semana.\n\n'
+      +'📋 Y el 1° de cada mes, el equipo de Velo te envía un análisis completo y detallado de todos tus registros del mes — mucho más rico que el resumen semanal.\n\n'
       +'¡Cada pequeño paso cuenta! 🌱';
     if(!inbox.find(function(m){ return m.id==='weekly-'+todayKey; })){
       inbox.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'💙',remitente:'Velo — Resumen Semanal',asunto:'Esta semana todavía no registraste nada 🌱',extracto:'¡Animáte a registrar cómo te sentís!',cuerpo:encBody,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
@@ -15779,7 +15779,7 @@ function _checkWeeklySummary(){
   if(weekMoods.length) bodyTxt += '📊 Registraste tu ánimo '+weekMoods.length+' vez'+(weekMoods.length>1?'es':'')+' esta semana'+(dominantMood?' — más frecuente: '+dominantMood:'')+'.\n';
   if(weekDiary.length) bodyTxt += '📔 Escribiste en tu diario '+weekDiary.length+' vez'+(weekDiary.length>1?'es':'')+'.\n';
   bodyTxt += '📅 Llevás '+streak+' día'+(streak>1?'s':'')+' seguidos en Velo.\n\n'
-    +'📋 Recordá que el 1° de cada mes el equipo de Velo envía un análisis personalizado basado en tus registros.\n\n¡Seguí así! 🌱';
+    +'📋 El 1° de cada mes el equipo de Velo te envía un análisis completo de todo tu mes — más detallado y rico que este resumen.\n\n¡Seguí así! 🌱';
   if(!inbox.find(function(m){ return m.id==='weekly-'+todayKey; })){
     inbox.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'📊',remitente:'Velo — Resumen Semanal',asunto:'Tu semana en Velo 🌱',extracto:weekMoods.length+' registro'+(weekMoods.length!==1?'s':'')+' esta semana'+(dominantMood?' · '+dominantMood:''),cuerpo:bodyTxt,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
     safeLS('set','velo_inbox',JSON.stringify(inbox.slice(0,100)));
