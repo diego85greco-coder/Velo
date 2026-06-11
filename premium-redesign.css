@@ -10495,30 +10495,11 @@ body:not(.r-dark) .para-vos-hdr {
    + ESTILO icon fix + Favoritos button
    ══════════════════════════════════════════════════════════════════ */
 
-/* ── Favoritos button ── */
-.home-fav-contacts-btn {
-  width: 100% !important;
-  text-align: center !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  letter-spacing: .3px !important;
-  padding: 11px 20px !important;
-  border-radius: 100px !important;
-  background: linear-gradient(135deg, rgba(255,215,60,.18) 0%, rgba(255,180,30,.10) 100%) !important;
-  border: 1.5px solid rgba(210,165,35,.55) !important;
-  color: rgba(195,148,18,.95) !important;
-  box-shadow: 0 2px 12px rgba(200,155,25,.14) !important;
-  transition: background .15s, border-color .15s !important;
-}
-body.r-dark .home-fav-contacts-btn {
-  background: linear-gradient(135deg, rgba(255,215,60,.14) 0%, rgba(255,180,30,.08) 100%) !important;
-  border-color: rgba(230,185,45,.45) !important;
-  color: rgba(235,195,65,.92) !important;
-}
+/* ── Favoritos button — light-mode color override only (base style is inline) ── */
 body:not(.r-dark) .home-fav-contacts-btn {
-  background: linear-gradient(135deg, rgba(255,220,70,.30) 0%, rgba(255,190,40,.20) 100%) !important;
+  background: linear-gradient(135deg, rgba(255,220,70,.30) 0%, rgba(255,190,40,.22) 100%) !important;
   border-color: rgba(160,118,15,.55) !important;
-  color: rgba(110,78,5,.92) !important;
+  color: rgba(105,72,5,.92) !important;
 }
 
 /* ── ESTILO nav icon — ensure always visible ── */
