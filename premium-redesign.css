@@ -8896,3 +8896,127 @@ body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
 #momentoCharCount {
   transition: color .2s;
 }
+
+/* ── v619: Momentos del Día — redesigned card ─────────────────── */
+.home-momento-wrap {
+  margin: 0 16px 20px;
+  display: none;
+  background: linear-gradient(140deg, rgba(18,42,30,.95) 0%, rgba(12,30,22,.97) 100%);
+  border: 1px solid rgba(116,198,157,.28);
+  border-radius: 20px;
+  padding: 18px 16px 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.22), inset 0 1px 0 rgba(116,198,157,.08);
+  position: relative;
+  overflow: hidden;
+}
+.home-momento-wrap::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 130px; height: 130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(116,198,157,.10) 0%, transparent 70%);
+  pointer-events: none;
+}
+.home-momento-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.home-momento-hdr-left { flex: 1; }
+.home-momento-badge {
+  display: inline-block;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(116,198,157,.75);
+  background: rgba(116,198,157,.10);
+  border: 1px solid rgba(116,198,157,.22);
+  border-radius: 20px;
+  padding: 2px 8px;
+  margin-bottom: 5px;
+}
+.home-momento-title {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Jost', sans-serif;
+  color: rgba(255,255,255,.92);
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+.home-momento-sub {
+  font-size: 10px;
+  color: rgba(255,255,255,.38);
+  letter-spacing: .2px;
+}
+.home-momento-btn-all {
+  flex-shrink: 0;
+  background: rgba(116,198,157,.14);
+  border: 1px solid rgba(116,198,157,.38);
+  border-radius: 20px;
+  padding: 6px 13px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #74c69d;
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  letter-spacing: .3px;
+  transition: background .18s;
+  margin-top: 2px;
+}
+.home-momento-btn-all:hover { background: rgba(116,198,157,.24); }
+.home-momento-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(116,198,157,.20);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+.home-momento-emoji-sel {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--ink);
+  padding: 0 2px;
+  -webkit-appearance: none;
+}
+.home-momento-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  font-family: 'Jost', sans-serif;
+  color: rgba(255,255,255,.82);
+}
+.home-momento-input::placeholder { color: rgba(255,255,255,.32); }
+.home-momento-post-btn {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(116,198,157,.30) 0%, rgba(80,160,120,.28) 100%);
+  border: 1px solid rgba(116,198,157,.45);
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #74c69d;
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  white-space: nowrap;
+  letter-spacing: .3px;
+  transition: background .18s;
+}
+.home-momento-post-btn:hover { background: rgba(116,198,157,.42); }
+#homeMomentoFeed .momento-card {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(116,198,157,.15);
+  color: rgba(255,255,255,.78);
+}
+#homeMomentoFeed .momento-card .momento-meta {
+  color: rgba(255,255,255,.32);
+}

@@ -15990,7 +15990,7 @@ function pCloseWeeklySummary(){
 
 // ── AMBIENT SOUNDS (Web Audio API) ───────────────────────────
 var _ambCtx = null, _ambSource = null, _ambGain = null, _ambLfo = null, _ambActive = null;
-var _AMB_META = { lluvia:{icon:'🌧️',label:'Lluvia'}, bosque:{icon:'🌲',label:'Bosque'}, cafe:{icon:'☕',label:'Café'}, mar:{icon:'🌊',label:'Mar'} };
+var _AMB_META = { lluvia:{icon:'🌧️',label:'Lluvia'}, bosque:{icon:'🌲',label:'Bosque'}, fuego:{icon:'🔥',label:'Fuego'}, mar:{icon:'🌊',label:'Mar'} };
 
 function _getAmbCtx(){
   if(!_ambCtx||_ambCtx.state==='closed') _ambCtx = new (window.AudioContext||window.webkitAudioContext)();
@@ -15999,15 +15999,26 @@ function _getAmbCtx(){
 }
 
 function _buildNoiseBuffer(ctx, type){
-  var rate=ctx.sampleRate, secs=12;
+  var rate=ctx.sampleRate, secs=16;
   var buf=ctx.createBuffer(2, rate*secs, rate);
   for(var ch=0;ch<2;ch++){
     var data=buf.getChannelData(ch);
-    var b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0,lo=0;
+    var b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
     for(var i=0;i<data.length;i++){
       var w=Math.random()*2-1;
-      if(type==='cafe'||type==='bosque'){ lo=(lo+.02*w)/1.02; data[i]=lo*3.5; }
-      else { b0=.99886*b0+w*.0555179;b1=.99332*b1+w*.0750759;b2=.969*b2+w*.153852;b3=.8665*b3+w*.3104856;b4=.55*b4+w*.5329522;b5=-.7616*b5-w*.016898; data[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*.11; b6=w*.115926; }
+      if(type==='fuego'){
+        // Fire: deep rumble base + random sparse crackles
+        b0=0.998*b0+0.002*w; b1=0.992*b1+0.008*w; b2=0.97*b2+0.03*w;
+        var base=(b0*6+b1*3+b2)*1.2;
+        var crackle=Math.random()<0.0003 ? (Math.random()*2-1)*(0.6+Math.random()*0.8) : 0;
+        data[i]=(base+crackle)*0.55;
+      } else {
+        // Pink noise (Voss–McCartney) — works well for lluvia, bosque, mar
+        b0=.99886*b0+w*.0555179; b1=.99332*b1+w*.0750759; b2=.969*b2+w*.153852;
+        b3=.8665*b3+w*.3104856; b4=.55*b4+w*.5329522; b5=-.7616*b5-w*.016898;
+        data[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*.13;
+        b6=w*.115926;
+      }
     }
   }
   return buf;
@@ -16021,15 +16032,15 @@ function pPlayAmbient(type){
     _ambSource.buffer=_buildNoiseBuffer(ctx,type);
     _ambSource.loop=true;
     var filt=ctx.createBiquadFilter();
-    if(type==='lluvia'){filt.type='bandpass';filt.frequency.value=3500;filt.Q.value=0.6;}
-    else if(type==='bosque'){filt.type='lowpass';filt.frequency.value=900;}
-    else if(type==='cafe'){filt.type='lowpass';filt.frequency.value=700;}
-    else{filt.type='lowpass';filt.frequency.value=500;}
-    _ambGain=ctx.createGain(); _ambGain.gain.value=0.28;
+    if(type==='lluvia'){filt.type='highpass';filt.frequency.value=1800;filt.Q.value=0.4;}
+    else if(type==='bosque'){filt.type='lowpass';filt.frequency.value=1100;filt.Q.value=0.7;}
+    else if(type==='fuego'){filt.type='lowpass';filt.frequency.value=800;filt.Q.value=0.5;}
+    else{filt.type='lowpass';filt.frequency.value=480;filt.Q.value=0.5;}
+    _ambGain=ctx.createGain(); _ambGain.gain.value=0.38;
     _ambSource.connect(filt); filt.connect(_ambGain);
     if(type==='mar'){
-      _ambLfo=ctx.createOscillator(); _ambLfo.type='sine'; _ambLfo.frequency.value=0.1;
-      var lg=ctx.createGain(); lg.gain.value=0.18;
+      _ambLfo=ctx.createOscillator(); _ambLfo.type='sine'; _ambLfo.frequency.value=0.08;
+      var lg=ctx.createGain(); lg.gain.value=0.26;
       _ambLfo.connect(lg); lg.connect(_ambGain.gain); _ambLfo.start();
     }
     _ambGain.connect(ctx.destination);

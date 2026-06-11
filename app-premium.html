@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="619">
+  <meta name="app-version" content="620">
   <title>Velo — Acompañamos emociones</title>
   <!-- Auto-update: if server has a newer version, force a hard reload -->
   <script>(function(){try{fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){var cur=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');if(d&&d.v&&d.v>cur){window.location.reload(true);}}).catch(function(){});}catch(e){}})();</script>
@@ -21,8 +21,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-619">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-619">
+  <link rel="stylesheet" href="premium.css?v=20260611-620">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-620">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1275,28 +1275,32 @@
             <div style="display:flex;gap:6px;flex-wrap:wrap">
               <button onclick="pTogAmbient('lluvia')" id="ambBtn-lluvia" class="amb-sound-btn">🌧️ Lluvia</button>
               <button onclick="pTogAmbient('bosque')" id="ambBtn-bosque" class="amb-sound-btn">🌲 Bosque</button>
-              <button onclick="pTogAmbient('cafe')" id="ambBtn-cafe" class="amb-sound-btn">☕ Café</button>
+              <button onclick="pTogAmbient('fuego')" id="ambBtn-fuego" class="amb-sound-btn">🔥 Fuego</button>
               <button onclick="pTogAmbient('mar')" id="ambBtn-mar" class="amb-sound-btn">🌊 Mar</button>
             </div>
           </div>
           <!-- Momentos del día -->
-          <div id="homeMomentoSection" style="margin:0 16px 16px;display:none">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-              <div>
-                <div style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4)">✨ MOMENTOS DEL DÍA</div>
-                <div style="font-size:10px;color:var(--ink4);opacity:.65;margin-top:1px">Anónimos · desaparecen en 24hs</div>
+          <div id="homeMomentoSection" class="home-momento-wrap">
+            <!-- Header row -->
+            <div class="home-momento-hdr">
+              <div class="home-momento-hdr-left">
+                <div class="home-momento-badge">COMUNIDAD</div>
+                <div class="home-momento-title">✨ Momentos del Día</div>
+                <div class="home-momento-sub">Anónimos · desaparecen en 24 hs</div>
               </div>
-              <button onclick="pGoTo('momento')" style="font-size:11px;font-weight:700;color:var(--sage2);background:none;border:none;cursor:pointer;font-family:'Jost',sans-serif">Ver todos →</button>
+              <button onclick="pGoTo('momento')" class="home-momento-btn-all">Ver todos →</button>
             </div>
+            <!-- Feed preview -->
             <div id="homeMomentoFeed"></div>
-            <div style="display:flex;gap:8px;align-items:center;margin-top:10px;background:var(--cream2);border:1px solid var(--border);border-radius:14px;padding:10px 12px">
-              <select id="momentoHomeEmoji" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink);padding:0 2px;-webkit-appearance:none">
+            <!-- Input row -->
+            <div class="home-momento-input-row">
+              <select id="momentoHomeEmoji" class="home-momento-emoji-sel">
                 <option>💭</option><option>😊</option><option>😔</option><option>❤️</option><option>🌱</option><option>✨</option><option>😌</option><option>🙏</option><option>😤</option><option>🌧️</option>
               </select>
-              <input type="text" id="momentoHomeInput" placeholder="Compartí algo anónimo (24h)…" maxlength="180"
-                style="flex:1;background:none;border:none;outline:none;font-size:13px;font-family:'Jost',sans-serif;color:var(--ink)"
+              <input type="text" id="momentoHomeInput" placeholder="Compartí algo con la comunidad (24h)…" maxlength="180"
+                class="home-momento-input"
                 onkeydown="if(event.key==='Enter')pPostMomentoHome()">
-              <button onclick="pPostMomentoHome()" id="momentoHomeBtn" style="background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.35);border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap;flex-shrink:0">✨</button>
+              <button onclick="pPostMomentoHome()" id="momentoHomeBtn" class="home-momento-post-btn">Publicar ✨</button>
             </div>
           </div>
           <div style="height:20px"></div>
@@ -3361,8 +3365,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-619"></script>
-<script src="premium-redesign.js?v=20260611-619"></script>
+<script src="premium.js?v=20260611-620"></script>
+<script src="premium-redesign.js?v=20260611-620"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
@@ -3395,7 +3399,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   <div style="display:flex;gap:6px;flex-wrap:wrap" id="ambientPlayerBtns">
     <button onclick="pTogAmbient('lluvia')" id="apBtn-lluvia" class="amb-sound-btn" style="font-size:11px">🌧️</button>
     <button onclick="pTogAmbient('bosque')" id="apBtn-bosque" class="amb-sound-btn" style="font-size:11px">🌲</button>
-    <button onclick="pTogAmbient('cafe')" id="apBtn-cafe" class="amb-sound-btn" style="font-size:11px">☕</button>
+    <button onclick="pTogAmbient('fuego')" id="apBtn-fuego" class="amb-sound-btn" style="font-size:11px">🔥</button>
     <button onclick="pTogAmbient('mar')" id="apBtn-mar" class="amb-sound-btn" style="font-size:11px">🌊</button>
   </div>
   <button onclick="pStopAmbient()" style="background:none;border:none;cursor:pointer;font-size:16px;opacity:.5;padding:4px" title="Detener">⏹</button>
