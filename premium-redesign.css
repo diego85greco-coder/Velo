@@ -9656,59 +9656,75 @@ body:not(.r-dark) .home-mood-btn {
   color: rgba(20,90,50,.88) !important;
 }
 
-/* ── Quick access buttons — each with a distinct color accent ───── */
+/* ── Quick access buttons — vivid color tiles ─────────────────── */
 /* Al Mar (1st) — ocean blue */
 .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(1) {
-  background: linear-gradient(145deg, rgba(40,120,200,.32) 0%, rgba(28,95,175,.26) 100%) !important;
-  border-color: rgba(80,160,240,.55) !important;
-  color: rgba(160,215,255,.96) !important;
-  box-shadow: 0 4px 16px rgba(40,120,200,.28), inset 0 1px 0 rgba(120,180,255,.15) !important;
+  background: linear-gradient(145deg, rgba(48,130,220,.50) 0%, rgba(30,105,195,.42) 100%) !important;
+  border-color: rgba(90,170,255,.65) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,.35) !important;
+  box-shadow: 0 5px 20px rgba(40,120,210,.38), inset 0 1px 0 rgba(160,210,255,.22) !important;
+}
+.r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(1):active {
+  background: linear-gradient(145deg, rgba(48,130,220,.68) 0%, rgba(30,105,195,.60) 100%) !important;
 }
 /* Velo IA (2nd) — violet */
 .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(2) {
-  background: linear-gradient(145deg, rgba(120,60,200,.32) 0%, rgba(95,40,175,.26) 100%) !important;
-  border-color: rgba(170,100,250,.55) !important;
-  color: rgba(220,185,255,.96) !important;
-  box-shadow: 0 4px 16px rgba(120,60,200,.28), inset 0 1px 0 rgba(180,130,255,.15) !important;
+  background: linear-gradient(145deg, rgba(128,68,215,.50) 0%, rgba(102,45,188,.42) 100%) !important;
+  border-color: rgba(180,115,255,.65) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,.35) !important;
+  box-shadow: 0 5px 20px rgba(120,60,205,.38), inset 0 1px 0 rgba(200,155,255,.18) !important;
 }
-/* Buzón (3rd) — gold */
+.r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(2):active {
+  background: linear-gradient(145deg, rgba(128,68,215,.68) 0%, rgba(102,45,188,.60) 100%) !important;
+}
+/* Buzón (3rd) — amber/gold */
 .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(3) {
-  background: linear-gradient(145deg, rgba(200,150,30,.32) 0%, rgba(170,118,15,.26) 100%) !important;
-  border-color: rgba(230,175,60,.55) !important;
-  color: rgba(255,225,110,.96) !important;
-  box-shadow: 0 4px 16px rgba(190,140,30,.28), inset 0 1px 0 rgba(255,210,80,.12) !important;
+  background: linear-gradient(145deg, rgba(210,155,35,.52) 0%, rgba(182,125,15,.44) 100%) !important;
+  border-color: rgba(245,188,65,.65) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,.35) !important;
+  box-shadow: 0 5px 20px rgba(195,145,25,.38), inset 0 1px 0 rgba(255,220,100,.18) !important;
+}
+.r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(3):active {
+  background: linear-gradient(145deg, rgba(210,155,35,.70) 0%, rgba(182,125,15,.62) 100%) !important;
 }
 /* Comunidad (4th) — teal */
 .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(4) {
-  background: linear-gradient(145deg, rgba(30,175,158,.32) 0%, rgba(18,148,132,.26) 100%) !important;
-  border-color: rgba(60,210,188,.55) !important;
-  color: rgba(115,248,228,.96) !important;
-  box-shadow: 0 4px 16px rgba(30,175,158,.28), inset 0 1px 0 rgba(80,230,210,.12) !important;
+  background: linear-gradient(145deg, rgba(32,182,165,.50) 0%, rgba(18,152,138,.42) 100%) !important;
+  border-color: rgba(68,220,200,.65) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,.35) !important;
+  box-shadow: 0 5px 20px rgba(28,172,155,.38), inset 0 1px 0 rgba(100,240,222,.18) !important;
 }
-/* Light mode accents */
+.r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(4):active {
+  background: linear-gradient(145deg, rgba(32,182,165,.68) 0%, rgba(18,152,138,.60) 100%) !important;
+}
+/* Light mode — semi-solid with white text */
 body:not(.r-dark) .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(1) {
-  background: linear-gradient(145deg,rgba(40,120,200,.18) 0%,rgba(28,95,175,.14) 100%) !important;
-  border-color: rgba(40,120,200,.45) !important;
-  color: rgba(18,70,160,.92) !important;
-  box-shadow: 0 3px 12px rgba(40,120,200,.18) !important;
+  background: linear-gradient(145deg,rgba(40,110,200,.55) 0%,rgba(25,90,180,.48) 100%) !important;
+  border-color: rgba(40,120,210,.55) !important;
+  color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.30) !important;
+  box-shadow: 0 4px 14px rgba(40,110,200,.30) !important;
 }
 body:not(.r-dark) .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(2) {
-  background: linear-gradient(145deg,rgba(100,40,180,.16) 0%,rgba(80,25,155,.12) 100%) !important;
-  border-color: rgba(120,60,200,.42) !important;
-  color: rgba(70,20,145,.92) !important;
-  box-shadow: 0 3px 12px rgba(100,40,180,.16) !important;
+  background: linear-gradient(145deg,rgba(110,45,195,.50) 0%,rgba(88,28,168,.42) 100%) !important;
+  border-color: rgba(130,65,215,.52) !important;
+  color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.30) !important;
+  box-shadow: 0 4px 14px rgba(110,45,195,.26) !important;
 }
 body:not(.r-dark) .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(3) {
-  background: linear-gradient(145deg,rgba(180,120,10,.18) 0%,rgba(155,95,5,.14) 100%) !important;
-  border-color: rgba(180,130,20,.42) !important;
-  color: rgba(110,65,0,.92) !important;
-  box-shadow: 0 3px 12px rgba(180,120,10,.16) !important;
+  background: linear-gradient(145deg,rgba(195,140,15,.55) 0%,rgba(168,115,8,.48) 100%) !important;
+  border-color: rgba(210,155,20,.55) !important;
+  color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.25) !important;
+  box-shadow: 0 4px 14px rgba(190,138,12,.28) !important;
 }
 body:not(.r-dark) .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(4) {
-  background: linear-gradient(145deg,rgba(20,150,130,.18) 0%,rgba(12,122,106,.14) 100%) !important;
-  border-color: rgba(20,150,130,.42) !important;
-  color: rgba(8,92,78,.92) !important;
-  box-shadow: 0 3px 12px rgba(20,150,130,.16) !important;
+  background: linear-gradient(145deg,rgba(22,158,142,.52) 0%,rgba(12,130,116,.44) 100%) !important;
+  border-color: rgba(22,160,144,.52) !important;
+  color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.25) !important;
+  box-shadow: 0 4px 14px rgba(18,148,132,.26) !important;
 }
 
 /* ── Sound buttons — themed colors ─────────────────────────────── */
@@ -9862,4 +9878,91 @@ body:not(.r-dark) .p-btn--primary {
 }
 body:not(.r-dark) .p-btn--primary:hover {
   background: linear-gradient(135deg, rgba(55,150,92,.95), rgba(40,120,72,.90)) !important;
+}
+
+/* ── v662: REGISTRA zone — more visual, more presence ───────────── */
+#homeRegisterZone {
+  background: linear-gradient(135deg, rgba(116,198,157,.14) 0%, rgba(80,155,110,.10) 100%) !important;
+  border-color: rgba(116,198,157,.42) !important;
+  box-shadow: 0 4px 22px rgba(0,0,0,.18), inset 0 1px 0 rgba(116,198,157,.14) !important;
+}
+body:not(.r-dark) #homeRegisterZone {
+  background: linear-gradient(135deg, rgba(116,198,157,.18) 0%, rgba(80,155,110,.13) 100%) !important;
+  border-color: rgba(70,160,100,.40) !important;
+  box-shadow: 0 3px 16px rgba(50,130,80,.10), inset 0 1px 0 rgba(255,255,255,.70) !important;
+}
+#homeRegisterLabel {
+  color: rgba(116,198,157,.90) !important;
+  font-size: 9px !important;
+  letter-spacing: 2.2px !important;
+}
+body:not(.r-dark) #homeRegisterLabel {
+  color: rgba(30,110,60,.78) !important;
+}
+/* Mi estado button — sage gradient */
+.home-mood-btn {
+  background: linear-gradient(135deg, rgba(116,198,157,.22) 0%, rgba(80,162,118,.18) 100%) !important;
+  border-color: rgba(116,198,157,.52) !important;
+  color: rgba(180,240,210,.96) !important;
+  box-shadow: 0 3px 12px rgba(80,180,125,.18) !important;
+}
+body:not(.r-dark) .home-mood-btn {
+  background: linear-gradient(135deg, rgba(80,165,100,.28) 0%, rgba(55,140,80,.22) 100%) !important;
+  border-color: rgba(60,155,90,.48) !important;
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,.20) !important;
+  box-shadow: 0 3px 10px rgba(55,140,80,.20) !important;
+}
+
+/* ── v662: Muro Feliz — warm golden tint on posts & compose ──────── */
+#homeHappyFeed .momento-card {
+  background: rgba(210,165,40,.07) !important;
+  border-color: rgba(220,175,55,.22) !important;
+}
+body:not(.r-dark) #homeHappyFeed .momento-card {
+  background: rgba(255,220,60,.09) !important;
+  border-color: rgba(200,155,20,.20) !important;
+}
+.home-happy-compose-btn {
+  background: linear-gradient(135deg, rgba(210,165,38,.20) 0%, rgba(185,138,20,.15) 100%) !important;
+  border-color: rgba(235,185,55,.55) !important;
+  color: rgba(255,225,100,.95) !important;
+  box-shadow: 0 3px 14px rgba(200,155,30,.18) !important;
+}
+body:not(.r-dark) .home-happy-compose-btn {
+  background: linear-gradient(135deg, rgba(220,170,20,.28) 0%, rgba(190,140,8,.22) 100%) !important;
+  border-color: rgba(210,160,15,.50) !important;
+  color: rgba(100,62,0,.92) !important;
+  box-shadow: 0 3px 12px rgba(190,140,15,.18) !important;
+}
+
+/* ── v662: Light-mode legibility fixes ─────────────────────────── */
+/* Sound buttons — darker text + colored bg in light mode */
+body:not(.r-dark) #ambBtn-lluvia {
+  background: linear-gradient(145deg,rgba(40,100,210,.30) 0%,rgba(28,80,188,.24) 100%) !important;
+  border-color: rgba(40,110,220,.48) !important;
+  color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.25) !important;
+  box-shadow: 0 4px 14px rgba(40,100,200,.22) !important;
+}
+body:not(.r-dark) #ambBtn-bosque {
+  background: linear-gradient(145deg,rgba(30,120,50,.38) 0%,rgba(18,100,38,.30) 100%) !important;
+  border-color: rgba(35,130,55,.52) !important;
+  color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.25) !important;
+  box-shadow: 0 4px 14px rgba(28,110,45,.20) !important;
+}
+body:not(.r-dark) #ambBtn-fuego {
+  background: linear-gradient(145deg,rgba(200,75,15,.36) 0%,rgba(175,55,8,.28) 100%) !important;
+  border-color: rgba(220,95,30,.50) !important;
+  color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.25) !important;
+  box-shadow: 0 4px 14px rgba(190,70,15,.22) !important;
+}
+body:not(.r-dark) #ambBtn-mar {
+  background: linear-gradient(145deg,rgba(15,80,165,.36) 0%,rgba(8,62,145,.28) 100%) !important;
+  border-color: rgba(25,100,195,.50) !important;
+  color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.25) !important;
+  box-shadow: 0 4px 14px rgba(15,80,160,.22) !important;
+}
+/* "CÓMO FUNCIONA" label — legible in light mode */
+body:not(.r-dark) .r-hero-actions > div:first-child > div:first-child {
+  color: rgba(25,95,55,.80) !important;
 }
