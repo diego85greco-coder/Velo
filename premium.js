@@ -5161,7 +5161,7 @@ function pOpenGuide(){
   ov.id='veloGuideOv';
   ov.className='p-modal-ov show';
   ov.style.zIndex='9998';
-  ov.innerHTML='<div class="p-sheet p-sheet-dark" id="veloGuideSheet" style="padding:0;overscroll-behavior:contain">'
+  ov.innerHTML='<div class="p-sheet p-sheet-dark" id="veloGuideSheet" style="padding:0;overscroll-behavior:none">'
     +'<div style="position:sticky;top:0;z-index:2;background:#0E1C14;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07)">'
     +'<div>'
     +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:4px">GUÍA DE VELO</div>'
@@ -5178,7 +5178,19 @@ function pOpenGuide(){
   // Force scroll to top — iOS Safari sometimes opens the sheet already scrolled
   // due to sticky-positioning + transform animation interaction
   var sheetEl = document.getElementById('veloGuideSheet');
-  if(sheetEl){ sheetEl.scrollTop = 0; requestAnimationFrame(function(){ sheetEl.scrollTop = 0; }); }
+  if(sheetEl){
+    sheetEl.scrollTop = 0;
+    requestAnimationFrame(function(){ sheetEl.scrollTop = 0; });
+    // iOS Safari bounce fix: block touchmove at scroll boundaries
+    var _guideStartY = 0;
+    sheetEl.addEventListener('touchstart', function(e){ _guideStartY = e.touches[0].clientY; }, {passive:true});
+    sheetEl.addEventListener('touchmove', function(e){
+      var atTop    = sheetEl.scrollTop <= 0;
+      var atBottom = sheetEl.scrollTop + sheetEl.clientHeight >= sheetEl.scrollHeight - 1;
+      var movingUp = e.touches[0].clientY > _guideStartY;
+      if((atTop && movingUp) || (atBottom && !movingUp)) e.preventDefault();
+    }, {passive:false});
+  }
   _syncBodyScroll();
 }
 
