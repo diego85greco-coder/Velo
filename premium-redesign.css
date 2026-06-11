@@ -10749,3 +10749,23 @@ body.r-dark .r-bell-btn {
   border-color: rgba(255,255,255,.15) !important;
   color: rgba(255,255,255,.82) !important;
 }
+
+/* ── v690 — Premium bottom nav icon polish ── */
+
+/* Favoritos tab: gold active tint (overrides the default sage-green) */
+.p-bn-fav.active {
+  color: rgba(220,178,35,.96) !important;
+}
+.p-bn-fav.active .p-bn-icon svg {
+  transform: translateY(-2px) scale(1.12) !important;
+  filter: drop-shadow(0 2px 8px rgba(220,178,35,.55)) !important;
+  stroke: rgba(235,192,45,.96) !important;
+}
+
+/* Home + Profile: slightly warmer active glow to match app palette */
+.p-bn-item[data-screen="home"].active .p-bn-icon svg {
+  filter: drop-shadow(0 2px 7px rgba(116,198,157,.55)) !important;
+}
+.p-bn-item[data-screen="profile"].active .p-bn-icon svg {
+  filter: drop-shadow(0 2px 7px rgba(116,198,157,.50)) !important;
+}
