@@ -15757,9 +15757,8 @@ async function _checkWeeklySummary(){
   var todayKey = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   if(lastKey === todayKey) return;
   var isSunday = today.getDay() === 0;
-  var daysSince = lastKey ? Math.floor((Date.now()-new Date(lastKey).getTime())/86400000) : 0;
-  // Only run on Sundays, OR if it's been 7+ days since last summary (not on first ever load)
-  if(!isSunday && daysSince < 7) return;
+  // Only run on Sundays — the 7-day fallback caused unexpected mid-week overlays
+  if(!isSunday) return;
 
   // Build Supabase fallback map for last 7 days (covers localStorage gaps)
   var _wsMonths = {};
@@ -15905,6 +15904,7 @@ function pShowWeeklySummary(data){
   var ov = document.getElementById('weeklySummaryOv');
   var cnt = document.getElementById('weeklySummaryContent');
   if(!ov||!cnt) return;
+  try{
 
   // 7-day emoji timeline
   var moodColors = {'😄':'#74c69d','😊':'#95d5b2','😐':'#e9b949','😞':'#e07a5f','😢':'#d45b5b'};
@@ -15970,16 +15970,19 @@ function pShowWeeklySummary(data){
     +'<div style="text-align:center;font-size:10px;color:rgba(255,255,255,.3);margin-bottom:18px">El 1° de cada mes recibís un análisis completo del mes 📋</div>'
     // CTA
     +'<button onclick="pCloseWeeklySummary()" style="width:100%;padding:14px;background:rgba(116,198,157,.22);border:1px solid rgba(116,198,157,.45);border-radius:14px;color:#74c69d;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">¡Hasta el próximo domingo! 🌱</button>';
+  }catch(e){ cnt.innerHTML = '<div style="color:#74c69d;text-align:center;padding:20px">Tu semana en Velo 🌱<br><br><button onclick="pCloseWeeklySummary()" style="margin-top:12px;padding:12px 24px;background:rgba(116,198,157,.22);border:1px solid rgba(116,198,157,.45);border-radius:14px;color:#74c69d;font-size:14px;font-weight:700;cursor:pointer">Cerrar</button></div>'; }
 
   // Style the overlay itself for dark background
-  var sheet = ov.querySelector('.p-sheet');
-  if(sheet){
-    sheet.style.background = 'linear-gradient(160deg,rgba(18,38,28,.97) 0%,rgba(12,28,22,.98) 100%)';
-    sheet.style.border = '1px solid rgba(116,198,157,.15)';
-    sheet.style.boxShadow = '0 30px 80px rgba(0,0,0,.6)';
-  }
-  if(typeof openModal==='function') openModal('weeklySummaryOv');
-  else { ov.classList.add('show'); ov.style.display='flex'; }
+  try{
+    var sheet = ov.querySelector('.p-sheet');
+    if(sheet){
+      sheet.style.background = 'linear-gradient(160deg,rgba(18,38,28,.97) 0%,rgba(12,28,22,.98) 100%)';
+      sheet.style.border = '1px solid rgba(116,198,157,.15)';
+      sheet.style.boxShadow = '0 30px 80px rgba(0,0,0,.6)';
+    }
+    if(typeof openModal==='function') openModal('weeklySummaryOv');
+    else { ov.classList.add('show'); ov.style.display='flex'; }
+  }catch(e){ console.warn('[Velo] pShowWeeklySummary render error:', e); }
 }
 
 function pCloseWeeklySummary(){
