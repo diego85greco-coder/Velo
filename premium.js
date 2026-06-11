@@ -16064,7 +16064,7 @@ async function pPlayAmbient(type){
 
     // Use cached buffer or fetch + decode
     if(!_ambCache[type]){
-      var resp = await fetch('/sounds/'+type+'.mp3', {cache:'force-cache'});
+      var resp = await fetch('sounds/'+type+'.mp3', {cache:'force-cache'});
       if(!resp.ok) throw new Error('Archivo no encontrado');
       var arrayBuf = await resp.arrayBuffer();
       _ambCache[type] = await ctx.decodeAudioData(arrayBuf);
