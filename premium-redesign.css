@@ -2278,6 +2278,8 @@ body.r-dark textarea::placeholder { color: rgba(255,255,255,.50) !important; }
 }
 #pg-profile #profileAv {
   border-color: rgba(80,150,210,.40) !important;
+  font-size: 90px !important;
+  line-height: 1 !important;
 }
 #pg-profile .p-field-label { color: #2a4060 !important; }
 #pg-profile .p-input { color: #0a2040 !important; background: rgba(255,255,255,.95) !important; }
@@ -9042,3 +9044,77 @@ body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
 .diary-prompt-label { font-size: 8.5px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(200,158,56,.80); margin-bottom: 3px; font-family: 'Jost', sans-serif; }
 .diary-prompt-text { font-size: 13px; font-style: italic; color: var(--ink2); line-height: 1.4; font-family: 'Cormorant Garamond', serif; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .diary-prompt-arrow { font-size: 14px; color: rgba(200,158,56,.55); flex-shrink: 0; margin-left: 4px; }
+
+/* ── v627: Momentos tabs + community banner ──────────────────────── */
+.momento-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.momento-tab {
+  flex: 1;
+  padding: 8px 10px;
+  background: rgba(255,255,255,.05);
+  border: 1.5px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,.50);
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  transition: background .15s, color .15s, border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.momento-tab--active {
+  background: rgba(116,198,157,.18) !important;
+  border-color: rgba(116,198,157,.45) !important;
+  color: #74c69d !important;
+}
+.momento-banner {
+  background: linear-gradient(135deg, rgba(18,48,28,.95), rgba(12,36,22,.97));
+  border: 1px solid rgba(116,198,157,.28);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  animation: p-fadeIn .3s ease;
+}
+.momento-banner-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.momento-banner-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,.88);
+  margin-bottom: 3px;
+}
+.momento-banner-desc {
+  font-size: 11px;
+  color: rgba(255,255,255,.50);
+  line-height: 1.5;
+}
+.momento-banner-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,.35);
+  font-size: 14px;
+  padding: 0 0 0 6px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.momento-banner-rules {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(116,198,157,.15);
+  padding-top: 9px;
+}
+.momento-banner-rules span {
+  font-size: 10px;
+  color: rgba(116,198,157,.75);
+  font-weight: 600;
+  letter-spacing: .3px;
+}

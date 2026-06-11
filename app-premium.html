@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="626">
+  <meta name="app-version" content="627">
   <title>Velo — Acompañamos emociones</title>
   <!-- Auto-update: if server has a newer version, force a hard reload -->
   <script>(function(){try{fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){var cur=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');if(d&&d.v&&d.v>cur){window.location.reload(true);}}).catch(function(){});}catch(e){}})();</script>
@@ -21,8 +21,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-626">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-626">
+  <link rel="stylesheet" href="premium.css?v=20260611-627">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-627">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -968,6 +968,7 @@
             <div id="homeRegisterZone" style="padding:8px 10px;display:flex;flex-direction:column;gap:6px">
               <button class="home-mood-btn" onclick="pOpenMyStatus()" style="font-size:11px;padding:6px 10px;white-space:nowrap;width:100%;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> Mi estado</button>
               <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:7px 12px;letter-spacing:.02em;cursor:pointer;white-space:nowrap;overflow:hidden">🌷 ¿Cómo te sentís hoy?</div>
+              <div id="homeMottoLine" onclick="pGoTo('profile')" style="display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:var(--ink4);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-radius:100px;padding:6px 12px;letter-spacing:.01em;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">✏️ <span id="homeMottoText">Agregá tu lema →</span></div>
             </div>
             <!-- Quick mood picker (hidden by default) -->
             <div id="quickMoodPicker" style="display:none;padding:12px 16px 14px;border-top:1px solid var(--border);background:var(--cream2);animation:p-fadeIn .2s ease">
@@ -1650,32 +1651,64 @@
                 <button class="p-back-btn" onclick="pGoTo('home')">←</button>
                 <div>
                   <div class="p-label">Comunidad</div>
-                  <h2 class="p-title">Momentos</h2>
+                  <h2 class="p-title">Momentos del Día</h2>
                 </div>
               </div>
               <button onclick="_loadMomentoPageFeed()" style="background:none;border:none;cursor:pointer;font-size:18px;opacity:.6" title="Actualizar">↻</button>
             </div>
-            <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:16px;font-style:italic">Compartí algo anónimo que dura 24 horas. Sin nombres, sin fotos — solo palabras. Nadie sabe quién sos.</p>
+
+            <!-- Community guidelines banner -->
+            <div id="momentoCommunityBanner" class="momento-banner" style="display:none">
+              <div class="momento-banner-top">
+                <span style="font-size:22px">🌿</span>
+                <div style="flex:1;min-width:0">
+                  <div class="momento-banner-title">Cuidemos nuestro espacio</div>
+                  <div class="momento-banner-desc">Un espacio para compartir reflexiones, emociones y apoyo de forma anónima. Los mensajes desaparecen en 24 hs.</div>
+                </div>
+                <button onclick="_dismissMomentoBanner()" class="momento-banner-close">✕</button>
+              </div>
+              <div class="momento-banner-rules">
+                <span>✓ Compartí desde la honestidad</span>
+                <span>✓ Respetá a cada persona</span>
+                <span>✓ En crisis usá el <strong>SOS</strong></span>
+              </div>
+            </div>
+
             <!-- Post input -->
-            <div style="background:rgba(255,255,255,.05);border:1px solid rgba(116,198,157,.22);border-radius:18px;padding:14px;margin-bottom:18px">
+            <div style="background:rgba(255,255,255,.05);border:1px solid rgba(116,198,157,.22);border-radius:18px;padding:14px;margin-bottom:14px">
+              <div style="font-size:9px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(116,198,157,.65);margin-bottom:10px">✨ Nuevo momento</div>
               <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
                 <select id="momentoEmoji" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--ink);padding:0;-webkit-appearance:none;flex-shrink:0">
                   <option>💭</option><option>😊</option><option>😔</option><option>❤️</option><option>🌱</option><option>✨</option><option>😌</option><option>🙏</option><option>😤</option><option>🌧️</option><option>🌟</option><option>😢</option>
                 </select>
-                <textarea id="momentoTa" rows="3" maxlength="200" placeholder="¿Qué querés compartir hoy?"
+                <textarea id="momentoTa" rows="3" maxlength="200" placeholder="¿Qué querés compartir con la comunidad hoy?"
                   style="flex:1;background:none;border:none;outline:none;font-size:14px;font-family:'Jost',sans-serif;color:rgba(255,255,255,.88);resize:none;line-height:1.5"
                   oninput="var c=document.getElementById('momentoCharCount');if(c){c.textContent=this.value.length+' / 200';c.style.color=this.value.length>180?'var(--sos)':'rgba(255,255,255,.35)';}"></textarea>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
                 <span id="momentoCharCount" style="font-size:10px;color:rgba(255,255,255,.3)">0 / 200</span>
-                <span style="font-size:10px;color:rgba(255,255,255,.28);flex:1;text-align:center">🔒 Nombre aleatorio · identidad protegida</span>
+                <span style="font-size:10px;color:rgba(255,255,255,.25);flex:1;text-align:center">🔒 Nombre aleatorio · identidad protegida</span>
                 <button id="momentoPostBtn" onclick="pPostMomento()" style="background:linear-gradient(135deg,rgba(116,198,157,.30),rgba(80,160,120,.28));border:1px solid rgba(116,198,157,.5);border-radius:12px;padding:8px 16px;font-size:12px;font-weight:700;color:#74c69d;cursor:pointer;font-family:'Jost',sans-serif">Compartir ✨</button>
               </div>
             </div>
-            <!-- Feed label -->
-            <div style="font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:12px">MOMENTOS ACTIVOS</div>
-            <div id="momentoFullFeed" style="max-height:60vh;overflow-y:auto;padding-right:2px"><div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.35)">Cargando…</div></div>
-            <!-- SQL migration note (shown if table missing) -->
+
+            <!-- Tabs -->
+            <div class="momento-tabs">
+              <button class="momento-tab momento-tab--active" id="momentoTabBtnComunidad" onclick="_switchMomentoTab('comunidad',this)">🌐 Comunidad</button>
+              <button class="momento-tab" id="momentoTabBtnMios" onclick="_switchMomentoTab('mios',this)">💛 Mis momentos</button>
+            </div>
+
+            <!-- Community feed -->
+            <div id="momentoTabComunidad">
+              <div id="momentoFullFeed" style="padding-right:2px"><div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.35)">Cargando…</div></div>
+            </div>
+
+            <!-- My momentos -->
+            <div id="momentoTabMios" style="display:none">
+              <div id="momentoMiosFeed" style="padding-right:2px"></div>
+            </div>
+
+            <!-- SQL migration note -->
             <div id="momentoMigrationNote" style="display:none;background:rgba(200,162,0,.08);border:1px solid rgba(200,162,0,.22);border-radius:12px;padding:14px;font-size:11px;color:var(--ink3);line-height:1.7;margin-top:10px">
               <strong>Tabla Supabase requerida:</strong><br>
               <pre style="font-size:9.5px;background:rgba(0,0,0,.06);padding:10px;border-radius:8px;overflow-x:auto;margin:8px 0;white-space:pre-wrap">CREATE TABLE momentos (
@@ -3227,6 +3260,10 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         <input class="p-input" type="text" id="editUsername" maxlength="20" placeholder="tuusuario" oninput="pCheckEditUsername(this.value)" autocapitalize="none" autocorrect="off" spellcheck="false" style="padding-left:28px">
       </div>
       <div id="editUsernameStatus" style="font-size:11px;height:16px;margin-top:3px"></div>
+      <div id="editUsernameChangesNote" style="font-size:10.5px;color:var(--ink4);line-height:1.5;margin-top:4px;background:rgba(255,255,255,.04);border-radius:8px;padding:6px 9px;display:none">
+        ℹ️ Solo podés cambiar tu usuario <strong>2 veces</strong> en total. El cambio solo se aplica si el nombre elegido está disponible.
+        <span id="editUsernameChangesLeft"></span>
+      </div>
     </div>
     <div style="display:flex;gap:8px">
       <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveProfile()">Guardar</button>
@@ -3366,8 +3403,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-626"></script>
-<script src="premium-redesign.js?v=20260611-626"></script>
+<script src="premium.js?v=20260611-627"></script>
+<script src="premium-redesign.js?v=20260611-627"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

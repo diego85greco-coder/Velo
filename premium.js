@@ -663,7 +663,7 @@ async function _sbSyncProfile(userId){
   var _pnEl = document.getElementById('profileName');
   if(_pnEl) _pnEl.textContent = safeLS('get','velo_user_name') || 'Usuario';
   var _pmEl = document.getElementById('profileMotto');
-  if(_pmEl) _pmEl.textContent = safeLS('get','velo_user_motto') || 'Mi camino, mi ritmo.';
+  if(_pmEl) _pmEl.textContent = safeLS('get','velo_user_motto') || 'Tu lema aquí…';
   [['profStatusMusic','velo_status_music'],['profStatusBook','velo_status_book'],
    ['profStatusFilm','velo_status_film'],['profStatusPhrase','velo_status_phrase']].forEach(function(kv){
     var _el = document.getElementById(kv[0]); if(_el) _el.value = safeLS('get',kv[1]) || '';
@@ -1441,6 +1441,7 @@ function _loadHomeData(){
   // Today's mood
   _loadTodayMoodHome();
   _updateHomeCurrentMoodLine();
+  _updateHomeMottoLine();
   _updateTopbarMoodBadge();
   _updateSidebarUser();
   _renderPersonalizedSuggestions();
@@ -1846,6 +1847,26 @@ async function _updateHomeCurrentMoodLine(){
   // Not registered yet — show animated pill
   el.style.cssText = 'display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:4px 10px;animation:p-breathe 3s ease-in-out infinite';
   el.textContent = '🌷 ¿Cómo te sentís hoy?';
+}
+
+function _updateHomeMottoLine(){
+  var el = document.getElementById('homeMottoLine');
+  var txt = document.getElementById('homeMottoText');
+  if(!el || !txt) return;
+  var motto = safeLS('get','velo_user_motto') || '';
+  if(motto.trim()){
+    txt.textContent = motto.trim();
+    el.style.color = 'var(--ink3)';
+    el.style.borderColor = 'rgba(200,158,56,.22)';
+    el.style.background = 'rgba(200,158,56,.07)';
+    el.title = 'Editar mi lema';
+  } else {
+    txt.textContent = 'Agregá tu lema →';
+    el.style.color = 'var(--ink5)';
+    el.style.borderColor = 'rgba(255,255,255,.10)';
+    el.style.background = 'rgba(255,255,255,.04)';
+    el.title = 'Agregá tu lema personal';
+  }
 }
 
 function _updateSidebarUser(){
@@ -8499,14 +8520,21 @@ function pLoadProfile(){
   var euEl = document.getElementById('editUsername');
   if(euEl){ euEl.value = uname; euEl.disabled = false; }
   var _unCh = parseInt(safeLS('get','velo_username_changes')||'0', 10);
-  var _unLeft = Math.max(0, 3 - _unCh);
+  var _unLeft = Math.max(0, 2 - _unCh);
   var _unHint = document.getElementById('usernameChangesHint');
   if(_unHint){
     if(_unLeft === 0) _unHint.innerHTML = ' · <span style="color:#E05C5C">sin cambios restantes</span>';
-    else if(_unLeft < 3) _unHint.innerHTML = ' · '+_unLeft+' cambio'+(_unLeft===1?'':'s')+' restante'+(_unLeft===1?'':'s');
     else _unHint.innerHTML = '';
   }
   if(_unLeft === 0 && euEl) euEl.disabled = true;
+  // Show the "max 2 changes" note with remaining count
+  var noteEl = document.getElementById('editUsernameChangesNote');
+  var leftEl  = document.getElementById('editUsernameChangesLeft');
+  if(noteEl) noteEl.style.display = 'block';
+  if(leftEl){
+    if(_unLeft === 0) leftEl.innerHTML = ' <strong style="color:#E05C5C">Ya usaste los 2 cambios disponibles.</strong>';
+    else leftEl.innerHTML = ' Te quedan <strong>'+_unLeft+'</strong> cambio'+(_unLeft===1?'':'s')+'.';
+  }
 
   // Plan badge
   var planBadge = document.getElementById('profilePlanBadge');
@@ -8908,7 +8936,7 @@ async function pSaveProfile(){
     // Handle username update if changed
     if(newUname && newUname !== curUname){
       var _unChanges = parseInt(safeLS('get','velo_username_changes')||'0', 10);
-      if(_unChanges >= 3){ pToast('⚠️','Has alcanzado el límite de 3 cambios de @usuario'); return; }
+      if(_unChanges >= 2){ pToast('⚠️','Solo podés cambiar tu @usuario 2 veces en total'); return; }
       if(newUname.length < 5 || newUname.length > 20){
         pToast('⚠️','El @usuario debe tener entre 5 y 20 caracteres'); return;
       }
@@ -16179,38 +16207,67 @@ async function _fetchMomentos(limit){
   }catch(e){ return []; }
 }
 
-function _renderMomentoCards(momentos, feedId){
+// Basic keyword moderation — returns false if message should be blocked
+function _momentoModerate(text){
+  var t = text.toLowerCase();
+  var bad = ['idiota','imbécil','imbecil','estúpido','estupido','puta','mierda','hdp',
+    'cretino','animal','basura','maldito','inútil','inutil','subnormal',
+    'odio a ','te odio','los odio','me dan asco','asco de','muérete','muerate',
+    'matate','matense','kill yourself','go kill'];
+  return !bad.some(function(w){ return t.indexOf(w) >= 0; });
+}
+
+function _renderMomentoCards(momentos, feedId, showMineOnly){
   var feed=document.getElementById(feedId);
   if(!feed) return;
   var myHash=_momentoUserHash();
   var isHome = feedId === 'homeMomentoFeed';
+  // Filter out locally reported momentos (always, on all views)
+  var reported = {};
+  try{ reported = JSON.parse(safeLS('get','velo_momento_reported')||'{}'); }catch(e){}
+
   if(!momentos||!momentos.length){
-    feed.innerHTML='<div style="text-align:center;padding:18px 8px;font-size:13px;color:rgba(255,255,255,.35);font-style:italic">Sé el primero en compartir un momento hoy ✨</div>';
+    feed.innerHTML='<div style="text-align:center;padding:18px 8px;font-size:13px;color:rgba(255,255,255,.35);font-style:italic">'
+      +(showMineOnly?'Todavía no publicaste ningún momento hoy ✨':'Sé el primero en compartir un momento hoy ✨')
+      +'</div>';
     return;
   }
-  feed.innerHTML=momentos.map(function(m){
+  var cards = momentos.filter(function(m){ return !reported[m.id]; });
+  if(!cards.length){
+    feed.innerHTML='<div style="text-align:center;padding:18px 8px;font-size:13px;color:rgba(255,255,255,.35);font-style:italic">No hay momentos disponibles ✨</div>';
+    return;
+  }
+  feed.innerHTML=cards.map(function(m){
     var liked=safeLS('get','velo_mheart_'+m.id)==='1';
     var mine=m.user_hash===myHash;
     var timeLeft=Math.max(0,Math.round((new Date(m.expires_at).getTime()-Date.now())/3600000));
-    // Use locally cached count if higher than DB value (handles Supabase UPDATE lag/failure)
     var cachedCnt=parseInt(safeLS('get','velo_mheart_'+m.id+'_cnt')||'0');
     var heartCount=Math.max(m.hearts||0, cachedCnt);
-    return '<div class="momento-card" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:14px;margin-bottom:10px;animation:p-fadeIn .3s ease">'
-      +'<div style="display:flex;align-items:flex-start;gap:10px">'
-      +'<span style="font-size:26px;flex-shrink:0;line-height:1">'+(m.emoji||'💭')+'</span>'
+    // Compact style for home widget
+    var cardPad = isHome ? '10px 12px' : '13px 14px';
+    var emojiSz = isHome ? '20px' : '24px';
+    var txtSz   = isHome ? '12px' : '14px';
+    return '<div class="momento-card" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:'+cardPad+';margin-bottom:8px;animation:p-fadeIn .3s ease">'
+      +'<div style="display:flex;align-items:flex-start;gap:9px">'
+      +'<span style="font-size:'+emojiSz+';flex-shrink:0;line-height:1;margin-top:1px">'+(m.emoji||'💭')+'</span>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.6;margin-bottom:8px">'+_escHtml(m.text||'')+'</div>'
-      +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+      +'<div style="font-size:'+txtSz+';color:rgba(255,255,255,.85);line-height:1.55;margin-bottom:6px">'+_escHtml(m.text||'')+'</div>'
+      +'<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">'
       +'<span style="font-size:10px;color:rgba(116,198,157,.7);font-style:italic">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
-      +'<span style="font-size:9px;color:rgba(255,255,255,.3)">'+_momentoAgo(m.created_at)+'</span>'
-      +'<span style="font-size:9px;color:rgba(255,255,255,.22)">⏱ '+timeLeft+'h</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.28)">'+_momentoAgo(m.created_at)+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.20)">⏱ '+timeLeft+'h</span>'
       +(mine?'<span style="font-size:9px;color:#74c69d;font-weight:700">· tuyo</span>':'')
       +'</div>'
       +'</div>'
-      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;cursor:pointer;color:'+(liked?'#e0446a':'rgba(255,255,255,.35)')+';padding:4px;flex-shrink:0">'
-      +'<span style="font-size:20px">'+(liked?'❤️':'🤍')+'</span>'
-      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:rgba(255,255,255,.4)">'+heartCount+'</span>'
+      // Heart button
+      +'<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0">'
+      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;cursor:pointer;color:'+(liked?'#e0446a':'rgba(255,255,255,.30)')+';padding:3px">'
+      +'<span style="font-size:18px">'+(liked?'❤️':'🤍')+'</span>'
+      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:rgba(255,255,255,.38)">'+heartCount+'</span>'
       +'</button>'
+      // Report button (only on full page, not home)
+      +(!isHome&&!mine ? '<button onclick="pReportMomento(\''+_escHtml(m.id)+'\',this)" title="Reportar" style="background:none;border:none;cursor:pointer;font-size:11px;color:rgba(255,255,255,.20);padding:2px 3px;margin-top:3px;line-height:1" title="Reportar contenido">🚩</button>' : '')
+      +'</div>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -16244,6 +16301,10 @@ async function pPostMomento(){
   var emojiSel=document.getElementById('momentoEmoji');
   if(!ta||!ta.value.trim()){pToast('💭','Escribí algo antes de compartir');return;}
   var text=ta.value.trim().slice(0,200);
+  if(!_momentoModerate(text)){
+    pToast('🌿','Este mensaje no respeta las normas de la comunidad. Por favor revisalo antes de publicar.');
+    return;
+  }
   var emoji=emojiSel?emojiSel.value:'💭';
   var id='mo-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
   var now=new Date();
@@ -16258,7 +16319,9 @@ async function pPostMomento(){
       else{ pToast('⚠️','Error al publicar ('+res.error.code+'): '+res.error.message); }
       if(btn){btn.disabled=false;btn.textContent='Compartir ✨';} return;
     }
-    ta.value=''; pToast('✨','¡Momento publicado! Vivirá 24 horas 🌱');
+    ta.value='';
+    var c=document.getElementById('momentoCharCount'); if(c) c.textContent='0 / 200';
+    pToast('✨','¡Momento publicado! Vivirá 24 horas 🌱');
     _loadMomentoPageFeed();
   }catch(e){pToast('⚠️','Error: '+e.message);}
   if(btn){btn.disabled=false;btn.textContent='Compartir ✨';}
@@ -16269,6 +16332,10 @@ async function pPostMomentoHome(){
   var emojiSel=document.getElementById('momentoHomeEmoji');
   if(!inp||!inp.value.trim()){pToast('💭','Escribí algo antes de compartir');return;}
   var text=inp.value.trim().slice(0,180);
+  if(!_momentoModerate(text)){
+    pToast('🌿','Este mensaje no respeta las normas de la comunidad. Por favor revisalo.');
+    return;
+  }
   var emoji=emojiSel?emojiSel.value:'💭';
   var id='mo-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
   var now=new Date();
@@ -16286,6 +16353,104 @@ async function pPostMomentoHome(){
     }
   }catch(e){pToast('⚠️','Error: '+e.message);}
   if(btn){btn.disabled=false;btn.textContent='Publicar ✨';}
+}
+
+function pReportMomento(id, btn){
+  var reported = {};
+  try{ reported = JSON.parse(safeLS('get','velo_momento_reported')||'{}'); }catch(e){}
+  reported[id] = 1;
+  safeLS('set','velo_momento_reported', JSON.stringify(reported));
+  // Remove the card from DOM immediately
+  if(btn){
+    var card = btn.closest('.momento-card');
+    if(card){ card.style.opacity='0'; card.style.transition='opacity .3s'; setTimeout(function(){ if(card.parentNode) card.parentNode.removeChild(card); }, 320); }
+  }
+  pToast('🚩','Reporte enviado. Gracias por cuidar la comunidad 🌿');
+}
+
+function _dismissMomentoBanner(){
+  safeLS('set','velo_momento_banner','dismissed');
+  var b = document.getElementById('momentoCommunityBanner');
+  if(b){ b.style.opacity='0'; b.style.transition='opacity .25s'; setTimeout(function(){ b.style.display='none'; }, 260); }
+}
+
+function _switchMomentoTab(tab, btn){
+  var tabCom = document.getElementById('momentoTabComunidad');
+  var tabMios = document.getElementById('momentoTabMios');
+  var btnCom  = document.getElementById('momentoTabBtnComunidad');
+  var btnMios = document.getElementById('momentoTabBtnMios');
+  if(tab === 'comunidad'){
+    if(tabCom) tabCom.style.display='';
+    if(tabMios) tabMios.style.display='none';
+    if(btnCom) btnCom.classList.add('momento-tab--active');
+    if(btnMios) btnMios.classList.remove('momento-tab--active');
+  } else {
+    if(tabCom) tabCom.style.display='none';
+    if(tabMios) tabMios.style.display='';
+    if(btnCom) btnCom.classList.remove('momento-tab--active');
+    if(btnMios) btnMios.classList.add('momento-tab--active');
+    _loadMisMomentos();
+  }
+}
+
+async function _loadMisMomentos(){
+  var feed = document.getElementById('momentoMiosFeed');
+  if(!feed) return;
+  feed.innerHTML='<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.35)">Cargando…</div>';
+  _initSupabase(); if(!sbClient){ feed.innerHTML=''; return; }
+  var myHash = _momentoUserHash();
+  try{
+    var now = new Date().toISOString();
+    var res = await sbClient.from('momentos').select('id,text,emoji,anon_label,hearts,created_at,expires_at,user_hash')
+      .gt('expires_at',now).eq('user_hash',myHash).order('created_at',{ascending:false}).limit(20);
+    if(res.error){ feed.innerHTML=''; return; }
+    var momentos = res.data||[];
+    if(!momentos.length){
+      feed.innerHTML='<div style="text-align:center;padding:28px 16px">'
+        +'<div style="font-size:28px;margin-bottom:10px">✨</div>'
+        +'<div style="font-size:14px;color:rgba(255,255,255,.55);margin-bottom:6px">Todavía no publicaste ningún momento hoy</div>'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.30)">Compartí algo con la comunidad → aparecerá aquí con sus reacciones</div>'
+        +'</div>';
+      return;
+    }
+    // Render "mis momentos" with reaction highlight
+    var myHash2 = _momentoUserHash();
+    feed.innerHTML = momentos.map(function(m){
+      var cachedCnt = parseInt(safeLS('get','velo_mheart_'+m.id+'_cnt')||'0');
+      var hearts = Math.max(m.hearts||0, cachedCnt);
+      var timeLeft = Math.max(0,Math.round((new Date(m.expires_at).getTime()-Date.now())/3600000));
+      return '<div class="momento-card momento-card--mine" style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.22);border-radius:14px;padding:13px 14px;margin-bottom:10px;animation:p-fadeIn .3s ease">'
+        +'<div style="display:flex;align-items:flex-start;gap:9px">'
+        +'<span style="font-size:22px;flex-shrink:0;line-height:1;margin-top:1px">'+(m.emoji||'💭')+'</span>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;color:rgba(255,255,255,.88);line-height:1.55;margin-bottom:6px">'+_escHtml(m.text||'')+'</div>'
+        +'<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">'
+        +'<span style="font-size:9px;color:rgba(116,198,157,.6);font-style:italic">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
+        +'<span style="font-size:9px;color:rgba(255,255,255,.28)">'+_momentoAgo(m.created_at)+'</span>'
+        +'<span style="font-size:9px;color:rgba(255,255,255,.22)">⏱ '+timeLeft+'h</span>'
+        +'</div>'
+        +'</div>'
+        // Reaction count highlight
+        +'<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;background:rgba(224,68,106,.12);border:1px solid rgba(224,68,106,.25);border-radius:10px;padding:6px 9px;min-width:38px">'
+        +'<span style="font-size:16px">❤️</span>'
+        +'<span style="font-size:13px;font-weight:700;color:'+(hearts>0?'#e0446a':'rgba(255,255,255,.35)')+'">'+hearts+'</span>'
+        +'</div>'
+        +'</div>'
+        +'</div>';
+    }).join('');
+  }catch(e){ feed.innerHTML=''; }
+}
+
+function _initMomentoPage(){
+  // Reset to Comunidad tab whenever page is opened
+  _switchMomentoTab('comunidad', null);
+  // Show community guidelines banner if not dismissed
+  var b = document.getElementById('momentoCommunityBanner');
+  if(b){
+    var dismissed = safeLS('get','velo_momento_banner') === 'dismissed';
+    b.style.display = dismissed ? 'none' : 'block';
+    b.style.opacity = '1';
+  }
 }
 
 async function pHeartMomento(id, btn){
@@ -16828,7 +16993,7 @@ function _onPageEnter(id){
       pRenderBottle();
       break;
     case 'diary':       pInitDiary(); break;
-    case 'momento':     _loadMomentoPageFeed(); break;
+    case 'momento':     _loadMomentoPageFeed(); _initMomentoPage(); break;
     case 'mood':        pInitMood(); break;
     case 'respira':     pInitRespira(); break;
     case 'vela':        pInitVela(); break;
