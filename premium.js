@@ -16300,6 +16300,99 @@ async function _initHomeMomento(){
   _renderMomentoCards(momentos,'homeMomentoFeed');
 }
 
+var _homeActiveFeedTab = 'momento';
+
+function pHomeTabSwitch(tab){
+  _homeActiveFeedTab = tab;
+  var tM = document.getElementById('hfTab-momento');
+  var tH = document.getElementById('hfTab-happy');
+  var cM = document.getElementById('homeTabMomento');
+  var cH = document.getElementById('homeTabHappy');
+  if(!tM||!tH||!cM||!cH) return;
+  if(tab === 'happy'){
+    tH.classList.add('home-feed-tab--active');
+    tM.classList.remove('home-feed-tab--active');
+    cM.style.display = 'none';
+    cH.style.display = '';
+    _loadHomeHappyFeed();
+  } else {
+    tM.classList.add('home-feed-tab--active');
+    tH.classList.remove('home-feed-tab--active');
+    cH.style.display = 'none';
+    cM.style.display = '';
+  }
+}
+
+async function _loadHomeHappyFeed(){
+  var feed = document.getElementById('homeHappyFeed');
+  if(!feed) return;
+  feed.innerHTML = '<div style="text-align:center;padding:16px;font-size:12px;color:var(--ink4)">Cargando…</div>';
+  _initSupabase();
+  var sbRows = await _sbLoad('happy_posts', function(q){
+    var cutoff = new Date(Date.now()-24*60*60*1000).toISOString();
+    return q.gte('created_at',cutoff).order('created_at',{ascending:false}).limit(4);
+  });
+  if(sbRows === null){
+    feed.innerHTML = '<div style="text-align:center;padding:16px;font-size:12px;color:var(--ink4)">Sin conexión · <button onclick="_loadHomeHappyFeed()" style="font-size:11px;background:none;border:none;color:var(--sage);cursor:pointer;font-weight:700">Reintentar</button></div>';
+    return;
+  }
+  var posts = sbRows.map(_sbHappyRow).filter(function(h){ return !_isBlocked(h.userId); });
+  if(!posts.length){
+    feed.innerHTML = '<div style="text-align:center;padding:18px"><span style="font-size:26px">☀️</span><div style="font-size:12px;color:var(--ink4);margin-top:7px">¡Sé el primero en compartir un momento de alegría!</div></div>';
+    return;
+  }
+  feed.innerHTML = posts.map(function(h){
+    var relTime = _happyRelTime(h.ts);
+    var avHtml = (h.av && (h.av.startsWith('data:')||h.av.startsWith('http')))
+      ? '<img src="'+_escHtml(h.av)+'" style="width:34px;height:34px;border-radius:9px;object-fit:cover;flex-shrink:0">'
+      : '<div style="width:34px;height:34px;border-radius:9px;background:rgba(255,224,102,.22);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">'+(h.anon ? '☀️' : _escHtml(h.av||'☀️'))+'</div>';
+    var nameHtml = h.anon
+      ? '<span style="color:var(--ink5);font-style:italic">Anónimo/a</span>'
+      : '<span>'+_escHtml(h.name||'Guardián/a')+'</span>';
+    return '<div style="display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,200,50,.12)">'
+      + avHtml
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:2px">'+nameHtml+' <span style="font-weight:400;color:var(--ink5)">· '+relTime+'</span></div>'
+      +'<div style="font-size:12.5px;color:var(--ink2);line-height:1.4;word-break:break-word">'+(h.emoji ? h.emoji+' ' : '')+_escHtml(h.text||'')+'</div>'
+      +'</div></div>';
+  }).join('');
+}
+
+async function pPostHappyHome(){
+  var inp = document.getElementById('happyHomeInput');
+  var btn = document.getElementById('happyHomeBtn');
+  if(!inp) return;
+  var text = inp.value.trim();
+  if(!text){ pToast('✍️','Escribí algo antes de publicar'); return; }
+  if(btn){ btn.disabled = true; btn.textContent = '…'; }
+  inp.value = '';
+  _initSupabase();
+  var myId   = _myUserId();
+  var myName = _myDisplayName();
+  var myAv   = safeLS('get','velo_user_av')||'';
+  var post = {
+    id: 'h'+Date.now(), userId: myId, emoji: '☀️', text: text,
+    name: myName, ts: Date.now(),
+    reactions: {'💛':0,'🌸':0,'🤗':0,'🌿':0,'✨':0}, comments: [],
+    anon: false, av: myAv
+  };
+  if(sbClient){
+    try{
+      var sbAv = myAv.startsWith('data:') ? '🧑' : myAv;
+      await sbClient.from('happy_posts').insert({
+        id: post.id, user_id: myId, user_name: myName, user_av: sbAv,
+        emoji: '☀️', text: text, anon: false, reactions: post.reactions
+      });
+    }catch(e){}
+  }
+  var posts = _processHappyQueue();
+  posts.unshift(post);
+  _happySave(posts);
+  if(btn){ btn.disabled = false; btn.textContent = 'Publicar ☀️'; }
+  pToast('☀️','¡Publicado en el Muro! Desaparece en 24h 💛');
+  _loadHomeHappyFeed();
+}
+
 async function _loadMomentoPageFeed(){
   var feed=document.getElementById('momentoFullFeed');
   var note=document.getElementById('momentoMigrationNote');

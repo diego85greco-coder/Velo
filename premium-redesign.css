@@ -9419,6 +9419,61 @@ body:not(.r-dark) #homeMottoLine {
 }
 body:not(.r-dark) #momentoFullFeed .momento-card .momento-meta { color: var(--ink4); }
 
+/* ── v638: Home feed tabs (Momentos / Muro Feliz) ── */
+.home-feed-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.home-feed-tab {
+  flex: 1;
+  padding: 8px 8px;
+  border: 1.5px solid rgba(116,198,157,.22);
+  border-radius: 20px;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(220,235,225,.65);
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  letter-spacing: .3px;
+  transition: background .18s, border-color .18s, color .18s;
+  text-align: center;
+  line-height: 1.3;
+}
+.home-feed-tab--active {
+  background: rgba(116,198,157,.14);
+  border-color: rgba(116,198,157,.50);
+  color: rgba(190,245,215,.95);
+}
+body:not(.r-dark) .home-feed-tab {
+  color: var(--ink4);
+  border-color: rgba(80,160,100,.22);
+}
+body:not(.r-dark) .home-feed-tab--active {
+  background: rgba(80,160,100,.12);
+  border-color: rgba(80,160,100,.45);
+  color: rgba(20,90,45,.92);
+}
+.home-momento-badge--happy {
+  background: rgba(255,224,102,.18) !important;
+  color: #7A5800 !important;
+  border-color: rgba(255,200,50,.35) !important;
+}
+body.r-dark .home-momento-badge--happy {
+  background: rgba(255,200,50,.20) !important;
+  color: rgba(255,230,120,.90) !important;
+  border-color: rgba(255,200,50,.40) !important;
+}
+.home-momento-post-btn--happy {
+  background: rgba(200,158,56,.80) !important;
+  color: #2a1a00 !important;
+}
+body.r-dark .home-momento-post-btn--happy {
+  background: rgba(200,158,56,.75) !important;
+  color: rgba(255,240,180,.95) !important;
+}
+
 /* ── v638: Dark-mode contrast fixes — REGISTRA TUS ÁNIMOS + REGISTRA zone ── */
 
 /* "📋 REGISTRA TUS ÁNIMOS" heading */
