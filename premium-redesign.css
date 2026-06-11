@@ -9014,11 +9014,11 @@ body:not(.r-dark) .mc-report { color: rgba(200,60,40,.70); }
 .home-momento-wrap {
   margin: 0 0 12px;
   display: none;
-  background: linear-gradient(140deg, rgba(18,42,30,.95) 0%, rgba(12,30,22,.97) 100%);
-  border: 1px solid rgba(116,198,157,.28);
+  background: linear-gradient(140deg, rgba(32,78,50,.92) 0%, rgba(20,58,38,.95) 100%);
+  border: 1px solid rgba(116,198,157,.42);
   border-radius: 20px;
   padding: 18px 16px 16px;
-  box-shadow: 0 4px 24px rgba(0,0,0,.22), inset 0 1px 0 rgba(116,198,157,.08);
+  box-shadow: 0 4px 28px rgba(0,0,0,.22), inset 0 1px 0 rgba(116,198,157,.18), 0 0 0 1px rgba(116,198,157,.06);
   position: relative;
   overflow: hidden;
 }
@@ -9376,9 +9376,9 @@ body:not(.r-dark) .r-home-quick-btn--resp svg { color: rgba(40,100,160,.75); }
 
 /* ── v630: Momentos light-mode harmony ─────────────────────────── */
 body:not(.r-dark) .home-momento-wrap {
-  background: linear-gradient(140deg,rgba(255,255,255,.75) 0%,rgba(235,250,240,.85) 100%);
-  border-color: rgba(80,160,100,.30);
-  box-shadow: 0 4px 20px rgba(0,0,0,.07), inset 0 1px 0 rgba(255,255,255,.9);
+  background: linear-gradient(140deg, rgba(185,235,208,.78) 0%, rgba(158,218,185,.72) 100%);
+  border-color: rgba(70,165,100,.42);
+  box-shadow: 0 4px 22px rgba(50,140,80,.14), inset 0 1px 0 rgba(255,255,255,.82);
 }
 body:not(.r-dark) .home-momento-wrap::before {
   background: radial-gradient(circle,rgba(116,198,157,.12) 0%,transparent 70%);
@@ -9659,40 +9659,56 @@ body:not(.r-dark) .home-mood-btn {
 /* ── Quick access buttons — each with a distinct color accent ───── */
 /* Al Mar (1st) — ocean blue */
 .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(1) {
-  background: rgba(40,120,200,.13) !important;
-  border-color: rgba(60,150,220,.32) !important;
-  color: rgba(140,200,255,.92) !important;
+  background: linear-gradient(145deg, rgba(40,120,200,.32) 0%, rgba(28,95,175,.26) 100%) !important;
+  border-color: rgba(80,160,240,.55) !important;
+  color: rgba(160,215,255,.96) !important;
+  box-shadow: 0 4px 16px rgba(40,120,200,.28), inset 0 1px 0 rgba(120,180,255,.15) !important;
 }
 /* Velo IA (2nd) — violet */
 .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(2) {
-  background: rgba(120,60,200,.13) !important;
-  border-color: rgba(150,80,230,.30) !important;
-  color: rgba(210,170,255,.90) !important;
+  background: linear-gradient(145deg, rgba(120,60,200,.32) 0%, rgba(95,40,175,.26) 100%) !important;
+  border-color: rgba(170,100,250,.55) !important;
+  color: rgba(220,185,255,.96) !important;
+  box-shadow: 0 4px 16px rgba(120,60,200,.28), inset 0 1px 0 rgba(180,130,255,.15) !important;
 }
 /* Buzón (3rd) — gold */
 .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(3) {
-  background: rgba(190,140,30,.13) !important;
-  border-color: rgba(210,160,50,.32) !important;
-  color: rgba(255,220,100,.90) !important;
+  background: linear-gradient(145deg, rgba(200,150,30,.32) 0%, rgba(170,118,15,.26) 100%) !important;
+  border-color: rgba(230,175,60,.55) !important;
+  color: rgba(255,225,110,.96) !important;
+  box-shadow: 0 4px 16px rgba(190,140,30,.28), inset 0 1px 0 rgba(255,210,80,.12) !important;
 }
 /* Comunidad (4th) — teal */
 .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(4) {
-  background: rgba(30,170,155,.13) !important;
-  border-color: rgba(50,195,175,.30) !important;
-  color: rgba(100,240,220,.88) !important;
+  background: linear-gradient(145deg, rgba(30,175,158,.32) 0%, rgba(18,148,132,.26) 100%) !important;
+  border-color: rgba(60,210,188,.55) !important;
+  color: rgba(115,248,228,.96) !important;
+  box-shadow: 0 4px 16px rgba(30,175,158,.28), inset 0 1px 0 rgba(80,230,210,.12) !important;
 }
 /* Light mode accents */
 body:not(.r-dark) .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(1) {
-  background: rgba(40,120,200,.10) !important; border-color: rgba(40,120,200,.28) !important; color: rgba(20,80,160,.88) !important;
+  background: linear-gradient(145deg,rgba(40,120,200,.18) 0%,rgba(28,95,175,.14) 100%) !important;
+  border-color: rgba(40,120,200,.45) !important;
+  color: rgba(18,70,160,.92) !important;
+  box-shadow: 0 3px 12px rgba(40,120,200,.18) !important;
 }
 body:not(.r-dark) .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(2) {
-  background: rgba(100,40,180,.08) !important; border-color: rgba(120,60,200,.25) !important; color: rgba(80,30,150,.88) !important;
+  background: linear-gradient(145deg,rgba(100,40,180,.16) 0%,rgba(80,25,155,.12) 100%) !important;
+  border-color: rgba(120,60,200,.42) !important;
+  color: rgba(70,20,145,.92) !important;
+  box-shadow: 0 3px 12px rgba(100,40,180,.16) !important;
 }
 body:not(.r-dark) .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(3) {
-  background: rgba(180,120,10,.10) !important; border-color: rgba(180,130,20,.28) !important; color: rgba(130,80,0,.90) !important;
+  background: linear-gradient(145deg,rgba(180,120,10,.18) 0%,rgba(155,95,5,.14) 100%) !important;
+  border-color: rgba(180,130,20,.42) !important;
+  color: rgba(110,65,0,.92) !important;
+  box-shadow: 0 3px 12px rgba(180,120,10,.16) !important;
 }
 body:not(.r-dark) .r-home-quick-panel .r-home-quick-row:first-of-type button:nth-child(4) {
-  background: rgba(20,150,130,.10) !important; border-color: rgba(20,150,130,.28) !important; color: rgba(10,100,88,.90) !important;
+  background: linear-gradient(145deg,rgba(20,150,130,.18) 0%,rgba(12,122,106,.14) 100%) !important;
+  border-color: rgba(20,150,130,.42) !important;
+  color: rgba(8,92,78,.92) !important;
+  box-shadow: 0 3px 12px rgba(20,150,130,.16) !important;
 }
 
 /* ── Sound buttons — themed colors ─────────────────────────────── */
