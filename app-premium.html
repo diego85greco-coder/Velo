@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="630">
+  <meta name="app-version" content="631">
   <title>Velo — Acompañamos emociones</title>
   <!-- Auto-update: if server has a newer version, force a hard reload -->
   <script>(function(){try{fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){var cur=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');if(d&&d.v&&d.v>cur){window.location.reload(true);}}).catch(function(){});}catch(e){}})();</script>
@@ -21,8 +21,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-630">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-630">
+  <link rel="stylesheet" href="premium.css?v=20260611-631">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-631">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -961,14 +961,16 @@
               </div>
               <div id="homeTimeIcon" style="display:flex;flex-direction:column;align-items:center;gap:0"><div id="homeWeatherInfo" style="display:none;margin-top:6px;font-size:12.5px;font-family:'Jost',sans-serif;font-weight:500;letter-spacing:.2px;text-align:center;line-height:1.4;color:rgba(15,50,28,.78)"></div></div>
           <!-- Greeting card — mood + status + lema actions -->
-          <div style="margin:0 16px 6px">
+          <div id="homeRegisterOuter" style="margin:0 16px 6px">
             <div id="homeRegisterZone" style="background:linear-gradient(135deg,rgba(255,255,255,.065) 0%,rgba(255,255,255,.03) 100%);border:1.5px solid rgba(255,255,255,.13);border-radius:20px;padding:11px 12px 11px;overflow:hidden">
               <div style="font-size:8px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.32);margin-bottom:9px" id="homeRegisterLabel">REGISTRA</div>
-              <div style="display:flex;flex-direction:column;gap:7px">
-              <button class="home-mood-btn" onclick="pOpenMyStatus()" style="font-size:11px;padding:6px 10px;white-space:nowrap;width:100%;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> Mi estado</button>
-              <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:7px 12px;letter-spacing:.02em;cursor:pointer;white-space:nowrap;overflow:hidden">🌷 ¿Cómo te sentís hoy?</div>
-              <div id="homeMottoLine" onclick="pOpenEditProfile()" style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(200,158,56,.92);background:linear-gradient(135deg,rgba(200,158,56,.16),rgba(180,140,40,.10));border:1px solid rgba(200,158,56,.38);border-radius:100px;padding:7px 12px;letter-spacing:.01em;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:background .15s">✏️ <span id="homeMottoText">Agregá tu lema →</span></div>
+              <!-- Row 1: Mi estado + current mood side by side -->
+              <div style="display:flex;gap:6px;margin-bottom:6px">
+                <button class="home-mood-btn" onclick="pOpenMyStatus()" style="flex:1;font-size:11px;padding:6px 8px;white-space:nowrap;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> Mi estado</button>
+                <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:7px 10px;letter-spacing:.02em;cursor:pointer;overflow:hidden;white-space:nowrap">🌷 <span id="homeCurrentMoodText">¿Cómo te sentís?</span></div>
               </div>
+              <!-- Row 2: Lema full width -->
+              <div id="homeMottoLine" onclick="pOpenEditProfile()" style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(200,158,56,.92);background:linear-gradient(135deg,rgba(200,158,56,.16),rgba(180,140,40,.10));border:1px solid rgba(200,158,56,.38);border-radius:100px;padding:7px 12px;letter-spacing:.01em;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:background .15s">✏️ <span id="homeMottoText">Agregá tu lema →</span></div>
             </div>
           </div>
           <!-- Quick mood picker (hidden by default) -->
@@ -1048,7 +1050,7 @@
                   <select id="momentoHomeEmoji" class="home-momento-emoji-sel">
                     <option>💭</option><option>😊</option><option>😔</option><option>❤️</option><option>🌱</option><option>✨</option><option>😌</option><option>🙏</option><option>😤</option><option>🌧️</option>
                   </select>
-                  <input type="text" id="momentoHomeInput" placeholder="Compartí algo con la comunidad (24h)…" maxlength="180"
+                  <input type="text" id="momentoHomeInput" placeholder="Compartí algo…" maxlength="180"
                     class="home-momento-input"
                     onkeydown="if(event.key==='Enter')pPostMomentoHome()">
                   <button onclick="pPostMomentoHome()" id="momentoHomeBtn" class="home-momento-post-btn">Publicar ✨</button>
@@ -1069,12 +1071,12 @@
                 <div class="r-home-quick-label">ACCESOS RÁPIDOS</div>
                 <div class="r-home-quick-row">
                   <button class="r-home-quick-btn r-home-quick-btn--sos" onclick="pOpenSOS()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                     <span>SOS</span>
                   </button>
                   <button class="r-home-quick-btn" onclick="pGoTo('contacts')" style="position:relative">
                     <span id="favCountBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--sage);color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif"></span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon fill="none" points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                     <span>Favoritos</span>
                   </button>
                   <button class="r-home-quick-btn" onclick="pGoTo('inbox')" style="position:relative">
@@ -1095,6 +1097,11 @@
                   <button onclick="pTogAmbient('fuego')" id="ambBtn-fuego" class="r-home-quick-btn r-home-quick-btn--amb">🔥<span>Fuego</span></button>
                   <button onclick="pTogAmbient('mar')" id="ambBtn-mar" class="r-home-quick-btn r-home-quick-btn--amb">🌊<span>Mar</span></button>
                 </div>
+                <div class="r-home-quick-divider" style="margin-top:10px"></div>
+                <button class="r-home-quick-btn r-home-quick-btn--resp" onclick="pGoTo('respira')">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2"/><path d="M10.59 19.41A2 2 0 1 0 14 16H2"/><path d="M15.73 3.73A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+                  <span>Ejercicio de respiración</span>
+                </button>
               </div>
             </div>
             <div class="r-hero-right">
@@ -1687,20 +1694,20 @@
             </div>
 
             <!-- Post input -->
-            <div style="background:rgba(255,255,255,.05);border:1px solid rgba(116,198,157,.22);border-radius:18px;padding:14px;margin-bottom:14px">
-              <div style="font-size:9px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(116,198,157,.65);margin-bottom:10px">✨ Nuevo momento</div>
+            <div id="momentoPostBox" style="background:var(--cream2);border:1px solid rgba(116,198,157,.30);border-radius:18px;padding:14px;margin-bottom:14px">
+              <div style="font-size:9px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--sage3);margin-bottom:10px">✨ Nuevo momento</div>
               <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
                 <select id="momentoEmoji" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--ink);padding:0;-webkit-appearance:none;flex-shrink:0">
                   <option>💭</option><option>😊</option><option>😔</option><option>❤️</option><option>🌱</option><option>✨</option><option>😌</option><option>🙏</option><option>😤</option><option>🌧️</option><option>🌟</option><option>😢</option>
                 </select>
                 <textarea id="momentoTa" rows="3" maxlength="200" placeholder="¿Qué querés compartir con la comunidad hoy?"
-                  style="flex:1;background:none;border:none;outline:none;font-size:14px;font-family:'Jost',sans-serif;color:rgba(255,255,255,.88);resize:none;line-height:1.5"
-                  oninput="var c=document.getElementById('momentoCharCount');if(c){c.textContent=this.value.length+' / 200';c.style.color=this.value.length>180?'var(--sos)':'rgba(255,255,255,.35)';}"></textarea>
+                  style="flex:1;background:none;border:none;outline:none;font-size:14px;font-family:'Jost',sans-serif;color:var(--ink);resize:none;line-height:1.5"
+                  oninput="var c=document.getElementById('momentoCharCount');if(c){c.textContent=this.value.length+' / 200';c.style.color=this.value.length>180?'var(--sos)':'var(--ink4)';}"></textarea>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-                <span id="momentoCharCount" style="font-size:10px;color:rgba(255,255,255,.3)">0 / 200</span>
-                <span style="font-size:10px;color:rgba(255,255,255,.25);flex:1;text-align:center">🔒 Nombre aleatorio · identidad protegida</span>
-                <button id="momentoPostBtn" onclick="pPostMomento()" style="background:linear-gradient(135deg,rgba(116,198,157,.30),rgba(80,160,120,.28));border:1px solid rgba(116,198,157,.5);border-radius:12px;padding:8px 16px;font-size:12px;font-weight:700;color:#74c69d;cursor:pointer;font-family:'Jost',sans-serif">Compartir ✨</button>
+                <span id="momentoCharCount" style="font-size:10px;color:var(--ink4)">0 / 200</span>
+                <span style="font-size:10px;color:var(--ink4);flex:1;text-align:center">🔒 Nombre aleatorio · identidad protegida</span>
+                <button id="momentoPostBtn" onclick="pPostMomento()" style="background:linear-gradient(135deg,rgba(116,198,157,.35),rgba(80,160,120,.32));border:1px solid rgba(116,198,157,.55);border-radius:12px;padding:8px 16px;font-size:12px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:'Jost',sans-serif">Compartir ✨</button>
               </div>
             </div>
 
@@ -1712,7 +1719,7 @@
 
             <!-- Community feed -->
             <div id="momentoTabComunidad">
-              <div id="momentoFullFeed" style="padding-right:2px"><div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.35)">Cargando…</div></div>
+              <div id="momentoFullFeed" style="padding-right:2px"><div style="text-align:center;padding:20px;font-size:12px;color:var(--ink4)">Cargando…</div></div>
             </div>
 
             <!-- My momentos -->
@@ -3413,8 +3420,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-630"></script>
-<script src="premium-redesign.js?v=20260611-630"></script>
+<script src="premium.js?v=20260611-631"></script>
+<script src="premium-redesign.js?v=20260611-631"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

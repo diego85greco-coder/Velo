@@ -8907,7 +8907,28 @@ function pPickAv(el, av){
   el.classList.add('selected');
 }
 
-function pOpenEditProfile(){ openModal('editProfileOv'); }
+function pOpenEditProfile(){
+  var en = document.getElementById('editName');
+  var em = document.getElementById('editMotto');
+  var eu = document.getElementById('editUsername');
+  if(en) en.value = safeLS('get','velo_user_name')  || '';
+  if(em) em.value = safeLS('get','velo_user_motto') || '';
+  var uname = safeLS('get','velo_username') || '';
+  if(eu){ eu.value = uname; eu.disabled = false; }
+  var _unCh   = parseInt(safeLS('get','velo_username_changes')||'0', 10);
+  var _unLeft = Math.max(0, 2 - _unCh);
+  var _unHint = document.getElementById('usernameChangesHint');
+  if(_unHint) _unHint.innerHTML = _unLeft === 0 ? ' · <span style="color:#E05C5C">sin cambios restantes</span>' : ' · <strong>'+_unLeft+'</strong> cambio'+ (_unLeft===1?'':'s')+' restante'+(_unLeft===1?'':'s');
+  if(_unLeft === 0 && eu) eu.disabled = true;
+  var noteEl = document.getElementById('editUsernameChangesNote');
+  var leftEl  = document.getElementById('editUsernameChangesLeft');
+  if(noteEl) noteEl.style.display = 'block';
+  if(leftEl){
+    if(_unLeft === 0) leftEl.innerHTML = ' <strong style="color:#E05C5C">Ya usaste los 2 cambios disponibles.</strong>';
+    else leftEl.innerHTML = ' Te quedan <strong>'+_unLeft+'</strong> cambio'+(_unLeft===1?'':'s')+'.';
+  }
+  openModal('editProfileOv');
+}
 
 async function pSaveProfile(){
   var nameEl  = document.getElementById('editName');
@@ -16241,26 +16262,24 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var cardPad = isHome ? '10px 12px' : '13px 14px';
     var emojiSz = isHome ? '20px' : '24px';
     var txtSz   = isHome ? '12px' : '14px';
-    return '<div class="momento-card" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:'+cardPad+';margin-bottom:8px;animation:p-fadeIn .3s ease">'
+    return '<div class="momento-card" style="border-radius:14px;padding:'+cardPad+';margin-bottom:8px;animation:p-fadeIn .3s ease">'
       +'<div style="display:flex;align-items:flex-start;gap:9px">'
       +'<span style="font-size:'+emojiSz+';flex-shrink:0;line-height:1;margin-top:1px">'+(m.emoji||'💭')+'</span>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:'+txtSz+';color:rgba(255,255,255,.85);line-height:1.55;margin-bottom:6px">'+_escHtml(m.text||'')+'</div>'
+      +'<div class="mc-text" style="font-size:'+txtSz+';line-height:1.55;margin-bottom:6px">'+_escHtml(m.text||'')+'</div>'
       +'<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">'
-      +'<span style="font-size:10px;color:rgba(116,198,157,.7);font-style:italic">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
-      +'<span style="font-size:9px;color:rgba(255,255,255,.28)">'+_momentoAgo(m.created_at)+'</span>'
-      +'<span style="font-size:9px;color:rgba(255,255,255,.20)">⏱ '+timeLeft+'h</span>'
-      +(mine?'<span style="font-size:9px;color:#74c69d;font-weight:700">· tuyo</span>':'')
+      +'<span class="mc-label" style="font-size:10px;font-style:italic">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
+      +'<span class="mc-time" style="font-size:9px">'+_momentoAgo(m.created_at)+'</span>'
+      +'<span class="mc-time" style="font-size:9px">⏱ '+timeLeft+'h</span>'
+      +(mine?'<span class="mc-mine" style="font-size:9px;font-weight:700">· tuyo</span>':'')
       +'</div>'
       +'</div>'
-      // Heart button
       +'<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0">'
-      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;cursor:pointer;color:'+(liked?'#e0446a':'rgba(255,255,255,.30)')+';padding:3px">'
+      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;cursor:pointer;padding:3px">'
       +'<span style="font-size:18px">'+(liked?'❤️':'🤍')+'</span>'
-      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:rgba(255,255,255,.38)">'+heartCount+'</span>'
+      +'<span id="mheart-'+_escHtml(m.id)+'" class="mc-heart-count" style="font-size:10px">'+heartCount+'</span>'
       +'</button>'
-      // Report button (only on full page, not home)
-      +(!isHome&&!mine ? '<button onclick="pReportMomento(\''+_escHtml(m.id)+'\',this)" title="Reportar" style="background:none;border:none;cursor:pointer;font-size:11px;color:rgba(255,255,255,.20);padding:2px 3px;margin-top:3px;line-height:1" title="Reportar contenido">🚩</button>' : '')
+      +(!isHome&&!mine ? '<button onclick="pReportMomento(\''+_escHtml(m.id)+'\',this)" title="Reportar" class="mc-report" style="background:none;border:none;cursor:pointer;font-size:11px;padding:2px 3px;margin-top:3px;line-height:1">🚩</button>' : '')
       +'</div>'
       +'</div>'
       +'</div>';

@@ -600,12 +600,17 @@ body.r-dark .home-logo-side {
 #homeGreetWrapper     { order: 1; }
 #homeTimeIcon         { order: 2; }
 #homeStatusToggle     { order: 3; }
-#homeDailyQuoteWrap   { order: 4; }
-#homeMomentoSection   { order: 5; }
-.r-hero-actions       { order: 6; }
-#homeSearchUsersBtn   { order: 7; }
-.r-home-shortcut-grid { order: 8; }
-#homeHeroLabel        { order: 8; margin-top: 24px; }
+#homeRegisterOuter    { order: 4; }
+#quickMoodPicker      { order: 4; }
+#homeMonthlyHint      { order: 5; }
+#homeWeekMoodGraph    { order: 5; }
+#homeDailyQuoteWrap   { order: 6; }
+#homeMomentoSection   { order: 7; }
+.r-hero-actions       { order: 8; }
+#homeSearchUsersBtn   { order: 9; }
+.r-home-quick-panel   { order: 10; }
+.r-home-shortcut-grid { order: 10; }
+#homeHeroLabel        { order: 11; margin-top: 24px; }
 
 /* ── Paired quick-actions (desktop): Diario/Muro/Al Mar + Ánimos/Donar/Plus ── */
 .r-paired-quick {
@@ -8905,6 +8910,29 @@ body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
   color: #74c69d;
 }
 
+/* ── v631: Momento card semantic classes (light/dark safe) ─────── */
+.momento-card {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+}
+.mc-text { color: rgba(255,255,255,.85); }
+.mc-label { color: rgba(116,198,157,.75); }
+.mc-time { color: rgba(255,255,255,.30); }
+.mc-heart-count { color: rgba(255,255,255,.40); }
+.mc-mine { color: #74c69d; }
+.mc-report { color: rgba(255,255,255,.22); }
+body:not(.r-dark) .momento-card {
+  background: rgba(255,255,255,.80);
+  border-color: rgba(80,160,100,.20);
+  box-shadow: 0 1px 6px rgba(0,0,0,.06);
+}
+body:not(.r-dark) .mc-text { color: var(--ink2); }
+body:not(.r-dark) .mc-label { color: rgba(40,120,70,.80); }
+body:not(.r-dark) .mc-time { color: var(--ink4); }
+body:not(.r-dark) .mc-heart-count { color: var(--ink4); }
+body:not(.r-dark) .mc-mine { color: rgba(40,120,70,.90); }
+body:not(.r-dark) .mc-report { color: var(--ink4); }
+
 /* ── v609: Momento cards ──────────────────────────────────────── */
 #homeMomentoSection .momento-card,
 #momentoFullFeed .momento-card {
@@ -9251,6 +9279,27 @@ body:not(.r-dark) .r-home-quick-btn--amb.amb-active {
   background: rgba(80,160,100,.18) !important;
   border-color: rgba(80,160,100,.50) !important;
   color: #3d7a50 !important;
+}
+.r-home-quick-btn--resp {
+  width: 100%;
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  margin-top: 8px;
+  color: rgba(116,198,157,.85);
+  border-color: rgba(116,198,157,.22);
+  background: rgba(116,198,157,.07);
+}
+.r-home-quick-btn--resp span { font-size: 10px; text-transform: none; letter-spacing: .2px; font-weight: 600; }
+body:not(.r-dark) .r-home-quick-btn--resp {
+  color: rgba(30,100,55,.85);
+  border-color: rgba(80,160,100,.30);
+  background: rgba(80,160,100,.08);
+}
+.r-home-quick-btn--resp:active {
+  background: rgba(116,198,157,.18) !important;
+  border-color: rgba(116,198,157,.50) !important;
 }
 
 /* ── v630: Momentos light-mode harmony ─────────────────────────── */
