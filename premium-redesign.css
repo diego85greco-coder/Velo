@@ -8418,8 +8418,16 @@ body:not(.r-dark) #homeProfileFab {
 #homeMonthlyHint { color: #1a5c35 !important; }
 body.r-dark #homeMonthlyHint { color: rgba(255,255,255,.95) !important; }
 
-/* ── Prevent iOS Safari auto-zoom on input focus (zoom triggers when font-size < 16px) ── */
-input, textarea, select { font-size: 16px !important; }
+/* ── Prevent iOS Safari / Android Chrome auto-zoom on input focus ── */
+/* Any input with font-size < 16px triggers browser zoom; !important overrides all inline styles */
+input, textarea, select {
+  font-size: 16px !important;
+  touch-action: manipulation !important; /* blocks double-tap zoom without disabling pinch zoom */
+}
+/* Restore reasonable visual size while keeping computed 16px for zoom prevention */
+input.p-input, textarea.p-textarea, .p-input, .p-textarea {
+  font-size: 16px !important;
+}
 
 /* ── v486: Larger, more aesthetic greeting block ── */
 #homeTimeIcon .r-time-icon svg {

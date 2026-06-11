@@ -1316,7 +1316,10 @@ function pNextOnboarding(){
 }
 function pSolidarityChoice(yes){
   safeLS('set','velo_pro_solidarity', yes ? '1' : '0');
-  if(yes) pToast('💙','¡Gracias! Llevás la insignia de Profesional Solidario/a');
+  if(yes){
+    pToast('💙','¡Gracias! Llevás la insignia de Profesional Solidario/a');
+    _persistProSolidarity(true);
+  }
   pFinishOnboarding();
 }
 function pFinishOnboarding(){
@@ -11894,7 +11897,15 @@ function _renderProSolidarity(){
 function pTogProSolidarity(on){
   safeLS('set','velo_pro_solidarity', on ? '1' : '0');
   pToast(on ? '💙' : '✅', on ? '¡Bienvenido/a al programa solidario!' : 'Saliste del programa solidario');
+  _persistProSolidarity(on);
   switchProPanel('solidario', null);
+}
+
+function _persistProSolidarity(on){
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(!sbClient || !uid) return;
+  sbClient.from('profiles').update({ pro_solidarity: on ? true : false }).eq('id', uid).then(function(){}).catch(function(){});
 }
 
 function pAssignSolidarity(waitlistId, userName){
@@ -12366,15 +12377,86 @@ async function _uploadProCert(userId){
 async function _adminTabProfesionales(panel){
   _initSupabase();
   panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando profesionales…</div>';
-  var pros = [];
+  var pros = [], solidaryPros = [], pendingReqs = [], assignedReqs = [], completedReqs = [];
   if(sbClient){
     try{
       var r = await sbClient.from('profiles')
-        .select('id,nombre,email,pro_spec,pro_cert_url,pro_verified,pro_trial_expires_at,pro_subscription_expires_at,created_at,user_status')
+        .select('id,nombre,email,pro_spec,pro_cert_url,pro_verified,pro_trial_expires_at,pro_subscription_expires_at,created_at,user_status,pro_solidarity')
         .eq('role','pro').order('created_at',{ascending:false}).limit(200);
-      if(!r.error && r.data) pros = r.data;
+      if(!r.error && r.data){
+        pros = r.data;
+        solidaryPros = pros.filter(function(p){ return p.pro_solidarity; });
+      }
+    }catch(e){}
+    try{
+      var srRes = await sbClient.from('solidarity_requests').select('id,user_name,email,tipo,espec,urgencia,horarios,description,status,created_at').order('created_at',{ascending:false}).limit(200);
+      if(!srRes.error && srRes.data){
+        pendingReqs   = srRes.data.filter(function(r){ return r.status==='pending'||!r.status; });
+        assignedReqs  = srRes.data.filter(function(r){ return r.status==='assigned'; });
+        completedReqs = srRes.data.filter(function(r){ return r.status==='completed'; });
+      }
     }catch(e){}
   }
+
+  var disponibles = Math.max(0, solidaryPros.length - assignedReqs.length);
+
+  var solidaryHtml = '<div style="background:rgba(58,123,213,.07);border:1px solid rgba(58,123,213,.2);border-radius:14px;padding:14px;margin-bottom:14px">'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(100,170,230,.8);margin-bottom:10px">💙 PROGRAMA SOLIDARIO</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px">'
+    +'<div class="a-card"><div style="font-size:20px">💙</div><div class="a-card-n" style="color:rgba(100,170,230,.9)">'+solidaryPros.length+'</div><div class="a-card-l">Profesionales solidarios</div></div>'
+    +'<div class="a-card"><div style="font-size:20px">✅</div><div class="a-card-n" style="color:'+(disponibles>0?'rgba(116,198,157,.9)':'rgba(200,80,80,.8)')+'">'+disponibles+'</div><div class="a-card-l">Disponibles para asignar</div></div>'
+    +'<div class="a-card"><div style="font-size:20px">⏳</div><div class="a-card-n" style="color:rgba(240,200,90,.85)">'+pendingReqs.length+'</div><div class="a-card-l">Solicitudes en espera</div></div>'
+    +'<div class="a-card"><div style="font-size:20px">🎯</div><div class="a-card-n" style="color:rgba(180,140,220,.85)">'+completedReqs.length+'</div><div class="a-card-l">Sesiones completadas</div></div>'
+    +'</div>';
+
+  // List of solidarity pros
+  if(solidaryPros.length){
+    solidaryHtml += '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(100,170,230,.55);margin-bottom:8px">Profesionales inscriptos</div>';
+    solidaryHtml += solidaryPros.map(function(p){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82)">'+_escHtml(p.nombre||p.email||'Sin nombre')+'</div>'
+        +'<div style="font-size:10px;color:rgba(255,255,255,.35)">'+_escHtml(p.pro_spec||'')+(p.pro_verified?' · <span style="color:rgba(116,198,157,.75)">✓ verificado</span>':'')+'</div>'
+        +'</div>'
+        +'<span style="font-size:9px;background:rgba(58,123,213,.2);border:1px solid rgba(58,123,213,.35);border-radius:4px;padding:2px 8px;color:rgba(100,170,230,.9);font-weight:700;white-space:nowrap">💙 Solidario</span>'
+        +'</div>';
+    }).join('');
+  } else {
+    solidaryHtml += '<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">Ningún profesional inscripto en el programa aún.</div>';
+  }
+
+  // Pending solidarity requests
+  if(pendingReqs.length){
+    solidaryHtml += '<div style="margin-top:12px;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(240,200,90,.55);margin-bottom:8px">Solicitudes pendientes de asignación</div>';
+    solidaryHtml += pendingReqs.slice(0,10).map(function(req){
+      var urgColor = req.urgencia==='alto'?'rgba(220,80,80,.8)':req.urgencia==='medio'?'rgba(240,200,90,.8)':'rgba(116,198,157,.7)';
+      var horariosArr = []; try{ horariosArr = JSON.parse(req.horarios||'[]'); }catch(e){}
+      var hs = horariosArr.map(function(h){ return {manana:'Mañana',tarde:'Tarde',noche:'Noche',finde:'Fin de semana'}[h]||h; }).join(', ');
+      var dias = req.created_at ? Math.floor((Date.now()-new Date(req.created_at).getTime())/86400000) : '?';
+      return '<div id="sreq-'+_escHtml(String(req.id))+'" style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+        +'<div style="display:flex;align-items:flex-start;gap:8px">'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82)">'+_escHtml(req.user_name||req.email||'Usuario')+'</div>'
+        +'<div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:1px">'
+        +_escHtml(req.tipo||'')+(req.espec?' · '+_escHtml(req.espec):'')+' · <span style="color:'+urgColor+'">Urgencia: '+(req.urgencia||'—')+'</span>'
+        +(hs?' · '+hs:'')
+        +'</div>'
+        +(req.description?'<div style="font-size:10px;color:rgba(255,255,255,.3);font-style:italic;margin-top:2px">"'+_escHtml(req.description.slice(0,90))+'"</div>':'')
+        +'<div style="font-size:9px;color:rgba(255,255,255,.22);margin-top:2px">hace '+dias+' día'+(dias!==1?'s':'')+'</div>'
+        +'</div>'
+        +'<button onclick="_adminAssignSolidarityReq(\''+_escHtml(String(req.id))+'\',\''+_escHtml(req.user_name||'Usuario')+'\',this)" style="flex-shrink:0;padding:5px 10px;background:rgba(58,123,213,.2);border:1px solid rgba(58,123,213,.4);border-radius:7px;color:rgba(100,170,230,.9);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">💙 Asignar</button>'
+        +'</div></div>';
+    }).join('');
+  } else if(!solidaryPros.length){
+    // no-op
+  } else {
+    solidaryHtml += '<div style="margin-top:8px;font-size:11px;color:rgba(116,198,157,.7);padding:4px 0">✅ Sin solicitudes pendientes.</div>';
+  }
+
+  solidaryHtml += '</div>';
+
+  var proListHtml = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(116,198,200,.7);margin-bottom:12px">🩺 PROFESIONALES REGISTRADOS ('+pros.length+')</div>'
+    + (pros.length ? pros.map(proCard).join('') : '<p style="font-size:12px;color:rgba(255,255,255,.3)">No hay profesionales registrados.</p>');
 
   function proCard(p){
     var certLink = p.pro_cert_url
@@ -12415,8 +12497,19 @@ async function _adminTabProfesionales(panel){
       +'</div>';
   }
 
-  panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(116,198,200,.7);margin-bottom:12px">🩺 PROFESIONALES REGISTRADOS ('+pros.length+')</div>'
-    + (pros.length ? pros.map(proCard).join('') : '<p style="font-size:12px;color:rgba(255,255,255,.3)">No hay profesionales registrados.</p>');
+  panel.innerHTML = solidaryHtml + proListHtml;
+}
+
+async function _adminAssignSolidarityReq(reqId, userName, btn){
+  if(!confirm('¿Marcar la solicitud de '+userName+' como asignada? Esto indica que un profesional solidario ya coordinó la sesión.')) return;
+  _initSupabase(); if(!sbClient) return;
+  try{
+    btn.disabled=true; btn.textContent='…';
+    await sbClient.from('solidarity_requests').update({status:'assigned'}).eq('id',reqId);
+    var card = document.getElementById('sreq-'+reqId);
+    if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ card.remove(); },350); }
+    pToast('💙','Solicitud de '+userName+' marcada como asignada');
+  }catch(e){ btn.disabled=false; btn.textContent='💙 Asignar'; pToast('⚠️','Error: '+e.message); }
 }
 
 async function _adminProVerify(proId, email, nombre){
@@ -14622,7 +14715,40 @@ var _pendingBcastImg = null; // { base64, mime } — holds AI-generated image pe
 async function pAdminGenerateBcastImage(){
   var descEl = document.getElementById('massAiDesc');
   var desc = descEl ? descEl.value.trim() : '';
-  if(!desc){ pToast('✍️','Describí el mensaje o la ocasión antes de generar la imagen'); return; }
+  if(!desc){
+    // Ask inline — don't force the user to go back to the description field
+    var imgDescOv = document.getElementById('bcastImgDescOv');
+    if(imgDescOv){ imgDescOv.remove(); }
+    var ov2 = document.createElement('div');
+    ov2.id = 'bcastImgDescOv';
+    ov2.style.cssText = 'position:fixed;inset:0;background:rgba(5,18,10,.97);z-index:10001;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;box-sizing:border-box';
+    ov2.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:2px;color:rgba(116,198,157,.7);margin-bottom:12px">🎨 GENERAR IMAGEN CON IA</div>'
+      +'<p style="font-size:13px;color:rgba(255,255,255,.65);text-align:center;margin-bottom:16px;line-height:1.5;max-width:300px">Describí brevemente qué querés que represente la imagen:</p>'
+      +'<textarea id="bcastImgDescInput" rows="3" placeholder="Ej: personas acompañándose, naturaleza serena, manos entrelazadas…" maxlength="200" style="width:100%;max-width:340px;padding:12px 14px;background:rgba(255,255,255,.09);border:1.5px solid rgba(116,198,157,.3);border-radius:12px;color:#fff;font-size:16px;font-family:\'Jost\',sans-serif;resize:none;box-sizing:border-box;margin-bottom:14px"></textarea>'
+      +'<div style="display:flex;gap:10px;width:100%;max-width:340px">'
+      +'<button onclick="pAdminGenerateBcastImageWithDesc()" style="flex:1;padding:12px;background:rgba(180,140,220,.2);border:1.5px solid rgba(180,140,220,.4);border-radius:12px;color:rgba(180,140,220,.95);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">🎨 Generar</button>'
+      +'<button onclick="document.getElementById(\'bcastImgDescOv\').remove()" style="padding:12px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:rgba(255,255,255,.5);font-size:13px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
+      +'</div>';
+    document.body.appendChild(ov2);
+    setTimeout(function(){ var t=document.getElementById('bcastImgDescInput'); if(t) t.focus(); }, 100);
+    return;
+  }
+  await _doGenerateBcastImage(desc);
+}
+
+async function pAdminGenerateBcastImageWithDesc(){
+  var el = document.getElementById('bcastImgDescInput');
+  var desc = el ? el.value.trim() : '';
+  if(!desc){ pToast('✍️','Escribí una descripción para la imagen'); return; }
+  var ov = document.getElementById('bcastImgDescOv');
+  if(ov) ov.remove();
+  // Also fill the main desc field so it's reusable
+  var mainDesc = document.getElementById('massAiDesc');
+  if(mainDesc && !mainDesc.value.trim()) mainDesc.value = desc;
+  await _doGenerateBcastImage(desc);
+}
+
+async function _doGenerateBcastImage(desc){
   var btn = document.getElementById('massAiImgBtn');
   var statusEl = document.getElementById('massImgUploadStatus');
   if(btn){ btn.disabled=true; btn.textContent='⏳ Generando imagen…'; }
