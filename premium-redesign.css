@@ -9418,3 +9418,40 @@ body:not(.r-dark) #homeMottoLine {
   background: linear-gradient(135deg,rgba(200,140,20,.16),rgba(180,120,10,.10)) !important;
 }
 body:not(.r-dark) #momentoFullFeed .momento-card .momento-meta { color: var(--ink4); }
+
+/* ── v638: Dark-mode contrast fixes — REGISTRA TUS ÁNIMOS + REGISTRA zone ── */
+
+/* "📋 REGISTRA TUS ÁNIMOS" heading */
+body.r-dark #homeMonthlyHint > div:first-child {
+  color: rgba(190,245,215,.95) !important;
+}
+/* Italic description */
+body.r-dark #homeMonthlyHint > div:nth-child(2) {
+  color: rgba(220,240,225,.82) !important;
+}
+/* Green pill "Resumen semanal" */
+body.r-dark #homeMonthlyHint > div:nth-child(3) > div:first-child > span:first-child {
+  color: rgba(200,255,225,.95) !important;
+  background: rgba(116,198,157,.22) !important;
+  border-color: rgba(116,198,157,.45) !important;
+}
+/* Sub-label "cada domingo" */
+body.r-dark #homeMonthlyHint > div:nth-child(3) > div:first-child > span:last-child {
+  color: rgba(180,235,205,.78) !important;
+}
+/* Gold pill "Análisis mensual" */
+body.r-dark #homeMonthlyHint > div:nth-child(3) > div:last-child > span:first-child {
+  color: rgba(255,218,90,.95) !important;
+  background: rgba(200,158,56,.22) !important;
+  border-color: rgba(200,158,56,.45) !important;
+}
+/* Sub-label "el 1° de cada mes" */
+body.r-dark #homeMonthlyHint > div:nth-child(3) > div:last-child > span:last-child {
+  color: rgba(240,200,95,.80) !important;
+}
+/* Lema pill (gold) in dark mode */
+body.r-dark #homeMottoLine {
+  color: rgba(255,215,85,.95) !important;
+  border-color: rgba(200,158,56,.50) !important;
+  background: linear-gradient(135deg,rgba(200,158,56,.24),rgba(180,130,40,.16)) !important;
+}
