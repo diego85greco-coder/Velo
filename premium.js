@@ -16119,7 +16119,15 @@ async function _fetchMomentos(limit){
   try{
     var now=new Date().toISOString();
     var res=await sbClient.from('momentos').select('id,text,emoji,anon_label,hearts,created_at,expires_at,user_hash').gt('expires_at',now).order('created_at',{ascending:false}).limit(limit||20);
-    if(res.error){ if(res.error.code==='42P01') return null; return []; }
+    if(res.error){
+      if(res.error.code==='42P01') return null;
+      console.warn('[Velo] momentos fetch error:', res.error.code, res.error.message);
+      // Permissions error — table exists but RLS blocks reads
+      if(res.error.code==='42501'||res.error.message.indexOf('permission')+res.error.message.indexOf('policy')>-2){
+        pToast('ℹ️','Activá las políticas RLS en la tabla momentos de Supabase');
+      }
+      return [];
+    }
     return res.data||[];
   }catch(e){ return []; }
 }
@@ -16128,29 +16136,30 @@ function _renderMomentoCards(momentos, feedId){
   var feed=document.getElementById(feedId);
   if(!feed) return;
   var myHash=_momentoUserHash();
+  var isHome = feedId === 'homeMomentoFeed';
   if(!momentos||!momentos.length){
-    feed.innerHTML='<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink4);font-style:italic">Sé el primero en compartir un momento hoy ✨</div>';
+    feed.innerHTML='<div style="text-align:center;padding:18px 8px;font-size:13px;color:rgba(255,255,255,.35);font-style:italic">Sé el primero en compartir un momento hoy ✨</div>';
     return;
   }
   feed.innerHTML=momentos.map(function(m){
     var liked=safeLS('get','velo_mheart_'+m.id)==='1';
     var mine=m.user_hash===myHash;
     var timeLeft=Math.max(0,Math.round((new Date(m.expires_at).getTime()-Date.now())/3600000));
-    return '<div style="background:var(--cream2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;animation:p-fadeIn .3s ease">'
+    return '<div class="momento-card" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:14px;margin-bottom:10px;animation:p-fadeIn .3s ease">'
       +'<div style="display:flex;align-items:flex-start;gap:10px">'
       +'<span style="font-size:26px;flex-shrink:0;line-height:1">'+(m.emoji||'💭')+'</span>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:14px;color:var(--ink2);line-height:1.6;margin-bottom:8px">'+_escHtml(m.text||'')+'</div>'
+      +'<div style="font-size:14px;color:rgba(255,255,255,.85);line-height:1.6;margin-bottom:8px">'+_escHtml(m.text||'')+'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-      +'<span style="font-size:10px;color:var(--ink4);font-style:italic">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
-      +'<span style="font-size:9px;color:var(--ink4);opacity:.5">'+_momentoAgo(m.created_at)+'</span>'
-      +'<span style="font-size:9px;color:var(--ink4);opacity:.4">⏱ '+timeLeft+'h</span>'
-      +(mine?'<span style="font-size:9px;color:var(--sage2);font-weight:700">· tuyo</span>':'')
+      +'<span style="font-size:10px;color:rgba(116,198,157,.7);font-style:italic">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.3)">'+_momentoAgo(m.created_at)+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.22)">⏱ '+timeLeft+'h</span>'
+      +(mine?'<span style="font-size:9px;color:#74c69d;font-weight:700">· tuyo</span>':'')
       +'</div>'
       +'</div>'
-      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;cursor:pointer;color:'+(liked?'#e0446a':'var(--ink4)')+';padding:4px;flex-shrink:0">'
+      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;cursor:pointer;color:'+(liked?'#e0446a':'rgba(255,255,255,.35)')+';padding:4px;flex-shrink:0">'
       +'<span style="font-size:20px">'+(liked?'❤️':'🤍')+'</span>'
-      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px">'+(m.hearts||0)+'</span>'
+      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:rgba(255,255,255,.4)">'+(m.hearts||0)+'</span>'
       +'</button>'
       +'</div>'
       +'</div>';
@@ -16194,8 +16203,12 @@ async function pPostMomento(){
   if(btn){btn.disabled=true;btn.textContent='…';}
   try{
     var res=await sbClient.from('momentos').insert({id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()});
-    if(res.error&&res.error.code==='42P01'){var n=document.getElementById('momentoMigrationNote');if(n)n.style.display='block';if(btn){btn.disabled=false;btn.textContent='Compartir ✨';}return;}
-    ta.value=''; pToast('✨','¡Momento compartido! Vivirá 24 horas');
+    if(res.error){
+      if(res.error.code==='42P01'){var n=document.getElementById('momentoMigrationNote');if(n)n.style.display='block';}
+      else{ pToast('⚠️','Error al publicar ('+res.error.code+'): '+res.error.message); }
+      if(btn){btn.disabled=false;btn.textContent='Compartir ✨';} return;
+    }
+    ta.value=''; pToast('✨','¡Momento publicado! Vivirá 24 horas 🌱');
     _loadMomentoPageFeed();
   }catch(e){pToast('⚠️','Error: '+e.message);}
   if(btn){btn.disabled=false;btn.textContent='Compartir ✨';}
@@ -16215,10 +16228,14 @@ async function pPostMomentoHome(){
   if(btn){btn.disabled=true;btn.textContent='…';}
   try{
     var res=await sbClient.from('momentos').insert({id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()});
-    if(!res.error){ inp.value=''; pToast('✨','¡Momento compartido!'); _initHomeMomento(); }
-    else if(res.error.code==='42P01'){pToast('ℹ️','Función próximamente disponible');}
+    if(res.error){
+      if(res.error.code==='42P01'){pToast('ℹ️','Función próximamente disponible');}
+      else{ pToast('⚠️','Error al publicar ('+res.error.code+'): '+res.error.message); }
+    } else {
+      inp.value=''; pToast('✨','¡Momento publicado! 🌱'); _initHomeMomento();
+    }
   }catch(e){pToast('⚠️','Error: '+e.message);}
-  if(btn){btn.disabled=false;btn.textContent='✨';}
+  if(btn){btn.disabled=false;btn.textContent='Publicar ✨';}
 }
 
 async function pHeartMomento(id, btn){

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="621">
+  <meta name="app-version" content="622">
   <title>Velo — Acompañamos emociones</title>
   <!-- Auto-update: if server has a newer version, force a hard reload -->
   <script>(function(){try{fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){var cur=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');if(d&&d.v&&d.v>cur){window.location.reload(true);}}).catch(function(){});}catch(e){}})();</script>
@@ -21,8 +21,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-621">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-621">
+  <link rel="stylesheet" href="premium.css?v=20260611-622">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-622">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1291,7 +1291,7 @@
               <button onclick="pGoTo('momento')" class="home-momento-btn-all">Ver todos →</button>
             </div>
             <!-- Feed preview -->
-            <div id="homeMomentoFeed"></div>
+            <div id="homeMomentoFeed" style="max-height:260px;overflow-y:auto;padding-right:2px"></div>
             <!-- Input row -->
             <div class="home-momento-input-row">
               <select id="momentoHomeEmoji" class="home-momento-emoji-sel">
@@ -1654,26 +1654,26 @@
               </div>
               <button onclick="_loadMomentoPageFeed()" style="background:none;border:none;cursor:pointer;font-size:18px;opacity:.6" title="Actualizar">↻</button>
             </div>
-            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:16px;font-style:italic">Compartí algo anónimo que dura 24 horas. Sin nombres, sin fotos — solo palabras. Nadie sabe quién sos.</p>
+            <p style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:16px;font-style:italic">Compartí algo anónimo que dura 24 horas. Sin nombres, sin fotos — solo palabras. Nadie sabe quién sos.</p>
             <!-- Post input -->
-            <div style="background:var(--cream2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:18px">
+            <div style="background:rgba(255,255,255,.05);border:1px solid rgba(116,198,157,.22);border-radius:18px;padding:14px;margin-bottom:18px">
               <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
                 <select id="momentoEmoji" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--ink);padding:0;-webkit-appearance:none;flex-shrink:0">
                   <option>💭</option><option>😊</option><option>😔</option><option>❤️</option><option>🌱</option><option>✨</option><option>😌</option><option>🙏</option><option>😤</option><option>🌧️</option><option>🌟</option><option>😢</option>
                 </select>
                 <textarea id="momentoTa" rows="3" maxlength="200" placeholder="¿Qué querés compartir hoy?"
-                  style="flex:1;background:none;border:none;outline:none;font-size:14px;font-family:'Jost',sans-serif;color:var(--ink);resize:none;line-height:1.5"
-                  oninput="var c=document.getElementById('momentoCharCount');if(c){c.textContent=this.value.length+' / 200';c.style.color=this.value.length>180?'var(--sos)':'var(--ink4)';}"></textarea>
+                  style="flex:1;background:none;border:none;outline:none;font-size:14px;font-family:'Jost',sans-serif;color:rgba(255,255,255,.88);resize:none;line-height:1.5"
+                  oninput="var c=document.getElementById('momentoCharCount');if(c){c.textContent=this.value.length+' / 200';c.style.color=this.value.length>180?'var(--sos)':'rgba(255,255,255,.35)';}"></textarea>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-                <span id="momentoCharCount" style="font-size:10px;color:var(--ink4);opacity:.6">0 / 200</span>
-                <span style="font-size:10px;color:var(--ink4);opacity:.6;flex:1;text-align:center">Nombre aleatorio — identidad protegida</span>
-                <button id="momentoPostBtn" onclick="pPostMomento()" class="p-btn p-btn--primary p-btn--sm">Compartir ✨</button>
+                <span id="momentoCharCount" style="font-size:10px;color:rgba(255,255,255,.3)">0 / 200</span>
+                <span style="font-size:10px;color:rgba(255,255,255,.28);flex:1;text-align:center">🔒 Nombre aleatorio · identidad protegida</span>
+                <button id="momentoPostBtn" onclick="pPostMomento()" style="background:linear-gradient(135deg,rgba(116,198,157,.30),rgba(80,160,120,.28));border:1px solid rgba(116,198,157,.5);border-radius:12px;padding:8px 16px;font-size:12px;font-weight:700;color:#74c69d;cursor:pointer;font-family:'Jost',sans-serif">Compartir ✨</button>
               </div>
             </div>
             <!-- Feed label -->
-            <div style="font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink4);margin-bottom:12px">MOMENTOS ACTIVOS</div>
-            <div id="momentoFullFeed"><div style="text-align:center;padding:20px;font-size:12px;color:var(--ink4)">Cargando…</div></div>
+            <div style="font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:12px">MOMENTOS ACTIVOS</div>
+            <div id="momentoFullFeed" style="max-height:60vh;overflow-y:auto;padding-right:2px"><div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.35)">Cargando…</div></div>
             <!-- SQL migration note (shown if table missing) -->
             <div id="momentoMigrationNote" style="display:none;background:rgba(200,162,0,.08);border:1px solid rgba(200,162,0,.22);border-radius:12px;padding:14px;font-size:11px;color:var(--ink3);line-height:1.7;margin-top:10px">
               <strong>Tabla Supabase requerida:</strong><br>
@@ -3365,8 +3365,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-621"></script>
-<script src="premium-redesign.js?v=20260611-621"></script>
+<script src="premium.js?v=20260611-622"></script>
+<script src="premium-redesign.js?v=20260611-622"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
