@@ -8688,21 +8688,16 @@ async function pShowPublicProfile(){
   var statsPromise = (async function(){
     try{
       _initSupabase(); await _ensureSbSession();
-      var rHelped = await sbClient.from('guardian_requests')
-        .select('id',{count:'exact',head:true})
-        .eq('guardian_id', myId)
-        .in('status',['ended','message_left']);
-      var rReceived = await sbClient.from('guardian_requests')
-        .select('id',{count:'exact',head:true})
-        .eq('user_id', myId)
-        .in('status',['ended','message_left']);
-      var helped   = (!rHelped.error   ? rHelped.count   : convs) || 0;
-      var received = (!rReceived.error ? rReceived.count : 0)     || 0;
+      var rProf = await sbClient.from('profiles')
+        .select('helped_count,received_count')
+        .eq('id', myId).maybeSingle();
+      var helped   = (rProf.data && rProf.data.helped_count)   ? parseInt(rProf.data.helped_count,10)   : convs;
+      var received = (rProf.data && rProf.data.received_count) ? parseInt(rProf.data.received_count,10) : 0;
       return { helped: helped, received: received };
     }catch(e){ return { helped: convs, received: 0 }; }
   })();
 
-  var reviewsPromise = myRole === 'pro' ? _loadUserReviews(myId) : Promise.resolve([]);
+  var reviewsPromise = myId ? _loadUserReviews(myId) : Promise.resolve([]);
 
   statsPromise.then(function(st){
     var el = document.getElementById('pubProfStats');
