@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="620">
+  <meta name="app-version" content="621">
   <title>Velo — Acompañamos emociones</title>
   <!-- Auto-update: if server has a newer version, force a hard reload -->
   <script>(function(){try{fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){var cur=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');if(d&&d.v&&d.v>cur){window.location.reload(true);}}).catch(function(){});}catch(e){}})();</script>
@@ -21,8 +21,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-620">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-620">
+  <link rel="stylesheet" href="premium.css?v=20260611-621">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-621">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -1270,9 +1270,9 @@
           <!-- Personalized suggestions (filled async by Gemini) -->
           <div id="homeSuggestions" style="display:none;margin-top:16px"></div>
           <!-- Sonidos ambientales -->
-          <div style="margin:4px 16px 14px">
-            <div style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px;opacity:.75">🎵 SONIDOS AMBIENTALES</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <div style="margin:4px 16px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:14px 14px 12px">
+            <div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:10px">🎵 Sonidos Ambientales</div>
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
               <button onclick="pTogAmbient('lluvia')" id="ambBtn-lluvia" class="amb-sound-btn">🌧️ Lluvia</button>
               <button onclick="pTogAmbient('bosque')" id="ambBtn-bosque" class="amb-sound-btn">🌲 Bosque</button>
               <button onclick="pTogAmbient('fuego')" id="ambBtn-fuego" class="amb-sound-btn">🔥 Fuego</button>
@@ -3365,8 +3365,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-620"></script>
-<script src="premium-redesign.js?v=20260611-620"></script>
+<script src="premium.js?v=20260611-621"></script>
+<script src="premium-redesign.js?v=20260611-621"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

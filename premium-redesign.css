@@ -8853,28 +8853,28 @@ body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 7px 13px;
+  padding: 8px 15px;
   font-size: 12px;
   font-weight: 700;
   font-family: 'Jost', sans-serif;
-  color: var(--ink3);
-  background: var(--cream2);
-  border: 1.5px solid var(--border2);
+  color: rgba(255,255,255,.78);
+  background: rgba(255,255,255,.08);
+  border: 1.5px solid rgba(255,255,255,.18);
   border-radius: 20px;
   cursor: pointer;
   transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
   white-space: nowrap;
 }
 .amb-sound-btn:hover {
-  background: rgba(116,198,157,.12);
-  border-color: rgba(116,198,157,.4);
-  color: var(--sage2);
+  background: rgba(116,198,157,.16);
+  border-color: rgba(116,198,157,.45);
+  color: #74c69d;
 }
 .amb-sound-btn.amb-active {
-  background: rgba(116,198,157,.2);
-  border-color: rgba(116,198,157,.55);
-  color: var(--sage);
-  box-shadow: 0 0 10px rgba(116,198,157,.25);
+  background: rgba(116,198,157,.25);
+  border-color: rgba(116,198,157,.65);
+  color: #74c69d;
+  box-shadow: 0 0 14px rgba(116,198,157,.30);
 }
 
 /* ── v609: Momento cards ──────────────────────────────────────── */
