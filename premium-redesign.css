@@ -9247,10 +9247,10 @@ body:not(.r-dark) .r-home-quick-panel {
   font-weight: 800;
   letter-spacing: 1.8px;
   text-transform: uppercase;
-  color: rgba(255,255,255,.30);
+  color: rgba(255,255,255,.55);
   margin-bottom: 8px;
 }
-body:not(.r-dark) .r-home-quick-label { color: rgba(50,100,60,.45); }
+body:not(.r-dark) .r-home-quick-label { color: rgba(50,100,60,.68); }
 .r-home-quick-label--sound {
   color: rgba(116,198,157,.65);
   margin-top: 10px;

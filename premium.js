@@ -16035,43 +16035,17 @@ function pCloseWeeklySummary(){
   else { var ov=document.getElementById('weeklySummaryOv'); if(ov){ ov.classList.remove('show'); ov.style.display='none'; } }
 }
 
-// ── AMBIENT SOUNDS (Web Audio API) ───────────────────────────
+// ── AMBIENT SOUNDS (Web Audio API — real recorded files) ─────
 var _ambCtx = null, _ambSource = null, _ambGain = null, _ambLfo = null, _ambLfo2 = null, _ambActive = null;
 var _AMB_META = { lluvia:{icon:'🌧️',label:'Lluvia'}, bosque:{icon:'🌲',label:'Bosque'}, fuego:{icon:'🔥',label:'Fuego'}, mar:{icon:'🌊',label:'Mar'} };
+var _ambCache = {}; // decoded AudioBuffer cache
 
-// Minimal silent WAV — playing this <audio> element forces iOS to move the
-// audio session from "ambient" (muted by silent switch) to "playback"
-// (ignores silent switch). Web Audio API then inherits "playback" category.
 var _AMB_UNLOCK_SRC = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-
-function _buildBrownNoiseBuffer(ctx){
-  // Stereo brown noise (1/f² — deeper and softer than pink, no harsh highs)
-  var rate = ctx.sampleRate, secs = 8;
-  var buf = ctx.createBuffer(2, rate * secs, rate);
-  for(var ch = 0; ch < 2; ch++){
-    var data = buf.getChannelData(ch);
-    var last = 0;
-    // Slightly different seed per channel for natural stereo width
-    var seed = ch * 0.37;
-    for(var i = 0; i < data.length; i++){
-      var w = Math.random() * 2 - 1 + seed * 0.001 * Math.sin(i * 0.0001);
-      last = (last + 0.02 * w) / 1.02;
-      data[i] = last * 3.5;
-    }
-    // Ensure loop point is smooth (fade first/last 512 samples)
-    for(var j = 0; j < 512; j++){
-      var t = j / 512;
-      data[j] *= t;
-      data[data.length - 1 - j] *= t;
-    }
-  }
-  return buf;
-}
 
 async function pPlayAmbient(type){
   pStopAmbient(true);
   try{
-    // iOS silent-switch bypass: silent <audio> upgrades session to "playback"
+    // iOS silent-switch bypass
     try{
       var _ul = new Audio(_AMB_UNLOCK_SRC);
       _ul.volume = 0.001; _ul.setAttribute('playsinline','');
@@ -16084,85 +16058,44 @@ async function pPlayAmbient(type){
     if(_ambCtx.state === 'suspended') await _ambCtx.resume();
     var ctx = _ambCtx;
 
-    _ambSource = ctx.createBufferSource();
-    _ambSource.buffer = _buildBrownNoiseBuffer(ctx);
-    _ambSource.loop = true;
+    // Show loading state on active button
+    var btnEl = document.getElementById('ambBtn-'+type) || document.getElementById('apBtn-'+type);
+    if(btnEl) btnEl.style.opacity = '0.5';
 
-    // 3-stage filter chain for natural frequency shaping
-    var f1 = ctx.createBiquadFilter();
-    var f2 = ctx.createBiquadFilter();
-    var f3 = ctx.createBiquadFilter();
-    _ambGain  = ctx.createGain();
-    _ambLfo   = ctx.createOscillator();
-    _ambLfo2  = ctx.createOscillator();
-    var lfoG  = ctx.createGain();
-    var lfoG2 = ctx.createGain();
-    _ambLfo.type  = 'sine';
-    _ambLfo2.type = 'sine';
-
-    if(type === 'lluvia'){
-      // Soft rain: broad mid-band (180–2800 Hz) keeps warmth of drops
-      // hitting surfaces; cutting above 2.8 kHz removes the TV-static harshness.
-      f1.type='highpass'; f1.frequency.value=180;  f1.Q.value=0.5;
-      f2.type='lowpass';  f2.frequency.value=2800; f2.Q.value=0.4;
-      f3.type='peaking';  f3.frequency.value=900;  f3.gain.value=3; f3.Q.value=1.2;
-      _ambGain.gain.value = 0.14;
-      _ambLfo.frequency.value  = 0.12; lfoG.gain.value  = 0.035; // gentle intensity swell
-      _ambLfo2.frequency.value = 0.38; lfoG2.gain.value = 0.020; // light random variation
-
-    } else if(type === 'bosque'){
-      // Forest: gentle low-freq wind (brown noise 60–900 Hz) with
-      // very slow gusts — sounds like wind through leaves
-      f1.type='highpass'; f1.frequency.value=60;  f1.Q.value=0.3;
-      f2.type='lowpass';  f2.frequency.value=900; f2.Q.value=0.5;
-      f3.type='peaking';  f3.frequency.value=220; f3.gain.value=4; f3.Q.value=0.5;
-      _ambGain.gain.value = 0.24;
-      _ambLfo.frequency.value  = 0.08; lfoG.gain.value  = 0.14;  // slow wind gusts
-      _ambLfo2.frequency.value = 0.19; lfoG2.gain.value = 0.07;  // secondary layer
-
-    } else if(type === 'fuego'){
-      // Fire: sawtooth LFO creates sharp amplitude spikes that mimic wood-crack
-      // pops; slow sine LFO adds the "breathing" base-flame swell.
-      _ambLfo.type = 'sawtooth';
-      f1.type='highpass'; f1.frequency.value=38;  f1.Q.value=0.3;
-      f2.type='lowpass';  f2.frequency.value=750; f2.Q.value=0.8;
-      f3.type='peaking';  f3.frequency.value=160; f3.gain.value=8; f3.Q.value=1.1;
-      _ambGain.gain.value = 0.22;
-      _ambLfo.frequency.value  = 3.50; lfoG.gain.value  = 0.10;  // sawtooth crackle pops
-      _ambLfo2.frequency.value = 0.18; lfoG2.gain.value = 0.09;  // slow base-flame breathing
-
-    } else { // mar — ocean waves
-      // The key to convincing waves: deep, SLOW LFO (0.1 Hz ≈ 10-second cycle)
-      // with large modulation depth. Brown noise filtered to 50–400 Hz = water rumble.
-      f1.type='lowpass';  f1.frequency.value=400; f1.Q.value=0.5;
-      f2.type='highpass'; f2.frequency.value=45;  f2.Q.value=0.3;
-      f3.type='peaking';  f3.frequency.value=100; f3.gain.value=7; f3.Q.value=0.6;
-      _ambGain.gain.value = 0.35;
-      _ambLfo.frequency.value  = 0.10; lfoG.gain.value  = 0.32;  // main wave swell
-      _ambLfo2.frequency.value = 0.07; lfoG2.gain.value = 0.18;  // secondary wave
+    // Use cached buffer or fetch + decode
+    if(!_ambCache[type]){
+      var resp = await fetch('/sounds/'+type+'.mp3', {cache:'force-cache'});
+      if(!resp.ok) throw new Error('Archivo no encontrado');
+      var arrayBuf = await resp.arrayBuffer();
+      _ambCache[type] = await ctx.decodeAudioData(arrayBuf);
     }
 
-    // Both LFOs modulate master gain for natural amplitude variation
-    _ambLfo.connect(lfoG);    lfoG.connect(_ambGain.gain);
-    _ambLfo2.connect(lfoG2);  lfoG2.connect(_ambGain.gain);
-    _ambLfo.start();
-    _ambLfo2.start(ctx.currentTime + 1.7); // slight offset for non-periodic feel
+    // Restore button opacity
+    if(btnEl) btnEl.style.opacity = '';
 
-    // Source → 3-stage filter → master gain → output
-    _ambSource.connect(f1);
-    f1.connect(f2); f2.connect(f3); f3.connect(_ambGain);
+    _ambSource = ctx.createBufferSource();
+    _ambSource.buffer = _ambCache[type];
+    _ambSource.loop = true;
+
+    _ambGain = ctx.createGain();
+    _ambGain.gain.value = 0.80;
+
+    _ambSource.connect(_ambGain);
     _ambGain.connect(ctx.destination);
     _ambSource.start();
     _ambActive = type;
     _updateAmbientUI();
-  }catch(e){ pToast('⚠️','No se pudo iniciar el audio: ' + e.message); }
+  }catch(e){
+    pToast('⚠️','No se pudo iniciar el audio: ' + e.message);
+    var btnEl2 = document.getElementById('ambBtn-'+type) || document.getElementById('apBtn-'+type);
+    if(btnEl2) btnEl2.style.opacity = '';
+  }
 }
 
 function pStopAmbient(silent){
   try{ if(_ambSource){_ambSource.stop();_ambSource.disconnect();_ambSource=null;} }catch(e){}
-  try{ if(_ambLfo){_ambLfo.stop();_ambLfo.disconnect();_ambLfo=null;} }catch(e){}
-  try{ if(_ambLfo2){_ambLfo2.stop();_ambLfo2.disconnect();_ambLfo2=null;} }catch(e){}
   try{ if(_ambGain){_ambGain.disconnect();_ambGain=null;} }catch(e){}
+  _ambLfo=null; _ambLfo2=null;
   _ambActive=null;
   _updateAmbientUI();
   if(!silent) pToast('🔇','Sonido detenido');
