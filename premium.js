@@ -15742,11 +15742,19 @@ function _checkWeeklySummary(){
   var todayKey = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   if(lastKey === todayKey) return;
   var isSunday = today.getDay() === 0;
-  var daysSince = lastKey ? Math.floor((Date.now()-new Date(lastKey).getTime())/86400000) : 999;
+  var daysSince = lastKey ? Math.floor((Date.now()-new Date(lastKey).getTime())/86400000) : 0;
+  // Only run on Sundays, OR if it's been 7+ days since last summary (not on first ever load)
   if(!isSunday && daysSince < 7) return;
 
-  var moodLog = []; try{ moodLog = JSON.parse(safeLS('get','velo_mood_log')||'[]'); }catch(e){}
-  var weekMoods = moodLog.filter(function(m){ return m.ts && (Date.now()-m.ts)<7*86400000; });
+  // Count moods via date keys (same source as mini-graph — more reliable than mood_log array)
+  var weekMoods = [];
+  var _today = new Date();
+  for(var _i=0; _i<7; _i++){
+    var _d = new Date(_today.getFullYear(), _today.getMonth(), _today.getDate()-_i);
+    var _k = _d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');
+    var _m = null; try{ _m = JSON.parse(safeLS('get','velo_mood_'+_k)||'null'); }catch(e){}
+    if(_m) weekMoods.push(_m);
+  }
   var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
   var weekDiary = diary.filter(function(e){ return e.ts && (Date.now()-e.ts)<7*86400000; });
   var streak = _getVisitDayCount ? _getVisitDayCount() : 1;
