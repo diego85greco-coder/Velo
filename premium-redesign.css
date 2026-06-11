@@ -10622,3 +10622,38 @@ body:not(.r-dark) #homeSearchRow .para-vos-bottom-btn,
 body:not(.r-dark) #homeSearchUsersBtn {
   color: rgba(95,65,8,.88) !important;
 }
+
+/* ── v683 — Momentos tabs: nth-child specificity fix (beats v676) ── */
+body:not(.r-dark) .home-feed-tabs button:nth-child(1) {
+  border-color: rgba(80,45,160,.32) !important;
+  color: rgba(62,32,138,.88) !important;
+  background: rgba(255,255,255,.55) !important;
+}
+body:not(.r-dark) .home-feed-tabs button:nth-child(1).home-feed-tab--active {
+  background: rgba(80,45,160,.16) !important;
+  border-color: rgba(90,52,172,.50) !important;
+  color: rgba(55,25,130,.96) !important;
+}
+body:not(.r-dark) .home-feed-tabs button:nth-child(2) {
+  border-color: rgba(138,88,8,.32) !important;
+  color: rgba(115,68,5,.88) !important;
+  background: rgba(255,255,255,.55) !important;
+}
+body:not(.r-dark) .home-feed-tabs button:nth-child(2).home-feed-tab--active {
+  background: rgba(138,92,8,.16) !important;
+  border-color: rgba(148,98,8,.50) !important;
+  color: rgba(100,58,4,.96) !important;
+}
+/* v676 header labels — override to dark on pastel */
+body:not(.r-dark) .home-momento-title { color: rgba(22,80,42,.92) !important; }
+/* v676 card text — override to dark */
+body:not(.r-dark) #homeMomentoFeed .momento-card { color: rgba(22,72,38,.90) !important; background: rgba(255,255,255,.72) !important; border-color: rgba(40,110,60,.22) !important; }
+body:not(.r-dark) #homeMomentoFeed .momento-card .momento-meta { color: rgba(35,82,48,.58) !important; }
+/* v676 compose button — dark text on light bg */
+body:not(.r-dark) .home-happy-compose-btn { background: rgba(255,255,255,.65) !important; border-color: rgba(40,110,60,.40) !important; color: rgba(22,80,42,.92) !important; box-shadow: 0 2px 8px rgba(40,110,60,.10) !important; }
+/* v676 happy feed cards */
+body:not(.r-dark) #homeHappyFeed .momento-card { background: rgba(255,255,255,.72) !important; border-color: rgba(40,110,60,.22) !important; color: rgba(22,72,38,.90) !important; }
+/* v676 input + post btn */
+body:not(.r-dark) .home-momento-input { color: rgba(22,72,38,.90) !important; background: rgba(255,255,255,.72) !important; border-color: rgba(40,110,60,.35) !important; }
+body:not(.r-dark) .home-momento-input::placeholder { color: rgba(35,82,48,.48) !important; }
+body:not(.r-dark) .home-momento-post-btn { background: rgba(40,110,60,.18) !important; border-color: rgba(40,110,60,.45) !important; color: rgba(22,80,42,.92) !important; }
