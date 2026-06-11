@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="681">
+  <meta name="app-version" content="682">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -28,8 +28,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-681">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-681">
+  <link rel="stylesheet" href="premium.css?v=20260611-682">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-682">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1002,7 +1002,7 @@
               <!-- Header: centered like PARA VOS -->
               <div style="text-align:center;margin-bottom:14px;padding-bottom:13px;border-bottom:1px solid rgba(200,158,56,.22)">
                 <div id="homeRegisterLabel">REGISTRA</div>
-                <div style="font-size:15px;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(230,192,90,.82);letter-spacing:.3px;margin-top:5px;line-height:1.2">Tu estado de hoy:</div>
+                <div id="homeRegisterSub" style="font-size:15px;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(230,192,90,.82);letter-spacing:.3px;margin-top:5px;line-height:1.2">Tu estado de hoy:</div>
               </div>
               <!-- Row 1: Mi estado input pill + mood gold pill -->
               <div style="display:flex;gap:8px;margin-bottom:8px">
@@ -1134,6 +1134,7 @@
                 </div>
                 <button class="p-btn p-btn--primary p-btn--lg" onclick="pGoTo('guardians')">Guardianes →</button>
                 <button class="p-btn p-btn--secondary p-btn--lg" onclick="pGoTo('help')">Sala de Ayuda →</button>
+                <button class="p-btn p-btn--ghost p-btn--md home-fav-contacts-btn" onclick="pGoTo('contacts')">⭐ Contactos Favoritos</button>
               </div>
               <!-- PARA VOS unified ornate panel -->
               <div id="homeParaVosPanel">
@@ -3522,8 +3523,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-681"></script>
-<script src="premium-redesign.js?v=20260611-681"></script>
+<script src="premium.js?v=20260611-682"></script>
+<script src="premium-redesign.js?v=20260611-682"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
