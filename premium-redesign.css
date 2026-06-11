@@ -9473,6 +9473,31 @@ body.r-dark .home-momento-post-btn--happy {
   background: rgba(200,158,56,.75) !important;
   color: rgba(255,240,180,.95) !important;
 }
+.home-happy-compose-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 14px;
+  background: rgba(200,158,56,.12);
+  border: 1.5px solid rgba(200,158,56,.35);
+  border-radius: 14px;
+  color: rgba(255,215,85,.88);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Jost', sans-serif;
+  text-align: left;
+  letter-spacing: .2px;
+  transition: background .15s, border-color .15s;
+}
+.home-happy-compose-btn:active { background: rgba(200,158,56,.20); }
+body:not(.r-dark) .home-happy-compose-btn {
+  background: rgba(200,140,20,.10);
+  border-color: rgba(180,120,10,.32);
+  color: rgba(130,80,0,.88);
+}
 
 /* ── v638: Dark-mode contrast fixes — REGISTRA TUS ÁNIMOS + REGISTRA zone ── */
 
