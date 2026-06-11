@@ -686,6 +686,9 @@ function rToggleDarkMode() {
   var sideLogo = document.querySelector('.p-sidebar-logo-img');
   if (topLogo) topLogo.src = logoSrc;
   if (sideLogo) sideLogo.src = logoSrc;
+  // Force repaint on iOS Safari — toggling a class doesn't always trigger a repaint
+  document.body.style.webkitTransform = 'translateZ(0)';
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ document.body.style.webkitTransform = ''; }); });
 }
 
 /* ── Particle animation — firefly + rising embers style ─────────── */

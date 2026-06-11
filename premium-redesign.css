@@ -599,18 +599,18 @@ body.r-dark .home-logo-side {
 }
 #homeGreetWrapper     { order: 1; }
 #homeTimeIcon         { order: 2; }
-#homeStatusToggle     { order: 3; }
-#homeMonthlyHint      { order: 4; }
-#homeWeekMoodGraph    { order: 4; }
-#homeRegisterOuter    { order: 5; }
-#quickMoodPicker      { order: 5; }
-#homeDailyQuoteWrap   { order: 6; }
-#homeMomentoSection   { order: 7; }
-.r-hero-actions       { order: 8; }
-#homeSearchUsersBtn   { order: 9; }
-.r-home-quick-panel   { order: 10; }
-.r-home-shortcut-grid { order: 10; }
-#homeHeroLabel        { order: 11; margin-top: 24px; }
+#homeDailyQuoteWrap   { order: 3; }
+#homeStatusToggle     { order: 4; }
+#homeMonthlyHint      { order: 5; }
+#homeRegisterOuter    { order: 6; }
+#quickMoodPicker      { order: 6; }
+#homeWeekMoodGraph    { order: 7; }
+#homeMomentoSection   { order: 8; }
+.r-hero-actions       { order: 9; }
+#homeSearchUsersBtn   { order: 10; }
+.r-home-quick-panel   { order: 11; }
+.r-home-shortcut-grid { order: 11; }
+#homeHeroLabel        { order: 12; margin-top: 24px; }
 
 /* ── Paired quick-actions (desktop): Diario/Muro/Al Mar + Ánimos/Donar/Plus ── */
 .r-paired-quick {
