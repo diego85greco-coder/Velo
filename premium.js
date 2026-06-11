@@ -6673,6 +6673,8 @@ function pCalmBook(){ pToast('📖', _calmBooks[Math.floor(Math.random()*_calmBo
 // ── RESPIRA (Breathing) ────────────────────────────────────────
 var _respiraRunning = false;
 var _respiraTimer = null;
+var _respiraAudio = null;
+var _respiraMuted = false;
 var _respiraPhases = [
   { name:'Inhala…',  dur:4,  colorA:'rgba(116,198,157,.95)', colorB:'rgba(60,160,110,.6)' },
   { name:'Sostén…',  dur:7,  colorA:'rgba(168,212,232,.90)', colorB:'rgba(80,160,200,.5)' },
@@ -6699,7 +6701,42 @@ function pStartRespira(){
   _setEl('respiraBtn','Detener');
   _respiraPhaseIdx = 0;
   _startRespiraAmbient();
+  _startRespiraMusic();
   _runRespiraPhase();
+}
+
+function _startRespiraMusic(){
+  _stopRespiraMusic();
+  _respiraMuted = false;
+  try{
+    _respiraAudio = new Audio('sounds/meditacion.mp3');
+    _respiraAudio.loop = true;
+    _respiraAudio.volume = 0.55;
+    _respiraAudio.setAttribute('playsinline','');
+    _respiraAudio.play().catch(function(){});
+    var wrap = document.getElementById('respiraSoundWrap');
+    var btn  = document.getElementById('respiraSoundBtn');
+    if(wrap) wrap.style.display = 'flex';
+    if(btn)  btn.textContent = '🔉';
+  }catch(e){}
+}
+
+function _stopRespiraMusic(){
+  if(_respiraAudio){
+    try{ _respiraAudio.pause(); _respiraAudio.currentTime = 0; }catch(e){}
+    _respiraAudio = null;
+  }
+  var wrap = document.getElementById('respiraSoundWrap');
+  if(wrap) wrap.style.display = 'none';
+  _respiraMuted = false;
+}
+
+function pTogRespiraMusic(){
+  if(!_respiraAudio) return;
+  _respiraMuted = !_respiraMuted;
+  _respiraAudio.muted = _respiraMuted;
+  var btn = document.getElementById('respiraSoundBtn');
+  if(btn) btn.textContent = _respiraMuted ? '🔇' : '🔉';
 }
 
 function _runRespiraPhase(){
@@ -6858,6 +6895,7 @@ function _stopRespira(){
   cancelAnimationFrame(_respiraRaf); _respiraRaf = null;
   clearInterval(_respiraTimer);      _respiraTimer = null;
   _stopRespiraAmbient();
+  _stopRespiraMusic();
   pInitRespira();
   safeLS('set','velo_breathed_once','1');
 }
