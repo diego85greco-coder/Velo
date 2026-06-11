@@ -9783,30 +9783,36 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   var isFav    = uid ? pIsFav(uid) : false;
   var presence = (uid && !isAnon) ? _presenceInfo(uid) : null;
 
-  var likeRows = (prof && !isAnon) ? [
-    prof.status_music  ? { lbl:'🎶 Escucha',  val:_escHtml(prof.status_music)  } : null,
-    prof.status_film   ? { lbl:'🎬 Mira',     val:_escHtml(prof.status_film)   } : null,
-    prof.status_book   ? { lbl:'📖 Lee',      val:_escHtml(prof.status_book)   } : null,
-    prof.status_phrase ? { lbl:'✨ Frase',    val:_escHtml(prof.status_phrase) } : null
-  ].filter(Boolean) : [];
-  var likes = likeRows.length
-    ? '<div style="text-align:left;background:var(--cream2);border-radius:12px;padding:10px 14px;margin-bottom:12px">'
-      + likeRows.map(function(r){ return '<div style="font-size:12px;color:var(--ink3);padding:3px 0"><span style="font-size:10px;font-weight:700;color:var(--ink5);text-transform:uppercase;letter-spacing:.4px;margin-right:6px">'+r.lbl+'</span>'+r.val+'</div>'; }).join('')
-      +'</div>'
+  var helped   = (prof && prof.helped_count)   ? parseInt(prof.helped_count,10)   : 0;
+  var received = (prof && prof.received_count) ? parseInt(prof.received_count,10) : 0;
+  var badge    = _getBadge(helped);
+
+  // Status block — same format as "Como me ven"
+  var statusLines = '';
+  if(prof && !isAnon){
+    if(prof.status_music)  statusLines += '<div><span style="color:var(--ink4);font-size:12px">🎵 Música</span> · '+_escHtml(prof.status_music)+'</div>';
+    if(prof.status_book)   statusLines += '<div><span style="color:var(--ink4);font-size:12px">📚 Libro</span> · '+_escHtml(prof.status_book)+'</div>';
+    if(prof.status_film)   statusLines += '<div><span style="color:var(--ink4);font-size:12px">🎬 Película</span> · '+_escHtml(prof.status_film)+'</div>';
+    if(prof.status_phrase) statusLines += '<div style="font-style:italic;margin-top:4px;color:var(--sage2)">✨ &ldquo;'+_escHtml(prof.status_phrase)+'&rdquo;</div>';
+  }
+  var likes = statusLines
+    ? '<div style="background:var(--sage7);border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;color:var(--ink3);line-height:1.9;text-align:left">'+statusLines+'</div>'
     : '';
-  var helped   = (prof && prof.helped_count)   ? prof.helped_count   : 0;
-  var received = (prof && prof.received_count) ? prof.received_count : 0;
+
   var counters = (!isAnon && prof)
-    ? '<div style="display:flex;justify-content:center;gap:24px;margin-bottom:14px">'
-      +'<div style="text-align:center"><div style="font-size:19px;font-weight:800;color:var(--sage)">'+helped+'</div><div style="font-size:10px;color:var(--ink5)">Acompañó</div></div>'
-      +'<div style="text-align:center"><div style="font-size:19px;font-weight:800;color:var(--sage)">'+received+'</div><div style="font-size:10px;color:var(--ink5)">Recibió apoyo</div></div>'
-      +'<div style="text-align:center"><div style="font-size:19px;font-weight:800;color:var(--sage)">'+reviews.length+'</div><div style="font-size:10px;color:var(--ink5)">Reseñas</div></div>'
+    ? '<div style="display:flex;gap:8px;margin-bottom:12px">'
+      +'<div style="flex:1;background:rgba(116,198,157,.08);border-radius:10px;padding:10px;text-align:center">'
+      +'<div style="font-size:20px;font-weight:700;color:var(--sage2)">'+helped+'</div>'
+      +'<div style="font-size:10px;color:var(--ink4);margin-top:2px">personas acompañadas</div></div>'
+      +'<div style="flex:1;background:rgba(116,198,157,.08);border-radius:10px;padding:10px;text-align:center">'
+      +'<div style="font-size:20px;font-weight:700;color:var(--sage2)">'+received+'</div>'
+      +'<div style="font-size:10px;color:var(--ink4);margin-top:2px">veces que lo/la apoyaron</div></div>'
       +'</div>'
     : '';
   var _qpMyId = _myUserId();
   var revHtml = reviews.length
     ? '<div style="text-align:left;margin-bottom:12px">'
-      +'<div style="font-size:10px;font-weight:700;color:var(--ink5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Reseñas recibidas</div>'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS</div>'
       + _renderReviewsList(reviews, _qpMyId, userId||'')
       +'</div>'
     : '';
@@ -9815,19 +9821,20 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   body.style.cssText = '';
   body.innerHTML =
     // ── Avatar + info (fav star floats top-right) ────────────────
-    '<div style="position:relative;text-align:center;padding:6px 0 14px">'
+    '<div style="position:relative;text-align:center;padding:6px 0 16px">'
     +(_showFavBtn
       ? '<button id="qpFavBtn" onclick="pToggleFavFromProfile('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+')" style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:4px;padding:6px 12px;background:'+(isFav?'rgba(255,200,50,.22)':'rgba(255,200,50,.08)')+';border:1.5px solid rgba(255,200,50,'+(isFav?'.55':'.3')+');border-radius:100px;font-size:14px;font-weight:700;color:'+(isFav?'#a07800':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;line-height:1">'+(isFav?'⭐':'☆')+'</button>'
       : '')
-    +'<div style="position:relative;display:inline-block;margin-bottom:8px">'
-    +'<div style="font-size:60px;display:flex;justify-content:center">'+_avInline(dispAv,68)+'</div>'
+    +'<div style="position:relative;display:inline-block;margin-bottom:10px">'
+    +'<div style="font-size:60px;display:flex;justify-content:center">'+_avInline(dispAv,72)+'</div>'
     +(presence ? '<span style="position:absolute;bottom:3px;right:3px;width:15px;height:15px;border-radius:50%;background:'+presence.color+';border:2.5px solid var(--cream)"></span>' : '')
     +'</div>'
-    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:3px">'+_escHtml(dispName)+'</div>'
-    +(presence ? '<div style="font-size:11px;color:'+(presence.on?presence.color:'var(--ink5)')+';margin-bottom:6px">● '+presence.label+'</div>' : '')
-    +(motto ? '<p style="font-size:13px;color:var(--ink3);line-height:1.6;font-style:italic;margin:6px 0 12px">"'+_escHtml(motto)+'"</p>' : '')
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:4px">'+_escHtml(dispName)+'</div>'
+    +(motto ? '<div style="font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:10px">'+_escHtml(motto)+'</div>' : '')
+    +(!isAnon ? '<div><span style="font-size:20px">'+badge.icon+'</span> <span style="font-size:12px;color:var(--ink4)">Guardián '+badge.name+'</span></div>' : '')
+    +(presence ? '<div style="font-size:11px;color:'+(presence.on?presence.color:'var(--ink5)')+';margin-top:6px">● '+presence.label+'</div>' : '')
     +'</div>'
-    + counters + likes + revHtml
+    + likes + counters + revHtml
     // ── Action buttons ───────────────────────────────────────────
     +(guardianId&&!isAnon ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'quickProfileOv\').remove();pOpenGuardian('+_jsAttr(guardianId)+')">Solicitar acompañamiento 💚</button><div style="height:8px"></div>' : '')
     +(!isAnon && uid ? '<button class="p-btn p-btn--secondary p-btn--sm p-btn--full" onclick="pOpenDM('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+');document.getElementById(\'quickProfileOv\').remove()">💬 Enviar mensaje</button><div style="height:8px"></div>' : '')
