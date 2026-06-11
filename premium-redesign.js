@@ -386,7 +386,7 @@
     return                        { emoji: '🌙', period: 'night',      type: 'clear-night' };
   }
 
-  /* ── Meteocons animated SVG — free CDN via jsDelivr (MIT license) ── */
+  /* ── Basmilius weather-icons animated SVG — free CDN via jsDelivr ── */
   function _weatherAnimSvg(period, type) {
     var map = {
       'clear-day':   'clear-day',
@@ -399,7 +399,7 @@
       'snow':        'snow'
     };
     var file = map[type] || (period === 'night' ? 'clear-night' : 'clear-day');
-    var url = 'https://cdn.jsdelivr.net/gh/basmilius/meteocons@dev/src/fill/svg/' + file + '.svg';
+    var url = 'https://cdn.jsdelivr.net/gh/basmilius/weather-icons@dev/production/fill/svg/' + file + '.svg';
     return '<img src="' + url + '" class="weather-hero-img" data-period="' + period + '" alt="" draggable="false">';
   }
 
