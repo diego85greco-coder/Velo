@@ -605,11 +605,8 @@ body.r-dark .home-logo-side {
 #homeMonthlyHint      { order: 6; }
 #homeRegisterOuter    { order: 7; }
 #quickMoodPicker      { order: 7; }
-#homeWeekMoodGraph    { order: 8; }
 #homeMomentoSection   { order: 9; }
-#homeDiscoverCards    { order: 10; }
-#homeSearchUsersBtn   { order: 11; }
-#homeSearchRow        { order: 11; }
+#homeParaVosPanel     { order: 10; }
 .r-home-quick-panel   { order: 12; }
 .r-home-shortcut-grid { order: 12; }
 #homeHeroLabel        { order: 13; margin-top: 24px; }
@@ -10169,4 +10166,134 @@ body:not(.r-dark) #homeMottoLine {
 body:not(.r-dark) #homeWeekMoodGraph {
   background: rgba(0,0,0,.06) !important;
   border: 1px solid rgba(0,0,0,.08) !important;
+}
+
+/* ── v666: PARA VOS ornate panel ────────────────────────────────── */
+#homeParaVosPanel {
+  margin: 0 16px 12px;
+}
+.para-vos-frame {
+  background: linear-gradient(155deg, rgba(18,46,32,.96) 0%, rgba(11,34,22,.92) 100%);
+  border: 1.5px solid rgba(200,158,56,.72);
+  border-radius: 18px;
+  padding: 14px 13px 0;
+  box-shadow:
+    0 0 0 1px rgba(200,158,56,.14) inset,
+    0 10px 36px rgba(0,0,0,.42),
+    0 3px 10px rgba(0,0,0,.24);
+  overflow: hidden;
+  position: relative;
+}
+/* Corner L-brackets (top-left + top-right) */
+.para-vos-frame::before,
+.para-vos-frame::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  width: 14px;
+  height: 14px;
+  border-color: rgba(200,158,56,.58);
+  border-style: solid;
+  pointer-events: none;
+  z-index: 1;
+}
+.para-vos-frame::before { left: 7px;  border-width: 1.5px 0 0 1.5px; border-radius: 4px 0 0 0; }
+.para-vos-frame::after  { right: 7px; border-width: 1.5px 1.5px 0 0; border-radius: 0 4px 0 0; }
+/* Header label */
+.para-vos-hdr {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.8px;
+  text-transform: uppercase;
+  color: rgba(200,158,56,.88);
+  margin-bottom: 13px;
+  font-family: 'Jost', sans-serif;
+}
+/* Override discover cards inside frame */
+#homeParaVosPanel #homeDiscoverCards { margin: 0 0 12px; }
+#homeParaVosPanel .home-discover-card {
+  background: linear-gradient(140deg, rgba(30,60,40,.90) 0%, rgba(20,46,30,.86) 100%) !important;
+  border: 1.5px solid rgba(200,158,56,.24) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.03) inset, 0 6px 18px rgba(0,0,0,.25) !important;
+}
+#homeParaVosPanel .home-discover-card:hover {
+  background: linear-gradient(140deg, rgba(38,72,50,.92) 0%, rgba(28,56,38,.88) 100%) !important;
+  border-color: rgba(200,158,56,.44) !important;
+}
+#homeParaVosPanel .home-discover-title { color: rgba(240,228,195,.96) !important; }
+#homeParaVosPanel .home-discover-sub   { color: rgba(185,165,120,.60) !important; }
+/* Bottom cream/gold strip */
+.para-vos-bottom {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 0 !important;
+  margin: 0 -13px !important;
+  padding: 10px 8px 11px !important;
+  background: linear-gradient(135deg, rgba(225,190,90,.20) 0%, rgba(200,162,60,.15) 100%);
+  border-top: 1px solid rgba(200,158,56,.30);
+}
+.para-vos-bottom-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 6px;
+  background: transparent;
+  border: none;
+  color: rgba(190,148,50,.90);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Jost', sans-serif;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.para-vos-bottom-btn:hover {
+  background: rgba(200,158,56,.15);
+  color: rgba(200,168,70,.98);
+}
+/* Divider between the two bottom buttons */
+.para-vos-bottom-btn:first-child {
+  border-right: 1px solid rgba(200,158,56,.22);
+  border-radius: 10px 0 0 10px;
+}
+.para-vos-bottom-btn:last-child {
+  border-radius: 0 10px 10px 0;
+}
+/* Light mode overrides */
+body:not(.r-dark) .para-vos-frame {
+  background: linear-gradient(155deg, rgba(248,244,230,.96) 0%, rgba(238,232,210,.92) 100%) !important;
+  border-color: rgba(175,135,38,.60) !important;
+  box-shadow: 0 0 0 1px rgba(175,135,38,.12) inset, 0 6px 24px rgba(80,60,10,.12) !important;
+}
+body:not(.r-dark) .para-vos-frame::before,
+body:not(.r-dark) .para-vos-frame::after {
+  border-color: rgba(155,115,28,.48) !important;
+}
+body:not(.r-dark) .para-vos-hdr {
+  color: rgba(130,95,18,.80) !important;
+}
+body:not(.r-dark) #homeParaVosPanel .home-discover-card {
+  background: rgba(255,255,255,.72) !important;
+  border-color: rgba(175,135,38,.28) !important;
+  box-shadow: 0 2px 10px rgba(80,60,10,.08) !important;
+}
+body:not(.r-dark) #homeParaVosPanel .home-discover-title { color: var(--ink2) !important; }
+body:not(.r-dark) #homeParaVosPanel .home-discover-sub   { color: var(--ink4) !important; }
+body:not(.r-dark) .para-vos-bottom {
+  background: linear-gradient(135deg, rgba(200,165,55,.18) 0%, rgba(180,148,38,.12) 100%) !important;
+  border-top-color: rgba(175,135,38,.26) !important;
+}
+body:not(.r-dark) .para-vos-bottom-btn {
+  color: rgba(110,78,10,.82) !important;
+}
+body:not(.r-dark) .para-vos-bottom-btn:hover {
+  background: rgba(175,135,38,.14) !important;
+  color: rgba(120,88,10,.92) !important;
+}
+body:not(.r-dark) .para-vos-bottom-btn:first-child {
+  border-right-color: rgba(175,135,38,.22) !important;
 }
