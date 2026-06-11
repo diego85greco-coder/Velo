@@ -10300,13 +10300,10 @@ body:not(.r-dark) #homeWeekMoodGraph {
   color: rgba(200,168,70,.98);
 }
 /* Divider between the two bottom buttons */
-.para-vos-bottom-btn:first-child {
+#homeSearchRow .para-vos-bottom-btn:first-child {
   border-right: 1px solid rgba(200,158,56,.22);
-  border-radius: 10px 0 0 10px;
 }
-.para-vos-bottom-btn:last-child {
-  border-radius: 0 10px 10px 0;
-}
+/* No custom border-radius — rounded bottom comes from parent overflow:hidden + border-radius */
 /* Light mode overrides */
 body:not(.r-dark) .para-vos-frame {
   background: linear-gradient(155deg, rgba(248,244,230,.96) 0%, rgba(238,232,210,.92) 100%) !important;
@@ -10338,6 +10335,6 @@ body:not(.r-dark) .para-vos-bottom-btn:hover {
   background: rgba(175,135,38,.14) !important;
   color: rgba(120,88,10,.92) !important;
 }
-body:not(.r-dark) .para-vos-bottom-btn:first-child {
+body:not(.r-dark) #homeSearchRow .para-vos-bottom-btn:first-child {
   border-right-color: rgba(175,135,38,.22) !important;
 }
