@@ -8899,7 +8899,7 @@ body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
 
 /* ── v619: Momentos del Día — redesigned card ─────────────────── */
 .home-momento-wrap {
-  margin: 0 16px 20px;
+  margin: 0 0 12px;
   display: none;
   background: linear-gradient(140deg, rgba(18,42,30,.95) 0%, rgba(12,30,22,.97) 100%);
   border: 1px solid rgba(116,198,157,.28);
