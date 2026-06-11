@@ -9820,11 +9820,7 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   var _showFavBtn = !isAnon && uid && uid !== _qpMyId;
   body.style.cssText = '';
   body.innerHTML =
-    // ── Avatar + info (fav star floats top-right) ────────────────
-    '<div style="position:relative;text-align:center;padding:6px 0 16px">'
-    +(_showFavBtn
-      ? '<button id="qpFavBtn" onclick="pToggleFavFromProfile('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+')" style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:4px;padding:6px 12px;background:'+(isFav?'rgba(255,200,50,.22)':'rgba(255,200,50,.08)')+';border:1.5px solid rgba(255,200,50,'+(isFav?'.55':'.3')+');border-radius:100px;font-size:14px;font-weight:700;color:'+(isFav?'#a07800':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;line-height:1">'+(isFav?'⭐':'☆')+'</button>'
-      : '')
+    '<div style="text-align:center;padding:6px 0 16px">'
     +'<div style="position:relative;display:inline-block;margin-bottom:10px">'
     +'<div style="font-size:60px;display:flex;justify-content:center">'+_avInline(dispAv,72)+'</div>'
     +(presence ? '<span style="position:absolute;bottom:3px;right:3px;width:15px;height:15px;border-radius:50%;background:'+presence.color+';border:2.5px solid var(--cream)"></span>' : '')
@@ -9838,6 +9834,7 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
     // ── Action buttons ───────────────────────────────────────────
     +(guardianId&&!isAnon ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'quickProfileOv\').remove();pOpenGuardian('+_jsAttr(guardianId)+')">Solicitar acompañamiento 💚</button><div style="height:8px"></div>' : '')
     +(!isAnon && uid ? '<button class="p-btn p-btn--secondary p-btn--sm p-btn--full" onclick="pOpenDM('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+');document.getElementById(\'quickProfileOv\').remove()">💬 Enviar mensaje</button><div style="height:8px"></div>' : '')
+    +(_showFavBtn ? '<button id="qpFavBtn" class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pToggleFavFromProfile('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+')" style="background:'+(isFav?'rgba(255,200,50,.18)':'')+';">'+(isFav?'⭐ En favoritos':'☆ Agregar a favoritos')+'</button><div style="height:8px"></div>' : '')
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'quickProfileOv\').remove()">Cerrar</button>';
 }
 
@@ -9976,7 +9973,7 @@ function pToggleFavFromProfile(userId, name, av){
   var btn = document.getElementById('qpFavBtn');
   if(btn){
     var nowFav = pIsFav(userId);
-    btn.textContent = nowFav ? '⭐ Favorito' : '☆ Favorito';
+    btn.textContent = nowFav ? '⭐ En favoritos' : '☆ Agregar a favoritos';
     btn.style.background    = nowFav ? 'rgba(255,200,50,.2)'  : 'rgba(255,200,50,.07)';
     btn.style.borderColor   = nowFav ? 'rgba(255,200,50,.5)'  : 'rgba(255,200,50,.25)';
     btn.style.color         = nowFav ? '#b88000' : 'var(--ink4)';
