@@ -16276,6 +16276,11 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
 async function _initHomeMomento(){
   var section=document.getElementById('homeMomentoSection');
   if(!section) return;
+  var quote=document.getElementById('homeDailyQuoteWrap');
+  var actions=document.querySelector('.r-hero-actions');
+  if(quote&&quote.parentNode&&actions&&quote.parentNode===actions.parentNode){
+    quote.parentNode.insertBefore(section,actions);
+  }
   var momentos=await _fetchMomentos(4);
   if(momentos===null){ section.style.display='none'; return; }
   section.style.display='block';

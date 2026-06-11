@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="627">
+  <meta name="app-version" content="628">
   <title>Velo — Acompañamos emociones</title>
   <!-- Auto-update: if server has a newer version, force a hard reload -->
   <script>(function(){try{fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){var cur=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');if(d&&d.v&&d.v>cur){window.location.reload(true);}}).catch(function(){});}catch(e){}})();</script>
@@ -21,8 +21,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260611-627">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260611-627">
+  <link rel="stylesheet" href="premium.css?v=20260611-628">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260611-628">
   <!-- Vercel Web Analytics -->
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -989,9 +989,14 @@
               </div>
             </div>
           </div>
-          <!-- Hint: monthly mood analysis -->
-          <div style="margin-left:20px;margin-right:20px;margin-top:8px;margin-bottom:12px;text-align:center">
-            <span id="homeMonthlyHint" style="font-size:17px;line-height:1.6;font-family:'Cormorant Garamond',serif;font-style:italic;letter-spacing:.02em;font-weight:600">Registrá tus ánimos a diario · cada domingo recibís tu resumen semanal automático · el 1° de cada mes recibís el análisis mensual completo: estadísticas, tendencias, recomendaciones y sugerencias personalizadas.</span>
+          <!-- Hint: monthly mood analysis — card -->
+          <div id="homeMonthlyHint" style="margin:8px 16px 12px;background:linear-gradient(135deg,rgba(116,198,157,.11) 0%,rgba(80,140,100,.07) 100%);border:1.5px solid rgba(116,198,157,.30);border-radius:18px;padding:14px 16px 12px">
+            <div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.80);margin-bottom:7px;display:flex;align-items:center;gap:5px">📋 <span>REGISTRA TUS ÁNIMOS</span></div>
+            <div style="font-size:15px;line-height:1.55;font-family:'Cormorant Garamond',serif;font-style:italic;letter-spacing:.01em;font-weight:600;color:var(--ink2);margin-bottom:8px">Registrá cómo te sentís cada día y recibí tu análisis personalizado.</div>
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
+              <span style="font-size:10px;background:rgba(116,198,157,.13);border:1px solid rgba(116,198,157,.28);border-radius:20px;padding:4px 11px;color:rgba(116,198,157,.95);font-weight:600">📊 Resumen semanal</span>
+              <span style="font-size:10px;background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.28);border-radius:20px;padding:4px 11px;color:rgba(200,158,56,.90);font-weight:600">✉️ Análisis mensual</span>
+            </div>
           </div>
               <!-- Weekly mood mini-graph (7 days) -->
               <div id="homeWeekMoodGraph" style="display:flex;gap:4px;justify-content:center;align-items:flex-end;margin:0 16px 14px;min-height:54px"></div>
@@ -1292,13 +1297,13 @@
           <!-- Personalized suggestions (filled async by Gemini) -->
           <div id="homeSuggestions" style="display:none;margin-top:16px"></div>
           <!-- Sonidos ambientales -->
-          <div style="margin:4px 16px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:14px 14px 12px">
-            <div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:10px">🎵 Sonidos Ambientales</div>
-            <div style="display:flex;gap:7px;flex-wrap:wrap">
-              <button onclick="pTogAmbient('lluvia')" id="ambBtn-lluvia" class="amb-sound-btn">🌧️ Lluvia</button>
-              <button onclick="pTogAmbient('bosque')" id="ambBtn-bosque" class="amb-sound-btn">🌲 Bosque</button>
-              <button onclick="pTogAmbient('fuego')" id="ambBtn-fuego" class="amb-sound-btn">🔥 Fuego</button>
-              <button onclick="pTogAmbient('mar')" id="ambBtn-mar" class="amb-sound-btn">🌊 Mar</button>
+          <div style="margin:4px 16px 16px;background:linear-gradient(135deg,rgba(14,36,24,.80) 0%,rgba(10,28,20,.85) 100%);border:1.5px solid rgba(116,198,157,.30);border-radius:18px;padding:14px 14px 13px;box-shadow:0 2px 12px rgba(0,0,0,.25)">
+            <div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.90);margin-bottom:11px">🎵 Sonidos Ambientales</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <button onclick="pTogAmbient('lluvia')" id="ambBtn-lluvia" class="amb-sound-btn amb-sound-btn--card">🌧️<span>Lluvia</span></button>
+              <button onclick="pTogAmbient('bosque')" id="ambBtn-bosque" class="amb-sound-btn amb-sound-btn--card">🌲<span>Bosque</span></button>
+              <button onclick="pTogAmbient('fuego')" id="ambBtn-fuego" class="amb-sound-btn amb-sound-btn--card">🔥<span>Fuego</span></button>
+              <button onclick="pTogAmbient('mar')" id="ambBtn-mar" class="amb-sound-btn amb-sound-btn--card">🌊<span>Mar</span></button>
             </div>
           </div>
           <div style="height:20px"></div>
@@ -3403,8 +3408,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260611-627"></script>
-<script src="premium-redesign.js?v=20260611-627"></script>
+<script src="premium.js?v=20260611-628"></script>
+<script src="premium-redesign.js?v=20260611-628"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
@@ -3431,19 +3436,19 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
 </div>
 
 <!-- ══ AMBIENT PLAYER BAR (fixed, hidden when no sound) ════════ -->
-<div id="ambientPlayerBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:8500;background:linear-gradient(160deg,rgba(14,32,22,.97),rgba(10,24,18,.98));border-top:1px solid rgba(116,198,157,.20);padding:10px 16px 14px;align-items:center;gap:10px;max-width:600px;margin:0 auto;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">
-  <span id="ambientPlayerIcon" style="font-size:22px">🎵</span>
+<div id="ambientPlayerBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:8500;background:linear-gradient(160deg,rgba(10,26,18,.98),rgba(8,20,14,.99));border-top:2px solid rgba(116,198,157,.55);padding:10px 16px 16px;align-items:center;gap:10px;max-width:600px;margin:0 auto;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 -4px 24px rgba(0,0,0,.55)">
+  <span id="ambientPlayerIcon" style="font-size:24px">🎵</span>
   <div style="flex:1;min-width:0">
-    <div style="font-size:11px;font-weight:700;color:rgba(116,198,157,.8);letter-spacing:.3px" id="ambientPlayerName"></div>
-    <div style="font-size:9px;color:rgba(255,255,255,.28);margin-top:1px">sonando ahora · toca otro para cambiar</div>
+    <div style="font-size:12px;font-weight:800;color:rgba(116,198,157,1);letter-spacing:.4px" id="ambientPlayerName"></div>
+    <div style="font-size:9.5px;color:rgba(255,255,255,.50);margin-top:2px;letter-spacing:.2px">sonando ahora · tocá otro para cambiar</div>
   </div>
-  <div style="display:flex;gap:5px" id="ambientPlayerBtns">
-    <button onclick="pTogAmbient('lluvia')" id="apBtn-lluvia" class="amb-sound-btn" style="padding:6px 10px;font-size:14px">🌧️</button>
-    <button onclick="pTogAmbient('bosque')" id="apBtn-bosque" class="amb-sound-btn" style="padding:6px 10px;font-size:14px">🌲</button>
-    <button onclick="pTogAmbient('fuego')" id="apBtn-fuego" class="amb-sound-btn" style="padding:6px 10px;font-size:14px">🔥</button>
-    <button onclick="pTogAmbient('mar')" id="apBtn-mar" class="amb-sound-btn" style="padding:6px 10px;font-size:14px">🌊</button>
+  <div style="display:flex;gap:6px" id="ambientPlayerBtns">
+    <button onclick="pTogAmbient('lluvia')" id="apBtn-lluvia" class="amb-sound-btn" style="padding:7px 11px;font-size:15px">🌧️</button>
+    <button onclick="pTogAmbient('bosque')" id="apBtn-bosque" class="amb-sound-btn" style="padding:7px 11px;font-size:15px">🌲</button>
+    <button onclick="pTogAmbient('fuego')" id="apBtn-fuego" class="amb-sound-btn" style="padding:7px 11px;font-size:15px">🔥</button>
+    <button onclick="pTogAmbient('mar')" id="apBtn-mar" class="amb-sound-btn" style="padding:7px 11px;font-size:15px">🌊</button>
   </div>
-  <button onclick="pStopAmbient()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Detener">⏹</button>
+  <button onclick="pStopAmbient()" style="background:rgba(255,80,80,.14);border:1.5px solid rgba(255,80,80,.35);border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:13px;color:rgba(255,120,120,.85);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s" title="Detener">⏹</button>
 </div>
 
 <!-- "Apoya a Velo" desktop gutter widget — visible only on wide screens -->

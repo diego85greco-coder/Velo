@@ -8879,6 +8879,31 @@ body.r-dark .r-util-arrow { color: rgba(255,255,255,.4); }
   color: #74c69d;
   box-shadow: 0 0 14px rgba(116,198,157,.30);
 }
+.amb-sound-btn--card {
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 8px;
+  font-size: 22px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.07);
+  border: 1.5px solid rgba(116,198,157,.25);
+  width: 100%;
+  justify-content: center;
+}
+.amb-sound-btn--card span {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.70);
+}
+.amb-sound-btn--card.amb-active {
+  background: rgba(116,198,157,.22);
+  border-color: rgba(116,198,157,.60);
+}
+.amb-sound-btn--card.amb-active span {
+  color: #74c69d;
+}
 
 /* ── v609: Momento cards ──────────────────────────────────────── */
 #homeMomentoSection .momento-card,
