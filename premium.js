@@ -11446,6 +11446,11 @@ function pCancelProBooking(bookingId, proId){
   var bks = _proBookingsLoad(proId);
   bks = bks.map(function(b){ return b.id===bookingId ? Object.assign({},b,{status:'cancelled'}) : b; });
   _proBookingsSave(proId, bks);
+  // Update Supabase
+  _initSupabase();
+  if(sbClient && bookingId){
+    sbClient.from('sessions').update({status:'cancelled',updated_at:new Date().toISOString()}).eq('id',bookingId).then(function(){}).catch(function(){});
+  }
   pToast('❌','Reserva cancelada');
   var content = document.getElementById('proPanelContent');
   if(content) content.innerHTML = pRenderProAgenda();
@@ -11583,6 +11588,17 @@ function pConfirmBookSlot(){
     leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
   safeLS('set','velo_inbox',JSON.stringify(inbox.slice(0,100)));
   _updateInboxDot();
+  // Persist to Supabase sessions table for admin visibility
+  _initSupabase();
+  if(sbClient){
+    sbClient.from('sessions').upsert({
+      id: bkId, pro_id: _bookingProId, pro_name: pro.name,
+      user_id: userId, user_name: userName,
+      booking_date: _bookingDateStr, booking_time: _bookingSlotTime,
+      status: 'confirmed', amount: pro.rate || 0,
+      created_at: new Date().toISOString()
+    }, {onConflict:'id'}).then(function(){}).catch(function(){});
+  }
   pCloseBookModal();
   pToast('📅','¡Reserva confirmada! '+dl+' · '+_bookingSlotTime+' ✅');
 }
@@ -12294,6 +12310,7 @@ var _adminActiveTab = 'moderacion';
 function _adminTabBarHtml(){
   var tabs = [
     { id:'moderacion',    icon:'🚨', label:'Moderación' },
+    { id:'consultas',     icon:'📅', label:'Consultas' },
     { id:'circulos',      icon:'🕊️', label:'Círculos' },
     { id:'mensajes',      icon:'📢', label:'Mensajes' },
     { id:'usuarios',      icon:'👥', label:'Usuarios' },
@@ -12327,6 +12344,7 @@ function _switchAdminTab(tab){
   panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando…</div>';
   var map = {
     moderacion:    _adminTabModeracion,
+    consultas:     _adminTabConsultas,
     circulos:      _adminTabCirculos,
     mensajes:      _adminTabMensajes,
     usuarios:      _adminTabUsuarios,
@@ -12692,6 +12710,132 @@ async function _adminTabModeracion(panel){
   panel.innerHTML = html;
   _loadAdminCrisisFromSupabase();
   _adminLoadUserCircles();
+}
+
+// ── TAB: CONSULTAS PROGRAMADAS ────────────────────────────────────────
+async function _adminTabConsultas(panel){
+  panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando consultas…</div>';
+  _initSupabase();
+  if(!sbClient){ panel.innerHTML='<div style="padding:20px;text-align:center;font-size:12px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  try{
+    var sRes = await sbClient.from('sessions').select('*').order('booking_date',{ascending:false}).order('booking_time',{ascending:false}).limit(300);
+    if(sRes.error && sRes.error.code==='42P01'){
+      // Table doesn't exist — show SQL migration instructions
+      panel.innerHTML = '<div style="background:rgba(230,180,40,.07);border:1px solid rgba(230,180,40,.2);border-radius:14px;padding:20px">'
+        +'<div style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(240,200,90,.8);margin-bottom:10px">⚠️ TABLA NO CREADA</div>'
+        +'<p style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:14px">Para activar el historial de consultas, ejecutá este SQL en Supabase → Editor SQL:</p>'
+        +'<pre style="background:rgba(0,0,0,.4);border-radius:10px;padding:14px;font-size:10px;color:rgba(116,198,157,.9);overflow-x:auto;white-space:pre-wrap;line-height:1.5">CREATE TABLE IF NOT EXISTS public.sessions (\n  id TEXT PRIMARY KEY,\n  pro_id TEXT,\n  pro_name TEXT,\n  user_id TEXT,\n  user_name TEXT,\n  booking_date DATE,\n  booking_time TEXT,\n  status TEXT DEFAULT \'confirmed\',\n  amount NUMERIC(10,2) DEFAULT 0,\n  created_at TIMESTAMPTZ DEFAULT NOW(),\n  updated_at TIMESTAMPTZ DEFAULT NOW()\n);\nALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "admin_all" ON public.sessions FOR ALL USING (true);</pre>'
+        +'<button onclick="_switchAdminTab(\'consultas\')" style="margin-top:12px;padding:9px 18px;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.3);border-radius:10px;color:rgba(116,198,157,.9);font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">↻ Reintentar</button>'
+        +'</div>';
+      return;
+    }
+    var sessions = (!sRes.error && sRes.data) ? sRes.data : [];
+
+    var confirmed  = sessions.filter(function(s){ return s.status==='confirmed'; });
+    var completed  = sessions.filter(function(s){ return s.status==='completed'; });
+    var cancelled  = sessions.filter(function(s){ return s.status==='cancelled'; });
+    var noShow     = sessions.filter(function(s){ return s.status==='no-show'; });
+    var now = new Date();
+
+    // Auto-detect missed: confirmed + date is past
+    var missed = confirmed.filter(function(s){
+      if(!s.booking_date) return false;
+      var d = new Date(s.booking_date+'T'+(s.booking_time||'23:59')+':00');
+      return d < now;
+    });
+
+    var html = '';
+
+    // Stats row
+    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">'
+      +'<div class="a-card"><div style="font-size:20px">📅</div><div class="a-card-n" style="color:rgba(200,200,200,.8)">'+sessions.length+'</div><div class="a-card-l">Total registradas</div></div>'
+      +'<div class="a-card"><div style="font-size:20px">✅</div><div class="a-card-n" style="color:rgba(116,198,157,.85)">'+completed.length+'</div><div class="a-card-l">Completadas</div></div>'
+      +'<div class="a-card"><div style="font-size:20px">⏳</div><div class="a-card-n" style="color:rgba(100,170,230,.85)">'+confirmed.length+'</div><div class="a-card-l">Confirmadas / pendientes</div></div>'
+      +'<div class="a-card"><div style="font-size:20px">❌</div><div class="a-card-n" style="color:rgba(220,80,80,.75)">'+(cancelled.length+noShow.length)+'</div><div class="a-card-l">Canceladas / no asistió</div></div>'
+      +'</div>';
+
+    if(missed.length){
+      html += '<div style="background:rgba(231,120,110,.07);border:1px solid rgba(231,120,110,.2);border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px">'
+        +'<span style="font-size:18px">⚠️</span>'
+        +'<span style="font-size:11px;color:rgba(231,120,110,.85);font-weight:700">'+missed.length+' consulta'+(missed.length!==1?'s':'')+' confirmada'+(missed.length!==1?'s':'')+' con fecha pasada sin marcar como completada o cancelada</span>'
+        +'</div>';
+    }
+
+    // Filters
+    html += '<div id="admConsFilter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'
+      +['todas','confirmed','completed','cancelled'].map(function(f){
+        var lbl = {todas:'Todas',confirmed:'Pendientes',completed:'Completadas',cancelled:'Canceladas'}[f]||f;
+        return '<button onclick="_admConsFilter(\''+f+'\')" data-cf="'+f+'" style="font-size:11px;padding:5px 12px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;'
+          +(f==='todas'?'background:rgba(116,198,157,.22);border:1.5px solid rgba(116,198,157,.48);color:rgba(255,255,255,.9)':'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4)')
+          +'">'+lbl+'</button>';
+      }).join('')
+      +'</div>';
+
+    // Session list
+    html += '<div id="admConsList">';
+    if(!sessions.length){
+      html += '<div style="text-align:center;padding:28px;font-size:12px;color:rgba(255,255,255,.3)">Aún no hay consultas registradas.<br><span style="font-size:11px;opacity:.7">Se registrarán automáticamente cuando los usuarios reserven con un profesional.</span></div>';
+    } else {
+      html += sessions.map(function(s){
+        var sColor = {confirmed:'rgba(100,170,230,.8)',completed:'rgba(116,198,157,.8)',cancelled:'rgba(220,80,80,.7)','no-show':'rgba(220,180,60,.75)'}[s.status]||'rgba(255,255,255,.4)';
+        var sLabel = {confirmed:'⏳ Pendiente',completed:'✅ Completada',cancelled:'❌ Cancelada','no-show':'👻 No asistió'}[s.status]||s.status;
+        var dateStr = s.booking_date ? new Date(s.booking_date+'T12:00:00').toLocaleDateString('es',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}) : '—';
+        var isPast = s.booking_date && new Date(s.booking_date+'T'+(s.booking_time||'23:59')+':00') < now;
+        return '<div class="acons-row" data-status="'+_escHtml(s.status||'')+'" style="padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+          +'<div style="display:flex;align-items:flex-start;gap:10px">'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'
+          +'<span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.88)">'+_escHtml(s.user_name||s.user_id||'Usuario')+'</span>'
+          +'<span style="font-size:10px;color:rgba(255,255,255,.35)">→</span>'
+          +'<span style="font-size:12px;font-weight:700;color:rgba(116,198,200,.85)">'+_escHtml(s.pro_name||s.pro_id||'Profesional')+'</span>'
+          +'</div>'
+          +'<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:2px">📅 '+_escHtml(dateStr)+(s.booking_time?' · 🕐 '+_escHtml(s.booking_time)+' hs':'')+'</div>'
+          +(s.amount?'<div style="font-size:10px;color:rgba(200,162,0,.7)">💲 $'+parseFloat(s.amount||0).toFixed(2)+'</div>':'')
+          +(isPast&&s.status==='confirmed'?'<div style="font-size:10px;color:rgba(231,120,110,.7);margin-top:2px;font-weight:700">⚠️ Fecha pasada — sin confirmar estado</div>':'')
+          +'</div>'
+          +'<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">'
+          +'<span style="font-size:9px;font-weight:700;border:1px solid;border-radius:4px;padding:2px 7px;color:'+sColor+';border-color:'+sColor+'">'+sLabel+'</span>'
+          +(s.status==='confirmed'?'<button onclick="_adminMarkSession(\''+_escHtml(String(s.id))+'\',\'completed\',this)" style="font-size:9px;padding:3px 7px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer;font-family:\'Jost\',sans-serif">✅ Completada</button>':'')
+          +(s.status==='confirmed'?'<button onclick="_adminMarkSession(\''+_escHtml(String(s.id))+'\',\'no-show\',this)" style="font-size:9px;padding:3px 7px;background:rgba(220,180,60,.12);border:1px solid rgba(220,180,60,.25);border-radius:6px;color:rgba(220,180,60,.8);cursor:pointer;font-family:\'Jost\',sans-serif">👻 No asistió</button>':'')
+          +'</div>'
+          +'</div></div>';
+      }).join('');
+    }
+    html += '</div>';
+    panel.innerHTML = html;
+    panel._sessions = sessions;
+  }catch(e){
+    panel.innerHTML='<div style="padding:20px;font-size:12px;color:rgba(255,100,100,.5)">Error: '+_escHtml(e.message)+'</div>';
+  }
+}
+
+function _admConsFilter(f){
+  document.querySelectorAll('[data-cf]').forEach(function(b){
+    var act = b.dataset.cf===f;
+    b.style.background  = act ? 'rgba(116,198,157,.22)' : 'rgba(255,255,255,.05)';
+    b.style.borderColor = act ? 'rgba(116,198,157,.48)'  : 'rgba(255,255,255,.1)';
+    b.style.color       = act ? 'rgba(255,255,255,.9)'   : 'rgba(255,255,255,.4)';
+    b.style.borderWidth = act ? '1.5px' : '1px';
+  });
+  document.querySelectorAll('.acons-row').forEach(function(row){
+    row.style.display = (f==='todas' || row.dataset.status===f) ? '' : 'none';
+  });
+}
+
+async function _adminMarkSession(sessionId, newStatus, btn){
+  _initSupabase(); if(!sbClient) return;
+  try{
+    btn.disabled=true; btn.textContent='…';
+    await sbClient.from('sessions').update({status:newStatus,updated_at:new Date().toISOString()}).eq('id',sessionId);
+    var row = btn.closest('.acons-row');
+    if(row) row.dataset.status = newStatus;
+    var sColor = newStatus==='completed'?'rgba(116,198,157,.8)':'rgba(220,180,60,.75)';
+    var sLabel = newStatus==='completed'?'✅ Completada':'👻 No asistió';
+    var badge = row && row.querySelector('[data-cf]'); // no — find the status span
+    // Just re-run the tab
+    pToast('✅','Consulta marcada como '+(newStatus==='completed'?'completada':'no asistió'));
+    setTimeout(function(){ _switchAdminTab('consultas'); }, 500);
+  }catch(e){ btn.disabled=false; btn.textContent='Marcar'; pToast('⚠️','Error: '+e.message); }
 }
 
 // ── TAB: CÍRCULOS DE PAZ ──────────────────────────────────────────────
@@ -15410,10 +15554,14 @@ function pEndSession(){
     pending.ended = true;
     pending.endedAt = Date.now();
     safeLS('set','velo_current_session', JSON.stringify(pending));
-    // Add to admin pending transfers
     var transfers = []; try{ transfers = JSON.parse(safeLS('get','velo_pending_transfers')||'[]'); }catch(e){}
     transfers.unshift(pending);
     safeLS('set','velo_pending_transfers', JSON.stringify(transfers.slice(0,100)));
+    // Update Supabase session status to completed
+    _initSupabase();
+    if(sbClient && pending.id){
+      sbClient.from('sessions').update({status:'completed',updated_at:new Date().toISOString()}).eq('id',pending.id).then(function(){}).catch(function(){});
+    }
   }
   setTimeout(function(){ pGoTo('post-chat'); }, 800);
 }
@@ -16162,6 +16310,19 @@ document.addEventListener('DOMContentLoaded', function(){
   _initMsgActions();
   _botGuardStartListeners();
   setTimeout(_restoreSeekerSubscription, 2000);
+  // Fix: when keyboard opens on iOS/Android, scroll the focused input into view
+  // within its .p-sheet scroll container (avoids bounce/unreachable-field issue)
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', function(){
+      var focused = document.activeElement;
+      if(!focused || !['INPUT','TEXTAREA','SELECT'].includes(focused.tagName)) return;
+      var sheet = focused.closest('.p-sheet');
+      if(!sheet) return;
+      setTimeout(function(){
+        focused.scrollIntoView({ behavior:'smooth', block:'nearest' });
+      }, 80);
+    });
+  }
 });
 
 window.addEventListener('load', function(){

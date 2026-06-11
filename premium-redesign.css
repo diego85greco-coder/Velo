@@ -8422,11 +8422,23 @@ body.r-dark #homeMonthlyHint { color: rgba(255,255,255,.95) !important; }
 /* Any input with font-size < 16px triggers browser zoom; !important overrides all inline styles */
 input, textarea, select {
   font-size: 16px !important;
-  touch-action: manipulation !important; /* blocks double-tap zoom without disabling pinch zoom */
+  touch-action: manipulation !important;
 }
-/* Restore reasonable visual size while keeping computed 16px for zoom prevention */
 input.p-input, textarea.p-textarea, .p-input, .p-textarea {
   font-size: 16px !important;
+}
+
+/* ── Fix: keyboard open shrinks viewport — use svh so sheet max-height follows keyboard ── */
+/* svh = Small Viewport Height = smallest possible viewport (keyboard open on iOS/Android)  */
+.p-sheet {
+  max-height: 90svh !important;        /* respects keyboard; fallback below for old browsers */
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+}
+/* Fallback for browsers that don't support svh (iOS < 15.4, old Android) */
+@supports not (height: 1svh) {
+  .p-sheet { max-height: 85vh !important; }
 }
 
 /* ── v486: Larger, more aesthetic greeting block ── */
