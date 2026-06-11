@@ -545,16 +545,16 @@
 
     // Particle animations — light color / dark mode color pairs
     setTimeout(function() {
-      initParticles('landingCanvas',    100, 0.60, '155,108,32',  '140,210,155');
-      initParticles('loginCanvas',       70, 0.55, '155,108,32',  '140,210,155');
-      initParticles('registerCanvas',    70, 0.55, '155,108,32',  '140,210,155');
-      initParticles('homeBgCanvas',     200, 0.72, '180,130,25',  '100,210,145');
-      initParticles('moodBgCanvas',        75, 0.50, '170,145,220', '145,190,230');
-      initParticles('profileBgCanvas',   70, 0.38, '80,140,200',  '100,200,180');
-      initParticles('helpBgCanvas',      65, 0.42, '60,140,90',   '120,200,240');
-      initParticles('respiraBgCanvas',   60, 0.42, '80,190,210',  '80,190,215');
+      initParticles('landingCanvas',    140, 0.78, '130,90,18',   '140,210,155');
+      initParticles('loginCanvas',       90, 0.72, '130,90,18',   '140,210,155');
+      initParticles('registerCanvas',    90, 0.72, '130,90,18',   '140,210,155');
+      initParticles('homeBgCanvas',     320, 0.88, '130,90,18',   '100,210,145');
+      initParticles('moodBgCanvas',      100, 0.68, '150,120,200', '145,190,230');
+      initParticles('profileBgCanvas',   95, 0.58, '70,120,180',  '100,200,180');
+      initParticles('helpBgCanvas',      85, 0.60, '45,120,75',   '120,200,240');
+      initParticles('respiraBgCanvas',   80, 0.60, '60,170,195',  '80,190,215');
       // Help chat: always dark green bg — use green particles visible on dark
-      initParticles('helpChatBgCanvas',  55, 0.45, '80,185,120',  '100,220,155');
+      initParticles('helpChatBgCanvas',  70, 0.58, '80,185,120',  '100,220,155');
       setTimeout(initAllPageParticles, 200);
     }, 300);
 
@@ -775,7 +775,7 @@ function initAllPageParticles() {
     cv.setAttribute('aria-hidden', 'true');
     cv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0';
     page.insertBefore(cv, page.firstChild);
-    initParticles(canvasId, 65, 0.52, '150,105,30',  '140,210,155');
+    initParticles(canvasId, 95, 0.68, '130,90,18',   '140,210,155');
   });
 }
 
