@@ -677,7 +677,7 @@ async function _sbSyncProfile(userId){
   if(typeof _updateInboxDot === 'function') _updateInboxDot();
   // If the inbox is open right now, re-render so synced read IDs take effect immediately
   // (the broadcast cards were rendered before this sync completed — need a second pass)
-  var _inPage = document.getElementById('pPage-inbox');
+  var _inPage = document.getElementById('pg-inbox');
   if(_inPage && _inPage.classList && _inPage.classList.contains('show') && typeof pRenderInbox === 'function'){
     pRenderInbox();
   }
