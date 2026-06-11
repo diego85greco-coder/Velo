@@ -3966,13 +3966,21 @@ body.r-dark #pg-happy .happy-tab:hover:not(.active) {
   box-shadow: 0 5px 20px rgba(0,0,0,.11) !important;
 }
 body.r-dark #pg-happy .happy-card {
-  background: rgba(18,42,28,.92) !important;
-  border-color: rgba(58,107,71,.65) !important;
-  box-shadow: 0 2px 12px rgba(0,0,0,.30) !important;
+  background: linear-gradient(140deg, rgba(52,34,6,.88) 0%, rgba(38,24,2,.84) 100%) !important;
+  border: 1.5px solid rgba(210,168,45,.42) !important;
+  box-shadow:
+    0 0 0 1px rgba(210,168,45,.10) inset,
+    inset 0 1px 0 rgba(255,210,70,.13),
+    0 4px 20px rgba(0,0,0,.32) !important;
+  transition: transform .15s, box-shadow .18s !important;
 }
 body.r-dark #pg-happy .happy-card:hover {
-  border-color: #3a9c55 !important;
-  box-shadow: 0 5px 20px rgba(0,0,0,.42) !important;
+  border-color: rgba(225,182,58,.60) !important;
+  transform: translateY(-1px) !important;
+  box-shadow:
+    0 0 0 1px rgba(210,168,45,.15) inset,
+    inset 0 1px 0 rgba(255,210,70,.18),
+    0 6px 24px rgba(0,0,0,.40) !important;
 }
 
 /* ── Desktop: single centered column ─────────────────────────────── */
@@ -10072,20 +10080,32 @@ body:not(.r-dark) .home-mood-btn {
 }
 
 /* ── Muro Feliz — visible card borders on posts ──────────────────── */
+/* ── v668: Muro Feliz home cards — deep amber glass (matches Momentos depth) ── */
 #homeHappyFeed .momento-card {
-  background: rgba(200,152,32,.12) !important;
-  border: 1.5px solid rgba(220,178,55,.44) !important;
-  border-radius: 14px !important;
-  padding: 11px 13px !important;
+  background: linear-gradient(140deg, rgba(56,36,6,.86) 0%, rgba(40,24,2,.82) 100%) !important;
+  border: 1.5px solid rgba(220,175,50,.40) !important;
+  border-radius: 16px !important;
+  padding: 12px 14px !important;
   margin-bottom: 8px !important;
+  box-shadow:
+    0 0 0 1px rgba(220,175,50,.10) inset,
+    inset 0 1px 0 rgba(255,215,80,.14),
+    0 4px 20px rgba(0,0,0,.30) !important;
+  transition: transform .15s, box-shadow .18s !important;
 }
 #homeHappyFeed .momento-card:hover {
-  background: rgba(200,152,32,.18) !important;
+  background: linear-gradient(140deg, rgba(64,42,8,.90) 0%, rgba(48,30,4,.86) 100%) !important;
   border-color: rgba(230,188,65,.58) !important;
+  transform: translateY(-1px) !important;
+  box-shadow:
+    0 0 0 1px rgba(220,175,50,.15) inset,
+    inset 0 1px 0 rgba(255,215,80,.18),
+    0 6px 24px rgba(0,0,0,.38) !important;
 }
 body:not(.r-dark) #homeHappyFeed .momento-card {
-  background: rgba(255,215,50,.10) !important;
+  background: linear-gradient(140deg, rgba(255,248,210,.88) 0%, rgba(255,238,175,.82) 100%) !important;
   border-color: rgba(200,158,20,.38) !important;
+  box-shadow: 0 0 0 1px rgba(200,158,20,.08) inset, inset 0 1px 0 rgba(255,255,255,.80), 0 3px 14px rgba(140,100,10,.10) !important;
 }
 
 /* ── v665: Meteocons weather icons ─ no custom CSS needed (pre-animated SVGs) ── */
