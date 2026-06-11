@@ -158,16 +158,16 @@ body::after {
   align-items: center;
   vertical-align: -10px;
 }
-.r-time-icon svg {
+.r-time-icon svg, .r-time-icon img {
   width: 48px; height: 48px;
   animation: rTimeFloat 6s ease-in-out infinite;
   filter: drop-shadow(0 4px 14px rgba(255, 217, 102, .4));
 }
-.r-time-icon.is-afternoon svg { filter: drop-shadow(0 4px 14px rgba(244, 142, 60, .4)); }
-.r-time-icon.is-night svg { filter: drop-shadow(0 4px 14px rgba(232, 200, 121, .35)); }
+.r-time-icon.is-afternoon svg, .r-time-icon.is-afternoon img { filter: drop-shadow(0 4px 14px rgba(244, 142, 60, .4)); }
+.r-time-icon.is-night svg,     .r-time-icon.is-night img     { filter: drop-shadow(0 4px 14px rgba(232, 200, 121, .35)); }
 @keyframes rTimeFloat {
-  0%, 100% { transform: translateY(0) rotate(-3deg); }
-  50% { transform: translateY(-5px) rotate(3deg); }
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
 }
 
 /* ── 4. Greeting bar (avatar + mood + mi estado) ────────────────── */
@@ -6233,9 +6233,7 @@ body:not(.r-dark) .r-hs-icon { filter: none; }
 
 /* ── v309: Time icon above heading ─────────────────────────────── */
 /* (v311 overrides applied further below) */
-#homeTimeIcon { display: block; margin-bottom: 10px; line-height: 1; }
-#homeTimeIcon .r-time-icon { display: inline-flex; vertical-align: 0; }
-#homeTimeIcon .r-time-icon svg { width: 72px; height: 72px; }
+#homeTimeIcon { display: flex; margin-bottom: 10px; line-height: 1; }
 
 /* ── v309: Equal-height 2×2 shortcut buttons ────────────────────── */
 .r-home-shortcut { min-height: 70px !important; justify-content: center !important; }
@@ -8507,11 +8505,42 @@ input.p-input, textarea.p-textarea, .p-input, .p-textarea {
   .p-sheet { max-height: 85vh !important; }
 }
 
-/* ── v486: Larger, more aesthetic greeting block ── */
-#homeTimeIcon .r-time-icon svg {
-  width: 88px !important;
-  height: 88px !important;
-  filter: drop-shadow(0 0 18px rgba(255,220,100,.38)) !important;
+/* ── v672: Weather hero icon — large, 3D depth effect ── */
+.weather-hero-img {
+  display: block !important;
+  width: 190px !important;
+  height: 190px !important;
+  animation: rTimeFloat 5s ease-in-out infinite !important;
+  /* Day: warm golden-sun glow + deep cast shadow */
+  filter:
+    drop-shadow(0 28px 55px rgba(0,0,0,.55))
+    drop-shadow(0 0 50px rgba(255,195,50,.22)) !important;
+}
+/* Period-specific glows */
+.r-time-icon.is-morning   .weather-hero-img { filter: drop-shadow(0 28px 55px rgba(0,0,0,.55)) drop-shadow(0 0 55px rgba(255,185,40,.28)) !important; }
+.r-time-icon.is-afternoon .weather-hero-img { filter: drop-shadow(0 28px 55px rgba(0,0,0,.55)) drop-shadow(0 0 55px rgba(255,160,30,.32)) !important; }
+.r-time-icon.is-night     .weather-hero-img { filter: drop-shadow(0 28px 55px rgba(0,0,0,.65)) drop-shadow(0 0 45px rgba(160,140,255,.22)) !important; }
+/* Container: icon floats, pill overlaps from below */
+#homeTimeIcon {
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0 !important;
+  position: relative !important;
+  overflow: visible !important;
+  padding-bottom: 22px !important; /* space for the overlapping pill */
+}
+#homeTimeIcon .r-time-icon {
+  display: block !important;
+  text-align: center !important;
+  line-height: 0 !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+#homeWeatherInfo {
+  position: relative !important;
+  z-index: 3 !important;
+  text-align: center !important;
+  margin-top: 0 !important;
 }
 @media (max-width: 860px) {
   #homeGreetBlock {
@@ -10338,3 +10367,4 @@ body:not(.r-dark) .para-vos-bottom-btn:hover {
 body:not(.r-dark) #homeSearchRow .para-vos-bottom-btn:first-child {
   border-right-color: rgba(175,135,38,.22) !important;
 }
+

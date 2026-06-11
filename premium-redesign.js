@@ -83,12 +83,12 @@
     card.style.cssText = [
       'display:inline-flex', 'align-items:center', 'gap:0',
       'background:' + cardBg,
-      'backdrop-filter:blur(12px)', '-webkit-backdrop-filter:blur(12px)',
+      'backdrop-filter:blur(16px)', '-webkit-backdrop-filter:blur(16px)',
       'border:1.5px solid ' + cardBord,
       'border-radius:100px',
-      'padding:8px 18px 8px 14px',
-      'box-shadow:0 4px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(116,198,157,.12)',
-      'margin-top:6px'
+      'padding:10px 22px 10px 18px',
+      'box-shadow:0 6px 32px rgba(0,0,0,.40),inset 0 1px 0 rgba(116,198,157,.14)',
+      'position:relative', 'z-index:2', 'margin-top:-22px'
     ].join(';');
 
     // Temperature — large, light weight
@@ -400,7 +400,7 @@
       'snow':        'snow'
     };
     var file = map[type] || (period === 'night' ? 'clear-night' : 'clear-day');
-    return '<img src="' + base + file + '.svg" width="88" height="88" alt="" style="display:block;animation:rTimeFloat 6s ease-in-out infinite">';
+    return '<img src="' + base + file + '.svg" class="weather-hero-img" alt="" data-period="' + period + '">';
   }
 
   function injectTimeIcon() {
