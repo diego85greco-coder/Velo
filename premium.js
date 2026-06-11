@@ -15997,28 +15997,19 @@ var _AMB_META = { lluvia:{icon:'🌧️',label:'Lluvia'}, bosque:{icon:'🌲',la
 // (ignores silent switch). Web Audio API then inherits "playback" category.
 var _AMB_UNLOCK_SRC = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
 
-function _buildNoiseBuffer(ctx, type){
-  // Short buffer (3 s) — avoids blocking the main thread on mobile
-  var rate = ctx.sampleRate, secs = 3;
+function _buildNoiseBuffer(ctx){
+  // Stereo pink noise buffer (4 s, loops seamlessly)
+  var rate = ctx.sampleRate, secs = 4;
   var buf = ctx.createBuffer(2, rate * secs, rate);
   for(var ch = 0; ch < 2; ch++){
     var data = buf.getChannelData(ch);
     var b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
     for(var i = 0; i < data.length; i++){
       var w = Math.random() * 2 - 1;
-      if(type === 'fuego'){
-        // Fire: slow rumble accumulators + sparse crackle spikes
-        b0=0.998*b0+0.002*w; b1=0.993*b1+0.007*w; b2=0.975*b2+0.025*w;
-        var rumble = (b0*5 + b1*3 + b2*1.5) * 0.9;
-        var crackle = Math.random() < 0.0008 ? (Math.random()*2-1)*1.4 : 0;
-        data[i] = (rumble + crackle) * 0.7;
-      } else {
-        // Pink noise — good base for rain / forest / sea
-        b0=.99886*b0+w*.0555179; b1=.99332*b1+w*.0750759; b2=.969*b2+w*.153852;
-        b3=.8665*b3+w*.3104856; b4=.55*b4+w*.5329522; b5=-.7616*b5-w*.016898;
-        data[i] = (b0+b1+b2+b3+b4+b5+b6+w*.5362) * 0.18;
-        b6 = w * .115926;
-      }
+      b0=.99886*b0+w*.0555179; b1=.99332*b1+w*.0750759; b2=.969*b2+w*.153852;
+      b3=.8665*b3+w*.3104856; b4=.55*b4+w*.5329522; b5=-.7616*b5-w*.016898;
+      data[i] = (b0+b1+b2+b3+b4+b5+b6+w*.5362) * 0.22;
+      b6 = w*.115926;
     }
   }
   return buf;
@@ -16027,52 +16018,69 @@ function _buildNoiseBuffer(ctx, type){
 async function pPlayAmbient(type){
   pStopAmbient(true);
   try{
-    // iOS silent-switch bypass: play a silent <audio> element first.
-    // This moves the iOS audio session from "ambient" (muted by silent switch)
-    // to "playback" category. The AudioContext inherits "playback" and is audible
-    // even when the hardware mute switch is on.
+    // iOS silent-switch bypass: playing a silent <audio> element upgrades the
+    // audio session from "ambient" (muted by silent switch) to "playback".
     try{
       var _ul = new Audio(_AMB_UNLOCK_SRC);
-      _ul.volume = 0.001;
-      _ul.setAttribute('playsinline', '');
+      _ul.volume = 0.001; _ul.setAttribute('playsinline','');
       await _ul.play();
     }catch(e){}
 
     if(!_ambCtx || _ambCtx.state === 'closed'){
       _ambCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
-    // Must await resume — iOS Safari suspends the context until user gesture resolves
     if(_ambCtx.state === 'suspended') await _ambCtx.resume();
     var ctx = _ambCtx;
 
     _ambSource = ctx.createBufferSource();
-    _ambSource.buffer = _buildNoiseBuffer(ctx, type);
+    _ambSource.buffer = _buildNoiseBuffer(ctx);
     _ambSource.loop = true;
 
-    var filt = ctx.createBiquadFilter();
-    if(type === 'lluvia'){ filt.type='bandpass'; filt.frequency.value=1800; filt.Q.value=0.4; }
-    else if(type === 'bosque'){ filt.type='lowpass'; filt.frequency.value=1600; filt.Q.value=0.7; }
-    else if(type === 'fuego'){ filt.type='lowpass'; filt.frequency.value=1000; filt.Q.value=0.5; }
-    else { filt.type='lowpass'; filt.frequency.value=600; filt.Q.value=0.5; }
-
+    // Each sound uses a 2-stage filter chain + LFO for natural variation.
+    // Stage 1: shape the spectrum. Stage 2: smooth harsh edges.
+    var f1 = ctx.createBiquadFilter();
+    var f2 = ctx.createBiquadFilter();
     _ambGain = ctx.createGain();
-    _ambGain.gain.value = 0.9;
+    _ambLfo  = ctx.createOscillator();
+    var lfoG = ctx.createGain();
+    _ambLfo.type = 'sine';
 
-    _ambSource.connect(filt);
-    filt.connect(_ambGain);
+    if(type === 'lluvia'){
+      // Soft rain: bandpass 400→4000 Hz, slight shimmer
+      f1.type='highpass';  f1.frequency.value=380;  f1.Q.value=0.5;
+      f2.type='lowpass';   f2.frequency.value=4200; f2.Q.value=0.4;
+      _ambGain.gain.value = 0.75;
+      _ambLfo.frequency.value = 0.4; lfoG.gain.value = 0.06; // gentle amplitude ripple
 
-    if(type === 'mar'){
-      // Slow wave swell via LFO on gain
-      _ambLfo = ctx.createOscillator();
-      _ambLfo.type = 'sine';
-      _ambLfo.frequency.value = 0.07;
-      var lg = ctx.createGain();
-      lg.gain.value = 0.35;
-      _ambLfo.connect(lg);
-      lg.connect(_ambGain.gain);
-      _ambLfo.start();
+    } else if(type === 'bosque'){
+      // Deep forest wind: very low rumble, very soft
+      f1.type='lowpass';   f1.frequency.value=500;  f1.Q.value=1.0;
+      f2.type='lowpass';   f2.frequency.value=700;  f2.Q.value=0.5;
+      _ambGain.gain.value = 0.7;
+      _ambLfo.frequency.value = 0.12; lfoG.gain.value = 0.15; // slow wind swell
+
+    } else if(type === 'fuego'){
+      // Warm fire: low rumble 80–900 Hz, slow flicker
+      f1.type='highpass';  f1.frequency.value=80;   f1.Q.value=0.7;
+      f2.type='lowpass';   f2.frequency.value=900;  f2.Q.value=1.2;
+      _ambGain.gain.value = 0.72;
+      _ambLfo.frequency.value = 2.8; lfoG.gain.value = 0.09; // fire flicker rhythm
+
+    } else { // mar
+      // Deep ocean: subsonic rumble + slow wave swell
+      f1.type='lowpass';   f1.frequency.value=380;  f1.Q.value=0.8;
+      f2.type='lowpass';   f2.frequency.value=550;  f2.Q.value=0.5;
+      _ambGain.gain.value = 0.78;
+      _ambLfo.frequency.value = 0.07; lfoG.gain.value = 0.28; // ocean wave cycle
     }
 
+    _ambLfo.connect(lfoG);
+    lfoG.connect(_ambGain.gain);
+    _ambLfo.start();
+
+    _ambSource.connect(f1);
+    f1.connect(f2);
+    f2.connect(_ambGain);
     _ambGain.connect(ctx.destination);
     _ambSource.start();
     _ambActive = type;
