@@ -12392,6 +12392,19 @@ async function _uploadProCert(userId){
 }
 
 // ── TAB: PROFESIONALES ────────────────────────────────────────────────
+function _proCategory(spec){
+  if(!spec) return '📂 Sin especialidad';
+  var s = spec.toLowerCase();
+  if(s.includes('psicolog') || s.includes('psicoterapeuta')) return '🧠 Psicología';
+  if(s.includes('psiquiatr')) return '💊 Psiquiatría';
+  if(s.includes('coaching') || s.includes('coach')) return '🎯 Coaching';
+  if(s.includes('trabajo social') || s.includes('trabajador social')) return '🤝 Trabajo Social';
+  if(s.includes('nutri')) return '🥗 Nutrición';
+  if(s.includes('medic') || s.includes('médic')) return '⚕️ Medicina';
+  if(s.includes('terapia') || s.includes('terapeuta')) return '💆 Terapia';
+  return '📋 Otras especialidades';
+}
+
 async function _adminTabProfesionales(panel){
   _initSupabase();
   panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando profesionales…</div>';
@@ -12418,6 +12431,7 @@ async function _adminTabProfesionales(panel){
 
   var disponibles = Math.max(0, solidaryPros.length - assignedReqs.length);
 
+  // ── PROGRAMA SOLIDARIO ─────────────────────────────────────────
   var solidaryHtml = '<div style="background:rgba(58,123,213,.07);border:1px solid rgba(58,123,213,.2);border-radius:14px;padding:14px;margin-bottom:14px">'
     +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(100,170,230,.8);margin-bottom:10px">💙 PROGRAMA SOLIDARIO</div>'
     +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px">'
@@ -12427,7 +12441,6 @@ async function _adminTabProfesionales(panel){
     +'<div class="a-card"><div style="font-size:20px">🎯</div><div class="a-card-n" style="color:rgba(180,140,220,.85)">'+completedReqs.length+'</div><div class="a-card-l">Sesiones completadas</div></div>'
     +'</div>';
 
-  // List of solidarity pros
   if(solidaryPros.length){
     solidaryHtml += '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(100,170,230,.55);margin-bottom:8px">Profesionales inscriptos</div>';
     solidaryHtml += solidaryPros.map(function(p){
@@ -12443,7 +12456,6 @@ async function _adminTabProfesionales(panel){
     solidaryHtml += '<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">Ningún profesional inscripto en el programa aún.</div>';
   }
 
-  // Pending solidarity requests
   if(pendingReqs.length){
     solidaryHtml += '<div style="margin-top:12px;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(240,200,90,.55);margin-bottom:8px">Solicitudes pendientes de asignación</div>';
     solidaryHtml += pendingReqs.slice(0,10).map(function(req){
@@ -12465,57 +12477,125 @@ async function _adminTabProfesionales(panel){
         +'<button onclick="_adminAssignSolidarityReq(\''+_escHtml(String(req.id))+'\',\''+_escHtml(req.user_name||'Usuario')+'\',this)" style="flex-shrink:0;padding:5px 10px;background:rgba(58,123,213,.2);border:1px solid rgba(58,123,213,.4);border-radius:7px;color:rgba(100,170,230,.9);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">💙 Asignar</button>'
         +'</div></div>';
     }).join('');
-  } else if(!solidaryPros.length){
-    // no-op
-  } else {
+  } else if(solidaryPros.length){
     solidaryHtml += '<div style="margin-top:8px;font-size:11px;color:rgba(116,198,157,.7);padding:4px 0">✅ Sin solicitudes pendientes.</div>';
   }
-
   solidaryHtml += '</div>';
 
-  var proListHtml = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(116,198,200,.7);margin-bottom:12px">🩺 PROFESIONALES REGISTRADOS ('+pros.length+')</div>'
-    + (pros.length ? pros.map(proCard).join('') : '<p style="font-size:12px;color:rgba(255,255,255,.3)">No hay profesionales registrados.</p>');
-
-  function proCard(p){
-    var certLink = p.pro_cert_url
-      ? '<a href="'+_escHtml(p.pro_cert_url)+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:rgba(116,198,157,.9);border:1px solid rgba(116,198,157,.3);border-radius:8px;padding:4px 10px;text-decoration:none;margin-top:6px">📎 Ver documento</a>'
-      : '<span style="font-size:11px;color:rgba(255,100,100,.6)">⚠️ Sin documento adjunto</span>';
-    var verifiedBadge = p.pro_verified
-      ? '<span style="font-size:9px;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.4);border-radius:4px;padding:2px 7px;color:rgba(116,198,157,.9);font-weight:700">✓ VERIFICADO</span>'
-      : '<span style="font-size:9px;background:rgba(220,162,0,.12);border:1px solid rgba(220,162,0,.35);border-radius:4px;padding:2px 7px;color:rgba(220,162,0,.85);font-weight:700">⏳ PENDIENTE</span>';
-    var now = Date.now();
-    var trialExp = p.pro_trial_expires_at ? new Date(p.pro_trial_expires_at).getTime() : 0;
-    var subExp   = p.pro_subscription_expires_at ? new Date(p.pro_subscription_expires_at).getTime() : 0;
-    var accessBadge = (trialExp > now || subExp > now)
-      ? '<span style="font-size:9px;color:rgba(116,198,200,.8);border:1px solid rgba(116,198,200,.3);border-radius:4px;padding:2px 7px">Acceso activo</span>'
-      : '<span style="font-size:9px;color:rgba(220,80,80,.7);border:1px solid rgba(220,80,80,.25);border-radius:4px;padding:2px 7px">Sin acceso</span>';
-    var regDate = p.created_at ? new Date(p.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
-    return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px;margin-bottom:10px">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px">'
-      +'<div>'
-      +'<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:2px">'+_escHtml(p.nombre||'Sin nombre')+'</div>'
-      +'<div style="font-size:12px;color:rgba(255,255,255,.5)">'+_escHtml(p.pro_spec||'Sin especialidad')+'</div>'
-      +'<div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">'+_escHtml(p.email||'')+'</div>'
-      +'</div>'
-      +'<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">'+verifiedBadge+' '+accessBadge+'</div>'
-      +'</div>'
-      +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">'
-      +certLink
-      +'<span style="font-size:10px;color:rgba(255,255,255,.25)">Reg. '+regDate+'</span>'
-      +'</div>'
-      +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
-      +(p.pro_verified
-        ? '<button onclick="_adminProRevoke(\''+p.id+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(220,162,0,.12);border:1px solid rgba(220,162,0,.3);color:rgba(220,162,0,.8)">↩️ Revocar verificación</button>'
-        : '<button onclick="_adminProVerify(\''+p.id+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.35);color:rgba(116,198,157,.95)">✅ Verificar</button>'
-      )
-      +'<button onclick="_adminProMoreInfo(\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(116,198,200,.1);border:1px solid rgba(116,198,200,.25);color:rgba(116,198,200,.8)">📧 Pedir más info</button>'
-      +'<button onclick="_adminProWarn(\''+p.id+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(220,120,0,.1);border:1px solid rgba(220,120,0,.25);color:rgba(220,120,0,.8)">⚠️ Advertir</button>'
-      +'<button onclick="_adminProDelete(\''+p.id+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(220,60,60,.1);border:1px solid rgba(220,60,60,.25);color:rgba(220,80,80,.8)">🗑️ Eliminar</button>'
-      +'</div>'
+  // ── PENDIENTES DE APROBACIÓN ───────────────────────────────────
+  var pendingPros = pros.filter(function(p){ return !p.pro_verified; });
+  var pendingProHtml = '';
+  if(pendingPros.length){
+    pendingProHtml = '<div style="background:rgba(240,160,50,.06);border:1px solid rgba(240,160,50,.25);border-radius:14px;padding:14px;margin-bottom:14px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(240,180,80,.85);margin-bottom:4px">⏳ PENDIENTES DE APROBACIÓN ('+pendingPros.length+')</div>'
+      +'<div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:12px">Revisá la documentación antes de aprobar</div>'
+      + pendingPros.map(function(p){
+          var certLink = p.pro_cert_url
+            ? '<a href="'+_escHtml(p.pro_cert_url)+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#fff;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.45);border-radius:10px;padding:8px 14px;text-decoration:none">📎 Ver documento / certificado</a>'
+            : '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,100,100,.7);background:rgba(220,60,60,.1);border:1px solid rgba(220,60,60,.25);border-radius:8px;padding:6px 10px">⚠️ Sin documento adjunto</span>';
+          var regDate = p.created_at ? new Date(p.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+          var diasEspera = p.created_at ? Math.floor((Date.now()-new Date(p.created_at).getTime())/86400000) : 0;
+          return '<div style="background:rgba(240,160,50,.05);border:1px solid rgba(240,160,50,.15);border-radius:12px;padding:14px;margin-bottom:10px">'
+            +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px">'
+            +'<div>'
+            +'<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:2px">'+_escHtml(p.nombre||'Sin nombre')+'</div>'
+            +'<div style="font-size:12px;color:rgba(255,255,255,.55)">'+_escHtml(p.pro_spec||'Sin especialidad')+'</div>'
+            +'<div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">'+_escHtml(p.email||'')+'</div>'
+            +'</div>'
+            +'<div style="text-align:right;flex-shrink:0">'
+            +'<span style="font-size:9px;background:rgba(240,160,50,.15);border:1px solid rgba(240,160,50,.3);border-radius:4px;padding:2px 7px;color:rgba(240,180,80,.9);font-weight:700;display:block;margin-bottom:3px">⏳ PENDIENTE</span>'
+            +'<span style="font-size:9px;color:rgba(255,255,255,.25)">Reg. '+regDate+'</span>'
+            +(diasEspera>7?'<br><span style="font-size:9px;color:rgba(240,120,80,.7)">'+diasEspera+'d en espera</span>':'')
+            +'</div>'
+            +'</div>'
+            +'<div style="margin-bottom:12px">'+certLink+'</div>'
+            +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+            +'<button onclick="_adminProVerify(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:8px 16px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:10px;cursor:pointer;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.45);color:rgba(116,198,157,.95)">✅ Aprobar</button>'
+            +'<button onclick="_adminProReject(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:8px 16px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:10px;cursor:pointer;background:rgba(220,60,60,.15);border:1px solid rgba(220,60,60,.35);color:rgba(240,100,100,.9)">❌ Rechazar</button>'
+            +'<button onclick="_adminProMoreInfo(\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(116,198,200,.1);border:1px solid rgba(116,198,200,.25);color:rgba(116,198,200,.8)">📧 Pedir más info</button>'
+            +'<button onclick="_adminProDelete(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(220,60,60,.1);border:1px solid rgba(220,60,60,.25);color:rgba(220,80,80,.8)">🗑️ Eliminar</button>'
+            +'</div>'
+            +'</div>';
+        }).join('')
       +'</div>';
   }
 
-  panel.innerHTML = solidaryHtml + proListHtml;
+  // ── PROFESIONALES AUTORIZADOS (por categoría) ──────────────────
+  var approvedPros = pros.filter(function(p){ return p.pro_verified; });
+  var approvedHtml = '';
+  if(approvedPros.length){
+    var catMap = {};
+    approvedPros.forEach(function(p){
+      var cat = _proCategory(p.pro_spec);
+      if(!catMap[cat]) catMap[cat] = [];
+      catMap[cat].push(p);
+    });
+    var catOrder = ['🧠 Psicología','💊 Psiquiatría','🎯 Coaching','🤝 Trabajo Social','🥗 Nutrición','⚕️ Medicina','💆 Terapia','📋 Otras especialidades','📂 Sin especialidad'];
+    var catKeys = catOrder.filter(function(c){ return catMap[c]; }).concat(
+      Object.keys(catMap).filter(function(c){ return catOrder.indexOf(c)<0; })
+    );
+    approvedHtml = '<div style="background:rgba(116,198,157,.05);border:1px solid rgba(116,198,157,.18);border-radius:14px;padding:14px;margin-bottom:14px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:12px">✅ PROFESIONALES AUTORIZADOS ('+approvedPros.length+')</div>';
+    catKeys.forEach(function(cat){
+      var catPros = catMap[cat];
+      approvedHtml += '<div style="margin-bottom:14px">'
+        +'<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);background:rgba(255,255,255,.06);border-radius:8px;padding:5px 10px;margin-bottom:8px;display:inline-block">'+cat+' ('+catPros.length+')</div>';
+      catPros.forEach(function(p){
+        var now2 = Date.now();
+        var trialExp = p.pro_trial_expires_at ? new Date(p.pro_trial_expires_at).getTime() : 0;
+        var subExp   = p.pro_subscription_expires_at ? new Date(p.pro_subscription_expires_at).getTime() : 0;
+        var accessBadge = (trialExp > now2 || subExp > now2)
+          ? '<span style="font-size:9px;color:rgba(116,198,200,.8);border:1px solid rgba(116,198,200,.3);border-radius:4px;padding:2px 7px">Acceso activo</span>'
+          : '<span style="font-size:9px;color:rgba(220,80,80,.7);border:1px solid rgba(220,80,80,.25);border-radius:4px;padding:2px 7px">Sin acceso</span>';
+        var regDate = p.created_at ? new Date(p.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+        approvedHtml += '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;margin-bottom:7px">'
+          +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">'
+          +'<div>'
+          +'<div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:1px">'+_escHtml(p.nombre||'Sin nombre')+'</div>'
+          +'<div style="font-size:11px;color:rgba(255,255,255,.45)">'+_escHtml(p.pro_spec||'')+'</div>'
+          +'<div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px">'+_escHtml(p.email||'')+'</div>'
+          +'</div>'
+          +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">'
+          +accessBadge
+          +'<span style="font-size:9px;color:rgba(255,255,255,.2)">Reg. '+regDate+'</span>'
+          +(p.pro_solidarity?'<span style="font-size:9px;color:rgba(100,170,230,.7)">💙 Solidario</span>':'')
+          +'</div>'
+          +'</div>'
+          +(p.pro_cert_url?'<div style="margin-bottom:8px"><a href="'+_escHtml(p.pro_cert_url)+'" target="_blank" rel="noopener" style="font-size:10px;color:rgba(116,198,157,.7);text-decoration:none">📎 Ver documento</a></div>':'')
+          +'<div style="display:flex;gap:5px;flex-wrap:wrap">'
+          +'<button onclick="_adminProRevoke(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:10px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(220,162,0,.1);border:1px solid rgba(220,162,0,.25);color:rgba(220,162,0,.75)">↩️ Revocar</button>'
+          +'<button onclick="_adminProMoreInfo(\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:10px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(116,198,200,.1);border:1px solid rgba(116,198,200,.2);color:rgba(116,198,200,.75)">📧 Contactar</button>'
+          +'<button onclick="_adminProWarn(\''+_escHtml(p.id)+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:10px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(220,120,0,.08);border:1px solid rgba(220,120,0,.2);color:rgba(220,120,0,.75)">⚠️ Advertir</button>'
+          +'<button onclick="_adminProDelete(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:10px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(220,60,60,.08);border:1px solid rgba(220,60,60,.2);color:rgba(220,80,80,.7)">🗑️ Eliminar</button>'
+          +'</div>'
+          +'</div>';
+      });
+      approvedHtml += '</div>';
+    });
+    approvedHtml += '</div>';
+  } else {
+    approvedHtml = '<div style="font-size:12px;color:rgba(255,255,255,.3);padding:10px 0">No hay profesionales verificados aún.</div>';
+  }
+
+  panel.innerHTML = solidaryHtml + pendingProHtml + approvedHtml;
+}
+
+async function _adminProReject(proId, email, nombre){
+  var motivo = prompt('Motivo del rechazo para '+nombre+' (se le enviará como mensaje interno):');
+  if(!motivo || !motivo.trim()) return;
+  if(!confirm('¿Confirmar rechazo de '+nombre+'? Se le notificará y su perfil quedará pendiente.')) return;
+  _initSupabase(); if(!sbClient) return;
+  try{
+    await sbClient.from('broadcasts').insert({
+      target: 'user:'+proId, icon:'❌',
+      subject: 'Solicitud de verificación profesional — Resultado',
+      body: 'Hola '+nombre+', revisamos tu documentación y lamentamos informarte que tu solicitud de verificación profesional no fue aprobada en este momento.\n\nMotivo: '+motivo.trim()+'\n\nSi querés enviar documentación actualizada o tenés alguna consulta, escribinos a contacto@heyvelo.app.',
+      sender: JSON.stringify({n:'Velo — Equipo',i:'velo-system',a:'❌'}),
+      sent_at: new Date().toISOString()
+    });
+    pToast('❌','Rechazo notificado a '+nombre);
+    _switchAdminTab('profesionales');
+  }catch(e){ pToast('⚠️','Error: '+e.message); }
 }
 
 async function _adminAssignSolidarityReq(reqId, userName, btn){
@@ -15579,9 +15659,25 @@ function _checkStripeReturn(){
   if(stripeStatus === 'ok' || session){
     var pending = null; try{ pending = JSON.parse(safeLS('get','velo_stripe_pending')||'null'); }catch(e){}
     if(pending){
+      // Assign a session ID if not present (needed for Supabase update in pEndSession)
+      if(!pending.id) pending.id = 'bk-stripe-'+Date.now();
       pToast('✅','¡Pago confirmado! Tu sesión ha sido reservada 💚');
       safeLS('set','velo_current_session', JSON.stringify(pending));
+      // Set postchat guardian so the review flow knows which professional to rate
+      safeLS('set','velo_postchat_guardian', JSON.stringify({id:pending.proId, name:pending.name}));
       safeLS('del','velo_stripe_pending');
+      // Persist to Supabase sessions table
+      _initSupabase();
+      if(sbClient){
+        var userId = safeLS('get','velo_user_email')||'guest';
+        var userName = safeLS('get','velo_user_name')||'Usuario';
+        sbClient.from('sessions').upsert({
+          id: pending.id, pro_id: pending.proId, pro_name: pending.name,
+          user_id: userId, user_name: userName,
+          status: 'confirmed', amount: pending.amount || 0,
+          created_at: new Date().toISOString()
+        }, {onConflict:'id'}).then(function(){}).catch(function(){});
+      }
       window.history.replaceState({}, '', window.location.pathname);
       setTimeout(function(){ pGoTo('session-room'); }, 1000);
     }
