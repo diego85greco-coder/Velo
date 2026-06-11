@@ -8721,8 +8721,10 @@ async function pShowPublicProfile(){
       rvEl.innerHTML = '<div style="font-size:11px;color:var(--ink4);text-align:center;padding:4px">Sin reseñas aún 💬</div>';
       return;
     }
-    rvEl.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS</div>'
-      + _renderReviewsList(revs, myId, myId);
+    rvEl.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS ('+revs.length+')</div>'
+      +'<div style="max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-right:2px">'
+      + _renderReviewsList(revs, myId, myId)
+      +'</div>';
   }).catch(function(){});
 }
 
@@ -9812,8 +9814,10 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   var _qpMyId = _myUserId();
   var revHtml = reviews.length
     ? '<div style="text-align:left;margin-bottom:12px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS</div>'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS ('+reviews.length+')</div>'
+      +'<div style="max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-right:2px">'
       + _renderReviewsList(reviews, _qpMyId, userId||'')
+      +'</div>'
       +'</div>'
     : '';
 
