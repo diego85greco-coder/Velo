@@ -6882,6 +6882,7 @@ var _circlesData = [
 
 var _curCircle = null;
 var _circleAutoMsgTimer = null;
+var _allCirclesCache = [];
 var _circleJoinedSession = {}; // tracks circles joined this session (for join/leave system messages)
 var _circleMembersCh  = null;  // realtime channel circle_members
 var _selectedCircleFoto = '';  // base64 photo for new circle
@@ -6938,7 +6939,7 @@ function pRenderCircles(){
     .then(function(res){
       var sbCircles = (res.data||[]).map(function(r){
         return { id:r.id, name:r.name, desc:r.descripcion||'', emoji:r.emoji||'⭕', foto:r.foto||'',
-          members:0, maxMembers:r.cap_max||30, active:true, official:false };
+          members:0, maxMembers:r.cap_max||30, active:true, official:false, creator_id:r.creator_id||'' };
       });
       // Merge: Supabase circles take precedence over same-id localStorage ones
       var merged = sbCircles.slice();
@@ -6988,6 +6989,7 @@ function _circleCardHtml(c, memberCounts){
 }
 
 function _renderCircleCards(list, circles, memberCounts){
+  _allCirclesCache = circles.slice();
   list.innerHTML = circles.map(function(c){ return _circleCardHtml(c, memberCounts); }).join('');
 }
 
@@ -7020,13 +7022,21 @@ function _refreshCircleMemberCounts(circles){
 
 function pOpenCircle(id, circleData){
   _curCircle = typeof circleData === 'string' ? JSON.parse(circleData) : circleData;
-  if(!_curCircle){ _curCircle = _circlesData.find(function(c){ return c.id===id; }); }
+  if(!_curCircle){ _curCircle = _circlesData.find(function(c){ return c.id===id; }) || _allCirclesCache.find(function(c){ return c.id===id; }); }
 
   // Save join timestamp — messages from before this moment won't be shown on render
   safeLS('set', 'velo_circle_joined_'+id, new Date().toISOString());
   _setEl('feedCircleName',  _curCircle ? _curCircle.name  : 'Círculo');
   _setEl('feedCircleEmoji', _curCircle ? _curCircle.emoji : '⭕');
   _setEl('feedCircleMembers', _curCircle ? _curCircle.members+' personas' : '');
+  // Show rename button only for the creator
+  var _myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
+  var _renameBtn = document.getElementById('feedCircleRenameBtn');
+  if(_renameBtn){
+    var _isCreator = _curCircle && _curCircle.creator_id && _curCircle.creator_id===_myId && !_curCircle.official;
+    _renameBtn.style.display = _isCreator ? '' : 'none';
+    if(_isCreator) _renameBtn.onclick = function(){ pRenameCircle(id); };
+  }
   var rulesEl = document.getElementById('feedCircleRules');
   if(rulesEl) rulesEl.innerHTML = '🤝 Sin juicios · Sin agresión · Sin consejo no solicitado';
 
@@ -7210,7 +7220,7 @@ function pOpenCreateCircle(){
   if(ov) ov.classList.add('show');
 }
 
-function pSubmitCreateCircle(){
+async function pSubmitCreateCircle(){
   var nameEl  = document.getElementById('newCircleName');
   var descEl  = document.getElementById('newCircleDesc');
   var capMinEl = document.getElementById('newCircleCapMin');
@@ -7220,6 +7230,17 @@ function pSubmitCreateCircle(){
   var capMin = Math.max(5, Math.min(30, parseInt((capMinEl&&capMinEl.value)||'5', 10)));
   var capMax = Math.max(capMin, Math.min(30, parseInt((capMaxEl&&capMaxEl.value)||'30', 10)));
   var myId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || 'anon';
+  // Enforce max 2 user-created circles
+  _initSupabase();
+  if(sbClient){
+    try{
+      var existRes = await sbClient.from('circles').select('id',{count:'exact',head:true}).eq('creator_id',myId).eq('official',false);
+      if(!existRes.error && (existRes.count||0)>=2){
+        pToast('⚠️','Tenés 2 salas activas (el máximo permitido). Eliminá una para crear una nueva.');
+        return;
+      }
+    }catch(e){}
+  }
   var c = {
     id: 'uc'+Date.now(),
     name: nameEl.value.trim(),
@@ -12262,6 +12283,7 @@ var _adminActiveTab = 'moderacion';
 function _adminTabBarHtml(){
   var tabs = [
     { id:'moderacion',    icon:'🚨', label:'Moderación' },
+    { id:'circulos',      icon:'🕊️', label:'Círculos' },
     { id:'mensajes',      icon:'📢', label:'Mensajes' },
     { id:'usuarios',      icon:'👥', label:'Usuarios' },
     { id:'profesionales', icon:'🩺', label:'Profesionales' },
@@ -12294,6 +12316,7 @@ function _switchAdminTab(tab){
   panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando…</div>';
   var map = {
     moderacion:    _adminTabModeracion,
+    circulos:      _adminTabCirculos,
     mensajes:      _adminTabMensajes,
     usuarios:      _adminTabUsuarios,
     profesionales: _adminTabProfesionales,
@@ -12576,6 +12599,239 @@ async function _adminTabModeracion(panel){
   panel.innerHTML = html;
   _loadAdminCrisisFromSupabase();
   _adminLoadUserCircles();
+}
+
+// ── TAB: CÍRCULOS DE PAZ ──────────────────────────────────────────────
+async function _adminTabCirculos(panel){
+  panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando círculos…</div>';
+  _initSupabase();
+  if(!sbClient){ panel.innerHTML='<div style="padding:20px;text-align:center;font-size:12px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  try{
+    var cRes = await sbClient.from('circles').select('*').order('created_at',{ascending:false}).limit(300);
+    var allCircles = (!cRes.error && cRes.data) ? cRes.data : [];
+    var officialCircles = allCircles.filter(function(c){ return c.official; });
+    var userCircles = allCircles.filter(function(c){ return !c.official; });
+    var deletedCount = parseInt(safeLS('get','velo_circles_deleted_count')||'0',10);
+    var circleIds = allCircles.map(function(c){ return c.id; });
+    var lastActivity = {}, memberCounts = {};
+    if(circleIds.length){
+      try{
+        var msgRes = await sbClient.from('circle_messages').select('circle_id,created_at').in('circle_id', circleIds).order('created_at',{ascending:false}).limit(2000);
+        if(msgRes.data) msgRes.data.forEach(function(m){ if(!lastActivity[m.circle_id]) lastActivity[m.circle_id] = m.created_at; });
+      }catch(e){}
+      try{
+        var mcRes = await sbClient.from('circle_members').select('circle_id').in('circle_id', circleIds);
+        if(mcRes.data) mcRes.data.forEach(function(m){ memberCounts[m.circle_id] = (memberCounts[m.circle_id]||0)+1; });
+      }catch(e){}
+    }
+    var now = Date.now();
+    var INACTIVE_MS = 30*24*60*60*1000;
+    var inactiveCount = allCircles.filter(function(c){
+      if(c.official) return false;
+      var lm = lastActivity[c.id];
+      if(!lm){ var created = c.created_at ? new Date(c.created_at).getTime() : 0; return created && (now-created)>=INACTIVE_MS; }
+      return (now-new Date(lm).getTime())>=INACTIVE_MS;
+    }).length;
+
+    function circleRow(c, isOfficial){
+      var members = memberCounts[c.id]||0;
+      var lastMsg = lastActivity[c.id];
+      var lastMsgDate = lastMsg ? new Date(lastMsg) : null;
+      var daysSince = lastMsgDate ? Math.floor((now-lastMsgDate.getTime())/86400000) : null;
+      var inactive = daysSince!==null && daysSince>=30;
+      var actLabel = lastMsgDate ? (daysSince===0?'Hoy':daysSince+'d sin act.') : 'Sin mensajes';
+      var actColor = inactive ? 'rgba(231,120,110,.8)' : (daysSince!==null && daysSince<7 ? 'rgba(116,198,157,.75)' : 'rgba(255,255,255,.35)');
+      var cid = _escHtml(String(c.id));
+      var cname = _escHtml(c.name||'Sin nombre');
+      var creatorShort = c.creator_id ? _escHtml(c.creator_id.slice(0,8))+'…' : '—';
+      var fecha = c.created_at ? new Date(c.created_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'2-digit'}) : '—';
+      var btns = '';
+      if(!isOfficial) btns += '<button onclick="_adminAlertCircleCreator(\''+cid+'\',\''+_escHtml(c.creator_id||'')+'\',\''+cname+'\')" style="flex-shrink:0;padding:5px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:7px;color:rgba(240,200,90,.9);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">‼️</button>';
+      btns += '<button onclick="_adminDelCirc(\''+cid+'\',\''+_escHtml(c.creator_id||'')+'\',\''+cname+'\',this)" style="flex-shrink:0;padding:5px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);border-radius:7px;color:rgba(231,120,110,.9);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️</button>';
+      return '<div id="admc-'+cid+'" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+        +'<div style="display:flex;align-items:flex-start;gap:8px">'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.88)">'+(c.emoji||'🕊️')+' '+cname+'</div>'
+        +(c.descripcion?'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:1px">'+_escHtml(c.descripcion.slice(0,80))+'</div>':'')
+        +'<div style="font-size:10px;margin-top:3px;display:flex;flex-wrap:wrap;gap:6px">'
+        +'<span style="color:rgba(255,255,255,.35)">👥 '+members+'</span>'
+        +'<span style="color:'+actColor+'">⏱ '+actLabel+'</span>'
+        +(!isOfficial?'<span style="color:rgba(255,255,255,.28)">🙋 '+creatorShort+'</span>':'<span style="color:rgba(116,198,157,.5)">👑 OFICIAL</span>')
+        +'<span style="color:rgba(255,255,255,.22)">'+fecha+'</span>'
+        +(inactive?'<span style="color:rgba(231,120,110,.75);font-weight:700">⚠️ +30d</span>':'')
+        +'</div></div>'
+        +'<div style="display:flex;gap:5px;flex-shrink:0;align-items:center">'+btns+'</div>'
+        +'</div></div>';
+    }
+
+    var html = '';
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">'
+      +'<div class="a-card"><div style="font-size:20px">🕊️</div><div class="a-card-n" style="color:rgba(200,165,100,.8)">'+allCircles.length+'</div><div class="a-card-l">Activos</div></div>'
+      +'<div class="a-card"><div style="font-size:20px">👑</div><div class="a-card-n" style="color:rgba(116,198,157,.8)">'+officialCircles.length+'</div><div class="a-card-l">Oficiales</div></div>'
+      +'<div class="a-card"><div style="font-size:20px">🗑️</div><div class="a-card-n" style="color:rgba(180,180,180,.6)">'+deletedCount+'</div><div class="a-card-l">Eliminados</div></div>'
+      +'</div>';
+    html += '<div style="background:rgba(231,120,110,.07);border:1px solid rgba(231,120,110,.2);border-radius:12px;padding:12px;margin-bottom:12px;display:flex;align-items:center;gap:10px">'
+      +'<div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(231,120,110,.85)">🧹 Limpieza automática</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Elimina salas sin actividad en 30+ días y avisa al creador por Buzón. <span style="color:rgba(231,120,110,.75);font-weight:700">'+inactiveCount+' detectadas</span></div></div>'
+      +'<button onclick="_adminCleanupInactiveCircles(this)" style="padding:8px 12px;background:rgba(231,76,60,.2);border:1.5px solid rgba(231,76,60,.4);border-radius:9px;color:rgba(231,120,110,.9);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">Limpiar ('+inactiveCount+')</button>'
+      +'</div>';
+    html += '<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:14px;padding:14px;margin-bottom:12px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7)">👑 CÍRCULOS OFICIALES VELO ('+officialCircles.length+')</div>'
+      +'<button onclick="_adminShowCreateOfficialCircle()" style="font-size:10px;padding:4px 10px;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.35);border-radius:7px;color:rgba(116,198,157,.9);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">+ Crear</button>'
+      +'</div>'
+      +'<div id="adminCreateOfficialCircleForm" style="display:none;background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:10px;padding:12px;margin-bottom:10px">'
+      +'<input id="adminOfficialCircleName" class="p-input" type="text" placeholder="Nombre del círculo" maxlength="40" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;margin-bottom:8px;width:100%;box-sizing:border-box">'
+      +'<textarea id="adminOfficialCircleDesc" class="p-input" placeholder="Descripción (opcional)" maxlength="120" rows="2" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;margin-bottom:8px;width:100%;box-sizing:border-box;resize:none"></textarea>'
+      +'<input id="adminOfficialCircleEmoji" class="p-input" type="text" placeholder="Emoji (ej: 🕊️)" maxlength="4" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;margin-bottom:8px;width:100%;box-sizing:border-box">'
+      +'<div style="display:flex;gap:8px">'
+      +'<button onclick="pAdminCreateOfficialCircle()" style="flex:1;padding:9px;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.4);border-radius:8px;color:rgba(116,198,157,.9);font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">✓ Crear oficial</button>'
+      +'<button onclick="document.getElementById(\'adminCreateOfficialCircleForm\').style.display=\'none\'" style="flex:1;padding:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
+      +'</div></div>';
+    if(officialCircles.length) html += officialCircles.map(function(c){ return circleRow(c,true); }).join('');
+    else html += '<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">No hay círculos oficiales todavía.</div>';
+    html += '</div>';
+    html += '<div style="background:rgba(100,170,230,.07);border:1px solid rgba(100,170,230,.18);border-radius:14px;padding:14px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(100,170,230,.8)">🫂 SALAS DE USUARIOS ('+userCircles.length+')</div>'
+      +'<button onclick="_switchAdminTab(\'circulos\')" style="font-size:10px;padding:3px 8px;background:rgba(100,170,230,.1);border:1px solid rgba(100,170,230,.25);border-radius:6px;color:rgba(100,170,230,.7);cursor:pointer;font-family:\'Jost\',sans-serif">↻</button>'
+      +'</div>';
+    if(userCircles.length) html += userCircles.map(function(c){ return circleRow(c,false); }).join('');
+    else html += '<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">No hay salas creadas por usuarios.</div>';
+    html += '</div>';
+    panel.innerHTML = html;
+  }catch(e){
+    panel.innerHTML='<div style="padding:20px;font-size:12px;color:rgba(255,100,100,.5)">Error: '+_escHtml(e.message)+'</div>';
+  }
+}
+
+function _adminShowCreateOfficialCircle(){
+  var f = document.getElementById('adminCreateOfficialCircleForm');
+  if(f) f.style.display = (f.style.display==='none'||!f.style.display) ? '' : 'none';
+}
+
+async function pAdminCreateOfficialCircle(){
+  var nameEl = document.getElementById('adminOfficialCircleName');
+  var descEl = document.getElementById('adminOfficialCircleDesc');
+  var emojiEl = document.getElementById('adminOfficialCircleEmoji');
+  if(!nameEl||!nameEl.value.trim()){ pToast('⚠️','Ponele un nombre al círculo'); return; }
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  try{
+    var r = await sbClient.from('circles').insert({
+      id:'velo'+Date.now(), name:nameEl.value.trim(),
+      descripcion: descEl?descEl.value.trim():'',
+      emoji: (emojiEl&&emojiEl.value.trim())||'🕊️',
+      official:true, cap_min:5, cap_max:500,
+      creator_id:'velo-admin'
+    });
+    if(r.error) throw r.error;
+    pToast('✅','Círculo oficial creado');
+    nameEl.value=''; if(descEl) descEl.value=''; if(emojiEl) emojiEl.value='';
+    _switchAdminTab('circulos');
+  }catch(e){ pToast('⚠️','Error: '+e.message); }
+}
+
+async function _adminAlertCircleCreator(circleId, creatorId, circleName){
+  if(!creatorId){ pToast('⚠️','No se encontró el creador'); return; }
+  var msg = prompt('Mensaje de alerta para el creador de "'+circleName+'" (dejá vacío para mensaje predeterminado):');
+  if(msg===null) return;
+  var body = msg.trim()||'Tu sala "'+circleName+'" está recibiendo reportes o no cumple con las normas de comunidad de Velo. Por favor revisá el contenido y el comportamiento de la sala. Si la situación no mejora, la sala puede ser eliminada. 💚';
+  _initSupabase(); if(!sbClient) return;
+  try{
+    await sbClient.from('broadcasts').insert({
+      target:'user:'+creatorId, subject:'‼️ Alerta sobre tu sala en Círculos de Paz',
+      body:body, icon:'‼️',
+      sender:JSON.stringify({n:'Velo — Moderación',i:'velo-system',a:'‼️'}),
+      sent_at:new Date().toISOString()
+    });
+    pToast('‼️','Alerta enviada al creador');
+  }catch(e){ pToast('⚠️','Error al enviar: '+e.message); }
+}
+
+async function _adminDelCirc(circleId, creatorId, circleName, btn){
+  if(!confirm('¿Eliminar la sala "'+circleName+'" y todos sus mensajes? Irreversible.')) return;
+  _initSupabase(); if(!sbClient||!circleId) return;
+  try{
+    btn.disabled=true; btn.textContent='…';
+    await sbClient.from('circle_members').delete().eq('circle_id',circleId);
+    await sbClient.from('circle_messages').delete().eq('circle_id',circleId);
+    await sbClient.from('circles').delete().eq('id',circleId);
+    if(creatorId){
+      try{
+        await sbClient.from('broadcasts').insert({
+          target:'user:'+creatorId, subject:'🕊️ Tu sala "'+circleName+'" fue eliminada',
+          body:'La sala que creaste fue eliminada por el equipo de Velo por incumplimiento de normas de comunidad. Si creés que fue un error, escribinos a consultas@heyvelo.app. 💚',
+          icon:'🕊️', sender:JSON.stringify({n:'Velo — Moderación',i:'velo-system',a:'🕊️'}),
+          sent_at:new Date().toISOString()
+        });
+      }catch(e){}
+    }
+    var dc = parseInt(safeLS('get','velo_circles_deleted_count')||'0',10)+1;
+    safeLS('set','velo_circles_deleted_count',String(dc));
+    var card = document.getElementById('admc-'+circleId);
+    if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ card.remove(); },350); }
+    pToast('✅','Sala eliminada');
+  }catch(e){ btn.disabled=false; btn.textContent='🗑️'; pToast('⚠️','Error al eliminar'); }
+}
+
+async function _adminCleanupInactiveCircles(btn){
+  if(!confirm('¿Eliminar todas las salas de usuarios sin actividad en 30+ días? Cada creador recibirá un aviso en su Buzón. Esta acción es irreversible.')) return;
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  if(btn){ btn.disabled=true; btn.textContent='Limpiando…'; }
+  try{
+    var cRes = await sbClient.from('circles').select('*').eq('official',false);
+    var circles = (!cRes.error&&cRes.data)?cRes.data:[];
+    var now = Date.now();
+    var INACTIVE_MS = 30*24*60*60*1000;
+    var deleted = 0;
+    for(var i=0;i<circles.length;i++){
+      var c = circles[i];
+      var lmRes = await sbClient.from('circle_messages').select('created_at').eq('circle_id',c.id).order('created_at',{ascending:false}).limit(1);
+      var lastMsgTime = (lmRes.data&&lmRes.data.length) ? new Date(lmRes.data[0].created_at).getTime() : 0;
+      var createdTime = c.created_at ? new Date(c.created_at).getTime() : 0;
+      var refTime = Math.max(lastMsgTime, createdTime);
+      if(refTime>0 && (now-refTime)<INACTIVE_MS) continue;
+      await sbClient.from('circle_members').delete().eq('circle_id',c.id);
+      await sbClient.from('circle_messages').delete().eq('circle_id',c.id);
+      await sbClient.from('circles').delete().eq('id',c.id);
+      if(c.creator_id){
+        try{
+          await sbClient.from('broadcasts').insert({
+            target:'user:'+c.creator_id, subject:'🕊️ Tu sala "'+c.name+'" fue eliminada por inactividad',
+            body:'La sala "'+c.name+'" que creaste en Círculos de Paz fue eliminada automáticamente por no tener actividad en más de 30 días. Podés crear una nueva sala cuando quieras. 💚',
+            icon:'🕊️', sender:JSON.stringify({n:'Velo',i:'velo-system',a:'🕊️'}),
+            sent_at:new Date().toISOString()
+          });
+        }catch(e){}
+      }
+      deleted++;
+    }
+    var dc = parseInt(safeLS('get','velo_circles_deleted_count')||'0',10)+deleted;
+    safeLS('set','velo_circles_deleted_count',String(dc));
+    pToast('✅',deleted+' sala'+(deleted!==1?'s':'')+' eliminada'+(deleted!==1?'s':'')+' por inactividad');
+    _switchAdminTab('circulos');
+  }catch(e){
+    if(btn){ btn.disabled=false; btn.textContent='Limpiar'; }
+    pToast('⚠️','Error: '+e.message);
+  }
+}
+
+async function pRenameCircle(circleId){
+  var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
+  _initSupabase(); if(!sbClient) return;
+  var cur = _curCircle && _curCircle.id===circleId ? _curCircle.name : '';
+  var newName = prompt('Nuevo nombre para la sala:', cur);
+  if(!newName||!newName.trim()) return;
+  newName = newName.trim().slice(0,40);
+  try{
+    var r = await sbClient.from('circles').update({name:newName}).eq('id',circleId).eq('creator_id',myId);
+    if(r.error) throw r.error;
+    if(_curCircle&&_curCircle.id===circleId) _curCircle.name=newName;
+    var nameEl = document.getElementById('feedCircleName');
+    if(nameEl) nameEl.textContent = newName;
+    pToast('✅','Nombre actualizado');
+    setTimeout(pRenderCircles, 400);
+  }catch(e){ pToast('⚠️','No se pudo renombrar'); }
 }
 
 async function _adminLoadUserCircles(){

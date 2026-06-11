@@ -8418,6 +8418,9 @@ body:not(.r-dark) #homeProfileFab {
 #homeMonthlyHint { color: #1a5c35 !important; }
 body.r-dark #homeMonthlyHint { color: rgba(255,255,255,.95) !important; }
 
+/* ── Prevent iOS Safari auto-zoom on input focus (zoom triggers when font-size < 16px) ── */
+input, textarea, select { font-size: 16px !important; }
+
 /* ── v486: Larger, more aesthetic greeting block ── */
 #homeTimeIcon .r-time-icon svg {
   width: 88px !important;
