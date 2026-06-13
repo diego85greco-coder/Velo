@@ -10931,3 +10931,17 @@ body.r-dark .home-momento-btn-all {
   color: rgba(220,190,100,.72) !important;
   border-color: rgba(200,165,50,.35) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v695 — Weather icon centering fix
+   ══════════════════════════════════════════════════════════════════ */
+/* .weather-hero-img is display:flex (block-level) inside a span with text-align:center.
+   text-align only affects inline content, so margin:auto is needed to center the block. */
+#homeTimeIcon .weather-hero-img {
+  margin: 0 auto !important;
+}
+/* Also ensure the .r-time-icon wrapper itself is self-centered as a flex item */
+#homeTimeIcon .r-time-icon {
+  align-self: center !important;
+  width: 190px !important;
+}

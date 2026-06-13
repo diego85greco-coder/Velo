@@ -1082,10 +1082,22 @@ async function _loginAndGo(){
       // Only redirect to picker if the page actually exists in the DOM
       // (guards against browser cache serving old HTML without pg-pick-username)
       if(document.getElementById('pg-pick-username')){
-        pGoTo('pick-username');
-        return;
+        // Skip for existing users who have a real name — they can set @username from profile.
+        // Only redirect truly new users (auto-gen or missing name).
+        var _savedName  = safeLS('get','velo_user_name') || '';
+        var _savedEmail = safeLS('get','velo_user_email') || '';
+        var _savedPfx   = _savedEmail.split('@')[0];
+        var _isExisting = _savedName &&
+                          _savedName !== _savedPfx &&
+                          _savedName !== _savedEmail &&
+                          !(/^[a-zA-Z0-9._-]+\d{3,}$/.test(_savedName)) &&
+                          !(_savedName.indexOf(' ') < 0 && /^\w+\.\w+\d+$/.test(_savedName));
+        if(!_isExisting){
+          pGoTo('pick-username');
+          return;
+        }
       }
-      // Page not in DOM → fall through to home (user can set username from profile)
+      // Page not in DOM or existing user → fall through to home
     }
     pGoTo('home');
     setTimeout(function(){
@@ -1444,6 +1456,7 @@ function _loadHomeData(){
   _updateHomeMottoLine();
   _updateTopbarMoodBadge();
   _updateSidebarUser();
+  _updateHomeStreak();
   _renderPersonalizedSuggestions();
   _updateHomeBell();
   // Show unread alert once per session if there are pending messages
@@ -1965,6 +1978,7 @@ function _trackVisitDay(){
     days.push(today);
     safeLS('set','velo_visit_days', JSON.stringify(days));
     _checkAndNotifyBadge();
+    _updateHomeStreak(); // refresh stat immediately once today is recorded
     // Delay push so _pullVisitCountFromSB (runs at 2500ms) can set the SB baseline first.
     // _getVisitDayCount() then returns Math.max(local, sbCount) — never overwrites a higher SB value.
     setTimeout(function(){
