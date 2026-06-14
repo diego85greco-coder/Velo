@@ -16744,16 +16744,23 @@ var _AMB_UNLOCK_SRC = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKw
 async function pPlayAmbient(type){
   pStopAmbient(true);
   try{
-    // iOS silent-switch bypass
-    try{
-      var _ul = new Audio(_AMB_UNLOCK_SRC);
-      _ul.volume = 0.001; _ul.setAttribute('playsinline','');
-      await _ul.play();
-    }catch(e){}
-
+    // Create / resume AudioContext SYNCHRONOUSLY — must stay in the user-gesture
+    // call stack (before any await) so iOS grants media-audio privileges and
+    // bypasses the silent switch.
     if(!_ambCtx || _ambCtx.state === 'closed'){
       _ambCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
+    if(_ambCtx.state === 'suspended') _ambCtx.resume(); // fire without await
+    // Play a 1-frame silent buffer through the context — this is the actual
+    // iOS silent-switch unlock; must happen before any await.
+    try{
+      var _silBuf = _ambCtx.createBuffer(1, 1, 22050);
+      var _silSrc = _ambCtx.createBufferSource();
+      _silSrc.buffer = _silBuf;
+      _silSrc.connect(_ambCtx.destination);
+      _silSrc.start(0);
+    }catch(e){}
+    // Now it's safe to await (gesture chain already satisfied above)
     if(_ambCtx.state === 'suspended') await _ambCtx.resume();
     var ctx = _ambCtx;
 
