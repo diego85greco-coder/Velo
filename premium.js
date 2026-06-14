@@ -16360,6 +16360,46 @@ async function _checkWeeklySummary(){
   var inbox=[]; try{ inbox=JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   var alreadySent = inbox.find(function(m){ return m.id==='weekly-'+todayKey; });
 
+  // ── Compute rich weekly stats ──────────────────────────────
+  var _moodScore = {'😄':5,'😊':4,'😐':3,'😞':2,'😢':1};
+  var _moodLabel = {'😄':'Genial','😊':'Bien','😐':'Neutro','😞':'Bajo','😢':'Difícil'};
+  var moodDistrib = {}; // emoji → count
+  weekMoods.forEach(function(m){ if(m&&m.emoji){ moodDistrib[m.emoji]=(moodDistrib[m.emoji]||0)+1; } });
+  var totalReg = weekMoods.length;
+  var consistenciaPct = Math.round((totalReg/7)*100);
+
+  // Mood distribution sorted by frequency
+  var distribLines = Object.keys(moodDistrib)
+    .sort(function(a,b){ return moodDistrib[b]-moodDistrib[a]; })
+    .map(function(e){
+      var pct = Math.round((moodDistrib[e]/totalReg)*100);
+      return e+' '+(_moodLabel[e]||e)+': '+moodDistrib[e]+' día'+(moodDistrib[e]!==1?'s':'')+' ('+pct+'%)';
+    });
+
+  // Best and worst day
+  var dayNamesLong = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  var bestDay = null, worstDay = null;
+  timeline.forEach(function(d){
+    if(!d.mood) return;
+    var sc = _moodScore[d.mood.emoji]||3;
+    if(!bestDay  || sc > (_moodScore[bestDay.mood.emoji]||3))  bestDay  = d;
+    if(!worstDay || sc < (_moodScore[worstDay.mood.emoji]||3)) worstDay = d;
+  });
+
+  // Trend: compare first half vs second half scores
+  var scores = timeline.filter(function(d){ return d.mood; }).map(function(d){ return _moodScore[d.mood.emoji]||3; });
+  var half = Math.ceil(scores.length/2);
+  var avgFirst  = scores.slice(0,half).reduce(function(a,b){return a+b;},0)/(half||1);
+  var avgSecond = scores.slice(half).reduce(function(a,b){return a+b;},0)/((scores.length-half)||1);
+  var trendVal  = scores.length < 2 ? 0 : avgSecond - avgFirst;
+  var trendTxt  = trendVal > 0.4 ? '↗ Mejoró a lo largo de la semana (+'+(Math.round(trendVal*20))+'%)'
+                : trendVal < -0.4 ? '↘ Descendió en la segunda mitad (-'+(Math.round(Math.abs(trendVal)*20))+'%)'
+                : '→ Se mantuvo estable durante la semana';
+
+  // Diary days
+  var diaryDays = [];
+  weekDiary.forEach(function(e){ if(e.ts){ var d=new Date(e.ts); var dn=dayNamesLong[d.getDay()].slice(0,2); if(diaryDays.indexOf(dn)<0) diaryDays.push(dn); } });
+
   if(sinRegistros){
     if(!alreadySent){
       var encBody = 'Hola'+(userName?' '+userName:'')+', esta semana no registraste cómo te sentiste — y está bien, todos los ritmos son válidos. 💙\n\n'
@@ -16374,10 +16414,9 @@ async function _checkWeeklySummary(){
     return;
   }
 
-  // Generate AI analysis and send to Buzón — overlay removed from auto-trigger
+  // Generate AI analysis and send to Buzón
   setTimeout(async function(){
-    var aiText = await _generateWeeklySummaryAI(timeline, dominantMood, streak, weekMoods.length, weekDiary.length, userName);
-    // Send to Buzón (with AI text)
+    var aiText = await _generateWeeklySummaryAI(timeline, dominantMood, streak, totalReg, weekDiary.length, userName, distribLines, trendTxt, bestDay, worstDay);
     if(!alreadySent){
       var _inbox2=[]; try{_inbox2=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e){}
       var _wqB = _pickWeeklyQuote(dominantMood);
@@ -16387,39 +16426,62 @@ async function _checkWeeklySummary(){
         neutral: { libro:'El Poder del Ahora — Eckhart Tolle', peli:'Into the Wild (2007)' },
         dificil: { libro:'El Hombre en Busca de Sentido — Viktor Frankl', peli:'Good Will Hunting (1997)' }
       }[_moodCat];
-      var bodyTxt = '¡Hola'+(userName?' '+userName:'')+'!\n\n'
-        +'Estamos muy felices de que formes parte de nuestra comunidad. Tu presencia hace la diferencia 💚\n\n'
-        +(aiText ? aiText+'\n\n' : '')
-        +'📊 '+weekMoods.length+' registro'+(weekMoods.length!==1?'s de ánimo':' de ánimo')+' esta semana'+(dominantMood?' — más frecuente: '+dominantMood:'')+'.\n'
-        +(weekDiary.length?'📔 '+weekDiary.length+' entrada'+(weekDiary.length!==1?'s':'')+ ' en tu diario.\n':'')
-        +'📅 '+streak+' día'+(streak!==1?'s':'')+' seguidos en Velo.\n\n'
+
+      var bodyTxt = '¡Hola'+(userName?' '+userName:'')+'! 💚\n\n'
+        +'Estamos muy felices de que formes parte de nuestra comunidad. Tu presencia hace la diferencia.\n\n'
+        +(aiText ? '─────────────────────\n'+aiText+'\n─────────────────────\n\n' : '')
+        +'📊 TUS ÁNIMOS ESTA SEMANA\n'
+        +'Registraste '+totalReg+' de 7 días ('+consistenciaPct+'% de consistencia)\n'
+        +(distribLines.length ? distribLines.map(function(l){ return '  · '+l; }).join('\n')+'\n' : '')
+        +(dominantMood ? 'Estado dominante: '+dominantMood+' '+(_moodLabel[dominantMood]||'')+'\n' : '')
+        +'Tendencia: '+trendTxt+'\n'
+        +(bestDay&&bestDay.mood?'🏆 Mejor día: '+dayNamesLong[['Do','Lu','Ma','Mi','Ju','Vi','Sa'].indexOf(bestDay.dayName)]||bestDay.dayName+' '+bestDay.mood.emoji+'\n':'')
+        +(worstDay&&worstDay.mood&&worstDay!==bestDay?'⚡ Día más desafiante: '+(dayNamesLong[['Do','Lu','Ma','Mi','Ju','Vi','Sa'].indexOf(worstDay.dayName)]||worstDay.dayName)+' '+worstDay.mood.emoji+'\n':'')
+        +'\n'
+        +(weekDiary.length
+          ? '📔 TU DIARIO\n'
+            +'Escribiste '+weekDiary.length+' entrada'+(weekDiary.length!==1?'s':'')+' esta semana'
+            +(diaryDays.length?' ('+diaryDays.join(', ')+')':'')+'\n\n'
+          : '')
+        +'📅 RACHA\n'
+        +streak+' día'+(streak!==1?'s':'')+' seguidos en Velo'
+        +(streak>=7?' 🔥 ¡Una semana completa!':streak>=3?' 💪 ¡Excelente ritmo!':'')+'\n\n'
         +(_wqB ? '❝ '+_wqB.q+'❞\n— '+_wqB.a+(_wqB.b?', '+_wqB.b:'')+'\n\n' : '')
-        +(_mediaRec ? '📚 Libro para esta semana: '+_mediaRec.libro+'\n🎬 Película que puede resonarte: '+_mediaRec.peli+'\n\n' : '')
+        +(_mediaRec ? '📚 Para esta semana:\n  Libro: '+_mediaRec.libro+'\n  Película: '+_mediaRec.peli+'\n\n' : '')
         +'📋 El 1° de cada mes recibís un análisis completo de tu mes.\n\n¡Hasta el próximo domingo! 🌱';
-      _inbox2.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'📊',remitente:'Velo — Resumen Semanal',asunto:'Tu semana en Velo 🌱'+(dominantMood?' '+dominantMood:''),extracto:aiText?aiText.slice(0,80)+'…':weekMoods.length+' registros esta semana',cuerpo:bodyTxt,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
+
+      _inbox2.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'📊',remitente:'Velo — Resumen Semanal',asunto:'Tu semana en Velo 🌱'+(dominantMood?' '+dominantMood:'')+' | '+consistenciaPct+'% constancia',extracto:aiText?aiText.slice(0,80)+'…':totalReg+'/7 días registrados ('+consistenciaPct+'%)',cuerpo:bodyTxt,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
       safeLS('set','velo_inbox',JSON.stringify(_inbox2.slice(0,100)));
       if(typeof _updateInboxDot==='function') _updateInboxDot();
     }
   }, 3000);
 }
 
-async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns, diaryCount, userName){
+async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns, diaryCount, userName, distribLines, trendTxt, bestDay, worstDay){
   try{
+    var _moodLabel = {'😄':'Genial','😊':'Bien','😐':'Neutro','😞':'Bajo','😢':'Difícil'};
+    var dayNamesLong = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    var dayNamesShort = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
     var moodLines = timeline.map(function(d){
-      return d.dayName+': '+(d.mood ? d.mood.emoji+' '+d.mood.label : '—');
+      return d.dayName+': '+(d.mood ? d.mood.emoji+' '+(_moodLabel[d.mood.emoji]||d.mood.label||d.mood.emoji) : '—');
     }).join('\n');
     var prompt = 'Sos un acompañante empático de Velo, una app de apoyo emocional. '
       +(userName?'El usuario se llama '+userName+'. ':'')
-      +'Esta semana registró los siguientes ánimos:\n'+moodLines+'\n\n'
+      +'Esta semana registró '+checkIns+' de 7 días. Sus ánimos día a día:\n'+moodLines+'\n\n'
+      +(distribLines&&distribLines.length?'Distribución: '+distribLines.join(' · ')+'\n':'')
+      +'Tendencia: '+trendTxt+'\n'
+      +(bestDay&&bestDay.mood?'Mejor día: '+(dayNamesLong[dayNamesShort.indexOf(bestDay.dayName)]||bestDay.dayName)+' '+bestDay.mood.emoji+'\n':'')
+      +(worstDay&&worstDay.mood&&worstDay!==bestDay?'Día más difícil: '+(dayNamesLong[dayNamesShort.indexOf(worstDay.dayName)]||worstDay.dayName)+' '+worstDay.mood.emoji+'\n':'')
       +'Racha: '+streak+' días seguidos en la app. '
       +(diaryCount>0?'Escribió en su diario '+diaryCount+' vez'+(diaryCount>1?'es':'')+' esta semana. ':'')
-      +'Escribí un párrafo cálido y genuino de 3 oraciones que:\n'
-      +'1. Observe algo específico y real de su semana (no genérico)\n'
-      +'2. Valide sus emociones sin exagerar\n'
-      +'3. Cierre con algo alentador pero concreto\n\n'
-      +'IMPORTANTE: NO empieces con "Hola" ni con el nombre de la persona. Empezá directo con la observación de la semana. '
-      +'Tono: como alguien que realmente los conoce, cercano y humano. Sin hashtags. NUNCA uses "salud mental".';
-    var text = await _geminiCall(prompt, { temperature:0.88, maxOutputTokens:180 });
+      +'\nEscribí 2-3 oraciones cálidas y específicas que:\n'
+      +'1. Mencionen algo concreto de su semana real (un día específico, la tendencia, la constancia)\n'
+      +'2. Validen sus emociones con naturalidad\n'
+      +'3. Cierren con algo alentador y genuino\n\n'
+      +'REGLAS: NO empieces con "Hola" ni con el nombre. Empezá directo con la observación. '
+      +'Tono cercano y humano, no clínico. Sin hashtags. Sin listas. NUNCA uses "salud mental". '
+      +'Máximo 60 palabras.';
+    var text = await _geminiCall(prompt, { temperature:0.85, maxOutputTokens:150 });
     return text || null;
   }catch(e){ return null; }
 }

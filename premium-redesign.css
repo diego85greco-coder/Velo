@@ -9280,7 +9280,7 @@ body:not(.r-dark) .mc-report { color: rgba(200,60,40,.70); }
 
 /* ── v630: Combined quick-access + ambient panel ─────────────────── */
 .r-home-quick-panel {
-  margin: 0 16px 12px;
+  margin: 0 0 12px;
   background: linear-gradient(135deg,rgba(255,255,255,.065) 0%,rgba(255,255,255,.028) 100%);
   border: 1.5px solid rgba(255,255,255,.12);
   border-radius: 20px;
@@ -10259,7 +10259,7 @@ body:not(.r-dark) #homeWeekMoodGraph {
 
 /* ── v666: PARA VOS ornate panel ────────────────────────────────── */
 #homeParaVosPanel {
-  margin: 0 16px 12px;
+  margin: 0 0 12px;
 }
 .para-vos-frame {
   background: linear-gradient(155deg, rgba(18,46,32,.96) 0%, rgba(11,34,22,.92) 100%);
