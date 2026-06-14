@@ -11,7 +11,7 @@
 :root {
   --r-ink: #1a201d;
   --r-ink-soft: #4a5249;
-  --r-glass-bg: rgba(255,251,239,.72);
+  --r-glass-bg: rgba(220,238,222,.80);
   --r-glass-bord: rgba(27,94,58,.10);
   --r-glass-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 8px 30px rgba(40, 45, 30, 0.06);
   --r-sage-glow: rgba(116, 198, 157, 0.35);
@@ -25,15 +25,15 @@ body {
   background:
     radial-gradient(circle at 8% 12%, var(--r-sage-glow) 0%, transparent 45%),
     radial-gradient(circle at 92% 88%, var(--r-gold-soft) 0%, transparent 50%),
-    linear-gradient(180deg, #f9f4e2 0%, #f6efd9 60%, #ece4c8 100%) !important;
+    linear-gradient(180deg, #e8f2e8 0%, #ddeadd 60%, #cddeca 100%) !important;
 }
 body::after {
   content: '';
   position: fixed; inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(108deg, transparent 30%, rgba(255,255,255,.30) 38%, transparent 46%),
-    linear-gradient(118deg, transparent 50%, rgba(255,255,255,.20) 58%, transparent 66%);
+    linear-gradient(108deg, transparent 30%, rgba(255,255,255,.10) 38%, transparent 46%),
+    linear-gradient(118deg, transparent 50%, rgba(255,255,255,.08) 58%, transparent 66%);
   mix-blend-mode: overlay;
   z-index: -1;
 }
@@ -1047,7 +1047,7 @@ body.r-dark .r-section-card {
   background:
     radial-gradient(circle at 12% 15%, rgba(116,198,157,.20) 0%, transparent 45%),
     radial-gradient(circle at 88% 85%, rgba(232,200,121,.14) 0%, transparent 50%),
-    linear-gradient(180deg, #f9f4e2 0%, #f6efd9 60%, #ece4c8 100%) !important;
+    linear-gradient(180deg, #e8f2e8 0%, #ddeadd 60%, #cddeca 100%) !important;
 }
 
 /* 2. Hero section: sin foto, solo la card de cristal */
@@ -1258,7 +1258,7 @@ body.r-dark .r-section-card {
     background:
       radial-gradient(circle at 15% 20%, rgba(116,198,157,.28) 0%, transparent 45%),
       radial-gradient(circle at 85% 80%, rgba(232,200,121,.18) 0%, transparent 50%),
-      linear-gradient(180deg, #f9f4e2 0%, #f6efd9 60%, #ece4c8 100%) !important;
+      linear-gradient(180deg, #e8f2e8 0%, #ddeadd 60%, #cddeca 100%) !important;
   }
   .auth-right {
     background: rgba(255,251,239,.94) !important;
