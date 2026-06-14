@@ -3047,15 +3047,20 @@ async function _loadCommunityPulse(){
     var sorted = Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
     var topEmoji = sorted[0] || '🌿';
     var topCount = counts[topEmoji] || 0;
+    var isTopUnique = sorted.length <= 1 || counts[sorted[1]] < topCount;
     var _labels = {'😊':'bien','😄':'genial','😌':'en paz','🥺':'sensibles','😔':'tristes','😰':'ansiosos','😤':'frustrados','💪':'con fuerza'};
-    if(emEl) emEl.textContent = topEmoji;
+    if(emEl) emEl.textContent = isTopUnique ? topEmoji : (sorted.slice(0,2).join(' '));
     if(total === 0){
       if(txtEl) txtEl.textContent = 'Sé el primero en responder hoy';
       if(subEl) subEl.textContent = 'La comunidad está esperando ✨';
     } else {
       var pct = Math.round((topCount/total)*100);
       if(txtEl) txtEl.textContent = total+(total===1?' persona respondió hoy':' personas respondieron hoy');
-      if(subEl) subEl.textContent = 'El '+pct+'% se siente '+(_labels[topEmoji]||'bien')+' · '+topEmoji;
+      if(isTopUnique && pct > 50){
+        if(subEl) subEl.textContent = 'El '+pct+'% se siente '+(_labels[topEmoji]||'bien')+' · '+topEmoji;
+      } else {
+        if(subEl) subEl.textContent = '¡Hoy hay de todo! '+sorted.slice(0,3).join(' ');
+      }
     }
     // Mini bar chart (top 4 emojis)
     if(barEl && sorted.length){
@@ -3237,7 +3242,9 @@ function _renderShareCard(canvas, logoImg){
     if(emoji) moodCounts[emoji]=(moodCounts[emoji]||0)+1;
   }
   var daysRecorded=days7.filter(function(d){return d.emoji;}).length;
-  var dominantEmoji=Object.keys(moodCounts).sort(function(a,b){return moodCounts[b]-moodCounts[a];})[0]||'';
+  var _sortedMoods=Object.keys(moodCounts).sort(function(a,b){return moodCounts[b]-moodCounts[a];});
+  // Only call it "dominant" if one emoji strictly leads (no tie)
+  var dominantEmoji=(_sortedMoods.length>0 && (_sortedMoods.length===1 || moodCounts[_sortedMoods[1]]<moodCounts[_sortedMoods[0]])) ? _sortedMoods[0] : '';
   var _moodLabel={'😄':'Excelente','😊':'Bien','😐':'Regular','😔':'Melancólico/a','😰':'Ansioso/a','😤':'Frustrado/a','😌':'En paz','🥺':'Sensible','💪':'Con fuerza'};
   var _moodColor={'😄':'rgba(116,198,157,.28)','😊':'rgba(116,198,157,.22)','😌':'rgba(100,180,160,.22)','😐':'rgba(200,160,80,.18)','😔':'rgba(130,100,200,.22)','😰':'rgba(200,140,70,.22)','😤':'rgba(200,80,80,.20)','🥺':'rgba(180,120,200,.22)','💪':'rgba(100,150,220,.22)'};
 
