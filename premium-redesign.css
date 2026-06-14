@@ -6312,7 +6312,7 @@ body:not(.r-dark) .r-hs-icon { color: rgba(27, 94, 58, 0.75) !important; filter:
     align-items: stretch !important;
     margin: 0 0 12px !important;
     border-radius: 0 !important;
-    padding: 18px 20px 22px !important;
+    padding: 18px 16px 22px !important;
     gap: 0 !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -11014,6 +11014,6 @@ body.r-dark #pg-help-chat .feed-messages {
   pointer-events: none;
 }
 body.r-dark #homeDailyShareBtn {
-  background: linear-gradient(135deg,#e59520 0%,#c96e12 40%,#a84808 100%) !important;
-  box-shadow: 0 6px 26px rgba(200,90,10,.55), 0 2px 8px rgba(200,90,10,.30), inset 0 1px 0 rgba(255,255,255,.18) !important;
+  background: linear-gradient(135deg,#0e5c38 0%,#0a7848 45%,#075c35 100%) !important;
+  box-shadow: 0 6px 26px rgba(8,100,55,.60), 0 2px 8px rgba(8,100,55,.30), inset 0 1px 0 rgba(255,255,255,.15) !important;
 }
