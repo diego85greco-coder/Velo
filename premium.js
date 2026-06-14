@@ -1547,22 +1547,17 @@ function _loadTodayMoodHome(){
 var _selectedQuickMoodEmoji = '';
 
 function pQuickMood(){
-  var picker = document.getElementById('quickMoodPicker');
-  if(!picker) return;
-  var isOpen = picker.style.display !== 'none';
-  if(isOpen){ pCloseQuickMood(); return; }
-  picker.style.display = '';
   _selectedQuickMoodEmoji = '';
   var saveBtn = document.getElementById('quickMoodSaveBtn');
   if(saveBtn) saveBtn.disabled = true;
   document.querySelectorAll('.quick-mood-emoji').forEach(function(b){ b.style.background=''; b.style.transform=''; });
   var inp = document.getElementById('quickMoodPhrase');
   if(inp) inp.value = '';
+  openModal('quickMoodOv');
 }
 
 function pCloseQuickMood(){
-  var picker = document.getElementById('quickMoodPicker');
-  if(picker) picker.style.display = 'none';
+  closeModal('quickMoodOv');
 }
 
 function pSelectQuickMood(el, emoji, label){

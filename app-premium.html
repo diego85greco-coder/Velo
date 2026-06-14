@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="697">
+  <meta name="app-version" content="698">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -28,8 +28,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260614-697">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260614-697">
+  <link rel="stylesheet" href="premium.css?v=20260614-698">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260614-698">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -40,7 +40,6 @@
     .r-hero-actions       { order: 5 !important; }
     #homeMonthlyHint      { order: 6; }
     #homeRegisterOuter    { order: 7; }
-    #quickMoodPicker      { order: 7; }
     #homeMomentoSection   { order: 9 !important; }
     #homeParaVosPanel     { order: 10; }
     .r-home-quick-panel   { order: 12; }
@@ -1024,24 +1023,7 @@
               </button>
             </div>
           </div>
-          <!-- Quick mood picker (hidden by default) -->
-          <div id="quickMoodPicker" style="display:none;margin:0 16px 6px;padding:12px 14px 14px;background:var(--cream2);border:1.5px solid rgba(116,198,157,.25);border-radius:18px;animation:p-fadeIn .2s ease">
-            <div style="font-size:11px;font-weight:700;color:var(--ink4);letter-spacing:.5px;margin-bottom:10px">¿CÓMO TE SENTÍS AHORA?</div>
-            <div style="display:flex;gap:5px;justify-content:center;margin-bottom:12px" id="quickMoodEmojis">
-              <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😄','Muy bien')">😄</button>
-              <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😊','Bien')">😊</button>
-              <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😐','Regular')">😐</button>
-              <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😞','Mal')">😞</button>
-              <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😢','Muy mal')">😢</button>
-            </div>
-            <input type="text" id="quickMoodPhrase" placeholder="Agregá una frase (opcional)…" maxlength="80"
-              style="width:100%;box-sizing:border-box;padding:8px 12px;border:1.5px solid var(--border2);border-radius:10px;font-size:13px;font-family:'Jost',sans-serif;background:var(--cream);color:var(--ink);outline:none"
-              onkeydown="if(event.key==='Enter')pSaveQuickMood()">
-            <div style="display:flex;gap:8px;margin-top:10px">
-              <button class="p-btn p-btn--primary p-btn--sm" style="flex:1" onclick="pSaveQuickMood()" id="quickMoodSaveBtn" disabled>Guardar</button>
-              <button class="p-btn p-btn--secondary p-btn--sm" onclick="pCloseQuickMood()">Cancelar</button>
-            </div>
-          </div>
+          <!-- Quick mood picker moved to modal below -->
           <!-- Hint: monthly mood analysis — card -->
           <div id="homeMonthlyHint" style="margin:8px 16px 12px;background:linear-gradient(135deg,rgba(116,198,157,.11) 0%,rgba(80,140,100,.07) 100%);border:1.5px solid rgba(116,198,157,.30);border-radius:18px;padding:14px 16px 14px;text-align:center">
             <div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.80);margin-bottom:7px">📋 REGISTRA TUS ÁNIMOS</div>
@@ -3538,8 +3520,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260614-697"></script>
-<script src="premium-redesign.js?v=20260614-697"></script>
+<script src="premium.js?v=20260614-698"></script>
+<script src="premium-redesign.js?v=20260614-698"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
@@ -3588,6 +3570,28 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   <div style="font-size:10.5px;color:var(--ink4);line-height:1.45;text-align:center;margin-bottom:10px">Mantenemos este espacio gratuito gracias a vos.</div>
   <button class="p-btn p-btn--primary p-btn--sm p-btn--full" onclick="pGoTo('donate-cta')" style="margin-bottom:6px;font-size:11px">🌻 Donar</button>
   <button class="p-btn p-btn--secondary p-btn--sm p-btn--full" onclick="pShowPlusModal()" style="font-size:11px">⭐ Velo Plus</button>
+</div>
+
+<!-- Quick mood picker modal -->
+<div class="p-modal-ov" id="quickMoodOv" onclick="if(event.target===this)closeModal('quickMoodOv')">
+  <div class="p-sheet" style="max-width:420px">
+    <div class="p-sheet-handle"></div>
+    <div style="font-size:13px;font-weight:800;color:var(--ink4);letter-spacing:.5px;margin-bottom:16px;text-align:center">¿CÓMO TE SENTÍS AHORA?</div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:16px" id="quickMoodEmojis">
+      <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😄','Muy bien')">😄</button>
+      <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😊','Bien')">😊</button>
+      <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😐','Regular')">😐</button>
+      <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😞','Mal')">😞</button>
+      <button class="quick-mood-emoji" onclick="pSelectQuickMood(this,'😢','Muy mal')">😢</button>
+    </div>
+    <input type="text" id="quickMoodPhrase" placeholder="Agregá una frase (opcional)…" maxlength="80"
+      style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid var(--border2);border-radius:12px;font-size:14px;font-family:'Jost',sans-serif;background:var(--cream);color:var(--ink);outline:none;margin-bottom:14px"
+      onkeydown="if(event.key==='Enter')pSaveQuickMood()">
+    <div style="display:flex;gap:8px">
+      <button class="p-btn p-btn--primary p-btn--sm" style="flex:1" onclick="pSaveQuickMood()" id="quickMoodSaveBtn" disabled>Guardar</button>
+      <button class="p-btn p-btn--secondary p-btn--sm" onclick="pCloseQuickMood()">Cancelar</button>
+    </div>
+  </div>
 </div>
 </body>
 </html>
