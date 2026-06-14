@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="743">
+  <meta name="app-version" content="744">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -28,8 +28,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260614-743">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260614-743">
+  <link rel="stylesheet" href="premium.css?v=20260614-744">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260614-744">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -41,14 +41,14 @@
     #homeStatusToggle     { order: 5 !important; }
     .r-hero-actions       { order: 6 !important; }
     #homeMonthlyHint      { order: 7; }
-    #homeGuardianChip     { order: 7; }
-    #homeRegisterOuter    { order: 8; }
+    #homeShareWeekBtn     { order: 7; }
+    #homeGuardianChip     { order: 8; }
+    #homeRegisterOuter    { order: 9; }
     #homeMemoryCard       { order: 9; }
     #homeMomentoSection   { order: 10 !important; }
     #homeParaVosPanel     { order: 11; }
     .r-home-quick-panel   { order: 12; }
     .r-home-shortcut-grid { order: 12; }
-    #homeShareWeekBtn     { order: 14; }
     @keyframes guardianPulse { 0%,100%{box-shadow:0 0 0 3px rgba(116,198,157,.2)} 50%{box-shadow:0 0 0 6px rgba(116,198,157,.05)} }
     body:not(.r-dark) #homeGuardianChip > div { background:linear-gradient(135deg,rgba(74,160,110,.1),rgba(74,160,110,.06)) !important;border-color:rgba(74,120,60,.3) !important; }
     body:not(.r-dark) #homeGuardianChipTxt { color:rgba(40,100,50,.9) !important; }
@@ -1253,7 +1253,7 @@
               </div>
               <!-- ── GUARDIAN ACTIVITY ──────────────────────────── -->
               <div id="homeGuardianChip" style="display:none;margin:0 0 10px;box-sizing:border-box;width:100%">
-                <div onclick="pGoTo('pg-guardians')" style="cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.12),rgba(74,160,110,.08));border:1px solid rgba(116,198,157,.25);border-radius:14px;padding:10px 16px;display:flex;align-items:center;gap:10px">
+                <div onclick="pGoTo('guardians')" style="cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.12),rgba(74,160,110,.08));border:1px solid rgba(116,198,157,.25);border-radius:14px;padding:10px 16px;display:flex;align-items:center;gap:10px">
                   <div style="width:8px;height:8px;border-radius:50%;background:rgba(116,198,157,.9);box-shadow:0 0 0 3px rgba(116,198,157,.2);flex-shrink:0;animation:guardianPulse 2s ease-in-out infinite"></div>
                   <div style="flex:1">
                     <span id="homeGuardianChipTxt" style="font-size:13px;font-weight:600;color:rgba(116,198,157,.9);font-family:Jost,sans-serif"></span>
@@ -3670,8 +3670,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
   <div style="font-size:10px;color:rgba(255,255,255,.3);font-family:Jost,sans-serif;text-align:center">Mantenés presionado la imagen para guardarla</div>
 </div>
-<script src="premium.js?v=20260614-743"></script>
-<script src="premium-redesign.js?v=20260614-743"></script>
+<script src="premium.js?v=20260614-744"></script>
+<script src="premium-redesign.js?v=20260614-744"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

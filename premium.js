@@ -2811,16 +2811,19 @@ async function _loadGuardianActivity(){
   if(!el) return;
   if(!sbClient) return;
   try{
-    var res = await sbClient.from('profiles')
-      .select('id',{count:'exact',head:true})
-      .eq('user_status','disponible')
-      .eq('incognito','false');
+    // Use guardian_presence (real-time) table: active in last 5 min, disponible, is_guardian
+    var cutoff = new Date(Date.now() - 5*60*1000).toISOString();
+    var res = await sbClient.from('guardian_presence')
+      .select('user_id',{count:'exact',head:true})
+      .eq('is_guardian', true)
+      .eq('status','disponible')
+      .gte('last_seen', cutoff);
     var n = res.count || 0;
-    if(n < 1) return; // hide chip if no guardians available
+    if(n < 1){ el.style.display = 'none'; return; }
     el.style.display = 'block';
     var txtEl = document.getElementById('homeGuardianChipTxt');
     if(txtEl) txtEl.textContent = '🛡️ '+n+(n===1?' guardián disponible ahora':' guardianes disponibles ahora');
-  }catch(e){}
+  }catch(e){ el.style.display = 'none'; }
 }
 
 // ── WEEKLY SHARE CARD ──────────────────────────────────────────
