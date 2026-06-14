@@ -1236,6 +1236,16 @@ async function _saveProfileComplete(){
   if(btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
+  // Always get UID from live session — don't rely on potentially stale localStorage value
+  if(sbClient){
+    try{
+      var {data:_sd} = await sbClient.auth.getSession();
+      if(_sd && _sd.session && _sd.session.user && _sd.session.user.id){
+        uid = _sd.session.user.id;
+        safeLS('set','velo_user_id', uid);
+      }
+    }catch(e){}
+  }
   if(sbClient && uid){
     try{
       var _rU = await sbClient.from('profiles').select('id').eq('username', uname).neq('id', uid).limit(1);
@@ -1244,11 +1254,10 @@ async function _saveProfileComplete(){
         if(btn){ btn.disabled = false; btn.textContent = 'Listo, entrá →'; }
         return;
       }
-      var _r = await sbClient.from('profiles').update({nombre: name, username: uname}).eq('id', uid);
-      if(_r.error){
-        await sbClient.from('profiles').upsert({id:uid, nombre:name, username:uname},{onConflict:'id'});
-      }
-    }catch(e){ console.warn('[_saveProfileComplete]', e); }
+      // Always UPSERT — UPDATE on a missing row returns no error but saves nothing
+      var _r = await sbClient.from('profiles').upsert({id:uid, nombre:name, username:uname},{onConflict:'id'});
+      if(_r && _r.error){ pToast('⚠️','Error al guardar perfil: '+_r.error.message); if(btn){btn.disabled=false;btn.textContent='Listo, entrá →';} return; }
+    }catch(e){ pToast('⚠️','Error de conexión al guardar perfil'); if(btn){btn.disabled=false;btn.textContent='Listo, entrá →';} return; }
   }
   safeLS('set','velo_user_name', name);
   safeLS('set','velo_username',  uname);
@@ -1609,55 +1618,51 @@ function _checkAndShowNameBanner(name){
   if(scrollEl) scrollEl.insertBefore(b, scrollEl.querySelector('.home-header') || scrollEl.firstChild);
 }
 
-function _saveNameFromBanner(){
+async function _saveNameFromBanner(){
   var inp = document.getElementById('homeNameInput');
   if(!inp) return;
   var newName = inp.value.trim();
   if(!newName || newName.length < 2){ pToast('⚠️','Ingresá un nombre válido'); return; }
   safeLS('set','velo_user_name', newName);
-  // Update DOM immediately
   var un = document.getElementById('homeUserName');
   if(un) un.textContent = newName;
   var unf = document.getElementById('homeUserNameFab');
   if(unf) unf.textContent = newName;
-  // Push to Supabase (same as pSaveProfile but from localStorage)
   _initSupabase();
+  if(!sbClient){ pToast('✅','Nombre guardado en este dispositivo'); var b=document.getElementById('homeNameBanner'); if(b)b.remove(); _updateSidebarUser(); return; }
+  // Get UID from session (don't rely solely on velo_user_id which may be stale)
   var uid = safeLS('get','velo_user_id');
+  try{
+    var {data:sd} = await sbClient.auth.getSession();
+    if(sd && sd.session && sd.session.user && sd.session.user.id){
+      uid = sd.session.user.id;
+      safeLS('set','velo_user_id', uid);
+    }
+  }catch(e){}
+  if(!uid){ pToast('✅','Nombre guardado en este dispositivo'); var b2=document.getElementById('homeNameBanner'); if(b2)b2.remove(); _updateSidebarUser(); return; }
   var email = safeLS('get','velo_user_email')||'';
-  if(sbClient && uid){
-    // Step 1: save only nombre via UPDATE (minimal — avoids failures from optional columns)
-    sbClient.from('profiles').update({nombre: newName}).eq('id', uid)
-    .then(function(r){
-      if(r && r.error){
-        // Row may not exist yet — upsert with minimal required fields
-        return sbClient.from('profiles').upsert({id:uid, nombre:newName, email:email},{onConflict:'id'});
-      }
-      return Promise.resolve(r);
-    })
-    .then(function(r){
-      if(r && r.error){ pToast('⚠️','Error al guardar: '+r.error.message); return; }
-      pToast('✅','¡Nombre guardado! Ya se verá en todos tus dispositivos 🌿');
-      var banner = document.getElementById('homeNameBanner');
-      if(banner) banner.remove();
-      _updateSidebarUser();
-      // Step 2: push other profile fields in background (non-blocking)
-      try{
-        var av = safeLS('get','velo_user_av')||'';
-        if(av.length > 8000) av = '';
-        sbClient.from('profiles').update({
-          avatar: av,
-          motto:  safeLS('get','velo_user_motto')||'',
-          status_music:  safeLS('get','velo_status_music')||'',
-          status_book:   safeLS('get','velo_status_book')||'',
-          status_phrase: safeLS('get','velo_status_phrase')||'',
-          status_film:   safeLS('get','velo_status_film')||''
-        }).eq('id', uid).then(function(){}).catch(function(){});
-      }catch(e2){}
-    })
-    .catch(function(e){ pToast('⚠️','Error de conexión'); });
-  } else {
-    pToast('⚠️','Sin conexión — intentá de nuevo');
-  }
+  try{
+    // Always UPSERT — UPDATE on missing row returns no error but saves nothing
+    var r = await sbClient.from('profiles').upsert({id:uid, nombre:newName, email:email},{onConflict:'id'});
+    if(r && r.error){ pToast('⚠️','Error al guardar: '+r.error.message); return; }
+    pToast('✅','¡Nombre guardado! Ya se verá en todos tus dispositivos 🌿');
+    var banner = document.getElementById('homeNameBanner');
+    if(banner) banner.remove();
+    _updateSidebarUser();
+    // Push other profile fields in background
+    try{
+      var av = safeLS('get','velo_user_av')||'';
+      if(av.length > 8000) av = '';
+      sbClient.from('profiles').upsert({
+        id: uid, avatar: av,
+        motto:  safeLS('get','velo_user_motto')||'',
+        status_music:  safeLS('get','velo_status_music')||'',
+        status_book:   safeLS('get','velo_status_book')||'',
+        status_phrase: safeLS('get','velo_status_phrase')||'',
+        status_film:   safeLS('get','velo_status_film')||''
+      },{onConflict:'id'}).then(function(){}).catch(function(){});
+    }catch(e2){}
+  }catch(e){ pToast('⚠️','Error de conexión'); }
 }
 
 // ── HOME DATA ──────────────────────────────────────────────────
