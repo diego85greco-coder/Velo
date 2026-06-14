@@ -2658,8 +2658,90 @@ async function _fetchDailyFeed(qId){
   var today = _dateKey();
   try{
     var res = await sbClient.from('daily_responses').select('*').eq('question_date',today).order('created_at',{ascending:false}).limit(40);
-    _renderDailyFeed(res.data || []);
+    var responses = res.data || [];
+    await _loadDqReactions(responses.map(function(r){ return r.id; }));
+    _renderDailyFeed(responses);
   }catch(e){ _renderDailyFeed([]); }
+}
+
+// ── DAILY QUESTION REACTIONS ────────────────────────────────────
+var _dqReactMap = {}; // {responseId:{identifico:{count,mine},abrazo:{count,mine},entiendo:{count,mine}}}
+
+async function _loadDqReactions(responseIds){
+  _dqReactMap = {};
+  if(!sbClient || !responseIds.length) return;
+  var myUid = safeLS('get','velo_user_id') || '';
+  try{
+    var res = await sbClient.from('dq_reactions').select('response_id,reaction,user_id').in('response_id', responseIds);
+    (res.data||[]).forEach(function(r){
+      if(!_dqReactMap[r.response_id]) _dqReactMap[r.response_id] = {};
+      var m = _dqReactMap[r.response_id];
+      if(!m[r.reaction]) m[r.reaction] = {count:0, mine:false};
+      m[r.reaction].count++;
+      if(r.user_id === myUid) m[r.reaction].mine = true;
+    });
+  }catch(e){}
+}
+
+function _buildDqReactionBar(responseId){
+  var rxDefs = [
+    {key:'identifico', label:'Me identifico', emoji:'💚'},
+    {key:'abrazo',     label:'Te abrazo',     emoji:'🫂'},
+    {key:'entiendo',   label:'Te entiendo',   emoji:'💙'}
+  ];
+  var m = _dqReactMap[responseId] || {};
+  return '<div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">'
+    + rxDefs.map(function(rx){
+      var rd = m[rx.key] || {count:0, mine:false};
+      var active = rd.mine;
+      var bg     = active ? 'rgba(116,198,157,.20)' : 'rgba(255,255,255,.06)';
+      var border = active ? 'rgba(116,198,157,.50)' : 'rgba(255,255,255,.12)';
+      var color  = active ? 'rgba(116,198,157,.95)' : 'rgba(255,255,255,.48)';
+      var cnt    = rd.count > 0 ? ' '+rd.count : '';
+      return '<button onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
+        +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+active+'" '
+        +'style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;border:1px solid '+border+';background:'+bg+';color:'+color+';font-size:11px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer;transition:all .15s;line-height:1">'
+        +rx.emoji+'<span>'+rx.label+cnt+'</span>'
+        +'</button>';
+    }).join('')
+    + '</div>';
+}
+
+async function pToggleDqReaction(responseId, reaction, btn){
+  var uid = safeLS('get','velo_user_id');
+  if(!uid){ pToast('💚','Iniciá sesión para reaccionar'); return; }
+  var isActive = btn.dataset.active === 'true';
+  if(!_dqReactMap[responseId]) _dqReactMap[responseId] = {};
+  var rd = _dqReactMap[responseId][reaction] || {count:0, mine:false};
+  var _rxLabel = {identifico:'Me identifico', abrazo:'Te abrazo', entiendo:'Te entiendo'};
+  var _rxEmoji = {identifico:'💚', abrazo:'🫂', entiendo:'💙'};
+  // Optimistic UI update
+  if(isActive){
+    rd.count = Math.max(0, rd.count-1); rd.mine = false;
+    btn.dataset.active = 'false';
+    btn.style.background = 'rgba(255,255,255,.06)';
+    btn.style.borderColor = 'rgba(255,255,255,.12)';
+    btn.style.color = 'rgba(255,255,255,.48)';
+  } else {
+    rd.count++; rd.mine = true;
+    btn.dataset.active = 'true';
+    btn.style.background = 'rgba(116,198,157,.20)';
+    btn.style.borderColor = 'rgba(116,198,157,.50)';
+    btn.style.color = 'rgba(116,198,157,.95)';
+    pToast(_rxEmoji[reaction], _rxLabel[reaction]);
+  }
+  _dqReactMap[responseId][reaction] = rd;
+  var span = btn.querySelector('span');
+  if(span) span.textContent = _rxLabel[reaction]+(rd.count>0?' '+rd.count:'');
+  // Sync Supabase
+  if(!sbClient) return;
+  try{
+    if(isActive){
+      await sbClient.from('dq_reactions').delete().eq('response_id',responseId).eq('user_id',uid).eq('reaction',reaction);
+    } else {
+      await sbClient.from('dq_reactions').upsert({response_id:responseId, user_id:uid, reaction:reaction},{onConflict:'response_id,user_id,reaction'});
+    }
+  }catch(e){}
 }
 
 var _DQ_PREVIEW_COUNT = 5; // cards shown before "ver más"
@@ -2716,6 +2798,7 @@ function _buildDqCards(list){
       +'<span style="font-size:17px;background:'+mBg+';border-radius:8px;padding:1px 5px">'+r.mood_emoji+'</span>'
       +'</div>'
       +txt
+      +_buildDqReactionBar(r.id)
       +'</div>'
       +'</div>';
   }).join('');
