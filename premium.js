@@ -3159,17 +3159,8 @@ async function _loadGuardianActivity(){
 
 // ── WEEKLY SHARE CARD ──────────────────────────────────────────
 function _initShareWeekBtn(){
-  // Show button only if user has at least 2 days of mood data
-  var count = 0;
-  for(var i=0;i<7;i++){
-    var d = new Date(); d.setDate(d.getDate()-i);
-    var k = d.toISOString().slice(0,10);
-    if(safeLS('get','velo_mood_'+k)) count++;
-  }
-  if(count >= 2){
-    var el = document.getElementById('homeShareWeekBtn');
-    if(el) el.style.display = 'block';
-  }
+  var el = document.getElementById('homeShareWeekBtn');
+  if(el) el.style.display = 'block';
 }
 
 function _closeShareCard(){
@@ -3177,9 +3168,37 @@ function _closeShareCard(){
   if(ov) ov.style.display = 'none';
 }
 
-function pOpenShareCard(){
+async function pOpenShareCard(){
   var ov = document.getElementById('shareCardOv');
   if(ov){ ov.style.display = 'flex'; }
+  // Sync this week's moods from Supabase if localStorage is empty (e.g. after clearing cache)
+  var _hasMoods = false;
+  for(var _mi=0;_mi<7;_mi++){
+    var _md=new Date(); _md.setDate(_md.getDate()-_mi);
+    if(safeLS('get','velo_mood_'+_md.toISOString().slice(0,10))){ _hasMoods=true; break; }
+  }
+  if(!_hasMoods){
+    _initSupabase();
+    var _uid = safeLS('get','velo_user_id');
+    if(sbClient && _uid){
+      try{
+        var _now=new Date(), _months={};
+        for(var _si=0;_si<7;_si++){
+          var _sd=new Date(_now.getFullYear(),_now.getMonth(),_now.getDate()-_si);
+          var _mk=_sd.getFullYear()+'-'+String(_sd.getMonth()+1).padStart(2,'0');
+          if(!_months[_mk]) _months[_mk]={year:_sd.getFullYear(),month:_sd.getMonth()+1};
+        }
+        await Promise.all(Object.values(_months).map(async function(m){
+          var sb=await sbLoadAllMoods(m.year,m.month);
+          if(sb) sb.forEach(function(e){
+            if(!safeLS('get','velo_mood_'+e.date_key)){
+              safeLS('set','velo_mood_'+e.date_key, JSON.stringify({emoji:e.emoji,label:e.label||'',note:e.note||'',ts:0}));
+            }
+          });
+        }));
+      }catch(e){}
+    }
+  }
   _drawShareCard();
 }
 
