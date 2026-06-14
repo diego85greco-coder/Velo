@@ -1203,14 +1203,19 @@ async function _checkProfileComplete(){
   var uid = safeLS('get','velo_user_id');
   if(!sbClient || !uid) return; // can't verify — give benefit of the doubt
   try{
-    var r = await sbClient.from('profiles').select('username,nombre').eq('id',uid).limit(1);
+    var r = await sbClient.from('profiles').select('username,nombre,avatar').eq('id',uid).limit(1);
     if(r.error || !r.data || !r.data.length) return; // query failed or no row — don't block
     var p = r.data[0];
     if(p.username){ safeLS('set','velo_username', p.username); uname = p.username; }
     if(p.nombre)  { safeLS('set','velo_user_name', p.nombre);  name  = p.nombre; }
-    if(_nameOk(name) && uname) return; // Supabase had the data — all good
+    if(p.avatar)  { safeLS('set','velo_user_av', p.avatar); _updateSidebarUser(); }
+    // If Supabase has a username, the user completed setup at some point — never block them.
+    // Their display name might be corrupted (email prefix overwrite bug) but that is fixable
+    // via Profile settings — not by forcing a mandatory modal that breaks returning users.
+    if(uname) return;
+    if(_nameOk(name)) return; // valid name alone is also sufficient for new-username flows
   }catch(e){ return; } // network error — don't block
-  // Only reach here if Supabase confirmed the profile is genuinely incomplete
+  // Only reach here if Supabase confirmed the profile is genuinely incomplete (truly new user)
   var pcn = document.getElementById('pcName');
   var pcu = document.getElementById('pcUsername');
   if(pcn && _nameOk(name)) pcn.value = name;
