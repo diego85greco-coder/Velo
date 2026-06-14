@@ -10933,15 +10933,27 @@ body.r-dark .home-momento-btn-all {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   v695 — Weather icon centering fix
+   v700 — Weather icon centering fix (replaces v695 attempt)
+   The pill card is wider than 190px, making the icon look off-center.
+   Fix: make .r-time-icon full-width flex so the emoji is always
+   centered relative to the full container, matching the pill.
    ══════════════════════════════════════════════════════════════════ */
-/* .weather-hero-img is display:flex (block-level) inside a span with text-align:center.
-   text-align only affects inline content, so margin:auto is needed to center the block. */
-#homeTimeIcon .weather-hero-img {
-  margin: 0 auto !important;
-}
-/* Also ensure the .r-time-icon wrapper itself is self-centered as a flex item */
 #homeTimeIcon .r-time-icon {
-  align-self: center !important;
-  width: 190px !important;
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  line-height: 0 !important;
+}
+/* Bigger emoji, auto-sized container — no hard-coded 190px to fight */
+#homeTimeIcon .weather-hero-img {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+}
+.weather-hero-emoji {
+  font-size: 155px !important;
 }
