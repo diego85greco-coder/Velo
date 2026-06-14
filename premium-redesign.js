@@ -745,6 +745,7 @@
 function rToggleDarkMode() {
   var isDark = document.body.classList.toggle('r-dark');
   try { localStorage.setItem('velo-r-darkmode', isDark ? '1' : '0'); } catch(e) {}
+  if(typeof _syncDarkModeToSB === 'function') _syncDarkModeToSB(isDark);
   var lbl = document.getElementById('rDarkToggleLbl');
   if (lbl) lbl.textContent = isDark ? '☀️ Modo claro' : '🌙 Modo oscuro';
   var icon = document.getElementById('rDarkToggleIcon');

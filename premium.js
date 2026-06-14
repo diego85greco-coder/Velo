@@ -442,7 +442,7 @@ async function _sbSyncProfile(userId){
   // Each tier drops more optional columns; _profileSelectTier is cached so we skip
   // known-failing queries on every subsequent call (avoids 400 flood in console).
   var _selTiers = [
-    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city,pro_trial_expires_at,pro_subscription_expires_at,visit_days',
+    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city,pro_trial_expires_at,pro_subscription_expires_at,visit_days,dark_mode,helped_count',
     'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids',
     'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes',
     'nombre,avatar,motto,role,username,username_changes',
@@ -573,6 +573,25 @@ async function _sbSyncProfile(userId){
   if(p.username)      safeLS('set','velo_username',       p.username);
   if(p.username)      _uFill(userId, p.username);
   if(p.username_changes != null) safeLS('set','velo_username_changes', String(p.username_changes));
+  // Infer onboarding done from username — if user has a username, they completed setup
+  if(p.username) safeLS('set','velo_onboarding_done','1');
+  // Restore "helped once" badge and guardian conv count from Supabase counter
+  if(p.helped_count > 0){
+    safeLS('set','velo_helped_once','1');
+    var _lConvs = parseInt(safeLS('get','velo_guardian_convs')||'0',10);
+    if(p.helped_count > _lConvs) safeLS('set','velo_guardian_convs', String(p.helped_count));
+  }
+  // Restore dark mode preference on fresh devices (never overwrite an explicit local choice)
+  if(p.dark_mode !== null && p.dark_mode !== undefined){
+    try{
+      var _lDark = localStorage.getItem('velo-r-darkmode');
+      if(_lDark === null){
+        localStorage.setItem('velo-r-darkmode', p.dark_mode ? '1' : '0');
+        if(p.dark_mode) document.body.classList.add('r-dark');
+        else document.body.classList.remove('r-dark');
+      }
+    }catch(e){}
+  }
   // user_status: restore on new device if local is empty; don't overwrite user's current session choice
   if(p.user_status && !safeLS('get','velo_user_status')) safeLS('set','velo_user_status', p.user_status);
   // incognito: restore on new device (treat missing/null as false)
@@ -2057,6 +2076,15 @@ function _fmtDate(ts){
 function _localDateStr(){
   var d = new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+// Push dark mode preference to Supabase profiles (called from rToggleDarkMode in premium-redesign.js)
+function _syncDarkModeToSB(isDark){
+  _initSupabase();
+  var uid = _myUserId ? _myUserId() : safeLS('get','velo_user_id');
+  if(!sbClient || !uid || uid === 'guest') return;
+  sbClient.from('profiles').update({dark_mode: isDark ? true : false}).eq('id', uid)
+    .then(function(){}).catch(function(){});
 }
 
 // Push current visit count + full dates array to Supabase profiles (fire-and-forget)
