@@ -6440,6 +6440,45 @@ async function pSaveMood(){
 }
 
 // ── MOOD QUICK VIEW MODAL ─────────────────────────────────────
+var _moodQVYear = 0, _moodQVMonth = 0;
+
+async function _moodQVNav(delta){
+  var now = new Date();
+  var ny = _moodQVYear, nm = _moodQVMonth + delta;
+  if(nm < 0){ nm = 11; ny--; }
+  if(nm > 11){ nm = 0; ny++; }
+  if(ny > now.getFullYear() || (ny === now.getFullYear() && nm > now.getMonth())) return;
+  _moodQVYear = ny; _moodQVMonth = nm;
+  var monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var titleEl = document.getElementById('moodQVTitle');
+  if(titleEl) titleEl.textContent = monthNames[nm] + ' ' + ny;
+  var calEl = document.getElementById('moodQVCal');
+  if(!calEl) return;
+  calEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--ink5);font-size:12px">Cargando…</div>';
+  var daysInMonth = new Date(ny, nm+1, 0).getDate();
+  var moodMap = {};
+  for(var d=1;d<=daysInMonth;d++){
+    var dk=''+ny+'-'+String(nm+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var st=safeLS('get','velo_mood_'+dk);
+    if(st){try{var ms=JSON.parse(st);if(ms.emoji)moodMap[dk]=ms;}catch(e){}}
+  }
+  try{var sbM=await sbLoadAllMoods(ny,nm+1);if(sbM)sbM.forEach(function(e){if(e.emoji)moodMap[e.date_key]=e;});}catch(e){}
+  var html='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 auto 16px;max-width:330px">';
+  ['L','M','M','J','V','S','D'].forEach(function(dd){html+='<div style="text-align:center;font-size:9px;font-weight:700;color:var(--ink5);padding:2px 0">'+dd+'</div>';});
+  var fd=new Date(ny,nm,1).getDay(); fd=fd===0?6:fd-1;
+  for(var i=0;i<fd;i++)html+='<div></div>';
+  for(var d2=1;d2<=daysInMonth;d2++){
+    var dk2=''+ny+'-'+String(nm+1).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
+    var ent=moodMap[dk2];
+    var isT=ny===now.getFullYear()&&nm===now.getMonth()&&d2===now.getDate();
+    html+='<div style="aspect-ratio:1;border-radius:8px;background:'+(ent?'rgba(116,198,157,.2)':'var(--cream2)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+(isT?'outline:2px solid var(--sage);outline-offset:1px':'')+'">'
+      +'<span style="font-size:9px;color:'+(ent?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+d2+'</span>'
+      +(ent?'<span style="font-size:13px;line-height:1">'+ent.emoji+'</span>':'')+'</div>';
+  }
+  html+='</div>';
+  calEl.innerHTML=html;
+}
+
 async function pOpenMoodQuickView(){
   var existing = document.getElementById('moodQuickOv');
   if(existing) existing.remove();
@@ -6448,6 +6487,7 @@ async function pOpenMoodQuickView(){
   var now = new Date();
   var year = now.getFullYear();
   var month = now.getMonth();
+  _moodQVYear = year; _moodQVMonth = month;
   var daysInMonth = new Date(year, month+1, 0).getDate();
   var monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
@@ -6507,13 +6547,14 @@ async function pOpenMoodQuickView(){
   ov.innerHTML = '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
-    +'<div><div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--sage3);text-transform:uppercase">Seguimiento</div>'
-    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink)">'+monthNames[month]+' '+year+'</div></div>'
-    +'<button onclick="document.getElementById(\'moodQuickOv\').remove()" style="width:32px;height:32px;border-radius:50%;background:var(--cream2);border:none;font-size:16px;cursor:pointer;color:var(--ink4)">✕</button>'
+    +'<button onclick="_moodQVNav(-1)" style="width:32px;height:32px;border-radius:50%;background:var(--cream2);border:none;font-size:18px;cursor:pointer;color:var(--ink3);flex-shrink:0;line-height:1">‹</button>'
+    +'<div style="text-align:center"><div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--sage3);text-transform:uppercase">Seguimiento</div>'
+    +'<div id="moodQVTitle" style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink)">'+monthNames[month]+' '+year+'</div></div>'
+    +'<button onclick="document.getElementById(\'moodQuickOv\').remove()" style="width:32px;height:32px;border-radius:50%;background:var(--cream2);border:none;font-size:16px;cursor:pointer;color:var(--ink4);flex-shrink:0">✕</button>'
     +'</div>'
     +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--sage2)">🔒 Solo vos podés ver estos registros</div>'
     +'<div style="background:rgba(221,212,245,.15);border:1px solid rgba(196,181,232,.3);border-radius:10px;padding:9px 12px;margin-bottom:14px;font-size:11px;color:var(--ink3);line-height:1.55">✨ La IA genera un reporte mensual con análisis de tus ánimos registrados. Lo recibirás en tu <strong>Buzón Velo</strong> el día 1 de cada mes 💌</div>'
-    + calHtml
+    +'<div id="moodQVCal">'+ calHtml +'</div>'
     + reportsHtml
     +'<div style="height:8px"></div>'
     +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="document.getElementById(\'moodQuickOv\').remove();pGoTo(\'mood\')">Registrar ánimo de hoy ✨</button>'
