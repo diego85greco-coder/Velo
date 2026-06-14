@@ -43,6 +43,7 @@ var _guardianRtCh = null;   // realtime channel guardian_presence
 var _liveGuardians = [];    // cached live guardian rows from Supabase
 var _grReqCh        = null;   // guardian_requests realtime channel (guardian side)
 var _seekerGrCh     = null;   // guardian_requests realtime channel (seeker side)
+var _homeRefreshTmr = null;   // home page live-content auto-refresh (60s)
 var _seekerGrPollTmr= null;   // polling fallback for seeker waiting for guardian offer
 var _grReqPollTmr   = null;   // polling fallback for guardian waiting for acceptance
 var _helpChatRtCh   = null;   // realtime channel for help chat direct_messages
@@ -1864,6 +1865,37 @@ function _loadHomeData(){
   setTimeout(_initHomeMomento, 400);
 }
 
+// ── HOME AUTO-REFRESH ─────────────────────────────────────────
+function _startHomeRefresh(){
+  if(_homeRefreshTmr) return;
+  _homeRefreshTmr = setInterval(_homeRefreshLive, 60000);
+}
+function _stopHomeRefresh(){
+  if(_homeRefreshTmr){ clearInterval(_homeRefreshTmr); _homeRefreshTmr = null; }
+}
+function _homeRefreshLive(){
+  if(document.visibilityState === 'hidden') return;
+  if(_curPage !== 'home'){ _stopHomeRefresh(); return; }
+  // Guardian availability chip
+  _loadGuardianActivity();
+  // Community pulse counter
+  _loadCommunityPulse();
+  // Momentos / Muro Feliz tab counts + active feed
+  _updateFeedTabCounts();
+  var section = document.getElementById('homeMomentoSection');
+  if(section && section.style.display !== 'none'){
+    if(_homeActiveFeedTab === 'happy') _loadHomeHappyFeed();
+    else _initHomeMomento();
+  }
+  // Daily question: refresh feed if user already answered, else update count
+  var openEl = document.getElementById('homeDailyQOpen');
+  if(openEl && openEl.style.display !== 'none'){
+    _fetchDailyFeed(_getDailyQuestion().id);
+  } else {
+    _fetchDailyCount();
+  }
+}
+
 function _updateHomeBell(){
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   var localUnread = msgs.filter(function(m){ return !m.leido && !safeLS('get','velo_read_'+m.id); }).length;
@@ -2744,7 +2776,22 @@ function _loadDailyQ(){
   var qtEl = document.getElementById('homeDailyQText');
   if(qtEl) qtEl.textContent = q.text;
   var dateKey = _dateKey();
+  var currentUid = safeLS('get','velo_user_id') || '';
   var myResp = safeLS('get','velo_daily_resp_'+dateKey);
+  // Validate that stored response belongs to the current user (multi-account fix)
+  if(myResp && currentUid){
+    try{
+      var _rv = JSON.parse(myResp);
+      if(!_rv.uid){
+        // Old format without uid — claim for current user
+        _rv.uid = currentUid;
+        safeLS('set','velo_daily_resp_'+dateKey, JSON.stringify(_rv));
+      } else if(_rv.uid !== currentUid){
+        // Belongs to a different user — treat as unanswered
+        myResp = null;
+      }
+    }catch(e){ myResp = null; }
+  }
   if(myResp){
     var lockedEl = document.getElementById('homeDailyQLocked');
     var openEl   = document.getElementById('homeDailyQOpen');
@@ -2958,7 +3005,7 @@ async function pSubmitDailyResponse(){
   var name  = safeLS('get','velo_user_name') || 'Alguien';
   var av    = safeLS('get','velo_user_av') || '';
   var avSafe = (av && !av.startsWith('data:')) ? av : '';
-  safeLS('set','velo_daily_resp_'+dateKey, JSON.stringify({emoji:_dailySelectedEmoji,text:text}));
+  safeLS('set','velo_daily_resp_'+dateKey, JSON.stringify({emoji:_dailySelectedEmoji,text:text,uid:uid}));
   if(sbClient && uid){
     try{
       await sbClient.from('daily_responses').upsert({
@@ -18791,11 +18838,12 @@ function _initReveal(){
 
 // ── PER-PAGE INIT DISPATCHER ──────────────────────────────────
 function _onPageEnter(id){
+  if(id !== 'home') _stopHomeRefresh(); // stop live refresh when leaving home
   switch(id){
     case 'landing':     _initReveal(); break;
     case 'register':    _botGuardInit(); break;
     case 'pro-reg':     _botGuardInit(); break;
-    case 'home':        _loadHomeData(); break;
+    case 'home':        _loadHomeData(); _startHomeRefresh(); break;
     case 'guardians':
       _initSupabase();
       if(sbClient && !_guardianRtCh) _guardianRtCh = _sbSub('velo:guardians', 'guardian_presence', function(){ pRenderGuardians(); });
