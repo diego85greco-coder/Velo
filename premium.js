@@ -16235,14 +16235,17 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
   try{ reported = JSON.parse(safeLS('get','velo_momento_reported')||'{}'); }catch(e){}
 
   if(!momentos||!momentos.length){
-    feed.innerHTML='<div style="text-align:center;padding:18px 8px;font-size:13px;color:rgba(255,255,255,.35);font-style:italic">'
-      +(showMineOnly?'Todavía no publicaste ningún momento hoy ✨':'Sé el primero en compartir un momento hoy ✨')
+    var _emptyEmoji = showMineOnly ? '✨' : '💭';
+    var _emptyMsg = showMineOnly ? 'Todavía no publicaste ningún momento hoy' : 'Sé el primero en compartir un momento hoy';
+    feed.innerHTML='<div style="text-align:center;padding:18px 8px">'
+      +'<span style="font-size:26px">'+_emptyEmoji+'</span>'
+      +'<div style="font-size:12px;color:var(--ink4);margin-top:7px;line-height:1.4">'+_emptyMsg+'</div>'
       +'</div>';
     return;
   }
   var cards = momentos.filter(function(m){ return !reported[m.id]; });
   if(!cards.length){
-    feed.innerHTML='<div style="text-align:center;padding:18px 8px;font-size:13px;color:rgba(255,255,255,.35);font-style:italic">No hay momentos disponibles ✨</div>';
+    feed.innerHTML='<div style="text-align:center;padding:18px 8px"><span style="font-size:26px">💭</span><div style="font-size:12px;color:var(--ink4);margin-top:7px">No hay momentos disponibles ✨</div></div>';
     return;
   }
   feed.innerHTML=cards.map(function(m){
