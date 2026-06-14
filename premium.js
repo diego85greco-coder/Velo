@@ -3077,6 +3077,65 @@ async function _loadCommunityPulse(){
   }
 }
 
+function _closePulseDetail(){
+  var ov = document.getElementById('pulseDetailOv');
+  if(ov) ov.style.display = 'none';
+}
+
+async function _showPulseDetail(){
+  var ov = document.getElementById('pulseDetailOv');
+  var cont = document.getElementById('pulseDetailContent');
+  if(!ov || !cont) return;
+  ov.style.display = 'flex';
+  cont.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink4);font-family:Jost,sans-serif;font-size:13px">Cargando…</div>';
+  if(!sbClient){
+    cont.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink4);font-family:Jost,sans-serif;font-size:13px">Sin conexión</div>';
+    return;
+  }
+  try{
+    var today = _dateKey();
+    var res = await sbClient.from('daily_responses').select('mood_emoji').eq('question_date', today);
+    var rows = res.data || [];
+    var total = rows.length;
+    var counts = {};
+    rows.forEach(function(r){ if(r.mood_emoji) counts[r.mood_emoji]=(counts[r.mood_emoji]||0)+1; });
+    var sorted = Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+    var _lbl = {'😊':'Bien','😄':'Genial','😌':'En paz','🥺':'Sensible','😔':'Triste','😰':'Ansioso/a','😤':'Frustrado/a','💪':'Con fuerza'};
+    var maxCount = sorted.length ? counts[sorted[0]] : 0;
+    var isUniqueDominant = sorted.length === 1 || (sorted.length > 1 && counts[sorted[1]] < maxCount);
+    if(total === 0){
+      cont.innerHTML = '<div style="text-align:center;padding:24px"><div style="font-size:36px;margin-bottom:10px">🌿</div>'
+        +'<div style="font-size:13px;color:var(--ink4);font-family:Jost,sans-serif">Nadie respondió todavía.<br>¡Sé el primero!</div></div>';
+      return;
+    }
+    var html = '<div style="text-align:center;font-size:13px;color:var(--ink4);font-family:Jost,sans-serif;margin-bottom:20px">'
+      +total+(total===1?' persona respondió hoy':' personas respondieron hoy')
+      +'</div>';
+    sorted.forEach(function(emoji){
+      var cnt = counts[emoji];
+      var pct = Math.round((cnt/total)*100);
+      var isDom = isUniqueDominant && emoji === sorted[0];
+      var barColor = isDom ? 'rgba(116,198,157,.75)' : 'rgba(255,255,255,.22)';
+      var nameColor = isDom ? 'rgba(116,198,157,.9)' : 'var(--ink)';
+      html += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">'
+        +'<div style="font-size:34px;width:42px;text-align:center;flex-shrink:0">'+emoji+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">'
+        +'<span style="font-size:13px;font-weight:'+(isDom?'700':'500')+';color:'+nameColor+';font-family:Jost,sans-serif">'+(_lbl[emoji]||emoji)+(isDom?' ✦':'')+'</span>'
+        +'<span style="font-size:12px;color:var(--ink4);font-family:Jost,sans-serif">'+cnt+(cnt===1?' persona':' personas')+' · '+pct+'%</span>'
+        +'</div>'
+        +'<div style="height:7px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden">'
+        +'<div style="height:7px;background:'+barColor+';border-radius:4px;width:'+pct+'%"></div>'
+        +'</div>'
+        +'</div>'
+        +'</div>';
+    });
+    cont.innerHTML = html;
+  }catch(e){
+    cont.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink4);font-family:Jost,sans-serif;font-size:13px">No se pudo cargar</div>';
+  }
+}
+
 // ── GUARDIAN ACTIVITY CHIP ─────────────────────────────────────
 async function _loadGuardianActivity(){
   var el = document.getElementById('homeGuardianChip');
