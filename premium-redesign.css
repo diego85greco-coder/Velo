@@ -10933,6 +10933,16 @@ body.r-dark .home-momento-btn-all {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   v702 — Home sections: wider + uniform horizontal margins
+   All home panels reduced from 16px → 8px side margins so they're
+   wider and all the same horizontal proportion.
+   ══════════════════════════════════════════════════════════════════ */
+#homeParaVosPanel   { margin-left: 8px !important; margin-right: 8px !important; }
+.r-home-quick-panel { margin-left: 8px !important; margin-right: 8px !important; }
+#homeRegisterOuter  { margin-left: 8px !important; margin-right: 8px !important; }
+#homeMonthlyHint    { margin-left: 8px !important; margin-right: 8px !important; }
+
+/* ══════════════════════════════════════════════════════════════════
    v700 — Weather icon centering fix (replaces v695 attempt)
    The pill card is wider than 190px, making the icon look off-center.
    Fix: make .r-time-icon full-width flex so the emoji is always

@@ -442,7 +442,7 @@ async function _sbSyncProfile(userId){
   // Each tier drops more optional columns; _profileSelectTier is cached so we skip
   // known-failing queries on every subsequent call (avoids 400 flood in console).
   var _selTiers = [
-    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city,pro_trial_expires_at,pro_subscription_expires_at',
+    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city,pro_trial_expires_at,pro_subscription_expires_at,visit_days',
     'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids',
     'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes',
     'nombre,avatar,motto,role,username,username_changes',
@@ -588,6 +588,16 @@ async function _sbSyncProfile(userId){
       });
       if(dirty) safeLS('set','velo_blocked', JSON.stringify(_bl));
     }).catch(function(){});
+  // visit_days: merge Supabase array with local — take union so new devices get full history
+  if(p.visit_days && Array.isArray(p.visit_days) && p.visit_days.length){
+    var _localDays = []; try{ _localDays = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
+    var _merged = _localDays.slice();
+    p.visit_days.forEach(function(d){ if(_merged.indexOf(d) < 0) _merged.push(d); });
+    if(_merged.length > _localDays.length){
+      safeLS('set','velo_visit_days', JSON.stringify(_merged));
+      _updateHomeStreak();
+    }
+  }
   if(p.role === 'plus'){
     sbClient.from('profiles').select('plus_expires_at').eq('id',userId).limit(1)
       .then(function(r2){
@@ -1058,6 +1068,7 @@ async function _loginAndGo(){
     // Check for @username — redirect to picker if missing (new or existing users)
     var _uname = safeLS('get','velo_username') || '';
     var _unameQueryOk = true; // false if DB query itself errors (column missing, etc.)
+    var _hasExistingProfile = false; // true if Supabase returned a profile row — means user is NOT new
     if(!_uname){
       _initSupabase();
       var _uid = safeLS('get','velo_user_id');
@@ -1069,11 +1080,11 @@ async function _loginAndGo(){
             console.warn('[_loginAndGo] username query error (migration pending?):', _ur.error.message);
             _unameQueryOk = false;
           } else if(_ur.data && _ur.data[0]){
+            _hasExistingProfile = true; // profile row exists → never redirect to pick-username
             if(_ur.data[0].username){
               safeLS('set','velo_username', _ur.data[0].username);
               _uname = _ur.data[0].username;
             }
-            // Pre-populate nombre so the _isExisting check below works on fresh browsers
             if(_ur.data[0].nombre){
               safeLS('set','velo_user_name', _ur.data[0].nombre);
             }
@@ -1084,7 +1095,7 @@ async function _loginAndGo(){
         }
       }
     }
-    if(!_uname && _unameQueryOk){
+    if(!_uname && _unameQueryOk && !_hasExistingProfile){
       // Only redirect to picker if the page actually exists in the DOM
       // (guards against browser cache serving old HTML without pg-pick-username)
       if(document.getElementById('pg-pick-username')){
@@ -2048,12 +2059,13 @@ function _localDateStr(){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
-// Push current visit count to Supabase profiles.visit_day_count (fire-and-forget)
+// Push current visit count + full dates array to Supabase profiles (fire-and-forget)
 function _pushVisitCountToSB(count){
   _initSupabase();
   var uid = _myUserId();
   if(!sbClient || !uid || uid === 'guest') return;
-  sbClient.from('profiles').update({ visit_day_count: count }).eq('id', uid)
+  var _days = []; try{ _days = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
+  sbClient.from('profiles').update({ visit_day_count: count, visit_days: _days }).eq('id', uid)
     .then(function(){}).catch(function(){}); // silent — column may not exist yet
 }
 
