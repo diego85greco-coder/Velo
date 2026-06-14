@@ -450,6 +450,19 @@ function _getSbPass(){
   return p;
 }
 
+// Guarantees a profile row exists before any save. Never overwrites existing fields.
+async function _getOrCreateProfile(userId){
+  _initSupabase();
+  if(!sbClient || !userId) return;
+  try{
+    var chk = await sbClient.from('profiles').select('id').eq('id', userId).limit(1);
+    if(chk.data && chk.data.length) return; // row exists — nothing to do
+    // Row missing — insert minimal skeleton so subsequent UPSERTs always find it
+    var _email = safeLS('get','velo_user_email') || '';
+    await sbClient.from('profiles').insert({ id: userId, email: _email, role: 'user' });
+  }catch(e){}
+}
+
 async function _sbSyncProfile(userId){
   _initSupabase();
   if(!sbClient) return;
@@ -940,6 +953,8 @@ async function pSignIn(){
       if(result.data && result.data.user && result.data.user.id){
         var uid = result.data.user.id;
         safeLS('set','velo_user_id', uid);
+        // Ensure profile row exists before any sync/save (avoids silent UPDATE failures)
+        await _getOrCreateProfile(uid);
         // Await profile sync so name/avatar/status are restored before home renders
         await _sbSyncProfile(uid);
         // If _sbSyncProfile found no valid name, fall back to email prefix
@@ -1008,7 +1023,8 @@ async function pSignOut(){
     if(_soUname)  _soUpdate.username = _soUname;
     if(_soAvatar && !_soAvatar.startsWith('data:')) _soUpdate.avatar = _soAvatar;
     if(Object.keys(_soUpdate).length){
-      try{ await sbClient.from('profiles').update(_soUpdate).eq('id', _soUid); }catch(e){}
+      _soUpdate.id = _soUid;
+      try{ await sbClient.from('profiles').upsert(_soUpdate, { onConflict:'id' }); }catch(e){}
     }
   }
   if(sbClient){ try{ await sbClient.auth.signOut(); }catch(e){} }
