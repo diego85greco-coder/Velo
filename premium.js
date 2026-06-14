@@ -9569,7 +9569,63 @@ function pOpenEditProfile(){
     if(_unLeft === 0) leftEl.innerHTML = ' <strong style="color:#E05C5C">Ya usaste los 2 cambios disponibles.</strong>';
     else leftEl.innerHTML = ' Te quedan <strong>'+_unLeft+'</strong> cambio'+(_unLeft===1?'':'s')+'.';
   }
+  // Push notification toggle
+  var _pushRow = document.getElementById('editPushRow');
+  if(_pushRow && 'Notification' in window) { _pushRow.style.display = 'block'; _updateEditPushUI(); }
   openModal('editProfileOv');
+}
+
+function _updateEditPushUI(){
+  var btn    = document.getElementById('editPushBtn');
+  var status = document.getElementById('editPushStatus');
+  if(!btn || !status) return;
+  var perm   = ('Notification' in window) ? Notification.permission : 'unavailable';
+  var hasSub = !!safeLS('get','velo_push_sub');
+  if(perm === 'denied'){
+    status.textContent = 'Bloqueadas — activálas en ajustes del navegador';
+    btn.textContent = '—'; btn.disabled = true;
+    btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:not-allowed;background:rgba(128,128,128,.12);color:var(--ink4)';
+  } else if(perm === 'granted' && hasSub){
+    status.textContent = 'Activadas — recibís un aviso por día ✓';
+    btn.textContent = 'Desactivar'; btn.disabled = false;
+    btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(220,80,80,.12);color:rgba(200,60,60,.9)';
+  } else {
+    status.textContent = 'No activadas — te avisamos una vez al día';
+    btn.textContent = 'Activar'; btn.disabled = false;
+    btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
+  }
+}
+
+async function pTogglePushNotifications(){
+  if(!('Notification' in window) || !('serviceWorker' in navigator)){
+    pToast('⚠️','Tu navegador no soporta notificaciones'); return;
+  }
+  var hasSub = !!safeLS('get','velo_push_sub');
+  var perm   = Notification.permission;
+  if(perm === 'denied'){ pToast('🔕','Activálas desde ajustes del navegador'); return; }
+  if(hasSub){
+    // Deactivate: remove subscription from Supabase and locally
+    safeLS('del','velo_push_sub');
+    safeLS('del','velo_push_granted');
+    var _uid = safeLS('get','velo_user_id');
+    if(sbClient && _uid){ try{ await sbClient.from('profiles').update({ push_subscription: null }).eq('id',_uid); }catch(e){} }
+    pToast('🔕','Notificaciones desactivadas');
+    _updateEditPushUI(); return;
+  }
+  // Need to subscribe
+  if(perm !== 'granted'){
+    var _p = await Notification.requestPermission();
+    if(_p !== 'granted'){ _updateEditPushUI(); return; }
+  }
+  pToast('🔔','¡Notificaciones activadas! Te avisamos una vez por día 💚');
+  safeLS('set','velo_push_granted','1');
+  try{
+    var _reg = await navigator.serviceWorker.ready;
+    var _sub = await _reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
+    await _savePushSubscriptionToSupabase(_sub);
+    safeLS('set','velo_push_sub', JSON.stringify(_sub));
+  }catch(e){ console.warn('[push toggle subscribe]',e); }
+  _updateEditPushUI();
 }
 
 async function pSaveProfile(){
