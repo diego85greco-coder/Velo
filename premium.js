@@ -1830,6 +1830,8 @@ function _loadHomeData(){
   _updateSidebarUser();
   _updateHomeStreak();
   _renderPersonalizedSuggestions();
+  _loadHomeMemoryCard();
+  _checkRequestPushPermission();
   _updateHomeBell();
   // Show unread alert once per session if there are pending messages
   if(!_buzónAlertedSession){
@@ -1948,6 +1950,7 @@ function pSaveQuickMood(){
   _updateTopbarMoodBadge();
   _renderHomeWeekMoodGraph().catch(function(){});
   pToast(_selectedQuickMoodEmoji, 'Estado de ánimo guardado 💚');
+  _showStreakCelebration();
 }
 
 // ── MI ESTADO VISIBLE ──────────────────────────────────────────
@@ -2397,6 +2400,143 @@ function _getConsecutiveStreak(){
     if(diff === 1){ streak++; } else { break; }
   }
   return streak;
+}
+
+// ── STREAK CELEBRATION ────────────────────────────────────────
+function _showStreakCelebration(){
+  var todayKey = _dateKey();
+  if(safeLS('get','velo_streak_cel_'+todayKey)) return; // already shown today
+  var streak = _getConsecutiveStreak();
+  if(streak < 1) return;
+  safeLS('set','velo_streak_cel_'+todayKey, '1');
+  var milestones = {1:'¡Primer registro! 🌱',3:'¡3 días! Estás en racha 🔥',7:'¡Una semana seguida! 🏆',14:'¡14 días! Constancia real ⭐',30:'¡30 días! Sos increíble 🌟',50:'¡50 días! 💎',100:'¡100 días! Leyenda 🌟'};
+  var milestone = milestones[streak];
+  // Create overlay
+  var el = document.createElement('div');
+  el.id = 'streakCelebEl';
+  el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);z-index:9999;background:linear-gradient(135deg,rgba(20,55,35,.96),rgba(10,40,22,.98));border:1.5px solid rgba(116,198,157,.45);border-radius:20px;padding:14px 22px;text-align:center;min-width:200px;max-width:280px;box-shadow:0 8px 32px rgba(0,0,0,.35);opacity:0;transition:all .35s cubic-bezier(.2,.8,.2,1);font-family:Jost,sans-serif';
+  el.innerHTML = '<div style="font-size:28px;line-height:1;margin-bottom:6px">🔥</div>'
+    + '<div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px">'+streak+' días de racha</div>'
+    + (milestone ? '<div style="font-size:12px;color:rgba(116,198,157,.90);margin-top:4px;font-weight:600">'+milestone+'</div>' : '');
+  document.body.appendChild(el);
+  // Animate in
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    el.style.opacity = '1'; el.style.transform = 'translateX(-50%) translateY(0)';
+  }); });
+  // Auto dismiss after 3s
+  setTimeout(function(){
+    el.style.opacity = '0'; el.style.transform = 'translateX(-50%) translateY(20px)';
+    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 400);
+  }, 3000);
+}
+
+// ── MEMORY CARD ───────────────────────────────────────────────
+function _loadHomeMemoryCard(){
+  var el = document.getElementById('homeMemoryCard');
+  if(!el) return;
+  var today = new Date();
+  // Check 7 days ago then 30 days ago
+  var targets = [7, 30];
+  var found = null, foundDays = 0;
+  for(var i=0; i<targets.length; i++){
+    var t = new Date(today); t.setDate(t.getDate()-targets[i]);
+    var dk = t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+    var stored = null; try{ stored = JSON.parse(safeLS('get','velo_mood_'+dk)||'null'); }catch(e){}
+    if(stored && stored.emoji){ found = stored; foundDays = targets[i]; break; }
+  }
+  if(!found){ el.style.display='none'; return; }
+  var daysLabel = foundDays === 7 ? 'Hace 7 días' : 'Hace un mes';
+  var labelMap = {'😄':'Muy bien','😊':'Bien','😐':'Regular','😞':'Bajo','😢':'Difícil'};
+  var moodLabel = found.label || labelMap[found.emoji] || '';
+  el.style.display = 'block';
+  el.innerHTML = '<div style="background:linear-gradient(135deg,rgba(200,158,56,.14),rgba(178,138,18,.09));border:1.5px solid rgba(200,158,56,.35);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:default">'
+    + '<div style="font-size:28px;line-height:1;flex-shrink:0">'+found.emoji+'</div>'
+    + '<div style="flex:1;min-width:0">'
+    + '<div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(200,158,56,.70);margin-bottom:3px">✨ '+daysLabel+'</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--ink2)">Te sentías <strong>'+moodLabel+'</strong>'+(found.note?'':'')+'</div>'
+    + (found.note ? '<div style="font-size:11px;color:var(--ink4);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+found.note.slice(0,60)+'</div>' : '')
+    + '</div>'
+    + '<div onclick="pGoTo(\'mood\')" style="font-size:10px;font-weight:700;color:rgba(200,158,56,.75);cursor:pointer;white-space:nowrap;flex-shrink:0">Ver →</div>'
+    + '</div>';
+}
+
+// ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────────
+var _VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa40HI80NM2zOE='; // placeholder — replace with real key
+
+function _urlBase64ToUint8Array(base64String){
+  var padding = '='.repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding).replace(/-/g,'+'). replace(/_/g,'/');
+  var rawData = atob(base64);
+  var arr = new Uint8Array(rawData.length);
+  for(var i=0; i<rawData.length; i++) arr[i] = rawData.charCodeAt(i);
+  return arr;
+}
+
+async function _savePushSubscriptionToSupabase(sub){
+  if(!sbClient) return;
+  var uid = safeLS('get','velo_user_id');
+  if(!uid || uid==='guest') return;
+  try{
+    await sbClient.from('profiles').update({ push_subscription: JSON.stringify(sub) }).eq('id', uid);
+  }catch(e){}
+}
+
+async function pRequestPushPermission(){
+  if(!('Notification' in window) || !('serviceWorker' in navigator)) return;
+  if(Notification.permission === 'granted'){
+    pToast('🔔','Las notificaciones ya están activas');
+    return;
+  }
+  if(Notification.permission === 'denied'){
+    pToast('🔕','Notificaciones bloqueadas — activálas desde ajustes del navegador');
+    return;
+  }
+  var perm = await Notification.requestPermission();
+  if(perm !== 'granted') return;
+  pToast('🔔','¡Notificaciones activadas! Te vamos a avisar una vez por día 💚');
+  safeLS('set','velo_push_granted','1');
+  // Subscribe to push
+  try{
+    var reg = await navigator.serviceWorker.ready;
+    var sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: _urlBase64ToUint8Array(_VAPID_PUBLIC_KEY)
+    });
+    await _savePushSubscriptionToSupabase(sub);
+    safeLS('set','velo_push_sub', JSON.stringify(sub));
+  }catch(e){}
+}
+
+function _checkRequestPushPermission(){
+  // Only ask if: notifications not yet granted, user has been using app for 2+ days, not asked before
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'default') return;
+  if(safeLS('get','velo_push_asked')) return;
+  var dayCount = _getVisitDayCount();
+  if(dayCount < 2) return;
+  safeLS('set','velo_push_asked','1');
+  // Show in-app prompt (friendlier than browser popup directly)
+  setTimeout(function(){ _showPushPrompt(); }, 4000);
+}
+
+function _showPushPrompt(){
+  if(document.getElementById('pushPromptEl')) return;
+  var el = document.createElement('div');
+  el.id = 'pushPromptEl';
+  el.style.cssText = 'position:fixed;bottom:90px;left:16px;right:16px;z-index:9998;background:linear-gradient(135deg,rgba(12,40,24,.97),rgba(8,28,16,.99));border:1.5px solid rgba(116,198,157,.40);border-radius:20px;padding:16px 18px;box-shadow:0 8px 32px rgba(0,0,0,.40);font-family:Jost,sans-serif;animation:pushPromptIn .4s cubic-bezier(.2,.8,.2,1) both';
+  el.innerHTML = '<style>@keyframes pushPromptIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}</style>'
+    + '<div style="display:flex;align-items:flex-start;gap:12px">'
+    + '<div style="font-size:26px;line-height:1;flex-shrink:0">🔔</div>'
+    + '<div style="flex:1">'
+    + '<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">¿Querés un recordatorio diario?</div>'
+    + '<div style="font-size:12px;color:rgba(255,255,255,.65);line-height:1.45;margin-bottom:12px">Solo uno por día — nada de spam. Te avisamos cuando sea un buen momento para registrar cómo te sentís.</div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button onclick="pRequestPushPermission();document.getElementById(\'pushPromptEl\').remove()" style="flex:1;padding:10px 14px;border-radius:12px;border:none;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(116,198,157,.95);font-size:13px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Sí, quiero 💚</button>'
+    + '<button onclick="document.getElementById(\'pushPromptEl\').remove()" style="padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.50);font-size:12px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Ahora no</button>'
+    + '</div>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(el);
 }
 
 // ── GUARDIAN DATA ─────────────────────────────────────────────
@@ -6534,6 +6674,7 @@ async function pSaveMood(){
   sbSaveMoodEntry(today, _selMood.emoji, _selMood.label, noteVal);
   _updateTopbarMoodBadge();
   pToast(_selMood.emoji, 'Estado de ánimo registrado 💚');
+  _showStreakCelebration();
   if(note) note.value = '';
 
   // Show personalized message

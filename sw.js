@@ -87,3 +87,25 @@ self.addEventListener('fetch', function(e){
     })
   );
 });
+
+// Push notification handler
+self.addEventListener('push', function(event){
+  var data = {};
+  try{ data = event.data ? event.data.json() : {}; }catch(e){ data = {title:'Velo',body:event.data?event.data.text():''}; }
+  var title = data.title || '💚 Velo';
+  var options = {
+    body: data.body || '¿Cómo te sentís hoy?',
+    icon: data.icon || '/assets/icon-192.png',
+    badge: '/assets/icon-72.png',
+    tag: data.tag || 'velo-daily',
+    requireInteraction: false,
+    data: { url: data.url || '/' }
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', function(event){
+  event.notification.close();
+  var url = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(clients.openWindow(url));
+});
