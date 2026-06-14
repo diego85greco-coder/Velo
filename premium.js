@@ -452,7 +452,17 @@ function _getSbPass(){
 
 async function _sbSyncProfile(userId){
   _initSupabase();
-  if(!sbClient || !userId) return;
+  if(!sbClient) return;
+  // If caller didn't pass a userId, try the live session
+  if(!userId){
+    try{
+      var {data:_initSd} = await sbClient.auth.getSession();
+      if(_initSd && _initSd.session && _initSd.session.user) userId = _initSd.session.user.id;
+    }catch(e){}
+  }
+  if(!userId) return;
+  // Ensure session is valid before making DB calls (refreshes JWT if expired)
+  try{ await sbClient.auth.getSession(); }catch(e){}
   var res;
   // Each tier drops more optional columns; _profileSelectTier is cached so we skip
   // known-failing queries on every subsequent call (avoids 400 flood in console).
@@ -497,31 +507,33 @@ async function _sbSyncProfile(userId){
     var _email    = safeLS('get','velo_user_email') || '';
     var _emailPfx = _email.split('@')[0];
     var _localName = safeLS('get','velo_user_name') || '';
-    // Detect auto-generated username patterns: no spaces + ends in 3+ digits OR matches email prefix
-    var _looksAutoGen = (p.nombre === _emailPfx) ||
+    // Detect names that should never be restored from Supabase — system defaults, email patterns, auto-gen
+    var _INVALID_NAMES = ['Usuario','usuario','User','user','','null','undefined'];
+    var _looksAutoGen = (_INVALID_NAMES.indexOf(p.nombre) >= 0) ||
+                        (p.nombre === _emailPfx) ||
                         (p.nombre === _email) ||
                         /^[a-zA-Z0-9._-]+\d{3,}$/.test(p.nombre) ||
                         (p.nombre.indexOf(' ') < 0 && /^\w+\.\w+\d+$/.test(p.nombre));
     if(!_looksAutoGen){
-      // Valid real name from Supabase — always use it on new devices
+      // Valid real name from Supabase — use on all devices
       safeLS('set','velo_user_name', p.nombre);
-    } else if(_localName && _localName !== _emailPfx && !(/^[a-zA-Z0-9._-]+\d{3,}$/.test(_localName))){
-      // Supabase has auto-name but local has a real name — push real name to Supabase
-      // Use upsert (not update) so RLS INSERT policy covers it even if UPDATE fails
+    } else if(_localName && _INVALID_NAMES.indexOf(_localName) < 0 && _localName !== _emailPfx && !(/^[a-zA-Z0-9._-]+\d{3,}$/.test(_localName))){
+      // Supabase has a bad name but local has a real name — push local to Supabase to repair it
       sbClient.from('profiles').upsert({ id: userId, nombre: _localName }, { onConflict: 'id' })
-        .then(function(r){ if(r&&r.error) console.warn('[nombre repair upsert]', r.error); })
+        .then(function(r){ if(r&&r.error) console.warn('[nombre repair]', r.error); })
         .catch(function(e){ console.warn('[nombre repair catch]', e); });
-      // Keep the local real name (don't overwrite with auto-gen)
-    } else if(!_localName && p.nombre){
-      // Fresh device with no local name — use Supabase name even if it looks auto-gen
-      // (better than showing "Hola"; user can update profile later)
+      // Keep local real name — don't overwrite it with the bad Supabase value
+    } else if(!_localName && !_looksAutoGen && p.nombre){
+      // Fresh device, Supabase has valid name — restore it
       safeLS('set','velo_user_name', p.nombre);
-      // Nudge the user to complete their real name (once per day)
+    } else if(!_localName && _looksAutoGen && p.nombre){
+      // Fresh device, Supabase has auto-gen name — use it temporarily, show nudge
+      safeLS('set','velo_user_name', p.nombre);
       var _nudgeDay = 'velo_name_nudge_'+new Date().toISOString().slice(0,10);
       if(!safeLS('get',_nudgeDay)){
         safeLS('set',_nudgeDay,'1');
         setTimeout(function(){
-          pToast('👋','Tu nombre se ve como usuario técnico. Actualizá tu Perfil con tu nombre real 🌿');
+          pToast('👋','Actualizá tu nombre real en Perfil 🌿');
         }, 2800);
       }
     }
