@@ -12,8 +12,8 @@
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
   <!-- BFCache fix: iOS Safari restores pages from back/forward cache without re-running scripts -->
   <script>window.addEventListener('pageshow',function(e){if(e.persisted)window.location.reload();});</script>
-  <!-- Auto-update: redirect with _v+_t so CDN cannot serve a cached response -->
-  <script>(function(){try{var _cv=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){if(d&&d.v&&d.v>_cv){var _base=location.href.replace(/[?&]?(_v|_t)=\d+/g,'').replace(/[?&]$/,'');var _sep=_base.indexOf('?')>=0?'&':'?';location.replace(_base+_sep+'_v='+d.v+'&_t='+Date.now());}}).catch(function(){});}catch(e){}})();</script>
+  <!-- Auto-update: redirect once per version to bust CDN cache; sessionStorage guard prevents infinite loops -->
+  <script>(function(){try{var _cv=parseInt((document.querySelector('meta[name=app-version]')||{}).content||'0');fetch('/version.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){if(d&&d.v&&d.v>_cv){var _sk='velo_redir_v'+d.v;if(sessionStorage.getItem(_sk))return;sessionStorage.setItem(_sk,'1');var _base=location.href.replace(/[?&]?(_v|_t)=\d+/g,'').replace(/[?&]$/,'');var _sep=_base.indexOf('?')>=0?'&':'?';location.replace(_base+_sep+'_v='+d.v+'&_t='+Date.now());}}).catch(function(){});}catch(e){}})();</script>
   <meta name="description" content="Tu espacio seguro de apoyo emocional. Guardianes, sala de ayuda, diario personal y bienestar.">
   <meta name="theme-color" content="#1B5E3A">
   <meta name="referrer" content="strict-origin-when-cross-origin">
