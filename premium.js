@@ -1091,7 +1091,19 @@ async function _loginAndGo(){
     if(!_uname){
       _initSupabase();
       var _uid = safeLS('get','velo_user_id');
-      if(sbClient && _uid){
+      // If uid missing from localStorage, try to get it from the live Supabase session
+      if(!_uid && sbClient){
+        try{
+          var _sessR = await sbClient.auth.getUser();
+          if(_sessR && _sessR.data && _sessR.data.user){
+            _uid = _sessR.data.user.id;
+            safeLS('set','velo_user_id', _uid);
+          }
+        }catch(e){}
+      }
+      // If still no client or no uid, don't redirect — treat as "can't verify"
+      if(!sbClient || !_uid){ _unameQueryOk = false; }
+      else {
         try{
           var _ur = await sbClient.from('profiles').select('username,nombre').eq('id',_uid).limit(1);
           if(_ur.error){
