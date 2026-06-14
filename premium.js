@@ -10133,9 +10133,9 @@ function pLoadProfile(){
 
   // Email
   _setEl('profileEmail', safeLS('get','velo_user_email') || '—');
-  // Push notifications toggle
+  // Push notifications toggle — always show; iOS handles gracefully
   var _prRow = document.getElementById('profilePushRow');
-  if(_prRow && 'Notification' in window){ _prRow.style.display = 'block'; _updateEditPushUI(); }
+  if(_prRow){ _prRow.style.display = 'block'; _updateEditPushUI(); }
 
   // Stats — show from localStorage first for instant display
   var daysReg = _getVisitDayCount() || Math.ceil((Date.now() - (parseInt(safeLS('get','velo_registered_ts')||Date.now(),10))) / 86400000);
@@ -10530,7 +10530,11 @@ function _updateEditPushUI(){
     var btn    = document.getElementById(prefix+'PushBtn');
     var status = document.getElementById(prefix+'PushStatus');
     if(!btn || !status) return;
-    if(perm === 'denied'){
+    if(perm === 'unavailable'){
+      status.textContent = 'Agregá Velo a tu pantalla de inicio para activar notificaciones';
+      btn.textContent = '¿Cómo?'; btn.disabled = false;
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(116,198,157,.15);color:rgba(80,160,110,.9)';
+    } else if(perm === 'denied'){
       status.textContent = 'Bloqueadas — activálas en ajustes del navegador';
       btn.textContent = '—'; btn.disabled = true;
       btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:not-allowed;background:rgba(128,128,128,.12);color:var(--ink4)';
@@ -10548,7 +10552,8 @@ function _updateEditPushUI(){
 
 async function pTogglePushNotifications(){
   if(!('Notification' in window) || !('serviceWorker' in navigator)){
-    pToast('⚠️','Tu navegador no soporta notificaciones'); return;
+    pToast('📱','En iPhone: toca Compartir → "Agregar a pantalla de inicio", luego abrí Velo desde ahí y activá las notificaciones 🌿');
+    return;
   }
   var hasSub = !!safeLS('get','velo_push_sub');
   var perm   = Notification.permission;
