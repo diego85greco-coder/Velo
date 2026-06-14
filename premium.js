@@ -942,8 +942,16 @@ function _clearSession(){
    'velo_pro_spec','velo_pro_solidarity','velo_pro_approved','velo_is_guardian',
    'velo_guardian_bio','velo_guardian_tags','velo_guardian_setup_done','velo_needs_pw_change','velo_username',
    'velo_username_changes','velo_favs','velo_blocked','velo_blocked_data',
-   'velo_incognito','velo_user_status','velo_fav_me_count','velo_fav_me_seen','velo_dm_unread'
+   'velo_incognito','velo_user_status','velo_fav_me_count','velo_fav_me_seen','velo_dm_unread',
+   'velo_diary','velo_mood_log','velo_bcast_shown','velo_bcast_unread','velo_inbox_deleted',
+   'velo_onboarding_done','velo_helped_once','velo_guardian_convs','velo_visit_days'
   ].forEach(function(k){ safeLS('del', k); });
+  // Clear per-key mood/diary entries (shared device privacy)
+  try{
+    Object.keys(localStorage).filter(function(k){
+      return k.startsWith('velo_mood_') || k.startsWith('velo_daily_status_');
+    }).forEach(function(k){ localStorage.removeItem(k); });
+  }catch(e){}
   // Stop guardian heartbeat and clear all RT channel refs so the next login can resubscribe
   _stopGuardianHeartbeat();
   _stopGuardianReqListener();
@@ -2169,7 +2177,7 @@ function _getConsecutiveStreak(){
   var yesterday = new Date(d); yesterday.setDate(d.getDate()-1);
   var yesterdayStr = yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
   // Streak must start from today or yesterday (if user hasn't visited yet today, keep streak alive)
-  if(days[0] !== today && days[0] !== yesterdayStr) return 1;
+  if(days[0] !== today && days[0] !== yesterdayStr) return 0;
   var streak = 1;
   for(var i = 1; i < days.length; i++){
     var prev = new Date(days[i-1]+'T12:00:00');
@@ -3426,8 +3434,7 @@ function _buzónHandleNew(rows){
   // Show popup for the newest item only
   var newest = fresh[0];
   var sInfo = null; try{ sInfo = JSON.parse(newest.sender); }catch(e){}
-  _showBuzónAlert(newest.subject||'Nuevo mensaje en Buzón', sInfo&&sInfo.i, sInfo&&sInfo.n, sInfo&&sInfo.a||newest.icon||'💌');
-  // Mark all fresh ones as shown + add to unread list
+  // Mark all fresh ones as shown + add to unread list BEFORE showing popup (prevents re-trigger on dismiss)
   var _ubcIds = []; try{ _ubcIds = JSON.parse(safeLS('get','velo_bcast_unread')||'[]'); }catch(e){}
   fresh.forEach(function(b){
     _shown[b.id] = 1;
@@ -3435,6 +3442,7 @@ function _buzónHandleNew(rows){
   });
   safeLS('set','velo_bcast_shown',  JSON.stringify(_shown));
   safeLS('set','velo_bcast_unread', JSON.stringify(_ubcIds));
+  _showBuzónAlert(newest.subject||'Nuevo mensaje en Buzón', sInfo&&sInfo.i, sInfo&&sInfo.n, sInfo&&sInfo.a||newest.icon||'💌');
   _updateInboxDot();
 }
 
@@ -6823,6 +6831,14 @@ function pClearAllMoods(){
     if(k && (k.startsWith('velo_mood_') || k.startsWith('velo_daily_status_'))) toRemove.push(k);
   }
   toRemove.forEach(function(k){ localStorage.removeItem(k); });
+  safeLS('del','velo_mood_log');
+  // Delete from Supabase
+  _initSupabase();
+  var _uid = _myUserId ? _myUserId() : safeLS('get','velo_user_id');
+  if(sbClient && _uid && _uid !== 'guest'){
+    sbClient.from('mood_entries').delete().eq('user_id', _uid)
+      .then(function(){}).catch(function(){});
+  }
   pToast('🗑️','Historial de ánimo eliminado');
   pInitMood();
 }
@@ -12473,10 +12489,12 @@ async function _renderAdmin(){
   }
 
   var waitlistCount = 0;
-  try{
-    var wlRes = await sbClient.from('solidarity_requests').select('id',{count:'exact',head:true});
-    if(!wlRes.error) waitlistCount = wlRes.count || 0;
-  }catch(e){}
+  if(sbClient){
+    try{
+      var wlRes = await sbClient.from('solidarity_requests').select('id',{count:'exact',head:true});
+      if(!wlRes.error) waitlistCount = wlRes.count || 0;
+    }catch(e){}
+  }
   var tcRecs = []; try{ tcRecs = JSON.parse(safeLS('get','velo_tc_records')||'[]'); }catch(e){}
 
   // If Supabase returned 0 users, fall back to T&C records as minimum estimate
