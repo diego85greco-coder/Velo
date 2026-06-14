@@ -1189,21 +1189,32 @@ async function _loginAndGo(){
   }
 }
 
-function _checkProfileComplete(){
+async function _checkProfileComplete(){
   var name   = safeLS('get','velo_user_name')  || '';
   var uname  = safeLS('get','velo_username')   || '';
   var email  = safeLS('get','velo_user_email') || '';
   var pfx    = email.split('@')[0];
-  var nameOk = name && name !== pfx && name !== email &&
-               !(/^[a-zA-Z0-9._-]+\d{3,}$/.test(name)) &&
-               !(name.indexOf(' ') < 0 && /^\w+\.\w+\d+$/.test(name)) &&
-               name !== 'Usuario';
-  if(nameOk && uname) return;
-  // Pre-fill whatever we already have
+  function _nameOk(n){ return n && n !== pfx && n !== email && n !== 'Usuario' &&
+    !(/^[a-zA-Z0-9._-]+\d{3,}$/.test(n)) && !(n.indexOf(' ') < 0 && /^\w+\.\w+\d+$/.test(n)); }
+  if(_nameOk(name) && uname) return; // localStorage already complete — skip
+  // Always do a fresh Supabase fetch before deciding. This prevents showing the modal
+  // to users whose data is in Supabase but not yet in localStorage (new device, cleared cache, etc.)
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(!sbClient || !uid) return; // can't verify — give benefit of the doubt
+  try{
+    var r = await sbClient.from('profiles').select('username,nombre').eq('id',uid).limit(1);
+    if(r.error || !r.data || !r.data.length) return; // query failed or no row — don't block
+    var p = r.data[0];
+    if(p.username){ safeLS('set','velo_username', p.username); uname = p.username; }
+    if(p.nombre)  { safeLS('set','velo_user_name', p.nombre);  name  = p.nombre; }
+    if(_nameOk(name) && uname) return; // Supabase had the data — all good
+  }catch(e){ return; } // network error — don't block
+  // Only reach here if Supabase confirmed the profile is genuinely incomplete
   var pcn = document.getElementById('pcName');
   var pcu = document.getElementById('pcUsername');
-  if(pcn && nameOk) pcn.value = name;
-  if(pcu && uname)  pcu.value = uname;
+  if(pcn && _nameOk(name)) pcn.value = name;
+  if(pcu && uname) pcu.value = uname;
   openModal('profileCompleteOv');
 }
 
