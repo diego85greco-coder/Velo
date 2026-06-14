@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="750">
+  <meta name="app-version" content="751">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -2421,6 +2421,16 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
                 <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('change-password')">🔐 Cambiar contraseña</button>
                 <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pContactUs()">✉️ Contactarnos</button>
                 <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('inbox')">📬 Buzón interno</button>
+                <!-- Push notification toggle -->
+                <div id="profilePushRow" style="display:none;background:var(--cream2);border-radius:14px;padding:12px 14px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                    <div style="flex:1">
+                      <div style="font-size:13px;font-weight:600;color:var(--ink)">🔔 Notificaciones</div>
+                      <div id="profilePushStatus" style="font-size:11px;color:var(--ink4);margin-top:3px">No activadas</div>
+                    </div>
+                    <button id="profilePushBtn" onclick="pTogglePushNotifications()" style="flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)">Activar</button>
+                  </div>
+                </div>
                 <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pSignOut()">↩️ Cerrar sesión</button>
               </div>
             </div>
@@ -3684,8 +3694,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
   <div style="font-size:10px;color:rgba(255,255,255,.3);font-family:Jost,sans-serif;text-align:center">Mantenés presionado la imagen para guardarla</div>
 </div>
-<script src="premium.js?v=20260614-750"></script>
-<script src="premium-redesign.js?v=20260614-750"></script>
+<script src="premium.js?v=20260614-751"></script>
+<script src="premium-redesign.js?v=20260614-751"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

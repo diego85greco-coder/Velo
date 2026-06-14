@@ -2782,12 +2782,8 @@ function _loadDailyQ(){
   if(myResp && currentUid){
     try{
       var _rv = JSON.parse(myResp);
-      if(!_rv.uid){
-        // Old format without uid — claim for current user
-        _rv.uid = currentUid;
-        safeLS('set','velo_daily_resp_'+dateKey, JSON.stringify(_rv));
-      } else if(_rv.uid !== currentUid){
-        // Belongs to a different user — treat as unanswered
+      if(!_rv.uid || _rv.uid !== currentUid){
+        // Missing uid (old format) or belongs to different user — treat as unanswered
         myResp = null;
       }
     }catch(e){ myResp = null; }
@@ -3173,10 +3169,10 @@ function _renderShareCard(canvas, logoImg){
   // ── Logo / header ───────────────────────────────────────────────
   var headerEnd; // y where header area ends
   if(logoImg){
-    var lW = 220, lH = Math.round(lW * logoImg.naturalHeight / logoImg.naturalWidth);
-    var lX = (W - lW) / 2, lY = 22;
+    var lW = 300, lH = Math.round(lW * logoImg.naturalHeight / logoImg.naturalWidth);
+    var lX = (W - lW) / 2, lY = 18;
     ctx.save();
-    ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 50;
+    ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 60;
     ctx.drawImage(logoImg, lX, lY, lW, lH);
     ctx.restore();
     ctx.drawImage(logoImg, lX, lY, lW, lH);
@@ -3353,8 +3349,11 @@ function _renderShareCard(canvas, logoImg){
   sep(brandY-20);
   ctx.font='500 32px Arial,sans-serif'; ctx.fillStyle='rgba(116,198,157,.65)'; ctx.textAlign='center';
   ctx.fillText('heyvelo.app', W/2, brandY+20);
-  ctx.font='italic 300 24px Georgia,serif'; ctx.fillStyle='rgba(255,255,255,.28)';
-  ctx.fillText('Acompañamos emociones', W/2, brandY+54);
+  if(!logoImg){
+    // Logo image already contains "Acompañamos emociones." — skip to save space
+    ctx.font='italic 300 24px Georgia,serif'; ctx.fillStyle='rgba(255,255,255,.28)';
+    ctx.fillText('Acompañamos emociones', W/2, brandY+54);
+  }
 
   // Gold bottom line
   var btmLine=ctx.createLinearGradient(60,0,W-60,0);
@@ -10044,6 +10043,9 @@ function pLoadProfile(){
 
   // Email
   _setEl('profileEmail', safeLS('get','velo_user_email') || '—');
+  // Push notifications toggle
+  var _prRow = document.getElementById('profilePushRow');
+  if(_prRow && 'Notification' in window){ _prRow.style.display = 'block'; _updateEditPushUI(); }
 
   // Stats — show from localStorage first for instant display
   var daysReg = _getVisitDayCount() || Math.ceil((Date.now() - (parseInt(safeLS('get','velo_registered_ts')||Date.now(),10))) / 86400000);
@@ -10431,24 +10433,27 @@ function pOpenEditProfile(){
 }
 
 function _updateEditPushUI(){
-  var btn    = document.getElementById('editPushBtn');
-  var status = document.getElementById('editPushStatus');
-  if(!btn || !status) return;
   var perm   = ('Notification' in window) ? Notification.permission : 'unavailable';
   var hasSub = !!safeLS('get','velo_push_sub');
-  if(perm === 'denied'){
-    status.textContent = 'Bloqueadas — activálas en ajustes del navegador';
-    btn.textContent = '—'; btn.disabled = true;
-    btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:not-allowed;background:rgba(128,128,128,.12);color:var(--ink4)';
-  } else if(perm === 'granted' && hasSub){
-    status.textContent = 'Activadas — recibís un aviso por día ✓';
-    btn.textContent = 'Desactivar'; btn.disabled = false;
-    btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(220,80,80,.12);color:rgba(200,60,60,.9)';
-  } else {
-    status.textContent = 'No activadas — te avisamos una vez al día';
-    btn.textContent = 'Activar'; btn.disabled = false;
-    btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
-  }
+  // Update both the edit-profile modal and the profile page toggles
+  ['edit','profile'].forEach(function(prefix){
+    var btn    = document.getElementById(prefix+'PushBtn');
+    var status = document.getElementById(prefix+'PushStatus');
+    if(!btn || !status) return;
+    if(perm === 'denied'){
+      status.textContent = 'Bloqueadas — activálas en ajustes del navegador';
+      btn.textContent = '—'; btn.disabled = true;
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:not-allowed;background:rgba(128,128,128,.12);color:var(--ink4)';
+    } else if(perm === 'granted' && hasSub){
+      status.textContent = 'Activadas — recibís un aviso por día ✓';
+      btn.textContent = 'Desactivar'; btn.disabled = false;
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(220,80,80,.12);color:rgba(200,60,60,.9)';
+    } else {
+      status.textContent = 'No activadas — te avisamos una vez al día';
+      btn.textContent = 'Activar'; btn.disabled = false;
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
+    }
+  });
 }
 
 async function pTogglePushNotifications(){
