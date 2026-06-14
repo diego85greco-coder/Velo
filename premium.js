@@ -2772,10 +2772,24 @@ function _gBtnStyle(isOn){
 function _renderHomeStatusToggle(){
   var isGuardian = safeLS('get','velo_is_guardian') === 'true';
   var isIncognito = safeLS('get','velo_incognito') === 'true';
+  var st = safeLS('get','velo_user_status') || 'disponible';
   var togG = document.getElementById('homeGuardianModeTog');
   var togI = document.getElementById('homeIncognitoTog');
   if(togG){ togG.classList.remove('on'); if(isGuardian) togG.classList.add('on'); }
   if(togI){ togI.classList.remove('on'); if(isIncognito) togI.classList.add('on'); }
+  // Highlight active availability button
+  var btnD = document.getElementById('homeStatusDispBtn');
+  var btnO = document.getElementById('homeStatusOcupBtn');
+  if(btnD){
+    btnD.style.background   = st==='disponible' ? 'rgba(34,197,94,.22)' : 'rgba(34,197,94,.07)';
+    btnD.style.borderColor  = st==='disponible' ? 'rgba(34,197,94,.60)' : 'rgba(34,197,94,.25)';
+    btnD.style.color        = st==='disponible' ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.55)';
+  }
+  if(btnO){
+    btnO.style.background   = st==='ocupado' ? 'rgba(234,179,8,.22)' : 'rgba(234,179,8,.06)';
+    btnO.style.borderColor  = st==='ocupado' ? 'rgba(234,179,8,.58)' : 'rgba(234,179,8,.22)';
+    btnO.style.color        = st==='ocupado' ? 'rgba(255,220,80,.95)' : 'rgba(255,255,255,.50)';
+  }
 }
 
 function _renderMyStatusBar(){
