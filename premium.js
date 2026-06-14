@@ -1267,17 +1267,90 @@ async function _recordTC(name, email, version){
 // ── ONBOARDING ─────────────────────────────────────────────────
 var _obStep = 0;
 var _obDataUser = [
-  { emoji:'🌿', title:'Bienvenido/a a Velo', sub:'Tu espacio de apoyo emocional. Personas reales que escuchan, sin juicios y sin costo.' },
-  { emoji:'🛡️', title:'Guardianes a tu lado', sub:'Personas de la comunidad con experiencia vivida, disponibles para escucharte cuando más lo necesitás.' },
-  { emoji:'📔', title:'Tus herramientas', sub:'Diario emocional, registro de ánimo, sesión de respiración y el Muro de la Felicidad — todo en un lugar.' },
-  { emoji:'🤝', title:'Una comunidad real', sub:'Sala de Ayuda, Mensajes al Mar, Círculos de Paz. Nadie debería atravesarlo solo/a.' }
+  {
+    emoji: '🌿',
+    tag: 'BIENVENIDA',
+    title: 'Hola, este es Velo',
+    sub: 'Un lugar cálido donde personas reales se acompañan mutuamente. Sin juicios, sin costo, sin soledad.',
+    features: null,
+    accent: 'rgba(116,198,157,.22)'
+  },
+  {
+    emoji: '🛡️',
+    tag: 'GUARDIANES',
+    title: 'Personas reales que escuchan',
+    sub: 'Los Guardianes son miembros de la comunidad con experiencia de vida. Están disponibles para charlar cuando más lo necesitás.',
+    features: ['Disponibles hoy mismo', 'Sin turnos ni esperas', 'Totalmente gratuito'],
+    accent: 'rgba(116,165,210,.20)'
+  },
+  {
+    emoji: '📔',
+    tag: 'TUS HERRAMIENTAS',
+    title: 'Conocete mejor cada día',
+    sub: 'Todo lo que necesitás para estar en contacto con tus emociones está en un solo lugar.',
+    features: ['Diario íntimo privado', 'Registro diario de ánimo', 'Sesiones de respiración', 'Frase del día personalizada'],
+    accent: 'rgba(200,158,56,.18)'
+  },
+  {
+    emoji: '💭',
+    tag: 'COMUNIDAD',
+    title: 'Nadie debería estar solo/a',
+    sub: 'Espacios donde compartir con otros que entienden — porque todos atravesamos momentos difíciles.',
+    features: ['Sala de ayuda', 'Momentos del día', 'Mensajes al mar', 'Muro de alegría'],
+    accent: 'rgba(180,120,200,.18)'
+  },
+  {
+    emoji: '✨',
+    tag: 'TODO LISTO',
+    title: '¡Ya sos parte de Velo!',
+    sub: 'Tu presencia importa y hace la diferencia. Estamos muy felices de que estés acá.',
+    features: null,
+    isLast: true,
+    accent: 'rgba(255,230,102,.15)'
+  }
 ];
 var _obDataPro = [
-  { emoji:'🩺', title:'Bienvenido/a a Velo', sub:'Conectá tu expertise con personas que necesitan apoyo profesional. Seguro, simple y ético.' },
-  { emoji:'📅', title:'Sesiones 1:1 integradas', sub:'Videollamada incorporada, agenda propia y honorarios que vos fijás. Sin intermediarios.' },
-  { emoji:'💰', title:'Ingresos transparentes', sub:'El 80% de cada sesión es tuyo. Pagos vía Stripe. Retiro cuando quieras.' },
-  { emoji:'🌍', title:'Impacto real', sub:'Tu trabajo ayuda a construir una comunidad de bienestar emocional más accesible para todos.' },
-  { emoji:'💙', title:'Programa Solidario', sub:'¿Querés donar 1 sesión gratuita por mes para acompañar a alguien que no puede pagarlo?\n\nLos usuarios en lista de espera te lo agradecen de corazón. Si aceptás, llevás la insignia 💙 Profesional Solidario/a.', solidarity: true }
+  {
+    emoji: '🩺',
+    tag: 'BIENVENIDA',
+    title: 'Hola, este es Velo',
+    sub: 'Conectá tu experiencia profesional con personas que buscan apoyo. Simple, seguro y con impacto real.',
+    features: null,
+    accent: 'rgba(116,198,157,.22)'
+  },
+  {
+    emoji: '📅',
+    tag: 'TU AGENDA',
+    title: 'Sesiones 1:1 integradas',
+    sub: 'Videollamada incorporada, agenda propia y honorarios que vos fijás. Sin intermediarios.',
+    features: ['Videollamada dentro de la app', 'Honorarios 100% libres', '80% de cada sesión es tuyo'],
+    accent: 'rgba(116,165,210,.20)'
+  },
+  {
+    emoji: '💰',
+    tag: 'INGRESOS',
+    title: 'Transparente y sin sorpresas',
+    sub: 'El 80% de cada sesión es para vos. Pagos vía Stripe con retiro cuando quieras.',
+    features: ['Cobro automático', 'Retiro en cualquier momento', 'Sin comisiones ocultas'],
+    accent: 'rgba(200,158,56,.18)'
+  },
+  {
+    emoji: '🌍',
+    tag: 'IMPACTO',
+    title: 'Tu trabajo transforma vidas',
+    sub: 'Cada sesión ayuda a construir una comunidad de apoyo emocional más accesible para todos.',
+    features: null,
+    accent: 'rgba(180,120,200,.18)'
+  },
+  {
+    emoji: '💙',
+    tag: 'PROGRAMA SOLIDARIO',
+    title: '¿Querés sumar una sesión solidaria?',
+    sub: '¿Querés donar 1 sesión gratuita por mes para acompañar a alguien que no puede pagarlo?\n\nLos usuarios en lista de espera te lo agradecen de corazón.',
+    features: null,
+    solidarity: true,
+    accent: 'rgba(116,165,210,.20)'
+  }
 ];
 var _obData = _obDataUser;
 function _initOnboarding(){
@@ -1291,26 +1364,51 @@ function _initOnboarding(){
 function _renderOb(){
   var d = _obData[_obStep];
   if(!d) return;
-  var em = document.getElementById('obEmoji');
-  var ti = document.getElementById('obTitle');
-  var su = document.getElementById('obSub');
-  if(em) em.textContent = d.emoji;
-  if(ti) ti.textContent = d.title;
-  if(su) su.style.whiteSpace = 'pre-line';
-  if(su) su.textContent = d.sub;
+  var cnt = document.getElementById('obContent');
+  if(!cnt) return;
+
+  var featHtml = '';
+  if(d.features && d.features.length){
+    featHtml = '<div style="display:flex;flex-direction:column;gap:8px;margin:16px 0 4px;text-align:left">'
+      + d.features.map(function(f){
+          return '<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 14px">'
+            +'<span style="font-size:15px;flex-shrink:0">✓</span>'
+            +'<span style="font-size:13px;color:rgba(255,255,255,.88);font-weight:500;font-family:\'Jost\',sans-serif">'+_escHtml(f)+'</span>'
+            +'</div>';
+        }).join('')
+      + '</div>';
+  }
+
+  var lastCta = d.isLast
+    ? '<div style="margin-top:20px;padding:16px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:18px">'
+        +'<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,230,102,.80);margin-bottom:8px">¿POR DÓNDE EMPEZAR?</div>'
+        +'<div style="font-size:12.5px;color:rgba(255,255,255,.75);line-height:1.6;font-family:\'Jost\',sans-serif">'
+        +'Podés registrar cómo te sentís hoy, explorar la comunidad o simplemente leer la frase del día. No hay un orden correcto — Velo se adapta a vos.</div>'
+      +'</div>'
+    : '';
+
+  cnt.innerHTML =
+    '<div style="display:inline-block;background:'+d.accent+';border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;margin-bottom:16px">'
+      +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.70)">'+_escHtml(d.tag)+'</span>'
+    +'</div>'
+    +'<div style="font-size:90px;margin-bottom:14px;animation:p-float 3s ease-in-out infinite;line-height:1">'+d.emoji+'</div>'
+    +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:30px;color:#fff;margin-bottom:10px;line-height:1.2">'+_escHtml(d.title)+'</h2>'
+    +'<p style="font-size:14.5px;color:rgba(255,255,255,.75);line-height:1.65;margin:0;white-space:pre-line">'+_escHtml(d.sub)+'</p>'
+    + featHtml
+    + lastCta;
+
   var dots = document.querySelectorAll('#obDots .ob-dot');
   dots.forEach(function(dot, i){ dot.classList.toggle('active', i === _obStep); });
   var skip = document.getElementById('obSkip');
   var next = document.getElementById('obNext');
   var solBtns = document.getElementById('obSolidarityBtns');
   if(d.solidarity){
-    // Solidarity slide: show YES/NO, hide normal navigation
     if(next) next.style.display = 'none';
     if(skip) skip.style.display = 'none';
     if(!solBtns){
       var btnWrap = document.createElement('div');
       btnWrap.id = 'obSolidarityBtns';
-      btnWrap.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-top:8px;width:100%';
+      btnWrap.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-top:8px;width:100%;max-width:360px';
       btnWrap.innerHTML = '<button class="p-btn p-btn--dark-white p-btn--lg" style="width:100%" onclick="pSolidarityChoice(true)">💙 Sí, quiero participar</button>'
         +'<button class="p-btn p-btn--ghost p-btn--md" style="width:100%;color:rgba(255,255,255,.6)" onclick="pSolidarityChoice(false)">Ahora no, gracias</button>';
       if(next) next.parentNode.insertBefore(btnWrap, next);
@@ -1319,13 +1417,11 @@ function _renderOb(){
     }
   } else {
     if(solBtns) solBtns.style.display = 'none';
-    if(_obStep === _obData.length - 1){
-      if(next){ next.textContent = 'Siguiente →'; next.style.display = ''; }
-      if(skip) skip.style.display = '';
-    } else {
-      if(next){ next.textContent = 'Siguiente →'; next.style.display = ''; }
-      if(skip) skip.style.display = '';
+    if(next){
+      next.textContent = d.isLast ? '¡Empezar! 🌿' : 'Siguiente →';
+      next.style.display = '';
     }
+    if(skip) skip.style.display = d.isLast ? 'none' : '';
   }
 }
 function pNextOnboarding(){
