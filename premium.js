@@ -520,13 +520,12 @@ async function _sbSyncProfile(userId){
     var _email    = safeLS('get','velo_user_email') || '';
     var _emailPfx = _email.split('@')[0];
     var _localName = safeLS('get','velo_user_name') || '';
-    // Detect names that should never be restored from Supabase — system defaults, email patterns, auto-gen
+    // Detect names that should never be restored from Supabase — system defaults and email patterns only
     var _INVALID_NAMES = ['Usuario','usuario','User','user','','null','undefined'];
     var _looksAutoGen = (_INVALID_NAMES.indexOf(p.nombre) >= 0) ||
                         (p.nombre === _emailPfx) ||
                         (p.nombre === _email) ||
-                        /^[a-zA-Z0-9._-]+\d{3,}$/.test(p.nombre) ||
-                        (p.nombre.indexOf(' ') < 0 && /^\w+\.\w+\d+$/.test(p.nombre));
+                        (p.nombre.indexOf(' ') < 0 && /^\w+\.\w+\d{3,}$/.test(p.nombre));
     if(!_looksAutoGen){
       // Valid real name from Supabase — use on all devices
       safeLS('set','velo_user_name', p.nombre);
@@ -986,7 +985,7 @@ function _clearSession(){
    'velo_username_changes','velo_favs','velo_blocked','velo_blocked_data',
    'velo_incognito','velo_user_status','velo_fav_me_count','velo_fav_me_seen','velo_dm_unread',
    'velo_bcast_shown','velo_bcast_unread',
-   'velo_onboarding_done','velo_helped_once','velo_guardian_convs'
+   'velo_onboarding_done','velo_helped_once','velo_guardian_convs','velo_prof_tier'
   ].forEach(function(k){ safeLS('del', k); });
   // Stop guardian heartbeat and clear all RT channel refs so the next login can resubscribe
   _stopGuardianHeartbeat();
@@ -1019,9 +1018,19 @@ async function pSignOut(){
     var _soNombre = safeLS('get','velo_user_name');
     var _soUname  = safeLS('get','velo_username');
     var _soAvatar = safeLS('get','velo_user_av');
+    var _soMotto  = safeLS('get','velo_user_motto');
     if(_soNombre) _soUpdate.nombre  = _soNombre;
     if(_soUname)  _soUpdate.username = _soUname;
     if(_soAvatar && !_soAvatar.startsWith('data:')) _soUpdate.avatar = _soAvatar;
+    if(_soMotto)  _soUpdate.motto   = _soMotto;
+    var _soMusic  = safeLS('get','velo_status_music');
+    var _soBook   = safeLS('get','velo_status_book');
+    var _soPhrase = safeLS('get','velo_status_phrase');
+    var _soFilm   = safeLS('get','velo_status_film');
+    if(_soMusic)  _soUpdate.status_music  = _soMusic;
+    if(_soBook)   _soUpdate.status_book   = _soBook;
+    if(_soPhrase) _soUpdate.status_phrase = _soPhrase;
+    if(_soFilm)   _soUpdate.status_film   = _soFilm;
     if(Object.keys(_soUpdate).length){
       _soUpdate.id = _soUid;
       try{ await sbClient.from('profiles').upsert(_soUpdate, { onConflict:'id' }); }catch(e){}
@@ -8884,10 +8893,18 @@ function _uploadAvatarToStorage(file, dataUrl, callback){
   }catch(e){ console.warn('[avatar storage error]', e); callback(null); }
 }
 
-function _syncAvatarToSb(av){
+async function _syncAvatarToSb(av){
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
-  if(!sbClient || !uid) return;
+  if(!sbClient) return;
+  try{
+    var {data:_avSd} = await sbClient.auth.getSession();
+    if(_avSd && _avSd.session && _avSd.session.user && _avSd.session.user.id){
+      uid = _avSd.session.user.id;
+      safeLS('set','velo_user_id', uid);
+    }
+  }catch(e){}
+  if(!uid) return;
   // Only store URL or emoji in profiles.avatar — never store large base64 strings
   var stored = (av && av.length > 8000) ? '' : av;
   sbClient.from('profiles').upsert({ id:uid, avatar:stored },{ onConflict:'id' })
@@ -9363,6 +9380,15 @@ async function pSaveProfile(){
   // Sync to Supabase so profile persists across devices
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
+  if(sbClient){
+    try{
+      var {data:_spSd} = await sbClient.auth.getSession();
+      if(_spSd && _spSd.session && _spSd.session.user && _spSd.session.user.id){
+        uid = _spSd.session.user.id;
+        safeLS('set','velo_user_id', uid);
+      }
+    }catch(e){}
+  }
   if(sbClient && uid){
     // Handle username update if changed
     if(newUname && newUname !== curUname){
