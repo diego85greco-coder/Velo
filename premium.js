@@ -1749,17 +1749,42 @@ function _loadHomeData(){
       ? greet + ', <span style="color:rgba(200,155,40,.92)">' + safeName + '</span>'
       : greet;
   }
-  // Warm contextual sub-message based on time of day, rotated by day-of-week
+  // Warm contextual sub-message — 7 per period so every day of the week is different
   var _greetSubs = {
-    mañana: ['¿Cómo empezás el día? 🌱','Un nuevo día para estar bien ☀️','Hoy puede ser un buen día 🌿'],
-    tarde:  ['Tomá un respiro 🍃','¿Cómo va la tarde? ✨','Un momento para vos ☕'],
-    noche:  ['Qué lindo que estás acá 🌙','Gracias por pasar esta noche ✨','Cuidate y descansá 🌿']
+    mañana: [
+      '¿Cómo empezás el día? 🌱',
+      'Hoy puede ser un buen día ☀️',
+      'Un nuevo comienzo, un nuevo día 🌿',
+      'Respirá profundo y arrancá 🍃',
+      '¿Qué querés sentir hoy? ✨',
+      'Hoy también cuenta 🌸',
+      'El día empieza y vos también 💚'
+    ],
+    tarde:  [
+      'Tomá un respiro en este momento 🍃',
+      '¿Cómo va la tarde? ✨',
+      'Un momento de calma para vos ☕',
+      '¿Ya te cuidaste hoy? 🌿',
+      'A veces parar es avanzar 💚',
+      'Estamos acá si necesitás 🌱',
+      'La tarde también merece un momento 🌸'
+    ],
+    noche:  [
+      'Qué lindo que estás acá esta noche 🌙',
+      'Gracias por pasar por acá ✨',
+      'Cuidate y descansá bien 🌿',
+      'Hoy hiciste lo que pudiste 💚',
+      'La noche es tuya para descansar 🌙',
+      'Respirá, el día ya pasó 🍃',
+      'Estás acá y eso importa ✨'
+    ]
   };
   var _periodo = h < 12 ? 'mañana' : h < 20 ? 'tarde' : 'noche';
   var _subs = _greetSubs[_periodo];
-  var _subTxt = _subs[d.getDay() % _subs.length];
+  // Index by absolute day number so every calendar day gets a different message
+  var _dayIdx = Math.floor(Date.now() / 86400000) % _subs.length;
   var gs = document.getElementById('homeGreetSub');
-  if(gs) gs.textContent = _subTxt;
+  if(gs) gs.textContent = _subs[_dayIdx];
   var av = safeLS('get','velo_user_av') || '🧑';
   var un = document.getElementById('homeUserName');
   var ha = document.getElementById('homeAv');
