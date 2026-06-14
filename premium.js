@@ -17629,15 +17629,11 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
 async function _initHomeMomento(){
   var section=document.getElementById('homeMomentoSection');
   if(!section) return;
-  var quote=document.getElementById('homeDailyQuoteWrap');
-  var actions=document.querySelector('.r-hero-actions');
-  if(quote&&quote.parentNode&&actions&&quote.parentNode===actions.parentNode){
-    quote.parentNode.insertBefore(section,actions);
-  }
   var momentos=await _fetchMomentos(4);
   if(momentos===null){ section.style.display='none'; return; }
   section.style.display='block';
   _renderMomentoCards(momentos,'homeMomentoFeed');
+  _updateFeedTabCounts();
 }
 
 var _homeActiveFeedTab = 'momento';
@@ -17650,17 +17646,38 @@ function pHomeTabSwitch(tab){
   var cH = document.getElementById('homeTabHappy');
   if(!tM||!tH||!cM||!cH) return;
   if(tab === 'happy'){
-    tH.classList.add('home-feed-tab--active');
-    tM.classList.remove('home-feed-tab--active');
+    // Active: gold
+    tH.style.cssText = 'flex:1;padding:11px 10px;border-radius:22px;border:1.5px solid rgba(200,158,56,.55);background:rgba(200,158,56,.18);color:rgba(255,230,130,.95);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;transition:all .18s';
+    // Inactive: ghost
+    tM.style.cssText = 'flex:1;padding:11px 10px;border-radius:22px;border:1.5px solid rgba(116,198,157,.18);background:transparent;color:rgba(220,235,225,.45);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;transition:all .18s';
     cM.style.display = 'none';
     cH.style.display = '';
     _loadHomeHappyFeed();
   } else {
-    tM.classList.add('home-feed-tab--active');
-    tH.classList.remove('home-feed-tab--active');
+    // Active: green
+    tM.style.cssText = 'flex:1;padding:11px 10px;border-radius:22px;border:1.5px solid rgba(116,198,157,.45);background:rgba(116,198,157,.18);color:rgba(190,245,215,.95);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;transition:all .18s';
+    // Inactive: ghost
+    tH.style.cssText = 'flex:1;padding:11px 10px;border-radius:22px;border:1.5px solid rgba(200,158,56,.18);background:transparent;color:rgba(220,235,225,.45);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;transition:all .18s';
     cH.style.display = 'none';
     cM.style.display = '';
   }
+}
+
+async function _updateFeedTabCounts(){
+  if(!sbClient) return;
+  var cutoff = new Date(Date.now()-24*60*60*1000).toISOString();
+  try{
+    var rM = await sbClient.from('momentos').select('id',{count:'exact',head:true}).gte('created_at',cutoff);
+    var nM = rM.count || 0;
+    var cntM = document.getElementById('hfTab-momento-cnt');
+    if(cntM) cntM.textContent = nM > 0 ? nM+(nM===1?' momento hoy':' momentos hoy') : '';
+  }catch(e){}
+  try{
+    var rH = await sbClient.from('happy_posts').select('id',{count:'exact',head:true}).gte('created_at',cutoff);
+    var nH = rH.count || 0;
+    var cntH = document.getElementById('hfTab-happy-cnt');
+    if(cntH) cntH.textContent = nH > 0 ? nH+(nH===1?' momento hoy':' momentos hoy') : '';
+  }catch(e){}
 }
 
 async function _loadHomeHappyFeed(){
