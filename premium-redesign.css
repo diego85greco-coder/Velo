@@ -6407,6 +6407,16 @@ body:not(.r-dark) .r-hs-icon { color: rgba(27, 94, 58, 0.75) !important; filter:
     padding: 0 16px 16px !important;
     box-sizing: border-box !important;
   }
+  /* Equal 16px side gutter for all sections below the hero card */
+  #pg-home .home-wide-card,
+  #pg-home #homeVeloIACard,
+  #pg-home #homeDonateBanner,
+  #pg-home #homeSuggestions,
+  #pg-home #homeMonthlyBanner {
+    margin-left: 16px !important;
+    margin-right: 16px !important;
+    box-sizing: border-box !important;
+  }
 }
 
 /* ── 5. Cancel v309/v310 blur animations ────────────────────────── */
