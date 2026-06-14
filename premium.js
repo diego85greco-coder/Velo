@@ -678,6 +678,18 @@ async function _sbSyncProfile(userId){
     var _trialOk  = p.pro_trial_expires_at        && new Date(p.pro_trial_expires_at).getTime()        > _proNow;
     var _subOk    = p.pro_subscription_expires_at && new Date(p.pro_subscription_expires_at).getTime() > _proNow;
     if(_trialOk || _subOk) safeLS('set','velo_pro_approved','true');
+    // Restore pro availability from Supabase on new devices
+    sbClient.from('profiles').select('pro_availability').eq('id',userId).limit(1)
+      .then(function(pr){
+        if(pr.data && pr.data[0] && pr.data[0].pro_availability){
+          var _av = {}; try{ _av = JSON.parse(pr.data[0].pro_availability); }catch(e){}
+          if(Object.keys(_av).length){
+            var _pAvKey = 'velo_pro_avail_'+(safeLS('get','velo_pro_id')||safeLS('get','velo_user_email')||userId);
+            safeLS('set', _pAvKey, JSON.stringify(_av));
+            _proAvailEditing = _av;
+          }
+        }
+      }).catch(function(){});
   }
   // Check if new people have added us as favorite → show badge on star
   sbClient.from('user_favorites').select('id',{count:'exact',head:true}).eq('fav_id', userId)
@@ -9491,12 +9503,21 @@ async function pSaveUsername(){
   }
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
+  if(sbClient){
+    try{
+      var {data:_puSd} = await sbClient.auth.getSession();
+      if(_puSd && _puSd.session && _puSd.session.user && _puSd.session.user.id){
+        uid = _puSd.session.user.id;
+        safeLS('set','velo_user_id', uid);
+      }
+    }catch(e){}
+  }
   if(sbClient && uid){
     try{
       // Final uniqueness check
       var rChk = await sbClient.from('profiles').select('id').eq('username', val).neq('id', uid).limit(1);
       if(rChk.data && rChk.data.length){ pToast('⚠️','Ese @usuario ya está tomado'); return; }
-      var rSave = await sbClient.from('profiles').update({ username: val }).eq('id', uid);
+      var rSave = await sbClient.from('profiles').upsert({ id: uid, username: val }, { onConflict: 'id' });
       if(rSave.error){ console.error('[pSaveUsername]', rSave.error); pToast('⚠️','Error al guardar. Intentá de nuevo.'); return; }
     }catch(e){ console.error('[pSaveUsername catch]', e); pToast('⚠️','Error de conexión'); return; }
   }
@@ -11936,6 +11957,14 @@ function pTogProSlot(dayNum, time, btn){
 function pSaveProAvail(){
   var proId = safeLS('get','velo_pro_id') || safeLS('get','velo_user_email') || 'demo-pro';
   _proAvailSave(proId, _proAvailEditing);
+  // Sync to Supabase so availability persists across devices
+  _initSupabase();
+  var _pavUid = safeLS('get','velo_user_id');
+  if(sbClient && _pavUid){
+    sbClient.from('profiles').upsert({ id:_pavUid, pro_availability: JSON.stringify(_proAvailEditing) },{ onConflict:'id' })
+      .then(function(r){ if(r && r.error) console.warn('[pro_avail sync]', r.error.message); })
+      .catch(function(e){ console.warn('[pro_avail sync catch]', e); });
+  }
   pToast('💾','Disponibilidad guardada ✅');
 }
 
@@ -12175,6 +12204,18 @@ function pOpenPatientNotes(userId, userName){
     +'</div></div>';
 }
 
+function _syncPatientNotesToSb(proUid, patientId, notes){
+  if(!sbClient || !proUid) return;
+  sbClient.from('pro_patient_notes').upsert({
+    pro_id: proUid,
+    patient_id: patientId,
+    notes: JSON.stringify(notes),
+    updated_at: new Date().toISOString()
+  },{ onConflict: 'pro_id,patient_id' })
+    .then(function(r){ if(r && r.error) console.warn('[patient_notes sync]', r.error.message); })
+    .catch(function(e){ console.warn('[patient_notes sync catch]', e); });
+}
+
 function pSavePatientNote(userId, userName){
   var ta = document.getElementById('patientNoteTa');
   if(!ta || !ta.value.trim()){ pToast('⚠️','Escribí algo antes de guardar'); return; }
@@ -12182,8 +12223,11 @@ function pSavePatientNote(userId, userName){
   var notesKey = 'velo_pro_notes_'+proId+'_'+userId;
   var notes = []; try{ notes = JSON.parse(safeLS('get',notesKey)||'[]'); }catch(e){}
   notes.unshift({ text: ta.value.trim(), ts: Date.now() });
-  safeLS('set', notesKey, JSON.stringify(notes.slice(0,200)));
-  pToast('💾','Nota guardada de forma privada');
+  notes = notes.slice(0,200);
+  safeLS('set', notesKey, JSON.stringify(notes));
+  _initSupabase();
+  _syncPatientNotesToSb(safeLS('get','velo_user_id'), userId, notes);
+  pToast('💾','Nota guardada');
   pOpenPatientNotes(userId, userName);
 }
 
@@ -12194,6 +12238,8 @@ function pDeletePatientNote(userId, userName, idx){
   var notes = []; try{ notes = JSON.parse(safeLS('get',notesKey)||'[]'); }catch(e){}
   notes.splice(idx, 1);
   safeLS('set', notesKey, JSON.stringify(notes));
+  _initSupabase();
+  _syncPatientNotesToSb(safeLS('get','velo_user_id'), userId, notes);
   pToast('🗑️','Nota eliminada');
   pOpenPatientNotes(userId, userName);
 }
