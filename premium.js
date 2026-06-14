@@ -1377,21 +1377,37 @@ function _saveNameFromBanner(){
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
   var email = safeLS('get','velo_user_email')||'';
-  var av = safeLS('get','velo_user_av')||'';
-  if(av.length > 8000) av = '';
   if(sbClient && uid){
-    sbClient.from('profiles').upsert({
-      id: uid, nombre: newName, email: email, avatar: av,
-      motto: safeLS('get','velo_user_motto')||'',
-      status_music: safeLS('get','velo_status_music')||'',
-      status_book: safeLS('get','velo_status_book')||'',
-      status_phrase: safeLS('get','velo_status_phrase')||'',
-      status_film: safeLS('get','velo_status_film')||''
-    },{onConflict:'id'})
+    // Step 1: save only nombre via UPDATE (minimal — avoids failures from optional columns)
+    sbClient.from('profiles').update({nombre: newName}).eq('id', uid)
     .then(function(r){
-      if(r&&r.error){ pToast('⚠️','Error al guardar: '+r.error.message); }
-      else { pToast('✅','¡Nombre guardado! Ya se verá en todos tus dispositivos 🌿'); var banner=document.getElementById('homeNameBanner'); if(banner) banner.remove(); _updateSidebarUser(); }
-    }).catch(function(e){ pToast('⚠️','Error de conexión'); });
+      if(r && r.error){
+        // Row may not exist yet — upsert with minimal required fields
+        return sbClient.from('profiles').upsert({id:uid, nombre:newName, email:email},{onConflict:'id'});
+      }
+      return Promise.resolve(r);
+    })
+    .then(function(r){
+      if(r && r.error){ pToast('⚠️','Error al guardar: '+r.error.message); return; }
+      pToast('✅','¡Nombre guardado! Ya se verá en todos tus dispositivos 🌿');
+      var banner = document.getElementById('homeNameBanner');
+      if(banner) banner.remove();
+      _updateSidebarUser();
+      // Step 2: push other profile fields in background (non-blocking)
+      try{
+        var av = safeLS('get','velo_user_av')||'';
+        if(av.length > 8000) av = '';
+        sbClient.from('profiles').update({
+          avatar: av,
+          motto:  safeLS('get','velo_user_motto')||'',
+          status_music:  safeLS('get','velo_status_music')||'',
+          status_book:   safeLS('get','velo_status_book')||'',
+          status_phrase: safeLS('get','velo_status_phrase')||'',
+          status_film:   safeLS('get','velo_status_film')||''
+        }).eq('id', uid).then(function(){}).catch(function(){});
+      }catch(e2){}
+    })
+    .catch(function(e){ pToast('⚠️','Error de conexión'); });
   } else {
     pToast('⚠️','Sin conexión — intentá de nuevo');
   }
