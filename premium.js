@@ -975,6 +975,21 @@ function _clearSession(){
 async function pSignOut(){
   // Mark guardian offline before clearing session data
   if(safeLS('get','velo_is_guardian') === 'true') await _updateGuardianPresence('offline');
+  // Persist nombre + username to Supabase before clearing localStorage (last-chance save)
+  _initSupabase();
+  var _soUid = safeLS('get','velo_user_id');
+  if(sbClient && _soUid && _soUid !== 'guest'){
+    var _soUpdate = {};
+    var _soNombre = safeLS('get','velo_user_name');
+    var _soUname  = safeLS('get','velo_username');
+    var _soAvatar = safeLS('get','velo_user_av');
+    if(_soNombre) _soUpdate.nombre  = _soNombre;
+    if(_soUname)  _soUpdate.username = _soUname;
+    if(_soAvatar && !_soAvatar.startsWith('data:')) _soUpdate.avatar = _soAvatar;
+    if(Object.keys(_soUpdate).length){
+      try{ await sbClient.from('profiles').update(_soUpdate).eq('id', _soUid); }catch(e){}
+    }
+  }
   if(sbClient){ try{ await sbClient.auth.signOut(); }catch(e){} }
   _clearSession();
   _authenticated = false;

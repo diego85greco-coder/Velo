@@ -89,13 +89,13 @@
     var info = document.getElementById('homeWeatherInfo');
     if (!info) return;
     if (_weatherTemp === null || _weatherTemp === undefined) { info.style.display = 'none'; return; }
-    // Home page always has dark green background — always use dark palette
-    var cardBg   = 'rgba(8,32,18,.70)';
-    var cardBord = 'rgba(116,198,157,.38)';
-    var tempClr  = '#b8f0d0';
-    var cityClr  = 'rgba(200,240,218,.92)';
-    var editClr  = 'rgba(140,210,175,.62)';
-    var divClr   = 'rgba(116,198,157,.28)';
+    var isDarkMode = document.body.classList.contains('r-dark');
+    var cardBg   = isDarkMode ? 'rgba(8,32,18,.70)'         : 'rgba(255,255,255,.72)';
+    var cardBord = isDarkMode ? 'rgba(116,198,157,.38)'     : 'rgba(80,160,110,.38)';
+    var tempClr  = isDarkMode ? '#b8f0d0'                   : '#1a5c38';
+    var cityClr  = isDarkMode ? 'rgba(200,240,218,.92)'     : 'rgba(25,80,50,.88)';
+    var editClr  = isDarkMode ? 'rgba(140,210,175,.62)'     : 'rgba(60,140,90,.60)';
+    var divClr   = isDarkMode ? 'rgba(116,198,157,.28)'     : 'rgba(80,160,110,.28)';
 
     info.innerHTML = '';
     info.style.cssText += ';display:block;text-align:center';
@@ -108,7 +108,7 @@
       'border:1.5px solid ' + cardBord,
       'border-radius:100px',
       'padding:10px 22px 10px 18px',
-      'box-shadow:0 6px 32px rgba(0,0,0,.40),inset 0 1px 0 rgba(116,198,157,.14)',
+      'box-shadow:' + (isDarkMode ? '0 6px 32px rgba(0,0,0,.40),inset 0 1px 0 rgba(116,198,157,.14)' : '0 4px 20px rgba(0,0,0,.10),inset 0 1px 0 rgba(255,255,255,.80)') + '',
       'position:relative', 'z-index:2', 'margin-top:-22px'
     ].join(';');
 
@@ -177,7 +177,7 @@
     var moonLbl = document.createElement('div');
     moonLbl.style.cssText = [
       'font-size:8px',
-      'color:' + (moon.isFull ? 'rgba(255,228,110,.88)' : 'rgba(200,230,215,.55)'),
+      'color:' + (moon.isFull ? (isDarkMode ? 'rgba(255,228,110,.88)' : 'rgba(160,120,0,.80)') : (isDarkMode ? 'rgba(200,230,215,.55)' : 'rgba(40,100,60,.55)')),
       'font-family:\'Jost\',sans-serif',
       'letter-spacing:.3px', 'line-height:1',
       'text-align:center', 'white-space:nowrap'
@@ -613,10 +613,10 @@
 
     // Particle animations — light color / dark mode color pairs
     setTimeout(function() {
-      initParticles('landingCanvas',    140, 0.78, '130,90,18',   '140,210,155');
-      initParticles('loginCanvas',       90, 0.72, '130,90,18',   '140,210,155');
-      initParticles('registerCanvas',    90, 0.72, '130,90,18',   '140,210,155');
-      initParticles('homeBgCanvas',     320, 0.88, '130,90,18',   '100,210,145');
+      initParticles('landingCanvas',    140, 0.55, '80,160,115',  '140,210,155');
+      initParticles('loginCanvas',       90, 0.50, '80,160,115',  '140,210,155');
+      initParticles('registerCanvas',    90, 0.50, '80,160,115',  '140,210,155');
+      initParticles('homeBgCanvas',     320, 0.60, '90,155,200',  '100,210,145');
       initParticles('moodBgCanvas',      100, 0.68, '150,120,200', '145,190,230');
       initParticles('profileBgCanvas',   95, 0.58, '70,120,180',  '100,200,180');
       initParticles('helpBgCanvas',      85, 0.60, '45,120,75',   '120,200,240');
@@ -847,7 +847,7 @@ function initAllPageParticles() {
     cv.setAttribute('aria-hidden', 'true');
     cv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0';
     page.insertBefore(cv, page.firstChild);
-    initParticles(canvasId, 95, 0.68, '130,90,18',   '140,210,155');
+    initParticles(canvasId, 95, 0.50, '80,160,115',  '140,210,155');
   });
 }
 
