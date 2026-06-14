@@ -1183,9 +1183,64 @@ async function _loginAndGo(){
     setTimeout(function(){
       _loadHomeData();
       _updateSidebarUser();
-      _checkSurveyDue(); // Check if quarterly survey is due
-    }, 100);
+      _checkSurveyDue();
+      _checkProfileComplete(); // Mandatory profile setup if name/username missing
+    }, 300);
   }
+}
+
+function _checkProfileComplete(){
+  var name   = safeLS('get','velo_user_name')  || '';
+  var uname  = safeLS('get','velo_username')   || '';
+  var email  = safeLS('get','velo_user_email') || '';
+  var pfx    = email.split('@')[0];
+  var nameOk = name && name !== pfx && name !== email &&
+               !(/^[a-zA-Z0-9._-]+\d{3,}$/.test(name)) &&
+               !(name.indexOf(' ') < 0 && /^\w+\.\w+\d+$/.test(name)) &&
+               name !== 'Usuario';
+  if(nameOk && uname) return;
+  // Pre-fill whatever we already have
+  var pcn = document.getElementById('pcName');
+  var pcu = document.getElementById('pcUsername');
+  if(pcn && nameOk) pcn.value = name;
+  if(pcu && uname)  pcu.value = uname;
+  openModal('profileCompleteOv');
+}
+
+async function _saveProfileComplete(){
+  var nameEl  = document.getElementById('pcName');
+  var unameEl = document.getElementById('pcUsername');
+  if(!nameEl || !unameEl) return;
+  var name  = nameEl.value.trim();
+  var uname = unameEl.value.toLowerCase().replace(/[^a-z0-9.\-_]/g,'').trim();
+  if(!name || name.length < 2){ pToast('⚠️','Ingresá tu nombre'); return; }
+  if(!uname || uname.length < 5){ pToast('⚠️','El @usuario debe tener al menos 5 caracteres'); return; }
+  if(uname.length > 20){ pToast('⚠️','El @usuario debe tener máximo 20 caracteres'); return; }
+  var btn = document.querySelector('#profileCompleteOv button');
+  if(btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(sbClient && uid){
+    try{
+      var _rU = await sbClient.from('profiles').select('id').eq('username', uname).neq('id', uid).limit(1);
+      if(_rU.data && _rU.data.length){
+        pToast('⚠️','Ese @usuario ya está tomado, elegí otro');
+        if(btn){ btn.disabled = false; btn.textContent = 'Listo, entrá →'; }
+        return;
+      }
+      var _r = await sbClient.from('profiles').update({nombre: name, username: uname}).eq('id', uid);
+      if(_r.error){
+        await sbClient.from('profiles').upsert({id:uid, nombre:name, username:uname},{onConflict:'id'});
+      }
+    }catch(e){ console.warn('[_saveProfileComplete]', e); }
+  }
+  safeLS('set','velo_user_name', name);
+  safeLS('set','velo_username',  uname);
+  safeLS('set','velo_onboarding_done','1');
+  closeModal('profileCompleteOv');
+  _updateSidebarUser();
+  _loadHomeData();
+  pToast('✅','¡Perfil guardado! Bienvenido/a 🌿');
 }
 
 function pSetType(type){
