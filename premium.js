@@ -3164,13 +3164,24 @@ function _renderShareCard(canvas, logoImg){
 
   // ── User name ───────────────────────────────────────────────────
   var name = safeLS('get','velo_user_name') || '';
+  var motto = (safeLS('get','velo_user_motto') || '').trim();
   ctx.font='700 62px Arial,sans-serif';
   ctx.fillStyle='rgba(200,158,56,.90)';
   ctx.fillText(name || 'Mi semana', W/2, 185+D);
 
-  ctx.font='400 24px Arial,sans-serif';
-  ctx.fillStyle='rgba(255,255,255,.28)';
-  ctx.fillText('mi semana emocional en Velo', W/2, 218+D);
+  ctx.textAlign='center';
+  if(motto){
+    ctx.font='italic 400 26px Georgia,serif';
+    ctx.fillStyle='rgba(255,255,255,.58)';
+    var mt = '"' + motto + '"';
+    var maxMW = W - 200;
+    while(ctx.measureText(mt).width > maxMW && mt.length > 3){ mt = mt.slice(0,-2) + '…"'; }
+    ctx.fillText(mt, W/2, 218+D);
+  } else {
+    ctx.font='400 24px Arial,sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.28)';
+    ctx.fillText('mi semana emocional en Velo', W/2, 218+D);
+  }
 
   // ── Collect mood data ───────────────────────────────────────────
   var days7=[], dayLabels=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'], moodCounts={};
