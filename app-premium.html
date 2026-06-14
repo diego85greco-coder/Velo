@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="747">
+  <meta name="app-version" content="748">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -1263,8 +1263,14 @@
               </div>
               <!-- ── SHARE WEEK BUTTON ──────────────────────────── -->
               <div id="homeShareWeekBtn" style="display:none;margin:0 0 10px;box-sizing:border-box;width:100%">
-                <button onclick="pOpenShareCard()" style="width:100%;padding:11px 16px;border-radius:14px;border:1px solid rgba(200,158,56,.3);background:rgba(200,158,56,.08);color:rgba(200,158,56,.85);font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-                  <span>📊</span><span>Compartir mi semana emocional</span><span style="opacity:.5">→</span>
+                <button onclick="pOpenShareCard()"
+                  style="width:100%;padding:13px 16px;border-radius:14px;border:none;cursor:pointer;font-family:'Jost',sans-serif;font-size:14px;font-weight:800;letter-spacing:.5px;color:#ffffff;text-shadow:0 1px 6px rgba(0,0,0,.55);background:linear-gradient(135deg,#1a6e48 0%,#0f8a52 45%,#0a6e42 100%);box-shadow:0 6px 24px rgba(10,110,66,.55),0 2px 8px rgba(10,110,66,.30),inset 0 1px 0 rgba(255,255,255,.20),inset 0 -1px 0 rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;gap:10px;touch-action:manipulation;-webkit-tap-highlight-color:transparent"
+                  onmousedown="this.style.transform='scale(.97)'"
+                  onmouseup="this.style.transform=''"
+                  ontouchstart="this.style.transform='scale(.97)'"
+                  ontouchend="this.style.transform=''">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                  <span>📊 Compartir mi semana emocional</span>
                 </button>
               </div>
               <!-- Memory card — "Hace 7 días sentías..." -->
@@ -3665,13 +3671,21 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   <div style="font-size:12px;font-weight:700;letter-spacing:1.2px;color:rgba(255,255,255,.5);text-transform:uppercase;font-family:Jost,sans-serif">Tu semana emocional</div>
   <canvas id="shareCanvas" width="1080" height="1080" style="width:280px;height:280px;border-radius:24px;box-shadow:0 16px 48px rgba(0,0,0,.5)"></canvas>
   <div style="display:flex;gap:10px;width:100%;max-width:280px">
-    <button onclick="pShareCard()" style="flex:1;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.35));color:rgba(116,198,157,.95);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Compartir 💚</button>
+    <button onclick="pShareCard()"
+      style="flex:1;padding:14px;border-radius:14px;border:none;cursor:pointer;font-family:'Jost',sans-serif;font-size:14px;font-weight:800;letter-spacing:.4px;color:#ffffff;text-shadow:0 1px 6px rgba(0,0,0,.55);background:linear-gradient(135deg,#1a6e48 0%,#0f8a52 45%,#0a6e42 100%);box-shadow:0 6px 24px rgba(10,110,66,.55),0 2px 8px rgba(10,110,66,.30),inset 0 1px 0 rgba(255,255,255,.20),inset 0 -1px 0 rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;gap:8px;touch-action:manipulation;-webkit-tap-highlight-color:transparent"
+      onmousedown="this.style.transform='scale(.97)'"
+      onmouseup="this.style.transform=''"
+      ontouchstart="this.style.transform='scale(.97)'"
+      ontouchend="this.style.transform=''">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      Compartir 💚
+    </button>
     <button onclick="_closeShareCard()" style="padding:14px 18px;border-radius:14px;border:1.5px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">✕</button>
   </div>
   <div style="font-size:10px;color:rgba(255,255,255,.3);font-family:Jost,sans-serif;text-align:center">Mantenés presionado la imagen para guardarla</div>
 </div>
-<script src="premium.js?v=20260614-746"></script>
-<script src="premium-redesign.js?v=20260614-746"></script>
+<script src="premium.js?v=20260614-748"></script>
+<script src="premium-redesign.js?v=20260614-748"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

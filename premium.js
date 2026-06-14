@@ -3079,6 +3079,21 @@ function pOpenShareCard(){
 function _drawShareCard(){
   var canvas = document.getElementById('shareCanvas');
   if(!canvas) return;
+  var _logoUrls = [
+    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png.PNG',
+    'assets/logo-dark.png'
+  ];
+  (function _nextLogo(i){
+    if(i >= _logoUrls.length){ _renderShareCard(canvas, null); return; }
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = function(){ _renderShareCard(canvas, img); };
+    img.onerror = function(){ _nextLogo(i+1); };
+    img.src = _logoUrls[i];
+  })(0);
+}
+
+function _renderShareCard(canvas, logoImg){
   var ctx = canvas.getContext('2d');
   var W = 1080, H = 1080;
   ctx.clearRect(0,0,W,H);
@@ -3108,20 +3123,35 @@ function _drawShareCard(){
     ctx.beginPath(); ctx.arc(p[0],p[1],i%3===0?4:2.5,0,Math.PI*2); ctx.fill();
   });
 
-  // ── Gold top line ───────────────────────────────────────────────
+  // ── Logo / header ───────────────────────────────────────────────
+  var headerEnd; // y where header area ends
+  if(logoImg){
+    var lW = 220, lH = Math.round(lW * logoImg.naturalHeight / logoImg.naturalWidth);
+    var lX = (W - lW) / 2, lY = 22;
+    ctx.save();
+    ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 50;
+    ctx.drawImage(logoImg, lX, lY, lW, lH);
+    ctx.restore();
+    ctx.drawImage(logoImg, lX, lY, lW, lH);
+    headerEnd = lY + lH + 14;
+  } else {
+    ctx.textAlign='center';
+    ctx.font='800 52px Arial,sans-serif';
+    ctx.fillStyle='rgba(116,198,157,.92)';
+    ctx.fillText('VELO', W/2, 54);
+    headerEnd = 68;
+  }
+
+  // Gold separator line below logo / title
   var topLine = ctx.createLinearGradient(60,0,W-60,0);
   topLine.addColorStop(0,'rgba(200,158,56,0)');
   topLine.addColorStop(0.25,'rgba(200,158,56,.75)');
   topLine.addColorStop(0.75,'rgba(200,158,56,.75)');
   topLine.addColorStop(1,'rgba(200,158,56,0)');
   ctx.strokeStyle=topLine; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.moveTo(60,68); ctx.lineTo(W-60,68); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(60,headerEnd); ctx.lineTo(W-60,headerEnd); ctx.stroke();
 
-  // ── VELO logo ───────────────────────────────────────────────────
-  ctx.textAlign='center';
-  ctx.font='800 52px Arial,sans-serif';
-  ctx.fillStyle='rgba(116,198,157,.92)';
-  ctx.fillText('VELO', W/2, 54);
+  var D = headerEnd - 68; // vertical offset applied to all content below
 
   // ── Header subtitle ─────────────────────────────────────────────
   var monthNames=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -3129,17 +3159,18 @@ function _drawShareCard(){
   var weekNum = Math.ceil((((now-new Date(now.getFullYear(),0,1))/86400000)+new Date(now.getFullYear(),0,1).getDay()+1)/7);
   ctx.font='300 26px Arial,sans-serif';
   ctx.fillStyle='rgba(255,255,255,.38)';
-  ctx.fillText('Semana '+weekNum+' · '+monthNames[now.getMonth()]+' '+now.getFullYear(), W/2, 108);
+  ctx.textAlign='center';
+  ctx.fillText('Semana '+weekNum+' · '+monthNames[now.getMonth()]+' '+now.getFullYear(), W/2, 108+D);
 
   // ── User name ───────────────────────────────────────────────────
   var name = safeLS('get','velo_user_name') || '';
   ctx.font='700 62px Arial,sans-serif';
   ctx.fillStyle='rgba(200,158,56,.90)';
-  ctx.fillText(name || 'Mi semana', W/2, 185);
+  ctx.fillText(name || 'Mi semana', W/2, 185+D);
 
   ctx.font='400 24px Arial,sans-serif';
   ctx.fillStyle='rgba(255,255,255,.28)';
-  ctx.fillText('mi semana emocional en Velo', W/2, 218);
+  ctx.fillText('mi semana emocional en Velo', W/2, 218+D);
 
   // ── Collect mood data ───────────────────────────────────────────
   var days7=[], dayLabels=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'], moodCounts={};
@@ -3162,10 +3193,10 @@ function _drawShareCard(){
     sl.addColorStop(0,'rgba(116,198,157,0)'); sl.addColorStop(.5,'rgba(116,198,157,.18)'); sl.addColorStop(1,'rgba(116,198,157,0)');
     ctx.strokeStyle=sl; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(80,y); ctx.lineTo(W-80,y); ctx.stroke();
   };
-  sep(244);
+  sep(244+D);
 
   // ── Mood grid ───────────────────────────────────────────────────
-  var gX=54,gY=280,gW=W-108,colW=gW/7;
+  var gX=54,gY=280+D,gW=W-108,colW=gW/7;
   days7.forEach(function(d,i){
     var x=gX+colW*i+colW/2;
     // Cell background pill
