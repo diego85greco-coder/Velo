@@ -333,6 +333,21 @@ function pGoTo(id){
   var showNav = P_NO_NAV.indexOf(id) < 0 && _authenticated;
   _updateNavState(id, showNav);
 
+  // Hide ambient player bar on chat pages so it doesn't cover the input field
+  var _chatHidePages = ['circle-chat','help-chat','dm','dm-chat','guardian-chat'];
+  var _ambBar = document.getElementById('ambientPlayerBar');
+  if(_ambBar){
+    if(_chatHidePages.indexOf(id) >= 0){
+      _ambBar.dataset.hiddenForChat = '1';
+      _ambBar.style.display = 'none';
+    } else {
+      if(_ambBar.dataset.hiddenForChat){
+        delete _ambBar.dataset.hiddenForChat;
+        if(_ambActive) _ambBar.style.display = 'flex';
+      }
+    }
+  }
+
   // Show/hide "return to chat" badge when navigating away from an active chat
   var _activeChatPages = ['help-chat', 'guardian-chat', 'dm-chat'];
   if(_inActiveChat && _activeChatPages.indexOf(id) < 0 && _activeChatPages.indexOf(_prevPage) >= 0){
@@ -943,15 +958,9 @@ function _clearSession(){
    'velo_guardian_bio','velo_guardian_tags','velo_guardian_setup_done','velo_needs_pw_change','velo_username',
    'velo_username_changes','velo_favs','velo_blocked','velo_blocked_data',
    'velo_incognito','velo_user_status','velo_fav_me_count','velo_fav_me_seen','velo_dm_unread',
-   'velo_diary','velo_mood_log','velo_bcast_shown','velo_bcast_unread','velo_inbox_deleted',
-   'velo_onboarding_done','velo_helped_once','velo_guardian_convs','velo_visit_days'
+   'velo_bcast_shown','velo_bcast_unread',
+   'velo_onboarding_done','velo_helped_once','velo_guardian_convs'
   ].forEach(function(k){ safeLS('del', k); });
-  // Clear per-key mood/diary entries (shared device privacy)
-  try{
-    Object.keys(localStorage).filter(function(k){
-      return k.startsWith('velo_mood_') || k.startsWith('velo_daily_status_');
-    }).forEach(function(k){ localStorage.removeItem(k); });
-  }catch(e){}
   // Stop guardian heartbeat and clear all RT channel refs so the next login can resubscribe
   _stopGuardianHeartbeat();
   _stopGuardianReqListener();
@@ -9502,10 +9511,15 @@ function pRenderInbox(){
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   var _delSet = []; try{ _delSet = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
   msgs = msgs.filter(function(m){ return _delSet.indexOf(m.id) < 0; });
+  // Only show welcome (m1) to genuinely new users — if they have a username or visit history, they're returning
+  var _isNewUser = !safeLS('get','velo_username') && !safeLS('get','velo_visit_days');
   var mockMsgs = [
     { id:'m1', tipo:'sistema', icon:'💚', remitente:'Equipo Velo', asunto:'¡Bienvenido/a!', extracto:'Gracias por unirte a Velo. Aquí encontrarás apoyo.', leido:!!safeLS('get','velo_read_m1'), fecha:'Ahora' },
     { id:'m2', tipo:'sistema', icon:'🌿', remitente:'Velo', asunto:'Consejo del día', extracto:'Recuerda: está bien no estar bien. El primer paso es reconocerlo.', leido:true, fecha:'Hoy' }
-  ].filter(function(m){ return _delSet.indexOf(m.id) < 0 && !_syncedReadIds[m.id]; });
+  ].filter(function(m){
+    if(m.id === 'm1' && !_isNewUser) return false; // hide welcome for returning users
+    return _delSet.indexOf(m.id) < 0 && !_syncedReadIds[m.id];
+  });
   var all = msgs.concat(mockMsgs);
   // Single upfront fresh-fetch of read_bcast_ids directly (no _ensureSbSession —
   // calling it here triggers _sbSyncProfile which calls pRenderInbox again → loop).

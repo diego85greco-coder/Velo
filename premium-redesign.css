@@ -10933,14 +10933,34 @@ body.r-dark .home-momento-btn-all {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   v702 — Home sections: wider + uniform horizontal margins
-   All home panels reduced from 16px → 8px side margins so they're
-   wider and all the same horizontal proportion.
+   v707 — Home sections: full width, no extra side margins so all
+   sections align flush with r-hero-actions ("Mensajes al Mar")
    ══════════════════════════════════════════════════════════════════ */
-#homeParaVosPanel   { margin-left: 8px !important; margin-right: 8px !important; }
-.r-home-quick-panel { margin-left: 8px !important; margin-right: 8px !important; }
-#homeRegisterOuter  { margin-left: 8px !important; margin-right: 8px !important; }
-#homeMonthlyHint    { margin-left: 8px !important; margin-right: 8px !important; }
+#homeParaVosPanel   { margin-left: 0 !important; margin-right: 0 !important; }
+.r-home-quick-panel { margin-left: 0 !important; margin-right: 0 !important; }
+#homeRegisterOuter  { margin-left: 0 !important; margin-right: 0 !important; }
+#homeMonthlyHint    { margin-left: 0 !important; margin-right: 0 !important; }
+
+/* ══════════════════════════════════════════════════════════════════
+   v707 — Botanical leaf chat background for circle/help/dm pages
+   Layered: soft mint gradient base + SVG leaf-pattern overlay
+   ══════════════════════════════════════════════════════════════════ */
+#pg-circle-chat .r-chat-messages-wrap,
+#pg-help-chat   .r-chat-messages-wrap,
+#pg-dm          .r-chat-messages-wrap {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cg opacity='.13'%3E%3Cellipse cx='40' cy='30' rx='14' ry='26' fill='%2352a873' transform='rotate(-25 40 30)'/%3E%3Cellipse cx='120' cy='90' rx='12' ry='22' fill='%2368c48c' transform='rotate(20 120 90)'/%3E%3Cellipse cx='75' cy='140' rx='10' ry='19' fill='%2352a873' transform='rotate(-10 75 140)'/%3E%3Cellipse cx='15' cy='110' rx='9' ry='17' fill='%2380b89a' transform='rotate(30 15 110)'/%3E%3Cellipse cx='140' cy='30' rx='11' ry='20' fill='%2368c48c' transform='rotate(-35 140 30)'/%3E%3Cellipse cx='90' cy='65' rx='7' ry='14' fill='%23a8d5b5' transform='rotate(15 90 65)'/%3E%3C/g%3E%3C/svg%3E") repeat,
+    linear-gradient(160deg, rgba(232,248,238,.95) 0%, rgba(210,240,225,.92) 50%, rgba(225,245,235,.95) 100%) !important;
+  background-size: 160px 160px, cover !important;
+}
+body.r-dark #pg-circle-chat .r-chat-messages-wrap,
+body.r-dark #pg-help-chat   .r-chat-messages-wrap,
+body.r-dark #pg-dm          .r-chat-messages-wrap {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cg opacity='.09'%3E%3Cellipse cx='40' cy='30' rx='14' ry='26' fill='%2352c878' transform='rotate(-25 40 30)'/%3E%3Cellipse cx='120' cy='90' rx='12' ry='22' fill='%2368e8a0' transform='rotate(20 120 90)'/%3E%3Cellipse cx='75' cy='140' rx='10' ry='19' fill='%2352c878' transform='rotate(-10 75 140)'/%3E%3Cellipse cx='15' cy='110' rx='9' ry='17' fill='%2380c8a0' transform='rotate(30 15 110)'/%3E%3Cellipse cx='140' cy='30' rx='11' ry='20' fill='%2368e8a0' transform='rotate(-35 140 30)'/%3E%3Cellipse cx='90' cy='65' rx='7' ry='14' fill='%23a8e8c8' transform='rotate(15 90 65)'/%3E%3C/g%3E%3C/svg%3E") repeat,
+    linear-gradient(160deg, rgba(6,24,14,.98) 0%, rgba(8,30,18,.96) 50%, rgba(6,24,14,.98) 100%) !important;
+  background-size: 160px 160px, cover !important;
+}
 
 /* ══════════════════════════════════════════════════════════════════
    v700 — Weather icon centering fix (replaces v695 attempt)
