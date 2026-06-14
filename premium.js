@@ -490,9 +490,10 @@ async function _sbSyncProfile(userId){
     for(var _ti = _profileSelectTier; _ti < _selTiers.length; _ti++){
       res = await sbClient.from('profiles').select(_selTiers[_ti]).eq('id',userId).limit(1);
       if(!res.error){ _profileSelectTier = _ti; safeLS('set','velo_prof_tier', String(_ti)); break; }
+      else{ console.warn('[_sbSyncProfile] tier',_ti,'failed:',res.error.message); }
     }
-    if(res.error) return; // all tiers failed
-  }catch(e){ return; }
+    if(res.error){ console.error('[_sbSyncProfile] all tiers failed'); return; }
+  }catch(e){ console.error('[_sbSyncProfile] SELECT exception:',e); return; }
 
   if(res.error) return;
 
@@ -516,6 +517,7 @@ async function _sbSyncProfile(userId){
   }
 
   var p = res.data[0];
+  console.log('[_sbSyncProfile] data from Supabase:', JSON.stringify({nombre:p.nombre,username:p.username,avatar:p.avatar?'[set]':'[empty]',motto:p.motto?'[set]':'[empty]'}));
   if(p.nombre){
     var _email    = safeLS('get','velo_user_email') || '';
     var _emailPfx = _email.split('@')[0];
@@ -728,11 +730,13 @@ async function _sbSyncProfile(userId){
       }
     }).catch(function(){});
   // Refresh all UI with synced data — use localStorage (already repaired) over raw Supabase value
+  var _syncName = safeLS('get','velo_user_name') || p.nombre || '';
+  var _syncAv   = safeLS('get','velo_user_av')   || p.avatar || '🧑';
   var hn = document.getElementById('homeUserName');
-  if(hn) hn.textContent = safeLS('get','velo_user_name') || p.nombre || '';
+  if(hn) hn.textContent = _syncName;
   var hnf = document.getElementById('homeUserNameFab');
-  if(hnf) hnf.textContent = safeLS('get','velo_user_name') || p.nombre || '';
-  _renderAvatarEl('homeAvFab', safeLS('get','velo_user_av') || '🧑');
+  if(hnf) hnf.textContent = _syncName;
+  _renderAvatarEl('homeAvFab', _syncAv);
   if(typeof _checkAndShowNameBanner === 'function'){
     _checkAndShowNameBanner(safeLS('get','velo_user_name') || '');
   }
@@ -999,6 +1003,7 @@ function _clearSession(){
    'velo_bcast_shown','velo_bcast_unread',
    'velo_onboarding_done','velo_helped_once','velo_guardian_convs','velo_prof_tier'
   ].forEach(function(k){ safeLS('del', k); });
+  _profileSelectTier = 0; // reset in-memory tier so next login starts with the full SELECT
   // Stop guardian heartbeat and clear all RT channel refs so the next login can resubscribe
   _stopGuardianHeartbeat();
   _stopGuardianReqListener();
@@ -1025,6 +1030,15 @@ async function pSignOut(){
   // Persist nombre + username to Supabase before clearing localStorage (last-chance save)
   _initSupabase();
   var _soUid = safeLS('get','velo_user_id');
+  // Always use the live session UID — localStorage UID can be stale
+  if(sbClient){
+    try{
+      var {data:_soSd} = await sbClient.auth.getSession();
+      if(_soSd && _soSd.session && _soSd.session.user && _soSd.session.user.id){
+        _soUid = _soSd.session.user.id;
+      }
+    }catch(e){}
+  }
   if(sbClient && _soUid && _soUid !== 'guest'){
     var _soUpdate = {};
     var _soNombre = safeLS('get','velo_user_name');
