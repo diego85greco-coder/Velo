@@ -1871,11 +1871,18 @@ async function pSaveStatusFromModal(){
   Object.keys(syncMap).forEach(function(id){ var el=document.getElementById(id); if(el) el.value=syncMap[id]; });
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
+  if(sbClient){
+    try{
+      var {data:_ms} = await sbClient.auth.getSession();
+      if(_ms && _ms.session && _ms.session.user && _ms.session.user.id) uid = _ms.session.user.id;
+    }catch(e){}
+  }
   if(sbClient && uid){
     try{
-      await _ensureSbSession();
-      var res = await sbClient.from('profiles').update({ status_music:music.trim(), status_book:book.trim(), status_film:film.trim(), status_phrase:phrase.trim() }).eq('id',uid);
-      if(res && res.error){ pToast('⚠️','Guardado solo en este dispositivo'); return; }
+      await sbClient.from('profiles').upsert({
+        id: uid, status_music:music.trim(), status_book:book.trim(),
+        status_film:film.trim(), status_phrase:phrase.trim()
+      },{ onConflict:'id' });
       pToast('✨','Estado actualizado y visible para todos 💚');
     }catch(e){ pToast('✨','Estado actualizado 💚'); }
   } else {
@@ -9026,25 +9033,24 @@ async function pSaveProfileStatus(){
   safeLS('set','velo_status_phrase', phrase.trim());
   _initSupabase();
   var uid = safeLS('get','velo_user_id');
+  if(sbClient){
+    try{
+      var {data:_ps} = await sbClient.auth.getSession();
+      if(_ps && _ps.session && _ps.session.user && _ps.session.user.id) uid = _ps.session.user.id;
+    }catch(e){}
+  }
   if(sbClient && uid){
     try{
-      // Update only the 4 status fields — avoids upsert conflicts with nombre/email constraints
-      var updateRes = await sbClient.from('profiles')
-        .update({
-          status_music:  music.trim(),
-          status_book:   book.trim(),
-          status_film:   film.trim(),
-          status_phrase: phrase.trim()
-        })
-        .eq('id', uid);
+      var updateRes = await sbClient.from('profiles').upsert({
+        id: uid, status_music: music.trim(), status_book: book.trim(),
+        status_film: film.trim(), status_phrase: phrase.trim()
+      },{ onConflict:'id' });
       if(updateRes && updateRes.error){
-        console.error('[pSaveProfileStatus]', updateRes.error);
         pToast('⚠️','Guardado solo en este dispositivo (error de red)');
         return;
       }
       pToast('✨','Estado actualizado y visible para todos 💚');
     }catch(e){
-      console.error('[pSaveProfileStatus catch]', e);
       pToast('⚠️','Guardado solo en este dispositivo (sin conexión)');
     }
   } else {
@@ -17120,16 +17126,31 @@ function pInitDailyStatus(){
   fields.forEach(function(f){ var el = document.getElementById(f); if(el) el.value = saved[f]||''; });
 }
 
-function pSaveDailyStatus(){
+async function pSaveDailyStatus(){
+  var movie  = document.getElementById('statusMovie')  ? document.getElementById('statusMovie').value.trim()  : '';
+  var music  = document.getElementById('statusMusic')  ? document.getElementById('statusMusic').value.trim()  : '';
+  var book   = document.getElementById('statusBook')   ? document.getElementById('statusBook').value.trim()   : '';
+  var phrase = document.getElementById('statusPhrase') ? document.getElementById('statusPhrase').value.trim() : '';
   var key = _todayStatusKey();
-  var data = {
-    movie:  (document.getElementById('statusMovie')  ? document.getElementById('statusMovie').value.trim()  : ''),
-    music:  (document.getElementById('statusMusic')  ? document.getElementById('statusMusic').value.trim()  : ''),
-    book:   (document.getElementById('statusBook')   ? document.getElementById('statusBook').value.trim()   : ''),
-    phrase: (document.getElementById('statusPhrase') ? document.getElementById('statusPhrase').value.trim() : ''),
-    ts: Date.now()
-  };
-  safeLS('set', key, JSON.stringify(data));
+  safeLS('set', key, JSON.stringify({ movie:movie, music:music, book:book, phrase:phrase, ts:Date.now() }));
+  // Also persist to cross-device profile keys so other users always see current data
+  safeLS('set','velo_status_film',   movie);
+  safeLS('set','velo_status_music',  music);
+  safeLS('set','velo_status_book',   book);
+  safeLS('set','velo_status_phrase', phrase);
+  // Push to Supabase so it survives across devices and sessions
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(sbClient && uid){
+    try{
+      var {data:_sd2} = await sbClient.auth.getSession();
+      if(_sd2 && _sd2.session && _sd2.session.user && _sd2.session.user.id) uid = _sd2.session.user.id;
+      await sbClient.from('profiles').upsert({
+        id: uid, status_film: movie, status_music: music,
+        status_book: book, status_phrase: phrase
+      },{ onConflict:'id' });
+    }catch(e){}
+  }
   pToast('✨','Estado del día guardado 💚');
 }
 
