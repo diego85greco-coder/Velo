@@ -1832,6 +1832,7 @@ function _loadHomeData(){
   _renderPersonalizedSuggestions();
   _loadHomeMemoryCard();
   _checkRequestPushPermission();
+  _loadDailyQ();
   _updateHomeBell();
   // Show unread alert once per session if there are pending messages
   if(!_buzónAlertedSession){
@@ -2537,6 +2538,220 @@ function _showPushPrompt(){
     + '</div>'
     + '</div>';
   document.body.appendChild(el);
+}
+
+// ── DAILY QUESTION ────────────────────────────────────────────
+var _DAILY_QUESTIONS = [
+  // Livianas
+  {id:1,  text:'¿Qué canción describe cómo te sentís hoy?'},
+  {id:2,  text:'Si hoy fuera un color, ¿cuál sería?'},
+  {id:3,  text:'¿Qué pequeña cosa te alegró esta semana?'},
+  {id:4,  text:'¿Con qué palabra describirías este momento?'},
+  {id:5,  text:'¿Hay algo que estás esperando con ganas esta semana?'},
+  {id:6,  text:'¿Cuál fue el mejor momento del día de ayer?'},
+  {id:7,  text:'¿Qué te dan ganas de hacer ahora mismo?'},
+  {id:8,  text:'¿Qué es algo simple que te hace sonreír?'},
+  {id:9,  text:'¿Hay alguien a quien extrañás hoy?'},
+  {id:10, text:'¿Qué parte del día disfrutás más?'},
+  {id:11, text:'Si pudieras teletransportarte ahora, ¿adónde irías?'},
+  {id:12, text:'¿Qué aroma te recuerda a algo bueno?'},
+  {id:13, text:'¿Qué es lo primero que pensás cuando te despertás?'},
+  {id:14, text:'¿Hay algo que querés hacer y siempre postergás?'},
+  {id:15, text:'¿Qué es lo más lindo que te dijeron últimamente?'},
+  // Reflexivas
+  {id:16, text:'¿En qué momento del día sos más vos mismo/a?'},
+  {id:17, text:'¿Qué emoción repetiste más estos días?'},
+  {id:18, text:'¿Cuándo fue la última vez que te sorprendiste a vos mismo/a?'},
+  {id:19, text:'¿Qué es lo que más valorás de las personas cercanas?'},
+  {id:20, text:'¿Hay algo que aprendiste esta semana sin darte cuenta?'},
+  {id:21, text:'¿Qué parte de tu rutina te hace realmente bien?'},
+  {id:22, text:'¿Qué necesitás más en tu vida en este momento?'},
+  {id:23, text:'¿Cuándo te sentís más en paz?'},
+  {id:24, text:'¿Qué significa para vos cuidarte?'},
+  {id:25, text:'¿Cuál fue tu última conversación significativa?'},
+  {id:26, text:'¿Hay algo que querés soltar antes de que termine la semana?'},
+  {id:27, text:'¿Qué es algo que antes te costaba y ahora te sale más natural?'},
+  {id:28, text:'¿Qué te hace sentir que pertenecés a algo?'},
+  {id:29, text:'¿Cuándo fue la última vez que hiciste algo solo/a para vos?'},
+  {id:30, text:'¿Cómo te tratás a vos mismo/a cuando cometés un error?'},
+  {id:31, text:'¿Qué te reconforta cuando todo se siente caótico?'},
+  {id:32, text:'¿Qué significa para vos estar bien?'},
+  {id:33, text:'¿Qué te preocupa del futuro?'},
+  {id:34, text:'¿Qué emoción te cuesta más admitir?'},
+  {id:35, text:'¿Qué extrañás de algún momento de tu vida?'},
+  // Desafiantes
+  {id:36, text:'¿Con quién deberías hablar y no lo hacés?'},
+  {id:37, text:'¿Qué te da miedo admitir que querés?'},
+  {id:38, text:'¿Hay algo que estás evitando pensar?'},
+  {id:39, text:'¿Qué necesitás que alguien te diga hoy?'},
+  {id:40, text:'¿Qué parte tuya no le mostrás a casi nadie?'},
+  {id:41, text:'¿Cuándo fue la última vez que pediste ayuda de verdad?'},
+  {id:42, text:'¿Qué estás cargando solo/a que no deberías?'},
+  {id:43, text:'¿Hay algo de lo que te arrepentís esta semana?'},
+  {id:44, text:'¿Qué sería diferente en tu vida si no tuvieras miedo?'},
+  {id:45, text:'¿Qué es lo más difícil de ser vos en este momento?'},
+  {id:46, text:'¿Cuándo fue la última vez que lloraste?'},
+  {id:47, text:'¿Qué emoción tuya no sabe manejar la gente de tu entorno?'},
+  {id:48, text:'¿Qué te decís a vos mismo/a cuando todo se pone difícil?'},
+  {id:49, text:'¿Hay algo que sentís pero no sabés cómo decirlo?'},
+  {id:50, text:'¿Qué límite te cuesta más sostener?'},
+  {id:51, text:'¿Qué es algo que no te permitís sentir?'},
+  {id:52, text:'¿Hay algo que querés cambiar pero no sabés por dónde empezar?'},
+  {id:53, text:'¿Cómo describirías tu relación con vos mismo/a ahora mismo?'},
+  {id:54, text:'¿Qué es algo que te cuesta pedir?'},
+  {id:55, text:'¿Hay algo que te da vergüenza sentir?'},
+  {id:56, text:'¿Qué necesitás para sentirte más tranquilo/a esta semana?'},
+  {id:57, text:'¿Cuándo te sentís más solo/a aunque estés rodeado/a de gente?'},
+  {id:58, text:'¿Qué te gustaría que alguien entendiese de vos?'},
+  {id:59, text:'¿Hay un pensamiento que vuelve aunque no querás?'},
+  {id:60, text:'¿Qué necesita tu versión de hoy que ayer no tenías?'}
+];
+
+function _getDailyQuestion(){
+  var dayIdx = Math.floor(Date.now() / 86400000);
+  return _DAILY_QUESTIONS[dayIdx % _DAILY_QUESTIONS.length];
+}
+
+function _loadDailyQ(){
+  var el = document.getElementById('homeDailyQ');
+  if(!el) return;
+  el.style.display = 'block';
+  var q = _getDailyQuestion();
+  var qtEl = document.getElementById('homeDailyQText');
+  if(qtEl) qtEl.textContent = q.text;
+  var dateKey = _dateKey();
+  var myResp = safeLS('get','velo_daily_resp_'+dateKey);
+  if(myResp){
+    var lockedEl = document.getElementById('homeDailyQLocked');
+    var openEl   = document.getElementById('homeDailyQOpen');
+    if(lockedEl) lockedEl.style.display = 'none';
+    if(openEl)   openEl.style.display   = 'block';
+    var openQEl = document.getElementById('homeDailyQOpenText');
+    if(openQEl) openQEl.textContent = q.text;
+    try{
+      var _r = JSON.parse(myResp);
+      var myBadge = document.getElementById('homeDailyQMyResp');
+      if(myBadge) myBadge.textContent = 'Tu respuesta: '+_r.emoji+(_r.text?' · '+_r.text.slice(0,35)+(_r.text.length>35?'…':''):'');
+    }catch(e){}
+    _fetchDailyFeed(q.id);
+  } else {
+    _fetchDailyCount();
+  }
+}
+
+async function _fetchDailyCount(){
+  var countEl = document.getElementById('homeDailyQCount');
+  if(!sbClient || !countEl) return;
+  var today = _dateKey();
+  try{
+    var res = await sbClient.from('daily_responses').select('id',{count:'exact',head:true}).eq('question_date',today);
+    var n = res.count || 0;
+    countEl.textContent = n === 0 ? 'Sé el primero en responder ✨' : n+(n===1?' persona respondió hoy':' personas respondieron hoy');
+  }catch(e){}
+}
+
+async function _fetchDailyFeed(qId){
+  if(!sbClient){ _renderDailyFeed([]); return; }
+  var today = _dateKey();
+  try{
+    var res = await sbClient.from('daily_responses').select('*').eq('question_date',today).order('created_at',{ascending:false}).limit(40);
+    _renderDailyFeed(res.data || []);
+  }catch(e){ _renderDailyFeed([]); }
+}
+
+function _renderDailyFeed(responses){
+  var summaryEl = document.getElementById('homeDailyQSummary');
+  var feedEl    = document.getElementById('homeDailyQFeed');
+  if(!feedEl) return;
+  if(summaryEl){
+    var counts = {};
+    responses.forEach(function(r){ counts[r.mood_emoji]=(counts[r.mood_emoji]||0)+1; });
+    var sorted = Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+    summaryEl.innerHTML = sorted.map(function(e){
+      return '<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(255,255,255,.08);border-radius:20px;padding:3px 9px;font-size:14px">'
+        +e+'<span style="font-size:11px;color:rgba(255,255,255,.55);font-family:Jost,sans-serif">'+counts[e]+'</span></span>';
+    }).join('');
+  }
+  if(!responses.length){
+    feedEl.innerHTML = '<div style="text-align:center;padding:14px 0;font-size:13px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif;font-style:italic">Sé el primero en compartir 🌱</div>';
+    return;
+  }
+  var _moodBg = {'😊':'rgba(116,198,157,.18)','😄':'rgba(116,198,157,.22)','😌':'rgba(116,198,157,.14)','🥺':'rgba(180,130,200,.18)','😔':'rgba(120,100,180,.18)','😰':'rgba(200,145,80,.18)','😤':'rgba(200,80,80,.16)','💪':'rgba(100,160,240,.16)'};
+  feedEl.innerHTML = responses.map(function(r){
+    var av = r.user_avatar || '';
+    var isImg = av && av.startsWith('http');
+    var avHtml = isImg
+      ? '<img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0">'
+      : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px">'+(av||'🌿')+'</div>';
+    var mBg = _moodBg[r.mood_emoji] || 'rgba(255,255,255,.1)';
+    var txt = r.response_text ? '<div class="dq-feed-text" style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.45;font-style:italic;margin-top:3px">'+r.response_text+'</div>' : '';
+    return '<div class="dq-feed-card" style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);align-items:flex-start">'
+      +avHtml
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">'
+      +'<span class="dq-feed-name" style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82);font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">'+(r.user_name||'Alguien')+'</span>'
+      +'<span style="font-size:17px;background:'+mBg+';border-radius:8px;padding:1px 5px">'+r.mood_emoji+'</span>'
+      +'</div>'
+      +txt
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+var _dailySelectedEmoji = '';
+
+function pOpenDailyResponse(){
+  var q = _getDailyQuestion();
+  var qtEl = document.getElementById('dailyResponseQText');
+  if(qtEl) qtEl.textContent = q.text;
+  _dailySelectedEmoji = '';
+  document.querySelectorAll('.daily-emoji-btn').forEach(function(b){ b.classList.remove('sel'); });
+  var tw = document.getElementById('dailyResponseTextWrap');
+  var tx = document.getElementById('dailyResponseText');
+  if(tw) tw.style.display = 'none';
+  if(tx) tx.value = '';
+  openModal('dailyResponseOv');
+}
+
+function _selectDailyEmoji(emoji, btn){
+  _dailySelectedEmoji = emoji;
+  document.querySelectorAll('.daily-emoji-btn').forEach(function(b){ b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  var tw = document.getElementById('dailyResponseTextWrap');
+  if(tw) tw.style.display = 'block';
+}
+
+async function pSubmitDailyResponse(){
+  if(!_dailySelectedEmoji){ pToast('✨','Elegí cómo te sentís'); return; }
+  var txEl  = document.getElementById('dailyResponseText');
+  var text  = txEl ? txEl.value.trim().slice(0,120) : '';
+  var q     = _getDailyQuestion();
+  var dateKey = _dateKey();
+  var uid   = safeLS('get','velo_user_id');
+  var name  = safeLS('get','velo_user_name') || 'Alguien';
+  var av    = safeLS('get','velo_user_av') || '';
+  var avSafe = (av && !av.startsWith('data:')) ? av : '';
+  safeLS('set','velo_daily_resp_'+dateKey, JSON.stringify({emoji:_dailySelectedEmoji,text:text}));
+  if(sbClient && uid){
+    try{
+      await sbClient.from('daily_responses').upsert({
+        user_id:uid, question_date:dateKey, question_id:q.id,
+        mood_emoji:_dailySelectedEmoji, response_text:text,
+        user_name:name, user_avatar:avSafe
+      },{onConflict:'user_id,question_date'});
+    }catch(e){ console.warn('[dailyQ save]',e); }
+  }
+  closeModal('dailyResponseOv');
+  pToast('💚','¡Gracias por compartir!');
+  var lockedEl = document.getElementById('homeDailyQLocked');
+  var openEl   = document.getElementById('homeDailyQOpen');
+  if(lockedEl) lockedEl.style.display = 'none';
+  if(openEl)   openEl.style.display   = 'block';
+  var openQEl = document.getElementById('homeDailyQOpenText');
+  if(openQEl) openQEl.textContent = q.text;
+  var myBadge = document.getElementById('homeDailyQMyResp');
+  if(myBadge) myBadge.textContent = 'Tu respuesta: '+_dailySelectedEmoji+(text?' · '+text.slice(0,35)+(text.length>35?'…':''):'');
+  _fetchDailyFeed(q.id);
 }
 
 // ── GUARDIAN DATA ─────────────────────────────────────────────
