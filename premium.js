@@ -2662,10 +2662,15 @@ async function _fetchDailyFeed(qId){
   }catch(e){ _renderDailyFeed([]); }
 }
 
+var _DQ_PREVIEW_COUNT = 5; // cards shown before "ver más"
+var _dqAllResponses = [];  // full list cached for expand
+
 function _renderDailyFeed(responses){
+  _dqAllResponses = responses;
   var summaryEl = document.getElementById('homeDailyQSummary');
   var feedEl    = document.getElementById('homeDailyQFeed');
   if(!feedEl) return;
+  // Emoji summary bar
   if(summaryEl){
     var counts = {};
     responses.forEach(function(r){ counts[r.mood_emoji]=(counts[r.mood_emoji]||0)+1; });
@@ -2679,8 +2684,23 @@ function _renderDailyFeed(responses){
     feedEl.innerHTML = '<div style="text-align:center;padding:14px 0;font-size:13px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif;font-style:italic">Sé el primero en compartir 🌱</div>';
     return;
   }
+  var preview = responses.slice(0, _DQ_PREVIEW_COUNT);
+  var rest = responses.length - _DQ_PREVIEW_COUNT;
+  feedEl.innerHTML = _buildDqCards(preview)
+    + (rest > 0
+      ? '<button onclick="_expandDailyFeed()" style="width:100%;margin-top:10px;padding:10px;border-radius:12px;border:1.5px solid rgba(116,198,157,.22);background:transparent;color:rgba(116,198,157,.7);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px" id="dqExpandBtn">Ver '+rest+' respuestas más ↓</button>'
+      : '');
+}
+
+function _expandDailyFeed(){
+  var feedEl = document.getElementById('homeDailyQFeed');
+  if(!feedEl) return;
+  feedEl.innerHTML = _buildDqCards(_dqAllResponses);
+}
+
+function _buildDqCards(list){
   var _moodBg = {'😊':'rgba(116,198,157,.18)','😄':'rgba(116,198,157,.22)','😌':'rgba(116,198,157,.14)','🥺':'rgba(180,130,200,.18)','😔':'rgba(120,100,180,.18)','😰':'rgba(200,145,80,.18)','😤':'rgba(200,80,80,.16)','💪':'rgba(100,160,240,.16)'};
-  feedEl.innerHTML = responses.map(function(r){
+  return list.map(function(r){
     var av = r.user_avatar || '';
     var isImg = av && av.startsWith('http');
     var avHtml = isImg
