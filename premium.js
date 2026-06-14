@@ -9216,7 +9216,8 @@ async function pSaveProfile(){
     // Handle username update if changed
     if(newUname && newUname !== curUname){
       var _unChanges = parseInt(safeLS('get','velo_username_changes')||'0', 10);
-      if(_unChanges >= 2){ pToast('⚠️','Solo podés cambiar tu @usuario 2 veces en total'); return; }
+      var _isFirstSet = curUname === ''; // first-time set doesn't count as a change
+      if(!_isFirstSet && _unChanges >= 2){ pToast('⚠️','Solo podés cambiar tu @usuario 2 veces en total'); return; }
       if(newUname.length < 5 || newUname.length > 20){
         pToast('⚠️','El @usuario debe tener entre 5 y 20 caracteres'); return;
       }
@@ -9224,7 +9225,7 @@ async function pSaveProfile(){
       try{
         var _rU = await sbClient.from('profiles').select('id').eq('username', newUname).neq('id', uid).limit(1);
         if(_rU.data && _rU.data.length){ pToast('⚠️','Ese @usuario ya está tomado, elegí otro'); return; }
-        var _newCount = _unChanges + 1;
+        var _newCount = _isFirstSet ? _unChanges : (_unChanges + 1); // only increment on replacement
         var _rUpd = await sbClient.from('profiles').update({ username: newUname, username_changes: _newCount }).eq('id', uid);
         if(!_rUpd.error){
           safeLS('set','velo_username', newUname);

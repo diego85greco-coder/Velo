@@ -98,7 +98,8 @@
     var divClr   = isDarkMode ? 'rgba(116,198,157,.28)'     : 'rgba(80,160,110,.28)';
 
     info.innerHTML = '';
-    info.style.cssText += ';display:block;text-align:center';
+    info.style.display = 'flex';
+    info.style.justifyContent = 'center';
 
     var card = document.createElement('div');
     card.style.cssText = [
