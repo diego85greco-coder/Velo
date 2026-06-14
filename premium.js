@@ -1063,14 +1063,20 @@ async function _loginAndGo(){
       var _uid = safeLS('get','velo_user_id');
       if(sbClient && _uid){
         try{
-          var _ur = await sbClient.from('profiles').select('username').eq('id',_uid).limit(1);
+          var _ur = await sbClient.from('profiles').select('username,nombre').eq('id',_uid).limit(1);
           if(_ur.error){
             // Column may not exist yet (SQL migration pending) — don't block login
             console.warn('[_loginAndGo] username query error (migration pending?):', _ur.error.message);
             _unameQueryOk = false;
-          } else if(_ur.data && _ur.data[0] && _ur.data[0].username){
-            safeLS('set','velo_username', _ur.data[0].username);
-            _uname = _ur.data[0].username;
+          } else if(_ur.data && _ur.data[0]){
+            if(_ur.data[0].username){
+              safeLS('set','velo_username', _ur.data[0].username);
+              _uname = _ur.data[0].username;
+            }
+            // Pre-populate nombre so the _isExisting check below works on fresh browsers
+            if(_ur.data[0].nombre){
+              safeLS('set','velo_user_name', _ur.data[0].nombre);
+            }
           }
         }catch(e){
           console.warn('[_loginAndGo] username fetch failed:', e);
@@ -1590,6 +1596,7 @@ function pSaveQuickMood(){
   if(moodLine) moodLine.textContent = _selectedQuickMoodEmoji + ' ' + (labels[_selectedQuickMoodEmoji]||'') + (phrase.trim() ? ' — ' + phrase.trim() : '');
   pCloseQuickMood();
   _updateTopbarMoodBadge();
+  _renderHomeWeekMoodGraph().catch(function(){});
   pToast(_selectedQuickMoodEmoji, 'Estado de ánimo guardado 💚');
 }
 
@@ -15940,12 +15947,22 @@ async function _checkWeeklySummary(){
     // Send to Buzón (with AI text)
     if(!alreadySent){
       var _inbox2=[]; try{_inbox2=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e){}
-      var bodyTxt = 'Hola'+(userName?' '+userName:'')+', tu resumen de esta semana en Velo:\n\n'
+      var _wqB = _pickWeeklyQuote(dominantMood);
+      var _moodCat = (dominantMood==='😄'||dominantMood==='😊') ? 'feliz' : (dominantMood==='😞'||dominantMood==='😢') ? 'dificil' : 'neutral';
+      var _mediaRec = {
+        feliz:   { libro:'El Alquimista — Paulo Coelho', peli:'Coco (Pixar, 2017)' },
+        neutral: { libro:'El Poder del Ahora — Eckhart Tolle', peli:'Into the Wild (2007)' },
+        dificil: { libro:'El Hombre en Busca de Sentido — Viktor Frankl', peli:'Good Will Hunting (1997)' }
+      }[_moodCat];
+      var bodyTxt = '¡Hola'+(userName?' '+userName:'')+'!\n\n'
+        +'Estamos muy felices de que formes parte de nuestra comunidad. Tu presencia hace la diferencia 💚\n\n'
         +(aiText ? aiText+'\n\n' : '')
         +'📊 '+weekMoods.length+' registro'+(weekMoods.length!==1?'s de ánimo':' de ánimo')+' esta semana'+(dominantMood?' — más frecuente: '+dominantMood:'')+'.\n'
         +(weekDiary.length?'📔 '+weekDiary.length+' entrada'+(weekDiary.length!==1?'s':'')+ ' en tu diario.\n':'')
         +'📅 '+streak+' día'+(streak!==1?'s':'')+' seguidos en Velo.\n\n'
-        +'📋 El 1° de cada mes el equipo de Velo te envía un análisis completo de todo tu mes.\n\n¡Hasta el próximo domingo! 🌱';
+        +(_wqB ? '❝ '+_wqB.q+'❞\n— '+_wqB.a+(_wqB.b?', '+_wqB.b:'')+'\n\n' : '')
+        +(_mediaRec ? '📚 Libro para esta semana: '+_mediaRec.libro+'\n🎬 Película que puede resonarte: '+_mediaRec.peli+'\n\n' : '')
+        +'📋 El 1° de cada mes recibís un análisis completo de tu mes.\n\n¡Hasta el próximo domingo! 🌱';
       _inbox2.unshift({id:'weekly-'+todayKey,tipo:'sistema',icon:'📊',remitente:'Velo — Resumen Semanal',asunto:'Tu semana en Velo 🌱'+(dominantMood?' '+dominantMood:''),extracto:aiText?aiText.slice(0,80)+'…':weekMoods.length+' registros esta semana',cuerpo:bodyTxt,leido:false,fecha:new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})});
       safeLS('set','velo_inbox',JSON.stringify(_inbox2.slice(0,100)));
       if(typeof _updateInboxDot==='function') _updateInboxDot();
@@ -15958,7 +15975,7 @@ async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns
     var moodLines = timeline.map(function(d){
       return d.dayName+': '+(d.mood ? d.mood.emoji+' '+d.mood.label : '—');
     }).join('\n');
-    var prompt = 'Sos un acompañante empático de Velo, una app de bienestar emocional. '
+    var prompt = 'Sos un acompañante empático de Velo, una app de apoyo emocional. '
       +(userName?'El usuario se llama '+userName+'. ':'')
       +'Esta semana registró los siguientes ánimos:\n'+moodLines+'\n\n'
       +'Racha: '+streak+' días seguidos en la app. '
@@ -15967,6 +15984,7 @@ async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns
       +'1. Observe algo específico y real de su semana (no genérico)\n'
       +'2. Valide sus emociones sin exagerar\n'
       +'3. Cierre con algo alentador pero concreto\n\n'
+      +'IMPORTANTE: NO empieces con "Hola" ni con el nombre de la persona. Empezá directo con la observación de la semana. '
       +'Tono: como alguien que realmente los conoce, cercano y humano. Sin hashtags. NUNCA uses "salud mental".';
     var text = await _geminiCall(prompt, { temperature:0.88, maxOutputTokens:180 });
     return text || null;
@@ -16339,11 +16357,13 @@ async function _loadHomeHappyFeed(){
     var cutoff = new Date(Date.now()-24*60*60*1000).toISOString();
     return q.gte('created_at',cutoff).order('created_at',{ascending:false}).limit(4);
   });
-  if(sbRows === null){
-    feed.innerHTML = '<div style="text-align:center;padding:16px;font-size:12px;color:var(--ink4)">Sin conexión · <button onclick="_loadHomeHappyFeed()" style="font-size:11px;background:none;border:none;color:var(--sage);cursor:pointer;font-weight:700">Reintentar</button></div>';
-    return;
+  var posts;
+  if(sbRows !== null){
+    posts = sbRows.map(_sbHappyRow).filter(function(h){ return !_isBlocked(h.userId); });
+  } else {
+    // Supabase unavailable — fall back to local queue
+    posts = (_processHappyQueue()||[]).slice(0,4);
   }
-  var posts = sbRows.map(_sbHappyRow).filter(function(h){ return !_isBlocked(h.userId); });
   if(!posts.length){
     feed.innerHTML = '<div style="text-align:center;padding:18px"><span style="font-size:26px">☀️</span><div style="font-size:12px;color:var(--ink4);margin-top:7px">¡Sé el primero en compartir un momento de alegría!</div></div>';
     return;
