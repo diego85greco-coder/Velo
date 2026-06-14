@@ -2856,128 +2856,196 @@ function _drawShareCard(){
   var W = 1080, H = 1080;
   ctx.clearRect(0,0,W,H);
 
-  // Background gradient
+  // ── Background ─────────────────────────────────────────────────
   var bg = ctx.createLinearGradient(0,0,W,H);
-  bg.addColorStop(0,'#0a1f10');
-  bg.addColorStop(0.5,'#071509');
-  bg.addColorStop(1,'#040d06');
+  bg.addColorStop(0,'#091c0e');
+  bg.addColorStop(0.45,'#071409');
+  bg.addColorStop(1,'#030c05');
   ctx.fillStyle = bg;
-  ctx.roundRect(0,0,W,H,60);
+  ctx.beginPath();
+  ctx.roundRect(0,0,W,H,48);
   ctx.fill();
 
-  // Subtle green glow top-left
-  var glow = ctx.createRadialGradient(200,200,0,200,200,500);
-  glow.addColorStop(0,'rgba(116,198,157,.12)');
-  glow.addColorStop(1,'rgba(116,198,157,0)');
-  ctx.fillStyle = glow;
-  ctx.fillRect(0,0,W,H);
+  // Glows
+  var g1 = ctx.createRadialGradient(W*.15,H*.1,0,W*.15,H*.1,480);
+  g1.addColorStop(0,'rgba(116,198,157,.09)'); g1.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g1; ctx.fillRect(0,0,W,H);
+  var g2 = ctx.createRadialGradient(W*.85,H*.85,0,W*.85,H*.85,400);
+  g2.addColorStop(0,'rgba(200,158,56,.07)'); g2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g2; ctx.fillRect(0,0,W,H);
 
-  // Gold accent line top
-  var goldLine = ctx.createLinearGradient(80,0,W-80,0);
-  goldLine.addColorStop(0,'rgba(200,158,56,0)');
-  goldLine.addColorStop(0.3,'rgba(200,158,56,.7)');
-  goldLine.addColorStop(0.7,'rgba(200,158,56,.7)');
-  goldLine.addColorStop(1,'rgba(200,158,56,0)');
-  ctx.strokeStyle = goldLine;
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(80,90); ctx.lineTo(W-80,90); ctx.stroke();
+  // Decorative dots (constellation feel)
+  var dots = [[120,200],[W-130,160],[80,H-180],[W-100,H-220],[W/2+180,320],[W/2-200,780]];
+  dots.forEach(function(p,i){
+    ctx.fillStyle = i%2===0 ? 'rgba(116,198,157,.18)' : 'rgba(200,158,56,.12)';
+    ctx.beginPath(); ctx.arc(p[0],p[1],i%3===0?4:2.5,0,Math.PI*2); ctx.fill();
+  });
 
-  // VELO logo text
-  ctx.font = '700 48px Jost,Arial,sans-serif';
-  ctx.fillStyle = 'rgba(116,198,157,.9)';
-  ctx.textAlign = 'center';
-  ctx.fillText('VELO', W/2, 72);
+  // ── Gold top line ───────────────────────────────────────────────
+  var topLine = ctx.createLinearGradient(60,0,W-60,0);
+  topLine.addColorStop(0,'rgba(200,158,56,0)');
+  topLine.addColorStop(0.25,'rgba(200,158,56,.75)');
+  topLine.addColorStop(0.75,'rgba(200,158,56,.75)');
+  topLine.addColorStop(1,'rgba(200,158,56,0)');
+  ctx.strokeStyle=topLine; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(60,68); ctx.lineTo(W-60,68); ctx.stroke();
 
-  // "Mi semana emocional" subtitle
-  ctx.font = '300 28px Jost,Arial,sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,.45)';
-  ctx.fillText('Mi semana emocional', W/2, 130);
+  // ── VELO logo ───────────────────────────────────────────────────
+  ctx.textAlign='center';
+  ctx.font='800 52px Arial,sans-serif';
+  ctx.fillStyle='rgba(116,198,157,.92)';
+  ctx.fillText('VELO', W/2, 54);
 
-  // User name
+  // ── Header subtitle ─────────────────────────────────────────────
+  var monthNames=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var now = new Date();
+  var weekNum = Math.ceil((((now-new Date(now.getFullYear(),0,1))/86400000)+new Date(now.getFullYear(),0,1).getDay()+1)/7);
+  ctx.font='300 26px Arial,sans-serif';
+  ctx.fillStyle='rgba(255,255,255,.38)';
+  ctx.fillText('Semana '+weekNum+' · '+monthNames[now.getMonth()]+' '+now.getFullYear(), W/2, 108);
+
+  // ── User name ───────────────────────────────────────────────────
   var name = safeLS('get','velo_user_name') || '';
-  if(name){
-    ctx.font = '600 36px Jost,Arial,sans-serif';
-    ctx.fillStyle = 'rgba(200,158,56,.85)';
-    ctx.fillText(name, W/2, 200);
-  }
+  ctx.font='700 62px Arial,sans-serif';
+  ctx.fillStyle='rgba(200,158,56,.90)';
+  ctx.fillText(name || 'Mi semana', W/2, 185);
 
-  // Collect last 7 days of moods
-  var days7 = [];
-  var dayLabels = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  ctx.font='400 24px Arial,sans-serif';
+  ctx.fillStyle='rgba(255,255,255,.28)';
+  ctx.fillText('mi semana emocional en Velo', W/2, 218);
+
+  // ── Collect mood data ───────────────────────────────────────────
+  var days7=[], dayLabels=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'], moodCounts={};
   for(var i=6;i>=0;i--){
-    var d = new Date(); d.setDate(d.getDate()-i);
-    var k = d.toISOString().slice(0,10);
-    var raw = safeLS('get','velo_mood_'+k);
-    var emoji = '';
+    var d=new Date(); d.setDate(d.getDate()-i);
+    var k=d.toISOString().slice(0,10);
+    var raw=safeLS('get','velo_mood_'+k), emoji='';
     if(raw){ try{ var obj=JSON.parse(raw); emoji=obj.emoji||obj||''; }catch(e){ emoji=raw; } }
-    days7.push({ day:dayLabels[d.getDay()===0?6:d.getDay()-1], emoji:emoji, date:k });
+    days7.push({day:dayLabels[d.getDay()===0?6:d.getDay()-1],emoji:emoji});
+    if(emoji) moodCounts[emoji]=(moodCounts[emoji]||0)+1;
   }
+  var daysRecorded=days7.filter(function(d){return d.emoji;}).length;
+  var dominantEmoji=Object.keys(moodCounts).sort(function(a,b){return moodCounts[b]-moodCounts[a];})[0]||'';
+  var _moodLabel={'😄':'Excelente','😊':'Bien','😐':'Regular','😔':'Melancólico/a','😰':'Ansioso/a','😤':'Frustrado/a','😌':'En paz','🥺':'Sensible','💪':'Con fuerza'};
+  var _moodColor={'😄':'rgba(116,198,157,.28)','😊':'rgba(116,198,157,.22)','😌':'rgba(100,180,160,.22)','😐':'rgba(200,160,80,.18)','😔':'rgba(130,100,200,.22)','😰':'rgba(200,140,70,.22)','😤':'rgba(200,80,80,.20)','🥺':'rgba(180,120,200,.22)','💪':'rgba(100,150,220,.22)'};
 
-  // Draw mood grid (7 columns)
-  var gridY = 260, gridW = W-160, colW = gridW/7, gridX = 80;
-  ctx.font = '400 22px Jost,Arial,sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,.35)';
-  ctx.textAlign = 'center';
+  // ── Separator ───────────────────────────────────────────────────
+  var sep = function(y){
+    var sl=ctx.createLinearGradient(80,0,W-80,0);
+    sl.addColorStop(0,'rgba(116,198,157,0)'); sl.addColorStop(.5,'rgba(116,198,157,.18)'); sl.addColorStop(1,'rgba(116,198,157,0)');
+    ctx.strokeStyle=sl; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(80,y); ctx.lineTo(W-80,y); ctx.stroke();
+  };
+  sep(244);
+
+  // ── Mood grid ───────────────────────────────────────────────────
+  var gX=54,gY=280,gW=W-108,colW=gW/7;
   days7.forEach(function(d,i){
-    var x = gridX + colW*i + colW/2;
+    var x=gX+colW*i+colW/2;
+    // Cell background pill
+    ctx.fillStyle=d.emoji?'rgba(116,198,157,.08)':'rgba(255,255,255,.04)';
+    ctx.beginPath(); ctx.roundRect(x-colW/2+6,gY-18,colW-12,110,18); ctx.fill();
     // Day label
-    ctx.fillStyle = 'rgba(255,255,255,.35)';
-    ctx.font = '400 22px Jost,Arial,sans-serif';
-    ctx.fillText(d.day, x, gridY);
-    // Emoji or dot
+    ctx.font='600 20px Arial,sans-serif';
+    ctx.fillStyle=d.emoji?'rgba(255,255,255,.55)':'rgba(255,255,255,.22)';
+    ctx.textAlign='center';
+    ctx.fillText(d.day,x,gY+6);
+    // Emoji or empty dot
     if(d.emoji){
-      ctx.font = '500 56px Arial,sans-serif';
-      ctx.fillText(d.emoji, x, gridY+72);
+      ctx.font='68px Arial,sans-serif';
+      ctx.fillText(d.emoji,x,gY+82);
     } else {
-      ctx.fillStyle = 'rgba(255,255,255,.12)';
-      ctx.beginPath(); ctx.arc(x, gridY+50, 16, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.10)';
+      ctx.beginPath(); ctx.arc(x,gY+54,16,0,Math.PI*2); ctx.fill();
     }
   });
 
-  // Streak
-  var streak = _getConsecutiveStreak ? _getConsecutiveStreak() : 0;
-  if(streak > 0){
-    ctx.font = '700 52px Jost,Arial,sans-serif';
-    ctx.fillStyle = 'rgba(200,158,56,.9)';
-    ctx.textAlign = 'center';
-    ctx.fillText('🔥 '+streak+(streak===1?' día':' días de racha'), W/2, 440);
+  var afterGrid = gY+128;
+  sep(afterGrid);
+
+  // ── Dominant mood pill ──────────────────────────────────────────
+  if(dominantEmoji){
+    var pillY=afterGrid+26, pillH=90, pillX=80, pillW=W-160;
+    ctx.fillStyle=_moodColor[dominantEmoji]||'rgba(116,198,157,.18)';
+    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,22); ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.10)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,22); ctx.stroke();
+    ctx.font='54px Arial,sans-serif'; ctx.textAlign='left';
+    ctx.fillStyle='rgba(255,255,255,.9)';
+    ctx.fillText(dominantEmoji,pillX+22,pillY+64);
+    ctx.font='700 30px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.85)';
+    ctx.fillText('Tu estado predominante: '+(_moodLabel[dominantEmoji]||'').toUpperCase(),pillX+100,pillY+40);
+    ctx.font='400 22px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.45)';
+    ctx.fillText(daysRecorded+' de 7 días registrados · '+(moodCounts[dominantEmoji]||0)+' veces esta semana',pillX+100,pillY+68);
   }
 
-  // Poetic phrase — rotates by week
-  var phrases = [
-    'Estuviste acá. Eso importa.',
-    'Cuidarte es un acto de valentía.',
-    'Cada día cuenta.',
-    'Tu historia merece ser contada.',
-    'Acompañar emociones es acompañarte.',
-    'Lo que sentís, vale.',
-    'Cada emoción tiene su lugar.'
-  ];
-  var weekIdx = Math.floor(Date.now()/(86400000*7)) % phrases.length;
-  ctx.font = 'italic 600 38px Cormorant Garamond,Georgia,serif';
-  ctx.fillStyle = 'rgba(255,255,255,.55)';
-  ctx.textAlign = 'center';
-  ctx.fillText('"'+phrases[weekIdx]+'"', W/2, 540);
+  // ── Stats row ───────────────────────────────────────────────────
+  var statsY = afterGrid+136;
+  var streak = typeof _getConsecutiveStreak==='function' ? _getConsecutiveStreak() : 0;
+  var totalDays = typeof _getVisitDayCount==='function' ? _getVisitDayCount() : 0;
+  // Left stat: streak
+  ctx.fillStyle='rgba(200,158,56,.12)';
+  ctx.beginPath(); ctx.roundRect(80,statsY,W/2-100,80,18); ctx.fill();
+  ctx.font='600 28px Arial,sans-serif'; ctx.textAlign='center'; ctx.fillStyle='rgba(200,158,56,.9)';
+  ctx.fillText('🔥 '+streak+(streak===1?' día':' días de racha'),80+(W/2-100)/2,statsY+36);
+  ctx.font='300 20px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.35)';
+  ctx.fillText('racha actual',80+(W/2-100)/2,statsY+60);
+  // Right stat: total days
+  ctx.fillStyle='rgba(116,198,157,.10)';
+  ctx.beginPath(); ctx.roundRect(W/2+20,statsY,W/2-100,80,18); ctx.fill();
+  ctx.font='600 28px Arial,sans-serif'; ctx.fillStyle='rgba(116,198,157,.85)';
+  ctx.fillText('🌿 '+totalDays+(totalDays===1?' día':' días en Velo'),W/2+20+(W/2-100)/2,statsY+36);
+  ctx.font='300 20px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.35)';
+  ctx.fillText('en total',W/2+20+(W/2-100)/2,statsY+60);
 
-  // Divider
-  var div2 = ctx.createLinearGradient(80,0,W-80,0);
-  div2.addColorStop(0,'rgba(116,198,157,0)');
-  div2.addColorStop(0.5,'rgba(116,198,157,.3)');
-  div2.addColorStop(1,'rgba(116,198,157,0)');
-  ctx.strokeStyle = div2;
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(80,580); ctx.lineTo(W-80,580); ctx.stroke();
+  // ── Emoji breakdown row ─────────────────────────────────────────
+  var brkY=statsY+110;
+  ctx.font='400 22px Arial,sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='rgba(255,255,255,.28)';
+  ctx.fillText('Emociones de la semana',W/2,brkY);
+  var brkEmojis=Object.keys(moodCounts).sort(function(a,b){return moodCounts[b]-moodCounts[a];});
+  var brkTotalW=brkEmojis.length*120, brkStartX=W/2-brkTotalW/2+60;
+  brkEmojis.forEach(function(e,i){
+    var bx=brkStartX+i*120;
+    ctx.font='48px Arial,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(e,bx,brkY+62);
+    ctx.font='700 22px Arial,sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.55)';
+    ctx.fillText('×'+moodCounts[e],bx,brkY+90);
+  });
 
-  // heyvelo.app branding
-  ctx.font = '400 30px Jost,Arial,sans-serif';
-  ctx.fillStyle = 'rgba(116,198,157,.5)';
-  ctx.textAlign = 'center';
-  ctx.fillText('heyvelo.app', W/2, 640);
+  sep(brkY+112);
 
-  // Bottom tagline
-  ctx.font = 'italic 300 26px Cormorant Garamond,Georgia,serif';
-  ctx.fillStyle = 'rgba(255,255,255,.3)';
-  ctx.fillText('Acompañamos emociones', W/2, 690);
+  // ── Poetic phrase ───────────────────────────────────────────────
+  var phrases=['Estuviste acá. Eso importa.','Cuidarte es un acto de valentía.','Cada día que registrás es tuyo.','Tu historia merece ser contada.','Lo que sentís es real y válido.','Cada emoción tiene su lugar.','Hoy estuviste presente para vos.'];
+  var weekIdx=Math.floor(Date.now()/(86400000*7))%phrases.length;
+  var phrase='"'+phrases[weekIdx]+'"';
+  ctx.font='italic 600 44px Georgia,serif';
+  ctx.fillStyle='rgba(255,255,255,.72)';
+  ctx.textAlign='center';
+  // Wrap long phrases
+  var maxW=W-160, words=phrase.split(' '), line='', phrY=brkY+170;
+  words.forEach(function(w){
+    var test=line+(line?' ':'')+w;
+    if(ctx.measureText(test).width>maxW && line){ ctx.fillText(line,W/2,phrY); phrY+=58; line=w; }
+    else line=test;
+  });
+  if(line) ctx.fillText(line,W/2,phrY);
+  phrY+=42;
+
+  // ── Bottom branding ─────────────────────────────────────────────
+  var brandY=Math.max(phrY+40, H-110);
+  sep(brandY-20);
+  ctx.font='500 32px Arial,sans-serif'; ctx.fillStyle='rgba(116,198,157,.65)'; ctx.textAlign='center';
+  ctx.fillText('heyvelo.app', W/2, brandY+20);
+  ctx.font='italic 300 24px Georgia,serif'; ctx.fillStyle='rgba(255,255,255,.28)';
+  ctx.fillText('Acompañamos emociones', W/2, brandY+54);
+
+  // Gold bottom line
+  var btmLine=ctx.createLinearGradient(60,0,W-60,0);
+  btmLine.addColorStop(0,'rgba(200,158,56,0)'); btmLine.addColorStop(.25,'rgba(200,158,56,.5)');
+  btmLine.addColorStop(.75,'rgba(200,158,56,.5)'); btmLine.addColorStop(1,'rgba(200,158,56,0)');
+  ctx.strokeStyle=btmLine; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(60,H-30); ctx.lineTo(W-60,H-30); ctx.stroke();
 }
 
 async function pShareCard(){
