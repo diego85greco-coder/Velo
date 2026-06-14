@@ -9866,6 +9866,20 @@ function pRenderInbox(){
       var isAlreadyRead = !!safeLS('get',readKey);
       var _xBtn = '<button onclick="event.stopPropagation();pDeleteInboxMsg(\'bc_'+b.id+'\',this)" style="'+_delBtnStyle+'">×</button>';
       // Monthly report special card
+      if(b.body && b.body.indexOf('__WEEKLY_REPORT__')===0){
+        var wrDate = b.body.slice('__WEEKLY_REPORT__'.length);
+        var wrParts = wrDate.split('-');
+        var wrDN = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+        var wrDay = wrParts.length===3 ? (wrDN[new Date(parseInt(wrParts[0]),parseInt(wrParts[1])-1,parseInt(wrParts[2])).getDay()]||'Domingo') : 'Domingo';
+        return '<div class="p-inbox-msg'+(isAlreadyRead?'':' unread')+'" data-mid="bc_'+b.id+'" style="cursor:pointer" onclick="pOpenWeeklyReportBroadcast('+_jsAttr(wrDate)+','+_jsAttr(readKey)+',this)">'
+          +'<div style="display:flex;flex-shrink:0">'+(isAlreadyRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
+          +'<div class="p-inbox-ic" style="background:rgba(200,158,56,.14);font-size:18px">📋</div>'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">Tu resumen semanal — '+wrDay+'</div>'
+          +'<div style="font-size:11px;color:var(--ink4);line-height:1.45">Ánimos, racha, tendencia y recomendaciones personalizadas de tu semana.</div>'
+          +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:rgba(200,158,56,.85)">Ver mi semana →</span>')+'</div>'
+          +'</div>'+_xBtn+'</div>';
+      }
       if(b.body && b.body.indexOf('__MONTHLY_REPORT__')===0){
         var rpMonth = b.body.slice('__MONTHLY_REPORT__'.length);
         var rpMon = parseInt((rpMonth.split('-')[1]||'1'))-1;
@@ -14059,6 +14073,89 @@ async function pAdminSendMonthlyReport(){
   _switchAdminTab('gestion');
 }
 
+async function pAdminSendWeeklyReport(){
+  var today = new Date();
+  var dateKey = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  var dayNames = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  var dayLabel = dayNames[today.getDay()];
+  if(!confirm('¿Enviar el resumen semanal personalizado de hoy ('+dayLabel+' '+dateKey+') a todos los usuarios?\n\nCada usuario verá sus propios ánimos y estadísticas de la semana al abrir el mensaje.')) return;
+  _initSupabase();
+  var saved = await sbSaveBroadcast('users','📊 Tu resumen semanal — '+dateKey,'__WEEKLY_REPORT__'+dateKey,'📊','Velo — Resumen Semanal','');
+  pToast('📊', saved ? 'Resumen semanal enviado a todos los usuarios ✅' : 'Guardado localmente (sin conexión)');
+  _switchAdminTab('gestion');
+}
+
+async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
+  if(readKey) safeLS('set',readKey,'1');
+  if(cardEl){ cardEl.classList.remove('unread'); var dot=cardEl.querySelector('.p-inbox-dot'); if(dot) dot.remove(); }
+  _updateInboxDot();
+
+  // Parse reference date (end of the week being summarized)
+  var parts = (dateStr||'').split('-');
+  var refDate = parts.length===3 ? new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2])) : new Date();
+
+  // Build Supabase fallback map for that week
+  var _wsMonths = {};
+  for(var _wmi=0; _wmi<7; _wmi++){
+    var _wmd = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate()-_wmi);
+    var _wmk = _wmd.getFullYear()+'-'+String(_wmd.getMonth()+1).padStart(2,'0');
+    if(!_wsMonths[_wmk]) _wsMonths[_wmk] = {year:_wmd.getFullYear(), month:_wmd.getMonth()+1};
+  }
+  var _wsSbMap = {};
+  await Promise.all(Object.values(_wsMonths).map(async function(m){
+    var sbData = await sbLoadAllMoods(m.year, m.month);
+    if(sbData) sbData.forEach(function(e){ _wsSbMap[e.date_key] = e; });
+  }));
+
+  // Collect 7-day timeline + stats
+  var dayNamesShort = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
+  var _moodScore = {'😄':5,'😊':4,'😐':3,'😞':2,'😢':1};
+  var _moodLbl   = {'😄':'Genial','😊':'Bien','😐':'Neutro','😞':'Bajo','😢':'Difícil'};
+  var dayNamesLong = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  var timeline = [], weekMoods = [];
+  for(var _j=6; _j>=0; _j--){
+    var _dj = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate()-_j);
+    var _kj = _dj.getFullYear()+'-'+String(_dj.getMonth()+1).padStart(2,'0')+'-'+String(_dj.getDate()).padStart(2,'0');
+    var _mj = null; try{ _mj = JSON.parse(safeLS('get','velo_mood_'+_kj)||'null'); }catch(e){}
+    if(!_mj && _wsSbMap[_kj]) _mj = _wsSbMap[_kj];
+    timeline.push({ dayName: dayNamesShort[_dj.getDay()], mood: _mj, isToday: _j===0 });
+    if(_mj) weekMoods.push(_mj);
+  }
+  var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
+  var refTs = refDate.getTime();
+  var weekDiary = diary.filter(function(e){ return e.ts && e.ts <= refTs && (refTs-e.ts) < 7*86400000; });
+  var streak = _getVisitDayCount ? _getVisitDayCount() : 1;
+  var moodCount = {}; weekMoods.forEach(function(m){ if(m&&m.emoji){ moodCount[m.emoji]=(moodCount[m.emoji]||0)+1; } });
+  var dominantMood = Object.keys(moodCount).sort(function(a,b){ return moodCount[b]-moodCount[a]; })[0]||null;
+  var totalReg = weekMoods.length;
+  var consistenciaPct = Math.round((totalReg/7)*100);
+  var distribLines = Object.keys(moodCount).sort(function(a,b){ return moodCount[b]-moodCount[a]; }).map(function(e){
+    return e+' '+(_moodLbl[e]||e)+': '+moodCount[e]+' día'+(moodCount[e]!==1?'s':'')+' ('+Math.round((moodCount[e]/totalReg)*100)+'%)';
+  });
+  var scores = timeline.filter(function(d){ return d.mood; }).map(function(d){ return _moodScore[d.mood.emoji]||3; });
+  var half = Math.ceil(scores.length/2);
+  var avgF = scores.slice(0,half).reduce(function(a,b){return a+b;},0)/(half||1);
+  var avgS = scores.slice(half).reduce(function(a,b){return a+b;},0)/((scores.length-half)||1);
+  var trendVal = scores.length<2?0:avgS-avgF;
+  var trendTxt = trendVal>0.4?'↗ Mejoró a lo largo de la semana (+'+(Math.round(trendVal*20))+'%)'
+               : trendVal<-0.4?'↘ Descendió en la segunda mitad (-'+(Math.round(Math.abs(trendVal)*20))+'%)'
+               : '→ Se mantuvo estable durante la semana';
+  var bestDay=null, worstDay=null;
+  timeline.forEach(function(d){ if(!d.mood) return; var sc=_moodScore[d.mood.emoji]||3;
+    if(!bestDay||sc>(_moodScore[bestDay.mood.emoji]||3)) bestDay=d;
+    if(!worstDay||sc<(_moodScore[worstDay.mood.emoji]||3)) worstDay=d; });
+
+  var userName = (safeLS('get','velo_user_name')||'').split(' ')[0]||'';
+
+  if(totalReg === 0){
+    pShowWeeklySummary({ timeline:timeline, dominantMood:null, checkIns:0, diaryEntries:0, streak:streak, aiText:'Esta semana no registraste estados de ánimo. ¡La próxima podés empezar cualquier día! 🌱' });
+    return;
+  }
+
+  var aiText = await _generateWeeklySummaryAI(timeline, dominantMood, streak, totalReg, weekDiary.length, userName, distribLines, trendTxt, bestDay, worstDay);
+  pShowWeeklySummary({ timeline:timeline, dominantMood:dominantMood, checkIns:totalReg, diaryEntries:weekDiary.length, streak:streak, aiText:aiText, distribLines:distribLines, consistenciaPct:consistenciaPct, trendTxt:trendTxt, bestDay:bestDay, worstDay:worstDay });
+}
+
 // ── TAB: PRIVACIDAD (GDPR / Ley 25.326) ──────────────────────────────
 function _adminTabPrivacidad(panel){
   panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.85);margin-bottom:12px">🔒 SOLICITUDES DE DATOS PERSONALES</div>'
@@ -14181,7 +14278,14 @@ function _adminTabGestion(panel){
         var mLabel=mn[d.getMonth()]+' '+d.getFullYear();
         var history=[]; try{history=JSON.parse(safeLS('get','velo_monthly_reports')||'[]');}catch(e){}
         var sentThis=history.find(function(r){ return r.month===(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); });
-        return '<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">📊 RESUMEN MENSUAL IA</div>'
+        var todayStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        var isSunday = d.getDay()===0;
+        return '<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,158,56,.7);margin-bottom:10px">📋 RESUMEN SEMANAL IA</div>'
+          +'<div style="background:rgba(200,158,56,.06);border:1px solid rgba(200,158,56,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
+          +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">Cada usuario ve sus propios ánimos y estadísticas de la semana al abrir el mensaje. Enviá siempre los domingos.</p>'
+          +'<button onclick="pAdminSendWeeklyReport()" style="width:100%;padding:10px;background:rgba(200,158,56,.15);border:1px solid rgba(200,158,56,.3);color:rgba(200,158,56,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;margin-bottom:8px">📋 Enviar resumen semanal de hoy ('+(isSunday?'domingo ✓':'hoy — recomendado domingos')+') a todos</button>'
+          +'</div>'
+          +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">📊 RESUMEN MENSUAL IA</div>'
           +'<div style="background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
           +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">Velo IA genera un resumen personalizado para cada usuario con sus propios estados de ánimo y diario del mes. Cada uno ve el suyo en su buzón.</p>'
           +(sentThis
