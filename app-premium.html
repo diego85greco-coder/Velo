@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="729">
+  <meta name="app-version" content="730">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -28,8 +28,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260614-729">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260614-729">
+  <link rel="stylesheet" href="premium.css?v=20260614-730">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260614-730">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -972,52 +972,27 @@
             <div class="r-hero-left">
               <div id="homeHeroLabel" style="font-size:10px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:rgba(200,158,56,.72);margin-bottom:12px;display:flex;align-items:center;gap:6px"><span>—</span><span>JARDÍN DE HOY</span></div>
               <!-- Guardian mode control — static HTML, state synced via _renderHomeStatusToggle() -->
-              <!-- Mi estado card — redesigned v729 -->
-              <div id="homeStatusToggle" style="margin-bottom:16px;width:100%;box-sizing:border-box">
-                <div id="homeGuardianWrap" style="width:100%;box-sizing:border-box;background:linear-gradient(150deg,rgba(20,55,35,.90) 0%,rgba(12,38,22,.94) 100%);border:1.5px solid rgba(116,198,157,.28);border-radius:20px;padding:14px 14px 12px;overflow:hidden;position:relative">
-                  <!-- subtle top-right glow -->
-                  <div style="position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(116,198,157,.14) 0%,transparent 70%);pointer-events:none"></div>
-                  <!-- Header row -->
-                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-                    <div style="font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.70)">⚡ MI ESTADO</div>
-                    <div style="font-size:9px;color:rgba(255,255,255,.38);letter-spacing:.5px">Visible en tu perfil</div>
-                  </div>
-                  <!-- Disponible / Ocupado — 2-column pills -->
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-                    <button id="homeStatusDispBtn" onclick="pSetUserStatus('disponible')" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 8px;border-radius:14px;border:1.5px solid rgba(34,197,94,.35);background:rgba(34,197,94,.10);color:rgba(255,255,255,.75);font-size:13px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;transition:all .18s;touch-action:manipulation;-webkit-tap-highlight-color:transparent">
-                      <span style="font-size:15px;line-height:1">🟢</span><span>Disponible</span>
-                    </button>
-                    <button id="homeStatusOcupBtn" onclick="pSetUserStatus('ocupado')" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 8px;border-radius:14px;border:1.5px solid rgba(234,179,8,.28);background:rgba(234,179,8,.08);color:rgba(255,255,255,.60);font-size:13px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;transition:all .18s;touch-action:manipulation;-webkit-tap-highlight-color:transparent">
-                      <span style="font-size:15px;line-height:1">🟡</span><span>Ocupado</span>
-                    </button>
-                  </div>
-                  <!-- Divider -->
-                  <div style="border-top:1px solid rgba(116,198,157,.15);margin-bottom:11px"></div>
-                  <!-- Incognito + Guardian — 2-column toggle tiles -->
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                    <div onclick="pToggleIncognito()" style="cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:5px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.11);border-radius:14px;padding:10px 10px 9px;touch-action:manipulation;-webkit-tap-highlight-color:transparent">
-                      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-                        <span style="font-size:17px;line-height:1">👤</span>
-                        <div class="p-tog" id="homeIncognitoTog" onclick="event.stopPropagation();pToggleIncognito()"><div class="p-tog-k"></div></div>
-                      </div>
-                      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.80);font-family:'Jost',sans-serif;letter-spacing:.2px">Incógnito</div>
-                      <div style="font-size:9px;color:rgba(255,255,255,.42);line-height:1.35">Ocultás tu foto e info</div>
+              <div id="homeStatusToggle" style="display:flex;justify-content:center;margin-bottom:20px">
+                <div id="homeGuardianWrap">
+                  <div class="p-card" style="padding:14px 16px;margin-bottom:0;width:100%;box-sizing:border-box">
+                    <div class="p-label p-label-sage" style="margin-bottom:10px">Privacidad</div>
+                    <div class="p-row-between" style="margin-bottom:3px">
+                      <div style="font-size:13px;color:var(--ink3)">👤 Modo incógnito</div>
+                      <div class="p-tog" id="homeIncognitoTog" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>
                     </div>
-                    <div onclick="pToggleGuardianMode()" style="cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:5px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.11);border-radius:14px;padding:10px 10px 9px;touch-action:manipulation;-webkit-tap-highlight-color:transparent">
-                      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-                        <span style="font-size:17px;line-height:1">🛡️</span>
-                        <div class="p-tog" id="homeGuardianModeTog" onclick="event.stopPropagation();pToggleGuardianMode()"><div class="p-tog-k"></div></div>
-                      </div>
-                      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.80);font-family:'Jost',sans-serif;letter-spacing:.2px">Guardián</div>
-                      <div style="font-size:9px;color:rgba(255,255,255,.42);line-height:1.35">Aparecés disponible</div>
+                    <div style="font-size:11px;color:var(--ink3);opacity:.72;margin-bottom:12px;line-height:1.4">(Activá para ocultar tu foto e información, anónimo)</div>
+                    <div class="p-row-between" style="margin-bottom:3px">
+                      <div style="font-size:13px;font-weight:600;color:var(--ink2)">🛡️ Modo guardián</div>
+                      <div class="p-tog" id="homeGuardianModeTog" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>
                     </div>
+                    <div style="font-size:11px;color:var(--ink3);opacity:.72;line-height:1.4">(Activá para aparecer en la lista de guardianes)</div>
                   </div>
                 </div>
               </div>
               <div id="homeGreetWrapper" style="position:relative">
                 <div id="homeGreetBlock">
                   <h1 class="p-title" id="homeGreetTxt">Buenos días</h1>
-                  <h2 class="r-hero-italic"><em id="homeGreetSub">¡Acompañemos emociones!</em></h2>
+                  <h2 class="r-hero-italic" id="homeGreetSub">¡Acompañemos emociones!</h2>
                 </div>
                 <div id="homeGreetQuote" style="display:none;position:absolute;top:0;left:0;right:0"></div>
               </div>
@@ -3553,8 +3528,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260614-729"></script>
-<script src="premium-redesign.js?v=20260614-729"></script>
+<script src="premium.js?v=20260614-730"></script>
+<script src="premium-redesign.js?v=20260614-730"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
