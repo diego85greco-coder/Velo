@@ -3234,6 +3234,8 @@ function _renderShareCard(canvas, logoImg){
   var headerEnd; // y where header area ends
   if(logoImg){
     var lW = 300, lH = Math.round(lW * logoImg.naturalHeight / logoImg.naturalWidth);
+    // Cap logo height to keep content within canvas
+    if(lH > 100){ lW = Math.round(100 * logoImg.naturalWidth / logoImg.naturalHeight); lH = 100; }
     var lX = (W - lW) / 2, lY = 18;
     ctx.save();
     ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 60;
@@ -3400,8 +3402,8 @@ function _renderShareCard(canvas, logoImg){
   ctx.font='italic 600 44px Georgia,serif';
   ctx.fillStyle='rgba(255,255,255,.72)';
   ctx.textAlign='center';
-  // Wrap long phrases
-  var maxW=W-160, words=phrase.split(' '), line='', phrY=brkY+170;
+  // Wrap long phrases — tighter gap when logo image is present to avoid canvas overflow
+  var maxW=W-160, words=phrase.split(' '), line='', phrY=brkY+(logoImg?130:170);
   words.forEach(function(w){
     var test=line+(line?' ':'')+w;
     if(ctx.measureText(test).width>maxW && line){ ctx.fillText(line,W/2,phrY); phrY+=58; line=w; }
@@ -9952,13 +9954,35 @@ function pShowAvatarPicker(){
   if(ov) ov.classList.add('show');
 }
 
+function _propagateAvatarUI(av){
+  _renderAvatarEl('homeAv', av);
+  _renderAvatarEl('homeAvFab', av);
+  _renderAvatarEl('profileAv', av);
+  _updateSidebarUser();
+  // Update today's daily_response row in Supabase so community feed shows new avatar
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  var avSafe = (av && !av.startsWith('data:')) ? av : '';
+  if(sbClient && uid && avSafe){
+    var today = _dateKey();
+    sbClient.from('daily_responses').update({user_avatar:avSafe}).eq('user_id',uid).eq('question_date',today).then(function(){
+      // Refresh feed if it's currently visible
+      var feedEl = document.getElementById('homeDailyQFeed');
+      var openEl = document.getElementById('homeDailyQOpen');
+      if(feedEl && openEl && openEl.style.display !== 'none'){
+        _fetchDailyFeed(_getDailyQuestion().id);
+      }
+    }).catch(function(){});
+  }
+}
+
 function pSetAvatar(emoji){
   safeLS('set','velo_user_av', emoji);
   _syncAvatarToSb(emoji);
   pToast('✅','Avatar actualizado');
   closeModal('avatarPickerOv');
   pLoadProfile();
-  _updateSidebarUser();
+  _propagateAvatarUI(emoji);
 }
 
 function pSetAvatarFromFile(input){
@@ -9979,7 +10003,7 @@ function pSetAvatarFromFile(input){
       // Show preview immediately using local data URL
       safeLS('set','velo_user_av', dataUrl);
       pLoadProfile();
-      _updateSidebarUser();
+      _propagateAvatarUI(dataUrl);
       // Upload to Supabase Storage (public URL, not base64 in DB)
       _uploadAvatarToStorage(file, dataUrl, function(publicUrl){
         var finalAv = publicUrl || dataUrl;
@@ -9988,7 +10012,7 @@ function pSetAvatarFromFile(input){
         pToast('✅','Foto de perfil actualizada 🌿');
         closeModal('avatarPickerOv');
         pLoadProfile();
-        _updateSidebarUser();
+        _propagateAvatarUI(finalAv);
       });
     });
   };
@@ -10635,7 +10659,7 @@ async function pSaveProfile(){
   }
   closeModal('editProfileOv');
   pLoadProfile();
-  _updateSidebarUser();
+  _propagateAvatarUI(safeLS('get','velo_user_av') || '🧑');
 }
 
 // ── @USERNAME PICKER ──────────────────────────────────────────────
