@@ -3150,29 +3150,38 @@ function _expandDailyFeed(){
 }
 
 function _buildDqCards(list){
-  var _bubbleBg = {
+  var isDark = document.body.classList.contains('r-dark');
+  var _bubbleBgDark = {
     '😊':'rgba(116,198,157,.18)','😄':'rgba(116,198,157,.22)','😌':'rgba(100,180,140,.16)','💪':'rgba(100,160,240,.16)',
     '🥺':'rgba(180,130,200,.18)','😔':'rgba(120,100,180,.18)','😰':'rgba(200,145,80,.18)','😤':'rgba(200,80,80,.16)'
   };
+  var _bubbleBgLight = {
+    '😊':'rgba(116,198,157,.22)','😄':'rgba(116,198,157,.28)','😌':'rgba(100,180,140,.20)','💪':'rgba(100,160,240,.20)',
+    '🥺':'rgba(180,130,200,.22)','😔':'rgba(120,100,180,.22)','😰':'rgba(200,145,80,.22)','😤':'rgba(200,80,80,.20)'
+  };
+  var _bubbleBg = isDark ? _bubbleBgDark : _bubbleBgLight;
+  var nameClr  = isDark ? 'rgba(255,255,255,.70)' : 'rgba(20,60,35,.72)';
+  var textClr  = isDark ? 'rgba(255,255,255,.85)' : 'rgba(20,60,35,.82)';
+  var borderClr= isDark ? 'rgba(255,255,255,.08)'  : 'rgba(116,198,157,.35)';
   return list.map(function(r){
     var av = r.user_avatar || '';
     var isImg = av && av.startsWith('http');
     var avHtml = isImg
       ? '<img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-top:2px">'
       : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.2);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:17px">'+(av||'🌿')+'</div>';
-    var bg = _bubbleBg[r.mood_emoji] || 'rgba(255,255,255,.10)';
+    var bg = _bubbleBg[r.mood_emoji] || (isDark ? 'rgba(255,255,255,.10)' : 'rgba(116,198,157,.14)');
     var bubbleContent = r.response_text
-      ? '<div style="font-size:12.5px;color:rgba(255,255,255,.85);line-height:1.5;font-style:italic;font-family:\'Cormorant Garamond\',serif;font-size:14px">'+r.response_text+'</div>'
+      ? '<div style="font-size:14px;color:'+textClr+';line-height:1.5;font-style:italic;font-family:\'Cormorant Garamond\',serif">'+r.response_text+'</div>'
       : '';
     return '<div class="dq-feed-card" style="display:flex;gap:8px;padding:8px 0;align-items:flex-start">'
       +avHtml
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">'
-      +'<span class="dq-feed-name" style="font-size:11.5px;font-weight:700;color:rgba(255,255,255,.70);font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">'+(r.user_name||'Alguien')+'</span>'
+      +'<span class="dq-feed-name" style="font-size:11.5px;font-weight:700;color:'+nameClr+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">'+(r.user_name||'Alguien')+'</span>'
       +'<span style="font-size:14px">'+r.mood_emoji+'</span>'
       +'</div>'
       +(r.response_text
-        ? '<div style="position:relative;background:'+bg+';border:1px solid rgba(255,255,255,.08);border-radius:4px 14px 14px 14px;padding:9px 12px;margin-bottom:6px">'
+        ? '<div style="position:relative;background:'+bg+';border:1px solid '+borderClr+';border-radius:4px 14px 14px 14px;padding:9px 12px;margin-bottom:6px">'
           +'<div style="position:absolute;top:0;left:-6px;width:0;height:0;border-top:8px solid '+bg+';border-left:7px solid transparent"></div>'
           +bubbleContent
           +'</div>'
