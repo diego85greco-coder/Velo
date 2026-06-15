@@ -1841,11 +1841,11 @@ body.r-dark #pg-dm-chat .feed-send-btn {
 }
 
 /* ── Topbar logo ─────────────────────────────────────────────────── */
-.p-topbar { min-height: 88px !important; }
+.p-topbar { min-height: 110px !important; }
 .p-topbar-logo-img {
-  height: 88px !important;
+  height: 110px !important;
   width: auto !important;
-  max-width: 260px !important;
+  max-width: 300px !important;
   object-fit: contain !important;
 }
 body.r-dark .p-topbar-logo-img {
@@ -2148,13 +2148,13 @@ body.r-dark #guardianSubLabel {
 /* ── v163: Topbar ───────────────────────────────────────────────── */
 .p-topbar {
   height: auto !important;
-  min-height: 88px !important;
+  min-height: 110px !important;
   padding: max(env(safe-area-inset-top,0px),8px) 16px 8px !important;
 }
 .p-topbar-logo-img {
-  height: 88px !important;
+  height: 110px !important;
   width: auto !important;
-  max-width: 260px !important;
+  max-width: 300px !important;
   object-fit: contain !important;
 }
 body.r-dark .p-topbar-logo-img {
@@ -2690,8 +2690,8 @@ body.r-dark #pg-profile #profileStatusCard [style*="color:var(--ink)"] {
     padding: max(env(safe-area-inset-top,0px), 8px) 16px 8px !important;
   }
   .p-topbar-logo-img {
-    height: 88px !important;
-    max-width: 260px !important;
+    height: 110px !important;
+    max-width: 300px !important;
     width: auto !important;
     object-fit: contain !important;
   }
