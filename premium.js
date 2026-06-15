@@ -2617,8 +2617,7 @@ function _updateHomeStreak(){
   var streak = _getConsecutiveStreak();
   var el = document.getElementById('homeStatStreak');
   if(el) el.textContent = _streakLabel(streak);
-  var pEl = document.getElementById('profileDays');
-  if(pEl) pEl.textContent = Math.max(1, _getVisitDayCount());
+  // profileDays is updated by pLoadProfile with direct mood-day count; don't overwrite here
 }
 
 function _trackVisitDay(){
@@ -10448,10 +10447,15 @@ function pLoadProfile(){
   var _prRow = document.getElementById('profilePushRow');
   if(_prRow){ _prRow.style.display = 'block'; _updateEditPushUI(); }
 
-  // Stats — sync mood days first so profileDays matches calendar records
-  _syncMoodDaysToVisitDays();
-  var daysReg = _getVisitDayCount() || Math.ceil((Date.now() - (parseInt(safeLS('get','velo_registered_ts')||Date.now(),10))) / 86400000);
-  _setEl('profileDays', Math.max(1, daysReg));
+  // Stats — count distinct days with a mood record (most accurate definition of "days registered")
+  var _moodDayCount = 0;
+  var _today = new Date();
+  for(var _mi = 0; _mi < 730; _mi++){
+    var _md = new Date(_today.getFullYear(), _today.getMonth(), _today.getDate() - _mi);
+    var _mdk = _md.getFullYear()+'-'+String(_md.getMonth()+1).padStart(2,'0')+'-'+String(_md.getDate()).padStart(2,'0');
+    if(safeLS('get','velo_mood_'+_mdk)) _moodDayCount++;
+  }
+  _setEl('profileDays', Math.max(1, _moodDayCount));
   var _locHelped = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
   var _locRecv   = parseInt(safeLS('get','velo_help_received')||'0', 10);
   _setEl('profileChats',    _locHelped + _locRecv);
