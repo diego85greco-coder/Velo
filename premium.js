@@ -18500,8 +18500,8 @@ async function _loadHomeHappyFeed(){
       return '<div style="display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,200,50,.12)">'
         + avHtml
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:2px">'+nameHtml+' <span style="font-weight:400;color:var(--ink5)">· '+relTime+'</span></div>'
-        +'<div style="font-size:12.5px;color:var(--ink2);line-height:1.4;word-break:break-word">'+(h.emoji ? h.emoji+' ' : '')+_escHtml(h.text||'')+'</div>'
+        +'<div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:5px">'+nameHtml+' <span style="font-weight:400;color:var(--ink5)">· '+relTime+'</span></div>'
+        +'<div class="mc-bubble mc-happy"><div class="mc-text" style="font-size:12.5px;line-height:1.4;word-break:break-word">'+(h.emoji ? h.emoji+' ' : '')+_escHtml(h.text||'')+'</div></div>'
         +'</div></div>';
     }).join('');
   } else {
@@ -18534,8 +18534,8 @@ async function _loadHomeHappyFeed(){
     return '<div style="display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,200,50,.12)">'
       + avHtml
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:2px">'+nameHtml+' <span style="font-weight:400;color:var(--ink5)">· '+relTime+'</span></div>'
-      +'<div style="font-size:12.5px;color:var(--ink2);line-height:1.4;word-break:break-word">'+(h.emoji ? h.emoji+' ' : '')+_escHtml(h.text||'')+'</div>'
+      +'<div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:5px">'+nameHtml+' <span style="font-weight:400;color:var(--ink5)">· '+relTime+'</span></div>'
+      +'<div class="mc-bubble mc-happy"><div class="mc-text" style="font-size:12.5px;line-height:1.4;word-break:break-word">'+(h.emoji ? h.emoji+' ' : '')+_escHtml(h.text||'')+'</div></div>'
       +'</div></div>';
   }).join('');
 }
