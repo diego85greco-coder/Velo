@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="791">
+  <meta name="app-version" content="792">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -31,7 +31,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="premium.css?v=20260614-746">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260615-791">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260615-792">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1128,10 +1128,10 @@
               <div id="homeMomentoSection" class="home-momento-wrap" style="margin:10px 0 12px;display:none">
                 <!-- Tab switcher — bigger, pill style -->
                 <div style="display:flex;gap:8px;margin-bottom:14px">
-                  <button id="hfTab-momento" onclick="pHomeTabSwitch('momento')" style="flex:1;padding:11px 10px;border-radius:22px;border:1.5px solid rgba(116,198,157,.35);background:rgba(116,198,157,.16);color:rgba(190,245,215,.95);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;transition:all .18s">
+                  <button id="hfTab-momento" onclick="pHomeTabSwitch('momento')" class="hf-tab hf-tab--active">
                     ✨ Momentos del Día<br><span id="hfTab-momento-cnt" style="font-size:9px;font-weight:400;opacity:.7"></span>
                   </button>
-                  <button id="hfTab-happy" onclick="pHomeTabSwitch('happy')" style="flex:1;padding:11px 10px;border-radius:22px;border:1.5px solid rgba(200,158,56,.22);background:transparent;color:rgba(220,235,225,.55);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;transition:all .18s">
+                  <button id="hfTab-happy" onclick="pHomeTabSwitch('happy')" class="hf-tab hf-tab--inactive-happy">
                     ☀️ Muro Feliz<br><span id="hfTab-happy-cnt" style="font-size:9px;font-weight:400;opacity:.7"></span>
                   </button>
                 </div>
@@ -3888,7 +3888,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260615-791"></script>
+<script src="premium.js?v=20260615-792"></script>
 <script src="premium-redesign.js?v=20260615-789"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();

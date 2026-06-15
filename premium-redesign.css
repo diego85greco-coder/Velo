@@ -11103,3 +11103,98 @@ body.r-dark .mc-bubble.mc-happy::before { border-top-color: rgba(200,165,45,.16)
 .mc-text { color: rgba(20,60,30,.88) !important; }
 body.r-dark .mc-text { color: rgba(255,255,255,.85) !important; }
 .mc-bubble.mc-happy .mc-text { color: rgba(55,35,5,.88) !important; }
+
+/* ══════════════════════════════════════════════════════════════════
+   v792 — Reaction buttons & feed tabs: CSS-driven colors
+   Fixes white-on-white flash when theme changes after render
+   ══════════════════════════════════════════════════════════════════ */
+
+/* DQ reaction buttons */
+.dq-reaction-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: Jost, sans-serif;
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1;
+  background: rgba(116,198,157,.13);
+  border: 1px solid rgba(116,198,157,.42);
+  color: rgba(20,60,35,.82);
+}
+body.r-dark .dq-reaction-btn {
+  background: rgba(255,255,255,.09);
+  border-color: rgba(255,255,255,.22);
+  color: rgba(255,255,255,.75);
+}
+.dq-reaction-btn[data-active="true"] {
+  background: rgba(116,198,157,.22) !important;
+  border-color: rgba(116,198,157,.55) !important;
+  color: rgba(60,180,110,.98) !important;
+}
+body.r-dark .dq-reaction-btn[data-active="true"] {
+  color: rgba(116,198,157,.98) !important;
+}
+
+/* Home feed tab buttons */
+.hf-tab {
+  flex: 1;
+  padding: 11px 10px;
+  border-radius: 22px;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: Jost, sans-serif;
+  cursor: pointer;
+  letter-spacing: .3px;
+  transition: all .18s;
+  border: 1.5px solid transparent;
+}
+/* Active Momentos tab */
+.hf-tab--active {
+  background: rgba(116,198,157,.18);
+  border-color: rgba(116,198,157,.45);
+  color: rgba(20,80,40,.95);
+}
+body.r-dark .hf-tab--active {
+  color: rgba(190,245,215,.95);
+}
+/* Inactive Momentos tab */
+.hf-tab--inactive {
+  background: transparent;
+  border-color: rgba(116,198,157,.18);
+  color: rgba(40,80,50,.45);
+}
+body.r-dark .hf-tab--inactive {
+  color: rgba(220,235,225,.45);
+}
+/* Active Muro Feliz tab */
+.hf-tab--active-happy {
+  background: rgba(200,158,56,.18);
+  border-color: rgba(200,158,56,.55);
+  color: rgba(100,65,5,.90);
+}
+body.r-dark .hf-tab--active-happy {
+  color: rgba(255,230,130,.95);
+}
+/* Inactive Muro Feliz tab */
+.hf-tab--inactive-happy {
+  background: transparent;
+  border-color: rgba(200,158,56,.22);
+  color: rgba(80,55,10,.45);
+}
+body.r-dark .hf-tab--inactive-happy {
+  color: rgba(220,235,225,.45);
+}
+
+/* Install step cards — dark mode contrast fix */
+body.r-dark .inst-step {
+  background: rgba(116,198,157,.16) !important;
+  border-color: rgba(116,198,157,.30) !important;
+}
+body.r-dark .inst-step > div:first-child > div:first-child {
+  background: rgba(116,198,157,.45) !important;
+}

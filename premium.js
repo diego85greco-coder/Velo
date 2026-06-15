@@ -3060,18 +3060,12 @@ function _buildDqReactionBar(responseId){
     {key:'entiendo',   label:'Te entiendo',   emoji:'💙'}
   ];
   var m = _dqReactMap[responseId] || {};
-  var _dk = document.body.classList.contains('r-dark') || localStorage.getItem('velo-r-darkmode') === '1';
   return '<div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">'
     + rxDefs.map(function(rx){
       var rd = m[rx.key] || {count:0, mine:false};
-      var active = rd.mine;
-      var bg     = active ? 'rgba(116,198,157,.22)' : (_dk ? 'rgba(255,255,255,.09)' : 'rgba(116,198,157,.13)');
-      var border = active ? 'rgba(116,198,157,.55)' : (_dk ? 'rgba(255,255,255,.22)' : 'rgba(116,198,157,.42)');
-      var color  = active ? 'rgba(116,198,157,.98)' : (_dk ? 'rgba(255,255,255,.75)' : 'rgba(20,60,35,.82)');
-      var cnt    = rd.count > 0 ? ' '+rd.count : '';
-      return '<button onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
-        +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+active+'" '
-        +'style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;border:1px solid '+border+';background:'+bg+';color:'+color+';font-size:11px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer;transition:all .15s;line-height:1">'
+      var cnt = rd.count > 0 ? ' '+rd.count : '';
+      return '<button class="dq-reaction-btn" onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
+        +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+rd.mine+'">'
         +rx.emoji+'<span>'+rx.label+cnt+'</span>'
         +'</button>';
     }).join('')
@@ -3086,20 +3080,13 @@ async function pToggleDqReaction(responseId, reaction, btn){
   var rd = _dqReactMap[responseId][reaction] || {count:0, mine:false};
   var _rxLabel = {identifico:'Me identifico', abrazo:'Te abrazo', entiendo:'Te entiendo'};
   var _rxEmoji = {identifico:'💚', abrazo:'🫂', entiendo:'💙'};
-  // Optimistic UI update
-  var _isDk = document.body.classList.contains('r-dark') || localStorage.getItem('velo-r-darkmode') === '1';
+  // Optimistic UI update — CSS class handles colors, just flip data-active
   if(isActive){
     rd.count = Math.max(0, rd.count-1); rd.mine = false;
     btn.dataset.active = 'false';
-    btn.style.background = _isDk ? 'rgba(255,255,255,.09)' : 'rgba(116,198,157,.13)';
-    btn.style.borderColor = _isDk ? 'rgba(255,255,255,.22)' : 'rgba(116,198,157,.42)';
-    btn.style.color = _isDk ? 'rgba(255,255,255,.75)' : 'rgba(20,60,35,.82)';
   } else {
     rd.count++; rd.mine = true;
     btn.dataset.active = 'true';
-    btn.style.background = 'rgba(116,198,157,.20)';
-    btn.style.borderColor = 'rgba(116,198,157,.50)';
-    btn.style.color = 'rgba(116,198,157,.95)';
     pToast(_rxEmoji[reaction], _rxLabel[reaction]);
   }
   _dqReactMap[responseId][reaction] = rd;
@@ -18466,18 +18453,14 @@ function pHomeTabSwitch(tab){
   var cH = document.getElementById('homeTabHappy');
   if(!tM||!tH||!cM||!cH) return;
   if(tab === 'happy'){
-    // Active: gold
-    tH.style.cssText = 'flex:1;padding:11px 10px;border-radius:22px;border:1.5px solid rgba(200,158,56,.55);background:rgba(200,158,56,.18);color:rgba(255,230,130,.95);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;transition:all .18s';
-    // Inactive: ghost
-    tM.style.cssText = 'flex:1;padding:11px 10px;border-radius:22px;border:1.5px solid rgba(116,198,157,.18);background:transparent;color:rgba(220,235,225,.45);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;transition:all .18s';
+    tH.className = 'hf-tab hf-tab--active-happy';
+    tM.className = 'hf-tab hf-tab--inactive';
     cM.style.display = 'none';
     cH.style.display = '';
     _loadHomeHappyFeed();
   } else {
-    // Active: green
-    tM.style.cssText = 'flex:1;padding:11px 10px;border-radius:22px;border:1.5px solid rgba(116,198,157,.45);background:rgba(116,198,157,.18);color:rgba(190,245,215,.95);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;transition:all .18s';
-    // Inactive: ghost
-    tH.style.cssText = 'flex:1;padding:11px 10px;border-radius:22px;border:1.5px solid rgba(200,158,56,.18);background:transparent;color:rgba(220,235,225,.45);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;transition:all .18s';
+    tM.className = 'hf-tab hf-tab--active';
+    tH.className = 'hf-tab hf-tab--inactive-happy';
     cH.style.display = 'none';
     cM.style.display = '';
   }
