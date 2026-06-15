@@ -2914,13 +2914,14 @@ function _buildDqReactionBar(responseId){
     {key:'entiendo',   label:'Te entiendo',   emoji:'💙'}
   ];
   var m = _dqReactMap[responseId] || {};
+  var _dk = document.body.classList.contains('r-dark');
   return '<div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">'
     + rxDefs.map(function(rx){
       var rd = m[rx.key] || {count:0, mine:false};
       var active = rd.mine;
-      var bg     = active ? 'rgba(116,198,157,.20)' : 'rgba(255,255,255,.06)';
-      var border = active ? 'rgba(116,198,157,.50)' : 'rgba(255,255,255,.12)';
-      var color  = active ? 'rgba(116,198,157,.95)' : 'rgba(255,255,255,.48)';
+      var bg     = active ? 'rgba(116,198,157,.20)' : (_dk ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)');
+      var border = active ? 'rgba(116,198,157,.50)' : (_dk ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.14)');
+      var color  = active ? 'rgba(116,198,157,.95)' : (_dk ? 'rgba(255,255,255,.48)' : 'rgba(40,80,50,.70)');
       var cnt    = rd.count > 0 ? ' '+rd.count : '';
       return '<button onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
         +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+active+'" '
@@ -2940,12 +2941,13 @@ async function pToggleDqReaction(responseId, reaction, btn){
   var _rxLabel = {identifico:'Me identifico', abrazo:'Te abrazo', entiendo:'Te entiendo'};
   var _rxEmoji = {identifico:'💚', abrazo:'🫂', entiendo:'💙'};
   // Optimistic UI update
+  var _isDk = document.body.classList.contains('r-dark');
   if(isActive){
     rd.count = Math.max(0, rd.count-1); rd.mine = false;
     btn.dataset.active = 'false';
-    btn.style.background = 'rgba(255,255,255,.06)';
-    btn.style.borderColor = 'rgba(255,255,255,.12)';
-    btn.style.color = 'rgba(255,255,255,.48)';
+    btn.style.background = _isDk ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
+    btn.style.borderColor = _isDk ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.14)';
+    btn.style.color = _isDk ? 'rgba(255,255,255,.48)' : 'rgba(40,80,50,.70)';
   } else {
     rd.count++; rd.mine = true;
     btn.dataset.active = 'true';
