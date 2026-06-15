@@ -2555,7 +2555,7 @@ function _loadHomeMemoryCard(){
 }
 
 // ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────────
-var _VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa40HI80NM2zOE='; // placeholder — replace with real key
+var _VAPID_PUBLIC_KEY = 'BC4O5Dd8jHkMPXcCsehTLZ-7aBHaSDr5QII9nE3P5IEfT8x3EHfp7N7AlIZIUIS3XdydSYxtuk5EwZDtumUm6IQ';
 
 function _urlBase64ToUint8Array(base64String){
   var padding = '='.repeat((4 - base64String.length % 4) % 4);
