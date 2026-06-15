@@ -767,6 +767,9 @@ async function _sbSyncProfile(userId){
   if(_inPage && _inPage.classList && _inPage.classList.contains('show') && typeof pRenderInbox === 'function'){
     pRenderInbox();
   }
+  // Check survey after sync so _syncedReadIds is fully populated — prevents false-positive
+  // toast on new browsers where Supabase shows survey was already completed on another device
+  if(typeof _checkSurveyDue === 'function') _checkSurveyDue();
 }
 
 async function _ensureSbSession(){
@@ -1248,7 +1251,6 @@ async function _loginAndGo(){
     setTimeout(function(){
       _loadHomeData();
       _updateSidebarUser();
-      _checkSurveyDue();
       _checkProfileComplete(); // Mandatory profile setup if name/username missing
     }, 300);
   }
