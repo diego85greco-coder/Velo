@@ -598,7 +598,8 @@ async function _sbSyncProfile(userId){
     if(_sbBadgeIdx > _loBadgeIdx && _localBadgeSet){
       safeLS('set','velo_badge_last_notified', p.badge_notified);
       var _nbIcons = {Bronce:'🥉',Plata:'🥈',Oro:'🥇',Diamante:'💎'};
-      _sendBadgeInboxMsg({ name: p.badge_notified, icon: _nbIcons[p.badge_notified] || '🏅' });
+      // Only notify for real milestones (Plata+); Bronce is earned silently by just using the app
+      if(p.badge_notified !== 'Bronce'){ _sendBadgeInboxMsg({ name: p.badge_notified, icon: _nbIcons[p.badge_notified] || '🏅' }); }
     } else if(!_localBadgeSet){
       safeLS('set','velo_badge_last_notified', p.badge_notified || 'Novato');
     }
@@ -1729,6 +1730,39 @@ async function _saveNameFromBanner(){
   }catch(e){ pToast('⚠️','Error de conexión'); }
 }
 
+// ── CROSS-DEVICE MOOD SYNC ─────────────────────────────────────
+// On first load in a fresh browser, pull this week's moods from Supabase
+// into localStorage so the home graph, share card, etc. show real data.
+var _moodSyncDone = false;
+async function _syncMoodsFromSb(){
+  if(_moodSyncDone) return;
+  _moodSyncDone = true;
+  _initSupabase();
+  if(!sbClient) return;
+  try{
+    var ok = await _ensureSbSession();
+    if(!ok) return;
+    var now = new Date();
+    var months = {};
+    for(var i=0;i<7;i++){
+      var d2=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i);
+      var mk=d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0');
+      if(!months[mk]) months[mk]={year:d2.getFullYear(),month:d2.getMonth()+1};
+    }
+    await Promise.all(Object.values(months).map(async function(m){
+      var rows = await sbLoadAllMoods(m.year, m.month);
+      if(rows) rows.forEach(function(e){
+        if(e.emoji && !safeLS('get','velo_mood_'+e.date_key)){
+          safeLS('set','velo_mood_'+e.date_key, JSON.stringify({emoji:e.emoji,label:e.label||'',note:e.note||'',ts:0}));
+        }
+      });
+    }));
+    // Re-render graph now that localStorage is populated
+    _renderHomeWeekMoodGraph().catch(function(){});
+    _initShareWeekBtn();
+  }catch(e){}
+}
+
 // ── HOME DATA ──────────────────────────────────────────────────
 function _loadHomeData(){
   _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
@@ -1857,8 +1891,9 @@ function _loadHomeData(){
   if(_ha){ _ha.classList.remove('r-greeting-anim'); void _ha.offsetHeight; setTimeout(function(){ _ha.classList.add('r-greeting-anim'); }, 80); }
   // Daily quote in home header (Gemini, cached per day)
   setTimeout(_loadDailyMotivationalQuote, 200);
-  // 7-day mood mini-graph
+  // 7-day mood mini-graph (renders immediately from localStorage, then syncs from Supabase)
   _renderHomeWeekMoodGraph().catch(function(){});
+  setTimeout(_syncMoodsFromSb, 800); // sync after auth settles
   // Weekly summary (runs on Sundays — Buzón message only, no overlay popup)
   _checkWeeklySummary().catch(function(){});
   // Momento feed (gracefully hidden if table missing)
@@ -3196,6 +3231,22 @@ async function pOpenShareCard(){
             }
           });
         }));
+        // Also restore lema if missing
+        if(!safeLS('get','velo_user_motto')){
+          try{
+            var ok2 = await _ensureSbSession();
+            if(ok2){
+              var {data:ud2} = await sbClient.auth.getUser();
+              if(ud2 && ud2.user){
+                var pr = await sbClient.from('profiles').select('motto,nombre').eq('id',ud2.user.id).limit(1);
+                if(pr.data && pr.data[0]){
+                  if(pr.data[0].motto) safeLS('set','velo_user_motto', pr.data[0].motto);
+                  if(pr.data[0].nombre && !safeLS('get','velo_user_name')) safeLS('set','velo_user_name', pr.data[0].nombre);
+                }
+              }
+            }
+          }catch(e2){}
+        }
       }catch(e){}
     }
   }
@@ -3206,8 +3257,8 @@ function _drawShareCard(){
   var canvas = document.getElementById('shareCanvas');
   if(!canvas) return;
   var _logoUrls = [
-    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png.PNG',
-    'assets/logo-dark.png'
+    'assets/logo-dark.png',
+    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png.PNG'
   ];
   (function _nextLogo(i){
     if(i >= _logoUrls.length){ _renderShareCard(canvas, null); return; }
@@ -3503,7 +3554,8 @@ function _checkAndNotifyBadge(){
   }
   if(badge.name === lastNotified) return;
   safeLS('set','velo_badge_last_notified', badge.name);
-  _sendBadgeInboxMsg(badge);
+  // Only notify for Plata, Oro, Diamante — Bronce is silently awarded for basic app usage
+  if(badge.name !== 'Bronce') _sendBadgeInboxMsg(badge);
   if(badge.name === 'Diamante') _grantDiamanteReward();
 }
 
@@ -6396,8 +6448,8 @@ function pShareDailyQuote(){
 
   // Try logo URLs in order; first success wins, last failure draws without logo
   var _logoUrls = [
-    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png.PNG',
-    'assets/logo-dark.png'
+    'assets/logo-dark.png',
+    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png.PNG'
   ];
   (function _nextLogo(i){
     if(i >= _logoUrls.length){ _drawShareCanvas(quote, author, null); return; }
@@ -10569,10 +10621,18 @@ function _updateEditPushUI(){
   });
 }
 
+function _showIOSPushModal(){
+  var ov = document.getElementById('iosPushInstrOv');
+  if(ov) ov.style.display = 'flex';
+}
+function _closeIOSPushModal(){
+  var ov = document.getElementById('iosPushInstrOv');
+  if(ov) ov.style.display = 'none';
+}
+
 async function pTogglePushNotifications(){
   if(!('Notification' in window) || !('serviceWorker' in navigator)){
-    pToast('📱','En iPhone: toca Compartir → "Agregar a pantalla de inicio", luego abrí Velo desde ahí y activá las notificaciones 🌿');
-    return;
+    _showIOSPushModal(); return;
   }
   var hasSub = !!safeLS('get','velo_push_sub');
   var perm   = Notification.permission;

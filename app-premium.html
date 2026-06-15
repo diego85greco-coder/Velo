@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="756">
+  <meta name="app-version" content="757">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -3706,8 +3706,34 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
     <button onclick="_closePulseDetail()" style="width:100%;margin-top:18px;padding:12px;border-radius:14px;border:1.5px solid rgba(255,255,255,.1);background:transparent;color:var(--ink4);font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button>
   </div>
 </div>
-<script src="premium.js?v=20260614-756"></script>
-<script src="premium-redesign.js?v=20260614-756"></script>
+<!-- ── iOS PUSH INSTRUCTIONS BOTTOM SHEET ────────────────── -->
+<div id="iosPushInstrOv" style="display:none;position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center" onclick="if(event.target===this)_closeIOSPushModal()">
+  <div style="width:100%;max-width:480px;background:var(--card);border-radius:24px 24px 0 0;padding:8px 24px 48px">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:12px auto 22px"></div>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:36px;margin-bottom:8px">🔔</div>
+      <div style="font-size:17px;font-weight:700;color:var(--ink);font-family:'Cormorant Garamond',serif;margin-bottom:6px">Activar notificaciones en iPhone</div>
+      <div style="font-size:13px;color:var(--ink4);line-height:1.5">Para recibir el recordatorio diario, primero instalá Velo en tu pantalla de inicio:</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px">
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.08);border-radius:14px;padding:12px 14px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--sage3);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--ink);flex-shrink:0">1</div>
+        <div style="font-size:13px;color:var(--ink3);line-height:1.4">Tocá el botón <strong>Compartir</strong> <span style="font-size:16px">⬆️</span> en la barra de Safari</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.08);border-radius:14px;padding:12px 14px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--sage3);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--ink);flex-shrink:0">2</div>
+        <div style="font-size:13px;color:var(--ink3);line-height:1.4">Seleccioná <strong>"Agregar a pantalla de inicio"</strong> 📱</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.08);border-radius:14px;padding:12px 14px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--sage3);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--ink);flex-shrink:0">3</div>
+        <div style="font-size:13px;color:var(--ink3);line-height:1.4">Abrí Velo desde el ícono en tu pantalla de inicio y activá las notificaciones desde Perfil 💚</div>
+      </div>
+    </div>
+    <button onclick="_closeIOSPushModal()" style="width:100%;padding:13px;border-radius:14px;border:1.5px solid rgba(255,255,255,.12);background:transparent;color:var(--ink4);font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Entendido</button>
+  </div>
+</div>
+<script src="premium.js?v=20260614-757"></script>
+<script src="premium-redesign.js?v=20260614-757"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
