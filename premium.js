@@ -3506,7 +3506,7 @@ function _renderShareCard(canvas, logoImg){
   // ── Logo / header ───────────────────────────────────────────────
   var headerEnd; // y where header area ends
   if(logoImg){
-    var lH = 270, lW = 270;
+    var lH = 360, lW = 360;
     var lX = (W - lW) / 2, lY = 20;
     ctx.save();
     ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 60;
