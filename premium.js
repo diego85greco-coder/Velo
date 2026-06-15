@@ -3150,23 +3150,33 @@ function _expandDailyFeed(){
 }
 
 function _buildDqCards(list){
-  var _moodBg = {'😊':'rgba(116,198,157,.18)','😄':'rgba(116,198,157,.22)','😌':'rgba(116,198,157,.14)','🥺':'rgba(180,130,200,.18)','😔':'rgba(120,100,180,.18)','😰':'rgba(200,145,80,.18)','😤':'rgba(200,80,80,.16)','💪':'rgba(100,160,240,.16)'};
+  var _bubbleBg = {
+    '😊':'rgba(116,198,157,.18)','😄':'rgba(116,198,157,.22)','😌':'rgba(100,180,140,.16)','💪':'rgba(100,160,240,.16)',
+    '🥺':'rgba(180,130,200,.18)','😔':'rgba(120,100,180,.18)','😰':'rgba(200,145,80,.18)','😤':'rgba(200,80,80,.16)'
+  };
   return list.map(function(r){
     var av = r.user_avatar || '';
     var isImg = av && av.startsWith('http');
     var avHtml = isImg
-      ? '<img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0">'
-      : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px">'+(av||'🌿')+'</div>';
-    var mBg = _moodBg[r.mood_emoji] || 'rgba(255,255,255,.1)';
-    var txt = r.response_text ? '<div class="dq-feed-text" style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.45;font-style:italic;margin-top:3px">'+r.response_text+'</div>' : '';
-    return '<div class="dq-feed-card" style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);align-items:flex-start">'
+      ? '<img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-top:2px">'
+      : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.2);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:17px">'+(av||'🌿')+'</div>';
+    var bg = _bubbleBg[r.mood_emoji] || 'rgba(255,255,255,.10)';
+    var bubbleContent = r.response_text
+      ? '<div style="font-size:12.5px;color:rgba(255,255,255,.85);line-height:1.5;font-style:italic;font-family:\'Cormorant Garamond\',serif;font-size:14px">'+r.response_text+'</div>'
+      : '';
+    return '<div class="dq-feed-card" style="display:flex;gap:8px;padding:8px 0;align-items:flex-start">'
       +avHtml
       +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">'
-      +'<span class="dq-feed-name" style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82);font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">'+(r.user_name||'Alguien')+'</span>'
-      +'<span style="font-size:17px;background:'+mBg+';border-radius:8px;padding:1px 5px">'+r.mood_emoji+'</span>'
+      +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">'
+      +'<span class="dq-feed-name" style="font-size:11.5px;font-weight:700;color:rgba(255,255,255,.70);font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">'+(r.user_name||'Alguien')+'</span>'
+      +'<span style="font-size:14px">'+r.mood_emoji+'</span>'
       +'</div>'
-      +txt
+      +(r.response_text
+        ? '<div style="position:relative;background:'+bg+';border:1px solid rgba(255,255,255,.08);border-radius:4px 14px 14px 14px;padding:9px 12px;margin-bottom:6px">'
+          +'<div style="position:absolute;top:0;left:-6px;width:0;height:0;border-top:8px solid '+bg+';border-left:7px solid transparent"></div>'
+          +bubbleContent
+          +'</div>'
+        : '')
       +_buildDqReactionBar(r.id)
       +'</div>'
       +'</div>';
