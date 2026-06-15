@@ -1833,8 +1833,12 @@ async function _pushMissingMoodsToSb(){
 function _renderHomePushBanner(){
   var banner = document.getElementById('homePushBanner');
   if(!banner) return;
-  var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-  var isAndroid = /Android/.test(navigator.userAgent);
+  var ua = navigator.userAgent;
+  var isIOS = /iPhone|iPad|iPod/.test(ua);
+  var isAndroid = /Android/.test(ua);
+  // On iOS, only Safari supports PWA install + Web Push. Chrome/Firefox/etc. can't do it.
+  var isIOSNonSafari = isIOS && /CriOS|FxiOS|OPiOS|mercury|EdgiOS/.test(ua);
+  var isIOSSafari = isIOS && !isIOSNonSafari;
   var isMobile = isIOS || isAndroid;
   var isStandalone = !!(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches);
   var hasNotifAPI = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
@@ -1844,11 +1848,17 @@ function _renderHomePushBanner(){
   var txt  = document.getElementById('homePushBannerText');
   var btn  = document.getElementById('homePushBannerBtn');
   if(hasSub || perm === 'denied'){ banner.style.display = 'none'; return; }
-  if(!isStandalone && isMobile){
+  if(isIOSNonSafari && !isStandalone){
+    // iOS Chrome/Firefox: must switch to Safari — no PWA install possible here
+    banner.style.display = 'flex';
+    if(icon) icon.textContent = '🦁';
+    if(txt)  txt.textContent  = 'Para instalar Velo y activar notificaciones en iPhone, abrí esta página en Safari (no en Chrome ni Firefox)';
+    if(btn){ btn.textContent = 'Copiar enlace'; btn.setAttribute('data-action','copy-url'); }
+  } else if(!isStandalone && isMobile){
     banner.style.display = 'flex';
     if(icon) icon.textContent = '📲';
     if(txt)  txt.textContent  = 'Agregá Velo a tu pantalla de inicio para usarla como app con acceso directo. Desde ahí también podés activar las notificaciones 📣';
-    if(btn){ btn.textContent = '¿Cómo?'; btn.setAttribute('data-action', isIOS ? 'how-ios' : 'how-android'); }
+    if(btn){ btn.textContent = '¿Cómo?'; btn.setAttribute('data-action', isIOSSafari ? 'how-ios' : 'how-android'); }
   } else if(isStandalone && hasNotifAPI && perm !== 'granted'){
     banner.style.display = 'flex';
     if(icon) icon.textContent = '🔔';
@@ -1864,6 +1874,10 @@ function _homePushBannerAction(){
   if(action === 'how-ios') _showIOSPushModal();
   else if(action === 'how-android') _showAndroidInstallModal();
   else if(action === 'activate') pTogglePushNotifications();
+  else if(action === 'copy-url'){
+    try{ navigator.clipboard.writeText('https://heyvelo.app'); }catch(e){}
+    pToast('🔗','Enlace copiado — pegalo en Safari 🦁');
+  }
 }
 function _showAndroidInstallModal(){
   var ov = document.getElementById('androidInstallInstrOv');
