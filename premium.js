@@ -3062,9 +3062,9 @@ function _buildDqReactionBar(responseId){
     + rxDefs.map(function(rx){
       var rd = m[rx.key] || {count:0, mine:false};
       var active = rd.mine;
-      var bg     = active ? 'rgba(116,198,157,.22)' : (_dk ? 'rgba(255,255,255,.09)' : 'rgba(0,0,0,.07)');
-      var border = active ? 'rgba(116,198,157,.55)' : (_dk ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.18)');
-      var color  = active ? 'rgba(116,198,157,.98)' : (_dk ? 'rgba(255,255,255,.75)' : 'rgba(30,70,45,.85)');
+      var bg     = active ? 'rgba(116,198,157,.22)' : (_dk ? 'rgba(255,255,255,.09)' : 'rgba(116,198,157,.13)');
+      var border = active ? 'rgba(116,198,157,.55)' : (_dk ? 'rgba(255,255,255,.22)' : 'rgba(116,198,157,.42)');
+      var color  = active ? 'rgba(116,198,157,.98)' : (_dk ? 'rgba(255,255,255,.75)' : 'rgba(20,60,35,.82)');
       var cnt    = rd.count > 0 ? ' '+rd.count : '';
       return '<button onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
         +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+active+'" '
@@ -3088,9 +3088,9 @@ async function pToggleDqReaction(responseId, reaction, btn){
   if(isActive){
     rd.count = Math.max(0, rd.count-1); rd.mine = false;
     btn.dataset.active = 'false';
-    btn.style.background = _isDk ? 'rgba(255,255,255,.09)' : 'rgba(0,0,0,.07)';
-    btn.style.borderColor = _isDk ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.18)';
-    btn.style.color = _isDk ? 'rgba(255,255,255,.75)' : 'rgba(30,70,45,.85)';
+    btn.style.background = _isDk ? 'rgba(255,255,255,.09)' : 'rgba(116,198,157,.13)';
+    btn.style.borderColor = _isDk ? 'rgba(255,255,255,.22)' : 'rgba(116,198,157,.42)';
+    btn.style.color = _isDk ? 'rgba(255,255,255,.75)' : 'rgba(20,60,35,.82)';
   } else {
     rd.count++; rd.mine = true;
     btn.dataset.active = 'true';
@@ -10826,7 +10826,12 @@ async function _tryRecoverPushSub(){
     }
     _updateEditPushUI();
     _renderHomePushBanner();
-  }catch(e){ console.warn('[recover push sub]',e); }
+  }catch(e){
+    console.warn('[recover push sub]',e);
+    // Recovery failed — revert UI to "No activadas" so user can press Activar manually
+    safeLS('del','velo_push_sub');
+    _updateEditPushUI();
+  }
 }
 
 function _showIOSPushModal(){

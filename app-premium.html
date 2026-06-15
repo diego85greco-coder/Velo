@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="784">
+  <meta name="app-version" content="785">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -31,7 +31,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="premium.css?v=20260614-746">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260615-784">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260615-785">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -71,6 +71,9 @@
     body:not(.r-dark) #homeDailyQOpen .dq-text { color:rgba(20,50,25,.92) !important; }
     body:not(.r-dark) .dq-feed-card { border-bottom-color:rgba(0,0,0,.08) !important; }
     body:not(.r-dark) .dq-feed-name { color:rgba(20,50,25,.85) !important; }
+    /* Install modals: light mode — step cards and inner mockups need more contrast */
+    body:not(.r-dark) .inst-step { background:rgba(116,198,157,.22) !important; border:1.5px solid rgba(116,198,157,.42) !important; }
+    body:not(.r-dark) .inst-mock  { background:rgba(116,198,157,.12) !important; border:1px solid rgba(116,198,157,.30) !important; }
     /* Momentos / Muro Feliz tab active states */
     body:not(.r-dark) #homeMomentoSection { background:linear-gradient(140deg,rgba(210,232,215,.95),rgba(195,220,202,.97)) !important;border-color:rgba(74,160,110,.35) !important; }
     body:not(.r-dark) #homeTabMomento button[onclick*="pGoTo('momento')"],
@@ -3755,13 +3758,13 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
       <!-- Paso 1 -->
-      <div style="background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:16px;padding:13px">
+      <div style="background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:16px;padding:13px" class="inst-step">
         <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
           <div style="width:26px;height:26px;border-radius:50%;background:rgba(116,198,157,.35);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--ink);flex-shrink:0;margin-top:1px">1</div>
           <div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.4">En Safari, tocá el botón <strong>Compartir</strong> que está en la barra inferior y buscá <strong>"Añadir a pantalla de inicio"</strong></div>
         </div>
         <!-- Safari bottom bar mockup -->
-        <div style="background:rgba(0,0,0,.06);border:1px solid rgba(128,128,128,.18);border-radius:12px;padding:8px 16px;margin-bottom:8px">
+        <div style="background:rgba(0,0,0,.06);border:1px solid rgba(128,128,128,.18);border-radius:12px" class="inst-mock;padding:8px 16px;margin-bottom:8px">
           <div style="font-size:10px;color:var(--ink);opacity:.45;text-align:center;margin-bottom:7px;font-family:'Jost',sans-serif;letter-spacing:.3px">BARRA INFERIOR DE SAFARI</div>
           <div style="display:flex;justify-content:space-between;align-items:center;padding:0 6px">
             <!-- Atrás -->
@@ -3781,7 +3784,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
           <div style="text-align:center;margin-top:5px;font-size:11px;font-weight:700;color:rgba(116,198,157,.9);font-family:'Jost',sans-serif">↑ Este botón</div>
         </div>
         <!-- Share sheet mockup -->
-        <div style="background:rgba(0,0,0,.06);border:1px solid rgba(128,128,128,.18);border-radius:12px;padding:6px 8px;font-family:'Jost',sans-serif">
+        <div style="background:rgba(0,0,0,.06);border:1px solid rgba(128,128,128,.18);border-radius:12px" class="inst-mock;padding:6px 8px;font-family:'Jost',sans-serif">
           <div style="padding:6px 8px;border-radius:7px;font-size:11.5px;color:var(--ink);opacity:.5;display:flex;align-items:center;gap:8px"><span style="font-size:13px">📋</span> Copiar</div>
           <div style="padding:6px 8px;border-radius:7px;font-size:11.5px;color:var(--ink);opacity:.5;display:flex;align-items:center;gap:8px"><span style="font-size:13px">⭐</span> Añadir a favoritos</div>
           <div style="padding:7px 10px;border-radius:9px;font-size:12px;font-weight:700;background:rgba(116,198,157,.22);border:1.5px solid rgba(116,198,157,.55);color:var(--ink);display:flex;align-items:center;gap:8px;margin:2px 0"><span style="font-size:15px;font-weight:400">⊕</span> Añadir a pantalla de inicio <span style="margin-left:auto;font-size:14px">←</span></div>
@@ -3789,7 +3792,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         </div>
       </div>
       <!-- Paso 2 -->
-      <div style="background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:16px;padding:13px">
+      <div style="background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:16px;padding:13px" class="inst-step">
         <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
           <div style="width:26px;height:26px;border-radius:50%;background:rgba(116,198,157,.35);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--ink);flex-shrink:0;margin-top:1px">2</div>
           <div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.4">El ícono de <strong>Velo</strong> aparecerá en la pantalla de inicio de tu teléfono — abrilo desde ahí</div>
@@ -3803,13 +3806,13 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         </div>
       </div>
       <!-- Paso 3 -->
-      <div style="background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:16px;padding:13px">
+      <div style="background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:16px;padding:13px" class="inst-step">
         <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
           <div style="width:26px;height:26px;border-radius:50%;background:rgba(116,198,157,.35);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--ink);flex-shrink:0;margin-top:1px">3</div>
           <div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.4">Dentro de la app andá a <strong>Perfil</strong>, bajá hasta el final de la sección y tocá <strong>"Activar notificaciones"</strong> 💚</div>
         </div>
         <!-- Profile notification card mockup -->
-        <div style="background:rgba(0,0,0,.06);border:1px solid rgba(128,128,128,.18);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+        <div style="background:rgba(0,0,0,.06);border:1px solid rgba(128,128,128,.18);border-radius:12px" class="inst-mock;padding:10px 12px;display:flex;align-items:center;gap:10px">
           <span style="font-size:22px">🔔</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:11px;font-weight:600;color:var(--ink);line-height:1.35">Activar notificaciones push</div>
@@ -3833,19 +3836,19 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
       <!-- Paso 1 -->
-      <div style="background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:16px;padding:13px">
+      <div style="background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:16px;padding:13px" class="inst-step">
         <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
           <div style="width:26px;height:26px;border-radius:50%;background:rgba(116,198,157,.35);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--ink);flex-shrink:0;margin-top:1px">1</div>
           <div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.4">Tocá el menú <strong>⋮</strong> (tres puntos) arriba a la derecha en Chrome</div>
         </div>
-        <div style="background:rgba(0,0,0,.06);border:1px solid rgba(128,128,128,.18);border-radius:12px;padding:6px 8px;font-family:'Jost',sans-serif">
+        <div style="background:rgba(0,0,0,.06);border:1px solid rgba(128,128,128,.18);border-radius:12px" class="inst-mock;padding:6px 8px;font-family:'Jost',sans-serif">
           <div style="padding:6px 8px;border-radius:7px;font-size:11.5px;color:var(--ink);opacity:.5;display:flex;align-items:center;gap:8px"><span style="font-size:13px">🔖</span> Marcar página</div>
           <div style="padding:7px 10px;border-radius:9px;font-size:12px;font-weight:700;background:rgba(116,198,157,.22);border:1.5px solid rgba(116,198,157,.55);color:var(--ink);display:flex;align-items:center;gap:8px;margin:2px 0"><span style="font-size:15px">⊕</span> Añadir a pantalla de inicio <span style="margin-left:auto;font-size:14px">←</span></div>
           <div style="padding:6px 8px;border-radius:7px;font-size:11.5px;color:var(--ink);opacity:.5;display:flex;align-items:center;gap:8px"><span style="font-size:13px">🖨️</span> Imprimir…</div>
         </div>
       </div>
       <!-- Paso 2 -->
-      <div style="background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:16px;padding:13px">
+      <div style="background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:16px;padding:13px" class="inst-step">
         <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
           <div style="width:26px;height:26px;border-radius:50%;background:rgba(116,198,157,.35);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--ink);flex-shrink:0;margin-top:1px">2</div>
           <div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.4">Seleccioná <strong>"Añadir a pantalla de inicio"</strong> o <strong>"Instalar app"</strong> y confirmá</div>
@@ -3858,12 +3861,12 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         </div>
       </div>
       <!-- Paso 3 -->
-      <div style="background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:16px;padding:13px">
+      <div style="background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:16px;padding:13px" class="inst-step">
         <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
           <div style="width:26px;height:26px;border-radius:50%;background:rgba(116,198,157,.35);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--ink);flex-shrink:0;margin-top:1px">3</div>
           <div style="font-size:13px;font-weight:600;color:var(--ink);line-height:1.4">Abrí Velo desde el ícono, andá a <strong>Perfil</strong>, bajá hasta el final y tocá <strong>"Activar notificaciones"</strong> 💚</div>
         </div>
-        <div style="background:rgba(0,0,0,.06);border:1px solid rgba(128,128,128,.18);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+        <div style="background:rgba(0,0,0,.06);border:1px solid rgba(128,128,128,.18);border-radius:12px" class="inst-mock;padding:10px 12px;display:flex;align-items:center;gap:10px">
           <span style="font-size:22px">🔔</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:11px;font-weight:600;color:var(--ink);line-height:1.35">Activar notificaciones push</div>
@@ -3877,8 +3880,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260615-784"></script>
-<script src="premium-redesign.js?v=20260615-784"></script>
+<script src="premium.js?v=20260615-785"></script>
+<script src="premium-redesign.js?v=20260615-785"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
