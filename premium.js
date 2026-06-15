@@ -9462,6 +9462,12 @@ async function pRenderHappy(){
   if(sbRows !== null){
     usingSB = true;
     posts = sbRows.map(_sbHappyRow).filter(function(h){ return !_isBlocked(h.userId); });
+    // Merge own local posts that failed to insert to Supabase (survives page refresh)
+    var _cutoffMs = Date.now() - 24*60*60*1000;
+    var _localOwn = _happyLoad().filter(function(p){ return p.ts > _cutoffMs && p.userId === myId; });
+    _localOwn.forEach(function(lp){
+      if(!posts.find(function(p){ return p.id === lp.id; })) posts.unshift(lp);
+    });
     // Merge post that was just submitted; Supabase may not have returned it yet
     if(_pendingHappyPost){
       var pendingIdx = posts.findIndex(function(p){ return p.id === _pendingHappyPost.id; });
