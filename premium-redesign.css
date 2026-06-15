@@ -11103,6 +11103,7 @@ body.r-dark .mc-bubble.mc-happy::before { border-top-color: rgba(200,165,45,.16)
 .mc-text { color: rgba(20,60,30,.88) !important; }
 body.r-dark .mc-text { color: rgba(255,255,255,.85) !important; }
 .mc-bubble.mc-happy .mc-text { color: rgba(55,35,5,.88) !important; }
+body.r-dark .mc-bubble.mc-happy .mc-text { color: rgba(255,248,200,.92) !important; }
 
 /* ══════════════════════════════════════════════════════════════════
    v792 — Reaction buttons & feed tabs: CSS-driven colors

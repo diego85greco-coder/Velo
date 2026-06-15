@@ -2583,9 +2583,20 @@ async function _pullVisitCountFromSB(){
   }catch(e){} // Column may not exist yet — ignore
 }
 
+function _streakLabel(days){
+  if(days < 30) return String(days);
+  var months = days / 30;
+  if(months < 1.25) return '1 mes';
+  if(months < 1.75) return '1½ mes';
+  var full = Math.floor(months);
+  var half = (months - full) >= 0.4;
+  return full + (half ? '½' : '') + (full === 1 ? ' mes' : ' meses');
+}
+
 function _updateHomeStreak(){
+  var streak = _getConsecutiveStreak();
   var el = document.getElementById('homeStatStreak');
-  if(el) el.textContent = _getConsecutiveStreak();
+  if(el) el.textContent = _streakLabel(streak);
   var pEl = document.getElementById('profileDays');
   if(pEl) pEl.textContent = Math.max(1, _getVisitDayCount());
 }
@@ -2982,11 +2993,12 @@ function _loadDailyQ(){
       if(!_rv.uid || _rv.uid !== currentUid) myResp = null;
     }catch(e){ myResp = null; }
   }
+  // Always init Supabase so _fetchDailyFeed works regardless of which path we take
+  _initSupabase();
   if(myResp){
     _applyDailyQAnswered(myResp, q);
   } else {
     // Not in localStorage — check Supabase (cross-device: answered on another browser)
-    _initSupabase();
     if(sbClient && currentUid){
       sbClient.from('daily_responses')
         .select('mood_emoji,response_text')
@@ -3234,7 +3246,6 @@ async function pSubmitDailyResponse(){
 async function _loadCommunityPulse(){
   var el = document.getElementById('homePulse');
   if(!el) return;
-  el.style.display = 'block';
   var today = _dateKey();
   var txtEl  = document.getElementById('homePulseTxt');
   var subEl  = document.getElementById('homePulseSub');
@@ -3242,6 +3253,7 @@ async function _loadCommunityPulse(){
   var barEl  = document.getElementById('homePulseBar');
   if(!sbClient){
     if(txtEl) txtEl.textContent = 'Comunidad Velo · cargando...';
+    el.style.display = 'block';
     return;
   }
   try{
@@ -3278,8 +3290,9 @@ async function _loadCommunityPulse(){
           +'</div>';
       }).join('');
     }
+    el.style.display = 'block';
   }catch(e){
-    if(txtEl) txtEl.textContent = 'Comunidad Velo';
+    el.style.display = 'none';
   }
 }
 
@@ -9397,9 +9410,16 @@ async function pRenderHappy(){
     posts = sbRows.map(_sbHappyRow).filter(function(h){ return !_isBlocked(h.userId); });
     // Merge post that was just submitted; Supabase may not have returned it yet
     if(_pendingHappyPost){
-      var alreadyIn = posts.some(function(p){ return p.id === _pendingHappyPost.id; });
-      if(!alreadyIn) posts.unshift(_pendingHappyPost);
-      else _pendingHappyPost = null;
+      var pendingIdx = posts.findIndex(function(p){ return p.id === _pendingHappyPost.id; });
+      if(pendingIdx < 0){
+        posts.unshift(_pendingHappyPost);
+      } else {
+        // Post found in SB — if photo is missing (column not supported or empty), preserve from pending
+        if(!posts[pendingIdx].photo && _pendingHappyPost.photo){
+          posts[pendingIdx].photo = _pendingHappyPost.photo;
+        }
+        _pendingHappyPost = null;
+      }
     }
     _sbHappy = posts;
     // Persist fresh posts to localStorage so next open is instant (strip large fields)
@@ -17858,13 +17878,13 @@ async function _renderHomeWeekMoodGraph(){
     days.push({ dayName:dayNames[d.getDay()], mood:mood, isToday:i===0 });
   }
   container.innerHTML = days.map(function(d){
-    var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.5)') : 'rgba(116,198,157,.30)';
-    var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.1)') : 'rgba(116,198,157,.07)';
+    var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.5)') : 'rgba(116,198,157,.60)';
+    var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.1)') : 'rgba(116,198,157,.12)';
     var ring  = d.isToday ? 'border:2.5px solid '+color+';box-shadow:0 0 8px '+color+';' : 'border:1.5px solid '+color+';';
     var emoji = d.mood ? d.mood.emoji : '·';
     var cls   = 'mood-day-circle'+(d.mood?'':' mood-day-empty')+(d.isToday?' mood-day-today':'');
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:'Sin registro')+'">'
-      +'<div class="'+cls+'" style="width:34px;height:34px;border-radius:50%;'+ring+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'17':'9')+'px;transition:.2s">'+emoji+'</div>'
+      +'<div class="'+cls+'" style="width:34px;height:34px;border-radius:50%;'+ring+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'17':'11')+'px;transition:.2s">'+emoji+'</div>'
       +'<span style="font-size:8px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
       +'</div>';
   }).join('');
