@@ -1701,14 +1701,13 @@ function _checkAndShowNameBanner(name){
   var banner = document.getElementById('homeNameBanner');
   if(!looksAutoGen){ if(banner) banner.remove(); return; }
   if(banner) return; // already showing
-  var isDark = document.body.classList.contains('r-dark');
   var b = document.createElement('div');
   b.id = 'homeNameBanner';
-  b.style.cssText = 'margin:0 0 14px;padding:12px 14px;border-radius:14px;background:'+(isDark?'rgba(116,198,157,.13)':'rgba(116,198,157,.18)')+';border:1px solid rgba(116,198,157,.35);display:flex;flex-direction:column;gap:8px';
-  b.innerHTML = '<div style="font-size:12px;font-weight:700;color:'+(isDark?'rgba(116,198,157,.95)':'#1a6b3c')+'">👋 ¿Cuál es tu nombre real?</div>'
+  b.className = 'home-name-banner';
+  b.innerHTML = '<div class="home-name-banner-title">👋 ¿Cuál es tu nombre real?</div>'
     +'<div style="font-size:11.5px;color:var(--ink3);line-height:1.4">Tu nombre se muestra como usuario técnico. Ingresá tu nombre real para que se vea en todos tus dispositivos.</div>'
     +'<div style="display:flex;gap:8px;align-items:center">'
-    +'<input id="homeNameInput" type="text" placeholder="Tu nombre o apodo" value="'+_escHtml(name !== emailPfx ? name : '')+'" style="flex:1;padding:8px 12px;border-radius:10px;border:1.5px solid rgba(116,198,157,.4);background:'+(isDark?'rgba(255,255,255,.07)':'rgba(255,255,255,.9)')+';color:var(--ink);font-size:13px;font-family:\'Jost\',sans-serif;outline:none">'
+    +'<input id="homeNameInput" type="text" placeholder="Tu nombre o apodo" value="'+_escHtml(name !== emailPfx ? name : '')+'" class="home-name-banner-input">'
     +'<button onclick="_saveNameFromBanner()" style="padding:8px 16px;border-radius:10px;border:none;background:var(--sage);color:#fff;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap">Guardar →</button>'
     +'</div>';
   var scrollEl = document.querySelector('#pg-home .p-page-scroll');
@@ -2667,17 +2666,14 @@ function _loadHomeMemoryCard(){
   var labelMap = {'😄':'Muy bien','😊':'Bien','😐':'Regular','😞':'Bajo','😢':'Difícil'};
   var moodLabel = found.label || labelMap[found.emoji] || '';
   el.style.display = 'block';
-  var _isDk = document.body.classList.contains('r-dark');
-  var _agoClr = _isDk ? 'rgba(200,158,56,.70)' : 'rgba(120,88,15,.72)';
-  var _verClr = _isDk ? 'rgba(200,158,56,.75)' : 'rgba(120,88,15,.80)';
   el.innerHTML = '<div style="background:linear-gradient(135deg,rgba(200,158,56,.14),rgba(178,138,18,.09));border:1.5px solid rgba(200,158,56,.35);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:default">'
     + '<div style="font-size:28px;line-height:1;flex-shrink:0">'+found.emoji+'</div>'
     + '<div style="flex:1;min-width:0">'
-    + '<div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:'+_agoClr+';margin-bottom:3px">✨ '+daysLabel+'</div>'
-    + '<div style="font-size:13px;font-weight:600;color:var(--ink2)">Te sentías <strong>'+moodLabel+'</strong>'+(found.note?'':'')+'</div>'
+    + '<div class="home-memo-ago">✨ '+daysLabel+'</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--ink2)">Te sentías <strong>'+moodLabel+'</strong></div>'
     + (found.note ? '<div style="font-size:11px;color:var(--ink4);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+found.note.slice(0,60)+'</div>' : '')
     + '</div>'
-    + '<div onclick="pGoTo(\'mood\')" style="font-size:10px;font-weight:700;color:'+_verClr+';cursor:pointer;white-space:nowrap;flex-shrink:0">Ver →</div>'
+    + '<div class="home-memo-ver" onclick="pGoTo(\'mood\')">Ver →</div>'
     + '</div>';
 }
 
@@ -17848,12 +17844,13 @@ async function _renderHomeWeekMoodGraph(){
     days.push({ dayName:dayNames[d.getDay()], mood:mood, isToday:i===0 });
   }
   container.innerHTML = days.map(function(d){
-    var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.5)') : 'rgba(200,200,200,.18)';
-    var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.1)') : 'transparent';
+    var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.5)') : 'rgba(116,198,157,.30)';
+    var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.1)') : 'rgba(116,198,157,.07)';
     var ring  = d.isToday ? 'border:2.5px solid '+color+';box-shadow:0 0 8px '+color+';' : 'border:1.5px solid '+color+';';
     var emoji = d.mood ? d.mood.emoji : '·';
+    var cls   = 'mood-day-circle'+(d.mood?'':' mood-day-empty')+(d.isToday?' mood-day-today':'');
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:'Sin registro')+'">'
-      +'<div style="width:34px;height:34px;border-radius:50%;'+ring+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'17':'9')+'px;transition:.2s">'+emoji+'</div>'
+      +'<div class="'+cls+'" style="width:34px;height:34px;border-radius:50%;'+ring+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'17':'9')+'px;transition:.2s">'+emoji+'</div>'
       +'<span style="font-size:8px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
       +'</div>';
   }).join('');

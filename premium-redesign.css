@@ -11198,3 +11198,67 @@ body.r-dark .inst-step {
 body.r-dark .inst-step > div:first-child > div:first-child {
   background: rgba(116,198,157,.45) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v794 — Light-mode visibility fixes for home page components
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Mood graph — empty day circles: use sage tint so they're visible in light mode */
+.mood-day-circle { /* base styles handled inline */ }
+body:not(.r-dark) .mood-day-empty {
+  border-color: rgba(116,198,157,.35) !important;
+  background: rgba(116,198,157,.08) !important;
+  color: rgba(80,140,95,.55) !important;
+}
+body:not(.r-dark) .mood-day-empty.mood-day-today {
+  border-color: rgba(116,198,157,.60) !important;
+  background: rgba(116,198,157,.14) !important;
+  box-shadow: 0 0 8px rgba(116,198,157,.40) !important;
+}
+
+/* Memory card — ago label & ver link: CSS-driven gold */
+.home-memo-ago {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+  color: rgba(120,88,15,.72);
+}
+body.r-dark .home-memo-ago { color: rgba(200,158,56,.70); }
+.home-memo-ver {
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: rgba(120,88,15,.80);
+}
+body.r-dark .home-memo-ver { color: rgba(200,158,56,.75); }
+
+/* Name banner — CSS-driven so it works on theme change without re-render */
+.home-name-banner {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(116,198,157,.18);
+  border: 1px solid rgba(116,198,157,.35);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+body.r-dark .home-name-banner { background: rgba(116,198,157,.13); }
+.home-name-banner-title { font-size: 12px; font-weight: 700; color: #1a6b3c; }
+body.r-dark .home-name-banner-title { color: rgba(116,198,157,.95); }
+.home-name-banner-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(116,198,157,.4);
+  background: rgba(255,255,255,.9);
+  color: var(--ink);
+  font-size: 13px;
+  font-family: 'Jost', sans-serif;
+  outline: none;
+}
+body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
