@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="789">
+  <meta name="app-version" content="790">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -31,7 +31,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="premium.css?v=20260614-746">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260615-789">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260615-790">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -85,6 +85,14 @@
     body:not(.r-dark) .dq-feed-text { color:rgba(40,80,45,.7) !important; }
     body:not(.r-dark) #homeDailyQCount { color:rgba(40,80,45,.55) !important; }
     body:not(.r-dark) #homeDailyQMyResp { color:rgba(74,120,60,.75) !important; }
+    /* REGISTRA section — light mode: all hardcoded white/gold colors need dark overrides */
+    body:not(.r-dark) #homeRegisterSub { color:rgba(30,60,35,.80) !important; }
+    body:not(.r-dark) .home-mood-btn { color:rgba(30,65,35,.80) !important; background:rgba(116,198,157,.18) !important; border-color:rgba(80,150,100,.40) !important; }
+    body:not(.r-dark) #homeCurrentMoodLine { color:rgba(80,50,5,.88) !important; background:linear-gradient(135deg,rgba(190,148,30,.18),rgba(168,122,8,.12)) !important; border-color:rgba(160,120,15,.42) !important; }
+    body:not(.r-dark) #homeMottoLine { color:rgba(30,65,35,.88) !important; background:linear-gradient(135deg,rgba(116,198,157,.20),rgba(90,175,125,.14)) !important; border-color:rgba(80,150,100,.42) !important; }
+    body:not(.r-dark) #topbarMoodBtn { color:rgba(30,65,35,.85) !important; background:rgba(116,198,157,.18) !important; border-color:rgba(80,150,100,.38) !important; }
+    body:not(.r-dark) #homeWeekMoodGraph { background:rgba(0,0,0,.06) !important; }
+    body:not(.r-dark) .home-motto-label { color:rgba(50,40,10,.72) !important; }
     #homeHeroLabel        { order: 13; margin-top: 24px; }
     /* Search row: 2-column grid — icon above, label below — no overlap possible */
     #homeSearchRow {
@@ -3880,7 +3888,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260615-789"></script>
+<script src="premium.js?v=20260615-790"></script>
 <script src="premium-redesign.js?v=20260615-789"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
