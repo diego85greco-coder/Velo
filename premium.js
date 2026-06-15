@@ -1834,7 +1834,8 @@ function _renderHomePushBanner(){
   var banner = document.getElementById('homePushBanner');
   if(!banner) return;
   var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-  var isMobile = /iPhone|iPad|iPod|Android/.test(navigator.userAgent);
+  var isAndroid = /Android/.test(navigator.userAgent);
+  var isMobile = isIOS || isAndroid;
   var isStandalone = !!(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches);
   var hasNotifAPI = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
   var hasSub = !!safeLS('get','velo_push_sub');
@@ -1842,19 +1843,16 @@ function _renderHomePushBanner(){
   var icon = document.getElementById('homePushBannerIcon');
   var txt  = document.getElementById('homePushBannerText');
   var btn  = document.getElementById('homePushBannerBtn');
-  // Already has sub or denied: never show
   if(hasSub || perm === 'denied'){ banner.style.display = 'none'; return; }
   if(!isStandalone && isMobile){
-    // Not installed yet — prompt to add to home screen
     banner.style.display = 'flex';
     if(icon) icon.textContent = '📲';
-    if(txt)  txt.textContent  = 'Instalá Velo en tu pantalla de inicio para recibir el recordatorio diario 💚';
-    if(btn){ btn.textContent = '¿Cómo?'; btn.setAttribute('data-action','how'); }
+    if(txt)  txt.textContent  = 'Agregá Velo a tu pantalla de inicio para usarla como app con acceso directo. Desde ahí también podés activar las notificaciones 📣';
+    if(btn){ btn.textContent = '¿Cómo?'; btn.setAttribute('data-action', isIOS ? 'how-ios' : 'how-android'); }
   } else if(isStandalone && hasNotifAPI && perm !== 'granted'){
-    // Installed but notifications not yet enabled
     banner.style.display = 'flex';
     if(icon) icon.textContent = '🔔';
-    if(txt)  txt.textContent  = 'Activá las notificaciones para recibir tu recordatorio diario 💚';
+    if(txt)  txt.textContent  = 'Activá las notificaciones para recibir tu recordatorio diario 📣';
     if(btn){ btn.textContent = 'Activar'; btn.setAttribute('data-action','activate'); }
   } else {
     banner.style.display = 'none';
@@ -1863,8 +1861,17 @@ function _renderHomePushBanner(){
 function _homePushBannerAction(){
   var btn = document.getElementById('homePushBannerBtn');
   var action = btn ? btn.getAttribute('data-action') : '';
-  if(action === 'how') _showIOSPushModal();
+  if(action === 'how-ios') _showIOSPushModal();
+  else if(action === 'how-android') _showAndroidInstallModal();
   else if(action === 'activate') pTogglePushNotifications();
+}
+function _showAndroidInstallModal(){
+  var ov = document.getElementById('androidInstallInstrOv');
+  if(ov) ov.style.display = 'flex';
+}
+function _closeAndroidInstallModal(){
+  var ov = document.getElementById('androidInstallInstrOv');
+  if(ov) ov.style.display = 'none';
 }
 
 // ── HOME DATA ──────────────────────────────────────────────────
