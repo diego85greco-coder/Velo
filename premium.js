@@ -582,19 +582,34 @@ async function _sbSyncProfile(userId){
       if(bid.indexOf('survey-') === 0) safeLS('set','velo_read_'+bid,'1');
     });
     if(_delChanged) safeLS('set','velo_inbox_deleted', JSON.stringify(_restoredDel));
-    // Remove surveys and weekly summaries deleted on another device, and stale Bronce badge messages
+  } else {
+    // profiles.read_bcast_ids column missing or null — read from auth.user_metadata as fallback
+    // (this is where _syncBroadcastRead saves when the column doesn't exist)
     try{
-      var _ib=[]; try{_ib=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e2){}
-      var _ibf=_ib.filter(function(m){
-        if(m.tipo==='encuesta' && m.id && _syncedReadIds[m.id]) return false;
-        if(m.id && m.id.indexOf('weekly-') === 0 && _syncedReadIds[m.id]) return false;
-        // Bronce badge messages are "silent" — remove any that slipped through older code
-        if(m.id && m.id.indexOf('badge_bronce_') === 0) return false;
-        return true;
-      });
-      if(_ibf.length !== _ib.length) safeLS('set','velo_inbox',JSON.stringify(_ibf));
+      var _umr = await sbClient.auth.getUser();
+      var _umeta = _umr && _umr.data && _umr.data.user && _umr.data.user.user_metadata;
+      if(_umeta && Array.isArray(_umeta.read_bcast_ids)){
+        _umeta.read_bcast_ids.forEach(function(bid){
+          if(!bid) return;
+          _syncedReadIds[bid] = 1;
+          safeLS('set','velo_bcast_read_'+bid,'1');
+          if(bid.indexOf('survey-') === 0) safeLS('set','velo_read_'+bid,'1');
+        });
+      }
     }catch(e){}
   }
+  // Remove surveys and weekly summaries deleted on another device, and stale Bronce badge messages
+  try{
+    var _ib=[]; try{_ib=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e2){}
+    var _ibf=_ib.filter(function(m){
+      if(m.tipo==='encuesta' && m.id && _syncedReadIds[m.id]) return false;
+      if(m.id && m.id.indexOf('weekly-') === 0 && _syncedReadIds[m.id]) return false;
+      // Bronce badge messages are "silent" — remove any that slipped through older code
+      if(m.id && m.id.indexOf('badge_bronce_') === 0) return false;
+      return true;
+    });
+    if(_ibf.length !== _ib.length) safeLS('set','velo_inbox',JSON.stringify(_ibf));
+  }catch(e){}
   // Badge notification cross-device: if Supabase shows a higher badge than local, show the inbox message
   if(p.badge_notified){
     var _badgeOrder = ['Novato','Bronce','Plata','Oro','Diamante'];
