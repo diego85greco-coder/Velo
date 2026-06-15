@@ -3153,40 +3153,22 @@ function _expandDailyFeed(){
 }
 
 function _buildDqCards(list){
-  var isDark = document.body.classList.contains('r-dark');
-  var _bubbleBgDark = {
-    '😊':'rgba(116,198,157,.18)','😄':'rgba(116,198,157,.22)','😌':'rgba(100,180,140,.16)','💪':'rgba(100,160,240,.16)',
-    '🥺':'rgba(180,130,200,.18)','😔':'rgba(120,100,180,.18)','😰':'rgba(200,145,80,.18)','😤':'rgba(200,80,80,.16)'
-  };
-  var _bubbleBgLight = {
-    '😊':'rgba(116,198,157,.22)','😄':'rgba(116,198,157,.28)','😌':'rgba(100,180,140,.20)','💪':'rgba(100,160,240,.20)',
-    '🥺':'rgba(180,130,200,.22)','😔':'rgba(120,100,180,.22)','😰':'rgba(200,145,80,.22)','😤':'rgba(200,80,80,.20)'
-  };
-  var _bubbleBg = isDark ? _bubbleBgDark : _bubbleBgLight;
-  var nameClr  = isDark ? 'rgba(255,255,255,.70)' : 'rgba(20,60,35,.72)';
-  var textClr  = isDark ? 'rgba(255,255,255,.85)' : 'rgba(20,60,35,.82)';
-  var borderClr= isDark ? 'rgba(255,255,255,.08)'  : 'rgba(116,198,157,.35)';
   return list.map(function(r){
     var av = r.user_avatar || '';
     var isImg = av && av.startsWith('http');
     var avHtml = isImg
       ? '<img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-top:2px">'
       : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.2);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:17px">'+(av||'🌿')+'</div>';
-    var bg = _bubbleBg[r.mood_emoji] || (isDark ? 'rgba(255,255,255,.10)' : 'rgba(116,198,157,.14)');
-    var bubbleContent = r.response_text
-      ? '<div style="font-size:14px;color:'+textClr+';line-height:1.5;font-style:italic;font-family:\'Cormorant Garamond\',serif">'+r.response_text+'</div>'
-      : '';
     return '<div class="dq-feed-card" style="display:flex;gap:8px;padding:8px 0;align-items:flex-start">'
       +avHtml
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">'
-      +'<span class="dq-feed-name" style="font-size:11.5px;font-weight:700;color:'+nameClr+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">'+(r.user_name||'Alguien')+'</span>'
+      +'<span class="dq-feed-name" style="font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">'+(r.user_name||'Alguien')+'</span>'
       +'<span style="font-size:14px">'+r.mood_emoji+'</span>'
       +'</div>'
       +(r.response_text
-        ? '<div style="position:relative;background:'+bg+';border:1px solid '+borderClr+';border-radius:4px 14px 14px 14px;padding:9px 12px;margin-bottom:6px">'
-          +'<div style="position:absolute;top:0;left:-6px;width:0;height:0;border-top:8px solid '+bg+';border-left:7px solid transparent"></div>'
-          +bubbleContent
+        ? '<div class="dq-bubble">'
+          +'<div class="dq-bubble-text">'+r.response_text+'</div>'
           +'</div>'
         : '')
       +_buildDqReactionBar(r.id)
@@ -3450,7 +3432,7 @@ function _drawShareCard(){
   if(!canvas) return;
   var _logoUrls = [
     'assets/logo.png',
-    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png.PNG'
+    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/IMG_2624.png'
   ];
   (function _nextLogo(i){
     if(i >= _logoUrls.length){ _renderShareCard(canvas, null); return; }
@@ -3495,17 +3477,12 @@ function _renderShareCard(canvas, logoImg){
   // ── Logo / header ───────────────────────────────────────────────
   var headerEnd; // y where header area ends
   if(logoImg){
-    // Source-crop: logo.png is square but content only spans ~15-75% of height
-    // Cropping removes transparent padding → logo appears much wider at same height
-    var _sY0 = Math.round(logoImg.naturalHeight * 0.15);
-    var _sH0 = Math.round(logoImg.naturalHeight * 0.60);
-    var lH = 250, lW = Math.round(lH * logoImg.naturalWidth / _sH0);
-    var lX = (W - lW) / 2, lY = 10;
+    var lH = 200, lW = 200;
+    var lX = (W - lW) / 2, lY = 20;
     ctx.save();
     ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 60;
-    ctx.drawImage(logoImg, 0, _sY0, logoImg.naturalWidth, _sH0, lX, lY, lW, lH);
+    ctx.drawImage(logoImg, 0, 0, logoImg.naturalWidth, logoImg.naturalHeight, lX, lY, lW, lH);
     ctx.restore();
-    ctx.drawImage(logoImg, 0, _sY0, logoImg.naturalWidth, _sH0, lX, lY, lW, lH);
     headerEnd = lY + lH + 14;
   } else {
     ctx.textAlign='center';
@@ -6643,7 +6620,7 @@ function pShareDailyQuote(){
   // Try logo URLs in order; first success wins, last failure draws without logo
   var _logoUrls = [
     'assets/logo.png',
-    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png.PNG'
+    'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/IMG_2624.png'
   ];
   (function _nextLogo(i){
     if(i >= _logoUrls.length){ _drawShareCanvas(quote, author, null); return; }
@@ -6748,11 +6725,7 @@ function _drawShareCanvas(quote, author, logoImg){
   _filigree(W-fp, fy2, -1, -1);
 
   // ── Brand header: large dark-mode logo ───────────────────────
-  var logoW = 800;
-  // Source-crop: skip ~15% top/25% bottom transparent padding in square logo
-  var _sY1 = logoImg ? Math.round(logoImg.naturalHeight * 0.15) : 0;
-  var _sH1 = logoImg ? Math.round(logoImg.naturalHeight * 0.60) : 0;
-  var logoH = logoImg ? Math.round(logoW * _sH1 / logoImg.naturalWidth) : 240;
+  var logoW = 600, logoH = 600;
   var logoX = (W - logoW) / 2;
   var logoY = 60;
 
@@ -6760,9 +6733,8 @@ function _drawShareCanvas(quote, author, logoImg){
     ctx.save();
     ctx.shadowColor = 'rgba(116,198,157,.55)';
     ctx.shadowBlur  = 70;
-    ctx.drawImage(logoImg, 0, _sY1, logoImg.naturalWidth, _sH1, logoX, logoY, logoW, logoH);
+    ctx.drawImage(logoImg, 0, 0, logoImg.naturalWidth, logoImg.naturalHeight, logoX, logoY, logoW, logoH);
     ctx.restore();
-    ctx.drawImage(logoImg, 0, _sY1, logoImg.naturalWidth, _sH1, logoX, logoY, logoW, logoH);
   }
 
   // ── "Mi frase del día" label ──────────────────────────────────
@@ -18419,14 +18391,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
   var myHash=_momentoUserHash();
   var isHome = feedId === 'homeMomentoFeed';
   var isHappy = feedId === 'homeHappyFeed' || feedId === 'happyFullFeed';
-  var isDark = document.body.classList.contains('r-dark');
-  var _bBg  = isHappy
-    ? (isDark ? 'rgba(200,165,45,.16)' : 'rgba(255,220,60,.22)')
-    : (isDark ? 'rgba(116,198,157,.14)' : 'rgba(116,198,157,.22)');
-  var _bBdr = isHappy
-    ? (isDark ? 'rgba(220,185,60,.24)' : 'rgba(180,140,10,.28)')
-    : (isDark ? 'rgba(116,198,157,.22)' : 'rgba(80,160,100,.30)');
-  var _bTxt = isDark ? 'rgba(255,255,255,.85)' : (isHappy ? 'rgba(55,35,5,.88)' : 'rgba(20,60,30,.88)');
+  var bubbleClass = isHappy ? 'mc-bubble mc-happy' : 'mc-bubble';
   // Filter out locally reported momentos (always, on all views)
   var reported = {};
   try{ reported = JSON.parse(safeLS('get','velo_momento_reported')||'{}'); }catch(e){}
@@ -18465,9 +18430,8 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       +'<span class="mc-time" style="font-size:9px">⏱ '+timeLeft+'h</span>'
       +(mine?'<span class="mc-mine" style="font-size:9px;font-weight:700">· tuyo</span>':'')
       +'</div>'
-      +'<div style="position:relative;background:'+_bBg+';border:1px solid '+_bBdr+';border-radius:4px 14px 14px 14px;padding:8px 11px;margin-bottom:4px">'
-      +'<div style="position:absolute;top:0;left:-6px;width:0;height:0;border-top:8px solid '+_bBg+';border-left:7px solid transparent"></div>'
-      +'<div class="mc-text" style="font-size:'+txtSz+';line-height:1.55;color:'+_bTxt+'">'+_escHtml(m.text||'')+'</div>'
+      +'<div class="'+bubbleClass+'">'
+      +'<div class="mc-text" style="font-size:'+txtSz+';line-height:1.55">'+_escHtml(m.text||'')+'</div>'
       +'</div>'
       +'</div>'
       +'<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0">'

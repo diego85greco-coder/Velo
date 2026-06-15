@@ -11027,3 +11027,79 @@ body.r-dark #homeDailyShareBtn {
   background: linear-gradient(135deg,#0e5c38 0%,#0a7848 45%,#075c35 100%) !important;
   box-shadow: 0 6px 26px rgba(8,100,55,.60), 0 2px 8px rgba(8,100,55,.30), inset 0 1px 0 rgba(255,255,255,.15) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v791 — Speech bubble classes: CSS-driven colors (no JS inline styles)
+   Eliminates FOUC when dark mode class is applied after card render
+   ══════════════════════════════════════════════════════════════════ */
+
+/* DQ daily-question feed bubbles */
+.dq-bubble {
+  position: relative;
+  background: rgba(116,198,157,.22);
+  border: 1px solid rgba(116,198,157,.35);
+  border-radius: 4px 14px 14px 14px;
+  padding: 9px 12px;
+  margin-bottom: 6px;
+}
+.dq-bubble::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -6px;
+  width: 0; height: 0;
+  border-top: 8px solid rgba(116,198,157,.22);
+  border-left: 7px solid transparent;
+}
+body.r-dark .dq-bubble {
+  background: rgba(116,198,157,.18);
+  border-color: rgba(255,255,255,.08);
+}
+body.r-dark .dq-bubble::before {
+  border-top-color: rgba(116,198,157,.18);
+}
+.dq-bubble-text {
+  font-size: 14px;
+  line-height: 1.5;
+  font-style: italic;
+  font-family: 'Cormorant Garamond', serif;
+  color: rgba(20,60,35,.82);
+}
+body.r-dark .dq-bubble-text { color: rgba(255,255,255,.85); }
+.dq-feed-name { color: rgba(20,60,35,.72); }
+body.r-dark .dq-feed-name { color: rgba(255,255,255,.70) !important; }
+
+/* Momento / Muro Feliz bubbles */
+.mc-bubble {
+  position: relative;
+  background: rgba(116,198,157,.22);
+  border: 1px solid rgba(80,160,100,.30);
+  border-radius: 4px 14px 14px 14px;
+  padding: 8px 11px;
+  margin-bottom: 4px;
+}
+.mc-bubble::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -6px;
+  width: 0; height: 0;
+  border-top: 8px solid rgba(116,198,157,.22);
+  border-left: 7px solid transparent;
+}
+.mc-bubble.mc-happy {
+  background: rgba(255,220,60,.22);
+  border-color: rgba(180,140,10,.28);
+}
+.mc-bubble.mc-happy::before { border-top-color: rgba(255,220,60,.22); }
+body.r-dark .mc-bubble {
+  background: rgba(116,198,157,.14);
+  border-color: rgba(116,198,157,.22);
+}
+body.r-dark .mc-bubble::before { border-top-color: rgba(116,198,157,.14); }
+body.r-dark .mc-bubble.mc-happy {
+  background: rgba(200,165,45,.16);
+  border-color: rgba(220,185,60,.24);
+}
+body.r-dark .mc-bubble.mc-happy::before { border-top-color: rgba(200,165,45,.16); }
+.mc-text { color: rgba(20,60,30,.88) !important; }
+body.r-dark .mc-text { color: rgba(255,255,255,.85) !important; }
+.mc-bubble.mc-happy .mc-text { color: rgba(55,35,5,.88) !important; }
