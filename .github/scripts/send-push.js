@@ -1,11 +1,11 @@
 const webpush = require('web-push');
 const { createClient } = require('@supabase/supabase-js');
 
-const VAPID_PUBLIC_KEY  = process.env.VAPID_PUBLIC_KEY;
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
-const VAPID_SUBJECT     = process.env.VAPID_SUBJECT || 'mailto:diego85greco@gmail.com';
-const SUPABASE_URL      = process.env.SUPABASE_URL;
-const SUPABASE_KEY      = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const VAPID_PUBLIC_KEY  = (process.env.VAPID_PUBLIC_KEY  || '').trim();
+const VAPID_PRIVATE_KEY = (process.env.VAPID_PRIVATE_KEY || '').trim();
+const VAPID_SUBJECT     = (process.env.VAPID_SUBJECT     || 'mailto:diego85greco@gmail.com').trim();
+const SUPABASE_URL      = (process.env.SUPABASE_URL      || '').trim();
+const SUPABASE_KEY      = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 
 if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Missing required environment variables');
