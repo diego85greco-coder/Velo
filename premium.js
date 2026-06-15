@@ -2667,14 +2667,17 @@ function _loadHomeMemoryCard(){
   var labelMap = {'😄':'Muy bien','😊':'Bien','😐':'Regular','😞':'Bajo','😢':'Difícil'};
   var moodLabel = found.label || labelMap[found.emoji] || '';
   el.style.display = 'block';
+  var _isDk = document.body.classList.contains('r-dark');
+  var _agoClr = _isDk ? 'rgba(200,158,56,.70)' : 'rgba(120,88,15,.72)';
+  var _verClr = _isDk ? 'rgba(200,158,56,.75)' : 'rgba(120,88,15,.80)';
   el.innerHTML = '<div style="background:linear-gradient(135deg,rgba(200,158,56,.14),rgba(178,138,18,.09));border:1.5px solid rgba(200,158,56,.35);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:default">'
     + '<div style="font-size:28px;line-height:1;flex-shrink:0">'+found.emoji+'</div>'
     + '<div style="flex:1;min-width:0">'
-    + '<div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(200,158,56,.70);margin-bottom:3px">✨ '+daysLabel+'</div>'
+    + '<div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:'+_agoClr+';margin-bottom:3px">✨ '+daysLabel+'</div>'
     + '<div style="font-size:13px;font-weight:600;color:var(--ink2)">Te sentías <strong>'+moodLabel+'</strong>'+(found.note?'':'')+'</div>'
     + (found.note ? '<div style="font-size:11px;color:var(--ink4);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+found.note.slice(0,60)+'</div>' : '')
     + '</div>'
-    + '<div onclick="pGoTo(\'mood\')" style="font-size:10px;font-weight:700;color:rgba(200,158,56,.75);cursor:pointer;white-space:nowrap;flex-shrink:0">Ver →</div>'
+    + '<div onclick="pGoTo(\'mood\')" style="font-size:10px;font-weight:700;color:'+_verClr+';cursor:pointer;white-space:nowrap;flex-shrink:0">Ver →</div>'
     + '</div>';
 }
 
@@ -18400,6 +18403,15 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
   if(!feed) return;
   var myHash=_momentoUserHash();
   var isHome = feedId === 'homeMomentoFeed';
+  var isHappy = feedId === 'homeHappyFeed' || feedId === 'happyFullFeed';
+  var isDark = document.body.classList.contains('r-dark');
+  var _bBg  = isHappy
+    ? (isDark ? 'rgba(200,165,45,.16)' : 'rgba(255,220,60,.22)')
+    : (isDark ? 'rgba(116,198,157,.14)' : 'rgba(116,198,157,.22)');
+  var _bBdr = isHappy
+    ? (isDark ? 'rgba(220,185,60,.24)' : 'rgba(180,140,10,.28)')
+    : (isDark ? 'rgba(116,198,157,.22)' : 'rgba(80,160,100,.30)');
+  var _bTxt = isDark ? 'rgba(255,255,255,.85)' : (isHappy ? 'rgba(55,35,5,.88)' : 'rgba(20,60,30,.88)');
   // Filter out locally reported momentos (always, on all views)
   var reported = {};
   try{ reported = JSON.parse(safeLS('get','velo_momento_reported')||'{}'); }catch(e){}
@@ -18430,14 +18442,17 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var txtSz   = isHome ? '12px' : '14px';
     return '<div class="momento-card" style="border-radius:14px;padding:'+cardPad+';margin-bottom:8px;animation:p-fadeIn .3s ease">'
       +'<div style="display:flex;align-items:flex-start;gap:9px">'
-      +'<span style="font-size:'+emojiSz+';flex-shrink:0;line-height:1;margin-top:1px">'+(m.emoji||'💭')+'</span>'
+      +'<span style="font-size:'+emojiSz+';flex-shrink:0;line-height:1;margin-top:4px">'+(m.emoji||'💭')+'</span>'
       +'<div style="flex:1;min-width:0">'
-      +'<div class="mc-text" style="font-size:'+txtSz+';line-height:1.55;margin-bottom:6px">'+_escHtml(m.text||'')+'</div>'
-      +'<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">'
       +'<span class="mc-label" style="font-size:10px;font-style:italic">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
       +'<span class="mc-time" style="font-size:9px">'+_momentoAgo(m.created_at)+'</span>'
       +'<span class="mc-time" style="font-size:9px">⏱ '+timeLeft+'h</span>'
       +(mine?'<span class="mc-mine" style="font-size:9px;font-weight:700">· tuyo</span>':'')
+      +'</div>'
+      +'<div style="position:relative;background:'+_bBg+';border:1px solid '+_bBdr+';border-radius:4px 14px 14px 14px;padding:8px 11px;margin-bottom:4px">'
+      +'<div style="position:absolute;top:0;left:-6px;width:0;height:0;border-top:8px solid '+_bBg+';border-left:7px solid transparent"></div>'
+      +'<div class="mc-text" style="font-size:'+txtSz+';line-height:1.55;color:'+_bTxt+'">'+_escHtml(m.text||'')+'</div>'
       +'</div>'
       +'</div>'
       +'<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0">'

@@ -1840,16 +1840,16 @@ body.r-dark #pg-dm-chat .feed-send-btn {
   background: rgba(180,40,40,.90) !important;
 }
 
-/* ── Topbar logo: dominant over nav buttons ──────────────────────── */
-.p-topbar { min-height: 82px !important; }
+/* ── Topbar logo ─────────────────────────────────────────────────── */
+.p-topbar { min-height: 56px !important; }
 .p-topbar-logo-img {
-  height: 80px !important;
+  height: 38px !important;
   width: auto !important;
-  max-width: 220px !important;
+  max-width: 160px !important;
   object-fit: contain !important;
 }
 body.r-dark .p-topbar-logo-img {
-  filter: brightness(1.15) drop-shadow(0 1px 12px rgba(116,198,157,.35)) !important;
+  filter: drop-shadow(0 1px 8px rgba(116,198,157,.25)) !important;
 }
 
 /* ── Hero stats: adaptive light/dark ─────────────────────────────── */
@@ -2145,20 +2145,20 @@ body.r-dark #guardianSubLabel {
   }
 }
 
-/* ── v163: Logo 2× bigger + taller topbar ───────────────────────── */
+/* ── v163: Topbar (restored compact size) ───────────────────────── */
 .p-topbar {
   height: auto !important;
-  min-height: 130px !important;
-  padding: max(env(safe-area-inset-top,0px),10px) 18px 10px !important;
+  min-height: 56px !important;
+  padding: max(env(safe-area-inset-top,0px),8px) 16px 8px !important;
 }
 .p-topbar-logo-img {
-  height: 110px !important;
+  height: 38px !important;
   width: auto !important;
-  max-width: 280px !important;
+  max-width: 160px !important;
   object-fit: contain !important;
 }
 body.r-dark .p-topbar-logo-img {
-  filter: brightness(1.15) drop-shadow(0 1px 14px rgba(116,198,157,.40)) !important;
+  filter: drop-shadow(0 1px 8px rgba(116,198,157,.25)) !important;
 }
 
 /* ── v163: Light mode card text contrast ─────────────────────────── */
@@ -2681,17 +2681,17 @@ body.r-dark #pg-profile #profileStatusCard [style*="color:var(--ink)"] {
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   v169: MOBILE TOPBAR — compact but logo clearly visible
+   v169: MOBILE TOPBAR — compact
    ══════════════════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
   .p-topbar {
-    min-height: 88px !important;
+    min-height: 56px !important;
     height: auto !important;
     padding: max(env(safe-area-inset-top,0px), 8px) 16px 8px !important;
   }
   .p-topbar-logo-img {
-    height: 72px !important;
-    max-width: 220px !important;
+    height: 38px !important;
+    max-width: 160px !important;
     width: auto !important;
     object-fit: contain !important;
   }
