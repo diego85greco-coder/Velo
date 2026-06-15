@@ -1857,7 +1857,7 @@ function _renderHomePushBanner(){
   } else if(!isStandalone && isMobile){
     banner.style.display = 'flex';
     if(icon) icon.textContent = '📲';
-    if(txt)  txt.textContent  = 'Agregá Velo a tu pantalla de inicio para usarla como app con acceso directo. Desde ahí también podés activar las notificaciones 📣';
+    if(txt)  txt.textContent  = 'Agregá Velo a tu pantalla de inicio para usarla como cualquier app de tu teléfono. Desde ahí también podés activar las notificaciones 📣';
     if(btn){ btn.textContent = '¿Cómo?'; btn.setAttribute('data-action', isIOSSafari ? 'how-ios' : 'how-android'); }
   } else if(isStandalone && hasNotifAPI && perm !== 'granted'){
     banner.style.display = 'flex';
