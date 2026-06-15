@@ -680,6 +680,11 @@ async function _sbSyncProfile(userId){
       safeLS('set','velo_visit_days', JSON.stringify(_merged));
       _updateHomeStreak();
     }
+    // Push merged array back to Supabase if local had more days than SB
+    // (prevents data loss when SB was behind and user later clears local cache)
+    if(_merged.length > p.visit_days.length){
+      setTimeout(function(){ _pushVisitCountToSB(_getVisitDayCount()); }, 1500);
+    }
   }
   if(p.role === 'plus'){
     sbClient.from('profiles').select('plus_expires_at').eq('id',userId).limit(1)
@@ -2555,15 +2560,24 @@ async function _pullVisitCountFromSB(){
   var uid = _myUserId();
   if(!sbClient || !uid || uid === 'guest') return;
   try{
-    var r = await sbClient.from('profiles').select('visit_day_count').eq('id', uid).maybeSingle();
+    var r = await sbClient.from('profiles').select('visit_day_count,visit_days').eq('id', uid).maybeSingle();
     if(r.error || !r.data) return;
     var sbCount = parseInt(r.data.visit_day_count || 0, 10);
     if(sbCount > 0){
       safeLS('set','velo_visit_day_count_sb', String(sbCount));
-      // Push local if local days > Supabase (so Supabase always has the highest)
-      var localCount = _getVisitDayCount();
-      if(localCount > sbCount) _pushVisitCountToSB(localCount);
     }
+    // Merge SB visit_days into local so consecutive streak survives cache clears
+    if(r.data.visit_days && Array.isArray(r.data.visit_days) && r.data.visit_days.length){
+      var _localDays2 = []; try{ _localDays2 = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
+      var _merged2 = _localDays2.slice();
+      r.data.visit_days.forEach(function(d){ if(_merged2.indexOf(d) < 0) _merged2.push(d); });
+      if(_merged2.length > _localDays2.length){
+        safeLS('set','velo_visit_days', JSON.stringify(_merged2));
+      }
+    }
+    // Push local if local has more days than SB
+    var localCount = _getVisitDayCount();
+    if(localCount > sbCount) _pushVisitCountToSB(localCount);
     // Always refresh the UI so both devices show the same number
     _updateHomeStreak();
   }catch(e){} // Column may not exist yet — ignore
