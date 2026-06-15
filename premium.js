@@ -10447,7 +10447,7 @@ function pLoadProfile(){
   var _prRow = document.getElementById('profilePushRow');
   if(_prRow){ _prRow.style.display = 'block'; _updateEditPushUI(); }
 
-  // Stats — count distinct days with a mood record (most accurate definition of "days registered")
+  // Stats — count distinct mood-recording days (local first for instant display, Supabase in background)
   var _moodDayCount = 0;
   var _today = new Date();
   for(var _mi = 0; _mi < 730; _mi++){
@@ -10455,7 +10455,9 @@ function pLoadProfile(){
     var _mdk = _md.getFullYear()+'-'+String(_md.getMonth()+1).padStart(2,'0')+'-'+String(_md.getDate()).padStart(2,'0');
     if(safeLS('get','velo_mood_'+_mdk)) _moodDayCount++;
   }
-  _setEl('profileDays', Math.max(1, _moodDayCount));
+  // Also compare with cached Supabase count so cross-device sync works
+  var _sbMoodCache = parseInt(safeLS('get','velo_mood_day_count_sb')||'0', 10);
+  _setEl('profileDays', Math.max(1, _moodDayCount, _sbMoodCache));
   var _locHelped = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
   var _locRecv   = parseInt(safeLS('get','velo_help_received')||'0', 10);
   _setEl('profileChats',    _locHelped + _locRecv);
@@ -10465,6 +10467,17 @@ function pLoadProfile(){
   _initSupabase();
   var _pUid = safeLS('get','velo_user_id');
   if(sbClient && _pUid){
+    // Fetch Supabase mood-day count in background (cross-device persistence)
+    sbClient.from('mood_entries').select('date_key', {count:'exact', head:true}).eq('user_id', _pUid)
+      .then(function(r){
+        var sbMoodDays = (r && r.count != null) ? r.count : 0;
+        if(sbMoodDays > 0){
+          safeLS('set','velo_mood_day_count_sb', String(sbMoodDays));
+          var _cur = parseInt(document.getElementById('profileDays') ? (document.getElementById('profileDays').textContent||'0') : '0', 10);
+          if(sbMoodDays > _cur) _setEl('profileDays', sbMoodDays);
+        }
+      }).catch(function(){});
+
     Promise.all([
       sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('guardian_id', _pUid).eq('status','ended'),
       sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('seeker_id',   _pUid).eq('status','ended'),
