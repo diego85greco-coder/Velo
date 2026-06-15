@@ -7897,6 +7897,8 @@ async function pSaveMood(){
 
   _loadMoodCalendar();
   _loadTodayMoodHome();
+  _renderHomeWeekMoodGraph().catch(function(){});
+  _updateHomeStreak();
 
   // Check if 1st of month — send monthly analysis
   _checkMonthlyMoodReport();
@@ -17931,39 +17933,49 @@ async function _renderHomeWeekMoodGraph(){
   var dayNames = ['D','L','M','M','J','V','S'];
   var moodColors = {'😄':'rgba(116,198,157,.9)','😊':'rgba(116,198,157,.65)','😐':'rgba(200,160,80,.7)','😞':'rgba(180,90,90,.7)','😢':'rgba(160,70,70,.8)'};
   var moodBgs    = {'😄':'rgba(116,198,157,.22)','😊':'rgba(116,198,157,.14)','😐':'rgba(200,160,80,.14)','😞':'rgba(180,90,90,.11)','😢':'rgba(160,70,70,.14)'};
-  // Build set of months covered by last 7 days (may span two months)
+
+  function _buildGraphHtml(sbMap){
+    var days = [];
+    for(var i=6; i>=0; i--){
+      var d = new Date(today.getFullYear(), today.getMonth(), today.getDate()-i);
+      var key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      var mood = null;
+      try{ mood = JSON.parse(safeLS('get','velo_mood_'+key)||'null'); }catch(e){}
+      if(!mood && sbMap && sbMap[key]) mood = sbMap[key];
+      days.push({ dayName:dayNames[d.getDay()], mood:mood, isToday:i===0 });
+    }
+    return days.map(function(d){
+      var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.5)') : 'rgba(116,198,157,.60)';
+      var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.1)') : 'rgba(116,198,157,.12)';
+      var ring  = d.isToday ? 'border:2.5px solid '+color+';box-shadow:0 0 8px '+color+';' : 'border:1.5px solid '+color+';';
+      var emoji = d.mood ? d.mood.emoji : '·';
+      var cls   = 'mood-day-circle'+(d.mood?'':' mood-day-empty')+(d.isToday?' mood-day-today':'');
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:'Sin registro')+'">'
+        +'<div class="'+cls+'" style="width:34px;height:34px;border-radius:50%;'+ring+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'17':'11')+'px;transition:.2s">'+emoji+'</div>'
+        +'<span style="font-size:8px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
+        +'</div>';
+    }).join('');
+  }
+
+  // Render immediately from localStorage (instant, no waiting)
+  container.innerHTML = _buildGraphHtml(null);
+
+  // Then silently update from Supabase in background
   var _months = {};
   for(var _mi=0; _mi<7; _mi++){
     var _md = new Date(today.getFullYear(), today.getMonth(), today.getDate()-_mi);
     var _mk = _md.getFullYear()+'-'+String(_md.getMonth()+1).padStart(2,'0');
     if(!_months[_mk]) _months[_mk] = {year:_md.getFullYear(), month:_md.getMonth()+1};
   }
-  // Load from Supabase for each relevant month and build fallback map
   var _sbMap = {};
   await Promise.all(Object.values(_months).map(async function(m){
     var sbData = await sbLoadAllMoods(m.year, m.month);
     if(sbData) sbData.forEach(function(e){ _sbMap[e.date_key] = e; });
   }));
-  var days = [];
-  for(var i=6; i>=0; i--){
-    var d = new Date(today.getFullYear(), today.getMonth(), today.getDate()-i);
-    var key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    var mood = null;
-    try{ mood = JSON.parse(safeLS('get','velo_mood_'+key)||'null'); }catch(e){}
-    if(!mood && _sbMap[key]) mood = _sbMap[key];
-    days.push({ dayName:dayNames[d.getDay()], mood:mood, isToday:i===0 });
+  // Only re-render if Supabase added data not in localStorage
+  if(Object.keys(_sbMap).length > 0 && document.getElementById('homeWeekMoodGraph')){
+    document.getElementById('homeWeekMoodGraph').innerHTML = _buildGraphHtml(_sbMap);
   }
-  container.innerHTML = days.map(function(d){
-    var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.5)') : 'rgba(116,198,157,.60)';
-    var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.1)') : 'rgba(116,198,157,.12)';
-    var ring  = d.isToday ? 'border:2.5px solid '+color+';box-shadow:0 0 8px '+color+';' : 'border:1.5px solid '+color+';';
-    var emoji = d.mood ? d.mood.emoji : '·';
-    var cls   = 'mood-day-circle'+(d.mood?'':' mood-day-empty')+(d.isToday?' mood-day-today':'');
-    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:'Sin registro')+'">'
-      +'<div class="'+cls+'" style="width:34px;height:34px;border-radius:50%;'+ring+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'17':'11')+'px;transition:.2s">'+emoji+'</div>'
-      +'<span style="font-size:8px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
-      +'</div>';
-  }).join('');
 }
 
 // ── DIARY PROMPTS ─────────────────────────────────────────────
