@@ -10660,27 +10660,21 @@ function _closeIOSPushModal(){
   if(ov) ov.style.display = 'none';
 }
 
-async function pTogglePushNotifications(){
-  if(!('Notification' in window) || !('serviceWorker' in navigator)){
-    _showIOSPushModal(); return;
-  }
-  var hasSub = !!safeLS('get','velo_push_sub');
-  var perm   = Notification.permission;
-  if(perm === 'denied'){ pToast('🔕','Activálas desde ajustes del navegador'); return; }
-  if(hasSub){
-    // Deactivate: remove subscription from Supabase and locally
-    safeLS('del','velo_push_sub');
-    safeLS('del','velo_push_granted');
-    var _uid = safeLS('get','velo_user_id');
-    if(sbClient && _uid){ try{ await sbClient.from('profiles').update({ push_subscription: null }).eq('id',_uid); }catch(e){} }
-    pToast('🔕','Notificaciones desactivadas');
-    _updateEditPushUI(); return;
-  }
-  // Need to subscribe
-  if(perm !== 'granted'){
-    var _p = await Notification.requestPermission();
-    if(_p !== 'granted'){ _updateEditPushUI(); return; }
-  }
+function _showAndroidPushModal(){
+  var ov = document.getElementById('androidPushInstrOv');
+  if(ov) ov.style.display = 'flex';
+}
+function _closeAndroidPushModal(){
+  var ov = document.getElementById('androidPushInstrOv');
+  if(ov) ov.style.display = 'none';
+}
+async function _androidPushConfirm(){
+  _closeAndroidPushModal();
+  var _p = await Notification.requestPermission();
+  if(_p !== 'granted'){ _updateEditPushUI(); return; }
+  await _doPushSubscribe();
+}
+async function _doPushSubscribe(){
   pToast('🔔','¡Notificaciones activadas! Te avisamos una vez por día 💚');
   safeLS('set','velo_push_granted','1');
   try{
@@ -10690,6 +10684,28 @@ async function pTogglePushNotifications(){
     safeLS('set','velo_push_sub', JSON.stringify(_sub));
   }catch(e){ console.warn('[push toggle subscribe]',e); }
   _updateEditPushUI();
+}
+
+async function pTogglePushNotifications(){
+  if(!('Notification' in window) || !('serviceWorker' in navigator)){
+    _showIOSPushModal(); return;
+  }
+  var hasSub = !!safeLS('get','velo_push_sub');
+  var perm   = Notification.permission;
+  if(perm === 'denied'){ pToast('🔕','Activálas desde ajustes del navegador'); return; }
+  if(hasSub){
+    safeLS('del','velo_push_sub');
+    safeLS('del','velo_push_granted');
+    var _uid = safeLS('get','velo_user_id');
+    if(sbClient && _uid){ try{ await sbClient.from('profiles').update({ push_subscription: null }).eq('id',_uid); }catch(e){} }
+    pToast('🔕','Notificaciones desactivadas');
+    _updateEditPushUI(); return;
+  }
+  if(perm === 'default'){
+    _showAndroidPushModal(); return;
+  }
+  // perm === 'granted' but no local subscription yet
+  await _doPushSubscribe();
 }
 
 async function pSaveProfile(){

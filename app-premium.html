@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="766">
+  <meta name="app-version" content="767">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -3709,6 +3709,31 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
     <button onclick="_closePulseDetail()" style="width:100%;margin-top:18px;padding:12px;border-radius:14px;border:1.5px solid rgba(255,255,255,.1);background:transparent;color:var(--ink4);font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button>
   </div>
 </div>
+<!-- ── ANDROID/CHROME PRE-PERMISSION BOTTOM SHEET ────────────────── -->
+<div id="androidPushInstrOv" style="display:none;position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center" onclick="if(event.target===this)_closeAndroidPushModal()">
+  <div style="width:100%;max-width:480px;background:var(--card);border-radius:24px 24px 0 0;padding:8px 24px 48px">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:12px auto 22px"></div>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:36px;margin-bottom:8px">🔔</div>
+      <div style="font-size:17px;font-weight:700;color:var(--ink);font-family:'Cormorant Garamond',serif;margin-bottom:6px">Activar notificaciones</div>
+      <div style="font-size:13px;color:var(--ink4);line-height:1.5">Velo te va a enviar un recordatorio diario para registrar cómo te sentís. Tu navegador te va a pedir permiso a continuación.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px">
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.08);border-radius:14px;padding:12px 14px">
+        <div style="font-size:22px;flex-shrink:0">🕐</div>
+        <div style="font-size:13px;color:var(--ink3);line-height:1.4">Un solo aviso por día, a las 12:00 del mediodía</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.08);border-radius:14px;padding:12px 14px">
+        <div style="font-size:22px;flex-shrink:0">🔕</div>
+        <div style="font-size:13px;color:var(--ink3);line-height:1.4">Podés desactivarlos cuando quieras desde tu perfil</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="_closeAndroidPushModal()" style="flex:1;padding:13px;border-radius:14px;border:1.5px solid rgba(255,255,255,.12);background:transparent;color:var(--ink4);font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Ahora no</button>
+      <button onclick="_androidPushConfirm()" style="flex:2;padding:13px;border-radius:14px;border:none;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Activar 💚</button>
+    </div>
+  </div>
+</div>
 <!-- ── iOS PUSH INSTRUCTIONS BOTTOM SHEET ────────────────── -->
 <div id="iosPushInstrOv" style="display:none;position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center" onclick="if(event.target===this)_closeIOSPushModal()">
   <div style="width:100%;max-width:480px;background:var(--card);border-radius:24px 24px 0 0;padding:8px 24px 48px">
@@ -3735,8 +3760,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
     <button onclick="_closeIOSPushModal()" style="width:100%;padding:13px;border-radius:14px;border:1.5px solid rgba(255,255,255,.12);background:transparent;color:var(--ink4);font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Entendido</button>
   </div>
 </div>
-<script src="premium.js?v=20260615-766"></script>
-<script src="premium-redesign.js?v=20260615-766"></script>
+<script src="premium.js?v=20260615-767"></script>
+<script src="premium-redesign.js?v=20260615-767"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
