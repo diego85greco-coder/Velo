@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="794">
+  <meta name="app-version" content="795">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -31,7 +31,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="premium.css?v=20260614-746">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260615-794">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260615-795">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -155,7 +155,6 @@
   <button class="p-mobile-nav-item" onclick="pGoTo('inbox');toggleMobileMenu()"><span class="p-mobile-nav-icon">💌</span> Mensajes</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('contact');toggleMobileMenu()"><span class="p-mobile-nav-icon">📞</span> Contacto</button>
   <div style="flex:1"></div>
-  <button class="p-mobile-nav-item" onclick="rToggleDarkMode();toggleMobileMenu()" id="mobileEstiloBtn"><span class="p-mobile-nav-icon">🌙</span> <span id="mobileEstiloLbl">Modo oscuro / claro</span></button>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
 </div>
 
@@ -261,11 +260,6 @@
           <div class="p-user-plan" id="sidebarUserPlan">Plan Gratuito</div>
         </div>
       </div>
-      <button onclick="rToggleDarkMode()" class="p-sidebar-theme-btn" title="Modo claro/oscuro">
-        <span class="r-tbar-sun"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
-        <span class="r-tbar-moon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></span>
-        <span class="p-sidebar-theme-lbl">Estilo</span>
-      </button>
     </div>
   </aside>
 
@@ -284,11 +278,6 @@
           <span id="homeMailBadge" style="display:none;position:absolute;top:-2px;right:-2px;background:#e63946;color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif;pointer-events:none"></span>
         </button>
         <button class="p-topbar-btn" onclick="toggleMobileMenu()" style="flex-shrink:0">☰</button>
-        <button onclick="rToggleDarkMode()" class="r-topbar-theme-btn" title="Modo claro/oscuro">
-          <span class="r-tbar-sun"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
-          <span class="r-tbar-moon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></span>
-          <span class="r-topbar-theme-lbl">Estilo</span>
-        </button>
       </div>
     </header>
 
@@ -3098,12 +3087,9 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         </span>
         <span class="p-bn-label p-bn-sos-label" style="display:none"></span>
       </button>
-      <button class="p-bn-item p-bn-estilo" onclick="rToggleDarkMode()">
-        <span class="p-bn-icon">
-          <span class="r-tbar-sun"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
-          <span class="r-tbar-moon"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></span>
-        </span>
-        <span class="p-bn-label">Estilo</span>
+      <button class="p-bn-item" data-screen="diary" onclick="pGoTo('diary')">
+        <span class="p-bn-icon" style="font-size:23px;line-height:1">📔</span>
+        <span class="p-bn-label" style="line-height:1.15">Tu Diario<br><span style="font-size:9px;font-weight:500;opacity:.78">íntimo</span></span>
       </button>
       <button class="p-bn-item" data-screen="profile" onclick="pGoTo('profile')">
         <span class="p-bn-icon">
@@ -3888,7 +3874,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260615-794"></script>
+<script src="premium.js?v=20260615-795"></script>
 <script src="premium-redesign.js?v=20260615-789"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();

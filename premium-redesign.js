@@ -720,17 +720,9 @@
   }
 
   function initDarkMode() {
-    try {
-      const saved = localStorage.getItem('velo-r-darkmode');
-      if (saved === '1') {
-        applyDarkMode(true);
-      } else if (saved === null) {
-        // Auto-detect system preference on first visit
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        applyDarkMode(prefersDark);
-        localStorage.setItem('velo-r-darkmode', prefersDark ? '1' : '0');
-      }
-    } catch(e) {}
+    // Dark mode is permanent — light mode removed
+    try { localStorage.setItem('velo-r-darkmode', '1'); } catch(e) {}
+    applyDarkMode(true);
   }
 
   if (document.readyState === 'loading') {
@@ -745,24 +737,7 @@
 
 /* ── Dark mode toggle — global (called from HTML onclick) ─────────── */
 function rToggleDarkMode() {
-  var isDark = document.body.classList.toggle('r-dark');
-  try { localStorage.setItem('velo-r-darkmode', isDark ? '1' : '0'); } catch(e) {}
-  if(typeof _syncDarkModeToSB === 'function') _syncDarkModeToSB(isDark);
-  var lbl = document.getElementById('rDarkToggleLbl');
-  if (lbl) lbl.textContent = isDark ? '☀️ Modo claro' : '🌙 Modo oscuro';
-  var icon = document.getElementById('rDarkToggleIcon');
-  if (icon) icon.textContent = isDark ? '☀️' : '🌙';
-  var logoSrc = isDark ? 'assets/logo.png' : 'assets/logo-dark.png';
-  var topLogo = document.querySelector('.p-topbar-logo-img');
-  var sideLogo = document.querySelector('.p-sidebar-logo-img');
-  if (topLogo) topLogo.src = logoSrc;
-  if (sideLogo) sideLogo.src = logoSrc;
-  // Re-render home feed cards so any remaining inline styles pick up the new theme
-  if(typeof _buildHomeDqFeed === 'function') try{ _buildHomeDqFeed(); }catch(e){}
-  if(typeof _initHomeMomento === 'function') try{ _initHomeMomento(); }catch(e){}
-  // Force repaint on iOS Safari — toggling a class doesn't always trigger a repaint
-  document.body.style.webkitTransform = 'translateZ(0)';
-  requestAnimationFrame(function(){ requestAnimationFrame(function(){ document.body.style.webkitTransform = ''; }); });
+  // Dark mode is permanent — this function is a no-op
 }
 
 /* ── Particle animation — firefly + rising embers style ─────────── */
