@@ -582,10 +582,16 @@ async function _sbSyncProfile(userId){
       if(bid.indexOf('survey-') === 0) safeLS('set','velo_read_'+bid,'1');
     });
     if(_delChanged) safeLS('set','velo_inbox_deleted', JSON.stringify(_restoredDel));
-    // Remove any surveys from velo_inbox that were deleted on another device
+    // Remove surveys and weekly summaries deleted on another device, and stale Bronce badge messages
     try{
       var _ib=[]; try{_ib=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e2){}
-      var _ibf=_ib.filter(function(m){ return !(m.tipo==='encuesta' && m.id && _syncedReadIds[m.id]); });
+      var _ibf=_ib.filter(function(m){
+        if(m.tipo==='encuesta' && m.id && _syncedReadIds[m.id]) return false;
+        if(m.id && m.id.indexOf('weekly-') === 0 && _syncedReadIds[m.id]) return false;
+        // Bronce badge messages are "silent" — remove any that slipped through older code
+        if(m.id && m.id.indexOf('badge_bronce_') === 0) return false;
+        return true;
+      });
       if(_ibf.length !== _ib.length) safeLS('set','velo_inbox',JSON.stringify(_ibf));
     }catch(e){}
   }
@@ -767,9 +773,9 @@ async function _sbSyncProfile(userId){
   if(_inPage && _inPage.classList && _inPage.classList.contains('show') && typeof pRenderInbox === 'function'){
     pRenderInbox();
   }
-  // Check survey after sync so _syncedReadIds is fully populated — prevents false-positive
-  // toast on new browsers where Supabase shows survey was already completed on another device
+  // Check survey and weekly summary after sync so _syncedReadIds is fully populated
   if(typeof _checkSurveyDue === 'function') _checkSurveyDue();
+  if(typeof _checkWeeklySummary === 'function') _checkWeeklySummary().catch(function(){});
 }
 
 async function _ensureSbSession(){
@@ -3615,8 +3621,8 @@ async function _grantDiamanteReward(){
 }
 
 function _sendBadgeInboxMsg(badge){
+  if(badge.name === 'Bronce') return; // Bronce is silently awarded — never creates an inbox message
   var catalog = {
-    Bronce:   { asunto:'¡Obtuviste la insignia Bronce! 🥉', cuerpo:'¡Felicitaciones! Ingresaste 5 días distintos a Velo. Como reconocimiento, te otorgamos la insignia Guardián Bronce, que ya aparece en tu perfil. ¡Gracias por ser parte de esta comunidad!' },
     Plata:    { asunto:'¡Insignia Plata desbloqueada! 🥈', cuerpo:'¡Increíble! Completaste 20 conversaciones de acompañamiento. Tu perfil ahora muestra el badge de guardián verificado, visible en toda la comunidad. ¡Seguí así!' },
     Oro:      { asunto:'¡Sos Guardián Oro! 🥇', cuerpo:'¡Felicitaciones! Completaste 40 conversaciones. Ahora podés crear Círculos de Paz y tenés prioridad en el listado de guardianes. ¡Sos un pilar de Velo!' },
     Diamante: { asunto:'¡Insignia Diamante — Leyenda de Velo! 💎🎁', cuerpo:'¡Extraordinario! Completaste 100 conversaciones y alcanzaste el nivel máximo de Velo.\n\nComo reconocimiento especial, te regalamos 3 meses de Velo Plus completamente gratis 🎁 — ya está activado en tu cuenta.\n\nCon Velo Plus tenés acceso ilimitado al acompañante IA Calma, sin restricciones en la Sala de Ayuda, Al Mar y Círculos de Paz, y muchas funciones exclusivas más.\n\n¡Gracias por tu dedicación. Sos una leyenda de nuestra comunidad! 💎' }
@@ -17736,6 +17742,11 @@ async function _checkWeeklySummary(){
   var isSunday = today.getDay() === 0;
   // Only run on Sundays — the 7-day fallback caused unexpected mid-week overlays
   if(!isSunday) return;
+  // Skip if Supabase sync shows this week's summary was already sent/read on another device
+  if(_syncedReadIds['weekly-'+todayKey]){
+    safeLS('set','velo_last_weekly_summary', todayKey);
+    return;
+  }
 
   // Build Supabase fallback map for last 7 days (covers localStorage gaps)
   var _wsMonths = {};
@@ -17782,7 +17793,7 @@ async function _checkWeeklySummary(){
   var userName = (safeLS('get','velo_user_name')||'').split(' ')[0]||'';
   var sinRegistros = weekMoods.length === 0 && weekDiary.length === 0;
   var inbox=[]; try{ inbox=JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
-  var alreadySent = inbox.find(function(m){ return m.id==='weekly-'+todayKey; });
+  var alreadySent = inbox.find(function(m){ return m.id==='weekly-'+todayKey; }) || _syncedReadIds['weekly-'+todayKey];
 
   // ── Compute rich weekly stats ──────────────────────────────
   var _moodScore = {'😄':5,'😊':4,'😐':3,'😞':2,'😢':1};
