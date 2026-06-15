@@ -2162,6 +2162,25 @@ async function _loadDailyMotivationalQuote(){
     }catch(e){ textEl.textContent = cached; return; }
   }
 
+  // Check Supabase for today's quote before calling Gemini (cross-browser sync)
+  _initSupabase();
+  var _sqUid = safeLS('get','velo_user_id');
+  if(sbClient && _sqUid){
+    try{
+      var _sqRes = await sbClient.from('profiles').select('daily_quote_cache').eq('id',_sqUid).limit(1);
+      if(_sqRes.data && _sqRes.data[0] && _sqRes.data[0].daily_quote_cache){
+        var _sqObj = JSON.parse(_sqRes.data[0].daily_quote_cache);
+        if(_sqObj.date === today && _sqObj.text && _sqObj.author && prevTexts.indexOf(_sqObj.text) === -1){
+          safeLS('set', cacheKey, JSON.stringify({text:_sqObj.text,author:_sqObj.author}));
+          textEl.style.opacity = '';
+          textEl.textContent = _sqObj.text;
+          if(authorEl) authorEl.textContent = '— ' + _sqObj.author;
+          return;
+        }
+      }
+    }catch(e){}
+  }
+
   // Show loading skeleton while Gemini generates the quote
   textEl.style.opacity = '.45';
   textEl.textContent = 'Cargando frase del día...';
@@ -2224,6 +2243,10 @@ async function _loadDailyMotivationalQuote(){
   safeLS('set', 'velo_quote_history', JSON.stringify(history.slice(0,30)));
 
   safeLS('set', cacheKey, JSON.stringify(quote));
+  // Save to Supabase so other browsers get the same quote today
+  if(sbClient && _sqUid){
+    sbClient.from('profiles').update({daily_quote_cache: JSON.stringify({date:today,text:quote.text,author:quote.author})}).eq('id',_sqUid).then(function(){}).catch(function(){});
+  }
   textEl.style.opacity = '';
   textEl.textContent   = quote.text;
   if(authorEl) authorEl.textContent = '— ' + quote.author;
