@@ -10447,17 +10447,21 @@ function pLoadProfile(){
   var _prRow = document.getElementById('profilePushRow');
   if(_prRow){ _prRow.style.display = 'block'; _updateEditPushUI(); }
 
-  // Stats — count distinct mood-recording days (local first for instant display, Supabase in background)
-  var _moodDayCount = 0;
+  // Stats — count mood-recording days in the CURRENT month, with dynamic month label
   var _today = new Date();
-  for(var _mi = 0; _mi < 730; _mi++){
-    var _md = new Date(_today.getFullYear(), _today.getMonth(), _today.getDate() - _mi);
-    var _mdk = _md.getFullYear()+'-'+String(_md.getMonth()+1).padStart(2,'0')+'-'+String(_md.getDate()).padStart(2,'0');
+  var _curYear  = _today.getFullYear();
+  var _curMonth = _today.getMonth(); // 0-indexed
+  var _monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var _daysInCurMonth = new Date(_curYear, _curMonth+1, 0).getDate();
+  var _moodDayCount = 0;
+  for(var _di = 1; _di <= _daysInCurMonth; _di++){
+    var _mdk = _curYear+'-'+String(_curMonth+1).padStart(2,'0')+'-'+String(_di).padStart(2,'0');
     if(safeLS('get','velo_mood_'+_mdk)) _moodDayCount++;
   }
-  // Also compare with cached Supabase count so cross-device sync works
-  var _sbMoodCache = parseInt(safeLS('get','velo_mood_day_count_sb')||'0', 10);
-  _setEl('profileDays', Math.max(1, _moodDayCount, _sbMoodCache));
+  var _monthLabel = _monthNames[_curMonth];
+  _setEl('profileDays', _moodDayCount);
+  var _lbl = document.getElementById('profileDaysLbl');
+  if(_lbl) _lbl.innerHTML = 'ÁNIMOS<br>' + _monthLabel.toUpperCase();
   var _locHelped = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
   var _locRecv   = parseInt(safeLS('get','velo_help_received')||'0', 10);
   _setEl('profileChats',    _locHelped + _locRecv);
@@ -10467,13 +10471,14 @@ function pLoadProfile(){
   _initSupabase();
   var _pUid = safeLS('get','velo_user_id');
   if(sbClient && _pUid){
-    // Fetch Supabase mood-day count in background (cross-device persistence)
-    sbClient.from('mood_entries').select('date_key', {count:'exact', head:true}).eq('user_id', _pUid)
+    // Fetch current-month mood count from Supabase in background (cross-device sync)
+    var _sbMonthPrefix = _curYear+'-'+String(_curMonth+1).padStart(2,'0');
+    sbClient.from('mood_entries').select('date_key', {count:'exact', head:true})
+      .eq('user_id', _pUid).like('date_key', _sbMonthPrefix+'%')
       .then(function(r){
         var sbMoodDays = (r && r.count != null) ? r.count : 0;
         if(sbMoodDays > 0){
-          safeLS('set','velo_mood_day_count_sb', String(sbMoodDays));
-          var _cur = parseInt(document.getElementById('profileDays') ? (document.getElementById('profileDays').textContent||'0') : '0', 10);
+          var _cur = parseInt((document.getElementById('profileDays')||{}).textContent||'0', 10);
           if(sbMoodDays > _cur) _setEl('profileDays', sbMoodDays);
         }
       }).catch(function(){});
