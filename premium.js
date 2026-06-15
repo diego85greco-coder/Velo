@@ -3326,15 +3326,17 @@ function _renderShareCard(canvas, logoImg){
   // ── Logo / header ───────────────────────────────────────────────
   var headerEnd; // y where header area ends
   if(logoImg){
-    var lW = 500, lH = Math.round(lW * logoImg.naturalHeight / logoImg.naturalWidth);
-    // Cap logo height to keep content within canvas
-    if(lH > 170){ lW = Math.round(170 * logoImg.naturalWidth / logoImg.naturalHeight); lH = 170; }
-    var lX = (W - lW) / 2, lY = 18;
+    // Source-crop: logo.png is square but content only spans ~15-75% of height
+    // Cropping removes transparent padding → logo appears much wider at same height
+    var _sY0 = Math.round(logoImg.naturalHeight * 0.15);
+    var _sH0 = Math.round(logoImg.naturalHeight * 0.60);
+    var lH = 250, lW = Math.round(lH * logoImg.naturalWidth / _sH0);
+    var lX = (W - lW) / 2, lY = 10;
     ctx.save();
     ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 60;
-    ctx.drawImage(logoImg, lX, lY, lW, lH);
+    ctx.drawImage(logoImg, 0, _sY0, logoImg.naturalWidth, _sH0, lX, lY, lW, lH);
     ctx.restore();
-    ctx.drawImage(logoImg, lX, lY, lW, lH);
+    ctx.drawImage(logoImg, 0, _sY0, logoImg.naturalWidth, _sH0, lX, lY, lW, lH);
     headerEnd = lY + lH + 14;
   } else {
     ctx.textAlign='center';
@@ -6578,19 +6580,20 @@ function _drawShareCanvas(quote, author, logoImg){
 
   // ── Brand header: large dark-mode logo ───────────────────────
   var logoW = 800;
-  var logoH = logoImg ? Math.round(logoW * logoImg.naturalHeight / logoImg.naturalWidth) : 240;
+  // Source-crop: skip ~15% top/25% bottom transparent padding in square logo
+  var _sY1 = logoImg ? Math.round(logoImg.naturalHeight * 0.15) : 0;
+  var _sH1 = logoImg ? Math.round(logoImg.naturalHeight * 0.60) : 0;
+  var logoH = logoImg ? Math.round(logoW * _sH1 / logoImg.naturalWidth) : 240;
   var logoX = (W - logoW) / 2;
   var logoY = 60;
 
   if(logoImg){
-    // Soft sage glow — render at natural colors (dark-mode logo)
     ctx.save();
     ctx.shadowColor = 'rgba(116,198,157,.55)';
     ctx.shadowBlur  = 70;
-    ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
+    ctx.drawImage(logoImg, 0, _sY1, logoImg.naturalWidth, _sH1, logoX, logoY, logoW, logoH);
     ctx.restore();
-    // Crisp pass
-    ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
+    ctx.drawImage(logoImg, 0, _sY1, logoImg.naturalWidth, _sH1, logoX, logoY, logoW, logoH);
   }
 
   // ── "Mi frase del día" label ──────────────────────────────────
