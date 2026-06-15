@@ -94,7 +94,7 @@
     var cardBord = isDarkMode ? 'rgba(116,198,157,.38)'     : 'rgba(80,160,110,.38)';
     var tempClr  = isDarkMode ? '#b8f0d0'                   : '#1a5c38';
     var cityClr  = isDarkMode ? 'rgba(200,240,218,.92)'     : 'rgba(25,80,50,.88)';
-    var editClr  = isDarkMode ? 'rgba(140,210,175,.62)'     : 'rgba(60,140,90,.60)';
+    var editClr  = isDarkMode ? 'rgba(160,225,190,.80)'     : 'rgba(60,140,90,.60)';
     var divClr   = isDarkMode ? 'rgba(116,198,157,.28)'     : 'rgba(80,160,110,.28)';
 
     info.innerHTML = '';
@@ -139,11 +139,11 @@
     var editBtn = document.createElement('div');
     editBtn.textContent = 'Cambiar ciudad ✎';
     editBtn.style.cssText = [
-      'font-size:9px', 'cursor:pointer',
+      'font-size:10.5px', 'cursor:pointer',
       'color:' + editClr,
       'font-family:\'Jost\',sans-serif',
       'letter-spacing:.3px', 'line-height:1',
-      'transition:opacity .15s', 'opacity:.75'
+      'transition:opacity .15s', 'opacity:.90'
     ].join(';');
     editBtn.onmouseover = function(){ editBtn.style.opacity = '1'; };
     editBtn.onmouseout  = function(){ editBtn.style.opacity = '.75'; };
@@ -178,9 +178,10 @@
     var moonLbl = document.createElement('div');
     moonLbl.style.cssText = [
       'font-size:8px',
-      'color:' + (moon.isFull ? (isDarkMode ? 'rgba(255,228,110,.88)' : 'rgba(160,120,0,.80)') : (isDarkMode ? 'rgba(200,230,215,.55)' : 'rgba(40,100,60,.55)')),
+      'color:' + (moon.isFull ? (isDarkMode ? 'rgba(255,228,110,.88)' : 'rgba(160,120,0,.80)') : (isDarkMode ? 'rgba(200,230,215,.78)' : 'rgba(40,100,60,.70)')),
       'font-family:\'Jost\',sans-serif',
       'letter-spacing:.3px', 'line-height:1',
+      'font-size:9px',
       'text-align:center', 'white-space:nowrap'
     ].join(';');
     moonLbl.textContent = moon.name;

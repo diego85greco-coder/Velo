@@ -10769,6 +10769,10 @@ function pOpenEditProfile(){
 function _updateEditPushUI(){
   var perm   = ('Notification' in window) ? Notification.permission : 'unavailable';
   var hasSub = !!safeLS('get','velo_push_sub');
+  // Permission granted but sub lost (cache cleared) — silently recover
+  if(perm === 'granted' && !hasSub && 'serviceWorker' in navigator && 'PushManager' in window){
+    _tryRecoverPushSub();
+  }
   // Update both the edit-profile modal and the profile page toggles
   ['edit','profile'].forEach(function(prefix){
     var btn    = document.getElementById(prefix+'PushBtn');
@@ -10786,12 +10790,33 @@ function _updateEditPushUI(){
       status.textContent = 'Activadas — recibís un aviso por día ✓';
       btn.textContent = 'Desactivar'; btn.disabled = false;
       btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(220,80,80,.12);color:rgba(200,60,60,.9)';
+    } else if(perm === 'granted' && !hasSub){
+      status.textContent = 'Activadas — reconectando…';
+      btn.textContent = '…'; btn.disabled = true;
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:default;background:rgba(116,198,157,.10);color:var(--ink4)';
     } else {
       status.textContent = 'No activadas — te avisamos una vez al día';
       btn.textContent = 'Activar'; btn.disabled = false;
       btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
     }
   });
+}
+
+async function _tryRecoverPushSub(){
+  try{
+    var _reg = await navigator.serviceWorker.ready;
+    var _existing = await _reg.pushManager.getSubscription();
+    if(_existing){
+      safeLS('set','velo_push_sub', JSON.stringify(_existing));
+      await _savePushSubscriptionToSupabase(_existing);
+    } else {
+      var _newSub = await _reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
+      safeLS('set','velo_push_sub', JSON.stringify(_newSub));
+      await _savePushSubscriptionToSupabase(_newSub);
+    }
+    _updateEditPushUI();
+    _renderHomePushBanner();
+  }catch(e){ console.warn('[recover push sub]',e); }
 }
 
 function _showIOSPushModal(){
