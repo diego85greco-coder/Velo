@@ -7668,36 +7668,13 @@ async function pSaveDiary(){
   _loadDiaryEntries();
 }
 
-async function _loadDiaryEntries(){
-  var el = document.getElementById('diaryEntries');
-  if(!el) return;
-  // Local storage has full metadata (title, emoji) — prefer it
-  var local = []; try{ local = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
-  var localMap = {};
-  local.forEach(function(e){ if(e.ts != null) localMap[String(e.ts)] = e; });
-  // Supabase for cross-device sync — only add entries not already in local
-  var sbEntries = await sbLoadDiaryEntries();
-  var entries = local.slice();
-  if(sbEntries && sbEntries.length){
-    sbEntries.forEach(function(se){
-      var k = String(se.ts);
-      if(!localMap[k]){
-        // Entry from another device — normalize and add
-        entries.push(Object.assign({}, se, { ts: Number(se.ts)||se.ts, dateLabel: se.date_label||se.dateLabel||'' }));
-      }
-    });
-  }
-  // Normalize any remaining field name differences
-  entries = entries.map(function(e){ return e.dateLabel != null ? e : Object.assign({}, e, { dateLabel: e.date_label || '' }); });
-  _diaryEntries = entries;
-  if(!entries.length){
+function _renderDiaryEntryList(el, entries){
+  if(!entries || !entries.length){
     el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">📔</span><div class="p-empty-title">Aún no tenés entradas</div><div class="p-empty-sub">Este es tu espacio seguro. 🌙</div></div>';
     return;
   }
-  // Sort newest first
-  entries = entries.slice().sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
-  el.innerHTML = entries.map(function(e, i){
-    // Date without time — strip everything after '·' from stored label, or format fresh
+  var sorted = entries.slice().sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
+  el.innerHTML = sorted.map(function(e, i){
     var rawLabel = e.dateLabel || '';
     var dateOnly = rawLabel ? rawLabel.split('·')[0].trim() : new Date(Number(e.ts)).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
     var emojiBadge = e.emoji ? '<span style="font-size:16px">'+e.emoji+'</span>' : '📜';
@@ -7713,6 +7690,34 @@ async function _loadDiaryEntries(){
       +'</div>'
       +'</div>';
   }).join('');
+}
+
+async function _loadDiaryEntries(){
+  var el = document.getElementById('diaryEntries');
+  if(!el) return;
+  // Local storage has full metadata (title, emoji) — prefer it
+  var local = []; try{ local = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
+  var localMap = {};
+  local.forEach(function(e){ if(e.ts != null) localMap[String(e.ts)] = e; });
+  // Render from localStorage immediately — instant, no Supabase wait
+  _diaryEntries = local.slice();
+  _renderDiaryEntryList(el, _diaryEntries);
+  // Supabase for cross-device sync — only add entries not already in local
+  var sbEntries = await sbLoadDiaryEntries();
+  if(!document.getElementById('diaryEntries')) return;
+  var entries = local.slice();
+  if(sbEntries && sbEntries.length){
+    sbEntries.forEach(function(se){
+      var k = String(se.ts);
+      if(!localMap[k]){
+        entries.push(Object.assign({}, se, { ts: Number(se.ts)||se.ts, dateLabel: se.date_label||se.dateLabel||'' }));
+      }
+    });
+  }
+  // Normalize any remaining field name differences
+  entries = entries.map(function(e){ return e.dateLabel != null ? e : Object.assign({}, e, { dateLabel: e.date_label || '' }); });
+  _diaryEntries = entries;
+  _renderDiaryEntryList(el, _diaryEntries);
 }
 
 var _diaryEntries = [];
@@ -9598,7 +9603,8 @@ function _renderAllHappy(list, posts){
     list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">☀️</span><div class="p-empty-title">El muro está vacío</div><div class="p-empty-sub">¡Sé el primero en compartir un momento de alegría!</div></div>';
     return;
   }
-  list.innerHTML = all.map(function(h){ return _happyPostCard(h, false); }).join('');
+  var _myId = _myUserId ? _myUserId() : '';
+  list.innerHTML = all.map(function(h){ return _happyPostCard(h, !!(_myId && h.userId === _myId)); }).join('');
 }
 
 function _renderMyHappy(list, posts, queue, myId){
