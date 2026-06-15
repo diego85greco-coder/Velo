@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="768">
+  <meta name="app-version" content="769">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -3712,56 +3712,56 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
 <!-- ── ANDROID/CHROME PRE-PERMISSION BOTTOM SHEET ────────────────── -->
 <div id="androidPushInstrOv" style="display:none;position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center" onclick="if(event.target===this)_closeAndroidPushModal()">
   <div style="width:100%;max-width:480px;background:var(--card);border-radius:24px 24px 0 0;padding:8px 24px 48px">
-    <div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:12px auto 22px"></div>
+    <div style="width:36px;height:4px;background:rgba(128,128,128,.3);border-radius:2px;margin:12px auto 22px"></div>
     <div style="text-align:center;margin-bottom:20px">
       <div style="font-size:36px;margin-bottom:8px">🔔</div>
       <div style="font-size:17px;font-weight:700;color:var(--ink);font-family:'Cormorant Garamond',serif;margin-bottom:6px">Activar notificaciones</div>
-      <div style="font-size:13px;color:var(--ink4);line-height:1.5">Velo te va a enviar un recordatorio diario para registrar cómo te sentís. Tu navegador te va a pedir permiso a continuación.</div>
+      <div style="font-size:13px;color:var(--ink);opacity:.6;line-height:1.5">Velo te va a enviar un recordatorio diario para registrar cómo te sentís. Tu navegador te va a pedir permiso a continuación.</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px">
-      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.08);border-radius:14px;padding:12px 14px">
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.12);border-radius:14px;padding:12px 14px">
         <div style="font-size:22px;flex-shrink:0">🕐</div>
-        <div style="font-size:13px;color:var(--ink3);line-height:1.4">Un solo aviso por día, a las 12:00 del mediodía</div>
+        <div style="font-size:13px;color:var(--ink);line-height:1.4">Un solo aviso por día, a las 12:00 del mediodía</div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.08);border-radius:14px;padding:12px 14px">
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.12);border-radius:14px;padding:12px 14px">
         <div style="font-size:22px;flex-shrink:0">🔕</div>
-        <div style="font-size:13px;color:var(--ink3);line-height:1.4">Podés desactivarlos cuando quieras desde tu perfil</div>
+        <div style="font-size:13px;color:var(--ink);line-height:1.4">Podés desactivarlos cuando quieras desde tu perfil</div>
       </div>
     </div>
     <div style="display:flex;gap:10px">
-      <button onclick="_closeAndroidPushModal()" style="flex:1;padding:13px;border-radius:14px;border:1.5px solid rgba(255,255,255,.12);background:transparent;color:var(--ink4);font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Ahora no</button>
-      <button onclick="_androidPushConfirm()" style="flex:2;padding:13px;border-radius:14px;border:none;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Activar 💚</button>
+      <button onclick="_closeAndroidPushModal()" style="flex:1;padding:13px;border-radius:14px;border:1.5px solid rgba(128,128,128,.25);background:transparent;color:var(--ink);opacity:.6;font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Ahora no</button>
+      <button onclick="_androidPushConfirm()" style="flex:2;padding:13px;border-radius:14px;border:none;background:linear-gradient(135deg,rgba(116,198,157,.30),rgba(74,160,110,.38));color:rgba(30,100,60,.95);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Activar 💚</button>
     </div>
   </div>
 </div>
 <!-- ── iOS PUSH INSTRUCTIONS BOTTOM SHEET ────────────────── -->
 <div id="iosPushInstrOv" style="display:none;position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center" onclick="if(event.target===this)_closeIOSPushModal()">
   <div style="width:100%;max-width:480px;background:var(--card);border-radius:24px 24px 0 0;padding:8px 24px 48px">
-    <div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:12px auto 22px"></div>
+    <div style="width:36px;height:4px;background:rgba(128,128,128,.3);border-radius:2px;margin:12px auto 22px"></div>
     <div style="text-align:center;margin-bottom:20px">
       <div style="font-size:36px;margin-bottom:8px">🔔</div>
       <div style="font-size:17px;font-weight:700;color:var(--ink);font-family:'Cormorant Garamond',serif;margin-bottom:6px">Activar notificaciones en iPhone</div>
-      <div style="font-size:13px;color:var(--ink4);line-height:1.5">Para recibir el recordatorio diario, primero instalá Velo en tu pantalla de inicio:</div>
+      <div style="font-size:13px;color:var(--ink);opacity:.6;line-height:1.5">Para recibir el recordatorio diario, primero instalá Velo en tu pantalla de inicio:</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px">
-      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.08);border-radius:14px;padding:12px 14px">
-        <div style="width:32px;height:32px;border-radius:50%;background:var(--sage3);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--ink);flex-shrink:0">1</div>
-        <div style="font-size:13px;color:var(--ink3);line-height:1.4">Tocá el botón <strong>Compartir</strong> <span style="font-size:16px">⬆️</span> en la barra de Safari</div>
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.12);border-radius:14px;padding:12px 14px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(116,198,157,.3);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--ink);flex-shrink:0">1</div>
+        <div style="font-size:13px;color:var(--ink);line-height:1.4">Tocá el botón <strong>Compartir</strong> <span style="font-size:16px">⬆️</span> en la barra de Safari</div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.08);border-radius:14px;padding:12px 14px">
-        <div style="width:32px;height:32px;border-radius:50%;background:var(--sage3);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--ink);flex-shrink:0">2</div>
-        <div style="font-size:13px;color:var(--ink3);line-height:1.4">Seleccioná <strong>"Agregar a pantalla de inicio"</strong> 📱</div>
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.12);border-radius:14px;padding:12px 14px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(116,198,157,.3);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--ink);flex-shrink:0">2</div>
+        <div style="font-size:13px;color:var(--ink);line-height:1.4">Seleccioná <strong>"Agregar a pantalla de inicio"</strong> 📱</div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.08);border-radius:14px;padding:12px 14px">
-        <div style="width:32px;height:32px;border-radius:50%;background:var(--sage3);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--ink);flex-shrink:0">3</div>
-        <div style="font-size:13px;color:var(--ink3);line-height:1.4">Abrí Velo desde el ícono en tu pantalla de inicio y activá las notificaciones desde Perfil 💚</div>
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.12);border-radius:14px;padding:12px 14px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(116,198,157,.3);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--ink);flex-shrink:0">3</div>
+        <div style="font-size:13px;color:var(--ink);line-height:1.4">Abrí Velo desde el ícono en tu pantalla de inicio y activá las notificaciones desde Perfil 💚</div>
       </div>
     </div>
-    <button onclick="_closeIOSPushModal()" style="width:100%;padding:13px;border-radius:14px;border:1.5px solid rgba(255,255,255,.12);background:transparent;color:var(--ink4);font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Entendido</button>
+    <button onclick="_closeIOSPushModal()" style="width:100%;padding:13px;border-radius:14px;border:1.5px solid rgba(128,128,128,.25);background:transparent;color:var(--ink);opacity:.7;font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Entendido</button>
   </div>
 </div>
-<script src="premium.js?v=20260615-768"></script>
-<script src="premium-redesign.js?v=20260615-768"></script>
+<script src="premium.js?v=20260615-769"></script>
+<script src="premium-redesign.js?v=20260615-769"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
