@@ -9403,6 +9403,13 @@ async function pRenderHappy(){
   if(!_ta || !_ta.value.trim()) pOpenHappyPost();
   var myId = _myUserId();
 
+  // Show cached posts immediately so the page never looks blank
+  if(_sbHappy && _sbHappy.length){
+    _renderAllHappy(list, _sbHappy);
+  } else {
+    list.innerHTML = '<div style="text-align:center;padding:30px;font-size:12px;color:var(--ink4)">Cargando ☀️…</div>';
+  }
+
   // Load from Supabase (shared wall) or fall back to localStorage
   var sbRows = await _sbLoad('happy_posts', function(q){
     var cutoff = new Date(Date.now()-24*60*60*1000).toISOString();
@@ -18524,7 +18531,24 @@ async function _updateFeedTabCounts(){
 async function _loadHomeHappyFeed(){
   var feed = document.getElementById('homeHappyFeed');
   if(!feed) return;
-  feed.innerHTML = '<div style="text-align:center;padding:16px;font-size:12px;color:var(--ink4)">Cargando…</div>';
+  // Show cached posts immediately while refreshing
+  if(_sbHappy && _sbHappy.length){
+    feed.innerHTML = _sbHappy.slice(0,4).map(function(h){
+      var relTime = _happyRelTime(h.ts);
+      var avHtml = (h.av && (h.av.startsWith('data:')||h.av.startsWith('http')))
+        ? '<img src="'+_escHtml(h.av)+'" style="width:34px;height:34px;border-radius:9px;object-fit:cover;flex-shrink:0">'
+        : '<div style="width:34px;height:34px;border-radius:9px;background:rgba(255,224,102,.22);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">'+(h.anon ? '☀️' : _escHtml(h.av||'☀️'))+'</div>';
+      var nameHtml = h.anon ? '<span style="color:var(--ink5);font-style:italic">Anónimo/a</span>' : '<span>'+_escHtml(h.name||'Guardián/a')+'</span>';
+      return '<div style="display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,200,50,.12)">'
+        + avHtml
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:2px">'+nameHtml+' <span style="font-weight:400;color:var(--ink5)">· '+relTime+'</span></div>'
+        +'<div style="font-size:12.5px;color:var(--ink2);line-height:1.4;word-break:break-word">'+(h.emoji ? h.emoji+' ' : '')+_escHtml(h.text||'')+'</div>'
+        +'</div></div>';
+    }).join('');
+  } else {
+    feed.innerHTML = '<div style="text-align:center;padding:16px;font-size:12px;color:var(--ink4)">Cargando…</div>';
+  }
   _initSupabase();
   var sbRows = await _sbLoad('happy_posts', function(q){
     var cutoff = new Date(Date.now()-24*60*60*1000).toISOString();
