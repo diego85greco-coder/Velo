@@ -9403,9 +9403,15 @@ async function pRenderHappy(){
   if(!_ta || !_ta.value.trim()) pOpenHappyPost();
   var myId = _myUserId();
 
-  // Show cached posts immediately so the page never looks blank
+  // Show cached posts immediately — filter expired ones (>24h) before displaying
+  var _hCutoff = Date.now() - 24*60*60*1000;
+  var _hCached = null;
+  try{ _hCached = JSON.parse(safeLS('get','velo_happy_feed_cache')||'null'); }catch(e){}
+  var _hCachedFresh = _hCached ? _hCached.filter(function(h){ return h.ts > _hCutoff; }) : null;
   if(_sbHappy && _sbHappy.length){
-    _renderAllHappy(list, _sbHappy);
+    _renderAllHappy(list, _sbHappy.filter(function(h){ return h.ts > _hCutoff; }));
+  } else if(_hCachedFresh && _hCachedFresh.length){
+    _renderAllHappy(list, _hCachedFresh);
   } else {
     list.innerHTML = '<div style="text-align:center;padding:30px;font-size:12px;color:var(--ink4)">Cargando ☀️…</div>';
   }
@@ -9427,6 +9433,8 @@ async function pRenderHappy(){
       else _pendingHappyPost = null;
     }
     _sbHappy = posts;
+    // Persist fresh posts to localStorage so next open is instant (strip large fields)
+    try{ safeLS('set','velo_happy_feed_cache', JSON.stringify(posts.slice(0,20).map(function(h){ return {id:h.id,userId:h.userId,name:h.name,av:h.av,anon:h.anon,emoji:h.emoji,text:h.text,ts:h.ts}; }))); }catch(e){}
     // Batch-fetch names/avatars for non-anon authors (also fixes posts saved with empty user_name)
     if(sbClient){
       var _hpUnknown = posts.filter(function(h){ return !h.anon && h.userId && h.userId!=='anon'; }).map(function(h){ return h.userId; }).filter(function(id,i,a){ return a.indexOf(id)===i; });
@@ -18531,9 +18539,12 @@ async function _updateFeedTabCounts(){
 async function _loadHomeHappyFeed(){
   var feed = document.getElementById('homeHappyFeed');
   if(!feed) return;
-  // Show cached posts immediately while refreshing
-  if(_sbHappy && _sbHappy.length){
-    feed.innerHTML = _sbHappy.slice(0,4).map(function(h){
+  // Show cached posts immediately while refreshing (filter expired >24h)
+  var _hwCutoff = Date.now() - 24*60*60*1000;
+  var _hwCache = _sbHappy ? _sbHappy.filter(function(h){ return h.ts > _hwCutoff; }) : [];
+  if(!_hwCache.length){ try{ _hwCache = (JSON.parse(safeLS('get','velo_happy_feed_cache')||'[]')).filter(function(h){ return h.ts > _hwCutoff; }); }catch(e){} }
+  if(_hwCache.length){
+    feed.innerHTML = _hwCache.slice(0,4).map(function(h){
       var relTime = _happyRelTime(h.ts);
       var avHtml = (h.av && (h.av.startsWith('data:')||h.av.startsWith('http')))
         ? '<img src="'+_escHtml(h.av)+'" style="width:34px;height:34px;border-radius:9px;object-fit:cover;flex-shrink:0">'
