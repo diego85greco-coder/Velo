@@ -10151,19 +10151,21 @@ async function pSubmitHappyPost(){
     _happyStatIncr('posts');
     if(post.text) _geminiModerateContent(post.text, 'muro-felicidad');
     pToast('☀️','¡Publicado en el Muro! Desaparece en 24h 💛');
-    // Insert to Supabase so all users see it
+    // Show post immediately — don't wait for Supabase
+    _pendingHappyPost = post;
+    // Insert to Supabase in background (non-blocking)
     _initSupabase();
     if(sbClient){
-      // Never send base64 avatars to Supabase — just use emoji to keep payload small
       var sbAv = (post.av||'').startsWith('data:') ? '🧑' : (post.av||'');
-      var ins = await sbClient.from('happy_posts').insert({ id:post.id,
-        user_id: safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon',
-        user_name: post.name, user_av: sbAv, emoji: post.emoji||'☀️',
+      var _sbUid = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon';
+      sbClient.from('happy_posts').insert({ id:post.id,
+        user_id: _sbUid, user_name: post.name, user_av: sbAv, emoji: post.emoji||'☀️',
         text: post.text||'', photo: post.photo||'', anon: !!isAnon, reactions: post.reactions
-      });
-      if(ins && ins.error) console.error('[happy insert]', ins.error.message, ins.error);
+      }).then(function(ins){
+        if(ins && ins.error) console.error('[happy insert]', ins.error.message, ins.error);
+      }).catch(function(e){ console.error('[happy insert catch]', e); });
       // Also persist to happy_history (permanent — no 24h expiry)
-      var _hisUid = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
+      var _hisUid = _sbUid !== 'anon' ? _sbUid : '';
       if(_hisUid){
         sbClient.from('happy_history').insert({
           id: post.id, user_id: _hisUid,
@@ -10171,8 +10173,6 @@ async function pSubmitHappyPost(){
         }).then(function(){}).catch(function(){});
       }
     }
-    // Inject into pending so pRenderHappy shows it instantly (even if Supabase is slow/fails)
-    _pendingHappyPost = post;
   } else {
     var queue = _happyQueueLoad();
     queue.push(post);
