@@ -10695,12 +10695,24 @@ async function _doPushSubscribe(){
 }
 
 async function pTogglePushNotifications(){
-  if(!('Notification' in window) || !('serviceWorker' in navigator)){
-    _showIOSPushModal(); return;
+  var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  var isStandalone = !!(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches);
+  var hasNotifAPI = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+
+  // iOS Safari (browser, not PWA): must install first
+  if(isIOS && !isStandalone){ _showIOSPushModal(); return; }
+
+  // iOS installed as PWA but OS/browser doesn't support Web Push (< iOS 16.4)
+  if(isIOS && isStandalone && !hasNotifAPI){
+    pToast('📱','Tu versión de iOS no soporta notificaciones. Actualizá a iOS 16.4 o superior.'); return;
   }
+
+  // Non-iOS without Notification API (very old browser)
+  if(!hasNotifAPI){ pToast('🔕','Tu navegador no soporta notificaciones push'); return; }
+
   var hasSub = !!safeLS('get','velo_push_sub');
   var perm   = Notification.permission;
-  if(perm === 'denied'){ pToast('🔕','Activálas desde ajustes del navegador'); return; }
+  if(perm === 'denied'){ pToast('🔕','Bloqueadas — activálas en Configuración > Safari/Notificaciones'); return; }
   if(hasSub){
     safeLS('del','velo_push_sub');
     safeLS('del','velo_push_granted');
@@ -10710,6 +10722,13 @@ async function pTogglePushNotifications(){
     _updateEditPushUI(); return;
   }
   if(perm === 'default'){
+    if(isIOS && isStandalone){
+      // On iOS PWA, request permission directly without the Android pre-permission modal
+      var _ip = await Notification.requestPermission();
+      if(_ip !== 'granted'){ _updateEditPushUI(); return; }
+      await _doPushSubscribe();
+      return;
+    }
     _showAndroidPushModal(); return;
   }
   // perm === 'granted' but no local subscription yet
