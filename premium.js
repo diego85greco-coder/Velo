@@ -1852,7 +1852,7 @@ function _renderHomePushBanner(){
     // iOS Chrome/Firefox: must switch to Safari — no PWA install possible here
     banner.style.display = 'flex';
     if(icon) icon.textContent = '🦁';
-    if(txt)  txt.textContent  = 'Para instalar Velo y activar notificaciones en iPhone, abrí esta página en Safari (no en Chrome ni Firefox)';
+    if(txt)  txt.textContent  = 'En iPhone, solo Safari puede instalar apps con notificaciones — es una limitación de Apple. Abrí heyvelo.app en Safari para continuar 🦁';
     if(btn){ btn.textContent = 'Copiar enlace'; btn.setAttribute('data-action','copy-url'); }
   } else if(!isStandalone && isMobile){
     banner.style.display = 'flex';
