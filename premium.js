@@ -10213,6 +10213,11 @@ async function pSubmitHappyPost(){
   if(body) body.style.display = 'none';
   if(bar) bar.style.display = '';
   pRenderHappy();
+  // Retry after 1.5s to catch Supabase consistency lag
+  setTimeout(function(){
+    var pg = document.getElementById('pg-happy');
+    if(pg && pg.classList.contains('active')) pRenderHappy();
+  }, 1500);
 }
 
 function _renderUserDashboard(){
@@ -18742,6 +18747,7 @@ async function pPostMomento(){
     var c=document.getElementById('momentoCharCount'); if(c) c.textContent='0 / 200';
     pToast('✨','¡Momento publicado! Vivirá 24 horas 🌱');
     _loadMomentoPageFeed();
+    setTimeout(function(){ _loadMomentoPageFeed(); }, 1500);
   }catch(e){pToast('⚠️','Error: '+e.message);}
   if(btn){btn.disabled=false;btn.textContent='Compartir ✨';}
 }
