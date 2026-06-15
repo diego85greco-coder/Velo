@@ -2593,7 +2593,27 @@ function _streakLabel(days){
   return full + (half ? '½' : '') + (full === 1 ? ' mes' : ' meses');
 }
 
+// Backfill velo_visit_days with any day that has a mood record.
+// If the user recorded a mood, they visited — these must always be in sync.
+function _syncMoodDaysToVisitDays(){
+  var days = []; try{ days = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
+  var daySet = {};
+  days.forEach(function(d){ daySet[d] = true; });
+  var changed = false;
+  var today = new Date();
+  for(var i = 0; i < 365; i++){
+    var d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
+    var key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(!daySet[key] && safeLS('get','velo_mood_'+key)){
+      days.push(key); daySet[key] = true; changed = true;
+    }
+  }
+  if(changed) safeLS('set','velo_visit_days', JSON.stringify(days));
+  return changed;
+}
+
 function _updateHomeStreak(){
+  _syncMoodDaysToVisitDays();
   var streak = _getConsecutiveStreak();
   var el = document.getElementById('homeStatStreak');
   if(el) el.textContent = _streakLabel(streak);
@@ -7886,29 +7906,42 @@ async function _moodQVNav(delta){
   if(titleEl) titleEl.textContent = monthNames[nm] + ' ' + ny;
   var calEl = document.getElementById('moodQVCal');
   if(!calEl) return;
-  calEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--ink5);font-size:12px">Cargando…</div>';
   var daysInMonth = new Date(ny, nm+1, 0).getDate();
+
+  function _buildNavCal(mMap){
+    var h='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 auto 16px;max-width:330px">';
+    ['L','M','M','J','V','S','D'].forEach(function(dd){h+='<div style="text-align:center;font-size:9px;font-weight:700;color:var(--ink5);padding:2px 0">'+dd+'</div>';});
+    var fd=new Date(ny,nm,1).getDay(); fd=fd===0?6:fd-1;
+    for(var i=0;i<fd;i++)h+='<div></div>';
+    for(var d2=1;d2<=daysInMonth;d2++){
+      var dk2=''+ny+'-'+String(nm+1).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
+      var ent=mMap[dk2];
+      var isT=ny===now.getFullYear()&&nm===now.getMonth()&&d2===now.getDate();
+      h+='<div style="aspect-ratio:1;border-radius:8px;background:'+(ent?'rgba(116,198,157,.2)':'var(--cream2)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+(isT?'outline:2px solid var(--sage);outline-offset:1px':'')+'">'
+        +'<span style="font-size:9px;color:'+(ent?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+d2+'</span>'
+        +(ent?'<span style="font-size:13px;line-height:1">'+ent.emoji+'</span>':'')+'</div>';
+    }
+    return h+'</div>';
+  }
+
+  // Show from localStorage immediately
   var moodMap = {};
   for(var d=1;d<=daysInMonth;d++){
     var dk=''+ny+'-'+String(nm+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     var st=safeLS('get','velo_mood_'+dk);
     if(st){try{var ms=JSON.parse(st);if(ms.emoji)moodMap[dk]=ms;}catch(e){}}
   }
-  try{var sbM=await sbLoadAllMoods(ny,nm+1);if(sbM)sbM.forEach(function(e){if(e.emoji)moodMap[e.date_key]=e;});}catch(e){}
-  var html='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 auto 16px;max-width:330px">';
-  ['L','M','M','J','V','S','D'].forEach(function(dd){html+='<div style="text-align:center;font-size:9px;font-weight:700;color:var(--ink5);padding:2px 0">'+dd+'</div>';});
-  var fd=new Date(ny,nm,1).getDay(); fd=fd===0?6:fd-1;
-  for(var i=0;i<fd;i++)html+='<div></div>';
-  for(var d2=1;d2<=daysInMonth;d2++){
-    var dk2=''+ny+'-'+String(nm+1).padStart(2,'0')+'-'+String(d2).padStart(2,'0');
-    var ent=moodMap[dk2];
-    var isT=ny===now.getFullYear()&&nm===now.getMonth()&&d2===now.getDate();
-    html+='<div style="aspect-ratio:1;border-radius:8px;background:'+(ent?'rgba(116,198,157,.2)':'var(--cream2)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+(isT?'outline:2px solid var(--sage);outline-offset:1px':'')+'">'
-      +'<span style="font-size:9px;color:'+(ent?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+d2+'</span>'
-      +(ent?'<span style="font-size:13px;line-height:1">'+ent.emoji+'</span>':'')+'</div>';
-  }
-  html+='</div>';
-  calEl.innerHTML=html;
+  calEl.innerHTML = _buildNavCal(moodMap);
+
+  // Update silently from Supabase in background
+  try{
+    var sbM=await sbLoadAllMoods(ny,nm+1);
+    if(sbM && sbM.length){
+      var ch=false;
+      sbM.forEach(function(e){if(e.emoji&&!moodMap[e.date_key]){moodMap[e.date_key]=e;ch=true;}});
+      if(ch && document.getElementById('moodQVCal')) calEl.innerHTML=_buildNavCal(moodMap);
+    }
+  }catch(e){}
 }
 
 async function pOpenMoodQuickView(){
@@ -7923,39 +7956,33 @@ async function pOpenMoodQuickView(){
   var daysInMonth = new Date(year, month+1, 0).getDate();
   var monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  // Build moodMap from localStorage first
+  // Build moodMap from localStorage first (instant)
   var moodMap = {};
   for(var _d=1; _d<=daysInMonth; _d++){
     var _dk = year+'-'+String(month+1).padStart(2,'0')+'-'+String(_d).padStart(2,'0');
     var _st = safeLS('get','velo_mood_'+_dk);
     if(_st){ try{ var _ms=JSON.parse(_st); if(_ms.emoji) moodMap[_dk]=_ms; }catch(e){} }
   }
-  // Merge from Supabase
-  try{
-    var sbMoods = await sbLoadAllMoods(year, month+1);
-    if(sbMoods) sbMoods.forEach(function(e){ if(e.emoji) moodMap[e.date_key]=e; });
-  }catch(e){}
 
-  // If modal was removed while loading, abort
-  if(document.getElementById('moodQuickOv')) return;
-
-  var calHtml = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 auto 16px;max-width:330px">';
-  ['L','M','M','J','V','S','D'].forEach(function(d){
-    calHtml += '<div style="text-align:center;font-size:9px;font-weight:700;color:var(--ink5);padding:2px 0">'+d+'</div>';
-  });
-  var firstDay = new Date(year, month, 1).getDay();
-  firstDay = firstDay === 0 ? 6 : firstDay - 1;
-  for(var i=0; i<firstDay; i++) calHtml += '<div></div>';
-  for(var d=1; d<=daysInMonth; d++){
-    var dk = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    var entry = moodMap[dk];
-    var isToday = d === now.getDate();
-    calHtml += '<div style="aspect-ratio:1;border-radius:8px;background:'+(entry?'rgba(116,198,157,.2)':'var(--cream2)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+(isToday?'outline:2px solid var(--sage);outline-offset:1px':'')+'">'
-      +'<span style="font-size:9px;color:'+(entry?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+d+'</span>'
-      +(entry?'<span style="font-size:13px;line-height:1">'+entry.emoji+'</span>':'')
-      +'</div>';
+  function _buildCalHtml(mMap){
+    var html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 auto 16px;max-width:330px">';
+    ['L','M','M','J','V','S','D'].forEach(function(d){
+      html += '<div style="text-align:center;font-size:9px;font-weight:700;color:var(--ink5);padding:2px 0">'+d+'</div>';
+    });
+    var firstDay = new Date(year, month, 1).getDay();
+    firstDay = firstDay === 0 ? 6 : firstDay - 1;
+    for(var i=0; i<firstDay; i++) html += '<div></div>';
+    for(var d=1; d<=daysInMonth; d++){
+      var dk = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      var entry = mMap[dk];
+      var isToday = d === now.getDate();
+      html += '<div style="aspect-ratio:1;border-radius:8px;background:'+(entry?'rgba(116,198,157,.2)':'var(--cream2)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+(isToday?'outline:2px solid var(--sage);outline-offset:1px':'')+'">'
+        +'<span style="font-size:9px;color:'+(entry?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+d+'</span>'
+        +(entry?'<span style="font-size:13px;line-height:1">'+entry.emoji+'</span>':'')
+        +'</div>';
+    }
+    return html + '</div>';
   }
-  calHtml += '</div>';
 
   // Last 5 mood reports from inbox
   var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
@@ -7973,6 +8000,7 @@ async function pOpenMoodQuickView(){
       + '</div>';
   }
 
+  // Show modal IMMEDIATELY from localStorage — no waiting for Supabase
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
   ov.id = 'moodQuickOv';
@@ -7986,7 +8014,7 @@ async function pOpenMoodQuickView(){
     +'</div>'
     +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--sage2)">🔒 Solo vos podés ver estos registros</div>'
     +'<div style="background:rgba(221,212,245,.15);border:1px solid rgba(196,181,232,.3);border-radius:10px;padding:9px 12px;margin-bottom:14px;font-size:11px;color:var(--ink3);line-height:1.55">✨ La IA genera un reporte mensual con análisis de tus ánimos registrados. Lo recibirás en tu <strong>Buzón Velo</strong> el día 1 de cada mes 💌</div>'
-    +'<div id="moodQVCal">'+ calHtml +'</div>'
+    +'<div id="moodQVCal">'+_buildCalHtml(moodMap)+'</div>'
     + reportsHtml
     +'<div style="height:8px"></div>'
     +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="document.getElementById(\'moodQuickOv\').remove();pGoTo(\'mood\')">Registrar ánimo de hoy ✨</button>'
@@ -7995,6 +8023,19 @@ async function pOpenMoodQuickView(){
     +'</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+
+  // Now fetch from Supabase in background and silently update calendar if more data found
+  try{
+    var sbMoods = await sbLoadAllMoods(year, month+1);
+    if(sbMoods && sbMoods.length){
+      var changed = false;
+      sbMoods.forEach(function(e){ if(e.emoji && !moodMap[e.date_key]){ moodMap[e.date_key]=e; changed=true; } });
+      if(changed){
+        var calEl = document.getElementById('moodQVCal');
+        if(calEl) calEl.innerHTML = _buildCalHtml(moodMap);
+      }
+    }
+  }catch(e){}
 }
 
 // ── SATISFACTION SURVEY (every 90 days) ──────────────────────
@@ -10407,7 +10448,8 @@ function pLoadProfile(){
   var _prRow = document.getElementById('profilePushRow');
   if(_prRow){ _prRow.style.display = 'block'; _updateEditPushUI(); }
 
-  // Stats — show from localStorage first for instant display
+  // Stats — sync mood days first so profileDays matches calendar records
+  _syncMoodDaysToVisitDays();
   var daysReg = _getVisitDayCount() || Math.ceil((Date.now() - (parseInt(safeLS('get','velo_registered_ts')||Date.now(),10))) / 86400000);
   _setEl('profileDays', Math.max(1, daysReg));
   var _locHelped = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
