@@ -3506,7 +3506,7 @@ function _renderShareCard(canvas, logoImg){
   // ── Logo / header ───────────────────────────────────────────────
   var headerEnd; // y where header area ends
   if(logoImg){
-    var lH = 200, lW = 200;
+    var lH = 270, lW = 270;
     var lX = (W - lW) / 2, lY = 20;
     ctx.save();
     ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 60;
@@ -3515,10 +3515,10 @@ function _renderShareCard(canvas, logoImg){
     headerEnd = lY + lH + 14;
   } else {
     ctx.textAlign='center';
-    ctx.font='800 52px Arial,sans-serif';
+    ctx.font='800 68px Arial,sans-serif';
     ctx.fillStyle='rgba(116,198,157,.92)';
-    ctx.fillText('VELO', W/2, 54);
-    headerEnd = 68;
+    ctx.fillText('VELO', W/2, 72);
+    headerEnd = 90;
   }
 
   // Gold separator line below logo / title
