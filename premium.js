@@ -773,9 +773,18 @@ async function _sbSyncProfile(userId){
   if(_inPage && _inPage.classList && _inPage.classList.contains('show') && typeof pRenderInbox === 'function'){
     pRenderInbox();
   }
-  // Check survey and weekly summary after sync so _syncedReadIds is fully populated
+  // Check survey after sync so _syncedReadIds is fully populated
   if(typeof _checkSurveyDue === 'function') _checkSurveyDue();
-  if(typeof _checkWeeklySummary === 'function') _checkWeeklySummary().catch(function(){});
+  // Push any local moods missing from Supabase, then run weekly summary so it has complete data
+  if(typeof _pushMissingMoodsToSb === 'function'){
+    _pushMissingMoodsToSb().then(function(){
+      if(typeof _checkWeeklySummary === 'function') _checkWeeklySummary().catch(function(){});
+    }).catch(function(){
+      if(typeof _checkWeeklySummary === 'function') _checkWeeklySummary().catch(function(){});
+    });
+  } else if(typeof _checkWeeklySummary === 'function'){
+    _checkWeeklySummary().catch(function(){});
+  }
 }
 
 async function _ensureSbSession(){
@@ -1771,6 +1780,41 @@ async function _syncMoodsFromSb(){
   }catch(e){}
 }
 
+// Push any local moods that are missing from Supabase (covers cases where sbSaveMoodEntry failed silently)
+async function _pushMissingMoodsToSb(){
+  _initSupabase();
+  if(!sbClient) return;
+  try{
+    var ok = await _ensureSbSession();
+    if(!ok) return;
+    // Collect last 60 days of local moods
+    var now = new Date();
+    var localMoods = {};
+    var months = {};
+    for(var i=0; i<60; i++){
+      var _ld = new Date(now.getFullYear(), now.getMonth(), now.getDate()-i);
+      var _lk = _ld.getFullYear()+'-'+String(_ld.getMonth()+1).padStart(2,'0')+'-'+String(_ld.getDate()).padStart(2,'0');
+      var _lm = null; try{ _lm = JSON.parse(safeLS('get','velo_mood_'+_lk)||'null'); }catch(e){}
+      if(_lm && _lm.emoji){ localMoods[_lk] = _lm; }
+      var _mk = _ld.getFullYear()+'-'+String(_ld.getMonth()+1).padStart(2,'0');
+      if(!months[_mk]) months[_mk] = {year:_ld.getFullYear(), month:_ld.getMonth()+1};
+    }
+    if(!Object.keys(localMoods).length) return;
+    // Fetch what Supabase already has for those months
+    var sbKeys = {};
+    await Promise.all(Object.values(months).map(async function(m){
+      var rows = await sbLoadAllMoods(m.year, m.month);
+      if(rows) rows.forEach(function(e){ sbKeys[e.date_key] = true; });
+    }));
+    // Push missing ones
+    var toSync = Object.keys(localMoods).filter(function(k){ return !sbKeys[k]; });
+    await Promise.all(toSync.map(function(k){
+      var m = localMoods[k];
+      return sbSaveMoodEntry(k, m.emoji, m.label||'', m.note||'');
+    }));
+  }catch(e){}
+}
+
 // ── HOME DATA ──────────────────────────────────────────────────
 function _loadHomeData(){
   _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
@@ -1902,8 +1946,6 @@ function _loadHomeData(){
   // 7-day mood mini-graph (renders immediately from localStorage, then syncs from Supabase)
   _renderHomeWeekMoodGraph().catch(function(){});
   setTimeout(_syncMoodsFromSb, 800); // sync after auth settles
-  // Weekly summary (runs on Sundays — Buzón message only, no overlay popup)
-  _checkWeeklySummary().catch(function(){});
   // Momento feed (gracefully hidden if table missing)
   setTimeout(_initHomeMomento, 400);
 }
