@@ -3280,7 +3280,7 @@ function _drawShareCard(){
   var canvas = document.getElementById('shareCanvas');
   if(!canvas) return;
   var _logoUrls = [
-    'assets/logo-dark.png',
+    'assets/logo.png',
     'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png.PNG'
   ];
   (function _nextLogo(i){
@@ -3326,9 +3326,9 @@ function _renderShareCard(canvas, logoImg){
   // ── Logo / header ───────────────────────────────────────────────
   var headerEnd; // y where header area ends
   if(logoImg){
-    var lW = 300, lH = Math.round(lW * logoImg.naturalHeight / logoImg.naturalWidth);
+    var lW = 500, lH = Math.round(lW * logoImg.naturalHeight / logoImg.naturalWidth);
     // Cap logo height to keep content within canvas
-    if(lH > 100){ lW = Math.round(100 * logoImg.naturalWidth / logoImg.naturalHeight); lH = 100; }
+    if(lH > 170){ lW = Math.round(170 * logoImg.naturalWidth / logoImg.naturalHeight); lH = 170; }
     var lX = (W - lW) / 2, lY = 18;
     ctx.save();
     ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 60;
@@ -6471,7 +6471,7 @@ function pShareDailyQuote(){
 
   // Try logo URLs in order; first success wins, last failure draws without logo
   var _logoUrls = [
-    'assets/logo-dark.png',
+    'assets/logo.png',
     'https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/Logo-nigth.png.PNG'
   ];
   (function _nextLogo(i){
@@ -6577,7 +6577,7 @@ function _drawShareCanvas(quote, author, logoImg){
   _filigree(W-fp, fy2, -1, -1);
 
   // ── Brand header: large dark-mode logo ───────────────────────
-  var logoW = 640;
+  var logoW = 800;
   var logoH = logoImg ? Math.round(logoW * logoImg.naturalHeight / logoImg.naturalWidth) : 240;
   var logoX = (W - logoW) / 2;
   var logoY = 60;
