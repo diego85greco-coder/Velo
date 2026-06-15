@@ -2613,11 +2613,19 @@ function _syncMoodDaysToVisitDays(){
 }
 
 function _updateHomeStreak(){
-  _syncMoodDaysToVisitDays();
-  var streak = _getConsecutiveStreak();
+  var _mn = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var _t = new Date();
+  var _y = _t.getFullYear(), _m = _t.getMonth();
+  var _dim = new Date(_y, _m + 1, 0).getDate();
+  var _count = 0;
+  for(var _di = 1; _di <= _dim; _di++){
+    var _k = _y+'-'+String(_m+1).padStart(2,'0')+'-'+String(_di).padStart(2,'0');
+    if(safeLS('get','velo_mood_'+_k)) _count++;
+  }
   var el = document.getElementById('homeStatStreak');
-  if(el) el.textContent = _streakLabel(streak);
-  // profileDays is updated by pLoadProfile with direct mood-day count; don't overwrite here
+  if(el) el.textContent = _count;
+  var lbl = document.getElementById('homeStatStreakLbl');
+  if(lbl) lbl.innerHTML = 'Ánimos<br>'+_mn[_m];
 }
 
 function _trackVisitDay(){
