@@ -1830,6 +1830,43 @@ async function _pushMissingMoodsToSb(){
   }catch(e){}
 }
 
+function _renderHomePushBanner(){
+  var banner = document.getElementById('homePushBanner');
+  if(!banner) return;
+  var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  var isMobile = /iPhone|iPad|iPod|Android/.test(navigator.userAgent);
+  var isStandalone = !!(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches);
+  var hasNotifAPI = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+  var hasSub = !!safeLS('get','velo_push_sub');
+  var perm = hasNotifAPI ? Notification.permission : 'default';
+  var icon = document.getElementById('homePushBannerIcon');
+  var txt  = document.getElementById('homePushBannerText');
+  var btn  = document.getElementById('homePushBannerBtn');
+  // Already has sub or denied: never show
+  if(hasSub || perm === 'denied'){ banner.style.display = 'none'; return; }
+  if(!isStandalone && isMobile){
+    // Not installed yet — prompt to add to home screen
+    banner.style.display = 'flex';
+    if(icon) icon.textContent = '📲';
+    if(txt)  txt.textContent  = 'Instalá Velo en tu pantalla de inicio para recibir el recordatorio diario 💚';
+    if(btn){ btn.textContent = '¿Cómo?'; btn.setAttribute('data-action','how'); }
+  } else if(isStandalone && hasNotifAPI && perm !== 'granted'){
+    // Installed but notifications not yet enabled
+    banner.style.display = 'flex';
+    if(icon) icon.textContent = '🔔';
+    if(txt)  txt.textContent  = 'Activá las notificaciones para recibir tu recordatorio diario 💚';
+    if(btn){ btn.textContent = 'Activar'; btn.setAttribute('data-action','activate'); }
+  } else {
+    banner.style.display = 'none';
+  }
+}
+function _homePushBannerAction(){
+  var btn = document.getElementById('homePushBannerBtn');
+  var action = btn ? btn.getAttribute('data-action') : '';
+  if(action === 'how') _showIOSPushModal();
+  else if(action === 'activate') pTogglePushNotifications();
+}
+
 // ── HOME DATA ──────────────────────────────────────────────────
 function _loadHomeData(){
   _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
@@ -1934,6 +1971,7 @@ function _loadHomeData(){
   _renderPersonalizedSuggestions();
   _loadHomeMemoryCard();
   _checkRequestPushPermission();
+  _renderHomePushBanner();
   _loadDailyQ();
   _loadCommunityPulse();
   _loadGuardianActivity();
@@ -10599,7 +10637,7 @@ function _renderBadgesGrid(){
       +'<div style="font-size:12px;font-weight:700;color:'+(reached?'var(--ink)':'var(--ink5)')+'">'+t.name
       +(isCurrent?' <span style="font-size:10px;background:var(--sage6);color:var(--sage);border-radius:100px;padding:1px 7px;margin-left:4px">Actual</span>':'')
       +(minLabel?'  <span style="font-size:10px;color:var(--ink5)">'+minLabel+'</span>':'')+'</div>'
-      +'<div style="font-size:11px;color:'+(reached?'var(--sage)':'var(--ink5)')+'">'+t.unlock+'</div>'
+      +'<div style="font-size:11px;color:'+(reached?'var(--ink3)':'var(--ink5)')+'">'+t.unlock+'</div>'
       +'</div>'
       +(reached?'<span style="font-size:14px;color:var(--sage)">✅</span>':'<span style="font-size:12px;color:var(--ink5)">🔒</span>')
       +'</div>';
@@ -10768,6 +10806,7 @@ async function _doPushSubscribe(){
     safeLS('set','velo_push_sub', JSON.stringify(_sub));
   }catch(e){ console.warn('[push toggle subscribe]',e); }
   _updateEditPushUI();
+  _renderHomePushBanner();
 }
 
 async function pTogglePushNotifications(){

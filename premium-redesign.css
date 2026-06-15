@@ -1468,6 +1468,8 @@ body.r-dark .feed-textarea {
 .p-pill--sky { color: #1A5070 !important; }
 .p-pill--lav { color: #5040A0 !important; }
 .p-pill--live { color: #1B5E30 !important; font-weight: 700 !important; }
+/* Dark mode: --sage=#1B5E3A is near-black — use bright green instead */
+body.r-dark .p-pill--sage { color: #72e0a6 !important; }
 
 /* 14. Guardian status banner on Guardianes page */
 .guardian-status-banner { color: var(--ink) !important; }
