@@ -3641,24 +3641,28 @@ function _renderShareCard(canvas, logoImg){
   var streak = typeof _getConsecutiveStreak==='function' ? _getConsecutiveStreak() : 0;
   var totalDays = typeof _getVisitDayCount==='function' ? _getVisitDayCount() : 0;
   // Left stat: streak
-  ctx.fillStyle='rgba(200,158,56,.12)';
+  ctx.fillStyle='rgba(200,158,56,.28)';
   ctx.beginPath(); ctx.roundRect(80,statsY,W/2-100,80,18); ctx.fill();
-  ctx.font='600 28px Arial,sans-serif'; ctx.textAlign='center'; ctx.fillStyle='rgba(200,158,56,.9)';
+  ctx.strokeStyle='rgba(200,158,56,.55)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.roundRect(80,statsY,W/2-100,80,18); ctx.stroke();
+  ctx.font='600 28px Arial,sans-serif'; ctx.textAlign='center'; ctx.fillStyle='rgba(255,220,120,1)';
   ctx.fillText('🔥 '+streak+(streak===1?' día':' días de racha'),80+(W/2-100)/2,statsY+36);
-  ctx.font='300 20px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.35)';
+  ctx.font='300 20px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.70)';
   ctx.fillText('racha actual',80+(W/2-100)/2,statsY+60);
   // Right stat: total days
-  ctx.fillStyle='rgba(116,198,157,.10)';
+  ctx.fillStyle='rgba(116,198,157,.26)';
   ctx.beginPath(); ctx.roundRect(W/2+20,statsY,W/2-100,80,18); ctx.fill();
-  ctx.font='600 28px Arial,sans-serif'; ctx.fillStyle='rgba(116,198,157,.85)';
+  ctx.strokeStyle='rgba(116,198,157,.55)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.roundRect(W/2+20,statsY,W/2-100,80,18); ctx.stroke();
+  ctx.font='600 28px Arial,sans-serif'; ctx.fillStyle='rgba(160,230,195,1)';
   ctx.fillText('🌿 '+totalDays+(totalDays===1?' día':' días en Velo'),W/2+20+(W/2-100)/2,statsY+36);
-  ctx.font='300 20px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.35)';
+  ctx.font='300 20px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.70)';
   ctx.fillText('en total',W/2+20+(W/2-100)/2,statsY+60);
 
   // ── Emoji breakdown row ─────────────────────────────────────────
   var brkY=statsY+110;
-  ctx.font='400 22px Arial,sans-serif'; ctx.textAlign='center';
-  ctx.fillStyle='rgba(255,255,255,.28)';
+  ctx.font='500 24px Arial,sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='rgba(255,255,255,.72)';
   ctx.fillText('Emociones de la semana',W/2,brkY);
   var brkEmojis=Object.keys(moodCounts).sort(function(a,b){return moodCounts[b]-moodCounts[a];});
   var brkTotalW=brkEmojis.length*120, brkStartX=W/2-brkTotalW/2+60;
