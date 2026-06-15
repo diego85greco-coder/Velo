@@ -18600,7 +18600,8 @@ async function _loadHomeHappyFeed(){
         +'</div></div>';
     }).join('');
   } else {
-    feed.innerHTML = '<div style="text-align:center;padding:16px;font-size:12px;color:var(--ink4)">Cargando…</div>';
+    // No cache — show empty state immediately rather than a loading spinner
+    feed.innerHTML = '<div style="text-align:center;padding:18px"><span style="font-size:26px">☀️</span><div style="font-size:12px;color:var(--ink4);margin-top:7px">¡Sé el primero en compartir un momento de alegría!</div></div>';
   }
   _initSupabase();
   var sbRows = await _sbLoad('happy_posts', function(q){
