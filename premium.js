@@ -2892,28 +2892,47 @@ function _loadDailyQ(){
   if(myResp && currentUid){
     try{
       var _rv = JSON.parse(myResp);
-      if(!_rv.uid || _rv.uid !== currentUid){
-        // Missing uid (old format) or belongs to different user — treat as unanswered
-        myResp = null;
-      }
+      if(!_rv.uid || _rv.uid !== currentUid) myResp = null;
     }catch(e){ myResp = null; }
   }
   if(myResp){
-    var lockedEl = document.getElementById('homeDailyQLocked');
-    var openEl   = document.getElementById('homeDailyQOpen');
-    if(lockedEl) lockedEl.style.display = 'none';
-    if(openEl)   openEl.style.display   = 'block';
-    var openQEl = document.getElementById('homeDailyQOpenText');
-    if(openQEl) openQEl.textContent = q.text;
-    try{
-      var _r = JSON.parse(myResp);
-      var myBadge = document.getElementById('homeDailyQMyResp');
-      if(myBadge) myBadge.textContent = 'Tu respuesta: '+_r.emoji+(_r.text?' · '+_r.text.slice(0,35)+(_r.text.length>35?'…':''):'');
-    }catch(e){}
-    _fetchDailyFeed(q.id);
+    _applyDailyQAnswered(myResp, q);
   } else {
-    _fetchDailyCount();
+    // Not in localStorage — check Supabase (cross-device: answered on another browser)
+    _initSupabase();
+    if(sbClient && currentUid){
+      sbClient.from('daily_responses')
+        .select('mood_emoji,response_text')
+        .eq('user_id', currentUid).eq('question_date', dateKey).limit(1)
+        .then(function(r){
+          if(r.data && r.data.length){
+            var _sb = r.data[0];
+            var _restored = JSON.stringify({emoji:_sb.mood_emoji, text:_sb.response_text||'', uid:currentUid});
+            safeLS('set','velo_daily_resp_'+dateKey, _restored);
+            _applyDailyQAnswered(_restored, q);
+          } else {
+            _fetchDailyCount();
+          }
+        }).catch(function(){ _fetchDailyCount(); });
+    } else {
+      _fetchDailyCount();
+    }
   }
+}
+
+function _applyDailyQAnswered(myResp, q){
+  var lockedEl = document.getElementById('homeDailyQLocked');
+  var openEl   = document.getElementById('homeDailyQOpen');
+  if(lockedEl) lockedEl.style.display = 'none';
+  if(openEl)   openEl.style.display   = 'block';
+  var openQEl = document.getElementById('homeDailyQOpenText');
+  if(openQEl) openQEl.textContent = q.text;
+  try{
+    var _r = JSON.parse(myResp);
+    var myBadge = document.getElementById('homeDailyQMyResp');
+    if(myBadge) myBadge.textContent = 'Tu respuesta: '+_r.emoji+(_r.text?' · '+_r.text.slice(0,35)+(_r.text.length>35?'…':''):'');
+  }catch(e){}
+  _fetchDailyFeed(q.id);
 }
 
 async function _fetchDailyCount(){
