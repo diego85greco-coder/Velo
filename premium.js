@@ -633,7 +633,11 @@ async function _sbSyncProfile(userId){
   if(p.status_book   != null) safeLS('set','velo_status_book',    p.status_book);
   if(p.status_phrase != null) safeLS('set','velo_status_phrase',  p.status_phrase);
   if(p.status_film   != null) safeLS('set','velo_status_film',    p.status_film);
-  if(p.weather_city)   try{ localStorage.setItem('velo_weather_city', p.weather_city); }catch(e){}
+  if(p.weather_city){
+    try{ localStorage.setItem('velo_weather_city', p.weather_city); }catch(e){}
+    // Notify weather widget so it auto-loads city on PWA first open (fresh localStorage)
+    try{ window.dispatchEvent(new CustomEvent('velo:city-synced',{detail:{city:p.weather_city}})); }catch(e){}
+  }
   if(p.username)      safeLS('set','velo_username',       p.username);
   if(p.username)      _uFill(userId, p.username);
   if(p.username_changes != null) safeLS('set','velo_username_changes', String(p.username_changes));
@@ -1053,6 +1057,7 @@ function _clearSession(){
   _circleRtCh = null; _dmRtCh = null; _dmInboxCh = null;
   _grReqCh = null; _seekerGrCh = null; _gcRtCh = null; _gcSeekerCh = null;
   _buzónRtCh = null; _helpChatRtCh = null;
+  if(_homeRefreshTmr){ clearInterval(_homeRefreshTmr); _homeRefreshTmr = null; }
   if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
   if(_grReqPollTmr){ clearInterval(_grReqPollTmr); _grReqPollTmr = null; }
   if(_dmPollTmr){ clearInterval(_dmPollTmr); _dmPollTmr = null; }
@@ -2997,7 +3002,9 @@ var _DAILY_QUESTIONS = [
 ];
 
 function _getDailyQuestion(){
-  var dayIdx = Math.floor(Date.now() / 86400000);
+  // Use local date so question changes at local midnight, not UTC midnight
+  var d = new Date();
+  var dayIdx = Math.floor((Date.now() - d.getTimezoneOffset() * 60000) / 86400000);
   return _DAILY_QUESTIONS[dayIdx % _DAILY_QUESTIONS.length];
 }
 
@@ -12295,7 +12302,10 @@ async function pRenderContacts(){
   var _tok = _navToken;
   var el = document.getElementById('contactsContent');
   if(!el) return;
+  try{ await _ensureSbSession(); }catch(e){}
+  if(_navToken !== _tok || !document.getElementById('contactsContent')) return;
 
+  try {
   var myId = safeLS('get','velo_user_id')||'';
   var favs = pGetFavs().filter(function(f){ return f.id !== myId; });
 
@@ -12435,6 +12445,11 @@ async function pRenderContacts(){
     +'</div>';
 
   el.innerHTML = tabsHtml + favsHtml + onlineHtml + fansHtml + blockedHtml;
+  } catch(e) {
+    console.error('[pRenderContacts]', e);
+    var elFb = document.getElementById('contactsContent');
+    if(elFb) elFb.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">⚠️</span><div class="p-empty-title">Error al cargar</div><div class="p-empty-sub" style="margin-top:8px"><button onclick="pRenderContacts()" style="padding:8px 18px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:13px;font-weight:700;color:var(--sage);cursor:pointer">Reintentar</button></div></div>';
+  }
 }
 
 function pContactsTab(tab){

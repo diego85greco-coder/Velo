@@ -553,6 +553,15 @@
   }
 
   /* ── 4. Boot ────────────────────────────────────────────────────── */
+  // Listen for city synced from Supabase profile (handles PWA fresh-install case)
+  window.addEventListener('velo:city-synced', function(e) {
+    try {
+      if(!_weatherCity && e && e.detail && e.detail.city) {
+        _fetchWeatherByCity(e.detail.city);
+      }
+    } catch(err) {}
+  });
+
   function boot() {
     // Greeting + icon
     wrapGreetingWords();
