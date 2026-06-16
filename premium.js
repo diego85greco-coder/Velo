@@ -817,10 +817,7 @@ async function _ensureSbSession(){
     var {data:sd} = await sbClient.auth.getSession();
     if(sd && sd.session){
       if(sd.session.user && sd.session.user.id){
-        var _esUid = sd.session.user.id;
-        safeLS('set','velo_user_id', _esUid);
-        // Always sync profile from Supabase on session restore so cross-device changes appear on refresh
-        setTimeout(function(){ _sbSyncProfile(_esUid); }, 300);
+        safeLS('set','velo_user_id', sd.session.user.id);
       }
       return true;
     }
