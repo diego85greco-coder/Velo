@@ -32,6 +32,7 @@ var _sbHelp       = null;   // cached Supabase help_posts
 var _syncedReadIds = {};    // broadcast IDs synced as read from Supabase profile (cross-device)
 var _buzónAlertedSession = false; // show unread alert once per session
 var _profileSelectTier = parseInt(safeLS('get','velo_prof_tier')||'0'); // persisted so 400s don't repeat on reload
+var _sbSyncProfilePending = false; // de-dup guard: only one sync runs at a time
 var _inboxAsyncPending = false; // prevents concurrent broadcast/reply injections
 var _sbBottles    = null;   // cached Supabase bottles
 var _sbCircleMsgs = [];     // cached Supabase circle_messages
@@ -465,6 +466,11 @@ async function _getOrCreateProfile(userId){
 }
 
 async function _sbSyncProfile(userId){
+  if(_sbSyncProfilePending) return;
+  _sbSyncProfilePending = true;
+  try{ await _sbSyncProfileInner(userId); }finally{ _sbSyncProfilePending = false; }
+}
+async function _sbSyncProfileInner(userId){
   _initSupabase();
   if(!sbClient) return;
   // If caller didn't pass a userId, try the live session
