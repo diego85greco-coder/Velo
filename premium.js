@@ -9478,7 +9478,14 @@ async function pRenderHappy(){
     var _cutoffMs = Date.now() - 24*60*60*1000;
     var _localOwn = _happyLoad().filter(function(p){ return p.ts > _cutoffMs && p.userId === myId; });
     _localOwn.forEach(function(lp){
-      if(!posts.find(function(p){ return p.id === lp.id; })) posts.unshift(lp);
+      // Match by id OR by timestamp (Supabase may auto-generate a different id)
+      var sbMatch = posts.find(function(p){ return String(p.id) === String(lp.id) || p.ts === lp.ts; });
+      if(!sbMatch){
+        posts.unshift(lp);
+      } else if(!sbMatch.photo && lp.photo){
+        // SB post exists but photo column was empty — restore from local cache
+        sbMatch.photo = lp.photo;
+      }
     });
     // Merge post that was just submitted; Supabase may not have returned it yet
     if(_pendingHappyPost){
@@ -9908,14 +9915,26 @@ function _happyPostCard(h, isOwn){
 async function pDeleteHappyPost(postId){
   if(!confirm('¿Eliminar esta publicación del Muro?')) return;
   _initSupabase();
+  // Ensure session is valid before deleting — expired session = silent fail
+  try{ await _ensureSbSession(); }catch(e){}
   if(sbClient){
-    try{ await sbClient.from('happy_posts').delete().eq('id', postId); }catch(e){}
+    var _delUid = safeLS('get','velo_user_id')||'';
+    try{
+      // Include user_id filter so RLS allows it even if policy requires ownership
+      var _q = sbClient.from('happy_posts').delete().eq('id', postId);
+      if(_delUid) _q = _q.eq('user_id', _delUid);
+      var _delRes = await _q;
+      if(_delRes && _delRes.error) console.error('[happy delete]', _delRes.error.message);
+    }catch(e){ console.error('[happy delete catch]', e); }
   }
-  // Remove from local cache
-  if(_sbHappy) _sbHappy = _sbHappy.filter(function(h){ return h.id !== postId; });
-  var card = document.querySelector('.happy-card[data-id="'+postId+'"]') || document.getElementById('hp-'+postId);
+  // Remove from local caches so it doesn't reappear
+  if(_sbHappy) _sbHappy = _sbHappy.filter(function(h){ return String(h.id) !== String(postId); });
+  _pendingHappyPost = null;
+  var _lc = _happyLoad().filter(function(p){ return String(p.id) !== String(postId); });
+  _happySave(_lc);
+  var card = document.querySelector('.happy-card[data-id="'+postId+'"]');
   if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ pRenderHappy(); },350); }
-  else { setTimeout(function(){ pRenderHappy(); },50); }
+  else { pRenderHappy(); }
   pToast('✅','Publicación eliminada');
 }
 
