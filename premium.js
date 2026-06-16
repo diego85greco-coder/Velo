@@ -8984,6 +8984,19 @@ async function _renderCircleMessages(){
   var el = document.getElementById('feedMessages');
   if(!el || !_curCircle) return;
 
+  // Read local cache — used for instant render before Supabase arrives
+  var localMsgs = [];
+  try{ localMsgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
+
+  // Render from localStorage immediately so sends appear at once
+  if(localMsgs.length){
+    el.innerHTML = localMsgs.map(function(m){
+      if(m.type === 'system') return '<div style="text-align:center;margin:10px 0"><span style="font-size:11px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
+      return _buildMsgBubble(m.text, !!m.own, m.av||'', m.name||'', 'feedInput', 'feedReplyBar', '', m.reactions||{}, '', m.userId||'');
+    }).join('');
+    el.scrollTop = el.scrollHeight;
+  }
+
   // Load from Supabase for real multi-user messages
   var sbRows = await _sbLoad('circle_messages', function(q){
     return q.eq('circle_id', _curCircle.id).order('created_at',{ascending:true}).limit(100);
@@ -8997,17 +9010,20 @@ async function _renderCircleMessages(){
   }
 
   var msgs;
-  if(sbRows !== null && sbRows.length){
+  if(sbRows !== null){
     msgs = sbRows.map(_sbCircleMsgRow);
+    // Merge local pending messages (own msgs that haven't reached Supabase yet)
+    var _cutMs = Date.now() - 30000;
+    localMsgs.filter(function(lm){ return lm.own && lm.ts > _cutMs; }).forEach(function(lm){
+      var inSb = msgs.some(function(m){ return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 10000; });
+      if(!inSb) msgs.push({ id:lm.id, userId:lm.userId||'', av:lm.av||'', name:lm.name||'', text:lm.text, ts:lm.ts, own:true, type:lm.type||'text', reactions:{} });
+    });
+    msgs.sort(function(a, b){ return a.ts - b.ts; });
     _sbCircleMsgs = msgs;
-    // Only use mock auto-messages if no real messages exist
-    if(_circleAutoMsgTimer){ clearInterval(_circleAutoMsgTimer); _circleAutoMsgTimer = null; }
-  } else if(sbRows !== null && !sbRows.length){
-    // Supabase connected but circle is empty — show seed message, no mocks
-    msgs = [];
+    if(sbRows.length && _circleAutoMsgTimer){ clearInterval(_circleAutoMsgTimer); _circleAutoMsgTimer = null; }
   } else {
     // Supabase unavailable — use only real localStorage messages
-    try{ msgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){ msgs = []; }
+    msgs = localMsgs;
   }
 
   el.innerHTML = msgs.map(function(m){
