@@ -3403,7 +3403,7 @@ function _buildDqCards(list){
     var isOwn = myUid && r.user_id === myUid;
     var actionBtn = isOwn
       ? '<button onclick="pDeleteMyDqResponse(\''+r.id+'\')" title="Borrar mi respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
-      : '<button onclick="pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" title="Reportar respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,160,60,.3);font-size:12px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
+      : '<button onclick="pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" title="Reportar respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,160,60,.8);font-size:12px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
     var _dqUname = _uAt(r.user_id);
     return '<div class="dq-feed-card" style="display:flex;gap:8px;padding:8px 0;align-items:flex-start">'
       +avHtml
