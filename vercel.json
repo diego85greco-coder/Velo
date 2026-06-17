@@ -3,7 +3,7 @@
   "framework": null,
   "buildCommand": "",
   "outputDirectory": ".",
-  "installCommand": "npm install",
+  "installCommand": "",
   "headers": [
     {
       "source": "/(.*\\.html)",

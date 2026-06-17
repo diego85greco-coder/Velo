@@ -8,7 +8,5 @@
   "scripts": {
     "build": "echo 'Static site — no build step needed'"
   },
-  "dependencies": {
-    "@google/generative-ai": "^0.21.0"
-  }
+  "dependencies": {}
 }
