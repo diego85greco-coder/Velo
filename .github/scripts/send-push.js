@@ -16,6 +16,34 @@ webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Pick message based on current UTC hour
+// 12 UTC = 09:00 AR (mañana)
+// 17 UTC = 14:00 AR (tarde)
+//  0 UTC = 21:00 AR (noche)
+function getNotification() {
+  const hour = new Date().getUTCHours();
+  if (hour >= 11 && hour < 15) {
+    return {
+      title: '🌅 ¡Buenos días!',
+      body: '¿Cómo amaneciste hoy? Tomate un segundo para registrar cómo te sentís 🌿',
+      tag: 'velo-morning'
+    };
+  }
+  if (hour >= 15 && hour < 20) {
+    return {
+      title: '🌤️ ¿Cómo va la tarde?',
+      body: 'Un momento para vos en medio del día. ¿Cómo está tu energía? 💛',
+      tag: 'velo-afternoon'
+    };
+  }
+  // night (0–4 UTC = 21–01 AR)
+  return {
+    title: '🌙 Antes de cerrar el día…',
+    body: '¿Cómo estuvo? Es el mejor momento para guardar cómo te sentiste hoy ✨',
+    tag: 'velo-night'
+  };
+}
+
 async function main() {
   const { data: users, error } = await supabase
     .from('profiles')
@@ -24,16 +52,20 @@ async function main() {
 
   if (error) { console.error('Supabase error:', error); process.exit(1); }
 
-  console.log(`Found ${(users || []).length} subscriptions`);
+  const notif = getNotification();
+  console.log(`Sending "${notif.title}" to ${(users || []).length} subscribers`);
+
   let sent = 0, failed = 0;
 
   await Promise.allSettled((users || []).map(async (user) => {
     try {
       const sub = JSON.parse(user.push_subscription);
       await webpush.sendNotification(sub, JSON.stringify({
-        title: '💚 Velo',
-        body: '¿Cómo te sentís hoy?',
+        title: notif.title,
+        body: notif.body,
         icon: '/assets/icon-192.png',
+        badge: '/assets/icon-72.png',
+        tag: notif.tag,
         url: '/'
       }));
       sent++;
