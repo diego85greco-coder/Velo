@@ -3396,9 +3396,9 @@ function _buildDqCards(list){
       ? '<img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-top:2px">'
       : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.2);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:17px">'+(av||'🌿')+'</div>';
     var isOwn = myUid && r.user_id === myUid;
-    var deleteBtn = isOwn
+    var actionBtn = isOwn
       ? '<button onclick="pDeleteMyDqResponse(\''+r.id+'\')" title="Borrar mi respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
-      : '';
+      : '<button onclick="pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" title="Reportar respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,160,60,.3);font-size:12px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
     var _dqUname = _uAt(r.user_id);
     return '<div class="dq-feed-card" style="display:flex;gap:8px;padding:8px 0;align-items:flex-start">'
       +avHtml
@@ -3406,7 +3406,7 @@ function _buildDqCards(list){
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:'+(_dqUname?'2':'5')+'px">'
       +'<span class="dq-feed-name" style="font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">'+(r.user_name||'Alguien')+'</span>'
       +'<span style="font-size:14px">'+r.mood_emoji+'</span>'
-      +deleteBtn
+      +actionBtn
       +'</div>'
       +(_dqUname ? '<div style="margin-bottom:4px">'+_dqUname+'</div>' : '')
       +(r.response_text
@@ -3418,6 +3418,27 @@ function _buildDqCards(list){
       +'</div>'
       +'</div>';
   }).join('');
+}
+
+function pReportDqResponse(responseId, responseUserId){
+  _pConfirm('¿Reportar esta respuesta? Va a quedar oculta para vos.', function(){
+    var _h = []; try{ _h = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
+    if(_h.indexOf(String(responseId)) === -1) _h.push(String(responseId));
+    if(_h.length > 200) _h = _h.slice(_h.length - 200);
+    safeLS('set','velo_dq_hidden', JSON.stringify(_h));
+    _renderDailyFeed(_dqAllResponses);
+    pToast('🚩','Respuesta reportada y ocultada');
+    if(!sbClient) return;
+    sbClient.auth.getUser().then(function(res){
+      if(!res.data || !res.data.user) return;
+      sbClient.from('content_reports').insert({
+        reporter_id: res.data.user.id,
+        response_id: String(responseId),
+        response_user_id: responseUserId || null,
+        report_type: 'dq_response'
+      }).then(function(){}).catch(function(){});
+    }).catch(function(){});
+  });
 }
 
 async function pDeleteMyDqToday(){
