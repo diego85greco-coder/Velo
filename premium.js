@@ -11718,30 +11718,36 @@ function pRenderInbox(){
   // Fallback: if profiles.read_bcast_ids column is missing, use auth.user_metadata (always available).
   var userType = safeLS('get','velo_user_type') || 'user';
   _initSupabase();
-  var _rsUid = safeLS('get','velo_user_id');
-  var _readStateProm = (sbClient && _rsUid) ? sbClient.from('profiles')
-    .select('read_bcast_ids').eq('id',_rsUid).limit(1)
-    .then(function(r){
-      if(r && r.error){
-        console.warn('[buzón] profiles SELECT error:', r.error.message, 'code:', r.error.code);
-        // Fallback: read from auth.user_metadata (no column needed)
-        return sbClient.auth.getUser().then(function(ar){
-          var meta = ar && ar.data && ar.data.user && ar.data.user.user_metadata;
-          var ids = (meta && Array.isArray(meta.read_bcast_ids)) ? meta.read_bcast_ids : [];
-          _applyReadIds(ids, '[buzón:auth_meta fallback]');
-        });
-      }
-      if(r && r.data && r.data[0] && Array.isArray(r.data[0].read_bcast_ids)){
-        _applyReadIds(r.data[0].read_bcast_ids, '[buzón:profiles]');
-      } else {
-        // profiles row exists but column empty — also check auth.user_metadata
-        return sbClient.auth.getUser().then(function(ar){
-          var meta = ar && ar.data && ar.data.user && ar.data.user.user_metadata;
-          var ids = (meta && Array.isArray(meta.read_bcast_ids)) ? meta.read_bcast_ids : [];
-          _applyReadIds(ids, '[buzón:auth_meta]');
-        });
-      }
-    }).catch(function(e){ console.warn('[buzón] read state exception:', e); })
+  // Use auth.getUser() — localStorage uid may be stale (cross-account contamination).
+  // Cannot call _ensureSbSession here (would trigger _sbSyncProfile → pRenderInbox loop).
+  var _readStateProm = sbClient ? sbClient.auth.getUser().then(function(authRs){
+    var _rsUid = (authRs && authRs.data && authRs.data.user) ? authRs.data.user.id : safeLS('get','velo_user_id');
+    if(_rsUid) safeLS('set','velo_user_id', _rsUid);
+    if(!_rsUid) return Promise.resolve();
+    return sbClient.from('profiles')
+      .select('read_bcast_ids').eq('id',_rsUid).limit(1)
+      .then(function(r){
+        if(r && r.error){
+          console.warn('[buzón] profiles SELECT error:', r.error.message, 'code:', r.error.code);
+          // Fallback: read from auth.user_metadata (no column needed)
+          return sbClient.auth.getUser().then(function(ar){
+            var meta = ar && ar.data && ar.data.user && ar.data.user.user_metadata;
+            var ids = (meta && Array.isArray(meta.read_bcast_ids)) ? meta.read_bcast_ids : [];
+            _applyReadIds(ids, '[buzón:auth_meta fallback]');
+          });
+        }
+        if(r && r.data && r.data[0] && Array.isArray(r.data[0].read_bcast_ids)){
+          _applyReadIds(r.data[0].read_bcast_ids, '[buzón:profiles]');
+        } else {
+          // profiles row exists but column empty — also check auth.user_metadata
+          return sbClient.auth.getUser().then(function(ar){
+            var meta = ar && ar.data && ar.data.user && ar.data.user.user_metadata;
+            var ids = (meta && Array.isArray(meta.read_bcast_ids)) ? meta.read_bcast_ids : [];
+            _applyReadIds(ids, '[buzón:auth_meta]');
+          });
+        }
+      }).catch(function(e){ console.warn('[buzón] read state exception:', e); });
+  }).catch(function(){ return Promise.resolve(); })
   : Promise.resolve();
 
   function _applyReadIds(ids, source){
@@ -12061,7 +12067,11 @@ function _syncBroadcastRead(bcId){
     try{
       var ok = await _ensureSbSession();
       if(!ok){ console.warn('[sync bcast] no session — delete not synced to Supabase'); return; }
-      var uid = safeLS('get','velo_user_id');
+      // Always use auth.getUser() — localStorage uid may be stale/wrong (cross-account bug)
+      var {data:_authBR} = await sbClient.auth.getUser();
+      if(!_authBR || !_authBR.user){ console.warn('[sync bcast] no auth user'); return; }
+      var uid = _authBR.user.id;
+      safeLS('set','velo_user_id', uid);
       if(!uid){ console.warn('[sync bcast] no uid — delete not synced to Supabase'); return; }
       // SELECT first — merge remote IDs so we never overwrite another device's deletions
       var cur = await sbClient.from('profiles').select('read_bcast_ids').eq('id',uid).limit(1);
