@@ -197,6 +197,28 @@ function _initSupabase(){
   }
   if(_supabaseLib && _supabaseLib.createClient){
     sbClient = _supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON);
+    // Cross-account session guard: if another user's token becomes active while this
+    // app is running (same browser, second tab, or refresh token swap), detect it and
+    // force re-login to prevent one account's data from leaking into another.
+    sbClient.auth.onAuthStateChange(function(event, session){
+      if(!_authenticated) return; // ignore events during login/init flow
+      var _storedUid = safeLS('get','velo_user_id') || '';
+      if(!_storedUid) return; // no stored user yet — still setting up
+      if(event === 'SIGNED_OUT'){
+        _clearSession();
+        _authenticated = false;
+        if(typeof pGoTo === 'function') pGoTo('landing');
+        if(typeof pToast === 'function') pToast('🌿','Sesión cerrada');
+      } else if(session && session.user && session.user.id !== _storedUid){
+        // A different user's session became active — this device was shared or
+        // another tab logged in. Force re-login to prevent cross-user data leaks.
+        _clearSession();
+        _authenticated = false;
+        try{ sbClient.auth.signOut(); }catch(e){}
+        if(typeof pGoTo === 'function') pGoTo('landing');
+        if(typeof pToast === 'function') pToast('⚠️','Cambio de cuenta detectado, ingresá nuevamente');
+      }
+    });
   }
 }
 
@@ -477,16 +499,19 @@ async function _sbSyncProfile(userId){
 async function _sbSyncProfileInner(userId){
   _initSupabase();
   if(!sbClient) return;
-  // If caller didn't pass a userId, try the live session
-  if(!userId){
-    try{
-      var {data:_initSd} = await sbClient.auth.getSession();
-      if(_initSd && _initSd.session && _initSd.session.user) userId = _initSd.session.user.id;
-    }catch(e){}
+  // Always verify against the actual live session — never trust a cached/passed userId.
+  // If the Supabase token switched to a different user (cross-tab login or token refresh),
+  // using the wrong userId would load another user's profile and mood data.
+  var _authSPRes;
+  try{ _authSPRes = await sbClient.auth.getUser(); }catch(e){ return; }
+  if(!_authSPRes || !_authSPRes.data || !_authSPRes.data.user) return;
+  var sessionUid = _authSPRes.data.user.id;
+  if(userId && userId !== sessionUid){
+    console.warn('[_sbSyncProfile] userId mismatch — passed:',userId.slice(0,8),'session:',sessionUid.slice(0,8),'— using session');
   }
-  if(!userId) return;
-  // Ensure session is valid before making DB calls (refreshes JWT if expired)
-  try{ await sbClient.auth.getSession(); }catch(e){}
+  // Session is always authoritative; lock localStorage to it
+  userId = sessionUid;
+  safeLS('set','velo_user_id', sessionUid);
   var res;
   // Each tier drops more optional columns; _profileSelectTier is cached so we skip
   // known-failing queries on every subsequent call (avoids 400 flood in console).
@@ -1853,10 +1878,21 @@ async function _syncMoodsFromSb(){
     if(_lsUid && _authD.user.id !== _lsUid){ _moodSyncDone = false; return; }
     var now = new Date();
     var months = {};
-    for(var i=0;i<7;i++){
+    // Cover last 90 days so stale keys from older months (other users) are also purged
+    for(var i=0;i<90;i++){
       var d2=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i);
       var mk=d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0');
       if(!months[mk]) months[mk]={year:d2.getFullYear(),month:d2.getMonth()+1};
+    }
+    // Also nuke any velo_mood_* key outside the covered range (belt-and-suspenders)
+    var _coveredPfx = {};
+    Object.values(months).forEach(function(m){ _coveredPfx['velo_mood_'+m.year+'-'+String(m.month).padStart(2,'0')] = true; });
+    for(var _ei = localStorage.length - 1; _ei >= 0; _ei--){
+      var _ek = localStorage.key(_ei);
+      if(_ek && _ek.startsWith('velo_mood_')){
+        var _matched = Object.keys(_coveredPfx).some(function(pfx){ return _ek.startsWith(pfx); });
+        if(!_matched) localStorage.removeItem(_ek);
+      }
     }
     await Promise.all(Object.values(months).map(async function(m){
       var rows = await sbLoadAllMoods(m.year, m.month);
