@@ -42,6 +42,7 @@ var _bottleRtCh   = null;   // realtime channel bottles
 var _circleRtCh   = null;   // realtime channel circle_messages
 var _guardianRtCh = null;   // realtime channel guardian_presence
 var _dqRtCh       = null;   // realtime channel daily_responses
+var _sbVerifiedMoodCount = -1; // Supabase-confirmed mood count; -1 = not yet fetched
 var _liveGuardians = [];    // cached live guardian rows from Supabase
 var _grReqCh        = null;   // guardian_requests realtime channel (guardian side)
 var _seekerGrCh     = null;   // guardian_requests realtime channel (seeker side)
@@ -1122,6 +1123,7 @@ function _clearSession(){
   if(_dmReactPollTmr){ clearInterval(_dmReactPollTmr); _dmReactPollTmr = null; }
   _gcReactHash = ''; _dmReactHash = '';
   _moodSyncDone = false;
+  _sbVerifiedMoodCount = -1;
   if(_dqRtCh){ _sbUnsub(_dqRtCh); _dqRtCh = null; }
 }
 
@@ -1858,16 +1860,31 @@ async function _syncMoodsFromSb(){
     }
     await Promise.all(Object.values(months).map(async function(m){
       var rows = await sbLoadAllMoods(m.year, m.month);
-      // Always overwrite — Supabase is source of truth; stale localStorage keys must not survive
-      if(rows) rows.forEach(function(e){
-        if(e.emoji){
-          safeLS('set','velo_mood_'+e.date_key, JSON.stringify({emoji:e.emoji,label:e.label||'',note:e.note||'',ts:0}));
+      if(rows !== null){
+        // Build set of date_keys Supabase actually has for this user
+        var _sbKeys = {};
+        rows.forEach(function(e){ if(e.emoji) _sbKeys[e.date_key] = true; });
+        // Purge contaminated localStorage keys: any velo_mood_YYYY-MM-* NOT in Supabase must go
+        var _pfx = 'velo_mood_'+m.year+'-'+String(m.month).padStart(2,'0');
+        for(var _li = localStorage.length - 1; _li >= 0; _li--){
+          var _lk = localStorage.key(_li);
+          if(_lk && _lk.startsWith(_pfx)){
+            var _dk = _lk.replace('velo_mood_','');
+            if(!_sbKeys[_dk]) localStorage.removeItem(_lk);
+          }
         }
-      });
+        // Write authoritative Supabase data
+        rows.forEach(function(e){
+          if(e.emoji){
+            safeLS('set','velo_mood_'+e.date_key, JSON.stringify({emoji:e.emoji,label:e.label||'',note:e.note||'',ts:0}));
+          }
+        });
+      }
     }));
-    // Re-render graph now that localStorage is populated
+    // Re-render graph now that localStorage is clean and populated
     _renderHomeWeekMoodGraph().catch(function(){});
     _initShareWeekBtn();
+    _updateHomeStreak(); // re-render with clean count
   }catch(e){}
 }
 
@@ -2693,16 +2710,20 @@ function _updateHomeStreak(){
   var _mn = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var _t = new Date();
   var _y = _t.getFullYear(), _m = _t.getMonth();
+  var lbl = document.getElementById('homeStatStreakLbl');
+  if(lbl) lbl.innerHTML = 'Ánimos<br>'+_mn[_m];
+  var el = document.getElementById('homeStatStreak');
+  if(!el) return;
+  // Once Supabase has confirmed the count, never let localStorage override it
+  if(_sbVerifiedMoodCount >= 0){ el.textContent = _sbVerifiedMoodCount; return; }
+  // Fallback: count from localStorage (may be stale — will be replaced when Supabase responds)
   var _dim = new Date(_y, _m + 1, 0).getDate();
   var _count = 0;
   for(var _di = 1; _di <= _dim; _di++){
     var _k = _y+'-'+String(_m+1).padStart(2,'0')+'-'+String(_di).padStart(2,'0');
     if(safeLS('get','velo_mood_'+_k)) _count++;
   }
-  var el = document.getElementById('homeStatStreak');
-  if(el) el.textContent = _count;
-  var lbl = document.getElementById('homeStatStreakLbl');
-  if(lbl) lbl.innerHTML = 'Ánimos<br>'+_mn[_m];
+  el.textContent = _count;
 }
 
 function _trackVisitDay(){
@@ -3309,19 +3330,20 @@ function _buildDqCards(list){
 
 async function pDeleteMyDqResponse(responseId){
   if(!sbClient || !responseId) return;
-  var myUid = safeLS('get','velo_user_id') || '';
-  if(!myUid) return;
   try{
     var _sessOk = await _ensureSbSession();
     if(!_sessOk){ pToast('⚠️','Sesión expirada, reingresá'); return; }
-    var _delRes = await sbClient.from('daily_responses').delete().eq('id', responseId).eq('user_id', myUid);
+    // Capture myUid AFTER session refresh — _ensureSbSession may correct velo_user_id
+    var myUid = safeLS('get','velo_user_id') || '';
+    if(!myUid) return;
+    // .select('id') returns deleted rows — empty array means RLS blocked or no matching row
+    var _delRes = await sbClient.from('daily_responses').delete().eq('id', responseId).eq('user_id', myUid).select('id');
     if(_delRes && _delRes.error){ pToast('⚠️','No se pudo borrar'); return; }
-    // Optimistic update — remove from local cache immediately
+    if(!_delRes.data || !_delRes.data.length){ pToast('⚠️','No se pudo borrar'); return; }
+    // Remove from local cache — do NOT re-fetch (would race with DB commit and restore the row)
     _dqAllResponses = _dqAllResponses.filter(function(r){ return String(r.id) !== String(responseId); });
     _renderDailyFeed(_dqAllResponses);
     pToast('🗑️','Respuesta eliminada');
-    var _q = _getDailyQuestion();
-    if(_q && _q.id) _fetchDailyFeed(_q.id);
   }catch(e){ pToast('⚠️','No se pudo borrar'); }
 }
 
@@ -10766,6 +10788,7 @@ function pLoadProfile(){
       .eq('user_id', _pUid).like('date_key', _sbMonthPrefix+'%')
       .then(function(r){
         var sbMoodDays = (r && r.count != null) ? r.count : 0;
+        _sbVerifiedMoodCount = sbMoodDays; // lock in Supabase value — stops localStorage from overriding
         _setEl('profileDays', sbMoodDays);
         _setEl('homeStatStreak', sbMoodDays);
       }).catch(function(){});
