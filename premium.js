@@ -19871,8 +19871,20 @@ function _clearAllLocalData(){
 }
 
 async function _execDeleteAccount(reason){
-  var userId = safeLS('get','velo_user_id') || '';
+  pToast('🗑️','Eliminando tu cuenta…');
+
+  var userId = '';
   var email  = safeLS('get','velo_user_email') || '';
+
+  if(sbClient){
+    try{
+      var {data:_authD} = await sbClient.auth.getUser();
+      if(_authD && _authD.user){
+        userId = _authD.user.id;
+        email  = _authD.user.email || email;
+      }
+    }catch(e){}
+  }
 
   if(sbClient && userId){
     // 1. Save feedback before deleting (fire-and-forget)
@@ -19891,10 +19903,12 @@ async function _execDeleteAccount(reason){
     try{ await sbClient.from('guardian_requests').delete().or('seeker_id.eq.'+uid+',guardian_id.eq.'+uid); }catch(e){}
     try{ await sbClient.from('help_posts').delete().eq('user_id', uid); }catch(e){}
     try{ await sbClient.from('happy_posts').delete().eq('user_id', uid); }catch(e){}
+    try{ await sbClient.from('daily_responses').delete().eq('user_id', uid); }catch(e){}
+    try{ await sbClient.from('mood_entries').delete().eq('user_id', uid); }catch(e){}
     // Delete profile last so auth still works for the above queries
     try{ await sbClient.from('profiles').delete().eq('id', uid); }catch(e){}
 
-    // 3. Sign out — auth user intentionally kept so same email can re-register as new user
+    // 3. Sign out
     try{ await sbClient.auth.signOut(); }catch(e){}
   }
 
@@ -19904,7 +19918,9 @@ async function _execDeleteAccount(reason){
   _favsList = null;
 
   pToast('👋','Cuenta eliminada. Podés registrarte de nuevo cuando quieras 🌿');
-  setTimeout(function(){ pGoTo('landing'); }, 2000);
+  setTimeout(function(){
+    try{ pGoTo('landing'); }catch(e){ window.location.reload(); }
+  }, 1800);
 }
 
 function pCancelSubscription(){
