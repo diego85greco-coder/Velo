@@ -3405,6 +3405,24 @@ function _buildDqCards(list){
   }).join('');
 }
 
+async function pDeleteMyDqToday(){
+  var _dqDateKey = _dateKey();
+  safeLS('del', 'velo_daily_resp_'+_dqDateKey);
+  var _dqLockedEl = document.getElementById('homeDailyQLocked');
+  var _dqOpenEl   = document.getElementById('homeDailyQOpen');
+  if(_dqLockedEl) _dqLockedEl.style.display = '';
+  if(_dqOpenEl)   _dqOpenEl.style.display   = 'none';
+  _fetchDailyCount();
+  pToast('🗑️','Respuesta eliminada');
+  if(!sbClient) return;
+  try{
+    var {data:_authD} = await sbClient.auth.getUser();
+    if(!_authD || !_authD.user) return;
+    await sbClient.from('daily_responses').delete()
+      .eq('user_id', _authD.user.id).eq('question_date', _dqDateKey);
+  }catch(e){ console.warn('[dq delete today]', e && e.message); }
+}
+
 async function pDeleteMyDqResponse(responseId){
   if(!responseId) return;
   // Always hide locally first — persists across refreshes via velo_dq_hidden
