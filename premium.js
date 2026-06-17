@@ -10847,39 +10847,42 @@ function pLoadProfile(){
   _setEl('profileReceived', _locRecv);
   // Count real conversations — three sources: localStorage, guardian_requests table, profiles table
   _initSupabase();
-  var _pUid = safeLS('get','velo_user_id');
-  if(sbClient && _pUid){
-    // Fetch current-month mood count from Supabase in background (cross-device sync)
-    var _sbMonthPrefix = _curYear+'-'+String(_curMonth+1).padStart(2,'0');
-    sbClient.from('mood_entries').select('date_key', {count:'exact', head:true})
-      .eq('user_id', _pUid).like('date_key', _sbMonthPrefix+'%')
-      .then(function(r){
-        var sbMoodDays = (r && r.count != null) ? r.count : 0;
-        _sbVerifiedMoodCount = sbMoodDays; // lock in Supabase value — stops localStorage from overriding
-        _setEl('profileDays', sbMoodDays);
-        _setEl('homeStatStreak', sbMoodDays);
-      }).catch(function(){});
+  if(sbClient){
+    // Always use auth.getUser() for the uid — localStorage may be stale
+    sbClient.auth.getUser().then(function(_authPL){
+      var _pUid = (_authPL && _authPL.data && _authPL.data.user) ? _authPL.data.user.id : safeLS('get','velo_user_id');
+      if(!_pUid) return;
+      safeLS('set','velo_user_id', _pUid);
+      // Fetch current-month mood count from Supabase in background (cross-device sync)
+      var _sbMonthPrefix = _curYear+'-'+String(_curMonth+1).padStart(2,'0');
+      sbClient.from('mood_entries').select('date_key', {count:'exact', head:true})
+        .eq('user_id', _pUid).like('date_key', _sbMonthPrefix+'%')
+        .then(function(r){
+          var sbMoodDays = (r && r.count != null) ? r.count : 0;
+          _sbVerifiedMoodCount = sbMoodDays; // lock in Supabase value — stops localStorage from overriding
+          _setEl('profileDays', sbMoodDays);
+          _setEl('homeStatStreak', sbMoodDays);
+        }).catch(function(){});
 
-    Promise.all([
-      sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('guardian_id', _pUid).eq('status','ended'),
-      sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('seeker_id',   _pUid).eq('status','ended'),
-      sbClient.from('profiles').select('helped_count,received_count').eq('id', _pUid).maybeSingle()
-    ]).then(function(results){
-      var realH  = (results[0] && results[0].count  != null) ? results[0].count  : 0;
-      var realR  = (results[1] && results[1].count  != null) ? results[1].count  : 0;
-      var profH  = (results[2] && results[2].data   && results[2].data.helped_count)   ? parseInt(results[2].data.helped_count,  10) : 0;
-      var profR  = (results[2] && results[2].data   && results[2].data.received_count) ? parseInt(results[2].data.received_count,10) : 0;
-      // Use only Supabase as source of truth — localStorage could be stale from a previous account
-      var finalH = Math.max(realH, profH);
-      var finalR = Math.max(realR, profR);
-      safeLS('set','velo_guardian_convs', String(finalH));
-      safeLS('set','velo_help_received',  String(finalR));
-      // Keep profiles table in sync (write-back if guardian_requests has more data)
-      if(finalH > profH) _bumpProfileCounter('helped_count',   finalH);
-      if(finalR > profR) _bumpProfileCounter('received_count', finalR);
-      _setEl('profileChats',    finalH + finalR);
-      _setEl('profileHelped',   finalH);
-      _setEl('profileReceived', finalR);
+      Promise.all([
+        sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('guardian_id', _pUid).eq('status','ended'),
+        sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('seeker_id',   _pUid).eq('status','ended'),
+        sbClient.from('profiles').select('helped_count,received_count').eq('id', _pUid).maybeSingle()
+      ]).then(function(results){
+        var realH  = (results[0] && results[0].count  != null) ? results[0].count  : 0;
+        var realR  = (results[1] && results[1].count  != null) ? results[1].count  : 0;
+        var profH  = (results[2] && results[2].data   && results[2].data.helped_count)   ? parseInt(results[2].data.helped_count,  10) : 0;
+        var profR  = (results[2] && results[2].data   && results[2].data.received_count) ? parseInt(results[2].data.received_count,10) : 0;
+        var finalH = Math.max(realH, profH);
+        var finalR = Math.max(realR, profR);
+        safeLS('set','velo_guardian_convs', String(finalH));
+        safeLS('set','velo_help_received',  String(finalR));
+        if(finalH > profH) _bumpProfileCounter('helped_count',   finalH);
+        if(finalR > profR) _bumpProfileCounter('received_count', finalR);
+        _setEl('profileChats',    finalH + finalR);
+        _setEl('profileHelped',   finalH);
+        _setEl('profileReceived', finalR);
+      }).catch(function(){});
     }).catch(function(){});
   }
 
@@ -10931,6 +10934,44 @@ function pLoadProfile(){
 
   // Badges
   _renderBadgesGrid();
+}
+
+// Deletes all mood_entries from Supabase for the current user and clears localStorage.
+// Addresses cross-account contamination where another account's moods were written under this uid.
+async function pResetMyMoodData(){
+  _pConfirm('¿Limpiar todos tus registros de ánimos de este dispositivo y Supabase? Esta acción no se puede deshacer.', async function(){
+    _initSupabase();
+    var _authRM; try{ _authRM = await sbClient.auth.getUser(); }catch(e){}
+    var _rmUid = (_authRM && _authRM.data && _authRM.data.user) ? _authRM.data.user.id : null;
+    // 1. Clear localStorage mood keys
+    var _toRemove = [];
+    for(var _ri = 0; _ri < localStorage.length; _ri++){
+      var _rk = localStorage.key(_ri);
+      if(_rk && _rk.startsWith('velo_mood_')) _toRemove.push(_rk);
+    }
+    _toRemove.forEach(function(k){ localStorage.removeItem(k); });
+    safeLS('del','velo_mood_log');
+    _sbVerifiedMoodCount = 0;
+    _setEl('profileDays', 0);
+    _setEl('homeStatStreak', 0);
+    _moodSyncDone = false;
+    // 2. Delete from Supabase (requires DELETE RLS policy on mood_entries)
+    if(sbClient && _rmUid){
+      try{
+        var _delMoods = await sbClient.from('mood_entries').delete().eq('user_id', _rmUid).select('date_key');
+        if(_delMoods && _delMoods.error){
+          pToast('⚠️','Limpieza local OK — Supabase requiere permisos adicionales');
+        } else {
+          var _deleted = (_delMoods.data || []).length;
+          pToast('✅','Ánimos limpiados ('+_deleted+' registros eliminados)');
+        }
+      }catch(e){ pToast('✅','Limpieza local completada'); }
+    } else {
+      pToast('✅','Ánimos locales limpiados');
+    }
+    _renderHomeWeekMoodGraph().catch(function(){});
+    _updateHomeStreak();
+  });
 }
 
 async function pSaveProfileStatus(){
