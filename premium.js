@@ -1149,21 +1149,37 @@ function _clearSession(){
   _inboxAsyncPending = false;
   _buzónPollTmr = null;
   _buzónLastCheck = null;
+  // Chat presence + DM state
+  _inActiveChat = false;
+  _prevChatStatus = null;
+  _dmPeer = null;
+  _dmPendingToId = null;
+  // Guardian chat session state
+  _gcLastMsgId = null;
+  _gcSessionStart = 0;
+  // Circles
+  _selectedCircleFoto = '';
+  // Username mention cache (cross-user contamination risk)
+  _unameCache = {};
   // Stop guardian heartbeat and clear all RT channel refs so the next login can resubscribe
   _stopGuardianHeartbeat();
   _stopGuardianReqListener();
   [_guardianRtCh, _helpRtCh, _bottleRtCh, _happyRtCh, _circleRtCh, _dmRtCh, _dmInboxCh,
-   _grReqCh, _seekerGrCh, _gcRtCh, _gcSeekerCh, _buzónRtCh, _helpChatRtCh, _profileRtCh].forEach(function(ch){ _sbUnsub(ch); });
+   _grReqCh, _seekerGrCh, _gcRtCh, _gcSeekerCh, _buzónRtCh, _helpChatRtCh, _profileRtCh,
+   _circleMembersCh].forEach(function(ch){ _sbUnsub(ch); });
   _guardianRtCh = null; _helpRtCh = null; _bottleRtCh = null; _happyRtCh = null;
   _circleRtCh = null; _dmRtCh = null; _dmInboxCh = null;
   _grReqCh = null; _seekerGrCh = null; _gcRtCh = null; _gcSeekerCh = null;
   _buzónRtCh = null; _helpChatRtCh = null; _profileRtCh = null;
+  _circleMembersCh = null;
   if(_homeRefreshTmr){ clearInterval(_homeRefreshTmr); _homeRefreshTmr = null; }
   if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
   if(_grReqPollTmr){ clearInterval(_grReqPollTmr); _grReqPollTmr = null; }
   if(_dmPollTmr){ clearInterval(_dmPollTmr); _dmPollTmr = null; }
   if(_buzónPollTmr){ clearInterval(_buzónPollTmr); _buzónPollTmr = null; }
   if(_dmReactPollTmr){ clearInterval(_dmReactPollTmr); _dmReactPollTmr = null; }
+  if(_seekerPollTmr){ clearInterval(_seekerPollTmr); _seekerPollTmr = null; }
+  if(_gcPollTmr){ clearInterval(_gcPollTmr); _gcPollTmr = null; }
   _gcReactHash = ''; _dmReactHash = '';
   _moodSyncDone = false;
   _sbVerifiedMoodCount = -1;
@@ -2928,7 +2944,6 @@ async function pRequestPushPermission(){
   }
   var perm = await Notification.requestPermission();
   if(perm !== 'granted') return;
-  pToast('🔔','¡Notificaciones activadas! Te avisamos 3 veces al día 💚');
   safeLS('set','velo_push_granted','1');
   // Subscribe to push
   try{
@@ -2939,7 +2954,10 @@ async function pRequestPushPermission(){
     });
     await _savePushSubscriptionToSupabase(sub);
     safeLS('set','velo_push_sub', JSON.stringify(sub));
-  }catch(e){}
+    pToast('🔔','¡Notificaciones activadas! Te avisamos 3 veces al día 💚');
+  }catch(e){
+    pToast('⚠️','No se pudo activar las notificaciones. Intentá de nuevo.');
+  }
 }
 
 function _checkRequestPushPermission(){
