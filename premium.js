@@ -882,6 +882,23 @@ function _sbUnsub(ch){
   if(ch && sbClient){ try{ sbClient.removeChannel(ch); }catch(e){} }
 }
 
+// Replacement for confirm() — works on iOS Safari PWA where confirm() is silently blocked
+function _pConfirm(msg, onYes){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:0';
+  ov.innerHTML = '<div style="background:var(--cream,#1B2E1B);border-radius:20px 20px 0 0;padding:24px 20px calc(28px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;font-family:Jost,sans-serif">'
+    +'<p style="font-size:15px;color:var(--ink,#e8f0e8);text-align:center;margin:0 0 22px;line-height:1.5">'+msg+'</p>'
+    +'<div style="display:flex;gap:12px">'
+    +'<button id="_pcNo" style="flex:1;padding:13px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:none;color:rgba(180,210,180,.8);font-family:Jost,sans-serif;font-size:14px;cursor:pointer">Cancelar</button>'
+    +'<button id="_pcYes" style="flex:1;padding:13px;border-radius:100px;border:1.5px solid rgba(255,80,80,.4);background:rgba(255,80,80,.12);color:rgba(255,120,120,1);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Confirmar</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+  function _close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.querySelector('#_pcNo').addEventListener('click', _close);
+  ov.querySelector('#_pcYes').addEventListener('click', function(){ _close(); onYes(); });
+  ov.addEventListener('click', function(e){ if(e.target === ov) _close(); });
+}
+
 function _sbHappyRow(r){
   return { id:r.id, userId:r.user_id||'anon', av:r.user_av||'',
     name:r.anon?'Usuario Anónimo':(r.user_name||'Usuario'),
@@ -5409,16 +5426,17 @@ async function pRenderHelp(){
 }
 
 function pDeleteHelpPost(postId){
-  if(!confirm('¿Eliminar tu publicación de la Sala de Ayuda?')) return;
-  _initSupabase();
-  if(sbClient){
-    sbClient.from('help_posts').update({closed:true}).eq('id',postId).then(function(){}).catch(function(){});
-  }
-  safeLS('set','velo_my_help_post_id','');
-  var card = document.getElementById('helppost-'+postId);
-  if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ pRenderHelp(); },350); }
-  else { pRenderHelp(); }
-  pToast('💙','Publicación eliminada');
+  _pConfirm('¿Eliminar tu publicación de la Sala de Ayuda?', function(){
+    _initSupabase();
+    if(sbClient){
+      sbClient.from('help_posts').update({closed:true}).eq('id',postId).then(function(){}).catch(function(){});
+    }
+    safeLS('set','velo_my_help_post_id','');
+    var card = document.getElementById('helppost-'+postId);
+    if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ pRenderHelp(); },350); }
+    else { pRenderHelp(); }
+    pToast('💙','Publicación eliminada');
+  });
 }
 
 var _curHelpPost = null;
@@ -7341,18 +7359,18 @@ async function pRenderBottleResponses(){
   }).join('');
 }
 
-async function pDeleteBottleResponse(broadcastId, cardEl){
-  if(!confirm('¿Eliminar esta respuesta?')) return;
-  if(cardEl){ cardEl.style.transition='opacity .3s'; cardEl.style.opacity='0'; setTimeout(function(){ if(cardEl.parentNode) cardEl.parentNode.removeChild(cardEl); },350); }
-  _initSupabase();
-  if(sbClient && broadcastId){
-    try{ await sbClient.from('broadcasts').delete().eq('id', broadcastId); }catch(e){}
-  }
-  // Also remove from localStorage inbox
-  var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
-  inbox = inbox.filter(function(m){ return m.id !== broadcastId; });
-  safeLS('set','velo_inbox', JSON.stringify(inbox));
-  pToast('🗑️','Respuesta eliminada');
+function pDeleteBottleResponse(broadcastId, cardEl){
+  _pConfirm('¿Eliminar esta respuesta?', async function(){
+    if(cardEl){ cardEl.style.transition='opacity .3s'; cardEl.style.opacity='0'; setTimeout(function(){ if(cardEl.parentNode) cardEl.parentNode.removeChild(cardEl); },350); }
+    _initSupabase();
+    if(sbClient && broadcastId){
+      try{ await sbClient.from('broadcasts').delete().eq('id', broadcastId); }catch(e){}
+    }
+    var inbox = []; try{ inbox = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
+    inbox = inbox.filter(function(m){ return m.id !== broadcastId; });
+    safeLS('set','velo_inbox', JSON.stringify(inbox));
+    pToast('🗑️','Respuesta eliminada');
+  });
 }
 
 async function _loadGuardianStats(){
@@ -7887,10 +7905,11 @@ async function pDeleteDiary(ts){
 }
 
 function pClearAllDiary(){
-  if(!confirm('¿Borrar todo el diario? Esta acción no se puede deshacer.')) return;
-  safeLS('del','velo_diary');
-  pToast('🗑️','Diario eliminado');
-  _loadDiaryEntries();
+  _pConfirm('¿Borrar todo el diario? Esta acción no se puede deshacer.', function(){
+    safeLS('del','velo_diary');
+    pToast('🗑️','Diario eliminado');
+    _loadDiaryEntries();
+  });
 }
 
 // ── MOOD ───────────────────────────────────────────────────────
@@ -8558,32 +8577,32 @@ async function _loadMoodCalendar(){
 }
 
 function pClearAllMoods(){
-  if(!confirm('¿Borrar todo el historial de ánimo? Esta acción no se puede deshacer.')) return;
-  // Remove all velo_mood_* and velo_daily_status_* keys
-  var toRemove = [];
-  for(var i = 0; i < localStorage.length; i++){
-    var k = localStorage.key(i);
-    if(k && (k.startsWith('velo_mood_') || k.startsWith('velo_daily_status_'))) toRemove.push(k);
-  }
-  toRemove.forEach(function(k){ localStorage.removeItem(k); });
-  safeLS('del','velo_mood_log');
-  // Delete from Supabase
-  _initSupabase();
-  var _uid = _myUserId ? _myUserId() : safeLS('get','velo_user_id');
-  if(sbClient && _uid && _uid !== 'guest'){
-    sbClient.from('mood_entries').delete().eq('user_id', _uid)
-      .then(function(){}).catch(function(){});
-  }
-  pToast('🗑️','Historial de ánimo eliminado');
-  pInitMood();
+  _pConfirm('¿Borrar todo el historial de ánimo? Esta acción no se puede deshacer.', function(){
+    var toRemove = [];
+    for(var i = 0; i < localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(k && (k.startsWith('velo_mood_') || k.startsWith('velo_daily_status_'))) toRemove.push(k);
+    }
+    toRemove.forEach(function(k){ localStorage.removeItem(k); });
+    safeLS('del','velo_mood_log');
+    _initSupabase();
+    var _uid = _myUserId ? _myUserId() : safeLS('get','velo_user_id');
+    if(sbClient && _uid && _uid !== 'guest'){
+      sbClient.from('mood_entries').delete().eq('user_id', _uid)
+        .then(function(){}).catch(function(){});
+    }
+    pToast('🗑️','Historial de ánimo eliminado');
+    pInitMood();
+  });
 }
 
 function pDeleteMood(dateKey){
-  if(!confirm('¿Eliminar el registro del '+dateKey+'?')) return;
-  localStorage.removeItem('velo_mood_'+dateKey);
-  localStorage.removeItem('velo_daily_status_'+dateKey);
-  pToast('🗑️','Registro eliminado');
-  _loadMoodCalendar();
+  _pConfirm('¿Eliminar el registro del '+dateKey+'?', function(){
+    localStorage.removeItem('velo_mood_'+dateKey);
+    localStorage.removeItem('velo_daily_status_'+dateKey);
+    pToast('🗑️','Registro eliminado');
+    _loadMoodCalendar();
+  });
 }
 
 // ── CALM SCREEN ────────────────────────────────────────────────
@@ -9534,19 +9553,20 @@ function _renderReviewsList(revs, myId, proId){
   return html;
 }
 
-async function pDeleteReview(reviewId, cardEl){
+function pDeleteReview(reviewId, cardEl){
   if(!reviewId) return;
-  if(!confirm('¿Eliminar esta reseña?')) return;
-  _initSupabase();
-  if(sbClient){
-    try{ await sbClient.from('reviews').delete().eq('id', reviewId); }catch(e){}
-  }
-  if(cardEl){
-    cardEl.style.transition = 'opacity .3s';
-    cardEl.style.opacity = '0';
-    setTimeout(function(){ if(cardEl.parentNode) cardEl.parentNode.removeChild(cardEl); }, 350);
-  }
-  pToast('🗑️','Reseña eliminada');
+  _pConfirm('¿Eliminar esta reseña?', async function(){
+    _initSupabase();
+    if(sbClient){
+      try{ await sbClient.from('reviews').delete().eq('id', reviewId); }catch(e){}
+    }
+    if(cardEl){
+      cardEl.style.transition = 'opacity .3s';
+      cardEl.style.opacity = '0';
+      setTimeout(function(){ if(cardEl.parentNode) cardEl.parentNode.removeChild(cardEl); }, 350);
+    }
+    pToast('🗑️','Reseña eliminada');
+  });
 }
 
 // Demo posts — richer structure
@@ -10016,12 +10036,13 @@ async function _renderHappyHistory(list, wallPosts, wallMyId){
 }
 
 function pClearHappyHistory(){
-  if(!confirm('¿Borrar todo tu historial del Muro de la Felicidad? Esta acción no se puede deshacer.')) return;
-  var _hUid2 = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
-  var _hKey2 = _hUid2 ? 'velo_happy_history_'+_hUid2 : 'velo_happy_history';
-  safeLS('set',_hKey2,'[]');
-  pRenderHappy();
-  pToast('🗑️','Historial borrado');
+  _pConfirm('¿Borrar todo tu historial del Muro de la Felicidad? Esta acción no se puede deshacer.', function(){
+    var _hUid2 = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
+    var _hKey2 = _hUid2 ? 'velo_happy_history_'+_hUid2 : 'velo_happy_history';
+    safeLS('set',_hKey2,'[]');
+    pRenderHappy();
+    pToast('🗑️','Historial borrado');
+  });
 }
 
 function _happyPostCard(h, isOwn){
@@ -10118,30 +10139,28 @@ function _happyPostCard(h, isOwn){
     +'</div>';
 }
 
-async function pDeleteHappyPost(postId){
-  if(!confirm('¿Eliminar esta publicación del Muro?')) return;
-  _initSupabase();
-  // Ensure session is valid before deleting — expired session = silent fail
-  try{ await _ensureSbSession(); }catch(e){}
-  if(sbClient){
-    var _delUid = safeLS('get','velo_user_id')||'';
-    try{
-      // Include user_id filter so RLS allows it even if policy requires ownership
-      var _q = sbClient.from('happy_posts').delete().eq('id', postId);
-      if(_delUid) _q = _q.eq('user_id', _delUid);
-      var _delRes = await _q;
-      if(_delRes && _delRes.error) console.error('[happy delete]', _delRes.error.message);
-    }catch(e){ console.error('[happy delete catch]', e); }
-  }
-  // Remove from local caches so it doesn't reappear
-  if(_sbHappy) _sbHappy = _sbHappy.filter(function(h){ return String(h.id) !== String(postId); });
-  _pendingHappyPost = null;
-  var _lc = _happyLoad().filter(function(p){ return String(p.id) !== String(postId); });
-  _happySave(_lc);
-  var card = document.querySelector('.happy-card[data-id="'+postId+'"]');
-  if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ pRenderHappy(); },350); }
-  else { pRenderHappy(); }
-  pToast('✅','Publicación eliminada');
+function pDeleteHappyPost(postId){
+  _pConfirm('¿Eliminar esta publicación del Muro?', async function(){
+    _initSupabase();
+    try{ await _ensureSbSession(); }catch(e){}
+    if(sbClient){
+      var _delUid = safeLS('get','velo_user_id')||'';
+      try{
+        var _q = sbClient.from('happy_posts').delete().eq('id', postId);
+        if(_delUid) _q = _q.eq('user_id', _delUid);
+        var _delRes = await _q;
+        if(_delRes && _delRes.error) console.error('[happy delete]', _delRes.error.message);
+      }catch(e){ console.error('[happy delete catch]', e); }
+    }
+    if(_sbHappy) _sbHappy = _sbHappy.filter(function(h){ return String(h.id) !== String(postId); });
+    _pendingHappyPost = null;
+    var _lc = _happyLoad().filter(function(p){ return String(p.id) !== String(postId); });
+    _happySave(_lc);
+    var card = document.querySelector('.happy-card[data-id="'+postId+'"]');
+    if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ pRenderHappy(); },350); }
+    else { pRenderHappy(); }
+    pToast('✅','Publicación eliminada');
+  });
 }
 
 function pToggleHappyFav(btn, userId, name, av){
@@ -12006,22 +12025,23 @@ function pDeleteInboxMsg(id, el){
 }
 
 function pInboxVaciar(){
-  if(!confirm('¿Vaciar el buzón? Se eliminarán todos los mensajes visibles.')) return;
-  var el = document.getElementById('inboxList');
-  if(!el) return;
-  var del = []; try{ del = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
-  el.querySelectorAll('.p-inbox-msg[data-mid]').forEach(function(c){
-    var id = c.getAttribute('data-mid'); if(!id) return;
-    if(del.indexOf(id) < 0) del.push(id);
-    if(id.indexOf('bc_') === 0) _syncBroadcastRead(id.replace('bc_',''));
-    else if(id.indexOf('rp_') === 0) _syncBroadcastRead(id);
-    else if(id === 'm1' || id === 'm2') _syncBroadcastRead(id);
-    else if(id.indexOf('survey-') === 0){ safeLS('set','velo_read_'+id,'1'); safeLS('set','velo_last_survey',String(Date.now())); _syncBroadcastRead(id); }
+  _pConfirm('¿Vaciar el buzón? Se eliminarán todos los mensajes visibles.', function(){
+    var el = document.getElementById('inboxList');
+    if(!el) return;
+    var del = []; try{ del = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
+    el.querySelectorAll('.p-inbox-msg[data-mid]').forEach(function(c){
+      var id = c.getAttribute('data-mid'); if(!id) return;
+      if(del.indexOf(id) < 0) del.push(id);
+      if(id.indexOf('bc_') === 0) _syncBroadcastRead(id.replace('bc_',''));
+      else if(id.indexOf('rp_') === 0) _syncBroadcastRead(id);
+      else if(id === 'm1' || id === 'm2') _syncBroadcastRead(id);
+      else if(id.indexOf('survey-') === 0){ safeLS('set','velo_read_'+id,'1'); safeLS('set','velo_last_survey',String(Date.now())); _syncBroadcastRead(id); }
+    });
+    safeLS('set','velo_inbox_deleted', JSON.stringify(del));
+    safeLS('set','velo_inbox', JSON.stringify([]));
+    safeLS('set','velo_inbox_cleared_at', Date.now().toString());
+    pRenderInbox();
   });
-  safeLS('set','velo_inbox_deleted', JSON.stringify(del));
-  safeLS('set','velo_inbox', JSON.stringify([]));
-  safeLS('set','velo_inbox_cleared_at', Date.now().toString());
-  pRenderInbox();
 }
 
 function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl, senderId, senderAv, senderUsername){
@@ -12446,7 +12466,7 @@ function pToggleFavFromProfile(userId, name, av){
 }
 
 function pBlockUser(userId, name, av){
-  if(!confirm('¿Bloquear a '+(name||'este usuario')+'? Sus publicaciones dejarán de aparecer.')) return;
+  _pConfirm('¿Bloquear a '+(name||'este usuario')+'? Sus publicaciones dejarán de aparecer.', function(){
   var blocked = []; try{ blocked = JSON.parse(safeLS('get','velo_blocked')||'[]'); }catch(e){}
   if(blocked.indexOf(userId)<0){ blocked.push(userId); safeLS('set','velo_blocked', JSON.stringify(blocked)); }
   var bd = []; try{ bd = JSON.parse(safeLS('get','velo_blocked_data')||'[]'); }catch(e){}
@@ -12462,6 +12482,7 @@ function pBlockUser(userId, name, av){
   }
   pRemoveFav(userId);
   pToast('🚫','Usuario bloqueado');
+  });
 }
 
 function pUnblockUser(userId){
@@ -12804,21 +12825,24 @@ async function _renderFavWidget(containerId){
 // ── CLEAR CHAT HELPERS ────────────────────────────────────────
 
 function pClearHelpChat(){
-  if(!confirm('¿Limpiar el historial de este chat?')) return;
-  var el = document.getElementById('helpChatMessages');
-  if(el) el.innerHTML = '';
+  _pConfirm('¿Limpiar el historial de este chat?', function(){
+    var el = document.getElementById('helpChatMessages');
+    if(el) el.innerHTML = '';
+  });
 }
 
 function pClearGuardianChat(){
-  if(!confirm('¿Limpiar la vista local de este chat?')) return;
-  var el = document.getElementById('gcMessages');
-  if(el) el.innerHTML = '';
+  _pConfirm('¿Limpiar la vista local de este chat?', function(){
+    var el = document.getElementById('gcMessages');
+    if(el) el.innerHTML = '';
+  });
 }
 
 function pClearCircleChat(){
-  if(!confirm('¿Limpiar la vista local? Los mensajes del círculo seguirán visibles para el resto.')) return;
-  var el = document.getElementById('feedMessages');
-  if(el) el.innerHTML = '';
+  _pConfirm('¿Limpiar la vista local? Los mensajes del círculo seguirán visibles para el resto.', function(){
+    var el = document.getElementById('feedMessages');
+    if(el) el.innerHTML = '';
+  });
 }
 
 var _dmEmojiList = ['😂','❤️','🙏','💪','✨','🌿','🤗','😢','😔','💙','🌸','🍃','🌈','🕊️','💚','🫂'];
@@ -12848,28 +12872,30 @@ function pToggleDMEmojis(){
   panel.style.display = hidden ? 'flex' : 'none';
 }
 
-async function pClearDMChat(){
+function pClearDMChat(){
   if(!_dmPeer) return;
-  if(!confirm('¿Borrar toda la conversación con '+_dmPeer.name+'? Esta acción es permanente.')) return;
-  var myId = safeLS('get','velo_user_id')||'';
-  var el = document.getElementById('dmMessages');
-  if(el) el.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Conversación eliminada</div>';
-  _initSupabase();
-  if(sbClient && myId && _dmPeer){
-    sbClient.from('direct_messages').delete()
-      .or('and(from_id.eq.'+myId+',to_id.eq.'+_dmPeer.id+'),and(from_id.eq.'+_dmPeer.id+',to_id.eq.'+myId+')')
-      .then(function(){}).catch(function(){});
-  }
-  safeLS('del','velo_dm_req_sent_'+_dmPeer.id);
-  safeLS('del','velo_dm_accepted_'+_dmPeer.id);
-  pToast('🗑️','Conversación eliminada');
+  _pConfirm('¿Borrar toda la conversación con '+_dmPeer.name+'? Esta acción es permanente.', function(){
+    var myId = safeLS('get','velo_user_id')||'';
+    var el = document.getElementById('dmMessages');
+    if(el) el.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Conversación eliminada</div>';
+    _initSupabase();
+    if(sbClient && myId && _dmPeer){
+      sbClient.from('direct_messages').delete()
+        .or('and(from_id.eq.'+myId+',to_id.eq.'+_dmPeer.id+'),and(from_id.eq.'+_dmPeer.id+',to_id.eq.'+myId+')')
+        .then(function(){}).catch(function(){});
+    }
+    safeLS('del','velo_dm_req_sent_'+_dmPeer.id);
+    safeLS('del','velo_dm_accepted_'+_dmPeer.id);
+    pToast('🗑️','Conversación eliminada');
+  });
 }
 
 function pClearAIChat(){
-  if(!confirm('¿Limpiar la conversación con Velo IA?')) return;
-  var el = document.getElementById('calmAIMessages');
-  if(el) el.innerHTML = '';
-  pToast('✨','Chat limpiado');
+  _pConfirm('¿Limpiar la conversación con Velo IA?', function(){
+    var el = document.getElementById('calmAIMessages');
+    if(el) el.innerHTML = '';
+    pToast('✨','Chat limpiado');
+  });
 }
 
 // ── DIRECT MESSAGES ───────────────────────────────────────────
@@ -13887,18 +13913,18 @@ function pSaveProAvail(){
 }
 
 function pCancelProBooking(bookingId, proId){
-  if(!confirm('¿Cancelar esta reserva?')) return;
-  var bks = _proBookingsLoad(proId);
-  bks = bks.map(function(b){ return b.id===bookingId ? Object.assign({},b,{status:'cancelled'}) : b; });
-  _proBookingsSave(proId, bks);
-  // Update Supabase
-  _initSupabase();
-  if(sbClient && bookingId){
-    sbClient.from('sessions').update({status:'cancelled',updated_at:new Date().toISOString()}).eq('id',bookingId).then(function(){}).catch(function(){});
-  }
-  pToast('❌','Reserva cancelada');
-  var content = document.getElementById('proPanelContent');
-  if(content) content.innerHTML = pRenderProAgenda();
+  _pConfirm('¿Cancelar esta reserva?', function(){
+    var bks = _proBookingsLoad(proId);
+    bks = bks.map(function(b){ return b.id===bookingId ? Object.assign({},b,{status:'cancelled'}) : b; });
+    _proBookingsSave(proId, bks);
+    _initSupabase();
+    if(sbClient && bookingId){
+      sbClient.from('sessions').update({status:'cancelled',updated_at:new Date().toISOString()}).eq('id',bookingId).then(function(){}).catch(function(){});
+    }
+    pToast('❌','Reserva cancelada');
+    var content = document.getElementById('proPanelContent');
+    if(content) content.innerHTML = pRenderProAgenda();
+  });
 }
 
 var _bookingProId = null;
