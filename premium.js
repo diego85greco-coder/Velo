@@ -5069,7 +5069,7 @@ function _gcSubscribe(){
       if(m.reactions && typeof m.reactions === 'object'){
         var chips = Object.keys(m.reactions).filter(function(e){ return m.reactions[e]; }).map(function(e){
           var cnt = m.reactions[e]||1;
-          return '<span class="msg-reaction" data-emoji="'+e+'" data-cnt="'+cnt+'" onclick="_msgReact(\''+e+'\')">'+e+' '+cnt+'</span>';
+          return '<span class="msg-reaction" data-emoji="'+e+'" data-cnt="'+cnt+'" onclick="_msgReact(\''+e+'\',this)">'+e+' '+cnt+'</span>';
         }).join('');
         if(chips){
           var newBar = document.createElement('div');
@@ -5773,7 +5773,7 @@ function _subscribeHelpChat(post){
       if(m.reactions && typeof m.reactions === 'object'){
         var chips = Object.keys(m.reactions).map(function(e){
           var cnt = m.reactions[e]||1;
-          return '<span class="msg-reaction" data-emoji="'+e+'" data-cnt="'+cnt+'" onclick="_msgReact(\''+e+'\')">'+e+' '+cnt+'</span>';
+          return '<span class="msg-reaction" data-emoji="'+e+'" data-cnt="'+cnt+'" onclick="_msgReact(\''+e+'\',this)">'+e+' '+cnt+'</span>';
         }).join('');
         if(chips){
           var newBar = document.createElement('div');
@@ -5861,10 +5861,12 @@ function pSendHelpChatMsg(){
   var fullText = quote ? '↩ "'+quote.slice(0,60)+(quote.length>60?'…':'')+'"  \n'+text : text;
   // Optimistic render
   var msgEl = document.getElementById('helpChatMessages');
+  var _hLastBubble = null;
   if(msgEl){
     var div = document.createElement('div');
     div.innerHTML = _buildMsgBubble(text, true, '', '', 'helpChatInput', 'helpChatReplyBar', quote);
-    var child = div.firstElementChild; if(child) msgEl.appendChild(child);
+    var child = div.firstElementChild;
+    if(child){ msgEl.appendChild(child); _hLastBubble = child; }
     msgEl.scrollTop = msgEl.scrollHeight;
   }
   _geminiCrisisCheck(text);
@@ -5874,9 +5876,6 @@ function pSendHelpChatMsg(){
     var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
     var myName = safeLS('get','velo_user_name')||'';
     var myAv   = safeLS('get','velo_user_av')||'💚';
-    // Capture the just-rendered bubble so we can stamp its data-sb-id once Supabase returns the row ID.
-    // Without this, reactions from the other user can't find the bubble via the UPDATE subscription.
-    var _hLastBubble = msgEl ? msgEl.lastElementChild : null;
     sbClient.from('direct_messages').insert({
       from_id:myId, from_name:myName, from_av:myAv, to_id:_curHelpPost.userId, text:fullText
     }).select('id').single().then(function(res){
@@ -13002,7 +13001,7 @@ function _subscribeToDMThread(){
       if(m.reactions && typeof m.reactions === 'object'){
         var chips = Object.keys(m.reactions).map(function(e){
           var cnt = m.reactions[e]||1;
-          return '<span class="msg-reaction" data-emoji="'+e+'" data-cnt="'+cnt+'" onclick="_msgReact(\''+e+'\')">'+e+' '+cnt+'</span>';
+          return '<span class="msg-reaction" data-emoji="'+e+'" data-cnt="'+cnt+'" onclick="_msgReact(\''+e+'\',this)">'+e+' '+cnt+'</span>';
         }).join('');
         if(chips){
           var newBar = document.createElement('div');
@@ -19742,11 +19741,15 @@ function pShowMsgActions(btn, msgId, text, inputId, replyBarId, senderName){
   pop.style.left = left + 'px';
 }
 
-function _msgReact(emoji){
+function _msgReact(emoji, chipEl){
   var pop = document.getElementById('msgActionsPopup');
   if(pop) pop.style.display = 'none';
   var msgId = _msgPopupData ? _msgPopupData.msgId : null;
-  // Also allow clicking existing reaction chips (msgId comes from data-sb-id parent)
+  // When called from an existing chip click, find the parent message element
+  if(!msgId && chipEl){
+    var _chipParent = chipEl.closest ? chipEl.closest('[data-sb-id]') : null;
+    msgId = _chipParent ? _chipParent.id : null;
+  }
   if(!msgId) return;
   var msgEl = document.getElementById(msgId);
   if(!msgEl) return;
@@ -19862,7 +19865,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
   if(reactions && typeof reactions === 'object'){
     var chips = Object.keys(reactions).map(function(e){
       var cnt = reactions[e]||1;
-      return '<span class="msg-reaction" data-emoji="'+e+'" data-cnt="'+cnt+'" onclick="_msgReact(\''+e+'\')">'+e+' '+cnt+'</span>';
+      return '<span class="msg-reaction" data-emoji="'+e+'" data-cnt="'+cnt+'" onclick="_msgReact(\''+e+'\',this)">'+e+' '+cnt+'</span>';
     }).join('');
     if(chips) rxHtml = '<div class="msg-rx-bar">'+chips+'</div>';
   }
