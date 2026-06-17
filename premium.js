@@ -5040,6 +5040,11 @@ function _buzónHandleNew(rows){
   safeLS('set','velo_bcast_unread', JSON.stringify(_ubcIds));
   _showBuzónAlert(newest.subject||'Nuevo mensaje en Buzón', sInfo&&sInfo.i, sInfo&&sInfo.n, sInfo&&sInfo.a||newest.icon||'💌');
   _updateInboxDot();
+  // If the inbox page is currently open, refresh it so the new message appears immediately
+  if(_curPage === 'inbox'){
+    _inboxAsyncPending = false; // clear any stale lock from the initial page render
+    pRenderInbox();
+  }
 }
 
 function _gcSubscribe(){
@@ -11568,9 +11573,9 @@ function pRenderInbox(){
   // Load broadcasts AFTER fresh read state is ready
   _readStateProm.then(function(){
    sbLoadBroadcasts(userType === 'pro' ? 'pros' : 'users').then(async function(bcs){
-    if(!bcs || !bcs.length) return;
+    if(!bcs || !bcs.length){ _inboxAsyncPending = false; return; }
     var el2 = document.getElementById('inboxList');
-    if(!el2) return;
+    if(!el2){ _inboxAsyncPending = false; return; }
     // Filter out ones already shown (by id in localStorage inbox)
     var localIds = msgs.map(function(m){ return m.id; });
     var newBcs = bcs.filter(function(b){ return localIds.indexOf(b.id) < 0; });
