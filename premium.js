@@ -57,6 +57,8 @@ var _dmInboxCh   = null;   // realtime channel direct_messages (global inbox lis
 var _dmPollTmr   = null;   // polling fallback for global DM inbox
 var _buzónRtCh   = null;   // realtime channel broadcasts (personal buzón alerts)
 var _dmLastMsgId    = null;   // last rendered DM message DB id (prevents flicker)
+var _dmReactHash    = '';     // hash of all DM message reactions — detects UPDATE-only changes
+var _dmReactPollTmr = null;   // poll timer for DM reactions fallback
 var _dmSessionStart = null;   // ISO timestamp when current DM session began (filters old history)
 var _favsList     = null;   // cached favorites array (loaded lazily)
 var _prevChatStatus = null; // status saved before entering any chat (restored on exit)
@@ -1082,6 +1084,8 @@ function _clearSession(){
   if(_grReqPollTmr){ clearInterval(_grReqPollTmr); _grReqPollTmr = null; }
   if(_dmPollTmr){ clearInterval(_dmPollTmr); _dmPollTmr = null; }
   if(_buzónPollTmr){ clearInterval(_buzónPollTmr); _buzónPollTmr = null; }
+  if(_dmReactPollTmr){ clearInterval(_dmReactPollTmr); _dmReactPollTmr = null; }
+  _gcReactHash = ''; _dmReactHash = '';
 }
 
 async function pSignOut(){
@@ -4801,6 +4805,7 @@ var _gcSeekerCh    = null;   // seeker's request-status channel
 var _seekerPollTmr = null;   // polling fallback for seeker wait
 var _gcPollTmr     = null;   // polling fallback for guardian chat messages
 var _gcLastMsgId   = null;   // last rendered message DB id (prevents flicker on poll)
+var _gcReactHash   = '';     // hash of all guardian chat message reactions — detects UPDATE-only changes
 var _gcSessionStart = 0;     // epoch ms when current guardian chat session began
 
 function _openGuardianChat(peerId, peerName, peerAv, reqId, role){
@@ -4812,6 +4817,7 @@ function _openGuardianChat(peerId, peerName, peerAv, reqId, role){
   _gcRole      = role;
   _gcSessionStart = Date.now();
   _gcLastMsgId = null; // reset so first render is a clean full load
+  _gcReactHash = '';
   pGoTo('guardian-chat');
 }
 
@@ -4859,11 +4865,13 @@ async function _gcRender(){
       return;
     }
     var lastId = msgs[msgs.length-1].id;
-    // Nothing new — skip re-render entirely (prevents polling flicker)
-    if(lastId === _gcLastMsgId) return;
+    var reactHash = msgs.map(function(m){ var r=m.reactions; return m.id+(r&&Object.keys(r).length?JSON.stringify(r):''); }).join('');
+    // Nothing changed (no new messages AND no reaction updates) — skip re-render
+    if(lastId === _gcLastMsgId && reactHash === _gcReactHash) return;
+    var onlyReactChanged = (lastId === _gcLastMsgId);
     var wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-    // If we already have messages rendered, try to append only new ones
-    if(_gcLastMsgId){
+    // Incremental append only when new messages arrived (not reaction-only updates)
+    if(!onlyReactChanged && _gcLastMsgId){
       var lastIdx = msgs.findIndex(function(m){ return m.id === _gcLastMsgId; });
       if(lastIdx >= 0 && lastIdx < msgs.length - 1){
         var ph = document.getElementById('gcPlaceholder');
@@ -4875,17 +4883,19 @@ async function _gcRender(){
           while(tmp.firstChild) el.appendChild(tmp.firstChild);
         });
         _gcLastMsgId = lastId;
+        _gcReactHash = reactHash;
         if(wasAtBottom) el.scrollTop = el.scrollHeight;
         return;
       }
     }
-    // Full render (first load or message not found in current DOM — e.g. reaction update)
+    // Full render (first load, reaction update, or incremental path not applicable)
     el.innerHTML = msgs.map(function(m){
       var isOwn = m.from_id === myId;
       return _buildMsgBubble(m.text||'', isOwn, isOwn?'':(m.from_av||'🌿'), isOwn?'':(m.from_name||''), 'gcInput', 'gcReplyBar', '', m.reactions||{}, 'direct_messages:'+m.id, isOwn?'':(m.from_id||''));
     }).join('');
     _gcLastMsgId = lastId;
-    el.scrollTop = el.scrollHeight;
+    _gcReactHash = reactHash;
+    if(wasAtBottom) el.scrollTop = el.scrollHeight;
   }catch(e){}
 }
 
@@ -5045,7 +5055,7 @@ function _gcSubscribe(){
       if(!rel(m) || !m.id) return;
       // Update reaction bar in-place without re-rendering whole chat
       var bubble = document.querySelector('[data-sb-id="direct_messages:'+m.id+'"]');
-      if(!bubble) return;
+      if(!bubble){ _gcReactHash = ''; _gcRender(); return; }
       var oldBar = bubble.querySelector('.msg-rx-bar');
       if(oldBar) oldBar.remove();
       if(m.reactions && typeof m.reactions === 'object'){
@@ -5060,6 +5070,7 @@ function _gcSubscribe(){
           bubble.appendChild(newBar);
         }
       }
+      _gcReactHash = ''; // mark hash stale so next poll re-computes
     })
     .subscribe(function(status, err){
       if(status !== 'SUBSCRIBED') console.warn('[gc subscribe] status:', status, err||'');
@@ -5102,6 +5113,7 @@ function pSendGuardianMsg(){
     }).select('id').single().then(function(res){
       if(res && res.data && res.data.id && _gcLastBubble){
         _gcLastBubble.setAttribute('data-sb-id', 'direct_messages:'+res.data.id);
+        _gcLastMsgId = res.data.id; // prevent poll from re-appending this message
       }
     }).catch(function(){});
   }
@@ -12758,6 +12770,7 @@ function _enterDMChat(toId, toName, toAv){
   _updateGuardianPresence('ocupado');
   _dmPeer = { id:toId, name:toName||'Usuario', av:toAv||'🧑' };
   _dmLastMsgId    = null;
+  _dmReactHash    = '';
   _dmSessionStart = new Date().toISOString(); // only show messages from this session onward
   var unread = {}; try{ unread = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
   delete unread[toId];
@@ -12836,11 +12849,13 @@ async function _renderDMThread(){
       return;
     }
     var lastId = msgs[msgs.length-1].id;
-    // Nothing changed — skip re-render (prevents flicker)
-    if(lastId === _dmLastMsgId) return;
+    var reactHash = msgs.map(function(m){ var r=m.reactions; return m.id+(r&&Object.keys(r).length?JSON.stringify(r):''); }).join('');
+    // Nothing changed (no new messages AND no reaction updates) — skip re-render
+    if(lastId === _dmLastMsgId && reactHash === _dmReactHash) return;
+    var onlyReactChanged = (lastId === _dmLastMsgId);
     var wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-    // Incremental append if possible
-    if(_dmLastMsgId){
+    // Incremental append only when new messages arrived (not reaction-only updates)
+    if(!onlyReactChanged && _dmLastMsgId){
       var lastIdx = msgs.findIndex(function(m){ return m.id === _dmLastMsgId; });
       if(lastIdx >= 0 && lastIdx < msgs.length - 1){
         var emptyEl = el.querySelector('.dm-empty-state');
@@ -12852,17 +12867,19 @@ async function _renderDMThread(){
           while(tmp.firstChild) el.appendChild(tmp.firstChild);
         });
         _dmLastMsgId = lastId;
+        _dmReactHash = reactHash;
         if(wasAtBottom) el.scrollTop = el.scrollHeight;
         return;
       }
     }
-    // Full render (first load or reaction update)
+    // Full render (first load, reaction update, or incremental path not applicable)
     el.innerHTML = msgs.map(function(m){
       var isOwn = m.from_id === myId;
       return _buildMsgBubble(m.text||'', isOwn, isOwn?'':(m.from_av||'🧑'), isOwn?'':(m.from_name||''), 'dmInput', 'dmReplyBar', '', m.reactions||{}, 'direct_messages:'+m.id, isOwn?'':(m.from_id||''));
     }).join('');
     _dmLastMsgId = lastId;
-    el.scrollTop = el.scrollHeight;
+    _dmReactHash = reactHash;
+    if(wasAtBottom) el.scrollTop = el.scrollHeight;
   }catch(e){ el.innerHTML = '<div class="p-empty" style="padding:30px 0">Error al cargar mensajes</div>'; }
 }
 
@@ -12883,7 +12900,7 @@ function _subscribeToDMThread(){
       if(!_dmRel(m) || !m.id) return;
       // Inline reaction chip update — avoids full re-render and scroll jump
       var bubble = document.querySelector('[data-sb-id="direct_messages:'+m.id+'"]');
-      if(!bubble){ _renderDMThread(); return; } // fallback if bubble not found
+      if(!bubble){ _dmReactHash = ''; _renderDMThread(); return; } // fallback: reset hash so render runs
       var oldBar = bubble.querySelector('.msg-rx-bar');
       if(oldBar) oldBar.remove();
       if(m.reactions && typeof m.reactions === 'object'){
@@ -12898,7 +12915,15 @@ function _subscribeToDMThread(){
           bubble.appendChild(newBar);
         }
       }
+      _dmReactHash = ''; // mark hash stale so next poll re-computes
     }).subscribe();
+  // Reaction poll fallback — catches cases where Supabase UPDATE events don't arrive
+  if(_dmReactPollTmr) clearInterval(_dmReactPollTmr);
+  _dmReactPollTmr = setInterval(function(){
+    if(!_dmPeer){ clearInterval(_dmReactPollTmr); _dmReactPollTmr = null; return; }
+    _dmReactHash = ''; // force reaction re-check
+    _renderDMThread();
+  }, 8000);
 }
 
 function pLeaveDM(){
@@ -12928,10 +12953,12 @@ function pLeaveDM(){
     });
   }
   if(_dmRtCh && sbClient){ try{ sbClient.removeChannel(_dmRtCh); }catch(e){} _dmRtCh = null; }
+  if(_dmReactPollTmr){ clearInterval(_dmReactPollTmr); _dmReactPollTmr = null; }
   // Clear accepted flag so a new session requires a fresh chat request
   if(_dmPeer && _dmPeer.id) safeLS('del', 'velo_dm_accepted_'+_dmPeer.id);
   _dmPeer = null;
   _dmLastMsgId = null;
+  _dmReactHash = '';
   _inActiveChat = false;
   _updateGuardianPresence(_prevChatStatus || _presenceStatus());
   _prevChatStatus = null;
