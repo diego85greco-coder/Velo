@@ -859,7 +859,21 @@ function _sbSub(channelName, table, callback){
   try{
     var ch = sbClient.channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: table }, callback)
-      .subscribe();
+      .subscribe(function(status){
+        if(status === 'CHANNEL_ERROR'){
+          // Channel died (e.g. socket closed 1006) — recreate after 4s
+          setTimeout(function(){
+            try{ sbClient.removeChannel(ch); }catch(e){}
+            try{
+              var newCh = sbClient.channel(channelName)
+                .on('postgres_changes', { event: '*', schema: 'public', table: table }, callback)
+                .subscribe();
+              // Copy new channel onto same object reference so callers see the update
+              Object.assign(ch, newCh);
+            }catch(e){}
+          }, 4000);
+        }
+      });
     return ch;
   }catch(e){ return null; }
 }
@@ -1812,7 +1826,12 @@ async function _syncMoodsFromSb(){
   if(!sbClient) return;
   try{
     var ok = await _ensureSbSession();
-    if(!ok) return;
+    if(!ok){ _moodSyncDone = false; return; }
+    // Privacy guard: verify Supabase auth session belongs to the current localStorage user
+    var {data:_authD} = await sbClient.auth.getUser();
+    if(!_authD || !_authD.user){ _moodSyncDone = false; return; }
+    var _lsUid = safeLS('get','velo_user_id') || '';
+    if(_lsUid && _authD.user.id !== _lsUid){ _moodSyncDone = false; return; }
     var now = new Date();
     var months = {};
     for(var i=0;i<7;i++){
@@ -1822,8 +1841,9 @@ async function _syncMoodsFromSb(){
     }
     await Promise.all(Object.values(months).map(async function(m){
       var rows = await sbLoadAllMoods(m.year, m.month);
+      // Always overwrite — Supabase is source of truth; stale localStorage keys must not survive
       if(rows) rows.forEach(function(e){
-        if(e.emoji && !safeLS('get','velo_mood_'+e.date_key)){
+        if(e.emoji){
           safeLS('set','velo_mood_'+e.date_key, JSON.stringify({emoji:e.emoji,label:e.label||'',note:e.note||'',ts:0}));
         }
       });
@@ -1841,6 +1861,11 @@ async function _pushMissingMoodsToSb(){
   try{
     var ok = await _ensureSbSession();
     if(!ok) return;
+    // Privacy guard: abort if Supabase session doesn't match current user
+    var {data:_authDP} = await sbClient.auth.getUser();
+    if(!_authDP || !_authDP.user) return;
+    var _lsUidP = safeLS('get','velo_user_id') || '';
+    if(_lsUidP && _authDP.user.id !== _lsUidP) return;
     // Collect last 60 days of local moods
     var now = new Date();
     var localMoods = {};
@@ -17749,6 +17774,8 @@ async function sbSaveMoodEntry(dateKey, emoji, label, note){
     if(!ok) return;
     var {data:ud} = await sbClient.auth.getUser();
     if(!ud || !ud.user) return;
+    var _lsUidS = safeLS('get','velo_user_id') || '';
+    if(_lsUidS && ud.user.id !== _lsUidS) return;
     await sbClient.from('mood_entries').upsert({ user_id:ud.user.id, date_key:dateKey, emoji:emoji, label:label, note:note||'' },{onConflict:'user_id,date_key'});
   }catch(e){}
 }
@@ -17760,6 +17787,8 @@ async function sbLoadAllMoods(year, month){
     if(!ok) return null;
     var {data:ud} = await sbClient.auth.getUser();
     if(!ud || !ud.user) return null;
+    var _lsUidL = safeLS('get','velo_user_id') || '';
+    if(_lsUidL && ud.user.id !== _lsUidL) return null;
     var prefix = year+'-'+String(month).padStart(2,'0');
     var {data, error} = await sbClient.from('mood_entries').select('emoji,label,note,date_key').eq('user_id', ud.user.id).like('date_key', prefix+'%').order('date_key',{ascending:true});
     return error ? null : data;
