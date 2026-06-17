@@ -3318,25 +3318,28 @@ var _dqAllResponses = [];  // full list cached for expand
 
 function _renderDailyFeed(responses){
   _dqAllResponses = responses;
+  // Filter out locally-hidden responses (deleted by this user, pending Supabase sync)
+  var _dqHidden = []; try{ _dqHidden = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
+  var visible = _dqHidden.length ? responses.filter(function(r){ return _dqHidden.indexOf(String(r.id)) === -1; }) : responses;
   var summaryEl = document.getElementById('homeDailyQSummary');
   var feedEl    = document.getElementById('homeDailyQFeed');
   if(!feedEl) return;
   // Emoji summary bar
   if(summaryEl){
     var counts = {};
-    responses.forEach(function(r){ counts[r.mood_emoji]=(counts[r.mood_emoji]||0)+1; });
+    visible.forEach(function(r){ counts[r.mood_emoji]=(counts[r.mood_emoji]||0)+1; });
     var sorted = Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
     summaryEl.innerHTML = sorted.map(function(e){
       return '<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(255,255,255,.08);border-radius:20px;padding:3px 9px;font-size:14px">'
         +e+'<span style="font-size:11px;color:rgba(255,255,255,.55);font-family:Jost,sans-serif">'+counts[e]+'</span></span>';
     }).join('');
   }
-  if(!responses.length){
+  if(!visible.length){
     feedEl.innerHTML = '<div style="text-align:center;padding:14px 0;font-size:13px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif;font-style:italic">Sé el primero en compartir 🌱</div>';
     return;
   }
-  var preview = responses.slice(0, _DQ_PREVIEW_COUNT);
-  var rest = responses.length - _DQ_PREVIEW_COUNT;
+  var preview = visible.slice(0, _DQ_PREVIEW_COUNT);
+  var rest = visible.length - _DQ_PREVIEW_COUNT;
   feedEl.innerHTML = _buildDqCards(preview)
     + (rest > 0
       ? '<button onclick="_expandDailyFeed()" style="width:100%;margin-top:10px;padding:10px;border-radius:12px;border:1.5px solid rgba(116,198,157,.22);background:transparent;color:rgba(116,198,157,.7);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px" id="dqExpandBtn">Ver '+rest+' respuestas más ↓</button>'
@@ -3346,12 +3349,16 @@ function _renderDailyFeed(responses){
 function _expandDailyFeed(){
   var feedEl = document.getElementById('homeDailyQFeed');
   if(!feedEl) return;
-  feedEl.innerHTML = _buildDqCards(_dqAllResponses);
+  var _dqHidden = []; try{ _dqHidden = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
+  var _vis = _dqHidden.length ? _dqAllResponses.filter(function(r){ return _dqHidden.indexOf(String(r.id)) === -1; }) : _dqAllResponses;
+  feedEl.innerHTML = _buildDqCards(_vis);
 }
 
 function _buildDqCards(list){
+  // Use localStorage uid for ownership check (synchronous); delete flow re-validates with auth.getUser()
   var myUid = safeLS('get','velo_user_id') || '';
-  return list.map(function(r){
+  var _dqHid = []; try{ _dqHid = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
+  return list.filter(function(r){ return _dqHid.indexOf(String(r.id)) === -1; }).map(function(r){
     var av = r.user_avatar || '';
     var isImg = av && av.startsWith('http');
     var avHtml = isImg
@@ -3381,29 +3388,35 @@ function _buildDqCards(list){
 }
 
 async function pDeleteMyDqResponse(responseId){
-  if(!sbClient || !responseId) return;
-  try{
-    var _sessOk = await _ensureSbSession();
-    if(!_sessOk){ pToast('⚠️','Sesión expirada, reingresá'); return; }
-    // Use auth.getUser() — same source as RLS auth.uid(), avoids localStorage mismatch
-    var {data:_authDel} = await sbClient.auth.getUser();
-    if(!_authDel || !_authDel.user){ pToast('⚠️','Sesión expirada, reingresá'); return; }
-    var myUid = _authDel.user.id;
-    // Attempt 1: delete with user_id filter (correct for new rows saved after v837)
-    var _delRes = await sbClient.from('daily_responses').delete().eq('id', responseId).eq('user_id', myUid).select('id');
-    if(_delRes && _delRes.error){ pToast('⚠️','No se pudo borrar'); return; }
-    if(!_delRes.data || !_delRes.data.length){
-      // Attempt 2: row may have been saved with a stale user_id (pre-v837 bug) — try by id only,
-      // relying on RLS to block if this row belongs to a different user
-      var _delRes2 = await sbClient.from('daily_responses').delete().eq('id', responseId).select('id');
-      if(_delRes2 && _delRes2.error){ pToast('⚠️','No se pudo borrar'); return; }
-      if(!_delRes2.data || !_delRes2.data.length){ pToast('⚠️','No se pudo borrar'); return; }
-    }
-    // Remove from local cache — do NOT re-fetch (would race with DB commit and restore the row)
-    _dqAllResponses = _dqAllResponses.filter(function(r){ return String(r.id) !== String(responseId); });
+  if(!responseId) return;
+  // Always hide locally first — persists across refreshes via velo_dq_hidden
+  function _hideLocally(){
+    var _h = []; try{ _h = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
+    if(_h.indexOf(String(responseId)) === -1) _h.push(String(responseId));
+    // Keep list capped at 200 entries (oldest first out)
+    if(_h.length > 200) _h = _h.slice(_h.length - 200);
+    safeLS('set','velo_dq_hidden', JSON.stringify(_h));
     _renderDailyFeed(_dqAllResponses);
     pToast('🗑️','Respuesta eliminada');
-  }catch(e){ pToast('⚠️','No se pudo borrar'); }
+  }
+  _hideLocally();
+  // Attempt Supabase delete in background (requires DELETE RLS policy on daily_responses)
+  if(!sbClient) return;
+  try{
+    var {data:_authDel} = await sbClient.auth.getUser();
+    if(!_authDel || !_authDel.user) return;
+    var myUid = _authDel.user.id;
+    // Attempt 1: with user_id filter (matches rows saved post-v838)
+    var _delRes = await sbClient.from('daily_responses').delete().eq('id', responseId).eq('user_id', myUid).select('id');
+    if(_delRes && !_delRes.error && _delRes.data && _delRes.data.length) return; // confirmed deleted
+    // Attempt 2: by id only (for rows saved with stale user_id pre-v838)
+    var _delRes2 = await sbClient.from('daily_responses').delete().eq('id', responseId).select('id');
+    if(_delRes2 && _delRes2.error){
+      console.warn('[dq delete] Supabase error — add DELETE policy: CREATE POLICY "delete_own_responses" ON daily_responses FOR DELETE USING (auth.uid() = user_id);');
+    } else if(!_delRes2.data || !_delRes2.data.length){
+      console.warn('[dq delete] 0 rows — possible missing DELETE RLS policy on daily_responses. Add: CREATE POLICY "delete_own_responses" ON daily_responses FOR DELETE USING (auth.uid() = user_id);');
+    }
+  }catch(e){ console.warn('[dq delete] exception:', e && e.message); }
 }
 
 var _dailySelectedEmoji = '';
@@ -10958,12 +10971,22 @@ async function pResetMyMoodData(){
     // 2. Delete from Supabase (requires DELETE RLS policy on mood_entries)
     if(sbClient && _rmUid){
       try{
+        // First count how many records exist so we can detect if delete was silently blocked by RLS
+        var _countRes = await sbClient.from('mood_entries').select('date_key', {count:'exact', head:true}).eq('user_id', _rmUid);
+        var _expectedCount = (_countRes && _countRes.count != null) ? _countRes.count : -1;
         var _delMoods = await sbClient.from('mood_entries').delete().eq('user_id', _rmUid).select('date_key');
         if(_delMoods && _delMoods.error){
-          pToast('⚠️','Limpieza local OK — Supabase requiere permisos adicionales');
+          console.warn('[resetMoods] Supabase error — add DELETE policy: CREATE POLICY "delete_own_moods" ON mood_entries FOR DELETE USING (auth.uid() = user_id);');
+          pToast('⚠️','Limpieza local OK — agregá política DELETE en Supabase');
         } else {
           var _deleted = (_delMoods.data || []).length;
-          pToast('✅','Ánimos limpiados ('+_deleted+' registros eliminados)');
+          if(_deleted === 0 && _expectedCount > 0){
+            // RLS silently blocked — count said records exist but delete returned 0
+            console.warn('[resetMoods] DELETE blocked by RLS (expected '+_expectedCount+' rows). Add: CREATE POLICY "delete_own_moods" ON mood_entries FOR DELETE USING (auth.uid() = user_id);');
+            pToast('⚠️','Limpieza local OK — agregá política DELETE en Supabase');
+          } else {
+            pToast('✅','Ánimos limpiados ('+_deleted+' registros eliminados)');
+          }
         }
       }catch(e){ pToast('✅','Limpieza local completada'); }
     } else {
