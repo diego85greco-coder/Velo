@@ -3373,10 +3373,16 @@ async function pDeleteMyDqResponse(responseId){
     var {data:_authDel} = await sbClient.auth.getUser();
     if(!_authDel || !_authDel.user){ pToast('⚠️','Sesión expirada, reingresá'); return; }
     var myUid = _authDel.user.id;
-    // .select('id') returns deleted rows — empty array means RLS blocked or no matching row
+    // Attempt 1: delete with user_id filter (correct for new rows saved after v837)
     var _delRes = await sbClient.from('daily_responses').delete().eq('id', responseId).eq('user_id', myUid).select('id');
     if(_delRes && _delRes.error){ pToast('⚠️','No se pudo borrar'); return; }
-    if(!_delRes.data || !_delRes.data.length){ pToast('⚠️','No se pudo borrar'); return; }
+    if(!_delRes.data || !_delRes.data.length){
+      // Attempt 2: row may have been saved with a stale user_id (pre-v837 bug) — try by id only,
+      // relying on RLS to block if this row belongs to a different user
+      var _delRes2 = await sbClient.from('daily_responses').delete().eq('id', responseId).select('id');
+      if(_delRes2 && _delRes2.error){ pToast('⚠️','No se pudo borrar'); return; }
+      if(!_delRes2.data || !_delRes2.data.length){ pToast('⚠️','No se pudo borrar'); return; }
+    }
     // Remove from local cache — do NOT re-fetch (would race with DB commit and restore the row)
     _dqAllResponses = _dqAllResponses.filter(function(r){ return String(r.id) !== String(responseId); });
     _renderDailyFeed(_dqAllResponses);
@@ -3413,12 +3419,20 @@ async function pSubmitDailyResponse(){
   var text  = txEl ? txEl.value.trim().slice(0,120) : '';
   var q     = _getDailyQuestion();
   var dateKey = _dateKey();
-  var uid   = safeLS('get','velo_user_id');
   var name  = safeLS('get','velo_user_name') || 'Alguien';
   var av    = safeLS('get','velo_user_av') || '';
   var avSafe = (av && !av.startsWith('data:')) ? av : '';
+  // Always use auth.getUser() so the stored user_id matches what RLS checks (auth.uid())
+  var uid = safeLS('get','velo_user_id');
+  if(sbClient){
+    try{
+      var {data:_authSub} = await sbClient.auth.getUser();
+      if(_authSub && _authSub.user) uid = _authSub.user.id;
+    }catch(e){}
+  }
+  if(!uid) return;
   safeLS('set','velo_daily_resp_'+dateKey, JSON.stringify({emoji:_dailySelectedEmoji,text:text,uid:uid}));
-  if(sbClient && uid){
+  if(sbClient){
     try{
       await sbClient.from('daily_responses').upsert({
         user_id:uid, question_date:dateKey, question_id:q.id,
