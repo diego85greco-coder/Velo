@@ -3908,8 +3908,8 @@ body.r-dark .happy-cbar-placeholder {
   transition: max-height .35s ease, opacity .28s ease;
 }
 .happy-compose-body.happy-compose--open {
-  max-height: min(72vh, 680px);
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
   opacity: 1;
 }
 

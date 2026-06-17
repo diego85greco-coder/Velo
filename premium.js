@@ -3269,9 +3269,9 @@ async function pDeleteMyDqResponse(responseId){
   if(!sbClient || !responseId) return;
   var myUid = safeLS('get','velo_user_id') || '';
   if(!myUid) return;
-  if(!confirm('¿Borrar tu respuesta?')) return;
   try{
     await sbClient.from('daily_responses').delete().eq('id', responseId).eq('user_id', myUid);
+    pToast('🗑️','Respuesta eliminada');
     _fetchDailyFeed(_getDailyQuestion().id);
   }catch(e){ pToast('⚠️','No se pudo borrar'); }
 }
