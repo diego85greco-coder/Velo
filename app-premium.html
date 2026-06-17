@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="865">
+  <meta name="app-version" content="866">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -1113,40 +1113,50 @@
                   </button>
                 </div>
               </div>
-              <!-- Momentos del Día — community feed -->
+              <!-- Momentos del Día + Muro Feliz — community feed -->
               <div id="homeMomentoSection" class="home-momento-wrap" style="margin:10px 0 12px;display:none">
-                <!-- Tab switcher — bigger, pill style -->
-                <div style="display:flex;gap:8px;margin-bottom:14px">
-                  <button id="hfTab-momento" onclick="pHomeTabSwitch('momento')" class="hf-tab hf-tab--active">
-                    ✨ Momentos del Día<br><span id="hfTab-momento-cnt" style="font-size:10px;font-weight:400;opacity:.85"></span>
+                <!-- Header row: label + streak badge -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                  <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.65);font-family:Jost,sans-serif">Comunidad</div>
+                  <span id="momentoStreakBadge" style="display:none;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(255,130,20,.18);color:rgba(255,170,60,.95);border:1px solid rgba(255,130,20,.3);font-family:Jost,sans-serif"></span>
+                </div>
+                <!-- Tab switcher — pill inside dark tray -->
+                <div style="display:flex;gap:4px;margin-bottom:14px;background:rgba(0,0,0,.28);padding:4px;border-radius:16px">
+                  <button id="hfTab-momento" onclick="pHomeTabSwitch('momento')" class="hf-tab hf-tab--active" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px">
+                    <span>✨</span><span>Momentos</span><span id="hfTab-momento-cnt" style="font-size:9px;font-weight:400;opacity:.75;margin-left:2px"></span>
                   </button>
-                  <button id="hfTab-happy" onclick="pHomeTabSwitch('happy')" class="hf-tab hf-tab--inactive-happy">
-                    ☀️ Muro Feliz<br><span id="hfTab-happy-cnt" style="font-size:10px;font-weight:400;opacity:.85"></span>
+                  <button id="hfTab-happy" onclick="pHomeTabSwitch('happy')" class="hf-tab hf-tab--inactive-happy" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px">
+                    <span>☀️</span><span>Muro Feliz</span><span id="hfTab-happy-cnt" style="font-size:9px;font-weight:400;opacity:.75;margin-left:2px"></span>
                   </button>
                 </div>
                 <!-- Momentos tab content -->
                 <div id="homeTabMomento">
-                  <!-- Compose first — most visible CTA -->
-                  <button onclick="pGoTo('momento')" style="display:flex;align-items:center;gap:10px;width:100%;margin-bottom:14px;padding:13px 16px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.30);border-radius:16px;cursor:pointer;text-align:left;transition:background .15s">
-                    <span style="font-size:18px;flex-shrink:0">✨</span>
-                    <span style="flex:1;font-size:13px;color:rgba(255,255,255,.55);font-family:Jost,sans-serif;font-style:italic">¿Qué momento del día querés compartir?</span>
-                    <span style="font-size:11px;font-weight:700;color:rgba(116,198,157,.9);font-family:Jost,sans-serif;white-space:nowrap;background:rgba(116,198,157,.15);padding:5px 10px;border-radius:12px">Escribir →</span>
-                  </button>
-                  <!-- Feed — no height cap, shows all cards -->
+                  <!-- Inline compose row -->
+                  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;padding:9px 12px;background:rgba(116,198,157,.07);border:1.5px solid rgba(116,198,157,.22);border-radius:14px">
+                    <select id="momentoHomeEmoji" style="background:none;border:none;font-size:18px;cursor:pointer;padding:0;-webkit-appearance:none;appearance:none;flex-shrink:0;outline:none">
+                      <option>💭</option><option>✨</option><option>🌿</option><option>🤍</option><option>🌟</option><option>😊</option><option>🎵</option><option>☕</option><option>🌅</option><option>💚</option>
+                    </select>
+                    <input id="momentoHomeInput" type="text" maxlength="180" placeholder="¿Qué momento querés compartir?" autocomplete="off" style="flex:1;background:none;border:none;color:rgba(255,255,255,.85);font-size:13px;font-family:Jost,sans-serif;outline:none;min-width:0">
+                    <button id="momentoHomeBtn" onclick="pPostMomentoHome()" style="background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.4);border-radius:10px;color:rgba(116,198,157,.95);font-size:13px;font-weight:700;font-family:Jost,sans-serif;padding:5px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0">✨</button>
+                  </div>
+                  <!-- Feed -->
                   <div id="homeMomentoFeed" style="padding-right:2px"></div>
-                  <button onclick="pGoTo('momento')" style="width:100%;margin-top:8px;padding:9px;border-radius:12px;border:1px solid rgba(116,198,157,.18);background:transparent;color:rgba(116,198,157,.6);font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">Ver todos los momentos →</button>
+                  <button onclick="pGoTo('momento')" style="width:100%;margin-top:8px;padding:9px;border-radius:12px;border:1px solid rgba(116,198,157,.18);background:transparent;color:rgba(116,198,157,.55);font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">Ver todos los momentos →</button>
                 </div>
                 <!-- Muro Feliz tab content -->
                 <div id="homeTabHappy" style="display:none">
-                  <!-- Compose first -->
-                  <button onclick="pGoTo('happy')" style="display:flex;align-items:center;gap:10px;width:100%;margin-bottom:14px;padding:13px 16px;background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.30);border-radius:16px;cursor:pointer;text-align:left;transition:background .15s">
-                    <span style="font-size:18px;flex-shrink:0">☀️</span>
-                    <span style="flex:1;font-size:13px;color:rgba(255,255,255,.55);font-family:Jost,sans-serif;font-style:italic">¿Qué momento de alegría compartís hoy?</span>
-                    <span style="font-size:11px;font-weight:700;color:rgba(200,158,56,.9);font-family:Jost,sans-serif;white-space:nowrap;background:rgba(200,158,56,.15);padding:5px 10px;border-radius:12px">Publicar →</span>
+                  <!-- Rotating daily prompt CTA -->
+                  <button onclick="pGoTo('happy')" style="display:flex;align-items:center;gap:10px;width:100%;margin-bottom:12px;padding:12px 14px;background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.28);border-radius:14px;cursor:pointer;text-align:left;transition:background .15s;box-sizing:border-box">
+                    <span style="font-size:22px;flex-shrink:0;line-height:1">🌞</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(200,158,56,.65);margin-bottom:2px;font-family:Jost,sans-serif">Prompt del día</div>
+                      <div id="happyPromptText" style="font-size:12.5px;color:rgba(255,255,255,.75);font-family:Jost,sans-serif;font-style:italic;line-height:1.3"></div>
+                    </div>
+                    <span style="font-size:11px;font-weight:700;color:rgba(200,158,56,.9);font-family:Jost,sans-serif;white-space:nowrap;background:rgba(200,158,56,.18);padding:5px 10px;border-radius:12px;flex-shrink:0">Escribir →</span>
                   </button>
-                  <!-- Feed — no height cap -->
+                  <!-- Feed -->
                   <div id="homeHappyFeed" style="padding-right:2px"></div>
-                  <button onclick="pGoTo('happy')" style="width:100%;margin-top:8px;padding:9px;border-radius:12px;border:1px solid rgba(200,158,56,.18);background:transparent;color:rgba(200,158,56,.6);font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">Ver todo el Muro Feliz →</button>
+                  <button onclick="pGoTo('happy')" style="width:100%;margin-top:8px;padding:9px;border-radius:12px;border:1px solid rgba(200,158,56,.18);background:transparent;color:rgba(200,158,56,.55);font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">Ver todo el Muro Feliz →</button>
                 </div>
               </div>
               <!-- Guardianes + Sala de Ayuda — above search pill -->
@@ -3890,7 +3900,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260617-865"></script>
+<script src="premium.js?v=20260617-866"></script>
 <script src="premium-redesign.js?v=20260616-814"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();

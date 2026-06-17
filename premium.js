@@ -19044,6 +19044,54 @@ function _updateAmbientUI(){
 // ── MOMENTOS ──────────────────────────────────────────────────
 var _MOMENTO_NAMES=['Flor silvestre','Cielo nublado','Río quieto','Hoja en el viento','Estrella fugaz','Luna nueva','Brisa suave','Tierra húmeda','Piedra en el agua','Nube de paso','Fuego lento','Noche clara','Sol de invierno','Primer pétalo','Marea baja','Viento frío','Raíz profunda','Rocío al alba'];
 
+// Card accent color based on emoji category
+function _momentoEmojiColor(emoji){
+  var warm=['🌟','✨','⭐','💫','🌅','🌄','☀️','😊','😄','🎉','🎊','💛','🧡','☕','🎵','🎶','🌻'];
+  var calm=['🤍','🌿','🌱','🍃','💚','🕊️','🌊','💙','🌙','⛅','☁️','🫧','🌾'];
+  if(warm.indexOf(emoji)>=0) return {border:'rgba(210,162,48,.7)',bg:'rgba(210,162,48,.07)'};
+  if(calm.indexOf(emoji)>=0) return {border:'rgba(82,182,128,.65)',bg:'rgba(82,182,128,.06)'};
+  return {border:'rgba(120,138,220,.55)',bg:'rgba(120,138,220,.055)'};
+}
+
+// Streak: count consecutive days the user posted a momento
+function _momentoStreak(){
+  try{
+    var raw=safeLS('get','velo_momento_post_dates')||'[]';
+    var dates=JSON.parse(raw);
+    if(!dates.length) return 0;
+    var unique=[]; dates.forEach(function(d){ if(unique.indexOf(d)<0) unique.push(d); });
+    unique.sort().reverse();
+    var today=new Date().toISOString().slice(0,10);
+    var streak=0; var check=today;
+    for(var i=0;i<unique.length;i++){
+      if(unique[i]===check){
+        streak++;
+        var dd=new Date(check); dd.setDate(dd.getDate()-1); check=dd.toISOString().slice(0,10);
+      } else if(unique[i]<check){ break; }
+    }
+    return streak;
+  }catch(e){ return 0; }
+}
+function _momentoTrackPost(){
+  try{
+    var dates=JSON.parse(safeLS('get','velo_momento_post_dates')||'[]');
+    var today=new Date().toISOString().slice(0,10);
+    if(dates.indexOf(today)<0){ dates.push(today); if(dates.length>90) dates=dates.slice(-90); safeLS('set','velo_momento_post_dates',JSON.stringify(dates)); }
+  }catch(e){}
+}
+
+// Daily rotating prompt for Muro Feliz
+var _HAPPY_PROMPTS=[
+  '¿Qué te hizo sonreír hoy? 😊',
+  '¿Qué pequeña cosa agradecés hoy? 🤍',
+  '¿Cuál fue tu momento favorito del día? ✨',
+  '¿Qué te dio energía hoy? 💚',
+  '¿Qué te alegró sin que lo esperaras? 🌟',
+  '¿Qué cosa linda pasó hoy? 🌿',
+  '¿Qué querés celebrar hoy, por pequeño que sea? 🎉',
+];
+function _happyDailyPrompt(){ return _HAPPY_PROMPTS[new Date().getDay()]; }
+
 function _momentoAnonLabel(){ return _MOMENTO_NAMES[Math.floor(Math.random()*_MOMENTO_NAMES.length)]; }
 
 function _momentoUserHash(){
@@ -19090,24 +19138,21 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
   if(!feed) return;
   var myHash=_momentoUserHash();
   var isHome = feedId === 'homeMomentoFeed';
-  var isHappy = feedId === 'homeHappyFeed' || feedId === 'happyFullFeed';
-  var bubbleClass = isHappy ? 'mc-bubble mc-happy' : 'mc-bubble';
-  // Filter out locally reported momentos (always, on all views)
   var reported = {};
   try{ reported = JSON.parse(safeLS('get','velo_momento_reported')||'{}'); }catch(e){}
 
   if(!momentos||!momentos.length){
     var _emptyEmoji = showMineOnly ? '✨' : '💭';
-    var _emptyMsg = showMineOnly ? 'Todavía no publicaste ningún momento hoy' : 'Sé el primero en compartir un momento hoy';
-    feed.innerHTML='<div style="text-align:center;padding:18px 8px">'
-      +'<span style="font-size:26px">'+_emptyEmoji+'</span>'
-      +'<div style="font-size:12px;color:var(--ink4);margin-top:7px;line-height:1.4">'+_emptyMsg+'</div>'
+    var _emptyMsg = showMineOnly ? 'Todavía no publicaste ningún momento hoy' : '¡Sé el primero en compartir un momento hoy! ✨';
+    feed.innerHTML='<div style="text-align:center;padding:22px 8px">'
+      +'<span style="font-size:32px;display:block;margin-bottom:8px">'+_emptyEmoji+'</span>'
+      +'<div style="font-size:12px;color:var(--ink4);line-height:1.5">'+_emptyMsg+'</div>'
       +'</div>';
     return;
   }
   var cards = momentos.filter(function(m){ return !reported[m.id]; });
   if(!cards.length){
-    feed.innerHTML='<div style="text-align:center;padding:18px 8px"><span style="font-size:26px">💭</span><div style="font-size:12px;color:var(--ink4);margin-top:7px">No hay momentos disponibles ✨</div></div>';
+    feed.innerHTML='<div style="text-align:center;padding:22px 8px"><span style="font-size:32px;display:block;margin-bottom:8px">💭</span><div style="font-size:12px;color:var(--ink4)">No hay momentos disponibles ✨</div></div>';
     return;
   }
   feed.innerHTML=cards.map(function(m){
@@ -19116,30 +19161,32 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var timeLeft=Math.max(0,Math.round((new Date(m.expires_at).getTime()-Date.now())/3600000));
     var cachedCnt=parseInt(safeLS('get','velo_mheart_'+m.id+'_cnt')||'0');
     var heartCount=Math.max(m.hearts||0, cachedCnt);
-    // Compact style for home widget
-    var cardPad = isHome ? '10px 12px' : '13px 14px';
-    var emojiSz = isHome ? '20px' : '24px';
-    var txtSz   = isHome ? '12px' : '14px';
-    return '<div class="momento-card" style="border-radius:14px;padding:'+cardPad+';margin-bottom:8px;animation:p-fadeIn .3s ease">'
-      +'<div style="display:flex;align-items:flex-start;gap:9px">'
-      +'<span style="font-size:'+emojiSz+';flex-shrink:0;line-height:1;margin-top:4px">'+(m.emoji||'💭')+'</span>'
+    var col=_momentoEmojiColor(m.emoji||'💭');
+    var badgeSz  = isHome ? '34px' : '40px';
+    var emojiFSz = isHome ? '18px' : '22px';
+    var txtSz    = isHome ? '12.5px' : '13.5px';
+    var pad      = isHome ? '10px 12px 10px 10px' : '12px 14px 12px 12px';
+    return '<div class="momento-card" style="border-radius:14px;padding:'+pad+';margin-bottom:8px;animation:p-fadeIn .3s ease;border-left:3px solid '+col.border+';background:'+col.bg+'">'
+      +'<div style="display:flex;align-items:flex-start;gap:10px">'
+      // Emoji badge circle
+      +'<div style="width:'+badgeSz+';height:'+badgeSz+';border-radius:11px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:'+emojiFSz+';line-height:1">'+(m.emoji||'💭')+'</div>'
+      // Main content
       +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">'
-      +'<span class="mc-label" style="font-size:10px;font-style:italic">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
-      +'<span class="mc-time" style="font-size:9px">'+_momentoAgo(m.created_at)+'</span>'
-      +'<span class="mc-time" style="font-size:9px">⏱ '+timeLeft+'h</span>'
-      +(mine?'<span class="mc-mine" style="font-size:9px;font-weight:700">· tuyo</span>':'')
+      +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
+      +'<span class="mc-label" style="font-size:10px;font-style:italic;font-weight:600">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
+      +'<span class="mc-time" style="font-size:9px">· '+_momentoAgo(m.created_at)+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.28)">· ⏱'+timeLeft+'h</span>'
+      +(mine?'<span style="font-size:8.5px;font-weight:700;padding:1px 6px;border-radius:6px;background:rgba(116,198,157,.18);color:rgba(116,198,157,.8)">tuyo</span>':'')
       +'</div>'
-      +'<div class="'+bubbleClass+'">'
-      +'<div class="mc-text" style="font-size:'+txtSz+';line-height:1.55">'+_escHtml(m.text||'')+'</div>'
+      +'<div class="mc-text" style="font-size:'+txtSz+';line-height:1.5;color:rgba(255,255,255,.85);word-break:break-word">'+_escHtml(m.text||'')+'</div>'
       +'</div>'
-      +'</div>'
-      +'<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0">'
-      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;cursor:pointer;padding:3px">'
-      +'<span style="font-size:18px">'+(liked?'❤️':'🩶')+'</span>'
-      +'<span id="mheart-'+_escHtml(m.id)+'" class="mc-heart-count" style="font-size:10px">'+heartCount+'</span>'
+      // Actions: heart + report
+      +'<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;padding-top:2px">'
+      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;cursor:pointer;padding:4px;border-radius:8px;transition:background .15s">'
+      +'<span style="font-size:'+(liked?'20':'18')+'px;line-height:1">'+(liked?'❤️':'🩶')+'</span>'
+      +'<span id="mheart-'+_escHtml(m.id)+'" class="mc-heart-count" style="font-size:9.5px">'+heartCount+'</span>'
       +'</button>'
-      +(!isHome&&!mine ? '<button onclick="pReportMomento(\''+_escHtml(m.id)+'\',this)" title="Reportar" class="mc-report" style="background:none;border:none;cursor:pointer;padding:4px 3px;margin-top:4px;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span style="font-size:7.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase">Reportar</span></button>' : '')
+      +(!isHome&&!mine ? '<button onclick="pReportMomento(\''+_escHtml(m.id)+'\',this)" title="Reportar" class="mc-report" style="background:none;border:none;cursor:pointer;padding:3px;margin-top:2px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span style="font-size:7px;font-weight:700;letter-spacing:.3px;text-transform:uppercase">Reportar</span></button>' : '')
       +'</div>'
       +'</div>'
       +'</div>';
@@ -19149,6 +19196,17 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
 async function _initHomeMomento(){
   var section=document.getElementById('homeMomentoSection');
   if(!section) return;
+  // Streak badge
+  var streak=_momentoStreak();
+  var badge=document.getElementById('momentoStreakBadge');
+  if(badge){
+    if(streak>=2){ badge.style.display=''; badge.textContent='🔥 '+streak+' días seguidos'; }
+    else { badge.style.display='none'; }
+  }
+  // Daily prompt for Muro Feliz tab
+  var pt=document.getElementById('happyPromptText');
+  if(pt) pt.textContent=_happyDailyPrompt();
+
   var momentos=await _fetchMomentos(4);
   if(momentos===null){ section.style.display='none'; return; }
   section.style.display='block';
@@ -19199,28 +19257,43 @@ async function _updateFeedTabCounts(){
 async function _loadHomeHappyFeed(){
   var feed = document.getElementById('homeHappyFeed');
   if(!feed) return;
-  // Show cached posts immediately while refreshing (filter expired >24h)
+  // Always refresh the prompt
+  var pt=document.getElementById('happyPromptText');
+  if(pt) pt.textContent=_happyDailyPrompt();
+
+  function _happyHomeCard(h){
+    var relTime = _happyRelTime(h.ts);
+    var hasImg = h.av && (h.av.startsWith('data:')||h.av.startsWith('http'));
+    var avHtml = hasImg
+      ? '<img src="'+_escHtml(h.av)+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid rgba(200,158,56,.3)">'
+      : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(200,158,56,.18);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:2px solid rgba(200,158,56,.25)">'+(h.anon?'☀️':_escHtml(h.av||'☀️'))+'</div>';
+    var nameHtml = h.anon
+      ? '<em style="color:rgba(255,215,100,.55);font-style:italic">Anónimo/a</em>'
+      : '<span style="color:rgba(255,215,100,.9);font-weight:700">'+_escHtml(h.name||'Alguien')+'</span>';
+    // Reaction count
+    var totalR=0;
+    if(h.reactions){ try{ var rv=typeof h.reactions==='string'?JSON.parse(h.reactions):h.reactions; Object.values(rv).forEach(function(a){ totalR+=Array.isArray(a)?a.length:0; }); }catch(e){} }
+    return '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 11px;margin-bottom:8px;background:rgba(200,158,56,.07);border:1px solid rgba(200,158,56,.18);border-left:3px solid rgba(200,158,56,.55);border-radius:13px;animation:p-fadeIn .3s ease">'
+      + avHtml
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">'
+      +nameHtml
+      +'<span style="font-size:9px;color:rgba(255,255,255,.3)">· '+relTime+'</span>'
+      +(totalR>0 ? '<span style="margin-left:auto;font-size:9.5px;color:rgba(200,158,56,.65)">'+totalR+' ❤️</span>' : '')
+      +'</div>'
+      +'<div style="font-size:12.5px;color:rgba(255,255,255,.82);line-height:1.45;word-break:break-word">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
+      +'</div></div>';
+  }
+
+  var _emptyState='<div style="text-align:center;padding:22px 8px"><span style="font-size:32px;display:block;margin-bottom:8px">🌞</span><div style="font-size:12px;color:rgba(200,158,56,.5);line-height:1.5">¡Sé el primero en iluminar el muro hoy!</div></div>';
+
+  // Show cached posts immediately while refreshing
   var _hwCutoff = Date.now() - 24*60*60*1000;
   var _hwCache = _sbHappy ? _sbHappy.filter(function(h){ return h.ts > _hwCutoff; }) : [];
   if(!_hwCache.length){ try{ _hwCache = (JSON.parse(safeLS('get','velo_happy_feed_cache')||'[]')).filter(function(h){ return h.ts > _hwCutoff; }); }catch(e){} }
-  if(_hwCache.length){
-    feed.innerHTML = _hwCache.slice(0,4).map(function(h){
-      var relTime = _happyRelTime(h.ts);
-      var avHtml = (h.av && (h.av.startsWith('data:')||h.av.startsWith('http')))
-        ? '<img src="'+_escHtml(h.av)+'" style="width:34px;height:34px;border-radius:9px;object-fit:cover;flex-shrink:0">'
-        : '<div style="width:34px;height:34px;border-radius:9px;background:rgba(255,224,102,.22);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">'+(h.anon ? '☀️' : _escHtml(h.av||'☀️'))+'</div>';
-      var nameHtml = h.anon ? '<span style="color:var(--ink5);font-style:italic">Anónimo/a</span>' : '<span>'+_escHtml(h.name||'Guardián/a')+'</span>';
-      return '<div style="display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,200,50,.12)">'
-        + avHtml
-        +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:5px">'+nameHtml+' <span style="font-weight:400;color:var(--ink5)">· '+relTime+'</span></div>'
-        +'<div class="mc-bubble mc-happy"><div class="mc-text" style="font-size:12.5px;line-height:1.4;word-break:break-word">'+(h.emoji ? h.emoji+' ' : '')+_escHtml(h.text||'')+'</div></div>'
-        +'</div></div>';
-    }).join('');
-  } else {
-    // No cache — show empty state immediately rather than a loading spinner
-    feed.innerHTML = '<div style="text-align:center;padding:18px"><span style="font-size:26px">☀️</span><div style="font-size:12px;color:var(--ink4);margin-top:7px">¡Sé el primero en compartir un momento de alegría!</div></div>';
-  }
+  if(_hwCache.length){ feed.innerHTML = _hwCache.slice(0,4).map(_happyHomeCard).join(''); }
+  else { feed.innerHTML = _emptyState; }
+
   _initSupabase();
   var sbRows = await _sbLoad('happy_posts', function(q){
     var cutoff = new Date(Date.now()-24*60*60*1000).toISOString();
@@ -19230,28 +19303,9 @@ async function _loadHomeHappyFeed(){
   if(sbRows !== null){
     posts = sbRows.map(_sbHappyRow).filter(function(h){ return !_isBlocked(h.userId); });
   } else {
-    // Supabase unavailable — fall back to local queue
     posts = (_processHappyQueue()||[]).slice(0,4);
   }
-  if(!posts.length){
-    feed.innerHTML = '<div style="text-align:center;padding:18px"><span style="font-size:26px">☀️</span><div style="font-size:12px;color:var(--ink4);margin-top:7px">¡Sé el primero en compartir un momento de alegría!</div></div>';
-    return;
-  }
-  feed.innerHTML = posts.map(function(h){
-    var relTime = _happyRelTime(h.ts);
-    var avHtml = (h.av && (h.av.startsWith('data:')||h.av.startsWith('http')))
-      ? '<img src="'+_escHtml(h.av)+'" style="width:34px;height:34px;border-radius:9px;object-fit:cover;flex-shrink:0">'
-      : '<div style="width:34px;height:34px;border-radius:9px;background:rgba(255,224,102,.22);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">'+(h.anon ? '☀️' : _escHtml(h.av||'☀️'))+'</div>';
-    var nameHtml = h.anon
-      ? '<span style="color:var(--ink5);font-style:italic">Anónimo/a</span>'
-      : '<span>'+_escHtml(h.name||'Guardián/a')+'</span>';
-    return '<div style="display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,200,50,.12)">'
-      + avHtml
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:5px">'+nameHtml+' <span style="font-weight:400;color:var(--ink5)">· '+relTime+'</span></div>'
-      +'<div class="mc-bubble mc-happy"><div class="mc-text" style="font-size:12.5px;line-height:1.4;word-break:break-word">'+(h.emoji ? h.emoji+' ' : '')+_escHtml(h.text||'')+'</div></div>'
-      +'</div></div>';
-  }).join('');
+  feed.innerHTML = posts.length ? posts.map(_happyHomeCard).join('') : _emptyState;
 }
 
 async function pPostHappyHome(){
@@ -19328,6 +19382,7 @@ async function pPostMomento(){
     }
     ta.value='';
     var c=document.getElementById('momentoCharCount'); if(c) c.textContent='0 / 200';
+    _momentoTrackPost();
     pToast('✨','¡Momento publicado! Vivirá 24 horas 🌱');
     _loadMomentoPageFeed();
     setTimeout(function(){ _loadMomentoPageFeed(); }, 1500);
@@ -19357,7 +19412,7 @@ async function pPostMomentoHome(){
       if(res.error.code==='42P01'){pToast('ℹ️','Función próximamente disponible');}
       else{ pToast('⚠️','Error al publicar ('+res.error.code+'): '+res.error.message); }
     } else {
-      inp.value=''; pToast('✨','¡Momento publicado! 🌱'); _initHomeMomento();
+      inp.value=''; _momentoTrackPost(); pToast('✨','¡Momento publicado! 🌱'); _initHomeMomento();
     }
   }catch(e){pToast('⚠️','Error: '+e.message);}
   if(btn){btn.disabled=false;btn.textContent='Publicar ✨';}
