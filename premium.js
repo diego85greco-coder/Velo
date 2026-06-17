@@ -3427,21 +3427,22 @@ async function pDeleteMyDqResponse(responseId){
   if(_dqLockedEl) _dqLockedEl.style.display = '';
   if(_dqOpenEl)   _dqOpenEl.style.display   = 'none';
   _fetchDailyCount();
-  // Attempt Supabase delete in background (requires DELETE RLS policy on daily_responses)
+  // Delete from Supabase — primary strategy: by user_id+question_date (matches RLS policy
+  // exactly and works regardless of whether the row id was saved under a contaminated uid)
   if(!sbClient) return;
   try{
     var {data:_authDel} = await sbClient.auth.getUser();
     if(!_authDel || !_authDel.user) return;
     var myUid = _authDel.user.id;
-    // Attempt 1: with user_id filter (matches rows saved post-v838)
-    var _delRes = await sbClient.from('daily_responses').delete().eq('id', responseId).eq('user_id', myUid).select('id');
-    if(_delRes && !_delRes.error && _delRes.data && _delRes.data.length) return; // confirmed deleted
-    // Attempt 2: by id only (for rows saved with stale user_id pre-v838)
-    var _delRes2 = await sbClient.from('daily_responses').delete().eq('id', responseId).select('id');
+    // Primary: delete by auth uid + today's date (safest — RLS always matches)
+    var _delRes = await sbClient.from('daily_responses').delete()
+      .eq('user_id', myUid).eq('question_date', _dqDateKey).select('id');
+    if(_delRes && !_delRes.error && _delRes.data && _delRes.data.length) return;
+    // Fallback: delete by row id + uid (in case date mismatch)
+    var _delRes2 = await sbClient.from('daily_responses').delete()
+      .eq('id', responseId).eq('user_id', myUid).select('id');
     if(_delRes2 && _delRes2.error){
-      console.warn('[dq delete] Supabase error — add DELETE policy: CREATE POLICY "delete_own_responses" ON daily_responses FOR DELETE USING (auth.uid() = user_id);');
-    } else if(!_delRes2.data || !_delRes2.data.length){
-      console.warn('[dq delete] 0 rows — possible missing DELETE RLS policy on daily_responses. Add: CREATE POLICY "delete_own_responses" ON daily_responses FOR DELETE USING (auth.uid() = user_id);');
+      console.warn('[dq delete] error:', _delRes2.error.message);
     }
   }catch(e){ console.warn('[dq delete] exception:', e && e.message); }
 }
