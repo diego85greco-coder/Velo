@@ -1067,6 +1067,9 @@ function _clearSession(){
   _circlesData = [];
   _allCirclesCache = [];
   _circleJoinedSession = {};
+  _circleLastDbMsgId  = null;
+  _circleRenderPending = false;
+  _circleRenderQueued  = false;
   _inboxAsyncPending = false;
   _buzónPollTmr = null;
   _buzónLastCheck = null;
@@ -5755,7 +5758,11 @@ function _subscribeHelpChat(post){
       var relevant = (m.from_id===myId&&m.to_id===peerId)||(m.from_id===peerId&&m.to_id===myId);
       if(!relevant || !m.id) return;
       var bubble = document.querySelector('[data-sb-id="direct_messages:'+m.id+'"]');
-      if(!bubble) return;
+      if(!bubble){
+        // Bubble not in DOM (e.g. optimistic message without data-sb-id yet) — reload history
+        _loadHelpChatHistory(post);
+        return;
+      }
       var oldBar = bubble.querySelector('.msg-rx-bar');
       if(oldBar) oldBar.remove();
       if(m.reactions && typeof m.reactions === 'object'){
@@ -8822,6 +8829,9 @@ var _curCircle = null;
 var _circleAutoMsgTimer = null;
 var _allCirclesCache = [];
 var _circleJoinedSession = {}; // tracks circles joined this session (for join/leave system messages)
+var _circleRenderPending = false; // prevents concurrent _renderCircleMessages calls
+var _circleRenderQueued  = false; // a render was requested while one was in-flight
+var _circleLastDbMsgId   = null;  // last DB message id rendered — avoids unnecessary full re-renders
 var _circleMembersCh  = null;  // realtime channel circle_members
 var _selectedCircleFoto = '';  // base64 photo for new circle
 
@@ -8983,8 +8993,13 @@ function pOpenCircle(id, circleData){
   _sbUnsub(_circleRtCh);
   _circleRtCh = null;
   if(sbClient){
+    var _circleMyId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
     _circleRtCh = _sbSub('velo:circle:'+id, 'circle_messages', function(payload){
-      if(payload.new && payload.new.circle_id === id){ _renderCircleMessages(); }
+      if(!payload.new || payload.new.circle_id !== id) return;
+      // Skip own inserts — pSendCircleMsg already called _renderCircleMessages()
+      if(payload.new.user_id && payload.new.user_id === _circleMyId && payload.new.type !== 'system') return;
+      _circleLastDbMsgId = null; // force re-render
+      _renderCircleMessages();
     });
     // Upsert user into circle_members for real-time presence counting
     var _cmId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
@@ -9007,6 +9022,20 @@ function pOpenCircle(id, circleData){
 }
 
 async function _renderCircleMessages(){
+  // Guard: if a render is in-flight, queue one more and return — the in-flight render will
+  // check the queue flag when it finishes and re-run if needed.
+  if(_circleRenderPending){ _circleRenderQueued = true; return; }
+  _circleRenderPending = true;
+  _circleRenderQueued  = false;
+  try{
+    await _renderCircleMessagesInner();
+  }catch(e){}
+  _circleRenderPending = false;
+  // If a render was queued while we were in-flight, run it now
+  if(_circleRenderQueued){ _circleRenderQueued = false; _renderCircleMessages(); }
+}
+
+async function _renderCircleMessagesInner(){
   var _tok = _navToken;
   var el = document.getElementById('feedMessages');
   if(!el || !_curCircle) return;
@@ -9015,8 +9044,9 @@ async function _renderCircleMessages(){
   var localMsgs = [];
   try{ localMsgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
 
-  // Render from localStorage immediately so sends appear at once
-  if(localMsgs.length){
+  // Only do the localStorage instant render on first load (when container is empty).
+  // Skipping it on subsequent calls prevents the DOM-wipe flicker during real-time updates.
+  if(localMsgs.length && !el.querySelector('.feed-msg')){
     el.innerHTML = localMsgs.map(function(m){
       if(m.type === 'system') return '<div style="text-align:center;margin:10px 0"><span style="font-size:11px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
       return _buildMsgBubble(m.text, !!m.own, m.av||'', m.name||'', 'feedInput', 'feedReplyBar', '', m.reactions||{}, '', m.userId||'');
@@ -9053,13 +9083,23 @@ async function _renderCircleMessages(){
     msgs = localMsgs;
   }
 
+  // Skip full re-render if DB content hasn't changed (prevents flicker on repeated calls)
+  var _newLastId = sbRows && sbRows.length ? sbRows[sbRows.length-1].id : null;
+  var _hasPending = localMsgs.some(function(lm){
+    if(!lm.own || lm.ts <= Date.now() - 30000) return false;
+    return !msgs.some(function(m){ return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 10000; });
+  });
+  if(_newLastId && _newLastId === _circleLastDbMsgId && !_hasPending) return;
+  _circleLastDbMsgId = _newLastId;
+
+  var wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   el.innerHTML = msgs.map(function(m){
     if(m.type === 'system'){
       return '<div style="text-align:center;margin:10px 0"><span style="font-size:11px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
     }
     return _buildMsgBubble(m.text, !!m.own, m.av, m.name, 'feedInput', 'feedReplyBar', '', m.reactions, m.sbId, m.userId);
   }).join('');
-  el.scrollTop = el.scrollHeight;
+  if(wasAtBottom) el.scrollTop = el.scrollHeight;
 
   // Count active members: users who sent a message in the last 2 hours (not all-time)
   if(sbRows !== null){
@@ -9157,6 +9197,9 @@ function pLeaveCircle(){
       .then(function(){}).catch(function(){});
   }
   _curCircle = null;
+  _circleLastDbMsgId  = null;
+  _circleRenderPending = false;
+  _circleRenderQueued  = false;
   pGoTo('circles');
   // Refresh member counts after leaving so the list reflects current state
   setTimeout(pRenderCircles, 300);
@@ -12979,10 +13022,12 @@ async function pSendDM(){
   var fullText = dmQuote ? '↩ "'+dmQuote.slice(0,60)+(dmQuote.length>60?'…':'')+'"  \n'+text : text;
   // Optimistic render
   var el = document.getElementById('dmMessages');
+  var _dmLastBubble = null;
   if(el){
     var div = document.createElement('div');
     div.innerHTML = _buildMsgBubble(text, true, '', '', 'dmInput', 'dmReplyBar', dmQuote);
-    el.appendChild(div.firstChild);
+    var _dmChild = div.firstElementChild;
+    if(_dmChild){ el.appendChild(_dmChild); _dmLastBubble = _dmChild; }
     el.scrollTop = el.scrollHeight;
   }
   _initSupabase();
@@ -12990,8 +13035,11 @@ async function pSendDM(){
     sbClient.from('direct_messages').insert({
       from_id:myId, from_name:myName, from_av:myAv, to_id:_dmPeer.id, text:fullText
     }).select('id').then(function(r){
-      // Update _dmLastMsgId so incremental render won't re-add this message
-      if(r&&r.data&&r.data[0]) _dmLastMsgId = r.data[0].id;
+      if(r&&r.data&&r.data[0]){
+        _dmLastMsgId = r.data[0].id;
+        // Stamp data-sb-id on the optimistic bubble so reactions can find it
+        if(_dmLastBubble) _dmLastBubble.setAttribute('data-sb-id', 'direct_messages:'+r.data[0].id);
+      }
     }).catch(function(){});
   }
 }
