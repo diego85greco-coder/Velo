@@ -19163,8 +19163,12 @@ function _todayStatusKey(){
 function pInitDailyStatus(){
   var key = _todayStatusKey();
   var saved = {}; try{ saved = JSON.parse(safeLS('get', key)||'{}'); }catch(e){}
-  var fields = ['statusMovie','statusMusic','statusBook','statusPhrase'];
-  fields.forEach(function(f){ var el = document.getElementById(f); if(el) el.value = saved[f]||''; });
+  // Pre-fill from persistent profile keys so both forms always show the same data
+  var el;
+  el = document.getElementById('statusMusic');  if(el) el.value = saved.music  || safeLS('get','velo_status_music')  || '';
+  el = document.getElementById('statusBook');   if(el) el.value = saved.book   || safeLS('get','velo_status_book')   || '';
+  el = document.getElementById('statusMovie');  if(el) el.value = saved.movie  || safeLS('get','velo_status_film')   || '';
+  el = document.getElementById('statusPhrase'); if(el) el.value = saved.phrase || safeLS('get','velo_status_phrase') || '';
 }
 
 async function pSaveDailyStatus(){

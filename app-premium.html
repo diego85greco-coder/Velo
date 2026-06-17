@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="819">
+  <meta name="app-version" content="820">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -2005,25 +2005,25 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
               <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSaveMood()">Registrar ánimo</button>
             </div>
             <div class="p-card" style="padding:20px;margin-bottom:16px" id="dailyStatusCard">
-              <div class="p-label p-label-sage" style="margin-bottom:14px">¿Cómo va tu día? ✨</div>
-              <p style="font-size:11px;color:var(--ink5);margin-bottom:14px;line-height:1.5;font-style:italic">Opcional · Visible en tu perfil si no estás en modo anónimo</p>
+              <div class="p-label p-label-sage" style="margin-bottom:4px">Mi estado · visible en tu perfil ✨</div>
+              <p style="font-size:11px;color:var(--ink5);margin-bottom:14px;line-height:1.5;font-style:italic">Lo que guardás aparece en tu perfil público y cuando la comunidad te ve.</p>
               <div class="p-field">
-                <label class="p-field-label">🎬 Película o serie</label>
-                <input class="p-input" type="text" id="statusMovie" placeholder="Ej: The Bear, Oppenheimer…" maxlength="60">
+                <label class="p-field-label">🎵 Música que escucho</label>
+                <input class="p-input" type="text" id="statusMusic" placeholder="Ej: Thalia — Arransando" maxlength="80">
               </div>
               <div class="p-field">
-                <label class="p-field-label">🎵 Música</label>
-                <input class="p-input" type="text" id="statusMusic" placeholder="Artista o canción que escuchás hoy…" maxlength="60">
+                <label class="p-field-label">📚 Libro que leo</label>
+                <input class="p-input" type="text" id="statusBook" placeholder="Ej: El Principito" maxlength="80">
               </div>
               <div class="p-field">
-                <label class="p-field-label">📚 Libro</label>
-                <input class="p-input" type="text" id="statusBook" placeholder="¿Qué estás leyendo?" maxlength="60">
+                <label class="p-field-label">🎬 Película / serie que miro</label>
+                <input class="p-input" type="text" id="statusMovie" placeholder="Ej: The Bear, Oppenheimer…" maxlength="80">
               </div>
               <div class="p-field">
-                <label class="p-field-label">💭 Frase del día</label>
-                <input class="p-input" type="text" id="statusPhrase" placeholder="Una frase que te inspire hoy…" maxlength="120">
+                <label class="p-field-label">✨ Frase que me acompaña</label>
+                <input class="p-input" type="text" id="statusPhrase" placeholder="Una frase motivadora…" maxlength="120">
               </div>
-              <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pSaveDailyStatus()">✨ Guardar estado del día</button>
+              <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveDailyStatus()">Guardar estado</button>
             </div>
             <div class="p-card" style="padding:20px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -3881,7 +3881,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260616-819"></script>
+<script src="premium.js?v=20260616-820"></script>
 <script src="premium-redesign.js?v=20260616-814"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
