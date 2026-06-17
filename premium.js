@@ -9024,6 +9024,14 @@ function pOpenCircle(id, circleData){
     }
   }
 
+  // Clear the message container immediately so stale messages from any previous
+  // circle don't remain visible while the new circle's DB query is in flight.
+  var _feedMsgEl = document.getElementById('feedMessages');
+  if(_feedMsgEl) _feedMsgEl.innerHTML = '';
+  _circleLastDbMsgId = null;
+  _circleRenderPending = false;
+  _circleRenderQueued  = false;
+
   pGoTo('feed');
   setTimeout(function(){ _renderCircleMessages(); _startCircleAutoMsg(); }, 100);
 }
@@ -9080,10 +9088,15 @@ async function _renderCircleMessagesInner(){
   var msgs;
   if(sbRows !== null){
     msgs = sbRows.map(_sbCircleMsgRow);
-    // Merge local pending messages (own msgs that haven't reached Supabase yet)
+    // Merge local pending messages (own msgs that haven't reached Supabase yet).
+    // Dedup uses the DB UUID if already known (saved after INSERT), or falls back to
+    // text+timestamp matching with a 60s window to tolerate server-client clock skew.
     var _cutMs = Date.now() - 30000;
     localMsgs.filter(function(lm){ return lm.own && lm.ts > _cutMs; }).forEach(function(lm){
-      var inSb = msgs.some(function(m){ return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 10000; });
+      var inSb = msgs.some(function(m){
+        if(lm.sbId && m.sbId) return lm.sbId === m.sbId; // exact DB UUID match
+        return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 60000; // fuzzy fallback
+      });
       if(!inSb) msgs.push({ id:lm.id, userId:lm.userId||'', av:lm.av||'', name:lm.name||'', text:lm.text, ts:lm.ts, own:true, type:lm.type||'text', reactions:{} });
     });
     msgs.sort(function(a, b){ return a.ts - b.ts; });
@@ -9098,7 +9111,10 @@ async function _renderCircleMessagesInner(){
   var _newLastId = sbRows && sbRows.length ? sbRows[sbRows.length-1].id : null;
   var _hasPending = localMsgs.some(function(lm){
     if(!lm.own || lm.ts <= Date.now() - 30000) return false;
-    return !msgs.some(function(m){ return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 10000; });
+    return !msgs.some(function(m){
+      if(lm.sbId && m.sbId) return lm.sbId === m.sbId;
+      return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 60000;
+    });
   });
   if(_newLastId && _newLastId === _circleLastDbMsgId && !_hasPending) return;
   _circleLastDbMsgId = _newLastId;
@@ -9163,13 +9179,21 @@ function pSendCircleMsg(){
   // Insert to Supabase so all circle members see the message in real-time
   _initSupabase();
   if(sbClient){
+    var _circleSendId = 'm'+_circleSendTs; // local id used to find this entry later
     sbClient.from('circle_messages').insert({ circle_id:_curCircle.id,
       user_id: myId, user_name: name+' '+badge.icon, user_av: av||'🌿', text:fullText, type:'text'
     }).select('id').single().then(function(res){
-      // Stamp data-sb-id so reactions from this circle message can be saved
-      if(res && res.data && res.data.id && _cLastBubble){
-        _cLastBubble.setAttribute('data-sb-id', 'circle_messages:'+res.data.id);
-        _circleLastDbMsgId = res.data.id; // prevent next poll from re-appending
+      if(res && res.data && res.data.id){
+        var _dbUuid = res.data.id;
+        // Stamp data-sb-id so reactions can target this row
+        if(_cLastBubble) _cLastBubble.setAttribute('data-sb-id', 'circle_messages:'+_dbUuid);
+        _circleLastDbMsgId = _dbUuid; // prevent next render from re-appending
+        // Save DB UUID in localStorage entry so future dedup uses exact matching instead of fuzzy
+        if(_curCircle){
+          var _lsMsgs2 = []; try{ _lsMsgs2 = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
+          _lsMsgs2 = _lsMsgs2.map(function(m){ return m.id === _circleSendId ? Object.assign({},m,{sbId:_dbUuid}) : m; });
+          safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(_lsMsgs2.slice(-100)));
+        }
       }
     }).catch(function(){});
   }
