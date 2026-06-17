@@ -850,10 +850,23 @@ async function _ensureSbSession(){
   if(!sbClient) return false;
   try{
     var {data:sd} = await sbClient.auth.getSession();
-    if(sd && sd.session){
-      if(sd.session.user && sd.session.user.id){
-        safeLS('set','velo_user_id', sd.session.user.id);
+    if(sd && sd.session && sd.session.user){
+      var _lsEmail = (safeLS('get','velo_user_email') || '').toLowerCase().trim();
+      var _sessEmail = (sd.session.user.email || '').toLowerCase().trim();
+      // If the active Supabase session belongs to a DIFFERENT account than the one
+      // stored in localStorage, sign out and re-authenticate with the correct credentials.
+      // This corrects cross-account token bleed (same browser, two accounts).
+      if(_lsEmail && _sessEmail && _lsEmail !== _sessEmail){
+        console.warn('[_ensureSbSession] session mismatch — session:', _sessEmail, 'stored:', _lsEmail, '— re-authenticating');
+        try{ await sbClient.auth.signOut(); }catch(e){}
+        var _email2 = safeLS('get','velo_user_email');
+        var _pass2  = safeLS('get','velo_sb_pass');
+        if(!_email2 || !_pass2) return false;
+        var {data:_rd2, error:_err2} = await sbClient.auth.signInWithPassword({email:_email2, password:_pass2});
+        if(!_err2 && _rd2 && _rd2.user){ safeLS('set','velo_user_id', _rd2.user.id); return true; }
+        return false;
       }
+      if(sd.session.user.id) safeLS('set','velo_user_id', sd.session.user.id);
       return true;
     }
     var email = safeLS('get','velo_user_email');
@@ -1043,6 +1056,9 @@ async function pSignIn(){
 
   try{
     _initSupabase();
+    // Sign out any existing Supabase session FIRST — prevents the previous account's
+    // refresh token from overwriting the new session after signInWithPassword returns
+    if(sbClient){ try{ await sbClient.auth.signOut(); }catch(e){} }
     var result;
     if(sbClient){
       result = await sbClient.auth.signInWithPassword({email:email, password:pass});
