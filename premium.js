@@ -19046,11 +19046,23 @@ var _MOMENTO_NAMES=['Flor silvestre','Cielo nublado','Río quieto','Hoja en el v
 
 // Card accent color based on emoji category
 function _momentoEmojiColor(emoji){
-  var warm=['🌟','✨','⭐','💫','🌅','🌄','☀️','😊','😄','🎉','🎊','💛','🧡','☕','🎵','🎶','🌻'];
-  var calm=['🤍','🌿','🌱','🍃','💚','🕊️','🌊','💙','🌙','⛅','☁️','🫧','🌾'];
-  if(warm.indexOf(emoji)>=0) return {border:'rgba(210,162,48,.7)',bg:'rgba(210,162,48,.07)'};
-  if(calm.indexOf(emoji)>=0) return {border:'rgba(82,182,128,.65)',bg:'rgba(82,182,128,.06)'};
-  return {border:'rgba(120,138,220,.55)',bg:'rgba(120,138,220,.055)'};
+  var warm=['🌟','✨','⭐','💫','🌅','🌄','☀️','😊','😄','🎉','🎊','💛','🧡','☕','🎵','🎶','🌻','🔥','🌈'];
+  var calm=['🤍','🌿','🌱','🍃','💚','🕊️','🌊','💙','🌙','⛅','☁️','🫧','🌾','🍀','🐦'];
+  if(warm.indexOf(emoji)>=0) return {
+    border:'rgba(218,162,40,.95)', borderFaint:'rgba(218,162,40,.25)',
+    bg:'linear-gradient(135deg,rgba(218,162,40,.22),rgba(218,162,40,.07))',
+    strip:'rgba(218,162,40,.18)', label:'rgba(245,200,80,.95)', badge:'rgba(218,162,40,.25)'
+  };
+  if(calm.indexOf(emoji)>=0) return {
+    border:'rgba(72,185,128,.90)', borderFaint:'rgba(72,185,128,.22)',
+    bg:'linear-gradient(135deg,rgba(72,185,128,.20),rgba(72,185,128,.06))',
+    strip:'rgba(72,185,128,.16)', label:'rgba(110,220,165,.95)', badge:'rgba(72,185,128,.22)'
+  };
+  return {
+    border:'rgba(110,128,220,.85)', borderFaint:'rgba(110,128,220,.20)',
+    bg:'linear-gradient(135deg,rgba(110,128,220,.18),rgba(110,128,220,.06))',
+    strip:'rgba(110,128,220,.14)', label:'rgba(155,170,240,.95)', badge:'rgba(110,128,220,.22)'
+  };
 }
 
 // Streak: count consecutive days the user posted a momento
@@ -19145,14 +19157,14 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var _emptyEmoji = showMineOnly ? '✨' : '💭';
     var _emptyMsg = showMineOnly ? 'Todavía no publicaste ningún momento hoy' : '¡Sé el primero en compartir un momento hoy! ✨';
     feed.innerHTML='<div style="text-align:center;padding:22px 8px">'
-      +'<span style="font-size:32px;display:block;margin-bottom:8px">'+_emptyEmoji+'</span>'
-      +'<div style="font-size:12px;color:var(--ink4);line-height:1.5">'+_emptyMsg+'</div>'
+      +'<span style="font-size:36px;display:block;margin-bottom:10px">'+_emptyEmoji+'</span>'
+      +'<div style="font-size:12.5px;color:rgba(255,255,255,.4);line-height:1.5">'+_emptyMsg+'</div>'
       +'</div>';
     return;
   }
   var cards = momentos.filter(function(m){ return !reported[m.id]; });
   if(!cards.length){
-    feed.innerHTML='<div style="text-align:center;padding:22px 8px"><span style="font-size:32px;display:block;margin-bottom:8px">💭</span><div style="font-size:12px;color:var(--ink4)">No hay momentos disponibles ✨</div></div>';
+    feed.innerHTML='<div style="text-align:center;padding:22px 8px"><span style="font-size:36px;display:block;margin-bottom:10px">💭</span><div style="font-size:12.5px;color:rgba(255,255,255,.4)">No hay momentos disponibles ✨</div></div>';
     return;
   }
   feed.innerHTML=cards.map(function(m){
@@ -19162,31 +19174,32 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var cachedCnt=parseInt(safeLS('get','velo_mheart_'+m.id+'_cnt')||'0');
     var heartCount=Math.max(m.hearts||0, cachedCnt);
     var col=_momentoEmojiColor(m.emoji||'💭');
-    var badgeSz  = isHome ? '34px' : '40px';
-    var emojiFSz = isHome ? '18px' : '22px';
-    var txtSz    = isHome ? '12.5px' : '13.5px';
-    var pad      = isHome ? '10px 12px 10px 10px' : '12px 14px 12px 12px';
-    return '<div class="momento-card" style="border-radius:14px;padding:'+pad+';margin-bottom:8px;animation:p-fadeIn .3s ease;border-left:3px solid '+col.border+';background:'+col.bg+'">'
-      +'<div style="display:flex;align-items:flex-start;gap:10px">'
-      // Emoji badge circle
-      +'<div style="width:'+badgeSz+';height:'+badgeSz+';border-radius:11px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:'+emojiFSz+';line-height:1">'+(m.emoji||'💭')+'</div>'
+    var txtSz = isHome ? '13px' : '14px';
+    var pad   = isHome ? '11px 12px 11px 0' : '13px 14px 13px 0';
+    // Inline !important overrides the CSS-level !important rules on .momento-card
+    var cardStyle='border-radius:14px!important;margin-bottom:9px!important;animation:p-fadeIn .3s ease;'
+      +'background:'+col.bg+'!important;border:1px solid '+col.borderFaint+'!important;border-left:4px solid '+col.border+'!important;overflow:hidden';
+    return '<div class="momento-card" style="'+cardStyle+'">'
+      +'<div style="display:flex;align-items:stretch;gap:0">'
+      // Colored left strip with emoji
+      +'<div style="width:52px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:'+col.strip+';font-size:'+(isHome?'22':'26')+'px;line-height:1;padding:'+(isHome?'12px':'14px')+' 0">'+(m.emoji||'💭')+'</div>'
       // Main content
-      +'<div style="flex:1;min-width:0">'
+      +'<div style="flex:1;min-width:0;padding:'+pad+';padding-left:12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
-      +'<span class="mc-label" style="font-size:10px;font-style:italic;font-weight:600">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
-      +'<span class="mc-time" style="font-size:9px">· '+_momentoAgo(m.created_at)+'</span>'
-      +'<span style="font-size:9px;color:rgba(255,255,255,.28)">· ⏱'+timeLeft+'h</span>'
-      +(mine?'<span style="font-size:8.5px;font-weight:700;padding:1px 6px;border-radius:6px;background:rgba(116,198,157,.18);color:rgba(116,198,157,.8)">tuyo</span>':'')
+      +'<span style="font-size:10.5px;font-style:italic;font-weight:600;color:'+col.label+'">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.3)">· '+_momentoAgo(m.created_at)+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.22)">· ⏱'+timeLeft+'h</span>'
+      +(mine?'<span style="font-size:8px;font-weight:700;padding:1px 6px;border-radius:5px;background:'+col.badge+';color:'+col.label+'">tuyo</span>':'')
       +'</div>'
-      +'<div class="mc-text" style="font-size:'+txtSz+';line-height:1.5;color:rgba(255,255,255,.85);word-break:break-word">'+_escHtml(m.text||'')+'</div>'
+      +'<div style="font-size:'+txtSz+';line-height:1.55;color:rgba(255,255,255,.9);word-break:break-word">'+_escHtml(m.text||'')+'</div>'
       +'</div>'
-      // Actions: heart + report
-      +'<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;padding-top:2px">'
-      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:none;cursor:pointer;padding:4px;border-radius:8px;transition:background .15s">'
-      +'<span style="font-size:'+(liked?'20':'18')+'px;line-height:1">'+(liked?'❤️':'🩶')+'</span>'
-      +'<span id="mheart-'+_escHtml(m.id)+'" class="mc-heart-count" style="font-size:9.5px">'+heartCount+'</span>'
+      // Heart + report
+      +'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;padding:10px 12px 10px 4px">'
+      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:4px">'
+      +'<span style="font-size:20px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
+      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:rgba(255,255,255,.45);font-family:Jost,sans-serif">'+heartCount+'</span>'
       +'</button>'
-      +(!isHome&&!mine ? '<button onclick="pReportMomento(\''+_escHtml(m.id)+'\',this)" title="Reportar" class="mc-report" style="background:none;border:none;cursor:pointer;padding:3px;margin-top:2px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span style="font-size:7px;font-weight:700;letter-spacing:.3px;text-transform:uppercase">Reportar</span></button>' : '')
+      +(!isHome&&!mine ? '<button onclick="pReportMomento(\''+_escHtml(m.id)+'\',this)" title="Reportar" class="mc-report" style="background:none;border:none;cursor:pointer;padding:3px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span style="font-size:7px;font-weight:700;letter-spacing:.3px;text-transform:uppercase">Reportar</span></button>' : '')
       +'</div>'
       +'</div>'
       +'</div>';
@@ -19265,23 +19278,26 @@ async function _loadHomeHappyFeed(){
     var relTime = _happyRelTime(h.ts);
     var hasImg = h.av && (h.av.startsWith('data:')||h.av.startsWith('http'));
     var avHtml = hasImg
-      ? '<img src="'+_escHtml(h.av)+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid rgba(200,158,56,.3)">'
-      : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(200,158,56,.18);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:2px solid rgba(200,158,56,.25)">'+(h.anon?'☀️':_escHtml(h.av||'☀️'))+'</div>';
+      ? '<img src="'+_escHtml(h.av)+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid rgba(218,168,48,.55)">'
+      : '<div style="width:36px;height:36px;border-radius:50%;background:rgba(218,168,48,.22);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:2px solid rgba(218,168,48,.40)">'+(h.anon?'☀️':_escHtml(h.av||'☀️'))+'</div>';
     var nameHtml = h.anon
-      ? '<em style="color:rgba(255,215,100,.55);font-style:italic">Anónimo/a</em>'
-      : '<span style="color:rgba(255,215,100,.9);font-weight:700">'+_escHtml(h.name||'Alguien')+'</span>';
-    // Reaction count
+      ? '<em style="color:rgba(245,200,80,.65);font-style:italic;font-size:11px">Anónimo/a</em>'
+      : '<span style="color:rgba(245,205,80,.95);font-weight:700;font-size:11px">'+_escHtml(h.name||'Alguien')+'</span>';
     var totalR=0;
     if(h.reactions){ try{ var rv=typeof h.reactions==='string'?JSON.parse(h.reactions):h.reactions; Object.values(rv).forEach(function(a){ totalR+=Array.isArray(a)?a.length:0; }); }catch(e){} }
-    return '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 11px;margin-bottom:8px;background:rgba(200,158,56,.07);border:1px solid rgba(200,158,56,.18);border-left:3px solid rgba(200,158,56,.55);border-radius:13px;animation:p-fadeIn .3s ease">'
-      + avHtml
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">'
+    return '<div style="display:flex;gap:0;align-items:stretch;margin-bottom:9px;border-radius:14px;overflow:hidden;animation:p-fadeIn .3s ease;border:1px solid rgba(218,168,48,.22)!important;background:linear-gradient(135deg,rgba(218,168,48,.20),rgba(218,168,48,.07))!important">'
+      // Left gold strip with avatar
+      +'<div style="width:54px;flex-shrink:0;background:rgba(218,168,48,.18);display:flex;align-items:center;justify-content:center;padding:12px 0">'
+      +avHtml
+      +'</div>'
+      // Content
+      +'<div style="flex:1;min-width:0;padding:10px 12px">'
+      +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">'
       +nameHtml
       +'<span style="font-size:9px;color:rgba(255,255,255,.3)">· '+relTime+'</span>'
-      +(totalR>0 ? '<span style="margin-left:auto;font-size:9.5px;color:rgba(200,158,56,.65)">'+totalR+' ❤️</span>' : '')
+      +(totalR>0?'<span style="margin-left:auto;font-size:9.5px;color:rgba(218,168,48,.75)">'+totalR+' ❤️</span>':'')
       +'</div>'
-      +'<div style="font-size:12.5px;color:rgba(255,255,255,.82);line-height:1.45;word-break:break-word">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.88);line-height:1.5;word-break:break-word">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
       +'</div></div>';
   }
 
