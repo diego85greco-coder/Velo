@@ -35,6 +35,9 @@ BEGIN
   DELETE FROM public.happy_posts         WHERE user_id = uid;
   DELETE FROM public.daily_responses     WHERE user_id = uid;
   DELETE FROM public.mood_entries        WHERE user_id = uid;
+  DELETE FROM public.bottles             WHERE user_id = uid;
+  DELETE FROM public.circle_messages     WHERE user_id = uid;
+  DELETE FROM public.diary_entries       WHERE user_id = uid;
   DELETE FROM public.profiles            WHERE id = uid;
 
   -- Delete the auth user
