@@ -3333,9 +3333,10 @@ async function pDeleteMyDqResponse(responseId){
   try{
     var _sessOk = await _ensureSbSession();
     if(!_sessOk){ pToast('⚠️','Sesión expirada, reingresá'); return; }
-    // Capture myUid AFTER session refresh — _ensureSbSession may correct velo_user_id
-    var myUid = safeLS('get','velo_user_id') || '';
-    if(!myUid) return;
+    // Use auth.getUser() — same source as RLS auth.uid(), avoids localStorage mismatch
+    var {data:_authDel} = await sbClient.auth.getUser();
+    if(!_authDel || !_authDel.user){ pToast('⚠️','Sesión expirada, reingresá'); return; }
+    var myUid = _authDel.user.id;
     // .select('id') returns deleted rows — empty array means RLS blocked or no matching row
     var _delRes = await sbClient.from('daily_responses').delete().eq('id', responseId).eq('user_id', myUid).select('id');
     if(_delRes && _delRes.error){ pToast('⚠️','No se pudo borrar'); return; }
