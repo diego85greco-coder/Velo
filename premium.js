@@ -12429,9 +12429,10 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   var body = document.getElementById('qpBody');
   if(!body) return; // sheet was closed
 
-  var dispName = isAnon ? 'Usuario Anónimo' : ((prof && prof.nombre) || name || 'Usuario');
-  var dispAv   = isAnon ? '👤' : ((prof && prof.avatar) || av || '🧑');
-  var motto    = (!isAnon && prof && prof.motto) ? prof.motto : (isAnon ? '' : (bio||''));
+  var dispName     = isAnon ? 'Usuario Anónimo' : ((prof && prof.nombre) || name || 'Usuario');
+  var dispAv       = isAnon ? '👤' : ((prof && prof.avatar) || av || '🧑');
+  var dispUsername = (!isAnon && prof && prof.username) ? prof.username : '';
+  var motto        = (!isAnon && prof && prof.motto) ? prof.motto : (isAnon ? '' : (bio||''));
   var isFav    = uid ? pIsFav(uid) : false;
   var presence = (uid && !isAnon) ? _presenceInfo(uid) : null;
 
@@ -12481,7 +12482,8 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
     +'<div style="font-size:60px;display:flex;justify-content:center">'+_avInline(dispAv,72)+'</div>'
     +(presence ? '<span style="position:absolute;bottom:3px;right:3px;width:15px;height:15px;border-radius:50%;background:'+presence.color+';border:2.5px solid var(--cream)"></span>' : '')
     +'</div>'
-    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:4px">'+_escHtml(dispName)+'</div>'
+    +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:2px">'+_escHtml(dispName)+'</div>'
+    +(dispUsername ? '<div style="font-size:12px;color:var(--ink4);margin-bottom:6px;font-family:Jost,sans-serif;letter-spacing:.2px">@'+_escHtml(dispUsername)+'</div>' : '')
     +(motto ? '<div style="font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:10px">'+_escHtml(motto)+'</div>' : '')
     +(!isAnon ? '<div><span style="font-size:20px">'+badge.icon+'</span> <span style="font-size:12px;color:var(--ink4)">Guardián '+badge.name+'</span></div>' : '')
     +(presence ? '<div style="font-size:11px;color:'+(presence.on?presence.color:'var(--ink5)')+';margin-top:6px">● '+presence.label+'</div>' : '')
