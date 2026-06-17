@@ -9001,9 +9001,11 @@ function pOpenCircle(id, circleData){
     var _circleMyId = safeLS('get','velo_user_id') || safeLS('get','velo_user_email') || '';
     _circleRtCh = _sbSub('velo:circle:'+id, 'circle_messages', function(payload){
       if(!payload.new || payload.new.circle_id !== id) return;
-      // Skip own inserts — pSendCircleMsg already called _renderCircleMessages()
-      if(payload.new.user_id && payload.new.user_id === _circleMyId && payload.new.type !== 'system') return;
-      _circleLastDbMsgId = null; // force re-render
+      // Skip own INSERT events only — pSendCircleMsg already called _renderCircleMessages().
+      // Do NOT skip UPDATE events (reactions) even if the message belongs to the current user.
+      var isInsert = payload.eventType === 'INSERT' || !payload.eventType;
+      if(isInsert && payload.new.user_id && payload.new.user_id === _circleMyId && payload.new.type !== 'system') return;
+      _circleLastDbMsgId = null; // force re-render to pick up reaction changes
       _renderCircleMessages();
     });
     // Upsert user into circle_members for real-time presence counting
@@ -9049,10 +9051,14 @@ async function _renderCircleMessagesInner(){
   var localMsgs = [];
   try{ localMsgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
 
-  // Only do the localStorage instant render on first load (when container is empty).
-  // Skipping it on subsequent calls prevents the DOM-wipe flicker during real-time updates.
-  if(localMsgs.length && !el.querySelector('.feed-msg')){
-    el.innerHTML = localMsgs.map(function(m){
+  // localStorage instant render — only on first load (empty container) and only messages
+  // from the current session (filtered by join timestamp to avoid flashing old history).
+  var _joinTimeMs = _curCircle ? new Date(safeLS('get','velo_circle_joined_'+_curCircle.id)||0).getTime() : 0;
+  var _lsRecent = _joinTimeMs
+    ? localMsgs.filter(function(m){ return m.ts >= _joinTimeMs - 2000; }) // 2s slack for clock
+    : localMsgs;
+  if(_lsRecent.length && !el.querySelector('.feed-msg')){
+    el.innerHTML = _lsRecent.map(function(m){
       if(m.type === 'system') return '<div style="text-align:center;margin:10px 0"><span style="font-size:11px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
       return _buildMsgBubble(m.text, !!m.own, m.av||'', m.name||'', 'feedInput', 'feedReplyBar', '', m.reactions||{}, '', m.userId||'');
     }).join('');
@@ -9139,15 +9145,33 @@ function pSendCircleMsg(){
   var userConvs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
   var badge = _getBadge(userConvs);
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon';
-  msgs.push({ id:'m'+Date.now(), av:av, name:name+' '+badge.icon, text:fullText, ts:Date.now(), own:true, userId:myId });
+  var _circleSendTs = Date.now();
+  msgs.push({ id:'m'+_circleSendTs, av:av, name:name+' '+badge.icon, text:fullText, ts:_circleSendTs, own:true, userId:myId });
   safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs.slice(-100)));
   _geminiModerateContent(fullText, 'circulo-'+_curCircle.id);
+  // Optimistic DOM append for instant feedback (same pattern as DM/guardian chat)
+  var _cMsgEl = document.getElementById('feedMessages');
+  var _cLastBubble = null;
+  if(_cMsgEl){
+    var _emptyState = _cMsgEl.querySelector('.p-empty');
+    if(_emptyState) _emptyState.remove();
+    var _cTmp = document.createElement('div');
+    _cTmp.innerHTML = _buildMsgBubble(fullText, true, av, name+' '+badge.icon, 'feedInput', 'feedReplyBar', circleQuote);
+    var _cChild = _cTmp.firstElementChild;
+    if(_cChild){ _cMsgEl.appendChild(_cChild); _cMsgEl.scrollTop = _cMsgEl.scrollHeight; _cLastBubble = _cChild; }
+  }
   // Insert to Supabase so all circle members see the message in real-time
   _initSupabase();
   if(sbClient){
     sbClient.from('circle_messages').insert({ circle_id:_curCircle.id,
       user_id: myId, user_name: name+' '+badge.icon, user_av: av||'🌿', text:fullText, type:'text'
-    }).then(function(){}).catch(function(){});
+    }).select('id').single().then(function(res){
+      // Stamp data-sb-id so reactions from this circle message can be saved
+      if(res && res.data && res.data.id && _cLastBubble){
+        _cLastBubble.setAttribute('data-sb-id', 'circle_messages:'+res.data.id);
+        _circleLastDbMsgId = res.data.id; // prevent next poll from re-appending
+      }
+    }).catch(function(){});
   }
   _renderCircleMessages();
 }
