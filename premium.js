@@ -3312,9 +3312,16 @@ async function pDeleteMyDqResponse(responseId){
   var myUid = safeLS('get','velo_user_id') || '';
   if(!myUid) return;
   try{
-    await sbClient.from('daily_responses').delete().eq('id', responseId).eq('user_id', myUid);
+    var _sessOk = await _ensureSbSession();
+    if(!_sessOk){ pToast('⚠️','Sesión expirada, reingresá'); return; }
+    var _delRes = await sbClient.from('daily_responses').delete().eq('id', responseId).eq('user_id', myUid);
+    if(_delRes && _delRes.error){ pToast('⚠️','No se pudo borrar'); return; }
+    // Optimistic update — remove from local cache immediately
+    _dqAllResponses = _dqAllResponses.filter(function(r){ return String(r.id) !== String(responseId); });
+    _renderDailyFeed(_dqAllResponses);
     pToast('🗑️','Respuesta eliminada');
-    _fetchDailyFeed(_getDailyQuestion().id);
+    var _q = _getDailyQuestion();
+    if(_q && _q.id) _fetchDailyFeed(_q.id);
   }catch(e){ pToast('⚠️','No se pudo borrar'); }
 }
 
