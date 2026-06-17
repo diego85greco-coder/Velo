@@ -19061,19 +19061,28 @@ function _momentoEmojiColor(emoji){
   var warm=['🌟','✨','⭐','💫','🌅','🌄','☀️','😊','😄','🎉','🎊','💛','🧡','☕','🎵','🎶','🌻','🔥','🌈'];
   var calm=['🤍','🌿','🌱','🍃','💚','🕊️','🌊','💙','🌙','⛅','☁️','🫧','🌾','🍀','🐦'];
   if(warm.indexOf(emoji)>=0) return {
-    border:'rgba(218,162,40,.95)', borderFaint:'rgba(218,162,40,.25)',
-    bg:'linear-gradient(135deg,rgba(218,162,40,.22),rgba(218,162,40,.07))',
-    strip:'rgba(218,162,40,.18)', label:'rgba(245,200,80,.95)', badge:'rgba(218,162,40,.25)'
+    bg:'rgba(48,32,4,.90)',
+    strip:'rgba(218,160,30,.38)',
+    border:'rgba(218,160,30,.70)',
+    glow:'rgba(218,160,30,.22)',
+    label:'rgba(255,210,70,.95)',
+    badge:'rgba(218,162,40,.30)'
   };
   if(calm.indexOf(emoji)>=0) return {
-    border:'rgba(72,185,128,.90)', borderFaint:'rgba(72,185,128,.22)',
-    bg:'linear-gradient(135deg,rgba(72,185,128,.20),rgba(72,185,128,.06))',
-    strip:'rgba(72,185,128,.16)', label:'rgba(110,220,165,.95)', badge:'rgba(72,185,128,.22)'
+    bg:'rgba(8,40,26,.90)',
+    strip:'rgba(72,185,128,.38)',
+    border:'rgba(72,185,128,.65)',
+    glow:'rgba(72,185,128,.20)',
+    label:'rgba(120,230,175,.95)',
+    badge:'rgba(72,185,128,.28)'
   };
   return {
-    border:'rgba(110,128,220,.85)', borderFaint:'rgba(110,128,220,.20)',
-    bg:'linear-gradient(135deg,rgba(110,128,220,.18),rgba(110,128,220,.06))',
-    strip:'rgba(110,128,220,.14)', label:'rgba(155,170,240,.95)', badge:'rgba(110,128,220,.22)'
+    bg:'rgba(18,18,52,.90)',
+    strip:'rgba(110,128,220,.40)',
+    border:'rgba(110,128,220,.60)',
+    glow:'rgba(110,128,220,.18)',
+    label:'rgba(165,182,255,.95)',
+    badge:'rgba(110,128,220,.28)'
   };
 }
 
@@ -19187,29 +19196,27 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var heartCount=Math.max(m.hearts||0, cachedCnt);
     var col=_momentoEmojiColor(m.emoji||'💭');
     var txtSz = isHome ? '13px' : '14px';
-    var pad   = isHome ? '11px 12px 11px 0' : '13px 14px 13px 0';
-    // Inline !important overrides the CSS-level !important rules on .momento-card
-    var cardStyle='border-radius:14px!important;margin-bottom:9px!important;animation:p-fadeIn .3s ease;'
-      +'background:'+col.bg+'!important;border:1px solid '+col.borderFaint+'!important;border-left:4px solid '+col.border+'!important;overflow:hidden';
-    return '<div class="momento-card" style="'+cardStyle+'">'
+    var stripW = isHome ? '56px' : '62px';
+    var emojiSz = isHome ? '24px' : '28px';
+    return '<div class="home-mc" style="background:'+col.bg+';box-shadow:0 3px 18px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3px solid '+col.border+'">'
       +'<div style="display:flex;align-items:stretch;gap:0">'
       // Colored left strip with emoji
-      +'<div style="width:52px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:'+col.strip+';font-size:'+(isHome?'22':'26')+'px;line-height:1;padding:'+(isHome?'12px':'14px')+' 0">'+(m.emoji||'💭')+'</div>'
+      +'<div style="width:'+stripW+';flex-shrink:0;display:flex;align-items:center;justify-content:center;background:'+col.strip+';font-size:'+emojiSz+';line-height:1;padding:'+(isHome?'14px':'16px')+' 0;border-radius:0">'+(m.emoji||'💭')+'</div>'
       // Main content
-      +'<div style="flex:1;min-width:0;padding:'+pad+';padding-left:12px">'
+      +'<div style="flex:1;min-width:0;padding:11px 10px 11px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
-      +'<span style="font-size:10.5px;font-style:italic;font-weight:600;color:'+col.label+'">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
-      +'<span style="font-size:9px;color:rgba(255,255,255,.3)">· '+_momentoAgo(m.created_at)+'</span>'
-      +'<span style="font-size:9px;color:rgba(255,255,255,.22)">· ⏱'+timeLeft+'h</span>'
+      +'<span style="font-size:10.5px;font-style:italic;font-weight:700;color:'+col.label+'">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.38)">· '+_momentoAgo(m.created_at)+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.28)">· ⏱'+timeLeft+'h</span>'
       +(mine?'<span style="font-size:8px;font-weight:700;padding:1px 6px;border-radius:5px;background:'+col.badge+';color:'+col.label+'">tuyo</span>':'')
       +'</div>'
-      +'<div style="font-size:'+txtSz+';line-height:1.55;color:rgba(255,255,255,.9);word-break:break-word">'+_escHtml(m.text||'')+'</div>'
+      +'<div style="font-size:'+txtSz+';line-height:1.55;color:rgba(255,255,255,.92);word-break:break-word">'+_escHtml(m.text||'')+'</div>'
       +'</div>'
       // Heart + report
-      +'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;padding:10px 12px 10px 4px">'
+      +'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;padding:10px 11px 10px 4px">'
       +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:4px">'
       +'<span style="font-size:20px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
-      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:rgba(255,255,255,.45);font-family:Jost,sans-serif">'+heartCount+'</span>'
+      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:rgba(255,255,255,.50);font-family:Jost,sans-serif">'+heartCount+'</span>'
       +'</button>'
       +(!isHome&&!mine ? '<button onclick="pReportMomento(\''+_escHtml(m.id)+'\',this)" title="Reportar" class="mc-report" style="background:none;border:none;cursor:pointer;padding:3px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span style="font-size:7px;font-weight:700;letter-spacing:.3px;text-transform:uppercase">Reportar</span></button>' : '')
       +'</div>'
@@ -19297,19 +19304,21 @@ async function _loadHomeHappyFeed(){
       : '<span style="color:rgba(245,205,80,.95);font-weight:700;font-size:11px">'+_escHtml(h.name||'Alguien')+'</span>';
     var totalR=0;
     if(h.reactions){ try{ var rv=typeof h.reactions==='string'?JSON.parse(h.reactions):h.reactions; Object.values(rv).forEach(function(a){ totalR+=Array.isArray(a)?a.length:0; }); }catch(e){} }
-    return '<div style="display:flex;gap:0;align-items:stretch;margin-bottom:9px;border-radius:14px;overflow:hidden;animation:p-fadeIn .3s ease;border:1px solid rgba(218,168,48,.22)!important;background:linear-gradient(135deg,rgba(218,168,48,.20),rgba(218,168,48,.07))!important">'
+    return '<div class="home-mc" style="background:rgba(48,32,4,.90);box-shadow:0 3px 18px rgba(218,160,30,.22),inset 0 0 0 1px rgba(218,160,30,.30);border-left:3px solid rgba(218,160,30,.70)">'
+      +'<div style="display:flex;align-items:stretch;gap:0">'
       // Left gold strip with avatar
-      +'<div style="width:54px;flex-shrink:0;background:rgba(218,168,48,.18);display:flex;align-items:center;justify-content:center;padding:12px 0">'
+      +'<div style="width:56px;flex-shrink:0;background:rgba(218,160,30,.38);display:flex;align-items:center;justify-content:center;padding:12px 0">'
       +avHtml
       +'</div>'
       // Content
-      +'<div style="flex:1;min-width:0;padding:10px 12px">'
+      +'<div style="flex:1;min-width:0;padding:10px 10px 10px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">'
       +nameHtml
-      +'<span style="font-size:9px;color:rgba(255,255,255,.3)">· '+relTime+'</span>'
-      +(totalR>0?'<span style="margin-left:auto;font-size:9.5px;color:rgba(218,168,48,.75)">'+totalR+' ❤️</span>':'')
+      +'<span style="font-size:9px;color:rgba(255,255,255,.38)">· '+relTime+'</span>'
+      +(totalR>0?'<span style="margin-left:auto;font-size:9.5px;color:rgba(255,210,70,.85)">'+totalR+' ❤️</span>':'')
       +'</div>'
-      +'<div style="font-size:13px;color:rgba(255,255,255,.88);line-height:1.5;word-break:break-word">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.92);line-height:1.5;word-break:break-word">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
+      +'</div>'
       +'</div></div>';
   }
 
