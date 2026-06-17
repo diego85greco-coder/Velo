@@ -746,7 +746,7 @@ async function _sbSyncProfileInner(userId){
       _updateFavBadge();
     }).catch(function(){});
   // Restore guardian bio/tags/status from guardian_presence
-  sbClient.from('guardian_presence').select('bio,tags,is_guardian,status').eq('user_id', userId).limit(1)
+  sbClient.from('guardian_presence').select('*').eq('user_id', userId).limit(1)
     .then(function(gr){
       if(gr.data && gr.data[0]){
         if(gr.data[0].bio)  safeLS('set','velo_guardian_bio', gr.data[0].bio);
