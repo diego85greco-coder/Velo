@@ -3183,11 +3183,14 @@ function _loadDailyQ(){
     // Not in localStorage — check Supabase (cross-device: answered on another browser)
     if(sbClient && currentUid){
       sbClient.from('daily_responses')
-        .select('mood_emoji,response_text')
+        .select('id,mood_emoji,response_text')
         .eq('user_id', currentUid).eq('question_date', dateKey).limit(1)
         .then(function(r){
           if(r.data && r.data.length){
             var _sb = r.data[0];
+            // If the user already deleted this locally, don't re-restore it
+            var _dqHid2 = []; try{ _dqHid2 = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
+            if(_sb.id && _dqHid2.indexOf(String(_sb.id)) !== -1){ _fetchDailyCount(); return; }
             var _restored = JSON.stringify({emoji:_sb.mood_emoji, text:_sb.response_text||'', uid:currentUid});
             safeLS('set','velo_daily_resp_'+dateKey, _restored);
             _applyDailyQAnswered(_restored, q);
@@ -3248,9 +3251,9 @@ async function _fetchDailyFeed(qId){
   if(!_dqRtCh && sbClient){
     var _dqToday = today;
     _dqRtCh = _sbSub('velo:dq:'+_dqToday, 'daily_responses', function(payload){
-      if(payload.new && payload.new.question_date === _dqToday){
-        _fetchDailyFeed(qId);
-      }
+      // Handle INSERT (payload.new) and DELETE (payload.old)
+      var _evDate = (payload.new && payload.new.question_date) || (payload.old && payload.old.question_date);
+      if(_evDate === _dqToday){ _fetchDailyFeed(qId); }
     });
   }
 }
@@ -8709,8 +8712,22 @@ async function _loadMoodCalendar(){
   }
 }
 
-function pClearAllMoods(){
-  _pConfirm('¿Borrar todo el historial de ánimo? Esta acción no se puede deshacer.', function(){
+async function pClearAllMoods(){
+  _pConfirm('¿Borrar todo el historial de ánimo? Esta acción no se puede deshacer.', async function(){
+    _initSupabase();
+    _moodResetPending = true;
+    _moodSyncDone = true;
+    var _authCl; try{ _authCl = await sbClient.auth.getUser(); }catch(e){}
+    var _clUid = (_authCl && _authCl.data && _authCl.data.user) ? _authCl.data.user.id : null;
+    if(sbClient && _clUid){
+      try{
+        var _delCl = await sbClient.from('mood_entries').delete().eq('user_id', _clUid).select('date_key');
+        if(_delCl && _delCl.error){
+          pToast('⚠️','Error al borrar ánimos. Agregá política DELETE en Supabase.');
+          _moodResetPending = false; _moodSyncDone = false; return;
+        }
+      }catch(e){ pToast('⚠️','Error al conectar'); _moodResetPending = false; _moodSyncDone = false; return; }
+    }
     var toRemove = [];
     for(var i = 0; i < localStorage.length; i++){
       var k = localStorage.key(i);
@@ -8718,14 +8735,13 @@ function pClearAllMoods(){
     }
     toRemove.forEach(function(k){ localStorage.removeItem(k); });
     safeLS('del','velo_mood_log');
-    _initSupabase();
-    var _uid = _myUserId ? _myUserId() : safeLS('get','velo_user_id');
-    if(sbClient && _uid && _uid !== 'guest'){
-      sbClient.from('mood_entries').delete().eq('user_id', _uid)
-        .then(function(){}).catch(function(){});
-    }
+    _sbVerifiedMoodCount = 0;
+    _setEl('profileDays', 0);
+    _setEl('homeStatStreak', 0);
     pToast('🗑️','Historial de ánimo eliminado');
     pInitMood();
+    _renderHomeWeekMoodGraph().catch(function(){});
+    _updateHomeStreak();
   });
 }
 
