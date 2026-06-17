@@ -10340,7 +10340,7 @@ function _happyPostCard(h, isOwn){
     // comment input
     +'<div style="display:flex;gap:8px;align-items:center">'
     +'<input id="cmt-'+h.id+'" class="p-input" style="flex:1;font-size:12px;padding:7px 12px;height:auto;border-radius:100px" placeholder="Dejar un comentario…" maxlength="120" onkeydown="if(event.key===\'Enter\')pHappyComment(\''+h.id+'\')">'
-    +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:7px 12px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;font-size:12px;cursor:pointer;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;flex-shrink:0;white-space:nowrap">Enviar 💬</button>'
+    +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:7px 12px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.35);border-radius:100px;font-size:12px;cursor:pointer;color:rgba(160,230,195,.95);font-family:\'Jost\',sans-serif;font-weight:700;flex-shrink:0;white-space:nowrap">Enviar 💬</button>'
     +'</div>'
     +(safeLS('get','velo_incognito')==='true' ? '<div style="font-size:10.5px;color:var(--ink5);line-height:1.5;margin-top:6px;font-style:italic">En tu perfil tenés activo el modo incógnito. Si querés comentar con tu perfil público, desactivá esa opción.</div>' : '')
     +'</div>';

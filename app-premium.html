@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="857">
+  <meta name="app-version" content="858">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -1882,7 +1882,7 @@
                   <span class="p-label" style="margin:0">Entradas</span>
                   <button class="p-btn p-btn--secondary p-btn--sm" onclick="pClearAllDiary()" style="font-size:11px">🗑️ Borrar todo</button>
                 </div>
-                <div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:var(--sage2);line-height:1.5">
+                <div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:rgba(210,235,215,.8);line-height:1.5">
                   🔒 Solo vos podés ver este diario — ni Velo puede acceder a este contenido
                 </div>
                 <div id="diaryEntries"></div>
@@ -3890,7 +3890,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260617-857"></script>
+<script src="premium.js?v=20260617-858"></script>
 <script src="premium-redesign.js?v=20260616-814"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
