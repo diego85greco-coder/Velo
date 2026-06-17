@@ -520,7 +520,9 @@ async function _sbSyncProfileInner(userId){
     'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids',
     'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes',
     'nombre,avatar,motto,role,username,username_changes',
-    'nombre,avatar,motto,role,username'
+    'nombre,avatar,motto,role,username',
+    'nombre,avatar,motto,role',   // fallback: username column not yet created in Supabase
+    'nombre,avatar'               // bare minimum
   ];
   try{
     for(var _ti = _profileSelectTier; _ti < _selTiers.length; _ti++){
