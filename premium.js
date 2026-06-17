@@ -12672,6 +12672,14 @@ function pIsFav(userId){
 function pAddFav(userId, name, av){
   var _myId = safeLS('get','velo_user_id')||'';
   if(!userId || userId === _myId || pIsFav(userId)) return;
+  // Clear tombstone — if re-adding a previously removed fav, _syncFavsFromSupabase
+  // would otherwise filter them back out because their ID is still in velo_favs_removed.
+  try{
+    var _rmKey='velo_favs_removed';
+    var _rmList=JSON.parse(safeLS('get',_rmKey)||'[]');
+    var _rmIdx=_rmList.indexOf(userId);
+    if(_rmIdx>=0){ _rmList.splice(_rmIdx,1); safeLS('set',_rmKey,JSON.stringify(_rmList)); }
+  }catch(e){}
   var favs = pGetFavs();
   favs.unshift({ id:userId, name:name||'Usuario', av:av||'🧑', ts:Date.now() });
   _favsList = favs;
@@ -12818,6 +12826,10 @@ async function pRenderContacts(){
   var el = document.getElementById('contactsContent');
   if(!el) return;
   try{ await _ensureSbSession(); }catch(e){}
+  if(_navToken !== _tok || !document.getElementById('contactsContent')) return;
+  // Sync favorites from Supabase before reading — ensures cross-device data and
+  // catches cases where the 3.5s startup timer hasn't fired yet.
+  try{ await _syncFavsFromSupabase(); }catch(e){}
   if(_navToken !== _tok || !document.getElementById('contactsContent')) return;
 
   try {
