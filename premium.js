@@ -1298,23 +1298,14 @@ async function pChangePassword(){
   if(newPass.length < 8){ pToast('⚠️','Mínimo 8 caracteres'); return; }
   if(newPass !== confPass){ pToast('⚠️','Las contraseñas no coinciden'); return; }
   _initSupabase();
-  var ok = false;
-  if(sbClient){
-    try{
-      var res = await sbClient.auth.updateUser({password: newPass});
-      if(!res.error) ok = true;
-    }catch(e){}
-  }
-  if(!ok){
-    // Demo fallback: update local only
-    ok = true;
-  }
-  var email = safeLS('get','velo_user_email');
-  if(email){
-    try{ localStorage.removeItem('velo_prov_'+email.toLowerCase().replace(/[^a-z0-9]/g,'_')); }catch(e){}
+  if(!sbClient){ pToast('⚠️','Sin conexión. Intentá de nuevo.'); return; }
+  var res;
+  try{ res = await sbClient.auth.updateUser({password: newPass}); }catch(e){ res = {error: e}; }
+  if(res && res.error){
+    pToast('❌','No se pudo actualizar la contraseña. '+(res.error.message||'Intentá de nuevo.'));
+    return;
   }
   safeLS('del','velo_needs_pw_change');
-  safeLS('set','velo_sb_pass', newPass);
   pToast('✅','¡Contraseña actualizada! 🔒');
   setTimeout(function(){ _loginAndGo(); }, 1400);
 }
