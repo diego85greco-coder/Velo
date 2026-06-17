@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="828">
+  <meta name="app-version" content="829">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -127,7 +127,7 @@
   <script>window.si=window.si||function(){(window.siq=window.siq||[]).push(arguments);};</script>
   <script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
-<body>
+<body class="r-dark">
 
 <!-- TOAST -->
 <div class="p-toast" id="pToast">
@@ -2004,7 +2004,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
               <div style="height:12px"></div>
               <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSaveMood()">Registrar ánimo</button>
             </div>
-            <div class="p-card" style="padding:20px;margin-bottom:16px" id="dailyStatusCard">
+            <div class="p-card" style="padding:20px;margin-bottom:16px;display:none" id="dailyStatusCard">
               <div class="p-label p-label-sage" style="margin-bottom:4px">Mi estado · visible en tu perfil ✨</div>
               <p style="font-size:11px;color:var(--ink5);margin-bottom:14px;line-height:1.5;font-style:italic">Lo que guardás aparece en tu perfil público y cuando la comunidad te ve.</p>
               <div class="p-field">
@@ -2208,7 +2208,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
           <div class="feed-header-info">
             <span id="feedCircleEmoji" style="font-size:26px">⭕</span>
             <div style="min-width:0">
-              <div id="feedCircleName" style="font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Círculo</div>
+              <div id="feedCircleName" style="font-size:15px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Círculo</div>
               <div id="feedCircleMembers" style="font-size:11px;color:var(--ink4)"></div>
             </div>
           </div>
@@ -2569,8 +2569,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
           <div class="feed-header-info" style="min-width:0;flex:1;overflow:hidden">
             <span id="gcAv" style="font-size:22px;flex-shrink:0">🌿</span>
             <div style="min-width:0;overflow:hidden">
-              <div id="gcName" style="font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Tu Guardián/a</div>
-              <div style="font-size:10px;color:var(--sage)">● Sesión privada</div>
+              <div id="gcName" style="font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Tu Guardián/a</div>
+              <div style="font-size:10px;color:rgba(116,198,157,.9)">● Sesión privada</div>
             </div>
           </div>
           <div style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-shrink:0">
@@ -2578,7 +2578,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
             <button onclick="pEndGuardianChat()" style="background:rgba(116,198,157,.1);border:1.5px solid rgba(116,198,157,.25);color:var(--sage);font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap">✅ Fin</button>
           </div>
         </div>
-        <div style="background:rgba(116,198,157,.1);border-bottom:1px solid rgba(116,198,157,.2);padding:6px 20px;font-size:11px;color:var(--sage);font-style:italic;flex-shrink:0">
+        <div style="background:rgba(116,198,157,.1);border-bottom:1px solid rgba(116,198,157,.2);padding:6px 20px;font-size:11px;color:rgba(180,230,200,.9);font-style:italic;flex-shrink:0">
           🤝 Sesión privada · No reemplaza atención profesional · SOS disponible en todo momento
         </div>
         <div id="gcMessages" class="feed-messages"></div>
@@ -3036,8 +3036,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         <div class="feed-header-info" style="cursor:pointer" onclick="_dmOpenPeerProfile()">
           <div id="dmPeerAv" style="font-size:26px">🧑</div>
           <div style="min-width:0">
-            <div id="dmPeerName" style="font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Contacto</div>
-            <div style="font-size:11px;color:var(--ink4)">Mensaje directo · privado</div>
+            <div id="dmPeerName" style="font-size:15px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Contacto</div>
+            <div style="font-size:11px;color:rgba(180,230,200,.8)">Mensaje directo · privado</div>
           </div>
         </div>
         <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
@@ -3046,7 +3046,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
           <button onclick="pReportDMChat()" style="background:rgba(192,48,40,.08);border:1.5px solid rgba(192,48,40,.15);color:rgba(192,48,40,.7);font-size:11px;font-weight:700;padding:5px 10px;border-radius:10px;cursor:pointer;font-family:'Jost',sans-serif" title="Reportar usuario">⚠️ Reportar</button>
         </div>
       </div>
-      <div id="dmRulesBanner" style="background:rgba(116,198,157,.12);border-bottom:1px solid rgba(116,198,157,.2);padding:6px 20px;font-size:11px;color:var(--sage);font-style:italic;flex-shrink:0">
+      <div id="dmRulesBanner" style="background:rgba(116,198,157,.12);border-bottom:1px solid rgba(116,198,157,.2);padding:6px 20px;font-size:11px;color:rgba(180,230,200,.9);font-style:italic;flex-shrink:0">
         🔒 Conversación privada · Solo vos y tu contacto pueden leer estos mensajes
       </div>
       <div id="dmMessages" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:2px"></div>
@@ -3881,7 +3881,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260617-828"></script>
+<script src="premium.js?v=20260617-829"></script>
 <script src="premium-redesign.js?v=20260616-814"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();

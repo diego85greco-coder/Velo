@@ -41,6 +41,7 @@ var _helpRtCh     = null;   // realtime channel help_posts
 var _bottleRtCh   = null;   // realtime channel bottles
 var _circleRtCh   = null;   // realtime channel circle_messages
 var _guardianRtCh = null;   // realtime channel guardian_presence
+var _dqRtCh       = null;   // realtime channel daily_responses
 var _liveGuardians = [];    // cached live guardian rows from Supabase
 var _grReqCh        = null;   // guardian_requests realtime channel (guardian side)
 var _seekerGrCh     = null;   // guardian_requests realtime channel (seeker side)
@@ -1089,6 +1090,8 @@ function _clearSession(){
   if(_buzónPollTmr){ clearInterval(_buzónPollTmr); _buzónPollTmr = null; }
   if(_dmReactPollTmr){ clearInterval(_dmReactPollTmr); _dmReactPollTmr = null; }
   _gcReactHash = ''; _dmReactHash = '';
+  _moodSyncDone = false;
+  if(_dqRtCh){ _sbUnsub(_dqRtCh); _dqRtCh = null; }
 }
 
 async function pSignOut(){
@@ -3115,6 +3118,15 @@ async function _fetchDailyFeed(qId){
     await _loadDqReactions(responses.map(function(r){ return r.id; }));
     _renderDailyFeed(responses);
   }catch(e){ _renderDailyFeed([]); }
+  // Subscribe to real-time new responses (one subscription per session)
+  if(!_dqRtCh && sbClient){
+    var _dqToday = today;
+    _dqRtCh = _sbSub('velo:dq:'+_dqToday, 'daily_responses', function(payload){
+      if(payload.new && payload.new.question_date === _dqToday){
+        _fetchDailyFeed(qId);
+      }
+    });
+  }
 }
 
 // ── DAILY QUESTION REACTIONS ────────────────────────────────────
@@ -3223,18 +3235,24 @@ function _expandDailyFeed(){
 }
 
 function _buildDqCards(list){
+  var myUid = safeLS('get','velo_user_id') || '';
   return list.map(function(r){
     var av = r.user_avatar || '';
     var isImg = av && av.startsWith('http');
     var avHtml = isImg
       ? '<img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-top:2px">'
       : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.2);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:17px">'+(av||'🌿')+'</div>';
+    var isOwn = myUid && r.user_id === myUid;
+    var deleteBtn = isOwn
+      ? '<button onclick="pDeleteMyDqResponse(\''+r.id+'\')" title="Borrar mi respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
+      : '';
     return '<div class="dq-feed-card" style="display:flex;gap:8px;padding:8px 0;align-items:flex-start">'
       +avHtml
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">'
       +'<span class="dq-feed-name" style="font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">'+(r.user_name||'Alguien')+'</span>'
       +'<span style="font-size:14px">'+r.mood_emoji+'</span>'
+      +deleteBtn
       +'</div>'
       +(r.response_text
         ? '<div class="dq-bubble">'
@@ -3245,6 +3263,17 @@ function _buildDqCards(list){
       +'</div>'
       +'</div>';
   }).join('');
+}
+
+async function pDeleteMyDqResponse(responseId){
+  if(!sbClient || !responseId) return;
+  var myUid = safeLS('get','velo_user_id') || '';
+  if(!myUid) return;
+  if(!confirm('¿Borrar tu respuesta?')) return;
+  try{
+    await sbClient.from('daily_responses').delete().eq('id', responseId).eq('user_id', myUid);
+    _fetchDailyFeed(_getDailyQuestion().id);
+  }catch(e){ pToast('⚠️','No se pudo borrar'); }
 }
 
 var _dailySelectedEmoji = '';
@@ -10686,10 +10715,8 @@ function pLoadProfile(){
       .eq('user_id', _pUid).like('date_key', _sbMonthPrefix+'%')
       .then(function(r){
         var sbMoodDays = (r && r.count != null) ? r.count : 0;
-        if(sbMoodDays > 0){
-          var _cur = parseInt((document.getElementById('profileDays')||{}).textContent||'0', 10);
-          if(sbMoodDays > _cur) _setEl('profileDays', sbMoodDays);
-        }
+        _setEl('profileDays', sbMoodDays);
+        _setEl('homeStatStreak', sbMoodDays);
       }).catch(function(){});
 
     Promise.all([
@@ -10701,11 +10728,11 @@ function pLoadProfile(){
       var realR  = (results[1] && results[1].count  != null) ? results[1].count  : 0;
       var profH  = (results[2] && results[2].data   && results[2].data.helped_count)   ? parseInt(results[2].data.helped_count,  10) : 0;
       var profR  = (results[2] && results[2].data   && results[2].data.received_count) ? parseInt(results[2].data.received_count,10) : 0;
-      var finalH = Math.max(_locHelped, realH, profH);
-      var finalR = Math.max(_locRecv,   realR, profR);
-      // Restore localStorage from highest known value (survives cache clears)
-      if(finalH > _locHelped){ safeLS('set','velo_guardian_convs', String(finalH)); }
-      if(finalR > _locRecv)  { safeLS('set','velo_help_received',  String(finalR)); }
+      // Use only Supabase as source of truth — localStorage could be stale from a previous account
+      var finalH = Math.max(realH, profH);
+      var finalR = Math.max(realR, profR);
+      safeLS('set','velo_guardian_convs', String(finalH));
+      safeLS('set','velo_help_received',  String(finalR));
       // Keep profiles table in sync (write-back if guardian_requests has more data)
       if(finalH > profH) _bumpProfileCounter('helped_count',   finalH);
       if(finalR > profR) _bumpProfileCounter('received_count', finalR);
