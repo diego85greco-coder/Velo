@@ -11268,3 +11268,24 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
 @media (min-width: 1025px) {
   .mobile-sound-hint { display: none !important; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v869 — Comunidad widget: match horizontal width of Registros widget
+   #homeRegisterOuter has width:100%;box-sizing:border-box and explicit
+   margin:0 overrides — apply same to #homeMomentoSection.
+   On desktop (≥861px) also match the 360px centred constraint that
+   #homeRegisterZone uses so both cards appear the same visual width.
+   ══════════════════════════════════════════════════════════════════ */
+#homeMomentoSection {
+  margin-left:  0 !important;
+  margin-right: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+@media (min-width: 861px) {
+  #homeMomentoSection {
+    max-width: 360px !important;
+    margin-left:  auto !important;
+    margin-right: auto !important;
+  }
+}
