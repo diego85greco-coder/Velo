@@ -1947,6 +1947,11 @@ async function _syncMoodsFromSb(){
 // Push any local moods that are missing from Supabase (covers cases where sbSaveMoodEntry failed silently)
 async function _pushMissingMoodsToSb(){
   if(_moodResetPending) return; // don't restore moods that were just intentionally deleted
+  // Sync from Supabase FIRST so we have the authoritative count before deciding what to push.
+  // Without this, _pushMissingMoodsToSb can run before the 800ms setTimeout(_syncMoodsFromSb)
+  // fires, uploading stale local moods to a Supabase that was intentionally emptied.
+  if(!_moodSyncDone) await _syncMoodsFromSb();
+  if(_moodResetPending) return; // re-check after await
   _initSupabase();
   if(!sbClient) return;
   try{
