@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="856">
+  <meta name="app-version" content="857">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -1058,7 +1058,7 @@
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.65"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
                   Mi estado
                 </button>
-                <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="flex:1;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(255,225,120,.95);background:linear-gradient(135deg,rgba(200,155,35,.42),rgba(178,132,18,.34));border:1.5px solid rgba(222,178,55,.58);border-radius:100px;padding:7px 10px;letter-spacing:.02em;cursor:pointer;overflow:hidden;white-space:nowrap">🌷 <span id="homeCurrentMoodText">¿Cómo te sentís?</span><span style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.8px;font-style:normal;font-family:'Jost',sans-serif;opacity:.62;flex-shrink:0;padding-left:4px">OK</span></div>
+                <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="flex:1;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(255,225,120,.95);background:linear-gradient(135deg,rgba(200,155,35,.42),rgba(178,132,18,.34));border:1.5px solid rgba(222,178,55,.58);border-radius:100px;padding:7px 10px;letter-spacing:.02em;cursor:pointer;overflow:hidden;white-space:nowrap">🌷 <span id="homeCurrentMoodText">¿Cómo te sentís?</span><span style="margin-left:auto;font-size:10px;font-weight:800;letter-spacing:.8px;font-style:normal;font-family:'Jost',sans-serif;opacity:.82;flex-shrink:0;padding-left:4px">OK</span></div>
               </div>
               <!-- Row 2: Motto pill with OK -->
               <div class="home-motto-label">Mi lema:</div>
@@ -1080,11 +1080,11 @@
             <div style="display:flex;gap:10px;justify-content:center">
               <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
                 <span style="font-size:10px;background:rgba(116,198,157,.13);border:1px solid rgba(116,198,157,.28);border-radius:20px;padding:4px 11px;color:rgba(116,198,157,.95);font-weight:600">📊 Resumen semanal</span>
-                <span style="font-size:9px;color:rgba(116,198,157,.60);letter-spacing:.2px">cada domingo</span>
+                <span style="font-size:10px;color:rgba(116,198,157,.80);letter-spacing:.2px">cada domingo</span>
               </div>
               <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
                 <span style="font-size:10px;background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.28);border-radius:20px;padding:4px 11px;color:rgba(200,158,56,.90);font-weight:600">✉️ Análisis mensual</span>
-                <span style="font-size:9px;color:rgba(200,158,56,.55);letter-spacing:.2px">el 1° de cada mes</span>
+                <span style="font-size:10px;color:rgba(200,158,56,.75);letter-spacing:.2px">el 1° de cada mes</span>
               </div>
             </div>
           </div>
@@ -1118,10 +1118,10 @@
                 <!-- Tab switcher — bigger, pill style -->
                 <div style="display:flex;gap:8px;margin-bottom:14px">
                   <button id="hfTab-momento" onclick="pHomeTabSwitch('momento')" class="hf-tab hf-tab--active">
-                    ✨ Momentos del Día<br><span id="hfTab-momento-cnt" style="font-size:9px;font-weight:400;opacity:.7"></span>
+                    ✨ Momentos del Día<br><span id="hfTab-momento-cnt" style="font-size:10px;font-weight:400;opacity:.85"></span>
                   </button>
                   <button id="hfTab-happy" onclick="pHomeTabSwitch('happy')" class="hf-tab hf-tab--inactive-happy">
-                    ☀️ Muro Feliz<br><span id="hfTab-happy-cnt" style="font-size:9px;font-weight:400;opacity:.7"></span>
+                    ☀️ Muro Feliz<br><span id="hfTab-happy-cnt" style="font-size:10px;font-weight:400;opacity:.85"></span>
                   </button>
                 </div>
                 <!-- Momentos tab content -->
@@ -1608,9 +1608,9 @@
                   </div>
                   <p style="font-size:13px;color:var(--ink3);line-height:1.6;font-family:'Cormorant Garamond',serif;font-style:italic" id="gdBio">Bio del guardián</p>
                   <div class="gd-stat-grid">
-                    <div class="gd-stat"><div style="font-size:18px;font-weight:800;color:var(--sage);line-height:1" id="gdRecommend">0</div><div style="font-size:9px;color:var(--ink5);text-transform:uppercase;letter-spacing:.3px">Recomend.</div></div>
-                    <div class="gd-stat"><div style="font-size:18px;font-weight:800;color:var(--sage);line-height:1" id="gdConvs">0</div><div style="font-size:9px;color:var(--ink5);text-transform:uppercase;letter-spacing:.3px">Conversaciones</div></div>
-                    <div class="gd-stat"><div style="font-size:18px;font-weight:800;color:var(--sage);line-height:1" id="gdRating">5.0</div><div style="font-size:9px;color:var(--ink5);text-transform:uppercase;letter-spacing:.3px">Rating</div></div>
+                    <div class="gd-stat"><div style="font-size:18px;font-weight:800;color:var(--sage);line-height:1" id="gdRecommend">0</div><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px">Recomend.</div></div>
+                    <div class="gd-stat"><div style="font-size:18px;font-weight:800;color:var(--sage);line-height:1" id="gdConvs">0</div><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px">Conversaciones</div></div>
+                    <div class="gd-stat"><div style="font-size:18px;font-weight:800;color:var(--sage);line-height:1" id="gdRating">5.0</div><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px">Rating</div></div>
                   </div>
                 </div>
                 <!-- Badge level -->
@@ -2089,7 +2089,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
           <button class="p-btn p-btn--dark-white p-btn--lg" style="margin-top:28px" id="respiraBtn" onclick="pStartRespira()">Comenzar</button>
           <div id="respiraSoundWrap" style="display:none;flex-direction:column;align-items:center;gap:4px;position:absolute;top:20px;right:20px;z-index:10">
             <button id="respiraSoundBtn" onclick="pTogRespiraMusic()" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:background .18s;backdrop-filter:blur(6px)" title="Silenciar música">🔉</button>
-            <span style="font-size:8px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.42);font-family:'Jost',sans-serif">Sonido</span>
+            <span style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.72);font-family:'Jost',sans-serif">Sonido</span>
           </div>
         </div>
       </div>
@@ -3890,7 +3890,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260617-856"></script>
+<script src="premium.js?v=20260617-857"></script>
 <script src="premium-redesign.js?v=20260616-814"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
