@@ -10977,14 +10977,14 @@ async function pResetMyMoodData(){
     }
     _toRemove.forEach(function(k){ localStorage.removeItem(k); });
     safeLS('del','velo_mood_log');
+    // Lock count at 0 and block background sync from re-fetching stale data during awaits
     _sbVerifiedMoodCount = 0;
+    _moodSyncDone = true;
     _setEl('profileDays', 0);
     _setEl('homeStatStreak', 0);
-    _moodSyncDone = false;
     // 2. Delete from Supabase (requires DELETE RLS policy on mood_entries)
     if(sbClient && _rmUid){
       try{
-        // First count how many records exist so we can detect if delete was silently blocked by RLS
         var _countRes = await sbClient.from('mood_entries').select('date_key', {count:'exact', head:true}).eq('user_id', _rmUid);
         var _expectedCount = (_countRes && _countRes.count != null) ? _countRes.count : -1;
         var _delMoods = await sbClient.from('mood_entries').delete().eq('user_id', _rmUid).select('date_key');
@@ -10994,8 +10994,7 @@ async function pResetMyMoodData(){
         } else {
           var _deleted = (_delMoods.data || []).length;
           if(_deleted === 0 && _expectedCount > 0){
-            // RLS silently blocked — count said records exist but delete returned 0
-            console.warn('[resetMoods] DELETE blocked by RLS (expected '+_expectedCount+' rows). Add: CREATE POLICY "delete_own_moods" ON mood_entries FOR DELETE USING (auth.uid() = user_id);');
+            console.warn('[resetMoods] DELETE blocked by RLS (expected '+_expectedCount+' rows).');
             pToast('⚠️','Limpieza local OK — agregá política DELETE en Supabase');
           } else {
             pToast('✅','Ánimos limpiados ('+_deleted+' registros eliminados)');
@@ -11005,6 +11004,10 @@ async function pResetMyMoodData(){
     } else {
       pToast('✅','Ánimos locales limpiados');
     }
+    // Re-lock to 0 after all awaits — prevents any in-flight pLoadProfile callback from overwriting
+    _sbVerifiedMoodCount = 0;
+    _setEl('profileDays', 0);
+    _setEl('homeStatStreak', 0);
     _renderHomeWeekMoodGraph().catch(function(){});
     _updateHomeStreak();
   });
