@@ -11263,3 +11263,8 @@ body.r-dark .home-name-banner-title { color: rgba(116,198,157,.95); }
   outline: none;
 }
 body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
+
+/* Mobile-only silent mode hint in ambient sounds section */
+@media (min-width: 1025px) {
+  .mobile-sound-hint { display: none !important; }
+}
