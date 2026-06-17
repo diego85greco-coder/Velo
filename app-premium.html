@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="852">
+  <meta name="app-version" content="853">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -2035,7 +2035,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
                 <div class="p-label p-label-sage" style="margin:0">Este mes</div>
                 <button class="p-btn p-btn--secondary p-btn--sm" onclick="pClearAllMoods()" style="font-size:11px">🗑️ Borrar historial</button>
               </div>
-              <div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:var(--sage2);line-height:1.5">
+              <div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:rgba(210,235,215,.8);line-height:1.5">
                 🔒 Solo vos podés ver tus registros de ánimo — son completamente privados
               </div>
               <div id="moodCalendar" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;max-width:340px;margin:0 auto"></div>
@@ -3887,7 +3887,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260617-852"></script>
+<script src="premium.js?v=20260617-853"></script>
 <script src="premium-redesign.js?v=20260616-814"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
