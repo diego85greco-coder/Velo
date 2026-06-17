@@ -1880,6 +1880,7 @@ async function _saveNameFromBanner(){
 // On first load in a fresh browser, pull this week's moods from Supabase
 // into localStorage so the home graph, share card, etc. show real data.
 var _moodSyncDone = false;
+var _moodResetPending = false; // blocks _pushMissingMoodsToSb during/after cleanup
 async function _syncMoodsFromSb(){
   if(_moodSyncDone) return;
   _moodSyncDone = true;
@@ -1943,6 +1944,7 @@ async function _syncMoodsFromSb(){
 
 // Push any local moods that are missing from Supabase (covers cases where sbSaveMoodEntry failed silently)
 async function _pushMissingMoodsToSb(){
+  if(_moodResetPending) return; // don't restore moods that were just intentionally deleted
   _initSupabase();
   if(!sbClient) return;
   try{
@@ -10967,22 +10969,12 @@ function pLoadProfile(){
 async function pResetMyMoodData(){
   _pConfirm('¿Limpiar todos tus registros de ánimos de este dispositivo y Supabase? Esta acción no se puede deshacer.', async function(){
     _initSupabase();
+    // Block _pushMissingMoodsToSb from re-uploading deleted data during and after this operation
+    _moodResetPending = true;
+    _moodSyncDone = true; // block background sync from fetching stale data during awaits
     var _authRM; try{ _authRM = await sbClient.auth.getUser(); }catch(e){}
     var _rmUid = (_authRM && _authRM.data && _authRM.data.user) ? _authRM.data.user.id : null;
-    // 1. Clear localStorage mood keys
-    var _toRemove = [];
-    for(var _ri = 0; _ri < localStorage.length; _ri++){
-      var _rk = localStorage.key(_ri);
-      if(_rk && _rk.startsWith('velo_mood_')) _toRemove.push(_rk);
-    }
-    _toRemove.forEach(function(k){ localStorage.removeItem(k); });
-    safeLS('del','velo_mood_log');
-    // Lock count at 0 and block background sync from re-fetching stale data during awaits
-    _sbVerifiedMoodCount = 0;
-    _moodSyncDone = true;
-    _setEl('profileDays', 0);
-    _setEl('homeStatStreak', 0);
-    // 2. Delete from Supabase (requires DELETE RLS policy on mood_entries)
+    // 1. Delete from Supabase FIRST — before touching localStorage
     if(sbClient && _rmUid){
       try{
         var _countRes = await sbClient.from('mood_entries').select('date_key', {count:'exact', head:true}).eq('user_id', _rmUid);
@@ -10990,24 +10982,34 @@ async function pResetMyMoodData(){
         var _delMoods = await sbClient.from('mood_entries').delete().eq('user_id', _rmUid).select('date_key');
         if(_delMoods && _delMoods.error){
           console.warn('[resetMoods] Supabase error — add DELETE policy: CREATE POLICY "delete_own_moods" ON mood_entries FOR DELETE USING (auth.uid() = user_id);');
-          pToast('⚠️','Limpieza local OK — agregá política DELETE en Supabase');
+          pToast('⚠️','Limpieza Supabase falló — intente de nuevo');
+          _moodResetPending = false; _moodSyncDone = false; return;
         } else {
           var _deleted = (_delMoods.data || []).length;
           if(_deleted === 0 && _expectedCount > 0){
             console.warn('[resetMoods] DELETE blocked by RLS (expected '+_expectedCount+' rows).');
-            pToast('⚠️','Limpieza local OK — agregá política DELETE en Supabase');
-          } else {
-            pToast('✅','Ánimos limpiados ('+_deleted+' registros eliminados)');
+            pToast('⚠️','Limpieza Supabase bloqueada — agregá política DELETE');
+            _moodResetPending = false; _moodSyncDone = false; return;
           }
         }
-      }catch(e){ pToast('✅','Limpieza local completada'); }
-    } else {
-      pToast('✅','Ánimos locales limpiados');
+      }catch(e){
+        pToast('⚠️','Error al conectar con Supabase');
+        _moodResetPending = false; _moodSyncDone = false; return;
+      }
     }
-    // Re-lock to 0 after all awaits — prevents any in-flight pLoadProfile callback from overwriting
+    // 2. Clear localStorage mood keys AFTER confirmed Supabase delete
+    var _toRemove = [];
+    for(var _ri = 0; _ri < localStorage.length; _ri++){
+      var _rk = localStorage.key(_ri);
+      if(_rk && _rk.startsWith('velo_mood_')) _toRemove.push(_rk);
+    }
+    _toRemove.forEach(function(k){ localStorage.removeItem(k); });
+    safeLS('del','velo_mood_log');
+    // Lock display at 0 — re-lock after awaits in case any in-flight callback overwrote it
     _sbVerifiedMoodCount = 0;
     _setEl('profileDays', 0);
     _setEl('homeStatStreak', 0);
+    pToast('✅','Ánimos limpiados correctamente');
     _renderHomeWeekMoodGraph().catch(function(){});
     _updateHomeStreak();
   });
