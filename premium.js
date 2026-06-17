@@ -3413,6 +3413,15 @@ async function pDeleteMyDqResponse(responseId){
     pToast('🗑️','Respuesta eliminada');
   }
   _hideLocally();
+  // Clear "already answered today" state so the user can submit a new response
+  var _dqDateKey = _dateKey();
+  safeLS('del', 'velo_daily_resp_'+_dqDateKey);
+  // Directly reset UI to unanswered state (don't re-query Supabase — delete is still in flight)
+  var _dqLockedEl = document.getElementById('homeDailyQLocked');
+  var _dqOpenEl   = document.getElementById('homeDailyQOpen');
+  if(_dqLockedEl) _dqLockedEl.style.display = '';
+  if(_dqOpenEl)   _dqOpenEl.style.display   = 'none';
+  _fetchDailyCount();
   // Attempt Supabase delete in background (requires DELETE RLS policy on daily_responses)
   if(!sbClient) return;
   try{
