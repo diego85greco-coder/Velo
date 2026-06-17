@@ -2938,7 +2938,7 @@ async function pRequestPushPermission(){
   }
   var perm = await Notification.requestPermission();
   if(perm !== 'granted') return;
-  pToast('🔔','¡Notificaciones activadas! Te vamos a avisar una vez por día 💚');
+  pToast('🔔','¡Notificaciones activadas! Te avisamos 3 veces al día 💚');
   safeLS('set','velo_push_granted','1');
   // Subscribe to push
   try{
@@ -2974,7 +2974,7 @@ function _showPushPrompt(){
     + '<div style="font-size:26px;line-height:1;flex-shrink:0">🔔</div>'
     + '<div style="flex:1">'
     + '<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">¿Querés un recordatorio diario?</div>'
-    + '<div style="font-size:12px;color:rgba(255,255,255,.65);line-height:1.45;margin-bottom:12px">Solo uno por día — nada de spam. Te avisamos cuando sea un buen momento para registrar cómo te sentís.</div>'
+    + '<div style="font-size:12px;color:rgba(255,255,255,.65);line-height:1.45;margin-bottom:12px">Mañana, tarde y noche — siempre amigable, nunca spam. Un recordatorio para registrar cómo te sentís.</div>'
     + '<div style="display:flex;gap:8px">'
     + '<button onclick="pRequestPushPermission();document.getElementById(\'pushPromptEl\').remove()" style="flex:1;padding:10px 14px;border-radius:12px;border:none;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(116,198,157,.95);font-size:13px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Sí, quiero 💚</button>'
     + '<button onclick="document.getElementById(\'pushPromptEl\').remove()" style="padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.50);font-size:12px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Ahora no</button>'
@@ -11433,7 +11433,7 @@ function _updateEditPushUI(){
       btn.textContent = '…'; btn.disabled = true;
       btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:default;background:rgba(116,198,157,.10);color:var(--ink4)';
     } else {
-      status.textContent = 'No activadas — te avisamos una vez al día';
+      status.textContent = 'No activadas — te avisamos 3 veces al día';
       btn.textContent = 'Activar'; btn.disabled = false;
       btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
     }
@@ -11486,7 +11486,7 @@ async function _androidPushConfirm(){
   await _doPushSubscribe();
 }
 async function _doPushSubscribe(){
-  pToast('🔔','¡Notificaciones activadas! Te avisamos una vez por día 💚');
+  pToast('🔔','¡Notificaciones activadas! Te avisamos 3 veces al día 💚');
   safeLS('set','velo_push_granted','1');
   try{
     var _reg = await navigator.serviceWorker.ready;
