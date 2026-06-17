@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "statusMessage": "Triggering Vercel deploy...",
+            "command": "python3 -c \"\nimport sys, json, subprocess, urllib.request, urllib.error, os\ndata = json.load(sys.stdin)\ncmd = data.get('tool_input', {}).get('command', '')\nif 'git push' not in cmd:\n    sys.exit(0)\ntoken = os.environ.get('VERCEL_TOKEN','')\nif not token:\n    sys.exit(0)\nsha = subprocess.check_output(['git','rev-parse','origin/main']).decode().strip()\npayload = json.dumps({'name':'velo','gitSource':{'type':'github','ref':'main','sha':sha,'repoId':1240607858},'project':'prj_X14vz39zh0LiGeZASVwQ32nuf2JS','target':'production'}).encode()\nreq = urllib.request.Request('https://api.vercel.com/v13/deployments',data=payload,headers={'Authorization':'Bearer '+token,'Content-Type':'application/json'})\ntry:\n    res = urllib.request.urlopen(req, timeout=15)\n    d = json.loads(res.read())\n    print(json.dumps({'systemMessage': 'Vercel deploy triggered: ' + d.get('url','?')}))\nexcept urllib.error.HTTPError as e:\n    body = json.loads(e.read())\n    err = body.get('error', body)\n    print(json.dumps({'systemMessage': 'Vercel deploy error: ' + str(err.get('message', err))}))\n\""
+          }
+        ]
+      }
+    ]
+  }
+}
