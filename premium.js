@@ -924,12 +924,13 @@ function _sbUnsub(ch){
 // Replacement for confirm() — works on iOS Safari PWA where confirm() is silently blocked
 function _pConfirm(msg, onYes){
   var ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:0';
-  ov.innerHTML = '<div style="background:var(--cream,#1B2E1B);border-radius:20px 20px 0 0;padding:24px 20px calc(28px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;font-family:Jost,sans-serif">'
-    +'<p style="font-size:15px;color:var(--ink,#e8f0e8);text-align:center;margin:0 0 22px;line-height:1.5">'+msg+'</p>'
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:0';
+  // Use hardcoded dark colors — CSS variables resolve inconsistently on dynamically appended nodes
+  ov.innerHTML = '<div style="background:#0e1f14;border-radius:20px 20px 0 0;padding:24px 20px calc(28px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;font-family:Jost,sans-serif;border-top:1.5px solid rgba(116,198,157,.18)">'
+    +'<p style="font-size:15px;color:#d8eed8;text-align:center;margin:0 0 22px;line-height:1.6">'+msg+'</p>'
     +'<div style="display:flex;gap:12px">'
-    +'<button id="_pcNo" style="flex:1;padding:13px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:none;color:rgba(180,210,180,.8);font-family:Jost,sans-serif;font-size:14px;cursor:pointer">Cancelar</button>'
-    +'<button id="_pcYes" style="flex:1;padding:13px;border-radius:100px;border:1.5px solid rgba(255,80,80,.4);background:rgba(255,80,80,.12);color:rgba(255,120,120,1);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Confirmar</button>'
+    +'<button id="_pcNo" style="flex:1;padding:13px;border-radius:100px;border:1.5px solid rgba(116,198,157,.3);background:rgba(116,198,157,.06);color:rgba(180,220,180,.85);font-family:Jost,sans-serif;font-size:14px;cursor:pointer">Cancelar</button>'
+    +'<button id="_pcYes" style="flex:1;padding:13px;border-radius:100px;border:1.5px solid rgba(255,80,80,.45);background:rgba(255,80,80,.14);color:rgba(255,130,130,1);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Confirmar</button>'
     +'</div></div>';
   document.body.appendChild(ov);
   function _close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
