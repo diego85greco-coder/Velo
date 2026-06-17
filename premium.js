@@ -3232,6 +3232,14 @@ async function _fetchDailyFeed(qId){
     var responses = res.data || [];
     await _loadDqReactions(responses.map(function(r){ return r.id; }));
     _renderDailyFeed(responses);
+    // Batch-fetch usernames for unknown user_ids so @handle shows in each card
+    var _unknownUids = responses.filter(function(r){ return r.user_id && !_uLook(r.user_id); }).map(function(r){ return r.user_id; });
+    var _uidsUniq = _unknownUids.filter(function(v,i,a){ return a.indexOf(v)===i; });
+    if(_uidsUniq.length && sbClient){
+      sbClient.from('profiles').select('id,username').in('id',_uidsUniq)
+        .then(function(ur){ if(ur.data) ur.data.forEach(function(p){ _uFill(p.id,p.username); }); _renderDailyFeed(_dqAllResponses); })
+        .catch(function(){});
+    }
   }catch(e){ _renderDailyFeed([]); }
   // Subscribe to real-time new responses (one subscription per session)
   if(!_dqRtCh && sbClient){
@@ -3368,14 +3376,16 @@ function _buildDqCards(list){
     var deleteBtn = isOwn
       ? '<button onclick="pDeleteMyDqResponse(\''+r.id+'\')" title="Borrar mi respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
       : '';
+    var _dqUname = _uAt(r.user_id);
     return '<div class="dq-feed-card" style="display:flex;gap:8px;padding:8px 0;align-items:flex-start">'
       +avHtml
       +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">'
+      +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:'+(_dqUname?'2':'5')+'px">'
       +'<span class="dq-feed-name" style="font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">'+(r.user_name||'Alguien')+'</span>'
       +'<span style="font-size:14px">'+r.mood_emoji+'</span>'
       +deleteBtn
       +'</div>'
+      +(_dqUname ? '<div style="margin-bottom:4px">'+_dqUname+'</div>' : '')
       +(r.response_text
         ? '<div class="dq-bubble">'
           +'<div class="dq-bubble-text">'+r.response_text+'</div>'
@@ -4503,6 +4513,8 @@ function pOpenGuardian(id){
   var g = _curGuardian;
   _setEl('gdName', g.name);
   _setEl('gdNameBig', g.name);
+  var _gdUnEl = document.getElementById('gdUsername');
+  if(_gdUnEl){ if(g.username){ _gdUnEl.textContent = '@'+g.username; _gdUnEl.style.display = ''; } else { _gdUnEl.style.display = 'none'; } }
   _setEl('gdAv', g.av);
   _setEl('gdBio', '"'+g.bio+'"');
   _setEl('gdDesc', g.bio);
@@ -10452,11 +10464,11 @@ function pSelHappyEmoji(el, emoji){
 function _compressImg(dataURL, cb){
   var image = new Image();
   image.onload = function(){
-    var maxPx = 600, w = image.width, h = image.height;
+    var maxPx = 1080, w = image.width, h = image.height;
     if(w > maxPx || h > maxPx){ var r = Math.min(maxPx/w, maxPx/h); w = Math.round(w*r); h = Math.round(h*r); }
     var c = document.createElement('canvas'); c.width = w; c.height = h;
     c.getContext('2d').drawImage(image, 0, 0, w, h);
-    cb(c.toDataURL('image/jpeg', 0.62));
+    cb(c.toDataURL('image/jpeg', 0.82));
   };
   image.onerror = function(){ cb(dataURL); };
   image.src = dataURL;
@@ -13139,6 +13151,24 @@ function _enterDMChat(toId, toName, toAv){
   if(hdr) hdr.textContent = toName||'Usuario';
   var hdrAv = document.getElementById('dmPeerAv');
   if(hdrAv) hdrAv.innerHTML = _avInline(toAv||'🧑',36);
+  var _dmUnEl = document.getElementById('dmPeerUsername');
+  if(_dmUnEl){
+    var _dmCached = _uLook(toId);
+    if(_dmCached){ _dmUnEl.textContent = '@'+_dmCached; }
+    else {
+      _dmUnEl.textContent = 'Mensaje directo · privado';
+      if(sbClient && toId){
+        sbClient.from('profiles').select('username').eq('id',toId).limit(1)
+          .then(function(r){
+            if(r.data && r.data[0] && r.data[0].username){
+              _uFill(toId, r.data[0].username);
+              var el2 = document.getElementById('dmPeerUsername');
+              if(el2) el2.textContent = '@'+r.data[0].username;
+            }
+          }).catch(function(){});
+      }
+    }
+  }
   pGoTo('dm-chat');
   setTimeout(function(){ _renderDMThread(); _subscribeToDMThread(); }, 100);
 }
