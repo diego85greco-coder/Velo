@@ -1959,13 +1959,28 @@ async function _pushMissingMoodsToSb(){
     if(_lsUidP && _authDP.user.id !== _lsUidP) return;
     // Collect last 60 days of local moods
     var now = new Date();
+    var _todayKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    var _clearedAt = parseInt(safeLS('get','velo_mood_cleared_at')||'0');
     var localMoods = {};
     var months = {};
     for(var i=0; i<60; i++){
       var _ld = new Date(now.getFullYear(), now.getMonth(), now.getDate()-i);
       var _lk = _ld.getFullYear()+'-'+String(_ld.getMonth()+1).padStart(2,'0')+'-'+String(_ld.getDate()).padStart(2,'0');
       var _lm = null; try{ _lm = JSON.parse(safeLS('get','velo_mood_'+_lk)||'null'); }catch(e){}
-      if(_lm && _lm.emoji){ localMoods[_lk] = _lm; }
+      if(_lm && _lm.emoji){
+        // If Supabase confirmed 0 entries this session, only allow today's mood —
+        // older local entries are stale from before an intentional clear
+        if(_moodSyncDone && _sbVerifiedMoodCount === 0 && _lk !== _todayKey){
+          safeLS('del','velo_mood_'+_lk); // purge stale local entry
+          continue;
+        }
+        // If a cleared_at timestamp exists, skip moods from before the clear
+        if(_clearedAt && new Date(_lk).getTime() < _clearedAt){
+          safeLS('del','velo_mood_'+_lk);
+          continue;
+        }
+        localMoods[_lk] = _lm;
+      }
       var _mk = _ld.getFullYear()+'-'+String(_ld.getMonth()+1).padStart(2,'0');
       if(!months[_mk]) months[_mk] = {year:_ld.getFullYear(), month:_ld.getMonth()+1};
     }
@@ -8757,6 +8772,7 @@ async function pClearAllMoods(){
     toRemove.forEach(function(k){ localStorage.removeItem(k); });
     safeLS('del','velo_mood_log');
     _sbVerifiedMoodCount = 0;
+    safeLS('set','velo_mood_cleared_at', String(Date.now())); // blocks _pushMissingMoodsToSb from re-uploading
     _setEl('profileDays', 0);
     _setEl('homeStatStreak', 0);
     pToast('🗑️','Historial de ánimo eliminado');
