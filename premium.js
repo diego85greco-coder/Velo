@@ -1141,7 +1141,6 @@ function _clearSession(){
   _syncedReadIds = {};
   _favsList = null;
   _curCircle = null;
-  _circlesData = [];
   _allCirclesCache = [];
   _circleJoinedSession = {};
   _circleLastDbMsgId  = null;
