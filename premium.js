@@ -1040,17 +1040,34 @@ async function pSignIn(){
 
 // Clears every session-scoped key so no data leaks between accounts (user ↔ admin ↔ pro)
 function _clearSession(){
-  ['velo_session','velo_admin_session','velo_user_email','velo_user_name','velo_user_id',
-   'velo_user_type','velo_user_av','velo_user_motto','velo_sb_pass','velo_plan',
-   'velo_status_music','velo_status_book','velo_status_phrase','velo_status_film','velo_pro_id','velo_pro_name',
-   'velo_pro_spec','velo_pro_solidarity','velo_pro_approved','velo_is_guardian',
-   'velo_guardian_bio','velo_guardian_tags','velo_guardian_setup_done','velo_needs_pw_change','velo_username',
-   'velo_username_changes','velo_favs','velo_blocked','velo_blocked_data',
-   'velo_incognito','velo_user_status','velo_fav_me_count','velo_fav_me_seen','velo_dm_unread',
-   'velo_bcast_shown','velo_bcast_unread',
-   'velo_onboarding_done','velo_helped_once','velo_guardian_convs','velo_prof_tier'
-  ].forEach(function(k){ safeLS('del', k); });
-  _profileSelectTier = 0; // reset in-memory tier so next login starts with the full SELECT
+  // Wipe ALL velo_ and velo-r- localStorage keys so dynamic keys (mood diary, visit days,
+  // circle caches, inbox, etc.) don't bleed into the next account's session.
+  // Only velo_prov_* (admin provisional passwords) are preserved — they're login credentials,
+  // not user data, and are scoped by email address anyway.
+  try{
+    Object.keys(localStorage).filter(function(k){
+      if(k.startsWith('velo_prov_')) return false;
+      return k.startsWith('velo_') || k.startsWith('velo-r-');
+    }).forEach(function(k){ localStorage.removeItem(k); });
+  }catch(e){}
+  // Reset all in-memory caches so the next account starts clean
+  _profileSelectTier = 0;
+  _sbSyncProfilePending = false;
+  _sbHappy = null; _pendingHappyPost = null;
+  _sbHelp  = null;
+  _sbBottles = null;
+  _sbCircleMsgs = [];
+  _liveGuardians = [];
+  _presenceCache = {};
+  _syncedReadIds = {};
+  _favsList = null;
+  _curCircle = null;
+  _circlesData = [];
+  _allCirclesCache = [];
+  _circleJoinedSession = {};
+  _inboxAsyncPending = false;
+  _buzónPollTmr = null;
+  _buzónLastCheck = null;
   // Stop guardian heartbeat and clear all RT channel refs so the next login can resubscribe
   _stopGuardianHeartbeat();
   _stopGuardianReqListener();
@@ -1064,12 +1081,7 @@ function _clearSession(){
   if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
   if(_grReqPollTmr){ clearInterval(_grReqPollTmr); _grReqPollTmr = null; }
   if(_dmPollTmr){ clearInterval(_dmPollTmr); _dmPollTmr = null; }
-  // Clear per-user DM acceptance flags so they don't leak to the next session
-  try{
-    Object.keys(localStorage).filter(function(k){ return k.startsWith('velo_dm_accepted_'); })
-      .forEach(function(k){ localStorage.removeItem(k); });
-  }catch(e){}
-  _favsList = null; // reset favorites cache
+  if(_buzónPollTmr){ clearInterval(_buzónPollTmr); _buzónPollTmr = null; }
 }
 
 async function pSignOut(){
