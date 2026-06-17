@@ -19862,31 +19862,37 @@ function _clearAllLocalData(){
 }
 
 async function _execDeleteAccount(reason){
-  pToast('🗑️','Eliminando tu cuenta…');
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión. Intentá de nuevo.'); return; }
 
   var userId = '';
   var email  = safeLS('get','velo_user_email') || '';
+  try{
+    var {data:_authD} = await sbClient.auth.getUser();
+    if(_authD && _authD.user){
+      userId = _authD.user.id;
+      email  = _authD.user.email || email;
+    }
+  }catch(e){}
 
-  if(sbClient){
-    try{
-      var {data:_authD} = await sbClient.auth.getUser();
-      if(_authD && _authD.user){
-        userId = _authD.user.id;
-        email  = _authD.user.email || email;
-      }
-    }catch(e){}
-  }
+  if(!userId){ pToast('⚠️','No pudimos verificar tu sesión. Cerrá sesión y volvé a intentarlo.'); return; }
 
-  if(sbClient && userId){
-    // 1. Save feedback before deleting (fire-and-forget)
+  var uid = userId;
+
+  // Try server-side RPC (deletes auth user from auth.users too)
+  var rpcOk = false;
+  try{
+    var {error:_rpcErr} = await sbClient.rpc('delete_my_account', { p_reason: reason || null });
+    if(!_rpcErr) rpcOk = true;
+  }catch(e){}
+
+  if(!rpcOk){
+    // Fallback: manual row deletion (auth user stays but all data is removed)
     sbClient.from('deleted_accounts').insert({
-      email: email, user_id: userId,
+      email: email, user_id: uid,
       reason: reason || null,
       deleted_at: new Date().toISOString()
     }).catch(function(){});
-
-    // 2. Remove user from every table that could surface them to other users
-    var uid = userId;
     try{ await sbClient.from('user_favorites').delete().eq('user_id', uid); }catch(e){}
     try{ await sbClient.from('user_favorites').delete().eq('fav_id', uid); }catch(e){}
     try{ await sbClient.from('guardian_presence').delete().eq('user_id', uid); }catch(e){}
@@ -19896,21 +19902,18 @@ async function _execDeleteAccount(reason){
     try{ await sbClient.from('happy_posts').delete().eq('user_id', uid); }catch(e){}
     try{ await sbClient.from('daily_responses').delete().eq('user_id', uid); }catch(e){}
     try{ await sbClient.from('mood_entries').delete().eq('user_id', uid); }catch(e){}
-    // Delete profile last so auth still works for the above queries
     try{ await sbClient.from('profiles').delete().eq('id', uid); }catch(e){}
-
-    // 3. Sign out
-    try{ await sbClient.auth.signOut(); }catch(e){}
   }
 
-  // 4. Wipe all local state
+  try{ await sbClient.auth.signOut(); }catch(e){}
+
   _clearAllLocalData();
   _authenticated = false;
   _favsList = null;
 
   pToast('👋','Cuenta eliminada. Podés registrarte de nuevo cuando quieras 🌿');
   setTimeout(function(){
-    try{ pGoTo('landing'); }catch(e){ window.location.reload(); }
+    window.location.replace(window.location.href.split('?')[0].split('#')[0]);
   }, 1800);
 }
 
