@@ -2184,6 +2184,8 @@ function _loadHomeData(){
   _loadHomeMemoryCard();
   _checkRequestPushPermission();
   _renderHomePushBanner();
+  // Sync local push subscription to Supabase — runs once, exits early if already synced
+  setTimeout(_syncPushSubOnStartup, 3000);
   _loadDailyQ();
   _loadCommunityPulse();
   _loadGuardianActivity();
@@ -2949,13 +2951,34 @@ function _urlBase64ToUint8Array(base64String){
 }
 
 async function _savePushSubscriptionToSupabase(sub){
+  _initSupabase(); // always init — sbClient may be null on first call
   if(!sbClient) return;
   var _uid = safeLS('get','velo_user_id');
   if(!_uid) return;
   try{
     var {error:_pErr} = await sbClient.from('profiles').update({ push_subscription: JSON.stringify(sub) }).eq('id', _uid);
     if(_pErr) console.warn('[push sub save]', _pErr.message);
+    else console.log('[push sub save] OK for uid', _uid);
   }catch(e){ console.warn('[push sub save]', e && e.message); }
+}
+
+// On startup, sync any existing localStorage push subscription to Supabase.
+// Handles users who subscribed before the DB-save worked, or who cleared cache on one device.
+async function _syncPushSubOnStartup(){
+  var _lsSub = safeLS('get','velo_push_sub');
+  if(!_lsSub) return; // no local subscription → nothing to sync
+  var _uid = safeLS('get','velo_user_id');
+  if(!_uid) return;
+  _initSupabase();
+  if(!sbClient) return;
+  try{
+    // Only update if DB currently has NULL (avoid overwriting a fresher subscription from another device)
+    var {data:_chk} = await sbClient.from('profiles').select('push_subscription').eq('id',_uid).limit(1);
+    if(_chk && _chk[0] && _chk[0].push_subscription) return; // already has one
+    var _sub = JSON.parse(_lsSub);
+    await _savePushSubscriptionToSupabase(_sub);
+    console.log('[push sync startup] subscription synced to Supabase');
+  }catch(e){ console.warn('[push sync startup]', e && e.message); }
 }
 
 async function pRequestPushPermission(){
