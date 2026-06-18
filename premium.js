@@ -4427,7 +4427,7 @@ function pSaveGuardianSetup(){
   pToast('🛡️','Perfil guardado. ¡Aparecés como guardián disponible!');
 }
 
-function pToggleGuardianMode(){
+async function pToggleGuardianMode(){
   var isOn = safeLS('get','velo_is_guardian') === 'true';
   var next = !isOn;
   safeLS('set','velo_is_guardian', next ? 'true' : 'false');
@@ -4442,25 +4442,17 @@ function pToggleGuardianMode(){
     // Always reset to disponible when activating — clears any stuck incognito state
     safeLS('set','velo_guardian_status','disponible');
     _myGuardianStatus = 'disponible';
-    _startGuardianHeartbeat(); // already calls _startGuardianReqListener internally
-    _updateGuardianPresence('disponible');
+    _startGuardianHeartbeat();
     pToast('🛡️','¡Aparecés como guardián disponible!');
+    await _updateGuardianPresence('disponible'); // wait for DB write before re-rendering
   } else {
-    // Stop heartbeat fully so re-activation can start fresh (clears timer + listener)
     _stopGuardianHeartbeat();
-    // Explicitly set is_guardian=false in DB so _sbSyncProfile won't re-enable it on next load
-    _initSupabase();
-    var _tuid = safeLS('get','velo_user_id');
-    if(sbClient && _tuid){
-      sbClient.from('guardian_presence').update({ is_guardian: false, status: 'offline' }).eq('user_id', _tuid)
-        .then(function(){}).catch(function(){});
-    }
-    _updateGuardianPresence('offline');
     pToast('👤','Ya no aparecés en la lista de guardianes');
+    await _updateGuardianPresence('offline');    // wait for DB write before re-rendering
   }
   _renderHomeStatusToggle();
   _renderMyStatusBar();
-  pRenderGuardians();
+  pRenderGuardians(); // runs after DB is updated — shows correct state immediately
 }
 
 function pSaveGuardianBio(){
@@ -4485,21 +4477,19 @@ function _initGuardianToggleUI(){
   if(tagsEl) tagsEl.value = safeLS('get','velo_guardian_tags') || '';
 }
 
-function pSetMyGuardianStatus(status){
+async function pSetMyGuardianStatus(status){
   _myGuardianStatus = status;
   safeLS('set','velo_guardian_status', status);
   var _isAnonSt = status === 'incognito' || (status && status.startsWith('incognito_'));
-  // Keep velo_incognito in sync so pSetUserStatus and heartbeat preserve incognito correctly
   safeLS('set','velo_incognito', _isAnonSt ? 'true' : 'false');
   if(!_isAnonSt) safeLS('set','velo_user_status', status);
-  // Persist incognito preference to Supabase profiles so other devices sync
   if(sbClient){ var _uid=safeLS('get','velo_user_id'); if(_uid) sbClient.from('profiles').update({incognito:_isAnonSt}).eq('id',_uid).then(function(){}).catch(function(){}); }
-  _updateGuardianPresence(status);
+  var _stLbl = status==='disponible'?'Disponible':status==='ocupado'?'Ocupado':'Anónimo';
+  pToast(status==='disponible'?'🟢':status==='ocupado'?'🟡':'👤', 'Estado: '+_stLbl);
+  await _updateGuardianPresence(status); // wait for DB write before re-rendering
   pRenderGuardians();
   _renderMyStatusBar();
   _renderHomeStatusToggle();
-  var _stLbl = status==='disponible'?'Disponible':status==='ocupado'?'Ocupado':'Anónimo';
-  pToast(status==='disponible'?'🟢':status==='ocupado'?'🟡':'👤', 'Estado: '+_stLbl);
 }
 
 // Home availability toggle (Disponible / Ocupado) — shown below the greeting
@@ -9443,32 +9433,21 @@ async function _renderCircleMessagesInner(){
   try{ localMsgs = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
 
   // localStorage instant render — only on first load (empty container) and only messages
-  // from the current session (filtered by join timestamp to avoid flashing old history).
-  var _joinTimeMs = _curCircle ? new Date(safeLS('get','velo_circle_joined_'+_curCircle.id)||0).getTime() : 0;
-  var _lsRecent = _joinTimeMs
-    ? localMsgs.filter(function(m){ return m.ts >= _joinTimeMs - 2000; }) // 2s slack for clock
-    : localMsgs;
-  if(_lsRecent.length && !el.querySelector('.feed-msg')){
-    el.innerHTML = _lsRecent.map(function(m){
+  // Show all cached local messages for instant render before Supabase responds
+  if(localMsgs.length && !el.querySelector('.feed-msg')){
+    el.innerHTML = localMsgs.map(function(m){
       if(m.type === 'system') return '<div style="text-align:center;margin:10px 0"><span style="font-size:11px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
       return _buildMsgBubble(m.text, !!m.own, m.av||'', m.name||'', 'feedInput', 'feedReplyBar', '', m.reactions||{}, '', m.userId||'');
     }).join('');
     el.scrollTop = el.scrollHeight;
   }
 
-  // Load from Supabase for real multi-user messages
+  // Load newest 100 messages from Supabase (descending → reverse for chronological display)
   var sbRows = await _sbLoad('circle_messages', function(q){
-    return q.eq('circle_id', _curCircle.id).order('created_at',{ascending:true}).limit(100);
+    return q.eq('circle_id', _curCircle.id).order('created_at',{ascending:false}).limit(100);
   });
   if(_navToken !== _tok) return;
-
-  // Filter out messages from before the user's current join time.
-  // Use numeric ms comparison with 60s buffer to avoid clock-skew and ISO-format mismatches.
-  var _circleJoinTime = safeLS('get', 'velo_circle_joined_'+_curCircle.id);
-  if(_circleJoinTime && sbRows !== null){
-    var _circleJoinMs = new Date(_circleJoinTime).getTime() - 60000;
-    sbRows = sbRows.filter(function(r){ return new Date(r.created_at).getTime() >= _circleJoinMs; });
-  }
+  if(sbRows) sbRows = sbRows.reverse(); // oldest-first for correct display order
 
   var msgs;
   if(sbRows !== null){
