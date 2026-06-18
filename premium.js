@@ -11469,18 +11469,29 @@ async function _tryRecoverPushSub(){
   try{
     var _reg = await navigator.serviceWorker.ready;
     var _existing = await _reg.pushManager.getSubscription();
-    var _sub = _existing || await _reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
-    if(!_sub){ pToast('⚠️','No se pudo reconectar las notificaciones'); return; }
-    safeLS('set','velo_push_sub', JSON.stringify(_sub));
-    // Update UI immediately before Supabase (so Supabase errors don't break the UI)
+    if(_existing){
+      safeLS('set','velo_push_sub', JSON.stringify(_existing));
+      _updateEditPushUI();
+      try{ await _savePushSubscriptionToSupabase(_existing); }catch(_se){}
+      try{ _renderHomePushBanner(); }catch(_be){}
+      return;
+    }
+    // No existing sub — re-request permission first (iOS sometimes needs this to rebind)
+    if('Notification' in window) await Notification.requestPermission();
+    var _newSub = await _reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
+    if(!_newSub){ pToast('⚠️','No se pudo crear la suscripción push'); return; }
+    safeLS('set','velo_push_sub', JSON.stringify(_newSub));
     _updateEditPushUI();
-    _renderHomePushBanner();
-    // Save to Supabase silently — failure here doesn't undo the local subscription
-    try{ await _savePushSubscriptionToSupabase(_sub); }catch(_se){ console.warn('[push sub supabase]',_se); }
+    try{ await _savePushSubscriptionToSupabase(_newSub); }catch(_se){}
+    try{ _renderHomePushBanner(); }catch(_be){}
   }catch(e){
-    console.warn('[recover push sub]',e);
-    pToast('⚠️','No se pudo reconectar. Cerrá sesión y volvé a entrar.');
-    // Do NOT delete localStorage or call _updateEditPushUI() — would trigger infinite retry loop
+    console.warn('[recover push sub]',e.name, e.message, e);
+    var _errHint = e.name === 'NotAllowedError'
+      ? 'Andá a Ajustes iOS → Notificaciones y activá Velo'
+      : e.name === 'AbortError' || e.name === 'InvalidStateError'
+      ? 'Eliminá la app del inicio y volvé a agregarla'
+      : 'Error ('+( e.name||'?')+') — eliminá la app y volvé a agregarla';
+    pToast('⚠️', _errHint);
   }
 }
 
