@@ -2924,10 +2924,10 @@ function _urlBase64ToUint8Array(base64String){
 
 async function _savePushSubscriptionToSupabase(sub){
   if(!sbClient) return;
+  var _uid = safeLS('get','velo_user_id');
+  if(!_uid) return;
   try{
-    var {data:_authD} = await sbClient.auth.getUser();
-    if(!_authD || !_authD.user) return;
-    var {error:_pErr} = await sbClient.from('profiles').update({ push_subscription: JSON.stringify(sub) }).eq('id', _authD.user.id);
+    var {error:_pErr} = await sbClient.from('profiles').update({ push_subscription: JSON.stringify(sub) }).eq('id', _uid);
     if(_pErr) console.warn('[push sub save]', _pErr.message);
   }catch(e){ console.warn('[push sub save]', e && e.message); }
 }
