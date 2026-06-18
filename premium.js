@@ -20135,7 +20135,7 @@ async function _execDeleteAccount(reason){
   _initSupabase();
   if(!sbClient){ pToast('⚠️','Sin conexión. Intentá de nuevo.'); return; }
 
-  var userId = '';
+  var userId = safeLS('get','velo_user_id') || '';
   var email  = safeLS('get','velo_user_email') || '';
   try{
     var {data:_authD} = await sbClient.auth.getUser();
@@ -20154,7 +20154,8 @@ async function _execDeleteAccount(reason){
   try{
     var {error:_rpcErr} = await sbClient.rpc('delete_my_account', { p_reason: reason || null });
     if(!_rpcErr) rpcOk = true;
-  }catch(e){}
+    else console.warn('[deleteAccount] RPC error:', _rpcErr.message);
+  }catch(e){ console.warn('[deleteAccount] RPC exception:', e && e.message); }
 
   if(!rpcOk){
     // Fallback: manual row deletion (auth user stays but all data is removed)
@@ -20172,7 +20173,10 @@ async function _execDeleteAccount(reason){
     try{ await sbClient.from('happy_posts').delete().eq('user_id', uid); }catch(e){}
     try{ await sbClient.from('daily_responses').delete().eq('user_id', uid); }catch(e){}
     try{ await sbClient.from('mood_entries').delete().eq('user_id', uid); }catch(e){}
-    try{ await sbClient.from('profiles').delete().eq('id', uid); }catch(e){}
+    try{ await sbClient.from('profiles').update({
+      nombre:'[eliminado]', avatar:'🌿', motto:'', push_subscription:null,
+      helped_count:0, received_count:0
+    }).eq('id', uid); }catch(e){}
   }
 
   try{ await sbClient.auth.signOut(); }catch(e){}
