@@ -24,11 +24,20 @@ function localHour(tz) {
   } catch { return -1; }
 }
 
+const FORCE_SEND = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch';
+
 function getSlot(tz) {
   const h = localHour(tz);
   if (h >= 8  && h < 11) return 'morning';
   if (h >= 13 && h < 16) return 'afternoon';
   if (h >= 20 && h < 23) return 'night';
+  // When triggered manually, use the closest upcoming slot
+  if (FORCE_SEND) {
+    if (h < 8)  return 'morning';
+    if (h < 13) return 'afternoon';
+    if (h < 20) return 'night';
+    return 'night';
+  }
   return null;
 }
 
