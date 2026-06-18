@@ -9405,7 +9405,7 @@ async function _renderCircleMessagesInner(){
     localMsgs.filter(function(lm){ return lm.own && lm.ts > _cutMs; }).forEach(function(lm){
       var inSb = msgs.some(function(m){
         if(lm.sbId && m.sbId) return lm.sbId === m.sbId; // exact DB UUID match
-        return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 60000; // fuzzy fallback
+        return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 5000; // fuzzy fallback — narrow window to avoid same-text collision
       });
       if(!inSb) msgs.push({ id:lm.id, userId:lm.userId||'', av:lm.av||'', name:lm.name||'', text:lm.text, ts:lm.ts, own:true, type:lm.type||'text', reactions:{} });
     });
