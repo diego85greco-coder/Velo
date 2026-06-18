@@ -43,6 +43,7 @@ var _bottleRtCh   = null;   // realtime channel bottles
 var _circleRtCh   = null;   // realtime channel circle_messages
 var _circleRtPollTmr = null; // polling fallback for circle_messages (5s)
 var _guardianRtCh = null;   // realtime channel guardian_presence
+var _guardianBcastCh = null; // broadcast channel for instant toggle notifications
 var _dqRtCh       = null;   // realtime channel daily_responses
 var _sbVerifiedMoodCount = -1; // Supabase-confirmed mood count; -1 = not yet fetched
 var _liveGuardians = [];    // cached live guardian rows from Supabase
@@ -1186,10 +1187,10 @@ function _clearSession(){
   // Stop guardian heartbeat and clear all RT channel refs so the next login can resubscribe
   _stopGuardianHeartbeat();
   _stopGuardianReqListener();
-  [_guardianRtCh, _helpRtCh, _bottleRtCh, _happyRtCh, _momentoRtCh, _circleRtCh, _dmRtCh, _dmInboxCh,
+  [_guardianRtCh, _guardianBcastCh, _helpRtCh, _bottleRtCh, _happyRtCh, _momentoRtCh, _circleRtCh, _dmRtCh, _dmInboxCh,
    _grReqCh, _seekerGrCh, _gcRtCh, _gcSeekerCh, _buzónRtCh, _helpChatRtCh, _profileRtCh,
    _circleMembersCh].forEach(function(ch){ _sbUnsub(ch); });
-  _guardianRtCh = null; _helpRtCh = null; _bottleRtCh = null; _happyRtCh = null; _momentoRtCh = null;
+  _guardianRtCh = null; _guardianBcastCh = null; _helpRtCh = null; _bottleRtCh = null; _happyRtCh = null; _momentoRtCh = null;
   _circleRtCh = null; _dmRtCh = null; _dmInboxCh = null;
   _grReqCh = null; _seekerGrCh = null; _gcRtCh = null; _gcSeekerCh = null;
   _buzónRtCh = null; _helpChatRtCh = null; _profileRtCh = null;
@@ -4308,6 +4309,10 @@ async function _updateGuardianPresence(status){
   if(!sbClient) return;
   var uid = _myUserId ? _myUserId() : (safeLS('get','velo_user_email')||'guest');
   if(!uid || uid === 'guest') return;
+  // Ensure auth session is alive — critical on iOS PWA where sessions expire silently.
+  // Without this, the upsert fails with a 401 and the row stays stale (offline),
+  // causing the guardian to be invisible until Supabase auto-refreshes (~60-90s).
+  try{ await _ensureSbSession(); }catch(e){}
   var isG  = safeLS('get','velo_is_guardian') === 'true';
   var st   = status || _presenceStatus();
   var _isIncogStatus = st === 'incognito' || st.startsWith('incognito_');
@@ -4329,6 +4334,15 @@ async function _updateGuardianPresence(status){
   try{
     var _upRes = await sbClient.from('guardian_presence').upsert(row, { onConflict: 'user_id' });
     if(_upRes && _upRes.error) console.error('[presence upsert]', _upRes.error.message, _upRes.error);
+    else {
+      // Broadcast the change on a public channel so other clients update instantly
+      // even if postgres_changes Realtime is filtered by RLS on their subscription.
+      try{
+        sbClient.channel('velo:guardian-changes')
+          .send({ type:'broadcast', event:'presence_change', payload: row })
+          .catch(function(){});
+      }catch(e){}
+    }
   }catch(e){ console.error('[presence upsert catch]', e); }
 }
 
@@ -20410,12 +20424,38 @@ function _onPageEnter(id){
         }
         pRenderGuardians();
       });
+      // Subscribe to broadcast channel for instant guardian toggle notifications.
+      // postgres_changes may be filtered by RLS; broadcast bypasses that entirely.
+      if(sbClient && !_guardianBcastCh){
+        _guardianBcastCh = sbClient.channel('velo:guardian-changes')
+          .on('broadcast', { event: 'presence_change' }, function(msg){
+            var row = msg.payload;
+            if(!row || !row.user_id) { pRenderGuardians(); return; }
+            var myId = _myUserId ? _myUserId() : '';
+            if(row.user_id === myId) return;
+            var cutoff = Date.now() - 10*60*1000;
+            var lastSeen = row.last_seen ? new Date(row.last_seen).getTime() : 0;
+            var isVisible = row.status !== 'offline' && row.is_guardian && lastSeen > cutoff;
+            var idx = _liveGuardians.findIndex(function(g){ return g.id === 'live_'+row.user_id; });
+            if(isVisible){
+              var entry = { id:'live_'+row.user_id, name:row.name, av:row.avatar, bio:row.bio||'',
+                motto:'', tags:Array.isArray(row.tags)?row.tags:[], status:row.status,
+                convs:row.convs||0, rating:row.rating||5.0, reviews:[], recommend:row.convs||0, username:'' };
+              if(idx >= 0) _liveGuardians[idx] = entry; else _liveGuardians.push(entry);
+            } else {
+              if(idx >= 0) _liveGuardians.splice(idx, 1);
+            }
+            if(_curPage === 'guardians') pRenderGuardians();
+            setTimeout(pRenderGuardians, 800);
+          })
+          .subscribe();
+      }
       pRenderGuardians();
       if(_guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
       _guardianListPollTmr = setInterval(function(){
         if(_curPage !== 'guardians'){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; return; }
         pRenderGuardians();
-      }, 15000);
+      }, 5000);
       break;
     case 'professionals': pRenderProfessionals(); break;
     case 'help':
