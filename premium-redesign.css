@@ -11282,13 +11282,14 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
   padding: max(env(safe-area-inset-top, 0px), 6px) 14px 5px !important;
 }
 .p-topbar-logo-img {
-  height: 52px !important;
-  width: 52px !important;
+  height: 46px !important;
+  width: 46px !important;
   max-width: none !important;
-  object-fit: contain !important;
-  border-radius: 0 !important;
+  object-fit: cover !important;
+  border-radius: 13px !important;
   flex-shrink: 0 !important;
-  filter: drop-shadow(0 1px 6px rgba(116,198,157,.50)) !important;
+  box-shadow: 0 0 0 2.5px rgba(116,198,157,.85), 0 2px 12px rgba(0,0,0,.55) !important;
+  outline: none !important;
 }
 .r-donar-btn, .r-plus-btn, .r-guide-btn {
   padding: 5px 10px !important;
