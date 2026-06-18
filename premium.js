@@ -56,6 +56,7 @@ var _guardianWaitTimer = null; // 2-min timeout when user waits for help-post ac
 var _seekerWaitTimer   = null; // 2-min timeout when user waits for direct guardian acceptance
 var _pendingGuardianPost = null; // post object guardian clicked "Acompañar" on
 var _pendingGuardianReqId = null; // ID of the guardian_request row sent (to cancel only that row)
+var _leaveMessageReqId = null;   // reqId captured when leave-message modal opens (survives _guardianCancelWait)
 var _dmRtCh      = null;   // realtime channel direct_messages (per-thread)
 var _dmInboxCh   = null;   // realtime channel direct_messages (global inbox listener)
 var _dmPollTmr   = null;   // polling fallback for global DM inbox
@@ -4515,10 +4516,10 @@ function pSetUserStatus(status){
       pToast('🟢','Guardián: disponible');
     }
     if(document.getElementById('myGuardianStatus')) _renderMyStatusBar();
+    _updateGuardianPresence(guardianStatus); // only guardians need presence updates
   } else {
     pToast(status==='ocupado'?'🟡':'🟢', status==='ocupado'?'Te marcaste como ocupado/a':'Estás disponible');
   }
-  _updateGuardianPresence(guardianStatus);
   _renderHomeStatusToggle();
 }
 
@@ -4628,10 +4629,13 @@ async function pRenderGuardians(){
       +'</div>';
   }
   if(_navToken !== _tok) return;
+  var _iAmGuardian = safeLS('get','velo_is_guardian') === 'true';
   if(!filtered.length){
     var emptyMsg = _guardianFilter !== 'todos'
       ? '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">Ningún guardián en este estado</div><div class="p-empty-sub">Probá con "Todos"</div></div>'
-      : '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">No hay guardianes conectados ahora</div><div class="p-empty-sub">¡Sé el primero! Activá tu estado como Disponible arriba para aparecer aquí.</div></div>';
+      : _iAmGuardian
+        ? '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">Sos el único guardián activo ahora</div><div class="p-empty-sub">Otros usuarios que buscan acompañamiento te verán aquí.</div></div>'
+        : '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">No hay guardianes conectados ahora</div><div class="p-empty-sub">¡Sé el primero! Activá tu estado como Disponible arriba para aparecer aquí.</div></div>';
     list.innerHTML = selfBanner + emptyMsg;
     return;
   }
@@ -5883,7 +5887,7 @@ function _guardianRequestExpired(post){
       +'<p style="font-size:13px;color:var(--ink3);margin:0 0 18px;line-height:1.55">Quizás el usuario que estás intentando conectar se desconectó y por eso no responde a la solicitud. Podés intentar en otro momento, o dejarle un mensaje en su buzón.</p>'
       +'<div style="display:flex;flex-direction:column;gap:10px">'
       +'<button onclick="_guardianCancelWait();pGoTo(\'help\')" style="padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Intentar en otro momento</button>'
-      +'<button onclick="_guardianCancelWait();_showLeaveMessageModal('+JSON.stringify(post)+',\'Quizás no estaba disponible en ese momento.\')" style="padding:11px;background:var(--sage);border:none;border-radius:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💌 Enviar mensaje al buzón</button>'
+      +'<button onclick="var _r=_pendingGuardianReqId;_guardianCancelWait();_showLeaveMessageModal('+JSON.stringify(post)+',\'Quizás no estaba disponible en ese momento.\',_r)" style="padding:11px;background:var(--sage);border:none;border-radius:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💌 Enviar mensaje al buzón</button>'
       +'</div>';
   } else {
     _clearGuardianWaitOverlay();
@@ -5891,7 +5895,9 @@ function _guardianRequestExpired(post){
   }
 }
 
-function _showLeaveMessageModal(post, reason){
+function _showLeaveMessageModal(post, reason, capturedReqId){
+  // Capture reqId now — _pendingGuardianReqId may be cleared by _guardianCancelWait before we get here
+  _leaveMessageReqId = capturedReqId || _pendingGuardianReqId || null;
   var existing = document.getElementById('leaveMessageOv');
   if(existing) existing.remove();
   var ov = document.createElement('div');
@@ -5917,10 +5923,12 @@ function _sendLeaveMessage(postId){
   if(ov) ov.remove();
   _initSupabase();
   if(sbClient){
-    // Save the support message in guardian_requests
-    sbClient.from('guardian_requests').update({support_msg:msg, status:'message_left'})
-      .eq('post_id',postId).then(function(){}).catch(function(){});
-    // Close the help post — it received support (a message), remove it from the wall
+    // Use specific row ID to update only THIS guardian's request, not all requests for the post
+    var _grUpdate = sbClient.from('guardian_requests').update({support_msg:msg, status:'message_left'});
+    if(_leaveMessageReqId) _grUpdate = _grUpdate.eq('id',_leaveMessageReqId);
+    else _grUpdate = _grUpdate.eq('post_id',postId);
+    _grUpdate.then(function(){}).catch(function(){});
+    _leaveMessageReqId = null;
     sbClient.from('help_posts').update({closed:true}).eq('id',postId).then(function(){}).catch(function(){});
   }
   pToast('💌','Mensaje enviado. Lo verán cuando vuelvan 💚');
@@ -6144,8 +6152,9 @@ async function _loadHelpChatHistory(post){
   if(post.anon) return;
   var myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
   if(!myId) return;
-  // Only load messages from the last 10 minutes — prevents old session history showing
-  var since = new Date(Date.now() - 10*60*1000).toISOString();
+  // Load messages from last 4 hours — help chat messages are deleted on session end,
+  // so this window only shows messages from the CURRENT active session
+  var since = new Date(Date.now() - 4*60*60*1000).toISOString();
   try{
     var {data} = await sbClient.from('direct_messages')
       .select('*')
@@ -9484,6 +9493,10 @@ async function _renderCircleMessagesInner(){
   _circleLastDbMsgId = _newLastId;
 
   var wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  if(!msgs.length){
+    el.innerHTML = '<div class="p-empty" style="padding:40px 20px"><span class="p-empty-emoji">💬</span><div class="p-empty-title">Este círculo está vacío</div><div class="p-empty-sub">Sé el primero en compartir algo 💚</div></div>';
+    return;
+  }
   el.innerHTML = msgs.map(function(m){
     if(m.type === 'system'){
       return '<div style="text-align:center;margin:10px 0"><span style="font-size:11px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
@@ -11960,12 +11973,13 @@ function pToggleIncognito(){
   // Sync to Supabase so other users see the change immediately
   if(safeLS('get','velo_is_guardian') === 'true'){
     var realAvail = safeLS('get','velo_user_status') || 'disponible';
-    // Turning incognito ON: keep real availability but hide identity → incognito_disponible / incognito_ocupado
-    // Turning incognito OFF: restore plain status
     var newStatus = next ? ('incognito_' + realAvail) : realAvail;
     safeLS('set','velo_guardian_status', newStatus);
     _myGuardianStatus = newStatus;
-    _updateGuardianPresence(newStatus);
+    _updateGuardianPresence(newStatus).then(function(){
+      // Refresh guardian list after DB write so status change is reflected immediately
+      if(_curPage === 'guardians') pRenderGuardians();
+    });
     _renderMyStatusBar();
     _renderHomeStatusToggle();
   }
