@@ -362,7 +362,7 @@ function pGoTo(id){
   _updateNavState(id, showNav);
 
   // Hide ambient player bar on chat pages so it doesn't cover the input field
-  var _chatHidePages = ['circle-chat','help-chat','dm','dm-chat','guardian-chat'];
+  var _chatHidePages = ['circle-chat','help-chat','dm','dm-chat','guardian-chat','feed','post-chat'];
   var _ambBar = document.getElementById('ambientPlayerBar');
   if(_ambBar){
     if(_chatHidePages.indexOf(id) >= 0){
