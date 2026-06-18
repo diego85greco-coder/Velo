@@ -1177,6 +1177,7 @@ function _clearSession(){
   if(_homeRefreshTmr){ clearInterval(_homeRefreshTmr); _homeRefreshTmr = null; }
   if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
   if(_grReqPollTmr){ clearInterval(_grReqPollTmr); _grReqPollTmr = null; }
+  if(_respiraTimer){ clearInterval(_respiraTimer); _respiraTimer = null; }
   if(_circleRtPollTmr){ clearInterval(_circleRtPollTmr); _circleRtPollTmr = null; }
   if(_guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
   if(_dmPollTmr){ clearInterval(_dmPollTmr); _dmPollTmr = null; }
@@ -4243,10 +4244,12 @@ async function _updateGuardianPresence(status){
   var uid = _myUserId ? _myUserId() : (safeLS('get','velo_user_email')||'guest');
   if(!uid || uid === 'guest') return;
   var isG  = safeLS('get','velo_is_guardian') === 'true';
-  var name = safeLS('get','velo_user_name') || 'Usuario';
+  var _isIncogStatus = st === 'incognito' || st.startsWith('incognito_');
+  // When incognito, never store real name/avatar in guardian_presence
+  var name = _isIncogStatus ? 'Guardián Anónimo' : (safeLS('get','velo_user_name') || 'Usuario');
   // Don't store base64/http avatars in guardian_presence — huge rows slow down the list for everyone
   // The real photo is read from profiles table when opening someone's profile card
-  var _rawAv = safeLS('get','velo_user_av') || (isG ? '💚' : '🧑');
+  var _rawAv = _isIncogStatus ? '🌿' : (safeLS('get','velo_user_av') || (isG ? '💚' : '🧑'));
   var av = (_rawAv.startsWith('data:') || _rawAv.startsWith('http')) ? (isG ? '💚' : '🧑') : _rawAv;
   var st   = status || _presenceStatus();
   var row  = { user_id: uid, name: name, avatar: av, is_guardian: isG,
@@ -4451,7 +4454,11 @@ function pSetMyGuardianStatus(status){
   _myGuardianStatus = status;
   safeLS('set','velo_guardian_status', status);
   var _isAnonSt = status === 'incognito' || (status && status.startsWith('incognito_'));
+  // Keep velo_incognito in sync so pSetUserStatus and heartbeat preserve incognito correctly
+  safeLS('set','velo_incognito', _isAnonSt ? 'true' : 'false');
   if(!_isAnonSt) safeLS('set','velo_user_status', status);
+  // Persist incognito preference to Supabase profiles so other devices sync
+  if(sbClient){ var _uid=safeLS('get','velo_user_id'); if(_uid) sbClient.from('profiles').update({incognito:_isAnonSt}).eq('id',_uid).then(function(){}).catch(function(){}); }
   _updateGuardianPresence(status);
   pRenderGuardians();
   _renderMyStatusBar();
@@ -6247,10 +6254,11 @@ function pLeaveHelpChat(){
   if(post && post.isSeeker && post.userId){
     safeLS('set','velo_postchat_guardian', JSON.stringify({ id:post.userId, name:post.name||'Guardián' }));
   }
-  var exitStatus = safeLS('get','velo_is_guardian') === 'true' ? 'disponible' : (_prevChatStatus || _presenceStatus());
+  var exitStatus = 'disponible'; // always return to disponible after help chat
   _inActiveChat = false;
   _prevChatStatus = null;
-  if(safeLS('get','velo_is_guardian') === 'true') safeLS('set','velo_guardian_status','disponible');
+  safeLS('set','velo_guardian_status','disponible');
+  safeLS('set','velo_user_status','disponible');
   _updateGuardianPresence(exitStatus);
   _showHelpChatRating(post);
 }
@@ -9371,7 +9379,7 @@ function pOpenCircle(id, circleData){
   // Polling fallback every 5s — catches messages if real-time drops
   if(_circleRtPollTmr){ clearInterval(_circleRtPollTmr); _circleRtPollTmr = null; }
   _circleRtPollTmr = setInterval(function(){
-    if(!document.getElementById('feedMessages')){ clearInterval(_circleRtPollTmr); _circleRtPollTmr = null; return; }
+    if(_curPage !== 'feed'){ clearInterval(_circleRtPollTmr); _circleRtPollTmr = null; return; }
     _renderCircleMessages();
   }, 5000);
 }
@@ -9455,7 +9463,7 @@ async function _renderCircleMessagesInner(){
     if(!lm.own || lm.ts <= Date.now() - 30000) return false;
     return !msgs.some(function(m){
       if(lm.sbId && m.sbId) return lm.sbId === m.sbId;
-      return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 60000;
+      return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 30000;
     });
   });
   if(_newLastId && _newLastId === _circleLastDbMsgId && !_hasPending) return;
@@ -20200,7 +20208,7 @@ function _onPageEnter(id){
       pRenderGuardians();
       if(_guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
       _guardianListPollTmr = setInterval(function(){
-        if(!document.getElementById('guardiansList')){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; return; }
+        if(_curPage !== 'guardians'){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; return; }
         pRenderGuardians();
       }, 15000);
       break;
