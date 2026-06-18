@@ -4244,6 +4244,7 @@ async function _updateGuardianPresence(status){
   var uid = _myUserId ? _myUserId() : (safeLS('get','velo_user_email')||'guest');
   if(!uid || uid === 'guest') return;
   var isG  = safeLS('get','velo_is_guardian') === 'true';
+  var st   = status || _presenceStatus();
   var _isIncogStatus = st === 'incognito' || st.startsWith('incognito_');
   // When incognito, never store real name/avatar in guardian_presence
   var name = _isIncogStatus ? 'Guardián Anónimo' : (safeLS('get','velo_user_name') || 'Usuario');
@@ -4251,7 +4252,6 @@ async function _updateGuardianPresence(status){
   // The real photo is read from profiles table when opening someone's profile card
   var _rawAv = _isIncogStatus ? '🌿' : (safeLS('get','velo_user_av') || (isG ? '💚' : '🧑'));
   var av = (_rawAv.startsWith('data:') || _rawAv.startsWith('http')) ? (isG ? '💚' : '🧑') : _rawAv;
-  var st   = status || _presenceStatus();
   var row  = { user_id: uid, name: name, avatar: av, is_guardian: isG,
     status: st, last_seen: new Date().toISOString() };
   if(isG){
