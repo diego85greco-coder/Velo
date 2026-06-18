@@ -37,6 +37,7 @@ var _inboxAsyncPending = false; // prevents concurrent broadcast/reply injection
 var _sbBottles    = null;   // cached Supabase bottles
 var _sbCircleMsgs = [];     // cached Supabase circle_messages
 var _happyRtCh    = null;   // realtime channel happy_posts
+var _momentoRtCh  = null;   // realtime channel momentos
 var _helpRtCh     = null;   // realtime channel help_posts
 var _bottleRtCh   = null;   // realtime channel bottles
 var _circleRtCh   = null;   // realtime channel circle_messages
@@ -1177,10 +1178,10 @@ function _clearSession(){
   // Stop guardian heartbeat and clear all RT channel refs so the next login can resubscribe
   _stopGuardianHeartbeat();
   _stopGuardianReqListener();
-  [_guardianRtCh, _helpRtCh, _bottleRtCh, _happyRtCh, _circleRtCh, _dmRtCh, _dmInboxCh,
+  [_guardianRtCh, _helpRtCh, _bottleRtCh, _happyRtCh, _momentoRtCh, _circleRtCh, _dmRtCh, _dmInboxCh,
    _grReqCh, _seekerGrCh, _gcRtCh, _gcSeekerCh, _buzónRtCh, _helpChatRtCh, _profileRtCh,
    _circleMembersCh].forEach(function(ch){ _sbUnsub(ch); });
-  _guardianRtCh = null; _helpRtCh = null; _bottleRtCh = null; _happyRtCh = null;
+  _guardianRtCh = null; _helpRtCh = null; _bottleRtCh = null; _happyRtCh = null; _momentoRtCh = null;
   _circleRtCh = null; _dmRtCh = null; _dmInboxCh = null;
   _grReqCh = null; _seekerGrCh = null; _gcRtCh = null; _gcSeekerCh = null;
   _buzónRtCh = null; _helpChatRtCh = null; _profileRtCh = null;
@@ -2221,6 +2222,9 @@ function _loadHomeData(){
   setTimeout(_syncMoodsFromSb, 800); // sync after auth settles
   // Momento feed (gracefully hidden if table missing)
   setTimeout(_initHomeMomento, 400);
+  // Realtime for momentos — new posts appear instantly (same pattern as _happyRtCh)
+  _initSupabase();
+  if(sbClient && !_momentoRtCh) _momentoRtCh = _sbSub('velo:momentos', 'momentos', function(){ _initHomeMomento(); });
 }
 
 // ── HOME AUTO-REFRESH ─────────────────────────────────────────
