@@ -785,18 +785,23 @@ async function _sbSyncProfileInner(userId){
         if(gr.data[0].bio)  safeLS('set','velo_guardian_bio', gr.data[0].bio);
         if(gr.data[0].tags) safeLS('set','velo_guardian_tags', Array.isArray(gr.data[0].tags) ? gr.data[0].tags.join(', ') : gr.data[0].tags);
         if(gr.data[0].is_guardian === true){
-          safeLS('set','velo_is_guardian','true');
-          if(gr.data[0].status && gr.data[0].status !== 'offline'){
-            // Never restore incognito on session start — always wake up as disponible
-            var _rawSt = gr.data[0].status || '';
-            var restoredStatus = (_rawSt === 'incognito' || _rawSt.startsWith('incognito_')) ? 'disponible' : _rawSt;
-            safeLS('set','velo_guardian_status', restoredStatus);
-            safeLS('set','velo_user_status', restoredStatus);
-            _myGuardianStatus = restoredStatus;
+          // Only restore guardian mode from DB if the user hasn't explicitly disabled it on this device.
+          // velo_is_guardian==='false' (string) means the user turned it off intentionally — don't override.
+          var _localGStr = safeLS('get','velo_is_guardian');
+          if(_localGStr !== 'false'){
+            safeLS('set','velo_is_guardian','true');
+            if(gr.data[0].status && gr.data[0].status !== 'offline'){
+              // Never restore incognito on session start — always wake up as disponible
+              var _rawSt = gr.data[0].status || '';
+              var restoredStatus = (_rawSt === 'incognito' || _rawSt.startsWith('incognito_')) ? 'disponible' : _rawSt;
+              safeLS('set','velo_guardian_status', restoredStatus);
+              safeLS('set','velo_user_status', restoredStatus);
+              _myGuardianStatus = restoredStatus;
+            }
+            setTimeout(_startGuardianReqListener, 300);
+            // Re-render only when DB confirms ON — never override a manual toggle the user made after this query was sent
+            _renderHomeStatusToggle();
           }
-          setTimeout(_startGuardianReqListener, 300);
-          // Re-render only when DB confirms ON — never override a manual toggle the user made after this query was sent
-          _renderHomeStatusToggle();
         }
       }
     }).catch(function(){});
@@ -3734,7 +3739,7 @@ async function _loadGuardianActivity(){
   if(!sbClient) return;
   try{
     // Use guardian_presence (real-time) table: active in last 5 min, disponible, is_guardian
-    var cutoff = new Date(Date.now() - 5*60*1000).toISOString();
+    var cutoff = new Date(Date.now() - 10*60*1000).toISOString();
     var res = await sbClient.from('guardian_presence')
       .select('user_id',{count:'exact',head:true})
       .eq('is_guardian', true)
@@ -4420,7 +4425,14 @@ function pToggleGuardianMode(){
   } else {
     // Stop heartbeat fully so re-activation can start fresh (clears timer + listener)
     _stopGuardianHeartbeat();
-    _updateGuardianPresence();
+    // Explicitly set is_guardian=false in DB so _sbSyncProfile won't re-enable it on next load
+    _initSupabase();
+    var _tuid = safeLS('get','velo_user_id');
+    if(sbClient && _tuid){
+      sbClient.from('guardian_presence').update({ is_guardian: false, status: 'offline' }).eq('user_id', _tuid)
+        .then(function(){}).catch(function(){});
+    }
+    _updateGuardianPresence('offline');
     pToast('👤','Ya no aparecés en la lista de guardianes');
   }
   _renderHomeStatusToggle();
@@ -4551,7 +4563,7 @@ async function pRenderGuardians(){
   _initSupabase();
   if(sbClient){
     try{
-      var cutoff = new Date(Date.now() - 3*60*1000).toISOString(); // active in last 3 min
+      var cutoff = new Date(Date.now() - 10*60*1000).toISOString(); // active in last 10 min
       var myId = _myUserId();
       var { data, error: gpErr } = await sbClient.from('guardian_presence')
         .select('*').neq('status','offline').gte('last_seen', cutoff);
