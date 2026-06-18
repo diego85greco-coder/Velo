@@ -11525,8 +11525,8 @@ function _updateEditPushUI(){
       btn.textContent = 'Desactivar'; btn.disabled = false;
       btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(220,80,80,.12);color:rgba(200,60,60,.9)';
     } else if(perm === 'granted' && !hasSub){
-      status.textContent = 'Activadas — tocá para reconectar';
-      btn.textContent = 'Reconectar'; btn.disabled = false;
+      status.textContent = 'Permiso concedido — tocá Activar para recibirlas';
+      btn.textContent = 'Activar'; btn.disabled = false;
       btn.onclick = function(){ _tryRecoverPushSub(); };
       btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
     } else {
