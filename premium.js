@@ -721,19 +721,27 @@ async function _sbSyncProfileInner(userId){
       });
       if(dirty) safeLS('set','velo_blocked', JSON.stringify(_bl));
     }).catch(function(){});
-  // visit_days: merge Supabase array with local — take union so new devices get full history
+  // visit_days: sync with Supabase, but use SB as authoritative when local has
+  // far more days — that indicates stale data from a previous/deleted account.
   if(p.visit_days && Array.isArray(p.visit_days) && p.visit_days.length){
     var _localDays = []; try{ _localDays = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
-    var _merged = _localDays.slice();
-    p.visit_days.forEach(function(d){ if(_merged.indexOf(d) < 0) _merged.push(d); });
-    if(_merged.length > _localDays.length){
-      safeLS('set','velo_visit_days', JSON.stringify(_merged));
+    var _sbDays = p.visit_days;
+    // If local has more than 2× the SB count, treat local data as stale (account was reset).
+    // This prevents old localStorage dates from contaminating a freshly created account.
+    if(_localDays.length > _sbDays.length * 2 && _localDays.length > 5){
+      safeLS('set','velo_visit_days', JSON.stringify(_sbDays));
       _updateHomeStreak();
-    }
-    // Push merged array back to Supabase if local had more days than SB
-    // (prevents data loss when SB was behind and user later clears local cache)
-    if(_merged.length > p.visit_days.length){
-      setTimeout(function(){ _pushVisitCountToSB(_getVisitDayCount()); }, 1500);
+    } else {
+      // Normal case: union so a new device gets the full SB history
+      var _merged = _localDays.slice();
+      _sbDays.forEach(function(d){ if(_merged.indexOf(d) < 0) _merged.push(d); });
+      if(_merged.length > _localDays.length){
+        safeLS('set','velo_visit_days', JSON.stringify(_merged));
+        _updateHomeStreak();
+      }
+      if(_merged.length > _sbDays.length){
+        setTimeout(function(){ _pushVisitCountToSB(_getVisitDayCount()); }, 1500);
+      }
     }
   }
   if(p.role === 'plus'){
@@ -2837,6 +2845,38 @@ function _getVisitDayCount(){
   var sbCount = parseInt(safeLS('get','velo_visit_day_count_sb')||'0', 10);
   return Math.max(days.length, sbCount);
 }
+// Returns consecutive mood-registration streak using velo_mood_YYYY-MM-DD keys.
+// These keys are account-scoped (cleared on _clearSession) so they can't carry
+// over data from a previous/deleted account — unlike velo_visit_days which
+// accumulates across app opens and can contain stale cross-account history.
+function _getMoodStreak(){
+  var days = [];
+  try{
+    var prefix = 'velo_mood_';
+    Object.keys(localStorage).forEach(function(k){
+      if(k.indexOf(prefix) !== 0) return;
+      var dateStr = k.slice(prefix.length);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
+      var val = null; try{ val = JSON.parse(localStorage.getItem(k)); }catch(e){}
+      if(val && val.emoji) days.push(dateStr);
+    });
+  }catch(e){}
+  if(!days.length) return 0;
+  days.sort(function(a,b){ return a < b ? 1 : a > b ? -1 : 0; });
+  var today = _localDateStr();
+  var d = new Date(); d.setHours(12,0,0,0);
+  var yest = new Date(d); yest.setDate(d.getDate()-1);
+  var yesterdayStr = yest.getFullYear()+'-'+String(yest.getMonth()+1).padStart(2,'0')+'-'+String(yest.getDate()).padStart(2,'0');
+  if(days[0] !== today && days[0] !== yesterdayStr) return 0;
+  var streak = 1;
+  for(var i = 1; i < days.length; i++){
+    var prev = new Date(days[i-1]+'T12:00:00');
+    var curr = new Date(days[i]+'T12:00:00');
+    if(Math.round((prev - curr) / 86400000) === 1){ streak++; } else { break; }
+  }
+  return streak;
+}
+
 // Returns the number of CONSECUTIVE days ending on today (or yesterday if not yet visited today)
 function _getConsecutiveStreak(){
   var days = []; try{ days = JSON.parse(safeLS('get','velo_visit_days')||'[]'); }catch(e){}
@@ -2863,7 +2903,9 @@ function _getConsecutiveStreak(){
 function _showStreakCelebration(){
   var todayKey = _dateKey();
   if(safeLS('get','velo_streak_cel_'+todayKey)) return; // already shown today
-  var streak = _getConsecutiveStreak();
+  // Use mood-registration streak (account-scoped) — NOT visit-day streak which
+  // can contain stale data from previous/deleted accounts in localStorage.
+  var streak = _getMoodStreak();
   if(streak < 1) return;
   safeLS('set','velo_streak_cel_'+todayKey, '1');
   var milestones = {1:'¡Primer registro! 🌱',3:'¡3 días! Estás en racha 🔥',7:'¡Una semana seguida! 🏆',14:'¡14 días! Constancia real ⭐',30:'¡30 días! Sos increíble 🌟',50:'¡50 días! 💎',100:'¡100 días! Leyenda 🌟'};
