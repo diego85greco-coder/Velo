@@ -2981,7 +2981,7 @@ async function pRequestPushPermission(){
       pToast('🔔','¡Notificaciones activadas! 💚');
       _updateEditPushUI();
       _renderHomePushBanner();
-    }).catch(function(){ pToast('⚠️','No se pudo activar. Intentá de nuevo.'); });
+    }).catch(function(){ _showPushFixModal('error'); });
   } else {
     try{
       var reg = await navigator.serviceWorker.ready;
@@ -2991,7 +2991,7 @@ async function pRequestPushPermission(){
       pToast('🔔','¡Notificaciones activadas! 💚');
       _updateEditPushUI();
       _renderHomePushBanner();
-    }catch(e){ pToast('⚠️','No se pudo activar. Intentá de nuevo.'); }
+    }catch(e){ _showPushFixModal('error'); }
   }
 }
 
@@ -11504,7 +11504,7 @@ function _updateEditPushUI(){
 
 function _tryRecoverPushSub(){
   if(!_swReg){
-    pToast('⚠️','Cerrá Velo y volvé a abrirlo, luego tocá Reconectar');
+    _showPushFixModal('noSW');
     return;
   }
   // subscribe() called synchronously — preserves iOS user-gesture context
@@ -11521,7 +11521,6 @@ function _tryRecoverPushSub(){
   }).catch(function(e){
     console.warn('[push sub]', e.name, e.message, e);
     // Fallback: maybe a sub already exists but wasn't saved to LS
-    // getSubscription() doesn't need user-gesture so it's safe here
     _swReg.pushManager.getSubscription().then(function(_existing){
       if(_existing){
         safeLS('set','velo_push_sub', JSON.stringify(_existing));
@@ -11531,14 +11530,32 @@ function _tryRecoverPushSub(){
         pToast('🔔','¡Notificaciones reconectadas! 💚');
         return;
       }
-      var _hint = e.name === 'NotAllowedError'
-        ? 'Andá a Ajustes iOS → Notificaciones → Velo y activálas'
-        : e.name === 'InvalidAccessError'
-        ? 'Cerrá Velo completamente (swipe en el app switcher) y volvé a abrirlo'
-        : 'Error ('+(e.name||'desconocido')+') — cerrá Velo y volvé a intentar';
-      pToast('⚠️', _hint);
-    }).catch(function(){ pToast('⚠️','Cerrá Velo y volvé a intentar'); });
+      if(e.name === 'NotAllowedError'){
+        _showPushFixModal('denied');
+      } else {
+        _showPushFixModal('error');
+      }
+    }).catch(function(){ _showPushFixModal('error'); });
   });
+}
+
+function _showPushFixModal(reason){
+  var existing = document.getElementById('pushFixOv');
+  if(existing) existing.remove();
+  var steps = reason === 'denied'
+    ? '1. Abrí <strong>Ajustes iOS</strong><br>2. Buscá <strong>Notificaciones → Velo</strong><br>3. Activá "Permitir notificaciones"<br>4. Volvé a Velo y tocá Reconectar'
+    : '1. Deslizá Velo hacia arriba en el <strong>App Switcher</strong><br>2. Volvé a abrir Velo desde tu pantalla de inicio<br>3. Andá a Perfil → Notificaciones<br>4. Tocá <strong>Reconectar</strong>';
+  var title = reason === 'denied' ? '🔕 Notificaciones bloqueadas' : '🔔 Reiniciá Velo para activar';
+  var ov = document.createElement('div');
+  ov.id = 'pushFixOv';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99990;display:flex;align-items:flex-end;justify-content:center;padding:0';
+  ov.innerHTML = '<div style="background:#0e1f14;border-radius:20px 20px 0 0;padding:24px 20px calc(28px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;font-family:Jost,sans-serif;border-top:1.5px solid rgba(116,198,157,.22)">'
+    +'<div style="font-size:17px;font-weight:700;color:#d8eed8;text-align:center;margin-bottom:12px">'+title+'</div>'
+    +'<div style="font-size:13px;color:rgba(200,230,210,.8);line-height:1.9;margin-bottom:18px;text-align:left">'+steps+'</div>'
+    +(reason !== 'denied' ? '<button onclick="window.location.reload()" style="width:100%;padding:13px;border-radius:100px;border:none;background:rgba(116,198,157,.9);color:#0e1f14;font-family:Jost,sans-serif;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px">🔄 Reiniciar Velo ahora</button>' : '')
+    +'<button onclick="document.getElementById(\'pushFixOv\').remove()" style="width:100%;padding:12px;border-radius:100px;border:1.5px solid rgba(116,198,157,.25);background:none;color:rgba(180,220,180,.7);font-family:Jost,sans-serif;font-size:14px;cursor:pointer">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
 }
 
 function _showIOSPushModal(){
