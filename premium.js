@@ -11476,8 +11476,7 @@ async function _tryRecoverPushSub(){
       try{ _renderHomePushBanner(); }catch(_be){}
       return;
     }
-    // No existing sub — re-request permission first (iOS sometimes needs this to rebind)
-    if('Notification' in window) await Notification.requestPermission();
+    // No existing sub — create new subscription
     var _newSub = await _reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
     if(!_newSub){ pToast('⚠️','No se pudo crear la suscripción push'); return; }
     safeLS('set','velo_push_sub', JSON.stringify(_newSub));
