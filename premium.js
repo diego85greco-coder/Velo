@@ -20131,52 +20131,77 @@ function _clearAllLocalData(){
   keys.forEach(function(k){ safeLS('del',k); });
 }
 
+function _showDeleteErrorAlert(msg, isWarning){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  var color = isWarning ? '#c0312a' : '#c0312a';
+  var title = isWarning ? '⚠️ Errores al eliminar — copiá esto' : '❌ No se pudo eliminar la cuenta';
+  ov.innerHTML = '<div style="background:#1a0a0a;border:2px solid '+color+';border-radius:16px;padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto">'
+    +'<div style="font-size:15px;font-weight:700;color:#ff6b6b;margin-bottom:12px">'+title+'</div>'
+    +'<pre style="font-size:11px;color:#ffb3b3;white-space:pre-wrap;word-break:break-all;background:rgba(255,255,255,.06);border-radius:8px;padding:12px;margin:0 0 16px;line-height:1.6">'+_escHtml(msg)+'</pre>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="navigator.clipboard&&navigator.clipboard.writeText('+JSON.stringify(msg)+').then(function(){this.textContent=\'✅ Copiado\'}.bind(this))" style="flex:1;padding:10px;background:rgba(255,107,107,.15);border:1px solid #ff6b6b;border-radius:10px;color:#ff6b6b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">📋 Copiar error</button>'
+    +'<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="flex:1;padding:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">Cerrar</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
 async function _execDeleteAccount(reason){
   _initSupabase();
-  if(!sbClient){ pToast('⚠️','Sin conexión. Intentá de nuevo.'); return; }
+  if(!sbClient){ _showDeleteErrorAlert('Sin conexión a Supabase. sbClient es null.'); return; }
 
   var userId = safeLS('get','velo_user_id') || '';
   var email  = safeLS('get','velo_user_email') || '';
+  var _authErr = null;
   try{
-    var {data:_authD} = await sbClient.auth.getUser();
-    if(_authD && _authD.user){
-      userId = _authD.user.id;
-      email  = _authD.user.email || email;
-    }
-  }catch(e){}
+    var {data:_authD, error:_aErr} = await sbClient.auth.getUser();
+    if(_authD && _authD.user){ userId = _authD.user.id; email = _authD.user.email || email; }
+    else if(_aErr) _authErr = _aErr.message;
+  }catch(e){ _authErr = e && e.message; }
 
-  if(!userId){ pToast('⚠️','No pudimos verificar tu sesión. Cerrá sesión y volvé a intentarlo.'); return; }
+  if(!userId){ _showDeleteErrorAlert('No se pudo obtener el userId.\nauth.getUser() error: '+(_authErr||'sin error, pero user es null')+'\nvelo_user_id en localStorage: '+(safeLS('get','velo_user_id')||'vacío')); return; }
 
   var uid = userId;
 
   // Try server-side RPC (deletes auth user from auth.users too)
   var rpcOk = false;
+  var rpcErrMsg = '';
   try{
     var {error:_rpcErr} = await sbClient.rpc('delete_my_account', { p_reason: reason || null });
     if(!_rpcErr) rpcOk = true;
-    else console.warn('[deleteAccount] RPC error:', _rpcErr.message);
-  }catch(e){ console.warn('[deleteAccount] RPC exception:', e && e.message); }
+    else rpcErrMsg = _rpcErr.message || JSON.stringify(_rpcErr);
+  }catch(e){ rpcErrMsg = e && e.message; }
 
+  var fallbackErrors = [];
   if(!rpcOk){
-    // Fallback: manual row deletion (auth user stays but all data is removed)
-    sbClient.from('deleted_accounts').insert({
-      email: email, user_id: uid,
-      reason: reason || null,
-      deleted_at: new Date().toISOString()
-    }).catch(function(){});
-    try{ await sbClient.from('user_favorites').delete().eq('user_id', uid); }catch(e){}
-    try{ await sbClient.from('user_favorites').delete().eq('fav_id', uid); }catch(e){}
-    try{ await sbClient.from('guardian_presence').delete().eq('user_id', uid); }catch(e){}
-    try{ await sbClient.from('direct_messages').delete().or('from_id.eq.'+uid+',to_id.eq.'+uid); }catch(e){}
-    try{ await sbClient.from('guardian_requests').delete().or('seeker_id.eq.'+uid+',guardian_id.eq.'+uid); }catch(e){}
-    try{ await sbClient.from('help_posts').delete().eq('user_id', uid); }catch(e){}
-    try{ await sbClient.from('happy_posts').delete().eq('user_id', uid); }catch(e){}
-    try{ await sbClient.from('daily_responses').delete().eq('user_id', uid); }catch(e){}
-    try{ await sbClient.from('mood_entries').delete().eq('user_id', uid); }catch(e){}
-    try{ await sbClient.from('profiles').update({
-      nombre:'[eliminado]', avatar:'🌿', motto:'', push_subscription:null,
-      helped_count:0, received_count:0
-    }).eq('id', uid); }catch(e){}
+    sbClient.from('deleted_accounts').insert({ email:email, user_id:uid, reason:reason||null, deleted_at:new Date().toISOString() }).catch(function(){});
+    var _fbTasks = [
+      ['user_favorites (user_id)',  sbClient.from('user_favorites').delete().eq('user_id', uid)],
+      ['user_favorites (fav_id)',   sbClient.from('user_favorites').delete().eq('fav_id', uid)],
+      ['guardian_presence',         sbClient.from('guardian_presence').delete().eq('user_id', uid)],
+      ['direct_messages',           sbClient.from('direct_messages').delete().or('from_id.eq.'+uid+',to_id.eq.'+uid)],
+      ['guardian_requests',         sbClient.from('guardian_requests').delete().or('seeker_id.eq.'+uid+',guardian_id.eq.'+uid)],
+      ['help_posts',                sbClient.from('help_posts').delete().eq('user_id', uid)],
+      ['happy_posts',               sbClient.from('happy_posts').delete().eq('user_id', uid)],
+      ['daily_responses',           sbClient.from('daily_responses').delete().eq('user_id', uid)],
+      ['mood_entries',              sbClient.from('mood_entries').delete().eq('user_id', uid)],
+      ['profiles (anonymize)',      sbClient.from('profiles').update({ nombre:'[eliminado]', avatar:'🌿', motto:'', push_subscription:null, helped_count:0, received_count:0 }).eq('id', uid)],
+    ];
+    for(var _fi = 0; _fi < _fbTasks.length; _fi++){
+      try{
+        var _fbRes = await _fbTasks[_fi][1];
+        if(_fbRes && _fbRes.error) fallbackErrors.push(_fbTasks[_fi][0]+': '+(_fbRes.error.message||JSON.stringify(_fbRes.error)));
+      }catch(e){ fallbackErrors.push(_fbTasks[_fi][0]+': '+(e&&e.message)); }
+    }
+  }
+
+  // Show debug alert if anything went wrong (before signing out)
+  if(rpcErrMsg || fallbackErrors.length){
+    var _dbgLines = [];
+    if(rpcErrMsg) _dbgLines.push('RPC delete_my_account: '+rpcErrMsg);
+    if(fallbackErrors.length) _dbgLines.push('Fallback errors:\n'+fallbackErrors.join('\n'));
+    _showDeleteErrorAlert(_dbgLines.join('\n\n'), true);
   }
 
   try{ await sbClient.auth.signOut(); }catch(e){}
@@ -20185,7 +20210,10 @@ async function _execDeleteAccount(reason){
   _authenticated = false;
   _favsList = null;
 
-  pToast('👋','Cuenta eliminada. Podés registrarte de nuevo cuando quieras 🌿');
+  if(!rpcErrMsg && !fallbackErrors.length){
+    pToast('👋','Cuenta eliminada. Podés registrarte de nuevo cuando quieras 🌿');
+    setTimeout(function(){ window.location.replace(window.location.href.split('?')[0].split('#')[0]); }, 1800);
+  }
   setTimeout(function(){
     window.location.replace(window.location.href.split('?')[0].split('#')[0]);
   }, 1800);
