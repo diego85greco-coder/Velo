@@ -11462,3 +11462,22 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
     color: rgba(255,255,255,.60) !important;
   }
 }
+
+/* ── v920: Desktop home — center stats bar + match REGISTRA width to share button ── */
+@media (min-width: 861px) {
+  /* Stats bar: center content within the hero card */
+  #pg-home .r-hero-right,
+  .r-hero-right {
+    justify-content: center !important;
+  }
+  /* REGISTRA widget: remove narrow max-width so it matches share-week button width */
+  #homeRegisterZone {
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  /* Share-week button: constrain to same container as register zone */
+  #homeShareWeekBtn {
+    max-width: 100% !important;
+  }
+}
