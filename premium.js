@@ -2928,7 +2928,7 @@ function _loadHomeMemoryCard(){
 }
 
 // ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────────
-var _VAPID_PUBLIC_KEY = 'BC4O5Dd8jHkMPXcCsehTLZ-7aBHaSDr5QII9nE3P5IEfT8x3EHfp7N7AlIZIUIS3XdydSYxtuk5EwZDtumUm6IQ';
+var _VAPID_PUBLIC_KEY = 'BLeG-4oCRXZUawLsttyqasVMamrlg5eMfwUOtDdAzcOj5tOl2jD-1HDboNFainVzjdq6UNED1FA-FrBV14AIJn0';
 // Pre-warm SW registration so subscribe() can be called synchronously from user gesture
 var _swReg = null;
 if('serviceWorker' in navigator && 'PushManager' in window){
