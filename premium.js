@@ -11538,48 +11538,40 @@ function _updateEditPushUI(){
 }
 
 function _tryRecoverPushSub(){
-  if(!_swReg){
-    // SW might be ready but _swReg wasn't initialized yet — try waiting for it
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.ready.then(function(reg){
-        _swReg = reg;
-        _tryRecoverPushSub(); // retry with valid _swReg
-      }).catch(function(){ _showPushFixModal('noSW'); });
-    } else {
-      _showPushFixModal('noSW');
-    }
-    return;
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+    _showPushFixModal('noSW'); return;
   }
-  // subscribe() called synchronously — preserves iOS user-gesture context
-  _swReg.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: _urlBase64ToUint8Array(_VAPID_PUBLIC_KEY)
-  }).then(function(_sub){
-    if(!_sub){ pToast('⚠️','No se pudo crear la suscripción'); return; }
-    safeLS('set','velo_push_sub', JSON.stringify(_sub));
-    _updateEditPushUI();
-    _savePushSubscriptionToSupabase(_sub).catch(function(){});
-    try{ _renderHomePushBanner(); }catch(_be){}
-    pToast('🔔','¡Notificaciones conectadas! 💚');
-  }).catch(function(e){
-    console.warn('[push sub]', e.name, e.message, e);
-    // Fallback: maybe a sub already exists but wasn't saved to LS
-    _swReg.pushManager.getSubscription().then(function(_existing){
+  // Always resolve fresh from ready — handles null _swReg and SW transitions
+  navigator.serviceWorker.ready.then(function(reg){
+    _swReg = reg;
+    // Check for existing sub first (no user-gesture needed for getSubscription)
+    return reg.pushManager.getSubscription().then(function(_existing){
       if(_existing){
         safeLS('set','velo_push_sub', JSON.stringify(_existing));
         _updateEditPushUI();
         _savePushSubscriptionToSupabase(_existing).catch(function(){});
         try{ _renderHomePushBanner(); }catch(_be){}
-        pToast('🔔','¡Notificaciones reconectadas! 💚');
+        pToast('🔔','¡Notificaciones conectadas! 💚');
         return;
       }
-      if(e.name === 'NotAllowedError'){
-        _showPushFixModal('denied');
-      } else {
-        _showPushFixModal('error');
-      }
-    }).catch(function(){ _showPushFixModal('error'); });
-  });
+      // No existing — subscribe (still within user-gesture window on iOS)
+      return reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: _urlBase64ToUint8Array(_VAPID_PUBLIC_KEY)
+      }).then(function(_sub){
+        if(!_sub){ pToast('⚠️','No se pudo crear la suscripción'); return; }
+        safeLS('set','velo_push_sub', JSON.stringify(_sub));
+        _updateEditPushUI();
+        _savePushSubscriptionToSupabase(_sub).catch(function(){});
+        try{ _renderHomePushBanner(); }catch(_be){}
+        pToast('🔔','¡Notificaciones activadas! 💚');
+      }).catch(function(e){
+        console.warn('[push sub]', e.name, e.message);
+        if(e.name === 'NotAllowedError') _showPushFixModal('denied');
+        else _showPushFixModal('error');
+      });
+    });
+  }).catch(function(){ _showPushFixModal('noSW'); });
 }
 
 function _showPushFixModal(reason){
