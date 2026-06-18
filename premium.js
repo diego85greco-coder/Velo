@@ -818,6 +818,11 @@ async function _sbSyncProfileInner(userId){
             // Re-render only when DB confirms ON — never override a manual toggle the user made after this query was sent
             _renderHomeStatusToggle();
           }
+        } else {
+          // DB confirmed guardian mode is off — clear any stale velo_is_guardian='true' left
+          // from a previous session where the disable write may have failed (e.g. expired PWA session)
+          safeLS('set','velo_is_guardian','false');
+          _renderHomeStatusToggle();
         }
       }
     }).catch(function(){});
@@ -4311,16 +4316,15 @@ async function _updateGuardianPresence(status){
   var uid = _myUserId ? _myUserId() : (safeLS('get','velo_user_email')||'guest');
   if(!uid || uid === 'guest') return;
   // Ensure auth session is alive — critical on iOS PWA where sessions expire silently.
-  // Without this, the upsert fails with a 401 and the row stays stale (offline),
-  // causing the guardian to be invisible until Supabase auto-refreshes (~60-90s).
   try{ await _ensureSbSession(); }catch(e){}
+  // Re-read uid after session refresh — _ensureSbSession may have written a fresh velo_user_id
+  var _freshUid = safeLS('get','velo_user_id');
+  if(_freshUid) uid = _freshUid;
+  if(!uid || uid === 'guest') return;
   var isG  = safeLS('get','velo_is_guardian') === 'true';
   var st   = status || _presenceStatus();
   var _isIncogStatus = st === 'incognito' || st.startsWith('incognito_');
-  // When incognito, never store real name/avatar in guardian_presence
   var name = _isIncogStatus ? 'Guardián Anónimo' : (safeLS('get','velo_user_name') || 'Usuario');
-  // Don't store base64/http avatars in guardian_presence — huge rows slow down the list for everyone
-  // The real photo is read from profiles table when opening someone's profile card
   var _rawAv = _isIncogStatus ? '🌿' : (safeLS('get','velo_user_av') || (isG ? '💚' : '🧑'));
   var av = (_rawAv.startsWith('data:') || _rawAv.startsWith('http')) ? (isG ? '💚' : '🧑') : _rawAv;
   var row  = { user_id: uid, name: name, avatar: av, is_guardian: isG,
@@ -4332,21 +4336,32 @@ async function _updateGuardianPresence(status){
     row.convs = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
     row.rating = 5.0;
   }
+  var _upsertOk = false;
   try{
     var _upRes = await sbClient.from('guardian_presence').upsert(row, { onConflict: 'user_id' });
-    if(_upRes && _upRes.error) console.error('[presence upsert]', _upRes.error.message, _upRes.error);
-    else {
-      // Broadcast the change so other clients update instantly.
-      // _guardianBcastCh must already be subscribed (set up in _startGuardianHeartbeat at login).
-      // Creating a throwaway channel without .subscribe() silently fails in Supabase v2.
+    if(_upRes && _upRes.error){
+      console.error('[presence upsert]', _upRes.error.message, _upRes.error);
+      // Session may have expired mid-flight — refresh and retry once (2s delay)
       try{
-        if(_guardianBcastCh){
-          _guardianBcastCh.send({ type:'broadcast', event:'presence_change', payload: row })
-            .catch(function(){});
-        }
-      }catch(e){}
-    }
+        await new Promise(function(r){ setTimeout(r, 2000); });
+        await _ensureSbSession();
+        row.last_seen = new Date().toISOString();
+        var _retry = await sbClient.from('guardian_presence').upsert(row, { onConflict: 'user_id' });
+        if(_retry && _retry.error){ console.error('[presence upsert retry]', _retry.error.message); }
+        else { _upsertOk = true; }
+      }catch(e2){}
+    } else { _upsertOk = true; }
   }catch(e){ console.error('[presence upsert catch]', e); }
+  if(!_upsertOk) return; // Don't broadcast if DB write failed
+  // Broadcast the change so other clients update instantly.
+  // If the channel send fails, null it out so _startGuardianHeartbeat re-subscribes fresh next time.
+  try{
+    if(_guardianBcastCh){
+      _guardianBcastCh.send({ type:'broadcast', event:'presence_change', payload: row })
+        .then(function(res){ if(res !== 'ok'){ _sbUnsub(_guardianBcastCh); _guardianBcastCh = null; } })
+        .catch(function(){ _sbUnsub(_guardianBcastCh); _guardianBcastCh = null; });
+    }
+  }catch(e){ _sbUnsub(_guardianBcastCh); _guardianBcastCh = null; }
 }
 
 // ── PRESENCE CACHE (online dots everywhere) ────────────────────
@@ -20476,12 +20491,13 @@ function _onPageEnter(id){
         pRenderGuardians();
       });
       // _guardianBcastCh is subscribed at login by _startGuardianHeartbeat — no setup needed here.
+      _lastGuardianListKey = ''; // reset dedup so re-activation shows immediately without page refresh
       pRenderGuardians();
       if(_guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
       _guardianListPollTmr = setInterval(function(){
         if(_curPage !== 'guardians'){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; return; }
         pRenderGuardians();
-      }, 30000);
+      }, 10000);
       break;
     case 'professionals': pRenderProfessionals(); break;
     case 'help':
@@ -20863,6 +20879,12 @@ window.addEventListener('load', function(){
   if(session === '1'){
     _authenticated = true;
     _trackVisitDay(); // Record today — runs on every app open, not just explicit login
+    // Reset per-session volatile states so home renders clean defaults instead of stale cache.
+    // incognito and status always reset to OFF/disponible — DB sync will restore guardian mode
+    // if the user has it active, within ~1.5s.
+    safeLS('set','velo_incognito','false');
+    safeLS('set','velo_guardian_status','disponible');
+    _myGuardianStatus = 'disponible';
     // Sync profile from Supabase on every app start so name/avatar stay current
     setTimeout(function(){ _sbSyncProfile(safeLS('get','velo_user_id')); }, 1500);
     // Proactive push: if this device has a real name, ensure Supabase has it too
