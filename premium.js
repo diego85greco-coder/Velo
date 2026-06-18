@@ -40,12 +40,14 @@ var _happyRtCh    = null;   // realtime channel happy_posts
 var _helpRtCh     = null;   // realtime channel help_posts
 var _bottleRtCh   = null;   // realtime channel bottles
 var _circleRtCh   = null;   // realtime channel circle_messages
+var _circleRtPollTmr = null; // polling fallback for circle_messages (5s)
 var _guardianRtCh = null;   // realtime channel guardian_presence
 var _dqRtCh       = null;   // realtime channel daily_responses
 var _sbVerifiedMoodCount = -1; // Supabase-confirmed mood count; -1 = not yet fetched
 var _liveGuardians = [];    // cached live guardian rows from Supabase
 var _grReqCh        = null;   // guardian_requests realtime channel (guardian side)
 var _seekerGrCh     = null;   // guardian_requests realtime channel (seeker side)
+var _guardianListPollTmr = null; // polling fallback for guardians list (15s)
 var _homeRefreshTmr = null;   // home page live-content auto-refresh (60s)
 var _seekerGrPollTmr= null;   // polling fallback for seeker waiting for guardian offer
 var _grReqPollTmr   = null;   // polling fallback for guardian waiting for acceptance
@@ -1175,6 +1177,8 @@ function _clearSession(){
   if(_homeRefreshTmr){ clearInterval(_homeRefreshTmr); _homeRefreshTmr = null; }
   if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
   if(_grReqPollTmr){ clearInterval(_grReqPollTmr); _grReqPollTmr = null; }
+  if(_circleRtPollTmr){ clearInterval(_circleRtPollTmr); _circleRtPollTmr = null; }
+  if(_guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
   if(_dmPollTmr){ clearInterval(_dmPollTmr); _dmPollTmr = null; }
   if(_buzónPollTmr){ clearInterval(_buzónPollTmr); _buzónPollTmr = null; }
   if(_dmReactPollTmr){ clearInterval(_dmReactPollTmr); _dmReactPollTmr = null; }
@@ -5057,8 +5061,9 @@ async function pAcceptGuardianRequest(){
   if(ov) ov.remove();
   _initSupabase();
   var myId   = _myUserId();
-  var myName = safeLS('get','velo_user_name') || 'Guardián';
-  var myAv   = safeLS('get','velo_user_av')   || '🌿';
+  var _accIsAnon = safeLS('get','velo_incognito')==='true' || (safeLS('get','velo_guardian_status')||'').startsWith('incognito');
+  var myName = _accIsAnon ? 'Guardián Anónimo' : (safeLS('get','velo_user_name') || 'Guardián');
+  var myAv   = _accIsAnon ? '🌿' : (safeLS('get','velo_user_av')   || '🌿');
   if(sbClient){
     try{ await sbClient.from('guardian_requests').update({status:'accepted'}).eq('id',req.id); }catch(e){}
     if(req.context){
@@ -5470,7 +5475,9 @@ function pEndGuardianChat(){
     safeLS('set','velo_guardian_convs', String(convs));
     _checkAndNotifyBadge();
     _bumpProfileCounter('helped_count', convs);
-    _updateGuardianPresence(exitStatus);
+    // Ensure localStorage status is 'disponible' before navigating so heartbeat reflects it
+    safeLS('set','velo_guardian_status', exitStatus === 'disponible' || !exitStatus ? 'disponible' : exitStatus);
+    _updateGuardianPresence(exitStatus || 'disponible');
     _gcPeer = null; _gcReqId = null; _gcRole = null;
     pToast('💚','Gracias por acompañar 🌿');
     pGoTo('guardians');
@@ -5591,6 +5598,9 @@ async function pRenderHelp(){
     var realPosts = []; try{ realPosts = JSON.parse(safeLS('get','velo_help_posts')||'[]'); }catch(e){}
     posts = realPosts.filter(function(h){ return !h.closed && hidden.indexOf('help-'+h.id)<0 && !_isBlocked(h.userId); });
   }
+  // Filter out expired posts (older than 24h) — don't show "expirado" cards
+  var _now24 = Date.now();
+  posts = posts.filter(function(h){ return h.time + 24*3600*1000 > _now24; });
   // Separate own posts from others' (own posts stay visible to author for deletion, even if anonymous)
   _helpPosts = posts.filter(function(h){ return (h.userId||'') !== myHelpId; });
   var myOwnPosts = myHelpId ? posts.filter(function(h){ return (h.userId||'') === myHelpId; }) : [];
@@ -5715,8 +5725,9 @@ async function _guardianSendRequest(post){
   _initSupabase();
   if(!sbClient){ _curHelpPost = post; _openHelpChat(post); return; }
   var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon';
-  var myName = safeLS('get','velo_user_name')||'Guardián';
-  var myAv   = safeLS('get','velo_user_av')||'🌿';
+  var _gIsAnon = safeLS('get','velo_incognito')==='true' || (safeLS('get','velo_guardian_status')||'').startsWith('incognito');
+  var myName = _gIsAnon ? 'Guardián Anónimo' : (safeLS('get','velo_user_name')||'Guardián');
+  var myAv   = _gIsAnon ? '🌿' : (safeLS('get','velo_user_av')||'🌿');
   var reqId  = 'gr'+Date.now();
   _pendingGuardianReqId = reqId; // store so _guardianCancelWait can target only this row
   // Insert guardian_request row — await so we know it arrived before showing overlay
@@ -9357,6 +9368,12 @@ function pOpenCircle(id, circleData){
 
   pGoTo('feed');
   setTimeout(function(){ _renderCircleMessages(); _startCircleAutoMsg(); }, 100);
+  // Polling fallback every 5s — catches messages if real-time drops
+  if(_circleRtPollTmr){ clearInterval(_circleRtPollTmr); _circleRtPollTmr = null; }
+  _circleRtPollTmr = setInterval(function(){
+    if(!document.getElementById('feedMessages')){ clearInterval(_circleRtPollTmr); _circleRtPollTmr = null; return; }
+    _renderCircleMessages();
+  }, 5000);
 }
 
 async function _renderCircleMessages(){
@@ -9402,10 +9419,12 @@ async function _renderCircleMessagesInner(){
   });
   if(_navToken !== _tok) return;
 
-  // Filter out messages from before the user's current join time
+  // Filter out messages from before the user's current join time.
+  // Use numeric ms comparison with 60s buffer to avoid clock-skew and ISO-format mismatches.
   var _circleJoinTime = safeLS('get', 'velo_circle_joined_'+_curCircle.id);
   if(_circleJoinTime && sbRows !== null){
-    sbRows = sbRows.filter(function(r){ return r.created_at >= _circleJoinTime; });
+    var _circleJoinMs = new Date(_circleJoinTime).getTime() - 60000;
+    sbRows = sbRows.filter(function(r){ return new Date(r.created_at).getTime() >= _circleJoinMs; });
   }
 
   var msgs;
@@ -20169,6 +20188,7 @@ function _initReveal(){
 // ── PER-PAGE INIT DISPATCHER ──────────────────────────────────
 function _onPageEnter(id){
   if(id !== 'home') _stopHomeRefresh(); // stop live refresh when leaving home
+  if(id !== 'guardians' && _guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
   switch(id){
     case 'landing':     _initReveal(); break;
     case 'register':    _botGuardInit(); break;
@@ -20178,6 +20198,11 @@ function _onPageEnter(id){
       _initSupabase();
       if(sbClient && !_guardianRtCh) _guardianRtCh = _sbSub('velo:guardians', 'guardian_presence', function(){ pRenderGuardians(); });
       pRenderGuardians();
+      if(_guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
+      _guardianListPollTmr = setInterval(function(){
+        if(!document.getElementById('guardiansList')){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; return; }
+        pRenderGuardians();
+      }, 15000);
       break;
     case 'professionals': pRenderProfessionals(); break;
     case 'help':
