@@ -2254,6 +2254,9 @@ function _updateHomeBell(){
   // Sidebar inbox badge
   var snBadge = document.getElementById('sn-inbox-badge');
   if(snBadge){ snBadge.textContent = unread > 0 ? '!' : ''; snBadge.classList.toggle('p-hidden', unread === 0); }
+  // Desktop sidebar bell badge
+  var sbBell = document.getElementById('sidebarBellBadge');
+  if(sbBell){ sbBell.style.display = unread > 0 ? 'inline-block' : 'none'; sbBell.textContent = label; }
 }
 
 function _updateInboxDot(){
@@ -11426,15 +11429,9 @@ function pOpenEditProfile(){
   openModal('editProfileOv');
 }
 
-var _pushAutoRecoveryDone = false;
 function _updateEditPushUI(){
   var perm   = ('Notification' in window) ? Notification.permission : 'unavailable';
   var hasSub = !!safeLS('get','velo_push_sub');
-  // Permission granted but sub lost — auto-recover once per session (guard prevents infinite loop)
-  if(perm === 'granted' && !hasSub && 'serviceWorker' in navigator && 'PushManager' in window && !_pushAutoRecoveryDone){
-    _pushAutoRecoveryDone = true;
-    _tryRecoverPushSub();
-  }
   // Update both the edit-profile modal and the profile page toggles
   ['edit','profile'].forEach(function(prefix){
     var btn    = document.getElementById(prefix+'PushBtn');

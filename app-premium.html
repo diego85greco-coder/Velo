@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="889">
+  <meta name="app-version" content="890">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -31,7 +31,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="premium.css?v=20260614-746">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260618-889">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260618-890">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -166,6 +166,11 @@
     <div class="p-sidebar-logo">
       <img src="assets/logo-dark.png" alt="Velo — Acompañamos emociones" class="p-sidebar-logo-img" onclick="pLogoClick()">
     </div>
+    <button id="sidebarBellBtn" onclick="pGoTo('inbox')" class="p-sidebar-bell" style="display:none">
+      <span style="font-size:20px;line-height:1;flex-shrink:0">🔔</span>
+      <span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85);flex:1;text-align:left">Buzón Velo</span>
+      <span id="sidebarBellBadge" style="display:none;background:#e63946;color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:8px;line-height:16px;text-align:center;padding:0 3px;font-family:'Jost',sans-serif"></span>
+    </button>
     <nav class="p-sidebar-nav">
       <div class="p-sidebar-section">Principal</div>
       <button class="p-sn-item" data-screen="home" onclick="pGoTo('home')">
@@ -3900,7 +3905,7 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260618-889"></script>
+<script src="premium.js?v=20260618-890"></script>
 <script src="premium-redesign.js?v=20260616-814"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();

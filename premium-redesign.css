@@ -11303,6 +11303,24 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
   }
   .p-sidebar-logo-img { max-width: 72px !important; }
 
+  /* Bell de notificaciones: visible solo en desktop */
+  .p-sidebar-bell {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 12px;
+    margin-bottom: 14px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(116,198,157,.30);
+    background: rgba(116,198,157,.10);
+    cursor: pointer;
+    font-family: 'Jost', sans-serif;
+    box-sizing: border-box;
+    transition: background .18s;
+  }
+  .p-sidebar-bell:hover { background: rgba(116,198,157,.18) !important; }
+
   /* ─── Main content: offset por sidebar fijo ───────────────────────── */
   .p-main-content { margin-left: 220px !important; min-height: 100vh !important; }
 
