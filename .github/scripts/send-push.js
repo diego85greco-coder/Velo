@@ -36,22 +36,22 @@ function getSlot(tz) {
 }
 
 const MORNING_MSGS = [
-  { title: '🌅 ¡Buenos días!', body: '¿Cómo amaneciste hoy? Tomate un segundo para registrar cómo te sentís 🌿' },
-  { title: '🌤️ Empezá bien el día', body: 'Abrí tu diario y anotá cómo llegás a este nuevo día 📔' },
-  { title: '☀️ Un momento para vos', body: '¿Hay un guardián disponible hoy? Conectate con alguien que te escuche 🛡️' },
-  { title: '🌱 Hoy es un nuevo comienzo', body: 'Los Círculos de Paz están activos. ¿Te sumás a la conversación? ☮️' },
+  { title: '🌅 ¡Buenos días!', body: 'Hoy tiene todo para ser un buen día 💚 ¿Anotás cómo llegás en tu diario?' },
+  { title: '☀️ ¡Hola! Buenos días', body: 'Qué lindo tenerte acá 🌿 Hay guardianes disponibles si querés charlar con alguien hoy.' },
+  { title: '🌱 ¡Buenos días!', body: 'Cada día es una oportunidad nueva 💛 Unite a los Círculos de Paz y empezá bien.' },
+  { title: '🌤️ ¡Buenos días!', body: 'Arrancás con todo 💪 Si tenés algo que soltar, Al Mar te espera con brazos abiertos 🌊' },
 ];
 const AFTERNOON_MSGS = [
-  { title: '🌤️ ¿Cómo va la tarde?', body: 'Un momento para vos en medio del día. ¿Cómo está tu energía? 💛' },
-  { title: '💛 Pausa de tarde', body: 'Publicá en Al Mar algo que necesitás soltar hoy 🌊' },
-  { title: '🤝 ¿Alguien necesita apoyo?', body: 'Entrá a la Sala de Ayuda — quizás hoy sos vos quien acompaña 💚' },
-  { title: '🌈 Momentos que hacen bien', body: 'Mirá el Muro Feliz y compartí algo que te alegró hoy ✨' },
+  { title: '💛 ¡Buenas tardes!', body: '¡Hola! Esperamos que tu día esté yendo bien 🌤️ ¿Compartís algo en el Muro Feliz?' },
+  { title: '🌿 ¡Buenas tardes!', body: 'Una pausa para vos 💚 Si necesitás apoyo, hay guardianes en la Sala de Ayuda listos para escucharte.' },
+  { title: '🌈 ¡Buenas tardes!', body: '¡Qué bueno verte! 😊 Los Círculos de Paz están activos — ¿te sumás a la charla?' },
+  { title: '🤝 ¡Buenas tardes!', body: 'El acompañamiento hace la diferencia 💙 ¿Publicás en Al Mar algo que necesitás soltar hoy?' },
 ];
 const NIGHT_MSGS = [
-  { title: '🌙 Antes de cerrar el día…', body: '¿Cómo estuvo? Es el mejor momento para guardar cómo te sentiste hoy ✨' },
-  { title: '🕯️ ¿Cómo terminó tu día?', body: 'Anotá en tu diario antes de dormir. Solo vos lo podés leer 📔' },
-  { title: '💤 Unos minutos para vos', body: 'Probá un ejercicio de respiración antes de dormir 🌬️' },
-  { title: '🌙 ¿Sentiste algo hoy?', body: 'Registrá tu estado de ánimo y Velo armará tu resumen del mes 😊' },
+  { title: '🌙 Buenas noches', body: 'Que descanses bien. Hoy hiciste lo que pudiste y eso es suficiente 💚 Nos vemos mañana.' },
+  { title: '🌙 Buenas noches', body: 'Cerrá los ojos con calma. Mañana es un nuevo comienzo 🌿 Nos vemos mañana.' },
+  { title: '🌙 Buenas noches', body: 'Que la noche te traiga descanso y paz ✨ Nos vemos mañana.' },
+  { title: '🌙 Buenas noches', body: 'Gracias por estar en Velo hoy 💙 Que descanses. Nos vemos mañana.' },
 ];
 
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
