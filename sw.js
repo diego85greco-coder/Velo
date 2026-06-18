@@ -1,5 +1,5 @@
 /* Velo Service Worker — always-fresh strategy for app-premium.html */
-var CACHE = 'velo-v4';
+var CACHE = 'velo-v5';
 var APP_HTML = '/app-premium.html';
 var VERSION_URL = '/version.json';
 
