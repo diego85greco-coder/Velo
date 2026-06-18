@@ -1,11 +1,13 @@
 const webpush = require('web-push');
 const { createClient } = require('@supabase/supabase-js');
+const fetch = require('node-fetch');
 
 const VAPID_PUBLIC_KEY  = (process.env.VAPID_PUBLIC_KEY  || '').trim();
 const VAPID_PRIVATE_KEY = (process.env.VAPID_PRIVATE_KEY || '').trim();
 const VAPID_SUBJECT     = (process.env.VAPID_SUBJECT     || 'mailto:diego85greco@gmail.com').trim();
 const SUPABASE_URL      = (process.env.SUPABASE_URL      || '').trim();
 const SUPABASE_KEY      = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+const GEMINI_KEY        = (process.env.GEMINI_API_KEY    || '').trim();
 
 if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Missing required environment variables');
@@ -13,7 +15,6 @@ if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
 }
 
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
-
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Returns the local hour (0-23) for a given IANA timezone at the current moment
@@ -23,43 +24,109 @@ function localHour(tz) {
   } catch { return -1; }
 }
 
-// Timezone groups — any tz whose offset matches gets treated as that group
-const AR_TZS = ['America/Argentina/Buenos_Aires','America/Argentina/Cordoba','America/Argentina/Mendoza','America/Sao_Paulo','America/Montevideo'];
-const PT_TZS = ['Europe/Lisbon','Atlantic/Azores','Europe/Madrid','Europe/London','Africa/Casablanca'];
-
 function getSlot(tz) {
   const h = localHour(tz);
-  if (h >= 8 && h < 11)  return 'morning';
+  if (h >= 8  && h < 11) return 'morning';
   if (h >= 13 && h < 16) return 'afternoon';
   if (h >= 20 && h < 23) return 'night';
-  return null; // not a notification window
+  return null;
 }
 
-const MORNING_MSGS = [
-  { title: '🌅 ¡Buenos días!', body: 'Hoy tiene todo para ser un buen día 💚 ¿Anotás cómo llegás en tu diario?' },
-  { title: '☀️ ¡Hola! Buenos días', body: 'Qué lindo tenerte acá 🌿 Hay guardianes disponibles si querés charlar con alguien hoy.' },
-  { title: '🌱 ¡Buenos días!', body: 'Cada día es una oportunidad nueva 💛 Unite a los Círculos de Paz y empezá bien.' },
-  { title: '🌤️ ¡Buenos días!', body: 'Arrancás con todo 💪 Si tenés algo que soltar, Al Mar te espera con brazos abiertos 🌊' },
-];
-const AFTERNOON_MSGS = [
-  { title: '💛 ¡Buenas tardes!', body: '¡Hola! Esperamos que tu día esté yendo bien 🌤️ ¿Compartís algo en el Muro Feliz?' },
-  { title: '🌿 ¡Buenas tardes!', body: 'Una pausa para vos 💚 Si necesitás apoyo, hay guardianes en la Sala de Ayuda listos para escucharte.' },
-  { title: '🌈 ¡Buenas tardes!', body: '¡Qué bueno verte! 😊 Los Círculos de Paz están activos — ¿te sumás a la charla?' },
-  { title: '🤝 ¡Buenas tardes!', body: 'El acompañamiento hace la diferencia 💙 ¿Publicás en Al Mar algo que necesitás soltar hoy?' },
-];
-const NIGHT_MSGS = [
-  { title: '🌙 Buenas noches', body: 'Que descanses bien. Hoy hiciste lo que pudiste y eso es suficiente 💚 Nos vemos mañana.' },
-  { title: '🌙 Buenas noches', body: 'Cerrá los ojos con calma. Mañana es un nuevo comienzo 🌿 Nos vemos mañana.' },
-  { title: '🌙 Buenas noches', body: 'Que la noche te traiga descanso y paz ✨ Nos vemos mañana.' },
-  { title: '🌙 Buenas noches', body: 'Gracias por estar en Velo hoy 💙 Que descanses. Nos vemos mañana.' },
-];
+// Static fallbacks — used if Gemini is unavailable
+const FALLBACK = {
+  morning: [
+    { title: '🌅 ¡Buenos días!', body: 'Hoy tiene todo para ser un buen día 💚 ¿Anotás cómo llegás en tu diario?' },
+    { title: '☀️ ¡Hola! Buenos días', body: 'Qué lindo tenerte acá 🌿 Hay guardianes disponibles si querés charlar con alguien hoy.' },
+    { title: '🌱 ¡Buenos días!', body: 'Cada día es una oportunidad nueva 💛 Unite a los Círculos de Paz y empezá bien.' },
+    { title: '🌤️ ¡Buenos días!', body: 'Arrancás con todo 💪 Si tenés algo que soltar, Al Mar te espera 🌊' },
+  ],
+  afternoon: [
+    { title: '💛 ¡Buenas tardes!', body: '¡Hola! Esperamos que tu día esté yendo bien 🌤️ ¿Compartís algo en el Muro Feliz?' },
+    { title: '🌿 ¡Buenas tardes!', body: 'Una pausa para vos 💚 Hay guardianes en la Sala de Ayuda listos para escucharte.' },
+    { title: '🌈 ¡Buenas tardes!', body: '¡Qué bueno verte! 😊 Los Círculos de Paz están activos — ¿te sumás a la charla?' },
+    { title: '🤝 ¡Buenas tardes!', body: 'El acompañamiento hace la diferencia 💙 ¿Publicás en Al Mar algo que necesitás soltar?' },
+  ],
+  night: [
+    { title: '🌙 Buenas noches', body: 'Que descanses bien. Hoy hiciste lo que pudiste y eso es suficiente 💚 Nos vemos mañana.' },
+    { title: '🌙 Buenas noches', body: 'Cerrá los ojos con calma. Mañana es un nuevo comienzo 🌿 Nos vemos mañana.' },
+    { title: '🌙 Buenas noches', body: 'Que la noche te traiga descanso y paz ✨ Nos vemos mañana.' },
+    { title: '🌙 Buenas noches', body: 'Gracias por estar en Velo hoy 💙 Que descanses. Nos vemos mañana.' },
+  ],
+};
 
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-function getNotification(slot) {
-  if (slot === 'morning')   return { ...pick(MORNING_MSGS),   tag: 'velo-morning' };
-  if (slot === 'afternoon') return { ...pick(AFTERNOON_MSGS), tag: 'velo-afternoon' };
-  return                           { ...pick(NIGHT_MSGS),     tag: 'velo-night' };
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+
+async function geminiGenerate(prompt) {
+  if (!GEMINI_KEY) return null;
+  for (const model of GEMINI_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.95, maxOutputTokens: 120, thinkingConfig: { thinkingBudget: 0 } }
+        })
+      });
+      const data = await res.json();
+      const parts = data.candidates?.[0]?.content?.parts;
+      const text = parts?.find(p => !p.thought && p.text)?.text?.trim();
+      if (text) return text;
+    } catch (e) {
+      console.warn(`[gemini] ${model} failed:`, e.message);
+    }
+  }
+  return null;
+}
+
+async function generateNotification(slot) {
+  const features = {
+    morning:   ['tu Diario personal', 'los Guardianes disponibles', 'los Círculos de Paz', 'Al Mar (publicar algo que necesitás soltar)'],
+    afternoon: ['el Muro Feliz', 'la Sala de Ayuda', 'los Círculos de Paz', 'Al Mar (publicar algo que necesitás soltar)'],
+  };
+
+  let prompt = '';
+  if (slot === 'morning') {
+    const feature = pick(features.morning);
+    prompt = `Sos el asistente de Velo, una app de apoyo emocional en español latinoamericano.
+Generá una notificación push de buenos días para los usuarios. Debe:
+- Saludar con calidez y decir algo lindo y alentador
+- Invitar sutilmente a usar: ${feature}
+- Ser breve: título máx 40 caracteres, cuerpo máx 90 caracteres
+- Usar 1-2 emojis naturales, tono cálido y cercano, no corporativo
+- Responder SOLO en formato JSON: {"title":"...","body":"..."}`;
+  } else if (slot === 'afternoon') {
+    const feature = pick(features.afternoon);
+    prompt = `Sos el asistente de Velo, una app de apoyo emocional en español latinoamericano.
+Generá una notificación push de buenas tardes para los usuarios. Debe:
+- Saludar con calidez y decir algo lindo sobre la tarde
+- Invitar sutilmente a usar: ${feature}
+- Ser breve: título máx 40 caracteres, cuerpo máx 90 caracteres
+- Usar 1-2 emojis naturales, tono cálido y cercano, no corporativo
+- Responder SOLO en formato JSON: {"title":"...","body":"..."}`;
+  } else {
+    prompt = `Sos el asistente de Velo, una app de apoyo emocional en español latinoamericano.
+Generá una notificación push de buenas noches para los usuarios. Debe:
+- Dar un mensaje de ánimo sincero y cálido sobre el día que pasó
+- Desear buenas noches y terminar con "Nos vemos mañana."
+- NO recomendar ninguna función de la app
+- Ser breve: título máx 40 caracteres, cuerpo máx 90 caracteres
+- Usar 1 emoji, tono íntimo y reconfortante
+- Responder SOLO en formato JSON: {"title":"...","body":"..."}`;
+  }
+
+  const raw = await geminiGenerate(prompt);
+  if (!raw) return null;
+
+  try {
+    const match = raw.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : raw);
+    if (parsed.title && parsed.body) return { ...parsed, tag: `velo-${slot}` };
+  } catch { }
+  return null;
 }
 
 async function main() {
@@ -70,47 +137,58 @@ async function main() {
 
   if (error) { console.error('Supabase error:', error); process.exit(1); }
 
-  let sent = 0, failed = 0, skipped = 0;
+  // Group users by slot so we call Gemini once per slot, not once per user
+  const slotUsers = { morning: [], afternoon: [], night: [] };
+  let skipped = 0;
 
-  await Promise.allSettled((users || []).map(async (user) => {
+  for (const user of (users || [])) {
     let rawSub, tz;
     try {
       const parsed = JSON.parse(user.push_subscription);
-      // New format: { sub: {...}, tz: 'America/...' }
-      // Old format: direct subscription object (backwards compatible)
-      if (parsed.sub && parsed.sub.endpoint) {
-        rawSub = parsed.sub;
-        tz = parsed.tz || 'America/Argentina/Buenos_Aires';
-      } else {
-        rawSub = parsed;
-        tz = 'America/Argentina/Buenos_Aires'; // default for old subscribers
-      }
-    } catch { skipped++; return; }
-
+      if (parsed.sub && parsed.sub.endpoint) { rawSub = parsed.sub; tz = parsed.tz || 'America/Argentina/Buenos_Aires'; }
+      else { rawSub = parsed; tz = 'America/Argentina/Buenos_Aires'; }
+    } catch { skipped++; continue; }
     const slot = getSlot(tz);
-    if (!slot) { skipped++; return; } // not a notification window for this user's timezone
+    if (!slot) { skipped++; continue; }
+    slotUsers[slot].push({ id: user.id, sub: rawSub, tz });
+  }
 
-    const notif = getNotification(slot);
-    console.log(`[${tz}] slot=${slot} → "${notif.title}"`);
-
-    try {
-      await webpush.sendNotification(rawSub, JSON.stringify({
-        title: notif.title,
-        body:  notif.body,
-        icon:  '/assets/icon-192.png',
-        badge: '/assets/icon-72.png',
-        tag:   notif.tag,
-        url:   '/'
-      }));
-      sent++;
-    } catch (err) {
-      if (err.statusCode === 410 || err.statusCode === 404) {
-        await supabase.from('profiles').update({ push_subscription: null }).eq('id', user.id);
-        console.log(`Removed expired subscription for user ${user.id}`);
-      }
-      failed++;
+  // Generate one AI message per active slot
+  const notifs = {};
+  for (const slot of ['morning', 'afternoon', 'night']) {
+    if (!slotUsers[slot].length) continue;
+    const ai = await generateNotification(slot);
+    if (ai) {
+      console.log(`[AI ${slot}] "${ai.title}" — "${ai.body}"`);
+      notifs[slot] = ai;
+    } else {
+      notifs[slot] = { ...pick(FALLBACK[slot]), tag: `velo-${slot}` };
+      console.log(`[fallback ${slot}] "${notifs[slot].title}"`);
     }
-  }));
+  }
+
+  let sent = 0, failed = 0;
+
+  for (const slot of ['morning', 'afternoon', 'night']) {
+    const notif = notifs[slot];
+    if (!notif) continue;
+    await Promise.allSettled(slotUsers[slot].map(async ({ id, sub, tz }) => {
+      try {
+        await webpush.sendNotification(sub, JSON.stringify({
+          title: notif.title, body: notif.body,
+          icon: '/assets/icon-192.png', badge: '/assets/icon-72.png',
+          tag: notif.tag, url: '/'
+        }));
+        sent++;
+      } catch (err) {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          await supabase.from('profiles').update({ push_subscription: null }).eq('id', id);
+          console.log(`Removed expired sub for user ${id}`);
+        }
+        failed++;
+      }
+    }));
+  }
 
   console.log(`Done — sent: ${sent}, skipped (wrong window): ${skipped}, failed: ${failed}`);
 }
