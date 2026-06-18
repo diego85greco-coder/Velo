@@ -11282,9 +11282,9 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
   padding: max(env(safe-area-inset-top, 0px), 6px) 14px 5px !important;
 }
 .p-topbar-logo-img {
-  height: 36px !important;
+  height: 54px !important;
   width: auto !important;
-  max-width: 120px !important;
+  max-width: 140px !important;
   object-fit: contain !important;
 }
 .r-donar-btn, .r-plus-btn, .r-guide-btn {
