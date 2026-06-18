@@ -11576,26 +11576,33 @@ function _tryRecoverPushSub(){
         pToast('🔔','¡Notificaciones activadas! 💚');
       }).catch(function(e){
         console.warn('[push sub]', e.name, e.message);
-        if(e.name === 'NotAllowedError') _showPushFixModal('denied');
-        else _showPushFixModal('error');
+        if(e.name === 'NotAllowedError') _showPushFixModal('denied', e);
+        else _showPushFixModal('error', e);
       });
     });
-  }).catch(function(){ _showPushFixModal('noSW'); });
+  }).catch(function(e){ _showPushFixModal('noSW', e); });
 }
 
-function _showPushFixModal(reason){
+function _showPushFixModal(reason, err){
   var existing = document.getElementById('pushFixOv');
   if(existing) existing.remove();
   var steps = reason === 'denied'
     ? '1. Abrí <strong>Ajustes iOS</strong><br>2. Buscá <strong>Notificaciones → Velo</strong><br>3. Activá "Permitir notificaciones"<br>4. Volvé a Velo y tocá Reconectar'
     : '1. Deslizá Velo hacia arriba en el <strong>App Switcher</strong><br>2. Volvé a abrir Velo desde tu pantalla de inicio<br>3. Andá a Perfil → Notificaciones<br>4. Tocá <strong>Activar</strong>';
   var title = reason === 'denied' ? '🔕 Notificaciones bloqueadas' : '🔔 Reiniciá Velo para activar';
+  // Show the actual error so it can be reported without needing a debug console
+  var errInfo = '';
+  if(err && reason !== 'denied'){
+    var _eName = (err.name || 'Error');
+    var _eMsg  = (err.message || '').slice(0, 120);
+    errInfo = '<div style="margin-top:10px;padding:8px 10px;background:rgba(0,0,0,.3);border-radius:8px;font-size:10px;color:rgba(180,220,180,.5);word-break:break-all;font-family:monospace">'+_escHtml(_eName)+(_eMsg?' · '+_escHtml(_eMsg):'')+'</div>';
+  }
   var ov = document.createElement('div');
   ov.id = 'pushFixOv';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99990;display:flex;align-items:flex-end;justify-content:center;padding:0';
   ov.innerHTML = '<div style="background:#0e1f14;border-radius:20px 20px 0 0;padding:24px 20px calc(28px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;font-family:Jost,sans-serif;border-top:1.5px solid rgba(116,198,157,.22)">'
     +'<div style="font-size:17px;font-weight:700;color:#d8eed8;text-align:center;margin-bottom:12px">'+title+'</div>'
-    +'<div style="font-size:13px;color:rgba(200,230,210,.8);line-height:1.9;margin-bottom:18px;text-align:left">'+steps+'</div>'
+    +'<div style="font-size:13px;color:rgba(200,230,210,.8);line-height:1.9;margin-bottom:18px;text-align:left">'+steps+errInfo+'</div>'
     +(reason !== 'denied' ? '<button onclick="window.location.reload()" style="width:100%;padding:13px;border-radius:100px;border:none;background:rgba(116,198,157,.9);color:#0e1f14;font-family:Jost,sans-serif;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px">🔄 Reiniciar Velo ahora</button>' : '')
     +'<button onclick="document.getElementById(\'pushFixOv\').remove()" style="width:100%;padding:12px;border-radius:100px;border:1.5px solid rgba(116,198,157,.25);background:none;color:rgba(180,220,180,.7);font-family:Jost,sans-serif;font-size:14px;cursor:pointer">Cerrar</button>'
     +'</div>';
@@ -11640,8 +11647,8 @@ async function _doPushSubscribe(){
   }catch(e){
     console.warn('[push subscribe]', e && e.name, e && e.message);
     safeLS('del','velo_push_granted');
-    if(e && e.name === 'NotAllowedError') _showPushFixModal('denied');
-    else _showPushFixModal('error');
+    if(e && e.name === 'NotAllowedError') _showPushFixModal('denied', e);
+    else _showPushFixModal('error', e);
   }
   _updateEditPushUI();
   _renderHomePushBanner();
