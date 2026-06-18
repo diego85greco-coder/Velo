@@ -65,6 +65,7 @@ var _dmLastMsgId    = null;   // last rendered DM message DB id (prevents flicke
 var _dmReactHash    = '';     // hash of all DM message reactions — detects UPDATE-only changes
 var _dmReactPollTmr = null;   // poll timer for DM reactions fallback
 var _dmSessionStart = null;   // ISO timestamp when current DM session began (filters old history)
+var _helpChatSessionStart = 0; // ms timestamp when current help-chat session opened (scopes delete on leave)
 var _favsList     = null;   // cached favorites array (loaded lazily)
 var _prevChatStatus = null; // status saved before entering any chat (restored on exit)
 var _inActiveChat   = false; // true while user is in any live chat session
@@ -6002,20 +6003,28 @@ function _showSeekerGuardianPopup(postId, row){
   ov.setAttribute('data-cd-int', seekCdInt);
 }
 
-function _seekerAcceptRequest(reqId, postId, guardianName, guardianAv, guardianId){
+async function _seekerAcceptRequest(reqId, postId, guardianName, guardianAv, guardianId){
   var ov = document.getElementById('seekerGuardianOv');
   if(ov){ var cdi = ov.getAttribute('data-cd-int'); if(cdi) clearInterval(parseInt(cdi,10)); ov.remove(); }
   // Stop polling — no longer needed once connected
   if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
   if(_seekerGrCh && sbClient){ try{ sbClient.removeChannel(_seekerGrCh); }catch(e){} _seekerGrCh = null; }
   _initSupabase();
+  // guardianId must be a real user ID — without it the chat channel can't be established
+  var _gId = (typeof guardianId === 'string' && guardianId.trim()) ? guardianId.trim() : '';
+  if(!_gId){
+    pToast('⚠️','Error: ID del guardián no disponible. Intenta de nuevo.');
+    return;
+  }
+  // Await DB write so guardian's realtime subscription sees 'accepted' before chat opens
   if(sbClient){
-    sbClient.from('guardian_requests').update({status:'accepted'}).eq('id',reqId).then(function(){}).catch(function(){});
+    try{ await sbClient.from('guardian_requests').update({status:'accepted'}).eq('id',reqId); }
+    catch(e){}
   }
   // Open a seeker-side help chat — guardianId is the peer to exchange messages with
   var safeEmoji = (guardianAv && !guardianAv.startsWith('data:') && !guardianAv.startsWith('http')) ? guardianAv : '💙';
   var fakePost = { id:postId, name:guardianName, emoji:safeEmoji, preview:'Guardián conectado',
-    userId: guardianId||'', isSeeker:true };
+    userId: _gId, isSeeker:true };
   _curHelpPost = fakePost;
   _openHelpChat(fakePost);
   pToast('💚','¡Conectado/a con '+guardianName+'!');
@@ -6079,6 +6088,7 @@ function _checkPendingSupportMessages(){
 }
 
 function _openHelpChat(post){
+  _helpChatSessionStart = Date.now();
   _setEl('helpChatTitle', post.name + ' · ' + post.emoji);
   var msgEl = document.getElementById('helpChatMessages');
   if(msgEl){
@@ -6257,8 +6267,11 @@ function pLeaveHelpChat(){
     var _hMyAv   = safeLS('get','velo_user_av')||'🧑';
     if(_hMyId){
       var _byeA = _hMyId, _byeB = _hPost.userId;
+      // Session start — go 60 s back to include messages sent right before _openHelpChat
+      var _sessionISO = new Date((_helpChatSessionStart||Date.now()) - 60000).toISOString();
       // Delete all messages AFTER insert commits — inserting first ensures realtime event
       // fires on the peer's side before the cleanup delete wipes the bye row.
+      // Scope by created_at >= session start so old DM history between these users is NOT wiped.
       sbClient.from('direct_messages').insert({
         from_id:_byeA, from_name:_hMyName, from_av:_hMyAv, to_id:_byeB,
         text:'__velo_help_bye__:'+JSON.stringify({ name:_hMyName, av:_hMyAv })
@@ -6267,14 +6280,16 @@ function pLeaveHelpChat(){
           if(sbClient){
             sbClient.from('direct_messages').delete()
               .or('and(from_id.eq.'+_byeA+',to_id.eq.'+_byeB+'),and(from_id.eq.'+_byeB+',to_id.eq.'+_byeA+')')
+              .gte('created_at', _sessionISO)
               .then(function(){}).catch(function(){});
           }
         }, 1800);
       }).catch(function(){
-        // Insert failed — still clean up existing messages
+        // Insert failed — still clean up existing messages from this session
         if(sbClient){
           sbClient.from('direct_messages').delete()
             .or('and(from_id.eq.'+_byeA+',to_id.eq.'+_byeB+'),and(from_id.eq.'+_byeB+',to_id.eq.'+_byeA+')')
+            .gte('created_at', _sessionISO)
             .then(function(){}).catch(function(){});
         }
       });
