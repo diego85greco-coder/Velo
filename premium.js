@@ -520,7 +520,7 @@ async function _sbSyncProfileInner(userId){
   // Each tier drops more optional columns; _profileSelectTier is cached so we skip
   // known-failing queries on every subsequent call (avoids 400 flood in console).
   var _selTiers = [
-    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city,pro_trial_expires_at,pro_subscription_expires_at,visit_days,dark_mode,helped_count',
+    'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids,badge_notified,weather_city,pro_trial_expires_at,pro_subscription_expires_at,visit_days,dark_mode,helped_count,received_count',
     'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes,user_status,incognito,read_bcast_ids',
     'nombre,avatar,motto,role,status_music,status_book,status_phrase,status_film,username,username_changes',
     'nombre,avatar,motto,role,username,username_changes',
@@ -689,6 +689,10 @@ async function _sbSyncProfileInner(userId){
     safeLS('set','velo_helped_once','1');
     var _lConvs = parseInt(safeLS('get','velo_guardian_convs')||'0',10);
     if(p.helped_count > _lConvs) safeLS('set','velo_guardian_convs', String(p.helped_count));
+  }
+  if(p.received_count > 0){
+    var _lRecv = parseInt(safeLS('get','velo_help_received')||'0',10);
+    if(p.received_count > _lRecv) safeLS('set','velo_help_received', String(p.received_count));
   }
   // Restore dark mode preference on fresh devices (never overwrite an explicit local choice)
   if(p.dark_mode !== null && p.dark_mode !== undefined){
@@ -6312,6 +6316,26 @@ function pLeaveHelpChat(){
   safeLS('set','velo_guardian_status','disponible');
   safeLS('set','velo_user_status','disponible');
   _updateGuardianPresence(exitStatus);
+  // Bump conversation counters — mirrors pEndGuardianChat for Sala de Ayuda sessions
+  _initSupabase();
+  if(post){
+    if(post.isSeeker){
+      var _hRecv = parseInt(safeLS('get','velo_help_received')||'0',10) + 1;
+      safeLS('set','velo_help_received', String(_hRecv));
+      if(sbClient) _bumpProfileCounter('received_count', _hRecv);
+    } else {
+      var _hConvs = parseInt(safeLS('get','velo_guardian_convs')||'0',10) + 1;
+      safeLS('set','velo_guardian_convs', String(_hConvs));
+      _checkAndNotifyBadge();
+      if(sbClient){
+        _bumpProfileCounter('helped_count', _hConvs);
+        if(_pendingGuardianReqId){
+          sbClient.from('guardian_requests').update({status:'ended'}).eq('id',_pendingGuardianReqId).then(function(){}).catch(function(){});
+          _pendingGuardianReqId = null;
+        }
+      }
+    }
+  }
   _showHelpChatRating(post);
 }
 
