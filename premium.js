@@ -2918,7 +2918,15 @@ var _VAPID_PUBLIC_KEY = 'BC4O5Dd8jHkMPXcCsehTLZ-7aBHaSDr5QII9nE3P5IEfT8x3EHfp7N7
 // Pre-warm SW registration so subscribe() can be called synchronously from user gesture
 var _swReg = null;
 if('serviceWorker' in navigator && 'PushManager' in window){
-  navigator.serviceWorker.ready.then(function(r){ _swReg = r; }).catch(function(){});
+  navigator.serviceWorker.ready.then(function(r){
+    _swReg = r;
+    // If a new SW is waiting, activate it immediately so subscribe() uses the active worker
+    if(r.waiting){ r.waiting.postMessage({type:'SKIP_WAITING'}); }
+  }).catch(function(){});
+  // When SW updates and takes control, refresh _swReg
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    navigator.serviceWorker.ready.then(function(r){ _swReg = r; }).catch(function(){});
+  });
 }
 
 function _urlBase64ToUint8Array(base64String){
@@ -11469,12 +11477,10 @@ function _updateEditPushUI(){
 
 function _tryRecoverPushSub(){
   if(!_swReg){
-    pToast('⚠️','Servicio no listo — esperá un momento y volvé a intentar');
+    pToast('⚠️','Cerrá Velo y volvé a abrirlo, luego tocá Reconectar');
     return;
   }
-  // subscribe() is called synchronously on the pre-cached reg object.
-  // This is the ONLY approach that preserves the iOS user-gesture requirement.
-  // If a push sub already exists with the same VAPID key, subscribe() returns it.
+  // subscribe() called synchronously — preserves iOS user-gesture context
   _swReg.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: _urlBase64ToUint8Array(_VAPID_PUBLIC_KEY)
@@ -11487,10 +11493,24 @@ function _tryRecoverPushSub(){
     pToast('🔔','¡Notificaciones conectadas! 💚');
   }).catch(function(e){
     console.warn('[push sub]', e.name, e.message, e);
-    var _hint = e.name === 'NotAllowedError'
-      ? 'Andá a Ajustes iOS → Notificaciones → Velo y activálas'
-      : 'No se pudo activar. Reinstalá Velo desde Safari.';
-    pToast('⚠️', _hint);
+    // Fallback: maybe a sub already exists but wasn't saved to LS
+    // getSubscription() doesn't need user-gesture so it's safe here
+    _swReg.pushManager.getSubscription().then(function(_existing){
+      if(_existing){
+        safeLS('set','velo_push_sub', JSON.stringify(_existing));
+        _updateEditPushUI();
+        _savePushSubscriptionToSupabase(_existing).catch(function(){});
+        try{ _renderHomePushBanner(); }catch(_be){}
+        pToast('🔔','¡Notificaciones reconectadas! 💚');
+        return;
+      }
+      var _hint = e.name === 'NotAllowedError'
+        ? 'Andá a Ajustes iOS → Notificaciones → Velo y activálas'
+        : e.name === 'InvalidAccessError'
+        ? 'Cerrá Velo completamente (swipe en el app switcher) y volvé a abrirlo'
+        : 'Error ('+(e.name||'desconocido')+') — cerrá Velo y volvé a intentar';
+      pToast('⚠️', _hint);
+    }).catch(function(){ pToast('⚠️','Cerrá Velo y volvé a intentar'); });
   });
 }
 
