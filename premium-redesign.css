@@ -11265,30 +11265,28 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   DESKTOP REDESIGN — sidebar siempre expandido + layout consistente
+   DESKTOP REDESIGN v889 — sidebar fijo, home columna única uniforme
+   Breakpoint 860px cubre laptops con zoom alto (1366px / 150% = 910px)
    ══════════════════════════════════════════════════════════════════════ */
 
-@media (min-width: 1024px) {
+@media (min-width: 860px) {
 
   /* ─── Sidebar: siempre expandido a 220px ─────────────────────────── */
   .p-sidebar {
     width: 220px !important;
     border-radius: 0 20px 20px 0 !important;
     position: fixed !important;
-    left: 0 !important;
-    top: 0 !important;
+    left: 0 !important; top: 0 !important;
     height: 100vh !important;
     margin: 0 !important;
     padding: 20px 8px 20px 12px !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    overflow-y: auto !important; overflow-x: hidden !important;
     z-index: 200 !important;
     box-sizing: border-box !important;
     scrollbar-width: none !important;
   }
   .p-sidebar::-webkit-scrollbar { display: none !important; }
-  /* Sin expand on hover — ya está abierto */
-  .p-sidebar:hover { width: 220px !important; box-shadow: var(--r-glass-shadow) !important; }
+  .p-sidebar:hover { width: 220px !important; }
 
   /* Labels y secciones siempre visibles */
   .p-sn-label  { opacity: 1 !important; transition: none !important; }
@@ -11298,57 +11296,112 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
   .p-sidebar:not(:hover) .p-sidebar-footer > button:not(.p-sidebar-theme-btn) { display: flex !important; }
   .p-sidebar:not(:hover) .p-user-info { display: flex !important; }
 
-  /* Logo: alineado a la izquierda */
-  .p-sidebar-logo { justify-content: flex-start !important; padding: 6px 4px 18px !important; }
-  .p-sidebar-logo-img { max-width: 80px !important; }
+  /* Logo centrado en el sidebar */
+  .p-sidebar-logo {
+    justify-content: center !important;
+    padding: 10px 4px 20px !important;
+  }
+  .p-sidebar-logo-img { max-width: 72px !important; }
 
   /* ─── Main content: offset por sidebar fijo ───────────────────────── */
-  .p-main-content { margin-left: 220px !important; }
+  .p-main-content { margin-left: 220px !important; min-height: 100vh !important; }
 
-  /* ─── Bottom nav: oculto ──────────────────────────────────────────── */
+  /* ─── Bottom nav: oculto en desktop ──────────────────────────────── */
   #pBottomnav { display: none !important; }
 
-  /* ─── Topbar: ocultar botón hamburger (sidebar siempre visible) ────── */
+  /* ─── Hamburger: oculto ───────────────────────────────────────────── */
   #homeMenuBtn { display: none !important; }
   button[onclick="toggleMobileMenu()"] { display: none !important; }
 
-  /* ─── Home hero: ajustar columnas para desktop ─────────────────────── */
+  /* ─── Home hero: columna única — todos los widgets mismo ancho ──── */
   .r-hero-v2 {
-    grid-template-columns: 1fr 300px !important;
-    align-items: start !important;
-    gap: 28px !important;
-    padding: 28px 32px 28px !important;
-    margin: 0 16px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    max-width: 860px !important;
+    margin: 0 auto 20px !important;
+    padding: 24px 32px 28px !important;
+    box-sizing: border-box !important;
+    align-items: stretch !important;
   }
+
+  /* Stats: fila horizontal compacta ENCIMA del contenido principal */
   .r-hero-right {
-    align-items: flex-start !important;
-    flex-direction: column !important;
-    gap: 16px !important;
-    padding-bottom: 0 !important;
-    position: sticky !important;
-    top: 72px !important;
-  }
-  .r-hero-stats {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 12px !important;
+    order: -1 !important;
     width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    position: static !important;
+    padding: 0 0 16px !important;
+    margin-bottom: 20px !important;
+    border-bottom: 1px solid rgba(116,198,157,.20) !important;
+    gap: 0 !important;
+  }
+  .r-hero-actions-top { display: none !important; }
+
+  .r-hero-stats {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0 !important;
+    width: auto !important;
+    flex-wrap: nowrap !important;
   }
   .r-hero-stat {
-    border-right: none !important;
-    border-bottom: 1px solid var(--r-glass-bord) !important;
-    padding-right: 0 !important;
-    padding-bottom: 10px !important;
-    width: 100% !important;
-    text-align: left !important;
     display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
-    gap: 10px !important;
+    gap: 8px !important;
+    border-right: 1px solid rgba(116,198,157,.20) !important;
+    border-bottom: none !important;
+    padding: 0 20px 0 0 !important;
+    margin-right: 20px !important;
+    width: auto !important;
+    text-align: left !important;
   }
-  .r-hero-stat:last-child { border-bottom: none !important; padding-bottom: 0 !important; }
+  .r-hero-stat:last-child {
+    border-right: none !important;
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+  }
   .r-hero-stat-lbl { font-size: 10px !important; margin-top: 0 !important; }
+  .r-hero-stat-val { justify-content: flex-start !important; }
 
-  /* ─── Páginas interiores: max-width centrado ──────────────────────── */
+  /* Quick links: ocultar (ya están en el sidebar) */
+  .r-paired-quick { display: none !important; }
+
+  /* Util buttons: fila */
+  #homeDesktopUtilBtns {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+  #homeDesktopUtilBtns .r-util-row-btn { flex: 1 !important; }
+
+  /* Columna izquierda: ancho completo */
+  .r-hero-left {
+    width: 100% !important;
+    flex: none !important;
+    min-width: 0 !important;
+  }
+
+  /* Todos los widgets: mismo ancho completo */
+  #homeRegisterOuter,
+  #homeMomentoSection,
+  #homeMonthlyHint,
+  #homePushBanner,
+  #homeGreetWrapper,
+  #homeTimeIcon,
+  #homeWeekMoodGraph {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    max-width: none !important;
+  }
+
+  /* ─── Páginas interiores: centradas max-width ─────────────────────── */
   #pg-profile .p-page-scroll,
   #pg-contacts .p-page-scroll,
   #pg-diary .p-page-scroll,
@@ -11386,5 +11439,8 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
     color: rgba(116,198,157,.95) !important;
     box-shadow: 0 2px 10px rgba(116,198,157,.15) !important;
   }
-  body.r-dark .p-sidebar-footer > button { border-color: rgba(116,198,157,.18) !important; color: rgba(255,255,255,.60) !important; }
+  body.r-dark .p-sidebar-footer > button {
+    border-color: rgba(116,198,157,.18) !important;
+    color: rgba(255,255,255,.60) !important;
+  }
 }
