@@ -16565,7 +16565,8 @@ async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
   var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
   var refTs = refDate.getTime();
   var weekDiary = diary.filter(function(e){ return e.ts && e.ts <= refTs && (refTs-e.ts) < 7*86400000; });
-  var streak = _getVisitDayCount ? _getVisitDayCount() : 1;
+  // Use mood-registration streak (account-scoped) — visit-day count can be stale
+  var streak = _getMoodStreak ? _getMoodStreak() : weekMoods.length;
   var moodCount = {}; weekMoods.forEach(function(m){ if(m&&m.emoji){ moodCount[m.emoji]=(moodCount[m.emoji]||0)+1; } });
   var dominantMood = Object.keys(moodCount).sort(function(a,b){ return moodCount[b]-moodCount[a]; })[0]||null;
   var totalReg = weekMoods.length;
@@ -17693,18 +17694,18 @@ async function _generateMonthlySummary(month, mName, year){
   var mon=parseInt(month.split('-')[1]); var yr=parseInt(month.split('-')[0]);
   var cutStart=new Date(yr,mon-1,1).toISOString(); var cutEnd=new Date(yr,mon,0,23,59,59).toISOString();
 
-  // ── Classify moods (localStorage first, fallback to Supabase on new devices) ──
-  var moodLog=[]; try{moodLog=JSON.parse(safeLS('get','velo_mood_log')||'[]');}catch(e){}
-  var monthMoods=moodLog.filter(function(m){ var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
-  // If no local moods, try Supabase mood_entries
-  if(!monthMoods.length){
-    var sbMoods=await sbLoadAllMoods(yr,mon);
-    if(sbMoods&&sbMoods.length){
-      monthMoods=sbMoods.map(function(m){ return {emoji:m.emoji,label:m.label,ts:new Date(m.date_key).getTime(),note:m.note}; });
-      // Restore to local mood_log so future calls don't need to hit Supabase again
-      moodLog=monthMoods.concat(moodLog);
-      safeLS('set','velo_mood_log',JSON.stringify(moodLog.slice(0,90)));
-    }
+  // ── Classify moods: Supabase-first (authoritative) ──
+  // Supabase is always the source of truth — it reflects the current account's
+  // actual mood registrations. velo_mood_log can have stale data from a previous
+  // deleted account if clearSession was not called, so we NEVER rely on it alone.
+  var monthMoods=[];
+  var sbMoods=await sbLoadAllMoods(yr,mon);
+  if(sbMoods&&sbMoods.length){
+    monthMoods=sbMoods.map(function(m){ return {emoji:m.emoji,label:m.label,ts:new Date(m.date_key+'T12:00:00').getTime(),note:m.note}; });
+  } else {
+    // Offline fallback: use local mood_log filtered to this month
+    var moodLog=[]; try{moodLog=JSON.parse(safeLS('get','velo_mood_log')||'[]');}catch(e){}
+    monthMoods=moodLog.filter(function(m){ var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
   }
   var positiveSet={'😊':1,'😄':1,'🥰':1,'😎':1,'🌈':1,'☀️':1,'🔥':1,'✨':1,'🌻':1};
   var negativeSet={'😔':1,'😢':1,'😰':1,'😤':1,'🌧️':1,'😞':1,'😟':1,'😭':1,'😣':1};
@@ -18903,7 +18904,8 @@ async function _checkWeeklySummary(){
   }
   var diary = []; try{ diary = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
   var weekDiary = diary.filter(function(e){ return e.ts && (Date.now()-e.ts)<7*86400000; });
-  var streak = _getVisitDayCount ? _getVisitDayCount() : 1;
+  // Use mood-registration streak (account-scoped) — visit-day count can be stale
+  var streak = _getMoodStreak ? _getMoodStreak() : weekMoods.length;
 
   safeLS('set','velo_last_weekly_summary', todayKey);
 
