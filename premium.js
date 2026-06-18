@@ -11552,8 +11552,14 @@ function _updateEditPushUI(){
 }
 
 function _tryRecoverPushSub(){
-  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
-    _showPushFixModal('noSW'); return;
+  var _hasSW  = 'serviceWorker' in navigator;
+  var _hasPM  = 'PushManager' in window;
+  var _hasNot = 'Notification' in window;
+  var _isSA   = !!(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches);
+  var _perm   = _hasNot ? Notification.permission : 'n/a';
+  if(!_hasSW || !_hasPM){
+    var _dbg = new Error('SW:'+_hasSW+' PM:'+_hasPM+' Notif:'+_hasNot+' SA:'+_isSA+' perm:'+_perm);
+    _showPushFixModal('noSW', _dbg); return;
   }
   // Always resolve fresh from ready — handles null _swReg and SW transitions
   navigator.serviceWorker.ready.then(function(reg){
@@ -11594,8 +11600,8 @@ function _showPushFixModal(reason, err){
   var errInfo = '';
   if(err && reason !== 'denied'){
     var _eName = (err.name || 'Error');
-    var _eMsg  = (err.message || '').slice(0, 120);
-    errInfo = '<div style="margin-top:10px;padding:8px 10px;background:rgba(0,0,0,.3);border-radius:8px;font-size:10px;color:rgba(180,220,180,.5);word-break:break-all;font-family:monospace">'+_escHtml(_eName)+(_eMsg?' · '+_escHtml(_eMsg):'')+'</div>';
+    var _eMsg  = (err.message || '').slice(0, 200);
+    errInfo = '<div style="margin-top:14px;padding:10px 12px;background:rgba(0,0,0,.45);border-radius:10px;border:1px solid rgba(255,200,100,.25);font-size:12px;color:rgba(255,210,120,.9);word-break:break-all;font-family:monospace;line-height:1.6"><strong style="color:rgba(255,200,80,1)">Error técnico (mandá foto):</strong><br>'+_escHtml(_eName)+'<br>'+_escHtml(_eMsg)+'</div>';
   }
   var ov = document.createElement('div');
   ov.id = 'pushFixOv';
