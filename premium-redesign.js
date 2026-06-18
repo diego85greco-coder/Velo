@@ -414,10 +414,17 @@
         return;
       }
     } catch(e) {}
-    // 2. Saved city in localStorage but stale cache → re-fetch weather silently
+    // 2. Saved city in localStorage but stale cache → show city immediately while fetching
     try {
       var saved = localStorage.getItem(_W_CITY);
-      if (saved) { _fetchWeatherByCity(saved); return; }
+      if (saved) {
+        _weatherCity = saved;
+        _weatherTemp = '—'; // placeholder until API responds
+        injectTimeIcon();
+        _renderWeatherInfo();
+        _fetchWeatherByCity(saved);
+        return;
+      }
     } catch(e) {}
     // 3. First visit on this device — show input, but also check Supabase in background
     _showCityInput();

@@ -2915,6 +2915,11 @@ function _loadHomeMemoryCard(){
 
 // ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────────
 var _VAPID_PUBLIC_KEY = 'BC4O5Dd8jHkMPXcCsehTLZ-7aBHaSDr5QII9nE3P5IEfT8x3EHfp7N7AlIZIUIS3XdydSYxtuk5EwZDtumUm6IQ';
+// Pre-warm SW registration so subscribe() can be called synchronously from user gesture
+var _swReg = null;
+if('serviceWorker' in navigator && 'PushManager' in window){
+  navigator.serviceWorker.ready.then(function(r){ _swReg = r; }).catch(function(){});
+}
 
 function _urlBase64ToUint8Array(base64String){
   var padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -2940,19 +2945,8 @@ async function pRequestPushPermission(){
   if(Notification.permission === 'granted'){
     var _hasSub = !!safeLS('get','velo_push_sub');
     if(_hasSub){ pToast('🔔','Las notificaciones ya están activas'); return; }
-    // Permission granted but sub lost — silently re-subscribe
-    try{
-      var _reg2 = await navigator.serviceWorker.ready;
-      var _existSub = await _reg2.pushManager.getSubscription();
-      var _sub2 = _existSub || await _reg2.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
-      safeLS('set','velo_push_sub', JSON.stringify(_sub2));
-      await _savePushSubscriptionToSupabase(_sub2);
-      pToast('🔔','¡Notificaciones reconectadas! 💚');
-      _updateEditPushUI();
-      _renderHomePushBanner();
-    }catch(_e2){
-      pToast('⚠️','No se pudo reconectar. Intentá de nuevo.');
-    }
+    // Delegate to sync subscribe (preserves user gesture on iOS)
+    _tryRecoverPushSub();
     return;
   }
   if(Notification.permission === 'denied'){
@@ -2962,18 +2956,29 @@ async function pRequestPushPermission(){
   var perm = await Notification.requestPermission();
   if(perm !== 'granted') return;
   safeLS('set','velo_push_granted','1');
-  // Subscribe to push
-  try{
-    var reg = await navigator.serviceWorker.ready;
-    var sub = await reg.pushManager.subscribe({
+  // After requestPermission we still have user activation — call subscribe immediately
+  if(_swReg){
+    _swReg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: _urlBase64ToUint8Array(_VAPID_PUBLIC_KEY)
-    });
-    await _savePushSubscriptionToSupabase(sub);
-    safeLS('set','velo_push_sub', JSON.stringify(sub));
-    pToast('🔔','¡Notificaciones activadas! Te avisamos 3 veces al día 💚');
-  }catch(e){
-    pToast('⚠️','No se pudo activar las notificaciones. Intentá de nuevo.');
+    }).then(function(sub){
+      if(!sub) return;
+      safeLS('set','velo_push_sub', JSON.stringify(sub));
+      _savePushSubscriptionToSupabase(sub).catch(function(){});
+      pToast('🔔','¡Notificaciones activadas! 💚');
+      _updateEditPushUI();
+      _renderHomePushBanner();
+    }).catch(function(){ pToast('⚠️','No se pudo activar. Intentá de nuevo.'); });
+  } else {
+    try{
+      var reg = await navigator.serviceWorker.ready;
+      var sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
+      safeLS('set','velo_push_sub', JSON.stringify(sub));
+      _savePushSubscriptionToSupabase(sub).catch(function(){});
+      pToast('🔔','¡Notificaciones activadas! 💚');
+      _updateEditPushUI();
+      _renderHomePushBanner();
+    }catch(e){ pToast('⚠️','No se pudo activar. Intentá de nuevo.'); }
   }
 }
 
@@ -11462,33 +11467,31 @@ function _updateEditPushUI(){
   });
 }
 
-async function _tryRecoverPushSub(){
-  try{
-    var _reg = await navigator.serviceWorker.ready;
-    var _existing = await _reg.pushManager.getSubscription();
-    if(_existing){
-      safeLS('set','velo_push_sub', JSON.stringify(_existing));
-      _updateEditPushUI();
-      try{ await _savePushSubscriptionToSupabase(_existing); }catch(_se){}
-      try{ _renderHomePushBanner(); }catch(_be){}
-      return;
-    }
-    // No existing sub — create new subscription
-    var _newSub = await _reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
-    if(!_newSub){ pToast('⚠️','No se pudo crear la suscripción push'); return; }
-    safeLS('set','velo_push_sub', JSON.stringify(_newSub));
-    _updateEditPushUI();
-    try{ await _savePushSubscriptionToSupabase(_newSub); }catch(_se){}
-    try{ _renderHomePushBanner(); }catch(_be){}
-  }catch(e){
-    console.warn('[recover push sub]',e.name, e.message, e);
-    var _errHint = e.name === 'NotAllowedError'
-      ? 'Andá a Ajustes iOS → Notificaciones y activá Velo'
-      : e.name === 'AbortError' || e.name === 'InvalidStateError'
-      ? 'Eliminá la app del inicio y volvé a agregarla'
-      : 'Error ('+( e.name||'?')+') — eliminá la app y volvé a agregarla';
-    pToast('⚠️', _errHint);
+function _tryRecoverPushSub(){
+  if(!_swReg){
+    pToast('⚠️','Servicio no listo — esperá un momento y volvé a intentar');
+    return;
   }
+  // subscribe() is called synchronously on the pre-cached reg object.
+  // This is the ONLY approach that preserves the iOS user-gesture requirement.
+  // If a push sub already exists with the same VAPID key, subscribe() returns it.
+  _swReg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: _urlBase64ToUint8Array(_VAPID_PUBLIC_KEY)
+  }).then(function(_sub){
+    if(!_sub){ pToast('⚠️','No se pudo crear la suscripción'); return; }
+    safeLS('set','velo_push_sub', JSON.stringify(_sub));
+    _updateEditPushUI();
+    _savePushSubscriptionToSupabase(_sub).catch(function(){});
+    try{ _renderHomePushBanner(); }catch(_be){}
+    pToast('🔔','¡Notificaciones conectadas! 💚');
+  }).catch(function(e){
+    console.warn('[push sub]', e.name, e.message, e);
+    var _hint = e.name === 'NotAllowedError'
+      ? 'Andá a Ajustes iOS → Notificaciones → Velo y activálas'
+      : 'No se pudo activar. Reinstalá Velo desde Safari.';
+    pToast('⚠️', _hint);
+  });
 }
 
 function _showIOSPushModal(){
