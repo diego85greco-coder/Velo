@@ -4407,7 +4407,7 @@ function _startGuardianHeartbeat(){
         } else {
           if(idx >= 0) _liveGuardians.splice(idx, 1);
         }
-        if(_curPage === 'guardians') pRenderGuardians();
+        if(_curPage === 'guardians') pRenderGuardians(true); // skipDB: cache already updated
       })
       .subscribe();
   }
@@ -4643,7 +4643,7 @@ function pFilterGuardians(filter, btn){
   pRenderGuardians();
 }
 
-async function pRenderGuardians(){
+async function pRenderGuardians(skipDB){
   var _tok = _navToken;
   _renderMyStatusBar();
   var list = document.getElementById('guardiansList');
@@ -4651,10 +4651,12 @@ async function pRenderGuardians(){
   _renderFavWidget('guardiansFavWidget');
   // Load guardian stats
   _loadGuardianStats();
-  // Try to load live guardians from Supabase
+  // Try to load live guardians from Supabase.
+  // skipDB=true: use _liveGuardians cache directly (called from broadcast handler to avoid
+  // overwriting fresh cache with a potentially stale DB read due to replication lag).
   var liveGuardians = [];
   _initSupabase();
-  if(sbClient){
+  if(!skipDB && sbClient){
     try{
       var cutoff = new Date(Date.now() - 10*60*1000).toISOString(); // active in last 10 min
       var myId = _myUserId();
@@ -4689,6 +4691,9 @@ async function pRenderGuardians(){
         if(typeof syncHeroStats === 'function') syncHeroStats();
       }
     }catch(e){}
+  } else {
+    // skipDB: render directly from broadcast-updated cache without a DB round-trip.
+    liveGuardians = _liveGuardians.slice();
   }
 
   // Only real live guardians — no fake fallback profiles
@@ -20448,10 +20453,10 @@ function _onPageEnter(id){
             } else {
               if(idx >= 0) _liveGuardians.splice(idx, 1);
             }
-            // Render immediately from updated cache, then refresh from DB after 600ms
-            // to fill in username/motto and confirm consistency.
-            if(_curPage === 'guardians') pRenderGuardians();
-            setTimeout(pRenderGuardians, 600);
+            // Render immediately from updated cache (no DB query to avoid stale-read overwrite),
+            // then refresh from DB after 800ms to fill in username/motto.
+            if(_curPage === 'guardians') pRenderGuardians(true); // skipDB
+            setTimeout(pRenderGuardians, 800);
             return;
           }
         }
