@@ -33,7 +33,7 @@ self.addEventListener('fetch', function(e){
   var path = new URL(url).pathname;
 
   /* For app-premium.html and index.html: network-first, fall back to cache */
-  if(path === '/' || path === '/index.html' || path.indexOf('app-premium.html') >= 0){
+  if(path === '/' || path === '/index.html' || path === '/app-premium.html'){
     e.respondWith(
       fetch(e.request, {cache: 'no-store'})
         .then(function(res){

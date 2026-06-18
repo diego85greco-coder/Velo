@@ -13203,7 +13203,7 @@ function _sendOfflineMsg(toId, toName, toAv){
   var myId   = safeLS('get','velo_user_id')||'';
   var myName = safeLS('get','velo_user_name')||'';
   var myAv   = safeLS('get','velo_user_av')||'🧑';
-  document.getElementById('offlineMsgOv').remove();
+  var _omOv = document.getElementById('offlineMsgOv'); if(_omOv) _omOv.remove();
   _initSupabase();
   if(sbClient && myId){
     // Route through broadcasts so recipient receives an inbox notification
@@ -13903,7 +13903,7 @@ function _showDMToast(fromId, fromName, fromAv, text){
     +'<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(fromName)+' te escribió 💬</div>'
     +'<div style="font-size:12px;color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(text.slice(0,60))+'</div>'
     +'</div>'
-    +'<button onclick="event.stopPropagation();document.getElementById(\'dmToastBanner\').remove()" style="font-size:16px;background:none;border:none;cursor:pointer;color:var(--ink4);padding:4px;flex-shrink:0">✕</button>';
+    +'<button onclick="event.stopPropagation();var _dtb=document.getElementById(\'dmToastBanner\');if(_dtb)_dtb.remove();" style="font-size:16px;background:none;border:none;cursor:pointer;color:var(--ink4);padding:4px;flex-shrink:0">✕</button>';
   banner.onclick = function(){
     banner.remove();
     // If already in an active DM session with this peer, just return to the chat
