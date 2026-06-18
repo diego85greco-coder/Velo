@@ -2935,7 +2935,21 @@ async function _savePushSubscriptionToSupabase(sub){
 async function pRequestPushPermission(){
   if(!('Notification' in window) || !('serviceWorker' in navigator)) return;
   if(Notification.permission === 'granted'){
-    pToast('🔔','Las notificaciones ya están activas');
+    var _hasSub = !!safeLS('get','velo_push_sub');
+    if(_hasSub){ pToast('🔔','Las notificaciones ya están activas'); return; }
+    // Permission granted but sub lost — silently re-subscribe
+    try{
+      var _reg2 = await navigator.serviceWorker.ready;
+      var _existSub = await _reg2.pushManager.getSubscription();
+      var _sub2 = _existSub || await _reg2.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
+      safeLS('set','velo_push_sub', JSON.stringify(_sub2));
+      await _savePushSubscriptionToSupabase(_sub2);
+      pToast('🔔','¡Notificaciones reconectadas! 💚');
+      _updateEditPushUI();
+      _renderHomePushBanner();
+    }catch(_e2){
+      pToast('⚠️','No se pudo reconectar. Intentá de nuevo.');
+    }
     return;
   }
   if(Notification.permission === 'denied'){
@@ -11439,7 +11453,7 @@ function _updateEditPushUI(){
     } else if(perm === 'granted' && !hasSub){
       status.textContent = 'Activadas — tocá para reconectar';
       btn.textContent = 'Reconectar'; btn.disabled = false;
-      btn.onclick = function(){ pRequestPushPermission(); };
+      btn.onclick = function(){ _tryRecoverPushSub(); };
       btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
     } else {
       status.textContent = 'No activadas — te avisamos 3 veces al día';
