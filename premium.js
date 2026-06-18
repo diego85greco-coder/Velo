@@ -11426,11 +11426,13 @@ function pOpenEditProfile(){
   openModal('editProfileOv');
 }
 
+var _pushAutoRecoveryDone = false;
 function _updateEditPushUI(){
   var perm   = ('Notification' in window) ? Notification.permission : 'unavailable';
   var hasSub = !!safeLS('get','velo_push_sub');
-  // Permission granted but sub lost (cache cleared) — silently recover
-  if(perm === 'granted' && !hasSub && 'serviceWorker' in navigator && 'PushManager' in window){
+  // Permission granted but sub lost — auto-recover once per session (guard prevents infinite loop)
+  if(perm === 'granted' && !hasSub && 'serviceWorker' in navigator && 'PushManager' in window && !_pushAutoRecoveryDone){
+    _pushAutoRecoveryDone = true;
     _tryRecoverPushSub();
   }
   // Update both the edit-profile modal and the profile page toggles
@@ -11467,21 +11469,18 @@ async function _tryRecoverPushSub(){
   try{
     var _reg = await navigator.serviceWorker.ready;
     var _existing = await _reg.pushManager.getSubscription();
-    if(_existing){
-      safeLS('set','velo_push_sub', JSON.stringify(_existing));
-      await _savePushSubscriptionToSupabase(_existing);
-    } else {
-      var _newSub = await _reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
-      safeLS('set','velo_push_sub', JSON.stringify(_newSub));
-      await _savePushSubscriptionToSupabase(_newSub);
-    }
+    var _sub = _existing || await _reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
+    if(!_sub){ pToast('⚠️','No se pudo reconectar las notificaciones'); return; }
+    safeLS('set','velo_push_sub', JSON.stringify(_sub));
+    // Update UI immediately before Supabase (so Supabase errors don't break the UI)
     _updateEditPushUI();
     _renderHomePushBanner();
+    // Save to Supabase silently — failure here doesn't undo the local subscription
+    try{ await _savePushSubscriptionToSupabase(_sub); }catch(_se){ console.warn('[push sub supabase]',_se); }
   }catch(e){
     console.warn('[recover push sub]',e);
-    // Recovery failed — revert UI to "No activadas" so user can press Activar manually
-    safeLS('del','velo_push_sub');
-    _updateEditPushUI();
+    pToast('⚠️','No se pudo reconectar. Cerrá sesión y volvé a entrar.');
+    // Do NOT delete localStorage or call _updateEditPushUI() — would trigger infinite retry loop
   }
 }
 
