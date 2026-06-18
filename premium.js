@@ -20380,7 +20380,36 @@ function _onPageEnter(id){
     case 'home':        _loadHomeData(); _startHomeRefresh(); break;
     case 'guardians':
       _initSupabase();
-      if(sbClient && !_guardianRtCh) _guardianRtCh = _sbSub('velo:guardians', 'guardian_presence', function(){ pRenderGuardians(); });
+      if(sbClient && !_guardianRtCh) _guardianRtCh = _sbSub('velo:guardians', 'guardian_presence', function(payload){
+        // Apply the payload immediately to _liveGuardians so the UI updates
+        // without waiting for a new DB round-trip (avoids read-lag race condition
+        // where the query runs before the write has fully propagated).
+        var row = (payload && payload.new) ? payload.new : null;
+        if(row && row.user_id){
+          var myId = _myUserId ? _myUserId() : '';
+          if(row.user_id !== myId){
+            var cutoff = Date.now() - 10*60*1000;
+            var lastSeen = row.last_seen ? new Date(row.last_seen).getTime() : 0;
+            var isVisible = row.status !== 'offline' && row.is_guardian && lastSeen > cutoff;
+            // Update or remove this guardian in the live cache
+            var idx = _liveGuardians.findIndex(function(g){ return g.id === 'live_'+row.user_id; });
+            if(isVisible){
+              var entry = { id:'live_'+row.user_id, name:row.name, av:row.avatar, bio:row.bio||'',
+                motto:'', tags:Array.isArray(row.tags)?row.tags:[], status:row.status,
+                convs:row.convs||0, rating:row.rating||5.0, reviews:[], recommend:row.convs||0, username:'' };
+              if(idx >= 0) _liveGuardians[idx] = entry; else _liveGuardians.push(entry);
+            } else {
+              if(idx >= 0) _liveGuardians.splice(idx, 1);
+            }
+            // Render immediately from updated cache, then refresh from DB after 600ms
+            // to fill in username/motto and confirm consistency.
+            if(_curPage === 'guardians') pRenderGuardians();
+            setTimeout(pRenderGuardians, 600);
+            return;
+          }
+        }
+        pRenderGuardians();
+      });
       pRenderGuardians();
       if(_guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
       _guardianListPollTmr = setInterval(function(){
