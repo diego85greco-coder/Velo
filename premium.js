@@ -2810,25 +2810,7 @@ function _syncMoodDaysToVisitDays(){
   return changed;
 }
 
-function _updateHomeStreak(){
-  var _mn = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  var _t = new Date();
-  var _y = _t.getFullYear(), _m = _t.getMonth();
-  var lbl = document.getElementById('homeStatStreakLbl');
-  if(lbl) lbl.innerHTML = 'Ánimos<br>'+_mn[_m];
-  var el = document.getElementById('homeStatStreak');
-  if(!el) return;
-  // Once Supabase has confirmed the count, never let localStorage override it
-  if(_sbVerifiedMoodCount >= 0){ el.textContent = _sbVerifiedMoodCount; return; }
-  // Fallback: count from localStorage (may be stale — will be replaced when Supabase responds)
-  var _dim = new Date(_y, _m + 1, 0).getDate();
-  var _count = 0;
-  for(var _di = 1; _di <= _dim; _di++){
-    var _k = _y+'-'+String(_m+1).padStart(2,'0')+'-'+String(_di).padStart(2,'0');
-    if(safeLS('get','velo_mood_'+_k)) _count++;
-  }
-  el.textContent = _count;
-}
+function _updateHomeStreak(){ /* mood counter removed from home — lives only in profile */ }
 
 function _trackVisitDay(){
   var today = _localDateStr();
@@ -8934,7 +8916,6 @@ async function pClearAllMoods(){
     _sbVerifiedMoodCount = 0;
     safeLS('set','velo_mood_cleared_at', String(Date.now())); // blocks _pushMissingMoodsToSb from re-uploading
     _setEl('profileDays', 0);
-    _setEl('homeStatStreak', 0);
     pToast('🗑️','Historial de ánimo eliminado');
     pInitMood();
     _renderHomeWeekMoodGraph().catch(function(){});
@@ -11119,7 +11100,6 @@ function pLoadProfile(){
           var sbMoodDays = (r && r.count != null) ? r.count : 0;
           _sbVerifiedMoodCount = sbMoodDays; // lock in Supabase value — stops localStorage from overriding
           _setEl('profileDays', sbMoodDays);
-          _setEl('homeStatStreak', sbMoodDays);
         }).catch(function(){});
 
       Promise.all([
@@ -11238,7 +11218,6 @@ async function pResetMyMoodData(){
     // Lock display at 0 — re-lock after awaits in case any in-flight callback overwrote it
     _sbVerifiedMoodCount = 0;
     _setEl('profileDays', 0);
-    _setEl('homeStatStreak', 0);
     pToast('✅','Ánimos limpiados correctamente');
     _renderHomeWeekMoodGraph().catch(function(){});
     _updateHomeStreak();
