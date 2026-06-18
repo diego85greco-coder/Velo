@@ -20138,17 +20138,23 @@ function _clearAllLocalData(){
 function _showDeleteErrorAlert(msg, isWarning){
   var ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
-  var color = isWarning ? '#c0312a' : '#c0312a';
   var title = isWarning ? '⚠️ Errores al eliminar — copiá esto' : '❌ No se pudo eliminar la cuenta';
-  ov.innerHTML = '<div style="background:#1a0a0a;border:2px solid '+color+';border-radius:16px;padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto">'
+  ov.innerHTML = '<div style="background:#1a0a0a;border:2px solid #c0312a;border-radius:16px;padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto">'
     +'<div style="font-size:15px;font-weight:700;color:#ff6b6b;margin-bottom:12px">'+title+'</div>'
-    +'<pre style="font-size:11px;color:#ffb3b3;white-space:pre-wrap;word-break:break-all;background:rgba(255,255,255,.06);border-radius:8px;padding:12px;margin:0 0 16px;line-height:1.6">'+_escHtml(msg)+'</pre>'
+    +'<pre id="_delErrPre" style="font-size:11px;color:#ffb3b3;white-space:pre-wrap;word-break:break-all;background:rgba(255,255,255,.06);border-radius:8px;padding:12px;margin:0 0 16px;line-height:1.6">'+_escHtml(msg)+'</pre>'
     +'<div style="display:flex;gap:8px">'
-    +'<button onclick="navigator.clipboard&&navigator.clipboard.writeText('+JSON.stringify(msg)+').then(function(){this.textContent=\'✅ Copiado\'}.bind(this))" style="flex:1;padding:10px;background:rgba(255,107,107,.15);border:1px solid #ff6b6b;border-radius:10px;color:#ff6b6b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">📋 Copiar error</button>'
-    +'<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="flex:1;padding:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">Cerrar</button>'
+    +'<button id="_delErrCopy" style="flex:1;padding:10px;background:rgba(255,107,107,.15);border:1px solid #ff6b6b;border-radius:10px;color:#ff6b6b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">📋 Copiar error</button>'
+    +'<button id="_delErrClose" style="flex:1;padding:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">Cerrar</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
+  var copyBtn  = document.getElementById('_delErrCopy');
+  var closeBtn = document.getElementById('_delErrClose');
+  if(copyBtn) copyBtn.addEventListener('click', function(){
+    if(navigator.clipboard) navigator.clipboard.writeText(msg).then(function(){ copyBtn.textContent = '✅ Copiado'; }).catch(function(){});
+    else { var ta=document.createElement('textarea'); ta.value=msg; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); copyBtn.textContent='✅ Copiado'; }
+  });
+  if(closeBtn) closeBtn.addEventListener('click', function(){ ov.remove(); });
 }
 
 async function _execDeleteAccount(reason){
