@@ -2958,9 +2958,12 @@ async function _savePushSubscriptionToSupabase(sub){
   var _uid = safeLS('get','velo_user_id');
   if(!_uid) return;
   try{
-    var {error:_pErr} = await sbClient.from('profiles').update({ push_subscription: JSON.stringify(sub) }).eq('id', _uid);
+    // Wrap subscription with timezone so server can send at the right local time per region
+    var _tz = (typeof Intl !== 'undefined' && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone : '';
+    var _payload = JSON.stringify({ sub: sub, tz: _tz || 'America/Argentina/Buenos_Aires' });
+    var {error:_pErr} = await sbClient.from('profiles').update({ push_subscription: _payload }).eq('id', _uid);
     if(_pErr) console.warn('[push sub save]', _pErr.message);
-    else console.log('[push sub save] OK for uid', _uid);
+    else console.log('[push sub save] OK for uid', _uid, 'tz:', _tz);
   }catch(e){ console.warn('[push sub save]', e && e.message); }
 }
 

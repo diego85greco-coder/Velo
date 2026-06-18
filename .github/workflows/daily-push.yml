@@ -2,12 +2,20 @@ name: Daily Push Notifications
 
 on:
   schedule:
-    # 12:00 UTC = 09:00 mañana Argentina (UTC-3)
+    # ── Argentina (UTC-3) ──────────────────────────
+    # 12:00 UTC = 09:00 mañana AR
     - cron: '0 12 * * *'
-    # 17:00 UTC = 14:00 tarde Argentina (UTC-3)
+    # 17:00 UTC = 14:00 tarde AR
     - cron: '0 17 * * *'
-    # 00:00 UTC = 21:00 noche Argentina (UTC-3)
+    # 00:00 UTC = 21:00 noche AR
     - cron: '0 0 * * *'
+    # ── Portugal (UTC+1 verano / UTC+0 invierno) ───
+    # 08:00 UTC = 09:00 mañana PT (verano)
+    - cron: '0 8 * * *'
+    # 13:00 UTC = 14:00 tarde PT (verano)
+    - cron: '0 13 * * *'
+    # 20:00 UTC = 21:00 noche PT (verano)
+    - cron: '0 20 * * *'
   workflow_dispatch: # permite correrlo manualmente para probar
 
 jobs:
