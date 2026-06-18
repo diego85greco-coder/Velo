@@ -9477,14 +9477,21 @@ async function _renderCircleMessagesInner(){
   if(sbRows !== null){
     msgs = sbRows.map(_sbCircleMsgRow);
     // Merge local pending messages (own msgs that haven't reached Supabase yet).
-    // Dedup uses the DB UUID if already known (saved after INSERT), or falls back to
-    // text+timestamp matching with a 60s window to tolerate server-client clock skew.
+    // Dedup: exact UUID match first; fuzzy fallback tracks which sbRow was already claimed
+    // so that two identical texts sent close together don't collapse into one bubble.
     var _cutMs = Date.now() - 30000;
+    var _claimedSbIds = {}; // sbRow.id already matched by a previous local msg
     localMsgs.filter(function(lm){ return lm.own && lm.ts > _cutMs; }).forEach(function(lm){
+      var matchedSbId = null;
       var inSb = msgs.some(function(m){
-        if(lm.sbId && m.sbId) return lm.sbId === m.sbId; // exact DB UUID match
-        return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 5000; // fuzzy fallback — narrow window to avoid same-text collision
+        if(lm.sbId && m.sbId){ if(lm.sbId === m.sbId){ matchedSbId = m.sbId; return true; } return false; }
+        // Fuzzy: same text, within 5 s, and this sbRow not yet claimed by another local msg
+        if(m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 5000 && !_claimedSbIds[m.sbId]){
+          matchedSbId = m.sbId; return true;
+        }
+        return false;
       });
+      if(inSb && matchedSbId) _claimedSbIds[matchedSbId] = true;
       if(!inSb) msgs.push({ id:lm.id, userId:lm.userId||'', av:lm.av||'', name:lm.name||'', text:lm.text, ts:lm.ts, own:true, type:lm.type||'text', reactions:{} });
     });
     msgs.sort(function(a, b){ return a.ts - b.ts; });
@@ -9501,7 +9508,7 @@ async function _renderCircleMessagesInner(){
     if(!lm.own || lm.ts <= Date.now() - 30000) return false;
     return !msgs.some(function(m){
       if(lm.sbId && m.sbId) return lm.sbId === m.sbId;
-      return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 30000;
+      return m.own && m.text === lm.text && Math.abs(m.ts - lm.ts) < 5000;
     });
   });
   if(_newLastId && _newLastId === _circleLastDbMsgId && !_hasPending) return;
