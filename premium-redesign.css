@@ -1840,17 +1840,7 @@ body.r-dark #pg-dm-chat .feed-send-btn {
   background: rgba(180,40,40,.90) !important;
 }
 
-/* ── Topbar logo ─────────────────────────────────────────────────── */
-.p-topbar { min-height: 110px !important; }
-.p-topbar-logo-img {
-  height: 110px !important;
-  width: auto !important;
-  max-width: 300px !important;
-  object-fit: contain !important;
-}
-body.r-dark .p-topbar-logo-img {
-  filter: drop-shadow(0 1px 8px rgba(116,198,157,.25)) !important;
-}
+/* ── Topbar logo — superseded by v873 block at end of file ── */
 
 /* ── Hero stats: adaptive light/dark ─────────────────────────────── */
 .r-hero-stat-val em { color: var(--sage2) !important; }
@@ -2145,21 +2135,7 @@ body.r-dark #guardianSubLabel {
   }
 }
 
-/* ── v163: Topbar ───────────────────────────────────────────────── */
-.p-topbar {
-  height: auto !important;
-  min-height: 110px !important;
-  padding: max(env(safe-area-inset-top,0px),8px) 16px 8px !important;
-}
-.p-topbar-logo-img {
-  height: 110px !important;
-  width: auto !important;
-  max-width: 300px !important;
-  object-fit: contain !important;
-}
-body.r-dark .p-topbar-logo-img {
-  filter: drop-shadow(0 1px 8px rgba(116,198,157,.25)) !important;
-}
+/* ── v163: Topbar — superseded by v873 block at end of file ── */
 
 /* ── v163: Light mode card text contrast ─────────────────────────── */
 #pg-help .dark-seeker,
@@ -2683,19 +2659,7 @@ body.r-dark #pg-profile #profileStatusCard [style*="color:var(--ink)"] {
 /* ══════════════════════════════════════════════════════════════════════
    v169: MOBILE TOPBAR — compact
    ══════════════════════════════════════════════════════════════════════ */
-@media (max-width: 767px) {
-  .p-topbar {
-    min-height: 56px !important;
-    height: auto !important;
-    padding: max(env(safe-area-inset-top,0px), 8px) 16px 8px !important;
-  }
-  .p-topbar-logo-img {
-    height: 110px !important;
-    max-width: 300px !important;
-    width: auto !important;
-    object-fit: contain !important;
-  }
-}
+/* @media (max-width: 767px) topbar — superseded by v873 block at end of file */
 
 /* ══════════════════════════════════════════════════════════════════════
    v167: LIGHT MODE — daily quote + status pills contrast fixes
