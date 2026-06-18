@@ -11539,7 +11539,15 @@ function _updateEditPushUI(){
 
 function _tryRecoverPushSub(){
   if(!_swReg){
-    _showPushFixModal('noSW');
+    // SW might be ready but _swReg wasn't initialized yet — try waiting for it
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.ready.then(function(reg){
+        _swReg = reg;
+        _tryRecoverPushSub(); // retry with valid _swReg
+      }).catch(function(){ _showPushFixModal('noSW'); });
+    } else {
+      _showPushFixModal('noSW');
+    }
     return;
   }
   // subscribe() called synchronously — preserves iOS user-gesture context
@@ -11579,7 +11587,7 @@ function _showPushFixModal(reason){
   if(existing) existing.remove();
   var steps = reason === 'denied'
     ? '1. Abrí <strong>Ajustes iOS</strong><br>2. Buscá <strong>Notificaciones → Velo</strong><br>3. Activá "Permitir notificaciones"<br>4. Volvé a Velo y tocá Reconectar'
-    : '1. Deslizá Velo hacia arriba en el <strong>App Switcher</strong><br>2. Volvé a abrir Velo desde tu pantalla de inicio<br>3. Andá a Perfil → Notificaciones<br>4. Tocá <strong>Reconectar</strong>';
+    : '1. Deslizá Velo hacia arriba en el <strong>App Switcher</strong><br>2. Volvé a abrir Velo desde tu pantalla de inicio<br>3. Andá a Perfil → Notificaciones<br>4. Tocá <strong>Activar</strong>';
   var title = reason === 'denied' ? '🔕 Notificaciones bloqueadas' : '🔔 Reiniciá Velo para activar';
   var ov = document.createElement('div');
   ov.id = 'pushFixOv';
