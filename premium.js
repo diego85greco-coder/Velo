@@ -4681,11 +4681,13 @@ async function pRenderGuardians(skipDB){
           });
         }catch(e){}
         liveGuardians = filtered0.map(function(r){
+          var _rIsAnon = r.status === 'incognito' || (r.status && r.status.startsWith('incognito_'));
           return { id: 'live_'+r.user_id, name: r.name, av: r.avatar, bio: r.bio||'',
-            motto: mottoMap[r.user_id] || '',
+            motto: _rIsAnon ? '' : (mottoMap[r.user_id] || ''),
             tags: Array.isArray(r.tags)?r.tags:[], status: r.status,
             convs: r.convs||0, rating: r.rating||5.0, reviews:[], recommend: r.convs||0,
-            username: uMap[r.user_id] || '' };
+            // Never expose real username for incognito guardians — breaks anonymity
+            username: _rIsAnon ? '' : (uMap[r.user_id] || '') };
         });
         _liveGuardians = liveGuardians;
         if(typeof syncHeroStats === 'function') syncHeroStats();
@@ -4755,10 +4757,12 @@ function pOpenGuardian(id){
     || _guardianProfiles.find(function(g){ return g.id === id; });
   if(!_curGuardian) return;
   var g = _curGuardian;
+  var isAnon = g.status === 'incognito' || (g.status && g.status.startsWith('incognito_'));
   _setEl('gdName', g.name);
   _setEl('gdNameBig', g.name);
   var _gdUnEl = document.getElementById('gdUsername');
-  if(_gdUnEl){ if(g.username){ _gdUnEl.textContent = '@'+g.username; _gdUnEl.style.display = ''; } else { _gdUnEl.style.display = 'none'; } }
+  // Never show real username for anonymous guardians — it breaks their anonymity
+  if(_gdUnEl){ if(g.username && !isAnon){ _gdUnEl.textContent = '@'+g.username; _gdUnEl.style.display = ''; } else { _gdUnEl.style.display = 'none'; } }
   _setEl('gdAv', g.av);
   _setEl('gdBio', '"'+g.bio+'"');
   _setEl('gdDesc', g.bio);
@@ -4810,10 +4814,17 @@ function pOpenGuardian(id){
   if(rvEl) rvEl.innerHTML = '<p class="p-sm p-muted">Cargando reseñas…</p>';
   var favBtn = document.getElementById('gdFavBtn');
   if(favBtn){
-    var gUidFav = (g.id||'').replace('live_','');
-    var isFavNow = gUidFav ? pIsFav(gUidFav) : false;
-    favBtn.textContent = isFavNow ? '⭐' : '☆';
-    favBtn.style.background = isFavNow ? 'rgba(255,200,50,.25)' : 'rgba(255,200,50,.15)';
+    if(isAnon){
+      // Hide favorites for anonymous guardians — showing ⭐ would reveal the seeker
+      // already knows this person, breaking anonymity.
+      favBtn.style.display = 'none';
+    } else {
+      favBtn.style.display = '';
+      var gUidFav = (g.id||'').replace('live_','');
+      var isFavNow = gUidFav ? pIsFav(gUidFav) : false;
+      favBtn.textContent = isFavNow ? '⭐' : '☆';
+      favBtn.style.background = isFavNow ? 'rgba(255,200,50,.25)' : 'rgba(255,200,50,.15)';
+    }
   }
   pGoTo('guardian-detail');
   // Load reviews + profile status data from Supabase
@@ -4834,10 +4845,12 @@ function pOpenGuardian(id){
       el.innerHTML = _renderReviewsList(revs, myId, gUid);
     });
 
-    // Load cultural status (music, book, film, phrase) from profiles table
-    // Only attempt if gUid looks like a UUID (36-char hex)
+    // Load cultural status (music, book, film, phrase) from profiles table.
+    // Skip for anonymous guardians — their profile data would reveal their identity.
+    var _gIsAnon = g.status === 'incognito' || (g.status && g.status.startsWith('incognito_'));
+    if(csCard && _gIsAnon) csCard.style.display = 'none';
     _initSupabase();
-    if(sbClient && gUid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gUid)){
+    if(!_gIsAnon && sbClient && gUid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gUid)){
       sbClient.from('profiles')
         .select('status_music,status_book,status_phrase,status_film')
         .eq('id', gUid).limit(1)
