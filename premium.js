@@ -20154,6 +20154,38 @@ async function _updateFeedTabCounts(){
   }catch(e){}
 }
 
+/* ── v957: Home Muro Feliz cards — 💬 action opens full sheet ── */
+var _happyHomePosts = [];
+
+function pOpenHappyHomeSheet(postId){
+  var h = _happyHomePosts.find(function(p){ return String(p.id) === String(postId); });
+  if(!h && _sbHappy) h = _sbHappy.find(function(p){ return String(p.id) === String(postId); });
+  if(!h) return;
+  // Merge into _sbHappy so pHappyReact / pHappyComment work
+  if(!_sbHappy) _sbHappy = [];
+  if(!_sbHappy.find(function(p){ return String(p.id) === String(postId); })) _sbHappy.push(h);
+  var isOwn = h.userId === (safeLS('get','velo_user_id')||'');
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'happyHomeSheetOv';
+  ov.onclick = function(e){ if(e.target===ov) _closeHappyHomeSheet(); };
+  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="max-height:88vh;overflow-y:auto">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">'
+    +'<span style="font-size:18px">☀️</span>'
+    +'<span style="font-size:14px;font-weight:700;color:rgba(245,210,80,.92);font-family:\'Cormorant Garamond\',serif;font-style:italic">Muro Feliz</span>'
+    +'<button onclick="_closeHappyHomeSheet()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,.45);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px">×</button>'
+    +'</div>'
+    + _happyPostCard(h, isOwn)
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function _closeHappyHomeSheet(){
+  var el = document.getElementById('happyHomeSheetOv');
+  if(el) el.remove();
+}
+
 async function _loadHomeHappyFeed(){
   var feed = document.getElementById('homeHappyFeed');
   if(!feed) return;
@@ -20172,6 +20204,7 @@ async function _loadHomeHappyFeed(){
       : '<span style="color:rgba(245,205,80,.95);font-weight:700;font-size:11px">'+_escHtml(h.name||'Alguien')+'</span>';
     var totalR=0;
     if(h.reactions){ try{ var rv=typeof h.reactions==='string'?JSON.parse(h.reactions):h.reactions; Object.values(rv).forEach(function(a){ totalR+=Array.isArray(a)?a.length:0; }); }catch(e){} }
+    var commCount = h.comments ? h.comments.length : 0;
     return '<div class="home-mc" style="background:rgba(48,32,4,.90);box-shadow:0 3px 18px rgba(218,160,30,.22),inset 0 0 0 1px rgba(218,160,30,.30);border-left:3px solid rgba(218,160,30,.70)">'
       +'<div style="display:flex;align-items:stretch;gap:0">'
       // Left gold strip with avatar
@@ -20179,13 +20212,21 @@ async function _loadHomeHappyFeed(){
       +avHtml
       +'</div>'
       // Content
-      +'<div style="flex:1;min-width:0;padding:10px 10px 10px 12px">'
+      +'<div style="flex:1;min-width:0;padding:10px 10px 8px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">'
       +nameHtml
       +'<span style="font-size:9px;color:rgba(255,255,255,.38)">· '+relTime+'</span>'
       +(totalR>0?'<span style="margin-left:auto;font-size:9.5px;color:rgba(255,210,70,.85)">'+totalR+' ❤️</span>':'')
       +'</div>'
-      +'<div style="font-size:13px;color:rgba(255,255,255,.92);line-height:1.5;word-break:break-word">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.92);line-height:1.5;word-break:break-word;margin-bottom:8px">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
+      // Action bar: reactions count + 💬 button
+      +'<div style="display:flex;align-items:center;gap:6px;padding-top:6px;border-top:1px solid rgba(218,160,30,.18)">'
+      +'<button onclick="pOpenHappyHomeSheet(\''+_escHtml(String(h.id))+'\')" style="display:flex;align-items:center;gap:4px;background:rgba(218,160,30,.14);border:1px solid rgba(218,160,30,.30);border-radius:20px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(245,210,80,.90);font-family:Jost,sans-serif;flex-shrink:0">'
+      +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>'
+      +(commCount > 0 ? ' '+commCount : ' Comentar')
+      +'</button>'
+      +(totalR===0?'<button onclick="pOpenHappyHomeSheet(\''+_escHtml(String(h.id))+'\')" style="display:flex;align-items:center;gap:4px;background:rgba(218,160,30,.14);border:1px solid rgba(218,160,30,.30);border-radius:20px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(245,210,80,.90);font-family:Jost,sans-serif;flex-shrink:0">❤️ Me gusta</button>':'')
+      +'</div>'
       +'</div>'
       +'</div></div>';
   }
@@ -20196,7 +20237,7 @@ async function _loadHomeHappyFeed(){
   var _hwCutoff = Date.now() - 24*60*60*1000;
   var _hwCache = _sbHappy ? _sbHappy.filter(function(h){ return h.ts > _hwCutoff; }) : [];
   if(!_hwCache.length){ try{ _hwCache = (JSON.parse(safeLS('get','velo_happy_feed_cache')||'[]')).filter(function(h){ return h.ts > _hwCutoff; }); }catch(e){} }
-  if(_hwCache.length){ feed.innerHTML = _hwCache.slice(0,4).map(_happyHomeCard).join(''); _initCarouselDots('homeHappyFeed','happyDots'); }
+  if(_hwCache.length){ _happyHomePosts = _hwCache.slice(0,4); feed.innerHTML = _happyHomePosts.map(_happyHomeCard).join(''); _initCarouselDots('homeHappyFeed','happyDots'); }
   else { feed.innerHTML = _emptyState; }
 
   _initSupabase();
@@ -20210,6 +20251,7 @@ async function _loadHomeHappyFeed(){
   } else {
     posts = (_processHappyQueue()||[]).slice(0,4);
   }
+  _happyHomePosts = posts;
   feed.innerHTML = posts.length ? posts.map(_happyHomeCard).join('') : _emptyState;
   _initCarouselDots('homeHappyFeed','happyDots');
 }
