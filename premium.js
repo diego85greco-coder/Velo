@@ -2508,6 +2508,9 @@ async function _loadDailyMotivationalQuote(){
   var textEl   = document.getElementById('homeDailyQuoteText');
   var authorEl = document.getElementById('homeDailyQuoteAuthor');
   if(!textEl) return;
+  // Set day label for quote card
+  var _qDayEl = document.getElementById('homeDailyQuoteDay');
+  if(_qDayEl && !_qDayEl.textContent){ var _qd=new Date(); var _qDias=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']; var _qMes=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']; _qDayEl.textContent=_qDias[_qd.getDay()]+' '+_qd.getDate()+' '+_qMes[_qd.getMonth()]; }
   // Use LOCAL date so quote rotates at local midnight, not UTC midnight
   var _d0 = new Date();
   var today = _d0.getFullYear()+'-'+String(_d0.getMonth()+1).padStart(2,'0')+'-'+String(_d0.getDate()).padStart(2,'0');
@@ -8437,6 +8440,8 @@ var _diaryPrivacyShown = false;
 function pInitDiary(){
   var dateEl = document.getElementById('diaryDateLbl');
   if(dateEl){ var d = new Date(); dateEl.textContent = _fmtDate(d.getTime()).split('·')[0].trim(); }
+  var dateSubEl = document.getElementById('diaryDateSub');
+  if(dateSubEl){ var _dS=new Date(); var _diaSems=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']; dateSubEl.textContent = '— '+_diaSems[_dS.getDay()]; }
   // Reset form state on each visit
   _selectedDiaryEmoji = '';
   var chosenEl = document.getElementById('diaryEmojiChosen');
@@ -8451,6 +8456,12 @@ function pInitDiary(){
   }
   _loadDiaryEntries();
   _initDiaryPromptPreview();
+  var _diaryTA = document.getElementById('diaryTa');
+  var _diaryCC = document.getElementById('diaryCharCount');
+  if(_diaryTA && _diaryCC){
+    _diaryTA.oninput = function(){ _diaryCC.textContent = this.value.length; };
+    _diaryCC.textContent = _diaryTA.value.length;
+  }
 }
 
 var _selectedDiaryEmoji = '';

@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260619-949">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260619-949">
+  <link rel="stylesheet" href="premium.css?v=20260619-950">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260619-950">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1098,11 +1098,12 @@
           </div>
               <!-- Daily motivational quote widget -->
               <div id="homeDailyQuoteWrap" style="padding:0 0 10px;width:100%">
-                <div style="padding:0 4px 6px;padding-left:6px">
+                <div style="padding:0 4px 6px;padding-left:6px;display:flex;align-items:center;justify-content:space-between">
                   <span style="font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);opacity:1">✨ Frase del día</span>
+                  <span id="homeDailyQuoteDay" style="font-size:10px;color:rgba(200,158,56,.60);font-family:'Jost',sans-serif;letter-spacing:.3px"></span>
                 </div>
                 <div id="homeDailyQuote" style="background:linear-gradient(135deg,rgba(255,230,102,.18) 0%,rgba(255,200,80,.12) 50%,rgba(255,240,180,.22) 100%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(200,146,10,.22);border-radius:18px;padding:14px 18px 16px;min-height:50px;box-shadow:0 4px 18px rgba(200,146,10,.10),inset 0 1px 0 rgba(255,255,255,.7)">
-                  <div style="font-size:18px;line-height:1;margin-bottom:6px;opacity:.7">❝</div>
+
                   <div id="homeDailyQuoteText" style="font-size:14px;color:var(--ink2);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.6;text-align:center;letter-spacing:.01em"></div>
                   <!-- Author row -->
                   <div id="homeDailyQuoteAuthor" style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.8px;text-transform:uppercase;text-align:right;margin-top:8px;margin-bottom:12px;opacity:.85"></div>
@@ -1341,9 +1342,9 @@
                       <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:rgba(200,158,56,.85);font-family:Jost,sans-serif">✨ Pregunta del día</span>
                       <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(200,158,56,.35),transparent)"></div>
                     </div>
-                    <div id="homeDailyQOpenText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:rgba(255,255,255,.72);line-height:1.3;margin-bottom:6px"></div>
+                    <div id="homeDailyQOpenText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:rgba(255,255,255,.92);line-height:1.3;margin-bottom:6px"></div>
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-                      <div id="homeDailyQMyResp" style="font-size:11px;color:rgba(116,198,157,.65);font-family:Jost,sans-serif;flex:1"></div>
+                      <div id="homeDailyQMyResp" style="font-size:11.5px;font-weight:600;color:rgba(140,230,185,.85);font-family:Jost,sans-serif;flex:1;background:rgba(116,198,157,.10);border-radius:8px;padding:4px 8px"></div>
                       <button onclick="pDeleteMyDqToday()" style="background:none;border:none;color:rgba(255,90,90,.5);font-size:13px;cursor:pointer;padding:2px 4px;flex-shrink:0" title="Borrar mi respuesta">🗑️</button>
                     </div>
                     <div id="homeDailyQSummary" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
@@ -1874,7 +1875,10 @@
               <div>
                 <div class="diary-write">
                   <div class="p-label p-label-sage" style="margin-bottom:10px">Nueva entrada</div>
-                  <div style="font-size:12px;color:var(--ink4);margin-bottom:10px" id="diaryDateLbl"></div>
+                  <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:12px">
+                    <div style="font-size:13px;font-weight:700;font-family:'Jost',sans-serif;color:rgba(116,198,157,.85)" id="diaryDateLbl"></div>
+                    <div style="font-size:11px;font-style:italic;color:var(--ink4);font-family:'Cormorant Garamond',serif" id="diaryDateSub">— escribe lo que quieras</div>
+                  </div>
                   <input class="p-input" id="diaryTitleInput" type="text" maxlength="80" placeholder="Título (opcional)…" style="width:100%;box-sizing:border-box;margin-bottom:10px">
                   <div style="margin-bottom:10px"><button onclick="_openDiaryEmojiPicker()" id="diaryEmojiBtn" style="background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--ink3);font-family:'Jost',sans-serif">😊 Elegir emoji</button> <span id="diaryEmojiChosen" style="font-size:22px;vertical-align:middle"></span></div>
                   <!-- Diary: Reflexión del día card -->
@@ -1887,14 +1891,14 @@
                     <div class="diary-prompt-arrow">→</div>
                   </div>
                   <textarea class="p-textarea" id="diaryTa" rows="6" placeholder="¿Cómo te sentís hoy? Escribí libremente..."></textarea>
-                  <div style="height:10px"></div>
-                  <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveDiary()">Guardar entrada 📔</button>
+                  <div style="display:flex;justify-content:flex-end;padding:2px 2px 8px;font-size:10px;color:rgba(255,255,255,.30);font-family:'Jost',sans-serif"><span id="diaryCharCount">0</span> caracteres</div>
+                  <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveDiary()" style="font-size:15px;font-weight:800;letter-spacing:.4px;padding:14px">Guardar entrada 📔</button>
                 </div>
               </div>
               <div>
                 <div class="p-section-hdr" style="display:flex;align-items:center;justify-content:space-between">
                   <span class="p-label" style="margin:0">Entradas</span>
-                  <button class="p-btn p-btn--secondary p-btn--sm" onclick="pClearAllDiary()" style="font-size:11px">🗑️ Borrar todo</button>
+                  <button onclick="pClearAllDiary()" style="background:none;border:none;color:rgba(255,100,100,.45);font-size:10px;cursor:pointer;font-family:'Jost',sans-serif;padding:2px 6px;letter-spacing:.3px">🗑️ Borrar todo</button>
                 </div>
                 <div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:rgba(210,235,215,.8);line-height:1.5">
                   🔒 Solo vos podés ver este diario — ni Velo puede acceder a este contenido
@@ -3904,8 +3908,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260619-949"></script>
-<script src="premium-redesign.js?v=20260619-949"></script>
+<script src="premium.js?v=20260619-950"></script>
+<script src="premium-redesign.js?v=20260619-950"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
