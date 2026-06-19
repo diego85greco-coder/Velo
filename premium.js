@@ -922,28 +922,18 @@ async function _sbLoad(table, qFn){
   }catch(e){ console.error('[_sbLoad catch] '+table+':', e); return null; }
 }
 
+// Sequence counter so each _sbSub call gets a unique channel name,
+// preventing "cannot add postgres_changes callbacks after subscribe" when
+// Supabase's async removeChannel hasn't finished before the next call.
+var _sbSubSeq = 0;
 function _sbSub(channelName, table, callback){
   _initSupabase();
   if(!sbClient) return null;
   try{
-    var ch = sbClient.channel(channelName)
+    var uniq = channelName + ':' + (++_sbSubSeq);
+    return sbClient.channel(uniq)
       .on('postgres_changes', { event: '*', schema: 'public', table: table }, callback)
-      .subscribe(function(status){
-        if(status === 'CHANNEL_ERROR'){
-          // Channel died (e.g. socket closed 1006) — recreate after 4s
-          setTimeout(function(){
-            try{ sbClient.removeChannel(ch); }catch(e){}
-            try{
-              var newCh = sbClient.channel(channelName)
-                .on('postgres_changes', { event: '*', schema: 'public', table: table }, callback)
-                .subscribe();
-              // Copy new channel onto same object reference so callers see the update
-              Object.assign(ch, newCh);
-            }catch(e){}
-          }, 4000);
-        }
-      });
-    return ch;
+      .subscribe();
   }catch(e){ return null; }
 }
 
@@ -4448,8 +4438,9 @@ function _startGuardianHeartbeat(){
   _createGuardianBcastCh();
   if(_guardianHeartbeatTimer) return;
   var beat = function(){
-    // Self-heal: re-create broadcast channel if it was CLOSED since the last tick.
+    // Self-heal: re-create both channels if they were CLOSED since the last tick.
     _createGuardianBcastCh();
+    if(!_guardianReqCh) _startGuardianReqListener();
     _updateGuardianPresence(_inActiveChat ? 'ocupado' : _presenceStatus());
     _refreshPresenceCache().then(function(){
       if(_curPage === 'contacts') pRenderContacts();
@@ -5162,30 +5153,35 @@ function _startGuardianReqListener(){
       })
       .subscribe(function(status, err){
         if(status === 'SUBSCRIBED'){
-          _checkPendingGuardianRequests(); // catch anything that arrived before subscribe
-        } else {
-          console.warn('[guardian notify] broadcast status:', status, err||'');
+          _checkPendingGuardianRequests();
+        } else if(status === 'CLOSED' || status === 'CHANNEL_ERROR'){
+          // Null the ref so beat() can re-create on next tick
+          _guardianReqCh = null;
         }
       });
     // Also subscribe on email key in case presence row used email as user_id
     if(myEmail && myEmail !== myId){
-      sbClient.channel('velo:gnotify:'+myEmail)
-        .on('broadcast', { event: 'guardian_request' }, function(msg){
-          var r = msg.payload || {};
+      try{
+        sbClient.channel('velo:gnotify:'+myEmail)
+          .on('broadcast', { event: 'guardian_request' }, function(msg){
+            var r = msg.payload || {};
+            if(r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
+          })
+          .subscribe();
+      }catch(e){}
+    }
+    // Secondary: postgres_changes (requires table replication enabled in Supabase)
+    try{
+      sbClient.channel('velo:gdreq:' + myId + ':' + Date.now())
+        .on('postgres_changes',{
+          event:'INSERT', schema:'public', table:'guardian_requests',
+          filter: 'guardian_id=eq.'+myId
+        }, function(payload){
+          var r = payload.new||{};
           if(r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
         })
         .subscribe();
-    }
-    // Also keep a postgres_changes listener as secondary (works if table replication is enabled)
-    sbClient.channel('velo:gdreq:'+myId)
-      .on('postgres_changes',{
-        event:'INSERT', schema:'public', table:'guardian_requests',
-        filter: 'guardian_id=eq.'+myId
-      }, function(payload){
-        var r = payload.new||{};
-        if(r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
-      })
-      .subscribe();
+    }catch(e){}
   }
   // Polling fallback every 5s — primary delivery mechanism since Realtime
   // requires the table to have replication enabled in Supabase dashboard
