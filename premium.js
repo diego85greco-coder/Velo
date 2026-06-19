@@ -4366,11 +4366,23 @@ async function _updateGuardianPresence(status){
   }
   if(!_upsertOk) return; // Don't broadcast if DB write failed
   // Broadcast the change so other clients update instantly.
-  // If the channel send fails, null it out so _startGuardianHeartbeat re-subscribes fresh next time.
+  // The channel may still be in JOINING state (just subscribed) — retry once after 1.5s
+  // before nulling, so the initial beat() on re-activation doesn't kill the channel.
   try{
     if(_guardianBcastCh){
+      var _bcastCh = _guardianBcastCh, _bcastRow = row;
       _guardianBcastCh.send({ type:'broadcast', event:'presence_change', payload: row })
-        .then(function(res){ if(res !== 'ok'){ _sbUnsub(_guardianBcastCh); _guardianBcastCh = null; } })
+        .then(function(res){
+          if(res !== 'ok'){
+            setTimeout(function(){
+              if(_guardianBcastCh === _bcastCh && _guardianBcastCh){
+                _guardianBcastCh.send({ type:'broadcast', event:'presence_change', payload: _bcastRow })
+                  .then(function(res2){ if(res2 !== 'ok'){ _sbUnsub(_guardianBcastCh); _guardianBcastCh = null; } })
+                  .catch(function(){ _sbUnsub(_guardianBcastCh); _guardianBcastCh = null; });
+              }
+            }, 1500);
+          }
+        })
         .catch(function(){ _sbUnsub(_guardianBcastCh); _guardianBcastCh = null; });
     }
   }catch(e){ _sbUnsub(_guardianBcastCh); _guardianBcastCh = null; }
