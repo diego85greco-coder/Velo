@@ -7281,16 +7281,138 @@ function pOpenNewsDetail(i){
 
 // ── ACOMPAÑANTE VELO IA ──────────────────────────────────────────
 var _calmAIMsgs = [];
+var _calmChipsShown = false;
+
+// ── Calm AI: session memory (localStorage per day) ───────────────────
+function _calmTodayKey(){
+  var d = new Date();
+  return 'velo_calm_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function _saveCalmSession(){
+  if(!_calmAIMsgs.some(function(m){ return m.user; })) return;
+  safeLS('set', _calmTodayKey(), JSON.stringify(_calmAIMsgs.slice(-30)));
+}
+function _loadCalmSession(){
+  try{ return JSON.parse(safeLS('get', _calmTodayKey())||'[]'); }catch(e){ return []; }
+}
+
+// ── Calm AI: mood context from today's mood log ───────────────────────
+function _calmMoodContext(){
+  var d = new Date();
+  var dk = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  var stored = safeLS('get','velo_mood_'+dk);
+  if(!stored) return null;
+  try{ return JSON.parse(stored); }catch(e){ return null; }
+}
+
+// ── Calm AI: personalized greeting ───────────────────────────────────
+function _calmGreeting(mood){
+  var hour = new Date().getHours();
+  var tg = hour < 12 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
+  if(mood && mood.emoji){
+    var desc = {'😄':'muy bien hoy','😊':'bien hoy','😐':'más o menos hoy','😞':'no tan bien hoy','😢':'bastante mal hoy'}[mood.emoji]||'de cierta manera hoy';
+    var noteSnip = mood.note ? ' Me comentaste: "'+mood.note.slice(0,55)+(mood.note.length>55?'…':'')+'". ' : ' ';
+    return tg+' 🌿 Vi que registraste que te sentís '+desc+'.'+noteSnip+'Estoy acá si querés contarme más, sin ningún apuro.';
+  }
+  var opts = [
+    'Hola, estoy acá para acompañarte 🌿 ¿Cómo te sentís en este momento? Podés contarme lo que quieras, sin apuros.',
+    tg+' 🌿 Me alegra que estés acá. ¿Cómo andás hoy?',
+    'Hola 🌿 Este es tu espacio, sin juicios. ¿Qué te trajo por acá hoy?'
+  ];
+  var d = new Date();
+  return opts[(d.getDate()+d.getHours())%opts.length];
+}
+
+// ── Calm AI: quick-start chips ────────────────────────────────────────
+function _showCalmChips(){
+  var msgEl = document.getElementById('calmAIMessages');
+  if(!msgEl || _calmChipsShown) return;
+  _calmChipsShown = true;
+  var chips = [
+    { label:'😰 Estoy ansioso/a',       text:'Estoy sintiendo mucha ansiedad' },
+    { label:'😔 Me siento solo/a',       text:'Me siento muy solo/a últimamente' },
+    { label:'😤 Tuve un día difícil',    text:'Tuve un día muy difícil' },
+    { label:'😴 No puedo dormir',        text:'Tengo problemas para dormir' },
+    { label:'💭 Solo quiero hablar',      text:'Quiero hablar y que alguien me escuche' }
+  ];
+  var wrap = document.createElement('div');
+  wrap.id = 'calmChips';
+  wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;padding:6px 0 10px';
+  wrap.innerHTML = chips.map(function(c){
+    return '<button onclick="pCalmChipSend('+_jsAttr(c.text)+')" style="padding:8px 13px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.25);border-radius:100px;font-size:12px;color:rgba(255,255,255,.72);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">'+c.label+'</button>';
+  }).join('');
+  msgEl.appendChild(wrap);
+  msgEl.scrollTop = msgEl.scrollHeight;
+}
+function pCalmChipSend(text){
+  var chips = document.getElementById('calmChips');
+  if(chips) chips.remove();
+  var ta = document.getElementById('calmAIInput');
+  if(ta){ ta.value = text; }
+  pSendCalmAIMsg();
+}
 
 function _initCalmAIPage(){
-  _calmAIMsgs = [];
+  _calmChipsShown = false;
   var msgEl = document.getElementById('calmAIMessages');
   if(msgEl) msgEl.innerHTML = '';
   var ta = document.getElementById('calmAIInput');
   if(ta){ ta.value = ''; ta.style.height = ''; }
+
+  var prevMsgs = _loadCalmSession();
+  var hasUser = prevMsgs.some(function(m){ return m.user; });
+
+  if(hasUser){
+    // Offer to resume today's conversation
+    var lastUser = prevMsgs.slice().reverse().find(function(m){ return m.user; });
+    var snippet = lastUser ? _escHtml((lastUser.text||'').slice(0,65))+(lastUser.text.length>65?'…':'') : '';
+    var resumeDiv = document.createElement('div');
+    resumeDiv.style.cssText = 'margin:16px 0 8px;padding:14px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.22);border-radius:16px;text-align:center';
+    resumeDiv.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,.45);margin-bottom:6px;letter-spacing:.3px">CONVERSACIÓN DE HOY</div>'
+      +'<div style="font-size:12.5px;color:rgba(255,255,255,.6);font-style:italic;margin-bottom:12px;line-height:1.5">"'+snippet+'"</div>'
+      +'<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'
+      +'<button onclick="_calmResumeSession()" style="padding:9px 18px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.38);border-radius:100px;font-size:12px;font-weight:700;color:rgba(116,198,157,.9);cursor:pointer;font-family:\'Jost\',sans-serif">↩️ Retomar conversación</button>'
+      +'<button onclick="_calmStartFresh()" style="padding:9px 18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:100px;font-size:12px;color:rgba(255,255,255,.45);cursor:pointer;font-family:\'Jost\',sans-serif">Empezar de nuevo</button>'
+      +'</div>';
+    if(msgEl) msgEl.appendChild(resumeDiv);
+  } else {
+    _calmStartFresh();
+  }
+}
+
+function _calmStartFresh(){
+  _calmAIMsgs = [];
+  _calmChipsShown = false;
+  var msgEl = document.getElementById('calmAIMessages');
+  if(msgEl) msgEl.innerHTML = '';
+  var mood = _calmMoodContext();
+  var greeting = _calmGreeting(mood);
   setTimeout(function(){
-    _calmAIAddMsg('Hola, estoy acá para acompañarte 🌿 ¿Cómo te sentís en este momento? Podés contarme lo que quieras, sin apuros.', false);
+    _calmAIAddMsg(greeting, false);
+    setTimeout(_showCalmChips, 700);
   }, 400);
+}
+
+function _calmResumeSession(){
+  var prevMsgs = _loadCalmSession();
+  _calmAIMsgs = prevMsgs;
+  _calmChipsShown = true;
+  var msgEl = document.getElementById('calmAIMessages');
+  if(msgEl) msgEl.innerHTML = '';
+  prevMsgs.forEach(function(m){
+    var div = document.createElement('div');
+    div.innerHTML = _buildMsgBubble(m.text, m.user, '🌿', 'Acompañante Velo', 'calmAIInput', 'calmAIReplyBar', '');
+    if(!m.user){
+      var bubble = div.querySelector('.feed-bubble');
+      if(bubble) bubble.innerHTML = bubble.innerHTML.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    }
+    var child = div.firstElementChild;
+    if(child && msgEl) msgEl.appendChild(child);
+  });
+  if(msgEl) msgEl.scrollTop = msgEl.scrollHeight;
+  setTimeout(function(){
+    _calmAIAddMsg('Seguimos donde lo dejamos 🌿 ¿Cómo te sentís ahora?', false);
+  }, 350);
 }
 
 function _calmAIAddMsg(text, isUser){
@@ -7300,7 +7422,6 @@ function _calmAIAddMsg(text, isUser){
   var div = document.createElement('div');
   div.innerHTML = _buildMsgBubble(text, isUser, '🌿', 'Acompañante Velo', 'calmAIInput', 'calmAIReplyBar', '');
   if(!isUser){
-    // Render **bold** markdown in bot responses (text is already HTML-escaped)
     var bubble = div.querySelector('.feed-bubble');
     if(bubble) bubble.innerHTML = bubble.innerHTML.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   }
@@ -7339,6 +7460,9 @@ async function pSendCalmAIMsg(){
   var text = ta.value.trim();
   ta.value = '';
   ta.style.height = '';
+  // Remove quick-start chips on first user message
+  var chips = document.getElementById('calmChips');
+  if(chips) chips.remove();
   var calmQuote = _getReplyQuote('calmAIReplyBar');
   pClearReplyBar('calmAIReplyBar');
   _calmAIMsgs.push({text:text, user:true});
@@ -7353,20 +7477,26 @@ async function pSendCalmAIMsg(){
   typingDiv.innerHTML = '<div class="feed-av">🌿</div><div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">Acompañante Velo</div><div class="feed-bubble" style="color:var(--ink4);font-style:italic">Escribiendo…</div></div>';
   if(msgEl){ msgEl.appendChild(typingDiv); msgEl.scrollTop = msgEl.scrollHeight; }
 
+  // Mood context — inject today's mood if the user logged one
+  var _cm = _calmMoodContext();
+  var moodLine = _cm
+    ? '\nEstado de ánimo registrado hoy por el usuario: '+_cm.emoji+((_cm.label)?' ('+_cm.label+')':'')+'.'+(_cm.note?' Su nota: "'+_cm.note.slice(0,80)+'". ':'')+'Usá esto como contexto cuando sea relevante, no lo menciones directamente a menos que el usuario lo traiga.'
+    : '';
+
   var systemPrompt = 'Sos Velo, un acompañante emocional especializado, entrenado en técnicas de psicología clínica y humanista. '
     +'Aplicás escucha activa profunda, técnicas rogerianas de reflejo y validación, y preguntas socráticas para facilitar la reflexión genuina. '
     +'Tenés experiencia y sensibilidad especial en: ansiedad y ataques de pánico, tristeza y depresión, duelo y pérdidas, problemas de pareja y familia, maltrato emocional y violencia doméstica, autoestima herida y trauma. '
     +'Respondés siempre en español rioplatense (usás "vos", "te", "estás", "querés"). '
-    +'Estructura de cada respuesta: (1) Validación empática específica — nombrás exactamente lo que dijo la persona, sin frases genéricas. (2) Reflejo o reformulación que demuestre comprensión profunda de su situación. (3) Una pregunta abierta y reflexiva que invite a explorar más, sin presionar. '
-    +'Usás entre 4-6 oraciones por respuesta. NUNCA dés consejos directivos antes de explorar cómo se siente. NUNCA repetís frases. NUNCA minimizás el dolor ("todo pasa", "hay gente peor"). '
-    +'Si la persona menciona violencia activa, maltrato o situación de peligro: con calidez y sin alarmismo, reconocé el valor que tuvo en contarlo y mencioná recursos concretos: la Sala de Ayuda de Velo y el 0800-222-1002 (línea nacional Argentina contra violencia), o la Sala de Ayuda de Velo y el 135 para crisis emocionales. '
-    +'Siempre recordá: no sos terapeuta ni médico. Sos un espacio seguro, humano y sin juicios donde la persona puede explorar sus emociones con acompañamiento genuino.';
+    +'Estructura de cada respuesta: (1) Validación empática específica — nombrás exactamente lo que dijo la persona, sin frases genéricas. (2) Reflejo o reformulación que demuestre comprensión profunda. (3) Una pregunta abierta y reflexiva que invite a explorar, sin presionar. '
+    +'Usás entre 2-4 oraciones por respuesta — concisas, cálidas y directas. NUNCA dés consejos directivos antes de explorar cómo se siente. NUNCA repetís frases. NUNCA minimizás el dolor ("todo pasa", "hay gente peor"). '
+    +'Si la persona menciona violencia activa, maltrato o peligro: con calidez reconocé el valor de contarlo y mencioná: la Sala de Ayuda de Velo y el 0800-222-1002 (violencia) o el 135 (crisis emocionales, Argentina). '
+    +'No sos terapeuta ni médico. Sos un espacio seguro, humano y sin juicios.'
+    + moodLine;
 
-  var reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-12), { temperature:0.88, maxOutputTokens:420 });
+  var reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-14), { temperature:0.88, maxOutputTokens:280 });
   if(!reply){
-    // Auto-retry once after 1.5s (handles cold-start / transient failures)
     await new Promise(function(r){ setTimeout(r, 1500); });
-    reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-12), { temperature:0.88, maxOutputTokens:420 });
+    reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-14), { temperature:0.88, maxOutputTokens:280 });
   }
   var typingEl = document.getElementById('calmAITyping');
   if(typingEl) typingEl.remove();
@@ -7375,6 +7505,7 @@ async function pSendCalmAIMsg(){
   } else {
     _calmAIAddMsg(reply, false);
   }
+  _saveCalmSession(); // Feature: persist session for today
   _geminiCrisisCheck(text);
 }
 
