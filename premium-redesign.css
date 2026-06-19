@@ -11538,3 +11538,49 @@ body:not(.r-dark) #homeMomentoSection .comm-icon-box {
   background: rgba(40,110,60,.14) !important;
   border-color: rgba(40,110,60,.35) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v953 — REGISTRA header redesign + fix ambient icon duplicate
+   ══════════════════════════════════════════════════════════════════ */
+
+/* REGISTRA header label — override existing color rules with new design */
+#homeRegisterLabel {
+  color: rgba(255,255,255,.90) !important;
+  opacity: 1 !important;
+  font-size: 17px !important;
+  font-family: 'Cormorant Garamond', serif !important;
+  font-style: italic !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+body:not(.r-dark) #homeRegisterLabel {
+  color: rgba(14,46,28,.92) !important;
+}
+
+/* Week graph container: more breathing room */
+#homeWeekMoodGraph {
+  padding: 10px 4px !important;
+  min-height: 64px !important;
+  gap: 2px !important;
+}
+
+/* "Mi estado" button: green tint in dark mode */
+body.r-dark #homeRegisterZone .home-mood-btn {
+  background: rgba(116,198,157,.14) !important;
+  border-color: rgba(116,198,157,.38) !important;
+  color: rgba(170,235,200,.92) !important;
+}
+
+/* "Mis Registros" button: more prominent */
+#topbarMoodBtn {
+  padding: 13px 14px !important;
+  border-radius: 14px !important;
+  font-size: 13px !important;
+  background: linear-gradient(135deg, rgba(116,198,157,.26), rgba(80,170,120,.18)) !important;
+  border-color: rgba(116,198,157,.50) !important;
+  box-shadow: 0 3px 14px rgba(116,198,157,.18) !important;
+}
+body.r-dark #topbarMoodBtn {
+  color: rgba(200,250,225,.95) !important;
+}

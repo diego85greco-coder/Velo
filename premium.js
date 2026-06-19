@@ -2148,14 +2148,6 @@ function _loadHomeData(){
   var gs = document.getElementById('homeGreetSub');
   if(gs) gs.textContent = _subs[_dayIdx];
 
-  // Ambient time-of-day icon in homeTimeIcon
-  var _ambEl = document.getElementById('homeAmbientIcon');
-  if(_ambEl){
-    var _ambIcons = { mañana:'☀️', tarde:'🌤️', noche:'🌙' };
-    var _ambGlow  = { mañana:'rgba(255,200,60,.70)', tarde:'rgba(160,195,255,.70)', noche:'rgba(180,160,255,.70)' };
-    _ambEl.innerHTML = '<span class="amb-icon" style="filter:drop-shadow(0 0 14px '+_ambGlow[_periodo]+')">'+_ambIcons[_periodo]+'</span>';
-  }
-
   // Section stagger fade-in (re-triggers on every home visit)
   var _stagPairs = [
     ['#homeGreetBlock','velo-sec-a0'],
@@ -19294,15 +19286,17 @@ async function _renderHomeWeekMoodGraph(){
       days.push({ dayName:dayNames[d.getDay()], mood:mood, isToday:i===0 });
     }
     return days.map(function(d){
-      var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.5)') : 'rgba(116,198,157,.60)';
-      var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.1)') : 'rgba(116,198,157,.12)';
-      var ring  = d.isToday ? 'border:2.5px solid '+color+';box-shadow:0 0 8px '+color+';' : 'border:1.5px solid '+color+';';
-      var emoji = d.mood ? d.mood.emoji : (d.isToday ? '+' : '·');
+      var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.65)') : (d.isToday ? 'rgba(116,198,157,.80)' : 'rgba(116,198,157,.30)');
+      var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.18)') : (d.isToday ? 'rgba(116,198,157,.15)' : 'rgba(255,255,255,.05)');
+      var shadow = d.mood ? 'box-shadow:0 2px 10px '+color+';' : (d.isToday ? 'box-shadow:0 0 10px rgba(116,198,157,.35);' : '');
+      var ring  = d.isToday ? 'border:2.5px solid '+color+';' : (d.mood ? 'border:2px solid '+color+';' : 'border:1.5px solid rgba(116,198,157,.20);');
+      var emoji = d.mood ? d.mood.emoji : (d.isToday ? '✦' : '·');
       var todayEmptyStyle = (d.isToday && !d.mood) ? 'animation:moodDayPulse 2.2s ease-in-out infinite;' : '';
+      var emojiSz = d.mood ? '20' : (d.isToday ? '14' : '10');
       var cls   = 'mood-day-circle'+(d.mood?'':' mood-day-empty')+(d.isToday?' mood-day-today':'');
-      return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:(d.isToday?'Registrá tu ánimo de hoy':'Sin registro'))+'">'
-        +'<div class="'+cls+'" style="width:34px;height:34px;border-radius:50%;'+ring+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'17':(d.isToday?'16':'11'))+'px;transition:.2s;'+todayEmptyStyle+'">'+emoji+'</div>'
-        +'<span style="font-size:8px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:(d.isToday?'Registrá tu ánimo de hoy':'Sin registro'))+'">'
+        +'<div class="'+cls+'" style="width:40px;height:40px;border-radius:50%;'+ring+shadow+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+emojiSz+'px;transition:.2s;'+todayEmptyStyle+'">'+emoji+'</div>'
+        +'<span style="font-size:8.5px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
         +'</div>';
     }).join('');
   }
