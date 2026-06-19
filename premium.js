@@ -7126,33 +7126,118 @@ async function pRenderNews(forceRefresh){
   _renderNewsList(newsEl, adminNews.concat(items));
 }
 
+// ── Feature 4: reading tracker ──────────────────────────────────────
+function _trackNewsRead(){
+  var today = new Date().toISOString().slice(0,10);
+  var reads = []; try{ reads = JSON.parse(safeLS('get','velo_news_reads')||'[]'); }catch(e){}
+  reads.push(today);
+  // keep last 90 days
+  safeLS('set','velo_news_reads', JSON.stringify(reads.slice(-200)));
+}
+function _getNewsWeekCount(){
+  var reads = []; try{ reads = JSON.parse(safeLS('get','velo_news_reads')||'[]'); }catch(e){}
+  var cutoff = new Date(Date.now() - 7*24*3600*1000).toISOString().slice(0,10);
+  return reads.filter(function(d){ return d >= cutoff; }).length;
+}
+function _getNewsStreak(){
+  var reads = []; try{ reads = JSON.parse(safeLS('get','velo_news_reads')||'[]'); }catch(e){}
+  var days = {}; reads.forEach(function(d){ days[d]=1; });
+  var streak = 0;
+  var d = new Date();
+  for(var i=0;i<60;i++){
+    var k = d.toISOString().slice(0,10);
+    if(days[k]) streak++;
+    else if(i>0) break;
+    d.setDate(d.getDate()-1);
+  }
+  return streak;
+}
+function _newsReadingBadgeHtml(){
+  var count = _getNewsWeekCount();
+  var streak = _getNewsStreak();
+  if(!count) return '';
+  var streakTxt = streak >= 2 ? ' · <strong>'+streak+' días seguidos 🔥</strong>' : '';
+  return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:11px 14px;background:linear-gradient(90deg,rgba(116,198,157,.10),rgba(116,198,157,.05));border:1px solid rgba(116,198,157,.22);border-radius:14px">'
+    +'<span style="font-size:22px">🌞</span>'
+    +'<div style="font-size:12px;color:var(--ink3);line-height:1.5">Leíste <strong style="color:var(--sage2)">'+count+' noticia'+(count!==1?'s':'')+' buena'+(count!==1?'s':'')+'</strong> esta semana'+streakTxt+'</div>'
+    +'</div>';
+}
+
+// ── Feature 5: share helper ─────────────────────────────────────────
+function pShareNewsItem(titulo, cuerpo, sourceUrl){
+  var text = '🌞 '+titulo+'\n\n'+cuerpo+(sourceUrl ? '\n\n🔗 '+sourceUrl : '')+'\n\n— Compartido desde Velo (heyvelo.app)';
+  if(navigator.share){
+    navigator.share({ title: titulo, text: text, url: sourceUrl || 'https://heyvelo.app' }).catch(function(){});
+    return;
+  }
+  // WhatsApp fallback
+  var wa = 'https://api.whatsapp.com/send?text='+encodeURIComponent(text);
+  window.open(wa, '_blank');
+}
+function pCopyNewsItem(titulo, cuerpo, sourceUrl, btnEl){
+  var text = '🌞 '+titulo+'\n\n'+cuerpo+(sourceUrl ? '\n\n🔗 '+sourceUrl : '')+'\n\n— Compartido desde Velo (heyvelo.app)';
+  try{
+    navigator.clipboard.writeText(text).then(function(){
+      if(btnEl){ var orig=btnEl.textContent; btnEl.textContent='✅ Copiado'; setTimeout(function(){ btnEl.textContent=orig; },1800); }
+    }).catch(function(){ pToast('📋','Copiado al portapapeles'); });
+  }catch(e){ pToast('⚠️','Tu navegador no soporta copiar'); }
+}
+
 function _renderNewsList(el, items){
   _newsListCache = items;
-  el.innerHTML = items.map(function(item, i){
+  var _cy = new Date().getFullYear();
+  var _sourceTag = function(item){
     var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
-    // Show real link for any item with a verified URL (admin-curated or grounded Gemini search)
-    var sourceTag = hasLink
+    return hasLink
       ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:var(--sage2);font-weight:700;text-decoration:none;background:var(--sage7);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.25)">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a>'
-      : (item.titulo ? '<a href="https://www.google.com/search?q='+encodeURIComponent(item.titulo+' '+new Date().getFullYear())+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:var(--ink4);font-size:11px;text-decoration:none;background:var(--cream);padding:3px 8px;border-radius:100px;border:1px solid var(--border)">🔍 Buscar noticia</a>' : '<span style="color:var(--ink5);font-style:italic">✨ Velo IA</span>');
-    return '<div class="p-card p-card--hover" style="margin-bottom:14px;padding:18px;cursor:pointer" onclick="pOpenNewsDetail('+i+')">'
-      +'<div style="display:flex;align-items:flex-start;gap:14px">'
-      +'<div style="font-size:36px;line-height:1;flex-shrink:0">'+_escHtml(item.emoji||'📰')+'</div>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:17px;color:var(--ink);margin-bottom:6px;font-weight:700">'+_escHtml(item.titulo)+'</div>'
-      +'<div style="font-size:13px;color:var(--ink2);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
-      +'<div style="margin-top:10px;font-size:11px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-      +sourceTag
-      +'</div>'
-      +'</div>'
-      +'</div>'
-      +'</div>';
-  }).join('');
+      : (item.titulo ? '<a href="https://www.google.com/search?q='+encodeURIComponent(item.titulo+' '+_cy)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:var(--ink4);font-size:11px;text-decoration:none;background:var(--cream);padding:3px 8px;border-radius:100px;border:1px solid var(--border)">🔍 Buscar noticia</a>' : '<span style="color:var(--ink5);font-style:italic">✨ Velo IA</span>');
+  };
+
+  var heroHtml = '';
+  var restHtml = '';
+
+  items.forEach(function(item, i){
+    var isHero = i === 0;
+    if(isHero){
+      // Feature 3: "Noticia del día" — hero card with newspaper front-page design
+      heroHtml = '<div onclick="pOpenNewsDetail(0)" style="cursor:pointer;margin-bottom:18px;border-radius:22px;overflow:hidden;background:linear-gradient(145deg,rgba(116,198,157,.14) 0%,rgba(116,198,157,.06) 100%);border:1.5px solid rgba(116,198,157,.28);box-shadow:0 4px 24px rgba(116,198,157,.10)">'
+        +'<div style="padding:14px 16px 6px;display:flex;align-items:center;gap:6px">'
+        +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--sage2);background:rgba(116,198,157,.15);padding:3px 10px;border-radius:100px;border:1px solid rgba(116,198,157,.3)">🗞️ NOTICIA DEL DÍA</span>'
+        +'</div>'
+        +'<div style="padding:8px 18px 6px;text-align:center">'
+        +'<div style="font-size:56px;line-height:1;margin-bottom:10px">'+_escHtml(item.emoji||'📰')+'</div>'
+        +'<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">'+_escHtml(item.titulo)+'</h3>'
+        +'<p style="font-size:13.5px;color:var(--ink2);line-height:1.7;margin-bottom:14px">'+_escHtml(item.cuerpo)+'</p>'
+        +'</div>'
+        +'<div style="padding:10px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid rgba(116,198,157,.12)">'
+        +_sourceTag(item)
+        +'<button onclick="event.stopPropagation();pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+');" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(37,168,106,.15);border:1px solid rgba(37,168,106,.3);border-radius:100px;font-size:11px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
+        +'</div>'
+        +'</div>';
+    } else {
+      restHtml += '<div class="p-card p-card--hover" style="margin-bottom:12px;padding:16px;cursor:pointer" onclick="pOpenNewsDetail('+i+')">'
+        +'<div style="display:flex;align-items:flex-start;gap:13px">'
+        +'<div style="font-size:32px;line-height:1;flex-shrink:0">'+_escHtml(item.emoji||'📰')+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;color:var(--ink);margin-bottom:5px;font-weight:700;line-height:1.3">'+_escHtml(item.titulo)+'</div>'
+        +'<div style="font-size:12.5px;color:var(--ink2);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
+        +'<div style="margin-top:9px;font-size:11px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+        +_sourceTag(item)
+        +'</div>'
+        +'</div>'
+        +'</div>'
+        +'</div>';
+    }
+  });
+
+  el.innerHTML = _newsReadingBadgeHtml() + heroHtml + (items.length > 1 ? '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:10px;margin-top:4px">MÁS NOTICIAS</div>' : '') + restHtml;
 }
 
 var _newsListCache = [];
 function pOpenNewsDetail(i){
   var item = _newsListCache[i];
   if(!item) return;
+  _trackNewsRead(); // Feature 4: count this read
   var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
   var _nd = new Date();
   var _months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -7164,6 +7249,11 @@ function pOpenNewsDetail(i){
     +'<span style="font-size:12px;color:var(--ink4)">📅 '+_dateStr+'</span>'
     +'<span style="color:var(--ink5);font-size:12px">·</span>'
     +sourceRef
+    +'</div>';
+  // Feature 5: share buttons row
+  var shareRow = '<div style="display:flex;gap:8px;margin-bottom:14px">'
+    +'<button onclick="pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:rgba(37,168,106,.13);border:1.5px solid rgba(37,168,106,.3);border-radius:14px;font-size:13px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
+    +'<button id="newsCopyBtn" onclick="pCopyNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+',this)" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:rgba(116,198,157,.08);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;font-size:13px;font-weight:700;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">📋 Copiar</button>'
     +'</div>';
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
@@ -7179,9 +7269,10 @@ function pOpenNewsDetail(i){
     +'<p style="font-size:13px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+_escHtml(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
     +'</div>'
     +(hasLink
-      ? '<a href="'+item.sourceUrl+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔗 Leer artículo completo en '+_escHtml(item.sourceName||'la fuente')+'</a>'
-      : '<a href="https://www.google.com/search?q='+encodeURIComponent(item.titulo)+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔍 Buscar noticia en Google</a>'
+      ? '<a href="'+item.sourceUrl+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:12px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔗 Leer artículo completo en '+_escHtml(item.sourceName||'la fuente')+'</a>'
+      : '<a href="https://www.google.com/search?q='+encodeURIComponent(item.titulo)+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:12px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔍 Buscar noticia en Google</a>'
     )
+    +shareRow
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'newsDetailOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
