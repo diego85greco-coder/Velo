@@ -4421,21 +4421,35 @@ function _presenceDot(userId, size){
   return '<span title="'+info.label+'" style="display:inline-block;width:'+s+'px;height:'+s+'px;border-radius:50%;background:'+info.color+';border:1.5px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.25);flex-shrink:0"></span>';
 }
 
+// Creates/re-creates the shared broadcast channel for guardian presence changes.
+// Called on login, on every heartbeat tick, and on page entry so a CLOSED channel
+// is always replaced before the next send attempt.
+function _createGuardianBcastCh(){
+  if(!sbClient || _guardianBcastCh) return;
+  _guardianBcastCh = sbClient.channel('velo:guardian-changes')
+    .on('broadcast', { event: 'presence_change' }, function(msg){
+      if(_curPage === 'guardians') pRenderGuardians();
+    })
+    .subscribe(function(status){
+      // Detect CLOSED/CHANNEL_ERROR so the reference is nulled and the next
+      // heartbeat tick (or page entry) re-creates a working channel.
+      if(status === 'CLOSED' || status === 'CHANNEL_ERROR'){
+        _guardianBcastCh = null;
+      }
+    });
+}
+
 // Universal presence heartbeat — runs for every logged-in user, not only guardians.
 function _startGuardianHeartbeat(){
   _startGuardianReqListener();
   // Subscribe to broadcast channel here (at login) so the guardian can SEND on it
   // even when not on the guardians page. Must happen before the early-return guard.
   _initSupabase();
-  if(sbClient && !_guardianBcastCh){
-    _guardianBcastCh = sbClient.channel('velo:guardian-changes')
-      .on('broadcast', { event: 'presence_change' }, function(msg){
-        if(_curPage === 'guardians') pRenderGuardians();
-      })
-      .subscribe();
-  }
+  _createGuardianBcastCh();
   if(_guardianHeartbeatTimer) return;
   var beat = function(){
+    // Self-heal: re-create broadcast channel if it was CLOSED since the last tick.
+    _createGuardianBcastCh();
     _updateGuardianPresence(_inActiveChat ? 'ocupado' : _presenceStatus());
     _refreshPresenceCache().then(function(){
       if(_curPage === 'contacts') pRenderContacts();
@@ -20472,14 +20486,14 @@ function _onPageEnter(id){
       if(sbClient) _guardianRtCh = _sbSub('velo:guardians', 'guardian_presence', function(){
         pRenderGuardians();
       });
-      // Re-create broadcast channel if it was nulled after a failed retry on login.
-      if(sbClient && !_guardianBcastCh) _startGuardianHeartbeat();
+      // Re-create broadcast channel if it was CLOSED/nulled (e.g. WebSocket drop).
+      _initSupabase(); _createGuardianBcastCh();
       pRenderGuardians();
       if(_guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
       _guardianListPollTmr = setInterval(function(){
         if(_curPage !== 'guardians'){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; return; }
         pRenderGuardians();
-      }, 10000);
+      }, 3000);
       break;
     case 'professionals': pRenderProfessionals(); break;
     case 'help':
