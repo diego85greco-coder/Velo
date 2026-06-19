@@ -14057,7 +14057,7 @@ function _showDMToast(fromId, fromName, fromAv, text){
   if(existing) existing.remove();
   var banner = document.createElement('div');
   banner.id = 'dmToastBanner';
-  banner.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;background:#fff;border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,.18);padding:12px 16px;display:flex;align-items:center;gap:12px;max-width:340px;width:calc(100% - 32px);cursor:pointer;border:1.5px solid var(--border2);animation:slideDown .25s ease';
+  banner.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--bg-card,#1a2e1a);border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,.35);padding:12px 16px;display:flex;align-items:center;gap:12px;max-width:340px;width:calc(100% - 32px);cursor:pointer;border:1.5px solid var(--border2);animation:slideDown .25s ease';
   banner.innerHTML = '<div style="font-size:32px;flex-shrink:0">'+_avInline(fromAv,38)+'</div>'
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(fromName)+' te escribió 💬</div>'
@@ -14066,7 +14066,12 @@ function _showDMToast(fromId, fromName, fromAv, text){
     +'<button onclick="event.stopPropagation();var _dtb=document.getElementById(\'dmToastBanner\');if(_dtb)_dtb.remove();" style="font-size:16px;background:none;border:none;cursor:pointer;color:var(--ink4);padding:4px;flex-shrink:0">✕</button>';
   banner.onclick = function(){
     banner.remove();
-    // If already in an active DM session with this peer, just return to the chat
+    // Back to guardian chat if this message is from the active guardian session
+    if(_inActiveChat && _gcPeer && _gcPeer.id === fromId){
+      pGoTo('pg-guardian-chat');
+      return;
+    }
+    // Back to DM chat if already in an active DM with this peer
     if(_inActiveChat && _dmPeer && _dmPeer.id === fromId){
       pGoTo('dm-chat');
       return;
