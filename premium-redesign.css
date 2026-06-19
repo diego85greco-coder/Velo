@@ -2225,10 +2225,8 @@ body.r-dark textarea::placeholder { color: rgba(255,255,255,.50) !important; }
   font-size: 24px !important;
 }
 
-/* ── v165: Daily quote — remove orphan quote mark, show inline ─────── */
-#homeDailyQuote > div:first-child {
-  display: none !important;
-}
+/* v165 rule removed v951: was hiding the ❝ div, which no longer exists;
+   after redesign the first child is #homeDailyQuoteText — must stay visible */
 
 /* ── v165: Guardian sub-label — hidden ─────────────────────────────── */
 #guardianSubLabel { display: none !important; }
