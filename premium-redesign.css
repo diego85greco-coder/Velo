@@ -11584,3 +11584,119 @@ body.r-dark #homeRegisterZone .home-mood-btn {
 body.r-dark #topbarMoodBtn {
   color: rgba(200,250,225,.95) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v954 — Saludo: shimmer en nombre + hero breathing + sub-texto
+         Comunidad: carrusel horizontal scroll-snap
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Shimmer en el nombre personalizado del saludo ───────────── */
+#homeGreetTxt span {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-image: linear-gradient(
+    90deg,
+    rgba(210,170,60,.90) 0%, rgba(210,170,60,.90) 22%,
+    rgba(255,235,90,1.00) 50%,
+    rgba(210,170,60,.90) 78%, rgba(210,170,60,.90) 100%
+  ) !important;
+  background-size: 220% auto !important;
+  animation: velo-text-shimmer 5s ease-in-out infinite !important;
+}
+
+/* ── 2. Hero background breathing (very subtle) ─────────────────── */
+@keyframes hero-bg-breathe {
+  0%, 100% { background-position: 0%   0%; }
+  50%       { background-position: 100% 100%; }
+}
+body.r-dark .r-hero-v2 {
+  background: linear-gradient(
+    140deg,
+    rgba(10,26,16,.88) 0%,
+    rgba(6,20,12,.92) 45%,
+    rgba(14,34,20,.86) 100%
+  ) !important;
+  background-size: 250% 250% !important;
+  animation: hero-bg-breathe 14s ease-in-out infinite !important;
+}
+
+/* ── 3. Sub-greeting text — más grande y visible ─────────────────── */
+#homeGreetSub {
+  font-size: 15px !important;
+  color: rgba(220,240,228,.72) !important;
+  font-style: italic !important;
+  font-family: 'Cormorant Garamond', serif !important;
+  text-align: center !important;
+  margin-top: 8px !important;
+  letter-spacing: .01em !important;
+  line-height: 1.4 !important;
+}
+body:not(.r-dark) #homeGreetSub {
+  color: rgba(30,70,40,.68) !important;
+}
+
+/* ── 4. Carrusel horizontal — Momentos del día + Muro Feliz ────── */
+#homeMomentoFeed,
+#homeHappyFeed {
+  display: flex !important;
+  flex-direction: row !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  scroll-snap-type: x mandatory !important;
+  gap: 10px !important;
+  padding: 4px 0 10px !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+#homeMomentoFeed::-webkit-scrollbar,
+#homeHappyFeed::-webkit-scrollbar { display: none !important; }
+
+/* Cards: ancho fijo para que se vea el borde del siguiente */
+#homeMomentoFeed .home-mc,
+#homeHappyFeed .home-mc {
+  flex-shrink: 0 !important;
+  width: 87% !important;
+  margin-bottom: 0 !important;
+  scroll-snap-align: start !important;
+  scroll-snap-stop: always !important;
+}
+/* Último card: margen derecho para indicar fin */
+#homeMomentoFeed .home-mc:last-child,
+#homeHappyFeed .home-mc:last-child { margin-right: 6px !important; }
+
+/* Estado vacío (prompt card): full width */
+#homeMomentoFeed > div:not(.home-mc),
+#homeHappyFeed > div:not(.home-mc) {
+  flex-shrink: 0 !important;
+  width: 100% !important;
+}
+
+/* Hint visual debajo del carrusel: "deslizá →" */
+#homeMomentoFeed::after {
+  content: 'deslizá →';
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(116,198,157,.45);
+  font-family: Jost, sans-serif;
+  padding-right: 4px;
+  white-space: nowrap;
+}
+#homeHappyFeed::after {
+  content: 'deslizá →';
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(200,158,56,.45);
+  font-family: Jost, sans-serif;
+  padding-right: 4px;
+  white-space: nowrap;
+}
