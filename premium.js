@@ -4337,21 +4337,29 @@ async function _updateGuardianPresence(status){
     row.rating = 5.0;
   }
   var _upsertOk = false;
+  var _doRetry = false;
   try{
     var _upRes = await sbClient.from('guardian_presence').upsert(row, { onConflict: 'user_id' });
     if(_upRes && _upRes.error){
       console.error('[presence upsert]', _upRes.error.message, _upRes.error);
-      // Session may have expired mid-flight — refresh and retry once (2s delay)
-      try{
-        await new Promise(function(r){ setTimeout(r, 2000); });
-        await _ensureSbSession();
-        row.last_seen = new Date().toISOString();
-        var _retry = await sbClient.from('guardian_presence').upsert(row, { onConflict: 'user_id' });
-        if(_retry && _retry.error){ console.error('[presence upsert retry]', _retry.error.message); }
-        else { _upsertOk = true; }
-      }catch(e2){}
+      _doRetry = true;
     } else { _upsertOk = true; }
-  }catch(e){ console.error('[presence upsert catch]', e); }
+  }catch(e){ console.error('[presence upsert catch]', e); _doRetry = true; }
+  if(_doRetry){
+    // Retry once after 2s — session may have expired (iOS PWA) or network briefly dropped.
+    // CRITICAL: re-check is_guardian before writing — if the user toggled state during the
+    // 2s wait, the old row is stale and writing it would overwrite the correct DB state.
+    try{
+      await new Promise(function(r){ setTimeout(r, 2000); });
+      var _currentIsG = safeLS('get','velo_is_guardian') === 'true';
+      if(_currentIsG !== isG){ _upsertOk = true; return; } // state changed — let that write handle DB
+      await _ensureSbSession();
+      row.last_seen = new Date().toISOString();
+      var _retry = await sbClient.from('guardian_presence').upsert(row, { onConflict: 'user_id' });
+      if(_retry && _retry.error){ console.error('[presence upsert retry]', _retry.error.message); }
+      else { _upsertOk = true; }
+    }catch(e2){ console.error('[presence upsert retry catch]', e2); }
+  }
   if(!_upsertOk) return; // Don't broadcast if DB write failed
   // Broadcast the change so other clients update instantly.
   // If the channel send fails, null it out so _startGuardianHeartbeat re-subscribes fresh next time.
