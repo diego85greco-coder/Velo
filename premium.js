@@ -16915,12 +16915,18 @@ function _adminTabGestion(panel){
     +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:14px;margin-bottom:18px">'
     +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Usuarios que se conectaron a la app cada día (últimos 14 días).</p>'
     +'<div id="adminDailyUsersChart"><div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando…</div></div>'
+    +'</div>'
+    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(231,76,60,.7);margin-bottom:10px">🧹 LIMPIAR CHATS DE SALAS</div>'
+    +'<div style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
+    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">Eliminá todos los mensajes de una sala de chat. Esta acción no se puede deshacer.</p>'
+    +'<div id="adminCircleChatList"><div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando salas…</div></div>'
     +'</div>';
   pAdminRenderNewsList();
   _renderAdminAITasks();
   _adminLoadDiamanteRewards();
   _adminLoadSolidarityRequests();
   _adminLoadDailyActiveUsers();
+  _adminLoadCircleChats();
 }
 
 async function _adminLoadDiamanteRewards(){
@@ -17069,6 +17075,106 @@ async function _adminLoadDailyActiveUsers(){
   }catch(e){
     el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Error al cargar datos.</div>';
   }
+}
+
+// ── ADMIN: Limpiar chats de salas ─────────────────────────────────────
+var _officialCircles = [
+  { id:'c1', name:'Manejo de Ansiedad', emoji:'🌊' },
+  { id:'c2', name:'Duelo y Pérdida',    emoji:'🌙' },
+  { id:'c3', name:'Crianza Consciente', emoji:'🌱' },
+  { id:'c4', name:'Trastornos del Sueño', emoji:'😴' },
+  { id:'c5', name:'Autoestima',          emoji:'✨' }
+];
+
+async function _adminLoadCircleChats(){
+  var el = document.getElementById('adminCircleChatList');
+  if(!el) return;
+  _initSupabase();
+  if(!sbClient){ el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+
+  // Count messages per circle for official ones
+  var officialRows = _officialCircles.map(function(c){ return {id:c.id,name:c.name,emoji:c.emoji,official:true,count:null}; });
+  var userCircles = [];
+
+  try{
+    var ucRes = await sbClient.from('circles').select('id,name,emoji').eq('official',false).order('created_at',{ascending:false}).limit(100);
+    userCircles = (ucRes.data||[]).map(function(r){ return {id:r.id,name:r.name||'Sin nombre',emoji:r.emoji||'💬',official:false,count:null}; });
+  }catch(e){}
+
+  // Batch-count messages for each circle
+  var allCircles = officialRows.concat(userCircles);
+  await Promise.all(allCircles.map(async function(c){
+    try{
+      var r = await sbClient.from('circle_messages').select('id',{count:'exact',head:true}).eq('circle_id',c.id);
+      c.count = r.count || 0;
+    }catch(e){ c.count = '?'; }
+  }));
+
+  var _btnStyle = 'font-size:10px;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;white-space:nowrap;';
+
+  el.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:8px">🛡️ SALAS OFICIALES</div>'
+    + officialRows.map(function(c){
+        return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+          +'<span style="font-size:18px">'+c.emoji+'</span>'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(c.name)+'</div>'
+          +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+c.count+' mensaje'+(c.count!==1?'s':'')+'</div>'
+          +'</div>'
+          +(c.count > 0
+            ? '<button onclick="pAdminClearCircleChat(\''+c.id+'\',\''+_escHtml(c.name)+'\')" style="'+_btnStyle+'background:rgba(231,76,60,.18);border:1px solid rgba(231,76,60,.35);color:rgba(255,130,130,.9)">🗑️ Limpiar</button>'
+            : '<span style="font-size:10px;color:rgba(255,255,255,.2)">Vacío</span>')
+          +'</div>';
+      }).join('')
+    + (userCircles.length
+        ? '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin:14px 0 8px">👥 CÍRCULOS DE USUARIOS</div>'
+          + userCircles.map(function(c){
+              return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+                +'<span style="font-size:18px">'+c.emoji+'</span>'
+                +'<div style="flex:1;min-width:0">'
+                +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(c.name)+'</div>'
+                +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+c.count+' mensaje'+(c.count!==1?'s':'')+'</div>'
+                +'</div>'
+                +(c.count > 0
+                  ? '<button onclick="pAdminClearCircleChat(\''+c.id+'\',\''+_escHtml(c.name)+'\')" style="'+_btnStyle+'background:rgba(231,76,60,.18);border:1px solid rgba(231,76,60,.35);color:rgba(255,130,130,.9)">🗑️ Limpiar</button>'
+                  : '<span style="font-size:10px;color:rgba(255,255,255,.2)">Vacío</span>')
+                +'</div>';
+            }).join('')
+        : '')
+    + '<div style="margin-top:12px">'
+    + '<button onclick="pAdminClearAllOfficialChats()" style="'+_btnStyle+'width:100%;padding:9px;background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.25);color:rgba(255,130,130,.75)">🧹 Limpiar TODAS las salas oficiales</button>'
+    + '</div>';
+}
+
+async function pAdminClearCircleChat(circleId, circleName){
+  if(!confirm('¿Eliminar TODOS los mensajes de "'+circleName+'"?\n\nEsta acción no se puede deshacer.')) return;
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión a Supabase'); return; }
+  try{
+    var res = await sbClient.from('circle_messages').delete().eq('circle_id', circleId);
+    if(res.error) throw res.error;
+    // Clear local cache too
+    safeLS('del', 'velo_circle_'+circleId);
+    pToast('🗑️','Chat "'+circleName+'" limpiado');
+    _adminLoadCircleChats();
+  }catch(e){ pToast('❌','Error: '+e.message); }
+}
+
+async function pAdminClearAllOfficialChats(){
+  if(!confirm('¿Eliminar TODOS los mensajes de las 5 salas oficiales de Velo?\n\nEsta acción no se puede deshacer.')) return;
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión a Supabase'); return; }
+  var errors = [];
+  for(var i=0; i<_officialCircles.length; i++){
+    var c = _officialCircles[i];
+    try{
+      var res = await sbClient.from('circle_messages').delete().eq('circle_id', c.id);
+      if(res.error) errors.push(c.name);
+      safeLS('del', 'velo_circle_'+c.id);
+    }catch(e){ errors.push(c.name); }
+  }
+  if(errors.length) pToast('⚠️','Error en: '+errors.join(', '));
+  else pToast('🧹','Todas las salas oficiales limpiadas');
+  _adminLoadCircleChats();
 }
 
 // ── NEW: Warn user ────────────────────────────────────────────────────
