@@ -3557,6 +3557,16 @@ function _expandDailyFeed(){
   feedEl.innerHTML = _buildDqCards(_vis);
 }
 
+function _dqEmojiColor(emoji){
+  var warm=['😊','😄','😁','😃','🙂','🌟','✨','⭐','💫','🌅','☀️','🎉','🎊','💛','🧡','🌻','🔥','😍','🤩','😀'];
+  var calm=['😌','🤍','🌿','💚','🕊️','🌊','💙','🌙','⛅','☁️','🫧','🌾','🍀','🐦','😶','😑'];
+  var sad=['😢','😔','😞','😟','😥','💔','🌧️','😓','😪','😮‍💨','😣','😖'];
+  if(warm.indexOf(emoji)>=0) return {bg:'rgba(48,32,4,.92)',strip:'rgba(218,160,30,.38)',border:'rgba(218,160,30,.70)',glow:'rgba(218,160,30,.18)',label:'rgba(255,210,70,.95)',badge:'rgba(218,162,40,.24)'};
+  if(sad.indexOf(emoji)>=0) return {bg:'rgba(28,8,8,.90)',strip:'rgba(200,80,80,.32)',border:'rgba(200,80,80,.58)',glow:'rgba(200,80,80,.14)',label:'rgba(255,160,160,.90)',badge:'rgba(200,80,80,.22)'};
+  if(calm.indexOf(emoji)>=0) return {bg:'rgba(6,28,18,.92)',strip:'rgba(72,185,128,.34)',border:'rgba(72,185,128,.64)',glow:'rgba(72,185,128,.16)',label:'rgba(120,230,175,.95)',badge:'rgba(72,185,128,.24)'};
+  return {bg:'rgba(16,16,48,.92)',strip:'rgba(110,128,220,.36)',border:'rgba(110,128,220,.60)',glow:'rgba(110,128,220,.15)',label:'rgba(165,182,255,.95)',badge:'rgba(110,128,220,.24)'};
+}
+
 function _buildDqCards(list){
   var myUid = safeLS('get','velo_user_id') || '';
   var _dqHid = []; try{ _dqHid = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
@@ -3564,36 +3574,45 @@ function _buildDqCards(list){
     var av = r.user_avatar || '';
     var isImg = av && av.startsWith('http');
     var canSeeProfile = r.user_id && r.user_id !== 'anon';
-    var avClick = canSeeProfile ? ' onclick="event.stopPropagation();pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')" style="cursor:pointer;width:34px;height:34px;border-radius:50%;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center"' : ' style="width:34px;height:34px;border-radius:50%;flex-shrink:0"';
-    var avHtml = isImg
-      ? '<div'+avClick+'><img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover"></div>'
-      : '<div'+avClick+' style="background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.2);display:flex;align-items:center;justify-content:center;font-size:17px">'+(av||'🌿')+'</div>';
     var isOwn = myUid && r.user_id === myUid;
+    var col = _dqEmojiColor(r.mood_emoji || '💭');
     var actionBtn = isOwn
-      ? '<button onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" title="Borrar mi respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
-      : '<button onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" title="Reportar respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,160,60,.8);font-size:12px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
+      ? '<button onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" style="background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
+      : '<button onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" style="background:none;border:none;color:rgba(255,160,60,.45);font-size:11px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
     var _dqUname = _uAt(r.user_id);
-    // Total reactions count for the "Ver" tap hint
     var _m = _dqReactMap[r.id] || {};
     var _totalRx = ['identifico','abrazo','entiendo'].reduce(function(s,k){ return s+((_m[k]&&_m[k].count)||0); },0);
-    return '<div class="dq-feed-card" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')" style="display:flex;gap:8px;padding:8px 0;align-items:flex-start;cursor:pointer">'
-      +avHtml
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:'+(_dqUname?'2':'5')+'px">'
-      +'<span class="dq-feed-name" style="font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">'+(r.user_name||'Alguien')+'</span>'
-      +'<span style="font-size:14px">'+r.mood_emoji+'</span>'
+    var avInner = isImg
+      ? '<img src="'+_escHtml(av)+'" style="width:28px;height:28px;object-fit:cover;border-radius:50%">'
+      : '<div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:13px">'+(av||'🌿')+'</div>';
+    var avWrap = canSeeProfile
+      ? '<div onclick="event.stopPropagation();pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')" style="cursor:pointer;width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0">'+avInner+'</div>'
+      : '<div style="width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;opacity:.7">'+avInner+'</div>';
+    return '<div class="dq-feed-card" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
+      +' style="background:'+col.bg+';box-shadow:0 3px 16px '+col.glow+',inset 0 0 0 1px '+col.border+';cursor:pointer;min-height:90px">'
+      +'<div style="display:flex;align-items:stretch">'
+      // Left colored strip with mood emoji + avatar
+      +'<div style="width:56px;flex-shrink:0;background:'+col.strip+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:12px 0">'
+      +'<span style="font-size:27px;line-height:1">'+r.mood_emoji+'</span>'
+      +avWrap
+      +'</div>'
+      // Content
+      +'<div style="flex:1;min-width:0;padding:10px 10px 8px 12px">'
+      // Name + action
+      +'<div style="display:flex;align-items:center;gap:4px;margin-bottom:5px">'
+      +'<span style="font-size:11px;font-weight:800;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px">'+(r.user_name||'Alguien')+'</span>'
       +actionBtn
       +'</div>'
       +(_dqUname ? '<div style="margin-bottom:4px">'+_dqUname+'</div>' : '')
+      // Response text — serif italic, premium look
       +(r.response_text
-        ? '<div class="dq-bubble">'
-          +'<div class="dq-bubble-text">'+r.response_text+'</div>'
-          +'</div>'
+        ? '<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.90);line-height:1.55;word-break:break-word;margin-bottom:8px">"'+_escHtml(r.response_text)+'"</div>'
         : '')
-      // Compact reaction hint + expand cue
-      +'<div style="display:flex;align-items:center;margin-top:8px;gap:8px">'
-      +(_totalRx>0?'<span style="font-size:10.5px;color:rgba(116,198,157,.65);font-family:Jost,sans-serif">'+_totalRx+' reacción'+(+_totalRx!==1?'es':'')+'</span>':'')
-      +'<span style="margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.5px;color:rgba(116,198,157,.50);font-family:Jost,sans-serif">Reaccionar →</span>'
+      // Reaction hint bar
+      +'<div style="display:flex;align-items:center;gap:6px;padding-top:6px;border-top:1px solid '+col.strip+'">'
+      +(_totalRx>0?'<span style="font-size:9.5px;color:'+col.label+';font-family:Jost,sans-serif;opacity:.80">'+_totalRx+' reacción'+(+_totalRx!==1?'es':'')+'</span>':'')
+      +'<span style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:'+col.label+';background:'+col.badge+';border-radius:100px;padding:2px 9px;font-family:Jost,sans-serif">Reaccionar →</span>'
+      +'</div>'
       +'</div>'
       +'</div>'
       +'</div>';
@@ -10980,8 +10999,15 @@ function _happyPostCard(h, isOwn){
       : '<button onclick="pReportContent(\'happy\','+_jsAttr(h.id)+','+_jsAttr((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(180,50,50,.88);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0">🚩</button>')
     +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap;flex-shrink:0">⏳ '+timeLeft+'</span>' : '')
     +'</div>'
-    // photo
-    +(h.photo ? '<img src="'+h.photo+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px;display:block;margin-bottom:14px;cursor:zoom-in">' : '')
+    // photo with tap-to-zoom hint overlay
+    +(h.photo
+      ? '<div style="position:relative;margin-bottom:14px;border-radius:12px;overflow:hidden">'
+        +'<img src="'+h.photo+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:260px;object-fit:cover;display:block;cursor:zoom-in">'
+        +'<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.50));padding:18px 12px 8px;pointer-events:none;display:flex;align-items:center;justify-content:center">'
+        +'<span style="background:rgba(0,0,0,.42);color:rgba(255,255,255,.82);font-size:9.5px;font-weight:700;letter-spacing:.4px;border-radius:100px;padding:3px 11px;font-family:Jost,sans-serif;backdrop-filter:blur(6px)">🔍 Toca para ampliar</span>'
+        +'</div>'
+        +'</div>'
+      : '')
     // text
     +(h.text ? '<p style="font-size:16px;color:var(--ink2);line-height:1.7;margin-bottom:14px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500">"'+_escHtml(h.text)+'"</p>' : '')
     // reactions
@@ -20299,13 +20325,10 @@ async function _loadHomeHappyFeed(){
       +(totalR>0?'<span style="margin-left:auto;font-size:9.5px;color:rgba(255,210,70,.85)">'+totalR+' ❤️</span>':'')
       +'</div>'
       +'<div style="font-size:13px;color:rgba(255,255,255,.92);line-height:1.5;word-break:break-word;margin-bottom:8px">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
-      // Action bar: reactions count + 💬 button
+      // Action bar: "Ver publicación" primary CTA + comment count
       +'<div style="display:flex;align-items:center;gap:6px;padding-top:6px;border-top:1px solid rgba(218,160,30,.18)">'
-      +'<button onclick="pOpenHappyHomeSheet(\''+_escHtml(String(h.id))+'\')" style="display:flex;align-items:center;gap:4px;background:rgba(218,160,30,.14);border:1px solid rgba(218,160,30,.30);border-radius:20px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(245,210,80,.90);font-family:Jost,sans-serif;flex-shrink:0">'
-      +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>'
-      +(commCount > 0 ? ' '+commCount : ' Comentar')
-      +'</button>'
-      +(totalR===0?'<button onclick="pOpenHappyHomeSheet(\''+_escHtml(String(h.id))+'\')" style="display:flex;align-items:center;gap:4px;background:rgba(218,160,30,.14);border:1px solid rgba(218,160,30,.30);border-radius:20px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(245,210,80,.90);font-family:Jost,sans-serif;flex-shrink:0">❤️ Me gusta</button>':'')
+      +'<button onclick="pOpenHappyHomeSheet(\''+_escHtml(String(h.id))+'\')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:rgba(218,160,30,.22);border:1.5px solid rgba(218,160,30,.55);border-radius:20px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:800;color:rgba(255,215,70,.95);font-family:Jost,sans-serif;letter-spacing:.3px">Ver publicación →</button>'
+      +(commCount > 0?'<span style="font-size:10px;color:rgba(245,210,80,.65);font-family:Jost,sans-serif;flex-shrink:0">💬 '+commCount+'</span>':'')
       +'</div>'
       +'</div>'
       +'</div></div>';
