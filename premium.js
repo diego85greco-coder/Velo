@@ -4430,23 +4430,7 @@ function _startGuardianHeartbeat(){
   if(sbClient && !_guardianBcastCh){
     _guardianBcastCh = sbClient.channel('velo:guardian-changes')
       .on('broadcast', { event: 'presence_change' }, function(msg){
-        var row = msg.payload;
-        if(!row || !row.user_id){ if(_curPage==='guardians') pRenderGuardians(); return; }
-        var myId = _myUserId ? _myUserId() : '';
-        if(row.user_id === myId) return;
-        var cutoff = Date.now() - 10*60*1000;
-        var lastSeen = row.last_seen ? new Date(row.last_seen).getTime() : 0;
-        var isVisible = row.status !== 'offline' && row.is_guardian && lastSeen > cutoff;
-        var idx = _liveGuardians.findIndex(function(g){ return g.id === 'live_'+row.user_id; });
-        if(isVisible){
-          var entry = { id:'live_'+row.user_id, name:row.name, av:row.avatar, bio:row.bio||'',
-            motto:'', tags:Array.isArray(row.tags)?row.tags:[], status:row.status,
-            convs:row.convs||0, rating:row.rating||5.0, reviews:[], recommend:row.convs||0, username:'' };
-          if(idx >= 0) _liveGuardians[idx] = entry; else _liveGuardians.push(entry);
-        } else {
-          if(idx >= 0) _liveGuardians.splice(idx, 1);
-        }
-        if(_curPage === 'guardians') pRenderGuardians(true); // skipDB: cache already updated
+        if(_curPage === 'guardians') pRenderGuardians();
       })
       .subscribe();
   }
@@ -4687,22 +4671,18 @@ function pFilterGuardians(filter, btn){
   pRenderGuardians();
 }
 
-async function pRenderGuardians(skipDB){
+async function pRenderGuardians(){
   var _tok = _navToken;
   _renderMyStatusBar();
   var list = document.getElementById('guardiansList');
   if(!list) return;
   _renderFavWidget('guardiansFavWidget');
-  // Load guardian stats
   _loadGuardianStats();
-  // Try to load live guardians from Supabase.
-  // skipDB=true: use _liveGuardians cache directly (called from broadcast handler to avoid
-  // overwriting fresh cache with a potentially stale DB read due to replication lag).
   var liveGuardians = [];
   _initSupabase();
-  if(!skipDB && sbClient){
+  if(sbClient){
     try{
-      var cutoff = new Date(Date.now() - 10*60*1000).toISOString(); // active in last 10 min
+      var cutoff = new Date(Date.now() - 10*60*1000).toISOString();
       var myId = _myUserId();
       var { data, error: gpErr } = await sbClient.from('guardian_presence')
         .select('*').neq('status','offline').gte('last_seen', cutoff);
@@ -4712,7 +4692,6 @@ async function pRenderGuardians(skipDB){
         var filtered0 = data
           .filter(function(r){ return r.user_id !== myId; })
           .filter(function(r){ return r.is_guardian !== false; });
-        // Fetch usernames and mottos from profiles for all visible guardians
         var gIds = filtered0.map(function(r){ return r.user_id; });
         var uMap = {}, mottoMap = {};
         try{
@@ -4730,19 +4709,15 @@ async function pRenderGuardians(skipDB){
             motto: _rIsAnon ? '' : (mottoMap[r.user_id] || ''),
             tags: Array.isArray(r.tags)?r.tags:[], status: r.status,
             convs: r.convs||0, rating: r.rating||5.0, reviews:[], recommend: r.convs||0,
-            // Never expose real username for incognito guardians — breaks anonymity
             username: _rIsAnon ? '' : (uMap[r.user_id] || '') };
         });
         _liveGuardians = liveGuardians;
         if(typeof syncHeroStats === 'function') syncHeroStats();
       }
     }catch(e){}
-  } else {
-    // skipDB: render directly from broadcast-updated cache without a DB round-trip.
-    liveGuardians = _liveGuardians.slice();
   }
 
-  // Only real live guardians — no fake fallback profiles
+  if(_navToken !== _tok) return;
   var combined = liveGuardians;
   var filtered = combined.filter(function(g){
     var _st = g.status || '';
@@ -4758,21 +4733,16 @@ async function pRenderGuardians(skipDB){
       +'<div style="font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.45">Estás visible como guardián. Las solicitudes de acompañamiento te llegarán acá.</div>'
       +'</div>';
   }
-  if(_navToken !== _tok) return;
   var _iAmGuardian = safeLS('get','velo_is_guardian') === 'true';
-  // Skip full re-render if list content hasn't changed — prevents 30s poll flicker.
-  var _newKey = (_iAmGuardian?'g':'u') + '|' + _guardianFilter + '|' + filtered.map(function(g){ return g.id+':'+g.status; }).join(',');
   if(!filtered.length){
     var emptyMsg = _guardianFilter !== 'todos'
       ? '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">Ningún guardián en este estado</div><div class="p-empty-sub">Probá con "Todos"</div></div>'
       : _iAmGuardian
         ? '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">Sos el único guardián activo ahora</div><div class="p-empty-sub">Otros usuarios que buscan acompañamiento te verán aquí.</div></div>'
         : '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">No hay guardianes conectados ahora</div><div class="p-empty-sub">¡Sé el primero! Activá tu estado como Disponible arriba para aparecer aquí.</div></div>';
-    if(_newKey !== _lastGuardianListKey){ _lastGuardianListKey = _newKey; list.innerHTML = selfBanner + emptyMsg; }
+    list.innerHTML = selfBanner + emptyMsg;
     return;
   }
-  if(_newKey === _lastGuardianListKey) return;
-  _lastGuardianListKey = _newKey;
   list.innerHTML = selfBanner + filtered.map(function(g){
     var badge = _getBadge(g.convs||0);
     var gVerified = (badge.name==='Plata'||badge.name==='Oro'||badge.name==='Diamante');
@@ -20499,39 +20469,11 @@ function _onPageEnter(id){
       _initSupabase();
       // Always re-subscribe so a stale/dropped channel doesn't silently miss re-activation events.
       if(_guardianRtCh){ _sbUnsub(_guardianRtCh); _guardianRtCh = null; }
-      if(sbClient) _guardianRtCh = _sbSub('velo:guardians', 'guardian_presence', function(payload){
-        // Apply the payload immediately to _liveGuardians so the UI updates
-        // without waiting for a new DB round-trip (avoids read-lag race condition
-        // where the query runs before the write has fully propagated).
-        var row = (payload && payload.new) ? payload.new : null;
-        if(row && row.user_id){
-          var myId = _myUserId ? _myUserId() : '';
-          if(row.user_id !== myId){
-            var cutoff = Date.now() - 10*60*1000;
-            var lastSeen = row.last_seen ? new Date(row.last_seen).getTime() : 0;
-            var isVisible = row.status !== 'offline' && row.is_guardian && lastSeen > cutoff;
-            // Update or remove this guardian in the live cache
-            var idx = _liveGuardians.findIndex(function(g){ return g.id === 'live_'+row.user_id; });
-            if(isVisible){
-              var entry = { id:'live_'+row.user_id, name:row.name, av:row.avatar, bio:row.bio||'',
-                motto:'', tags:Array.isArray(row.tags)?row.tags:[], status:row.status,
-                convs:row.convs||0, rating:row.rating||5.0, reviews:[], recommend:row.convs||0, username:'' };
-              if(idx >= 0) _liveGuardians[idx] = entry; else _liveGuardians.push(entry);
-            } else {
-              if(idx >= 0) _liveGuardians.splice(idx, 1);
-            }
-            // Render immediately from updated cache (no DB query to avoid stale-read overwrite),
-            // then refresh from DB after 800ms to fill in username/motto.
-            if(_curPage === 'guardians') pRenderGuardians(true); // skipDB
-            setTimeout(pRenderGuardians, 800);
-            return;
-          }
-        }
+      if(sbClient) _guardianRtCh = _sbSub('velo:guardians', 'guardian_presence', function(){
         pRenderGuardians();
       });
       // Re-create broadcast channel if it was nulled after a failed retry on login.
       if(sbClient && !_guardianBcastCh) _startGuardianHeartbeat();
-      _lastGuardianListKey = ''; // reset dedup so re-activation shows immediately without page refresh
       pRenderGuardians();
       if(_guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
       _guardianListPollTmr = setInterval(function(){
