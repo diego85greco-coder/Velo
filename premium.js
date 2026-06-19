@@ -3591,19 +3591,23 @@ function _buildDqCards(list){
     return '<div class="dq-feed-card" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
       +' style="background:'+col.bg+';box-shadow:0 3px 16px '+col.glow+',inset 0 0 0 1px '+col.border+';cursor:pointer;min-height:90px">'
       +'<div style="display:flex;align-items:stretch">'
-      // Left colored strip with mood emoji + avatar
-      +'<div style="width:56px;flex-shrink:0;background:'+col.strip+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:12px 0">'
+      // Left colored strip — mood emoji only
+      +'<div style="width:52px;flex-shrink:0;background:'+col.strip+';display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 0">'
       +'<span style="font-size:27px;line-height:1">'+r.mood_emoji+'</span>'
-      +avWrap
       +'</div>'
       // Content
       +'<div style="flex:1;min-width:0;padding:10px 10px 8px 12px">'
-      // Name + action
-      +'<div style="display:flex;align-items:center;gap:4px;margin-bottom:5px">'
-      +'<span style="font-size:11px;font-weight:800;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px">'+(r.user_name||'Alguien')+'</span>'
+      // Avatar + name row
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+      +avWrap
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="display:flex;align-items:center;gap:4px">'
+      +'<span style="font-size:11.5px;font-weight:800;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px">'+(r.user_name||'Alguien')+'</span>'
       +actionBtn
       +'</div>'
-      +(_dqUname ? '<div style="margin-bottom:4px">'+_dqUname+'</div>' : '')
+      +(_dqUname ? '<div style="margin-top:1px">'+_dqUname+'</div>' : '')
+      +'</div>'
+      +'</div>'
       // Response text — serif italic, premium look
       +(r.response_text
         ? '<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.90);line-height:1.55;word-break:break-word;margin-bottom:8px">"'+_escHtml(r.response_text)+'"</div>'
@@ -3663,7 +3667,7 @@ function pOpenDqResponseSheet(responseId){
     +'<div style="text-align:center;margin-bottom:6px">'
     +'<span style="font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(200,158,56,.80);font-family:Jost,sans-serif">✨ Pregunta del día</span>'
     +'</div>'
-    +'<div style="text-align:center;font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(220,240,228,.72);line-height:1.35;margin-bottom:20px;padding:0 16px">'+_escHtml(q?q.question:'')+'</div>'
+    +'<div style="text-align:center;font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(220,240,228,.72);line-height:1.35;margin-bottom:20px;padding:0 16px">'+_escHtml(q?q.text:'')+'</div>'
     // Mood emoji glow
     +'<div style="text-align:center;margin-bottom:16px">'
     +'<span style="font-size:48px;filter:drop-shadow(0 0 14px rgba(116,198,157,.35));line-height:1">'+r.mood_emoji+'</span>'
@@ -3672,14 +3676,16 @@ function pOpenDqResponseSheet(responseId){
     +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;justify-content:center">'
     +avHtml
     +'<div>'
-    +'<div style="font-size:14px;font-weight:700;color:rgba(200,240,218,.90);font-family:Jost,sans-serif'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
-    +'<div style="font-size:11px;color:rgba(116,198,157,.55);margin-top:2px;font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
+    +'<div style="font-size:15px;font-weight:700;color:rgba(200,240,218,.90);font-family:Jost,sans-serif'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
+    +(_uAt(r.user_id) ? '<div style="margin-top:2px">'+_uAt(r.user_id)+'</div>' : '')
+    +'<div style="font-size:11px;color:rgba(116,198,157,.55);margin-top:3px;font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
     +'</div>'
     +'</div>'
-    // Response text
+    // Response text — premium serif block
     +(r.response_text
-      ? '<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:18px;padding:18px 20px;margin-bottom:22px;text-align:center">'
-        +'<div style="font-size:19px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;color:rgba(235,250,240,.92);line-height:1.6">\'\''+_escHtml(r.response_text)+'\'\'</div>'
+      ? '<div style="background:linear-gradient(135deg,rgba(116,198,157,.09),rgba(116,198,157,.04));border:1px solid rgba(116,198,157,.22);border-radius:20px;padding:22px 24px;margin-bottom:22px;text-align:center;position:relative">'
+        +'<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.55);font-family:Jost,sans-serif;margin-bottom:12px">Su respuesta</div>'
+        +'<div style="font-size:22px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:rgba(240,255,246,.96);line-height:1.65;letter-spacing:.3px;text-shadow:0 1px 12px rgba(116,198,157,.20)">❝ '+_escHtml(r.response_text)+' ❞</div>'
         +'</div>'
       : '<div style="height:16px"></div>')
     // Reactions
@@ -20466,7 +20472,7 @@ async function pPostMomentoHome(){
     }
     var res=await sbClient.from('momentos').insert(_insertData);
     // Graceful fallback if profile columns not yet in DB
-    if(res.error && res.error.code==='42703'){
+    if(res.error && (res.error.code==='42703' || res.error.code==='PGRST204' || (res.error.message&&res.error.message.indexOf('user_avatar')>=0))){
       delete _insertData.user_name; delete _insertData.user_avatar;
       res=await sbClient.from('momentos').insert(_insertData);
     }

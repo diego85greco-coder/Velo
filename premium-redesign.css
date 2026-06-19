@@ -36,12 +36,12 @@ body::after {
   mix-blend-mode: multiply;
   z-index: -1;
 }
-/* ── Full-width glow sweep (v960 — no blend mode, higher opacity) */
+/* ── Full-width glow sweep (v961 — 120% wide, full coverage, 3min cycle) */
 body::before {
   content: '';
   position: fixed;
   top: -5%; left: 0;
-  width: 80%; height: 110%;
+  width: 120%; height: 110%;
   pointer-events: none;
   z-index: -1;
   background: linear-gradient(
@@ -52,9 +52,8 @@ body::before {
     rgba(232,200,121,.18) 68%,
     transparent 92%
   );
-  /* no mix-blend-mode: overlay was invisible on dark backgrounds */
-  transform: translateX(-110%);
-  animation: velo-bg-sweep 12s ease-in-out infinite;
+  transform: translateX(-100%);
+  animation: velo-bg-sweep 180s linear infinite;
   will-change: transform;
 }
 body.r-dark::before {
@@ -68,9 +67,10 @@ body.r-dark::before {
   );
 }
 @keyframes velo-bg-sweep {
-  0%   { transform: translateX(-110%); }
-  50%  { transform: translateX(175%); }
-  100% { transform: translateX(-110%); }
+  0%    { transform: translateX(-100%); animation-timing-function: ease-in-out; }
+  5%    { transform: translateX(84%); animation-timing-function: step-start; }
+  5.1%  { transform: translateX(-100%); animation-timing-function: linear; }
+  100%  { transform: translateX(-100%); }
 }
 
 /* ── 2. SIDEBAR — pill, colapsada por defecto, expande on hover ── */
