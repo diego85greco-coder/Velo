@@ -3019,9 +3019,9 @@ async function _syncPushSubOnStartup(){
   // Refresh session first — expired JWT causes SELECT/UPDATE to fail silently via RLS
   try{ await _ensureSbSession(); }catch(e){}
   try{
-    // Only update if DB currently has NULL (avoid overwriting a fresher subscription from another device)
-    var {data:_chk} = await sbClient.from('profiles').select('push_subscription').eq('id',_uid).limit(1);
-    if(_chk && _chk[0] && _chk[0].push_subscription) return; // already has one
+    // Always sync local sub to DB on startup: after a deactivate+reactivate cycle the DB may
+    // hold a stale (now-invalid) subscription while LS has the fresh one. Checking for non-null
+    // DB and skipping means we keep sending to the expired endpoint until it 410s.
     var _sub = JSON.parse(_lsSub);
     await _savePushSubscriptionToSupabase(_sub);
     console.log('[push sync startup] subscription synced to Supabase');
@@ -11832,7 +11832,10 @@ async function pTogglePushNotifications(){
     safeLS('del','velo_push_sub');
     safeLS('del','velo_push_granted');
     var _uid = safeLS('get','velo_user_id');
-    if(sbClient && _uid){ try{ await sbClient.from('profiles').update({ push_subscription: null }).eq('id',_uid); }catch(e){} }
+    if(sbClient && _uid){
+      try{ await _ensureSbSession(); }catch(e){}
+      try{ await sbClient.from('profiles').update({ push_subscription: null }).eq('id',_uid); }catch(e){}
+    }
     pToast('🔕','Notificaciones desactivadas');
     _updateEditPushUI(); return;
   }
