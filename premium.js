@@ -14068,7 +14068,7 @@ function _showDMToast(fromId, fromName, fromAv, text){
     banner.remove();
     // Back to guardian chat if this message is from the active guardian session
     if(_inActiveChat && _gcPeer && _gcPeer.id === fromId){
-      pGoTo('pg-guardian-chat');
+      pGoTo('guardian-chat');
       return;
     }
     // Back to DM chat if already in an active DM with this peer
