@@ -3558,21 +3558,25 @@ function _expandDailyFeed(){
 }
 
 function _buildDqCards(list){
-  // Use localStorage uid for ownership check (synchronous); delete flow re-validates with auth.getUser()
   var myUid = safeLS('get','velo_user_id') || '';
   var _dqHid = []; try{ _dqHid = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
   return list.filter(function(r){ return _dqHid.indexOf(String(r.id)) === -1; }).map(function(r){
     var av = r.user_avatar || '';
     var isImg = av && av.startsWith('http');
+    var canSeeProfile = r.user_id && r.user_id !== 'anon';
+    var avClick = canSeeProfile ? ' onclick="event.stopPropagation();pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')" style="cursor:pointer;width:34px;height:34px;border-radius:50%;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center"' : ' style="width:34px;height:34px;border-radius:50%;flex-shrink:0"';
     var avHtml = isImg
-      ? '<img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-top:2px">'
-      : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.2);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:17px">'+(av||'🌿')+'</div>';
+      ? '<div'+avClick+'><img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover"></div>'
+      : '<div'+avClick+' style="background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.2);display:flex;align-items:center;justify-content:center;font-size:17px">'+(av||'🌿')+'</div>';
     var isOwn = myUid && r.user_id === myUid;
     var actionBtn = isOwn
-      ? '<button onclick="pDeleteMyDqResponse(\''+r.id+'\')" title="Borrar mi respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
-      : '<button onclick="pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" title="Reportar respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,160,60,.8);font-size:12px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
+      ? '<button onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" title="Borrar mi respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
+      : '<button onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" title="Reportar respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,160,60,.8);font-size:12px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
     var _dqUname = _uAt(r.user_id);
-    return '<div class="dq-feed-card" style="display:flex;gap:8px;padding:8px 0;align-items:flex-start">'
+    // Total reactions count for the "Ver" tap hint
+    var _m = _dqReactMap[r.id] || {};
+    var _totalRx = ['identifico','abrazo','entiendo'].reduce(function(s,k){ return s+((_m[k]&&_m[k].count)||0); },0);
+    return '<div class="dq-feed-card" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')" style="display:flex;gap:8px;padding:8px 0;align-items:flex-start;cursor:pointer">'
       +avHtml
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:'+(_dqUname?'2':'5')+'px">'
@@ -3586,10 +3590,86 @@ function _buildDqCards(list){
           +'<div class="dq-bubble-text">'+r.response_text+'</div>'
           +'</div>'
         : '')
-      +_buildDqReactionBar(r.id)
+      // Compact reaction hint + expand cue
+      +'<div style="display:flex;align-items:center;margin-top:8px;gap:8px">'
+      +(_totalRx>0?'<span style="font-size:10.5px;color:rgba(116,198,157,.65);font-family:Jost,sans-serif">'+_totalRx+' reacción'+(+_totalRx!==1?'es':'')+'</span>':'')
+      +'<span style="margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.5px;color:rgba(116,198,157,.50);font-family:Jost,sans-serif">Reaccionar →</span>'
+      +'</div>'
       +'</div>'
       +'</div>';
   }).join('');
+}
+
+function pOpenDqResponseSheet(responseId){
+  var r = _dqAllResponses.find(function(x){ return String(x.id) === String(responseId); });
+  if(!r) return;
+  var q = _getDailyQuestion();
+  var av = r.user_avatar || '';
+  var isImg = av && av.startsWith('http');
+  var canSeeProfile = r.user_id && r.user_id !== 'anon';
+  var avStyle = 'width:56px;height:56px;border-radius:50%;object-fit:cover;border:2.5px solid rgba(116,198,157,.50);'+(canSeeProfile?'cursor:pointer':'');
+  var avClick = canSeeProfile ? ' onclick="pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')"' : '';
+  var avHtml = isImg
+    ? '<img src="'+_escHtml(av)+'" style="'+avStyle+'"'+avClick+'>'
+    : '<div style="'+avStyle+';background:rgba(116,198,157,.18);display:flex;align-items:center;justify-content:center;font-size:26px"'+avClick+'>'+(av||'🌿')+'</div>';
+
+  // Build reaction buttons for the sheet (big pill style)
+  var rxDefs = [{key:'identifico',label:'Me identifico',emoji:'💚'},{key:'abrazo',label:'Te abrazo',emoji:'🫂'},{key:'entiendo',label:'Te entiendo',emoji:'💙'}];
+  var _m = _dqReactMap[responseId] || {};
+  var rxHtml = rxDefs.map(function(rx){
+    var rd = _m[rx.key] || {count:0,mine:false};
+    var cnt = rd.count > 0 ? ' '+rd.count : '';
+    var activeBg = rx.emoji==='💚'?'rgba(80,200,130,.22)':rx.emoji==='🫂'?'rgba(120,160,240,.20)':'rgba(80,140,230,.20)';
+    var activeBorder = rx.emoji==='💚'?'rgba(80,200,130,.55)':rx.emoji==='🫂'?'rgba(120,160,240,.50)':'rgba(80,140,230,.50)';
+    var bg = rd.mine ? activeBg : 'rgba(255,255,255,.06)';
+    var border = rd.mine ? activeBorder : 'rgba(255,255,255,.12)';
+    return '<button class="dq-reaction-btn" onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
+      +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+rd.mine+'" '
+      +'style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;background:'+bg+';border:1.5px solid '+border+';border-radius:16px;cursor:pointer;transition:all .18s;font-family:Jost,sans-serif">'
+      +'<span style="font-size:22px;line-height:1">'+rx.emoji+'</span>'
+      +'<span style="font-size:10px;font-weight:700;color:rgba(220,240,228,.80);letter-spacing:.3px">'+rx.label+(cnt?'<br><span style="font-size:12px;color:rgba(116,198,157,.90)">'+cnt.trim()+'</span>':'')+'</span>'
+      +'</button>';
+  }).join('');
+
+  var existing = document.getElementById('dqResponseSheetOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'dqResponseSheetOv';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="max-height:88vh;overflow-y:auto;background:linear-gradient(160deg,rgba(4,18,10,.98),rgba(6,24,14,.98));border-top:1.5px solid rgba(116,198,157,.22)">'
+    // Handle
+    +'<div class="p-sheet-handle" style="background:rgba(116,198,157,.30)"></div>'
+    // Question label
+    +'<div style="text-align:center;margin-bottom:6px">'
+    +'<span style="font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(200,158,56,.80);font-family:Jost,sans-serif">✨ Pregunta del día</span>'
+    +'</div>'
+    +'<div style="text-align:center;font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(220,240,228,.72);line-height:1.35;margin-bottom:20px;padding:0 16px">'+_escHtml(q?q.question:'')+'</div>'
+    // Mood emoji glow
+    +'<div style="text-align:center;margin-bottom:16px">'
+    +'<span style="font-size:48px;filter:drop-shadow(0 0 14px rgba(116,198,157,.35));line-height:1">'+r.mood_emoji+'</span>'
+    +'</div>'
+    // Author row
+    +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;justify-content:center">'
+    +avHtml
+    +'<div>'
+    +'<div style="font-size:14px;font-weight:700;color:rgba(200,240,218,.90);font-family:Jost,sans-serif'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
+    +'<div style="font-size:11px;color:rgba(116,198,157,.55);margin-top:2px;font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
+    +'</div>'
+    +'</div>'
+    // Response text
+    +(r.response_text
+      ? '<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:18px;padding:18px 20px;margin-bottom:22px;text-align:center">'
+        +'<div style="font-size:19px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;color:rgba(235,250,240,.92);line-height:1.6">\'\''+_escHtml(r.response_text)+'\'\'</div>'
+        +'</div>'
+      : '<div style="height:16px"></div>')
+    // Reactions
+    +'<div style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(116,198,157,.55);font-family:Jost,sans-serif;text-align:center;margin-bottom:12px">Reaccioná</div>'
+    +'<div style="display:flex;gap:10px">'+rxHtml+'</div>'
+    // Close
+    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;margin-top:18px;padding:11px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.22);border-radius:14px;color:rgba(116,198,157,.70);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
 }
 
 function pReportDqResponse(responseId, responseUserId){
