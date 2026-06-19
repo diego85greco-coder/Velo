@@ -7189,7 +7189,7 @@ function _renderNewsList(el, items){
   var _sourceTag = function(item){
     var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
     return hasLink
-      ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:var(--sage2);font-weight:700;text-decoration:none;background:var(--sage7);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.25)">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a>'
+      ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:#fff;font-weight:700;text-decoration:none;background:rgba(20,110,70,.78);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.5)">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a>'
       : (item.titulo ? '<a href="https://www.google.com/search?q='+encodeURIComponent(item.titulo+' '+_cy)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:var(--ink4);font-size:11px;text-decoration:none;background:var(--cream);padding:3px 8px;border-radius:100px;border:1px solid var(--border)">🔍 Buscar noticia</a>' : '<span style="color:var(--ink5);font-style:italic">✨ Velo IA</span>');
   };
 
@@ -7202,7 +7202,7 @@ function _renderNewsList(el, items){
       // Feature 3: "Noticia del día" — hero card with newspaper front-page design
       heroHtml = '<div onclick="pOpenNewsDetail(0)" style="cursor:pointer;margin-bottom:18px;border-radius:22px;overflow:hidden;background:linear-gradient(145deg,rgba(116,198,157,.14) 0%,rgba(116,198,157,.06) 100%);border:1.5px solid rgba(116,198,157,.28);box-shadow:0 4px 24px rgba(116,198,157,.10)">'
         +'<div style="padding:14px 16px 6px;display:flex;align-items:center;gap:6px">'
-        +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--sage2);background:rgba(116,198,157,.15);padding:3px 10px;border-radius:100px;border:1px solid rgba(116,198,157,.3)">🗞️ NOTICIA DEL DÍA</span>'
+        +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#fff;background:rgba(20,110,70,.80);padding:3px 10px;border-radius:100px;border:1px solid rgba(116,198,157,.55)">🗞️ NOTICIA DEL DÍA</span>'
         +'</div>'
         +'<div style="padding:8px 18px 6px;text-align:center">'
         +'<div style="font-size:56px;line-height:1;margin-bottom:10px">'+_escHtml(item.emoji||'📰')+'</div>'
@@ -7211,7 +7211,7 @@ function _renderNewsList(el, items){
         +'</div>'
         +'<div style="padding:10px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid rgba(116,198,157,.12)">'
         +_sourceTag(item)
-        +'<button onclick="event.stopPropagation();pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+');" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(37,168,106,.15);border:1px solid rgba(37,168,106,.3);border-radius:100px;font-size:11px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
+        +'<button onclick="event.stopPropagation();pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+');" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(20,110,70,.78);border:1px solid rgba(116,198,157,.5);border-radius:100px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
         +'</div>'
         +'</div>';
     } else {
@@ -7252,7 +7252,7 @@ function pOpenNewsDetail(i){
     +'</div>';
   // Feature 5: share buttons row
   var shareRow = '<div style="display:flex;gap:8px;margin-bottom:14px">'
-    +'<button onclick="pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:rgba(37,168,106,.13);border:1.5px solid rgba(37,168,106,.3);border-radius:14px;font-size:13px;font-weight:700;color:var(--sage2);cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
+    +'<button onclick="pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:rgba(20,110,70,.78);border:1.5px solid rgba(116,198,157,.45);border-radius:14px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
     +'<button id="newsCopyBtn" onclick="pCopyNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+',this)" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:rgba(116,198,157,.08);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;font-size:13px;font-weight:700;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">📋 Copiar</button>'
     +'</div>';
   var ov = document.createElement('div');
@@ -19265,17 +19265,39 @@ async function _renderHomeWeekMoodGraph(){
       var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.5)') : 'rgba(116,198,157,.60)';
       var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.1)') : 'rgba(116,198,157,.12)';
       var ring  = d.isToday ? 'border:2.5px solid '+color+';box-shadow:0 0 8px '+color+';' : 'border:1.5px solid '+color+';';
-      var emoji = d.mood ? d.mood.emoji : '·';
+      var emoji = d.mood ? d.mood.emoji : (d.isToday ? '+' : '·');
+      var todayEmptyStyle = (d.isToday && !d.mood) ? 'animation:moodDayPulse 2.2s ease-in-out infinite;' : '';
       var cls   = 'mood-day-circle'+(d.mood?'':' mood-day-empty')+(d.isToday?' mood-day-today':'');
-      return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:'Sin registro')+'">'
-        +'<div class="'+cls+'" style="width:34px;height:34px;border-radius:50%;'+ring+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'17':'11')+'px;transition:.2s">'+emoji+'</div>'
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:(d.isToday?'Registrá tu ánimo de hoy':'Sin registro'))+'">'
+        +'<div class="'+cls+'" style="width:34px;height:34px;border-radius:50%;'+ring+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'17':(d.isToday?'16':'11'))+'px;transition:.2s;'+todayEmptyStyle+'">'+emoji+'</div>'
         +'<span style="font-size:8px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
         +'</div>';
     }).join('');
   }
 
+  // Helper: count days logged this week and build streak message
+  function _weekStreakHtml(sbMap){
+    var loggedCount = 0;
+    var streak = 0;
+    var streakBroken = false;
+    for(var _si=0; _si<7; _si++){
+      var _sd = new Date(today.getFullYear(), today.getMonth(), today.getDate()-_si);
+      var _sk = _sd.getFullYear()+'-'+String(_sd.getMonth()+1).padStart(2,'0')+'-'+String(_sd.getDate()).padStart(2,'0');
+      var _sm = null;
+      try{ _sm = JSON.parse(safeLS('get','velo_mood_'+_sk)||'null'); }catch(e){}
+      if(!_sm && sbMap && sbMap[_sk]) _sm = sbMap[_sk];
+      if(_sm && _sm.emoji) loggedCount++;
+      if(!streakBroken){ if(_sm && _sm.emoji) streak++; else if(_si > 0) streakBroken = true; }
+    }
+    if(!loggedCount) return '<div style="text-align:center;padding:4px 0 2px;font-size:10.5px;color:rgba(255,255,255,.38);font-family:Jost,sans-serif;font-style:italic">Registrá cómo te sentís para ver tu historial</div>';
+    var _msg = streak >= 5 ? '🔥 '+streak+' días seguidos — ¡imparable!' : streak >= 3 ? '🔥 '+streak+' días seguidos' : streak >= 2 ? '✨ '+streak+' días seguidos esta semana' : loggedCount >= 3 ? '💚 '+loggedCount+' días registrados esta semana' : '💚 Registraste '+loggedCount+' día'+(loggedCount>1?'s':'')+' esta semana';
+    return '<div style="text-align:center;padding:5px 0 2px;font-size:10.5px;font-weight:700;color:rgba(116,198,157,.80);font-family:Jost,sans-serif;letter-spacing:.2px">'+_msg+'</div>';
+  }
+
   // Render immediately from localStorage (instant, no waiting)
   container.innerHTML = _buildGraphHtml(null);
+  var _streakEl = document.getElementById('homeWeekStreak');
+  if(_streakEl) _streakEl.innerHTML = _weekStreakHtml(null);
 
   // Then silently update from Supabase in background
   var _months = {};
@@ -19292,6 +19314,8 @@ async function _renderHomeWeekMoodGraph(){
   // Only re-render if Supabase added data not in localStorage
   if(Object.keys(_sbMap).length > 0 && document.getElementById('homeWeekMoodGraph')){
     document.getElementById('homeWeekMoodGraph').innerHTML = _buildGraphHtml(_sbMap);
+    var _streakElSb = document.getElementById('homeWeekStreak');
+    if(_streakElSb) _streakElSb.innerHTML = _weekStreakHtml(_sbMap);
   }
 }
 
@@ -19887,12 +19911,38 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
   try{ reported = JSON.parse(safeLS('get','velo_momento_reported')||'{}'); }catch(e){}
 
   if(!momentos||!momentos.length){
-    var _emptyEmoji = showMineOnly ? '✨' : '💭';
-    var _emptyMsg = showMineOnly ? 'Todavía no publicaste ningún momento hoy' : '¡Sé el primero en compartir un momento hoy! ✨';
-    feed.innerHTML='<div style="text-align:center;padding:22px 8px">'
-      +'<span style="font-size:36px;display:block;margin-bottom:10px">'+_emptyEmoji+'</span>'
-      +'<div style="font-size:12.5px;color:rgba(255,255,255,.4);line-height:1.5">'+_emptyMsg+'</div>'
-      +'</div>';
+    if(showMineOnly){
+      feed.innerHTML='<div style="text-align:center;padding:22px 8px">'
+        +'<span style="font-size:36px;display:block;margin-bottom:10px">✨</span>'
+        +'<div style="font-size:12.5px;color:rgba(255,255,255,.4);line-height:1.5">Todavía no publicaste ningún momento hoy</div>'
+        +'</div>';
+      return;
+    }
+    // Rotating inviting prompts for home empty state
+    var _homePrompts = [
+      { emoji:'💭', q:'¿Qué fue lo mejor de tu día?', sub:'La comunidad te está esperando — un momento tuyo puede alegrarle el día a alguien.' },
+      { emoji:'🌿', q:'¿Algo pequeño te dio paz hoy?', sub:'Los momentos chicos también merecen espacio. Compartílo.' },
+      { emoji:'✨', q:'¿Algo te hizo sonreír hoy?', sub:'Velo crece con cada momento que elegís compartir.' },
+      { emoji:'🤍', q:'¿Cómo te estás tratando hoy?', sub:'Compartir es un acto de valentía y de generosidad.' },
+      { emoji:'🌅', q:'¿Qué aprendiste hoy de vos mismo/a?', sub:'Tu perspectiva importa. Sé el primero en abrirlo.' },
+      { emoji:'☁️', q:'¿Qué tenés en la cabeza ahora?', sub:'Acá nadie juzga. Podés compartir lo que sea.' },
+      { emoji:'🌟', q:'¿Qué cosa, por pequeña que sea, te salió bien hoy?', sub:'Celebrar los logros chicos es parte de cuidarse.' }
+    ];
+    var _pi = (Math.floor(Date.now() / 3600000)) % _homePrompts.length;
+    var _p = _homePrompts[_pi];
+    if(isHome){
+      feed.innerHTML='<div onclick="pFocusMomentoInput()" style="cursor:pointer;border-radius:16px;padding:18px 16px 16px;background:linear-gradient(145deg,rgba(116,198,157,.12),rgba(116,198,157,.06));border:1.5px dashed rgba(116,198,157,.35);text-align:center;margin-bottom:4px">'
+        +'<div style="font-size:34px;line-height:1;margin-bottom:10px">'+_p.emoji+'</div>'
+        +'<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.88);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.4;margin-bottom:8px">'+_p.q+'</div>'
+        +'<div style="font-size:11.5px;color:rgba(116,198,157,.75);line-height:1.5;margin-bottom:14px">'+_p.sub+'</div>'
+        +'<div style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:rgba(116,198,157,.20);border:1px solid rgba(116,198,157,.40);border-radius:100px;font-size:12px;font-weight:700;color:rgba(220,255,235,.90);font-family:Jost,sans-serif">✏️ Compartir momento</div>'
+        +'</div>';
+    } else {
+      feed.innerHTML='<div style="text-align:center;padding:22px 8px">'
+        +'<span style="font-size:36px;display:block;margin-bottom:10px">💭</span>'
+        +'<div style="font-size:12.5px;color:rgba(255,255,255,.4);line-height:1.5">¡Sé el primero en compartir un momento hoy! ✨</div>'
+        +'</div>';
+    }
     return;
   }
   var cards = momentos.filter(function(m){ return !reported[m.id]; });
@@ -19937,6 +19987,10 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
   }).join('');
 }
 
+function pFocusMomentoInput(){
+  var el=document.getElementById('momentoHomeInput');
+  if(el){ el.focus(); el.scrollIntoView({behavior:'smooth',block:'center'}); }
+}
 async function _initHomeMomento(){
   var section=document.getElementById('homeMomentoSection');
   if(!section) return;
