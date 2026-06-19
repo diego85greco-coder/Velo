@@ -13223,7 +13223,7 @@ async function pRenderContacts(){
 
   // Build online list (favs + fans, deduped, only online)
   var _onlineMap = {};
-  favs.forEach(function(f){ var pi=_presenceInfo(f.id); if(pi.on) _onlineMap[f.id]={id:f.id,name:f.name,av:f.av||'🧑',uname:usernameMap[f.id]||f.username||'',pInfo:pi,unread:unreadIds[f.id]||0,isFav:true}; });
+  favs.forEach(function(f){ var pi=_presenceInfo(f.id); if(pi.on){ var _pm=profileMap[f.id]||{}; _onlineMap[f.id]={id:f.id,name:_pm.name||f.name,av:_pm.av||f.av||'🧑',uname:usernameMap[f.id]||f.username||'',pInfo:pi,unread:unreadIds[f.id]||0,isFav:true}; } });
   favMeRows.forEach(function(r){ var pi=_presenceInfo(r.user_id); if(pi.on&&!_onlineMap[r.user_id]){ var _fp=profileMap[r.user_id]||{}; _onlineMap[r.user_id]={id:r.user_id,name:_fp.name||usernameMap[r.user_id]||'Usuario',av:_fp.av||'🧑',uname:usernameMap[r.user_id]||'',pInfo:pi,unread:0,isFav:false}; } });
   var onlineList = Object.keys(_onlineMap).map(function(k){ return _onlineMap[k]; });
 
