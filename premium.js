@@ -4296,6 +4296,10 @@ var _guardianFilter = 'all';
 var _myGuardianStatus = safeLS('get','velo_guardian_status') || 'disponible'; // disponible/ocupado/incognito
 var _guardianHeartbeatTimer = null;
 var _lastGuardianListKey = ''; // dedup key to skip re-render when list didn't change
+// Module-level so pToggleGuardianMode can cancel them on re-activation, preventing
+// the race where a stale blur/visibility timer fires AFTER re-activation and writes 'ocupado'.
+var _guardianVisibilityTimer = null;
+var _guardianBlurTimer = null;
 
 // The user's general availability (disponible/ocupado). Guardians may also be 'incognito'.
 function _presenceStatus(){
@@ -4547,6 +4551,10 @@ async function pToggleGuardianMode(){
   var details = document.getElementById('guardianModeDetails');
   if(details) details.style.display = next ? '' : 'none';
   if(next){
+    // Cancel any pending blur/visibility timers that could overwrite 'disponible' with 'ocupado'
+    // after this re-activation (race: timer started before deactivation, fires after reactivation).
+    if(_guardianVisibilityTimer){ clearTimeout(_guardianVisibilityTimer); _guardianVisibilityTimer = null; }
+    if(_guardianBlurTimer){ clearTimeout(_guardianBlurTimer); _guardianBlurTimer = null; }
     // Always reset to disponible when activating — clears any stuck incognito state
     safeLS('set','velo_guardian_status','disponible');
     _myGuardianStatus = 'disponible';
@@ -20951,7 +20959,7 @@ window.addEventListener('load', function(){
   });
 
   // Detect tab/window hidden (phone locked, minimized, other tab) — mark ocupado automatically
-  var _guardianVisibilityTimer = null;
+  // _guardianVisibilityTimer is module-level so pToggleGuardianMode can cancel it on re-activation.
   document.addEventListener('visibilitychange', function(){
     if(!document.hidden && _authenticated){
       // Re-sync favorites when user returns to the tab (picks up cross-device changes)
@@ -20973,7 +20981,7 @@ window.addEventListener('load', function(){
 
   // Detect window blur (PC screen lock, Alt+Tab to another app on Windows)
   // visibilitychange alone doesn't fire on Windows lock screen — blur does
-  var _guardianBlurTimer = null;
+  // _guardianBlurTimer is module-level so pToggleGuardianMode can cancel it on re-activation.
   window.addEventListener('blur', function(){
     if(safeLS('get','velo_is_guardian') !== 'true') return;
     // 4s grace period so focus loss from dialog/DevTools doesn't falsely trigger
