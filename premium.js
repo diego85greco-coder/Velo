@@ -2995,6 +2995,8 @@ async function _savePushSubscriptionToSupabase(sub){
   if(!sbClient) return;
   var _uid = safeLS('get','velo_user_id');
   if(!_uid) return;
+  // Session may be expired (iOS PWA backgrounded) — refresh before the UPDATE or RLS will block it silently
+  try{ await _ensureSbSession(); }catch(e){}
   try{
     // Wrap subscription with timezone so server can send at the right local time per region
     var _tz = (typeof Intl !== 'undefined' && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone : '';
@@ -3014,6 +3016,8 @@ async function _syncPushSubOnStartup(){
   if(!_uid) return;
   _initSupabase();
   if(!sbClient) return;
+  // Refresh session first — expired JWT causes SELECT/UPDATE to fail silently via RLS
+  try{ await _ensureSbSession(); }catch(e){}
   try{
     // Only update if DB currently has NULL (avoid overwriting a fresher subscription from another device)
     var {data:_chk} = await sbClient.from('profiles').select('push_subscription').eq('id',_uid).limit(1);
