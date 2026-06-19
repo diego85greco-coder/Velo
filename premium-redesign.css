@@ -31,11 +31,46 @@ body::after {
   content: '';
   position: fixed; inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(108deg, transparent 30%, rgba(255,255,255,.10) 38%, transparent 46%),
-    linear-gradient(118deg, transparent 50%, rgba(255,255,255,.08) 58%, transparent 66%);
-  mix-blend-mode: overlay;
+  /* vignette only — sweep moved to body::before */
+  background: radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0,0,0,.03) 100%);
+  mix-blend-mode: multiply;
   z-index: -1;
+}
+/* ── Full-width glow sweep (v956) ───────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  top: -5%; left: 0;
+  width: 70%; height: 110%;
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(
+    108deg,
+    transparent 5%,
+    rgba(116,198,157,.13) 28%,
+    rgba(255,255,255,.09) 48%,
+    rgba(232,200,121,.10) 68%,
+    transparent 92%
+  );
+  mix-blend-mode: overlay;
+  transform: translateX(-110%);
+  animation: velo-bg-sweep 12s ease-in-out infinite;
+  will-change: transform;
+}
+body.r-dark::before {
+  background: linear-gradient(
+    108deg,
+    transparent 5%,
+    rgba(116,198,157,.07) 28%,
+    rgba(255,255,255,.04) 48%,
+    rgba(232,200,121,.06) 68%,
+    transparent 92%
+  );
+}
+@keyframes velo-bg-sweep {
+  0%   { transform: translateX(-110%); }
+  50%  { transform: translateX(200%); }
+  100% { transform: translateX(-110%); }
 }
 
 /* ── 2. SIDEBAR — pill, colapsada por defecto, expande on hover ── */
@@ -11787,4 +11822,106 @@ body.velo-t-noche.r-dark #homeGreetSub {
 /* Hero breathing nocturno: más lento, índigo */
 body.velo-t-noche.r-dark .r-hero-v2 {
   animation: hero-bg-breathe 18s ease-in-out infinite !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v956 — Carousel dot indicators + profile toggle
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Dot pagination below carousels */
+.carousel-dots {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 5px !important;
+  min-height: 18px !important;
+  margin-top: 6px !important;
+  margin-bottom: 2px !important;
+}
+.carousel-dots span {
+  display: block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: rgba(116,198,157,.22);
+  transition: width .25s ease, background .25s ease, border-radius .25s ease;
+  flex-shrink: 0;
+}
+.carousel-dots span.cd-active {
+  width: 14px;
+  border-radius: 3px;
+  background: rgba(116,198,157,.80);
+}
+#happyDots span { background: rgba(200,158,56,.22); }
+#happyDots span.cd-active { background: rgba(200,158,56,.80); }
+#dqDots span { background: rgba(200,158,56,.22); }
+#dqDots span.cd-active { background: rgba(200,158,56,.70); }
+
+/* Daily question responses — horizontal carousel */
+#homeDailyQFeed {
+  display: flex !important;
+  flex-direction: row !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  scroll-snap-type: x mandatory !important;
+  gap: 10px !important;
+  padding: 4px 0 8px !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+#homeDailyQFeed::-webkit-scrollbar { display: none !important; }
+#homeDailyQFeed .dq-feed-card {
+  flex-shrink: 0 !important;
+  width: 87% !important;
+  scroll-snap-align: start !important;
+  scroll-snap-stop: always !important;
+  padding: 14px !important;
+  background: rgba(8,24,14,.90) !important;
+  border: 1px solid rgba(116,198,157,.18) !important;
+  border-radius: 16px !important;
+  box-sizing: border-box !important;
+  align-items: flex-start !important;
+}
+#homeDailyQFeed #dqExpandBtn { display: none !important; }
+
+/* Profile toggle in momento compose row */
+#momentoProfileToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 6px;
+  border-radius: 22px;
+  border: 1px solid rgba(116,198,157,.28);
+  background: rgba(116,198,157,.08);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: Jost, sans-serif;
+  color: rgba(116,198,157,.75);
+  transition: background .2s, border-color .2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+#momentoProfileToggle.mpt-on {
+  background: rgba(116,198,157,.18) !important;
+  border-color: rgba(116,198,157,.50) !important;
+  color: rgba(116,198,157,.95) !important;
+}
+#momentoProfileToggle .mpt-avatar {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(116,198,157,.40);
+}
+#momentoProfileToggle .mpt-avatar-ph {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: rgba(116,198,157,.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+  border: 1.5px solid rgba(116,198,157,.30);
 }

@@ -3544,12 +3544,9 @@ function _renderDailyFeed(responses){
     feedEl.innerHTML = '<div style="text-align:center;padding:14px 0;font-size:13px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif;font-style:italic">Sé el primero en compartir 🌱</div>';
     return;
   }
-  var preview = visible.slice(0, _DQ_PREVIEW_COUNT);
-  var rest = visible.length - _DQ_PREVIEW_COUNT;
-  feedEl.innerHTML = _buildDqCards(preview)
-    + (rest > 0
-      ? '<button onclick="_expandDailyFeed()" style="width:100%;margin-top:10px;padding:10px;border-radius:12px;border:1.5px solid rgba(116,198,157,.22);background:transparent;color:rgba(116,198,157,.7);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px" id="dqExpandBtn">Ver '+rest+' respuestas más ↓</button>'
-      : '');
+  // Show all responses in carousel (no expand button needed)
+  feedEl.innerHTML = _buildDqCards(visible);
+  _initCarouselDots('homeDailyQFeed','dqDots');
 }
 
 function _expandDailyFeed(){
@@ -19908,11 +19905,16 @@ async function _fetchMomentos(limit){
   _initSupabase(); if(!sbClient) return [];
   try{
     var now=new Date().toISOString();
-    var res=await sbClient.from('momentos').select('id,text,emoji,anon_label,hearts,created_at,expires_at,user_hash').gt('expires_at',now).order('created_at',{ascending:false}).limit(limit||20);
+    var _sel = 'id,text,emoji,anon_label,hearts,created_at,expires_at,user_hash,user_name,user_avatar';
+    var res=await sbClient.from('momentos').select(_sel).gt('expires_at',now).order('created_at',{ascending:false}).limit(limit||20);
+    // Fall back if profile columns don't exist yet in DB
+    if(res.error && res.error.code==='42703'){
+      _sel = 'id,text,emoji,anon_label,hearts,created_at,expires_at,user_hash';
+      res = await sbClient.from('momentos').select(_sel).gt('expires_at',now).order('created_at',{ascending:false}).limit(limit||20);
+    }
     if(res.error){
       if(res.error.code==='42P01') return null;
       console.warn('[Velo] momentos fetch error:', res.error.code, res.error.message);
-      // Permissions error — table exists but RLS blocks reads
       if(res.error.code==='42501'||res.error.message.indexOf('permission')+res.error.message.indexOf('policy')>-2){
         pToast('ℹ️','Activá las políticas RLS en la tabla momentos de Supabase');
       }
@@ -19930,6 +19932,67 @@ function _momentoModerate(text){
     'odio a ','te odio','los odio','me dan asco','asco de','muérete','muerate',
     'matate','matense','kill yourself','go kill'];
   return !bad.some(function(w){ return t.indexOf(w) >= 0; });
+}
+
+/* ── v956: carousel dots + profile toggle ───────────────────── */
+var _momentoShowProfile = false;
+
+function _initCarouselDots(feedId, dotsId){
+  var feed = document.getElementById(feedId);
+  var dotsEl = document.getElementById(dotsId);
+  if(!feed || !dotsEl) return;
+  var cards = feed.querySelectorAll('.home-mc');
+  if(cards.length < 2){ dotsEl.innerHTML = ''; return; }
+  dotsEl.innerHTML = Array.from(cards).map(function(_,i){
+    return '<span'+(i===0?' class="cd-active"':'')+' data-i="'+i+'"></span>';
+  }).join('');
+  if(feed._dotsListener) feed.removeEventListener('scroll', feed._dotsListener);
+  var _cardW = cards[0] ? cards[0].offsetWidth + 10 : feed.offsetWidth * 0.87 + 10;
+  feed._dotsListener = function(){
+    var idx = Math.min(Math.round(feed.scrollLeft / _cardW), cards.length - 1);
+    dotsEl.querySelectorAll('span').forEach(function(s,i){ s.classList.toggle('cd-active', i===idx); });
+  };
+  feed.addEventListener('scroll', feed._dotsListener, {passive:true});
+  // First-visit swipe hint — nudge the feed and come back
+  setTimeout(function(){
+    if(feed.scrollLeft === 0 && feed.querySelectorAll('.home-mc').length > 1){
+      feed.scrollTo({left:38, behavior:'smooth'});
+      setTimeout(function(){ feed.scrollTo({left:0, behavior:'smooth'}); }, 560);
+    }
+  }, 800);
+}
+
+function pToggleMomentoProfile(){
+  _momentoShowProfile = !_momentoShowProfile;
+  var btn = document.getElementById('momentoProfileToggle');
+  var lbl = document.getElementById('momentoProfileToggleLabel');
+  var ico = document.getElementById('momentoProfileToggleIcon');
+  if(!btn) return;
+  btn.classList.toggle('mpt-on', _momentoShowProfile);
+  if(lbl) lbl.textContent = _momentoShowProfile ? (_escHtml(safeLS('get','velo_user_name')||'Mi perfil')) : 'Publicar anónimo/a';
+  if(ico) ico.textContent = _momentoShowProfile ? '👤' : '🔒';
+}
+
+function _initMomentoProfileToggle(){
+  _momentoShowProfile = false;
+  var btn = document.getElementById('momentoProfileToggle');
+  if(!btn) return;
+  btn.classList.remove('mpt-on');
+  var lbl = document.getElementById('momentoProfileToggleLabel');
+  var ico = document.getElementById('momentoProfileToggleIcon');
+  if(lbl) lbl.textContent = 'Publicar anónimo/a';
+  if(ico) ico.textContent = '🔒';
+  var av = safeLS('get','velo_user_av') || '';
+  var name = safeLS('get','velo_user_name') || '';
+  var avEl = document.getElementById('momentoProfileToggleAv');
+  if(!avEl) return;
+  if(av && (av.startsWith('http') || av.startsWith('data:'))){
+    avEl.className = '';
+    avEl.innerHTML = '<img src="'+_escHtml(av)+'" class="mpt-avatar" alt="">';
+  } else {
+    avEl.className = 'mpt-avatar-ph';
+    avEl.textContent = name ? name.charAt(0).toUpperCase() : '🌿';
+  }
 }
 
 function _renderMomentoCards(momentos, feedId, showMineOnly){
@@ -19990,6 +20053,12 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var txtSz = isHome ? '13px' : '14px';
     var stripW = isHome ? '56px' : '62px';
     var emojiSz = isHome ? '24px' : '28px';
+    var hasProfile = m.user_name && m.user_name.length > 0;
+    var authorName = hasProfile ? m.user_name : (m.anon_label||'Anónimo/a');
+    var authorAvHtml = '';
+    if(hasProfile && m.user_avatar && (m.user_avatar.startsWith('http')||m.user_avatar.startsWith('data:'))){
+      authorAvHtml = '<img src="'+_escHtml(m.user_avatar)+'" style="width:16px;height:16px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:3px;flex-shrink:0;border:1px solid '+col.border+'">';
+    }
     return '<div class="home-mc" style="background:'+col.bg+';box-shadow:0 3px 18px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3px solid '+col.border+'">'
       +'<div style="display:flex;align-items:stretch;gap:0">'
       // Colored left strip with emoji
@@ -19997,7 +20066,8 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       // Main content
       +'<div style="flex:1;min-width:0;padding:11px 10px 11px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
-      +'<span style="font-size:10.5px;font-style:italic;font-weight:700;color:'+col.label+'">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
+      +(authorAvHtml ? '<span style="display:inline-flex;align-items:center">'+authorAvHtml+'</span>' : '')
+      +'<span style="font-size:10.5px;font-style:italic;font-weight:700;color:'+col.label+'">'+_escHtml(authorName)+'</span>'
       +'<span style="font-size:9px;color:rgba(255,255,255,.38)">· '+_momentoAgo(m.created_at)+'</span>'
       +'<span style="font-size:9px;color:rgba(255,255,255,.28)">· ⏱'+timeLeft+'h</span>'
       +(mine?'<span style="font-size:8px;font-weight:700;padding:1px 6px;border-radius:5px;background:'+col.badge+';color:'+col.label+'">tuyo</span>':'')
@@ -20039,6 +20109,8 @@ async function _initHomeMomento(){
   if(momentos===null){ section.style.display='none'; return; }
   section.style.display='block';
   _renderMomentoCards(momentos,'homeMomentoFeed');
+  _initCarouselDots('homeMomentoFeed','momentoDots');
+  _initMomentoProfileToggle();
   _updateFeedTabCounts();
 }
 
@@ -20124,7 +20196,7 @@ async function _loadHomeHappyFeed(){
   var _hwCutoff = Date.now() - 24*60*60*1000;
   var _hwCache = _sbHappy ? _sbHappy.filter(function(h){ return h.ts > _hwCutoff; }) : [];
   if(!_hwCache.length){ try{ _hwCache = (JSON.parse(safeLS('get','velo_happy_feed_cache')||'[]')).filter(function(h){ return h.ts > _hwCutoff; }); }catch(e){} }
-  if(_hwCache.length){ feed.innerHTML = _hwCache.slice(0,4).map(_happyHomeCard).join(''); }
+  if(_hwCache.length){ feed.innerHTML = _hwCache.slice(0,4).map(_happyHomeCard).join(''); _initCarouselDots('homeHappyFeed','happyDots'); }
   else { feed.innerHTML = _emptyState; }
 
   _initSupabase();
@@ -20139,6 +20211,7 @@ async function _loadHomeHappyFeed(){
     posts = (_processHappyQueue()||[]).slice(0,4);
   }
   feed.innerHTML = posts.length ? posts.map(_happyHomeCard).join('') : _emptyState;
+  _initCarouselDots('homeHappyFeed','happyDots');
 }
 
 async function pPostHappyHome(){
@@ -20240,7 +20313,18 @@ async function pPostMomentoHome(){
   var btn=document.getElementById('momentoHomeBtn');
   if(btn){btn.disabled=true;btn.textContent='…';}
   try{
-    var res=await sbClient.from('momentos').insert({id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()});
+    var _insertData={id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()};
+    if(_momentoShowProfile){
+      var _pn=safeLS('get','velo_user_name'); var _pav=safeLS('get','velo_user_av');
+      if(_pn) _insertData.user_name=_pn;
+      if(_pav) _insertData.user_avatar=_pav;
+    }
+    var res=await sbClient.from('momentos').insert(_insertData);
+    // Graceful fallback if profile columns not yet in DB
+    if(res.error && res.error.code==='42703'){
+      delete _insertData.user_name; delete _insertData.user_avatar;
+      res=await sbClient.from('momentos').insert(_insertData);
+    }
     if(res.error){
       if(res.error.code==='42P01'){pToast('ℹ️','Función próximamente disponible');}
       else{ pToast('⚠️','Error al publicar ('+res.error.code+'): '+res.error.message); }
@@ -20248,7 +20332,7 @@ async function pPostMomentoHome(){
       inp.value=''; _momentoTrackPost(); pToast('✨','¡Momento publicado! 🌱'); _initHomeMomento();
     }
   }catch(e){pToast('⚠️','Error: '+e.message);}
-  if(btn){btn.disabled=false;btn.textContent='Publicar ✨';}
+  if(btn){btn.disabled=false;btn.textContent='✨';}
 }
 
 function pReportMomento(id, btn){
