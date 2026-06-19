@@ -4865,12 +4865,18 @@ function pOpenGuardian(id){
     if(csEl) csEl.innerHTML = '';
     if(csCard) csCard.style.display = 'none';
 
-    _loadUserReviews(gUid).then(function(revs){
-      var el = document.getElementById('gdReviews');
-      if(!el) return;
-      if(!revs.length){ el.innerHTML = '<p class="p-sm p-muted">Sin reseñas aún.</p>'; return; }
-      el.innerHTML = _renderReviewsList(revs, myId, gUid);
-    });
+    var rvEl2 = document.getElementById('gdReviews');
+    if(_gIsAnon){
+      // Don't load reviews for anonymous guardians — reviewer names would break their anonymity.
+      if(rvEl2) rvEl2.innerHTML = '<p class="p-sm p-muted">Las reseñas no están disponibles en modo anónimo.</p>';
+    } else {
+      _loadUserReviews(gUid).then(function(revs){
+        var el = document.getElementById('gdReviews');
+        if(!el) return;
+        if(!revs.length){ el.innerHTML = '<p class="p-sm p-muted">Sin reseñas aún.</p>'; return; }
+        el.innerHTML = _renderReviewsList(revs, myId, gUid);
+      });
+    }
 
     // Load cultural status (music, book, film, phrase) from profiles table.
     // Skip for anonymous guardians — their profile data would reveal their identity.
@@ -12805,7 +12811,7 @@ async function pSendReplyToAdmin(originalTopic){
 }
 
 async function pQuickProfile(name, av, bio, guardianId, userId){
-  var isAnon = !name || name === 'Usuario Anónimo' || name === 'Anónimo';
+  var isAnon = !name || name === 'Usuario Anónimo' || name === 'Anónimo' || name === 'Guardián Anónimo';
   var uid = userId || (guardianId ? guardianId.replace('live_','') : '');
 
   // Show the sheet immediately with a loading state, then enrich
@@ -20740,11 +20746,13 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
       +'<div class="feed-bubble feed-bubble--own">'+quotePart+_highlightMentions(text)+'<span class="feed-time">'+ts+'</span></div>'
       +'</div>'+rxHtml+'</div>';
   } else {
-    var canProfile = !!(senderName && senderName !== 'Usuario Anónimo' && senderName !== 'Anónimo');
+    var _isAnonSender = !senderName || senderName === 'Usuario Anónimo' || senderName === 'Anónimo' || senderName === 'Guardián Anónimo';
+    var canProfile = !_isAnonSender;
     var avClickAttr = canProfile
       ? ' style="cursor:pointer" onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(av||'🌿')+',\'\',\'\','+_jsAttr(senderId||'')+')"'
       : '';
-    var _sUname = senderId ? _uLook(senderId) : '';
+    // Never look up the real username for anonymous senders — the UID would expose their identity.
+    var _sUname = (!_isAnonSender && senderId) ? _uLook(senderId) : '';
     var _sUnameTag = _sUname ? '<span style="font-size:9px;display:block;color:var(--ink5);font-weight:500;margin-top:0px;line-height:1.2">@'+_escHtml(_sUname)+'</span>' : '';
     var senderHtml = canProfile
       ? '<div class="feed-sender" style="font-size:11px;color:var(--ink4);cursor:pointer;line-height:1.2" onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(av||'🌿')+',\'\',\'\','+_jsAttr(senderId||'')+')">'+_escHtml(senderName)+_sUnameTag+'</div>'
