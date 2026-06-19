@@ -7049,11 +7049,12 @@ async function pRenderNews(forceRefresh){
   var _seed = forceRefresh ? ' Session:'+Date.now() : '';
 
   // Attempt 1: Grounded search — Gemini with Google Search finds real articles with verified URLs
-  var gPrompt = 'Today is '+todayFull+'.'+_seed+' Use Google Search to find 5 DIFFERENT real positive news stories published in the last 7 days. '
+  var gPrompt = 'Today is '+todayFull+' ('+_nd.getFullYear()+').'+_seed+' Use Google Search to find 5 DIFFERENT real positive news stories published in '+_nd.getFullYear()+' (current year). '
     +'Focus on: '+_topicFocus+'. '
-    +'For EACH story you MUST include: the real article URL (sourceUrl), the news outlet name (sourceName), '
+    +'PRIORITY: articles from '+_nd.getFullYear()+'. Only use older articles (max 1 year old) if absolutely nothing recent is found. NEVER use articles older than 12 months. '
+    +'For EACH story you MUST include: the real article URL (sourceUrl — must be a direct link to the article page), the news outlet name (sourceName), '
     +'the article title, a 2-3 sentence summary in Argentine Spanish (rioplatense, vos/vosotros), and a short wellbeing reflection. '
-    +'ONLY include stories actually found via Google Search today — do NOT repeat stories from previous searches, do NOT use training data. '
+    +'ONLY include stories actually found via Google Search — do NOT use training data, do NOT invent URLs. '
     +'Respond ONLY with valid JSON array, no markdown fences: '
     +'[{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"...","sourceName":"...","sourceUrl":"https://..."}]';
 
@@ -7084,9 +7085,10 @@ async function pRenderNews(forceRefresh){
 
   // Attempt 2: Regular Gemini fallback (no fake URLs)
   if(!items.length){
-    var aiPrompt = 'Generá 5 noticias positivas e inspiradoras de bienestar, ciencia, naturaleza y solidaridad humana. '
-      +'Sé específico y detallado, no genérico. No inventes URLs. '
-      +'SOLO JSON: [{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"..."}]';
+    var aiPrompt = 'Generá 5 noticias reales, positivas e inspiradoras de '+_nd.getFullYear()+' (año actual) sobre bienestar, ciencia, naturaleza o solidaridad humana. '
+      +'Priorizá noticias del año '+_nd.getFullYear()+'. Si no tenés información de ese año, usá noticias de los últimos 12 meses. NUNCA uses noticias de más de 2 años atrás. '
+      +'Sé específico: incluí nombres reales, países, datos concretos. No inventes URLs. '
+      +'SOLO JSON: [{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"...","sourceName":"nombre del medio real"}]';
     var aiText = await _geminiCall(aiPrompt, { temperature:0.85, maxOutputTokens:1200 });
     if(_navToken !== _tok) return;
     if(aiText){
@@ -7099,17 +7101,19 @@ async function pRenderNews(forceRefresh){
 
   if(!items.length){
     // Static curated pool — rotate so consecutive refreshes show different stories
+    // Each item includes a Google search URL so users can find the real article
+    var _cy = _nd.getFullYear();
     var _pool = [
-      { emoji:'🌱', titulo:'Reforestación récord: 1.000 millones de árboles plantados', cuerpo:'Una coalición de países y organizaciones alcanzó el hito histórico de plantar mil millones de árboles en un solo año, contribuyendo a absorber millones de toneladas de CO₂ y restaurar ecosistemas degradados en cinco continentes.', reflexion:'Cada árbol es un acto de fe en el futuro. La humanidad puede regenerarse cuando actúa unida. 🌿', _src:'static' },
-      { emoji:'💊', titulo:'Nueva terapia elimina dolor crónico sin opioides', cuerpo:'Investigadores desarrollaron un tratamiento basado en neuromodulación que redujo el dolor crónico en un 80% de los participantes sin generar dependencia, abriendo una nueva era en el manejo del dolor.', reflexion:'El alivio del sufrimiento humano sigue avanzando. La ciencia trabaja para que vivir bien sea posible para todos. 💙', _src:'static' },
-      { emoji:'🤝', titulo:'Comunidades rurales logran autosuficiencia energética solar', cuerpo:'Más de 200 aldeas accedieron por primera vez a electricidad limpia gracias a micro-redes solares comunitarias, transformando la educación, la salud y la economía local.', reflexion:'La energía limpia no es solo tecnología — es dignidad y oportunidad. ✨', _src:'static' },
-      { emoji:'🐋', titulo:'Ballenas jorobadas se recuperaron al 93% de niveles históricos', cuerpo:'Después de décadas de protección internacional, las ballenas jorobadas del Atlántico Sur alcanzaron casi su población pre-cacería, en uno de los mayores éxitos de conservación marina.', reflexion:'La naturaleza sana cuando le damos tiempo y espacio. El daño puede revertirse. 🌊', _src:'static' },
-      { emoji:'📚', titulo:'100% de alfabetización digital en adultos mayores de 60', cuerpo:'Un programa nacional capacitó a más de 400.000 personas mayores en el uso de internet, videollamadas y servicios en línea, reduciendo el aislamiento social en un 40%.', reflexion:'Aprender no tiene edad. Cada persona conectada es una vida más acompañada. 🌻', _src:'static' },
-      { emoji:'🦁', titulo:'El guepardo vuelve a India después de 70 años de extinción local', cuerpo:'El ambicioso proyecto de reintroducción de guepardos africanos en el Parque Nacional Kuno resultó exitoso: ya nacieron las primeras crías en cautiverio semi-libre, consolidando la esperanza de recuperación de la especie.', reflexion:'Cuando la humanidad decide proteger la vida, los milagros ecológicos son posibles. 🌿', _src:'static' },
-      { emoji:'🧬', titulo:'Primer tratamiento de edición genética aprobado para enfermedad sanguínea', cuerpo:'La FDA aprobó la primera terapia basada en CRISPR para la anemia falciforme, una enfermedad dolorosa que afecta a millones. Los ensayos muestran remisión completa en el 90% de los pacientes tratados.', reflexion:'La ciencia convierte el sufrimiento de hoy en el alivio de mañana. Cada avance es una vida cambiada. 💙', _src:'static' },
-      { emoji:'🌊', titulo:'Gran Barrera de Coral muestra señales de recuperación sorprendente', cuerpo:'Científicos australianos registraron niveles de cobertura de coral más altos que en décadas en partes de la Gran Barrera, atribuido a reducción local de contaminantes y nuevas técnicas de restauración con corales resistentes al calor.', reflexion:'La resiliencia de la naturaleza nos enseña que siempre hay posibilidad de regeneración. 🌏', _src:'static' },
-      { emoji:'🤲', titulo:'Cocinas comunitarias alimentan a 2 millones de personas en América Latina', cuerpo:'Una red de voluntarios en 12 países organiza ollas populares que sirven más de dos millones de comidas semanales a personas en situación de vulnerabilidad, conectando a vecinos y fortaleciendo el tejido social.', reflexion:'La solidaridad transforma vecindarios en comunidades. Compartir una mesa es un acto de amor. ❤️', _src:'static' },
-      { emoji:'♻️', titulo:'Ciudad europea logra reciclar el 95% de sus residuos', cuerpo:'Ljubljana, en Eslovenia, alcanzó tasas de reciclaje del 95%, convirtiéndose en modelo mundial de economía circular gracias a su sistema de separación puerta a puerta y educación ambiental desde la escuela primaria.', reflexion:'Un futuro limpio se construye con pequeñas decisiones diarias y mucha voluntad colectiva. 🌍', _src:'static' }
+      { emoji:'🌱', titulo:'Reforestación récord: millones de árboles plantados en '+_cy, cuerpo:'Coaliciones de países y organizaciones siguen batiendo récords de reforestación, contribuyendo a absorber millones de toneladas de CO₂ y restaurar ecosistemas degradados en distintos continentes.', reflexion:'Cada árbol es un acto de fe en el futuro. La humanidad puede regenerarse cuando actúa unida. 🌿', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=reforestacion+record+arboles+'+_cy, _src:'static' },
+      { emoji:'💊', titulo:'Avances en tratamientos sin opioides para el dolor crónico', cuerpo:'Investigadores continúan desarrollando terapias basadas en neuromodulación y biomedicina que reducen el dolor crónico sin generar dependencia, mejorando la calidad de vida de millones de personas.', reflexion:'El alivio del sufrimiento humano sigue avanzando. La ciencia trabaja para que vivir bien sea posible para todos. 💙', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=tratamiento+dolor+cronico+sin+opioides+'+_cy, _src:'static' },
+      { emoji:'☀️', titulo:'Energía solar bate récords de producción en '+_cy, cuerpo:'La energía solar alcanzó nuevos máximos de producción global en '+_cy+', con cientos de comunidades rurales accediendo por primera vez a electricidad limpia gracias a micro-redes comunitarias.', reflexion:'La energía limpia no es solo tecnología — es dignidad y oportunidad. ✨', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=record+energia+solar+renovable+'+_cy, _src:'static' },
+      { emoji:'🐋', titulo:'Especies marinas en recuperación gracias a áreas protegidas', cuerpo:'Ballenas, tortugas y delfines muestran señales de recuperación poblacional en zonas donde se establecieron reservas marinas, demostrando que la protección sostenida revierte el daño ambiental.', reflexion:'La naturaleza sana cuando le damos tiempo y espacio. El daño puede revertirse. 🌊', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=conservacion+marina+especies+recuperacion+'+_cy, _src:'static' },
+      { emoji:'📚', titulo:'Programas de inclusión digital reducen el aislamiento en adultos mayores', cuerpo:'Iniciativas en toda América Latina capacitan a personas mayores en el uso de internet y videollamadas, reduciendo el aislamiento social y conectando a miles con sus familias y comunidades.', reflexion:'Aprender no tiene edad. Cada persona conectada es una vida más acompañada. 🌻', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=inclusion+digital+adultos+mayores+america+latina+'+_cy, _src:'static' },
+      { emoji:'🧬', titulo:'Terapias génicas CRISPR abren nuevas esperanzas para enfermedades raras', cuerpo:'Los avances en edición genética continúan transformando el tratamiento de enfermedades hereditarias, con nuevas terapias aprobadas y ensayos clínicos que muestran resultados prometedores en pacientes de todo el mundo.', reflexion:'La ciencia convierte el sufrimiento de hoy en el alivio de mañana. Cada avance es una vida cambiada. 💙', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=CRISPR+terapia+genica+aprobacion+'+_cy, _src:'static' },
+      { emoji:'🌊', titulo:'Corales tropicales muestran resiliencia ante el cambio climático', cuerpo:'Científicos identificaron colonias de coral con mayor tolerancia al calor y trabajan en programas de restauración activa que replican estas variedades en arrecifes degradados de todo el mundo.', reflexion:'La resiliencia de la naturaleza nos enseña que siempre hay posibilidad de regeneración. 🌏', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=restauracion+corales+resiliencia+'+_cy, _src:'static' },
+      { emoji:'🤲', titulo:'Redes de voluntariado baten récords de impacto social en '+_cy, cuerpo:'Organizaciones de voluntarios en todo el mundo registran un crecimiento sin precedentes en '+_cy+', con millones de personas dedicando tiempo a causas comunitarias, bancos de alimentos y apoyo a personas vulnerables.', reflexion:'La solidaridad transforma vecindarios en comunidades. Compartir es un acto de amor. ❤️', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=voluntariado+record+solidaridad+'+_cy, _src:'static' },
+      { emoji:'♻️', titulo:'Ciudades líderes en reciclaje y economía circular en '+_cy, cuerpo:'Varias ciudades europeas y latinoamericanas alcanzan tasas de reciclaje históricas en '+_cy+', inspirando nuevos modelos de economía circular que reducen residuos y generan empleos verdes.', reflexion:'Un futuro limpio se construye con pequeñas decisiones diarias y mucha voluntad colectiva. 🌍', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=ciudades+reciclaje+economia+circular+'+_cy, _src:'static' },
+      { emoji:'🧠', titulo:'Investigaciones en salud mental reducen el estigma en jóvenes', cuerpo:'Nuevos programas de salud mental en escuelas y universidades de América Latina están logrando que más jóvenes busquen ayuda sin miedo al juicio, cambiando la cultura del bienestar emocional.', reflexion:'Hablar de lo que sentimos es el primer paso hacia sanar. La salud mental es salud. 💚', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=salud+mental+jovenes+programa+'+_cy, _src:'static' }
     ];
     var _offset = (Date.now() / 60000 | 0) % _pool.length; // rotates every minute
     items = [];
@@ -7126,12 +7130,10 @@ function _renderNewsList(el, items){
   _newsListCache = items;
   el.innerHTML = items.map(function(item, i){
     var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
-    // Only show a source name badge for admin-curated content with a real verified link.
-    // Groq-generated items have no web access so source names are AI-invented — show "Velo IA" instead.
-    var isAdminReal = item._src === 'admin' && hasLink;
-    var sourceTag = isAdminReal
+    // Show real link for any item with a verified URL (admin-curated or grounded Gemini search)
+    var sourceTag = hasLink
       ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:var(--sage2);font-weight:700;text-decoration:none;background:var(--sage7);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.25)">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a>'
-      : '<span style="color:var(--ink5);font-style:italic">✨ Historia de bienestar · Velo IA</span>';
+      : (item.titulo ? '<a href="https://www.google.com/search?q='+encodeURIComponent(item.titulo+' '+new Date().getFullYear())+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:var(--ink4);font-size:11px;text-decoration:none;background:var(--cream);padding:3px 8px;border-radius:100px;border:1px solid var(--border)">🔍 Buscar noticia</a>' : '<span style="color:var(--ink5);font-style:italic">✨ Velo IA</span>');
     return '<div class="p-card p-card--hover" style="margin-bottom:14px;padding:18px;cursor:pointer" onclick="pOpenNewsDetail('+i+')">'
       +'<div style="display:flex;align-items:flex-start;gap:14px">'
       +'<div style="font-size:36px;line-height:1;flex-shrink:0">'+_escHtml(item.emoji||'📰')+'</div>'
@@ -7155,8 +7157,7 @@ function pOpenNewsDetail(i){
   var _nd = new Date();
   var _months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   var _dateStr = _nd.getDate()+' de '+_months[_nd.getMonth()]+' de '+_nd.getFullYear();
-  var isAdminRealDetail = item._src === 'admin' && hasLink;
-  var sourceRef = isAdminRealDetail
+  var sourceRef = hasLink
     ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--sage2);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a>'
     : '<span style="font-size:12px;color:var(--ink4);font-style:italic">✨ Historia de bienestar · Velo IA</span>';
   var sourceBlock = '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-bottom:18px;padding:10px 14px;background:rgba(116,198,157,.07);border-radius:10px;border:1px solid rgba(116,198,157,.18)">'
