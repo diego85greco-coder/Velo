@@ -2160,6 +2160,10 @@ function _loadHomeData(){
     if(_se){ _se.classList.remove(pair[1]); void _se.offsetWidth; _se.classList.add(pair[1]); }
   });
 
+  // Time-of-day ambient class on body — changes accent colors per period
+  document.body.classList.remove('velo-t-manana','velo-t-tarde','velo-t-noche');
+  document.body.classList.add(_periodo === 'mañana' ? 'velo-t-manana' : _periodo === 'tarde' ? 'velo-t-tarde' : 'velo-t-noche');
+
   var av = safeLS('get','velo_user_av') || '🧑';
   var un = document.getElementById('homeUserName');
   var ha = document.getElementById('homeAv');

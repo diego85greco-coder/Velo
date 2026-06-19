@@ -11700,3 +11700,91 @@ body:not(.r-dark) #homeGreetSub {
   padding-right: 4px;
   white-space: nowrap;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v955 — Ambient time-of-day styling (mañana / tarde / noche)
+   Clase aplicada al body por _loadHomeData() en cada visita a home.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── MAÑANA (< 12h): amanecer cálido dorado ─────────────────────── */
+body.velo-t-manana.r-dark .r-hero-v2 {
+  background: linear-gradient(140deg,
+    rgba(22,32,10,.90) 0%,
+    rgba(14,24,6,.94) 50%,
+    rgba(26,36,8,.88) 100%
+  ) !important;
+  border-color: rgba(200,168,50,.30) !important;
+  box-shadow: 0 0 0 1px rgba(200,168,50,.10), 0 8px 40px rgba(0,0,0,.32) !important;
+}
+/* Glow dorado en la esquina superior derecha */
+body.velo-t-manana.r-dark .r-hero-v2::before {
+  background: radial-gradient(circle at 80% 10%, rgba(255,210,60,.10) 0%, transparent 50%) !important;
+}
+/* Shimmer del nombre: dorado cálido */
+body.velo-t-manana.r-dark #homeGreetTxt span {
+  background-image: linear-gradient(90deg,
+    rgba(215,175,55,.92) 0%, rgba(215,175,55,.92) 22%,
+    rgba(255,235,90,1) 50%,
+    rgba(215,175,55,.92) 78%, rgba(215,175,55,.92) 100%
+  ) !important;
+}
+
+/* ── TARDE (12-20h): verde fresco vibrante ──────────────────────── */
+body.velo-t-tarde.r-dark .r-hero-v2 {
+  background: linear-gradient(140deg,
+    rgba(10,30,18,.90) 0%,
+    rgba(6,22,12,.94) 50%,
+    rgba(12,28,16,.88) 100%
+  ) !important;
+  border-color: rgba(80,185,120,.28) !important;
+  box-shadow: 0 0 0 1px rgba(80,185,120,.08), 0 8px 40px rgba(0,0,0,.30) !important;
+}
+body.velo-t-tarde.r-dark .r-hero-v2::before {
+  background: radial-gradient(circle at 75% 15%, rgba(116,198,157,.08) 0%, transparent 52%) !important;
+}
+/* Shimmer del nombre: verde esmeralda */
+body.velo-t-tarde.r-dark #homeGreetTxt span {
+  background-image: linear-gradient(90deg,
+    rgba(130,215,172,.90) 0%, rgba(130,215,172,.90) 22%,
+    rgba(200,255,225,1) 50%,
+    rgba(130,215,172,.90) 78%, rgba(130,215,172,.90) 100%
+  ) !important;
+}
+
+/* ── NOCHE (≥ 20h): calma índigo profundo ───────────────────────── */
+body.velo-t-noche.r-dark .r-hero-v2 {
+  background: linear-gradient(140deg,
+    rgba(10,10,30,.92) 0%,
+    rgba(8,8,24,.96) 50%,
+    rgba(14,12,36,.90) 100%
+  ) !important;
+  border-color: rgba(130,110,230,.24) !important;
+  box-shadow: 0 0 0 1px rgba(130,110,230,.08), 0 8px 40px rgba(0,0,0,.38) !important;
+}
+/* Glow lunar en la esquina */
+body.velo-t-noche.r-dark .r-hero-v2::before {
+  background: radial-gradient(circle at 82% 8%, rgba(180,160,255,.08) 0%, transparent 50%) !important;
+}
+/* Texto de saludo: blanco perla */
+body.velo-t-noche.r-dark #homeGreetTxt {
+  color: rgba(220,210,255,.94) !important;
+}
+/* Shimmer del nombre: lavanda plateada */
+body.velo-t-noche.r-dark #homeGreetTxt span {
+  background-image: linear-gradient(90deg,
+    rgba(190,175,255,.90) 0%, rgba(190,175,255,.90) 22%,
+    rgba(240,230,255,1) 50%,
+    rgba(190,175,255,.90) 78%, rgba(190,175,255,.90) 100%
+  ) !important;
+}
+/* Subtítulo: lavanda suave */
+body.velo-t-noche.r-dark .r-hero-italic {
+  color: rgba(190,178,248,.68) !important;
+}
+body.velo-t-noche.r-dark #homeGreetSub {
+  color: rgba(200,192,255,.62) !important;
+}
+/* Hero breathing nocturno: más lento, índigo */
+body.velo-t-noche.r-dark .r-hero-v2 {
+  animation: hero-bg-breathe 18s ease-in-out infinite !important;
+}
