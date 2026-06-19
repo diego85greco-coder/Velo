@@ -4541,9 +4541,14 @@ async function pToggleGuardianMode(){
     pToast('🛡️','¡Aparecés como guardián disponible!');
     await _updateGuardianPresence('disponible'); // wait for DB write before re-rendering
   } else {
-    _stopGuardianHeartbeat();
+    // Stop heartbeat AFTER the offline write so the write (and its retry) can complete.
+    // Stopping first means a failed write gets no retry and the DB keeps stale "active" state.
     pToast('👤','Ya no aparecés en la lista de guardianes');
-    await _updateGuardianPresence('offline');    // wait for DB write before re-rendering
+    await _updateGuardianPresence('offline');    // wait for DB write (with retry) before stopping
+    _stopGuardianHeartbeat();
+    // Belt-and-suspenders: schedule a second offline write 4s later in case both upsert attempts
+    // failed (expired iOS session). By then, Supabase auto-refresh has usually completed.
+    setTimeout(function(){ if(safeLS('get','velo_is_guardian') !== 'true') _updateGuardianPresence('offline'); }, 4000);
   }
   _renderHomeStatusToggle();
   _renderMyStatusBar();
@@ -20879,9 +20884,12 @@ window.addEventListener('load', function(){
   if(session === '1'){
     _authenticated = true;
     _trackVisitDay(); // Record today — runs on every app open, not just explicit login
-    // Reset per-session volatile states so home renders clean defaults instead of stale cache.
-    // incognito and status always reset to OFF/disponible — DB sync will restore guardian mode
-    // if the user has it active, within ~1.5s.
+    // Reset per-session volatile states so home renders clean defaults.
+    // DB writes on iOS PWA fail silently (expired session), so the DB can hold stale
+    // "guardian active" state even after the user deactivated. Always start fresh —
+    // _sbSyncProfile will NOT restore guardian/incognito because _localGStr='false'
+    // blocks the restore (the existing if(_localGStr !== 'false') check).
+    safeLS('set','velo_is_guardian','false');
     safeLS('set','velo_incognito','false');
     safeLS('set','velo_guardian_status','disponible');
     _myGuardianStatus = 'disponible';
