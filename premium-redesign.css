@@ -11479,3 +11479,62 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
     max-width: 100% !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v952 — Animaciones home + rediseño comunidad
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Ambient time icon ──────────────────────────────────────────── */
+#homeAmbientIcon .amb-icon {
+  font-size: 38px;
+  line-height: 1;
+  display: block;
+  animation: amb-float 4s ease-in-out infinite;
+}
+@keyframes amb-float {
+  0%, 100% { transform: translateY(0) scale(1);   opacity: .82; }
+  50%       { transform: translateY(-4px) scale(1.06); opacity: 1; }
+}
+
+/* ── Section stagger fade-in ────────────────────────────────────── */
+@keyframes velo-sec-fadein {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.velo-sec-a0 { animation: velo-sec-fadein .50s .00s cubic-bezier(.2,.8,.2,1) both; }
+.velo-sec-a1 { animation: velo-sec-fadein .50s .13s cubic-bezier(.2,.8,.2,1) both; }
+.velo-sec-a2 { animation: velo-sec-fadein .50s .24s cubic-bezier(.2,.8,.2,1) both; }
+.velo-sec-a3 { animation: velo-sec-fadein .50s .36s cubic-bezier(.2,.8,.2,1) both; }
+
+/* ── Community section: light-mode header text fix ──────────────── */
+body:not(.r-dark) #homeMomentoSection .comm-title-italic {
+  color: rgba(14,46,28,.90) !important;
+}
+
+/* ── Tabs: stronger active state ────────────────────────────────── */
+.hf-tab--active {
+  background: linear-gradient(135deg, rgba(116,198,157,.28), rgba(80,170,120,.20)) !important;
+  border-color: rgba(116,198,157,.62) !important;
+  box-shadow: 0 2px 12px rgba(116,198,157,.22) !important;
+  font-weight: 700 !important;
+}
+body.r-dark .hf-tab--active { color: rgba(200,250,225,.98) !important; }
+body:not(.r-dark) .hf-tab--active { color: rgba(12,60,32,.95) !important; }
+.hf-tab--active-happy {
+  background: linear-gradient(135deg, rgba(200,158,56,.28), rgba(180,138,36,.20)) !important;
+  border-color: rgba(200,158,56,.65) !important;
+  box-shadow: 0 2px 12px rgba(200,158,56,.22) !important;
+  font-weight: 700 !important;
+}
+body.r-dark .hf-tab--active-happy { color: rgba(255,235,140,.98) !important; }
+body:not(.r-dark) .hf-tab--active-happy { color: rgba(80,50,5,.92) !important; }
+
+/* ── home-mc cards: press effect ────────────────────────────────── */
+.home-mc { transition: transform .12s, box-shadow .12s; }
+.home-mc:active { transform: scale(.985); }
+
+/* ── Community header icon: light mode ──────────────────────────── */
+body:not(.r-dark) #homeMomentoSection .comm-icon-box {
+  background: rgba(40,110,60,.14) !important;
+  border-color: rgba(40,110,60,.35) !important;
+}

@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260619-951">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260619-951">
+  <link rel="stylesheet" href="premium.css?v=20260619-952">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260619-952">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1049,7 +1049,7 @@
                 </div>
                 <div id="homeGreetQuote" style="display:none;position:absolute;top:0;left:0;right:0"></div>
               </div>
-              <div id="homeTimeIcon" style="display:flex;flex-direction:column;align-items:center;gap:0;width:100%"><div id="homeWeatherInfo" style="display:none;margin-top:6px;width:100%;justify-content:center"></div></div>
+              <div id="homeTimeIcon" style="display:flex;flex-direction:column;align-items:center;gap:0;width:100%"><div id="homeAmbientIcon" style="margin:0 auto 14px;display:flex;align-items:center;justify-content:center;min-height:36px"></div><div id="homeWeatherInfo" style="display:none;margin-top:6px;width:100%;justify-content:center"></div></div>
           <!-- Greeting card — mood + status + lema actions -->
           <div id="homeRegisterOuter" style="margin:0 0 6px;box-sizing:border-box;width:100%">
             <div id="homeRegisterZone">
@@ -1124,9 +1124,13 @@
               </div>
               <!-- Momentos del Día + Muro Feliz — community feed -->
               <div id="homeMomentoSection" class="home-momento-wrap" style="margin:10px 0 12px;width:100%;box-sizing:border-box;display:none">
-                <!-- Header row: label + streak badge -->
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                  <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.65);font-family:Jost,sans-serif">Comunidad</div>
+                <!-- Header row: community branding + streak badge -->
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                  <div style="width:40px;height:40px;border-radius:13px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.35);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 0 12px rgba(116,198,157,.15)">🌱</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:16px;font-weight:700;color:rgba(255,255,255,.90);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.1;margin-bottom:1px">Jardín compartido</div>
+                    <div style="font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.60);font-family:Jost,sans-serif">Comunidad · en vivo</div>
+                  </div>
                   <span id="momentoStreakBadge" style="display:none;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(255,130,20,.18);color:rgba(255,170,60,.95);border:1px solid rgba(255,130,20,.3);font-family:Jost,sans-serif"></span>
                 </div>
                 <!-- Tab switcher — pill inside dark tray -->
@@ -1150,7 +1154,7 @@
                   </div>
                   <!-- Feed -->
                   <div id="homeMomentoFeed" style="padding-right:2px"></div>
-                  <button onclick="pGoTo('momento')" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1px solid rgba(116,198,157,.30);background:rgba(116,198,157,.08);color:rgba(160,240,200,.75);font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">Ver todos los momentos →</button>
+                  <button onclick="pGoTo('momento')" style="width:100%;margin-top:8px;padding:12px;border-radius:14px;border:1.5px solid rgba(116,198,157,.42);background:linear-gradient(135deg,rgba(116,198,157,.20),rgba(80,170,120,.13));color:rgba(195,250,225,.88);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px;box-shadow:0 2px 10px rgba(116,198,157,.14)">✨ Ver todos los momentos →</button>
                 </div>
                 <!-- Muro Feliz tab content -->
                 <div id="homeTabHappy" style="display:none">
@@ -1165,7 +1169,7 @@
                   </button>
                   <!-- Feed -->
                   <div id="homeHappyFeed" style="padding-right:2px"></div>
-                  <button onclick="pGoTo('happy')" style="width:100%;margin-top:8px;padding:9px;border-radius:12px;border:1px solid rgba(200,158,56,.18);background:transparent;color:rgba(200,158,56,.55);font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">Ver todo el Muro Feliz →</button>
+                  <button onclick="pGoTo('happy')" style="width:100%;margin-top:8px;padding:12px;border-radius:14px;border:1.5px solid rgba(200,158,56,.42);background:linear-gradient(135deg,rgba(200,158,56,.20),rgba(180,138,36,.13));color:rgba(255,230,130,.88);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px;box-shadow:0 2px 10px rgba(200,158,56,.14)">☀️ Ver todo el Muro Feliz →</button>
                 </div>
               </div>
               <!-- Guardianes + Sala de Ayuda — above search pill -->
@@ -3908,8 +3912,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260619-951"></script>
-<script src="premium-redesign.js?v=20260619-951"></script>
+<script src="premium.js?v=20260619-952"></script>
+<script src="premium-redesign.js?v=20260619-952"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

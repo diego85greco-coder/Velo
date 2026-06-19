@@ -2147,6 +2147,27 @@ function _loadHomeData(){
   var _dayIdx = Math.floor(Date.now() / 86400000) % _subs.length;
   var gs = document.getElementById('homeGreetSub');
   if(gs) gs.textContent = _subs[_dayIdx];
+
+  // Ambient time-of-day icon in homeTimeIcon
+  var _ambEl = document.getElementById('homeAmbientIcon');
+  if(_ambEl){
+    var _ambIcons = { mañana:'☀️', tarde:'🌤️', noche:'🌙' };
+    var _ambGlow  = { mañana:'rgba(255,200,60,.70)', tarde:'rgba(160,195,255,.70)', noche:'rgba(180,160,255,.70)' };
+    _ambEl.innerHTML = '<span class="amb-icon" style="filter:drop-shadow(0 0 14px '+_ambGlow[_periodo]+')">'+_ambIcons[_periodo]+'</span>';
+  }
+
+  // Section stagger fade-in (re-triggers on every home visit)
+  var _stagPairs = [
+    ['#homeGreetBlock','velo-sec-a0'],
+    ['#homeRegisterOuter','velo-sec-a1'],
+    ['#homeDailyQuoteWrap','velo-sec-a2'],
+    ['#homeMomentoSection','velo-sec-a3']
+  ];
+  _stagPairs.forEach(function(pair){
+    var _se = document.querySelector(pair[0]);
+    if(_se){ _se.classList.remove(pair[1]); void _se.offsetWidth; _se.classList.add(pair[1]); }
+  });
+
   var av = safeLS('get','velo_user_av') || '🧑';
   var un = document.getElementById('homeUserName');
   var ha = document.getElementById('homeAv');
