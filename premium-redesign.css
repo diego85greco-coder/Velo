@@ -11925,3 +11925,54 @@ body.velo-t-noche.r-dark .r-hero-v2 {
   font-size: 13px; flex-shrink: 0;
   border: 1.5px solid rgba(116,198,157,.30);
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v958 — Section headers more prominent + news badge dark mode fix
+   ══════════════════════════════════════════════════════════════════ */
+
+/* PARA VOS — bigger, more impactful */
+.para-vos-hdr {
+  text-align: center !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  letter-spacing: 3.5px !important;
+  text-transform: uppercase !important;
+  color: rgba(200,158,56,.95) !important;
+  margin-bottom: 14px !important;
+  font-family: 'Jost', sans-serif !important;
+  position: relative !important;
+}
+/* Decorative lines on either side of PARA VOS */
+.para-vos-hdr::before,
+.para-vos-hdr::after {
+  content: '';
+  display: inline-block;
+  width: 24px; height: 1px;
+  background: rgba(200,158,56,.45);
+  vertical-align: middle;
+  margin: 0 10px;
+}
+
+/* ACCESOS RÁPIDOS — bigger and more visible */
+.r-home-quick-label {
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 2.8px !important;
+  color: rgba(116,198,157,.80) !important;
+  margin-bottom: 10px !important;
+  padding-left: 4px !important;
+}
+body:not(.r-dark) .r-home-quick-label {
+  color: rgba(30,90,50,.72) !important;
+}
+
+/* News reading badge — sage2 (#2D6A4F dark green) is invisible in dark mode */
+body.r-dark #pg-news [style*="color:var(--sage2)"] {
+  color: rgba(116,198,157,.92) !important;
+}
+body.r-dark #pg-news [style*="color:var(--ink3)"] {
+  color: rgba(220,240,228,.72) !important;
+}
+body.r-dark #pg-news [style*="color:var(--ink4)"] {
+  color: rgba(200,225,210,.55) !important;
+}
