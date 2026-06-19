@@ -5376,7 +5376,9 @@ async function _gcRender(){
         msgs.slice(lastIdx + 1).forEach(function(m){
           var tmp = document.createElement('div');
           var isOwn = m.from_id === myId;
-          tmp.innerHTML = _buildMsgBubble(m.text||'', isOwn, isOwn?'':(m.from_av||'🌿'), isOwn?'':(m.from_name||''), 'gcInput', 'gcReplyBar', '', m.reactions||{}, 'direct_messages:'+m.id, isOwn?'':(m.from_id||''));
+          var _pAv   = isOwn ? '' : (_gcPeer && m.from_id === _gcPeer.id ? _gcPeer.av   : (m.from_av||'🌿'));
+          var _pName = isOwn ? '' : (_gcPeer && m.from_id === _gcPeer.id ? _gcPeer.name : (m.from_name||''));
+          tmp.innerHTML = _buildMsgBubble(m.text||'', isOwn, _pAv, _pName, 'gcInput', 'gcReplyBar', '', m.reactions||{}, 'direct_messages:'+m.id, isOwn?'':(m.from_id||''));
           while(tmp.firstChild) el.appendChild(tmp.firstChild);
         });
         _gcLastMsgId = lastId;
@@ -5388,7 +5390,9 @@ async function _gcRender(){
     // Full render (first load, reaction update, or incremental path not applicable)
     el.innerHTML = msgs.map(function(m){
       var isOwn = m.from_id === myId;
-      return _buildMsgBubble(m.text||'', isOwn, isOwn?'':(m.from_av||'🌿'), isOwn?'':(m.from_name||''), 'gcInput', 'gcReplyBar', '', m.reactions||{}, 'direct_messages:'+m.id, isOwn?'':(m.from_id||''));
+      var _pAv   = isOwn ? '' : (_gcPeer && m.from_id === _gcPeer.id ? _gcPeer.av   : (m.from_av||'🌿'));
+      var _pName = isOwn ? '' : (_gcPeer && m.from_id === _gcPeer.id ? _gcPeer.name : (m.from_name||''));
+      return _buildMsgBubble(m.text||'', isOwn, _pAv, _pName, 'gcInput', 'gcReplyBar', '', m.reactions||{}, 'direct_messages:'+m.id, isOwn?'':(m.from_id||''));
     }).join('');
     _gcLastMsgId = lastId;
     _gcReactHash = reactHash;
@@ -5595,8 +5599,9 @@ function pSendGuardianMsg(){
   pClearReplyBar('gcReplyBar');
   var fullText = quote ? '↩ "'+quote.slice(0,60)+(quote.length>60?'…':'')+'"  \n'+text : text;
   var myId   = _myUserId();
-  var myName = safeLS('get','velo_user_name')||'Usuario';
-  var myAv   = safeLS('get','velo_user_av')||'🌿';
+  var _gcSendIsAnon = safeLS('get','velo_incognito')==='true' || (safeLS('get','velo_guardian_status')||'').startsWith('incognito');
+  var myName = _gcSendIsAnon ? 'Guardián Anónimo' : (safeLS('get','velo_user_name')||'Usuario');
+  var myAv   = _gcSendIsAnon ? '🌿' : (safeLS('get','velo_user_av')||'🌿');
   // Optimistic render
   var el = document.getElementById('gcMessages');
   var _gcLastBubble = null;
@@ -20492,7 +20497,9 @@ function _onPageEnter(id){
     case 'home':        _loadHomeData(); _startHomeRefresh(); break;
     case 'guardians':
       _initSupabase();
-      if(sbClient && !_guardianRtCh) _guardianRtCh = _sbSub('velo:guardians', 'guardian_presence', function(payload){
+      // Always re-subscribe so a stale/dropped channel doesn't silently miss re-activation events.
+      if(_guardianRtCh){ _sbUnsub(_guardianRtCh); _guardianRtCh = null; }
+      if(sbClient) _guardianRtCh = _sbSub('velo:guardians', 'guardian_presence', function(payload){
         // Apply the payload immediately to _liveGuardians so the UI updates
         // without waiting for a new DB round-trip (avoids read-lag race condition
         // where the query runs before the write has fully propagated).
@@ -20522,7 +20529,8 @@ function _onPageEnter(id){
         }
         pRenderGuardians();
       });
-      // _guardianBcastCh is subscribed at login by _startGuardianHeartbeat — no setup needed here.
+      // Re-create broadcast channel if it was nulled after a failed retry on login.
+      if(sbClient && !_guardianBcastCh) _startGuardianHeartbeat();
       _lastGuardianListKey = ''; // reset dedup so re-activation shows immediately without page refresh
       pRenderGuardians();
       if(_guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
@@ -20991,6 +20999,7 @@ window.addEventListener('load', function(){
   });
 
   // Detect tab/window hidden (phone locked, minimized, other tab) — mark ocupado automatically
+  var _guardianVisibilityTimer = null;
   document.addEventListener('visibilitychange', function(){
     if(!document.hidden && _authenticated){
       // Re-sync favorites when user returns to the tab (picks up cross-device changes)
@@ -20998,8 +21007,14 @@ window.addEventListener('load', function(){
     }
     if(safeLS('get','velo_is_guardian') !== 'true') return;
     if(document.hidden){
-      _updateGuardianPresence('ocupado');
+      // 5s grace period — prevents false "ocupado" when briefly switching tabs during testing
+      _guardianVisibilityTimer = setTimeout(function(){
+        _guardianVisibilityTimer = null;
+        if(safeLS('get','velo_is_guardian') !== 'true') return;
+        _updateGuardianPresence('ocupado');
+      }, 5000);
     } else {
+      if(_guardianVisibilityTimer){ clearTimeout(_guardianVisibilityTimer); _guardianVisibilityTimer = null; }
       _updateGuardianPresence(_presenceStatus());
     }
   });
