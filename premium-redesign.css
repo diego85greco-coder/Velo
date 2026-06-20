@@ -12266,3 +12266,237 @@ body.r-dark .diary-row-date { color: rgba(116,198,157,.80) !important; }
   margin-top: 2px;
 }
 body.r-dark .diary-row-preview { color: rgba(255,255,255,.50) !important; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   v975 — Estilos del día: rediseño visual completo
+   Tres momentos del día con identidad cromática propia.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────
+   MAÑANA (< 12h)
+   Paleta: Amanecer dorado-ámbar · energía suave · cielo claro
+──────────────────────────────────────────────────────────────── */
+
+/* Hero card — dark */
+body.velo-t-manana.r-dark .r-hero-v2 {
+  background: linear-gradient(145deg,
+    rgba(30,22,4,.92) 0%,
+    rgba(22,16,2,.96) 40%,
+    rgba(36,24,4,.88) 100%
+  ) !important;
+  border-color: rgba(220,170,45,.35) !important;
+  box-shadow:
+    0 0 0 1px rgba(220,170,45,.12),
+    0 8px 44px rgba(0,0,0,.38),
+    inset 0 1px 0 rgba(255,220,80,.08) !important;
+}
+/* Glow solar en esquina superior derecha */
+body.velo-t-manana.r-dark .r-hero-v2::before {
+  background:
+    radial-gradient(ellipse at 88% 0%, rgba(255,210,50,.22) 0%, transparent 55%),
+    radial-gradient(ellipse at 20% 90%, rgba(255,140,30,.08) 0%, transparent 45%) !important;
+  opacity: 1 !important;
+}
+/* Etiqueta JARDÍN DE HOY — dorada */
+body.velo-t-manana.r-dark #homeHeroLabel {
+  color: rgba(225,175,50,.85) !important;
+}
+/* Nombre: shimmer ámbar luminoso */
+body.velo-t-manana.r-dark #homeGreetTxt span {
+  background: linear-gradient(90deg,
+    rgba(220,178,55,.92) 0%,
+    rgba(255,235,100,1) 45%,
+    rgba(220,178,55,.92) 100%
+  ) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+body.velo-t-manana.r-dark .r-hero-italic {
+  color: rgba(230,200,100,.65) !important;
+}
+body.velo-t-manana.r-dark #homeGreetSub {
+  color: rgba(230,205,115,.62) !important;
+}
+/* Section labels — tinte dorado */
+body.velo-t-manana.r-dark .home-sec-lbl-acomp .home-sec-hdr,
+body.velo-t-manana.r-dark .home-sec-lbl-estado .home-sec-hdr,
+body.velo-t-manana.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
+  color: rgba(225,180,55,.82) !important;
+  border-bottom-color: rgba(225,180,55,.22) !important;
+}
+
+/* Hero card — light */
+body.velo-t-manana:not(.r-dark) .r-hero-v2 {
+  background: linear-gradient(145deg,
+    rgba(255,248,225,.96) 0%,
+    rgba(255,252,238,.98) 50%,
+    rgba(255,244,210,.94) 100%
+  ) !important;
+  border-color: rgba(200,160,40,.28) !important;
+  box-shadow:
+    0 0 0 1px rgba(200,160,40,.10),
+    0 8px 32px rgba(200,130,20,.10) !important;
+}
+body.velo-t-manana:not(.r-dark) .r-hero-v2::before {
+  background: radial-gradient(ellipse at 85% 5%, rgba(255,200,50,.18) 0%, transparent 52%) !important;
+  opacity: 1 !important;
+}
+body.velo-t-manana:not(.r-dark) #homeHeroLabel {
+  color: rgba(175,125,20,.72) !important;
+}
+body.velo-t-manana:not(.r-dark) #homeGreetTxt span {
+  color: rgba(175,120,15,.92) !important;
+  -webkit-text-fill-color: rgba(175,120,15,.92) !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   TARDE (12–20h)
+   Paleta: Verde esmeralda · frescura · vida · luz solar filtrada
+──────────────────────────────────────────────────────────────── */
+
+/* Hero card — dark */
+body.velo-t-tarde.r-dark .r-hero-v2 {
+  background: linear-gradient(145deg,
+    rgba(6,26,14,.93) 0%,
+    rgba(4,20,10,.97) 40%,
+    rgba(8,30,16,.89) 100%
+  ) !important;
+  border-color: rgba(90,200,135,.32) !important;
+  box-shadow:
+    0 0 0 1px rgba(90,200,135,.10),
+    0 8px 44px rgba(0,0,0,.36),
+    inset 0 1px 0 rgba(116,198,157,.10) !important;
+}
+body.velo-t-tarde.r-dark .r-hero-v2::before {
+  background:
+    radial-gradient(ellipse at 82% 0%, rgba(100,215,155,.20) 0%, transparent 52%),
+    radial-gradient(ellipse at 15% 85%, rgba(60,180,100,.08) 0%, transparent 42%) !important;
+  opacity: 1 !important;
+}
+body.velo-t-tarde.r-dark #homeHeroLabel {
+  color: rgba(100,205,148,.78) !important;
+}
+body.velo-t-tarde.r-dark #homeGreetTxt span {
+  background: linear-gradient(90deg,
+    rgba(130,215,172,.92) 0%,
+    rgba(200,255,225,1) 45%,
+    rgba(130,215,172,.92) 100%
+  ) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+body.velo-t-tarde.r-dark .r-hero-italic {
+  color: rgba(140,225,180,.60) !important;
+}
+body.velo-t-tarde.r-dark #homeGreetSub {
+  color: rgba(145,228,182,.58) !important;
+}
+body.velo-t-tarde.r-dark .home-sec-lbl-acomp .home-sec-hdr,
+body.velo-t-tarde.r-dark .home-sec-lbl-estado .home-sec-hdr,
+body.velo-t-tarde.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
+  color: rgba(100,205,148,.80) !important;
+  border-bottom-color: rgba(100,205,148,.20) !important;
+}
+
+/* Hero card — light */
+body.velo-t-tarde:not(.r-dark) .r-hero-v2 {
+  background: linear-gradient(145deg,
+    rgba(235,252,242,.97) 0%,
+    rgba(242,255,248,.99) 50%,
+    rgba(230,250,238,.95) 100%
+  ) !important;
+  border-color: rgba(80,190,130,.25) !important;
+  box-shadow:
+    0 0 0 1px rgba(80,190,130,.08),
+    0 8px 32px rgba(60,160,100,.08) !important;
+}
+body.velo-t-tarde:not(.r-dark) .r-hero-v2::before {
+  background: radial-gradient(ellipse at 82% 5%, rgba(100,210,150,.16) 0%, transparent 50%) !important;
+  opacity: 1 !important;
+}
+body.velo-t-tarde:not(.r-dark) #homeHeroLabel {
+  color: rgba(50,155,90,.72) !important;
+}
+body.velo-t-tarde:not(.r-dark) #homeGreetTxt span {
+  color: rgba(40,140,80,.90) !important;
+  -webkit-text-fill-color: rgba(40,140,80,.90) !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   NOCHE (≥ 20h)
+   Paleta: Índigo profundo · luna · calma sideral · lavanda
+──────────────────────────────────────────────────────────────── */
+
+/* Hero card — dark */
+body.velo-t-noche.r-dark .r-hero-v2 {
+  background: linear-gradient(145deg,
+    rgba(8,8,28,.94) 0%,
+    rgba(6,6,22,.97) 40%,
+    rgba(12,10,34,.90) 100%
+  ) !important;
+  border-color: rgba(150,130,240,.28) !important;
+  box-shadow:
+    0 0 0 1px rgba(150,130,240,.09),
+    0 8px 48px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(200,185,255,.07) !important;
+}
+body.velo-t-noche.r-dark .r-hero-v2::before {
+  background:
+    radial-gradient(ellipse at 85% 0%, rgba(180,160,255,.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 10% 80%, rgba(120,100,220,.08) 0%, transparent 42%) !important;
+  opacity: 1 !important;
+}
+body.velo-t-noche.r-dark #homeHeroLabel {
+  color: rgba(175,160,248,.72) !important;
+}
+body.velo-t-noche.r-dark #homeGreetTxt {
+  color: rgba(225,215,255,.94) !important;
+}
+body.velo-t-noche.r-dark #homeGreetTxt span {
+  background: linear-gradient(90deg,
+    rgba(195,178,255,.92) 0%,
+    rgba(245,235,255,1) 45%,
+    rgba(195,178,255,.92) 100%
+  ) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+body.velo-t-noche.r-dark .r-hero-italic {
+  color: rgba(195,182,252,.58) !important;
+}
+body.velo-t-noche.r-dark #homeGreetSub {
+  color: rgba(200,188,255,.56) !important;
+}
+body.velo-t-noche.r-dark .home-sec-lbl-acomp .home-sec-hdr,
+body.velo-t-noche.r-dark .home-sec-lbl-estado .home-sec-hdr,
+body.velo-t-noche.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
+  color: rgba(175,160,248,.78) !important;
+  border-bottom-color: rgba(175,160,248,.18) !important;
+}
+
+/* Hero card — light */
+body.velo-t-noche:not(.r-dark) .r-hero-v2 {
+  background: linear-gradient(145deg,
+    rgba(240,238,255,.97) 0%,
+    rgba(248,246,255,.99) 50%,
+    rgba(235,232,255,.95) 100%
+  ) !important;
+  border-color: rgba(140,120,230,.24) !important;
+  box-shadow:
+    0 0 0 1px rgba(140,120,230,.08),
+    0 8px 32px rgba(100,80,200,.08) !important;
+}
+body.velo-t-noche:not(.r-dark) .r-hero-v2::before {
+  background: radial-gradient(ellipse at 83% 4%, rgba(170,150,255,.15) 0%, transparent 50%) !important;
+  opacity: 1 !important;
+}
+body.velo-t-noche:not(.r-dark) #homeHeroLabel {
+  color: rgba(110,90,200,.68) !important;
+}
+body.velo-t-noche:not(.r-dark) #homeGreetTxt span {
+  color: rgba(100,80,195,.88) !important;
+  -webkit-text-fill-color: rgba(100,80,195,.88) !important;
+}
