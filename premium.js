@@ -3965,27 +3965,24 @@ function pOpenDqResponseSheet(responseId){
     ? '<img src="'+_escHtml(av)+'" style="'+avStyle+'"'+avClick+'>'
     : '<div style="'+avStyle+';background:rgba(116,198,157,.18);display:flex;align-items:center;justify-content:center;font-size:26px"'+avClick+'>'+(av||'🌿')+'</div>';
 
-  // Build reaction buttons for the sheet (big pill style)
+  // Reaction buttons — zen row layout: emoji big on top, label below, 3 in a row
   var rxDefs = [{key:'identifico',label:'Me identifico',emoji:'💚'},{key:'abrazo',label:'Te abrazo',emoji:'🫂'},{key:'entiendo',label:'Te entiendo',emoji:'💙'}];
   var _m = _dqReactMap[responseId] || {};
   var rxHtml = rxDefs.map(function(rx){
     var rd = _m[rx.key] || {count:0,mine:false};
     var rc = _rxColors[rx.key];
-    var bg = rd.mine ? rc.activeBg : rc.inactiveBg;
-    var bdr = rd.mine ? rc.border : rc.inactiveBorder;
-    var txtCol = rd.mine ? rc.txt : rc.inactiveTxt;
-    var circBg = rd.mine ? rc.circleBg : rc.inactiveCircleBg;
-    var circBdr = rd.mine ? rc.border : 'rgba(255,255,255,.10)';
-    var shadow = rd.mine ? '0 2px 10px '+rc.glow : 'none';
+    var bg = rd.mine ? rc.activeBg : 'rgba(255,255,255,.03)';
+    var bdr = rd.mine ? rc.border : 'rgba(255,255,255,.09)';
+    var txtCol = rd.mine ? rc.txt : 'rgba(255,255,255,.42)';
+    var glow = rd.mine ? '0 0 20px '+rc.glow+',0 2px 8px '+rc.glow : 'none';
+    var emojiScale = rd.mine ? 'transform:scale(1.18);filter:drop-shadow(0 0 8px '+rc.glow+')' : '';
     return '<button class="dq-reaction-btn" onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
       +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+rd.mine+'" '
-      +'style="width:100%;display:flex;align-items:center;gap:10px;padding:8px 12px;background:'+bg+';border:1.5px solid '+bdr+';border-radius:14px;cursor:pointer;transition:background .20s,border-color .20s,box-shadow .20s;font-family:Jost,sans-serif;box-sizing:border-box;box-shadow:'+shadow+'">'
-      +'<span style="width:32px;height:32px;border-radius:50%;background:'+circBg+';border:1.5px solid '+circBdr+';display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .20s,border-color .20s">'
-      +'<span style="font-size:16px;line-height:1">'+rx.emoji+'</span>'
-      +'</span>'
-      +'<span class="rx-txt" style="font-size:12.5px;font-weight:700;color:'+txtCol+';flex:1;text-align:left;letter-spacing:.1px;transition:color .20s">'+rx.label+'</span>'
+      +'style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px 6px 14px;background:'+bg+';border:1.5px solid '+bdr+';border-radius:22px;cursor:pointer;transition:all .22s;box-shadow:'+glow+';font-family:Jost,sans-serif;box-sizing:border-box">'
+      +'<span style="font-size:30px;line-height:1;display:block;transition:all .22s;'+emojiScale+'">'+rx.emoji+'</span>'
+      +'<span class="rx-txt" style="font-size:10px;font-weight:700;color:'+txtCol+';text-align:center;letter-spacing:.3px;transition:color .22s;line-height:1.3">'+rx.label+'</span>'
       +(rd.count>0
-        ? '<span class="rx-cnt" style="font-size:11px;font-weight:800;color:'+txtCol+';opacity:.80">'+rd.count+'</span>'
+        ? '<span class="rx-cnt" style="font-size:9px;font-weight:800;color:'+txtCol+';opacity:.65;min-height:13px">'+rd.count+'</span>'
         : '<span class="rx-cnt" style="display:none"></span>')
       +'</button>';
   }).join('');
@@ -3996,42 +3993,48 @@ function pOpenDqResponseSheet(responseId){
   ov.className = 'p-modal-ov show';
   ov.id = 'dqResponseSheetOv';
   ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
-  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="padding:0;overflow:hidden;max-height:92vh;display:flex;flex-direction:column;border-top:3px solid '+col.border+'">'
-    // Colored mood header strip
-    +'<div style="background:linear-gradient(145deg,'+col.bg+',rgba(4,14,8,.98));padding:28px 22px 22px;position:relative;flex-shrink:0">'
-    +'<div class="p-sheet-handle" style="background:'+col.border.replace(/[\d.]+\)$/,'0.45)')+';position:absolute;top:10px;left:50%;transform:translateX(-50%);margin:0"></div>'
-    // Emoji + question label row
-    +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">'
-    +'<span style="font-size:52px;line-height:1;filter:drop-shadow(0 0 18px '+col.glow+')">'+r.mood_emoji+'</span>'
-    +'<div>'
-    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.65)')+';font-family:Jost,sans-serif;margin-bottom:5px">✨ Pregunta del día</div>'
-    +'<div style="font-size:16px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(240,255,246,.88);line-height:1.35">'+_escHtml(q?q.text:'')+'</div>'
-    +'</div>'
-    +'</div>'
-    // Author row
-    +'<div style="display:flex;align-items:center;gap:11px;padding:12px 14px;background:rgba(0,0,0,.22);border-radius:14px;border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.18)')+'">'+avHtml
-    +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:13.5px;font-weight:700;color:rgba(220,245,230,.92);font-family:Jost,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
-    +(_uAt(r.user_id)?'<div style="margin-top:2px">'+_uAt(r.user_id)+'</div>':'')
-    +'<div style="font-size:10.5px;color:'+col.label.replace(/[\d.]+\)$/,'0.50)')+';margin-top:2px;font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
+
+  // Zen divider helper
+  var _zenDiv = '<div style="display:flex;align-items:center;gap:10px;margin:18px 0">'
+    +'<div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,'+col.border.replace(/[\d.]+\)$/,'0.22)')+')">'+'</div>'
+    +'<span style="font-size:11px;color:'+col.label.replace(/[\d.]+\)$/,'0.30)')+'">✦</span>'
+    +'<div style="flex:1;height:1px;background:linear-gradient(270deg,transparent,'+col.border.replace(/[\d.]+\)$/,'0.22)')+')">'+'</div>'
+    +'</div>';
+
+  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="padding:0;overflow:hidden;max-height:92vh;display:flex;flex-direction:column;border-top:2px solid '+col.border+';border-radius:28px 28px 0 0">'
+    // Header: full-bleed gradient, everything centered
+    +'<div style="background:linear-gradient(170deg,'+col.bg+' 0%,rgba(4,10,8,.97) 100%);padding:32px 24px 24px;position:relative;flex-shrink:0;text-align:center">'
+    +'<div class="p-sheet-handle" style="background:'+col.border.replace(/[\d.]+\)$/,'0.40)')+';position:absolute;top:10px;left:50%;transform:translateX(-50%);margin:0"></div>'
+    // Mood emoji — big, centered, glowing
+    +'<div style="font-size:62px;line-height:1;margin-bottom:14px;filter:drop-shadow(0 0 22px '+col.glow+')">'+r.mood_emoji+'</div>'
+    // Label
+    +'<div style="font-size:8.5px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.55)')+';font-family:Jost,sans-serif;margin-bottom:10px">✨ Pregunta del día</div>'
+    // Question text — centered, larger
+    +'<div style="font-size:18px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(240,255,246,.90);line-height:1.5;max-width:340px;margin:0 auto 18px">'+_escHtml(q?q.text:'')+'</div>'
+    // Author chip — compact, centered
+    +'<div style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px 7px 8px;background:rgba(0,0,0,.28);border-radius:100px;border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.18)')+'">'+avHtml
+    +'<div style="text-align:left">'
+    +'<div style="font-size:12.5px;font-weight:700;color:rgba(220,245,230,.88);font-family:Jost,sans-serif'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
+    +'<div style="font-size:9.5px;color:'+col.label.replace(/[\d.]+\)$/,'0.44)')+';font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
     +'</div>'
     +'</div>'
     +'</div>'
     // Scrollable body
-    +'<div style="overflow-y:auto;padding:20px 22px 24px;flex:1">'
-    // Response text block
+    +'<div style="overflow-y:auto;padding:24px 20px 28px;flex:1;text-align:center">'
+    // Response text — centered, big, minimal container
     +(r.response_text
-      ? '<div style="background:'+col.strip.replace(/[\d.]+\)$/,'0.14)')+';border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.32)')+';border-radius:22px;padding:24px 22px;margin-bottom:22px;position:relative;overflow:hidden">'
-        +'<div style="position:absolute;top:-8px;left:8px;font-size:72px;color:'+col.border.replace(/[\d.]+\)$/,'0.07)')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none;user-select:none">❝</div>'
-        +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.55)')+';font-family:Jost,sans-serif;margin-bottom:14px;position:relative">Su respuesta</div>'
-        +'<div style="font-size:22px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.65;letter-spacing:.3px;text-shadow:0 2px 16px '+col.glow+';position:relative">'+_escHtml(r.response_text)+'</div>'
-        +'<div style="position:absolute;bottom:-16px;right:8px;font-size:72px;color:'+col.border.replace(/[\d.]+\)$/,'0.07)')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none;user-select:none">❞</div>'
+      ? '<div style="position:relative;padding:8px 4px 20px;margin-bottom:4px">'
+        +'<div style="font-size:80px;font-family:\'Cormorant Garamond\',serif;color:'+col.border.replace(/[\d.]+\)$/,'0.10)')+';line-height:.7;margin-bottom:4px;user-select:none">❝</div>'
+        +'<div style="font-size:25px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.65;letter-spacing:.3px;text-shadow:0 2px 20px '+col.glow+';padding:0 8px">'+_escHtml(r.response_text)+'</div>'
         +'</div>'
-      : '<div style="height:12px"></div>')
-    // Reactions
-    +'<div style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.38)')+';font-family:Jost,sans-serif;text-align:center;margin-bottom:8px">Reaccioná</div>'
-    +'<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">'+rxHtml+'</div>'
-    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:13px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.10);border-radius:16px;color:rgba(255,255,255,.40);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
+      : '<div style="height:6px"></div>')
+    +_zenDiv
+    // Reactions label
+    +'<div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.32)')+';font-family:\'Cormorant Garamond\',serif;font-style:italic;margin-bottom:12px">¿Cómo te resonó?</div>'
+    // Reaction row — 3 zen circles side by side
+    +'<div style="display:flex;gap:10px;margin-bottom:20px">'+rxHtml+'</div>'
+    // Close
+    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:13px;background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:100px;color:rgba(255,255,255,.30);font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase">· cerrar ·</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
