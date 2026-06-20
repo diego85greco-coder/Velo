@@ -2111,6 +2111,45 @@ function _closeAndroidInstallModal(){
   if(ov) ov.style.display = 'none';
 }
 
+// ── MEDITATION HOME WIDGET ─────────────────────────────────────
+function _renderHomeMedWidget(){
+  var el = document.getElementById('homeMedWidget');
+  if(!el) return;
+  var med = _MEDITATIONS[new Date().getDay() % _MEDITATIONS.length];
+  var c = med.col;
+  var lblFaint = c.label.replace(/,[\d.]+\)$/, ',.52)');
+  var lblGhost = c.label.replace(/,[\d.]+\)$/, ',.38)');
+  el.innerHTML =
+    '<div style="background:linear-gradient(140deg,'+c.card+','+c.bg+');border:1.5px solid '+c.border
+    +';border-radius:20px;overflow:hidden;box-shadow:0 6px 32px '+c.glow+';position:relative;-webkit-tap-highlight-color:transparent">'
+    // subtle background shimmer layer
+    +'<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,'+c.strip+',transparent 70%);pointer-events:none"></div>'
+    // header row
+    +'<div style="position:relative;padding:13px 16px 0;display:flex;align-items:center;justify-content:space-between">'
+    +'<span style="font-size:9px;font-weight:800;letter-spacing:1.8px;color:'+lblFaint+';text-transform:uppercase;font-family:Jost,sans-serif">✦ MEDITACIÓN GUIADA</span>'
+    +'<span onclick="pGoTo(\'meditacion\')" style="font-size:10px;color:'+lblFaint+';font-family:Jost,sans-serif;font-weight:700;cursor:pointer">ver las 10 →</span>'
+    +'</div>'
+    // body row
+    +'<div style="position:relative;padding:10px 16px 15px;display:flex;align-items:center;gap:14px">'
+    // emoji square
+    +'<div onclick="pOpenMeditation(\''+med.id+'\')" style="cursor:pointer;width:66px;height:66px;flex-shrink:0;border-radius:18px;background:'+c.strip
+    +';border:1.5px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 4px 20px '+c.glow+'">'+med.emoji+'</div>'
+    // text
+    +'<div style="flex:1;min-width:0;cursor:pointer" onclick="pGoTo(\'meditacion\')">'
+    +'<div style="font-size:15px;font-weight:800;color:'+c.label+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.2;margin-bottom:4px">'+med.title+'</div>'
+    +'<div style="font-size:11px;color:'+lblFaint+';font-family:Jost,sans-serif;font-weight:500;line-height:1.35;margin-bottom:10px">'+med.sub+'</div>'
+    // tag + duration + play
+    +'<div style="display:flex;align-items:center;gap:7px">'
+    +'<span style="font-size:8.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:'+c.label+';background:'+c.strip+';border:1px solid '+c.border+';padding:3px 8px;border-radius:20px;font-family:Jost,sans-serif">'+med.tag+'</span>'
+    +'<span style="font-size:9.5px;color:'+lblGhost+';font-family:Jost,sans-serif;font-weight:600">⏱ '+med.duration+'</span>'
+    +'<div onclick="event.stopPropagation();pOpenMeditation(\''+med.id+'\')" style="cursor:pointer;margin-left:auto;width:40px;height:40px;border-radius:50%;background:'+c.border
+    +';display:flex;align-items:center;justify-content:center;font-size:16px;color:rgba(255,255,255,.95);box-shadow:0 4px 18px '+c.glow+';flex-shrink:0">▶</div>'
+    +'</div>'
+    +'</div>'
+    +'</div>'
+    +'</div>';
+}
+
 // ── HOME DATA ──────────────────────────────────────────────────
 function _loadHomeData(){
   _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
@@ -2262,6 +2301,8 @@ function _loadHomeData(){
   // 7-day mood mini-graph (renders immediately from localStorage, then syncs from Supabase)
   _renderHomeWeekMoodGraph().catch(function(){});
   setTimeout(_syncMoodsFromSb, 800); // sync after auth settles
+  // Meditation home widget (featured meditation of the day)
+  _renderHomeMedWidget();
   // Momento feed (gracefully hidden if table missing)
   setTimeout(_initHomeMomento, 400);
   // Realtime for momentos — new posts appear instantly (same pattern as _happyRtCh)
