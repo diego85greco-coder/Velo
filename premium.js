@@ -20481,101 +20481,68 @@ function _updateAmbientUI(){
 }
 
 // ── MEDITACIÓN ────────────────────────────────────────────────
+// Real guided meditation audios in Spanish (Amparo Piles Mindfulness — free)
 var _MEDITATIONS = [
-  { id:'respira', emoji:'🌬️', title:'Respiración Consciente', duration:'5 min', durationMs:5*60*1000,
-    steps:[
-      {t:0,    text:'Encontrá una postura cómoda. Cerrá los ojos suavemente.'},
-      {t:12000, text:'Llevá tu atención a la respiración. Solo observá.'},
-      {t:28000, text:'Inhalá profundo por la nariz durante 4 segundos...'},
-      {t:38000, text:'Retenéla suavemente durante 7 segundos...'},
-      {t:52000, text:'Exhalá lentamente por la boca durante 8 segundos...'},
-      {t:68000, text:'Muy bien. Volvé a inhalar...'},
-      {t:80000, text:'Retené con suavidad...'},
-      {t:94000, text:'Exhalá soltando toda la tensión...'},
-      {t:115000, text:'Sentís cómo tu cuerpo se afloja con cada respiración.'},
-      {t:140000, text:'Inhalá nuevamente... con calma...'},
-      {t:155000, text:'Retenéla... y soltá todo...'},
-      {t:185000, text:'Cada vez más relajado/a. Tu mente se aquieta.'},
-      {t:220000, text:'Una respiración más. Inhalá todo lo que necesitás...'},
-      {t:240000, text:'Y soltá. Quedáte en este silencio interior.'},
-      {t:270000, text:'Cuando estés listo/a, abrí los ojos suavemente. ✨'}
-    ]
+  { id:'calma', emoji:'🌊',
+    title:'Meditación de Calma',
+    sub:'Encontrá quietud interior profunda',
+    tag:'Mindfulness', tagCol:'rgba(64,156,220,.22)', tagTxt:'rgba(140,210,255,.90)',
+    duration:'~17 min',
+    col:{ bg:'rgba(6,18,38,.95)', card:'rgba(10,40,80,.60)', border:'rgba(64,156,220,.50)', glow:'rgba(64,156,220,.25)', label:'rgba(140,210,255,.95)', strip:'rgba(64,156,220,.18)' },
+    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2021/10/1.-Med-Calma22.mp3'
   },
-  { id:'mar', emoji:'🌊', title:'Viaje al Mar Interior', duration:'10 min', durationMs:10*60*1000,
-    steps:[
-      {t:0,     text:'Cerrá los ojos. Dejá que el cuerpo se asiente.'},
-      {t:15000, text:'Imaginá que estás frente al mar. Sentís la brisa suave.'},
-      {t:35000, text:'Escuchás el sonido de las olas... entrando y saliendo...'},
-      {t:60000, text:'Con cada ola que llega, traés calma hacia adentro.'},
-      {t:90000, text:'Con cada ola que se va, soltás lo que ya no necesitás.'},
-      {t:120000, text:'Sentís la arena tibia bajo tus pies. Estás a salvo.'},
-      {t:160000, text:'El mar te recuerda que todo fluye. Nada es permanente.'},
-      {t:200000, text:'Dejáte llevar por este ritmo suave... ola a ola...'},
-      {t:250000, text:'Respirás profundo. El aire salado te limpia por dentro.'},
-      {t:320000, text:'Sos parte de algo más grande. Sentís esa conexión.'},
-      {t:390000, text:'El mar sigue... tú seguís... todo está bien.'},
-      {t:470000, text:'Poco a poco, empezás a volver. Sentís tu cuerpo.'},
-      {t:530000, text:'Movés suavemente los dedos. Respirás profundo.'},
-      {t:570000, text:'Abrí los ojos cuando quieras. Llevás el mar dentro. 🌊'}
-    ]
+  { id:'escaneo', emoji:'🌿',
+    title:'Escaneo Corporal',
+    sub:'Liberá la tensión de cada parte del cuerpo',
+    tag:'Relajación', tagCol:'rgba(72,185,128,.22)', tagTxt:'rgba(140,230,175,.90)',
+    duration:'~10 min',
+    col:{ bg:'rgba(4,18,12,.95)', card:'rgba(8,44,24,.60)', border:'rgba(72,185,128,.50)', glow:'rgba(72,185,128,.25)', label:'rgba(140,230,175,.95)', strip:'rgba(72,185,128,.18)' },
+    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2023/02/3.Med_.-Escaner-corporal-23.mp3'
   },
-  { id:'tierra', emoji:'🌿', title:'Conexión con la Tierra', duration:'15 min', durationMs:15*60*1000,
-    steps:[
-      {t:0,     text:'Sentate con los pies apoyados en el suelo. Cerrá los ojos.'},
-      {t:20000, text:'Sentís el peso de tu cuerpo. La tierra te sostiene.'},
-      {t:45000, text:'Imaginá raíces que bajan desde tus pies hacia la tierra.'},
-      {t:75000, text:'Cada respiración te conecta más con la calma de la tierra.'},
-      {t:110000, text:'Escaneá tu cuerpo desde los pies... suavemente...'},
-      {t:150000, text:'Tus piernas... tu abdomen... tu pecho... tus hombros...'},
-      {t:195000, text:'Tu cuello... tu cara... toda la tensión se disuelve.'},
-      {t:240000, text:'Sentís la tierra firme debajo de vos. Nada puede desequilibrarte.'},
-      {t:300000, text:'Inhalá energía verde de la naturaleza. Exhalá lo que pesa.'},
-      {t:370000, text:'Sos parte de un ciclo eterno. Naciste de esta tierra.'},
-      {t:450000, text:'Sentís paz. Una paz que no depende de nada externo.'},
-      {t:540000, text:'Llevá esta calma a cada parte de tu cuerpo.'},
-      {t:640000, text:'Tu mente descansa. Tu corazón late tranquilo.'},
-      {t:740000, text:'Comenzás a volver al presente. Sintiendo cada respiración.'},
-      {t:840000, text:'Abrí los ojos lentamente. Seguís conectado/a a la tierra. 🌿'}
-    ]
+  { id:'metta', emoji:'💜',
+    title:'Amor y Compasión',
+    sub:'Abrí el corazón · Metta hacia vos y los demás',
+    tag:'Compasión', tagCol:'rgba(180,120,240,.22)', tagTxt:'rgba(215,170,255,.90)',
+    duration:'~18 min',
+    col:{ bg:'rgba(18,6,32,.95)', card:'rgba(40,12,64,.60)', border:'rgba(180,120,240,.50)', glow:'rgba(180,120,240,.25)', label:'rgba(215,170,255,.95)', strip:'rgba(180,120,240,.18)' },
+    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2021/10/6.Med_.-metta-21.mp3'
   },
-  { id:'presencia', emoji:'☁️', title:'Presencia Plena', duration:'20 min', durationMs:20*60*1000,
-    steps:[
-      {t:0,     text:'Encontrá una posición cómoda. Dejá que el cuerpo descanse.'},
-      {t:25000, text:'No hay nada que hacer. Solo estar aquí, ahora.'},
-      {t:60000, text:'Observá tus pensamientos como nubes pasando en el cielo.'},
-      {t:100000, text:'No los sigas. Solo observálos venir y irse.'},
-      {t:150000, text:'Tu conciencia es el cielo. Los pensamientos son las nubes.'},
-      {t:210000, text:'Respirás. El momento presente es el único que existe.'},
-      {t:280000, text:'¿Qué sentís en este instante? Solo observá sin juzgar.'},
-      {t:360000, text:'Si tu mente se va, gentilmente volvéla a este momento.'},
-      {t:450000, text:'Sentís el aire. Sentís el cuerpo. Estás completamente acá.'},
-      {t:550000, text:'La paz que buscás ya está en vos. Siempre estuvo.'},
-      {t:660000, text:'Cada momento es completo en sí mismo. No falta nada.'},
-      {t:780000, text:'Seguís respirando. Seguís presente. Seguís vos.'},
-      {t:900000, text:'Dejá que la calma se expanda por cada célula de tu ser.'},
-      {t:1050000, text:'Sos testigo de tu propia vida. Con compasión y sin juicio.'},
-      {t:1150000, text:'Comenzás a traer la conciencia de vuelta. Poco a poco.'},
-      {t:1160000, text:'Mové suavemente los dedos. Los pies. Respirá profundo.'},
-      {t:1175000, text:'Abrí los ojos. Llevás esta presencia al resto del día. ☁️'}
-    ]
+  { id:'nubes', emoji:'☁️',
+    title:'La Meditación de las Nubes',
+    sub:'Observá tus pensamientos sin engancharte',
+    tag:'Presencia plena', tagCol:'rgba(130,150,220,.22)', tagTxt:'rgba(185,200,255,.90)',
+    duration:'~14 min',
+    col:{ bg:'rgba(10,10,26,.95)', card:'rgba(20,20,52,.60)', border:'rgba(130,150,220,.50)', glow:'rgba(130,150,220,.25)', label:'rgba(185,200,255,.95)', strip:'rgba(130,150,220,.18)' },
+    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2021/10/3.Meditacion-nubes22.mp3'
   }
 ];
 
 var _medAudio = null, _medTimer = null, _medStepTimers = [], _medStartTime = 0, _medTimerInterval = null, _medCurrentId = null;
-var _medCtx = null, _medSrc = null, _medGainNode = null;
-var _medLoadToken = 0; // cancel in-flight audio load on close/reopen
+var _medLoadToken = 0;
 
 function pInitMeditacion(){
   var el = document.getElementById('meditacionCards');
   if(!el) return;
   el.innerHTML = _MEDITATIONS.map(function(m){
-    return '<div onclick="pOpenMeditation(\''+m.id+'\')" style="cursor:pointer;background:linear-gradient(135deg,rgba(147,112,219,.16),rgba(102,51,153,.10));border:1.5px solid rgba(147,112,219,.35);border-radius:20px;padding:18px 20px;display:flex;align-items:center;gap:16px;transition:all .15s;box-shadow:0 3px 16px rgba(147,112,219,.10)">'
-      +'<div style="width:58px;height:58px;border-radius:50%;background:rgba(147,112,219,.22);border:2px solid rgba(147,112,219,.45);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:28px">'+m.emoji+'</div>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:15px;font-weight:800;color:rgba(220,200,255,.95);font-family:\'Cormorant Garamond\',serif;font-style:italic;margin-bottom:3px">'+m.title+'</div>'
-      +'<div style="font-size:11.5px;color:rgba(200,180,255,.55);font-family:\'Jost\',sans-serif;font-weight:600;letter-spacing:.5px">⏱ '+m.duration+' · Guiada en español</div>'
+    var c = m.col;
+    var bdrFaint = c.border.replace(/,[\d.]+\)$/, ',.15)');
+    var lblSub   = c.label.replace(/,[\d.]+\)$/, ',.55)');
+    var lblMeta  = c.label.replace(/,[\d.]+\)$/, ',.42)');
+    return '<div onclick="pOpenMeditation(\''+m.id+'\')" style="cursor:pointer;background:'+c.card+';border:1.5px solid '+c.border+';border-radius:22px;overflow:hidden;display:flex;box-shadow:0 4px 28px '+c.glow+';margin-bottom:14px;active:transform:scale(.98)">'
+      +'<div style="width:68px;flex-shrink:0;background:'+c.strip+';display:flex;align-items:center;justify-content:center;border-right:1px solid '+bdrFaint+'">'
+      +'<span style="font-size:30px;line-height:1;display:block;text-align:center">'+m.emoji+'</span>'
       +'</div>'
-      +'<div style="width:38px;height:38px;border-radius:50%;background:rgba(147,112,219,.28);border:1.5px solid rgba(147,112,219,.50);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">▶</div>'
+      +'<div style="flex:1;padding:15px 16px 13px;min-width:0">'
+      +'<div style="display:inline-flex;align-items:center;background:'+m.tagCol+';border-radius:20px;padding:3px 9px;margin-bottom:8px">'
+      +'<span style="font-size:9px;font-weight:800;letter-spacing:1px;color:'+m.tagTxt+';text-transform:uppercase;font-family:\'Jost\',sans-serif">'+m.tag+'</span>'
+      +'</div>'
+      +'<div style="font-size:15px;font-weight:800;color:'+c.label+';font-family:\'Cormorant Garamond\',serif;font-style:italic;margin-bottom:4px;line-height:1.25">'+m.title+'</div>'
+      +'<div style="font-size:11px;color:'+lblSub+';font-family:\'Jost\',sans-serif;font-weight:500;margin-bottom:10px;line-height:1.3">'+m.sub+'</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between">'
+      +'<span style="font-size:10px;color:'+lblMeta+';font-weight:600;font-family:\'Jost\',sans-serif">⏱ '+m.duration+' · guiada en español</span>'
+      +'<div style="width:32px;height:32px;border-radius:50%;background:'+c.border+';display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:rgba(255,255,255,.92);box-shadow:0 2px 10px '+c.glow+'">▶</div>'
+      +'</div>'
+      +'</div>'
       +'</div>';
   }).join('');
 }
@@ -20587,27 +20554,30 @@ function _medDrawCanvas(t){
   var ctx = cv.getContext('2d');
   var cx = cv.width/2, cy = cv.height/2;
   ctx.clearRect(0,0,cv.width,cv.height);
-  // Breathing circle: expands and contracts slowly
-  var cycle = (t / 11000) % 1; // 11s per breath cycle
+  var med = _medCurrentId ? _MEDITATIONS.find(function(m){ return m.id===_medCurrentId; }) : null;
+  var glowCol = med ? med.col.glow : 'rgba(147,112,219,.25)';
+  var partCol = med ? med.col.label : 'rgba(200,180,255,.95)';
+  var rgb  = glowCol.replace(/rgba?\(/,'').split(',').slice(0,3).join(',');
+  var pRgb = partCol.replace(/rgba?\(/,'').split(',').slice(0,3).join(',');
+  var cycle = (t / 11000) % 1;
   var scale = 0.6 + 0.4 * Math.sin(cycle * Math.PI * 2);
   var r = Math.min(cx,cy) * 0.35 * scale;
   var grd = ctx.createRadialGradient(cx,cy,0,cx,cy,r*1.8);
-  grd.addColorStop(0,'rgba(147,112,219,.30)');
-  grd.addColorStop(0.5,'rgba(102,51,153,.18)');
+  grd.addColorStop(0,'rgba('+rgb+',.48)');
+  grd.addColorStop(0.5,'rgba('+rgb+',.22)');
   grd.addColorStop(1,'rgba(0,0,0,0)');
   ctx.beginPath(); ctx.arc(cx,cy,r*1.8,0,Math.PI*2); ctx.fillStyle=grd; ctx.fill();
-  // Floating particles
   for(var i=0;i<14;i++){
     var ang = (t/12000 + i/14) * Math.PI * 2;
     var rad = (0.28 + 0.12*Math.sin((t/7000)+i)) * Math.min(cx,cy);
     var px = cx + Math.cos(ang)*rad, py = cy + Math.sin(ang)*rad;
     var pr = 2.5 + 1.5*Math.sin((t/3000)+i);
     ctx.beginPath(); ctx.arc(px,py,pr,0,Math.PI*2);
-    ctx.fillStyle='rgba(200,180,255,'+(0.15+0.2*Math.sin((t/4000)+i))+')'; ctx.fill();
+    ctx.fillStyle='rgba('+pRgb+','+(0.15+0.20*Math.sin((t/4000)+i))+')'; ctx.fill();
   }
 }
 
-async function pOpenMeditation(id){
+function pOpenMeditation(id){
   var med = _MEDITATIONS.find(function(m){ return m.id===id; });
   if(!med) return;
   pCloseMeditation();
@@ -20619,69 +20589,45 @@ async function pOpenMeditation(id){
   document.getElementById('meditacionEmoji').textContent = med.emoji;
   document.getElementById('meditacionTitle').textContent = med.title;
   document.getElementById('meditacionDuration').textContent = med.duration + ' · Guía en español';
-  document.getElementById('meditacionGuide').textContent = '';
+  var guideEl = document.getElementById('meditacionGuide');
+  if(guideEl){ guideEl.style.opacity='1'; guideEl.textContent = med.sub; }
   document.getElementById('meditacionTimer').textContent = '0:00';
-  // Start background music
+  // Tint the background image hue to match each meditation's color
+  var bgEl = document.getElementById('meditacionBg');
+  var hueMap = {calma:'200deg', escaneo:'140deg', metta:'270deg', nubes:'220deg'};
+  if(bgEl) bgEl.style.filter = 'brightness(.45) saturate(1.5) hue-rotate('+(hueMap[id]||'0deg')+')';
+  // Play real human-voice guided meditation via HTML5 Audio (no CORS headers needed)
   try{
-    if(!_medCtx || _medCtx.state==='closed') _medCtx = new (window.AudioContext||window.webkitAudioContext)();
-    if(_medCtx.state==='suspended') await _medCtx.resume();
-    if(_medLoadToken !== _myMedToken) return;
-    var resp = await fetch('sounds/meditacion.mp3',{cache:'force-cache'});
-    if(_medLoadToken !== _myMedToken) return;
-    if(resp.ok){
-      var buf = await _medCtx.decodeAudioData(await resp.arrayBuffer());
-      if(_medLoadToken !== _myMedToken) return;
-      _medSrc = _medCtx.createBufferSource();
-      _medSrc.buffer = buf; _medSrc.loop = true;
-      _medGainNode = _medCtx.createGain(); _medGainNode.gain.value = 0.55;
-      _medSrc.connect(_medGainNode); _medGainNode.connect(_medCtx.destination);
-      _medSrc.start();
-    }
-  }catch(e){}
-  // Schedule guided text steps using Web Speech API
-  var synth = window.speechSynthesis;
+    _medAudio = new Audio();
+    _medAudio.src = med.audioUrl;
+    _medAudio.volume = 0.90;
+    _medAudio.addEventListener('ended', function(){
+      if(_medTimerInterval){ clearInterval(_medTimerInterval); _medTimerInterval=null; }
+    });
+    _medAudio.play().catch(function(e){ console.warn('[med audio]', e); });
+  }catch(e){ console.warn('[med audio init]', e); }
+  // Timer + canvas animation loop
   _medStartTime = Date.now();
-  med.steps.forEach(function(step, idx){
-    var tmr = setTimeout(function(){
-      var guideEl = document.getElementById('meditacionGuide');
-      if(!guideEl) return;
-      guideEl.style.opacity='0';
-      setTimeout(function(){ guideEl.style.opacity='1'; guideEl.textContent=step.text; }, 400);
-      if(synth && idx < med.steps.length - 1){
-        var utt = new SpeechSynthesisUtterance(step.text);
-        utt.lang='es-AR'; utt.rate=0.82; utt.pitch=0.95; utt.volume=0.90;
-        var voices = synth.getVoices();
-        var esVoice = voices.find(function(v){ return v.lang.startsWith('es'); });
-        if(esVoice) utt.voice = esVoice;
-        synth.cancel(); synth.speak(utt);
-      }
-    }, step.t);
-    _medStepTimers.push(tmr);
-  });
-  // Timer tick
-  _medTimerInterval = setInterval(function(){
-    var el = document.getElementById('meditacionTimer');
-    if(!el) return;
-    var elapsed = Math.floor((Date.now()-_medStartTime)/1000);
-    var m=Math.floor(elapsed/60), s=elapsed%60;
-    el.textContent = m+':'+(s<10?'0':'')+s;
-    _medDrawCanvas(Date.now()-_medStartTime);
-    if(elapsed >= med.durationMs/1000){ clearInterval(_medTimerInterval); _medTimerInterval=null; }
-  }, 100);
-  // Initial canvas draw
   _medDrawCanvas(0);
+  _medTimerInterval = setInterval(function(){
+    if(_medLoadToken !== _myMedToken){ clearInterval(_medTimerInterval); _medTimerInterval=null; return; }
+    var timerEl = document.getElementById('meditacionTimer');
+    if(!timerEl) return;
+    var elapsed = Math.floor((Date.now()-_medStartTime)/1000);
+    var mm=Math.floor(elapsed/60), ss=elapsed%60;
+    timerEl.textContent = mm+':'+(ss<10?'0':'')+ss;
+    _medDrawCanvas(Date.now()-_medStartTime);
+  }, 500);
 }
 
 function pCloseMeditation(){
-  _medLoadToken++; // cancel any in-flight audio load
+  _medLoadToken++;
   var ov = document.getElementById('meditacionPlayer');
   if(ov) ov.style.display='none';
   _medCurrentId = null;
   _medStepTimers.forEach(function(t){ clearTimeout(t); }); _medStepTimers=[];
   if(_medTimerInterval){ clearInterval(_medTimerInterval); _medTimerInterval=null; }
-  try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
-  try{ if(_medSrc){ _medSrc.stop(); _medSrc.disconnect(); _medSrc=null; } }catch(e){}
-  try{ if(_medGainNode){ _medGainNode.disconnect(); _medGainNode=null; } }catch(e){}
+  try{ if(_medAudio){ _medAudio.pause(); _medAudio.src=''; _medAudio=null; } }catch(e){}
 }
 
 // ── MOMENTOS ──────────────────────────────────────────────────
