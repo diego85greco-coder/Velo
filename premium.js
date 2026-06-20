@@ -3540,13 +3540,16 @@ function _applyDailyQAnswered(myResp, q){
 }
 
 async function _fetchDailyCount(){
-  var countEl = document.getElementById('homeDailyQCount');
-  if(!sbClient || !countEl) return;
+  if(!sbClient) return;
   var today = _dateKey();
   try{
     var res = await sbClient.from('daily_responses').select('id',{count:'exact',head:true}).eq('question_date',today);
     var n = res.count || 0;
-    countEl.textContent = n === 0 ? 'Sé el primero en responder ✨' : n+(n===1?' persona respondió hoy':' personas respondieron hoy');
+    var t = n === 0 ? 'Sé el primero en responder ✨' : n+(n===1?' persona respondió hoy':' personas respondieron hoy');
+    var countEl = document.getElementById('homeDailyQCount');
+    var openEl  = document.getElementById('homeDailyQOpenCount');
+    if(countEl) countEl.textContent = t;
+    if(openEl)  openEl.textContent  = t;
   }catch(e){}
 }
 
@@ -4226,16 +4229,16 @@ async function pSubmitDailyResponse(){
 
 // ── COMMUNITY PULSE ────────────────────────────────────────────
 async function _loadCommunityPulse(){
-  var el = document.getElementById('homePulse');
-  if(!el) return;
   var today = _dateKey();
-  var txtEl  = document.getElementById('homePulseTxt');
-  var subEl  = document.getElementById('homePulseSub');
-  var emEl   = document.getElementById('homePulseEmoji');
-  var barEl  = document.getElementById('homePulseBar');
+  var countEl   = document.getElementById('homeDailyQCount');
+  var subEl     = document.getElementById('homeDailyQPulseSub');
+  var emEl      = document.getElementById('homeDailyQPulseEmoji');
+  var barEl     = document.getElementById('homeDailyQPulseBar');
+  var openCountEl = document.getElementById('homeDailyQOpenCount');
+  var openEmEl    = document.getElementById('homeDailyQOpenPulseEmoji');
+  var openBarEl   = document.getElementById('homeDailyQOpenPulseBar');
   if(!sbClient){
-    if(txtEl) txtEl.textContent = 'Comunidad Velo · cargando...';
-    el.style.display = 'block';
+    if(countEl) countEl.textContent = 'Cargando comunidad...';
     return;
   }
   try{
@@ -4249,33 +4252,33 @@ async function _loadCommunityPulse(){
     var topCount = counts[topEmoji] || 0;
     var isTopUnique = sorted.length <= 1 || counts[sorted[1]] < topCount;
     var _labels = {'😊':'bien','😄':'genial','😌':'en paz','🥺':'sensibles','😔':'tristes','😰':'ansiosos','😤':'frustrados','💪':'con fuerza'};
-    if(emEl) emEl.textContent = isTopUnique ? topEmoji : (sorted.slice(0,2).join(' '));
+    var topStr = isTopUnique ? topEmoji : sorted.slice(0,2).join(' ');
+    if(emEl)    emEl.textContent = topStr;
+    if(openEmEl) openEmEl.textContent = topStr;
+    var countTxt, subTxt;
     if(total === 0){
-      if(txtEl) txtEl.textContent = 'Sé el primero en responder hoy';
-      if(subEl) subEl.textContent = 'La comunidad está esperando ✨';
+      countTxt = 'Sé el primero en responder hoy ✨';
+      subTxt   = 'La comunidad está esperando';
     } else {
       var pct = Math.round((topCount/total)*100);
-      if(txtEl) txtEl.textContent = total+(total===1?' persona respondió hoy':' personas respondieron hoy');
-      if(isTopUnique && pct > 50){
-        if(subEl) subEl.textContent = 'El '+pct+'% se siente '+(_labels[topEmoji]||'bien')+' · '+topEmoji;
-      } else {
-        if(subEl) subEl.textContent = '¡Hoy hay de todo! '+sorted.slice(0,3).join(' ');
-      }
+      countTxt = total+(total===1?' persona respondió hoy':' personas respondieron hoy');
+      subTxt   = isTopUnique && pct > 50
+        ? 'El '+pct+'% se siente '+(_labels[topEmoji]||'bien')+' · '+topEmoji
+        : '¡Hoy hay de todo! '+sorted.slice(0,3).join(' ');
     }
-    // Mini bar chart (top 4 emojis)
-    if(barEl && sorted.length){
-      barEl.innerHTML = sorted.slice(0,4).map(function(e){
-        var h = total > 0 ? Math.max(4, Math.round((counts[e]/total)*28)) : 4;
-        return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px">'
-          +'<div style="width:6px;border-radius:3px;background:rgba(116,198,157,.55);height:'+h+'px;transition:height .4s"></div>'
-          +'<span style="font-size:8px">'+e+'</span>'
-          +'</div>';
-      }).join('');
-    }
-    el.style.display = 'block';
-  }catch(e){
-    el.style.display = 'none';
-  }
+    if(countEl)     countEl.textContent = countTxt;
+    if(openCountEl) openCountEl.textContent = countTxt;
+    if(subEl)       subEl.textContent = subTxt;
+    var barHTML = sorted.slice(0,4).map(function(e){
+      var h = total > 0 ? Math.max(4, Math.round((counts[e]/total)*28)) : 4;
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px">'
+        +'<div style="width:6px;border-radius:3px;background:rgba(200,158,56,.55);height:'+h+'px;transition:height .4s"></div>'
+        +'<span style="font-size:8px">'+e+'</span>'
+        +'</div>';
+    }).join('');
+    if(barEl)    barEl.innerHTML = barHTML;
+    if(openBarEl) openBarEl.innerHTML = barHTML;
+  }catch(e){}
 }
 
 function _closePulseDetail(){
