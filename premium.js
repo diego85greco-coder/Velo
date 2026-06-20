@@ -3699,8 +3699,10 @@ function _renderDailyFeed(responses){
     return;
   }
   // Show max 3 in carousel; "ver todas" button appears when there are more
+  var _dqPrevL = feedEl.scrollLeft;
   feedEl.innerHTML = _buildDqCards(visible.slice(0,3));
   _initCarouselDots('homeDailyQFeed','dqDots');
+  if(_dqPrevL>0) requestAnimationFrame(function(){ feedEl.scrollLeft = _dqPrevL; });
   if(btnEl){
     if(visible.length > 3){
       btnEl.innerHTML = '<button onclick="pOpenDqAllSheet()" style="width:100%;margin-top:12px;padding:11px 16px;background:linear-gradient(135deg,rgba(175,130,20,.22),rgba(120,86,8,.28));border:1.5px solid rgba(200,158,56,.45);border-radius:14px;color:rgba(220,185,75,.92);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px;transition:opacity .15s">✦ Ver todas las respuestas ('+visible.length+') →</button>';
@@ -20614,6 +20616,7 @@ function _initMomentoProfileToggle(){
 function _renderMomentoCards(momentos, feedId, showMineOnly){
   var feed=document.getElementById(feedId);
   if(!feed) return;
+  var _prevL = feed.scrollLeft; // remember carousel position across re-renders
   var myHash=_momentoUserHash();
   var isHome = feedId === 'homeMomentoFeed';
   var isTappable = isHome || feedId === 'momentoFullFeed';
@@ -20709,6 +20712,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       +'</div>'
       +'</div>';
   }).join('');
+  if(_prevL > 0) requestAnimationFrame(function(){ feed.scrollLeft = _prevL; });
 }
 
 function pFocusMomentoInput(){
@@ -21016,7 +21020,8 @@ async function _loadHomeHappyFeed(){
   var _hwCutoff = Date.now() - 24*60*60*1000;
   var _hwCache = _sbHappy ? _sbHappy.filter(function(h){ return h.ts > _hwCutoff; }) : [];
   if(!_hwCache.length){ try{ _hwCache = (JSON.parse(safeLS('get','velo_happy_feed_cache')||'[]')).filter(function(h){ return h.ts > _hwCutoff; }); }catch(e){} }
-  if(_hwCache.length){ _happyHomePosts = _hwCache.slice(0,4); feed.innerHTML = _happyHomePosts.map(_happyHomeCard).join(''); _initCarouselDots('homeHappyFeed','happyDots'); }
+  var _hPrevL = feed.scrollLeft; // save carousel position
+  if(_hwCache.length){ _happyHomePosts = _hwCache.slice(0,4); feed.innerHTML = _happyHomePosts.map(_happyHomeCard).join(''); _initCarouselDots('homeHappyFeed','happyDots'); if(_hPrevL>0) requestAnimationFrame(function(){ feed.scrollLeft = _hPrevL; }); }
   else { feed.innerHTML = _emptyState; }
 
   _initSupabase();
@@ -21033,6 +21038,7 @@ async function _loadHomeHappyFeed(){
   _happyHomePosts = posts;
   feed.innerHTML = posts.length ? posts.map(_happyHomeCard).join('') : _emptyState;
   _initCarouselDots('homeHappyFeed','happyDots');
+  if(_hPrevL>0) requestAnimationFrame(function(){ feed.scrollLeft = _hPrevL; });
 }
 
 async function pPostHappyHome(){

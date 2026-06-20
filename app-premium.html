@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260620-990">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260620-990">
+  <link rel="stylesheet" href="premium.css?v=20260620-991">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260620-991">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1935,21 +1935,25 @@
 
             <!-- Stats bar -->
             <div class="diary-stats-bar">
-              <div class="diary-stat">
-                <span class="diary-stat-ico">🔥</span>
-                <strong class="diary-stat-val" id="diaryStreakVal">0</strong>
-                <span class="diary-stat-lbl">racha</span>
+              <div class="diary-stat" style="flex-direction:column;gap:1px">
+                <div style="display:flex;align-items:center;gap:4px">
+                  <span class="diary-stat-ico">🔥</span>
+                  <strong class="diary-stat-val" id="diaryStreakVal">0</strong>
+                </div>
+                <span class="diary-stat-lbl" title="Días consecutivos que escribís">días seguidos</span>
               </div>
               <div class="diary-stat-sep"></div>
-              <div class="diary-stat">
-                <span class="diary-stat-ico">📔</span>
-                <strong class="diary-stat-val" id="diaryEntryCountEl">0</strong>
-                <span class="diary-stat-lbl">entradas</span>
+              <div class="diary-stat" style="flex-direction:column;gap:1px">
+                <div style="display:flex;align-items:center;gap:4px">
+                  <span class="diary-stat-ico">📔</span>
+                  <strong class="diary-stat-val" id="diaryEntryCountEl">0</strong>
+                </div>
+                <span class="diary-stat-lbl" title="Total de entradas guardadas">guardadas</span>
               </div>
               <div class="diary-stat-sep"></div>
-              <div class="diary-stat">
+              <div class="diary-stat" style="flex-direction:column;gap:1px">
                 <span class="diary-stat-ico">🔒</span>
-                <span class="diary-stat-lbl">encriptado</span>
+                <span class="diary-stat-lbl">privado</span>
               </div>
             </div>
 
@@ -4017,8 +4021,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260620-990"></script>
-<script src="premium-redesign.js?v=20260620-990"></script>
+<script src="premium.js?v=20260620-991"></script>
+<script src="premium-redesign.js?v=20260620-991"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
