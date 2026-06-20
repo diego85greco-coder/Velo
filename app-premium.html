@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1016">
+  <meta name="app-version" content="1017">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260620-1016">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260620-1016">
+  <link rel="stylesheet" href="premium.css?v=20260620-1017">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260620-1017">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1258,15 +1258,23 @@
                   <div style="font-size:11.5px;color:rgba(255,255,255,.68);font-family:'Jost',sans-serif;line-height:1.6;margin-bottom:14px">Publicá si necesitás acompañamiento, o acompañá a alguien. Lo único que importa es estar <strong style="color:rgba(255,255,255,.88)">disponible</strong>. Si alguien quiere acompañarte, te llegará un popup en cualquier parte de la app.</div>
                   <button onclick="pGoTo('help')" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid rgba(116,198,157,.40);background:linear-gradient(135deg,rgba(60,140,90,.32),rgba(40,100,65,.26));color:rgba(160,240,195,.95);font-size:13px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.4px;touch-action:manipulation">Sala de Ayuda →</button>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;flex-basis:100%;flex-shrink:0;box-sizing:border-box">
-                  <button onclick="pGoTo('bottle')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 10px;border-radius:18px;background:linear-gradient(155deg,rgba(30,100,180,.55),rgba(18,72,148,.48));border:1.5px solid rgba(80,160,240,.50);color:rgba(190,225,255,.95);font-size:13px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.2px;box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent;text-align:center;line-height:1.2">
-                    <span style="font-size:26px;line-height:1">🌊</span>
-                    <span>Mensajes<br>al Mar</span>
-                  </button>
-                  <button onclick="pGoTo('circles')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 10px;border-radius:18px;background:linear-gradient(155deg,rgba(45,120,75,.55),rgba(28,88,52,.48));border:1.5px solid rgba(100,200,140,.50);color:rgba(175,240,200,.95);font-size:13px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.2px;box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent;text-align:center;line-height:1.2">
-                    <span style="font-size:26px;line-height:1">☮️</span>
-                    <span>Círculos<br>de Paz</span>
-                  </button>
+                <!-- Card Mensajes al Mar -->
+                <div style="flex-basis:100%;width:100%;background:rgba(20,80,180,.10);border:1px solid rgba(80,160,240,.22);border-radius:18px;padding:16px;box-sizing:border-box">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                    <span style="font-size:20px;line-height:1">🌊</span>
+                    <span style="font-size:13px;font-weight:800;color:rgba(170,215,255,.92);font-family:'Jost',sans-serif;letter-spacing:.3px">Mensajes al Mar</span>
+                  </div>
+                  <div style="font-size:11.5px;color:rgba(255,255,255,.68);font-family:'Jost',sans-serif;line-height:1.6;margin-bottom:14px">Soltá lo que sentís de forma <strong style="color:rgba(255,255,255,.88)">anónima</strong>. Lanzá un mensaje al mundo y recibí respuestas de desconocidos que se preocupan.</div>
+                  <button onclick="pGoTo('bottle')" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid rgba(80,160,240,.45);background:linear-gradient(135deg,rgba(30,90,200,.38),rgba(18,65,165,.30));color:rgba(180,220,255,.95);font-size:13px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.4px;touch-action:manipulation">Mensajes al Mar →</button>
+                </div>
+                <!-- Card Círculos de Paz -->
+                <div style="flex-basis:100%;width:100%;background:rgba(100,60,180,.10);border:1px solid rgba(170,130,240,.22);border-radius:18px;padding:16px;box-sizing:border-box">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                    <span style="font-size:20px;line-height:1">☮️</span>
+                    <span style="font-size:13px;font-weight:800;color:rgba(210,185,255,.92);font-family:'Jost',sans-serif;letter-spacing:.3px">Círculos de Paz</span>
+                  </div>
+                  <div style="font-size:11.5px;color:rgba(255,255,255,.68);font-family:'Jost',sans-serif;line-height:1.6;margin-bottom:14px">Uníte a grupos pequeños de apoyo mutuo. Sin likes, sin juicios — solo <strong style="color:rgba(255,255,255,.88)">conexión genuina</strong> entre personas que se acompañan de verdad.</div>
+                  <button onclick="pGoTo('circles')" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid rgba(170,130,240,.45);background:linear-gradient(135deg,rgba(100,60,200,.38),rgba(75,40,165,.30));color:rgba(215,195,255,.95);font-size:13px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.4px;touch-action:manipulation">Círculos de Paz →</button>
                 </div>
               </div>
               <!-- ── MEDITACIÓN WIDGET ─────────────────────────── -->
@@ -4081,8 +4089,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260620-1016"></script>
-<script src="premium-redesign.js?v=20260620-1016"></script>
+<script src="premium.js?v=20260620-1017"></script>
+<script src="premium-redesign.js?v=20260620-1017"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
