@@ -546,19 +546,6 @@ body::after {
   -webkit-backdrop-filter: blur(22px) saturate(140%);
   box-shadow: var(--r-glass-shadow) !important;
 }
-.r-hero-v2::before {
-  content: '';
-  position: absolute;
-  top: -30%; right: -10%;
-  width: 60%; height: 200%;
-  background: radial-gradient(ellipse at center, var(--r-sage-glow), transparent 60%);
-  pointer-events: none;
-  animation: rHeroHalo 12s ease-in-out infinite;
-}
-@keyframes rHeroHalo {
-  0%, 100% { transform: scale(1) rotate(0deg); opacity: .8; }
-  50%       { transform: scale(1.1) rotate(8deg); opacity: 1; }
-}
 .r-hero-left {
   position: relative;
   z-index: 1;

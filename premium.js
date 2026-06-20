@@ -20398,8 +20398,13 @@ async function pPostMomentoComment(momentoId){
   if(uid) data.user_id=uid;
   var res=await sbClient.from('momento_comments').insert(data);
   if(res.error){
-    if(res.error.code==='42P01'){ pToast('ℹ️','Comentarios próximamente disponibles'); }
-    else if(res.error.code==='42703'||res.error.code==='PGRST204'){
+    // Table doesn't exist yet
+    if(res.error.code==='42P01'||res.error.code==='PGRST200'){
+      pToast('🛠️','La tabla de comentarios aún no está creada en la base de datos');
+      if(btn){btn.disabled=false;btn.textContent='Enviar';} return;
+    }
+    // Profile columns missing — retry without them
+    if(res.error.code==='42703'||res.error.code==='PGRST204'||(res.error.message&&res.error.message.indexOf('user_avatar')>=0)){
       delete data.user_name; delete data.user_avatar;
       res=await sbClient.from('momento_comments').insert(data);
       if(res.error){ pToast('⚠️','Error al comentar'); if(btn){btn.disabled=false;btn.textContent='Enviar';} return; }
@@ -20701,13 +20706,15 @@ async function pPostMomento(){
   try{
     var _insertData={id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()};
     if(_momentoShowProfile){
-      var _pn=safeLS('get','velo_user_name'); var _pav=safeLS('get','velo_user_av');
+      var _pn=safeLS('get','velo_user_name'); var _pav=safeLS('get','velo_user_av'); var _puid=safeLS('get','velo_user_id');
       if(_pn) _insertData.user_name=_pn;
       if(_pav) _insertData.user_avatar=_pav;
+      if(_puid) _insertData.user_id=_puid;
     }
     var res=await sbClient.from('momentos').insert(_insertData);
     if(res.error && (res.error.code==='42703'||res.error.code==='PGRST204'||(res.error.message&&res.error.message.indexOf('user_avatar')>=0))){
-      delete _insertData.user_name; delete _insertData.user_avatar;
+      pToast('ℹ️','Falta migración de BD — publicando anónimo');
+      delete _insertData.user_name; delete _insertData.user_avatar; delete _insertData.user_id;
       res=await sbClient.from('momentos').insert(_insertData);
     }
     if(res.error){
