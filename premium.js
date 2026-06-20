@@ -3403,7 +3403,7 @@ var _DAILY_QUESTIONS = [
   // Esperanza y futuro
   {id:191, text:'¿Qué sueño todavía no te animaste a contarle a alguien?', hint:'Ese que guardás porque te parece demasiado grande o raro.'},
   {id:192, text:'¿Qué querías ser de chico/a y qué quedó de eso en vos?', hint:'¿Algo de ese sueño de infancia todavía vive adentro?'},
-  {id:193, text:'¿Qué versioné mejorada de vos mismo/a estás construyendo?', hint:'¿Hacia dónde va la evolución? ¿Lo notás?'},
+  {id:193, text:'¿Qué versión mejorada de vos mismo/a estás construyendo?', hint:'¿Hacia dónde va la evolución? ¿Lo notás?'},
   {id:194, text:'Si supieras que no podés fallar, ¿qué intentarías mañana?', hint:'Sin miedo al fracaso. ¿Qué sería lo primero?'},
   {id:195, text:'¿Qué es lo que más esperás de los próximos 12 meses?', hint:'Un deseo, un proyecto, una sensación. Lo que más querés que pase.'},
   // Vulnerabilidad real
@@ -20558,6 +20558,7 @@ var _MEDITATIONS = [
 
 var _medAudio = null, _medTimer = null, _medStepTimers = [], _medStartTime = 0, _medTimerInterval = null, _medCurrentId = null;
 var _medCtx = null, _medSrc = null, _medGainNode = null;
+var _medLoadToken = 0; // cancel in-flight audio load on close/reopen
 
 function pInitMeditacion(){
   var el = document.getElementById('meditacionCards');
@@ -20605,6 +20606,7 @@ async function pOpenMeditation(id){
   var med = _MEDITATIONS.find(function(m){ return m.id===id; });
   if(!med) return;
   pCloseMeditation();
+  var _myMedToken = ++_medLoadToken;
   _medCurrentId = id;
   var ov = document.getElementById('meditacionPlayer');
   if(!ov) return;
@@ -20618,9 +20620,12 @@ async function pOpenMeditation(id){
   try{
     if(!_medCtx || _medCtx.state==='closed') _medCtx = new (window.AudioContext||window.webkitAudioContext)();
     if(_medCtx.state==='suspended') await _medCtx.resume();
+    if(_medLoadToken !== _myMedToken) return;
     var resp = await fetch('sounds/meditacion.mp3',{cache:'force-cache'});
+    if(_medLoadToken !== _myMedToken) return;
     if(resp.ok){
       var buf = await _medCtx.decodeAudioData(await resp.arrayBuffer());
+      if(_medLoadToken !== _myMedToken) return;
       _medSrc = _medCtx.createBufferSource();
       _medSrc.buffer = buf; _medSrc.loop = true;
       _medGainNode = _medCtx.createGain(); _medGainNode.gain.value = 0.55;
@@ -20663,6 +20668,7 @@ async function pOpenMeditation(id){
 }
 
 function pCloseMeditation(){
+  _medLoadToken++; // cancel any in-flight audio load
   var ov = document.getElementById('meditacionPlayer');
   if(ov) ov.style.display='none';
   _medCurrentId = null;
@@ -22133,6 +22139,7 @@ function _initReveal(){
 // ── PER-PAGE INIT DISPATCHER ──────────────────────────────────
 function _onPageEnter(id){
   if(id !== 'home') _stopHomeRefresh(); // stop live refresh when leaving home
+  if(id !== 'meditacion') pCloseMeditation(); // stop audio/timers when leaving meditation
   if(id !== 'guardians' && _guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
   switch(id){
     case 'landing':     _initReveal(); break;
