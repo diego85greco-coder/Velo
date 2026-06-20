@@ -3610,7 +3610,7 @@ function _buildDqCards(list){
       +'</div>'
       // Response text — serif italic, premium look
       +(r.response_text
-        ? '<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.90);line-height:1.55;word-break:break-word;margin-bottom:8px">"'+_escHtml(r.response_text)+'"</div>'
+        ? '<div style="font-size:16.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.60;word-break:break-word;margin-bottom:8px;letter-spacing:.15px;text-shadow:0 1px 8px '+col.glow+'">❝ '+_escHtml(r.response_text)+' ❞</div>'
         : '')
       // Reaction hint bar
       +'<div style="display:flex;align-items:center;gap:6px;padding-top:6px;border-top:1px solid '+col.strip+'">'
@@ -13954,11 +13954,8 @@ async function _renderFavWidget(containerId){
         +'<div style="font-size:10px;color:var(--ink3);font-weight:600;max-width:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(displayName.split(' ')[0])+'</div>'
         +'</div>';
     }).join('')
-    +'<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer" onclick="pGoTo(\'contacts\')">'
-    +'<div style="width:38px;height:38px;border-radius:50%;background:var(--cream2);border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:16px">👥</div>'
-    +'<div style="font-size:10px;color:var(--ink3);font-weight:600">Ver todos</div>'
     +'</div>'
-    +'</div>'
+    +'<button onclick="pGoTo(\'contacts\')" style="width:100%;margin-top:8px;padding:10px 16px;background:linear-gradient(135deg,rgba(116,198,157,.13),rgba(116,198,157,.07));border:1.5px solid rgba(116,198,157,.28);border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:\'Jost\',sans-serif;font-size:11.5px;font-weight:700;color:var(--sage3);letter-spacing:.3px;transition:all .18s" onmouseenter="this.style.background=\'linear-gradient(135deg,rgba(116,198,157,.20),rgba(116,198,157,.12))\'" onmouseleave="this.style.background=\'linear-gradient(135deg,rgba(116,198,157,.13),rgba(116,198,157,.07))\'"><span style="font-size:14px">👥</span> Ver todos mis contactos</button>'
     +'</div>';
 }
 
@@ -20206,6 +20203,33 @@ function pToggleMomentoProfile(){
   if(ico) ico.textContent = _momentoShowProfile ? '👤' : '🔒';
 }
 
+function pToggleMomentoPageProfile(){
+  _momentoShowProfile = !_momentoShowProfile;
+  var btn = document.getElementById('momentoPageProfileToggle');
+  var lbl = document.getElementById('momentoPageProfileLabel');
+  var avEl = document.getElementById('momentoPageProfileAv');
+  if(!btn) return;
+  var name = safeLS('get','velo_user_name') || '';
+  var av   = safeLS('get','velo_user_av') || '';
+  if(_momentoShowProfile){
+    btn.style.background = 'rgba(116,198,157,.18)';
+    btn.style.borderColor = 'rgba(116,198,157,.50)';
+    if(lbl) lbl.textContent = name || 'Mi perfil';
+    if(avEl){
+      if(av && av.startsWith('http')){
+        avEl.innerHTML = '<img src="'+_escHtml(av)+'" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle">';
+      } else {
+        avEl.textContent = name ? name.charAt(0).toUpperCase() : '👤';
+      }
+    }
+  } else {
+    btn.style.background = 'rgba(116,198,157,.08)';
+    btn.style.borderColor = 'rgba(116,198,157,.22)';
+    if(lbl) lbl.textContent = 'Anónimo/a';
+    if(avEl){ avEl.innerHTML = ''; avEl.textContent = '🔒'; }
+  }
+}
+
 function _initMomentoProfileToggle(){
   _momentoShowProfile = false;
   var btn = document.getElementById('momentoProfileToggle');
@@ -20233,6 +20257,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
   if(!feed) return;
   var myHash=_momentoUserHash();
   var isHome = feedId === 'homeMomentoFeed';
+  var isTappable = isHome || feedId === 'momentoFullFeed';
   var reported = {};
   try{ reported = JSON.parse(safeLS('get','velo_momento_reported')||'{}'); }catch(e){}
 
@@ -20292,7 +20317,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     if(hasProfile && m.user_avatar && (m.user_avatar.startsWith('http')||m.user_avatar.startsWith('data:'))){
       authorAvHtml = '<img src="'+_escHtml(m.user_avatar)+'" style="width:16px;height:16px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:3px;flex-shrink:0;border:1px solid '+col.border+'">';
     }
-    return '<div class="home-mc"'+(isHome?' onclick="pOpenMomentoSheet(\''+_escHtml(String(m.id))+'\')"':'')+' style="background:'+col.bg+';box-shadow:0 3px 18px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3px solid '+col.border+(isHome?';cursor:pointer':'')+'">'
+    return '<div class="home-mc"'+(isTappable?' onclick="pOpenMomentoSheet(\''+_escHtml(String(m.id))+'\')"':'')+' style="background:'+col.bg+';box-shadow:0 3px 18px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3px solid '+col.border+(isTappable?';cursor:pointer':'')+'">'
       +'<div style="display:flex;align-items:stretch;gap:0">'
       // Colored left strip with emoji
       +'<div style="width:'+stripW+';flex-shrink:0;display:flex;align-items:center;justify-content:center;background:'+col.strip+';font-size:'+emojiSz+';line-height:1;padding:'+(isHome?'14px':'16px')+' 0;border-radius:0">'+(m.emoji||'💭')+'</div>'
@@ -20653,6 +20678,7 @@ async function _loadMomentoPageFeed(){
     return;
   }
   if(note) note.style.display='none';
+  if(momentos) _homeMomentoCache = (_homeMomentoCache||[]).concat(momentos).filter(function(m,i,a){ return a.findIndex(function(x){ return x.id===m.id; })===i; });
   _renderMomentoCards(momentos,'momentoFullFeed');
 }
 
@@ -20673,7 +20699,17 @@ async function pPostMomento(){
   var btn=document.getElementById('momentoPostBtn');
   if(btn){btn.disabled=true;btn.textContent='…';}
   try{
-    var res=await sbClient.from('momentos').insert({id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()});
+    var _insertData={id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()};
+    if(_momentoShowProfile){
+      var _pn=safeLS('get','velo_user_name'); var _pav=safeLS('get','velo_user_av');
+      if(_pn) _insertData.user_name=_pn;
+      if(_pav) _insertData.user_avatar=_pav;
+    }
+    var res=await sbClient.from('momentos').insert(_insertData);
+    if(res.error && (res.error.code==='42703'||res.error.code==='PGRST204'||(res.error.message&&res.error.message.indexOf('user_avatar')>=0))){
+      delete _insertData.user_name; delete _insertData.user_avatar;
+      res=await sbClient.from('momentos').insert(_insertData);
+    }
     if(res.error){
       if(res.error.code==='42P01'){var n=document.getElementById('momentoMigrationNote');if(n)n.style.display='block';}
       else{ pToast('⚠️','Error al publicar ('+res.error.code+'): '+res.error.message); }
