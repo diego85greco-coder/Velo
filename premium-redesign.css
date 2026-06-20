@@ -24,7 +24,6 @@
 body {
   background:
     radial-gradient(circle at 8% 12%, var(--r-sage-glow) 0%, transparent 45%),
-    radial-gradient(circle at 92% 88%, var(--r-gold-soft) 0%, transparent 50%),
     linear-gradient(180deg, #e8f2e8 0%, #ddeadd 60%, #cddeca 100%) !important;
 }
 body::after {
@@ -846,7 +845,6 @@ body.r-dark {
   /* Ambient background */
   background:
     radial-gradient(circle at 8% 12%, rgba(58, 110, 80, 0.35) 0%, transparent 45%),
-    radial-gradient(circle at 92% 88%, rgba(60, 70, 30, 0.25) 0%, transparent 50%),
     linear-gradient(180deg, #0f1a14 0%, #111d17 60%, #0c1510 100%) !important;
   color-scheme: dark;
 }
