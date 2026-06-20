@@ -20171,7 +20171,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     if(hasProfile && m.user_avatar && (m.user_avatar.startsWith('http')||m.user_avatar.startsWith('data:'))){
       authorAvHtml = '<img src="'+_escHtml(m.user_avatar)+'" style="width:16px;height:16px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:3px;flex-shrink:0;border:1px solid '+col.border+'">';
     }
-    return '<div class="home-mc" style="background:'+col.bg+';box-shadow:0 3px 18px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3px solid '+col.border+'">'
+    return '<div class="home-mc"'+(isHome?' onclick="pOpenMomentoSheet(\''+_escHtml(String(m.id))+'\')"':'')+' style="background:'+col.bg+';box-shadow:0 3px 18px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3px solid '+col.border+(isHome?';cursor:pointer':'')+'">'
       +'<div style="display:flex;align-items:stretch;gap:0">'
       // Colored left strip with emoji
       +'<div style="width:'+stripW+';flex-shrink:0;display:flex;align-items:center;justify-content:center;background:'+col.strip+';font-size:'+emojiSz+';line-height:1;padding:'+(isHome?'14px':'16px')+' 0;border-radius:0">'+(m.emoji||'💭')+'</div>'
@@ -20188,7 +20188,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       +'</div>'
       // Heart + report
       +'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;padding:10px 11px 10px 4px">'
-      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:4px">'
+      +'<button onclick="event.stopPropagation();pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:4px">'
       +'<span style="font-size:20px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
       +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:rgba(255,255,255,.50);font-family:Jost,sans-serif">'+heartCount+'</span>'
       +'</button>'
@@ -20202,6 +20202,125 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
 function pFocusMomentoInput(){
   var el=document.getElementById('momentoHomeInput');
   if(el){ el.focus(); el.scrollIntoView({behavior:'smooth',block:'center'}); }
+}
+
+async function _loadMomentoComments(momentoId){
+  _initSupabase(); if(!sbClient) return [];
+  try{
+    var res=await sbClient.from('momento_comments')
+      .select('id,text,user_name,user_avatar,user_id,created_at')
+      .eq('momento_id',String(momentoId))
+      .order('created_at',{ascending:true})
+      .limit(50);
+    if(res.error) return [];
+    return res.data||[];
+  }catch(e){ return []; }
+}
+
+function _renderMomentoComments(comments){
+  if(!comments||!comments.length){
+    return '<div style="text-align:center;padding:18px 8px;font-size:12.5px;color:rgba(255,255,255,.32);font-family:Jost,sans-serif;font-style:italic">Sé el primero en comentar 🌿</div>';
+  }
+  return comments.map(function(c){
+    var av=c.user_avatar||''; var isImg=av&&av.startsWith('http');
+    var name=c.user_name||'Anónimo/a';
+    var avHtml=isImg
+      ?'<img src="'+_escHtml(av)+'" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(116,198,157,.35);flex-shrink:0">'
+      :'<div style="width:30px;height:30px;border-radius:50%;background:rgba(116,198,157,.12);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:1.5px solid rgba(116,198,157,.22)">'+_escHtml(av||'🌿')+'</div>';
+    return '<div style="display:flex;gap:9px;margin-bottom:12px;align-items:flex-start">'
+      +avHtml
+      +'<div style="flex:1;background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.15);border-radius:14px;padding:9px 12px">'
+      +'<div style="font-size:11px;font-weight:700;color:rgba(200,240,218,.80);font-family:Jost,sans-serif;margin-bottom:4px">'+_escHtml(name)+'<span style="font-weight:400;color:rgba(255,255,255,.28);margin-left:7px">· '+_momentoAgo(c.created_at)+'</span></div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.86);line-height:1.5;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+async function pPostMomentoComment(momentoId){
+  var inp=document.getElementById('momentoCommentInput');
+  if(!inp) return;
+  var text=(inp.value||'').trim();
+  if(!text) return;
+  var btn=document.getElementById('momentoCommentBtn');
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  _initSupabase();
+  var data={momento_id:String(momentoId),text:text,user_hash:_momentoUserHash(),created_at:new Date().toISOString()};
+  var pn=safeLS('get','velo_user_name'); var pav=safeLS('get','velo_user_av'); var uid=safeLS('get','velo_user_id');
+  if(pn) data.user_name=pn;
+  if(pav) data.user_avatar=pav;
+  if(uid) data.user_id=uid;
+  var res=await sbClient.from('momento_comments').insert(data);
+  if(res.error){
+    if(res.error.code==='42P01'){ pToast('ℹ️','Comentarios próximamente disponibles'); }
+    else if(res.error.code==='42703'||res.error.code==='PGRST204'){
+      delete data.user_name; delete data.user_avatar;
+      res=await sbClient.from('momento_comments').insert(data);
+      if(res.error){ pToast('⚠️','Error al comentar'); if(btn){btn.disabled=false;btn.textContent='Enviar';} return; }
+    } else { pToast('⚠️','Error: '+res.error.message); if(btn){btn.disabled=false;btn.textContent='Enviar';} return; }
+  }
+  inp.value='';
+  pToast('💬','Comentario publicado');
+  var comments=await _loadMomentoComments(momentoId);
+  var feed=document.getElementById('momentoCommentFeed');
+  if(feed) feed.innerHTML=_renderMomentoComments(comments);
+  if(btn){btn.disabled=false;btn.textContent='Enviar';}
+}
+
+async function pOpenMomentoSheet(momentoId){
+  var m=_homeMomentoCache.find(function(x){return String(x.id)===String(momentoId);});
+  if(!m) return;
+  var col=_momentoEmojiColor(m.emoji||'💭');
+  var liked=safeLS('get','velo_mheart_'+m.id)==='1';
+  var cachedCnt=parseInt(safeLS('get','velo_mheart_'+m.id+'_cnt')||'0');
+  var heartCount=Math.max(m.hearts||0,cachedCnt);
+  var hasProfile=m.user_name&&m.user_name.length>0;
+  var authorName=hasProfile?m.user_name:(m.anon_label||'Anónimo/a');
+  var timeLeft=Math.max(0,Math.round((new Date(m.expires_at).getTime()-Date.now())/3600000));
+  var av=m.user_avatar||''; var isImg=av&&av.startsWith('http');
+  var canSeeProfile=hasProfile&&m.user_id;
+  var avClick=canSeeProfile?' onclick="pQuickProfile('+_jsAttr(authorName)+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(m.user_id||'')+')"':'';
+  var avHtml=isImg
+    ?'<img src="'+_escHtml(av)+'" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid '+col.border+';'+(canSeeProfile?'cursor:pointer':'')+'"'+avClick+'>'
+    :'<div style="width:44px;height:44px;border-radius:50%;background:'+col.strip+';display:flex;align-items:center;justify-content:center;font-size:18px;border:2px solid '+col.border+';flex-shrink:0'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+(av||'🌿')+'</div>';
+  var existing=document.getElementById('momentoDetailSheetOv');
+  if(existing) existing.remove();
+  var ov=document.createElement('div');
+  ov.className='p-modal-ov show'; ov.id='momentoDetailSheetOv';
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="max-height:90vh;overflow-y:auto;background:linear-gradient(160deg,rgba(4,18,10,.98),rgba(6,24,14,.98));border-top:2px solid '+col.border+'">'
+    +'<div class="p-sheet-handle" style="background:'+col.border+'"></div>'
+    +'<div style="text-align:center;margin-bottom:14px">'
+    +'<span style="font-size:50px;line-height:1;filter:drop-shadow(0 0 14px '+col.glow+')">'+m.emoji+'</span>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+    +avHtml
+    +'<div>'
+    +'<div style="font-size:14px;font-weight:700;color:rgba(200,240,218,.90);font-family:Jost,sans-serif">'+(canSeeProfile?'<span style="cursor:pointer"'+avClick+'>':'')+_escHtml(authorName)+(canSeeProfile?'</span>':'')+'</div>'
+    +'<div style="font-size:11px;color:rgba(116,198,157,.55);margin-top:3px;font-family:Jost,sans-serif">'+_momentoAgo(m.created_at||'')+'<span style="margin-left:7px;color:rgba(255,255,255,.28)">· ⏱ '+timeLeft+'h restantes</span></div>'
+    +'</div>'
+    +'</div>'
+    +'<div style="background:'+col.strip.replace(/,[\d.]+\)$/,',.12)')+';border:1.5px solid '+col.border.replace(/,[\d.]+\)$/,',.28)')+';border-radius:18px;padding:18px 20px;margin-bottom:16px">'
+    +'<div style="font-size:16px;line-height:1.65;color:rgba(255,255,255,.92);word-break:break-word">'+_escHtml(m.text||'')+'</div>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">'
+    +'<button id="momentoSheetHeartBtn" onclick="event.stopPropagation();pHeartMomento(\''+_escHtml(String(m.id))+'\',this)" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.14);border-radius:100px;padding:8px 18px;cursor:pointer;font-family:Jost,sans-serif">'
+    +'<span style="font-size:18px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
+    +'<span id="mheart-'+_escHtml(String(m.id))+'" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.58)">'+heartCount+'</span>'
+    +'</button>'
+    +'</div>'
+    +'<div style="font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.60);font-family:Jost,sans-serif;margin-bottom:14px">💬 Comentarios</div>'
+    +'<div id="momentoCommentFeed"><div style="text-align:center;padding:14px;font-size:12px;color:rgba(255,255,255,.30);font-family:Jost,sans-serif">Cargando comentarios...</div></div>'
+    +'<div style="display:flex;gap:8px;margin-top:16px;align-items:flex-end">'
+    +'<textarea id="momentoCommentInput" placeholder="Escribí un comentario..." rows="2" style="flex:1;background:rgba(255,255,255,.06);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;padding:10px 13px;font-size:13px;color:rgba(255,255,255,.88);font-family:Jost,sans-serif;resize:none;line-height:1.4;outline:none"></textarea>'
+    +'<button id="momentoCommentBtn" onclick="pPostMomentoComment(\''+_escHtml(String(m.id))+'\')" style="padding:10px 16px;background:rgba(116,198,157,.22);border:1.5px solid rgba(116,198,157,.45);border-radius:14px;color:rgba(116,198,157,.95);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;align-self:flex-end">Enviar</button>'
+    +'</div>'
+    +'<button onclick="document.getElementById(\'momentoDetailSheetOv\').remove()" style="width:100%;margin-top:14px;padding:11px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.18);border-radius:14px;color:rgba(116,198,157,.62);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  var comments=await _loadMomentoComments(momentoId);
+  var feed=document.getElementById('momentoCommentFeed');
+  if(feed) feed.innerHTML=_renderMomentoComments(comments);
 }
 async function _initHomeMomento(){
   var section=document.getElementById('homeMomentoSection');
@@ -20217,16 +20336,18 @@ async function _initHomeMomento(){
   var pt=document.getElementById('happyPromptText');
   if(pt) pt.textContent=_happyDailyPrompt();
 
-  var momentos=await _fetchMomentos(4);
+  var momentos=await _fetchMomentos(10);
   if(momentos===null){ section.style.display='none'; return; }
+  _homeMomentoCache = momentos || [];
   section.style.display='block';
-  _renderMomentoCards(momentos,'homeMomentoFeed');
+  _renderMomentoCards(momentos.slice(0,4),'homeMomentoFeed');
   _initCarouselDots('homeMomentoFeed','momentoDots');
   _initMomentoProfileToggle();
   _updateFeedTabCounts();
 }
 
 var _homeActiveFeedTab = 'momento';
+var _homeMomentoCache = [];
 
 function pHomeTabSwitch(tab){
   _homeActiveFeedTab = tab;
