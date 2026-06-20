@@ -634,7 +634,7 @@
       initParticles('landingCanvas',    140, 0.55, '80,160,115',  '140,210,155');
       initParticles('loginCanvas',       90, 0.50, '80,160,115',  '140,210,155');
       initParticles('registerCanvas',    90, 0.50, '80,160,115',  '140,210,155');
-      initParticles('homeBgCanvas',     320, 0.60, '90,155,200',  '100,210,145');
+      initParticles('homeBgCanvas',     360, 0.92, '115,180,225', '160,238,190');
       initParticles('moodBgCanvas',      100, 0.68, '150,120,200', '145,190,230');
       initParticles('profileBgCanvas',   95, 0.58, '70,120,180',  '100,200,180');
       initParticles('helpBgCanvas',      85, 0.60, '45,120,75',   '120,200,240');
@@ -813,7 +813,7 @@ function initParticles(canvasId, count, maxOpacity, color, darkColor) {
       if (p.x > canvas.width  + 20) p.x = -20;
       if (p.y < -20) p.y = canvas.height + 20;
       if (p.y > canvas.height + 20) p.y = -20;
-      var pulseOp = p.op * (0.55 + 0.45 * Math.sin(frame * p.pspd + p.pulse));
+      var pulseOp = p.op * (0.68 + 0.32 * Math.sin(frame * p.pspd + p.pulse));
       var radius = p.r * 3.2;
       var gr = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius);
       gr.addColorStop(0,   'rgba(' + particleColor + ',' + pulseOp + ')');
