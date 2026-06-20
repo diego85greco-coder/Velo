@@ -30,12 +30,12 @@ function getSlot(tz) {
   const h = localHour(tz);
   if (h >= 8  && h < 11) return 'morning';
   if (h >= 13 && h < 16) return 'afternoon';
-  if (h >= 20 && h < 23) return 'night';
+  // Night: exactly 23hs local (2 AM UTC for AR)
+  if (h === 23) return 'night';
   // When triggered manually, use the closest upcoming slot
   if (FORCE_SEND) {
     if (h < 8)  return 'morning';
     if (h < 13) return 'afternoon';
-    if (h < 20) return 'night';
     return 'night';
   }
   return null;
@@ -146,6 +146,8 @@ async function main() {
 
   if (error) { console.error('Supabase error:', error); process.exit(1); }
 
+  console.log(`Found ${users?.length || 0} users with push_subscription in DB`);
+
   // Group users by slot so we call Gemini once per slot, not once per user
   const slotUsers = { morning: [], afternoon: [], night: [] };
   let skipped = 0;
@@ -158,6 +160,7 @@ async function main() {
       else { rawSub = parsed; tz = 'America/Argentina/Buenos_Aires'; }
     } catch { skipped++; continue; }
     const slot = getSlot(tz);
+    console.log(`  user ${user.id}: tz=${tz} h=${localHour(tz)} slot=${slot||'none'}`);
     if (!slot) { skipped++; continue; }
     slotUsers[slot].push({ id: user.id, sub: rawSub, tz });
   }
@@ -199,7 +202,7 @@ async function main() {
     }));
   }
 
-  console.log(`Done — sent: ${sent}, skipped (wrong window): ${skipped}, failed: ${failed}`);
+  console.log(`Done — total_users=${users?.length||0}, sent=${sent}, skipped_no_window=${skipped}, failed=${failed}`);
 }
 
 main();
