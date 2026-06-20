@@ -20407,6 +20407,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       +(mine?'<span style="font-size:8px;font-weight:700;padding:1px 6px;border-radius:5px;background:'+col.badge+';color:'+col.label+'">tuyo</span>':'')
       +'</div>'
       +'<div style="font-size:'+txtSz+';line-height:1.55;color:rgba(255,255,255,.92);word-break:break-word">'+_escHtml(m.text||'')+'</div>'
+      +(isTappable?'<div style="margin-top:7px;font-size:9.5px;color:'+col.label.replace(',1)',',0.40)')+';font-family:\'Jost\',sans-serif;display:flex;align-items:center;gap:3px;letter-spacing:.2px">💬 <span>tocá para comentar</span></div>':'')
       +'</div>'
       // Heart + report
       +'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;padding:10px 11px 10px 4px">'
@@ -20439,21 +20440,25 @@ async function _loadMomentoComments(momentoId){
   }catch(e){ return []; }
 }
 
-function _renderMomentoComments(comments){
+function _renderMomentoComments(comments,col){
+  var brd=col?col.border:'rgba(116,198,157,1)';
+  var lbl=col?col.label:'rgba(200,240,218,1)';
+  var strip=col?col.strip:'rgba(116,198,157,1)';
+  var ca=function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
   if(!comments||!comments.length){
-    return '<div style="text-align:center;padding:18px 8px;font-size:12.5px;color:rgba(255,255,255,.32);font-family:Jost,sans-serif;font-style:italic">Sé el primero en comentar 🌿</div>';
+    return '<div style="text-align:center;padding:20px 8px;font-size:12.5px;color:rgba(255,255,255,.30);font-family:\'Jost\',sans-serif;font-style:italic">Sé el primero en comentar 🌿</div>';
   }
   return comments.map(function(c){
     var av=c.user_avatar||''; var isImg=av&&av.startsWith('http');
     var name=c.user_name||'Anónimo/a';
     var avHtml=isImg
-      ?'<img src="'+_escHtml(av)+'" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(116,198,157,.35);flex-shrink:0">'
-      :'<div style="width:30px;height:30px;border-radius:50%;background:rgba(116,198,157,.12);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:1.5px solid rgba(116,198,157,.22)">'+_escHtml(av||'🌿')+'</div>';
-    return '<div style="display:flex;gap:9px;margin-bottom:12px;align-items:flex-start">'
+      ?'<img src="'+_escHtml(av)+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid '+ca(brd,'.35')+';flex-shrink:0">'
+      :'<div style="width:28px;height:28px;border-radius:50%;background:'+ca(strip,'.14')+';display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;border:1.5px solid '+ca(brd,'.25')+'">'+_escHtml(av||'🌿')+'</div>';
+    return '<div style="display:flex;gap:8px;margin-bottom:10px;align-items:flex-start">'
       +avHtml
-      +'<div style="flex:1;background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.15);border-radius:14px;padding:9px 12px">'
-      +'<div style="font-size:11px;font-weight:700;color:rgba(200,240,218,.80);font-family:Jost,sans-serif;margin-bottom:4px">'+_escHtml(name)+'<span style="font-weight:400;color:rgba(255,255,255,.28);margin-left:7px">· '+_momentoAgo(c.created_at)+'</span></div>'
-      +'<div style="font-size:13px;color:rgba(255,255,255,.86);line-height:1.5;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
+      +'<div style="flex:1;background:'+ca(strip,'.08')+';border:1px solid '+ca(brd,'.18')+';border-radius:14px;padding:8px 12px">'
+      +'<div style="font-size:10.5px;font-weight:700;color:'+ca(lbl,'.80')+';font-family:\'Jost\',sans-serif;margin-bottom:3px">'+_escHtml(name)+'<span style="font-weight:400;color:rgba(255,255,255,.28);margin-left:6px">· '+_momentoAgo(c.created_at)+'</span></div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.86);line-height:1.52;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -20507,47 +20512,72 @@ async function pOpenMomentoSheet(momentoId){
   var av=m.user_avatar||''; var isImg=av&&av.startsWith('http');
   var canSeeProfile=hasProfile&&m.user_id;
   var avClick=canSeeProfile?' onclick="pQuickProfile('+_jsAttr(authorName)+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(m.user_id||'')+')"':'';
-  var avHtml=isImg
-    ?'<img src="'+_escHtml(av)+'" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid '+col.border+';'+(canSeeProfile?'cursor:pointer':'')+'"'+avClick+'>'
-    :'<div style="width:44px;height:44px;border-radius:50%;background:'+col.strip+';display:flex;align-items:center;justify-content:center;font-size:18px;border:2px solid '+col.border+';flex-shrink:0'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+(av||'🌿')+'</div>';
+  var avSmall=isImg
+    ?'<img src="'+_escHtml(av)+'" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1.5px solid '+col.border+';flex-shrink:0"'+avClick+'>'
+    :'<div style="width:30px;height:30px;border-radius:50%;background:'+col.strip+';display:flex;align-items:center;justify-content:center;font-size:14px;border:1.5px solid '+col.border+';flex-shrink:0"'+avClick+'>'+(av||'🌿')+'</div>';
   var existing=document.getElementById('momentoDetailSheetOv');
   if(existing) existing.remove();
   var ov=document.createElement('div');
   ov.className='p-modal-ov show'; ov.id='momentoDetailSheetOv';
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
-  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="max-height:90vh;overflow-y:auto;background:linear-gradient(160deg,rgba(4,18,10,.98),rgba(6,24,14,.98));border-top:2px solid '+col.border+'">'
+  // helper: strip alpha from col values
+  var ca=function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
+  ov.innerHTML=
+    '<div class="p-sheet p-sheet-dark" style="max-height:92vh;display:flex;flex-direction:column;overflow:hidden;background:rgba(6,10,16,.98);border-top:2.5px solid '+col.border+'">'
+    // Handle
     +'<div class="p-sheet-handle" style="background:'+col.border+'"></div>'
-    +'<div style="text-align:center;margin-bottom:14px">'
-    +'<span style="font-size:50px;line-height:1;filter:drop-shadow(0 0 14px '+col.glow+')">'+m.emoji+'</span>'
-    +'</div>'
-    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
-    +avHtml
+    // ── Hero header — colored strip ──
+    +'<div style="background:linear-gradient(160deg,'+col.bg+' 0%,rgba(6,10,16,.0) 100%);padding:20px 20px 16px;position:relative;overflow:hidden;flex-shrink:0;border-bottom:1px solid '+ca(col.border,'.14')+'">'
+    +'<div style="position:absolute;right:-8px;top:-8px;font-size:100px;opacity:.06;line-height:1;pointer-events:none;filter:grayscale(.4)">'+m.emoji+'</div>'
+    +'<div style="display:flex;align-items:center;gap:14px;position:relative;z-index:1">'
+    +'<span style="font-size:54px;line-height:1;filter:drop-shadow(0 0 18px '+col.glow+');flex-shrink:0">'+m.emoji+'</span>'
+    +'<div style="flex:1;min-width:0">'
+    // Author glass pill
+    +'<div style="display:inline-flex;align-items:center;gap:7px;background:rgba(0,0,0,.40);border:1px solid '+ca(col.border,'.25')+';border-radius:20px;padding:5px 12px 5px 6px;margin-bottom:5px">'
+    +avSmall
     +'<div>'
-    +'<div style="font-size:14px;font-weight:700;color:rgba(200,240,218,.90);font-family:Jost,sans-serif">'+(canSeeProfile?'<span style="cursor:pointer"'+avClick+'>':'')+_escHtml(authorName)+(canSeeProfile?'</span>':'')+'</div>'
-    +'<div style="font-size:11px;color:rgba(116,198,157,.55);margin-top:3px;font-family:Jost,sans-serif">'+_momentoAgo(m.created_at||'')+'<span style="margin-left:7px;color:rgba(255,255,255,.28)">· ⏱ '+timeLeft+'h restantes</span></div>'
+    +'<div style="font-size:12.5px;font-weight:700;color:'+col.label+';font-family:\'Jost\',sans-serif;line-height:1.2">'+(canSeeProfile?'<span style="cursor:pointer"'+avClick+'>':'')+_escHtml(authorName)+(canSeeProfile?'</span>':'')+'</div>'
+    +'<div style="font-size:10px;color:rgba(255,255,255,.38);font-family:\'Jost\',sans-serif;margin-top:1px">'+_momentoAgo(m.created_at||'')+' · ⏱ '+timeLeft+'h restantes</div>'
     +'</div>'
     +'</div>'
-    +'<div style="background:'+col.strip.replace(/,[\d.]+\)$/,',.12)')+';border:1.5px solid '+col.border.replace(/,[\d.]+\)$/,',.28)')+';border-radius:18px;padding:18px 20px;margin-bottom:16px">'
-    +'<div style="font-size:16px;line-height:1.65;color:rgba(255,255,255,.92);word-break:break-word">'+_escHtml(m.text||'')+'</div>'
     +'</div>'
-    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">'
-    +'<button id="momentoSheetHeartBtn" onclick="event.stopPropagation();pHeartMomento(\''+_escHtml(String(m.id))+'\',this)" style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.14);border-radius:100px;padding:8px 18px;cursor:pointer;font-family:Jost,sans-serif">'
+    +'</div>'
+    +'</div>'
+    // ── Scrollable body ──
+    +'<div style="flex:1;overflow-y:auto;padding:18px 20px 0">'
+    // Text block with serif + decorative ❝
+    +'<div style="background:'+ca(col.strip,'.10')+';border:1.5px solid '+ca(col.border,'.25')+';border-radius:18px;padding:18px 20px 16px;margin-bottom:16px;position:relative;overflow:hidden">'
+    +'<div style="position:absolute;top:-4px;left:4px;font-size:54px;color:'+ca(col.label,'.09')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none">❝</div>'
+    +'<div style="font-size:17px;line-height:1.72;color:rgba(255,255,255,.93);word-break:break-word;font-family:\'Cormorant Garamond\',serif;font-style:italic;position:relative">'+_escHtml(m.text||'')+'</div>'
+    +'</div>'
+    // Heart button
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">'
+    +'<button id="momentoSheetHeartBtn" onclick="event.stopPropagation();pHeartMomento(\''+_escHtml(String(m.id))+'\',this)" style="display:flex;align-items:center;gap:8px;background:'+ca(col.strip,'.14')+';border:1.5px solid '+ca(col.border,'.38')+';border-radius:100px;padding:8px 20px;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'
     +'<span style="font-size:18px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
-    +'<span id="mheart-'+_escHtml(String(m.id))+'" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.58)">'+heartCount+'</span>'
+    +'<span id="mheart-'+_escHtml(String(m.id))+'" style="font-size:13px;font-weight:700;color:'+col.label+'">'+heartCount+'</span>'
     +'</button>'
     +'</div>'
-    +'<div style="font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.60);font-family:Jost,sans-serif;margin-bottom:14px">💬 Comentarios</div>'
-    +'<div id="momentoCommentFeed"><div style="text-align:center;padding:14px;font-size:12px;color:rgba(255,255,255,.30);font-family:Jost,sans-serif">Cargando comentarios...</div></div>'
-    +'<div style="display:flex;gap:8px;margin-top:16px;align-items:flex-end">'
-    +'<textarea id="momentoCommentInput" placeholder="Escribí un comentario..." rows="2" style="flex:1;background:rgba(255,255,255,.06);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;padding:10px 13px;font-size:13px;color:rgba(255,255,255,.88);font-family:Jost,sans-serif;resize:none;line-height:1.4;outline:none"></textarea>'
-    +'<button id="momentoCommentBtn" onclick="pPostMomentoComment(\''+_escHtml(String(m.id))+'\')" style="padding:10px 16px;background:rgba(116,198,157,.22);border:1.5px solid rgba(116,198,157,.45);border-radius:14px;color:rgba(116,198,157,.95);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;align-self:flex-end">Enviar</button>'
+    // Comments header
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'
+    +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+ca(col.label,'.60')+';font-family:\'Jost\',sans-serif;white-space:nowrap">💬 Comentarios</span>'
+    +'<div style="flex:1;height:1px;background:'+ca(col.border,'.18')+'"></div>'
     +'</div>'
-    +'<button onclick="document.getElementById(\'momentoDetailSheetOv\').remove()" style="width:100%;margin-top:14px;padding:11px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.18);border-radius:14px;color:rgba(116,198,157,.62);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
+    +'<div id="momentoCommentFeed"><div style="text-align:center;padding:14px;font-size:12px;color:rgba(255,255,255,.28);font-family:\'Jost\',sans-serif">Cargando...</div></div>'
+    // Comment input
+    +'<div style="display:flex;gap:8px;margin-top:14px;align-items:flex-end;padding-bottom:14px">'
+    +'<textarea id="momentoCommentInput" placeholder="Escribí un comentario..." rows="2" style="flex:1;background:rgba(255,255,255,.05);border:1.5px solid '+ca(col.border,'.28')+';border-radius:14px;padding:10px 13px;font-size:13px;color:rgba(255,255,255,.88);font-family:\'Jost\',sans-serif;resize:none;line-height:1.4;outline:none"></textarea>'
+    +'<button id="momentoCommentBtn" onclick="pPostMomentoComment(\''+_escHtml(String(m.id))+'\')" style="padding:10px 16px;background:'+ca(col.strip,'.20')+';border:1.5px solid '+ca(col.border,'.50')+';border-radius:14px;color:'+col.label+';font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;align-self:flex-end">Enviar</button>'
+    +'</div>'
+    +'</div>'
+    // ── Fixed close bar ──
+    +'<div style="padding:10px 20px 16px;flex-shrink:0;border-top:1px solid '+ca(col.border,'.12')+'">'
+    +'<button onclick="document.getElementById(\'momentoDetailSheetOv\').remove()" style="width:100%;padding:11px;background:'+ca(col.strip,'.08')+';border:1px solid '+ca(col.border,'.18')+';border-radius:14px;color:'+ca(col.label,'.60')+';font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
+    +'</div>'
     +'</div>';
   document.body.appendChild(ov);
-  var comments=await _loadMomentoComments(momentoId);
   var feed=document.getElementById('momentoCommentFeed');
-  if(feed) feed.innerHTML=_renderMomentoComments(comments);
+  var comments=await _loadMomentoComments(momentoId);
+  if(feed) feed.innerHTML=_renderMomentoComments(comments,col);
 }
 async function _initHomeMomento(){
   var section=document.getElementById('homeMomentoSection');
