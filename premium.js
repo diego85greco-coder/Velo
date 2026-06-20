@@ -3630,7 +3630,8 @@ function pOpenDqResponseSheet(responseId){
   var av = r.user_avatar || '';
   var isImg = av && av.startsWith('http');
   var canSeeProfile = r.user_id && r.user_id !== 'anon';
-  var avStyle = 'width:56px;height:56px;border-radius:50%;object-fit:cover;border:2.5px solid rgba(116,198,157,.50);'+(canSeeProfile?'cursor:pointer':'');
+  var col = _dqEmojiColor(r.mood_emoji||'💭');
+  var avStyle = 'width:44px;height:44px;border-radius:50%;object-fit:cover;border:2.5px solid '+col.border+';flex-shrink:0;'+(canSeeProfile?'cursor:pointer':'');
   var avClick = canSeeProfile ? ' onclick="pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')"' : '';
   var avHtml = isImg
     ? '<img src="'+_escHtml(av)+'" style="'+avStyle+'"'+avClick+'>'
@@ -3660,39 +3661,43 @@ function pOpenDqResponseSheet(responseId){
   ov.className = 'p-modal-ov show';
   ov.id = 'dqResponseSheetOv';
   ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
-  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="max-height:88vh;overflow-y:auto;background:linear-gradient(160deg,rgba(4,18,10,.98),rgba(6,24,14,.98));border-top:1.5px solid rgba(116,198,157,.22)">'
-    // Handle
-    +'<div class="p-sheet-handle" style="background:rgba(116,198,157,.30)"></div>'
-    // Question label
-    +'<div style="text-align:center;margin-bottom:6px">'
-    +'<span style="font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(200,158,56,.80);font-family:Jost,sans-serif">✨ Pregunta del día</span>'
+  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="padding:0;overflow:hidden;max-height:92vh;display:flex;flex-direction:column;border-top:3px solid '+col.border+'">'
+    // Colored mood header strip
+    +'<div style="background:linear-gradient(145deg,'+col.bg+',rgba(4,14,8,.98));padding:28px 22px 22px;position:relative;flex-shrink:0">'
+    +'<div class="p-sheet-handle" style="background:'+col.border.replace(/[\d.]+\)$/,'0.45)')+';position:absolute;top:10px;left:50%;transform:translateX(-50%);margin:0"></div>'
+    // Emoji + question label row
+    +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">'
+    +'<span style="font-size:52px;line-height:1;filter:drop-shadow(0 0 18px '+col.glow+')">'+r.mood_emoji+'</span>'
+    +'<div>'
+    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.65)')+';font-family:Jost,sans-serif;margin-bottom:5px">✨ Pregunta del día</div>'
+    +'<div style="font-size:16px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(240,255,246,.88);line-height:1.35">'+_escHtml(q?q.text:'')+'</div>'
     +'</div>'
-    +'<div style="text-align:center;font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(220,240,228,.72);line-height:1.35;margin-bottom:20px;padding:0 16px">'+_escHtml(q?q.text:'')+'</div>'
-    // Mood emoji glow
-    +'<div style="text-align:center;margin-bottom:16px">'
-    +'<span style="font-size:48px;filter:drop-shadow(0 0 14px rgba(116,198,157,.35));line-height:1">'+r.mood_emoji+'</span>'
     +'</div>'
     // Author row
-    +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;justify-content:center">'
-    +avHtml
-    +'<div>'
-    +'<div style="font-size:15px;font-weight:700;color:rgba(200,240,218,.90);font-family:Jost,sans-serif'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
-    +(_uAt(r.user_id) ? '<div style="margin-top:2px">'+_uAt(r.user_id)+'</div>' : '')
-    +'<div style="font-size:11px;color:rgba(116,198,157,.55);margin-top:3px;font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
+    +'<div style="display:flex;align-items:center;gap:11px;padding:12px 14px;background:rgba(0,0,0,.22);border-radius:14px;border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.18)')+'">'+avHtml
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:13.5px;font-weight:700;color:rgba(220,245,230,.92);font-family:Jost,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
+    +(_uAt(r.user_id)?'<div style="margin-top:2px">'+_uAt(r.user_id)+'</div>':'')
+    +'<div style="font-size:10.5px;color:'+col.label.replace(/[\d.]+\)$/,'0.50)')+';margin-top:2px;font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
     +'</div>'
     +'</div>'
-    // Response text — premium serif block
+    +'</div>'
+    // Scrollable body
+    +'<div style="overflow-y:auto;padding:20px 22px 24px;flex:1">'
+    // Response text block
     +(r.response_text
-      ? '<div style="background:linear-gradient(135deg,rgba(116,198,157,.09),rgba(116,198,157,.04));border:1px solid rgba(116,198,157,.22);border-radius:20px;padding:22px 24px;margin-bottom:22px;text-align:center;position:relative">'
-        +'<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.55);font-family:Jost,sans-serif;margin-bottom:12px">Su respuesta</div>'
-        +'<div style="font-size:22px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:rgba(240,255,246,.96);line-height:1.65;letter-spacing:.3px;text-shadow:0 1px 12px rgba(116,198,157,.20)">❝ '+_escHtml(r.response_text)+' ❞</div>'
+      ? '<div style="background:'+col.strip.replace(/[\d.]+\)$/,'0.14)')+';border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.32)')+';border-radius:22px;padding:24px 22px;margin-bottom:22px;position:relative;overflow:hidden">'
+        +'<div style="position:absolute;top:-8px;left:8px;font-size:72px;color:'+col.border.replace(/[\d.]+\)$/,'0.07)')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none;user-select:none">❝</div>'
+        +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.55)')+';font-family:Jost,sans-serif;margin-bottom:14px;position:relative">Su respuesta</div>'
+        +'<div style="font-size:22px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.65;letter-spacing:.3px;text-shadow:0 2px 16px '+col.glow+';position:relative">'+_escHtml(r.response_text)+'</div>'
+        +'<div style="position:absolute;bottom:-16px;right:8px;font-size:72px;color:'+col.border.replace(/[\d.]+\)$/,'0.07)')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none;user-select:none">❞</div>'
         +'</div>'
-      : '<div style="height:16px"></div>')
+      : '<div style="height:12px"></div>')
     // Reactions
-    +'<div style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(116,198,157,.55);font-family:Jost,sans-serif;text-align:center;margin-bottom:12px">Reaccioná</div>'
-    +'<div style="display:flex;gap:10px">'+rxHtml+'</div>'
-    // Close
-    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;margin-top:18px;padding:11px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.22);border-radius:14px;color:rgba(116,198,157,.70);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
+    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.50)')+';font-family:Jost,sans-serif;text-align:center;margin-bottom:12px">Reaccioná</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:18px">'+rxHtml+'</div>'
+    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:13px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.10);border-radius:16px;color:rgba(255,255,255,.40);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
+    +'</div>'
     +'</div>';
   document.body.appendChild(ov);
 }
