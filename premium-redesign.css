@@ -24,19 +24,19 @@
 body {
   background:
     radial-gradient(circle at 8% 12%, var(--r-sage-glow) 0%, transparent 45%),
-    radial-gradient(circle at 92% 88%, var(--r-gold-soft) 0%, transparent 50%),
     linear-gradient(180deg, #e8f2e8 0%, #ddeadd 60%, #cddeca 100%) !important;
 }
 body::after {
   content: '';
   position: fixed; inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(108deg, transparent 30%, rgba(255,255,255,.10) 38%, transparent 46%),
-    linear-gradient(118deg, transparent 50%, rgba(255,255,255,.08) 58%, transparent 66%);
-  mix-blend-mode: overlay;
+  /* vignette only — sweep moved to body::before */
+  background: radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0,0,0,.03) 100%);
+  mix-blend-mode: multiply;
   z-index: -1;
 }
+/* ── Full-width glow sweep (v965 — dual veil, izq+der se unen en el centro) */
+
 
 /* ── 2. SIDEBAR — pill, colapsada por defecto, expande on hover ── */
 @media (min-width: 1024px) {
@@ -546,19 +546,6 @@ body::after {
   -webkit-backdrop-filter: blur(22px) saturate(140%);
   box-shadow: var(--r-glass-shadow) !important;
 }
-.r-hero-v2::before {
-  content: '';
-  position: absolute;
-  top: -30%; right: -10%;
-  width: 60%; height: 200%;
-  background: radial-gradient(ellipse at center, var(--r-sage-glow), transparent 60%);
-  pointer-events: none;
-  animation: rHeroHalo 12s ease-in-out infinite;
-}
-@keyframes rHeroHalo {
-  0%, 100% { transform: scale(1) rotate(0deg); opacity: .8; }
-  50%       { transform: scale(1.1) rotate(8deg); opacity: 1; }
-}
 .r-hero-left {
   position: relative;
   z-index: 1;
@@ -605,8 +592,8 @@ body.r-dark .home-logo-side {
 #homeMonthlyHint      { order: 6; }
 #homeRegisterOuter    { order: 7; }
 #quickMoodPicker      { order: 7; }
-#homeMomentoSection   { order: 9; }
-#homeParaVosPanel     { order: 10; }
+#homeMomentoSection   { order: 15; }
+#homeParaVosPanel     { order: 16; }
 .r-home-quick-panel   { order: 12; }
 .r-home-shortcut-grid { order: 12; }
 #homeHeroLabel        { order: 13; margin-top: 24px; }
@@ -845,7 +832,6 @@ body.r-dark {
   /* Ambient background */
   background:
     radial-gradient(circle at 8% 12%, rgba(58, 110, 80, 0.35) 0%, transparent 45%),
-    radial-gradient(circle at 92% 88%, rgba(60, 70, 30, 0.25) 0%, transparent 50%),
     linear-gradient(180deg, #0f1a14 0%, #111d17 60%, #0c1510 100%) !important;
   color-scheme: dark;
 }
@@ -2225,10 +2211,8 @@ body.r-dark textarea::placeholder { color: rgba(255,255,255,.50) !important; }
   font-size: 24px !important;
 }
 
-/* ── v165: Daily quote — remove orphan quote mark, show inline ─────── */
-#homeDailyQuote > div:first-child {
-  display: none !important;
-}
+/* v165 rule removed v951: was hiding the ❝ div, which no longer exists;
+   after redesign the first child is #homeDailyQuoteText — must stay visible */
 
 /* ── v165: Guardian sub-label — hidden ─────────────────────────────── */
 #guardianSubLabel { display: none !important; }
@@ -11042,6 +11026,12 @@ body.r-dark .mc-bubble.mc-happy .mc-text { color: rgba(255,248,200,.92) !importa
    ══════════════════════════════════════════════════════════════════ */
 
 /* DQ reaction buttons */
+@keyframes velo-rx-pop {
+  0%   { transform: scale(1);    filter: brightness(1); }
+  35%  { transform: scale(1.05); filter: brightness(1.22); }
+  100% { transform: scale(1);    filter: brightness(1); }
+}
+
 .dq-reaction-btn {
   display: inline-flex;
   align-items: center;
@@ -11052,7 +11042,7 @@ body.r-dark .mc-bubble.mc-happy .mc-text { color: rgba(255,248,200,.92) !importa
   font-weight: 600;
   font-family: Jost, sans-serif;
   cursor: pointer;
-  transition: all .15s;
+  transition: background .18s, border-color .18s, box-shadow .18s;
   line-height: 1;
   background: rgba(116,198,157,.13);
   border: 1px solid rgba(116,198,157,.42);
@@ -11075,15 +11065,15 @@ body.r-dark .dq-reaction-btn[data-active="true"] {
 /* Home feed tab buttons */
 .hf-tab {
   flex: 1;
-  padding: 11px 10px;
-  border-radius: 22px;
-  font-size: 12px;
+  padding: 12px 8px;
+  border-radius: 16px;
+  font-size: 13px;
   font-weight: 800;
   font-family: Jost, sans-serif;
   cursor: pointer;
   letter-spacing: .3px;
-  transition: all .18s;
-  border: 1.5px solid transparent;
+  transition: all .20s;
+  border: 2px solid transparent;
 }
 /* Active Momentos tab */
 .hf-tab--active {
@@ -11232,6 +11222,7 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
   overflow: hidden;
   animation: p-fadeIn .3s ease;
   display: block;
+  position: relative;
 }
 .home-mc:last-child { margin-bottom: 0; }
 
@@ -11481,3 +11472,1375 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
     max-width: 100% !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v952 — Animaciones home + rediseño comunidad
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Ambient time icon ──────────────────────────────────────────── */
+#homeAmbientIcon .amb-icon {
+  font-size: 38px;
+  line-height: 1;
+  display: block;
+  animation: amb-float 4s ease-in-out infinite;
+}
+@keyframes amb-float {
+  0%, 100% { transform: translateY(0) scale(1);   opacity: .82; }
+  50%       { transform: translateY(-4px) scale(1.06); opacity: 1; }
+}
+
+/* ── Section stagger fade-in ────────────────────────────────────── */
+@keyframes velo-sec-fadein {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.velo-sec-a0 { animation: velo-sec-fadein .50s .00s cubic-bezier(.2,.8,.2,1) both; }
+.velo-sec-a1 { animation: velo-sec-fadein .50s .13s cubic-bezier(.2,.8,.2,1) both; }
+.velo-sec-a2 { animation: velo-sec-fadein .50s .24s cubic-bezier(.2,.8,.2,1) both; }
+.velo-sec-a3 { animation: velo-sec-fadein .50s .36s cubic-bezier(.2,.8,.2,1) both; }
+
+/* ── Community section: light-mode header text fix ──────────────── */
+body:not(.r-dark) #homeMomentoSection .comm-title-italic {
+  color: rgba(14,46,28,.90) !important;
+}
+
+/* ── Tabs: vivid active state ────────────────────────────────────── */
+.hf-tab--active {
+  background: linear-gradient(145deg, rgba(116,198,157,.62) 0%, rgba(48,175,98,.45) 100%) !important;
+  border-color: rgba(116,198,157,.92) !important;
+  box-shadow: 0 6px 24px rgba(116,198,157,.42), 0 2px 8px rgba(116,198,157,.28), inset 0 1px 0 rgba(255,255,255,.14) !important;
+}
+body.r-dark .hf-tab--active { color: rgba(228,255,240,.99) !important; text-shadow: 0 0 18px rgba(116,198,157,.55) !important; }
+body:not(.r-dark) .hf-tab--active { color: rgba(10,55,28,.96) !important; }
+.hf-tab--inactive {
+  opacity: .58 !important;
+  background: rgba(116,198,157,.06) !important;
+  border-color: rgba(116,198,157,.22) !important;
+}
+body.r-dark .hf-tab--inactive { color: rgba(180,220,200,.70) !important; }
+.hf-tab--active-happy {
+  background: linear-gradient(145deg, rgba(222,162,36,.62) 0%, rgba(200,132,18,.45) 100%) !important;
+  border-color: rgba(222,162,36,.92) !important;
+  box-shadow: 0 6px 24px rgba(222,162,36,.42), 0 2px 8px rgba(222,162,36,.28), inset 0 1px 0 rgba(255,255,255,.14) !important;
+}
+body.r-dark .hf-tab--active-happy { color: rgba(255,244,168,.99) !important; text-shadow: 0 0 18px rgba(222,162,36,.55) !important; }
+body:not(.r-dark) .hf-tab--active-happy { color: rgba(75,46,4,.94) !important; }
+.hf-tab--inactive-happy {
+  opacity: .58 !important;
+  background: rgba(222,162,36,.06) !important;
+  border-color: rgba(222,162,36,.22) !important;
+}
+body.r-dark .hf-tab--inactive-happy { color: rgba(210,190,130,.70) !important; }
+
+/* ── home-mc cards: press effect ────────────────────────────────── */
+.home-mc { transition: transform .12s, box-shadow .12s; }
+.home-mc:active { transform: scale(.985); }
+
+/* ── Community header icon: light mode ──────────────────────────── */
+body:not(.r-dark) #homeMomentoSection .comm-icon-box {
+  background: rgba(40,110,60,.14) !important;
+  border-color: rgba(40,110,60,.35) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v953 — REGISTRA header redesign + fix ambient icon duplicate
+   ══════════════════════════════════════════════════════════════════ */
+
+/* REGISTRA header label — override existing color rules with new design */
+#homeRegisterLabel {
+  color: rgba(255,255,255,.90) !important;
+  opacity: 1 !important;
+  font-size: 17px !important;
+  font-family: 'Cormorant Garamond', serif !important;
+  font-style: italic !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+body:not(.r-dark) #homeRegisterLabel {
+  color: rgba(14,46,28,.92) !important;
+}
+
+/* Week graph container: more breathing room */
+#homeWeekMoodGraph {
+  padding: 10px 4px !important;
+  min-height: 64px !important;
+  gap: 2px !important;
+}
+
+/* "Mi estado" button: green tint in dark mode */
+body.r-dark #homeRegisterZone .home-mood-btn {
+  background: rgba(116,198,157,.14) !important;
+  border-color: rgba(116,198,157,.38) !important;
+  color: rgba(170,235,200,.92) !important;
+}
+
+/* "Mis Registros" button: more prominent */
+#topbarMoodBtn {
+  padding: 13px 14px !important;
+  border-radius: 14px !important;
+  font-size: 13px !important;
+  background: linear-gradient(135deg, rgba(116,198,157,.26), rgba(80,170,120,.18)) !important;
+  border-color: rgba(116,198,157,.50) !important;
+  box-shadow: 0 3px 14px rgba(116,198,157,.18) !important;
+}
+body.r-dark #topbarMoodBtn {
+  color: rgba(200,250,225,.95) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v954 — Saludo: shimmer en nombre + hero breathing + sub-texto
+         Comunidad: carrusel horizontal scroll-snap
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Shimmer en el nombre personalizado del saludo ───────────── */
+#homeGreetTxt span {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-image: linear-gradient(
+    90deg,
+    rgba(210,170,60,.90) 0%, rgba(210,170,60,.90) 22%,
+    rgba(255,235,90,1.00) 50%,
+    rgba(210,170,60,.90) 78%, rgba(210,170,60,.90) 100%
+  ) !important;
+  background-size: 220% auto !important;
+  animation: velo-text-shimmer 5s ease-in-out infinite !important;
+}
+
+/* hero-bg-breathe removed v974 */
+body.r-dark .r-hero-v2 {
+  background: linear-gradient(
+    140deg,
+    rgba(10,26,16,.88) 0%,
+    rgba(6,20,12,.92) 45%,
+    rgba(14,34,20,.86) 100%
+  ) !important;
+}
+
+/* ── 3. Sub-greeting text — más grande y visible ─────────────────── */
+#homeGreetSub {
+  font-size: 15px !important;
+  color: rgba(220,240,228,.72) !important;
+  font-style: italic !important;
+  font-family: 'Cormorant Garamond', serif !important;
+  text-align: center !important;
+  margin-top: 8px !important;
+  letter-spacing: .01em !important;
+  line-height: 1.4 !important;
+}
+body:not(.r-dark) #homeGreetSub {
+  color: rgba(30,70,40,.68) !important;
+}
+
+/* ── 4. Carrusel horizontal — Momentos del día + Muro Feliz ────── */
+#homeMomentoFeed,
+#homeHappyFeed {
+  display: flex !important;
+  flex-direction: row !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  scroll-snap-type: x mandatory !important;
+  gap: 10px !important;
+  padding: 4px 0 10px !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+#homeMomentoFeed::-webkit-scrollbar,
+#homeHappyFeed::-webkit-scrollbar { display: none !important; }
+
+/* Cards: ancho fijo para que se vea el borde del siguiente */
+#homeMomentoFeed .home-mc,
+#homeHappyFeed .home-mc {
+  flex-shrink: 0 !important;
+  width: 87% !important;
+  margin-bottom: 0 !important;
+  scroll-snap-align: start !important;
+  scroll-snap-stop: always !important;
+}
+/* Último card: margen derecho para indicar fin */
+#homeMomentoFeed .home-mc:last-child,
+#homeHappyFeed .home-mc:last-child { margin-right: 6px !important; }
+
+/* Estado vacío (prompt card): full width */
+#homeMomentoFeed > div:not(.home-mc),
+#homeHappyFeed > div:not(.home-mc) {
+  flex-shrink: 0 !important;
+  width: 100% !important;
+}
+
+/* Hint visual debajo del carrusel: "deslizá →" */
+#homeMomentoFeed::after {
+  content: 'deslizá →';
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(116,198,157,.45);
+  font-family: Jost, sans-serif;
+  padding-right: 4px;
+  white-space: nowrap;
+}
+#homeHappyFeed::after {
+  content: 'deslizá →';
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(200,158,56,.45);
+  font-family: Jost, sans-serif;
+  padding-right: 4px;
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v955 — Ambient time-of-day styling (mañana / tarde / noche)
+   Clase aplicada al body por _loadHomeData() en cada visita a home.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── MAÑANA (< 12h): amanecer cálido dorado ─────────────────────── */
+body.velo-t-manana.r-dark .r-hero-v2 {
+  background: linear-gradient(140deg,
+    rgba(22,32,10,.90) 0%,
+    rgba(14,24,6,.94) 50%,
+    rgba(26,36,8,.88) 100%
+  ) !important;
+  border-color: rgba(200,168,50,.30) !important;
+  box-shadow: 0 0 0 1px rgba(200,168,50,.10), 0 8px 40px rgba(0,0,0,.32) !important;
+}
+/* Glow dorado en la esquina superior derecha */
+body.velo-t-manana.r-dark .r-hero-v2::before {
+  background: radial-gradient(circle at 80% 10%, rgba(255,210,60,.10) 0%, transparent 50%) !important;
+}
+/* Shimmer del nombre: dorado cálido */
+body.velo-t-manana.r-dark #homeGreetTxt span {
+  background-image: linear-gradient(90deg,
+    rgba(215,175,55,.92) 0%, rgba(215,175,55,.92) 22%,
+    rgba(255,235,90,1) 50%,
+    rgba(215,175,55,.92) 78%, rgba(215,175,55,.92) 100%
+  ) !important;
+}
+
+/* ── TARDE (12-20h): verde fresco vibrante ──────────────────────── */
+body.velo-t-tarde.r-dark .r-hero-v2 {
+  background: linear-gradient(140deg,
+    rgba(10,30,18,.90) 0%,
+    rgba(6,22,12,.94) 50%,
+    rgba(12,28,16,.88) 100%
+  ) !important;
+  border-color: rgba(80,185,120,.28) !important;
+  box-shadow: 0 0 0 1px rgba(80,185,120,.08), 0 8px 40px rgba(0,0,0,.30) !important;
+}
+body.velo-t-tarde.r-dark .r-hero-v2::before {
+  background: radial-gradient(circle at 75% 15%, rgba(116,198,157,.08) 0%, transparent 52%) !important;
+}
+/* Shimmer del nombre: verde esmeralda */
+body.velo-t-tarde.r-dark #homeGreetTxt span {
+  background-image: linear-gradient(90deg,
+    rgba(130,215,172,.90) 0%, rgba(130,215,172,.90) 22%,
+    rgba(200,255,225,1) 50%,
+    rgba(130,215,172,.90) 78%, rgba(130,215,172,.90) 100%
+  ) !important;
+}
+
+/* ── NOCHE (≥ 20h): calma índigo profundo ───────────────────────── */
+body.velo-t-noche.r-dark .r-hero-v2 {
+  background: linear-gradient(140deg,
+    rgba(10,10,30,.92) 0%,
+    rgba(8,8,24,.96) 50%,
+    rgba(14,12,36,.90) 100%
+  ) !important;
+  border-color: rgba(130,110,230,.24) !important;
+  box-shadow: 0 0 0 1px rgba(130,110,230,.08), 0 8px 40px rgba(0,0,0,.38) !important;
+}
+/* Glow lunar en la esquina */
+body.velo-t-noche.r-dark .r-hero-v2::before {
+  background: radial-gradient(circle at 82% 8%, rgba(180,160,255,.08) 0%, transparent 50%) !important;
+}
+/* Texto de saludo: blanco perla */
+body.velo-t-noche.r-dark #homeGreetTxt {
+  color: rgba(220,210,255,.94) !important;
+}
+/* Shimmer del nombre: lavanda plateada */
+body.velo-t-noche.r-dark #homeGreetTxt span {
+  background-image: linear-gradient(90deg,
+    rgba(190,175,255,.90) 0%, rgba(190,175,255,.90) 22%,
+    rgba(240,230,255,1) 50%,
+    rgba(190,175,255,.90) 78%, rgba(190,175,255,.90) 100%
+  ) !important;
+}
+/* Subtítulo: lavanda suave */
+body.velo-t-noche.r-dark .r-hero-italic {
+  color: rgba(190,178,248,.68) !important;
+}
+body.velo-t-noche.r-dark #homeGreetSub {
+  color: rgba(200,192,255,.62) !important;
+}
+/* Hero breathing nocturno: removed — no animation */
+
+/* ══════════════════════════════════════════════════════════════════
+   v956 — Carousel dot indicators + profile toggle
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Dot pagination below carousels */
+.carousel-dots {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 5px !important;
+  min-height: 18px !important;
+  margin-top: 6px !important;
+  margin-bottom: 2px !important;
+}
+.carousel-dots span {
+  display: block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: rgba(116,198,157,.22);
+  transition: width .25s ease, background .25s ease, border-radius .25s ease;
+  flex-shrink: 0;
+}
+.carousel-dots span.cd-active {
+  width: 14px;
+  border-radius: 3px;
+  background: rgba(116,198,157,.80);
+}
+#happyDots span { background: rgba(200,158,56,.22); }
+#happyDots span.cd-active { background: rgba(200,158,56,.80); }
+#dqDots span { background: rgba(200,158,56,.22); }
+#dqDots span.cd-active { background: rgba(200,158,56,.70); }
+
+/* Daily question responses — horizontal carousel */
+#homeDailyQFeed {
+  display: flex !important;
+  flex-direction: row !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  scroll-snap-type: x mandatory !important;
+  gap: 10px !important;
+  padding: 4px 0 8px !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+#homeDailyQFeed::-webkit-scrollbar { display: none !important; }
+#homeDailyQFeed .dq-feed-card {
+  flex-shrink: 0 !important;
+  width: 87% !important;
+  scroll-snap-align: start !important;
+  scroll-snap-stop: always !important;
+  padding: 0 !important;
+  border-radius: 16px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  position: relative !important;
+  /* background/border set inline per card based on mood emoji color */
+}
+#homeDailyQFeed #dqExpandBtn { display: none !important; }
+
+/* Profile toggle in momento compose row */
+#momentoProfileToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 6px;
+  border-radius: 22px;
+  border: 1px solid rgba(116,198,157,.28);
+  background: rgba(116,198,157,.08);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: Jost, sans-serif;
+  color: rgba(116,198,157,.75);
+  transition: background .2s, border-color .2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+#momentoProfileToggle.mpt-on {
+  background: rgba(116,198,157,.18) !important;
+  border-color: rgba(116,198,157,.50) !important;
+  color: rgba(116,198,157,.95) !important;
+}
+#momentoProfileToggle .mpt-avatar {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(116,198,157,.40);
+}
+#momentoProfileToggle .mpt-avatar-ph {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: rgba(116,198,157,.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+  border: 1.5px solid rgba(116,198,157,.30);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v958 — Section headers more prominent + news badge dark mode fix
+   ══════════════════════════════════════════════════════════════════ */
+
+/* PARA VOS — bigger, more impactful */
+.para-vos-hdr {
+  text-align: center !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  letter-spacing: 3.5px !important;
+  text-transform: uppercase !important;
+  color: rgba(200,158,56,.95) !important;
+  margin-bottom: 14px !important;
+  font-family: 'Jost', sans-serif !important;
+  position: relative !important;
+}
+/* Decorative lines on either side of PARA VOS */
+.para-vos-hdr::before,
+.para-vos-hdr::after {
+  content: '';
+  display: inline-block;
+  width: 24px; height: 1px;
+  background: rgba(200,158,56,.45);
+  vertical-align: middle;
+  margin: 0 10px;
+}
+
+/* ACCESOS RÁPIDOS — bigger and more visible */
+.r-home-quick-label {
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 2.8px !important;
+  color: rgba(116,198,157,.80) !important;
+  margin-bottom: 10px !important;
+  padding-left: 4px !important;
+}
+body:not(.r-dark) .r-home-quick-label {
+  color: rgba(30,90,50,.72) !important;
+}
+
+/* News reading badge — sage2 (#2D6A4F dark green) is invisible in dark mode */
+body.r-dark #pg-news [style*="color:var(--sage2)"] {
+  color: rgba(116,198,157,.92) !important;
+}
+body.r-dark #pg-news [style*="color:var(--ink3)"] {
+  color: rgba(220,240,228,.72) !important;
+}
+body.r-dark #pg-news [style*="color:var(--ink4)"] {
+  color: rgba(200,225,210,.55) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v960 — Home section divider labels
+   ══════════════════════════════════════════════════════════════════ */
+.home-sec-lbl {
+  display: none;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 18px 4px 6px;
+}
+.home-sec-hdr {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-family: 'Jost', sans-serif;
+  color: rgba(116,198,157,.72);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.home-sec-hdr::before,
+.home-sec-hdr::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(116,198,157,.22);
+}
+.home-sec-hdr--gold {
+  color: rgba(200,158,56,.80);
+}
+.home-sec-hdr--gold::before,
+.home-sec-hdr--gold::after {
+  background: rgba(200,158,56,.22);
+}
+@media (max-width: 1023px) {
+  .home-sec-lbl { display: block; }
+}
+
+/* ── v964: Bottle float animation + typing indicator ─────────────────── */
+@keyframes bottleFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-4px); }
+}
+#pg-bottle #bottleList .dark-bottle {
+  animation: bottleFloat 5s ease-in-out infinite;
+}
+.help-typing-indicator {
+  font-size: 12px;
+  color: rgba(116,198,157,.65);
+  font-family: 'Jost', sans-serif;
+  font-style: italic;
+  padding: 4px 16px 2px;
+  min-height: 22px;
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+}
+/* v964: color-coded bottle cards in dark mode */
+body.r-dark #pg-bottle .dark-bottle {
+  background: var(--bottle-bg, rgba(10,28,46,.88)) !important;
+  border-left-color: var(--bottle-border, rgba(80,150,200,.45)) !important;
+}
+/* v964: replied bottle visual in feed */
+.dark-bottle.bottle-already-replied {
+  opacity: 0.65;
+}
+.dark-bottle.bottle-already-replied::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(116,198,157,.04);
+  pointer-events: none;
+}
+
+/* ── v974: Diary full redesign ──────────────────────────────── */
+
+/* Hero header */
+.diary-hero {
+  position: relative;
+  background: linear-gradient(160deg, rgba(116,198,157,.14) 0%, rgba(80,150,110,.08) 55%, rgba(200,158,56,.07) 100%);
+  border-bottom: 1px solid rgba(116,198,157,.16);
+  padding: 56px 20px 22px;
+  margin: 0 -16px 18px;
+  overflow: hidden;
+}
+.diary-hero::before {
+  content: '✦';
+  position: absolute;
+  top: 4px; right: 16px;
+  font-size: 80px;
+  opacity: .04;
+  color: var(--sage2);
+  pointer-events: none;
+  line-height: 1;
+}
+.diary-hero-back {
+  position: absolute !important;
+  top: 14px !important;
+  left: 14px !important;
+}
+.diary-hero-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.diary-hero-deco {
+  font-size: 40px;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: .70;
+}
+.diary-hero-kicker {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: rgba(116,198,157,.65);
+  font-family: 'Jost', sans-serif;
+  margin-bottom: 4px;
+}
+.diary-hero-date {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.diary-hero-sub {
+  font-size: 10px;
+  color: var(--ink4);
+  font-style: italic;
+  font-family: 'Cormorant Garamond', serif;
+}
+
+/* Stats bar */
+.diary-stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(116,198,157,.07);
+  border: 1px solid rgba(116,198,157,.18);
+  border-radius: 16px;
+  padding: 10px 16px;
+  margin-bottom: 18px;
+}
+.diary-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  justify-content: center;
+}
+.diary-stat-ico { font-size: 15px; }
+.diary-stat-val {
+  font-size: 16px;
+  font-weight: 800;
+  font-family: 'Jost', sans-serif;
+  color: var(--ink);
+}
+.diary-stat-lbl {
+  font-size: 10px;
+  color: var(--ink4);
+  font-family: 'Jost', sans-serif;
+}
+.diary-stat-sep {
+  width: 1px;
+  height: 22px;
+  background: rgba(116,198,157,.22);
+  flex-shrink: 0;
+}
+
+/* Write panel */
+.diary-write {
+  background: var(--cream);
+  border: 1.5px solid rgba(116,198,157,.22);
+  border-radius: 20px;
+  padding: 18px 16px 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.09);
+  margin-bottom: 16px;
+}
+body.r-dark .diary-write {
+  background: rgba(22,40,28,.60) !important;
+  border-color: rgba(116,198,157,.30) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,.45) !important;
+}
+.diary-write-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(116,198,157,.14);
+}
+.diary-write-kicker {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: rgba(116,198,157,.65);
+  font-family: 'Jost', sans-serif;
+  margin-bottom: 3px;
+}
+.diary-write-date {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.diary-write-weekday {
+  font-size: 11px;
+  color: var(--ink4);
+  font-style: italic;
+  font-family: 'Cormorant Garamond', serif;
+  margin-top: 2px;
+}
+
+/* Mood pill row */
+.diary-mood-row { margin-bottom: 12px; }
+.diary-mood-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: var(--ink4);
+  font-family: 'Jost', sans-serif;
+  display: block;
+  margin-bottom: 7px;
+}
+.diary-mood-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.diary-mood-pill {
+  background: rgba(255,255,255,.05);
+  border: 1.5px solid rgba(116,198,157,.18);
+  border-radius: 10px;
+  padding: 5px 8px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1;
+}
+.diary-mood-pill:hover, .diary-mood-pill.active {
+  background: rgba(116,198,157,.18);
+  border-color: rgba(116,198,157,.60);
+  transform: scale(1.10);
+  box-shadow: 0 2px 8px rgba(116,198,157,.20);
+}
+.diary-mood-pill--more {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink4);
+  padding: 5px 12px;
+  font-family: 'Jost', sans-serif;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+/* Quick template row */
+.diary-tpl-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.diary-tpl-btn {
+  background: rgba(116,198,157,.08);
+  border: 1.5px solid rgba(116,198,157,.20);
+  border-radius: 20px;
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--ink3);
+  font-family: 'Jost', sans-serif;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.diary-tpl-btn:hover {
+  background: rgba(116,198,157,.18);
+  border-color: rgba(116,198,157,.50);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
+/* Textarea — notebook ruled-lines feel */
+.diary-ta {
+  border-radius: 14px !important;
+  font-size: 16px !important;
+  line-height: 30px !important;
+  font-family: 'Cormorant Garamond', serif !important;
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 29px, rgba(116,180,140,.18) 29px, rgba(116,180,140,.18) 30px) !important;
+  background-size: 100% 30px !important;
+  padding-top: 10px !important;
+}
+
+/* Entry cards */
+.diary-row {
+  background: var(--cream);
+  border: 1px solid rgba(116,198,157,.15);
+  border-left: 3.5px solid rgba(116,198,157,.55);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  transition: all .15s;
+  animation: fadeSlideUp .3s ease both;
+}
+.diary-row:hover {
+  background: rgba(116,198,157,.06);
+  border-left-color: rgba(116,198,157,.90);
+  transform: translateX(2px);
+}
+body.r-dark .diary-row {
+  background: rgba(255,255,255,.04) !important;
+  border-color: rgba(116,198,157,.18) !important;
+  border-left-color: rgba(116,198,157,.45) !important;
+}
+body.r-dark .diary-row:hover {
+  background: rgba(116,198,157,.10) !important;
+  border-left-color: rgba(116,198,157,.80) !important;
+}
+.diary-row-date {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(116,198,157,.85);
+  font-family: 'Jost', sans-serif;
+  letter-spacing: .3px;
+}
+body.r-dark .diary-row-date { color: rgba(116,198,157,.80) !important; }
+.diary-row-preview {
+  font-size: 12.5px;
+  color: var(--ink4);
+  font-style: italic;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: 'Cormorant Garamond', serif;
+  margin-top: 2px;
+}
+body.r-dark .diary-row-preview { color: rgba(255,255,255,.50) !important; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   v975 — Estilos del día: rediseño visual completo
+   Tres momentos del día con identidad cromática propia.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────
+   MAÑANA (< 12h)
+   Paleta: Amanecer dorado-ámbar · energía suave · cielo claro
+──────────────────────────────────────────────────────────────── */
+
+/* Hero card — dark */
+body.velo-t-manana.r-dark .r-hero-v2 {
+  background: linear-gradient(145deg,
+    rgba(30,22,4,.92) 0%,
+    rgba(22,16,2,.96) 40%,
+    rgba(36,24,4,.88) 100%
+  ) !important;
+  border-color: rgba(220,170,45,.35) !important;
+  box-shadow:
+    0 0 0 1px rgba(220,170,45,.12),
+    0 8px 44px rgba(0,0,0,.38),
+    inset 0 1px 0 rgba(255,220,80,.08) !important;
+}
+/* Glow solar en esquina superior derecha */
+body.velo-t-manana.r-dark .r-hero-v2::before {
+  background:
+    radial-gradient(ellipse at 88% 0%, rgba(255,210,50,.22) 0%, transparent 55%),
+    radial-gradient(ellipse at 20% 90%, rgba(255,140,30,.08) 0%, transparent 45%) !important;
+  opacity: 1 !important;
+}
+/* Etiqueta JARDÍN DE HOY — dorada */
+body.velo-t-manana.r-dark #homeHeroLabel {
+  color: rgba(225,175,50,.85) !important;
+}
+/* Nombre: shimmer ámbar luminoso */
+body.velo-t-manana.r-dark #homeGreetTxt span {
+  background: linear-gradient(90deg,
+    rgba(220,178,55,.92) 0%,
+    rgba(255,235,100,1) 45%,
+    rgba(220,178,55,.92) 100%
+  ) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+body.velo-t-manana.r-dark .r-hero-italic {
+  color: rgba(230,200,100,.65) !important;
+}
+body.velo-t-manana.r-dark #homeGreetSub {
+  color: rgba(230,205,115,.62) !important;
+}
+/* Section labels — tinte dorado */
+body.velo-t-manana.r-dark .home-sec-lbl-acomp .home-sec-hdr,
+body.velo-t-manana.r-dark .home-sec-lbl-estado .home-sec-hdr,
+body.velo-t-manana.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
+  color: rgba(225,180,55,.82) !important;
+  border-bottom-color: rgba(225,180,55,.22) !important;
+}
+
+/* Hero card — light */
+body.velo-t-manana:not(.r-dark) .r-hero-v2 {
+  background: linear-gradient(145deg,
+    rgba(255,248,225,.96) 0%,
+    rgba(255,252,238,.98) 50%,
+    rgba(255,244,210,.94) 100%
+  ) !important;
+  border-color: rgba(200,160,40,.28) !important;
+  box-shadow:
+    0 0 0 1px rgba(200,160,40,.10),
+    0 8px 32px rgba(200,130,20,.10) !important;
+}
+body.velo-t-manana:not(.r-dark) .r-hero-v2::before {
+  background: radial-gradient(ellipse at 85% 5%, rgba(255,200,50,.18) 0%, transparent 52%) !important;
+  opacity: 1 !important;
+}
+body.velo-t-manana:not(.r-dark) #homeHeroLabel {
+  color: rgba(175,125,20,.72) !important;
+}
+body.velo-t-manana:not(.r-dark) #homeGreetTxt span {
+  color: rgba(175,120,15,.92) !important;
+  -webkit-text-fill-color: rgba(175,120,15,.92) !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   TARDE (12–20h)
+   Paleta: Verde esmeralda · frescura · vida · luz solar filtrada
+──────────────────────────────────────────────────────────────── */
+
+/* Hero card — dark */
+body.velo-t-tarde.r-dark .r-hero-v2 {
+  background: linear-gradient(145deg,
+    rgba(6,26,14,.93) 0%,
+    rgba(4,20,10,.97) 40%,
+    rgba(8,30,16,.89) 100%
+  ) !important;
+  border-color: rgba(90,200,135,.32) !important;
+  box-shadow:
+    0 0 0 1px rgba(90,200,135,.10),
+    0 8px 44px rgba(0,0,0,.36),
+    inset 0 1px 0 rgba(116,198,157,.10) !important;
+}
+body.velo-t-tarde.r-dark .r-hero-v2::before {
+  background:
+    radial-gradient(ellipse at 82% 0%, rgba(100,215,155,.20) 0%, transparent 52%),
+    radial-gradient(ellipse at 15% 85%, rgba(60,180,100,.08) 0%, transparent 42%) !important;
+  opacity: 1 !important;
+}
+body.velo-t-tarde.r-dark #homeHeroLabel {
+  color: rgba(100,205,148,.78) !important;
+}
+body.velo-t-tarde.r-dark #homeGreetTxt span {
+  background: linear-gradient(90deg,
+    rgba(130,215,172,.92) 0%,
+    rgba(200,255,225,1) 45%,
+    rgba(130,215,172,.92) 100%
+  ) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+body.velo-t-tarde.r-dark .r-hero-italic {
+  color: rgba(140,225,180,.60) !important;
+}
+body.velo-t-tarde.r-dark #homeGreetSub {
+  color: rgba(145,228,182,.58) !important;
+}
+body.velo-t-tarde.r-dark .home-sec-lbl-acomp .home-sec-hdr,
+body.velo-t-tarde.r-dark .home-sec-lbl-estado .home-sec-hdr,
+body.velo-t-tarde.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
+  color: rgba(100,205,148,.80) !important;
+  border-bottom-color: rgba(100,205,148,.20) !important;
+}
+
+/* Hero card — light */
+body.velo-t-tarde:not(.r-dark) .r-hero-v2 {
+  background: linear-gradient(145deg,
+    rgba(235,252,242,.97) 0%,
+    rgba(242,255,248,.99) 50%,
+    rgba(230,250,238,.95) 100%
+  ) !important;
+  border-color: rgba(80,190,130,.25) !important;
+  box-shadow:
+    0 0 0 1px rgba(80,190,130,.08),
+    0 8px 32px rgba(60,160,100,.08) !important;
+}
+body.velo-t-tarde:not(.r-dark) .r-hero-v2::before {
+  background: radial-gradient(ellipse at 82% 5%, rgba(100,210,150,.16) 0%, transparent 50%) !important;
+  opacity: 1 !important;
+}
+body.velo-t-tarde:not(.r-dark) #homeHeroLabel {
+  color: rgba(50,155,90,.72) !important;
+}
+body.velo-t-tarde:not(.r-dark) #homeGreetTxt span {
+  color: rgba(40,140,80,.90) !important;
+  -webkit-text-fill-color: rgba(40,140,80,.90) !important;
+}
+
+/* ────────────────────────────────────────────────────────────────
+   NOCHE (≥ 20h)
+   Paleta: Índigo profundo · luna · calma sideral · lavanda
+──────────────────────────────────────────────────────────────── */
+
+/* Hero card — dark */
+body.velo-t-noche.r-dark .r-hero-v2 {
+  background: linear-gradient(145deg,
+    rgba(8,8,28,.94) 0%,
+    rgba(6,6,22,.97) 40%,
+    rgba(12,10,34,.90) 100%
+  ) !important;
+  border-color: rgba(150,130,240,.28) !important;
+  box-shadow:
+    0 0 0 1px rgba(150,130,240,.09),
+    0 8px 48px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(200,185,255,.07) !important;
+}
+body.velo-t-noche.r-dark .r-hero-v2::before {
+  background:
+    radial-gradient(ellipse at 85% 0%, rgba(180,160,255,.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 10% 80%, rgba(120,100,220,.08) 0%, transparent 42%) !important;
+  opacity: 1 !important;
+}
+body.velo-t-noche.r-dark #homeHeroLabel {
+  color: rgba(175,160,248,.72) !important;
+}
+body.velo-t-noche.r-dark #homeGreetTxt {
+  color: rgba(225,215,255,.94) !important;
+}
+body.velo-t-noche.r-dark #homeGreetTxt span {
+  background: linear-gradient(90deg,
+    rgba(195,178,255,.92) 0%,
+    rgba(245,235,255,1) 45%,
+    rgba(195,178,255,.92) 100%
+  ) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+body.velo-t-noche.r-dark .r-hero-italic {
+  color: rgba(195,182,252,.58) !important;
+}
+body.velo-t-noche.r-dark #homeGreetSub {
+  color: rgba(200,188,255,.56) !important;
+}
+body.velo-t-noche.r-dark .home-sec-lbl-acomp .home-sec-hdr,
+body.velo-t-noche.r-dark .home-sec-lbl-estado .home-sec-hdr,
+body.velo-t-noche.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
+  color: rgba(175,160,248,.78) !important;
+  border-bottom-color: rgba(175,160,248,.18) !important;
+}
+
+/* Hero card — light */
+body.velo-t-noche:not(.r-dark) .r-hero-v2 {
+  background: linear-gradient(145deg,
+    rgba(240,238,255,.97) 0%,
+    rgba(248,246,255,.99) 50%,
+    rgba(235,232,255,.95) 100%
+  ) !important;
+  border-color: rgba(140,120,230,.24) !important;
+  box-shadow:
+    0 0 0 1px rgba(140,120,230,.08),
+    0 8px 32px rgba(100,80,200,.08) !important;
+}
+body.velo-t-noche:not(.r-dark) .r-hero-v2::before {
+  background: radial-gradient(ellipse at 83% 4%, rgba(170,150,255,.15) 0%, transparent 50%) !important;
+  opacity: 1 !important;
+}
+body.velo-t-noche:not(.r-dark) #homeHeroLabel {
+  color: rgba(110,90,200,.68) !important;
+}
+body.velo-t-noche:not(.r-dark) #homeGreetTxt span {
+  color: rgba(100,80,195,.88) !important;
+  -webkit-text-fill-color: rgba(100,80,195,.88) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   v976 — Diary dark text fix + DQ redesign + Mi Estado vs Comunidad
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Diary: force readable text in dark mode */
+body.r-dark .diary-hero-date    { color: rgba(255,255,255,.92) !important; }
+body.r-dark .diary-hero-sub     { color: rgba(255,255,255,.50) !important; }
+body.r-dark .diary-write-date   { color: rgba(255,255,255,.88) !important; }
+body.r-dark .diary-write-weekday{ color: rgba(255,255,255,.48) !important; }
+body.r-dark .diary-stat-val     { color: rgba(255,255,255,.88) !important; }
+body.r-dark .diary-mood-label   { color: rgba(255,255,255,.42) !important; }
+
+/* Mi Estado section label — always warm amber (personal) */
+.home-sec-lbl-estado .home-sec-hdr {
+  color: rgba(210,165,48,.82) !important;
+  border-bottom-color: rgba(210,165,48,.20) !important;
+}
+/* Comunidad section label — always sage green (community) */
+.home-sec-lbl-comunidad .home-sec-hdr {
+  color: rgba(116,198,157,.82) !important;
+  border-bottom-color: rgba(116,198,157,.20) !important;
+}
+
+/* homePulse card ("Mi estado de hoy") — amber/warm personal identity */
+body.r-dark #homePulse > div {
+  background: linear-gradient(135deg, rgba(32,18,4,.92), rgba(22,10,2,.96)) !important;
+  border-color: rgba(200,158,56,.28) !important;
+  box-shadow: 0 4px 20px rgba(180,130,10,.12) !important;
+}
+body.r-dark #homePulseSub { color: rgba(215,172,52,.78) !important; }
+
+/* homeMemoryCard + weekly mood card — also amber tint in dark mode */
+body.r-dark #homeMemoryCard {
+  border-color: rgba(200,158,56,.20) !important;
+}
+
+/* homeMomentoSection card header icon box — more saturated sage */
+body.r-dark #homeMomentoSection > .home-momento-wrap,
+body.r-dark .home-momento-wrap {
+  border-color: rgba(116,198,157,.30) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v979 — Mañana: dark forest-green base (NOT amber/brown)
+   El fondo ámbar oscuro "apagaba la onda". Reemplazado por verde
+   forestal oscuro que mantiene las partículas flotantes visibles,
+   con solo un toque de glow dorado-solar en la esquina superior.
+   ══════════════════════════════════════════════════════════════════ */
+body.velo-t-manana.r-dark .r-hero-v2 {
+  background: linear-gradient(150deg,
+    rgba(10,24,8,.95) 0%,
+    rgba(6,18,4,.98) 50%,
+    rgba(12,26,8,.93) 100%
+  ) !important;
+  border-color: rgba(140,200,70,.28) !important;
+  box-shadow:
+    0 0 0 1px rgba(140,200,70,.08),
+    0 8px 40px rgba(0,0,0,.36),
+    inset 0 1px 0 rgba(200,240,80,.05) !important;
+}
+body.velo-t-manana.r-dark .r-hero-v2::before {
+  background:
+    radial-gradient(ellipse at 80% 0%, rgba(255,220,50,.12) 0%, transparent 48%),
+    radial-gradient(ellipse at 96% 8%, rgba(255,170,20,.07) 0%, transparent 36%) !important;
+  opacity: 1 !important;
+}
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v986 — Diary vivid redesign + tab scale + compose toggle
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Tab active: subtle scale pop */
+.hf-tab--active { transform: scale(1.05) !important; }
+.hf-tab--active-happy { transform: scale(1.05) !important; }
+
+/* Profile toggle: bigger, clearer */
+#momentoProfileToggle {
+  padding: 8px 14px 8px 8px !important;
+  border: 1.5px solid rgba(116,198,157,.42) !important;
+  background: rgba(116,198,157,.13) !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  color: rgba(116,198,157,.85) !important;
+  margin-top: 8px !important;
+}
+#momentoProfileToggle.mpt-on {
+  background: rgba(116,198,157,.24) !important;
+  border-color: rgba(116,198,157,.65) !important;
+  color: rgba(180,255,215,.95) !important;
+}
+#momentoProfileToggle .mpt-avatar-ph {
+  width: 26px !important; height: 26px !important;
+  font-size: 15px !important;
+  border: 2px solid rgba(116,198,157,.50) !important;
+}
+
+/* Diary stats bar — colored per stat */
+body.r-dark .diary-stats-bar {
+  background: linear-gradient(135deg, rgba(8,18,10,.90) 0%, rgba(12,24,16,.95) 100%) !important;
+  border-color: rgba(116,198,157,.28) !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,.40), inset 0 1px 0 rgba(116,198,157,.08) !important;
+}
+body.r-dark .diary-stat-sep { background: rgba(116,198,157,.18) !important; }
+body.r-dark .diary-stats-bar > div:nth-child(1) .diary-stat-val {
+  color: rgba(255,168,55,.97) !important;
+  text-shadow: 0 0 12px rgba(255,140,30,.45);
+}
+body.r-dark .diary-stats-bar > div:nth-child(1) .diary-stat-lbl { color: rgba(255,180,80,.60) !important; }
+body.r-dark .diary-stats-bar > div:nth-child(3) .diary-stat-val { color: rgba(116,198,157,.97) !important; text-shadow: 0 0 12px rgba(116,198,157,.40); }
+body.r-dark .diary-stats-bar > div:nth-child(3) .diary-stat-lbl { color: rgba(116,198,157,.60) !important; }
+body.r-dark .diary-stats-bar > div:nth-child(5) .diary-stat-lbl { color: rgba(185,155,255,.80) !important; }
+body.r-dark .diary-stats-bar > div:nth-child(5) .diary-stat-ico { filter: drop-shadow(0 0 5px rgba(155,100,255,.55)); }
+
+/* Diary write panel */
+body.r-dark .diary-write {
+  background: linear-gradient(155deg, rgba(12,28,18,.95) 0%, rgba(8,18,12,.98) 100%) !important;
+  border: 1.5px solid rgba(116,198,157,.45) !important;
+  box-shadow: 0 6px 32px rgba(0,0,0,.60), 0 0 0 1px rgba(116,198,157,.10) !important;
+}
+body.r-dark .diary-write-kicker { color: rgba(116,198,157,.92) !important; letter-spacing: 2px !important; }
+body.r-dark .diary-write-date { color: rgba(215,255,235,.97) !important; }
+body.r-dark .diary-write-weekday { color: rgba(165,228,195,.62) !important; }
+body.r-dark .diary-write-hdr { border-bottom-color: rgba(116,198,157,.28) !important; }
+
+/* Mood pills */
+body.r-dark .diary-mood-pill {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(116,198,157,.22) !important;
+  transition: all .15s !important;
+}
+body.r-dark .diary-mood-pill:hover, body.r-dark .diary-mood-pill.active {
+  background: rgba(116,198,157,.28) !important;
+  border-color: rgba(116,198,157,.80) !important;
+  box-shadow: 0 3px 16px rgba(116,198,157,.32) !important;
+  transform: scale(1.15) !important;
+}
+
+/* Template tag buttons — each own color */
+body.r-dark .diary-tpl-btn { color: rgba(180,220,200,.80) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(1) { background:rgba(222,162,36,.14) !important; border-color:rgba(222,162,36,.38) !important; color:rgba(255,220,78,.90) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(1):hover { background:rgba(222,162,36,.28) !important; border-color:rgba(222,162,36,.68) !important; box-shadow:0 2px 12px rgba(222,162,36,.25) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(2) { background:rgba(148,88,222,.14) !important; border-color:rgba(148,88,222,.38) !important; color:rgba(210,172,255,.90) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(2):hover { background:rgba(148,88,222,.28) !important; border-color:rgba(148,88,222,.68) !important; box-shadow:0 2px 12px rgba(148,88,222,.25) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(3) { background:rgba(85,132,225,.14) !important; border-color:rgba(85,132,225,.38) !important; color:rgba(162,195,255,.90) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(3):hover { background:rgba(85,132,225,.28) !important; border-color:rgba(85,132,225,.68) !important; box-shadow:0 2px 12px rgba(85,132,225,.25) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(4) { background:rgba(116,198,157,.14) !important; border-color:rgba(116,198,157,.38) !important; color:rgba(168,242,205,.90) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(4):hover { background:rgba(116,198,157,.28) !important; border-color:rgba(116,198,157,.68) !important; box-shadow:0 2px 12px rgba(116,198,157,.25) !important; }
+
+/* Textarea — dark notebook */
+body.r-dark .diary-ta {
+  background-color: rgba(6,18,10,.85) !important;
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 29px, rgba(116,198,157,.14) 29px, rgba(116,198,157,.14) 30px) !important;
+  background-size: 100% 30px !important;
+  border-color: rgba(116,198,157,.28) !important;
+  color: rgba(220,255,235,.93) !important;
+  line-height: 30px !important;
+  padding-top: 10px !important;
+  font-size: 16px !important;
+}
+body.r-dark .diary-ta::placeholder { color: rgba(116,198,157,.40) !important; font-style: italic; }
+
+/* Save button */
+body.r-dark .diary-write .p-btn--primary {
+  background: linear-gradient(135deg, rgba(85,175,120,.80) 0%, rgba(60,145,95,.90) 100%) !important;
+  box-shadow: 0 4px 20px rgba(85,175,120,.35), 0 2px 8px rgba(0,0,0,.30) !important;
+  border: none !important;
+  font-size: 16px !important;
+}
+
+/* ══════════════════════════════════════════════════
+   v987 — MI ESTADO, Al Mar & Sala de Ayuda, DQ widget
+   ══════════════════════════════════════════════════ */
+
+/* ── MI ESTADO section dark mode ─────────────────── */
+@keyframes velo-estado-glow {
+  0%,100% { box-shadow: 0 6px 28px rgba(116,198,157,.18), 0 0 0 1px rgba(116,198,157,.14); }
+  50%      { box-shadow: 0 8px 38px rgba(116,198,157,.32), 0 0 0 1px rgba(116,198,157,.28); }
+}
+@keyframes velo-icon-float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+@keyframes velo-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+body.r-dark #homeRegisterOuter {
+  background: linear-gradient(150deg, rgba(10,30,18,.96) 0%, rgba(6,18,12,.98) 100%) !important;
+  border: 1.5px solid rgba(116,198,157,.38) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 6px 28px rgba(116,198,157,.18), 0 0 0 1px rgba(116,198,157,.14) !important;
+  animation: velo-estado-glow 3.5s ease-in-out infinite !important;
+  padding: 18px 16px !important;
+}
+
+/* Floating icon */
+body.r-dark #homeRegisterOuter > div > div:first-child > div:first-child {
+  animation: velo-icon-float 3s ease-in-out infinite !important;
+}
+
+/* Label text */
+body.r-dark #homeRegisterLabel {
+  color: rgba(215,255,235,.97) !important;
+}
+body.r-dark #homeRegisterSub {
+  color: rgba(116,198,157,.75) !important;
+}
+
+/* Mood button */
+body.r-dark .home-mood-btn {
+  background: rgba(116,198,157,.12) !important;
+  border: 1.5px solid rgba(116,198,157,.35) !important;
+  color: rgba(200,248,225,.88) !important;
+  transition: all .18s !important;
+}
+body.r-dark .home-mood-btn:hover {
+  background: rgba(116,198,157,.22) !important;
+  border-color: rgba(116,198,157,.65) !important;
+  box-shadow: 0 2px 14px rgba(116,198,157,.28) !important;
+}
+
+/* Weekly graph strip */
+body.r-dark #homeWeekMoodGraph {
+  background: rgba(0,0,0,.32) !important;
+  border: 1px solid rgba(116,198,157,.18) !important;
+}
+
+/* Mis Registros button — shimmer animation */
+body.r-dark #topbarMoodBtn {
+  background: linear-gradient(90deg,
+    rgba(116,198,157,.22) 0%,
+    rgba(116,198,157,.38) 40%,
+    rgba(116,198,157,.22) 80%,
+    rgba(116,198,157,.32) 100%) !important;
+  background-size: 200% auto !important;
+  border: 1.5px solid rgba(116,198,157,.52) !important;
+  color: rgba(210,255,235,.97) !important;
+  box-shadow: 0 3px 18px rgba(116,198,157,.28), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  animation: velo-shimmer 2.8s linear infinite !important;
+}
+
+/* Motto line */
+body.r-dark #homeMottoLine {
+  background: linear-gradient(135deg, rgba(200,158,56,.20) 0%, rgba(178,138,18,.14) 100%) !important;
+  border-color: rgba(200,158,56,.52) !important;
+  color: rgba(255,220,78,.97) !important;
+}
+body.r-dark .home-motto-label {
+  color: rgba(200,158,56,.65) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1.5px !important;
+  text-transform: uppercase !important;
+  margin-bottom: 5px !important;
+  margin-top: 6px !important;
+  font-family: 'Jost', sans-serif !important;
+}
+
+/* ── Al Mar (bottle) dark mode card fix ─────────── */
+/* The dark-bottle base class needs dark overrides */
+body.r-dark .dark-bottle {
+  background: rgba(4,18,42,.92) !important;
+  border-color: rgba(65,145,220,.28) !important;
+}
+
+/* ── Sala de Ayuda dark mode card ───────────────── */
+/* dark-seeker in #pg-help: override the generic light rule */
+body.r-dark #pg-help .dark-seeker {
+  background: rgba(10,22,48,.94) !important;
+  border-color: rgba(255,255,255,.07) !important;
+}
+body.r-dark #pg-help .dark-seeker:hover {
+  background: rgba(14,28,56,.96) !important;
+}
+
+/* ── Pregunta del Día RESPONDIDA widget ─────────── */
+@keyframes velo-dq-pulse {
+  0%,100% { box-shadow: 0 8px 36px rgba(200,158,56,.22), 0 0 0 1px rgba(200,158,56,.10); }
+  50%      { box-shadow: 0 10px 44px rgba(200,158,56,.38), 0 0 0 1px rgba(200,158,56,.22); }
+}
+@keyframes velo-check-bounce {
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.4); }
+}
+
+body.r-dark #homeDailyQOpen > div {
+  animation: velo-dq-pulse 3.2s ease-in-out infinite !important;
+}
+body.r-dark #homeDailyQOpen > div > div:first-child > span:last-child {
+  display: inline-block !important;
+  animation: velo-check-bounce 2s ease-in-out infinite !important;
+  color: rgba(116,198,157,.90) !important;
+  font-size: 14px !important;
+}
+
+/* "My response" box in DQ open */
+body.r-dark #homeDailyQMyResp {
+  background: rgba(200,158,56,.16) !important;
+  border: 1.5px solid rgba(200,158,56,.38) !important;
+  color: rgba(255,224,90,.97) !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  border-radius: 12px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 2px 14px rgba(200,158,56,.18) !important;
+}
+
+/* DQ "Ver todos" button */
+body.r-dark #dqVerTodosBtn button {
+  background: linear-gradient(135deg, rgba(200,158,56,.28) 0%, rgba(160,118,16,.22) 100%) !important;
+  border-color: rgba(200,158,56,.60) !important;
+  color: rgba(255,220,75,.97) !important;
+  box-shadow: 0 3px 16px rgba(200,158,56,.22) !important;
+}
+
+/* ── Bottle card reply button accent ─────────────── */
+body.r-dark .dark-bottle button[onclick*="pOpenBottleReply"] {
+  background: rgba(65,155,222,.20) !important;
+  border: 1.5px solid rgba(65,155,222,.52) !important;
+  color: rgba(160,215,255,.95) !important;
+}
+body.r-dark .dark-bottle button[onclick*="pOpenBottleReply"]:hover {
+  background: rgba(65,155,222,.32) !important;
+  box-shadow: 0 2px 12px rgba(65,155,222,.28) !important;
+}
+

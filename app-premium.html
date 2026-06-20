@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="932">
+  <meta name="app-version" content="995">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -30,29 +30,33 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260619-940">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260619-940">
+  <link rel="stylesheet" href="premium.css?v=20260620-995">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260620-995">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
     #homeGreetWrapper     { order: 1; }
     #homeTimeIcon         { order: 2; }
-    #homePulse            { order: 2; }
-    #homeDailyQ           { order: 3; }
-    #homeDailyQuoteWrap   { order: 4; }
-    #homeStatusToggle     { order: 5 !important; }
-    .r-hero-actions       { order: 6 !important; }
-    #homeMonthlyHint      { order: 7; }
-    #homeShareWeekBtn     { order: 7; }
-    #homeGuardianChip     { order: 8; }
-    #homeRegisterOuter    { order: 9; }
-    #homeMemoryCard       { order: 9; }
-    #homeMomentoSection   { order: 10 !important; }
-    #homeParaVosPanel     { order: 11; }
-    .r-home-quick-panel   { order: 12; }
-    .r-home-shortcut-grid { order: 12; }
+    #homeDailyQuoteWrap   { order: 3; }
+    #homePulse            { order: 4; }
+    #homeDailyQ           { order: 5; }
+    #homeStatusToggle     { order: 6 !important; }
+    .home-sec-lbl-acomp   { order: 7 !important; }
+    .r-hero-actions       { order: 8 !important; }
+    #homeMonthlyHint      { order: 9; }
+    #homeGuardianChip     { order: 10; }
+    .home-sec-lbl-estado  { order: 11 !important; }
+    #homeRegisterOuter    { order: 12; }
+    #homeMemoryCard       { order: 12; }
+    #homeShareWeekBtn     { order: 13; }
+    .home-sec-lbl-comunidad { order: 14 !important; }
+    #homeMomentoSection   { order: 15 !important; }
+    #homeParaVosPanel     { order: 16; }
+    .r-home-quick-panel   { order: 16; }
+    .r-home-shortcut-grid { order: 16; }
     @keyframes guardianPulse { 0%,100%{box-shadow:0 0 0 3px rgba(116,198,157,.2)} 50%{box-shadow:0 0 0 6px rgba(116,198,157,.05)} }
     @keyframes dqBtnPulse { 0%,100%{box-shadow:0 4px 18px rgba(40,110,65,.3),inset 0 1px 0 rgba(255,255,255,.07)} 50%{box-shadow:0 6px 28px rgba(40,110,65,.5),inset 0 1px 0 rgba(255,255,255,.07)} }
+    @keyframes moodDayPulse { 0%,100%{box-shadow:0 0 0 2px rgba(116,198,157,.30),0 0 6px rgba(116,198,157,.20)} 50%{box-shadow:0 0 0 4px rgba(116,198,157,.18),0 0 12px rgba(116,198,157,.35)} }
     body:not(.r-dark) #homeGuardianChip > div { background:linear-gradient(135deg,rgba(74,160,110,.1),rgba(74,160,110,.06)) !important;border-color:rgba(74,120,60,.3) !important; }
     body:not(.r-dark) #homeGuardianChipTxt { color:rgba(40,100,50,.9) !important; }
     body:not(.r-dark) #homeDailyQHint { color:rgba(40,80,55,.55) !important; }
@@ -1049,13 +1053,22 @@
                 <div id="homeGreetQuote" style="display:none;position:absolute;top:0;left:0;right:0"></div>
               </div>
               <div id="homeTimeIcon" style="display:flex;flex-direction:column;align-items:center;gap:0;width:100%"><div id="homeWeatherInfo" style="display:none;margin-top:6px;width:100%;justify-content:center"></div></div>
+          <!-- Section label: Acompañamiento -->
+          <div class="home-sec-lbl home-sec-lbl-acomp"><div class="home-sec-hdr">🛡️ Acompañamiento</div></div>
+          <!-- Section label: Mi Estado -->
+          <div class="home-sec-lbl home-sec-lbl-estado"><div class="home-sec-hdr">💚 Mi Estado</div></div>
+          <!-- Section label: Comunidad -->
+          <div class="home-sec-lbl home-sec-lbl-comunidad"><div class="home-sec-hdr">🌱 Comunidad</div></div>
           <!-- Greeting card — mood + status + lema actions -->
-          <div id="homeRegisterOuter" style="margin:0 0 6px;box-sizing:border-box;width:100%">
+          <div id="homeRegisterOuter" style="margin:0 0 18px;box-sizing:border-box;width:100%">
             <div id="homeRegisterZone">
-              <!-- Header: centered like PARA VOS -->
-              <div style="text-align:center;margin-bottom:14px;padding-bottom:13px;border-bottom:1px solid rgba(200,158,56,.22)">
-                <div id="homeRegisterLabel">REGISTRA</div>
-                <div id="homeRegisterSub" style="font-size:15px;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(230,192,90,.82);letter-spacing:.3px;margin-top:5px;line-height:1.2">Tu estado de hoy:</div>
+              <!-- Header: icon + title like community section -->
+              <div style="display:flex;align-items:center;gap:11px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(116,198,157,.22)">
+                <div style="width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,rgba(116,198,157,.24),rgba(80,170,120,.18));border:1.5px solid rgba(116,198,157,.44);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;box-shadow:0 0 14px rgba(116,198,157,.18)">💚</div>
+                <div>
+                  <div id="homeRegisterLabel" style="font-size:17px;font-weight:700;font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.1;margin-bottom:2px">Mi estado de hoy</div>
+                  <div id="homeRegisterSub" style="font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.60);font-family:'Jost',sans-serif">Registra · cuídate</div>
+                </div>
               </div>
               <!-- Row 1: Mi estado input pill + mood gold pill -->
               <div style="display:flex;gap:8px;margin-bottom:8px">
@@ -1070,8 +1083,10 @@
               <div id="homeMottoLine" onclick="pOpenEditProfile()" style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(200,158,56,.95);background:linear-gradient(135deg,rgba(200,158,56,.18),rgba(178,138,18,.13));border:1.5px solid rgba(200,158,56,.45);border-radius:100px;padding:10px 14px;letter-spacing:.02em;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:background .15s">✏️ <span id="homeMottoText">Agregá tu lema →</span></div>
               <!-- Row 3: Weekly emoji history in dark strip -->
               <div id="homeWeekMoodGraph" style="display:flex;gap:4px;justify-content:center;align-items:flex-end;margin-top:12px;min-height:54px;background:rgba(0,0,0,.20);border-radius:14px;padding:8px 6px"></div>
+              <!-- Streak message below week graph -->
+              <div id="homeWeekStreak" style="margin-top:5px;min-height:22px"></div>
               <!-- Mis Registros link — replaces topbar button -->
-              <button id="topbarMoodBtn" onclick="pOpenMoodQuickView()" title="Ver tus registros de ánimos" style="display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:10px;padding:9px 14px;border-radius:100px;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.22);color:rgba(255,255,255,.78);font-size:12px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.4px;text-transform:uppercase;box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent">
+              <button id="topbarMoodBtn" onclick="pOpenMoodQuickView()" title="Ver tus registros de ánimos" style="display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:8px;padding:11px 14px;border-radius:100px;background:linear-gradient(135deg,rgba(116,198,157,.22),rgba(116,198,157,.14));border:1.5px solid rgba(116,198,157,.40);color:rgba(220,255,235,.90);font-size:12px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.4px;text-transform:uppercase;box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent">
                 <span id="topbarMoodEmoji" style="font-size:16px;line-height:1">🤗</span>
                 <span>Mis Registros</span>
               </button>
@@ -1094,12 +1109,13 @@
             </div>
           </div>
               <!-- Daily motivational quote widget -->
-              <div id="homeDailyQuoteWrap" style="padding:0 0 10px;width:100%">
-                <div style="padding:0 4px 6px;padding-left:6px">
+              <div id="homeDailyQuoteWrap" style="padding:0 0 18px;width:100%">
+                <div style="padding:0 4px 6px;padding-left:6px;display:flex;align-items:center;justify-content:space-between">
                   <span style="font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);opacity:1">✨ Frase del día</span>
+                  <span id="homeDailyQuoteDay" style="font-size:10px;color:rgba(200,158,56,.60);font-family:'Jost',sans-serif;letter-spacing:.3px"></span>
                 </div>
                 <div id="homeDailyQuote" style="background:linear-gradient(135deg,rgba(255,230,102,.18) 0%,rgba(255,200,80,.12) 50%,rgba(255,240,180,.22) 100%);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(200,146,10,.22);border-radius:18px;padding:14px 18px 16px;min-height:50px;box-shadow:0 4px 18px rgba(200,146,10,.10),inset 0 1px 0 rgba(255,255,255,.7)">
-                  <div style="font-size:18px;line-height:1;margin-bottom:6px;opacity:.7">❝</div>
+
                   <div id="homeDailyQuoteText" style="font-size:14px;color:var(--ink2);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.6;text-align:center;letter-spacing:.01em"></div>
                   <!-- Author row -->
                   <div id="homeDailyQuoteAuthor" style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.8px;text-transform:uppercase;text-align:right;margin-top:8px;margin-bottom:12px;opacity:.85"></div>
@@ -1119,34 +1135,50 @@
                 </div>
               </div>
               <!-- Momentos del Día + Muro Feliz — community feed -->
-              <div id="homeMomentoSection" class="home-momento-wrap" style="margin:10px 0 12px;width:100%;box-sizing:border-box;display:none">
-                <!-- Header row: label + streak badge -->
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                  <div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.65);font-family:Jost,sans-serif">Comunidad</div>
+              <div id="homeMomentoSection" class="home-momento-wrap" style="margin:0 0 18px;width:100%;box-sizing:border-box;display:none">
+                <!-- Header row: community branding + streak badge -->
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                  <div style="width:40px;height:40px;border-radius:13px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.35);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 0 12px rgba(116,198,157,.15)">🌱</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:16px;font-weight:700;color:rgba(255,255,255,.90);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.1;margin-bottom:1px">Jardín compartido</div>
+                    <div style="font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.60);font-family:Jost,sans-serif">Comunidad · en vivo</div>
+                  </div>
                   <span id="momentoStreakBadge" style="display:none;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(255,130,20,.18);color:rgba(255,170,60,.95);border:1px solid rgba(255,130,20,.3);font-family:Jost,sans-serif"></span>
                 </div>
                 <!-- Tab switcher — pill inside dark tray -->
-                <div style="display:flex;gap:4px;margin-bottom:14px;background:rgba(0,0,0,.28);padding:4px;border-radius:16px">
-                  <button id="hfTab-momento" onclick="pHomeTabSwitch('momento')" class="hf-tab hf-tab--active" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px">
-                    <span>✨</span><span>Momentos</span><span id="hfTab-momento-cnt" style="font-size:9px;font-weight:400;opacity:.75;margin-left:2px"></span>
+                <div style="display:flex;gap:5px;margin-bottom:16px;background:rgba(0,0,0,.32);padding:5px;border-radius:20px">
+                  <button id="hfTab-momento" onclick="pHomeTabSwitch('momento')" class="hf-tab hf-tab--active" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:12px 8px">
+                    <span style="font-size:26px;line-height:1;display:block">✨</span>
+                    <span style="font-size:13px;font-weight:800;letter-spacing:.3px;font-family:'Jost',sans-serif">Momentos</span>
+                    <span id="hfTab-momento-cnt" style="font-size:9.5px;font-weight:600;opacity:.72;font-family:'Jost',sans-serif;letter-spacing:.2px"></span>
                   </button>
-                  <button id="hfTab-happy" onclick="pHomeTabSwitch('happy')" class="hf-tab hf-tab--inactive-happy" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px">
-                    <span>☀️</span><span>Muro Feliz</span><span id="hfTab-happy-cnt" style="font-size:9px;font-weight:400;opacity:.75;margin-left:2px"></span>
+                  <button id="hfTab-happy" onclick="pHomeTabSwitch('happy')" class="hf-tab hf-tab--inactive-happy" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:12px 8px">
+                    <span style="font-size:26px;line-height:1;display:block">☀️</span>
+                    <span style="font-size:13px;font-weight:800;letter-spacing:.3px;font-family:'Jost',sans-serif">Muro Feliz</span>
+                    <span id="hfTab-happy-cnt" style="font-size:9.5px;font-weight:600;opacity:.72;font-family:'Jost',sans-serif;letter-spacing:.2px"></span>
                   </button>
                 </div>
                 <!-- Momentos tab content -->
                 <div id="homeTabMomento">
                   <!-- Inline compose row -->
-                  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;padding:9px 12px;background:rgba(116,198,157,.07);border:1.5px solid rgba(116,198,157,.22);border-radius:14px">
-                    <select id="momentoHomeEmoji" style="background:none;border:none;font-size:18px;cursor:pointer;padding:0;-webkit-appearance:none;appearance:none;flex-shrink:0;outline:none">
-                      <option>💭</option><option>✨</option><option>🌿</option><option>🤍</option><option>🌟</option><option>😊</option><option>🎵</option><option>☕</option><option>🌅</option><option>💚</option>
-                    </select>
-                    <input id="momentoHomeInput" type="text" maxlength="180" placeholder="¿Qué momento querés compartir?" autocomplete="off" style="flex:1;background:none;border:none;color:rgba(255,255,255,.85);font-size:13px;font-family:Jost,sans-serif;outline:none;min-width:0">
-                    <button id="momentoHomeBtn" onclick="pPostMomentoHome()" style="background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.4);border-radius:10px;color:rgba(116,198,157,.95);font-size:13px;font-weight:700;font-family:Jost,sans-serif;padding:5px 10px;cursor:pointer;white-space:nowrap;flex-shrink:0">✨</button>
+                  <div style="margin-bottom:12px;padding:10px 13px;background:rgba(8,26,16,.88);border:1.5px solid rgba(116,198,157,.38);border-radius:14px">
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <select id="momentoHomeEmoji" style="background:none;border:none;font-size:19px;cursor:pointer;padding:0;-webkit-appearance:none;appearance:none;flex-shrink:0;outline:none">
+                        <option>💭</option><option>✨</option><option>🌿</option><option>🤍</option><option>🌟</option><option>😊</option><option>🎵</option><option>☕</option><option>🌅</option><option>💚</option>
+                      </select>
+                      <input id="momentoHomeInput" type="text" maxlength="180" placeholder="¿Qué momento querés compartir?" autocomplete="off" style="flex:1;background:transparent;-webkit-appearance:none;appearance:none;border:none;color:rgba(255,255,255,.90);font-size:13px;font-family:Jost,sans-serif;outline:none;min-width:0">
+                      <button id="momentoHomeBtn" onclick="pPostMomentoHome()" style="background:rgba(116,198,157,.38);border:1.5px solid rgba(116,198,157,.72);border-radius:10px;color:rgba(220,255,238,.98);font-size:14px;font-weight:800;font-family:Jost,sans-serif;padding:5px 11px;cursor:pointer;white-space:nowrap;flex-shrink:0;box-shadow:0 2px 10px rgba(116,198,157,.22)">✨</button>
+                    </div>
+                    <button id="momentoProfileToggle" onclick="pToggleMomentoProfile()" title="Cambiar visibilidad del perfil">
+                      <span id="momentoProfileToggleAv" class="mpt-avatar-ph">🌿</span>
+                      <span id="momentoProfileToggleLabel">Publicar anónimo/a</span>
+                      <span id="momentoProfileToggleIcon" style="margin-left:auto;font-size:13px">🔒</span>
+                    </button>
                   </div>
                   <!-- Feed -->
                   <div id="homeMomentoFeed" style="padding-right:2px"></div>
-                  <button onclick="pGoTo('momento')" style="width:100%;margin-top:8px;padding:9px;border-radius:12px;border:1px solid rgba(116,198,157,.18);background:transparent;color:rgba(116,198,157,.55);font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">Ver todos los momentos →</button>
+                  <div id="momentoDots" class="carousel-dots"></div>
+                  <button onclick="pGoTo('momento')" style="width:100%;margin-top:8px;padding:12px;border-radius:14px;border:1.5px solid rgba(116,198,157,.42);background:linear-gradient(135deg,rgba(116,198,157,.20),rgba(80,170,120,.13));color:rgba(195,250,225,.88);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px;box-shadow:0 2px 10px rgba(116,198,157,.14)">✨ Ver todos los momentos →</button>
                 </div>
                 <!-- Muro Feliz tab content -->
                 <div id="homeTabHappy" style="display:none">
@@ -1161,7 +1193,8 @@
                   </button>
                   <!-- Feed -->
                   <div id="homeHappyFeed" style="padding-right:2px"></div>
-                  <button onclick="pGoTo('happy')" style="width:100%;margin-top:8px;padding:9px;border-radius:12px;border:1px solid rgba(200,158,56,.18);background:transparent;color:rgba(200,158,56,.55);font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">Ver todo el Muro Feliz →</button>
+                  <div id="happyDots" class="carousel-dots"></div>
+                  <button onclick="pGoTo('happy')" style="width:100%;margin-top:8px;padding:12px;border-radius:14px;border:1.5px solid rgba(200,158,56,.42);background:linear-gradient(135deg,rgba(200,158,56,.20),rgba(180,138,36,.13));color:rgba(255,230,130,.88);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px;box-shadow:0 2px 10px rgba(200,158,56,.14)">☀️ Ver todo el Muro Feliz →</button>
                 </div>
               </div>
               <!-- Guardianes + Sala de Ayuda — above search pill -->
@@ -1200,7 +1233,7 @@
                 </div>
               </div>
               <!-- PARA VOS unified ornate panel -->
-              <div id="homeParaVosPanel" style="margin:0 0 12px;box-sizing:border-box;width:100%">
+              <div id="homeParaVosPanel" style="margin:0 0 18px;box-sizing:border-box;width:100%">
                 <div class="para-vos-frame">
                   <div class="para-vos-hdr">PARA VOS</div>
                   <!-- Discover cards -->
@@ -1313,38 +1346,52 @@
               <div id="homeDailyQ" style="display:none;margin:0 0 12px;box-sizing:border-box;width:100%">
                 <!-- Locked state (before answering) -->
                 <div id="homeDailyQLocked">
-                  <div style="background:linear-gradient(145deg,rgba(8,24,14,.94),rgba(4,16,8,.97));border:1.5px solid rgba(116,198,157,.22);border-radius:22px;padding:20px 18px;box-shadow:0 8px 32px rgba(0,0,0,.35),0 0 0 1px rgba(116,198,157,.06)">
-                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px">
-                      <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:rgba(200,158,56,.85);font-family:Jost,sans-serif">✨ Pregunta del día</span>
-                      <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(200,158,56,.35),transparent)"></div>
-                    </div>
-                    <div id="homeDailyQText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#fff;line-height:1.35;margin-bottom:10px;letter-spacing:.1px"></div>
-                    <div id="homeDailyQHint" style="font-family:'Jost',sans-serif;font-size:13px;color:rgba(255,255,255,.46);line-height:1.5;margin-bottom:16px;font-style:italic;padding:0 2px"></div>
-                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-                      <div style="display:flex">
-                        <div style="width:27px;height:27px;border-radius:50%;background:rgba(116,198,157,.18);border:2px solid rgba(8,24,14,.9);margin-right:-8px;display:flex;align-items:center;justify-content:center;font-size:13px">🌿</div>
-                        <div style="width:27px;height:27px;border-radius:50%;background:rgba(116,198,157,.12);border:2px solid rgba(8,24,14,.9);margin-right:-8px;display:flex;align-items:center;justify-content:center;font-size:13px">🌱</div>
-                        <div style="width:27px;height:27px;border-radius:50%;background:rgba(116,198,157,.08);border:2px solid rgba(8,24,14,.9);display:flex;align-items:center;justify-content:center;font-size:11px">🔒</div>
+                  <div style="background:linear-gradient(145deg,rgba(12,8,28,.94),rgba(6,4,20,.97));border:1.5px solid rgba(200,158,56,.28);border-radius:22px;padding:20px 18px;box-shadow:0 8px 36px rgba(0,0,0,.42),0 0 0 1px rgba(200,158,56,.08),inset 0 1px 0 rgba(255,220,80,.05)">
+                    <!-- Header row: label + timer -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+                      <div style="display:flex;align-items:center;gap:6px">
+                        <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.88);font-family:'Jost',sans-serif">✨ Pregunta del día</span>
                       </div>
-                      <div id="homeDailyQCount" style="font-size:12px;color:rgba(255,255,255,.4);font-family:Jost,sans-serif;line-height:1.3"></div>
+                      <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:rgba(200,158,56,.55);font-family:'Jost',sans-serif;flex-shrink:0">
+                        <span>⏱</span><span id="dqTimerTxt">Nueva a medianoche</span>
+                      </div>
                     </div>
-                    <button onclick="pOpenDailyResponse()" style="width:100%;padding:15px;border-radius:14px;border:1.5px solid rgba(116,198,157,.38);background:linear-gradient(135deg,rgba(52,115,78,.92),rgba(24,72,44,.95));color:rgba(220,255,235,.95);font-size:15px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.5px;animation:dqBtnPulse 2.8s ease-in-out infinite;transition:transform .15s">Responder para ver →</button>
+                    <!-- Decorative quote + question -->
+                    <div style="position:relative;margin-bottom:16px;padding-left:18px">
+                      <div style="position:absolute;top:-6px;left:-2px;font-size:46px;color:rgba(200,158,56,.13);font-family:'Cormorant Garamond',serif;line-height:1;pointer-events:none">❝</div>
+                      <div id="homeDailyQText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:rgba(255,255,255,.95);line-height:1.38;letter-spacing:.08px"></div>
+                    </div>
+                    <!-- Hint — with amber left border -->
+                    <div id="homeDailyQHint" style="font-family:'Jost',sans-serif;font-size:12px;color:rgba(255,255,255,.58);line-height:1.55;margin-bottom:18px;font-style:italic;border-left:2.5px solid rgba(200,158,56,.30);padding-left:10px"></div>
+                    <!-- Response count pill -->
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">
+                      <div style="display:flex">
+                        <div style="width:26px;height:26px;border-radius:50%;background:rgba(200,158,56,.14);border:2px solid rgba(12,8,28,.9);margin-right:-7px;display:flex;align-items:center;justify-content:center;font-size:12px">🌿</div>
+                        <div style="width:26px;height:26px;border-radius:50%;background:rgba(200,158,56,.09);border:2px solid rgba(12,8,28,.9);margin-right:-7px;display:flex;align-items:center;justify-content:center;font-size:12px">🌱</div>
+                        <div style="width:26px;height:26px;border-radius:50%;background:rgba(200,158,56,.06);border:2px solid rgba(12,8,28,.9);display:flex;align-items:center;justify-content:center;font-size:10px">🔒</div>
+                      </div>
+                      <div id="homeDailyQCount" style="font-size:11px;font-weight:600;color:rgba(220,185,75,.80);font-family:'Jost',sans-serif;background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.22);border-radius:20px;padding:4px 12px;line-height:1.3"></div>
+                    </div>
+                    <!-- CTA button — amber premium -->
+                    <button onclick="pOpenDailyResponse()" style="width:100%;padding:15px;border-radius:16px;border:1.5px solid rgba(200,158,56,.45);background:linear-gradient(135deg,rgba(175,130,20,.90),rgba(120,86,8,.95));color:rgba(255,242,180,.97);font-size:15px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.6px;animation:dqBtnPulse 2.8s ease-in-out infinite;transition:transform .15s;box-shadow:0 4px 22px rgba(170,125,15,.28)">Compartir mi respuesta ✦</button>
                   </div>
                 </div>
                 <!-- Open state (after answering) -->
                 <div id="homeDailyQOpen" style="display:none">
-                  <div style="background:linear-gradient(145deg,rgba(8,24,14,.94),rgba(4,16,8,.97));border:1.5px solid rgba(116,198,157,.22);border-radius:22px;padding:16px 18px;box-shadow:0 8px 32px rgba(0,0,0,.35),0 0 0 1px rgba(116,198,157,.06)">
-                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
-                      <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:rgba(200,158,56,.85);font-family:Jost,sans-serif">✨ Pregunta del día</span>
-                      <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(200,158,56,.35),transparent)"></div>
+                  <div style="background:linear-gradient(145deg,rgba(12,8,28,.94),rgba(6,4,20,.97));border:1.5px solid rgba(200,158,56,.28);border-radius:22px;padding:16px 18px;box-shadow:0 8px 36px rgba(0,0,0,.42),0 0 0 1px rgba(200,158,56,.08)">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                      <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.88);font-family:'Jost',sans-serif">✨ Pregunta del día · respondida</span>
+                      <span style="font-size:10px;color:rgba(200,158,56,.50);font-family:'Jost',sans-serif">✓</span>
                     </div>
-                    <div id="homeDailyQOpenText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:rgba(255,255,255,.72);line-height:1.3;margin-bottom:6px"></div>
+                    <div id="homeDailyQOpenText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:rgba(255,255,255,.90);line-height:1.35;margin-bottom:10px;padding-left:14px;border-left:2.5px solid rgba(200,158,56,.30)"></div>
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-                      <div id="homeDailyQMyResp" style="font-size:11px;color:rgba(116,198,157,.65);font-family:Jost,sans-serif;flex:1"></div>
-                      <button onclick="pDeleteMyDqToday()" style="background:none;border:none;color:rgba(255,90,90,.5);font-size:13px;cursor:pointer;padding:2px 4px;flex-shrink:0" title="Borrar mi respuesta">🗑️</button>
+                      <div id="homeDailyQMyResp" style="font-size:11.5px;font-weight:600;color:rgba(220,185,75,.88);font-family:'Jost',sans-serif;flex:1;background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.20);border-radius:10px;padding:5px 10px"></div>
+                      <button onclick="pDeleteMyDqToday()" style="background:none;border:none;color:rgba(255,90,90,.45);font-size:13px;cursor:pointer;padding:2px 4px;flex-shrink:0" title="Borrar mi respuesta">🗑️</button>
                     </div>
                     <div id="homeDailyQSummary" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
                     <div id="homeDailyQFeed"></div>
+                    <div id="dqDots" class="carousel-dots"></div>
+                    <div id="dqVerTodosBtn"></div>
                   </div>
                 </div>
               </div>
@@ -1505,6 +1552,14 @@
               <div class="p-card-sub">Técnica 4-7-8 guiada</div>
               <div class="p-card-foot">
                 <span class="p-pill p-pill--sky">Calma</span>
+              </div>
+            </div>
+            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('meditacion')" style="background:linear-gradient(135deg,rgba(147,112,219,.18),rgba(138,43,226,.08))">
+              <span class="p-card-icon">🧘</span>
+              <div class="p-card-title">Meditación</div>
+              <div class="p-card-sub">4 guías en español</div>
+              <div class="p-card-foot">
+                <span class="p-pill p-pill--lav">Calma</span>
               </div>
             </div>
             <!-- "Apoya a Velo" — spans 2 cols on desktop to fill the empty row slot -->
@@ -1707,10 +1762,32 @@
           <div style="padding:18px 18px 14px;position:sticky;top:0;z-index:10;background:rgba(232,248,240,.92);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(116,198,157,.2)">
             <button class="p-back-btn" onclick="pGoTo('home')">←</button>
             <span style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink)">Sala de Ayuda</span>
-            <button onclick="pOpenSOS()" style="width:40px;height:40px;border-radius:50%;background:#e53935;border:none;color:#fff;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(229,57,53,.4)">SOS</button>
+            <div style="width:40px"></div>
           </div>
           <div style="padding:12px 16px 6px;font-size:11.5px;color:var(--ink4);line-height:1.6;background:rgba(116,198,157,.08);border-bottom:1px solid rgba(116,198,157,.12)">
             Publicá cómo te sentís y un Guardián voluntario te acompañará en tiempo real · Las publicaciones duran <strong>24 horas</strong> · Anónimo por defecto
+          </div>
+          <!-- Crisis resources quick-access widget -->
+          <div id="helpCrisisChip" style="padding:8px 16px;background:rgba(229,57,53,.06);border-bottom:1px solid rgba(229,57,53,.12);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="_toggleHelpCrisis()">
+            <span style="font-size:11.5px;font-weight:700;color:rgba(229,57,53,.80);font-family:'Jost',sans-serif">🆘 Líneas de ayuda en crisis</span>
+            <span id="helpCrisisChevron" style="font-size:11px;color:rgba(229,57,53,.55);transition:transform .22s">▼</span>
+          </div>
+          <div id="helpCrisisPanel" style="display:none;padding:12px 16px 14px;background:rgba(229,57,53,.04);border-bottom:1px solid rgba(229,57,53,.08)">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+              <a href="tel:135" style="flex:1;min-width:110px;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(229,57,53,.09);border:1px solid rgba(229,57,53,.20);border-radius:12px;text-decoration:none">
+                <span style="font-size:18px">📞</span>
+                <div><div style="font-size:10px;font-weight:700;color:rgba(229,57,53,.70)">Argentina</div><div style="font-size:15px;font-weight:800;color:#e53935">135</div></div>
+              </a>
+              <a href="tel:024" style="flex:1;min-width:110px;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(229,57,53,.09);border:1px solid rgba(229,57,53,.20);border-radius:12px;text-decoration:none">
+                <span style="font-size:18px">📞</span>
+                <div><div style="font-size:10px;font-weight:700;color:rgba(229,57,53,.70)">España</div><div style="font-size:15px;font-weight:800;color:#e53935">024</div></div>
+              </a>
+              <a href="tel:08000767" style="flex:1;min-width:110px;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(229,57,53,.09);border:1px solid rgba(229,57,53,.20);border-radius:12px;text-decoration:none">
+                <span style="font-size:18px">📞</span>
+                <div><div style="font-size:10px;font-weight:700;color:rgba(229,57,53,.70)">Uruguay</div><div style="font-size:15px;font-weight:800;color:#e53935">0800 0767</div></div>
+              </a>
+            </div>
+            <div style="text-align:right"><button onclick="pOpenSOS()" style="font-size:11px;font-weight:700;color:rgba(229,57,53,.72);background:none;border:none;cursor:pointer;padding:0;font-family:'Jost',sans-serif">Ver todos los países →</button></div>
           </div>
           <div style="padding:16px">
             <div class="dark-hero-card" style="background:rgba(255,255,255,.65);border-color:rgba(116,198,157,.25)">
@@ -1767,6 +1844,7 @@
           </div>
         </div>
         <div id="helpChatMessages" class="feed-messages"></div>
+        <div id="helpTypingIndicator" class="help-typing-indicator"></div>
         <div class="reply-preview-bar" id="helpChatReplyBar" style="background:rgba(255,255,255,.06);border-left-color:rgba(116,198,157,.8)">
           <span class="reply-preview-text" style="color:rgba(255,255,255,.6)"></span>
           <button class="reply-preview-close" onclick="pClearReplyBar('helpChatReplyBar')" style="color:rgba(255,255,255,.4)">✕</button>
@@ -1775,6 +1853,7 @@
         <div class="feed-input-area" style="background:rgba(8,20,10,.9);border-top:1px solid rgba(116,198,157,.12)">
           <button type="button" class="feed-emoji-toggle" onclick="pToggleChatEmojis('helpChatEmojiPanel','helpChatInput')" title="Emojis">😊</button>
           <textarea id="helpChatInput" class="feed-input" placeholder="Escribí con amor y presencia…" rows="1" style="background:rgba(255,255,255,.06);color:#fff;border-color:rgba(116,198,157,.2)"
+            oninput="pHelpChatTyping()"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendHelpChatMsg()}"></textarea>
           <button class="feed-send-btn" onclick="pSendHelpChatMsg()">↑</button>
         </div>
@@ -1847,58 +1926,97 @@
       <!-- ══ DIARY ════════════════════════════════════════════════ -->
       <div class="p-page" id="pg-diary">
         <div class="p-page-scroll">
-          <div class="p-page-inner">
-            <div class="p-page-hdr">
-              <div class="p-page-hdr-back">
-                <button class="p-back-btn" onclick="pGoTo('home')">←</button>
-                <div>
-                  <div class="p-label">Personal</div>
-                  <h2 class="p-title">Diario</h2>
+          <div class="p-page-inner" style="padding-top:0">
+
+            <!-- Diary hero -->
+            <div class="diary-hero">
+              <button class="p-back-btn diary-hero-back" onclick="pGoTo('home')">←</button>
+              <div class="diary-hero-inner">
+                <div class="diary-hero-deco">🖋</div>
+                <div class="diary-hero-text">
+                  <div class="diary-hero-kicker">Diario Íntimo</div>
+                  <div class="diary-hero-date" id="diaryHeroDate"></div>
+                  <div class="diary-hero-sub">Solo vos podés leer esto · completamente privado</div>
                 </div>
               </div>
             </div>
-            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Escribí tus pensamientos y emociones del día. Tu diario es completamente privado — solo vos podés leerlo. La IA analiza tus registros mensualmente y te envía un resumen al Buzón.</p>
-            <!-- Privacy banner — shown once per session via JS -->
-            <div id="diaryPrivacyBanner" style="display:none;align-items:flex-start;gap:10px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.28);border-radius:12px;padding:11px 14px;margin-bottom:16px">
-              <span style="font-size:18px;flex-shrink:0">🔒</span>
-              <div style="flex:1">
-                <div style="font-size:12px;font-weight:700;color:var(--sage2);margin-bottom:2px">Tu privacidad, nuestra prioridad</div>
-                <div style="font-size:11px;color:var(--ink3);line-height:1.55">Lo que escribas aquí vive en tu cuenta personal de Velo — nadie más puede leerlo. Nunca usamos el contenido de tu diario para análisis ni lo compartimos con terceros.</div>
+
+            <!-- Stats bar -->
+            <div class="diary-stats-bar">
+              <div class="diary-stat" style="flex-direction:column;gap:1px">
+                <div style="display:flex;align-items:center;gap:4px">
+                  <span class="diary-stat-ico">🔥</span>
+                  <strong class="diary-stat-val" id="diaryStreakVal">0</strong>
+                </div>
+                <span class="diary-stat-lbl" title="Días consecutivos que escribís">días seguidos</span>
               </div>
-              <button onclick="document.getElementById('diaryPrivacyBanner').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink4);line-height:1;padding:0;flex-shrink:0">✕</button>
+              <div class="diary-stat-sep"></div>
+              <div class="diary-stat" style="flex-direction:column;gap:1px">
+                <div style="display:flex;align-items:center;gap:4px">
+                  <span class="diary-stat-ico">📔</span>
+                  <strong class="diary-stat-val" id="diaryEntryCountEl">0</strong>
+                </div>
+                <span class="diary-stat-lbl" title="Total de entradas guardadas">guardadas</span>
+              </div>
+              <div class="diary-stat-sep"></div>
+              <div class="diary-stat" style="flex-direction:column;gap:1px">
+                <span class="diary-stat-ico">🔒</span>
+                <span class="diary-stat-lbl">privado</span>
+              </div>
             </div>
+
             <div class="diary-grid">
               <div>
+                <!-- Write panel — journal card -->
                 <div class="diary-write">
-                  <div class="p-label p-label-sage" style="margin-bottom:10px">Nueva entrada</div>
-                  <div style="font-size:12px;color:var(--ink4);margin-bottom:10px" id="diaryDateLbl"></div>
-                  <input class="p-input" id="diaryTitleInput" type="text" maxlength="80" placeholder="Título (opcional)…" style="width:100%;box-sizing:border-box;margin-bottom:10px">
-                  <div style="margin-bottom:10px"><button onclick="_openDiaryEmojiPicker()" id="diaryEmojiBtn" style="background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--ink3);font-family:'Jost',sans-serif">😊 Elegir emoji</button> <span id="diaryEmojiChosen" style="font-size:22px;vertical-align:middle"></span></div>
-                  <!-- Diary: Reflexión del día card -->
-                  <div class="diary-prompt-card" onclick="pInjectDiaryPrompt()">
-                    <div class="diary-prompt-icon">✨</div>
-                    <div class="diary-prompt-inner">
-                      <div class="diary-prompt-label">Reflexión del día</div>
-                      <div id="diaryPromptPreview" class="diary-prompt-text"></div>
+                  <div class="diary-write-hdr">
+                    <div>
+                      <div class="diary-write-kicker">Nueva entrada</div>
+                      <div class="diary-write-date" id="diaryDateLbl"></div>
+                      <div class="diary-write-weekday" id="diaryDateSub"></div>
                     </div>
-                    <div class="diary-prompt-arrow">→</div>
+                    <span id="diaryEmojiChosen" style="font-size:34px;line-height:1;flex-shrink:0;min-width:40px;text-align:right"></span>
                   </div>
-                  <textarea class="p-textarea" id="diaryTa" rows="6" placeholder="¿Cómo te sentís hoy? Escribí libremente..."></textarea>
-                  <div style="height:10px"></div>
-                  <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveDiary()">Guardar entrada 📔</button>
+
+                  <!-- Mood pills -->
+                  <div class="diary-mood-row">
+                    <span class="diary-mood-label">Estado de ánimo:</span>
+                    <div class="diary-mood-pills">
+                      <button class="diary-mood-pill" onclick="_setDiaryEmoji('😊')">😊</button>
+                      <button class="diary-mood-pill" onclick="_setDiaryEmoji('😌')">😌</button>
+                      <button class="diary-mood-pill" onclick="_setDiaryEmoji('😢')">😢</button>
+                      <button class="diary-mood-pill" onclick="_setDiaryEmoji('😤')">😤</button>
+                      <button class="diary-mood-pill" onclick="_setDiaryEmoji('🥺')">🥺</button>
+                      <button class="diary-mood-pill" onclick="_setDiaryEmoji('😴')">😴</button>
+                      <button class="diary-mood-pill diary-mood-pill--more" onclick="_openDiaryEmojiPicker()">+</button>
+                    </div>
+                  </div>
+
+                  <input class="p-input" id="diaryTitleInput" type="text" maxlength="80" placeholder="Título (opcional)…" style="width:100%;box-sizing:border-box;margin-bottom:12px">
+
+                  <!-- Quick templates -->
+                  <div class="diary-tpl-row">
+                    <button class="diary-tpl-btn" onclick="_injectDiaryTemplate('gratitud')">🙏 Gratitud</button>
+                    <button class="diary-tpl-btn" onclick="_injectDiaryTemplate('reflexion')">🌙 Reflexión</button>
+                    <button class="diary-tpl-btn" onclick="_injectDiaryTemplate('sueno')">💭 Sueño</button>
+                    <button class="diary-tpl-btn" onclick="pInjectDiaryPrompt()">✨ Del día</button>
+                  </div>
+
+                  <textarea class="p-textarea diary-ta" id="diaryTa" rows="7" placeholder="¿Cómo te sentís hoy? Escribí libremente..."></textarea>
+                  <div style="display:flex;justify-content:flex-end;padding:2px 2px 10px;font-size:10px;color:rgba(255,255,255,.28);font-family:'Jost',sans-serif"><span id="diaryCharCount">0</span> caracteres</div>
+                  <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveDiary()" style="font-size:15px;font-weight:800;letter-spacing:.4px;padding:14px">Guardar entrada 📔</button>
                 </div>
               </div>
+
               <div>
-                <div class="p-section-hdr" style="display:flex;align-items:center;justify-content:space-between">
-                  <span class="p-label" style="margin:0">Entradas</span>
-                  <button class="p-btn p-btn--secondary p-btn--sm" onclick="pClearAllDiary()" style="font-size:11px">🗑️ Borrar todo</button>
-                </div>
-                <div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:rgba(210,235,215,.8);line-height:1.5">
-                  🔒 Solo vos podés ver este diario — ni Velo puede acceder a este contenido
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                  <span class="p-label" style="margin:0">Mis entradas</span>
+                  <button onclick="pClearAllDiary()" style="background:none;border:none;color:rgba(255,100,100,.45);font-size:10px;cursor:pointer;font-family:'Jost',sans-serif;padding:2px 6px;letter-spacing:.3px">🗑️ Borrar todo</button>
                 </div>
                 <div id="diaryEntries"></div>
               </div>
             </div>
+
           </div>
         </div>
       </div><!-- /pg-diary -->
@@ -1948,7 +2066,10 @@
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
                 <span id="momentoCharCount" style="font-size:10px;color:var(--ink4)">0 / 200</span>
-                <span style="font-size:10px;color:var(--ink4);flex:1;text-align:center">🔒 Nombre aleatorio · identidad protegida</span>
+                <button id="momentoPageProfileToggle" onclick="pToggleMomentoPageProfile()" style="display:flex;align-items:center;gap:5px;background:rgba(116,198,157,.08);border:1.5px solid rgba(116,198,157,.22);border-radius:100px;padding:5px 10px 5px 7px;cursor:pointer;font-family:'Jost',sans-serif;flex:1;max-width:180px;transition:all .18s">
+                  <span id="momentoPageProfileAv" style="font-size:15px">🔒</span>
+                  <span id="momentoPageProfileLabel" style="font-size:10px;font-weight:600;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Anónimo/a</span>
+                </button>
                 <button id="momentoPostBtn" onclick="pPostMomento()" style="background:linear-gradient(135deg,rgba(116,198,157,.55),rgba(60,160,100,.50));border:1px solid rgba(116,198,157,.80);border-radius:12px;padding:8px 16px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:'Jost',sans-serif;text-shadow:0 1px 2px rgba(0,0,0,.25)">Compartir ✨</button>
               </div>
             </div>
@@ -2074,9 +2195,9 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
               </div>
             </div>
             <p style="font-size:14px;color:var(--ink4);line-height:1.6;margin-bottom:12px;font-style:italic">Historias positivas del mundo que nos recuerdan que hay luz, solidaridad y esperanza. Se renuevan cada día. 🌞</p>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-              <button onclick="pForceRefreshNews()" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:rgba(116,198,157,.14);border:1.5px solid rgba(116,198,157,.35);border-radius:100px;font-size:13px;font-weight:600;color:var(--sage2);cursor:pointer;font-family:'Jost',sans-serif;transition:background .15s;flex-shrink:0" onmouseover="this.style.background='rgba(116,198,157,.26)'" onmouseout="this.style.background='rgba(116,198,157,.14)'">🔄 Actualizar noticias</button>
-              <span style="font-size:13px;color:var(--ink4);font-style:italic;line-height:1.4">Carga historias nuevas, distintas a las que estás viendo ahora</span>
+            <div style="margin-bottom:16px">
+              <button onclick="pForceRefreshNews()" style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;background:var(--sage);border:none;border-radius:100px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Jost',sans-serif;box-shadow:0 2px 10px rgba(116,198,157,.30);letter-spacing:.3px">🔄 Actualizar noticias</button>
+              <div style="font-size:12px;color:var(--ink4);font-style:italic;line-height:1.4;margin-top:7px">Carga historias nuevas, distintas a las que estás viendo ahora</div>
             </div>
             <div id="newsContainer">
               <div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Cargando buenas noticias...</div>
@@ -2101,6 +2222,38 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
           <div id="respiraSoundWrap" style="display:none;flex-direction:column;align-items:center;gap:4px;position:absolute;top:20px;right:20px;z-index:10">
             <button id="respiraSoundBtn" onclick="pTogRespiraMusic()" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;transition:background .18s;backdrop-filter:blur(6px)" title="Silenciar música">🔉</button>
             <span style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.72);font-family:'Jost',sans-serif">Sonido</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ MEDITACIÓN ═══════════════════════════════════════════ -->
+      <div class="p-page fade-in" id="pg-meditacion">
+        <div class="p-page-scroll">
+          <div class="p-page-inner" style="max-width:600px;margin:auto">
+            <div class="p-page-hdr" style="margin-bottom:4px">
+              <div>
+                <div class="p-label">Bienestar</div>
+                <h2 class="p-title">Meditación 🧘</h2>
+              </div>
+              <button class="p-back-btn" onclick="goBack()">←</button>
+            </div>
+            <p style="font-size:13px;color:rgba(255,255,255,.52);margin-bottom:22px;line-height:1.6;font-family:'Jost',sans-serif">Elegí una guía en español. Se abrirá una experiencia inmersiva con música y voz.</p>
+            <div id="meditacionCards" style="display:flex;flex-direction:column;gap:14px"></div>
+          </div>
+        </div>
+        <!-- Fullscreen meditation player overlay -->
+        <div id="meditacionPlayer" style="display:none;position:fixed;inset:0;z-index:99999;overflow:hidden">
+          <img id="meditacionBg" src="https://yuravtnjvvztsxdtggod.supabase.co/storage/v1/object/public/velo-assets/IMG_2791.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.55) saturate(1.2)">
+          <canvas id="meditacionCanvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+          <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:32px;text-align:center">
+            <div id="meditacionEmoji" style="font-size:64px;line-height:1;margin-bottom:16px;filter:drop-shadow(0 0 24px rgba(255,255,255,.4))">🧘</div>
+            <div id="meditacionTitle" style="font-size:22px;font-weight:800;color:#fff;font-family:'Cormorant Garamond',serif;font-style:italic;margin-bottom:8px;text-shadow:0 2px 20px rgba(0,0,0,.8)"></div>
+            <div id="meditacionDuration" style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55);font-family:'Jost',sans-serif;margin-bottom:32px"></div>
+            <div id="meditacionGuide" style="font-size:17px;font-family:'Cormorant Garamond',serif;font-style:italic;color:rgba(255,255,255,.92);line-height:1.8;max-width:400px;min-height:80px;text-shadow:0 2px 16px rgba(0,0,0,.7);transition:opacity .8s ease"></div>
+            <div style="margin-top:32px;display:flex;align-items:center;gap:10px">
+              <div id="meditacionTimer" style="font-size:36px;font-weight:800;color:rgba(255,255,255,.85);font-family:'Jost',sans-serif;text-shadow:0 2px 16px rgba(0,0,0,.6);min-width:80px;text-align:center">0:00</div>
+            </div>
+            <button onclick="pCloseMeditation()" style="margin-top:36px;padding:12px 28px;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.30);border-radius:100px;color:rgba(255,255,255,.75);font-size:13px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;backdrop-filter:blur(8px)">✕ Terminar</button>
           </div>
         </div>
       </div>
@@ -3028,19 +3181,26 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
     <!-- ══ CONTACTS (Favoritos) ════════════════════════════════ -->
     <div class="p-page" id="pg-contacts">
       <div class="p-page-scroll">
-        <div class="p-page-inner">
-          <div class="p-page-hdr">
-            <div class="p-page-hdr-back">
-              <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+        <div class="p-page-inner" style="padding-top:0">
+          <!-- Hero header -->
+          <div style="margin:-20px -20px 0;padding:24px 20px 22px;background:linear-gradient(160deg,rgba(14,40,26,.98) 0%,rgba(8,22,16,.96) 60%,rgba(20,50,32,.95) 100%);border-bottom:1.5px solid rgba(116,198,157,.18);position:relative;overflow:hidden;margin-bottom:0">
+            <div style="position:absolute;top:-20px;right:-10px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(116,198,157,.14) 0%,transparent 70%);pointer-events:none"></div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <button class="p-back-btn" onclick="goBack()" style="flex-shrink:0">←</button>
               <div>
-                <div class="p-label">Red personal</div>
-                <h2 class="p-title">Mis Contactos ⭐</h2>
+                <div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.65);font-family:Jost,sans-serif;margin-bottom:4px">Red personal</div>
+                <h2 style="font-size:22px;font-weight:800;color:rgba(220,250,235,.96);font-family:Jost,sans-serif;margin:0;letter-spacing:-.3px">Mis Contactos <span style="font-size:20px">⭐</span></h2>
               </div>
             </div>
+            <p style="font-size:12px;color:rgba(160,210,185,.65);line-height:1.6;margin:12px 0 0;font-style:italic">Tus favoritos y quienes te agregaron. Chateá con quienes aceptaron tu conexión.</p>
           </div>
-          <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Acá encontrás tus favoritos y las personas que te agregaron. Podés chatear directamente con quienes aceptaron tu solicitud de conexión.</p>
-          <div style="display:flex;gap:8px;margin-bottom:14px">
-            <input class="p-input" id="contactSearch" placeholder="🔍 Buscar contacto…" oninput="pFilterContacts(this.value)" style="flex:1">
+          <!-- Search bar -->
+          <div style="padding:14px 0 4px">
+            <div style="position:relative">
+              <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none">🔍</span>
+              <input id="contactSearch" placeholder="Buscar contacto…" oninput="pFilterContacts(this.value)"
+                style="width:100%;box-sizing:border-box;padding:11px 14px 11px 40px;background:rgba(116,198,157,.07);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;color:rgba(220,245,230,.92);font-size:14px;font-family:Jost,sans-serif;outline:none">
+            </div>
           </div>
           <div id="contactsContent">
             <div class="p-skeleton"><div class="p-skel-line"></div><div class="p-skel-line w60"></div></div>
@@ -3901,8 +4061,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260619-940"></script>
-<script src="premium-redesign.js?v=20260619-940"></script>
+<script src="premium.js?v=20260620-995"></script>
+<script src="premium-redesign.js?v=20260620-995"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

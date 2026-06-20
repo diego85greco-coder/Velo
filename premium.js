@@ -45,6 +45,10 @@ var _circleRtPollTmr = null; // polling fallback for circle_messages (5s)
 var _guardianRtCh = null;   // realtime channel guardian_presence
 var _guardianBcastCh = null; // broadcast channel for instant toggle notifications
 var _dqRtCh       = null;   // realtime channel daily_responses
+var _dqReactRtCh  = null;   // realtime channel dq_reactions (live count updates)
+var _dqReactPollTmr = null; // 20s fallback poll for reaction counts (bypasses Supabase RLS gap)
+var _dqVisHandler = null;   // visibilitychange handler for PWA foreground refresh
+var _scrollSave   = {}; // page id → scrollTop saved on navigate away
 var _sbVerifiedMoodCount = -1; // Supabase-confirmed mood count; -1 = not yet fetched
 var _liveGuardians = [];    // cached live guardian rows from Supabase
 var _grReqCh        = null;   // guardian_requests realtime channel (guardian side)
@@ -342,6 +346,11 @@ function pGoTo(id){
     if(!inPage) return;
   }
 
+  // Save scroll of page we're leaving so goBack() can restore it
+  var _outEl = document.getElementById('pg-'+_curPage);
+  var _outSc = _outEl && _outEl.querySelector('.p-page-scroll');
+  if(_outSc && _curPage !== id) _scrollSave[_curPage] = _outSc.scrollTop;
+
   // Deactivate current
   var outPage = document.getElementById('pg-'+_curPage);
   if(outPage){ outPage.classList.remove('active','fade-in'); }
@@ -435,7 +444,17 @@ function _updateNavState(id, showNav){
 }
 
 function goBack(){
-  if(_prevPage) pGoTo(_prevPage);
+  if(!_prevPage) return;
+  var _tgt = _prevPage;
+  var _pos = _scrollSave[_tgt] || 0;
+  pGoTo(_tgt);
+  if(_pos){
+    requestAnimationFrame(function(){
+      var _pg = document.getElementById('pg-'+_tgt);
+      var _sc = _pg && _pg.querySelector('.p-page-scroll');
+      if(_sc) _sc.scrollTop = _pos;
+    });
+  }
 }
 
 // ── MOBILE MENU ──────────────────────────────────────────────
@@ -1205,6 +1224,8 @@ function _clearSession(){
   _moodSyncDone = false;
   _sbVerifiedMoodCount = -1;
   if(_dqRtCh){ _sbUnsub(_dqRtCh); _dqRtCh = null; }
+  if(_dqReactRtCh){ _sbUnsub(_dqReactRtCh); _dqReactRtCh = null; }
+  _stopDqReactPoll();
 }
 
 async function pSignOut(){
@@ -2147,6 +2168,23 @@ function _loadHomeData(){
   var _dayIdx = Math.floor(Date.now() / 86400000) % _subs.length;
   var gs = document.getElementById('homeGreetSub');
   if(gs) gs.textContent = _subs[_dayIdx];
+
+  // Section stagger fade-in (re-triggers on every home visit)
+  var _stagPairs = [
+    ['#homeGreetBlock','velo-sec-a0'],
+    ['#homeRegisterOuter','velo-sec-a1'],
+    ['#homeDailyQuoteWrap','velo-sec-a2'],
+    ['#homeMomentoSection','velo-sec-a3']
+  ];
+  _stagPairs.forEach(function(pair){
+    var _se = document.querySelector(pair[0]);
+    if(_se){ _se.classList.remove(pair[1]); void _se.offsetWidth; _se.classList.add(pair[1]); }
+  });
+
+  // Time-of-day ambient class on body — changes accent colors per period
+  document.body.classList.remove('velo-t-manana','velo-t-tarde','velo-t-noche');
+  document.body.classList.add(_periodo === 'mañana' ? 'velo-t-manana' : _periodo === 'tarde' ? 'velo-t-tarde' : 'velo-t-noche');
+
   var av = safeLS('get','velo_user_av') || '🧑';
   var un = document.getElementById('homeUserName');
   var ha = document.getElementById('homeAv');
@@ -2229,6 +2267,7 @@ function _loadHomeData(){
   // Realtime for momentos — new posts appear instantly (same pattern as _happyRtCh)
   _initSupabase();
   if(sbClient && !_momentoRtCh) _momentoRtCh = _sbSub('velo:momentos', 'momentos', function(){ _initHomeMomento(); });
+  if(sbClient && !_happyRtCh) _happyRtCh = _sbSub('velo:happy', 'happy_posts', function(){ _loadHomeHappyFeed(); if(typeof pRenderHappy==='function') pRenderHappy(); });
 }
 
 // ── HOME AUTO-REFRESH ─────────────────────────────────────────
@@ -2411,63 +2450,106 @@ function pSaveMyStatus(){
 // ── DAILY MOTIVATIONAL QUOTE (home, below greeting) ────────────
 // Each entry: { text, author }
 var _dailyQuoteFallbacks = [
-  { text: 'La vida es lo que pasa mientras estás ocupado haciendo otros planes.', author: 'John Lennon' },
-  { text: 'El futuro pertenece a quienes creen en la belleza de sus sueños.', author: 'Eleanor Roosevelt' },
-  { text: 'Caer siete veces y levantarse ocho.', author: 'Proverbio japonés' },
-  { text: 'Sé el cambio que quieres ver en el mundo.', author: 'Mahatma Gandhi' },
-  { text: 'La felicidad no es algo hecho. Viene de tus propias acciones.', author: 'Dalai Lama' },
-  { text: 'El éxito es ir de fracaso en fracaso sin perder el entusiasmo.', author: 'Winston Churchill' },
-  { text: 'No llores porque terminó, sonríe porque sucedió.', author: 'Gabriel García Márquez' },
+  // Autoestima
+  { text: 'Nadie puede hacerte sentir inferior sin tu consentimiento.', author: 'Eleanor Roosevelt' },
+  { text: 'Sé tú mismo; los demás puestos ya están ocupados.', author: 'Oscar Wilde' },
+  { text: 'El amor propio es el comienzo de una historia de amor de por vida.', author: 'Oscar Wilde' },
+  { text: 'Conócete a ti mismo y conocerás el universo y a los dioses.', author: 'Sócrates' },
+  { text: 'Eres más valiente de lo que crees, más fuerte de lo que pareces y más inteligente de lo que piensas.', author: 'A.A. Milne' },
+  { text: 'La cosa más difícil es la decisión de actuar; el resto es solo tenacidad.', author: 'Amelia Earhart' },
+  { text: 'Eres tú quien decide qué tipo de persona ser hoy.', author: 'Viktor Frankl' },
   { text: 'Nunca es demasiado tarde para ser lo que podrías haber sido.', author: 'George Eliot' },
+  { text: 'La peor soledad es no estar cómodo con uno mismo.', author: 'Mark Twain' },
+  { text: 'Mereces el amor que das a los demás.', author: 'R.H. Sin' },
+  { text: 'Tu valor no disminuye porque alguien no pueda verlo.', author: 'Anónimo' },
+  { text: 'Primero tienes que creer en ti mismo antes de que alguien más lo haga.', author: 'Oprah Winfrey' },
+  { text: 'No te compares con los demás; eres único y extraordinario.', author: 'Maya Angelou' },
+  { text: 'Cuando te aceptas a ti mismo, el mundo entero te acepta.', author: 'Lao Tse' },
+  // Felicidad y alegría
+  { text: 'La felicidad no es algo hecho. Viene de tus propias acciones.', author: 'Dalai Lama' },
+  { text: 'La felicidad depende de nosotros mismos.', author: 'Aristóteles' },
+  { text: 'La felicidad es cuando lo que piensas, lo que dices y lo que haces están en armonía.', author: 'Mahatma Gandhi' },
+  { text: 'No hay camino hacia la felicidad; la felicidad es el camino.', author: 'Thich Nhat Hanh' },
+  { text: 'La alegría no viene de afuera, sino de dentro.', author: 'Victor Hugo' },
+  { text: 'Ser feliz no significa que todo sea perfecto. Significa que decidiste ver más allá de las imperfecciones.', author: 'Gerard Way' },
+  { text: 'Al final, lo que importa no son los años de vida, sino la vida en esos años.', author: 'Abraham Lincoln' },
+  { text: 'La belleza de vivir está en atreverse a vivirla plenamente.', author: 'Frida Kahlo' },
+  { text: 'Un poco de perfume siempre se queda en la mano que da rosas.', author: 'Proverbio chino' },
+  { text: 'La gratitud convierte lo que tenemos en suficiente.', author: 'Melody Beattie' },
+  { text: 'Cada día es una nueva oportunidad de ser la mejor versión de ti mismo.', author: 'Deepak Chopra' },
+  // Amor y conexión
+  { text: 'Quiero hacer contigo lo que la primavera hace con los cerezos.', author: 'Pablo Neruda' },
+  { text: 'El amor no consiste en mirarse el uno al otro, sino en mirar juntos en la misma dirección.', author: 'Antoine de Saint-Exupéry' },
+  { text: 'Amar es encontrar en la felicidad del otro tu propia felicidad.', author: 'Gottfried Leibniz' },
+  { text: 'Donde mora el amor, llega la vida.', author: 'León Tolstoi' },
+  { text: 'La mejor cosa a la que podemos aferrarnos en la vida es el uno al otro.', author: 'Audrey Hepburn' },
+  { text: 'El amor es la única fuerza capaz de transformar a un enemigo en amigo.', author: 'Martin Luther King Jr.' },
+  { text: 'No llores porque terminó, sonríe porque sucedió.', author: 'Gabriel García Márquez' },
+  { text: 'La gentileza es el idioma que el sordo puede oír y el ciego puede ver.', author: 'Mark Twain' },
+  { text: 'Amar es dar lo que no se tiene a alguien que no lo es.', author: 'Jacques Lacan' },
+  { text: 'El amor es la música del universo expresada por el corazón.', author: 'Khalil Gibran' },
+  // Calma, paz y tranquilidad
+  { text: 'La paz viene de adentro; no la busques afuera.', author: 'Buda' },
+  { text: 'El que es dueño de sí mismo es más poderoso que el que conquista ciudades.', author: 'Marco Aurelio' },
+  { text: 'Conocer a los demás es sabiduría; conocerse a uno mismo es iluminación.', author: 'Lao Tse' },
+  { text: 'La paz no es solo ausencia de guerra; es una virtud, un estado mental.', author: 'Baruch Spinoza' },
+  { text: 'En el silencio encontramos las respuestas que el ruido nos impide escuchar.', author: 'Pablo Neruda' },
+  { text: 'La mente tranquila es la mayor riqueza del alma.', author: 'Marco Aurelio' },
+  { text: 'Aprende a estar en paz con lo que no puedes cambiar.', author: 'Epicteto' },
+  { text: 'El árbol que resiste la tormenta tiene las raíces más profundas.', author: 'Proverbio chino' },
+  { text: 'Respira. Esto también pasará.', author: 'Rumi' },
+  { text: 'La calma no es debilidad; es la forma más poderosa de estar presente.', author: 'Thich Nhat Hanh' },
+  // Superación y resiliencia
+  { text: 'Caer siete veces y levantarse ocho.', author: 'Proverbio japonés' },
+  { text: 'Siempre parece imposible hasta que se hace.', author: 'Nelson Mandela' },
+  { text: 'El éxito es la suma de pequeños esfuerzos repetidos día a día.', author: 'Robert Collier' },
+  { text: 'No cuentes los días, haz que los días cuenten.', author: 'Muhammad Ali' },
+  { text: 'El secreto de salir adelante es empezar.', author: 'Mark Twain' },
   { text: 'Haz lo que puedas, con lo que tengas, donde estés.', author: 'Theodore Roosevelt' },
   { text: 'El único modo de hacer un gran trabajo es amar lo que haces.', author: 'Steve Jobs' },
-  { text: 'Lo que no te mata te hace más fuerte.', author: 'Friedrich Nietzsche' },
-  { text: 'El secreto de salir adelante es empezar.', author: 'Mark Twain' },
-  { text: 'La imaginación es más importante que el conocimiento.', author: 'Albert Einstein' },
-  { text: 'Sé tú mismo; los demás puestos ya están ocupados.', author: 'Oscar Wilde' },
-  { text: 'No hay viento favorable para el barco que no sabe adónde va.', author: 'Séneca' },
-  { text: 'La esperanza es el sueño del hombre despierto.', author: 'Aristóteles' },
-  { text: 'Nuestros sueños se pueden hacer realidad si tenemos el coraje de perseguirlos.', author: 'Walt Disney' },
-  { text: 'En el corazón de cada invierno hay una primavera que tiembla.', author: 'Khalil Gibran' },
-  { text: 'Solo en la oscuridad puedes ver las estrellas.', author: 'Martin Luther King Jr.' },
-  { text: 'La peor soledad es no estar cómodo con uno mismo.', author: 'Mark Twain' },
-  { text: 'Si puedes soñarlo, puedes hacerlo.', author: 'Walt Disney' },
-  { text: 'Todo lo que se puede imaginar es real.', author: 'Pablo Picasso' },
-  { text: 'La creatividad es la inteligencia divirtiéndose.', author: 'Albert Einstein' },
-  { text: 'Siempre parece imposible hasta que se hace.', author: 'Nelson Mandela' },
-  { text: 'No cuentes los días, haz que los días cuenten.', author: 'Muhammad Ali' },
-  { text: 'Cuando la vida te da razones para llorar, muéstrale que tienes mil razones para reír.', author: 'Paulo Coelho' },
-  { text: 'La belleza de vivir está en atreverse a vivirla plenamente.', author: 'Frida Kahlo' },
-  { text: 'Al final, lo que importa no son los años de vida, sino la vida en esos años.', author: 'Abraham Lincoln' },
-  { text: 'El coraje es resistencia al miedo, dominio del miedo, no ausencia del miedo.', author: 'Mark Twain' },
-  { text: 'Que tu vida sea la respuesta a tus oraciones.', author: 'Proverbio sufí' },
+  { text: 'No importa cuántas veces caigas, sino cuántas te levantes.', author: 'Vince Lombardi' },
   { text: 'Apunta a la luna. Aunque falles, aterrizarás entre las estrellas.', author: 'Les Brown' },
-  { text: 'No hay nada imposible para un corazón valiente.', author: 'Juana de Arco' },
+  { text: 'No hay nada imposible para un corazón que se atreve.', author: 'Juana de Arco' },
+  { text: 'Cuando la vida te da razones para llorar, muéstrale que tienes mil razones para reír.', author: 'Paulo Coelho' },
+  { text: 'El éxito es ir de fracaso en fracaso sin perder el entusiasmo.', author: 'Winston Churchill' },
   { text: 'Vive como si fueras a morir mañana. Aprende como si fueras a vivir para siempre.', author: 'Mahatma Gandhi' },
-  { text: 'La gratitud convierte lo que tenemos en suficiente.', author: 'Melody Beattie' },
-  { text: 'La gentileza es el idioma que el sordo puede oír y el ciego puede ver.', author: 'Mark Twain' },
-  { text: 'Siempre parece imposible hasta que se hace.', author: 'Nelson Mandela' },
-  { text: 'Cada día es una segunda oportunidad.', author: 'Proverbio popular' },
-  { text: 'Donde hay voluntad, hay un camino.', author: 'Proverbio inglés' },
-  { text: 'Dios nunca cierra una puerta sin abrir una ventana.', author: 'Papa Francisco' },
-  { text: 'La paz no es solo ausencia de guerra; es una virtud, un estado mental.', author: 'Baruch Spinoza' },
-  { text: 'El amor soporta todo, cree todo, espera todo, aguanta todo.', author: '1 Corintios 13:7' },
-  { text: 'No temas, porque yo estoy contigo.', author: 'Isaías 41:10' },
-  { text: 'Ser feliz no significa que todo sea perfecto. Significa que decidiste ver más allá de las imperfecciones.', author: 'Gerard Way' },
-  { text: 'La música puede cambiar el mundo porque puede cambiar a las personas.', author: 'Bono' },
-  { text: 'Nunca camines por el camino trazado, pues te llevará solo a donde otros ya han ido.', author: 'Alexander Graham Bell' },
-  { text: 'No importa cuántas veces caes, sino cuántas te levantas.', author: 'Vince Lombardi' },
-  { text: 'Lo que el sol es para las flores, eres tú para mí.', author: 'Proverbio' },
-  { text: 'Eres tú quien decide qué tipo de persona ser hoy.', author: 'Viktor Frankl' },
-  { text: 'Nadie puede hacerte sentir inferior sin tu consentimiento.', author: 'Eleanor Roosevelt' },
+  { text: 'Nunca camines por el camino trazado; te llevará solo a donde otros ya han ido.', author: 'Alexander Graham Bell' },
   { text: 'El sufrimiento que no te mata te hace más sabio y más fuerte.', author: 'Jorge Bucay' },
-  { text: 'Trata a los demás como quieras que te traten a ti.', author: 'Regla de oro universal' }
+  // Reflexiones y pensamiento
+  { text: 'La vida es lo que pasa mientras estás ocupado haciendo otros planes.', author: 'John Lennon' },
+  { text: 'El verdadero viaje de descubrimiento no consiste en buscar nuevos paisajes, sino en tener nuevos ojos.', author: 'Marcel Proust' },
+  { text: 'El futuro pertenece a quienes creen en la belleza de sus sueños.', author: 'Eleanor Roosevelt' },
+  { text: 'Solo en la oscuridad puedes ver las estrellas.', author: 'Martin Luther King Jr.' },
+  { text: 'La imaginación es más importante que el conocimiento.', author: 'Albert Einstein' },
+  { text: 'La creatividad es la inteligencia divirtiéndose.', author: 'Albert Einstein' },
+  { text: 'Todo lo que se puede imaginar es real.', author: 'Pablo Picasso' },
+  { text: 'En el corazón de cada invierno hay una primavera que tiembla.', author: 'Khalil Gibran' },
+  { text: 'Nuestros sueños se pueden hacer realidad si tenemos el coraje de perseguirlos.', author: 'Walt Disney' },
+  { text: 'Vivir es la cosa más rara del mundo. La mayoría de la gente solo existe.', author: 'Oscar Wilde' },
+  { text: 'La esperanza es el sueño del hombre despierto.', author: 'Aristóteles' },
+  { text: 'No hay viento favorable para el barco que no sabe adónde va.', author: 'Séneca' },
+  { text: 'Si puedes soñarlo, puedes hacerlo.', author: 'Walt Disney' },
+  { text: 'La música puede cambiar el mundo porque puede cambiar a las personas.', author: 'Bono' },
+  { text: 'Sé el cambio que quieres ver en el mundo.', author: 'Mahatma Gandhi' },
+  { text: 'Cada día es una segunda oportunidad.', author: 'Proverbio popular' },
+  { text: 'Lo que no te mata te hace más fuerte.', author: 'Friedrich Nietzsche' },
+  { text: 'No hay nada más valioso que un día bien vivido.', author: 'Leonardo da Vinci' },
+  { text: 'La imaginación es el ojo del alma.', author: 'Joseph Joubert' },
+  { text: 'Haz de cada día tu obra maestra.', author: 'John Wooden' },
+  { text: 'La curiosidad es la llave que abre todas las puertas.', author: 'Albert Einstein' },
+  { text: 'El único fracaso real es no intentarlo.', author: 'Elbert Hubbard' },
+  { text: 'Una sonrisa es la curva que lo arregla todo.', author: 'Phyllis Diller' },
+  { text: 'La vida es corta y el arte es largo.', author: 'Hipócrates' },
+  { text: 'Cada momento es una oportunidad de florecer.', author: 'Rainer Maria Rilke' }
 ];
 
 async function _loadDailyMotivationalQuote(){
   var textEl   = document.getElementById('homeDailyQuoteText');
   var authorEl = document.getElementById('homeDailyQuoteAuthor');
   if(!textEl) return;
+  // Set day label for quote card
+  var _qDayEl = document.getElementById('homeDailyQuoteDay');
+  if(_qDayEl && !_qDayEl.textContent){ var _qd=new Date(); var _qDias=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']; var _qMes=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']; _qDayEl.textContent=_qDias[_qd.getDay()]+' '+_qd.getDate()+' '+_qMes[_qd.getMonth()]; }
   // Use LOCAL date so quote rotates at local midnight, not UTC midnight
   var _d0 = new Date();
   var today = _d0.getFullYear()+'-'+String(_d0.getMonth()+1).padStart(2,'0')+'-'+String(_d0.getDate()).padStart(2,'0');
@@ -2531,26 +2613,27 @@ async function _loadDailyMotivationalQuote(){
     : '';
   // Pick a random source category each day using date as seed (forces variety)
   var _cats = [
-    'un filósofo griego o estoico (Epicteto, Marco Aurelio, Sócrates, Platón, Aristóteles)',
-    'un escritor o poeta latinoamericano (Pablo Neruda, Gabriel García Márquez, Octavio Paz, Borges, Isabel Allende, Mario Benedetti)',
-    'un líder espiritual o religioso (Papa Francisco, Dalai Lama, Francisco de Asís, Martin Luther King Jr., Madre Teresa)',
-    'un científico, inventor o explorador (Marie Curie, Stephen Hawking, Carl Sagan, Leonardo da Vinci, Nikola Tesla)',
-    'un artista, músico o cantante (Frida Kahlo, Pablo Picasso, Beethoven, Bob Marley, Shakira, Mercedes Sosa)',
-    'un personaje de libro o película inspiradora (El Principito, El Alquimista de Paulo Coelho, Mufasa en El Rey León, Gandalf, Dumbledore)',
-    'un empresario, emprendedor o deportista (Muhammad Ali, Serena Williams, Roger Federer, Steve Jobs, Elon Musk)',
+    'un filósofo griego o estoico (Epicteto, Marco Aurelio, Sócrates, Platón, Aristóteles, Séneca)',
+    'un escritor o poeta latinoamericano (Pablo Neruda, Gabriel García Márquez, Octavio Paz, Borges, Isabel Allende, Mario Benedetti, Juana de Ibarbourou)',
+    'un pensador, humanista o filósofo moderno (Bertrand Russell, Albert Camus, Simone de Beauvoir, Hannah Arendt, Jean-Paul Sartre)',
+    'un científico, inventor o explorador (Marie Curie, Stephen Hawking, Carl Sagan, Leonardo da Vinci, Nikola Tesla, Charles Darwin)',
+    'un artista visual, músico o cantante (Frida Kahlo, Pablo Picasso, Beethoven, Bob Marley, Mercedes Sosa, Violeta Parra, Leonard Cohen)',
+    'un personaje de literatura universal inspirador (El Principito de Saint-Exupéry, El Alquimista de Paulo Coelho, Siddharta de Hesse)',
+    'un deportista, empresario o emprendedor reconocido (Muhammad Ali, Serena Williams, Roger Federer, Ayrton Senna, Coco Chanel)',
     'un proverbio sabio de cultura africana, árabe, china, japonesa o indígena latinoamericana',
-    'un poeta o escritor universal (Rainer Maria Rilke, Walt Whitman, Emily Dickinson, Khalil Gibran, Antoine de Saint-Exupéry)',
-    'un líder histórico o activista de derechos humanos (Nelson Mandela, Eleanor Roosevelt, Simón Bolívar, Sor Juana, Rosa Parks)',
-    'una frase bíblica o de texto sagrado que sea de esperanza, amor o fortaleza',
-    'un psicólogo o autor de autoayuda (Viktor Frankl, Brené Brown, Wayne Dyer, Jorge Bucay, Louise Hay)'
+    'un poeta o escritor universal (Rainer Maria Rilke, Walt Whitman, Emily Dickinson, Khalil Gibran, Rumi, Pablo Neruda)',
+    'un líder histórico o activista de derechos humanos (Nelson Mandela, Eleanor Roosevelt, Simón Bolívar, Sor Juana Inés de la Cruz, Rosa Parks)',
+    'un psicólogo o autor de autoayuda y bienestar (Viktor Frankl, Brené Brown, Wayne Dyer, Jorge Bucay, Louise Hay, Nathaniel Branden)',
+    'un escritor, poeta o novelista universal del siglo XX (Gabriel García Márquez, Pablo Neruda, Marguerite Yourcenar, Jorge Luis Borges, Milan Kundera)'
   ];
   var _catIdx = (d.getDate() * 7 + d.getMonth() * 31 + d.getFullYear()) % _cats.length;
   var _chosenCat = _cats[_catIdx];
   var prompt = 'Dame UNA frase célebre, inspiradora y positiva de '+_chosenCat+'. '
     +'Hoy es '+dias[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear()+'. '
     +avoidClause+avoidTextClause
-    +'La frase debe transmitir esperanza, ánimo, superación, amor, bienestar, alegría o logro. '
-    +'Que sea una frase REAL y conocida, no inventada. Traducida al español si es en otro idioma. '
+    +'La frase debe transmitir autoestima, esperanza, superación personal, amor, bienestar, alegría, calma o reflexión profunda. '
+    +'NO uses frases de la Biblia, el Corán, ni de ningún texto religioso sagrado. '
+    +'Que sea una frase REAL y conocida de un pensador, poeta, artista, científico, escritor o personaje histórico. No la inventes. Traducida al español si es en otro idioma. '
     +'Entre 10 y 35 palabras. '
     +'Devolvé SOLO un objeto JSON sin markdown: {"text":"frase en español","author":"Nombre completo del autor o fuente"}.';
 
@@ -2969,6 +3052,17 @@ if('serviceWorker' in navigator && 'PushManager' in window){
   navigator.serviceWorker.addEventListener('controllerchange', function(){
     navigator.serviceWorker.ready.then(function(r){ _swReg = r; }).catch(function(){});
   });
+  // When the browser rotates the push endpoint (pushsubscriptionchange in SW),
+  // the SW sends us the new subscription via postMessage — save it immediately.
+  navigator.serviceWorker.addEventListener('message', function(e){
+    if(!e.data || e.data.type !== 'PUSH_SUB_CHANGED') return;
+    try{
+      var newSub = JSON.parse(e.data.sub);
+      safeLS('set','velo_push_sub', JSON.stringify(newSub));
+      _savePushSubscriptionToSupabase(newSub).catch(function(){});
+      console.log('[push] subscription rotated by browser — saved new endpoint');
+    }catch(_me){}
+  });
 }
 
 function _urlBase64ToUint8Array(base64String){
@@ -3000,21 +3094,26 @@ async function _savePushSubscriptionToSupabase(sub){
 // On startup, sync any existing localStorage push subscription to Supabase.
 // Handles users who subscribed before the DB-save worked, or who cleared cache on one device.
 async function _syncPushSubOnStartup(){
-  var _lsSub = safeLS('get','velo_push_sub');
-  if(!_lsSub) return; // no local subscription → nothing to sync
   var _uid = safeLS('get','velo_user_id');
   if(!_uid) return;
-  _initSupabase();
-  if(!sbClient) return;
-  // Refresh session first — expired JWT causes SELECT/UPDATE to fail silently via RLS
-  try{ await _ensureSbSession(); }catch(e){}
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   try{
-    // Always sync local sub to DB on startup: after a deactivate+reactivate cycle the DB may
-    // hold a stale (now-invalid) subscription while LS has the fresh one. Checking for non-null
-    // DB and skipping means we keep sending to the expired endpoint until it 410s.
-    var _sub = JSON.parse(_lsSub);
-    await _savePushSubscriptionToSupabase(_sub);
-    console.log('[push sync startup] subscription synced to Supabase');
+    // Use pushManager.getSubscription() as the authoritative source —
+    // the browser may have silently rotated the endpoint since we last saved it.
+    var _reg = await navigator.serviceWorker.ready;
+    var _browserSub = await _reg.pushManager.getSubscription();
+    if(_browserSub){
+      // Always update LS with the real browser sub (endpoint may have rotated)
+      safeLS('set','velo_push_sub', JSON.stringify(_browserSub));
+      _initSupabase();
+      if(!sbClient) return;
+      try{ await _ensureSbSession(); }catch(e){}
+      await _savePushSubscriptionToSupabase(_browserSub);
+      console.log('[push sync startup] subscription synced from browser endpoint');
+    } else {
+      // No active browser subscription — clear stale LS entry
+      safeLS('remove','velo_push_sub');
+    }
   }catch(e){ console.warn('[push sync startup]', e && e.message); }
 }
 
@@ -3277,7 +3376,42 @@ var _DAILY_QUESTIONS = [
   {id:167, text:'¿Qué versión futura de vos querés construir?', hint:'No perfecta. Solo más tuya. ¿Cómo sería?'},
   {id:168, text:'¿Qué aprendiste de una situación que creíste que no ibas a poder superar?', hint:'Algo que esa experiencia difícil te dejó como aprendizaje real.'},
   {id:169, text:'¿Cómo sabés si estás creciendo o simplemente sobreviviendo?', hint:'¿Hay señales que te ayudan a distinguirlo?'},
-  {id:170, text:'¿Qué le dirías a la versión de vos de hace 5 años?', hint:'Lo que necesitaba escuchar. Lo que querés que sepa.'}
+  {id:170, text:'¿Qué le dirías a la versión de vos de hace 5 años?', hint:'Lo que necesitaba escuchar. Lo que querés que sepa.'},
+  // Creativas y divertidas
+  {id:171, text:'Si tu vida fuera una película, ¿qué género sería?', hint:'Drama, comedia, aventura, documental... ¿y cómo se llamaría?'},
+  {id:172, text:'¿Qué superpoder emocional quisierías tener?', hint:'Leer mentes, nunca dudar de vos mismo, olvidar lo que duele... ¿cuál elegís?'},
+  {id:173, text:'Si pudieras cenar con una persona de la historia, ¿quién elegirías?', hint:'¿Qué le preguntarías?'},
+  {id:174, text:'¿Qué canción querés que suene en tu próximo gran momento?', hint:'El tema de tu banda sonora personal para cuando algo importante pasa.'},
+  {id:175, text:'¿Cuál es la cosa más valiente que hiciste sin que nadie lo supiera?', hint:'Algo que solo vos sabés que te costó mucho.'},
+  {id:176, text:'¿Qué parte de vos cambiaría con una varita mágica, y qué nunca cambiarías?', hint:'Lo que querés transformar... y lo que es sagrado.'},
+  {id:177, text:'Si tuvieras un lema de vida, ¿cuál sería?', hint:'Esa frase que resume cómo querés vivir o cómo ya vivís.'},
+  {id:178, text:'¿Cuál fue la decisión más difícil que tomaste y de la que hoy te alegrás?', hint:'Algo que costó tomar pero resultó bien.'},
+  {id:179, text:'¿Qué cosa pequeña pero significativa cambió tu forma de ver el mundo?', hint:'Un libro, una conversación, un momento. Lo que te movió el piso suavemente.'},
+  {id:180, text:'¿A qué le decirías "gracias" hoy si pudieras?', hint:'Una persona, una experiencia, una emoción. Lo que te dejó algo bueno.'},
+  // Conexión y comunidad
+  {id:181, text:'¿Cuándo fue la última vez que alguien te sorprendió de la mejor manera?', hint:'Una amabilidad inesperada, un gesto que no olvidás.'},
+  {id:182, text:'¿Qué es lo que más admirás de alguien en tu vida?', hint:'Una cualidad que ves en esa persona y que te inspira.'},
+  {id:183, text:'¿Hay alguien a quien debería llamar hoy pero no lo hago?', hint:'¿Qué te frena? ¿Qué pasaría si lo hicieras?'},
+  {id:184, text:'¿Qué le dirías a tu yo de hace 5 años?', hint:'Lo que más necesitaba escuchar en aquel momento.'},
+  {id:185, text:'¿Cuál fue el consejo más valioso que te dieron y que todavía usás?', hint:'Algo que alguien te dijo que se quedó grabado para siempre.'},
+  // Presente y cotidiano
+  {id:186, text:'¿Qué te hizo sonreír en las últimas 24 horas?', hint:'Aunque sea algo pequeño. Un detalle, un olor, un momento cualquiera.'},
+  {id:187, text:'¿Qué es algo que hoy notaste y normalmente pasás por alto?', hint:'El color del cielo, un olor, la textura de algo. Lo cotidiano que ignoramos.'},
+  {id:188, text:'¿Cómo describirías hoy con un solo emoji?', hint:'El primero que aparece en tu cabeza ya dice algo.'},
+  {id:189, text:'¿Qué es lo más honesto que podrías decir sobre cómo te sentís hoy?', hint:'Sin el "bien, ¿y vos?". La respuesta real.'},
+  {id:190, text:'¿Hay algo que querés probar y nunca te animaste?', hint:'Una comida, un hobby, una conversación. ¿Qué te frena?'},
+  // Esperanza y futuro
+  {id:191, text:'¿Qué sueño todavía no te animaste a contarle a alguien?', hint:'Ese que guardás porque te parece demasiado grande o raro.'},
+  {id:192, text:'¿Qué querías ser de chico/a y qué quedó de eso en vos?', hint:'¿Algo de ese sueño de infancia todavía vive adentro?'},
+  {id:193, text:'¿Qué versión mejorada de vos mismo/a estás construyendo?', hint:'¿Hacia dónde va la evolución? ¿Lo notás?'},
+  {id:194, text:'Si supieras que no podés fallar, ¿qué intentarías mañana?', hint:'Sin miedo al fracaso. ¿Qué sería lo primero?'},
+  {id:195, text:'¿Qué es lo que más esperás de los próximos 12 meses?', hint:'Un deseo, un proyecto, una sensación. Lo que más querés que pase.'},
+  // Vulnerabilidad real
+  {id:196, text:'¿Cuándo fue la última vez que fuiste completamente honesto/a con alguien?', hint:'¿Cómo fue? ¿Te arrepentís o te alivió?'},
+  {id:197, text:'¿Hay algo que actualmente te genera mucha incertidumbre?', hint:'Sin resolverlo. Solo nombrarlo puede aliviar.'},
+  {id:198, text:'¿Qué parte de tu historia te cuesta contar en voz alta?', hint:'No para contarla acá necesariamente. Solo para reconocerla.'},
+  {id:199, text:'¿Cuándo sentiste que algo te superó y saliste adelante igual?', hint:'La vez que no creíste poder y pudiste.'},
+  {id:200, text:'¿Qué te hace seguir, en los días en que todo parece difícil?', hint:'El ancla. Lo que te mantiene en pie cuando todo cuesta.'}
 ];
 
 function _getDailyQuestion(){
@@ -3287,10 +3421,28 @@ function _getDailyQuestion(){
   return _DAILY_QUESTIONS[dayIdx % _DAILY_QUESTIONS.length];
 }
 
+var _dqTimerInterval = null;
+function _initDqTimer(){
+  var el = document.getElementById('dqTimerTxt');
+  if(!el) return;
+  function _tick(){
+    var now = new Date();
+    var midnight = new Date(now); midnight.setHours(24,0,0,0);
+    var diff = Math.floor((midnight - now) / 1000);
+    var h = Math.floor(diff / 3600);
+    var m = Math.floor((diff % 3600) / 60);
+    el.textContent = 'Nueva en '+h+'h '+m+'m';
+  }
+  _tick();
+  if(_dqTimerInterval) clearInterval(_dqTimerInterval);
+  _dqTimerInterval = setInterval(_tick, 60000);
+}
+
 function _loadDailyQ(){
   var el = document.getElementById('homeDailyQ');
   if(!el) return;
   el.style.display = 'block';
+  _initDqTimer();
   var q = _getDailyQuestion();
   var qtEl = document.getElementById('homeDailyQText');
   if(qtEl) qtEl.textContent = q.text;
@@ -3361,6 +3513,20 @@ async function _fetchDailyCount(){
   }catch(e){}
 }
 
+function _startDqReactPoll(){
+  if(_dqReactPollTmr || !sbClient) return;
+  _dqReactPollTmr = setInterval(async function(){
+    var ids = _dqAllResponses.map(function(r){ return r.id; });
+    if(!ids.length) return;
+    await _loadDqReactions(ids);
+    ids.forEach(function(id){ _updateDqCardReactions(String(id)); });
+  }, 20000);
+}
+function _stopDqReactPoll(){
+  if(_dqReactPollTmr){ clearInterval(_dqReactPollTmr); _dqReactPollTmr = null; }
+  if(_dqVisHandler){ document.removeEventListener('visibilitychange', _dqVisHandler); _dqVisHandler = null; }
+}
+
 async function _fetchDailyFeed(qId){
   if(!sbClient){ _renderDailyFeed([]); return; }
   var today = _dateKey();
@@ -3387,6 +3553,38 @@ async function _fetchDailyFeed(qId){
       if(_evDate === _dqToday){ _fetchDailyFeed(qId); }
     });
   }
+  // Subscribe to real-time reaction counts — updates cards surgically, no carousel rebuild
+  if(!_dqReactRtCh && sbClient){
+    _dqReactRtCh = _sbSub('velo:dq-react', 'dq_reactions', function(payload){
+      var myUid = safeLS('get','velo_user_id')||'';
+      var ev = payload.eventType; var row = payload.new||{}; var del = payload.old||{};
+      var rid, reaction, uid;
+      if(ev==='INSERT'){
+        rid=row.response_id; reaction=row.reaction; uid=row.user_id;
+        if(uid===myUid) return; // already handled optimistically by pToggleDqReaction
+        if(!_dqReactMap[rid]) _dqReactMap[rid]={};
+        if(!_dqReactMap[rid][reaction]) _dqReactMap[rid][reaction]={count:0,mine:false};
+        _dqReactMap[rid][reaction].count++;
+      } else if(ev==='DELETE'){
+        rid=del.response_id; reaction=del.reaction; uid=del.user_id;
+        if(uid===myUid) return;
+        if(_dqReactMap[rid]&&_dqReactMap[rid][reaction])
+          _dqReactMap[rid][reaction].count=Math.max(0,_dqReactMap[rid][reaction].count-1);
+      }
+      if(rid) _updateDqCardReactions(String(rid));
+    });
+  }
+  // 20s poll + visibility-change handler: reliable fallback for Supabase RLS gaps
+  _startDqReactPoll();
+  if(!_dqVisHandler){
+    _dqVisHandler = async function(){
+      if(document.hidden || !_dqAllResponses.length || !sbClient) return;
+      var ids = _dqAllResponses.map(function(r){ return r.id; });
+      await _loadDqReactions(ids);
+      ids.forEach(function(id){ _updateDqCardReactions(String(id)); });
+    };
+    document.addEventListener('visibilitychange', _dqVisHandler);
+  }
 }
 
 // ── DAILY QUESTION REACTIONS ────────────────────────────────────
@@ -3406,6 +3604,44 @@ async function _loadDqReactions(responseIds){
       if(r.user_id === myUid) m[r.reaction].mine = true;
     });
   }catch(e){}
+}
+
+var _rxColors = {
+  identifico:{activeBg:'rgba(30,160,90,.68)',inactiveBg:'rgba(255,255,255,.05)',border:'rgba(45,185,110,.72)',inactiveBorder:'rgba(255,255,255,.12)',glow:'rgba(30,160,90,.40)',txt:'rgba(130,255,185,.98)',inactiveTxt:'rgba(255,255,255,.45)',circleBg:'rgba(30,160,90,.25)',inactiveCircleBg:'rgba(255,255,255,.08)'},
+  abrazo:     {activeBg:'rgba(100,80,225,.62)',inactiveBg:'rgba(255,255,255,.05)',border:'rgba(120,100,240,.70)',inactiveBorder:'rgba(255,255,255,.12)',glow:'rgba(100,80,225,.38)',txt:'rgba(195,185,255,.98)',inactiveTxt:'rgba(255,255,255,.45)',circleBg:'rgba(100,80,225,.22)',inactiveCircleBg:'rgba(255,255,255,.08)'},
+  entiendo:   {activeBg:'rgba(45,130,225,.62)',inactiveBg:'rgba(255,255,255,.05)',border:'rgba(65,150,235,.70)',inactiveBorder:'rgba(255,255,255,.12)',glow:'rgba(45,130,225,.38)',txt:'rgba(165,215,255,.98)',inactiveTxt:'rgba(255,255,255,.45)',circleBg:'rgba(45,130,225,.22)',inactiveCircleBg:'rgba(255,255,255,.08)'}
+};
+
+function _updateDqCardReactions(rid){
+  rid = String(rid);
+  var card = document.querySelector('.dq-feed-card[data-response-id="'+rid+'"]');
+  if(card){
+    var pillsEl = card.querySelector('.dq-rx-pills');
+    if(pillsEl){
+      var r = _dqAllResponses.find(function(x){ return String(x.id)===rid; });
+      var col = r ? _dqEmojiColor(r.mood_emoji||'💭') : {label:'rgba(130,255,185,.97)'};
+      var _m = _dqReactMap[rid]||{};
+      pillsEl.innerHTML = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
+        .filter(function(rx){ return _m[rx.k]&&_m[rx.k].count>0; })
+        .map(function(rx){ return '<span style="display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,.08);border-radius:100px;padding:2px 7px;font-size:12px">'+rx.e+'<span style="font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif">'+_m[rx.k].count+'</span></span>'; })
+        .join('');
+    }
+  }
+  // Update "Tu respuesta" badge
+  var myUid = safeLS('get','velo_user_id')||'';
+  var myResp = _dqAllResponses.find(function(x){ return String(x.id)===rid && x.user_id===myUid; });
+  if(myResp){
+    var myBadge = document.getElementById('homeDailyQMyResp');
+    if(myBadge){
+      var _m2 = _dqReactMap[rid]||{};
+      var rxPills2 = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
+        .filter(function(rx){ return _m2[rx.k]&&_m2[rx.k].count>0; })
+        .map(function(rx){ return rx.e+' '+_m2[rx.k].count; }).join('  ');
+      var myTxt2 = 'Tu respuesta: '+(myResp.mood_emoji||'')+(myResp.response_text?' · '+myResp.response_text.slice(0,30)+(myResp.response_text.length>30?'…':''):'');
+      myBadge.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(myTxt2)+'</span>'
+        +(rxPills2?'<span style="margin-left:6px;font-size:13px;flex-shrink:0;letter-spacing:2px">'+rxPills2+'</span>':'');
+    }
+  }
 }
 
 function _buildDqReactionBar(responseId){
@@ -3445,8 +3681,35 @@ async function pToggleDqReaction(responseId, reaction, btn){
     pToast(_rxEmoji[reaction], _rxLabel[reaction]);
   }
   _dqReactMap[responseId][reaction] = rd;
-  var span = btn.querySelector('span');
-  if(span) span.textContent = _rxLabel[reaction]+(rd.count>0?' '+rd.count:'');
+  var span = btn.querySelector('.rx-txt');
+  if(span) span.textContent = _rxLabel[reaction];
+  var cntEl = btn.querySelector('.rx-cnt');
+  if(cntEl){ cntEl.textContent = rd.count>0?rd.count:''; cntEl.style.display=rd.count>0?'':'none'; }
+  // Update button's inline styles to reflect new active state
+  var _rc = _rxColors[reaction];
+  if(_rc){
+    var _nowActive = btn.dataset.active === 'true';
+    btn.style.background = _nowActive ? _rc.activeBg : _rc.inactiveBg;
+    btn.style.borderColor = _nowActive ? _rc.border : _rc.inactiveBorder;
+    btn.style.boxShadow   = _nowActive ? '0 4px 22px '+_rc.glow : 'none';
+    var _circ = btn.querySelector('span:first-child');
+    if(_circ){
+      _circ.style.background   = _nowActive ? _rc.circleBg : _rc.inactiveCircleBg;
+      _circ.style.borderColor  = _nowActive ? _rc.border : 'rgba(255,255,255,.10)';
+    }
+    var _rxt = btn.querySelector('.rx-txt');
+    if(_rxt) _rxt.style.color = _nowActive ? _rc.txt : _rc.inactiveTxt;
+    var _rcc = btn.querySelector('.rx-cnt');
+    if(_rcc){
+      _rcc.style.color       = _nowActive ? _rc.txt : _rc.inactiveTxt;
+      _rcc.style.background  = _nowActive ? _rc.circleBg : 'rgba(255,255,255,.08)';
+      _rcc.style.borderColor = _nowActive ? _rc.border : 'rgba(255,255,255,.12)';
+    }
+  }
+  // Pop animation
+  btn.style.animation='none';
+  void btn.offsetWidth;
+  if(btn.dataset.active==='true') btn.style.animation='velo-rx-pop .22s ease-out both';
   // Sync Supabase
   if(!sbClient) return;
   try{
@@ -3463,13 +3726,27 @@ var _dqAllResponses = [];  // full list cached for expand
 
 function _renderDailyFeed(responses){
   _dqAllResponses = responses;
-  // Filter out locally-hidden responses (deleted by this user, pending Supabase sync)
   var _dqHidden = []; try{ _dqHidden = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
   var visible = _dqHidden.length ? responses.filter(function(r){ return _dqHidden.indexOf(String(r.id)) === -1; }) : responses;
+  // Update "Tu respuesta" badge with reactions received on own response
+  var myUid2 = safeLS('get','velo_user_id')||'';
+  var myResp2 = responses.find(function(r){ return r.user_id === myUid2; });
+  var myBadge2 = document.getElementById('homeDailyQMyResp');
+  if(myBadge2 && myResp2){
+    var _rxMap2 = _dqReactMap[myResp2.id] || {};
+    var _rxPills2 = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
+      .filter(function(rx){ return _rxMap2[rx.k]&&_rxMap2[rx.k].count>0; })
+      .map(function(rx){ return rx.e+' '+_rxMap2[rx.k].count; }).join('  ');
+    var _myText2 = 'Tu respuesta: '+(myResp2.mood_emoji||'')+( myResp2.response_text?' · '+myResp2.response_text.slice(0,30)+(myResp2.response_text.length>30?'…':''):'');
+    myBadge2.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(_myText2)+'</span>'
+      +(_rxPills2?'<span style="margin-left:6px;font-size:13px;flex-shrink:0;letter-spacing:2px">'+_rxPills2+'</span>':'');
+    myBadge2.style.display = 'flex';
+    myBadge2.style.alignItems = 'center';
+  }
   var summaryEl = document.getElementById('homeDailyQSummary');
   var feedEl    = document.getElementById('homeDailyQFeed');
+  var btnEl     = document.getElementById('dqVerTodosBtn');
   if(!feedEl) return;
-  // Emoji summary bar
   if(summaryEl){
     var counts = {};
     visible.forEach(function(r){ counts[r.mood_emoji]=(counts[r.mood_emoji]||0)+1; });
@@ -3481,14 +3758,21 @@ function _renderDailyFeed(responses){
   }
   if(!visible.length){
     feedEl.innerHTML = '<div style="text-align:center;padding:14px 0;font-size:13px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif;font-style:italic">Sé el primero en compartir 🌱</div>';
+    if(btnEl) btnEl.innerHTML = '';
     return;
   }
-  var preview = visible.slice(0, _DQ_PREVIEW_COUNT);
-  var rest = visible.length - _DQ_PREVIEW_COUNT;
-  feedEl.innerHTML = _buildDqCards(preview)
-    + (rest > 0
-      ? '<button onclick="_expandDailyFeed()" style="width:100%;margin-top:10px;padding:10px;border-radius:12px;border:1.5px solid rgba(116,198,157,.22);background:transparent;color:rgba(116,198,157,.7);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px" id="dqExpandBtn">Ver '+rest+' respuestas más ↓</button>'
-      : '');
+  // Show max 3 in carousel; "ver todas" button appears when there are more
+  var _dqPrevL = feedEl.scrollLeft;
+  feedEl.innerHTML = _buildDqCards(visible.slice(0,3));
+  _initCarouselDots('homeDailyQFeed','dqDots');
+  if(_dqPrevL>0) requestAnimationFrame(function(){ feedEl.scrollLeft = _dqPrevL; });
+  if(btnEl){
+    if(visible.length > 3){
+      btnEl.innerHTML = '<button onclick="pOpenDqAllSheet()" style="width:100%;margin-top:12px;padding:11px 16px;background:linear-gradient(135deg,rgba(175,130,20,.22),rgba(120,86,8,.28));border:1.5px solid rgba(200,158,56,.45);border-radius:14px;color:rgba(220,185,75,.92);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px;transition:opacity .15s">✦ Ver todas las respuestas ('+visible.length+') →</button>';
+    } else {
+      btnEl.innerHTML = '';
+    }
+  }
 }
 
 function _expandDailyFeed(){
@@ -3499,39 +3783,258 @@ function _expandDailyFeed(){
   feedEl.innerHTML = _buildDqCards(_vis);
 }
 
+function pOpenDqAllSheet(){
+  var myUid = safeLS('get','velo_user_id')||'';
+  var q = _getDailyQuestion();
+  var existing = document.getElementById('dqAllSheetOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'dqAllSheetOv';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  var _dqHidden = []; try{ _dqHidden = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
+  var allVis = _dqHidden.length ? _dqAllResponses.filter(function(r){ return _dqHidden.indexOf(String(r.id))===-1; }) : _dqAllResponses;
+  var myResp = allVis.find(function(r){ return r.user_id === myUid; });
+  ov.innerHTML =
+    '<div class="p-sheet p-sheet-dark" style="max-height:92vh;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(160deg,rgba(14,10,32,.98),rgba(6,4,20,.99));border-top:2.5px solid rgba(200,158,56,.55)">'
+    +'<div class="p-sheet-handle" style="background:rgba(200,158,56,.55)"></div>'
+    +'<div style="padding:16px 20px 14px;flex-shrink:0;border-bottom:1px solid rgba(200,158,56,.16)">'
+    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(200,158,56,.75);font-family:\'Jost\',sans-serif;margin-bottom:9px">✨ Pregunta del día</div>'
+    +(q ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16.5px;font-style:italic;font-weight:600;color:rgba(255,255,255,.92);line-height:1.42;padding-left:13px;border-left:2.5px solid rgba(200,158,56,.50)">'+_escHtml(q.text)+'</div>' : '')
+    +'</div>'
+    +'<div style="display:flex;gap:0;padding:0 20px;border-bottom:1px solid rgba(200,158,56,.12);flex-shrink:0">'
+    +'<button id="dqAllTab1" onclick="pDqAllTabSwitch(1)" style="flex:1;padding:11px 0;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;background:none;border:none;border-bottom:2.5px solid rgba(200,158,56,.75);color:rgba(210,170,60,.95);cursor:pointer">Todas ('+allVis.length+')</button>'
+    +'<button id="dqAllTab2" onclick="pDqAllTabSwitch(2)" style="flex:1;padding:11px 0;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;background:none;border:none;border-bottom:2.5px solid transparent;color:rgba(255,255,255,.38);cursor:pointer">Mi publicación</button>'
+    +'</div>'
+    +'<div id="dqAllTabContent1" style="flex:1;overflow-y:auto;padding:14px 14px 0">'
+    +(allVis.length ? _buildDqCards(allVis) : '<div style="text-align:center;padding:32px;font-size:13px;color:rgba(255,255,255,.30);font-style:italic;font-family:Jost,sans-serif">Nadie ha respondido aún 🌱</div>')
+    +'</div>'
+    +'<div id="dqAllTabContent2" style="display:none;flex:1;overflow-y:auto;padding:16px">'
+    +_buildDqMyPubSection(myResp)
+    +'</div>'
+    +'<div style="padding:10px 20px 16px;flex-shrink:0;border-top:1px solid rgba(200,158,56,.12)">'
+    +'<button onclick="document.getElementById(\'dqAllSheetOv\').remove()" style="width:100%;padding:12px;background:rgba(200,158,56,.08);border:1px solid rgba(200,158,56,.22);border-radius:14px;color:rgba(200,158,56,.65);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function pDqAllTabSwitch(tab){
+  var t1 = document.getElementById('dqAllTab1');
+  var t2 = document.getElementById('dqAllTab2');
+  var c1 = document.getElementById('dqAllTabContent1');
+  var c2 = document.getElementById('dqAllTabContent2');
+  if(!t1||!t2||!c1||!c2) return;
+  if(tab === 2){
+    t2.style.borderBottomColor = 'rgba(200,158,56,.75)';
+    t2.style.color = 'rgba(210,170,60,.95)';
+    t1.style.borderBottomColor = 'transparent';
+    t1.style.color = 'rgba(255,255,255,.38)';
+    c1.style.display = 'none'; c2.style.display = '';
+  } else {
+    t1.style.borderBottomColor = 'rgba(200,158,56,.75)';
+    t1.style.color = 'rgba(210,170,60,.95)';
+    t2.style.borderBottomColor = 'transparent';
+    t2.style.color = 'rgba(255,255,255,.38)';
+    c2.style.display = 'none'; c1.style.display = '';
+  }
+}
+
+function _buildDqMyPubSection(myResp){
+  if(!myResp) return '<div style="text-align:center;padding:48px 24px;font-family:\'Jost\',sans-serif">'
+    +'<div style="font-size:38px;margin-bottom:14px">🌱</div>'
+    +'<div style="font-size:14px;color:rgba(255,255,255,.42);line-height:1.7">Respondé la pregunta del día<br>para ver tu publicación aquí</div>'
+    +'</div>';
+  var col = _dqEmojiColor(myResp.mood_emoji||'💭');
+  var ca = function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
+  var _m = _dqReactMap[myResp.id] || {};
+  var rxTypes = ['identifico','abrazo','entiendo'];
+  var rxEmojis = {identifico:'🙌',abrazo:'🤗',entiendo:'💙'};
+  var rxLabels = {identifico:'Me identifico',abrazo:'Te mando un abrazo',entiendo:'Te entiendo'};
+  var totalRx = rxTypes.reduce(function(s,k){ return s+((_m[k]&&_m[k].count)||0); },0);
+  var rxHtml = rxTypes.map(function(k){
+    var cnt = (_m[k]&&_m[k].count)||0;
+    if(!cnt) return '';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:'+ca(col.strip,'.16')+';border:1px solid '+ca(col.border,'.28')+';border-radius:13px;margin-bottom:8px">'
+      +'<span style="font-size:24px;line-height:1">'+rxEmojis[k]+'</span>'
+      +'<div style="flex:1"><div style="font-size:11.5px;font-weight:600;color:'+ca(col.label,'.80')+';font-family:\'Jost\',sans-serif">'+rxLabels[k]+'</div>'
+      +'<div style="font-size:20px;font-weight:800;color:rgba(255,255,255,.92);font-family:\'Jost\',sans-serif;line-height:1.2">'+cnt+'</div></div>'
+      +'</div>';
+  }).join('');
+  return '<div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+ca(col.label,'.70')+';font-family:\'Jost\',sans-serif;margin-bottom:13px">✦ Mi publicación</div>'
+    +'<div style="background:'+col.bg+';border:1.5px solid '+ca(col.border,'.50')+';border-left:3px solid '+ca(col.border,'.80')+';border-radius:16px;padding:16px 18px;margin-bottom:20px">'
+    +'<div style="font-size:17px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:rgba(255,255,255,.93);line-height:1.68;margin-bottom:10px">❝ '+_escHtml(myResp.response_text||'')+' ❞</div>'
+    +'<div style="font-size:11px;color:'+ca(col.label,'.65')+';font-family:\'Jost\',sans-serif">'+myResp.mood_emoji+' · '+_momentoAgo(myResp.created_at||'')+'</div>'
+    +'</div>'
+    +'<div style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,.45);font-family:\'Jost\',sans-serif;margin-bottom:12px;letter-spacing:.3px">Reacciones recibidas</div>'
+    +(totalRx > 0 ? rxHtml : '<div style="text-align:center;padding:20px;font-size:12.5px;color:rgba(255,255,255,.28);font-style:italic;font-family:Jost,sans-serif">Aún no recibiste reacciones 🌙</div>');
+}
+
+function _dqEmojiColor(emoji){
+  var warm=['😊','😄','😁','😃','🙂','🌟','✨','⭐','💫','🌅','☀️','🎉','🎊','💛','🧡','🌻','🔥','😍','🤩','😀'];
+  var calm=['😌','🤍','🌿','💚','🕊️','🌊','💙','🌙','⛅','☁️','🫧','🌾','🍀','🐦','😶','😑'];
+  var sad=['😢','😔','😞','😟','😥','💔','🌧️','😓','😪','😮‍💨','😣','😖'];
+  if(warm.indexOf(emoji)>=0) return {bg:'rgba(48,32,4,.92)',strip:'rgba(218,160,30,.38)',border:'rgba(218,160,30,.70)',glow:'rgba(218,160,30,.18)',label:'rgba(255,210,70,.95)',badge:'rgba(218,162,40,.24)'};
+  if(sad.indexOf(emoji)>=0) return {bg:'rgba(28,8,8,.90)',strip:'rgba(200,80,80,.32)',border:'rgba(200,80,80,.58)',glow:'rgba(200,80,80,.14)',label:'rgba(255,160,160,.90)',badge:'rgba(200,80,80,.22)'};
+  if(calm.indexOf(emoji)>=0) return {bg:'rgba(6,28,18,.92)',strip:'rgba(72,185,128,.34)',border:'rgba(72,185,128,.64)',glow:'rgba(72,185,128,.16)',label:'rgba(120,230,175,.95)',badge:'rgba(72,185,128,.24)'};
+  return {bg:'rgba(16,16,48,.92)',strip:'rgba(110,128,220,.36)',border:'rgba(110,128,220,.60)',glow:'rgba(110,128,220,.15)',label:'rgba(165,182,255,.95)',badge:'rgba(110,128,220,.24)'};
+}
+
+// Consistent per-user color palette — same user always gets same color
+function _userColor(seed){
+  var s=String(seed||'');
+  var h=0;
+  for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}
+  return [
+    {bg:'rgba(34,10,62,.94)',strip:'rgba(155,88,228,.50)',border:'rgba(155,88,228,.85)',glow:'rgba(155,88,228,.30)',label:'rgba(212,172,255,.97)',badge:'rgba(155,88,228,.34)'},
+    {bg:'rgba(5,32,18,.94)',strip:'rgba(45,180,120,.50)',border:'rgba(45,180,120,.85)',glow:'rgba(45,180,120,.30)',label:'rgba(112,238,175,.97)',badge:'rgba(45,180,120,.34)'},
+    {bg:'rgba(44,22,2,.94)',strip:'rgba(222,162,36,.50)',border:'rgba(222,162,36,.85)',glow:'rgba(222,162,36,.30)',label:'rgba(255,220,75,.97)',badge:'rgba(222,162,36,.34)'},
+    {bg:'rgba(6,14,50,.94)',strip:'rgba(82,132,228,.50)',border:'rgba(82,132,228,.85)',glow:'rgba(82,132,228,.30)',label:'rgba(162,195,255,.97)',badge:'rgba(82,132,228,.34)'},
+    {bg:'rgba(46,6,22,.94)',strip:'rgba(215,75,135,.50)',border:'rgba(215,75,135,.85)',glow:'rgba(215,75,135,.30)',label:'rgba(255,155,205,.97)',badge:'rgba(215,75,135,.34)'},
+    {bg:'rgba(46,16,2,.94)',strip:'rgba(225,110,38,.50)',border:'rgba(225,110,38,.85)',glow:'rgba(225,110,38,.30)',label:'rgba(255,180,85,.97)',badge:'rgba(225,110,38,.34)'},
+  ][Math.abs(h)%6];
+}
+
 function _buildDqCards(list){
-  // Use localStorage uid for ownership check (synchronous); delete flow re-validates with auth.getUser()
   var myUid = safeLS('get','velo_user_id') || '';
   var _dqHid = []; try{ _dqHid = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
   return list.filter(function(r){ return _dqHid.indexOf(String(r.id)) === -1; }).map(function(r){
     var av = r.user_avatar || '';
     var isImg = av && av.startsWith('http');
-    var avHtml = isImg
-      ? '<img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-top:2px">'
-      : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.2);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:17px">'+(av||'🌿')+'</div>';
+    var canSeeProfile = r.user_id && r.user_id !== 'anon';
     var isOwn = myUid && r.user_id === myUid;
+    var col = _userColor(r.user_id && r.user_id !== 'anon' ? r.user_id : (r.anon_label||r.mood_emoji||''));
     var actionBtn = isOwn
-      ? '<button onclick="pDeleteMyDqResponse(\''+r.id+'\')" title="Borrar mi respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
-      : '<button onclick="pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" title="Reportar respuesta" style="margin-left:auto;background:none;border:none;color:rgba(255,160,60,.8);font-size:12px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
+      ? '<button onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" style="background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
+      : '<button onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" style="background:none;border:none;color:rgba(255,160,60,.45);font-size:11px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
     var _dqUname = _uAt(r.user_id);
-    return '<div class="dq-feed-card" style="display:flex;gap:8px;padding:8px 0;align-items:flex-start">'
-      +avHtml
+    var _m = _dqReactMap[r.id] || {};
+    var _totalRx = ['identifico','abrazo','entiendo'].reduce(function(s,k){ return s+((_m[k]&&_m[k].count)||0); },0);
+    var avInner = isImg
+      ? '<img src="'+_escHtml(av)+'" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block">'
+      : '<div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1">'+_escHtml(av||'🌿')+'</div>';
+    var avWrap = canSeeProfile
+      ? '<div onclick="event.stopPropagation();pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')" style="cursor:pointer;width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'+avInner+'</div>'
+      : '<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;opacity:.7;display:flex;align-items:center;justify-content:center">'+avInner+'</div>';
+    return '<div class="dq-feed-card" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
+      +' style="background:'+col.bg+';box-shadow:0 3px 16px '+col.glow+',inset 0 0 0 1px '+col.border+';cursor:pointer">'
+      // Absolute strip fills full card height on all platforms
+      +'<div style="position:absolute;left:0;top:0;bottom:0;width:52px;background:'+col.strip+';display:flex;flex-direction:column;align-items:center;justify-content:center">'
+      +'<span style="font-size:27px;line-height:1">'+r.mood_emoji+'</span>'
+      +'</div>'
+      // Content
+      +'<div style="margin-left:52px;min-height:90px;padding:10px 10px 8px 12px">'
+      // Avatar + name row
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+      +avWrap
       +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:'+(_dqUname?'2':'5')+'px">'
-      +'<span class="dq-feed-name" style="font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px">'+(r.user_name||'Alguien')+'</span>'
-      +'<span style="font-size:14px">'+r.mood_emoji+'</span>'
+      +'<div style="display:flex;align-items:center;gap:4px">'
+      +'<span style="font-size:11.5px;font-weight:800;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px">'+(r.user_name||'Alguien')+'</span>'
       +actionBtn
       +'</div>'
-      +(_dqUname ? '<div style="margin-bottom:4px">'+_dqUname+'</div>' : '')
+      +(_dqUname ? '<div style="margin-top:1px">'+_dqUname+'</div>' : '')
+      +'</div>'
+      +'</div>'
+      // Response text — serif italic, premium look
       +(r.response_text
-        ? '<div class="dq-bubble">'
-          +'<div class="dq-bubble-text">'+r.response_text+'</div>'
-          +'</div>'
+        ? '<div style="font-size:16.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.60;word-break:break-word;margin-bottom:8px;letter-spacing:.15px;text-shadow:0 1px 8px '+col.glow+'">❝ '+_escHtml(r.response_text)+' ❞</div>'
         : '')
-      +_buildDqReactionBar(r.id)
+      // Reaction hint bar — per-emoji counts
+      +'<div class="dq-rx-bar" style="display:flex;align-items:center;gap:5px;padding-top:6px;border-top:1px solid '+col.strip+'">'
+      +'<span class="dq-rx-pills">'+[{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}].filter(function(rx){ return _m[rx.k]&&_m[rx.k].count>0; }).map(function(rx){
+          return '<span style="display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,.08);border-radius:100px;padding:2px 7px;font-size:12px">'+rx.e+'<span style="font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif">'+_m[rx.k].count+'</span></span>';
+        }).join('')+'</span>'
+      +'<span style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:'+col.label+';background:'+col.badge+';border-radius:100px;padding:2px 9px;font-family:Jost,sans-serif">'+(_totalRx>0?'Reaccionar':'✦ Reaccionar')+'</span>'
+      +'</div>'
       +'</div>'
       +'</div>';
   }).join('');
+}
+
+function pOpenDqResponseSheet(responseId){
+  var r = _dqAllResponses.find(function(x){ return String(x.id) === String(responseId); });
+  if(!r) return;
+  var q = _getDailyQuestion();
+  var av = r.user_avatar || '';
+  var isImg = av && av.startsWith('http');
+  var canSeeProfile = r.user_id && r.user_id !== 'anon';
+  var col = _dqEmojiColor(r.mood_emoji||'💭');
+  var avStyle = 'width:44px;height:44px;border-radius:50%;object-fit:cover;border:2.5px solid '+col.border+';flex-shrink:0;'+(canSeeProfile?'cursor:pointer':'');
+  var avClick = canSeeProfile ? ' onclick="pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')"' : '';
+  var avHtml = isImg
+    ? '<img src="'+_escHtml(av)+'" style="'+avStyle+'"'+avClick+'>'
+    : '<div style="'+avStyle+';background:rgba(116,198,157,.18);display:flex;align-items:center;justify-content:center;font-size:26px"'+avClick+'>'+(av||'🌿')+'</div>';
+
+  // Build reaction buttons for the sheet (big pill style)
+  var rxDefs = [{key:'identifico',label:'Me identifico',emoji:'💚'},{key:'abrazo',label:'Te abrazo',emoji:'🫂'},{key:'entiendo',label:'Te entiendo',emoji:'💙'}];
+  var _m = _dqReactMap[responseId] || {};
+  var rxHtml = rxDefs.map(function(rx){
+    var rd = _m[rx.key] || {count:0,mine:false};
+    var rc = _rxColors[rx.key];
+    var bg = rd.mine ? rc.activeBg : rc.inactiveBg;
+    var bdr = rd.mine ? rc.border : rc.inactiveBorder;
+    var txtCol = rd.mine ? rc.txt : rc.inactiveTxt;
+    var circBg = rd.mine ? rc.circleBg : rc.inactiveCircleBg;
+    var circBdr = rd.mine ? rc.border : 'rgba(255,255,255,.10)';
+    var shadow = rd.mine ? '0 2px 10px '+rc.glow : 'none';
+    return '<button class="dq-reaction-btn" onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
+      +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+rd.mine+'" '
+      +'style="width:100%;display:flex;align-items:center;gap:10px;padding:8px 12px;background:'+bg+';border:1.5px solid '+bdr+';border-radius:14px;cursor:pointer;transition:background .20s,border-color .20s,box-shadow .20s;font-family:Jost,sans-serif;box-sizing:border-box;box-shadow:'+shadow+'">'
+      +'<span style="width:32px;height:32px;border-radius:50%;background:'+circBg+';border:1.5px solid '+circBdr+';display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .20s,border-color .20s">'
+      +'<span style="font-size:16px;line-height:1">'+rx.emoji+'</span>'
+      +'</span>'
+      +'<span class="rx-txt" style="font-size:12.5px;font-weight:700;color:'+txtCol+';flex:1;text-align:left;letter-spacing:.1px;transition:color .20s">'+rx.label+'</span>'
+      +(rd.count>0
+        ? '<span class="rx-cnt" style="font-size:11px;font-weight:800;color:'+txtCol+';opacity:.80">'+rd.count+'</span>'
+        : '<span class="rx-cnt" style="display:none"></span>')
+      +'</button>';
+  }).join('');
+
+  var existing = document.getElementById('dqResponseSheetOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'dqResponseSheetOv';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="padding:0;overflow:hidden;max-height:92vh;display:flex;flex-direction:column;border-top:3px solid '+col.border+'">'
+    // Colored mood header strip
+    +'<div style="background:linear-gradient(145deg,'+col.bg+',rgba(4,14,8,.98));padding:28px 22px 22px;position:relative;flex-shrink:0">'
+    +'<div class="p-sheet-handle" style="background:'+col.border.replace(/[\d.]+\)$/,'0.45)')+';position:absolute;top:10px;left:50%;transform:translateX(-50%);margin:0"></div>'
+    // Emoji + question label row
+    +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">'
+    +'<span style="font-size:52px;line-height:1;filter:drop-shadow(0 0 18px '+col.glow+')">'+r.mood_emoji+'</span>'
+    +'<div>'
+    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.65)')+';font-family:Jost,sans-serif;margin-bottom:5px">✨ Pregunta del día</div>'
+    +'<div style="font-size:16px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(240,255,246,.88);line-height:1.35">'+_escHtml(q?q.text:'')+'</div>'
+    +'</div>'
+    +'</div>'
+    // Author row
+    +'<div style="display:flex;align-items:center;gap:11px;padding:12px 14px;background:rgba(0,0,0,.22);border-radius:14px;border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.18)')+'">'+avHtml
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:13.5px;font-weight:700;color:rgba(220,245,230,.92);font-family:Jost,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
+    +(_uAt(r.user_id)?'<div style="margin-top:2px">'+_uAt(r.user_id)+'</div>':'')
+    +'<div style="font-size:10.5px;color:'+col.label.replace(/[\d.]+\)$/,'0.50)')+';margin-top:2px;font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
+    +'</div>'
+    +'</div>'
+    +'</div>'
+    // Scrollable body
+    +'<div style="overflow-y:auto;padding:20px 22px 24px;flex:1">'
+    // Response text block
+    +(r.response_text
+      ? '<div style="background:'+col.strip.replace(/[\d.]+\)$/,'0.14)')+';border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.32)')+';border-radius:22px;padding:24px 22px;margin-bottom:22px;position:relative;overflow:hidden">'
+        +'<div style="position:absolute;top:-8px;left:8px;font-size:72px;color:'+col.border.replace(/[\d.]+\)$/,'0.07)')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none;user-select:none">❝</div>'
+        +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.55)')+';font-family:Jost,sans-serif;margin-bottom:14px;position:relative">Su respuesta</div>'
+        +'<div style="font-size:22px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.65;letter-spacing:.3px;text-shadow:0 2px 16px '+col.glow+';position:relative">'+_escHtml(r.response_text)+'</div>'
+        +'<div style="position:absolute;bottom:-16px;right:8px;font-size:72px;color:'+col.border.replace(/[\d.]+\)$/,'0.07)')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none;user-select:none">❞</div>'
+        +'</div>'
+      : '<div style="height:12px"></div>')
+    // Reactions
+    +'<div style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.38)')+';font-family:Jost,sans-serif;text-align:center;margin-bottom:8px">Reaccioná</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">'+rxHtml+'</div>'
+    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:13px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.10);border-radius:16px;color:rgba(255,255,255,.40);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
 }
 
 function pReportDqResponse(responseId, responseUserId){
@@ -3915,31 +4418,40 @@ function _renderShareCard(canvas, logoImg){
   ctx.fillStyle=g2; ctx.fillRect(0,0,W,H);
 
   // Decorative dots (constellation feel)
-  var dots = [[120,200],[W-130,160],[80,H-180],[W-100,H-220],[W/2+180,320],[W/2-200,780]];
+  var dots = [[120,200],[W-130,160],[80,H-180],[W-100,H-220],[W/2+180,320],[W/2-200,780],
+              [W*.3,H*.55],[W*.72,H*.42],[W*.18,H*.38],[W*.88,H*.65],[W*.5,H*.82]];
   dots.forEach(function(p,i){
-    ctx.fillStyle = i%2===0 ? 'rgba(116,198,157,.18)' : 'rgba(200,158,56,.12)';
-    ctx.beginPath(); ctx.arc(p[0],p[1],i%3===0?4:2.5,0,Math.PI*2); ctx.fill();
+    var sz = i%4===0?5:i%3===0?3:2;
+    ctx.fillStyle = i%3===0 ? 'rgba(116,198,157,.20)' : i%2===0 ? 'rgba(200,158,56,.14)' : 'rgba(255,255,255,.08)';
+    ctx.beginPath(); ctx.arc(p[0],p[1],sz,0,Math.PI*2); ctx.fill();
+  });
+  // Subtle corner accents
+  [[0,0],[W,0],[0,H],[W,H]].forEach(function(p,i){
+    var cg=ctx.createRadialGradient(p[0],p[1],0,p[0],p[1],220);
+    cg.addColorStop(0,i%2===0?'rgba(116,198,157,.06)':'rgba(200,158,56,.05)');
+    cg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=cg; ctx.fillRect(0,0,W,H);
   });
 
   // ── Logo / header ───────────────────────────────────────────────
   var headerEnd; // y where header area ends
   if(logoImg){
-    var lH = 450, lW = 450;
-    var lX = (W - lW) / 2, lY = 20;
+    var lH = 260, lW = 260;
+    var lX = (W - lW) / 2, lY = 28;
     ctx.save();
-    ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 60;
+    ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 50;
     ctx.drawImage(logoImg, 0, 0, logoImg.naturalWidth, logoImg.naturalHeight, lX, lY, lW, lH);
     ctx.restore();
-    headerEnd = lY + lH + 14;
+    headerEnd = lY + lH + 16;
   } else {
     ctx.textAlign='center';
     ctx.font='800 68px Arial,sans-serif';
     ctx.fillStyle='rgba(116,198,157,.92)';
     ctx.fillText('VELO', W/2, 72);
-    headerEnd = 90;
+    headerEnd = 104;
   }
 
-  // Gold separator line below logo / title
+  // Gold separator line — well below logo
   var topLine = ctx.createLinearGradient(60,0,W-60,0);
   topLine.addColorStop(0,'rgba(200,158,56,0)');
   topLine.addColorStop(0.25,'rgba(200,158,56,.75)');
@@ -3994,56 +4506,98 @@ function _renderShareCard(canvas, logoImg){
   var _sortedMoods=Object.keys(moodCounts).sort(function(a,b){return moodCounts[b]-moodCounts[a];});
   // Only call it "dominant" if one emoji strictly leads (no tie)
   var dominantEmoji=(_sortedMoods.length>0 && (_sortedMoods.length===1 || moodCounts[_sortedMoods[1]]<moodCounts[_sortedMoods[0]])) ? _sortedMoods[0] : '';
-  var _moodLabel={'😄':'Excelente','😊':'Bien','😐':'Regular','😔':'Melancólico/a','😰':'Ansioso/a','😤':'Frustrado/a','😌':'En paz','🥺':'Sensible','💪':'Con fuerza'};
-  var _moodColor={'😄':'rgba(116,198,157,.28)','😊':'rgba(116,198,157,.22)','😌':'rgba(100,180,160,.22)','😐':'rgba(200,160,80,.18)','😔':'rgba(130,100,200,.22)','😰':'rgba(200,140,70,.22)','😤':'rgba(200,80,80,.20)','🥺':'rgba(180,120,200,.22)','💪':'rgba(100,150,220,.22)'};
+  var _moodLabel={'😄':'Excelente','😊':'Bien','😐':'Regular','😔':'Melancólico/a','😰':'Ansioso/a','😤':'Frustrado/a','😌':'En paz','🥺':'Sensible','💪':'Con fuerza','😢':'Triste','😞':'Desanimado/a','🤩':'Emocionado/a','🙂':'Tranquilo/a','😃':'Con energía'};
+  var _moodColor={'😄':'rgba(218,160,30,.32)','😊':'rgba(218,160,30,.28)','😌':'rgba(72,185,128,.28)','😐':'rgba(200,160,80,.22)','😔':'rgba(140,100,210,.28)','😰':'rgba(200,140,70,.26)','😤':'rgba(200,80,80,.26)','🥺':'rgba(180,120,200,.26)','💪':'rgba(100,150,220,.26)','😢':'rgba(140,100,210,.28)','😞':'rgba(140,100,210,.24)','🤩':'rgba(218,160,30,.32)','🙂':'rgba(72,185,128,.24)','😃':'rgba(218,160,30,.30)'};
+  var _moodBorder={'😄':'rgba(218,160,30,.65)','😊':'rgba(218,160,30,.55)','😌':'rgba(72,185,128,.60)','😐':'rgba(200,160,80,.45)','😔':'rgba(140,100,210,.60)','😰':'rgba(200,140,70,.55)','😤':'rgba(200,80,80,.60)','🥺':'rgba(180,120,200,.55)','💪':'rgba(100,150,220,.60)','😢':'rgba(140,100,210,.60)','😞':'rgba(140,100,210,.50)','🤩':'rgba(218,160,30,.65)','🙂':'rgba(72,185,128,.50)','😃':'rgba(218,160,30,.60)'};
+  var _moodCellBg={'😄':'rgba(218,160,30,.13)','😊':'rgba(218,160,30,.10)','😌':'rgba(72,185,128,.12)','😐':'rgba(200,160,80,.09)','😔':'rgba(140,100,210,.12)','😰':'rgba(200,140,70,.11)','😤':'rgba(200,80,80,.12)','🥺':'rgba(180,120,200,.11)','💪':'rgba(100,150,220,.12)','😢':'rgba(140,100,210,.12)','😞':'rgba(140,100,210,.10)','🤩':'rgba(218,160,30,.13)','🙂':'rgba(72,185,128,.10)','😃':'rgba(218,160,30,.11)'};
+
+  // ── Reflexión semanal personalizada ────────────────────────────
+  var _rfxY = 248+D;
+  var _reflexion = '';
+  if(daysRecorded===7) _reflexion='✦ Registraste los 7 días esta semana ✦';
+  else if(daysRecorded>=4) _reflexion='✦ '+daysRecorded+' de 7 días registrados esta semana ✦';
+  else if(daysRecorded>0) _reflexion='✦ Registraste '+daysRecorded+' día'+(daysRecorded>1?'s':'')+' · seguí así ✦';
+  else _reflexion='✦ Empezá a registrar tu semana emocional ✦';
+  if(_reflexion){
+    ctx.font='500 22px Arial,sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='rgba(116,198,157,.48)'; ctx.fillText(_reflexion,W/2,_rfxY);
+  }
 
   // ── Separator ───────────────────────────────────────────────────
   var sep = function(y){
     var sl=ctx.createLinearGradient(80,0,W-80,0);
-    sl.addColorStop(0,'rgba(116,198,157,0)'); sl.addColorStop(.5,'rgba(116,198,157,.18)'); sl.addColorStop(1,'rgba(116,198,157,0)');
+    sl.addColorStop(0,'rgba(116,198,157,0)'); sl.addColorStop(.5,'rgba(116,198,157,.22)'); sl.addColorStop(1,'rgba(116,198,157,0)');
     ctx.strokeStyle=sl; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(80,y); ctx.lineTo(W-80,y); ctx.stroke();
   };
-  sep(244+D);
+  sep(274+D);
 
   // ── Mood grid ───────────────────────────────────────────────────
-  var gX=54,gY=280+D,gW=W-108,colW=gW/7;
+  var gX=54,gY=310+D,gW=W-108,colW=gW/7;
   days7.forEach(function(d,i){
     var x=gX+colW*i+colW/2;
+    var cellBg=d.emoji?(_moodCellBg[d.emoji]||'rgba(116,198,157,.10)'):'rgba(255,255,255,.04)';
+    var cellBorder=d.emoji?(_moodBorder[d.emoji]||'rgba(116,198,157,.35)'):'rgba(255,255,255,.10)';
     // Cell background pill
-    ctx.fillStyle=d.emoji?'rgba(116,198,157,.08)':'rgba(255,255,255,.04)';
-    ctx.beginPath(); ctx.roundRect(x-colW/2+6,gY-18,colW-12,110,18); ctx.fill();
+    ctx.fillStyle=cellBg;
+    ctx.beginPath(); ctx.roundRect(x-colW/2+6,gY-18,colW-12,114,20); ctx.fill();
+    // Cell border glow for filled days
+    if(d.emoji){
+      ctx.strokeStyle=cellBorder; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.roundRect(x-colW/2+6,gY-18,colW-12,114,20); ctx.stroke();
+    }
     // Day label
-    ctx.font='600 20px Arial,sans-serif';
-    ctx.fillStyle=d.emoji?'rgba(255,255,255,.55)':'rgba(255,255,255,.22)';
+    ctx.font='700 19px Arial,sans-serif';
+    ctx.fillStyle=d.emoji?'rgba(255,255,255,.60)':'rgba(255,255,255,.22)';
     ctx.textAlign='center';
-    ctx.fillText(d.day,x,gY+6);
+    ctx.fillText(d.day,x,gY+5);
     // Emoji or empty dot
     if(d.emoji){
-      ctx.font='68px Arial,sans-serif';
-      ctx.fillText(d.emoji,x,gY+82);
+      ctx.font='64px Arial,sans-serif';
+      ctx.fillText(d.emoji,x,gY+83);
     } else {
-      ctx.fillStyle='rgba(255,255,255,.10)';
-      ctx.beginPath(); ctx.arc(x,gY+54,16,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.12)';
+      ctx.beginPath(); ctx.arc(x,gY+52,14,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(x,gY+52,14,0,Math.PI*2); ctx.stroke();
     }
   });
 
-  var afterGrid = gY+128;
+  var afterGrid = gY+132;
   sep(afterGrid);
 
-  // ── Dominant mood pill ──────────────────────────────────────────
-  if(dominantEmoji){
-    var pillY=afterGrid+26, pillH=90, pillX=80, pillW=W-160;
-    ctx.fillStyle=_moodColor[dominantEmoji]||'rgba(116,198,157,.18)';
-    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,22); ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,.10)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,22); ctx.stroke();
-    ctx.font='54px Arial,sans-serif'; ctx.textAlign='left';
-    ctx.fillStyle='rgba(255,255,255,.9)';
-    ctx.fillText(dominantEmoji,pillX+22,pillY+64);
-    ctx.font='700 30px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.85)';
-    ctx.fillText('Tu estado predominante: '+(_moodLabel[dominantEmoji]||'').toUpperCase(),pillX+100,pillY+40);
-    ctx.font='400 22px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.45)';
-    ctx.fillText(daysRecorded+' de 7 días registrados · '+(moodCounts[dominantEmoji]||0)+' veces esta semana',pillX+100,pillY+68);
+  // ── Dominant mood pill (always visible) ────────────────────────
+  var _showDominant = _sortedMoods.length > 0 ? _sortedMoods[0] : '';
+  var pillY=afterGrid+22, pillH=94, pillX=80, pillW=W-160;
+  if(_showDominant){
+    var _pillFill=_moodColor[_showDominant]||'rgba(116,198,157,.22)';
+    var _pillBorder=_moodBorder[_showDominant]||'rgba(116,198,157,.45)';
+    ctx.fillStyle=_pillFill;
+    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,24); ctx.fill();
+    ctx.strokeStyle=_pillBorder; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,24); ctx.stroke();
+    // Inner glow strip
+    var _pg=ctx.createLinearGradient(pillX,pillY,pillX+pillW,pillY+pillH);
+    _pg.addColorStop(0,'rgba(255,255,255,.06)'); _pg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=_pg; ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,24); ctx.fill();
+    ctx.font='56px Arial,sans-serif'; ctx.textAlign='left';
+    ctx.fillText(_showDominant,pillX+22,pillY+68);
+    ctx.font='800 28px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.92)';
+    ctx.fillText('Estado predominante: '+(_moodLabel[_showDominant]||_showDominant).toUpperCase(),pillX+102,pillY+38);
+    ctx.font='400 21px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.50)';
+    var _isDominant=_sortedMoods.length===1||moodCounts[_sortedMoods[1]]<moodCounts[_sortedMoods[0]];
+    ctx.fillText((_isDominant?'Predominante ·':'')+' '+(moodCounts[_showDominant]||0)+' veces · '+daysRecorded+'/7 días registrados',pillX+102,pillY+68);
+  } else {
+    // No moods — show invitation pill
+    ctx.fillStyle='rgba(116,198,157,.08)';
+    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,24); ctx.fill();
+    ctx.strokeStyle='rgba(116,198,157,.22)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,24); ctx.stroke();
+    ctx.font='56px Arial,sans-serif'; ctx.textAlign='left';
+    ctx.fillText('🌱',pillX+22,pillY+68);
+    ctx.font='700 28px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.65)';
+    ctx.fillText('Empezá a registrar tus emociones',pillX+102,pillY+38);
+    ctx.font='italic 400 21px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.35)';
+    ctx.fillText('Cada emoción registrada es un paso hacia vos mismo/a',pillX+102,pillY+68);
   }
 
   // ── Stats row ───────────────────────────────────────────────────
@@ -5824,26 +6378,35 @@ async function pRenderHelp(){
     var hAv = h.av || h.emoji || '💙';
     var profCall = 'pQuickProfile('+_jsAttr(h.name)+','+_jsAttr(hAv)+',\'\',\'\','+_jsAttr(h.userId||'')+')';
     var uAtTag = _uAt(h.anon ? '' : h.userId);
+    var hCol = _userColor(h.userId && !h.anon ? h.userId : (h.emoji||'💙'));
     var nameHtml = canClickProfile
-      ? '<div><span style="font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" onclick="'+profCall+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>'
-      : '<div><span style="font-size:12px;font-weight:600;color:var(--ink)">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>';
-    var avHtml = (hAv && (hAv.indexOf('data:')===0||hAv.indexOf('http')===0)) ? _avInline(hAv,32) : (!h.anon ? hAv : (h.emoji||'💙'));
+      ? '<div><span style="font-size:12px;font-weight:700;color:'+hCol.label+';cursor:pointer" onclick="'+profCall+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>'
+      : '<div><span style="font-size:12px;font-weight:700;color:'+hCol.label+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>';
     var pDot = (!h.anon && h.userId) ? _presenceDot(h.userId, 10) : '';
-    var avDotHtml = pDot
-      ? '<div style="position:relative;display:inline-block">' + avHtml + '<span style="position:absolute;bottom:-1px;right:-3px">' + pDot + '</span></div>'
-      : avHtml;
-    return '<div class="dark-seeker" id="helppost-'+h.id+'">'
-      +'<div style="display:flex;align-items:flex-start;gap:11px">'
-      +'<div style="font-size:28px;flex-shrink:0;'+(canClickProfile?'cursor:pointer" onclick="'+profCall:'')+'">' + avDotHtml + '</div>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:3px">'
-      +nameHtml
-      +'<span style="font-size:10px;color:var(--ink5);margin-top:2px">'+timeStr+'</span>'
-      +urgBadge
+    var hAvHasImg = hAv && (hAv.indexOf('data:')===0||hAv.indexOf('http')===0);
+    var hAvIsEmoji = hAv && !hAvHasImg;
+    // Strip: single element with optional presence dot
+    var stripCore = hAvHasImg
+      ? '<img src="'+_escHtml(hAv)+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2.5px solid '+hCol.border+';box-shadow:0 2px 12px '+hCol.glow+';display:block"'+(canClickProfile?' onclick="'+profCall+'"':'')+' alt="">'
+      : hAvIsEmoji
+        ? '<div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.10);border:2px solid '+hCol.border+';display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 12px '+hCol.glow+'"'+(canClickProfile?' onclick="'+profCall+'"':'')+'>'+_escHtml(hAv)+'</div>'
+        : '<span style="font-size:26px;line-height:1">'+_escHtml(h.emoji||'💙')+'</span>';
+    var stripInnerH = pDot
+      ? '<div style="position:relative;display:inline-block">'+stripCore+'<span style="position:absolute;bottom:0;right:0">'+pDot+'</span></div>'
+      : stripCore;
+    return '<div class="dark-seeker" id="helppost-'+h.id+'"'
+      +' style="position:relative !important;background:'+hCol.bg+' !important;border:1.5px solid rgba(255,255,255,.07) !important;border-radius:18px !important;box-shadow:0 4px 22px '+hCol.glow+',inset 0 0 0 1px '+hCol.border.replace(/[\d.]+\)$/,'0.18)')+' !important;overflow:hidden !important;margin:0 0 10px !important;padding:0 !important">'
+      // Absolute strip fills full card height on all platforms
+      +'<div style="position:absolute;left:0;top:0;bottom:0;width:64px;background:'+hCol.strip+';border-right:1.5px solid '+hCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center">'
+      +stripInnerH
       +'</div>'
-      +'<div style="font-size:13px;color:var(--ink3);line-height:1.55;margin-bottom:10px;font-style:italic">'+_escHtml(h.preview)+'</div>'
+      +'<div style="margin-left:64px;min-height:76px;padding:10px 12px">'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">'
+      +'<div>'+nameHtml+'<div style="display:flex;align-items:center;gap:4px;margin-top:1px">'+urgBadge+'<span style="font-size:10px;color:rgba(255,255,255,.35)">'+timeStr+'</span></div></div>'
+      +'</div>'
+      +'<div style="font-size:15px;color:rgba(255,255,255,.92);line-height:1.55;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;letter-spacing:.02em">"'+_escHtml(h.preview)+'"</div>'
       +'<div style="display:flex;gap:8px;align-items:center">'+actions+'</div>'
-      +'</div></div></div>';
+      +'</div></div>';
   }
 
   // Show own posts pinned at top (public AND anonymous), then others below
@@ -5868,6 +6431,9 @@ function pDeleteHelpPost(postId){
 
 var _curHelpPost = null;
 var _helpChatInactivityTimer = null;
+var _helpChatInactivityWarnTimer = null;
+var _helpTypingDebounceTimer = null;
+var _helpTypingShowTimer = null;
 // Auto-replies simulating the seeker (person who asked for help)
 var _helpChatAutoMsgPool = [
   'Gracias por responder… no esperaba que alguien lo hiciera tan rápido 🙏',
@@ -6128,6 +6694,7 @@ function _showSeekerGuardianPopup(postId, row){
     +'<div style="font-size:44px;margin-bottom:10px">'+_avInline(guardianAv,52)+'</div>'
     +'<div style="font-size:17px;font-weight:700;color:'+titleClr+';margin-bottom:8px;font-family:\'Cormorant Garamond\',serif">Un guardián quiere acompañarte 💙</div>'
     +'<div style="font-size:14px;color:'+bodyClr+';margin-bottom:6px"><strong>'+_escHtml(guardianName)+'</strong> vio tu mensaje y está aquí para escucharte.</div>'
+    +'<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.30);border-radius:100px;margin-bottom:10px"><span style="font-size:11px">💚</span><span style="font-size:11px;font-weight:700;color:rgba(116,198,157,.90);font-family:\'Jost\',sans-serif">Guardián verificado de la comunidad Velo</span></div>'
     +'<div style="font-size:12px;color:'+subClr+';margin-bottom:10px">¿Aceptás el acompañamiento ahora?</div>'
     +'<div id="seekerGuardianCountdown" style="font-size:28px;font-weight:800;color:'+cdClr+';margin-bottom:18px">80</div>'
     +'<div style="display:flex;gap:10px">'
@@ -6331,7 +6898,9 @@ function _renderHelpChatMsg(m, isOwn){
   var msgEl = document.getElementById('helpChatMessages');
   if(!msgEl) return;
   var _sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-  var _t=m.text||''; if(_sentinels.indexOf(_t)>=0||_t.startsWith('__velo_guardian_req__:')||_t.startsWith('__velo_guardian_acc__:')||_t.startsWith('__velo_guardian_rej__:')||_t.startsWith('__velo_guardian_bye__:')||_t.startsWith('__velo_dm_bye__:')||_t.startsWith('__velo_help_bye__:')) return;
+  var _t=m.text||'';
+  if(_t.startsWith('__velo_typing__:') && !isOwn){ _showHelpTypingIndicator(_t.slice('__velo_typing__:'.length)); return; }
+  if(_t.startsWith('__velo_typing__:')||_sentinels.indexOf(_t)>=0||_t.startsWith('__velo_guardian_req__:')||_t.startsWith('__velo_guardian_acc__:')||_t.startsWith('__velo_guardian_rej__:')||_t.startsWith('__velo_guardian_bye__:')||_t.startsWith('__velo_dm_bye__:')||_t.startsWith('__velo_help_bye__:')) return;
   var post = _curHelpPost||{};
   var div = document.createElement('div');
   div.innerHTML = _buildMsgBubble(m.text||'', isOwn, isOwn?'':(post.emoji||'💙'), isOwn?'':(post.name||''), 'helpChatInput', 'helpChatReplyBar', '', m.reactions||{}, m.id?'direct_messages:'+m.id:'', isOwn?'':(m.from_id||''));
@@ -6341,13 +6910,27 @@ function _renderHelpChatMsg(m, isOwn){
 
 function _resetHelpInactivity(){
   if(_helpChatInactivityTimer) clearTimeout(_helpChatInactivityTimer);
+  if(_helpChatInactivityWarnTimer) clearTimeout(_helpChatInactivityWarnTimer);
+  // Warning at 4 minutes
+  _helpChatInactivityWarnTimer = setTimeout(function(){
+    var msgEl = document.getElementById('helpChatMessages');
+    if(msgEl){
+      var msg = document.createElement('div');
+      msg.className = 'feed-system-msg';
+      msg.textContent = '⏱️ ¿Seguís ahí? El chat se cerrará en 1 minuto si no hay actividad.';
+      msgEl.appendChild(msg);
+      msgEl.scrollTop = msgEl.scrollHeight;
+    }
+    pToast('⏱️','¿Seguís ahí? El chat cierra en 1 min por inactividad.');
+  }, 4 * 60 * 1000);
+  // Close at 5 minutes
   _helpChatInactivityTimer = setTimeout(function(){
-    // 5 minutes of inactivity
     _closeHelpChatInactive();
   }, 5 * 60 * 1000);
 }
 
 function _closeHelpChatInactive(){
+  if(_helpChatInactivityWarnTimer){ clearTimeout(_helpChatInactivityWarnTimer); _helpChatInactivityWarnTimer = null; }
   var msgEl = document.getElementById('helpChatMessages');
   if(msgEl){
     var msg = document.createElement('div');
@@ -6360,6 +6943,40 @@ function _closeHelpChatInactive(){
     pToast('⏱️','Chat cerrado por inactividad. ¿Querés enviarle un mensaje al buzón?');
     setTimeout(function(){ pLeaveHelpChat(); pGoTo('help'); }, 2000);
   }, 2000);
+}
+
+function _toggleHelpCrisis(){
+  var panel = document.getElementById('helpCrisisPanel');
+  var chevron = document.getElementById('helpCrisisChevron');
+  if(!panel) return;
+  var isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if(chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+function _showHelpTypingIndicator(name){
+  var el = document.getElementById('helpTypingIndicator');
+  if(!el) return;
+  el.textContent = '💙 ' + (name||'La otra persona') + ' está escribiendo...';
+  el.style.opacity = '1';
+  if(_helpTypingShowTimer) clearTimeout(_helpTypingShowTimer);
+  _helpTypingShowTimer = setTimeout(function(){
+    if(el) el.style.opacity = '0';
+  }, 3500);
+}
+
+function pHelpChatTyping(){
+  if(_helpTypingDebounceTimer) return;
+  _helpTypingDebounceTimer = setTimeout(function(){ _helpTypingDebounceTimer = null; }, 3000);
+  _initSupabase();
+  if(!sbClient || !_curHelpPost || !_curHelpPost.userId) return;
+  var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
+  var myName = safeLS('get','velo_user_name')||'La otra persona';
+  sbClient.from('direct_messages').insert({
+    from_id: myId, to_id: _curHelpPost.userId,
+    text: '__velo_typing__:'+myName,
+    created_at: new Date().toISOString()
+  }).then(function(){}).catch(function(){});
 }
 
 function pSendHelpChatMsg(){
@@ -6875,8 +7492,8 @@ function _showDailyGreeting(saludo, msg){
         +'">'+_escHtml(saludo)+'</div>'
         // Gemini message line — shows loading dots until ready
         +'<div id="veloGreetingGemini" style="'
-          +'font-family:\'Cormorant Garamond\',serif;font-size:15.5px;'
-          +'color:var(--ink3);line-height:1.58;font-weight:400;letter-spacing:-.1px'
+          +'font-family:\'Cormorant Garamond\',serif;'
+          +'color:rgba(255,255,255,.95);font-size:17px;line-height:1.52;font-weight:500;letter-spacing:-.1px;text-shadow:0 1px 12px rgba(0,0,0,.65)'
         +'">'+( msg ? _escHtml(msg) : '…')+'</div>'
       +'</div>'
 
@@ -7008,11 +7625,12 @@ async function pRenderNews(forceRefresh){
   var _seed = forceRefresh ? ' Session:'+Date.now() : '';
 
   // Attempt 1: Grounded search — Gemini with Google Search finds real articles with verified URLs
-  var gPrompt = 'Today is '+todayFull+'.'+_seed+' Use Google Search to find 5 DIFFERENT real positive news stories published in the last 7 days. '
+  var gPrompt = 'Today is '+todayFull+' ('+_nd.getFullYear()+').'+_seed+' Use Google Search to find 5 DIFFERENT real positive news stories published in '+_nd.getFullYear()+' (current year). '
     +'Focus on: '+_topicFocus+'. '
-    +'For EACH story you MUST include: the real article URL (sourceUrl), the news outlet name (sourceName), '
+    +'PRIORITY: articles from '+_nd.getFullYear()+'. Only use older articles (max 1 year old) if absolutely nothing recent is found. NEVER use articles older than 12 months. '
+    +'For EACH story you MUST include: the real article URL (sourceUrl — must be a direct link to the article page), the news outlet name (sourceName), '
     +'the article title, a 2-3 sentence summary in Argentine Spanish (rioplatense, vos/vosotros), and a short wellbeing reflection. '
-    +'ONLY include stories actually found via Google Search today — do NOT repeat stories from previous searches, do NOT use training data. '
+    +'ONLY include stories actually found via Google Search — do NOT use training data, do NOT invent URLs. '
     +'Respond ONLY with valid JSON array, no markdown fences: '
     +'[{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"...","sourceName":"...","sourceUrl":"https://..."}]';
 
@@ -7043,9 +7661,10 @@ async function pRenderNews(forceRefresh){
 
   // Attempt 2: Regular Gemini fallback (no fake URLs)
   if(!items.length){
-    var aiPrompt = 'Generá 5 noticias positivas e inspiradoras de bienestar, ciencia, naturaleza y solidaridad humana. '
-      +'Sé específico y detallado, no genérico. No inventes URLs. '
-      +'SOLO JSON: [{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"..."}]';
+    var aiPrompt = 'Generá 5 noticias reales, positivas e inspiradoras de '+_nd.getFullYear()+' (año actual) sobre bienestar, ciencia, naturaleza o solidaridad humana. '
+      +'Priorizá noticias del año '+_nd.getFullYear()+'. Si no tenés información de ese año, usá noticias de los últimos 12 meses. NUNCA uses noticias de más de 2 años atrás. '
+      +'Sé específico: incluí nombres reales, países, datos concretos. No inventes URLs. '
+      +'SOLO JSON: [{"emoji":"...","titulo":"...","cuerpo":"...","reflexion":"...","sourceName":"nombre del medio real"}]';
     var aiText = await _geminiCall(aiPrompt, { temperature:0.85, maxOutputTokens:1200 });
     if(_navToken !== _tok) return;
     if(aiText){
@@ -7058,17 +7677,19 @@ async function pRenderNews(forceRefresh){
 
   if(!items.length){
     // Static curated pool — rotate so consecutive refreshes show different stories
+    // Each item includes a Google search URL so users can find the real article
+    var _cy = _nd.getFullYear();
     var _pool = [
-      { emoji:'🌱', titulo:'Reforestación récord: 1.000 millones de árboles plantados', cuerpo:'Una coalición de países y organizaciones alcanzó el hito histórico de plantar mil millones de árboles en un solo año, contribuyendo a absorber millones de toneladas de CO₂ y restaurar ecosistemas degradados en cinco continentes.', reflexion:'Cada árbol es un acto de fe en el futuro. La humanidad puede regenerarse cuando actúa unida. 🌿', _src:'static' },
-      { emoji:'💊', titulo:'Nueva terapia elimina dolor crónico sin opioides', cuerpo:'Investigadores desarrollaron un tratamiento basado en neuromodulación que redujo el dolor crónico en un 80% de los participantes sin generar dependencia, abriendo una nueva era en el manejo del dolor.', reflexion:'El alivio del sufrimiento humano sigue avanzando. La ciencia trabaja para que vivir bien sea posible para todos. 💙', _src:'static' },
-      { emoji:'🤝', titulo:'Comunidades rurales logran autosuficiencia energética solar', cuerpo:'Más de 200 aldeas accedieron por primera vez a electricidad limpia gracias a micro-redes solares comunitarias, transformando la educación, la salud y la economía local.', reflexion:'La energía limpia no es solo tecnología — es dignidad y oportunidad. ✨', _src:'static' },
-      { emoji:'🐋', titulo:'Ballenas jorobadas se recuperaron al 93% de niveles históricos', cuerpo:'Después de décadas de protección internacional, las ballenas jorobadas del Atlántico Sur alcanzaron casi su población pre-cacería, en uno de los mayores éxitos de conservación marina.', reflexion:'La naturaleza sana cuando le damos tiempo y espacio. El daño puede revertirse. 🌊', _src:'static' },
-      { emoji:'📚', titulo:'100% de alfabetización digital en adultos mayores de 60', cuerpo:'Un programa nacional capacitó a más de 400.000 personas mayores en el uso de internet, videollamadas y servicios en línea, reduciendo el aislamiento social en un 40%.', reflexion:'Aprender no tiene edad. Cada persona conectada es una vida más acompañada. 🌻', _src:'static' },
-      { emoji:'🦁', titulo:'El guepardo vuelve a India después de 70 años de extinción local', cuerpo:'El ambicioso proyecto de reintroducción de guepardos africanos en el Parque Nacional Kuno resultó exitoso: ya nacieron las primeras crías en cautiverio semi-libre, consolidando la esperanza de recuperación de la especie.', reflexion:'Cuando la humanidad decide proteger la vida, los milagros ecológicos son posibles. 🌿', _src:'static' },
-      { emoji:'🧬', titulo:'Primer tratamiento de edición genética aprobado para enfermedad sanguínea', cuerpo:'La FDA aprobó la primera terapia basada en CRISPR para la anemia falciforme, una enfermedad dolorosa que afecta a millones. Los ensayos muestran remisión completa en el 90% de los pacientes tratados.', reflexion:'La ciencia convierte el sufrimiento de hoy en el alivio de mañana. Cada avance es una vida cambiada. 💙', _src:'static' },
-      { emoji:'🌊', titulo:'Gran Barrera de Coral muestra señales de recuperación sorprendente', cuerpo:'Científicos australianos registraron niveles de cobertura de coral más altos que en décadas en partes de la Gran Barrera, atribuido a reducción local de contaminantes y nuevas técnicas de restauración con corales resistentes al calor.', reflexion:'La resiliencia de la naturaleza nos enseña que siempre hay posibilidad de regeneración. 🌏', _src:'static' },
-      { emoji:'🤲', titulo:'Cocinas comunitarias alimentan a 2 millones de personas en América Latina', cuerpo:'Una red de voluntarios en 12 países organiza ollas populares que sirven más de dos millones de comidas semanales a personas en situación de vulnerabilidad, conectando a vecinos y fortaleciendo el tejido social.', reflexion:'La solidaridad transforma vecindarios en comunidades. Compartir una mesa es un acto de amor. ❤️', _src:'static' },
-      { emoji:'♻️', titulo:'Ciudad europea logra reciclar el 95% de sus residuos', cuerpo:'Ljubljana, en Eslovenia, alcanzó tasas de reciclaje del 95%, convirtiéndose en modelo mundial de economía circular gracias a su sistema de separación puerta a puerta y educación ambiental desde la escuela primaria.', reflexion:'Un futuro limpio se construye con pequeñas decisiones diarias y mucha voluntad colectiva. 🌍', _src:'static' }
+      { emoji:'🌱', titulo:'Reforestación récord: millones de árboles plantados en '+_cy, cuerpo:'Coaliciones de países y organizaciones siguen batiendo récords de reforestación, contribuyendo a absorber millones de toneladas de CO₂ y restaurar ecosistemas degradados en distintos continentes.', reflexion:'Cada árbol es un acto de fe en el futuro. La humanidad puede regenerarse cuando actúa unida. 🌿', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('reforestacion record arboles')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'💊', titulo:'Avances en tratamientos sin opioides para el dolor crónico', cuerpo:'Investigadores continúan desarrollando terapias basadas en neuromodulación y biomedicina que reducen el dolor crónico sin generar dependencia, mejorando la calidad de vida de millones de personas.', reflexion:'El alivio del sufrimiento humano sigue avanzando. La ciencia trabaja para que vivir bien sea posible para todos. 💙', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('tratamiento dolor cronico sin opioides')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'☀️', titulo:'Energía solar bate récords de producción en '+_cy, cuerpo:'La energía solar alcanzó nuevos máximos de producción global en '+_cy+', con cientos de comunidades rurales accediendo por primera vez a electricidad limpia gracias a micro-redes comunitarias.', reflexion:'La energía limpia no es solo tecnología — es dignidad y oportunidad. ✨', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('record energia solar renovable')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'🐋', titulo:'Especies marinas en recuperación gracias a áreas protegidas', cuerpo:'Ballenas, tortugas y delfines muestran señales de recuperación poblacional en zonas donde se establecieron reservas marinas, demostrando que la protección sostenida revierte el daño ambiental.', reflexion:'La naturaleza sana cuando le damos tiempo y espacio. El daño puede revertirse. 🌊', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('conservacion marina especies recuperacion')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'📚', titulo:'Programas de inclusión digital reducen el aislamiento en adultos mayores', cuerpo:'Iniciativas en toda América Latina capacitan a personas mayores en el uso de internet y videollamadas, reduciendo el aislamiento social y conectando a miles con sus familias y comunidades.', reflexion:'Aprender no tiene edad. Cada persona conectada es una vida más acompañada. 🌻', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('inclusion digital adultos mayores america latina')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'🧬', titulo:'Terapias génicas CRISPR abren nuevas esperanzas para enfermedades raras', cuerpo:'Los avances en edición genética continúan transformando el tratamiento de enfermedades hereditarias, con nuevas terapias aprobadas y ensayos clínicos que muestran resultados prometedores en pacientes de todo el mundo.', reflexion:'La ciencia convierte el sufrimiento de hoy en el alivio de mañana. Cada avance es una vida cambiada. 💙', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('CRISPR terapia genica aprobacion')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'🌊', titulo:'Corales tropicales muestran resiliencia ante el cambio climático', cuerpo:'Científicos identificaron colonias de coral con mayor tolerancia al calor y trabajan en programas de restauración activa que replican estas variedades en arrecifes degradados de todo el mundo.', reflexion:'La resiliencia de la naturaleza nos enseña que siempre hay posibilidad de regeneración. 🌏', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('restauracion corales resiliencia')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'🤲', titulo:'Redes de voluntariado baten récords de impacto social en '+_cy, cuerpo:'Organizaciones de voluntarios en todo el mundo registran un crecimiento sin precedentes en '+_cy+', con millones de personas dedicando tiempo a causas comunitarias, bancos de alimentos y apoyo a personas vulnerables.', reflexion:'La solidaridad transforma vecindarios en comunidades. Compartir es un acto de amor. ❤️', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('voluntariado record solidaridad')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'♻️', titulo:'Ciudades líderes en reciclaje y economía circular en '+_cy, cuerpo:'Varias ciudades europeas y latinoamericanas alcanzan tasas de reciclaje históricas en '+_cy+', inspirando nuevos modelos de economía circular que reducen residuos y generan empleos verdes.', reflexion:'Un futuro limpio se construye con pequeñas decisiones diarias y mucha voluntad colectiva. 🌍', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('ciudades reciclaje economia circular')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'🧠', titulo:'Investigaciones en salud mental reducen el estigma en jóvenes', cuerpo:'Nuevos programas de salud mental en escuelas y universidades de América Latina están logrando que más jóvenes busquen ayuda sin miedo al juicio, cambiando la cultura del bienestar emocional.', reflexion:'Hablar de lo que sentimos es el primer paso hacia sanar. La salud mental es salud. 💚', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('salud mental jovenes programa')+'+'+_cy+'&hl=es-419', _src:'static' }
     ];
     var _offset = (Date.now() / 60000 | 0) % _pool.length; // rotates every minute
     items = [];
@@ -7081,47 +7702,136 @@ async function pRenderNews(forceRefresh){
   _renderNewsList(newsEl, adminNews.concat(items));
 }
 
+// ── Feature 4: reading tracker ──────────────────────────────────────
+function _trackNewsRead(){
+  var today = new Date().toISOString().slice(0,10);
+  var reads = []; try{ reads = JSON.parse(safeLS('get','velo_news_reads')||'[]'); }catch(e){}
+  reads.push(today);
+  // keep last 90 days
+  safeLS('set','velo_news_reads', JSON.stringify(reads.slice(-200)));
+}
+function _getNewsWeekCount(){
+  var reads = []; try{ reads = JSON.parse(safeLS('get','velo_news_reads')||'[]'); }catch(e){}
+  var cutoff = new Date(Date.now() - 7*24*3600*1000).toISOString().slice(0,10);
+  return reads.filter(function(d){ return d >= cutoff; }).length;
+}
+function _getNewsStreak(){
+  var reads = []; try{ reads = JSON.parse(safeLS('get','velo_news_reads')||'[]'); }catch(e){}
+  var days = {}; reads.forEach(function(d){ days[d]=1; });
+  var streak = 0;
+  var d = new Date();
+  for(var i=0;i<60;i++){
+    var k = d.toISOString().slice(0,10);
+    if(days[k]) streak++;
+    else if(i>0) break;
+    d.setDate(d.getDate()-1);
+  }
+  return streak;
+}
+function _newsReadingBadgeHtml(){
+  var count = _getNewsWeekCount();
+  var streak = _getNewsStreak();
+  if(!count) return '';
+  var streakTxt = streak >= 2 ? ' · <strong>'+streak+' días seguidos 🔥</strong>' : '';
+  return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:11px 14px;background:linear-gradient(90deg,rgba(116,198,157,.10),rgba(116,198,157,.05));border:1px solid rgba(116,198,157,.22);border-radius:14px">'
+    +'<span style="font-size:22px">🌞</span>'
+    +'<div style="font-size:12px;color:var(--ink3);line-height:1.5">Leíste <strong style="color:var(--sage2)">'+count+' noticia'+(count!==1?'s':'')+' buena'+(count!==1?'s':'')+'</strong> esta semana'+streakTxt+'</div>'
+    +'</div>';
+}
+
+// ── Feature 5: share helper ─────────────────────────────────────────
+function pShareNewsItem(titulo, cuerpo, sourceUrl){
+  var text = '🌞 '+titulo+'\n\n'+cuerpo+(sourceUrl ? '\n\n🔗 '+sourceUrl : '')+'\n\n— Compartido desde Velo (heyvelo.app)';
+  if(navigator.share){
+    navigator.share({ title: titulo, text: text, url: sourceUrl || 'https://heyvelo.app' }).catch(function(){});
+    return;
+  }
+  // WhatsApp fallback
+  var wa = 'https://api.whatsapp.com/send?text='+encodeURIComponent(text);
+  window.open(wa, '_blank');
+}
+function pCopyNewsItem(titulo, cuerpo, sourceUrl, btnEl){
+  var text = '🌞 '+titulo+'\n\n'+cuerpo+(sourceUrl ? '\n\n🔗 '+sourceUrl : '')+'\n\n— Compartido desde Velo (heyvelo.app)';
+  try{
+    navigator.clipboard.writeText(text).then(function(){
+      if(btnEl){ var orig=btnEl.textContent; btnEl.textContent='✅ Copiado'; setTimeout(function(){ btnEl.textContent=orig; },1800); }
+    }).catch(function(){ pToast('📋','Copiado al portapapeles'); });
+  }catch(e){ pToast('⚠️','Tu navegador no soporta copiar'); }
+}
+
 function _renderNewsList(el, items){
   _newsListCache = items;
-  el.innerHTML = items.map(function(item, i){
-    var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
-    // Only show a source name badge for admin-curated content with a real verified link.
-    // Groq-generated items have no web access so source names are AI-invented — show "Velo IA" instead.
-    var isAdminReal = item._src === 'admin' && hasLink;
-    var sourceTag = isAdminReal
-      ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:var(--sage2);font-weight:700;text-decoration:none;background:var(--sage7);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.25)">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a>'
-      : '<span style="color:var(--ink5);font-style:italic">✨ Historia de bienestar · Velo IA</span>';
-    return '<div class="p-card p-card--hover" style="margin-bottom:14px;padding:18px;cursor:pointer" onclick="pOpenNewsDetail('+i+')">'
-      +'<div style="display:flex;align-items:flex-start;gap:14px">'
-      +'<div style="font-size:36px;line-height:1;flex-shrink:0">'+_escHtml(item.emoji||'📰')+'</div>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:17px;color:var(--ink);margin-bottom:6px;font-weight:700">'+_escHtml(item.titulo)+'</div>'
-      +'<div style="font-size:13px;color:var(--ink2);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
-      +'<div style="margin-top:10px;font-size:11px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-      +sourceTag
-      +'</div>'
-      +'</div>'
-      +'</div>'
-      +'</div>';
-  }).join('');
+  var _cy = new Date().getFullYear();
+  var _sourceTag = function(item){
+    var _newsSearch = 'https://news.google.com/search?q='+encodeURIComponent((item.titulo||'')+' '+_cy)+'&hl=es-419';
+    return item.titulo
+      ? '<a href="'+_escHtml(_newsSearch)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:#fff;font-weight:700;text-decoration:none;background:rgba(20,110,70,.78);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.5)">🔗 Buscar en Google News</a>'
+      : '<span style="color:var(--ink5);font-style:italic">✨ Velo IA</span>';
+  };
+
+  var heroHtml = '';
+  var restHtml = '';
+
+  items.forEach(function(item, i){
+    var isHero = i === 0;
+    if(isHero){
+      // Feature 3: "Noticia del día" — hero card with newspaper front-page design
+      heroHtml = '<div onclick="pOpenNewsDetail(0)" style="cursor:pointer;margin-bottom:18px;border-radius:22px;overflow:hidden;background:linear-gradient(145deg,rgba(116,198,157,.14) 0%,rgba(116,198,157,.06) 100%);border:1.5px solid rgba(116,198,157,.28);box-shadow:0 4px 24px rgba(116,198,157,.10)">'
+        +'<div style="padding:14px 16px 6px;display:flex;align-items:center;gap:6px">'
+        +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#fff;background:rgba(20,110,70,.80);padding:3px 10px;border-radius:100px;border:1px solid rgba(116,198,157,.55)">🗞️ NOTICIA DEL DÍA</span>'
+        +'</div>'
+        +'<div style="padding:8px 18px 6px;text-align:center">'
+        +'<div style="font-size:56px;line-height:1;margin-bottom:10px">'+_escHtml(item.emoji||'📰')+'</div>'
+        +'<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">'+_escHtml(item.titulo)+'</h3>'
+        +'<p style="font-size:13.5px;color:var(--ink2);line-height:1.7;margin-bottom:14px">'+_escHtml(item.cuerpo)+'</p>'
+        +'</div>'
+        +'<div style="padding:10px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid rgba(116,198,157,.12)">'
+        +_sourceTag(item)
+        +'<button onclick="event.stopPropagation();pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+');" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(20,110,70,.78);border:1px solid rgba(116,198,157,.5);border-radius:100px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
+        +'</div>'
+        +'</div>';
+    } else {
+      restHtml += '<div class="p-card p-card--hover" style="margin-bottom:12px;padding:16px;cursor:pointer" onclick="pOpenNewsDetail('+i+')">'
+        +'<div style="display:flex;align-items:flex-start;gap:13px">'
+        +'<div style="font-size:32px;line-height:1;flex-shrink:0">'+_escHtml(item.emoji||'📰')+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;color:var(--ink);margin-bottom:5px;font-weight:700;line-height:1.3">'+_escHtml(item.titulo)+'</div>'
+        +'<div style="font-size:12.5px;color:var(--ink2);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
+        +'<div style="margin-top:9px;font-size:11px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+        +_sourceTag(item)
+        +'</div>'
+        +'</div>'
+        +'</div>'
+        +'</div>';
+    }
+  });
+
+  el.innerHTML = _newsReadingBadgeHtml() + heroHtml + (items.length > 1 ? '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:10px;margin-top:4px">MÁS NOTICIAS</div>' : '') + restHtml;
 }
 
 var _newsListCache = [];
 function pOpenNewsDetail(i){
   var item = _newsListCache[i];
   if(!item) return;
+  _trackNewsRead(); // Feature 4: count this read
   var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
   var _nd = new Date();
+  var _cy2 = _nd.getFullYear();
   var _months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  var _dateStr = _nd.getDate()+' de '+_months[_nd.getMonth()]+' de '+_nd.getFullYear();
-  var isAdminRealDetail = item._src === 'admin' && hasLink;
-  var sourceRef = isAdminRealDetail
-    ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--sage2);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a>'
+  var _dateStr = _nd.getDate()+' de '+_months[_nd.getMonth()]+' de '+_cy2;
+  var _detailNewsSearch = 'https://news.google.com/search?q='+encodeURIComponent((item.titulo||'')+' '+_cy2)+'&hl=es-419';
+  var sourceRef = item.titulo
+    ? '<a href="'+_escHtml(_detailNewsSearch)+'" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--sage2);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px">🔗 Buscar en Google News</a>'
     : '<span style="font-size:12px;color:var(--ink4);font-style:italic">✨ Historia de bienestar · Velo IA</span>';
   var sourceBlock = '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-bottom:18px;padding:10px 14px;background:rgba(116,198,157,.07);border-radius:10px;border:1px solid rgba(116,198,157,.18)">'
     +'<span style="font-size:12px;color:var(--ink4)">📅 '+_dateStr+'</span>'
     +'<span style="color:var(--ink5);font-size:12px">·</span>'
     +sourceRef
+    +'</div>';
+  // Feature 5: share buttons row
+  var shareRow = '<div style="display:flex;gap:8px;margin-bottom:14px">'
+    +'<button onclick="pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:rgba(20,110,70,.78);border:1.5px solid rgba(116,198,157,.45);border-radius:14px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
+    +'<button id="newsCopyBtn" onclick="pCopyNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+',this)" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:rgba(116,198,157,.08);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;font-size:13px;font-weight:700;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">📋 Copiar</button>'
     +'</div>';
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
@@ -7136,10 +7846,8 @@ function pOpenNewsDetail(i){
     +'<div style="font-size:11px;font-weight:700;color:var(--sage3);letter-spacing:.5px;margin-bottom:6px">✨ REFLEXIÓN VELO IA</div>'
     +'<p style="font-size:13px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+_escHtml(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
     +'</div>'
-    +(hasLink
-      ? '<a href="'+item.sourceUrl+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔗 Leer artículo completo en '+_escHtml(item.sourceName||'la fuente')+'</a>'
-      : '<a href="https://www.google.com/search?q='+encodeURIComponent(item.titulo)+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔍 Buscar noticia en Google</a>'
-    )
+    +'<a href="'+_escHtml(_detailNewsSearch)+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:12px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔍 Buscar en Google News</a>'
+    +shareRow
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'newsDetailOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
@@ -7148,16 +7856,138 @@ function pOpenNewsDetail(i){
 
 // ── ACOMPAÑANTE VELO IA ──────────────────────────────────────────
 var _calmAIMsgs = [];
+var _calmChipsShown = false;
+
+// ── Calm AI: session memory (localStorage per day) ───────────────────
+function _calmTodayKey(){
+  var d = new Date();
+  return 'velo_calm_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function _saveCalmSession(){
+  if(!_calmAIMsgs.some(function(m){ return m.user; })) return;
+  safeLS('set', _calmTodayKey(), JSON.stringify(_calmAIMsgs.slice(-30)));
+}
+function _loadCalmSession(){
+  try{ return JSON.parse(safeLS('get', _calmTodayKey())||'[]'); }catch(e){ return []; }
+}
+
+// ── Calm AI: mood context from today's mood log ───────────────────────
+function _calmMoodContext(){
+  var d = new Date();
+  var dk = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  var stored = safeLS('get','velo_mood_'+dk);
+  if(!stored) return null;
+  try{ return JSON.parse(stored); }catch(e){ return null; }
+}
+
+// ── Calm AI: personalized greeting ───────────────────────────────────
+function _calmGreeting(mood){
+  var hour = new Date().getHours();
+  var tg = hour < 12 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
+  if(mood && mood.emoji){
+    var desc = {'😄':'muy bien hoy','😊':'bien hoy','😐':'más o menos hoy','😞':'no tan bien hoy','😢':'bastante mal hoy'}[mood.emoji]||'de cierta manera hoy';
+    var noteSnip = mood.note ? ' Me comentaste: "'+mood.note.slice(0,55)+(mood.note.length>55?'…':'')+'". ' : ' ';
+    return tg+' 🌿 Vi que registraste que te sentís '+desc+'.'+noteSnip+'Estoy acá si querés contarme más, sin ningún apuro.';
+  }
+  var opts = [
+    'Hola, estoy acá para acompañarte 🌿 ¿Cómo te sentís en este momento? Podés contarme lo que quieras, sin apuros.',
+    tg+' 🌿 Me alegra que estés acá. ¿Cómo andás hoy?',
+    'Hola 🌿 Este es tu espacio, sin juicios. ¿Qué te trajo por acá hoy?'
+  ];
+  var d = new Date();
+  return opts[(d.getDate()+d.getHours())%opts.length];
+}
+
+// ── Calm AI: quick-start chips ────────────────────────────────────────
+function _showCalmChips(){
+  var msgEl = document.getElementById('calmAIMessages');
+  if(!msgEl || _calmChipsShown) return;
+  _calmChipsShown = true;
+  var chips = [
+    { label:'😰 Estoy ansioso/a',       text:'Estoy sintiendo mucha ansiedad' },
+    { label:'😔 Me siento solo/a',       text:'Me siento muy solo/a últimamente' },
+    { label:'😤 Tuve un día difícil',    text:'Tuve un día muy difícil' },
+    { label:'😴 No puedo dormir',        text:'Tengo problemas para dormir' },
+    { label:'💭 Solo quiero hablar',      text:'Quiero hablar y que alguien me escuche' }
+  ];
+  var wrap = document.createElement('div');
+  wrap.id = 'calmChips';
+  wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;padding:6px 0 10px';
+  wrap.innerHTML = chips.map(function(c){
+    return '<button onclick="pCalmChipSend('+_jsAttr(c.text)+')" style="padding:8px 13px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.25);border-radius:100px;font-size:12px;color:rgba(255,255,255,.72);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">'+c.label+'</button>';
+  }).join('');
+  msgEl.appendChild(wrap);
+  msgEl.scrollTop = msgEl.scrollHeight;
+}
+function pCalmChipSend(text){
+  var chips = document.getElementById('calmChips');
+  if(chips) chips.remove();
+  var ta = document.getElementById('calmAIInput');
+  if(ta){ ta.value = text; }
+  pSendCalmAIMsg();
+}
 
 function _initCalmAIPage(){
-  _calmAIMsgs = [];
+  _calmChipsShown = false;
   var msgEl = document.getElementById('calmAIMessages');
   if(msgEl) msgEl.innerHTML = '';
   var ta = document.getElementById('calmAIInput');
   if(ta){ ta.value = ''; ta.style.height = ''; }
+
+  var prevMsgs = _loadCalmSession();
+  var hasUser = prevMsgs.some(function(m){ return m.user; });
+
+  if(hasUser){
+    // Offer to resume today's conversation
+    var lastUser = prevMsgs.slice().reverse().find(function(m){ return m.user; });
+    var snippet = lastUser ? _escHtml((lastUser.text||'').slice(0,65))+(lastUser.text.length>65?'…':'') : '';
+    var resumeDiv = document.createElement('div');
+    resumeDiv.style.cssText = 'margin:16px 0 8px;padding:14px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.22);border-radius:16px;text-align:center';
+    resumeDiv.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,.45);margin-bottom:6px;letter-spacing:.3px">CONVERSACIÓN DE HOY</div>'
+      +'<div style="font-size:12.5px;color:rgba(255,255,255,.6);font-style:italic;margin-bottom:12px;line-height:1.5">"'+snippet+'"</div>'
+      +'<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'
+      +'<button onclick="_calmResumeSession()" style="padding:9px 18px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.38);border-radius:100px;font-size:12px;font-weight:700;color:rgba(116,198,157,.9);cursor:pointer;font-family:\'Jost\',sans-serif">↩️ Retomar conversación</button>'
+      +'<button onclick="_calmStartFresh()" style="padding:9px 18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:100px;font-size:12px;color:rgba(255,255,255,.45);cursor:pointer;font-family:\'Jost\',sans-serif">Empezar de nuevo</button>'
+      +'</div>';
+    if(msgEl) msgEl.appendChild(resumeDiv);
+  } else {
+    _calmStartFresh();
+  }
+}
+
+function _calmStartFresh(){
+  _calmAIMsgs = [];
+  _calmChipsShown = false;
+  var msgEl = document.getElementById('calmAIMessages');
+  if(msgEl) msgEl.innerHTML = '';
+  var mood = _calmMoodContext();
+  var greeting = _calmGreeting(mood);
   setTimeout(function(){
-    _calmAIAddMsg('Hola, estoy acá para acompañarte 🌿 ¿Cómo te sentís en este momento? Podés contarme lo que quieras, sin apuros.', false);
+    _calmAIAddMsg(greeting, false);
+    setTimeout(_showCalmChips, 700);
   }, 400);
+}
+
+function _calmResumeSession(){
+  var prevMsgs = _loadCalmSession();
+  _calmAIMsgs = prevMsgs;
+  _calmChipsShown = true;
+  var msgEl = document.getElementById('calmAIMessages');
+  if(msgEl) msgEl.innerHTML = '';
+  prevMsgs.forEach(function(m){
+    var div = document.createElement('div');
+    div.innerHTML = _buildMsgBubble(m.text, m.user, '🌿', 'Acompañante Velo', 'calmAIInput', 'calmAIReplyBar', '');
+    if(!m.user){
+      var bubble = div.querySelector('.feed-bubble');
+      if(bubble) bubble.innerHTML = bubble.innerHTML.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    }
+    var child = div.firstElementChild;
+    if(child && msgEl) msgEl.appendChild(child);
+  });
+  if(msgEl) msgEl.scrollTop = msgEl.scrollHeight;
+  setTimeout(function(){
+    _calmAIAddMsg('Seguimos donde lo dejamos 🌿 ¿Cómo te sentís ahora?', false);
+  }, 350);
 }
 
 function _calmAIAddMsg(text, isUser){
@@ -7167,7 +7997,6 @@ function _calmAIAddMsg(text, isUser){
   var div = document.createElement('div');
   div.innerHTML = _buildMsgBubble(text, isUser, '🌿', 'Acompañante Velo', 'calmAIInput', 'calmAIReplyBar', '');
   if(!isUser){
-    // Render **bold** markdown in bot responses (text is already HTML-escaped)
     var bubble = div.querySelector('.feed-bubble');
     if(bubble) bubble.innerHTML = bubble.innerHTML.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   }
@@ -7206,6 +8035,9 @@ async function pSendCalmAIMsg(){
   var text = ta.value.trim();
   ta.value = '';
   ta.style.height = '';
+  // Remove quick-start chips on first user message
+  var chips = document.getElementById('calmChips');
+  if(chips) chips.remove();
   var calmQuote = _getReplyQuote('calmAIReplyBar');
   pClearReplyBar('calmAIReplyBar');
   _calmAIMsgs.push({text:text, user:true});
@@ -7220,20 +8052,26 @@ async function pSendCalmAIMsg(){
   typingDiv.innerHTML = '<div class="feed-av">🌿</div><div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">Acompañante Velo</div><div class="feed-bubble" style="color:var(--ink4);font-style:italic">Escribiendo…</div></div>';
   if(msgEl){ msgEl.appendChild(typingDiv); msgEl.scrollTop = msgEl.scrollHeight; }
 
+  // Mood context — inject today's mood if the user logged one
+  var _cm = _calmMoodContext();
+  var moodLine = _cm
+    ? '\nEstado de ánimo registrado hoy por el usuario: '+_cm.emoji+((_cm.label)?' ('+_cm.label+')':'')+'.'+(_cm.note?' Su nota: "'+_cm.note.slice(0,80)+'". ':'')+'Usá esto como contexto cuando sea relevante, no lo menciones directamente a menos que el usuario lo traiga.'
+    : '';
+
   var systemPrompt = 'Sos Velo, un acompañante emocional especializado, entrenado en técnicas de psicología clínica y humanista. '
     +'Aplicás escucha activa profunda, técnicas rogerianas de reflejo y validación, y preguntas socráticas para facilitar la reflexión genuina. '
     +'Tenés experiencia y sensibilidad especial en: ansiedad y ataques de pánico, tristeza y depresión, duelo y pérdidas, problemas de pareja y familia, maltrato emocional y violencia doméstica, autoestima herida y trauma. '
     +'Respondés siempre en español rioplatense (usás "vos", "te", "estás", "querés"). '
-    +'Estructura de cada respuesta: (1) Validación empática específica — nombrás exactamente lo que dijo la persona, sin frases genéricas. (2) Reflejo o reformulación que demuestre comprensión profunda de su situación. (3) Una pregunta abierta y reflexiva que invite a explorar más, sin presionar. '
-    +'Usás entre 4-6 oraciones por respuesta. NUNCA dés consejos directivos antes de explorar cómo se siente. NUNCA repetís frases. NUNCA minimizás el dolor ("todo pasa", "hay gente peor"). '
-    +'Si la persona menciona violencia activa, maltrato o situación de peligro: con calidez y sin alarmismo, reconocé el valor que tuvo en contarlo y mencioná recursos concretos: la Sala de Ayuda de Velo y el 0800-222-1002 (línea nacional Argentina contra violencia), o la Sala de Ayuda de Velo y el 135 para crisis emocionales. '
-    +'Siempre recordá: no sos terapeuta ni médico. Sos un espacio seguro, humano y sin juicios donde la persona puede explorar sus emociones con acompañamiento genuino.';
+    +'Estructura de cada respuesta: (1) Validación empática específica — nombrás exactamente lo que dijo la persona, sin frases genéricas. (2) Reflejo o reformulación que demuestre comprensión profunda. (3) Una pregunta abierta y reflexiva que invite a explorar, sin presionar. '
+    +'Usás entre 2-4 oraciones por respuesta — concisas, cálidas y directas. NUNCA dés consejos directivos antes de explorar cómo se siente. NUNCA repetís frases. NUNCA minimizás el dolor ("todo pasa", "hay gente peor"). '
+    +'Si la persona menciona violencia activa, maltrato o peligro: con calidez reconocé el valor de contarlo y mencioná: la Sala de Ayuda de Velo y el 0800-222-1002 (violencia) o el 135 (crisis emocionales, Argentina). '
+    +'No sos terapeuta ni médico. Sos un espacio seguro, humano y sin juicios.'
+    + moodLine;
 
-  var reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-12), { temperature:0.88, maxOutputTokens:420 });
+  var reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-14), { temperature:0.88, maxOutputTokens:280 });
   if(!reply){
-    // Auto-retry once after 1.5s (handles cold-start / transient failures)
     await new Promise(function(r){ setTimeout(r, 1500); });
-    reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-12), { temperature:0.88, maxOutputTokens:420 });
+    reply = await _geminiChat(systemPrompt, _calmAIMsgs.slice(-14), { temperature:0.88, maxOutputTokens:280 });
   }
   var typingEl = document.getElementById('calmAITyping');
   if(typingEl) typingEl.remove();
@@ -7242,6 +8080,7 @@ async function pSendCalmAIMsg(){
   } else {
     _calmAIAddMsg(reply, false);
   }
+  _saveCalmSession(); // Feature: persist session for today
   _geminiCrisisCheck(text);
 }
 
@@ -7798,30 +8637,32 @@ async function pRenderBottleResponses(){
     })();
     var expireMin = Math.round((r.ts + 24*3600*1000 - Date.now()) / 60000);
     var expireLabel = expireMin > 60 ? Math.floor(expireMin/60)+'h' : expireMin+'min';
-    var authorHtml = (r.authorName)
-      ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;cursor:pointer" onclick="pQuickProfile('+_jsAttr(r.authorName)+','+_jsAttr(r.authorAv||'🧑')+',\'\',\'\','+_jsAttr(r.authorId||'')+')">'
-        +_avInline(r.authorAv||'🧑',22)
-        +'<span class="bottle-replied-author">'+_escHtml(r.authorName)+'</span>'
-        +'<span class="bottle-replied-meta">· ver perfil</span>'
-        +'</div>'
-      : '<div style="margin-bottom:10px"><span class="bottle-replied-meta">Mensaje anónimo 🌊</span></div>';
-    return '<div class="dark-bottle bottle-replied-card" style="border-left:3px solid rgba(80,150,200,.4)">'
-      // Header row
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-      +'<span class="bottle-replied-tag">💬 Respondiste</span>'
+    var authorName = r.authorName || 'Anónimo';
+    var avHtml = _avInline(r.authorAv||'🌊', 28);
+    var authorClick = r.authorId ? 'onclick="pQuickProfile('+_jsAttr(r.authorName)+','+_jsAttr(r.authorAv||'🧑')+',\'\',\'\','+_jsAttr(r.authorId||'')+')" style="cursor:pointer"' : '';
+    var myName = safeLS('get','velo_user_name')||'Vos';
+    var myAv = safeLS('get','velo_user_av')||'🌿';
+    return '<div class="dark-bottle bottle-replied-card" style="border-left:3px solid rgba(80,150,200,.35);padding:14px 14px 12px">'
+      // Header
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+      +'<span style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(80,150,200,.75);font-family:\'Jost\',sans-serif">💬 Conversación</span>'
       +'<span class="bottle-replied-meta">'+relTime+' · expira en '+expireLabel+'</span>'
       +'</div>'
-      // Author
-      +authorHtml
-      // Original message
-      +'<div class="bottle-original-block">'
-      +'<div class="bottle-block-label">Mensaje del mar</div>'
-      +'<p class="bottle-original-text">"'+(r.preview ? _escHtml(r.preview.slice(0,120)+(r.preview.length>120?'…':'')) : '…')+'"</p>'
+      // Their message — left bubble
+      +'<div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:10px">'
+      +'<div '+authorClick+'>'+avHtml+'</div>'
+      +'<div style="flex:1;background:rgba(80,150,200,.09);border:1px solid rgba(80,150,200,.20);border-radius:0 14px 14px 14px;padding:10px 13px">'
+      +'<div style="font-size:10px;font-weight:700;color:rgba(80,150,200,.80);font-family:\'Jost\',sans-serif;margin-bottom:5px">🌊 '+_escHtml(authorName)+'</div>'
+      +'<div style="font-size:13px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:var(--ink);line-height:1.55">"'+(r.preview?_escHtml(r.preview.slice(0,160)+(r.preview.length>160?'…':'')):'')+'"</div>'
       +'</div>'
-      // Your reply
-      +'<div class="bottle-reply-block">'
-      +'<div class="bottle-block-label" style="color:#1a6fa8">Tu respuesta</div>'
-      +'<p class="bottle-reply-text">'+_escHtml(r.reply||'')+'</p>'
+      +'</div>'
+      // My reply — right bubble
+      +'<div style="display:flex;gap:9px;align-items:flex-start;flex-direction:row-reverse">'
+      +_avInline(myAv, 28)
+      +'<div style="flex:1;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);border-radius:14px 0 14px 14px;padding:10px 13px;text-align:right">'
+      +'<div style="font-size:10px;font-weight:700;color:rgba(116,198,157,.80);font-family:\'Jost\',sans-serif;margin-bottom:5px">'+_escHtml(myName)+' (vos) 💚</div>'
+      +'<div style="font-size:13px;color:var(--ink);line-height:1.55">'+_escHtml(r.reply||'')+'</div>'
+      +'</div>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -7872,6 +8713,17 @@ async function _loadBottleStats(){
   }catch(e){}
 }
 
+function _bottleEmojiColor(mood){
+  var warm=['🤗','😊','🥰','😄','🎉','💛','☀️','🌻'];
+  var sad=['😢','😔','😰','😤','😞','😖','💔','🫂'];
+  var anx=['😬','😨','😥','😣','🤯','😓'];
+  if(warm.indexOf(mood)>=0) return {bg:'rgba(52,28,4,.94)',border:'rgba(222,162,36,.85)',glow:'rgba(222,162,36,.30)',strip:'rgba(222,162,36,.45)',label:'rgba(255,220,75,.97)'};
+  if(sad.indexOf(mood)>=0)  return {bg:'rgba(8,12,52,.94)',border:'rgba(110,128,228,.82)',glow:'rgba(110,128,228,.28)',strip:'rgba(110,128,228,.45)',label:'rgba(168,182,255,.97)'};
+  if(anx.indexOf(mood)>=0)  return {bg:'rgba(38,8,38,.94)',border:'rgba(192,80,200,.80)',glow:'rgba(192,80,200,.26)',strip:'rgba(192,80,200,.42)',label:'rgba(245,168,255,.97)'};
+  if(mood==='🌊')           return {bg:'rgba(4,24,52,.94)',border:'rgba(65,158,222,.82)',glow:'rgba(65,158,222,.28)',strip:'rgba(65,158,222,.45)',label:'rgba(140,210,255,.97)'};
+  return                           {bg:'rgba(8,28,20,.94)',border:'rgba(72,185,128,.80)',glow:'rgba(72,185,128,.26)',strip:'rgba(72,185,128,.42)',label:'rgba(120,240,185,.97)'};
+}
+
 async function pRenderBottle(){
   var _tok = _navToken;
   _renderFavWidget('bottleFavWidget');
@@ -7918,10 +8770,8 @@ async function pRenderBottle(){
     allBottles = myBottles.concat(filteredMock);
   }
 
-  // Hide bottles already replied to by this user — they move to "Mis respuestas" tab
-  allBottles = allBottles.filter(function(b){
-    return safeLS('get','velo_bottle_replied_'+b.id) !== '1';
-  });
+  // Mark (but do NOT hide) already-replied bottles — they stay visible, styled differently
+  // Replied bottles remain so multiple users can respond; user just can't reply again
 
   // Batch-fetch usernames for non-anon bottle authors not yet cached
   if(sbClient){ var _bUnknown = allBottles.filter(function(b){ return !b.anon && b.userId && !_uLook(b.userId); }).map(function(b){ return b.userId; }); if(_bUnknown.length){ try{ var _br = await sbClient.from('profiles').select('id,username').in('id',_bUnknown); if(_br.data) _br.data.forEach(function(p){ _uFill(p.id,p.username); }); }catch(e){} } }
@@ -7945,37 +8795,54 @@ async function pRenderBottle(){
     var actions;
     if(isOwn){
       actions = '<div style="display:flex;gap:7px;align-items:center">'
-        +'<span style="font-size:11px;color:var(--ink4);font-style:italic">Tu mensaje 🌊</span>'
-        +'<button data-del-btn="1" style="padding:4px 9px;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.2);border-radius:100px;color:rgba(255,120,120,.75);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pDeleteBottle(\''+b.id+'\')">🗑️</button>'
+        +'<span style="font-size:11px;color:rgba(255,255,255,.45);font-style:italic;font-family:\'Jost\',sans-serif">Tu mensaje 🌊</span>'
+        +'<button data-del-btn="1" style="padding:4px 10px;background:rgba(255,80,80,.14);border:1.5px solid rgba(255,80,80,.32);border-radius:100px;color:rgba(255,140,140,.90);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pDeleteBottle(\''+b.id+'\')">🗑️</button>'
         +'</div>';
     } else {
       actions = '<div style="display:flex;gap:7px;align-items:center">'
-        +'<button style="padding:5px 11px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.28);border-radius:100px;color:rgba(180,50,50,.9);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
+        +'<button style="padding:5px 11px;background:rgba(200,50,50,.14);border:1.5px solid rgba(200,50,50,.32);border-radius:100px;color:rgba(255,140,140,.88);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
         +(alreadyReplied
-          ? '<span style="font-size:11px;color:var(--sage2);font-weight:700">💛 Ya respondiste</span>'
-          : '<button style="padding:5px 11px;background:rgba(80,150,200,.12);border:1px solid rgba(80,150,200,.28);border-radius:100px;color:#1E5A80;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pOpenBottleReply('+_jsAttr(b.id)+','+_jsAttr(b.text.substring(0,120))+','+_jsAttr(b.userId||b.user_id||'')+','+_jsAttr(b.anon?'':''+( b.userName||''))+','+_jsAttr(b.anon?'':''+( b.userAv||''))+')">💌 Responder</button>')
+          ? '<span style="font-size:11px;color:rgba(116,198,157,.85);font-weight:700;font-family:\'Jost\',sans-serif">💛 Ya respondiste</span>'
+          : '<button style="padding:5px 14px;background:rgba(65,155,222,.22);border:1.5px solid rgba(65,155,222,.55);border-radius:100px;color:rgba(160,215,255,.96);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;box-shadow:0 2px 10px rgba(65,155,222,.20)" onclick="pOpenBottleReply('+_jsAttr(b.id)+','+_jsAttr(b.text.substring(0,120))+','+_jsAttr(b.userId||b.user_id||'')+','+_jsAttr(b.anon?'':''+( b.userName||''))+','+_jsAttr(b.anon?'':''+( b.userAv||''))+')">💌 Responder</button>')
         +'</div>';
     }
     var showAuthor = !b.anon && b.userName && !isOwn;
-    var authorHtml = showAuthor
-      ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;cursor:pointer" onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')">'
-        +_avInline(b.userAv||'🧑',24)
-        +'<div style="display:flex;flex-direction:column;line-height:1.2">'
-        +'<span style="font-size:11px;color:#1E5A80;font-weight:600">'+_escHtml(b.userName)+'</span>'
-        +(_uAt(b.userId||''))
-        +'</div>'
-        +'<span style="font-size:10px;color:var(--ink5)">· toca para ver perfil</span>'
-        +'</div>'
-      : (b.anon
-        ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
-          +'<span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:.3px">👤 Usuario Anónimo</span>'
-          +'</div>'
-        : '');
-    return '<div class="dark-bottle" id="bottle-'+b.id+'" style="animation-delay:'+i*.08+'s;border-left:3px solid rgba(80,150,200,.3)">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:20px">'+b.mood+'</span><span style="font-size:10px;color:var(--ink5)">'+relTime+'</span></div>'
-      +authorHtml
-      +'<p style="font-size:13px;color:var(--ink);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+b.text+'"</p>'
-      +'<div style="display:flex;align-items:center;justify-content:flex-end">'+actions+'</div></div>';
+    var bCol = _bottleEmojiColor(b.mood||'🌊');
+    var _bav = b.userAv || '';
+    var bAvHasImg = _bav && (_bav.startsWith('http')||_bav.startsWith('data:'));
+    var bAvIsEmoji = _bav && !bAvHasImg;
+    var myName = safeLS('get','velo_user_name') || '';
+    var authorNameHtml = isOwn
+      ? '<span style="font-size:11px;font-weight:700;color:'+bCol.label+'">'+(myName||'Tú')+'</span>'
+      : showAuthor
+        ? (bAvHasImg
+            ? '<img src="'+_escHtml(_bav)+'" style="width:15px;height:15px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:3px;border:1px solid '+bCol.border+'">'
+            : (bAvIsEmoji ? '<span style="font-size:12px;vertical-align:middle;margin-right:3px">'+_escHtml(_bav)+'</span>' : ''))
+          +'<span style="font-size:11px;font-weight:700;color:'+bCol.label+';cursor:pointer" onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')">'
+          +_escHtml(b.userName)+'</span>'
+          +(_uAt(b.userId||''))
+        : '<span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.38);letter-spacing:.2px">Anónimo/a</span>';
+    // Strip: only ONE element — avatar photo OR emoji avatar OR mood emoji. Never stack.
+    var stripInnerB = bAvHasImg
+      ? '<img src="'+_escHtml(_bav)+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2.5px solid '+bCol.border+';display:block;box-shadow:0 2px 12px '+bCol.glow+'">'
+      : bAvIsEmoji
+        ? '<div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.10);border:2px solid '+bCol.border+';display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 12px '+bCol.glow+'">'+_escHtml(_bav)+'</div>'
+        : '<span style="font-size:30px;line-height:1;filter:drop-shadow(0 0 8px '+bCol.glow+')">'+_escHtml(b.mood||'🌊')+'</span>';
+    return '<div class="dark-bottle'+(alreadyReplied?' bottle-already-replied':'')+'" id="bottle-'+b.id+'"'
+      +' style="animation-delay:'+i*.08+'s;position:relative;background:'+bCol.bg+';border:1.5px solid rgba(255,255,255,.07);border-radius:18px;box-shadow:0 4px 22px '+bCol.glow+',inset 0 0 0 1px '+bCol.border.replace(/[\d.]+\)$/,'0.18)')+';overflow:hidden;margin:0 0 10px;padding:0">'
+      // Absolute strip fills full card height on all platforms
+      +'<div style="position:absolute;left:0;top:0;bottom:0;width:64px;background:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center">'
+      +stripInnerB
+      +'</div>'
+      +'<div style="margin-left:64px;min-height:76px;padding:10px 12px">'
+      +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
+      +authorNameHtml
+      +(alreadyReplied?'<span style="font-size:9px;font-weight:700;color:rgba(116,198,157,.80);background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.28);border-radius:100px;padding:1px 7px;margin-left:auto">💌 Respondiste</span>'
+        :'<span style="margin-left:auto;font-size:9px;font-weight:700;color:'+bCol.label.replace(/[\d.]+\)$/,'0.55)')+';font-family:\'Jost\',sans-serif">'+relTime+'</span>')
+      +'</div>'
+      +'<p style="font-size:15px;color:rgba(255,255,255,.93);line-height:1.55;margin:0 0 9px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;letter-spacing:.01em">"'+_escHtml(b.text)+'"</p>'
+      +'<div style="display:flex;align-items:center;justify-content:flex-end">'+actions+'</div>'
+      +'</div></div>';
   }).join('');
 }
 
@@ -8171,22 +9038,34 @@ var _diaryEmojis = ['😊','😢','😰','😤','😴','🤔','💪','🌿','✨
 var _diaryPrivacyShown = false;
 
 function pInitDiary(){
+  var _now = new Date();
+  var _dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  var _meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var _diaStr = _dias[_now.getDay()]+', '+_now.getDate()+' de '+_meses[_now.getMonth()];
+  // Hero header date
+  var heroDate = document.getElementById('diaryHeroDate');
+  if(heroDate) heroDate.textContent = _diaStr;
+  // Write panel date
   var dateEl = document.getElementById('diaryDateLbl');
-  if(dateEl){ var d = new Date(); dateEl.textContent = _fmtDate(d.getTime()).split('·')[0].trim(); }
+  if(dateEl) dateEl.textContent = _now.getDate()+' de '+_meses[_now.getMonth()]+' '+_now.getFullYear();
+  var dateSubEl = document.getElementById('diaryDateSub');
+  if(dateSubEl) dateSubEl.textContent = '— '+_dias[_now.getDay()].toLowerCase();
   // Reset form state on each visit
   _selectedDiaryEmoji = '';
   var chosenEl = document.getElementById('diaryEmojiChosen');
   if(chosenEl) chosenEl.textContent = '';
   var titleEl = document.getElementById('diaryTitleInput');
   if(titleEl) titleEl.value = '';
-  // Show privacy notice once per session
-  if(!_diaryPrivacyShown){
-    _diaryPrivacyShown = true;
-    var banner = document.getElementById('diaryPrivacyBanner');
-    if(banner) banner.style.display = 'flex';
-  }
+  // Clear active mood pills
+  document.querySelectorAll('.diary-mood-pill').forEach(function(b){ b.classList.remove('active'); });
   _loadDiaryEntries();
   _initDiaryPromptPreview();
+  var _diaryTA = document.getElementById('diaryTa');
+  var _diaryCC = document.getElementById('diaryCharCount');
+  if(_diaryTA && _diaryCC){
+    _diaryTA.oninput = function(){ _diaryCC.textContent = this.value.length; };
+    _diaryCC.textContent = _diaryTA.value.length;
+  }
 }
 
 var _selectedDiaryEmoji = '';
@@ -8231,10 +9110,12 @@ function _openDiaryEmojiPicker(){
 
 function _setDiaryEmoji(emoji){
   _selectedDiaryEmoji = emoji;
-  var btn = document.getElementById('diaryEmojiBtn');
   var chosen = document.getElementById('diaryEmojiChosen');
-  if(btn) btn.textContent = '😊 Elegir emoji';
   if(chosen) chosen.textContent = emoji;
+  // Highlight active pill
+  document.querySelectorAll('.diary-mood-pill').forEach(function(b){
+    b.classList.toggle('active', b.textContent.trim() === emoji);
+  });
   var ov = document.getElementById('diaryEmojiPickerOv');
   if(ov) ov.remove();
 }
@@ -8267,23 +9148,26 @@ async function pSaveDiary(){
 
 function _renderDiaryEntryList(el, entries){
   if(!entries || !entries.length){
-    el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">📔</span><div class="p-empty-title">Aún no tenés entradas</div><div class="p-empty-sub">Este es tu espacio seguro. 🌙</div></div>';
+    el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">📔</span><div class="p-empty-title">Aún no tenés entradas</div><div class="p-empty-sub">Empezá hoy — es tu espacio seguro 🌙</div></div>';
     return;
   }
+  // Update stats whenever we render
+  _updateDiaryStats(entries);
   var sorted = entries.slice().sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
   el.innerHTML = sorted.map(function(e, i){
     var rawLabel = e.dateLabel || '';
     var dateOnly = rawLabel ? rawLabel.split('·')[0].trim() : new Date(Number(e.ts)).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
-    var emojiBadge = e.emoji ? '<span style="font-size:16px">'+e.emoji+'</span>' : '📜';
-    var titleLine = e.title ? '<div style="font-size:12px;color:var(--ink4);font-style:italic;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(e.title)+'</div>' : '';
+    var emo = e.emoji || '📜';
+    var preview = e.title ? e.title : (e.text ? e.text.replace(/\n/g,' ').slice(0,72) : '');
+    var previewHtml = preview ? '<div class="diary-row-preview">'+_escHtml(preview)+'</div>' : '';
     return '<div class="diary-row" onclick="pOpenDiaryEntry('+e.ts+')" style="animation-delay:'+i*.04+'s;cursor:pointer">'
       +'<div style="display:flex;align-items:center;gap:10px">'
-      +'<span style="font-size:20px;flex-shrink:0">'+emojiBadge+'</span>'
+      +'<span style="font-size:22px;flex-shrink:0;line-height:1">'+emo+'</span>'
       +'<div style="flex:1;min-width:0">'
       +'<div class="diary-row-date">'+_escHtml(dateOnly)+'</div>'
-      +titleLine
+      +previewHtml
       +'</div>'
-      +'<button onclick="event.stopPropagation();pDeleteDiary('+e.ts+')" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink4);padding:4px 6px;flex-shrink:0">🗑️</button>'
+      +'<button onclick="event.stopPropagation();pDeleteDiary('+e.ts+')" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink4);opacity:.5;padding:4px 6px;flex-shrink:0">🗑️</button>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -8318,6 +9202,50 @@ async function _loadDiaryEntries(){
 }
 
 var _diaryEntries = [];
+
+function _getDiaryStreak(entries){
+  if(!entries || !entries.length) return 0;
+  var msDay = 86400000;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var uniqueDays = {};
+  entries.forEach(function(e){
+    if(!e.ts) return;
+    var d = new Date(Number(e.ts)); d.setHours(0,0,0,0);
+    uniqueDays[d.getTime()] = true;
+  });
+  var streak = 0;
+  var check = today.getTime();
+  if(!uniqueDays[check]) check -= msDay;
+  while(uniqueDays[check]){ streak++; check -= msDay; }
+  return streak;
+}
+
+function _updateDiaryStats(entries){
+  var streak = _getDiaryStreak(entries);
+  var sv = document.getElementById('diaryStreakVal');
+  var ec = document.getElementById('diaryEntryCountEl');
+  if(sv) sv.textContent = streak;
+  if(ec) ec.textContent = entries ? entries.length : 0;
+}
+
+function _injectDiaryTemplate(type){
+  var ta = document.getElementById('diaryTa');
+  if(!ta) return;
+  var tpls = {
+    gratitud: 'Hoy estoy agradecido/a por:\n1. \n2. \n3. \n\nAlgo que me alegró hoy: \n\nUna persona a quien quiero dar las gracias: ',
+    reflexion: '¿Qué aprendí hoy?\n\n\n¿Qué podría haber hecho mejor?\n\n\n¿Cómo me siento en este momento?\n',
+    sueno: 'Soñé con...\n\n\nLo que sentí en el sueño:\n\n\nLo que podría significar:\n'
+  };
+  var text = tpls[type] || '';
+  if(!text) return;
+  ta.value = text;
+  ta.focus();
+  ta.setSelectionRange(text.length, text.length);
+  var cc = document.getElementById('diaryCharCount');
+  if(cc) cc.textContent = ta.value.length;
+  pToast('✨', type === 'gratitud' ? 'Plantilla de Gratitud' : type === 'reflexion' ? 'Plantilla de Reflexión' : 'Plantilla de Sueño');
+}
+
 function pOpenDiaryEntry(ts){
   var entries = _diaryEntries;
   if(!entries.length){ try{ entries = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){} }
@@ -10544,7 +11472,7 @@ function _happyPostCard(h, isOwn){
   var rxBar = _happyReactEmojis.map(function(e){
     var cnt = (h.reactions && h.reactions[e]) || 0;
     var active = myReacted === e;
-    return '<button onclick="pHappyReact(\''+h.id+'\',\''+e+'\')" style="padding:4px 9px;background:'+(active?'rgba(255,224,102,.35)':'rgba(255,255,255,.6)')+';border:1px solid '+(active?'rgba(255,200,50,.5)':'var(--border2)')+';border-radius:100px;font-size:12px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600;transition:all .15s">'+e+(cnt?' '+cnt:'')+'</button>';
+    return '<button onclick="pHappyReact(\''+h.id+'\',\''+e+'\')" style="padding:5px 12px;background:'+(active?'rgba(222,162,36,.45)':'rgba(222,162,36,.11)')+';border:1.5px solid '+(active?'rgba(222,162,36,.80)':'rgba(222,162,36,.30)')+';border-radius:100px;font-size:13px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s;box-shadow:'+(active?'0 2px 14px rgba(222,162,36,.32)':'none')+'">'+e+(cnt?' <span style="font-size:11px;color:rgba(255,218,70,.90)">'+cnt+'</span>':'')+'</button>';
   }).join('');
 
   // Comments
@@ -10565,9 +11493,9 @@ function _happyPostCard(h, isOwn){
         : '<div style="flex-shrink:0;cursor:pointer"'+cClickAttr+'>'+_avInline(c.av||'🧑',26)+'</div>';
       commHtml += '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">'
         + avHtml
-        +'<div style="background:var(--cream2);border-radius:0 12px 12px 12px;padding:7px 11px;flex:1;min-width:0">'
-        +'<div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:2px'+(cAnon?'':';cursor:pointer')+'"'+cClickAttr+'>'+_escHtml(c.name||'Usuario')+'</div>'
-        +'<div style="font-size:12px;color:var(--ink3);line-height:1.45;word-break:break-word">'+_escHtml(c.text)+'</div>'
+        +'<div style="background:rgba(222,162,36,.10);border-radius:0 12px 12px 12px;padding:7px 11px;flex:1;min-width:0;border-left:2px solid rgba(222,162,36,.42)">'
+        +'<div style="font-size:11px;font-weight:700;color:rgba(255,222,78,.90);margin-bottom:2px'+(cAnon?'':';cursor:pointer')+'"'+cClickAttr+'>'+_escHtml(c.name||'Usuario')+'</div>'
+        +'<div style="font-size:12px;color:rgba(255,255,255,.80);line-height:1.45;word-break:break-word">'+_escHtml(c.text)+'</div>'
         +'</div></div>';
     });
     if(!isOwn && commCount > 5){
@@ -10595,7 +11523,7 @@ function _happyPostCard(h, isOwn){
     avatarHtml = '<div style="font-size:26px;width:44px;height:44px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>';
   }
 
-  var canClick = !isOwn && h.userId && h.userId !== 'anon' && !h.anon;
+  var canClick = !!(h.userId && h.userId !== 'anon' && !h.anon);
   var authorClick = canClick ? ' style="cursor:pointer" onclick="pQuickProfile('+_jsAttr(h.name||'Usuario')+','+_jsAttr(h.av||'')+',\'\',\'\','+_jsAttr(h.userId||'')+')"' : '';
   return '<div class="happy-card" data-id="'+h.id+'">'
     // header
@@ -10611,8 +11539,15 @@ function _happyPostCard(h, isOwn){
       : '<button onclick="pReportContent(\'happy\','+_jsAttr(h.id)+','+_jsAttr((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(180,50,50,.88);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0">🚩</button>')
     +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap;flex-shrink:0">⏳ '+timeLeft+'</span>' : '')
     +'</div>'
-    // photo
-    +(h.photo ? '<img src="'+h.photo+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px;display:block;margin-bottom:14px;cursor:zoom-in">' : '')
+    // photo with tap-to-zoom hint overlay
+    +(h.photo
+      ? '<div style="position:relative;margin-bottom:14px;border-radius:12px;overflow:hidden">'
+        +'<img src="'+h.photo+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:260px;object-fit:cover;display:block;cursor:zoom-in">'
+        +'<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.50));padding:18px 12px 8px;pointer-events:none;display:flex;align-items:center;justify-content:center">'
+        +'<span style="background:rgba(0,0,0,.42);color:rgba(255,255,255,.82);font-size:9.5px;font-weight:700;letter-spacing:.4px;border-radius:100px;padding:3px 11px;font-family:Jost,sans-serif;backdrop-filter:blur(6px)">🔍 Toca para ampliar</span>'
+        +'</div>'
+        +'</div>'
+      : '')
     // text
     +(h.text ? '<p style="font-size:16px;color:var(--ink2);line-height:1.7;margin-bottom:14px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500">"'+_escHtml(h.text)+'"</p>' : '')
     // reactions
@@ -10622,7 +11557,7 @@ function _happyPostCard(h, isOwn){
     // comment input
     +'<div style="display:flex;gap:8px;align-items:center">'
     +'<input id="cmt-'+h.id+'" class="p-input" style="flex:1;font-size:12px;padding:7px 12px;height:auto;border-radius:100px" placeholder="Dejar un comentario…" maxlength="120" onkeydown="if(event.key===\'Enter\')pHappyComment(\''+h.id+'\')">'
-    +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:7px 12px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.35);border-radius:100px;font-size:12px;cursor:pointer;color:rgba(160,230,195,.95);font-family:\'Jost\',sans-serif;font-weight:700;flex-shrink:0;white-space:nowrap">Enviar 💬</button>'
+    +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:7px 14px;background:linear-gradient(135deg,rgba(222,162,36,.48),rgba(200,136,16,.36));border:1.5px solid rgba(222,162,36,.72);border-radius:100px;font-size:12px;cursor:pointer;color:rgba(255,228,82,.97);font-family:\'Jost\',sans-serif;font-weight:700;flex-shrink:0;white-space:nowrap;box-shadow:0 2px 14px rgba(222,162,36,.24)">Enviar ✨</button>'
     +'</div>'
     +(safeLS('get','velo_incognito')==='true' ? '<div style="font-size:10.5px;color:var(--ink5);line-height:1.5;margin-top:6px;font-style:italic">En tu perfil tenés activo el modo incógnito. Si querés comentar con tu perfil público, desactivá esa opción.</div>' : '')
     +'</div>';
@@ -13133,26 +14068,34 @@ function _updateFavBadge(){
 
 function _contactCard(id, name, av, uname, pInfo, unread, opts){
   var canChat = pInfo.on && pInfo.label !== 'Ocupado/a';
-  var sz = opts.small ? 38 : 44;
-  return '<div data-fav-name="'+_escHtml(name||'')+'" data-fav-uname="'+_escHtml(uname||'')+'" style="display:flex;align-items:center;gap:10px;padding:'+(opts.small?'10px 12px':'12px')+';background:var(--cream);border-radius:'+(opts.small?'14':'16')+'px;margin-bottom:8px;'+(opts.small?'border:1.5px solid rgba(116,198,157,.18)':'box-shadow:var(--shadow-sm)')+'">'
+  var sz = opts.small ? 40 : 48;
+  var onlineColor = pInfo.on ? (pInfo.label==='Disponible'?'rgba(80,220,130,.95)':'rgba(220,170,60,.95)') : 'rgba(180,180,180,.45)';
+  var onlineBg    = pInfo.on ? (pInfo.label==='Disponible'?'rgba(30,140,80,.25)':'rgba(180,130,30,.22)') : 'rgba(255,255,255,.06)';
+  return '<div data-fav-name="'+_escHtml(name||'')+'" data-fav-uname="'+_escHtml(uname||'')+'" '
+    +'style="display:flex;align-items:center;gap:12px;padding:14px 14px 14px 14px;'
+    +'background:rgba(8,26,18,.85);border:1.5px solid rgba(116,198,157,.16);border-radius:18px;margin-bottom:10px;'
+    +'box-shadow:0 3px 18px rgba(0,0,0,.25),inset 0 0 0 1px rgba(116,198,157,.08)">'
     +'<div style="position:relative;flex-shrink:0;cursor:pointer" onclick="pQuickProfile('+_jsAttr(name||'Usuario')+','+_jsAttr(av||'🧑')+',\'\',\'\','+_jsAttr(id)+')">'
-    +_avInline(av||'🧑', sz)
-    +'<span style="position:absolute;bottom:0;right:0;width:'+(opts.small?'10':'11')+'px;height:'+(opts.small?'10':'11')+'px;border-radius:50%;background:'+pInfo.color+';border:2px solid var(--cream)"></span>'
+    +'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;border:2px solid rgba(116,198,157,.35);overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(116,198,157,.14)">'+_avInline(av||'🧑', sz)+'</div>'
+    +'<span style="position:absolute;bottom:1px;right:1px;width:12px;height:12px;border-radius:50%;background:'+onlineColor+';border:2.5px solid rgba(8,26,18,.95);box-shadow:0 0 6px '+onlineColor+'"></span>'
     +'</div>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:'+(opts.small?'13':'14')+'px;font-weight:700;color:var(--ink)">'+_escHtml(name||'Usuario')+'</div>'
-    +(uname?'<div style="font-size:10px;color:var(--sage3);font-weight:600;margin-bottom:1px">'+_escHtml(uname)+'</div>':'')
-    +'<div style="font-size:11px;color:'+(pInfo.on?pInfo.color:'var(--ink5)')+'">'+(pInfo.on?'● ':'○ ')+pInfo.label+'</div>'
-    +(opts.motto?'<p style="font-size:11px;color:var(--ink4);line-height:1.4;margin:3px 0 0;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml(opts.motto)+'"</p>':'')
+    +'<div style="font-size:15px;font-weight:800;color:rgba(220,245,230,.95);font-family:Jost,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(name||'Usuario')+'</div>'
+    +(uname?'<div style="font-size:11px;color:rgba(116,198,157,.80);font-weight:600;margin-bottom:2px;font-family:Jost,sans-serif">'+_escHtml(uname)+'</div>':'')
+    +'<div style="display:inline-flex;align-items:center;gap:5px;background:'+onlineBg+';border-radius:100px;padding:2px 8px 2px 6px;margin-top:1px">'
+    +'<span style="width:6px;height:6px;border-radius:50%;background:'+onlineColor+';flex-shrink:0;box-shadow:0 0 4px '+onlineColor+'"></span>'
+    +'<span style="font-size:10px;font-weight:700;color:'+onlineColor+';font-family:Jost,sans-serif;letter-spacing:.2px">'+pInfo.label+'</span>'
     +'</div>'
-    +'<div style="display:flex;gap:5px;flex-shrink:0">'
+    +(opts.motto?'<p style="font-size:11.5px;color:rgba(180,220,200,.65);line-height:1.4;margin:5px 0 0;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml(opts.motto)+'"</p>':'')
+    +'</div>'
+    +'<div style="display:flex;gap:6px;flex-shrink:0">'
     +(canChat
-      ?'<button onclick="pOpenDM('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" style="padding:6px 11px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer">💬</button>'
-      :'<button disabled style="padding:6px 10px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;font-size:12px;color:var(--ink5);cursor:not-allowed;opacity:.4">💬</button>')
-    +(opts.showMail?'<button onclick="pLeaveOfflineMsg('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" style="padding:6px 9px;background:rgba(200,165,100,.08);border:1px solid rgba(200,165,100,.25);border-radius:10px;font-size:12px;cursor:pointer" title="Buzón">✉️</button>':'')
-    +(opts.showRemove?'<button onclick="pRemoveFav(\''+id+'\');pRenderContacts()" style="padding:6px 9px;background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);border-radius:10px;font-size:12px;cursor:pointer">⭐</button>':'')
-    +(opts.showBlock?'<button onclick="pBlockUser('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" style="padding:6px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:12px;cursor:pointer" title="Bloquear">🚫</button>':'')
-    +(opts.showAddFav?'<button onclick="pAddFav('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" style="padding:6px 9px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.3);border-radius:10px;font-size:12px;cursor:pointer" title="Agregar favorito">⭐</button>':'')
+      ?'<button onclick="pOpenDM('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Chat directo" style="width:38px;height:38px;border-radius:12px;background:rgba(30,140,80,.32);border:1.5px solid rgba(116,198,157,.55);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">💬</button>'
+      :'<button disabled title="No disponible" style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.10);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:not-allowed;opacity:.35">💬</button>')
+    +(opts.showMail?'<button onclick="pLeaveOfflineMsg('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Buzón privado" style="width:38px;height:38px;border-radius:12px;background:rgba(200,160,60,.18);border:1.5px solid rgba(220,175,70,.45);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">✉️</button>':'')
+    +(opts.showRemove?'<button onclick="pRemoveFav(\''+id+'\');pRenderContacts()" title="Quitar favorito" style="width:38px;height:38px;border-radius:12px;background:rgba(240,190,40,.18);border:1.5px solid rgba(240,190,40,.50);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">⭐</button>':'')
+    +(opts.showBlock?'<button onclick="pBlockUser('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" title="Bloquear" style="width:38px;height:38px;border-radius:12px;background:rgba(200,40,40,.12);border:1.5px solid rgba(200,40,40,.35);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">🚫</button>':'')
+    +(opts.showAddFav?'<button onclick="pAddFav('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" title="Agregar favorito" style="width:38px;height:38px;border-radius:12px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.45);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">⭐</button>':'')
     +'</div></div>';
 }
 
@@ -13223,7 +14166,7 @@ async function pRenderContacts(){
 
   // Build online list (favs + fans, deduped, only online)
   var _onlineMap = {};
-  favs.forEach(function(f){ var pi=_presenceInfo(f.id); if(pi.on) _onlineMap[f.id]={id:f.id,name:f.name,av:f.av||'🧑',uname:usernameMap[f.id]||f.username||'',pInfo:pi,unread:unreadIds[f.id]||0,isFav:true}; });
+  favs.forEach(function(f){ var pi=_presenceInfo(f.id); if(pi.on){ var _pm=profileMap[f.id]||{}; _onlineMap[f.id]={id:f.id,name:_pm.name||f.name,av:_pm.av||f.av||'🧑',uname:usernameMap[f.id]||f.username||'',pInfo:pi,unread:unreadIds[f.id]||0,isFav:true}; } });
   favMeRows.forEach(function(r){ var pi=_presenceInfo(r.user_id); if(pi.on&&!_onlineMap[r.user_id]){ var _fp=profileMap[r.user_id]||{}; _onlineMap[r.user_id]={id:r.user_id,name:_fp.name||usernameMap[r.user_id]||'Usuario',av:_fp.av||'🧑',uname:usernameMap[r.user_id]||'',pInfo:pi,unread:0,isFav:false}; } });
   var onlineList = Object.keys(_onlineMap).map(function(k){ return _onlineMap[k]; });
 
@@ -13432,11 +14375,8 @@ async function _renderFavWidget(containerId){
         +'<div style="font-size:10px;color:var(--ink3);font-weight:600;max-width:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(displayName.split(' ')[0])+'</div>'
         +'</div>';
     }).join('')
-    +'<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;cursor:pointer" onclick="pGoTo(\'contacts\')">'
-    +'<div style="width:38px;height:38px;border-radius:50%;background:var(--cream2);border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:16px">👥</div>'
-    +'<div style="font-size:10px;color:var(--ink3);font-weight:600">Ver todos</div>'
     +'</div>'
-    +'</div>'
+    +'<button onclick="pGoTo(\'contacts\')" style="width:100%;margin-top:8px;padding:10px 16px;background:linear-gradient(135deg,rgba(116,198,157,.13),rgba(116,198,157,.07));border:1.5px solid rgba(116,198,157,.28);border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:\'Jost\',sans-serif;font-size:11.5px;font-weight:700;color:var(--sage3);letter-spacing:.3px;transition:all .18s" onmouseenter="this.style.background=\'linear-gradient(135deg,rgba(116,198,157,.20),rgba(116,198,157,.12))\'" onmouseleave="this.style.background=\'linear-gradient(135deg,rgba(116,198,157,.13),rgba(116,198,157,.07))\'"><span style="font-size:14px">👥</span> Ver todos mis contactos</button>'
     +'</div>';
 }
 
@@ -14068,7 +15008,7 @@ function _showDMToast(fromId, fromName, fromAv, text){
     banner.remove();
     // Back to guardian chat if this message is from the active guardian session
     if(_inActiveChat && _gcPeer && _gcPeer.id === fromId){
-      pGoTo('pg-guardian-chat');
+      pGoTo('guardian-chat');
       return;
     }
     // Back to DM chat if already in an active DM with this peer
@@ -16873,12 +17813,18 @@ function _adminTabGestion(panel){
     +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:14px;margin-bottom:18px">'
     +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Usuarios que se conectaron a la app cada día (últimos 14 días).</p>'
     +'<div id="adminDailyUsersChart"><div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando…</div></div>'
+    +'</div>'
+    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(231,76,60,.7);margin-bottom:10px">🧹 LIMPIAR CHATS DE SALAS</div>'
+    +'<div style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
+    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">Eliminá todos los mensajes de una sala de chat. Esta acción no se puede deshacer.</p>'
+    +'<div id="adminCircleChatList"><div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando salas…</div></div>'
     +'</div>';
   pAdminRenderNewsList();
   _renderAdminAITasks();
   _adminLoadDiamanteRewards();
   _adminLoadSolidarityRequests();
   _adminLoadDailyActiveUsers();
+  _adminLoadCircleChats();
 }
 
 async function _adminLoadDiamanteRewards(){
@@ -17027,6 +17973,106 @@ async function _adminLoadDailyActiveUsers(){
   }catch(e){
     el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Error al cargar datos.</div>';
   }
+}
+
+// ── ADMIN: Limpiar chats de salas ─────────────────────────────────────
+var _officialCircles = [
+  { id:'c1', name:'Manejo de Ansiedad', emoji:'🌊' },
+  { id:'c2', name:'Duelo y Pérdida',    emoji:'🌙' },
+  { id:'c3', name:'Crianza Consciente', emoji:'🌱' },
+  { id:'c4', name:'Trastornos del Sueño', emoji:'😴' },
+  { id:'c5', name:'Autoestima',          emoji:'✨' }
+];
+
+async function _adminLoadCircleChats(){
+  var el = document.getElementById('adminCircleChatList');
+  if(!el) return;
+  _initSupabase();
+  if(!sbClient){ el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+
+  // Count messages per circle for official ones
+  var officialRows = _officialCircles.map(function(c){ return {id:c.id,name:c.name,emoji:c.emoji,official:true,count:null}; });
+  var userCircles = [];
+
+  try{
+    var ucRes = await sbClient.from('circles').select('id,name,emoji').eq('official',false).order('created_at',{ascending:false}).limit(100);
+    userCircles = (ucRes.data||[]).map(function(r){ return {id:r.id,name:r.name||'Sin nombre',emoji:r.emoji||'💬',official:false,count:null}; });
+  }catch(e){}
+
+  // Batch-count messages for each circle
+  var allCircles = officialRows.concat(userCircles);
+  await Promise.all(allCircles.map(async function(c){
+    try{
+      var r = await sbClient.from('circle_messages').select('id',{count:'exact',head:true}).eq('circle_id',c.id);
+      c.count = r.count || 0;
+    }catch(e){ c.count = '?'; }
+  }));
+
+  var _btnStyle = 'font-size:10px;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;white-space:nowrap;';
+
+  el.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:8px">🛡️ SALAS OFICIALES</div>'
+    + officialRows.map(function(c){
+        return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+          +'<span style="font-size:18px">'+c.emoji+'</span>'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(c.name)+'</div>'
+          +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+c.count+' mensaje'+(c.count!==1?'s':'')+'</div>'
+          +'</div>'
+          +(c.count > 0
+            ? '<button onclick="pAdminClearCircleChat(\''+c.id+'\',\''+_escHtml(c.name)+'\')" style="'+_btnStyle+'background:rgba(231,76,60,.18);border:1px solid rgba(231,76,60,.35);color:rgba(255,130,130,.9)">🗑️ Limpiar</button>'
+            : '<span style="font-size:10px;color:rgba(255,255,255,.2)">Vacío</span>')
+          +'</div>';
+      }).join('')
+    + (userCircles.length
+        ? '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin:14px 0 8px">👥 CÍRCULOS DE USUARIOS</div>'
+          + userCircles.map(function(c){
+              return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+                +'<span style="font-size:18px">'+c.emoji+'</span>'
+                +'<div style="flex:1;min-width:0">'
+                +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(c.name)+'</div>'
+                +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+c.count+' mensaje'+(c.count!==1?'s':'')+'</div>'
+                +'</div>'
+                +(c.count > 0
+                  ? '<button onclick="pAdminClearCircleChat(\''+c.id+'\',\''+_escHtml(c.name)+'\')" style="'+_btnStyle+'background:rgba(231,76,60,.18);border:1px solid rgba(231,76,60,.35);color:rgba(255,130,130,.9)">🗑️ Limpiar</button>'
+                  : '<span style="font-size:10px;color:rgba(255,255,255,.2)">Vacío</span>')
+                +'</div>';
+            }).join('')
+        : '')
+    + '<div style="margin-top:12px">'
+    + '<button onclick="pAdminClearAllOfficialChats()" style="'+_btnStyle+'width:100%;padding:9px;background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.25);color:rgba(255,130,130,.75)">🧹 Limpiar TODAS las salas oficiales</button>'
+    + '</div>';
+}
+
+async function pAdminClearCircleChat(circleId, circleName){
+  if(!confirm('¿Eliminar TODOS los mensajes de "'+circleName+'"?\n\nEsta acción no se puede deshacer.')) return;
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión a Supabase'); return; }
+  try{
+    var res = await sbClient.from('circle_messages').delete().eq('circle_id', circleId);
+    if(res.error) throw res.error;
+    // Clear local cache too
+    safeLS('del', 'velo_circle_'+circleId);
+    pToast('🗑️','Chat "'+circleName+'" limpiado');
+    _adminLoadCircleChats();
+  }catch(e){ pToast('❌','Error: '+e.message); }
+}
+
+async function pAdminClearAllOfficialChats(){
+  if(!confirm('¿Eliminar TODOS los mensajes de las 5 salas oficiales de Velo?\n\nEsta acción no se puede deshacer.')) return;
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión a Supabase'); return; }
+  var errors = [];
+  for(var i=0; i<_officialCircles.length; i++){
+    var c = _officialCircles[i];
+    try{
+      var res = await sbClient.from('circle_messages').delete().eq('circle_id', c.id);
+      if(res.error) errors.push(c.name);
+      safeLS('del', 'velo_circle_'+c.id);
+    }catch(e){ errors.push(c.name); }
+  }
+  if(errors.length) pToast('⚠️','Error en: '+errors.join(', '));
+  else pToast('🧹','Todas las salas oficiales limpiadas');
+  _adminLoadCircleChats();
 }
 
 // ── NEW: Warn user ────────────────────────────────────────────────────
@@ -18892,20 +19938,44 @@ async function _renderHomeWeekMoodGraph(){
       days.push({ dayName:dayNames[d.getDay()], mood:mood, isToday:i===0 });
     }
     return days.map(function(d){
-      var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.5)') : 'rgba(116,198,157,.60)';
-      var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.1)') : 'rgba(116,198,157,.12)';
-      var ring  = d.isToday ? 'border:2.5px solid '+color+';box-shadow:0 0 8px '+color+';' : 'border:1.5px solid '+color+';';
-      var emoji = d.mood ? d.mood.emoji : '·';
+      var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.65)') : (d.isToday ? 'rgba(116,198,157,.80)' : 'rgba(116,198,157,.30)');
+      var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.18)') : (d.isToday ? 'rgba(116,198,157,.15)' : 'rgba(255,255,255,.05)');
+      var shadow = d.mood ? 'box-shadow:0 2px 10px '+color+';' : (d.isToday ? 'box-shadow:0 0 10px rgba(116,198,157,.35);' : '');
+      var ring  = d.isToday ? 'border:2.5px solid '+color+';' : (d.mood ? 'border:2px solid '+color+';' : 'border:1.5px solid rgba(116,198,157,.20);');
+      var emoji = d.mood ? d.mood.emoji : (d.isToday ? '✦' : '·');
+      var todayEmptyStyle = (d.isToday && !d.mood) ? 'animation:moodDayPulse 2.2s ease-in-out infinite;' : '';
+      var emojiSz = d.mood ? '20' : (d.isToday ? '14' : '10');
       var cls   = 'mood-day-circle'+(d.mood?'':' mood-day-empty')+(d.isToday?' mood-day-today':'');
-      return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:'Sin registro')+'">'
-        +'<div class="'+cls+'" style="width:34px;height:34px;border-radius:50%;'+ring+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'17':'11')+'px;transition:.2s">'+emoji+'</div>'
-        +'<span style="font-size:8px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:(d.isToday?'Registrá tu ánimo de hoy':'Sin registro'))+'">'
+        +'<div class="'+cls+'" style="width:40px;height:40px;border-radius:50%;'+ring+shadow+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+emojiSz+'px;transition:.2s;'+todayEmptyStyle+'">'+emoji+'</div>'
+        +'<span style="font-size:8.5px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
         +'</div>';
     }).join('');
   }
 
+  // Helper: count days logged this week and build streak message
+  function _weekStreakHtml(sbMap){
+    var loggedCount = 0;
+    var streak = 0;
+    var streakBroken = false;
+    for(var _si=0; _si<7; _si++){
+      var _sd = new Date(today.getFullYear(), today.getMonth(), today.getDate()-_si);
+      var _sk = _sd.getFullYear()+'-'+String(_sd.getMonth()+1).padStart(2,'0')+'-'+String(_sd.getDate()).padStart(2,'0');
+      var _sm = null;
+      try{ _sm = JSON.parse(safeLS('get','velo_mood_'+_sk)||'null'); }catch(e){}
+      if(!_sm && sbMap && sbMap[_sk]) _sm = sbMap[_sk];
+      if(_sm && _sm.emoji) loggedCount++;
+      if(!streakBroken){ if(_sm && _sm.emoji) streak++; else if(_si > 0) streakBroken = true; }
+    }
+    if(!loggedCount) return '<div style="text-align:center;padding:4px 0 2px;font-size:10.5px;color:rgba(255,255,255,.38);font-family:Jost,sans-serif;font-style:italic">Registrá cómo te sentís para ver tu historial</div>';
+    var _msg = streak >= 5 ? '🔥 '+streak+' días seguidos — ¡imparable!' : streak >= 3 ? '🔥 '+streak+' días seguidos' : streak >= 2 ? '✨ '+streak+' días seguidos esta semana' : loggedCount >= 3 ? '💚 '+loggedCount+' días registrados esta semana' : '💚 Registraste '+loggedCount+' día'+(loggedCount>1?'s':'')+' esta semana';
+    return '<div style="text-align:center;padding:5px 0 2px;font-size:10.5px;font-weight:700;color:rgba(116,198,157,.80);font-family:Jost,sans-serif;letter-spacing:.2px">'+_msg+'</div>';
+  }
+
   // Render immediately from localStorage (instant, no waiting)
   container.innerHTML = _buildGraphHtml(null);
+  var _streakEl = document.getElementById('homeWeekStreak');
+  if(_streakEl) _streakEl.innerHTML = _weekStreakHtml(null);
 
   // Then silently update from Supabase in background
   var _months = {};
@@ -18922,6 +19992,8 @@ async function _renderHomeWeekMoodGraph(){
   // Only re-render if Supabase added data not in localStorage
   if(Object.keys(_sbMap).length > 0 && document.getElementById('homeWeekMoodGraph')){
     document.getElementById('homeWeekMoodGraph').innerHTML = _buildGraphHtml(_sbMap);
+    var _streakElSb = document.getElementById('homeWeekStreak');
+    if(_streakElSb) _streakElSb.innerHTML = _weekStreakHtml(_sbMap);
   }
 }
 
@@ -19299,6 +20371,7 @@ function pCloseWeeklySummary(){
 
 // ── AMBIENT SOUNDS (Web Audio API — real recorded files) ─────
 var _ambCtx = null, _ambSource = null, _ambGain = null, _ambLfo = null, _ambLfo2 = null, _ambActive = null;
+var _ambPlayToken = 0; // increment to cancel in-flight pPlayAmbient
 var _AMB_META = { lluvia:{icon:'🌧️',label:'Lluvia'}, bosque:{icon:'🌲',label:'Bosque'}, fuego:{icon:'🔥',label:'Fuego'}, mar:{icon:'🌊',label:'Mar'} };
 var _ambCache = {}; // decoded AudioBuffer cache
 
@@ -19306,6 +20379,7 @@ var _AMB_UNLOCK_SRC = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKw
 
 async function pPlayAmbient(type){
   pStopAmbient(true);
+  var _myToken = ++_ambPlayToken;
   try{
     // Create / resume AudioContext SYNCHRONOUSLY — must stay in the user-gesture
     // call stack (before any await) so iOS grants media-audio privileges and
@@ -19323,8 +20397,10 @@ async function pPlayAmbient(type){
       _silSrc.connect(_ambCtx.destination);
       _silSrc.start(0);
     }catch(e){}
+    if(_ambPlayToken !== _myToken){ _ambSource=null; return; }
     // Now it's safe to await (gesture chain already satisfied above)
     if(_ambCtx.state === 'suspended') await _ambCtx.resume();
+    if(_ambPlayToken !== _myToken) return;
     var ctx = _ambCtx;
 
     // Show loading state on active button
@@ -19334,9 +20410,12 @@ async function pPlayAmbient(type){
     // Use cached buffer or fetch + decode
     if(!_ambCache[type]){
       var resp = await fetch('sounds/'+type+'.mp3', {cache:'force-cache'});
+      if(_ambPlayToken !== _myToken) return;
       if(!resp.ok) throw new Error('Archivo no encontrado');
       var arrayBuf = await resp.arrayBuffer();
+      if(_ambPlayToken !== _myToken) return;
       _ambCache[type] = await ctx.decodeAudioData(arrayBuf);
+      if(_ambPlayToken !== _myToken) return;
     }
 
     // Restore button opacity
@@ -19362,6 +20441,7 @@ async function pPlayAmbient(type){
 }
 
 function pStopAmbient(silent){
+  _ambPlayToken++;
   try{ if(_ambSource){_ambSource.stop();_ambSource.disconnect();_ambSource=null;} }catch(e){}
   try{ if(_ambGain){_ambGain.disconnect();_ambGain=null;} }catch(e){}
   _ambLfo=null; _ambLfo2=null;
@@ -19393,6 +20473,210 @@ function _updateAmbientUI(){
   var nameEl=document.getElementById('ambientPlayerName');
   if(iconEl) iconEl.textContent=meta.icon;
   if(nameEl) nameEl.textContent=meta.label+' — reproduciendo';
+}
+
+// ── MEDITACIÓN ────────────────────────────────────────────────
+var _MEDITATIONS = [
+  { id:'respira', emoji:'🌬️', title:'Respiración Consciente', duration:'5 min', durationMs:5*60*1000,
+    steps:[
+      {t:0,    text:'Encontrá una postura cómoda. Cerrá los ojos suavemente.'},
+      {t:12000, text:'Llevá tu atención a la respiración. Solo observá.'},
+      {t:28000, text:'Inhalá profundo por la nariz durante 4 segundos...'},
+      {t:38000, text:'Retenéla suavemente durante 7 segundos...'},
+      {t:52000, text:'Exhalá lentamente por la boca durante 8 segundos...'},
+      {t:68000, text:'Muy bien. Volvé a inhalar...'},
+      {t:80000, text:'Retené con suavidad...'},
+      {t:94000, text:'Exhalá soltando toda la tensión...'},
+      {t:115000, text:'Sentís cómo tu cuerpo se afloja con cada respiración.'},
+      {t:140000, text:'Inhalá nuevamente... con calma...'},
+      {t:155000, text:'Retenéla... y soltá todo...'},
+      {t:185000, text:'Cada vez más relajado/a. Tu mente se aquieta.'},
+      {t:220000, text:'Una respiración más. Inhalá todo lo que necesitás...'},
+      {t:240000, text:'Y soltá. Quedáte en este silencio interior.'},
+      {t:270000, text:'Cuando estés listo/a, abrí los ojos suavemente. ✨'}
+    ]
+  },
+  { id:'mar', emoji:'🌊', title:'Viaje al Mar Interior', duration:'10 min', durationMs:10*60*1000,
+    steps:[
+      {t:0,     text:'Cerrá los ojos. Dejá que el cuerpo se asiente.'},
+      {t:15000, text:'Imaginá que estás frente al mar. Sentís la brisa suave.'},
+      {t:35000, text:'Escuchás el sonido de las olas... entrando y saliendo...'},
+      {t:60000, text:'Con cada ola que llega, traés calma hacia adentro.'},
+      {t:90000, text:'Con cada ola que se va, soltás lo que ya no necesitás.'},
+      {t:120000, text:'Sentís la arena tibia bajo tus pies. Estás a salvo.'},
+      {t:160000, text:'El mar te recuerda que todo fluye. Nada es permanente.'},
+      {t:200000, text:'Dejáte llevar por este ritmo suave... ola a ola...'},
+      {t:250000, text:'Respirás profundo. El aire salado te limpia por dentro.'},
+      {t:320000, text:'Sos parte de algo más grande. Sentís esa conexión.'},
+      {t:390000, text:'El mar sigue... tú seguís... todo está bien.'},
+      {t:470000, text:'Poco a poco, empezás a volver. Sentís tu cuerpo.'},
+      {t:530000, text:'Movés suavemente los dedos. Respirás profundo.'},
+      {t:570000, text:'Abrí los ojos cuando quieras. Llevás el mar dentro. 🌊'}
+    ]
+  },
+  { id:'tierra', emoji:'🌿', title:'Conexión con la Tierra', duration:'15 min', durationMs:15*60*1000,
+    steps:[
+      {t:0,     text:'Sentate con los pies apoyados en el suelo. Cerrá los ojos.'},
+      {t:20000, text:'Sentís el peso de tu cuerpo. La tierra te sostiene.'},
+      {t:45000, text:'Imaginá raíces que bajan desde tus pies hacia la tierra.'},
+      {t:75000, text:'Cada respiración te conecta más con la calma de la tierra.'},
+      {t:110000, text:'Escaneá tu cuerpo desde los pies... suavemente...'},
+      {t:150000, text:'Tus piernas... tu abdomen... tu pecho... tus hombros...'},
+      {t:195000, text:'Tu cuello... tu cara... toda la tensión se disuelve.'},
+      {t:240000, text:'Sentís la tierra firme debajo de vos. Nada puede desequilibrarte.'},
+      {t:300000, text:'Inhalá energía verde de la naturaleza. Exhalá lo que pesa.'},
+      {t:370000, text:'Sos parte de un ciclo eterno. Naciste de esta tierra.'},
+      {t:450000, text:'Sentís paz. Una paz que no depende de nada externo.'},
+      {t:540000, text:'Llevá esta calma a cada parte de tu cuerpo.'},
+      {t:640000, text:'Tu mente descansa. Tu corazón late tranquilo.'},
+      {t:740000, text:'Comenzás a volver al presente. Sintiendo cada respiración.'},
+      {t:840000, text:'Abrí los ojos lentamente. Seguís conectado/a a la tierra. 🌿'}
+    ]
+  },
+  { id:'presencia', emoji:'☁️', title:'Presencia Plena', duration:'20 min', durationMs:20*60*1000,
+    steps:[
+      {t:0,     text:'Encontrá una posición cómoda. Dejá que el cuerpo descanse.'},
+      {t:25000, text:'No hay nada que hacer. Solo estar aquí, ahora.'},
+      {t:60000, text:'Observá tus pensamientos como nubes pasando en el cielo.'},
+      {t:100000, text:'No los sigas. Solo observálos venir y irse.'},
+      {t:150000, text:'Tu conciencia es el cielo. Los pensamientos son las nubes.'},
+      {t:210000, text:'Respirás. El momento presente es el único que existe.'},
+      {t:280000, text:'¿Qué sentís en este instante? Solo observá sin juzgar.'},
+      {t:360000, text:'Si tu mente se va, gentilmente volvéla a este momento.'},
+      {t:450000, text:'Sentís el aire. Sentís el cuerpo. Estás completamente acá.'},
+      {t:550000, text:'La paz que buscás ya está en vos. Siempre estuvo.'},
+      {t:660000, text:'Cada momento es completo en sí mismo. No falta nada.'},
+      {t:780000, text:'Seguís respirando. Seguís presente. Seguís vos.'},
+      {t:900000, text:'Dejá que la calma se expanda por cada célula de tu ser.'},
+      {t:1050000, text:'Sos testigo de tu propia vida. Con compasión y sin juicio.'},
+      {t:1150000, text:'Comenzás a traer la conciencia de vuelta. Poco a poco.'},
+      {t:1160000, text:'Mové suavemente los dedos. Los pies. Respirá profundo.'},
+      {t:1175000, text:'Abrí los ojos. Llevás esta presencia al resto del día. ☁️'}
+    ]
+  }
+];
+
+var _medAudio = null, _medTimer = null, _medStepTimers = [], _medStartTime = 0, _medTimerInterval = null, _medCurrentId = null;
+var _medCtx = null, _medSrc = null, _medGainNode = null;
+var _medLoadToken = 0; // cancel in-flight audio load on close/reopen
+
+function pInitMeditacion(){
+  var el = document.getElementById('meditacionCards');
+  if(!el) return;
+  el.innerHTML = _MEDITATIONS.map(function(m){
+    return '<div onclick="pOpenMeditation(\''+m.id+'\')" style="cursor:pointer;background:linear-gradient(135deg,rgba(147,112,219,.16),rgba(102,51,153,.10));border:1.5px solid rgba(147,112,219,.35);border-radius:20px;padding:18px 20px;display:flex;align-items:center;gap:16px;transition:all .15s;box-shadow:0 3px 16px rgba(147,112,219,.10)">'
+      +'<div style="width:58px;height:58px;border-radius:50%;background:rgba(147,112,219,.22);border:2px solid rgba(147,112,219,.45);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:28px">'+m.emoji+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:15px;font-weight:800;color:rgba(220,200,255,.95);font-family:\'Cormorant Garamond\',serif;font-style:italic;margin-bottom:3px">'+m.title+'</div>'
+      +'<div style="font-size:11.5px;color:rgba(200,180,255,.55);font-family:\'Jost\',sans-serif;font-weight:600;letter-spacing:.5px">⏱ '+m.duration+' · Guiada en español</div>'
+      +'</div>'
+      +'<div style="width:38px;height:38px;border-radius:50%;background:rgba(147,112,219,.28);border:1.5px solid rgba(147,112,219,.50);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">▶</div>'
+      +'</div>';
+  }).join('');
+}
+
+function _medDrawCanvas(t){
+  var cv = document.getElementById('meditacionCanvas');
+  if(!cv) return;
+  cv.width = cv.offsetWidth; cv.height = cv.offsetHeight;
+  var ctx = cv.getContext('2d');
+  var cx = cv.width/2, cy = cv.height/2;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // Breathing circle: expands and contracts slowly
+  var cycle = (t / 11000) % 1; // 11s per breath cycle
+  var scale = 0.6 + 0.4 * Math.sin(cycle * Math.PI * 2);
+  var r = Math.min(cx,cy) * 0.35 * scale;
+  var grd = ctx.createRadialGradient(cx,cy,0,cx,cy,r*1.8);
+  grd.addColorStop(0,'rgba(147,112,219,.30)');
+  grd.addColorStop(0.5,'rgba(102,51,153,.18)');
+  grd.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.arc(cx,cy,r*1.8,0,Math.PI*2); ctx.fillStyle=grd; ctx.fill();
+  // Floating particles
+  for(var i=0;i<14;i++){
+    var ang = (t/12000 + i/14) * Math.PI * 2;
+    var rad = (0.28 + 0.12*Math.sin((t/7000)+i)) * Math.min(cx,cy);
+    var px = cx + Math.cos(ang)*rad, py = cy + Math.sin(ang)*rad;
+    var pr = 2.5 + 1.5*Math.sin((t/3000)+i);
+    ctx.beginPath(); ctx.arc(px,py,pr,0,Math.PI*2);
+    ctx.fillStyle='rgba(200,180,255,'+(0.15+0.2*Math.sin((t/4000)+i))+')'; ctx.fill();
+  }
+}
+
+async function pOpenMeditation(id){
+  var med = _MEDITATIONS.find(function(m){ return m.id===id; });
+  if(!med) return;
+  pCloseMeditation();
+  var _myMedToken = ++_medLoadToken;
+  _medCurrentId = id;
+  var ov = document.getElementById('meditacionPlayer');
+  if(!ov) return;
+  ov.style.display = 'block';
+  document.getElementById('meditacionEmoji').textContent = med.emoji;
+  document.getElementById('meditacionTitle').textContent = med.title;
+  document.getElementById('meditacionDuration').textContent = med.duration + ' · Guía en español';
+  document.getElementById('meditacionGuide').textContent = '';
+  document.getElementById('meditacionTimer').textContent = '0:00';
+  // Start background music
+  try{
+    if(!_medCtx || _medCtx.state==='closed') _medCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(_medCtx.state==='suspended') await _medCtx.resume();
+    if(_medLoadToken !== _myMedToken) return;
+    var resp = await fetch('sounds/meditacion.mp3',{cache:'force-cache'});
+    if(_medLoadToken !== _myMedToken) return;
+    if(resp.ok){
+      var buf = await _medCtx.decodeAudioData(await resp.arrayBuffer());
+      if(_medLoadToken !== _myMedToken) return;
+      _medSrc = _medCtx.createBufferSource();
+      _medSrc.buffer = buf; _medSrc.loop = true;
+      _medGainNode = _medCtx.createGain(); _medGainNode.gain.value = 0.55;
+      _medSrc.connect(_medGainNode); _medGainNode.connect(_medCtx.destination);
+      _medSrc.start();
+    }
+  }catch(e){}
+  // Schedule guided text steps using Web Speech API
+  var synth = window.speechSynthesis;
+  _medStartTime = Date.now();
+  med.steps.forEach(function(step, idx){
+    var tmr = setTimeout(function(){
+      var guideEl = document.getElementById('meditacionGuide');
+      if(!guideEl) return;
+      guideEl.style.opacity='0';
+      setTimeout(function(){ guideEl.style.opacity='1'; guideEl.textContent=step.text; }, 400);
+      if(synth && idx < med.steps.length - 1){
+        var utt = new SpeechSynthesisUtterance(step.text);
+        utt.lang='es-AR'; utt.rate=0.82; utt.pitch=0.95; utt.volume=0.90;
+        var voices = synth.getVoices();
+        var esVoice = voices.find(function(v){ return v.lang.startsWith('es'); });
+        if(esVoice) utt.voice = esVoice;
+        synth.cancel(); synth.speak(utt);
+      }
+    }, step.t);
+    _medStepTimers.push(tmr);
+  });
+  // Timer tick
+  _medTimerInterval = setInterval(function(){
+    var el = document.getElementById('meditacionTimer');
+    if(!el) return;
+    var elapsed = Math.floor((Date.now()-_medStartTime)/1000);
+    var m=Math.floor(elapsed/60), s=elapsed%60;
+    el.textContent = m+':'+(s<10?'0':'')+s;
+    _medDrawCanvas(Date.now()-_medStartTime);
+    if(elapsed >= med.durationMs/1000){ clearInterval(_medTimerInterval); _medTimerInterval=null; }
+  }, 100);
+  // Initial canvas draw
+  _medDrawCanvas(0);
+}
+
+function pCloseMeditation(){
+  _medLoadToken++; // cancel any in-flight audio load
+  var ov = document.getElementById('meditacionPlayer');
+  if(ov) ov.style.display='none';
+  _medCurrentId = null;
+  _medStepTimers.forEach(function(t){ clearTimeout(t); }); _medStepTimers=[];
+  if(_medTimerInterval){ clearInterval(_medTimerInterval); _medTimerInterval=null; }
+  try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+  try{ if(_medSrc){ _medSrc.stop(); _medSrc.disconnect(); _medSrc=null; } }catch(e){}
+  try{ if(_medGainNode){ _medGainNode.disconnect(); _medGainNode=null; } }catch(e){}
 }
 
 // ── MOMENTOS ──────────────────────────────────────────────────
@@ -19484,11 +20768,16 @@ async function _fetchMomentos(limit){
   _initSupabase(); if(!sbClient) return [];
   try{
     var now=new Date().toISOString();
-    var res=await sbClient.from('momentos').select('id,text,emoji,anon_label,hearts,created_at,expires_at,user_hash').gt('expires_at',now).order('created_at',{ascending:false}).limit(limit||20);
+    var _sel = 'id,text,emoji,anon_label,hearts,created_at,expires_at,user_hash,user_name,user_avatar,user_id';
+    var res=await sbClient.from('momentos').select(_sel).gt('expires_at',now).order('created_at',{ascending:false}).limit(limit||20);
+    // Fall back if profile columns don't exist yet in DB
+    if(res.error && res.error.code==='42703'){
+      _sel = 'id,text,emoji,anon_label,hearts,created_at,expires_at,user_hash';
+      res = await sbClient.from('momentos').select(_sel).gt('expires_at',now).order('created_at',{ascending:false}).limit(limit||20);
+    }
     if(res.error){
       if(res.error.code==='42P01') return null;
       console.warn('[Velo] momentos fetch error:', res.error.code, res.error.message);
-      // Permissions error — table exists but RLS blocks reads
       if(res.error.code==='42501'||res.error.message.indexOf('permission')+res.error.message.indexOf('policy')>-2){
         pToast('ℹ️','Activá las políticas RLS en la tabla momentos de Supabase');
       }
@@ -19508,21 +20797,137 @@ function _momentoModerate(text){
   return !bad.some(function(w){ return t.indexOf(w) >= 0; });
 }
 
+/* ── v956: carousel dots + profile toggle ───────────────────── */
+var _momentoShowProfile = false;
+
+function _initCarouselDots(feedId, dotsId){
+  var feed = document.getElementById(feedId);
+  var dotsEl = document.getElementById(dotsId);
+  if(!feed || !dotsEl) return;
+  var cards = feed.querySelectorAll('.home-mc');
+  if(cards.length < 2){ dotsEl.innerHTML = ''; return; }
+  dotsEl.innerHTML = Array.from(cards).map(function(_,i){
+    return '<span'+(i===0?' class="cd-active"':'')+' data-i="'+i+'"></span>';
+  }).join('');
+  if(feed._dotsListener) feed.removeEventListener('scroll', feed._dotsListener);
+  var _cardW = cards[0] ? cards[0].offsetWidth + 10 : feed.offsetWidth * 0.87 + 10;
+  feed._dotsListener = function(){
+    var idx = Math.min(Math.round(feed.scrollLeft / _cardW), cards.length - 1);
+    dotsEl.querySelectorAll('span').forEach(function(s,i){ s.classList.toggle('cd-active', i===idx); });
+  };
+  feed.addEventListener('scroll', feed._dotsListener, {passive:true});
+  // First-visit swipe hint — nudge the feed and come back
+  setTimeout(function(){
+    if(feed.scrollLeft === 0 && feed.querySelectorAll('.home-mc').length > 1){
+      feed.scrollTo({left:38, behavior:'smooth'});
+      setTimeout(function(){ feed.scrollTo({left:0, behavior:'smooth'}); }, 560);
+    }
+  }, 800);
+}
+
+function pToggleMomentoProfile(){
+  _momentoShowProfile = !_momentoShowProfile;
+  var btn = document.getElementById('momentoProfileToggle');
+  var lbl = document.getElementById('momentoProfileToggleLabel');
+  var ico = document.getElementById('momentoProfileToggleIcon');
+  if(!btn) return;
+  btn.classList.toggle('mpt-on', _momentoShowProfile);
+  if(lbl) lbl.textContent = _momentoShowProfile ? (_escHtml(safeLS('get','velo_user_name')||'Mi perfil')) : 'Publicar anónimo/a';
+  if(ico) ico.textContent = _momentoShowProfile ? '👤' : '🔒';
+}
+
+function pToggleMomentoPageProfile(){
+  _momentoShowProfile = !_momentoShowProfile;
+  var btn = document.getElementById('momentoPageProfileToggle');
+  var lbl = document.getElementById('momentoPageProfileLabel');
+  var avEl = document.getElementById('momentoPageProfileAv');
+  if(!btn) return;
+  var name = safeLS('get','velo_user_name') || '';
+  var av   = safeLS('get','velo_user_av') || '';
+  if(_momentoShowProfile){
+    btn.style.background = 'rgba(116,198,157,.18)';
+    btn.style.borderColor = 'rgba(116,198,157,.50)';
+    if(lbl) lbl.textContent = name || 'Mi perfil';
+    if(avEl){
+      if(av && av.startsWith('http')){
+        avEl.innerHTML = '<img src="'+_escHtml(av)+'" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle">';
+      } else {
+        avEl.textContent = name ? name.charAt(0).toUpperCase() : '👤';
+      }
+    }
+  } else {
+    btn.style.background = 'rgba(116,198,157,.08)';
+    btn.style.borderColor = 'rgba(116,198,157,.22)';
+    if(lbl) lbl.textContent = 'Anónimo/a';
+    if(avEl){ avEl.innerHTML = ''; avEl.textContent = '🔒'; }
+  }
+}
+
+function _initMomentoProfileToggle(){
+  _momentoShowProfile = false;
+  var btn = document.getElementById('momentoProfileToggle');
+  if(!btn) return;
+  btn.classList.remove('mpt-on');
+  var lbl = document.getElementById('momentoProfileToggleLabel');
+  var ico = document.getElementById('momentoProfileToggleIcon');
+  if(lbl) lbl.textContent = 'Publicar anónimo/a';
+  if(ico) ico.textContent = '🔒';
+  var av = safeLS('get','velo_user_av') || '';
+  var name = safeLS('get','velo_user_name') || '';
+  var avEl = document.getElementById('momentoProfileToggleAv');
+  if(!avEl) return;
+  if(av && (av.startsWith('http') || av.startsWith('data:'))){
+    avEl.className = '';
+    avEl.innerHTML = '<img src="'+_escHtml(av)+'" class="mpt-avatar" alt="">';
+  } else {
+    avEl.className = 'mpt-avatar-ph';
+    avEl.textContent = name ? name.charAt(0).toUpperCase() : '🌿';
+  }
+}
+
 function _renderMomentoCards(momentos, feedId, showMineOnly){
   var feed=document.getElementById(feedId);
   if(!feed) return;
+  var _prevL = feed.scrollLeft; // remember carousel position across re-renders
   var myHash=_momentoUserHash();
   var isHome = feedId === 'homeMomentoFeed';
+  var isTappable = isHome || feedId === 'momentoFullFeed';
   var reported = {};
   try{ reported = JSON.parse(safeLS('get','velo_momento_reported')||'{}'); }catch(e){}
 
   if(!momentos||!momentos.length){
-    var _emptyEmoji = showMineOnly ? '✨' : '💭';
-    var _emptyMsg = showMineOnly ? 'Todavía no publicaste ningún momento hoy' : '¡Sé el primero en compartir un momento hoy! ✨';
-    feed.innerHTML='<div style="text-align:center;padding:22px 8px">'
-      +'<span style="font-size:36px;display:block;margin-bottom:10px">'+_emptyEmoji+'</span>'
-      +'<div style="font-size:12.5px;color:rgba(255,255,255,.4);line-height:1.5">'+_emptyMsg+'</div>'
-      +'</div>';
+    if(showMineOnly){
+      feed.innerHTML='<div style="text-align:center;padding:22px 8px">'
+        +'<span style="font-size:36px;display:block;margin-bottom:10px">✨</span>'
+        +'<div style="font-size:12.5px;color:rgba(255,255,255,.4);line-height:1.5">Todavía no publicaste ningún momento hoy</div>'
+        +'</div>';
+      return;
+    }
+    // Rotating inviting prompts for home empty state
+    var _homePrompts = [
+      { emoji:'💭', q:'¿Qué fue lo mejor de tu día?', sub:'La comunidad te está esperando — un momento tuyo puede alegrarle el día a alguien.' },
+      { emoji:'🌿', q:'¿Algo pequeño te dio paz hoy?', sub:'Los momentos chicos también merecen espacio. Compartílo.' },
+      { emoji:'✨', q:'¿Algo te hizo sonreír hoy?', sub:'Velo crece con cada momento que elegís compartir.' },
+      { emoji:'🤍', q:'¿Cómo te estás tratando hoy?', sub:'Compartir es un acto de valentía y de generosidad.' },
+      { emoji:'🌅', q:'¿Qué aprendiste hoy de vos mismo/a?', sub:'Tu perspectiva importa. Sé el primero en abrirlo.' },
+      { emoji:'☁️', q:'¿Qué tenés en la cabeza ahora?', sub:'Acá nadie juzga. Podés compartir lo que sea.' },
+      { emoji:'🌟', q:'¿Qué cosa, por pequeña que sea, te salió bien hoy?', sub:'Celebrar los logros chicos es parte de cuidarse.' }
+    ];
+    var _pi = (Math.floor(Date.now() / 3600000)) % _homePrompts.length;
+    var _p = _homePrompts[_pi];
+    if(isHome){
+      feed.innerHTML='<div onclick="pFocusMomentoInput()" style="cursor:pointer;border-radius:16px;padding:18px 16px 16px;background:linear-gradient(145deg,rgba(116,198,157,.12),rgba(116,198,157,.06));border:1.5px dashed rgba(116,198,157,.35);text-align:center;margin-bottom:4px">'
+        +'<div style="font-size:34px;line-height:1;margin-bottom:10px">'+_p.emoji+'</div>'
+        +'<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.88);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.4;margin-bottom:8px">'+_p.q+'</div>'
+        +'<div style="font-size:11.5px;color:rgba(116,198,157,.75);line-height:1.5;margin-bottom:14px">'+_p.sub+'</div>'
+        +'<div style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:rgba(116,198,157,.20);border:1px solid rgba(116,198,157,.40);border-radius:100px;font-size:12px;font-weight:700;color:rgba(220,255,235,.90);font-family:Jost,sans-serif">✏️ Compartir momento</div>'
+        +'</div>';
+    } else {
+      feed.innerHTML='<div style="text-align:center;padding:22px 8px">'
+        +'<span style="font-size:36px;display:block;margin-bottom:10px">💭</span>'
+        +'<div style="font-size:12.5px;color:rgba(255,255,255,.4);line-height:1.5">¡Sé el primero en compartir un momento hoy! ✨</div>'
+        +'</div>';
+    }
     return;
   }
   var cards = momentos.filter(function(m){ return !reported[m.id]; });
@@ -19536,27 +20941,41 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var timeLeft=Math.max(0,Math.round((new Date(m.expires_at).getTime()-Date.now())/3600000));
     var cachedCnt=parseInt(safeLS('get','velo_mheart_'+m.id+'_cnt')||'0');
     var heartCount=Math.max(m.hearts||0, cachedCnt);
-    var col=_momentoEmojiColor(m.emoji||'💭');
+    var hasProfile = !!(m.user_name && m.user_name.length > 0);
+    var col = _userColor(m.user_id || m.anon_label || m.emoji || '');
     var txtSz = isHome ? '13px' : '14px';
-    var stripW = isHome ? '56px' : '62px';
+    var stripW = isHome ? '62px' : '68px';
     var emojiSz = isHome ? '24px' : '28px';
-    return '<div class="home-mc" style="background:'+col.bg+';box-shadow:0 3px 18px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3px solid '+col.border+'">'
-      +'<div style="display:flex;align-items:stretch;gap:0">'
-      // Colored left strip with emoji
-      +'<div style="width:'+stripW+';flex-shrink:0;display:flex;align-items:center;justify-content:center;background:'+col.strip+';font-size:'+emojiSz+';line-height:1;padding:'+(isHome?'14px':'16px')+' 0;border-radius:0">'+(m.emoji||'💭')+'</div>'
+    var authorName = hasProfile ? m.user_name : (m.anon_label||'Anónimo/a');
+    var _mav = m.user_avatar || '';
+    var hasImgAv = hasProfile && _mav && (_mav.startsWith('http')||_mav.startsWith('data:'));
+    var hasEmojiAv = hasProfile && _mav && !hasImgAv;
+    var authorAvHtml = hasImgAv ? '<img src="'+_escHtml(_mav)+'" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;flex-shrink:0;border:1.5px solid '+col.border+'">'
+      : hasEmojiAv ? '<span style="font-size:14px;vertical-align:middle;margin-right:4px">'+_escHtml(_mav)+'</span>' : '';
+    var stripInner = hasImgAv
+      ? '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><img src="'+_escHtml(_mav)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2.5px solid '+col.border+';display:block"><span style="font-size:13px;line-height:1">'+_escHtml(m.emoji||'💭')+'</span></div>'
+      : hasEmojiAv
+        ? '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid '+col.border+';display:flex;align-items:center;justify-content:center;font-size:20px">'+_escHtml(_mav)+'</div><span style="font-size:12px;line-height:1">'+_escHtml(m.emoji||'💭')+'</span></div>'
+        : '<span style="font-size:'+emojiSz+';line-height:1">'+_escHtml(m.emoji||'💭')+'</span>';
+    return '<div class="home-mc"'+(isTappable?' onclick="pOpenMomentoSheet(\''+_escHtml(String(m.id))+'\')"':'')+' style="background:'+col.bg+';box-shadow:0 3px 20px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3.5px solid '+col.border+(isTappable?';cursor:pointer':'')+'">'
+      // Absolute strip fills full card height on all platforms (no iOS Safari flex gap)
+      +'<div style="position:absolute;left:0;top:0;bottom:0;width:'+stripW+';background:'+col.strip+';display:flex;align-items:center;justify-content:center">'+stripInner+'</div>'
+      +'<div style="display:flex;margin-left:'+stripW+';min-height:76px">'
       // Main content
       +'<div style="flex:1;min-width:0;padding:11px 10px 11px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
-      +'<span style="font-size:10.5px;font-style:italic;font-weight:700;color:'+col.label+'">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
+      +(authorAvHtml ? '<span style="display:inline-flex;align-items:center">'+authorAvHtml+'</span>' : '')
+      +'<span style="font-size:10.5px;font-style:italic;font-weight:700;color:'+col.label+'">'+_escHtml(authorName)+'</span>'
       +'<span style="font-size:9px;color:rgba(255,255,255,.38)">· '+_momentoAgo(m.created_at)+'</span>'
       +'<span style="font-size:9px;color:rgba(255,255,255,.28)">· ⏱'+timeLeft+'h</span>'
       +(mine?'<span style="font-size:8px;font-weight:700;padding:1px 6px;border-radius:5px;background:'+col.badge+';color:'+col.label+'">tuyo</span>':'')
       +'</div>'
       +'<div style="font-size:'+txtSz+';line-height:1.55;color:rgba(255,255,255,.92);word-break:break-word">'+_escHtml(m.text||'')+'</div>'
+      +(isTappable?'<div style="margin-top:7px;font-size:10px;color:'+col.label.replace(',1)',',0.70)')+';font-family:\'Jost\',sans-serif;display:flex;align-items:center;gap:3px;letter-spacing:.2px">💬 <span>tocá para comentar</span></div>':'')
       +'</div>'
       // Heart + report
       +'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;padding:10px 11px 10px 4px">'
-      +'<button onclick="pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:4px">'
+      +'<button onclick="event.stopPropagation();pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:4px">'
       +'<span style="font-size:20px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
       +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:rgba(255,255,255,.50);font-family:Jost,sans-serif">'+heartCount+'</span>'
       +'</button>'
@@ -19565,8 +20984,164 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       +'</div>'
       +'</div>';
   }).join('');
+  if(_prevL > 0) requestAnimationFrame(function(){ feed.scrollLeft = _prevL; });
 }
 
+function pFocusMomentoInput(){
+  var el=document.getElementById('momentoHomeInput');
+  if(el){ el.focus(); el.scrollIntoView({behavior:'smooth',block:'center'}); }
+}
+
+async function _loadMomentoComments(momentoId){
+  _initSupabase(); if(!sbClient) return [];
+  try{
+    var res=await sbClient.from('momento_comments')
+      .select('id,text,user_name,user_avatar,user_id,created_at')
+      .eq('momento_id',String(momentoId))
+      .order('created_at',{ascending:true})
+      .limit(50);
+    if(res.error) return [];
+    return res.data||[];
+  }catch(e){ return []; }
+}
+
+function _renderMomentoComments(comments,col){
+  var brd=col?col.border:'rgba(116,198,157,1)';
+  var lbl=col?col.label:'rgba(200,240,218,1)';
+  var strip=col?col.strip:'rgba(116,198,157,1)';
+  var bg=col?col.bg:'rgba(6,28,18,.92)';
+  var ca=function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
+  if(!comments||!comments.length){
+    return '<div style="text-align:center;padding:24px 8px;font-size:13px;color:rgba(255,255,255,.35);font-family:\'Jost\',sans-serif;font-style:italic">Sé el primero en comentar 🌿</div>';
+  }
+  return comments.map(function(c){
+    var av=c.user_avatar||''; var isImg=av&&av.startsWith('http');
+    var name=c.user_name||'Anónimo/a';
+    var avHtml=isImg
+      ?'<img src="'+_escHtml(av)+'" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid '+ca(brd,'.50')+';flex-shrink:0">'
+      :'<div style="width:30px;height:30px;border-radius:50%;background:'+ca(strip,'.32')+';display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:2px solid '+ca(brd,'.45')+'">'+_escHtml(av||'🌿')+'</div>';
+    return '<div style="display:flex;gap:9px;margin-bottom:12px;align-items:flex-start">'
+      +avHtml
+      +'<div style="flex:1;background:'+ca(strip,'.18')+';border:1px solid '+ca(brd,'.30')+';border-left:2.5px solid '+ca(brd,'.65')+';border-radius:14px;padding:9px 13px">'
+      +'<div style="font-size:11px;font-weight:800;color:'+ca(lbl,'.88')+';font-family:\'Jost\',sans-serif;margin-bottom:4px">'+_escHtml(name)+'<span style="font-weight:400;color:rgba(255,255,255,.35);margin-left:6px;font-size:10px">· '+_momentoAgo(c.created_at)+'</span></div>'
+      +'<div style="font-size:13.5px;color:rgba(255,255,255,.90);line-height:1.55;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+async function pPostMomentoComment(momentoId){
+  var inp=document.getElementById('momentoCommentInput');
+  if(!inp) return;
+  var text=(inp.value||'').trim();
+  if(!text) return;
+  var btn=document.getElementById('momentoCommentBtn');
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  _initSupabase();
+  var data={momento_id:String(momentoId),text:text,user_hash:_momentoUserHash(),created_at:new Date().toISOString()};
+  var pn=safeLS('get','velo_user_name'); var pav=safeLS('get','velo_user_av'); var uid=safeLS('get','velo_user_id');
+  if(pn) data.user_name=pn;
+  if(pav) data.user_avatar=pav;
+  if(uid) data.user_id=uid;
+  var res=await sbClient.from('momento_comments').insert(data);
+  if(res.error){
+    // Table doesn't exist yet
+    if(res.error.code==='42P01'||res.error.code==='PGRST200'){
+      pToast('🛠️','La tabla de comentarios aún no está creada en la base de datos');
+      if(btn){btn.disabled=false;btn.textContent='Enviar';} return;
+    }
+    // Profile columns missing — retry without them
+    if(res.error.code==='42703'||res.error.code==='PGRST204'||(res.error.message&&res.error.message.indexOf('user_avatar')>=0)){
+      delete data.user_name; delete data.user_avatar;
+      res=await sbClient.from('momento_comments').insert(data);
+      if(res.error){ pToast('⚠️','Error al comentar'); if(btn){btn.disabled=false;btn.textContent='Enviar';} return; }
+    } else { pToast('⚠️','Error: '+res.error.message); if(btn){btn.disabled=false;btn.textContent='Enviar';} return; }
+  }
+  inp.value='';
+  pToast('💬','Comentario publicado');
+  var comments=await _loadMomentoComments(momentoId);
+  var feed=document.getElementById('momentoCommentFeed');
+  if(feed) feed.innerHTML=_renderMomentoComments(comments);
+  if(btn){btn.disabled=false;btn.textContent='Enviar';}
+}
+
+async function pOpenMomentoSheet(momentoId){
+  var m=_homeMomentoCache.find(function(x){return String(x.id)===String(momentoId);});
+  if(!m) return;
+  var col=_momentoEmojiColor(m.emoji||'💭');
+  var ca=function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
+  var liked=safeLS('get','velo_mheart_'+m.id)==='1';
+  var cachedCnt=parseInt(safeLS('get','velo_mheart_'+m.id+'_cnt')||'0');
+  var heartCount=Math.max(m.hearts||0,cachedCnt);
+  var hasProfile=m.user_name&&m.user_name.length>0;
+  var authorName=hasProfile?m.user_name:(m.anon_label||'Anónimo/a');
+  var timeLeft=Math.max(0,Math.round((new Date(m.expires_at).getTime()-Date.now())/3600000));
+  var av=m.user_avatar||''; var isImg=av&&av.startsWith('http');
+  var canSeeProfile=hasProfile&&m.user_id;
+  var avClick=canSeeProfile?' onclick="pQuickProfile('+_jsAttr(authorName)+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(m.user_id||'')+')"':'';
+  var avSmall=isImg
+    ?'<img src="'+_escHtml(av)+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid '+ca(col.border,'.55')+';flex-shrink:0"'+avClick+'>'
+    :'<div style="width:32px;height:32px;border-radius:50%;background:'+ca(col.strip,'.40')+';display:flex;align-items:center;justify-content:center;font-size:15px;border:2px solid '+ca(col.border,'.55')+';flex-shrink:0"'+avClick+'>'+(av||'🌿')+'</div>';
+  var existing=document.getElementById('momentoDetailSheetOv');
+  if(existing) existing.remove();
+  var ov=document.createElement('div');
+  ov.className='p-modal-ov show'; ov.id='momentoDetailSheetOv';
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  ov.innerHTML=
+    '<div class="p-sheet p-sheet-dark" style="max-height:92vh;display:flex;flex-direction:column;overflow:hidden;background:rgba(8,12,22,.99);border-top:3px solid '+col.border+';box-shadow:0 -6px 48px '+ca(col.glow,'.35')+'">'
+    +'<div class="p-sheet-handle" style="background:'+col.border+'"></div>'
+    // ── Hero: vivid colored gradient + large emoji ──
+    +'<div style="background:linear-gradient(170deg,'+ca(col.strip,'.55')+' 0%,'+ca(col.bg,'.96')+' 52%,rgba(8,12,22,.0) 100%);padding:22px 20px 18px;position:relative;overflow:hidden;flex-shrink:0;border-bottom:1px solid '+ca(col.border,'.22')+'">'
+    +'<div style="position:absolute;right:-14px;top:-10px;font-size:130px;opacity:.10;line-height:1;pointer-events:none">'+m.emoji+'</div>'
+    +'<div style="display:flex;align-items:center;gap:16px;position:relative;z-index:1">'
+    +'<span style="font-size:68px;line-height:1;filter:drop-shadow(0 0 28px '+ca(col.border,'.65')+');flex-shrink:0">'+m.emoji+'</span>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,0,0,.52);border:1.5px solid '+ca(col.border,'.42')+';border-radius:22px;padding:6px 14px 6px 6px;margin-bottom:6px;backdrop-filter:blur(8px)">'
+    +avSmall
+    +'<div>'
+    +'<div style="font-size:13px;font-weight:800;color:'+col.label+';font-family:\'Jost\',sans-serif;line-height:1.2">'+(canSeeProfile?'<span style="cursor:pointer"'+avClick+'>':'')+_escHtml(authorName)+(canSeeProfile?'</span>':'')+'</div>'
+    +'<div style="font-size:10px;color:rgba(255,255,255,.48);font-family:\'Jost\',sans-serif;margin-top:2px">'+_momentoAgo(m.created_at||'')+' · ⏱ '+timeLeft+'h restantes</div>'
+    +'</div>'
+    +'</div>'
+    +'</div>'
+    +'</div>'
+    +'</div>'
+    // ── Scrollable body ──
+    +'<div style="flex:1;overflow-y:auto;padding:18px 20px 0">'
+    // Text block: col.bg as solid tinted bg + vivid left border
+    +'<div style="background:'+col.bg+';border:1.5px solid '+ca(col.border,'.38')+';border-left:3.5px solid '+ca(col.border,'.82')+';border-radius:18px;padding:18px 20px 16px;margin-bottom:18px;position:relative;overflow:hidden">'
+    +'<div style="position:absolute;top:-6px;left:6px;font-size:58px;color:'+ca(col.label,'.08')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none">❝</div>'
+    +'<div style="font-size:17.5px;line-height:1.74;color:rgba(255,255,255,.96);word-break:break-word;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;position:relative">'+_escHtml(m.text||'')+'</div>'
+    +'</div>'
+    // Heart button — vivid pill
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">'
+    +'<button id="momentoSheetHeartBtn" onclick="event.stopPropagation();pHeartMomento(\''+_escHtml(String(m.id))+'\',this)" style="display:flex;align-items:center;gap:9px;background:'+ca(col.strip,'.24')+';border:2px solid '+ca(col.border,'.62')+';border-radius:100px;padding:10px 24px;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'
+    +'<span style="font-size:20px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
+    +'<span id="mheart-'+_escHtml(String(m.id))+'" style="font-size:15px;font-weight:800;color:'+col.label+'">'+heartCount+'</span>'
+    +'</button>'
+    +'</div>'
+    // Comments header
+    +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">'
+    +'<span style="font-size:9.5px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+ca(col.label,'.78')+';font-family:\'Jost\',sans-serif;white-space:nowrap">💬 Comentarios</span>'
+    +'<div style="flex:1;height:1px;background:'+ca(col.border,'.32')+'"></div>'
+    +'</div>'
+    +'<div id="momentoCommentFeed"><div style="text-align:center;padding:14px;font-size:12px;color:rgba(255,255,255,.28);font-family:\'Jost\',sans-serif">Cargando...</div></div>'
+    // Comment input
+    +'<div style="display:flex;gap:8px;margin-top:14px;align-items:flex-end;padding-bottom:14px">'
+    +'<textarea id="momentoCommentInput" placeholder="Escribí un comentario..." rows="2" style="flex:1;background:rgba(255,255,255,.06);border:1.5px solid '+ca(col.border,'.40')+';border-radius:14px;padding:11px 14px;font-size:13px;color:rgba(255,255,255,.90);font-family:\'Jost\',sans-serif;resize:none;line-height:1.4;outline:none"></textarea>'
+    +'<button id="momentoCommentBtn" onclick="pPostMomentoComment(\''+_escHtml(String(m.id))+'\')" style="padding:11px 18px;background:linear-gradient(135deg,'+ca(col.border,'.75')+','+ca(col.strip,'.82')+');border:none;border-radius:14px;color:#fff;font-size:12.5px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;align-self:flex-end;letter-spacing:.2px">Enviar</button>'
+    +'</div>'
+    +'</div>'
+    // ── Fixed close bar ──
+    +'<div style="padding:10px 20px 16px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.08)">'
+    +'<button onclick="document.getElementById(\'momentoDetailSheetOv\').remove()" style="width:100%;padding:13px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;color:rgba(255,255,255,.55);font-size:13px;font-weight:600;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">Cerrar</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+  var feed=document.getElementById('momentoCommentFeed');
+  var comments=await _loadMomentoComments(momentoId);
+  if(feed) feed.innerHTML=_renderMomentoComments(comments,col);
+}
 async function _initHomeMomento(){
   var section=document.getElementById('homeMomentoSection');
   if(!section) return;
@@ -19581,14 +21156,18 @@ async function _initHomeMomento(){
   var pt=document.getElementById('happyPromptText');
   if(pt) pt.textContent=_happyDailyPrompt();
 
-  var momentos=await _fetchMomentos(4);
+  var momentos=await _fetchMomentos(10);
   if(momentos===null){ section.style.display='none'; return; }
+  _homeMomentoCache = momentos || [];
   section.style.display='block';
-  _renderMomentoCards(momentos,'homeMomentoFeed');
+  _renderMomentoCards(momentos.slice(0,4),'homeMomentoFeed');
+  _initCarouselDots('homeMomentoFeed','momentoDots');
+  _initMomentoProfileToggle();
   _updateFeedTabCounts();
 }
 
 var _homeActiveFeedTab = 'momento';
+var _homeMomentoCache = [];
 
 function pHomeTabSwitch(tab){
   _homeActiveFeedTab = tab;
@@ -19628,6 +21207,39 @@ async function _updateFeedTabCounts(){
   }catch(e){}
 }
 
+/* ── v957: Home Muro Feliz cards — 💬 action opens full sheet ── */
+var _happyHomePosts = [];
+
+function pOpenHappyHomeSheet(postId){
+  var h = _happyHomePosts.find(function(p){ return String(p.id) === String(postId); });
+  if(!h && _sbHappy) h = _sbHappy.find(function(p){ return String(p.id) === String(postId); });
+  if(!h) return;
+  // Merge into _sbHappy so pHappyReact / pHappyComment work
+  if(!_sbHappy) _sbHappy = [];
+  if(!_sbHappy.find(function(p){ return String(p.id) === String(postId); })) _sbHappy.push(h);
+  var isOwn = h.userId === (safeLS('get','velo_user_id')||'');
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'happyHomeSheetOv';
+  ov.onclick = function(e){ if(e.target===ov) _closeHappyHomeSheet(); };
+  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="max-height:88vh;overflow-y:auto">'
+    +'<div class="p-sheet-handle"></div>'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:10px 14px;background:linear-gradient(135deg,rgba(222,162,36,.28) 0%,rgba(200,138,18,.14) 100%);border-radius:14px;border:1.5px solid rgba(222,162,36,.42)">'
+    +'<div style="width:34px;height:34px;border-radius:10px;background:rgba(222,162,36,.28);border:1.5px solid rgba(222,162,36,.60);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0">☀️</div>'
+    +'<div><div style="font-size:15px;font-weight:700;color:rgba(255,228,82,.95);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1">Muro Feliz</div>'
+    +'<div style="font-size:9.5px;color:rgba(255,210,55,.50);font-weight:700;letter-spacing:.6px;font-family:Jost,sans-serif;margin-top:2px">PUBLICACIÓN</div></div>'
+    +'<button onclick="_closeHappyHomeSheet()" style="margin-left:auto;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.55);font-size:16px;cursor:pointer;line-height:1;padding:4px 9px;border-radius:8px">×</button>'
+    +'</div>'
+    + _happyPostCard(h, isOwn)
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function _closeHappyHomeSheet(){
+  var el = document.getElementById('happyHomeSheetOv');
+  if(el) el.remove();
+}
+
 async function _loadHomeHappyFeed(){
   var feed = document.getElementById('homeHappyFeed');
   if(!feed) return;
@@ -19646,20 +21258,30 @@ async function _loadHomeHappyFeed(){
       : '<span style="color:rgba(245,205,80,.95);font-weight:700;font-size:11px">'+_escHtml(h.name||'Alguien')+'</span>';
     var totalR=0;
     if(h.reactions){ try{ var rv=typeof h.reactions==='string'?JSON.parse(h.reactions):h.reactions; Object.values(rv).forEach(function(a){ totalR+=Array.isArray(a)?a.length:0; }); }catch(e){} }
+    var commCount = h.comments ? h.comments.length : 0;
     return '<div class="home-mc" style="background:rgba(48,32,4,.90);box-shadow:0 3px 18px rgba(218,160,30,.22),inset 0 0 0 1px rgba(218,160,30,.30);border-left:3px solid rgba(218,160,30,.70)">'
-      +'<div style="display:flex;align-items:stretch;gap:0">'
-      // Left gold strip with avatar
-      +'<div style="width:56px;flex-shrink:0;background:rgba(218,160,30,.38);display:flex;align-items:center;justify-content:center;padding:12px 0">'
+      // Absolute strip fills full card height on all platforms
+      +'<div style="position:absolute;left:0;top:0;bottom:0;width:56px;background:rgba(218,160,30,.38);display:flex;align-items:center;justify-content:center">'
       +avHtml
       +'</div>'
       // Content
-      +'<div style="flex:1;min-width:0;padding:10px 10px 10px 12px">'
+      +'<div style="display:flex;margin-left:56px;min-height:76px">'
+      +'<div style="flex:1;min-width:0;padding:10px 10px 8px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">'
       +nameHtml
       +'<span style="font-size:9px;color:rgba(255,255,255,.38)">· '+relTime+'</span>'
       +(totalR>0?'<span style="margin-left:auto;font-size:9.5px;color:rgba(255,210,70,.85)">'+totalR+' ❤️</span>':'')
       +'</div>'
-      +'<div style="font-size:13px;color:rgba(255,255,255,.92);line-height:1.5;word-break:break-word">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.92);line-height:1.5;word-break:break-word;margin-bottom:'+(h.photo?'6px':'8px')+'">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
+      +(h.photo?'<div style="margin-bottom:8px;border-radius:8px;overflow:hidden;cursor:pointer" onclick="pOpenHappyHomeSheet(\''+_escHtml(String(h.id))+'\')">'
+        +'<img src="'+_escHtml(h.photo)+'" style="width:100%;height:70px;object-fit:cover;display:block">'
+        +'<div style="text-align:center;font-size:9px;font-weight:700;letter-spacing:.3px;color:rgba(255,215,70,.65);font-family:Jost,sans-serif;padding:3px 0;background:rgba(218,160,30,.12)">📷 Ver foto</div>'
+        +'</div>':'')
+      // Action bar: "Ver publicación" primary CTA + comment count
+      +'<div style="display:flex;align-items:center;gap:6px;padding-top:6px;border-top:1px solid rgba(218,160,30,.18)">'
+      +'<button onclick="pOpenHappyHomeSheet(\''+_escHtml(String(h.id))+'\')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:rgba(218,160,30,.22);border:1.5px solid rgba(218,160,30,.55);border-radius:20px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:800;color:rgba(255,215,70,.95);font-family:Jost,sans-serif;letter-spacing:.3px">Ver publicación →</button>'
+      +(commCount > 0?'<span style="font-size:10px;color:rgba(245,210,80,.65);font-family:Jost,sans-serif;flex-shrink:0">💬 '+commCount+'</span>':'')
+      +'</div>'
       +'</div>'
       +'</div></div>';
   }
@@ -19670,7 +21292,8 @@ async function _loadHomeHappyFeed(){
   var _hwCutoff = Date.now() - 24*60*60*1000;
   var _hwCache = _sbHappy ? _sbHappy.filter(function(h){ return h.ts > _hwCutoff; }) : [];
   if(!_hwCache.length){ try{ _hwCache = (JSON.parse(safeLS('get','velo_happy_feed_cache')||'[]')).filter(function(h){ return h.ts > _hwCutoff; }); }catch(e){} }
-  if(_hwCache.length){ feed.innerHTML = _hwCache.slice(0,4).map(_happyHomeCard).join(''); }
+  var _hPrevL = feed.scrollLeft; // save carousel position
+  if(_hwCache.length){ _happyHomePosts = _hwCache.slice(0,4); feed.innerHTML = _happyHomePosts.map(_happyHomeCard).join(''); _initCarouselDots('homeHappyFeed','happyDots'); if(_hPrevL>0) requestAnimationFrame(function(){ feed.scrollLeft = _hPrevL; }); }
   else { feed.innerHTML = _emptyState; }
 
   _initSupabase();
@@ -19684,7 +21307,10 @@ async function _loadHomeHappyFeed(){
   } else {
     posts = (_processHappyQueue()||[]).slice(0,4);
   }
+  _happyHomePosts = posts;
   feed.innerHTML = posts.length ? posts.map(_happyHomeCard).join('') : _emptyState;
+  _initCarouselDots('homeHappyFeed','happyDots');
+  if(_hPrevL>0) requestAnimationFrame(function(){ feed.scrollLeft = _hPrevL; });
 }
 
 async function pPostHappyHome(){
@@ -19733,6 +21359,7 @@ async function _loadMomentoPageFeed(){
     return;
   }
   if(note) note.style.display='none';
+  if(momentos) _homeMomentoCache = (_homeMomentoCache||[]).concat(momentos).filter(function(m,i,a){ return a.findIndex(function(x){ return x.id===m.id; })===i; });
   _renderMomentoCards(momentos,'momentoFullFeed');
 }
 
@@ -19753,7 +21380,19 @@ async function pPostMomento(){
   var btn=document.getElementById('momentoPostBtn');
   if(btn){btn.disabled=true;btn.textContent='…';}
   try{
-    var res=await sbClient.from('momentos').insert({id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()});
+    var _insertData={id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()};
+    if(_momentoShowProfile){
+      var _pn=safeLS('get','velo_user_name'); var _pav=safeLS('get','velo_user_av'); var _puid=safeLS('get','velo_user_id');
+      if(_pn) _insertData.user_name=_pn;
+      if(_pav) _insertData.user_avatar=_pav;
+      if(_puid) _insertData.user_id=_puid;
+    }
+    var res=await sbClient.from('momentos').insert(_insertData);
+    if(res.error && (res.error.code==='42703'||res.error.code==='PGRST204'||(res.error.message&&res.error.message.indexOf('user_avatar')>=0))){
+      pToast('ℹ️','Falta migración de BD — publicando anónimo');
+      delete _insertData.user_name; delete _insertData.user_avatar; delete _insertData.user_id;
+      res=await sbClient.from('momentos').insert(_insertData);
+    }
     if(res.error){
       if(res.error.code==='42P01'){var n=document.getElementById('momentoMigrationNote');if(n)n.style.display='block';}
       else{ pToast('⚠️','Error al publicar ('+res.error.code+'): '+res.error.message); }
@@ -19786,7 +21425,19 @@ async function pPostMomentoHome(){
   var btn=document.getElementById('momentoHomeBtn');
   if(btn){btn.disabled=true;btn.textContent='…';}
   try{
-    var res=await sbClient.from('momentos').insert({id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()});
+    var _insertData={id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()};
+    if(_momentoShowProfile){
+      var _pn=safeLS('get','velo_user_name'); var _pav=safeLS('get','velo_user_av'); var _puid2=safeLS('get','velo_user_id');
+      if(_pn) _insertData.user_name=_pn;
+      if(_pav) _insertData.user_avatar=_pav;
+      if(_puid2) _insertData.user_id=_puid2;
+    }
+    var res=await sbClient.from('momentos').insert(_insertData);
+    // Graceful fallback if profile columns not yet in DB
+    if(res.error && (res.error.code==='42703' || res.error.code==='PGRST204' || (res.error.message&&res.error.message.indexOf('user_avatar')>=0))){
+      delete _insertData.user_name; delete _insertData.user_avatar; delete _insertData.user_id;
+      res=await sbClient.from('momentos').insert(_insertData);
+    }
     if(res.error){
       if(res.error.code==='42P01'){pToast('ℹ️','Función próximamente disponible');}
       else{ pToast('⚠️','Error al publicar ('+res.error.code+'): '+res.error.message); }
@@ -19794,7 +21445,7 @@ async function pPostMomentoHome(){
       inp.value=''; _momentoTrackPost(); pToast('✨','¡Momento publicado! 🌱'); _initHomeMomento();
     }
   }catch(e){pToast('⚠️','Error: '+e.message);}
-  if(btn){btn.disabled=false;btn.textContent='Publicar ✨';}
+  if(btn){btn.disabled=false;btn.textContent='✨';}
 }
 
 function pReportMomento(id, btn){
@@ -19902,7 +21553,7 @@ async function pHeartMomento(id, btn){
   // Increment DOM count and persist locally so re-renders don't reset it
   var cEl=document.getElementById('mheart-'+id);
   var newCount=(parseInt((cEl&&cEl.textContent)||'0')||0)+1;
-  if(cEl) cEl.textContent=newCount;
+  document.querySelectorAll('[id="mheart-'+id+'"]').forEach(function(el){ el.textContent=newCount; });
   safeLS('set','velo_mheart_'+id+'_cnt', String(newCount));
   // Update button appearance
   if(btn){
@@ -20488,6 +22139,7 @@ function _initReveal(){
 // ── PER-PAGE INIT DISPATCHER ──────────────────────────────────
 function _onPageEnter(id){
   if(id !== 'home') _stopHomeRefresh(); // stop live refresh when leaving home
+  if(id !== 'meditacion') pCloseMeditation(); // stop audio/timers when leaving meditation
   if(id !== 'guardians' && _guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
   switch(id){
     case 'landing':     _initReveal(); break;
@@ -20527,6 +22179,7 @@ function _onPageEnter(id){
     case 'momento':     _loadMomentoPageFeed(); _initMomentoPage(); break;
     case 'mood':        pInitMood(); break;
     case 'respira':     pInitRespira(); break;
+    case 'meditacion':  pInitMeditacion(); break;
     case 'vela':        pInitVela(); break;
     case 'circles':     pRenderCircles(); break;
     case 'feed':        _renderCircleMessages(); break;
