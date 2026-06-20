@@ -46,6 +46,8 @@ var _guardianRtCh = null;   // realtime channel guardian_presence
 var _guardianBcastCh = null; // broadcast channel for instant toggle notifications
 var _dqRtCh       = null;   // realtime channel daily_responses
 var _dqReactRtCh  = null;   // realtime channel dq_reactions (live count updates)
+var _dqReactPollTmr = null; // 20s fallback poll for reaction counts (bypasses Supabase RLS gap)
+var _dqVisHandler = null;   // visibilitychange handler for PWA foreground refresh
 var _scrollSave   = {}; // page id → scrollTop saved on navigate away
 var _sbVerifiedMoodCount = -1; // Supabase-confirmed mood count; -1 = not yet fetched
 var _liveGuardians = [];    // cached live guardian rows from Supabase
@@ -1223,6 +1225,7 @@ function _clearSession(){
   _sbVerifiedMoodCount = -1;
   if(_dqRtCh){ _sbUnsub(_dqRtCh); _dqRtCh = null; }
   if(_dqReactRtCh){ _sbUnsub(_dqReactRtCh); _dqReactRtCh = null; }
+  _stopDqReactPoll();
 }
 
 async function pSignOut(){
@@ -3475,6 +3478,20 @@ async function _fetchDailyCount(){
   }catch(e){}
 }
 
+function _startDqReactPoll(){
+  if(_dqReactPollTmr || !sbClient) return;
+  _dqReactPollTmr = setInterval(async function(){
+    var ids = _dqAllResponses.map(function(r){ return r.id; });
+    if(!ids.length) return;
+    await _loadDqReactions(ids);
+    ids.forEach(function(id){ _updateDqCardReactions(String(id)); });
+  }, 20000);
+}
+function _stopDqReactPoll(){
+  if(_dqReactPollTmr){ clearInterval(_dqReactPollTmr); _dqReactPollTmr = null; }
+  if(_dqVisHandler){ document.removeEventListener('visibilitychange', _dqVisHandler); _dqVisHandler = null; }
+}
+
 async function _fetchDailyFeed(qId){
   if(!sbClient){ _renderDailyFeed([]); return; }
   var today = _dateKey();
@@ -3521,6 +3538,17 @@ async function _fetchDailyFeed(qId){
       }
       if(rid) _updateDqCardReactions(String(rid));
     });
+  }
+  // 20s poll + visibility-change handler: reliable fallback for Supabase RLS gaps
+  _startDqReactPoll();
+  if(!_dqVisHandler){
+    _dqVisHandler = async function(){
+      if(document.hidden || !_dqAllResponses.length || !sbClient) return;
+      var ids = _dqAllResponses.map(function(r){ return r.id; });
+      await _loadDqReactions(ids);
+      ids.forEach(function(id){ _updateDqCardReactions(String(id)); });
+    };
+    document.addEventListener('visibilitychange', _dqVisHandler);
   }
 }
 
@@ -3646,7 +3674,7 @@ async function pToggleDqReaction(responseId, reaction, btn){
   // Pop animation
   btn.style.animation='none';
   void btn.offsetWidth;
-  if(btn.dataset.active==='true') btn.style.animation='velo-rx-pop .38s cubic-bezier(.34,1.56,.64,1) both';
+  if(btn.dataset.active==='true') btn.style.animation='velo-rx-pop .22s ease-out both';
   // Sync Supabase
   if(!sbClient) return;
   try{
@@ -3913,16 +3941,16 @@ function pOpenDqResponseSheet(responseId){
     var txtCol = rd.mine ? rc.txt : rc.inactiveTxt;
     var circBg = rd.mine ? rc.circleBg : rc.inactiveCircleBg;
     var circBdr = rd.mine ? rc.border : 'rgba(255,255,255,.10)';
-    var shadow = rd.mine ? '0 4px 22px '+rc.glow : 'none';
+    var shadow = rd.mine ? '0 2px 10px '+rc.glow : 'none';
     return '<button class="dq-reaction-btn" onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
       +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+rd.mine+'" '
-      +'style="width:100%;display:flex;align-items:center;gap:14px;padding:12px 16px;background:'+bg+';border:1.5px solid '+bdr+';border-radius:18px;cursor:pointer;transition:background .20s,border-color .20s,box-shadow .20s;font-family:Jost,sans-serif;box-sizing:border-box;box-shadow:'+shadow+'">'
-      +'<span style="width:46px;height:46px;border-radius:50%;background:'+circBg+';border:1.5px solid '+circBdr+';display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .20s,border-color .20s">'
-      +'<span style="font-size:24px;line-height:1">'+rx.emoji+'</span>'
+      +'style="width:100%;display:flex;align-items:center;gap:10px;padding:8px 12px;background:'+bg+';border:1.5px solid '+bdr+';border-radius:14px;cursor:pointer;transition:background .20s,border-color .20s,box-shadow .20s;font-family:Jost,sans-serif;box-sizing:border-box;box-shadow:'+shadow+'">'
+      +'<span style="width:32px;height:32px;border-radius:50%;background:'+circBg+';border:1.5px solid '+circBdr+';display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .20s,border-color .20s">'
+      +'<span style="font-size:16px;line-height:1">'+rx.emoji+'</span>'
       +'</span>'
-      +'<span class="rx-txt" style="font-size:15px;font-weight:700;color:'+txtCol+';flex:1;text-align:left;letter-spacing:.2px;transition:color .20s">'+rx.label+'</span>'
+      +'<span class="rx-txt" style="font-size:12.5px;font-weight:700;color:'+txtCol+';flex:1;text-align:left;letter-spacing:.1px;transition:color .20s">'+rx.label+'</span>'
       +(rd.count>0
-        ? '<span class="rx-cnt" style="font-size:13px;font-weight:800;color:'+txtCol+';background:'+circBg+';border-radius:100px;padding:3px 12px;display:flex;align-items:center;border:1px solid '+bdr+'">'+rd.count+'</span>'
+        ? '<span class="rx-cnt" style="font-size:11px;font-weight:800;color:'+txtCol+';opacity:.80">'+rd.count+'</span>'
         : '<span class="rx-cnt" style="display:none"></span>')
       +'</button>';
   }).join('');
@@ -3966,8 +3994,8 @@ function pOpenDqResponseSheet(responseId){
         +'</div>'
       : '<div style="height:12px"></div>')
     // Reactions
-    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.50)')+';font-family:Jost,sans-serif;text-align:center;margin-bottom:12px">Reaccioná</div>'
-    +'<div style="display:flex;flex-direction:column;gap:9px;margin-bottom:18px">'+rxHtml+'</div>'
+    +'<div style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.38)')+';font-family:Jost,sans-serif;text-align:center;margin-bottom:8px">Reaccioná</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">'+rxHtml+'</div>'
     +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:13px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.10);border-radius:16px;color:rgba(255,255,255,.40);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
     +'</div>'
     +'</div>';

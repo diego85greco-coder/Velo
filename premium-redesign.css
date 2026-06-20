@@ -11028,9 +11028,7 @@ body.r-dark .mc-bubble.mc-happy .mc-text { color: rgba(255,248,200,.92) !importa
 /* DQ reaction buttons */
 @keyframes velo-rx-pop {
   0%   { transform: scale(1);    filter: brightness(1); }
-  20%  { transform: scale(1.12); filter: brightness(1.55); }
-  45%  { transform: scale(0.95); filter: brightness(1.10); }
-  70%  { transform: scale(1.05); filter: brightness(1.04); }
+  35%  { transform: scale(1.05); filter: brightness(1.22); }
   100% { transform: scale(1);    filter: brightness(1); }
 }
 
