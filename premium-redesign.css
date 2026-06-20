@@ -592,8 +592,8 @@ body.r-dark .home-logo-side {
 #homeMonthlyHint      { order: 6; }
 #homeRegisterOuter    { order: 7; }
 #quickMoodPicker      { order: 7; }
-#homeMomentoSection   { order: 9; }
-#homeParaVosPanel     { order: 10; }
+#homeMomentoSection   { order: 15; }
+#homeParaVosPanel     { order: 16; }
 .r-home-quick-panel   { order: 12; }
 .r-home-shortcut-grid { order: 12; }
 #homeHeroLabel        { order: 13; margin-top: 24px; }
