@@ -8683,22 +8683,26 @@ var _diaryEmojis = ['😊','😢','😰','😤','😴','🤔','💪','🌿','✨
 var _diaryPrivacyShown = false;
 
 function pInitDiary(){
+  var _now = new Date();
+  var _dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  var _meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var _diaStr = _dias[_now.getDay()]+', '+_now.getDate()+' de '+_meses[_now.getMonth()];
+  // Hero header date
+  var heroDate = document.getElementById('diaryHeroDate');
+  if(heroDate) heroDate.textContent = _diaStr;
+  // Write panel date
   var dateEl = document.getElementById('diaryDateLbl');
-  if(dateEl){ var d = new Date(); dateEl.textContent = _fmtDate(d.getTime()).split('·')[0].trim(); }
+  if(dateEl) dateEl.textContent = _now.getDate()+' de '+_meses[_now.getMonth()]+' '+_now.getFullYear();
   var dateSubEl = document.getElementById('diaryDateSub');
-  if(dateSubEl){ var _dS=new Date(); var _diaSems=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']; dateSubEl.textContent = '— '+_diaSems[_dS.getDay()]; }
+  if(dateSubEl) dateSubEl.textContent = '— '+_dias[_now.getDay()].toLowerCase();
   // Reset form state on each visit
   _selectedDiaryEmoji = '';
   var chosenEl = document.getElementById('diaryEmojiChosen');
   if(chosenEl) chosenEl.textContent = '';
   var titleEl = document.getElementById('diaryTitleInput');
   if(titleEl) titleEl.value = '';
-  // Show privacy notice once per session
-  if(!_diaryPrivacyShown){
-    _diaryPrivacyShown = true;
-    var banner = document.getElementById('diaryPrivacyBanner');
-    if(banner) banner.style.display = 'flex';
-  }
+  // Clear active mood pills
+  document.querySelectorAll('.diary-mood-pill').forEach(function(b){ b.classList.remove('active'); });
   _loadDiaryEntries();
   _initDiaryPromptPreview();
   var _diaryTA = document.getElementById('diaryTa');
@@ -8751,10 +8755,12 @@ function _openDiaryEmojiPicker(){
 
 function _setDiaryEmoji(emoji){
   _selectedDiaryEmoji = emoji;
-  var btn = document.getElementById('diaryEmojiBtn');
   var chosen = document.getElementById('diaryEmojiChosen');
-  if(btn) btn.textContent = '😊 Elegir emoji';
   if(chosen) chosen.textContent = emoji;
+  // Highlight active pill
+  document.querySelectorAll('.diary-mood-pill').forEach(function(b){
+    b.classList.toggle('active', b.textContent.trim() === emoji);
+  });
   var ov = document.getElementById('diaryEmojiPickerOv');
   if(ov) ov.remove();
 }
@@ -8787,23 +8793,26 @@ async function pSaveDiary(){
 
 function _renderDiaryEntryList(el, entries){
   if(!entries || !entries.length){
-    el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">📔</span><div class="p-empty-title">Aún no tenés entradas</div><div class="p-empty-sub">Este es tu espacio seguro. 🌙</div></div>';
+    el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">📔</span><div class="p-empty-title">Aún no tenés entradas</div><div class="p-empty-sub">Empezá hoy — es tu espacio seguro 🌙</div></div>';
     return;
   }
+  // Update stats whenever we render
+  _updateDiaryStats(entries);
   var sorted = entries.slice().sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
   el.innerHTML = sorted.map(function(e, i){
     var rawLabel = e.dateLabel || '';
     var dateOnly = rawLabel ? rawLabel.split('·')[0].trim() : new Date(Number(e.ts)).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
-    var emojiBadge = e.emoji ? '<span style="font-size:16px">'+e.emoji+'</span>' : '📜';
-    var titleLine = e.title ? '<div style="font-size:12px;color:var(--ink4);font-style:italic;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(e.title)+'</div>' : '';
+    var emo = e.emoji || '📜';
+    var preview = e.title ? e.title : (e.text ? e.text.replace(/\n/g,' ').slice(0,72) : '');
+    var previewHtml = preview ? '<div class="diary-row-preview">'+_escHtml(preview)+'</div>' : '';
     return '<div class="diary-row" onclick="pOpenDiaryEntry('+e.ts+')" style="animation-delay:'+i*.04+'s;cursor:pointer">'
       +'<div style="display:flex;align-items:center;gap:10px">'
-      +'<span style="font-size:20px;flex-shrink:0">'+emojiBadge+'</span>'
+      +'<span style="font-size:22px;flex-shrink:0;line-height:1">'+emo+'</span>'
       +'<div style="flex:1;min-width:0">'
       +'<div class="diary-row-date">'+_escHtml(dateOnly)+'</div>'
-      +titleLine
+      +previewHtml
       +'</div>'
-      +'<button onclick="event.stopPropagation();pDeleteDiary('+e.ts+')" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink4);padding:4px 6px;flex-shrink:0">🗑️</button>'
+      +'<button onclick="event.stopPropagation();pDeleteDiary('+e.ts+')" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink4);opacity:.5;padding:4px 6px;flex-shrink:0">🗑️</button>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -8838,6 +8847,50 @@ async function _loadDiaryEntries(){
 }
 
 var _diaryEntries = [];
+
+function _getDiaryStreak(entries){
+  if(!entries || !entries.length) return 0;
+  var msDay = 86400000;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var uniqueDays = {};
+  entries.forEach(function(e){
+    if(!e.ts) return;
+    var d = new Date(Number(e.ts)); d.setHours(0,0,0,0);
+    uniqueDays[d.getTime()] = true;
+  });
+  var streak = 0;
+  var check = today.getTime();
+  if(!uniqueDays[check]) check -= msDay;
+  while(uniqueDays[check]){ streak++; check -= msDay; }
+  return streak;
+}
+
+function _updateDiaryStats(entries){
+  var streak = _getDiaryStreak(entries);
+  var sv = document.getElementById('diaryStreakVal');
+  var ec = document.getElementById('diaryEntryCountEl');
+  if(sv) sv.textContent = streak;
+  if(ec) ec.textContent = entries ? entries.length : 0;
+}
+
+function _injectDiaryTemplate(type){
+  var ta = document.getElementById('diaryTa');
+  if(!ta) return;
+  var tpls = {
+    gratitud: 'Hoy estoy agradecido/a por:\n1. \n2. \n3. \n\nAlgo que me alegró hoy: \n\nUna persona a quien quiero dar las gracias: ',
+    reflexion: '¿Qué aprendí hoy?\n\n\n¿Qué podría haber hecho mejor?\n\n\n¿Cómo me siento en este momento?\n',
+    sueno: 'Soñé con...\n\n\nLo que sentí en el sueño:\n\n\nLo que podría significar:\n'
+  };
+  var text = tpls[type] || '';
+  if(!text) return;
+  ta.value = text;
+  ta.focus();
+  ta.setSelectionRange(text.length, text.length);
+  var cc = document.getElementById('diaryCharCount');
+  if(cc) cc.textContent = ta.value.length;
+  pToast('✨', type === 'gratitud' ? 'Plantilla de Gratitud' : type === 'reflexion' ? 'Plantilla de Reflexión' : 'Plantilla de Sueño');
+}
+
 function pOpenDiaryEntry(ts){
   var entries = _diaryEntries;
   if(!entries.length){ try{ entries = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){} }

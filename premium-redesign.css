@@ -11597,11 +11597,7 @@ body.r-dark #topbarMoodBtn {
   animation: velo-text-shimmer 5s ease-in-out infinite !important;
 }
 
-/* ── 2. Hero background breathing (very subtle) ─────────────────── */
-@keyframes hero-bg-breathe {
-  0%, 100% { background-position: 0%   0%; }
-  50%       { background-position: 100% 100%; }
-}
+/* hero-bg-breathe removed v974 */
 body.r-dark .r-hero-v2 {
   background: linear-gradient(
     140deg,
@@ -11609,8 +11605,6 @@ body.r-dark .r-hero-v2 {
     rgba(6,20,12,.92) 45%,
     rgba(14,34,20,.86) 100%
   ) !important;
-  background-size: 250% 250% !important;
-  animation: hero-bg-breathe 14s ease-in-out infinite !important;
 }
 
 /* ── 3. Sub-greeting text — más grande y visible ─────────────────── */
@@ -11776,10 +11770,7 @@ body.velo-t-noche.r-dark .r-hero-italic {
 body.velo-t-noche.r-dark #homeGreetSub {
   color: rgba(200,192,255,.62) !important;
 }
-/* Hero breathing nocturno: más lento, índigo */
-body.velo-t-noche.r-dark .r-hero-v2 {
-  animation: hero-bg-breathe 18s ease-in-out infinite !important;
-}
+/* Hero breathing nocturno: removed — no animation */
 
 /* ══════════════════════════════════════════════════════════════════
    v956 — Carousel dot indicators + profile toggle
@@ -12008,3 +11999,270 @@ body.r-dark #pg-bottle .dark-bottle {
   background: rgba(116,198,157,.04);
   pointer-events: none;
 }
+
+/* ── v974: Diary full redesign ──────────────────────────────── */
+
+/* Hero header */
+.diary-hero {
+  position: relative;
+  background: linear-gradient(160deg, rgba(116,198,157,.14) 0%, rgba(80,150,110,.08) 55%, rgba(200,158,56,.07) 100%);
+  border-bottom: 1px solid rgba(116,198,157,.16);
+  padding: 56px 20px 22px;
+  margin: 0 -16px 18px;
+  overflow: hidden;
+}
+.diary-hero::before {
+  content: '✦';
+  position: absolute;
+  top: 4px; right: 16px;
+  font-size: 80px;
+  opacity: .04;
+  color: var(--sage2);
+  pointer-events: none;
+  line-height: 1;
+}
+.diary-hero-back {
+  position: absolute !important;
+  top: 14px !important;
+  left: 14px !important;
+}
+.diary-hero-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.diary-hero-deco {
+  font-size: 40px;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: .70;
+}
+.diary-hero-kicker {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: rgba(116,198,157,.65);
+  font-family: 'Jost', sans-serif;
+  margin-bottom: 4px;
+}
+.diary-hero-date {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.diary-hero-sub {
+  font-size: 10px;
+  color: var(--ink4);
+  font-style: italic;
+  font-family: 'Cormorant Garamond', serif;
+}
+
+/* Stats bar */
+.diary-stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(116,198,157,.07);
+  border: 1px solid rgba(116,198,157,.18);
+  border-radius: 16px;
+  padding: 10px 16px;
+  margin-bottom: 18px;
+}
+.diary-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  justify-content: center;
+}
+.diary-stat-ico { font-size: 15px; }
+.diary-stat-val {
+  font-size: 16px;
+  font-weight: 800;
+  font-family: 'Jost', sans-serif;
+  color: var(--ink);
+}
+.diary-stat-lbl {
+  font-size: 10px;
+  color: var(--ink4);
+  font-family: 'Jost', sans-serif;
+}
+.diary-stat-sep {
+  width: 1px;
+  height: 22px;
+  background: rgba(116,198,157,.22);
+  flex-shrink: 0;
+}
+
+/* Write panel */
+.diary-write {
+  background: var(--cream);
+  border: 1.5px solid rgba(116,198,157,.22);
+  border-radius: 20px;
+  padding: 18px 16px 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.09);
+  margin-bottom: 16px;
+}
+body.r-dark .diary-write {
+  background: rgba(22,40,28,.60) !important;
+  border-color: rgba(116,198,157,.30) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,.45) !important;
+}
+.diary-write-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(116,198,157,.14);
+}
+.diary-write-kicker {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: rgba(116,198,157,.65);
+  font-family: 'Jost', sans-serif;
+  margin-bottom: 3px;
+}
+.diary-write-date {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.diary-write-weekday {
+  font-size: 11px;
+  color: var(--ink4);
+  font-style: italic;
+  font-family: 'Cormorant Garamond', serif;
+  margin-top: 2px;
+}
+
+/* Mood pill row */
+.diary-mood-row { margin-bottom: 12px; }
+.diary-mood-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: var(--ink4);
+  font-family: 'Jost', sans-serif;
+  display: block;
+  margin-bottom: 7px;
+}
+.diary-mood-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.diary-mood-pill {
+  background: rgba(255,255,255,.05);
+  border: 1.5px solid rgba(116,198,157,.18);
+  border-radius: 10px;
+  padding: 5px 8px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1;
+}
+.diary-mood-pill:hover, .diary-mood-pill.active {
+  background: rgba(116,198,157,.18);
+  border-color: rgba(116,198,157,.60);
+  transform: scale(1.10);
+  box-shadow: 0 2px 8px rgba(116,198,157,.20);
+}
+.diary-mood-pill--more {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--ink4);
+  padding: 5px 12px;
+  font-family: 'Jost', sans-serif;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+/* Quick template row */
+.diary-tpl-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.diary-tpl-btn {
+  background: rgba(116,198,157,.08);
+  border: 1.5px solid rgba(116,198,157,.20);
+  border-radius: 20px;
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--ink3);
+  font-family: 'Jost', sans-serif;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.diary-tpl-btn:hover {
+  background: rgba(116,198,157,.18);
+  border-color: rgba(116,198,157,.50);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
+/* Textarea */
+.diary-ta {
+  border-radius: 14px !important;
+  font-size: 15px !important;
+  line-height: 1.72 !important;
+  font-family: 'Cormorant Garamond', serif !important;
+}
+
+/* Entry cards */
+.diary-row {
+  background: var(--cream);
+  border: 1px solid rgba(116,198,157,.15);
+  border-left: 3.5px solid rgba(116,198,157,.55);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  transition: all .15s;
+  animation: fadeSlideUp .3s ease both;
+}
+.diary-row:hover {
+  background: rgba(116,198,157,.06);
+  border-left-color: rgba(116,198,157,.90);
+  transform: translateX(2px);
+}
+body.r-dark .diary-row {
+  background: rgba(255,255,255,.04) !important;
+  border-color: rgba(116,198,157,.18) !important;
+  border-left-color: rgba(116,198,157,.45) !important;
+}
+body.r-dark .diary-row:hover {
+  background: rgba(116,198,157,.10) !important;
+  border-left-color: rgba(116,198,157,.80) !important;
+}
+.diary-row-date {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(116,198,157,.85);
+  font-family: 'Jost', sans-serif;
+  letter-spacing: .3px;
+}
+body.r-dark .diary-row-date { color: rgba(116,198,157,.80) !important; }
+.diary-row-preview {
+  font-size: 12.5px;
+  color: var(--ink4);
+  font-style: italic;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: 'Cormorant Garamond', serif;
+  margin-top: 2px;
+}
+body.r-dark .diary-row-preview { color: rgba(255,255,255,.50) !important; }

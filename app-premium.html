@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260619-973">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260619-973">
+  <link rel="stylesheet" href="premium.css?v=20260620-974">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260620-974">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1905,61 +1905,93 @@
       <!-- ══ DIARY ════════════════════════════════════════════════ -->
       <div class="p-page" id="pg-diary">
         <div class="p-page-scroll">
-          <div class="p-page-inner">
-            <div class="p-page-hdr">
-              <div class="p-page-hdr-back">
-                <button class="p-back-btn" onclick="pGoTo('home')">←</button>
-                <div>
-                  <div class="p-label">Personal</div>
-                  <h2 class="p-title">Diario</h2>
+          <div class="p-page-inner" style="padding-top:0">
+
+            <!-- Diary hero -->
+            <div class="diary-hero">
+              <button class="p-back-btn diary-hero-back" onclick="pGoTo('home')">←</button>
+              <div class="diary-hero-inner">
+                <div class="diary-hero-deco">🖋</div>
+                <div class="diary-hero-text">
+                  <div class="diary-hero-kicker">Diario Íntimo</div>
+                  <div class="diary-hero-date" id="diaryHeroDate"></div>
+                  <div class="diary-hero-sub">Solo vos podés leer esto · completamente privado</div>
                 </div>
               </div>
             </div>
-            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Escribí tus pensamientos y emociones del día. Tu diario es completamente privado — solo vos podés leerlo. La IA analiza tus registros mensualmente y te envía un resumen al Buzón.</p>
-            <!-- Privacy banner — shown once per session via JS -->
-            <div id="diaryPrivacyBanner" style="display:none;align-items:flex-start;gap:10px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.28);border-radius:12px;padding:11px 14px;margin-bottom:16px">
-              <span style="font-size:18px;flex-shrink:0">🔒</span>
-              <div style="flex:1">
-                <div style="font-size:12px;font-weight:700;color:var(--sage2);margin-bottom:2px">Tu privacidad, nuestra prioridad</div>
-                <div style="font-size:11px;color:var(--ink3);line-height:1.55">Lo que escribas aquí vive en tu cuenta personal de Velo — nadie más puede leerlo. Nunca usamos el contenido de tu diario para análisis ni lo compartimos con terceros.</div>
+
+            <!-- Stats bar -->
+            <div class="diary-stats-bar">
+              <div class="diary-stat">
+                <span class="diary-stat-ico">🔥</span>
+                <strong class="diary-stat-val" id="diaryStreakVal">0</strong>
+                <span class="diary-stat-lbl">racha</span>
               </div>
-              <button onclick="document.getElementById('diaryPrivacyBanner').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink4);line-height:1;padding:0;flex-shrink:0">✕</button>
+              <div class="diary-stat-sep"></div>
+              <div class="diary-stat">
+                <span class="diary-stat-ico">📔</span>
+                <strong class="diary-stat-val" id="diaryEntryCountEl">0</strong>
+                <span class="diary-stat-lbl">entradas</span>
+              </div>
+              <div class="diary-stat-sep"></div>
+              <div class="diary-stat">
+                <span class="diary-stat-ico">🔒</span>
+                <span class="diary-stat-lbl">encriptado</span>
+              </div>
             </div>
+
             <div class="diary-grid">
               <div>
+                <!-- Write panel — journal card -->
                 <div class="diary-write">
-                  <div class="p-label p-label-sage" style="margin-bottom:10px">Nueva entrada</div>
-                  <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:12px">
-                    <div style="font-size:13px;font-weight:700;font-family:'Jost',sans-serif;color:rgba(116,198,157,.85)" id="diaryDateLbl"></div>
-                    <div style="font-size:11px;font-style:italic;color:var(--ink4);font-family:'Cormorant Garamond',serif" id="diaryDateSub">— escribe lo que quieras</div>
-                  </div>
-                  <input class="p-input" id="diaryTitleInput" type="text" maxlength="80" placeholder="Título (opcional)…" style="width:100%;box-sizing:border-box;margin-bottom:10px">
-                  <div style="margin-bottom:10px"><button onclick="_openDiaryEmojiPicker()" id="diaryEmojiBtn" style="background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--ink3);font-family:'Jost',sans-serif">😊 Elegir emoji</button> <span id="diaryEmojiChosen" style="font-size:22px;vertical-align:middle"></span></div>
-                  <!-- Diary: Reflexión del día card -->
-                  <div class="diary-prompt-card" onclick="pInjectDiaryPrompt()">
-                    <div class="diary-prompt-icon">✨</div>
-                    <div class="diary-prompt-inner">
-                      <div class="diary-prompt-label">Reflexión del día</div>
-                      <div id="diaryPromptPreview" class="diary-prompt-text"></div>
+                  <div class="diary-write-hdr">
+                    <div>
+                      <div class="diary-write-kicker">Nueva entrada</div>
+                      <div class="diary-write-date" id="diaryDateLbl"></div>
+                      <div class="diary-write-weekday" id="diaryDateSub"></div>
                     </div>
-                    <div class="diary-prompt-arrow">→</div>
+                    <span id="diaryEmojiChosen" style="font-size:34px;line-height:1;flex-shrink:0;min-width:40px;text-align:right"></span>
                   </div>
-                  <textarea class="p-textarea" id="diaryTa" rows="6" placeholder="¿Cómo te sentís hoy? Escribí libremente..."></textarea>
-                  <div style="display:flex;justify-content:flex-end;padding:2px 2px 8px;font-size:10px;color:rgba(255,255,255,.30);font-family:'Jost',sans-serif"><span id="diaryCharCount">0</span> caracteres</div>
+
+                  <!-- Mood pills -->
+                  <div class="diary-mood-row">
+                    <span class="diary-mood-label">Estado de ánimo:</span>
+                    <div class="diary-mood-pills">
+                      <button class="diary-mood-pill" onclick="_setDiaryEmoji('😊')">😊</button>
+                      <button class="diary-mood-pill" onclick="_setDiaryEmoji('😌')">😌</button>
+                      <button class="diary-mood-pill" onclick="_setDiaryEmoji('😢')">😢</button>
+                      <button class="diary-mood-pill" onclick="_setDiaryEmoji('😤')">😤</button>
+                      <button class="diary-mood-pill" onclick="_setDiaryEmoji('🥺')">🥺</button>
+                      <button class="diary-mood-pill" onclick="_setDiaryEmoji('😴')">😴</button>
+                      <button class="diary-mood-pill diary-mood-pill--more" onclick="_openDiaryEmojiPicker()">+</button>
+                    </div>
+                  </div>
+
+                  <input class="p-input" id="diaryTitleInput" type="text" maxlength="80" placeholder="Título (opcional)…" style="width:100%;box-sizing:border-box;margin-bottom:12px">
+
+                  <!-- Quick templates -->
+                  <div class="diary-tpl-row">
+                    <button class="diary-tpl-btn" onclick="_injectDiaryTemplate('gratitud')">🙏 Gratitud</button>
+                    <button class="diary-tpl-btn" onclick="_injectDiaryTemplate('reflexion')">🌙 Reflexión</button>
+                    <button class="diary-tpl-btn" onclick="_injectDiaryTemplate('sueno')">💭 Sueño</button>
+                    <button class="diary-tpl-btn" onclick="pInjectDiaryPrompt()">✨ Del día</button>
+                  </div>
+
+                  <textarea class="p-textarea diary-ta" id="diaryTa" rows="7" placeholder="¿Cómo te sentís hoy? Escribí libremente..."></textarea>
+                  <div style="display:flex;justify-content:flex-end;padding:2px 2px 10px;font-size:10px;color:rgba(255,255,255,.28);font-family:'Jost',sans-serif"><span id="diaryCharCount">0</span> caracteres</div>
                   <button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pSaveDiary()" style="font-size:15px;font-weight:800;letter-spacing:.4px;padding:14px">Guardar entrada 📔</button>
                 </div>
               </div>
+
               <div>
-                <div class="p-section-hdr" style="display:flex;align-items:center;justify-content:space-between">
-                  <span class="p-label" style="margin:0">Entradas</span>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                  <span class="p-label" style="margin:0">Mis entradas</span>
                   <button onclick="pClearAllDiary()" style="background:none;border:none;color:rgba(255,100,100,.45);font-size:10px;cursor:pointer;font-family:'Jost',sans-serif;padding:2px 6px;letter-spacing:.3px">🗑️ Borrar todo</button>
-                </div>
-                <div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:rgba(210,235,215,.8);line-height:1.5">
-                  🔒 Solo vos podés ver este diario — ni Velo puede acceder a este contenido
                 </div>
                 <div id="diaryEntries"></div>
               </div>
             </div>
+
           </div>
         </div>
       </div><!-- /pg-diary -->
@@ -3965,8 +3997,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260619-973"></script>
-<script src="premium-redesign.js?v=20260619-973"></script>
+<script src="premium.js?v=20260620-974"></script>
+<script src="premium-redesign.js?v=20260620-974"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
