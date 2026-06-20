@@ -11311,7 +11311,7 @@ function _happyPostCard(h, isOwn){
     avatarHtml = '<div style="font-size:26px;width:44px;height:44px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>';
   }
 
-  var canClick = !isOwn && h.userId && h.userId !== 'anon' && !h.anon;
+  var canClick = !!(h.userId && h.userId !== 'anon' && !h.anon);
   var authorClick = canClick ? ' style="cursor:pointer" onclick="pQuickProfile('+_jsAttr(h.name||'Usuario')+','+_jsAttr(h.av||'')+',\'\',\'\','+_jsAttr(h.userId||'')+')"' : '';
   return '<div class="happy-card" data-id="'+h.id+'">'
     // header
