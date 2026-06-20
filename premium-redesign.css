@@ -12571,3 +12571,102 @@ body.velo-t-manana.r-dark .r-hero-v2::before {
     radial-gradient(ellipse at 96% 8%, rgba(255,170,20,.07) 0%, transparent 36%) !important;
   opacity: 1 !important;
 }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v986 — Diary vivid redesign + tab scale + compose toggle
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Tab active: subtle scale pop */
+.hf-tab--active { transform: scale(1.05) !important; }
+.hf-tab--active-happy { transform: scale(1.05) !important; }
+
+/* Profile toggle: bigger, clearer */
+#momentoProfileToggle {
+  padding: 8px 14px 8px 8px !important;
+  border: 1.5px solid rgba(116,198,157,.42) !important;
+  background: rgba(116,198,157,.13) !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  color: rgba(116,198,157,.85) !important;
+  margin-top: 8px !important;
+}
+#momentoProfileToggle.mpt-on {
+  background: rgba(116,198,157,.24) !important;
+  border-color: rgba(116,198,157,.65) !important;
+  color: rgba(180,255,215,.95) !important;
+}
+#momentoProfileToggle .mpt-avatar-ph {
+  width: 26px !important; height: 26px !important;
+  font-size: 15px !important;
+  border: 2px solid rgba(116,198,157,.50) !important;
+}
+
+/* Diary stats bar — colored per stat */
+body.r-dark .diary-stats-bar {
+  background: linear-gradient(135deg, rgba(8,18,10,.90) 0%, rgba(12,24,16,.95) 100%) !important;
+  border-color: rgba(116,198,157,.28) !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,.40), inset 0 1px 0 rgba(116,198,157,.08) !important;
+}
+body.r-dark .diary-stat-sep { background: rgba(116,198,157,.18) !important; }
+body.r-dark .diary-stats-bar > div:nth-child(1) .diary-stat-val {
+  color: rgba(255,168,55,.97) !important;
+  text-shadow: 0 0 12px rgba(255,140,30,.45);
+}
+body.r-dark .diary-stats-bar > div:nth-child(1) .diary-stat-lbl { color: rgba(255,180,80,.60) !important; }
+body.r-dark .diary-stats-bar > div:nth-child(3) .diary-stat-val { color: rgba(116,198,157,.97) !important; text-shadow: 0 0 12px rgba(116,198,157,.40); }
+body.r-dark .diary-stats-bar > div:nth-child(3) .diary-stat-lbl { color: rgba(116,198,157,.60) !important; }
+body.r-dark .diary-stats-bar > div:nth-child(5) .diary-stat-lbl { color: rgba(185,155,255,.80) !important; }
+body.r-dark .diary-stats-bar > div:nth-child(5) .diary-stat-ico { filter: drop-shadow(0 0 5px rgba(155,100,255,.55)); }
+
+/* Diary write panel */
+body.r-dark .diary-write {
+  background: linear-gradient(155deg, rgba(12,28,18,.95) 0%, rgba(8,18,12,.98) 100%) !important;
+  border: 1.5px solid rgba(116,198,157,.45) !important;
+  box-shadow: 0 6px 32px rgba(0,0,0,.60), 0 0 0 1px rgba(116,198,157,.10) !important;
+}
+body.r-dark .diary-write-kicker { color: rgba(116,198,157,.92) !important; letter-spacing: 2px !important; }
+body.r-dark .diary-write-date { color: rgba(215,255,235,.97) !important; }
+body.r-dark .diary-write-weekday { color: rgba(165,228,195,.62) !important; }
+body.r-dark .diary-write-hdr { border-bottom-color: rgba(116,198,157,.28) !important; }
+
+/* Mood pills */
+body.r-dark .diary-mood-pill {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(116,198,157,.22) !important;
+  transition: all .15s !important;
+}
+body.r-dark .diary-mood-pill:hover, body.r-dark .diary-mood-pill.active {
+  background: rgba(116,198,157,.28) !important;
+  border-color: rgba(116,198,157,.80) !important;
+  box-shadow: 0 3px 16px rgba(116,198,157,.32) !important;
+  transform: scale(1.15) !important;
+}
+
+/* Template tag buttons — each own color */
+body.r-dark .diary-tpl-btn { color: rgba(180,220,200,.80) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(1) { background:rgba(222,162,36,.14) !important; border-color:rgba(222,162,36,.38) !important; color:rgba(255,220,78,.90) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(1):hover { background:rgba(222,162,36,.28) !important; border-color:rgba(222,162,36,.68) !important; box-shadow:0 2px 12px rgba(222,162,36,.25) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(2) { background:rgba(148,88,222,.14) !important; border-color:rgba(148,88,222,.38) !important; color:rgba(210,172,255,.90) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(2):hover { background:rgba(148,88,222,.28) !important; border-color:rgba(148,88,222,.68) !important; box-shadow:0 2px 12px rgba(148,88,222,.25) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(3) { background:rgba(85,132,225,.14) !important; border-color:rgba(85,132,225,.38) !important; color:rgba(162,195,255,.90) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(3):hover { background:rgba(85,132,225,.28) !important; border-color:rgba(85,132,225,.68) !important; box-shadow:0 2px 12px rgba(85,132,225,.25) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(4) { background:rgba(116,198,157,.14) !important; border-color:rgba(116,198,157,.38) !important; color:rgba(168,242,205,.90) !important; }
+body.r-dark .diary-tpl-row > button:nth-child(4):hover { background:rgba(116,198,157,.28) !important; border-color:rgba(116,198,157,.68) !important; box-shadow:0 2px 12px rgba(116,198,157,.25) !important; }
+
+/* Textarea */
+body.r-dark .diary-ta {
+  background: rgba(8,20,12,.78) !important;
+  border-color: rgba(116,198,157,.32) !important;
+  color: rgba(215,255,235,.92) !important;
+}
+body.r-dark .diary-ta::placeholder { color: rgba(116,198,157,.45) !important; }
+
+/* Save button */
+body.r-dark .diary-write .p-btn--primary {
+  background: linear-gradient(135deg, rgba(85,175,120,.80) 0%, rgba(60,145,95,.90) 100%) !important;
+  box-shadow: 0 4px 20px rgba(85,175,120,.35), 0 2px 8px rgba(0,0,0,.30) !important;
+  border: none !important;
+  font-size: 16px !important;
+}
+

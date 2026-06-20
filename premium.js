@@ -7291,8 +7291,8 @@ function _showDailyGreeting(saludo, msg){
         +'">'+_escHtml(saludo)+'</div>'
         // Gemini message line — shows loading dots until ready
         +'<div id="veloGreetingGemini" style="'
-          +'font-family:\'Cormorant Garamond\',serif;font-size:15.5px;'
-          +'color:rgba(255,255,255,.82);line-height:1.58;font-weight:400;letter-spacing:-.1px'
+          +'font-family:\'Cormorant Garamond\',serif;'
+          +'color:rgba(255,255,255,.95);font-size:17px;line-height:1.52;font-weight:500;letter-spacing:-.1px;text-shadow:0 1px 12px rgba(0,0,0,.65)'
         +'">'+( msg ? _escHtml(msg) : '…')+'</div>'
       +'</div>'
 
@@ -20838,7 +20838,11 @@ async function _loadHomeHappyFeed(){
       +'<span style="font-size:9px;color:rgba(255,255,255,.38)">· '+relTime+'</span>'
       +(totalR>0?'<span style="margin-left:auto;font-size:9.5px;color:rgba(255,210,70,.85)">'+totalR+' ❤️</span>':'')
       +'</div>'
-      +'<div style="font-size:13px;color:rgba(255,255,255,.92);line-height:1.5;word-break:break-word;margin-bottom:8px">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.92);line-height:1.5;word-break:break-word;margin-bottom:'+(h.photo?'6px':'8px')+'">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
+      +(h.photo?'<div style="margin-bottom:8px;border-radius:8px;overflow:hidden;cursor:pointer" onclick="pOpenHappyHomeSheet(\''+_escHtml(String(h.id))+'\')">'
+        +'<img src="'+_escHtml(h.photo)+'" style="width:100%;height:70px;object-fit:cover;display:block">'
+        +'<div style="text-align:center;font-size:9px;font-weight:700;letter-spacing:.3px;color:rgba(255,215,70,.65);font-family:Jost,sans-serif;padding:3px 0;background:rgba(218,160,30,.12)">📷 Ver foto</div>'
+        +'</div>':'')
       // Action bar: "Ver publicación" primary CTA + comment count
       +'<div style="display:flex;align-items:center;gap:6px;padding-top:6px;border-top:1px solid rgba(218,160,30,.18)">'
       +'<button onclick="pOpenHappyHomeSheet(\''+_escHtml(String(h.id))+'\')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:rgba(218,160,30,.22);border:1.5px solid rgba(218,160,30,.55);border-radius:20px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:800;color:rgba(255,215,70,.95);font-family:Jost,sans-serif;letter-spacing:.3px">Ver publicación →</button>'
