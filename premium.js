@@ -3376,7 +3376,42 @@ var _DAILY_QUESTIONS = [
   {id:167, text:'¿Qué versión futura de vos querés construir?', hint:'No perfecta. Solo más tuya. ¿Cómo sería?'},
   {id:168, text:'¿Qué aprendiste de una situación que creíste que no ibas a poder superar?', hint:'Algo que esa experiencia difícil te dejó como aprendizaje real.'},
   {id:169, text:'¿Cómo sabés si estás creciendo o simplemente sobreviviendo?', hint:'¿Hay señales que te ayudan a distinguirlo?'},
-  {id:170, text:'¿Qué le dirías a la versión de vos de hace 5 años?', hint:'Lo que necesitaba escuchar. Lo que querés que sepa.'}
+  {id:170, text:'¿Qué le dirías a la versión de vos de hace 5 años?', hint:'Lo que necesitaba escuchar. Lo que querés que sepa.'},
+  // Creativas y divertidas
+  {id:171, text:'Si tu vida fuera una película, ¿qué género sería?', hint:'Drama, comedia, aventura, documental... ¿y cómo se llamaría?'},
+  {id:172, text:'¿Qué superpoder emocional quisierías tener?', hint:'Leer mentes, nunca dudar de vos mismo, olvidar lo que duele... ¿cuál elegís?'},
+  {id:173, text:'Si pudieras cenar con una persona de la historia, ¿quién elegirías?', hint:'¿Qué le preguntarías?'},
+  {id:174, text:'¿Qué canción querés que suene en tu próximo gran momento?', hint:'El tema de tu banda sonora personal para cuando algo importante pasa.'},
+  {id:175, text:'¿Cuál es la cosa más valiente que hiciste sin que nadie lo supiera?', hint:'Algo que solo vos sabés que te costó mucho.'},
+  {id:176, text:'¿Qué parte de vos cambiaría con una varita mágica, y qué nunca cambiarías?', hint:'Lo que querés transformar... y lo que es sagrado.'},
+  {id:177, text:'Si tuvieras un lema de vida, ¿cuál sería?', hint:'Esa frase que resume cómo querés vivir o cómo ya vivís.'},
+  {id:178, text:'¿Cuál fue la decisión más difícil que tomaste y de la que hoy te alegrás?', hint:'Algo que costó tomar pero resultó bien.'},
+  {id:179, text:'¿Qué cosa pequeña pero significativa cambió tu forma de ver el mundo?', hint:'Un libro, una conversación, un momento. Lo que te movió el piso suavemente.'},
+  {id:180, text:'¿A qué le decirías "gracias" hoy si pudieras?', hint:'Una persona, una experiencia, una emoción. Lo que te dejó algo bueno.'},
+  // Conexión y comunidad
+  {id:181, text:'¿Cuándo fue la última vez que alguien te sorprendió de la mejor manera?', hint:'Una amabilidad inesperada, un gesto que no olvidás.'},
+  {id:182, text:'¿Qué es lo que más admirás de alguien en tu vida?', hint:'Una cualidad que ves en esa persona y que te inspira.'},
+  {id:183, text:'¿Hay alguien a quien debería llamar hoy pero no lo hago?', hint:'¿Qué te frena? ¿Qué pasaría si lo hicieras?'},
+  {id:184, text:'¿Qué le dirías a tu yo de hace 5 años?', hint:'Lo que más necesitaba escuchar en aquel momento.'},
+  {id:185, text:'¿Cuál fue el consejo más valioso que te dieron y que todavía usás?', hint:'Algo que alguien te dijo que se quedó grabado para siempre.'},
+  // Presente y cotidiano
+  {id:186, text:'¿Qué te hizo sonreír en las últimas 24 horas?', hint:'Aunque sea algo pequeño. Un detalle, un olor, un momento cualquiera.'},
+  {id:187, text:'¿Qué es algo que hoy notaste y normalmente pasás por alto?', hint:'El color del cielo, un olor, la textura de algo. Lo cotidiano que ignoramos.'},
+  {id:188, text:'¿Cómo describirías hoy con un solo emoji?', hint:'El primero que aparece en tu cabeza ya dice algo.'},
+  {id:189, text:'¿Qué es lo más honesto que podrías decir sobre cómo te sentís hoy?', hint:'Sin el "bien, ¿y vos?". La respuesta real.'},
+  {id:190, text:'¿Hay algo que querés probar y nunca te animaste?', hint:'Una comida, un hobby, una conversación. ¿Qué te frena?'},
+  // Esperanza y futuro
+  {id:191, text:'¿Qué sueño todavía no te animaste a contarle a alguien?', hint:'Ese que guardás porque te parece demasiado grande o raro.'},
+  {id:192, text:'¿Qué querías ser de chico/a y qué quedó de eso en vos?', hint:'¿Algo de ese sueño de infancia todavía vive adentro?'},
+  {id:193, text:'¿Qué versioné mejorada de vos mismo/a estás construyendo?', hint:'¿Hacia dónde va la evolución? ¿Lo notás?'},
+  {id:194, text:'Si supieras que no podés fallar, ¿qué intentarías mañana?', hint:'Sin miedo al fracaso. ¿Qué sería lo primero?'},
+  {id:195, text:'¿Qué es lo que más esperás de los próximos 12 meses?', hint:'Un deseo, un proyecto, una sensación. Lo que más querés que pase.'},
+  // Vulnerabilidad real
+  {id:196, text:'¿Cuándo fue la última vez que fuiste completamente honesto/a con alguien?', hint:'¿Cómo fue? ¿Te arrepentís o te alivió?'},
+  {id:197, text:'¿Hay algo que actualmente te genera mucha incertidumbre?', hint:'Sin resolverlo. Solo nombrarlo puede aliviar.'},
+  {id:198, text:'¿Qué parte de tu historia te cuesta contar en voz alta?', hint:'No para contarla acá necesariamente. Solo para reconocerla.'},
+  {id:199, text:'¿Cuándo sentiste que algo te superó y saliste adelante igual?', hint:'La vez que no creíste poder y pudiste.'},
+  {id:200, text:'¿Qué te hace seguir, en los días en que todo parece difícil?', hint:'El ancla. Lo que te mantiene en pie cuando todo cuesta.'}
 ];
 
 function _getDailyQuestion(){
@@ -7645,16 +7680,16 @@ async function pRenderNews(forceRefresh){
     // Each item includes a Google search URL so users can find the real article
     var _cy = _nd.getFullYear();
     var _pool = [
-      { emoji:'🌱', titulo:'Reforestación récord: millones de árboles plantados en '+_cy, cuerpo:'Coaliciones de países y organizaciones siguen batiendo récords de reforestación, contribuyendo a absorber millones de toneladas de CO₂ y restaurar ecosistemas degradados en distintos continentes.', reflexion:'Cada árbol es un acto de fe en el futuro. La humanidad puede regenerarse cuando actúa unida. 🌿', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=reforestacion+record+arboles+'+_cy, _src:'static' },
-      { emoji:'💊', titulo:'Avances en tratamientos sin opioides para el dolor crónico', cuerpo:'Investigadores continúan desarrollando terapias basadas en neuromodulación y biomedicina que reducen el dolor crónico sin generar dependencia, mejorando la calidad de vida de millones de personas.', reflexion:'El alivio del sufrimiento humano sigue avanzando. La ciencia trabaja para que vivir bien sea posible para todos. 💙', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=tratamiento+dolor+cronico+sin+opioides+'+_cy, _src:'static' },
-      { emoji:'☀️', titulo:'Energía solar bate récords de producción en '+_cy, cuerpo:'La energía solar alcanzó nuevos máximos de producción global en '+_cy+', con cientos de comunidades rurales accediendo por primera vez a electricidad limpia gracias a micro-redes comunitarias.', reflexion:'La energía limpia no es solo tecnología — es dignidad y oportunidad. ✨', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=record+energia+solar+renovable+'+_cy, _src:'static' },
-      { emoji:'🐋', titulo:'Especies marinas en recuperación gracias a áreas protegidas', cuerpo:'Ballenas, tortugas y delfines muestran señales de recuperación poblacional en zonas donde se establecieron reservas marinas, demostrando que la protección sostenida revierte el daño ambiental.', reflexion:'La naturaleza sana cuando le damos tiempo y espacio. El daño puede revertirse. 🌊', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=conservacion+marina+especies+recuperacion+'+_cy, _src:'static' },
-      { emoji:'📚', titulo:'Programas de inclusión digital reducen el aislamiento en adultos mayores', cuerpo:'Iniciativas en toda América Latina capacitan a personas mayores en el uso de internet y videollamadas, reduciendo el aislamiento social y conectando a miles con sus familias y comunidades.', reflexion:'Aprender no tiene edad. Cada persona conectada es una vida más acompañada. 🌻', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=inclusion+digital+adultos+mayores+america+latina+'+_cy, _src:'static' },
-      { emoji:'🧬', titulo:'Terapias génicas CRISPR abren nuevas esperanzas para enfermedades raras', cuerpo:'Los avances en edición genética continúan transformando el tratamiento de enfermedades hereditarias, con nuevas terapias aprobadas y ensayos clínicos que muestran resultados prometedores en pacientes de todo el mundo.', reflexion:'La ciencia convierte el sufrimiento de hoy en el alivio de mañana. Cada avance es una vida cambiada. 💙', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=CRISPR+terapia+genica+aprobacion+'+_cy, _src:'static' },
-      { emoji:'🌊', titulo:'Corales tropicales muestran resiliencia ante el cambio climático', cuerpo:'Científicos identificaron colonias de coral con mayor tolerancia al calor y trabajan en programas de restauración activa que replican estas variedades en arrecifes degradados de todo el mundo.', reflexion:'La resiliencia de la naturaleza nos enseña que siempre hay posibilidad de regeneración. 🌏', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=restauracion+corales+resiliencia+'+_cy, _src:'static' },
-      { emoji:'🤲', titulo:'Redes de voluntariado baten récords de impacto social en '+_cy, cuerpo:'Organizaciones de voluntarios en todo el mundo registran un crecimiento sin precedentes en '+_cy+', con millones de personas dedicando tiempo a causas comunitarias, bancos de alimentos y apoyo a personas vulnerables.', reflexion:'La solidaridad transforma vecindarios en comunidades. Compartir es un acto de amor. ❤️', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=voluntariado+record+solidaridad+'+_cy, _src:'static' },
-      { emoji:'♻️', titulo:'Ciudades líderes en reciclaje y economía circular en '+_cy, cuerpo:'Varias ciudades europeas y latinoamericanas alcanzan tasas de reciclaje históricas en '+_cy+', inspirando nuevos modelos de economía circular que reducen residuos y generan empleos verdes.', reflexion:'Un futuro limpio se construye con pequeñas decisiones diarias y mucha voluntad colectiva. 🌍', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=ciudades+reciclaje+economia+circular+'+_cy, _src:'static' },
-      { emoji:'🧠', titulo:'Investigaciones en salud mental reducen el estigma en jóvenes', cuerpo:'Nuevos programas de salud mental en escuelas y universidades de América Latina están logrando que más jóvenes busquen ayuda sin miedo al juicio, cambiando la cultura del bienestar emocional.', reflexion:'Hablar de lo que sentimos es el primer paso hacia sanar. La salud mental es salud. 💚', sourceName:'Buscar noticia', sourceUrl:'https://www.google.com/search?q=salud+mental+jovenes+programa+'+_cy, _src:'static' }
+      { emoji:'🌱', titulo:'Reforestación récord: millones de árboles plantados en '+_cy, cuerpo:'Coaliciones de países y organizaciones siguen batiendo récords de reforestación, contribuyendo a absorber millones de toneladas de CO₂ y restaurar ecosistemas degradados en distintos continentes.', reflexion:'Cada árbol es un acto de fe en el futuro. La humanidad puede regenerarse cuando actúa unida. 🌿', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('reforestacion record arboles')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'💊', titulo:'Avances en tratamientos sin opioides para el dolor crónico', cuerpo:'Investigadores continúan desarrollando terapias basadas en neuromodulación y biomedicina que reducen el dolor crónico sin generar dependencia, mejorando la calidad de vida de millones de personas.', reflexion:'El alivio del sufrimiento humano sigue avanzando. La ciencia trabaja para que vivir bien sea posible para todos. 💙', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('tratamiento dolor cronico sin opioides')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'☀️', titulo:'Energía solar bate récords de producción en '+_cy, cuerpo:'La energía solar alcanzó nuevos máximos de producción global en '+_cy+', con cientos de comunidades rurales accediendo por primera vez a electricidad limpia gracias a micro-redes comunitarias.', reflexion:'La energía limpia no es solo tecnología — es dignidad y oportunidad. ✨', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('record energia solar renovable')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'🐋', titulo:'Especies marinas en recuperación gracias a áreas protegidas', cuerpo:'Ballenas, tortugas y delfines muestran señales de recuperación poblacional en zonas donde se establecieron reservas marinas, demostrando que la protección sostenida revierte el daño ambiental.', reflexion:'La naturaleza sana cuando le damos tiempo y espacio. El daño puede revertirse. 🌊', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('conservacion marina especies recuperacion')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'📚', titulo:'Programas de inclusión digital reducen el aislamiento en adultos mayores', cuerpo:'Iniciativas en toda América Latina capacitan a personas mayores en el uso de internet y videollamadas, reduciendo el aislamiento social y conectando a miles con sus familias y comunidades.', reflexion:'Aprender no tiene edad. Cada persona conectada es una vida más acompañada. 🌻', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('inclusion digital adultos mayores america latina')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'🧬', titulo:'Terapias génicas CRISPR abren nuevas esperanzas para enfermedades raras', cuerpo:'Los avances en edición genética continúan transformando el tratamiento de enfermedades hereditarias, con nuevas terapias aprobadas y ensayos clínicos que muestran resultados prometedores en pacientes de todo el mundo.', reflexion:'La ciencia convierte el sufrimiento de hoy en el alivio de mañana. Cada avance es una vida cambiada. 💙', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('CRISPR terapia genica aprobacion')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'🌊', titulo:'Corales tropicales muestran resiliencia ante el cambio climático', cuerpo:'Científicos identificaron colonias de coral con mayor tolerancia al calor y trabajan en programas de restauración activa que replican estas variedades en arrecifes degradados de todo el mundo.', reflexion:'La resiliencia de la naturaleza nos enseña que siempre hay posibilidad de regeneración. 🌏', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('restauracion corales resiliencia')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'🤲', titulo:'Redes de voluntariado baten récords de impacto social en '+_cy, cuerpo:'Organizaciones de voluntarios en todo el mundo registran un crecimiento sin precedentes en '+_cy+', con millones de personas dedicando tiempo a causas comunitarias, bancos de alimentos y apoyo a personas vulnerables.', reflexion:'La solidaridad transforma vecindarios en comunidades. Compartir es un acto de amor. ❤️', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('voluntariado record solidaridad')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'♻️', titulo:'Ciudades líderes en reciclaje y economía circular en '+_cy, cuerpo:'Varias ciudades europeas y latinoamericanas alcanzan tasas de reciclaje históricas en '+_cy+', inspirando nuevos modelos de economía circular que reducen residuos y generan empleos verdes.', reflexion:'Un futuro limpio se construye con pequeñas decisiones diarias y mucha voluntad colectiva. 🌍', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('ciudades reciclaje economia circular')+'+'+_cy+'&hl=es-419', _src:'static' },
+      { emoji:'🧠', titulo:'Investigaciones en salud mental reducen el estigma en jóvenes', cuerpo:'Nuevos programas de salud mental en escuelas y universidades de América Latina están logrando que más jóvenes busquen ayuda sin miedo al juicio, cambiando la cultura del bienestar emocional.', reflexion:'Hablar de lo que sentimos es el primer paso hacia sanar. La salud mental es salud. 💚', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('salud mental jovenes programa')+'+'+_cy+'&hl=es-419', _src:'static' }
     ];
     var _offset = (Date.now() / 60000 | 0) % _pool.length; // rotates every minute
     items = [];
@@ -7728,10 +7763,10 @@ function _renderNewsList(el, items){
   _newsListCache = items;
   var _cy = new Date().getFullYear();
   var _sourceTag = function(item){
-    var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
-    return hasLink
-      ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:#fff;font-weight:700;text-decoration:none;background:rgba(20,110,70,.78);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.5)">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a>'
-      : (item.titulo ? '<a href="https://www.google.com/search?q='+encodeURIComponent(item.titulo+' '+_cy)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:var(--ink4);font-size:11px;text-decoration:none;background:var(--cream);padding:3px 8px;border-radius:100px;border:1px solid var(--border)">🔍 Buscar noticia</a>' : '<span style="color:var(--ink5);font-style:italic">✨ Velo IA</span>');
+    var _newsSearch = 'https://news.google.com/search?q='+encodeURIComponent((item.titulo||'')+' '+_cy)+'&hl=es-419';
+    return item.titulo
+      ? '<a href="'+_escHtml(_newsSearch)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;color:#fff;font-weight:700;text-decoration:none;background:rgba(20,110,70,.78);padding:3px 8px;border-radius:100px;border:1px solid rgba(116,198,157,.5)">🔗 Buscar en Google News</a>'
+      : '<span style="color:var(--ink5);font-style:italic">✨ Velo IA</span>';
   };
 
   var heroHtml = '';
@@ -7781,10 +7816,12 @@ function pOpenNewsDetail(i){
   _trackNewsRead(); // Feature 4: count this read
   var hasLink = item.sourceUrl && item.sourceUrl.startsWith('http');
   var _nd = new Date();
+  var _cy2 = _nd.getFullYear();
   var _months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  var _dateStr = _nd.getDate()+' de '+_months[_nd.getMonth()]+' de '+_nd.getFullYear();
-  var sourceRef = hasLink
-    ? '<a href="'+_escHtml(item.sourceUrl)+'" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--sage2);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px">🔗 '+_escHtml(item.sourceName||'Ver fuente')+'</a>'
+  var _dateStr = _nd.getDate()+' de '+_months[_nd.getMonth()]+' de '+_cy2;
+  var _detailNewsSearch = 'https://news.google.com/search?q='+encodeURIComponent((item.titulo||'')+' '+_cy2)+'&hl=es-419';
+  var sourceRef = item.titulo
+    ? '<a href="'+_escHtml(_detailNewsSearch)+'" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--sage2);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px">🔗 Buscar en Google News</a>'
     : '<span style="font-size:12px;color:var(--ink4);font-style:italic">✨ Historia de bienestar · Velo IA</span>';
   var sourceBlock = '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-bottom:18px;padding:10px 14px;background:rgba(116,198,157,.07);border-radius:10px;border:1px solid rgba(116,198,157,.18)">'
     +'<span style="font-size:12px;color:var(--ink4)">📅 '+_dateStr+'</span>'
@@ -7809,10 +7846,7 @@ function pOpenNewsDetail(i){
     +'<div style="font-size:11px;font-weight:700;color:var(--sage3);letter-spacing:.5px;margin-bottom:6px">✨ REFLEXIÓN VELO IA</div>'
     +'<p style="font-size:13px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+_escHtml(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
     +'</div>'
-    +(hasLink
-      ? '<a href="'+item.sourceUrl+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:12px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔗 Leer artículo completo en '+_escHtml(item.sourceName||'la fuente')+'</a>'
-      : '<a href="https://www.google.com/search?q='+encodeURIComponent(item.titulo)+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:12px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔍 Buscar noticia en Google</a>'
-    )
+    +'<a href="'+_escHtml(_detailNewsSearch)+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:12px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔍 Buscar en Google News</a>'
     +shareRow
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'newsDetailOv\').remove()">Cerrar</button>'
     +'</div>';
@@ -20337,6 +20371,7 @@ function pCloseWeeklySummary(){
 
 // ── AMBIENT SOUNDS (Web Audio API — real recorded files) ─────
 var _ambCtx = null, _ambSource = null, _ambGain = null, _ambLfo = null, _ambLfo2 = null, _ambActive = null;
+var _ambPlayToken = 0; // increment to cancel in-flight pPlayAmbient
 var _AMB_META = { lluvia:{icon:'🌧️',label:'Lluvia'}, bosque:{icon:'🌲',label:'Bosque'}, fuego:{icon:'🔥',label:'Fuego'}, mar:{icon:'🌊',label:'Mar'} };
 var _ambCache = {}; // decoded AudioBuffer cache
 
@@ -20344,6 +20379,7 @@ var _AMB_UNLOCK_SRC = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKw
 
 async function pPlayAmbient(type){
   pStopAmbient(true);
+  var _myToken = ++_ambPlayToken;
   try{
     // Create / resume AudioContext SYNCHRONOUSLY — must stay in the user-gesture
     // call stack (before any await) so iOS grants media-audio privileges and
@@ -20361,8 +20397,10 @@ async function pPlayAmbient(type){
       _silSrc.connect(_ambCtx.destination);
       _silSrc.start(0);
     }catch(e){}
+    if(_ambPlayToken !== _myToken){ _ambSource=null; return; }
     // Now it's safe to await (gesture chain already satisfied above)
     if(_ambCtx.state === 'suspended') await _ambCtx.resume();
+    if(_ambPlayToken !== _myToken) return;
     var ctx = _ambCtx;
 
     // Show loading state on active button
@@ -20372,9 +20410,12 @@ async function pPlayAmbient(type){
     // Use cached buffer or fetch + decode
     if(!_ambCache[type]){
       var resp = await fetch('sounds/'+type+'.mp3', {cache:'force-cache'});
+      if(_ambPlayToken !== _myToken) return;
       if(!resp.ok) throw new Error('Archivo no encontrado');
       var arrayBuf = await resp.arrayBuffer();
+      if(_ambPlayToken !== _myToken) return;
       _ambCache[type] = await ctx.decodeAudioData(arrayBuf);
+      if(_ambPlayToken !== _myToken) return;
     }
 
     // Restore button opacity
@@ -20400,6 +20441,7 @@ async function pPlayAmbient(type){
 }
 
 function pStopAmbient(silent){
+  _ambPlayToken++;
   try{ if(_ambSource){_ambSource.stop();_ambSource.disconnect();_ambSource=null;} }catch(e){}
   try{ if(_ambGain){_ambGain.disconnect();_ambGain=null;} }catch(e){}
   _ambLfo=null; _ambLfo2=null;
@@ -20431,6 +20473,204 @@ function _updateAmbientUI(){
   var nameEl=document.getElementById('ambientPlayerName');
   if(iconEl) iconEl.textContent=meta.icon;
   if(nameEl) nameEl.textContent=meta.label+' — reproduciendo';
+}
+
+// ── MEDITACIÓN ────────────────────────────────────────────────
+var _MEDITATIONS = [
+  { id:'respira', emoji:'🌬️', title:'Respiración Consciente', duration:'5 min', durationMs:5*60*1000,
+    steps:[
+      {t:0,    text:'Encontrá una postura cómoda. Cerrá los ojos suavemente.'},
+      {t:12000, text:'Llevá tu atención a la respiración. Solo observá.'},
+      {t:28000, text:'Inhalá profundo por la nariz durante 4 segundos...'},
+      {t:38000, text:'Retenéla suavemente durante 7 segundos...'},
+      {t:52000, text:'Exhalá lentamente por la boca durante 8 segundos...'},
+      {t:68000, text:'Muy bien. Volvé a inhalar...'},
+      {t:80000, text:'Retené con suavidad...'},
+      {t:94000, text:'Exhalá soltando toda la tensión...'},
+      {t:115000, text:'Sentís cómo tu cuerpo se afloja con cada respiración.'},
+      {t:140000, text:'Inhalá nuevamente... con calma...'},
+      {t:155000, text:'Retenéla... y soltá todo...'},
+      {t:185000, text:'Cada vez más relajado/a. Tu mente se aquieta.'},
+      {t:220000, text:'Una respiración más. Inhalá todo lo que necesitás...'},
+      {t:240000, text:'Y soltá. Quedáte en este silencio interior.'},
+      {t:270000, text:'Cuando estés listo/a, abrí los ojos suavemente. ✨'}
+    ]
+  },
+  { id:'mar', emoji:'🌊', title:'Viaje al Mar Interior', duration:'10 min', durationMs:10*60*1000,
+    steps:[
+      {t:0,     text:'Cerrá los ojos. Dejá que el cuerpo se asiente.'},
+      {t:15000, text:'Imaginá que estás frente al mar. Sentís la brisa suave.'},
+      {t:35000, text:'Escuchás el sonido de las olas... entrando y saliendo...'},
+      {t:60000, text:'Con cada ola que llega, traés calma hacia adentro.'},
+      {t:90000, text:'Con cada ola que se va, soltás lo que ya no necesitás.'},
+      {t:120000, text:'Sentís la arena tibia bajo tus pies. Estás a salvo.'},
+      {t:160000, text:'El mar te recuerda que todo fluye. Nada es permanente.'},
+      {t:200000, text:'Dejáte llevar por este ritmo suave... ola a ola...'},
+      {t:250000, text:'Respirás profundo. El aire salado te limpia por dentro.'},
+      {t:320000, text:'Sos parte de algo más grande. Sentís esa conexión.'},
+      {t:390000, text:'El mar sigue... tú seguís... todo está bien.'},
+      {t:470000, text:'Poco a poco, empezás a volver. Sentís tu cuerpo.'},
+      {t:530000, text:'Movés suavemente los dedos. Respirás profundo.'},
+      {t:570000, text:'Abrí los ojos cuando quieras. Llevás el mar dentro. 🌊'}
+    ]
+  },
+  { id:'tierra', emoji:'🌿', title:'Conexión con la Tierra', duration:'15 min', durationMs:15*60*1000,
+    steps:[
+      {t:0,     text:'Sentate con los pies apoyados en el suelo. Cerrá los ojos.'},
+      {t:20000, text:'Sentís el peso de tu cuerpo. La tierra te sostiene.'},
+      {t:45000, text:'Imaginá raíces que bajan desde tus pies hacia la tierra.'},
+      {t:75000, text:'Cada respiración te conecta más con la calma de la tierra.'},
+      {t:110000, text:'Escaneá tu cuerpo desde los pies... suavemente...'},
+      {t:150000, text:'Tus piernas... tu abdomen... tu pecho... tus hombros...'},
+      {t:195000, text:'Tu cuello... tu cara... toda la tensión se disuelve.'},
+      {t:240000, text:'Sentís la tierra firme debajo de vos. Nada puede desequilibrarte.'},
+      {t:300000, text:'Inhalá energía verde de la naturaleza. Exhalá lo que pesa.'},
+      {t:370000, text:'Sos parte de un ciclo eterno. Naciste de esta tierra.'},
+      {t:450000, text:'Sentís paz. Una paz que no depende de nada externo.'},
+      {t:540000, text:'Llevá esta calma a cada parte de tu cuerpo.'},
+      {t:640000, text:'Tu mente descansa. Tu corazón late tranquilo.'},
+      {t:740000, text:'Comenzás a volver al presente. Sintiendo cada respiración.'},
+      {t:840000, text:'Abrí los ojos lentamente. Seguís conectado/a a la tierra. 🌿'}
+    ]
+  },
+  { id:'presencia', emoji:'☁️', title:'Presencia Plena', duration:'20 min', durationMs:20*60*1000,
+    steps:[
+      {t:0,     text:'Encontrá una posición cómoda. Dejá que el cuerpo descanse.'},
+      {t:25000, text:'No hay nada que hacer. Solo estar aquí, ahora.'},
+      {t:60000, text:'Observá tus pensamientos como nubes pasando en el cielo.'},
+      {t:100000, text:'No los sigas. Solo observálos venir y irse.'},
+      {t:150000, text:'Tu conciencia es el cielo. Los pensamientos son las nubes.'},
+      {t:210000, text:'Respirás. El momento presente es el único que existe.'},
+      {t:280000, text:'¿Qué sentís en este instante? Solo observá sin juzgar.'},
+      {t:360000, text:'Si tu mente se va, gentilmente volvéla a este momento.'},
+      {t:450000, text:'Sentís el aire. Sentís el cuerpo. Estás completamente acá.'},
+      {t:550000, text:'La paz que buscás ya está en vos. Siempre estuvo.'},
+      {t:660000, text:'Cada momento es completo en sí mismo. No falta nada.'},
+      {t:780000, text:'Seguís respirando. Seguís presente. Seguís vos.'},
+      {t:900000, text:'Dejá que la calma se expanda por cada célula de tu ser.'},
+      {t:1050000, text:'Sos testigo de tu propia vida. Con compasión y sin juicio.'},
+      {t:1150000, text:'Comenzás a traer la conciencia de vuelta. Poco a poco.'},
+      {t:1160000, text:'Mové suavemente los dedos. Los pies. Respirá profundo.'},
+      {t:1175000, text:'Abrí los ojos. Llevás esta presencia al resto del día. ☁️'}
+    ]
+  }
+];
+
+var _medAudio = null, _medTimer = null, _medStepTimers = [], _medStartTime = 0, _medTimerInterval = null, _medCurrentId = null;
+var _medCtx = null, _medSrc = null, _medGainNode = null;
+
+function pInitMeditacion(){
+  var el = document.getElementById('meditacionCards');
+  if(!el) return;
+  el.innerHTML = _MEDITATIONS.map(function(m){
+    return '<div onclick="pOpenMeditation(\''+m.id+'\')" style="cursor:pointer;background:linear-gradient(135deg,rgba(147,112,219,.16),rgba(102,51,153,.10));border:1.5px solid rgba(147,112,219,.35);border-radius:20px;padding:18px 20px;display:flex;align-items:center;gap:16px;transition:all .15s;box-shadow:0 3px 16px rgba(147,112,219,.10)">'
+      +'<div style="width:58px;height:58px;border-radius:50%;background:rgba(147,112,219,.22);border:2px solid rgba(147,112,219,.45);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:28px">'+m.emoji+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:15px;font-weight:800;color:rgba(220,200,255,.95);font-family:\'Cormorant Garamond\',serif;font-style:italic;margin-bottom:3px">'+m.title+'</div>'
+      +'<div style="font-size:11.5px;color:rgba(200,180,255,.55);font-family:\'Jost\',sans-serif;font-weight:600;letter-spacing:.5px">⏱ '+m.duration+' · Guiada en español</div>'
+      +'</div>'
+      +'<div style="width:38px;height:38px;border-radius:50%;background:rgba(147,112,219,.28);border:1.5px solid rgba(147,112,219,.50);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">▶</div>'
+      +'</div>';
+  }).join('');
+}
+
+function _medDrawCanvas(t){
+  var cv = document.getElementById('meditacionCanvas');
+  if(!cv) return;
+  cv.width = cv.offsetWidth; cv.height = cv.offsetHeight;
+  var ctx = cv.getContext('2d');
+  var cx = cv.width/2, cy = cv.height/2;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // Breathing circle: expands and contracts slowly
+  var cycle = (t / 11000) % 1; // 11s per breath cycle
+  var scale = 0.6 + 0.4 * Math.sin(cycle * Math.PI * 2);
+  var r = Math.min(cx,cy) * 0.35 * scale;
+  var grd = ctx.createRadialGradient(cx,cy,0,cx,cy,r*1.8);
+  grd.addColorStop(0,'rgba(147,112,219,.30)');
+  grd.addColorStop(0.5,'rgba(102,51,153,.18)');
+  grd.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.arc(cx,cy,r*1.8,0,Math.PI*2); ctx.fillStyle=grd; ctx.fill();
+  // Floating particles
+  for(var i=0;i<14;i++){
+    var ang = (t/12000 + i/14) * Math.PI * 2;
+    var rad = (0.28 + 0.12*Math.sin((t/7000)+i)) * Math.min(cx,cy);
+    var px = cx + Math.cos(ang)*rad, py = cy + Math.sin(ang)*rad;
+    var pr = 2.5 + 1.5*Math.sin((t/3000)+i);
+    ctx.beginPath(); ctx.arc(px,py,pr,0,Math.PI*2);
+    ctx.fillStyle='rgba(200,180,255,'+(0.15+0.2*Math.sin((t/4000)+i))+')'; ctx.fill();
+  }
+}
+
+async function pOpenMeditation(id){
+  var med = _MEDITATIONS.find(function(m){ return m.id===id; });
+  if(!med) return;
+  pCloseMeditation();
+  _medCurrentId = id;
+  var ov = document.getElementById('meditacionPlayer');
+  if(!ov) return;
+  ov.style.display = 'block';
+  document.getElementById('meditacionEmoji').textContent = med.emoji;
+  document.getElementById('meditacionTitle').textContent = med.title;
+  document.getElementById('meditacionDuration').textContent = med.duration + ' · Guía en español';
+  document.getElementById('meditacionGuide').textContent = '';
+  document.getElementById('meditacionTimer').textContent = '0:00';
+  // Start background music
+  try{
+    if(!_medCtx || _medCtx.state==='closed') _medCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(_medCtx.state==='suspended') await _medCtx.resume();
+    var resp = await fetch('sounds/meditacion.mp3',{cache:'force-cache'});
+    if(resp.ok){
+      var buf = await _medCtx.decodeAudioData(await resp.arrayBuffer());
+      _medSrc = _medCtx.createBufferSource();
+      _medSrc.buffer = buf; _medSrc.loop = true;
+      _medGainNode = _medCtx.createGain(); _medGainNode.gain.value = 0.55;
+      _medSrc.connect(_medGainNode); _medGainNode.connect(_medCtx.destination);
+      _medSrc.start();
+    }
+  }catch(e){}
+  // Schedule guided text steps using Web Speech API
+  var synth = window.speechSynthesis;
+  _medStartTime = Date.now();
+  med.steps.forEach(function(step, idx){
+    var tmr = setTimeout(function(){
+      var guideEl = document.getElementById('meditacionGuide');
+      if(!guideEl) return;
+      guideEl.style.opacity='0';
+      setTimeout(function(){ guideEl.style.opacity='1'; guideEl.textContent=step.text; }, 400);
+      if(synth && idx < med.steps.length - 1){
+        var utt = new SpeechSynthesisUtterance(step.text);
+        utt.lang='es-AR'; utt.rate=0.82; utt.pitch=0.95; utt.volume=0.90;
+        var voices = synth.getVoices();
+        var esVoice = voices.find(function(v){ return v.lang.startsWith('es'); });
+        if(esVoice) utt.voice = esVoice;
+        synth.cancel(); synth.speak(utt);
+      }
+    }, step.t);
+    _medStepTimers.push(tmr);
+  });
+  // Timer tick
+  _medTimerInterval = setInterval(function(){
+    var el = document.getElementById('meditacionTimer');
+    if(!el) return;
+    var elapsed = Math.floor((Date.now()-_medStartTime)/1000);
+    var m=Math.floor(elapsed/60), s=elapsed%60;
+    el.textContent = m+':'+(s<10?'0':'')+s;
+    _medDrawCanvas(Date.now()-_medStartTime);
+    if(elapsed >= med.durationMs/1000){ clearInterval(_medTimerInterval); _medTimerInterval=null; }
+  }, 100);
+  // Initial canvas draw
+  _medDrawCanvas(0);
+}
+
+function pCloseMeditation(){
+  var ov = document.getElementById('meditacionPlayer');
+  if(ov) ov.style.display='none';
+  _medCurrentId = null;
+  _medStepTimers.forEach(function(t){ clearTimeout(t); }); _medStepTimers=[];
+  if(_medTimerInterval){ clearInterval(_medTimerInterval); _medTimerInterval=null; }
+  try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+  try{ if(_medSrc){ _medSrc.stop(); _medSrc.disconnect(); _medSrc=null; } }catch(e){}
+  try{ if(_medGainNode){ _medGainNode.disconnect(); _medGainNode=null; } }catch(e){}
 }
 
 // ── MOMENTOS ──────────────────────────────────────────────────
@@ -21307,7 +21547,7 @@ async function pHeartMomento(id, btn){
   // Increment DOM count and persist locally so re-renders don't reset it
   var cEl=document.getElementById('mheart-'+id);
   var newCount=(parseInt((cEl&&cEl.textContent)||'0')||0)+1;
-  if(cEl) cEl.textContent=newCount;
+  document.querySelectorAll('[id="mheart-'+id+'"]').forEach(function(el){ el.textContent=newCount; });
   safeLS('set','velo_mheart_'+id+'_cnt', String(newCount));
   // Update button appearance
   if(btn){
@@ -21932,6 +22172,7 @@ function _onPageEnter(id){
     case 'momento':     _loadMomentoPageFeed(); _initMomentoPage(); break;
     case 'mood':        pInitMood(); break;
     case 'respira':     pInitRespira(); break;
+    case 'meditacion':  pInitMeditacion(); break;
     case 'vela':        pInitVela(); break;
     case 'circles':     pRenderCircles(); break;
     case 'feed':        _renderCircleMessages(); break;
