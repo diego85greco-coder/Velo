@@ -3542,13 +3542,12 @@ var _dqAllResponses = [];  // full list cached for expand
 
 function _renderDailyFeed(responses){
   _dqAllResponses = responses;
-  // Filter out locally-hidden responses (deleted by this user, pending Supabase sync)
   var _dqHidden = []; try{ _dqHidden = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
   var visible = _dqHidden.length ? responses.filter(function(r){ return _dqHidden.indexOf(String(r.id)) === -1; }) : responses;
   var summaryEl = document.getElementById('homeDailyQSummary');
   var feedEl    = document.getElementById('homeDailyQFeed');
+  var btnEl     = document.getElementById('dqVerTodosBtn');
   if(!feedEl) return;
-  // Emoji summary bar
   if(summaryEl){
     var counts = {};
     visible.forEach(function(r){ counts[r.mood_emoji]=(counts[r.mood_emoji]||0)+1; });
@@ -3560,11 +3559,19 @@ function _renderDailyFeed(responses){
   }
   if(!visible.length){
     feedEl.innerHTML = '<div style="text-align:center;padding:14px 0;font-size:13px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif;font-style:italic">Sé el primero en compartir 🌱</div>';
+    if(btnEl) btnEl.innerHTML = '';
     return;
   }
-  // Show all responses in carousel (no expand button needed)
-  feedEl.innerHTML = _buildDqCards(visible);
+  // Show max 3 in carousel; "ver todas" button appears when there are more
+  feedEl.innerHTML = _buildDqCards(visible.slice(0,3));
   _initCarouselDots('homeDailyQFeed','dqDots');
+  if(btnEl){
+    if(visible.length > 3){
+      btnEl.innerHTML = '<button onclick="pOpenDqAllSheet()" style="width:100%;margin-top:12px;padding:11px 16px;background:linear-gradient(135deg,rgba(175,130,20,.22),rgba(120,86,8,.28));border:1.5px solid rgba(200,158,56,.45);border-radius:14px;color:rgba(220,185,75,.92);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px;transition:opacity .15s">✦ Ver todas las respuestas ('+visible.length+') →</button>';
+    } else {
+      btnEl.innerHTML = '';
+    }
+  }
 }
 
 function _expandDailyFeed(){
@@ -3573,6 +3580,93 @@ function _expandDailyFeed(){
   var _dqHidden = []; try{ _dqHidden = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
   var _vis = _dqHidden.length ? _dqAllResponses.filter(function(r){ return _dqHidden.indexOf(String(r.id)) === -1; }) : _dqAllResponses;
   feedEl.innerHTML = _buildDqCards(_vis);
+}
+
+function pOpenDqAllSheet(){
+  var myUid = safeLS('get','velo_user_id')||'';
+  var q = _getDailyQuestion();
+  var existing = document.getElementById('dqAllSheetOv');
+  if(existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'dqAllSheetOv';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  var _dqHidden = []; try{ _dqHidden = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
+  var allVis = _dqHidden.length ? _dqAllResponses.filter(function(r){ return _dqHidden.indexOf(String(r.id))===-1; }) : _dqAllResponses;
+  var myResp = allVis.find(function(r){ return r.user_id === myUid; });
+  ov.innerHTML =
+    '<div class="p-sheet p-sheet-dark" style="max-height:92vh;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(160deg,rgba(14,10,32,.98),rgba(6,4,20,.99));border-top:2.5px solid rgba(200,158,56,.55)">'
+    +'<div class="p-sheet-handle" style="background:rgba(200,158,56,.55)"></div>'
+    +'<div style="padding:16px 20px 14px;flex-shrink:0;border-bottom:1px solid rgba(200,158,56,.16)">'
+    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(200,158,56,.75);font-family:\'Jost\',sans-serif;margin-bottom:9px">✨ Pregunta del día</div>'
+    +(q ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16.5px;font-style:italic;font-weight:600;color:rgba(255,255,255,.92);line-height:1.42;padding-left:13px;border-left:2.5px solid rgba(200,158,56,.50)">'+_escHtml(q.text)+'</div>' : '')
+    +'</div>'
+    +'<div style="display:flex;gap:0;padding:0 20px;border-bottom:1px solid rgba(200,158,56,.12);flex-shrink:0">'
+    +'<button id="dqAllTab1" onclick="pDqAllTabSwitch(1)" style="flex:1;padding:11px 0;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;background:none;border:none;border-bottom:2.5px solid rgba(200,158,56,.75);color:rgba(210,170,60,.95);cursor:pointer">Todas ('+allVis.length+')</button>'
+    +'<button id="dqAllTab2" onclick="pDqAllTabSwitch(2)" style="flex:1;padding:11px 0;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;background:none;border:none;border-bottom:2.5px solid transparent;color:rgba(255,255,255,.38);cursor:pointer">Mi publicación</button>'
+    +'</div>'
+    +'<div id="dqAllTabContent1" style="flex:1;overflow-y:auto;padding:14px 14px 0">'
+    +(allVis.length ? _buildDqCards(allVis) : '<div style="text-align:center;padding:32px;font-size:13px;color:rgba(255,255,255,.30);font-style:italic;font-family:Jost,sans-serif">Nadie ha respondido aún 🌱</div>')
+    +'</div>'
+    +'<div id="dqAllTabContent2" style="display:none;flex:1;overflow-y:auto;padding:16px">'
+    +_buildDqMyPubSection(myResp)
+    +'</div>'
+    +'<div style="padding:10px 20px 16px;flex-shrink:0;border-top:1px solid rgba(200,158,56,.12)">'
+    +'<button onclick="document.getElementById(\'dqAllSheetOv\').remove()" style="width:100%;padding:12px;background:rgba(200,158,56,.08);border:1px solid rgba(200,158,56,.22);border-radius:14px;color:rgba(200,158,56,.65);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+
+function pDqAllTabSwitch(tab){
+  var t1 = document.getElementById('dqAllTab1');
+  var t2 = document.getElementById('dqAllTab2');
+  var c1 = document.getElementById('dqAllTabContent1');
+  var c2 = document.getElementById('dqAllTabContent2');
+  if(!t1||!t2||!c1||!c2) return;
+  if(tab === 2){
+    t2.style.borderBottomColor = 'rgba(200,158,56,.75)';
+    t2.style.color = 'rgba(210,170,60,.95)';
+    t1.style.borderBottomColor = 'transparent';
+    t1.style.color = 'rgba(255,255,255,.38)';
+    c1.style.display = 'none'; c2.style.display = '';
+  } else {
+    t1.style.borderBottomColor = 'rgba(200,158,56,.75)';
+    t1.style.color = 'rgba(210,170,60,.95)';
+    t2.style.borderBottomColor = 'transparent';
+    t2.style.color = 'rgba(255,255,255,.38)';
+    c2.style.display = 'none'; c1.style.display = '';
+  }
+}
+
+function _buildDqMyPubSection(myResp){
+  if(!myResp) return '<div style="text-align:center;padding:48px 24px;font-family:\'Jost\',sans-serif">'
+    +'<div style="font-size:38px;margin-bottom:14px">🌱</div>'
+    +'<div style="font-size:14px;color:rgba(255,255,255,.42);line-height:1.7">Respondé la pregunta del día<br>para ver tu publicación aquí</div>'
+    +'</div>';
+  var col = _dqEmojiColor(myResp.mood_emoji||'💭');
+  var ca = function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
+  var _m = _dqReactMap[myResp.id] || {};
+  var rxTypes = ['identifico','abrazo','entiendo'];
+  var rxEmojis = {identifico:'🙌',abrazo:'🤗',entiendo:'💙'};
+  var rxLabels = {identifico:'Me identifico',abrazo:'Te mando un abrazo',entiendo:'Te entiendo'};
+  var totalRx = rxTypes.reduce(function(s,k){ return s+((_m[k]&&_m[k].count)||0); },0);
+  var rxHtml = rxTypes.map(function(k){
+    var cnt = (_m[k]&&_m[k].count)||0;
+    if(!cnt) return '';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:'+ca(col.strip,'.16')+';border:1px solid '+ca(col.border,'.28')+';border-radius:13px;margin-bottom:8px">'
+      +'<span style="font-size:24px;line-height:1">'+rxEmojis[k]+'</span>'
+      +'<div style="flex:1"><div style="font-size:11.5px;font-weight:600;color:'+ca(col.label,'.80')+';font-family:\'Jost\',sans-serif">'+rxLabels[k]+'</div>'
+      +'<div style="font-size:20px;font-weight:800;color:rgba(255,255,255,.92);font-family:\'Jost\',sans-serif;line-height:1.2">'+cnt+'</div></div>'
+      +'</div>';
+  }).join('');
+  return '<div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+ca(col.label,'.70')+';font-family:\'Jost\',sans-serif;margin-bottom:13px">✦ Mi publicación</div>'
+    +'<div style="background:'+col.bg+';border:1.5px solid '+ca(col.border,'.50')+';border-left:3px solid '+ca(col.border,'.80')+';border-radius:16px;padding:16px 18px;margin-bottom:20px">'
+    +'<div style="font-size:17px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:rgba(255,255,255,.93);line-height:1.68;margin-bottom:10px">❝ '+_escHtml(myResp.response_text||'')+' ❞</div>'
+    +'<div style="font-size:11px;color:'+ca(col.label,'.65')+';font-family:\'Jost\',sans-serif">'+myResp.mood_emoji+' · '+_momentoAgo(myResp.created_at||'')+'</div>'
+    +'</div>'
+    +'<div style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,.45);font-family:\'Jost\',sans-serif;margin-bottom:12px;letter-spacing:.3px">Reacciones recibidas</div>'
+    +(totalRx > 0 ? rxHtml : '<div style="text-align:center;padding:20px;font-size:12.5px;color:rgba(255,255,255,.28);font-style:italic;font-family:Jost,sans-serif">Aún no recibiste reacciones 🌙</div>');
 }
 
 function _dqEmojiColor(emoji){
@@ -20444,21 +20538,22 @@ function _renderMomentoComments(comments,col){
   var brd=col?col.border:'rgba(116,198,157,1)';
   var lbl=col?col.label:'rgba(200,240,218,1)';
   var strip=col?col.strip:'rgba(116,198,157,1)';
+  var bg=col?col.bg:'rgba(6,28,18,.92)';
   var ca=function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
   if(!comments||!comments.length){
-    return '<div style="text-align:center;padding:20px 8px;font-size:12.5px;color:rgba(255,255,255,.30);font-family:\'Jost\',sans-serif;font-style:italic">Sé el primero en comentar 🌿</div>';
+    return '<div style="text-align:center;padding:24px 8px;font-size:13px;color:rgba(255,255,255,.35);font-family:\'Jost\',sans-serif;font-style:italic">Sé el primero en comentar 🌿</div>';
   }
   return comments.map(function(c){
     var av=c.user_avatar||''; var isImg=av&&av.startsWith('http');
     var name=c.user_name||'Anónimo/a';
     var avHtml=isImg
-      ?'<img src="'+_escHtml(av)+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid '+ca(brd,'.35')+';flex-shrink:0">'
-      :'<div style="width:28px;height:28px;border-radius:50%;background:'+ca(strip,'.14')+';display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;border:1.5px solid '+ca(brd,'.25')+'">'+_escHtml(av||'🌿')+'</div>';
-    return '<div style="display:flex;gap:8px;margin-bottom:10px;align-items:flex-start">'
+      ?'<img src="'+_escHtml(av)+'" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid '+ca(brd,'.50')+';flex-shrink:0">'
+      :'<div style="width:30px;height:30px;border-radius:50%;background:'+ca(strip,'.32')+';display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:2px solid '+ca(brd,'.45')+'">'+_escHtml(av||'🌿')+'</div>';
+    return '<div style="display:flex;gap:9px;margin-bottom:12px;align-items:flex-start">'
       +avHtml
-      +'<div style="flex:1;background:'+ca(strip,'.08')+';border:1px solid '+ca(brd,'.18')+';border-radius:14px;padding:8px 12px">'
-      +'<div style="font-size:10.5px;font-weight:700;color:'+ca(lbl,'.80')+';font-family:\'Jost\',sans-serif;margin-bottom:3px">'+_escHtml(name)+'<span style="font-weight:400;color:rgba(255,255,255,.28);margin-left:6px">· '+_momentoAgo(c.created_at)+'</span></div>'
-      +'<div style="font-size:13px;color:rgba(255,255,255,.86);line-height:1.52;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
+      +'<div style="flex:1;background:'+ca(strip,'.18')+';border:1px solid '+ca(brd,'.30')+';border-left:2.5px solid '+ca(brd,'.65')+';border-radius:14px;padding:9px 13px">'
+      +'<div style="font-size:11px;font-weight:800;color:'+ca(lbl,'.88')+';font-family:\'Jost\',sans-serif;margin-bottom:4px">'+_escHtml(name)+'<span style="font-weight:400;color:rgba(255,255,255,.35);margin-left:6px;font-size:10px">· '+_momentoAgo(c.created_at)+'</span></div>'
+      +'<div style="font-size:13.5px;color:rgba(255,255,255,.90);line-height:1.55;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -20503,6 +20598,7 @@ async function pOpenMomentoSheet(momentoId){
   var m=_homeMomentoCache.find(function(x){return String(x.id)===String(momentoId);});
   if(!m) return;
   var col=_momentoEmojiColor(m.emoji||'💭');
+  var ca=function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
   var liked=safeLS('get','velo_mheart_'+m.id)==='1';
   var cachedCnt=parseInt(safeLS('get','velo_mheart_'+m.id+'_cnt')||'0');
   var heartCount=Math.max(m.hearts||0,cachedCnt);
@@ -20513,31 +20609,27 @@ async function pOpenMomentoSheet(momentoId){
   var canSeeProfile=hasProfile&&m.user_id;
   var avClick=canSeeProfile?' onclick="pQuickProfile('+_jsAttr(authorName)+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(m.user_id||'')+')"':'';
   var avSmall=isImg
-    ?'<img src="'+_escHtml(av)+'" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1.5px solid '+col.border+';flex-shrink:0"'+avClick+'>'
-    :'<div style="width:30px;height:30px;border-radius:50%;background:'+col.strip+';display:flex;align-items:center;justify-content:center;font-size:14px;border:1.5px solid '+col.border+';flex-shrink:0"'+avClick+'>'+(av||'🌿')+'</div>';
+    ?'<img src="'+_escHtml(av)+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid '+ca(col.border,'.55')+';flex-shrink:0"'+avClick+'>'
+    :'<div style="width:32px;height:32px;border-radius:50%;background:'+ca(col.strip,'.40')+';display:flex;align-items:center;justify-content:center;font-size:15px;border:2px solid '+ca(col.border,'.55')+';flex-shrink:0"'+avClick+'>'+(av||'🌿')+'</div>';
   var existing=document.getElementById('momentoDetailSheetOv');
   if(existing) existing.remove();
   var ov=document.createElement('div');
   ov.className='p-modal-ov show'; ov.id='momentoDetailSheetOv';
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
-  // helper: strip alpha from col values
-  var ca=function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
   ov.innerHTML=
-    '<div class="p-sheet p-sheet-dark" style="max-height:92vh;display:flex;flex-direction:column;overflow:hidden;background:rgba(6,10,16,.98);border-top:2.5px solid '+col.border+'">'
-    // Handle
+    '<div class="p-sheet p-sheet-dark" style="max-height:92vh;display:flex;flex-direction:column;overflow:hidden;background:rgba(8,12,22,.99);border-top:3px solid '+col.border+';box-shadow:0 -6px 48px '+ca(col.glow,'.35')+'">'
     +'<div class="p-sheet-handle" style="background:'+col.border+'"></div>'
-    // ── Hero header — colored strip ──
-    +'<div style="background:linear-gradient(160deg,'+col.bg+' 0%,rgba(6,10,16,.0) 100%);padding:20px 20px 16px;position:relative;overflow:hidden;flex-shrink:0;border-bottom:1px solid '+ca(col.border,'.14')+'">'
-    +'<div style="position:absolute;right:-8px;top:-8px;font-size:100px;opacity:.06;line-height:1;pointer-events:none;filter:grayscale(.4)">'+m.emoji+'</div>'
-    +'<div style="display:flex;align-items:center;gap:14px;position:relative;z-index:1">'
-    +'<span style="font-size:54px;line-height:1;filter:drop-shadow(0 0 18px '+col.glow+');flex-shrink:0">'+m.emoji+'</span>'
+    // ── Hero: vivid colored gradient + large emoji ──
+    +'<div style="background:linear-gradient(170deg,'+ca(col.strip,'.55')+' 0%,'+ca(col.bg,'.96')+' 52%,rgba(8,12,22,.0) 100%);padding:22px 20px 18px;position:relative;overflow:hidden;flex-shrink:0;border-bottom:1px solid '+ca(col.border,'.22')+'">'
+    +'<div style="position:absolute;right:-14px;top:-10px;font-size:130px;opacity:.10;line-height:1;pointer-events:none">'+m.emoji+'</div>'
+    +'<div style="display:flex;align-items:center;gap:16px;position:relative;z-index:1">'
+    +'<span style="font-size:68px;line-height:1;filter:drop-shadow(0 0 28px '+ca(col.border,'.65')+');flex-shrink:0">'+m.emoji+'</span>'
     +'<div style="flex:1;min-width:0">'
-    // Author glass pill
-    +'<div style="display:inline-flex;align-items:center;gap:7px;background:rgba(0,0,0,.40);border:1px solid '+ca(col.border,'.25')+';border-radius:20px;padding:5px 12px 5px 6px;margin-bottom:5px">'
+    +'<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,0,0,.52);border:1.5px solid '+ca(col.border,'.42')+';border-radius:22px;padding:6px 14px 6px 6px;margin-bottom:6px;backdrop-filter:blur(8px)">'
     +avSmall
     +'<div>'
-    +'<div style="font-size:12.5px;font-weight:700;color:'+col.label+';font-family:\'Jost\',sans-serif;line-height:1.2">'+(canSeeProfile?'<span style="cursor:pointer"'+avClick+'>':'')+_escHtml(authorName)+(canSeeProfile?'</span>':'')+'</div>'
-    +'<div style="font-size:10px;color:rgba(255,255,255,.38);font-family:\'Jost\',sans-serif;margin-top:1px">'+_momentoAgo(m.created_at||'')+' · ⏱ '+timeLeft+'h restantes</div>'
+    +'<div style="font-size:13px;font-weight:800;color:'+col.label+';font-family:\'Jost\',sans-serif;line-height:1.2">'+(canSeeProfile?'<span style="cursor:pointer"'+avClick+'>':'')+_escHtml(authorName)+(canSeeProfile?'</span>':'')+'</div>'
+    +'<div style="font-size:10px;color:rgba(255,255,255,.48);font-family:\'Jost\',sans-serif;margin-top:2px">'+_momentoAgo(m.created_at||'')+' · ⏱ '+timeLeft+'h restantes</div>'
     +'</div>'
     +'</div>'
     +'</div>'
@@ -20545,33 +20637,33 @@ async function pOpenMomentoSheet(momentoId){
     +'</div>'
     // ── Scrollable body ──
     +'<div style="flex:1;overflow-y:auto;padding:18px 20px 0">'
-    // Text block with serif + decorative ❝
-    +'<div style="background:'+ca(col.strip,'.10')+';border:1.5px solid '+ca(col.border,'.25')+';border-radius:18px;padding:18px 20px 16px;margin-bottom:16px;position:relative;overflow:hidden">'
-    +'<div style="position:absolute;top:-4px;left:4px;font-size:54px;color:'+ca(col.label,'.09')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none">❝</div>'
-    +'<div style="font-size:17px;line-height:1.72;color:rgba(255,255,255,.93);word-break:break-word;font-family:\'Cormorant Garamond\',serif;font-style:italic;position:relative">'+_escHtml(m.text||'')+'</div>'
+    // Text block: col.bg as solid tinted bg + vivid left border
+    +'<div style="background:'+col.bg+';border:1.5px solid '+ca(col.border,'.38')+';border-left:3.5px solid '+ca(col.border,'.82')+';border-radius:18px;padding:18px 20px 16px;margin-bottom:18px;position:relative;overflow:hidden">'
+    +'<div style="position:absolute;top:-6px;left:6px;font-size:58px;color:'+ca(col.label,'.08')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none">❝</div>'
+    +'<div style="font-size:17.5px;line-height:1.74;color:rgba(255,255,255,.96);word-break:break-word;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;position:relative">'+_escHtml(m.text||'')+'</div>'
     +'</div>'
-    // Heart button
-    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">'
-    +'<button id="momentoSheetHeartBtn" onclick="event.stopPropagation();pHeartMomento(\''+_escHtml(String(m.id))+'\',this)" style="display:flex;align-items:center;gap:8px;background:'+ca(col.strip,'.14')+';border:1.5px solid '+ca(col.border,'.38')+';border-radius:100px;padding:8px 20px;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'
-    +'<span style="font-size:18px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
-    +'<span id="mheart-'+_escHtml(String(m.id))+'" style="font-size:13px;font-weight:700;color:'+col.label+'">'+heartCount+'</span>'
+    // Heart button — vivid pill
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">'
+    +'<button id="momentoSheetHeartBtn" onclick="event.stopPropagation();pHeartMomento(\''+_escHtml(String(m.id))+'\',this)" style="display:flex;align-items:center;gap:9px;background:'+ca(col.strip,'.24')+';border:2px solid '+ca(col.border,'.62')+';border-radius:100px;padding:10px 24px;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'
+    +'<span style="font-size:20px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
+    +'<span id="mheart-'+_escHtml(String(m.id))+'" style="font-size:15px;font-weight:800;color:'+col.label+'">'+heartCount+'</span>'
     +'</button>'
     +'</div>'
     // Comments header
-    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'
-    +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+ca(col.label,'.60')+';font-family:\'Jost\',sans-serif;white-space:nowrap">💬 Comentarios</span>'
-    +'<div style="flex:1;height:1px;background:'+ca(col.border,'.18')+'"></div>'
+    +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">'
+    +'<span style="font-size:9.5px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+ca(col.label,'.78')+';font-family:\'Jost\',sans-serif;white-space:nowrap">💬 Comentarios</span>'
+    +'<div style="flex:1;height:1px;background:'+ca(col.border,'.32')+'"></div>'
     +'</div>'
     +'<div id="momentoCommentFeed"><div style="text-align:center;padding:14px;font-size:12px;color:rgba(255,255,255,.28);font-family:\'Jost\',sans-serif">Cargando...</div></div>'
     // Comment input
     +'<div style="display:flex;gap:8px;margin-top:14px;align-items:flex-end;padding-bottom:14px">'
-    +'<textarea id="momentoCommentInput" placeholder="Escribí un comentario..." rows="2" style="flex:1;background:rgba(255,255,255,.05);border:1.5px solid '+ca(col.border,'.28')+';border-radius:14px;padding:10px 13px;font-size:13px;color:rgba(255,255,255,.88);font-family:\'Jost\',sans-serif;resize:none;line-height:1.4;outline:none"></textarea>'
-    +'<button id="momentoCommentBtn" onclick="pPostMomentoComment(\''+_escHtml(String(m.id))+'\')" style="padding:10px 16px;background:'+ca(col.strip,'.20')+';border:1.5px solid '+ca(col.border,'.50')+';border-radius:14px;color:'+col.label+';font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;align-self:flex-end">Enviar</button>'
+    +'<textarea id="momentoCommentInput" placeholder="Escribí un comentario..." rows="2" style="flex:1;background:rgba(255,255,255,.06);border:1.5px solid '+ca(col.border,'.40')+';border-radius:14px;padding:11px 14px;font-size:13px;color:rgba(255,255,255,.90);font-family:\'Jost\',sans-serif;resize:none;line-height:1.4;outline:none"></textarea>'
+    +'<button id="momentoCommentBtn" onclick="pPostMomentoComment(\''+_escHtml(String(m.id))+'\')" style="padding:11px 18px;background:linear-gradient(135deg,'+ca(col.border,'.75')+','+ca(col.strip,'.82')+');border:none;border-radius:14px;color:#fff;font-size:12.5px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;align-self:flex-end;letter-spacing:.2px">Enviar</button>'
     +'</div>'
     +'</div>'
     // ── Fixed close bar ──
-    +'<div style="padding:10px 20px 16px;flex-shrink:0;border-top:1px solid '+ca(col.border,'.12')+'">'
-    +'<button onclick="document.getElementById(\'momentoDetailSheetOv\').remove()" style="width:100%;padding:11px;background:'+ca(col.strip,'.08')+';border:1px solid '+ca(col.border,'.18')+';border-radius:14px;color:'+ca(col.label,'.60')+';font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
+    +'<div style="padding:10px 20px 16px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.08)">'
+    +'<button onclick="document.getElementById(\'momentoDetailSheetOv\').remove()" style="width:100%;padding:13px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;color:rgba(255,255,255,.55);font-size:13px;font-weight:600;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">Cerrar</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
