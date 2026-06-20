@@ -12500,3 +12500,45 @@ body.velo-t-noche:not(.r-dark) #homeGreetTxt span {
   color: rgba(100,80,195,.88) !important;
   -webkit-text-fill-color: rgba(100,80,195,.88) !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   v976 — Diary dark text fix + DQ redesign + Mi Estado vs Comunidad
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Diary: force readable text in dark mode */
+body.r-dark .diary-hero-date    { color: rgba(255,255,255,.92) !important; }
+body.r-dark .diary-hero-sub     { color: rgba(255,255,255,.50) !important; }
+body.r-dark .diary-write-date   { color: rgba(255,255,255,.88) !important; }
+body.r-dark .diary-write-weekday{ color: rgba(255,255,255,.48) !important; }
+body.r-dark .diary-stat-val     { color: rgba(255,255,255,.88) !important; }
+body.r-dark .diary-mood-label   { color: rgba(255,255,255,.42) !important; }
+
+/* Mi Estado section label — always warm amber (personal) */
+.home-sec-lbl-estado .home-sec-hdr {
+  color: rgba(210,165,48,.82) !important;
+  border-bottom-color: rgba(210,165,48,.20) !important;
+}
+/* Comunidad section label — always sage green (community) */
+.home-sec-lbl-comunidad .home-sec-hdr {
+  color: rgba(116,198,157,.82) !important;
+  border-bottom-color: rgba(116,198,157,.20) !important;
+}
+
+/* homePulse card ("Mi estado de hoy") — amber/warm personal identity */
+body.r-dark #homePulse > div {
+  background: linear-gradient(135deg, rgba(32,18,4,.92), rgba(22,10,2,.96)) !important;
+  border-color: rgba(200,158,56,.28) !important;
+  box-shadow: 0 4px 20px rgba(180,130,10,.12) !important;
+}
+body.r-dark #homePulseSub { color: rgba(215,172,52,.78) !important; }
+
+/* homeMemoryCard + weekly mood card — also amber tint in dark mode */
+body.r-dark #homeMemoryCard {
+  border-color: rgba(200,158,56,.20) !important;
+}
+
+/* homeMomentoSection card header icon box — more saturated sage */
+body.r-dark #homeMomentoSection > .home-momento-wrap,
+body.r-dark .home-momento-wrap {
+  border-color: rgba(116,198,157,.30) !important;
+}

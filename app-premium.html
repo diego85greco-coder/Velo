@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260620-975">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260620-975">
+  <link rel="stylesheet" href="premium.css?v=20260620-976">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260620-976">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1346,35 +1346,47 @@
               <div id="homeDailyQ" style="display:none;margin:0 0 12px;box-sizing:border-box;width:100%">
                 <!-- Locked state (before answering) -->
                 <div id="homeDailyQLocked">
-                  <div style="background:linear-gradient(145deg,rgba(8,24,14,.94),rgba(4,16,8,.97));border:1.5px solid rgba(116,198,157,.22);border-radius:22px;padding:20px 18px;box-shadow:0 8px 32px rgba(0,0,0,.35),0 0 0 1px rgba(116,198,157,.06)">
-                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px">
-                      <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:rgba(200,158,56,.85);font-family:Jost,sans-serif">✨ Pregunta del día</span>
-                      <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(200,158,56,.35),transparent)"></div>
-                    </div>
-                    <div id="homeDailyQText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#fff;line-height:1.35;margin-bottom:10px;letter-spacing:.1px"></div>
-                    <div id="homeDailyQHint" style="font-family:'Jost',sans-serif;font-size:13px;color:rgba(255,255,255,.70);line-height:1.5;margin-bottom:16px;font-style:italic;padding:0 2px"></div>
-                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-                      <div style="display:flex">
-                        <div style="width:27px;height:27px;border-radius:50%;background:rgba(116,198,157,.18);border:2px solid rgba(8,24,14,.9);margin-right:-8px;display:flex;align-items:center;justify-content:center;font-size:13px">🌿</div>
-                        <div style="width:27px;height:27px;border-radius:50%;background:rgba(116,198,157,.12);border:2px solid rgba(8,24,14,.9);margin-right:-8px;display:flex;align-items:center;justify-content:center;font-size:13px">🌱</div>
-                        <div style="width:27px;height:27px;border-radius:50%;background:rgba(116,198,157,.08);border:2px solid rgba(8,24,14,.9);display:flex;align-items:center;justify-content:center;font-size:11px">🔒</div>
+                  <div style="background:linear-gradient(145deg,rgba(12,8,28,.94),rgba(6,4,20,.97));border:1.5px solid rgba(200,158,56,.28);border-radius:22px;padding:20px 18px;box-shadow:0 8px 36px rgba(0,0,0,.42),0 0 0 1px rgba(200,158,56,.08),inset 0 1px 0 rgba(255,220,80,.05)">
+                    <!-- Header row: label + timer -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+                      <div style="display:flex;align-items:center;gap:6px">
+                        <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.88);font-family:'Jost',sans-serif">✨ Pregunta del día</span>
                       </div>
-                      <div id="homeDailyQCount" style="font-size:12px;color:rgba(200,255,220,.62);font-family:Jost,sans-serif;line-height:1.3"></div>
+                      <div style="display:flex;align-items:center;gap:3px;font-size:10px;color:rgba(200,158,56,.55);font-family:'Jost',sans-serif;flex-shrink:0">
+                        <span>⏱</span><span id="dqTimerTxt">Nueva a medianoche</span>
+                      </div>
                     </div>
-                    <button onclick="pOpenDailyResponse()" style="width:100%;padding:15px;border-radius:14px;border:1.5px solid rgba(116,198,157,.38);background:linear-gradient(135deg,rgba(52,115,78,.92),rgba(24,72,44,.95));color:rgba(220,255,235,.95);font-size:15px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.5px;animation:dqBtnPulse 2.8s ease-in-out infinite;transition:transform .15s">Responder para ver →</button>
+                    <!-- Decorative quote + question -->
+                    <div style="position:relative;margin-bottom:16px;padding-left:18px">
+                      <div style="position:absolute;top:-6px;left:-2px;font-size:46px;color:rgba(200,158,56,.13);font-family:'Cormorant Garamond',serif;line-height:1;pointer-events:none">❝</div>
+                      <div id="homeDailyQText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:rgba(255,255,255,.95);line-height:1.38;letter-spacing:.08px"></div>
+                    </div>
+                    <!-- Hint — with amber left border -->
+                    <div id="homeDailyQHint" style="font-family:'Jost',sans-serif;font-size:12px;color:rgba(255,255,255,.58);line-height:1.55;margin-bottom:18px;font-style:italic;border-left:2.5px solid rgba(200,158,56,.30);padding-left:10px"></div>
+                    <!-- Response count pill -->
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">
+                      <div style="display:flex">
+                        <div style="width:26px;height:26px;border-radius:50%;background:rgba(200,158,56,.14);border:2px solid rgba(12,8,28,.9);margin-right:-7px;display:flex;align-items:center;justify-content:center;font-size:12px">🌿</div>
+                        <div style="width:26px;height:26px;border-radius:50%;background:rgba(200,158,56,.09);border:2px solid rgba(12,8,28,.9);margin-right:-7px;display:flex;align-items:center;justify-content:center;font-size:12px">🌱</div>
+                        <div style="width:26px;height:26px;border-radius:50%;background:rgba(200,158,56,.06);border:2px solid rgba(12,8,28,.9);display:flex;align-items:center;justify-content:center;font-size:10px">🔒</div>
+                      </div>
+                      <div id="homeDailyQCount" style="font-size:11px;font-weight:600;color:rgba(220,185,75,.80);font-family:'Jost',sans-serif;background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.22);border-radius:20px;padding:4px 12px;line-height:1.3"></div>
+                    </div>
+                    <!-- CTA button — amber premium -->
+                    <button onclick="pOpenDailyResponse()" style="width:100%;padding:15px;border-radius:16px;border:1.5px solid rgba(200,158,56,.45);background:linear-gradient(135deg,rgba(175,130,20,.90),rgba(120,86,8,.95));color:rgba(255,242,180,.97);font-size:15px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.6px;animation:dqBtnPulse 2.8s ease-in-out infinite;transition:transform .15s;box-shadow:0 4px 22px rgba(170,125,15,.28)">Compartir mi respuesta ✦</button>
                   </div>
                 </div>
                 <!-- Open state (after answering) -->
                 <div id="homeDailyQOpen" style="display:none">
-                  <div style="background:linear-gradient(145deg,rgba(8,24,14,.94),rgba(4,16,8,.97));border:1.5px solid rgba(116,198,157,.22);border-radius:22px;padding:16px 18px;box-shadow:0 8px 32px rgba(0,0,0,.35),0 0 0 1px rgba(116,198,157,.06)">
-                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
-                      <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:rgba(200,158,56,.85);font-family:Jost,sans-serif">✨ Pregunta del día</span>
-                      <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(200,158,56,.35),transparent)"></div>
+                  <div style="background:linear-gradient(145deg,rgba(12,8,28,.94),rgba(6,4,20,.97));border:1.5px solid rgba(200,158,56,.28);border-radius:22px;padding:16px 18px;box-shadow:0 8px 36px rgba(0,0,0,.42),0 0 0 1px rgba(200,158,56,.08)">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                      <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.88);font-family:'Jost',sans-serif">✨ Pregunta del día · respondida</span>
+                      <span style="font-size:10px;color:rgba(200,158,56,.50);font-family:'Jost',sans-serif">✓</span>
                     </div>
-                    <div id="homeDailyQOpenText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:rgba(255,255,255,.92);line-height:1.3;margin-bottom:6px"></div>
+                    <div id="homeDailyQOpenText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:rgba(255,255,255,.90);line-height:1.35;margin-bottom:10px;padding-left:14px;border-left:2.5px solid rgba(200,158,56,.30)"></div>
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-                      <div id="homeDailyQMyResp" style="font-size:11.5px;font-weight:600;color:rgba(140,230,185,.85);font-family:Jost,sans-serif;flex:1;background:rgba(116,198,157,.10);border-radius:8px;padding:4px 8px"></div>
-                      <button onclick="pDeleteMyDqToday()" style="background:none;border:none;color:rgba(255,90,90,.5);font-size:13px;cursor:pointer;padding:2px 4px;flex-shrink:0" title="Borrar mi respuesta">🗑️</button>
+                      <div id="homeDailyQMyResp" style="font-size:11.5px;font-weight:600;color:rgba(220,185,75,.88);font-family:'Jost',sans-serif;flex:1;background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.20);border-radius:10px;padding:5px 10px"></div>
+                      <button onclick="pDeleteMyDqToday()" style="background:none;border:none;color:rgba(255,90,90,.45);font-size:13px;cursor:pointer;padding:2px 4px;flex-shrink:0" title="Borrar mi respuesta">🗑️</button>
                     </div>
                     <div id="homeDailyQSummary" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
                     <div id="homeDailyQFeed"></div>
@@ -3997,8 +4009,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260620-975"></script>
-<script src="premium-redesign.js?v=20260620-975"></script>
+<script src="premium.js?v=20260620-976"></script>
+<script src="premium-redesign.js?v=20260620-976"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

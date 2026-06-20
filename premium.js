@@ -3348,10 +3348,28 @@ function _getDailyQuestion(){
   return _DAILY_QUESTIONS[dayIdx % _DAILY_QUESTIONS.length];
 }
 
+var _dqTimerInterval = null;
+function _initDqTimer(){
+  var el = document.getElementById('dqTimerTxt');
+  if(!el) return;
+  function _tick(){
+    var now = new Date();
+    var midnight = new Date(now); midnight.setHours(24,0,0,0);
+    var diff = Math.floor((midnight - now) / 1000);
+    var h = Math.floor(diff / 3600);
+    var m = Math.floor((diff % 3600) / 60);
+    el.textContent = 'Nueva en '+h+'h '+m+'m';
+  }
+  _tick();
+  if(_dqTimerInterval) clearInterval(_dqTimerInterval);
+  _dqTimerInterval = setInterval(_tick, 60000);
+}
+
 function _loadDailyQ(){
   var el = document.getElementById('homeDailyQ');
   if(!el) return;
   el.style.display = 'block';
+  _initDqTimer();
   var q = _getDailyQuestion();
   var qtEl = document.getElementById('homeDailyQText');
   if(qtEl) qtEl.textContent = q.text;
