@@ -2115,40 +2115,33 @@ function _closeAndroidInstallModal(){
 function _renderHomeMedWidget(){
   var el = document.getElementById('homeMedWidget');
   if(!el) return;
-  var med = _MEDITATIONS[new Date().getDay() % _MEDITATIONS.length];
-  var c = med.col;
-  var lblFaint = c.label.replace(/,[\d.]+\)$/, ',.55)');
-  var lblGhost = c.label.replace(/,[\d.]+\)$/, ',.38)');
+  // Build emoji row from all 10 meditations
+  var emojiRow = _MEDITATIONS.map(function(m){ return m.emoji; }).join(' ');
+  // Type tags from all meditations
+  var tags = _MEDITATIONS.map(function(m){ return m.tag; }).join(' · ');
   el.innerHTML =
-    '<div onclick="pGoTo(\'meditacion\')" style="cursor:pointer;background:linear-gradient(140deg,'+c.card+','+c.bg+')'
-    +';border:1.5px solid '+c.border+';border-radius:22px;overflow:hidden;box-shadow:0 8px 36px '+c.glow+';position:relative'
-    +';-webkit-tap-highlight-color:transparent" onmousedown="this.style.opacity=\'.88\'" onmouseup="this.style.opacity=\'1\'" ontouchstart="this.style.opacity=\'.88\'" ontouchend="this.style.opacity=\'1\'">'
-    // shimmer glow behind emoji
-    +'<div style="position:absolute;top:-30px;left:-10px;width:140px;height:140px;background:radial-gradient(circle,'+c.strip+',transparent 70%);pointer-events:none;opacity:.8"></div>'
-    // label row
-    +'<div style="position:relative;padding:14px 18px 0;display:flex;align-items:center;gap:7px">'
-    +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;color:'+lblFaint+';text-transform:uppercase;font-family:Jost,sans-serif">✦ meditación del día</span>'
+    '<div onclick="pGoTo(\'meditacion\')" style="cursor:pointer;background:linear-gradient(145deg,rgba(12,8,28,.96),rgba(22,12,44,.96));border:1.5px solid rgba(130,90,200,.38);border-radius:22px;overflow:hidden;box-shadow:0 8px 40px rgba(100,60,180,.22),inset 0 1px 0 rgba(180,140,255,.10);position:relative;-webkit-tap-highlight-color:transparent" onmousedown="this.style.opacity=\'.88\'" onmouseup="this.style.opacity=\'1\'" ontouchstart="this.style.opacity=\'.88\'" ontouchend="this.style.opacity=\'1\'">'
+    // ambient glow blobs
+    +'<div style="position:absolute;top:-40px;right:-20px;width:160px;height:160px;background:radial-gradient(circle,rgba(130,90,200,.28),transparent 70%);pointer-events:none"></div>'
+    +'<div style="position:absolute;bottom:-30px;left:10px;width:120px;height:120px;background:radial-gradient(circle,rgba(64,156,220,.16),transparent 70%);pointer-events:none"></div>'
+    // label
+    +'<div style="position:relative;padding:16px 18px 0;display:flex;align-items:center;gap:8px">'
+    +'<span style="font-size:18px;line-height:1">🧘</span>'
+    +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;color:rgba(180,150,255,.70);text-transform:uppercase;font-family:Jost,sans-serif">Meditación Guiada</span>'
     +'</div>'
-    // body
-    +'<div style="position:relative;padding:10px 18px 14px;display:flex;align-items:center;gap:16px">'
-    // emoji block
-    +'<div style="width:70px;height:70px;flex-shrink:0;border-radius:20px;background:'+c.strip
-    +';border:1.5px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 4px 24px '+c.glow+';filter:drop-shadow(0 0 12px '+c.glow+')">'
-    +med.emoji
+    // headline
+    +'<div style="position:relative;padding:8px 18px 0">'
+    +'<div style="font-size:20px;font-weight:800;color:rgba(220,200,255,.96);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.2;margin-bottom:5px">10 sesiones para tu bienestar interior</div>'
+    +'<div style="font-size:11.5px;color:rgba(180,155,235,.62);font-family:Jost,sans-serif;font-weight:400;line-height:1.5;margin-bottom:12px">Voz humana real en español · desde 8 hasta 18 minutos · sin publicidad</div>'
     +'</div>'
-    // text block
-    +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:16px;font-weight:800;color:'+c.label+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.2;margin-bottom:5px">'+med.title+'</div>'
-    +'<div style="font-size:11.5px;color:'+lblFaint+';font-family:Jost,sans-serif;font-weight:400;line-height:1.4;margin-bottom:11px">'+med.sub+'</div>'
-    +'<div style="display:flex;align-items:center;gap:8px">'
-    +'<span style="font-size:8.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:'+c.label.replace(/,[\d.]+\)$/,',.80)')+';background:'+c.strip+';border:1px solid '+c.border.replace(/,[\d.]+\)$/,',.35)')+';padding:3px 9px;border-radius:20px;font-family:Jost,sans-serif">'+med.tag+'</span>'
-    +'<span style="font-size:9.5px;color:'+lblGhost+';font-family:Jost,sans-serif;font-weight:600">⏱ '+med.duration+'</span>'
+    // emoji constellation
+    +'<div style="position:relative;padding:0 18px 12px">'
+    +'<div style="font-size:19px;letter-spacing:4px;opacity:.90">'+emojiRow+'</div>'
     +'</div>'
-    +'</div>'
-    +'</div>'
-    // footer: acceder button
-    +'<div style="position:relative;padding:0 18px 14px;display:flex;justify-content:flex-end">'
-    +'<span style="font-size:11px;font-weight:800;letter-spacing:.5px;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.border+';padding:7px 18px;border-radius:100px;box-shadow:0 3px 14px '+c.glow+'">Acceder →</span>'
+    // types
+    +'<div style="position:relative;padding:0 18px 16px;display:flex;align-items:center;justify-content:space-between">'
+    +'<div style="font-size:9.5px;color:rgba(150,125,210,.55);font-family:Jost,sans-serif;font-weight:600;line-height:1.5;flex:1;margin-right:12px">Respiración · Escaneo corporal · Metta · Visualización · Autocompasión · y más</div>'
+    +'<div style="flex-shrink:0;background:linear-gradient(135deg,rgba(130,90,200,.80),rgba(90,60,160,.90));border:1px solid rgba(180,150,255,.40);border-radius:100px;padding:9px 20px;font-size:12px;font-weight:800;color:rgba(235,220,255,.96);font-family:Jost,sans-serif;letter-spacing:.3px;box-shadow:0 4px 18px rgba(100,60,180,.35);white-space:nowrap">Explorar →</div>'
     +'</div>'
     +'</div>';
 }
