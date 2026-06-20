@@ -3706,6 +3706,8 @@ async function pToggleDqReaction(responseId, reaction, btn){
       _rcc.style.borderColor = _nowActive ? _rc.border : 'rgba(255,255,255,.12)';
     }
   }
+  // Update feed card pills instantly (optimistic)
+  _updateDqCardReactions(String(responseId));
   // Pop animation
   btn.style.animation='none';
   void btn.offsetWidth;
