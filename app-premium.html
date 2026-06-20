@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1002">
+  <meta name="app-version" content="1003">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -30,30 +30,32 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260620-1002">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260620-1002">
+  <link rel="stylesheet" href="premium.css?v=20260620-1003">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260620-1003">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
-    #homeGreetWrapper     { order: 1; }
-    #homeTimeIcon         { order: 2; }
-    #homeDailyQuoteWrap   { order: 3; }
-    #homePulse            { order: 4; }
-    #homeDailyQ           { order: 5; }
-    #homeStatusToggle     { order: 6 !important; }
-    .home-sec-lbl-acomp   { order: 7 !important; }
-    .r-hero-actions       { order: 8 !important; }
-    #homeMonthlyHint      { order: 9; }
-    #homeGuardianChip     { order: 10; }
-    .home-sec-lbl-estado  { order: 11 !important; }
-    #homeRegisterOuter    { order: 12; }
-    #homeMemoryCard       { order: 12; }
-    #homeShareWeekBtn     { order: 13; }
-    .home-sec-lbl-comunidad { order: 14 !important; }
-    #homeMomentoSection   { order: 15 !important; }
-    #homeMedWidget        { order: 16; }
-    #homeParaVosPanel     { order: 17; }
-    .r-home-quick-panel   { order: 18; }
+    #homeGreetWrapper      { order: 1; }
+    #homeTimeIcon          { order: 2; }
+    #homeRegisterOuter     { order: 3; }
+    #homeMemoryCard        { order: 4; }
+    #homeDailyQ            { order: 5; }
+    #homePulse             { order: 6; }
+    #homeMedWidget         { order: 7; }
+    .r-home-quick-panel    { order: 8; }
+    #homeGuardianChip      { order: 9; }
+    .home-sec-lbl-comunidad { order: 10 !important; }
+    #homeMomentoSection    { order: 11 !important; }
+    #homeDailyQuoteWrap    { order: 12; }
+    #homeParaVosPanel      { order: 13; }
+    .r-hero-actions        { order: 14 !important; }
+    #homeMonthlyHint       { order: 15; }
+    #homeShareWeekBtn      { order: 16; }
+    #homeStatusToggle      { order: 17 !important; }
+    /* Eliminados visualmente: rótulos de sección, grilla duplicada */
+    .home-sec-lbl-acomp    { display: none !important; }
+    .home-sec-lbl-estado   { display: none !important; }
+    #homeHeroLabel         { display: none !important; }
     .r-home-shortcut-grid { order: 18; }
     @keyframes guardianPulse { 0%,100%{box-shadow:0 0 0 3px rgba(116,198,157,.2)} 50%{box-shadow:0 0 0 6px rgba(116,198,157,.05)} }
     @keyframes dqBtnPulse { 0%,100%{box-shadow:0 4px 18px rgba(40,110,65,.3),inset 0 1px 0 rgba(255,255,255,.07)} 50%{box-shadow:0 6px 28px rgba(40,110,65,.5),inset 0 1px 0 rgba(255,255,255,.07)} }
@@ -1200,23 +1202,9 @@
               </div>
               <!-- Guardianes + Sala de Ayuda — above search pill -->
               <div class="r-hero-actions">
-                <!-- Instrucciones de uso -->
-                <div style="flex-basis:100%;width:100%;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.20);border-radius:14px;padding:12px 14px 10px;font-family:'Jost',sans-serif;box-sizing:border-box">
-                  <div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.70);margin-bottom:9px">💡 CÓMO FUNCIONA</div>
-                  <div style="display:flex;flex-direction:column;gap:9px">
-                    <div style="display:flex;gap:9px;align-items:flex-start">
-                      <span style="font-size:17px;flex-shrink:0;line-height:1.2">🛡️</span>
-                      <div>
-                        <div style="font-size:11.5px;font-weight:700;color:var(--ink2);margin-bottom:2px">Guardianes</div>
-                        <div style="font-size:11px;color:var(--ink3);line-height:1.5">Necesitás estar <strong>disponible</strong> y con <strong>modo guardián activo</strong>. Si alguien te elige de la lista, te llegará un popup de chat en cualquier parte de la app para aceptar o rechazar.</div>
-                      </div>
-                    </div>
-                    <div style="display:flex;gap:9px;align-items:flex-start">
-                      <span style="font-size:17px;flex-shrink:0;line-height:1.2">💬</span>
-                      <div>
-                        <div style="font-size:11.5px;font-weight:700;color:var(--ink2);margin-bottom:2px">Sala de Ayuda</div>
-                        <div style="font-size:11px;color:var(--ink3);line-height:1.5">Publicá si necesitás acompañamiento, o acompañá a alguien — lo único que importa es estar <strong>disponible</strong>, ya sea con o sin modo guardián activo. Si alguien quiere acompañarte, te llegará un popup en cualquier parte de la app. Si no hay respuesta, podés dejar un mensaje en Buzón.</div>
-                      </div>
+                <!-- Instrucciones de uso — ocultas del home, están en cada sección -->
+                <div style="display:none">
+                  <div>
                     </div>
                   </div>
                 </div>
@@ -1269,7 +1257,7 @@
               </div>
               <!-- Accesos rápidos + Sonidos combinados -->
               <div class="r-home-quick-panel" style="margin:0 0 12px;box-sizing:border-box;width:100%">
-                <div class="r-home-quick-label">ACCESOS RÁPIDOS</div>
+                <div class="r-home-quick-label" style="display:none">ACCESOS RÁPIDOS</div>
                 <div class="r-home-quick-row">
                   <button id="quickBtn-almar" class="r-home-quick-btn" onclick="pGoTo('bottle')">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11c1.5-3 3-3 4.5 0s3 3 4.5 0 3-3 4.5 0 3 3 4.5 0"/><path d="M3 17c1.5-3 3-3 4.5 0s3 3 4.5 0 3-3 4.5 0 3 3 4.5 0"/></svg>
@@ -1474,8 +1462,8 @@
           </div>
           <!-- Monthly report banner (shown only on 1st, hidden after 3s) -->
           <div id="homeMonthlyBanner" style="display:none;margin:0 16px 12px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.3);border-radius:14px;padding:12px 16px;font-size:12px;color:var(--sage2);line-height:1.5"></div>
-          <!-- Feature grid -->
-          <div class="home-main-grid" id="homeGrid">
+          <!-- Feature grid — hidden: redundant with bottom nav + home sections -->
+          <div class="home-main-grid" id="homeGrid" style="display:none!important">
             <div class="p-card p-card--feature p-card--hover fc-mint" onclick="pGoTo('guardians')">
               <span class="p-card-icon">🛡️</span>
               <div class="p-card-title">Guardianes</div>
@@ -4064,8 +4052,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260620-1002"></script>
-<script src="premium-redesign.js?v=20260620-1002"></script>
+<script src="premium.js?v=20260620-1003"></script>
+<script src="premium-redesign.js?v=20260620-1003"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
