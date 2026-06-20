@@ -20336,7 +20336,7 @@ async function _fetchMomentos(limit){
   _initSupabase(); if(!sbClient) return [];
   try{
     var now=new Date().toISOString();
-    var _sel = 'id,text,emoji,anon_label,hearts,created_at,expires_at,user_hash,user_name,user_avatar';
+    var _sel = 'id,text,emoji,anon_label,hearts,created_at,expires_at,user_hash,user_name,user_avatar,user_id';
     var res=await sbClient.from('momentos').select(_sel).gt('expires_at',now).order('created_at',{ascending:false}).limit(limit||20);
     // Fall back if profile columns don't exist yet in DB
     if(res.error && res.error.code==='42703'){
@@ -20514,11 +20514,16 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var stripW = isHome ? '62px' : '68px';
     var emojiSz = isHome ? '24px' : '28px';
     var authorName = hasProfile ? m.user_name : (m.anon_label||'Anónimo/a');
-    var hasAv = hasProfile && m.user_avatar && (m.user_avatar.startsWith('http')||m.user_avatar.startsWith('data:'));
-    var authorAvHtml = hasAv ? '<img src="'+_escHtml(m.user_avatar)+'" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;flex-shrink:0;border:1.5px solid '+col.border+'">' : '';
-    var stripInner = hasAv
-      ? '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><img src="'+_escHtml(m.user_avatar)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2.5px solid '+col.border+';display:block"><span style="font-size:14px;line-height:1">'+_escHtml(m.emoji||'💭')+'</span></div>'
-      : '<span style="font-size:'+emojiSz+';line-height:1">'+_escHtml(m.emoji||'💭')+'</span>';
+    var _mav = m.user_avatar || '';
+    var hasImgAv = hasProfile && _mav && (_mav.startsWith('http')||_mav.startsWith('data:'));
+    var hasEmojiAv = hasProfile && _mav && !hasImgAv;
+    var authorAvHtml = hasImgAv ? '<img src="'+_escHtml(_mav)+'" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;flex-shrink:0;border:1.5px solid '+col.border+'">'
+      : hasEmojiAv ? '<span style="font-size:14px;vertical-align:middle;margin-right:4px">'+_escHtml(_mav)+'</span>' : '';
+    var stripInner = hasImgAv
+      ? '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><img src="'+_escHtml(_mav)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2.5px solid '+col.border+';display:block"><span style="font-size:13px;line-height:1">'+_escHtml(m.emoji||'💭')+'</span></div>'
+      : hasEmojiAv
+        ? '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid '+col.border+';display:flex;align-items:center;justify-content:center;font-size:20px">'+_escHtml(_mav)+'</div><span style="font-size:12px;line-height:1">'+_escHtml(m.emoji||'💭')+'</span></div>'
+        : '<span style="font-size:'+emojiSz+';line-height:1">'+_escHtml(m.emoji||'💭')+'</span>';
     return '<div class="home-mc"'+(isTappable?' onclick="pOpenMomentoSheet(\''+_escHtml(String(m.id))+'\')"':'')+' style="background:'+col.bg+';box-shadow:0 3px 20px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3.5px solid '+col.border+(isTappable?';cursor:pointer':'')+'">'
       +'<div style="display:flex;align-items:stretch;gap:0">'
       // Colored left strip: avatar photo + emoji when visible user, else just emoji
@@ -20982,14 +20987,15 @@ async function pPostMomentoHome(){
   try{
     var _insertData={id,text,emoji,anon_label:_momentoAnonLabel(),hearts:0,created_at:now.toISOString(),expires_at:expires,user_hash:_momentoUserHash()};
     if(_momentoShowProfile){
-      var _pn=safeLS('get','velo_user_name'); var _pav=safeLS('get','velo_user_av');
+      var _pn=safeLS('get','velo_user_name'); var _pav=safeLS('get','velo_user_av'); var _puid2=safeLS('get','velo_user_id');
       if(_pn) _insertData.user_name=_pn;
       if(_pav) _insertData.user_avatar=_pav;
+      if(_puid2) _insertData.user_id=_puid2;
     }
     var res=await sbClient.from('momentos').insert(_insertData);
     // Graceful fallback if profile columns not yet in DB
     if(res.error && (res.error.code==='42703' || res.error.code==='PGRST204' || (res.error.message&&res.error.message.indexOf('user_avatar')>=0))){
-      delete _insertData.user_name; delete _insertData.user_avatar;
+      delete _insertData.user_name; delete _insertData.user_avatar; delete _insertData.user_id;
       res=await sbClient.from('momentos').insert(_insertData);
     }
     if(res.error){
