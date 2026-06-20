@@ -11497,29 +11497,33 @@ body:not(.r-dark) #homeMomentoSection .comm-title-italic {
   color: rgba(14,46,28,.90) !important;
 }
 
-/* ── Tabs: strong active state ───────────────────────────────────── */
+/* ── Tabs: vivid active state ────────────────────────────────────── */
 .hf-tab--active {
-  background: linear-gradient(145deg, rgba(116,198,157,.32), rgba(60,150,100,.22)) !important;
-  border-color: rgba(116,198,157,.72) !important;
-  box-shadow: 0 3px 16px rgba(116,198,157,.28), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  background: linear-gradient(145deg, rgba(116,198,157,.62) 0%, rgba(48,175,98,.45) 100%) !important;
+  border-color: rgba(116,198,157,.92) !important;
+  box-shadow: 0 6px 24px rgba(116,198,157,.42), 0 2px 8px rgba(116,198,157,.28), inset 0 1px 0 rgba(255,255,255,.14) !important;
 }
-body.r-dark .hf-tab--active { color: rgba(200,252,225,.98) !important; }
-body:not(.r-dark) .hf-tab--active { color: rgba(12,60,32,.95) !important; }
+body.r-dark .hf-tab--active { color: rgba(228,255,240,.99) !important; text-shadow: 0 0 18px rgba(116,198,157,.55) !important; }
+body:not(.r-dark) .hf-tab--active { color: rgba(10,55,28,.96) !important; }
 .hf-tab--inactive {
-  opacity: .55 !important;
+  opacity: .58 !important;
+  background: rgba(116,198,157,.06) !important;
+  border-color: rgba(116,198,157,.22) !important;
 }
-body.r-dark .hf-tab--inactive { color: rgba(220,235,225,.65) !important; }
+body.r-dark .hf-tab--inactive { color: rgba(180,220,200,.70) !important; }
 .hf-tab--active-happy {
-  background: linear-gradient(145deg, rgba(200,158,56,.32), rgba(170,128,26,.22)) !important;
-  border-color: rgba(200,158,56,.75) !important;
-  box-shadow: 0 3px 16px rgba(200,158,56,.28), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  background: linear-gradient(145deg, rgba(222,162,36,.62) 0%, rgba(200,132,18,.45) 100%) !important;
+  border-color: rgba(222,162,36,.92) !important;
+  box-shadow: 0 6px 24px rgba(222,162,36,.42), 0 2px 8px rgba(222,162,36,.28), inset 0 1px 0 rgba(255,255,255,.14) !important;
 }
-body.r-dark .hf-tab--active-happy { color: rgba(255,238,145,.98) !important; }
-body:not(.r-dark) .hf-tab--active-happy { color: rgba(80,50,5,.92) !important; }
+body.r-dark .hf-tab--active-happy { color: rgba(255,244,168,.99) !important; text-shadow: 0 0 18px rgba(222,162,36,.55) !important; }
+body:not(.r-dark) .hf-tab--active-happy { color: rgba(75,46,4,.94) !important; }
 .hf-tab--inactive-happy {
-  opacity: .55 !important;
+  opacity: .58 !important;
+  background: rgba(222,162,36,.06) !important;
+  border-color: rgba(222,162,36,.22) !important;
 }
-body.r-dark .hf-tab--inactive-happy { color: rgba(220,235,225,.65) !important; }
+body.r-dark .hf-tab--inactive-happy { color: rgba(210,190,130,.70) !important; }
 
 /* ── home-mc cards: press effect ────────────────────────────────── */
 .home-mc { transition: transform .12s, box-shadow .12s; }

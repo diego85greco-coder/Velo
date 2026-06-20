@@ -3695,6 +3695,21 @@ function _dqEmojiColor(emoji){
   return {bg:'rgba(16,16,48,.92)',strip:'rgba(110,128,220,.36)',border:'rgba(110,128,220,.60)',glow:'rgba(110,128,220,.15)',label:'rgba(165,182,255,.95)',badge:'rgba(110,128,220,.24)'};
 }
 
+// Consistent per-user color palette — same user always gets same color
+function _userColor(seed){
+  var s=String(seed||'');
+  var h=0;
+  for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}
+  return [
+    {bg:'rgba(34,10,62,.94)',strip:'rgba(155,88,228,.50)',border:'rgba(155,88,228,.85)',glow:'rgba(155,88,228,.30)',label:'rgba(212,172,255,.97)',badge:'rgba(155,88,228,.34)'},
+    {bg:'rgba(5,32,18,.94)',strip:'rgba(45,180,120,.50)',border:'rgba(45,180,120,.85)',glow:'rgba(45,180,120,.30)',label:'rgba(112,238,175,.97)',badge:'rgba(45,180,120,.34)'},
+    {bg:'rgba(44,22,2,.94)',strip:'rgba(222,162,36,.50)',border:'rgba(222,162,36,.85)',glow:'rgba(222,162,36,.30)',label:'rgba(255,220,75,.97)',badge:'rgba(222,162,36,.34)'},
+    {bg:'rgba(6,14,50,.94)',strip:'rgba(82,132,228,.50)',border:'rgba(82,132,228,.85)',glow:'rgba(82,132,228,.30)',label:'rgba(162,195,255,.97)',badge:'rgba(82,132,228,.34)'},
+    {bg:'rgba(46,6,22,.94)',strip:'rgba(215,75,135,.50)',border:'rgba(215,75,135,.85)',glow:'rgba(215,75,135,.30)',label:'rgba(255,155,205,.97)',badge:'rgba(215,75,135,.34)'},
+    {bg:'rgba(46,16,2,.94)',strip:'rgba(225,110,38,.50)',border:'rgba(225,110,38,.85)',glow:'rgba(225,110,38,.30)',label:'rgba(255,180,85,.97)',badge:'rgba(225,110,38,.34)'},
+  ][Math.abs(h)%6];
+}
+
 function _buildDqCards(list){
   var myUid = safeLS('get','velo_user_id') || '';
   var _dqHid = []; try{ _dqHid = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
@@ -3703,7 +3718,7 @@ function _buildDqCards(list){
     var isImg = av && av.startsWith('http');
     var canSeeProfile = r.user_id && r.user_id !== 'anon';
     var isOwn = myUid && r.user_id === myUid;
-    var col = _dqEmojiColor(r.mood_emoji || '💭');
+    var col = _userColor(r.user_id && r.user_id !== 'anon' ? r.user_id : (r.anon_label||r.mood_emoji||''));
     var actionBtn = isOwn
       ? '<button onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" style="background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
       : '<button onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" style="background:none;border:none;color:rgba(255,160,60,.45);font-size:11px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
@@ -7277,7 +7292,7 @@ function _showDailyGreeting(saludo, msg){
         // Gemini message line — shows loading dots until ready
         +'<div id="veloGreetingGemini" style="'
           +'font-family:\'Cormorant Garamond\',serif;font-size:15.5px;'
-          +'color:var(--ink3);line-height:1.58;font-weight:400;letter-spacing:-.1px'
+          +'color:rgba(255,255,255,.82);line-height:1.58;font-weight:400;letter-spacing:-.1px'
         +'">'+( msg ? _escHtml(msg) : '…')+'</div>'
       +'</div>'
 
@@ -11245,7 +11260,7 @@ function _happyPostCard(h, isOwn){
   var rxBar = _happyReactEmojis.map(function(e){
     var cnt = (h.reactions && h.reactions[e]) || 0;
     var active = myReacted === e;
-    return '<button onclick="pHappyReact(\''+h.id+'\',\''+e+'\')" style="padding:4px 9px;background:'+(active?'rgba(255,224,102,.35)':'rgba(255,255,255,.6)')+';border:1px solid '+(active?'rgba(255,200,50,.5)':'var(--border2)')+';border-radius:100px;font-size:12px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600;transition:all .15s">'+e+(cnt?' '+cnt:'')+'</button>';
+    return '<button onclick="pHappyReact(\''+h.id+'\',\''+e+'\')" style="padding:5px 12px;background:'+(active?'rgba(222,162,36,.45)':'rgba(222,162,36,.11)')+';border:1.5px solid '+(active?'rgba(222,162,36,.80)':'rgba(222,162,36,.30)')+';border-radius:100px;font-size:13px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s;box-shadow:'+(active?'0 2px 14px rgba(222,162,36,.32)':'none')+'">'+e+(cnt?' <span style="font-size:11px;color:rgba(255,218,70,.90)">'+cnt+'</span>':'')+'</button>';
   }).join('');
 
   // Comments
@@ -11266,9 +11281,9 @@ function _happyPostCard(h, isOwn){
         : '<div style="flex-shrink:0;cursor:pointer"'+cClickAttr+'>'+_avInline(c.av||'🧑',26)+'</div>';
       commHtml += '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">'
         + avHtml
-        +'<div style="background:var(--cream2);border-radius:0 12px 12px 12px;padding:7px 11px;flex:1;min-width:0">'
-        +'<div style="font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:2px'+(cAnon?'':';cursor:pointer')+'"'+cClickAttr+'>'+_escHtml(c.name||'Usuario')+'</div>'
-        +'<div style="font-size:12px;color:var(--ink3);line-height:1.45;word-break:break-word">'+_escHtml(c.text)+'</div>'
+        +'<div style="background:rgba(222,162,36,.10);border-radius:0 12px 12px 12px;padding:7px 11px;flex:1;min-width:0;border-left:2px solid rgba(222,162,36,.42)">'
+        +'<div style="font-size:11px;font-weight:700;color:rgba(255,222,78,.90);margin-bottom:2px'+(cAnon?'':';cursor:pointer')+'"'+cClickAttr+'>'+_escHtml(c.name||'Usuario')+'</div>'
+        +'<div style="font-size:12px;color:rgba(255,255,255,.80);line-height:1.45;word-break:break-word">'+_escHtml(c.text)+'</div>'
         +'</div></div>';
     });
     if(!isOwn && commCount > 5){
@@ -11330,7 +11345,7 @@ function _happyPostCard(h, isOwn){
     // comment input
     +'<div style="display:flex;gap:8px;align-items:center">'
     +'<input id="cmt-'+h.id+'" class="p-input" style="flex:1;font-size:12px;padding:7px 12px;height:auto;border-radius:100px" placeholder="Dejar un comentario…" maxlength="120" onkeydown="if(event.key===\'Enter\')pHappyComment(\''+h.id+'\')">'
-    +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:7px 12px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.35);border-radius:100px;font-size:12px;cursor:pointer;color:rgba(160,230,195,.95);font-family:\'Jost\',sans-serif;font-weight:700;flex-shrink:0;white-space:nowrap">Enviar 💬</button>'
+    +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:7px 14px;background:linear-gradient(135deg,rgba(222,162,36,.48),rgba(200,136,16,.36));border:1.5px solid rgba(222,162,36,.72);border-radius:100px;font-size:12px;cursor:pointer;color:rgba(255,228,82,.97);font-family:\'Jost\',sans-serif;font-weight:700;flex-shrink:0;white-space:nowrap;box-shadow:0 2px 14px rgba(222,162,36,.24)">Enviar ✨</button>'
     +'</div>'
     +(safeLS('get','velo_incognito')==='true' ? '<div style="font-size:10.5px;color:var(--ink5);line-height:1.5;margin-top:6px;font-style:italic">En tu perfil tenés activo el modo incógnito. Si querés comentar con tu perfil público, desactivá esa opción.</div>' : '')
     +'</div>';
@@ -20493,20 +20508,21 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var timeLeft=Math.max(0,Math.round((new Date(m.expires_at).getTime()-Date.now())/3600000));
     var cachedCnt=parseInt(safeLS('get','velo_mheart_'+m.id+'_cnt')||'0');
     var heartCount=Math.max(m.hearts||0, cachedCnt);
-    var col=_momentoEmojiColor(m.emoji||'💭');
+    var hasProfile = !!(m.user_name && m.user_name.length > 0);
+    var col = _userColor(m.user_id || m.anon_label || m.emoji || '');
     var txtSz = isHome ? '13px' : '14px';
-    var stripW = isHome ? '56px' : '62px';
+    var stripW = isHome ? '62px' : '68px';
     var emojiSz = isHome ? '24px' : '28px';
-    var hasProfile = m.user_name && m.user_name.length > 0;
     var authorName = hasProfile ? m.user_name : (m.anon_label||'Anónimo/a');
-    var authorAvHtml = '';
-    if(hasProfile && m.user_avatar && (m.user_avatar.startsWith('http')||m.user_avatar.startsWith('data:'))){
-      authorAvHtml = '<img src="'+_escHtml(m.user_avatar)+'" style="width:16px;height:16px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:3px;flex-shrink:0;border:1px solid '+col.border+'">';
-    }
-    return '<div class="home-mc"'+(isTappable?' onclick="pOpenMomentoSheet(\''+_escHtml(String(m.id))+'\')"':'')+' style="background:'+col.bg+';box-shadow:0 3px 18px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3px solid '+col.border+(isTappable?';cursor:pointer':'')+'">'
+    var hasAv = hasProfile && m.user_avatar && (m.user_avatar.startsWith('http')||m.user_avatar.startsWith('data:'));
+    var authorAvHtml = hasAv ? '<img src="'+_escHtml(m.user_avatar)+'" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;flex-shrink:0;border:1.5px solid '+col.border+'">' : '';
+    var stripInner = hasAv
+      ? '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><img src="'+_escHtml(m.user_avatar)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2.5px solid '+col.border+';display:block"><span style="font-size:14px;line-height:1">'+_escHtml(m.emoji||'💭')+'</span></div>'
+      : '<span style="font-size:'+emojiSz+';line-height:1">'+_escHtml(m.emoji||'💭')+'</span>';
+    return '<div class="home-mc"'+(isTappable?' onclick="pOpenMomentoSheet(\''+_escHtml(String(m.id))+'\')"':'')+' style="background:'+col.bg+';box-shadow:0 3px 20px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3.5px solid '+col.border+(isTappable?';cursor:pointer':'')+'">'
       +'<div style="display:flex;align-items:stretch;gap:0">'
-      // Colored left strip with emoji
-      +'<div style="width:'+stripW+';flex-shrink:0;display:flex;align-items:center;justify-content:center;background:'+col.strip+';font-size:'+emojiSz+';line-height:1;padding:'+(isHome?'14px':'16px')+' 0;border-radius:0">'+(m.emoji||'💭')+'</div>'
+      // Colored left strip: avatar photo + emoji when visible user, else just emoji
+      +'<div style="width:'+stripW+';flex-shrink:0;display:flex;align-items:center;justify-content:center;background:'+col.strip+';padding:'+(isHome?'12px':'14px')+' 0;border-radius:0">'+stripInner+'</div>'
       // Main content
       +'<div style="flex:1;min-width:0;padding:11px 10px 11px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
@@ -20517,7 +20533,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       +(mine?'<span style="font-size:8px;font-weight:700;padding:1px 6px;border-radius:5px;background:'+col.badge+';color:'+col.label+'">tuyo</span>':'')
       +'</div>'
       +'<div style="font-size:'+txtSz+';line-height:1.55;color:rgba(255,255,255,.92);word-break:break-word">'+_escHtml(m.text||'')+'</div>'
-      +(isTappable?'<div style="margin-top:7px;font-size:9.5px;color:'+col.label.replace(',1)',',0.40)')+';font-family:\'Jost\',sans-serif;display:flex;align-items:center;gap:3px;letter-spacing:.2px">💬 <span>tocá para comentar</span></div>':'')
+      +(isTappable?'<div style="margin-top:7px;font-size:10px;color:'+col.label.replace(',1)',',0.70)')+';font-family:\'Jost\',sans-serif;display:flex;align-items:center;gap:3px;letter-spacing:.2px">💬 <span>tocá para comentar</span></div>':'')
       +'</div>'
       // Heart + report
       +'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;padding:10px 11px 10px 4px">'
@@ -20769,10 +20785,11 @@ function pOpenHappyHomeSheet(postId){
   ov.onclick = function(e){ if(e.target===ov) _closeHappyHomeSheet(); };
   ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="max-height:88vh;overflow-y:auto">'
     +'<div class="p-sheet-handle"></div>'
-    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">'
-    +'<span style="font-size:18px">☀️</span>'
-    +'<span style="font-size:14px;font-weight:700;color:rgba(245,210,80,.92);font-family:\'Cormorant Garamond\',serif;font-style:italic">Muro Feliz</span>'
-    +'<button onclick="_closeHappyHomeSheet()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,.45);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px">×</button>'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:10px 14px;background:linear-gradient(135deg,rgba(222,162,36,.28) 0%,rgba(200,138,18,.14) 100%);border-radius:14px;border:1.5px solid rgba(222,162,36,.42)">'
+    +'<div style="width:34px;height:34px;border-radius:10px;background:rgba(222,162,36,.28);border:1.5px solid rgba(222,162,36,.60);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0">☀️</div>'
+    +'<div><div style="font-size:15px;font-weight:700;color:rgba(255,228,82,.95);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1">Muro Feliz</div>'
+    +'<div style="font-size:9.5px;color:rgba(255,210,55,.50);font-weight:700;letter-spacing:.6px;font-family:Jost,sans-serif;margin-top:2px">PUBLICACIÓN</div></div>'
+    +'<button onclick="_closeHappyHomeSheet()" style="margin-left:auto;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.55);font-size:16px;cursor:pointer;line-height:1;padding:4px 9px;border-radius:8px">×</button>'
     +'</div>'
     + _happyPostCard(h, isOwn)
     +'</div>';
