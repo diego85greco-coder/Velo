@@ -12670,3 +12670,161 @@ body.r-dark .diary-write .p-btn--primary {
   font-size: 16px !important;
 }
 
+/* ══════════════════════════════════════════════════
+   v987 — MI ESTADO, Al Mar & Sala de Ayuda, DQ widget
+   ══════════════════════════════════════════════════ */
+
+/* ── MI ESTADO section dark mode ─────────────────── */
+@keyframes velo-estado-glow {
+  0%,100% { box-shadow: 0 6px 28px rgba(116,198,157,.18), 0 0 0 1px rgba(116,198,157,.14); }
+  50%      { box-shadow: 0 8px 38px rgba(116,198,157,.32), 0 0 0 1px rgba(116,198,157,.28); }
+}
+@keyframes velo-icon-float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+@keyframes velo-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+body.r-dark #homeRegisterOuter {
+  background: linear-gradient(150deg, rgba(10,30,18,.96) 0%, rgba(6,18,12,.98) 100%) !important;
+  border: 1.5px solid rgba(116,198,157,.38) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 6px 28px rgba(116,198,157,.18), 0 0 0 1px rgba(116,198,157,.14) !important;
+  animation: velo-estado-glow 3.5s ease-in-out infinite !important;
+  padding: 18px 16px !important;
+}
+
+/* Floating icon */
+body.r-dark #homeRegisterOuter > div > div:first-child > div:first-child {
+  animation: velo-icon-float 3s ease-in-out infinite !important;
+}
+
+/* Label text */
+body.r-dark #homeRegisterLabel {
+  color: rgba(215,255,235,.97) !important;
+}
+body.r-dark #homeRegisterSub {
+  color: rgba(116,198,157,.75) !important;
+}
+
+/* Mood button */
+body.r-dark .home-mood-btn {
+  background: rgba(116,198,157,.12) !important;
+  border: 1.5px solid rgba(116,198,157,.35) !important;
+  color: rgba(200,248,225,.88) !important;
+  transition: all .18s !important;
+}
+body.r-dark .home-mood-btn:hover {
+  background: rgba(116,198,157,.22) !important;
+  border-color: rgba(116,198,157,.65) !important;
+  box-shadow: 0 2px 14px rgba(116,198,157,.28) !important;
+}
+
+/* Weekly graph strip */
+body.r-dark #homeWeekMoodGraph {
+  background: rgba(0,0,0,.32) !important;
+  border: 1px solid rgba(116,198,157,.18) !important;
+}
+
+/* Mis Registros button — shimmer animation */
+body.r-dark #topbarMoodBtn {
+  background: linear-gradient(90deg,
+    rgba(116,198,157,.22) 0%,
+    rgba(116,198,157,.38) 40%,
+    rgba(116,198,157,.22) 80%,
+    rgba(116,198,157,.32) 100%) !important;
+  background-size: 200% auto !important;
+  border: 1.5px solid rgba(116,198,157,.52) !important;
+  color: rgba(210,255,235,.97) !important;
+  box-shadow: 0 3px 18px rgba(116,198,157,.28), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  animation: velo-shimmer 2.8s linear infinite !important;
+}
+
+/* Motto line */
+body.r-dark #homeMottoLine {
+  background: linear-gradient(135deg, rgba(200,158,56,.20) 0%, rgba(178,138,18,.14) 100%) !important;
+  border-color: rgba(200,158,56,.52) !important;
+  color: rgba(255,220,78,.97) !important;
+}
+body.r-dark .home-motto-label {
+  color: rgba(200,158,56,.65) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1.5px !important;
+  text-transform: uppercase !important;
+  margin-bottom: 5px !important;
+  margin-top: 6px !important;
+  font-family: 'Jost', sans-serif !important;
+}
+
+/* ── Al Mar (bottle) dark mode card fix ─────────── */
+/* The dark-bottle base class needs dark overrides */
+body.r-dark .dark-bottle {
+  background: rgba(4,18,42,.92) !important;
+  border-color: rgba(65,145,220,.28) !important;
+}
+
+/* ── Sala de Ayuda dark mode card ───────────────── */
+/* dark-seeker in #pg-help: override the generic light rule */
+body.r-dark #pg-help .dark-seeker {
+  background: rgba(10,22,48,.94) !important;
+  border-color: rgba(255,255,255,.07) !important;
+}
+body.r-dark #pg-help .dark-seeker:hover {
+  background: rgba(14,28,56,.96) !important;
+}
+
+/* ── Pregunta del Día RESPONDIDA widget ─────────── */
+@keyframes velo-dq-pulse {
+  0%,100% { box-shadow: 0 8px 36px rgba(200,158,56,.22), 0 0 0 1px rgba(200,158,56,.10); }
+  50%      { box-shadow: 0 10px 44px rgba(200,158,56,.38), 0 0 0 1px rgba(200,158,56,.22); }
+}
+@keyframes velo-check-bounce {
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.4); }
+}
+
+body.r-dark #homeDailyQOpen > div {
+  animation: velo-dq-pulse 3.2s ease-in-out infinite !important;
+}
+body.r-dark #homeDailyQOpen > div > div:first-child > span:last-child {
+  display: inline-block !important;
+  animation: velo-check-bounce 2s ease-in-out infinite !important;
+  color: rgba(116,198,157,.90) !important;
+  font-size: 14px !important;
+}
+
+/* "My response" box in DQ open */
+body.r-dark #homeDailyQMyResp {
+  background: rgba(200,158,56,.16) !important;
+  border: 1.5px solid rgba(200,158,56,.38) !important;
+  color: rgba(255,224,90,.97) !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  border-radius: 12px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 2px 14px rgba(200,158,56,.18) !important;
+}
+
+/* DQ "Ver todos" button */
+body.r-dark #dqVerTodosBtn button {
+  background: linear-gradient(135deg, rgba(200,158,56,.28) 0%, rgba(160,118,16,.22) 100%) !important;
+  border-color: rgba(200,158,56,.60) !important;
+  color: rgba(255,220,75,.97) !important;
+  box-shadow: 0 3px 16px rgba(200,158,56,.22) !important;
+}
+
+/* ── Bottle card reply button accent ─────────────── */
+body.r-dark .dark-bottle button[onclick*="pOpenBottleReply"] {
+  background: rgba(65,155,222,.20) !important;
+  border: 1.5px solid rgba(65,155,222,.52) !important;
+  color: rgba(160,215,255,.95) !important;
+}
+body.r-dark .dark-bottle button[onclick*="pOpenBottleReply"]:hover {
+  background: rgba(65,155,222,.32) !important;
+  box-shadow: 0 2px 12px rgba(65,155,222,.28) !important;
+}
+

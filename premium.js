@@ -6186,24 +6186,26 @@ async function pRenderHelp(){
     var hAv = h.av || h.emoji || '💙';
     var profCall = 'pQuickProfile('+_jsAttr(h.name)+','+_jsAttr(hAv)+',\'\',\'\','+_jsAttr(h.userId||'')+')';
     var uAtTag = _uAt(h.anon ? '' : h.userId);
+    var hCol = _userColor(h.userId && !h.anon ? h.userId : (h.emoji||'💙'));
     var nameHtml = canClickProfile
-      ? '<div><span style="font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" onclick="'+profCall+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>'
-      : '<div><span style="font-size:12px;font-weight:600;color:var(--ink)">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>';
+      ? '<div><span style="font-size:12px;font-weight:700;color:'+hCol.label+';cursor:pointer" onclick="'+profCall+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>'
+      : '<div><span style="font-size:12px;font-weight:700;color:'+hCol.label+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>';
     var avHtml = (hAv && (hAv.indexOf('data:')===0||hAv.indexOf('http')===0)) ? _avInline(hAv,32) : (!h.anon ? hAv : (h.emoji||'💙'));
     var pDot = (!h.anon && h.userId) ? _presenceDot(h.userId, 10) : '';
     var avDotHtml = pDot
       ? '<div style="position:relative;display:inline-block">' + avHtml + '<span style="position:absolute;bottom:-1px;right:-3px">' + pDot + '</span></div>'
       : avHtml;
-    return '<div class="dark-seeker" id="helppost-'+h.id+'">'
-      +'<div style="display:flex;align-items:flex-start;gap:11px">'
-      +'<div style="font-size:28px;flex-shrink:0;'+(canClickProfile?'cursor:pointer" onclick="'+profCall:'')+'">' + avDotHtml + '</div>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:3px">'
-      +nameHtml
-      +'<span style="font-size:10px;color:var(--ink5);margin-top:2px">'+timeStr+'</span>'
-      +urgBadge
+    return '<div class="dark-seeker" id="helppost-'+h.id+'"'
+      +' style="background:'+hCol.bg+' !important;border:1.5px solid rgba(255,255,255,.07) !important;border-radius:18px !important;box-shadow:0 4px 22px '+hCol.glow+',inset 0 0 0 1px '+hCol.border.replace(/[\d.]+\)$/,'0.18)')+' !important;overflow:hidden !important;margin:0 0 10px !important;padding:0 !important">'
+      +'<div style="display:flex;min-height:76px">'
+      +'<div style="width:64px;flex-shrink:0;background:'+hCol.strip+';border-right:1.5px solid '+hCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 0">'
+      +'<div style="font-size:26px;line-height:1;'+(canClickProfile?'cursor:pointer" onclick="'+profCall:'')+'">' + avDotHtml + '</div>'
       +'</div>'
-      +'<div style="font-size:13px;color:var(--ink3);line-height:1.55;margin-bottom:10px;font-style:italic">'+_escHtml(h.preview)+'</div>'
+      +'<div style="flex:1;min-width:0;padding:10px 12px">'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">'
+      +'<div>'+nameHtml+'<div style="display:flex;align-items:center;gap:4px;margin-top:1px">'+urgBadge+'<span style="font-size:10px;color:rgba(255,255,255,.35)">'+timeStr+'</span></div></div>'
+      +'</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.82);line-height:1.58;margin-bottom:10px;font-style:italic;font-family:\'Cormorant Garamond\',serif">"'+_escHtml(h.preview)+'"</div>'
       +'<div style="display:flex;gap:8px;align-items:center">'+actions+'</div>'
       +'</div></div></div>';
   }
@@ -8514,12 +8516,14 @@ async function _loadBottleStats(){
 }
 
 function _bottleEmojiColor(mood){
-  var warm=['🤗','😊'];
-  var sad=['😢','😔','😰','😤'];
-  if(warm.indexOf(mood)>=0) return {bg:'rgba(218,160,30,.10)',border:'rgba(218,160,30,.40)',glow:'rgba(218,160,30,.08)',strip:'rgba(218,160,30,.22)'};
-  if(sad.indexOf(mood)>=0)  return {bg:'rgba(100,120,210,.10)',border:'rgba(130,148,220,.38)',glow:'rgba(100,120,210,.08)',strip:'rgba(115,133,218,.22)'};
-  if(mood==='🌊')           return {bg:'rgba(40,130,200,.10)',border:'rgba(70,155,210,.38)',glow:'rgba(40,130,200,.08)',strip:'rgba(60,148,210,.22)'};
-  return                           {bg:'rgba(80,140,200,.08)',border:'rgba(80,150,200,.35)',glow:'rgba(60,140,200,.07)',strip:'rgba(70,145,205,.20)'};
+  var warm=['🤗','😊','🥰','😄','🎉','💛','☀️','🌻'];
+  var sad=['😢','😔','😰','😤','😞','😖','💔','🫂'];
+  var anx=['😬','😨','😥','😣','🤯','😓'];
+  if(warm.indexOf(mood)>=0) return {bg:'rgba(52,28,4,.94)',border:'rgba(222,162,36,.85)',glow:'rgba(222,162,36,.30)',strip:'rgba(222,162,36,.45)',label:'rgba(255,220,75,.97)'};
+  if(sad.indexOf(mood)>=0)  return {bg:'rgba(8,12,52,.94)',border:'rgba(110,128,228,.82)',glow:'rgba(110,128,228,.28)',strip:'rgba(110,128,228,.45)',label:'rgba(168,182,255,.97)'};
+  if(anx.indexOf(mood)>=0)  return {bg:'rgba(38,8,38,.94)',border:'rgba(192,80,200,.80)',glow:'rgba(192,80,200,.26)',strip:'rgba(192,80,200,.42)',label:'rgba(245,168,255,.97)'};
+  if(mood==='🌊')           return {bg:'rgba(4,24,52,.94)',border:'rgba(65,158,222,.82)',glow:'rgba(65,158,222,.28)',strip:'rgba(65,158,222,.45)',label:'rgba(140,210,255,.97)'};
+  return                           {bg:'rgba(8,28,20,.94)',border:'rgba(72,185,128,.80)',glow:'rgba(72,185,128,.26)',strip:'rgba(72,185,128,.42)',label:'rgba(120,240,185,.97)'};
 }
 
 async function pRenderBottle(){
@@ -8605,32 +8609,36 @@ async function pRenderBottle(){
         +'</div>';
     }
     var showAuthor = !b.anon && b.userName && !isOwn;
-    var authorHtml = showAuthor
-      ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;cursor:pointer" onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')">'
-        +_avInline(b.userAv||'🧑',24)
-        +'<div style="display:flex;flex-direction:column;line-height:1.2">'
-        +'<span style="font-size:11px;color:#1E5A80;font-weight:600">'+_escHtml(b.userName)+'</span>'
-        +(_uAt(b.userId||''))
-        +'</div>'
-        +'<span style="font-size:10px;color:var(--ink5)">· toca para ver perfil</span>'
-        +'</div>'
-      : (b.anon
-        ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
-          +'<span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:.3px">👤 Usuario Anónimo</span>'
-          +'</div>'
-        : '');
     var bCol = _bottleEmojiColor(b.mood||'🌊');
+    var _bav = b.userAv || '';
+    var bAvHasImg = _bav && (_bav.startsWith('http')||_bav.startsWith('data:'));
+    var authorNameHtml = showAuthor
+      ? (bAvHasImg
+          ? '<img src="'+_escHtml(_bav)+'" style="width:16px;height:16px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:3px;border:1px solid '+bCol.border+'">'
+          : (_bav ? '<span style="font-size:13px;vertical-align:middle;margin-right:3px">'+_escHtml(_bav)+'</span>' : ''))
+        +'<span style="font-size:11px;font-weight:700;color:'+bCol.label+';cursor:pointer" onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')">'
+        +_escHtml(b.userName)+'</span>'
+        +(_uAt(b.userId||''))
+      : (b.anon ? '<span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.38);letter-spacing:.2px">Anónimo/a</span>' : '<span style="font-size:11px;color:rgba(255,255,255,.28)">—</span>');
+    var stripInnerB = bAvHasImg
+      ? '<img src="'+_escHtml(_bav)+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid '+bCol.border+';display:block;margin-bottom:5px"><span style="font-size:18px;line-height:1">'+_escHtml(b.mood||'🌊')+'</span>'
+      : (_bav ? '<div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.10);border:2px solid '+bCol.border+';display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:4px">'+_escHtml(_bav)+'</div><span style="font-size:16px;line-height:1">'+_escHtml(b.mood||'🌊')+'</span>'
+        : '<span style="font-size:28px;line-height:1;filter:drop-shadow(0 0 8px '+bCol.glow+')">'+_escHtml(b.mood||'🌊')+'</span>');
     return '<div class="dark-bottle'+(alreadyReplied?' bottle-already-replied':'')+'" id="bottle-'+b.id+'"'
-      +' style="animation-delay:'+i*.08+'s;position:relative;background:'+bCol.bg+';border-left:3px solid '+bCol.border+';box-shadow:0 3px 14px '+bCol.glow+'">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-      +'<div style="display:flex;align-items:center;gap:7px">'
-      +'<span style="font-size:22px;filter:drop-shadow(0 0 6px '+bCol.glow+')">'+b.mood+'</span>'
-      +(alreadyReplied?'<span style="font-size:10px;font-weight:700;color:rgba(116,198,157,.75);background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);border-radius:100px;padding:2px 8px">💌 Respondiste</span>':'')
+      +' style="animation-delay:'+i*.08+'s;position:relative;background:'+bCol.bg+';border:1.5px solid rgba(255,255,255,.07);border-radius:18px;box-shadow:0 4px 22px '+bCol.glow+',inset 0 0 0 1px '+bCol.border.replace(/[\d.]+\)$/,'0.18)')+';overflow:hidden;margin:0 0 10px;padding:0">'
+      +'<div style="display:flex;min-height:76px">'
+      +'<div style="width:64px;flex-shrink:0;background:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 0;border-radius:0">'
+      +stripInnerB
       +'</div>'
-      +'<span style="font-size:10px;color:var(--ink5)">'+relTime+'</span></div>'
-      +authorHtml
-      +'<p style="font-size:13px;color:var(--ink);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+b.text+'"</p>'
-      +'<div style="display:flex;align-items:center;justify-content:flex-end">'+actions+'</div></div>';
+      +'<div style="flex:1;min-width:0;padding:10px 12px">'
+      +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
+      +authorNameHtml
+      +(alreadyReplied?'<span style="font-size:9px;font-weight:700;color:rgba(116,198,157,.80);background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.28);border-radius:100px;padding:1px 7px;margin-left:auto">💌 Respondiste</span>'
+        :'<span style="margin-left:auto;font-size:9px;font-weight:700;color:'+bCol.label.replace(/[\d.]+\)$/,'0.55)')+';font-family:\'Jost\',sans-serif">'+relTime+'</span>')
+      +'</div>'
+      +'<p style="font-size:13px;color:rgba(255,255,255,.88);line-height:1.58;margin:0 0 9px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(b.text)+'"</p>'
+      +'<div style="display:flex;align-items:center;justify-content:flex-end">'+actions+'</div>'
+      +'</div></div></div>';
   }).join('');
 }
 
