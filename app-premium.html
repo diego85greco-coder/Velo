@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1018">
+  <meta name="app-version" content="1019">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260620-1018">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260620-1018">
+  <link rel="stylesheet" href="premium.css?v=20260620-1019">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260620-1019">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -44,8 +44,8 @@
     #homeDailyQ            { order: 7; }
     #homeStatusToggle      { order: 9 !important; }
     .r-hero-actions        { order: 10 !important; }
-    #homeStatusToggle      { display:flex !important; align-items:center; gap:10px; }
-    #homeStatusSegPill     { flex:1; min-width:0; }
+    #homeStatusToggle      { display:flex !important; flex-direction:column !important; align-items:stretch !important; gap:0 !important; }
+    #homeStatusSegPill     { width:100%; flex-shrink:0; }
     #homeStatusSegPill .r-status-combined-pill { display:flex; width:100%; }
     #homeMedWidget         { order: 11; }
     .r-home-quick-panel    { order: 12; }
@@ -1026,15 +1026,18 @@
             <div class="r-hero-left">
               <div id="homeHeroLabel" style="font-size:10px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:rgba(200,158,56,.72);margin-bottom:12px;display:flex;align-items:center;gap:6px"><span>—</span><span>JARDÍN DE HOY</span></div>
               <!-- Guardian mode control — static HTML, state synced via _renderHomeStatusToggle() -->
-              <!-- Mi Presencia — fila compacta: pill izq, toggles der -->
-              <div id="homeStatusToggle" style="margin:0 0 16px;box-sizing:border-box;width:100%;padding:10px 14px;background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.16);border-radius:16px">
+              <div id="homeStatusToggle" style="margin:0 0 16px;box-sizing:border-box;width:100%;padding:16px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.28);border-radius:18px">
+                <!-- Header -->
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                  <span style="font-size:20px;line-height:1">💚</span>
+                  <span style="font-size:13px;font-weight:800;color:rgba(160,230,190,.92);font-family:'Jost',sans-serif;letter-spacing:.3px">Mi Disponibilidad</span>
+                </div>
                 <!-- homeStatusSegPill lo inserta JS aquí, antes de homeGuardianWrap -->
-                <div id="homeGuardianWrap" style="display:flex;align-items:flex-start;gap:12px;flex-shrink:0">
+                <div id="homeGuardianWrap" style="display:flex;align-items:flex-start;justify-content:space-around;gap:0;flex-shrink:0;padding-top:14px;border-top:1px solid rgba(116,198,157,.18);margin-top:2px">
                   <!-- Span invisible: absorbe el texto "Activarme"/"Activo" que inyecta el JS -->
                   <span style="display:none"></span>
-                  <div style="width:1px;align-self:stretch;background:rgba(116,198,157,.18);flex-shrink:0"></div>
                   <!-- Modo incógnito -->
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:76px">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1">
                     <div style="display:flex;align-items:center;gap:5px">
                       <div style="font-size:14px">👤</div>
                       <div class="p-tog" id="homeIncognitoTog" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>
@@ -1042,8 +1045,9 @@
                     <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.88);font-family:'Jost',sans-serif;text-align:center;line-height:1.2">Modo incógnito</div>
                     <div style="font-size:9.5px;color:rgba(180,230,200,.70);font-family:'Jost',sans-serif;text-align:center;line-height:1.35">Ocultá tu foto e información</div>
                   </div>
+                  <div style="width:1px;align-self:stretch;background:rgba(116,198,157,.18);flex-shrink:0;margin:0 8px"></div>
                   <!-- Modo guardián -->
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;min-width:76px">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1">
                     <div style="display:flex;align-items:center;gap:5px">
                       <div style="font-size:14px">🛡️</div>
                       <div class="p-tog" id="homeGuardianModeTog" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>
@@ -4089,8 +4093,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260620-1018"></script>
-<script src="premium-redesign.js?v=20260620-1018"></script>
+<script src="premium.js?v=20260620-1019"></script>
+<script src="premium-redesign.js?v=20260620-1019"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
