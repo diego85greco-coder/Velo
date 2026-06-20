@@ -3711,11 +3711,11 @@ function _buildDqCards(list){
     var _m = _dqReactMap[r.id] || {};
     var _totalRx = ['identifico','abrazo','entiendo'].reduce(function(s,k){ return s+((_m[k]&&_m[k].count)||0); },0);
     var avInner = isImg
-      ? '<img src="'+_escHtml(av)+'" style="width:28px;height:28px;object-fit:cover;border-radius:50%">'
-      : '<div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:13px">'+(av||'🌿')+'</div>';
+      ? '<img src="'+_escHtml(av)+'" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block">'
+      : '<div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1">'+_escHtml(av||'🌿')+'</div>';
     var avWrap = canSeeProfile
-      ? '<div onclick="event.stopPropagation();pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')" style="cursor:pointer;width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0">'+avInner+'</div>'
-      : '<div style="width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;opacity:.7">'+avInner+'</div>';
+      ? '<div onclick="event.stopPropagation();pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')" style="cursor:pointer;width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'+avInner+'</div>'
+      : '<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;opacity:.7;display:flex;align-items:center;justify-content:center">'+avInner+'</div>';
     return '<div class="dq-feed-card" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
       +' style="background:'+col.bg+';box-shadow:0 3px 16px '+col.glow+',inset 0 0 0 1px '+col.border+';cursor:pointer;min-height:90px">'
       +'<div style="display:flex;align-items:stretch">'
@@ -4229,22 +4229,22 @@ function _renderShareCard(canvas, logoImg){
   // ── Logo / header ───────────────────────────────────────────────
   var headerEnd; // y where header area ends
   if(logoImg){
-    var lH = 450, lW = 450;
-    var lX = (W - lW) / 2, lY = 20;
+    var lH = 260, lW = 260;
+    var lX = (W - lW) / 2, lY = 28;
     ctx.save();
-    ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 60;
+    ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 50;
     ctx.drawImage(logoImg, 0, 0, logoImg.naturalWidth, logoImg.naturalHeight, lX, lY, lW, lH);
     ctx.restore();
-    headerEnd = lY + lH + 14;
+    headerEnd = lY + lH + 36; // 36px breathing room so line never touches logo
   } else {
     ctx.textAlign='center';
     ctx.font='800 68px Arial,sans-serif';
     ctx.fillStyle='rgba(116,198,157,.92)';
     ctx.fillText('VELO', W/2, 72);
-    headerEnd = 90;
+    headerEnd = 104;
   }
 
-  // Gold separator line below logo / title
+  // Gold separator line — well below logo
   var topLine = ctx.createLinearGradient(60,0,W-60,0);
   topLine.addColorStop(0,'rgba(200,158,56,0)');
   topLine.addColorStop(0.25,'rgba(200,158,56,.75)');
