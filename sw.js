@@ -109,3 +109,25 @@ self.addEventListener('notificationclick', function(event){
   var url = (event.notification.data && event.notification.data.url) || '/';
   event.waitUntil(clients.openWindow(url));
 });
+
+// When the browser rotates/renews a push endpoint automatically,
+// re-subscribe and notify the app page so it can update Supabase.
+// Without this, the old endpoint gets a 410 and push_subscription goes null.
+self.addEventListener('pushsubscriptionchange', function(event){
+  var appKey = event.oldSubscription && event.oldSubscription.options
+    ? event.oldSubscription.options.applicationServerKey
+    : null;
+  if(!appKey) return;
+  event.waitUntil(
+    self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey })
+      .then(function(newSub){
+        return self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+          .then(function(clientList){
+            clientList.forEach(function(c){
+              c.postMessage({ type: 'PUSH_SUB_CHANGED', sub: JSON.stringify(newSub) });
+            });
+          });
+      })
+      .catch(function(e){ console.warn('[SW pushsubscriptionchange]', e && e.message); })
+  );
+});

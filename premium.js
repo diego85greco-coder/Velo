@@ -3030,6 +3030,17 @@ if('serviceWorker' in navigator && 'PushManager' in window){
   navigator.serviceWorker.addEventListener('controllerchange', function(){
     navigator.serviceWorker.ready.then(function(r){ _swReg = r; }).catch(function(){});
   });
+  // When the browser rotates the push endpoint (pushsubscriptionchange in SW),
+  // the SW sends us the new subscription via postMessage — save it immediately.
+  navigator.serviceWorker.addEventListener('message', function(e){
+    if(!e.data || e.data.type !== 'PUSH_SUB_CHANGED') return;
+    try{
+      var newSub = JSON.parse(e.data.sub);
+      safeLS('set','velo_push_sub', JSON.stringify(newSub));
+      _savePushSubscriptionToSupabase(newSub).catch(function(){});
+      console.log('[push] subscription rotated by browser — saved new endpoint');
+    }catch(_me){}
+  });
 }
 
 function _urlBase64ToUint8Array(base64String){
@@ -3061,21 +3072,26 @@ async function _savePushSubscriptionToSupabase(sub){
 // On startup, sync any existing localStorage push subscription to Supabase.
 // Handles users who subscribed before the DB-save worked, or who cleared cache on one device.
 async function _syncPushSubOnStartup(){
-  var _lsSub = safeLS('get','velo_push_sub');
-  if(!_lsSub) return; // no local subscription → nothing to sync
   var _uid = safeLS('get','velo_user_id');
   if(!_uid) return;
-  _initSupabase();
-  if(!sbClient) return;
-  // Refresh session first — expired JWT causes SELECT/UPDATE to fail silently via RLS
-  try{ await _ensureSbSession(); }catch(e){}
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   try{
-    // Always sync local sub to DB on startup: after a deactivate+reactivate cycle the DB may
-    // hold a stale (now-invalid) subscription while LS has the fresh one. Checking for non-null
-    // DB and skipping means we keep sending to the expired endpoint until it 410s.
-    var _sub = JSON.parse(_lsSub);
-    await _savePushSubscriptionToSupabase(_sub);
-    console.log('[push sync startup] subscription synced to Supabase');
+    // Use pushManager.getSubscription() as the authoritative source —
+    // the browser may have silently rotated the endpoint since we last saved it.
+    var _reg = await navigator.serviceWorker.ready;
+    var _browserSub = await _reg.pushManager.getSubscription();
+    if(_browserSub){
+      // Always update LS with the real browser sub (endpoint may have rotated)
+      safeLS('set','velo_push_sub', JSON.stringify(_browserSub));
+      _initSupabase();
+      if(!sbClient) return;
+      try{ await _ensureSbSession(); }catch(e){}
+      await _savePushSubscriptionToSupabase(_browserSub);
+      console.log('[push sync startup] subscription synced from browser endpoint');
+    } else {
+      // No active browser subscription — clear stale LS entry
+      safeLS('remove','velo_push_sub');
+    }
   }catch(e){ console.warn('[push sync startup]', e && e.message); }
 }
 
