@@ -11145,15 +11145,15 @@ body.r-dark .dq-reaction-btn[data-active="true"] {
 /* Home feed tab buttons */
 .hf-tab {
   flex: 1;
-  padding: 11px 10px;
-  border-radius: 22px;
-  font-size: 12px;
+  padding: 12px 8px;
+  border-radius: 16px;
+  font-size: 13px;
   font-weight: 800;
   font-family: Jost, sans-serif;
   cursor: pointer;
   letter-spacing: .3px;
-  transition: all .18s;
-  border: 1.5px solid transparent;
+  transition: all .20s;
+  border: 2px solid transparent;
 }
 /* Active Momentos tab */
 .hf-tab--active {
@@ -11583,23 +11583,29 @@ body:not(.r-dark) #homeMomentoSection .comm-title-italic {
   color: rgba(14,46,28,.90) !important;
 }
 
-/* ── Tabs: stronger active state ────────────────────────────────── */
+/* ── Tabs: strong active state ───────────────────────────────────── */
 .hf-tab--active {
-  background: linear-gradient(135deg, rgba(116,198,157,.28), rgba(80,170,120,.20)) !important;
-  border-color: rgba(116,198,157,.62) !important;
-  box-shadow: 0 2px 12px rgba(116,198,157,.22) !important;
-  font-weight: 700 !important;
+  background: linear-gradient(145deg, rgba(116,198,157,.32), rgba(60,150,100,.22)) !important;
+  border-color: rgba(116,198,157,.72) !important;
+  box-shadow: 0 3px 16px rgba(116,198,157,.28), inset 0 1px 0 rgba(255,255,255,.08) !important;
 }
-body.r-dark .hf-tab--active { color: rgba(200,250,225,.98) !important; }
+body.r-dark .hf-tab--active { color: rgba(200,252,225,.98) !important; }
 body:not(.r-dark) .hf-tab--active { color: rgba(12,60,32,.95) !important; }
-.hf-tab--active-happy {
-  background: linear-gradient(135deg, rgba(200,158,56,.28), rgba(180,138,36,.20)) !important;
-  border-color: rgba(200,158,56,.65) !important;
-  box-shadow: 0 2px 12px rgba(200,158,56,.22) !important;
-  font-weight: 700 !important;
+.hf-tab--inactive {
+  opacity: .55 !important;
 }
-body.r-dark .hf-tab--active-happy { color: rgba(255,235,140,.98) !important; }
+body.r-dark .hf-tab--inactive { color: rgba(220,235,225,.65) !important; }
+.hf-tab--active-happy {
+  background: linear-gradient(145deg, rgba(200,158,56,.32), rgba(170,128,26,.22)) !important;
+  border-color: rgba(200,158,56,.75) !important;
+  box-shadow: 0 3px 16px rgba(200,158,56,.28), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+body.r-dark .hf-tab--active-happy { color: rgba(255,238,145,.98) !important; }
 body:not(.r-dark) .hf-tab--active-happy { color: rgba(80,50,5,.92) !important; }
+.hf-tab--inactive-happy {
+  opacity: .55 !important;
+}
+body.r-dark .hf-tab--inactive-happy { color: rgba(220,235,225,.65) !important; }
 
 /* ── home-mc cards: press effect ────────────────────────────────── */
 .home-mc { transition: transform .12s, box-shadow .12s; }

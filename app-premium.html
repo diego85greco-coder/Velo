@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260619-966">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260619-966">
+  <link rel="stylesheet" href="premium.css?v=20260619-967">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260619-967">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1146,12 +1146,16 @@
                   <span id="momentoStreakBadge" style="display:none;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(255,130,20,.18);color:rgba(255,170,60,.95);border:1px solid rgba(255,130,20,.3);font-family:Jost,sans-serif"></span>
                 </div>
                 <!-- Tab switcher — pill inside dark tray -->
-                <div style="display:flex;gap:4px;margin-bottom:14px;background:rgba(0,0,0,.28);padding:4px;border-radius:16px">
-                  <button id="hfTab-momento" onclick="pHomeTabSwitch('momento')" class="hf-tab hf-tab--active" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px">
-                    <span>✨</span><span>Momentos</span><span id="hfTab-momento-cnt" style="font-size:9px;font-weight:400;opacity:.75;margin-left:2px"></span>
+                <div style="display:flex;gap:5px;margin-bottom:16px;background:rgba(0,0,0,.32);padding:5px;border-radius:20px">
+                  <button id="hfTab-momento" onclick="pHomeTabSwitch('momento')" class="hf-tab hf-tab--active" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:12px 8px">
+                    <span style="font-size:26px;line-height:1;display:block">✨</span>
+                    <span style="font-size:13px;font-weight:800;letter-spacing:.3px;font-family:'Jost',sans-serif">Momentos</span>
+                    <span id="hfTab-momento-cnt" style="font-size:9.5px;font-weight:600;opacity:.72;font-family:'Jost',sans-serif;letter-spacing:.2px"></span>
                   </button>
-                  <button id="hfTab-happy" onclick="pHomeTabSwitch('happy')" class="hf-tab hf-tab--inactive-happy" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px">
-                    <span>☀️</span><span>Muro Feliz</span><span id="hfTab-happy-cnt" style="font-size:9px;font-weight:400;opacity:.75;margin-left:2px"></span>
+                  <button id="hfTab-happy" onclick="pHomeTabSwitch('happy')" class="hf-tab hf-tab--inactive-happy" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:12px 8px">
+                    <span style="font-size:26px;line-height:1;display:block">☀️</span>
+                    <span style="font-size:13px;font-weight:800;letter-spacing:.3px;font-family:'Jost',sans-serif">Muro Feliz</span>
+                    <span id="hfTab-happy-cnt" style="font-size:9.5px;font-weight:600;opacity:.72;font-family:'Jost',sans-serif;letter-spacing:.2px"></span>
                   </button>
                 </div>
                 <!-- Momentos tab content -->
@@ -3961,8 +3965,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260619-966"></script>
-<script src="premium-redesign.js?v=20260619-966"></script>
+<script src="premium.js?v=20260619-967"></script>
+<script src="premium-redesign.js?v=20260619-967"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
