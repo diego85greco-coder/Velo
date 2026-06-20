@@ -8289,30 +8289,32 @@ async function pRenderBottleResponses(){
     })();
     var expireMin = Math.round((r.ts + 24*3600*1000 - Date.now()) / 60000);
     var expireLabel = expireMin > 60 ? Math.floor(expireMin/60)+'h' : expireMin+'min';
-    var authorHtml = (r.authorName)
-      ? '<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;cursor:pointer" onclick="pQuickProfile('+_jsAttr(r.authorName)+','+_jsAttr(r.authorAv||'🧑')+',\'\',\'\','+_jsAttr(r.authorId||'')+')">'
-        +_avInline(r.authorAv||'🧑',22)
-        +'<span class="bottle-replied-author">'+_escHtml(r.authorName)+'</span>'
-        +'<span class="bottle-replied-meta">· ver perfil</span>'
-        +'</div>'
-      : '<div style="margin-bottom:10px"><span class="bottle-replied-meta">Mensaje anónimo 🌊</span></div>';
-    return '<div class="dark-bottle bottle-replied-card" style="border-left:3px solid rgba(80,150,200,.4)">'
-      // Header row
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-      +'<span class="bottle-replied-tag">💬 Respondiste</span>'
+    var authorName = r.authorName || 'Anónimo';
+    var avHtml = _avInline(r.authorAv||'🌊', 28);
+    var authorClick = r.authorId ? 'onclick="pQuickProfile('+_jsAttr(r.authorName)+','+_jsAttr(r.authorAv||'🧑')+',\'\',\'\','+_jsAttr(r.authorId||'')+')" style="cursor:pointer"' : '';
+    var myName = safeLS('get','velo_user_name')||'Vos';
+    var myAv = safeLS('get','velo_user_av')||'🌿';
+    return '<div class="dark-bottle bottle-replied-card" style="border-left:3px solid rgba(80,150,200,.35);padding:14px 14px 12px">'
+      // Header
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+      +'<span style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(80,150,200,.75);font-family:\'Jost\',sans-serif">💬 Conversación</span>'
       +'<span class="bottle-replied-meta">'+relTime+' · expira en '+expireLabel+'</span>'
       +'</div>'
-      // Author
-      +authorHtml
-      // Original message
-      +'<div class="bottle-original-block">'
-      +'<div class="bottle-block-label">Mensaje del mar</div>'
-      +'<p class="bottle-original-text">"'+(r.preview ? _escHtml(r.preview.slice(0,120)+(r.preview.length>120?'…':'')) : '…')+'"</p>'
+      // Their message — left bubble
+      +'<div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:10px">'
+      +'<div '+authorClick+'>'+avHtml+'</div>'
+      +'<div style="flex:1;background:rgba(80,150,200,.09);border:1px solid rgba(80,150,200,.20);border-radius:0 14px 14px 14px;padding:10px 13px">'
+      +'<div style="font-size:10px;font-weight:700;color:rgba(80,150,200,.80);font-family:\'Jost\',sans-serif;margin-bottom:5px">🌊 '+_escHtml(authorName)+'</div>'
+      +'<div style="font-size:13px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:var(--ink);line-height:1.55">"'+(r.preview?_escHtml(r.preview.slice(0,160)+(r.preview.length>160?'…':'')):'')+'"</div>'
       +'</div>'
-      // Your reply
-      +'<div class="bottle-reply-block">'
-      +'<div class="bottle-block-label" style="color:#1a6fa8">Tu respuesta</div>'
-      +'<p class="bottle-reply-text">'+_escHtml(r.reply||'')+'</p>'
+      +'</div>'
+      // My reply — right bubble
+      +'<div style="display:flex;gap:9px;align-items:flex-start;flex-direction:row-reverse">'
+      +_avInline(myAv, 28)
+      +'<div style="flex:1;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);border-radius:14px 0 14px 14px;padding:10px 13px;text-align:right">'
+      +'<div style="font-size:10px;font-weight:700;color:rgba(116,198,157,.80);font-family:\'Jost\',sans-serif;margin-bottom:5px">'+_escHtml(myName)+' (vos) 💚</div>'
+      +'<div style="font-size:13px;color:var(--ink);line-height:1.55">'+_escHtml(r.reply||'')+'</div>'
+      +'</div>'
       +'</div>'
       +'</div>';
   }).join('');
