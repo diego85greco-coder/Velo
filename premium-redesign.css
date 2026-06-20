@@ -11026,6 +11026,13 @@ body.r-dark .mc-bubble.mc-happy .mc-text { color: rgba(255,248,200,.92) !importa
    ══════════════════════════════════════════════════════════════════ */
 
 /* DQ reaction buttons */
+@keyframes velo-rx-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.08); }
+  65%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
 .dq-reaction-btn {
   display: inline-flex;
   align-items: center;
@@ -11036,7 +11043,7 @@ body.r-dark .mc-bubble.mc-happy .mc-text { color: rgba(255,248,200,.92) !importa
   font-weight: 600;
   font-family: Jost, sans-serif;
   cursor: pointer;
-  transition: all .15s;
+  transition: background .18s, border-color .18s, box-shadow .18s;
   line-height: 1;
   background: rgba(116,198,157,.13);
   border: 1px solid rgba(116,198,157,.42);

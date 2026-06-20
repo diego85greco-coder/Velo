@@ -3540,8 +3540,14 @@ async function pToggleDqReaction(responseId, reaction, btn){
     pToast(_rxEmoji[reaction], _rxLabel[reaction]);
   }
   _dqReactMap[responseId][reaction] = rd;
-  var span = btn.querySelector('span');
-  if(span) span.textContent = _rxLabel[reaction]+(rd.count>0?' '+rd.count:'');
+  var span = btn.querySelector('.rx-txt');
+  if(span) span.textContent = _rxLabel[reaction];
+  var cntEl = btn.querySelector('.rx-cnt');
+  if(cntEl){ cntEl.textContent = rd.count>0?rd.count:''; cntEl.style.display=rd.count>0?'':'none'; }
+  // Pop animation
+  btn.style.animation='none';
+  void btn.offsetWidth;
+  if(btn.dataset.active==='true') btn.style.animation='velo-rx-pop .38s cubic-bezier(.34,1.56,.64,1) both';
   // Sync Supabase
   if(!sbClient) return;
   try{
@@ -3560,6 +3566,21 @@ function _renderDailyFeed(responses){
   _dqAllResponses = responses;
   var _dqHidden = []; try{ _dqHidden = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
   var visible = _dqHidden.length ? responses.filter(function(r){ return _dqHidden.indexOf(String(r.id)) === -1; }) : responses;
+  // Update "Tu respuesta" badge with reactions received on own response
+  var myUid2 = safeLS('get','velo_user_id')||'';
+  var myResp2 = responses.find(function(r){ return r.user_id === myUid2; });
+  var myBadge2 = document.getElementById('homeDailyQMyResp');
+  if(myBadge2 && myResp2){
+    var _rxMap2 = _dqReactMap[myResp2.id] || {};
+    var _rxPills2 = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
+      .filter(function(rx){ return _rxMap2[rx.k]&&_rxMap2[rx.k].count>0; })
+      .map(function(rx){ return rx.e+' '+_rxMap2[rx.k].count; }).join('  ');
+    var _myText2 = 'Tu respuesta: '+(myResp2.mood_emoji||'')+( myResp2.response_text?' · '+myResp2.response_text.slice(0,30)+(myResp2.response_text.length>30?'…':''):'');
+    myBadge2.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(_myText2)+'</span>'
+      +(_rxPills2?'<span style="margin-left:6px;font-size:13px;flex-shrink:0;letter-spacing:2px">'+_rxPills2+'</span>':'');
+    myBadge2.style.display = 'flex';
+    myBadge2.style.alignItems = 'center';
+  }
   var summaryEl = document.getElementById('homeDailyQSummary');
   var feedEl    = document.getElementById('homeDailyQFeed');
   var btnEl     = document.getElementById('dqVerTodosBtn');
@@ -3755,10 +3776,12 @@ function _buildDqCards(list){
       +(r.response_text
         ? '<div style="font-size:16.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.60;word-break:break-word;margin-bottom:8px;letter-spacing:.15px;text-shadow:0 1px 8px '+col.glow+'">❝ '+_escHtml(r.response_text)+' ❞</div>'
         : '')
-      // Reaction hint bar
-      +'<div style="display:flex;align-items:center;gap:6px;padding-top:6px;border-top:1px solid '+col.strip+'">'
-      +(_totalRx>0?'<span style="font-size:9.5px;color:'+col.label+';font-family:Jost,sans-serif;opacity:.80">'+_totalRx+' reacción'+(+_totalRx!==1?'es':'')+'</span>':'')
-      +'<span style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:'+col.label+';background:'+col.badge+';border-radius:100px;padding:2px 9px;font-family:Jost,sans-serif">Reaccionar →</span>'
+      // Reaction hint bar — per-emoji counts
+      +'<div style="display:flex;align-items:center;gap:5px;padding-top:6px;border-top:1px solid '+col.strip+'">'
+      +[{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}].filter(function(rx){ return _m[rx.k]&&_m[rx.k].count>0; }).map(function(rx){
+          return '<span style="display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,.08);border-radius:100px;padding:2px 7px;font-size:12px">'+rx.e+'<span style="font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif">'+_m[rx.k].count+'</span></span>';
+        }).join('')
+      +'<span style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:'+col.label+';background:'+col.badge+';border-radius:100px;padding:2px 9px;font-family:Jost,sans-serif">'+(_totalRx>0?'Reaccionar':'✦ Reaccionar')+'</span>'
       +'</div>'
       +'</div>'
       +'</div>'
@@ -3783,18 +3806,19 @@ function pOpenDqResponseSheet(responseId){
   // Build reaction buttons for the sheet (big pill style)
   var rxDefs = [{key:'identifico',label:'Me identifico',emoji:'💚'},{key:'abrazo',label:'Te abrazo',emoji:'🫂'},{key:'entiendo',label:'Te entiendo',emoji:'💙'}];
   var _m = _dqReactMap[responseId] || {};
+  var rxColors = {identifico:{bg:'rgba(45,175,105,.22)',border:'rgba(45,175,105,.60)',glow:'rgba(45,175,105,.32)',txt:'rgba(120,240,175,.97)'},abrazo:{bg:'rgba(100,120,235,.20)',border:'rgba(110,130,240,.58)',glow:'rgba(100,120,235,.28)',txt:'rgba(175,190,255,.97)'},entiendo:{bg:'rgba(70,140,230,.20)',border:'rgba(80,150,240,.58)',glow:'rgba(70,140,230,.28)',txt:'rgba(160,210,255,.97)'}};
   var rxHtml = rxDefs.map(function(rx){
     var rd = _m[rx.key] || {count:0,mine:false};
-    var cnt = rd.count > 0 ? ' '+rd.count : '';
-    var activeBg = rx.emoji==='💚'?'rgba(80,200,130,.22)':rx.emoji==='🫂'?'rgba(120,160,240,.20)':'rgba(80,140,230,.20)';
-    var activeBorder = rx.emoji==='💚'?'rgba(80,200,130,.55)':rx.emoji==='🫂'?'rgba(120,160,240,.50)':'rgba(80,140,230,.50)';
-    var bg = rd.mine ? activeBg : 'rgba(255,255,255,.06)';
-    var border = rd.mine ? activeBorder : 'rgba(255,255,255,.12)';
+    var rc = rxColors[rx.key];
+    var bg = rd.mine ? rc.bg : 'rgba(255,255,255,.06)';
+    var border = rd.mine ? rc.border : 'rgba(255,255,255,.13)';
+    var txtCol = rd.mine ? rc.txt : 'rgba(255,255,255,.72)';
     return '<button class="dq-reaction-btn" onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
       +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+rd.mine+'" '
-      +'style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;background:'+bg+';border:1.5px solid '+border+';border-radius:16px;cursor:pointer;transition:all .18s;font-family:Jost,sans-serif">'
-      +'<span style="font-size:22px;line-height:1">'+rx.emoji+'</span>'
-      +'<span style="font-size:10px;font-weight:700;color:rgba(220,240,228,.80);letter-spacing:.3px">'+rx.label+(cnt?'<br><span style="font-size:12px;color:rgba(116,198,157,.90)">'+cnt.trim()+'</span>':'')+'</span>'
+      +'style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 18px;background:'+bg+';border:1.5px solid '+border+';border-radius:100px;cursor:pointer;transition:background .18s,border-color .18s,box-shadow .18s;font-family:Jost,sans-serif;box-sizing:border-box'+(rd.mine?';box-shadow:0 3px 18px '+rc.glow:'')+'">'
+      +'<span style="font-size:28px;line-height:1;flex-shrink:0">'+rx.emoji+'</span>'
+      +'<span class="rx-txt" style="font-size:14px;font-weight:700;color:'+txtCol+';flex:1;text-align:left;letter-spacing:.2px">'+rx.label+'</span>'
+      +'<span class="rx-cnt" style="font-size:13px;font-weight:800;color:'+txtCol+';background:rgba(255,255,255,.10);border-radius:100px;padding:2px 10px;min-width:24px;text-align:center;display:'+(rd.count>0?'block':'none')+'">'+( rd.count>0?rd.count:'')+'</span>'
       +'</button>';
   }).join('');
 
@@ -3838,7 +3862,7 @@ function pOpenDqResponseSheet(responseId){
       : '<div style="height:12px"></div>')
     // Reactions
     +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.50)')+';font-family:Jost,sans-serif;text-align:center;margin-bottom:12px">Reaccioná</div>'
-    +'<div style="display:flex;gap:8px;margin-bottom:18px">'+rxHtml+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:9px;margin-bottom:18px">'+rxHtml+'</div>'
     +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:13px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.10);border-radius:16px;color:rgba(255,255,255,.40);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
     +'</div>'
     +'</div>';
