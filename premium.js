@@ -4235,7 +4235,7 @@ function _renderShareCard(canvas, logoImg){
     ctx.shadowColor = 'rgba(116,198,157,.55)'; ctx.shadowBlur = 50;
     ctx.drawImage(logoImg, 0, 0, logoImg.naturalWidth, logoImg.naturalHeight, lX, lY, lW, lH);
     ctx.restore();
-    headerEnd = lY + lH + 36; // 36px breathing room so line never touches logo
+    headerEnd = lY + lH + 16;
   } else {
     ctx.textAlign='center';
     ctx.font='800 68px Arial,sans-serif';
