@@ -4078,10 +4078,19 @@ function _renderShareCard(canvas, logoImg){
   ctx.fillStyle=g2; ctx.fillRect(0,0,W,H);
 
   // Decorative dots (constellation feel)
-  var dots = [[120,200],[W-130,160],[80,H-180],[W-100,H-220],[W/2+180,320],[W/2-200,780]];
+  var dots = [[120,200],[W-130,160],[80,H-180],[W-100,H-220],[W/2+180,320],[W/2-200,780],
+              [W*.3,H*.55],[W*.72,H*.42],[W*.18,H*.38],[W*.88,H*.65],[W*.5,H*.82]];
   dots.forEach(function(p,i){
-    ctx.fillStyle = i%2===0 ? 'rgba(116,198,157,.18)' : 'rgba(200,158,56,.12)';
-    ctx.beginPath(); ctx.arc(p[0],p[1],i%3===0?4:2.5,0,Math.PI*2); ctx.fill();
+    var sz = i%4===0?5:i%3===0?3:2;
+    ctx.fillStyle = i%3===0 ? 'rgba(116,198,157,.20)' : i%2===0 ? 'rgba(200,158,56,.14)' : 'rgba(255,255,255,.08)';
+    ctx.beginPath(); ctx.arc(p[0],p[1],sz,0,Math.PI*2); ctx.fill();
+  });
+  // Subtle corner accents
+  [[0,0],[W,0],[0,H],[W,H]].forEach(function(p,i){
+    var cg=ctx.createRadialGradient(p[0],p[1],0,p[0],p[1],220);
+    cg.addColorStop(0,i%2===0?'rgba(116,198,157,.06)':'rgba(200,158,56,.05)');
+    cg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=cg; ctx.fillRect(0,0,W,H);
   });
 
   // ── Logo / header ───────────────────────────────────────────────
@@ -4157,56 +4166,98 @@ function _renderShareCard(canvas, logoImg){
   var _sortedMoods=Object.keys(moodCounts).sort(function(a,b){return moodCounts[b]-moodCounts[a];});
   // Only call it "dominant" if one emoji strictly leads (no tie)
   var dominantEmoji=(_sortedMoods.length>0 && (_sortedMoods.length===1 || moodCounts[_sortedMoods[1]]<moodCounts[_sortedMoods[0]])) ? _sortedMoods[0] : '';
-  var _moodLabel={'😄':'Excelente','😊':'Bien','😐':'Regular','😔':'Melancólico/a','😰':'Ansioso/a','😤':'Frustrado/a','😌':'En paz','🥺':'Sensible','💪':'Con fuerza'};
-  var _moodColor={'😄':'rgba(116,198,157,.28)','😊':'rgba(116,198,157,.22)','😌':'rgba(100,180,160,.22)','😐':'rgba(200,160,80,.18)','😔':'rgba(130,100,200,.22)','😰':'rgba(200,140,70,.22)','😤':'rgba(200,80,80,.20)','🥺':'rgba(180,120,200,.22)','💪':'rgba(100,150,220,.22)'};
+  var _moodLabel={'😄':'Excelente','😊':'Bien','😐':'Regular','😔':'Melancólico/a','😰':'Ansioso/a','😤':'Frustrado/a','😌':'En paz','🥺':'Sensible','💪':'Con fuerza','😢':'Triste','😞':'Desanimado/a','🤩':'Emocionado/a','🙂':'Tranquilo/a','😃':'Con energía'};
+  var _moodColor={'😄':'rgba(218,160,30,.32)','😊':'rgba(218,160,30,.28)','😌':'rgba(72,185,128,.28)','😐':'rgba(200,160,80,.22)','😔':'rgba(140,100,210,.28)','😰':'rgba(200,140,70,.26)','😤':'rgba(200,80,80,.26)','🥺':'rgba(180,120,200,.26)','💪':'rgba(100,150,220,.26)','😢':'rgba(140,100,210,.28)','😞':'rgba(140,100,210,.24)','🤩':'rgba(218,160,30,.32)','🙂':'rgba(72,185,128,.24)','😃':'rgba(218,160,30,.30)'};
+  var _moodBorder={'😄':'rgba(218,160,30,.65)','😊':'rgba(218,160,30,.55)','😌':'rgba(72,185,128,.60)','😐':'rgba(200,160,80,.45)','😔':'rgba(140,100,210,.60)','😰':'rgba(200,140,70,.55)','😤':'rgba(200,80,80,.60)','🥺':'rgba(180,120,200,.55)','💪':'rgba(100,150,220,.60)','😢':'rgba(140,100,210,.60)','😞':'rgba(140,100,210,.50)','🤩':'rgba(218,160,30,.65)','🙂':'rgba(72,185,128,.50)','😃':'rgba(218,160,30,.60)'};
+  var _moodCellBg={'😄':'rgba(218,160,30,.13)','😊':'rgba(218,160,30,.10)','😌':'rgba(72,185,128,.12)','😐':'rgba(200,160,80,.09)','😔':'rgba(140,100,210,.12)','😰':'rgba(200,140,70,.11)','😤':'rgba(200,80,80,.12)','🥺':'rgba(180,120,200,.11)','💪':'rgba(100,150,220,.12)','😢':'rgba(140,100,210,.12)','😞':'rgba(140,100,210,.10)','🤩':'rgba(218,160,30,.13)','🙂':'rgba(72,185,128,.10)','😃':'rgba(218,160,30,.11)'};
+
+  // ── Reflexión semanal personalizada ────────────────────────────
+  var _rfxY = 248+D;
+  var _reflexion = '';
+  if(daysRecorded===7) _reflexion='✦ Registraste los 7 días esta semana ✦';
+  else if(daysRecorded>=4) _reflexion='✦ '+daysRecorded+' de 7 días registrados esta semana ✦';
+  else if(daysRecorded>0) _reflexion='✦ Registraste '+daysRecorded+' día'+(daysRecorded>1?'s':'')+' · seguí así ✦';
+  else _reflexion='✦ Empezá a registrar tu semana emocional ✦';
+  if(_reflexion){
+    ctx.font='500 22px Arial,sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='rgba(116,198,157,.48)'; ctx.fillText(_reflexion,W/2,_rfxY);
+  }
 
   // ── Separator ───────────────────────────────────────────────────
   var sep = function(y){
     var sl=ctx.createLinearGradient(80,0,W-80,0);
-    sl.addColorStop(0,'rgba(116,198,157,0)'); sl.addColorStop(.5,'rgba(116,198,157,.18)'); sl.addColorStop(1,'rgba(116,198,157,0)');
+    sl.addColorStop(0,'rgba(116,198,157,0)'); sl.addColorStop(.5,'rgba(116,198,157,.22)'); sl.addColorStop(1,'rgba(116,198,157,0)');
     ctx.strokeStyle=sl; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(80,y); ctx.lineTo(W-80,y); ctx.stroke();
   };
-  sep(244+D);
+  sep(274+D);
 
   // ── Mood grid ───────────────────────────────────────────────────
-  var gX=54,gY=280+D,gW=W-108,colW=gW/7;
+  var gX=54,gY=310+D,gW=W-108,colW=gW/7;
   days7.forEach(function(d,i){
     var x=gX+colW*i+colW/2;
+    var cellBg=d.emoji?(_moodCellBg[d.emoji]||'rgba(116,198,157,.10)'):'rgba(255,255,255,.04)';
+    var cellBorder=d.emoji?(_moodBorder[d.emoji]||'rgba(116,198,157,.35)'):'rgba(255,255,255,.10)';
     // Cell background pill
-    ctx.fillStyle=d.emoji?'rgba(116,198,157,.08)':'rgba(255,255,255,.04)';
-    ctx.beginPath(); ctx.roundRect(x-colW/2+6,gY-18,colW-12,110,18); ctx.fill();
+    ctx.fillStyle=cellBg;
+    ctx.beginPath(); ctx.roundRect(x-colW/2+6,gY-18,colW-12,114,20); ctx.fill();
+    // Cell border glow for filled days
+    if(d.emoji){
+      ctx.strokeStyle=cellBorder; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.roundRect(x-colW/2+6,gY-18,colW-12,114,20); ctx.stroke();
+    }
     // Day label
-    ctx.font='600 20px Arial,sans-serif';
-    ctx.fillStyle=d.emoji?'rgba(255,255,255,.55)':'rgba(255,255,255,.22)';
+    ctx.font='700 19px Arial,sans-serif';
+    ctx.fillStyle=d.emoji?'rgba(255,255,255,.60)':'rgba(255,255,255,.22)';
     ctx.textAlign='center';
-    ctx.fillText(d.day,x,gY+6);
+    ctx.fillText(d.day,x,gY+5);
     // Emoji or empty dot
     if(d.emoji){
-      ctx.font='68px Arial,sans-serif';
-      ctx.fillText(d.emoji,x,gY+82);
+      ctx.font='64px Arial,sans-serif';
+      ctx.fillText(d.emoji,x,gY+83);
     } else {
-      ctx.fillStyle='rgba(255,255,255,.10)';
-      ctx.beginPath(); ctx.arc(x,gY+54,16,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.12)';
+      ctx.beginPath(); ctx.arc(x,gY+52,14,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(x,gY+52,14,0,Math.PI*2); ctx.stroke();
     }
   });
 
-  var afterGrid = gY+128;
+  var afterGrid = gY+132;
   sep(afterGrid);
 
-  // ── Dominant mood pill ──────────────────────────────────────────
-  if(dominantEmoji){
-    var pillY=afterGrid+26, pillH=90, pillX=80, pillW=W-160;
-    ctx.fillStyle=_moodColor[dominantEmoji]||'rgba(116,198,157,.18)';
-    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,22); ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,.10)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,22); ctx.stroke();
-    ctx.font='54px Arial,sans-serif'; ctx.textAlign='left';
-    ctx.fillStyle='rgba(255,255,255,.9)';
-    ctx.fillText(dominantEmoji,pillX+22,pillY+64);
-    ctx.font='700 30px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.85)';
-    ctx.fillText('Tu estado predominante: '+(_moodLabel[dominantEmoji]||'').toUpperCase(),pillX+100,pillY+40);
-    ctx.font='400 22px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.45)';
-    ctx.fillText(daysRecorded+' de 7 días registrados · '+(moodCounts[dominantEmoji]||0)+' veces esta semana',pillX+100,pillY+68);
+  // ── Dominant mood pill (always visible) ────────────────────────
+  var _showDominant = _sortedMoods.length > 0 ? _sortedMoods[0] : '';
+  var pillY=afterGrid+22, pillH=94, pillX=80, pillW=W-160;
+  if(_showDominant){
+    var _pillFill=_moodColor[_showDominant]||'rgba(116,198,157,.22)';
+    var _pillBorder=_moodBorder[_showDominant]||'rgba(116,198,157,.45)';
+    ctx.fillStyle=_pillFill;
+    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,24); ctx.fill();
+    ctx.strokeStyle=_pillBorder; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,24); ctx.stroke();
+    // Inner glow strip
+    var _pg=ctx.createLinearGradient(pillX,pillY,pillX+pillW,pillY+pillH);
+    _pg.addColorStop(0,'rgba(255,255,255,.06)'); _pg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=_pg; ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,24); ctx.fill();
+    ctx.font='56px Arial,sans-serif'; ctx.textAlign='left';
+    ctx.fillText(_showDominant,pillX+22,pillY+68);
+    ctx.font='800 28px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.92)';
+    ctx.fillText('Estado predominante: '+(_moodLabel[_showDominant]||_showDominant).toUpperCase(),pillX+102,pillY+38);
+    ctx.font='400 21px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.50)';
+    var _isDominant=_sortedMoods.length===1||moodCounts[_sortedMoods[1]]<moodCounts[_sortedMoods[0]];
+    ctx.fillText((_isDominant?'Predominante ·':'')+' '+(moodCounts[_showDominant]||0)+' veces · '+daysRecorded+'/7 días registrados',pillX+102,pillY+68);
+  } else {
+    // No moods — show invitation pill
+    ctx.fillStyle='rgba(116,198,157,.08)';
+    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,24); ctx.fill();
+    ctx.strokeStyle='rgba(116,198,157,.22)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,24); ctx.stroke();
+    ctx.font='56px Arial,sans-serif'; ctx.textAlign='left';
+    ctx.fillText('🌱',pillX+22,pillY+68);
+    ctx.font='700 28px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.65)';
+    ctx.fillText('Empezá a registrar tus emociones',pillX+102,pillY+38);
+    ctx.font='italic 400 21px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.35)';
+    ctx.fillText('Cada emoción registrada es un paso hacia vos mismo/a',pillX+102,pillY+68);
   }
 
   // ── Stats row ───────────────────────────────────────────────────
