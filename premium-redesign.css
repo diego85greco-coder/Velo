@@ -36,7 +36,7 @@ body::after {
   mix-blend-mode: multiply;
   z-index: -1;
 }
-/* ── Full-width glow sweep (v961 — 120% wide, full coverage, 3min cycle) */
+/* ── Full-width glow sweep (v965 — dual veil, izq+der se unen en el centro) */
 body::before {
   content: '';
   position: fixed;
@@ -66,12 +66,49 @@ body.r-dark::before {
     transparent 92%
   );
 }
+/* Velo espejado desde la derecha — se une con el izquierdo en el centro */
+body::after {
+  content: '';
+  position: fixed;
+  top: -5%; right: 0;
+  width: 120%; height: 110%;
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(
+    108deg,
+    transparent 8%,
+    rgba(232,200,121,.18) 32%,
+    rgba(255,255,255,.14) 52%,
+    rgba(116,198,157,.20) 72%,
+    transparent 92%
+  );
+  transform: translateX(100%);
+  animation: velo-bg-sweep-right 180s linear infinite;
+  will-change: transform;
+}
+body.r-dark::after {
+  background: linear-gradient(
+    108deg,
+    transparent 8%,
+    rgba(232,200,121,.18) 32%,
+    rgba(255,255,255,.12) 52%,
+    rgba(116,198,157,.22) 72%,
+    transparent 92%
+  );
+}
 @keyframes velo-bg-sweep {
   0%    { transform: translateX(-100%); animation-timing-function: ease-in-out; }
   5%    { transform: translateX(84%); animation-timing-function: step-start; }
   5.1%  { transform: translateX(-100%); animation-timing-function: linear; }
   100%  { transform: translateX(-100%); }
 }
+@keyframes velo-bg-sweep-right {
+  0%    { transform: translateX(100%); animation-timing-function: ease-in-out; }
+  5%    { transform: translateX(-84%); animation-timing-function: step-start; }
+  5.1%  { transform: translateX(100%); animation-timing-function: linear; }
+  100%  { transform: translateX(100%); }
+}
+
 
 /* ── 2. SIDEBAR — pill, colapsada por defecto, expande on hover ── */
 @media (min-width: 1024px) {
