@@ -45,6 +45,8 @@ var _circleRtPollTmr = null; // polling fallback for circle_messages (5s)
 var _guardianRtCh = null;   // realtime channel guardian_presence
 var _guardianBcastCh = null; // broadcast channel for instant toggle notifications
 var _dqRtCh       = null;   // realtime channel daily_responses
+var _dqReactRtCh  = null;   // realtime channel dq_reactions (live count updates)
+var _scrollSave   = {}; // page id → scrollTop saved on navigate away
 var _sbVerifiedMoodCount = -1; // Supabase-confirmed mood count; -1 = not yet fetched
 var _liveGuardians = [];    // cached live guardian rows from Supabase
 var _grReqCh        = null;   // guardian_requests realtime channel (guardian side)
@@ -342,6 +344,11 @@ function pGoTo(id){
     if(!inPage) return;
   }
 
+  // Save scroll of page we're leaving so goBack() can restore it
+  var _outEl = document.getElementById('pg-'+_curPage);
+  var _outSc = _outEl && _outEl.querySelector('.p-page-scroll');
+  if(_outSc && _curPage !== id) _scrollSave[_curPage] = _outSc.scrollTop;
+
   // Deactivate current
   var outPage = document.getElementById('pg-'+_curPage);
   if(outPage){ outPage.classList.remove('active','fade-in'); }
@@ -435,7 +442,17 @@ function _updateNavState(id, showNav){
 }
 
 function goBack(){
-  if(_prevPage) pGoTo(_prevPage);
+  if(!_prevPage) return;
+  var _tgt = _prevPage;
+  var _pos = _scrollSave[_tgt] || 0;
+  pGoTo(_tgt);
+  if(_pos){
+    requestAnimationFrame(function(){
+      var _pg = document.getElementById('pg-'+_tgt);
+      var _sc = _pg && _pg.querySelector('.p-page-scroll');
+      if(_sc) _sc.scrollTop = _pos;
+    });
+  }
 }
 
 // ── MOBILE MENU ──────────────────────────────────────────────
@@ -1205,6 +1222,7 @@ function _clearSession(){
   _moodSyncDone = false;
   _sbVerifiedMoodCount = -1;
   if(_dqRtCh){ _sbUnsub(_dqRtCh); _dqRtCh = null; }
+  if(_dqReactRtCh){ _sbUnsub(_dqReactRtCh); _dqReactRtCh = null; }
 }
 
 async function pSignOut(){
@@ -2246,6 +2264,7 @@ function _loadHomeData(){
   // Realtime for momentos — new posts appear instantly (same pattern as _happyRtCh)
   _initSupabase();
   if(sbClient && !_momentoRtCh) _momentoRtCh = _sbSub('velo:momentos', 'momentos', function(){ _initHomeMomento(); });
+  if(sbClient && !_happyRtCh) _happyRtCh = _sbSub('velo:happy', 'happy_posts', function(){ _loadHomeHappyFeed(); if(typeof pRenderHappy==='function') pRenderHappy(); });
 }
 
 // ── HOME AUTO-REFRESH ─────────────────────────────────────────
@@ -3482,6 +3501,27 @@ async function _fetchDailyFeed(qId){
       if(_evDate === _dqToday){ _fetchDailyFeed(qId); }
     });
   }
+  // Subscribe to real-time reaction counts — updates cards surgically, no carousel rebuild
+  if(!_dqReactRtCh && sbClient){
+    _dqReactRtCh = _sbSub('velo:dq-react', 'dq_reactions', function(payload){
+      var myUid = safeLS('get','velo_user_id')||'';
+      var ev = payload.eventType; var row = payload.new||{}; var del = payload.old||{};
+      var rid, reaction, uid;
+      if(ev==='INSERT'){
+        rid=row.response_id; reaction=row.reaction; uid=row.user_id;
+        if(uid===myUid) return; // already handled optimistically by pToggleDqReaction
+        if(!_dqReactMap[rid]) _dqReactMap[rid]={};
+        if(!_dqReactMap[rid][reaction]) _dqReactMap[rid][reaction]={count:0,mine:false};
+        _dqReactMap[rid][reaction].count++;
+      } else if(ev==='DELETE'){
+        rid=del.response_id; reaction=del.reaction; uid=del.user_id;
+        if(uid===myUid) return;
+        if(_dqReactMap[rid]&&_dqReactMap[rid][reaction])
+          _dqReactMap[rid][reaction].count=Math.max(0,_dqReactMap[rid][reaction].count-1);
+      }
+      if(rid) _updateDqCardReactions(String(rid));
+    });
+  }
 }
 
 // ── DAILY QUESTION REACTIONS ────────────────────────────────────
@@ -3501,6 +3541,44 @@ async function _loadDqReactions(responseIds){
       if(r.user_id === myUid) m[r.reaction].mine = true;
     });
   }catch(e){}
+}
+
+var _rxColors = {
+  identifico:{activeBg:'rgba(30,160,90,.68)',inactiveBg:'rgba(255,255,255,.05)',border:'rgba(45,185,110,.72)',inactiveBorder:'rgba(255,255,255,.12)',glow:'rgba(30,160,90,.40)',txt:'rgba(130,255,185,.98)',inactiveTxt:'rgba(255,255,255,.45)',circleBg:'rgba(30,160,90,.25)',inactiveCircleBg:'rgba(255,255,255,.08)'},
+  abrazo:     {activeBg:'rgba(100,80,225,.62)',inactiveBg:'rgba(255,255,255,.05)',border:'rgba(120,100,240,.70)',inactiveBorder:'rgba(255,255,255,.12)',glow:'rgba(100,80,225,.38)',txt:'rgba(195,185,255,.98)',inactiveTxt:'rgba(255,255,255,.45)',circleBg:'rgba(100,80,225,.22)',inactiveCircleBg:'rgba(255,255,255,.08)'},
+  entiendo:   {activeBg:'rgba(45,130,225,.62)',inactiveBg:'rgba(255,255,255,.05)',border:'rgba(65,150,235,.70)',inactiveBorder:'rgba(255,255,255,.12)',glow:'rgba(45,130,225,.38)',txt:'rgba(165,215,255,.98)',inactiveTxt:'rgba(255,255,255,.45)',circleBg:'rgba(45,130,225,.22)',inactiveCircleBg:'rgba(255,255,255,.08)'}
+};
+
+function _updateDqCardReactions(rid){
+  rid = String(rid);
+  var card = document.querySelector('.dq-feed-card[data-response-id="'+rid+'"]');
+  if(card){
+    var pillsEl = card.querySelector('.dq-rx-pills');
+    if(pillsEl){
+      var r = _dqAllResponses.find(function(x){ return String(x.id)===rid; });
+      var col = r ? _dqEmojiColor(r.mood_emoji||'💭') : {label:'rgba(130,255,185,.97)'};
+      var _m = _dqReactMap[rid]||{};
+      pillsEl.innerHTML = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
+        .filter(function(rx){ return _m[rx.k]&&_m[rx.k].count>0; })
+        .map(function(rx){ return '<span style="display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,.08);border-radius:100px;padding:2px 7px;font-size:12px">'+rx.e+'<span style="font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif">'+_m[rx.k].count+'</span></span>'; })
+        .join('');
+    }
+  }
+  // Update "Tu respuesta" badge
+  var myUid = safeLS('get','velo_user_id')||'';
+  var myResp = _dqAllResponses.find(function(x){ return String(x.id)===rid && x.user_id===myUid; });
+  if(myResp){
+    var myBadge = document.getElementById('homeDailyQMyResp');
+    if(myBadge){
+      var _m2 = _dqReactMap[rid]||{};
+      var rxPills2 = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
+        .filter(function(rx){ return _m2[rx.k]&&_m2[rx.k].count>0; })
+        .map(function(rx){ return rx.e+' '+_m2[rx.k].count; }).join('  ');
+      var myTxt2 = 'Tu respuesta: '+(myResp.mood_emoji||'')+(myResp.response_text?' · '+myResp.response_text.slice(0,30)+(myResp.response_text.length>30?'…':''):'');
+      myBadge.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(myTxt2)+'</span>'
+        +(rxPills2?'<span style="margin-left:6px;font-size:13px;flex-shrink:0;letter-spacing:2px">'+rxPills2+'</span>':'');
+    }
+  }
 }
 
 function _buildDqReactionBar(responseId){
@@ -3544,6 +3622,27 @@ async function pToggleDqReaction(responseId, reaction, btn){
   if(span) span.textContent = _rxLabel[reaction];
   var cntEl = btn.querySelector('.rx-cnt');
   if(cntEl){ cntEl.textContent = rd.count>0?rd.count:''; cntEl.style.display=rd.count>0?'':'none'; }
+  // Update button's inline styles to reflect new active state
+  var _rc = _rxColors[reaction];
+  if(_rc){
+    var _nowActive = btn.dataset.active === 'true';
+    btn.style.background = _nowActive ? _rc.activeBg : _rc.inactiveBg;
+    btn.style.borderColor = _nowActive ? _rc.border : _rc.inactiveBorder;
+    btn.style.boxShadow   = _nowActive ? '0 4px 22px '+_rc.glow : 'none';
+    var _circ = btn.querySelector('span:first-child');
+    if(_circ){
+      _circ.style.background   = _nowActive ? _rc.circleBg : _rc.inactiveCircleBg;
+      _circ.style.borderColor  = _nowActive ? _rc.border : 'rgba(255,255,255,.10)';
+    }
+    var _rxt = btn.querySelector('.rx-txt');
+    if(_rxt) _rxt.style.color = _nowActive ? _rc.txt : _rc.inactiveTxt;
+    var _rcc = btn.querySelector('.rx-cnt');
+    if(_rcc){
+      _rcc.style.color       = _nowActive ? _rc.txt : _rc.inactiveTxt;
+      _rcc.style.background  = _nowActive ? _rc.circleBg : 'rgba(255,255,255,.08)';
+      _rcc.style.borderColor = _nowActive ? _rc.border : 'rgba(255,255,255,.12)';
+    }
+  }
   // Pop animation
   btn.style.animation='none';
   void btn.offsetWidth;
@@ -3752,11 +3851,11 @@ function _buildDqCards(list){
     var avWrap = canSeeProfile
       ? '<div onclick="event.stopPropagation();pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')" style="cursor:pointer;width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'+avInner+'</div>'
       : '<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;opacity:.7;display:flex;align-items:center;justify-content:center">'+avInner+'</div>';
-    return '<div class="dq-feed-card" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
-      +' style="background:'+col.bg+';box-shadow:0 3px 16px '+col.glow+',inset 0 0 0 1px '+col.border+';cursor:pointer;min-height:90px">'
-      +'<div style="display:flex;align-items:stretch">'
+    return '<div class="dq-feed-card" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
+      +' style="background:'+col.bg+';box-shadow:0 3px 16px '+col.glow+',inset 0 0 0 1px '+col.border+';cursor:pointer">'
+      +'<div style="display:flex;align-items:stretch;min-height:90px">'
       // Left colored strip — mood emoji only
-      +'<div style="width:52px;flex-shrink:0;background:'+col.strip+';display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 0">'
+      +'<div style="width:52px;flex-shrink:0;align-self:stretch;background:'+col.strip+';display:flex;flex-direction:column;align-items:center;justify-content:center">'
       +'<span style="font-size:27px;line-height:1">'+r.mood_emoji+'</span>'
       +'</div>'
       // Content
@@ -3777,10 +3876,10 @@ function _buildDqCards(list){
         ? '<div style="font-size:16.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.60;word-break:break-word;margin-bottom:8px;letter-spacing:.15px;text-shadow:0 1px 8px '+col.glow+'">❝ '+_escHtml(r.response_text)+' ❞</div>'
         : '')
       // Reaction hint bar — per-emoji counts
-      +'<div style="display:flex;align-items:center;gap:5px;padding-top:6px;border-top:1px solid '+col.strip+'">'
-      +[{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}].filter(function(rx){ return _m[rx.k]&&_m[rx.k].count>0; }).map(function(rx){
+      +'<div class="dq-rx-bar" style="display:flex;align-items:center;gap:5px;padding-top:6px;border-top:1px solid '+col.strip+'">'
+      +'<span class="dq-rx-pills">'+[{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}].filter(function(rx){ return _m[rx.k]&&_m[rx.k].count>0; }).map(function(rx){
           return '<span style="display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,.08);border-radius:100px;padding:2px 7px;font-size:12px">'+rx.e+'<span style="font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif">'+_m[rx.k].count+'</span></span>';
-        }).join('')
+        }).join('')+'</span>'
       +'<span style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:'+col.label+';background:'+col.badge+';border-radius:100px;padding:2px 9px;font-family:Jost,sans-serif">'+(_totalRx>0?'Reaccionar':'✦ Reaccionar')+'</span>'
       +'</div>'
       +'</div>'
@@ -3806,19 +3905,25 @@ function pOpenDqResponseSheet(responseId){
   // Build reaction buttons for the sheet (big pill style)
   var rxDefs = [{key:'identifico',label:'Me identifico',emoji:'💚'},{key:'abrazo',label:'Te abrazo',emoji:'🫂'},{key:'entiendo',label:'Te entiendo',emoji:'💙'}];
   var _m = _dqReactMap[responseId] || {};
-  var rxColors = {identifico:{bg:'rgba(45,175,105,.22)',border:'rgba(45,175,105,.60)',glow:'rgba(45,175,105,.32)',txt:'rgba(120,240,175,.97)'},abrazo:{bg:'rgba(100,120,235,.20)',border:'rgba(110,130,240,.58)',glow:'rgba(100,120,235,.28)',txt:'rgba(175,190,255,.97)'},entiendo:{bg:'rgba(70,140,230,.20)',border:'rgba(80,150,240,.58)',glow:'rgba(70,140,230,.28)',txt:'rgba(160,210,255,.97)'}};
   var rxHtml = rxDefs.map(function(rx){
     var rd = _m[rx.key] || {count:0,mine:false};
-    var rc = rxColors[rx.key];
-    var bg = rd.mine ? rc.bg : 'rgba(255,255,255,.06)';
-    var border = rd.mine ? rc.border : 'rgba(255,255,255,.13)';
-    var txtCol = rd.mine ? rc.txt : 'rgba(255,255,255,.72)';
+    var rc = _rxColors[rx.key];
+    var bg = rd.mine ? rc.activeBg : rc.inactiveBg;
+    var bdr = rd.mine ? rc.border : rc.inactiveBorder;
+    var txtCol = rd.mine ? rc.txt : rc.inactiveTxt;
+    var circBg = rd.mine ? rc.circleBg : rc.inactiveCircleBg;
+    var circBdr = rd.mine ? rc.border : 'rgba(255,255,255,.10)';
+    var shadow = rd.mine ? '0 4px 22px '+rc.glow : 'none';
     return '<button class="dq-reaction-btn" onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
       +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+rd.mine+'" '
-      +'style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 18px;background:'+bg+';border:1.5px solid '+border+';border-radius:100px;cursor:pointer;transition:background .18s,border-color .18s,box-shadow .18s;font-family:Jost,sans-serif;box-sizing:border-box'+(rd.mine?';box-shadow:0 3px 18px '+rc.glow:'')+'">'
-      +'<span style="font-size:28px;line-height:1;flex-shrink:0">'+rx.emoji+'</span>'
-      +'<span class="rx-txt" style="font-size:14px;font-weight:700;color:'+txtCol+';flex:1;text-align:left;letter-spacing:.2px">'+rx.label+'</span>'
-      +'<span class="rx-cnt" style="font-size:13px;font-weight:800;color:'+txtCol+';background:rgba(255,255,255,.10);border-radius:100px;padding:2px 10px;min-width:24px;text-align:center;display:'+(rd.count>0?'block':'none')+'">'+( rd.count>0?rd.count:'')+'</span>'
+      +'style="width:100%;display:flex;align-items:center;gap:14px;padding:12px 16px;background:'+bg+';border:1.5px solid '+bdr+';border-radius:18px;cursor:pointer;transition:background .20s,border-color .20s,box-shadow .20s;font-family:Jost,sans-serif;box-sizing:border-box;box-shadow:'+shadow+'">'
+      +'<span style="width:46px;height:46px;border-radius:50%;background:'+circBg+';border:1.5px solid '+circBdr+';display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .20s,border-color .20s">'
+      +'<span style="font-size:24px;line-height:1">'+rx.emoji+'</span>'
+      +'</span>'
+      +'<span class="rx-txt" style="font-size:15px;font-weight:700;color:'+txtCol+';flex:1;text-align:left;letter-spacing:.2px;transition:color .20s">'+rx.label+'</span>'
+      +(rd.count>0
+        ? '<span class="rx-cnt" style="font-size:13px;font-weight:800;color:'+txtCol+';background:'+circBg+';border-radius:100px;padding:3px 12px;display:flex;align-items:center;border:1px solid '+bdr+'">'+rd.count+'</span>'
+        : '<span class="rx-cnt" style="display:none"></span>')
       +'</button>';
   }).join('');
 
@@ -6229,7 +6334,7 @@ async function pRenderHelp(){
     return '<div class="dark-seeker" id="helppost-'+h.id+'"'
       +' style="background:'+hCol.bg+' !important;border:1.5px solid rgba(255,255,255,.07) !important;border-radius:18px !important;box-shadow:0 4px 22px '+hCol.glow+',inset 0 0 0 1px '+hCol.border.replace(/[\d.]+\)$/,'0.18)')+' !important;overflow:hidden !important;margin:0 0 10px !important;padding:0 !important">'
       +'<div style="display:flex;min-height:76px">'
-      +'<div style="width:64px;flex-shrink:0;background:'+hCol.strip+';border-right:1.5px solid '+hCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center;padding:12px 0">'
+      +'<div style="width:64px;flex-shrink:0;align-self:stretch;background:'+hCol.strip+';border-right:1.5px solid '+hCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center">'
       +stripInnerH
       +'</div>'
       +'<div style="flex:1;min-width:0;padding:10px 12px">'
@@ -8664,7 +8769,7 @@ async function pRenderBottle(){
     return '<div class="dark-bottle'+(alreadyReplied?' bottle-already-replied':'')+'" id="bottle-'+b.id+'"'
       +' style="animation-delay:'+i*.08+'s;position:relative;background:'+bCol.bg+';border:1.5px solid rgba(255,255,255,.07);border-radius:18px;box-shadow:0 4px 22px '+bCol.glow+',inset 0 0 0 1px '+bCol.border.replace(/[\d.]+\)$/,'0.18)')+';overflow:hidden;margin:0 0 10px;padding:0">'
       +'<div style="display:flex;min-height:76px">'
-      +'<div style="width:64px;flex-shrink:0;background:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 0;border-radius:0">'
+      +'<div style="width:64px;flex-shrink:0;align-self:stretch;background:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center;border-radius:0">'
       +stripInnerB
       +'</div>'
       +'<div style="flex:1;min-width:0;padding:10px 12px">'
@@ -13901,26 +14006,34 @@ function _updateFavBadge(){
 
 function _contactCard(id, name, av, uname, pInfo, unread, opts){
   var canChat = pInfo.on && pInfo.label !== 'Ocupado/a';
-  var sz = opts.small ? 38 : 44;
-  return '<div data-fav-name="'+_escHtml(name||'')+'" data-fav-uname="'+_escHtml(uname||'')+'" style="display:flex;align-items:center;gap:10px;padding:'+(opts.small?'10px 12px':'12px')+';background:var(--cream);border-radius:'+(opts.small?'14':'16')+'px;margin-bottom:8px;'+(opts.small?'border:1.5px solid rgba(116,198,157,.18)':'box-shadow:var(--shadow-sm)')+'">'
+  var sz = opts.small ? 40 : 48;
+  var onlineColor = pInfo.on ? (pInfo.label==='Disponible'?'rgba(80,220,130,.95)':'rgba(220,170,60,.95)') : 'rgba(180,180,180,.45)';
+  var onlineBg    = pInfo.on ? (pInfo.label==='Disponible'?'rgba(30,140,80,.25)':'rgba(180,130,30,.22)') : 'rgba(255,255,255,.06)';
+  return '<div data-fav-name="'+_escHtml(name||'')+'" data-fav-uname="'+_escHtml(uname||'')+'" '
+    +'style="display:flex;align-items:center;gap:12px;padding:14px 14px 14px 14px;'
+    +'background:rgba(8,26,18,.85);border:1.5px solid rgba(116,198,157,.16);border-radius:18px;margin-bottom:10px;'
+    +'box-shadow:0 3px 18px rgba(0,0,0,.25),inset 0 0 0 1px rgba(116,198,157,.08)">'
     +'<div style="position:relative;flex-shrink:0;cursor:pointer" onclick="pQuickProfile('+_jsAttr(name||'Usuario')+','+_jsAttr(av||'🧑')+',\'\',\'\','+_jsAttr(id)+')">'
-    +_avInline(av||'🧑', sz)
-    +'<span style="position:absolute;bottom:0;right:0;width:'+(opts.small?'10':'11')+'px;height:'+(opts.small?'10':'11')+'px;border-radius:50%;background:'+pInfo.color+';border:2px solid var(--cream)"></span>'
+    +'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;border:2px solid rgba(116,198,157,.35);overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(116,198,157,.14)">'+_avInline(av||'🧑', sz)+'</div>'
+    +'<span style="position:absolute;bottom:1px;right:1px;width:12px;height:12px;border-radius:50%;background:'+onlineColor+';border:2.5px solid rgba(8,26,18,.95);box-shadow:0 0 6px '+onlineColor+'"></span>'
     +'</div>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:'+(opts.small?'13':'14')+'px;font-weight:700;color:var(--ink)">'+_escHtml(name||'Usuario')+'</div>'
-    +(uname?'<div style="font-size:10px;color:var(--sage3);font-weight:600;margin-bottom:1px">'+_escHtml(uname)+'</div>':'')
-    +'<div style="font-size:11px;color:'+(pInfo.on?pInfo.color:'var(--ink5)')+'">'+(pInfo.on?'● ':'○ ')+pInfo.label+'</div>'
-    +(opts.motto?'<p style="font-size:11px;color:var(--ink4);line-height:1.4;margin:3px 0 0;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml(opts.motto)+'"</p>':'')
+    +'<div style="font-size:15px;font-weight:800;color:rgba(220,245,230,.95);font-family:Jost,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(name||'Usuario')+'</div>'
+    +(uname?'<div style="font-size:11px;color:rgba(116,198,157,.80);font-weight:600;margin-bottom:2px;font-family:Jost,sans-serif">'+_escHtml(uname)+'</div>':'')
+    +'<div style="display:inline-flex;align-items:center;gap:5px;background:'+onlineBg+';border-radius:100px;padding:2px 8px 2px 6px;margin-top:1px">'
+    +'<span style="width:6px;height:6px;border-radius:50%;background:'+onlineColor+';flex-shrink:0;box-shadow:0 0 4px '+onlineColor+'"></span>'
+    +'<span style="font-size:10px;font-weight:700;color:'+onlineColor+';font-family:Jost,sans-serif;letter-spacing:.2px">'+pInfo.label+'</span>'
     +'</div>'
-    +'<div style="display:flex;gap:5px;flex-shrink:0">'
+    +(opts.motto?'<p style="font-size:11.5px;color:rgba(180,220,200,.65);line-height:1.4;margin:5px 0 0;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml(opts.motto)+'"</p>':'')
+    +'</div>'
+    +'<div style="display:flex;gap:6px;flex-shrink:0">'
     +(canChat
-      ?'<button onclick="pOpenDM('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" style="padding:6px 11px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer">💬</button>'
-      :'<button disabled style="padding:6px 10px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:10px;font-size:12px;color:var(--ink5);cursor:not-allowed;opacity:.4">💬</button>')
-    +(opts.showMail?'<button onclick="pLeaveOfflineMsg('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" style="padding:6px 9px;background:rgba(200,165,100,.08);border:1px solid rgba(200,165,100,.25);border-radius:10px;font-size:12px;cursor:pointer" title="Buzón">✉️</button>':'')
-    +(opts.showRemove?'<button onclick="pRemoveFav(\''+id+'\');pRenderContacts()" style="padding:6px 9px;background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);border-radius:10px;font-size:12px;cursor:pointer">⭐</button>':'')
-    +(opts.showBlock?'<button onclick="pBlockUser('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" style="padding:6px 9px;background:rgba(200,50,50,.06);border:1px solid rgba(200,50,50,.15);border-radius:10px;font-size:12px;cursor:pointer" title="Bloquear">🚫</button>':'')
-    +(opts.showAddFav?'<button onclick="pAddFav('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" style="padding:6px 9px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.3);border-radius:10px;font-size:12px;cursor:pointer" title="Agregar favorito">⭐</button>':'')
+      ?'<button onclick="pOpenDM('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Chat directo" style="width:38px;height:38px;border-radius:12px;background:rgba(30,140,80,.32);border:1.5px solid rgba(116,198,157,.55);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">💬</button>'
+      :'<button disabled title="No disponible" style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.10);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:not-allowed;opacity:.35">💬</button>')
+    +(opts.showMail?'<button onclick="pLeaveOfflineMsg('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Buzón privado" style="width:38px;height:38px;border-radius:12px;background:rgba(200,160,60,.18);border:1.5px solid rgba(220,175,70,.45);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">✉️</button>':'')
+    +(opts.showRemove?'<button onclick="pRemoveFav(\''+id+'\');pRenderContacts()" title="Quitar favorito" style="width:38px;height:38px;border-radius:12px;background:rgba(240,190,40,.18);border:1.5px solid rgba(240,190,40,.50);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">⭐</button>':'')
+    +(opts.showBlock?'<button onclick="pBlockUser('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" title="Bloquear" style="width:38px;height:38px;border-radius:12px;background:rgba(200,40,40,.12);border:1.5px solid rgba(200,40,40,.35);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">🚫</button>':'')
+    +(opts.showAddFav?'<button onclick="pAddFav('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" title="Agregar favorito" style="width:38px;height:38px;border-radius:12px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.45);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">⭐</button>':'')
     +'</div></div>';
 }
 
@@ -20572,7 +20685,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     return '<div class="home-mc"'+(isTappable?' onclick="pOpenMomentoSheet(\''+_escHtml(String(m.id))+'\')"':'')+' style="background:'+col.bg+';box-shadow:0 3px 20px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3.5px solid '+col.border+(isTappable?';cursor:pointer':'')+'">'
       +'<div style="display:flex;align-items:stretch;gap:0">'
       // Colored left strip: avatar photo + emoji when visible user, else just emoji
-      +'<div style="width:'+stripW+';flex-shrink:0;display:flex;align-items:center;justify-content:center;background:'+col.strip+';padding:'+(isHome?'12px':'14px')+' 0;border-radius:0">'+stripInner+'</div>'
+      +'<div style="width:'+stripW+';flex-shrink:0;align-self:stretch;display:flex;align-items:center;justify-content:center;background:'+col.strip+';border-radius:0">'+stripInner+'</div>'
       // Main content
       +'<div style="flex:1;min-width:0;padding:11px 10px 11px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
@@ -20873,7 +20986,7 @@ async function _loadHomeHappyFeed(){
     return '<div class="home-mc" style="background:rgba(48,32,4,.90);box-shadow:0 3px 18px rgba(218,160,30,.22),inset 0 0 0 1px rgba(218,160,30,.30);border-left:3px solid rgba(218,160,30,.70)">'
       +'<div style="display:flex;align-items:stretch;gap:0">'
       // Left gold strip with avatar
-      +'<div style="width:56px;flex-shrink:0;background:rgba(218,160,30,.38);display:flex;align-items:center;justify-content:center;padding:12px 0">'
+      +'<div style="width:56px;flex-shrink:0;align-self:stretch;background:rgba(218,160,30,.38);display:flex;align-items:center;justify-content:center">'
       +avHtml
       +'</div>'
       // Content

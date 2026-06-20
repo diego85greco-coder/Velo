@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260620-989">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260620-989">
+  <link rel="stylesheet" href="premium.css?v=20260620-990">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260620-990">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1161,12 +1161,12 @@
                 <!-- Momentos tab content -->
                 <div id="homeTabMomento">
                   <!-- Inline compose row -->
-                  <div style="margin-bottom:12px;padding:10px 13px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.60);border-radius:14px;box-shadow:0 2px 16px rgba(116,198,157,.12)">
+                  <div style="margin-bottom:12px;padding:10px 13px;background:rgba(8,26,16,.88);border:1.5px solid rgba(116,198,157,.38);border-radius:14px">
                     <div style="display:flex;gap:8px;align-items:center">
                       <select id="momentoHomeEmoji" style="background:none;border:none;font-size:19px;cursor:pointer;padding:0;-webkit-appearance:none;appearance:none;flex-shrink:0;outline:none">
                         <option>💭</option><option>✨</option><option>🌿</option><option>🤍</option><option>🌟</option><option>😊</option><option>🎵</option><option>☕</option><option>🌅</option><option>💚</option>
                       </select>
-                      <input id="momentoHomeInput" type="text" maxlength="180" placeholder="¿Qué momento querés compartir?" autocomplete="off" style="flex:1;background:none;border:none;color:rgba(255,255,255,.90);font-size:13px;font-family:Jost,sans-serif;outline:none;min-width:0">
+                      <input id="momentoHomeInput" type="text" maxlength="180" placeholder="¿Qué momento querés compartir?" autocomplete="off" style="flex:1;background:transparent;-webkit-appearance:none;appearance:none;border:none;color:rgba(255,255,255,.90);font-size:13px;font-family:Jost,sans-serif;outline:none;min-width:0">
                       <button id="momentoHomeBtn" onclick="pPostMomentoHome()" style="background:rgba(116,198,157,.38);border:1.5px solid rgba(116,198,157,.72);border-radius:10px;color:rgba(220,255,238,.98);font-size:14px;font-weight:800;font-family:Jost,sans-serif;padding:5px 11px;cursor:pointer;white-space:nowrap;flex-shrink:0;box-shadow:0 2px 10px rgba(116,198,157,.22)">✨</button>
                     </div>
                     <button id="momentoProfileToggle" onclick="pToggleMomentoProfile()" title="Cambiar visibilidad del perfil">
@@ -3137,19 +3137,26 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
     <!-- ══ CONTACTS (Favoritos) ════════════════════════════════ -->
     <div class="p-page" id="pg-contacts">
       <div class="p-page-scroll">
-        <div class="p-page-inner">
-          <div class="p-page-hdr">
-            <div class="p-page-hdr-back">
-              <button class="p-back-btn" onclick="pGoTo('home')">←</button>
+        <div class="p-page-inner" style="padding-top:0">
+          <!-- Hero header -->
+          <div style="margin:-20px -20px 0;padding:24px 20px 22px;background:linear-gradient(160deg,rgba(14,40,26,.98) 0%,rgba(8,22,16,.96) 60%,rgba(20,50,32,.95) 100%);border-bottom:1.5px solid rgba(116,198,157,.18);position:relative;overflow:hidden;margin-bottom:0">
+            <div style="position:absolute;top:-20px;right:-10px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(116,198,157,.14) 0%,transparent 70%);pointer-events:none"></div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <button class="p-back-btn" onclick="goBack()" style="flex-shrink:0">←</button>
               <div>
-                <div class="p-label">Red personal</div>
-                <h2 class="p-title">Mis Contactos ⭐</h2>
+                <div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.65);font-family:Jost,sans-serif;margin-bottom:4px">Red personal</div>
+                <h2 style="font-size:22px;font-weight:800;color:rgba(220,250,235,.96);font-family:Jost,sans-serif;margin:0;letter-spacing:-.3px">Mis Contactos <span style="font-size:20px">⭐</span></h2>
               </div>
             </div>
+            <p style="font-size:12px;color:rgba(160,210,185,.65);line-height:1.6;margin:12px 0 0;font-style:italic">Tus favoritos y quienes te agregaron. Chateá con quienes aceptaron tu conexión.</p>
           </div>
-          <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Acá encontrás tus favoritos y las personas que te agregaron. Podés chatear directamente con quienes aceptaron tu solicitud de conexión.</p>
-          <div style="display:flex;gap:8px;margin-bottom:14px">
-            <input class="p-input" id="contactSearch" placeholder="🔍 Buscar contacto…" oninput="pFilterContacts(this.value)" style="flex:1">
+          <!-- Search bar -->
+          <div style="padding:14px 0 4px">
+            <div style="position:relative">
+              <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none">🔍</span>
+              <input id="contactSearch" placeholder="Buscar contacto…" oninput="pFilterContacts(this.value)"
+                style="width:100%;box-sizing:border-box;padding:11px 14px 11px 40px;background:rgba(116,198,157,.07);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;color:rgba(220,245,230,.92);font-size:14px;font-family:Jost,sans-serif;outline:none">
+            </div>
           </div>
           <div id="contactsContent">
             <div class="p-skeleton"><div class="p-skel-line"></div><div class="p-skel-line w60"></div></div>
@@ -4010,8 +4017,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260620-989"></script>
-<script src="premium-redesign.js?v=20260620-989"></script>
+<script src="premium.js?v=20260620-990"></script>
+<script src="premium-redesign.js?v=20260620-990"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
