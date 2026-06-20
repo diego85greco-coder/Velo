@@ -6082,6 +6082,9 @@ function pDeleteHelpPost(postId){
 
 var _curHelpPost = null;
 var _helpChatInactivityTimer = null;
+var _helpChatInactivityWarnTimer = null;
+var _helpTypingDebounceTimer = null;
+var _helpTypingShowTimer = null;
 // Auto-replies simulating the seeker (person who asked for help)
 var _helpChatAutoMsgPool = [
   'Gracias por responder… no esperaba que alguien lo hiciera tan rápido 🙏',
@@ -6342,6 +6345,7 @@ function _showSeekerGuardianPopup(postId, row){
     +'<div style="font-size:44px;margin-bottom:10px">'+_avInline(guardianAv,52)+'</div>'
     +'<div style="font-size:17px;font-weight:700;color:'+titleClr+';margin-bottom:8px;font-family:\'Cormorant Garamond\',serif">Un guardián quiere acompañarte 💙</div>'
     +'<div style="font-size:14px;color:'+bodyClr+';margin-bottom:6px"><strong>'+_escHtml(guardianName)+'</strong> vio tu mensaje y está aquí para escucharte.</div>'
+    +'<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.30);border-radius:100px;margin-bottom:10px"><span style="font-size:11px">💚</span><span style="font-size:11px;font-weight:700;color:rgba(116,198,157,.90);font-family:\'Jost\',sans-serif">Guardián verificado de la comunidad Velo</span></div>'
     +'<div style="font-size:12px;color:'+subClr+';margin-bottom:10px">¿Aceptás el acompañamiento ahora?</div>'
     +'<div id="seekerGuardianCountdown" style="font-size:28px;font-weight:800;color:'+cdClr+';margin-bottom:18px">80</div>'
     +'<div style="display:flex;gap:10px">'
@@ -6545,7 +6549,9 @@ function _renderHelpChatMsg(m, isOwn){
   var msgEl = document.getElementById('helpChatMessages');
   if(!msgEl) return;
   var _sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
-  var _t=m.text||''; if(_sentinels.indexOf(_t)>=0||_t.startsWith('__velo_guardian_req__:')||_t.startsWith('__velo_guardian_acc__:')||_t.startsWith('__velo_guardian_rej__:')||_t.startsWith('__velo_guardian_bye__:')||_t.startsWith('__velo_dm_bye__:')||_t.startsWith('__velo_help_bye__:')) return;
+  var _t=m.text||'';
+  if(_t.startsWith('__velo_typing__:') && !isOwn){ _showHelpTypingIndicator(_t.slice('__velo_typing__:'.length)); return; }
+  if(_t.startsWith('__velo_typing__:')||_sentinels.indexOf(_t)>=0||_t.startsWith('__velo_guardian_req__:')||_t.startsWith('__velo_guardian_acc__:')||_t.startsWith('__velo_guardian_rej__:')||_t.startsWith('__velo_guardian_bye__:')||_t.startsWith('__velo_dm_bye__:')||_t.startsWith('__velo_help_bye__:')) return;
   var post = _curHelpPost||{};
   var div = document.createElement('div');
   div.innerHTML = _buildMsgBubble(m.text||'', isOwn, isOwn?'':(post.emoji||'💙'), isOwn?'':(post.name||''), 'helpChatInput', 'helpChatReplyBar', '', m.reactions||{}, m.id?'direct_messages:'+m.id:'', isOwn?'':(m.from_id||''));
@@ -6555,13 +6561,27 @@ function _renderHelpChatMsg(m, isOwn){
 
 function _resetHelpInactivity(){
   if(_helpChatInactivityTimer) clearTimeout(_helpChatInactivityTimer);
+  if(_helpChatInactivityWarnTimer) clearTimeout(_helpChatInactivityWarnTimer);
+  // Warning at 4 minutes
+  _helpChatInactivityWarnTimer = setTimeout(function(){
+    var msgEl = document.getElementById('helpChatMessages');
+    if(msgEl){
+      var msg = document.createElement('div');
+      msg.className = 'feed-system-msg';
+      msg.textContent = '⏱️ ¿Seguís ahí? El chat se cerrará en 1 minuto si no hay actividad.';
+      msgEl.appendChild(msg);
+      msgEl.scrollTop = msgEl.scrollHeight;
+    }
+    pToast('⏱️','¿Seguís ahí? El chat cierra en 1 min por inactividad.');
+  }, 4 * 60 * 1000);
+  // Close at 5 minutes
   _helpChatInactivityTimer = setTimeout(function(){
-    // 5 minutes of inactivity
     _closeHelpChatInactive();
   }, 5 * 60 * 1000);
 }
 
 function _closeHelpChatInactive(){
+  if(_helpChatInactivityWarnTimer){ clearTimeout(_helpChatInactivityWarnTimer); _helpChatInactivityWarnTimer = null; }
   var msgEl = document.getElementById('helpChatMessages');
   if(msgEl){
     var msg = document.createElement('div');
@@ -6574,6 +6594,40 @@ function _closeHelpChatInactive(){
     pToast('⏱️','Chat cerrado por inactividad. ¿Querés enviarle un mensaje al buzón?');
     setTimeout(function(){ pLeaveHelpChat(); pGoTo('help'); }, 2000);
   }, 2000);
+}
+
+function _toggleHelpCrisis(){
+  var panel = document.getElementById('helpCrisisPanel');
+  var chevron = document.getElementById('helpCrisisChevron');
+  if(!panel) return;
+  var isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if(chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+function _showHelpTypingIndicator(name){
+  var el = document.getElementById('helpTypingIndicator');
+  if(!el) return;
+  el.textContent = '💙 ' + (name||'La otra persona') + ' está escribiendo...';
+  el.style.opacity = '1';
+  if(_helpTypingShowTimer) clearTimeout(_helpTypingShowTimer);
+  _helpTypingShowTimer = setTimeout(function(){
+    if(el) el.style.opacity = '0';
+  }, 3500);
+}
+
+function pHelpChatTyping(){
+  if(_helpTypingDebounceTimer) return;
+  _helpTypingDebounceTimer = setTimeout(function(){ _helpTypingDebounceTimer = null; }, 3000);
+  _initSupabase();
+  if(!sbClient || !_curHelpPost || !_curHelpPost.userId) return;
+  var myId   = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
+  var myName = safeLS('get','velo_user_name')||'La otra persona';
+  sbClient.from('direct_messages').insert({
+    from_id: myId, to_id: _curHelpPost.userId,
+    text: '__velo_typing__:'+myName,
+    created_at: new Date().toISOString()
+  }).then(function(){}).catch(function(){});
 }
 
 function pSendHelpChatMsg(){
@@ -8309,6 +8363,15 @@ async function _loadBottleStats(){
   }catch(e){}
 }
 
+function _bottleEmojiColor(mood){
+  var warm=['🤗','😊'];
+  var sad=['😢','😔','😰','😤'];
+  if(warm.indexOf(mood)>=0) return {bg:'rgba(218,160,30,.10)',border:'rgba(218,160,30,.40)',glow:'rgba(218,160,30,.08)',strip:'rgba(218,160,30,.22)'};
+  if(sad.indexOf(mood)>=0)  return {bg:'rgba(100,120,210,.10)',border:'rgba(130,148,220,.38)',glow:'rgba(100,120,210,.08)',strip:'rgba(115,133,218,.22)'};
+  if(mood==='🌊')           return {bg:'rgba(40,130,200,.10)',border:'rgba(70,155,210,.38)',glow:'rgba(40,130,200,.08)',strip:'rgba(60,148,210,.22)'};
+  return                           {bg:'rgba(80,140,200,.08)',border:'rgba(80,150,200,.35)',glow:'rgba(60,140,200,.07)',strip:'rgba(70,145,205,.20)'};
+}
+
 async function pRenderBottle(){
   var _tok = _navToken;
   _renderFavWidget('bottleFavWidget');
@@ -8355,10 +8418,8 @@ async function pRenderBottle(){
     allBottles = myBottles.concat(filteredMock);
   }
 
-  // Hide bottles already replied to by this user — they move to "Mis respuestas" tab
-  allBottles = allBottles.filter(function(b){
-    return safeLS('get','velo_bottle_replied_'+b.id) !== '1';
-  });
+  // Mark (but do NOT hide) already-replied bottles — they stay visible, styled differently
+  // Replied bottles remain so multiple users can respond; user just can't reply again
 
   // Batch-fetch usernames for non-anon bottle authors not yet cached
   if(sbClient){ var _bUnknown = allBottles.filter(function(b){ return !b.anon && b.userId && !_uLook(b.userId); }).map(function(b){ return b.userId; }); if(_bUnknown.length){ try{ var _br = await sbClient.from('profiles').select('id,username').in('id',_bUnknown); if(_br.data) _br.data.forEach(function(p){ _uFill(p.id,p.username); }); }catch(e){} } }
@@ -8408,8 +8469,15 @@ async function pRenderBottle(){
           +'<span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:.3px">👤 Usuario Anónimo</span>'
           +'</div>'
         : '');
-    return '<div class="dark-bottle" id="bottle-'+b.id+'" style="animation-delay:'+i*.08+'s;border-left:3px solid rgba(80,150,200,.3)">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:20px">'+b.mood+'</span><span style="font-size:10px;color:var(--ink5)">'+relTime+'</span></div>'
+    var bCol = _bottleEmojiColor(b.mood||'🌊');
+    return '<div class="dark-bottle'+(alreadyReplied?' bottle-already-replied':'')+'" id="bottle-'+b.id+'"'
+      +' style="animation-delay:'+i*.08+'s;position:relative;background:'+bCol.bg+';border-left:3px solid '+bCol.border+';box-shadow:0 3px 14px '+bCol.glow+'">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+      +'<div style="display:flex;align-items:center;gap:7px">'
+      +'<span style="font-size:22px;filter:drop-shadow(0 0 6px '+bCol.glow+')">'+b.mood+'</span>'
+      +(alreadyReplied?'<span style="font-size:10px;font-weight:700;color:rgba(116,198,157,.75);background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);border-radius:100px;padding:2px 8px">💌 Respondiste</span>':'')
+      +'</div>'
+      +'<span style="font-size:10px;color:var(--ink5)">'+relTime+'</span></div>'
       +authorHtml
       +'<p style="font-size:13px;color:var(--ink);line-height:1.6;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+b.text+'"</p>'
       +'<div style="display:flex;align-items:center;justify-content:flex-end">'+actions+'</div></div>';

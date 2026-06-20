@@ -1742,6 +1742,28 @@
           <div style="padding:12px 16px 6px;font-size:11.5px;color:var(--ink4);line-height:1.6;background:rgba(116,198,157,.08);border-bottom:1px solid rgba(116,198,157,.12)">
             Publicá cómo te sentís y un Guardián voluntario te acompañará en tiempo real · Las publicaciones duran <strong>24 horas</strong> · Anónimo por defecto
           </div>
+          <!-- Crisis resources quick-access widget -->
+          <div id="helpCrisisChip" style="padding:8px 16px;background:rgba(229,57,53,.06);border-bottom:1px solid rgba(229,57,53,.12);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="_toggleHelpCrisis()">
+            <span style="font-size:11.5px;font-weight:700;color:rgba(229,57,53,.80);font-family:'Jost',sans-serif">🆘 Líneas de ayuda en crisis</span>
+            <span id="helpCrisisChevron" style="font-size:11px;color:rgba(229,57,53,.55);transition:transform .22s">▼</span>
+          </div>
+          <div id="helpCrisisPanel" style="display:none;padding:12px 16px 14px;background:rgba(229,57,53,.04);border-bottom:1px solid rgba(229,57,53,.08)">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+              <a href="tel:135" style="flex:1;min-width:110px;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(229,57,53,.09);border:1px solid rgba(229,57,53,.20);border-radius:12px;text-decoration:none">
+                <span style="font-size:18px">📞</span>
+                <div><div style="font-size:10px;font-weight:700;color:rgba(229,57,53,.70)">Argentina</div><div style="font-size:15px;font-weight:800;color:#e53935">135</div></div>
+              </a>
+              <a href="tel:024" style="flex:1;min-width:110px;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(229,57,53,.09);border:1px solid rgba(229,57,53,.20);border-radius:12px;text-decoration:none">
+                <span style="font-size:18px">📞</span>
+                <div><div style="font-size:10px;font-weight:700;color:rgba(229,57,53,.70)">España</div><div style="font-size:15px;font-weight:800;color:#e53935">024</div></div>
+              </a>
+              <a href="tel:08000767" style="flex:1;min-width:110px;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(229,57,53,.09);border:1px solid rgba(229,57,53,.20);border-radius:12px;text-decoration:none">
+                <span style="font-size:18px">📞</span>
+                <div><div style="font-size:10px;font-weight:700;color:rgba(229,57,53,.70)">Uruguay</div><div style="font-size:15px;font-weight:800;color:#e53935">0800 0767</div></div>
+              </a>
+            </div>
+            <div style="text-align:right"><button onclick="pOpenSOS()" style="font-size:11px;font-weight:700;color:rgba(229,57,53,.72);background:none;border:none;cursor:pointer;padding:0;font-family:'Jost',sans-serif">Ver todos los países →</button></div>
+          </div>
           <div style="padding:16px">
             <div class="dark-hero-card" style="background:rgba(255,255,255,.65);border-color:rgba(116,198,157,.25)">
               <div class="dark-label" style="color:rgba(45,106,79,.7)">EN VIVO AHORA</div>
@@ -1797,6 +1819,7 @@
           </div>
         </div>
         <div id="helpChatMessages" class="feed-messages"></div>
+        <div id="helpTypingIndicator" class="help-typing-indicator"></div>
         <div class="reply-preview-bar" id="helpChatReplyBar" style="background:rgba(255,255,255,.06);border-left-color:rgba(116,198,157,.8)">
           <span class="reply-preview-text" style="color:rgba(255,255,255,.6)"></span>
           <button class="reply-preview-close" onclick="pClearReplyBar('helpChatReplyBar')" style="color:rgba(255,255,255,.4)">✕</button>
@@ -1805,6 +1828,7 @@
         <div class="feed-input-area" style="background:rgba(8,20,10,.9);border-top:1px solid rgba(116,198,157,.12)">
           <button type="button" class="feed-emoji-toggle" onclick="pToggleChatEmojis('helpChatEmojiPanel','helpChatInput')" title="Emojis">😊</button>
           <textarea id="helpChatInput" class="feed-input" placeholder="Escribí con amor y presencia…" rows="1" style="background:rgba(255,255,255,.06);color:#fff;border-color:rgba(116,198,157,.2)"
+            oninput="pHelpChatTyping()"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendHelpChatMsg()}"></textarea>
           <button class="feed-send-btn" onclick="pSendHelpChatMsg()">↑</button>
         </div>

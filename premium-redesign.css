@@ -12014,3 +12014,40 @@ body.r-dark #pg-news [style*="color:var(--ink4)"] {
 @media (max-width: 1023px) {
   .home-sec-lbl { display: block; }
 }
+
+/* ── v964: Bottle float animation + typing indicator ─────────────────── */
+@keyframes bottleFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-4px); }
+}
+#pg-bottle #bottleList .dark-bottle {
+  animation: bottleFloat 5s ease-in-out infinite;
+}
+.help-typing-indicator {
+  font-size: 12px;
+  color: rgba(116,198,157,.65);
+  font-family: 'Jost', sans-serif;
+  font-style: italic;
+  padding: 4px 16px 2px;
+  min-height: 22px;
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+}
+/* v964: color-coded bottle cards in dark mode */
+body.r-dark #pg-bottle .dark-bottle {
+  background: var(--bottle-bg, rgba(10,28,46,.88)) !important;
+  border-left-color: var(--bottle-border, rgba(80,150,200,.45)) !important;
+}
+/* v964: replied bottle visual in feed */
+.dark-bottle.bottle-already-replied {
+  opacity: 0.65;
+}
+.dark-bottle.bottle-already-replied::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(116,198,157,.04);
+  pointer-events: none;
+}
