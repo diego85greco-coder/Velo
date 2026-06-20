@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1004">
+  <meta name="app-version" content="1005">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -30,29 +30,29 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260620-1004">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260620-1004">
+  <link rel="stylesheet" href="premium.css?v=20260620-1005">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260620-1005">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
     #homeGreetWrapper      { order: 1; }
     #homeTimeIcon          { order: 2; }
-    #homeRegisterOuter     { order: 3; }
-    #homeMemoryCard        { order: 4; }
-    #homeDailyQ            { order: 5; }
+    #homeDailyQuoteWrap    { order: 3; }
+    #homeRegisterOuter     { order: 4; }
+    #homeMemoryCard        { order: 5; }
     #homePulse             { order: 6; }
-    #homeMedWidget         { order: 7; }
-    .r-home-quick-panel    { order: 8; }
-    .r-home-shortcut-grid  { order: 8; }
-    #homeGuardianChip      { order: 9; }
-    .home-sec-lbl-comunidad { order: 10 !important; }
-    #homeMomentoSection    { order: 11 !important; }
-    #homeDailyQuoteWrap    { order: 12; }
-    #homeParaVosPanel      { order: 13; }
-    .r-hero-actions        { order: 14 !important; }
-    #homeMonthlyHint       { order: 15; }
-    #homeShareWeekBtn      { order: 16; }
-    #homeStatusToggle      { order: 17 !important; }
+    #homeDailyQ            { order: 7; }
+    #homeStatusToggle      { order: 8 !important; }
+    .r-hero-actions        { order: 9 !important; }
+    #homeMedWidget         { order: 10; }
+    .r-home-quick-panel    { order: 11; }
+    .r-home-shortcut-grid  { order: 11; }
+    #homeGuardianChip      { order: 12; }
+    .home-sec-lbl-comunidad { order: 13 !important; }
+    #homeMomentoSection    { order: 14 !important; }
+    #homeParaVosPanel      { order: 15; }
+    #homeMonthlyHint       { order: 16; }
+    #homeShareWeekBtn      { order: 17; }
     /* Ocultar rótulos de sección — el agrupado visual reemplaza los labels */
     .home-sec-lbl-acomp    { display: none !important; }
     .home-sec-lbl-estado   { display: none !important; }
@@ -4068,8 +4068,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260620-1004"></script>
-<script src="premium-redesign.js?v=20260620-1004"></script>
+<script src="premium.js?v=20260620-1005"></script>
+<script src="premium-redesign.js?v=20260620-1005"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
