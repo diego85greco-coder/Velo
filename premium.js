@@ -3855,13 +3855,12 @@ function _buildDqCards(list){
       : '<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;opacity:.7;display:flex;align-items:center;justify-content:center">'+avInner+'</div>';
     return '<div class="dq-feed-card" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
       +' style="background:'+col.bg+';box-shadow:0 3px 16px '+col.glow+',inset 0 0 0 1px '+col.border+';cursor:pointer">'
-      +'<div style="display:flex;align-items:stretch;min-height:90px">'
-      // Left colored strip — mood emoji only
-      +'<div style="width:52px;flex-shrink:0;align-self:stretch;background:'+col.strip+';display:flex;flex-direction:column;align-items:center;justify-content:center">'
+      // Absolute strip fills full card height on all platforms
+      +'<div style="position:absolute;left:0;top:0;bottom:0;width:52px;background:'+col.strip+';display:flex;flex-direction:column;align-items:center;justify-content:center">'
       +'<span style="font-size:27px;line-height:1">'+r.mood_emoji+'</span>'
       +'</div>'
       // Content
-      +'<div style="flex:1;min-width:0;padding:10px 10px 8px 12px">'
+      +'<div style="margin-left:52px;min-height:90px;padding:10px 10px 8px 12px">'
       // Avatar + name row
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
       +avWrap
@@ -3883,7 +3882,6 @@ function _buildDqCards(list){
           return '<span style="display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,.08);border-radius:100px;padding:2px 7px;font-size:12px">'+rx.e+'<span style="font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif">'+_m[rx.k].count+'</span></span>';
         }).join('')+'</span>'
       +'<span style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:'+col.label+';background:'+col.badge+';border-radius:100px;padding:2px 9px;font-family:Jost,sans-serif">'+(_totalRx>0?'Reaccionar':'✦ Reaccionar')+'</span>'
-      +'</div>'
       +'</div>'
       +'</div>'
       +'</div>';
@@ -6334,18 +6332,18 @@ async function pRenderHelp(){
       ? '<div style="position:relative;display:inline-block">'+stripCore+'<span style="position:absolute;bottom:0;right:0">'+pDot+'</span></div>'
       : stripCore;
     return '<div class="dark-seeker" id="helppost-'+h.id+'"'
-      +' style="background:'+hCol.bg+' !important;border:1.5px solid rgba(255,255,255,.07) !important;border-radius:18px !important;box-shadow:0 4px 22px '+hCol.glow+',inset 0 0 0 1px '+hCol.border.replace(/[\d.]+\)$/,'0.18)')+' !important;overflow:hidden !important;margin:0 0 10px !important;padding:0 !important">'
-      +'<div style="display:flex;min-height:76px">'
-      +'<div style="width:64px;flex-shrink:0;align-self:stretch;background:'+hCol.strip+';border-right:1.5px solid '+hCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center">'
+      +' style="position:relative !important;background:'+hCol.bg+' !important;border:1.5px solid rgba(255,255,255,.07) !important;border-radius:18px !important;box-shadow:0 4px 22px '+hCol.glow+',inset 0 0 0 1px '+hCol.border.replace(/[\d.]+\)$/,'0.18)')+' !important;overflow:hidden !important;margin:0 0 10px !important;padding:0 !important">'
+      // Absolute strip fills full card height on all platforms
+      +'<div style="position:absolute;left:0;top:0;bottom:0;width:64px;background:'+hCol.strip+';border-right:1.5px solid '+hCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center">'
       +stripInnerH
       +'</div>'
-      +'<div style="flex:1;min-width:0;padding:10px 12px">'
+      +'<div style="margin-left:64px;min-height:76px;padding:10px 12px">'
       +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">'
       +'<div>'+nameHtml+'<div style="display:flex;align-items:center;gap:4px;margin-top:1px">'+urgBadge+'<span style="font-size:10px;color:rgba(255,255,255,.35)">'+timeStr+'</span></div></div>'
       +'</div>'
       +'<div style="font-size:15px;color:rgba(255,255,255,.92);line-height:1.55;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;letter-spacing:.02em">"'+_escHtml(h.preview)+'"</div>'
       +'<div style="display:flex;gap:8px;align-items:center">'+actions+'</div>'
-      +'</div></div></div>';
+      +'</div></div>';
   }
 
   // Show own posts pinned at top (public AND anonymous), then others below
@@ -8770,11 +8768,11 @@ async function pRenderBottle(){
         : '<span style="font-size:30px;line-height:1;filter:drop-shadow(0 0 8px '+bCol.glow+')">'+_escHtml(b.mood||'🌊')+'</span>';
     return '<div class="dark-bottle'+(alreadyReplied?' bottle-already-replied':'')+'" id="bottle-'+b.id+'"'
       +' style="animation-delay:'+i*.08+'s;position:relative;background:'+bCol.bg+';border:1.5px solid rgba(255,255,255,.07);border-radius:18px;box-shadow:0 4px 22px '+bCol.glow+',inset 0 0 0 1px '+bCol.border.replace(/[\d.]+\)$/,'0.18)')+';overflow:hidden;margin:0 0 10px;padding:0">'
-      +'<div style="display:flex;min-height:76px">'
-      +'<div style="width:64px;flex-shrink:0;align-self:stretch;background:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center;border-radius:0">'
+      // Absolute strip fills full card height on all platforms
+      +'<div style="position:absolute;left:0;top:0;bottom:0;width:64px;background:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center">'
       +stripInnerB
       +'</div>'
-      +'<div style="flex:1;min-width:0;padding:10px 12px">'
+      +'<div style="margin-left:64px;min-height:76px;padding:10px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
       +authorNameHtml
       +(alreadyReplied?'<span style="font-size:9px;font-weight:700;color:rgba(116,198,157,.80);background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.28);border-radius:100px;padding:1px 7px;margin-left:auto">💌 Respondiste</span>'
@@ -8782,7 +8780,7 @@ async function pRenderBottle(){
       +'</div>'
       +'<p style="font-size:15px;color:rgba(255,255,255,.93);line-height:1.55;margin:0 0 9px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;letter-spacing:.01em">"'+_escHtml(b.text)+'"</p>'
       +'<div style="display:flex;align-items:center;justify-content:flex-end">'+actions+'</div>'
-      +'</div></div></div>';
+      +'</div></div>';
   }).join('');
 }
 
@@ -20686,9 +20684,9 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
         ? '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid '+col.border+';display:flex;align-items:center;justify-content:center;font-size:20px">'+_escHtml(_mav)+'</div><span style="font-size:12px;line-height:1">'+_escHtml(m.emoji||'💭')+'</span></div>'
         : '<span style="font-size:'+emojiSz+';line-height:1">'+_escHtml(m.emoji||'💭')+'</span>';
     return '<div class="home-mc"'+(isTappable?' onclick="pOpenMomentoSheet(\''+_escHtml(String(m.id))+'\')"':'')+' style="background:'+col.bg+';box-shadow:0 3px 20px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3.5px solid '+col.border+(isTappable?';cursor:pointer':'')+'">'
-      +'<div style="display:flex;align-items:stretch;gap:0">'
-      // Colored left strip: avatar photo + emoji when visible user, else just emoji
-      +'<div style="width:'+stripW+';flex-shrink:0;align-self:stretch;display:flex;align-items:center;justify-content:center;background:'+col.strip+';border-radius:0">'+stripInner+'</div>'
+      // Absolute strip fills full card height on all platforms (no iOS Safari flex gap)
+      +'<div style="position:absolute;left:0;top:0;bottom:0;width:'+stripW+';background:'+col.strip+';display:flex;align-items:center;justify-content:center">'+stripInner+'</div>'
+      +'<div style="display:flex;margin-left:'+stripW+';min-height:76px">'
       // Main content
       +'<div style="flex:1;min-width:0;padding:11px 10px 11px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
@@ -20988,12 +20986,12 @@ async function _loadHomeHappyFeed(){
     if(h.reactions){ try{ var rv=typeof h.reactions==='string'?JSON.parse(h.reactions):h.reactions; Object.values(rv).forEach(function(a){ totalR+=Array.isArray(a)?a.length:0; }); }catch(e){} }
     var commCount = h.comments ? h.comments.length : 0;
     return '<div class="home-mc" style="background:rgba(48,32,4,.90);box-shadow:0 3px 18px rgba(218,160,30,.22),inset 0 0 0 1px rgba(218,160,30,.30);border-left:3px solid rgba(218,160,30,.70)">'
-      +'<div style="display:flex;align-items:stretch;gap:0">'
-      // Left gold strip with avatar
-      +'<div style="width:56px;flex-shrink:0;align-self:stretch;background:rgba(218,160,30,.38);display:flex;align-items:center;justify-content:center">'
+      // Absolute strip fills full card height on all platforms
+      +'<div style="position:absolute;left:0;top:0;bottom:0;width:56px;background:rgba(218,160,30,.38);display:flex;align-items:center;justify-content:center">'
       +avHtml
       +'</div>'
       // Content
+      +'<div style="display:flex;margin-left:56px;min-height:76px">'
       +'<div style="flex:1;min-width:0;padding:10px 10px 8px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">'
       +nameHtml

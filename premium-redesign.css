@@ -11224,6 +11224,7 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
   overflow: hidden;
   animation: p-fadeIn .3s ease;
   display: block;
+  position: relative;
 }
 .home-mc:last-child { margin-bottom: 0; }
 
@@ -11839,6 +11840,7 @@ body.velo-t-noche.r-dark #homeGreetSub {
   border-radius: 16px !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
+  position: relative !important;
   /* background/border set inline per card based on mood emoji color */
 }
 #homeDailyQFeed #dqExpandBtn { display: none !important; }
