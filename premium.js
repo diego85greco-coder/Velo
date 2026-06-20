@@ -2117,35 +2117,38 @@ function _renderHomeMedWidget(){
   if(!el) return;
   var med = _MEDITATIONS[new Date().getDay() % _MEDITATIONS.length];
   var c = med.col;
-  var lblFaint = c.label.replace(/,[\d.]+\)$/, ',.52)');
+  var lblFaint = c.label.replace(/,[\d.]+\)$/, ',.55)');
   var lblGhost = c.label.replace(/,[\d.]+\)$/, ',.38)');
   el.innerHTML =
-    '<div style="background:linear-gradient(140deg,'+c.card+','+c.bg+');border:1.5px solid '+c.border
-    +';border-radius:20px;overflow:hidden;box-shadow:0 6px 32px '+c.glow+';position:relative;-webkit-tap-highlight-color:transparent">'
-    // subtle background shimmer layer
-    +'<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,'+c.strip+',transparent 70%);pointer-events:none"></div>'
-    // header row
-    +'<div style="position:relative;padding:13px 16px 0;display:flex;align-items:center;justify-content:space-between">'
-    +'<span style="font-size:9px;font-weight:800;letter-spacing:1.8px;color:'+lblFaint+';text-transform:uppercase;font-family:Jost,sans-serif">✦ MEDITACIÓN GUIADA</span>'
-    +'<span onclick="pGoTo(\'meditacion\')" style="font-size:10px;color:'+lblFaint+';font-family:Jost,sans-serif;font-weight:700;cursor:pointer">ver las 10 →</span>'
+    '<div onclick="pGoTo(\'meditacion\')" style="cursor:pointer;background:linear-gradient(140deg,'+c.card+','+c.bg+')'
+    +';border:1.5px solid '+c.border+';border-radius:22px;overflow:hidden;box-shadow:0 8px 36px '+c.glow+';position:relative'
+    +';-webkit-tap-highlight-color:transparent" onmousedown="this.style.opacity=\'.88\'" onmouseup="this.style.opacity=\'1\'" ontouchstart="this.style.opacity=\'.88\'" ontouchend="this.style.opacity=\'1\'">'
+    // shimmer glow behind emoji
+    +'<div style="position:absolute;top:-30px;left:-10px;width:140px;height:140px;background:radial-gradient(circle,'+c.strip+',transparent 70%);pointer-events:none;opacity:.8"></div>'
+    // label row
+    +'<div style="position:relative;padding:14px 18px 0;display:flex;align-items:center;gap:7px">'
+    +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;color:'+lblFaint+';text-transform:uppercase;font-family:Jost,sans-serif">✦ meditación del día</span>'
     +'</div>'
-    // body row
-    +'<div style="position:relative;padding:10px 16px 15px;display:flex;align-items:center;gap:14px">'
-    // emoji square
-    +'<div onclick="pOpenMeditation(\''+med.id+'\')" style="cursor:pointer;width:66px;height:66px;flex-shrink:0;border-radius:18px;background:'+c.strip
-    +';border:1.5px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 4px 20px '+c.glow+'">'+med.emoji+'</div>'
-    // text
-    +'<div style="flex:1;min-width:0;cursor:pointer" onclick="pGoTo(\'meditacion\')">'
-    +'<div style="font-size:15px;font-weight:800;color:'+c.label+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.2;margin-bottom:4px">'+med.title+'</div>'
-    +'<div style="font-size:11px;color:'+lblFaint+';font-family:Jost,sans-serif;font-weight:500;line-height:1.35;margin-bottom:10px">'+med.sub+'</div>'
-    // tag + duration + play
-    +'<div style="display:flex;align-items:center;gap:7px">'
-    +'<span style="font-size:8.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:'+c.label+';background:'+c.strip+';border:1px solid '+c.border+';padding:3px 8px;border-radius:20px;font-family:Jost,sans-serif">'+med.tag+'</span>'
+    // body
+    +'<div style="position:relative;padding:10px 18px 14px;display:flex;align-items:center;gap:16px">'
+    // emoji block
+    +'<div style="width:70px;height:70px;flex-shrink:0;border-radius:20px;background:'+c.strip
+    +';border:1.5px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 4px 24px '+c.glow+';filter:drop-shadow(0 0 12px '+c.glow+')">'
+    +med.emoji
+    +'</div>'
+    // text block
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:16px;font-weight:800;color:'+c.label+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.2;margin-bottom:5px">'+med.title+'</div>'
+    +'<div style="font-size:11.5px;color:'+lblFaint+';font-family:Jost,sans-serif;font-weight:400;line-height:1.4;margin-bottom:11px">'+med.sub+'</div>'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    +'<span style="font-size:8.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:'+c.label.replace(/,[\d.]+\)$/,',.80)')+';background:'+c.strip+';border:1px solid '+c.border.replace(/,[\d.]+\)$/,',.35)')+';padding:3px 9px;border-radius:20px;font-family:Jost,sans-serif">'+med.tag+'</span>'
     +'<span style="font-size:9.5px;color:'+lblGhost+';font-family:Jost,sans-serif;font-weight:600">⏱ '+med.duration+'</span>'
-    +'<div onclick="event.stopPropagation();pOpenMeditation(\''+med.id+'\')" style="cursor:pointer;margin-left:auto;width:40px;height:40px;border-radius:50%;background:'+c.border
-    +';display:flex;align-items:center;justify-content:center;font-size:16px;color:rgba(255,255,255,.95);box-shadow:0 4px 18px '+c.glow+';flex-shrink:0">▶</div>'
     +'</div>'
     +'</div>'
+    +'</div>'
+    // footer: acceder button
+    +'<div style="position:relative;padding:0 18px 14px;display:flex;justify-content:flex-end">'
+    +'<span style="font-size:11px;font-weight:800;letter-spacing:.5px;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.border+';padding:7px 18px;border-radius:100px;box-shadow:0 3px 14px '+c.glow+'">Acceder →</span>'
     +'</div>'
     +'</div>';
 }

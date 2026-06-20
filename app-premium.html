@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1000">
+  <meta name="app-version" content="1001">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260620-1000">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260620-1000">
+  <link rel="stylesheet" href="premium.css?v=20260620-1001">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260620-1001">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1232,6 +1232,8 @@
                   </button>
                 </div>
               </div>
+              <!-- ── MEDITACIÓN WIDGET ─────────────────────────── -->
+              <div id="homeMedWidget" style="margin:0 0 14px;box-sizing:border-box;width:100%"></div>
               <!-- PARA VOS unified ornate panel -->
               <div id="homeParaVosPanel" style="margin:0 0 18px;box-sizing:border-box;width:100%">
                 <div class="para-vos-frame">
@@ -1304,8 +1306,6 @@
                   <span>Ejercicio de respiración</span>
                 </button>
               </div>
-              <!-- ── MEDITACIÓN WIDGET ─────────────────────────── -->
-              <div id="homeMedWidget" style="margin:0 0 10px;box-sizing:border-box;width:100%"></div>
               <!-- ── PULSO EMOCIONAL ──────────────────────────── -->
               <div id="homePulse" style="display:none;margin:0 0 10px;box-sizing:border-box;width:100%">
                 <div onclick="_showPulseDetail()" style="cursor:pointer;background:linear-gradient(135deg,rgba(8,24,14,.88),rgba(4,16,8,.92));border:1px solid rgba(116,198,157,.18);border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:10px;-webkit-tap-highlight-color:transparent" onmousedown="this.style.opacity='.8'" onmouseup="this.style.opacity=''" ontouchstart="this.style.opacity='.8'" ontouchend="this.style.opacity=''">
@@ -4063,8 +4063,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260620-1000"></script>
-<script src="premium-redesign.js?v=20260620-1000"></script>
+<script src="premium.js?v=20260620-1001"></script>
+<script src="premium-redesign.js?v=20260620-1001"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
