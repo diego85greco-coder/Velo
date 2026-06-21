@@ -20528,7 +20528,7 @@ var _MEDITATIONS = [
     sub:'Ambient · ondas suaves · para soltar el día',
     tag:'Relajación', tagCol:'rgba(64,156,220,.22)', tagTxt:'rgba(140,210,255,.90)',
     duration:'~5 min',
-    audioUrl:'sounds/m-calma.mp3?v=1043',
+    audioUrl:'https://diego85greco-coder.github.io/Velo/sounds/m-calma.mp3?v=1044',
     col:{ bg:'rgba(6,18,38,.95)', card:'rgba(10,40,80,.60)', border:'rgba(64,156,220,.50)', glow:'rgba(64,156,220,.25)', label:'rgba(140,210,255,.95)', strip:'rgba(64,156,220,.18)' }
   },
   // ── MEDITACIÓN 1
@@ -20537,7 +20537,7 @@ var _MEDITATIONS = [
     sub:'Piano · cuencos · silencio interior',
     tag:'Meditación', tagCol:'rgba(220,80,130,.22)', tagTxt:'rgba(255,160,200,.90)',
     duration:'~3 min',
-    audioUrl:'sounds/m-med1.mp3?v=1043',
+    audioUrl:'https://diego85greco-coder.github.io/Velo/sounds/m-med1.mp3?v=1044',
     col:{ bg:'rgba(38,6,18,.95)', card:'rgba(80,10,40,.60)', border:'rgba(220,80,130,.50)', glow:'rgba(220,80,130,.25)', label:'rgba(255,160,200,.95)', strip:'rgba(220,80,130,.18)' }
   },
   // ── RELAJACIÓN 2
@@ -20546,7 +20546,7 @@ var _MEDITATIONS = [
     sub:'Naturaleza · instrumentos suaves · relajación total',
     tag:'Relajación', tagCol:'rgba(72,185,128,.22)', tagTxt:'rgba(140,230,175,.90)',
     duration:'~5 min',
-    audioUrl:'sounds/m-bosque.mp3?v=1043',
+    audioUrl:'https://diego85greco-coder.github.io/Velo/sounds/m-bosque.mp3?v=1044',
     col:{ bg:'rgba(4,18,12,.95)', card:'rgba(8,44,24,.60)', border:'rgba(72,185,128,.50)', glow:'rgba(72,185,128,.25)', label:'rgba(140,230,175,.95)', strip:'rgba(72,185,128,.18)' }
   },
   // ── MEDITACIÓN 2
@@ -20555,7 +20555,7 @@ var _MEDITATIONS = [
     sub:'Piano sereno · contemplación · calma profunda',
     tag:'Meditación', tagCol:'rgba(100,80,200,.22)', tagTxt:'rgba(180,160,255,.90)',
     duration:'~4 min',
-    audioUrl:'sounds/m-med2.mp3?v=1043',
+    audioUrl:'https://diego85greco-coder.github.io/Velo/sounds/m-med2.mp3?v=1044',
     col:{ bg:'rgba(10,8,38,.95)', card:'rgba(24,18,80,.60)', border:'rgba(100,80,200,.50)', glow:'rgba(100,80,200,.25)', label:'rgba(180,160,255,.95)', strip:'rgba(100,80,200,.18)' }
   },
   // ── RELAJACIÓN 3
@@ -20564,7 +20564,7 @@ var _MEDITATIONS = [
     sub:'Piano suave · cuencos · para el corazón',
     tag:'Relajación', tagCol:'rgba(180,120,240,.22)', tagTxt:'rgba(215,170,255,.90)',
     duration:'~5 min',
-    audioUrl:'sounds/m-paz.mp3?v=1043',
+    audioUrl:'https://diego85greco-coder.github.io/Velo/sounds/m-paz.mp3?v=1044',
     col:{ bg:'rgba(18,6,32,.95)', card:'rgba(40,12,64,.60)', border:'rgba(180,120,240,.50)', glow:'rgba(180,120,240,.25)', label:'rgba(215,170,255,.95)', strip:'rgba(180,120,240,.18)' }
   },
   // ── MEDITACIÓN 3
@@ -20573,7 +20573,7 @@ var _MEDITATIONS = [
     sub:'Piano etéreo · espacio · apertura interior',
     tag:'Meditación', tagCol:'rgba(200,110,180,.22)', tagTxt:'rgba(240,180,230,.90)',
     duration:'~4 min',
-    audioUrl:'sounds/m-med3.mp3?v=1043',
+    audioUrl:'https://diego85greco-coder.github.io/Velo/sounds/m-med3.mp3?v=1044',
     col:{ bg:'rgba(32,8,28,.95)', card:'rgba(64,16,55,.60)', border:'rgba(200,110,180,.50)', glow:'rgba(200,110,180,.25)', label:'rgba(240,180,230,.95)', strip:'rgba(200,110,180,.18)' }
   },
   // ── RELAJACIÓN 4
@@ -20582,7 +20582,7 @@ var _MEDITATIONS = [
     sub:'Ritmo de respiración · flauta · movimiento suave',
     tag:'Relajación', tagCol:'rgba(100,190,230,.22)', tagTxt:'rgba(180,225,245,.90)',
     duration:'~5 min',
-    audioUrl:'sounds/m-fluir.mp3?v=1043',
+    audioUrl:'https://diego85greco-coder.github.io/Velo/sounds/m-fluir.mp3?v=1044',
     col:{ bg:'rgba(4,20,32,.95)', card:'rgba(8,48,72,.60)', border:'rgba(100,190,230,.50)', glow:'rgba(100,190,230,.22)', label:'rgba(180,225,245,.95)', strip:'rgba(100,190,230,.18)' }
   },
   // ── MEDITACIÓN 4
@@ -20591,7 +20591,7 @@ var _MEDITATIONS = [
     sub:'Ambient oscuro · drones suaves · para soltar',
     tag:'Meditación', tagCol:'rgba(140,170,210,.22)', tagTxt:'rgba(200,220,245,.90)',
     duration:'~4 min',
-    audioUrl:'sounds/m-med4.mp3?v=1043',
+    audioUrl:'https://diego85greco-coder.github.io/Velo/sounds/m-med4.mp3?v=1044',
     col:{ bg:'rgba(8,14,28,.95)', card:'rgba(18,30,60,.60)', border:'rgba(140,170,210,.50)', glow:'rgba(140,170,210,.25)', label:'rgba(200,220,245,.95)', strip:'rgba(140,170,210,.18)' }
   },
   // ── RELAJACIÓN 5
@@ -20600,7 +20600,7 @@ var _MEDITATIONS = [
     sub:'Música suave · para empezar el día con calma',
     tag:'Relajación', tagCol:'rgba(230,175,50,.22)', tagTxt:'rgba(255,220,100,.90)',
     duration:'~5 min',
-    audioUrl:'sounds/m-amanecer.mp3?v=1043',
+    audioUrl:'https://diego85greco-coder.github.io/Velo/sounds/m-amanecer.mp3?v=1044',
     col:{ bg:'rgba(28,18,4,.95)', card:'rgba(60,38,8,.60)', border:'rgba(230,175,50,.50)', glow:'rgba(230,175,50,.24)', label:'rgba(255,220,100,.95)', strip:'rgba(230,175,50,.20)' }
   },
   // ── MEDITACIÓN 5
@@ -20609,7 +20609,7 @@ var _MEDITATIONS = [
     sub:'Piano meditativo · apertura · presencia plena',
     tag:'Meditación', tagCol:'rgba(200,160,80,.22)', tagTxt:'rgba(240,210,130,.90)',
     duration:'~4 min',
-    audioUrl:'sounds/m-med5.mp3?v=1043',
+    audioUrl:'https://diego85greco-coder.github.io/Velo/sounds/m-med5.mp3?v=1044',
     col:{ bg:'rgba(28,22,4,.95)', card:'rgba(60,46,8,.60)', border:'rgba(200,160,80,.50)', glow:'rgba(200,160,80,.24)', label:'rgba(240,210,130,.95)', strip:'rgba(200,160,80,.20)' }
   }
 ];
@@ -22591,6 +22591,32 @@ window.addEventListener('load', function(){
   _initSupabase();
   _checkStripeReturn();
   _checkPayPalReturn();
+
+  // Force SW update check + auto-reload on new version
+  (function(){
+    var _BUILT_V = 1044;
+    // Trigger SW to check for updates immediately
+    if(navigator.serviceWorker){
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        regs.forEach(function(r){ try{ r.update(); }catch(e){} });
+      });
+      // When a new SW takes control, reload to get fresh assets
+      navigator.serviceWorker.addEventListener('controllerchange', function(){
+        window.location.reload();
+      });
+    }
+    // Poll version.json every 90s; reload if version changed
+    function _pollVersion(){
+      fetch('/version.json?_=' + Date.now(), {cache:'no-store'})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          var v = d && d.v;
+          if(v && v > _BUILT_V){ window.location.reload(); }
+        }).catch(function(){});
+    }
+    setTimeout(_pollVersion, 5000);
+    setInterval(_pollVersion, 90000);
+  })();
 
   // Detect Supabase auth redirect type from both hash and query params
   // (Supabase v2 may use either format depending on flow/version)
