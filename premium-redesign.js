@@ -1059,7 +1059,12 @@ function initSurveyDismissal() {
     if (!segEl) {
       segEl = document.createElement('div');
       segEl.id = 'homeStatusSegPill';
-      el.insertBefore(segEl, gWrap || el.firstChild);
+      // gWrap may be a nested grandchild — use its actual parent to avoid HierarchyRequestError
+      if (gWrap && gWrap.parentNode) {
+        gWrap.parentNode.insertBefore(segEl, gWrap);
+      } else {
+        el.insertBefore(segEl, el.firstChild);
+      }
     }
     segEl.innerHTML = '<div class="r-status-combined-pill">'
       + '<button class="r-status-seg r-status-seg--disp' + (st === 'disponible' ? ' active' : '') + '" onclick="pSetUserStatus(\'disponible\')">Disponible</button>'
