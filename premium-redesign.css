@@ -12844,3 +12844,86 @@ body.r-dark .dark-bottle button[onclick*="pOpenBottleReply"]:hover {
   box-shadow: 0 2px 12px rgba(65,155,222,.28) !important;
 }
 
+
+/* ══════════════════════════════════════════════════════════════════
+   LAVANDA NOCTURNA — activa de 18:00 a 07:00
+   body.r-lavender se aplica por _applyTimeTheme() en premium-redesign.js
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Hero background — índigo oscuro en vez de verde oscuro */
+body.r-lavender.r-dark .r-hero-v2 {
+  background: linear-gradient(
+    140deg,
+    rgba(22,10,44,.92) 0%,
+    rgba(14,6,34,.96) 45%,
+    rgba(20,8,40,.90) 100%
+  ) !important;
+}
+
+/* Velo tintado de lavanda sobre el hero */
+body.r-lavender .r-hero-v2 { position: relative; }
+body.r-lavender .r-hero-v2::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(110,60,210,.07) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Partículas del home → lavanda */
+body.r-lavender #homeBgCanvas {
+  filter: hue-rotate(188deg) saturate(1.15) brightness(1.05) !important;
+}
+
+/* Card de registro (el grande verde oscuro) → índigo oscuro */
+body.r-lavender #homeRegisterOuter {
+  background: linear-gradient(160deg, rgba(30,12,56,.98), rgba(20,8,44,.99)) !important;
+  border-top-color: rgba(150,110,240,.72) !important;
+}
+
+/* Pill "MI ESTADO DE HOY" dentro de homeRegisterOuter */
+body.r-lavender #homeRegisterOuter .r-reg-lbl-pill {
+  background: rgba(130,90,220,.20) !important;
+  color: rgba(200,175,255,.85) !important;
+  border-color: rgba(150,110,240,.35) !important;
+}
+
+/* Texto decorativo tope */
+body.r-lavender #homeRegisterOuter .r-reg-top-bar {
+  background: linear-gradient(90deg, rgba(140,90,230,.80), rgba(180,130,255,.60)) !important;
+}
+
+/* Widget Mi Disponibilidad → lavanda */
+body.r-lavender #homeStatusToggle {
+  background: rgba(120,80,220,.10) !important;
+  border-color: rgba(150,110,240,.28) !important;
+}
+body.r-lavender #homeStatusToggle .p-tog.on {
+  background: rgba(150,110,240,.85) !important;
+}
+
+/* Cards de acción (Guardianes / Sala de Ayuda / etc.) — solo tint */
+body.r-lavender .r-hero-actions > div {
+  filter: hue-rotate(188deg) saturate(0.95);
+}
+
+/* Pregunta del día — borde superior lavanda */
+body.r-lavender #homeDailyQ {
+  border-top-color: rgba(160,120,240,.60) !important;
+}
+
+/* Botón primario → gradiente lavanda */
+body.r-lavender .p-btn--primary:not([style*="background"]) {
+  background: linear-gradient(135deg, rgba(140,90,240,.88), rgba(110,60,220,.82)) !important;
+  border-color: rgba(155,110,245,.60) !important;
+}
+
+/* Dots del carousel → lavanda */
+body.r-lavender .carousel-dots span { background: rgba(160,120,240,.35) !important; }
+body.r-lavender .carousel-dots span.cd-active { background: rgba(160,120,240,.85) !important; }
+
+/* Etiqueta COMUNIDAD → lavanda */
+body.r-lavender .home-sec-lbl-comunidad {
+  color: rgba(190,155,255,.75) !important;
+}

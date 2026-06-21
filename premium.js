@@ -21031,7 +21031,8 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       +'<span style="font-size:20px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
       +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:rgba(255,255,255,.50);font-family:Jost,sans-serif">'+heartCount+'</span>'
       +'</button>'
-      +(!isHome&&!mine ? '<button onclick="pReportMomento(\''+_escHtml(m.id)+'\',this)" title="Reportar" class="mc-report" style="background:none;border:none;cursor:pointer;padding:3px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span style="font-size:7px;font-weight:700;letter-spacing:.3px;text-transform:uppercase">Reportar</span></button>' : '')
+      +(mine ? '<button onclick="event.stopPropagation();pDeleteMomento(\''+_escHtml(m.id)+'\',this)" title="Borrar" style="background:none;border:none;cursor:pointer;padding:3px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,100,100,.72)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg><span style="font-size:7px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:rgba(255,100,100,.60)">Borrar</span></button>'
+        : !isHome ? '<button onclick="pReportMomento(\''+_escHtml(m.id)+'\',this)" title="Reportar" class="mc-report" style="background:none;border:none;cursor:pointer;padding:3px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span style="font-size:7px;font-weight:700;letter-spacing:.3px;text-transform:uppercase">Reportar</span></button>' : '')
       +'</div>'
       +'</div>'
       +'</div>';
@@ -21171,6 +21172,7 @@ async function pOpenMomentoSheet(momentoId){
     +'<span style="font-size:20px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
     +'<span id="mheart-'+_escHtml(String(m.id))+'" style="font-size:15px;font-weight:800;color:'+col.label+'">'+heartCount+'</span>'
     +'</button>'
+    +(m.user_hash===_momentoUserHash()?'<button onclick="pDeleteMomento(\''+_escHtml(String(m.id))+'\',null,true)" style="display:flex;align-items:center;gap:8px;background:rgba(220,60,60,.10);border:1.5px solid rgba(255,90,90,.28);border-radius:100px;padding:9px 18px;cursor:pointer;font-family:\'Jost\',sans-serif"><span style="font-size:15px">🗑️</span><span style="font-size:12px;font-weight:700;color:rgba(255,130,130,.90)">Borrar momento</span></button>':'')
     +'</div>'
     // Comments header
     +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">'
@@ -21193,6 +21195,23 @@ async function pOpenMomentoSheet(momentoId){
   var feed=document.getElementById('momentoCommentFeed');
   var comments=await _loadMomentoComments(momentoId);
   if(feed) feed.innerHTML=_renderMomentoComments(comments,col);
+}
+async function pDeleteMomento(momentoId, btnEl, fromModal){
+  if(!confirm('¿Borrar este momento? No se puede deshacer.')) return;
+  _initSupabase(); if(!sbClient) return;
+  try {
+    var res = await sbClient.from('momentos').delete().eq('id', String(momentoId));
+    if(res.error){ console.warn('[pDeleteMomento]', res.error); return; }
+    _homeMomentoCache = (_homeMomentoCache||[]).filter(function(m){ return String(m.id) !== String(momentoId); });
+    var sh = document.getElementById('momentoDetailSheetOv');
+    if(sh) sh.remove();
+    if(btnEl){
+      var card = typeof btnEl.closest==='function' ? btnEl.closest('.home-mc') : null;
+      if(card) card.remove();
+    }
+    _renderMomentoCards(_homeMomentoCache.slice(0,4), 'homeMomentoFeed');
+    _initCarouselDots('homeMomentoFeed','momentoDots');
+  } catch(e){ console.warn('[pDeleteMomento]', e); }
 }
 async function _initHomeMomento(){
   var section=document.getElementById('homeMomentoSection');

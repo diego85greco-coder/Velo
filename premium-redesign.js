@@ -648,6 +648,8 @@
     initSurveyDismissal();
     enrichGreeting();
     initGreetingRotation();
+    _applyTimeTheme();
+    setInterval(_applyTimeTheme, 60000);
   }
 
   /* ── 5. Sync valores dinámicos del hero v2 ──────────────────── */
@@ -754,6 +756,14 @@
 /* ── Dark mode toggle — global (called from HTML onclick) ─────────── */
 function rToggleDarkMode() {
   // Dark mode is permanent — this function is a no-op
+}
+
+/* ── Tema temporal: verde (07–18 h) / lavanda (18–07 h) ─────────── */
+function _applyTimeTheme(){
+  var h = new Date().getHours();
+  var isLavanda = h >= 18 || h < 7;
+  document.body.classList.toggle('r-lavender', isLavanda);
+  document.body.classList.toggle('r-theme-green', !isLavanda);
 }
 
 /* ── Particle animation — firefly + rising embers style ─────────── */
