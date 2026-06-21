@@ -10117,7 +10117,7 @@ function _startRespiraMusic(){
   _stopRespiraMusic();
   _respiraMuted = false;
   try{
-    _respiraAudio = new Audio('sounds/meditacion.mp3');
+    _respiraAudio = new Audio('sounds/meditacion.mp3?v=1036');
     _respiraAudio.loop = true;
     _respiraAudio.volume = 0.55;
     _respiraAudio.setAttribute('playsinline','');
@@ -20455,7 +20455,7 @@ async function pPlayAmbient(type){
 
     // Use cached buffer or fetch + decode
     if(!_ambCache[type]){
-      var resp = await fetch('sounds/'+type+'.mp3', {cache:'force-cache'});
+      var resp = await fetch('sounds/'+type+'.mp3?v=1036', {cache:'force-cache'});
       if(_ambPlayToken !== _myToken) return;
       if(!resp.ok) throw new Error('Archivo no encontrado');
       var arrayBuf = await resp.arrayBuffer();
