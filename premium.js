@@ -21212,10 +21212,9 @@ async function pOpenMomentoSheet(momentoId){
     +'</div>'
     // Actions row
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">'
-    +'<button id="momentoSheetHeartBtn" onclick="event.stopPropagation();pHeartMomento(\''+mId+'\',this)" style="display:flex;align-items:center;gap:10px;background:'+(liked?'linear-gradient(135deg,rgba(220,50,80,.35),rgba(180,30,60,.30))':'rgba(255,255,255,.06)')+';border:2px solid '+(liked?'rgba(255,80,100,.60)':ca(col.border,'.35'))+';border-radius:100px;padding:12px 24px;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .18s;flex:1">'
-    +'<span style="font-size:22px;line-height:1;transition:transform .18s">'+(liked?'❤️':'🤍')+'</span>'
-    +'<span id="mheart-'+mId+'" style="font-size:16px;font-weight:800;color:'+(liked?'rgba(255,130,150,1)':col.label)+'">'+heartCount+'</span>'
-    +'<span style="font-size:11px;color:rgba(255,255,255,.35);font-family:\'Jost\',sans-serif;font-weight:500">'+(heartCount===1?'reacción':'reacciones')+'</span>'
+    +'<button id="momentoSheetHeartBtn" onclick="event.stopPropagation();pHeartMomento(\''+mId+'\',this)" style="display:inline-flex;align-items:center;gap:8px;background:'+(liked?'rgba(220,50,80,.22)':ca(col.strip,'.18'))+';border:1.5px solid '+(liked?'rgba(255,80,100,.55)':ca(col.border,'.40'))+';border-radius:100px;padding:10px 20px;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .18s">'
+    +'<span style="font-size:18px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
+    +'<span id="mheart-'+mId+'" style="font-size:14px;font-weight:800;color:'+(liked?'rgba(255,130,150,1)':col.label)+'">'+heartCount+'</span>'
     +'</button>'
     +'</div>'
     // Comments header

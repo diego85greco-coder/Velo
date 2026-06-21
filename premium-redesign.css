@@ -12962,3 +12962,7 @@ body.r-lavender .home-sec-lbl-comunidad {
 /* ── Landing page: ocultar sidebar en desktop (columna vacía) ─── */
 body.is-landing .p-sidebar { display: none !important; }
 body.is-landing .p-main-content { width: 100% !important; max-width: 100% !important; }
+
+/* ── v1033 — homeGreetSub visible on all themes ── */
+#homeGreetSub { color: rgba(255,255,255,.78) !important; }
+body:not(.r-dark) #homeGreetSub { color: rgba(30,60,40,.72) !important; }
