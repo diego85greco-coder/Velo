@@ -20850,21 +20850,29 @@ function _initCarouselDots(feedId, dotsId){
     return '<span'+(i===0?' class="cd-active"':'')+' data-i="'+i+'"></span>';
   }).join('');
   if(feed._dotsListener) feed.removeEventListener('scroll', feed._dotsListener);
-  var _cardW = cards[0] ? cards[0].offsetWidth + 10 : feed.offsetWidth * 0.87 + 10;
+  var _cardW = 0;
+  function _getCardW(){
+    if(_cardW > 10) return _cardW;
+    var w = cards[0] ? cards[0].offsetWidth : 0;
+    _cardW = w > 10 ? w + 10 : Math.max(feed.offsetWidth * 0.80, 80);
+    return _cardW;
+  }
   function _apply3D(){
-    var prog = feed.scrollLeft / _cardW;
+    var cw = _getCardW();
+    var prog = feed.scrollLeft / cw;
     Array.from(cards).forEach(function(card, i){
       var dist = i - prog;
       var abs = Math.abs(dist);
-      var scale = Math.max(0.88, 1 - abs * 0.06);
-      var opacity = Math.max(0.55, 1 - abs * 0.24);
-      var rotY = Math.max(-5, Math.min(5, dist * 3));
-      card.style.transform = 'perspective(900px) scale('+scale.toFixed(3)+') rotateY('+rotY.toFixed(1)+'deg)';
+      var scale = Math.max(0.85, 1 - abs * 0.08);
+      var opacity = Math.max(0.50, 1 - abs * 0.30);
+      var rotY = Math.max(-8, Math.min(8, dist * 4));
+      card.style.transform = 'perspective(700px) scale('+scale.toFixed(3)+') rotateY('+rotY.toFixed(1)+'deg)';
       card.style.opacity = opacity.toFixed(2);
     });
   }
   feed._dotsListener = function(){
-    var idx = Math.min(Math.round(feed.scrollLeft / _cardW), cards.length - 1);
+    var cw = _getCardW();
+    var idx = Math.min(Math.round(feed.scrollLeft / cw), cards.length - 1);
     dotsEl.querySelectorAll('span').forEach(function(s,i){ s.classList.toggle('cd-active', i===idx); });
     _apply3D();
   };
