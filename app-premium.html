@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1052">
+  <meta name="app-version" content="1053">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260621-1052">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260621-1052">
+  <link rel="stylesheet" href="premium.css?v=20260621-1053">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260621-1053">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1031,36 +1031,58 @@
           <div class="home-header r-hero-v2">
             <div class="r-hero-left">
               <div id="homeHeroLabel" style="font-size:10px;font-weight:700;letter-spacing:2.8px;text-transform:uppercase;color:rgba(200,158,56,.72);margin-bottom:12px;display:flex;align-items:center;gap:6px"><span>—</span><span>JARDÍN DE HOY</span></div>
-              <!-- Guardian mode control — static HTML, state synced via _renderHomeStatusToggle() -->
-              <div id="homeStatusToggle" style="margin:0 0 16px;box-sizing:border-box;width:100%;padding:16px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.28);border-radius:18px">
-                <!-- Header -->
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-                  <span style="font-size:20px;line-height:1">💚</span>
-                  <span style="font-size:10.5px;font-weight:700;color:rgba(180,240,210,.80);font-family:'Jost',sans-serif;letter-spacing:2px;text-transform:uppercase">Mi Disponibilidad</span>
+              <!-- Widget unificado ACOMPAÑAMIENTO: disponibilidad + guardianes + sala -->
+              <div id="homeStatusToggle" style="margin:0 0 16px;box-sizing:border-box;width:100%;background:linear-gradient(150deg,rgba(8,28,18,.96),rgba(12,38,24,.94));border:1.5px solid rgba(116,198,157,.32);border-radius:22px;overflow:hidden;box-shadow:0 8px 36px rgba(0,0,0,.38),inset 0 1px 0 rgba(116,198,157,.08)">
+                <!-- Barra decorativa top -->
+                <div style="height:3px;background:linear-gradient(90deg,transparent,rgba(116,198,157,.60) 30%,rgba(100,180,255,.50) 70%,transparent)"></div>
+                <!-- Sección disponibilidad -->
+                <div style="padding:16px 16px 14px">
+                  <div style="font-size:9.5px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.65);font-family:'Jost',sans-serif;margin-bottom:12px">💚 Mi disponibilidad</div>
+                  <!-- homeStatusSegPill lo inserta JS aquí -->
+                  <div id="homeGuardianWrap" style="display:flex;align-items:flex-start;justify-content:space-around;gap:0;flex-shrink:0;padding-top:12px;border-top:1px solid rgba(116,198,157,.14)">
+                    <span style="display:none"></span>
+                    <!-- Modo incógnito -->
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1">
+                      <div style="display:flex;align-items:center;gap:5px">
+                        <div style="font-size:14px">👤</div>
+                        <div class="p-tog" id="homeIncognitoTog" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>
+                      </div>
+                      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.88);font-family:'Jost',sans-serif;text-align:center;line-height:1.2">Modo incógnito</div>
+                      <div style="font-size:9.5px;color:rgba(180,230,200,.60);font-family:'Jost',sans-serif;text-align:center;line-height:1.35">Ocultá tu foto e información</div>
+                    </div>
+                    <div style="width:1px;align-self:stretch;background:rgba(116,198,157,.15);flex-shrink:0;margin:0 8px"></div>
+                    <!-- Modo guardián -->
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1">
+                      <div style="display:flex;align-items:center;gap:5px">
+                        <div style="font-size:14px">🛡️</div>
+                        <div class="p-tog" id="homeGuardianModeTog" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>
+                      </div>
+                      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.88);font-family:'Jost',sans-serif;text-align:center;line-height:1.2">Modo guardián</div>
+                      <div style="font-size:9.5px;color:rgba(180,230,200,.60);font-family:'Jost',sans-serif;text-align:center;line-height:1.35">Aparecés en la lista de guardianes</div>
+                    </div>
+                  </div>
                 </div>
-                <!-- homeStatusSegPill lo inserta JS aquí, antes de homeGuardianWrap -->
-                <div id="homeGuardianWrap" style="display:flex;align-items:flex-start;justify-content:space-around;gap:0;flex-shrink:0;padding-top:14px;border-top:1px solid rgba(116,198,157,.18);margin-top:2px">
-                  <!-- Span invisible: absorbe el texto "Activarme"/"Activo" que inyecta el JS -->
-                  <span style="display:none"></span>
-                  <!-- Modo incógnito -->
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1">
-                    <div style="display:flex;align-items:center;gap:5px">
-                      <div style="font-size:14px">👤</div>
-                      <div class="p-tog" id="homeIncognitoTog" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>
-                    </div>
-                    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.88);font-family:'Jost',sans-serif;text-align:center;line-height:1.2">Modo incógnito</div>
-                    <div style="font-size:9.5px;color:rgba(180,230,200,.70);font-family:'Jost',sans-serif;text-align:center;line-height:1.35">Ocultá tu foto e información</div>
+                <!-- Divisor -->
+                <div style="height:1px;background:rgba(116,198,157,.14);margin:0 16px"></div>
+                <!-- Sección Guardianes -->
+                <div style="padding:16px 16px 14px">
+                  <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+                    <span style="font-size:22px;line-height:1">🛡️</span>
+                    <span style="font-size:15px;font-weight:800;color:rgba(190,220,255,.95);font-family:'Cormorant Garamond',serif;font-style:italic;letter-spacing:.2px">Guardianes</span>
                   </div>
-                  <div style="width:1px;align-self:stretch;background:rgba(116,198,157,.18);flex-shrink:0;margin:0 8px"></div>
-                  <!-- Modo guardián -->
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1">
-                    <div style="display:flex;align-items:center;gap:5px">
-                      <div style="font-size:14px">🛡️</div>
-                      <div class="p-tog" id="homeGuardianModeTog" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>
-                    </div>
-                    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.88);font-family:'Jost',sans-serif;text-align:center;line-height:1.2">Modo guardián</div>
-                    <div style="font-size:9.5px;color:rgba(180,230,200,.70);font-family:'Jost',sans-serif;text-align:center;line-height:1.35">Aparecés en la lista de guardianes</div>
+                  <div style="font-size:12px;color:rgba(255,255,255,.65);font-family:'Jost',sans-serif;line-height:1.65;margin-bottom:12px">Personas reales de la comunidad que eligieron estar ahí para otros. Para aparecer en la lista necesitás estar <strong style="color:rgba(190,220,255,.88)">disponible</strong> y tener el <strong style="color:rgba(190,220,255,.88)">modo guardián activo</strong>. Si alguien te elige, recibís un popup para aceptar o rechazar.</div>
+                  <button onclick="pGoTo('guardians')" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(100,160,240,.50);background:linear-gradient(135deg,rgba(50,100,200,.42),rgba(30,70,160,.35));color:rgba(200,225,255,.97);font-size:13px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.4px;box-shadow:0 4px 16px rgba(80,130,220,.20);touch-action:manipulation">🛡️ Ir a Guardianes →</button>
+                </div>
+                <!-- Divisor -->
+                <div style="height:1px;background:rgba(116,198,157,.14);margin:0 16px"></div>
+                <!-- Sección Sala de Ayuda -->
+                <div style="padding:16px 16px 18px">
+                  <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+                    <span style="font-size:22px;line-height:1">💬</span>
+                    <span style="font-size:15px;font-weight:800;color:rgba(160,235,195,.95);font-family:'Cormorant Garamond',serif;font-style:italic;letter-spacing:.2px">Sala de Ayuda</span>
                   </div>
+                  <div style="font-size:12px;color:rgba(255,255,255,.65);font-family:'Jost',sans-serif;line-height:1.65;margin-bottom:12px">Publicá si necesitás acompañamiento, o acompañá a alguien. Solo necesitás estar <strong style="color:rgba(160,235,195,.88)">disponible</strong>. Si alguien quiere acompañarte, te llega un popup en cualquier parte de la app — sin interrupciones.</div>
+                  <button onclick="pGoTo('help')" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(116,198,157,.50);background:linear-gradient(135deg,rgba(60,140,90,.42),rgba(40,100,65,.35));color:rgba(175,245,210,.97);font-size:13px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.4px;box-shadow:0 4px 16px rgba(80,180,120,.20);touch-action:manipulation">💬 Ir a Sala de Ayuda →</button>
                 </div>
               </div>
               <!-- Smart push banner: shows install prompt or activate button, hides when done -->
@@ -1252,24 +1274,6 @@
               </div>
               <!-- Guardianes + Sala de Ayuda — integrado: descripción + botón -->
               <div class="r-hero-actions">
-                <!-- Card Guardianes -->
-                <div style="flex-basis:100%;width:100%;background:rgba(80,130,200,.10);border:1px solid rgba(100,160,240,.22);border-radius:18px;padding:16px;box-sizing:border-box">
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                    <span style="font-size:20px;line-height:1">🛡️</span>
-                    <span style="font-size:13px;font-weight:800;color:rgba(190,220,255,.92);font-family:'Jost',sans-serif;letter-spacing:.3px">Guardianes</span>
-                  </div>
-                  <div style="font-size:11.5px;color:rgba(255,255,255,.68);font-family:'Jost',sans-serif;line-height:1.6;margin-bottom:14px">Necesitás estar <strong style="color:rgba(255,255,255,.88)">disponible</strong> y con <strong style="color:rgba(255,255,255,.88)">modo guardián activo</strong>. Si alguien te elige de la lista, te llegará un popup para aceptar o rechazar.</div>
-                  <button onclick="pGoTo('guardians')" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid rgba(100,160,240,.45);background:linear-gradient(135deg,rgba(50,100,200,.38),rgba(30,70,160,.30));color:rgba(190,220,255,.95);font-size:13px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.4px;touch-action:manipulation">Guardianes →</button>
-                </div>
-                <!-- Card Sala de Ayuda -->
-                <div style="flex-basis:100%;width:100%;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.22);border-radius:18px;padding:16px;box-sizing:border-box">
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                    <span style="font-size:20px;line-height:1">💬</span>
-                    <span style="font-size:13px;font-weight:800;color:rgba(160,230,190,.92);font-family:'Jost',sans-serif;letter-spacing:.3px">Sala de Ayuda</span>
-                  </div>
-                  <div style="font-size:11.5px;color:rgba(255,255,255,.68);font-family:'Jost',sans-serif;line-height:1.6;margin-bottom:14px">Publicá si necesitás acompañamiento, o acompañá a alguien. Lo único que importa es estar <strong style="color:rgba(255,255,255,.88)">disponible</strong>. Si alguien quiere acompañarte, te llegará un popup en cualquier parte de la app.</div>
-                  <button onclick="pGoTo('help')" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid rgba(116,198,157,.40);background:linear-gradient(135deg,rgba(60,140,90,.32),rgba(40,100,65,.26));color:rgba(160,240,195,.95);font-size:13px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.4px;touch-action:manipulation">Sala de Ayuda →</button>
-                </div>
                 <!-- Card Mensajes al Mar -->
                 <div style="flex-basis:100%;width:100%;background:rgba(20,80,180,.10);border:1px solid rgba(80,160,240,.22);border-radius:18px;padding:16px;box-sizing:border-box">
                   <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
@@ -4113,8 +4117,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260621-1052"></script>
-<script src="premium-redesign.js?v=20260621-1052"></script>
+<script src="premium.js?v=20260621-1053"></script>
+<script src="premium-redesign.js?v=20260621-1053"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

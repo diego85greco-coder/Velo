@@ -3982,14 +3982,14 @@ function _buildDqCards(list){
       +'</div>'
       +actionBtn
       +'</div>'
-      // Response text
+      // Response text — indented to align with name (avatar 36px + gap 9px)
       +(r.response_text
-        ? '<div style="font-size:15.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:rgba(255,255,255,.90);line-height:1.55;word-break:break-word;margin-bottom:10px">'+_escHtml(r.response_text)+'</div>'
+        ? '<div style="font-size:15.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:rgba(255,255,255,.90);line-height:1.55;word-break:break-word;margin-bottom:10px;padding-left:45px">'+_escHtml(r.response_text)+'</div>'
         : '')
-      // Bottom: reaction pills + button
-      +'<div class="dq-rx-bar" style="display:flex;align-items:center;gap:5px;border-top:1px solid '+col.border.replace(/[\d.]+\)$/,'.18)')+';padding-top:8px">'
-      +'<span class="dq-rx-pills">'+rxPills+'</span>'
-      +'<span style="margin-left:auto;font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif;letter-spacing:.2px">'+(_totalRx>0?'Reaccionar ›':'✦ Reaccionar')+'</span>'
+      // Bottom: reaction pills + button — padding-right ensures "Reaccionar" never clips
+      +'<div class="dq-rx-bar" style="display:flex;align-items:center;gap:5px;border-top:1px solid '+col.border.replace(/[\d.]+\)$/,'.18)')+';padding-top:8px;padding-right:2px">'
+      +'<span class="dq-rx-pills" style="flex:1;min-width:0">'+rxPills+'</span>'
+      +'<span style="flex-shrink:0;white-space:nowrap;font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif;letter-spacing:.2px;padding-left:6px">'+(_totalRx>0?'Reaccionar ›':'✦ Reaccionar')+'</span>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -4078,7 +4078,7 @@ function pOpenDqResponseSheet(responseId){
     // Reaction row — 3 zen circles side by side
     +'<div style="display:flex;gap:10px;margin-bottom:20px">'+rxHtml+'</div>'
     // Close
-    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:13px;background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:100px;color:rgba(255,255,255,.30);font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase">· cerrar ·</button>'
+    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:14px;background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.30);border-radius:100px;color:rgba(255,255,255,.90);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:1.8px;text-transform:uppercase">· CERRAR ·</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
@@ -22625,7 +22625,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1052;
+    var _BUILT_V = 1053;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
