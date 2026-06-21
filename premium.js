@@ -21074,19 +21074,26 @@ function _renderMomentoComments(comments,col){
   var bg=col?col.bg:'rgba(6,28,18,.92)';
   var ca=function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
   if(!comments||!comments.length){
-    return '<div style="text-align:center;padding:24px 8px;font-size:13px;color:rgba(255,255,255,.35);font-family:\'Jost\',sans-serif;font-style:italic">Sé el primero en comentar 🌿</div>';
+    return '<div style="text-align:center;padding:28px 8px 20px;font-family:\'Jost\',sans-serif">'
+      +'<div style="font-size:36px;margin-bottom:10px;opacity:.60">💬</div>'
+      +'<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.50);margin-bottom:4px">Todavía no hay comentarios</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.28)">Sé el primero en sumar algo 🌿</div>'
+      +'</div>';
   }
   return comments.map(function(c){
     var av=c.user_avatar||''; var isImg=av&&av.startsWith('http');
     var name=c.user_name||'Anónimo/a';
     var avHtml=isImg
-      ?'<img src="'+_escHtml(av)+'" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid '+ca(brd,'.50')+';flex-shrink:0">'
-      :'<div style="width:30px;height:30px;border-radius:50%;background:'+ca(strip,'.32')+';display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:2px solid '+ca(brd,'.45')+'">'+_escHtml(av||'🌿')+'</div>';
-    return '<div style="display:flex;gap:9px;margin-bottom:12px;align-items:flex-start">'
+      ?'<img src="'+_escHtml(av)+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid '+ca(brd,'.55')+';flex-shrink:0">'
+      :'<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,'+ca(strip,'.40')+','+ca(bg,'1')+');display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;border:2px solid '+ca(brd,'.50')+'">'+_escHtml(av||'🌿')+'</div>';
+    return '<div style="display:flex;gap:10px;margin-bottom:14px;align-items:flex-start">'
       +avHtml
-      +'<div style="flex:1;background:'+ca(strip,'.18')+';border:1px solid '+ca(brd,'.30')+';border-left:2.5px solid '+ca(brd,'.65')+';border-radius:14px;padding:9px 13px">'
-      +'<div style="font-size:11px;font-weight:800;color:'+ca(lbl,'.88')+';font-family:\'Jost\',sans-serif;margin-bottom:4px">'+_escHtml(name)+'<span style="font-weight:400;color:rgba(255,255,255,.35);margin-left:6px;font-size:10px">· '+_momentoAgo(c.created_at)+'</span></div>'
-      +'<div style="font-size:13.5px;color:rgba(255,255,255,.90);line-height:1.55;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:5px">'
+      +'<span style="font-size:12px;font-weight:800;color:'+ca(lbl,'.95')+';font-family:\'Jost\',sans-serif">'+_escHtml(name)+'</span>'
+      +'<span style="font-size:10px;color:rgba(255,255,255,.32);font-family:\'Jost\',sans-serif">'+_momentoAgo(c.created_at)+'</span>'
+      +'</div>'
+      +'<div style="background:'+ca(strip,'.14')+';border:1px solid '+ca(brd,'.28')+';border-left:3px solid '+ca(brd,'.70')+';border-radius:0 14px 14px 14px;padding:10px 14px;font-size:13.5px;color:rgba(255,255,255,.92);line-height:1.55;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -21149,55 +21156,86 @@ async function pOpenMomentoSheet(momentoId){
   var ov=document.createElement('div');
   ov.className='p-modal-ov show'; ov.id='momentoDetailSheetOv';
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  var mId=_escHtml(String(m.id));
   ov.innerHTML=
-    '<div class="p-sheet p-sheet-dark" style="max-height:92vh;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg,'+ca(col.bg,'.82')+' 0%,rgba(6,10,20,1) 38%);border-top:4px solid '+col.border+';box-shadow:0 -8px 64px '+ca(col.glow,'.55')+',0 -2px 0 '+ca(col.border,'.55')+'">'
-    +'<div class="p-sheet-handle" style="background:'+col.border+'"></div>'
-    // ── Hero: vivid colored gradient + large emoji ──
-    +'<div style="background:linear-gradient(170deg,'+ca(col.border,'.70')+' 0%,'+ca(col.bg,'1')+' 48%,rgba(6,10,20,1) 100%);padding:22px 20px 18px;position:relative;overflow:hidden;flex-shrink:0;border-bottom:1px solid '+ca(col.border,'.32')+'">'
-    +'<div style="position:absolute;right:-14px;top:-10px;font-size:130px;opacity:.22;line-height:1;pointer-events:none;filter:blur(1px)">'+m.emoji+'</div>'
-    +'<div style="display:flex;align-items:center;gap:16px;position:relative;z-index:1">'
-    +'<span style="font-size:68px;line-height:1;filter:drop-shadow(0 0 28px '+ca(col.border,'.65')+');flex-shrink:0">'+m.emoji+'</span>'
-    +'<div style="flex:1;min-width:0">'
-    +'<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,0,0,.52);border:1.5px solid '+ca(col.border,'.42')+';border-radius:22px;padding:6px 14px 6px 6px;margin-bottom:6px;backdrop-filter:blur(8px)">'
-    +avSmall
-    +'<div>'
-    +'<div style="font-size:13px;font-weight:800;color:'+col.label+';font-family:\'Jost\',sans-serif;line-height:1.2">'+(canSeeProfile?'<span style="cursor:pointer"'+avClick+'>':'')+_escHtml(authorName)+(canSeeProfile?'</span>':'')+'</div>'
-    +'<div style="font-size:10px;color:rgba(255,255,255,.48);font-family:\'Jost\',sans-serif;margin-top:2px">'+_momentoAgo(m.created_at||'')+' · ⏱ '+timeLeft+'h restantes</div>'
+    '<style>'
+    +'@keyframes mds-glow{0%,100%{filter:drop-shadow(0 0 22px '+ca(col.border,'.55')+') drop-shadow(0 0 48px '+ca(col.glow,'.35')+');}50%{filter:drop-shadow(0 0 40px '+ca(col.border,'.80')+') drop-shadow(0 0 80px '+ca(col.glow,'.50')+');}}'
+    +'@keyframes mds-in{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}'
+    +'@keyframes mds-heart-pop{0%{transform:scale(1);}40%{transform:scale(1.35);}100%{transform:scale(1);}}'
+    +'#mds-emoji{animation:mds-glow 3s ease-in-out infinite;}'
+    +'#mds-body>*{animation:mds-in .32s ease both;}'
+    +'#mds-body>*:nth-child(2){animation-delay:.06s;}'
+    +'#mds-body>*:nth-child(3){animation-delay:.12s;}'
+    +'#mds-body>*:nth-child(4){animation-delay:.18s;}'
+    +'#momentoCommentInput::placeholder{color:rgba(255,255,255,.32);}'
+    +'#momentoCommentInput:focus{border-color:'+ca(col.border,'.80')+' !important;outline:none;}'
+    +'</style>'
+    +'<div class="p-sheet p-sheet-dark" style="max-height:92vh;display:flex;flex-direction:column;overflow:hidden;background:rgba(8,10,18,1);border-top:3px solid '+col.border+';box-shadow:0 -12px 80px '+ca(col.glow,'.60')+',0 -2px 0 '+ca(col.border,'.70')+'">'
+    +'<div class="p-sheet-handle" style="background:'+col.border+';width:40px;margin:10px auto 0;border-radius:4px;height:4px;flex-shrink:0"></div>'
+    // ── Hero ──
+    +'<div style="background:linear-gradient(175deg,'+ca(col.border,'.28')+' 0%,'+ca(col.bg,'1')+' 55%,rgba(8,10,18,1) 100%);padding:24px 20px 20px;position:relative;overflow:hidden;flex-shrink:0">'
+    // glow blob
+    +'<div style="position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:200px;border-radius:50%;background:'+ca(col.glow,'.40')+';filter:blur(60px);pointer-events:none"></div>'
+    // big bg emoji watermark
+    +'<div style="position:absolute;right:-12px;top:6px;font-size:110px;opacity:.12;pointer-events:none;transform:rotate(12deg)">'+m.emoji+'</div>'
+    // emoji + author row
+    +'<div style="display:flex;align-items:flex-end;gap:18px;position:relative;z-index:1">'
+    // emoji
+    +'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">'
+    +'<span id="mds-emoji" style="font-size:76px;line-height:1;display:block">'+m.emoji+'</span>'
+    +'<div style="background:'+ca(col.border,'.22')+';border:1px solid '+ca(col.border,'.50')+';border-radius:100px;padding:3px 10px;font-size:10px;font-weight:800;color:'+col.label+';font-family:\'Jost\',sans-serif;letter-spacing:.5px;white-space:nowrap">⏱ '+timeLeft+'h</div>'
     +'</div>'
+    // author info
+    +'<div style="flex:1;min-width:0;padding-bottom:4px">'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+    +'<div style="position:relative;flex-shrink:0">'
+    +(isImg
+      ?'<img src="'+_escHtml(av)+'" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2.5px solid '+ca(col.border,'.75')+';display:block"'+avClick+'>'
+      :'<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,'+ca(col.strip,'.50')+','+ca(col.bg,'1')+');display:flex;align-items:center;justify-content:center;font-size:22px;border:2.5px solid '+ca(col.border,'.75')+';flex-shrink:0"'+avClick+'>'+_escHtml(av||'🌿')+'</div>')
+    +'<div style="position:absolute;bottom:-2px;right:-2px;width:14px;height:14px;background:'+col.border+';border-radius:50%;border:2px solid rgba(8,10,18,1)"></div>'
+    +'</div>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:15px;font-weight:800;color:#fff;font-family:\'Jost\',sans-serif;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(canSeeProfile?'<span style="cursor:pointer"'+avClick+'>':'')+_escHtml(authorName)+(canSeeProfile?'</span>':'')+'</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.50);font-family:\'Jost\',sans-serif;margin-top:3px">'+_momentoAgo(m.created_at||'')+'</div>'
+    +'</div>'
+    +(m.user_hash===_momentoUserHash()?'<button onclick="pDeleteMomento(\''+mId+'\',null,true)" title="Borrar" style="width:34px;height:34px;border-radius:50%;background:rgba(220,50,50,.14);border:1.5px solid rgba(255,80,80,.32);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:15px;transition:background .15s">🗑️</button>':'')
     +'</div>'
     +'</div>'
     +'</div>'
     +'</div>'
     // ── Scrollable body ──
-    +'<div style="flex:1;overflow-y:auto;padding:18px 20px 0">'
-    // Text block: col.bg as solid tinted bg + vivid left border
-    +'<div style="background:'+ca(col.bg,'.96')+';border:1.5px solid '+ca(col.border,'.50')+';border-left:4px solid '+col.border+';border-radius:18px;padding:18px 20px 16px;margin-bottom:18px;position:relative;overflow:hidden;box-shadow:0 0 32px '+ca(col.glow,'.35')+'">'
-    +'<div style="position:absolute;top:-6px;left:6px;font-size:58px;color:'+ca(col.label,'.16')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none">❝</div>'
-    +'<div style="font-size:17.5px;line-height:1.74;color:rgba(255,255,255,.96);word-break:break-word;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;position:relative">'+_escHtml(m.text||'')+'</div>'
+    +'<div id="mds-body" style="flex:1;overflow-y:auto;padding:20px 18px 0;-webkit-overflow-scrolling:touch">'
+    // Text card
+    +'<div style="background:'+ca(col.bg,'.98')+';border:1.5px solid '+ca(col.border,'.45')+';border-left:5px solid '+col.border+';border-radius:20px;padding:20px 20px 18px 18px;margin-bottom:20px;position:relative;overflow:hidden;box-shadow:0 4px 32px '+ca(col.glow,'.30')+',inset 0 1px 0 '+ca(col.border,'.20')+'">'
+    +'<div style="position:absolute;top:-16px;left:10px;font-size:88px;color:'+ca(col.label,'.14')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none;font-weight:900">❝</div>'
+    +'<div style="font-size:19px;line-height:1.75;color:rgba(255,255,255,.97);word-break:break-word;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;position:relative;z-index:1;padding-top:4px">'+_escHtml(m.text||'')+'</div>'
     +'</div>'
-    // Heart button — vivid pill
-    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">'
-    +'<button id="momentoSheetHeartBtn" onclick="event.stopPropagation();pHeartMomento(\''+_escHtml(String(m.id))+'\',this)" style="display:flex;align-items:center;gap:9px;background:'+ca(col.strip,'.24')+';border:2px solid '+ca(col.border,'.62')+';border-radius:100px;padding:10px 24px;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'
-    +'<span style="font-size:20px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
-    +'<span id="mheart-'+_escHtml(String(m.id))+'" style="font-size:15px;font-weight:800;color:'+col.label+'">'+heartCount+'</span>'
+    // Actions row
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">'
+    +'<button id="momentoSheetHeartBtn" onclick="event.stopPropagation();pHeartMomento(\''+mId+'\',this)" style="display:flex;align-items:center;gap:10px;background:'+(liked?'linear-gradient(135deg,rgba(220,50,80,.35),rgba(180,30,60,.30))':'rgba(255,255,255,.06)')+';border:2px solid '+(liked?'rgba(255,80,100,.60)':ca(col.border,'.35'))+';border-radius:100px;padding:12px 24px;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .18s;flex:1">'
+    +'<span style="font-size:22px;line-height:1;transition:transform .18s">'+(liked?'❤️':'🤍')+'</span>'
+    +'<span id="mheart-'+mId+'" style="font-size:16px;font-weight:800;color:'+(liked?'rgba(255,130,150,1)':col.label)+'">'+heartCount+'</span>'
+    +'<span style="font-size:11px;color:rgba(255,255,255,.35);font-family:\'Jost\',sans-serif;font-weight:500">'+(heartCount===1?'reacción':'reacciones')+'</span>'
     +'</button>'
-    +(m.user_hash===_momentoUserHash()?'<button onclick="pDeleteMomento(\''+_escHtml(String(m.id))+'\',null,true)" style="display:flex;align-items:center;gap:8px;background:rgba(220,60,60,.10);border:1.5px solid rgba(255,90,90,.28);border-radius:100px;padding:9px 18px;cursor:pointer;font-family:\'Jost\',sans-serif"><span style="font-size:15px">🗑️</span><span style="font-size:12px;font-weight:700;color:rgba(255,130,130,.90)">Borrar momento</span></button>':'')
     +'</div>'
     // Comments header
-    +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">'
-    +'<span style="font-size:9.5px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+ca(col.label,'.78')+';font-family:\'Jost\',sans-serif;white-space:nowrap">💬 Comentarios</span>'
-    +'<div style="flex:1;height:1px;background:'+ca(col.border,'.32')+'"></div>'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
+    +'<div style="background:'+ca(col.strip,'.22')+';border:1px solid '+ca(col.border,'.45')+';border-radius:100px;padding:5px 14px;display:flex;align-items:center;gap:6px">'
+    +'<span style="font-size:13px">💬</span>'
+    +'<span style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:'+col.label+';font-family:\'Jost\',sans-serif">Comentarios</span>'
     +'</div>'
-    +'<div id="momentoCommentFeed"><div style="text-align:center;padding:14px;font-size:12px;color:rgba(255,255,255,.28);font-family:\'Jost\',sans-serif">Cargando...</div></div>'
+    +'<div style="flex:1;height:1px;background:'+ca(col.border,'.25')+'"></div>'
+    +'</div>'
+    +'<div id="momentoCommentFeed"><div style="text-align:center;padding:18px 8px;font-size:13px;color:rgba(255,255,255,.28);font-family:\'Jost\',sans-serif;font-style:italic">Cargando...</div></div>'
     // Comment input
-    +'<div style="display:flex;gap:8px;margin-top:14px;align-items:flex-end;padding-bottom:14px">'
-    +'<textarea id="momentoCommentInput" placeholder="Escribí un comentario..." rows="2" style="flex:1;background:rgba(255,255,255,.06);border:1.5px solid '+ca(col.border,'.40')+';border-radius:14px;padding:11px 14px;font-size:13px;color:rgba(255,255,255,.90);font-family:\'Jost\',sans-serif;resize:none;line-height:1.4;outline:none"></textarea>'
-    +'<button id="momentoCommentBtn" onclick="pPostMomentoComment(\''+_escHtml(String(m.id))+'\')" style="padding:11px 18px;background:linear-gradient(135deg,'+ca(col.border,'.75')+','+ca(col.strip,'.82')+');border:none;border-radius:14px;color:#fff;font-size:12.5px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;align-self:flex-end;letter-spacing:.2px">Enviar</button>'
+    +'<div style="display:flex;align-items:flex-end;gap:10px;margin-top:16px;padding-bottom:18px;background:rgba(8,10,18,1);position:sticky;bottom:0;padding-top:10px">'
+    +'<textarea id="momentoCommentInput" placeholder="Sumate a la conversación..." rows="2" style="flex:1;background:rgba(255,255,255,.07);border:1.5px solid '+ca(col.border,'.35')+';border-radius:16px;padding:12px 15px;font-size:13.5px;color:rgba(255,255,255,.94);font-family:\'Jost\',sans-serif;resize:none;line-height:1.45;transition:border-color .2s"></textarea>'
+    +'<button id="momentoCommentBtn" onclick="pPostMomentoComment(\''+mId+'\')" style="padding:12px 20px;background:linear-gradient(135deg,'+ca(col.border,'.85')+','+ca(col.strip,'.90')+');border:none;border-radius:16px;color:#fff;font-size:13px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;flex-shrink:0;align-self:flex-end;letter-spacing:.3px;box-shadow:0 4px 16px '+ca(col.glow,'.45')+'">✈️ Enviar</button>'
     +'</div>'
     +'</div>'
-    // ── Fixed close bar ──
-    +'<div style="padding:10px 20px 16px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.08)">'
-    +'<button onclick="document.getElementById(\'momentoDetailSheetOv\').remove()" style="width:100%;padding:13px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;color:rgba(255,255,255,.55);font-size:13px;font-weight:600;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">Cerrar</button>'
+    // ── Close bar ──
+    +'<div style="padding:8px 18px 20px;flex-shrink:0">'
+    +'<button onclick="document.getElementById(\'momentoDetailSheetOv\').remove()" style="width:100%;padding:14px;background:'+ca(col.strip,'.16')+';border:1.5px solid '+ca(col.border,'.35')+';border-radius:16px;color:'+col.label+';font-size:13.5px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px;transition:background .15s">Listo ✓</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
