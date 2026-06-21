@@ -4059,40 +4059,40 @@ function pOpenDqResponseSheet(responseId){
     +'<div style="flex:1;height:1px;background:linear-gradient(270deg,transparent,'+col.border.replace(/[\d.]+\)$/,'0.22)')+')">'+'</div>'
     +'</div>';
 
-  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="padding:0;overflow:hidden;max-height:92vh;display:flex;flex-direction:column;border-top:2px solid '+col.border+';border-radius:28px 28px 0 0">'
-    // Header: full-bleed gradient, everything centered
-    +'<div style="background:linear-gradient(170deg,'+col.bg+' 0%,rgba(4,10,8,.97) 100%);padding:32px 24px 24px;position:relative;flex-shrink:0;text-align:center">'
-    +'<div class="p-sheet-handle" style="background:'+col.border.replace(/[\d.]+\)$/,'0.40)')+';position:absolute;top:10px;left:50%;transform:translateX(-50%);margin:0"></div>'
-    // Mood emoji — big, centered, glowing
-    +'<div style="font-size:62px;line-height:1;margin-bottom:14px;filter:drop-shadow(0 0 22px '+col.glow+')">'+r.mood_emoji+'</div>'
-    // Label
-    +'<div style="font-size:8.5px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.55)')+';font-family:Jost,sans-serif;margin-bottom:10px">✨ Pregunta del día</div>'
-    // Question text — centered, larger
-    +'<div style="font-size:18px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(240,255,246,.90);line-height:1.5;max-width:340px;margin:0 auto 18px">'+_escHtml(q?q.text:'')+'</div>'
-    // Author chip — compact, centered
-    +'<div style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px 7px 8px;background:rgba(0,0,0,.28);border-radius:100px;border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.18)')+'">'+avHtml
+  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="padding:0;overflow:hidden;max-height:88vh;display:flex;flex-direction:column;border-top:2px solid '+col.border+';border-radius:28px 28px 0 0">'
+    // Header — compact gradient
+    +'<div style="background:linear-gradient(170deg,'+col.bg+' 0%,rgba(4,10,8,.97) 100%);padding:16px 20px 14px;position:relative;flex-shrink:0;text-align:center">'
+    +'<div class="p-sheet-handle" style="background:'+col.border.replace(/[\d.]+\)$/,'0.40)')+';position:absolute;top:8px;left:50%;transform:translateX(-50%);margin:0"></div>'
+    // Mood emoji + label en misma línea
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;margin-top:6px">'
+    +'<span style="font-size:34px;line-height:1;filter:drop-shadow(0 0 12px '+col.glow+')">'+r.mood_emoji+'</span>'
+    +'<span style="font-size:8px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.55)')+';font-family:Jost,sans-serif">✨ Pregunta del día</span>'
+    +'</div>'
+    // Question text
+    +'<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(240,255,246,.88);line-height:1.45;max-width:320px;margin:0 auto 10px">'+_escHtml(q?q.text:'')+'</div>'
+    // Author chip
+    +'<div style="display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 6px;background:rgba(0,0,0,.28);border-radius:100px;border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.18)')+'">'+avHtml
     +'<div style="text-align:left">'
-    +'<div style="font-size:12.5px;font-weight:700;color:rgba(220,245,230,.88);font-family:Jost,sans-serif'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
-    +'<div style="font-size:9.5px;color:'+col.label.replace(/[\d.]+\)$/,'0.44)')+';font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
-    +'</div>'
-    +'</div>'
+    +'<div style="font-size:12px;font-weight:700;color:rgba(220,245,230,.88);font-family:Jost,sans-serif'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
+    +'<div style="font-size:9px;color:'+col.label.replace(/[\d.]+\)$/,'0.44)')+';font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
+    +'</div></div>'
     +'</div>'
     // Scrollable body
-    +'<div style="overflow-y:auto;padding:24px 20px 28px;flex:1;text-align:center">'
-    // Response text — centered, big, minimal container
+    +'<div style="overflow-y:auto;padding:16px 18px 20px;flex:1;text-align:center">'
+    // Response text
     +(r.response_text
-      ? '<div style="position:relative;padding:8px 4px 20px;margin-bottom:4px">'
-        +'<div style="font-size:80px;font-family:\'Cormorant Garamond\',serif;color:'+col.border.replace(/[\d.]+\)$/,'0.10)')+';line-height:.7;margin-bottom:4px;user-select:none">❝</div>'
-        +'<div style="font-size:25px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.65;letter-spacing:.3px;text-shadow:0 2px 20px '+col.glow+';padding:0 8px">'+_escHtml(r.response_text)+'</div>'
+      ? '<div style="margin-bottom:4px;padding:6px 4px 14px">'
+        +'<div style="font-size:52px;font-family:\'Cormorant Garamond\',serif;color:'+col.border.replace(/[\d.]+\)$/,'0.12)')+';line-height:.65;margin-bottom:2px;user-select:none">❝</div>'
+        +'<div style="font-size:20px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.55;text-shadow:0 2px 16px '+col.glow+';padding:0 6px">'+_escHtml(r.response_text)+'</div>'
         +'</div>'
-      : '<div style="height:6px"></div>')
+      : '<div style="height:4px"></div>')
     +_zenDiv
     // Reactions label
-    +'<div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.32)')+';font-family:\'Cormorant Garamond\',serif;font-style:italic;margin-bottom:12px">¿Cómo te resonó?</div>'
-    // Reaction row — 3 zen circles side by side
-    +'<div style="display:flex;gap:10px;margin-bottom:20px">'+rxHtml+'</div>'
+    +'<div style="font-size:9.5px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.38)')+';font-family:Jost,sans-serif;margin-bottom:10px">¿Cómo te resonó?</div>'
+    // Reaction row
+    +'<div style="display:flex;gap:8px;margin-bottom:16px">'+rxHtml+'</div>'
     // Close
-    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:14px;background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.30);border-radius:100px;color:rgba(255,255,255,.90);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:1.8px;text-transform:uppercase">· CERRAR ·</button>'
+    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.22);border-radius:100px;color:rgba(255,255,255,.80);font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase">· CERRAR ·</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
@@ -7646,42 +7646,60 @@ async function pRenderNews(forceRefresh){
   var _tok = _navToken;
   var today = new Date().toISOString().slice(0,10);
   var cacheKey = 'velo_goodnews_'+today;
+  var _nd = new Date();
+  var _cy = _nd.getFullYear();
 
-  // Check cache FIRST — render immediately without waiting for network (skip on force refresh)
+  // Static pool — shown immediately when no cache (no spinner)
+  var _pool = [
+    { emoji:'🌱', titulo:'Reforestación récord: millones de árboles plantados en '+_cy, cuerpo:'Coaliciones de países y organizaciones siguen batiendo récords de reforestación, contribuyendo a absorber millones de toneladas de CO₂ y restaurar ecosistemas degradados en distintos continentes.', reflexion:'Cada árbol es un acto de fe en el futuro. La humanidad puede regenerarse cuando actúa unida. 🌿', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('reforestacion record arboles')+'+'+_cy+'&hl=es-419', _src:'static' },
+    { emoji:'💊', titulo:'Avances en tratamientos sin opioides para el dolor crónico', cuerpo:'Investigadores continúan desarrollando terapias basadas en neuromodulación y biomedicina que reducen el dolor crónico sin generar dependencia, mejorando la calidad de vida de millones de personas.', reflexion:'El alivio del sufrimiento humano sigue avanzando. La ciencia trabaja para que vivir bien sea posible para todos. 💙', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('tratamiento dolor cronico sin opioides')+'+'+_cy+'&hl=es-419', _src:'static' },
+    { emoji:'☀️', titulo:'Energía solar bate récords de producción en '+_cy, cuerpo:'La energía solar alcanzó nuevos máximos de producción global en '+_cy+', con cientos de comunidades rurales accediendo por primera vez a electricidad limpia gracias a micro-redes comunitarias.', reflexion:'La energía limpia no es solo tecnología — es dignidad y oportunidad. ✨', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('record energia solar renovable')+'+'+_cy+'&hl=es-419', _src:'static' },
+    { emoji:'🐋', titulo:'Especies marinas en recuperación gracias a áreas protegidas', cuerpo:'Ballenas, tortugas y delfines muestran señales de recuperación poblacional en zonas donde se establecieron reservas marinas, demostrando que la protección sostenida revierte el daño ambiental.', reflexion:'La naturaleza sana cuando le damos tiempo y espacio. El daño puede revertirse. 🌊', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('conservacion marina especies recuperacion')+'+'+_cy+'&hl=es-419', _src:'static' },
+    { emoji:'📚', titulo:'Programas de inclusión digital reducen el aislamiento en adultos mayores', cuerpo:'Iniciativas en toda América Latina capacitan a personas mayores en el uso de internet y videollamadas, reduciendo el aislamiento social y conectando a miles con sus familias y comunidades.', reflexion:'Aprender no tiene edad. Cada persona conectada es una vida más acompañada. 🌻', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('inclusion digital adultos mayores america latina')+'+'+_cy+'&hl=es-419', _src:'static' },
+    { emoji:'🧬', titulo:'Terapias génicas CRISPR abren nuevas esperanzas para enfermedades raras', cuerpo:'Los avances en edición genética continúan transformando el tratamiento de enfermedades hereditarias, con nuevas terapias aprobadas y ensayos clínicos que muestran resultados prometedores en pacientes de todo el mundo.', reflexion:'La ciencia convierte el sufrimiento de hoy en el alivio de mañana. Cada avance es una vida cambiada. 💙', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('CRISPR terapia genica aprobacion')+'+'+_cy+'&hl=es-419', _src:'static' },
+    { emoji:'🌊', titulo:'Corales tropicales muestran resiliencia ante el cambio climático', cuerpo:'Científicos identificaron colonias de coral con mayor tolerancia al calor y trabajan en programas de restauración activa que replican estas variedades en arrecifes degradados de todo el mundo.', reflexion:'La resiliencia de la naturaleza nos enseña que siempre hay posibilidad de regeneración. 🌏', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('restauracion corales resiliencia')+'+'+_cy+'&hl=es-419', _src:'static' },
+    { emoji:'🤲', titulo:'Redes de voluntariado baten récords de impacto social en '+_cy, cuerpo:'Organizaciones de voluntarios en todo el mundo registran un crecimiento sin precedentes en '+_cy+', con millones de personas dedicando tiempo a causas comunitarias, bancos de alimentos y apoyo a personas vulnerables.', reflexion:'La solidaridad transforma vecindarios en comunidades. Compartir es un acto de amor. ❤️', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('voluntariado record solidaridad')+'+'+_cy+'&hl=es-419', _src:'static' },
+    { emoji:'♻️', titulo:'Ciudades líderes en reciclaje y economía circular en '+_cy, cuerpo:'Varias ciudades europeas y latinoamericanas alcanzan tasas de reciclaje históricas en '+_cy+', inspirando nuevos modelos de economía circular que reducen residuos y generan empleos verdes.', reflexion:'Un futuro limpio se construye con pequeñas decisiones diarias y mucha voluntad colectiva. 🌍', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('ciudades reciclaje economia circular')+'+'+_cy+'&hl=es-419', _src:'static' },
+    { emoji:'🧠', titulo:'Investigaciones en salud mental reducen el estigma en jóvenes', cuerpo:'Nuevos programas de salud mental en escuelas y universidades de América Latina están logrando que más jóvenes busquen ayuda sin miedo al juicio, cambiando la cultura del bienestar emocional.', reflexion:'Hablar de lo que sentimos es el primer paso hacia sanar. La salud mental es salud. 💚', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('salud mental jovenes programa')+'+'+_cy+'&hl=es-419', _src:'static' }
+  ];
+
+  // Cache hit → instant render and done
   if(!forceRefresh){
     var cached = safeLS('get', cacheKey);
     if(cached){
       try{
         var cachedItems = JSON.parse(cached);
-        // Skip static fallback cache — always re-fetch if we only have static content
-        var isLive = cachedItems.some(function(it){ return it._src === 'g' || it._src === 'ai'; });
-        if(isLive){ _renderNewsList(newsEl, cachedItems); return; }
+        if(cachedItems && cachedItems.length){ _renderNewsList(newsEl, cachedItems); return; }
       }catch(e){}
     }
   }
 
-  // No valid cache — show loading state, then fetch
-  if(!forceRefresh) newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
+  // No cache — show static items immediately (no spinner, no wait)
+  var _staticItems = [];
+  if(!forceRefresh){
+    var _pOff = _nd.getDate() % _pool.length;
+    for(var _psi=0;_psi<5;_psi++) _staticItems.push(_pool[(_pOff+_psi)%_pool.length]);
+    _renderNewsList(newsEl, _staticItems);
+  } else {
+    newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🔄 Actualizando noticias...</div>';
+  }
 
-  // Admin-published news — load first and show immediately, Gemini continues in background
+  // Admin-published news
   _initSupabase();
   var adminNews = (await sbLoadAdminNews()).map(function(n){
     return { emoji:n.emoji||'📰', titulo:n.titulo, cuerpo:n.cuerpo, reflexion:'',
       sourceUrl:n.source_url||'', sourceName:n.source_name||'Velo', _src:'admin' };
   });
   if(safeLS('get','velo_admin_news_only') === '1' && adminNews.length){
+    newsEl = document.getElementById('newsContainer');
+    if(_navToken !== _tok || !newsEl) return;
+    safeLS('set', cacheKey, JSON.stringify(adminNews));
     _renderNewsList(newsEl, adminNews);
     return;
   }
-  // On force refresh: keep spinner visible while Gemini loads (don't show admin news early)
-  // On normal load: show admin news right away so user isn't staring at a spinner
-  if(!forceRefresh && adminNews.length) _renderNewsList(newsEl, adminNews);
-  else if(!forceRefresh) newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🌞 Buscando noticias positivas del mundo...</div>';
 
-  var _nd = new Date();
   var monthYear = ['enero','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][_nd.getMonth()]+' '+_nd.getFullYear();
   var todayFull = _nd.getDate()+' de '+['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][_nd.getMonth()]+' de '+_nd.getFullYear();
-  // Rotate topics daily so each refresh brings a different angle
   var _topicSets = [
     'avances médicos, nuevos tratamientos, bienestar emocional positivo',
     'naturaleza, conservación animal, reforestación, océanos limpios',
@@ -7712,9 +7730,8 @@ async function pRenderNews(forceRefresh){
       var m = raw.match(/\[[\s\S]*\]/);
       if(m) items = JSON.parse(m[0]);
     }catch(e){}
-    // Validate URLs returned by Gemini — keep only real http URLs (grounding ensures they're real).
-    // For any item still missing a URL, try to fill from grounding chunks (pool of all cited sources).
-    var chunkPool = (result.urls || []).slice(); // [{uri, title}, ...]
+    // For any item missing a URL, try to fill from grounding chunks
+    var chunkPool = (result.urls || []).slice();
     items.forEach(function(item){
       var hasUrl = item.sourceUrl && item.sourceUrl.startsWith('http');
       if(!hasUrl && chunkPool.length){
@@ -7743,31 +7760,19 @@ async function pRenderNews(forceRefresh){
     }
   }
 
-  if(!items.length){
-    // Static curated pool — rotate so consecutive refreshes show different stories
-    // Each item includes a Google search URL so users can find the real article
-    var _cy = _nd.getFullYear();
-    var _pool = [
-      { emoji:'🌱', titulo:'Reforestación récord: millones de árboles plantados en '+_cy, cuerpo:'Coaliciones de países y organizaciones siguen batiendo récords de reforestación, contribuyendo a absorber millones de toneladas de CO₂ y restaurar ecosistemas degradados en distintos continentes.', reflexion:'Cada árbol es un acto de fe en el futuro. La humanidad puede regenerarse cuando actúa unida. 🌿', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('reforestacion record arboles')+'+'+_cy+'&hl=es-419', _src:'static' },
-      { emoji:'💊', titulo:'Avances en tratamientos sin opioides para el dolor crónico', cuerpo:'Investigadores continúan desarrollando terapias basadas en neuromodulación y biomedicina que reducen el dolor crónico sin generar dependencia, mejorando la calidad de vida de millones de personas.', reflexion:'El alivio del sufrimiento humano sigue avanzando. La ciencia trabaja para que vivir bien sea posible para todos. 💙', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('tratamiento dolor cronico sin opioides')+'+'+_cy+'&hl=es-419', _src:'static' },
-      { emoji:'☀️', titulo:'Energía solar bate récords de producción en '+_cy, cuerpo:'La energía solar alcanzó nuevos máximos de producción global en '+_cy+', con cientos de comunidades rurales accediendo por primera vez a electricidad limpia gracias a micro-redes comunitarias.', reflexion:'La energía limpia no es solo tecnología — es dignidad y oportunidad. ✨', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('record energia solar renovable')+'+'+_cy+'&hl=es-419', _src:'static' },
-      { emoji:'🐋', titulo:'Especies marinas en recuperación gracias a áreas protegidas', cuerpo:'Ballenas, tortugas y delfines muestran señales de recuperación poblacional en zonas donde se establecieron reservas marinas, demostrando que la protección sostenida revierte el daño ambiental.', reflexion:'La naturaleza sana cuando le damos tiempo y espacio. El daño puede revertirse. 🌊', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('conservacion marina especies recuperacion')+'+'+_cy+'&hl=es-419', _src:'static' },
-      { emoji:'📚', titulo:'Programas de inclusión digital reducen el aislamiento en adultos mayores', cuerpo:'Iniciativas en toda América Latina capacitan a personas mayores en el uso de internet y videollamadas, reduciendo el aislamiento social y conectando a miles con sus familias y comunidades.', reflexion:'Aprender no tiene edad. Cada persona conectada es una vida más acompañada. 🌻', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('inclusion digital adultos mayores america latina')+'+'+_cy+'&hl=es-419', _src:'static' },
-      { emoji:'🧬', titulo:'Terapias génicas CRISPR abren nuevas esperanzas para enfermedades raras', cuerpo:'Los avances en edición genética continúan transformando el tratamiento de enfermedades hereditarias, con nuevas terapias aprobadas y ensayos clínicos que muestran resultados prometedores en pacientes de todo el mundo.', reflexion:'La ciencia convierte el sufrimiento de hoy en el alivio de mañana. Cada avance es una vida cambiada. 💙', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('CRISPR terapia genica aprobacion')+'+'+_cy+'&hl=es-419', _src:'static' },
-      { emoji:'🌊', titulo:'Corales tropicales muestran resiliencia ante el cambio climático', cuerpo:'Científicos identificaron colonias de coral con mayor tolerancia al calor y trabajan en programas de restauración activa que replican estas variedades en arrecifes degradados de todo el mundo.', reflexion:'La resiliencia de la naturaleza nos enseña que siempre hay posibilidad de regeneración. 🌏', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('restauracion corales resiliencia')+'+'+_cy+'&hl=es-419', _src:'static' },
-      { emoji:'🤲', titulo:'Redes de voluntariado baten récords de impacto social en '+_cy, cuerpo:'Organizaciones de voluntarios en todo el mundo registran un crecimiento sin precedentes en '+_cy+', con millones de personas dedicando tiempo a causas comunitarias, bancos de alimentos y apoyo a personas vulnerables.', reflexion:'La solidaridad transforma vecindarios en comunidades. Compartir es un acto de amor. ❤️', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('voluntariado record solidaridad')+'+'+_cy+'&hl=es-419', _src:'static' },
-      { emoji:'♻️', titulo:'Ciudades líderes en reciclaje y economía circular en '+_cy, cuerpo:'Varias ciudades europeas y latinoamericanas alcanzan tasas de reciclaje históricas en '+_cy+', inspirando nuevos modelos de economía circular que reducen residuos y generan empleos verdes.', reflexion:'Un futuro limpio se construye con pequeñas decisiones diarias y mucha voluntad colectiva. 🌍', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('ciudades reciclaje economia circular')+'+'+_cy+'&hl=es-419', _src:'static' },
-      { emoji:'🧠', titulo:'Investigaciones en salud mental reducen el estigma en jóvenes', cuerpo:'Nuevos programas de salud mental en escuelas y universidades de América Latina están logrando que más jóvenes busquen ayuda sin miedo al juicio, cambiando la cultura del bienestar emocional.', reflexion:'Hablar de lo que sentimos es el primer paso hacia sanar. La salud mental es salud. 💚', sourceName:'Buscar noticia', sourceUrl:'https://news.google.com/search?q='+encodeURIComponent('salud mental jovenes programa')+'+'+_cy+'&hl=es-419', _src:'static' }
-    ];
-    var _offset = (Date.now() / 60000 | 0) % _pool.length; // rotates every minute
-    items = [];
-    for(var _pi=0; _pi<5; _pi++) items.push(_pool[(_offset+_pi) % _pool.length]);
-  }
-
   newsEl = document.getElementById('newsContainer');
   if(_navToken !== _tok || !newsEl) return;
-  safeLS('set', cacheKey, JSON.stringify(items));
-  _renderNewsList(newsEl, adminNews.concat(items));
+  if(items.length){
+    // Gemini succeeded — update UI with live content and cache it
+    var finalItems = adminNews.concat(items);
+    safeLS('set', cacheKey, JSON.stringify(finalItems));
+    _renderNewsList(newsEl, finalItems);
+  } else if(adminNews.length && forceRefresh){
+    // Force refresh with only admin news (Gemini failed)
+    safeLS('set', cacheKey, JSON.stringify(adminNews));
+    _renderNewsList(newsEl, adminNews);
+  }
+  // else: static items already visible, no update needed
 }
 
 // ── Feature 4: reading tracker ──────────────────────────────────────
@@ -22761,7 +22766,7 @@ function _btLoadTab(type,refresh){
   if(feed&&(!_btPosts[type]||!_btPosts[type].length)){
     feed.innerHTML='<div style="text-align:center;padding:40px 0;color:rgba(180,200,190,.40);font-family:Jost,sans-serif;font-size:13px">Cargando...</div>';
   }
-  sbClient.from('bitacora_posts_full').select('*').eq('type',type).order('created_at',{ascending:false}).limit(15)
+  sbClient.from('bitacora_posts_full').select('*').eq('categoria',type).order('created_at',{ascending:false}).limit(15)
     .then(function(res){
       if(res.error){ _btLoading=false; if(_btCurrentTab===type) _btRenderFeed(type); return; }
       _btPosts[type]=res.data||[];
@@ -23175,7 +23180,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1067;
+    var _BUILT_V = 1068;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
