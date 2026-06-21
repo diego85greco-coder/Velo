@@ -10627,12 +10627,7 @@ body:not(.r-dark) #homeRegisterZone #topbarMoodBtn {
    v687 — Premium topbar buttons + Al Mar/Círculos light-mode
    ══════════════════════════════════════════════════════════════════ */
 
-/* ── v1029 — Premium topbar buttons: solid gradients + glow ── */
-
-@keyframes tb-donar-glow {
-  0%,100% { box-shadow: 0 3px 16px rgba(210,162,18,.48), inset 0 1px 0 rgba(255,235,110,.42); }
-  50%      { box-shadow: 0 4px 26px rgba(218,170,22,.72), inset 0 1px 0 rgba(255,242,140,.55); }
-}
+/* ── v1031 — Premium topbar buttons: jewel-toned semi-transparent ── */
 
 .r-donar-btn, .r-plus-btn, .r-guide-btn {
   display: flex !important;
@@ -10641,53 +10636,60 @@ body:not(.r-dark) #homeRegisterZone #topbarMoodBtn {
   padding: 8px 15px !important;
   border-radius: 100px !important;
   font-size: 12.5px !important;
-  font-weight: 800 !important;
+  font-weight: 700 !important;
   cursor: pointer !important;
   font-family: 'Jost', sans-serif !important;
   white-space: nowrap !important;
-  letter-spacing: .3px !important;
-  border: none !important;
-  transition: transform .12s, filter .15s !important;
+  letter-spacing: .25px !important;
+  transition: transform .12s, box-shadow .18s !important;
   flex-shrink: 0 !important;
   -webkit-tap-highlight-color: transparent !important;
   touch-action: manipulation !important;
 }
 .r-donar-btn:active, .r-plus-btn:active, .r-guide-btn:active {
   transform: scale(.93) !important;
-  filter: brightness(.92) !important;
 }
 
-/* Donar — gold solid, pulsing glow */
+/* Donar — amber jewel */
 .r-donar-btn {
-  background: linear-gradient(140deg, #e8b820 0%, #b88510 100%) !important;
-  color: rgba(30,14,0,.95) !important;
-  animation: tb-donar-glow 3s ease-in-out infinite !important;
+  background: linear-gradient(140deg, rgba(210,162,22,.50) 0%, rgba(170,124,8,.55) 100%) !important;
+  border: 1.5px solid rgba(228,182,42,.58) !important;
+  color: rgba(255,234,160,.96) !important;
+  box-shadow: 0 2px 14px rgba(200,152,18,.28), inset 0 1px 0 rgba(255,232,110,.22) !important;
 }
 body.r-dark .r-donar-btn {
-  background: linear-gradient(140deg, #f0c432 0%, #c49010 100%) !important;
-  color: rgba(28,12,0,.95) !important;
+  background: linear-gradient(140deg, rgba(218,168,28,.48) 0%, rgba(178,130,10,.54) 100%) !important;
+  border-color: rgba(235,190,50,.60) !important;
+  color: rgba(255,238,175,.97) !important;
+  box-shadow: 0 2px 16px rgba(208,158,22,.32), inset 0 1px 0 rgba(255,235,120,.22) !important;
 }
 
-/* Plus — emerald solid */
+/* Plus — emerald jewel */
 .r-plus-btn {
-  background: linear-gradient(140deg, #3aaa60 0%, #268040 100%) !important;
-  color: #fff !important;
-  box-shadow: 0 3px 16px rgba(42,148,72,.40), inset 0 1px 0 rgba(200,255,220,.28) !important;
+  background: linear-gradient(140deg, rgba(48,152,85,.50) 0%, rgba(32,115,58,.55) 100%) !important;
+  border: 1.5px solid rgba(72,185,110,.55) !important;
+  color: rgba(195,255,218,.96) !important;
+  box-shadow: 0 2px 14px rgba(45,148,78,.24), inset 0 1px 0 rgba(180,255,210,.18) !important;
 }
 body.r-dark .r-plus-btn {
-  background: linear-gradient(140deg, #44b96c 0%, #2c9048 100%) !important;
-  box-shadow: 0 3px 20px rgba(55,175,90,.48), inset 0 1px 0 rgba(200,255,218,.28) !important;
+  background: linear-gradient(140deg, rgba(55,165,92,.50) 0%, rgba(36,128,65,.55) 100%) !important;
+  border-color: rgba(85,198,125,.58) !important;
+  color: rgba(205,255,225,.97) !important;
+  box-shadow: 0 2px 16px rgba(52,162,88,.30), inset 0 1px 0 rgba(185,255,215,.18) !important;
 }
 
-/* Guía — indigo/violet solid */
+/* Guía — violet jewel */
 .r-guide-btn {
-  background: linear-gradient(140deg, #8c64dc 0%, #6444bc 100%) !important;
-  color: #fff !important;
-  box-shadow: 0 3px 16px rgba(120,88,210,.38), inset 0 1px 0 rgba(228,210,255,.22) !important;
+  background: linear-gradient(140deg, rgba(112,80,195,.50) 0%, rgba(82,55,165,.55) 100%) !important;
+  border: 1.5px solid rgba(148,112,228,.52) !important;
+  color: rgba(228,215,255,.96) !important;
+  box-shadow: 0 2px 14px rgba(115,80,205,.24), inset 0 1px 0 rgba(220,205,255,.16) !important;
 }
 body.r-dark .r-guide-btn {
-  background: linear-gradient(140deg, #9b73eb 0%, #704ecd 100%) !important;
-  box-shadow: 0 3px 20px rgba(148,108,228,.48), inset 0 1px 0 rgba(230,212,255,.22) !important;
+  background: linear-gradient(140deg, rgba(128,92,215,.50) 0%, rgba(95,65,185,.55) 100%) !important;
+  border-color: rgba(165,130,242,.55) !important;
+  color: rgba(232,220,255,.97) !important;
+  box-shadow: 0 2px 16px rgba(128,92,218,.30), inset 0 1px 0 rgba(222,210,255,.16) !important;
 }
 
 /* ── Al Mar + Círculos de Paz buttons — light-mode ── */
