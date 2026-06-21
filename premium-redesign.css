@@ -12927,3 +12927,7 @@ body.r-lavender .carousel-dots span.cd-active { background: rgba(160,120,240,.85
 body.r-lavender .home-sec-lbl-comunidad {
   color: rgba(190,155,255,.75) !important;
 }
+
+/* ── Landing page: ocultar sidebar en desktop (columna vacía) ─── */
+body.is-landing .p-sidebar { display: none !important; }
+body.is-landing .p-main-content { width: 100% !important; max-width: 100% !important; }

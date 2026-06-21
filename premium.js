@@ -358,6 +358,7 @@ function pGoTo(id){
   if(_curPage !== id) _prevPage = _curPage;
   _curPage = id;
   _navToken++;
+  document.body.classList.toggle('is-landing', id === 'landing');
 
   // Remember where the user is so a browser refresh restores this screen
   if(_authenticated && _NO_RESTORE.indexOf(id) < 0){
