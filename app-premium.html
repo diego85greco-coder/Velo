@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1030">
+  <meta name="app-version" content="1031">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260621-1030">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260621-1030">
+  <link rel="stylesheet" href="premium.css?v=20260621-1031">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260621-1031">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1033,7 +1033,7 @@
                 <!-- Header -->
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
                   <span style="font-size:20px;line-height:1">💚</span>
-                  <span style="font-size:13px;font-weight:800;color:rgba(160,230,190,.92);font-family:'Jost',sans-serif;letter-spacing:.3px">Mi Disponibilidad</span>
+                  <span style="font-size:10.5px;font-weight:700;color:rgba(180,240,210,.80);font-family:'Jost',sans-serif;letter-spacing:2px;text-transform:uppercase">Mi Disponibilidad</span>
                 </div>
                 <!-- homeStatusSegPill lo inserta JS aquí, antes de homeGuardianWrap -->
                 <div id="homeGuardianWrap" style="display:flex;align-items:flex-start;justify-content:space-around;gap:0;flex-shrink:0;padding-top:14px;border-top:1px solid rgba(116,198,157,.18);margin-top:2px">
@@ -1102,15 +1102,15 @@
                 <div style="font-size:11.5px;color:rgba(116,198,157,.62);font-family:'Jost',sans-serif;line-height:1.45;margin-bottom:14px">Registrá cada día · recibí tu análisis personalizado</div>
                 <!-- Cards de beneficios -->
                 <div style="display:flex;gap:8px">
-                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.20);border-radius:14px;padding:10px 8px;text-align:center">
+                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.35);border-radius:14px;padding:10px 8px;text-align:center">
                     <span style="font-size:20px">📊</span>
-                    <span style="font-size:11px;font-weight:700;color:rgba(116,198,157,.92);font-family:'Jost',sans-serif;line-height:1.25">Resumen semanal</span>
-                    <span style="font-size:9.5px;color:rgba(116,198,157,.55);font-family:'Jost',sans-serif">cada domingo</span>
+                    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.92);font-family:'Jost',sans-serif;line-height:1.25">Resumen semanal</span>
+                    <span style="font-size:9.5px;color:rgba(255,255,255,.55);font-family:'Jost',sans-serif">cada domingo</span>
                   </div>
-                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:rgba(200,158,56,.07);border:1px solid rgba(200,158,56,.20);border-radius:14px;padding:10px 8px;text-align:center">
+                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:rgba(200,158,56,.12);border:1px solid rgba(200,158,56,.35);border-radius:14px;padding:10px 8px;text-align:center">
                     <span style="font-size:20px">✉️</span>
-                    <span style="font-size:11px;font-weight:700;color:rgba(200,158,56,.90);font-family:'Jost',sans-serif;line-height:1.25">Análisis mensual</span>
-                    <span style="font-size:9.5px;color:rgba(200,158,56,.55);font-family:'Jost',sans-serif">el 1° de cada mes</span>
+                    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.92);font-family:'Jost',sans-serif;line-height:1.25">Análisis mensual</span>
+                    <span style="font-size:9.5px;color:rgba(255,255,255,.55);font-family:'Jost',sans-serif">el 1° de cada mes</span>
                   </div>
                 </div>
               </div>
@@ -4096,8 +4096,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260621-1030"></script>
-<script src="premium-redesign.js?v=20260621-1030"></script>
+<script src="premium.js?v=20260621-1031"></script>
+<script src="premium-redesign.js?v=20260621-1031"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
