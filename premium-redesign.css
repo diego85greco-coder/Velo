@@ -11661,7 +11661,8 @@ body:not(.r-dark) #homeGreetSub {
 }
 /* Último card: margen derecho para indicar fin */
 #homeMomentoFeed .home-mc:last-child,
-#homeHappyFeed .home-mc:last-child { margin-right: 6px !important; }
+#homeHappyFeed .home-mc:last-child,
+#homeDailyQFeed .home-mc:last-child { margin-right: 6px !important; }
 
 /* Estado vacío (prompt card): full width */
 #homeMomentoFeed > div:not(.home-mc),

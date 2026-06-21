@@ -3959,7 +3959,7 @@ function _buildDqCards(list){
     var avWrap = canSeeProfile
       ? '<div onclick="event.stopPropagation();pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')" style="cursor:pointer;width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'+avInner+'</div>'
       : '<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;opacity:.7;display:flex;align-items:center;justify-content:center">'+avInner+'</div>';
-    return '<div class="dq-feed-card" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
+    return '<div class="dq-feed-card home-mc" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
       +' style="background:'+col.bg+';box-shadow:0 3px 16px '+col.glow+',inset 0 0 0 1px '+col.border+';cursor:pointer">'
       // Absolute strip fills full card height on all platforms
       +'<div style="position:absolute;left:0;top:0;bottom:0;width:52px;background:'+col.strip+';display:flex;flex-direction:column;align-items:center;justify-content:center">'
