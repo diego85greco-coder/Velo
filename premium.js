@@ -21029,7 +21029,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var cachedCnt=parseInt(safeLS('get','velo_mheart_'+m.id+'_cnt')||'0');
     var heartCount=Math.max(m.hearts||0, cachedCnt);
     var hasProfile = !!(m.user_name && m.user_name.length > 0);
-    var col = _userColor(m.user_id || m.anon_label || m.emoji || '');
+    var col = _momentoEmojiColor(m.emoji || '💭');
     var txtSz = isHome ? '13px' : '14px';
     var stripW = isHome ? '62px' : '68px';
     var emojiSz = isHome ? '24px' : '28px';
@@ -22594,7 +22594,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1045;
+    var _BUILT_V = 1046;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

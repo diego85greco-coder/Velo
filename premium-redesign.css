@@ -11107,39 +11107,43 @@ body.r-dark .dq-reaction-btn[data-active="true"] {
 }
 /* Active Momentos tab */
 .hf-tab--active {
-  background: rgba(116,198,157,.18);
-  border-color: rgba(116,198,157,.45);
+  background: rgba(116,198,157,.28);
+  border-color: rgba(116,198,157,.60);
   color: rgba(20,80,40,.95);
+  box-shadow: 0 2px 12px rgba(116,198,157,.22);
 }
 body.r-dark .hf-tab--active {
-  color: rgba(190,245,215,.95);
+  color: rgba(210,255,232,.98);
+  box-shadow: 0 2px 14px rgba(116,198,157,.28);
 }
 /* Inactive Momentos tab */
 .hf-tab--inactive {
-  background: transparent;
-  border-color: rgba(116,198,157,.18);
-  color: rgba(40,80,50,.45);
+  background: rgba(116,198,157,.06);
+  border-color: rgba(116,198,157,.22);
+  color: rgba(40,80,50,.55);
 }
 body.r-dark .hf-tab--inactive {
-  color: rgba(220,235,225,.45);
+  color: rgba(200,230,212,.55);
 }
 /* Active Muro Feliz tab */
 .hf-tab--active-happy {
-  background: rgba(200,158,56,.18);
-  border-color: rgba(200,158,56,.55);
-  color: rgba(100,65,5,.90);
+  background: rgba(200,158,56,.28);
+  border-color: rgba(200,158,56,.65);
+  color: rgba(100,65,5,.92);
+  box-shadow: 0 2px 12px rgba(200,158,56,.22);
 }
 body.r-dark .hf-tab--active-happy {
-  color: rgba(255,230,130,.95);
+  color: rgba(255,235,140,.99);
+  box-shadow: 0 2px 14px rgba(200,158,56,.25);
 }
 /* Inactive Muro Feliz tab */
 .hf-tab--inactive-happy {
-  background: transparent;
-  border-color: rgba(200,158,56,.22);
-  color: rgba(80,55,10,.45);
+  background: rgba(200,158,56,.06);
+  border-color: rgba(200,158,56,.25);
+  color: rgba(80,55,10,.55);
 }
 body.r-dark .hf-tab--inactive-happy {
-  color: rgba(220,235,225,.45);
+  color: rgba(210,185,120,.55);
 }
 
 /* Install step cards — dark mode contrast fix */
@@ -11534,33 +11538,35 @@ body:not(.r-dark) #homeMomentoSection .comm-title-italic {
   color: rgba(14,46,28,.90) !important;
 }
 
-/* ── Tabs: vivid active state ────────────────────────────────────── */
+/* ── Tabs: vivid active / readable inactive ──────────────────────── */
 .hf-tab--active {
-  background: linear-gradient(145deg, rgba(116,198,157,.62) 0%, rgba(48,175,98,.45) 100%) !important;
-  border-color: rgba(116,198,157,.92) !important;
-  box-shadow: 0 6px 24px rgba(116,198,157,.42), 0 2px 8px rgba(116,198,157,.28), inset 0 1px 0 rgba(255,255,255,.14) !important;
+  background: linear-gradient(145deg, rgba(116,198,157,.55) 0%, rgba(48,175,98,.38) 100%) !important;
+  border-color: rgba(116,198,157,.85) !important;
+  box-shadow: 0 4px 18px rgba(116,198,157,.32), inset 0 1px 0 rgba(255,255,255,.12) !important;
 }
-body.r-dark .hf-tab--active { color: rgba(228,255,240,.99) !important; text-shadow: 0 0 18px rgba(116,198,157,.55) !important; }
+body.r-dark .hf-tab--active { color: rgba(228,255,240,.99) !important; text-shadow: 0 0 14px rgba(116,198,157,.45) !important; }
 body:not(.r-dark) .hf-tab--active { color: rgba(10,55,28,.96) !important; }
 .hf-tab--inactive {
-  opacity: .58 !important;
+  opacity: 1 !important;
   background: rgba(116,198,157,.06) !important;
-  border-color: rgba(116,198,157,.22) !important;
+  border-color: rgba(116,198,157,.20) !important;
 }
-body.r-dark .hf-tab--inactive { color: rgba(180,220,200,.70) !important; }
+body.r-dark .hf-tab--inactive { color: rgba(180,220,200,.62) !important; }
+body:not(.r-dark) .hf-tab--inactive { color: rgba(40,80,50,.55) !important; }
 .hf-tab--active-happy {
-  background: linear-gradient(145deg, rgba(222,162,36,.62) 0%, rgba(200,132,18,.45) 100%) !important;
-  border-color: rgba(222,162,36,.92) !important;
-  box-shadow: 0 6px 24px rgba(222,162,36,.42), 0 2px 8px rgba(222,162,36,.28), inset 0 1px 0 rgba(255,255,255,.14) !important;
+  background: linear-gradient(145deg, rgba(222,162,36,.55) 0%, rgba(200,132,18,.38) 100%) !important;
+  border-color: rgba(222,162,36,.85) !important;
+  box-shadow: 0 4px 18px rgba(222,162,36,.30), inset 0 1px 0 rgba(255,255,255,.12) !important;
 }
-body.r-dark .hf-tab--active-happy { color: rgba(255,244,168,.99) !important; text-shadow: 0 0 18px rgba(222,162,36,.55) !important; }
+body.r-dark .hf-tab--active-happy { color: rgba(255,244,168,.99) !important; text-shadow: 0 0 14px rgba(222,162,36,.45) !important; }
 body:not(.r-dark) .hf-tab--active-happy { color: rgba(75,46,4,.94) !important; }
 .hf-tab--inactive-happy {
-  opacity: .58 !important;
+  opacity: 1 !important;
   background: rgba(222,162,36,.06) !important;
-  border-color: rgba(222,162,36,.22) !important;
+  border-color: rgba(222,162,36,.20) !important;
 }
-body.r-dark .hf-tab--inactive-happy { color: rgba(210,190,130,.70) !important; }
+body.r-dark .hf-tab--inactive-happy { color: rgba(210,190,130,.62) !important; }
+body:not(.r-dark) .hf-tab--inactive-happy { color: rgba(80,55,10,.55) !important; }
 
 /* ── home-mc cards: press effect ────────────────────────────────── */
 .home-mc { transition: transform .12s, box-shadow .12s; }
