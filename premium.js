@@ -20850,12 +20850,25 @@ function _initCarouselDots(feedId, dotsId){
   }).join('');
   if(feed._dotsListener) feed.removeEventListener('scroll', feed._dotsListener);
   var _cardW = cards[0] ? cards[0].offsetWidth + 10 : feed.offsetWidth * 0.87 + 10;
+  function _apply3D(){
+    var prog = feed.scrollLeft / _cardW;
+    Array.from(cards).forEach(function(card, i){
+      var dist = i - prog;
+      var abs = Math.abs(dist);
+      var scale = Math.max(0.88, 1 - abs * 0.06);
+      var opacity = Math.max(0.55, 1 - abs * 0.24);
+      var rotY = Math.max(-5, Math.min(5, dist * 3));
+      card.style.transform = 'perspective(900px) scale('+scale.toFixed(3)+') rotateY('+rotY.toFixed(1)+'deg)';
+      card.style.opacity = opacity.toFixed(2);
+    });
+  }
   feed._dotsListener = function(){
     var idx = Math.min(Math.round(feed.scrollLeft / _cardW), cards.length - 1);
     dotsEl.querySelectorAll('span').forEach(function(s,i){ s.classList.toggle('cd-active', i===idx); });
+    _apply3D();
   };
   feed.addEventListener('scroll', feed._dotsListener, {passive:true});
-  // First-visit swipe hint — nudge the feed and come back
+  requestAnimationFrame(_apply3D);
   setTimeout(function(){
     if(feed.scrollLeft === 0 && feed.querySelectorAll('.home-mc').length > 1){
       feed.scrollTo({left:38, behavior:'smooth'});
@@ -21127,11 +21140,11 @@ async function pOpenMomentoSheet(momentoId){
   ov.className='p-modal-ov show'; ov.id='momentoDetailSheetOv';
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
   ov.innerHTML=
-    '<div class="p-sheet p-sheet-dark" style="max-height:92vh;display:flex;flex-direction:column;overflow:hidden;background:rgba(8,12,22,.99);border-top:3px solid '+col.border+';box-shadow:0 -6px 48px '+ca(col.glow,'.35')+'">'
+    '<div class="p-sheet p-sheet-dark" style="max-height:92vh;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg,'+ca(col.bg,'.82')+' 0%,rgba(6,10,20,1) 38%);border-top:4px solid '+col.border+';box-shadow:0 -8px 64px '+ca(col.glow,'.55')+',0 -2px 0 '+ca(col.border,'.55')+'">'
     +'<div class="p-sheet-handle" style="background:'+col.border+'"></div>'
     // ── Hero: vivid colored gradient + large emoji ──
-    +'<div style="background:linear-gradient(170deg,'+ca(col.strip,'.55')+' 0%,'+ca(col.bg,'.96')+' 52%,rgba(8,12,22,.0) 100%);padding:22px 20px 18px;position:relative;overflow:hidden;flex-shrink:0;border-bottom:1px solid '+ca(col.border,'.22')+'">'
-    +'<div style="position:absolute;right:-14px;top:-10px;font-size:130px;opacity:.10;line-height:1;pointer-events:none">'+m.emoji+'</div>'
+    +'<div style="background:linear-gradient(170deg,'+ca(col.border,'.70')+' 0%,'+ca(col.bg,'1')+' 48%,rgba(6,10,20,1) 100%);padding:22px 20px 18px;position:relative;overflow:hidden;flex-shrink:0;border-bottom:1px solid '+ca(col.border,'.32')+'">'
+    +'<div style="position:absolute;right:-14px;top:-10px;font-size:130px;opacity:.22;line-height:1;pointer-events:none;filter:blur(1px)">'+m.emoji+'</div>'
     +'<div style="display:flex;align-items:center;gap:16px;position:relative;z-index:1">'
     +'<span style="font-size:68px;line-height:1;filter:drop-shadow(0 0 28px '+ca(col.border,'.65')+');flex-shrink:0">'+m.emoji+'</span>'
     +'<div style="flex:1;min-width:0">'
@@ -21148,8 +21161,8 @@ async function pOpenMomentoSheet(momentoId){
     // ── Scrollable body ──
     +'<div style="flex:1;overflow-y:auto;padding:18px 20px 0">'
     // Text block: col.bg as solid tinted bg + vivid left border
-    +'<div style="background:'+col.bg+';border:1.5px solid '+ca(col.border,'.38')+';border-left:3.5px solid '+ca(col.border,'.82')+';border-radius:18px;padding:18px 20px 16px;margin-bottom:18px;position:relative;overflow:hidden">'
-    +'<div style="position:absolute;top:-6px;left:6px;font-size:58px;color:'+ca(col.label,'.08')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none">❝</div>'
+    +'<div style="background:'+ca(col.bg,'.96')+';border:1.5px solid '+ca(col.border,'.50')+';border-left:4px solid '+col.border+';border-radius:18px;padding:18px 20px 16px;margin-bottom:18px;position:relative;overflow:hidden;box-shadow:0 0 32px '+ca(col.glow,'.35')+'">'
+    +'<div style="position:absolute;top:-6px;left:6px;font-size:58px;color:'+ca(col.label,'.16')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none">❝</div>'
     +'<div style="font-size:17.5px;line-height:1.74;color:rgba(255,255,255,.96);word-break:break-word;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;position:relative">'+_escHtml(m.text||'')+'</div>'
     +'</div>'
     // Heart button — vivid pill
