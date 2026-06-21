@@ -1371,6 +1371,12 @@ async function pChangePassword(){
 
 async function _loginAndGo(){
   if(safeLS('get','velo_needs_pw_change') === '1'){ pGoTo('change-password'); return; }
+  // Admin email detected → send to admin-login instead of regular flow
+  var _lEmail = (safeLS('get','velo_user_email') || '').toLowerCase().trim();
+  if(_ADMIN_EMAILS.indexOf(_lEmail) >= 0 && safeLS('get','velo_admin_session') !== '1'){
+    pGoTo('admin-login');
+    return;
+  }
   var type = safeLS('get','velo_user_type') || 'user';
   _userType = type;
   _trackVisitDay(); // Record today as an app visit (for Bronze badge)
@@ -11699,7 +11705,7 @@ function pHappyReact(postId, emoji){
   var myReacted = safeLS('get','velo_happy_rx_'+postId);
   if(myReacted === emoji){ pToast('💛','Ya reaccionaste con '+emoji); return; }
   // Supabase-loaded post → update in memory + persist to Supabase
-  var sbPost = (_sbHappy||[]).find(function(p){ return p.id === postId; });
+  var sbPost = (_sbHappy||[]).find(function(p){ return String(p.id) === String(postId); });
   if(sbPost){
     if(!sbPost.reactions) sbPost.reactions = {};
     if(myReacted && sbPost.reactions[myReacted] > 0) sbPost.reactions[myReacted]--;
@@ -11743,7 +11749,7 @@ function pHappyComment(postId){
   var myId   = incognito ? '' : _myUserId();
   var comment = { name:myName, text:text, ts:Date.now(), userId:myId, av:myAv };
   // Supabase-loaded post → update in memory + persist to Supabase
-  var sbPost = (_sbHappy||[]).find(function(p){ return p.id === postId; });
+  var sbPost = (_sbHappy||[]).find(function(p){ return String(p.id) === String(postId); });
   if(sbPost){
     if(!sbPost.comments) sbPost.comments = [];
     sbPost.comments.push(comment);
@@ -23096,7 +23102,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1059;
+    var _BUILT_V = 1060;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
