@@ -3972,7 +3972,7 @@ function _buildDqCards(list){
       +'<span style="position:absolute;bottom:-3px;right:-4px;font-size:13px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))">'+r.mood_emoji+'</span>'
       +'</div>';
     return '<div class="dq-feed-card home-mc" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
-      +' style="background:'+col.bg+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'.30)')+';border-left:3px solid '+col.border+';box-shadow:0 2px 14px '+col.glow+';cursor:pointer;border-radius:16px;padding:13px 14px 11px;position:relative;overflow:hidden">'
+      +' style="background:'+col.bg+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'.30)')+';border-left:3px solid '+col.border+';box-shadow:0 2px 14px '+col.glow+';cursor:pointer;border-radius:16px;padding:13px 16px 12px;position:relative;overflow:hidden">'
       // Top row: avatar + name + time + action
       +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">'
       +avWrap
@@ -3987,9 +3987,9 @@ function _buildDqCards(list){
         ? '<div style="font-size:15.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:rgba(255,255,255,.90);line-height:1.55;word-break:break-word;margin-bottom:10px;padding-left:45px">'+_escHtml(r.response_text)+'</div>'
         : '')
       // Bottom: reaction pills + button — padding-right ensures "Reaccionar" never clips
-      +'<div class="dq-rx-bar" style="display:flex;align-items:center;gap:5px;border-top:1px solid '+col.border.replace(/[\d.]+\)$/,'.18)')+';padding-top:8px;padding-right:2px">'
+      +'<div class="dq-rx-bar" style="display:flex;align-items:center;gap:5px;border-top:1px solid '+col.border.replace(/[\d.]+\)$/,'.18)')+';padding-top:8px">'
       +'<span class="dq-rx-pills" style="flex:1;min-width:0">'+rxPills+'</span>'
-      +'<span style="flex-shrink:0;white-space:nowrap;font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif;letter-spacing:.2px;padding-left:6px">'+(_totalRx>0?'Reaccionar ›':'✦ Reaccionar')+'</span>'
+      +'<span style="flex-shrink:0;white-space:nowrap;font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif;letter-spacing:.2px;padding:3px 10px 3px 8px;background:'+col.badge+';border-radius:20px">'+(_totalRx>0?'Reaccionar ›':'✦ Reaccionar')+'</span>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -22625,7 +22625,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1054;
+    var _BUILT_V = 1055;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
