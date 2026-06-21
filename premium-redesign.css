@@ -11095,7 +11095,7 @@ body.r-dark .dq-reaction-btn[data-active="true"] {
 /* Home feed tab buttons */
 .hf-tab {
   flex: 1;
-  padding: 12px 8px;
+  padding: 8px 10px;
   border-radius: 16px;
   font-size: 13px;
   font-weight: 800;
@@ -12620,8 +12620,8 @@ body.velo-t-manana.r-dark .r-hero-v2::before {
    ══════════════════════════════════════════════════════════════════ */
 
 /* Tab active: subtle scale pop */
-.hf-tab--active { transform: scale(1.05) !important; }
-.hf-tab--active-happy { transform: scale(1.05) !important; }
+.hf-tab--active { transform: scale(1.02) !important; }
+.hf-tab--active-happy { transform: scale(1.02) !important; }
 
 /* Profile toggle: bigger, clearer */
 #momentoProfileToggle {

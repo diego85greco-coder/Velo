@@ -20996,11 +20996,10 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       +(authorAvHtml ? '<span style="display:inline-flex;align-items:center">'+authorAvHtml+'</span>' : '')
       +'<span style="font-size:10.5px;font-style:italic;font-weight:700;color:'+col.label+'">'+_escHtml(authorName)+'</span>'
       +'<span style="font-size:9px;color:rgba(255,255,255,.38)">· '+_momentoAgo(m.created_at)+'</span>'
-      +'<span style="font-size:9px;color:rgba(255,255,255,.28)">· ⏱'+timeLeft+'h</span>'
       +(mine?'<span style="font-size:8px;font-weight:700;padding:1px 6px;border-radius:5px;background:'+col.badge+';color:'+col.label+'">tuyo</span>':'')
       +'</div>'
       +'<div style="font-size:'+txtSz+';line-height:1.55;color:rgba(255,255,255,.92);word-break:break-word">'+_escHtml(m.text||'')+'</div>'
-      +(isTappable?'<div style="margin-top:7px;font-size:10px;color:'+col.label.replace(',1)',',0.70)')+';font-family:\'Jost\',sans-serif;display:flex;align-items:center;gap:3px;letter-spacing:.2px">💬 <span>tocá para comentar</span></div>':'')
+      +(isTappable?'<div style="margin-top:6px;font-size:9.5px;color:rgba(255,255,255,.32);font-family:\'Jost\',sans-serif;letter-spacing:.2px">💬 comentar</div>':'')
       +'</div>'
       // Heart + report
       +'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;padding:10px 11px 10px 4px">'
