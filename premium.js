@@ -2116,9 +2116,7 @@ function _closeAndroidInstallModal(){
 function _renderHomeMedWidget(){
   var el = document.getElementById('homeMedWidget');
   if(!el) return;
-  // Build emoji row from all 10 meditations
   var emojiRow = _MEDITATIONS.map(function(m){ return m.emoji; }).join(' ');
-  // Type tags from all meditations
   var tags = _MEDITATIONS.map(function(m){ return m.tag; }).join(' · ');
   el.innerHTML =
     '<div onclick="pGoTo(\'meditacion\')" style="cursor:pointer;background:linear-gradient(145deg,rgba(12,8,28,.96),rgba(22,12,44,.96));border:1.5px solid rgba(130,90,200,.38);border-radius:22px;overflow:hidden;box-shadow:0 8px 40px rgba(100,60,180,.22),inset 0 1px 0 rgba(180,140,255,.10);position:relative;-webkit-tap-highlight-color:transparent" onmousedown="this.style.opacity=\'.88\'" onmouseup="this.style.opacity=\'1\'" ontouchstart="this.style.opacity=\'.88\'" ontouchend="this.style.opacity=\'1\'">'
@@ -2128,12 +2126,12 @@ function _renderHomeMedWidget(){
     // label
     +'<div style="position:relative;padding:16px 18px 0;display:flex;align-items:center;gap:8px">'
     +'<span style="font-size:18px;line-height:1">🧘</span>'
-    +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;color:rgba(180,150,255,.70);text-transform:uppercase;font-family:Jost,sans-serif">Meditación Guiada</span>'
+    +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;color:rgba(180,150,255,.70);text-transform:uppercase;font-family:Jost,sans-serif">Música de Relajación</span>'
     +'</div>'
     // headline
     +'<div style="position:relative;padding:8px 18px 0">'
-    +'<div style="font-size:20px;font-weight:800;color:rgba(220,200,255,.96);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.2;margin-bottom:5px">10 sesiones para tu bienestar interior</div>'
-    +'<div style="font-size:11.5px;color:rgba(180,155,235,.62);font-family:Jost,sans-serif;font-weight:400;line-height:1.5;margin-bottom:12px">Voz humana real en español · desde 8 hasta 18 minutos · sin publicidad</div>'
+    +'<div style="font-size:20px;font-weight:800;color:rgba(220,200,255,.96);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.2;margin-bottom:5px">5 tracks para tu bienestar interior</div>'
+    +'<div style="font-size:11.5px;color:rgba(180,155,235,.62);font-family:Jost,sans-serif;font-weight:400;line-height:1.5;margin-bottom:12px">Música original · ambient · para relajar · ~5 minutos cada track</div>'
     +'</div>'
     // emoji constellation
     +'<div style="position:relative;padding:0 18px 12px">'
@@ -2141,7 +2139,7 @@ function _renderHomeMedWidget(){
     +'</div>'
     // types
     +'<div style="position:relative;padding:0 18px 16px;display:flex;align-items:center;justify-content:space-between">'
-    +'<div style="font-size:9.5px;color:rgba(150,125,210,.55);font-family:Jost,sans-serif;font-weight:600;line-height:1.5;flex:1;margin-right:12px">Respiración · Escaneo corporal · Metta · Visualización · Autocompasión · y más</div>'
+    +'<div style="font-size:9.5px;color:rgba(150,125,210,.55);font-family:Jost,sans-serif;font-weight:600;line-height:1.5;flex:1;margin-right:12px">'+tags+'</div>'
     +'<div style="flex-shrink:0;background:linear-gradient(135deg,rgba(130,90,200,.80),rgba(90,60,160,.90));border:1px solid rgba(180,150,255,.40);border-radius:100px;padding:9px 20px;font-size:12px;font-weight:800;color:rgba(235,220,255,.96);font-family:Jost,sans-serif;letter-spacing:.3px;box-shadow:0 4px 18px rgba(100,60,180,.35);white-space:nowrap">Explorar →</div>'
     +'</div>'
     +'</div>';
@@ -20521,42 +20519,42 @@ function _updateAmbientUI(){
   if(nameEl) nameEl.textContent=meta.label+' — reproduciendo';
 }
 
-// ── MEDITACIÓN ────────────────────────────────────────────────
-// Audios propios — próximamente (audioUrl se agrega cuando estén listos)
+// ── MÚSICA DE RELAJACIÓN ────────────────────────────────────────
+// 5 tracks generados con Suno — audioUrl se agrega cuando estén listos
 var _MEDITATIONS = [
   { id:'calma', emoji:'🌊',
-    title:'Calma Interior',
-    sub:'Encontrá quietud · dejate sostener · respiración consciente',
-    tag:'Mindfulness', tagCol:'rgba(64,156,220,.22)', tagTxt:'rgba(140,210,255,.90)',
-    duration:'~6 min',
+    title:'Olas de Calma',
+    sub:'Ambient · ondas suaves · para soltar el día',
+    tag:'Ambient', tagCol:'rgba(64,156,220,.22)', tagTxt:'rgba(140,210,255,.90)',
+    duration:'~5 min',
     col:{ bg:'rgba(6,18,38,.95)', card:'rgba(10,40,80,.60)', border:'rgba(64,156,220,.50)', glow:'rgba(64,156,220,.25)', label:'rgba(140,210,255,.95)', strip:'rgba(64,156,220,.18)' }
   },
   { id:'escaneo', emoji:'🌿',
-    title:'Escaneo del Cuerpo',
-    sub:'Recorré cada parte y soltá la tensión acumulada',
-    tag:'Relajación', tagCol:'rgba(72,185,128,.22)', tagTxt:'rgba(140,230,175,.90)',
-    duration:'~7 min',
+    title:'Bosque Profundo',
+    sub:'Naturaleza · instrumentos suaves · relajación total',
+    tag:'Naturaleza', tagCol:'rgba(72,185,128,.22)', tagTxt:'rgba(140,230,175,.90)',
+    duration:'~5 min',
     col:{ bg:'rgba(4,18,12,.95)', card:'rgba(8,44,24,.60)', border:'rgba(72,185,128,.50)', glow:'rgba(72,185,128,.25)', label:'rgba(140,230,175,.95)', strip:'rgba(72,185,128,.18)' }
   },
   { id:'metta', emoji:'💜',
-    title:'Bondad Amorosa',
-    sub:'Abrí el corazón hacia vos y hacia los demás',
-    tag:'Compasión', tagCol:'rgba(180,120,240,.22)', tagTxt:'rgba(215,170,255,.90)',
-    duration:'~6 min',
+    title:'Paz Interior',
+    sub:'Piano suave · cuencos · para el corazón',
+    tag:'Meditación', tagCol:'rgba(180,120,240,.22)', tagTxt:'rgba(215,170,255,.90)',
+    duration:'~5 min',
     col:{ bg:'rgba(18,6,32,.95)', card:'rgba(40,12,64,.60)', border:'rgba(180,120,240,.50)', glow:'rgba(180,120,240,.25)', label:'rgba(215,170,255,.95)', strip:'rgba(180,120,240,.18)' }
   },
   { id:'espiracion', emoji:'💨',
-    title:'Con la Respiración',
-    sub:'Soltá el estrés · la respiración como ancla',
+    title:'Fluir',
+    sub:'Ritmo de respiración · flauta · movimiento suave',
     tag:'Respiración', tagCol:'rgba(100,190,230,.22)', tagTxt:'rgba(180,225,245,.90)',
     duration:'~5 min',
     col:{ bg:'rgba(4,20,32,.95)', card:'rgba(8,48,72,.60)', border:'rgba(100,190,230,.50)', glow:'rgba(100,190,230,.22)', label:'rgba(180,225,245,.95)', strip:'rgba(100,190,230,.18)' }
   },
   { id:'ahora', emoji:'🌅',
-    title:'El Momento Presente',
-    sub:'Anclate aquí · sonidos · sensaciones · este instante',
-    tag:'Presencia', tagCol:'rgba(230,175,50,.22)', tagTxt:'rgba(255,220,100,.90)',
-    duration:'~6 min',
+    title:'Amanecer',
+    sub:'Música suave · para empezar el día con calma',
+    tag:'Mañana', tagCol:'rgba(230,175,50,.22)', tagTxt:'rgba(255,220,100,.90)',
+    duration:'~5 min',
     col:{ bg:'rgba(28,18,4,.95)', card:'rgba(60,38,8,.60)', border:'rgba(230,175,50,.50)', glow:'rgba(230,175,50,.24)', label:'rgba(255,220,100,.95)', strip:'rgba(230,175,50,.20)' }
   }
 ];
@@ -20632,7 +20630,7 @@ function pOpenMeditation(id){
   ov.style.display = 'block';
   document.getElementById('meditacionEmoji').textContent = med.emoji;
   document.getElementById('meditacionTitle').textContent = med.title;
-  document.getElementById('meditacionDuration').textContent = med.duration + ' · Guía en español';
+  document.getElementById('meditacionDuration').textContent = med.duration + ' · Música de relajación';
   var guideEl = document.getElementById('meditacionGuide');
   if(guideEl){ guideEl.style.opacity='1'; guideEl.textContent = med.sub; }
   document.getElementById('meditacionTimer').textContent = '0:00';
