@@ -20612,7 +20612,18 @@ var _MEDITATIONS = [
 var _medAudio = null, _medTimer = null, _medStepTimers = [], _medStartTime = 0, _medTimerInterval = null, _medCurrentId = null;
 var _medLoadToken = 0;
 
+// Preloaded audio elements keyed by meditation id — filled on pInitMeditacion
+var _medPreloads = {};
 function pInitMeditacion(){
+  // Preload all track URLs so canplay fires fast when user taps one
+  _MEDITATIONS.forEach(function(m){
+    if(m.audioUrl && !_medPreloads[m.id]){
+      var a = new Audio();
+      a.preload = 'auto';
+      a.src = m.audioUrl;
+      _medPreloads[m.id] = a;
+    }
+  });
   var el = document.getElementById('meditacionCards');
   if(!el) return;
   el.innerHTML = _MEDITATIONS.map(function(m){
@@ -20692,15 +20703,32 @@ function pOpenMeditation(id){
   // Play guided meditation audio when available
   var guideEl2 = document.getElementById('meditacionGuide');
   if(med.audioUrl){
-    if(guideEl2){ guideEl2.style.opacity='1'; guideEl2.textContent = med.sub; }
+    if(guideEl2){ guideEl2.style.opacity='1'; guideEl2.textContent = '⏳ Cargando audio…'; }
     try{
-      _medAudio = new Audio();
-      _medAudio.src = med.audioUrl;
+      // Reuse preloaded element if available (already buffering since pInitMeditacion)
+      _medAudio = _medPreloads[id] || new Audio();
+      delete _medPreloads[id];
+      if(!_medAudio.src || _medAudio.src !== med.audioUrl){
+        _medAudio.preload = 'auto';
+        _medAudio.src = med.audioUrl;
+      }
       _medAudio.volume = 0.90;
       _medAudio.addEventListener('ended', function(){
         if(_medTimerInterval){ clearInterval(_medTimerInterval); _medTimerInterval=null; }
       });
-      _medAudio.play().catch(function(e){ console.warn('[med audio]', e); });
+      // Wait for enough data before playing — avoids leading silence from buffering
+      var _audioToken = _myMedToken;
+      function _doPlay(){
+        if(_medLoadToken !== _audioToken) return;
+        if(guideEl2) guideEl2.textContent = med.sub;
+        _medAudio.play().catch(function(e){ console.warn('[med audio]', e); });
+      }
+      _medAudio.addEventListener('canplay', _doPlay, { once: true });
+      // Fallback: if canplay never fires (some mobile browsers), play anyway after 4s
+      setTimeout(function(){
+        if(_medLoadToken !== _audioToken || !_medAudio) return;
+        if(_medAudio.paused){ _doPlay(); }
+      }, 4000);
     }catch(e){ console.warn('[med audio init]', e); }
   } else {
     if(guideEl2){ guideEl2.style.opacity='1'; guideEl2.textContent = '🎙️ Audio en preparación · disponible muy pronto'; }
@@ -22589,7 +22617,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1049;
+    var _BUILT_V = 1050;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
