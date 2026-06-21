@@ -13332,7 +13332,7 @@ function pRenderInbox(){
         ? '<div class="p-inbox-ic" style="cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_avInline(senderAv,32)+'</div>'
         : '<div class="p-inbox-ic">'+_escHtml(b.icon||'📢')+'</div>';
       var senderRow = (senderId && senderName)
-        ? '<div style="font-size:11px;color:var(--sage);font-weight:600;margin-bottom:2px;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_escHtml(senderName)+' ›</div>'
+        ? '<div style="font-size:11px;color:rgba(116,198,157,.90);font-weight:700;margin-bottom:2px;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_escHtml(senderName)+' ›</div>'
         : '';
       var isAlreadyRead = !!safeLS('get',readKey);
       var _xBtn = '<button onclick="event.stopPropagation();pDeleteInboxMsg(\'bc_'+b.id+'\',this)" style="'+_delBtnStyle+'">×</button>';
@@ -23096,7 +23096,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1058;
+    var _BUILT_V = 1059;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
