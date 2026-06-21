@@ -4107,15 +4107,18 @@ function pReportDqResponse(responseId, responseUserId){
     _renderDailyFeed(_dqAllResponses);
     pToast('🚩','Respuesta reportada y ocultada');
     if(!sbClient) return;
-    sbClient.auth.getUser().then(function(res){
-      if(!res.data || !res.data.user) return;
+    var _ruid = safeLS('get','velo_user_id');
+    if(_ruid){
       sbClient.from('content_reports').insert({
-        reporter_id: res.data.user.id,
+        reporter_id: _ruid,
         response_id: String(responseId),
         response_user_id: responseUserId || null,
-        report_type: 'dq_response'
-      }).then(function(){}).catch(function(){});
-    }).catch(function(){});
+        report_type: 'dq_response',
+        resolved: false
+      }).then(function(){
+        _notifyAdminsNewReport('🚩 Nuevo reporte de usuario', 'Un usuario reportó una respuesta en la Pregunta Diaria. Revisá el panel de Moderación.');
+      }).catch(function(){});
+    }
   });
 }
 
@@ -7358,7 +7361,9 @@ async function _geminiModerateContent(text, section){
         sbClient.from('moderation_flags').insert({
           section: section, tipo: data.tipo, gravedad: 'alta',
           content: text.slice(0,300), user_id: uid, resolved: false
-        }).then(function(){}).catch(function(){});
+        }).then(function(){
+          _notifyAdminsNewReport('🤖 Alerta IA: '+data.tipo, 'Contenido marcado por IA en "'+section+'". Gravedad: alta. Revisá el panel de Moderación → Alertas IA.');
+        }).catch(function(){});
       }
       pToast('⚠️','Tu mensaje fue marcado para revisión por el equipo de Velo.');
     }
@@ -16175,6 +16180,25 @@ async function pStartProTrial(nameVal, specVal, emailVal, passVal){
 // ── ADMIN ──────────────────────────────────────────────────────
 var _ADMIN_EMAILS = ['consultas@heyvelo.app', 'wearevelo.app@gmail.com'];
 
+// Notifica a todos los admins vía broadcasts cuando llega un reporte o alerta IA
+function _notifyAdminsNewReport(subject, body){
+  _initSupabase();
+  if(!sbClient) return;
+  sbClient.from('profiles').select('id').in('email', _ADMIN_EMAILS)
+    .then(function(aRes){
+      if(!aRes || !aRes.data) return;
+      aRes.data.forEach(function(a){
+        sbClient.from('broadcasts').insert({
+          target: 'user:'+a.id, icon:'🚨',
+          subject: subject,
+          body: body,
+          sender: JSON.stringify({n:'Velo Sistema',i:'velo-system',a:'🚨'}),
+          sent_at: new Date().toISOString()
+        }).then(function(){}).catch(function(){});
+      });
+    }).catch(function(){});
+}
+
 async function pAdminLogin(){
   var emailEl = document.getElementById('adminEmail');
   var passEl  = document.getElementById('adminPass');
@@ -16284,13 +16308,21 @@ async function _renderAdmin(){
       }
     }catch(e){}
 
-    // Reportes: open reports and crisis
+    // Reportes: open reports and crisis (reportes + content_reports + bitacora_reports)
     try{
       var repRes = await sbClient.from('reportes').select('estado,categoria').eq('estado','abierto');
       if(!repRes.error && repRes.data){
         openReports = repRes.data.length;
         crisisOpen  = repRes.data.filter(function(r){ return r.categoria==='crisis'; }).length;
       }
+    }catch(e){}
+    try{
+      var crMetRes = await sbClient.from('content_reports').select('id',{count:'exact',head:true}).or('resolved.is.null,resolved.eq.false');
+      if(!crMetRes.error) openReports += (crMetRes.count||0);
+    }catch(e){}
+    try{
+      var brMetRes = await sbClient.from('bitacora_reports').select('id',{count:'exact',head:true});
+      if(!brMetRes.error) openReports += (brMetRes.count||0);
     }catch(e){}
   }
 
@@ -16815,6 +16847,25 @@ async function _adminTabModeracion(panel){
   if(sbClient){
     try{ var fRes = await sbClient.from('moderation_flags').select('*').eq('resolved',false).order('created_at',{ascending:false}).limit(50); flags = (!fRes.error&&fRes.data)?fRes.data:[]; }catch(e){}
     try{ var rRes = await sbClient.from('reportes').select('*').eq('estado','abierto').order('created_at',{ascending:false}).limit(50); reports = (!rRes.error&&rRes.data)?rRes.data:[]; }catch(e){}
+    // También leer content_reports (reportes de usuarios en DQ) y bitacora_reports
+    try{
+      var crRes = await sbClient.from('content_reports').select('*').or('resolved.is.null,resolved.eq.false').order('created_at',{ascending:false}).limit(50);
+      if(!crRes.error && crRes.data) crRes.data.forEach(function(r){
+        reports.push({ id:r.id, created_at:r.created_at, categoria:'Reporte DQ', tipo:'reporte_dq',
+          descripcion:'Respuesta ID '+r.response_id+' reportada por usuario', reported_user_id:r.response_user_id,
+          content_id:r.response_id, content_type:'dq_response', _src:'content_reports' });
+      });
+    }catch(e){}
+    try{
+      var brRes = await sbClient.from('bitacora_reports').select('*').order('created_at',{ascending:false}).limit(50);
+      if(!brRes.error && brRes.data) brRes.data.forEach(function(r){
+        reports.push({ id:r.id, created_at:r.created_at, categoria:'Reporte Bitácora', tipo:'reporte_bitacora',
+          descripcion:(r.post_id?'Post ID '+r.post_id:'Comentario ID '+r.comment_id)+' reportado', reported_user_id:r.user_id,
+          content_id:r.post_id||r.comment_id, content_type:'bitacora', _src:'bitacora_reports' });
+      });
+    }catch(e){}
+    // Ordenar todos los reportes por fecha descendente
+    reports.sort(function(a,b){ return new Date(b.created_at||0)-new Date(a.created_at||0); });
   }
   var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
   var crisisLocal = audit.filter(function(a){ return a.tipo==='crisis_detect'; });
@@ -16847,12 +16898,16 @@ async function _adminTabModeracion(panel){
           var ruid = _escHtml(r.reported_user_id||r.user_id||'');
           var cid  = _escHtml(r.content_id||'');
           var ctype= _escHtml(r.content_type||r.categoria||'');
+          var rsrc = _escHtml(r._src||'reportes');
+          var srcBadge = r._src==='content_reports' ? '<span style="font-size:9px;background:rgba(100,170,230,.15);border:1px solid rgba(100,170,230,.25);border-radius:4px;padding:1px 5px;color:rgba(100,170,230,.8);margin-left:5px">DQ</span>'
+                       : r._src==='bitacora_reports' ? '<span style="font-size:9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.25);border-radius:4px;padding:1px 5px;color:rgba(116,198,157,.8);margin-left:5px">Bitácora</span>'
+                       : '';
           return '<div id="report-'+r.id+'" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
-            +'<div style="font-size:11px;font-weight:700;color:rgba(255,190,100,.9)">'+_escHtml(r.categoria||r.tipo||'reporte')+'</div>'
+            +'<div style="font-size:11px;font-weight:700;color:rgba(255,190,100,.9)">'+_escHtml(r.categoria||r.tipo||'reporte')+srcBadge+'</div>'
             +'<div style="font-size:11px;color:rgba(255,255,255,.5);margin:3px 0">'+_escHtml((r.descripcion||r.motivo||r.texto||'').slice(0,180))+'</div>'
             +'<div style="font-size:10px;color:rgba(255,255,255,.25)">'+t+(ruid?' · uid:'+ruid.slice(0,8):'')+'</div>'
             +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">'
-            +'<button onclick="pAdminResolveReport(\''+r.id+'\')" style="font-size:10px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Resolver</button>'
+            +'<button onclick="pAdminResolveReport(\''+r.id+'\',\''+rsrc+'\')" style="font-size:10px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Resolver</button>'
             +(ruid?'<button onclick="pAdminWarnUser(\''+ruid+'\',\'\')" style="font-size:10px;padding:4px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:6px;color:rgba(240,200,90,.9);cursor:pointer">⚠️ Advertir</button>':'')
             +(cid?'<button onclick="pAdminDeleteContent(\''+cid+'\',\''+ctype+'\')" style="font-size:10px;padding:4px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);border-radius:6px;color:rgba(231,120,110,.9);cursor:pointer">🗑️ Eliminar</button>':'')
             +'</div></div>';
@@ -18171,11 +18226,18 @@ async function pAdminSendWarning(userId, email){
   pToast('⚠️',saved?'Advertencia enviada al usuario':'Guardado localmente (sin conexión)');
 }
 
-async function pAdminResolveReport(id){
+async function pAdminResolveReport(id, src){
   _initSupabase();
   if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
   try{
-    await sbClient.from('reportes').update({estado:'resuelto',resolved_at:new Date().toISOString()}).eq('id',id);
+    var table = src || 'reportes';
+    if(table === 'reportes'){
+      await sbClient.from('reportes').update({estado:'resuelto',resolved_at:new Date().toISOString()}).eq('id',id);
+    } else if(table === 'content_reports'){
+      await sbClient.from('content_reports').update({resolved:true,resolved_at:new Date().toISOString()}).eq('id',id);
+    } else if(table === 'bitacora_reports'){
+      await sbClient.from('bitacora_reports').delete().eq('id',id);
+    }
     var card=document.getElementById('report-'+id); if(card) card.remove();
     pToast('✅','Reporte resuelto');
   }catch(e){ pToast('⚠️','Error al resolver el reporte'); }
@@ -22077,7 +22139,9 @@ async function _aiReviewReport(type, id, content, userReason){
         section: type, tipo: data.tipo, gravedad: data.gravedad||'media',
         content: content.slice(0,300), user_id: safeLS('get','velo_user_id')||'',
         resolved: false, resolution: null
-      }).then(function(){}).catch(function(){});
+      }).then(function(){
+        _notifyAdminsNewReport('🤖 Alerta IA: '+data.tipo, 'Contenido reportado por usuario y confirmado por IA en "'+type+'". Gravedad: '+(data.gravedad||'media')+'. Revisá el panel de Moderación.');
+      }).catch(function(){});
     }
     var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
     audit[0] = Object.assign(audit[0]||{}, { aiVerdict: data.viola ? 'VIOLA:'+data.tipo : 'ok', aiJustif: data.justificacion });
@@ -22801,7 +22865,10 @@ function _btReport(postId,commentId){
     var obj={user_id:uid};
     if(postId) obj.post_id=postId;
     if(commentId) obj.comment_id=commentId;
-    sbClient.from('bitacora_reports').insert(obj).then(function(){ pToast('Gracias, revisaremos el reporte.'); });
+    sbClient.from('bitacora_reports').insert(obj).then(function(){
+      pToast('Gracias, revisaremos el reporte.');
+      _notifyAdminsNewReport('🚩 Reporte en Bitácora', 'Un usuario reportó contenido en Bitácora. Revisá el panel de Moderación.');
+    }).catch(function(){});
   });
 }
 
@@ -23102,7 +23169,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1060;
+    var _BUILT_V = 1061;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
