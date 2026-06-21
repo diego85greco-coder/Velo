@@ -20527,6 +20527,7 @@ var _MEDITATIONS = [
     sub:'Ambient · ondas suaves · para soltar el día',
     tag:'Ambient', tagCol:'rgba(64,156,220,.22)', tagTxt:'rgba(140,210,255,.90)',
     duration:'~5 min',
+    audioUrl:'sounds/m-calma.mp3?v=1039',
     col:{ bg:'rgba(6,18,38,.95)', card:'rgba(10,40,80,.60)', border:'rgba(64,156,220,.50)', glow:'rgba(64,156,220,.25)', label:'rgba(140,210,255,.95)', strip:'rgba(64,156,220,.18)' }
   },
   { id:'escaneo', emoji:'🌿',
@@ -20534,6 +20535,7 @@ var _MEDITATIONS = [
     sub:'Naturaleza · instrumentos suaves · relajación total',
     tag:'Naturaleza', tagCol:'rgba(72,185,128,.22)', tagTxt:'rgba(140,230,175,.90)',
     duration:'~5 min',
+    audioUrl:'sounds/m-bosque.mp3?v=1039',
     col:{ bg:'rgba(4,18,12,.95)', card:'rgba(8,44,24,.60)', border:'rgba(72,185,128,.50)', glow:'rgba(72,185,128,.25)', label:'rgba(140,230,175,.95)', strip:'rgba(72,185,128,.18)' }
   },
   { id:'metta', emoji:'💜',
@@ -20541,6 +20543,7 @@ var _MEDITATIONS = [
     sub:'Piano suave · cuencos · para el corazón',
     tag:'Meditación', tagCol:'rgba(180,120,240,.22)', tagTxt:'rgba(215,170,255,.90)',
     duration:'~5 min',
+    audioUrl:'sounds/m-paz.mp3?v=1039',
     col:{ bg:'rgba(18,6,32,.95)', card:'rgba(40,12,64,.60)', border:'rgba(180,120,240,.50)', glow:'rgba(180,120,240,.25)', label:'rgba(215,170,255,.95)', strip:'rgba(180,120,240,.18)' }
   },
   { id:'espiracion', emoji:'💨',
@@ -20548,6 +20551,7 @@ var _MEDITATIONS = [
     sub:'Ritmo de respiración · flauta · movimiento suave',
     tag:'Respiración', tagCol:'rgba(100,190,230,.22)', tagTxt:'rgba(180,225,245,.90)',
     duration:'~5 min',
+    audioUrl:'sounds/m-fluir.mp3?v=1039',
     col:{ bg:'rgba(4,20,32,.95)', card:'rgba(8,48,72,.60)', border:'rgba(100,190,230,.50)', glow:'rgba(100,190,230,.22)', label:'rgba(180,225,245,.95)', strip:'rgba(100,190,230,.18)' }
   },
   { id:'ahora', emoji:'🌅',
@@ -20555,6 +20559,7 @@ var _MEDITATIONS = [
     sub:'Música suave · para empezar el día con calma',
     tag:'Mañana', tagCol:'rgba(230,175,50,.22)', tagTxt:'rgba(255,220,100,.90)',
     duration:'~5 min',
+    audioUrl:'sounds/m-amanecer.mp3?v=1039',
     col:{ bg:'rgba(28,18,4,.95)', card:'rgba(60,38,8,.60)', border:'rgba(230,175,50,.50)', glow:'rgba(230,175,50,.24)', label:'rgba(255,220,100,.95)', strip:'rgba(230,175,50,.20)' }
   }
 ];
