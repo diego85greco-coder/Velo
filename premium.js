@@ -20676,7 +20676,11 @@ function pOpenMeditation(id){
 function pCloseMeditation(){
   _medLoadToken++;
   var ov = document.getElementById('meditacionPlayer');
-  if(ov) ov.style.display='none';
+  if(ov){
+    ov.style.pointerEvents = 'none'; // block ghost-click immediately
+    var _ovRef = ov;
+    setTimeout(function(){ _ovRef.style.display='none'; _ovRef.style.pointerEvents=''; }, 350);
+  }
   _medCurrentId = null;
   _medStepTimers.forEach(function(t){ clearTimeout(t); }); _medStepTimers=[];
   if(_medTimerInterval){ clearInterval(_medTimerInterval); _medTimerInterval=null; }
