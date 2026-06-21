@@ -22,17 +22,12 @@ self.addEventListener('activate', function(e){
 self.addEventListener('fetch', function(e){
   var url = e.request.url;
 
-  // CRITICAL: never intercept cross-origin requests.
-  // Let the browser handle CDN (Supabase, Google Fonts, Stripe, etc.) directly.
-  // Intercepting these and returning undefined from cache causes
-  // "TypeError: Failed to convert value to Response" which blocks Supabase from loading.
   if(!url.startsWith(self.location.origin)){
     return;
   }
 
   var path = new URL(url).pathname;
 
-  /* For app-premium.html and index.html: network-first, fall back to cache */
   if(path === '/' || path === '/index.html' || path === '/app-premium.html'){
     e.respondWith(
       fetch(e.request, {cache: 'no-store'})
@@ -52,7 +47,6 @@ self.addEventListener('fetch', function(e){
     return;
   }
 
-  /* For version.json: always network, no cache */
   if(path === VERSION_URL || path === '/version.json'){
     e.respondWith(
       fetch(e.request, {cache: 'no-store'})
@@ -61,7 +55,6 @@ self.addEventListener('fetch', function(e){
     return;
   }
 
-  /* For JS/CSS assets with version query strings: cache-first (they're already versioned) */
   if((path.endsWith('.js') || path.endsWith('.css')) && url.indexOf('?v=') >= 0){
     e.respondWith(
       caches.match(e.request).then(function(cached){
@@ -78,7 +71,6 @@ self.addEventListener('fetch', function(e){
     return;
   }
 
-  /* Same-origin requests: network with safe cache fallback */
   e.respondWith(
     fetch(e.request).catch(function(){
       return caches.match(e.request).then(function(cached){
@@ -88,7 +80,6 @@ self.addEventListener('fetch', function(e){
   );
 });
 
-// Push notification handler
 self.addEventListener('push', function(event){
   var data = {};
   try{ data = event.data ? event.data.json() : {}; }catch(e){ data = {title:'Velo',body:event.data?event.data.text():''}; }
@@ -110,9 +101,6 @@ self.addEventListener('notificationclick', function(event){
   event.waitUntil(clients.openWindow(url));
 });
 
-// When the browser rotates/renews a push endpoint automatically,
-// re-subscribe and notify the app page so it can update Supabase.
-// Without this, the old endpoint gets a 410 and push_subscription goes null.
 self.addEventListener('pushsubscriptionchange', function(event){
   var appKey = event.oldSubscription && event.oldSubscription.options
     ? event.oldSubscription.options.applicationServerKey
