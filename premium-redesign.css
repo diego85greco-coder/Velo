@@ -10425,7 +10425,7 @@ body:not(.r-dark) .home-momento-post-btn {
   letter-spacing: 0 !important;
 }
 #homeGreetWrapper .r-hero-italic {
-  color: rgba(210,178,105,.68) !important;
+  color: rgba(210,178,105,.92) !important;
   text-align: center !important;
 }
 /* Light mode — dark warm amber, fully legible */
@@ -10437,7 +10437,7 @@ body:not(.r-dark) #homeGreetTxt::after {
   color: rgba(130,82,12,.60) !important;
 }
 body:not(.r-dark) #homeGreetWrapper .r-hero-italic {
-  color: rgba(105,65,12,.72) !important;
+  color: rgba(105,65,12,.90) !important;
 }
 
 /* ── v680: PARA VOS always dark green — consistent with REGISTRA & Momentos ── */
@@ -12964,8 +12964,8 @@ body.is-landing .p-sidebar { display: none !important; }
 body.is-landing .p-main-content { width: 100% !important; max-width: 100% !important; }
 
 /* ── v1033 — homeGreetSub visible on all themes ── */
-#homeGreetSub { color: rgba(255,255,255,.78) !important; }
-body:not(.r-dark) #homeGreetSub { color: rgba(30,60,40,.72) !important; }
+#homeGreetSub { color: rgba(255,255,255,.92) !important; font-size: 16px !important; }
+body:not(.r-dark) #homeGreetSub { color: rgba(30,60,40,.88) !important; }
 
 /* ── v1033 — Section labels: acomp + herra ── */
 .home-sec-lbl-herra { display: block; width: 100%; box-sizing: border-box; padding: 18px 4px 6px; }
