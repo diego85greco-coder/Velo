@@ -22643,11 +22643,12 @@ function _btRenderShell(){
       +'<button onclick="_btOpenCompose(null)" style="background:linear-gradient(135deg,rgba(116,198,157,.35),rgba(80,160,120,.25));border:1.5px solid rgba(116,198,157,.55);color:rgba(175,245,210,.97);font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:20px;padding:7px 15px;cursor:pointer;letter-spacing:.3px">✦ Publicar</button>'
     +'</div>'
     +'<p style="font-size:12px;color:rgba(180,200,190,.55);font-family:Jost,sans-serif;line-height:1.5;margin:0 0 14px;font-style:italic">Historias reales · desde el corazón · para quien necesita leerlas</p>'
-    +'<div style="display:flex;gap:8px;margin-bottom:18px">'
+    +'<div style="display:flex;gap:8px;margin-bottom:12px">'
       +_btTabBtn('apoyo','🫂 Apoyo')
       +_btTabBtn('superacion','⭐ Superación')
       +_btTabBtn('debate','💬 Debate')
     +'</div>'
+    +'<div id="btTabDesc" style="font-size:11.5px;font-family:Jost,sans-serif;line-height:1.5;margin-bottom:14px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(180,210,195,.70)"></div>'
     +'<div id="btFeed" style="display:flex;flex-direction:column;gap:12px"></div>';
 }
 
@@ -22655,6 +22656,12 @@ function _btTabBtn(type,label){
   var c=_btColors[type];
   return '<button id="btTab-'+type+'" onclick="_btSwitchTab(\''+type+'\')" style="flex:1;padding:9px 6px;border-radius:14px;border:1.5px solid '+c.border+';background:'+c.bg+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:.50;transition:opacity .2s,box-shadow .2s,transform .2s">'+label+'</button>';
 }
+
+var _btTabDescs = {
+  apoyo:      '🫂 ¿Estás pasando un momento difícil? Compartí tu historia o dejá un mensaje de aliento a quien lo necesita. Aquí nadie juzga.',
+  superacion: '⭐ Historias de personas que superaron algo muy duro. Compartí lo que te costó y lo que aprendiste — puede cambiarle la vida a alguien.',
+  debate:     '💬 Temas que generan perspectivas distintas. Publicá un dilema, elegí dos posturas y que la comunidad vote y opine con respeto.'
+};
 
 function _btSwitchTab(type){
   _btCurrentTab=type;
@@ -22665,6 +22672,8 @@ function _btSwitchTab(type){
     if(t===type){ btn.style.opacity='1'; btn.style.boxShadow='0 4px 18px '+c.glow+',inset 0 1px 0 rgba(255,255,255,.12)'; btn.style.transform='translateY(-1px)'; }
     else { btn.style.opacity='.48'; btn.style.boxShadow='none'; btn.style.transform='none'; }
   });
+  var desc=document.getElementById('btTabDesc');
+  if(desc) desc.textContent=_btTabDescs[type]||'';
   if(!_btPosts[type]||!_btPosts[type].length){ _btLoadTab(type,false); }
   else { _btRenderFeed(type); }
 }
@@ -23026,7 +23035,7 @@ function _btSubmitCompose(){
 }
 
 function _renderHomeBitacoraWidget(){
-  var el=document.getElementById('homeBitacoraWidget');
+  var el=document.getElementById('homeBitacoraFeed');
   if(!el) return;
   _initSupabase();
   var posts=[];
@@ -23034,7 +23043,7 @@ function _renderHomeBitacoraWidget(){
   posts.sort(function(a,b){ return (b.created_at||'')>(a.created_at||'')?1:-1; });
   posts=posts.slice(0,3);
   if(!posts.length){
-    el.innerHTML='<div style="text-align:center;padding:12px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif">Cargando historias...</div>';
+    el.innerHTML='<div style="text-align:center;padding:10px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif;font-style:italic">Aún no hay historias publicadas. ¡Sé el primero!</div>';
     if(sbClient){
       sbClient.from('bitacora_posts_full').select('*').order('created_at',{ascending:false}).limit(3).then(function(res){
         if(!res.data||!res.data.length) return;
@@ -23087,7 +23096,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1057;
+    var _BUILT_V = 1058;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
