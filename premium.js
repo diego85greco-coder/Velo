@@ -21204,17 +21204,17 @@ async function pOpenMomentoSheet(momentoId){
     +'</div>'
     +'</div>'
     // ── Scrollable body ──
-    +'<div id="mds-body" style="flex:1;overflow-y:auto;padding:20px 18px 0;-webkit-overflow-scrolling:touch">'
+    +'<div id="mds-body" style="flex:1;overflow-y:auto;padding:20px 18px 0;-webkit-overflow-scrolling:touch;background:radial-gradient(ellipse 80% 40% at 50% 0%,'+ca(col.glow,'.28')+' 0%,transparent 70%),radial-gradient(ellipse 60% 30% at 80% 100%,'+ca(col.strip,'.12')+' 0%,transparent 65%),rgba(8,10,18,1)">'
     // Text card
     +'<div style="background:'+ca(col.bg,'.98')+';border:1.5px solid '+ca(col.border,'.45')+';border-left:5px solid '+col.border+';border-radius:20px;padding:20px 20px 18px 18px;margin-bottom:20px;position:relative;overflow:hidden;box-shadow:0 4px 32px '+ca(col.glow,'.30')+',inset 0 1px 0 '+ca(col.border,'.20')+'">'
     +'<div style="position:absolute;top:-16px;left:10px;font-size:88px;color:'+ca(col.label,'.14')+';font-family:\'Cormorant Garamond\',serif;line-height:1;pointer-events:none;font-weight:900">❝</div>'
     +'<div style="font-size:19px;line-height:1.75;color:rgba(255,255,255,.97);word-break:break-word;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;position:relative;z-index:1;padding-top:4px">'+_escHtml(m.text||'')+'</div>'
     +'</div>'
-    // Actions row
-    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">'
-    +'<button id="momentoSheetHeartBtn" onclick="event.stopPropagation();pHeartMomento(\''+mId+'\',this)" style="display:inline-flex;align-items:center;gap:8px;background:'+(liked?'rgba(220,50,80,.22)':ca(col.strip,'.18'))+';border:1.5px solid '+(liked?'rgba(255,80,100,.55)':ca(col.border,'.40'))+';border-radius:100px;padding:10px 20px;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .18s">'
-    +'<span style="font-size:18px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
-    +'<span id="mheart-'+mId+'" style="font-size:14px;font-weight:800;color:'+(liked?'rgba(255,130,150,1)':col.label)+'">'+heartCount+'</span>'
+    // Actions row — centered
+    +'<div style="display:flex;justify-content:center;margin-bottom:24px">'
+    +'<button id="momentoSheetHeartBtn" onclick="event.stopPropagation();pHeartMomento(\''+mId+'\',this)" style="display:inline-flex;align-items:center;gap:10px;background:'+(liked?'rgba(220,50,80,.22)':ca(col.strip,'.18'))+';border:1.5px solid '+(liked?'rgba(255,80,100,.55)':ca(col.border,'.40'))+';border-radius:100px;padding:11px 28px;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .18s;box-shadow:0 2px 12px '+ca(col.glow,'.28')+'">'
+    +'<span style="font-size:20px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
+    +'<span id="mheart-'+mId+'" style="font-size:15px;font-weight:800;color:'+(liked?'rgba(255,130,150,1)':col.label)+'">'+heartCount+'</span>'
     +'</button>'
     +'</div>'
     // Comments header

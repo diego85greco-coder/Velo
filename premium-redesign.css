@@ -12966,3 +12966,6 @@ body.is-landing .p-main-content { width: 100% !important; max-width: 100% !impor
 /* ── v1033 — homeGreetSub visible on all themes ── */
 #homeGreetSub { color: rgba(255,255,255,.78) !important; }
 body:not(.r-dark) #homeGreetSub { color: rgba(30,60,40,.72) !important; }
+
+/* ── v1033 — Section labels: acomp + herra ── */
+.home-sec-lbl-herra { display: block; width: 100%; box-sizing: border-box; padding: 18px 4px 6px; }
