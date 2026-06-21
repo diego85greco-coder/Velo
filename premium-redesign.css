@@ -13098,3 +13098,25 @@ body.r-dark .hf-tab--inactive {
 body.r-dark .hf-tab--inactive-happy {
   color: rgba(220,190,120,.75) !important;
 }
+
+/* ── BITÁCORA ──────────────────────────────────────────────── */
+@keyframes btCardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.bt-card { animation: btCardIn .42s both; }
+.bt-tab  { transition: opacity .2s, box-shadow .2s, transform .2s; }
+
+/* Home Bitácora widget */
+#homeBitacoraWidget {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.home-bt-card {
+  transition: transform .18s ease, opacity .18s ease;
+}
+.home-bt-card:active {
+  transform: scale(.97);
+  opacity: .85;
+}

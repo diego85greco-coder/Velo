@@ -2300,6 +2300,8 @@ function _loadHomeData(){
   _initSupabase();
   if(sbClient && !_momentoRtCh) _momentoRtCh = _sbSub('velo:momentos', 'momentos', function(){ _initHomeMomento(); });
   if(sbClient && !_happyRtCh) _happyRtCh = _sbSub('velo:happy', 'happy_posts', function(){ _loadHomeHappyFeed(); if(typeof pRenderHappy==='function') pRenderHappy(); });
+  // Bitácora home widget
+  setTimeout(_renderHomeBitacoraWidget, 700);
 }
 
 // ── HOME AUTO-REFRESH ─────────────────────────────────────────
@@ -3977,8 +3979,14 @@ function _buildDqCards(list){
       +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">'
       +avWrap
       +'<div style="flex:1;min-width:0">'
-      +'<span style="font-size:12.5px;font-weight:800;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;cursor:'+(canSeeProfile?'pointer':'default')+'"'+nameClick+'>'+(r.user_name||'Alguien')+'</span>'
-      +'<span style="font-size:10px;color:'+col.label.replace(/[\d.]+\)$/,'.45)')+';font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||'')+'</span>'
+      +'<div style="overflow:hidden;cursor:'+(canSeeProfile?'pointer':'default')+'"'+nameClick+'>'
+      +'<div style="font-size:15px;font-weight:800;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">'+(r.user_name||'Alguien')+'</div>'
+      +'<div style="display:flex;align-items:center;gap:5px;margin-top:3px">'
+      +'<div style="height:1.5px;width:18px;background:'+col.border+';border-radius:1px;flex-shrink:0;opacity:.70"></div>'
+      +'<span style="font-size:10px;font-weight:600;color:'+col.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">@'+(r.user_name||'alguien').toLowerCase().replace(/\s+/g,'')+'</span>'
+      +'<span style="font-size:10px;color:'+col.label.replace(/[\d.]+\)$/,'.40)')+';font-family:Jost,sans-serif">· '+_momentoAgo(r.created_at||'')+'</span>'
+      +'</div>'
+      +'</div>'
       +'</div>'
       +actionBtn
       +'</div>'
@@ -22355,6 +22363,7 @@ function _onPageEnter(id){
     case 'meditacion':  pInitMeditacion(); break;
     case 'vela':        pInitVela(); break;
     case 'circles':     pRenderCircles(); break;
+    case 'bitacora':    pInitBitacora(); break;
     case 'feed':        _renderCircleMessages(); break;
     case 'happy':
       _initSupabase();
@@ -22598,6 +22607,459 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
   }
 }
 
+// ── BITÁCORA ─────────────────────────────────────────────────────
+var _btPosts = {apoyo:[],superacion:[],debate:[]};
+var _btCurrentTab = 'apoyo';
+var _btReactMap = {};
+var _btLoading = false;
+var _btRtCh = null;
+
+var _btColors = {
+  apoyo:      {bg:'rgba(20,35,80,.92)',strip:'rgba(90,120,230,.40)',border:'rgba(90,120,230,.70)',glow:'rgba(90,120,230,.20)',label:'rgba(160,185,255,.95)',badge:'rgba(90,120,230,.25)',emoji:'🫂'},
+  superacion: {bg:'rgba(48,32,4,.92)',strip:'rgba(218,160,30,.38)',border:'rgba(218,160,30,.70)',glow:'rgba(218,160,30,.22)',label:'rgba(255,210,70,.95)',badge:'rgba(218,162,40,.28)',emoji:'⭐'},
+  debate:     {bg:'rgba(5,40,30,.92)',strip:'rgba(60,185,130,.38)',border:'rgba(60,185,130,.65)',glow:'rgba(60,185,130,.20)',label:'rgba(120,230,175,.95)',badge:'rgba(60,185,130,.26)',emoji:'💬'}
+};
+
+function pInitBitacora(){
+  _initSupabase();
+  if(sbClient && !_btRtCh){
+    _btRtCh = _sbSub('velo:bitacora','bitacora_posts',function(){ _btLoadTab(_btCurrentTab,true); });
+  }
+  _btRenderShell();
+  _btSwitchTab('apoyo');
+}
+
+function _btRenderShell(){
+  var pg = document.getElementById('pg-bitacora');
+  if(!pg) return;
+  var inner = pg.querySelector('.p-page-inner');
+  if(!inner) return;
+  inner.innerHTML = ''
+    +'<div class="p-page-hdr">'
+      +'<div class="p-page-hdr-back">'
+        +'<button class="p-back-btn" onclick="pGoTo(\'home\')">←</button>'
+        +'<div><div class="p-label">Comunidad</div><h2 class="p-title">Bitácora</h2></div>'
+      +'</div>'
+      +'<button onclick="_btOpenCompose(null)" style="background:linear-gradient(135deg,rgba(116,198,157,.35),rgba(80,160,120,.25));border:1.5px solid rgba(116,198,157,.55);color:rgba(175,245,210,.97);font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:20px;padding:7px 15px;cursor:pointer;letter-spacing:.3px">✦ Publicar</button>'
+    +'</div>'
+    +'<p style="font-size:12px;color:rgba(180,200,190,.55);font-family:Jost,sans-serif;line-height:1.5;margin:0 0 14px;font-style:italic">Historias reales · desde el corazón · para quien necesita leerlas</p>'
+    +'<div style="display:flex;gap:8px;margin-bottom:18px">'
+      +_btTabBtn('apoyo','🫂 Apoyo')
+      +_btTabBtn('superacion','⭐ Superación')
+      +_btTabBtn('debate','💬 Debate')
+    +'</div>'
+    +'<div id="btFeed" style="display:flex;flex-direction:column;gap:12px"></div>';
+}
+
+function _btTabBtn(type,label){
+  var c=_btColors[type];
+  return '<button id="btTab-'+type+'" onclick="_btSwitchTab(\''+type+'\')" style="flex:1;padding:9px 6px;border-radius:14px;border:1.5px solid '+c.border+';background:'+c.bg+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:.50;transition:opacity .2s,box-shadow .2s,transform .2s">'+label+'</button>';
+}
+
+function _btSwitchTab(type){
+  _btCurrentTab=type;
+  ['apoyo','superacion','debate'].forEach(function(t){
+    var btn=document.getElementById('btTab-'+t);
+    if(!btn) return;
+    var c=_btColors[t];
+    if(t===type){ btn.style.opacity='1'; btn.style.boxShadow='0 4px 18px '+c.glow+',inset 0 1px 0 rgba(255,255,255,.12)'; btn.style.transform='translateY(-1px)'; }
+    else { btn.style.opacity='.48'; btn.style.boxShadow='none'; btn.style.transform='none'; }
+  });
+  if(!_btPosts[type]||!_btPosts[type].length){ _btLoadTab(type,false); }
+  else { _btRenderFeed(type); }
+}
+
+function _btLoadTab(type,refresh){
+  if(!sbClient||_btLoading) return;
+  _btLoading=true;
+  var feed=document.getElementById('btFeed');
+  if(feed&&(!_btPosts[type]||!_btPosts[type].length)){
+    feed.innerHTML='<div style="text-align:center;padding:40px 0;color:rgba(180,200,190,.40);font-family:Jost,sans-serif;font-size:13px">Cargando...</div>';
+  }
+  sbClient.from('bitacora_posts_full').select('*').eq('type',type).order('created_at',{ascending:false}).limit(15)
+    .then(function(res){
+      if(res.error){ _btLoading=false; if(_btCurrentTab===type) _btRenderFeed(type); return; }
+      _btPosts[type]=res.data||[];
+      var ids=_btPosts[type].map(function(p){ return p.id; });
+      if(!ids.length){ _btLoading=false; if(_btCurrentTab===type) _btRenderFeed(type); return; }
+      var uid=safeLS('get','velo_user_id');
+      sbClient.from('bitacora_reactions').select('post_id,reaction_type,user_id').in('post_id',ids)
+        .then(function(rxRes){
+          if(rxRes.data){
+            rxRes.data.forEach(function(rx){
+              if(!_btReactMap[rx.post_id]) _btReactMap[rx.post_id]={resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,mine:''};
+              var m=_btReactMap[rx.post_id];
+              if(typeof m[rx.reaction_type]==='number') m[rx.reaction_type]++;
+              if(uid&&rx.user_id===uid) m.mine=rx.reaction_type;
+            });
+          }
+          _btLoading=false;
+          if(_btCurrentTab===type) _btRenderFeed(type);
+        });
+    });
+}
+
+function _btRenderFeed(type){
+  var feed=document.getElementById('btFeed');
+  if(!feed) return;
+  var posts=_btPosts[type]||[];
+  if(!posts.length){
+    var c0=_btColors[type];
+    feed.innerHTML='<div style="text-align:center;padding:50px 0">'
+      +'<div style="font-size:36px;margin-bottom:12px">'+c0.emoji+'</div>'
+      +'<div style="font-size:13px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;line-height:1.5">Aún no hay historias aquí.<br>¡Sé el primero en compartir!</div>'
+      +'<button onclick="_btOpenCompose(\''+type+'\')" style="margin-top:16px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.30);color:rgba(175,245,210,.88);font-size:12px;font-weight:700;font-family:Jost,sans-serif;border-radius:20px;padding:8px 20px;cursor:pointer">✦ Publicar</button>'
+      +'</div>';
+    return;
+  }
+  var uid=safeLS('get','velo_user_id');
+  feed.innerHTML=posts.map(function(p,i){ return _btCard(p,i,uid); }).join('');
+  var cards=feed.querySelectorAll('.bt-card');
+  cards.forEach(function(c,i){ c.style.animationDelay=(i*0.06)+'s'; });
+}
+
+function _btCard(p,idx,uid){
+  var c=_btColors[p.type]||_btColors.apoyo;
+  var rx=_btReactMap[p.id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,mine:''};
+  var isOwn=uid&&p.user_id&&String(p.user_id)===String(uid)&&!p.is_anon;
+  var name=p.is_anon?'Anónimo/a':(p.author_name||'Alguien');
+  var avUrl=p.is_anon?'':(p.author_avatar||'');
+  var avHtml=(avUrl&&avUrl.startsWith('http'))
+    ?'<img src="'+_escHtml(avUrl)+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid '+c.border+';flex-shrink:0">'
+    :'<div style="width:32px;height:32px;border-radius:50%;background:'+c.strip+';border:2px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">'+c.emoji+'</div>';
+  var totRx=(rx.resuena||0)+(rx.ayudo||0)+(rx.cambio||0);
+  var debBar='';
+  if(p.type==='debate'&&(p.postura_a||p.postura_b)){
+    var totAB=(rx.apoyo_a||0)+(rx.apoyo_b||0);
+    var pA=totAB>0?Math.round((rx.apoyo_a||0)/totAB*100):50;
+    var pB=100-pA;
+    debBar='<div style="margin:8px 0 4px">'
+      +'<div style="display:flex;justify-content:space-between;font-size:10px;color:'+c.label+';font-family:Jost,sans-serif;margin-bottom:3px">'
+        +'<span>'+_escHtml(p.postura_a||'A')+' ('+pA+'%)</span>'
+        +'<span>'+_escHtml(p.postura_b||'B')+' ('+pB+'%)</span>'
+      +'</div>'
+      +'<div style="height:6px;border-radius:3px;background:rgba(255,255,255,.10);overflow:hidden">'
+        +'<div style="height:100%;width:'+pA+'%;background:'+c.strip+';border-radius:3px;transition:width .4s"></div>'
+      +'</div>'
+    +'</div>';
+  }
+  return '<div class="bt-card" onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')"'
+    +' style="background:'+c.bg+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.25)')+';border-left:3px solid '+c.border+';box-shadow:0 3px 18px '+c.glow+';border-radius:16px;padding:14px 16px;cursor:pointer">'
+    +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">'
+      +avHtml
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:11.5px;font-weight:800;color:'+c.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(name)+'</div>'
+        +'<div style="font-size:10px;color:'+c.label.replace(/[\d.]+\)$/,'.50)')+';font-family:Jost,sans-serif">'+_momentoAgo(p.created_at||'')+(p.is_anon?' · 👤':'')+'</div>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
+        +(isOwn?'<button onclick="event.stopPropagation();_btDeletePost(\''+_escHtml(String(p.id))+'\',\''+p.type+'\')" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);color:rgba(255,120,120,.80);font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 7px;cursor:pointer">🗑</button>':'')
+        +'<button onclick="event.stopPropagation();_btReport(\''+_escHtml(String(p.id))+'\',null)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:rgba(255,255,255,.28);font-size:10px;border-radius:10px;padding:3px 7px;cursor:pointer">⚑</button>'
+      +'</div>'
+    +'</div>'
+    +(p.title?'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.95);font-family:Jost,sans-serif;margin-bottom:6px;line-height:1.3">'+_escHtml(p.title)+'</div>':'')
+    +'<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.80);line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px">'+_escHtml(p.content)+'</div>'
+    +debBar
+    +'<div style="display:flex;align-items:center;gap:6px;border-top:1px solid '+c.border.replace(/[\d.]+\)$/,'.15)')+';padding-top:8px;margin-top:'+(debBar?'8':'0')+'px">'
+      +'<span style="font-size:10px;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;flex:1">'+(rx.mine?'✓ Reaccionaste':(totRx>0?totRx+' reacciones':''))+'</span>'
+      +'<span style="font-size:10px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';border-radius:20px;padding:3px 10px">'+(p.type==='debate'?'🗳 Debatir':'✨ Reaccionar')+'</span>'
+    +'</div>'
+  +'</div>';
+}
+
+function _btDeletePost(id,type){
+  _pConfirm('¿Eliminar esta publicación?',function(){
+    if(!sbClient){ pToast('Conectando...'); return; }
+    sbClient.from('bitacora_posts').delete().eq('id',id).then(function(res){
+      if(res.error){ pToast('Error al eliminar'); return; }
+      pToast('Publicación eliminada');
+      if(type) _btPosts[type]=(_btPosts[type]||[]).filter(function(p){ return p.id!==id; });
+      _btRenderFeed(_btCurrentTab);
+    });
+  });
+}
+
+function _btReport(postId,commentId){
+  _pConfirm('¿Reportar este contenido?',function(){
+    var uid=safeLS('get','velo_user_id');
+    if(!uid){ pToast('Debés iniciar sesión'); return; }
+    if(!sbClient) return;
+    var obj={user_id:uid};
+    if(postId) obj.post_id=postId;
+    if(commentId) obj.comment_id=commentId;
+    sbClient.from('bitacora_reports').insert(obj).then(function(){ pToast('Gracias, revisaremos el reporte.'); });
+  });
+}
+
+function _btOpenDetail(id){
+  var post=null;
+  var tabs=['apoyo','superacion','debate'];
+  for(var ti=0;ti<tabs.length;ti++){
+    var f=(_btPosts[tabs[ti]]||[]).find(function(p){ return String(p.id)===String(id); });
+    if(f){ post=f; break; }
+  }
+  if(!post) return;
+  var c=_btColors[post.type]||_btColors.apoyo;
+  var rx=_btReactMap[id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,mine:''};
+  var authorName=post.is_anon?'Anónimo/a':(post.author_name||'Alguien');
+  var typeLabel={apoyo:'🫂 APOYO',superacion:'⭐ SUPERACIÓN',debate:'💬 DEBATE'};
+  var rxHtml='';
+  if(post.type==='debate'){
+    var totAB=(rx.apoyo_a||0)+(rx.apoyo_b||0);
+    var pA=totAB>0?Math.round((rx.apoyo_a||0)/totAB*100):50;
+    var pB=100-pA;
+    rxHtml='<div style="margin-bottom:16px">'
+      +'<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;margin-bottom:10px">¿CON QUÉ POSTURA TE IDENTIFICÁS?</div>'
+      +'<div style="display:flex;gap:8px">'
+        +'<button onclick="_btReact(\''+id+'\',\'apoyo_a\')" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(rx.mine==='apoyo_a'?'.60':'.28)'))+';background:'+(rx.mine==='apoyo_a'?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">'+_escHtml(post.postura_a||'A')+' ('+pA+'%)</button>'
+        +'<button onclick="_btReact(\''+id+'\',\'apoyo_b\')" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(rx.mine==='apoyo_b'?'.60':'.28)'))+';background:'+(rx.mine==='apoyo_b'?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">'+_escHtml(post.postura_b||'B')+' ('+pB+'%)</button>'
+      +'</div>'
+    +'</div>';
+  } else {
+    var rxDefs=[{key:'resuena',label:'✨ Resuena'},{key:'ayudo',label:'🤝 Me ayudó'},{key:'cambio',label:'💡 Me cambió'}];
+    rxHtml='<div style="display:flex;gap:8px;margin-bottom:16px">'
+      +rxDefs.map(function(rd){
+        var act=rx.mine===rd.key;
+        var n=rx[rd.key]||0;
+        return '<button onclick="_btReact(\''+id+'\',\''+rd.key+'\')" style="flex:1;padding:8px 4px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.60':'.25)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px"><span>'+rd.label+'</span><span style="font-size:10px;opacity:.70">'+n+'</span></button>';
+      }).join('')
+    +'</div>';
+  }
+  var ov=document.createElement('div');
+  ov.id='btDetailOv';
+  ov.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);display:flex;flex-direction:column;justify-content:flex-end';
+  var sh='<div id="btDetailSheet" style="background:linear-gradient(180deg,rgba(8,18,30,.98),rgba(5,12,20,.99));border-radius:26px 26px 0 0;max-height:90vh;overflow-y:auto;padding:0 0 max(20px,env(safe-area-inset-bottom));border-top:3px solid '+c.border.replace(/[\d.]+\)$/,'.55)')+';">';
+  sh+='<div style="display:flex;justify-content:center;padding:12px 0 0"><div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px"></div></div>';
+  sh+='<div style="padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between">';
+  sh+='<div style="font-size:10px;font-weight:800;letter-spacing:2px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+(typeLabel[post.type]||'')+'</div>';
+  sh+='<button onclick="document.getElementById(\'btDetailOv\').remove()" style="background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.70);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>';
+  sh+='</div><div style="padding:14px 18px 0">';
+  sh+='<div style="font-size:11px;color:'+c.label.replace(/[\d.]+\)$/,'.60)')+';font-family:Jost,sans-serif;margin-bottom:6px">'+_escHtml(authorName)+' · '+_momentoAgo(post.created_at||'')+'</div>';
+  if(post.title) sh+='<div style="font-size:18px;font-weight:800;color:rgba(255,255,255,.97);font-family:Jost,sans-serif;line-height:1.3;margin-bottom:12px">'+_escHtml(post.title)+'</div>';
+  sh+='<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.65;margin-bottom:18px;white-space:pre-wrap">'+_escHtml(post.content)+'</div>';
+  sh+=rxHtml;
+  sh+='<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px">';
+  sh+='<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:12px">COMENTARIOS</div>';
+  sh+='<div id="btCommentsWrap" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"><div style="text-align:center;padding:20px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif">Cargando...</div></div>';
+  sh+='<div style="display:flex;gap:8px;align-items:flex-end">';
+  sh+='<textarea id="btCommentInput" placeholder="Escribí tu comentario..." style="flex:1;background:rgba(255,255,255,.07);border:1.5px solid '+c.border.replace(/[\d.]+\)$/,'.35)')+';border-radius:14px;padding:10px 12px;color:rgba(255,255,255,.90);font-size:13px;font-family:Jost,sans-serif;resize:none;min-height:40px;max-height:100px;outline:none;box-sizing:border-box" rows="1"></textarea>';
+  sh+='<button onclick="_btSendComment(\''+_escHtml(String(post.id))+'\')" style="background:'+c.strip+';border:1.5px solid '+c.border.replace(/[\d.]+\)$/,'.60)')+';color:'+c.label+';font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:14px;padding:10px 14px;cursor:pointer;flex-shrink:0">Enviar</button>';
+  sh+='</div></div></div></div>';
+  ov.innerHTML=sh;
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){ if(e.target===ov) ov.remove(); });
+  _btLoadComments(post.id);
+}
+
+function _btLoadComments(postId){
+  if(!sbClient) return;
+  sbClient.from('bitacora_comments_full').select('*').eq('post_id',postId).order('created_at',{ascending:true}).limit(50)
+    .then(function(res){
+      var wrap=document.getElementById('btCommentsWrap');
+      if(!wrap) return;
+      if(res.error||!res.data||!res.data.length){
+        wrap.innerHTML='<div style="text-align:center;padding:12px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif">Sin comentarios aún. ¡Sé el primero!</div>';
+        return;
+      }
+      var uid=safeLS('get','velo_user_id');
+      wrap.innerHTML=res.data.map(function(cm){
+        var nm=cm.is_anon?'Anónimo/a':(cm.author_name||'Alguien');
+        var own=uid&&cm.user_id&&String(cm.user_id)===String(uid)&&!cm.is_anon;
+        return '<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px 12px">'
+          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">'
+            +'<span style="font-size:10.5px;font-weight:700;color:rgba(180,220,200,.80);font-family:Jost,sans-serif">'+_escHtml(nm)+'</span>'
+            +'<div style="display:flex;gap:4px">'
+              +(own?'<button onclick="_btDeleteComment(\''+_escHtml(String(cm.id))+'\',\''+_escHtml(String(postId))+'\')" style="background:rgba(255,80,80,.10);border:1px solid rgba(255,80,80,.22);color:rgba(255,120,120,.72);font-size:9px;font-weight:700;font-family:Jost,sans-serif;border-radius:8px;padding:2px 6px;cursor:pointer">🗑</button>':'')
+              +'<button onclick="_btReport(null,\''+_escHtml(String(cm.id))+'\')" style="background:none;border:none;color:rgba(255,255,255,.22);font-size:9px;cursor:pointer;padding:2px 5px">⚑</button>'
+            +'</div>'
+          +'</div>'
+          +'<div style="font-size:13px;color:rgba(255,255,255,.80);font-family:Jost,sans-serif;line-height:1.45;word-break:break-word">'+_escHtml(cm.content)+'</div>'
+          +'<div style="font-size:10px;color:rgba(180,200,190,.38);font-family:Jost,sans-serif;margin-top:4px">'+_momentoAgo(cm.created_at||'')+'</div>'
+        +'</div>';
+      }).join('');
+    });
+}
+
+function _btSendComment(postId){
+  var input=document.getElementById('btCommentInput');
+  if(!input) return;
+  var text=(input.value||'').trim();
+  if(!text) return;
+  var uid=safeLS('get','velo_user_id');
+  if(!uid){ pToast('Debés iniciar sesión'); return; }
+  if(!sbClient) return;
+  input.disabled=true;
+  sbClient.from('bitacora_comments').insert({post_id:postId,user_id:uid,content:text,is_anon:false}).then(function(res){
+    if(input) input.disabled=false;
+    if(res.error){ pToast('Error al enviar'); return; }
+    if(input) input.value='';
+    pToast('Comentario enviado ✓');
+    _btLoadComments(postId);
+  });
+}
+
+function _btDeleteComment(commentId,postId){
+  _pConfirm('¿Eliminar comentario?',function(){
+    if(!sbClient) return;
+    sbClient.from('bitacora_comments').delete().eq('id',commentId).then(function(){
+      pToast('Comentario eliminado');
+      _btLoadComments(postId);
+    });
+  });
+}
+
+function _btReact(postId,type){
+  var uid=safeLS('get','velo_user_id');
+  if(!uid){ pToast('Debés iniciar sesión'); return; }
+  if(!sbClient) return;
+  var rx=_btReactMap[postId]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,mine:''};
+  var oldMine=rx.mine;
+  var _refreshDetail=function(){
+    var ov=document.getElementById('btDetailOv');
+    if(ov) ov.remove();
+    _btOpenDetail(postId);
+  };
+  var _doInsert=function(){
+    sbClient.from('bitacora_reactions').insert({post_id:postId,user_id:uid,reaction_type:type}).then(function(){
+      var m=_btReactMap[postId]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,mine:''};
+      if(typeof m[type]==='number') m[type]++; else m[type]=1;
+      m.mine=type; _btReactMap[postId]=m;
+      _refreshDetail();
+    });
+  };
+  if(oldMine===type){
+    sbClient.from('bitacora_reactions').delete().eq('post_id',postId).eq('user_id',uid).eq('reaction_type',type).then(function(){
+      var m=_btReactMap[postId]||{};
+      if(typeof m[type]==='number'&&m[type]>0) m[type]--;
+      m.mine=''; _btReactMap[postId]=m;
+      _refreshDetail();
+    });
+  } else if(oldMine){
+    sbClient.from('bitacora_reactions').delete().eq('post_id',postId).eq('user_id',uid).eq('reaction_type',oldMine).then(function(){
+      var m=_btReactMap[postId]||{};
+      if(typeof m[oldMine]==='number'&&m[oldMine]>0) m[oldMine]--;
+      m.mine=''; _btReactMap[postId]=m;
+      _doInsert();
+    });
+  } else { _doInsert(); }
+}
+
+function _btOpenCompose(typeHint){
+  var uid=safeLS('get','velo_user_id');
+  if(!uid){ pToast('Debés iniciar sesión para publicar'); return; }
+  var selType=typeHint||_btCurrentTab||'apoyo';
+  var ov=document.createElement('div');
+  ov.id='btComposeOv';
+  ov.dataset.type=selType;
+  ov.style.cssText='position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.82);display:flex;flex-direction:column;justify-content:flex-end';
+  var h='<div style="background:linear-gradient(180deg,rgba(6,16,28,.99),rgba(4,12,22,1));border-radius:26px 26px 0 0;max-height:92vh;overflow-y:auto;padding:0 0 max(24px,env(safe-area-inset-bottom));border-top:3px solid rgba(116,198,157,.45)">';
+  h+='<div style="display:flex;justify-content:center;padding:12px 0 0"><div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px"></div></div>';
+  h+='<div style="padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between">';
+  h+='<div style="font-size:13px;font-weight:800;color:rgba(255,255,255,.90);font-family:Jost,sans-serif">✦ Nueva Publicación</div>';
+  h+='<button onclick="document.getElementById(\'btComposeOv\').remove()" style="background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.70);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>';
+  h+='</div><div style="padding:14px 18px 0">';
+  h+='<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:8px">SECCIÓN</div>';
+  h+='<div style="display:flex;gap:6px;margin-bottom:16px">';
+  [['apoyo','🫂 Apoyo'],['superacion','⭐ Superación'],['debate','💬 Debate']].forEach(function(t){
+    var ci=_btColors[t[0]];
+    h+='<button id="btCmpType-'+t[0]+'" onclick="_btSetComposeType(\''+t[0]+'\')" style="flex:1;padding:8px 4px;border-radius:12px;border:1.5px solid '+ci.border.replace(/[\d.]+\)$/,'.42)')+';background:'+(selType===t[0]?ci.strip:'rgba(255,255,255,.05)')+';color:'+ci.label+';font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:'+(selType===t[0]?'1':'.52')+'">'+t[1]+'</button>';
+  });
+  h+='</div>';
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 12px;background:rgba(255,255,255,.05);border-radius:12px">';
+  h+='<span style="font-size:20px">👤</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85);font-family:Jost,sans-serif">Publicar anónimo</div>';
+  h+='<div style="font-size:10.5px;color:rgba(180,200,190,.52);font-family:Jost,sans-serif">Tu nombre no será visible</div></div>';
+  h+='<input type="checkbox" id="btCmpAnon" style="width:18px;height:18px;cursor:pointer;accent-color:rgba(116,198,157,.80)"></div>';
+  h+='<input id="btCmpTitle" placeholder="Título (opcional)" maxlength="100" style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(116,198,157,.20);border-radius:12px;padding:10px 12px;color:rgba(255,255,255,.90);font-size:13px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px">';
+  h+='<textarea id="btCmpContent" placeholder="Contá tu historia..." maxlength="2000" style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(116,198,157,.20);border-radius:12px;padding:10px 12px;color:rgba(255,255,255,.90);font-size:13.5px;font-family:\'Cormorant Garamond\',serif;box-sizing:border-box;outline:none;resize:none;min-height:120px;line-height:1.55" rows="5"></textarea>';
+  h+='<div id="btCmpDebateFields" style="display:'+(selType==='debate'?'block':'none')+';margin-top:10px">';
+  h+='<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:8px">POSTURAS DEL DEBATE</div>';
+  h+='<div style="display:flex;gap:6px"><input id="btCmpPosturaA" placeholder="Postura A" maxlength="50" style="flex:1;background:rgba(255,255,255,.07);border:1.5px solid rgba(60,185,130,.25);border-radius:12px;padding:9px 11px;color:rgba(255,255,255,.90);font-size:12px;font-family:Jost,sans-serif;outline:none">';
+  h+='<input id="btCmpPosturaB" placeholder="Postura B" maxlength="50" style="flex:1;background:rgba(255,255,255,.07);border:1.5px solid rgba(60,185,130,.25);border-radius:12px;padding:9px 11px;color:rgba(255,255,255,.90);font-size:12px;font-family:Jost,sans-serif;outline:none"></div></div>';
+  h+='<button onclick="_btSubmitCompose()" style="width:100%;margin-top:16px;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.38),rgba(80,160,120,.28));border:1.5px solid rgba(116,198,157,.55);color:rgba(175,245,210,.97);font-size:14px;font-weight:800;font-family:Jost,sans-serif;border-radius:16px;cursor:pointer;letter-spacing:.3px">✦ Publicar</button>';
+  h+='</div></div>';
+  ov.innerHTML=h;
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){ if(e.target===ov) ov.remove(); });
+}
+
+function _btSetComposeType(type){
+  ['apoyo','superacion','debate'].forEach(function(t){
+    var btn=document.getElementById('btCmpType-'+t);
+    if(!btn) return;
+    var ci=_btColors[t];
+    if(t===type){ btn.style.background=ci.strip; btn.style.opacity='1'; }
+    else { btn.style.background='rgba(255,255,255,.05)'; btn.style.opacity='.52'; }
+  });
+  var df=document.getElementById('btCmpDebateFields');
+  if(df) df.style.display=type==='debate'?'block':'none';
+  var ov=document.getElementById('btComposeOv');
+  if(ov) ov.dataset.type=type;
+}
+
+function _btSubmitCompose(){
+  var ov=document.getElementById('btComposeOv');
+  if(!ov) return;
+  var type=ov.dataset.type||'apoyo';
+  var title=((document.getElementById('btCmpTitle')||{}).value||'').trim();
+  var content=((document.getElementById('btCmpContent')||{}).value||'').trim();
+  var isAnon=!!((document.getElementById('btCmpAnon')||{}).checked);
+  var pA=((document.getElementById('btCmpPosturaA')||{}).value||'').trim();
+  var pB=((document.getElementById('btCmpPosturaB')||{}).value||'').trim();
+  if(!content){ pToast('Escribí algo antes de publicar'); return; }
+  var uid=safeLS('get','velo_user_id');
+  if(!uid){ pToast('Debés iniciar sesión'); return; }
+  if(!sbClient){ pToast('Conectando...'); return; }
+  var obj={type:type,content:content,is_anon:isAnon,user_id:uid};
+  if(title) obj.title=title;
+  if(type==='debate'&&pA) obj.postura_a=pA;
+  if(type==='debate'&&pB) obj.postura_b=pB;
+  var btn=ov.querySelector('button[onclick*="_btSubmitCompose"]');
+  if(btn){ btn.disabled=true; btn.textContent='Publicando...'; }
+  sbClient.from('bitacora_posts').insert(obj).then(function(res){
+    if(res.error){ pToast('Error al publicar'); if(btn){ btn.disabled=false; btn.textContent='✦ Publicar'; } return; }
+    ov.remove();
+    pToast('✓ Publicación enviada');
+    _btPosts[type]=[];
+    if(document.getElementById('pg-bitacora')&&document.getElementById('pg-bitacora').classList.contains('active')){
+      _btSwitchTab(type);
+    }
+  });
+}
+
+function _renderHomeBitacoraWidget(){
+  var el=document.getElementById('homeBitacoraWidget');
+  if(!el) return;
+  _initSupabase();
+  var posts=[];
+  ['apoyo','superacion','debate'].forEach(function(t){ posts=posts.concat((_btPosts[t]||[]).slice(0,2)); });
+  posts.sort(function(a,b){ return (b.created_at||'')>(a.created_at||'')?1:-1; });
+  posts=posts.slice(0,3);
+  if(!posts.length){
+    el.innerHTML='<div style="text-align:center;padding:12px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif">Cargando historias...</div>';
+    if(sbClient){
+      sbClient.from('bitacora_posts_full').select('*').order('created_at',{ascending:false}).limit(3).then(function(res){
+        if(!res.data||!res.data.length) return;
+        res.data.forEach(function(p){ if(!_btPosts[p.type]) _btPosts[p.type]=[]; _btPosts[p.type].push(p); });
+        _renderHomeBitacoraWidget();
+      });
+    }
+    return;
+  }
+  el.innerHTML=posts.map(function(p){
+    var c=_btColors[p.type]||_btColors.apoyo;
+    var nm=p.is_anon?'Anónimo/a':(p.author_name||'Alguien');
+    var prev=(p.content||'').slice(0,80)+((p.content||'').length>80?'…':'');
+    return '<div class="home-mc home-bt-card" onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.bg+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.22)')+';border-left:3px solid '+c.border+';border-radius:12px;padding:11px 13px;cursor:pointer">'
+      +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">'
+        +'<span style="font-size:14px">'+c.emoji+'</span>'
+        +'<span style="font-size:10.5px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(nm)+'</span>'
+        +'<span style="font-size:9.5px;color:'+c.label.replace(/[\d.]+\)$/,'.45)')+';font-family:Jost,sans-serif">'+_momentoAgo(p.created_at||'')+'</span>'
+      +'</div>'
+      +(p.title?'<div style="font-size:12.5px;font-weight:700;color:rgba(255,255,255,.88);font-family:Jost,sans-serif;margin-bottom:4px">'+_escHtml(p.title)+'</div>':'')
+      +'<div style="font-size:12px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.68);line-height:1.45">'+_escHtml(prev)+'</div>'
+    +'</div>';
+  }).join('');
+}
+
 document.addEventListener('DOMContentLoaded', function(){
   _initSupabase();
   _initMsgActions();
@@ -22625,7 +23087,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1056;
+    var _BUILT_V = 1057;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
