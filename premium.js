@@ -20633,6 +20633,7 @@ function pOpenMeditation(id){
   var ov = document.getElementById('meditacionPlayer');
   if(!ov) return;
   ov.style.display = 'block';
+  ov.style.pointerEvents = '';
   document.getElementById('meditacionEmoji').textContent = med.emoji;
   document.getElementById('meditacionTitle').textContent = med.title;
   document.getElementById('meditacionDuration').textContent = med.duration + ' · Música de relajación';
@@ -20675,11 +20676,18 @@ function pOpenMeditation(id){
 
 function pCloseMeditation(){
   _medLoadToken++;
+  var _closeToken = _medLoadToken;
   var ov = document.getElementById('meditacionPlayer');
   if(ov){
-    ov.style.pointerEvents = 'none'; // block ghost-click immediately
+    ov.style.pointerEvents = 'none';
     var _ovRef = ov;
-    setTimeout(function(){ _ovRef.style.display='none'; _ovRef.style.pointerEvents=''; }, 350);
+    setTimeout(function(){
+      // Only hide if no new meditation opened in the meantime
+      if(_medLoadToken === _closeToken){
+        _ovRef.style.display = 'none';
+      }
+      _ovRef.style.pointerEvents = '';
+    }, 350);
   }
   _medCurrentId = null;
   _medStepTimers.forEach(function(t){ clearTimeout(t); }); _medStepTimers=[];
