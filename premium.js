@@ -5374,7 +5374,7 @@ async function pRenderGuardians(){
     list.innerHTML = selfBanner + emptyMsg;
     return;
   }
-  list.innerHTML = selfBanner + filtered.map(function(g){
+  var _newHtml = selfBanner + filtered.map(function(g){
     var badge = _getBadge(g.convs||0);
     var gVerified = (badge.name==='Plata'||badge.name==='Oro'||badge.name==='Diamante');
     var isAnon = g.status === 'incognito' || (g.status && g.status.startsWith('incognito_'));
@@ -5395,6 +5395,8 @@ async function pRenderGuardians(){
       +'<button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(realSt==='ocupado'?'pToast(\'🟡\','+_jsAttr((isAnon?'Este guardián':''+g.name)+' está ocupado/a ahora')+')':'pOpenGuardian('+_jsAttr(g.id)+')')+'">'+(realSt==='ocupado'?'Ocupado/a':'Solicitar')+'</button>'
       +'</div></div></div>';
   }).join('');
+  // Solo redibujar si el contenido cambió — evita parpadeo en el polling
+  if(list.innerHTML !== _newHtml) list.innerHTML = _newHtml;
 }
 
 function pOpenGuardian(id){
@@ -22411,7 +22413,7 @@ function _onPageEnter(id){
       _guardianListPollTmr = setInterval(function(){
         if(_curPage !== 'guardians'){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; return; }
         pRenderGuardians();
-      }, 3000);
+      }, 15000);
       break;
     case 'professionals': pRenderProfessionals(); break;
     case 'help':
@@ -23169,7 +23171,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1062;
+    var _BUILT_V = 1063;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
