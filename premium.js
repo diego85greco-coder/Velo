@@ -47,6 +47,7 @@ var _guardianBcastCh = null; // broadcast channel for instant toggle notificatio
 var _dqRtCh       = null;   // realtime channel daily_responses
 var _dqReactRtCh  = null;   // realtime channel dq_reactions (live count updates)
 var _dqReactPollTmr = null; // 20s fallback poll for reaction counts (bypasses Supabase RLS gap)
+var _dqFeedPollTmr  = null; // 30s fallback poll for new responses (in case RT subscription misses)
 var _dqVisHandler = null;   // visibilitychange handler for PWA foreground refresh
 var _scrollSave   = {}; // page id → scrollTop saved on navigate away
 var _sbVerifiedMoodCount = -1; // Supabase-confirmed mood count; -1 = not yet fetched
@@ -3558,6 +3559,7 @@ function _startDqReactPoll(){
 }
 function _stopDqReactPoll(){
   if(_dqReactPollTmr){ clearInterval(_dqReactPollTmr); _dqReactPollTmr = null; }
+  if(_dqFeedPollTmr){ clearInterval(_dqFeedPollTmr); _dqFeedPollTmr = null; }
   if(_dqVisHandler){ document.removeEventListener('visibilitychange', _dqVisHandler); _dqVisHandler = null; }
 }
 
@@ -3607,6 +3609,14 @@ async function _fetchDailyFeed(qId){
       }
       if(rid) _updateDqCardReactions(String(rid));
     });
+  }
+  // 30s feed poll — reliable fallback when Supabase RT subscription misses inserts
+  if(!_dqFeedPollTmr && sbClient){
+    var _pollQId = qId;
+    _dqFeedPollTmr = setInterval(function(){
+      if(document.hidden) return;
+      _fetchDailyFeed(_pollQId);
+    }, 30000);
   }
   // 20s poll + visibility-change handler: reliable fallback for Supabase RLS gaps
   _startDqReactPoll();
@@ -3951,13 +3961,25 @@ function _buildDqCards(list){
       .map(function(rx){
         return '<span style="display:inline-flex;align-items:center;gap:2px;background:'+col.badge+';border-radius:100px;padding:2px 8px;font-size:12px">'+rx.e+'<span style="font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif">'+_m[rx.k].count+'</span></span>';
       }).join('');
+    // Avatar: profile photo or emoji-in-circle, with mood badge overlay
+    var av = r.user_avatar || '';
+    var isImg = av && av.startsWith('http');
+    var avInner = isImg
+      ? '<img src="'+_escHtml(av)+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:block;border:2px solid '+col.border+'">'
+      : '<div style="width:36px;height:36px;border-radius:50%;background:'+col.strip+';border:2px solid '+col.border+';display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;flex-shrink:0">'+_escHtml(av||r.mood_emoji||'🌿')+'</div>';
+    var avWrap = '<div style="position:relative;flex-shrink:0;'+(canSeeProfile?'cursor:pointer':'')+'"'+nameClick+'>'
+      +avInner
+      +'<span style="position:absolute;bottom:-3px;right:-4px;font-size:13px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))">'+r.mood_emoji+'</span>'
+      +'</div>';
     return '<div class="dq-feed-card home-mc" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
       +' style="background:'+col.bg+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'.30)')+';border-left:3px solid '+col.border+';box-shadow:0 2px 14px '+col.glow+';cursor:pointer;border-radius:16px;padding:13px 14px 11px;position:relative;overflow:hidden">'
-      // Top row: emoji + name + action
-      +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:9px">'
-      +'<span style="font-size:22px;line-height:1;flex-shrink:0">'+r.mood_emoji+'</span>'
-      +'<span style="font-size:12px;font-weight:800;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:'+(canSeeProfile?'pointer':'default')+'"'+nameClick+'>'+(r.user_name||'Alguien')+'</span>'
-      +'<span style="font-size:10px;color:'+col.label.replace(/[\d.]+\)$/,'.42)')+';font-family:Jost,sans-serif;flex-shrink:0">· '+_momentoAgo(r.created_at||'')+'</span>'
+      // Top row: avatar + name + time + action
+      +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">'
+      +avWrap
+      +'<div style="flex:1;min-width:0">'
+      +'<span style="font-size:12.5px;font-weight:800;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;cursor:'+(canSeeProfile?'pointer':'default')+'"'+nameClick+'>'+(r.user_name||'Alguien')+'</span>'
+      +'<span style="font-size:10px;color:'+col.label.replace(/[\d.]+\)$/,'.45)')+';font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||'')+'</span>'
+      +'</div>'
       +actionBtn
       +'</div>'
       // Response text
@@ -22603,7 +22625,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1051;
+    var _BUILT_V = 1052;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

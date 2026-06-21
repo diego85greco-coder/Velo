@@ -13054,3 +13054,47 @@ body.r-dark .p-bn-item.active::after {
   pointer-events: none;
 }
 body.r-dark .p-bn-item.p-bn-sos.active::after { display: none; }
+
+/* ── v1052 — Tabs COMUNIDAD: más grandes, más atractivas ──────── */
+.hf-tab {
+  padding: 13px 12px !important;
+  font-size: 14.5px !important;
+  letter-spacing: .3px !important;
+  border-radius: 18px !important;
+  border-width: 2px !important;
+}
+/* Active Momentos — gradiente más sólido y visible */
+.hf-tab--active {
+  background: linear-gradient(145deg, rgba(116,198,157,.72) 0%, rgba(48,175,98,.55) 100%) !important;
+  border-color: rgba(116,198,157,.95) !important;
+  box-shadow: 0 6px 24px rgba(116,198,157,.40), inset 0 1px 0 rgba(255,255,255,.18) !important;
+}
+body.r-dark .hf-tab--active {
+  color: rgba(255,255,255,1) !important;
+  text-shadow: 0 0 18px rgba(116,198,157,.60) !important;
+}
+/* Active Muro Feliz */
+.hf-tab--active-happy {
+  background: linear-gradient(145deg, rgba(222,162,36,.72) 0%, rgba(200,132,18,.55) 100%) !important;
+  border-color: rgba(222,162,36,.95) !important;
+  box-shadow: 0 6px 24px rgba(222,162,36,.38), inset 0 1px 0 rgba(255,255,255,.18) !important;
+}
+body.r-dark .hf-tab--active-happy {
+  color: rgba(255,255,255,1) !important;
+  text-shadow: 0 0 18px rgba(222,162,36,.60) !important;
+}
+/* Inactive tabs — más visibles que antes */
+.hf-tab--inactive {
+  background: rgba(116,198,157,.10) !important;
+  border-color: rgba(116,198,157,.28) !important;
+}
+body.r-dark .hf-tab--inactive {
+  color: rgba(180,225,200,.75) !important;
+}
+.hf-tab--inactive-happy {
+  background: rgba(222,162,36,.10) !important;
+  border-color: rgba(222,162,36,.28) !important;
+}
+body.r-dark .hf-tab--inactive-happy {
+  color: rgba(220,190,120,.75) !important;
+}
