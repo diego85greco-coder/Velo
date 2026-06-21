@@ -8900,7 +8900,7 @@ async function pRenderBottle(){
       +' style="animation-delay:'+i*.08+'s;position:relative;background:'+bCol.bg+';border:1.5px solid rgba(255,255,255,.07);border-radius:18px;box-shadow:0 4px 22px '+bCol.glow+',inset 0 0 0 1px '+bCol.border.replace(/[\d.]+\)$/,'0.18)')+';overflow:hidden;margin:0 0 10px;padding:0">'
       // Absolute strip fills full card height on all platforms
       +'<div style="position:absolute;left:0;top:0;bottom:0;width:64px;background:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center;'+(isOwn||showAuthor?'cursor:pointer;':'')+'" '
-      +(isOwn ? 'onclick="pGoTo(\'profile\')"'
+      +(isOwn ? 'onclick="pQuickProfile('+_jsAttr(myName||b.userName||'Tú')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(myId)+')"'
         : showAuthor ? 'onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')"'
         : '')
       +'>'
@@ -23175,7 +23175,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1066;
+    var _BUILT_V = 1067;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
