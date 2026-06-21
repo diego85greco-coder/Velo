@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1069">
+  <meta name="app-version" content="1070">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260621-1069">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260621-1069">
+  <link rel="stylesheet" href="premium.css?v=20260621-1070">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260621-1070">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1349,11 +1349,15 @@
                       </button>
                     </div>
                   </div>
-                  <!-- Bottom strip: Buscar personas (full width) -->
+                  <!-- Bottom strip: Buscar personas + Profesionales -->
                   <div id="homeSearchRow" class="para-vos-bottom">
-                    <button id="homeSearchUsersBtn" onclick="pOpenUserSearch()" class="para-vos-bottom-btn" title="Buscar personas" style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;padding:11px 16px;width:100%;border:none;background:transparent;cursor:pointer;border-radius:0;box-sizing:border-box;font-size:13px;font-weight:700;letter-spacing:.3px;color:rgba(190,148,50,.90)">
+                    <button id="homeSearchUsersBtn" onclick="pOpenUserSearch()" class="para-vos-bottom-btn" title="Buscar personas" style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border:none;background:transparent;cursor:pointer;border-radius:0;box-sizing:border-box;font-size:13px;font-weight:700;letter-spacing:.3px;color:rgba(190,148,50,.90)">
                       <span style="font-size:20px;line-height:1">🔍</span>
                       <span>Buscar personas</span>
+                    </button>
+                    <button onclick="pGoTo('professionals')" class="para-vos-bottom-btn" title="Profesionales" style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border:none;background:transparent;cursor:pointer;border-radius:0;box-sizing:border-box;font-size:13px;font-weight:700;letter-spacing:.3px;color:rgba(190,148,50,.90)">
+                      <span style="font-size:20px;line-height:1">🩺</span>
+                      <span>Profesionales</span>
                     </button>
                   </div>
                 </div>
@@ -1656,8 +1660,8 @@
           <div class="p-card p-card--hover" onclick="pGoTo('vela')" style="margin-top:4px;min-height:88px;padding:18px 20px;background:linear-gradient(135deg,rgba(218,160,30,.18),rgba(200,130,20,.10));border:1.5px solid rgba(218,160,30,.28);cursor:pointer;display:flex;align-items:center;gap:16px">
             <div style="width:52px;height:52px;border-radius:14px;background:rgba(218,160,30,.15);border:1.5px solid rgba(218,160,30,.28);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🕯️</div>
             <div style="flex:1;min-width:0">
-              <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);margin-bottom:3px">Velo Vela por Ti</div>
-              <div style="font-size:11.5px;color:var(--ink4);line-height:1.4">Sesiones solidarias con profesionales · gratuito</div>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Velo Vela por Ti</div>
+              <div style="font-size:11px;color:var(--ink4);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Sesiones solidarias con profesionales</div>
             </div>
             <span class="p-pill" style="flex-shrink:0;background:rgba(218,160,30,.18);color:#8a6500;border:1px solid rgba(218,160,30,.32)">Gratuito</span>
           </div>
@@ -1665,8 +1669,8 @@
           <div id="homeVeloIACard" class="p-card p-card--hover" onclick="pGoTo('calm-ai')" style="margin-top:4px;min-height:88px;padding:18px 20px;background:linear-gradient(135deg,rgba(255,182,193,.22),rgba(255,160,180,.12));border:1.5px solid rgba(255,160,180,.3);cursor:pointer;display:flex;align-items:center;gap:16px">
             <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,160,180,.15);border:1.5px solid rgba(255,160,180,.28);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🤖</div>
             <div style="flex:1;min-width:0">
-              <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);margin-bottom:3px">Hablar con Velo IA</div>
-              <div style="font-size:11.5px;color:var(--ink4);line-height:1.4">Tu acompañante inteligente · disponible las 24h</div>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Hablar con Velo IA</div>
+              <div style="font-size:11px;color:var(--ink4);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Acompañante inteligente · 24h</div>
             </div>
             <span class="p-pill" style="flex-shrink:0;background:rgba(255,160,180,.2);color:#9B3A52;border:1px solid rgba(255,160,180,.35)">Disponible</span>
           </div>
@@ -4152,8 +4156,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260621-1069"></script>
-<script src="premium-redesign.js?v=20260621-1069"></script>
+<script src="premium.js?v=20260621-1070"></script>
+<script src="premium-redesign.js?v=20260621-1070"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
