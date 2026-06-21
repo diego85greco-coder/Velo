@@ -12969,3 +12969,81 @@ body:not(.r-dark) #homeGreetSub { color: rgba(30,60,40,.72) !important; }
 
 /* ── v1033 — Section labels: acomp + herra ── */
 .home-sec-lbl-herra { display: block; width: 100%; box-sizing: border-box; padding: 18px 4px 6px; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   v1035 — Bottom nav visual overhaul: more presence & per-tab identity
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Size: taller bar, bigger icons, readable labels ── */
+.p-bottomnav { height: 64px !important; }
+@media (max-width: 767px) {
+  .p-bottomnav { height: 64px !important; }
+  .p-bn-item { padding: 5px 6px 4px !important; gap: 3px !important; }
+  .p-bn-icon { font-size: 20px !important; }
+  .p-bn-label { font-size: 9px !important; font-weight: 600 !important; letter-spacing: .2px !important; }
+  .p-bn-item.p-bn-sos { padding: 6px 10px !important; }
+}
+.p-bn-icon svg { width: 26px !important; height: 26px !important; }
+
+/* ── Dark mode: brighter inactive labels ── */
+body.r-dark .p-bn-label { color: rgba(255,255,255,.65) !important; }
+
+/* ── Inactive icons: fully visible white strokes with shadow ── */
+body.r-dark .p-bn-item:not(.active) .p-bn-icon svg {
+  opacity: 1 !important;
+  color: rgba(255,255,255,.80) !important;
+  filter: drop-shadow(0 1px 5px rgba(0,0,0,.75)) !important;
+}
+body.r-dark .p-bn-item:not(.active):hover .p-bn-icon svg {
+  color: rgba(255,255,255,.96) !important;
+  filter: drop-shadow(0 0 6px rgba(255,255,255,.30)) drop-shadow(0 1px 3px rgba(0,0,0,.6)) !important;
+  transform: translateY(-2px) scale(1.08) !important;
+}
+
+/* ── Active: per-tab accent colors ── */
+body.r-dark .p-bn-item[data-screen="home"].active        { color: #6be8a8 !important; }
+body.r-dark .p-bn-item[data-screen="contacts"].active    { color: #c8a2f8 !important; }
+body.r-dark .p-bn-item[data-screen="diary"].active       { color: #72c8e8 !important; }
+body.r-dark .p-bn-item[data-screen="profile"].active     { color: #f5c546 !important; }
+
+/* ── Active labels ── */
+body.r-dark .p-bn-item[data-screen="home"].active .p-bn-label    { color: #6be8a8 !important; }
+body.r-dark .p-bn-item[data-screen="contacts"].active .p-bn-label { color: #c8a2f8 !important; }
+body.r-dark .p-bn-item[data-screen="diary"].active .p-bn-label   { color: #72c8e8 !important; }
+body.r-dark .p-bn-item[data-screen="profile"].active .p-bn-label { color: #f5c546 !important; }
+
+/* ── Active glass pill behind icon — per tab ── */
+body.r-dark .p-bn-item[data-screen="home"].active::before    { background: rgba(107,232,168,.26) !important; box-shadow: 0 0 18px rgba(107,232,168,.22) !important; }
+body.r-dark .p-bn-item[data-screen="contacts"].active::before { background: rgba(168,120,248,.26) !important; box-shadow: 0 0 18px rgba(168,120,248,.22) !important; }
+body.r-dark .p-bn-item[data-screen="diary"].active::before   { background: rgba(100,185,220,.26) !important; box-shadow: 0 0 18px rgba(100,185,220,.22) !important; }
+body.r-dark .p-bn-item[data-screen="profile"].active::before { background: rgba(240,197,70,.26) !important; box-shadow: 0 0 18px rgba(240,197,70,.22) !important; }
+
+/* ── Active SVG glow — per tab ── */
+body.r-dark .p-bn-item[data-screen="home"].active .p-bn-icon svg {
+  filter: drop-shadow(0 0 10px rgba(107,232,168,.85)) drop-shadow(0 2px 6px rgba(107,232,168,.55)) !important;
+}
+body.r-dark .p-bn-item[data-screen="contacts"].active .p-bn-icon svg {
+  filter: drop-shadow(0 0 10px rgba(168,120,248,.85)) drop-shadow(0 2px 6px rgba(168,120,248,.55)) !important;
+}
+body.r-dark .p-bn-item[data-screen="diary"].active .p-bn-icon svg {
+  filter: drop-shadow(0 0 10px rgba(100,185,220,.85)) drop-shadow(0 2px 6px rgba(100,185,220,.55)) !important;
+}
+body.r-dark .p-bn-item[data-screen="profile"].active .p-bn-icon svg {
+  filter: drop-shadow(0 0 10px rgba(240,197,70,.85)) drop-shadow(0 2px 6px rgba(240,197,70,.55)) !important;
+}
+
+/* ── Active indicator: small colored notch at top of active item ── */
+body.r-dark .p-bn-item.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+  background: currentColor;
+  opacity: .90;
+  pointer-events: none;
+}
+body.r-dark .p-bn-item.p-bn-sos.active::after { display: none; }
