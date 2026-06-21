@@ -11657,7 +11657,7 @@ body.r-dark .r-hero-v2 {
 /* ── 3. Sub-greeting text — más grande y visible ─────────────────── */
 #homeGreetSub {
   font-size: 15px !important;
-  color: rgba(220,240,228,.72) !important;
+  color: rgba(255,255,255,.92) !important;
   font-style: italic !important;
   font-family: 'Cormorant Garamond', serif !important;
   text-align: center !important;
@@ -12368,7 +12368,7 @@ body.velo-t-manana.r-dark .r-hero-italic {
   color: rgba(230,200,100,.65) !important;
 }
 body.velo-t-manana.r-dark #homeGreetSub {
-  color: rgba(230,205,115,.62) !important;
+  color: rgba(255,255,255,.92) !important;
 }
 /* Section labels — tinte dorado */
 body.velo-t-manana.r-dark .home-sec-lbl-acomp .home-sec-hdr,
@@ -12443,7 +12443,7 @@ body.velo-t-tarde.r-dark .r-hero-italic {
   color: rgba(140,225,180,.60) !important;
 }
 body.velo-t-tarde.r-dark #homeGreetSub {
-  color: rgba(145,228,182,.58) !important;
+  color: rgba(255,255,255,.92) !important;
 }
 body.velo-t-tarde.r-dark .home-sec-lbl-acomp .home-sec-hdr,
 body.velo-t-tarde.r-dark .home-sec-lbl-estado .home-sec-hdr,
@@ -12520,7 +12520,7 @@ body.velo-t-noche.r-dark .r-hero-italic {
   color: rgba(195,182,252,.58) !important;
 }
 body.velo-t-noche.r-dark #homeGreetSub {
-  color: rgba(200,188,255,.56) !important;
+  color: rgba(255,255,255,.92) !important;
 }
 body.velo-t-noche.r-dark .home-sec-lbl-acomp .home-sec-hdr,
 body.velo-t-noche.r-dark .home-sec-lbl-estado .home-sec-hdr,
@@ -12969,7 +12969,8 @@ body.r-lavender .home-sec-lbl-comunidad {
 body.is-landing .p-sidebar { display: none !important; }
 body.is-landing .p-main-content { width: 100% !important; max-width: 100% !important; }
 
-/* ── v1033 — homeGreetSub visible on all themes ── */
+/* ── v1049 — homeGreetSub white in all dark themes ── */
+body.r-dark #homeGreetSub { color: rgba(255,255,255,.92) !important; font-size: 16px !important; }
 #homeGreetSub { color: rgba(255,255,255,.92) !important; font-size: 16px !important; }
 body:not(.r-dark) #homeGreetSub { color: rgba(30,60,40,.88) !important; }
 

@@ -3939,7 +3939,7 @@ function _buildDqCards(list){
     var isImg = av && av.startsWith('http');
     var canSeeProfile = r.user_id && r.user_id !== 'anon';
     var isOwn = myUid && r.user_id === myUid;
-    var col = _userColor(r.user_id && r.user_id !== 'anon' ? r.user_id : (r.anon_label||r.mood_emoji||''));
+    var col = _dqEmojiColor(r.mood_emoji||'💭');
     var actionBtn = isOwn
       ? '<button onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" style="background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
       : '<button onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" style="background:none;border:none;color:rgba(255,160,60,.45);font-size:11px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
@@ -22589,7 +22589,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1048;
+    var _BUILT_V = 1049;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
