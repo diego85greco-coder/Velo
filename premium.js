@@ -3763,10 +3763,9 @@ var _dqAllResponses = [];  // full list cached for expand
 function _renderDailyFeed(responses){
   _dqAllResponses = responses;
   var _dqHidden = []; try{ _dqHidden = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
-  var visible = _dqHidden.length ? responses.filter(function(r){ return _dqHidden.indexOf(String(r.id)) === -1; }) : responses;
-  // Update "Tu respuesta" badge with reactions received on own response
   var myUid2 = safeLS('get','velo_user_id')||'';
   var myResp2 = responses.find(function(r){ return r.user_id === myUid2; });
+  // Update "Tu respuesta" badge
   var myBadge2 = document.getElementById('homeDailyQMyResp');
   if(myBadge2 && myResp2){
     var _rxMap2 = _dqReactMap[myResp2.id] || {};
@@ -3779,32 +3778,35 @@ function _renderDailyFeed(responses){
     myBadge2.style.display = 'flex';
     myBadge2.style.alignItems = 'center';
   }
+  // Update count from actual data — avoids stale "Sé el primero" text
+  var _totalCount = responses.length;
+  var _countTxt = _totalCount === 0 ? 'Sé el primero en responder ✨'
+    : _totalCount === 1 ? '1 persona compartió hoy'
+    : _totalCount+' personas compartieron hoy';
+  var _openCount = document.getElementById('homeDailyQOpenCount');
+  if(_openCount && _totalCount > 0) _openCount.textContent = _countTxt;
+  // Hide emoji summary row — redundant noise
   var summaryEl = document.getElementById('homeDailyQSummary');
+  if(summaryEl) summaryEl.style.display = 'none';
   var feedEl    = document.getElementById('homeDailyQFeed');
   var btnEl     = document.getElementById('dqVerTodosBtn');
   if(!feedEl) return;
-  if(summaryEl){
-    var counts = {};
-    visible.forEach(function(r){ counts[r.mood_emoji]=(counts[r.mood_emoji]||0)+1; });
-    var sorted = Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
-    summaryEl.innerHTML = sorted.map(function(e){
-      return '<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(255,255,255,.08);border-radius:20px;padding:3px 9px;font-size:14px">'
-        +e+'<span style="font-size:11px;color:rgba(255,255,255,.55);font-family:Jost,sans-serif">'+counts[e]+'</span></span>';
-    }).join('');
-  }
-  if(!visible.length){
-    feedEl.innerHTML = '<div style="text-align:center;padding:14px 0;font-size:13px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif;font-style:italic">Sé el primero en compartir 🌱</div>';
+  // Exclude own response from home feed (already shown in badge above)
+  var others = responses.filter(function(r){
+    return r.user_id !== myUid2 && _dqHidden.indexOf(String(r.id)) === -1;
+  });
+  if(!others.length){
+    feedEl.innerHTML = '<div style="text-align:center;padding:12px 0;font-size:12.5px;color:rgba(255,255,255,.30);font-family:Jost,sans-serif;font-style:italic">La comunidad aún no compartió hoy 🌱</div>';
     if(btnEl) btnEl.innerHTML = '';
     return;
   }
-  // Show max 3 in carousel; "ver todas" button appears when there are more
   var _dqPrevL = feedEl.scrollLeft;
-  feedEl.innerHTML = _buildDqCards(visible.slice(0,3));
+  feedEl.innerHTML = _buildDqCards(others.slice(0,3));
   _initCarouselDots('homeDailyQFeed','dqDots');
   if(_dqPrevL>0) requestAnimationFrame(function(){ feedEl.scrollLeft = _dqPrevL; });
   if(btnEl){
-    if(visible.length > 3){
-      btnEl.innerHTML = '<button onclick="pOpenDqAllSheet()" style="width:100%;margin-top:12px;padding:11px 16px;background:linear-gradient(135deg,rgba(175,130,20,.22),rgba(120,86,8,.28));border:1.5px solid rgba(200,158,56,.45);border-radius:14px;color:rgba(220,185,75,.92);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px;transition:opacity .15s">✦ Ver todas las respuestas ('+visible.length+') →</button>';
+    if(others.length > 3){
+      btnEl.innerHTML = '<button onclick="pOpenDqAllSheet()" style="width:100%;margin-top:10px;padding:10px 16px;background:rgba(200,158,56,.12);border:1.5px solid rgba(200,158,56,.40);border-radius:14px;color:rgba(220,185,75,.88);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">✦ Ver todas las respuestas ('+others.length+') →</button>';
     } else {
       btnEl.innerHTML = '';
     }
@@ -3935,53 +3937,37 @@ function _buildDqCards(list){
   var myUid = safeLS('get','velo_user_id') || '';
   var _dqHid = []; try{ _dqHid = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
   return list.filter(function(r){ return _dqHid.indexOf(String(r.id)) === -1; }).map(function(r){
-    var av = r.user_avatar || '';
-    var isImg = av && av.startsWith('http');
-    var canSeeProfile = r.user_id && r.user_id !== 'anon';
     var isOwn = myUid && r.user_id === myUid;
     var col = _dqEmojiColor(r.mood_emoji||'💭');
-    var actionBtn = isOwn
-      ? '<button onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" style="background:none;border:none;color:rgba(255,90,90,.55);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
-      : '<button onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" style="background:none;border:none;color:rgba(255,160,60,.45);font-size:11px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
-    var _dqUname = _uAt(r.user_id);
     var _m = _dqReactMap[r.id] || {};
     var _totalRx = ['identifico','abrazo','entiendo'].reduce(function(s,k){ return s+((_m[k]&&_m[k].count)||0); },0);
-    var avInner = isImg
-      ? '<img src="'+_escHtml(av)+'" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block">'
-      : '<div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1">'+_escHtml(av||'🌿')+'</div>';
-    var avWrap = canSeeProfile
-      ? '<div onclick="event.stopPropagation();pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')" style="cursor:pointer;width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'+avInner+'</div>'
-      : '<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid '+col.border+';flex-shrink:0;opacity:.7;display:flex;align-items:center;justify-content:center">'+avInner+'</div>';
+    var actionBtn = isOwn
+      ? '<button onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" style="background:none;border:none;color:rgba(255,90,90,.45);font-size:12px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0;margin-left:auto">🗑️</button>'
+      : '<button onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" style="background:none;border:none;color:rgba(255,255,255,.18);font-size:10px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0;margin-left:auto">🚩</button>';
+    var canSeeProfile = r.user_id && r.user_id !== 'anon';
+    var nameClick = canSeeProfile ? ' onclick="event.stopPropagation();pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(r.user_avatar||'')+',\'\',\'\','+_jsAttr(r.user_id)+')"' : '';
+    var rxPills = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
+      .filter(function(rx){ return _m[rx.k]&&_m[rx.k].count>0; })
+      .map(function(rx){
+        return '<span style="display:inline-flex;align-items:center;gap:2px;background:'+col.badge+';border-radius:100px;padding:2px 8px;font-size:12px">'+rx.e+'<span style="font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif">'+_m[rx.k].count+'</span></span>';
+      }).join('');
     return '<div class="dq-feed-card home-mc" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
-      +' style="background:'+col.bg+';box-shadow:0 3px 16px '+col.glow+',inset 0 0 0 1px '+col.border+';cursor:pointer">'
-      // Absolute strip fills full card height on all platforms
-      +'<div style="position:absolute;left:0;top:0;bottom:0;width:52px;background:'+col.strip+';display:flex;flex-direction:column;align-items:center;justify-content:center">'
-      +'<span style="font-size:27px;line-height:1">'+r.mood_emoji+'</span>'
-      +'</div>'
-      // Content
-      +'<div style="margin-left:52px;min-height:90px;padding:10px 10px 8px 12px">'
-      // Avatar + name row
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
-      +avWrap
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:center;gap:4px">'
-      +'<span style="font-size:11.5px;font-weight:800;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px">'+(r.user_name||'Alguien')+'</span>'
+      +' style="background:'+col.bg+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'.30)')+';border-left:3px solid '+col.border+';box-shadow:0 2px 14px '+col.glow+';cursor:pointer;border-radius:16px;padding:13px 14px 11px;position:relative;overflow:hidden">'
+      // Top row: emoji + name + action
+      +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:9px">'
+      +'<span style="font-size:22px;line-height:1;flex-shrink:0">'+r.mood_emoji+'</span>'
+      +'<span style="font-size:12px;font-weight:800;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:'+(canSeeProfile?'pointer':'default')+'"'+nameClick+'>'+(r.user_name||'Alguien')+'</span>'
+      +'<span style="font-size:10px;color:'+col.label.replace(/[\d.]+\)$/,'.42)')+';font-family:Jost,sans-serif;flex-shrink:0">· '+_momentoAgo(r.created_at||'')+'</span>'
       +actionBtn
       +'</div>'
-      +(_dqUname ? '<div style="margin-top:1px">'+_dqUname+'</div>' : '')
-      +'</div>'
-      +'</div>'
-      // Response text — serif italic, premium look
+      // Response text
       +(r.response_text
-        ? '<div style="font-size:16.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.60;word-break:break-word;margin-bottom:8px;letter-spacing:.15px;text-shadow:0 1px 8px '+col.glow+'">❝ '+_escHtml(r.response_text)+' ❞</div>'
+        ? '<div style="font-size:15.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:rgba(255,255,255,.90);line-height:1.55;word-break:break-word;margin-bottom:10px">'+_escHtml(r.response_text)+'</div>'
         : '')
-      // Reaction hint bar — per-emoji counts
-      +'<div class="dq-rx-bar" style="display:flex;align-items:center;gap:5px;padding-top:6px;border-top:1px solid '+col.strip+'">'
-      +'<span class="dq-rx-pills">'+[{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}].filter(function(rx){ return _m[rx.k]&&_m[rx.k].count>0; }).map(function(rx){
-          return '<span style="display:inline-flex;align-items:center;gap:2px;background:rgba(255,255,255,.08);border-radius:100px;padding:2px 7px;font-size:12px">'+rx.e+'<span style="font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif">'+_m[rx.k].count+'</span></span>';
-        }).join('')+'</span>'
-      +'<span style="margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.5px;color:'+col.label+';background:'+col.badge+';border-radius:100px;padding:2px 9px;font-family:Jost,sans-serif">'+(_totalRx>0?'Reaccionar':'✦ Reaccionar')+'</span>'
-      +'</div>'
+      // Bottom: reaction pills + button
+      +'<div class="dq-rx-bar" style="display:flex;align-items:center;gap:5px;border-top:1px solid '+col.border.replace(/[\d.]+\)$/,'.18)')+';padding-top:8px">'
+      +'<span class="dq-rx-pills">'+rxPills+'</span>'
+      +'<span style="margin-left:auto;font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif;letter-spacing:.2px">'+(_totalRx>0?'Reaccionar ›':'✦ Reaccionar')+'</span>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -22617,7 +22603,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1050;
+    var _BUILT_V = 1051;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
