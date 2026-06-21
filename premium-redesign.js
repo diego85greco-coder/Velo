@@ -719,17 +719,30 @@
   }
 
   /* ── 6. Dark mode init ──────────────────────────────────────────── */
+  function _sysDark() {
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
   function applyDarkMode(dark) {
     if (dark) {
       document.body.classList.add('r-dark');
     } else {
       document.body.classList.remove('r-dark');
     }
+    // Actualizar theme-color del navegador/PWA
+    var tm = document.querySelector('meta[name="theme-color"]');
+    if (tm) tm.setAttribute('content', dark ? '#0f1a14' : '#1B5E3A');
+
+    // Label del toggle: muestra el próximo estado al que irá
+    var saved = null;
+    try { saved = localStorage.getItem('velo-r-darkmode'); } catch(e) {}
+    var isSystem = saved === null;
     const lbl = document.getElementById('rDarkToggleLbl');
-    if (lbl) lbl.textContent = dark ? '☀️ Modo claro' : '🌙 Modo oscuro';
+    if (lbl) lbl.textContent = isSystem ? '🖥️ Sistema' : (dark ? '🌙 Oscuro' : '☀️ Claro');
     const icon = document.getElementById('rDarkToggleIcon');
-    if (icon) icon.textContent = dark ? '☀️' : '🌙';
-    // Swap logo src based on background (light logo on dark bg, dark logo on light bg)
+    if (icon) icon.textContent = isSystem ? '🖥️' : (dark ? '🌙' : '☀️');
+
+    // Swap logo
     var logoSrc = dark ? 'assets/logo.png' : 'assets/logo-dark.png';
     var topLogo = document.querySelector('.p-topbar-logo-img');
     var sideLogo = document.querySelector('.p-sidebar-logo-img');
@@ -738,9 +751,26 @@
   }
 
   function initDarkMode() {
-    // Dark mode is permanent — light mode removed
-    try { localStorage.setItem('velo-r-darkmode', '1'); } catch(e) {}
-    applyDarkMode(true);
+    var saved = null;
+    try { saved = localStorage.getItem('velo-r-darkmode'); } catch(e) {}
+    var dark;
+    if (saved === '1') {
+      dark = true;                  // usuario forzó oscuro
+    } else if (saved === '0') {
+      dark = false;                 // usuario forzó claro
+    } else {
+      dark = _sysDark();            // sin preferencia → seguir al sistema
+    }
+    applyDarkMode(dark);
+
+    // Escuchar cambios en tiempo real del sistema (solo si no hay override manual)
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+        var cur = null;
+        try { cur = localStorage.getItem('velo-r-darkmode'); } catch(e2) {}
+        if (cur === null) applyDarkMode(e.matches); // sin override → seguir sistema
+      });
+    }
   }
 
   if (document.readyState === 'loading') {
@@ -755,7 +785,22 @@
 
 /* ── Dark mode toggle — global (called from HTML onclick) ─────────── */
 function rToggleDarkMode() {
-  // Dark mode is permanent — this function is a no-op
+  var saved = null;
+  try { saved = localStorage.getItem('velo-r-darkmode'); } catch(e) {}
+  // Ciclo: Sistema → Oscuro → Claro → Sistema
+  if (saved === null) {
+    // Estaba en modo sistema → forzar oscuro
+    try { localStorage.setItem('velo-r-darkmode', '1'); } catch(e) {}
+    applyDarkMode(true);
+  } else if (saved === '1') {
+    // Estaba forzado oscuro → forzar claro
+    try { localStorage.setItem('velo-r-darkmode', '0'); } catch(e) {}
+    applyDarkMode(false);
+  } else {
+    // Estaba forzado claro → volver a sistema
+    try { localStorage.removeItem('velo-r-darkmode'); } catch(e) {}
+    applyDarkMode(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
 }
 
 /* ── Tema temporal: verde (07–18 h) / lavanda (18–07 h) ─────────── */
