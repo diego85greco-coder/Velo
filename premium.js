@@ -20522,87 +20522,42 @@ function _updateAmbientUI(){
 }
 
 // ── MEDITACIÓN ────────────────────────────────────────────────
-// Real guided meditation audios in Spanish (Amparo Piles Mindfulness — free)
+// Audios propios — próximamente (audioUrl se agrega cuando estén listos)
 var _MEDITATIONS = [
   { id:'calma', emoji:'🌊',
-    title:'Meditación de Calma',
-    sub:'Encontrá quietud interior · respiración consciente',
+    title:'Calma Interior',
+    sub:'Encontrá quietud · dejate sostener · respiración consciente',
     tag:'Mindfulness', tagCol:'rgba(64,156,220,.22)', tagTxt:'rgba(140,210,255,.90)',
-    duration:'~17 min',
-    col:{ bg:'rgba(6,18,38,.95)', card:'rgba(10,40,80,.60)', border:'rgba(64,156,220,.50)', glow:'rgba(64,156,220,.25)', label:'rgba(140,210,255,.95)', strip:'rgba(64,156,220,.18)' },
-    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2021/10/1.-Med-Calma22.mp3'
+    duration:'~6 min',
+    col:{ bg:'rgba(6,18,38,.95)', card:'rgba(10,40,80,.60)', border:'rgba(64,156,220,.50)', glow:'rgba(64,156,220,.25)', label:'rgba(140,210,255,.95)', strip:'rgba(64,156,220,.18)' }
   },
   { id:'escaneo', emoji:'🌿',
-    title:'Escaneo Corporal',
-    sub:'Recorré tu cuerpo y soltá la tensión acumulada',
+    title:'Escaneo del Cuerpo',
+    sub:'Recorré cada parte y soltá la tensión acumulada',
     tag:'Relajación', tagCol:'rgba(72,185,128,.22)', tagTxt:'rgba(140,230,175,.90)',
-    duration:'~10 min',
-    col:{ bg:'rgba(4,18,12,.95)', card:'rgba(8,44,24,.60)', border:'rgba(72,185,128,.50)', glow:'rgba(72,185,128,.25)', label:'rgba(140,230,175,.95)', strip:'rgba(72,185,128,.18)' },
-    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2023/02/3.Med_.-Escaner-corporal-23.mp3'
+    duration:'~7 min',
+    col:{ bg:'rgba(4,18,12,.95)', card:'rgba(8,44,24,.60)', border:'rgba(72,185,128,.50)', glow:'rgba(72,185,128,.25)', label:'rgba(140,230,175,.95)', strip:'rgba(72,185,128,.18)' }
   },
   { id:'metta', emoji:'💜',
-    title:'Amor Universal · Metta',
+    title:'Bondad Amorosa',
     sub:'Abrí el corazón hacia vos y hacia los demás',
     tag:'Compasión', tagCol:'rgba(180,120,240,.22)', tagTxt:'rgba(215,170,255,.90)',
-    duration:'~18 min',
-    col:{ bg:'rgba(18,6,32,.95)', card:'rgba(40,12,64,.60)', border:'rgba(180,120,240,.50)', glow:'rgba(180,120,240,.25)', label:'rgba(215,170,255,.95)', strip:'rgba(180,120,240,.18)' },
-    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2021/10/6.Med_.-metta-21.mp3'
-  },
-  { id:'nubes', emoji:'☁️',
-    title:'Meditación de las Nubes',
-    sub:'Observá tus pensamientos sin engancharte en ellos',
-    tag:'Defusión', tagCol:'rgba(130,150,220,.22)', tagTxt:'rgba(185,200,255,.90)',
-    duration:'~14 min',
-    col:{ bg:'rgba(10,10,26,.95)', card:'rgba(20,20,52,.60)', border:'rgba(130,150,220,.50)', glow:'rgba(130,150,220,.25)', label:'rgba(185,200,255,.95)', strip:'rgba(130,150,220,.18)' },
-    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2021/10/3.Meditacion-nubes22.mp3'
+    duration:'~6 min',
+    col:{ bg:'rgba(18,6,32,.95)', card:'rgba(40,12,64,.60)', border:'rgba(180,120,240,.50)', glow:'rgba(180,120,240,.25)', label:'rgba(215,170,255,.95)', strip:'rgba(180,120,240,.18)' }
   },
   { id:'espiracion', emoji:'💨',
-    title:'Me relajo con la espiración',
-    sub:'Soltá el estrés con cada exhalación consciente',
+    title:'Con la Respiración',
+    sub:'Soltá el estrés · la respiración como ancla',
     tag:'Respiración', tagCol:'rgba(100,190,230,.22)', tagTxt:'rgba(180,225,245,.90)',
-    duration:'~8 min',
-    col:{ bg:'rgba(4,20,32,.95)', card:'rgba(8,48,72,.60)', border:'rgba(100,190,230,.50)', glow:'rgba(100,190,230,.22)', label:'rgba(180,225,245,.95)', strip:'rgba(100,190,230,.18)' },
-    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2023/10/1.Med_.-Me-relajo-con-la-espiracion23.mp3'
+    duration:'~5 min',
+    col:{ bg:'rgba(4,20,32,.95)', card:'rgba(8,48,72,.60)', border:'rgba(100,190,230,.50)', glow:'rgba(100,190,230,.22)', label:'rgba(180,225,245,.95)', strip:'rgba(100,190,230,.18)' }
   },
   { id:'ahora', emoji:'🌅',
-    title:'Aquí y Ahora',
-    sub:'Anclate en el momento presente · todo está bien',
+    title:'El Momento Presente',
+    sub:'Anclate aquí · sonidos · sensaciones · este instante',
     tag:'Presencia', tagCol:'rgba(230,175,50,.22)', tagTxt:'rgba(255,220,100,.90)',
-    duration:'~12 min',
-    col:{ bg:'rgba(28,18,4,.95)', card:'rgba(60,38,8,.60)', border:'rgba(230,175,50,.50)', glow:'rgba(230,175,50,.24)', label:'rgba(255,220,100,.95)', strip:'rgba(230,175,50,.20)' },
-    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2023/03/2.Aqui-y-ahora-23b.mp3'
-  },
-  { id:'montana', emoji:'🏔️',
-    title:'La Meditación de la Montaña',
-    sub:'Encontrá estabilidad y arraigo interior profundo',
-    tag:'Arraigo', tagCol:'rgba(160,138,96,.22)', tagTxt:'rgba(220,198,154,.90)',
-    duration:'~15 min',
-    col:{ bg:'rgba(18,14,8,.95)', card:'rgba(46,36,18,.60)', border:'rgba(160,138,96,.50)', glow:'rgba(160,138,96,.20)', label:'rgba(220,198,154,.95)', strip:'rgba(160,138,96,.20)' },
-    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2021/10/Med.-Montana22.mp3'
-  },
-  { id:'lago', emoji:'🪷',
-    title:'Meditación del Lago',
-    sub:'Tu mente es un lago tranquilo · sereno y claro',
-    tag:'Quietud', tagCol:'rgba(60,190,190,.22)', tagTxt:'rgba(140,230,232,.90)',
-    duration:'~12 min',
-    col:{ bg:'rgba(2,18,22,.95)', card:'rgba(4,42,48,.60)', border:'rgba(60,190,190,.50)', glow:'rgba(60,190,190,.22)', label:'rgba(140,230,232,.95)', strip:'rgba(60,190,190,.18)' },
-    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2021/10/5.-Med.-Lago.mp3'
-  },
-  { id:'ablanda', emoji:'🌸',
-    title:'Ablanda, Permite, Ama',
-    sub:'Autocompasión · abrí espacio para lo que sentís',
-    tag:'Autocompasión', tagCol:'rgba(230,100,160,.22)', tagTxt:'rgba(255,168,210,.90)',
-    duration:'~10 min',
-    col:{ bg:'rgba(30,6,18,.95)', card:'rgba(62,12,38,.60)', border:'rgba(230,100,160,.50)', glow:'rgba(230,100,160,.22)', label:'rgba(255,168,210,.95)', strip:'rgba(230,100,160,.18)' },
-    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2020/02/Med.-Ablandapermiteama21.mp3'
-  },
-  { id:'huesped', emoji:'🕯️',
-    title:'La Casa de Huéspedes',
-    sub:'Cada emoción es un visitante · bienvenila y soltala',
-    tag:'Aceptación', tagCol:'rgba(200,158,70,.22)', tagTxt:'rgba(240,210,135,.90)',
-    duration:'~10 min',
-    col:{ bg:'rgba(24,16,4,.95)', card:'rgba(54,36,8,.60)', border:'rgba(200,158,70,.50)', glow:'rgba(200,158,70,.22)', label:'rgba(240,210,135,.95)', strip:'rgba(200,158,70,.18)' },
-    audioUrl:'https://www.amparopilesmindfulness.com/wp-content/uploads/2022/02/Casa-hues-vacia-22.mp3'
+    duration:'~6 min',
+    col:{ bg:'rgba(28,18,4,.95)', card:'rgba(60,38,8,.60)', border:'rgba(230,175,50,.50)', glow:'rgba(230,175,50,.24)', label:'rgba(255,220,100,.95)', strip:'rgba(230,175,50,.20)' }
   }
 ];
 
@@ -20683,18 +20638,24 @@ function pOpenMeditation(id){
   document.getElementById('meditacionTimer').textContent = '0:00';
   // Tint the background image hue to match each meditation's color
   var bgEl = document.getElementById('meditacionBg');
-  var hueMap = {calma:'200deg', escaneo:'140deg', metta:'270deg', nubes:'220deg', espiracion:'195deg', ahora:'30deg', montana:'35deg', lago:'175deg', ablanda:'320deg', huesped:'40deg'};
+  var hueMap = {calma:'200deg', escaneo:'140deg', metta:'270deg', espiracion:'195deg', ahora:'30deg'};
   if(bgEl) bgEl.style.filter = 'brightness(.45) saturate(1.5) hue-rotate('+(hueMap[id]||'0deg')+')';
-  // Play real human-voice guided meditation via HTML5 Audio (no CORS headers needed)
-  try{
-    _medAudio = new Audio();
-    _medAudio.src = med.audioUrl;
-    _medAudio.volume = 0.90;
-    _medAudio.addEventListener('ended', function(){
-      if(_medTimerInterval){ clearInterval(_medTimerInterval); _medTimerInterval=null; }
-    });
-    _medAudio.play().catch(function(e){ console.warn('[med audio]', e); });
-  }catch(e){ console.warn('[med audio init]', e); }
+  // Play guided meditation audio when available
+  var guideEl2 = document.getElementById('meditacionGuide');
+  if(med.audioUrl){
+    if(guideEl2){ guideEl2.style.opacity='1'; guideEl2.textContent = med.sub; }
+    try{
+      _medAudio = new Audio();
+      _medAudio.src = med.audioUrl;
+      _medAudio.volume = 0.90;
+      _medAudio.addEventListener('ended', function(){
+        if(_medTimerInterval){ clearInterval(_medTimerInterval); _medTimerInterval=null; }
+      });
+      _medAudio.play().catch(function(e){ console.warn('[med audio]', e); });
+    }catch(e){ console.warn('[med audio init]', e); }
+  } else {
+    if(guideEl2){ guideEl2.style.opacity='1'; guideEl2.textContent = '🎙️ Audio en preparación · disponible muy pronto'; }
+  }
   // Timer + canvas animation loop
   _medStartTime = Date.now();
   _medDrawCanvas(0);
