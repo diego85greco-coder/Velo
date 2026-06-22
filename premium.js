@@ -23149,7 +23149,7 @@ function _btCard(p,idx,uid){
       +'</div>'
     +'</div>';
   }
-  return '<div class="bt-card" onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')"'
+  return '<div class="bt-card" id="btCard_'+_escHtml(String(p.id))+'" onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')"'
     +' style="background:'+c.bg+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.25)')+';border-left:3px solid '+c.border+';box-shadow:0 3px 18px '+c.glow+';border-radius:16px;padding:14px 16px;cursor:pointer">'
     +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">'
       +(_btCanClick ? '<div onclick="'+_escHtml(_btProfileClick)+'" style="cursor:pointer;flex-shrink:0">'+avHtml+'</div>' : '<div style="flex-shrink:0">'+avHtml+'</div>')
@@ -23512,6 +23512,8 @@ function _btSendComment(postId){
     if(res.error){ pToast('Error al enviar'); return; }
     if(input) input.value='';
     pToast('Comentario enviado ✓');
+    _btCommentCounts[postId]=(_btCommentCounts[postId]||0)+1;
+    _btRefreshCard(postId);
     _btLoadComments(postId);
   });
 }
@@ -23526,6 +23528,18 @@ function _btDeleteComment(commentId,postId){
   });
 }
 
+function _btRefreshCard(postId){
+  var el=document.getElementById('btCard_'+postId);
+  if(!el) return;
+  var allP=(_btPosts.apoyo||[]).concat(_btPosts.superacion||[]).concat(_btPosts.debate||[]).concat(_btPosts.mio||[]);
+  var post=allP.filter(function(p){ return String(p.id)===String(postId); })[0];
+  if(!post) return;
+  var uid=safeLS('get','velo_user_id');
+  var tmp=document.createElement('div');
+  tmp.innerHTML=_btCard(post,0,uid);
+  if(tmp.firstChild) el.parentNode.replaceChild(tmp.firstChild,el);
+}
+
 function _btReact(postId,type){
   var uid=safeLS('get','velo_user_id');
   if(!uid){ pToast('Debés iniciar sesión'); return; }
@@ -23534,6 +23548,7 @@ function _btReact(postId,type){
   var oldMine=rx.mine;
   var _genRxKeys=['concuerdo','no_concuerdo','neutral'];
   var _refreshDetail=function(){
+    _btRefreshCard(postId);
     if(_genRxKeys.indexOf(type)>=0){
       var genEl=document.getElementById('btGenRx_'+postId);
       if(genEl){
@@ -23749,7 +23764,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1095;
+    var _BUILT_V = 1096;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
