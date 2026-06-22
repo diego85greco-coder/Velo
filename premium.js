@@ -12447,6 +12447,54 @@ function pLoadProfile(){
     }
   }
 
+  // Bitácora feed on own profile
+  (function(){
+    var btFeed = document.getElementById('profileBitacoraFeed');
+    var btCard = document.getElementById('profileBitacoraCard');
+    if(!btFeed) return;
+    var _uid = safeLS('get','velo_user_id')||'';
+    if(!_uid || !sbClient){ btFeed.innerHTML='<p class="p-sm p-muted">Inicia sesión para ver tus publicaciones.</p>'; return; }
+    btFeed.innerHTML='<p class="p-sm p-muted">Cargando…</p>';
+    sbClient.from('bitacora_posts').select('id,titulo,contenido,categoria,created_at')
+      .eq('user_id',_uid).order('created_at',{ascending:false}).limit(50)
+      .then(function(res){
+        if(res.error||!res.data){ btFeed.innerHTML='<p class="p-sm p-muted">No se pudieron cargar las publicaciones.</p>'; return; }
+        var posts = res.data;
+        if(!posts.length){
+          if(btCard) btCard.style.display='none';
+          return;
+        }
+        if(btCard) btCard.style.display='';
+        var _btCatLabel={apoyo:'🫂 Apoyo',superacion:'⭐ Superación',debate:'💬 Debate'};
+        var _btCatColor={apoyo:'rgba(80,108,225,.70)',superacion:'rgba(188,138,14,.70)',debate:'rgba(44,154,94,.70)'};
+        var _mkCard=function(p){
+          var col=_btCatColor[p.categoria]||'rgba(116,198,157,.70)';
+          var lbl=_btCatLabel[p.categoria]||p.categoria||'';
+          var prev=(p.contenido||'').slice(0,90)+((p.contenido||'').length>90?'…':'');
+          var dateStr='';
+          try{ var d=new Date(p.created_at); dateStr=d.toLocaleDateString('es',{day:'numeric',month:'short',year:'numeric'}); }catch(e){}
+          return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+            +(p.titulo?'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
+            +'<div style="font-size:11.5px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
+            +'<div style="display:flex;align-items:center;justify-content:space-between">'
+              +'<span style="font-size:9px;font-weight:700;color:'+col+';border-radius:20px;padding:2px 8px;background:var(--sage7);border:1px solid var(--border)">'+lbl+'</span>'
+              +(dateStr?'<span style="font-size:10px;color:var(--ink5)">'+dateStr+'</span>':'')
+            +'</div>'
+            +'</div>';
+        };
+        var shown=posts.slice(0,3);
+        var rest=posts.slice(3);
+        var moreId='prBtMore';
+        var html=shown.map(_mkCard).join('');
+        if(rest.length){
+          html+='<div id="'+moreId+'" style="display:none">'+rest.map(_mkCard).join('')+'</div>'
+            +'<button onclick="var m=document.getElementById(\''+moreId+'\');if(!m)return;var op=m.style.display!==\'none\';m.style.display=op?\'none\':\'block\';this.textContent=op?\'Ver más ('+rest.length+') ↓\':\'Ver menos ↑\';" '
+            +'style="background:none;border:none;color:var(--sage);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>';
+        }
+        btFeed.innerHTML=html;
+      }).catch(function(){ btFeed.innerHTML='<p class="p-sm p-muted">Error cargando publicaciones.</p>'; });
+  })();
+
   // Badges
   _renderBadgesGrid();
 }
@@ -23167,12 +23215,24 @@ function _btReport(postId,commentId){
 
 function _btOpenDetail(id){
   var post=null;
-  var tabs=['apoyo','superacion','debate'];
+  var tabs=['apoyo','superacion','debate','mio'];
   for(var ti=0;ti<tabs.length;ti++){
     var f=(_btPosts[tabs[ti]]||[]).find(function(p){ return String(p.id)===String(id); });
     if(f){ post=f; break; }
   }
-  if(!post) return;
+  if(!post){
+    // Not in local cache (e.g. opened from profile page) — fetch from Supabase
+    _initSupabase();
+    if(!sbClient) return;
+    sbClient.from('bitacora_posts_full').select('*').eq('id',id).maybeSingle().then(function(res){
+      if(res.error||!res.data) return;
+      var p=res.data;
+      if(!_btPosts[p.categoria]) _btPosts[p.categoria]=[];
+      if(!_btPosts[p.categoria].some(function(x){ return String(x.id)===String(id); })) _btPosts[p.categoria].push(p);
+      _btOpenDetail(id);
+    }).catch(function(){});
+    return;
+  }
   var c=_btColors[post.categoria]||_btColors.apoyo;
   var rx=_btReactMap[id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,mine:''};
   var authorName=post.is_anon?'Anónimo/a':(post.author_name||'Alguien');
@@ -23514,7 +23574,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1083;
+    var _BUILT_V = 1084;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
