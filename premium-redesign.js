@@ -741,6 +741,10 @@
     if (lbl) lbl.textContent = isSystem ? '🖥️ Sistema' : (dark ? '🌙 Oscuro' : '☀️ Claro');
     const icon = document.getElementById('rDarkToggleIcon');
     if (icon) icon.textContent = isSystem ? '🖥️' : (dark ? '🌙' : '☀️');
+    const topEstiloLbl = document.getElementById('topbarEstiloLbl');
+    if (topEstiloLbl) topEstiloLbl.textContent = isSystem ? 'Sistema' : (dark ? 'Oscuro' : 'Claro');
+    const topEstiloIcon = document.getElementById('topbarEstiloIcon');
+    if (topEstiloIcon) topEstiloIcon.textContent = isSystem ? '🌓' : (dark ? '🌙' : '☀️');
 
     // Swap logo
     var logoSrc = dark ? 'assets/logo.png' : 'assets/logo-dark.png';

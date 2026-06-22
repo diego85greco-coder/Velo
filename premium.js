@@ -22689,7 +22689,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
 }
 
 // ── BITÁCORA ─────────────────────────────────────────────────────
-var _btPosts = {apoyo:[],superacion:[],debate:[]};
+var _btPosts = {apoyo:[],superacion:[],debate:[],mio:[]};
 var _btCurrentTab = 'apoyo';
 var _btReactMap = {};
 var _btLoading = false;
@@ -22698,8 +22698,10 @@ var _btRtCh = null;
 var _btColors = {
   apoyo:      {bg:'rgba(20,35,80,.92)',strip:'rgba(90,120,230,.40)',border:'rgba(90,120,230,.70)',glow:'rgba(90,120,230,.20)',label:'rgba(160,185,255,.95)',badge:'rgba(90,120,230,.25)',emoji:'🫂'},
   superacion: {bg:'rgba(48,32,4,.92)',strip:'rgba(218,160,30,.38)',border:'rgba(218,160,30,.70)',glow:'rgba(218,160,30,.22)',label:'rgba(255,210,70,.95)',badge:'rgba(218,162,40,.28)',emoji:'⭐'},
-  debate:     {bg:'rgba(5,40,30,.92)',strip:'rgba(60,185,130,.38)',border:'rgba(60,185,130,.65)',glow:'rgba(60,185,130,.20)',label:'rgba(120,230,175,.95)',badge:'rgba(60,185,130,.26)',emoji:'💬'}
+  debate:     {bg:'rgba(5,40,30,.92)',strip:'rgba(60,185,130,.38)',border:'rgba(60,185,130,.65)',glow:'rgba(60,185,130,.20)',label:'rgba(120,230,175,.95)',badge:'rgba(60,185,130,.26)',emoji:'💬'},
+  mio:        {bg:'rgba(35,15,55,.92)',strip:'rgba(165,95,230,.38)',border:'rgba(165,95,230,.65)',glow:'rgba(165,95,230,.20)',label:'rgba(215,165,255,.95)',badge:'rgba(165,95,230,.26)',emoji:'📝'}
 };
+var _btCommentCounts = {};
 
 function pInitBitacora(){
   _initSupabase();
@@ -22724,10 +22726,11 @@ function _btRenderShell(){
       +'<button onclick="_btOpenCompose(null)" style="background:linear-gradient(135deg,rgba(116,198,157,.35),rgba(80,160,120,.25));border:1.5px solid rgba(116,198,157,.55);color:rgba(175,245,210,.97);font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:20px;padding:7px 15px;cursor:pointer;letter-spacing:.3px">✦ Publicar</button>'
     +'</div>'
     +'<p style="font-size:12px;color:rgba(180,200,190,.55);font-family:Jost,sans-serif;line-height:1.5;margin:0 0 14px;font-style:italic">Historias reales · desde el corazón · para quien necesita leerlas</p>'
-    +'<div style="display:flex;gap:8px;margin-bottom:12px">'
+    +'<div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;scrollbar-width:none">'
       +_btTabBtn('apoyo','🫂 Apoyo')
       +_btTabBtn('superacion','⭐ Superación')
       +_btTabBtn('debate','💬 Debate')
+      +_btTabBtn('mio','📝 Mis posts')
     +'</div>'
     +'<div id="btTabDesc" style="font-size:11.5px;font-family:Jost,sans-serif;line-height:1.5;margin-bottom:14px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(180,210,195,.70)"></div>'
     +'<div id="btFeed" style="display:flex;flex-direction:column;gap:12px"></div>';
@@ -22735,18 +22738,19 @@ function _btRenderShell(){
 
 function _btTabBtn(type,label){
   var c=_btColors[type];
-  return '<button id="btTab-'+type+'" onclick="_btSwitchTab(\''+type+'\')" style="flex:1;padding:9px 6px;border-radius:14px;border:1.5px solid '+c.border+';background:'+c.bg+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:.50;transition:opacity .2s,box-shadow .2s,transform .2s">'+label+'</button>';
+  return '<button id="btTab-'+type+'" onclick="_btSwitchTab(\''+type+'\')" style="flex-shrink:0;padding:9px 12px;border-radius:14px;border:1.5px solid '+c.border+';background:'+c.bg+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:.50;transition:opacity .2s,box-shadow .2s,transform .2s;white-space:nowrap">'+label+'</button>';
 }
 
 var _btTabDescs = {
   apoyo:      '🫂 ¿Estás pasando un momento difícil? Compartí tu historia o dejá un mensaje de aliento a quien lo necesita. Aquí nadie juzga.',
   superacion: '⭐ Historias de personas que superaron algo muy duro. Compartí lo que te costó y lo que aprendiste — puede cambiarle la vida a alguien.',
-  debate:     '💬 Temas que generan perspectivas distintas. Publicá un dilema, elegí dos posturas y que la comunidad vote y opine con respeto.'
+  debate:     '💬 Temas que generan perspectivas distintas. Publicá un dilema, elegí dos posturas y que la comunidad vote y opine con respeto.',
+  mio:        '📝 Tus publicaciones en Bitácora — las historias y mensajes que compartiste con la comunidad.'
 };
 
 function _btSwitchTab(type){
   _btCurrentTab=type;
-  ['apoyo','superacion','debate'].forEach(function(t){
+  ['apoyo','superacion','debate','mio'].forEach(function(t){
     var btn=document.getElementById('btTab-'+t);
     if(!btn) return;
     var c=_btColors[t];
@@ -22766,13 +22770,26 @@ function _btLoadTab(type,refresh){
   if(feed&&(!_btPosts[type]||!_btPosts[type].length)){
     feed.innerHTML='<div style="text-align:center;padding:40px 0;color:rgba(180,200,190,.40);font-family:Jost,sans-serif;font-size:13px">Cargando...</div>';
   }
-  sbClient.from('bitacora_posts_full').select('*').eq('categoria',type).order('created_at',{ascending:false}).limit(15)
-    .then(function(res){
+  var query;
+  if(type==='mio'){
+    var uid0=safeLS('get','velo_user_id');
+    if(!uid0){ _btLoading=false; _btRenderFeed(type); return; }
+    query=sbClient.from('bitacora_posts_full').select('*').eq('user_id',uid0).order('created_at',{ascending:false}).limit(50);
+  } else {
+    query=sbClient.from('bitacora_posts_full').select('*').eq('categoria',type).order('created_at',{ascending:false}).limit(15);
+  }
+  query.then(function(res){
       if(res.error){ _btLoading=false; if(_btCurrentTab===type) _btRenderFeed(type); return; }
       _btPosts[type]=res.data||[];
       var ids=_btPosts[type].map(function(p){ return p.id; });
       if(!ids.length){ _btLoading=false; if(_btCurrentTab===type) _btRenderFeed(type); return; }
       var uid=safeLS('get','velo_user_id');
+      var rxDone=false, cmtDone=false;
+      function tryRender(){
+        if(!rxDone||!cmtDone) return;
+        _btLoading=false;
+        if(_btCurrentTab===type) _btRenderFeed(type);
+      }
       sbClient.from('bitacora_reactions').select('post_id,reaction_type,user_id').in('post_id',ids)
         .then(function(rxRes){
           if(rxRes.data){
@@ -22783,9 +22800,16 @@ function _btLoadTab(type,refresh){
               if(uid&&rx.user_id===uid) m.mine=rx.reaction_type;
             });
           }
-          _btLoading=false;
-          if(_btCurrentTab===type) _btRenderFeed(type);
+          rxDone=true; tryRender();
         });
+      ids.forEach(function(id){ _btCommentCounts[id]=0; });
+      sbClient.from('bitacora_comments').select('post_id').in('post_id',ids)
+        .then(function(cmtRes){
+          if(cmtRes.data){
+            cmtRes.data.forEach(function(c){ _btCommentCounts[c.post_id]=(_btCommentCounts[c.post_id]||0)+1; });
+          }
+          cmtDone=true; tryRender();
+        }).catch(function(){ cmtDone=true; tryRender(); });
     });
 }
 
@@ -22811,7 +22835,8 @@ function _btRenderFeed(type){
 function _btCard(p,idx,uid){
   var c=_btColors[p.categoria]||_btColors.apoyo;
   var rx=_btReactMap[p.id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,mine:''};
-  var isOwn=uid&&p.user_id&&String(p.user_id)===String(uid)&&!p.is_anon;
+  var isOwn=uid&&p.user_id&&String(p.user_id)===String(uid);
+  var cmtCount=_btCommentCounts[p.id]||0;
   var name=p.is_anon?'Anónimo/a':(p.author_name||'Alguien');
   var avUrl=p.is_anon?'':(p.author_avatar||'');
   var avHtml=(avUrl&&avUrl.startsWith('http'))
@@ -22843,6 +22868,7 @@ function _btCard(p,idx,uid){
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
         +(isOwn?'<button onclick="event.stopPropagation();_btDeletePost(\''+_escHtml(String(p.id))+'\',\''+p.categoria+'\')" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);color:rgba(255,120,120,.80);font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 7px;cursor:pointer">🗑</button>':'')
+        +'<button onclick="event.stopPropagation();_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';color:'+c.label+';font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 8px;cursor:pointer">💬 Comentar</button>'
         +'<button onclick="event.stopPropagation();_btReport(\''+_escHtml(String(p.id))+'\',null)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:rgba(255,255,255,.28);font-size:10px;border-radius:10px;padding:3px 7px;cursor:pointer">⚑</button>'
       +'</div>'
     +'</div>'
@@ -22850,7 +22876,10 @@ function _btCard(p,idx,uid){
     +'<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.80);line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px">'+_escHtml(p.contenido)+'</div>'
     +debBar
     +'<div style="display:flex;align-items:center;gap:6px;border-top:1px solid '+c.border.replace(/[\d.]+\)$/,'.15)')+';padding-top:8px;margin-top:'+(debBar?'8':'0')+'px">'
-      +'<span style="font-size:10px;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;flex:1">'+(rx.mine?'✓ Reaccionaste':(totRx>0?totRx+' reacciones':''))+'</span>'
+      +'<div style="flex:1;display:flex;align-items:center;gap:10px">'
+        +'<span style="font-size:11px;color:'+c.label.replace(/[\d.]+\)$/,'.70)')+';font-family:Jost,sans-serif">'+(rx.mine?'✓ ':'')+totRx+' ❤️</span>'
+        +'<span style="font-size:11px;color:'+c.label.replace(/[\d.]+\)$/,'.70)')+';font-family:Jost,sans-serif">'+cmtCount+' 💬</span>'
+      +'</div>'
       +'<span style="font-size:10px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';border-radius:20px;padding:3px 10px">'+(p.categoria==='debate'?'🗳 Debatir':'✨ Reaccionar')+'</span>'
     +'</div>'
   +'</div>';
@@ -22862,7 +22891,9 @@ function _btDeletePost(id,type){
     sbClient.from('bitacora_posts').delete().eq('id',id).then(function(res){
       if(res.error){ pToast('Error al eliminar'); return; }
       pToast('Publicación eliminada');
-      if(type) _btPosts[type]=(_btPosts[type]||[]).filter(function(p){ return p.id!==id; });
+      ['apoyo','superacion','debate','mio'].forEach(function(t){
+        _btPosts[t]=(_btPosts[t]||[]).filter(function(p){ return String(p.id)!==String(id); });
+      });
       _btRenderFeed(_btCurrentTab);
     });
   });
@@ -23065,7 +23096,8 @@ function _btReact(postId,type){
 function _btOpenCompose(typeHint){
   var uid=safeLS('get','velo_user_id');
   if(!uid){ pToast('Debés iniciar sesión para publicar'); return; }
-  var selType=typeHint||_btCurrentTab||'apoyo';
+  if(typeHint==='mio') typeHint=null;
+  var selType=typeHint||(_btCurrentTab==='mio'?'apoyo':_btCurrentTab)||'apoyo';
   var ov=document.createElement('div');
   ov.id='btComposeOv';
   ov.dataset.type=selType;
@@ -23091,8 +23123,8 @@ function _btOpenCompose(typeHint){
   h+='<textarea id="btCmpContent" placeholder="Contá tu historia..." maxlength="2000" style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(116,198,157,.20);border-radius:12px;padding:10px 12px;color:rgba(255,255,255,.90);font-size:13.5px;font-family:\'Cormorant Garamond\',serif;box-sizing:border-box;outline:none;resize:none;min-height:120px;line-height:1.55" rows="5"></textarea>';
   h+='<div id="btCmpDebateFields" style="display:'+(selType==='debate'?'block':'none')+';margin-top:10px">';
   h+='<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:8px">POSTURAS DEL DEBATE</div>';
-  h+='<div style="display:flex;gap:6px"><input id="btCmpPosturaA" placeholder="Postura A" maxlength="50" style="flex:1;background:rgba(255,255,255,.07);border:1.5px solid rgba(60,185,130,.25);border-radius:12px;padding:9px 11px;color:rgba(255,255,255,.90);font-size:12px;font-family:Jost,sans-serif;outline:none">';
-  h+='<input id="btCmpPosturaB" placeholder="Postura B" maxlength="50" style="flex:1;background:rgba(255,255,255,.07);border:1.5px solid rgba(60,185,130,.25);border-radius:12px;padding:9px 11px;color:rgba(255,255,255,.90);font-size:12px;font-family:Jost,sans-serif;outline:none"></div></div>';
+  h+='<div style="display:flex;gap:6px"><input id="btCmpPosturaA" placeholder="Postura A (ej: Sí)" maxlength="150" style="flex:1;background:rgba(255,255,255,.07);border:1.5px solid rgba(60,185,130,.25);border-radius:12px;padding:9px 11px;color:rgba(255,255,255,.90);font-size:12px;font-family:Jost,sans-serif;outline:none">';
+  h+='<input id="btCmpPosturaB" placeholder="Postura B (ej: No)" maxlength="150" style="flex:1;background:rgba(255,255,255,.07);border:1.5px solid rgba(60,185,130,.25);border-radius:12px;padding:9px 11px;color:rgba(255,255,255,.90);font-size:12px;font-family:Jost,sans-serif;outline:none"></div></div>';
   h+='<button onclick="_btSubmitCompose()" style="width:100%;margin-top:16px;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.38),rgba(80,160,120,.28));border:1.5px solid rgba(116,198,157,.55);color:rgba(175,245,210,.97);font-size:14px;font-weight:800;font-family:Jost,sans-serif;border-radius:16px;cursor:pointer;letter-spacing:.3px">✦ Publicar</button>';
   h+='</div></div>';
   ov.innerHTML=h;
@@ -23134,7 +23166,7 @@ function _btSubmitCompose(){
   var btn=ov.querySelector('button[onclick*="_btSubmitCompose"]');
   if(btn){ btn.disabled=true; btn.textContent='Publicando...'; }
   sbClient.from('bitacora_posts').insert(obj).then(function(res){
-    if(res.error){ pToast('Error al publicar'); if(btn){ btn.disabled=false; btn.textContent='✦ Publicar'; } return; }
+    if(res.error){ pToast('Error: '+(res.error.message||'No se pudo publicar').slice(0,90)); if(btn){ btn.disabled=false; btn.textContent='✦ Publicar'; } return; }
     ov.remove();
     pToast('✓ Publicación enviada');
     _btPosts[type]=[];
@@ -23206,7 +23238,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1071;
+    var _BUILT_V = 1072;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

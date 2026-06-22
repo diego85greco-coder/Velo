@@ -12558,8 +12558,9 @@ body.velo-t-noche:not(.r-dark) #homeGreetTxt span {
    ═══════════════════════════════════════════════════════════════════ */
 
 /* Diary: force readable text in dark mode */
-body.r-dark .diary-hero-date    { color: rgba(255,255,255,.92) !important; }
-body.r-dark .diary-hero-sub     { color: rgba(255,255,255,.50) !important; }
+body.r-dark .diary-hero-kicker  { color: rgba(175,235,205,.90) !important; }
+body.r-dark .diary-hero-date    { color: rgba(255,255,255,.95) !important; }
+body.r-dark .diary-hero-sub     { color: rgba(255,255,255,.52) !important; }
 body.r-dark .diary-write-date   { color: rgba(255,255,255,.88) !important; }
 body.r-dark .diary-write-weekday{ color: rgba(255,255,255,.48) !important; }
 body.r-dark .diary-stat-val     { color: rgba(255,255,255,.88) !important; }

@@ -152,17 +152,25 @@ async function main() {
   const slotUsers = { morning: [], afternoon: [], night: [] };
   let skipped = 0;
 
+  const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
   for (const user of (users || [])) {
-    let rawSub, tz;
+    let rawSub, tz, parsedFull;
     try {
-      const parsed = JSON.parse(user.push_subscription);
-      if (parsed.sub && parsed.sub.endpoint) { rawSub = parsed.sub; tz = parsed.tz || 'America/Argentina/Buenos_Aires'; }
-      else { rawSub = parsed; tz = 'America/Argentina/Buenos_Aires'; }
+      parsedFull = JSON.parse(user.push_subscription);
+      if (parsedFull.sub && parsedFull.sub.endpoint) { rawSub = parsedFull.sub; tz = parsedFull.tz || 'America/Argentina/Buenos_Aires'; }
+      else { rawSub = parsedFull; parsedFull = { sub: rawSub }; tz = 'America/Argentina/Buenos_Aires'; }
     } catch { skipped++; continue; }
     const slot = getSlot(tz);
     console.log(`  user ${user.id}: tz=${tz} h=${localHour(tz)} slot=${slot||'none'}`);
     if (!slot) { skipped++; continue; }
-    slotUsers[slot].push({ id: user.id, sub: rawSub, tz });
+    // Dedup: skip if this slot was already sent today
+    if (parsedFull.lastSent && parsedFull.lastSent[slot] === today) {
+      console.log(`  user ${user.id}: already sent ${slot} today — skipping`);
+      skipped++;
+      continue;
+    }
+    slotUsers[slot].push({ id: user.id, sub: rawSub, tz, parsedFull });
   }
 
   // Generate one AI message per active slot
@@ -184,7 +192,7 @@ async function main() {
   for (const slot of ['morning', 'afternoon', 'night']) {
     const notif = notifs[slot];
     if (!notif) continue;
-    await Promise.allSettled(slotUsers[slot].map(async ({ id, sub, tz }) => {
+    await Promise.allSettled(slotUsers[slot].map(async ({ id, sub, tz, parsedFull }) => {
       try {
         await webpush.sendNotification(sub, JSON.stringify({
           title: notif.title, body: notif.body,
@@ -192,6 +200,9 @@ async function main() {
           tag: notif.tag, url: '/'
         }));
         sent++;
+        // Record that this slot was sent today to prevent duplicate sends
+        const updatedSub = { ...parsedFull, lastSent: { ...(parsedFull.lastSent || {}), [slot]: today } };
+        await supabase.from('profiles').update({ push_subscription: JSON.stringify(updatedSub) }).eq('id', id);
       } catch (err) {
         if (err.statusCode === 410 || err.statusCode === 404) {
           await supabase.from('profiles').update({ push_subscription: null }).eq('id', id);
