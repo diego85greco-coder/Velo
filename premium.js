@@ -22932,7 +22932,7 @@ var _btLoading = false;
 var _btRtCh = null;
 var _btHiddenIds = new Set(); // IDs de posts reportados (globalmente ocultos)
 
-function _btCleanContenido(s){ return (s||'').replace(/\n*\[posturas:a=[^|]*\|b=[^\]]*\]/g,'').trim(); }
+function _btCleanContenido(s){ return (s||'').replace(/\n*\[posturas:a=.*?\|b=.*?\]/g,'').trim(); }
 
 var _btColors = {
   apoyo:      {bg:'rgba(20,35,80,.92)',strip:'rgba(90,120,230,.40)',border:'rgba(90,120,230,.70)',glow:'rgba(90,120,230,.20)',label:'rgba(160,185,255,.95)',badge:'rgba(90,120,230,.25)',emoji:'🫂'},
@@ -23121,7 +23121,7 @@ function _btCard(p,idx,uid){
   // Extract debate posturas — columns first, then embedded backup in contenido
   var _pA=p.postura_a||'', _pB=p.postura_b||'';
   if(p.categoria==='debate'&&p.contenido){
-    var _pm=p.contenido.match(/\[posturas:a=([^[]*?)\|b=([^[]*?)\]/);
+    var _pm=p.contenido.match(/\[posturas:a=(.*?)\|b=(.*?)\]/);
     if(_pm){ if(!_pA) _pA=(_pm[1]||'').trim(); if(!_pB) _pB=(_pm[2]||'').trim(); }
   }
   var debBar='';
@@ -23306,7 +23306,7 @@ function _btOpenDetail(id){
   // Extract debate posturas — columns first, then embedded backup in contenido
   var _dpA=post.postura_a||'', _dpB=post.postura_b||'';
   if(post.categoria==='debate'&&post.contenido){
-    var _dpm=post.contenido.match(/\[posturas:a=([^[]*?)\|b=([^[]*?)\]/);
+    var _dpm=post.contenido.match(/\[posturas:a=(.*?)\|b=(.*?)\]/);
     if(_dpm){ if(!_dpA) _dpA=(_dpm[1]||'').trim(); if(!_dpB) _dpB=(_dpm[2]||'').trim(); }
   }
   var rxHtml='';
@@ -23701,7 +23701,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1091;
+    var _BUILT_V = 1092;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
