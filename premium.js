@@ -22770,6 +22770,12 @@ var _btColors = {
   debate:     {bg:'rgba(5,40,30,.92)',strip:'rgba(60,185,130,.38)',border:'rgba(60,185,130,.65)',glow:'rgba(60,185,130,.20)',label:'rgba(120,230,175,.95)',badge:'rgba(60,185,130,.26)',emoji:'💬'},
   mio:        {bg:'rgba(35,15,55,.92)',strip:'rgba(165,95,230,.38)',border:'rgba(165,95,230,.65)',glow:'rgba(165,95,230,.20)',label:'rgba(215,165,255,.95)',badge:'rgba(165,95,230,.26)',emoji:'📝'}
 };
+var _btColorsLight = {
+  apoyo:      {bg:'rgba(218,226,255,.94)',strip:'rgba(80,108,225,.22)',border:'rgba(80,108,225,.55)',glow:'rgba(80,108,225,.16)',label:'rgba(30,38,130,.88)',badge:'rgba(80,108,225,.14)',emoji:'🫂',title:'rgba(18,24,100,.90)',preview:'rgba(38,48,118,.65)'},
+  superacion: {bg:'rgba(255,246,212,.96)',strip:'rgba(188,138,14,.22)',border:'rgba(188,138,14,.55)',glow:'rgba(188,138,14,.16)',label:'rgba(98,60,0,.88)',badge:'rgba(188,138,14,.14)',emoji:'⭐',title:'rgba(68,38,0,.90)',preview:'rgba(88,56,0,.65)'},
+  debate:     {bg:'rgba(212,248,230,.96)',strip:'rgba(44,154,94,.22)',border:'rgba(44,154,94,.55)',glow:'rgba(44,154,94,.16)',label:'rgba(10,84,46,.88)',badge:'rgba(44,154,94,.14)',emoji:'💬',title:'rgba(8,58,34,.90)',preview:'rgba(14,72,42,.65)'},
+  mio:        {bg:'rgba(240,220,255,.96)',strip:'rgba(138,78,215,.22)',border:'rgba(138,78,215,.55)',glow:'rgba(138,78,215,.16)',label:'rgba(68,24,118,.88)',badge:'rgba(138,78,215,.14)',emoji:'📝',title:'rgba(48,14,88,.90)',preview:'rgba(62,24,102,.65)'}
+};
 var _btCommentCounts = {};
 
 function pInitBitacora(){
@@ -22813,7 +22819,8 @@ function _btRenderShell(){
 }
 
 function _btTabBtn(type,label){
-  var c=_btColors[type];
+  var isLight=!document.body.classList.contains('r-dark');
+  var c=isLight?(_btColorsLight[type]||_btColorsLight.apoyo):(_btColors[type]||_btColors.apoyo);
   return '<button id="btTab-'+type+'" onclick="_btSwitchTab(\''+type+'\')" style="flex-shrink:0;padding:9px 12px;border-radius:14px;border:1.5px solid '+c.border+';background:'+c.bg+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:.50;transition:opacity .2s,box-shadow .2s,transform .2s;white-space:nowrap">'+label+'</button>';
 }
 
@@ -22826,10 +22833,11 @@ var _btTabDescs = {
 
 function _btSwitchTab(type){
   _btCurrentTab=type;
+  var isLight=!document.body.classList.contains('r-dark');
   ['apoyo','superacion','debate','mio'].forEach(function(t){
     var btn=document.getElementById('btTab-'+t);
     if(!btn) return;
-    var c=_btColors[t];
+    var c=isLight?(_btColorsLight[t]||_btColorsLight.apoyo):(_btColors[t]||_btColors.apoyo);
     if(t===type){ btn.style.opacity='1'; btn.style.boxShadow='0 4px 18px '+c.glow+',inset 0 1px 0 rgba(255,255,255,.12)'; btn.style.transform='translateY(-1px)'; }
     else { btn.style.opacity='.48'; btn.style.boxShadow='none'; btn.style.transform='none'; }
   });
@@ -22911,7 +22919,14 @@ function _btRenderFeed(type){
 }
 
 function _btCard(p,idx,uid){
-  var c=_btColors[p.categoria]||_btColors.apoyo;
+  var isLight=!document.body.classList.contains('r-dark');
+  var c=isLight?(_btColorsLight[p.categoria]||_btColorsLight.apoyo):(_btColors[p.categoria]||_btColors.apoyo);
+  var titleColor=isLight?c.title:'rgba(255,255,255,.95)';
+  var bodyColor=isLight?c.preview:'rgba(255,255,255,.80)';
+  var debTrackColor=isLight?'rgba(0,0,0,.08)':'rgba(255,255,255,.10)';
+  var reportBg=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.06)';
+  var reportBorder=isLight?'rgba(0,0,0,.10)':'rgba(255,255,255,.10)';
+  var reportColor=isLight?'rgba(0,0,0,.30)':'rgba(255,255,255,.28)';
   var rx=_btReactMap[p.id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,mine:''};
   var isOwn=uid&&p.user_id&&String(p.user_id)===String(uid);
   var cmtCount=_btCommentCounts[p.id]||0;
@@ -22931,7 +22946,7 @@ function _btCard(p,idx,uid){
         +'<span>'+_escHtml(p.postura_a||'A')+' ('+pA+'%)</span>'
         +'<span>'+_escHtml(p.postura_b||'B')+' ('+pB+'%)</span>'
       +'</div>'
-      +'<div style="height:6px;border-radius:3px;background:rgba(255,255,255,.10);overflow:hidden">'
+      +'<div style="height:6px;border-radius:3px;background:'+debTrackColor+';overflow:hidden">'
         +'<div style="height:100%;width:'+pA+'%;background:'+c.strip+';border-radius:3px;transition:width .4s"></div>'
       +'</div>'
     +'</div>';
@@ -22945,13 +22960,13 @@ function _btCard(p,idx,uid){
         +'<div style="font-size:10px;color:'+c.label.replace(/[\d.]+\)$/,'.50)')+';font-family:Jost,sans-serif">'+_momentoAgo(p.created_at||'')+(p.is_anon?' · 👤':'')+'</div>'
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
-        +(isOwn?'<button onclick="event.stopPropagation();_btDeletePost(\''+_escHtml(String(p.id))+'\',\''+p.categoria+'\')" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);color:rgba(255,120,120,.80);font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 7px;cursor:pointer">🗑</button>':'')
+        +(isOwn?'<button onclick="event.stopPropagation();_btDeletePost(\''+_escHtml(String(p.id))+'\',\''+p.categoria+'\')" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);color:rgba(200,40,40,.80);font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 7px;cursor:pointer">🗑</button>':'')
         +'<button onclick="event.stopPropagation();_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';color:'+c.label+';font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 8px;cursor:pointer">💬 Comentar</button>'
-        +(!isOwn?'<button onclick="event.stopPropagation();_btReport(\''+_escHtml(String(p.id))+'\',null)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:rgba(255,255,255,.28);font-size:10px;border-radius:10px;padding:3px 7px;cursor:pointer" title="Reportar contenido">🚩</button>':'')
+        +(!isOwn?'<button onclick="event.stopPropagation();_btReport(\''+_escHtml(String(p.id))+'\',null)" style="background:'+reportBg+';border:1px solid '+reportBorder+';color:'+reportColor+';font-size:10px;border-radius:10px;padding:3px 7px;cursor:pointer" title="Reportar contenido">🚩</button>':'')
       +'</div>'
     +'</div>'
-    +(p.titulo?'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.95);font-family:Jost,sans-serif;margin-bottom:6px;line-height:1.3">'+_escHtml(p.titulo)+'</div>':'')
-    +'<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.80);line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px">'+_escHtml(p.contenido)+'</div>'
+    +(p.titulo?'<div style="font-size:15px;font-weight:700;color:'+titleColor+';font-family:Jost,sans-serif;margin-bottom:6px;line-height:1.3">'+_escHtml(p.titulo)+'</div>':'')
+    +'<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+bodyColor+';line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px">'+_escHtml(p.contenido)+'</div>'
     +debBar
     +'<div style="display:flex;align-items:center;gap:6px;border-top:1px solid '+c.border.replace(/[\d.]+\)$/,'.15)')+';padding-top:8px;margin-top:'+(debBar?'8':'0')+'px">'
       +'<div style="flex:1;display:flex;align-items:center;gap:10px">'
@@ -23298,17 +23313,20 @@ function _renderHomeBitacoraWidget(){
     return;
   }
   el.innerHTML=posts.map(function(p){
-    var c=_btColors[p.categoria]||_btColors.apoyo;
+    var isLight=!document.body.classList.contains('r-dark');
+    var c=isLight?(_btColorsLight[p.categoria]||_btColorsLight.apoyo):(_btColors[p.categoria]||_btColors.apoyo);
+    var titleColor=isLight?c.title:'rgba(255,255,255,.88)';
+    var prevColor=isLight?c.preview:'rgba(255,255,255,.68)';
     var nm=p.is_anon?'Anónimo/a':(p.author_name||'Alguien');
     var prev=(p.contenido||'').slice(0,80)+((p.contenido||'').length>80?'…':'');
-    return '<div class="home-mc home-bt-card" onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.bg+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.22)')+';border-left:3px solid '+c.border+';border-radius:12px;padding:11px 13px;cursor:pointer">'
+    return '<div class="home-mc home-bt-card" onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.bg+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.28)')+';border-left:3px solid '+c.border+';border-radius:12px;padding:11px 13px;cursor:pointer;box-shadow:0 2px 10px '+c.glow+'">'
       +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">'
         +'<span style="font-size:14px">'+c.emoji+'</span>'
         +'<span style="font-size:10.5px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(nm)+'</span>'
-        +'<span style="font-size:9.5px;color:'+c.label.replace(/[\d.]+\)$/,'.45)')+';font-family:Jost,sans-serif">'+_momentoAgo(p.created_at||'')+'</span>'
+        +'<span style="font-size:9.5px;color:'+c.label.replace(/[\d.]+\)$/,'.50)')+';font-family:Jost,sans-serif">'+_momentoAgo(p.created_at||'')+'</span>'
       +'</div>'
-      +(p.titulo?'<div style="font-size:12.5px;font-weight:700;color:rgba(255,255,255,.88);font-family:Jost,sans-serif;margin-bottom:4px">'+_escHtml(p.titulo)+'</div>':'')
-      +'<div style="font-size:12px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.68);line-height:1.45">'+_escHtml(prev)+'</div>'
+      +(p.titulo?'<div style="font-size:12.5px;font-weight:700;color:'+titleColor+';font-family:Jost,sans-serif;margin-bottom:4px">'+_escHtml(p.titulo)+'</div>':'')
+      +'<div style="font-size:12px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+prevColor+';line-height:1.45">'+_escHtml(prev)+'</div>'
     +'</div>';
   }).join('');
 }
@@ -23340,7 +23358,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1079;
+    var _BUILT_V = 1080;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

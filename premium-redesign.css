@@ -13391,12 +13391,7 @@ body.r-lavender:not(.r-dark) #homeStatusToggle {
   border-color: var(--border) !important;
 }
 
-/* Bitácora home widget cards — legible en claro */
-body.r-theme-green:not(.r-dark) .home-bt-card,
-body.r-lavender:not(.r-dark) .home-bt-card {
-  background: rgba(255,255,255,.72) !important;
-  border-color: rgba(0,80,40,.15) !important;
-}
+/* Bitácora home widget cards — JS handles per-category colors in light mode (v1080) */
 
 /* ══════════════════════════════════════════════════════════════════
    v1077 — MODO CLARO: widgets con fondos oscuros hardcoded
@@ -13408,7 +13403,6 @@ body:not(.r-dark) #homeBitacoraWidget > div {
   border-color: rgba(40,130,80,.22) !important;
   box-shadow: 0 4px 20px rgba(0,0,0,.06) !important;
 }
-body:not(.r-dark) #homeBitacoraWidget .home-bt-card,
 body:not(.r-dark) #homeBitacoraWidget [style*="rgba(6,22,12"],
 body:not(.r-dark) #homeBitacoraWidget [style*="rgba(5,28,18"] {
   background: rgba(240,252,245,.90) !important;
@@ -13447,11 +13441,11 @@ body:not(.r-dark) #homeMedWidget > div > div:nth-child(2) {
   background: none !important;
 }
 
-/* Momentos compose row — dark bg → light */
+/* Momentos compose row — neutral white in light mode */
 body:not(.r-dark) #momentoComposeRow {
-  background: rgba(200,240,218,.75) !important;
-  border-color: rgba(60,160,100,.30) !important;
-  box-shadow: 0 2px 10px rgba(60,160,100,.08) !important;
+  background: rgba(255,255,255,.82) !important;
+  border-color: rgba(0,0,0,.10) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06) !important;
 }
 body:not(.r-dark) #momentoComposeRow input {
   color: var(--ink) !important;
@@ -13518,11 +13512,7 @@ body:not(.r-dark) .dq-label {
   color: rgba(100,65,8,.90) !important;
 }
 
-/* Bitácora home post cards — fondo menta muy suave para separarse del widget blanco */
-body:not(.r-dark) .home-bt-card {
-  background: rgba(230,248,238,.96) !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,.05) !important;
-}
+/* Bitácora home post cards — JS handles per-category colors (v1080) */
 
 /* Herramientas Explorar button — blanco con texto púrpura */
 body:not(.r-dark) #homeMedWidget > div > div:last-child > div:last-child {
@@ -13562,4 +13552,87 @@ body:not(.r-dark) #homeMomentoFeed .home-mc > div:last-child {
 }
 body:not(.r-dark) #homeMomentoFeed .home-mc > div:last-child * {
   color: var(--ink) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v1080 — MODO CLARO: topbar premium + bitácora page + DQ card
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Topbar icon buttons — white glass with subtle border */
+body:not(.r-dark) .p-topbar > button,
+body:not(.r-dark) .p-topbar > div:not(.p-topbar-actions) button,
+body:not(.r-dark) .p-topbar-actions button:last-child {
+  background: rgba(255,255,255,.76) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,.09), inset 0 1px 0 rgba(255,255,255,.95) !important;
+}
+body.r-theme-green:not(.r-dark) .p-topbar > button,
+body.r-theme-green:not(.r-dark) .p-topbar > div:not(.p-topbar-actions) button,
+body.r-theme-green:not(.r-dark) .p-topbar-actions button:last-child {
+  border-color: rgba(40,140,80,.28) !important;
+}
+body.r-lavender:not(.r-dark) .p-topbar > button,
+body.r-lavender:not(.r-dark) .p-topbar > div:not(.p-topbar-actions) button,
+body.r-lavender:not(.r-dark) .p-topbar-actions button:last-child {
+  border-color: rgba(40,100,185,.28) !important;
+}
+
+/* Bitácora page — Publicar button in light mode */
+body:not(.r-dark) #pg-bitacora .p-page-hdr > button {
+  background: rgba(40,155,88,.22) !important;
+  border-color: rgba(40,155,88,.52) !important;
+  color: rgba(8,58,32,.92) !important;
+  text-shadow: none !important;
+}
+
+/* Bitácora page subtitle text */
+body:not(.r-dark) #pg-bitacora [style*="rgba(180,200,190"] {
+  color: var(--ink4) !important;
+}
+
+/* Bitácora tab description box */
+body:not(.r-dark) #btTabDesc {
+  background: rgba(255,255,255,.78) !important;
+  border-color: rgba(0,0,0,.09) !important;
+  color: var(--ink3) !important;
+}
+
+/* Bitácora feed loading + empty state texts */
+body:not(.r-dark) #btFeed [style*="rgba(180,200,190"] {
+  color: var(--ink4) !important;
+}
+body:not(.r-dark) #btFeed [style*="rgba(175,245,210"] {
+  color: var(--ink2) !important;
+  background: rgba(40,155,88,.12) !important;
+  border-color: rgba(40,155,88,.32) !important;
+}
+
+/* Pregunta del día card — dark obsidian → warm amber cream */
+body:not(.r-dark) #homeDailyQLocked > div {
+  background: rgba(255,248,218,.97) !important;
+  border-color: rgba(190,148,28,.42) !important;
+  box-shadow: 0 6px 28px rgba(170,128,10,.14), 0 0 0 1px rgba(200,158,56,.10) !important;
+}
+body:not(.r-dark) #homeDailyQOpen > div {
+  background: rgba(255,248,218,.97) !important;
+  border-color: rgba(190,148,28,.42) !important;
+  box-shadow: 0 6px 28px rgba(170,128,10,.14) !important;
+}
+body:not(.r-dark) #homeDailyQLocked [style*="rgba(255,255,255,.95)"],
+body:not(.r-dark) #homeDailyQLocked [style*="rgba(255,255,255,.90)"] {
+  color: rgba(58,34,0,.90) !important;
+}
+body:not(.r-dark) #homeDailyQLocked [style*="rgba(255,255,255,.58)"] {
+  color: rgba(80,52,0,.68) !important;
+}
+body:not(.r-dark) #homeDailyQOpen [style*="rgba(255,255,255,.90)"] {
+  color: rgba(58,34,0,.90) !important;
+}
+
+/* Compartir mi respuesta — amber button readable in light */
+body:not(.r-dark) #homeDailyQLocked > div > button {
+  background: linear-gradient(135deg, rgba(215,165,35,.88), rgba(162,118,8,.92)) !important;
+  color: rgba(255,248,195,.97) !important;
+  border-color: rgba(190,148,28,.52) !important;
+  box-shadow: 0 4px 18px rgba(175,132,8,.28) !important;
+  text-shadow: 0 1px 3px rgba(80,40,0,.35) !important;
 }
