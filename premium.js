@@ -23707,7 +23707,10 @@ function _renderHomeBitacoraWidget(){
     var prevColor=isLight?c.preview:'rgba(255,255,255,.68)';
     var nm=p.is_anon?'Anónimo/a':(p.author_name||'Alguien');
     var _pc3=_btCleanContenido(p.contenido); var prev=_pc3.slice(0,80)+(_pc3.length>80?'…':'');
+    var _catLabels={apoyo:'🫂 Apoyo',superacion:'⭐ Superación',debate:'💬 Debate'};
+    var _catBadge=_catLabels[p.categoria]||'';
     return '<div class="home-mc home-bt-card" onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.bg+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.28)')+';border-left:3px solid '+c.border+';border-radius:12px;padding:11px 13px;cursor:pointer;box-shadow:0 2px 10px '+c.glow+'">'
+      +(_catBadge?'<div style="margin-bottom:7px"><span style="font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.strip+';border-radius:20px;padding:3px 9px">'+_catBadge+'</span></div>':'')
       +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">'
         +'<span style="font-size:14px">'+c.emoji+'</span>'
         +'<span style="font-size:10.5px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(nm)+'</span>'
@@ -23746,7 +23749,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1094;
+    var _BUILT_V = 1095;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
