@@ -22927,6 +22927,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
 var _btPosts = {apoyo:[],superacion:[],debate:[],mio:[]};
 var _btCurrentTab = 'apoyo';
 var _btReactMap = {};
+var _btDetailChannel = null;
 var _btLoading = false;
 var _btRtCh = null;
 var _btHiddenIds = new Set(); // IDs de posts reportados (globalmente ocultos)
@@ -23047,7 +23048,7 @@ function _btLoadTab(type,refresh){
         .then(function(rxRes){
           if(rxRes.data){
             rxRes.data.forEach(function(rx){
-              if(!_btReactMap[rx.post_id]) _btReactMap[rx.post_id]={resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,mine:''};
+              if(!_btReactMap[rx.post_id]) _btReactMap[rx.post_id]={resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
               var m=_btReactMap[rx.post_id];
               if(typeof m[rx.reaction_type]==='number') m[rx.reaction_type]++;
               if(uid&&rx.user_id===uid) m.mine=rx.reaction_type;
@@ -23096,7 +23097,7 @@ function _btCard(p,idx,uid){
   var reportBg=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.06)';
   var reportBorder=isLight?'rgba(0,0,0,.10)':'rgba(255,255,255,.10)';
   var reportColor=isLight?'rgba(0,0,0,.30)':'rgba(255,255,255,.28)';
-  var rx=_btReactMap[p.id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,mine:''};
+  var rx=_btReactMap[p.id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
   var isOwn=uid&&p.user_id&&String(p.user_id)===String(uid);
   var cmtCount=_btCommentCounts[p.id]||0;
   var name=p.is_anon?'Anónimo/a':(p.author_name||'Alguien');
@@ -23221,6 +23222,63 @@ function _btReport(postId,commentId){
   });
 }
 
+function _btGenRxHtml(id, rx, c){
+  var defs=[
+    {key:'concuerdo',   emoji:'👍', label:'Concuerdo'},
+    {key:'neutral',     emoji:'🫥', label:'Neutral'},
+    {key:'no_concuerdo',emoji:'👎', label:'No concuerdo'},
+  ];
+  return '<div id="btGenRx_'+id+'" style="display:flex;gap:8px;margin-bottom:16px">'
+    +defs.map(function(d){
+      var act=rx.mine===d.key;
+      var n=rx[d.key]||0;
+      return '<button onclick="_btReact(\''+id+'\',\''+d.key+'\')" '
+        +'style="flex:1;padding:10px 4px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.65':'.20)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px">'
+        +'<span style="font-size:22px;line-height:1">'+d.emoji+'</span>'
+        +'<span style="font-size:11px;font-weight:700">'+d.label+'</span>'
+        +'<span style="font-size:10px;opacity:.65">'+n+'</span>'
+        +'</button>';
+    }).join('')
+    +'</div>';
+}
+
+function _btSubscribeDetail(postId){
+  if(!sbClient) return;
+  if(_btDetailChannel){
+    try{ sbClient.removeChannel(_btDetailChannel); }catch(e){}
+    _btDetailChannel=null;
+  }
+  _btDetailChannel=sbClient.channel('bt-detail-'+postId)
+    .on('postgres_changes',{event:'*',schema:'public',table:'bitacora_reactions',filter:'post_id=eq.'+postId},function(){
+      var uid=safeLS('get','velo_user_id');
+      sbClient.from('bitacora_reactions').select('post_id,reaction_type,user_id').eq('post_id',postId)
+        .then(function(res){
+          if(!res.data) return;
+          var m={resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
+          res.data.forEach(function(rx){
+            if(typeof m[rx.reaction_type]==='number') m[rx.reaction_type]++;
+            if(uid&&rx.user_id===uid) m.mine=rx.reaction_type;
+          });
+          _btReactMap[postId]=m;
+          var genEl=document.getElementById('btGenRx_'+postId);
+          if(genEl){
+            var cat='apoyo';
+            var allP=(_btPosts.apoyo||[]).concat(_btPosts.superacion||[]).concat(_btPosts.debate||[]).concat(_btPosts.mio||[]);
+            var found=allP.filter(function(p){ return String(p.id)===String(postId); })[0];
+            if(found) cat=found.categoria;
+            var _c=_btColors[cat]||_btColors.apoyo;
+            var newEl=document.createElement('div');
+            newEl.innerHTML=_btGenRxHtml(postId,m,_c);
+            genEl.parentNode.replaceChild(newEl.firstChild,genEl);
+          } else {
+            var ov=document.getElementById('btDetailOv');
+            if(ov){ ov.remove(); _btOpenDetail(postId); }
+          }
+        }).catch(function(){});
+    })
+    .subscribe();
+}
+
 function _btOpenDetail(id){
   var post=null;
   var tabs=['apoyo','superacion','debate','mio'];
@@ -23242,7 +23300,7 @@ function _btOpenDetail(id){
     return;
   }
   var c=_btColors[post.categoria]||_btColors.apoyo;
-  var rx=_btReactMap[id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,mine:''};
+  var rx=_btReactMap[id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
   var authorName=post.is_anon?'Anónimo/a':(post.author_name||'Alguien');
   var typeLabel={apoyo:'🫂 APOYO',superacion:'⭐ SUPERACIÓN',debate:'💬 DEBATE'};
   // Extract debate posturas — columns first, then embedded backup in contenido
@@ -23324,7 +23382,7 @@ function _btOpenDetail(id){
   sh+='<div style="display:flex;justify-content:center;padding:12px 0 0"><div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px"></div></div>';
   sh+='<div style="padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between">';
   sh+='<div style="font-size:10px;font-weight:800;letter-spacing:2px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+(typeLabel[post.categoria]||'')+'</div>';
-  sh+='<button onclick="document.getElementById(\'btDetailOv\').remove()" style="background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.70);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>';
+  sh+='<button onclick="document.getElementById(\'btDetailOv\').remove();if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e){}_btDetailChannel=null;}" style="background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.70);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>';
   sh+='</div><div style="padding:14px 18px 0">';
   var _dUname = !post.is_anon ? (post.author_username||_uLook(post.user_id)||'') : '';
   var _dCanClick = !post.is_anon && post.user_id;
@@ -23351,6 +23409,7 @@ function _btOpenDetail(id){
   if(post.titulo) sh+='<div style="font-size:18px;font-weight:800;color:rgba(255,255,255,.97);font-family:Jost,sans-serif;line-height:1.3;margin-bottom:12px">'+_escHtml(post.titulo)+'</div>';
   sh+='<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.65;margin-bottom:18px;white-space:pre-wrap">'+_escHtml(_btCleanContenido(post.contenido))+'</div>';
   sh+=rxHtml;
+  sh+=_btGenRxHtml(id, rx, c);
   sh+='<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px">';
   sh+='<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:12px">COMENTARIOS</div>';
   sh+='<div id="btCommentsWrap" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"><div style="text-align:center;padding:20px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif">Cargando...</div></div>';
@@ -23360,7 +23419,8 @@ function _btOpenDetail(id){
   sh+='</div></div></div></div>';
   ov.innerHTML=sh;
   document.body.appendChild(ov);
-  ov.addEventListener('click',function(e){ if(e.target===ov) ov.remove(); });
+  ov.addEventListener('click',function(e){ if(e.target===ov){ ov.remove(); if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e2){}_btDetailChannel=null;} } });
+  _btSubscribeDetail(id);
   _btLoadComments(post.id);
 }
 
@@ -23425,16 +23485,30 @@ function _btReact(postId,type){
   var uid=safeLS('get','velo_user_id');
   if(!uid){ pToast('Debés iniciar sesión'); return; }
   if(!sbClient) return;
-  var rx=_btReactMap[postId]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,mine:''};
+  var rx=_btReactMap[postId]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
   var oldMine=rx.mine;
+  var _genRxKeys=['concuerdo','no_concuerdo','neutral'];
   var _refreshDetail=function(){
+    if(_genRxKeys.indexOf(type)>=0){
+      var genEl=document.getElementById('btGenRx_'+postId);
+      if(genEl){
+        var allP=(_btPosts.apoyo||[]).concat(_btPosts.superacion||[]).concat(_btPosts.debate||[]).concat(_btPosts.mio||[]);
+        var foundP=allP.filter(function(p){ return String(p.id)===String(postId); })[0];
+        var _c=_btColors[(foundP&&foundP.categoria)||'apoyo']||_btColors.apoyo;
+        var newEl=document.createElement('div');
+        newEl.innerHTML=_btGenRxHtml(postId, _btReactMap[postId]||{}, _c);
+        genEl.parentNode.replaceChild(newEl.firstChild,genEl);
+        return;
+      }
+    }
+    if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e){}_btDetailChannel=null;}
     var ov=document.getElementById('btDetailOv');
     if(ov) ov.remove();
     _btOpenDetail(postId);
   };
   var _doInsert=function(){
     sbClient.from('bitacora_reactions').insert({post_id:postId,user_id:uid,reaction_type:type}).then(function(){
-      var m=_btReactMap[postId]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,mine:''};
+      var m=_btReactMap[postId]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
       if(typeof m[type]==='number') m[type]++; else m[type]=1;
       m.mine=type; _btReactMap[postId]=m;
       _refreshDetail();
@@ -23626,7 +23700,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1089;
+    var _BUILT_V = 1090;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
