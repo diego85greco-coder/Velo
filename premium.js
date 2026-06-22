@@ -23256,11 +23256,28 @@ function _btOpenDetail(id){
     var totAB=(rx.apoyo_a||0)+(rx.apoyo_b||0);
     var pA=totAB>0?Math.round((rx.apoyo_a||0)/totAB*100):50;
     var pB=100-pA;
+    var _mkPosturaCard=function(key,label,desc,pct,active){
+      var bord=c.border.replace(/[\d.]+\)$/,(active?'.65':'.25)'));
+      var bg=active?c.strip:'rgba(255,255,255,.05)';
+      return '<div onclick="_btReact(\''+id+'\',\''+key+'\')" style="flex:1;border:1.5px solid '+bord+';border-radius:14px;background:'+bg+';cursor:pointer;overflow:hidden">'
+        +'<div style="padding:10px 12px 8px">'
+          +'<div style="font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;margin-bottom:5px">'+label+'</div>'
+          +(desc?'<div style="font-size:12px;color:'+c.label+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.4;margin-bottom:8px">'+_escHtml(desc)+'</div>':'')
+          +'<div style="display:flex;align-items:center;justify-content:space-between">'
+            +'<div style="height:4px;flex:1;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden;margin-right:8px">'
+              +'<div style="height:100%;width:'+pct+'%;background:'+c.strip+';border-radius:2px"></div>'
+            +'</div>'
+            +'<span style="font-size:11px;font-weight:800;color:'+c.label+';font-family:Jost,sans-serif">'+pct+'%</span>'
+          +'</div>'
+        +'</div>'
+        +(active?'<div style="background:'+c.strip+';padding:4px 12px;text-align:center;font-size:10px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif">✓ Tu voto</div>':'')
+      +'</div>';
+    };
     rxHtml='<div style="margin-bottom:16px">'
       +'<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;margin-bottom:10px">¿CON QUÉ POSTURA TE IDENTIFICÁS?</div>'
-      +'<div style="display:flex;gap:8px">'
-        +'<button onclick="_btReact(\''+id+'\',\'apoyo_a\')" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(rx.mine==='apoyo_a'?'.60':'.28)'))+';background:'+(rx.mine==='apoyo_a'?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">'+_escHtml(_dpA||'Postura A')+' ('+pA+'%)</button>'
-        +'<button onclick="_btReact(\''+id+'\',\'apoyo_b\')" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(rx.mine==='apoyo_b'?'.60':'.28)'))+';background:'+(rx.mine==='apoyo_b'?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">'+_escHtml(_dpB||'Postura B')+' ('+pB+'%)</button>'
+      +'<div style="display:flex;gap:10px">'
+        +_mkPosturaCard('apoyo_a','Postura A',_dpA,pA,rx.mine==='apoyo_a')
+        +_mkPosturaCard('apoyo_b','Postura B',_dpB,pB,rx.mine==='apoyo_b')
       +'</div>'
     +'</div>';
   } else if(post.categoria==='apoyo'){
@@ -23610,7 +23627,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1087;
+    var _BUILT_V = 1088;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
