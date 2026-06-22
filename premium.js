@@ -23388,7 +23388,10 @@ function _btOpenDetail(id){
             +'<span style="font-size:11px;font-weight:800;color:rgba(255,255,255,.90);font-family:Jost,sans-serif">'+pct+'%</span>'
           +'</div>'
         +'</div>'
-        +(active?'<div style="background:'+c.strip+';padding:4px 12px;text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.95);font-family:Jost,sans-serif">✓ Tu voto</div>':'')
+        +(active
+          ?'<div style="background:'+c.strip+';padding:4px 12px;text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.95);font-family:Jost,sans-serif">✓ Tu voto</div>'
+          :(rx.mine?'':'<div style="padding:4px 12px;text-align:center;font-size:9.5px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif">Toca para votar</div>')
+        )
       +'</div>';
     };
     rxHtml='<div style="margin-bottom:16px">'
@@ -23808,7 +23811,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1098;
+    var _BUILT_V = 1099;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
