@@ -21994,15 +21994,14 @@ function _filterContactInfo(text, context){
   return '⚠️ Mensaje bloqueado: Velo no permite el intercambio de datos de contacto externos. Todas las sesiones deben realizarse dentro de la plataforma.';
 }
 
-// ── LOGO ADMIN EASTER EGG ─────────────────────────────────────
+// ── LOGO CLICK ─────────────────────────────────────────────────
 var _logoClickCount = 0;
 var _logoClickTimer = null;
 function pLogoClick(){
   _logoClickCount++;
-  console.log('Clic en el logo: ' + _logoClickCount);
   if(_logoClickTimer) clearTimeout(_logoClickTimer);
   _logoClickTimer = setTimeout(function(){ _logoClickCount = 0; }, 2500);
-  if(_logoClickCount >= 4){
+  if(_logoClickCount >= 10){
     _logoClickCount = 0;
     clearTimeout(_logoClickTimer);
     pGoTo('admin-login');
@@ -23238,7 +23237,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1072;
+    var _BUILT_V = 1073;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

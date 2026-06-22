@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1072">
+  <meta name="app-version" content="1073">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -300,15 +300,15 @@
         <span id="topbarEstiloIcon" style="font-size:16px;line-height:1">🌓</span>
         <span id="topbarEstiloLbl" style="font-size:9px;font-weight:700;color:rgba(200,230,210,.80);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Estilo</span>
       </button>
-      <div class="p-topbar-actions" style="display:flex;align-items:center;gap:6px">
-<button onclick="pGoTo('donate-cta')" class="r-donar-btn">💛 Donar</button>
-        <button onclick="pShowPlusModal()" class="r-plus-btn">🕊️ Plus</button>
-        <button onclick="pOpenGuide()" class="r-guide-btn" title="Guía de Velo">📖 Guía</button>
-        <button onclick="pGoTo('inbox')" class="r-bell-btn" title="Buzón Velo" style="position:relative;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.14);cursor:pointer;flex-shrink:0;font-size:17px;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent">
-          🔔
-          <span id="homeMailBadge" style="display:none;position:absolute;top:-2px;right:-2px;background:#e63946;color:#fff;font-size:8px;font-weight:800;min-width:14px;height:14px;border-radius:7px;line-height:14px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif;pointer-events:none"></span>
+      <div class="p-topbar-actions" style="display:flex;align-items:center;gap:5px;margin-left:auto">
+        <button onclick="pGoTo('donate-cta')" class="r-donar-btn r-tbtn"><span class="r-tbtn-ico">💛</span><span class="r-tbtn-lbl">Donar</span></button>
+        <button onclick="pShowPlusModal()" class="r-plus-btn r-tbtn"><span class="r-tbtn-ico">🕊️</span><span class="r-tbtn-lbl">Plus</span></button>
+        <button onclick="pOpenGuide()" class="r-guide-btn r-tbtn" title="Guía de Velo"><span class="r-tbtn-ico">📖</span><span class="r-tbtn-lbl">Guía</span></button>
+        <button onclick="pGoTo('inbox')" class="r-bell-btn r-tbtn" title="Buzón Velo" style="position:relative">
+          <span class="r-tbtn-ico">🔔<span id="homeMailBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#e63946;color:#fff;font-size:7px;font-weight:800;min-width:13px;height:13px;border-radius:7px;line-height:13px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif;pointer-events:none"></span></span>
+          <span class="r-tbtn-lbl">Buzón</span>
         </button>
-        <button class="p-topbar-btn" onclick="toggleMobileMenu()" style="flex-shrink:0">☰</button>
+        <button class="p-topbar-btn r-tbtn" onclick="toggleMobileMenu()"><span class="r-tbtn-ico">☰</span><span class="r-tbtn-lbl">Menú</span></button>
       </div>
     </header>
 

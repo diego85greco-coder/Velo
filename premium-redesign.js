@@ -785,27 +785,24 @@
     setTimeout(boot, 100);
     initDarkMode();
   }
-})();
 
-/* ── Dark mode toggle — global (called from HTML onclick) ─────────── */
-function rToggleDarkMode() {
-  var saved = null;
-  try { saved = localStorage.getItem('velo-r-darkmode'); } catch(e) {}
-  // Ciclo: Sistema → Oscuro → Claro → Sistema
-  if (saved === null) {
-    // Estaba en modo sistema → forzar oscuro
-    try { localStorage.setItem('velo-r-darkmode', '1'); } catch(e) {}
-    applyDarkMode(true);
-  } else if (saved === '1') {
-    // Estaba forzado oscuro → forzar claro
-    try { localStorage.setItem('velo-r-darkmode', '0'); } catch(e) {}
-    applyDarkMode(false);
-  } else {
-    // Estaba forzado claro → volver a sistema
-    try { localStorage.removeItem('velo-r-darkmode'); } catch(e) {}
-    applyDarkMode(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  }
-}
+  // Expose toggle globally — must be inside IIFE to access applyDarkMode
+  window.rToggleDarkMode = function() {
+    var saved = null;
+    try { saved = localStorage.getItem('velo-r-darkmode'); } catch(e) {}
+    // Ciclo: Sistema → Oscuro → Claro → Sistema
+    if (saved === null) {
+      try { localStorage.setItem('velo-r-darkmode', '1'); } catch(e) {}
+      applyDarkMode(true);
+    } else if (saved === '1') {
+      try { localStorage.setItem('velo-r-darkmode', '0'); } catch(e) {}
+      applyDarkMode(false);
+    } else {
+      try { localStorage.removeItem('velo-r-darkmode'); } catch(e) {}
+      applyDarkMode(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+  };
+})();
 
 /* ── Tema temporal: verde (07–18 h) / lavanda (18–07 h) ─────────── */
 function _applyTimeTheme(){
