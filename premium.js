@@ -23129,13 +23129,23 @@ function _btCard(p,idx,uid){
     var totAB=(rx.apoyo_a||0)+(rx.apoyo_b||0);
     var pA=totAB>0?Math.round((rx.apoyo_a||0)/totAB*100):50;
     var pB=100-pA;
-    debBar='<div style="margin:8px 0 4px">'
-      +'<div style="display:flex;justify-content:space-between;font-size:10px;color:'+c.label+';font-family:Jost,sans-serif;margin-bottom:3px">'
-        +'<span>'+_escHtml(_pA||'Postura A')+' ('+pA+'%)</span>'
-        +'<span>'+_escHtml(_pB||'Postura B')+' ('+pB+'%)</span>'
+    var _pBox='border:1px solid '+c.border.replace(/[\d.]+\)$/,'.28)')+';border-radius:10px;padding:7px 9px;flex:1;min-width:0';
+    debBar='<div style="margin:8px 0 4px;display:flex;gap:7px">'
+      +'<div style="'+_pBox+'">'
+        +'<div style="font-size:8.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;margin-bottom:3px">Postura A</div>'
+        +(_pA?'<div style="font-size:11px;color:'+bodyColor+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.35;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(_pA)+'</div>':'')
+        +'<div style="display:flex;align-items:center;gap:4px">'
+          +'<div style="flex:1;height:3px;border-radius:2px;background:'+debTrackColor+';overflow:hidden"><div style="height:100%;width:'+pA+'%;background:'+c.strip+';border-radius:2px;transition:width .4s"></div></div>'
+          +'<span style="font-size:9.5px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif">'+pA+'%</span>'
+        +'</div>'
       +'</div>'
-      +'<div style="height:6px;border-radius:3px;background:'+debTrackColor+';overflow:hidden">'
-        +'<div style="height:100%;width:'+pA+'%;background:'+c.strip+';border-radius:3px;transition:width .4s"></div>'
+      +'<div style="'+_pBox+'">'
+        +'<div style="font-size:8.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;margin-bottom:3px">Postura B</div>'
+        +(_pB?'<div style="font-size:11px;color:'+bodyColor+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.35;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(_pB)+'</div>':'')
+        +'<div style="display:flex;align-items:center;gap:4px">'
+          +'<div style="flex:1;height:3px;border-radius:2px;background:'+debTrackColor+';overflow:hidden"><div style="height:100%;width:'+pB+'%;background:'+c.strip+';border-radius:2px;transition:width .4s"></div></div>'
+          +'<span style="font-size:9.5px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif">'+pB+'%</span>'
+        +'</div>'
       +'</div>'
     +'</div>';
   }
@@ -23159,13 +23169,21 @@ function _btCard(p,idx,uid){
     +(p.titulo?'<div style="font-size:15px;font-weight:700;color:'+titleColor+';font-family:Jost,sans-serif;margin-bottom:6px;line-height:1.3">'+_escHtml(p.titulo)+'</div>':'')
     +'<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+bodyColor+';line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px">'+_escHtml(_btCleanContenido(p.contenido))+'</div>'
     +debBar
-    +'<div style="display:flex;align-items:center;gap:6px;border-top:1px solid '+c.border.replace(/[\d.]+\)$/,'.15)')+';padding-top:8px;margin-top:'+(debBar?'8':'0')+'px">'
-      +'<div style="flex:1;display:flex;align-items:center;gap:10px">'
-        +'<span style="font-size:11px;color:'+c.label.replace(/[\d.]+\)$/,'.70)')+';font-family:Jost,sans-serif">'+(rx.mine?'✓ ':'')+totRx+' ❤️</span>'
-        +'<span style="font-size:11px;color:'+c.label.replace(/[\d.]+\)$/,'.70)')+';font-family:Jost,sans-serif">'+cmtCount+' 💬</span>'
-      +'</div>'
-      +'<span style="font-size:10px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';border-radius:20px;padding:3px 10px">'+(p.categoria==='debate'?'🗳 Debatir':'✨ Reaccionar')+'</span>'
-    +'</div>'
+    +(function(){
+      var _em={apoyo_te:'🫂',entiendo:'💙',abrazo:'🤗',acompano:'🕊️',resuena:'✨',inspiro:'🌟',cambio:'💡',concuerdo:'👍',no_concuerdo:'👎',neutral:'🫥',ayudo:'🙏'};
+      var _ks=Object.keys(_em).filter(function(k){return (rx[k]||0)>0;}).slice(0,5);
+      var _rxArr=_ks.map(function(k){return _em[k]+' '+rx[k];});
+      var _dv=(rx.apoyo_a||0)+(rx.apoyo_b||0);
+      if(p.categoria==='debate'&&_dv>0) _rxArr.unshift('🗳️ '+_dv);
+      var _rxStr=_rxArr.slice(0,5).join('  ');
+      return '<div style="display:flex;align-items:center;gap:6px;border-top:1px solid '+c.border.replace(/[\d.]+\)$/,'.15)')+';padding-top:8px;margin-top:'+(debBar?'8':'0')+'px">'
+        +'<div style="flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+          +'<span style="font-size:12px;color:'+c.label.replace(/[\d.]+\)$/,'.80)')+';font-family:Jost,sans-serif;letter-spacing:.2px">'+(_rxStr||(rx.mine?'✓':'')||'—')+'</span>'
+          +'<span style="font-size:11px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+cmtCount+' 💬</span>'
+        +'</div>'
+        +'<span style="font-size:10px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';border-radius:20px;padding:3px 10px">'+(p.categoria==='debate'?'🗳 Debatir':'✨ Reaccionar')+'</span>'
+      +'</div>';
+    })()
   +'</div>';
 }
 
@@ -23728,7 +23746,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1093;
+    var _BUILT_V = 1094;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
