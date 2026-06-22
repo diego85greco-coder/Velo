@@ -2,29 +2,9 @@ name: Daily Push Notifications
 
 on:
   schedule:
-    # Corre cada hora entre 7 UTC y 23 UTC (cubre mañana/tarde AR y PT)
-    # El script filtra por ventana horaria local del usuario — el tag evita duplicados.
-    - cron: '0 7 * * *'
-    - cron: '0 8 * * *'
-    - cron: '0 9 * * *'
-    - cron: '0 10 * * *'
-    - cron: '0 11 * * *'
-    - cron: '0 12 * * *'
-    - cron: '0 13 * * *'
-    - cron: '0 14 * * *'
-    - cron: '0 15 * * *'
-    - cron: '0 16 * * *'
-    - cron: '0 17 * * *'
-    - cron: '0 18 * * *'
-    - cron: '0 19 * * *'
-    - cron: '0 20 * * *'
-    - cron: '0 21 * * *'
-    - cron: '0 22 * * *'
-    - cron: '0 23 * * *'
-    # Noche Argentina (UTC-3): 23:00 AR = 02:00 UTC
-    - cron: '0 0 * * *'
-    - cron: '0 1 * * *'
-    - cron: '0 2 * * *'
+    - cron: '0 12 * * *'   # 9am Argentina (UTC-3) / 10am Uruguay / 8am Chile
+    - cron: '0 17 * * *'   # 2pm Argentina / 3pm Uruguay / 1pm Chile
+    - cron: '0 2 * * *'    # 11pm Argentina / midnight Uruguay / 10pm Chile
   workflow_dispatch: # permite correrlo manualmente para probar
 
 jobs:

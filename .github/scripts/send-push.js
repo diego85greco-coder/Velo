@@ -27,15 +27,16 @@ function localHour(tz) {
 const FORCE_SEND = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch';
 
 function getSlot(tz) {
-  const h = localHour(tz);
-  if (h >= 8  && h < 11) return 'morning';
-  if (h >= 13 && h < 16) return 'afternoon';
-  // Night: exactly 23hs local (2 AM UTC for AR)
-  if (h === 23) return 'night';
-  // When triggered manually, use the closest upcoming slot
+  // Use UTC hour to determine slot — matches the 3 fixed cron times
+  const utcH = new Date().getUTCHours();
+  if (utcH === 12) return 'morning';
+  if (utcH === 17) return 'afternoon';
+  if (utcH === 2)  return 'night';
+  // Manual dispatch: detect from user's local time
   if (FORCE_SEND) {
-    if (h < 8)  return 'morning';
-    if (h < 13) return 'afternoon';
+    const h = localHour(tz);
+    if (h >= 6  && h < 13) return 'morning';
+    if (h >= 13 && h < 20) return 'afternoon';
     return 'night';
   }
   return null;

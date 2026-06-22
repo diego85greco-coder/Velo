@@ -22961,6 +22961,9 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
 
 // ── BITÁCORA ─────────────────────────────────────────────────────
 var _btPosts = {apoyo:[],superacion:[],debate:[],mio:[]};
+// Helper: empty reaction map entry — keeps postura vote and emoji reaction independent
+function _btEmptyRx(prev){ return {resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine_postura:(prev?prev.mine_postura:''),mine_rx:(prev?prev.mine_rx:'')}; }
+function _btIsPostura(t){ return t==='apoyo_a'||t==='apoyo_b'; }
 var _btCurrentTab = 'apoyo';
 var _btReactMap = {};
 var _btDetailChannel = null;
@@ -23080,10 +23083,9 @@ function _btLoadTab(type,refresh){
     var ids=_btPosts[type].map(function(p){ return p.id; });
     if(!ids.length){ clearTimeout(_btSafetyTimer); _btLoading=false; if(_btCurrentTab===type) _btRenderFeed(type); return; }
     var uid=safeLS('get','velo_user_id');
-    // Reset reaction counts for these posts (prevents accumulation on refresh)
+    // Reset reaction counts (prevents accumulation on refresh), preserve mine_postura/mine_rx
     ids.forEach(function(id){
-      var prev=_btReactMap[id];
-      _btReactMap[id]={resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:(prev?prev.mine:'')};
+      _btReactMap[id]=_btEmptyRx(_btReactMap[id]);
     });
     var rxDone=false, cmtDone=false;
     function tryRender(){
@@ -23099,7 +23101,10 @@ function _btLoadTab(type,refresh){
             var m=_btReactMap[rx.post_id];
             if(!m) return;
             if(typeof m[rx.reaction_type]==='number') m[rx.reaction_type]++;
-            if(uid&&String(rx.user_id)===String(uid)) m.mine=rx.reaction_type;
+            if(uid&&String(rx.user_id)===String(uid)){
+              if(_btIsPostura(rx.reaction_type)) m.mine_postura=rx.reaction_type;
+              else m.mine_rx=rx.reaction_type;
+            }
           });
         }
         rxDone=true; tryRender();
@@ -23145,7 +23150,7 @@ function _btCard(p,idx,uid){
   var reportBg=isLight?'rgba(0,0,0,.05)':'rgba(255,255,255,.06)';
   var reportBorder=isLight?'rgba(0,0,0,.10)':'rgba(255,255,255,.10)';
   var reportColor=isLight?'rgba(0,0,0,.30)':'rgba(255,255,255,.28)';
-  var rx=_btReactMap[p.id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
+  var rx=_btReactMap[p.id]||_btEmptyRx();
   var isOwn=uid&&p.user_id&&String(p.user_id)===String(uid);
   var cmtCount=_btCommentCounts[p.id]||0;
   var name=p.is_anon?'Anónimo/a':(p.author_name||'Alguien');
@@ -23226,7 +23231,7 @@ function _btCard(p,idx,uid){
       var _rxStr=_rxArr.slice(0,5).join('  ');
       return '<div style="display:flex;align-items:center;gap:6px;border-top:1px solid '+c.border.replace(/[\d.]+\)$/,'.15)')+';padding-top:8px;margin-top:'+(debBar?'8':'0')+'px">'
         +'<div style="flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-          +'<span style="font-size:12px;color:'+c.label.replace(/[\d.]+\)$/,'.80)')+';font-family:Jost,sans-serif;letter-spacing:.2px">'+(_rxStr||(rx.mine?'✓':'')||'—')+'</span>'
+          +'<span style="font-size:12px;color:'+c.label.replace(/[\d.]+\)$/,'.80)')+';font-family:Jost,sans-serif;letter-spacing:.2px">'+(_rxStr||((rx.mine_postura||rx.mine_rx)?'✓':'')||'—')+'</span>'
           +'<span style="font-size:11px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+cmtCount+' 💬</span>'
         +'</div>'
         +'<span style="font-size:10px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';border-radius:20px;padding:3px 10px">'+(p.categoria==='debate'?'🗳 Debatir':'✨ Reaccionar')+'</span>'
@@ -23302,7 +23307,7 @@ function _btGenRxHtml(id, rx, c){
   ];
   return '<div id="btGenRx_'+id+'" style="display:flex;gap:8px;margin-bottom:16px">'
     +defs.map(function(d){
-      var act=rx.mine===d.key;
+      var act=rx.mine_rx===d.key;
       var n=rx[d.key]||0;
       return '<button onclick="_btReact(\''+id+'\',\''+d.key+'\')" '
         +'style="flex:1;padding:10px 4px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.65':'.20)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px">'
@@ -23326,10 +23331,13 @@ function _btSubscribeDetail(postId){
       sbClient.from('bitacora_reactions').select('post_id,reaction_type,user_id').eq('post_id',postId)
         .then(function(res){
           if(!res.data) return;
-          var m={resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
+          var m=_btEmptyRx();
           res.data.forEach(function(rx){
             if(typeof m[rx.reaction_type]==='number') m[rx.reaction_type]++;
-            if(uid&&rx.user_id===uid) m.mine=rx.reaction_type;
+            if(uid&&String(rx.user_id)===String(uid)){
+              if(_btIsPostura(rx.reaction_type)) m.mine_postura=rx.reaction_type;
+              else m.mine_rx=rx.reaction_type;
+            }
           });
           _btReactMap[postId]=m;
           var genEl=document.getElementById('btGenRx_'+postId);
@@ -23372,7 +23380,7 @@ function _btOpenDetail(id){
     return;
   }
   var c=_btColors[post.categoria]||_btColors.apoyo;
-  var rx=_btReactMap[id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
+  var rx=_btReactMap[id]||_btEmptyRx();
   var authorName=post.is_anon?'Anónimo/a':(post.author_name||'Alguien');
   var typeLabel={apoyo:'🫂 APOYO',superacion:'⭐ SUPERACIÓN',debate:'💬 DEBATE'};
   // Extract debate posturas — columns first, then embedded backup in contenido
@@ -23402,15 +23410,15 @@ function _btOpenDetail(id){
         +'</div>'
         +(active
           ?'<div style="background:'+c.strip+';padding:4px 12px;text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.95);font-family:Jost,sans-serif">✓ Tu voto</div>'
-          :(rx.mine?'':'<div style="padding:4px 12px;text-align:center;font-size:9.5px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif">Toca para votar</div>')
+          :(rx.mine_postura?'':'<div style="padding:4px 12px;text-align:center;font-size:9.5px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif">Toca para votar</div>')
         )
       +'</div>';
     };
     rxHtml='<div style="margin-bottom:16px">'
       +'<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.45);font-family:Jost,sans-serif;margin-bottom:10px">¿CON QUÉ POSTURA TE IDENTIFICÁS?</div>'
       +'<div id="btPCards_'+id+'" style="display:flex;gap:10px">'
-        +_mkPosturaCard('apoyo_a','Postura A',_dpA,pA,rx.mine==='apoyo_a')
-        +_mkPosturaCard('apoyo_b','Postura B',_dpB,pB,rx.mine==='apoyo_b')
+        +_mkPosturaCard('apoyo_a','Postura A',_dpA,pA,rx.mine_postura==='apoyo_a')
+        +_mkPosturaCard('apoyo_b','Postura B',_dpB,pB,rx.mine_postura==='apoyo_b')
       +'</div>'
     +'</div>';
   } else if(post.categoria==='apoyo'){
@@ -23422,7 +23430,7 @@ function _btOpenDetail(id){
     ];
     rxHtml='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">'
       +rxDefs.map(function(rd){
-        var act=rx.mine===rd.key;
+        var act=rx.mine_rx===rd.key;
         var n=rx[rd.key]||0;
         return '<button onclick="_btReact(\''+id+'\',\''+rd.key+'\')" style="padding:10px 6px;border-radius:13px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.70':'.25)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px">'
           +'<span style="font-size:22px;line-height:1">'+rd.emoji+'</span>'
@@ -23439,7 +23447,7 @@ function _btOpenDetail(id){
     ];
     rxHtml='<div style="display:flex;gap:8px;margin-bottom:16px">'
       +rxDefs.map(function(rd){
-        var act=rx.mine===rd.key;
+        var act=rx.mine_rx===rd.key;
         var n=rx[rd.key]||0;
         return '<button onclick="_btReact(\''+id+'\',\''+rd.key+'\')" style="flex:1;padding:10px 4px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.65':'.25)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px">'
           +'<span style="font-size:20px;line-height:1">'+rd.emoji+'</span>'
@@ -23512,11 +23520,11 @@ function _btOpenDetail(id){
         if(!fA&&!fB) return;
         var pcards=document.getElementById('btPCards_'+id);
         if(!pcards) return;
-        var rx2=_btReactMap[id]||{apoyo_a:0,apoyo_b:0,mine:''};
+        var rx2=_btReactMap[id]||_btEmptyRx();
         var totAB2=(rx2.apoyo_a||0)+(rx2.apoyo_b||0);
         var pA2=totAB2>0?Math.round((rx2.apoyo_a||0)/totAB2*100):50;
-        pcards.innerHTML=_mkPosturaCard('apoyo_a','Postura A',fA,pA2,rx2.mine==='apoyo_a')
-          +_mkPosturaCard('apoyo_b','Postura B',fB,100-pA2,rx2.mine==='apoyo_b');
+        pcards.innerHTML=_mkPosturaCard('apoyo_a','Postura A',fA,pA2,rx2.mine_postura==='apoyo_a')
+          +_mkPosturaCard('apoyo_b','Postura B',fB,100-pA2,rx2.mine_postura==='apoyo_b');
         // Update cache so re-open doesn't lose posturas
         Object.keys(_btPosts).forEach(function(cat){
           (_btPosts[cat]||[]).forEach(function(p){ if(String(p.id)===String(id)){ p.postura_a=fA; p.postura_b=fB; } });
@@ -23600,11 +23608,17 @@ function _btReact(postId,type){
   var uid=safeLS('get','velo_user_id');
   if(!uid){ pToast('Debés iniciar sesión'); return; }
   if(!sbClient) return;
-  var rx=_btReactMap[postId]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
-  var oldMine=rx.mine;
+  var rx=_btReactMap[postId]||_btEmptyRx();
+  // Postura votes (apoyo_a/apoyo_b) and emoji reactions are independent
+  var isPostura=_btIsPostura(type);
+  var oldMine=isPostura?rx.mine_postura:rx.mine_rx;
+  var _setMine=function(m,val){
+    if(isPostura) m.mine_postura=val; else m.mine_rx=val;
+  };
   var _genRxKeys=['concuerdo','no_concuerdo','neutral'];
   var _refreshDetail=function(){
     _btRefreshCard(postId);
+    // For genRx buttons (concuerdo/neutral/no_concuerdo): re-render just that row
     if(_genRxKeys.indexOf(type)>=0){
       var genEl=document.getElementById('btGenRx_'+postId);
       if(genEl){
@@ -23612,11 +23626,35 @@ function _btReact(postId,type){
         var foundP=allP.filter(function(p){ return String(p.id)===String(postId); })[0];
         var _c=_btColors[(foundP&&foundP.categoria)||'apoyo']||_btColors.apoyo;
         var newEl=document.createElement('div');
-        newEl.innerHTML=_btGenRxHtml(postId, _btReactMap[postId]||{}, _c);
+        newEl.innerHTML=_btGenRxHtml(postId,_btReactMap[postId]||_btEmptyRx(),_c);
         genEl.parentNode.replaceChild(newEl.firstChild,genEl);
         return;
       }
     }
+    // For postura votes: re-render just the postura cards row without closing the overlay
+    if(isPostura){
+      var pcards=document.getElementById('btPCards_'+postId);
+      if(pcards){
+        var rx3=_btReactMap[postId]||_btEmptyRx();
+        var totAB3=(rx3.apoyo_a||0)+(rx3.apoyo_b||0);
+        var pA3=totAB3>0?Math.round((rx3.apoyo_a||0)/totAB3*100):50;
+        var allP2=(_btPosts.apoyo||[]).concat(_btPosts.superacion||[]).concat(_btPosts.debate||[]).concat(_btPosts.mio||[]);
+        var fp=allP2.filter(function(p){ return String(p.id)===String(postId); })[0];
+        var pA_txt=(fp&&fp.postura_a)||''; var pB_txt=(fp&&fp.postura_b)||'';
+        // Re-use the _mkPosturaCard closure that was defined inside _btOpenDetail
+        // Rebuild via re-open only if the closure is gone
+        if(typeof _mkPosturaCard==='function'){
+          pcards.innerHTML=_mkPosturaCard('apoyo_a','Postura A',pA_txt,pA3,rx3.mine_postura==='apoyo_a')
+            +_mkPosturaCard('apoyo_b','Postura B',pB_txt,100-pA3,rx3.mine_postura==='apoyo_b');
+        } else {
+          if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e){}_btDetailChannel=null;}
+          var ov2=document.getElementById('btDetailOv'); if(ov2) ov2.remove();
+          _btOpenDetail(postId);
+        }
+        return;
+      }
+    }
+    // Default: re-open detail overlay
     if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e){}_btDetailChannel=null;}
     var ov=document.getElementById('btDetailOv');
     if(ov) ov.remove();
@@ -23624,30 +23662,43 @@ function _btReact(postId,type){
   };
   var _doInsert=function(){
     sbClient.from('bitacora_reactions').insert({post_id:postId,user_id:uid,reaction_type:type}).then(function(res){
-      if(res.error){ pToast('Error al reaccionar: '+((res.error.message||'').slice(0,60))); return; }
-      var m=_btReactMap[postId]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
+      if(res.error){
+        // Duplicate key = reaction already in DB (stale memory) — treat as success
+        if((res.error.message||'').indexOf('duplicate')>=0||(res.error.code||'')==='23505'){
+          var m=_btReactMap[postId]||_btEmptyRx();
+          if(typeof m[type]==='number'){ if(m[type]===0) m[type]=1; } else m[type]=1;
+          _setMine(m,type); _btReactMap[postId]=m;
+          _refreshDetail(); return;
+        }
+        pToast('Error al reaccionar'); return;
+      }
+      var m=_btReactMap[postId]||_btEmptyRx();
       if(typeof m[type]==='number') m[type]++; else m[type]=1;
-      m.mine=type; _btReactMap[postId]=m;
+      _setMine(m,type); _btReactMap[postId]=m;
       _refreshDetail();
-    });
+    }).catch(function(){ pToast('Error de conexión'); });
   };
   if(oldMine===type){
+    // Toggle off
     sbClient.from('bitacora_reactions').delete().eq('post_id',postId).eq('user_id',uid).eq('reaction_type',type).then(function(res){
       if(res.error) return;
-      var m=_btReactMap[postId]||{};
+      var m=_btReactMap[postId]||_btEmptyRx();
       if(typeof m[type]==='number'&&m[type]>0) m[type]--;
-      m.mine=''; _btReactMap[postId]=m;
+      _setMine(m,''); _btReactMap[postId]=m;
       _refreshDetail();
-    });
+    }).catch(function(){});
   } else if(oldMine){
+    // Switch reaction within the same category (postura↔postura or rx↔rx)
     sbClient.from('bitacora_reactions').delete().eq('post_id',postId).eq('user_id',uid).eq('reaction_type',oldMine).then(function(res){
       if(res.error) return;
-      var m=_btReactMap[postId]||{};
+      var m=_btReactMap[postId]||_btEmptyRx();
       if(typeof m[oldMine]==='number'&&m[oldMine]>0) m[oldMine]--;
-      m.mine=''; _btReactMap[postId]=m;
+      _setMine(m,''); _btReactMap[postId]=m;
       _doInsert();
-    });
-  } else { _doInsert(); }
+    }).catch(function(){});
+  } else {
+    _doInsert();
+  }
 }
 
 function _btOpenCompose(typeHint){
@@ -23823,7 +23874,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1100;
+    var _BUILT_V = 1101;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
