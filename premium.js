@@ -23060,6 +23060,13 @@ function _btCard(p,idx,uid){
     avHtml='<div style="width:32px;height:32px;border-radius:50%;background:'+c.strip+';border:2px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">'+c.emoji+'</div>';
   }
   var totRx=['resuena','ayudo','cambio','apoyo_te','entiendo','abrazo','acompano','inspiro'].reduce(function(s,k){ return s+(rx[k]||0); },0);
+  // Username for @handle display
+  var _btUname = !p.is_anon ? (p.author_username||_uLook(p.user_id)||'') : '';
+  // Clickable author profile
+  var _btCanClick = !p.is_anon && p.user_id;
+  var _btProfileClick = _btCanClick
+    ? 'event.stopPropagation();pQuickProfile('+_jsAttr(name)+','+_jsAttr(avUrl||'')+',\'\',\'\','+_jsAttr(p.user_id)+')'
+    : '';
   var debBar='';
   if(p.categoria==='debate'&&(p.postura_a||p.postura_b)){
     var totAB=(rx.apoyo_a||0)+(rx.apoyo_b||0);
@@ -23078,10 +23085,13 @@ function _btCard(p,idx,uid){
   return '<div class="bt-card" onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')"'
     +' style="background:'+c.bg+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.25)')+';border-left:3px solid '+c.border+';box-shadow:0 3px 18px '+c.glow+';border-radius:16px;padding:14px 16px;cursor:pointer">'
     +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">'
-      +avHtml
+      +(_btCanClick ? '<div onclick="'+_escHtml(_btProfileClick)+'" style="cursor:pointer;flex-shrink:0">'+avHtml+'</div>' : '<div style="flex-shrink:0">'+avHtml+'</div>')
       +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:11.5px;font-weight:800;color:'+c.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(name)+'</div>'
-        +'<div style="font-size:10px;color:'+c.label.replace(/[\d.]+\)$/,'.50)')+';font-family:Jost,sans-serif">'+_momentoAgo(p.created_at||'')+(p.is_anon?' · 👤':'')+'</div>'
+        +'<div style="font-size:11.5px;font-weight:800;color:'+c.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'+(_btCanClick?';cursor:pointer':'')+'"'
+          +(_btCanClick?' onclick="'+_escHtml(_btProfileClick)+'"':'')+'>'+_escHtml(name)+'</div>'
+        +(_btUname ? '<div style="font-size:9.5px;color:'+c.label.replace(/[\d.]+\)$/,'.52)')+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:1px'+(_btCanClick?';cursor:pointer':'')+'"'
+          +(_btCanClick?' onclick="'+_escHtml(_btProfileClick)+'"':'')+'>@'+_escHtml(_btUname)+'</div>' : '')
+        +'<div style="font-size:10px;color:'+c.label.replace(/[\d.]+\)$/,'.45)')+';font-family:Jost,sans-serif">'+_momentoAgo(p.created_at||'')+(p.is_anon?' · 👤':'')+'</div>'
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
         +(isOwn?'<button onclick="event.stopPropagation();_btDeletePost(\''+_escHtml(String(p.id))+'\',\''+p.categoria+'\')" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);color:rgba(200,40,40,.80);font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 7px;cursor:pointer">🗑</button>':'')
@@ -23225,7 +23235,28 @@ function _btOpenDetail(id){
   sh+='<div style="font-size:10px;font-weight:800;letter-spacing:2px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+(typeLabel[post.categoria]||'')+'</div>';
   sh+='<button onclick="document.getElementById(\'btDetailOv\').remove()" style="background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.70);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>';
   sh+='</div><div style="padding:14px 18px 0">';
-  sh+='<div style="font-size:11px;color:'+c.label.replace(/[\d.]+\)$/,'.60)')+';font-family:Jost,sans-serif;margin-bottom:6px">'+_escHtml(authorName)+' · '+_momentoAgo(post.created_at||'')+'</div>';
+  var _dUname = !post.is_anon ? (post.author_username||_uLook(post.user_id)||'') : '';
+  var _dCanClick = !post.is_anon && post.user_id;
+  var _dAvUrl = !post.is_anon ? (post.author_avatar||'') : '';
+  var _dClick = _dCanClick
+    ? 'pQuickProfile('+_jsAttr(authorName)+','+_jsAttr(_dAvUrl)+',\'\',\'\','+_jsAttr(post.user_id)+')'
+    : '';
+  sh+='<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">';
+  // Author avatar in detail
+  if(_dAvUrl&&_dAvUrl.startsWith('http')){
+    sh+='<img src="'+_escHtml(_dAvUrl)+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid '+c.border+';flex-shrink:0'+(_dCanClick?';cursor:pointer':'')+'"'+(_dCanClick?' onclick="'+_escHtml(_dClick)+'"':'')+'>';
+  } else if(_dAvUrl&&_dCanClick){
+    sh+='<div onclick="'+_escHtml(_dClick)+'" style="width:36px;height:36px;border-radius:50%;background:'+c.strip+';border:2px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;cursor:pointer">'+_escHtml(_dAvUrl)+'</div>';
+  } else {
+    sh+='<div style="width:36px;height:36px;border-radius:50%;background:'+c.strip+';border:2px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">'+c.emoji+'</div>';
+  }
+  sh+='<div style="flex:1;min-width:0">';
+  sh+='<div style="font-size:12px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'+(_dCanClick?';cursor:pointer':'')+'"'
+    +(_dCanClick?' onclick="'+_escHtml(_dClick)+'"':'')+'>'+_escHtml(authorName)+'</div>';
+  if(_dUname) sh+='<div style="font-size:10px;color:'+c.label.replace(/[\d.]+\)$/,'.52)')+';font-family:Jost,sans-serif'+(_dCanClick?';cursor:pointer':'')+'"'
+    +(_dCanClick?' onclick="'+_escHtml(_dClick)+'"':'')+'>@'+_escHtml(_dUname)+'</div>';
+  sh+='<div style="font-size:10px;color:'+c.label.replace(/[\d.]+\)$/,'.40)')+';font-family:Jost,sans-serif">'+_momentoAgo(post.created_at||'')+'</div>';
+  sh+='</div></div>';
   if(post.titulo) sh+='<div style="font-size:18px;font-weight:800;color:rgba(255,255,255,.97);font-family:Jost,sans-serif;line-height:1.3;margin-bottom:12px">'+_escHtml(post.titulo)+'</div>';
   sh+='<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.65;margin-bottom:18px;white-space:pre-wrap">'+_escHtml(post.contenido)+'</div>';
   sh+=rxHtml;
@@ -23483,7 +23514,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1082;
+    var _BUILT_V = 1083;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
