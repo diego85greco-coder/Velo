@@ -13182,12 +13182,9 @@ body.r-theme-green:not(.r-dark) .p-main-content {
   background: transparent !important;
 }
 body.r-theme-green:not(.r-dark) .r-hero-v2 {
-  background: linear-gradient(160deg,
-    rgba(80,185,120,.70) 0%,
-    rgba(120,210,155,.60) 35%,
-    rgba(168,235,195,.55) 65%,
-    rgba(200,248,220,.50) 100%) !important;
-  border-bottom-color: rgba(40,160,90,.18) !important;
+  background: rgba(255,255,255,.84) !important;
+  border-bottom: 1px solid rgba(60,170,100,.14) !important;
+  box-shadow: 0 4px 22px rgba(0,0,0,.05) !important;
 }
 body.r-theme-green:not(.r-dark) .p-topbar {
   background: rgba(192,240,215,.92) !important;
@@ -13256,12 +13253,9 @@ body.r-lavender:not(.r-dark) .p-main-content {
   background: transparent !important;
 }
 body.r-lavender:not(.r-dark) .r-hero-v2 {
-  background: linear-gradient(160deg,
-    rgba(60,130,200,.65) 0%,
-    rgba(100,165,225,.58) 35%,
-    rgba(150,198,242,.52) 65%,
-    rgba(195,225,250,.48) 100%) !important;
-  border-bottom-color: rgba(40,110,190,.18) !important;
+  background: rgba(255,255,255,.84) !important;
+  border-bottom: 1px solid rgba(60,120,210,.14) !important;
+  box-shadow: 0 4px 22px rgba(0,0,0,.05) !important;
 }
 body.r-lavender:not(.r-dark) .p-topbar {
   background: rgba(185,220,250,.92) !important;
@@ -13493,4 +13487,79 @@ body:not(.r-dark) #homeTabHappy > button:first-child > div:last-child {
 #homeVelaCard, #homeVeloIACard {
   height: 88px !important;
   overflow: hidden !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v1078 — MODO CLARO: segunda ronda de fixes de contraste
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Compartir esta frase — verde oscuro → glass verde claro */
+body:not(.r-dark) #homeDailyShareBtn {
+  background: rgba(40,130,80,.14) !important;
+  border: 1.5px solid rgba(40,130,80,.36) !important;
+  box-shadow: none !important;
+  color: rgba(10,65,35,.90) !important;
+}
+body:not(.r-dark) #homeDailyShareBtn span { color: rgba(10,65,35,.90) !important; text-shadow: none !important; }
+body:not(.r-dark) #homeDailyShareBtn svg { stroke: rgba(10,65,35,.90) !important; filter: none !important; }
+
+/* Compartir mi semana emocional — verde oscuro → glass verde claro */
+body:not(.r-dark) #homeShareWeekBtn button {
+  background: rgba(40,130,80,.14) !important;
+  border: 1.5px solid rgba(40,130,80,.36) !important;
+  box-shadow: none !important;
+  color: rgba(10,65,35,.90) !important;
+  text-shadow: none !important;
+}
+body:not(.r-dark) #homeShareWeekBtn svg { stroke: rgba(10,65,35,.90) !important; filter: none !important; }
+
+/* PREGUNTA DEL DÍA / dq-label — ámbar oscuro más visible */
+body:not(.r-dark) .dq-label {
+  color: rgba(100,65,8,.90) !important;
+}
+
+/* Bitácora home post cards — fondo menta muy suave para separarse del widget blanco */
+body:not(.r-dark) .home-bt-card {
+  background: rgba(230,248,238,.96) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05) !important;
+}
+
+/* Herramientas Explorar button — blanco con texto púrpura */
+body:not(.r-dark) #homeMedWidget > div > div:last-child > div:last-child {
+  background: rgba(255,255,255,.90) !important;
+  color: rgba(65,32,135,.92) !important;
+  border: 1.5px solid rgba(110,70,180,.32) !important;
+  box-shadow: 0 2px 8px rgba(100,60,180,.10) !important;
+}
+
+/* Muro Feliz home cards — crema cálida en lugar de oliva oscuro */
+body:not(.r-dark) #homeHappyFeed .home-mc {
+  background: rgba(255,248,215,.96) !important;
+  box-shadow: 0 2px 14px rgba(200,158,56,.14) !important;
+}
+body:not(.r-dark) #homeHappyFeed .home-mc > div:first-child {
+  background: rgba(218,168,48,.18) !important;
+}
+body:not(.r-dark) #homeHappyFeed .home-mc > div:last-child {
+  color: rgba(55,32,0,.88) !important;
+}
+body:not(.r-dark) #homeHappyFeed .home-mc > div:last-child * {
+  color: rgba(55,32,0,.88) !important;
+}
+body:not(.r-dark) #homeHappyFeed .home-mc button {
+  background: rgba(218,160,30,.18) !important;
+  border-color: rgba(180,130,20,.38) !important;
+  color: rgba(65,40,0,.88) !important;
+}
+
+/* Momentos home feed cards — fondo neutro claro */
+body:not(.r-dark) #homeMomentoFeed .home-mc {
+  background: rgba(238,248,244,.96) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,.05) !important;
+}
+body:not(.r-dark) #homeMomentoFeed .home-mc > div:last-child {
+  color: var(--ink) !important;
+}
+body:not(.r-dark) #homeMomentoFeed .home-mc > div:last-child * {
+  color: var(--ink) !important;
 }
