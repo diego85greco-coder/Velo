@@ -80,7 +80,7 @@ body::after {
     gap: 14px !important;
     overflow: hidden;
     white-space: nowrap;
-    transition: background .25s ease, color .2s ease !important;
+    transition: none !important;
   }
   .p-sn-icon {
     width: 22px !important;
@@ -13168,7 +13168,7 @@ body.r-dark .hf-tab--inactive-happy {
 
 body.r-theme-green:not(.r-dark) {
   background:
-    linear-gradient(160deg, #b0e8c4 0%, #c8f0d6 35%, #ddf8e8 65%, #eefaf3 100%) fixed !important;
+    linear-gradient(160deg, #b0e8c4 0%, #c8f0d6 35%, #ddf8e8 65%, #eefaf3 100%) !important;
   --ink:  #0c2d18;
   --ink2: #1a4528;
   --ink3: #2a5e38;
@@ -13242,7 +13242,7 @@ body.r-theme-green:not(.r-dark) .p-bnav-item.active { color: var(--ink) !importa
 
 body.r-lavender:not(.r-dark) {
   background:
-    linear-gradient(160deg, #a4cce8 0%, #bcdaf5 35%, #d0e8fb 65%, #e4f2fd 100%) fixed !important;
+    linear-gradient(160deg, #a4cce8 0%, #bcdaf5 35%, #d0e8fb 65%, #e4f2fd 100%) !important;
   --ink:  #0a1e3c;
   --ink2: #183058;
   --ink3: #284870;
