@@ -741,10 +741,9 @@
     if (lbl) lbl.textContent = isSystem ? '🖥️ Sistema' : (dark ? '🌙 Oscuro' : '☀️ Claro');
     const icon = document.getElementById('rDarkToggleIcon');
     if (icon) icon.textContent = isSystem ? '🖥️' : (dark ? '🌙' : '☀️');
-    const topEstiloLbl = document.getElementById('topbarEstiloLbl');
-    if (topEstiloLbl) topEstiloLbl.textContent = isSystem ? 'Sistema' : (dark ? 'Oscuro' : 'Claro');
+    // topbarEstiloLbl always stays "Estilo" — only the icon changes
     const topEstiloIcon = document.getElementById('topbarEstiloIcon');
-    if (topEstiloIcon) topEstiloIcon.textContent = isSystem ? '🌓' : (dark ? '🌙' : '☀️');
+    if (topEstiloIcon) topEstiloIcon.textContent = dark ? '🌛' : '🌞';
 
     // Swap logo
     var logoSrc = dark ? 'assets/logo.png' : 'assets/logo-dark.png';
@@ -786,21 +785,12 @@
     initDarkMode();
   }
 
-  // Expose toggle globally — must be inside IIFE to access applyDarkMode
+  // Expose toggle globally — simple binary toggle: dark ↔ light
   window.rToggleDarkMode = function() {
-    var saved = null;
-    try { saved = localStorage.getItem('velo-r-darkmode'); } catch(e) {}
-    // Ciclo: Sistema → Oscuro → Claro → Sistema
-    if (saved === null) {
-      try { localStorage.setItem('velo-r-darkmode', '1'); } catch(e) {}
-      applyDarkMode(true);
-    } else if (saved === '1') {
-      try { localStorage.setItem('velo-r-darkmode', '0'); } catch(e) {}
-      applyDarkMode(false);
-    } else {
-      try { localStorage.removeItem('velo-r-darkmode'); } catch(e) {}
-      applyDarkMode(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    }
+    var isDark = document.body.classList.contains('r-dark');
+    var newDark = !isDark;
+    try { localStorage.setItem('velo-r-darkmode', newDark ? '1' : '0'); } catch(e) {}
+    applyDarkMode(newDark);
   };
 })();
 
