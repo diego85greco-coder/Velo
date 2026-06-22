@@ -23124,14 +23124,14 @@ function _btCard(p,idx,uid){
     if(_pm){ _pA=_pm[1]||''; _pB=_pm[2]||''; }
   }
   var debBar='';
-  if(p.categoria==='debate'&&(_pA||_pB)){
+  if(p.categoria==='debate'){
     var totAB=(rx.apoyo_a||0)+(rx.apoyo_b||0);
     var pA=totAB>0?Math.round((rx.apoyo_a||0)/totAB*100):50;
     var pB=100-pA;
     debBar='<div style="margin:8px 0 4px">'
       +'<div style="display:flex;justify-content:space-between;font-size:10px;color:'+c.label+';font-family:Jost,sans-serif;margin-bottom:3px">'
-        +'<span>'+_escHtml(_pA||'A')+' ('+pA+'%)</span>'
-        +'<span>'+_escHtml(_pB||'B')+' ('+pB+'%)</span>'
+        +'<span>'+_escHtml(_pA||'Postura A')+' ('+pA+'%)</span>'
+        +'<span>'+_escHtml(_pB||'Postura B')+' ('+pB+'%)</span>'
       +'</div>'
       +'<div style="height:6px;border-radius:3px;background:'+debTrackColor+';overflow:hidden">'
         +'<div style="height:100%;width:'+pA+'%;background:'+c.strip+';border-radius:3px;transition:width .4s"></div>'
@@ -23610,7 +23610,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1086;
+    var _BUILT_V = 1087;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
