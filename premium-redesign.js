@@ -745,6 +745,9 @@
     const topEstiloIcon = document.getElementById('topbarEstiloIcon');
     if (topEstiloIcon) topEstiloIcon.textContent = dark ? '🌛' : '🌞';
 
+    // Re-render weather pill so dark/light colors update instantly
+    _renderWeatherInfo();
+
     // Swap logo
     var logoSrc = dark ? 'assets/logo.png' : 'assets/logo-dark.png';
     var topLogo = document.querySelector('.p-topbar-logo-img');

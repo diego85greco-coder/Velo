@@ -13840,7 +13840,7 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 
   // Fetch full profile + reviews + accurate session counts
-  var prof = null, reviews = [], _qpHelped = 0, _qpReceived = 0;
+  var prof = null, reviews = [], _qpHelped = 0, _qpReceived = 0, _qpBtPosts = [];
   if(uid && !isAnon){
     _initSupabase();
     if(sbClient){
@@ -13869,6 +13869,14 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
         }
       }catch(e){}
       reviews = await _loadUserReviews(uid);
+      // Load public Bitácora posts (non-anonymous) for the profile
+      try{
+        var btRes = await sbClient.from('bitacora_posts_full')
+          .select('id,titulo,contenido,categoria,created_at')
+          .eq('user_id', uid).eq('is_anon', false)
+          .order('created_at',{ascending:false}).limit(4);
+        if(!btRes.error && btRes.data) _qpBtPosts = btRes.data;
+      }catch(e){}
     }
   }
   var body = document.getElementById('qpBody');
@@ -13934,6 +13942,24 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
     +(presence ? '<div style="font-size:11px;color:'+(presence.on?presence.color:'var(--ink5)')+';margin-top:6px">● '+presence.label+'</div>' : '')
     +'</div>'
     + likes + counters + revHtml
+    // ── Bitácora posts section ────────────────────────────────────
+    +(_qpBtPosts.length ? (function(){
+      var _btCatLabel = {apoyo:'🫂 Apoyo',superacion:'⭐ Superación',debate:'💬 Debate'};
+      var _btCatColor = {apoyo:'rgba(218,160,30,.80)',superacion:'rgba(116,198,157,.80)',debate:'rgba(165,110,220,.80)'};
+      return '<div style="text-align:left;margin-bottom:14px">'
+        +'<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">📖 EN BITÁCORA ('+_qpBtPosts.length+')</div>'
+        +_qpBtPosts.map(function(p){
+          var col = _btCatColor[p.categoria]||'rgba(116,198,157,.75)';
+          var lbl = _btCatLabel[p.categoria]||p.categoria||'';
+          var prev = (p.contenido||'').slice(0,90)+((p.contenido||'').length>90?'…':'');
+          return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\');document.getElementById(\'quickProfileOv\').remove()" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+            +(p.titulo?'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
+            +'<div style="font-size:11.5px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
+            +'<span style="font-size:9px;font-weight:700;color:'+col+';background:rgba(255,255,255,.06);border-radius:20px;padding:2px 8px">'+lbl+'</span>'
+            +'</div>';
+        }).join('')
+        +'</div>';
+    })() : '')
     // ── Action buttons ───────────────────────────────────────────
     +(guardianId&&!isAnon ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'quickProfileOv\').remove();pOpenGuardian('+_jsAttr(guardianId)+')">Solicitar acompañamiento 💚</button><div style="height:8px"></div>' : '')
     +(!isAnon && uid ? '<button class="p-btn p-btn--secondary p-btn--sm p-btn--full" onclick="pOpenDM('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+');document.getElementById(\'quickProfileOv\').remove()">💬 Enviar mensaje</button><div style="height:8px"></div>' : '')
@@ -23314,7 +23340,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1076;
+    var _BUILT_V = 1077;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

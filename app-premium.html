@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1076">
+  <meta name="app-version" content="1077">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260622-1076">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260622-1076">
+  <link rel="stylesheet" href="premium.css?v=20260622-1077">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260622-1077">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -72,7 +72,7 @@
     @keyframes moodDayPulse { 0%,100%{box-shadow:0 0 0 2px rgba(116,198,157,.30),0 0 6px rgba(116,198,157,.20)} 50%{box-shadow:0 0 0 4px rgba(116,198,157,.18),0 0 12px rgba(116,198,157,.35)} }
     body:not(.r-dark) #homeGuardianChip > div { background:linear-gradient(135deg,rgba(74,160,110,.1),rgba(74,160,110,.06)) !important;border-color:rgba(74,120,60,.3) !important; }
     body:not(.r-dark) #homeGuardianChipTxt { color:rgba(40,100,50,.9) !important; }
-    body:not(.r-dark) #homeDailyQHint { color:rgba(40,80,55,.55) !important; }
+    body:not(.r-dark) #homeDailyQHint { color:rgba(30,70,40,.80) !important; border-left-color:rgba(80,140,60,.40) !important; }
     .daily-emoji-btn { background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 6px;cursor:pointer;font-size:22px;text-align:center;color:var(--ink);font-family:Jost,sans-serif;transition:all .18s; }
     .daily-emoji-btn.sel { background:rgba(116,198,157,.22);border-color:rgba(116,198,157,.65);transform:scale(1.06); }
     body:not(.r-dark) .daily-emoji-btn { background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.1); }
@@ -300,10 +300,12 @@
         <span id="topbarEstiloIcon" style="font-size:17px;line-height:1">🌛</span>
         <span id="topbarEstiloLbl" style="font-size:9px;font-weight:700;color:rgba(200,230,210,.80);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Estilo</span>
       </button>
-      <div class="p-topbar-actions" style="display:flex;align-items:center;gap:4px;margin-left:auto">
+      <div style="flex:1;display:flex;justify-content:center;align-items:center;gap:4px">
         <button onclick="pGoTo('donate-cta')" title="Donar" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0"><span style="font-size:17px;line-height:1">💛</span><span style="font-size:9px;font-weight:700;color:rgba(200,230,210,.85);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Donar</span></button>
         <button onclick="pShowPlusModal()" title="Plus" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0"><span style="font-size:17px;line-height:1">🕊️</span><span style="font-size:9px;font-weight:700;color:rgba(200,230,210,.85);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Plus</span></button>
         <button onclick="pOpenGuide()" title="Guía de Velo" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0"><span style="font-size:17px;line-height:1">📖</span><span style="font-size:9px;font-weight:700;color:rgba(200,230,210,.85);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Guía</span></button>
+      </div>
+      <div class="p-topbar-actions" style="display:flex;align-items:center;gap:4px">
         <button onclick="pGoTo('inbox')" title="Buzón Velo" style="position:relative;display:flex;align-items:center;justify-content:center;background:none;border:none;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0">
           <span style="font-size:22px;line-height:1;position:relative">🔔<span id="homeMailBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#e63946;color:#fff;font-size:7px;font-weight:800;min-width:13px;height:13px;border-radius:7px;line-height:13px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif;pointer-events:none"></span></span>
         </button>
@@ -1246,7 +1248,7 @@
                 <!-- Momentos tab content -->
                 <div id="homeTabMomento">
                   <!-- Inline compose row -->
-                  <div style="margin-bottom:12px;padding:10px 13px;background:rgba(6,22,12,.85);border:1.5px solid rgba(116,198,157,.38);border-radius:14px;box-shadow:0 2px 12px rgba(116,198,157,.08)">
+                  <div id="momentoComposeRow" style="margin-bottom:12px;padding:10px 13px;background:rgba(6,22,12,.85);border:1.5px solid rgba(116,198,157,.38);border-radius:14px;box-shadow:0 2px 12px rgba(116,198,157,.08)">
                     <div style="display:flex;gap:8px;align-items:center">
                       <select id="momentoHomeEmoji" style="background:none;border:none;font-size:19px;cursor:pointer;padding:0;-webkit-appearance:none;appearance:none;flex-shrink:0;outline:none">
                         <option>💭</option><option>✨</option><option>🌿</option><option>🤍</option><option>🌟</option><option>😊</option><option>🎵</option><option>☕</option><option>🌅</option><option>💚</option>
@@ -1362,7 +1364,7 @@
                       <span>Buscar personas</span>
                     </button>
                     <button onclick="pGoTo('professionals')" class="para-vos-bottom-btn" title="Profesionales" style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border:none;background:transparent;cursor:pointer;border-radius:0;box-sizing:border-box;font-size:13px;font-weight:700;letter-spacing:.3px;color:rgba(190,148,50,.90)">
-                      <span style="font-size:20px;line-height:1">🩺</span>
+                      <span style="font-size:20px;line-height:1">🧑‍⚕️👩‍⚕️</span>
                       <span>Profesionales</span>
                     </button>
                   </div>
@@ -1663,7 +1665,7 @@
             </div>
           </div>
           <!-- Velo Vela por Ti — full width -->
-          <div class="p-card p-card--hover" onclick="pGoTo('vela')" style="margin-top:4px;min-height:88px;padding:18px 20px;background:linear-gradient(135deg,rgba(218,160,30,.18),rgba(200,130,20,.10));border:1.5px solid rgba(218,160,30,.28);cursor:pointer;display:flex;align-items:center;gap:16px">
+          <div id="homeVelaCard" class="p-card p-card--hover" onclick="pGoTo('vela')" style="margin-top:4px;height:88px;padding:18px 20px;background:linear-gradient(135deg,rgba(218,160,30,.18),rgba(200,130,20,.10));border:1.5px solid rgba(218,160,30,.28);cursor:pointer;display:flex;align-items:center;gap:16px">
             <div style="width:52px;height:52px;border-radius:14px;background:rgba(218,160,30,.15);border:1.5px solid rgba(218,160,30,.28);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🕯️</div>
             <div style="flex:1;min-width:0">
               <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Velo Vela por Ti</div>
@@ -1672,7 +1674,7 @@
             <span class="p-pill" style="flex-shrink:0;background:rgba(218,160,30,.18);color:#8a6500;border:1px solid rgba(218,160,30,.32)">Gratuito</span>
           </div>
           <!-- Velo IA wide card -->
-          <div id="homeVeloIACard" class="p-card p-card--hover" onclick="pGoTo('calm-ai')" style="margin-top:4px;min-height:88px;padding:18px 20px;background:linear-gradient(135deg,rgba(255,182,193,.22),rgba(255,160,180,.12));border:1.5px solid rgba(255,160,180,.3);cursor:pointer;display:flex;align-items:center;gap:16px">
+          <div id="homeVeloIACard" class="p-card p-card--hover" onclick="pGoTo('calm-ai')" style="margin-top:4px;height:88px;padding:18px 20px;background:linear-gradient(135deg,rgba(255,182,193,.22),rgba(255,160,180,.12));border:1.5px solid rgba(255,160,180,.3);cursor:pointer;display:flex;align-items:center;gap:16px">
             <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,160,180,.15);border:1.5px solid rgba(255,160,180,.28);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🤖</div>
             <div style="flex:1;min-width:0">
               <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Hablar con Velo IA</div>
@@ -4162,8 +4164,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260622-1076"></script>
-<script src="premium-redesign.js?v=20260622-1076"></script>
+<script src="premium.js?v=20260622-1077"></script>
+<script src="premium-redesign.js?v=20260622-1077"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
