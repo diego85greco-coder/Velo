@@ -12651,7 +12651,8 @@ async function pShowPublicProfile(){
     +(isInc ? '<div style="margin-top:12px;font-size:12px;color:var(--ink4);background:var(--cream2);border-radius:10px;padding:10px">🎭 Modo incógnito · tu nombre y avatar están ocultos</div>' : '')
     +'</div>'
     +'<div id="pubProfStats" style="margin:0 0 8px"></div>'
-    +'<div id="pubProfReviews" style="margin:0 0 12px"></div>'
+    +'<div id="pubProfReviews" style="margin:0 0 8px"></div>'
+    +'<div id="pubProfBitacora" style="margin:0 0 12px"></div>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'publicProfileOv\').remove()">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov);
@@ -12691,15 +12692,50 @@ async function pShowPublicProfile(){
   reviewsPromise.then(function(revs){
     var rvEl = document.getElementById('pubProfReviews');
     if(!rvEl) return;
-    if(!revs.length){
-      rvEl.innerHTML = '<div style="font-size:11px;color:var(--ink4);text-align:center;padding:4px">Sin reseñas aún 💬</div>';
-      return;
-    }
+    if(!revs.length) return;
     rvEl.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS ('+revs.length+')</div>'
       +'<div style="max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-right:2px">'
       + _renderReviewsList(revs, myId, myId)
       +'</div>';
   }).catch(function(){});
+
+  // Load own public Bitácora posts
+  if(!isInc && sbClient){
+    (async function(){
+      try{
+        var btRes = await sbClient.from('bitacora_posts')
+          .select('id,titulo,contenido,categoria,created_at,is_anon')
+          .eq('user_id', myId).eq('is_anon', false)
+          .order('created_at',{ascending:false}).limit(5);
+        var btEl = document.getElementById('pubProfBitacora');
+        if(!btEl) return;
+        if(btRes.error || !btRes.data || !btRes.data.length) return;
+        var _btCatLabel={apoyo:'🫂 Apoyo',superacion:'⭐ Superación',debate:'💬 Debate'};
+        var _btCatColor={apoyo:'rgba(80,108,225,.70)',superacion:'rgba(188,138,14,.70)',debate:'rgba(44,154,94,.70)'};
+        var shown=btRes.data.slice(0,3), rest=btRes.data.slice(3);
+        var _moreId='ppBtMore'+Math.random().toString(36).slice(2,6);
+        var _mkBtCard=function(p){
+          var col=_btCatColor[p.categoria]||'rgba(116,198,157,.70)';
+          var lbl=_btCatLabel[p.categoria]||p.categoria||'';
+          var _pc=_btCleanContenido(p.contenido); var prev=_pc.slice(0,90)+(_pc.length>90?'…':'');
+          return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\');document.getElementById(\'publicProfileOv\').remove()" '
+            +'style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+            +(p.titulo?'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
+            +'<div style="font-size:11.5px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
+            +'<span style="font-size:9px;font-weight:700;color:'+col+';background:rgba(255,255,255,.06);border-radius:20px;padding:2px 8px">'+lbl+'</span>'
+            +'</div>';
+        };
+        btEl.innerHTML = '<div style="text-align:left">'
+          +'<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">📖 EN BITÁCORA ('+btRes.data.length+')</div>'
+          +shown.map(_mkBtCard).join('')
+          +(rest.length
+            ? '<div id="'+_moreId+'" style="display:none">'+rest.map(_mkBtCard).join('')+'</div>'
+              +'<button onclick="var m=document.getElementById(\''+_moreId+'\');if(!m)return;var op=m.style.display!==\'none\';m.style.display=op?\'none\':\'block\';this.textContent=op?\'Ver más ('+rest.length+') ↓\':\'Ver menos ↑\';" style="background:none;border:none;color:var(--sage);font-size:12px;font-weight:600;cursor:pointer;padding:2px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>'
+            : '')
+          +'</div>';
+      }catch(e){}
+    })();
+  }
 }
 
 function _calcBadges(){
@@ -23163,7 +23199,7 @@ function _btCard(p,idx,uid){
       +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
         +(isOwn?'<button onclick="event.stopPropagation();_btDeletePost(\''+_escHtml(String(p.id))+'\',\''+p.categoria+'\')" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);color:rgba(200,40,40,.80);font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 7px;cursor:pointer">🗑</button>':'')
         +'<button onclick="event.stopPropagation();_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';color:'+c.label+';font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 8px;cursor:pointer">💬 Comentar</button>'
-        +(!isOwn?'<button onclick="event.stopPropagation();_btReport(\''+_escHtml(String(p.id))+'\',null)" style="background:'+reportBg+';border:1px solid '+reportBorder+';color:'+reportColor+';font-size:10px;border-radius:10px;padding:3px 7px;cursor:pointer" title="Reportar contenido">🚩</button>':'')
+        +(!isOwn?'<button onclick="event.stopPropagation();_btReport(\''+_escHtml(String(p.id))+'\',null)" style="background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.22);color:rgba(255,100,100,.75);font-size:10px;border-radius:10px;padding:3px 7px;cursor:pointer" title="Reportar contenido">🚩</button>':'')
       +'</div>'
     +'</div>'
     +(p.titulo?'<div style="font-size:15px;font-weight:700;color:'+titleColor+';font-family:Jost,sans-serif;margin-bottom:6px;line-height:1.3">'+_escHtml(p.titulo)+'</div>':'')
@@ -23404,9 +23440,14 @@ function _btOpenDetail(id){
   var _shBg=c.bg.replace(/[\d.]+\)$/,'.99)');
   var sh='<div id="btDetailSheet" style="background:'+_shBg+';border-radius:26px 26px 0 0;max-height:90vh;overflow-y:auto;padding:0 0 max(20px,env(safe-area-inset-bottom));border-top:3px solid '+c.border.replace(/[\d.]+\)$/,'.55)')+';">';
   sh+='<div style="display:flex;justify-content:center;padding:12px 0 0"><div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px"></div></div>';
+  var _detUid=safeLS('get','velo_user_id');
+  var _detIsOwn=_detUid&&post.user_id&&String(post.user_id)===String(_detUid);
   sh+='<div style="padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between">';
   sh+='<div style="font-size:10px;font-weight:800;letter-spacing:2px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+(typeLabel[post.categoria]||'')+'</div>';
-  sh+='<button onclick="document.getElementById(\'btDetailOv\').remove();if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e){}_btDetailChannel=null;}" style="background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.70);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>';
+  sh+='<div style="display:flex;align-items:center;gap:7px">'
+    +(!_detIsOwn?'<button onclick="document.getElementById(\'btDetailOv\').remove();if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e){}_btDetailChannel=null;};_btReport(\''+_escHtml(String(post.id))+'\',null)" style="background:rgba(220,60,60,.12);border:1.5px solid rgba(220,60,60,.22);color:rgba(255,120,120,.80);font-size:11px;font-weight:700;font-family:Jost,sans-serif;border-radius:20px;padding:4px 10px;cursor:pointer">🚩 Reportar</button>':'')
+    +'<button onclick="document.getElementById(\'btDetailOv\').remove();if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e){}_btDetailChannel=null;}" style="background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.70);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>'
+  +'</div>';
   sh+='</div><div style="padding:14px 18px 0">';
   var _dUname = !post.is_anon ? (post.author_username||_uLook(post.user_id)||'') : '';
   var _dCanClick = !post.is_anon && post.user_id;
@@ -23488,7 +23529,7 @@ function _btLoadComments(postId){
             +'<span style="font-size:10.5px;font-weight:700;color:rgba(180,220,200,.80);font-family:Jost,sans-serif">'+_escHtml(nm)+'</span>'
             +'<div style="display:flex;gap:4px">'
               +(own?'<button onclick="_btDeleteComment(\''+_escHtml(String(cm.id))+'\',\''+_escHtml(String(postId))+'\')" style="background:rgba(255,80,80,.10);border:1px solid rgba(255,80,80,.22);color:rgba(255,120,120,.72);font-size:9px;font-weight:700;font-family:Jost,sans-serif;border-radius:8px;padding:2px 6px;cursor:pointer">🗑</button>':'')
-              +'<button onclick="_btReport(null,\''+_escHtml(String(cm.id))+'\')" style="background:none;border:none;color:rgba(255,255,255,.22);font-size:9px;cursor:pointer;padding:2px 5px">⚑</button>'
+              +'<button onclick="_btReport(null,\''+_escHtml(String(cm.id))+'\')" style="background:rgba(220,60,60,.10);border:1px solid rgba(220,60,60,.18);color:rgba(255,110,110,.65);font-size:9px;font-family:Jost,sans-serif;border-radius:6px;padding:2px 6px;cursor:pointer">🚩</button>'
             +'</div>'
           +'</div>'
           +'<div style="font-size:13px;color:rgba(255,255,255,.80);font-family:Jost,sans-serif;line-height:1.45;word-break:break-word">'+_escHtml(cm.content)+'</div>'
@@ -23767,7 +23808,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1097;
+    var _BUILT_V = 1098;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
