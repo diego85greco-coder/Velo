@@ -975,9 +975,9 @@ function _pConfirm(msg, onYes){
     +'</div></div>';
   document.body.appendChild(ov);
   function _close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
-  ov.querySelector('#_pcNo').addEventListener('click', _close);
-  ov.querySelector('#_pcYes').addEventListener('click', function(){ _close(); onYes(); });
-  ov.addEventListener('click', function(e){ if(e.target === ov) _close(); });
+  ov.querySelector('#_pcNo').addEventListener('click', function(e){ e.stopPropagation(); e.preventDefault(); _close(); });
+  ov.querySelector('#_pcYes').addEventListener('click', function(e){ e.stopPropagation(); e.preventDefault(); _close(); setTimeout(onYes, 80); });
+  ov.addEventListener('click', function(e){ if(e.target === ov){ e.stopPropagation(); _close(); } });
 }
 
 function _sbHappyRow(r){
@@ -23110,7 +23110,7 @@ function _btCard(p,idx,uid){
   } else {
     avHtml='<div style="width:32px;height:32px;border-radius:50%;background:'+c.strip+';border:2px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">'+c.emoji+'</div>';
   }
-  var totRx=['resuena','ayudo','cambio','apoyo_te','entiendo','abrazo','acompano','inspiro'].reduce(function(s,k){ return s+(rx[k]||0); },0);
+  var totRx=['resuena','ayudo','cambio','apoyo_te','entiendo','abrazo','acompano','inspiro','concuerdo','no_concuerdo','neutral','apoyo_a','apoyo_b'].reduce(function(s,k){ return s+(rx[k]||0); },0);
   // Username for @handle display
   var _btUname = !p.is_anon ? (p.author_username||_uLook(p.user_id)||'') : '';
   // Clickable author profile
@@ -23178,6 +23178,12 @@ function _btDeletePost(id,type){
       ['apoyo','superacion','debate','mio'].forEach(function(t){
         _btPosts[t]=(_btPosts[t]||[]).filter(function(p){ return String(p.id)!==String(id); });
       });
+      // Close any open detail overlay
+      var _dvOv=document.getElementById('btDetailOv'); if(_dvOv) _dvOv.remove();
+      // Ensure we stay on Bitácora page
+      if(document.getElementById('pg-bitacora')&&!document.getElementById('pg-bitacora').classList.contains('active')){
+        pGoTo('bitacora');
+      }
       _btRenderFeed(_btCurrentTab);
     });
   });
@@ -23319,21 +23325,21 @@ function _btOpenDetail(id){
       var bg=active?c.strip:'rgba(255,255,255,.05)';
       return '<div onclick="_btReact(\''+id+'\',\''+key+'\')" style="flex:1;border:1.5px solid '+bord+';border-radius:14px;background:'+bg+';cursor:pointer;overflow:hidden">'
         +'<div style="padding:10px 12px 8px">'
-          +'<div style="font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;margin-bottom:5px">'+label+'</div>'
-          +(desc?'<div style="font-size:12px;color:'+c.label+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.4;margin-bottom:8px">'+_escHtml(desc)+'</div>':'')
+          +'<div style="font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.50);font-family:Jost,sans-serif;margin-bottom:5px">'+label+'</div>'
+          +(desc?'<div style="font-size:12px;color:rgba(255,255,255,.92);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.4;margin-bottom:8px">'+_escHtml(desc)+'</div>':'')
           +'<div style="display:flex;align-items:center;justify-content:space-between">'
             +'<div style="height:4px;flex:1;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden;margin-right:8px">'
               +'<div style="height:100%;width:'+pct+'%;background:'+c.strip+';border-radius:2px"></div>'
             +'</div>'
-            +'<span style="font-size:11px;font-weight:800;color:'+c.label+';font-family:Jost,sans-serif">'+pct+'%</span>'
+            +'<span style="font-size:11px;font-weight:800;color:rgba(255,255,255,.90);font-family:Jost,sans-serif">'+pct+'%</span>'
           +'</div>'
         +'</div>'
-        +(active?'<div style="background:'+c.strip+';padding:4px 12px;text-align:center;font-size:10px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif">✓ Tu voto</div>':'')
+        +(active?'<div style="background:'+c.strip+';padding:4px 12px;text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.95);font-family:Jost,sans-serif">✓ Tu voto</div>':'')
       +'</div>';
     };
     rxHtml='<div style="margin-bottom:16px">'
-      +'<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;margin-bottom:10px">¿CON QUÉ POSTURA TE IDENTIFICÁS?</div>'
-      +'<div style="display:flex;gap:10px">'
+      +'<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.45);font-family:Jost,sans-serif;margin-bottom:10px">¿CON QUÉ POSTURA TE IDENTIFICÁS?</div>'
+      +'<div id="btPCards_'+id+'" style="display:flex;gap:10px">'
         +_mkPosturaCard('apoyo_a','Postura A',_dpA,pA,rx.mine==='apoyo_a')
         +_mkPosturaCard('apoyo_b','Postura B',_dpB,pB,rx.mine==='apoyo_b')
       +'</div>'
@@ -23422,6 +23428,27 @@ function _btOpenDetail(id){
   ov.addEventListener('click',function(e){ if(e.target===ov){ ov.remove(); if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e2){}_btDetailChannel=null;} } });
   _btSubscribeDetail(id);
   _btLoadComments(post.id);
+  // For debate: async-fetch fresh posturas from base table (bypasses stale view/schema cache)
+  if(post.categoria==='debate' && sbClient && (!_dpA||!_dpB)){
+    sbClient.from('bitacora_posts').select('id,postura_a,postura_b,contenido').eq('id',id).maybeSingle()
+      .then(function(fr){
+        if(!fr||fr.error||!fr.data) return;
+        var d=fr.data, fA=(d.postura_a||'').trim(), fB=(d.postura_b||'').trim();
+        if(!fA||!fB){ var fm=(d.contenido||'').match(/\[posturas:a=(.*?)\|b=(.*?)\]/); if(fm){ fA=fA||(fm[1]||'').trim(); fB=fB||(fm[2]||'').trim(); } }
+        if(!fA&&!fB) return;
+        var pcards=document.getElementById('btPCards_'+id);
+        if(!pcards) return;
+        var rx2=_btReactMap[id]||{apoyo_a:0,apoyo_b:0,mine:''};
+        var totAB2=(rx2.apoyo_a||0)+(rx2.apoyo_b||0);
+        var pA2=totAB2>0?Math.round((rx2.apoyo_a||0)/totAB2*100):50;
+        pcards.innerHTML=_mkPosturaCard('apoyo_a','Postura A',fA,pA2,rx2.mine==='apoyo_a')
+          +_mkPosturaCard('apoyo_b','Postura B',fB,100-pA2,rx2.mine==='apoyo_b');
+        // Update cache so re-open doesn't lose posturas
+        Object.keys(_btPosts).forEach(function(cat){
+          (_btPosts[cat]||[]).forEach(function(p){ if(String(p.id)===String(id)){ p.postura_a=fA; p.postura_b=fB; } });
+        });
+      }).catch(function(){});
+  }
 }
 
 function _btLoadComments(postId){
@@ -23701,7 +23728,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1092;
+    var _BUILT_V = 1093;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
