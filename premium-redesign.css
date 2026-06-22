@@ -13636,3 +13636,76 @@ body:not(.r-dark) #homeDailyQLocked > div > button {
   box-shadow: 0 4px 18px rgba(175,132,8,.28) !important;
   text-shadow: 0 1px 3px rgba(80,40,0,.35) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v1081 — MODO CLARO: música, compose row, "Ver todos" button
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Música/Meditación — subtitle text legible */
+body:not(.r-dark) #pg-meditacion [style*="rgba(255,255,255,.52)"] {
+  color: var(--ink3) !important;
+}
+
+/* Música/Meditación — track cards: white bg + dark text */
+body:not(.r-dark) #meditacionCards > div {
+  background: rgba(255,255,255,.92) !important;
+  border-color: rgba(0,0,0,.12) !important;
+  box-shadow: 0 3px 18px rgba(0,0,0,.08) !important;
+}
+body:not(.r-dark) #meditacionCards > div > div:last-child > div:nth-child(1) span {
+  color: var(--ink2) !important;
+}
+body:not(.r-dark) #meditacionCards > div > div:last-child > div:nth-child(2) {
+  color: var(--ink) !important;
+}
+body:not(.r-dark) #meditacionCards > div > div:last-child > div:nth-child(3) {
+  color: var(--ink3) !important;
+}
+body:not(.r-dark) #meditacionCards > div > div:last-child > div:nth-child(4) > span {
+  color: var(--ink4) !important;
+}
+
+/* Compose row — profile toggle: neutral light look */
+body:not(.r-dark) #momentoProfileToggle {
+  background: rgba(255,255,255,.80) !important;
+  border-color: rgba(0,0,0,.12) !important;
+  color: var(--ink3) !important;
+}
+body:not(.r-dark) #momentoProfileToggle.mpt-on {
+  background: rgba(220,242,230,.92) !important;
+  border-color: rgba(40,140,80,.32) !important;
+}
+
+/* Compose row — send button: lighter in light mode */
+body:not(.r-dark) #momentoHomeBtn {
+  background: rgba(40,155,88,.22) !important;
+  border-color: rgba(40,155,88,.55) !important;
+  color: rgba(8,60,35,.92) !important;
+  box-shadow: none !important;
+}
+
+/* "Ver todos los momentos →" home button — legible in light */
+body:not(.r-dark) #homeTabMomento > button:last-child {
+  background: rgba(255,255,255,.72) !important;
+  border-color: rgba(40,140,80,.32) !important;
+  color: rgba(10,65,38,.88) !important;
+  box-shadow: none !important;
+}
+
+/* Mensajes al Mar hero card — light mode */
+body:not(.r-dark) #pg-bottle .dark-hero-card {
+  background: rgba(255,255,255,.88) !important;
+  color: var(--ink) !important;
+}
+body:not(.r-dark) #pg-bottle .dark-hero-card * {
+  color: var(--ink) !important;
+}
+body:not(.r-dark) #pg-bottle .dark-label { color: var(--ink4) !important; }
+body:not(.r-dark) #pg-bottle .dark-title { color: var(--ink) !important; }
+body:not(.r-dark) #pg-bottle .dark-sub   { color: var(--ink3) !important; }
+
+/* Sala de Ayuda empty state */
+body:not(.r-dark) #pg-help [style*="rgba(255,255,255,.5)"],
+body:not(.r-dark) #pg-help [style*="rgba(255,255,255,.7)"] {
+  color: var(--ink4) !important;
+}

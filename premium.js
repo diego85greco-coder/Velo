@@ -3950,6 +3950,19 @@ function _userColor(seed){
     {bg:'rgba(46,16,2,.94)',strip:'rgba(225,110,38,.50)',border:'rgba(225,110,38,.85)',glow:'rgba(225,110,38,.30)',label:'rgba(255,180,85,.97)',badge:'rgba(225,110,38,.34)'},
   ][Math.abs(h)%6];
 }
+function _userColorLight(seed){
+  var s=String(seed||'');
+  var h=0;
+  for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}
+  return [
+    {bg:'rgba(235,220,255,.96)',strip:'rgba(155,88,228,.22)',border:'rgba(155,88,228,.55)',glow:'rgba(155,88,228,.16)',label:'rgba(75,28,148,.90)',badge:'rgba(155,88,228,.14)'},
+    {bg:'rgba(212,248,230,.96)',strip:'rgba(45,180,120,.22)',border:'rgba(45,180,120,.55)',glow:'rgba(45,180,120,.16)',label:'rgba(10,80,45,.90)',badge:'rgba(45,180,120,.14)'},
+    {bg:'rgba(255,245,210,.96)',strip:'rgba(222,162,36,.22)',border:'rgba(222,162,36,.55)',glow:'rgba(222,162,36,.16)',label:'rgba(88,55,0,.90)',badge:'rgba(222,162,36,.14)'},
+    {bg:'rgba(218,228,255,.96)',strip:'rgba(82,132,228,.22)',border:'rgba(82,132,228,.55)',glow:'rgba(82,132,228,.16)',label:'rgba(22,52,148,.90)',badge:'rgba(82,132,228,.14)'},
+    {bg:'rgba(255,220,238,.96)',strip:'rgba(215,75,135,.22)',border:'rgba(215,75,135,.55)',glow:'rgba(215,75,135,.16)',label:'rgba(108,18,62,.90)',badge:'rgba(215,75,135,.14)'},
+    {bg:'rgba(255,235,215,.96)',strip:'rgba(225,110,38,.22)',border:'rgba(225,110,38,.55)',glow:'rgba(225,110,38,.16)',label:'rgba(108,42,4,.90)',badge:'rgba(225,110,38,.14)'},
+  ][Math.abs(h)%6];
+}
 
 function _buildDqCards(list){
   var myUid = safeLS('get','velo_user_id') || '';
@@ -6422,6 +6435,7 @@ async function pRenderHelp(){
   }
 
   function _helpCard(h, isOwn){
+    var isLight=!document.body.classList.contains('r-dark');
     var timeLeft = h.time + 24*3600*1000 - Date.now();
     var timeStr = (function(){
       if(timeLeft <= 0) return 'expirado';
@@ -6431,46 +6445,48 @@ async function pRenderHelp(){
       return '⏳ '+(rem ? hrs+'h '+rem+'min' : hrs+'h')+' restantes';
     })();
     var urgBadge = h.urgencia==='urgente'
-      ? '<span style="font-size:9px;background:rgba(220,50,50,.25);color:rgba(255,130,130,.9);border:1px solid rgba(220,50,50,.3);border-radius:6px;padding:1px 6px;margin-left:4px">🔴 Urgente</span>'
+      ? '<span style="font-size:9px;background:rgba(220,50,50,.25);color:'+(isLight?'rgba(180,20,20,.90)':'rgba(255,130,130,.9)')+';border:1px solid rgba(220,50,50,.3);border-radius:6px;padding:1px 6px;margin-left:4px">🔴 Urgente</span>'
       : h.urgencia==='media'
-      ? '<span style="font-size:9px;background:rgba(230,160,20,.2);color:rgba(255,200,80,.9);border:1px solid rgba(230,160,20,.25);border-radius:6px;padding:1px 6px;margin-left:4px">🟡 Media</span>'
+      ? '<span style="font-size:9px;background:rgba(230,160,20,.2);color:'+(isLight?'rgba(140,90,0,.90)':'rgba(255,200,80,.9)')+';border:1px solid rgba(230,160,20,.25);border-radius:6px;padding:1px 6px;margin-left:4px">🟡 Media</span>'
       : '';
     var actions = isOwn
-      ? '<span style="font-size:11px;color:rgba(116,198,157,.7);font-style:italic">Tu publicación 💙</span>'
-        +'<button onclick="pDeleteHelpPost(\''+h.id+'\')" style="margin-left:8px;padding:4px 10px;background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.2);border-radius:100px;color:rgba(255,120,120,.8);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️ Eliminar</button>'
+      ? '<span style="font-size:11px;color:'+(isLight?'rgba(10,75,40,.72)':'rgba(116,198,157,.7)')+';font-style:italic">Tu publicación 💙</span>'
+        +'<button onclick="pDeleteHelpPost(\''+h.id+'\')" style="margin-left:8px;padding:4px 10px;background:rgba(220,50,50,.12);border:1px solid rgba(220,50,50,.28);border-radius:100px;color:'+(isLight?'rgba(180,20,20,.85)':'rgba(255,120,120,.8)')+';font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️ Eliminar</button>'
       : '<button class="p-btn p-btn--primary p-btn--sm" onclick="pAccompanyHelp(\''+h.id+'\')">💚 Acompañar</button>'
         +'<button style="font-size:11px;font-weight:600;padding:4px 9px;background:rgba(200,50,50,.1);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(190,45,35,.9);cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportContent(\'help\',\''+h.id+'\')">⚠️ Reportar</button>';
     var canClickProfile = !h.anon && !isOwn && h.userId && h.name !== 'Usuario Anónimo';
     var hAv = h.av || h.emoji || '💙';
     var profCall = 'pQuickProfile('+_jsAttr(h.name)+','+_jsAttr(hAv)+',\'\',\'\','+_jsAttr(h.userId||'')+')';
     var uAtTag = _uAt(h.anon ? '' : h.userId);
-    var hCol = _userColor(h.userId && !h.anon ? h.userId : (h.emoji||'💙'));
+    var hCol = isLight ? _userColorLight(h.userId && !h.anon ? h.userId : (h.emoji||'💙')) : _userColor(h.userId && !h.anon ? h.userId : (h.emoji||'💙'));
     var nameHtml = canClickProfile
       ? '<div><span style="font-size:12px;font-weight:700;color:'+hCol.label+';cursor:pointer" onclick="'+profCall+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>'
       : '<div><span style="font-size:12px;font-weight:700;color:'+hCol.label+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>';
     var pDot = (!h.anon && h.userId) ? _presenceDot(h.userId, 10) : '';
     var hAvHasImg = hAv && (hAv.indexOf('data:')===0||hAv.indexOf('http')===0);
     var hAvIsEmoji = hAv && !hAvHasImg;
-    // Strip: single element with optional presence dot
+    var avCircleBg = isLight?'rgba(0,0,0,.06)':'rgba(255,255,255,.10)';
+    var bodyTextColor = isLight?hCol.label:'rgba(255,255,255,.92)';
+    var timeColor = isLight?'rgba(0,0,0,.42)':'rgba(255,255,255,.35)';
+    var cardBorder = isLight?hCol.border.replace(/[\d.]+\)$/,'.30)'):'rgba(255,255,255,.07)';
     var stripCore = hAvHasImg
       ? '<img src="'+_escHtml(hAv)+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2.5px solid '+hCol.border+';box-shadow:0 2px 12px '+hCol.glow+';display:block"'+(canClickProfile?' onclick="'+profCall+'"':'')+' alt="">'
       : hAvIsEmoji
-        ? '<div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.10);border:2px solid '+hCol.border+';display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 12px '+hCol.glow+'"'+(canClickProfile?' onclick="'+profCall+'"':'')+'>'+_escHtml(hAv)+'</div>'
+        ? '<div style="width:40px;height:40px;border-radius:50%;background:'+avCircleBg+';border:2px solid '+hCol.border+';display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 12px '+hCol.glow+'"'+(canClickProfile?' onclick="'+profCall+'"':'')+'>'+_escHtml(hAv)+'</div>'
         : '<span style="font-size:26px;line-height:1">'+_escHtml(h.emoji||'💙')+'</span>';
     var stripInnerH = pDot
       ? '<div style="position:relative;display:inline-block">'+stripCore+'<span style="position:absolute;bottom:0;right:0">'+pDot+'</span></div>'
       : stripCore;
     return '<div class="dark-seeker" id="helppost-'+h.id+'"'
-      +' style="position:relative !important;background:'+hCol.bg+' !important;border:1.5px solid rgba(255,255,255,.07) !important;border-radius:18px !important;box-shadow:0 4px 22px '+hCol.glow+',inset 0 0 0 1px '+hCol.border.replace(/[\d.]+\)$/,'0.18)')+' !important;overflow:hidden !important;margin:0 0 10px !important;padding:0 !important">'
-      // Absolute strip fills full card height on all platforms
+      +' style="position:relative;background:'+hCol.bg+';border:1.5px solid '+cardBorder+';border-radius:18px;box-shadow:0 4px 22px '+hCol.glow+',inset 0 0 0 1px '+hCol.border.replace(/[\d.]+\)$/,'0.18)')+';overflow:hidden;margin:0 0 10px;padding:0">'
       +'<div style="position:absolute;left:0;top:0;bottom:0;width:64px;background:'+hCol.strip+';border-right:1.5px solid '+hCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center">'
       +stripInnerH
       +'</div>'
       +'<div style="margin-left:64px;min-height:76px;padding:10px 12px">'
       +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">'
-      +'<div>'+nameHtml+'<div style="display:flex;align-items:center;gap:4px;margin-top:1px">'+urgBadge+'<span style="font-size:10px;color:rgba(255,255,255,.35)">'+timeStr+'</span></div></div>'
+      +'<div>'+nameHtml+'<div style="display:flex;align-items:center;gap:4px;margin-top:1px">'+urgBadge+'<span style="font-size:10px;color:'+timeColor+'">'+timeStr+'</span></div></div>'
       +'</div>'
-      +'<div style="font-size:15px;color:rgba(255,255,255,.92);line-height:1.55;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;letter-spacing:.02em">"'+_escHtml(h.preview)+'"</div>'
+      +'<div style="font-size:15px;color:'+bodyTextColor+';line-height:1.55;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;letter-spacing:.02em">"'+_escHtml(h.preview)+'"</div>'
       +'<div style="display:flex;gap:8px;align-items:center">'+actions+'</div>'
       +'</div></div>';
   }
@@ -8796,6 +8812,16 @@ function _bottleEmojiColor(mood){
   if(mood==='🌊')           return {bg:'rgba(4,24,52,.94)',border:'rgba(65,158,222,.82)',glow:'rgba(65,158,222,.28)',strip:'rgba(65,158,222,.45)',label:'rgba(140,210,255,.97)'};
   return                           {bg:'rgba(8,28,20,.94)',border:'rgba(72,185,128,.80)',glow:'rgba(72,185,128,.26)',strip:'rgba(72,185,128,.42)',label:'rgba(120,240,185,.97)'};
 }
+function _bottleEmojiColorLight(mood){
+  var warm=['🤗','😊','🥰','😄','🎉','💛','☀️','🌻'];
+  var sad=['😢','😔','😰','😤','😞','😖','💔','🫂'];
+  var anx=['😬','😨','😥','😣','🤯','😓'];
+  if(warm.indexOf(mood)>=0) return {bg:'rgba(255,246,210,.97)',border:'rgba(200,148,28,.55)',glow:'rgba(200,148,28,.16)',strip:'rgba(200,148,28,.22)',label:'rgba(85,52,0,.90)'};
+  if(sad.indexOf(mood)>=0)  return {bg:'rgba(218,225,255,.97)',border:'rgba(90,112,220,.55)',glow:'rgba(90,112,220,.16)',strip:'rgba(90,112,220,.22)',label:'rgba(28,42,148,.90)'};
+  if(anx.indexOf(mood)>=0)  return {bg:'rgba(248,220,255,.97)',border:'rgba(170,65,185,.55)',glow:'rgba(170,65,185,.16)',strip:'rgba(170,65,185,.22)',label:'rgba(88,18,108,.90)'};
+  if(mood==='🌊')           return {bg:'rgba(218,238,255,.97)',border:'rgba(48,142,215,.55)',glow:'rgba(48,142,215,.16)',strip:'rgba(48,142,215,.22)',label:'rgba(12,58,138,.90)'};
+  return                          {bg:'rgba(212,248,232,.97)',border:'rgba(50,168,112,.55)',glow:'rgba(50,168,112,.16)',strip:'rgba(50,168,112,.22)',label:'rgba(8,72,40,.90)'};
+}
 
 async function pRenderBottle(){
   var _tok = _navToken;
@@ -8866,25 +8892,34 @@ async function pRenderBottle(){
     var isOwn = myId && (b.userId||'') === myId;
     var alreadyReplied = safeLS('get','velo_bottle_replied_'+b.id) === '1';
     var actions;
+    var _isLightBottle=!document.body.classList.contains('r-dark');
+    var _ownMsgColor=_isLightBottle?'rgba(0,0,0,.45)':'rgba(255,255,255,.45)';
+    var _delBtnColor=_isLightBottle?'rgba(180,20,20,.85)':'rgba(255,140,140,.90)';
+    var _replyTextColor=_isLightBottle?'rgba(12,58,138,.90)':'rgba(160,215,255,.96)';
     if(isOwn){
       actions = '<div style="display:flex;gap:7px;align-items:center">'
-        +'<span style="font-size:11px;color:rgba(255,255,255,.45);font-style:italic;font-family:\'Jost\',sans-serif">Tu mensaje 🌊</span>'
-        +'<button data-del-btn="1" style="padding:4px 10px;background:rgba(255,80,80,.14);border:1.5px solid rgba(255,80,80,.32);border-radius:100px;color:rgba(255,140,140,.90);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pDeleteBottle(\''+b.id+'\')">🗑️</button>'
+        +'<span style="font-size:11px;color:'+_ownMsgColor+';font-style:italic;font-family:\'Jost\',sans-serif">Tu mensaje 🌊</span>'
+        +'<button data-del-btn="1" style="padding:4px 10px;background:rgba(220,50,50,.14);border:1.5px solid rgba(220,50,50,.32);border-radius:100px;color:'+_delBtnColor+';font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pDeleteBottle(\''+b.id+'\')">🗑️</button>'
         +'</div>';
     } else {
       actions = '<div style="display:flex;gap:7px;align-items:center">'
-        +'<button style="padding:5px 11px;background:rgba(200,50,50,.14);border:1.5px solid rgba(200,50,50,.32);border-radius:100px;color:rgba(255,140,140,.88);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
+        +'<button style="padding:5px 11px;background:rgba(200,50,50,.14);border:1.5px solid rgba(200,50,50,.32);border-radius:100px;color:rgba(190,30,30,.88);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
         +(alreadyReplied
           ? '<span style="font-size:11px;color:rgba(116,198,157,.85);font-weight:700;font-family:\'Jost\',sans-serif">💛 Ya respondiste</span>'
-          : '<button style="padding:5px 14px;background:rgba(65,155,222,.22);border:1.5px solid rgba(65,155,222,.55);border-radius:100px;color:rgba(160,215,255,.96);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;box-shadow:0 2px 10px rgba(65,155,222,.20)" onclick="pOpenBottleReply('+_jsAttr(b.id)+','+_jsAttr(b.text.substring(0,120))+','+_jsAttr(b.userId||b.user_id||'')+','+_jsAttr(b.anon?'':''+( b.userName||''))+','+_jsAttr(b.anon?'':''+( b.userAv||''))+')">💌 Responder</button>')
+          : '<button style="padding:5px 14px;background:rgba(65,155,222,.22);border:1.5px solid rgba(65,155,222,.55);border-radius:100px;color:'+_replyTextColor+';font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;box-shadow:0 2px 10px rgba(65,155,222,.20)" onclick="pOpenBottleReply('+_jsAttr(b.id)+','+_jsAttr(b.text.substring(0,120))+','+_jsAttr(b.userId||b.user_id||'')+','+_jsAttr(b.anon?'':''+( b.userName||''))+','+_jsAttr(b.anon?'':''+( b.userAv||''))+')">💌 Responder</button>')
         +'</div>';
     }
+    var isLight=!document.body.classList.contains('r-dark');
     var showAuthor = !b.anon && b.userName && !isOwn;
-    var bCol = _bottleEmojiColor(b.mood||'🌊');
+    var bCol = isLight ? _bottleEmojiColorLight(b.mood||'🌊') : _bottleEmojiColor(b.mood||'🌊');
     var _bav = b.userAv || '';
     var bAvHasImg = _bav && (_bav.startsWith('http')||_bav.startsWith('data:'));
     var bAvIsEmoji = _bav && !bAvHasImg;
     var myName = safeLS('get','velo_user_name') || '';
+    var anonColor = isLight?'rgba(0,0,0,.42)':'rgba(255,255,255,.38)';
+    var bodyTextColor = isLight?bCol.label:'rgba(255,255,255,.93)';
+    var avCircleBg = isLight?'rgba(0,0,0,.06)':'rgba(255,255,255,.10)';
+    var cardBorder = isLight?bCol.border.replace(/[\d.]+\)$/,'.30)'):'rgba(255,255,255,.07)';
     var authorNameHtml = isOwn
       ? '<span style="font-size:11px;font-weight:700;color:'+bCol.label+'">'+(myName||'Tú')+'</span>'
       : showAuthor
@@ -8894,16 +8929,14 @@ async function pRenderBottle(){
           +'<span style="font-size:11px;font-weight:700;color:'+bCol.label+';cursor:pointer" onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')">'
           +_escHtml(b.userName)+'</span>'
           +(_uAt(b.userId||''))
-        : '<span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.38);letter-spacing:.2px">Anónimo/a</span>';
-    // Strip: only ONE element — avatar photo OR emoji avatar OR mood emoji. Never stack.
+        : '<span style="font-size:11px;font-weight:700;color:'+anonColor+';letter-spacing:.2px">Anónimo/a</span>';
     var stripInnerB = bAvHasImg
       ? '<img src="'+_escHtml(_bav)+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2.5px solid '+bCol.border+';display:block;box-shadow:0 2px 12px '+bCol.glow+'">'
       : bAvIsEmoji
-        ? '<div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.10);border:2px solid '+bCol.border+';display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 12px '+bCol.glow+'">'+_escHtml(_bav)+'</div>'
+        ? '<div style="width:40px;height:40px;border-radius:50%;background:'+avCircleBg+';border:2px solid '+bCol.border+';display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 12px '+bCol.glow+'">'+_escHtml(_bav)+'</div>'
         : '<span style="font-size:30px;line-height:1;filter:drop-shadow(0 0 8px '+bCol.glow+')">'+_escHtml(b.mood||'🌊')+'</span>';
     return '<div class="dark-bottle'+(alreadyReplied?' bottle-already-replied':'')+'" id="bottle-'+b.id+'"'
-      +' style="animation-delay:'+i*.08+'s;position:relative;background:'+bCol.bg+';border:1.5px solid rgba(255,255,255,.07);border-radius:18px;box-shadow:0 4px 22px '+bCol.glow+',inset 0 0 0 1px '+bCol.border.replace(/[\d.]+\)$/,'0.18)')+';overflow:hidden;margin:0 0 10px;padding:0">'
-      // Absolute strip fills full card height on all platforms
+      +' style="animation-delay:'+i*.08+'s;position:relative;background:'+bCol.bg+';border:1.5px solid '+cardBorder+';border-radius:18px;box-shadow:0 4px 22px '+bCol.glow+',inset 0 0 0 1px '+bCol.border.replace(/[\d.]+\)$/,'0.18)')+';overflow:hidden;margin:0 0 10px;padding:0">'
       +'<div style="position:absolute;left:0;top:0;bottom:0;width:64px;background:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center;'+(isOwn||showAuthor?'cursor:pointer;':'')+'" '
       +(isOwn ? 'onclick="pQuickProfile('+_jsAttr(myName||b.userName||'Tú')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(myId)+')"'
         : showAuthor ? 'onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')"'
@@ -8915,9 +8948,9 @@ async function pRenderBottle(){
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
       +authorNameHtml
       +(alreadyReplied?'<span style="font-size:9px;font-weight:700;color:rgba(116,198,157,.80);background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.28);border-radius:100px;padding:1px 7px;margin-left:auto">💌 Respondiste</span>'
-        :'<span style="margin-left:auto;font-size:9px;font-weight:700;color:'+bCol.label.replace(/[\d.]+\)$/,'0.55)')+';font-family:\'Jost\',sans-serif">'+relTime+'</span>')
+        :'<span style="margin-left:auto;font-size:9px;font-weight:700;color:'+bCol.label.replace(/[\d.]+\)$/,'0.60)')+';font-family:\'Jost\',sans-serif">'+relTime+'</span>')
       +'</div>'
-      +'<p style="font-size:15px;color:rgba(255,255,255,.93);line-height:1.55;margin:0 0 9px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;letter-spacing:.01em">"'+_escHtml(b.text)+'"</p>'
+      +'<p style="font-size:15px;color:'+bodyTextColor+';line-height:1.55;margin:0 0 9px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;letter-spacing:.01em">"'+_escHtml(b.text)+'"</p>'
       +'<div style="display:flex;align-items:center;justify-content:flex-end">'+actions+'</div>'
       +'</div></div>';
   }).join('');
@@ -23358,7 +23391,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1080;
+    var _BUILT_V = 1081;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
