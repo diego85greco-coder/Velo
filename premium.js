@@ -23117,11 +23117,11 @@ function _btCard(p,idx,uid){
   var _btProfileClick = _btCanClick
     ? 'event.stopPropagation();pQuickProfile('+_jsAttr(name)+','+_jsAttr(avUrl||'')+',\'\',\'\','+_jsAttr(p.user_id)+')'
     : '';
-  // Extract debate posturas — from dedicated columns OR embedded in contenido
+  // Extract debate posturas — columns first, then embedded backup in contenido
   var _pA=p.postura_a||'', _pB=p.postura_b||'';
-  if(!_pA&&!_pB&&p.categoria==='debate'&&p.contenido){
-    var _pm=p.contenido.match(/\[posturas:a=([^|]*)\|b=([^\]]*)\]/);
-    if(_pm){ _pA=_pm[1]||''; _pB=_pm[2]||''; }
+  if(p.categoria==='debate'&&p.contenido){
+    var _pm=p.contenido.match(/\[posturas:a=([^[]*?)\|b=([^[]*?)\]/);
+    if(_pm){ if(!_pA) _pA=(_pm[1]||'').trim(); if(!_pB) _pB=(_pm[2]||'').trim(); }
   }
   var debBar='';
   if(p.categoria==='debate'){
@@ -23245,11 +23245,11 @@ function _btOpenDetail(id){
   var rx=_btReactMap[id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,mine:''};
   var authorName=post.is_anon?'Anónimo/a':(post.author_name||'Alguien');
   var typeLabel={apoyo:'🫂 APOYO',superacion:'⭐ SUPERACIÓN',debate:'💬 DEBATE'};
-  // Extract debate posturas — from dedicated columns OR embedded in contenido
+  // Extract debate posturas — columns first, then embedded backup in contenido
   var _dpA=post.postura_a||'', _dpB=post.postura_b||'';
-  if(!_dpA&&!_dpB&&post.categoria==='debate'&&post.contenido){
-    var _dpm=post.contenido.match(/\[posturas:a=([^|]*)\|b=([^\]]*)\]/);
-    if(_dpm){ _dpA=_dpm[1]||''; _dpB=_dpm[2]||''; }
+  if(post.categoria==='debate'&&post.contenido){
+    var _dpm=post.contenido.match(/\[posturas:a=([^[]*?)\|b=([^[]*?)\]/);
+    if(_dpm){ if(!_dpA) _dpA=(_dpm[1]||'').trim(); if(!_dpB) _dpB=(_dpm[2]||'').trim(); }
   }
   var rxHtml='';
   if(post.categoria==='debate'){
@@ -23527,17 +23527,16 @@ function _btSubmitCompose(){
   if(btn){ btn.disabled=true; btn.textContent='Publicando...'; }
 
   function _doInsert(usePosturaCols){
-    var obj={categoria:type,contenido:content,is_anon:isAnon,user_id:uid};
+    // For debates: ALWAYS embed posturas in contenido as backup (resilient to stale PostgREST schema cache)
+    var baseContent = content;
+    if(type==='debate' && (pA||pB)){
+      baseContent = content + '\n\n[posturas:a='+pA+'|b='+pB+']';
+    }
+    var obj={categoria:type,contenido:baseContent,is_anon:isAnon,user_id:uid};
     if(title) obj.titulo=title;
-    if(type==='debate'){
-      if(usePosturaCols){
-        if(pA) obj.postura_a=pA;
-        if(pB) obj.postura_b=pB;
-      } else {
-        // Columns missing — encode in contenido so data isn't lost
-        var suffix='\n\n[posturas:a='+pA+'|b='+pB+']';
-        obj.contenido=content+suffix;
-      }
+    if(type==='debate' && usePosturaCols){
+      if(pA) obj.postura_a=pA;
+      if(pB) obj.postura_b=pB;
     }
     sbClient.from('bitacora_posts').insert(obj).then(function(res){
       if(res.error){
@@ -23627,7 +23626,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1088;
+    var _BUILT_V = 1089;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
