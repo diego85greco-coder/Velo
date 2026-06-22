@@ -23049,58 +23049,70 @@ function _btSwitchTab(type){
   });
   var desc=document.getElementById('btTabDesc');
   if(desc) desc.textContent=_btTabDescs[type]||'';
-  if(!_btPosts[type]||!_btPosts[type].length){ _btLoadTab(type,false); }
-  else { _btRenderFeed(type); }
+  // Always reload — render cached immediately then refresh from DB
+  _btLoadTab(type,false);
 }
 
 function _btLoadTab(type,refresh){
-  if(!sbClient||_btLoading) return;
+  if(!sbClient) return;
+  if(_btLoading){ return; }
   _btLoading=true;
+  // Safety: clear the flag after 12s in case a query hangs
+  var _btSafetyTimer=setTimeout(function(){ _btLoading=false; },12000);
   var feed=document.getElementById('btFeed');
-  if(feed&&(!_btPosts[type]||!_btPosts[type].length)){
+  // Render cached posts immediately so there's no blank screen
+  if(_btPosts[type]&&_btPosts[type].length){
+    if(_btCurrentTab===type) _btRenderFeed(type);
+  } else if(feed){
     feed.innerHTML='<div style="text-align:center;padding:40px 0;color:rgba(180,200,190,.40);font-family:Jost,sans-serif;font-size:13px">Cargando...</div>';
   }
   var query;
   if(type==='mio'){
     var uid0=safeLS('get','velo_user_id');
-    if(!uid0){ _btLoading=false; _btRenderFeed(type); return; }
+    if(!uid0){ clearTimeout(_btSafetyTimer); _btLoading=false; _btRenderFeed(type); return; }
     query=sbClient.from('bitacora_posts_full').select('*').eq('user_id',uid0).order('created_at',{ascending:false}).limit(50);
   } else {
     query=sbClient.from('bitacora_posts_full').select('*').eq('categoria',type).order('created_at',{ascending:false}).limit(15);
   }
   query.then(function(res){
-      if(res.error){ _btLoading=false; if(_btCurrentTab===type) _btRenderFeed(type); return; }
-      _btPosts[type]=res.data||[];
-      var ids=_btPosts[type].map(function(p){ return p.id; });
-      if(!ids.length){ _btLoading=false; if(_btCurrentTab===type) _btRenderFeed(type); return; }
-      var uid=safeLS('get','velo_user_id');
-      var rxDone=false, cmtDone=false;
-      function tryRender(){
-        if(!rxDone||!cmtDone) return;
-        _btLoading=false;
-        if(_btCurrentTab===type) _btRenderFeed(type);
-      }
-      sbClient.from('bitacora_reactions').select('post_id,reaction_type,user_id').in('post_id',ids)
-        .then(function(rxRes){
-          if(rxRes.data){
-            rxRes.data.forEach(function(rx){
-              if(!_btReactMap[rx.post_id]) _btReactMap[rx.post_id]={resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
-              var m=_btReactMap[rx.post_id];
-              if(typeof m[rx.reaction_type]==='number') m[rx.reaction_type]++;
-              if(uid&&rx.user_id===uid) m.mine=rx.reaction_type;
-            });
-          }
-          rxDone=true; tryRender();
-        });
-      ids.forEach(function(id){ _btCommentCounts[id]=0; });
-      sbClient.from('bitacora_comments').select('post_id').in('post_id',ids)
-        .then(function(cmtRes){
-          if(cmtRes.data){
-            cmtRes.data.forEach(function(c){ _btCommentCounts[c.post_id]=(_btCommentCounts[c.post_id]||0)+1; });
-          }
-          cmtDone=true; tryRender();
-        }).catch(function(){ cmtDone=true; tryRender(); });
+    if(res.error){ clearTimeout(_btSafetyTimer); _btLoading=false; if(_btCurrentTab===type) _btRenderFeed(type); return; }
+    _btPosts[type]=res.data||[];
+    var ids=_btPosts[type].map(function(p){ return p.id; });
+    if(!ids.length){ clearTimeout(_btSafetyTimer); _btLoading=false; if(_btCurrentTab===type) _btRenderFeed(type); return; }
+    var uid=safeLS('get','velo_user_id');
+    // Reset reaction counts for these posts (prevents accumulation on refresh)
+    ids.forEach(function(id){
+      var prev=_btReactMap[id];
+      _btReactMap[id]={resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:(prev?prev.mine:'')};
     });
+    var rxDone=false, cmtDone=false;
+    function tryRender(){
+      if(!rxDone||!cmtDone) return;
+      clearTimeout(_btSafetyTimer);
+      _btLoading=false;
+      if(_btCurrentTab===type) _btRenderFeed(type);
+    }
+    sbClient.from('bitacora_reactions').select('post_id,reaction_type,user_id').in('post_id',ids)
+      .then(function(rxRes){
+        if(rxRes.data){
+          rxRes.data.forEach(function(rx){
+            var m=_btReactMap[rx.post_id];
+            if(!m) return;
+            if(typeof m[rx.reaction_type]==='number') m[rx.reaction_type]++;
+            if(uid&&String(rx.user_id)===String(uid)) m.mine=rx.reaction_type;
+          });
+        }
+        rxDone=true; tryRender();
+      }).catch(function(){ rxDone=true; tryRender(); });
+    ids.forEach(function(id){ _btCommentCounts[id]=0; });
+    sbClient.from('bitacora_comments').select('post_id').in('post_id',ids)
+      .then(function(cmtRes){
+        if(cmtRes.data){
+          cmtRes.data.forEach(function(c){ _btCommentCounts[c.post_id]=(_btCommentCounts[c.post_id]||0)+1; });
+        }
+        cmtDone=true; tryRender();
+      }).catch(function(){ cmtDone=true; tryRender(); });
+  }).catch(function(){ clearTimeout(_btSafetyTimer); _btLoading=false; if(_btCurrentTab===type) _btRenderFeed(type); });
 }
 
 function _btRenderFeed(type){
@@ -23811,7 +23823,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1099;
+    var _BUILT_V = 1100;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
