@@ -13709,3 +13709,60 @@ body:not(.r-dark) #pg-help [style*="rgba(255,255,255,.5)"],
 body:not(.r-dark) #pg-help [style*="rgba(255,255,255,.7)"] {
   color: var(--ink4) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v1082 — BITÁCORA HOME WIDGET light mode + various fixes
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Bitácora home widget — light mode outer card */
+body:not(.r-dark) .btw-outer-card {
+  background: rgba(255,255,255,.94) !important;
+  border: 1.5px solid rgba(60,160,100,.22) !important;
+  box-shadow: 0 3px 18px rgba(0,0,0,.07) !important;
+}
+body:not(.r-dark) .btw-top-strip { display: none !important; }
+body:not(.r-dark) .btw-header { border-color: rgba(60,160,100,.12) !important; }
+body:not(.r-dark) .btw-title-text { color: rgba(8,58,32,.92) !important; }
+body:not(.r-dark) .btw-desc { color: rgba(30,70,45,.72) !important; }
+body:not(.r-dark) .btw-ver-todo { color: rgba(40,120,70,.85) !important; }
+body:not(.r-dark) .btw-feed-btn {
+  background: rgba(40,120,70,.12) !important;
+  border-color: rgba(40,120,70,.35) !important;
+  color: rgba(10,60,30,.88) !important;
+}
+body:not(.r-dark) .btw-tags span {
+  background: rgba(0,0,0,.04) !important;
+  border-color: rgba(0,0,0,.10) !important;
+  color: var(--ink3) !important;
+}
+/* Dark mode: brighter description text */
+body.r-dark .btw-desc { color: rgba(200,235,215,.82) !important; }
+
+/* Diary — light mode text contrast */
+body:not(.r-dark) .diary-hero-kicker { color: rgba(40,100,60,.82) !important; }
+body:not(.r-dark) .diary-hero-sub    { color: rgba(30,70,40,.60) !important; }
+body:not(.r-dark) .diary-write-kicker { color: rgba(40,100,60,.82) !important; }
+body:not(.r-dark) .diary-write-date  { color: rgba(20,55,30,.90) !important; }
+
+/* Diary — Borrar todo button legible in light */
+body:not(.r-dark) #diaryDeleteAllBtn { color: rgba(178,40,40,.72) !important; }
+
+/* Muro Feliz comment text — adaptive for light mode */
+body:not(.r-dark) .happy-cmt-name { color: rgba(140,92,4,.92) !important; }
+body:not(.r-dark) .happy-cmt-text { color: rgba(28,22,2,.82) !important; }
+
+/* Reviews — reply section */
+.rv-reply-block {
+  margin-top: 8px;
+  background: rgba(116,198,157,.08);
+  border-left: 2.5px solid rgba(116,198,157,.55);
+  border-radius: 0 10px 10px 0;
+  padding: 7px 10px;
+}
+body.r-dark .rv-reply-block { background: rgba(116,198,157,.10) !important; }
+.rv-reply-label { font-size: 9.5px; font-weight: 700; letter-spacing: .8px; color: var(--sage); text-transform: uppercase; margin-bottom: 3px; }
+.rv-reply-text  { font-size: 12px; color: var(--ink3); font-style: italic; line-height: 1.5; }
+
+/* Profile stats — smaller font on 5-col grid */
+#pg-profile .profile-stat-num { font-size: 20px !important; }
+

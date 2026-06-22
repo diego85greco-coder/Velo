@@ -11052,17 +11052,87 @@ async function _loadUserReviews(userId){
 }
 
 function _reviewCardHtml(r, myId, proId){
-  var canDel = myId && (r.user_id === myId || proId === myId);
+  // Only the reviewer (author) can delete their own review; the recipient cannot delete it
+  var canDel = myId && r.user_id === myId;
+  // The recipient (proId) can respond to reviews they received
+  var canReply = myId && myId === proId && !r.reply;
   var delBtn = canDel
     ? '<button onclick="pDeleteReview(\''+_escHtml(String(r.id||''))+'\',this.closest(\'.p-review-card\'))" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink5);padding:0 0 0 8px;line-height:1;flex-shrink:0" title="Eliminar reseña">🗑️</button>'
+    : '';
+  var replyBtn = canReply
+    ? '<button onclick="pOpenReviewReply(\''+_escHtml(String(r.id||''))+'\',\''+_escHtml(String(r.user_id||''))+'\',this.closest(\'.p-review-card\'))" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--sage);padding:0 0 0 8px;line-height:1;flex-shrink:0;font-family:\'Jost\',sans-serif;font-weight:600" title="Responder a esta reseña">💬 Responder</button>'
+    : '';
+  var replyHtml = r.reply
+    ? '<div class="rv-reply-block">'
+      +'<div class="rv-reply-label">Respuesta del guardián</div>'
+      +'<div class="rv-reply-text">'+_escHtml(r.reply)+'</div>'
+      +'</div>'
     : '';
   return '<div class="p-review-card" style="margin-bottom:10px">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
     +'<span style="font-size:13px">'+'⭐'.repeat(Math.min(5,r.stars||5))+'</span>'
-    +delBtn+'</div>'
+    +'<div style="display:flex;align-items:center">'+replyBtn+delBtn+'</div>'
+    +'</div>'
     +(r.texto ? '<p class="p-rv-txt" style="margin:0 0 4px">&#8220;'+_escHtml(r.texto)+'&#8221;</p>' : '')
     +'<div style="font-size:11px;color:var(--ink5)">— '+_escHtml(r.reviewer_name||'Anónimo')+'</div>'
+    +replyHtml
     +'</div>';
+}
+
+function pOpenReviewReply(reviewId, reviewerUserId, cardEl){
+  if(!reviewId) return;
+  var isDark = document.body.classList.contains('r-dark');
+  var ov = document.createElement('div');
+  ov.id = 'reviewReplyOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.65);display:flex;flex-direction:column;justify-content:flex-end';
+  ov.innerHTML = '<div style="background:'+(isDark?'rgba(8,22,14,.97)':'rgba(255,255,255,.98)')+';border-radius:22px 22px 0 0;padding:20px 18px max(20px,env(safe-area-inset-bottom));border-top:2px solid rgba(116,198,157,.45)">'
+    +'<div style="width:36px;height:4px;background:rgba(128,128,128,.25);border-radius:2px;margin:0 auto 16px"></div>'
+    +'<div style="font-size:12px;font-weight:700;color:var(--sage);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">💬 Responder a la reseña</div>'
+    +'<textarea id="reviewReplyTA" placeholder="Escribí tu respuesta (gracias, aclaración...)" maxlength="400" style="width:100%;box-sizing:border-box;background:'+(isDark?'rgba(255,255,255,.07)':'rgba(0,0,0,.04)')+';border:1.5px solid rgba(116,198,157,.35);border-radius:14px;padding:10px 12px;color:var(--ink);font-size:13px;font-family:\'Jost\',sans-serif;resize:none;min-height:88px;outline:none;line-height:1.5" rows="4"></textarea>'
+    +'<div style="display:flex;gap:10px;margin-top:12px">'
+    +'<button onclick="document.getElementById(\'reviewReplyOv\').remove()" style="flex:1;padding:12px;border-radius:14px;border:1.5px solid var(--border);background:transparent;color:var(--ink3);font-size:13px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
+    +'<button onclick="pSubmitReviewReply(\''+_escHtml(String(reviewId))+'\',\''+_escHtml(String(reviewerUserId||''))+'\')" style="flex:2;padding:12px;border-radius:14px;border:1.5px solid rgba(116,198,157,.55);background:rgba(116,198,157,.18);color:var(--sage);font-size:13px;font-weight:800;cursor:pointer;font-family:\'Jost\',sans-serif">Enviar respuesta 💚</button>'
+    +'</div>'
+    +'</div>';
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+  setTimeout(function(){ var ta=document.getElementById('reviewReplyTA'); if(ta) ta.focus(); }, 100);
+}
+
+async function pSubmitReviewReply(reviewId, reviewerUserId){
+  var ta = document.getElementById('reviewReplyTA');
+  if(!ta) return;
+  var replyText = ta.value.trim();
+  if(!replyText){ pToast('⚠️','Escribí una respuesta primero'); return; }
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var myId   = safeLS('get','velo_user_id')||'';
+  var myName = _myDisplayName();
+  try{
+    var _upd = await sbClient.from('reviews').update({ reply: replyText, reply_name: myName }).eq('id', reviewId);
+    if(_upd.error){ pToast('⚠️','Error al guardar'); console.error('[reviewReply]',_upd.error); return; }
+    // Notify the reviewer
+    if(reviewerUserId && reviewerUserId !== myId){
+      sbSaveBroadcast('user:'+reviewerUserId,
+        '💬 Recibiste una respuesta en tu reseña',
+        myName+' respondió a tu reseña: "'+replyText.slice(0,100)+(replyText.length>100?'…':'')+'"',
+        '💬', JSON.stringify({n:myName,i:myId,a:safeLS('get','velo_user_av')||'🌿'})
+      );
+    }
+    // Notify self (the guardian who replied)
+    pToast('💚','Respuesta enviada');
+    document.getElementById('reviewReplyOv').remove();
+    // Refresh reviews
+    var myProfileId = safeLS('get','velo_user_id')||'';
+    var rvEl = document.getElementById('profileReviews');
+    if(rvEl && myProfileId){
+      _loadUserReviews(myProfileId).then(function(revs){
+        rvEl.innerHTML = revs.length
+          ? _renderReviewsList(revs, myProfileId, myProfileId)
+          : '<div class="p-empty"><span class="p-empty-emoji">⭐</span><div class="p-empty-title">Aún no hay reseñas</div></div>';
+      });
+    }
+  }catch(e){ pToast('⚠️','Error al enviar'); console.error('[reviewReply catch]',e); }
 }
 
 function _renderReviewsList(revs, myId, proId){
@@ -11589,6 +11659,9 @@ function _happyPostCard(h, isOwn){
   var comments = h.comments || [];
   var commCount = comments.length;
   var shownComments = isOwn ? comments : comments.slice(0, 5);
+  var _hcDark = document.body.classList.contains('r-dark');
+  var _cmtNameCol = _hcDark ? 'rgba(255,222,78,.90)' : 'rgba(140,92,4,.92)';
+  var _cmtTextCol = _hcDark ? 'rgba(255,255,255,.80)' : 'rgba(28,22,2,.82)';
   var commHtml = '';
   if(commCount > 0){
     commHtml = '<div style="margin-bottom:10px">';
@@ -11604,8 +11677,8 @@ function _happyPostCard(h, isOwn){
       commHtml += '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">'
         + avHtml
         +'<div style="background:rgba(222,162,36,.10);border-radius:0 12px 12px 12px;padding:7px 11px;flex:1;min-width:0;border-left:2px solid rgba(222,162,36,.42)">'
-        +'<div style="font-size:11px;font-weight:700;color:rgba(255,222,78,.90);margin-bottom:2px'+(cAnon?'':';cursor:pointer')+'"'+cClickAttr+'>'+_escHtml(c.name||'Usuario')+'</div>'
-        +'<div style="font-size:12px;color:rgba(255,255,255,.80);line-height:1.45;word-break:break-word">'+_escHtml(c.text)+'</div>'
+        +'<div class="happy-cmt-name" style="font-size:11px;font-weight:700;color:'+_cmtNameCol+';margin-bottom:2px'+(cAnon?'':';cursor:pointer')+'"'+cClickAttr+'>'+_escHtml(c.name||'Usuario')+'</div>'
+        +'<div class="happy-cmt-text" style="font-size:12px;color:'+_cmtTextCol+';line-height:1.45;word-break:break-word">'+_escHtml(c.text)+'</div>'
         +'</div></div>';
     });
     if(!isOwn && commCount > 5){
@@ -12300,6 +12373,11 @@ function pLoadProfile(){
           _sbVerifiedMoodCount = sbMoodDays; // lock in Supabase value — stops localStorage from overriding
           _setEl('profileDays', sbMoodDays);
         }).catch(function(){});
+
+      // Bitácora public post count
+      sbClient.from('bitacora_posts').select('id',{count:'exact',head:true}).eq('user_id',_pUid).eq('is_anon',false)
+        .then(function(r){ var el=document.getElementById('profileBitacoraCount'); if(el) el.textContent=(r&&r.count!=null)?r.count:0; })
+        .catch(function(){});
 
       Promise.all([
         sbClient.from('guardian_requests').select('id', {count:'exact', head:true}).eq('guardian_id', _pUid).eq('status','ended'),
@@ -13978,19 +14056,27 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
     // ── Bitácora posts section ────────────────────────────────────
     +(_qpBtPosts.length ? (function(){
       var _btCatLabel = {apoyo:'🫂 Apoyo',superacion:'⭐ Superación',debate:'💬 Debate'};
-      var _btCatColor = {apoyo:'rgba(218,160,30,.80)',superacion:'rgba(116,198,157,.80)',debate:'rgba(165,110,220,.80)'};
+      var _btCatColor = {apoyo:'rgba(80,108,225,.70)',superacion:'rgba(188,138,14,.70)',debate:'rgba(44,154,94,.70)'};
+      var shown = _qpBtPosts.slice(0,3);
+      var rest  = _qpBtPosts.slice(3);
+      var _moreId = 'qpBtMore'+Math.random().toString(36).slice(2,6);
+      var _makeCard = function(p){
+        var col = _btCatColor[p.categoria]||'rgba(116,198,157,.70)';
+        var lbl = _btCatLabel[p.categoria]||p.categoria||'';
+        var prev = (p.contenido||'').slice(0,90)+((p.contenido||'').length>90?'…':'');
+        return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\');document.getElementById(\'quickProfileOv\').remove()" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+          +(p.titulo?'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
+          +'<div style="font-size:11.5px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
+          +'<span style="font-size:9px;font-weight:700;color:'+col+';background:rgba(255,255,255,.06);border-radius:20px;padding:2px 8px">'+lbl+'</span>'
+          +'</div>';
+      };
       return '<div style="text-align:left;margin-bottom:14px">'
         +'<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">📖 EN BITÁCORA ('+_qpBtPosts.length+')</div>'
-        +_qpBtPosts.map(function(p){
-          var col = _btCatColor[p.categoria]||'rgba(116,198,157,.75)';
-          var lbl = _btCatLabel[p.categoria]||p.categoria||'';
-          var prev = (p.contenido||'').slice(0,90)+((p.contenido||'').length>90?'…':'');
-          return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\');document.getElementById(\'quickProfileOv\').remove()" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
-            +(p.titulo?'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
-            +'<div style="font-size:11.5px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
-            +'<span style="font-size:9px;font-weight:700;color:'+col+';background:rgba(255,255,255,.06);border-radius:20px;padding:2px 8px">'+lbl+'</span>'
-            +'</div>';
-        }).join('')
+        +shown.map(_makeCard).join('')
+        +(rest.length
+          ? '<div id="'+_moreId+'" style="display:none">'+rest.map(_makeCard).join('')+'</div>'
+            +'<button onclick="var m=document.getElementById(\''+_moreId+'\');if(!m)return;var op=m.style.display!==\'none\';m.style.display=op?\'none\':\'block\';this.textContent=op?\'Ver más ('+rest.length+') ↓\':\'Ver menos ↑\';" style="background:none;border:none;color:var(--sage);font-size:12px;font-weight:600;cursor:pointer;padding:2px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>'
+          : '')
         +'</div>';
     })() : '')
     // ── Action buttons ───────────────────────────────────────────
@@ -22965,9 +23051,14 @@ function _btCard(p,idx,uid){
   var cmtCount=_btCommentCounts[p.id]||0;
   var name=p.is_anon?'Anónimo/a':(p.author_name||'Alguien');
   var avUrl=p.is_anon?'':(p.author_avatar||'');
-  var avHtml=(avUrl&&avUrl.startsWith('http'))
-    ?'<img src="'+_escHtml(avUrl)+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid '+c.border+';flex-shrink:0">'
-    :'<div style="width:32px;height:32px;border-radius:50%;background:'+c.strip+';border:2px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">'+c.emoji+'</div>';
+  var avHtml;
+  if(avUrl&&avUrl.startsWith('http')){
+    avHtml='<img src="'+_escHtml(avUrl)+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid '+c.border+';flex-shrink:0">';
+  } else if(avUrl&&!p.is_anon){
+    avHtml='<div style="width:32px;height:32px;border-radius:50%;background:'+c.strip+';border:2px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+_escHtml(avUrl)+'</div>';
+  } else {
+    avHtml='<div style="width:32px;height:32px;border-radius:50%;background:'+c.strip+';border:2px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">'+c.emoji+'</div>';
+  }
   var totRx=['resuena','ayudo','cambio','apoyo_te','entiendo','abrazo','acompano','inspiro'].reduce(function(s,k){ return s+(rx[k]||0); },0);
   var debBar='';
   if(p.categoria==='debate'&&(p.postura_a||p.postura_b)){
@@ -23127,7 +23218,8 @@ function _btOpenDetail(id){
   var ov=document.createElement('div');
   ov.id='btDetailOv';
   ov.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);display:flex;flex-direction:column;justify-content:flex-end';
-  var sh='<div id="btDetailSheet" style="background:linear-gradient(180deg,rgba(8,18,30,.98),rgba(5,12,20,.99));border-radius:26px 26px 0 0;max-height:90vh;overflow-y:auto;padding:0 0 max(20px,env(safe-area-inset-bottom));border-top:3px solid '+c.border.replace(/[\d.]+\)$/,'.55)')+';">';
+  var _shBg=c.bg.replace(/[\d.]+\)$/,'.99)');
+  var sh='<div id="btDetailSheet" style="background:'+_shBg+';border-radius:26px 26px 0 0;max-height:90vh;overflow-y:auto;padding:0 0 max(20px,env(safe-area-inset-bottom));border-top:3px solid '+c.border.replace(/[\d.]+\)$/,'.55)')+';">';
   sh+='<div style="display:flex;justify-content:center;padding:12px 0 0"><div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px"></div></div>';
   sh+='<div style="padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between">';
   sh+='<div style="font-size:10px;font-weight:800;letter-spacing:2px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+(typeLabel[post.categoria]||'')+'</div>';
@@ -23391,7 +23483,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1081;
+    var _BUILT_V = 1082;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

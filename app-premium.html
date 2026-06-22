@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1081">
+  <meta name="app-version" content="1082">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260622-1081">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260622-1081">
+  <link rel="stylesheet" href="premium.css?v=20260622-1082">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260622-1082">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -43,7 +43,7 @@
     #homeMemoryCard        { order: 6; }
     #homeDailyQ            { order: 7; }
     #homeStatusToggle      { order: 9 !important; }
-    .r-hero-actions        { order: 10 !important; }
+    /* .r-hero-actions order overridden below */
     #homeStatusToggle      { display:flex !important; flex-direction:column !important; align-items:stretch !important; gap:0 !important; margin:0 0 16px !important; padding:16px !important; width:100% !important; max-width:none !important; box-sizing:border-box !important; }
     #homeStatusSegPill     { width:100%; flex-shrink:0; }
     #homeStatusSegPill .r-status-combined-pill { display:flex; width:100%; }
@@ -52,7 +52,8 @@
     .home-mc { transition: transform .22s ease, opacity .22s ease !important; transform-origin: center center; will-change: transform, opacity; }
     /* Section separators */
     .home-sec-lbl-acomp    { order: 8 !important; }
-    #homeBitacoraWidget    { order: 11; }
+    #homeBitacoraWidget    { order: 10; }
+    .r-hero-actions        { order: 11 !important; }
     .home-sec-lbl-herra    { order: 12 !important; }
     #homeMedWidget         { order: 13; }
     .r-home-quick-panel    { order: 14; }
@@ -1310,20 +1311,20 @@
               </div>
               <!-- ── BITÁCORA HOME WIDGET ──────────────────────── -->
               <div id="homeBitacoraWidget" style="flex-basis:100%;width:100%;box-sizing:border-box;margin-bottom:12px">
-                <div style="background:linear-gradient(145deg,rgba(5,28,18,.96),rgba(8,38,24,.93));border:1.5px solid rgba(116,198,157,.28);border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.32)">
+                <div class="btw-outer-card" style="background:linear-gradient(145deg,rgba(5,28,18,.96),rgba(8,38,24,.93));border:1.5px solid rgba(116,198,157,.28);border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.32)">
                   <!-- Barra superior de color -->
-                  <div style="height:2.5px;background:linear-gradient(90deg,transparent,rgba(116,198,157,.65) 35%,rgba(90,120,230,.55) 70%,transparent)"></div>
+                  <div class="btw-top-strip" style="height:2.5px;background:linear-gradient(90deg,transparent,rgba(116,198,157,.65) 35%,rgba(90,120,230,.55) 70%,transparent)"></div>
                   <!-- Header -->
-                  <div style="padding:14px 16px 12px;border-bottom:1px solid rgba(116,198,157,.10)">
+                  <div class="btw-header" style="padding:14px 16px 12px;border-bottom:1px solid rgba(116,198,157,.10)">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
                       <div style="display:flex;align-items:center;gap:8px">
                         <span style="font-size:20px;line-height:1">📖</span>
-                        <span style="font-size:13px;font-weight:800;color:rgba(175,245,210,.96);font-family:'Jost',sans-serif;letter-spacing:.8px;text-transform:uppercase">Bitácora</span>
+                        <span class="btw-title-text" style="font-size:13px;font-weight:800;color:rgba(175,245,210,.96);font-family:'Jost',sans-serif;letter-spacing:.8px;text-transform:uppercase">Bitácora</span>
                       </div>
-                      <button onclick="pGoTo('bitacora')" style="font-size:11px;font-weight:700;color:rgba(116,198,157,.85);font-family:'Jost',sans-serif;background:none;border:none;cursor:pointer;letter-spacing:.3px;padding:0">Ver todo →</button>
+                      <button onclick="pGoTo('bitacora')" class="btw-ver-todo" style="font-size:11px;font-weight:700;color:rgba(116,198,157,.85);font-family:'Jost',sans-serif;background:none;border:none;cursor:pointer;letter-spacing:.3px;padding:0">Ver todo →</button>
                     </div>
-                    <div style="font-size:11.5px;color:rgba(175,215,195,.62);font-family:'Jost',sans-serif;line-height:1.45;margin-bottom:11px">Historias reales de apoyo, superación e inspiración — compartidas por nuestra comunidad.</div>
-                    <div style="display:flex;gap:6px">
+                    <div class="btw-desc" style="font-size:11.5px;color:rgba(175,215,195,.62);font-family:'Jost',sans-serif;line-height:1.45;margin-bottom:11px">Historias reales de apoyo, superación e inspiración — compartidas por nuestra comunidad.</div>
+                    <div class="btw-tags" style="display:flex;gap:6px">
                       <span style="font-size:10px;font-weight:700;font-family:'Jost',sans-serif;color:rgba(160,185,255,.90);background:rgba(90,120,230,.18);border:1px solid rgba(90,120,230,.36);border-radius:10px;padding:3px 9px">🫂 Apoyo</span>
                       <span style="font-size:10px;font-weight:700;font-family:'Jost',sans-serif;color:rgba(255,210,70,.90);background:rgba(218,160,30,.18);border:1px solid rgba(218,160,30,.34);border-radius:10px;padding:3px 9px">⭐ Superación</span>
                       <span style="font-size:10px;font-weight:700;font-family:'Jost',sans-serif;color:rgba(120,230,175,.90);background:rgba(60,185,130,.18);border:1px solid rgba(60,185,130,.34);border-radius:10px;padding:3px 9px">💬 Debate</span>
@@ -1332,7 +1333,7 @@
                   <!-- Feed area -->
                   <div style="padding:12px 16px 14px">
                     <div id="homeBitacoraFeed" style="display:flex;flex-direction:column;gap:9px"></div>
-                    <button onclick="pGoTo('bitacora')" style="width:100%;margin-top:12px;padding:10px 14px;border-radius:14px;border:1.5px solid rgba(116,198,157,.40);background:rgba(116,198,157,.10);color:rgba(175,245,210,.90);font-size:12px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.3px">Ver todas las historias →</button>
+                    <button onclick="pGoTo('bitacora')" class="btw-feed-btn" style="width:100%;margin-top:12px;padding:10px 14px;border-radius:14px;border:1.5px solid rgba(116,198,157,.40);background:rgba(116,198,157,.10);color:rgba(175,245,210,.90);font-size:12px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.3px">Ver todas las historias →</button>
                   </div>
                 </div>
               </div>
@@ -1439,7 +1440,7 @@
                     </div>
                     <!-- Decorative quote + question -->
                     <div style="position:relative;margin-bottom:16px;padding-left:18px">
-                      <div style="position:absolute;top:-6px;left:-2px;font-size:46px;color:rgba(200,158,56,.13);font-family:'Cormorant Garamond',serif;line-height:1;pointer-events:none">❝</div>
+                      <div style="position:absolute;top:-6px;left:-2px;font-size:46px;color:rgba(200,158,56,.30);font-family:'Cormorant Garamond',serif;line-height:1;pointer-events:none">❝</div>
                       <div id="homeDailyQText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:rgba(255,255,255,.95);line-height:1.38;letter-spacing:.08px"></div>
                     </div>
                     <!-- Hint — with amber left border -->
@@ -2093,7 +2094,7 @@
               <div>
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
                   <span class="p-label" style="margin:0">Mis entradas</span>
-                  <button onclick="pClearAllDiary()" style="background:none;border:none;color:rgba(255,100,100,.45);font-size:10px;cursor:pointer;font-family:'Jost',sans-serif;padding:2px 6px;letter-spacing:.3px">🗑️ Borrar todo</button>
+                  <button id="diaryDeleteAllBtn" onclick="pClearAllDiary()" style="background:none;border:none;color:rgba(255,100,100,.55);font-size:10px;cursor:pointer;font-family:'Jost',sans-serif;padding:2px 6px;letter-spacing:.3px">🗑️ Borrar todo</button>
                 </div>
                 <div id="diaryEntries"></div>
               </div>
@@ -2613,11 +2614,12 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
             <!-- ── Estadísticas ── -->
             <div class="p-card" style="padding:18px;margin-bottom:14px">
               <div class="p-label p-label-sage" style="margin-bottom:12px">Mis estadísticas</div>
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center">
-                <div><div class="profile-stat-num" id="profileDays">—</div><div class="profile-stat-lbl" id="profileDaysLbl" style="font-size:8px;line-height:1.3">ÁNIMOS<br>ESTE MES</div></div>
-                <div><div class="profile-stat-num" id="profileChats">0</div><div class="profile-stat-lbl">CHARLAS</div></div>
-                <div><div class="profile-stat-num" id="profileHelped">0</div><div class="profile-stat-lbl">AYUDÉ</div></div>
-                <div><div class="profile-stat-num" id="profileReceived">0</div><div class="profile-stat-lbl">RECIBÍ</div></div>
+              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center">
+                <div><div class="profile-stat-num" id="profileDays">—</div><div class="profile-stat-lbl" id="profileDaysLbl" style="font-size:7.5px;line-height:1.3">ÁNIMOS<br>MES</div></div>
+                <div><div class="profile-stat-num" id="profileChats">0</div><div class="profile-stat-lbl" style="font-size:7.5px">CHARLAS</div></div>
+                <div><div class="profile-stat-num" id="profileHelped">0</div><div class="profile-stat-lbl" style="font-size:7.5px">AYUDÉ</div></div>
+                <div><div class="profile-stat-num" id="profileReceived">0</div><div class="profile-stat-lbl" style="font-size:7.5px">RECIBÍ</div></div>
+                <div><div class="profile-stat-num" id="profileBitacoraCount">0</div><div class="profile-stat-lbl" style="font-size:7.5px">BITÁCORA</div></div>
               </div>
 
             </div>
@@ -4164,8 +4166,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260622-1081"></script>
-<script src="premium-redesign.js?v=20260622-1081"></script>
+<script src="premium.js?v=20260622-1082"></script>
+<script src="premium-redesign.js?v=20260622-1082"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

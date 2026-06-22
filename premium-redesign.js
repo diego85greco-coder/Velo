@@ -747,6 +747,8 @@
 
     // Re-render weather pill so dark/light colors update instantly
     _renderWeatherInfo();
+    // Re-render Bitácora widget (uses mode-specific card colors)
+    if(typeof _renderHomeBitacoraWidget === 'function') setTimeout(_renderHomeBitacoraWidget, 50);
 
     // Swap logo
     var logoSrc = dark ? 'assets/logo.png' : 'assets/logo-dark.png';
