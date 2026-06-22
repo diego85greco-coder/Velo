@@ -23567,7 +23567,8 @@ function _btReact(postId,type){
     _btOpenDetail(postId);
   };
   var _doInsert=function(){
-    sbClient.from('bitacora_reactions').insert({post_id:postId,user_id:uid,reaction_type:type}).then(function(){
+    sbClient.from('bitacora_reactions').insert({post_id:postId,user_id:uid,reaction_type:type}).then(function(res){
+      if(res.error){ pToast('Error al reaccionar: '+((res.error.message||'').slice(0,60))); return; }
       var m=_btReactMap[postId]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine:''};
       if(typeof m[type]==='number') m[type]++; else m[type]=1;
       m.mine=type; _btReactMap[postId]=m;
@@ -23575,14 +23576,16 @@ function _btReact(postId,type){
     });
   };
   if(oldMine===type){
-    sbClient.from('bitacora_reactions').delete().eq('post_id',postId).eq('user_id',uid).eq('reaction_type',type).then(function(){
+    sbClient.from('bitacora_reactions').delete().eq('post_id',postId).eq('user_id',uid).eq('reaction_type',type).then(function(res){
+      if(res.error) return;
       var m=_btReactMap[postId]||{};
       if(typeof m[type]==='number'&&m[type]>0) m[type]--;
       m.mine=''; _btReactMap[postId]=m;
       _refreshDetail();
     });
   } else if(oldMine){
-    sbClient.from('bitacora_reactions').delete().eq('post_id',postId).eq('user_id',uid).eq('reaction_type',oldMine).then(function(){
+    sbClient.from('bitacora_reactions').delete().eq('post_id',postId).eq('user_id',uid).eq('reaction_type',oldMine).then(function(res){
+      if(res.error) return;
       var m=_btReactMap[postId]||{};
       if(typeof m[oldMine]==='number'&&m[oldMine]>0) m[oldMine]--;
       m.mine=''; _btReactMap[postId]=m;
@@ -23764,7 +23767,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1096;
+    var _BUILT_V = 1097;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
