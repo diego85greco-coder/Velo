@@ -13308,3 +13308,98 @@ body.r-lavender:not(.r-dark) .p-bottomnav {
 }
 body.r-lavender:not(.r-dark) .p-bnav-item { color: var(--ink4) !important; }
 body.r-lavender:not(.r-dark) .p-bnav-item.active { color: var(--ink) !important; }
+
+/* ══════════════════════════════════════════════════════════════════
+   v1075 — LEGIBILIDAD MODO CLARO (ambos temas: verde + celeste)
+   Fuerza colores oscuros sobre los blancos hardcoded del JS
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Topbar: botones y texto en claro */
+body:not(.r-dark) .p-topbar {
+  color: var(--ink) !important;
+}
+body.r-theme-green:not(.r-dark) .p-topbar button span,
+body.r-lavender:not(.r-dark) .p-topbar button span {
+  color: var(--ink2) !important;
+  filter: none !important;
+}
+
+/* Hero section: texto legible */
+body.r-theme-green:not(.r-dark) .r-hero-v2,
+body.r-lavender:not(.r-dark) .r-hero-v2 {
+  color: var(--ink) !important;
+}
+body.r-theme-green:not(.r-dark) .r-hero-v2 *,
+body.r-lavender:not(.r-dark) .r-hero-v2 * {
+  color: var(--ink) !important;
+}
+
+/* Greeting text */
+body.r-theme-green:not(.r-dark) #homeGreetWrapper,
+body.r-lavender:not(.r-dark) #homeGreetWrapper {
+  color: var(--ink) !important;
+}
+body.r-theme-green:not(.r-dark) #homeGreetWrapper *,
+body.r-lavender:not(.r-dark) #homeGreetWrapper * {
+  color: var(--ink2) !important;
+}
+
+/* Widget content: texto oscuro sobre fondo blanco */
+body.r-theme-green:not(.r-dark) .p-widget,
+body.r-lavender:not(.r-dark) .p-widget,
+body.r-theme-green:not(.r-dark) .r-card-widget,
+body.r-lavender:not(.r-dark) .r-card-widget {
+  color: var(--ink) !important;
+}
+
+/* Page titles and labels */
+body.r-theme-green:not(.r-dark) .p-page-hdr,
+body.r-lavender:not(.r-dark) .p-page-hdr {
+  color: var(--ink) !important;
+}
+body.r-theme-green:not(.r-dark) .p-back-btn,
+body.r-lavender:not(.r-dark) .p-back-btn {
+  color: var(--ink3) !important;
+}
+
+/* Topbar Estilo/Donar/Plus/Guía button labels */
+body.r-theme-green:not(.r-dark) #topbarEstiloLbl,
+body.r-lavender:not(.r-dark) #topbarEstiloLbl {
+  color: var(--ink3) !important;
+}
+
+/* Home daily quote */
+body.r-theme-green:not(.r-dark) #homeDailyQuoteWrap,
+body.r-lavender:not(.r-dark) #homeDailyQuoteWrap {
+  color: var(--ink2) !important;
+}
+body.r-theme-green:not(.r-dark) #homeDailyQuoteWrap *,
+body.r-lavender:not(.r-dark) #homeDailyQuoteWrap * {
+  color: var(--ink2) !important;
+}
+
+/* Home register section */
+body.r-theme-green:not(.r-dark) #homeRegisterOuter *,
+body.r-lavender:not(.r-dark) #homeRegisterOuter * {
+  color: var(--ink) !important;
+}
+
+/* Canvas particles — adjust opacity for light mode visibility */
+body.r-theme-green:not(.r-dark) #homeBgCanvas,
+body.r-lavender:not(.r-dark) #homeBgCanvas {
+  opacity: .18 !important;
+}
+
+/* Status pill / mood toggle */
+body.r-theme-green:not(.r-dark) #homeStatusToggle,
+body.r-lavender:not(.r-dark) #homeStatusToggle {
+  background: rgba(255,255,255,.55) !important;
+  border-color: var(--border) !important;
+}
+
+/* Bitácora home widget cards — legible en claro */
+body.r-theme-green:not(.r-dark) .home-bt-card,
+body.r-lavender:not(.r-dark) .home-bt-card {
+  background: rgba(255,255,255,.72) !important;
+  border-color: rgba(0,80,40,.15) !important;
+}

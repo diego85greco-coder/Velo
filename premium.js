@@ -23265,7 +23265,7 @@ function _renderHomeBitacoraWidget(){
     if(sbClient){
       sbClient.from('bitacora_posts_full').select('*').order('created_at',{ascending:false}).limit(3).then(function(res){
         if(!res.data||!res.data.length) return;
-        res.data.forEach(function(p){ if(!_btPosts[p.categoria]) _btPosts[p.categoria]=[]; _btPosts[p.categoria].push(p); });
+        res.data.forEach(function(p){ if(!_btPosts[p.categoria]) _btPosts[p.categoria]=[]; if(!_btPosts[p.categoria].some(function(x){ return String(x.id)===String(p.id); })) _btPosts[p.categoria].push(p); });
         _renderHomeBitacoraWidget();
       });
     }
@@ -23314,7 +23314,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1075;
+    var _BUILT_V = 1076;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
