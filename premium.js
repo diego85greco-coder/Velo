@@ -23594,6 +23594,7 @@ function _btSubmitCompose(){
   var pA=((document.getElementById('btCmpPosturaA')||{}).value||'').trim();
   var pB=((document.getElementById('btCmpPosturaB')||{}).value||'').trim();
   if(!content){ pToast('Escribí algo antes de publicar'); return; }
+  if(type==='debate'&&(!pA||!pB)){ pToast('⚠️ Completá ambas posturas del debate'); return; }
   var uid=safeLS('get','velo_user_id');
   if(!uid){ pToast('Debés iniciar sesión'); return; }
   if(!sbClient){ pToast('Conectando...'); return; }
@@ -23700,7 +23701,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1090;
+    var _BUILT_V = 1091;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
