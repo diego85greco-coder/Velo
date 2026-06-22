@@ -13168,7 +13168,7 @@ body.r-dark .hf-tab--inactive-happy {
 
 body.r-theme-green:not(.r-dark) {
   background:
-    linear-gradient(160deg, #b0e8c4 0%, #c8f0d6 35%, #ddf8e8 65%, #eefaf3 100%) !important;
+    linear-gradient(160deg, #d8f0e4 0%, #e4f7ec 35%, #eef9f3 65%, #f4fbf8 100%) !important;
   --ink:  #0c2d18;
   --ink2: #1a4528;
   --ink3: #2a5e38;
@@ -13378,10 +13378,10 @@ body.r-lavender:not(.r-dark) #homeRegisterOuter * {
   color: var(--ink) !important;
 }
 
-/* Canvas particles — higher opacity so blue particles are visible on light bg */
+/* Canvas particles — clearly visible blue particles on light bg */
 body.r-theme-green:not(.r-dark) #homeBgCanvas,
 body.r-lavender:not(.r-dark) #homeBgCanvas {
-  opacity: .55 !important;
+  opacity: .78 !important;
 }
 
 /* Status pill / mood toggle */
