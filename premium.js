@@ -12470,7 +12470,7 @@ function pLoadProfile(){
         var _mkCard=function(p){
           var col=_btCatColor[p.categoria]||'rgba(116,198,157,.70)';
           var lbl=_btCatLabel[p.categoria]||p.categoria||'';
-          var prev=(p.contenido||'').slice(0,90)+((p.contenido||'').length>90?'…':'');
+          var _pc=_btCleanContenido(p.contenido); var prev=_pc.slice(0,90)+(_pc.length>90?'…':'');
           var dateStr='';
           try{ var d=new Date(p.created_at); dateStr=d.toLocaleDateString('es',{day:'numeric',month:'short',year:'numeric'}); }catch(e){}
           return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
@@ -14111,7 +14111,7 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
       var _makeCard = function(p){
         var col = _btCatColor[p.categoria]||'rgba(116,198,157,.70)';
         var lbl = _btCatLabel[p.categoria]||p.categoria||'';
-        var prev = (p.contenido||'').slice(0,90)+((p.contenido||'').length>90?'…':'');
+        var _pc2=_btCleanContenido(p.contenido); var prev = _pc2.slice(0,90)+(_pc2.length>90?'…':'');
         return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\');document.getElementById(\'quickProfileOv\').remove()" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
           +(p.titulo?'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
           +'<div style="font-size:11.5px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
@@ -22931,6 +22931,8 @@ var _btLoading = false;
 var _btRtCh = null;
 var _btHiddenIds = new Set(); // IDs de posts reportados (globalmente ocultos)
 
+function _btCleanContenido(s){ return (s||'').replace(/\n*\[posturas:a=[^|]*\|b=[^\]]*\]/g,'').trim(); }
+
 var _btColors = {
   apoyo:      {bg:'rgba(20,35,80,.92)',strip:'rgba(90,120,230,.40)',border:'rgba(90,120,230,.70)',glow:'rgba(90,120,230,.20)',label:'rgba(160,185,255,.95)',badge:'rgba(90,120,230,.25)',emoji:'🫂'},
   superacion: {bg:'rgba(48,32,4,.92)',strip:'rgba(218,160,30,.38)',border:'rgba(218,160,30,.70)',glow:'rgba(218,160,30,.22)',label:'rgba(255,210,70,.95)',badge:'rgba(218,162,40,.28)',emoji:'⭐'},
@@ -23115,15 +23117,21 @@ function _btCard(p,idx,uid){
   var _btProfileClick = _btCanClick
     ? 'event.stopPropagation();pQuickProfile('+_jsAttr(name)+','+_jsAttr(avUrl||'')+',\'\',\'\','+_jsAttr(p.user_id)+')'
     : '';
+  // Extract debate posturas — from dedicated columns OR embedded in contenido
+  var _pA=p.postura_a||'', _pB=p.postura_b||'';
+  if(!_pA&&!_pB&&p.categoria==='debate'&&p.contenido){
+    var _pm=p.contenido.match(/\[posturas:a=([^|]*)\|b=([^\]]*)\]/);
+    if(_pm){ _pA=_pm[1]||''; _pB=_pm[2]||''; }
+  }
   var debBar='';
-  if(p.categoria==='debate'&&(p.postura_a||p.postura_b)){
+  if(p.categoria==='debate'&&(_pA||_pB)){
     var totAB=(rx.apoyo_a||0)+(rx.apoyo_b||0);
     var pA=totAB>0?Math.round((rx.apoyo_a||0)/totAB*100):50;
     var pB=100-pA;
     debBar='<div style="margin:8px 0 4px">'
       +'<div style="display:flex;justify-content:space-between;font-size:10px;color:'+c.label+';font-family:Jost,sans-serif;margin-bottom:3px">'
-        +'<span>'+_escHtml(p.postura_a||'A')+' ('+pA+'%)</span>'
-        +'<span>'+_escHtml(p.postura_b||'B')+' ('+pB+'%)</span>'
+        +'<span>'+_escHtml(_pA||'A')+' ('+pA+'%)</span>'
+        +'<span>'+_escHtml(_pB||'B')+' ('+pB+'%)</span>'
       +'</div>'
       +'<div style="height:6px;border-radius:3px;background:'+debTrackColor+';overflow:hidden">'
         +'<div style="height:100%;width:'+pA+'%;background:'+c.strip+';border-radius:3px;transition:width .4s"></div>'
@@ -23148,7 +23156,7 @@ function _btCard(p,idx,uid){
       +'</div>'
     +'</div>'
     +(p.titulo?'<div style="font-size:15px;font-weight:700;color:'+titleColor+';font-family:Jost,sans-serif;margin-bottom:6px;line-height:1.3">'+_escHtml(p.titulo)+'</div>':'')
-    +'<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+bodyColor+';line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px">'+_escHtml(p.contenido)+'</div>'
+    +'<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+bodyColor+';line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px">'+_escHtml(_btCleanContenido(p.contenido))+'</div>'
     +debBar
     +'<div style="display:flex;align-items:center;gap:6px;border-top:1px solid '+c.border.replace(/[\d.]+\)$/,'.15)')+';padding-top:8px;margin-top:'+(debBar?'8':'0')+'px">'
       +'<div style="flex:1;display:flex;align-items:center;gap:10px">'
@@ -23237,6 +23245,12 @@ function _btOpenDetail(id){
   var rx=_btReactMap[id]||{resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,mine:''};
   var authorName=post.is_anon?'Anónimo/a':(post.author_name||'Alguien');
   var typeLabel={apoyo:'🫂 APOYO',superacion:'⭐ SUPERACIÓN',debate:'💬 DEBATE'};
+  // Extract debate posturas — from dedicated columns OR embedded in contenido
+  var _dpA=post.postura_a||'', _dpB=post.postura_b||'';
+  if(!_dpA&&!_dpB&&post.categoria==='debate'&&post.contenido){
+    var _dpm=post.contenido.match(/\[posturas:a=([^|]*)\|b=([^\]]*)\]/);
+    if(_dpm){ _dpA=_dpm[1]||''; _dpB=_dpm[2]||''; }
+  }
   var rxHtml='';
   if(post.categoria==='debate'){
     var totAB=(rx.apoyo_a||0)+(rx.apoyo_b||0);
@@ -23245,8 +23259,8 @@ function _btOpenDetail(id){
     rxHtml='<div style="margin-bottom:16px">'
       +'<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;margin-bottom:10px">¿CON QUÉ POSTURA TE IDENTIFICÁS?</div>'
       +'<div style="display:flex;gap:8px">'
-        +'<button onclick="_btReact(\''+id+'\',\'apoyo_a\')" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(rx.mine==='apoyo_a'?'.60':'.28)'))+';background:'+(rx.mine==='apoyo_a'?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">'+_escHtml(post.postura_a||'A')+' ('+pA+'%)</button>'
-        +'<button onclick="_btReact(\''+id+'\',\'apoyo_b\')" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(rx.mine==='apoyo_b'?'.60':'.28)'))+';background:'+(rx.mine==='apoyo_b'?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">'+_escHtml(post.postura_b||'B')+' ('+pB+'%)</button>'
+        +'<button onclick="_btReact(\''+id+'\',\'apoyo_a\')" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(rx.mine==='apoyo_a'?'.60':'.28)'))+';background:'+(rx.mine==='apoyo_a'?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">'+_escHtml(_dpA||'Postura A')+' ('+pA+'%)</button>'
+        +'<button onclick="_btReact(\''+id+'\',\'apoyo_b\')" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(rx.mine==='apoyo_b'?'.60':'.28)'))+';background:'+(rx.mine==='apoyo_b'?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">'+_escHtml(_dpB||'Postura B')+' ('+pB+'%)</button>'
       +'</div>'
     +'</div>';
   } else if(post.categoria==='apoyo'){
@@ -23318,7 +23332,7 @@ function _btOpenDetail(id){
   sh+='<div style="font-size:10px;color:'+c.label.replace(/[\d.]+\)$/,'.40)')+';font-family:Jost,sans-serif">'+_momentoAgo(post.created_at||'')+'</div>';
   sh+='</div></div>';
   if(post.titulo) sh+='<div style="font-size:18px;font-weight:800;color:rgba(255,255,255,.97);font-family:Jost,sans-serif;line-height:1.3;margin-bottom:12px">'+_escHtml(post.titulo)+'</div>';
-  sh+='<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.65;margin-bottom:18px;white-space:pre-wrap">'+_escHtml(post.contenido)+'</div>';
+  sh+='<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.65;margin-bottom:18px;white-space:pre-wrap">'+_escHtml(_btCleanContenido(post.contenido))+'</div>';
   sh+=rxHtml;
   sh+='<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px">';
   sh+='<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:12px">COMENTARIOS</div>';
@@ -23492,21 +23506,43 @@ function _btSubmitCompose(){
   var uid=safeLS('get','velo_user_id');
   if(!uid){ pToast('Debés iniciar sesión'); return; }
   if(!sbClient){ pToast('Conectando...'); return; }
-  var obj={categoria:type,contenido:content,is_anon:isAnon,user_id:uid};
-  if(title) obj.titulo=title;
-  if(type==='debate'&&pA) obj.postura_a=pA;
-  if(type==='debate'&&pB) obj.postura_b=pB;
   var btn=ov.querySelector('button[onclick*="_btSubmitCompose"]');
   if(btn){ btn.disabled=true; btn.textContent='Publicando...'; }
-  sbClient.from('bitacora_posts').insert(obj).then(function(res){
-    if(res.error){ pToast('Error: '+(res.error.message||'No se pudo publicar').slice(0,90)); if(btn){ btn.disabled=false; btn.textContent='✦ Publicar'; } return; }
-    ov.remove();
-    pToast('✓ Publicación enviada');
-    _btPosts[type]=[];
-    if(document.getElementById('pg-bitacora')&&document.getElementById('pg-bitacora').classList.contains('active')){
-      _btSwitchTab(type);
+
+  function _doInsert(usePosturaCols){
+    var obj={categoria:type,contenido:content,is_anon:isAnon,user_id:uid};
+    if(title) obj.titulo=title;
+    if(type==='debate'){
+      if(usePosturaCols){
+        if(pA) obj.postura_a=pA;
+        if(pB) obj.postura_b=pB;
+      } else {
+        // Columns missing — encode in contenido so data isn't lost
+        var suffix='\n\n[posturas:a='+pA+'|b='+pB+']';
+        obj.contenido=content+suffix;
+      }
     }
-  });
+    sbClient.from('bitacora_posts').insert(obj).then(function(res){
+      if(res.error){
+        var msg=(res.error.message||'');
+        // Retry without postura columns if they don't exist in the table
+        if(usePosturaCols && msg.indexOf('postura')!==-1 && msg.indexOf('column')!==-1){
+          _doInsert(false);
+          return;
+        }
+        pToast('Error: '+msg.slice(0,90));
+        if(btn){ btn.disabled=false; btn.textContent='✦ Publicar'; }
+        return;
+      }
+      ov.remove();
+      pToast('✓ Publicación enviada');
+      _btPosts[type]=[];
+      if(document.getElementById('pg-bitacora')&&document.getElementById('pg-bitacora').classList.contains('active')){
+        _btSwitchTab(type);
+      }
+    });
+  }
+  _doInsert(true);
 }
 
 function _renderHomeBitacoraWidget(){
@@ -23534,7 +23570,7 @@ function _renderHomeBitacoraWidget(){
     var titleColor=isLight?c.title:'rgba(255,255,255,.88)';
     var prevColor=isLight?c.preview:'rgba(255,255,255,.68)';
     var nm=p.is_anon?'Anónimo/a':(p.author_name||'Alguien');
-    var prev=(p.contenido||'').slice(0,80)+((p.contenido||'').length>80?'…':'');
+    var _pc3=_btCleanContenido(p.contenido); var prev=_pc3.slice(0,80)+(_pc3.length>80?'…':'');
     return '<div class="home-mc home-bt-card" onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.bg+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.28)')+';border-left:3px solid '+c.border+';border-radius:12px;padding:11px 13px;cursor:pointer;box-shadow:0 2px 10px '+c.glow+'">'
       +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">'
         +'<span style="font-size:14px">'+c.emoji+'</span>'
@@ -23574,7 +23610,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1085;
+    var _BUILT_V = 1086;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
