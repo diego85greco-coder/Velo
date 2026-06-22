@@ -8,8 +8,9 @@ ALTER TABLE public.bitacora_posts
   ADD COLUMN IF NOT EXISTS reactions JSONB DEFAULT '{}';
 
 -- Recreate bitacora_posts_full view to include author_username from profiles
--- (needed for @username display in cards)
-CREATE OR REPLACE VIEW public.bitacora_posts_full AS
+-- (DROP first to avoid "cannot change view column name" error when bp.* expands)
+DROP VIEW IF EXISTS public.bitacora_posts_full;
+CREATE VIEW public.bitacora_posts_full AS
   SELECT
     bp.*,
     p.username AS author_username,
