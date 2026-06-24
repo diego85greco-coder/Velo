@@ -8490,7 +8490,7 @@ function pOpenGuide(){
     {icon:'💭',name:'Pregunta del Día',desc:'Cada día una nueva pregunta para reflexionar sobre vos mismo/a. Podés responderla de forma privada en tu diario o compartirla con la comunidad. Una forma simple de conocerte mejor.'},
     {icon:'📖',name:'Bitácora',desc:'Espacio comunitario de historias reales: apoyo, superación y debate. Todo es anónimo. Podés seguir publicaciones, filtrar por tema, guardarlas y buscar por palabras clave.'},
     {icon:'🧘',name:'Relajación y Meditación',desc:'Meditaciones guiadas y sesiones de mindfulness para calmar la mente. Elegís la duración según el tiempo que tengas — desde 3 minutos hasta sesiones completas.'},
-    {icon:'🎵',name:'Sonidos de Ambiente',desc:'Sonidos relajantes para concentrarte, descansar o simplemente estar. Lluvia, bosque, café, chimenea y más. Suenan en segundo plano mientras usás el resto de la app.'},
+    {icon:'🎵',name:'Sonidos de Ambiente',desc:'Sonidos relajantes para concentrarte, descansar o simplemente estar. Lluvia, bosque, fuego y mar. Suenan en segundo plano mientras usás el resto de la app.'},
   ];
   var cards=sections.map(function(s){
     return '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px">'
@@ -24135,7 +24135,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1122;
+    var _BUILT_V = 1123;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
