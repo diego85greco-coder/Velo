@@ -13871,6 +13871,20 @@ body:not(.r-dark) .diary-write-date  { color: rgba(20,55,30,.90) !important; }
 /* Diary — Borrar todo button legible in light */
 body:not(.r-dark) #diaryDeleteAllBtn { color: rgba(178,40,40,.72) !important; }
 
+/* Diary hero + stats bar — visible in light mode */
+body:not(.r-dark) .diary-hero {
+  background: linear-gradient(160deg, rgba(255,255,255,.88) 0%, rgba(240,248,244,.90) 100%) !important;
+  border-bottom: 1.5px solid rgba(80,140,100,.22) !important;
+  box-shadow: 0 2px 12px rgba(80,140,100,.10) !important;
+}
+body:not(.r-dark) .diary-stats-bar {
+  background: rgba(255,255,255,.85) !important;
+  border: 1.5px solid rgba(80,140,100,.28) !important;
+  box-shadow: 0 1px 8px rgba(80,140,100,.10) !important;
+}
+body:not(.r-dark) .diary-stat-val { color: rgba(20,55,35,.88) !important; }
+body:not(.r-dark) .diary-stat-lbl { color: rgba(50,90,60,.60) !important; }
+
 /* Muro Feliz comment text — adaptive for light mode */
 body:not(.r-dark) .happy-cmt-name { color: rgba(140,92,4,.92) !important; }
 body:not(.r-dark) .happy-cmt-text { color: rgba(28,22,2,.82) !important; }
