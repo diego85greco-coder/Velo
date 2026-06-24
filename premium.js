@@ -23272,7 +23272,10 @@ function _btRenderShell(){
         +'<button class="p-back-btn" onclick="pGoTo(\'home\')">←</button>'
         +'<div><div class="p-label">Comunidad</div><h2 class="p-title">Bitácora</h2></div>'
       +'</div>'
-      +'<button onclick="_btOpenCompose(null)" style="background:linear-gradient(135deg,rgba(116,198,157,.35),rgba(80,160,120,.25));border:1.5px solid rgba(116,198,157,.55);color:rgba(175,245,210,.97);font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:20px;padding:7px 15px;cursor:pointer;letter-spacing:.3px">✦ Publicar</button>'
+      +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'
+        +'<button onclick="_btOpenCompose(null)" style="background:linear-gradient(135deg,rgba(116,198,157,.35),rgba(80,160,120,.25));border:1.5px solid rgba(116,198,157,.55);color:rgba(175,245,210,.97);font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:20px;padding:7px 15px;cursor:pointer;letter-spacing:.3px">✦ Publicar</button>'
+        +'<button id="btSortBtn" onclick="_btToggleSort()" style="padding:4px 10px;border-radius:20px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:rgba(200,210,205,.65);font-size:10.5px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .2s">🕐 Recientes</button>'
+      +'</div>'
     +'</div>'
     +'<p style="font-size:12px;color:rgba(180,200,190,.55);font-family:Jost,sans-serif;line-height:1.5;margin:0 0 14px;font-style:italic">Historias reales · desde el corazón · para quien necesita leerlas</p>'
     +'<div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;scrollbar-width:none">'
@@ -23793,6 +23796,14 @@ function _btOpenDetail(id){
   sh+='<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.65;margin-bottom:18px;white-space:pre-wrap">'+_escHtml(_btCleanContenido(post.contenido))+'</div>';
   sh+=rxHtml;
   sh+=_btGenRxHtml(id, rx, c);
+  sh+='<div onclick="_btSharePost(\''+_escHtml(String(post.id))+'\',event)" style="cursor:pointer;margin:6px 0 16px;background:'+c.strip.replace(/[\d.]+\)$/,'.18)')+';border:1.5px solid '+c.border.replace(/[\d.]+\)$/,'.38)')+';border-radius:16px;padding:11px 14px;display:flex;align-items:center;gap:12px;transition:opacity .15s" onmouseover="this.style.opacity=\'.8\'" onmouseout="this.style.opacity=\'1\'">'
+    +'<div style="font-size:22px;flex-shrink:0">📤</div>'
+    +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:12px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;line-height:1.3">¿Querés que más gente lo vea?</div>'
+      +'<div style="font-size:10.5px;color:'+c.label.replace(/[\d.]+\)$/,'.52)')+';font-family:Jost,sans-serif;margin-top:1px">Compartilo para que más personas reaccionen o comenten</div>'
+    +'</div>'
+    +'<div style="font-size:11px;font-weight:800;color:'+c.label+';font-family:Jost,sans-serif;white-space:nowrap">Compartir →</div>'
+  +'</div>';
   sh+='<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px">';
   sh+='<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:12px">COMENTARIOS</div>';
   sh+='<div id="btCommentsWrap" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"><div style="text-align:center;padding:20px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif">Cargando...</div></div>';
@@ -24203,7 +24214,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1126;
+    var _BUILT_V = 1127;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
