@@ -17181,7 +17181,7 @@ async function _adminTabModeracion(panel){
       if(!brRes.error && brRes.data) brRes.data.forEach(function(r){
         reports.push({ id:r.id, created_at:r.created_at, categoria:'Reporte Bitácora', tipo:'reporte_bitacora',
           descripcion:(r.post_id?'Post ID '+r.post_id:'Comentario ID '+r.comment_id)+' reportado', reported_user_id:r.user_id,
-          content_id:r.post_id||r.comment_id, content_type:'bitacora', _src:'bitacora_reports' });
+          content_id:r.post_id||r.comment_id, _bt_is_post:!!r.post_id, content_type:'bitacora', _src:'bitacora_reports' });
       });
     }catch(e){}
     // Ordenar todos los reportes por fecha descendente
@@ -17229,8 +17229,9 @@ async function _adminTabModeracion(panel){
             +'<div style="font-size:10px;color:rgba(255,255,255,.25)">'+t+(ruid?' · reportante uid:'+ruid.slice(0,8):'')+(cid?' · post:'+cid.slice(0,8):'')+'</div>'
             +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">'
             +(isBtRep
-              ? (cid?'<button onclick="pAdminResolveBitacoraReport(\''+r.id+'\',\''+cid+'\',\''+ruid+'\',\'valido\')" style="font-size:10px;padding:5px 10px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);border-radius:7px;color:rgba(255,120,100,.95);cursor:pointer;font-weight:700">✓ Reporte válido — remover publicación</button>':'')
-              +(cid?'<button onclick="pAdminResolveBitacoraReport(\''+r.id+'\',\''+cid+'\',\''+ruid+'\',\'invalido\')" style="font-size:10px;padding:5px 10px;background:rgba(116,198,157,.13);border:1px solid rgba(116,198,157,.30);border-radius:7px;color:rgba(116,198,157,.90);cursor:pointer;font-weight:700">✗ Reporte no válido — restaurar publicación</button>':'')
+              ? (r._bt_is_post&&cid?'<button onclick="_btOpenDetail(\''+cid+'\')" style="font-size:10px;padding:5px 10px;background:rgba(100,170,230,.12);border:1px solid rgba(100,170,230,.30);border-radius:7px;color:rgba(120,185,245,.90);cursor:pointer;font-weight:700">👁️ Ver post</button>':'')
+              +(cid?'<button onclick="pAdminResolveBitacoraReport(\''+r.id+'\',\''+cid+'\',\''+ruid+'\',\'valido\')" style="font-size:10px;padding:5px 10px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);border-radius:7px;color:rgba(255,120,100,.95);cursor:pointer;font-weight:700">✓ Reporte válido — remover</button>':'')
+              +(cid?'<button onclick="pAdminResolveBitacoraReport(\''+r.id+'\',\''+cid+'\',\''+ruid+'\',\'invalido\')" style="font-size:10px;padding:5px 10px;background:rgba(116,198,157,.13);border:1px solid rgba(116,198,157,.30);border-radius:7px;color:rgba(116,198,157,.90);cursor:pointer;font-weight:700">✗ No válido</button>':'')
               : '<button onclick="pAdminResolveReport(\''+r.id+'\',\''+rsrc+'\')" style="font-size:10px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Resolver</button>'
               +(ruid?'<button onclick="pAdminWarnUser(\''+ruid+'\',\'\')" style="font-size:10px;padding:4px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:6px;color:rgba(240,200,90,.9);cursor:pointer">⚠️ Advertir</button>':'')
               +(cid?'<button onclick="pAdminDeleteContent(\''+cid+'\',\''+ctype+'\')" style="font-size:10px;padding:4px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);border-radius:6px;color:rgba(231,120,110,.9);cursor:pointer">🗑️ Eliminar</button>':''))
@@ -18863,11 +18864,15 @@ function pAdminModerateFlag(id, action){
   if(!sbClient) return;
   var labels = { accept:'Reporte aceptado — contenido OK', alert:'Usuario alertado ⚠️',
     'delete':'Contenido eliminado 🗑️', alertdelete:'Usuario alertado y contenido eliminado' };
-  sbClient.from('moderation_flags').update({ resolved:true, resolution:action }).eq('id',id)
+  sbClient.from('moderation_flags').update({ resolved:true, resolution:action, resolved_by:safeLS('get','velo_user_id')||'admin', resolved_at:new Date().toISOString() }).eq('id',id)
     .then(function(){
       var card = document.getElementById('modflag-'+id);
       if(card) card.remove();
       pToast('✅', labels[action] || 'Reporte resuelto');
+      // Audit trail — log action in local audit log
+      var _al=[]; try{_al=JSON.parse(safeLS('get','velo_audit_log')||'[]');}catch(e){}
+      _al.unshift({tipo:'admin_moderation',ts:Date.now(),motivo:'Acción "'+action+'" en flag '+String(id).slice(0,8),detail:labels[action]||''});
+      safeLS('set','velo_audit_log',JSON.stringify(_al.slice(0,100)));
     }).catch(function(){ pToast('⚠️','Error — ¿corriste el SQL de Fase 2?'); });
 }
 
@@ -21978,6 +21983,7 @@ async function pPostHappyHome(){
         id: post.id, user_id: myId, user_name: myName, user_av: sbAv,
         emoji: '☀️', text: text, anon: false, reactions: post.reactions
       });
+      _geminiModerateContent(text, 'muro-felicidad');
     }catch(e){}
   }
   var posts = _processHappyQueue();
@@ -22042,6 +22048,7 @@ async function pPostMomento(){
     var c=document.getElementById('momentoCharCount'); if(c) c.textContent='0 / 200';
     _momentoTrackPost();
     pToast('✨','¡Momento publicado! Vivirá 24 horas 🌱');
+    _geminiModerateContent(text, 'momentos');
     _loadMomentoPageFeed();
     setTimeout(function(){ _loadMomentoPageFeed(); }, 1500);
   }catch(e){pToast('⚠️','Error: '+e.message);}
@@ -22082,7 +22089,9 @@ async function pPostMomentoHome(){
       if(res.error.code==='42P01'){pToast('ℹ️','Función próximamente disponible');}
       else{ pToast('⚠️','Error al publicar ('+res.error.code+'): '+res.error.message); }
     } else {
-      inp.value=''; _momentoTrackPost(); pToast('✨','¡Momento publicado! 🌱'); _initHomeMomento();
+      inp.value=''; _momentoTrackPost(); pToast('✨','¡Momento publicado! 🌱');
+      _geminiModerateContent(text, 'momentos');
+      _initHomeMomento();
     }
   }catch(e){pToast('⚠️','Error: '+e.message);}
   if(btn){btn.disabled=false;btn.textContent='✨';}
@@ -23905,6 +23914,7 @@ function _btSendComment(postId){
     if(res.error){ pToast('Error al enviar'); return; }
     if(input) input.value='';
     pToast('Comentario enviado ✓');
+    _geminiModerateContent(text, 'bitacora-comment');
     _btCommentCounts[postId]=(_btCommentCounts[postId]||0)+1;
     _btRefreshCard(postId);
     _btLoadComments(postId);
@@ -24160,6 +24170,9 @@ function _btSubmitCompose(){
       }
       ov.remove();
       pToast('✓ Publicación enviada');
+      // AI moderation (fire-and-forget — same pattern as rest of app)
+      var _btModText=(title?title+' ':'')+content;
+      _geminiModerateContent(_btModText, 'bitacora-'+type);
       _btPosts[type]=[];
       if(document.getElementById('pg-bitacora')&&document.getElementById('pg-bitacora').classList.contains('active')){
         _btSwitchTab(type);
@@ -24237,7 +24250,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1131;
+    var _BUILT_V = 1132;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
