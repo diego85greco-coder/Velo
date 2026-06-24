@@ -4432,6 +4432,7 @@ function _initShareWeekBtn(){
   if(el) el.style.display = 'block';
 }
 
+var _shareCardAIPhrase = '';
 function _closeShareCard(){
   var ov = document.getElementById('shareCardOv');
   if(ov) ov.style.display = 'none';
@@ -4484,6 +4485,29 @@ async function pOpenShareCard(){
       }catch(e){}
     }
   }
+  // Generate AI phrase from this week's mood balance
+  _shareCardAIPhrase = '';
+  try{
+    var _mc={};
+    for(var _mi3=0;_mi3<7;_mi3++){
+      var _md3=new Date(); _md3.setDate(_md3.getDate()-_mi3);
+      var _raw3=safeLS('get','velo_mood_'+_md3.toISOString().slice(0,10));
+      if(_raw3){ try{ var _obj3=JSON.parse(_raw3); var _e3=_obj3.emoji||_obj3||''; if(_e3) _mc[_e3]=(_mc[_e3]||0)+1; }catch(e3){} }
+    }
+    var _moodLbl2={'😄':'Excelente','😊':'Bien','😐':'Regular','😔':'Melancólico/a','😰':'Ansioso/a','😤':'Frustrado/a','😌':'En paz','🥺':'Sensible','💪':'Con fuerza','😢':'Triste','😞':'Desanimado/a','🤩':'Emocionado/a','🙂':'Tranquilo/a','😃':'Con energía'};
+    var _sortedE2=Object.keys(_mc).sort(function(a,b){return _mc[b]-_mc[a];});
+    var _domL=_sortedE2.length>0?(_moodLbl2[_sortedE2[0]]||'variado'):'sin registros';
+    var _dRec=_sortedE2.reduce(function(s,k){return s+_mc[k];},0);
+    var _mSum=_sortedE2.map(function(e){return (_moodLbl2[e]||e)+' x'+_mc[e];}).join(', ');
+    if(_dRec>0){
+      var _aiP='Generá UNA frase inspiradora muy breve (máximo 10 palabras) en español rioplatense (usá "vos") '
+        +'para alguien que esta semana tuvo: '+_mSum+'. Estado predominante: '+_domL+'. '
+        +'Días registrados: '+_dRec+'/7. Que sea cálida, directa y poética. '
+        +'Solo devolvé la frase, sin comillas ni explicaciones.';
+      var _aiResp=await _geminiCall(_aiP,{temperature:0.92,maxOutputTokens:50});
+      if(_aiResp) _shareCardAIPhrase=_aiResp.replace(/^["'""„]|["'""„]$/g,'').trim();
+    }
+  }catch(e){}
   _drawShareCard();
 }
 
@@ -4689,8 +4713,10 @@ function _renderShareCard(canvas, logoImg){
     var _pg=ctx.createLinearGradient(pillX,pillY,pillX+pillW,pillY+pillH);
     _pg.addColorStop(0,'rgba(255,255,255,.06)'); _pg.addColorStop(1,'rgba(255,255,255,0)');
     ctx.fillStyle=_pg; ctx.beginPath(); ctx.roundRect(pillX,pillY,pillW,pillH,24); ctx.fill();
-    ctx.font='56px Arial,sans-serif'; ctx.textAlign='left';
-    ctx.fillText(_showDominant,pillX+22,pillY+68);
+    ctx.font='54px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    ctx.textBaseline='middle'; ctx.textAlign='left';
+    ctx.fillText(_showDominant,pillX+22,pillY+pillH/2);
+    ctx.textBaseline='alphabetic';
     ctx.font='800 28px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.92)';
     ctx.fillText('Estado predominante: '+(_moodLabel[_showDominant]||_showDominant).toUpperCase(),pillX+102,pillY+38);
     ctx.font='400 21px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.50)';
@@ -4710,31 +4736,23 @@ function _renderShareCard(canvas, logoImg){
     ctx.fillText('Cada emoción registrada es un paso hacia vos mismo/a',pillX+102,pillY+68);
   }
 
-  // ── Stats row ───────────────────────────────────────────────────
+  // ── AI phrase row (replaces stats) ──────────────────────────────
   var statsY = afterGrid+136;
-  var streak = typeof _getConsecutiveStreak==='function' ? _getConsecutiveStreak() : 0;
-  var totalDays = typeof _getVisitDayCount==='function' ? _getVisitDayCount() : 0;
-  // Left stat: streak
-  ctx.fillStyle='rgba(200,158,56,.28)';
-  ctx.beginPath(); ctx.roundRect(80,statsY,W/2-100,80,18); ctx.fill();
-  ctx.strokeStyle='rgba(200,158,56,.55)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.roundRect(80,statsY,W/2-100,80,18); ctx.stroke();
-  ctx.font='600 28px Arial,sans-serif'; ctx.textAlign='center'; ctx.fillStyle='rgba(255,220,120,1)';
-  ctx.fillText('🔥 '+streak+(streak===1?' día':' días de racha'),80+(W/2-100)/2,statsY+36);
-  ctx.font='300 20px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.70)';
-  ctx.fillText('racha actual',80+(W/2-100)/2,statsY+60);
-  // Right stat: total days
-  ctx.fillStyle='rgba(116,198,157,.26)';
-  ctx.beginPath(); ctx.roundRect(W/2+20,statsY,W/2-100,80,18); ctx.fill();
-  ctx.strokeStyle='rgba(116,198,157,.55)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.roundRect(W/2+20,statsY,W/2-100,80,18); ctx.stroke();
-  ctx.font='600 28px Arial,sans-serif'; ctx.fillStyle='rgba(160,230,195,1)';
-  ctx.fillText('🌿 '+totalDays+(totalDays===1?' día':' días en Velo'),W/2+20+(W/2-100)/2,statsY+36);
-  ctx.font='300 20px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.70)';
-  ctx.fillText('en total',W/2+20+(W/2-100)/2,statsY+60);
+  var _aiPhrase = _shareCardAIPhrase || '';
+  if(_aiPhrase){
+    ctx.font='italic 600 34px Georgia,"Times New Roman",serif';
+    ctx.textAlign='center'; ctx.fillStyle='rgba(116,198,157,.82)';
+    var _aw=W-200, _apWords=('“'+_aiPhrase+'”').split(' '), _aLine='', _apY=statsY+38;
+    _apWords.forEach(function(w){
+      var _t=_aLine+(_aLine?' ':'')+w;
+      if(ctx.measureText(_t).width>_aw&&_aLine){ ctx.fillText(_aLine,W/2,_apY); _apY+=48; _aLine=w; }
+      else _aLine=_t;
+    });
+    if(_aLine) ctx.fillText(_aLine,W/2,_apY);
+  }
 
   // ── Emoji breakdown row ─────────────────────────────────────────
-  var brkY=statsY+110;
+  var brkY=statsY+100;
   ctx.font='500 24px Arial,sans-serif'; ctx.textAlign='center';
   ctx.fillStyle='rgba(255,255,255,.72)';
   ctx.fillText('Emociones de la semana',W/2,brkY);
@@ -4754,7 +4772,7 @@ function _renderShareCard(canvas, logoImg){
   // ── Poetic phrase ───────────────────────────────────────────────
   var phrases=['Estuviste acá. Eso importa.','Cuidarte es un acto de valentía.','Cada día que registrás es tuyo.','Tu historia merece ser contada.','Lo que sentís es real y válido.','Cada emoción tiene su lugar.','Hoy estuviste presente para vos.'];
   var weekIdx=Math.floor(Date.now()/(86400000*7))%phrases.length;
-  var phrase='"'+phrases[weekIdx]+'"';
+  var phrase='"'+(_shareCardAIPhrase&&!_shareCardAIPhrase.match(/["""]/)?_shareCardAIPhrase:phrases[weekIdx])+'"';
   ctx.font='italic 600 44px Georgia,serif';
   ctx.fillStyle='rgba(255,255,255,.72)';
   ctx.textAlign='center';
@@ -24185,7 +24203,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1125;
+    var _BUILT_V = 1126;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
