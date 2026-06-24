@@ -23078,9 +23078,9 @@ var _btCmpAccent = {
   debate:     {header:'linear-gradient(135deg,rgba(12,98,58,.82),rgba(6,72,42,.94))',border:'rgba(60,185,130,.65)',btn:'linear-gradient(135deg,rgba(58,168,112,.92),rgba(28,132,78,.98))',pill:'rgba(58,168,112,.30)',pillBorder:'rgba(78,205,148,.55)'}
 };
 var _btTemas = {
-  apoyo:      ['Soledad','Ansiedad','Familia','Relaciones','Duelo','Autoestima','Trauma','Emociones','Salud mental','Otro'],
-  superacion: ['Autoestima','Adicciones','Trauma','Miedos','Logros','Cambios','Hábitos','Relaciones','Resilencia','Otro'],
-  debate:     ['Amor','LGBTQ+','Sociedad','Sexualidad','Familia','Salud','Religión','Amistad','Temas tabú','Otro']
+  apoyo:      ['Soledad','Ansiedad','Familia','Relaciones','Duelo','Autoestima','Trauma','Emociones','Salud mental','Desamor','Violencia','Trabajo','Acoso','Identidad','Límites','Otro'],
+  superacion: ['Autoestima','Adicciones','Trauma','Miedos','Logros','Cambios','Hábitos','Relaciones','Resiliencia','Creatividad','Propósito','Finanzas','Espiritualidad','Otro'],
+  debate:     ['Amor','LGBTQ+','Sociedad','Sexualidad','Familia','Salud','Religión','Amistad','Temas tabú','Política','Tecnología','Redes sociales','Maternidad','Diversidad','Otro']
 };
 var _btSavedIds = (function(){ try{ return JSON.parse(safeLS('get','bt_saved')||'[]'); }catch(e){ return []; } })();
 var _btSearchQ = '';
@@ -23125,7 +23125,12 @@ function _btToggleSave(id,e){
   safeLS('set','bt_saved',JSON.stringify(_btSavedIds));
   var btn=document.getElementById('btSave-'+id);
   var isSaved=_btSavedIds.indexOf(id)>=0;
-  if(btn){ btn.style.opacity=isSaved?'1':'.42'; btn.title=isSaved?'Guardado':'Guardar post'; }
+  if(btn){
+    btn.style.background=isSaved?'rgba(80,110,230,.85)':'transparent';
+    btn.style.color=isSaved?'#fff':'rgba(80,110,230,.9)';
+    btn.style.border=isSaved?'none':'1.5px solid rgba(80,110,230,.5)';
+    btn.textContent=isSaved?'✓ Siguiendo':'+ Seguir';
+  }
 }
 function _btAutoTema(text){
   var t=(text||'').toLowerCase();
@@ -23157,7 +23162,31 @@ function _btSetTemaFilter(t){
 function _btApplyFilters(){
   var q=((document.getElementById('btSearch')||{}).value||'').trim().toLowerCase();
   _btSearchQ=q;
-  _btRenderFeed(_btCurrentTab);
+  if(q){
+    // Global search across all tabs
+    var allPosts=(_btPosts.apoyo||[]).concat(_btPosts.superacion||[]).concat(_btPosts.debate||[]);
+    var feed=document.getElementById('btFeed');
+    if(!feed) return;
+    var uid=safeLS('get','velo_user_id');
+    var matched=allPosts.filter(function(p){ return !_btHiddenIds.has(String(p.id))||String(p.user_id)===String(uid); });
+    matched=matched.filter(function(p){
+      var haystack=((p.titulo||'')+' '+(p.contenido||'')+' '+(p.author_name||'')).toLowerCase();
+      return haystack.indexOf(q)>=0;
+    });
+    // Sort: title matches first, then body matches
+    matched.sort(function(a,b){
+      var aTitle=((a.titulo||'')).toLowerCase().indexOf(q)>=0?0:1;
+      var bTitle=((b.titulo||'')).toLowerCase().indexOf(q)>=0?0:1;
+      return aTitle-bTitle;
+    });
+    if(!matched.length){
+      feed.innerHTML='<div style="text-align:center;padding:50px 0"><div style="font-size:13px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;line-height:1.5">Sin resultados para ese filtro.</div></div>';
+      return;
+    }
+    feed.innerHTML=matched.map(function(p,i){ return _btCard(p,i,uid); }).join('');
+  } else {
+    _btRenderFeed(_btCurrentTab);
+  }
 }
 
 function pInitBitacora(){
@@ -23194,6 +23223,7 @@ function _btRenderShell(){
       +_btTabBtn('apoyo','🫂 Apoyo')
       +_btTabBtn('superacion','⭐ Superación')
       +_btTabBtn('debate','💬 Debate')
+      +'<button id="btTab-guardados" onclick="_btSwitchTab(\'guardados\')" style="flex-shrink:0;padding:9px 12px;border-radius:14px;border:1.5px solid rgba(180,150,255,.55);background:rgba(60,30,90,.92);color:rgba(210,180,255,.95);font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:.50;transition:opacity .2s,box-shadow .2s,transform .2s;white-space:nowrap">📌 Guardados</button>'
       +_btTabBtn('mio','📝 Mis posts')
     +'</div>'
     +'<div id="btTabDesc" style="font-size:11.5px;font-family:Jost,sans-serif;line-height:1.5;margin-bottom:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(180,210,195,.70)"></div>'
@@ -23214,7 +23244,8 @@ var _btTabDescs = {
   apoyo:      '🫂 ¿Estás pasando un momento difícil? Compartí tu historia o dejá un mensaje de aliento a quien lo necesita. Aquí nadie juzga.',
   superacion: '⭐ Historias de personas que superaron algo muy duro. Compartí lo que te costó y lo que aprendiste — puede cambiarle la vida a alguien.',
   debate:     '💬 Temas que generan perspectivas distintas. Publicá un dilema, elegí dos posturas y que la comunidad vote y opine con respeto.',
-  mio:        '📝 Tus publicaciones en Bitácora — las historias y mensajes que compartiste con la comunidad.'
+  mio:        '📝 Tus publicaciones en Bitácora — las historias y mensajes que compartiste con la comunidad.',
+  guardados:  '📌 Las publicaciones que seguís — guardadas para volver a ellas cuando quieras.'
 };
 
 function _btSwitchTab(type){
@@ -23222,9 +23253,14 @@ function _btSwitchTab(type){
   _btTemaFilter='';
   _btSearchQ='';
   var isLight=!document.body.classList.contains('r-dark');
-  ['apoyo','superacion','debate','mio'].forEach(function(t){
+  ['apoyo','superacion','debate','mio','guardados'].forEach(function(t){
     var btn=document.getElementById('btTab-'+t);
     if(!btn) return;
+    if(t==='guardados'){
+      if(t===type){ btn.style.opacity='1'; btn.style.boxShadow='0 4px 18px rgba(165,95,230,.30),inset 0 1px 0 rgba(255,255,255,.12)'; btn.style.transform='translateY(-1px)'; }
+      else { btn.style.opacity='.48'; btn.style.boxShadow='none'; btn.style.transform='none'; }
+      return;
+    }
     var c=isLight?(_btColorsLight[t]||_btColorsLight.apoyo):(_btColors[t]||_btColors.apoyo);
     if(t===type){ btn.style.opacity='1'; btn.style.boxShadow='0 4px 18px '+c.glow+',inset 0 1px 0 rgba(255,255,255,.12)'; btn.style.transform='translateY(-1px)'; }
     else { btn.style.opacity='.48'; btn.style.boxShadow='none'; btn.style.transform='none'; }
@@ -23233,6 +23269,13 @@ function _btSwitchTab(type){
   if(desc) desc.textContent=_btTabDescs[type]||'';
   var srch=document.getElementById('btSearch');
   if(srch) srch.value='';
+  if(type==='guardados'){
+    // Guardados tab: hide tema filter and compose row, show saved posts
+    var temaFilterEl=document.getElementById('btTemaFilter');
+    if(temaFilterEl){ temaFilterEl.style.display='none'; }
+    _btRenderGuardados();
+    return;
+  }
   _btUpdateTemaFilter();
   // Always reload — render cached immediately then refresh from DB
   _btLoadTab(type,false);
@@ -23337,6 +23380,24 @@ function _btRenderFeed(type){
   cards.forEach(function(c,i){ c.style.animationDelay=(i*0.06)+'s'; });
 }
 
+function _btRenderGuardados(){
+  var feed = document.getElementById('btFeed');
+  if(!feed) return;
+  if(!_btSavedIds.length){
+    feed.innerHTML = '<div style="text-align:center;padding:48px 16px;color:rgba(100,100,120,.55);font-size:14px">Todavía no seguís ninguna publicación.<br>Tocá <b>Seguir</b> en cualquier post para guardarlo acá.</div>';
+    return;
+  }
+  // Collect all posts from all tabs
+  var allPosts = (_btPosts.apoyo||[]).concat(_btPosts.superacion||[]).concat(_btPosts.debate||[]);
+  var saved = allPosts.filter(function(p){ return _btSavedIds.indexOf(String(p.id)) >= 0; });
+  if(!saved.length){
+    // Posts not loaded yet — show loading message and load apoyo first
+    feed.innerHTML = '<div style="text-align:center;padding:32px;color:rgba(100,100,120,.55);font-size:13px">Cargando publicaciones seguidas...</div>';
+    return;
+  }
+  feed.innerHTML = saved.map(function(p){ return _btCard(p); }).join('');
+}
+
 function _btCard(p,idx,uid){
   var isLight=!document.body.classList.contains('r-dark');
   var c=isLight?(_btColorsLight[p.categoria]||_btColorsLight.apoyo):(_btColors[p.categoria]||_btColors.apoyo);
@@ -23411,7 +23472,7 @@ function _btCard(p,idx,uid){
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
         +(isOwn?'<button onclick="event.stopPropagation();_btDeletePost(\''+_escHtml(String(p.id))+'\',\''+p.categoria+'\')" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);color:rgba(200,40,40,.80);font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 7px;cursor:pointer">🗑</button>':'')
-        +'<button id="btSave-'+_escHtml(String(p.id))+'" onclick="event.stopPropagation();_btToggleSave(\''+_escHtml(String(p.id))+'\',event)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.65);font-size:13px;border-radius:10px;padding:3px 7px;cursor:pointer;opacity:'+(_btSavedIds.indexOf(String(p.id))>=0?'1':'.42')+'" title="'+(_btSavedIds.indexOf(String(p.id))>=0?'Guardado':'Guardar post')+'">🔖</button>'
++(function(){ var _isSaved=_btSavedIds.indexOf(String(p.id))>=0; return '<button id="btSave-'+_escHtml(String(p.id))+'" onclick="_btToggleSave(\''+_escHtml(String(p.id))+'\',event)" style="'+(_isSaved?'background:rgba(80,110,230,.85);color:#fff;border:none;':'background:transparent;color:rgba(80,110,230,.9);border:1.5px solid rgba(80,110,230,.5);')+'border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:Jost,sans-serif">'+(_isSaved?'✓ Siguiendo':'+ Seguir')+'</button>'; })()
         +'<button onclick="event.stopPropagation();_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';color:'+c.label+';font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 8px;cursor:pointer">💬 Comentar</button>'
         +(!isOwn?'<button onclick="event.stopPropagation();_btReport(\''+_escHtml(String(p.id))+'\',null)" style="background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.22);color:rgba(255,100,100,.75);font-size:10px;border-radius:10px;padding:3px 7px;cursor:pointer" title="Reportar contenido">🚩</button>':'')
       +'</div>'
@@ -24057,7 +24118,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1117;
+    var _BUILT_V = 1118;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
