@@ -2242,7 +2242,7 @@ function _loadHomeData(){
     var _p = _periodo === 'mañana' ? 'manana' : _periodo;
     var _bgLight = {
       manana: 'radial-gradient(circle at 8% 12%,rgba(60,185,105,.52) 0%,transparent 50%),radial-gradient(circle at 92% 88%,rgba(30,140,80,.32) 0%,transparent 42%),linear-gradient(180deg,#d5eedd 0%,#bfe5c8 55%,#a8d8b0 100%)',
-      tarde:  'radial-gradient(circle at 10% 10%,rgba(255,115,35,.44) 0%,transparent 52%),radial-gradient(circle at 88% 80%,rgba(255,80,120,.30) 0%,transparent 48%),linear-gradient(180deg,#ffe4be 0%,#ffcf95 55%,#ffb870 100%)',
+      tarde:  'radial-gradient(circle at 10% 10%,rgba(255,165,100,.20) 0%,transparent 52%),radial-gradient(circle at 88% 80%,rgba(255,145,140,.13) 0%,transparent 48%),linear-gradient(180deg,#fff5ea 0%,#ffecd6 55%,#ffdec0 100%)',
       noche:  'radial-gradient(circle at 10% 10%,rgba(125,90,230,.36) 0%,transparent 50%),radial-gradient(circle at 90% 85%,rgba(185,110,215,.28) 0%,transparent 46%),linear-gradient(180deg,#e6ddf8 0%,#d5c8f0 55%,#c2b2e6 100%)'
     };
     var _bgDark = {
@@ -2257,7 +2257,7 @@ function _loadHomeData(){
     if(!_dk){
       var _cardTints = {
         manana: {bg:'rgba(192,232,205,.52)',bd:'rgba(45,140,80,.28)',bf:'blur(14px) saturate(130%)'},
-        tarde:  {bg:'rgba(255,210,162,.52)',bd:'rgba(200,85,40,.28)',bf:'blur(14px) saturate(130%)'},
+        tarde:  {bg:'rgba(255,235,215,.42)',bd:'rgba(200,145,100,.18)',bf:'blur(14px) saturate(115%)'},
         noche:  {bg:'rgba(210,195,248,.52)',bd:'rgba(105,80,215,.28)',bf:'blur(14px) saturate(130%)'}
       };
       var _ct = _cardTints[_p];
@@ -24081,7 +24081,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1115;
+    var _BUILT_V = 1116;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

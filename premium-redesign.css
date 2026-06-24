@@ -27,12 +27,12 @@ body {
     linear-gradient(180deg, #e8f2e8 0%, #ddeadd 60%, #cddeca 100%) !important;
 }
 
-/* Tarde (12-20h) — durazno-naranja vívido ───────────────────── */
+/* Tarde (12-20h) — durazno pastel suave ─────────────────────── */
 body.velo-t-tarde:not(.r-dark) {
   background:
-    radial-gradient(circle at 10% 10%, rgba(255,115,35,.44) 0%, transparent 52%),
-    radial-gradient(circle at 88% 80%, rgba(255,80,120,.30) 0%, transparent 48%),
-    linear-gradient(180deg, #ffe4be 0%, #ffcf95 55%, #ffb870 100%) !important;
+    radial-gradient(circle at 10% 10%, rgba(255,165,100,.20) 0%, transparent 52%),
+    radial-gradient(circle at 88% 80%, rgba(255,145,140,.13) 0%, transparent 48%),
+    linear-gradient(180deg, #fff5ea 0%, #ffecd6 55%, #ffdec0 100%) !important;
 }
 
 /* Noche en modo claro (≥20h) — lavanda saturada ─────────────── */
@@ -5591,11 +5591,11 @@ body:not(.r-dark) .p-card {
 }
 /* Home page cards: glass effect per time period so body gradient shows through */
 body.velo-t-tarde:not(.r-dark) #pg-home .p-card {
-  background: rgba(255,228,210,.36) !important;
-  backdrop-filter: blur(16px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
-  border-color: rgba(210,100,65,.22) !important;
-  box-shadow: 0 2px 16px rgba(200,90,55,.10), inset 0 1px 0 rgba(255,255,255,.40) !important;
+  background: rgba(255,238,222,.34) !important;
+  backdrop-filter: blur(16px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
+  border-color: rgba(210,140,100,.18) !important;
+  box-shadow: 0 2px 16px rgba(200,120,80,.08), inset 0 1px 0 rgba(255,255,255,.40) !important;
 }
 body.velo-t-manana:not(.r-dark) #pg-home .p-card {
   background: rgba(215,238,220,.36) !important;
@@ -5639,15 +5639,15 @@ body.velo-t-manana:not(.r-dark) #homeDailyQuote {
 /* Tarde: warm peach */
 body.velo-t-tarde:not(.r-dark) .home-greeting,
 body.velo-t-tarde:not(.r-dark) #pg-home .home-greeting {
-  background: rgba(255,212,168,.55) !important;
-  border-color: rgba(200,85,40,.28) !important;
-  box-shadow: 0 4px 18px rgba(180,70,30,.10) !important;
+  background: rgba(255,232,208,.52) !important;
+  border-color: rgba(200,145,100,.20) !important;
+  box-shadow: 0 4px 18px rgba(180,120,70,.08) !important;
 }
 body.velo-t-tarde:not(.r-dark) #pg-home #homeDailyQuote,
 body.velo-t-tarde:not(.r-dark) #homeDailyQuote {
-  background: rgba(255,212,168,.55) !important;
-  border: 1.5px solid rgba(200,85,40,.28) !important;
-  box-shadow: 0 4px 18px rgba(180,70,30,.10), inset 0 1px 0 rgba(255,255,255,.55) !important;
+  background: rgba(255,232,208,.52) !important;
+  border: 1.5px solid rgba(200,145,100,.20) !important;
+  box-shadow: 0 4px 18px rgba(180,120,70,.08), inset 0 1px 0 rgba(255,255,255,.55) !important;
   animation: none !important;
 }
 /* Noche: lavender */
