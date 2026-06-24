@@ -2252,30 +2252,6 @@ function _loadHomeData(){
     };
     var _bgVal = (_dk ? _bgDark : _bgLight)[_p];
     if(_bgVal) document.body.style.setProperty('background', _bgVal, 'important');
-
-    // Apply tinted glass background to home cards via JS — bypasses CSS cache
-    if(!_dk){
-      var _cardTints = {
-        manana: {bg:'rgba(192,232,205,.52)',bd:'rgba(45,140,80,.28)',bf:'blur(14px) saturate(130%)'},
-        tarde:  {bg:'rgba(255,235,215,.42)',bd:'rgba(200,145,100,.18)',bf:'blur(14px) saturate(115%)'},
-        noche:  {bg:'rgba(210,195,248,.52)',bd:'rgba(105,80,215,.28)',bf:'blur(14px) saturate(130%)'}
-      };
-      var _ct = _cardTints[_p];
-      if(_ct){
-        var _applyTints = function(){
-          var _sel = '#pg-home .p-card:not([class*="fc-"]), #homeDailyQuote, #pg-home .home-greeting';
-          document.querySelectorAll(_sel).forEach(function(el){
-            el.style.setProperty('background', _ct.bg, 'important');
-            el.style.setProperty('border-color', _ct.bd, 'important');
-            el.style.setProperty('backdrop-filter', _ct.bf, 'important');
-            el.style.setProperty('-webkit-backdrop-filter', _ct.bf, 'important');
-          });
-        };
-        _applyTints();
-        setTimeout(_applyTints, 350);
-        setTimeout(_applyTints, 750);
-      }
-    }
   })();
 
   var av = safeLS('get','velo_user_av') || '🧑';
@@ -24081,7 +24057,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1116;
+    var _BUILT_V = 1117;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
