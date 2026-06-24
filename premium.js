@@ -23000,8 +23000,9 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
 // ── BITÁCORA ─────────────────────────────────────────────────────
 var _btPosts = {apoyo:[],superacion:[],debate:[],mio:[]};
 // Helper: empty reaction map entry — keeps postura vote and emoji reaction independent
-function _btEmptyRx(prev){ return {resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine_postura:(prev?prev.mine_postura:''),mine_rx:(prev?prev.mine_rx:'')}; }
+function _btEmptyRx(prev){ return {resuena:0,ayudo:0,cambio:0,apoyo_a:0,apoyo_b:0,apoyo_te:0,entiendo:0,abrazo:0,acompano:0,inspiro:0,concuerdo:0,no_concuerdo:0,neutral:0,mine_postura:(prev?prev.mine_postura:''),mine_rx:(prev?prev.mine_rx:''),mine_gen:(prev?prev.mine_gen:'')}; }
 function _btIsPostura(t){ return t==='apoyo_a'||t==='apoyo_b'; }
+function _btIsGenRx(t){ return t==='concuerdo'||t==='no_concuerdo'||t==='neutral'||t==='ayudo'; }
 // Category reaction buttons for apoyo/superacion — used by _btOpenDetail and _btReact inline refresh
 function _btGenCatRxHtml(postId,category,rx,c){
   if(category==='apoyo'){
@@ -23178,6 +23179,7 @@ function _btLoadTab(type,refresh){
             if(typeof m[rx.reaction_type]==='number') m[rx.reaction_type]++;
             if(uid&&String(rx.user_id)===String(uid)){
               if(_btIsPostura(rx.reaction_type)) m.mine_postura=rx.reaction_type;
+              else if(_btIsGenRx(rx.reaction_type)) m.mine_gen=rx.reaction_type;
               else m.mine_rx=rx.reaction_type;
             }
           });
@@ -23383,7 +23385,7 @@ function _btGenRxHtml(id, rx, c){
   ];
   return '<div id="btGenRx_'+id+'" style="display:flex;gap:8px;margin-bottom:16px">'
     +defs.map(function(d){
-      var act=rx.mine_rx===d.key;
+      var act=rx.mine_gen===d.key;
       var n=rx[d.key]||0;
       return '<button onclick="_btReact(\''+id+'\',\''+d.key+'\')" '
         +'style="flex:1;padding:10px 4px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.65':'.20)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px">'
@@ -23412,6 +23414,7 @@ function _btSubscribeDetail(postId){
             if(typeof m[rx.reaction_type]==='number') m[rx.reaction_type]++;
             if(uid&&String(rx.user_id)===String(uid)){
               if(_btIsPostura(rx.reaction_type)) m.mine_postura=rx.reaction_type;
+              else if(_btIsGenRx(rx.reaction_type)) m.mine_gen=rx.reaction_type;
               else m.mine_rx=rx.reaction_type;
             }
           });
@@ -23636,14 +23639,22 @@ function _btReact(postId,type){
   if(!sbClient) return;
   var rx=_btReactMap[postId]||_btEmptyRx();
   var isPostura=_btIsPostura(type);
-  var oldMine=isPostura?rx.mine_postura:rx.mine_rx;
-  var _setMine=function(m,val){ if(isPostura) m.mine_postura=val; else m.mine_rx=val; };
+  var isGenRx=_btIsGenRx(type);
+  // Each reaction slot is independent: postura | genRx (concuerdo/neutral) | category (apoyo_te/abrazo/etc)
+  var oldMine=isPostura?rx.mine_postura:(isGenRx?rx.mine_gen:rx.mine_rx);
+  var _setMine=function(m,val){
+    if(isPostura) m.mine_postura=val;
+    else if(isGenRx) m.mine_gen=val;
+    else m.mine_rx=val;
+  };
   var _isToggleOff=(oldMine===type);
-  // Delete ALL reactions in same category — handles stale DB rows from previous bugs
+  // Only delete reactions within the SAME slot — preserves independent slots
   var _keysToDelete=isPostura
     ?['apoyo_a','apoyo_b']
-    :['apoyo_te','entiendo','abrazo','acompano','resuena','inspiro','cambio','concuerdo','no_concuerdo','neutral','ayudo'];
-  var _genRxKeys=['concuerdo','no_concuerdo','neutral'];
+    :(isGenRx
+      ?['concuerdo','no_concuerdo','neutral','ayudo']
+      :['apoyo_te','entiendo','abrazo','acompano','resuena','inspiro','cambio']);
+  var _genRxKeys=['concuerdo','no_concuerdo','neutral','ayudo'];
   var _refreshDetail=function(){
     _btRefreshCard(postId);
     var _allP=(_btPosts.apoyo||[]).concat(_btPosts.superacion||[]).concat(_btPosts.debate||[]).concat(_btPosts.mio||[]);
@@ -23887,7 +23898,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1108;
+    var _BUILT_V = 1109;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

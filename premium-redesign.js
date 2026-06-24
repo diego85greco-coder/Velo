@@ -634,7 +634,7 @@
       initParticles('landingCanvas',    140, 0.55, '80,160,115',  '140,210,155');
       initParticles('loginCanvas',       90, 0.50, '80,160,115',  '140,210,155');
       initParticles('registerCanvas',    90, 0.50, '80,160,115',  '140,210,155');
-      initParticles('homeBgCanvas',     360, 0.92, '115,180,225', '160,238,190');
+      initParticles('homeBgCanvas',     360, 0.42, '115,180,225', '160,238,190');
       initParticles('moodBgCanvas',      100, 0.68, '150,120,200', '145,190,230');
       initParticles('profileBgCanvas',   95, 0.58, '70,120,180',  '100,200,180');
       initParticles('helpBgCanvas',      85, 0.60, '45,120,75',   '120,200,240');
@@ -861,15 +861,13 @@ function initParticles(canvasId, count, maxOpacity, color, darkColor) {
     var particleColor;
     if (canvasId === 'homeBgCanvas') {
       if (_isDk) {
-        // Dark backgrounds: warm/gold particles for maximum contrast
-        if (_isMa)      particleColor = '255,238,170'; // cream-gold on navy blue
-        else if (_isNo) particleColor = '255,240,185'; // warm ivory on dark lavender
-        else            particleColor = '255,224,80';  // bright gold on dark green
+        if (_isMa)      particleColor = '200,218,255'; // soft periwinkle on navy
+        else if (_isNo) particleColor = '210,195,255'; // soft lavender on dark lavender
+        else            particleColor = '160,220,185'; // soft mint-green on dark green
       } else {
-        // Light backgrounds: vivid contrasting colors
-        if (_isMa)      particleColor = '28,112,215';  // deep blue on mint
-        else if (_isNo) particleColor = '210,125,18';  // warm amber on light lavender
-        else            particleColor = '18,98,215';   // vivid royal blue on peach
+        if (_isMa)      particleColor = '90,140,210';  // soft muted blue on mint
+        else if (_isNo) particleColor = '165,130,210'; // soft mauve on lavender
+        else            particleColor = '95,140,205';  // soft steel blue on peach
       }
     } else {
       particleColor = _isDk ? darkModeColor : lightColor;
