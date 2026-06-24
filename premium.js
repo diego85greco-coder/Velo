@@ -7723,14 +7723,18 @@ async function pRenderNews(forceRefresh){
     }
   }
 
-  // No cache — show static items immediately (no spinner, no wait)
+  // Always show static items immediately (no spinner) — replaced when API returns
+  var _pOff = _nd.getDate() % _pool.length;
   var _staticItems = [];
-  if(!forceRefresh){
-    var _pOff = _nd.getDate() % _pool.length;
-    for(var _psi=0;_psi<5;_psi++) _staticItems.push(_pool[(_pOff+_psi)%_pool.length]);
-    _renderNewsList(newsEl, _staticItems);
-  } else {
-    newsEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink4)">🔄 Actualizando noticias...</div>';
+  for(var _psi=0;_psi<5;_psi++) _staticItems.push(_pool[(_pOff+_psi)%_pool.length]);
+  _renderNewsList(newsEl, _staticItems);
+  if(forceRefresh){
+    // Subtle top banner while fetching fresh news in background
+    var _ub=document.createElement('div');
+    _ub.id='newsUpdBanner';
+    _ub.style.cssText='text-align:center;padding:8px 12px;margin-bottom:10px;border-radius:10px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.20);color:var(--ink4);font-size:12px;opacity:.75';
+    _ub.textContent='🔄 Buscando noticias frescas del día…';
+    if(newsEl) newsEl.insertBefore(_ub, newsEl.firstChild);
   }
 
   // Admin-published news
@@ -7811,17 +7815,18 @@ async function pRenderNews(forceRefresh){
 
   newsEl = document.getElementById('newsContainer');
   if(_navToken !== _tok || !newsEl) return;
+  var _removeBanner=function(){ var b=document.getElementById('newsUpdBanner'); if(b&&b.parentNode) b.parentNode.removeChild(b); };
   if(items.length){
-    // Gemini succeeded — update UI with live content and cache it
     var finalItems = adminNews.concat(items);
     safeLS('set', cacheKey, JSON.stringify(finalItems));
     _renderNewsList(newsEl, finalItems);
   } else if(adminNews.length && forceRefresh){
-    // Force refresh with only admin news (Gemini failed)
     safeLS('set', cacheKey, JSON.stringify(adminNews));
     _renderNewsList(newsEl, adminNews);
+  } else {
+    // Gemini failed but static items already visible — just remove the banner
+    _removeBanner();
   }
-  // else: static items already visible, no update needed
 }
 
 // ── Feature 4: reading tracker ──────────────────────────────────────
@@ -7882,6 +7887,7 @@ function pCopyNewsItem(titulo, cuerpo, sourceUrl, btnEl){
 }
 
 function _renderNewsList(el, items){
+  var _b=document.getElementById('newsUpdBanner'); if(_b&&_b.parentNode) _b.parentNode.removeChild(_b);
   _newsListCache = items;
   var _cy = new Date().getFullYear();
   var _sourceTag = function(item){
@@ -24129,7 +24135,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1121;
+    var _BUILT_V = 1122;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
