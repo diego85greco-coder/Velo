@@ -23266,6 +23266,13 @@ function _btRenderShell(){
   if(!pg) return;
   var inner = pg.querySelector('.p-page-inner');
   if(!inner) return;
+  var isLight=!document.body.classList.contains('r-dark');
+  var _pubBg=isLight?'linear-gradient(135deg,rgba(44,130,90,.90),rgba(30,100,66,.85))':'linear-gradient(135deg,rgba(116,198,157,.35),rgba(80,160,120,.25))';
+  var _pubBd=isLight?'rgba(30,100,66,.55)':'rgba(116,198,157,.55)';
+  var _pubCl=isLight?'rgba(255,255,255,.97)':'rgba(175,245,210,.97)';
+  var _srtBg=isLight?'rgba(50,80,60,.10)':'rgba(255,255,255,.07)';
+  var _srtBd=isLight?'rgba(50,80,60,.28)':'rgba(255,255,255,.14)';
+  var _srtCl=isLight?'rgba(30,60,40,.70)':'rgba(200,210,205,.65)';
   inner.innerHTML = ''
     +'<div class="p-page-hdr">'
       +'<div class="p-page-hdr-back">'
@@ -23273,8 +23280,8 @@ function _btRenderShell(){
         +'<div><div class="p-label">Comunidad</div><h2 class="p-title">Bitácora</h2></div>'
       +'</div>'
       +'<div style="display:flex;flex-direction:column;align-items:stretch;gap:6px">'
-        +'<button onclick="_btOpenCompose(null)" style="background:linear-gradient(135deg,rgba(116,198,157,.35),rgba(80,160,120,.25));border:1.5px solid rgba(116,198,157,.55);color:rgba(175,245,210,.97);font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:20px;padding:7px 15px;cursor:pointer;letter-spacing:.3px;text-align:center">✦ Publicar</button>'
-        +'<button id="btSortBtn" onclick="_btToggleSort()" style="padding:7px 15px;border-radius:20px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:rgba(200,210,205,.65);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .2s;text-align:center;letter-spacing:.3px">🕐 Recientes</button>'
+        +'<button onclick="_btOpenCompose(null)" style="background:'+_pubBg+';border:1.5px solid '+_pubBd+';color:'+_pubCl+';font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:20px;padding:7px 15px;cursor:pointer;letter-spacing:.3px;text-align:center">✦ Publicar</button>'
+        +'<button id="btSortBtn" onclick="_btToggleSort()" style="padding:7px 15px;border-radius:20px;border:1.5px solid '+_srtBd+';background:'+_srtBg+';color:'+_srtCl+';font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .2s;text-align:center;letter-spacing:.3px">🕐 Recientes</button>'
       +'</div>'
     +'</div>'
     +'<p style="font-size:12px;color:rgba(180,200,190,.55);font-family:Jost,sans-serif;line-height:1.5;margin:0 0 14px;font-style:italic">Historias reales · desde el corazón · para quien necesita leerlas</p>'
@@ -23855,7 +23862,7 @@ function _btLoadComments(postId){
             +'<span style="font-size:10.5px;font-weight:700;color:rgba(180,220,200,.80);font-family:Jost,sans-serif">'+_escHtml(nm)+'</span>'
             +'<div style="display:flex;gap:4px">'
               +(own?'<button onclick="_btDeleteComment(\''+_escHtml(String(cm.id))+'\',\''+_escHtml(String(postId))+'\')" style="background:rgba(255,80,80,.10);border:1px solid rgba(255,80,80,.22);color:rgba(255,120,120,.72);font-size:9px;font-weight:700;font-family:Jost,sans-serif;border-radius:8px;padding:2px 6px;cursor:pointer">🗑</button>':'')
-              +'<button onclick="_btReport(null,\''+_escHtml(String(cm.id))+'\')" style="background:rgba(220,60,60,.10);border:1px solid rgba(220,60,60,.18);color:rgba(255,110,110,.65);font-size:9px;font-family:Jost,sans-serif;border-radius:6px;padding:2px 6px;cursor:pointer">🚩</button>'
+              +(!own?'<button onclick="_btReport(null,\''+_escHtml(String(cm.id))+'\')" style="background:rgba(220,60,60,.10);border:1px solid rgba(220,60,60,.18);color:rgba(255,110,110,.65);font-size:9px;font-family:Jost,sans-serif;border-radius:6px;padding:2px 6px;cursor:pointer">🚩</button>':'')
             +'</div>'
           +'</div>'
           +'<div style="font-size:13px;color:rgba(255,255,255,.80);font-family:Jost,sans-serif;line-height:1.45;word-break:break-word">'+_escHtml(cm.content)+'</div>'
@@ -24211,7 +24218,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1128;
+    var _BUILT_V = 1129;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

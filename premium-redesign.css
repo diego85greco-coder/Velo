@@ -1989,6 +1989,7 @@ body.r-dark #pg-help .p-empty-sub   { color: rgba(255,255,255,.55) !important; }
   backdrop-filter: blur(20px) saturate(1.5) !important;
   -webkit-backdrop-filter: blur(20px) saturate(1.5) !important;
 }
+.p-toast-emoji { color: rgba(255,255,255,.95) !important; }
 .p-toast-msg { color: rgba(255,255,255,.95) !important; }
 .p-toast-close { color: rgba(255,255,255,.65) !important; opacity: 1 !important; }
 
