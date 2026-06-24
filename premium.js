@@ -23536,12 +23536,35 @@ function _btCard(p,idx,uid){
           +'<span style="font-size:12px;color:'+c.label.replace(/[\d.]+\)$/,'.80)')+';font-family:Jost,sans-serif;letter-spacing:.2px">'+(_rxStr||((rx.mine_postura||rx.mine_rx)?'✓':'')||'—')+'</span>'
           +'<span style="font-size:11px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+cmtCount+' 💬</span>'
         +'</div>'
+        +'<button onclick="event.stopPropagation();_btSharePost(\''+_escHtml(String(p.id))+'\',event)" style="background:transparent;border:1px solid '+c.border.replace(/[\d.]+\)$/,'.25)')+';color:'+c.label.replace(/[\d.]+\)$/,'.60)')+';font-size:10px;border-radius:10px;padding:3px 8px;cursor:pointer;font-family:Jost,sans-serif" title="Compartir">📤</button>'
         +'<span style="font-size:10px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';border-radius:20px;padding:3px 10px">'+(p.categoria==='debate'?'🗳 Debatir':'✨ Reaccionar')+'</span>'
       +'</div>';
     })()
   +'</div>';
 }
 
+function _btSharePost(id,ev){
+  if(ev) ev.stopPropagation();
+  var p=null;
+  ['apoyo','superacion','debate','mio'].forEach(function(t){ (_btPosts[t]||[]).forEach(function(x){ if(String(x.id)===String(id)) p=x; }); });
+  if(!p) return;
+  var catEmoji={apoyo:'🫂',superacion:'⭐',debate:'💬'};
+  var catTag={apoyo:'#Apoyo #SaludMental #HeyVelo',superacion:'#Superación #Crecimiento #HeyVelo',debate:'#Debate #Reflexión #HeyVelo'};
+  var excerpt=(p.contenido||'').replace(/\[posturas:[^\]]*\]/g,'').trim();
+  excerpt=excerpt.length>220?excerpt.slice(0,217)+'…':excerpt;
+  var parts=[];
+  if(p.titulo) parts.push((catEmoji[p.categoria]||'💬')+' '+p.titulo);
+  parts.push(excerpt);
+  parts.push('');
+  parts.push('¿Te resonó? Uníte a la conversación 👉 heyvelo.app');
+  parts.push(catTag[p.categoria]||'#HeyVelo');
+  var shareText=parts.join('\n');
+  if(navigator.share){
+    navigator.share({title:p.titulo||'Bitácora · Velo',text:shareText,url:'https://heyvelo.app'}).catch(function(){});
+  } else {
+    try{ navigator.clipboard.writeText(shareText); pToast('📋','Copiado al portapapeles'); }catch(e){ pToast('📤','No se pudo compartir'); }
+  }
+}
 function _btDeletePost(id,type){
   _pConfirm('¿Eliminar esta publicación?',function(){
     if(!sbClient){ pToast('Conectando...'); return; }
@@ -24162,7 +24185,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1124;
+    var _BUILT_V = 1125;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
