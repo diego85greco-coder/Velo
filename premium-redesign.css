@@ -845,11 +845,27 @@ body.r-dark .r-dark-toggle-pill::after {
    MODO OSCURO — variables y overrides
    ══════════════════════════════════════════════════════════════════ */
 body.r-dark {
-  /* Ambient background */
+  /* Ambient background — tarde (12-20h): verde oscuro actual */
   background:
     radial-gradient(circle at 8% 12%, rgba(58, 110, 80, 0.35) 0%, transparent 45%),
     linear-gradient(180deg, #0f1a14 0%, #111d17 60%, #0c1510 100%) !important;
   color-scheme: dark;
+}
+
+/* Mañana (0-12h): azul Francia oscuro, partículas blancas */
+body.velo-t-manana.r-dark {
+  background:
+    radial-gradient(circle at 8% 12%, rgba(30, 70, 180, 0.38) 0%, transparent 46%),
+    radial-gradient(circle at 90% 85%, rgba(10, 40, 130, 0.22) 0%, transparent 40%),
+    linear-gradient(180deg, #090e1e 0%, #0b1228 60%, #070c1c 100%) !important;
+}
+
+/* Noche (≥20h): lavanda oscuro profundo */
+body.velo-t-noche.r-dark {
+  background:
+    radial-gradient(circle at 8% 12%, rgba(90, 55, 200, 0.32) 0%, transparent 46%),
+    radial-gradient(circle at 88% 82%, rgba(60, 30, 160, 0.20) 0%, transparent 40%),
+    linear-gradient(180deg, #0d0a1c 0%, #100d24 60%, #09071a 100%) !important;
 }
 body.r-dark::after {
   display: none !important;

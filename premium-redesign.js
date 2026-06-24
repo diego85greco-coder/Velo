@@ -854,7 +854,20 @@ function initParticles(canvasId, count, maxOpacity, color, darkColor) {
       canvas.width  = dw;
       canvas.height = dh;
     }
-    var particleColor = document.body.classList.contains('r-dark') ? darkModeColor : lightColor;
+    var _bd = document.body;
+    var particleColor;
+    if (_bd.classList.contains('r-dark')) {
+      // Home canvas: white in morning, green in afternoon, lavender at night
+      if (canvasId === 'homeBgCanvas') {
+        if (_bd.classList.contains('velo-t-manana'))      particleColor = '215,228,255';
+        else if (_bd.classList.contains('velo-t-noche'))  particleColor = '198,182,255';
+        else                                               particleColor = darkModeColor;
+      } else {
+        particleColor = darkModeColor;
+      }
+    } else {
+      particleColor = lightColor;
+    }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     frame++;
     particles.forEach(function(p) {
