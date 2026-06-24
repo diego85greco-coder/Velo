@@ -20,11 +20,27 @@
   --r-easing: cubic-bezier(.2,.8,.2,1);
 }
 
-/* ── 1. ambient body — más calmo, menos foto bg ───────────────── */
+/* ── 1. ambient body — mañana/default: menta suave ────────────── */
 body {
   background:
     radial-gradient(circle at 8% 12%, var(--r-sage-glow) 0%, transparent 45%),
     linear-gradient(180deg, #e8f2e8 0%, #ddeadd 60%, #cddeca 100%) !important;
+}
+
+/* Tarde (12-20h) — durazno-rosado pastel, partículas azules ───── */
+body.velo-t-tarde:not(.r-dark) {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(255,148,90,.24) 0%, transparent 46%),
+    radial-gradient(circle at 88% 80%, rgba(255,118,158,.20) 0%, transparent 44%),
+    linear-gradient(180deg, #fff3ed 0%, #ffe6d6 55%, #fdd6c4 100%) !important;
+}
+
+/* Noche en modo claro (≥20h) — lavanda suave ─────────────────── */
+body.velo-t-noche:not(.r-dark) {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(145,115,240,.18) 0%, transparent 45%),
+    radial-gradient(circle at 90% 85%, rgba(200,140,220,.14) 0%, transparent 42%),
+    linear-gradient(180deg, #f4f0ff 0%, #ece6fa 55%, #e0d8f4 100%) !important;
 }
 body::after {
   content: '';
@@ -12452,28 +12468,28 @@ body.velo-t-tarde.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
   border-bottom-color: rgba(100,205,148,.20) !important;
 }
 
-/* Hero card — light */
+/* Hero card — light tarde (durazno-coral, armoniza con fondo warm) */
 body.velo-t-tarde:not(.r-dark) .r-hero-v2 {
   background: linear-gradient(145deg,
-    rgba(235,252,242,.97) 0%,
-    rgba(242,255,248,.99) 50%,
-    rgba(230,250,238,.95) 100%
+    rgba(255,248,242,.97) 0%,
+    rgba(255,252,248,.99) 50%,
+    rgba(255,244,236,.95) 100%
   ) !important;
-  border-color: rgba(80,190,130,.25) !important;
+  border-color: rgba(235,130,90,.22) !important;
   box-shadow:
-    0 0 0 1px rgba(80,190,130,.08),
-    0 8px 32px rgba(60,160,100,.08) !important;
+    0 0 0 1px rgba(235,130,90,.07),
+    0 8px 32px rgba(200,100,60,.10) !important;
 }
 body.velo-t-tarde:not(.r-dark) .r-hero-v2::before {
-  background: radial-gradient(ellipse at 82% 5%, rgba(100,210,150,.16) 0%, transparent 50%) !important;
+  background: radial-gradient(ellipse at 82% 5%, rgba(255,150,100,.14) 0%, transparent 50%) !important;
   opacity: 1 !important;
 }
 body.velo-t-tarde:not(.r-dark) #homeHeroLabel {
-  color: rgba(50,155,90,.72) !important;
+  color: rgba(190,95,50,.72) !important;
 }
 body.velo-t-tarde:not(.r-dark) #homeGreetTxt span {
-  color: rgba(40,140,80,.90) !important;
-  -webkit-text-fill-color: rgba(40,140,80,.90) !important;
+  color: rgba(175,80,40,.90) !important;
+  -webkit-text-fill-color: rgba(175,80,40,.90) !important;
 }
 
 /* ────────────────────────────────────────────────────────────────
