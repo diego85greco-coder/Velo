@@ -23145,13 +23145,21 @@ function _btAutoTema(text){
 function _btUpdateTemaFilter(){
   var el=document.getElementById('btTemaFilter');
   if(!el) return;
+  el.style.display='';
   var type=_btCurrentTab;
-  if(type==='mio'){ el.innerHTML=''; return; }
+  if(type==='mio'||type==='guardados'){ el.innerHTML=''; return; }
+  var isLight=!document.body.classList.contains('r-dark');
   var temas=['Todos'].concat(_btTemas[type]||[]);
-  var c=(!document.body.classList.contains('r-dark')?(_btColorsLight[type]||_btColorsLight.apoyo):(_btColors[type]||_btColors.apoyo));
+  var c=(isLight?(_btColorsLight[type]||_btColorsLight.apoyo):(_btColors[type]||_btColors.apoyo));
+  var offBg=isLight?'rgba(255,255,255,.70)':'rgba(255,255,255,.05)';
+  var offBd=isLight?'rgba(100,100,130,.20)':'rgba(255,255,255,.12)';
+  var offCl=isLight?'rgba(50,50,80,.65)':'rgba(255,255,255,.40)';
   el.innerHTML=temas.map(function(t){
     var isAct=(t==='Todos'?(!_btTemaFilter):(t===_btTemaFilter));
-    return '<button onclick="_btSetTemaFilter(\''+t+'\')" style="padding:4px 10px;border-radius:20px;border:1px solid '+(isAct?c.border.replace(/[\d.]+\)$/,'.55)'):'rgba(255,255,255,.12)')+';background:'+(isAct?c.strip:'rgba(255,255,255,.05)')+';color:'+(isAct?c.label:'rgba(255,255,255,.35)')+';font-size:10.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap">'+t+'</button>';
+    var bg=isAct?(isLight?c.strip:c.strip):offBg;
+    var bd=isAct?c.border:offBd;
+    var cl=isAct?c.label:offCl;
+    return '<button onclick="_btSetTemaFilter(\''+t+'\')" style="padding:5px 11px;border-radius:20px;border:1.5px solid '+bd+';background:'+bg+';color:'+cl+';font-size:11px;font-weight:'+(isAct?'700':'500')+';font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .15s">'+t+'</button>';
   }).join('');
 }
 function _btSetTemaFilter(t){
@@ -23270,9 +23278,7 @@ function _btSwitchTab(type){
   var srch=document.getElementById('btSearch');
   if(srch) srch.value='';
   if(type==='guardados'){
-    // Guardados tab: hide tema filter and compose row, show saved posts
-    var temaFilterEl=document.getElementById('btTemaFilter');
-    if(temaFilterEl){ temaFilterEl.style.display='none'; }
+    _btUpdateTemaFilter();
     _btRenderGuardados();
     return;
   }
@@ -24118,7 +24124,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1119;
+    var _BUILT_V = 1120;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
