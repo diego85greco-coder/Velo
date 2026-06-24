@@ -23096,6 +23096,7 @@ var _btTemas = {
 var _btSavedIds = (function(){ try{ return JSON.parse(safeLS('get','bt_saved')||'[]'); }catch(e){ return []; } })();
 var _btSearchQ = '';
 var _btTemaFilter = '';
+var _btSortMode = 'recent';
 var _btColors = {
   apoyo:      {bg:'rgba(20,35,80,.92)',strip:'rgba(90,120,230,.40)',border:'rgba(90,120,230,.70)',glow:'rgba(90,120,230,.20)',label:'rgba(160,185,255,.95)',badge:'rgba(90,120,230,.25)',emoji:'🫂'},
   superacion: {bg:'rgba(48,32,4,.92)',strip:'rgba(218,160,30,.38)',border:'rgba(218,160,30,.70)',glow:'rgba(218,160,30,.22)',label:'rgba(255,210,70,.95)',badge:'rgba(218,162,40,.28)',emoji:'⭐'},
@@ -23178,6 +23179,24 @@ function _btSetTemaFilter(t){
   _btUpdateTemaFilter();
   _btApplyFilters();
 }
+function _btRelevanceScore(p){
+  var rx=_btReactMap[p.id]||_btEmptyRx();
+  var rxKeys=['resuena','ayudo','cambio','apoyo_a','apoyo_b','apoyo_te','entiendo','abrazo','acompano','inspiro','concuerdo','no_concuerdo','neutral'];
+  var rxTotal=0; rxKeys.forEach(function(k){ rxTotal+=(rx[k]||0); });
+  return rxTotal+(_btCommentCounts[p.id]||0)*2;
+}
+function _btToggleSort(){
+  _btSortMode=(_btSortMode==='recent'?'relevante':'recent');
+  var btn=document.getElementById('btSortBtn');
+  if(btn){
+    var isRel=_btSortMode==='relevante';
+    btn.textContent=isRel?'🔥 Relevantes':'🕐 Recientes';
+    btn.style.background=isRel?'rgba(255,130,50,.18)':'rgba(255,255,255,.07)';
+    btn.style.borderColor=isRel?'rgba(255,130,50,.45)':'rgba(255,255,255,.14)';
+    btn.style.color=isRel?'rgba(255,160,80,.95)':'rgba(200,210,205,.65)';
+  }
+  _btRenderFeed(_btCurrentTab);
+}
 function _btApplyFilters(){
   var q=((document.getElementById('btSearch')||{}).value||'').trim().toLowerCase();
   _btSearchQ=q;
@@ -23246,7 +23265,10 @@ function _btRenderShell(){
       +_btTabBtn('mio','📝 Mis posts')
     +'</div>'
     +'<div id="btTabDesc" style="font-size:11.5px;font-family:Jost,sans-serif;line-height:1.5;margin-bottom:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(180,210,195,.70)"></div>'
-    +'<div id="btTemaFilter" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
+      +'<div id="btTemaFilter" style="display:flex;flex-wrap:wrap;gap:5px;flex:1"></div>'
+      +'<button id="btSortBtn" onclick="_btToggleSort()" style="flex-shrink:0;padding:5px 11px;border-radius:20px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:rgba(200,210,205,.65);font-size:11px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .2s">🕐 Recientes</button>'
+    +'</div>'
     +'<div style="margin-bottom:12px">'
       +'<input id="btSearch" oninput="_btApplyFilters()" placeholder="🔍 Buscar en Bitácora..." maxlength="100" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.10);border-radius:14px;padding:10px 14px;color:rgba(255,255,255,.85);font-size:12.5px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;caret-color:rgba(255,255,255,.70)">'
     +'</div>'
@@ -23271,6 +23293,7 @@ function _btSwitchTab(type){
   _btCurrentTab=type;
   _btTemaFilter='';
   _btSearchQ='';
+  _btSortMode='recent';
   var isLight=!document.body.classList.contains('r-dark');
   ['apoyo','superacion','debate','mio','guardados'].forEach(function(t){
     var btn=document.getElementById('btTab-'+t);
@@ -23382,6 +23405,10 @@ function _btRenderFeed(type){
       var haystack=((p.titulo||'')+' '+(p.contenido||'')+' '+(p.author_name||'')).toLowerCase();
       return haystack.indexOf(_btSearchQ)>=0;
     });
+  }
+  // Sort by relevance or recency
+  if(_btSortMode==='relevante'){
+    posts=posts.slice().sort(function(a,b){ return _btRelevanceScore(b)-_btRelevanceScore(a); });
   }
   if(!posts.length){
     var c0=_btColors[type]||_btColors.apoyo;
@@ -24135,7 +24162,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1123;
+    var _BUILT_V = 1124;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
