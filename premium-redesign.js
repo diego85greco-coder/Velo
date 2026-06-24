@@ -855,18 +855,24 @@ function initParticles(canvasId, count, maxOpacity, color, darkColor) {
       canvas.height = dh;
     }
     var _bd = document.body;
+    var _isDk = _bd.classList.contains('r-dark');
+    var _isMa = _bd.classList.contains('velo-t-manana');
+    var _isNo = _bd.classList.contains('velo-t-noche');
     var particleColor;
-    if (_bd.classList.contains('r-dark')) {
-      // Home canvas: white in morning, green in afternoon, lavender at night
-      if (canvasId === 'homeBgCanvas') {
-        if (_bd.classList.contains('velo-t-manana'))      particleColor = '215,228,255';
-        else if (_bd.classList.contains('velo-t-noche'))  particleColor = '198,182,255';
-        else                                               particleColor = darkModeColor;
+    if (canvasId === 'homeBgCanvas') {
+      if (_isDk) {
+        // Dark backgrounds: warm/gold particles for maximum contrast
+        if (_isMa)      particleColor = '255,238,170'; // cream-gold on navy blue
+        else if (_isNo) particleColor = '255,240,185'; // warm ivory on dark lavender
+        else            particleColor = '255,224,80';  // bright gold on dark green
       } else {
-        particleColor = darkModeColor;
+        // Light backgrounds: vivid contrasting colors
+        if (_isMa)      particleColor = '28,112,215';  // deep blue on mint
+        else if (_isNo) particleColor = '210,125,18';  // warm amber on light lavender
+        else            particleColor = '18,98,215';   // vivid royal blue on peach
       }
     } else {
-      particleColor = lightColor;
+      particleColor = _isDk ? darkModeColor : lightColor;
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     frame++;
