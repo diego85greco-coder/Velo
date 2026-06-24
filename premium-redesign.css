@@ -13522,37 +13522,7 @@ body:not(.r-dark) #homeMedWidget > div > div:last-child > div:last-child {
   box-shadow: 0 2px 8px rgba(100,60,180,.10) !important;
 }
 
-/* Muro Feliz home cards — crema cálida en lugar de oliva oscuro */
-body:not(.r-dark) #homeHappyFeed .home-mc {
-  background: rgba(255,248,215,.96) !important;
-  box-shadow: 0 2px 14px rgba(200,158,56,.14) !important;
-}
-body:not(.r-dark) #homeHappyFeed .home-mc > div:first-child {
-  background: rgba(218,168,48,.18) !important;
-}
-body:not(.r-dark) #homeHappyFeed .home-mc > div:last-child {
-  color: rgba(55,32,0,.88) !important;
-}
-body:not(.r-dark) #homeHappyFeed .home-mc > div:last-child * {
-  color: rgba(55,32,0,.88) !important;
-}
-body:not(.r-dark) #homeHappyFeed .home-mc button {
-  background: rgba(218,160,30,.18) !important;
-  border-color: rgba(180,130,20,.38) !important;
-  color: rgba(65,40,0,.88) !important;
-}
-
-/* Momentos home feed cards — fondo neutro claro */
-body:not(.r-dark) #homeMomentoFeed .home-mc {
-  background: rgba(238,248,244,.96) !important;
-  box-shadow: 0 2px 10px rgba(0,0,0,.05) !important;
-}
-body:not(.r-dark) #homeMomentoFeed .home-mc > div:last-child {
-  color: var(--ink) !important;
-}
-body:not(.r-dark) #homeMomentoFeed .home-mc > div:last-child * {
-  color: var(--ink) !important;
-}
+/* v1103: home-mc colors fully controlled by JS inline styles (mode-aware) — no overrides needed */
 
 /* ══════════════════════════════════════════════════════════════════
    v1080 — MODO CLARO: topbar premium + bitácora page + DQ card

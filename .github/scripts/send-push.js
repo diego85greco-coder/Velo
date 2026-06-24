@@ -27,12 +27,15 @@ function localHour(tz) {
 const FORCE_SEND = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch';
 
 function getSlot(tz) {
-  // Use UTC hour to determine slot — matches the 3 fixed cron times
   const utcH = new Date().getUTCHours();
-  if (utcH === 12) return 'morning';
-  if (utcH === 17) return 'afternoon';
-  if (utcH === 2)  return 'night';
-  // Manual dispatch: detect from user's local time
+  // Wide windows handle GitHub cron drift + transition between old/new schedule:
+  //   morning   → UTC 5-13  (old cron was 6, new is 12)
+  //   afternoon → UTC 14-19 (old cron was 14, new is 17)
+  //   night     → UTC 1-3 or 19-22 (old cron was 19, new is 2)
+  if (utcH >= 5  && utcH <= 13) return 'morning';
+  if (utcH >= 14 && utcH <= 18) return 'afternoon';
+  if ((utcH >= 19 && utcH <= 22) || (utcH >= 1 && utcH <= 3)) return 'night';
+  // Manual dispatch always sends, using user's local time for label
   if (FORCE_SEND) {
     const h = localHour(tz);
     if (h >= 6  && h < 13) return 'morning';
