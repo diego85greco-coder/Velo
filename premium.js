@@ -23096,6 +23096,19 @@ var _btHiddenIds = new Set(); // IDs de posts reportados (globalmente ocultos)
 
 function _btCleanContenido(s){ return (s||'').replace(/\n*\[posturas:a=.*?\|b=.*?\]/g,'').trim(); }
 
+var _btCmpAccent = {
+  apoyo:      {header:'linear-gradient(135deg,rgba(50,70,200,.82),rgba(30,48,170,.94))',border:'rgba(110,140,255,.65)',btn:'linear-gradient(135deg,rgba(80,110,230,.92),rgba(55,82,205,.98))',pill:'rgba(80,110,230,.30)',pillBorder:'rgba(110,142,255,.55)'},
+  superacion: {header:'linear-gradient(135deg,rgba(148,98,5,.82),rgba(118,72,2,.94))',border:'rgba(218,165,30,.65)',btn:'linear-gradient(135deg,rgba(198,146,18,.92),rgba(158,112,5,.98))',pill:'rgba(198,146,18,.30)',pillBorder:'rgba(228,175,38,.55)'},
+  debate:     {header:'linear-gradient(135deg,rgba(12,98,58,.82),rgba(6,72,42,.94))',border:'rgba(60,185,130,.65)',btn:'linear-gradient(135deg,rgba(58,168,112,.92),rgba(28,132,78,.98))',pill:'rgba(58,168,112,.30)',pillBorder:'rgba(78,205,148,.55)'}
+};
+var _btTemas = {
+  apoyo:      ['Soledad','Ansiedad','Familia','Relaciones','Duelo','Autoestima','Trauma','Emociones','Salud mental','Otro'],
+  superacion: ['Autoestima','Adicciones','Trauma','Miedos','Logros','Cambios','Hábitos','Relaciones','Resilencia','Otro'],
+  debate:     ['Amor','LGBTQ+','Sociedad','Sexualidad','Familia','Salud','Religión','Amistad','Temas tabú','Otro']
+};
+var _btSavedIds = (function(){ try{ return JSON.parse(safeLS('get','bt_saved')||'[]'); }catch(e){ return []; } })();
+var _btSearchQ = '';
+var _btTemaFilter = '';
 var _btColors = {
   apoyo:      {bg:'rgba(20,35,80,.92)',strip:'rgba(90,120,230,.40)',border:'rgba(90,120,230,.70)',glow:'rgba(90,120,230,.20)',label:'rgba(160,185,255,.95)',badge:'rgba(90,120,230,.25)',emoji:'🫂'},
   superacion: {bg:'rgba(48,32,4,.92)',strip:'rgba(218,160,30,.38)',border:'rgba(218,160,30,.70)',glow:'rgba(218,160,30,.22)',label:'rgba(255,210,70,.95)',badge:'rgba(218,162,40,.28)',emoji:'⭐'},
@@ -23109,6 +23122,67 @@ var _btColorsLight = {
   mio:        {bg:'rgba(240,220,255,.96)',strip:'rgba(138,78,215,.22)',border:'rgba(138,78,215,.55)',glow:'rgba(138,78,215,.16)',label:'rgba(68,24,118,.88)',badge:'rgba(138,78,215,.14)',emoji:'📝',title:'rgba(48,14,88,.90)',preview:'rgba(62,24,102,.88)'}
 };
 var _btCommentCounts = {};
+
+function _btToggleTema(t){
+  var ov=document.getElementById('btComposeOv');
+  if(!ov) return;
+  var cur=ov.dataset.tema||'';
+  var next=cur===t?'':t;
+  ov.dataset.tema=next;
+  var type=ov.dataset.type||'apoyo';
+  var ac=_btCmpAccent[type]||_btCmpAccent.apoyo;
+  document.querySelectorAll('#btCmpTemas button').forEach(function(el){
+    var isAct=el.dataset.tema===next;
+    el.style.background=isAct?ac.pill:'rgba(255,255,255,.05)';
+    el.style.borderColor=isAct?ac.pillBorder:'rgba(255,255,255,.14)';
+    el.style.color=isAct?'rgba(255,255,255,.92)':'rgba(255,255,255,.40)';
+  });
+}
+function _btCmpCounter(el){
+  var cnt=document.getElementById('btCmpCharCount');
+  if(cnt) cnt.textContent=(el.value.length)+' / 2000';
+}
+function _btToggleSave(id,e){
+  if(e) e.stopPropagation();
+  var idx=_btSavedIds.indexOf(id);
+  if(idx>=0) _btSavedIds.splice(idx,1); else _btSavedIds.push(id);
+  safeLS('set','bt_saved',JSON.stringify(_btSavedIds));
+  var btn=document.getElementById('btSave-'+id);
+  var isSaved=_btSavedIds.indexOf(id)>=0;
+  if(btn){ btn.style.opacity=isSaved?'1':'.42'; btn.title=isSaved?'Guardado':'Guardar post'; }
+}
+function _btAutoTema(text){
+  var t=(text||'').toLowerCase();
+  var map=[['Amor',['amor','enamorado','enamorada','pareja','noviazgo']],['Ansiedad',['ansiedad','ansioso','ansiosa','pánico','nervios']],['Familia',['familia','padre','madre','hijo','hija','hermano','hermana','padres']],['Soledad',['soledad','solo','sola','aislado','aislada']],['Trauma',['trauma','abuso','maltrato','violencia','herida']],['Duelo',['duelo','muerte','fallecio','falleció','pérdida','luto']],['Autoestima',['autoestima','confianza','inseguro','insegura','valgo']],['LGBTQ+',['gay','lesbiana','bisexual','trans','lgbtq','queer']],['Adicciones',['adicción','adicto','adicta','droga','alcohol','vicio']],['Sexualidad',['sexo','sexual','sexualidad','intimidad']]];
+  for(var i=0;i<map.length;i++){
+    for(var j=0;j<map[i][1].length;j++){
+      if(t.indexOf(map[i][1][j])>=0) return map[i][0];
+    }
+  }
+  return '';
+}
+function _btUpdateTemaFilter(){
+  var el=document.getElementById('btTemaFilter');
+  if(!el) return;
+  var type=_btCurrentTab;
+  if(type==='mio'){ el.innerHTML=''; return; }
+  var temas=['Todos'].concat(_btTemas[type]||[]);
+  var c=(!document.body.classList.contains('r-dark')?(_btColorsLight[type]||_btColorsLight.apoyo):(_btColors[type]||_btColors.apoyo));
+  el.innerHTML=temas.map(function(t){
+    var isAct=(t==='Todos'?(!_btTemaFilter):(t===_btTemaFilter));
+    return '<button onclick="_btSetTemaFilter(\''+t+'\')" style="padding:4px 10px;border-radius:20px;border:1px solid '+(isAct?c.border.replace(/[\d.]+\)$/,'.55)'):'rgba(255,255,255,.12)')+';background:'+(isAct?c.strip:'rgba(255,255,255,.05)')+';color:'+(isAct?c.label:'rgba(255,255,255,.35)')+';font-size:10.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap">'+t+'</button>';
+  }).join('');
+}
+function _btSetTemaFilter(t){
+  _btTemaFilter=(t==='Todos'?'':t);
+  _btUpdateTemaFilter();
+  _btApplyFilters();
+}
+function _btApplyFilters(){
+  var q=((document.getElementById('btSearch')||{}).value||'').trim().toLowerCase();
+  _btSearchQ=q;
+  _btRenderFeed(_btCurrentTab);
+}
 
 function pInitBitacora(){
   _initSupabase();
@@ -23146,7 +23220,11 @@ function _btRenderShell(){
       +_btTabBtn('debate','💬 Debate')
       +_btTabBtn('mio','📝 Mis posts')
     +'</div>'
-    +'<div id="btTabDesc" style="font-size:11.5px;font-family:Jost,sans-serif;line-height:1.5;margin-bottom:14px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(180,210,195,.70)"></div>'
+    +'<div id="btTabDesc" style="font-size:11.5px;font-family:Jost,sans-serif;line-height:1.5;margin-bottom:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(180,210,195,.70)"></div>'
+    +'<div id="btTemaFilter" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>'
+    +'<div style="margin-bottom:12px">'
+      +'<input id="btSearch" oninput="_btApplyFilters()" placeholder="🔍 Buscar en Bitácora..." maxlength="100" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.10);border-radius:14px;padding:10px 14px;color:rgba(255,255,255,.85);font-size:12.5px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;caret-color:rgba(255,255,255,.70)">'
+    +'</div>'
     +'<div id="btFeed" style="display:flex;flex-direction:column;gap:12px"></div>';
 }
 
@@ -23165,6 +23243,8 @@ var _btTabDescs = {
 
 function _btSwitchTab(type){
   _btCurrentTab=type;
+  _btTemaFilter='';
+  _btSearchQ='';
   var isLight=!document.body.classList.contains('r-dark');
   ['apoyo','superacion','debate','mio'].forEach(function(t){
     var btn=document.getElementById('btTab-'+t);
@@ -23175,6 +23255,9 @@ function _btSwitchTab(type){
   });
   var desc=document.getElementById('btTabDesc');
   if(desc) desc.textContent=_btTabDescs[type]||'';
+  var srch=document.getElementById('btSearch');
+  if(srch) srch.value='';
+  _btUpdateTemaFilter();
   // Always reload — render cached immediately then refresh from DB
   _btLoadTab(type,false);
 }
@@ -23248,18 +23331,31 @@ function _btRenderFeed(type){
   var feed=document.getElementById('btFeed');
   if(!feed) return;
   var posts=_btPosts[type]||[];
+  var uid=safeLS('get','velo_user_id');
+  posts=posts.filter(function(p){ return !_btHiddenIds.has(String(p.id))||String(p.user_id)===String(uid); });
+  // Apply tema filter
+  if(_btTemaFilter){
+    posts=posts.filter(function(p){
+      var t=p.tema||_btAutoTema((p.titulo||'')+' '+(p.contenido||''));
+      return t===_btTemaFilter;
+    });
+  }
+  // Apply search filter
+  if(_btSearchQ){
+    posts=posts.filter(function(p){
+      var haystack=((p.titulo||'')+' '+(p.contenido||'')+' '+(p.author_name||'')).toLowerCase();
+      return haystack.indexOf(_btSearchQ)>=0;
+    });
+  }
   if(!posts.length){
-    var c0=_btColors[type];
+    var c0=_btColors[type]||_btColors.apoyo;
     feed.innerHTML='<div style="text-align:center;padding:50px 0">'
       +'<div style="font-size:36px;margin-bottom:12px">'+c0.emoji+'</div>'
-      +'<div style="font-size:13px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;line-height:1.5">Aún no hay historias aquí.<br>¡Sé el primero en compartir!</div>'
-      +'<button onclick="_btOpenCompose(\''+type+'\')" style="margin-top:16px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.30);color:rgba(175,245,210,.88);font-size:12px;font-weight:700;font-family:Jost,sans-serif;border-radius:20px;padding:8px 20px;cursor:pointer">✦ Publicar</button>'
+      +'<div style="font-size:13px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;line-height:1.5">'+(_btSearchQ||_btTemaFilter?'Sin resultados para ese filtro.':'Aún no hay historias aquí.<br>¡Sé el primero en compartir!')+'</div>'
+      +(!_btSearchQ&&!_btTemaFilter?'<button onclick="_btOpenCompose(\''+type+'\')" style="margin-top:16px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.30);color:rgba(175,245,210,.88);font-size:12px;font-weight:700;font-family:Jost,sans-serif;border-radius:20px;padding:8px 20px;cursor:pointer">✦ Publicar</button>':'')
       +'</div>';
     return;
   }
-  var uid=safeLS('get','velo_user_id');
-  // Filter globally-hidden posts (reported, pending admin resolution) — unless it's the owner viewing their own post
-  posts=posts.filter(function(p){ return !_btHiddenIds.has(String(p.id))||String(p.user_id)===String(uid); });
   feed.innerHTML=posts.map(function(p,i){ return _btCard(p,i,uid); }).join('');
   var cards=feed.querySelectorAll('.bt-card');
   cards.forEach(function(c,i){ c.style.animationDelay=(i*0.06)+'s'; });
@@ -23339,6 +23435,7 @@ function _btCard(p,idx,uid){
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
         +(isOwn?'<button onclick="event.stopPropagation();_btDeletePost(\''+_escHtml(String(p.id))+'\',\''+p.categoria+'\')" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);color:rgba(200,40,40,.80);font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 7px;cursor:pointer">🗑</button>':'')
+        +'<button id="btSave-'+_escHtml(String(p.id))+'" onclick="event.stopPropagation();_btToggleSave(\''+_escHtml(String(p.id))+'\',event)" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.65);font-size:13px;border-radius:10px;padding:3px 7px;cursor:pointer;opacity:'+(_btSavedIds.indexOf(String(p.id))>=0?'1':'.42')+'" title="'+(_btSavedIds.indexOf(String(p.id))>=0?'Guardado':'Guardar post')+'">🔖</button>'
         +'<button onclick="event.stopPropagation();_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';color:'+c.label+';font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 8px;cursor:pointer">💬 Comentar</button>'
         +(!isOwn?'<button onclick="event.stopPropagation();_btReport(\''+_escHtml(String(p.id))+'\',null)" style="background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.22);color:rgba(255,100,100,.75);font-size:10px;border-radius:10px;padding:3px 7px;cursor:pointer" title="Reportar contenido">🚩</button>':'')
       +'</div>'
@@ -23772,6 +23869,57 @@ function _btReact(postId,type){
     }).catch(function(){ pToast('Error de conexión'); });
 }
 
+function _btBuildComposeInner(type,tema){
+  var ac=_btCmpAccent[type]||_btCmpAccent.apoyo;
+  var temas=_btTemas[type]||[];
+  var _si={apoyo:{emoji:'🫂',name:'Apoyo',sub:'Compartí lo que te pesa · Nadie juzga'},
+            superacion:{emoji:'⭐',name:'Superación',sub:'Tus avances pueden inspirar a alguien'},
+            debate:{emoji:'💬',name:'Debate',sub:'Planteá un tema · Escuchá otras voces'}};
+  var si=_si[type]||_si.apoyo;
+  var h='<div style="background:linear-gradient(180deg,#0e1b2a,#080f18);border-radius:28px 28px 0 0;max-height:92vh;overflow-y:auto;padding:0 0 max(28px,env(safe-area-inset-bottom))">';
+  h+='<div style="display:flex;justify-content:center;padding:12px 0 0"><div style="width:36px;height:4px;background:rgba(255,255,255,.18);border-radius:2px"></div></div>';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px 0">';
+  h+='<div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(255,255,255,.30);font-family:Jost,sans-serif">NUEVA PUBLICACIÓN</div>';
+  h+='<button onclick="document.getElementById(\'btComposeOv\').remove()" style="background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.14);border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.60);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>';
+  h+='</div>';
+  h+='<div id="btCmpHeader" style="margin:10px 18px 0;border-radius:18px;padding:15px 16px;background:'+ac.header+';border:1.5px solid '+ac.border.replace(/[\d.]+\)$/,'.32)')+';">';
+  h+='<div style="display:flex;align-items:center;gap:12px"><div style="font-size:30px;line-height:1;flex-shrink:0">'+si.emoji+'</div>';
+  h+='<div><div style="font-size:16px;font-weight:800;color:rgba(255,255,255,.96);font-family:Jost,sans-serif">'+si.name+'</div>';
+  h+='<div style="font-size:11px;color:rgba(255,255,255,.52);font-family:Jost,sans-serif;margin-top:2px">'+si.sub+'</div></div></div></div>';
+  h+='<div style="padding:12px 18px 0">';
+  h+='<div style="font-size:9.5px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif;margin-bottom:7px">SECCIÓN</div>';
+  h+='<div style="display:flex;gap:7px;margin-bottom:14px">';
+  [['apoyo','🫂 Apoyo'],['superacion','⭐ Superación'],['debate','💬 Debate']].forEach(function(t){
+    var ac2=_btCmpAccent[t[0]]||_btCmpAccent.apoyo; var isAct=type===t[0];
+    h+='<button id="btCmpType-'+t[0]+'" onclick="_btSetComposeType(\''+t[0]+'\')" style="flex:1;padding:8px 4px;border-radius:13px;border:1.5px solid '+(isAct?ac2.pillBorder:'rgba(255,255,255,.12)')+';background:'+(isAct?ac2.pill:'rgba(255,255,255,.06)')+';color:'+(isAct?'rgba(255,255,255,.94)':'rgba(255,255,255,.36)')+';font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">'+t[1]+'</button>';
+  });
+  h+='</div>';
+  h+='<div style="font-size:9.5px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif;margin-bottom:7px">TEMA <span style="font-weight:400;letter-spacing:0;font-size:9px;opacity:.7">(opcional)</span></div>';
+  h+='<div id="btCmpTemas" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px">';
+  temas.forEach(function(t){
+    var isT=tema===t;
+    h+='<button onclick="_btToggleTema(\''+t+'\')" data-tema="'+t+'" style="padding:5px 11px;border-radius:20px;border:1px solid '+(isT?ac.pillBorder:'rgba(255,255,255,.14)')+';background:'+(isT?ac.pill:'rgba(255,255,255,.05)')+';color:'+(isT?'rgba(255,255,255,.92)':'rgba(255,255,255,.38)')+';font-size:11px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">'+t+'</button>';
+  });
+  h+='</div>';
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:11px 13px;background:rgba(255,255,255,.06);border-radius:14px;border:1px solid rgba(255,255,255,.09)">';
+  h+='<div style="font-size:18px">👤</div>';
+  h+='<div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82);font-family:Jost,sans-serif">Publicar anónimo</div>';
+  h+='<div style="font-size:10.5px;color:rgba(255,255,255,.32);font-family:Jost,sans-serif">Tu nombre no será visible</div></div>';
+  h+='<input type="checkbox" id="btCmpAnon" style="width:20px;height:20px;cursor:pointer;accent-color:'+ac.pillBorder+'">';
+  h+='</div>';
+  h+='<input id="btCmpTitle" placeholder="Título (opcional)" maxlength="100" style="width:100%;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 14px;color:rgba(255,255,255,.92);font-size:13px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px">';
+  h+='<textarea id="btCmpContent" placeholder="Contá tu historia..." maxlength="2000" oninput="_btCmpCounter(this)" style="width:100%;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 14px;color:rgba(255,255,255,.92);font-size:14px;font-family:\'Cormorant Garamond\',serif;box-sizing:border-box;outline:none;resize:none;min-height:130px;line-height:1.6" rows="5"></textarea>';
+  h+='<div id="btCmpCharCount" style="text-align:right;font-size:10px;color:rgba(255,255,255,.22);font-family:Jost,sans-serif;margin-top:3px;margin-bottom:10px">0 / 2000</div>';
+  h+='<div id="btCmpDebateFields" style="display:'+(type==='debate'?'block':'none')+';margin-bottom:12px">';
+  h+='<div style="font-size:9.5px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif;margin-bottom:7px">POSTURAS DEL DEBATE</div>';
+  h+='<div style="display:flex;gap:7px">';
+  h+='<input id="btCmpPosturaA" placeholder="Postura A (ej: Sí)" maxlength="150" style="flex:1;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:13px;padding:10px 12px;color:rgba(255,255,255,.90);font-size:12px;font-family:Jost,sans-serif;outline:none">';
+  h+='<input id="btCmpPosturaB" placeholder="Postura B (ej: No)" maxlength="150" style="flex:1;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:13px;padding:10px 12px;color:rgba(255,255,255,.90);font-size:12px;font-family:Jost,sans-serif;outline:none">';
+  h+='</div></div>';
+  h+='<button id="btCmpSubmitBtn" onclick="_btSubmitCompose()" style="width:100%;padding:15px;background:'+ac.btn+';border:none;color:rgba(255,255,255,.97);font-size:15px;font-weight:800;font-family:Jost,sans-serif;border-radius:16px;cursor:pointer;letter-spacing:.4px;box-shadow:0 4px 24px rgba(0,0,0,.30)">✦ Publicar</button>';
+  h+='</div></div>';
+  return h;
+}
 function _btOpenCompose(typeHint){
   var uid=safeLS('get','velo_user_id');
   if(!uid){ pToast('Debés iniciar sesión para publicar'); return; }
@@ -23780,49 +23928,30 @@ function _btOpenCompose(typeHint){
   var ov=document.createElement('div');
   ov.id='btComposeOv';
   ov.dataset.type=selType;
-  ov.style.cssText='position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.82);display:flex;flex-direction:column;justify-content:flex-end';
-  var h='<div style="background:linear-gradient(180deg,rgba(6,16,28,.99),rgba(4,12,22,1));border-radius:26px 26px 0 0;max-height:92vh;overflow-y:auto;padding:0 0 max(24px,env(safe-area-inset-bottom));border-top:3px solid rgba(116,198,157,.45)">';
-  h+='<div style="display:flex;justify-content:center;padding:12px 0 0"><div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px"></div></div>';
-  h+='<div style="padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between">';
-  h+='<div style="font-size:13px;font-weight:800;color:rgba(255,255,255,.90);font-family:Jost,sans-serif">✦ Nueva Publicación</div>';
-  h+='<button onclick="document.getElementById(\'btComposeOv\').remove()" style="background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.70);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>';
-  h+='</div><div style="padding:14px 18px 0">';
-  h+='<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:8px">SECCIÓN</div>';
-  h+='<div style="display:flex;gap:6px;margin-bottom:16px">';
-  [['apoyo','🫂 Apoyo'],['superacion','⭐ Superación'],['debate','💬 Debate']].forEach(function(t){
-    var ci=_btColors[t[0]];
-    h+='<button id="btCmpType-'+t[0]+'" onclick="_btSetComposeType(\''+t[0]+'\')" style="flex:1;padding:8px 4px;border-radius:12px;border:1.5px solid '+ci.border.replace(/[\d.]+\)$/,'.42)')+';background:'+(selType===t[0]?ci.strip:'rgba(255,255,255,.05)')+';color:'+ci.label+';font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:'+(selType===t[0]?'1':'.52')+'">'+t[1]+'</button>';
-  });
-  h+='</div>';
-  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 12px;background:rgba(255,255,255,.05);border-radius:12px">';
-  h+='<span style="font-size:20px">👤</span><div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85);font-family:Jost,sans-serif">Publicar anónimo</div>';
-  h+='<div style="font-size:10.5px;color:rgba(180,200,190,.52);font-family:Jost,sans-serif">Tu nombre no será visible</div></div>';
-  h+='<input type="checkbox" id="btCmpAnon" style="width:18px;height:18px;cursor:pointer;accent-color:rgba(116,198,157,.80)"></div>';
-  h+='<input id="btCmpTitle" placeholder="Título (opcional)" maxlength="100" style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(116,198,157,.20);border-radius:12px;padding:10px 12px;color:rgba(255,255,255,.90);font-size:13px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px">';
-  h+='<textarea id="btCmpContent" placeholder="Contá tu historia..." maxlength="2000" style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(116,198,157,.20);border-radius:12px;padding:10px 12px;color:rgba(255,255,255,.90);font-size:13.5px;font-family:\'Cormorant Garamond\',serif;box-sizing:border-box;outline:none;resize:none;min-height:120px;line-height:1.55" rows="5"></textarea>';
-  h+='<div id="btCmpDebateFields" style="display:'+(selType==='debate'?'block':'none')+';margin-top:10px">';
-  h+='<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:8px">POSTURAS DEL DEBATE</div>';
-  h+='<div style="display:flex;gap:6px"><input id="btCmpPosturaA" placeholder="Postura A (ej: Sí)" maxlength="150" style="flex:1;background:rgba(255,255,255,.07);border:1.5px solid rgba(60,185,130,.25);border-radius:12px;padding:9px 11px;color:rgba(255,255,255,.90);font-size:12px;font-family:Jost,sans-serif;outline:none">';
-  h+='<input id="btCmpPosturaB" placeholder="Postura B (ej: No)" maxlength="150" style="flex:1;background:rgba(255,255,255,.07);border:1.5px solid rgba(60,185,130,.25);border-radius:12px;padding:9px 11px;color:rgba(255,255,255,.90);font-size:12px;font-family:Jost,sans-serif;outline:none"></div></div>';
-  h+='<button onclick="_btSubmitCompose()" style="width:100%;margin-top:16px;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.38),rgba(80,160,120,.28));border:1.5px solid rgba(116,198,157,.55);color:rgba(175,245,210,.97);font-size:14px;font-weight:800;font-family:Jost,sans-serif;border-radius:16px;cursor:pointer;letter-spacing:.3px">✦ Publicar</button>';
-  h+='</div></div>';
-  ov.innerHTML=h;
+  ov.dataset.tema='';
+  ov.style.cssText='position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.72);display:flex;flex-direction:column;justify-content:flex-end;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)';
+  ov.innerHTML=_btBuildComposeInner(selType,'');
   document.body.appendChild(ov);
   ov.addEventListener('click',function(e){ if(e.target===ov) ov.remove(); });
 }
 
 function _btSetComposeType(type){
-  ['apoyo','superacion','debate'].forEach(function(t){
-    var btn=document.getElementById('btCmpType-'+t);
-    if(!btn) return;
-    var ci=_btColors[t];
-    if(t===type){ btn.style.background=ci.strip; btn.style.opacity='1'; }
-    else { btn.style.background='rgba(255,255,255,.05)'; btn.style.opacity='.52'; }
-  });
-  var df=document.getElementById('btCmpDebateFields');
-  if(df) df.style.display=type==='debate'?'block':'none';
   var ov=document.getElementById('btComposeOv');
-  if(ov) ov.dataset.type=type;
+  if(!ov) return;
+  var titleVal=(document.getElementById('btCmpTitle')||{}).value||'';
+  var contentVal=(document.getElementById('btCmpContent')||{}).value||'';
+  var isAnon=!!((document.getElementById('btCmpAnon')||{}).checked);
+  var pA=((document.getElementById('btCmpPosturaA')||{}).value)||'';
+  var pB=((document.getElementById('btCmpPosturaB')||{}).value)||'';
+  ov.dataset.type=type;
+  ov.dataset.tema='';
+  var inner=ov.querySelector('div');
+  if(inner) inner.outerHTML=_btBuildComposeInner(type,'');
+  var t=document.getElementById('btCmpTitle'); if(t) t.value=titleVal;
+  var c=document.getElementById('btCmpContent'); if(c){ c.value=contentVal; _btCmpCounter(c); }
+  var a=document.getElementById('btCmpAnon'); if(a) a.checked=isAnon;
+  var pa=document.getElementById('btCmpPosturaA'); if(pa) pa.value=pA;
+  var pb=document.getElementById('btCmpPosturaB'); if(pb) pb.value=pB;
 }
 
 function _btSubmitCompose(){
@@ -23842,7 +23971,8 @@ function _btSubmitCompose(){
   var btn=ov.querySelector('button[onclick*="_btSubmitCompose"]');
   if(btn){ btn.disabled=true; btn.textContent='Publicando...'; }
 
-  function _doInsert(usePosturaCols){
+  var tema=((ov.dataset.tema)||'').trim();
+  function _doInsert(usePosturaCols,useTema){
     // For debates: ALWAYS embed posturas in contenido as backup (resilient to stale PostgREST schema cache)
     var baseContent = content;
     if(type==='debate' && (pA||pB)){
@@ -23850,6 +23980,7 @@ function _btSubmitCompose(){
     }
     var obj={categoria:type,contenido:baseContent,is_anon:isAnon,user_id:uid};
     if(title) obj.titulo=title;
+    if(tema && useTema) obj.tema=tema;
     if(type==='debate' && usePosturaCols){
       if(pA) obj.postura_a=pA;
       if(pB) obj.postura_b=pB;
@@ -23859,7 +23990,12 @@ function _btSubmitCompose(){
         var msg=(res.error.message||'');
         // Retry without postura columns if they don't exist in the table
         if(usePosturaCols && msg.indexOf('postura')!==-1 && msg.indexOf('column')!==-1){
-          _doInsert(false);
+          _doInsert(false,useTema);
+          return;
+        }
+        // Retry without tema column if it doesn't exist yet
+        if(useTema && tema && msg.indexOf('tema')!==-1 && msg.indexOf('column')!==-1){
+          _doInsert(usePosturaCols,false);
           return;
         }
         pToast('Error: '+msg.slice(0,90));
@@ -23874,7 +24010,7 @@ function _btSubmitCompose(){
       }
     });
   }
-  _doInsert(true);
+  _doInsert(true,true);
 }
 
 function _renderHomeBitacoraWidget(){
@@ -23945,7 +24081,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1114;
+    var _BUILT_V = 1115;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
