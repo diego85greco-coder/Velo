@@ -13825,3 +13825,60 @@ body.r-dark .rv-reply-block { background: rgba(116,198,157,.10) !important; }
 /* Profile stats — smaller font on 5-col grid */
 #pg-profile .profile-stat-num { font-size: 20px !important; }
 
+/* ══════════════════════════════════════════════════════════════════
+   v1113 — Dark mode: Vela/IA service cards + discover cards equal height
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Vela card — dark mode: amber gradient + legible pill */
+body.r-dark #homeVelaCard {
+  background: linear-gradient(135deg, rgba(52,38,8,.90), rgba(40,28,4,.88)) !important;
+  border-color: rgba(218,160,30,.32) !important;
+}
+body.r-dark #homeVelaCard .p-pill {
+  background: rgba(218,160,30,.22) !important;
+  color: rgba(240,200,100,.95) !important;
+  border-color: rgba(218,160,30,.38) !important;
+}
+body.r-dark #homeVelaCard [style*="font-family:'Cormorant"] {
+  color: rgba(240,228,195,.96) !important;
+}
+body.r-dark #homeVelaCard [style*="color:var(--ink4)"] {
+  color: rgba(200,175,120,.80) !important;
+}
+body.r-dark #homeVelaCard > div:first-child + div > div:last-child {
+  color: rgba(200,175,120,.80) !important;
+}
+
+/* Velo IA card — dark mode: rose/pink gradient + legible pill */
+body.r-dark #homeVeloIACard {
+  background: linear-gradient(135deg, rgba(52,22,30,.90), rgba(42,16,24,.88)) !important;
+  border-color: rgba(255,130,160,.28) !important;
+}
+body.r-dark #homeVeloIACard .p-pill {
+  background: rgba(255,130,160,.20) !important;
+  color: rgba(255,185,205,.95) !important;
+  border-color: rgba(255,130,160,.35) !important;
+}
+body.r-dark #homeVeloIACard [style*="font-family:'Cormorant"] {
+  color: rgba(255,220,230,.96) !important;
+}
+body.r-dark #homeVeloIACard [style*="color:var(--ink4)"] {
+  color: rgba(215,170,185,.80) !important;
+}
+
+/* Icon backgrounds for dark mode service cards */
+body.r-dark #homeVelaCard > div:first-child {
+  background: rgba(218,160,30,.18) !important;
+  border-color: rgba(218,160,30,.30) !important;
+}
+body.r-dark #homeVeloIACard > div:first-child {
+  background: rgba(255,130,160,.16) !important;
+  border-color: rgba(255,130,160,.28) !important;
+}
+
+/* Discover card equal stretch — both columns same height */
+#homeDiscoverCards .home-discover-card {
+  height: 100% !important;
+  box-sizing: border-box !important;
+}
+
