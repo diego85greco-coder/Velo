@@ -12410,13 +12410,21 @@ body.velo-t-manana.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
   border-bottom-color: rgba(225,180,55,.22) !important;
 }
 
-/* Hero card — light */
+/* Glass tokens — mañana light: mint-tinted semi-transparent */
+body.velo-t-manana:not(.r-dark) {
+  --r-glass-bg: rgba(210,235,215,.62);
+  --r-glass-bord: rgba(60,140,90,.14);
+}
+
+/* Hero card — light mañana (mint glassmorphism) */
 body.velo-t-manana:not(.r-dark) .r-hero-v2 {
   background: linear-gradient(145deg,
-    rgba(255,248,225,.96) 0%,
-    rgba(255,252,238,.98) 50%,
-    rgba(255,244,210,.94) 100%
+    rgba(248,252,230,.68) 0%,
+    rgba(252,255,238,.72) 50%,
+    rgba(242,250,218,.64) 100%
   ) !important;
+  backdrop-filter: blur(18px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
   border-color: rgba(200,160,40,.28) !important;
   box-shadow:
     0 0 0 1px rgba(200,160,40,.10),
@@ -12484,17 +12492,26 @@ body.velo-t-tarde.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
   border-bottom-color: rgba(100,205,148,.20) !important;
 }
 
-/* Hero card — light tarde (durazno-coral, armoniza con fondo warm) */
+/* Glass tokens — tarde light: peach-tinted semi-transparent */
+body.velo-t-tarde:not(.r-dark) {
+  --r-glass-bg: rgba(255,232,218,.60);
+  --r-glass-bord: rgba(220,110,70,.15);
+  --r-glass-shadow: 0 1px 0 rgba(255,255,255,.55) inset, 0 8px 30px rgba(200,90,50,.08);
+}
+
+/* Hero card — light tarde (durazno-coral glassmorphism) */
 body.velo-t-tarde:not(.r-dark) .r-hero-v2 {
   background: linear-gradient(145deg,
-    rgba(255,248,242,.97) 0%,
-    rgba(255,252,248,.99) 50%,
-    rgba(255,244,236,.95) 100%
+    rgba(255,240,228,.68) 0%,
+    rgba(255,248,238,.72) 50%,
+    rgba(255,234,218,.64) 100%
   ) !important;
-  border-color: rgba(235,130,90,.22) !important;
+  backdrop-filter: blur(18px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
+  border-color: rgba(235,130,90,.30) !important;
   box-shadow:
-    0 0 0 1px rgba(235,130,90,.07),
-    0 8px 32px rgba(200,100,60,.10) !important;
+    0 0 0 1px rgba(235,130,90,.12),
+    0 8px 32px rgba(200,100,60,.14) !important;
 }
 body.velo-t-tarde:not(.r-dark) .r-hero-v2::before {
   background: radial-gradient(ellipse at 82% 5%, rgba(255,150,100,.14) 0%, transparent 50%) !important;
@@ -12561,17 +12578,26 @@ body.velo-t-noche.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
   border-bottom-color: rgba(175,160,248,.18) !important;
 }
 
-/* Hero card — light */
+/* Glass tokens — noche light: lavender-tinted semi-transparent */
+body.velo-t-noche:not(.r-dark) {
+  --r-glass-bg: rgba(228,220,255,.60);
+  --r-glass-bord: rgba(130,105,230,.14);
+  --r-glass-shadow: 0 1px 0 rgba(255,255,255,.55) inset, 0 8px 30px rgba(100,80,200,.08);
+}
+
+/* Hero card — light noche (lavanda glassmorphism) */
 body.velo-t-noche:not(.r-dark) .r-hero-v2 {
   background: linear-gradient(145deg,
-    rgba(240,238,255,.97) 0%,
-    rgba(248,246,255,.99) 50%,
-    rgba(235,232,255,.95) 100%
+    rgba(234,228,255,.68) 0%,
+    rgba(244,240,255,.72) 50%,
+    rgba(226,218,255,.64) 100%
   ) !important;
-  border-color: rgba(140,120,230,.24) !important;
+  backdrop-filter: blur(18px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
+  border-color: rgba(140,120,230,.30) !important;
   box-shadow:
-    0 0 0 1px rgba(140,120,230,.08),
-    0 8px 32px rgba(100,80,200,.08) !important;
+    0 0 0 1px rgba(140,120,230,.12),
+    0 8px 32px rgba(100,80,200,.12) !important;
 }
 body.velo-t-noche:not(.r-dark) .r-hero-v2::before {
   background: radial-gradient(ellipse at 83% 4%, rgba(170,150,255,.15) 0%, transparent 50%) !important;
