@@ -21435,15 +21435,17 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var _p = _homePrompts[_pi];
     if(isHome){
       var _esD=document.body.classList.contains('r-dark');
-      var _esTxt=_esD?'rgba(255,255,255,.88)':'rgba(30,70,45,.88)';
-      var _esSub=_esD?'rgba(116,198,157,.75)':'rgba(30,100,60,.60)';
-      var _esBg=_esD?'linear-gradient(145deg,rgba(116,198,157,.12),rgba(116,198,157,.06))':'linear-gradient(145deg,rgba(116,198,157,.18),rgba(116,198,157,.09))';
-      var _esBtnTxt=_esD?'rgba(220,255,235,.90)':'rgba(20,80,45,.88)';
-      feed.innerHTML='<div onclick="pFocusMomentoInput()" style="cursor:pointer;border-radius:16px;padding:18px 16px 16px;background:'+_esBg+';border:1.5px dashed rgba(116,198,157,.40);text-align:center;margin-bottom:4px">'
-        +'<div style="font-size:34px;line-height:1;margin-bottom:10px">'+_p.emoji+'</div>'
-        +'<div style="font-size:14px;font-weight:700;color:'+_esTxt+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.4;margin-bottom:8px">'+_p.q+'</div>'
-        +'<div style="font-size:11.5px;color:'+_esSub+';line-height:1.5;margin-bottom:14px">'+_p.sub+'</div>'
-        +'<div style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:rgba(116,198,157,.20);border:1px solid rgba(116,198,157,.40);border-radius:100px;font-size:12px;font-weight:700;color:'+_esBtnTxt+';font-family:Jost,sans-serif">✏️ Compartir momento</div>'
+      var _esTxt=_esD?'#e8f5ee':'rgba(28,65,40,.92)';
+      var _esSub=_esD?'rgba(160,225,190,.88)':'rgba(28,88,50,.70)';
+      var _esBg=_esD?'rgba(22,52,32,.88)':'rgba(200,235,210,.45)';
+      var _esBorder=_esD?'rgba(116,198,157,.55)':'rgba(60,140,90,.35)';
+      var _esBtnBg=_esD?'rgba(116,198,157,.28)':'rgba(60,140,90,.20)';
+      var _esBtnTxt=_esD?'rgba(200,245,220,.95)':'rgba(20,80,45,.88)';
+      feed.innerHTML='<div onclick="pFocusMomentoInput()" style="cursor:pointer;border-radius:16px;padding:20px 18px 18px;background:'+_esBg+';border:1.5px dashed '+_esBorder+';text-align:center;margin-bottom:4px">'
+        +'<div style="font-size:36px;line-height:1;margin-bottom:12px">'+_p.emoji+'</div>'
+        +'<div style="font-size:15px;font-weight:700;color:'+_esTxt+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.4;margin-bottom:8px">'+_p.q+'</div>'
+        +'<div style="font-size:12px;color:'+_esSub+';line-height:1.5;margin-bottom:16px">'+_p.sub+'</div>'
+        +'<div style="display:inline-flex;align-items:center;gap:6px;padding:9px 20px;background:'+_esBtnBg+';border:1.5px solid '+_esBorder+';border-radius:100px;font-size:12.5px;font-weight:700;color:'+_esBtnTxt+';font-family:Jost,sans-serif">✏️ Compartir momento</div>'
         +'</div>';
     } else {
       feed.innerHTML='<div style="text-align:center;padding:22px 8px">'
@@ -23919,7 +23921,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1111;
+    var _BUILT_V = 1112;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

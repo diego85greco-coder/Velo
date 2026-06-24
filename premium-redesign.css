@@ -5589,6 +5589,28 @@ body:not(.r-dark) .p-card {
   border-color: rgba(30,100,60,.32) !important;
   box-shadow: 0 2px 12px rgba(30,100,60,.08) !important;
 }
+/* Home page cards: glass effect per time period so body gradient shows through */
+body.velo-t-tarde:not(.r-dark) #pg-home .p-card {
+  background: rgba(255,228,210,.36) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+  border-color: rgba(210,100,65,.22) !important;
+  box-shadow: 0 2px 16px rgba(200,90,55,.10), inset 0 1px 0 rgba(255,255,255,.40) !important;
+}
+body.velo-t-manana:not(.r-dark) #pg-home .p-card {
+  background: rgba(215,238,220,.36) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+  border-color: rgba(60,140,90,.22) !important;
+  box-shadow: 0 2px 16px rgba(50,120,70,.10), inset 0 1px 0 rgba(255,255,255,.40) !important;
+}
+body.velo-t-noche:not(.r-dark) #pg-home .p-card {
+  background: rgba(225,215,255,.36) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+  border-color: rgba(120,95,220,.22) !important;
+  box-shadow: 0 2px 16px rgba(100,80,200,.10), inset 0 1px 0 rgba(255,255,255,.40) !important;
+}
 /* sidebar */
 body:not(.r-dark) .p-sidebar {
   background: rgba(220,242,230,.95) !important;
@@ -12421,16 +12443,16 @@ body.velo-t-manana.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
 
 /* Glass tokens — mañana light: mint-tinted semi-transparent */
 body.velo-t-manana:not(.r-dark) {
-  --r-glass-bg: rgba(210,235,215,.62);
-  --r-glass-bord: rgba(60,140,90,.14);
+  --r-glass-bg: rgba(210,235,215,.32);
+  --r-glass-bord: rgba(60,140,90,.18);
 }
 
 /* Hero card — light mañana (mint glassmorphism) */
 body.velo-t-manana:not(.r-dark) .r-hero-v2 {
   background: linear-gradient(145deg,
-    rgba(248,252,230,.68) 0%,
-    rgba(252,255,238,.72) 50%,
-    rgba(242,250,218,.64) 100%
+    rgba(248,252,230,.28) 0%,
+    rgba(252,255,238,.32) 50%,
+    rgba(242,250,218,.24) 100%
   ) !important;
   backdrop-filter: blur(18px) saturate(130%) !important;
   -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
@@ -12503,17 +12525,17 @@ body.velo-t-tarde.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
 
 /* Glass tokens — tarde light: peach-tinted semi-transparent */
 body.velo-t-tarde:not(.r-dark) {
-  --r-glass-bg: rgba(255,232,218,.60);
-  --r-glass-bord: rgba(220,110,70,.15);
-  --r-glass-shadow: 0 1px 0 rgba(255,255,255,.55) inset, 0 8px 30px rgba(200,90,50,.08);
+  --r-glass-bg: rgba(255,232,218,.30);
+  --r-glass-bord: rgba(220,110,70,.18);
+  --r-glass-shadow: 0 1px 0 rgba(255,255,255,.45) inset, 0 8px 30px rgba(200,90,50,.10);
 }
 
 /* Hero card — light tarde (durazno-coral glassmorphism) */
 body.velo-t-tarde:not(.r-dark) .r-hero-v2 {
   background: linear-gradient(145deg,
-    rgba(255,240,228,.68) 0%,
-    rgba(255,248,238,.72) 50%,
-    rgba(255,234,218,.64) 100%
+    rgba(255,220,200,.28) 0%,
+    rgba(255,232,215,.32) 50%,
+    rgba(255,210,190,.24) 100%
   ) !important;
   backdrop-filter: blur(18px) saturate(130%) !important;
   -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
@@ -12589,17 +12611,17 @@ body.velo-t-noche.r-dark .home-sec-lbl-comunidad .home-sec-hdr {
 
 /* Glass tokens — noche light: lavender-tinted semi-transparent */
 body.velo-t-noche:not(.r-dark) {
-  --r-glass-bg: rgba(228,220,255,.60);
-  --r-glass-bord: rgba(130,105,230,.14);
-  --r-glass-shadow: 0 1px 0 rgba(255,255,255,.55) inset, 0 8px 30px rgba(100,80,200,.08);
+  --r-glass-bg: rgba(228,220,255,.30);
+  --r-glass-bord: rgba(130,105,230,.18);
+  --r-glass-shadow: 0 1px 0 rgba(255,255,255,.45) inset, 0 8px 30px rgba(100,80,200,.10);
 }
 
 /* Hero card — light noche (lavanda glassmorphism) */
 body.velo-t-noche:not(.r-dark) .r-hero-v2 {
   background: linear-gradient(145deg,
-    rgba(234,228,255,.68) 0%,
-    rgba(244,240,255,.72) 50%,
-    rgba(226,218,255,.64) 100%
+    rgba(220,212,255,.28) 0%,
+    rgba(232,226,255,.32) 50%,
+    rgba(210,202,255,.24) 100%
   ) !important;
   backdrop-filter: blur(18px) saturate(130%) !important;
   -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
