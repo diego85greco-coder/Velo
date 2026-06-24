@@ -747,6 +747,8 @@
 
     // Re-render weather pill so dark/light colors update instantly
     _renderWeatherInfo();
+    // Re-apply body gradient + re-render current section inline styles on theme switch
+    if(typeof _onThemeChange === 'function') setTimeout(_onThemeChange, 30);
     // Re-render Bitácora widget (uses mode-specific card colors)
     if(typeof _renderHomeBitacoraWidget === 'function') setTimeout(_renderHomeBitacoraWidget, 50);
 

@@ -2163,6 +2163,39 @@ function _renderHomeMedWidget(){
     +'</div>';
 }
 
+// ── THEME HELPERS — called from applyDarkMode (premium-redesign.js) ──
+var _periodo = 'mañana'; // module-level time period — updated by _loadHomeData
+
+function _applyBodyGrad(){
+  var _dk = document.body.classList.contains('r-dark');
+  var _p = (_periodo === 'mañana') ? 'manana' : _periodo;
+  var _bgLight = {
+    manana: 'radial-gradient(circle at 8% 12%,rgba(60,185,105,.52) 0%,transparent 50%),radial-gradient(circle at 92% 88%,rgba(30,140,80,.32) 0%,transparent 42%),linear-gradient(180deg,#d5eedd 0%,#bfe5c8 55%,#a8d8b0 100%)',
+    tarde:  'radial-gradient(circle at 10% 10%,rgba(255,165,100,.20) 0%,transparent 52%),radial-gradient(circle at 88% 80%,rgba(255,145,140,.13) 0%,transparent 48%),linear-gradient(180deg,#fff5ea 0%,#ffecd6 55%,#ffdec0 100%)',
+    noche:  'radial-gradient(circle at 10% 10%,rgba(125,90,230,.36) 0%,transparent 50%),radial-gradient(circle at 90% 85%,rgba(185,110,215,.28) 0%,transparent 46%),linear-gradient(180deg,#e6ddf8 0%,#d5c8f0 55%,#c2b2e6 100%)'
+  };
+  var _bgDark = {
+    manana: 'radial-gradient(circle at 8% 12%,rgba(30,70,180,.38) 0%,transparent 46%),radial-gradient(circle at 90% 85%,rgba(10,40,130,.22) 0%,transparent 40%),linear-gradient(180deg,#090e1e 0%,#0b1228 60%,#070c1c 100%)',
+    tarde:  'radial-gradient(circle at 8% 12%,rgba(58,110,80,.35) 0%,transparent 45%),linear-gradient(180deg,#0f1a14 0%,#111d17 60%,#0c1510 100%)',
+    noche:  'radial-gradient(circle at 8% 12%,rgba(90,55,200,.32) 0%,transparent 46%),radial-gradient(circle at 88% 82%,rgba(60,30,160,.20) 0%,transparent 40%),linear-gradient(180deg,#0d0a1c 0%,#100d24 60%,#09071a 100%)'
+  };
+  var _bgVal = (_dk ? _bgDark : _bgLight)[_p];
+  if(_bgVal) document.body.style.setProperty('background', _bgVal, 'important');
+}
+
+function _onThemeChange(){
+  _applyBodyGrad();
+  var _cp = typeof _curPage !== 'undefined' ? _curPage : '';
+  if(_cp === 'bitacora'){
+    if(typeof _btRenderShell === 'function') _btRenderShell();
+    setTimeout(function(){
+      if(typeof _btSwitchTab === 'function') _btSwitchTab(typeof _btCurrentTab !== 'undefined' ? _btCurrentTab : 'apoyo');
+    }, 50);
+  }
+  if(typeof _btUpdateTemaFilter === 'function') _btUpdateTemaFilter();
+  if(typeof _renderHomeBitacoraWidget === 'function') setTimeout(_renderHomeBitacoraWidget, 60);
+}
+
 // ── HOME DATA ──────────────────────────────────────────────────
 function _loadHomeData(){
   _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
@@ -2214,7 +2247,7 @@ function _loadHomeData(){
       'Estás acá y eso importa ✨'
     ]
   };
-  var _periodo = h < 12 ? 'mañana' : h < 20 ? 'tarde' : 'noche';
+  _periodo = h < 12 ? 'mañana' : h < 20 ? 'tarde' : 'noche'; // update module-level
   var _subs = _greetSubs[_periodo];
   // Index by absolute day number so every calendar day gets a different message
   var _dayIdx = Math.floor(Date.now() / 86400000) % _subs.length;
@@ -2236,23 +2269,8 @@ function _loadHomeData(){
   // Time-of-day ambient class on body — changes accent colors per period
   document.body.classList.remove('velo-t-manana','velo-t-tarde','velo-t-noche');
   document.body.classList.add(_periodo === 'mañana' ? 'velo-t-manana' : _periodo === 'tarde' ? 'velo-t-tarde' : 'velo-t-noche');
-  // Apply background directly from JS so it works even with stale CSS cache
-  (function(){
-    var _dk = document.body.classList.contains('r-dark');
-    var _p = _periodo === 'mañana' ? 'manana' : _periodo;
-    var _bgLight = {
-      manana: 'radial-gradient(circle at 8% 12%,rgba(60,185,105,.52) 0%,transparent 50%),radial-gradient(circle at 92% 88%,rgba(30,140,80,.32) 0%,transparent 42%),linear-gradient(180deg,#d5eedd 0%,#bfe5c8 55%,#a8d8b0 100%)',
-      tarde:  'radial-gradient(circle at 10% 10%,rgba(255,165,100,.20) 0%,transparent 52%),radial-gradient(circle at 88% 80%,rgba(255,145,140,.13) 0%,transparent 48%),linear-gradient(180deg,#fff5ea 0%,#ffecd6 55%,#ffdec0 100%)',
-      noche:  'radial-gradient(circle at 10% 10%,rgba(125,90,230,.36) 0%,transparent 50%),radial-gradient(circle at 90% 85%,rgba(185,110,215,.28) 0%,transparent 46%),linear-gradient(180deg,#e6ddf8 0%,#d5c8f0 55%,#c2b2e6 100%)'
-    };
-    var _bgDark = {
-      manana: 'radial-gradient(circle at 8% 12%,rgba(30,70,180,.38) 0%,transparent 46%),radial-gradient(circle at 90% 85%,rgba(10,40,130,.22) 0%,transparent 40%),linear-gradient(180deg,#090e1e 0%,#0b1228 60%,#070c1c 100%)',
-      tarde:  'radial-gradient(circle at 8% 12%,rgba(58,110,80,.35) 0%,transparent 45%),linear-gradient(180deg,#0f1a14 0%,#111d17 60%,#0c1510 100%)',
-      noche:  'radial-gradient(circle at 8% 12%,rgba(90,55,200,.32) 0%,transparent 46%),radial-gradient(circle at 88% 82%,rgba(60,30,160,.20) 0%,transparent 40%),linear-gradient(180deg,#0d0a1c 0%,#100d24 60%,#09071a 100%)'
-    };
-    var _bgVal = (_dk ? _bgDark : _bgLight)[_p];
-    if(_bgVal) document.body.style.setProperty('background', _bgVal, 'important');
-  })();
+  // Apply background using shared helper (also called on theme toggle)
+  _applyBodyGrad();
 
   var av = safeLS('get','velo_user_av') || '🧑';
   var un = document.getElementById('homeUserName');
@@ -4772,7 +4790,7 @@ function _renderShareCard(canvas, logoImg){
   // ── Poetic phrase ───────────────────────────────────────────────
   var phrases=['Estuviste acá. Eso importa.','Cuidarte es un acto de valentía.','Cada día que registrás es tuyo.','Tu historia merece ser contada.','Lo que sentís es real y válido.','Cada emoción tiene su lugar.','Hoy estuviste presente para vos.'];
   var weekIdx=Math.floor(Date.now()/(86400000*7))%phrases.length;
-  var phrase='"'+(_shareCardAIPhrase&&!_shareCardAIPhrase.match(/["""]/)?_shareCardAIPhrase:phrases[weekIdx])+'"';
+  var phrase='"'+phrases[weekIdx]+'"'; // AI phrase already shown above; use static phrase here
   ctx.font='italic 600 44px Georgia,serif';
   ctx.fillStyle='rgba(255,255,255,.72)';
   ctx.textAlign='center';
@@ -23186,7 +23204,7 @@ function _btUpdateTemaFilter(){
   var offCl=isLight?'rgba(50,50,80,.65)':'rgba(255,255,255,.40)';
   el.innerHTML=temas.map(function(t){
     var isAct=(t==='Todos'?(!_btTemaFilter):(t===_btTemaFilter));
-    var bg=isAct?(isLight?c.strip:c.strip):offBg;
+    var bg=isAct?(isLight?c.strip.replace(/[\d.]+\)$/,'.35)'):c.strip.replace(/[\d.]+\)$/,'.55)')):offBg;
     var bd=isAct?c.border:offBd;
     var cl=isAct?c.label:offCl;
     return '<button onclick="_btSetTemaFilter(\''+t+'\')" style="padding:5px 11px;border-radius:20px;border:1.5px solid '+bd+';background:'+bg+';color:'+cl+';font-size:11px;font-weight:'+(isAct?'700':'500')+';font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .15s">'+t+'</button>';
@@ -23208,10 +23226,11 @@ function _btToggleSort(){
   var btn=document.getElementById('btSortBtn');
   if(btn){
     var isRel=_btSortMode==='relevante';
+    var _isLt=!document.body.classList.contains('r-dark');
     btn.textContent=isRel?'🔥 Relevantes':'🕐 Recientes';
-    btn.style.background=isRel?'rgba(255,130,50,.18)':'rgba(255,255,255,.07)';
-    btn.style.borderColor=isRel?'rgba(255,130,50,.45)':'rgba(255,255,255,.14)';
-    btn.style.color=isRel?'rgba(255,160,80,.95)':'rgba(200,210,205,.65)';
+    btn.style.background=isRel?(_isLt?'rgba(220,80,20,.12)':'rgba(255,130,50,.18)'):(_isLt?'rgba(50,80,60,.10)':'rgba(255,255,255,.07)');
+    btn.style.borderColor=isRel?'rgba(255,130,50,.45)':(_isLt?'rgba(50,80,60,.28)':'rgba(255,255,255,.14)');
+    btn.style.color=isRel?(_isLt?'rgba(160,50,10,.90)':'rgba(255,160,80,.95)'):(_isLt?'rgba(30,60,40,.75)':'rgba(200,210,205,.65)');
   }
   _btRenderFeed(_btCurrentTab);
 }
@@ -24218,7 +24237,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1130;
+    var _BUILT_V = 1131;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
