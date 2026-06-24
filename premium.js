@@ -2241,9 +2241,9 @@ function _loadHomeData(){
     var _dk = document.body.classList.contains('r-dark');
     var _p = _periodo === 'mañana' ? 'manana' : _periodo;
     var _bgLight = {
-      manana: 'radial-gradient(circle at 8% 12%,rgba(116,198,157,.35) 0%,transparent 45%),linear-gradient(180deg,#e8f2e8 0%,#ddeadd 60%,#cddeca 100%)',
-      tarde:  'radial-gradient(circle at 10% 10%,rgba(255,148,90,.24) 0%,transparent 46%),radial-gradient(circle at 88% 80%,rgba(255,118,158,.20) 0%,transparent 44%),linear-gradient(180deg,#fff3ed 0%,#ffe6d6 55%,#fdd6c4 100%)',
-      noche:  'radial-gradient(circle at 10% 10%,rgba(145,115,240,.18) 0%,transparent 45%),radial-gradient(circle at 90% 85%,rgba(200,140,220,.14) 0%,transparent 42%),linear-gradient(180deg,#f4f0ff 0%,#ece6fa 55%,#e0d8f4 100%)'
+      manana: 'radial-gradient(circle at 8% 12%,rgba(60,185,105,.52) 0%,transparent 50%),radial-gradient(circle at 92% 88%,rgba(30,140,80,.32) 0%,transparent 42%),linear-gradient(180deg,#d5eedd 0%,#bfe5c8 55%,#a8d8b0 100%)',
+      tarde:  'radial-gradient(circle at 10% 10%,rgba(255,115,35,.44) 0%,transparent 52%),radial-gradient(circle at 88% 80%,rgba(255,80,120,.30) 0%,transparent 48%),linear-gradient(180deg,#ffe4be 0%,#ffcf95 55%,#ffb870 100%)',
+      noche:  'radial-gradient(circle at 10% 10%,rgba(125,90,230,.36) 0%,transparent 50%),radial-gradient(circle at 90% 85%,rgba(185,110,215,.28) 0%,transparent 46%),linear-gradient(180deg,#e6ddf8 0%,#d5c8f0 55%,#c2b2e6 100%)'
     };
     var _bgDark = {
       manana: 'radial-gradient(circle at 8% 12%,rgba(30,70,180,.38) 0%,transparent 46%),radial-gradient(circle at 90% 85%,rgba(10,40,130,.22) 0%,transparent 40%),linear-gradient(180deg,#090e1e 0%,#0b1228 60%,#070c1c 100%)',
@@ -2252,6 +2252,30 @@ function _loadHomeData(){
     };
     var _bgVal = (_dk ? _bgDark : _bgLight)[_p];
     if(_bgVal) document.body.style.setProperty('background', _bgVal, 'important');
+
+    // Apply tinted glass background to home cards via JS — bypasses CSS cache
+    if(!_dk){
+      var _cardTints = {
+        manana: {bg:'rgba(192,232,205,.52)',bd:'rgba(45,140,80,.28)',bf:'blur(14px) saturate(130%)'},
+        tarde:  {bg:'rgba(255,210,162,.52)',bd:'rgba(200,85,40,.28)',bf:'blur(14px) saturate(130%)'},
+        noche:  {bg:'rgba(210,195,248,.52)',bd:'rgba(105,80,215,.28)',bf:'blur(14px) saturate(130%)'}
+      };
+      var _ct = _cardTints[_p];
+      if(_ct){
+        var _applyTints = function(){
+          var _sel = '#pg-home .p-card:not([class*="fc-"]), #homeDailyQuote, #pg-home .home-greeting';
+          document.querySelectorAll(_sel).forEach(function(el){
+            el.style.setProperty('background', _ct.bg, 'important');
+            el.style.setProperty('border-color', _ct.bd, 'important');
+            el.style.setProperty('backdrop-filter', _ct.bf, 'important');
+            el.style.setProperty('-webkit-backdrop-filter', _ct.bf, 'important');
+          });
+        };
+        _applyTints();
+        setTimeout(_applyTints, 350);
+        setTimeout(_applyTints, 750);
+      }
+    }
   })();
 
   var av = safeLS('get','velo_user_av') || '🧑';
@@ -23921,7 +23945,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1113;
+    var _BUILT_V = 1114;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

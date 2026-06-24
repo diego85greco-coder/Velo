@@ -27,20 +27,20 @@ body {
     linear-gradient(180deg, #e8f2e8 0%, #ddeadd 60%, #cddeca 100%) !important;
 }
 
-/* Tarde (12-20h) — durazno-rosado pastel, partículas azules ───── */
+/* Tarde (12-20h) — durazno-naranja vívido ───────────────────── */
 body.velo-t-tarde:not(.r-dark) {
   background:
-    radial-gradient(circle at 10% 10%, rgba(255,148,90,.24) 0%, transparent 46%),
-    radial-gradient(circle at 88% 80%, rgba(255,118,158,.20) 0%, transparent 44%),
-    linear-gradient(180deg, #fff3ed 0%, #ffe6d6 55%, #fdd6c4 100%) !important;
+    radial-gradient(circle at 10% 10%, rgba(255,115,35,.44) 0%, transparent 52%),
+    radial-gradient(circle at 88% 80%, rgba(255,80,120,.30) 0%, transparent 48%),
+    linear-gradient(180deg, #ffe4be 0%, #ffcf95 55%, #ffb870 100%) !important;
 }
 
-/* Noche en modo claro (≥20h) — lavanda suave ─────────────────── */
+/* Noche en modo claro (≥20h) — lavanda saturada ─────────────── */
 body.velo-t-noche:not(.r-dark) {
   background:
-    radial-gradient(circle at 10% 10%, rgba(145,115,240,.18) 0%, transparent 45%),
-    radial-gradient(circle at 90% 85%, rgba(200,140,220,.14) 0%, transparent 42%),
-    linear-gradient(180deg, #f4f0ff 0%, #ece6fa 55%, #e0d8f4 100%) !important;
+    radial-gradient(circle at 10% 10%, rgba(125,90,230,.36) 0%, transparent 50%),
+    radial-gradient(circle at 90% 85%, rgba(185,110,215,.28) 0%, transparent 46%),
+    linear-gradient(180deg, #e6ddf8 0%, #d5c8f0 55%, #c2b2e6 100%) !important;
 }
 body::after {
   content: '';
@@ -5617,18 +5617,51 @@ body:not(.r-dark) .p-sidebar {
   border-right-color: rgba(30,100,60,.35) !important;
   box-shadow: 2px 0 24px rgba(30,100,60,.12) !important;
 }
-/* ── v250: Greeting card + quote card — soft sage green ─────────── */
+/* ── v250 → v1114: Greeting + quote card — time-period aware ────── */
+/* Default/manana: mint green */
 body:not(.r-dark) .home-greeting,
-body:not(.r-dark) #pg-home .home-greeting {
-  background: rgba(195,232,212,.65) !important;
-  border-color: rgba(80,168,118,.28) !important;
+body:not(.r-dark) #pg-home .home-greeting,
+body.velo-t-manana:not(.r-dark) .home-greeting,
+body.velo-t-manana:not(.r-dark) #pg-home .home-greeting {
+  background: rgba(192,232,210,.55) !important;
+  border-color: rgba(60,140,88,.28) !important;
   box-shadow: 0 4px 18px rgba(40,130,75,.10) !important;
 }
 body:not(.r-dark) #pg-home #homeDailyQuote,
-body:not(.r-dark) #homeDailyQuote {
-  background: rgba(195,232,212,.65) !important;
-  border: 1.5px solid rgba(80,168,118,.28) !important;
+body:not(.r-dark) #homeDailyQuote,
+body.velo-t-manana:not(.r-dark) #pg-home #homeDailyQuote,
+body.velo-t-manana:not(.r-dark) #homeDailyQuote {
+  background: rgba(192,232,210,.55) !important;
+  border: 1.5px solid rgba(60,140,88,.28) !important;
   box-shadow: 0 4px 18px rgba(40,130,75,.10), inset 0 1px 0 rgba(255,255,255,.55) !important;
+  animation: none !important;
+}
+/* Tarde: warm peach */
+body.velo-t-tarde:not(.r-dark) .home-greeting,
+body.velo-t-tarde:not(.r-dark) #pg-home .home-greeting {
+  background: rgba(255,212,168,.55) !important;
+  border-color: rgba(200,85,40,.28) !important;
+  box-shadow: 0 4px 18px rgba(180,70,30,.10) !important;
+}
+body.velo-t-tarde:not(.r-dark) #pg-home #homeDailyQuote,
+body.velo-t-tarde:not(.r-dark) #homeDailyQuote {
+  background: rgba(255,212,168,.55) !important;
+  border: 1.5px solid rgba(200,85,40,.28) !important;
+  box-shadow: 0 4px 18px rgba(180,70,30,.10), inset 0 1px 0 rgba(255,255,255,.55) !important;
+  animation: none !important;
+}
+/* Noche: lavender */
+body.velo-t-noche:not(.r-dark) .home-greeting,
+body.velo-t-noche:not(.r-dark) #pg-home .home-greeting {
+  background: rgba(210,195,248,.55) !important;
+  border-color: rgba(108,80,215,.28) !important;
+  box-shadow: 0 4px 18px rgba(90,65,190,.10) !important;
+}
+body.velo-t-noche:not(.r-dark) #pg-home #homeDailyQuote,
+body.velo-t-noche:not(.r-dark) #homeDailyQuote {
+  background: rgba(210,195,248,.55) !important;
+  border: 1.5px solid rgba(108,80,215,.28) !important;
+  box-shadow: 0 4px 18px rgba(90,65,190,.10), inset 0 1px 0 rgba(255,255,255,.55) !important;
   animation: none !important;
 }
 /* mood picker inside greeting bar */
@@ -5636,11 +5669,33 @@ body:not(.r-dark) #quickMoodPicker {
   background: rgba(175,228,200,.70) !important;
   border-top-color: rgba(80,168,118,.22) !important;
 }
-/* ── v250: Quote text — solid dark green (gradient replaced by v260) ── */
+/* ── v250 → v1114: Quote text — dark per time period ── */
 body:not(.r-dark) #pg-home #homeDailyQuoteText,
-body:not(.r-dark) #homeDailyQuoteText {
+body:not(.r-dark) #homeDailyQuoteText,
+body.velo-t-manana:not(.r-dark) #pg-home #homeDailyQuoteText,
+body.velo-t-manana:not(.r-dark) #homeDailyQuoteText {
   -webkit-text-fill-color: #0a2e15 !important;
   color: #0a2e15 !important;
+  background-image: none !important;
+  -webkit-background-clip: padding-box !important;
+  background-clip: padding-box !important;
+  animation: none !important;
+  font-weight: 700 !important;
+}
+body.velo-t-tarde:not(.r-dark) #pg-home #homeDailyQuoteText,
+body.velo-t-tarde:not(.r-dark) #homeDailyQuoteText {
+  -webkit-text-fill-color: #4a1e00 !important;
+  color: #4a1e00 !important;
+  background-image: none !important;
+  -webkit-background-clip: padding-box !important;
+  background-clip: padding-box !important;
+  animation: none !important;
+  font-weight: 700 !important;
+}
+body.velo-t-noche:not(.r-dark) #pg-home #homeDailyQuoteText,
+body.velo-t-noche:not(.r-dark) #homeDailyQuoteText {
+  -webkit-text-fill-color: #22104a !important;
+  color: #22104a !important;
   background-image: none !important;
   -webkit-background-clip: padding-box !important;
   background-clip: padding-box !important;
