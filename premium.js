@@ -2220,6 +2220,23 @@ function _loadHomeData(){
   // Time-of-day ambient class on body — changes accent colors per period
   document.body.classList.remove('velo-t-manana','velo-t-tarde','velo-t-noche');
   document.body.classList.add(_periodo === 'mañana' ? 'velo-t-manana' : _periodo === 'tarde' ? 'velo-t-tarde' : 'velo-t-noche');
+  // Apply background directly from JS so it works even with stale CSS cache
+  (function(){
+    var _dk = document.body.classList.contains('r-dark');
+    var _p = _periodo === 'mañana' ? 'manana' : _periodo;
+    var _bgLight = {
+      manana: 'radial-gradient(circle at 8% 12%,rgba(116,198,157,.35) 0%,transparent 45%),linear-gradient(180deg,#e8f2e8 0%,#ddeadd 60%,#cddeca 100%)',
+      tarde:  'radial-gradient(circle at 10% 10%,rgba(255,148,90,.24) 0%,transparent 46%),radial-gradient(circle at 88% 80%,rgba(255,118,158,.20) 0%,transparent 44%),linear-gradient(180deg,#fff3ed 0%,#ffe6d6 55%,#fdd6c4 100%)',
+      noche:  'radial-gradient(circle at 10% 10%,rgba(145,115,240,.18) 0%,transparent 45%),radial-gradient(circle at 90% 85%,rgba(200,140,220,.14) 0%,transparent 42%),linear-gradient(180deg,#f4f0ff 0%,#ece6fa 55%,#e0d8f4 100%)'
+    };
+    var _bgDark = {
+      manana: 'radial-gradient(circle at 8% 12%,rgba(30,70,180,.38) 0%,transparent 46%),radial-gradient(circle at 90% 85%,rgba(10,40,130,.22) 0%,transparent 40%),linear-gradient(180deg,#090e1e 0%,#0b1228 60%,#070c1c 100%)',
+      tarde:  'radial-gradient(circle at 8% 12%,rgba(58,110,80,.35) 0%,transparent 45%),linear-gradient(180deg,#0f1a14 0%,#111d17 60%,#0c1510 100%)',
+      noche:  'radial-gradient(circle at 8% 12%,rgba(90,55,200,.32) 0%,transparent 46%),radial-gradient(circle at 88% 82%,rgba(60,30,160,.20) 0%,transparent 40%),linear-gradient(180deg,#0d0a1c 0%,#100d24 60%,#09071a 100%)'
+    };
+    var _bgVal = (_dk ? _bgDark : _bgLight)[_p];
+    if(_bgVal) document.body.style.setProperty('background', _bgVal, 'important');
+  })();
 
   var av = safeLS('get','velo_user_av') || '🧑';
   var un = document.getElementById('homeUserName');
@@ -23870,7 +23887,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1107;
+    var _BUILT_V = 1108;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
