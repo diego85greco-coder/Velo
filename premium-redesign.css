@@ -2488,6 +2488,15 @@ body.r-dark .p-page {
 body.r-dark #pg-home,
 body.r-dark #pg-feed,
 body.r-dark #pg-dm-chat { background: unset !important; }
+/* Light mode: home page transparent so body time-based gradient shows through */
+body:not(.r-dark) #pg-home { background: transparent !important; }
+
+/* Dark mode: registration type picker — override --cream2 card and --ink title */
+body.r-dark .reg-type-card { background: rgba(18,44,28,.92) !important; border-color: rgba(80,160,110,.35) !important; }
+body.r-dark .reg-type-card--pro { background: linear-gradient(135deg,rgba(60,45,18,.92),rgba(50,38,12,.92)) !important; border-color: rgba(200,165,100,.40) !important; }
+body.r-dark .reg-type-title { color: rgba(210,245,225,.95) !important; }
+body.r-dark .reg-type-desc { color: rgba(150,200,170,.80) !important; }
+
 /* Help-chat keeps its own dark green gradient */
 body.r-dark #pg-help-chat {
   background: linear-gradient(160deg, #0b1c0e 0%, #080e08 100%) !important;

@@ -1709,18 +1709,34 @@ var _obDataUser = [
   },
   {
     emoji: '📔',
-    tag: 'TUS HERRAMIENTAS',
-    title: 'Conocete mejor cada día',
-    sub: 'Todo lo que necesitás para estar en contacto con tus emociones está en un solo lugar.',
-    features: ['Diario íntimo privado', 'Registro diario de ánimo', 'Sesiones de respiración', 'Frase del día personalizada'],
+    tag: 'TU DIARIO',
+    title: 'Un espacio solo tuyo',
+    sub: 'Escribí, reflexioná y conocete mejor. Tu diario íntimo es privado — nadie más puede verlo.',
+    features: ['Diario íntimo privado', 'Registro diario de ánimo', 'Preguntas del día para reflexionar', 'Resúmenes semanales y mensuales'],
     accent: 'rgba(200,158,56,.18)'
   },
   {
+    emoji: '🧘',
+    tag: 'MEDITACIONES Y SONIDOS',
+    title: 'Calma cuando más la necesitás',
+    sub: 'Sesiones guiadas de respiración, meditación y sonidos ambientales para bajar la ansiedad y encontrar equilibrio.',
+    features: ['Meditaciones guiadas en español', 'Sonidos de naturaleza y relajación', 'Técnicas de respiración para la ansiedad', 'Disponibles sin conexión'],
+    accent: 'rgba(100,140,220,.20)'
+  },
+  {
+    emoji: '📖',
+    tag: 'BITÁCORA',
+    title: 'Historias reales de la comunidad',
+    sub: 'Compartí tu historia o leé la de otros. Apoyo, superación y debates — desde el corazón, sin juicios.',
+    features: ['Apoyo entre pares anónimo', 'Historias de superación', 'Debates respetuosos', 'Reacciones y comentarios'],
+    accent: 'rgba(80,160,120,.20)'
+  },
+  {
     emoji: '💭',
-    tag: 'COMUNIDAD',
-    title: 'Nadie debería estar solo/a',
-    sub: 'Espacios donde compartir con otros que entienden — porque todos atravesamos momentos difíciles.',
-    features: ['Sala de ayuda', 'Momentos del día', 'Mensajes al mar', 'Muro de alegría'],
+    tag: 'MOMENTOS Y COMUNIDAD',
+    title: 'Compartí tu día con la comunidad',
+    sub: 'Momentos del día, Muro de la Felicidad y Mensajes al Mar — pequeños gestos que conectan a personas reales.',
+    features: ['Momentos: micro-historias del día', 'Muro Feliz: compartí logros y alegrías', 'Mensajes al Mar: soltá lo que cargás', 'Sala de Ayuda: apoyo en tiempo real'],
     accent: 'rgba(180,120,200,.18)'
   },
   {
@@ -21410,7 +21426,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       { emoji:'💭', q:'¿Qué fue lo mejor de tu día?', sub:'La comunidad te está esperando — un momento tuyo puede alegrarle el día a alguien.' },
       { emoji:'🌿', q:'¿Algo pequeño te dio paz hoy?', sub:'Los momentos chicos también merecen espacio. Compartílo.' },
       { emoji:'✨', q:'¿Algo te hizo sonreír hoy?', sub:'Velo crece con cada momento que elegís compartir.' },
-      { emoji:'🤍', q:'¿Cómo te estás tratando hoy?', sub:'Compartir es un acto de valentía y de generosidad.' },
+      { emoji:'💚', q:'¿Cómo te estás tratando hoy?', sub:'Compartir es un acto de valentía y de generosidad.' },
       { emoji:'🌅', q:'¿Qué aprendiste hoy de vos mismo/a?', sub:'Tu perspectiva importa. Sé el primero en abrirlo.' },
       { emoji:'☁️', q:'¿Qué tenés en la cabeza ahora?', sub:'Acá nadie juzga. Podés compartir lo que sea.' },
       { emoji:'🌟', q:'¿Qué cosa, por pequeña que sea, te salió bien hoy?', sub:'Celebrar los logros chicos es parte de cuidarse.' }
@@ -21418,11 +21434,16 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var _pi = (Math.floor(Date.now() / 3600000)) % _homePrompts.length;
     var _p = _homePrompts[_pi];
     if(isHome){
-      feed.innerHTML='<div onclick="pFocusMomentoInput()" style="cursor:pointer;border-radius:16px;padding:18px 16px 16px;background:linear-gradient(145deg,rgba(116,198,157,.12),rgba(116,198,157,.06));border:1.5px dashed rgba(116,198,157,.35);text-align:center;margin-bottom:4px">'
+      var _esD=document.body.classList.contains('r-dark');
+      var _esTxt=_esD?'rgba(255,255,255,.88)':'rgba(30,70,45,.88)';
+      var _esSub=_esD?'rgba(116,198,157,.75)':'rgba(30,100,60,.60)';
+      var _esBg=_esD?'linear-gradient(145deg,rgba(116,198,157,.12),rgba(116,198,157,.06))':'linear-gradient(145deg,rgba(116,198,157,.18),rgba(116,198,157,.09))';
+      var _esBtnTxt=_esD?'rgba(220,255,235,.90)':'rgba(20,80,45,.88)';
+      feed.innerHTML='<div onclick="pFocusMomentoInput()" style="cursor:pointer;border-radius:16px;padding:18px 16px 16px;background:'+_esBg+';border:1.5px dashed rgba(116,198,157,.40);text-align:center;margin-bottom:4px">'
         +'<div style="font-size:34px;line-height:1;margin-bottom:10px">'+_p.emoji+'</div>'
-        +'<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.88);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.4;margin-bottom:8px">'+_p.q+'</div>'
-        +'<div style="font-size:11.5px;color:rgba(116,198,157,.75);line-height:1.5;margin-bottom:14px">'+_p.sub+'</div>'
-        +'<div style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:rgba(116,198,157,.20);border:1px solid rgba(116,198,157,.40);border-radius:100px;font-size:12px;font-weight:700;color:rgba(220,255,235,.90);font-family:Jost,sans-serif">✏️ Compartir momento</div>'
+        +'<div style="font-size:14px;font-weight:700;color:'+_esTxt+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.4;margin-bottom:8px">'+_p.q+'</div>'
+        +'<div style="font-size:11.5px;color:'+_esSub+';line-height:1.5;margin-bottom:14px">'+_p.sub+'</div>'
+        +'<div style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:rgba(116,198,157,.20);border:1px solid rgba(116,198,157,.40);border-radius:100px;font-size:12px;font-weight:700;color:'+_esBtnTxt+';font-family:Jost,sans-serif">✏️ Compartir momento</div>'
         +'</div>';
     } else {
       feed.innerHTML='<div style="text-align:center;padding:22px 8px">'
@@ -23056,10 +23077,10 @@ var _btColors = {
   mio:        {bg:'rgba(35,15,55,.92)',strip:'rgba(165,95,230,.38)',border:'rgba(165,95,230,.65)',glow:'rgba(165,95,230,.20)',label:'rgba(215,165,255,.95)',badge:'rgba(165,95,230,.26)',emoji:'📝'}
 };
 var _btColorsLight = {
-  apoyo:      {bg:'rgba(218,226,255,.94)',strip:'rgba(80,108,225,.22)',border:'rgba(80,108,225,.55)',glow:'rgba(80,108,225,.16)',label:'rgba(30,38,130,.88)',badge:'rgba(80,108,225,.14)',emoji:'🫂',title:'rgba(18,24,100,.90)',preview:'rgba(38,48,118,.65)'},
-  superacion: {bg:'rgba(255,246,212,.96)',strip:'rgba(188,138,14,.22)',border:'rgba(188,138,14,.55)',glow:'rgba(188,138,14,.16)',label:'rgba(98,60,0,.88)',badge:'rgba(188,138,14,.14)',emoji:'⭐',title:'rgba(68,38,0,.90)',preview:'rgba(88,56,0,.65)'},
-  debate:     {bg:'rgba(212,248,230,.96)',strip:'rgba(44,154,94,.22)',border:'rgba(44,154,94,.55)',glow:'rgba(44,154,94,.16)',label:'rgba(10,84,46,.88)',badge:'rgba(44,154,94,.14)',emoji:'💬',title:'rgba(8,58,34,.90)',preview:'rgba(14,72,42,.65)'},
-  mio:        {bg:'rgba(240,220,255,.96)',strip:'rgba(138,78,215,.22)',border:'rgba(138,78,215,.55)',glow:'rgba(138,78,215,.16)',label:'rgba(68,24,118,.88)',badge:'rgba(138,78,215,.14)',emoji:'📝',title:'rgba(48,14,88,.90)',preview:'rgba(62,24,102,.65)'}
+  apoyo:      {bg:'rgba(218,226,255,.94)',strip:'rgba(80,108,225,.22)',border:'rgba(80,108,225,.55)',glow:'rgba(80,108,225,.16)',label:'rgba(30,38,130,.88)',badge:'rgba(80,108,225,.14)',emoji:'🫂',title:'rgba(18,24,100,.90)',preview:'rgba(38,48,118,.88)'},
+  superacion: {bg:'rgba(255,246,212,.96)',strip:'rgba(188,138,14,.22)',border:'rgba(188,138,14,.55)',glow:'rgba(188,138,14,.16)',label:'rgba(98,60,0,.88)',badge:'rgba(188,138,14,.14)',emoji:'⭐',title:'rgba(68,38,0,.90)',preview:'rgba(88,56,0,.88)'},
+  debate:     {bg:'rgba(212,248,230,.96)',strip:'rgba(44,154,94,.22)',border:'rgba(44,154,94,.55)',glow:'rgba(44,154,94,.16)',label:'rgba(10,84,46,.88)',badge:'rgba(44,154,94,.14)',emoji:'💬',title:'rgba(8,58,34,.90)',preview:'rgba(14,72,42,.88)'},
+  mio:        {bg:'rgba(240,220,255,.96)',strip:'rgba(138,78,215,.22)',border:'rgba(138,78,215,.55)',glow:'rgba(138,78,215,.16)',label:'rgba(68,24,118,.88)',badge:'rgba(138,78,215,.14)',emoji:'📝',title:'rgba(48,14,88,.90)',preview:'rgba(62,24,102,.88)'}
 };
 var _btCommentCounts = {};
 
@@ -23898,7 +23919,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1110;
+    var _BUILT_V = 1111;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

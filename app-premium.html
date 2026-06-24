@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1110">
+  <meta name="app-version" content="1111">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -30,8 +30,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260624-1110">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260624-1110">
+  <link rel="stylesheet" href="premium.css?v=20260624-1111">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260624-1111">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -521,9 +521,33 @@
               </div>
               <div class="land-feat-card reveal" data-delay="3">
                 <div class="land-feat-icon" style="background:linear-gradient(135deg,var(--lav2),var(--lav))">📔</div>
-                <h3 class="p-title" style="font-size:20px;margin-bottom:8px">Espacio Personal</h3>
-                <p class="p-body">Diario personal, seguimiento de ánimo y herramientas de bienestar. Tu refugio digital.</p>
-                <p class="land-feat-quote">"Escribir en mi diario cada día me ayudó a conocerme mejor."</p>
+                <h3 class="p-title" style="font-size:20px;margin-bottom:8px">Diario y Registros</h3>
+                <p class="p-body">Diario íntimo privado, registro diario de ánimo y preguntas del día para reflexionar. Recibí resúmenes semanales y mensuales de tu evolución emocional.</p>
+                <p class="land-feat-quote">"Ver mi progreso semana a semana me motiva a seguir cuidándome."</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Más herramientas -->
+          <section class="land-features" style="padding-top:0">
+            <div class="land-features-grid">
+              <div class="land-feat-card reveal" data-delay="1">
+                <div class="land-feat-icon" style="background:linear-gradient(135deg,#0d1f3a,#1a3560)">🧘</div>
+                <h3 class="p-title" style="font-size:20px;margin-bottom:8px">Meditaciones y Sonidos</h3>
+                <p class="p-body">Sesiones guiadas de respiración, meditaciones en español y sonidos de naturaleza. Calma la ansiedad y encontrá equilibrio en cualquier momento del día.</p>
+                <p class="land-feat-quote">"Los ejercicios de respiración me cambiaron la forma de manejar el estrés."</p>
+              </div>
+              <div class="land-feat-card reveal" data-delay="2">
+                <div class="land-feat-icon" style="background:linear-gradient(135deg,#1a3828,#2d5a40)">📖</div>
+                <h3 class="p-title" style="font-size:20px;margin-bottom:8px">Bitácora</h3>
+                <p class="p-body">Un espacio para compartir historias reales. Apoyo, superación y debates respetuosos — publicá de forma anónima y conectá con quienes entienden lo que vivís.</p>
+                <p class="land-feat-quote">"Leer lo que otros vivieron me hizo sentir que no estaba solo/a."</p>
+              </div>
+              <div class="land-feat-card reveal" data-delay="3">
+                <div class="land-feat-icon" style="background:linear-gradient(135deg,#3a1a4a,#5a2d70)">💭</div>
+                <h3 class="p-title" style="font-size:20px;margin-bottom:8px">Momentos y Comunidad</h3>
+                <p class="p-body">Compartí pequeños momentos del día, publicá en el Muro de la Felicidad o lanzá un mensaje al mar. La comunidad está ahí para recibirlos.</p>
+                <p class="land-feat-quote">"Un momento compartido puede iluminarle el día a alguien."</p>
               </div>
             </div>
           </section>
@@ -942,19 +966,19 @@
             </div>
             <div style="display:flex;flex-direction:column;gap:14px">
               <!-- User card -->
-              <div onclick="pSetType('user')" style="background:var(--cream2);border:2px solid var(--border2);border-radius:18px;padding:22px 20px;cursor:pointer;transition:border-color .2s,box-shadow .2s;display:flex;align-items:center;gap:16px" onmouseover="this.style.borderColor='var(--sage2)';this.style.boxShadow='0 4px 20px rgba(100,160,100,.15)'" onmouseout="this.style.borderColor='var(--border2)';this.style.boxShadow='none'">
+              <div class="reg-type-card" onclick="pSetType('user')" style="background:var(--cream2);border:2px solid var(--border2);border-radius:18px;padding:22px 20px;cursor:pointer;transition:border-color .2s,box-shadow .2s;display:flex;align-items:center;gap:16px" onmouseover="this.style.borderColor='var(--sage2)';this.style.boxShadow='0 4px 20px rgba(100,160,100,.15)'" onmouseout="this.style.borderColor='var(--border2)';this.style.boxShadow='none'">
                 <div style="font-size:40px;flex-shrink:0;width:56px;height:56px;background:var(--sage7);border-radius:14px;display:flex;align-items:center;justify-content:center">🌱</div>
                 <div>
-                  <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">Busco apoyo emocional</div>
-                  <div style="font-size:12px;color:var(--ink4);line-height:1.5">Guardianes, Sala de Ayuda, diario emocional, Muro de la Felicidad y más herramientas de bienestar.</div>
+                  <div class="reg-type-title" style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">Busco apoyo emocional</div>
+                  <div class="reg-type-desc" style="font-size:12px;color:var(--ink4);line-height:1.5">Guardianes, Sala de Ayuda, diario emocional, Muro de la Felicidad y más herramientas de bienestar.</div>
                 </div>
               </div>
               <!-- Pro card -->
-              <div onclick="pSetType('pro')" style="background:linear-gradient(135deg,rgba(200,165,100,.1),rgba(200,165,100,.04));border:2px solid rgba(200,165,100,.3);border-radius:18px;padding:22px 20px;cursor:pointer;transition:border-color .2s,box-shadow .2s;display:flex;align-items:center;gap:16px" onmouseover="this.style.borderColor='rgba(200,165,100,.7)';this.style.boxShadow='0 4px 20px rgba(200,165,100,.15)'" onmouseout="this.style.borderColor='rgba(200,165,100,.3)';this.style.boxShadow='none'">
+              <div class="reg-type-card reg-type-card--pro" onclick="pSetType('pro')" style="background:linear-gradient(135deg,rgba(200,165,100,.1),rgba(200,165,100,.04));border:2px solid rgba(200,165,100,.3);border-radius:18px;padding:22px 20px;cursor:pointer;transition:border-color .2s,box-shadow .2s;display:flex;align-items:center;gap:16px" onmouseover="this.style.borderColor='rgba(200,165,100,.7)';this.style.boxShadow='0 4px 20px rgba(200,165,100,.15)'" onmouseout="this.style.borderColor='rgba(200,165,100,.3)';this.style.boxShadow='none'">
                 <div style="font-size:40px;flex-shrink:0;width:56px;height:56px;background:rgba(200,165,100,.15);border-radius:14px;display:flex;align-items:center;justify-content:center">🩺</div>
                 <div>
-                  <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">Soy profesional de salud <span style="font-size:11px;background:rgba(200,165,100,.2);color:#C8A560;border-radius:6px;padding:2px 7px;font-weight:600;vertical-align:middle">PRO</span></div>
-                  <div style="font-size:12px;color:var(--ink4);line-height:1.5">Ofrecé sesiones terapéuticas, gestioná tu agenda y ayudá a personas que más lo necesitan.</div>
+                  <div class="reg-type-title" style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">Soy profesional de salud <span style="font-size:11px;background:rgba(200,165,100,.2);color:#C8A560;border-radius:6px;padding:2px 7px;font-weight:600;vertical-align:middle">PRO</span></div>
+                  <div class="reg-type-desc" style="font-size:12px;color:var(--ink4);line-height:1.5">Ofrecé sesiones terapéuticas, gestioná tu agenda y ayudá a personas que más lo necesitan.</div>
                 </div>
               </div>
             </div>
@@ -975,7 +999,7 @@
           <div id="obContent" style="max-width:400px;width:100%;position:relative;z-index:1"></div>
           <!-- Dots -->
           <div class="ob-dots" id="obDots" style="margin-top:24px;position:relative;z-index:1">
-            <div class="ob-dot active"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div>
+            <div class="ob-dot active"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div>
           </div>
           <!-- Navigation -->
           <div style="display:flex;gap:10px;margin-top:22px;position:relative;z-index:1;width:100%;max-width:360px">
@@ -4172,8 +4196,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260624-1110"></script>
-<script src="premium-redesign.js?v=20260624-1110"></script>
+<script src="premium.js?v=20260624-1111"></script>
+<script src="premium-redesign.js?v=20260624-1111"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
