@@ -23272,9 +23272,9 @@ function _btRenderShell(){
         +'<button class="p-back-btn" onclick="pGoTo(\'home\')">←</button>'
         +'<div><div class="p-label">Comunidad</div><h2 class="p-title">Bitácora</h2></div>'
       +'</div>'
-      +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'
-        +'<button onclick="_btOpenCompose(null)" style="background:linear-gradient(135deg,rgba(116,198,157,.35),rgba(80,160,120,.25));border:1.5px solid rgba(116,198,157,.55);color:rgba(175,245,210,.97);font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:20px;padding:7px 15px;cursor:pointer;letter-spacing:.3px">✦ Publicar</button>'
-        +'<button id="btSortBtn" onclick="_btToggleSort()" style="padding:4px 10px;border-radius:20px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:rgba(200,210,205,.65);font-size:10.5px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .2s">🕐 Recientes</button>'
+      +'<div style="display:flex;flex-direction:column;align-items:stretch;gap:6px">'
+        +'<button onclick="_btOpenCompose(null)" style="background:linear-gradient(135deg,rgba(116,198,157,.35),rgba(80,160,120,.25));border:1.5px solid rgba(116,198,157,.55);color:rgba(175,245,210,.97);font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:20px;padding:7px 15px;cursor:pointer;letter-spacing:.3px;text-align:center">✦ Publicar</button>'
+        +'<button id="btSortBtn" onclick="_btToggleSort()" style="padding:7px 15px;border-radius:20px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:rgba(200,210,205,.65);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .2s;text-align:center;letter-spacing:.3px">🕐 Recientes</button>'
       +'</div>'
     +'</div>'
     +'<p style="font-size:12px;color:rgba(180,200,190,.55);font-family:Jost,sans-serif;line-height:1.5;margin:0 0 14px;font-style:italic">Historias reales · desde el corazón · para quien necesita leerlas</p>'
@@ -23286,10 +23286,7 @@ function _btRenderShell(){
       +_btTabBtn('mio','📝 Mis posts')
     +'</div>'
     +'<div id="btTabDesc" style="font-size:11.5px;font-family:Jost,sans-serif;line-height:1.5;margin-bottom:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(180,210,195,.70)"></div>'
-    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
-      +'<div id="btTemaFilter" style="display:flex;flex-wrap:wrap;gap:5px;flex:1"></div>'
-      +'<button id="btSortBtn" onclick="_btToggleSort()" style="flex-shrink:0;padding:5px 11px;border-radius:20px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:rgba(200,210,205,.65);font-size:11px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .2s">🕐 Recientes</button>'
-    +'</div>'
+    +'<div id="btTemaFilter" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>'
     +'<div style="margin-bottom:12px">'
       +'<input id="btSearch" oninput="_btApplyFilters()" placeholder="🔍 Buscar en Bitácora..." maxlength="100" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.10);border-radius:14px;padding:10px 14px;color:rgba(255,255,255,.85);font-size:12.5px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;caret-color:rgba(255,255,255,.70)">'
     +'</div>'
@@ -24214,7 +24211,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1127;
+    var _BUILT_V = 1128;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
