@@ -2322,6 +2322,7 @@ function _onThemeChange(){
 // ── HOME DATA ──────────────────────────────────────────────────
 function _loadHomeData(){
   _initHomeNavTiles();
+  _checkVeloNotifs();
   _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
   var d = new Date();
   var h = d.getHours();
@@ -4423,6 +4424,10 @@ async function pPostDqComment(responseId){
   }
   inp.value = '';
   pToast('💬','Comentario publicado');
+  var _dqRespOwner = _dqAllResponses && _dqAllResponses.find(function(x){ return String(x.id)===String(responseId); });
+  if(_dqRespOwner && _dqRespOwner.user_id){
+    _createVeloNotif(_dqRespOwner.user_id,'dq_comment',(safeLS('get','velo_user_name')||'Alguien')+' comentó tu respuesta del día',text.slice(0,80),responseId);
+  }
   var feedEl = document.getElementById('dqCommentFeed');
   if(feedEl){
     var comments = await _loadDqComments(responseId);
@@ -4430,6 +4435,112 @@ async function pPostDqComment(responseId){
   }
   if(btn){ btn.disabled = false; btn.textContent = 'Enviar'; }
 }
+
+// ═══════════════════════════════════════════════════════════
+//  NOTIFICACIONES IN-APP  (velo_notifications)
+// ═══════════════════════════════════════════════════════════
+
+function _createVeloNotif(recipientId,type,title,body,relatedId){
+  var myUid=safeLS('get','velo_user_id');
+  if(!recipientId||recipientId===myUid) return;
+  _initSupabase(); if(!sbClient) return;
+  var data={user_id:recipientId,type:type,title:title,body:body||null,related_id:relatedId?String(relatedId):null,is_read:false,created_at:new Date().toISOString()};
+  sbClient.from('velo_notifications').insert(data).then(function(){}).catch(function(){});
+}
+
+async function _loadVeloNotifs(){
+  _initSupabase(); if(!sbClient) return [];
+  var uid=safeLS('get','velo_user_id'); if(!uid) return [];
+  try{
+    var res=await sbClient.from('velo_notifications')
+      .select('id,type,title,body,related_id,is_read,created_at')
+      .eq('user_id',uid)
+      .order('created_at',{ascending:false})
+      .limit(40);
+    if(res.error) return [];
+    return res.data||[];
+  }catch(e){ return []; }
+}
+
+async function _markVeloNotifsRead(){
+  _initSupabase(); if(!sbClient) return;
+  var uid=safeLS('get','velo_user_id'); if(!uid) return;
+  try{ await sbClient.from('velo_notifications').update({is_read:true}).eq('user_id',uid).eq('is_read',false); }catch(e){}
+}
+
+function _updateVeloNotifBadge(count){
+  var b=document.getElementById('veloNotifBadge');
+  if(!b) return;
+  b.textContent=count>9?'9+':String(count);
+  b.style.display=count>0?'inline-block':'none';
+}
+
+async function _checkVeloNotifs(){
+  _initSupabase(); if(!sbClient) return;
+  var uid=safeLS('get','velo_user_id'); if(!uid) return;
+  try{
+    var res=await sbClient.from('velo_notifications')
+      .select('id',{count:'exact',head:true})
+      .eq('user_id',uid)
+      .eq('is_read',false);
+    if(res.error) return;
+    _updateVeloNotifBadge(res.count||0);
+  }catch(e){}
+}
+
+function _renderVeloNotifs(notifs){
+  var typeIcon={dq_comment:'💬',momento_comment:'💬',reaction:'💚'};
+  if(!notifs||!notifs.length){
+    return '<div style="text-align:center;padding:40px 16px">'
+      +'<div style="font-size:44px;margin-bottom:14px;opacity:.40">💬</div>'
+      +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.45);font-family:Jost,sans-serif">Todo al día</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.25);margin-top:8px;line-height:1.55;font-family:Jost,sans-serif">Cuando alguien comente o reaccione a tus publicaciones aparecerá acá</div>'
+      +'</div>';
+  }
+  return notifs.map(function(n){
+    var icon=typeIcon[n.type]||'🔔';
+    var unread=!n.is_read;
+    var dot=unread
+      ?'<span style="width:8px;height:8px;border-radius:50%;background:rgba(116,198,157,.90);flex-shrink:0;margin-top:5px;box-shadow:0 0 6px rgba(116,198,157,.50)"></span>'
+      :'<span style="width:8px;flex-shrink:0"></span>';
+    return '<div style="display:flex;gap:10px;align-items:flex-start;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+      +dot
+      +'<span style="font-size:22px;flex-shrink:0;line-height:1.25">'+icon+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;font-weight:'+(unread?'700':'500')+';color:rgba(255,255,255,'+(unread?'.90':'.50')+');font-family:Jost,sans-serif;line-height:1.35;margin-bottom:3px">'+_escHtml(n.title||'')+'</div>'
+      +(n.body?'<div style="font-size:11.5px;color:rgba(255,255,255,.36);font-family:Jost,sans-serif;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml('"'+n.body+'"')+'</div>':'')
+      +'<div style="font-size:10px;color:rgba(255,255,255,.25);font-family:Jost,sans-serif;margin-top:4px">'+_momentoAgo(n.created_at||'')+'</div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+async function pOpenVeloNotifsSheet(){
+  var existing=document.getElementById('veloNotifsSheetOv');
+  if(existing) existing.remove();
+  var ov=document.createElement('div');
+  ov.className='p-modal-ov show';
+  ov.id='veloNotifsSheetOv';
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  ov.innerHTML='<div class="p-sheet p-sheet-dark" style="padding:0;overflow-y:auto;max-height:86vh;border-top:2px solid rgba(116,198,157,.40);border-radius:28px 28px 0 0">'
+    +'<div style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1;background:rgba(6,16,10,.97);backdrop-filter:blur(12px)">'
+    +'<div class="p-sheet-handle" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);margin:0;background:rgba(116,198,157,.30)"></div>'
+    +'<div style="font-size:15px;font-weight:800;color:rgba(200,240,218,.92);font-family:Jost,sans-serif;letter-spacing:.2px;margin-top:6px">🔔 Actividad</div>'
+    +'<button onclick="document.getElementById(\'veloNotifsSheetOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.35);font-size:20px;cursor:pointer;padding:4px;line-height:1;margin-top:6px">×</button>'
+    +'</div>'
+    +'<div id="veloNotifsBody" style="padding:0 18px 4px"><div style="text-align:center;padding:32px 8px;font-size:12px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif">Cargando…</div></div>'
+    +'<div style="padding:12px 18px calc(max(16px,env(safe-area-inset-bottom,16px)) + 4px);border-top:1px solid rgba(255,255,255,.06)">'
+    +'<button onclick="pGoTo(\'inbox\');document.getElementById(\'veloNotifsSheetOv\').remove()" style="width:100%;padding:12px;background:rgba(116,198,157,.12);border:1.5px solid rgba(116,198,157,.32);border-radius:100px;color:rgba(160,235,195,.85);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.6px">📥 Ver Buzón Velo →</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+  var notifs=await _loadVeloNotifs();
+  var body=document.getElementById('veloNotifsBody');
+  if(body) body.innerHTML=_renderVeloNotifs(notifs);
+  _markVeloNotifsRead().then(function(){ _updateVeloNotifBadge(0); });
+}
+
+// ═══════════════════════════════════════════════════════════
 
 function pReportDqResponse(responseId, responseUserId){
   _pConfirm('¿Reportar esta respuesta? Va a quedar oculta para vos.', function(){
@@ -22083,6 +22194,10 @@ async function pPostMomentoComment(momentoId){
   }
   inp.value='';
   pToast('💬','Comentario publicado');
+  var _mOwnerItem=_homeMomentoCache&&_homeMomentoCache.find(function(m){return String(m.id)===String(momentoId);});
+  if(_mOwnerItem&&_mOwnerItem.user_id){
+    _createVeloNotif(_mOwnerItem.user_id,'momento_comment',(safeLS('get','velo_user_name')||'Alguien')+' comentó tu momento',text.slice(0,80),momentoId);
+  }
   var comments=await _loadMomentoComments(momentoId);
   var feed=document.getElementById('momentoCommentFeed');
   if(feed) feed.innerHTML=_renderMomentoComments(comments);
@@ -24692,7 +24807,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1156;
+    var _BUILT_V = 1157;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

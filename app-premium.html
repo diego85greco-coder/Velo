@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1156">
+  <meta name="app-version" content="1157">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260625-1156">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260625-1156">
+  <link rel="stylesheet" href="premium.css?v=20260625-1157">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260625-1157">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -334,6 +334,9 @@
         <button onclick="pOpenGuide()" title="Guía de Velo" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.13);border-radius:10px;width:46px;height:46px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0"><span style="font-size:17px;line-height:1">📖</span><span style="font-size:9px;font-weight:700;color:rgba(200,230,210,.85);font-family:'Jost',sans-serif;letter-spacing:.3px;white-space:nowrap">Guía</span></button>
       </div>
       <div class="p-topbar-actions" style="display:flex;align-items:center;gap:4px">
+        <button onclick="pOpenVeloNotifsSheet()" title="Actividad" style="position:relative;display:flex;align-items:center;justify-content:center;background:none;border:none;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0">
+          <span style="font-size:21px;line-height:1;position:relative">💬<span id="veloNotifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#e63946;color:#fff;font-size:7px;font-weight:800;min-width:13px;height:13px;border-radius:7px;line-height:13px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif;pointer-events:none"></span></span>
+        </button>
         <button onclick="pGoTo('inbox')" title="Buzón Velo" style="position:relative;display:flex;align-items:center;justify-content:center;background:none;border:none;padding:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0">
           <span style="font-size:22px;line-height:1;position:relative">🔔<span id="homeMailBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#e63946;color:#fff;font-size:7px;font-weight:800;min-width:13px;height:13px;border-radius:7px;line-height:13px;text-align:center;padding:0 2px;font-family:'Jost',sans-serif;pointer-events:none"></span></span>
         </button>
@@ -4272,8 +4275,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260625-1156"></script>
-<script src="premium-redesign.js?v=20260625-1156"></script>
+<script src="premium.js?v=20260625-1157"></script>
+<script src="premium-redesign.js?v=20260625-1157"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
