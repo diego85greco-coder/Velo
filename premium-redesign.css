@@ -11566,7 +11566,7 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
     max-width: none !important;
   }
 
-  /* ─── Páginas interiores: centradas max-width ─────────────────────── */
+  /* ─── Páginas interiores: centradas con max-width generoso ────────── */
   #pg-profile .p-page-scroll,
   #pg-contacts .p-page-scroll,
   #pg-diary .p-page-scroll,
@@ -11582,12 +11582,31 @@ body.r-dark .home-name-banner-input { background: rgba(255,255,255,.07); }
   #pg-vela .p-page-scroll,
   #pg-buzon .p-page-scroll,
   #pg-contact .p-page-scroll,
-  #pg-bottle .p-page-scroll,
   #pg-momento .p-page-scroll,
   #pg-feed .p-page-scroll {
-    max-width: 800px !important;
+    max-width: 900px !important;
     margin-left: auto !important;
     margin-right: auto !important;
+  }
+  /* Páginas con fondo de color propio — ancho completo sin márgenes vacíos */
+  #pg-bottle .p-page-scroll,
+  #pg-bitacora .p-page-scroll {
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  /* Contenido interior centrado con padding generoso en desktop */
+  #pg-bottle .p-page-scroll > div:not(.p-modal-ov),
+  #pg-bitacora .p-page-scroll > div {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  #pg-bottle #bottleHdr {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 0 0 16px 16px;
   }
 
   /* ─── Dark mode sidebar ────────────────────────────────────────────── */
