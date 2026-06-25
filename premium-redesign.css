@@ -14089,3 +14089,19 @@ body:not(.r-dark) #momentoPostBox > div:first-child {
   color: rgba(30,100,60,.80) !important;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   v1143 — Guardian chat light mode: disclaimer bar + sub-labels legible
+   The disclaimer bar uses inline color:rgba(180,230,200,.9) designed for
+   dark mode — in light mode it's invisible against the mint background.
+   ══════════════════════════════════════════════════════════════════ */
+/* Disclaimer bar: the div immediately after .feed-header */
+body:not(.r-dark) #pg-guardian-chat .feed-header + div {
+  background: rgba(30,100,60,.10) !important;
+  border-bottom-color: rgba(30,100,60,.20) !important;
+  color: rgba(15,60,30,.84) !important;
+}
+/* "● Sesión privada" sub-label */
+body:not(.r-dark) #pg-guardian-chat .feed-header-info > div > div:last-child {
+  color: rgba(20,90,50,.72) !important;
+}
+
