@@ -64,12 +64,16 @@
           "value": "camera=(self), microphone=(self), geolocation=(), payment=(self)"
         },
         {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains; preload"
+        },
+        {
           "key": "X-XSS-Protection",
           "value": "1; mode=block"
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://*.supabase.co https://www.paypal.com https://www.paypalobjects.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.ipify.org https://generativelanguage.googleapis.com https://newsdata.io https://api.paypal.com https://www.paypal.com https://challenges.cloudflare.com https://api.stripe.com https://geocoding-api.open-meteo.com https://api.open-meteo.com; frame-src https://www.paypal.com https://challenges.cloudflare.com https://meet.jit.si https://js.stripe.com https://*.stripe.com; frame-ancestors 'none'; upgrade-insecure-requests"
+          "value": "default-src 'self' https:; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com https://*.supabase.co https://www.paypal.com https://www.paypalobjects.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.ipify.org https://generativelanguage.googleapis.com https://newsdata.io https://api.paypal.com https://www.paypal.com https://challenges.cloudflare.com https://api.stripe.com https://geocoding-api.open-meteo.com https://api.open-meteo.com; frame-src https://www.paypal.com https://challenges.cloudflare.com https://meet.jit.si https://js.stripe.com https://*.stripe.com; frame-ancestors 'none'; upgrade-insecure-requests"
         }
       ]
     }
