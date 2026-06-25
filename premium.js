@@ -4271,7 +4271,8 @@ function _buildDqCards(list){
       // Bottom: reaction pills + button — padding-right ensures "Reaccionar" never clips
       +'<div class="dq-rx-bar" style="display:flex;align-items:center;gap:5px;border-top:1px solid '+col.border.replace(/[\d.]+\)$/,'.18)')+';padding-top:8px;padding-bottom:2px;padding-right:10px">'
       +'<span class="dq-rx-pills" style="flex:1;min-width:0">'+rxPills+'</span>'
-      +'<span style="flex-shrink:0;white-space:nowrap;font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif;letter-spacing:.2px;padding:4px 10px;background:'+col.badge+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'.35)')+';border-radius:20px;display:inline-block">'+(_totalRx>0?'Reaccionar ›':'✦ Reaccionar')+'</span>'
+      +'<span style="flex-shrink:0;font-size:10px;color:'+col.label.replace(/[\d.]+\)$/,'.50)')+';font-family:Jost,sans-serif;padding:4px 8px">💬</span>'
+      +'<span style="flex-shrink:0;white-space:nowrap;font-size:10px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif;letter-spacing:.2px;padding:4px 10px;background:'+col.badge+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'.35)')+';border-radius:20px;display:inline-block">'+(_totalRx>0?'Reaccionar ›':'✦ Ver hilo')+'</span>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -4359,11 +4360,75 @@ function pOpenDqResponseSheet(responseId){
     +'<div style="font-size:9.5px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.38)')+';font-family:Jost,sans-serif;margin-bottom:10px">¿Cómo te resonó?</div>'
     // Reaction row
     +'<div style="display:flex;gap:8px;margin-bottom:16px">'+rxHtml+'</div>'
+    // Comments section
+    +_zenDiv
+    +'<div style="text-align:left;margin-bottom:18px">'
+    +'<div style="font-size:9.5px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.45)')+';font-family:Jost,sans-serif;margin-bottom:12px">💬 Hilo de comentarios</div>'
+    +'<div id="dqCommentFeed" style="margin-bottom:14px"><div style="text-align:center;padding:20px 8px;font-size:12px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif">Cargando…</div></div>'
+    +'<div style="display:flex;gap:8px;align-items:flex-end">'
+    +'<textarea id="dqCommentInput" rows="2" placeholder="Sumar algo al hilo…" style="flex:1;background:rgba(255,255,255,.06);border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.30)')+';border-radius:14px;color:rgba(255,255,255,.92);font-size:13px;font-family:\'Jost\',sans-serif;padding:10px 12px;resize:none;outline:none;line-height:1.4"></textarea>'
+    +'<button id="dqCommentBtn" onclick="pPostDqComment(\''+responseId+'\')" style="background:'+col.strip+';border:none;border-radius:12px;color:rgba(0,0,0,.75);font-size:12px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;padding:10px 14px;flex-shrink:0;height:44px;min-width:60px">Enviar</button>'
+    +'</div>'
+    +'</div>'
     // Close
     +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.22);border-radius:100px;color:rgba(255,255,255,.80);font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase">· CERRAR ·</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
+  // Load comments asynchronously
+  _loadDqComments(responseId).then(function(comments){
+    var feed = document.getElementById('dqCommentFeed');
+    if(feed) feed.innerHTML = _renderMomentoComments(comments, col);
+  });
+}
+
+async function _loadDqComments(responseId){
+  _initSupabase(); if(!sbClient) return [];
+  try{
+    var res = await sbClient.from('dq_comments')
+      .select('id,text,user_name,user_avatar,user_id,created_at')
+      .eq('response_id', String(responseId))
+      .order('created_at', {ascending: true})
+      .limit(50);
+    if(res.error) return [];
+    return res.data || [];
+  }catch(e){ return []; }
+}
+
+async function pPostDqComment(responseId){
+  var inp = document.getElementById('dqCommentInput');
+  if(!inp) return;
+  var text = (inp.value || '').trim();
+  if(!text) return;
+  var btn = document.getElementById('dqCommentBtn');
+  if(btn){ btn.disabled = true; btn.textContent = '...'; }
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión'); if(btn){ btn.disabled = false; btn.textContent = 'Enviar'; } return; }
+  var data = { response_id: String(responseId), text: text, user_hash: _momentoUserHash(), created_at: new Date().toISOString() };
+  var pn = safeLS('get','velo_user_name'); var pav = safeLS('get','velo_user_av'); var uid = safeLS('get','velo_user_id');
+  if(pn) data.user_name = pn;
+  if(pav) data.user_avatar = pav;
+  if(uid) data.user_id = uid;
+  var res = await sbClient.from('dq_comments').insert(data);
+  if(res.error){
+    if(res.error.code === '42P01' || res.error.code === 'PGRST200'){
+      pToast('🛠️','La tabla de comentarios aún no está creada en la base de datos');
+      if(btn){ btn.disabled = false; btn.textContent = 'Enviar'; } return;
+    }
+    if(res.error.code === '42703' || res.error.code === 'PGRST204' || (res.error.message && res.error.message.indexOf('user_avatar') >= 0)){
+      delete data.user_name; delete data.user_avatar;
+      res = await sbClient.from('dq_comments').insert(data);
+      if(res.error){ pToast('⚠️','Error al comentar'); if(btn){ btn.disabled = false; btn.textContent = 'Enviar'; } return; }
+    } else { pToast('⚠️','Error: '+res.error.message); if(btn){ btn.disabled = false; btn.textContent = 'Enviar'; } return; }
+  }
+  inp.value = '';
+  pToast('💬','Comentario publicado');
+  var feedEl = document.getElementById('dqCommentFeed');
+  if(feedEl){
+    var comments = await _loadDqComments(responseId);
+    feedEl.innerHTML = _renderMomentoComments(comments, null);
+  }
+  if(btn){ btn.disabled = false; btn.textContent = 'Enviar'; }
 }
 
 function pReportDqResponse(responseId, responseUserId){
@@ -24627,7 +24692,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1155;
+    var _BUILT_V = 1156;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
