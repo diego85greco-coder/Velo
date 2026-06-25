@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1138">
+  <meta name="app-version" content="1139">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260624-1138">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260624-1138">
+  <link rel="stylesheet" href="premium.css?v=20260624-1139">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260624-1139">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -186,7 +186,7 @@
     </div>
     <button id="sidebarBellBtn" onclick="pGoTo('inbox')" class="p-sidebar-bell" aria-label="Buzón de mensajes" style="display:none">
       <span style="font-size:20px;line-height:1;flex-shrink:0">🔔</span>
-      <span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85);flex:1;text-align:left">Buzón Velo</span>
+      <span style="font-size:12px;font-weight:700;color:var(--ink2);flex:1;text-align:left">Buzón Velo</span>
       <span id="sidebarBellBadge" style="display:none;background:#e63946;color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:8px;line-height:16px;text-align:center;padding:0 3px;font-family:'Jost',sans-serif"></span>
     </button>
     <nav class="p-sidebar-nav" role="navigation" aria-label="Menú principal">
@@ -280,6 +280,11 @@
           <div style="font-size:10px;color:var(--ink5)">Ver seguimiento</div>
         </div>
       </button>
+      <button onclick="rToggleDarkMode()" class="p-sidebar-theme-btn" title="Cambiar modo visual">
+        <span class="r-tbar-sun">☀️</span>
+        <span class="r-tbar-moon">🌛</span>
+        <span class="p-sidebar-theme-lbl">Modo oscuro / claro</span>
+      </button>
       <div class="p-user-mini" onclick="pGoTo('profile')">
         <div class="p-user-av" id="sidebarUserAv">🧑</div>
         <div class="p-user-info">
@@ -367,7 +372,7 @@
           <section class="land-what">
             <div class="land-section-head reveal">
               <span class="p-label p-label-sage" style="font-size:11px;display:block;margin-bottom:8px">Nuestra misión</span>
-              <h2 class="p-hero-text" style="color:var(--sage)">Qué es VELO</h2>
+              <h2 class="p-hero-text">Qué es VELO</h2>
             </div>
             <div class="land-what-inner">
               <div class="land-what-quote reveal" data-delay="1">
@@ -4181,8 +4186,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260624-1138"></script>
-<script src="premium-redesign.js?v=20260624-1138"></script>
+<script src="premium.js?v=20260624-1139"></script>
+<script src="premium-redesign.js?v=20260624-1139"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

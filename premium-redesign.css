@@ -13963,3 +13963,45 @@ body.r-dark #homeVeloIACard > div:first-child {
   box-sizing: border-box !important;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   v1138 — Legibilidad: sidebar luz, landing headings, comunidad
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Sidebar en modo claro: etiquetas de sección e ítems deben ser oscuros */
+body:not(.r-dark) .p-sidebar .p-sidebar-section {
+  color: var(--ink3) !important;
+}
+body:not(.r-dark) .p-sidebar .p-sn-item {
+  color: var(--ink2) !important;
+}
+body:not(.r-dark) .p-sidebar .p-sn-item.active {
+  color: var(--sage) !important;
+}
+body:not(.r-dark) .p-sidebar-bell {
+  background: rgba(45,106,79,.12) !important;
+  border-color: rgba(45,106,79,.28) !important;
+}
+
+/* Landing headings — garantizar blanco sobre fondos verde oscuro */
+#pg-landing .land-usecases .p-hero-text,
+#pg-landing .land-security .p-hero-text,
+#pg-landing .land-what .p-hero-text { color: #ffffff !important; }
+
+/* Landing labels sobre fondos oscuros — más visibles */
+.land-usecases .land-section-head .p-label,
+.land-security .land-section-head .p-label {
+  color: rgba(255,255,255,.80) !important;
+}
+.land-what .land-section-head .p-label {
+  color: rgba(116,198,157,.95) !important;
+}
+
+/* Comunidad en vivo: ampliar en desktop para que no quede comprimida */
+@media (min-width: 861px) {
+  #homeMomentoSection {
+    max-width: 100% !important;
+    margin-left:  0 !important;
+    margin-right: 0 !important;
+  }
+}
+

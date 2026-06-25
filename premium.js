@@ -1378,7 +1378,7 @@ function _showOnboarding(){
 
   var ov = document.createElement('div');
   ov.id = 'veloOnboardOv';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(10,20,15,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;overflow:auto;';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(10,20,15,1);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;overflow:auto;';
 
   function _done(){
     safeLS('set','velo_home_onboarding_done','1');
@@ -24482,7 +24482,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1138;
+    var _BUILT_V = 1139;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
