@@ -4518,10 +4518,10 @@ async function pOpenShareCard(){
     var _dRec=_sortedE2.reduce(function(s,k){return s+_mc[k];},0);
     var _mSum=_sortedE2.map(function(e){return (_moodLbl2[e]||e)+' x'+_mc[e];}).join(', ');
     if(_dRec>0){
-      var _aiP='Generá UNA frase inspiradora muy breve (máximo 10 palabras) en español rioplatense (usá "vos") '
+      var _aiP='Genera UNA frase inspiradora muy breve (máximo 10 palabras) en español neutro (usa "tú", nunca "vos" ni "Che") '
         +'para alguien que esta semana tuvo: '+_mSum+'. Estado predominante: '+_domL+'. '
-        +'Días registrados: '+_dRec+'/7. Que sea cálida, directa y poética. '
-        +'Solo devolvé la frase, sin comillas ni explicaciones.';
+        +'Días registrados: '+_dRec+'/7. Que sea cálida, directa y poética. Sin vocativos ni saludos. '
+        +'Solo devuelve la frase, sin comillas ni explicaciones.';
       var _aiResp=await _geminiCall(_aiP,{temperature:0.92,maxOutputTokens:50});
       if(_aiResp) _shareCardAIPhrase=_aiResp.replace(/^["'""„]|["'""„]$/g,'').trim();
     }
@@ -4669,7 +4669,7 @@ function _renderShareCard(canvas, logoImg){
   if(daysRecorded===7) _reflexion='✦ Registraste los 7 días esta semana ✦';
   else if(daysRecorded>=4) _reflexion='✦ '+daysRecorded+' de 7 días registrados esta semana ✦';
   else if(daysRecorded>0) _reflexion='✦ Registraste '+daysRecorded+' día'+(daysRecorded>1?'s':'')+' · seguí así ✦';
-  else _reflexion='✦ Empezá a registrar tu semana emocional ✦';
+  else _reflexion='✦ Empieza a registrar tu semana emocional ✦';
   if(_reflexion){
     ctx.font='500 22px Arial,sans-serif'; ctx.textAlign='center';
     ctx.fillStyle='rgba(116,198,157,.48)'; ctx.fillText(_reflexion,W/2,_rfxY);
@@ -4749,53 +4749,58 @@ function _renderShareCard(canvas, logoImg){
     ctx.font='56px Arial,sans-serif'; ctx.textAlign='left';
     ctx.fillText('🌱',pillX+22,pillY+68);
     ctx.font='700 28px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.65)';
-    ctx.fillText('Empezá a registrar tus emociones',pillX+102,pillY+38);
+    ctx.fillText('Empieza a registrar tus emociones',pillX+102,pillY+38);
     ctx.font='italic 400 21px Arial,sans-serif'; ctx.fillStyle='rgba(255,255,255,.35)';
-    ctx.fillText('Cada emoción registrada es un paso hacia vos mismo/a',pillX+102,pillY+68);
+    ctx.fillText('Cada emoción registrada es un paso hacia ti',pillX+102,pillY+68);
   }
 
-  // ── AI phrase row (replaces stats) ──────────────────────────────
-  var statsY = afterGrid+136;
+  // ── AI phrase row ───────────────────────────────────────────────
+  var statsY = afterGrid+150;
   var _aiPhrase = _shareCardAIPhrase || '';
+  var _apFinalY = statsY + 48; // tracks where phrase ends; used to position next section
   if(_aiPhrase){
-    ctx.font='italic 600 34px Georgia,"Times New Roman",serif';
+    ctx.font='italic 600 34px Georgia,”Times New Roman”,serif';
     ctx.textAlign='center'; ctx.fillStyle='rgba(116,198,157,.82)';
-    var _aw=W-200, _apWords=('“'+_aiPhrase+'”').split(' '), _aLine='', _apY=statsY+38;
+    var _aw=W-200, _apWords=('”'+_aiPhrase+'”').split(' '), _aLine='', _apY=statsY+44;
     _apWords.forEach(function(w){
       var _t=_aLine+(_aLine?' ':'')+w;
-      if(ctx.measureText(_t).width>_aw&&_aLine){ ctx.fillText(_aLine,W/2,_apY); _apY+=48; _aLine=w; }
+      if(ctx.measureText(_t).width>_aw&&_aLine){ ctx.fillText(_aLine,W/2,_apY); _apY+=50; _aLine=w; }
       else _aLine=_t;
     });
     if(_aLine) ctx.fillText(_aLine,W/2,_apY);
+    _apFinalY = _apY;
   }
 
   // ── Emoji breakdown row ─────────────────────────────────────────
-  var brkY=statsY+100;
-  ctx.font='500 24px Arial,sans-serif'; ctx.textAlign='center';
-  ctx.fillStyle='rgba(255,255,255,.72)';
+  var brkY = _apFinalY + 58; // dynamic gap below AI phrase (no overlap)
+  ctx.font='700 22px Arial,sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='rgba(255,255,255,.42)';
   ctx.fillText('Emociones de la semana',W/2,brkY);
   var brkEmojis=Object.keys(moodCounts).sort(function(a,b){return moodCounts[b]-moodCounts[a];});
-  var brkTotalW=brkEmojis.length*120, brkStartX=W/2-brkTotalW/2+60;
-  brkEmojis.forEach(function(e,i){
-    var bx=brkStartX+i*120;
-    ctx.font='48px Arial,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(e,bx,brkY+62);
-    ctx.font='700 22px Arial,sans-serif';
-    ctx.fillStyle='rgba(255,255,255,.55)';
-    ctx.fillText('×'+moodCounts[e],bx,brkY+90);
+  var brkN=Math.min(brkEmojis.length,6), brkStep=Math.min(120, Math.floor((W-120)/Math.max(brkN,1)));
+  var brkStartX=W/2 - (brkN-1)*brkStep/2;
+  brkEmojis.slice(0,brkN).forEach(function(e,i){
+    var bx=brkStartX+i*brkStep;
+    ctx.font='52px “Apple Color Emoji”,”Segoe UI Emoji”,”Noto Color Emoji”,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(e,bx,brkY+70);
+    ctx.font='700 20px Arial,sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.50)';
+    ctx.fillText('×'+moodCounts[e],bx,brkY+96);
+    ctx.fillStyle='rgba(255,255,255,.42)'; // reset for next iteration label
   });
 
-  sep(brkY+112);
+  sep(brkY+120);
 
   // ── Poetic phrase ───────────────────────────────────────────────
-  var phrases=['Estuviste acá. Eso importa.','Cuidarte es un acto de valentía.','Cada día que registrás es tuyo.','Tu historia merece ser contada.','Lo que sentís es real y válido.','Cada emoción tiene su lugar.','Hoy estuviste presente para vos.'];
+  var phrases=['Estuviste aquí. Eso importa.','Cuidarte es un acto de valentía.','Cada día que registras es tuyo.','Tu historia merece ser contada.','Lo que sientes es real y válido.','Cada emoción tiene su lugar.','Hoy estuviste presente para ti.'];
   var weekIdx=Math.floor(Date.now()/(86400000*7))%phrases.length;
   var phrase='"'+phrases[weekIdx]+'"'; // AI phrase already shown above; use static phrase here
   ctx.font='italic 600 44px Georgia,serif';
   ctx.fillStyle='rgba(255,255,255,.72)';
   ctx.textAlign='center';
   // Wrap long phrases — tighter gap when logo image is present to avoid canvas overflow
-  var maxW=W-160, words=phrase.split(' '), line='', phrY=brkY+(logoImg?130:170);
+  var maxW=W-160, words=phrase.split(' '), line='', phrY=brkY+148;
   words.forEach(function(w){
     var test=line+(line?' ':'')+w;
     if(ctx.measureText(test).width>maxW && line){ ctx.fillText(line,W/2,phrY); phrY+=58; line=w; }
@@ -24250,7 +24255,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1132;
+    var _BUILT_V = 1133;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
