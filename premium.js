@@ -5403,12 +5403,15 @@ async function pToggleGuardianMode(){
     // after this re-activation (race: timer started before deactivation, fires after reactivation).
     if(_guardianVisibilityTimer){ clearTimeout(_guardianVisibilityTimer); _guardianVisibilityTimer = null; }
     if(_guardianBlurTimer){ clearTimeout(_guardianBlurTimer); _guardianBlurTimer = null; }
-    // Always reset to disponible when activating — clears any stuck incognito state
-    safeLS('set','velo_guardian_status','disponible');
-    _myGuardianStatus = 'disponible';
+    // Respect incognito mode when re-activating: if incognito is on, stay anonymous
+    var _reActInc = safeLS('get','velo_incognito') === 'true';
+    var _reActAvail = safeLS('get','velo_user_status') || 'disponible';
+    var _reActStatus = _reActInc ? ('incognito_' + _reActAvail) : 'disponible';
+    safeLS('set','velo_guardian_status', _reActStatus);
+    _myGuardianStatus = _reActStatus;
     _startGuardianHeartbeat();
-    pToast('🛡️','¡Aparecés como guardián disponible!');
-    await _updateGuardianPresence('disponible'); // wait for DB write before re-rendering
+    pToast('🛡️', _reActInc ? '¡Aparecés como guardián anónimo!' : '¡Aparecés como guardián disponible!');
+    await _updateGuardianPresence(_reActStatus); // wait for DB write before re-rendering
   } else {
     // Stop heartbeat AFTER the offline write so the write (and its retry) can complete.
     // Stopping first means a failed write gets no retry and the DB keeps stale "active" state.
@@ -24482,7 +24485,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1140;
+    var _BUILT_V = 1141;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

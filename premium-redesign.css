@@ -14024,3 +14024,53 @@ body:not(.r-dark) .p-sidebar-bell {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   v1141 — Fix home gap: Bitácora adjacent to Mensajes al Mar
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Move Bitácora (was order 0) and r-hero-actions (was order 5) to
+   consecutive orders 10→11 so they appear together, eliminating
+   the large gap caused by greeting/quote/status (orders 1-4) */
+#homeBitacoraWidget { order: 10; }
+.r-hero-actions     { order: 11; }
+
+/* ══════════════════════════════════════════════════════════════════
+   v1141 — Momentos page compose box — improved aesthetics
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Light mode: sage-tinted compose box */
+body:not(.r-dark) #momentoPostBox {
+  background: linear-gradient(145deg, rgba(116,198,157,.10), rgba(60,140,90,.06)) !important;
+  border: 1.5px solid rgba(60,140,90,.30) !important;
+  box-shadow: 0 2px 14px rgba(60,140,90,.08), inset 0 1px 0 rgba(255,255,255,.60) !important;
+}
+/* Light mode: textarea gets a soft visible container */
+body:not(.r-dark) #momentoTa {
+  background: rgba(255,255,255,.70) !important;
+  border: 1px solid rgba(60,140,90,.18) !important;
+  border-radius: 10px !important;
+  padding: 8px 10px !important;
+  box-sizing: border-box !important;
+  color: rgba(20,65,40,.92) !important;
+}
+body:not(.r-dark) #momentoTa::placeholder {
+  color: rgba(40,100,65,.45) !important;
+}
+/* Dark mode: richer compose box */
+body.r-dark #momentoPostBox {
+  background: linear-gradient(145deg, rgba(6,22,12,.94), rgba(10,32,20,.90)) !important;
+  border: 1.5px solid rgba(116,198,157,.32) !important;
+  box-shadow: 0 2px 14px rgba(0,0,0,.22), inset 0 1px 0 rgba(116,198,157,.07) !important;
+}
+body.r-dark #momentoTa {
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(116,198,157,.18) !important;
+  border-radius: 10px !important;
+  padding: 8px 10px !important;
+  box-sizing: border-box !important;
+}
+/* Compose label line */
+body:not(.r-dark) #momentoPostBox > div:first-child {
+  color: rgba(30,100,60,.80) !important;
+}
+
