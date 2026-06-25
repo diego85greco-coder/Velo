@@ -2514,6 +2514,29 @@ function _initHomeNavTiles(){
   stripEl.innerHTML = stripHtml;
   heroLeft.insertAdjacentElement('afterbegin', stripEl);
 
+  // ── SECOND ROW 4: compact strip ABOVE frase del día (order 25) ──
+  var midFour = [
+    { icon:'💬', title:'Sala de Ayuda',       sub:'Apoyo en tiempo real', bg:'rgba(80,190,140,.18)',  border:'rgba(80,190,140,.50)',  glow:'rgba(80,190,140,.12)',  action:"pGoTo('help')" },
+    { icon:'📔', title:'Diario Íntimo',        sub:'Tu espacio privado',   bg:'rgba(175,130,230,.18)', border:'rgba(175,130,230,.50)', glow:'rgba(175,130,230,.12)', action:"pGoTo('diary')" },
+    { icon:'☀️', title:'Buenas Noticias',      sub:'Historias que suman',  bg:'rgba(240,175,45,.18)',  border:'rgba(240,175,45,.50)',  glow:'rgba(240,175,45,.12)',  action:"pGoTo('news')" },
+    { icon:'🎶', title:'Música y Relajación',  sub:'Sonidos y meditación', bg:'rgba(70,155,210,.18)',  border:'rgba(70,155,210,.50)',  glow:'rgba(70,155,210,.12)',  action:"pGoTo('meditacion')" },
+  ];
+  var stripHtml2 = midFour.map(function(t){
+    return '<div onclick="'+t.action+'" class="home-nav-top-tile"'
+      +' style="flex:1;cursor:pointer;background:'+t.bg+';border:1.5px solid '+t.border+';border-radius:16px;padding:12px 6px 11px;display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:0 4px 14px '+t.glow+';-webkit-tap-highlight-color:transparent;touch-action:manipulation"'
+      +' onmousedown="this.style.transform=\'scale(.94)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'"'
+      +' ontouchstart="this.style.transform=\'scale(.94)\'" ontouchend="this.style.transform=\'\'">'
+      +'<div style="font-size:22px;line-height:1">'+t.icon+'</div>'
+      +'<div class="hntt-label" style="font-size:10px;font-weight:800;color:rgba(255,255,255,.92);font-family:\'Jost\',sans-serif;text-align:center;letter-spacing:.1px;line-height:1.2">'+t.title+'</div>'
+      +(t.sub ? '<div style="font-size:8.5px;color:rgba(255,255,255,.45);font-family:\'Jost\',sans-serif;text-align:center;letter-spacing:.2px;line-height:1;margin-top:-2px">'+t.sub+'</div>' : '')
+      +'</div>';
+  }).join('');
+  var strip2El = document.createElement('div');
+  strip2El.id = 'homeNavTopStrip2';
+  strip2El.style.cssText = 'display:flex;gap:8px;width:100%;box-sizing:border-box;margin:0 0 14px;';
+  strip2El.innerHTML = stripHtml2;
+  heroLeft.insertAdjacentElement('beforeend', strip2El);
+
   // ── REMAINING 6: 2-column grid below frase del día (order 4) ──
   var gridSix = [
     { icon:'🌱', title:'Comunidad',        sub:'Momentos & Muro Feliz',       bg:'linear-gradient(135deg,rgba(70,180,120,.20),rgba(50,150,90,.14))',   border:'rgba(90,200,140,.38)', action:"pGoTo('momento')" },
@@ -24604,7 +24627,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1150;
+    var _BUILT_V = 1151;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
