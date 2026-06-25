@@ -2490,42 +2490,37 @@ function _initHomeNavTiles(){
   if(document.getElementById('homeNavTiles')) return;
   var heroLeft = document.querySelector('.r-hero-left');
   if(!heroLeft) return;
+  // Each tile navigates to its own dedicated page
   var tiles = [
-    { icon:'🤝', title:'Acompañamiento', desc:'Guardianes, incógnito y sala de ayuda', bg:'rgba(116,198,157,.14)', border:'rgba(116,198,157,.45)', action:"pShowHomeSection('homeStatusToggle')" },
-    { icon:'📖', title:'Bitácora', desc:'Historias de apoyo e inspiración', bg:'rgba(100,150,240,.14)', border:'rgba(100,150,240,.42)', action:"pGoTo('bitacora')" },
-    { icon:'🌊', title:'Mensajes al Mar', desc:'Soltá lo que sentís de forma anónima', bg:'rgba(60,130,220,.14)', border:'rgba(60,130,220,.42)', action:"pGoTo('bottle')" },
-    { icon:'☮️', title:'Círculos de Paz', desc:'Grupos pequeños de apoyo mutuo', bg:'rgba(160,110,220,.14)', border:'rgba(160,110,220,.42)', action:"pGoTo('circles')" },
-    { icon:'🌱', title:'Momentos y Muro Feliz', desc:'Compartí momentos de la comunidad', bg:'rgba(80,180,130,.14)', border:'rgba(80,180,130,.42)', action:"pGoTo('momento')" },
-    { icon:'🧘', title:'Meditación y Calma', desc:'Ejercicios guiados para la mente', bg:'rgba(180,140,220,.14)', border:'rgba(180,140,220,.42)', action:"pGoTo('meditacion')" },
-    { icon:'🎵', title:'Sonidos de Ambiente', desc:'Lluvia, bosque, fuego y mar', bg:'rgba(70,150,200,.14)', border:'rgba(70,150,200,.42)', action:"pGoTo('respira')" },
-    { icon:'🤖', title:'Calma IA', desc:'Tu asistente de bienestar personal', bg:'rgba(80,180,160,.14)', border:'rgba(80,180,160,.42)', action:"pGoTo('calm-ai')" },
-    { icon:'👨‍⚕️', title:'Profesionales', desc:'Especialistas en salud mental', bg:'rgba(50,120,200,.14)', border:'rgba(50,120,200,.42)', action:"pGoTo('professionals')" },
-    { icon:'🌟', title:'Velo Vela por Ti', desc:'Tu espacio personal de bienestar', bg:'rgba(200,158,56,.14)', border:'rgba(200,158,56,.42)', action:"pGoTo('vela')" },
+    { icon:'🤝', title:'Apoyo',            sub:'Guardianes & sala de ayuda',   bg:'linear-gradient(135deg,rgba(60,180,120,.22),rgba(40,140,90,.16))',  border:'rgba(80,200,140,.40)', action:"pGoTo('guardians')" },
+    { icon:'📖', title:'Bitácora',          sub:'Historias de la comunidad',    bg:'linear-gradient(135deg,rgba(100,140,240,.22),rgba(70,110,200,.16))', border:'rgba(120,160,255,.38)', action:"pGoTo('bitacora')" },
+    { icon:'🌊', title:'Al Mar',            sub:'Soltá lo que sentís',          bg:'linear-gradient(135deg,rgba(50,130,220,.22),rgba(30,100,190,.16))',  border:'rgba(80,160,240,.38)', action:"pGoTo('bottle')" },
+    { icon:'☮️', title:'Círculos de Paz',   sub:'Grupos de apoyo mutuo',        bg:'linear-gradient(135deg,rgba(160,100,230,.22),rgba(130,75,200,.16))', border:'rgba(180,130,255,.38)', action:"pGoTo('circles')" },
+    { icon:'🌱', title:'Comunidad',         sub:'Momentos & Muro Feliz',        bg:'linear-gradient(135deg,rgba(70,180,120,.22),rgba(50,150,90,.16))',   border:'rgba(90,200,140,.38)', action:"pGoTo('momento')" },
+    { icon:'🧘', title:'Meditación',        sub:'Ejercicios y calma',           bg:'linear-gradient(135deg,rgba(180,130,230,.22),rgba(150,100,200,.16))',border:'rgba(200,160,255,.38)', action:"pGoTo('meditacion')" },
+    { icon:'🎵', title:'Sonidos',           sub:'Lluvia, bosque, fuego y mar',  bg:'linear-gradient(135deg,rgba(60,150,210,.22),rgba(40,120,180,.16))',  border:'rgba(90,180,240,.38)', action:"pGoTo('respira')" },
+    { icon:'🤖', title:'Calma IA',          sub:'Tu asistente de bienestar',    bg:'linear-gradient(135deg,rgba(70,180,160,.22),rgba(50,150,130,.16))',  border:'rgba(90,210,185,.38)', action:"pGoTo('calm-ai')" },
+    { icon:'👨‍⚕️', title:'Profesionales',   sub:'Especialistas de salud mental', bg:'linear-gradient(135deg,rgba(50,120,200,.22),rgba(30,90,170,.16))',  border:'rgba(80,150,230,.38)', action:"pGoTo('professionals')" },
+    { icon:'🌟', title:'Velo Vela por Ti',  sub:'Tu espacio personal',          bg:'linear-gradient(135deg,rgba(200,150,40,.22),rgba(170,120,20,.16))',  border:'rgba(220,175,70,.38)', action:"pGoTo('vela')" },
   ];
   var tilesHtml = tiles.map(function(t){
     return '<div onclick="'+t.action+'" class="home-nav-tile"'
-      +' style="cursor:pointer;background:'+t.bg+';border:1.5px solid '+t.border+';border-radius:18px;padding:16px 14px;display:flex;flex-direction:column;gap:7px;-webkit-tap-highlight-color:transparent;touch-action:manipulation"'
+      +' style="cursor:pointer;background:'+t.bg+';border:1.5px solid '+t.border+';border-radius:20px;padding:18px 16px 16px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;box-shadow:0 4px 18px rgba(0,0,0,.28)"'
       +' onmousedown="this.style.transform=\'scale(.96)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'"'
       +' ontouchstart="this.style.transform=\'scale(.96)\'" ontouchend="this.style.transform=\'\'">'
-      +'<div style="font-size:26px;line-height:1">'+t.icon+'</div>'
-      +'<div class="hnt-title" style="font-size:12.5px;font-weight:800;color:rgba(255,255,255,.95);font-family:\'Jost\',sans-serif;line-height:1.2">'+t.title+'</div>'
-      +'<div class="hnt-desc" style="font-size:10px;color:rgba(255,255,255,.55);font-family:\'Jost\',sans-serif;line-height:1.4">'+t.desc+'</div>'
-      +'<div class="hnt-cta" style="margin-top:2px;font-size:10.5px;color:rgba(255,255,255,.32);font-family:\'Jost\',sans-serif;letter-spacing:.2px;font-weight:600">Abrir →</div>'
+      +'<div style="font-size:30px;line-height:1">'+t.icon+'</div>'
+      +'<div class="hnt-title" style="font-size:13px;font-weight:800;color:rgba(255,255,255,.96);font-family:\'Jost\',sans-serif;line-height:1.25">'+t.title+'</div>'
+      +'<div class="hnt-desc" style="font-size:10px;color:rgba(255,255,255,.52);font-family:\'Jost\',sans-serif;line-height:1.35">'+t.sub+'</div>'
+      +'<div style="position:absolute;bottom:14px;right:14px;font-size:13px;color:rgba(255,255,255,.28);font-weight:800;font-family:\'Jost\',sans-serif">›</div>'
       +'</div>';
   }).join('');
   var container = '<div id="homeNavTiles" style="width:100%;margin:0 0 18px;box-sizing:border-box">'
-    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.60);margin-bottom:10px;font-family:\'Jost\',sans-serif;padding-left:2px;display:flex;align-items:center;gap:6px"><span style="height:1px;flex:1;background:rgba(116,198,157,.20)"></span><span>Explorar Velo</span><span style="height:1px;flex:1;background:rgba(116,198,157,.20)"></span></div>'
+    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(200,158,56,.70);margin-bottom:12px;font-family:\'Jost\',sans-serif;display:flex;align-items:center;gap:8px"><span style="height:1px;flex:1;background:rgba(200,158,56,.18)"></span><span>Secciones de Velo</span><span style="height:1px;flex:1;background:rgba(200,158,56,.18)"></span></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     +tilesHtml
     +'</div>'
     +'</div>';
   heroLeft.insertAdjacentHTML('beforeend', container);
-}
-
-function pShowHomeSection(id){
-  var el = document.getElementById(id);
-  if(!el) return;
-  el.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 // ── HOME AUTO-REFRESH ─────────────────────────────────────────
@@ -24565,7 +24560,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1144;
+    var _BUILT_V = 1145;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
