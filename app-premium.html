@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1157">
+  <meta name="app-version" content="1158">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260625-1157">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260625-1157">
+  <link rel="stylesheet" href="premium.css?v=20260625-1158">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260625-1158">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1527,10 +1527,11 @@
                       <span style="font-size:10px;color:rgba(200,158,56,.50);font-family:'Jost',sans-serif">✓</span>
                     </div>
                     <div id="homeDailyQOpenText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:rgba(255,255,255,.90);line-height:1.35;margin-bottom:10px;padding-left:14px;border-left:2.5px solid rgba(200,158,56,.30)"></div>
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-                      <div id="homeDailyQMyResp" style="font-size:11.5px;font-weight:600;color:rgba(220,185,75,.88);font-family:'Jost',sans-serif;flex:1;background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.20);border-radius:10px;padding:5px 10px"></div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                      <div id="homeDailyQMyResp" onclick="pOpenMyDqResponseFromHome()" style="font-size:11.5px;font-weight:600;color:rgba(220,185,75,.88);font-family:'Jost',sans-serif;flex:1;background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.20);border-radius:10px;padding:5px 10px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
                       <button onclick="pDeleteMyDqToday()" style="background:none;border:none;color:rgba(255,90,90,.45);font-size:13px;cursor:pointer;padding:2px 4px;flex-shrink:0" title="Borrar mi respuesta">🗑️</button>
                     </div>
+                    <div id="homeDailyQMyRxPills" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
                     <!-- Pulso integrado — open state -->
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:7px 12px;background:rgba(200,158,56,.07);border:1px solid rgba(200,158,56,.15);border-radius:10px">
                       <span id="homeDailyQOpenPulseEmoji" style="font-size:15px;flex-shrink:0">🌿</span>
@@ -4082,9 +4083,9 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
       <button class="daily-emoji-btn" onclick="_selectDailyEmoji('😤',this)">😤<br><span style="font-size:9px;display:block;margin-top:2px;color:var(--ink4);font-family:Jost,sans-serif">Frustrado/a</span></button>
       <button class="daily-emoji-btn" onclick="_selectDailyEmoji('💪',this)">💪<br><span style="font-size:9px;display:block;margin-top:2px;color:var(--ink4);font-family:Jost,sans-serif">Con fuerza</span></button>
     </div>
-    <div id="dailyResponseTextWrap" style="display:none;margin-bottom:16px">
-      <textarea id="dailyResponseText" maxlength="120" rows="3" placeholder="Contá un poco más... (opcional)" style="width:100%;box-sizing:border-box;background:var(--cream2);border:1.5px solid rgba(116,198,157,.25);border-radius:14px;padding:12px 14px;font-size:13px;color:var(--ink);font-family:Jost,sans-serif;resize:none;outline:none;line-height:1.5"></textarea>
-      <div style="text-align:right;font-size:10px;color:var(--ink4);margin-top:4px;font-family:Jost,sans-serif">Máx. 120 caracteres</div>
+    <div id="dailyResponseTextWrap" style="margin-bottom:16px">
+      <textarea id="dailyResponseText" maxlength="120" rows="3" placeholder="Contá cómo te sentís con esta pregunta…" style="width:100%;box-sizing:border-box;background:var(--cream2);border:1.5px solid rgba(116,198,157,.35);border-radius:14px;padding:12px 14px;font-size:13px;color:var(--ink);font-family:Jost,sans-serif;resize:none;outline:none;line-height:1.5"></textarea>
+      <div style="text-align:right;font-size:10px;color:var(--ink4);margin-top:4px;font-family:Jost,sans-serif">Máx. 120 caracteres · <strong>obligatorio</strong></div>
     </div>
     <button onclick="pSubmitDailyResponse()" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.35));color:rgba(116,198,157,.95);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;margin-bottom:8px">Compartir con la comunidad 💚</button>
     <button onclick="closeModal('dailyResponseOv')" style="width:100%;padding:11px;border-radius:14px;border:1.5px solid rgba(255,255,255,.1);background:transparent;color:var(--ink4);font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Ahora no</button>
@@ -4275,8 +4276,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260625-1157"></script>
-<script src="premium-redesign.js?v=20260625-1157"></script>
+<script src="premium.js?v=20260625-1158"></script>
+<script src="premium-redesign.js?v=20260625-1158"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

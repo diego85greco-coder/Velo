@@ -3946,8 +3946,16 @@ function _updateDqCardReactions(rid){
         .filter(function(rx){ return _m2[rx.k]&&_m2[rx.k].count>0; })
         .map(function(rx){ return rx.e+' '+_m2[rx.k].count; }).join('  ');
       var myTxt2 = 'Tu respuesta: '+(myResp.mood_emoji||'')+(myResp.response_text?' · '+myResp.response_text.slice(0,30)+(myResp.response_text.length>30?'…':''):'');
-      myBadge.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(myTxt2)+'</span>'
-        +(rxPills2?'<span style="margin-left:6px;font-size:13px;flex-shrink:0;letter-spacing:2px">'+rxPills2+'</span>':'');
+      myBadge.textContent = myTxt2;
+      var _liveRxEl = document.getElementById('homeDailyQMyRxPills');
+      if(_liveRxEl){
+        var _liveRxHtml = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
+          .filter(function(rx){ return _m2[rx.k]&&_m2[rx.k].count>0; })
+          .map(function(rx){ return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(200,158,56,.12);border:1px solid rgba(200,158,56,.28);border-radius:20px;padding:4px 11px;font-size:12.5px">'+rx.e+'<span style="font-size:10.5px;font-weight:700;color:rgba(200,155,40,.90);font-family:Jost,sans-serif">'+_m2[rx.k].count+'</span></span>'; })
+          .join('');
+        _liveRxEl.innerHTML = _liveRxHtml;
+        _liveRxEl.style.display = _liveRxHtml ? 'flex' : 'none';
+      }
     }
   }
 }
@@ -4042,15 +4050,20 @@ function _renderDailyFeed(responses){
   // Update "Tu respuesta" badge
   var myBadge2 = document.getElementById('homeDailyQMyResp');
   if(myBadge2 && myResp2){
-    var _rxMap2 = _dqReactMap[myResp2.id] || {};
-    var _rxPills2 = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
-      .filter(function(rx){ return _rxMap2[rx.k]&&_rxMap2[rx.k].count>0; })
-      .map(function(rx){ return rx.e+' '+_rxMap2[rx.k].count; }).join('  ');
     var _myText2 = 'Tu respuesta: '+(myResp2.mood_emoji||'')+( myResp2.response_text?' · '+myResp2.response_text.slice(0,30)+(myResp2.response_text.length>30?'…':''):'');
-    myBadge2.innerHTML = '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(_myText2)+'</span>'
-      +(_rxPills2?'<span style="margin-left:6px;font-size:13px;flex-shrink:0;letter-spacing:2px">'+_rxPills2+'</span>':'');
+    myBadge2.textContent = _myText2;
     myBadge2.style.display = 'flex';
     myBadge2.style.alignItems = 'center';
+  }
+  var _rxPillsEl2 = document.getElementById('homeDailyQMyRxPills');
+  if(_rxPillsEl2 && myResp2){
+    var _rxMap2 = _dqReactMap[myResp2.id] || {};
+    var _rxHtml2 = [{k:'identifico',e:'💚',lbl:'Me identificaron'},{k:'abrazo',e:'🫂',lbl:'Te abrazaron'},{k:'entiendo',e:'💙',lbl:'Te entendieron'}]
+      .filter(function(rx){ return _rxMap2[rx.k]&&_rxMap2[rx.k].count>0; })
+      .map(function(rx){ return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(200,158,56,.12);border:1px solid rgba(200,158,56,.28);border-radius:20px;padding:4px 11px;font-size:12.5px">'+rx.e+'<span style="font-size:10.5px;font-weight:700;color:rgba(200,155,40,.90);font-family:Jost,sans-serif">'+_rxMap2[rx.k].count+'</span></span>'; })
+      .join('');
+    _rxPillsEl2.innerHTML = _rxHtml2;
+    _rxPillsEl2.style.display = _rxHtml2 ? 'flex' : 'none';
   }
   // Update count from actual data — avoids stale "Sé el primero" text
   var _totalCount = responses.length;
@@ -4192,6 +4205,16 @@ function _dqEmojiColor(emoji){
   return {bg:'rgba(16,16,48,.92)',strip:'rgba(110,128,220,.36)',border:'rgba(110,128,220,.60)',glow:'rgba(110,128,220,.15)',label:'rgba(165,182,255,.95)',badge:'rgba(110,128,220,.24)'};
 }
 
+function _dqEmojiColorLight(emoji){
+  var warm=['😊','😄','😁','😃','🙂','🌟','✨','⭐','💫','🌅','☀️','🎉','🎊','💛','🧡','🌻','🔥','😍','🤩','😀'];
+  var calm=['😌','🤍','🌿','💚','🕊️','🌊','💙','🌙','⛅','☁️','🫧','🌾','🍀','🐦','😶','😑'];
+  var sad=['😢','😔','😞','😟','😥','💔','🌧️','😓','😪','😮‍💨','😣','😖'];
+  if(warm.indexOf(emoji)>=0) return {bg:'rgba(255,248,215,.97)',strip:'rgba(218,160,30,.22)',border:'rgba(175,118,5,.48)',glow:'rgba(218,160,30,.10)',label:'rgba(85,52,0,.88)',badge:'rgba(200,150,8,.14)'};
+  if(sad.indexOf(emoji)>=0) return {bg:'rgba(255,226,226,.97)',strip:'rgba(200,75,75,.18)',border:'rgba(175,50,50,.42)',glow:'rgba(200,75,75,.10)',label:'rgba(105,15,15,.85)',badge:'rgba(200,75,75,.14)'};
+  if(calm.indexOf(emoji)>=0) return {bg:'rgba(212,248,228,.97)',strip:'rgba(62,175,118,.20)',border:'rgba(32,130,75,.42)',glow:'rgba(62,175,118,.10)',label:'rgba(12,68,35,.85)',badge:'rgba(62,175,118,.14)'};
+  return {bg:'rgba(224,220,252,.97)',strip:'rgba(105,95,215,.18)',border:'rgba(75,65,188,.40)',glow:'rgba(105,95,215,.10)',label:'rgba(32,22,115,.82)',badge:'rgba(105,95,215,.14)'};
+}
+
 // Consistent per-user color palette — same user always gets same color
 function _userColor(seed){
   var s=String(seed||'');
@@ -4225,7 +4248,8 @@ function _buildDqCards(list){
   var _dqHid = []; try{ _dqHid = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
   return list.filter(function(r){ return _dqHid.indexOf(String(r.id)) === -1; }).map(function(r){
     var isOwn = myUid && r.user_id === myUid;
-    var col = _dqEmojiColor(r.mood_emoji||'💭');
+    var isDark = document.body.classList.contains('r-dark');
+    var col = isDark ? _dqEmojiColor(r.mood_emoji||'💭') : _dqEmojiColorLight(r.mood_emoji||'💭');
     var _m = _dqReactMap[r.id] || {};
     var _totalRx = ['identifico','abrazo','entiendo'].reduce(function(s,k){ return s+((_m[k]&&_m[k].count)||0); },0);
     var actionBtn = isOwn
@@ -4653,6 +4677,7 @@ async function pSubmitDailyResponse(){
   if(!_dailySelectedEmoji){ pToast('✨','Elegí cómo te sentís'); return; }
   var txEl  = document.getElementById('dailyResponseText');
   var text  = txEl ? txEl.value.trim().slice(0,120) : '';
+  if(!text){ pToast('✏️','Escribí algo sobre cómo te sentís con esta pregunta'); if(txEl) txEl.focus(); return; }
   var q     = _getDailyQuestion();
   var dateKey = _dateKey();
   var name  = safeLS('get','velo_user_name') || 'Alguien';
@@ -4688,6 +4713,14 @@ async function pSubmitDailyResponse(){
   var myBadge = document.getElementById('homeDailyQMyResp');
   if(myBadge) myBadge.textContent = 'Tu respuesta: '+_dailySelectedEmoji+(text?' · '+text.slice(0,35)+(text.length>35?'…':''):'');
   _fetchDailyFeed(q.id);
+}
+
+function pOpenMyDqResponseFromHome(){
+  var uid = safeLS('get','velo_user_id');
+  if(!uid || !_dqAllResponses) return;
+  var myResp = _dqAllResponses.find(function(x){ return x.user_id === uid; });
+  if(!myResp){ pToast('💭','Aún no respondiste hoy'); return; }
+  pOpenDqResponseSheet(String(myResp.id));
 }
 
 // ── COMMUNITY PULSE ────────────────────────────────────────────
@@ -24807,7 +24840,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1157;
+    var _BUILT_V = 1158;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
