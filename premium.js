@@ -12575,7 +12575,7 @@ function pLoadProfile(){
   var unameEl = document.getElementById('profileUsername');
   if(unameEl){
     if(uname){
-      unameEl.innerHTML = '<span style="color:var(--sage2);font-weight:700">@'+uname+'</span>';
+      unameEl.innerHTML = '<span style="color:var(--sage2);font-weight:700">@'+_escHtml(uname)+'</span>';
       unameEl.onclick = null;
       unameEl.style.cursor = 'default';
     } else {
@@ -24488,7 +24488,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1136;
+    var _BUILT_V = 1137;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
