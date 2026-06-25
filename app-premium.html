@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1152">
+  <meta name="app-version" content="1153">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260625-1152">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260625-1152">
+  <link rel="stylesheet" href="premium.css?v=20260625-1153">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260625-1153">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1774,7 +1774,33 @@
                 </div>
               </div>
             </div>
-            <p style="font-size:12px;color:var(--ink4);line-height:1.6;margin-bottom:14px;font-style:italic">Los Guardianes son usuarios de Velo que, desde su propia experiencia y vivencias, eligen estar disponibles para escuchar y acompañar a otras personas en momentos difíciles. Sin juicios, sin apuro — solo presencia.</p>
+            <!-- Resumen de sección -->
+            <div style="background:linear-gradient(140deg,rgba(8,28,18,.97),rgba(12,38,24,.95));border:1.5px solid rgba(116,198,157,.28);border-radius:18px;padding:16px;margin-bottom:14px">
+              <div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.60);font-family:'Jost',sans-serif;margin-bottom:13px">¿Qué es esta sección?</div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <span style="font-size:20px;flex-shrink:0;line-height:1.2">🤝</span>
+                  <div>
+                    <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.90);font-family:'Jost',sans-serif;margin-bottom:3px">Personas que eligen acompañar</div>
+                    <div style="font-size:11px;color:rgba(180,220,200,.62);font-family:'Jost',sans-serif;line-height:1.55">Cualquier persona de la comunidad puede estar disponible para escuchar y acompañar — sin necesidad de ser profesional, solo presencia real y sin juicios.</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <span style="font-size:20px;flex-shrink:0;line-height:1.2">💬</span>
+                  <div>
+                    <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.90);font-family:'Jost',sans-serif;margin-bottom:3px">¿Cómo pedir acompañamiento?</div>
+                    <div style="font-size:11px;color:rgba(180,220,200,.62);font-family:'Jost',sans-serif;line-height:1.55">Elegís a alguien de la lista y le enviás una solicitud de chat. Si acepta, se abre una conversación privada en tiempo real.</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <span style="font-size:20px;flex-shrink:0;line-height:1.2">🔔</span>
+                  <div>
+                    <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.90);font-family:'Jost',sans-serif;margin-bottom:3px">Aviso en cualquier parte de la app</div>
+                    <div style="font-size:11px;color:rgba(180,220,200,.62);font-family:'Jost',sans-serif;line-height:1.55">Si alguien te solicita acompañamiento, recibís un popup de chat inmediato — donde sea que estés en la app, mientras estés conectado/a.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div id="myGuardianStatus" style="margin-bottom:12px"></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px" id="guardianStatusBar">
               <button class="p-filter-chip active" onclick="pFilterGuardians('all',this)">Todos</button>
@@ -1911,8 +1937,32 @@
             <span style="font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink)">Sala de Ayuda</span>
             <div style="width:40px"></div>
           </div>
-          <div style="padding:12px 16px 6px;font-size:11.5px;color:var(--ink4);line-height:1.6;background:rgba(116,198,157,.08);border-bottom:1px solid rgba(116,198,157,.12)">
-            Publicá cómo te sentís y una persona de la comunidad te acompañará en tiempo real · Las publicaciones duran <strong>24 horas</strong> · Anónimo por defecto
+          <!-- Info card: qué es Sala de Ayuda -->
+          <div style="margin:14px 16px 0;background:linear-gradient(140deg,rgba(8,28,18,.97),rgba(12,38,24,.95));border:1.5px solid rgba(116,198,157,.28);border-radius:18px;padding:16px">
+            <div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.55);margin-bottom:12px;font-family:'Jost',sans-serif">¿Qué es esta sección?</div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <span style="font-size:20px;flex-shrink:0;line-height:1.2">💬</span>
+                <div>
+                  <div style="font-size:12px;font-weight:700;color:rgba(160,235,195,.92);font-family:'Jost',sans-serif;margin-bottom:2px">Pedí acompañamiento</div>
+                  <div style="font-size:11.5px;color:rgba(160,235,195,.60);line-height:1.55">Publicá cómo te sentís y cualquier persona de la comunidad puede ofrecerte escucha y acompañamiento en tiempo real. Las publicaciones duran <strong style="color:rgba(160,235,195,.75)">24 horas</strong> y son anónimas por defecto.</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <span style="font-size:20px;flex-shrink:0;line-height:1.2">🤝</span>
+                <div>
+                  <div style="font-size:12px;font-weight:700;color:rgba(160,235,195,.92);font-family:'Jost',sans-serif;margin-bottom:2px">¿Quién puede acompañarte?</div>
+                  <div style="font-size:11.5px;color:rgba(160,235,195,.60);line-height:1.55">Cualquier miembro de la comunidad — no solo Guardianes. Si alguien acepta acompañarte, se abre un chat privado entre los dos.</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <span style="font-size:20px;flex-shrink:0;line-height:1.2">🔔</span>
+                <div>
+                  <div style="font-size:12px;font-weight:700;color:rgba(160,235,195,.92);font-family:'Jost',sans-serif;margin-bottom:2px">El chat te llega donde estés</div>
+                  <div style="font-size:11.5px;color:rgba(160,235,195,.60);line-height:1.55">Cuando alguien acepta tu pedido aparece un aviso emergente en cualquier parte de la app, sin importar en qué sección estés en ese momento.</div>
+                </div>
+              </div>
+            </div>
           </div>
           <!-- Crisis resources quick-access widget -->
           <div id="helpCrisisChip" style="padding:8px 16px;background:rgba(229,57,53,.06);border-bottom:1px solid rgba(229,57,53,.12);display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="_toggleHelpCrisis()">
@@ -4222,8 +4272,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260625-1152"></script>
-<script src="premium-redesign.js?v=20260625-1152"></script>
+<script src="premium.js?v=20260625-1153"></script>
+<script src="premium-redesign.js?v=20260625-1153"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
