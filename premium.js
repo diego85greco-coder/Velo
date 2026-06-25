@@ -2493,7 +2493,7 @@ function _initHomeNavTiles(){
 
   // ── TOP 4: compact strip ABOVE the greeting (order 0) ──────
   var topFour = [
-    { icon:'🤝', title:'Apoyo',      bg:'rgba(80,185,140,.18)',  border:'rgba(80,185,140,.50)',  glow:'rgba(80,185,140,.12)',  action:"pGoTo('guardians')" },
+    { icon:'🤝', title:'Apoyo',      sub:'Guardianes', bg:'rgba(80,185,140,.18)',  border:'rgba(80,185,140,.50)',  glow:'rgba(80,185,140,.12)',  action:"pGoTo('guardians')" },
     { icon:'📖', title:'Bitácora',   bg:'rgba(100,145,240,.18)', border:'rgba(100,145,240,.48)', glow:'rgba(100,145,240,.12)', action:"pGoTo('bitacora')" },
     { icon:'🌊', title:'Al Mar',     bg:'rgba(50,135,220,.18)',  border:'rgba(50,135,220,.48)',  glow:'rgba(50,135,220,.12)',  action:"pGoTo('bottle')" },
     { icon:'☮️', title:'Círculos',   bg:'rgba(165,105,235,.18)', border:'rgba(165,105,235,.48)', glow:'rgba(165,105,235,.12)', action:"pGoTo('circles')" },
@@ -2505,6 +2505,7 @@ function _initHomeNavTiles(){
       +' ontouchstart="this.style.transform=\'scale(.94)\'" ontouchend="this.style.transform=\'\'">'
       +'<div style="font-size:22px;line-height:1">'+t.icon+'</div>'
       +'<div class="hntt-label" style="font-size:10px;font-weight:800;color:rgba(255,255,255,.92);font-family:\'Jost\',sans-serif;text-align:center;letter-spacing:.1px;line-height:1.2">'+t.title+'</div>'
+      +(t.sub ? '<div style="font-size:8.5px;color:rgba(255,255,255,.45);font-family:\'Jost\',sans-serif;text-align:center;letter-spacing:.2px;line-height:1;margin-top:-2px">'+t.sub+'</div>' : '')
       +'</div>';
   }).join('');
   var stripEl = document.createElement('div');
@@ -24603,7 +24604,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1147;
+    var _BUILT_V = 1148;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
