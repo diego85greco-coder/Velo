@@ -911,28 +911,24 @@ async function _ensureSbSession(){
     if(sd && sd.session && sd.session.user){
       var _lsEmail = (safeLS('get','velo_user_email') || '').toLowerCase().trim();
       var _sessEmail = (sd.session.user.email || '').toLowerCase().trim();
-      // If the active Supabase session belongs to a DIFFERENT account than the one
-      // stored in localStorage, sign out and re-authenticate with the correct credentials.
-      // This corrects cross-account token bleed (same browser, two accounts).
+      // Cross-account token bleed: different account in session vs stored email.
+      // Sign out and send to login — never re-auth silently with a stored password.
       if(_lsEmail && _sessEmail && _lsEmail !== _sessEmail){
-        console.warn('[_ensureSbSession] session mismatch — session:', _sessEmail, 'stored:', _lsEmail, '— re-authenticating');
+        console.warn('[_ensureSbSession] session mismatch — redirecting to login');
         try{ await sbClient.auth.signOut(); }catch(e){}
-        var _email2 = safeLS('get','velo_user_email');
-        var _pass2  = safeLS('get','velo_sb_pass');
-        if(!_email2 || !_pass2) return false;
-        var {data:_rd2, error:_err2} = await sbClient.auth.signInWithPassword({email:_email2, password:_pass2});
-        if(!_err2 && _rd2 && _rd2.user){ safeLS('set','velo_user_id', _rd2.user.id); return true; }
+        if(typeof pGoTo === 'function') pGoTo('login');
         return false;
       }
       if(sd.session.user.id) safeLS('set','velo_user_id', sd.session.user.id);
       return true;
     }
-    var email = safeLS('get','velo_user_email');
-    var pass  = safeLS('get','velo_sb_pass');
-    if(!email || !pass) return false;
-    var {data:rd, error} = await sbClient.auth.signInWithPassword({email:email, password:pass});
-    if(!error && rd && rd.user && rd.user.id) safeLS('set','velo_user_id', rd.user.id);
-    return !error;
+    // No active session — try Supabase's own stored refresh token (no password needed).
+    var {data:rd, error} = await sbClient.auth.refreshSession();
+    if(!error && rd && rd.user && rd.user.id){
+      safeLS('set','velo_user_id', rd.user.id);
+      return true;
+    }
+    return false;
   }catch(e){ return false; }
 }
 
@@ -1068,7 +1064,6 @@ async function pSignUp(){
       pToast('⚠️', errMsg);
     } else {
       safeLS('set','velo_user_email', email);
-      safeLS('set','velo_sb_pass', pass);
       safeLS('set','velo_user_name', name);
       safeLS('set','velo_user_type','user');
       _recordTC(name, email, 'TOS-v1');
@@ -1132,8 +1127,8 @@ async function pSignIn(){
       }
     } else {
       _clearSession(); // fresh slate — no leftover data from a previous account
+      safeLS('del','velo_sb_pass'); // migration: remove legacy stored password if any
       safeLS('set','velo_user_email', email);
-      safeLS('set','velo_sb_pass', pass);
       // Don't preset email prefix — _sbSyncProfile will restore the real name from Supabase.
       // If Supabase has no real name, the email prefix will be set as a fallback below.
       safeLS('set','velo_session','1');
@@ -16640,7 +16635,6 @@ async function pProRegNext(){
   safeLS('set','velo_pro_name',   nameVal);
   safeLS('set','velo_pro_spec',   specVal);
   safeLS('set','velo_user_email', emailVal);
-  safeLS('set','velo_sb_pass',    passVal);
   safeLS('set','velo_user_type',  'pro');
   safeLS('set','velo_user_name',  nameVal);
   await _recordTC(nameVal, emailVal, 'TOS-v1');
@@ -24488,7 +24482,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1137;
+    var _BUILT_V = 1138;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
