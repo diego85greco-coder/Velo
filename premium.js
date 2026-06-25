@@ -2322,6 +2322,7 @@ function _onThemeChange(){
 // ── HOME DATA ──────────────────────────────────────────────────
 function _loadHomeData(){
   _initHomeNavTiles();
+  _initDqThemeObserver();
   _checkVeloNotifs();
   _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
   var d = new Date();
@@ -4041,6 +4042,18 @@ async function pToggleDqReaction(responseId, reaction, btn){
 
 var _DQ_PREVIEW_COUNT = 5; // cards shown before "ver más"
 var _dqAllResponses = [];  // full list cached for expand
+var _dqThemeObserverSet = false;
+function _initDqThemeObserver(){
+  if(_dqThemeObserverSet) return;
+  _dqThemeObserverSet = true;
+  var _dqThemeTimer = null;
+  var obs = new MutationObserver(function(){
+    if(!_dqAllResponses || !_dqAllResponses.length) return;
+    clearTimeout(_dqThemeTimer);
+    _dqThemeTimer = setTimeout(function(){ _renderDailyFeed(_dqAllResponses); }, 60);
+  });
+  obs.observe(document.body, {attributes:true, attributeFilter:['class']});
+}
 
 function _renderDailyFeed(responses){
   _dqAllResponses = responses;
@@ -24840,7 +24853,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1158;
+    var _BUILT_V = 1159;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
