@@ -18,6 +18,8 @@
   --r-gold-soft: rgba(232, 200, 121, 0.16);
   --r-rust: #b86b3a;
   --r-easing: cubic-bezier(.2,.8,.2,1);
+  /* border2: default light-mode value (dark-mode overrides in body.r-dark) */
+  --border2: rgba(80,140,100,.22);
 }
 
 /* ── 1. ambient body — mañana/default: menta suave ────────────── */
