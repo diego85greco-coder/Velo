@@ -5575,13 +5575,39 @@ function _renderMyStatusBar(){
   if(!el) return;
   var st = _myGuardianStatus || '';
   var isAnonSt = st === 'incognito' || st.startsWith('incognito_');
-  var baseSt = isAnonSt ? st.replace('incognito_','') || 'disponible' : st;
-  el.innerHTML = '<div style="background:rgba(255,255,255,.7);border:1.5px solid var(--border);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px">'
-    +'<div style="font-size:11px;font-weight:700;color:var(--ink2);letter-spacing:.5px">MI ESTADO</div>'
-    +'<div style="display:flex;gap:6px;margin-left:auto">'
-    +'<button onclick="pSetMyGuardianStatus(\'disponible\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(baseSt==='disponible'?'var(--sage2)':'var(--border2)')+';background:'+(baseSt==='disponible'?'var(--sage7)':'none')+';color:'+(baseSt==='disponible'?'var(--sage)':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">🟢 Disponible</button>'
-    +'<button onclick="pSetMyGuardianStatus(\'ocupado\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(baseSt==='ocupado'?'#C8A200':'var(--border2)')+';background:'+(baseSt==='ocupado'?'rgba(200,162,0,.1)':'none')+';color:'+(baseSt==='ocupado'?'#C8A200':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">🟡 Ocupado</button>'
-    +'<button onclick="pSetMyGuardianStatus(\'incognito\')" style="font-size:11px;padding:5px 10px;border-radius:100px;border:1.5px solid '+(isAnonSt?'var(--ink3)':'var(--border2)')+';background:'+(isAnonSt?'rgba(0,0,0,.06)':'none')+';color:'+(isAnonSt?'var(--ink)':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">👤 Anónimo</button>'
+  var baseSt = isAnonSt ? (st.replace('incognito_','') || 'disponible') : st;
+  var isGuardian = safeLS('get','velo_is_guardian') === 'true';
+  var isIncognito = safeLS('get','velo_incognito') === 'true';
+  var dis = baseSt === 'disponible', ocu = baseSt === 'ocupado';
+  el.innerHTML =
+    '<div style="background:linear-gradient(140deg,rgba(8,28,18,.97),rgba(12,38,24,.95));border:1.5px solid rgba(116,198,157,.32);border-radius:22px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.40),inset 0 1px 0 rgba(116,198,157,.08);margin-bottom:14px">'
+    +'<div style="height:2px;background:linear-gradient(90deg,transparent,rgba(116,198,157,.60) 35%,rgba(100,180,255,.50) 75%,transparent)"></div>'
+    // Disponibilidad
+    +'<div style="padding:14px 16px 12px">'
+    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.65);font-family:\'Jost\',sans-serif;margin-bottom:10px">💚 Mi disponibilidad</div>'
+    +'<div style="display:flex;gap:6px">'
+    +'<button onclick="pSetMyGuardianStatus(\'disponible\')" style="flex:1;font-size:12px;padding:9px 6px;border-radius:100px;border:1.5px solid '+(dis?'rgba(80,190,140,.80)':'rgba(116,198,157,.20)')+';background:'+(dis?'rgba(80,190,140,.20)':'none')+';color:'+(dis?'rgba(140,230,185,.95)':'rgba(180,220,200,.50)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s">🟢 Disponible</button>'
+    +'<button onclick="pSetMyGuardianStatus(\'ocupado\')" style="flex:1;font-size:12px;padding:9px 6px;border-radius:100px;border:1.5px solid '+(ocu?'rgba(200,165,0,.75)':'rgba(116,198,157,.20)')+';background:'+(ocu?'rgba(200,165,0,.15)':'none')+';color:'+(ocu?'rgba(225,190,60,.90)':'rgba(180,220,200,.50)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s">🟡 Ocupado</button>'
+    +'</div>'
+    +'</div>'
+    +'<div style="height:1px;background:rgba(116,198,157,.14);margin:0 16px"></div>'
+    // Toggles incógnito + guardián
+    +'<div style="padding:12px 16px 15px;display:flex;align-items:stretch">'
+    +'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">'
+    +'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px">👤</span>'
+    +'<div class="p-tog'+(isIncognito?' on':'')+'" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>'
+    +'</div>'
+    +'<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.88);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.2">Modo incógnito</div>'
+    +'<div style="font-size:9px;color:rgba(180,230,200,.50);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.35">Ocultá tu foto e info</div>'
+    +'</div>'
+    +'<div style="width:1px;align-self:stretch;background:rgba(116,198,157,.15);margin:0 8px"></div>'
+    +'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">'
+    +'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px">🛡️</span>'
+    +'<div class="p-tog'+(isGuardian?' on':'')+'" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>'
+    +'</div>'
+    +'<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.88);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.2">Modo guardián</div>'
+    +'<div style="font-size:9px;color:rgba(180,230,200,.50);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.35">Aparecés en la lista</div>'
+    +'</div>'
     +'</div>'
     +'</div>';
 }
@@ -13759,12 +13785,11 @@ function pToggleIncognito(){
     safeLS('set','velo_guardian_status', newStatus);
     _myGuardianStatus = newStatus;
     _updateGuardianPresence(newStatus).then(function(){
-      // Refresh guardian list after DB write so status change is reflected immediately
       if(_curPage === 'guardians') pRenderGuardians();
     });
-    _renderMyStatusBar();
-    _renderHomeStatusToggle();
   }
+  _renderMyStatusBar();
+  _renderHomeStatusToggle();
   pToast(isOn ? '👁️' : '🕵️', isOn ? 'Modo incógnito desactivado' : 'Modo incógnito activado');
 }
 
@@ -24578,7 +24603,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1146;
+    var _BUILT_V = 1147;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
