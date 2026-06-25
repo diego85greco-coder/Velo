@@ -2323,6 +2323,7 @@ function _onThemeChange(){
 function _loadHomeData(){
   _initHomeNavTiles();
   _initDqThemeObserver();
+  _initMoodChip();
   _checkVeloNotifs();
   _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
   var d = new Date();
@@ -4043,6 +4044,89 @@ async function pToggleDqReaction(responseId, reaction, btn){
 var _DQ_PREVIEW_COUNT = 5; // cards shown before "ver más"
 var _dqAllResponses = [];  // full list cached for expand
 var _dqThemeObserverSet = false;
+// ── MOOD CHIP WIDGET (compact, above greeting) ────────────────
+var _moodChipSheetOpen = false;
+var _moodChipOrgParent = null;
+var _moodChipOrgNextSibling = null;
+
+function _initMoodChip(){
+  if(document.getElementById('homeMoodChip')) return;
+  var heroLeft = document.querySelector('.r-hero-left');
+  if(!heroLeft) return;
+  var chip = document.createElement('div');
+  chip.id = 'homeMoodChip';
+  chip.onclick = function(){ pOpenMoodChipSheet(); };
+  chip.style.cssText = 'order:0;width:100%;box-sizing:border-box;margin-bottom:10px;cursor:pointer;flex-shrink:0';
+  heroLeft.insertAdjacentElement('afterbegin', chip);
+  _updateMoodChip();
+}
+
+function _updateMoodChip(){
+  var chip = document.getElementById('homeMoodChip');
+  if(!chip) return;
+  var today = _dateKey ? _dateKey() : '';
+  var emoji = null; var label = '';
+  if(today){ try{ var _cm=JSON.parse(safeLS('get','velo_mood_'+today)||'null'); if(_cm){emoji=_cm.emoji||null;label=_cm.label||'';} }catch(e){} }
+  var isDark = document.body.classList.contains('r-dark');
+  var bg = isDark ? 'rgba(116,198,157,.10)' : 'rgba(116,198,157,.16)';
+  var border = isDark ? 'rgba(116,198,157,.28)' : 'rgba(116,198,157,.42)';
+  var textColor = isDark ? 'rgba(200,240,218,.90)' : 'rgba(12,68,35,.88)';
+  var subColor = isDark ? 'rgba(116,198,157,.62)' : 'rgba(30,100,55,.62)';
+  chip.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:11px 16px;background:'+bg+';border:1.5px solid '+border+';border-radius:16px">'
+    +'<span style="font-size:26px;flex-shrink:0;line-height:1">'+(emoji||'😊')+'</span>'
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+subColor+';font-family:Jost,sans-serif;margin-bottom:2px">Registrá tus ánimos</div>'
+    +(emoji
+      ? '<div style="font-size:13px;font-weight:600;color:'+textColor+';font-family:Jost,sans-serif">'+_escHtml(label||'Registrado hoy ✓')+'</div>'
+      : '<div style="font-size:13px;font-weight:600;color:'+textColor+';font-family:Jost,sans-serif">¿Cómo te sentís hoy?</div>'
+    )
+    +'</div>'
+    +'<span style="font-size:18px;color:'+subColor+';flex-shrink:0">›</span>'
+    +'</div>';
+}
+
+function pOpenMoodChipSheet(){
+  if(_moodChipSheetOpen) return;
+  var reg = document.getElementById('homeRegisterOuter');
+  if(!reg) return;
+  _moodChipOrgParent = reg.parentElement;
+  _moodChipOrgNextSibling = reg.nextSibling;
+  var ov = document.createElement('div');
+  ov.className = 'p-modal-ov show';
+  ov.id = 'moodChipSheetOv';
+  ov.onclick = function(e){ if(e.target===ov) pCloseMoodChipSheet(); };
+  var sheet = document.createElement('div');
+  sheet.className = 'p-sheet p-sheet-dark';
+  sheet.style.cssText = 'padding:0;overflow-y:auto;max-height:92vh;border-radius:28px 28px 0 0;border-top:2px solid rgba(116,198,157,.38)';
+  sheet.innerHTML = '<div style="padding:14px 20px 10px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1;background:rgba(6,16,10,.97);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06)">'
+    +'<div class="p-sheet-handle" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);margin:0;background:rgba(116,198,157,.32)"></div>'
+    +'<div style="font-size:15px;font-weight:800;color:rgba(200,240,218,.92);font-family:Jost,sans-serif;margin-top:6px">😊 Mi estado de hoy</div>'
+    +'<button onclick="pCloseMoodChipSheet()" style="background:none;border:none;color:rgba(255,255,255,.38);font-size:20px;cursor:pointer;padding:4px;line-height:1;margin-top:6px">×</button>'
+    +'</div>'
+    +'<div id="moodChipSheetBody"></div>';
+  ov.appendChild(sheet);
+  document.body.appendChild(ov);
+  reg.style.display = 'block';
+  document.getElementById('moodChipSheetBody').appendChild(reg);
+  _moodChipSheetOpen = true;
+}
+
+function pCloseMoodChipSheet(){
+  var ov = document.getElementById('moodChipSheetOv');
+  var reg = document.getElementById('homeRegisterOuter');
+  if(reg && _moodChipOrgParent){
+    reg.style.display = 'none';
+    if(_moodChipOrgNextSibling && _moodChipOrgNextSibling.parentElement === _moodChipOrgParent){
+      _moodChipOrgParent.insertBefore(reg, _moodChipOrgNextSibling);
+    } else {
+      _moodChipOrgParent.appendChild(reg);
+    }
+  }
+  if(ov) ov.remove();
+  _moodChipSheetOpen = false;
+  _updateMoodChip();
+}
+
 function _initDqThemeObserver(){
   if(_dqThemeObserverSet) return;
   _dqThemeObserverSet = true;
@@ -24853,7 +24937,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1159;
+    var _BUILT_V = 1160;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

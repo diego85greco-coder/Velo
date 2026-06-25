@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1159">
+  <meta name="app-version" content="1160">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260625-1159">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260625-1159">
+  <link rel="stylesheet" href="premium.css?v=20260625-1160">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260625-1160">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1185,7 +1185,7 @@
           <!-- Section label: Comunidad -->
           <div class="home-sec-lbl home-sec-lbl-comunidad"><div class="home-sec-hdr">🌱 Comunidad</div></div>
           <!-- ESTADO DEL DÍA — card unificado con invitación -->
-          <div id="homeRegisterOuter" style="margin:0 0 18px;box-sizing:border-box;width:100%">
+          <div id="homeRegisterOuter" style="margin:0 0 18px;box-sizing:border-box;width:100%;display:none">
             <div id="homeRegisterZone" style="position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(5,20,12,.98) 0%,rgba(8,30,18,.96) 55%,rgba(4,16,10,.99) 100%);border:1.5px solid rgba(116,198,157,.30);border-radius:26px;padding:0 0 18px;box-shadow:0 16px 56px rgba(0,0,0,.60),0 0 0 1px rgba(116,198,157,.05),inset 0 1px 0 rgba(116,198,157,.07)">
 
               <!-- Barra decorativa top — degradado teal→gold -->
@@ -4276,8 +4276,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260625-1159"></script>
-<script src="premium-redesign.js?v=20260625-1159"></script>
+<script src="premium.js?v=20260625-1160"></script>
+<script src="premium-redesign.js?v=20260625-1160"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
