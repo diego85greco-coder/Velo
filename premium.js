@@ -2495,8 +2495,8 @@ function _initHomeNavTiles(){
   var topFour = [
     { icon:'🤝', title:'Apoyo',      sub:'Guardianes', bg:'rgba(80,185,140,.18)',  border:'rgba(80,185,140,.50)',  glow:'rgba(80,185,140,.12)',  action:"pGoTo('guardians')" },
     { icon:'📖', title:'Bitácora',   sub:'Historias', bg:'rgba(100,145,240,.18)', border:'rgba(100,145,240,.48)', glow:'rgba(100,145,240,.12)', action:"pGoTo('bitacora')" },
-    { icon:'🌊', title:'Al Mar',     bg:'rgba(50,135,220,.18)',  border:'rgba(50,135,220,.48)',  glow:'rgba(50,135,220,.12)',  action:"pGoTo('bottle')" },
-    { icon:'☮️', title:'Círculos',   bg:'rgba(165,105,235,.18)', border:'rgba(165,105,235,.48)', glow:'rgba(165,105,235,.12)', action:"pGoTo('circles')" },
+    { icon:'🌊', title:'Al Mar',     sub:'Lanzá un mensaje', bg:'rgba(50,135,220,.18)',  border:'rgba(50,135,220,.48)',  glow:'rgba(50,135,220,.12)',  action:"pGoTo('bottle')" },
+    { icon:'☮️', title:'Círculos',   sub:'Grupos de chat',   bg:'rgba(165,105,235,.18)', border:'rgba(165,105,235,.48)', glow:'rgba(165,105,235,.12)', action:"pGoTo('circles')" },
   ];
   var stripHtml = topFour.map(function(t){
     return '<div onclick="'+t.action+'" class="home-nav-top-tile"'
@@ -24604,7 +24604,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1149;
+    var _BUILT_V = 1150;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
