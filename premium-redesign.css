@@ -6016,8 +6016,23 @@ body.r-dark .gd-hero-card {
   border-color: rgba(116,198,157,.18) !important;
 }
 body.r-dark .gd-stat {
-  background: rgba(255,255,255,.06) !important;
-  border-color: rgba(116,198,157,.15) !important;
+  background: rgba(116,198,157,.12) !important;
+  border-color: rgba(116,198,157,.28) !important;
+}
+/* Stat number and label — ensure legibility in dark mode */
+body.r-dark .gd-stat [id^="gd"] {
+  color: rgba(180,240,200,.96) !important;
+}
+body.r-dark .gd-stat div:not([id]) {
+  color: rgba(200,220,210,.80) !important;
+}
+/* Light mode — cleaner stat cells */
+body:not(.r-dark) .gd-stat {
+  background: rgba(116,198,157,.10) !important;
+  border-color: rgba(116,198,157,.25) !important;
+}
+body:not(.r-dark) .gd-stat div:not([id]) {
+  color: rgba(30,80,50,.70) !important;
 }
 body.r-dark .gd-av-lg {
   background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(116,198,157,.15)) !important;

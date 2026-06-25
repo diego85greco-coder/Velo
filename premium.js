@@ -5755,6 +5755,41 @@ function pOpenGuardian(id){
           }
         }).catch(function(){});
     }
+
+    // Load Bitácora posts for this guardian (public/non-anon only)
+    var gdBtCard = document.getElementById('gdBitacoraCard');
+    var gdBtFeed = document.getElementById('gdBitacoraFeed');
+    if(gdBtCard) gdBtCard.style.display = 'none';
+    if(gdBtFeed) gdBtFeed.innerHTML = '';
+    if(!_gIsAnon && sbClient && gUid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gUid)){
+      sbClient.from('bitacora_posts').select('id,titulo,contenido,categoria,created_at')
+        .eq('user_id', gUid).eq('is_anon', false)
+        .order('created_at', {ascending:false}).limit(3)
+        .then(function(res){
+          var posts = (res && !res.error && res.data) ? res.data : [];
+          var btFeed = document.getElementById('gdBitacoraFeed');
+          var btCard = document.getElementById('gdBitacoraCard');
+          if(!posts.length || !btFeed || !btCard) return;
+          var _btCatLabel = {apoyo:'🫂 Apoyo',superacion:'⭐ Superación',debate:'💬 Debate'};
+          var _btCatColor = {apoyo:'rgba(80,108,225,.70)',superacion:'rgba(188,138,14,.70)',debate:'rgba(44,154,94,.70)'};
+          btFeed.innerHTML = posts.map(function(p){
+            var col = _btCatColor[p.categoria] || 'rgba(116,198,157,.70)';
+            var lbl = _btCatLabel[p.categoria] || p.categoria || '';
+            var prev = (p.contenido||'').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim().slice(0,100);
+            if(prev.length===100) prev += '…';
+            var dateStr = '';
+            try{ var d=new Date(p.created_at); dateStr=d.toLocaleDateString('es',{day:'numeric',month:'short'}); }catch(e){}
+            return '<div onclick="pGoTo(\'bitacora\')" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+              +(p.titulo?'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
+              +'<div style="font-size:11.5px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
+              +'<div style="display:flex;align-items:center;justify-content:space-between">'
+              +'<span style="font-size:9px;font-weight:700;color:'+col+';border-radius:20px;padding:2px 8px;background:var(--sage7);border:1px solid var(--border)">'+lbl+'</span>'
+              +(dateStr?'<span style="font-size:10px;color:var(--ink5)">'+dateStr+'</span>':'')
+              +'</div></div>';
+          }).join('');
+          btCard.style.display = '';
+        }).catch(function(){});
+    }
   })();
 }
 
@@ -24485,7 +24520,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1141;
+    var _BUILT_V = 1142;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
