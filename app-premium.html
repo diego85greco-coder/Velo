@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1145">
+  <meta name="app-version" content="1146">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260625-1145">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260625-1145">
+  <link rel="stylesheet" href="premium.css?v=20260625-1146">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260625-1146">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -110,10 +110,11 @@
     body:not(.r-dark) #topbarMoodBtn { color:rgba(30,65,35,.85) !important; background:rgba(116,198,157,.18) !important; border-color:rgba(80,150,100,.38) !important; }
     body:not(.r-dark) #homeWeekMoodGraph { background:rgba(0,0,0,.06) !important; }
     body:not(.r-dark) .home-motto-label { color:rgba(50,40,10,.72) !important; }
-    /* v1145 — Home navigation tiles: right after frase del día */
+    /* v1146 — Top-4 strip above greeting + secondary 6-tile grid */
+    #homeNavTopStrip       { order: 0 !important; }
     #homeNavTiles          { order: 4 !important; }
     #homeRegisterOuter     { order: 5 !important; }
-    /* Push secondary inline sections below tiles — accessible by scrolling */
+    /* Push secondary inline sections below tiles */
     #homeStatusToggle      { order: 50 !important; }
     #homeBitacoraWidget    { order: 51 !important; }
     .r-hero-actions        { order: 52 !important; }
@@ -124,11 +125,12 @@
     #homeParaVosPanel      { order: 57 !important; }
     #homeMemoryCard        { order: 58 !important; }
     .home-sec-lbl          { display: none !important; }
-    /* Nav tile transitions */
-    .home-nav-tile         { transition: transform .15s ease; }
+    /* Tile transitions */
+    .home-nav-tile, .home-nav-top-tile { transition: transform .14s ease; }
     /* Light mode tile text */
-    body:not(.r-dark) .hnt-title { color: rgba(10,40,22,.92) !important; }
-    body:not(.r-dark) .hnt-desc  { color: rgba(10,40,22,.55) !important; }
+    body:not(.r-dark) .hnt-title  { color: rgba(10,40,22,.92) !important; }
+    body:not(.r-dark) .hnt-desc   { color: rgba(10,40,22,.55) !important; }
+    body:not(.r-dark) .hntt-label { color: rgba(10,40,22,.88) !important; }
     #homeHeroLabel        { order: 13; margin-top: 24px; }
     /* Search row: 2-column grid — icon above, label below — no overlap possible */
     #homeSearchRow {
@@ -4218,8 +4220,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260625-1145"></script>
-<script src="premium-redesign.js?v=20260625-1145"></script>
+<script src="premium.js?v=20260625-1146"></script>
+<script src="premium-redesign.js?v=20260625-1146"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
