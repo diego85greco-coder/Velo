@@ -401,6 +401,13 @@ function pGoTo(id){
     _hideReturnToChatBadge();
   }
 
+  // Update URL hash for deep-linking / bookmarkable sections
+  if(_authenticated && _NO_RESTORE.indexOf(id) < 0){
+    try{ history.replaceState(null,'','#'+id); }catch(e){}
+  } else if(location.hash && P_NO_NAV.indexOf(id) >= 0){
+    try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+  }
+
   // Per-page init
   _onPageEnter(id);
   _trackPageView(id);
@@ -1568,6 +1575,13 @@ async function _loginAndGo(){
       if(!safeLS('get','velo_home_onboarding_done')){
         setTimeout(_showOnboarding, 700);
       }
+      // Restore deep-link from URL hash (bookmarked section)
+      var _hashDl = (location.hash||'').slice(1).trim();
+      var _dlSafe = ['diary','bitacora','momento','happy','guardians','help','bottle',
+                     'contacts','mood','news','inbox','circles','professionals','calm-ai','respira','vela','profile'];
+      if(_hashDl && _dlSafe.indexOf(_hashDl) >= 0){ setTimeout(function(){ pGoTo(_hashDl); }, 300); }
+      // Retry any pending Supabase diary syncs (may have been offline last session)
+      setTimeout(_retryDiarySync, 3000);
     }, 300);
   }
 }
@@ -4540,9 +4554,16 @@ async function _showPulseDetail(){
 async function _loadGuardianActivity(){
   var el = document.getElementById('homeGuardianChip');
   if(!el) return;
-  if(!sbClient) return;
+  el.style.display = 'block'; // always visible
+  var inner = el.querySelector('[data-guardian-inner]');
+  if(!inner){ inner = el.querySelector('div'); }
+  var txtEl = document.getElementById('homeGuardianChipTxt');
+  var dotEl = el.querySelector('[data-guardian-dot]');
+  if(!sbClient){
+    if(txtEl) txtEl.textContent = '🛡️ Guardianes — tu red de apoyo';
+    return;
+  }
   try{
-    // Use guardian_presence (real-time) table: active in last 5 min, disponible, is_guardian
     var cutoff = new Date(Date.now() - 10*60*1000).toISOString();
     var res = await sbClient.from('guardian_presence')
       .select('user_id',{count:'exact',head:true})
@@ -4550,11 +4571,25 @@ async function _loadGuardianActivity(){
       .eq('status','disponible')
       .gte('last_seen', cutoff);
     var n = res.count || 0;
-    if(n < 1){ el.style.display = 'none'; return; }
-    el.style.display = 'block';
-    var txtEl = document.getElementById('homeGuardianChipTxt');
-    if(txtEl) txtEl.textContent = '🛡️ '+n+(n===1?' guardián disponible ahora':' guardianes disponibles ahora');
-  }catch(e){ el.style.display = 'none'; }
+    if(n < 1){
+      // No active guardians — show a softer CTA
+      if(inner){
+        inner.style.background = 'rgba(116,198,157,.05)';
+        inner.style.borderColor = 'rgba(116,198,157,.14)';
+      }
+      if(dotEl){ dotEl.style.background='rgba(116,198,157,.3)'; dotEl.style.boxShadow='none'; dotEl.style.animation='none'; }
+      if(txtEl){ txtEl.style.color='rgba(116,198,157,.55)'; txtEl.textContent='🛡️ Sin guardianes activos ahora — ¿te animas?'; }
+    } else {
+      if(inner){
+        inner.style.background = 'linear-gradient(135deg,rgba(116,198,157,.16),rgba(74,160,110,.10))';
+        inner.style.borderColor = 'rgba(116,198,157,.35)';
+      }
+      if(dotEl){ dotEl.style.background='rgba(116,198,157,.9)'; dotEl.style.boxShadow='0 0 0 3px rgba(116,198,157,.22)'; dotEl.style.animation='guardianPulse 2s ease-in-out infinite'; }
+      if(txtEl){ txtEl.style.color='rgba(116,198,157,.9)'; txtEl.textContent='🛡️ '+n+(n===1?' guardián disponible ahora':' guardianes disponibles ahora'); }
+    }
+  }catch(e){
+    if(txtEl) txtEl.textContent='🛡️ Guardianes — tu red de apoyo';
+  }
 }
 
 // ── WEEKLY SHARE CARD ──────────────────────────────────────────
@@ -9512,6 +9547,25 @@ async function _loadDiaryEntries(){
 
 var _diaryEntries = [];
 var _diarySearchTimer = null;
+
+function pExportDiary(){
+  var entries=[]; try{entries=JSON.parse(safeLS('get','velo_diary')||'[]');}catch(e){}
+  if(!entries.length){ pToast('📔','No hay entradas para exportar'); return; }
+  var sorted=entries.slice().sort(function(a,b){return (a.ts||0)-(b.ts||0);});
+  var lines=['VELO — Mi Diario Emocional','Exportado el '+new Date().toLocaleDateString('es',{day:'numeric',month:'long',year:'numeric'}),'═'.repeat(40),''];
+  sorted.forEach(function(e){
+    lines.push('📅 '+(e.dateLabel||new Date(Number(e.ts)).toLocaleDateString('es')));
+    if(e.emoji||e.title) lines.push((e.emoji?e.emoji+' ':'')+_escHtml(e.title||'').replace(/&[a-z]+;/g,''));
+    if(e.text) lines.push('',''+e.text);
+    lines.push('','─'.repeat(32),'');
+  });
+  var blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a'); a.href=url; a.download='velo-diario.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},2000);
+  pToast('📤','Diario exportado');
+}
 
 function pDiarySearch(val){
   clearTimeout(_diarySearchTimer);
@@ -20087,15 +20141,46 @@ async function sbSignIn(email, password){
   return await sbClient.auth.signInWithPassword({email, password});
 }
 
-async function sbSaveDiaryEntry(text, dateLabel, ts, title){
+function _queueDiarySync(entry){
+  var q=[]; try{q=JSON.parse(safeLS('get','velo_diary_sync_q')||'[]');}catch(e){}
+  if(q.some(function(x){return String(x.ts)===String(entry.ts);})) return;
+  q.push({text:entry.text,dateLabel:entry.dateLabel,ts:entry.ts,title:entry.title||''});
+  safeLS('set','velo_diary_sync_q', JSON.stringify(q.slice(0,50)));
+}
+
+async function _retryDiarySync(){
   if(!sbClient) return;
+  var q=[]; try{q=JSON.parse(safeLS('get','velo_diary_sync_q')||'[]');}catch(e){}
+  if(!q.length) return;
+  var ok=await _ensureSbSession(); if(!ok) return;
+  var uid=safeLS('get','velo_user_id'); if(!uid) return;
+  var remaining=[];
+  for(var i=0;i<q.length;i++){
+    var e=q[i];
+    try{
+      var res=await sbClient.from('diary_entries').upsert(
+        {user_id:uid,text:e.text,date_label:e.dateLabel,ts:e.ts,title:e.title||''},
+        {onConflict:'user_id,ts',ignoreDuplicates:true}
+      );
+      if(res.error) remaining.push(e);
+    }catch(err){ remaining.push(e); }
+  }
+  safeLS('set','velo_diary_sync_q', JSON.stringify(remaining));
+  if(remaining.length < q.length) pToast('🔄','Entradas sincronizadas');
+}
+
+window.addEventListener('online', function(){ setTimeout(_retryDiarySync, 1500); });
+
+async function sbSaveDiaryEntry(text, dateLabel, ts, title){
+  if(!sbClient){ _queueDiarySync({text:text,dateLabel:dateLabel,ts:ts,title:title}); return; }
   try{
     var ok = await _ensureSbSession();
-    if(!ok) return;
-    var {data:ud} = await sbClient.auth.getUser();
-    if(!ud || !ud.user) return;
-    await sbClient.from('diary_entries').insert({ user_id:ud.user.id, text:text, date_label:dateLabel, ts:ts, title:title||'' });
-  }catch(e){}
+    if(!ok){ _queueDiarySync({text:text,dateLabel:dateLabel,ts:ts,title:title}); return; }
+    var uid = safeLS('get','velo_user_id');
+    if(!uid){ _queueDiarySync({text:text,dateLabel:dateLabel,ts:ts,title:title}); return; }
+    var res = await sbClient.from('diary_entries').insert({ user_id:uid, text:text, date_label:dateLabel, ts:ts, title:title||'' });
+    if(res.error) _queueDiarySync({text:text,dateLabel:dateLabel,ts:ts,title:title});
+  }catch(e){ _queueDiarySync({text:text,dateLabel:dateLabel,ts:ts,title:title}); }
 }
 
 async function sbDeleteDiaryEntry(ts){
@@ -24403,7 +24488,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1135;
+    var _BUILT_V = 1136;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

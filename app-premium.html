@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1135">
+  <meta name="app-version" content="1136">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260624-1135">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260624-1135">
+  <link rel="stylesheet" href="premium.css?v=20260624-1136">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260624-1136">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -155,7 +155,7 @@
 
 <!-- MOBILE MENU OVERLAY -->
 <div class="p-mobile-menu" id="pMobileMenu">
-  <button class="p-mobile-menu-close" onclick="toggleMobileMenu()">✕</button>
+  <button class="p-mobile-menu-close" onclick="toggleMobileMenu()" aria-label="Cerrar menú">✕</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('home');toggleMobileMenu()"><span class="p-mobile-nav-icon">🏠</span> Inicio</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('guardians');toggleMobileMenu()"><span class="p-mobile-nav-icon">🛡️</span> Guardianes</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('help');toggleMobileMenu()"><span class="p-mobile-nav-icon">🆘</span> Sala de Ayuda</button>
@@ -184,84 +184,84 @@
     <div class="p-sidebar-logo">
       <img src="assets/logo-dark.png" alt="Velo — Acompañamos emociones" class="p-sidebar-logo-img" onclick="pLogoClick()">
     </div>
-    <button id="sidebarBellBtn" onclick="pGoTo('inbox')" class="p-sidebar-bell" style="display:none">
+    <button id="sidebarBellBtn" onclick="pGoTo('inbox')" class="p-sidebar-bell" aria-label="Buzón de mensajes" style="display:none">
       <span style="font-size:20px;line-height:1;flex-shrink:0">🔔</span>
       <span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85);flex:1;text-align:left">Buzón Velo</span>
       <span id="sidebarBellBadge" style="display:none;background:#e63946;color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:8px;line-height:16px;text-align:center;padding:0 3px;font-family:'Jost',sans-serif"></span>
     </button>
-    <nav class="p-sidebar-nav">
-      <div class="p-sidebar-section">Principal</div>
-      <button class="p-sn-item" data-screen="home" onclick="pGoTo('home')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+    <nav class="p-sidebar-nav" role="navigation" aria-label="Menú principal">
+      <div class="p-sidebar-section" aria-hidden="true">Principal</div>
+      <button class="p-sn-item" data-screen="home" onclick="pGoTo('home')" aria-label="Inicio">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
         <span class="p-sn-label">Inicio</span>
       </button>
-      <button class="p-sn-item" data-screen="guardians" onclick="pGoTo('guardians')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+      <button class="p-sn-item" data-screen="guardians" onclick="pGoTo('guardians')" aria-label="Guardianes">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
         <span class="p-sn-label">Guardianes</span>
       </button>
-      <button class="p-sn-item" data-screen="help" onclick="pGoTo('help')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+      <button class="p-sn-item" data-screen="help" onclick="pGoTo('help')" aria-label="Sala de Ayuda">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
         <span class="p-sn-label">Sala de Ayuda</span>
-        <span class="p-sn-badge p-hidden" id="sn-help-badge">!</span>
+        <span class="p-sn-badge p-hidden" id="sn-help-badge" aria-live="polite">!</span>
       </button>
-      <button class="p-sn-item" data-screen="bottle" onclick="pGoTo('bottle')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/><path d="M2 16c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/></svg></span>
+      <button class="p-sn-item" data-screen="bottle" onclick="pGoTo('bottle')" aria-label="Al Mar">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/><path d="M2 16c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/></svg></span>
         <span class="p-sn-label">Al Mar</span>
       </button>
-      <button class="p-sn-item" data-screen="contacts" onclick="pGoTo('contacts')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+      <button class="p-sn-item" data-screen="contacts" onclick="pGoTo('contacts')" aria-label="Contactos">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
         <span class="p-sn-label">Contactos</span>
       </button>
-      <div class="p-sidebar-section">Comunidad</div>
-      <button class="p-sn-item" data-screen="professionals" onclick="pGoTo('professionals')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+      <div class="p-sidebar-section" aria-hidden="true">Comunidad</div>
+      <button class="p-sn-item" data-screen="professionals" onclick="pGoTo('professionals')" aria-label="Profesionales">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
         <span class="p-sn-label">Profesionales</span>
       </button>
-      <button class="p-sn-item" data-screen="circles" onclick="pGoTo('circles')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4.5"/></svg></span>
+      <button class="p-sn-item" data-screen="circles" onclick="pGoTo('circles')" aria-label="Círculos de Paz">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4.5"/></svg></span>
         <span class="p-sn-label">Círculos de Paz</span>
       </button>
-      <button class="p-sn-item" data-screen="bitacora" onclick="pGoTo('bitacora')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
+      <button class="p-sn-item" data-screen="bitacora" onclick="pGoTo('bitacora')" aria-label="Bitácora">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
         <span class="p-sn-label">Bitácora</span>
       </button>
-      <button class="p-sn-item" data-screen="happy" onclick="pGoTo('happy')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
+      <button class="p-sn-item" data-screen="happy" onclick="pGoTo('happy')" aria-label="Muro Feliz">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
         <span class="p-sn-label">Muro Feliz</span>
       </button>
-      <div class="p-sidebar-section">Personal</div>
-      <button class="p-sn-item" data-screen="diary" onclick="pGoTo('diary')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+      <div class="p-sidebar-section" aria-hidden="true">Personal</div>
+      <button class="p-sn-item" data-screen="diary" onclick="pGoTo('diary')" aria-label="Diario">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
         <span class="p-sn-label">Diario</span>
       </button>
-      <button class="p-sn-item" data-screen="mood" onclick="pGoTo('mood')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></span>
+      <button class="p-sn-item" data-screen="mood" onclick="pGoTo('mood')" aria-label="Estado de Ánimo">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></span>
         <span class="p-sn-label">Estado de Ánimo</span>
       </button>
-      <button class="p-sn-item" data-screen="news" onclick="pGoTo('news')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg></span>
+      <button class="p-sn-item" data-screen="news" onclick="pGoTo('news')" aria-label="Noticias">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg></span>
         <span class="p-sn-label">Noticias</span>
       </button>
-      <button class="p-sn-item" data-screen="inbox" onclick="pGoTo('inbox')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+      <button class="p-sn-item" data-screen="inbox" onclick="pGoTo('inbox')" aria-label="Mensajes">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
         <span class="p-sn-label">Mensajes</span>
-        <span class="p-sn-badge p-hidden" id="sn-inbox-badge">!</span>
+        <span class="p-sn-badge p-hidden" id="sn-inbox-badge" aria-live="polite">!</span>
       </button>
-      <button class="p-sn-item" data-screen="contact" onclick="pGoTo('contact')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.44 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6.17 6.17l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+      <button class="p-sn-item" data-screen="contact" onclick="pGoTo('contact')" aria-label="Contacto">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.44 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6.17 6.17l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
         <span class="p-sn-label">Contacto</span>
       </button>
-      <div class="p-sidebar-section">Bienestar</div>
-      <button class="p-sn-item" data-screen="calm-ai" onclick="pGoTo('calm-ai')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="9" cy="14" r="1" fill="currentColor"/><circle cx="15" cy="14" r="1" fill="currentColor"/></svg></span>
+      <div class="p-sidebar-section" aria-hidden="true">Bienestar</div>
+      <button class="p-sn-item" data-screen="calm-ai" onclick="pGoTo('calm-ai')" aria-label="Velo IA">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="9" cy="14" r="1" fill="currentColor"/><circle cx="15" cy="14" r="1" fill="currentColor"/></svg></span>
         <span class="p-sn-label">Velo IA</span>
       </button>
-      <button class="p-sn-item" data-screen="respira" onclick="pGoTo('respira')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg></span>
+      <button class="p-sn-item" data-screen="respira" onclick="pGoTo('respira')" aria-label="Respira">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg></span>
         <span class="p-sn-label">Respira</span>
       </button>
-      <button class="p-sn-item" data-screen="vela" onclick="pGoTo('vela')">
-        <span class="p-sn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="4"/><path d="M12 4c0 2-2 3-2 5a2 2 0 0 0 4 0c0-2-2-3-2-5z"/><rect x="8" y="14" width="8" height="8" rx="1"/><line x1="9" y1="14" x2="9" y2="22"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="15" y1="14" x2="15" y2="22"/></svg></span>
+      <button class="p-sn-item" data-screen="vela" onclick="pGoTo('vela')" aria-label="Vela por Ti">
+        <span class="p-sn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="4"/><path d="M12 4c0 2-2 3-2 5a2 2 0 0 0 4 0c0-2-2-3-2-5z"/><rect x="8" y="14" width="8" height="8" rx="1"/><line x1="9" y1="14" x2="9" y2="22"/><line x1="12" y1="14" x2="12" y2="22"/><line x1="15" y1="14" x2="15" y2="22"/></svg></span>
         <span class="p-sn-label">Vela por Ti</span>
       </button>
     </nav>
@@ -1437,12 +1437,12 @@
               <!-- ── PULSO EMOCIONAL ──────────────────────────── -->
               <!-- ── GUARDIAN ACTIVITY ──────────────────────────── -->
               <div id="homeGuardianChip" style="display:none;margin:0 0 10px;box-sizing:border-box;width:100%">
-                <div onclick="pGoTo('guardians')" style="cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.12),rgba(74,160,110,.08));border:1px solid rgba(116,198,157,.25);border-radius:14px;padding:10px 16px;display:flex;align-items:center;gap:10px">
-                  <div style="width:8px;height:8px;border-radius:50%;background:rgba(116,198,157,.9);box-shadow:0 0 0 3px rgba(116,198,157,.2);flex-shrink:0;animation:guardianPulse 2s ease-in-out infinite"></div>
+                <div data-guardian-inner onclick="pGoTo('guardians')" aria-label="Ir a Guardianes" style="cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.12),rgba(74,160,110,.08));border:1px solid rgba(116,198,157,.25);border-radius:14px;padding:10px 16px;display:flex;align-items:center;gap:10px;transition:all .2s">
+                  <div data-guardian-dot style="width:8px;height:8px;border-radius:50%;background:rgba(116,198,157,.9);box-shadow:0 0 0 3px rgba(116,198,157,.2);flex-shrink:0;animation:guardianPulse 2s ease-in-out infinite"></div>
                   <div style="flex:1">
                     <span id="homeGuardianChipTxt" style="font-size:13px;font-weight:600;color:rgba(116,198,157,.9);font-family:Jost,sans-serif"></span>
                   </div>
-                  <div style="font-size:12px;color:rgba(116,198,157,.6);font-family:Jost,sans-serif">Ver →</div>
+                  <div style="font-size:12px;color:rgba(116,198,157,.5);font-family:Jost,sans-serif">Ver →</div>
                 </div>
               </div>
               <!-- Memory card — "Hace 7 días sentías..." -->
@@ -2117,7 +2117,10 @@
               <div>
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
                   <span class="p-label" style="margin:0">Mis entradas</span>
-                  <button id="diaryDeleteAllBtn" onclick="pClearAllDiary()" style="background:none;border:none;color:rgba(255,100,100,.55);font-size:10px;cursor:pointer;font-family:'Jost',sans-serif;padding:2px 6px;letter-spacing:.3px">🗑️ Borrar todo</button>
+                  <div style="display:flex;align-items:center;gap:4px">
+                    <button onclick="pExportDiary()" aria-label="Exportar diario" style="background:none;border:none;color:rgba(116,198,157,.7);font-size:10px;cursor:pointer;font-family:'Jost',sans-serif;padding:2px 6px;letter-spacing:.3px">📤 Exportar</button>
+                    <button id="diaryDeleteAllBtn" onclick="pClearAllDiary()" aria-label="Borrar todas las entradas" style="background:none;border:none;color:rgba(255,100,100,.55);font-size:10px;cursor:pointer;font-family:'Jost',sans-serif;padding:2px 6px;letter-spacing:.3px">🗑️ Borrar todo</button>
+                  </div>
                 </div>
                 <div style="position:relative;margin-bottom:12px">
                   <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;opacity:.5">🔍</span>
@@ -4178,8 +4181,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260624-1135"></script>
-<script src="premium-redesign.js?v=20260624-1135"></script>
+<script src="premium.js?v=20260624-1136"></script>
+<script src="premium-redesign.js?v=20260624-1136"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
