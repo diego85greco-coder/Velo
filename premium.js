@@ -1369,6 +1369,116 @@ async function pChangePassword(){
   setTimeout(function(){ _loginAndGo(); }, 1400);
 }
 
+function _showOnboarding(){
+  if(safeLS('get','velo_home_onboarding_done')) return;
+  var step = 0;
+  var STEPS = 3;
+
+  var ov = document.createElement('div');
+  ov.id = 'veloOnboardOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(10,20,15,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;overflow:auto;';
+
+  function _done(){
+    safeLS('set','velo_home_onboarding_done','1');
+    ov.style.transition = 'opacity .35s';
+    ov.style.opacity = '0';
+    setTimeout(function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }, 370);
+    window.pObChip = null; window.pObNext = null; window.pObDone = null;
+  }
+
+  function _dotHtml(){
+    var s = '<div style="display:flex;gap:7px;justify-content:center;margin-bottom:20px">';
+    for(var i=0;i<STEPS;i++){
+      s += '<div style="width:7px;height:7px;border-radius:50%;background:'+(i===step?'rgba(116,198,157,.9)':'rgba(255,255,255,.18)')+'"></div>';
+    }
+    s += '</div>';
+    return s;
+  }
+
+  function _step0(){
+    var chips = [
+      {e:'📔',l:'Escribir mi diario',k:'diary'},
+      {e:'🤝',l:'Apoyo comunitario',k:'community'},
+      {e:'🛡️',l:'Guardianes',k:'guardianes'},
+      {e:'🌿',l:'Bienestar general',k:'bienestar'}
+    ];
+    var s = '<div style="max-width:400px;width:100%;text-align:center">';
+    s += _dotHtml();
+    s += '<div style="font-size:44px;margin-bottom:12px">🌿</div>';
+    s += '<h2 style="font-size:22px;font-weight:800;color:#fff;margin:0 0 8px;font-family:\'Jost\',sans-serif">Bienvenido/a a Velo</h2>';
+    s += '<p style="font-size:14px;color:rgba(255,255,255,.58);margin:0 0 22px;font-family:\'Jost\',sans-serif">\xBFQu\xe9 te trajo aqu\xed hoy?</p>';
+    s += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:26px">';
+    chips.forEach(function(it){
+      s += '<div class="ob-chip" data-k="'+it.k+'" onclick="pObChip(this)"'
+        +' style="background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;padding:14px 10px;cursor:pointer;transition:all .18s;user-select:none">'
+        +'<div style="font-size:26px;margin-bottom:6px">'+it.e+'</div>'
+        +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85);font-family:\'Jost\',sans-serif">'+it.l+'</div>'
+        +'</div>';
+    });
+    s += '</div>';
+    s += '<button onclick="pObNext()" style="width:100%;padding:14px;border:none;border-radius:14px;background:rgba(116,198,157,.90);color:#0a1a0f;font-size:15px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">Continuar →</button>';
+    s += '<button onclick="pObDone()" style="margin-top:12px;background:none;border:none;color:rgba(255,255,255,.32);font-size:12px;cursor:pointer;font-family:\'Jost\',sans-serif;display:block;width:100%;padding:8px">Saltar introducci\xf3n</button>';
+    s += '</div>';
+    return s;
+  }
+
+  function _step1(){
+    var feats = [
+      {e:'📔',t:'Diario emocional',d:'Escribe c\xf3mo te sientes cada d\xeda. Solo t\xfa lo ves.'},
+      {e:'🛡️',t:'Guardianes',d:'Personas de confianza que cuidan de ti cuando lo necesitas.'},
+      {e:'🤝',t:'Bit\xe1cora comunitaria',d:'Comparte lo que sientes de forma an\xf3nima con la comunidad.'},
+      {e:'🤖',t:'Calma IA',d:'Habla con una IA emp\xe1tica cuando necesitas un espacio seguro.'}
+    ];
+    var s = '<div style="max-width:420px;width:100%;text-align:center">';
+    s += _dotHtml();
+    s += '<div style="font-size:13px;color:rgba(116,198,157,.8);font-family:\'Jost\',sans-serif;font-weight:700;letter-spacing:1px;margin-bottom:16px;text-transform:uppercase">Lo que puedes hacer</div>';
+    s += '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:26px;text-align:left">';
+    feats.forEach(function(f){
+      s += '<div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px">'
+        +'<span style="font-size:28px;flex-shrink:0">'+f.e+'</span>'
+        +'<div>'
+        +'<div style="font-size:13px;font-weight:800;color:#fff;font-family:\'Jost\',sans-serif">'+f.t+'</div>'
+        +'<div style="font-size:12px;color:rgba(255,255,255,.52);font-family:\'Jost\',sans-serif;margin-top:2px">'+f.d+'</div>'
+        +'</div>'
+        +'</div>';
+    });
+    s += '</div>';
+    s += '<button onclick="pObNext()" style="width:100%;padding:14px;border:none;border-radius:14px;background:rgba(116,198,157,.90);color:#0a1a0f;font-size:15px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">Siguiente →</button>';
+    s += '</div>';
+    return s;
+  }
+
+  function _step2(){
+    var s = '<div style="max-width:380px;width:100%;text-align:center">';
+    s += _dotHtml();
+    s += '<div style="font-size:56px;margin-bottom:16px">✨</div>';
+    s += '<h2 style="font-size:24px;font-weight:800;color:#fff;margin:0 0 10px;font-family:\'Jost\',sans-serif">Todo listo</h2>';
+    s += '<p style="font-size:14px;color:rgba(255,255,255,.58);margin:0 0 30px;line-height:1.65;font-family:\'Jost\',sans-serif">Velo es tu espacio seguro.<br>Aqu\xed no hay juicios, solo presencia.</p>';
+    s += '<button onclick="pObDone()" style="width:100%;padding:16px;border:none;border-radius:16px;background:rgba(116,198,157,.90);color:#0a1a0f;font-size:16px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.4px">\xA1Entrar a Velo! ✨</button>';
+    s += '</div>';
+    return s;
+  }
+
+  var _stepFns = [_step0, _step1, _step2];
+
+  function _render(){
+    ov.innerHTML = '<div style="animation:p-fadeIn .3s ease">' + _stepFns[step]() + '</div>';
+  }
+
+  window.pObChip = function(el){
+    if(!el) return;
+    var chips = ov.querySelectorAll('.ob-chip');
+    chips.forEach(function(c){ c.style.background='rgba(116,198,157,.10)'; c.style.borderColor='rgba(116,198,157,.22)'; });
+    el.style.background = 'rgba(116,198,157,.28)';
+    el.style.borderColor = 'rgba(116,198,157,.70)';
+  };
+  window.pObNext = function(){ step++; if(step>=STEPS){ _done(); return; } _render(); };
+  window.pObDone = function(){ _done(); };
+
+  _render();
+  document.body.appendChild(ov);
+}
+
 async function _loginAndGo(){
   if(safeLS('get','velo_needs_pw_change') === '1'){ pGoTo('change-password'); return; }
   // Admin email detected → send to admin-login instead of regular flow
@@ -1455,6 +1565,9 @@ async function _loginAndGo(){
       _loadHomeData();
       _updateSidebarUser();
       _checkProfileComplete(); // Mandatory profile setup if name/username missing
+      if(!safeLS('get','velo_home_onboarding_done')){
+        setTimeout(_showOnboarding, 700);
+      }
     }, 300);
   }
 }
@@ -9398,6 +9511,35 @@ async function _loadDiaryEntries(){
 }
 
 var _diaryEntries = [];
+var _diarySearchTimer = null;
+
+function pDiarySearch(val){
+  clearTimeout(_diarySearchTimer);
+  _diarySearchTimer = setTimeout(function(){
+    var el = document.getElementById('diaryEntries');
+    if(!el) return;
+    var q = (val||'').toLowerCase().trim();
+    var clr = document.getElementById('diarySearchClear');
+    if(clr) clr.style.opacity = q ? '1' : '0';
+    if(!q){ _renderDiaryEntryList(el, _diaryEntries); return; }
+    var filtered = _diaryEntries.filter(function(e){
+      return ((e.title||'')+' '+(e.text||'')).toLowerCase().indexOf(q) >= 0;
+    });
+    if(!filtered.length){
+      el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">🔍</span>'
+        +'<div class="p-empty-title">Sin resultados</div>'
+        +'<div class="p-empty-sub">Intenta con otras palabras</div></div>';
+    } else {
+      _renderDiaryEntryList(el, filtered);
+    }
+  }, 280);
+}
+
+function pDiaryClear(){
+  var inp = document.getElementById('diarySearchInput');
+  if(inp){ inp.value = ''; }
+  pDiarySearch('');
+}
 
 function _getDiaryStreak(entries){
   if(!entries || !entries.length) return 0;
@@ -24261,7 +24403,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1134;
+    var _BUILT_V = 1135;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
