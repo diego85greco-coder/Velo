@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1143">
+  <meta name="app-version" content="1144">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260625-1143">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260625-1143">
+  <link rel="stylesheet" href="premium.css?v=20260625-1144">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260625-1144">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -110,6 +110,25 @@
     body:not(.r-dark) #topbarMoodBtn { color:rgba(30,65,35,.85) !important; background:rgba(116,198,157,.18) !important; border-color:rgba(80,150,100,.38) !important; }
     body:not(.r-dark) #homeWeekMoodGraph { background:rgba(0,0,0,.06) !important; }
     body:not(.r-dark) .home-motto-label { color:rgba(50,40,10,.72) !important; }
+    /* v1144 — Home navigation tiles + section reorder */
+    #homeNavTiles          { order: 8 !important; }
+    /* Push secondary sections below tiles */
+    #homeStatusToggle      { order: 50 !important; }
+    #homeBitacoraWidget    { order: 51 !important; }
+    .r-hero-actions        { order: 52 !important; }
+    #homeMedWidget         { order: 53 !important; }
+    .r-home-quick-panel    { order: 54 !important; }
+    #homeGuardianChip      { order: 55 !important; }
+    #homeMomentoSection    { order: 56 !important; }
+    #homeParaVosPanel      { order: 57 !important; }
+    #homeMemoryCard        { order: 58 !important; }
+    .home-sec-lbl          { display: none !important; }
+    /* Nav tile transitions */
+    .home-nav-tile         { transition: transform .15s ease; }
+    /* Light mode tile text */
+    body:not(.r-dark) .hnt-title { color: rgba(10,40,22,.92) !important; }
+    body:not(.r-dark) .hnt-desc  { color: rgba(10,40,22,.58) !important; }
+    body:not(.r-dark) .hnt-cta   { color: rgba(10,40,22,.35) !important; }
     #homeHeroLabel        { order: 13; margin-top: 24px; }
     /* Search row: 2-column grid — icon above, label below — no overlap possible */
     #homeSearchRow {
@@ -938,7 +957,10 @@
             <div class="p-field">
               <label class="p-field-label">Contraseña</label>
               <div style="position:relative"><form style="display:contents" onsubmit="return false"><input class="p-input" type="password" id="regPass" placeholder="Mínimo 6 caracteres" autocomplete="new-password" style="padding-right:44px"></form><button type="button" onclick="pTogglePassVis('regPass',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:17px;color:var(--ink4);padding:4px;line-height:1">👁️</button></div>
-              <div class="p-err-msg" id="regPassErr">La contraseña debe tener al menos 6 caracteres</div>
+              <div class="p-err-msg" id="regPassErr">Mínimo 6 caracteres con al menos 1 número, 1 minúscula y 1 mayúscula</div>
+              <div style="margin-top:7px;padding:9px 12px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.22);border-radius:10px;font-size:11.5px;color:var(--ink4);line-height:1.65">
+                <span style="font-weight:700;color:var(--sage3)">Requisitos:</span> mínimo <strong>6 caracteres</strong> · al menos <strong>1 número</strong> · <strong>1 mayúscula</strong> · <strong>1 minúscula</strong>
+              </div>
             </div>
             <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;background:var(--cream2);border-radius:12px;padding:12px 14px">
               <input type="checkbox" id="regTcCheck" style="accent-color:var(--sage2);width:18px;height:18px;cursor:pointer;flex-shrink:0;margin-top:1px">
@@ -1021,13 +1043,17 @@
             <h2 style="font-family:'Cormorant Garamond',serif;font-size:30px;color:#fff;margin-bottom:12px;line-height:1.2">¡Ya casi estás!</h2>
             <p style="font-size:15px;color:rgba(255,255,255,.85);line-height:1.65;margin-bottom:10px">Te enviamos un correo de confirmación a:</p>
             <div style="background:rgba(255,255,255,.15);border-radius:12px;padding:10px 18px;margin-bottom:20px;font-size:15px;font-weight:700;color:#fff" id="verifyEmailAddr">tu@email.com</div>
-            <div style="background:rgba(255,255,255,.12);border-radius:14px;padding:16px 18px;margin-bottom:24px;text-align:left">
-              <div style="font-size:13px;color:rgba(255,255,255,.9);line-height:1.8">
-                <div>✅ Revisá tu bandeja de entrada</div>
-                <div>📁 Si no llegó, revisá Spam o Promociones</div>
-                <div>⏱️ Puede tardar unos minutos</div>
-                <div>🔗 Hacé clic en el enlace del correo para activar tu cuenta</div>
+            <div style="background:rgba(255,255,255,.18);border-radius:16px;padding:18px 20px;margin-bottom:10px;text-align:left;border:1.5px solid rgba(255,255,255,.30)">
+              <div style="font-size:14px;font-weight:800;color:#fff;font-family:'Jost',sans-serif;margin-bottom:10px">📬 Revisá tu correo</div>
+              <div style="font-size:13px;color:rgba(255,255,255,.92);line-height:1.9">
+                <div>✅ Abrí tu <strong>bandeja de entrada</strong></div>
+                <div>🚨 <strong>Si no aparece, revisá Spam o Correo No Deseado</strong></div>
+                <div>⏱️ El correo puede tardar 1–3 minutos</div>
+                <div>🔗 Hacé clic en el enlace para activar tu cuenta</div>
               </div>
+            </div>
+            <div style="background:rgba(255,150,50,.25);border:1.5px solid rgba(255,180,80,.50);border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:12.5px;color:#fff;line-height:1.6;font-family:'Jost',sans-serif">
+              ⚠️ <strong>¿No lo encontrás?</strong> Buscá un correo de <em>noreply@mail.app.supabase.io</em> o "Velo" en tu carpeta de spam. A veces los filtros automáticos lo clasifican ahí.
             </div>
             <button onclick="pGoTo('login')" class="p-btn p-btn--dark-white p-btn--lg" style="width:100%;margin-bottom:12px">Ir a Iniciar Sesión →</button>
             <button onclick="pGoTo('landing')" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;font-family:'Jost',sans-serif">← Volver al inicio</button>
@@ -4192,8 +4218,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260625-1143"></script>
-<script src="premium-redesign.js?v=20260625-1143"></script>
+<script src="premium.js?v=20260625-1144"></script>
+<script src="premium-redesign.js?v=20260625-1144"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

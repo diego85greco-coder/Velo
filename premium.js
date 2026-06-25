@@ -1028,7 +1028,8 @@ async function pSignUp(){
   if(tcErrEl) tcErrEl.style.display = 'none';
   if(!name){ _showFieldErr('regNameErr'); ok=false; }
   if(!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ _showFieldErr('regEmailErr'); ok=false; }
-  if(!pass || pass.length < 6){ _showFieldErr('regPassErr'); ok=false; }
+  var passOk = pass && pass.length >= 6 && /[0-9]/.test(pass) && /[a-z]/.test(pass) && /[A-Z]/.test(pass);
+  if(!passOk){ _showFieldErr('regPassErr'); ok=false; }
   if(tcEl && !tcEl.checked){ if(tcErrEl) tcErrEl.style.display='block'; ok=false; }
   if(!ok) return;
   if(!_botGuardCheck()) return;
@@ -1067,9 +1068,9 @@ async function pSignUp(){
       safeLS('set','velo_user_name', name);
       safeLS('set','velo_user_type','user');
       _recordTC(name, email, 'TOS-v1');
-      var veEl = document.getElementById('verifyEmailAddr');
-      if(veEl) veEl.textContent = email;
-      pGoTo('verify-email');
+      // Go to pick-username first — pSaveUsername() will then navigate to verify-email
+      safeLS('set','velo_pick_username_from_reg','1');
+      pGoTo('pick-username');
     }
   }catch(e){
     pToast('⚠️','Error de conexión');
@@ -2320,6 +2321,7 @@ function _onThemeChange(){
 
 // ── HOME DATA ──────────────────────────────────────────────────
 function _loadHomeData(){
+  _initHomeNavTiles();
   _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
   var d = new Date();
   var h = d.getHours();
@@ -2481,6 +2483,49 @@ function _loadHomeData(){
   if(sbClient && !_happyRtCh) _happyRtCh = _sbSub('velo:happy', 'happy_posts', function(){ _loadHomeHappyFeed(); if(typeof pRenderHappy==='function') pRenderHappy(); });
   // Bitácora home widget
   setTimeout(_renderHomeBitacoraWidget, 700);
+}
+
+// ── HOME NAV TILES ────────────────────────────────────────────
+function _initHomeNavTiles(){
+  if(document.getElementById('homeNavTiles')) return;
+  var heroLeft = document.querySelector('.r-hero-left');
+  if(!heroLeft) return;
+  var tiles = [
+    { icon:'🤝', title:'Acompañamiento', desc:'Guardianes, incógnito y sala de ayuda', bg:'rgba(116,198,157,.14)', border:'rgba(116,198,157,.45)', action:"pShowHomeSection('homeStatusToggle')" },
+    { icon:'📖', title:'Bitácora', desc:'Historias de apoyo e inspiración', bg:'rgba(100,150,240,.14)', border:'rgba(100,150,240,.42)', action:"pGoTo('bitacora')" },
+    { icon:'🌊', title:'Mensajes al Mar', desc:'Soltá lo que sentís de forma anónima', bg:'rgba(60,130,220,.14)', border:'rgba(60,130,220,.42)', action:"pGoTo('bottle')" },
+    { icon:'☮️', title:'Círculos de Paz', desc:'Grupos pequeños de apoyo mutuo', bg:'rgba(160,110,220,.14)', border:'rgba(160,110,220,.42)', action:"pGoTo('circles')" },
+    { icon:'🌱', title:'Momentos y Muro Feliz', desc:'Compartí momentos de la comunidad', bg:'rgba(80,180,130,.14)', border:'rgba(80,180,130,.42)', action:"pGoTo('momento')" },
+    { icon:'🧘', title:'Meditación y Calma', desc:'Ejercicios guiados para la mente', bg:'rgba(180,140,220,.14)', border:'rgba(180,140,220,.42)', action:"pGoTo('meditacion')" },
+    { icon:'🎵', title:'Sonidos de Ambiente', desc:'Lluvia, bosque, fuego y mar', bg:'rgba(70,150,200,.14)', border:'rgba(70,150,200,.42)', action:"pGoTo('respira')" },
+    { icon:'🤖', title:'Calma IA', desc:'Tu asistente de bienestar personal', bg:'rgba(80,180,160,.14)', border:'rgba(80,180,160,.42)', action:"pGoTo('calm-ai')" },
+    { icon:'👨‍⚕️', title:'Profesionales', desc:'Especialistas en salud mental', bg:'rgba(50,120,200,.14)', border:'rgba(50,120,200,.42)', action:"pGoTo('professionals')" },
+    { icon:'🌟', title:'Velo Vela por Ti', desc:'Tu espacio personal de bienestar', bg:'rgba(200,158,56,.14)', border:'rgba(200,158,56,.42)', action:"pGoTo('vela')" },
+  ];
+  var tilesHtml = tiles.map(function(t){
+    return '<div onclick="'+t.action+'" class="home-nav-tile"'
+      +' style="cursor:pointer;background:'+t.bg+';border:1.5px solid '+t.border+';border-radius:18px;padding:16px 14px;display:flex;flex-direction:column;gap:7px;-webkit-tap-highlight-color:transparent;touch-action:manipulation"'
+      +' onmousedown="this.style.transform=\'scale(.96)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'"'
+      +' ontouchstart="this.style.transform=\'scale(.96)\'" ontouchend="this.style.transform=\'\'">'
+      +'<div style="font-size:26px;line-height:1">'+t.icon+'</div>'
+      +'<div class="hnt-title" style="font-size:12.5px;font-weight:800;color:rgba(255,255,255,.95);font-family:\'Jost\',sans-serif;line-height:1.2">'+t.title+'</div>'
+      +'<div class="hnt-desc" style="font-size:10px;color:rgba(255,255,255,.55);font-family:\'Jost\',sans-serif;line-height:1.4">'+t.desc+'</div>'
+      +'<div class="hnt-cta" style="margin-top:2px;font-size:10.5px;color:rgba(255,255,255,.32);font-family:\'Jost\',sans-serif;letter-spacing:.2px;font-weight:600">Abrir →</div>'
+      +'</div>';
+  }).join('');
+  var container = '<div id="homeNavTiles" style="width:100%;margin:0 0 18px;box-sizing:border-box">'
+    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.60);margin-bottom:10px;font-family:\'Jost\',sans-serif;padding-left:2px;display:flex;align-items:center;gap:6px"><span style="height:1px;flex:1;background:rgba(116,198,157,.20)"></span><span>Explorar Velo</span><span style="height:1px;flex:1;background:rgba(116,198,157,.20)"></span></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +tilesHtml
+    +'</div>'
+    +'</div>';
+  heroLeft.insertAdjacentHTML('beforeend', container);
+}
+
+function pShowHomeSection(id){
+  var el = document.getElementById(id);
+  if(!el) return;
+  el.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 // ── HOME AUTO-REFRESH ─────────────────────────────────────────
@@ -4184,7 +4229,7 @@ function _buildDqCards(list){
       +'</div>'
       // Response text — indented to align with name (avatar 36px + gap 9px)
       +(r.response_text
-        ? '<div style="font-size:15.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:rgba(255,255,255,.90);line-height:1.55;word-break:break-word;margin-bottom:10px;padding-left:45px">'+_escHtml(r.response_text)+'</div>'
+        ? '<div style="font-size:15.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.55;word-break:break-word;margin-bottom:10px;padding-left:45px">'+_escHtml(r.response_text)+'</div>'
         : '')
       // Bottom: reaction pills + button — padding-right ensures "Reaccionar" never clips
       +'<div class="dq-rx-bar" style="display:flex;align-items:center;gap:5px;border-top:1px solid '+col.border.replace(/[\d.]+\)$/,'.18)')+';padding-top:8px;padding-bottom:2px;padding-right:10px">'
@@ -24520,7 +24565,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1143;
+    var _BUILT_V = 1144;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
