@@ -11994,7 +11994,8 @@ body.velo-t-noche.r-dark #homeGreetSub {
   box-sizing: border-box !important;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
-  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-x: none !important;
+  -webkit-overflow-scrolling: auto !important;
 }
 #homeDailyQFeed::-webkit-scrollbar { display: none !important; }
 #homeDailyQFeed .dq-feed-card {
@@ -14200,4 +14201,29 @@ body.r-dark #homeDailyQuote {
 }
 body:not(.r-dark) #homeDailyQuote {
   border: 1px solid rgba(35,120,70,.12) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v1193 — Contact cards: theme-aware via CSS cascade (auto-switches)
+   Per-user accent color (border-left strip, avatar ring) set in JS via _userColor
+   ══════════════════════════════════════════════════════════════════ */
+.vcc-card {
+  background: rgba(255,255,255,.97) !important;
+  box-shadow: 0 2px 18px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.90) !important;
+}
+body.r-dark .vcc-card {
+  background: linear-gradient(135deg,rgba(10,22,16,.97) 0%,rgba(7,16,11,.95) 100%) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,.34), inset 0 1px 0 rgba(116,198,157,.10) !important;
+}
+.vcc-card .vcc-name {
+  color: rgba(15,45,28,.94) !important;
+}
+body.r-dark .vcc-card .vcc-name {
+  color: rgba(222,248,234,.96) !important;
+}
+.vcc-card .vcc-motto {
+  color: rgba(38,80,55,.48) !important;
+}
+body.r-dark .vcc-card .vcc-motto {
+  color: rgba(150,208,175,.48) !important;
 }
