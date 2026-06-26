@@ -11064,6 +11064,13 @@ body.r-dark #pg-help-chat .feed-messages {
 }
 .weather-hero-emoji {
   font-size: 155px !important;
+  animation: weatherEmojiFloat 8s ease-in-out infinite !important;
+  display: inline-block !important;
+}
+@keyframes weatherEmojiFloat {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  45%       { transform: translateY(-10px) scale(1.02); }
+  55%       { transform: translateY(-10px) scale(1.02); }
 }
 
 /* ══════════════════════════════════════════════════════════════════
