@@ -753,6 +753,8 @@
     if(typeof _onThemeChange === 'function') setTimeout(_onThemeChange, 80);
     // Re-render Bitácora widget (uses mode-specific card colors)
     if(typeof _renderHomeBitacoraWidget === 'function') setTimeout(_renderHomeBitacoraWidget, 50);
+    // Re-render Guardianes "MI DISPONIBILIDAD" card (inline colors)
+    if(typeof _renderMyStatusBar === 'function') setTimeout(_renderMyStatusBar, 50);
     // Re-render Momentos home feed empty state (uses mode-specific inline colors)
     if(typeof _renderMomentoCards === 'function' && typeof _homeMomentoCache !== 'undefined') {
       setTimeout(function(){ _renderMomentoCards(_homeMomentoCache.slice(0,4), 'homeMomentoFeed'); }, 80);

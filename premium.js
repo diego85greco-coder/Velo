@@ -6060,34 +6060,51 @@ function _renderMyStatusBar(){
   var isGuardian = safeLS('get','velo_is_guardian') === 'true';
   var isIncognito = safeLS('get','velo_incognito') === 'true';
   var dis = baseSt === 'disponible', ocu = baseSt === 'ocupado';
+  var isDark = document.body.classList.contains('r-dark');
+  // Theme-aware palette
+  var bg       = isDark ? 'linear-gradient(140deg,rgba(8,28,18,.97),rgba(12,38,24,.95))' : 'rgba(248,255,250,.97)';
+  var bdr      = isDark ? 'rgba(116,198,157,.32)' : 'rgba(74,160,110,.35)';
+  var shd      = isDark ? '0 8px 28px rgba(0,0,0,.40),inset 0 1px 0 rgba(116,198,157,.08)' : '0 4px 16px rgba(74,160,110,.14),inset 0 1px 0 rgba(255,255,255,.92)';
+  var hdrCol   = isDark ? 'rgba(116,198,157,.65)' : 'rgba(30,120,70,.75)';
+  var idleBdr  = isDark ? 'rgba(116,198,157,.20)' : 'rgba(74,160,110,.28)';
+  var idleCol  = isDark ? 'rgba(180,220,200,.50)' : 'rgba(35,90,55,.55)';
+  var disBdr   = isDark ? 'rgba(80,190,140,.80)' : 'rgba(50,160,100,.75)';
+  var disBg    = isDark ? 'rgba(80,190,140,.20)' : 'rgba(80,190,140,.18)';
+  var disCol   = isDark ? 'rgba(140,230,185,.95)' : 'rgba(10,90,45,.92)';
+  var ocuBdr   = isDark ? 'rgba(200,165,0,.75)' : 'rgba(180,140,30,.65)';
+  var ocuBg    = isDark ? 'rgba(200,165,0,.15)' : 'rgba(225,190,60,.20)';
+  var ocuCol   = isDark ? 'rgba(225,190,60,.90)' : 'rgba(140,100,15,.92)';
+  var dvLine   = isDark ? 'rgba(116,198,157,.14)' : 'rgba(74,160,110,.20)';
+  var togCol   = isDark ? 'rgba(255,255,255,.88)' : 'rgba(15,55,30,.92)';
+  var subTog   = isDark ? 'rgba(180,230,200,.50)' : 'rgba(35,85,55,.55)';
   el.innerHTML =
-    '<div style="background:linear-gradient(140deg,rgba(8,28,18,.97),rgba(12,38,24,.95));border:1.5px solid rgba(116,198,157,.32);border-radius:22px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.40),inset 0 1px 0 rgba(116,198,157,.08);margin-bottom:14px">'
+    '<div style="background:'+bg+';border:1.5px solid '+bdr+';border-radius:22px;overflow:hidden;box-shadow:'+shd+';margin-bottom:14px">'
     +'<div style="height:2px;background:linear-gradient(90deg,transparent,rgba(116,198,157,.60) 35%,rgba(100,180,255,.50) 75%,transparent)"></div>'
     // Disponibilidad
     +'<div style="padding:14px 16px 12px">'
-    +'<div style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.65);font-family:\'Jost\',sans-serif;margin-bottom:10px">💚 Mi disponibilidad</div>'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+hdrCol+';font-family:\'Jost\',sans-serif;margin-bottom:10px">💚 Mi disponibilidad</div>'
     +'<div style="display:flex;gap:6px">'
-    +'<button onclick="pSetMyGuardianStatus(\'disponible\')" style="flex:1;font-size:14px;padding:9px 6px;border-radius:100px;border:1.5px solid '+(dis?'rgba(80,190,140,.80)':'rgba(116,198,157,.20)')+';background:'+(dis?'rgba(80,190,140,.20)':'none')+';color:'+(dis?'rgba(140,230,185,.95)':'rgba(180,220,200,.50)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s">🟢 Disponible</button>'
-    +'<button onclick="pSetMyGuardianStatus(\'ocupado\')" style="flex:1;font-size:14px;padding:9px 6px;border-radius:100px;border:1.5px solid '+(ocu?'rgba(200,165,0,.75)':'rgba(116,198,157,.20)')+';background:'+(ocu?'rgba(200,165,0,.15)':'none')+';color:'+(ocu?'rgba(225,190,60,.90)':'rgba(180,220,200,.50)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s">🟡 Ocupado</button>'
+    +'<button onclick="pSetMyGuardianStatus(\'disponible\')" style="flex:1;font-size:14px;padding:9px 6px;border-radius:100px;border:1.5px solid '+(dis?disBdr:idleBdr)+';background:'+(dis?disBg:'none')+';color:'+(dis?disCol:idleCol)+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s">🟢 Disponible</button>'
+    +'<button onclick="pSetMyGuardianStatus(\'ocupado\')" style="flex:1;font-size:14px;padding:9px 6px;border-radius:100px;border:1.5px solid '+(ocu?ocuBdr:idleBdr)+';background:'+(ocu?ocuBg:'none')+';color:'+(ocu?ocuCol:idleCol)+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s">🟡 Ocupado</button>'
     +'</div>'
     +'</div>'
-    +'<div style="height:1px;background:rgba(116,198,157,.14);margin:0 16px"></div>'
+    +'<div style="height:1px;background:'+dvLine+';margin:0 16px"></div>'
     // Toggles incógnito + guardián
     +'<div style="padding:12px 16px 15px;display:flex;align-items:stretch">'
     +'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">'
     +'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px">👤</span>'
     +'<div class="p-tog'+(isIncognito?' on':'')+'" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>'
     +'</div>'
-    +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.88);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.2">Modo incógnito</div>'
-    +'<div style="font-size:11px;color:rgba(180,230,200,.50);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.35">Ocultá tu foto e info</div>'
+    +'<div style="font-size:13px;font-weight:700;color:'+togCol+';font-family:\'Jost\',sans-serif;text-align:center;line-height:1.2">Modo incógnito</div>'
+    +'<div style="font-size:11px;color:'+subTog+';font-family:\'Jost\',sans-serif;text-align:center;line-height:1.35">Ocultá tu foto e info</div>'
     +'</div>'
-    +'<div style="width:1px;align-self:stretch;background:rgba(116,198,157,.15);margin:0 8px"></div>'
+    +'<div style="width:1px;align-self:stretch;background:'+dvLine+';margin:0 8px"></div>'
     +'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">'
     +'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px">🛡️</span>'
     +'<div class="p-tog'+(isGuardian?' on':'')+'" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>'
     +'</div>'
-    +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.88);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.2">Modo guardián</div>'
-    +'<div style="font-size:11px;color:rgba(180,230,200,.50);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.35">Aparecés en la lista</div>'
+    +'<div style="font-size:13px;font-weight:700;color:'+togCol+';font-family:\'Jost\',sans-serif;text-align:center;line-height:1.2">Modo guardián</div>'
+    +'<div style="font-size:11px;color:'+subTog+';font-family:\'Jost\',sans-serif;text-align:center;line-height:1.35">Aparecés en la lista</div>'
     +'</div>'
     +'</div>'
     +'</div>';
@@ -25220,7 +25237,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1206;
+    var _BUILT_V = 1207;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
