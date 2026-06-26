@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1183">
+  <meta name="app-version" content="1184">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1183">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1183">
+  <link rel="stylesheet" href="premium.css?v=20260626-1184">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1184">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1238,23 +1238,30 @@
               <!-- SECCIÓN REGISTRO -->
               <div style="padding:16px 18px 0">
                 <!-- Row 1: Mi estado input pill + mood gold pill -->
-                <div style="display:flex;gap:8px;margin-bottom:8px">
-                  <button class="home-mood-btn" onclick="pOpenMyStatus()" style="flex:1.1;background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.20);border-radius:100px;padding:9px 12px;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:rgba(255,255,255,.72);cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap;transition:background .15s">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.65"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+                <div style="display:flex;gap:8px;margin-bottom:10px">
+                  <button class="home-mood-btn" onclick="pOpenMyStatus()" style="flex:1.1;background:linear-gradient(135deg,rgba(68,175,120,.82),rgba(48,152,95,.78));border:none;border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:rgba(255,255,255,.97);cursor:pointer;font-family:'Jost',sans-serif;white-space:nowrap;transition:all .18s;box-shadow:0 3px 14px rgba(55,160,100,.30),inset 0 1px 0 rgba(255,255,255,.14)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
                     Mi estado
+                    <span style="margin-left:auto;font-size:11px;opacity:.75">✏️</span>
                   </button>
-                  <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="flex:1;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:400;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(255,225,120,.95);background:linear-gradient(135deg,rgba(200,155,35,.42),rgba(178,132,18,.34));border:1.5px solid rgba(222,178,55,.58);border-radius:100px;padding:7px 10px;letter-spacing:.02em;cursor:pointer;overflow:hidden;white-space:nowrap">🌷 <span id="homeCurrentMoodText">¿Cómo te sentís?</span><span style="margin-left:auto;font-size:10px;font-weight:800;letter-spacing:.8px;font-style:normal;font-family:'Jost',sans-serif;opacity:.82;flex-shrink:0;padding-left:4px">OK</span></div>
+                  <div id="homeCurrentMoodLine" onclick="pQuickMood()" style="flex:1;display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(255,235,145,.98);background:linear-gradient(135deg,rgba(210,162,40,.58),rgba(185,138,20,.50));border:1.5px solid rgba(228,185,55,.78);border-radius:100px;padding:8px 10px;letter-spacing:.02em;cursor:pointer;overflow:hidden;white-space:nowrap;box-shadow:0 2px 10px rgba(210,162,40,.22)">🌷 <span id="homeCurrentMoodText">¿Cómo te sentís?</span><span style="margin-left:auto;font-size:10px;font-weight:800;letter-spacing:.8px;font-style:normal;font-family:'Jost',sans-serif;opacity:.85;flex-shrink:0;padding-left:4px">OK</span></div>
                 </div>
                 <!-- Row 2: Motto pill -->
                 <div class="home-motto-label">Mi lema:</div>
-                <div id="homeMottoLine" onclick="pOpenEditProfile()" style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(200,158,56,.95);background:linear-gradient(135deg,rgba(200,158,56,.18),rgba(178,138,18,.13));border:1.5px solid rgba(200,158,56,.45);border-radius:100px;padding:10px 14px;letter-spacing:.02em;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:background .15s">✏️ <span id="homeMottoText">Agregá tu lema →</span></div>
+                <div id="homeMottoLine" onclick="pOpenEditProfile()" style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;font-style:italic;font-family:'Cormorant Garamond',serif;color:rgba(200,158,56,.95);background:linear-gradient(135deg,rgba(200,158,56,.24),rgba(178,138,18,.18));border:1.5px solid rgba(220,172,60,.65);border-radius:14px;padding:10px 14px;letter-spacing:.02em;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:background .15s;box-shadow:0 2px 10px rgba(200,155,35,.18)">✏️ <span id="homeMottoText">Agregá tu lema →</span></div>
                 <!-- Row 3: Weekly emoji history -->
                 <div id="homeWeekMoodGraph" style="display:flex;gap:4px;justify-content:center;align-items:flex-end;margin-top:12px;min-height:54px;background:rgba(0,0,0,.22);border-radius:14px;padding:8px 6px"></div>
                 <!-- Streak -->
                 <div id="homeWeekStreak" style="margin-top:5px;min-height:22px"></div>
+                <!-- Divider -->
+                <div style="display:flex;align-items:center;gap:8px;margin:14px 0 10px">
+                  <div style="height:1px;flex:1;background:linear-gradient(90deg,transparent,rgba(116,198,157,.28))"></div>
+                  <span style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(116,198,157,.55);font-family:'Jost',sans-serif">Acciones</span>
+                  <div style="height:1px;flex:1;background:linear-gradient(90deg,rgba(116,198,157,.28),transparent)"></div>
+                </div>
                 <!-- Mis Registros -->
-                <button id="topbarMoodBtn" onclick="pOpenMoodQuickView()" title="Ver tus registros de ánimos" style="display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:8px;padding:11px 14px;border-radius:100px;background:linear-gradient(135deg,rgba(116,198,157,.22),rgba(116,198,157,.14));border:1.5px solid rgba(116,198,157,.40);color:rgba(220,255,235,.90);font-size:12px;font-weight:700;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.4px;text-transform:uppercase;box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent">
-                  <span id="topbarMoodEmoji" style="font-size:16px;line-height:1">🤗</span>
+                <button id="topbarMoodBtn" onclick="pOpenMoodQuickView()" title="Ver tus registros de ánimos" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,rgba(100,192,148,.65),rgba(62,168,110,.58));border:1.5px solid rgba(116,198,157,.78);color:rgba(215,255,235,.98);font-size:13.5px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent;box-shadow:0 4px 20px rgba(62,168,110,.28)">
+                  <span id="topbarMoodEmoji" style="font-size:20px;line-height:1">🤗</span>
                   <span>Mis Registros</span>
                 </button>
                 <!-- Compartir semana emocional -->
@@ -4282,8 +4289,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1183"></script>
-<script src="premium-redesign.js?v=20260626-1183"></script>
+<script src="premium.js?v=20260626-1184"></script>
+<script src="premium-redesign.js?v=20260626-1184"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
