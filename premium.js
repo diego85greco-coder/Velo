@@ -21306,10 +21306,13 @@ async function _renderHomeWeekMoodGraph(){
   if(!container) return;
   var today = new Date();
   var dayNames = ['D','L','M','M','J','V','S'];
+  var dayFullNames = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   var moodColors = {'😄':'rgba(116,198,157,.9)','😊':'rgba(116,198,157,.65)','😐':'rgba(200,160,80,.7)','😞':'rgba(180,90,90,.7)','😢':'rgba(160,70,70,.8)'};
   var moodBgs    = {'😄':'rgba(116,198,157,.22)','😊':'rgba(116,198,157,.14)','😐':'rgba(200,160,80,.14)','😞':'rgba(180,90,90,.11)','😢':'rgba(160,70,70,.14)'};
+  // Score per mood for the "best day" insight + curva emocional
+  var moodScore  = {'😄':5,'😊':4,'😐':3,'😞':2,'😢':1};
 
-  function _buildGraphHtml(sbMap){
+  function _buildDays(sbMap){
     var days = [];
     for(var i=6; i>=0; i--){
       var d = new Date(today.getFullYear(), today.getMonth(), today.getDate()-i);
@@ -21317,47 +21320,125 @@ async function _renderHomeWeekMoodGraph(){
       var mood = null;
       try{ mood = JSON.parse(safeLS('get','velo_mood_'+key)||'null'); }catch(e){}
       if(!mood && sbMap && sbMap[key]) mood = sbMap[key];
-      days.push({ dayName:dayNames[d.getDay()], mood:mood, isToday:i===0 });
+      days.push({
+        dayName:dayNames[d.getDay()],
+        dayFull:dayFullNames[d.getDay()],
+        mood:mood,
+        isToday:i===0,
+        key:key
+      });
     }
-    return days.map(function(d){
+    return days;
+  }
+
+  function _buildGraphHtml(days){
+    // SVG line connecting registered moods (la curva emocional)
+    var pts = [];
+    days.forEach(function(d,i){
+      if(d.mood && moodScore[d.mood.emoji] !== undefined){
+        // x = center of column (each col = ~14.28%); y inverted (higher score → lower y)
+        var x = (i + .5) * (100/7);
+        var y = 86 - (moodScore[d.mood.emoji]-1) * 18; // map 1..5 → 86..14
+        pts.push({x:x, y:y, i:i});
+      }
+    });
+    var svgPath = '';
+    if(pts.length >= 2){
+      // Smooth curve between points using a quadratic-style midpoint trick
+      var path = 'M ' + pts[0].x.toFixed(2) + ' ' + pts[0].y.toFixed(2);
+      for(var ci=1; ci<pts.length; ci++){
+        var p0 = pts[ci-1], p1 = pts[ci];
+        var midX = (p0.x + p1.x) / 2;
+        path += ' Q ' + midX.toFixed(2) + ' ' + p0.y.toFixed(2) + ' ' + midX.toFixed(2) + ' ' + ((p0.y+p1.y)/2).toFixed(2);
+        path += ' T ' + p1.x.toFixed(2) + ' ' + p1.y.toFixed(2);
+      }
+      svgPath = '<svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible">'
+        + '<defs><linearGradient id="moodCurveGrad" x1="0%" y1="0%" x2="100%" y2="0%">'
+        + '<stop offset="0%" stop-color="rgba(116,198,157,.45)"/>'
+        + '<stop offset="100%" stop-color="rgba(155,210,180,.85)"/>'
+        + '</linearGradient></defs>'
+        + '<path d="'+path+'" fill="none" stroke="url(#moodCurveGrad)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" style="filter:drop-shadow(0 1px 3px rgba(116,198,157,.35))"/>'
+        + '</svg>';
+    }
+    var dayCols = days.map(function(d){
       var color = d.mood ? (moodColors[d.mood.emoji]||'rgba(116,198,157,.65)') : (d.isToday ? 'rgba(116,198,157,.80)' : 'rgba(116,198,157,.30)');
       var bg    = d.mood ? (moodBgs[d.mood.emoji]||'rgba(116,198,157,.18)') : (d.isToday ? 'rgba(116,198,157,.15)' : 'rgba(255,255,255,.05)');
-      var shadow = d.mood ? 'box-shadow:0 2px 10px '+color+';' : (d.isToday ? 'box-shadow:0 0 10px rgba(116,198,157,.35);' : '');
-      var ring  = d.isToday ? 'border:2.5px solid '+color+';' : (d.mood ? 'border:2px solid '+color+';' : 'border:1.5px solid rgba(116,198,157,.20);');
+      var shadow = d.mood ? 'box-shadow:0 2px 12px '+color+';' : (d.isToday ? 'box-shadow:0 0 10px rgba(116,198,157,.35);' : '');
+      var ring  = d.isToday ? 'border:2.5px solid '+color+';' : (d.mood ? 'border:2px solid '+color+';' : 'border:1.5px dashed rgba(116,198,157,.28);');
       var emoji = d.mood ? d.mood.emoji : (d.isToday ? '✦' : '·');
       var todayEmptyStyle = (d.isToday && !d.mood) ? 'animation:moodDayPulse 2.2s ease-in-out infinite;' : '';
       var emojiSz = d.mood ? '20' : (d.isToday ? '14' : '10');
       var cls   = 'mood-day-circle'+(d.mood?'':' mood-day-empty')+(d.isToday?' mood-day-today':'');
-      return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:(d.isToday?'Registrá tu ánimo de hoy':'Sin registro'))+'">'
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;cursor:pointer;position:relative;z-index:1" onclick="pGoTo(\'mood\')" title="'+(d.mood?(d.dayFull+': '+(d.mood.label||d.mood.emoji)):(d.isToday?'Registrá tu ánimo de hoy':'Sin registro · '+d.dayFull))+'">'
         +'<div class="'+cls+'" style="width:40px;height:40px;border-radius:50%;'+ring+shadow+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+emojiSz+'px;transition:.2s;'+todayEmptyStyle+'">'+emoji+'</div>'
         +'<span style="font-size:10px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
         +'</div>';
     }).join('');
+    return svgPath
+      + '<div style="position:relative;z-index:1;display:flex;gap:4px;justify-content:space-between;align-items:flex-end;width:100%">'+dayCols+'</div>';
   }
 
-  // Helper: count days logged this week and build streak message
-  function _weekStreakHtml(sbMap){
+  // Streak + insight + progress bar
+  function _streakInsightHtml(days){
     var loggedCount = 0;
     var streak = 0;
     var streakBroken = false;
-    for(var _si=0; _si<7; _si++){
-      var _sd = new Date(today.getFullYear(), today.getMonth(), today.getDate()-_si);
-      var _sk = _sd.getFullYear()+'-'+String(_sd.getMonth()+1).padStart(2,'0')+'-'+String(_sd.getDate()).padStart(2,'0');
-      var _sm = null;
-      try{ _sm = JSON.parse(safeLS('get','velo_mood_'+_sk)||'null'); }catch(e){}
-      if(!_sm && sbMap && sbMap[_sk]) _sm = sbMap[_sk];
-      if(_sm && _sm.emoji) loggedCount++;
-      if(!streakBroken){ if(_sm && _sm.emoji) streak++; else if(_si > 0) streakBroken = true; }
+    var moodTally = {};
+    var bestScore = -1;
+    var bestDay = null;
+    for(var i=6; i>=0; i--){
+      var d = days[i];
+      var sIdx = 6 - i; // 0 = today, 1 = yesterday, ...
+      if(d.mood && d.mood.emoji){
+        loggedCount++;
+        moodTally[d.mood.emoji] = (moodTally[d.mood.emoji]||0) + 1;
+        var sc = moodScore[d.mood.emoji] || 0;
+        if(sc > bestScore){ bestScore = sc; bestDay = d; }
+      }
+      if(!streakBroken){
+        if(d.mood && d.mood.emoji) streak++;
+        else if(sIdx > 0) streakBroken = true;
+      }
     }
-    if(!loggedCount) return '<div style="text-align:center;padding:4px 0 2px;font-size:12px;color:rgba(255,255,255,.38);font-family:Jost,sans-serif;font-style:italic">Registrá cómo te sentís para ver tu historial</div>';
-    var _msg = streak >= 5 ? '🔥 '+streak+' días seguidos — ¡imparable!' : streak >= 3 ? '🔥 '+streak+' días seguidos' : streak >= 2 ? '✨ '+streak+' días seguidos esta semana' : loggedCount >= 3 ? '💚 '+loggedCount+' días registrados esta semana' : '💚 Registraste '+loggedCount+' día'+(loggedCount>1?'s':'')+' esta semana';
-    return '<div style="text-align:center;padding:5px 0 2px;font-size:12px;font-weight:700;color:rgba(116,198,157,.80);font-family:Jost,sans-serif;letter-spacing:.2px">'+_msg+'</div>';
+    if(!loggedCount){
+      return '<div style="text-align:center;padding:6px 0 2px;font-size:12px;color:var(--ink4);font-family:Jost,sans-serif;font-style:italic;opacity:.72">Registrá cómo te sentís para ver tu historial</div>';
+    }
+    var streakMsg = streak >= 5 ? '🔥 '+streak+' días seguidos — ¡imparable!'
+                  : streak >= 3 ? '🔥 '+streak+' días seguidos'
+                  : streak >= 2 ? '✨ '+streak+' días seguidos esta semana'
+                  : loggedCount >= 3 ? '💚 '+loggedCount+' días registrados esta semana'
+                  : '💚 Registraste '+loggedCount+' día'+(loggedCount>1?'s':'')+' esta semana';
+    // Dominant emotion
+    var domEmoji = '', domCount = 0;
+    Object.keys(moodTally).forEach(function(k){ if(moodTally[k] > domCount){ domCount = moodTally[k]; domEmoji = k; }});
+    // Insights block
+    var insights = [];
+    if(bestDay && bestDay.mood) insights.push('Tu mejor día: <strong style="color:rgba(116,198,157,.95)">'+bestDay.dayFull+'</strong> '+bestDay.mood.emoji);
+    if(domCount >= 2) insights.push('Emoción dominante: '+domEmoji+' ×'+domCount);
+    if(loggedCount < 7) insights.push('<span style="opacity:.78">Faltan '+(7-loggedCount)+' día'+(7-loggedCount>1?'s':'')+' para completar tu semana</span>');
+    // Progress bar
+    var progPct = Math.round(loggedCount / 7 * 100);
+    var progBar = '<div style="margin:8px 14px 0;height:5px;background:rgba(116,198,157,.10);border-radius:100px;overflow:hidden;position:relative">'
+      + '<div style="height:100%;width:'+progPct+'%;background:linear-gradient(90deg,rgba(116,198,157,.65),rgba(155,210,180,.95));border-radius:100px;transition:width .6s ease-out;box-shadow:0 0 8px rgba(116,198,157,.55)"></div>'
+      + '</div>';
+    var html = '<div style="text-align:center;padding:6px 0 2px;font-size:12.5px;font-weight:800;color:rgba(116,198,157,.90);font-family:Jost,sans-serif;letter-spacing:.2px">'+streakMsg+'</div>'
+      + progBar;
+    if(insights.length){
+      html += '<div style="text-align:center;margin-top:8px;font-size:11.5px;color:var(--ink3);font-family:Jost,sans-serif;line-height:1.55">'+insights.join(' &nbsp;·&nbsp; ')+'</div>';
+    }
+    // CTA "Ver mi mes"
+    html += '<div style="text-align:center;margin-top:9px"><button onclick="pGoTo(\'mood\')" style="background:rgba(116,198,157,.16);border:1px solid rgba(116,198,157,.42);color:rgba(116,198,157,.95);font-size:11.5px;font-weight:800;font-family:Jost,sans-serif;padding:6px 14px;border-radius:100px;letter-spacing:.4px;cursor:pointer;transition:all .15s">Ver mi mes completo →</button></div>';
+    return html;
   }
 
+  // Make container relative so SVG can overlay
+  container.style.position = 'relative';
+
   // Render immediately from localStorage (instant, no waiting)
-  container.innerHTML = _buildGraphHtml(null);
+  var _days0 = _buildDays(null);
+  container.innerHTML = _buildGraphHtml(_days0);
   var _streakEl = document.getElementById('homeWeekStreak');
-  if(_streakEl) _streakEl.innerHTML = _weekStreakHtml(null);
+  if(_streakEl) _streakEl.innerHTML = _streakInsightHtml(_days0);
 
   // Then silently update from Supabase in background
   var _months = {};
@@ -21374,9 +21455,10 @@ async function _renderHomeWeekMoodGraph(){
   // Only re-render if Supabase added data not in localStorage
   var _gwEl=document.getElementById('homeWeekMoodGraph');
   if(Object.keys(_sbMap).length > 0 && _gwEl){
-    _gwEl.innerHTML = _buildGraphHtml(_sbMap);
+    var _daysSb = _buildDays(_sbMap);
+    _gwEl.innerHTML = _buildGraphHtml(_daysSb);
     var _streakElSb = document.getElementById('homeWeekStreak');
-    if(_streakElSb) _streakElSb.innerHTML = _weekStreakHtml(_sbMap);
+    if(_streakElSb) _streakElSb.innerHTML = _streakInsightHtml(_daysSb);
   }
 }
 
@@ -25237,7 +25319,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1209;
+    var _BUILT_V = 1210;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
