@@ -1385,7 +1385,7 @@ function _showOnboarding(){
     safeLS('set','velo_home_onboarding_done','1');
     ov.style.transition = 'opacity .35s';
     ov.style.opacity = '0';
-    setTimeout(function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }, 370);
+    setTimeout(function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); setTimeout(_startHomeTour, 250); }, 370);
     window.pObChip = null; window.pObNext = null; window.pObDone = null;
   }
 
@@ -1482,6 +1482,102 @@ function _showOnboarding(){
   document.body.appendChild(ov);
 }
 
+function _startHomeTour(){
+  if(safeLS('get','velo_tour_done')) return;
+
+  // Inject pulse animation once
+  if(!document.getElementById('_tourStyle')){
+    var _ts = document.createElement('style');
+    _ts.id = '_tourStyle';
+    _ts.textContent = '@keyframes _tourPulse{0%,100%{border-color:rgba(116,198,157,.85);box-shadow:0 0 0 9999px rgba(0,0,0,.78)}50%{border-color:rgba(116,198,157,1);box-shadow:0 0 0 9999px rgba(0,0,0,.78),0 0 0 6px rgba(116,198,157,.22)}}';
+    document.head.appendChild(_ts);
+  }
+
+  var STEPS = [
+    {sel:'#homeReflexionDia',   e:'✨', t:'Reflexión del día',    d:'Una frase especial cada mañana. Ideal para empezar con calma y presencia.'},
+    {sel:'#homeDailyQ',         e:'💬', t:'Pregunta del día',     d:'Respondé anónimamente y descubrí qué sienten los demás hoy.'},
+    {sel:'#homeRegisterOuter',  e:'😊', t:'Mi estado de hoy',     d:'Elegí cómo te sentís. Queda guardado en tu diario emocional privado.'},
+    {sel:'#homeMomentoSection', e:'🌿', t:'Comunidad',            d:'Momentos y Muro Feliz — el lado cálido y humano de Velo.'},
+    {sel:'.p-sos-pill',         e:'🆘', t:'Botón SOS',            d:'Acceso rápido a tu red de apoyo. Siempre visible en la pantalla.'},
+    {sel:'[data-screen="diary"]',    e:'📔', t:'Tu Diario Íntimo', d:'Escribí cómo te sentís cada día. Solo vos podés verlo.'},
+    {sel:'[data-screen="contacts"]', e:'🤝', t:'Contactos',       d:'Tus personas de confianza y la comunidad de apoyo emocional.'},
+  ];
+
+  var step = 0;
+
+  var spot = document.createElement('div');
+  spot.id = '_tourSpot';
+  document.body.appendChild(spot);
+
+  var tip = document.createElement('div');
+  tip.id = '_tourTip';
+  tip.style.cssText = 'position:fixed;z-index:9997;pointer-events:all;width:min(310px,calc(100vw - 28px));opacity:0;transition:opacity .25s';
+  document.body.appendChild(tip);
+
+  function _done(){
+    safeLS('set','velo_tour_done','1');
+    spot.style.transition = 'opacity .3s'; tip.style.transition = 'opacity .3s';
+    spot.style.opacity = '0'; tip.style.opacity = '0';
+    setTimeout(function(){ if(spot.parentNode) spot.remove(); if(tip.parentNode) tip.remove(); }, 340);
+    delete window._tourNext; delete window._tourDone;
+  }
+
+  function _place(idx){
+    var s = STEPS[idx];
+    var el = document.querySelector(s.sel);
+    if(!el || el.offsetParent === null){
+      step++; if(step >= STEPS.length){ _done(); return; } _place(step); return;
+    }
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    setTimeout(function(){
+      var r = el.getBoundingClientRect();
+      var pad = 7;
+      spot.style.cssText = 'position:fixed;z-index:9996;pointer-events:none'
+        +';left:'+(r.left-pad)+'px;top:'+(r.top-pad)+'px'
+        +';width:'+(r.width+pad*2)+'px;height:'+(r.height+pad*2)+'px'
+        +';border-radius:18px;border:2.5px solid rgba(116,198,157,.85)'
+        +';animation:_tourPulse 2s ease-in-out infinite'
+        +';transition:left .3s,top .3s,width .3s,height .3s;opacity:1';
+
+      // Dots
+      var dots = STEPS.map(function(_,i){
+        return '<div style="width:'+(i===idx?'16':'6')+'px;height:6px;border-radius:3px;background:'
+          +(i===idx?'rgba(116,198,157,.9)':'rgba(255,255,255,.22)')+';transition:width .25s"></div>';
+      }).join('');
+      var isLast = idx === STEPS.length - 1;
+      var nextBtn = isLast
+        ? '<button onclick="window._tourNext()" style="background:rgba(116,198,157,.92);border:none;color:#071409;font-size:12.5px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;padding:9px 20px;border-radius:12px;letter-spacing:.2px">¡Listo! ✨</button>'
+        : '<button onclick="window._tourNext()" style="background:rgba(116,198,157,.92);border:none;color:#071409;font-size:12.5px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;padding:9px 20px;border-radius:12px;letter-spacing:.2px">Siguiente →</button>';
+
+      tip.innerHTML = '<div style="background:linear-gradient(145deg,rgba(10,26,18,.98),rgba(6,18,12,.97));border:1.5px solid rgba(116,198,157,.50);border-radius:20px;padding:18px 18px 14px;box-shadow:0 14px 60px rgba(0,0,0,.75),0 0 0 1px rgba(116,198,157,.10)">'
+        +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">'
+        +'<span style="font-size:26px;line-height:1">'+s.e+'</span>'
+        +'<span style="font-size:14.5px;font-weight:800;color:rgba(222,250,232,.96);font-family:Jost,sans-serif">'+s.t+'</span>'
+        +'</div>'
+        +'<p style="font-size:12.5px;color:rgba(180,220,195,.72);margin:0 0 13px;line-height:1.62;font-family:Jost,sans-serif">'+s.d+'</p>'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
+        +'<div style="display:flex;gap:4px;align-items:center">'+dots+'</div>'
+        +'<div style="display:flex;gap:8px;align-items:center">'
+        +'<button onclick="window._tourDone()" style="background:none;border:none;color:rgba(255,255,255,.28);font-size:11px;cursor:pointer;font-family:Jost,sans-serif;padding:6px 8px">Saltar</button>'
+        +nextBtn
+        +'</div></div></div>';
+
+      // Position tip below element or above if near bottom
+      var tipH = 170;
+      var tipTop = r.bottom + pad + 14;
+      if(tipTop + tipH > window.innerHeight - 16) tipTop = Math.max(10, r.top - pad - tipH - 14);
+      var tipLeft = Math.max(14, Math.min(r.left, window.innerWidth - 324));
+      tip.style.left = tipLeft+'px';
+      tip.style.top  = tipTop+'px';
+      tip.style.opacity = '1';
+    }, 420);
+  }
+
+  window._tourNext = function(){ tip.style.opacity='0'; step++; if(step>=STEPS.length){ _done(); return; } _place(step); };
+  window._tourDone = function(){ _done(); };
+  _place(0);
+}
+
 async function _loginAndGo(){
   if(safeLS('get','velo_needs_pw_change') === '1'){ pGoTo('change-password'); return; }
   // Admin email detected → send to admin-login instead of regular flow
@@ -1570,6 +1666,8 @@ async function _loginAndGo(){
       _checkProfileComplete(); // Mandatory profile setup if name/username missing
       if(!safeLS('get','velo_home_onboarding_done')){
         setTimeout(_showOnboarding, 700);
+      } else if(!safeLS('get','velo_tour_done')){
+        setTimeout(_startHomeTour, 900);
       }
       // Restore deep-link from URL hash (bookmarked section)
       var _hashDl = (location.hash||'').slice(1).trim();
@@ -24980,7 +25078,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1191;
+    var _BUILT_V = 1192;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
