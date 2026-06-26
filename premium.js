@@ -2529,7 +2529,7 @@ function _initHomeNavTiles(){
   var gridSix = [
     { icon:'⭐', title:'Contactos favoritos', sub:'Tus personas de confianza',    bg:'linear-gradient(135deg,rgba(198,148,38,.20),rgba(168,118,18,.14))',  border:'rgba(218,173,68,.38)', action:"pGoTo('contacts')" },
     { icon:'🤖', title:'Calma IA',         sub:'Tu asistente de bienestar',    bg:'linear-gradient(135deg,rgba(70,178,160,.20),rgba(50,148,130,.14))',  border:'rgba(90,208,185,.38)', action:"pGoTo('calm-ai')" },
-    { icon:'👨‍⚕️', title:'Profesionales',  sub:'Especialistas en salud mental', bg:'linear-gradient(135deg,rgba(50,118,200,.20),rgba(30,88,168,.14))',  border:'rgba(80,148,230,.38)', action:"pGoTo('professionals')" },
+    { icon:'👨‍⚕️', title:'Profesionales',  sub:'Especialistas en bienestar emocional', bg:'linear-gradient(135deg,rgba(50,118,200,.20),rgba(30,88,168,.14))',  border:'rgba(80,148,230,.38)', action:"pGoTo('professionals')" },
     { icon:'🙏', title:'Velo Vela por Ti', sub:'Tu espacio personal',          bg:'linear-gradient(135deg,rgba(198,148,38,.20),rgba(168,118,18,.14))',  border:'rgba(218,173,68,.38)', action:"pGoTo('vela')" },
   ];
   var gridHtml = gridSix.map(function(t){
@@ -24955,7 +24955,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1177;
+    var _BUILT_V = 1178;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
