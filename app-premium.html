@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1174">
+  <meta name="app-version" content="1175">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1174">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1174">
+  <link rel="stylesheet" href="premium.css?v=20260626-1175">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1175">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1291,11 +1291,13 @@
                       <div style="font-size:22px;color:rgba(200,158,56,.22);font-family:'Cormorant Garamond',serif;line-height:1;margin-bottom:2px;user-select:none">❝</div>
                       <div id="homeDailyQuoteText" style="font-size:17px;color:rgba(255,240,190,.95);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.65;letter-spacing:.01em;text-shadow:0 1px 10px rgba(200,150,20,.16)"></div>
                     </div>
-                    <div id="homeDailyQuoteAuthor" style="font-size:10px;font-weight:700;color:rgba(200,158,56,.75);letter-spacing:.8px;text-transform:uppercase;font-family:'Jost',sans-serif;margin-bottom:14px"></div>
-                    <button id="homeDailyShareBtn" onclick="pShareDailyQuote()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:12px 18px;background:linear-gradient(135deg,rgba(116,198,157,.22),rgba(74,160,110,.16));border:1.5px solid rgba(116,198,157,.40);border-radius:14px;cursor:pointer;color:rgba(180,240,210,.95);font-size:12px;font-weight:800;font-family:'Jost',sans-serif;letter-spacing:.5px;box-shadow:0 2px 14px rgba(116,198,157,.12);-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:opacity .15s" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                      Compartí esta frase del día ↗
-                    </button>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px">
+                      <div id="homeDailyQuoteAuthor" style="font-size:10px;font-weight:700;color:rgba(200,158,56,.75);letter-spacing:.8px;text-transform:uppercase;font-family:'Jost',sans-serif;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+                      <button id="homeDailyShareBtn" onclick="pShareDailyQuote()" style="flex-shrink:0;display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.35);border-radius:20px;cursor:pointer;color:rgba(160,230,200,.90);font-size:10.5px;font-weight:700;font-family:'Jost',sans-serif;letter-spacing:.3px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:opacity .15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                        Compartir
+                      </button>
+                    </div>
                   </div>
                   <!-- Pregunta del día — shown by JS -->
                   <div id="homeDailyQ" style="display:none">
@@ -4278,8 +4280,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1174"></script>
-<script src="premium-redesign.js?v=20260626-1174"></script>
+<script src="premium.js?v=20260626-1175"></script>
+<script src="premium-redesign.js?v=20260626-1175"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
