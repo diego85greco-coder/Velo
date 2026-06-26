@@ -1483,7 +1483,8 @@ function _showOnboarding(){
 }
 
 function _startHomeTour(){
-  if(safeLS('get','velo_tour_done')) return;
+  // v1202: tour redesigned — invalidate older tour_done flags so users see the new flow
+  if(safeLS('get','velo_tour_done') === 'v1202') return;
 
   if(!document.getElementById('_tourStyle')){
     var _ts = document.createElement('style');
@@ -1492,20 +1493,24 @@ function _startHomeTour(){
     document.head.appendChild(_ts);
   }
 
-  // Steps: sel = CSS selector to spotlight (null = floating card, no spotlight)
+  // Steps: sel = CSS selector to spotlight; fx = special effect to run on enter
   var STEPS = [
-    {sel:'#homeReflexionDia',        e:'✨', t:'Reflexión del día',   d:'Una frase especial cada mañana para empezar con calma y presencia.'},
-    {sel:'#homeDailyQ',              e:'💬', t:'Pregunta del día',    d:'Respondé anónimamente y descubrí qué sienten los demás hoy.'},
-    {sel:'#homeRegisterOuter',       e:'😊', t:'Mi estado de hoy',   d:'Registrá cómo te sentís. Queda guardado en tu diario emocional privado.'},
-    {sel:'#homeMomentoSection',      e:'🌿', t:'Comunidad',           d:'Momentos y Muro Feliz — el lado cálido y humano de Velo.'},
-    {sel:'[data-screen="guardians"]',e:'🛡️', t:'Guardianes',         d:'Conectate con personas que escuchan desde su experiencia vivida. Apoyo real, sin juicios, cuando más lo necesitás.'},
-    {sel:'[data-screen="help"]',     e:'🤝', t:'Sala de Ayuda',      d:'Publicá lo que te está pasando y alguien de la comunidad te acompañará. Anónimo, sin juicios, disponible 24/7.'},
-    {sel:'[data-screen="circles"]',  e:'⭕', t:'Círculos de Paz',    d:'Grupos temáticos de apoyo: ansiedad, duelo, relaciones y más. Un espacio seguro para compartir y ser escuchado/a.'},
-    {sel:'[data-screen="bottle"]',   e:'🌊', t:'Mensajes al Mar',    d:'Escribí lo que sentís y lanzalo anónimamente. Alguien lo encontrará y te responderá con amor.'},
-    {sel:'[data-screen="bitacora"]', e:'📖', t:'Bitácora',           d:'Compartí historias reales de forma anónima. Apoyo, superación y conexión con quienes entienden lo que vivís.'},
-    {sel:'.p-sos-pill',              e:'🆘', t:'Botón SOS',          d:'Acceso rápido a tu red de apoyo. Siempre visible, para cuando más lo necesités.'},
-    {sel:'[data-screen="diary"]',    e:'📔', t:'Tu Diario Íntimo',   d:'Escribí cómo te sentís cada día. Privado y solo tuyo.'},
-    {sel:'[data-screen="contacts"]', e:'🤝', t:'Contactos',          d:'Tus personas de confianza y la comunidad de apoyo emocional.'},
+    {sel:'#homeReflexionDia',                                 e:'✨', t:'Reflexión del día',     d:'Una frase especial cada mañana — para empezar con calma, presencia y un poco de luz.'},
+    {sel:'#homeMoodChip',                                     e:'💚', t:'Registrá tus ánimos',   d:'Tomate 5 segundos para anotar cómo te sentís hoy. Velo crea tu mapa emocional con eso.'},
+    {sel:'#homeDailyQ',                                       e:'💬', t:'Pregunta del día',      d:'Respondé en anónimo o con tu perfil y descubrí qué sienten los demás hoy.'},
+    {sel:'.home-main-grid [onclick*="\'guardians\'"]',        e:'🛡️', t:'Apoyo Guardianes',      d:'Personas reales disponibles para escucharte sin juicios — sin necesidad de ser profesionales.'},
+    {sel:'.home-main-grid [onclick*="\'help\'"]',             e:'🤝', t:'Sala de Ayuda',         d:'Publicá lo que te pasa y cualquier persona de la comunidad puede acompañarte en tiempo real.'},
+    {sel:'.home-main-grid [onclick*="\'bottle\'"]',           e:'🌊', t:'Al Mar',                d:'Escribí lo que sentís y lanzalo en una botella. Alguien la encontrará y te dejará amor.'},
+    {sel:'.home-main-grid [onclick*="\'circles\'"]',          e:'☮️', t:'Círculos de Paz',       d:'Grupos temáticos: ansiedad, duelo, relaciones, soledad. Compartir es sanar.'},
+    {sel:'#homeVeloIACard',                                   e:'🤖', t:'Acompañante IA',        d:'Un chatbot empático listo para escucharte 24/7. No reemplaza atención profesional — sí te abraza.'},
+    {sel:'.home-main-grid [onclick*="\'news\'"]',             e:'🌞', t:'Buenas Noticias',       d:'Historias reales que dan esperanza. Una dosis de luz cuando el mundo se siente pesado.'},
+    {sel:'#homeBitacoraWidget',                               e:'📖', t:'Bitácora',              d:'Historias anónimas de la comunidad. Leé, escribí y conectate con quienes vivieron lo mismo.'},
+    {sel:'.home-main-grid [onclick*="\'diary\'"]',            e:'📔', t:'Diario Íntimo',         d:'Tu espacio totalmente privado. Solo vos podés leer lo que escribís acá.'},
+    {sel:'.home-main-grid [onclick*="\'meditacion\'"]',       e:'🎵', t:'Música y Relajación',   d:'Tracks originales para acompañar tu calma, tu enojo, tu llanto. La música también abraza.'},
+    {sel:'#homeAmbientPanel',                                 e:'🌧️', t:'Sonidos Ambientales',   d:'Lluvia, bosque, fuego, mar. Ponete uno de fondo mientras escribís o respirás.'},
+    {sel:'.home-main-grid [onclick*="\'contacts\'"]',         e:'⭐', t:'Contactos Favoritos',   d:'Tus personas de confianza. Vé quién está activo y mandales un mensaje cuando los necesités.'},
+    {sel:'#topbarEstiloBtn',                                  e:'🌛', t:'Modo Estilo',           d:'Cambiá entre claro y oscuro cuando quieras. Mirá ↓', fx:'theme'},
+    {sel:'#topbarDonateBtn, #topbarPlusBtn',                  e:'💛', t:'Apoyá a Velo',          d:'Velo es 100% donaciones. Si te ayudó, podés donar o suscribirte a Plus — opcional, pero hace toda la diferencia 💛'},
   ];
 
   var step = 0;
@@ -1520,7 +1525,7 @@ function _startHomeTour(){
   document.body.appendChild(tip);
 
   function _done(){
-    safeLS('set','velo_tour_done','1');
+    safeLS('set','velo_tour_done','v1202');
     spot.style.transition = 'opacity .3s'; tip.style.transition = 'opacity .3s';
     spot.style.opacity = '0'; tip.style.opacity = '0';
     setTimeout(function(){ if(spot.parentNode) spot.remove(); if(tip.parentNode) tip.remove(); }, 340);
@@ -1550,46 +1555,65 @@ function _startHomeTour(){
       +'</div></div></div>';
   }
 
+  function _unionRect(els){
+    var L = Infinity, T = Infinity, R = -Infinity, B = -Infinity;
+    for(var i=0;i<els.length;i++){
+      if(!els[i] || els[i].offsetParent === null) continue;
+      var r = els[i].getBoundingClientRect();
+      if(r.left<L) L=r.left; if(r.top<T) T=r.top;
+      if(r.right>R) R=r.right; if(r.bottom>B) B=r.bottom;
+    }
+    if(L===Infinity) return null;
+    return {left:L, top:T, right:R, bottom:B, width:R-L, height:B-T};
+  }
+
   function _place(idx){
     var s = STEPS[idx];
-    var el = s.sel ? document.querySelector(s.sel) : null;
-    var elVisible = el && el.offsetParent !== null;
+    var els = s.sel ? Array.prototype.slice.call(document.querySelectorAll(s.sel)) : [];
+    els = els.filter(function(e){ return e && e.offsetParent !== null; });
+    var firstEl = els[0] || null;
+    var elVisible = !!firstEl;
 
     tip.style.opacity = '0';
 
     if(elVisible){
-      el.scrollIntoView({behavior:'smooth', block:'center'});
+      firstEl.scrollIntoView({behavior:'smooth', block:'center'});
     } else {
-      // Hide spotlight when element is not visible (e.g. sidebar hidden on mobile)
       spot.style.cssText = 'position:fixed;z-index:9996;pointer-events:none;opacity:0';
+    }
+
+    // Special effect: briefly toggle theme on the Estilo step
+    if(s.fx === 'theme' && typeof window.rToggleDarkMode === 'function'){
+      setTimeout(function(){ try{ window.rToggleDarkMode(); }catch(e){} }, 850);
+      setTimeout(function(){ try{ window.rToggleDarkMode(); }catch(e){} }, 2700);
     }
 
     setTimeout(function(){
       tip.innerHTML = _buildTipHtml(s, idx);
 
       if(elVisible){
-        var r = el.getBoundingClientRect();
-        var pad = 7;
+        var r = els.length > 1 ? _unionRect(els) : firstEl.getBoundingClientRect();
+        var pad = 8;
         spot.style.cssText = 'position:fixed;z-index:9996;pointer-events:none'
           +';left:'+(r.left-pad)+'px;top:'+(r.top-pad)+'px'
           +';width:'+(r.width+pad*2)+'px;height:'+(r.height+pad*2)+'px'
           +';border-radius:18px;border:2.5px solid rgba(116,198,157,.85)'
           +';animation:_tourPulse 2s ease-in-out infinite'
-          +';transition:left .3s,top .3s,width .3s,height .3s;opacity:1';
-        var tipH = 190;
+          +';transition:left .35s cubic-bezier(.4,0,.2,1),top .35s cubic-bezier(.4,0,.2,1),width .35s cubic-bezier(.4,0,.2,1),height .35s cubic-bezier(.4,0,.2,1);opacity:1';
+        var tipH = 200;
+        var tipW = 320;
         var tipTop = r.bottom + pad + 14;
         if(tipTop + tipH > window.innerHeight - 16) tipTop = Math.max(10, r.top - pad - tipH - 14);
-        var tipLeft = Math.max(14, Math.min(r.left, window.innerWidth - 334));
+        var tipLeft = Math.max(14, Math.min(r.left, window.innerWidth - tipW - 14));
         tip.style.left = tipLeft+'px';
         tip.style.top  = tipTop+'px';
       } else {
-        // Floating centered card — full dark overlay, no spotlight hole
         spot.style.cssText = 'position:fixed;z-index:9996;pointer-events:none;inset:0;background:rgba(0,0,0,.72);opacity:1';
         tip.style.left = Math.max(14, (window.innerWidth - 320)/2)+'px';
         tip.style.top  = Math.max(20, (window.innerHeight - 220)/2)+'px';
       }
       tip.style.opacity = '1';
-    }, elVisible ? 420 : 80);
+    }, elVisible ? 440 : 80);
   }
 
   window._tourNext = function(){ tip.style.opacity='0'; step++; if(step>=STEPS.length){ _done(); return; } _place(step); };
@@ -4160,15 +4184,26 @@ function _updateMoodChip(){
   var emoji = null; var label = '';
   if(today){ try{ var _cm=JSON.parse(safeLS('get','velo_mood_'+today)||'null'); if(_cm){emoji=_cm.emoji||null;label=_cm.label||'';} }catch(e){} }
   var hasEntry = !!emoji;
+  var isDark = document.body.classList.contains('r-dark');
+  var wrapBg   = isDark ? 'linear-gradient(145deg,rgba(14,58,32,.92),rgba(8,38,20,.90))' : 'linear-gradient(145deg,rgba(255,255,255,.96),rgba(238,252,244,.94))';
+  var wrapBdr  = isDark ? 'rgba(116,198,157,.65)' : 'rgba(74,160,110,.55)';
+  var wrapShd  = isDark ? '0 4px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(116,198,157,.12)' : '0 4px 18px rgba(74,160,110,.16),inset 0 1px 0 rgba(255,255,255,.80)';
+  var glowBg   = isDark ? 'radial-gradient(circle,rgba(116,198,157,.25) 0%,transparent 70%)' : 'radial-gradient(circle,rgba(74,160,110,.18) 0%,transparent 70%)';
+  var iconBg   = isDark ? 'rgba(116,198,157,.20)' : 'rgba(74,160,110,.12)';
+  var iconBdr  = isDark ? 'rgba(116,198,157,.65)' : 'rgba(74,160,110,.55)';
+  var iconShd  = isDark ? '0 2px 10px rgba(116,198,157,.22)' : '0 2px 10px rgba(74,160,110,.15)';
+  var lblCol   = isDark ? 'rgba(116,198,157,.90)' : 'rgba(38,120,70,.85)';
+  var mainCol  = isDark ? 'rgba(230,255,240,.98)' : 'rgba(8,52,24,.92)';
+  var arrowCol = isDark ? 'rgba(116,198,157,.90)' : 'rgba(38,120,70,.75)';
   chip.innerHTML =
-    '<div class="mcc-wrap'+(hasEntry?' mcc-has-entry':'')+'">'
-    +'<div class="mcc-glow"></div>'
-    +'<div class="mcc-icon">'+(emoji||'💚')+'</div>'
-    +'<div class="mcc-text">'
-    +'<div class="mcc-label">✦ Registrá tus ánimos</div>'
-    +'<div class="mcc-main">'+(hasEntry?_escHtml(label||'Registrado hoy'):'¿Cómo te sentís hoy?')+'</div>'
+    '<div class="mcc-wrap'+(hasEntry?' mcc-has-entry':'')+'" style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:'+wrapBg+';border:1.5px solid '+wrapBdr+';border-radius:20px;box-shadow:'+wrapShd+';position:relative;overflow:hidden">'
+    +'<div class="mcc-glow" style="position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:64px;height:64px;border-radius:50%;background:'+glowBg+';pointer-events:none"></div>'
+    +'<div class="mcc-icon" style="position:relative;z-index:1;width:46px;height:46px;border-radius:15px;background:'+iconBg+';border:1.5px solid '+iconBdr+';display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:'+iconShd+'">'+(emoji||'💚')+'</div>'
+    +'<div class="mcc-text" style="position:relative;z-index:1;flex:1;min-width:0">'
+    +'<div class="mcc-label" style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+lblCol+';font-family:\'Jost\',sans-serif;margin-bottom:4px">✦ Registrá tus ánimos</div>'
+    +'<div class="mcc-main" style="font-size:16px;font-weight:800;color:'+mainCol+';font-family:\'Jost\',sans-serif;line-height:1.2">'+(hasEntry?_escHtml(label||'Registrado hoy'):'¿Cómo te sentís hoy?')+'</div>'
     +'</div>'
-    +'<span class="mcc-arrow">›</span>'
+    +'<span class="mcc-arrow" style="position:relative;z-index:1;font-size:22px;font-weight:300;color:'+arrowCol+';flex-shrink:0;line-height:1">›</span>'
     +'</div>';
 }
 
@@ -4879,8 +4914,10 @@ async function pSubmitDailyResponse(){
   if(!text){ pToast('✏️','Escribí algo sobre cómo te sentís con esta pregunta'); if(txEl) txEl.focus(); return; }
   var q     = _getDailyQuestion();
   var dateKey = _dateKey();
-  var name  = safeLS('get','velo_user_name') || 'Alguien';
-  var av    = safeLS('get','velo_user_av') || '';
+  var anonChk = document.getElementById('dqAnonChk');
+  var isAnon = !!(anonChk && anonChk.checked);
+  var name  = isAnon ? 'Anónimo' : (safeLS('get','velo_user_name') || 'Alguien');
+  var av    = isAnon ? '' : (safeLS('get','velo_user_av') || '');
   var avSafe = (av && !av.startsWith('data:')) ? av : '';
   // Always use auth.getUser() so the stored user_id matches what RLS checks (auth.uid())
   var uid = safeLS('get','velo_user_id');
@@ -4891,7 +4928,7 @@ async function pSubmitDailyResponse(){
     }catch(e){}
   }
   if(!uid) return;
-  safeLS('set','velo_daily_resp_'+dateKey, JSON.stringify({emoji:_dailySelectedEmoji,text:text,uid:uid}));
+  safeLS('set','velo_daily_resp_'+dateKey, JSON.stringify({emoji:_dailySelectedEmoji,text:text,uid:uid,anon:isAnon}));
   if(sbClient){
     try{
       await sbClient.from('daily_responses').upsert({
@@ -8780,7 +8817,7 @@ function _showCalmChips(){
   wrap.id = 'calmChips';
   wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;padding:6px 0 10px';
   wrap.innerHTML = chips.map(function(c){
-    return '<button onclick="pCalmChipSend('+_jsAttr(c.text)+')" style="padding:8px 13px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.25);border-radius:100px;font-size:14px;color:rgba(255,255,255,.72);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">'+c.label+'</button>';
+    return '<button class="calm-chip" onclick="pCalmChipSend('+_jsAttr(c.text)+')">'+c.label+'</button>';
   }).join('');
   msgEl.appendChild(wrap);
   msgEl.scrollTop = msgEl.scrollHeight;
@@ -10538,6 +10575,11 @@ function _checkSurveyDue(){
   // Only for regular users (not admin, not pro)
   if(safeLS('get','velo_user_type') === 'admin') return;
   if(safeLS('get','velo_user_type') === 'pro') return;
+  // Require at least 7 distinct days of usage before showing first survey
+  try{
+    var _vd = JSON.parse(safeLS('get','velo_visit_days')||'[]');
+    if(!Array.isArray(_vd) || _vd.length < 7) return;
+  }catch(e){ return; }
   var sid = _surveyQuarterId();
   // Already opened/completed this quarter's survey → never re-add
   if(safeLS('get','velo_read_'+sid) === '1') return;
@@ -14239,7 +14281,7 @@ function pRenderInbox(){
   // Only show welcome (m1) to genuinely new users — if they have a username or visit history, they're returning
   var _isNewUser = !safeLS('get','velo_username') && !safeLS('get','velo_visit_days');
   var mockMsgs = [
-    { id:'m1', tipo:'sistema', icon:'💚', remitente:'Equipo Velo', asunto:'¡Bienvenido/a!', extracto:'Gracias por unirte a Velo. Aquí encontrarás apoyo.', leido:!!safeLS('get','velo_read_m1'), fecha:'Ahora' },
+    { id:'m1', tipo:'sistema', icon:'💚', remitente:'Equipo Velo', asunto:'¡Bienvenido/a a Velo!', extracto:'Registrá tus ánimos cada día — cada domingo te enviamos tu resumen semanal, y a fin de mes un análisis completo de tu mes. 🌿', leido:!!safeLS('get','velo_read_m1'), fecha:'Ahora' },
     { id:'m2', tipo:'sistema', icon:'🌿', remitente:'Velo', asunto:'Consejo del día', extracto:'Recuerda: está bien no estar bien. El primer paso es reconocerlo.', leido:true, fecha:'Hoy' }
   ].filter(function(m){
     if(m.id === 'm1' && !_isNewUser) return false; // hide welcome for returning users
@@ -14342,11 +14384,36 @@ function pRenderInbox(){
     });
     var _clearedAt = parseInt(safeLS('get','velo_inbox_cleared_at')||'0');
 
+    // First-visit date — used to suppress monthly/weekly reports that cover periods BEFORE user existed
+    var _firstVisitDay = (function(){
+      try{
+        var dl = JSON.parse(safeLS('get','velo_visit_days')||'[]');
+        if(!dl.length) return null;
+        return dl.slice().sort()[0]; // earliest YYYY-MM-DD
+      }catch(e){ return null; }
+    })();
+    function _reportCoversBeforeSignup(b){
+      // Monthly report body: __MONTHLY_REPORT__YYYY-MM
+      if(b.body && b.body.indexOf('__MONTHLY_REPORT__') === 0){
+        var rpYM = b.body.slice('__MONTHLY_REPORT__'.length); // "YYYY-MM"
+        if(!_firstVisitDay) return false; // can't tell → keep
+        var firstYM = _firstVisitDay.slice(0,7); // YYYY-MM
+        return rpYM < firstYM; // report covers a month BEFORE user first visited
+      }
+      // Weekly report body: __WEEKLY_REPORT__YYYY-MM-DD (Sunday)
+      if(b.body && b.body.indexOf('__WEEKLY_REPORT__') === 0){
+        var wkDay = b.body.slice('__WEEKLY_REPORT__'.length);
+        if(!_firstVisitDay) return false;
+        return wkDay < _firstVisitDay; // week's Sunday is before user's first day
+      }
+      return false;
+    }
     newBcs = newBcs.filter(function(b){
       if(_del2.indexOf('bc_'+b.id) >= 0) return false;
       if(safeLS('get','velo_bcast_read_'+b.id)) return false;
       if(_syncedReadIds[b.id]) return false;
       if(_clearedAt && b.sent_at && new Date(b.sent_at).getTime() <= _clearedAt) return false;
+      if(_reportCoversBeforeSignup(b)) return false; // new user → no resúmenes de periodos previos
       return true;
     });
     // Resolve real sender names from Supabase profiles (stored name may be a username)
@@ -14489,7 +14556,7 @@ function pRenderInbox(){
   el.innerHTML = contactBanner + all.map(function(m){
     var actionBtn = '';
     if(m.accion && !m.leido){
-      actionBtn = '<button onclick="event.stopPropagation();(function(){var ms=[];try{ms=JSON.parse(safeLS(\'get\',\'velo_inbox\')||\'[]\');}catch(e){}safeLS(\'set\',\'velo_inbox\',JSON.stringify(ms.map(function(x){return x.id===\''+m.id+'\'?Object.assign({},x,{leido:true}):x;})));})();safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');this.closest(\'.p-inbox-msg\').classList.remove(\'unread\');var d=this.closest(\'.p-inbox-msg\').querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();'+m.accion+'" style="margin-top:6px;font-size:13px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
+      actionBtn = '<button class="buzon-notif-cta" onclick="event.stopPropagation();(function(){var ms=[];try{ms=JSON.parse(safeLS(\'get\',\'velo_inbox\')||\'[]\');}catch(e){}safeLS(\'set\',\'velo_inbox\',JSON.stringify(ms.map(function(x){return x.id===\''+m.id+'\'?Object.assign({},x,{leido:true}):x;})));})();safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');this.closest(\'.p-inbox-msg\').classList.remove(\'unread\');var d=this.closest(\'.p-inbox-msg\').querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();'+m.accion+'" style="margin-top:8px;font-size:13px;padding:8px 16px;border-radius:100px;font-family:\'Jost\',sans-serif;cursor:pointer">Completar encuesta →</button>';
     }
     var hasCuerpo = !!(m.cuerpo);
     var readKey = 'velo_read_'+m.id;
@@ -14967,12 +15034,15 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
     +(presence ? '<div style="font-size:13px;color:'+(presence.on?presence.color:'var(--ink5)')+';margin-top:6px">● '+presence.label+'</div>' : '')
     +'</div>'
     + likes + counters + revHtml
-    // ── Bitácora posts section ────────────────────────────────────
-    +(_qpBtPosts.length ? (function(){
+    // ── Bitácora posts section (always shown with count, even if 0) ──
+    +(!isAnon ? (function(){
       var _btCatLabel = {apoyo:'🫂 Apoyo',superacion:'⭐ Superación',debate:'💬 Debate'};
       var _btCatColor = {apoyo:'rgba(80,108,225,.70)',superacion:'rgba(188,138,14,.70)',debate:'rgba(44,154,94,.70)'};
-      var shown = _qpBtPosts.slice(0,3);
-      var rest  = _qpBtPosts.slice(3);
+      var sorted = (_qpBtPosts||[]).slice().sort(function(a,b){
+        return new Date(b.created_at||0) - new Date(a.created_at||0);
+      });
+      var shown = sorted.slice(0,3);
+      var rest  = sorted.slice(3);
       var _moreId = 'qpBtMore'+Math.random().toString(36).slice(2,6);
       var _makeCard = function(p){
         var col = _btCatColor[p.categoria]||'rgba(116,198,157,.70)';
@@ -14984,13 +15054,16 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
           +'<span style="font-size:11px;font-weight:700;color:'+col+';background:rgba(255,255,255,.06);border-radius:20px;padding:2px 8px">'+lbl+'</span>'
           +'</div>';
       };
+      var n = sorted.length;
       return '<div style="text-align:left;margin-bottom:14px">'
-        +'<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">📖 EN BITÁCORA ('+_qpBtPosts.length+')</div>'
-        +shown.map(_makeCard).join('')
-        +(rest.length
-          ? '<div id="'+_moreId+'" style="display:none">'+rest.map(_makeCard).join('')+'</div>'
-            +'<button onclick="var m=document.getElementById(\''+_moreId+'\');if(!m)return;var op=m.style.display!==\'none\';m.style.display=op?\'none\':\'block\';this.textContent=op?\'Ver más ('+rest.length+') ↓\':\'Ver menos ↑\';" style="background:none;border:none;color:var(--sage);font-size:14px;font-weight:600;cursor:pointer;padding:2px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>'
-          : '')
+        +'<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">📖 EN BITÁCORA ('+n+')</div>'
+        +(n===0
+          ? '<div style="background:var(--sage7);border:1px dashed var(--border);border-radius:10px;padding:14px;text-align:center;font-size:13px;color:var(--ink4);font-style:italic">Sin historias publicadas aún</div>'
+          : shown.map(_makeCard).join('')
+            +(rest.length
+              ? '<div id="'+_moreId+'" style="display:none">'+rest.map(_makeCard).join('')+'</div>'
+                +'<button onclick="var m=document.getElementById(\''+_moreId+'\');if(!m)return;var op=m.style.display!==\'none\';m.style.display=op?\'none\':\'block\';this.textContent=op?\'Ver más ('+rest.length+') ↓\':\'Ver menos ↑\';" style="background:none;border:none;color:var(--sage);font-size:14px;font-weight:600;cursor:pointer;padding:2px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>'
+              : ''))
         +'</div>';
     })() : '')
     // ── Action buttons ───────────────────────────────────────────
@@ -24636,6 +24709,10 @@ function _btOpenDetail(id){
   sh+='<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px">';
   sh+='<div style="font-size:12px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:12px">COMENTARIOS</div>';
   sh+='<div id="btCommentsWrap" style="margin-bottom:14px"><div style="text-align:center;padding:20px 0;color:rgba(180,200,190,.35);font-size:14px;font-family:Jost,sans-serif">Cargando...</div></div>';
+  sh+='<label for="btCommentAnon" style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:10px;cursor:pointer;font-family:Jost,sans-serif">'
+    +'<input type="checkbox" id="btCommentAnon" style="width:16px;height:16px;accent-color:'+c.label+';cursor:pointer;flex-shrink:0">'
+    +'<span style="font-size:12px;color:rgba(255,255,255,.78);line-height:1.3"><strong>🕊️ Comentar como anónimo/a</strong> <span style="opacity:.62">— sin marcar, se muestra tu perfil.</span></span>'
+    +'</label>';
   sh+='<div style="display:flex;gap:8px;align-items:flex-end">';
   sh+='<textarea id="btCommentInput" placeholder="Escribí tu comentario..." style="flex:1;background:rgba(255,255,255,.13);border:1.5px solid '+c.border.replace(/[\d.]+\)$/,'.50)')+';border-radius:14px;padding:10px 12px;color:rgba(255,255,255,.95);font-size:15px;font-family:Jost,sans-serif;resize:none;min-height:44px;max-height:120px;outline:none;box-sizing:border-box;box-shadow:inset 0 1px 4px rgba(0,0,0,.18)" rows="1"></textarea>';
   sh+='<button onclick="_btSendComment(\''+_escHtml(String(post.id))+'\')" style="background:'+c.strip+';border:1.5px solid '+c.border.replace(/[\d.]+\)$/,'.60)')+';color:'+c.label+';font-size:14px;font-weight:800;font-family:Jost,sans-serif;border-radius:14px;padding:10px 14px;cursor:pointer;flex-shrink:0">Enviar</button>';
@@ -24778,7 +24855,9 @@ function _btSendComment(postId){
   if(!uid){ pToast('Debés iniciar sesión'); return; }
   if(!sbClient) return;
   input.disabled=true;
-  sbClient.from('bitacora_comments').insert({post_id:postId,user_id:uid,content:text,is_anon:false}).then(function(res){
+  var anonChk = document.getElementById('btCommentAnon');
+  var _btAnon = !!(anonChk && anonChk.checked);
+  sbClient.from('bitacora_comments').insert({post_id:postId,user_id:uid,content:text,is_anon:_btAnon}).then(function(res){
     if(input) input.disabled=false;
     if(res.error){ pToast('Error al enviar'); return; }
     if(input) input.value='';
