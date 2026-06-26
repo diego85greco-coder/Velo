@@ -4162,26 +4162,26 @@ function _updateMoodChip(){
   var isDark = document.body.classList.contains('r-dark');
   var hasEntry = !!emoji;
   var bg = isDark
-    ? (hasEntry ? 'linear-gradient(135deg,rgba(116,198,157,.32),rgba(74,160,110,.22))' : 'linear-gradient(135deg,rgba(116,198,157,.24),rgba(74,160,110,.16))')
-    : (hasEntry ? 'linear-gradient(135deg,rgba(116,198,157,.36),rgba(74,160,110,.26))' : 'linear-gradient(135deg,rgba(116,198,157,.28),rgba(74,160,110,.18))');
-  var border = isDark ? 'rgba(116,198,157,.62)' : 'rgba(74,160,110,.62)';
-  var textColor = isDark ? 'rgba(220,255,235,.97)' : 'rgba(8,52,24,.92)';
-  var subColor = isDark ? 'rgba(200,240,218,.80)' : 'rgba(30,100,55,.85)';
-  var shadow = isDark ? '0 4px 20px rgba(116,198,157,.24),inset 0 1px 0 rgba(255,255,255,.07)' : '0 4px 16px rgba(74,160,110,.22)';
-  var emojiRing = isDark ? 'rgba(116,198,157,.18)' : 'rgba(74,160,110,.14)';
-  var glow = isDark ? 'rgba(116,198,157,.22)' : 'rgba(74,160,110,.18)';
+    ? (hasEntry ? 'linear-gradient(145deg,rgba(18,72,40,.94),rgba(10,48,26,.92))' : 'linear-gradient(145deg,rgba(14,58,32,.92),rgba(8,38,20,.90))')
+    : (hasEntry ? 'linear-gradient(145deg,rgba(255,255,255,.96),rgba(240,252,245,.94))' : 'linear-gradient(145deg,rgba(255,255,255,.94),rgba(238,252,244,.92))');
+  var border = isDark ? 'rgba(116,198,157,.65)' : 'rgba(74,160,110,.55)';
+  var textColor = isDark ? 'rgba(230,255,240,.98)' : 'rgba(8,52,24,.92)';
+  var subColor = isDark ? 'rgba(116,198,157,.95)' : 'rgba(38,120,70,.80)';
+  var shadow = isDark ? '0 4px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(116,198,157,.12)' : '0 4px 18px rgba(74,160,110,.18),inset 0 1px 0 rgba(255,255,255,.80)';
+  var emojiRing = isDark ? 'rgba(116,198,157,.22)' : 'rgba(74,160,110,.14)';
+  var glow = isDark ? 'rgba(116,198,157,.25)' : 'rgba(74,160,110,.18)';
   chip.innerHTML =
     '<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:'+bg+';border:1.5px solid '+border+';border-radius:20px;box-shadow:'+shadow+';position:relative;overflow:hidden">'
     +'<div style="position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:64px;height:64px;border-radius:50%;background:radial-gradient(circle,'+glow+' 0%,transparent 70%);pointer-events:none"></div>'
     +'<div style="position:relative;z-index:1;width:48px;height:48px;border-radius:16px;background:'+emojiRing+';border:1.5px solid '+border+';display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;box-shadow:0 2px 12px '+glow+'">'+(emoji||'💚')+'</div>'
     +'<div style="position:relative;z-index:1;flex:1;min-width:0">'
-    +'<div style="font-size:10px;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;color:'+subColor+';font-family:Jost,sans-serif;margin-bottom:5px">✦ Registrá tus ánimos</div>'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+subColor+';font-family:Jost,sans-serif;margin-bottom:5px">✦ Registrá tus ánimos</div>'
     +(hasEntry
-      ? '<div style="font-size:15px;font-weight:800;color:'+textColor+';font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(label||'Registrado hoy')+'</div>'
-      : '<div style="font-size:15px;font-weight:800;color:'+textColor+';font-family:Jost,sans-serif;line-height:1.2">¿Cómo te sentís hoy?</div>'
+      ? '<div style="font-size:17px;font-weight:800;color:'+textColor+';font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(label||'Registrado hoy')+'</div>'
+      : '<div style="font-size:17px;font-weight:800;color:'+textColor+';font-family:Jost,sans-serif;line-height:1.2">¿Cómo te sentís hoy?</div>'
     )
     +'</div>'
-    +'<span style="position:relative;z-index:1;font-size:22px;font-weight:300;color:'+subColor+';flex-shrink:0;line-height:1">›</span>'
+    +'<span style="position:relative;z-index:1;font-size:24px;font-weight:300;color:'+subColor+';flex-shrink:0;line-height:1">›</span>'
     +'</div>';
 }
 
@@ -25130,7 +25130,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1197;
+    var _BUILT_V = 1198;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
