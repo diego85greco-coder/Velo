@@ -1495,8 +1495,8 @@ function pReplayHomeTour(){
 }
 
 function _startHomeTour(){
-  // v1208: tour selectors fixed (IDs instead of attribute substring)
-  if(safeLS('get','velo_tour_done') === 'v1208') return;
+  // v1212: tip positioning + Reflexión separated from DQ
+  if(safeLS('get','velo_tour_done') === 'v1212') return;
 
   if(!document.getElementById('_tourStyle')){
     var _ts = document.createElement('style');
@@ -1507,7 +1507,7 @@ function _startHomeTour(){
 
   // Steps: sel = CSS selector to spotlight; fx = special effect to run on enter
   var STEPS = [
-    {sel:'#homeReflexionDia',                                 e:'✨', t:'Reflexión del día',     d:'Una frase especial cada mañana — para empezar con calma, presencia y un poco de luz.'},
+    {sel:'#homeReflexionPart',                                e:'✨', t:'Reflexión del día',     d:'Una frase especial cada mañana — para empezar con calma, presencia y un poco de luz.'},
     {sel:'#homeMoodChip',                                     e:'💚', t:'Registrá tus ánimos',   d:'Tomate 5 segundos para anotar cómo te sentís hoy. Velo crea tu mapa emocional con eso.'},
     {sel:'#homeDailyQ',                                       e:'💬', t:'Pregunta del día',      d:'Respondé en anónimo o con tu perfil y descubrí qué sienten los demás hoy.'},
     {sel:'#hgGuardians',                                      e:'🛡️', t:'Apoyo Guardianes',      d:'Personas reales disponibles para escucharte sin juicios — sin necesidad de ser profesionales.'},
@@ -1537,7 +1537,7 @@ function _startHomeTour(){
   document.body.appendChild(tip);
 
   function _done(){
-    safeLS('set','velo_tour_done','v1208');
+    safeLS('set','velo_tour_done','v1212');
     spot.style.transition = 'opacity .3s'; tip.style.transition = 'opacity .3s';
     spot.style.opacity = '0'; tip.style.opacity = '0';
     setTimeout(function(){ if(spot.parentNode) spot.remove(); if(tip.parentNode) tip.remove(); }, 340);
@@ -1588,9 +1588,7 @@ function _startHomeTour(){
 
     tip.style.opacity = '0';
 
-    if(elVisible){
-      firstEl.scrollIntoView({behavior:'smooth', block:'center'});
-    } else {
+    if(!elVisible){
       spot.style.cssText = 'position:fixed;z-index:9996;pointer-events:none;opacity:0';
     }
 
@@ -1606,26 +1604,56 @@ function _startHomeTour(){
       if(elVisible){
         var r = els.length > 1 ? _unionRect(els) : firstEl.getBoundingClientRect();
         var pad = 8;
-        spot.style.cssText = 'position:fixed;z-index:9996;pointer-events:none'
-          +';left:'+(r.left-pad)+'px;top:'+(r.top-pad)+'px'
-          +';width:'+(r.width+pad*2)+'px;height:'+(r.height+pad*2)+'px'
-          +';border-radius:18px;border:2.5px solid rgba(116,198,157,.85)'
-          +';animation:_tourPulse 2s ease-in-out infinite'
-          +';transition:left .35s cubic-bezier(.4,0,.2,1),top .35s cubic-bezier(.4,0,.2,1),width .35s cubic-bezier(.4,0,.2,1),height .35s cubic-bezier(.4,0,.2,1);opacity:1';
         var tipH = 200;
         var tipW = 320;
-        var tipTop = r.bottom + pad + 14;
-        if(tipTop + tipH > window.innerHeight - 16) tipTop = Math.max(10, r.top - pad - tipH - 14);
-        var tipLeft = Math.max(14, Math.min(r.left, window.innerWidth - tipW - 14));
-        tip.style.left = tipLeft+'px';
-        tip.style.top  = tipTop+'px';
+        var winH = window.innerHeight;
+        var winW = window.innerWidth;
+        // Pre-scroll so the element sits in the TOP third of the viewport — tip cabe abajo
+        var scroller = document.scrollingElement || document.documentElement;
+        var elAbsTop = (scroller.scrollTop||0) + r.top;
+        var elH = r.height;
+        // Want element top at ~16% of viewport so tip (200px) cabe debajo con margen
+        var desiredScroll = elAbsTop - winH * 0.16;
+        if(elH > winH * 0.5){
+          // Elemento más grande que media pantalla: scrolleamos para que su tope quede a 8% del viewport
+          desiredScroll = elAbsTop - winH * 0.08;
+        }
+        scroller.scrollTo({top: Math.max(0, desiredScroll), behavior:'smooth'});
+        // Recompute rect after scroll
+        setTimeout(function(){
+          var r2 = els.length > 1 ? _unionRect(els) : firstEl.getBoundingClientRect();
+          spot.style.cssText = 'position:fixed;z-index:9996;pointer-events:none'
+            +';left:'+(r2.left-pad)+'px;top:'+(r2.top-pad)+'px'
+            +';width:'+(r2.width+pad*2)+'px;height:'+(r2.height+pad*2)+'px'
+            +';border-radius:18px;border:2.5px solid rgba(116,198,157,.85)'
+            +';animation:_tourPulse 2s ease-in-out infinite'
+            +';transition:left .35s cubic-bezier(.4,0,.2,1),top .35s cubic-bezier(.4,0,.2,1),width .35s cubic-bezier(.4,0,.2,1),height .35s cubic-bezier(.4,0,.2,1);opacity:1';
+          // Place tip: PREFER below; if no room, ABOVE; if still no room, ABSOLUTE bottom
+          var tipTop, tipPlace = 'below';
+          var roomBelow = winH - (r2.bottom + pad + 14);
+          var roomAbove = r2.top - pad - 14;
+          if(roomBelow >= tipH + 10){
+            tipTop = r2.bottom + pad + 14;
+          } else if(roomAbove >= tipH + 10){
+            tipTop = r2.top - pad - tipH - 14;
+            tipPlace = 'above';
+          } else {
+            // No room either side — pin to bottom of viewport
+            tipTop = Math.max(10, winH - tipH - 14);
+            tipPlace = 'pinned';
+          }
+          var tipLeft = Math.max(14, Math.min(r2.left, winW - tipW - 14));
+          tip.style.left = tipLeft+'px';
+          tip.style.top  = tipTop+'px';
+          tip.style.opacity = '1';
+        }, 300);
       } else {
         spot.style.cssText = 'position:fixed;z-index:9996;pointer-events:none;inset:0;background:rgba(0,0,0,.72);opacity:1';
         tip.style.left = Math.max(14, (window.innerWidth - 320)/2)+'px';
         tip.style.top  = Math.max(20, (window.innerHeight - 220)/2)+'px';
+        tip.style.opacity = '1';
       }
-      tip.style.opacity = '1';
-    }, elVisible ? 440 : 80);
+    }, elVisible ? 180 : 80);
   }
 
   window._tourNext = function(){ tip.style.opacity='0'; step++; if(step>=STEPS.length){ _done(); return; } _place(step); };
@@ -25319,7 +25347,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1211;
+    var _BUILT_V = 1212;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

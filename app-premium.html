@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1211">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1211">
+  <link rel="stylesheet" href="premium.css?v=20260626-1212">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1212">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1290,23 +1290,26 @@
                 <div style="background:linear-gradient(145deg,rgba(10,6,24,.96),rgba(6,4,16,.98));border:1.5px solid rgba(200,158,56,.30);border-radius:22px;overflow:hidden;box-shadow:0 8px 36px rgba(0,0,0,.42),0 0 0 1px rgba(200,158,56,.08),inset 0 1px 0 rgba(255,220,80,.04)">
                   <!-- Gold top strip -->
                   <div style="height:3px;background:linear-gradient(90deg,transparent,rgba(200,158,56,.65) 30%,rgba(255,220,80,.80) 50%,rgba(200,158,56,.65) 70%,transparent)"></div>
-                  <!-- Header: label + date -->
-                  <div style="padding:14px 18px 0;display:flex;align-items:center;justify-content:space-between">
-                    <span style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.88);font-family:'Jost',sans-serif">✨ Reflexión del día</span>
-                    <span id="homeDailyQuoteDay" style="font-size:10px;color:rgba(255,255,255,.45);font-family:'Jost',sans-serif;letter-spacing:.3px"></span>
-                  </div>
-                  <!-- Frase section -->
-                  <div style="padding:12px 18px 16px">
-                    <div style="padding-left:4px;margin-bottom:10px">
-                      <div style="font-size:22px;color:rgba(200,158,56,.22);font-family:'Cormorant Garamond',serif;line-height:1;margin-bottom:2px;user-select:none">❝</div>
-                      <div id="homeDailyQuoteText" style="font-size:17px;color:rgba(255,240,190,.95);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.65;letter-spacing:.01em;text-shadow:0 1px 10px rgba(200,150,20,.16)"></div>
+                  <!-- Reflexión sub-block (target for tour step 1) -->
+                  <div id="homeReflexionPart" style="position:relative">
+                    <!-- Header: label + date -->
+                    <div style="padding:14px 18px 0;display:flex;align-items:center;justify-content:space-between">
+                      <span style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.88);font-family:'Jost',sans-serif">✨ Reflexión del día</span>
+                      <span id="homeDailyQuoteDay" style="font-size:10px;color:rgba(255,255,255,.45);font-family:'Jost',sans-serif;letter-spacing:.3px"></span>
                     </div>
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px">
-                      <div id="homeDailyQuoteAuthor" style="font-size:10px;font-weight:700;color:rgba(200,158,56,.75);letter-spacing:.8px;text-transform:uppercase;font-family:'Jost',sans-serif;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
-                      <button id="homeDailyShareBtn" onclick="pShareDailyQuote()" style="flex-shrink:0;display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.35);border-radius:20px;cursor:pointer;color:rgba(160,230,200,.90);font-size:10.5px;font-weight:700;font-family:'Jost',sans-serif;letter-spacing:.3px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:opacity .15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                        Compartir
-                      </button>
+                    <!-- Frase section -->
+                    <div style="padding:12px 18px 16px">
+                      <div style="padding-left:4px;margin-bottom:10px">
+                        <div style="font-size:22px;color:rgba(200,158,56,.22);font-family:'Cormorant Garamond',serif;line-height:1;margin-bottom:2px;user-select:none">❝</div>
+                        <div id="homeDailyQuoteText" style="font-size:17px;color:rgba(255,240,190,.95);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.65;letter-spacing:.01em;text-shadow:0 1px 10px rgba(200,150,20,.16)"></div>
+                      </div>
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px">
+                        <div id="homeDailyQuoteAuthor" style="font-size:10px;font-weight:700;color:rgba(200,158,56,.75);letter-spacing:.8px;text-transform:uppercase;font-family:'Jost',sans-serif;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+                        <button id="homeDailyShareBtn" onclick="pShareDailyQuote()" style="flex-shrink:0;display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.35);border-radius:20px;cursor:pointer;color:rgba(160,230,200,.90);font-size:10.5px;font-weight:700;font-family:'Jost',sans-serif;letter-spacing:.3px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:opacity .15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                          Compartir
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <!-- Pregunta del día — shown by JS -->
@@ -4297,8 +4300,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1211"></script>
-<script src="premium-redesign.js?v=20260626-1211"></script>
+<script src="premium.js?v=20260626-1212"></script>
+<script src="premium-redesign.js?v=20260626-1212"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
