@@ -4071,20 +4071,24 @@ function _updateMoodChip(){
   var emoji = null; var label = '';
   if(today){ try{ var _cm=JSON.parse(safeLS('get','velo_mood_'+today)||'null'); if(_cm){emoji=_cm.emoji||null;label=_cm.label||'';} }catch(e){} }
   var isDark = document.body.classList.contains('r-dark');
-  var bg = isDark ? 'rgba(116,198,157,.10)' : 'rgba(116,198,157,.16)';
-  var border = isDark ? 'rgba(116,198,157,.28)' : 'rgba(116,198,157,.42)';
-  var textColor = isDark ? 'rgba(200,240,218,.90)' : 'rgba(12,68,35,.88)';
-  var subColor = isDark ? 'rgba(116,198,157,.62)' : 'rgba(30,100,55,.62)';
-  chip.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:11px 16px;background:'+bg+';border:1.5px solid '+border+';border-radius:16px">'
-    +'<span style="font-size:26px;flex-shrink:0;line-height:1">'+(emoji||'😊')+'</span>'
+  var hasEntry = !!emoji;
+  var bg = isDark
+    ? (hasEntry ? 'linear-gradient(135deg,rgba(116,198,157,.26),rgba(74,160,110,.18))' : 'linear-gradient(135deg,rgba(116,198,157,.20),rgba(74,160,110,.13))')
+    : (hasEntry ? 'linear-gradient(135deg,rgba(116,198,157,.30),rgba(74,160,110,.22))' : 'linear-gradient(135deg,rgba(116,198,157,.22),rgba(74,160,110,.14))');
+  var border = isDark ? 'rgba(116,198,157,.52)' : 'rgba(74,160,110,.55)';
+  var textColor = isDark ? 'rgba(220,255,235,.96)' : 'rgba(8,52,24,.90)';
+  var subColor = isDark ? 'rgba(116,198,157,.88)' : 'rgba(30,100,55,.80)';
+  var shadow = isDark ? '0 2px 14px rgba(116,198,157,.18),inset 0 1px 0 rgba(255,255,255,.05)' : '0 2px 12px rgba(74,160,110,.18)';
+  chip.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:'+bg+';border:1.5px solid '+border+';border-radius:16px;box-shadow:'+shadow+'">'
+    +'<span style="font-size:26px;flex-shrink:0;line-height:1">'+(emoji||'💚')+'</span>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+subColor+';font-family:Jost,sans-serif;margin-bottom:2px">Registrá tus ánimos</div>'
-    +(emoji
-      ? '<div style="font-size:13px;font-weight:600;color:'+textColor+';font-family:Jost,sans-serif">'+_escHtml(label||'Registrado hoy ✓')+'</div>'
-      : '<div style="font-size:13px;font-weight:600;color:'+textColor+';font-family:Jost,sans-serif">¿Cómo te sentís hoy?</div>'
+    +'<div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+subColor+';font-family:Jost,sans-serif;margin-bottom:3px">Registrá tus ánimos</div>'
+    +(hasEntry
+      ? '<div style="font-size:13px;font-weight:700;color:'+textColor+';font-family:Jost,sans-serif">'+_escHtml(label||'Registrado hoy ✓')+'</div>'
+      : '<div style="font-size:13px;font-weight:700;color:'+textColor+';font-family:Jost,sans-serif">¿Cómo te sentís hoy?</div>'
     )
     +'</div>'
-    +'<span style="font-size:18px;color:'+subColor+';flex-shrink:0">›</span>'
+    +'<span style="font-size:20px;font-weight:700;color:'+subColor+';flex-shrink:0;line-height:1">›</span>'
     +'</div>';
 }
 
@@ -24993,7 +24997,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1167;
+    var _BUILT_V = 1168;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
