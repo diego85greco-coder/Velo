@@ -4580,8 +4580,8 @@ async function pOpenDqResponseSheet(responseId){
     +'<div style="display:flex;gap:8px;margin-bottom:16px">'+rxHtml+'</div>'
     +_zenDiv
     +'<div style="text-align:left;margin-bottom:18px">'
-    +'<div style="font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(50,60,50,.60);font-family:Jost,sans-serif;margin-bottom:12px">💬 Hilo de comentarios</div>'
-    +'<div id="dqCommentFeed" style="margin-bottom:14px;background:rgba(255,255,255,.97);border-radius:16px;padding:12px 10px;min-height:60px"><div style="text-align:center;padding:20px 8px;font-size:14px;color:rgba(80,90,80,.55);font-family:Jost,sans-serif">Cargando…</div></div>'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(220,240,228,.80);font-family:Jost,sans-serif;margin-bottom:12px">💬 Hilo de comentarios</div>'
+    +'<div id="dqCommentFeed" style="margin-bottom:14px;background:rgba(255,251,232,.97);border-radius:16px;padding:12px 10px;min-height:60px"><div style="text-align:center;padding:20px 8px;font-size:14px;color:rgba(80,70,40,.50);font-family:Jost,sans-serif">Cargando…</div></div>'
     +'<div style="display:flex;gap:8px;align-items:flex-end">'
     +'<textarea id="dqCommentInput" rows="2" placeholder="Sumar algo al hilo…" style="flex:1;background:rgba(255,252,240,.97);border:1.5px solid rgba(0,0,0,.12);border-radius:14px;color:rgba(20,25,20,.90);font-size:15px;font-family:\'Jost\',sans-serif;padding:10px 12px;resize:none;outline:none;line-height:1.4"></textarea>'
     +'<button id="dqCommentBtn" onclick="pPostDqComment(\''+responseId+'\')" style="background:'+col.strip+';border:none;border-radius:12px;color:rgba(255,255,255,.92);font-size:14px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;padding:10px 14px;flex-shrink:0;height:44px;min-width:60px;box-shadow:0 2px 10px '+col.glow+'">Enviar</button>'
@@ -22392,7 +22392,7 @@ function _renderMomentoComments(comments,col,lightMode){
   var textColor=lightMode?'rgba(20,25,20,.88)':'rgba(255,255,255,.92)';
   var textDim=lightMode?'rgba(60,70,60,.42)':'rgba(255,255,255,.32)';
   var nameLbl=lightMode?'rgba(20,60,30,.90)':ca(lbl,'.95');
-  var bubbleBg=lightMode?'rgba(244,247,244,.97)':ca(strip,'.14');
+  var bubbleBg=lightMode?'rgba(255,249,220,.97)':ca(strip,'.14');
   var bubbleBdr=lightMode?'rgba(0,0,0,.09)':ca(brd,'.28');
   var bubbleLeft=lightMode?ca(brd,'.55'):ca(brd,'.70');
   if(!comments||!comments.length){
@@ -25130,7 +25130,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1198;
+    var _BUILT_V = 1199;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
