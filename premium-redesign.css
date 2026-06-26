@@ -14188,3 +14188,24 @@ body:not(.r-dark) #topbarMoodBtn {
   color: #ffffff !important;
   box-shadow: 0 4px 18px rgba(18,100,55,.30) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v1187 — DQ response cards: colorful border (speech bubble effect)
+   ══════════════════════════════════════════════════════════════════ */
+body.r-dark .dq-feed-card {
+  border: 1.5px solid rgba(116,198,157,.62) !important;
+  box-shadow: 0 3px 16px rgba(116,198,157,.14) !important;
+  background: rgba(20,40,26,.70) !important;
+}
+body:not(.r-dark) .dq-feed-card {
+  border: 1.5px solid rgba(35,120,70,.52) !important;
+  box-shadow: 0 2px 12px rgba(35,120,70,.13) !important;
+  background: rgba(230,248,238,.82) !important;
+}
+/* Remove heavy outer border on DQ widget — less boxy look */
+body.r-dark #homeDailyQuote {
+  border: 1px solid rgba(116,198,157,.14) !important;
+}
+body:not(.r-dark) #homeDailyQuote {
+  border: 1px solid rgba(35,120,70,.12) !important;
+}
