@@ -747,6 +747,8 @@
 
     // Re-render weather pill so dark/light colors update instantly
     _renderWeatherInfo();
+    // Re-render mood chip (inline colors depend on dark/light mode)
+    if(typeof _updateMoodChip === 'function') setTimeout(_updateMoodChip, 30);
     // Re-apply body gradient + re-render current section inline styles on theme switch
     if(typeof _onThemeChange === 'function') setTimeout(_onThemeChange, 80);
     // Re-render Bitácora widget (uses mode-specific card colors)
