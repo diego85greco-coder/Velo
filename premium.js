@@ -4345,16 +4345,16 @@ function _buildDqCards(list){
       ? '<img src="'+_escHtml(avUrl)+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid '+col.border+'">'
       : '<div style="width:40px;height:40px;border-radius:50%;flex-shrink:0;background:'+col.badge+';border:2px solid '+col.border+';display:flex;align-items:center;justify-content:center;font-size:'+(avEmoji?'20':'14')+'px;font-weight:700;color:'+col.label+'">'+(avEmoji||avLetter)+'</div>';
     return '<div class="dq-feed-card home-mc" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
-      +' style="display:flex;align-items:flex-start;gap:12px;background:'+col.bg+';border:1.5px solid '+col.border+';border-radius:16px;padding:13px 14px;cursor:pointer;scroll-snap-align:center;flex-shrink:0;width:100%;box-sizing:border-box;box-shadow:0 3px 16px '+col.glow+'">'
+      +' style="display:flex;align-items:flex-start;gap:12px;background:'+col.bg+';border:1.5px solid '+col.border+';border-radius:16px;cursor:pointer;flex-shrink:0;width:100%;box-sizing:border-box;box-shadow:0 3px 16px '+col.glow+'">'
       +avInner
       +'<div style="flex:1;min-width:0;overflow:hidden">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:5px">'
           +'<span style="font-size:13px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.user_name||'Alguien')+'</span>'
-          +'<span style="font-size:10px;color:'+col.label+';opacity:.55;font-family:Jost,sans-serif;flex-shrink:0;padding-right:2px">'+_momentoAgo(r.created_at||'')+'</span>'
+          +'<span style="font-size:10px;color:'+col.label+';opacity:.55;font-family:Jost,sans-serif;flex-shrink:0;margin-right:6px">'+_momentoAgo(r.created_at||'')+'</span>'
         +'</div>'
         +(r.response_text
-          ? '<div style="font-size:14.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+col.label+';opacity:.90;line-height:1.55;word-break:break-word;margin-bottom:9px">'+_escHtml(r.mood_emoji||'💭')+' '+_escHtml(r.response_text)+'</div>'
-          : '<div style="font-size:24px;margin-bottom:9px">'+_escHtml(r.mood_emoji||'💭')+'</div>')
+          ? '<div style="font-size:14px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+col.label+';opacity:.90;line-height:1.45;word-break:break-word;margin-bottom:7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(r.mood_emoji||'💭')+' '+_escHtml(r.response_text)+'</div>'
+          : '<div style="font-size:24px;margin-bottom:7px">'+_escHtml(r.mood_emoji||'💭')+'</div>')
         +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
           +'<span class="dq-rx-meta" style="font-size:10.5px;font-weight:700;color:'+col.border+';font-family:Jost,sans-serif;flex-shrink:0;white-space:nowrap">'+(_totalRx>0?'💚 '+_totalRx+' · ':'')+'Ver →</span>'
           +actionBtn
@@ -4372,11 +4372,15 @@ function pOpenDqResponseSheet(responseId){
   var isImg = av && av.startsWith('http');
   var canSeeProfile = r.user_id && r.user_id !== 'anon';
   var col = _dqEmojiColor(r.mood_emoji||'💭');
+  var _stripSolid = col.strip.replace(/[\d.]+\)$/,'0.55)');
+  var _stripFaint = col.strip.replace(/[\d.]+\)$/,'0.18)');
+  var _labelFull  = col.label;
+  var _labelDim   = col.label.replace(/[\d.]+\)$/,'0.48)');
   var avStyle = 'width:44px;height:44px;border-radius:50%;object-fit:cover;border:2.5px solid '+col.border+';flex-shrink:0;'+(canSeeProfile?'cursor:pointer':'');
   var avClick = canSeeProfile ? ' onclick="pQuickProfile('+_jsAttr(r.user_name||'Alguien')+','+_jsAttr(av)+',\'\',\'\','+_jsAttr(r.user_id)+')"' : '';
   var avHtml = isImg
     ? '<img src="'+_escHtml(av)+'" style="'+avStyle+'"'+avClick+'>'
-    : '<div style="'+avStyle+';background:rgba(116,198,157,.18);display:flex;align-items:center;justify-content:center;font-size:26px"'+avClick+'>'+(av||'🌿')+'</div>';
+    : '<div style="'+avStyle+';background:'+_stripFaint+';display:flex;align-items:center;justify-content:center;font-size:26px"'+avClick+'>'+(av||'🌿')+'</div>';
 
   // Reaction buttons — zen row layout: emoji big on top, label below, 3 in a row
   var rxDefs = [{key:'identifico',label:'Me identifico',emoji:'💚'},{key:'abrazo',label:'Te abrazo',emoji:'🫂'},{key:'entiendo',label:'Te entiendo',emoji:'💙'}];
@@ -4384,8 +4388,8 @@ function pOpenDqResponseSheet(responseId){
   var rxHtml = rxDefs.map(function(rx){
     var rd = _m[rx.key] || {count:0,mine:false};
     var rc = _rxColors[rx.key];
-    var bg = rd.mine ? rc.activeBg : 'rgba(255,255,255,.03)';
-    var bdr = rd.mine ? rc.border : 'rgba(255,255,255,.09)';
+    var bg = rd.mine ? rc.activeBg : _stripFaint;
+    var bdr = rd.mine ? rc.border : col.border.replace(/[\d.]+\)$/,'0.25)');
     var txtCol = rd.mine ? rc.txt : 'rgba(255,255,255,.42)';
     var glow = rd.mine ? '0 0 20px '+rc.glow+',0 2px 8px '+rc.glow : 'none';
     var emojiScale = rd.mine ? 'transform:scale(1.18);filter:drop-shadow(0 0 8px '+rc.glow+')' : '';
@@ -4414,50 +4418,42 @@ function pOpenDqResponseSheet(responseId){
     +'<div style="flex:1;height:1px;background:linear-gradient(270deg,transparent,'+col.border.replace(/[\d.]+\)$/,'0.22)')+')">'+'</div>'
     +'</div>';
 
-  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="padding:0;overflow-y:auto;max-height:88vh;border-top:2px solid '+col.border+';border-radius:28px 28px 0 0">'
-    // Header — compact gradient
-    +'<div style="background:linear-gradient(170deg,'+col.bg+' 0%,rgba(4,10,8,.97) 100%);padding:16px 20px 14px;position:sticky;top:0;z-index:1;text-align:center">'
-    +'<div class="p-sheet-handle" style="background:'+col.border.replace(/[\d.]+\)$/,'0.40)')+';position:absolute;top:8px;left:50%;transform:translateX(-50%);margin:0"></div>'
-    // Mood emoji + label en misma línea
-    +'<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;margin-top:6px">'
-    +'<span style="font-size:34px;line-height:1;filter:drop-shadow(0 0 12px '+col.glow+')">'+r.mood_emoji+'</span>'
-    +'<span style="font-size:8px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.55)')+';font-family:Jost,sans-serif">✨ Pregunta del día</span>'
+  ov.innerHTML = '<div class="p-sheet p-sheet-dark" style="padding:0;overflow-y:auto;max-height:88vh;border-top:3px solid '+col.border+';border-radius:28px 28px 0 0;background:'+col.bg+'">'
+    // Header — vibrant gradient using strip color
+    +'<div style="background:linear-gradient(150deg,'+_stripSolid+' 0%,'+col.bg+' 55%);padding:18px 20px 16px;position:sticky;top:0;z-index:1;text-align:center;backdrop-filter:blur(12px)">'
+    +'<div class="p-sheet-handle" style="background:'+col.border.replace(/[\d.]+\)$/,'0.50)')+';position:absolute;top:8px;left:50%;transform:translateX(-50%);margin:0"></div>'
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:10px;margin-top:6px">'
+    +'<span style="font-size:36px;line-height:1;filter:drop-shadow(0 0 14px '+col.glow+')">'+r.mood_emoji+'</span>'
+    +'<span style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+_labelFull+';font-family:Jost,sans-serif">✨ Pregunta del día</span>'
     +'</div>'
-    // Question text
-    +'<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(240,255,246,.88);line-height:1.45;max-width:320px;margin:0 auto 10px">'+_escHtml(q?q.text:'')+'</div>'
-    // Author chip
-    +'<div style="display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 6px;background:rgba(0,0,0,.28);border-radius:100px;border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.18)')+'">'+avHtml
+    +'<div style="font-size:15.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+_labelFull+';line-height:1.45;max-width:320px;margin:0 auto 12px;opacity:.92">'+_escHtml(q?q.text:'')+'</div>'
+    +'<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 7px;background:'+_stripFaint+';border-radius:100px;border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.35)')+'">'+avHtml
     +'<div style="text-align:left">'
-    +'<div style="font-size:12px;font-weight:700;color:rgba(220,245,230,.88);font-family:Jost,sans-serif'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
-    +'<div style="font-size:9px;color:'+col.label.replace(/[\d.]+\)$/,'0.44)')+';font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
+    +'<div style="font-size:12.5px;font-weight:700;color:'+_labelFull+';font-family:Jost,sans-serif'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
+    +'<div style="font-size:9px;color:'+_labelDim+';font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
     +'</div></div>'
     +'</div>'
-    // Body — no flex:1, sits after header in scroll flow
-    +'<div style="padding:16px 18px calc(max(20px, env(safe-area-inset-bottom, 20px)) + 8px);text-align:center">'
-    // Response text
+    // Body
+    +'<div style="padding:18px 18px calc(max(20px, env(safe-area-inset-bottom, 20px)) + 8px);text-align:center">'
     +(r.response_text
-      ? '<div style="margin-bottom:4px;padding:6px 4px 14px">'
-        +'<div style="font-size:48px;font-family:\'Cormorant Garamond\',serif;color:'+col.border.replace(/[\d.]+\)$/,'0.15)')+';line-height:.65;margin-bottom:2px;user-select:none">❝</div>'
-        +'<div style="font-size:19px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+col.label+';line-height:1.55;text-shadow:0 2px 16px '+col.glow+';padding:0 6px">'+_escHtml(r.response_text)+'</div>'
+      ? '<div style="margin-bottom:6px;padding:10px 8px 16px;background:'+_stripFaint+';border-radius:18px;border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.22)')+';">'
+        +'<div style="font-size:44px;font-family:\'Cormorant Garamond\',serif;color:'+col.border.replace(/[\d.]+\)$/,'0.30)')+';line-height:.6;margin-bottom:4px;user-select:none">❝</div>'
+        +'<div style="font-size:20px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+_labelFull+';line-height:1.55;text-shadow:0 2px 20px '+col.glow+';padding:0 4px">'+_escHtml(r.response_text)+'</div>'
         +'</div>'
       : '')
     +_zenDiv
-    // Reactions label
-    +'<div style="font-size:9.5px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.38)')+';font-family:Jost,sans-serif;margin-bottom:10px">¿Cómo te resonó?</div>'
-    // Reaction row
+    +'<div style="font-size:9.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:'+_labelDim+';font-family:Jost,sans-serif;margin-bottom:12px">¿Cómo te resonó?</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:16px">'+rxHtml+'</div>'
-    // Comments section
     +_zenDiv
     +'<div style="text-align:left;margin-bottom:18px">'
-    +'<div style="font-size:9.5px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:'+col.label.replace(/[\d.]+\)$/,'0.45)')+';font-family:Jost,sans-serif;margin-bottom:12px">💬 Hilo de comentarios</div>'
-    +'<div id="dqCommentFeed" style="margin-bottom:14px"><div style="text-align:center;padding:20px 8px;font-size:12px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif">Cargando…</div></div>'
+    +'<div style="font-size:9.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:'+_labelDim+';font-family:Jost,sans-serif;margin-bottom:12px">💬 Hilo de comentarios</div>'
+    +'<div id="dqCommentFeed" style="margin-bottom:14px"><div style="text-align:center;padding:20px 8px;font-size:12px;color:'+_labelDim+';font-family:Jost,sans-serif">Cargando…</div></div>'
     +'<div style="display:flex;gap:8px;align-items:flex-end">'
-    +'<textarea id="dqCommentInput" rows="2" placeholder="Sumar algo al hilo…" style="flex:1;background:rgba(255,255,255,.06);border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.30)')+';border-radius:14px;color:rgba(255,255,255,.92);font-size:13px;font-family:\'Jost\',sans-serif;padding:10px 12px;resize:none;outline:none;line-height:1.4"></textarea>'
-    +'<button id="dqCommentBtn" onclick="pPostDqComment(\''+responseId+'\')" style="background:'+col.strip+';border:none;border-radius:12px;color:rgba(0,0,0,.75);font-size:12px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;padding:10px 14px;flex-shrink:0;height:44px;min-width:60px">Enviar</button>'
+    +'<textarea id="dqCommentInput" rows="2" placeholder="Sumar algo al hilo…" style="flex:1;background:'+_stripFaint+';border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.40)')+';border-radius:14px;color:'+_labelFull+';font-size:13px;font-family:\'Jost\',sans-serif;padding:10px 12px;resize:none;outline:none;line-height:1.4"></textarea>'
+    +'<button id="dqCommentBtn" onclick="pPostDqComment(\''+responseId+'\')" style="background:'+col.strip+';border:none;border-radius:12px;color:rgba(255,255,255,.92);font-size:12px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;padding:10px 14px;flex-shrink:0;height:44px;min-width:60px;box-shadow:0 2px 10px '+col.glow+'">Enviar</button>'
     +'</div>'
     +'</div>'
-    // Close
-    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:12px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.22);border-radius:100px;color:rgba(255,255,255,.80);font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase">· CERRAR ·</button>'
+    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:13px;background:'+_stripFaint+';border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.35)')+';border-radius:100px;color:'+_labelFull+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase">· CERRAR ·</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
@@ -24971,7 +24967,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1188;
+    var _BUILT_V = 1189;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

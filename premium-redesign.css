@@ -11986,7 +11986,7 @@ body.velo-t-noche.r-dark #homeGreetSub {
   flex-direction: row !important;
   overflow-x: auto !important;
   overflow-y: hidden !important;
-  scroll-snap-type: x proximity !important;
+  scroll-snap-type: none !important;
   scroll-behavior: smooth !important;
   gap: 10px !important;
   padding: 4px 0 8px !important;
@@ -11999,12 +11999,13 @@ body.velo-t-noche.r-dark #homeGreetSub {
 #homeDailyQFeed::-webkit-scrollbar { display: none !important; }
 #homeDailyQFeed .dq-feed-card {
   flex-shrink: 0 !important;
-  width: 85% !important;
-  scroll-snap-align: center !important;
+  width: 83% !important;
+  scroll-snap-align: none !important;
+  height: 116px !important;
   padding: 13px 14px !important;
   border-radius: 16px !important;
   box-sizing: border-box !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   position: relative !important;
   /* background/border/shadow set inline per card via _userColorDark/Light */
 }
