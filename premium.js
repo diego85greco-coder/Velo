@@ -4436,9 +4436,10 @@ function pOpenDqResponseSheet(responseId){
     // Body
     +'<div style="padding:18px 18px calc(max(20px, env(safe-area-inset-bottom, 20px)) + 8px);text-align:center">'
     +(r.response_text
-      ? '<div style="margin-bottom:6px;padding:10px 8px 16px;background:'+_stripFaint+';border-radius:18px;border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.22)')+';">'
-        +'<div style="font-size:44px;font-family:\'Cormorant Garamond\',serif;color:'+col.border.replace(/[\d.]+\)$/,'0.30)')+';line-height:.6;margin-bottom:4px;user-select:none">❝</div>'
-        +'<div style="font-size:20px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+_labelFull+';line-height:1.55;text-shadow:0 2px 20px '+col.glow+';padding:0 4px">'+_escHtml(r.response_text)+'</div>'
+      ? '<div style="margin-bottom:18px;padding:22px 20px 26px;background:'+_stripFaint+';border-radius:20px;border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.28)')+';position:relative;overflow:hidden">'
+        +'<div style="position:absolute;top:0;left:0;width:4px;height:100%;background:'+col.strip.replace(/[\d.]+\)$/,'0.70)')+'"></div>'
+        +'<div style="font-size:72px;font-family:\'Cormorant Garamond\',serif;color:'+col.border.replace(/[\d.]+\)$/,'0.18)')+';line-height:.65;margin-bottom:10px;user-select:none;padding-left:18px;text-align:left">❝</div>'
+        +'<div style="font-size:24px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+_labelFull+';line-height:1.58;text-shadow:0 2px 24px '+col.glow+';padding:0 8px 0 20px;letter-spacing:.3px;text-align:left">'+_escHtml(r.response_text)+'</div>'
         +'</div>'
       : '')
     +_zenDiv
@@ -4452,6 +4453,7 @@ function pOpenDqResponseSheet(responseId){
     +'<textarea id="dqCommentInput" rows="2" placeholder="Sumar algo al hilo…" style="flex:1;background:'+_stripFaint+';border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.40)')+';border-radius:14px;color:'+_labelFull+';font-size:13px;font-family:\'Jost\',sans-serif;padding:10px 12px;resize:none;outline:none;line-height:1.4"></textarea>'
     +'<button id="dqCommentBtn" onclick="pPostDqComment(\''+responseId+'\')" style="background:'+col.strip+';border:none;border-radius:12px;color:rgba(255,255,255,.92);font-size:12px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;padding:10px 14px;flex-shrink:0;height:44px;min-width:60px;box-shadow:0 2px 10px '+col.glow+'">Enviar</button>'
     +'</div>'
+    +'<div style="text-align:center;margin-top:10px;font-size:10.5px;color:'+_labelDim+';font-family:Jost,sans-serif;letter-spacing:.4px">💬 Haz clic para comentar o reaccionar</div>'
     +'</div>'
     +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:13px;background:'+_stripFaint+';border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.35)')+';border-radius:100px;color:'+_labelFull+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase">· CERRAR ·</button>'
     +'</div>'
@@ -15062,34 +15064,45 @@ function _updateFavBadge(){
 
 function _contactCard(id, name, av, uname, pInfo, unread, opts){
   var canChat = pInfo.on && pInfo.label !== 'Ocupado/a';
-  var sz = opts.small ? 40 : 48;
-  var onlineColor = pInfo.on ? (pInfo.label==='Disponible'?'rgba(80,220,130,.95)':'rgba(220,170,60,.95)') : 'rgba(180,180,180,.45)';
-  var onlineBg    = pInfo.on ? (pInfo.label==='Disponible'?'rgba(30,140,80,.25)':'rgba(180,130,30,.22)') : 'rgba(255,255,255,.06)';
+  var sz = opts.small ? 40 : 50;
+  var isDk = document.body.classList.contains('r-dark');
+  var onlineColor = pInfo.on ? (pInfo.label==='Disponible'?'#4DD988':'#D9A940') : 'rgba(140,150,145,.55)';
+  var onlineBg    = pInfo.on ? (pInfo.label==='Disponible'?'rgba(38,120,75,.20)':'rgba(160,118,28,.18)') : 'rgba(120,128,124,.10)';
+  var cardBg      = isDk ? 'linear-gradient(135deg,rgba(14,34,22,.97) 0%,rgba(9,24,16,.95) 100%)' : 'linear-gradient(135deg,rgba(250,254,252,1) 0%,rgba(240,250,245,.98) 100%)';
+  var cardBorder  = isDk ? 'rgba(116,198,157,.20)' : 'rgba(80,160,108,.24)';
+  var cardShadow  = isDk ? '0 4px 22px rgba(0,0,0,.32),inset 0 1px 0 rgba(116,198,157,.12)' : '0 2px 16px rgba(40,100,65,.10),inset 0 1px 0 rgba(255,255,255,.90)';
+  var nameTxt     = isDk ? 'rgba(222,248,234,.96)' : 'rgba(18,52,32,.92)';
+  var unameTxt    = isDk ? 'rgba(116,198,157,.78)' : 'rgba(40,128,78,.82)';
+  var mottoTxt    = isDk ? 'rgba(150,210,178,.52)' : 'rgba(38,95,60,.50)';
+  var avRing      = isDk ? 'rgba(116,198,157,.38)' : 'rgba(80,160,108,.44)';
+  var avBg        = isDk ? 'rgba(116,198,157,.14)' : 'rgba(116,198,157,.20)';
+  var dotBorder   = isDk ? 'rgba(14,34,22,.96)' : 'rgba(248,253,250,1)';
+  var btnSz = 'width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;flex-shrink:0';
   return '<div data-fav-name="'+_escHtml(name||'')+'" data-fav-uname="'+_escHtml(uname||'')+'" '
-    +'style="display:flex;align-items:center;gap:12px;padding:14px 14px 14px 14px;'
-    +'background:rgba(8,26,18,.85);border:1.5px solid rgba(116,198,157,.16);border-radius:18px;margin-bottom:10px;'
-    +'box-shadow:0 3px 18px rgba(0,0,0,.25),inset 0 0 0 1px rgba(116,198,157,.08)">'
+    +'style="display:flex;align-items:center;gap:13px;padding:12px 14px;'
+    +'background:'+cardBg+';border:1.5px solid '+cardBorder+';border-radius:20px;margin-bottom:9px;'
+    +'box-shadow:'+cardShadow+'">'
     +'<div style="position:relative;flex-shrink:0;cursor:pointer" onclick="pQuickProfile('+_jsAttr(name||'Usuario')+','+_jsAttr(av||'🧑')+',\'\',\'\','+_jsAttr(id)+')">'
-    +'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;border:2px solid rgba(116,198,157,.35);overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(116,198,157,.14)">'+_avInline(av||'🧑', sz)+'</div>'
-    +'<span style="position:absolute;bottom:1px;right:1px;width:12px;height:12px;border-radius:50%;background:'+onlineColor+';border:2.5px solid rgba(8,26,18,.95);box-shadow:0 0 6px '+onlineColor+'"></span>'
+    +'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;border:2.5px solid '+avRing+';overflow:hidden;display:flex;align-items:center;justify-content:center;background:'+avBg+'">'+_avInline(av||'🧑', sz)+'</div>'
+    +'<span style="position:absolute;bottom:0;right:0;width:13px;height:13px;border-radius:50%;background:'+onlineColor+';border:2.5px solid '+dotBorder+';box-shadow:0 0 6px '+onlineColor+'"></span>'
     +'</div>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:15px;font-weight:800;color:rgba(220,245,230,.95);font-family:Jost,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(name||'Usuario')+'</div>'
-    +(uname?'<div style="font-size:11px;color:rgba(116,198,157,.80);font-weight:600;margin-bottom:2px;font-family:Jost,sans-serif">'+_escHtml(uname)+'</div>':'')
-    +'<div style="display:inline-flex;align-items:center;gap:5px;background:'+onlineBg+';border-radius:100px;padding:2px 8px 2px 6px;margin-top:1px">'
-    +'<span style="width:6px;height:6px;border-radius:50%;background:'+onlineColor+';flex-shrink:0;box-shadow:0 0 4px '+onlineColor+'"></span>'
-    +'<span style="font-size:10px;font-weight:700;color:'+onlineColor+';font-family:Jost,sans-serif;letter-spacing:.2px">'+pInfo.label+'</span>'
+    +'<div style="font-size:15.5px;font-weight:800;color:'+nameTxt+';font-family:Jost,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.1px">'+_escHtml(name||'Usuario')+'</div>'
+    +(uname?'<div style="font-size:11px;color:'+unameTxt+';font-weight:600;margin-bottom:3px;font-family:Jost,sans-serif">'+_escHtml(uname)+'</div>':'')
+    +'<div style="display:inline-flex;align-items:center;gap:5px;background:'+onlineBg+';border-radius:100px;padding:2px 9px 2px 6px;margin-top:2px">'
+    +'<span style="width:7px;height:7px;border-radius:50%;background:'+onlineColor+';flex-shrink:0"></span>'
+    +'<span style="font-size:9.5px;font-weight:700;color:'+onlineColor+';font-family:Jost,sans-serif;letter-spacing:.2px">'+pInfo.label+'</span>'
     +'</div>'
-    +(opts.motto?'<p style="font-size:11.5px;color:rgba(180,220,200,.65);line-height:1.4;margin:5px 0 0;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml(opts.motto)+'"</p>':'')
+    +(opts.motto?'<p style="font-size:11px;color:'+mottoTxt+';line-height:1.4;margin:5px 0 0;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml(opts.motto)+'"</p>':'')
     +'</div>'
-    +'<div style="display:flex;gap:6px;flex-shrink:0">'
+    +'<div style="display:flex;gap:5px;flex-shrink:0">'
     +(canChat
-      ?'<button onclick="pOpenDM('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Chat directo" style="width:38px;height:38px;border-radius:12px;background:rgba(30,140,80,.32);border:1.5px solid rgba(116,198,157,.55);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">💬</button>'
-      :'<button disabled title="No disponible" style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.10);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:not-allowed;opacity:.35">💬</button>')
-    +(opts.showMail?'<button onclick="pLeaveOfflineMsg('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Buzón privado" style="width:38px;height:38px;border-radius:12px;background:rgba(200,160,60,.18);border:1.5px solid rgba(220,175,70,.45);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">✉️</button>':'')
-    +(opts.showRemove?'<button onclick="pRemoveFav(\''+id+'\');pRenderContacts()" title="Quitar favorito" style="width:38px;height:38px;border-radius:12px;background:rgba(240,190,40,.18);border:1.5px solid rgba(240,190,40,.50);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">⭐</button>':'')
-    +(opts.showBlock?'<button onclick="pBlockUser('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" title="Bloquear" style="width:38px;height:38px;border-radius:12px;background:rgba(200,40,40,.12);border:1.5px solid rgba(200,40,40,.35);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">🚫</button>':'')
-    +(opts.showAddFav?'<button onclick="pAddFav('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" title="Agregar favorito" style="width:38px;height:38px;border-radius:12px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.45);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer">⭐</button>':'')
+      ?'<button onclick="pOpenDM('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Chat directo" style="'+btnSz+';background:rgba(55,155,95,.22);border:1.5px solid rgba(80,180,110,.50)">💬</button>'
+      :'<button disabled title="No disponible" style="'+btnSz+';background:rgba(160,160,160,.07);border:1px solid rgba(160,160,160,.16);cursor:not-allowed;opacity:.28">💬</button>')
+    +(opts.showMail?'<button onclick="pLeaveOfflineMsg('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Buzón privado" style="'+btnSz+';background:rgba(195,155,50,.18);border:1.5px solid rgba(215,170,60,.44)">✉️</button>':'')
+    +(opts.showRemove?'<button onclick="pRemoveFav(\''+id+'\');pRenderContacts()" title="Quitar favorito" style="'+btnSz+';background:rgba(235,185,38,.18);border:1.5px solid rgba(235,185,38,.50)">⭐</button>':'')
+    +(opts.showBlock?'<button onclick="pBlockUser('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" title="Bloquear" style="'+btnSz+';background:rgba(195,38,38,.10);border:1.5px solid rgba(195,38,38,.30)">🚫</button>':'')
+    +(opts.showAddFav?'<button onclick="pAddFav('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" title="Agregar favorito" style="'+btnSz+';background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.44)">⭐</button>':'')
     +'</div></div>';
 }
 
@@ -24967,7 +24980,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1190;
+    var _BUILT_V = 1191;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
