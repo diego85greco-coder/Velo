@@ -14570,3 +14570,36 @@ body:not(.r-dark) .home-momento-btn-all {
   border-color: rgba(74,160,110,.55) !important;
   color: rgba(15,80,45,.95) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v1211 — REFLEXIÓN DEL DÍA + PREGUNTA DEL DÍA: dark mode con más luz
+   Antes: rgba(10,6,24,.96) → casi negro plano
+   Ahora: gradient dark-sage con un dejo dorado tibio
+   ══════════════════════════════════════════════════════════════════ */
+body.r-dark #homeReflexionDia > div {
+  background: linear-gradient(150deg, rgba(28,38,30,.95) 0%, rgba(22,30,24,.92) 50%, rgba(34,30,18,.93) 100%) !important;
+  border: 1.5px solid rgba(200,158,56,.45) !important;
+  box-shadow: 0 10px 38px rgba(0,0,0,.50), 0 0 0 1px rgba(200,158,56,.10), inset 0 1px 0 rgba(255,220,80,.10) !important;
+}
+/* Internal divider line between Reflexión and Pregunta — más visible */
+body.r-dark #homeDailyQ > div[style*="height:1px"][style*="rgba(200,158,56"] {
+  background: rgba(200,158,56,.32) !important;
+}
+/* Pulse row inside DQ locked — fondo levemente más claro */
+body.r-dark #homeDailyQCountRow {
+  background: rgba(200,158,56,.14) !important;
+}
+/* Text legibility tweaks for the new lighter background */
+body.r-dark #homeDailyQuoteText {
+  color: rgba(255,242,200,.97) !important;
+  text-shadow: 0 1px 12px rgba(200,150,20,.22) !important;
+}
+body.r-dark #homeDailyQText {
+  color: rgba(252,248,225,.96) !important;
+}
+body.r-dark #homeDailyQHint {
+  color: rgba(248,238,200,.62) !important;
+}
+body.r-dark #homeDailyQuoteAuthor {
+  color: rgba(220,178,72,.85) !important;
+}
