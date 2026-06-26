@@ -4894,9 +4894,9 @@ async function _showPulseDetail(){
   var cont = document.getElementById('pulseDetailContent');
   if(!ov || !cont) return;
   ov.style.display = 'flex';
-  cont.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink4);font-family:Jost,sans-serif;font-size:13px">Cargando…</div>';
+  cont.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(180,230,210,.60);font-family:Jost,sans-serif;font-size:13px">Cargando…</div>';
   if(!sbClient){
-    cont.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink4);font-family:Jost,sans-serif;font-size:13px">Sin conexión</div>';
+    cont.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(180,230,210,.60);font-family:Jost,sans-serif;font-size:13px">Sin conexión</div>';
     return;
   }
   try{
@@ -4912,34 +4912,34 @@ async function _showPulseDetail(){
     var isUniqueDominant = sorted.length === 1 || (sorted.length > 1 && counts[sorted[1]] < maxCount);
     if(total === 0){
       cont.innerHTML = '<div style="text-align:center;padding:24px"><div style="font-size:36px;margin-bottom:10px">🌿</div>'
-        +'<div style="font-size:13px;color:var(--ink4);font-family:Jost,sans-serif">Nadie respondió todavía.<br>¡Sé el primero!</div></div>';
+        +'<div style="font-size:13px;color:rgba(180,230,210,.70);font-family:Jost,sans-serif">Nadie respondió todavía.<br>¡Sé el primero!</div></div>';
       return;
     }
-    var html = '<div style="text-align:center;font-size:13px;color:var(--ink4);font-family:Jost,sans-serif;margin-bottom:20px">'
+    var html = '<div style="text-align:center;font-size:13px;font-weight:600;color:rgba(255,255,255,.75);font-family:Jost,sans-serif;margin-bottom:20px">'
       +total+(total===1?' persona respondió hoy':' personas respondieron hoy')
       +'</div>';
     sorted.forEach(function(emoji){
       var cnt = counts[emoji];
       var pct = Math.round((cnt/total)*100);
       var isDom = isUniqueDominant && emoji === sorted[0];
-      var barColor = isDom ? 'rgba(116,198,157,.75)' : 'rgba(255,255,255,.22)';
-      var nameColor = isDom ? 'rgba(116,198,157,.9)' : 'var(--ink)';
-      html += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">'
-        +'<div style="font-size:34px;width:42px;text-align:center;flex-shrink:0">'+emoji+'</div>'
+      var barColor = isDom ? 'rgba(116,198,157,.80)' : 'rgba(116,198,157,.30)';
+      var nameColor = isDom ? 'rgba(200,255,230,.95)' : 'rgba(255,255,255,.78)';
+      html += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">'
+        +'<div style="font-size:32px;width:40px;text-align:center;flex-shrink:0">'+emoji+'</div>'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">'
-        +'<span style="font-size:13px;font-weight:'+(isDom?'700':'500')+';color:'+nameColor+';font-family:Jost,sans-serif">'+(_lbl[emoji]||emoji)+(isDom?' ✦':'')+'</span>'
-        +'<span style="font-size:12px;color:var(--ink4);font-family:Jost,sans-serif">'+cnt+(cnt===1?' persona':' personas')+' · '+pct+'%</span>'
+        +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">'
+        +'<span style="font-size:13px;font-weight:'+(isDom?'800':'600')+';color:'+nameColor+';font-family:Jost,sans-serif">'+(_lbl[emoji]||emoji)+(isDom?' ✦':'')+'</span>'
+        +'<span style="font-size:11px;color:rgba(180,230,210,.60);font-family:Jost,sans-serif">'+cnt+(cnt===1?' persona':' personas')+' · '+pct+'%</span>'
         +'</div>'
-        +'<div style="height:7px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden">'
-        +'<div style="height:7px;background:'+barColor+';border-radius:4px;width:'+pct+'%"></div>'
+        +'<div style="height:6px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden">'
+        +'<div style="height:6px;background:'+barColor+';border-radius:4px;width:'+pct+'%;transition:width .4s"></div>'
         +'</div>'
         +'</div>'
         +'</div>';
     });
     cont.innerHTML = html;
   }catch(e){
-    cont.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink4);font-family:Jost,sans-serif;font-size:13px">No se pudo cargar</div>';
+    cont.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(180,230,210,.60);font-family:Jost,sans-serif;font-size:13px">No se pudo cargar</div>';
   }
 }
 
@@ -25014,7 +25014,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1175;
+    var _BUILT_V = 1176;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

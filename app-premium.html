@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1175">
+  <meta name="app-version" content="1176">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1175">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1175">
+  <link rel="stylesheet" href="premium.css?v=20260626-1176">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1176">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -4114,12 +4114,12 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   <div style="font-size:10px;color:rgba(255,255,255,.3);font-family:Jost,sans-serif;text-align:center">Mantenés presionado la imagen para guardarla</div>
 </div>
 <!-- ── PULSE DETAIL BOTTOM SHEET ──────────────────────────── -->
-<div id="pulseDetailOv" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);align-items:flex-end;justify-content:center" onclick="if(event.target===this)_closePulseDetail()">
-  <div style="width:100%;max-width:480px;background:var(--card);border-radius:24px 24px 0 0;padding:8px 20px 44px;max-height:85vh;overflow-y:auto">
-    <div style="width:36px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:12px auto 20px"></div>
-    <div style="text-align:center;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);font-family:Jost,sans-serif;margin-bottom:18px">Pulso de la comunidad · hoy</div>
+<div id="pulseDetailOv" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center" onclick="if(event.target===this)_closePulseDetail()">
+  <div style="width:100%;max-width:480px;background:linear-gradient(160deg,rgba(14,38,24,.98),rgba(8,24,16,.99));border-radius:24px 24px 0 0;padding:8px 20px max(32px,env(safe-area-inset-bottom));max-height:85vh;overflow-y:auto;border-top:1.5px solid rgba(116,198,157,.28)">
+    <div style="width:36px;height:4px;background:rgba(116,198,157,.25);border-radius:2px;margin:12px auto 20px"></div>
+    <div style="text-align:center;font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(116,198,157,.70);font-family:Jost,sans-serif;margin-bottom:4px">✦ Pulso de la comunidad</div>
     <div id="pulseDetailContent"></div>
-    <button onclick="_closePulseDetail()" style="width:100%;margin-top:18px;padding:12px;border-radius:14px;border:1.5px solid rgba(255,255,255,.1);background:transparent;color:var(--ink4);font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button>
+    <button onclick="_closePulseDetail()" style="width:100%;margin-top:16px;padding:12px;border-radius:14px;border:1px solid rgba(116,198,157,.22);background:rgba(116,198,157,.08);color:rgba(180,230,210,.75);font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button>
   </div>
 </div>
 <!-- ── ANDROID/CHROME PRE-PERMISSION BOTTOM SHEET ────────────────── -->
@@ -4280,8 +4280,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1175"></script>
-<script src="premium-redesign.js?v=20260626-1175"></script>
+<script src="premium.js?v=20260626-1176"></script>
+<script src="premium-redesign.js?v=20260626-1176"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
