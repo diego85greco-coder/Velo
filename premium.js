@@ -4051,13 +4051,18 @@ var _moodChipOrgNextSibling = null;
 
 function _initMoodChip(){
   if(document.getElementById('homeMoodChip')) return;
-  var heroLeft = document.querySelector('.r-hero-left');
-  if(!heroLeft) return;
   var chip = document.createElement('div');
   chip.id = 'homeMoodChip';
   chip.onclick = function(){ pOpenMoodChipSheet(); };
   chip.style.cssText = 'order:0;width:100%;box-sizing:border-box;margin-bottom:10px;cursor:pointer;flex-shrink:0';
-  heroLeft.insertAdjacentElement('afterbegin', chip);
+  var greetEl = document.getElementById('homeGreetWrapper');
+  if(greetEl && greetEl.parentElement) {
+    greetEl.parentElement.insertBefore(chip, greetEl);
+  } else {
+    var heroLeft = document.querySelector('.r-hero-left');
+    if(!heroLeft) return;
+    heroLeft.insertAdjacentElement('afterbegin', chip);
+  }
   _updateMoodChip();
 }
 
@@ -4094,6 +4099,7 @@ function pOpenMoodChipSheet(){
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
   ov.id = 'moodChipSheetOv';
+  ov.style.zIndex = '750';
   ov.onclick = function(e){ if(e.target===ov) pCloseMoodChipSheet(); };
   var sheet = document.createElement('div');
   sheet.className = 'p-sheet p-sheet-dark';
@@ -24937,7 +24943,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1160;
+    var _BUILT_V = 1161;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
