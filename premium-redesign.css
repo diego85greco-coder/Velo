@@ -12001,12 +12001,12 @@ body.velo-t-noche.r-dark #homeGreetSub {
   flex-shrink: 0 !important;
   width: 85% !important;
   scroll-snap-align: center !important;
-  padding: 0 !important;
+  padding: 13px 14px !important;
   border-radius: 16px !important;
   box-sizing: border-box !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   position: relative !important;
-  /* background/border set inline per card based on mood emoji color */
+  /* background/border/shadow set inline per card via _userColorDark/Light */
 }
 #homeDailyQFeed #dqExpandBtn { display: none !important; }
 
@@ -14190,20 +14190,9 @@ body:not(.r-dark) #topbarMoodBtn {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   v1187 — DQ response cards: colorful border (speech bubble effect)
+   v1188 — DQ cards: per-user color via JS inline, softer widget border
+   Colors (bg/border/shadow) set in _buildDqCards() via _userColorDark/Light
    ══════════════════════════════════════════════════════════════════ */
-body.r-dark .dq-feed-card {
-  border: 1.5px solid rgba(116,198,157,.62) !important;
-  box-shadow: 0 3px 16px rgba(116,198,157,.14) !important;
-  background: rgba(20,40,26,.70) !important;
-  padding: 13px 14px !important;
-}
-body:not(.r-dark) .dq-feed-card {
-  border: 1.5px solid rgba(35,120,70,.52) !important;
-  box-shadow: 0 2px 12px rgba(35,120,70,.13) !important;
-  background: rgba(230,248,238,.82) !important;
-  padding: 13px 14px !important;
-}
 /* Remove heavy outer border on DQ widget — less boxy look */
 body.r-dark #homeDailyQuote {
   border: 1px solid rgba(116,198,157,.14) !important;
