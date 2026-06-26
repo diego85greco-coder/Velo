@@ -24557,7 +24557,7 @@ function _btRenderComments(comments,rxData,postId,uid,wrap){
   wrap.innerHTML=comments.map(function(cm){
     var nm=cm.is_anon?'Anónimo/a':(cm.author_name||'Alguien');
     var own=uid&&cm.user_id&&String(cm.user_id)===String(uid)&&!cm.is_anon;
-    var canClick=!cm.is_anon&&cm.user_id;
+    var canClick=!cm.is_anon;
     var avUrl=cm.avatar_url||cm.av||'';
     var profileArgs='\''+_jsAttr(nm)+'\',\''+_jsAttr(avUrl)+'\',\'\',\'\',\''+_jsAttr(String(cm.user_id||''))+'\'';
     var avClickAttr=canClick?'onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer;flex-shrink:0"':'style="cursor:default;flex-shrink:0"';
@@ -24972,7 +24972,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1182;
+    var _BUILT_V = 1183;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
