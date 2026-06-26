@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1169">
+  <meta name="app-version" content="1170">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1169">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1169">
+  <link rel="stylesheet" href="premium.css?v=20260626-1170">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1170">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -160,6 +160,11 @@
     }
     /* accesos rápidos: 3 columnas iguales */
     #homeQuickAccess .r-home-quick-row { grid-template-columns: repeat(3,1fr) !important; }
+    /* Light mode bottom nav — stronger contrast for icons */
+    body:not(.r-dark) .p-bottomnav { background: rgba(255,255,255,.97) !important; box-shadow: 0 -1px 0 rgba(0,0,0,.08), 0 -4px 16px rgba(0,0,0,.06) !important; }
+    body:not(.r-dark) .p-bn-item:not(.active) { color: rgba(20,52,30,.68) !important; }
+    body:not(.r-dark) .p-bn-item:not(.active) .p-bn-label { color: rgba(20,52,30,.50) !important; }
+    body:not(.r-dark) .p-bn-item:not(.active) svg { stroke-width: 2; }
     /* v1164 — widgets removed from home by user request */
     #homeStatusToggle,
     #homeBitacoraWidget,
@@ -1282,8 +1287,8 @@
                   </div>
                   <!-- Frase section -->
                   <div style="padding:12px 18px 16px">
-                    <div style="position:relative;padding-left:4px;margin-bottom:10px">
-                      <div style="position:absolute;top:-8px;left:-6px;font-size:42px;color:rgba(200,158,56,.18);font-family:'Cormorant Garamond',serif;line-height:1;pointer-events:none;user-select:none">❝</div>
+                    <div style="padding-left:4px;margin-bottom:10px">
+                      <div style="font-size:22px;color:rgba(200,158,56,.22);font-family:'Cormorant Garamond',serif;line-height:1;margin-bottom:2px;user-select:none">❝</div>
                       <div id="homeDailyQuoteText" style="font-size:17px;color:rgba(255,240,190,.95);font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.65;letter-spacing:.01em;text-shadow:0 1px 10px rgba(200,150,20,.16)"></div>
                     </div>
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -4274,8 +4279,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1169"></script>
-<script src="premium-redesign.js?v=20260626-1169"></script>
+<script src="premium.js?v=20260626-1170"></script>
+<script src="premium-redesign.js?v=20260626-1170"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

@@ -4077,7 +4077,7 @@ function _updateMoodChip(){
     : (hasEntry ? 'linear-gradient(135deg,rgba(116,198,157,.36),rgba(74,160,110,.26))' : 'linear-gradient(135deg,rgba(116,198,157,.28),rgba(74,160,110,.18))');
   var border = isDark ? 'rgba(116,198,157,.62)' : 'rgba(74,160,110,.62)';
   var textColor = isDark ? 'rgba(220,255,235,.97)' : 'rgba(8,52,24,.92)';
-  var subColor = isDark ? 'rgba(116,198,157,.92)' : 'rgba(30,100,55,.85)';
+  var subColor = isDark ? 'rgba(200,240,218,.80)' : 'rgba(30,100,55,.85)';
   var shadow = isDark ? '0 4px 20px rgba(116,198,157,.24),inset 0 1px 0 rgba(255,255,255,.07)' : '0 4px 16px rgba(74,160,110,.22)';
   var emojiRing = isDark ? 'rgba(116,198,157,.18)' : 'rgba(74,160,110,.14)';
   var glow = isDark ? 'rgba(116,198,157,.22)' : 'rgba(74,160,110,.18)';
@@ -4382,7 +4382,7 @@ function _buildDqCards(list){
       +'<span style="position:absolute;bottom:-3px;right:-4px;font-size:13px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))">'+r.mood_emoji+'</span>'
       +'</div>';
     return '<div class="dq-feed-card home-mc" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
-      +' style="background:'+col.bg+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'.30)')+';border-left:3px solid '+col.border+';box-shadow:0 3px 18px '+col.glow+',inset 0 1px 0 rgba(255,255,255,.04);cursor:pointer;border-radius:18px;padding:14px 16px 13px;position:relative;overflow:hidden">'
+      +' style="background:'+col.bg+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'.30)')+';border-left:3px solid '+col.border+';box-shadow:inset 0 1px 0 rgba(255,255,255,.04);cursor:pointer;border-radius:18px;padding:14px 16px 13px;position:relative;overflow:hidden">'
       // Top row: avatar + name + time + action
       +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">'
       +avWrap
@@ -24999,7 +24999,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1169;
+    var _BUILT_V = 1170;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

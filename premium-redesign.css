@@ -178,14 +178,14 @@ body::after {
 }
 .r-time-icon svg, .r-time-icon img {
   width: 48px; height: 48px;
-  animation: rTimeFloat 6s ease-in-out infinite;
-  filter: drop-shadow(0 4px 14px rgba(255, 217, 102, .4));
+  animation: rTimeFloat 14s ease-in-out infinite;
+  filter: drop-shadow(0 3px 8px rgba(255, 217, 102, .18));
 }
-.r-time-icon.is-afternoon svg, .r-time-icon.is-afternoon img { filter: drop-shadow(0 4px 14px rgba(244, 142, 60, .4)); }
-.r-time-icon.is-night svg,     .r-time-icon.is-night img     { filter: drop-shadow(0 4px 14px rgba(232, 200, 121, .35)); }
+.r-time-icon.is-afternoon svg, .r-time-icon.is-afternoon img { filter: drop-shadow(0 3px 8px rgba(244, 142, 60, .18)); }
+.r-time-icon.is-night svg,     .r-time-icon.is-night img     { filter: drop-shadow(0 3px 8px rgba(232, 200, 121, .15)); }
 @keyframes rTimeFloat {
   0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
+  50%       { transform: translateY(-3px); }
 }
 
 /* ── 4. Greeting bar (avatar + mood + mi estado) ────────────────── */
@@ -4321,11 +4321,11 @@ body.r-dark #homeUserName { color: rgba(255,255,255,.92) !important; }
 
 /* Mood pill — richer glow pulse */
 @keyframes velo-mood-pulse {
-  0%, 100% { box-shadow: 0 2px 8px rgba(116,198,157,.18); transform: scale(1); }
-  50%       { box-shadow: 0 4px 18px rgba(116,198,157,.40); transform: scale(1.04); }
+  0%, 100% { box-shadow: 0 2px 6px rgba(116,198,157,.12); }
+  50%       { box-shadow: 0 3px 14px rgba(116,198,157,.22); }
 }
 #homeCurrentMoodLine {
-  animation: velo-mood-pulse 3.2s ease-in-out infinite !important;
+  animation: velo-mood-pulse 6s ease-in-out infinite !important;
   font-size: 12px !important;
   padding: 5px 12px !important;
 }
@@ -12013,10 +12013,12 @@ body.velo-t-noche.r-dark #homeGreetSub {
   display: flex !important;
   flex-direction: row !important;
   overflow-x: auto !important;
-  overflow-y: visible !important;
+  overflow-y: hidden !important;
   scroll-snap-type: x mandatory !important;
   gap: 10px !important;
   padding: 4px 0 8px !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
   -webkit-overflow-scrolling: touch !important;
