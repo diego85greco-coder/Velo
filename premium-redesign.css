@@ -14079,3 +14079,32 @@ body:not(.r-dark) #pg-guardian-chat .feed-header-info > div > div:last-child {
   color: rgba(20,90,50,.72) !important;
 }
 
+
+/* ══════════════════════════════════════════════════════════════════
+   v1182 — Bitácora comment speech bubbles
+   ══════════════════════════════════════════════════════════════════ */
+.bt-comment-bubble {
+  position: relative;
+  background: rgba(255,255,255,.93);
+  border-radius: 4px 16px 16px 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.15);
+  flex: 1;
+  min-width: 0;
+}
+.bt-comment-bubble::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: -8px;
+  border-top: 7px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 9px solid rgba(255,255,255,.93);
+}
+/* Light mode: slightly darker bubble */
+body:not(.r-dark) .bt-comment-bubble {
+  background: rgba(240,246,242,.98);
+  box-shadow: 0 2px 10px rgba(0,0,0,.10);
+}
+body:not(.r-dark) .bt-comment-bubble::before {
+  border-right-color: rgba(240,246,242,.98);
+}

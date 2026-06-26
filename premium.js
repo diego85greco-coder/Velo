@@ -24490,7 +24490,7 @@ function _btOpenDetail(id){
   +'</div>';
   sh+='<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px">';
   sh+='<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:12px">COMENTARIOS</div>';
-  sh+='<div id="btCommentsWrap" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"><div style="text-align:center;padding:20px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif">Cargando...</div></div>';
+  sh+='<div id="btCommentsWrap" style="margin-bottom:14px"><div style="text-align:center;padding:20px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif">Cargando...</div></div>';
   sh+='<div style="display:flex;gap:8px;align-items:flex-end">';
   sh+='<textarea id="btCommentInput" placeholder="Escribí tu comentario..." style="flex:1;background:rgba(255,255,255,.13);border:1.5px solid '+c.border.replace(/[\d.]+\)$/,'.50)')+';border-radius:14px;padding:10px 12px;color:rgba(255,255,255,.95);font-size:13px;font-family:Jost,sans-serif;resize:none;min-height:44px;max-height:120px;outline:none;box-sizing:border-box;box-shadow:inset 0 1px 4px rgba(0,0,0,.18)" rows="1"></textarea>';
   sh+='<button onclick="_btSendComment(\''+_escHtml(String(post.id))+'\')" style="background:'+c.strip+';border:1.5px solid '+c.border.replace(/[\d.]+\)$/,'.60)')+';color:'+c.label+';font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:14px;padding:10px 14px;cursor:pointer;flex-shrink:0">Enviar</button>';
@@ -24559,41 +24559,48 @@ function _btRenderComments(comments,rxData,postId,uid,wrap){
     var own=uid&&cm.user_id&&String(cm.user_id)===String(uid)&&!cm.is_anon;
     var canClick=!cm.is_anon&&cm.user_id;
     var avUrl=cm.avatar_url||cm.av||'';
-    var avClick=canClick?'onclick="pQuickProfile(\''+_jsAttr(nm)+'\',\''+_jsAttr(avUrl)+'\',\'\',\'\',\''+_jsAttr(String(cm.user_id))+'\')" style="cursor:pointer"':'style="cursor:default"';
+    var profileArgs='\''+_jsAttr(nm)+'\',\''+_jsAttr(avUrl)+'\',\'\',\'\',\''+_jsAttr(String(cm.user_id||''))+'\'';
+    var avClickAttr=canClick?'onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer;flex-shrink:0"':'style="cursor:default;flex-shrink:0"';
+    // Avatar: 40px circle with ring glow
+    var ringStyle='width:40px;height:40px;border-radius:50%;flex-shrink:0;border:2px solid rgba(116,198,157,.65);box-shadow:0 0 0 3px rgba(116,198,157,.15),0 2px 8px rgba(0,0,0,.22);';
     var avHtml=avUrl
-      ?'<img src="'+_jsAttr(avUrl)+'" '+avClick+' style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(116,198,157,.35);flex-shrink:0" />'
-      :'<div '+avClick+' style="width:28px;height:28px;border-radius:50%;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.28);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">'+(cm.is_anon?'👤':'🌿')+'</div>';
+      ?'<img src="'+_jsAttr(avUrl)+'" '+avClickAttr+' style="'+ringStyle+'object-fit:cover;" />'
+      :'<div '+avClickAttr+' style="'+ringStyle+'background:rgba(116,198,157,.20);display:flex;align-items:center;justify-content:center;font-size:'+(cm.is_anon?'17':'20')+'px">'+(cm.is_anon?'👤':'🌿')+'</div>';
+    // Name: clickable if not anon
     var nmHtml=canClick
-      ?'<span onclick="pQuickProfile(\''+_jsAttr(nm)+'\',\''+_jsAttr(avUrl)+'\',\'\',\'\',\''+_jsAttr(String(cm.user_id))+'\')" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px">'+_escHtml(nm)+'</span>'
-      :'<span>'+_escHtml(nm)+'</span>';
+      ?'<span onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer;font-size:12.5px;font-weight:700;color:rgba(10,60,30,.90);font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(nm)+'</span>'
+      :'<span style="font-size:12.5px;font-weight:700;color:rgba(10,60,30,.90);font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(nm)+'</span>';
+    // Reaction buttons — dark text on white bubble
     var cmRx=rxMap[String(cm.id)]||{};
     var cmIdStr=String(cm.id);
     var rxHtml='<div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">'
       +EMOJIS.map(function(e){
         var r=cmRx[e.k]||{count:0,mine:false};
-        var rxBg=r.mine?'rgba(116,198,157,.25)':'rgba(255,255,255,.08)';
-        var rxBorder=r.mine?'rgba(116,198,157,.60)':'rgba(255,255,255,.18)';
+        var rxBg=r.mine?'rgba(116,198,157,.28)':'rgba(0,0,0,.06)';
+        var rxBorder=r.mine?'rgba(116,198,157,.70)':'rgba(0,0,0,.12)';
+        var rxTxt=r.mine?'rgba(10,80,40,.90)':'rgba(0,0,0,.55)';
         return '<button type="button" onclick="event.stopPropagation();_btCmReact(\''+cmIdStr+'\',\''+e.k+'\',\''+String(postId)+'\')" '
           +'style="display:inline-flex;align-items:center;gap:4px;background:'+rxBg+';border:1.5px solid '+rxBorder+';border-radius:20px;padding:4px 10px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:background .15s">'
           +'<span style="font-size:15px;line-height:1">'+e.i+'</span>'
-          +'<span style="font-size:11px;font-weight:700;color:rgba(180,230,210,.90);font-family:Jost,sans-serif">'+(r.count>0?r.count:'')+'</span>'
+          +'<span style="font-size:11px;font-weight:700;color:'+rxTxt+';font-family:Jost,sans-serif">'+(r.count>0?r.count:'')+'</span>'
           +'</button>';
       }).join('')
       +'</div>';
-    return '<div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:11px 13px">'
-      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">'
-        +avHtml
-        +'<div style="flex:1;min-width:0">'
-          +'<div style="font-size:11px;font-weight:700;color:rgba(180,230,210,.90);font-family:Jost,sans-serif;line-height:1.2">'+nmHtml+'</div>'
-          +'<div style="font-size:9.5px;color:rgba(180,200,190,.45);font-family:Jost,sans-serif">'+_momentoAgo(cm.created_at||'')+'</div>'
+    // Speech bubble card
+    return '<div style="display:flex;align-items:flex-start;gap:9px;margin-bottom:14px">'
+      +avHtml
+      +'<div class="bt-comment-bubble" style="padding:10px 13px">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px">'
+          +nmHtml
+          +'<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">'
+            +'<span style="font-size:10px;color:rgba(0,0,0,.38);font-family:Jost,sans-serif">'+_momentoAgo(cm.created_at||'')+'</span>'
+            +(own?'<button type="button" onclick="_btDeleteComment(\''+_escHtml(cmIdStr)+'\',\''+_escHtml(String(postId))+'\')" style="background:none;border:none;color:rgba(200,60,60,.65);font-size:12px;cursor:pointer;padding:0 2px;line-height:1">🗑</button>':'')
+            +(!own?'<button type="button" onclick="_btReport(null,\''+_escHtml(cmIdStr)+'\')" style="background:none;border:none;color:rgba(180,60,60,.55);font-size:11px;cursor:pointer;padding:0 2px;line-height:1">🚩</button>':'')
+          +'</div>'
         +'</div>'
-        +'<div style="display:flex;gap:4px;flex-shrink:0">'
-          +(own?'<button type="button" onclick="_btDeleteComment(\''+_escHtml(cmIdStr)+'\',\''+_escHtml(String(postId))+'\')" style="background:rgba(255,80,80,.10);border:1px solid rgba(255,80,80,.22);color:rgba(255,120,120,.72);font-size:9px;font-weight:700;font-family:Jost,sans-serif;border-radius:8px;padding:2px 6px;cursor:pointer">🗑</button>':'')
-          +(!own?'<button type="button" onclick="_btReport(null,\''+_escHtml(cmIdStr)+'\')" style="background:rgba(220,60,60,.10);border:1px solid rgba(220,60,60,.18);color:rgba(255,110,110,.65);font-size:9px;font-family:Jost,sans-serif;border-radius:6px;padding:2px 6px;cursor:pointer">🚩</button>':'')
-        +'</div>'
+        +'<div style="font-size:13px;color:rgba(10,10,10,.82);font-family:Jost,sans-serif;line-height:1.5;word-break:break-word">'+_escHtml(cm.content)+'</div>'
+        +rxHtml
       +'</div>'
-      +'<div style="font-size:13px;color:rgba(255,255,255,.88);font-family:Jost,sans-serif;line-height:1.5;word-break:break-word;padding-left:36px">'+_escHtml(cm.content)+'</div>'
-      +rxHtml
     +'</div>';
   }).join('');
 }
@@ -24965,7 +24972,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1181;
+    var _BUILT_V = 1182;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
