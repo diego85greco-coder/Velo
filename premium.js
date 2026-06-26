@@ -24574,23 +24574,72 @@ function _btLoadComments(postId){
         wrap.innerHTML='<div style="text-align:center;padding:12px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif">Sin comentarios aún. ¡Sé el primero!</div>';
         return;
       }
+      var comments=res.data;
+      var ids=comments.map(function(c){ return c.id; });
       var uid=safeLS('get','velo_user_id');
-      wrap.innerHTML=res.data.map(function(cm){
-        var nm=cm.is_anon?'Anónimo/a':(cm.author_name||'Alguien');
-        var own=uid&&cm.user_id&&String(cm.user_id)===String(uid)&&!cm.is_anon;
-        return '<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px 12px">'
-          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">'
-            +'<span style="font-size:10.5px;font-weight:700;color:rgba(180,220,200,.80);font-family:Jost,sans-serif">'+_escHtml(nm)+'</span>'
-            +'<div style="display:flex;gap:4px">'
-              +(own?'<button onclick="_btDeleteComment(\''+_escHtml(String(cm.id))+'\',\''+_escHtml(String(postId))+'\')" style="background:rgba(255,80,80,.10);border:1px solid rgba(255,80,80,.22);color:rgba(255,120,120,.72);font-size:9px;font-weight:700;font-family:Jost,sans-serif;border-radius:8px;padding:2px 6px;cursor:pointer">🗑</button>':'')
-              +(!own?'<button onclick="_btReport(null,\''+_escHtml(String(cm.id))+'\')" style="background:rgba(220,60,60,.10);border:1px solid rgba(220,60,60,.18);color:rgba(255,110,110,.65);font-size:9px;font-family:Jost,sans-serif;border-radius:6px;padding:2px 6px;cursor:pointer">🚩</button>':'')
-            +'</div>'
-          +'</div>'
-          +'<div style="font-size:13px;color:rgba(255,255,255,.80);font-family:Jost,sans-serif;line-height:1.45;word-break:break-word">'+_escHtml(cm.content)+'</div>'
-          +'<div style="font-size:10px;color:rgba(180,200,190,.38);font-family:Jost,sans-serif;margin-top:4px">'+_momentoAgo(cm.created_at||'')+'</div>'
-        +'</div>';
-      }).join('');
+      sbClient.from('bitacora_comment_reactions').select('comment_id,emoji,user_id').in('comment_id',ids)
+        .then(function(rxRes){
+          _btRenderComments(comments,(rxRes.error||!rxRes.data)?[]:rxRes.data,postId,uid,wrap);
+        }).catch(function(){ _btRenderComments(comments,[],postId,uid,wrap); });
     });
+}
+
+function _btRenderComments(comments,rxData,postId,uid,wrap){
+  var rxMap={};
+  rxData.forEach(function(rx){
+    var cid=String(rx.comment_id);
+    if(!rxMap[cid]) rxMap[cid]={};
+    var e=rx.emoji;
+    if(!rxMap[cid][e]) rxMap[cid][e]={count:0,mine:false};
+    rxMap[cid][e].count++;
+    if(uid&&String(rx.user_id)===String(uid)) rxMap[cid][e].mine=true;
+  });
+  var EMOJIS=[{k:'heart',i:'❤️'},{k:'clap',i:'🙌'},{k:'hug',i:'🫂'}];
+  wrap.innerHTML=comments.map(function(cm){
+    var nm=cm.is_anon?'Anónimo/a':(cm.author_name||'Alguien');
+    var own=uid&&cm.user_id&&String(cm.user_id)===String(uid)&&!cm.is_anon;
+    var cmRx=rxMap[String(cm.id)]||{};
+    var rxHtml='<div style="display:flex;gap:5px;margin-top:7px;flex-wrap:wrap">'
+      +EMOJIS.map(function(e){
+        var r=cmRx[e.k]||{count:0,mine:false};
+        var bg=r.mine?'background:rgba(116,198,157,.22);border-color:rgba(116,198,157,.55)':'background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)';
+        return '<button onclick="_btCmReact(\''+cm.id+'\',\''+e.k+'\',\''+postId+'\')" '
+          +'style="display:inline-flex;align-items:center;gap:3px;'+bg+';border:1px solid;border-radius:20px;padding:3px 9px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">'
+          +'<span style="font-size:14px;line-height:1">'+e.i+'</span>'
+          +(r.count>0?'<span style="font-size:10.5px;font-weight:700;color:rgba(180,220,200,.85);font-family:Jost,sans-serif">'+r.count+'</span>':'')
+          +'</button>';
+      }).join('')
+      +'</div>';
+    return '<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px 12px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">'
+        +'<span style="font-size:10.5px;font-weight:700;color:rgba(180,220,200,.80);font-family:Jost,sans-serif">'+_escHtml(nm)+'</span>'
+        +'<div style="display:flex;gap:4px">'
+          +(own?'<button onclick="_btDeleteComment(\''+_escHtml(String(cm.id))+'\',\''+_escHtml(String(postId))+'\')" style="background:rgba(255,80,80,.10);border:1px solid rgba(255,80,80,.22);color:rgba(255,120,120,.72);font-size:9px;font-weight:700;font-family:Jost,sans-serif;border-radius:8px;padding:2px 6px;cursor:pointer">🗑</button>':'')
+          +(!own?'<button onclick="_btReport(null,\''+_escHtml(String(cm.id))+'\')" style="background:rgba(220,60,60,.10);border:1px solid rgba(220,60,60,.18);color:rgba(255,110,110,.65);font-size:9px;font-family:Jost,sans-serif;border-radius:6px;padding:2px 6px;cursor:pointer">🚩</button>':'')
+        +'</div>'
+      +'</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.80);font-family:Jost,sans-serif;line-height:1.45;word-break:break-word">'+_escHtml(cm.content)+'</div>'
+      +'<div style="font-size:10px;color:rgba(180,200,190,.38);font-family:Jost,sans-serif;margin-top:4px">'+_momentoAgo(cm.created_at||'')+'</div>'
+      +rxHtml
+    +'</div>';
+  }).join('');
+}
+
+function _btCmReact(commentId,emoji,postId){
+  var uid=safeLS('get','velo_user_id');
+  if(!uid){ pToast('Debés iniciar sesión'); return; }
+  if(!sbClient) return;
+  sbClient.from('bitacora_comment_reactions').select('id').eq('comment_id',commentId).eq('user_id',uid).eq('emoji',emoji).limit(1)
+    .then(function(res){
+      if(res.error) return;
+      if(res.data&&res.data.length){
+        sbClient.from('bitacora_comment_reactions').delete().eq('id',res.data[0].id)
+          .then(function(){ _btLoadComments(postId); });
+      } else {
+        sbClient.from('bitacora_comment_reactions').insert({comment_id:commentId,user_id:uid,emoji:emoji})
+          .then(function(r){ if(!r.error) _btLoadComments(postId); });
+      }
+    }).catch(function(){});
 }
 
 function _btSendComment(postId){
@@ -24943,7 +24992,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1161;
+    var _BUILT_V = 1162;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
