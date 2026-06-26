@@ -4336,7 +4336,7 @@ function _buildDqCards(list){
       ? '<button type="button" onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" style="background:none;border:none;color:rgba(255,90,90,.45);font-size:12px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
       : '<button type="button" onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" style="background:none;border:none;color:rgba(255,255,255,.18);font-size:11px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
     // Per-user color palette (consistent hash per user_id)
-    var col = isDark ? _userColorDark(r.user_id || r.user_name) : _userColorLight(r.user_id || r.user_name);
+    var col = isDark ? _userColor(r.user_id || r.user_name) : _userColorLight(r.user_id || r.user_name);
     // Avatar
     var avUrl = r.user_avatar && r.user_avatar.startsWith('http') ? r.user_avatar : '';
     var avEmoji = r.user_avatar && !r.user_avatar.startsWith('http') ? r.user_avatar : '';
@@ -24967,7 +24967,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1189;
+    var _BUILT_V = 1190;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
