@@ -4332,21 +4332,31 @@ function _buildDqCards(list){
     var _m = _dqReactMap[r.id] || {};
     var _totalRx = ['identifico','abrazo','entiendo'].reduce(function(s,k){ return s+((_m[k]&&_m[k].count)||0); },0);
     var actionBtn = isOwn
-      ? '<button type="button" onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" style="background:none;border:none;color:rgba(255,90,90,.35);font-size:11px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
-      : '<button type="button" onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" style="background:none;border:none;color:rgba(255,255,255,.15);font-size:10px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
+      ? '<button type="button" onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" style="background:none;border:none;color:rgba(255,90,90,.40);font-size:12px;cursor:pointer;padding:2px 6px;line-height:1;flex-shrink:0">🗑️</button>'
+      : '<button type="button" onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" style="background:none;border:none;color:rgba(255,255,255,.20);font-size:11px;cursor:pointer;padding:2px 6px;line-height:1;flex-shrink:0">🚩</button>';
+    // Avatar: URL image, emoji, or initials circle
+    var avUrl = r.user_avatar && r.user_avatar.startsWith('http') ? r.user_avatar : '';
+    var avEmoji = r.user_avatar && !r.user_avatar.startsWith('http') ? r.user_avatar : '';
+    var avLetter = (r.user_name||'A')[0].toUpperCase();
+    var avInner = avUrl
+      ? '<img src="'+_escHtml(avUrl)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid rgba(116,198,157,.40)">'
+      : '<div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.32);display:flex;align-items:center;justify-content:center;font-size:'+(avEmoji?'19':'14')+'px;font-weight:700;color:rgba(180,240,210,.85)">'+(avEmoji||avLetter)+'</div>';
     return '<div class="dq-feed-card home-mc" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
-      +' style="display:flex;align-items:flex-start;gap:11px;background:rgba(255,255,255,.05);border-radius:16px;padding:13px 14px;cursor:pointer;scroll-snap-align:start;flex-shrink:0;width:100%;box-sizing:border-box">'
-      +'<div style="font-size:28px;line-height:1;padding-top:1px;flex-shrink:0">'+_escHtml(r.mood_emoji||'💭')+'</div>'
+      +' style="display:flex;align-items:flex-start;gap:11px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:13px 14px;cursor:pointer;scroll-snap-align:start;flex-shrink:0;width:100%;box-sizing:border-box">'
+      +avInner
       +'<div style="flex:1;min-width:0">'
+        +'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-bottom:5px">'
+          +'<span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82);font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.user_name||'Alguien')+'</span>'
+          +'<span style="font-size:10px;color:rgba(200,230,215,.42);font-family:Jost,sans-serif;flex-shrink:0">'+_momentoAgo(r.created_at||'')+'</span>'
+        +'</div>'
         +(r.response_text
-          ? '<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.5;word-break:break-word;margin-bottom:9px">'+_escHtml(r.response_text)+'</div>'
-          : '')
+          ? '<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.86);line-height:1.52;word-break:break-word;margin-bottom:8px">'+_escHtml(r.mood_emoji||'💭')+' '+_escHtml(r.response_text)+'</div>'
+          : '<div style="font-size:22px;margin-bottom:8px">'+_escHtml(r.mood_emoji||'💭')+'</div>')
         +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
-          +'<span style="font-size:10px;color:rgba(200,230,215,.45);font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.user_name||'Alguien')+' · '+_momentoAgo(r.created_at||'')+'</span>'
-          +'<span class="dq-rx-meta" style="font-size:10px;font-weight:700;color:rgba(200,230,215,.55);font-family:Jost,sans-serif;flex-shrink:0;white-space:nowrap">'+(_totalRx>0?'💚 '+_totalRx+' · ':'')+'Ver →</span>'
+          +'<span class="dq-rx-meta" style="font-size:10.5px;font-weight:700;color:rgba(160,230,200,.65);font-family:Jost,sans-serif;flex-shrink:0;white-space:nowrap">'+(_totalRx>0?'💚 '+_totalRx+' · ':'')+'Ver →</span>'
+          +actionBtn
         +'</div>'
       +'</div>'
-      +actionBtn
     +'</div>';
   }).join('');
 }
@@ -24955,7 +24965,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1178;
+    var _BUILT_V = 1179;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
