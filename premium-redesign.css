@@ -4563,31 +4563,7 @@ body:not(.r-dark) #pg-home #homeDailyQuote {
   border-left-color: rgba(200,158,56,.65) !important;
 }
 
-/* Sweeping crystal light refraction (replaces old ::after glow) */
-#pg-home #homeDailyQuote::after {
-  content: '' !important;
-  position: absolute !important;
-  top: -10% !important; left: -90% !important;
-  width: 55% !important; height: 120% !important;
-  background: linear-gradient(
-    105deg,
-    transparent 0%,
-    rgba(255,255,255,.03) 30%,
-    rgba(255,255,255,.24) 50%,
-    rgba(255,255,255,.03) 70%,
-    transparent 100%
-  ) !important;
-  transform: skewX(-12deg) !important;
-  pointer-events: none !important;
-  z-index: 2 !important;
-  animation: crystal-sweep 4.5s ease-in-out infinite !important;
-}
-@keyframes crystal-sweep {
-  0%, 10%  { left: -90%;  opacity: 0; }
-  18%       { opacity: 1; }
-  78%       { opacity: 1; }
-  86%, 100% { left: 160%; opacity: 0; }
-}
+#pg-home #homeDailyQuote::after { display: none !important; }
 
 /* Animated glowing border pulse — stronger + faster */
 @keyframes quote-border-pulse-dk {
@@ -11035,19 +11011,7 @@ body.r-dark #pg-help-chat .feed-messages {
 /* ══════════════════════════════════════════════════════════════════
    v724 — Share button on daily quote: shimmer animation + dark mode
    ══════════════════════════════════════════════════════════════════ */
-@keyframes shareShimmer {
-  0%   { transform: translateX(-120%) skewX(-18deg); }
-  100% { transform: translateX(240%)  skewX(-18deg); }
-}
-#homeDailyShareBtn::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 40%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent);
-  animation: shareShimmer 2.8s ease-in-out infinite;
-  pointer-events: none;
-}
+#homeDailyShareBtn::after { display: none !important; }
 body.r-dark #homeDailyShareBtn {
   background: linear-gradient(135deg,#0e5c38 0%,#0a7848 45%,#075c35 100%) !important;
   box-shadow: 0 6px 26px rgba(8,100,55,.60), 0 2px 8px rgba(8,100,55,.30), inset 0 1px 0 rgba(255,255,255,.15) !important;
