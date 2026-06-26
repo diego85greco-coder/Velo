@@ -21454,8 +21454,8 @@ async function _renderHomeWeekMoodGraph(){
     if(insights.length){
       html += '<div style="text-align:center;margin-top:8px;font-size:11.5px;color:var(--ink3);font-family:Jost,sans-serif;line-height:1.55">'+insights.join(' &nbsp;·&nbsp; ')+'</div>';
     }
-    // CTA "Ver mi mes"
-    html += '<div style="text-align:center;margin-top:9px"><button onclick="pGoTo(\'mood\')" style="background:rgba(116,198,157,.16);border:1px solid rgba(116,198,157,.42);color:rgba(116,198,157,.95);font-size:11.5px;font-weight:800;font-family:Jost,sans-serif;padding:6px 14px;border-radius:100px;letter-spacing:.4px;cursor:pointer;transition:all .15s">Ver mi mes completo →</button></div>';
+    // CTA "Ver mi mes" — cierra el sheet si está abierto, luego abre el quick view mensual
+    html += '<div style="text-align:center;margin-top:9px"><button onclick="if(typeof pCloseMoodChipSheet===\'function\'&&_moodChipSheetOpen){pCloseMoodChipSheet();setTimeout(pOpenMoodQuickView,250);}else{pOpenMoodQuickView();}" style="background:rgba(116,198,157,.16);border:1px solid rgba(116,198,157,.42);color:rgba(116,198,157,.95);font-size:11.5px;font-weight:800;font-family:Jost,sans-serif;padding:6px 14px;border-radius:100px;letter-spacing:.4px;cursor:pointer;transition:all .15s">Ver mi mes completo →</button></div>';
     return html;
   }
 
@@ -25347,7 +25347,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1212;
+    var _BUILT_V = 1213;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
