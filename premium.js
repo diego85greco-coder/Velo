@@ -1482,6 +1482,18 @@ function _showOnboarding(){
   document.body.appendChild(ov);
 }
 
+// Manual replay from menu hamburguesa — reinicia el flag y arranca el tour desde home
+function pReplayHomeTour(){
+  safeLS('del','velo_tour_done');
+  // Si ya estamos en home, arrancar de una; si no, navegar primero
+  if(_curPage === 'home'){
+    setTimeout(_startHomeTour, 250);
+  } else {
+    pGoTo('home');
+    setTimeout(_startHomeTour, 900);
+  }
+}
+
 function _startHomeTour(){
   // v1202: tour redesigned — invalidate older tour_done flags so users see the new flow
   if(safeLS('get','velo_tour_done') === 'v1202') return;
