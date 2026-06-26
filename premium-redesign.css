@@ -1712,10 +1712,12 @@ body.r-dark #pg-dm-chat .feed-send-btn {
 #pg-landing .land-feat-card .p-title { color: rgba(255,255,255,.95) !important; }
 #pg-landing .land-feat-card .p-body  { color: rgba(255,255,255,.72) !important; }
 .land-feat-quote {
-  color: rgba(116,198,157,.88) !important;
-  border-left-color: rgba(116,198,157,.45) !important;
-  background: rgba(116,198,157,.09) !important;
+  color: rgba(255,255,255,.90) !important;
+  border-left-color: rgba(116,198,157,.75) !important;
+  background: rgba(255,255,255,.11) !important;
   border-radius: 0 10px 10px 0 !important;
+  padding: 8px 12px !important;
+  text-shadow: 0 1px 6px rgba(0,0,0,.30) !important;
 }
 
 /* 6. Diff cards (Qué hace diferente) — glass curvado */

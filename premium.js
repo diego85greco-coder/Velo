@@ -4451,9 +4451,10 @@ function _buildDqCards(list){
           +'<span style="font-size:10px;color:'+col.label+';opacity:.55;font-family:Jost,sans-serif;flex-shrink:0;margin-right:6px">'+_momentoAgo(r.created_at||'')+'</span>'
         +'</div>'
         +(r.response_text
-          ? '<div style="background:'+col.badge+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.28)')+';border-radius:10px 10px 10px 2px;padding:7px 10px;margin-bottom:6px">'
+          ? '<div style="background:'+col.badge+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.28)')+';border-radius:10px 10px 10px 2px;padding:7px 10px;margin-bottom:4px">'
             +'<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+col.label+';line-height:1.44;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(r.mood_emoji||'💭')+' '+_escHtml(r.response_text)+'</div>'
             +'</div>'
+            +'<div style="font-size:9px;color:'+col.label.replace(/[\d.]+\)$/,'0.42)')+';font-family:Jost,sans-serif;letter-spacing:.2px;margin-bottom:5px">💬 Toca para comentar o reaccionar</div>'
           : '<div style="font-size:24px;margin-bottom:7px">'+_escHtml(r.mood_emoji||'💭')+'</div>')
         +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
           +'<span class="dq-rx-meta" style="font-size:10.5px;font-weight:700;color:'+col.border+';font-family:Jost,sans-serif;flex-shrink:0;white-space:nowrap">'+(_totalRx>0?'💚 '+_totalRx+' · ':'')+'Ver →</span>'
@@ -4488,9 +4489,9 @@ function pOpenDqResponseSheet(responseId){
   var rxHtml = rxDefs.map(function(rx){
     var rd = _m[rx.key] || {count:0,mine:false};
     var rc = _rxColors[rx.key];
-    var bg = rd.mine ? rc.activeBg : _stripFaint;
-    var bdr = rd.mine ? rc.border : col.border.replace(/[\d.]+\)$/,'0.25)');
-    var txtCol = rd.mine ? rc.txt : 'rgba(255,255,255,.42)';
+    var bg = rd.mine ? rc.activeBg : 'rgba(255,255,255,.95)';
+    var bdr = rd.mine ? rc.border : 'rgba(0,0,0,.10)';
+    var txtCol = rd.mine ? rc.txt : 'rgba(30,30,30,.75)';
     var glow = rd.mine ? '0 0 20px '+rc.glow+',0 2px 8px '+rc.glow : 'none';
     var emojiScale = rd.mine ? 'transform:scale(1.18);filter:drop-shadow(0 0 8px '+rc.glow+')' : '';
     return '<button class="dq-reaction-btn" onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
@@ -4522,6 +4523,7 @@ function pOpenDqResponseSheet(responseId){
     // Header — vibrant gradient using strip color
     +'<div style="background:linear-gradient(150deg,'+_stripSolid+' 0%,'+col.bg+' 55%);padding:18px 20px 16px;position:sticky;top:0;z-index:1;text-align:center;backdrop-filter:blur(12px)">'
     +'<div class="p-sheet-handle" style="background:'+col.border.replace(/[\d.]+\)$/,'0.50)')+';position:absolute;top:8px;left:50%;transform:translateX(-50%);margin:0"></div>'
+    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,.18);border:none;border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.85);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:2">✕</button>'
     +'<div style="display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:10px;margin-top:6px">'
     +'<span style="font-size:36px;line-height:1;filter:drop-shadow(0 0 14px '+col.glow+')">'+r.mood_emoji+'</span>'
     +'<span style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+_labelFull+';font-family:Jost,sans-serif">✨ Pregunta del día</span>'
@@ -4536,10 +4538,10 @@ function pOpenDqResponseSheet(responseId){
     // Body
     +'<div style="padding:18px 18px calc(max(20px, env(safe-area-inset-bottom, 20px)) + 8px);text-align:center">'
     +(r.response_text
-      ? '<div style="margin-bottom:18px;padding:22px 20px 26px;background:'+_stripFaint+';border-radius:20px;border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.28)')+';position:relative;overflow:hidden">'
-        +'<div style="position:absolute;top:0;left:0;width:4px;height:100%;background:'+col.strip.replace(/[\d.]+\)$/,'0.70)')+'"></div>'
-        +'<div style="font-size:72px;font-family:\'Cormorant Garamond\',serif;color:'+col.border.replace(/[\d.]+\)$/,'0.18)')+';line-height:.65;margin-bottom:10px;user-select:none;padding-left:18px;text-align:left">❝</div>'
-        +'<div style="font-size:24px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+_labelFull+';line-height:1.58;text-shadow:0 2px 24px '+col.glow+';padding:0 8px 0 20px;letter-spacing:.3px;text-align:left">'+_escHtml(r.response_text)+'</div>'
+      ? '<div style="margin-bottom:18px;padding:22px 20px 26px;background:rgba(255,252,240,.97);border-radius:20px;border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.40)')+';position:relative;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.22)">'
+        +'<div style="position:absolute;top:0;left:0;width:4px;height:100%;background:'+col.strip.replace(/[\d.]+\)$/,'0.82)')+'"></div>'
+        +'<div style="font-size:72px;font-family:\'Cormorant Garamond\',serif;color:'+col.border.replace(/[\d.]+\)$/,'0.22)')+';line-height:.65;margin-bottom:10px;user-select:none;padding-left:18px;text-align:left">❝</div>'
+        +'<div style="font-size:24px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:rgba(25,35,28,.88);line-height:1.58;padding:0 8px 0 20px;letter-spacing:.3px;text-align:left">'+_escHtml(r.response_text)+'</div>'
         +'</div>'
       : '')
     +_zenDiv
@@ -4547,13 +4549,12 @@ function pOpenDqResponseSheet(responseId){
     +'<div style="display:flex;gap:8px;margin-bottom:16px">'+rxHtml+'</div>'
     +_zenDiv
     +'<div style="text-align:left;margin-bottom:18px">'
-    +'<div style="font-size:9.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:'+_labelDim+';font-family:Jost,sans-serif;margin-bottom:12px">💬 Hilo de comentarios</div>'
-    +'<div id="dqCommentFeed" style="margin-bottom:14px"><div style="text-align:center;padding:20px 8px;font-size:12px;color:'+_labelDim+';font-family:Jost,sans-serif">Cargando…</div></div>'
+    +'<div style="font-size:9.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(50,60,50,.60);font-family:Jost,sans-serif;margin-bottom:12px">💬 Hilo de comentarios</div>'
+    +'<div id="dqCommentFeed" style="margin-bottom:14px;background:rgba(255,255,255,.97);border-radius:16px;padding:12px 10px;min-height:60px"><div style="text-align:center;padding:20px 8px;font-size:12px;color:rgba(80,90,80,.55);font-family:Jost,sans-serif">Cargando…</div></div>'
     +'<div style="display:flex;gap:8px;align-items:flex-end">'
-    +'<textarea id="dqCommentInput" rows="2" placeholder="Sumar algo al hilo…" style="flex:1;background:'+_stripFaint+';border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.40)')+';border-radius:14px;color:'+_labelFull+';font-size:13px;font-family:\'Jost\',sans-serif;padding:10px 12px;resize:none;outline:none;line-height:1.4"></textarea>'
+    +'<textarea id="dqCommentInput" rows="2" placeholder="Sumar algo al hilo…" style="flex:1;background:rgba(255,252,240,.97);border:1.5px solid rgba(0,0,0,.12);border-radius:14px;color:rgba(20,25,20,.90);font-size:13px;font-family:\'Jost\',sans-serif;padding:10px 12px;resize:none;outline:none;line-height:1.4"></textarea>'
     +'<button id="dqCommentBtn" onclick="pPostDqComment(\''+responseId+'\')" style="background:'+col.strip+';border:none;border-radius:12px;color:rgba(255,255,255,.92);font-size:12px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;padding:10px 14px;flex-shrink:0;height:44px;min-width:60px;box-shadow:0 2px 10px '+col.glow+'">Enviar</button>'
     +'</div>'
-    +'<div style="text-align:center;margin-top:10px;font-size:10.5px;color:'+_labelDim+';font-family:Jost,sans-serif;letter-spacing:.4px">💬 Haz clic para comentar o reaccionar</div>'
     +'</div>'
     +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:13px;background:'+_stripFaint+';border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.35)')+';border-radius:100px;color:'+_labelFull+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase">· CERRAR ·</button>'
     +'</div>'
@@ -4562,7 +4563,7 @@ function pOpenDqResponseSheet(responseId){
   // Load comments asynchronously
   _loadDqComments(responseId).then(function(comments){
     var feed = document.getElementById('dqCommentFeed');
-    if(feed) feed.innerHTML = _renderMomentoComments(comments, col);
+    if(feed) feed.innerHTML = _renderMomentoComments(comments, col, true);
   });
 }
 
@@ -15192,7 +15193,7 @@ function _contactCard(id, name, av, uname, pInfo, unread, opts){
     +'<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;justify-content:center;padding-left:4px">'
     +(canChat
       ?'<button onclick="pOpenDM('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Chat" style="'+bs+';background:'+accentBg+';border:1.5px solid '+accent+';box-shadow:0 2px 10px '+accentGlow+'">💬</button>'
-      :'<button disabled title="No disponible" style="'+bs+';background:rgba(140,140,140,.06);border:1px solid rgba(140,140,140,.12);cursor:not-allowed;opacity:.25">💬</button>')
+      :'<button disabled title="No disponible para chat" style="'+bs+';background:rgba(130,130,130,.13);border:1.5px solid rgba(130,130,130,.30);cursor:not-allowed;filter:grayscale(1);opacity:.52">💬</button>')
     +'<div style="display:flex;gap:4px">'
     +(opts.showMail?'<button onclick="pLeaveOfflineMsg('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Buzón" style="'+bs+';width:auto;padding:0 8px;background:rgba(200,158,50,.12);border:1px solid rgba(215,168,55,.34)">✉️</button>':'')
     +(opts.showRemove?'<button onclick="pRemoveFav(\''+id+'\');pRenderContacts()" title="Quitar fav" style="'+bs+';width:auto;padding:0 8px;background:rgba(232,182,36,.12);border:1px solid rgba(232,182,36,.36)">⭐</button>':'')
@@ -22332,17 +22333,23 @@ async function _loadMomentoComments(momentoId){
   }catch(e){ return []; }
 }
 
-function _renderMomentoComments(comments,col){
+function _renderMomentoComments(comments,col,lightMode){
   var brd=col?col.border:'rgba(116,198,157,1)';
   var lbl=col?col.label:'rgba(200,240,218,1)';
   var strip=col?col.strip:'rgba(116,198,157,1)';
   var bg=col?col.bg:'rgba(6,28,18,.92)';
   var ca=function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
+  var textColor=lightMode?'rgba(20,25,20,.88)':'rgba(255,255,255,.92)';
+  var textDim=lightMode?'rgba(60,70,60,.42)':'rgba(255,255,255,.32)';
+  var nameLbl=lightMode?'rgba(20,60,30,.90)':ca(lbl,'.95');
+  var bubbleBg=lightMode?'rgba(244,247,244,.97)':ca(strip,'.14');
+  var bubbleBdr=lightMode?'rgba(0,0,0,.09)':ca(brd,'.28');
+  var bubbleLeft=lightMode?ca(brd,'.55'):ca(brd,'.70');
   if(!comments||!comments.length){
     return '<div style="text-align:center;padding:28px 8px 20px;font-family:\'Jost\',sans-serif">'
       +'<div style="font-size:36px;margin-bottom:10px;opacity:.60">💬</div>'
-      +'<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.50);margin-bottom:4px">Todavía no hay comentarios</div>'
-      +'<div style="font-size:12px;color:rgba(255,255,255,.28)">Sé el primero en sumar algo 🌿</div>'
+      +'<div style="font-size:14px;font-weight:700;color:'+(lightMode?'rgba(60,80,60,.55)':'rgba(255,255,255,.50)')+';margin-bottom:4px">Todavía no hay comentarios</div>'
+      +'<div style="font-size:12px;color:'+(lightMode?'rgba(60,80,60,.32)':'rgba(255,255,255,.28)')+'">Sé el primero en sumar algo 🌿</div>'
       +'</div>';
   }
   return comments.map(function(c){
@@ -22355,10 +22362,10 @@ function _renderMomentoComments(comments,col){
       +avHtml
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:5px">'
-      +'<span style="font-size:12px;font-weight:800;color:'+ca(lbl,'.95')+';font-family:\'Jost\',sans-serif">'+_escHtml(name)+'</span>'
-      +'<span style="font-size:10px;color:rgba(255,255,255,.32);font-family:\'Jost\',sans-serif">'+_momentoAgo(c.created_at)+'</span>'
+      +'<span style="font-size:12px;font-weight:800;color:'+nameLbl+';font-family:\'Jost\',sans-serif">'+_escHtml(name)+'</span>'
+      +'<span style="font-size:10px;color:'+textDim+';font-family:\'Jost\',sans-serif">'+_momentoAgo(c.created_at)+'</span>'
       +'</div>'
-      +'<div style="background:'+ca(strip,'.14')+';border:1px solid '+ca(brd,'.28')+';border-left:3px solid '+ca(brd,'.70')+';border-radius:0 14px 14px 14px;padding:10px 14px;font-size:13.5px;color:rgba(255,255,255,.92);line-height:1.55;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
+      +'<div style="background:'+bubbleBg+';border:1px solid '+bubbleBdr+';border-left:3px solid '+bubbleLeft+';border-radius:0 14px 14px 14px;padding:10px 14px;font-size:13.5px;color:'+textColor+';line-height:1.55;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -25073,7 +25080,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1193;
+    var _BUILT_V = 1194;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
