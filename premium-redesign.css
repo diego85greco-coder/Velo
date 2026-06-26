@@ -4410,20 +4410,61 @@ body.r-dark #pg-home #homeDailyQuote {
   animation: quote-mark-float 8s ease-in-out infinite !important;
 }
 
-/* Quote text — static color */
-body:not(.r-dark) #pg-home #homeDailyQuoteText {
-  color: rgba(30,48,32,.92) !important;
-}
-body.r-dark #pg-home #homeDailyQuoteText {
-  color: rgba(255,240,190,.95) !important;
+/* ── Shared shimmer keyframe ─────────────────────────────────────── */
+@keyframes velo-text-shimmer {
+  0%   { background-position: -220% center; }
+  100% { background-position: 220% center; }
 }
 
-/* Author attribution — static gold */
+/* Quote text — golden shimmer sweeps through the italic sentence */
+#pg-home #homeDailyQuoteText {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-size: 220% auto !important;
+  animation: velo-text-shimmer 7s ease-in-out infinite !important;
+  text-shadow: none !important;
+}
+body:not(.r-dark) #pg-home #homeDailyQuoteText {
+  background-image: linear-gradient(
+    90deg,
+    #1e3020 0%, #1e3020 26%,
+    rgba(148,95,4,.95) 50%,
+    #1e3020 74%, #1e3020 100%
+  ) !important;
+}
+body.r-dark #pg-home #homeDailyQuoteText {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255,255,255,.86) 0%, rgba(255,255,255,.86) 26%,
+    rgba(215,170,55,.98) 50%,
+    rgba(255,255,255,.86) 74%, rgba(255,255,255,.86) 100%
+  ) !important;
+}
+
+/* Author attribution — faster gold shimmer */
+#pg-home #homeDailyQuoteAuthor {
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-size: 220% auto !important;
+  animation: velo-text-shimmer 4s ease-in-out infinite !important;
+}
 body:not(.r-dark) #pg-home #homeDailyQuoteAuthor {
-  color: rgba(128,84,4,.80) !important;
+  background-image: linear-gradient(
+    90deg,
+    rgba(128,84,4,.64) 0%, rgba(128,84,4,.64) 18%,
+    rgba(215,168,50,1) 50%,
+    rgba(128,84,4,.64) 82%, rgba(128,84,4,.64) 100%
+  ) !important;
 }
 body.r-dark #pg-home #homeDailyQuoteAuthor {
-  color: rgba(200,158,56,.78) !important;
+  background-image: linear-gradient(
+    90deg,
+    rgba(200,158,56,.58) 0%, rgba(200,158,56,.58) 18%,
+    rgba(255,228,80,1) 50%,
+    rgba(200,158,56,.58) 82%, rgba(200,158,56,.58) 100%
+  ) !important;
 }
 
 /* ── Greeting / mood card — animated border glow ─────────────────── */
@@ -4454,10 +4495,27 @@ body.r-dark #pg-home .home-greeting {
   animation: mood-card-glow-dark 5.5s ease-in-out 0.5s infinite !important;
 }
 
-/* Mood pill */
+/* Mood pill — sweeping light shimmer */
 #homeCurrentMoodLine {
   position: relative !important;
   overflow: hidden !important;
+}
+@keyframes pill-light-sweep {
+  0%          { transform: translateX(-160%); opacity: 0; }
+  15%, 85%    { opacity: 1; }
+  100%        { transform: translateX(300%);  opacity: 0; }
+}
+#homeCurrentMoodLine::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  width: 48% !important;
+  background: linear-gradient(
+    90deg, transparent 0%, rgba(255,255,255,.38) 50%, transparent 100%
+  ) !important;
+  border-radius: 100px !important;
+  pointer-events: none !important;
+  animation: pill-light-sweep 3.8s ease-in-out infinite !important;
 }
 
 /* Username — subtle sage glow on hover/dark mode */
