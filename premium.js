@@ -2542,9 +2542,7 @@ function _initHomeNavTiles(){
 
   // ── REMAINING 6: 2-column grid below frase del día (order 4) ──
   var gridSix = [
-    { icon:'🌱', title:'Comunidad',        sub:'Momentos & Muro Feliz',       bg:'linear-gradient(135deg,rgba(70,180,120,.20),rgba(50,150,90,.14))',   border:'rgba(90,200,140,.38)', action:"pGoTo('momento')" },
     { icon:'🧘', title:'Meditación',       sub:'Ejercicios guiados',           bg:'linear-gradient(135deg,rgba(175,130,230,.20),rgba(145,100,200,.14))',border:'rgba(195,160,255,.38)', action:"pGoTo('meditacion')" },
-    { icon:'🎵', title:'Sonidos',          sub:'Lluvia, bosque, mar…',         bg:'linear-gradient(135deg,rgba(60,148,210,.20),rgba(40,118,180,.14))',  border:'rgba(90,178,240,.38)', action:"pGoTo('respira')" },
     { icon:'🤖', title:'Calma IA',         sub:'Tu asistente de bienestar',    bg:'linear-gradient(135deg,rgba(70,178,160,.20),rgba(50,148,130,.14))',  border:'rgba(90,208,185,.38)', action:"pGoTo('calm-ai')" },
     { icon:'👨‍⚕️', title:'Profesionales',  sub:'Especialistas en salud mental', bg:'linear-gradient(135deg,rgba(50,118,200,.20),rgba(30,88,168,.14))',  border:'rgba(80,148,230,.38)', action:"pGoTo('professionals')" },
     { icon:'🌟', title:'Velo Vela por Ti', sub:'Tu espacio personal',          bg:'linear-gradient(135deg,rgba(198,148,38,.20),rgba(168,118,18,.14))',  border:'rgba(218,173,68,.38)', action:"pGoTo('vela')" },
@@ -24995,7 +24993,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1164;
+    var _BUILT_V = 1165;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
