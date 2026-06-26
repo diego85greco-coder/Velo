@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="1168">
+  <meta name="app-version" content="1169">
   <title>Velo — Acompañamos emociones</title>
   <!-- Service Worker registration — ensures always-fresh HTML on every load -->
   <script>(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}})();</script>
@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1168">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1168">
+  <link rel="stylesheet" href="premium.css?v=20260626-1169">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1169">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -67,7 +67,7 @@
     /* Ocultar grilla duplicada de features */
     #homeGrid              { display: none !important; }
     @keyframes guardianPulse { 0%,100%{box-shadow:0 0 0 3px rgba(116,198,157,.2)} 50%{box-shadow:0 0 0 6px rgba(116,198,157,.05)} }
-    @keyframes dqBtnPulse { 0%,100%{box-shadow:0 4px 18px rgba(40,110,65,.3),inset 0 1px 0 rgba(255,255,255,.07)} 50%{box-shadow:0 6px 28px rgba(40,110,65,.5),inset 0 1px 0 rgba(255,255,255,.07)} }
+    @keyframes dqBtnPulse { 0%,100%{box-shadow:0 3px 12px rgba(175,130,20,.14),inset 0 1px 0 rgba(255,255,255,.06)} 50%{box-shadow:0 5px 20px rgba(175,130,20,.26),inset 0 1px 0 rgba(255,255,255,.06)} }
     @keyframes moodDayPulse { 0%,100%{box-shadow:0 0 0 2px rgba(116,198,157,.30),0 0 6px rgba(116,198,157,.20)} 50%{box-shadow:0 0 0 4px rgba(116,198,157,.18),0 0 12px rgba(116,198,157,.35)} }
     body:not(.r-dark) #homeGuardianChip > div { background:linear-gradient(135deg,rgba(74,160,110,.1),rgba(74,160,110,.06)) !important;border-color:rgba(74,120,60,.3) !important; }
     body:not(.r-dark) #homeGuardianChipTxt { color:rgba(40,100,50,.9) !important; }
@@ -1316,7 +1316,7 @@
                         </div>
                         <div id="homeDailyQPulseBar" style="display:flex;gap:3px;align-items:flex-end"></div>
                       </div>
-                      <button onclick="pOpenDailyResponse()" style="width:100%;padding:14px;border-radius:14px;border:1.5px solid rgba(200,158,56,.42);background:linear-gradient(135deg,rgba(175,130,20,.88),rgba(120,86,8,.94));color:rgba(255,242,180,.97);font-size:14px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.5px;animation:dqBtnPulse 2.8s ease-in-out infinite;transition:transform .15s;box-shadow:0 4px 20px rgba(170,125,15,.25)">Compartir mi respuesta ✦</button>
+                      <button onclick="pOpenDailyResponse()" style="width:100%;padding:14px;border-radius:14px;border:1.5px solid rgba(200,158,56,.42);background:linear-gradient(135deg,rgba(175,130,20,.88),rgba(120,86,8,.94));color:rgba(255,242,180,.97);font-size:14px;font-weight:800;font-family:'Jost',sans-serif;cursor:pointer;letter-spacing:.5px;animation:dqBtnPulse 5s ease-in-out infinite;transition:transform .15s;box-shadow:0 4px 20px rgba(170,125,15,.25)">Compartir mi respuesta ✦</button>
                     </div>
                     <!-- Open state -->
                     <div id="homeDailyQOpen" style="display:none;padding:0 18px 18px">
@@ -1324,15 +1324,15 @@
                         <span class="dq-label" style="font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(200,158,56,.82);font-family:'Jost',sans-serif">💬 Pregunta del día · respondida</span>
                         <span style="font-size:10px;color:rgba(200,158,56,.50);font-family:'Jost',sans-serif">✓</span>
                       </div>
-                      <div id="homeDailyQOpenText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:rgba(255,255,255,.88);line-height:1.35;margin-bottom:10px;padding-left:12px;border-left:2px solid rgba(200,158,56,.28)"></div>
+                      <div id="homeDailyQOpenText" class="dq-text" style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:rgba(255,248,210,.93);line-height:1.38;margin-bottom:12px;padding-left:14px;border-left:3px solid rgba(200,158,56,.48)"></div>
                       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                        <div id="homeDailyQMyResp" onclick="pOpenMyDqResponseFromHome()" style="font-size:11.5px;font-weight:600;color:rgba(220,185,75,.88);font-family:'Jost',sans-serif;flex:1;background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.20);border-radius:10px;padding:5px 10px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+                        <div id="homeDailyQMyResp" onclick="pOpenMyDqResponseFromHome()" style="font-size:12px;font-weight:700;color:rgba(255,220,90,.95);font-family:'Jost',sans-serif;flex:1;background:linear-gradient(135deg,rgba(200,158,56,.20),rgba(160,118,16,.14));border:1.5px solid rgba(200,158,56,.42);border-left:3px solid rgba(200,158,56,.78);border-radius:12px;padding:9px 13px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:0 2px 10px rgba(200,158,56,.14)"></div>
                         <button onclick="pDeleteMyDqToday()" style="background:none;border:none;color:rgba(255,90,90,.40);font-size:13px;cursor:pointer;padding:2px 4px;flex-shrink:0" title="Borrar mi respuesta">🗑️</button>
                       </div>
                       <div id="homeDailyQMyRxPills" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
-                      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:7px 12px;background:rgba(200,158,56,.07);border:1px solid rgba(200,158,56,.14);border-radius:10px">
-                        <span id="homeDailyQOpenPulseEmoji" style="font-size:15px;flex-shrink:0">🌿</span>
-                        <span id="homeDailyQOpenCount" style="font-size:11px;font-weight:600;color:rgba(220,185,75,.78);font-family:'Jost',sans-serif;flex:1"></span>
+                      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:9px 14px;background:linear-gradient(135deg,rgba(200,158,56,.12),rgba(160,118,16,.08));border:1.5px solid rgba(200,158,56,.26);border-radius:14px;box-shadow:0 2px 10px rgba(200,158,56,.08)">
+                        <span id="homeDailyQOpenPulseEmoji" style="font-size:20px;flex-shrink:0">🌿</span>
+                        <span id="homeDailyQOpenCount" style="font-size:12px;font-weight:700;color:rgba(255,220,90,.90);font-family:'Jost',sans-serif;flex:1"></span>
                         <div id="homeDailyQOpenPulseBar" style="display:flex;gap:2px;align-items:flex-end"></div>
                       </div>
                       <div id="homeDailyQSummary" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px"></div>
@@ -4274,8 +4274,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1168"></script>
-<script src="premium-redesign.js?v=20260626-1168"></script>
+<script src="premium.js?v=20260626-1169"></script>
+<script src="premium-redesign.js?v=20260626-1169"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
