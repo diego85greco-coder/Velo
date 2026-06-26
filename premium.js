@@ -4342,7 +4342,7 @@ function _buildDqCards(list){
       ? '<img src="'+_escHtml(avUrl)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid rgba(116,198,157,.40)">'
       : '<div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.32);display:flex;align-items:center;justify-content:center;font-size:'+(avEmoji?'19':'14')+'px;font-weight:700;color:rgba(180,240,210,.85)">'+(avEmoji||avLetter)+'</div>';
     return '<div class="dq-feed-card home-mc" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
-      +' style="display:flex;align-items:flex-start;gap:11px;background:rgba(255,255,255,.11);border-radius:14px;padding:13px 14px;cursor:pointer;scroll-snap-align:start;flex-shrink:0;width:100%;box-sizing:border-box">'
+      +' style="display:flex;align-items:flex-start;gap:11px;background:rgba(255,255,255,.11);border-radius:14px;padding:13px 14px;cursor:pointer;scroll-snap-align:center;flex-shrink:0;width:100%;box-sizing:border-box">'
       +avInner
       +'<div style="flex:1;min-width:0">'
         +'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-bottom:5px">'
@@ -24563,9 +24563,11 @@ function _btRenderComments(comments,rxData,postId,uid,wrap){
     var avClickAttr=canClick?'onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer;flex-shrink:0"':'style="cursor:default;flex-shrink:0"';
     // Avatar: 40px circle with ring glow
     var ringStyle='width:40px;height:40px;border-radius:50%;flex-shrink:0;border:2px solid rgba(116,198,157,.65);box-shadow:0 0 0 3px rgba(116,198,157,.15),0 2px 8px rgba(0,0,0,.22);';
-    var avHtml=avUrl
+    var avIsUrl=avUrl&&(avUrl.startsWith('http')||avUrl.startsWith('data:'));
+    var avEmoji=!avIsUrl&&avUrl?avUrl:(cm.is_anon?'👤':'🌿');
+    var avHtml=avIsUrl
       ?'<img src="'+_jsAttr(avUrl)+'" '+avClickAttr+' style="'+ringStyle+'object-fit:cover;" />'
-      :'<div '+avClickAttr+' style="'+ringStyle+'background:rgba(116,198,157,.20);display:flex;align-items:center;justify-content:center;font-size:'+(cm.is_anon?'17':'20')+'px">'+(cm.is_anon?'👤':'🌿')+'</div>';
+      :'<div '+avClickAttr+' style="'+ringStyle+'background:rgba(116,198,157,.20);display:flex;align-items:center;justify-content:center;font-size:20px">'+avEmoji+'</div>';
     // Name: clickable if not anon
     var nmHtml=canClick
       ?'<span onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer;font-size:12.5px;font-weight:700;color:rgba(10,60,30,.90);font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(nm)+'</span>'
@@ -24972,7 +24974,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1184;
+    var _BUILT_V = 1185;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

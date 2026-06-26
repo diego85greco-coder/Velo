@@ -11986,7 +11986,8 @@ body.velo-t-noche.r-dark #homeGreetSub {
   flex-direction: row !important;
   overflow-x: auto !important;
   overflow-y: hidden !important;
-  scroll-snap-type: x mandatory !important;
+  scroll-snap-type: x proximity !important;
+  scroll-behavior: smooth !important;
   gap: 10px !important;
   padding: 4px 0 8px !important;
   max-width: 100% !important;
@@ -11998,9 +11999,8 @@ body.velo-t-noche.r-dark #homeGreetSub {
 #homeDailyQFeed::-webkit-scrollbar { display: none !important; }
 #homeDailyQFeed .dq-feed-card {
   flex-shrink: 0 !important;
-  width: 87% !important;
-  scroll-snap-align: start !important;
-  scroll-snap-stop: always !important;
+  width: 85% !important;
+  scroll-snap-align: center !important;
   padding: 0 !important;
   border-radius: 16px !important;
   box-sizing: border-box !important;
@@ -13017,14 +13017,14 @@ body.r-dark #homeDailyQOpen > div > div:first-child > span:last-child {
 
 /* "My response" box in DQ open */
 body.r-dark #homeDailyQMyResp {
-  background: rgba(200,158,56,.16) !important;
-  border: 1.5px solid rgba(200,158,56,.38) !important;
+  background: rgba(200,158,56,.14) !important;
+  border: none !important;
   color: rgba(255,224,90,.97) !important;
   font-size: 13px !important;
   line-height: 1.55 !important;
   border-radius: 12px !important;
   padding: 8px 12px !important;
-  box-shadow: 0 2px 14px rgba(200,158,56,.18) !important;
+  box-shadow: none !important;
 }
 
 /* DQ "Ver todos" button */
