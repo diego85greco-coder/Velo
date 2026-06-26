@@ -1495,8 +1495,8 @@ function pReplayHomeTour(){
 }
 
 function _startHomeTour(){
-  // v1202: tour redesigned — invalidate older tour_done flags so users see the new flow
-  if(safeLS('get','velo_tour_done') === 'v1202') return;
+  // v1208: tour selectors fixed (IDs instead of attribute substring)
+  if(safeLS('get','velo_tour_done') === 'v1208') return;
 
   if(!document.getElementById('_tourStyle')){
     var _ts = document.createElement('style');
@@ -1510,17 +1510,17 @@ function _startHomeTour(){
     {sel:'#homeReflexionDia',                                 e:'✨', t:'Reflexión del día',     d:'Una frase especial cada mañana — para empezar con calma, presencia y un poco de luz.'},
     {sel:'#homeMoodChip',                                     e:'💚', t:'Registrá tus ánimos',   d:'Tomate 5 segundos para anotar cómo te sentís hoy. Velo crea tu mapa emocional con eso.'},
     {sel:'#homeDailyQ',                                       e:'💬', t:'Pregunta del día',      d:'Respondé en anónimo o con tu perfil y descubrí qué sienten los demás hoy.'},
-    {sel:'.home-main-grid [onclick*="\'guardians\'"]',        e:'🛡️', t:'Apoyo Guardianes',      d:'Personas reales disponibles para escucharte sin juicios — sin necesidad de ser profesionales.'},
-    {sel:'.home-main-grid [onclick*="\'help\'"]',             e:'🤝', t:'Sala de Ayuda',         d:'Publicá lo que te pasa y cualquier persona de la comunidad puede acompañarte en tiempo real.'},
-    {sel:'.home-main-grid [onclick*="\'bottle\'"]',           e:'🌊', t:'Al Mar',                d:'Escribí lo que sentís y lanzalo en una botella. Alguien la encontrará y te dejará amor.'},
-    {sel:'.home-main-grid [onclick*="\'circles\'"]',          e:'☮️', t:'Círculos de Paz',       d:'Grupos temáticos: ansiedad, duelo, relaciones, soledad. Compartir es sanar.'},
+    {sel:'#hgGuardians',                                      e:'🛡️', t:'Apoyo Guardianes',      d:'Personas reales disponibles para escucharte sin juicios — sin necesidad de ser profesionales.'},
+    {sel:'#hgHelp',                                           e:'🤝', t:'Sala de Ayuda',         d:'Publicá lo que te pasa y cualquier persona de la comunidad puede acompañarte en tiempo real.'},
+    {sel:'#hgBottle',                                         e:'🌊', t:'Al Mar',                d:'Escribí lo que sentís y lanzalo en una botella. Alguien la encontrará y te dejará amor.'},
+    {sel:'#hgCircles',                                        e:'☮️', t:'Círculos de Paz',       d:'Grupos temáticos: ansiedad, duelo, relaciones, soledad. Compartir es sanar.'},
     {sel:'#homeVeloIACard',                                   e:'🤖', t:'Acompañante IA',        d:'Un chatbot empático listo para escucharte 24/7. No reemplaza atención profesional — sí te abraza.'},
-    {sel:'.home-main-grid [onclick*="\'news\'"]',             e:'🌞', t:'Buenas Noticias',       d:'Historias reales que dan esperanza. Una dosis de luz cuando el mundo se siente pesado.'},
+    {sel:'#hgNews',                                           e:'🌞', t:'Buenas Noticias',       d:'Historias reales que dan esperanza. Una dosis de luz cuando el mundo se siente pesado.'},
     {sel:'#homeBitacoraWidget',                               e:'📖', t:'Bitácora',              d:'Historias anónimas de la comunidad. Leé, escribí y conectate con quienes vivieron lo mismo.'},
-    {sel:'.home-main-grid [onclick*="\'diary\'"]',            e:'📔', t:'Diario Íntimo',         d:'Tu espacio totalmente privado. Solo vos podés leer lo que escribís acá.'},
-    {sel:'.home-main-grid [onclick*="\'meditacion\'"]',       e:'🎵', t:'Música y Relajación',   d:'Tracks originales para acompañar tu calma, tu enojo, tu llanto. La música también abraza.'},
+    {sel:'#hgDiary',                                          e:'📔', t:'Diario Íntimo',         d:'Tu espacio totalmente privado. Solo vos podés leer lo que escribís acá.'},
+    {sel:'#hgMusic',                                          e:'🎵', t:'Música y Relajación',   d:'Tracks originales para acompañar tu calma, tu enojo, tu llanto. La música también abraza.'},
     {sel:'#homeAmbientPanel',                                 e:'🌧️', t:'Sonidos Ambientales',   d:'Lluvia, bosque, fuego, mar. Ponete uno de fondo mientras escribís o respirás.'},
-    {sel:'.home-main-grid [onclick*="\'contacts\'"]',         e:'⭐', t:'Contactos Favoritos',   d:'Tus personas de confianza. Vé quién está activo y mandales un mensaje cuando los necesités.'},
+    {sel:'#hgContacts',                                       e:'⭐', t:'Contactos Favoritos',   d:'Tus personas de confianza. Vé quién está activo y mandales un mensaje cuando los necesités.'},
     {sel:'#topbarEstiloBtn',                                  e:'🌛', t:'Modo Estilo',           d:'Cambiá entre claro y oscuro cuando quieras. Mirá ↓', fx:'theme'},
     {sel:'#topbarDonateBtn, #topbarPlusBtn',                  e:'💛', t:'Apoyá a Velo',          d:'Velo es 100% donaciones. Si te ayudó, podés donar o suscribirte a Plus — opcional, pero hace toda la diferencia 💛'},
   ];
@@ -1537,7 +1537,7 @@ function _startHomeTour(){
   document.body.appendChild(tip);
 
   function _done(){
-    safeLS('set','velo_tour_done','v1202');
+    safeLS('set','velo_tour_done','v1208');
     spot.style.transition = 'opacity .3s'; tip.style.transition = 'opacity .3s';
     spot.style.opacity = '0'; tip.style.opacity = '0';
     setTimeout(function(){ if(spot.parentNode) spot.remove(); if(tip.parentNode) tip.remove(); }, 340);
@@ -25237,7 +25237,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1207;
+    var _BUILT_V = 1208;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

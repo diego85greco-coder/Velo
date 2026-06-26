@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1207">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1207">
+  <link rel="stylesheet" href="premium.css?v=20260626-1208">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1208">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1637,7 +1637,7 @@
           <div id="homeMonthlyBanner" style="display:none;margin:0 16px 12px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.3);border-radius:14px;padding:12px 16px;font-size:12px;color:var(--sage2);line-height:1.5"></div>
           <!-- Feature grid -->
           <div class="home-main-grid" id="homeGrid">
-            <div class="p-card p-card--feature p-card--hover fc-mint" onclick="pGoTo('guardians')">
+            <div id="hgGuardians" class="p-card p-card--feature p-card--hover fc-mint" onclick="pGoTo('guardians')">
               <span class="p-card-icon">🛡️</span>
               <div class="p-card-title">Guardianes</div>
               <div class="p-card-sub">Personas que escuchan</div>
@@ -1645,7 +1645,7 @@
                 <span class="p-pill p-pill--live"><span class="p-ldot p-ldot--on"></span> Comunidad activa</span>
               </div>
             </div>
-            <div class="p-card p-card--feature p-card--hover fc-sage" onclick="pGoTo('help')">
+            <div id="hgHelp" class="p-card p-card--feature p-card--hover fc-sage" onclick="pGoTo('help')">
               <span class="p-card-icon">🤝</span>
               <div class="p-card-title">Sala de Ayuda</div>
               <div class="p-card-sub">Apoyo en tiempo real</div>
@@ -1653,7 +1653,7 @@
                 <span class="p-pill p-pill--live" style="background:rgba(116,198,157,.1);border-color:rgba(116,198,157,.2)"><span class="p-ldot p-ldot--on"></span> Siempre disponible</span>
               </div>
             </div>
-            <div class="p-card p-card--feature p-card--hover fc-ocean" onclick="pGoTo('bottle')">
+            <div id="hgBottle" class="p-card p-card--feature p-card--hover fc-ocean" onclick="pGoTo('bottle')">
               <span class="p-card-icon">🌊</span>
               <div class="p-card-title">Al Mar</div>
               <div class="p-card-sub">Mensajes al mundo</div>
@@ -1661,7 +1661,7 @@
                 <span class="p-pill p-pill--ocean">Anónimo</span>
               </div>
             </div>
-            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('contacts')" style="background:linear-gradient(135deg,rgba(255,215,80,.18),rgba(255,180,50,.10));border-color:rgba(255,200,60,.25)">
+            <div id="hgContacts" class="p-card p-card--feature p-card--hover" onclick="pGoTo('contacts')" style="background:linear-gradient(135deg,rgba(255,215,80,.18),rgba(255,180,50,.10));border-color:rgba(255,200,60,.25)">
               <span class="p-card-icon">⭐</span>
               <div class="p-card-title">Contactos</div>
               <div class="p-card-sub">Favoritos y presencia</div>
@@ -1669,7 +1669,7 @@
                 <span class="p-pill" style="background:rgba(255,200,60,.2);color:#7A5800;border:1px solid rgba(255,200,60,.35)">Favoritos</span>
               </div>
             </div>
-            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('circles')" style="background:linear-gradient(135deg,rgba(116,198,157,.15),rgba(45,106,79,.08));border-color:rgba(116,198,157,.25)">
+            <div id="hgCircles" class="p-card p-card--feature p-card--hover" onclick="pGoTo('circles')" style="background:linear-gradient(135deg,rgba(116,198,157,.15),rgba(45,106,79,.08));border-color:rgba(116,198,157,.25)">
               <span class="p-card-icon">☮️</span>
               <div class="p-card-title">Círculos de Paz</div>
               <div class="p-card-sub">Sin likes, solo conexión</div>
@@ -1685,7 +1685,7 @@
                 <span class="p-pill p-pill--live"><span class="p-ldot p-ldot--on"></span> Comunidad activa</span>
               </div>
             </div>
-            <div class="p-card p-card--feature p-card--hover fc-warm" onclick="pGoTo('news')" style="background:linear-gradient(135deg,rgba(255,200,80,.18),rgba(255,170,50,.10))">
+            <div id="hgNews" class="p-card p-card--feature p-card--hover fc-warm" onclick="pGoTo('news')" style="background:linear-gradient(135deg,rgba(255,200,80,.18),rgba(255,170,50,.10))">
               <span class="p-card-icon">🌞</span>
               <div class="p-card-title">Buenas Noticias</div>
               <div class="p-card-sub">Historias que dan esperanza</div>
@@ -1702,7 +1702,7 @@
                 <span class="p-pill" style="background:rgba(196,181,232,.2);color:#6B5BA0;border:1px solid rgba(196,181,232,.35)">Personal</span>
               </div>
             </div>
-            <div class="p-card p-card--feature p-card--hover fc-lav" onclick="pGoTo('diary')">
+            <div id="hgDiary" class="p-card p-card--feature p-card--hover fc-lav" onclick="pGoTo('diary')">
               <span class="p-card-icon">📔</span>
               <div class="p-card-title">Diario</div>
               <div class="p-card-sub">Tu espacio íntimo</div>
@@ -1718,7 +1718,7 @@
                 <span class="p-pill p-pill--sky">Calma</span>
               </div>
             </div>
-            <div class="p-card p-card--feature p-card--hover" onclick="pGoTo('meditacion')" style="background:linear-gradient(135deg,rgba(147,112,219,.18),rgba(138,43,226,.08))">
+            <div id="hgMusic" class="p-card p-card--feature p-card--hover" onclick="pGoTo('meditacion')" style="background:linear-gradient(135deg,rgba(147,112,219,.18),rgba(138,43,226,.08))">
               <span class="p-card-icon">🎵</span>
               <div class="p-card-title">Música</div>
               <div class="p-card-sub">5 tracks de relajación</div>
@@ -4297,8 +4297,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1207"></script>
-<script src="premium-redesign.js?v=20260626-1207"></script>
+<script src="premium.js?v=20260626-1208"></script>
+<script src="premium-redesign.js?v=20260626-1208"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
