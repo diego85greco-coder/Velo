@@ -8600,24 +8600,24 @@ input.p-input, textarea.p-textarea, .p-input, .p-textarea {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 190px !important;
-  height: 190px !important;
+  width: 130px !important;
+  height: 130px !important;
   animation: rTimeFloat 14s ease-in-out infinite !important;
 }
 .weather-hero-emoji {
-  font-size: 130px !important;
+  font-size: 86px !important;
   line-height: 1 !important;
-  filter: drop-shadow(0 18px 36px rgba(0,0,0,.45)) !important;
+  filter: drop-shadow(0 12px 28px rgba(0,0,0,.40)) saturate(.85) contrast(.95) !important;
 }
 /* Period-specific ambient glow on emoji */
 .r-time-icon.is-morning   .weather-hero-emoji {
-  filter: drop-shadow(0 18px 36px rgba(0,0,0,.40)) drop-shadow(0 0 50px rgba(255,185,40,.22)) !important;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,.30)) drop-shadow(0 0 32px rgba(255,185,40,.20)) saturate(.85) contrast(.95) !important;
 }
 .r-time-icon.is-afternoon .weather-hero-emoji {
-  filter: drop-shadow(0 18px 36px rgba(0,0,0,.40)) drop-shadow(0 0 50px rgba(255,145,20,.26)) !important;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,.30)) drop-shadow(0 0 32px rgba(255,145,20,.22)) saturate(.85) contrast(.95) !important;
 }
 .r-time-icon.is-night     .weather-hero-emoji {
-  filter: drop-shadow(0 18px 36px rgba(0,0,0,.55)) drop-shadow(0 0 40px rgba(155,130,255,.20)) !important;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,.45)) drop-shadow(0 0 28px rgba(155,130,255,.22)) saturate(.85) contrast(.95) !important;
 }
 /* Container: icon floats, pill overlaps from below */
 #homeTimeIcon {
@@ -10606,11 +10606,11 @@ body:not(.r-dark) .p-bn-estilo .r-tbar-moon { display: none !important; }
 body.r-dark .p-bn-estilo .r-tbar-moon { display: flex !important; }
 body:not(.r-dark) .p-bn-estilo .r-tbar-sun { display: flex !important; }
 
-/* ── REGISTRA — pastel sage green in light mode ── */
+/* ── REGISTRA — refined light-mode (v1208): clean white + sage accents ── */
 body:not(.r-dark) #homeRegisterZone {
-  background: linear-gradient(155deg, rgba(215,242,225,.92) 0%, rgba(195,232,208,.88) 100%) !important;
-  border-color: rgba(40,110,60,.48) !important;
-  box-shadow: 0 0 0 1px rgba(40,110,60,.06) inset, 0 6px 22px rgba(40,110,60,.10), 0 2px 8px rgba(40,110,60,.06) !important;
+  background: linear-gradient(160deg, rgba(255,255,255,.98) 0%, rgba(248,253,250,.96) 60%, rgba(240,250,244,.97) 100%) !important;
+  border: 1.5px solid rgba(74,160,110,.40) !important;
+  box-shadow: 0 8px 32px rgba(20,80,45,.10), 0 2px 8px rgba(20,80,45,.06), inset 0 1px 0 rgba(255,255,255,.95) !important;
 }
 body:not(.r-dark) #homeRegisterLabel {
   color: rgba(22,80,42,.92) !important;
@@ -14461,4 +14461,56 @@ body:not(.r-dark) .mcc-main {
 }
 body:not(.r-dark) .mcc-arrow {
   color: rgba(38,120,70,.75) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v1209 — Mi estado de hoy sheet: pulido en modo claro
+   ══════════════════════════════════════════════════════════════════ */
+/* Benefit cards (Resumen semanal / Análisis mensual) — más definición */
+body:not(.r-dark) #homeRegisterZone div[style*="background:rgba(116,198,157,.14)"] {
+  background: linear-gradient(140deg, rgba(116,198,157,.18), rgba(80,168,120,.10)) !important;
+  border-color: rgba(74,160,110,.50) !important;
+  box-shadow: 0 2px 10px rgba(40,110,60,.10), inset 0 1px 0 rgba(255,255,255,.70) !important;
+}
+body:not(.r-dark) #homeRegisterZone div[style*="background:rgba(200,158,56,.12)"] {
+  background: linear-gradient(140deg, rgba(220,170,55,.16), rgba(190,140,30,.08)) !important;
+  border-color: rgba(180,135,30,.50) !important;
+  box-shadow: 0 2px 10px rgba(160,120,15,.10), inset 0 1px 0 rgba(255,255,255,.70) !important;
+}
+body:not(.r-dark) #homeRegisterZone div[style*="background:rgba(116,198,157,.14)"] span,
+body:not(.r-dark) #homeRegisterZone div[style*="background:rgba(200,158,56,.12)"] span {
+  color: rgba(20,75,42,.95) !important;
+}
+body:not(.r-dark) #homeRegisterZone div[style*="background:rgba(116,198,157,.14)"] span[style*=".55"],
+body:not(.r-dark) #homeRegisterZone div[style*="background:rgba(200,158,56,.12)"] span[style*=".55"] {
+  color: rgba(60,100,75,.72) !important;
+}
+/* Question heading — darker for contrast */
+body:not(.r-dark) #homeRegisterZone div[style*="font-size:26px"] {
+  color: rgba(15,55,30,.95) !important;
+}
+body:not(.r-dark) #homeRegisterZone div[style*="font-size:11.5px"][style*=".58"] {
+  color: rgba(45,90,60,.78) !important;
+}
+/* Label pill at top */
+body:not(.r-dark) #homeRegisterZone div[style*="background:rgba(116,198,157,.08)"][style*="border-radius:20px"] {
+  background: rgba(116,198,157,.18) !important;
+  border-color: rgba(74,160,110,.45) !important;
+}
+body:not(.r-dark) #homeRegisterZone div[style*="background:rgba(116,198,157,.08)"][style*="border-radius:20px"] span {
+  color: rgba(20,90,50,.92) !important;
+}
+/* Week mood graph background */
+body:not(.r-dark) #homeWeekMoodGraph {
+  background: rgba(20,80,45,.06) !important;
+  border: 1px solid rgba(74,160,110,.20) !important;
+}
+/* "Registrá cómo te sentís para ver tu historial" hint */
+body:not(.r-dark) #homeRegisterZone .home-week-hint,
+body:not(.r-dark) #homeWeekStreak {
+  color: rgba(45,100,65,.78) !important;
+}
+/* Acciones divider */
+body:not(.r-dark) #homeRegisterZone div[style*="ACCIONES" i] {
+  color: rgba(40,110,70,.80) !important;
 }

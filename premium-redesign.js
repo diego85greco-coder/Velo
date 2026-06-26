@@ -448,20 +448,23 @@
     return                        { emoji: '🌙', period: 'night',      type: 'clear-night' };
   }
 
-  /* ── Hero weather: large native emoji — renders photorealistic 3D on iOS ── */
+  /* ── Hero weather: usar el emoji de fase lunar real cuando es noche clara,
+        en lugar del 🌕 fijo (que iOS renderiza fotorrealista). Las demás
+        condiciones siguen con su emoji característico. ── */
   function _weatherAnimSvg(period, type) {
+    var moonNow = _getMoonPhase();
     var map = {
       'clear-day':   '☀️',
-      'clear-night': '🌕',
+      'clear-night': moonNow.emoji, // 🌑/🌒/🌓/🌔/🌕/🌖/🌗/🌘 según fase real
       'sun-cloud':   '⛅',
-      'moon-cloud':  '🌙',
+      'moon-cloud':  moonNow.emoji, // misma fase con nube debajo
       'overcast':    '☁️',
       'rain':        '🌧️',
       'storm':       '⛈️',
       'snow':        '🌨️'
     };
-    var emoji = map[type] || (period === 'night' ? '🌕' : '☀️');
-    return '<span class="weather-hero-img weather-hero-emoji" data-period="' + period + '">' + emoji + '</span>';
+    var emoji = map[type] || (period === 'night' ? moonNow.emoji : '☀️');
+    return '<span class="weather-hero-img weather-hero-emoji" data-period="' + period + '" data-type="' + type + '">' + emoji + '</span>';
   }
 
   function injectTimeIcon() {
