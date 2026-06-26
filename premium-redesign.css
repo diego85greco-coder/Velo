@@ -14196,11 +14196,13 @@ body.r-dark .dq-feed-card {
   border: 1.5px solid rgba(116,198,157,.62) !important;
   box-shadow: 0 3px 16px rgba(116,198,157,.14) !important;
   background: rgba(20,40,26,.70) !important;
+  padding: 13px 14px !important;
 }
 body:not(.r-dark) .dq-feed-card {
   border: 1.5px solid rgba(35,120,70,.52) !important;
   box-shadow: 0 2px 12px rgba(35,120,70,.13) !important;
   background: rgba(230,248,238,.82) !important;
+  padding: 13px 14px !important;
 }
 /* Remove heavy outer border on DQ widget — less boxy look */
 body.r-dark #homeDailyQuote {
