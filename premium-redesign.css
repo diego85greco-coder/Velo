@@ -12004,7 +12004,7 @@ body.velo-t-noche.r-dark #homeGreetSub {
   flex-shrink: 0 !important;
   width: 83% !important;
   scroll-snap-align: none !important;
-  height: 152px !important;
+  height: 185px !important;
   padding: 13px 14px !important;
   border-radius: 16px !important;
   box-sizing: border-box !important;
@@ -14257,4 +14257,58 @@ body.r-dark .vcc-card .vcc-name {
 }
 body.r-dark .vcc-card .vcc-motto {
   color: rgba(150,208,175,.48) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   v1201 — Section info cards: light mode adaptation
+   Guardianes + Sala de Ayuda "¿Qué es esta sección?" cards
+   ══════════════════════════════════════════════════════════════════ */
+.section-info-card {
+  background: linear-gradient(140deg,rgba(8,28,18,.97),rgba(12,38,24,.95)) !important;
+  border: 1.5px solid rgba(116,198,157,.28) !important;
+  border-radius: 18px !important;
+  padding: 16px !important;
+  margin-bottom: 14px !important;
+}
+body:not(.r-dark) .section-info-card {
+  background: rgba(240,252,245,.96) !important;
+  border-color: rgba(80,168,120,.30) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06) !important;
+}
+.section-info-card .sic-label {
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: 2.5px !important;
+  text-transform: uppercase !important;
+  color: rgba(116,198,157,.60) !important;
+  font-family: 'Jost', sans-serif !important;
+  margin-bottom: 13px !important;
+}
+body:not(.r-dark) .section-info-card .sic-label {
+  color: rgba(30,110,65,.60) !important;
+}
+.section-info-card .sic-heading {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: rgba(255,255,255,.90) !important;
+  font-family: 'Jost', sans-serif !important;
+  margin-bottom: 3px !important;
+}
+body:not(.r-dark) .section-info-card .sic-heading {
+  color: rgba(10,50,28,.90) !important;
+}
+.section-info-card .sic-body {
+  font-size: 11px !important;
+  color: rgba(180,220,200,.62) !important;
+  font-family: 'Jost', sans-serif !important;
+  line-height: 1.55 !important;
+}
+body:not(.r-dark) .section-info-card .sic-body {
+  color: rgba(20,70,40,.68) !important;
+}
+.section-info-card .sic-body strong {
+  color: rgba(120,200,165,.85) !important;
+}
+body:not(.r-dark) .section-info-card .sic-body strong {
+  color: rgba(15,90,45,.85) !important;
 }
