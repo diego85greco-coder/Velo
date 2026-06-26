@@ -421,7 +421,7 @@ function _showReturnToChatBadge(pageId){
   badge.dataset.page = pageId;
   badge.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;max-width:700px;margin:0 auto">'
     +'<span style="display:flex;align-items:center;gap:8px;font-size:14px"><span style="font-size:18px">💬</span><span>Tenés un chat activo</span></span>'
-    +'<button onclick="pGoTo(document.getElementById(\'returnChatBadge\').dataset.page)" style="background:rgba(255,255,255,.25);border:1.5px solid rgba(255,255,255,.5);border-radius:20px;color:#fff;padding:6px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">Volver →</button>'
+    +'<button onclick="pGoTo(document.getElementById(\'returnChatBadge\').dataset.page)" style="background:rgba(255,255,255,.25);border:1.5px solid rgba(255,255,255,.5);border-radius:20px;color:#fff;padding:6px 16px;font-size:15px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">Volver →</button>'
     +'</div>';
   badge.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,#1b6636,#25a86a);color:#fff;padding:10px 16px;font-weight:600;font-family:\'Jost\',sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.25);cursor:pointer;';
   badge.onclick = function(e){ if(e.target===badge||e.target.tagName==='SPAN') pGoTo(this.dataset.page); };
@@ -1415,12 +1415,12 @@ function _showOnboarding(){
       s += '<div class="ob-chip" data-k="'+it.k+'" onclick="pObChip(this)"'
         +' style="background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;padding:14px 10px;cursor:pointer;transition:all .18s;user-select:none">'
         +'<div style="font-size:26px;margin-bottom:6px">'+it.e+'</div>'
-        +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.85);font-family:\'Jost\',sans-serif">'+it.l+'</div>'
+        +'<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.85);font-family:\'Jost\',sans-serif">'+it.l+'</div>'
         +'</div>';
     });
     s += '</div>';
     s += '<button onclick="pObNext()" style="width:100%;padding:14px;border:none;border-radius:14px;background:rgba(116,198,157,.90);color:#0a1a0f;font-size:15px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">Continuar →</button>';
-    s += '<button onclick="pObDone()" style="margin-top:12px;background:none;border:none;color:rgba(255,255,255,.32);font-size:12px;cursor:pointer;font-family:\'Jost\',sans-serif;display:block;width:100%;padding:8px">Saltar introducci\xf3n</button>';
+    s += '<button onclick="pObDone()" style="margin-top:12px;background:none;border:none;color:rgba(255,255,255,.32);font-size:14px;cursor:pointer;font-family:\'Jost\',sans-serif;display:block;width:100%;padding:8px">Saltar introducci\xf3n</button>';
     s += '</div>';
     return s;
   }
@@ -1434,14 +1434,14 @@ function _showOnboarding(){
     ];
     var s = '<div style="max-width:420px;width:100%;text-align:center">';
     s += _dotHtml();
-    s += '<div style="font-size:13px;color:rgba(116,198,157,.8);font-family:\'Jost\',sans-serif;font-weight:700;letter-spacing:1px;margin-bottom:16px;text-transform:uppercase">Lo que puedes hacer</div>';
+    s += '<div style="font-size:15px;color:rgba(116,198,157,.8);font-family:\'Jost\',sans-serif;font-weight:700;letter-spacing:1px;margin-bottom:16px;text-transform:uppercase">Lo que puedes hacer</div>';
     s += '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:26px;text-align:left">';
     feats.forEach(function(f){
       s += '<div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px">'
         +'<span style="font-size:28px;flex-shrink:0">'+f.e+'</span>'
         +'<div>'
-        +'<div style="font-size:13px;font-weight:800;color:#fff;font-family:\'Jost\',sans-serif">'+f.t+'</div>'
-        +'<div style="font-size:12px;color:rgba(255,255,255,.52);font-family:\'Jost\',sans-serif;margin-top:2px">'+f.d+'</div>'
+        +'<div style="font-size:15px;font-weight:800;color:#fff;font-family:\'Jost\',sans-serif">'+f.t+'</div>'
+        +'<div style="font-size:14px;color:rgba(255,255,255,.52);font-family:\'Jost\',sans-serif;margin-top:2px">'+f.d+'</div>'
         +'</div>'
         +'</div>';
     });
@@ -1534,18 +1534,18 @@ function _startHomeTour(){
     }).join('');
     var isLast = idx === STEPS.length - 1;
     var nextBtn = isLast
-      ? '<button onclick="window._tourNext()" style="background:rgba(116,198,157,.92);border:none;color:#071409;font-size:12.5px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;padding:9px 20px;border-radius:12px;letter-spacing:.2px">¡Listo! ✨</button>'
-      : '<button onclick="window._tourNext()" style="background:rgba(116,198,157,.92);border:none;color:#071409;font-size:12.5px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;padding:9px 20px;border-radius:12px;letter-spacing:.2px">Siguiente →</button>';
+      ? '<button onclick="window._tourNext()" style="background:rgba(116,198,157,.92);border:none;color:#071409;font-size:14px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;padding:9px 20px;border-radius:12px;letter-spacing:.2px">¡Listo! ✨</button>'
+      : '<button onclick="window._tourNext()" style="background:rgba(116,198,157,.92);border:none;color:#071409;font-size:14px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;padding:9px 20px;border-radius:12px;letter-spacing:.2px">Siguiente →</button>';
     return '<div style="background:linear-gradient(145deg,rgba(10,26,18,.98),rgba(6,18,12,.97));border:1.5px solid rgba(116,198,157,.50);border-radius:20px;padding:18px 18px 14px;box-shadow:0 14px 60px rgba(0,0,0,.75),0 0 0 1px rgba(116,198,157,.10)">'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">'
       +'<span style="font-size:26px;line-height:1">'+s.e+'</span>'
       +'<span style="font-size:14.5px;font-weight:800;color:rgba(222,250,232,.96);font-family:Jost,sans-serif">'+s.t+'</span>'
       +'</div>'
-      +'<p style="font-size:12.5px;color:rgba(180,220,195,.72);margin:0 0 13px;line-height:1.62;font-family:Jost,sans-serif">'+s.d+'</p>'
+      +'<p style="font-size:14px;color:rgba(180,220,195,.72);margin:0 0 13px;line-height:1.62;font-family:Jost,sans-serif">'+s.d+'</p>'
       +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
       +'<div style="display:flex;gap:4px;align-items:center">'+dots+'</div>'
       +'<div style="display:flex;gap:8px;align-items:center">'
-      +'<button onclick="window._tourDone()" style="background:none;border:none;color:rgba(255,255,255,.28);font-size:11px;cursor:pointer;font-family:Jost,sans-serif;padding:6px 8px">Saltar</button>'
+      +'<button onclick="window._tourDone()" style="background:none;border:none;color:rgba(255,255,255,.28);font-size:13px;cursor:pointer;font-family:Jost,sans-serif;padding:6px 8px">Saltar</button>'
       +nextBtn
       +'</div></div></div>';
   }
@@ -2045,7 +2045,7 @@ function _renderOb(){
       + d.features.map(function(f){
           return '<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 14px">'
             +'<span style="font-size:15px;flex-shrink:0">✓</span>'
-            +'<span style="font-size:13px;color:rgba(255,255,255,.88);font-weight:500;font-family:\'Jost\',sans-serif">'+_escHtml(f)+'</span>'
+            +'<span style="font-size:15px;color:rgba(255,255,255,.88);font-weight:500;font-family:\'Jost\',sans-serif">'+_escHtml(f)+'</span>'
             +'</div>';
         }).join('')
       + '</div>';
@@ -2053,15 +2053,15 @@ function _renderOb(){
 
   var lastCta = d.isLast
     ? '<div style="margin-top:20px;padding:16px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.20);border-radius:18px">'
-        +'<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(255,230,102,.80);margin-bottom:8px">¿POR DÓNDE EMPEZAR?</div>'
-        +'<div style="font-size:12.5px;color:rgba(255,255,255,.75);line-height:1.6;font-family:\'Jost\',sans-serif">'
+        +'<div style="font-size:13px;font-weight:700;letter-spacing:1.5px;color:rgba(255,230,102,.80);margin-bottom:8px">¿POR DÓNDE EMPEZAR?</div>'
+        +'<div style="font-size:14px;color:rgba(255,255,255,.75);line-height:1.6;font-family:\'Jost\',sans-serif">'
         +'Podés registrar cómo te sentís hoy, explorar la comunidad o simplemente leer la frase del día. No hay un orden correcto — Velo se adapta a vos.</div>'
       +'</div>'
     : '';
 
   cnt.innerHTML =
     '<div style="display:inline-block;background:'+d.accent+';border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;margin-bottom:16px">'
-      +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.70)">'+_escHtml(d.tag)+'</span>'
+      +'<span style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.70)">'+_escHtml(d.tag)+'</span>'
     +'</div>'
     +'<div style="font-size:90px;margin-bottom:14px;animation:p-float 3s ease-in-out infinite;line-height:1">'+d.emoji+'</div>'
     +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:30px;color:#fff;margin-bottom:10px;line-height:1.2">'+_escHtml(d.title)+'</h2>'
@@ -2126,10 +2126,10 @@ function _checkAndShowNameBanner(name){
   b.id = 'homeNameBanner';
   b.className = 'home-name-banner';
   b.innerHTML = '<div class="home-name-banner-title">👋 ¿Cuál es tu nombre real?</div>'
-    +'<div style="font-size:11.5px;color:var(--ink3);line-height:1.4">Tu nombre se muestra como usuario técnico. Ingresá tu nombre real para que se vea en todos tus dispositivos.</div>'
+    +'<div style="font-size:13px;color:var(--ink3);line-height:1.4">Tu nombre se muestra como usuario técnico. Ingresá tu nombre real para que se vea en todos tus dispositivos.</div>'
     +'<div style="display:flex;gap:8px;align-items:center">'
     +'<input id="homeNameInput" type="text" placeholder="Tu nombre o apodo" value="'+_escHtml(name !== emailPfx ? name : '')+'" class="home-name-banner-input">'
-    +'<button onclick="_saveNameFromBanner()" style="padding:8px 16px;border-radius:10px;border:none;background:var(--sage);color:#fff;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap">Guardar →</button>'
+    +'<button onclick="_saveNameFromBanner()" style="padding:8px 16px;border-radius:10px;border:none;background:var(--sage);color:#fff;font-size:15px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap">Guardar →</button>'
     +'</div>';
   var scrollEl = document.querySelector('#pg-home .p-page-scroll');
   if(scrollEl) scrollEl.insertBefore(b, scrollEl.querySelector('.home-header') || scrollEl.firstChild);
@@ -2380,17 +2380,17 @@ function _renderHomeMedWidget(){
     // label
     +'<div style="position:relative;padding:16px 18px 0;display:flex;align-items:center;gap:8px">'
     +'<span style="font-size:18px;line-height:1">🧘</span>'
-    +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;color:rgba(180,150,255,.70);text-transform:uppercase;font-family:Jost,sans-serif">Relajación · Meditación</span>'
+    +'<span style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(180,150,255,.70);text-transform:uppercase;font-family:Jost,sans-serif">Relajación · Meditación</span>'
     +'</div>'
     // headline
     +'<div style="position:relative;padding:8px 18px 0">'
     +'<div style="font-size:20px;font-weight:800;color:rgba(220,200,255,.96);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.2;margin-bottom:5px">10 tracks para tu bienestar interior</div>'
-    +'<div style="font-size:11.5px;color:rgba(180,155,235,.62);font-family:Jost,sans-serif;font-weight:400;line-height:1.5;margin-bottom:12px">5 de relajación · 5 de meditación · alternados</div>'
+    +'<div style="font-size:13px;color:rgba(180,155,235,.62);font-family:Jost,sans-serif;font-weight:400;line-height:1.5;margin-bottom:12px">5 de relajación · 5 de meditación · alternados</div>'
     +'</div>'
     // emoji constellation + button
     +'<div style="position:relative;padding:0 18px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px">'
     +'<div style="font-size:19px;letter-spacing:3px;opacity:.90;flex:1;min-width:0;overflow:hidden">'+emojiRow+'</div>'
-    +'<div style="flex-shrink:0;background:linear-gradient(135deg,rgba(130,90,200,.80),rgba(90,60,160,.90));border:1px solid rgba(180,150,255,.40);border-radius:100px;padding:9px 20px;font-size:12px;font-weight:800;color:rgba(235,220,255,.96);font-family:Jost,sans-serif;letter-spacing:.3px;box-shadow:0 4px 18px rgba(100,60,180,.35);white-space:nowrap">Explorar →</div>'
+    +'<div style="flex-shrink:0;background:linear-gradient(135deg,rgba(130,90,200,.80),rgba(90,60,160,.90));border:1px solid rgba(180,150,255,.40);border-radius:100px;padding:9px 20px;font-size:14px;font-weight:800;color:rgba(235,220,255,.96);font-family:Jost,sans-serif;letter-spacing:.3px;box-shadow:0 4px 18px rgba(100,60,180,.35);white-space:nowrap">Explorar →</div>'
     +'</div>'
     +'</div>';
 }
@@ -2609,8 +2609,8 @@ function _initHomeNavTiles(){
       +' onmousedown="this.style.transform=\'scale(.94)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'"'
       +' ontouchstart="this.style.transform=\'scale(.94)\'" ontouchend="this.style.transform=\'\'">'
       +'<div style="font-size:22px;line-height:1">'+t.icon+'</div>'
-      +'<div class="hntt-label" style="font-size:10px;font-weight:800;color:rgba(255,255,255,.92);font-family:\'Jost\',sans-serif;text-align:center;letter-spacing:.1px;line-height:1.2">'+t.title+'</div>'
-      +(t.sub ? '<div style="font-size:8.5px;color:rgba(255,255,255,.45);font-family:\'Jost\',sans-serif;text-align:center;letter-spacing:.2px;line-height:1;margin-top:-2px">'+t.sub+'</div>' : '')
+      +'<div class="hntt-label" style="font-size:12px;font-weight:800;color:rgba(255,255,255,.92);font-family:\'Jost\',sans-serif;text-align:center;letter-spacing:.1px;line-height:1.2">'+t.title+'</div>'
+      +(t.sub ? '<div style="font-size:10px;color:rgba(255,255,255,.45);font-family:\'Jost\',sans-serif;text-align:center;letter-spacing:.2px;line-height:1;margin-top:-2px">'+t.sub+'</div>' : '')
       +'</div>';
   }).join('');
   var stripEl = document.createElement('div');
@@ -2632,8 +2632,8 @@ function _initHomeNavTiles(){
       +' onmousedown="this.style.transform=\'scale(.94)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'"'
       +' ontouchstart="this.style.transform=\'scale(.94)\'" ontouchend="this.style.transform=\'\'">'
       +'<div style="font-size:22px;line-height:1">'+t.icon+'</div>'
-      +'<div class="hntt-label" style="font-size:10px;font-weight:800;color:rgba(255,255,255,.92);font-family:\'Jost\',sans-serif;text-align:center;letter-spacing:.1px;line-height:1.2">'+t.title+'</div>'
-      +(t.sub ? '<div style="font-size:8.5px;color:rgba(255,255,255,.45);font-family:\'Jost\',sans-serif;text-align:center;letter-spacing:.2px;line-height:1;margin-top:-2px">'+t.sub+'</div>' : '')
+      +'<div class="hntt-label" style="font-size:12px;font-weight:800;color:rgba(255,255,255,.92);font-family:\'Jost\',sans-serif;text-align:center;letter-spacing:.1px;line-height:1.2">'+t.title+'</div>'
+      +(t.sub ? '<div style="font-size:10px;color:rgba(255,255,255,.45);font-family:\'Jost\',sans-serif;text-align:center;letter-spacing:.2px;line-height:1;margin-top:-2px">'+t.sub+'</div>' : '')
       +'</div>';
   }).join('');
   var strip2El = document.createElement('div');
@@ -2655,15 +2655,15 @@ function _initHomeNavTiles(){
       +' onmousedown="this.style.transform=\'scale(.96)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'"'
       +' ontouchstart="this.style.transform=\'scale(.96)\'" ontouchend="this.style.transform=\'\'">'
       +'<div style="font-size:28px;line-height:1">'+t.icon+'</div>'
-      +'<div class="hnt-title" style="font-size:12.5px;font-weight:800;color:rgba(255,255,255,.95);font-family:\'Jost\',sans-serif;line-height:1.25">'+t.title+'</div>'
-      +'<div class="hnt-desc" style="font-size:10px;color:rgba(255,255,255,.50);font-family:\'Jost\',sans-serif;line-height:1.35">'+t.sub+'</div>'
+      +'<div class="hnt-title" style="font-size:14px;font-weight:800;color:rgba(255,255,255,.95);font-family:\'Jost\',sans-serif;line-height:1.25">'+t.title+'</div>'
+      +'<div class="hnt-desc" style="font-size:12px;color:rgba(255,255,255,.50);font-family:\'Jost\',sans-serif;line-height:1.35">'+t.sub+'</div>'
       +'<div style="position:absolute;bottom:12px;right:13px;font-size:14px;color:rgba(255,255,255,.25);font-weight:800;font-family:\'Jost\',sans-serif">›</div>'
       +'</div>';
   }).join('');
   var container = document.createElement('div');
   container.id = 'homeNavTiles';
   container.style.cssText = 'width:100%;margin:0 0 18px;box-sizing:border-box;';
-  container.innerHTML = '<div style="font-size:8.5px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(200,158,56,.65);margin-bottom:10px;font-family:\'Jost\',sans-serif;display:flex;align-items:center;gap:8px"><span style="height:1px;flex:1;background:rgba(200,158,56,.16)"></span><span>Más secciones</span><span style="height:1px;flex:1;background:rgba(200,158,56,.16)"></span></div>'
+  container.innerHTML = '<div style="font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(200,158,56,.65);margin-bottom:10px;font-family:\'Jost\',sans-serif;display:flex;align-items:center;gap:8px"><span style="height:1px;flex:1;background:rgba(200,158,56,.16)"></span><span>Más secciones</span><span style="height:1px;flex:1;background:rgba(200,158,56,.16)"></span></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+gridHtml+'</div>';
   heroLeft.insertAdjacentElement('beforeend', container);
 }
@@ -3138,7 +3138,7 @@ async function _updateHomeCurrentMoodLine(){
     }catch(e){}
   }
   // Not registered yet — show animated pill
-  el.style.cssText = 'display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:4px 10px;animation:p-breathe 3s ease-in-out infinite';
+  el.style.cssText = 'display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--sage2);background:linear-gradient(135deg,rgba(116,198,157,.18),rgba(183,228,199,.25));border:1px solid rgba(116,198,157,.35);border-radius:100px;padding:4px 10px;animation:p-breathe 3s ease-in-out infinite';
   el.textContent = '🌷 ¿Cómo te sentís hoy?';
 }
 
@@ -3386,7 +3386,7 @@ function _showStreakCelebration(){
   el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);z-index:9999;background:linear-gradient(135deg,rgba(20,55,35,.96),rgba(10,40,22,.98));border:1.5px solid rgba(116,198,157,.45);border-radius:20px;padding:14px 22px;text-align:center;min-width:200px;max-width:280px;box-shadow:0 8px 32px rgba(0,0,0,.35);opacity:0;transition:all .35s cubic-bezier(.2,.8,.2,1);font-family:Jost,sans-serif';
   el.innerHTML = '<div style="font-size:28px;line-height:1;margin-bottom:6px">🔥</div>'
     + '<div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px">'+streak+' días de racha</div>'
-    + (milestone ? '<div style="font-size:12px;color:rgba(116,198,157,.90);margin-top:4px;font-weight:600">'+milestone+'</div>' : '');
+    + (milestone ? '<div style="font-size:14px;color:rgba(116,198,157,.90);margin-top:4px;font-weight:600">'+milestone+'</div>' : '');
   document.body.appendChild(el);
   // Animate in
   requestAnimationFrame(function(){ requestAnimationFrame(function(){
@@ -3422,8 +3422,8 @@ function _loadHomeMemoryCard(){
     + '<div style="font-size:28px;line-height:1;flex-shrink:0">'+found.emoji+'</div>'
     + '<div style="flex:1;min-width:0">'
     + '<div class="home-memo-ago">✨ '+daysLabel+'</div>'
-    + '<div style="font-size:13px;font-weight:600;color:var(--ink2)">Te sentías <strong>'+moodLabel+'</strong></div>'
-    + (found.note ? '<div style="font-size:11px;color:var(--ink4);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+found.note.slice(0,60)+'</div>' : '')
+    + '<div style="font-size:15px;font-weight:600;color:var(--ink2)">Te sentías <strong>'+moodLabel+'</strong></div>'
+    + (found.note ? '<div style="font-size:13px;color:var(--ink4);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+found.note.slice(0,60)+'</div>' : '')
     + '</div>'
     + '<div class="home-memo-ver" onclick="pGoTo(\'mood\')">Ver →</div>'
     + '</div>';
@@ -3572,10 +3572,10 @@ function _showPushPrompt(){
     + '<div style="font-size:26px;line-height:1;flex-shrink:0">🔔</div>'
     + '<div style="flex:1">'
     + '<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">¿Querés un recordatorio diario?</div>'
-    + '<div style="font-size:12px;color:rgba(255,255,255,.65);line-height:1.45;margin-bottom:12px">Mañana, tarde y noche — siempre amigable, nunca spam. Un recordatorio para registrar cómo te sentís.</div>'
+    + '<div style="font-size:14px;color:rgba(255,255,255,.65);line-height:1.45;margin-bottom:12px">Mañana, tarde y noche — siempre amigable, nunca spam. Un recordatorio para registrar cómo te sentís.</div>'
     + '<div style="display:flex;gap:8px">'
-    + '<button onclick="pRequestPushPermission();document.getElementById(\'pushPromptEl\').remove()" style="flex:1;padding:10px 14px;border-radius:12px;border:none;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(116,198,157,.95);font-size:13px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Sí, quiero 💚</button>'
-    + '<button onclick="document.getElementById(\'pushPromptEl\').remove()" style="padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.50);font-size:12px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Ahora no</button>'
+    + '<button onclick="pRequestPushPermission();document.getElementById(\'pushPromptEl\').remove()" style="flex:1;padding:10px 14px;border-radius:12px;border:none;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(116,198,157,.95);font-size:15px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Sí, quiero 💚</button>'
+    + '<button onclick="document.getElementById(\'pushPromptEl\').remove()" style="padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.50);font-size:14px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">Ahora no</button>'
     + '</div>'
     + '</div>'
     + '</div>';
@@ -4040,7 +4040,7 @@ function _updateDqCardReactions(rid){
       if(_liveRxEl){
         var _liveRxHtml = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
           .filter(function(rx){ return _m2[rx.k]&&_m2[rx.k].count>0; })
-          .map(function(rx){ return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(200,158,56,.12);border:1px solid rgba(200,158,56,.28);border-radius:20px;padding:4px 11px;font-size:12.5px">'+rx.e+'<span style="font-size:10.5px;font-weight:700;color:rgba(200,155,40,.90);font-family:Jost,sans-serif">'+_m2[rx.k].count+'</span></span>'; })
+          .map(function(rx){ return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(200,158,56,.12);border:1px solid rgba(200,158,56,.28);border-radius:20px;padding:4px 11px;font-size:14px">'+rx.e+'<span style="font-size:12px;font-weight:700;color:rgba(200,155,40,.90);font-family:Jost,sans-serif">'+_m2[rx.k].count+'</span></span>'; })
           .join('');
         _liveRxEl.innerHTML = _liveRxHtml;
         _liveRxEl.style.display = _liveRxHtml ? 'flex' : 'none';
@@ -4175,7 +4175,7 @@ function _updateMoodChip(){
     +'<div style="position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:64px;height:64px;border-radius:50%;background:radial-gradient(circle,'+glow+' 0%,transparent 70%);pointer-events:none"></div>'
     +'<div style="position:relative;z-index:1;width:48px;height:48px;border-radius:16px;background:'+emojiRing+';border:1.5px solid '+border+';display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;box-shadow:0 2px 12px '+glow+'">'+(emoji||'💚')+'</div>'
     +'<div style="position:relative;z-index:1;flex:1;min-width:0">'
-    +'<div style="font-size:8.5px;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;color:'+subColor+';font-family:Jost,sans-serif;margin-bottom:5px">✦ Registrá tus ánimos</div>'
+    +'<div style="font-size:10px;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;color:'+subColor+';font-family:Jost,sans-serif;margin-bottom:5px">✦ Registrá tus ánimos</div>'
     +(hasEntry
       ? '<div style="font-size:15px;font-weight:800;color:'+textColor+';font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(label||'Registrado hoy')+'</div>'
       : '<div style="font-size:15px;font-weight:800;color:'+textColor+';font-family:Jost,sans-serif;line-height:1.2">¿Cómo te sentís hoy?</div>'
@@ -4258,7 +4258,7 @@ function _renderDailyFeed(responses){
     var _rxMap2 = _dqReactMap[myResp2.id] || {};
     var _rxHtml2 = [{k:'identifico',e:'💚',lbl:'Me identificaron'},{k:'abrazo',e:'🫂',lbl:'Te abrazaron'},{k:'entiendo',e:'💙',lbl:'Te entendieron'}]
       .filter(function(rx){ return _rxMap2[rx.k]&&_rxMap2[rx.k].count>0; })
-      .map(function(rx){ return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(200,158,56,.12);border:1px solid rgba(200,158,56,.28);border-radius:20px;padding:4px 11px;font-size:12.5px">'+rx.e+'<span style="font-size:10.5px;font-weight:700;color:rgba(200,155,40,.90);font-family:Jost,sans-serif">'+_rxMap2[rx.k].count+'</span></span>'; })
+      .map(function(rx){ return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(200,158,56,.12);border:1px solid rgba(200,158,56,.28);border-radius:20px;padding:4px 11px;font-size:14px">'+rx.e+'<span style="font-size:12px;font-weight:700;color:rgba(200,155,40,.90);font-family:Jost,sans-serif">'+_rxMap2[rx.k].count+'</span></span>'; })
       .join('');
     _rxPillsEl2.innerHTML = _rxHtml2;
     _rxPillsEl2.style.display = _rxHtml2 ? 'flex' : 'none';
@@ -4281,7 +4281,7 @@ function _renderDailyFeed(responses){
     return r.user_id !== myUid2 && _dqHidden.indexOf(String(r.id)) === -1;
   });
   if(!others.length){
-    feedEl.innerHTML = '<div style="text-align:center;padding:12px 0;font-size:12.5px;color:rgba(255,255,255,.30);font-family:Jost,sans-serif;font-style:italic">La comunidad aún no compartió hoy 🌱</div>';
+    feedEl.innerHTML = '<div style="text-align:center;padding:12px 0;font-size:14px;color:rgba(255,255,255,.30);font-family:Jost,sans-serif;font-style:italic">La comunidad aún no compartió hoy 🌱</div>';
     if(btnEl) btnEl.innerHTML = '';
     return;
   }
@@ -4291,7 +4291,7 @@ function _renderDailyFeed(responses){
   if(_dqPrevL>0) requestAnimationFrame(function(){ feedEl.scrollLeft = _dqPrevL; });
   if(btnEl){
     if(others.length > 3){
-      btnEl.innerHTML = '<button onclick="pOpenDqAllSheet()" style="width:100%;margin-top:10px;padding:10px 16px;background:rgba(200,158,56,.12);border:1.5px solid rgba(200,158,56,.40);border-radius:14px;color:rgba(220,185,75,.88);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">✦ Ver todas las respuestas ('+others.length+') →</button>';
+      btnEl.innerHTML = '<button onclick="pOpenDqAllSheet()" style="width:100%;margin-top:10px;padding:10px 16px;background:rgba(200,158,56,.12);border:1.5px solid rgba(200,158,56,.40);border-radius:14px;color:rgba(220,185,75,.88);font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">✦ Ver todas las respuestas ('+others.length+') →</button>';
     } else {
       btnEl.innerHTML = '';
     }
@@ -4322,21 +4322,21 @@ function pOpenDqAllSheet(){
     '<div class="p-sheet p-sheet-dark" style="max-height:92vh;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(160deg,rgba(14,10,32,.98),rgba(6,4,20,.99));border-top:2.5px solid rgba(200,158,56,.55)">'
     +'<div class="p-sheet-handle" style="background:rgba(200,158,56,.55)"></div>'
     +'<div style="padding:16px 20px 14px;flex-shrink:0;border-bottom:1px solid rgba(200,158,56,.16)">'
-    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(200,158,56,.75);font-family:\'Jost\',sans-serif;margin-bottom:9px">✨ Pregunta del día</div>'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(200,158,56,.75);font-family:\'Jost\',sans-serif;margin-bottom:9px">✨ Pregunta del día</div>'
     +(q ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16.5px;font-style:italic;font-weight:600;color:rgba(255,255,255,.92);line-height:1.42;padding-left:13px;border-left:2.5px solid rgba(200,158,56,.50)">'+_escHtml(q.text)+'</div>' : '')
     +'</div>'
     +'<div style="display:flex;gap:0;padding:0 20px;border-bottom:1px solid rgba(200,158,56,.12);flex-shrink:0">'
-    +'<button id="dqAllTab1" onclick="pDqAllTabSwitch(1)" style="flex:1;padding:11px 0;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;background:none;border:none;border-bottom:2.5px solid rgba(200,158,56,.75);color:rgba(210,170,60,.95);cursor:pointer">Todas ('+allVis.length+')</button>'
-    +'<button id="dqAllTab2" onclick="pDqAllTabSwitch(2)" style="flex:1;padding:11px 0;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;background:none;border:none;border-bottom:2.5px solid transparent;color:rgba(255,255,255,.38);cursor:pointer">Mi publicación</button>'
+    +'<button id="dqAllTab1" onclick="pDqAllTabSwitch(1)" style="flex:1;padding:11px 0;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;background:none;border:none;border-bottom:2.5px solid rgba(200,158,56,.75);color:rgba(210,170,60,.95);cursor:pointer">Todas ('+allVis.length+')</button>'
+    +'<button id="dqAllTab2" onclick="pDqAllTabSwitch(2)" style="flex:1;padding:11px 0;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;background:none;border:none;border-bottom:2.5px solid transparent;color:rgba(255,255,255,.38);cursor:pointer">Mi publicación</button>'
     +'</div>'
     +'<div id="dqAllTabContent1" style="flex:1;overflow-y:auto;padding:14px 14px 0">'
-    +(allVis.length ? _buildDqCards(allVis) : '<div style="text-align:center;padding:32px;font-size:13px;color:rgba(255,255,255,.30);font-style:italic;font-family:Jost,sans-serif">Nadie ha respondido aún 🌱</div>')
+    +(allVis.length ? _buildDqCards(allVis) : '<div style="text-align:center;padding:32px;font-size:15px;color:rgba(255,255,255,.30);font-style:italic;font-family:Jost,sans-serif">Nadie ha respondido aún 🌱</div>')
     +'</div>'
     +'<div id="dqAllTabContent2" style="display:none;flex:1;overflow-y:auto;padding:16px">'
     +_buildDqMyPubSection(myResp)
     +'</div>'
     +'<div style="padding:10px 20px 16px;flex-shrink:0;border-top:1px solid rgba(200,158,56,.12)">'
-    +'<button onclick="document.getElementById(\'dqAllSheetOv\').remove()" style="width:100%;padding:12px;background:rgba(200,158,56,.08);border:1px solid rgba(200,158,56,.22);border-radius:14px;color:rgba(200,158,56,.65);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
+    +'<button onclick="document.getElementById(\'dqAllSheetOv\').remove()" style="width:100%;padding:12px;background:rgba(200,158,56,.08);border:1px solid rgba(200,158,56,.22);border-radius:14px;color:rgba(200,158,56,.65);font-size:15px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.5px">Cerrar</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
@@ -4380,17 +4380,17 @@ function _buildDqMyPubSection(myResp){
     if(!cnt) return '';
     return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:'+ca(col.strip,'.16')+';border:1px solid '+ca(col.border,'.28')+';border-radius:13px;margin-bottom:8px">'
       +'<span style="font-size:24px;line-height:1">'+rxEmojis[k]+'</span>'
-      +'<div style="flex:1"><div style="font-size:11.5px;font-weight:600;color:'+ca(col.label,'.80')+';font-family:\'Jost\',sans-serif">'+rxLabels[k]+'</div>'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:'+ca(col.label,'.80')+';font-family:\'Jost\',sans-serif">'+rxLabels[k]+'</div>'
       +'<div style="font-size:20px;font-weight:800;color:rgba(255,255,255,.92);font-family:\'Jost\',sans-serif;line-height:1.2">'+cnt+'</div></div>'
       +'</div>';
   }).join('');
-  return '<div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+ca(col.label,'.70')+';font-family:\'Jost\',sans-serif;margin-bottom:13px">✦ Mi publicación</div>'
+  return '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+ca(col.label,'.70')+';font-family:\'Jost\',sans-serif;margin-bottom:13px">✦ Mi publicación</div>'
     +'<div style="background:'+col.bg+';border:1.5px solid '+ca(col.border,'.50')+';border-left:3px solid '+ca(col.border,'.80')+';border-radius:16px;padding:16px 18px;margin-bottom:20px">'
     +'<div style="font-size:17px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:rgba(255,255,255,.93);line-height:1.68;margin-bottom:10px">❝ '+_escHtml(myResp.response_text||'')+' ❞</div>'
-    +'<div style="font-size:11px;color:'+ca(col.label,'.65')+';font-family:\'Jost\',sans-serif">'+myResp.mood_emoji+' · '+_momentoAgo(myResp.created_at||'')+'</div>'
+    +'<div style="font-size:13px;color:'+ca(col.label,'.65')+';font-family:\'Jost\',sans-serif">'+myResp.mood_emoji+' · '+_momentoAgo(myResp.created_at||'')+'</div>'
     +'</div>'
-    +'<div style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,.45);font-family:\'Jost\',sans-serif;margin-bottom:12px;letter-spacing:.3px">Reacciones recibidas</div>'
-    +(totalRx > 0 ? rxHtml : '<div style="text-align:center;padding:20px;font-size:12.5px;color:rgba(255,255,255,.28);font-style:italic;font-family:Jost,sans-serif">Aún no recibiste reacciones 🌙</div>');
+    +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.45);font-family:\'Jost\',sans-serif;margin-bottom:12px;letter-spacing:.3px">Reacciones recibidas</div>'
+    +(totalRx > 0 ? rxHtml : '<div style="text-align:center;padding:20px;font-size:14px;color:rgba(255,255,255,.28);font-style:italic;font-family:Jost,sans-serif">Aún no recibiste reacciones 🌙</div>');
 }
 
 function _dqEmojiColor(emoji){
@@ -4450,8 +4450,8 @@ function _buildDqCards(list){
     var _m = _dqReactMap[r.id] || {};
     var _totalRx = ['identifico','abrazo','entiendo'].reduce(function(s,k){ return s+((_m[k]&&_m[k].count)||0); },0);
     var actionBtn = isOwn
-      ? '<button type="button" onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" style="background:none;border:none;color:rgba(255,90,90,.45);font-size:12px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
-      : '<button type="button" onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" style="background:none;border:none;color:rgba(255,255,255,.18);font-size:11px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
+      ? '<button type="button" onclick="event.stopPropagation();pDeleteMyDqResponse(\''+r.id+'\')" style="background:none;border:none;color:rgba(255,90,90,.45);font-size:14px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🗑️</button>'
+      : '<button type="button" onclick="event.stopPropagation();pReportDqResponse(\''+r.id+'\',\''+r.user_id+'\')" style="background:none;border:none;color:rgba(255,255,255,.18);font-size:13px;cursor:pointer;padding:2px 4px;line-height:1;flex-shrink:0">🚩</button>';
     // Per-user color palette (consistent hash per user_id)
     var col = isDark ? _userColor(r.user_id || r.user_name) : _userColorLight(r.user_id || r.user_name);
     // Avatar
@@ -4466,17 +4466,17 @@ function _buildDqCards(list){
       +avInner
       +'<div style="flex:1;min-width:0;overflow:hidden">'
         +'<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:5px">'
-          +'<span style="font-size:13px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.user_name||'Alguien')+'</span>'
-          +'<span style="font-size:10px;color:'+col.label+';opacity:.55;font-family:Jost,sans-serif;flex-shrink:0;margin-right:6px">'+_momentoAgo(r.created_at||'')+'</span>'
+          +'<span style="font-size:15px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.user_name||'Alguien')+'</span>'
+          +'<span style="font-size:12px;color:'+col.label+';opacity:.55;font-family:Jost,sans-serif;flex-shrink:0;margin-right:6px">'+_momentoAgo(r.created_at||'')+'</span>'
         +'</div>'
         +(r.response_text
           ? '<div style="background:'+col.badge+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.28)')+';border-radius:10px 10px 10px 2px;padding:7px 10px;margin-bottom:4px">'
-            +'<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+col.label+';line-height:1.44;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(r.mood_emoji||'💭')+' '+_escHtml(r.response_text)+'</div>'
+            +'<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+col.label+';line-height:1.44;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(r.mood_emoji||'💭')+' '+_escHtml(r.response_text)+'</div>'
             +'</div>'
-            +'<div style="font-size:9px;color:'+col.label.replace(/[\d.]+\)$/,'0.42)')+';font-family:Jost,sans-serif;letter-spacing:.2px;margin-bottom:5px">💬 Toca para comentar o reaccionar</div>'
+            +'<div style="font-size:11px;color:'+col.label.replace(/[\d.]+\)$/,'0.42)')+';font-family:Jost,sans-serif;letter-spacing:.2px;margin-bottom:5px">💬 Toca para comentar o reaccionar</div>'
           : '<div style="font-size:24px;margin-bottom:7px">'+_escHtml(r.mood_emoji||'💭')+'</div>')
         +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
-          +'<span class="dq-rx-meta" style="font-size:10.5px;font-weight:700;color:'+col.border+';font-family:Jost,sans-serif;flex-shrink:0;white-space:nowrap">'+(_totalRx>0?'💚 '+_totalRx+' · ':'')+'Ver →</span>'
+          +'<span class="dq-rx-meta" style="font-size:12px;font-weight:700;color:'+col.border+';font-family:Jost,sans-serif;flex-shrink:0;white-space:nowrap">'+(_totalRx>0?'💚 '+_totalRx+' · ':'')+'Ver →</span>'
           +actionBtn
         +'</div>'
       +'</div>'
@@ -4484,9 +4484,21 @@ function _buildDqCards(list){
   }).join('');
 }
 
-function pOpenDqResponseSheet(responseId){
-  var r = _dqAllResponses.find(function(x){ return String(x.id) === String(responseId); });
-  if(!r) return;
+async function pOpenDqResponseSheet(responseId){
+  var r = (_dqAllResponses||[]).find(function(x){ return String(x.id) === String(responseId); });
+  if(!r){
+    // Fetch directly from Supabase when not in cache (e.g. opened from notification)
+    _initSupabase();
+    if(sbClient){
+      try{
+        var _fr = await sbClient.from('daily_responses')
+          .select('id,user_id,user_name,user_avatar,response_text,mood_emoji,created_at')
+          .eq('id', String(responseId)).single();
+        if(!_fr.error && _fr.data) r = _fr.data;
+      }catch(e){}
+    }
+    if(!r){ pToast('⚠️','No se encontró la respuesta'); return; }
+  }
   var q = _getDailyQuestion();
   var av = r.user_avatar || '';
   var isImg = av && av.startsWith('http');
@@ -4517,9 +4529,9 @@ function pOpenDqResponseSheet(responseId){
       +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+rd.mine+'" '
       +'style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px 6px 14px;background:'+bg+';border:1.5px solid '+bdr+';border-radius:22px;cursor:pointer;transition:all .22s;box-shadow:'+glow+';font-family:Jost,sans-serif;box-sizing:border-box">'
       +'<span style="font-size:30px;line-height:1;display:block;transition:all .22s;'+emojiScale+'">'+rx.emoji+'</span>'
-      +'<span class="rx-txt" style="font-size:10px;font-weight:700;color:'+txtCol+';text-align:center;letter-spacing:.3px;transition:color .22s;line-height:1.3">'+rx.label+'</span>'
+      +'<span class="rx-txt" style="font-size:12px;font-weight:700;color:'+txtCol+';text-align:center;letter-spacing:.3px;transition:color .22s;line-height:1.3">'+rx.label+'</span>'
       +(rd.count>0
-        ? '<span class="rx-cnt" style="font-size:9px;font-weight:800;color:'+txtCol+';opacity:.65;min-height:13px">'+rd.count+'</span>'
+        ? '<span class="rx-cnt" style="font-size:11px;font-weight:800;color:'+txtCol+';opacity:.65;min-height:13px">'+rd.count+'</span>'
         : '<span class="rx-cnt" style="display:none"></span>')
       +'</button>';
   }).join('');
@@ -4534,7 +4546,7 @@ function pOpenDqResponseSheet(responseId){
   // Zen divider helper
   var _zenDiv = '<div style="display:flex;align-items:center;gap:10px;margin:18px 0">'
     +'<div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,'+col.border.replace(/[\d.]+\)$/,'0.22)')+')">'+'</div>'
-    +'<span style="font-size:11px;color:'+col.label.replace(/[\d.]+\)$/,'0.30)')+'">✦</span>'
+    +'<span style="font-size:13px;color:'+col.label.replace(/[\d.]+\)$/,'0.30)')+'">✦</span>'
     +'<div style="flex:1;height:1px;background:linear-gradient(270deg,transparent,'+col.border.replace(/[\d.]+\)$/,'0.22)')+')">'+'</div>'
     +'</div>';
 
@@ -4545,13 +4557,13 @@ function pOpenDqResponseSheet(responseId){
     +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,.18);border:none;border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.85);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:2">✕</button>'
     +'<div style="display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:10px;margin-top:6px">'
     +'<span style="font-size:36px;line-height:1;filter:drop-shadow(0 0 14px '+col.glow+')">'+r.mood_emoji+'</span>'
-    +'<span style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+_labelFull+';font-family:Jost,sans-serif">✨ Pregunta del día</span>'
+    +'<span style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:'+_labelFull+';font-family:Jost,sans-serif">✨ Pregunta del día</span>'
     +'</div>'
     +'<div style="font-size:15.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+_labelFull+';line-height:1.45;max-width:320px;margin:0 auto 12px;opacity:.92">'+_escHtml(q?q.text:'')+'</div>'
     +'<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 7px;background:'+_stripFaint+';border-radius:100px;border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.35)')+'">'+avHtml
     +'<div style="text-align:left">'
-    +'<div style="font-size:12.5px;font-weight:700;color:'+_labelFull+';font-family:Jost,sans-serif'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
-    +'<div style="font-size:9px;color:'+_labelDim+';font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
+    +'<div style="font-size:14px;font-weight:700;color:'+_labelFull+';font-family:Jost,sans-serif'+(canSeeProfile?';cursor:pointer':'')+'"'+avClick+'>'+_escHtml(r.user_name||'Alguien')+'</div>'
+    +'<div style="font-size:11px;color:'+_labelDim+';font-family:Jost,sans-serif">'+_momentoAgo(r.created_at||new Date().toISOString())+'</div>'
     +'</div></div>'
     +'</div>'
     // Body
@@ -4564,18 +4576,18 @@ function pOpenDqResponseSheet(responseId){
         +'</div>'
       : '')
     +_zenDiv
-    +'<div style="font-size:9.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:'+_labelDim+';font-family:Jost,sans-serif;margin-bottom:12px">¿Cómo te resonó?</div>'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:'+_labelDim+';font-family:Jost,sans-serif;margin-bottom:12px">¿Cómo te resonó?</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:16px">'+rxHtml+'</div>'
     +_zenDiv
     +'<div style="text-align:left;margin-bottom:18px">'
-    +'<div style="font-size:9.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(50,60,50,.60);font-family:Jost,sans-serif;margin-bottom:12px">💬 Hilo de comentarios</div>'
-    +'<div id="dqCommentFeed" style="margin-bottom:14px;background:rgba(255,255,255,.97);border-radius:16px;padding:12px 10px;min-height:60px"><div style="text-align:center;padding:20px 8px;font-size:12px;color:rgba(80,90,80,.55);font-family:Jost,sans-serif">Cargando…</div></div>'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(50,60,50,.60);font-family:Jost,sans-serif;margin-bottom:12px">💬 Hilo de comentarios</div>'
+    +'<div id="dqCommentFeed" style="margin-bottom:14px;background:rgba(255,255,255,.97);border-radius:16px;padding:12px 10px;min-height:60px"><div style="text-align:center;padding:20px 8px;font-size:14px;color:rgba(80,90,80,.55);font-family:Jost,sans-serif">Cargando…</div></div>'
     +'<div style="display:flex;gap:8px;align-items:flex-end">'
-    +'<textarea id="dqCommentInput" rows="2" placeholder="Sumar algo al hilo…" style="flex:1;background:rgba(255,252,240,.97);border:1.5px solid rgba(0,0,0,.12);border-radius:14px;color:rgba(20,25,20,.90);font-size:13px;font-family:\'Jost\',sans-serif;padding:10px 12px;resize:none;outline:none;line-height:1.4"></textarea>'
-    +'<button id="dqCommentBtn" onclick="pPostDqComment(\''+responseId+'\')" style="background:'+col.strip+';border:none;border-radius:12px;color:rgba(255,255,255,.92);font-size:12px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;padding:10px 14px;flex-shrink:0;height:44px;min-width:60px;box-shadow:0 2px 10px '+col.glow+'">Enviar</button>'
+    +'<textarea id="dqCommentInput" rows="2" placeholder="Sumar algo al hilo…" style="flex:1;background:rgba(255,252,240,.97);border:1.5px solid rgba(0,0,0,.12);border-radius:14px;color:rgba(20,25,20,.90);font-size:15px;font-family:\'Jost\',sans-serif;padding:10px 12px;resize:none;outline:none;line-height:1.4"></textarea>'
+    +'<button id="dqCommentBtn" onclick="pPostDqComment(\''+responseId+'\')" style="background:'+col.strip+';border:none;border-radius:12px;color:rgba(255,255,255,.92);font-size:14px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;padding:10px 14px;flex-shrink:0;height:44px;min-width:60px;box-shadow:0 2px 10px '+col.glow+'">Enviar</button>'
     +'</div>'
     +'</div>'
-    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:13px;background:'+_stripFaint+';border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.35)')+';border-radius:100px;color:'+_labelFull+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase">· CERRAR ·</button>'
+    +'<button onclick="document.getElementById(\'dqResponseSheetOv\').remove()" style="width:100%;padding:13px;background:'+_stripFaint+';border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.35)')+';border-radius:100px;color:'+_labelFull+';font-size:13px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase">· CERRAR ·</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
@@ -4691,28 +4703,47 @@ async function _checkVeloNotifs(){
   }catch(e){}
 }
 
+function _navToNotif(type, relatedId){
+  var shOv = document.getElementById('veloNotifsSheetOv');
+  if(shOv) shOv.remove();
+  if(!relatedId) return;
+  if(type === 'dq_comment'){
+    pOpenDqResponseSheet(relatedId);
+  } else if(type === 'momento_comment'){
+    // Navigate home so cache is populated, then open the sheet
+    pGoTo('home');
+    setTimeout(function(){ pOpenMomentoSheet(relatedId); }, 900);
+  }
+}
+
 function _renderVeloNotifs(notifs){
   var typeIcon={dq_comment:'💬',momento_comment:'💬',reaction:'💚'};
+  var typeNavigable={dq_comment:true, momento_comment:true};
   if(!notifs||!notifs.length){
     return '<div style="text-align:center;padding:40px 16px">'
       +'<div style="font-size:44px;margin-bottom:14px;opacity:.40">💬</div>'
-      +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.45);font-family:Jost,sans-serif">Todo al día</div>'
-      +'<div style="font-size:12px;color:rgba(255,255,255,.25);margin-top:8px;line-height:1.55;font-family:Jost,sans-serif">Cuando alguien comente o reaccione a tus publicaciones aparecerá acá</div>'
+      +'<div style="font-size:17px;font-weight:700;color:rgba(255,255,255,.45);font-family:Jost,sans-serif">Todo al día</div>'
+      +'<div style="font-size:14px;color:rgba(255,255,255,.25);margin-top:8px;line-height:1.55;font-family:Jost,sans-serif">Cuando alguien comente o reaccione a tus publicaciones aparecerá acá</div>'
       +'</div>';
   }
   return notifs.map(function(n){
     var icon=typeIcon[n.type]||'🔔';
     var unread=!n.is_read;
+    var canNav=typeNavigable[n.type]&&n.related_id;
     var dot=unread
       ?'<span style="width:8px;height:8px;border-radius:50%;background:rgba(116,198,157,.90);flex-shrink:0;margin-top:5px;box-shadow:0 0 6px rgba(116,198,157,.50)"></span>'
       :'<span style="width:8px;flex-shrink:0"></span>';
-    return '<div style="display:flex;gap:10px;align-items:flex-start;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+    var clickAttr=canNav
+      ?' onclick="_navToNotif(\''+_escHtml(n.type)+'\',\''+_escHtml(String(n.related_id||''))+'\')" style="cursor:pointer"'
+      :'';
+    var navBg = canNav ? (unread ? ';background:rgba(116,198,157,.05)' : '') : '';
+    return '<div'+clickAttr+' style="display:flex;gap:10px;align-items:flex-start;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.06)'+(canNav?';border-radius:12px;transition:background .18s'+navBg:'')+'">'+''
       +dot
       +'<span style="font-size:22px;flex-shrink:0;line-height:1.25">'+icon+'</span>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:13px;font-weight:'+(unread?'700':'500')+';color:rgba(255,255,255,'+(unread?'.90':'.50')+');font-family:Jost,sans-serif;line-height:1.35;margin-bottom:3px">'+_escHtml(n.title||'')+'</div>'
-      +(n.body?'<div style="font-size:11.5px;color:rgba(255,255,255,.36);font-family:Jost,sans-serif;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml('"'+n.body+'"')+'</div>':'')
-      +'<div style="font-size:10px;color:rgba(255,255,255,.25);font-family:Jost,sans-serif;margin-top:4px">'+_momentoAgo(n.created_at||'')+'</div>'
+      +'<div style="font-size:15px;font-weight:'+(unread?'700':'500')+';color:rgba(255,255,255,'+(unread?'.90':'.50')+');font-family:Jost,sans-serif;line-height:1.35;margin-bottom:3px">'+_escHtml(n.title||'')+'</div>'
+      +(n.body?'<div style="font-size:14px;color:rgba(255,255,255,.40);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml('"'+n.body+'"')+'</div>':'')
+      +'<div style="font-size:12px;color:rgba(255,255,255,.25);font-family:Jost,sans-serif;margin-top:4px">'+_momentoAgo(n.created_at||'')+(canNav?'<span style="margin-left:8px;color:rgba(116,198,157,.55);font-size:11px">Ver →</span>':'')+'</div>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -4731,9 +4762,9 @@ async function pOpenVeloNotifsSheet(){
     +'<div style="font-size:15px;font-weight:800;color:rgba(200,240,218,.92);font-family:Jost,sans-serif;letter-spacing:.2px;margin-top:6px">🔔 Actividad</div>'
     +'<button onclick="document.getElementById(\'veloNotifsSheetOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.35);font-size:20px;cursor:pointer;padding:4px;line-height:1;margin-top:6px">×</button>'
     +'</div>'
-    +'<div id="veloNotifsBody" style="padding:0 18px 4px"><div style="text-align:center;padding:32px 8px;font-size:12px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif">Cargando…</div></div>'
+    +'<div id="veloNotifsBody" style="padding:0 18px 4px"><div style="text-align:center;padding:32px 8px;font-size:14px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif">Cargando…</div></div>'
     +'<div style="padding:12px 18px calc(max(16px,env(safe-area-inset-bottom,16px)) + 4px);border-top:1px solid rgba(255,255,255,.06)">'
-    +'<button onclick="pGoTo(\'inbox\');document.getElementById(\'veloNotifsSheetOv\').remove()" style="width:100%;padding:12px;background:rgba(116,198,157,.12);border:1.5px solid rgba(116,198,157,.32);border-radius:100px;color:rgba(160,235,195,.85);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.6px">📥 Ver Buzón Velo →</button>'
+    +'<button onclick="pGoTo(\'inbox\');document.getElementById(\'veloNotifsSheetOv\').remove()" style="width:100%;padding:12px;background:rgba(116,198,157,.12);border:1.5px solid rgba(116,198,157,.32);border-radius:100px;color:rgba(160,235,195,.85);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.6px">📥 Ver Buzón Velo →</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
@@ -4948,7 +4979,7 @@ async function _loadCommunityPulse(){
       var h = total > 0 ? Math.max(4, Math.round((counts[e]/total)*28)) : 4;
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px">'
         +'<div style="width:6px;border-radius:3px;background:rgba(200,158,56,.55);height:'+h+'px;transition:height .4s"></div>'
-        +'<span style="font-size:8px">'+e+'</span>'
+        +'<span style="font-size:10px">'+e+'</span>'
         +'</div>';
     }).join('');
     if(barEl)    barEl.innerHTML = barHTML;
@@ -4966,9 +4997,9 @@ async function _showPulseDetail(){
   var cont = document.getElementById('pulseDetailContent');
   if(!ov || !cont) return;
   ov.style.display = 'flex';
-  cont.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(180,230,210,.60);font-family:Jost,sans-serif;font-size:13px">Cargando…</div>';
+  cont.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(180,230,210,.60);font-family:Jost,sans-serif;font-size:15px">Cargando…</div>';
   if(!sbClient){
-    cont.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(180,230,210,.60);font-family:Jost,sans-serif;font-size:13px">Sin conexión</div>';
+    cont.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(180,230,210,.60);font-family:Jost,sans-serif;font-size:15px">Sin conexión</div>';
     return;
   }
   try{
@@ -4984,10 +5015,10 @@ async function _showPulseDetail(){
     var isUniqueDominant = sorted.length === 1 || (sorted.length > 1 && counts[sorted[1]] < maxCount);
     if(total === 0){
       cont.innerHTML = '<div style="text-align:center;padding:24px"><div style="font-size:36px;margin-bottom:10px">🌿</div>'
-        +'<div style="font-size:13px;color:rgba(180,230,210,.70);font-family:Jost,sans-serif">Nadie respondió todavía.<br>¡Sé el primero!</div></div>';
+        +'<div style="font-size:15px;color:rgba(180,230,210,.70);font-family:Jost,sans-serif">Nadie respondió todavía.<br>¡Sé el primero!</div></div>';
       return;
     }
-    var html = '<div style="text-align:center;font-size:13px;font-weight:600;color:rgba(255,255,255,.75);font-family:Jost,sans-serif;margin-bottom:20px">'
+    var html = '<div style="text-align:center;font-size:15px;font-weight:600;color:rgba(255,255,255,.75);font-family:Jost,sans-serif;margin-bottom:20px">'
       +total+(total===1?' persona respondió hoy':' personas respondieron hoy')
       +'</div>';
     sorted.forEach(function(emoji){
@@ -5000,8 +5031,8 @@ async function _showPulseDetail(){
         +'<div style="font-size:32px;width:40px;text-align:center;flex-shrink:0">'+emoji+'</div>'
         +'<div style="flex:1;min-width:0">'
         +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">'
-        +'<span style="font-size:13px;font-weight:'+(isDom?'800':'600')+';color:'+nameColor+';font-family:Jost,sans-serif">'+(_lbl[emoji]||emoji)+(isDom?' ✦':'')+'</span>'
-        +'<span style="font-size:11px;color:rgba(180,230,210,.60);font-family:Jost,sans-serif">'+cnt+(cnt===1?' persona':' personas')+' · '+pct+'%</span>'
+        +'<span style="font-size:15px;font-weight:'+(isDom?'800':'600')+';color:'+nameColor+';font-family:Jost,sans-serif">'+(_lbl[emoji]||emoji)+(isDom?' ✦':'')+'</span>'
+        +'<span style="font-size:13px;color:rgba(180,230,210,.60);font-family:Jost,sans-serif">'+cnt+(cnt===1?' persona':' personas')+' · '+pct+'%</span>'
         +'</div>'
         +'<div style="height:6px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden">'
         +'<div style="height:6px;background:'+barColor+';border-radius:4px;width:'+pct+'%;transition:width .4s"></div>'
@@ -5011,7 +5042,7 @@ async function _showPulseDetail(){
     });
     cont.innerHTML = html;
   }catch(e){
-    cont.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(180,230,210,.60);font-family:Jost,sans-serif;font-size:13px">No se pudo cargar</div>';
+    cont.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(180,230,210,.60);font-family:Jost,sans-serif;font-size:15px">No se pudo cargar</div>';
   }
 }
 
@@ -5828,13 +5859,13 @@ function pShowGuardianSetupModal(){
     +'<span style="font-size:26px">🛡️</span>'
     +'<div>'
     +'<div style="font-size:16px;font-weight:700;color:var(--ink)">Modo guardián</div>'
-    +'<div style="font-size:12px;color:var(--ink4)">Aparecer disponible para acompañar</div>'
+    +'<div style="font-size:14px;color:var(--ink4)">Aparecer disponible para acompañar</div>'
     +'</div>'
     +'</div>'
-    +'<div style="font-size:10px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">Tu mensaje de bienvenida</div>'
-    +'<textarea id="guardianSetupBio" rows="4" placeholder="¿Desde qué experiencia querés acompañar?" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:12px;font-size:13px;color:var(--ink);font-family:\'Jost\',sans-serif;resize:none;box-sizing:border-box;margin-bottom:14px">'+_escHtml(savedBio)+'</textarea>'
-    +'<div style="font-size:10px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">Temas (separados por coma)</div>'
-    +'<input id="guardianSetupTags" type="text" placeholder="ej: ansiedad, duelo, soledad" value="'+_escHtml(savedTags)+'" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:12px;font-size:13px;color:var(--ink);font-family:\'Jost\',sans-serif;box-sizing:border-box;margin-bottom:20px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">Tu mensaje de bienvenida</div>'
+    +'<textarea id="guardianSetupBio" rows="4" placeholder="¿Desde qué experiencia querés acompañar?" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:12px;font-size:15px;color:var(--ink);font-family:\'Jost\',sans-serif;resize:none;box-sizing:border-box;margin-bottom:14px">'+_escHtml(savedBio)+'</textarea>'
+    +'<div style="font-size:12px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">Temas (separados por coma)</div>'
+    +'<input id="guardianSetupTags" type="text" placeholder="ej: ansiedad, duelo, soledad" value="'+_escHtml(savedTags)+'" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:12px;font-size:15px;color:var(--ink);font-family:\'Jost\',sans-serif;box-sizing:border-box;margin-bottom:20px">'
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSaveGuardianSetup()" style="margin-bottom:10px">Guardar perfil de guardián</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'guardianSetupOv\').remove()">Cancelar</button>'
     +'</div>';
@@ -5996,10 +6027,10 @@ function _renderMyStatusBar(){
     +'<div style="height:2px;background:linear-gradient(90deg,transparent,rgba(116,198,157,.60) 35%,rgba(100,180,255,.50) 75%,transparent)"></div>'
     // Disponibilidad
     +'<div style="padding:14px 16px 12px">'
-    +'<div style="font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.65);font-family:\'Jost\',sans-serif;margin-bottom:10px">💚 Mi disponibilidad</div>'
+    +'<div style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.65);font-family:\'Jost\',sans-serif;margin-bottom:10px">💚 Mi disponibilidad</div>'
     +'<div style="display:flex;gap:6px">'
-    +'<button onclick="pSetMyGuardianStatus(\'disponible\')" style="flex:1;font-size:12px;padding:9px 6px;border-radius:100px;border:1.5px solid '+(dis?'rgba(80,190,140,.80)':'rgba(116,198,157,.20)')+';background:'+(dis?'rgba(80,190,140,.20)':'none')+';color:'+(dis?'rgba(140,230,185,.95)':'rgba(180,220,200,.50)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s">🟢 Disponible</button>'
-    +'<button onclick="pSetMyGuardianStatus(\'ocupado\')" style="flex:1;font-size:12px;padding:9px 6px;border-radius:100px;border:1.5px solid '+(ocu?'rgba(200,165,0,.75)':'rgba(116,198,157,.20)')+';background:'+(ocu?'rgba(200,165,0,.15)':'none')+';color:'+(ocu?'rgba(225,190,60,.90)':'rgba(180,220,200,.50)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s">🟡 Ocupado</button>'
+    +'<button onclick="pSetMyGuardianStatus(\'disponible\')" style="flex:1;font-size:14px;padding:9px 6px;border-radius:100px;border:1.5px solid '+(dis?'rgba(80,190,140,.80)':'rgba(116,198,157,.20)')+';background:'+(dis?'rgba(80,190,140,.20)':'none')+';color:'+(dis?'rgba(140,230,185,.95)':'rgba(180,220,200,.50)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s">🟢 Disponible</button>'
+    +'<button onclick="pSetMyGuardianStatus(\'ocupado\')" style="flex:1;font-size:14px;padding:9px 6px;border-radius:100px;border:1.5px solid '+(ocu?'rgba(200,165,0,.75)':'rgba(116,198,157,.20)')+';background:'+(ocu?'rgba(200,165,0,.15)':'none')+';color:'+(ocu?'rgba(225,190,60,.90)':'rgba(180,220,200,.50)')+';cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s">🟡 Ocupado</button>'
     +'</div>'
     +'</div>'
     +'<div style="height:1px;background:rgba(116,198,157,.14);margin:0 16px"></div>'
@@ -6009,16 +6040,16 @@ function _renderMyStatusBar(){
     +'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px">👤</span>'
     +'<div class="p-tog'+(isIncognito?' on':'')+'" onclick="pToggleIncognito()"><div class="p-tog-k"></div></div>'
     +'</div>'
-    +'<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.88);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.2">Modo incógnito</div>'
-    +'<div style="font-size:9px;color:rgba(180,230,200,.50);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.35">Ocultá tu foto e info</div>'
+    +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.88);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.2">Modo incógnito</div>'
+    +'<div style="font-size:11px;color:rgba(180,230,200,.50);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.35">Ocultá tu foto e info</div>'
     +'</div>'
     +'<div style="width:1px;align-self:stretch;background:rgba(116,198,157,.15);margin:0 8px"></div>'
     +'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">'
     +'<div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px">🛡️</span>'
     +'<div class="p-tog'+(isGuardian?' on':'')+'" onclick="pToggleGuardianMode()"><div class="p-tog-k"></div></div>'
     +'</div>'
-    +'<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.88);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.2">Modo guardián</div>'
-    +'<div style="font-size:9px;color:rgba(180,230,200,.50);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.35">Aparecés en la lista</div>'
+    +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.88);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.2">Modo guardián</div>'
+    +'<div style="font-size:11px;color:rgba(180,230,200,.50);font-family:\'Jost\',sans-serif;text-align:center;line-height:1.35">Aparecés en la lista</div>'
     +'</div>'
     +'</div>'
     +'</div>';
@@ -6090,7 +6121,7 @@ async function pRenderGuardians(){
   if(safeLS('get','velo_is_guardian') === 'true'){
     selfBanner = '<div style="background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.45);border-radius:14px;padding:11px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">'
       +'<span style="font-size:20px">🟢</span>'
-      +'<div style="font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.45">Estás visible como guardián. Las solicitudes de acompañamiento te llegarán acá.</div>'
+      +'<div style="font-size:14px;color:var(--ink);font-weight:600;line-height:1.45">Estás visible como guardián. Las solicitudes de acompañamiento te llegarán acá.</div>'
       +'</div>';
   }
   var _iAmGuardian = safeLS('get','velo_is_guardian') === 'true';
@@ -6115,10 +6146,10 @@ async function pRenderGuardians(){
     var rawId = g.id.replace('live_','');
     var isFav = !isAnon && pIsFav(rawId);
     var gVbadge = gVerified && !isAnon ? '<span class="velo-verified" title="Verificado — Plata o superior">✓</span>' : '';
-    var gVavBadge = gVerified && !isAnon ? '<span style="position:absolute;bottom:-2px;left:-2px;width:14px;height:14px;border-radius:50%;background:#1d9bf0;border:2px solid var(--bg-main,#fff);color:#fff;font-size:8px;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1">✓</span>' : '';
+    var gVavBadge = gVerified && !isAnon ? '<span style="position:absolute;bottom:-2px;left:-2px;width:14px;height:14px;border-radius:50%;background:#1d9bf0;border:2px solid var(--bg-main,#fff);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1">✓</span>' : '';
     var gUsername = (!isAnon && g.username) ? ('<div class="gc-username">@'+_escHtml(g.username)+'</div>') : '';
     var gMotto = !isAnon ? (g.motto || g.bio || '') : '';
-    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span>'+gVavBadge+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.2">'+(isAnon?'Guardián Anónimo':_escHtml(g.name||'—'))+'</span>'+gVbadge+'<span style="font-size:14px">'+badge.icon+'</span></div>'+gUsername+'<div style="font-size:12px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div>'+(gMotto?'<p style="font-size:12px;color:var(--ink4);line-height:1.5;margin:0;font-style:italic">"'+_escHtml(gMotto)+'"</p>':'')+'</div>'
+    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span>'+gVavBadge+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.2">'+(isAnon?'Guardián Anónimo':_escHtml(g.name||'—'))+'</span>'+gVbadge+'<span style="font-size:14px">'+badge.icon+'</span></div>'+gUsername+'<div style="font-size:14px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div>'+(gMotto?'<p style="font-size:14px;color:var(--ink4);line-height:1.5;margin:0;font-style:italic">"'+_escHtml(gMotto)+'"</p>':'')+'</div>'
       +'<div style="display:flex;gap:6px;align-items:center">'
       +(!isAnon ? '<button onclick="event.stopPropagation();'+(isFav?'pRemoveFav':'pAddFav')+'('+_jsAttr(rawId)+','+_jsAttr(g.name)+','+_jsAttr(g.av||'🌿')+');pRenderGuardians()" style="padding:6px 8px;background:'+(isFav?'rgba(255,200,50,.18)':'rgba(255,200,50,.07)')+';border:1px solid rgba(255,200,50,'+(isFav?'.4':'.2')+');border-radius:10px;font-size:15px;cursor:pointer" title="'+(isFav?'Quitar favorito':'Guardar favorito')+'">'+(isFav?'⭐':'☆')+'</button>' : '')
       +'<button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(realSt==='ocupado'?'pToast(\'🟡\','+_jsAttr((isAnon?'Este guardián':''+g.name)+' está ocupado/a ahora')+')':'pOpenGuardian('+_jsAttr(g.id)+')')+'">'+(realSt==='ocupado'?'Ocupado/a':'Solicitar')+'</button>'
@@ -6155,12 +6186,12 @@ function pOpenGuardian(id){
   var badgeHtml = '<div style="display:flex;align-items:center;gap:10px;background:'+(_isDark?'rgba(255,255,255,.07)':'rgba(255,255,255,.7)')+';border:1px solid '+(_isDark?'rgba(116,198,157,.18)':'rgba(0,0,0,.07)')+';border-radius:14px;padding:12px 16px;margin-bottom:14px">'
     +'<span style="font-size:28px">'+badge.icon+'</span>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:13px;font-weight:700;color:var(--ink)">Guardián '+badge.name+'</div>'
-    +'<div style="font-size:11px;color:var(--ink4);margin-bottom:6px">'+g.convs+' conversaciones completadas</div>'
+    +'<div style="font-size:15px;font-weight:700;color:var(--ink)">Guardián '+badge.name+'</div>'
+    +'<div style="font-size:13px;color:var(--ink4);margin-bottom:6px">'+g.convs+' conversaciones completadas</div>'
     +'<div style="height:5px;background:'+(_isDark?'rgba(255,255,255,.12)':'var(--cream2)')+';border-radius:99px;overflow:hidden">'
     +'<div style="height:100%;width:'+tierPct+'%;background:'+badge.color+';border-radius:99px;transition:width .6s"></div>'
     +'</div>'
-    +(badge.next ? '<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+badge.needed+' conversaciones para '+badge.next+'</div>' : '<div style="font-size:10px;color:var(--ink5);margin-top:4px">Nivel máximo ✨</div>')
+    +(badge.next ? '<div style="font-size:12px;color:var(--ink5);margin-top:4px">'+badge.needed+' conversaciones para '+badge.next+'</div>' : '<div style="font-size:12px;color:var(--ink5);margin-top:4px">Nivel máximo ✨</div>')
     +'</div></div>';
   var badgeEl = document.getElementById('gdBadge');
   if(badgeEl) badgeEl.innerHTML = badgeHtml;
@@ -6240,10 +6271,10 @@ function pOpenGuardian(id){
           if(!res || !res.data || !res.data[0]) return;
           var p = res.data[0];
           var items = [
-            p.status_music  ? '<div style="display:flex;align-items:baseline;gap:6px;font-size:13px;color:var(--ink3);line-height:1.5"><span style="min-width:18px">🎵</span><span>'+_escHtml(p.status_music)+'</span></div>'  : '',
-            p.status_film   ? '<div style="display:flex;align-items:baseline;gap:6px;font-size:13px;color:var(--ink3);line-height:1.5"><span style="min-width:18px">🎬</span><span>'+_escHtml(p.status_film)+'</span></div>'   : '',
-            p.status_book   ? '<div style="display:flex;align-items:baseline;gap:6px;font-size:13px;color:var(--ink3);line-height:1.5"><span style="min-width:18px">📖</span><span>'+_escHtml(p.status_book)+'</span></div>'   : '',
-            p.status_phrase ? '<div style="display:flex;align-items:baseline;gap:6px;font-size:13px;color:var(--ink3);line-height:1.5"><span style="min-width:18px">💬</span><span style="font-style:italic">'+_escHtml(p.status_phrase)+'</span></div>' : ''
+            p.status_music  ? '<div style="display:flex;align-items:baseline;gap:6px;font-size:15px;color:var(--ink3);line-height:1.5"><span style="min-width:18px">🎵</span><span>'+_escHtml(p.status_music)+'</span></div>'  : '',
+            p.status_film   ? '<div style="display:flex;align-items:baseline;gap:6px;font-size:15px;color:var(--ink3);line-height:1.5"><span style="min-width:18px">🎬</span><span>'+_escHtml(p.status_film)+'</span></div>'   : '',
+            p.status_book   ? '<div style="display:flex;align-items:baseline;gap:6px;font-size:15px;color:var(--ink3);line-height:1.5"><span style="min-width:18px">📖</span><span>'+_escHtml(p.status_book)+'</span></div>'   : '',
+            p.status_phrase ? '<div style="display:flex;align-items:baseline;gap:6px;font-size:15px;color:var(--ink3);line-height:1.5"><span style="min-width:18px">💬</span><span style="font-style:italic">'+_escHtml(p.status_phrase)+'</span></div>' : ''
           ].filter(Boolean);
           if(items.length && csEl && csCard){
             csEl.innerHTML = items.join('<div style="height:7px"></div>');
@@ -6276,11 +6307,11 @@ function pOpenGuardian(id){
             var dateStr = '';
             try{ var d=new Date(p.created_at); dateStr=d.toLocaleDateString('es',{day:'numeric',month:'short'}); }catch(e){}
             return '<div onclick="pGoTo(\'bitacora\')" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
-              +(p.titulo?'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
-              +'<div style="font-size:11.5px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
+              +(p.titulo?'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
+              +'<div style="font-size:13px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
               +'<div style="display:flex;align-items:center;justify-content:space-between">'
-              +'<span style="font-size:9px;font-weight:700;color:'+col+';border-radius:20px;padding:2px 8px;background:var(--sage7);border:1px solid var(--border)">'+lbl+'</span>'
-              +(dateStr?'<span style="font-size:10px;color:var(--ink5)">'+dateStr+'</span>':'')
+              +'<span style="font-size:11px;font-weight:700;color:'+col+';border-radius:20px;padding:2px 8px;background:var(--sage7);border:1px solid var(--border)">'+lbl+'</span>'
+              +(dateStr?'<span style="font-size:12px;color:var(--ink5)">'+dateStr+'</span>':'')
               +'</div></div>';
           }).join('');
           btCard.style.display = '';
@@ -6392,12 +6423,12 @@ async function pConfirmAskGuardian(){
         +'<div style="text-align:center;margin-bottom:14px">'
         +'<div style="font-size:36px;margin-bottom:8px">💤</div>'
         +'<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px">Sin respuesta</div>'
-        +'<p style="font-size:12.5px;color:var(--ink3);margin:0;line-height:1.55">'+_escHtml(_noRespGuardianName)+' no está disponible ahora. Podés dejarle un mensaje y te responderá por el Buzón Velo.</p>'
+        +'<p style="font-size:14px;color:var(--ink3);margin:0;line-height:1.55">'+_escHtml(_noRespGuardianName)+' no está disponible ahora. Podés dejarle un mensaje y te responderá por el Buzón Velo.</p>'
         +'</div>'
-        +'<textarea id="gdNoRespMsg" rows="3" placeholder="Escribí tu mensaje para '+_escHtml(_noRespGuardianName)+'…" maxlength="500" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-family:\'Jost\',sans-serif;background:var(--cream);color:var(--ink);resize:none;outline:none;margin-bottom:10px"></textarea>'
+        +'<textarea id="gdNoRespMsg" rows="3" placeholder="Escribí tu mensaje para '+_escHtml(_noRespGuardianName)+'…" maxlength="500" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--border2);border-radius:12px;font-size:15px;font-family:\'Jost\',sans-serif;background:var(--cream);color:var(--ink);resize:none;outline:none;margin-bottom:10px"></textarea>'
         +'<div style="display:flex;flex-direction:column;gap:8px">'
-        +'<button id="gdSendNoRespBtn" style="padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">💌 Enviar mensaje al Buzón Velo</button>'
-        +'<button id="gdCancelNoRespBtn" style="padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Intentar en otro momento</button>'
+        +'<button id="gdSendNoRespBtn" style="padding:12px;background:var(--sage);border:none;border-radius:12px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">💌 Enviar mensaje al Buzón Velo</button>'
+        +'<button id="gdCancelNoRespBtn" style="padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:15px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Intentar en otro momento</button>'
         +'</div></div>';
       // Wire buttons after DOM insertion
       var sendBtn   = sheet.querySelector('#gdSendNoRespBtn');
@@ -6440,7 +6471,7 @@ function _showGuardianWaitSheet(name, reqId){
     +'<div style="text-align:center;padding:10px 0 8px">'
     +'<div style="font-size:46px;margin-bottom:12px">💚</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);margin-bottom:8px">Esperando a '+_escHtml(name)+'</div>'
-    +'<p style="font-size:13px;color:var(--ink3);margin:0 0 18px;line-height:1.55">Le avisamos que pediste acompañamiento. Te abriremos el chat apenas acepte 🌿</p>'
+    +'<p style="font-size:15px;color:var(--ink3);margin:0 0 18px;line-height:1.55">Le avisamos que pediste acompañamiento. Te abriremos el chat apenas acepte 🌿</p>'
     +'<div style="font-size:24px;margin-bottom:18px;letter-spacing:3px;color:var(--sage3)">• • •</div>'
     +'</div>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pCancelGuardianWait('+_jsAttr(reqId)+')">Cancelar solicitud</button>'
@@ -6604,8 +6635,8 @@ function _showGuardianRequest(req){
     +'<div style="text-align:center;padding:8px 0 14px">'
     +'<div style="font-size:48px;margin-bottom:10px">'+_avInline(req.seeker_av||'🧑',54)+'</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:6px">'+_escHtml(req.seeker_name||'Alguien')+'</div>'
-    +'<p style="font-size:13px;color:var(--ink3);margin:0 0 12px;line-height:1.5">solicita tu acompañamiento 💚</p>'
-    +(req.context ? '<div style="background:var(--cream2);border-radius:12px;padding:11px 13px;font-size:13px;color:var(--ink3);font-style:italic;text-align:left;line-height:1.55">"'+_escHtml(req.context)+'"</div>' : '')
+    +'<p style="font-size:15px;color:var(--ink3);margin:0 0 12px;line-height:1.5">solicita tu acompañamiento 💚</p>'
+    +(req.context ? '<div style="background:var(--cream2);border-radius:12px;padding:11px 13px;font-size:15px;color:var(--ink3);font-style:italic;text-align:left;line-height:1.55">"'+_escHtml(req.context)+'"</div>' : '')
     +'</div>'
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pAcceptGuardianRequest()" style="margin-bottom:8px">💚 Aceptar y acompañar</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pRejectGuardianRequest()">Ahora no puedo</button>'
@@ -6734,7 +6765,7 @@ async function _gcRender(){
     var msgs = data.filter(function(m){ var t=m.text||''; return sentinels.indexOf(t)<0&&!t.startsWith('__velo_guardian_req__:')&&!t.startsWith('__velo_guardian_acc__:')&&!t.startsWith('__velo_guardian_rej__:')&&!t.startsWith('__velo_guardian_bye__:')&&!t.startsWith('__velo_dm_bye__:')&&!t.startsWith('__velo_help_bye__:'); });
     if(!msgs.length){
       if(!document.getElementById('gcPlaceholder')){
-        el.innerHTML = '<div id="gcPlaceholder" style="text-align:center;padding:34px 16px;color:var(--ink5);font-size:13px;line-height:1.6">Este es un espacio seguro 🌿<br>Escriban con presencia y cuidado.</div>';
+        el.innerHTML = '<div id="gcPlaceholder" style="text-align:center;padding:34px 16px;color:var(--ink5);font-size:15px;line-height:1.6">Este es un espacio seguro 🌿<br>Escriban con presencia y cuidado.</div>';
         _gcLastMsgId = null;
       }
       return;
@@ -6798,7 +6829,7 @@ function _showChatExitBanner(bannerId, messagesElId, inputElId, exitFn, peerName
   banner.style.cssText = 'flex-shrink:0;background:rgba(14,36,22,.97);border-top:1.5px solid rgba(116,198,157,.30);padding:20px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center';
   banner.innerHTML = '<div style="font-size:32px;margin-bottom:2px">👋</div>'
     +'<div style="font-size:15px;font-weight:700;color:#e8f2ec;line-height:1.3">'+_escHtml(peerName)+' abandonó el chat</div>'
-    +'<div style="font-size:12px;color:rgba(255,255,255,.50);margin-bottom:6px">La conversación ha finalizado</div>'
+    +'<div style="font-size:14px;color:rgba(255,255,255,.50);margin-bottom:6px">La conversación ha finalizado</div>'
     +'<button onclick="('+exitFn+')" style="width:100%;max-width:280px;padding:12px 24px;background:rgba(116,198,157,.85);border:none;border-radius:100px;font-size:14px;font-weight:700;color:#0a1810;cursor:pointer;font-family:\'Jost\',sans-serif">Salir ✓</button>';
   chatEl.appendChild(banner);
 }
@@ -6825,8 +6856,8 @@ function _showBuzónAlert(subject, senderId, senderName, senderAv){
     : _avInline(senderAv||'🌿', 34);
   pop.innerHTML = '<div style="width:34px;height:34px;border-radius:50%;background:'+(isDark?'rgba(116,198,157,.22)':'rgba(116,198,157,.18)')+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📬</div>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:11px;font-weight:700;color:'+(isDark?'rgba(116,198,157,.90)':'#1a6b3c')+';margin-bottom:2px;letter-spacing:.4px;text-transform:uppercase">Buzón Velo</div>'
-    +'<div style="font-size:13px;font-weight:600;color:'+(isDark?'rgba(255,255,255,.88)':'#0a1810')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(subject||'Tenés un nuevo mensaje')+'</div>'
+    +'<div style="font-size:13px;font-weight:700;color:'+(isDark?'rgba(116,198,157,.90)':'#1a6b3c')+';margin-bottom:2px;letter-spacing:.4px;text-transform:uppercase">Buzón Velo</div>'
+    +'<div style="font-size:15px;font-weight:600;color:'+(isDark?'rgba(255,255,255,.88)':'#0a1810')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(subject||'Tenés un nuevo mensaje')+'</div>'
     +'</div>';
   pop.onclick = function(){
     pop.remove();
@@ -7066,15 +7097,15 @@ function pRenderProfessionals(){
 
   function _proCard(p){
     var spec = p.spec || p.specialty || 'Especialista';
-    var solidBadge = p.solidarity ? '<span style="font-size:10px;font-weight:700;color:#3a7bd5;background:rgba(58,123,213,.1);border:1px solid rgba(58,123,213,.25);border-radius:100px;padding:2px 8px;margin-left:6px">💙 Solidario/a</span>' : '';
-    return '<div class="p-pro-card" onclick="pOpenProSession(\''+p.id+'\')"><div style="display:flex;align-items:flex-start;gap:14px"><div style="font-size:44px;flex-shrink:0">'+p.av+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+p.name+'</span>'+solidBadge+'</div><span class="pro-rate">$'+p.rate+' <span style="font-size:13px;color:var(--ink4)">'+p.currency+'</span></span></div><div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--sage3)">'+_escHtml(spec)+'</div><p style="font-size:12px;color:var(--ink4);line-height:1.5;margin-bottom:10px">'+p.bio+'</p><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+p.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--ink4)">⭐ '+p.rating+' · '+p.sessions+' sesiones</span><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pOpenBookPro(\''+p.id+'\')">📅 Reservar</button></div></div></div></div>';
+    var solidBadge = p.solidarity ? '<span style="font-size:12px;font-weight:700;color:#3a7bd5;background:rgba(58,123,213,.1);border:1px solid rgba(58,123,213,.25);border-radius:100px;padding:2px 8px;margin-left:6px">💙 Solidario/a</span>' : '';
+    return '<div class="p-pro-card" onclick="pOpenProSession(\''+p.id+'\')"><div style="display:flex;align-items:flex-start;gap:14px"><div style="font-size:44px;flex-shrink:0">'+p.av+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px"><span style="font-size:15px;font-weight:700;color:var(--ink)">'+p.name+'</span>'+solidBadge+'</div><span class="pro-rate">$'+p.rate+' <span style="font-size:15px;color:var(--ink4)">'+p.currency+'</span></span></div><div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--sage3)">'+_escHtml(spec)+'</div><p style="font-size:14px;color:var(--ink4);line-height:1.5;margin-bottom:10px">'+p.bio+'</p><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+p.tags.map(function(t){ return '<span class="p-tag">'+t+'</span>'; }).join('')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;color:var(--ink4)">⭐ '+p.rating+' · '+p.sessions+' sesiones</span><button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();pOpenBookPro(\''+p.id+'\')">📅 Reservar</button></div></div></div></div>';
   }
 
   // Waitlist CTA for users who can't afford sessions
   var waitlistBanner = '<div onclick="pJoinWaitlist()" style="display:flex;align-items:center;gap:12px;background:rgba(58,123,213,.07);border:1.5px solid rgba(58,123,213,.18);border-radius:14px;padding:13px 15px;margin-bottom:16px;cursor:pointer">'
     +'<div style="font-size:24px">💙</div>'
-    +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--ink)">¿No podés pagarlo ahora?</div>'
-    +'<div style="font-size:11px;color:var(--ink4);margin-top:2px">Anotate en la lista de espera solidaria. Profesionales donan 1 sesión/mes para quienes más lo necesitan.</div></div>'
+    +'<div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--ink)">¿No podés pagarlo ahora?</div>'
+    +'<div style="font-size:13px;color:var(--ink4);margin-top:2px">Anotate en la lista de espera solidaria. Profesionales donan 1 sesión/mes para quienes más lo necesitan.</div></div>'
     +'<div style="color:var(--ink5);font-size:16px;flex-shrink:0">›</div>'
     +'</div>';
 
@@ -7100,11 +7131,11 @@ function pOpenProSession(id){
       // Anti-external-contact warning
       '<div style="background:rgba(192,48,40,.07);border:1.5px solid rgba(192,48,40,.18);border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">'
       +'<span style="font-size:18px;flex-shrink:0">⚠️</span>'
-      +'<div style="font-size:12px;color:var(--ink3);line-height:1.6">'
+      +'<div style="font-size:14px;color:var(--ink3);line-height:1.6">'
       +'<strong>Política de protección de la plataforma:</strong> Queda estrictamente prohibido el intercambio de datos de contacto (teléfono, WhatsApp, Instagram, correo personal) entre usuarios y profesionales dentro de Velo. Todas las sesiones deben realizarse exclusivamente a través de la videollamada de Velo. El incumplimiento puede resultar en la suspensión de la cuenta.'
       +'</div></div>'
       // Pro info
-      +'<div class="p-card" style="padding:22px;margin-bottom:14px"><div style="display:flex;align-items:center;gap:14px;margin-bottom:16px"><div style="font-size:52px">'+p.av+'</div><div><div style="font-size:18px;font-weight:700;color:var(--ink)">'+p.name+'</div><div style="font-size:13px;color:var(--sage3);font-weight:600">'+p.spec+'</div><div style="font-size:13px;color:var(--ink4);margin-top:2px">⭐ '+p.rating+' · '+p.sessions+' sesiones</div></div></div><p style="font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:18px">'+p.bio+'</p><div class="p-divider-line"></div><div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0"><span style="font-size:14px;color:var(--ink3)">Precio por sesión</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:28px;font-weight:700;color:var(--sage)">$'+p.rate+' '+p.currency+'</span></div><div class="p-divider-line"></div><div style="font-size:12px;color:var(--ink4);margin:12px 0">🔒 Pago seguro vía Stripe · Videollamada privada en Velo · 80% al profesional</div><button class="p-btn p-btn--primary p-btn--xl p-btn--full" onclick="pStripeCheckout(\''+p.id+'\')">Reservar con Stripe 💳</button><div style="height:8px"></div><button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo(\'professionals\')">Volver</button></div>';
+      +'<div class="p-card" style="padding:22px;margin-bottom:14px"><div style="display:flex;align-items:center;gap:14px;margin-bottom:16px"><div style="font-size:52px">'+p.av+'</div><div><div style="font-size:18px;font-weight:700;color:var(--ink)">'+p.name+'</div><div style="font-size:15px;color:var(--sage3);font-weight:600">'+p.spec+'</div><div style="font-size:15px;color:var(--ink4);margin-top:2px">⭐ '+p.rating+' · '+p.sessions+' sesiones</div></div></div><p style="font-size:15px;color:var(--ink3);line-height:1.6;margin-bottom:18px">'+p.bio+'</p><div class="p-divider-line"></div><div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0"><span style="font-size:14px;color:var(--ink3)">Precio por sesión</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:28px;font-weight:700;color:var(--sage)">$'+p.rate+' '+p.currency+'</span></div><div class="p-divider-line"></div><div style="font-size:14px;color:var(--ink4);margin:12px 0">🔒 Pago seguro vía Stripe · Videollamada privada en Velo · 80% al profesional</div><button class="p-btn p-btn--primary p-btn--xl p-btn--full" onclick="pStripeCheckout(\''+p.id+'\')">Reservar con Stripe 💳</button><div style="height:8px"></div><button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo(\'professionals\')">Volver</button></div>';
   }
   pGoTo('pro-session');
 }
@@ -7196,23 +7227,23 @@ async function pRenderHelp(){
       return '⏳ '+(rem ? hrs+'h '+rem+'min' : hrs+'h')+' restantes';
     })();
     var urgBadge = h.urgencia==='urgente'
-      ? '<span style="font-size:9px;background:rgba(220,50,50,.25);color:'+(isLight?'rgba(180,20,20,.90)':'rgba(255,130,130,.9)')+';border:1px solid rgba(220,50,50,.3);border-radius:6px;padding:1px 6px;margin-left:4px">🔴 Urgente</span>'
+      ? '<span style="font-size:11px;background:rgba(220,50,50,.25);color:'+(isLight?'rgba(180,20,20,.90)':'rgba(255,130,130,.9)')+';border:1px solid rgba(220,50,50,.3);border-radius:6px;padding:1px 6px;margin-left:4px">🔴 Urgente</span>'
       : h.urgencia==='media'
-      ? '<span style="font-size:9px;background:rgba(230,160,20,.2);color:'+(isLight?'rgba(140,90,0,.90)':'rgba(255,200,80,.9)')+';border:1px solid rgba(230,160,20,.25);border-radius:6px;padding:1px 6px;margin-left:4px">🟡 Media</span>'
+      ? '<span style="font-size:11px;background:rgba(230,160,20,.2);color:'+(isLight?'rgba(140,90,0,.90)':'rgba(255,200,80,.9)')+';border:1px solid rgba(230,160,20,.25);border-radius:6px;padding:1px 6px;margin-left:4px">🟡 Media</span>'
       : '';
     var actions = isOwn
-      ? '<span style="font-size:11px;color:'+(isLight?'rgba(10,75,40,.72)':'rgba(116,198,157,.7)')+';font-style:italic">Tu publicación 💙</span>'
-        +'<button onclick="pDeleteHelpPost(\''+h.id+'\')" style="margin-left:8px;padding:4px 10px;background:rgba(220,50,50,.12);border:1px solid rgba(220,50,50,.28);border-radius:100px;color:'+(isLight?'rgba(180,20,20,.85)':'rgba(255,120,120,.8)')+';font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️ Eliminar</button>'
+      ? '<span style="font-size:13px;color:'+(isLight?'rgba(10,75,40,.72)':'rgba(116,198,157,.7)')+';font-style:italic">Tu publicación 💙</span>'
+        +'<button onclick="pDeleteHelpPost(\''+h.id+'\')" style="margin-left:8px;padding:4px 10px;background:rgba(220,50,50,.12);border:1px solid rgba(220,50,50,.28);border-radius:100px;color:'+(isLight?'rgba(180,20,20,.85)':'rgba(255,120,120,.8)')+';font-size:13px;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️ Eliminar</button>'
       : '<button class="p-btn p-btn--primary p-btn--sm" onclick="pAccompanyHelp(\''+h.id+'\')">💚 Acompañar</button>'
-        +'<button style="font-size:11px;font-weight:600;padding:4px 9px;background:rgba(200,50,50,.1);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(190,45,35,.9);cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportContent(\'help\',\''+h.id+'\')">⚠️ Reportar</button>';
+        +'<button style="font-size:13px;font-weight:600;padding:4px 9px;background:rgba(200,50,50,.1);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(190,45,35,.9);cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportContent(\'help\',\''+h.id+'\')">⚠️ Reportar</button>';
     var canClickProfile = !h.anon && !isOwn && h.userId && h.name !== 'Usuario Anónimo';
     var hAv = h.av || h.emoji || '💙';
     var profCall = 'pQuickProfile('+_jsAttr(h.name)+','+_jsAttr(hAv)+',\'\',\'\','+_jsAttr(h.userId||'')+')';
     var uAtTag = _uAt(h.anon ? '' : h.userId);
     var hCol = isLight ? _userColorLight(h.userId && !h.anon ? h.userId : (h.emoji||'💙')) : _userColor(h.userId && !h.anon ? h.userId : (h.emoji||'💙'));
     var nameHtml = canClickProfile
-      ? '<div><span style="font-size:12px;font-weight:700;color:'+hCol.label+';cursor:pointer" onclick="'+profCall+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>'
-      : '<div><span style="font-size:12px;font-weight:700;color:'+hCol.label+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>';
+      ? '<div><span style="font-size:14px;font-weight:700;color:'+hCol.label+';cursor:pointer" onclick="'+profCall+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>'
+      : '<div><span style="font-size:14px;font-weight:700;color:'+hCol.label+'">'+_escHtml(h.name)+'</span>'+uAtTag+'</div>';
     var pDot = (!h.anon && h.userId) ? _presenceDot(h.userId, 10) : '';
     var hAvHasImg = hAv && (hAv.indexOf('data:')===0||hAv.indexOf('http')===0);
     var hAvIsEmoji = hAv && !hAvHasImg;
@@ -7235,7 +7266,7 @@ async function pRenderHelp(){
       +'</div>'
       +'<div style="margin-left:64px;min-height:76px;padding:10px 12px">'
       +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">'
-      +'<div>'+nameHtml+'<div style="display:flex;align-items:center;gap:4px;margin-top:1px">'+urgBadge+'<span style="font-size:10px;color:'+timeColor+'">'+timeStr+'</span></div></div>'
+      +'<div>'+nameHtml+'<div style="display:flex;align-items:center;gap:4px;margin-top:1px">'+urgBadge+'<span style="font-size:12px;color:'+timeColor+'">'+timeStr+'</span></div></div>'
       +'</div>'
       +'<div style="font-size:15px;color:'+bodyTextColor+';line-height:1.55;margin-bottom:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;letter-spacing:.02em">"'+_escHtml(h.preview)+'"</div>'
       +'<div style="display:flex;gap:8px;align-items:center">'+actions+'</div>'
@@ -7369,9 +7400,9 @@ function _showGuardianWaitOverlay(post, myName){
   ov.innerHTML = '<div id="guardianWaitCard" style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center">'
     +'<div style="font-size:44px;margin-bottom:12px">💙</div>'
     +'<div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Esperando respuesta…</div>'
-    +'<div style="font-size:13px;color:var(--ink3);margin-bottom:18px">Le avisamos a <strong>'+_escHtml(post.name)+'</strong> que querés acompañarle. Si no responde en 1 minuto te mostraremos opciones.</div>'
+    +'<div style="font-size:15px;color:var(--ink3);margin-bottom:18px">Le avisamos a <strong>'+_escHtml(post.name)+'</strong> que querés acompañarle. Si no responde en 1 minuto te mostraremos opciones.</div>'
     +'<div id="guardianWaitCountdown" style="font-size:32px;font-weight:800;color:var(--sage);margin-bottom:20px">1:00</div>'
-    +'<button onclick="_guardianCancelWait()" style="padding:10px 24px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:100px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
+    +'<button onclick="_guardianCancelWait()" style="padding:10px 24px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:100px;font-size:15px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
     +'</div>';
   document.body.appendChild(ov);
   // Start countdown display: 1 minute (60s), shown as M:SS
@@ -7427,10 +7458,10 @@ function _guardianRequestExpired(post){
   if(card){
     card.innerHTML = '<div style="font-size:40px;margin-bottom:12px">💤</div>'
       +'<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:10px">Sin respuesta</div>'
-      +'<p style="font-size:13px;color:var(--ink3);margin:0 0 18px;line-height:1.55">Quizás el usuario que estás intentando conectar se desconectó y por eso no responde a la solicitud. Podés intentar en otro momento, o dejarle un mensaje en su buzón.</p>'
+      +'<p style="font-size:15px;color:var(--ink3);margin:0 0 18px;line-height:1.55">Quizás el usuario que estás intentando conectar se desconectó y por eso no responde a la solicitud. Podés intentar en otro momento, o dejarle un mensaje en su buzón.</p>'
       +'<div style="display:flex;flex-direction:column;gap:10px">'
-      +'<button onclick="_guardianCancelWait();pGoTo(\'help\')" style="padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Intentar en otro momento</button>'
-      +'<button onclick="var _r=_pendingGuardianReqId;_guardianCancelWait();_showLeaveMessageModal('+JSON.stringify(post)+',\'Quizás no estaba disponible en ese momento.\',_r)" style="padding:11px;background:var(--sage);border:none;border-radius:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💌 Enviar mensaje al buzón</button>'
+      +'<button onclick="_guardianCancelWait();pGoTo(\'help\')" style="padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:15px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Intentar en otro momento</button>'
+      +'<button onclick="var _r=_pendingGuardianReqId;_guardianCancelWait();_showLeaveMessageModal('+JSON.stringify(post)+',\'Quizás no estaba disponible en ese momento.\',_r)" style="padding:11px;background:var(--sage);border:none;border-radius:12px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💌 Enviar mensaje al buzón</button>'
       +'</div>';
   } else {
     _clearGuardianWaitOverlay();
@@ -7449,11 +7480,11 @@ function _showLeaveMessageModal(post, reason, capturedReqId){
   ov.innerHTML = '<div style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:340px;width:100%">'
     +'<div style="font-size:32px;text-align:center;margin-bottom:10px">💌</div>'
     +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;text-align:center">'+_escHtml(reason)+'</div>'
-    +'<div style="font-size:12px;color:var(--ink3);margin-bottom:14px;text-align:center">¿Querés dejarle un mensaje de apoyo para cuando vuelva?</div>'
-    +'<textarea id="leaveMessageTa" placeholder="Escribí unas palabras de aliento…" rows="3" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--ink);outline:none;resize:none;box-sizing:border-box;font-family:\'Jost\',sans-serif"></textarea>'
+    +'<div style="font-size:14px;color:var(--ink3);margin-bottom:14px;text-align:center">¿Querés dejarle un mensaje de apoyo para cuando vuelva?</div>'
+    +'<textarea id="leaveMessageTa" placeholder="Escribí unas palabras de aliento…" rows="3" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:10px 12px;font-size:15px;color:var(--ink);outline:none;resize:none;box-sizing:border-box;font-family:\'Jost\',sans-serif"></textarea>'
     +'<div style="display:flex;gap:10px;margin-top:14px">'
-    +'<button onclick="document.getElementById(\'leaveMessageOv\').remove();pGoTo(\'help\')" style="flex:1;padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
-    +'<button onclick="_sendLeaveMessage('+_jsAttr(post.id)+')" style="flex:1;padding:11px;background:var(--sage);border:none;border-radius:12px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💙 Enviar</button>'
+    +'<button onclick="document.getElementById(\'leaveMessageOv\').remove();pGoTo(\'help\')" style="flex:1;padding:11px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;font-size:15px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
+    +'<button onclick="_sendLeaveMessage('+_jsAttr(post.id)+')" style="flex:1;padding:11px;background:var(--sage);border:none;border-radius:12px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💙 Enviar</button>'
     +'</div></div>';
   document.body.appendChild(ov);
 }
@@ -7527,11 +7558,11 @@ function _showSeekerGuardianPopup(postId, row){
     +'<div style="font-size:44px;margin-bottom:10px">'+_avInline(guardianAv,52)+'</div>'
     +'<div style="font-size:17px;font-weight:700;color:'+titleClr+';margin-bottom:8px;font-family:\'Cormorant Garamond\',serif">Un guardián quiere acompañarte 💙</div>'
     +'<div style="font-size:14px;color:'+bodyClr+';margin-bottom:6px"><strong>'+_escHtml(guardianName)+'</strong> vio tu mensaje y está aquí para escucharte.</div>'
-    +'<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.30);border-radius:100px;margin-bottom:10px"><span style="font-size:11px">💚</span><span style="font-size:11px;font-weight:700;color:rgba(116,198,157,.90);font-family:\'Jost\',sans-serif">Guardián verificado de la comunidad Velo</span></div>'
-    +'<div style="font-size:12px;color:'+subClr+';margin-bottom:10px">¿Aceptás el acompañamiento ahora?</div>'
+    +'<div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.30);border-radius:100px;margin-bottom:10px"><span style="font-size:13px">💚</span><span style="font-size:13px;font-weight:700;color:rgba(116,198,157,.90);font-family:\'Jost\',sans-serif">Guardián verificado de la comunidad Velo</span></div>'
+    +'<div style="font-size:14px;color:'+subClr+';margin-bottom:10px">¿Aceptás el acompañamiento ahora?</div>'
     +'<div id="seekerGuardianCountdown" style="font-size:28px;font-weight:800;color:'+cdClr+';margin-bottom:18px">80</div>'
     +'<div style="display:flex;gap:10px">'
-    +'<button onclick="_seekerDeclineRequest(\''+reqId+'\',\''+postId+'\')" style="flex:1;padding:12px;background:'+skipBg+';border:1.5px solid '+skipBrd+';border-radius:12px;font-size:13px;font-weight:600;color:'+skipClr+';cursor:pointer;font-family:\'Jost\',sans-serif">Ahora no</button>'
+    +'<button onclick="_seekerDeclineRequest(\''+reqId+'\',\''+postId+'\')" style="flex:1;padding:12px;background:'+skipBg+';border:1.5px solid '+skipBrd+';border-radius:12px;font-size:15px;font-weight:600;color:'+skipClr+';cursor:pointer;font-family:\'Jost\',sans-serif">Ahora no</button>'
     +'<button onclick="_seekerAcceptRequest('+_jsAttr(reqId)+','+_jsAttr(postId)+','+_jsAttr(guardianName)+','+_jsAttr(guardianAv)+','+_jsAttr(row.guardian_id||'')+')\" style="flex:1;padding:12px;background:#1B5E3A;border:none;border-radius:12px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">💚 Aceptar</button>'
     +'</div></div>';
   document.body.appendChild(ov);
@@ -7947,18 +7978,18 @@ function _showHelpChatRating(post){
   ov.innerHTML = '<div style="background:'+cardBg+';border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center;'+cardBrd+'">'
     +'<div style="font-size:44px;margin-bottom:12px">💚</div>'
     +'<div style="font-size:17px;font-weight:700;color:'+titleClr+';margin-bottom:6px;font-family:\'Cormorant Garamond\',serif">¡Conversación finalizada!</div>'
-    +'<div style="font-size:13px;color:'+subClr+';margin-bottom:20px;line-height:1.5">Gracias por acompañar y ser acompañado/a. 🌿</div>'
+    +'<div style="font-size:15px;color:'+subClr+';margin-bottom:20px;line-height:1.5">Gracias por acompañar y ser acompañado/a. 🌿</div>'
     +(post && post.userId && post.userId !== 'anon' && !post.anon
       ? pIsFav(post.userId)
         // Already a favorite — skip the add prompt, go straight to review
-        ? '<div style="margin-bottom:16px;padding:12px 14px;background:'+favBg+';border-radius:14px;border:1px solid '+favBrd+';font-size:12px;color:'+favTxtClr+';font-weight:600">⭐ Ya tenés a esta persona en favoritos</div>'
+        ? '<div style="margin-bottom:16px;padding:12px 14px;background:'+favBg+';border-radius:14px;border:1px solid '+favBrd+';font-size:14px;color:'+favTxtClr+';font-weight:600">⭐ Ya tenés a esta persona en favoritos</div>'
         // Not yet a favorite — show the add prompt
         : '<div style="margin-bottom:16px;padding:14px;background:'+favBg+';border-radius:14px;border:1px solid '+favBrd+'">'
-          +'<div style="font-size:12px;color:'+favTxtClr+';margin-bottom:10px;font-weight:600">¿Querés mantener contacto con esta persona?</div>'
+          +'<div style="font-size:14px;color:'+favTxtClr+';margin-bottom:10px;font-weight:600">¿Querés mantener contacto con esta persona?</div>'
           +'<button onclick="pAddFav('+_jsAttr(post.userId)+','+_jsAttr(post.name||'Usuario')+','+_jsAttr(post.emoji||'🧑')+');document.getElementById(\'helpRatingOv\').remove();pGoTo(\'post-chat\')" style="padding:11px 22px;background:'+favBtnBg+';border:1.5px solid '+favBrd+';border-radius:100px;font-size:14px;font-weight:700;color:'+favBtnClr+';cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">⭐ Guardar en favoritos</button>'
           +'</div>'
       : '')
-    +'<button onclick="document.getElementById(\'helpRatingOv\').remove();pGoTo(\'post-chat\')" style="padding:12px 28px;background:'+skipBg+';border:1.5px solid '+skipBrd+';border-radius:100px;font-size:13px;font-weight:600;color:'+skipClr+';cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">'+(post && post.userId && post.userId !== 'anon' && !post.anon && pIsFav(post.userId) ? 'Ir a la reseña →' : 'Omitir')+'</button>'
+    +'<button onclick="document.getElementById(\'helpRatingOv\').remove();pGoTo(\'post-chat\')" style="padding:12px 28px;background:'+skipBg+';border:1.5px solid '+skipBrd+';border-radius:100px;font-size:15px;font-weight:600;color:'+skipClr+';cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">'+(post && post.userId && post.userId !== 'anon' && !post.anon && pIsFav(post.userId) ? 'Ir a la reseña →' : 'Omitir')+'</button>'
     +'</div>';
   document.body.appendChild(ov);
 }
@@ -8317,7 +8348,7 @@ function _showDailyGreeting(saludo, msg){
       // text
       +'<div style="flex:1;min-width:0;padding-top:2px">'
         +'<div style="'
-          +'font-size:10px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;'
+          +'font-size:12px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;'
           +'color:rgba(116,198,157,.75);margin-bottom:6px'
         +'">Acompañante Velo</div>'
         // Fixed greeting line (Buenos días / tardes / noches)
@@ -8336,7 +8367,7 @@ function _showDailyGreeting(saludo, msg){
       +'<button onclick="pDismissGreeting()" style="'
         +'flex-shrink:0;width:30px;height:30px;border-radius:50%;'
         +'background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);'
-        +'color:var(--sage3);font-size:13px;cursor:pointer;'
+        +'color:var(--sage3);font-size:15px;cursor:pointer;'
         +'display:flex;align-items:center;justify-content:center;'
         +'font-family:\'Jost\',sans-serif;transition:all .15s;align-self:flex-start;margin-top:1px'
       +'">✕</button>'
@@ -8450,7 +8481,7 @@ async function pRenderNews(forceRefresh){
     // Subtle top banner while fetching fresh news in background
     var _ub=document.createElement('div');
     _ub.id='newsUpdBanner';
-    _ub.style.cssText='text-align:center;padding:8px 12px;margin-bottom:10px;border-radius:10px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.20);color:var(--ink4);font-size:12px;opacity:.75';
+    _ub.style.cssText='text-align:center;padding:8px 12px;margin-bottom:10px;border-radius:10px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.20);color:var(--ink4);font-size:14px;opacity:.75';
     _ub.textContent='🔄 Buscando noticias frescas del día…';
     if(newsEl) newsEl.insertBefore(_ub, newsEl.firstChild);
   }
@@ -8580,7 +8611,7 @@ function _newsReadingBadgeHtml(){
   var streakTxt = streak >= 2 ? ' · <strong>'+streak+' días seguidos 🔥</strong>' : '';
   return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:11px 14px;background:linear-gradient(90deg,rgba(116,198,157,.10),rgba(116,198,157,.05));border:1px solid rgba(116,198,157,.22);border-radius:14px">'
     +'<span style="font-size:22px">🌞</span>'
-    +'<div style="font-size:12px;color:var(--ink3);line-height:1.5">Leíste <strong style="color:var(--sage2)">'+count+' noticia'+(count!==1?'s':'')+' buena'+(count!==1?'s':'')+'</strong> esta semana'+streakTxt+'</div>'
+    +'<div style="font-size:14px;color:var(--ink3);line-height:1.5">Leíste <strong style="color:var(--sage2)">'+count+' noticia'+(count!==1?'s':'')+' buena'+(count!==1?'s':'')+'</strong> esta semana'+streakTxt+'</div>'
     +'</div>';
 }
 
@@ -8624,16 +8655,16 @@ function _renderNewsList(el, items){
       // Feature 3: "Noticia del día" — hero card with newspaper front-page design
       heroHtml = '<div onclick="pOpenNewsDetail(0)" style="cursor:pointer;margin-bottom:18px;border-radius:22px;overflow:hidden;background:linear-gradient(145deg,rgba(116,198,157,.14) 0%,rgba(116,198,157,.06) 100%);border:1.5px solid rgba(116,198,157,.28);box-shadow:0 4px 24px rgba(116,198,157,.10)">'
         +'<div style="padding:14px 16px 6px;display:flex;align-items:center;gap:6px">'
-        +'<span style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#fff;background:rgba(20,110,70,.80);padding:3px 10px;border-radius:100px;border:1px solid rgba(116,198,157,.55)">🗞️ NOTICIA DEL DÍA</span>'
+        +'<span style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#fff;background:rgba(20,110,70,.80);padding:3px 10px;border-radius:100px;border:1px solid rgba(116,198,157,.55)">🗞️ NOTICIA DEL DÍA</span>'
         +'</div>'
         +'<div style="padding:8px 18px 6px;text-align:center">'
         +'<div style="font-size:56px;line-height:1;margin-bottom:10px">'+_escHtml(item.emoji||'📰')+'</div>'
         +'<h3 style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:10px">'+_escHtml(item.titulo)+'</h3>'
-        +'<p style="font-size:13.5px;color:var(--ink2);line-height:1.7;margin-bottom:14px">'+_escHtml(item.cuerpo)+'</p>'
+        +'<p style="font-size:15px;color:var(--ink2);line-height:1.7;margin-bottom:14px">'+_escHtml(item.cuerpo)+'</p>'
         +'</div>'
         +'<div style="padding:10px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-top:1px solid rgba(116,198,157,.12)">'
         +_sourceTag(item)
-        +'<button onclick="event.stopPropagation();pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+');" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(20,110,70,.78);border:1px solid rgba(116,198,157,.5);border-radius:100px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
+        +'<button onclick="event.stopPropagation();pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+');" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(20,110,70,.78);border:1px solid rgba(116,198,157,.5);border-radius:100px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
         +'</div>'
         +'</div>';
     } else {
@@ -8642,8 +8673,8 @@ function _renderNewsList(el, items){
         +'<div style="font-size:32px;line-height:1;flex-shrink:0">'+_escHtml(item.emoji||'📰')+'</div>'
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;color:var(--ink);margin-bottom:5px;font-weight:700;line-height:1.3">'+_escHtml(item.titulo)+'</div>'
-        +'<div style="font-size:12.5px;color:var(--ink2);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
-        +'<div style="margin-top:9px;font-size:11px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+        +'<div style="font-size:14px;color:var(--ink2);line-height:1.6">'+_escHtml(item.cuerpo)+'</div>'
+        +'<div style="margin-top:9px;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
         +_sourceTag(item)
         +'</div>'
         +'</div>'
@@ -8652,7 +8683,7 @@ function _renderNewsList(el, items){
     }
   });
 
-  el.innerHTML = _newsReadingBadgeHtml() + heroHtml + (items.length > 1 ? '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:10px;margin-top:4px">MÁS NOTICIAS</div>' : '') + restHtml;
+  el.innerHTML = _newsReadingBadgeHtml() + heroHtml + (items.length > 1 ? '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:10px;margin-top:4px">MÁS NOTICIAS</div>' : '') + restHtml;
 }
 
 var _newsListCache = [];
@@ -8667,17 +8698,17 @@ function pOpenNewsDetail(i){
   var _dateStr = _nd.getDate()+' de '+_months[_nd.getMonth()]+' de '+_cy2;
   var _detailNewsSearch = 'https://news.google.com/search?q='+encodeURIComponent((item.titulo||'')+' '+_cy2)+'&hl=es-419';
   var sourceRef = item.titulo
-    ? '<a href="'+_escHtml(_detailNewsSearch)+'" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--sage2);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px">🔗 Buscar en Google News</a>'
-    : '<span style="font-size:12px;color:var(--ink4);font-style:italic">✨ Historia de bienestar · Velo IA</span>';
+    ? '<a href="'+_escHtml(_detailNewsSearch)+'" target="_blank" rel="noopener noreferrer" style="font-size:14px;color:var(--sage2);font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px">🔗 Buscar en Google News</a>'
+    : '<span style="font-size:14px;color:var(--ink4);font-style:italic">✨ Historia de bienestar · Velo IA</span>';
   var sourceBlock = '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-bottom:18px;padding:10px 14px;background:rgba(116,198,157,.07);border-radius:10px;border:1px solid rgba(116,198,157,.18)">'
-    +'<span style="font-size:12px;color:var(--ink4)">📅 '+_dateStr+'</span>'
-    +'<span style="color:var(--ink5);font-size:12px">·</span>'
+    +'<span style="font-size:14px;color:var(--ink4)">📅 '+_dateStr+'</span>'
+    +'<span style="color:var(--ink5);font-size:14px">·</span>'
     +sourceRef
     +'</div>';
   // Feature 5: share buttons row
   var shareRow = '<div style="display:flex;gap:8px;margin-bottom:14px">'
-    +'<button onclick="pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:rgba(20,110,70,.78);border:1.5px solid rgba(116,198,157,.45);border-radius:14px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
-    +'<button id="newsCopyBtn" onclick="pCopyNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+',this)" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:rgba(116,198,157,.08);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;font-size:13px;font-weight:700;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">📋 Copiar</button>'
+    +'<button onclick="pShareNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:rgba(20,110,70,.78);border:1.5px solid rgba(116,198,157,.45);border-radius:14px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif">📤 Compartir</button>'
+    +'<button id="newsCopyBtn" onclick="pCopyNewsItem('+_jsAttr(item.titulo)+','+_jsAttr(item.cuerpo)+','+_jsAttr(item.sourceUrl||'')+',this)" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:rgba(116,198,157,.08);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;font-size:15px;font-weight:700;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif">📋 Copiar</button>'
     +'</div>';
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
@@ -8689,8 +8720,8 @@ function pOpenNewsDetail(i){
     +sourceBlock
     +'<p style="font-size:14px;color:var(--ink2);line-height:1.75;margin-bottom:20px">'+_escHtml(item.cuerpo)+'</p>'
     +'<div style="background:var(--sage7);border-radius:12px;padding:12px 14px;margin-bottom:20px">'
-    +'<div style="font-size:11px;font-weight:700;color:var(--sage3);letter-spacing:.5px;margin-bottom:6px">✨ REFLEXIÓN VELO IA</div>'
-    +'<p style="font-size:13px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+_escHtml(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
+    +'<div style="font-size:13px;font-weight:700;color:var(--sage3);letter-spacing:.5px;margin-bottom:6px">✨ REFLEXIÓN VELO IA</div>'
+    +'<p style="font-size:15px;color:var(--ink3);line-height:1.65;margin:0;font-style:italic">'+_escHtml(item.reflexion||'Cada buena noticia nos recuerda que el mundo avanza con esperanza.')+'</p>'
     +'</div>'
     +'<a href="'+_escHtml(_detailNewsSearch)+'" target="_blank" rel="noopener noreferrer" class="p-btn p-btn--secondary p-btn--lg p-btn--full" style="display:block;text-align:center;text-decoration:none;margin-bottom:12px;background:var(--sage7);border-color:rgba(116,198,157,.4);color:var(--sage2)">🔍 Buscar en Google News</a>'
     +shareRow
@@ -8760,7 +8791,7 @@ function _showCalmChips(){
   wrap.id = 'calmChips';
   wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;padding:6px 0 10px';
   wrap.innerHTML = chips.map(function(c){
-    return '<button onclick="pCalmChipSend('+_jsAttr(c.text)+')" style="padding:8px 13px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.25);border-radius:100px;font-size:12px;color:rgba(255,255,255,.72);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">'+c.label+'</button>';
+    return '<button onclick="pCalmChipSend('+_jsAttr(c.text)+')" style="padding:8px 13px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.25);border-radius:100px;font-size:14px;color:rgba(255,255,255,.72);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">'+c.label+'</button>';
   }).join('');
   msgEl.appendChild(wrap);
   msgEl.scrollTop = msgEl.scrollHeight;
@@ -8790,11 +8821,11 @@ function _initCalmAIPage(){
     var snippet = _lt ? _escHtml(_lt.slice(0,65))+(_lt.length>65?'…':'') : '';
     var resumeDiv = document.createElement('div');
     resumeDiv.style.cssText = 'margin:16px 0 8px;padding:14px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.22);border-radius:16px;text-align:center';
-    resumeDiv.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,.45);margin-bottom:6px;letter-spacing:.3px">CONVERSACIÓN DE HOY</div>'
-      +'<div style="font-size:12.5px;color:rgba(255,255,255,.6);font-style:italic;margin-bottom:12px;line-height:1.5">"'+snippet+'"</div>'
+    resumeDiv.innerHTML = '<div style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:6px;letter-spacing:.3px">CONVERSACIÓN DE HOY</div>'
+      +'<div style="font-size:14px;color:rgba(255,255,255,.6);font-style:italic;margin-bottom:12px;line-height:1.5">"'+snippet+'"</div>'
       +'<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'
-      +'<button onclick="_calmResumeSession()" style="padding:9px 18px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.38);border-radius:100px;font-size:12px;font-weight:700;color:rgba(116,198,157,.9);cursor:pointer;font-family:\'Jost\',sans-serif">↩️ Retomar conversación</button>'
-      +'<button onclick="_calmStartFresh()" style="padding:9px 18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:100px;font-size:12px;color:rgba(255,255,255,.45);cursor:pointer;font-family:\'Jost\',sans-serif">Empezar de nuevo</button>'
+      +'<button onclick="_calmResumeSession()" style="padding:9px 18px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.38);border-radius:100px;font-size:14px;font-weight:700;color:rgba(116,198,157,.9);cursor:pointer;font-family:\'Jost\',sans-serif">↩️ Retomar conversación</button>'
+      +'<button onclick="_calmStartFresh()" style="padding:9px 18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:100px;font-size:14px;color:rgba(255,255,255,.45);cursor:pointer;font-family:\'Jost\',sans-serif">Empezar de nuevo</button>'
       +'</div>';
     if(msgEl) msgEl.appendChild(resumeDiv);
   } else {
@@ -8896,7 +8927,7 @@ async function pSendCalmAIMsg(){
   var typingDiv = document.createElement('div');
   typingDiv.id = 'calmAITyping';
   typingDiv.className = 'feed-msg';
-  typingDiv.innerHTML = '<div class="feed-av">🌿</div><div><div class="feed-sender" style="font-size:11px;color:var(--ink4)">Acompañante Velo</div><div class="feed-bubble" style="color:var(--ink4);font-style:italic">Escribiendo…</div></div>';
+  typingDiv.innerHTML = '<div class="feed-av">🌿</div><div><div class="feed-sender" style="font-size:13px;color:var(--ink4)">Acompañante Velo</div><div class="feed-bubble" style="color:var(--ink4);font-style:italic">Escribiendo…</div></div>';
   if(msgEl){ msgEl.appendChild(typingDiv); msgEl.scrollTop = msgEl.scrollHeight; }
 
   // Mood context — inject today's mood if the user logged one
@@ -9175,13 +9206,13 @@ async function _renderPersonalizedSuggestions(){
   }
   if(!sugs.length){ el.style.display='none'; return; }
   el.style.display = '';
-  el.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);margin-bottom:10px">Sugerido para vos 💡</div>'
+  el.innerHTML = '<div style="font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);margin-bottom:10px">Sugerido para vos 💡</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     +sugs.map(function(s){
       return '<div class="p-card p-card--hover" style="padding:14px;cursor:pointer" onclick="pGoTo(\''+_escHtml(s.page||'home')+'\')">'
         +'<div style="font-size:22px;margin-bottom:6px">'+s.icon+'</div>'
         +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:15px;color:var(--ink);margin-bottom:4px">'+_escHtml(s.titulo)+'</div>'
-        +'<div style="font-size:11px;color:var(--ink4);line-height:1.4">'+_escHtml(s.razon)+'</div>'
+        +'<div style="font-size:13px;color:var(--ink4);line-height:1.4">'+_escHtml(s.razon)+'</div>'
         +'</div>';
     }).join('')
     +'</div>';
@@ -9214,8 +9245,8 @@ function pOpenGuide(){
   var cards=sections.map(function(s){
     return '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px">'
       +'<span style="font-size:22px;flex-shrink:0;line-height:1;margin-top:1px">'+s.icon+'</span>'
-      +'<div><div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:3px">'+_escHtml(s.name)+'</div>'
-      +'<div style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.6">'+_escHtml(s.desc)+'</div></div>'
+      +'<div><div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:3px">'+_escHtml(s.name)+'</div>'
+      +'<div style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.6">'+_escHtml(s.desc)+'</div></div>'
       +'</div>';
   }).join('');
   var ov=document.createElement('div');
@@ -9228,9 +9259,9 @@ function pOpenGuide(){
   ov.innerHTML='<div class="p-sheet p-sheet-dark" id="veloGuideSheet" style="padding:0">'
     +'<div style="position:sticky;top:0;z-index:2;background:#0E1C14;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07)">'
     +'<div>'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:4px">GUÍA DE VELO</div>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:4px">GUÍA DE VELO</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:#fff;font-weight:300;line-height:1.2">¿Qué hace cada sección?</div>'
-    +'<div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;margin-top:4px">Todo lo que podés hacer dentro de la app.</div>'
+    +'<div style="font-size:14px;color:rgba(255,255,255,.45);line-height:1.5;margin-top:4px">Todo lo que podés hacer dentro de la app.</div>'
     +'</div>'
     +'<button onclick="document.getElementById(\'veloGuideOv\').remove();_syncBodyScroll()" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);font-size:16px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:10px">✕</button>'
     +'</div>'
@@ -9407,8 +9438,8 @@ function _renderSOSResources(){
   var selectedCountry = _sosCountry || countries[0];
 
   var selectorHtml = '<div style="margin-bottom:14px">'
-    +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:1px;display:block;margin-bottom:6px">SELECCIONÁ TU PAÍS</label>'
-    +'<select id="sosCountrySel" onchange="pSosCountry(this.value)" tabindex="-1" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:13px;font-weight:600;font-family:\'Jost\',sans-serif;cursor:pointer">'
+    +'<label style="font-size:13px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:1px;display:block;margin-bottom:6px">SELECCIONÁ TU PAÍS</label>'
+    +'<select id="sosCountrySel" onchange="pSosCountry(this.value)" tabindex="-1" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:15px;font-weight:600;font-family:\'Jost\',sans-serif;cursor:pointer">'
     +countries.map(function(c){
       return '<option value="'+c+'" style="background:#0B1810;color:#fff"'+(c===selectedCountry?' selected':'')+'>'+c+'</option>';
     }).join('')
@@ -9419,14 +9450,14 @@ function _renderSOSResources(){
   var linesHtml = lines.map(function(r){
     var isUrl = r.url.startsWith('http');
     return '<a href="'+r.url+'" '+(isUrl?'target="_blank" rel="noopener"':'')+' style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(192,48,40,.08);border:1px solid rgba(192,48,40,.18);border-radius:14px;margin-bottom:8px;text-decoration:none">'
-      +'<div><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);margin-bottom:2px">'+r.label+'</div><div style="font-size:15px;color:#fff;font-weight:700">'+r.num+'</div></div>'
+      +'<div><div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.45);margin-bottom:2px">'+r.label+'</div><div style="font-size:15px;color:#fff;font-weight:700">'+r.num+'</div></div>'
       +'<span style="font-size:20px">'+(isUrl?'🌐':'📞')+'</span>'
       +'</a>';
   }).join('');
 
   el.innerHTML = selectorHtml + linesHtml
     +'<div style="margin-top:14px;padding:12px;background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.12);border-radius:12px;text-align:center">'
-    +'<p style="font-size:11px;color:rgba(255,255,255,.4);line-height:1.5;margin:0">Esta información es de carácter informativo y se actualiza periódicamente. En caso de emergencia, contactá siempre al número de emergencias de tu país.</p>'
+    +'<p style="font-size:13px;color:rgba(255,255,255,.4);line-height:1.5;margin:0">Esta información es de carácter informativo y se actualiza periódicamente. En caso de emergencia, contactá siempre al número de emergencias de tu país.</p>'
     +'</div>';
   // iOS Safari scrolls the sheet to the first focusable element (<select>) when it's injected.
   // Reset scrollTop immediately and again after the next paint so the header stays visible.
@@ -9497,23 +9528,23 @@ async function pRenderBottleResponses(){
     return '<div class="dark-bottle bottle-replied-card" style="border-left:3px solid rgba(80,150,200,.35);padding:14px 14px 12px">'
       // Header
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
-      +'<span style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(80,150,200,.75);font-family:\'Jost\',sans-serif">💬 Conversación</span>'
+      +'<span style="font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(80,150,200,.75);font-family:\'Jost\',sans-serif">💬 Conversación</span>'
       +'<span class="bottle-replied-meta">'+relTime+' · expira en '+expireLabel+'</span>'
       +'</div>'
       // Their message — left bubble
       +'<div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:10px">'
       +'<div '+authorClick+'>'+avHtml+'</div>'
       +'<div style="flex:1;background:rgba(80,150,200,.09);border:1px solid rgba(80,150,200,.20);border-radius:0 14px 14px 14px;padding:10px 13px">'
-      +'<div style="font-size:10px;font-weight:700;color:rgba(80,150,200,.80);font-family:\'Jost\',sans-serif;margin-bottom:5px">🌊 '+_escHtml(authorName)+'</div>'
-      +'<div style="font-size:13px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:var(--ink);line-height:1.55">"'+(r.preview?_escHtml(r.preview.slice(0,160)+(r.preview.length>160?'…':'')):'')+'"</div>'
+      +'<div style="font-size:12px;font-weight:700;color:rgba(80,150,200,.80);font-family:\'Jost\',sans-serif;margin-bottom:5px">🌊 '+_escHtml(authorName)+'</div>'
+      +'<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:var(--ink);line-height:1.55">"'+(r.preview?_escHtml(r.preview.slice(0,160)+(r.preview.length>160?'…':'')):'')+'"</div>'
       +'</div>'
       +'</div>'
       // My reply — right bubble
       +'<div style="display:flex;gap:9px;align-items:flex-start;flex-direction:row-reverse">'
       +_avInline(myAv, 28)
       +'<div style="flex:1;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);border-radius:14px 0 14px 14px;padding:10px 13px;text-align:right">'
-      +'<div style="font-size:10px;font-weight:700;color:rgba(116,198,157,.80);font-family:\'Jost\',sans-serif;margin-bottom:5px">'+_escHtml(myName)+' (vos) 💚</div>'
-      +'<div style="font-size:13px;color:var(--ink);line-height:1.55">'+_escHtml(r.reply||'')+'</div>'
+      +'<div style="font-size:12px;font-weight:700;color:rgba(116,198,157,.80);font-family:\'Jost\',sans-serif;margin-bottom:5px">'+_escHtml(myName)+' (vos) 💚</div>'
+      +'<div style="font-size:15px;color:var(--ink);line-height:1.55">'+_escHtml(r.reply||'')+'</div>'
       +'</div>'
       +'</div>'
       +'</div>';
@@ -9661,15 +9692,15 @@ async function pRenderBottle(){
     var _replyTextColor=_isLightBottle?'rgba(12,58,138,.90)':'rgba(160,215,255,.96)';
     if(isOwn){
       actions = '<div style="display:flex;gap:7px;align-items:center">'
-        +'<span style="font-size:11px;color:'+_ownMsgColor+';font-style:italic;font-family:\'Jost\',sans-serif">Tu mensaje 🌊</span>'
-        +'<button data-del-btn="1" style="padding:4px 10px;background:rgba(220,50,50,.14);border:1.5px solid rgba(220,50,50,.32);border-radius:100px;color:'+_delBtnColor+';font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pDeleteBottle(\''+b.id+'\')">🗑️</button>'
+        +'<span style="font-size:13px;color:'+_ownMsgColor+';font-style:italic;font-family:\'Jost\',sans-serif">Tu mensaje 🌊</span>'
+        +'<button data-del-btn="1" style="padding:4px 10px;background:rgba(220,50,50,.14);border:1.5px solid rgba(220,50,50,.32);border-radius:100px;color:'+_delBtnColor+';font-size:13px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pDeleteBottle(\''+b.id+'\')">🗑️</button>'
         +'</div>';
     } else {
       actions = '<div style="display:flex;gap:7px;align-items:center">'
-        +'<button style="padding:5px 11px;background:rgba(200,50,50,.14);border:1.5px solid rgba(200,50,50,.32);border-radius:100px;color:rgba(190,30,30,.88);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
+        +'<button style="padding:5px 11px;background:rgba(200,50,50,.14);border:1.5px solid rgba(200,50,50,.32);border-radius:100px;color:rgba(190,30,30,.88);font-size:13px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pReportBottle(\''+b.id+'\')">🚩 Reportar</button>'
         +(alreadyReplied
-          ? '<span style="font-size:11px;color:rgba(116,198,157,.85);font-weight:700;font-family:\'Jost\',sans-serif">💛 Ya respondiste</span>'
-          : '<button style="padding:5px 14px;background:rgba(65,155,222,.22);border:1.5px solid rgba(65,155,222,.55);border-radius:100px;color:'+_replyTextColor+';font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;box-shadow:0 2px 10px rgba(65,155,222,.20)" onclick="pOpenBottleReply('+_jsAttr(b.id)+','+_jsAttr(b.text.substring(0,120))+','+_jsAttr(b.userId||b.user_id||'')+','+_jsAttr(b.anon?'':''+( b.userName||''))+','+_jsAttr(b.anon?'':''+( b.userAv||''))+')">💌 Responder</button>')
+          ? '<span style="font-size:13px;color:rgba(116,198,157,.85);font-weight:700;font-family:\'Jost\',sans-serif">💛 Ya respondiste</span>'
+          : '<button style="padding:5px 14px;background:rgba(65,155,222,.22);border:1.5px solid rgba(65,155,222,.55);border-radius:100px;color:'+_replyTextColor+';font-size:13px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;box-shadow:0 2px 10px rgba(65,155,222,.20)" onclick="pOpenBottleReply('+_jsAttr(b.id)+','+_jsAttr(b.text.substring(0,120))+','+_jsAttr(b.userId||b.user_id||'')+','+_jsAttr(b.anon?'':''+( b.userName||''))+','+_jsAttr(b.anon?'':''+( b.userAv||''))+')">💌 Responder</button>')
         +'</div>';
     }
     var isLight=!document.body.classList.contains('r-dark');
@@ -9684,15 +9715,15 @@ async function pRenderBottle(){
     var avCircleBg = isLight?'rgba(0,0,0,.06)':'rgba(255,255,255,.10)';
     var cardBorder = isLight?bCol.border.replace(/[\d.]+\)$/,'.30)'):'rgba(255,255,255,.07)';
     var authorNameHtml = isOwn
-      ? '<span style="font-size:11px;font-weight:700;color:'+bCol.label+'">'+(myName||'Tú')+'</span>'
+      ? '<span style="font-size:13px;font-weight:700;color:'+bCol.label+'">'+(myName||'Tú')+'</span>'
       : showAuthor
         ? (bAvHasImg
             ? '<img src="'+_escHtml(_bav)+'" style="width:15px;height:15px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:3px;border:1px solid '+bCol.border+'">'
-            : (bAvIsEmoji ? '<span style="font-size:12px;vertical-align:middle;margin-right:3px">'+_escHtml(_bav)+'</span>' : ''))
-          +'<span style="font-size:11px;font-weight:700;color:'+bCol.label+';cursor:pointer" onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')">'
+            : (bAvIsEmoji ? '<span style="font-size:14px;vertical-align:middle;margin-right:3px">'+_escHtml(_bav)+'</span>' : ''))
+          +'<span style="font-size:13px;font-weight:700;color:'+bCol.label+';cursor:pointer" onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')">'
           +_escHtml(b.userName)+'</span>'
           +(_uAt(b.userId||''))
-        : '<span style="font-size:11px;font-weight:700;color:'+anonColor+';letter-spacing:.2px">Anónimo/a</span>';
+        : '<span style="font-size:13px;font-weight:700;color:'+anonColor+';letter-spacing:.2px">Anónimo/a</span>';
     var stripInnerB = bAvHasImg
       ? '<img src="'+_escHtml(_bav)+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2.5px solid '+bCol.border+';display:block;box-shadow:0 2px 12px '+bCol.glow+'">'
       : bAvIsEmoji
@@ -9710,8 +9741,8 @@ async function pRenderBottle(){
       +'<div style="margin-left:64px;min-height:76px;padding:10px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
       +authorNameHtml
-      +(alreadyReplied?'<span style="font-size:9px;font-weight:700;color:rgba(116,198,157,.80);background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.28);border-radius:100px;padding:1px 7px;margin-left:auto">💌 Respondiste</span>'
-        :'<span style="margin-left:auto;font-size:9px;font-weight:700;color:'+bCol.label.replace(/[\d.]+\)$/,'0.60)')+';font-family:\'Jost\',sans-serif">'+relTime+'</span>')
+      +(alreadyReplied?'<span style="font-size:11px;font-weight:700;color:rgba(116,198,157,.80);background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.28);border-radius:100px;padding:1px 7px;margin-left:auto">💌 Respondiste</span>'
+        :'<span style="margin-left:auto;font-size:11px;font-weight:700;color:'+bCol.label.replace(/[\d.]+\)$/,'0.60)')+';font-family:\'Jost\',sans-serif">'+relTime+'</span>')
       +'</div>'
       +'<p style="font-size:15px;color:'+bodyTextColor+';line-height:1.55;margin:0 0 9px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;letter-spacing:.01em">"'+_escHtml(b.text)+'"</p>'
       +'<div style="display:flex;align-items:center;justify-content:flex-end">'+actions+'</div>'
@@ -9964,11 +9995,11 @@ function _openDiaryEmojiPicker(){
   ov.style.cssText = 'position:fixed;inset:0;z-index:9100;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.5)';
   var html = '<div style="background:var(--cream);border-radius:20px 20px 0 0;padding:20px 16px 28px;width:100%;max-width:560px;max-height:70vh;overflow-y:auto">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
-    +'<div style="font-size:13px;font-weight:700;color:var(--ink)">Elegí un emoji</div>'
+    +'<div style="font-size:15px;font-weight:700;color:var(--ink)">Elegí un emoji</div>'
     +'<button onclick="document.getElementById(\'diaryEmojiPickerOv\').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--ink4)">✕</button>'
     +'</div>';
   groups.forEach(function(g){
-    html += '<div style="font-size:10px;font-weight:700;color:var(--ink4);letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px">'+g.label+'</div>';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--ink4);letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px">'+g.label+'</div>';
     html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
     g.emojis.forEach(function(em){
       html += '<button onclick="_setDiaryEmoji(\''+em+'\')" style="background:none;border:none;cursor:pointer;font-size:24px;padding:4px;border-radius:8px;line-height:1">'+em+'</button>';
@@ -10183,10 +10214,10 @@ function pOpenDiaryEntry(ts){
     var _uname = safeLS('get','velo_user_name') || '';
     if(_av.startsWith('data:') || _av.startsWith('http')){
       avEl.innerHTML = '<img src="'+_av+'" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid rgba(170,130,45,.45)">'
-        + (_uname ? '<span style="font-size:11px;font-family:\'Jost\',sans-serif;color:#7a5020;font-weight:700;margin-top:4px;display:block;text-align:center">'+_escHtml(_uname)+'</span>' : '');
+        + (_uname ? '<span style="font-size:13px;font-family:\'Jost\',sans-serif;color:#7a5020;font-weight:700;margin-top:4px;display:block;text-align:center">'+_escHtml(_uname)+'</span>' : '');
     } else {
       avEl.innerHTML = '<div style="width:52px;height:52px;border-radius:50%;background:rgba(200,160,60,.15);border:2px solid rgba(170,130,45,.45);display:flex;align-items:center;justify-content:center;font-size:28px">'+_av+'</div>'
-        + (_uname ? '<span style="font-size:11px;font-family:\'Jost\',sans-serif;color:#7a5020;font-weight:700;margin-top:4px;display:block;text-align:center">'+_escHtml(_uname)+'</span>' : '');
+        + (_uname ? '<span style="font-size:13px;font-family:\'Jost\',sans-serif;color:#7a5020;font-weight:700;margin-top:4px;display:block;text-align:center">'+_escHtml(_uname)+'</span>' : '');
     }
   }
   var dateEl   = document.getElementById('diaryEntryDate');
@@ -10375,7 +10406,7 @@ async function _moodQVNav(delta){
 
   function _buildNavCal(mMap){
     var h='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 auto 16px;max-width:330px">';
-    ['L','M','M','J','V','S','D'].forEach(function(dd){h+='<div style="text-align:center;font-size:9px;font-weight:700;color:var(--ink5);padding:2px 0">'+dd+'</div>';});
+    ['L','M','M','J','V','S','D'].forEach(function(dd){h+='<div style="text-align:center;font-size:11px;font-weight:700;color:var(--ink5);padding:2px 0">'+dd+'</div>';});
     var fd=new Date(ny,nm,1).getDay(); fd=fd===0?6:fd-1;
     for(var i=0;i<fd;i++)h+='<div></div>';
     for(var d2=1;d2<=daysInMonth;d2++){
@@ -10383,8 +10414,8 @@ async function _moodQVNav(delta){
       var ent=mMap[dk2];
       var isT=ny===now.getFullYear()&&nm===now.getMonth()&&d2===now.getDate();
       h+='<div style="aspect-ratio:1;border-radius:8px;background:'+(ent?'rgba(116,198,157,.2)':'var(--cream2)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+(isT?'outline:2px solid var(--sage);outline-offset:1px':'')+'">'
-        +'<span style="font-size:9px;color:'+(ent?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+d2+'</span>'
-        +(ent?'<span style="font-size:13px;line-height:1">'+ent.emoji+'</span>':'')+'</div>';
+        +'<span style="font-size:11px;color:'+(ent?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+d2+'</span>'
+        +(ent?'<span style="font-size:15px;line-height:1">'+ent.emoji+'</span>':'')+'</div>';
     }
     return h+'</div>';
   }
@@ -10432,7 +10463,7 @@ async function pOpenMoodQuickView(){
   function _buildCalHtml(mMap){
     var html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 auto 16px;max-width:330px">';
     ['L','M','M','J','V','S','D'].forEach(function(d){
-      html += '<div style="text-align:center;font-size:9px;font-weight:700;color:var(--ink5);padding:2px 0">'+d+'</div>';
+      html += '<div style="text-align:center;font-size:11px;font-weight:700;color:var(--ink5);padding:2px 0">'+d+'</div>';
     });
     var firstDay = new Date(year, month, 1).getDay();
     firstDay = firstDay === 0 ? 6 : firstDay - 1;
@@ -10442,8 +10473,8 @@ async function pOpenMoodQuickView(){
       var entry = mMap[dk];
       var isToday = d === now.getDate();
       html += '<div style="aspect-ratio:1;border-radius:8px;background:'+(entry?'rgba(116,198,157,.2)':'var(--cream2)')+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+(isToday?'outline:2px solid var(--sage);outline-offset:1px':'')+'">'
-        +'<span style="font-size:9px;color:'+(entry?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+d+'</span>'
-        +(entry?'<span style="font-size:13px;line-height:1">'+entry.emoji+'</span>':'')
+        +'<span style="font-size:11px;color:'+(entry?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+d+'</span>'
+        +(entry?'<span style="font-size:15px;line-height:1">'+entry.emoji+'</span>':'')
         +'</div>';
     }
     return html + '</div>';
@@ -10454,12 +10485,12 @@ async function pOpenMoodQuickView(){
   var reports = inbox.filter(function(m){ return m.tipo==='reporte' && m.icon==='📊'; }).slice(0,5);
   var reportsHtml = '';
   if(reports.length){
-    reportsHtml = '<div style="margin-top:4px"><div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--ink5);text-transform:uppercase;margin-bottom:10px">Últimos reportes</div>'
+    reportsHtml = '<div style="margin-top:4px"><div style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--ink5);text-transform:uppercase;margin-bottom:10px">Últimos reportes</div>'
       + reports.map(function(r){
         return '<div style="background:var(--cream2);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer" onclick="document.getElementById(\'moodQuickOv\').remove();pOpenInboxMsg(\''+r.id+'\',null)">'
-          +'<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(r.asunto||'Reporte mensual')+'</div>'
-          +'<div style="font-size:11px;color:var(--ink4);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5">'+_escHtml(r.extracto||'')+'</div>'
-          +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+_escHtml(r.fecha||'')+'</div>'
+          +'<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(r.asunto||'Reporte mensual')+'</div>'
+          +'<div style="font-size:13px;color:var(--ink4);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5">'+_escHtml(r.extracto||'')+'</div>'
+          +'<div style="font-size:12px;color:var(--ink5);margin-top:4px">'+_escHtml(r.fecha||'')+'</div>'
           +'</div>';
       }).join('')
       + '</div>';
@@ -10473,12 +10504,12 @@ async function pOpenMoodQuickView(){
     +'<div class="p-sheet-handle"></div>'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
     +'<button onclick="_moodQVNav(-1)" style="width:32px;height:32px;border-radius:50%;background:var(--cream2);border:none;font-size:18px;cursor:pointer;color:var(--ink3);flex-shrink:0;line-height:1">‹</button>'
-    +'<div style="text-align:center"><div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--sage3);text-transform:uppercase">Seguimiento</div>'
+    +'<div style="text-align:center"><div style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--sage3);text-transform:uppercase">Seguimiento</div>'
     +'<div id="moodQVTitle" style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink)">'+monthNames[month]+' '+year+'</div></div>'
     +'<button onclick="document.getElementById(\'moodQuickOv\').remove()" style="width:32px;height:32px;border-radius:50%;background:var(--cream2);border:none;font-size:16px;cursor:pointer;color:var(--ink4);flex-shrink:0">✕</button>'
     +'</div>'
-    +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:var(--sage2)">🔒 Solo vos podés ver estos registros</div>'
-    +'<div style="background:rgba(221,212,245,.15);border:1px solid rgba(196,181,232,.3);border-radius:10px;padding:9px 12px;margin-bottom:14px;font-size:11px;color:var(--ink3);line-height:1.55">✨ La IA genera un reporte mensual con análisis de tus ánimos registrados. Lo recibirás en tu <strong>Buzón Velo</strong> el día 1 de cada mes 💌</div>'
+    +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:var(--sage2)">🔒 Solo vos podés ver estos registros</div>'
+    +'<div style="background:rgba(221,212,245,.15);border:1px solid rgba(196,181,232,.3);border-radius:10px;padding:9px 12px;margin-bottom:14px;font-size:13px;color:var(--ink3);line-height:1.55">✨ La IA genera un reporte mensual con análisis de tus ánimos registrados. Lo recibirás en tu <strong>Buzón Velo</strong> el día 1 de cada mes 💌</div>'
     +'<div id="moodQVCal">'+_buildCalHtml(moodMap)+'</div>'
     + reportsHtml
     +'<div style="height:8px"></div>'
@@ -10645,7 +10676,7 @@ async function _adminLoadSurveys(){
 
 function _renderSurveyResults(responses){
   if(!responses || !responses.length){
-    return '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin respuestas aún.</p>';
+    return '<p style="font-size:14px;color:rgba(255,255,255,.3);padding:12px 0">Sin respuestas aún.</p>';
   }
   var total = responses.length;
   var avgGeneral    = (responses.reduce(function(s,r){ return s + ((r.scores&&r.scores.general)||r.general||0); }, 0) / total).toFixed(1);
@@ -10664,32 +10695,32 @@ function _renderSurveyResults(responses){
     return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
       +'<div style="flex:1;height:7px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden">'
       +'<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:99px;transition:width .5s"></div></div>'
-      +'<span style="font-size:13px;font-weight:800;color:'+color+';min-width:28px;text-align:right">'+val+'</span>'
+      +'<span style="font-size:15px;font-weight:800;color:'+color+';min-width:28px;text-align:right">'+val+'</span>'
       +'</div>';
   }
 
   return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">'
     +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:12px;text-align:center">'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px">Satisfacción general</div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:6px">Satisfacción general</div>'
     +scoreBar(avgGeneral)+'</div>'
     +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:12px;text-align:center">'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px">Utilidad</div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:6px">Utilidad</div>'
     +scoreBar(avgUtilidad)+'</div>'
     +'<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:12px;text-align:center">'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px">Recomendaría (NPS)</div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:6px">Recomendaría (NPS)</div>'
     +scoreBar(avgRecomend)+'</div>'
     +'</div>'
     +'<div style="display:flex;gap:10px;margin-bottom:14px">'
     +'<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px;flex:1">'
-    +'<span style="font-size:10px;color:rgba(255,255,255,.35);letter-spacing:1px">FUNCIÓN MÁS USADA</span>'
+    +'<span style="font-size:12px;color:rgba(255,255,255,.35);letter-spacing:1px">FUNCIÓN MÁS USADA</span>'
     +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.8);margin-top:4px">'+_escHtml(topFunc)+'</div></div>'
     +'<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px;flex:1">'
-    +'<span style="font-size:10px;color:rgba(255,255,255,.35);letter-spacing:1px">RESPUESTAS TOTALES</span>'
+    +'<span style="font-size:12px;color:rgba(255,255,255,.35);letter-spacing:1px">RESPUESTAS TOTALES</span>'
     +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.8);margin-top:4px">'+total+'</div></div>'
     +'</div>'
-    +(sugs.length ? '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:8px">SUGERENCIAS (anónimas)</div>'
+    +(sugs.length ? '<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:8px">SUGERENCIAS (anónimas)</div>'
       + sugs.map(function(r){
-          return '<div style="background:rgba(255,255,255,.04);border-left:3px solid rgba(116,198,157,.4);border-radius:0 8px 8px 0;padding:8px 10px;margin-bottom:6px;font-size:12px;color:rgba(255,255,255,.6);line-height:1.5">'+_escHtml(r.sugerencia)+'</div>';
+          return '<div style="background:rgba(255,255,255,.04);border-left:3px solid rgba(116,198,157,.4);border-radius:0 8px 8px 0;padding:8px 10px;margin-bottom:6px;font-size:14px;color:rgba(255,255,255,.6);line-height:1.5">'+_escHtml(r.sugerencia)+'</div>';
         }).join('')
     : '');
 }
@@ -10870,7 +10901,7 @@ async function _loadMoodCalendar(){
     var entry = moodMap[k];
     var isToday2 = dd === now.getDate();
     html += '<div style="aspect-ratio:1;background:'+(entry?'rgba(116,198,157,.18)':'rgba(0,0,0,.04)')+';border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+(isToday2?'outline:2px solid var(--sage);outline-offset:1px;':'')+'" title="'+k+'">'
-      +'<span style="font-size:9px;color:'+(entry?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+dd+'</span>'
+      +'<span style="font-size:11px;color:'+(entry?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+dd+'</span>'
       +(entry?'<span style="font-size:14px;line-height:1">'+entry.emoji+'</span>':'')
       +'</div>';
   }
@@ -10884,8 +10915,8 @@ async function _loadMoodCalendar(){
         var e = moodMap[k];
         return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'
           +'<span style="font-size:20px">'+e.emoji+'</span>'
-          +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">'+e.label+'</div>'
-          +'<div style="font-size:11px;color:var(--ink5)">'+k+(e.note?' · '+e.note:'')+'</div></div>'
+          +'<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600;color:var(--ink)">'+e.label+'</div>'
+          +'<div style="font-size:13px;color:var(--ink5)">'+k+(e.note?' · '+e.note:'')+'</div></div>'
           +'<button onclick="pDeleteMood(\''+k+'\')" style="font-size:14px;background:none;border:none;cursor:pointer;color:var(--ink5);padding:4px 6px;border-radius:6px;flex-shrink:0" title="Eliminar registro">🗑️</button>'
           +'</div>';
       }).join('');
@@ -11266,7 +11297,7 @@ function pRenderCircles(){
   if(notice){
     if(!canCreate){
       var convsFalta = 40 - userConvs;
-      notice.innerHTML = '<div style="font-size:12px;color:var(--ink4);background:var(--sage7);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:14px;line-height:1.5">'
+      notice.innerHTML = '<div style="font-size:14px;color:var(--ink4);background:var(--sage7);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:14px;line-height:1.5">'
         +'🛡️ Los Círculos los crean <strong>Guardianes Oro</strong> (40+ conversaciones). '
         +'Te faltan <strong>'+convsFalta+' conversaciones</strong> para llegar a Oro, o podés activar <strong>Velo Plus</strong> para crearlo ahora.'
         +'</div>';
@@ -11320,24 +11351,24 @@ function _circleCardHtml(c, memberCounts){
     ? '<img src="'+c.foto+'" alt="" style="width:52px;height:52px;border-radius:18px;object-fit:cover;flex-shrink:0">'
     : '<div style="font-size:34px;width:52px;height:52px;border-radius:18px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative">'
       +c.emoji
-      +(c.official ? '<span style="position:absolute;bottom:-4px;right:-4px;font-size:12px;background:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)" title="Sala oficial Velo">🛡️</span>' : '')
+      +(c.official ? '<span style="position:absolute;bottom:-4px;right:-4px;font-size:14px;background:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15)" title="Sala oficial Velo">🛡️</span>' : '')
       +'</div>';
   return '<div class="circle-card'+(c.official?' circle-card--official':'')+'" id="circlecard-'+c.id+'" onclick="pOpenCircle(\''+c.id+'\')">'
     +'<div style="display:flex;align-items:center;gap:13px">'
     +imgHtml
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">'+c.name+'</div>'
-    +'<div style="font-size:12px;color:var(--ink2);margin-bottom:5px">'+c.desc+'</div>'
+    +'<div style="font-size:14px;color:var(--ink2);margin-bottom:5px">'+c.desc+'</div>'
     +'<div style="height:5px"></div>'
     +'<div style="display:flex;align-items:center;gap:6px">'
     +'<div style="flex:1;height:4px;background:var(--cream2);border-radius:100px;overflow:hidden"><div style="height:100%;width:'+capPct+'%;background:'+(isFull?'var(--sos)':'var(--sage3)')+';border-radius:100px"></div></div>'
-    +'<span class="circle-member-count-'+c.id+'" style="font-size:10px;color:var(--ink3);font-weight:600">'+memberCount+'/'+maxM+'</span>'
-    +(isFull ? '<span style="font-size:10px;color:var(--sos);font-weight:700">Lleno</span>' : '')
+    +'<span class="circle-member-count-'+c.id+'" style="font-size:12px;color:var(--ink3);font-weight:600">'+memberCount+'/'+maxM+'</span>'
+    +(isFull ? '<span style="font-size:12px;color:var(--sos);font-weight:700">Lleno</span>' : '')
     +'</div>'
     +'</div>'
     +'<div style="text-align:right;flex-shrink:0;margin-left:6px">'
-    +(c.active ? '<span class="p-pill p-pill--live" style="font-size:10px"><span class="p-ldot p-ldot--on"></span> Activo</span><br>' : '')
-    +(c.official ? '<span style="font-size:10px;color:var(--sage);font-weight:700">Oficial</span>' : '')
+    +(c.active ? '<span class="p-pill p-pill--live" style="font-size:12px"><span class="p-ldot p-ldot--on"></span> Activo</span><br>' : '')
+    +(c.official ? '<span style="font-size:12px;color:var(--sage);font-weight:700">Oficial</span>' : '')
     +'</div>'
     +'</div>'
     +'</div>';
@@ -11471,7 +11502,7 @@ async function _renderCircleMessagesInner(){
   // Show all cached local messages for instant render before Supabase responds
   if(localMsgs.length && !el.querySelector('.feed-msg')){
     el.innerHTML = localMsgs.map(function(m){
-      if(m.type === 'system') return '<div style="text-align:center;margin:10px 0"><span style="font-size:11px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
+      if(m.type === 'system') return '<div style="text-align:center;margin:10px 0"><span style="font-size:13px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
       return _buildMsgBubble(m.text, !!m.own, m.av||'', m.name||'', 'feedInput', 'feedReplyBar', '', m.reactions||{}, '', m.userId||'');
     }).join('');
     el.scrollTop = el.scrollHeight;
@@ -11532,7 +11563,7 @@ async function _renderCircleMessagesInner(){
   }
   el.innerHTML = msgs.map(function(m){
     if(m.type === 'system'){
-      return '<div style="text-align:center;margin:10px 0"><span style="font-size:11px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
+      return '<div style="text-align:center;margin:10px 0"><span style="font-size:13px;color:var(--ink5);font-style:italic;background:var(--cream2);padding:4px 12px;border-radius:100px">'+_escHtml(m.text)+'</span></div>';
     }
     return _buildMsgBubble(m.text, !!m.own, m.av, m.name, 'feedInput', 'feedReplyBar', '', m.reactions, m.sbId, m.userId);
   }).join('');
@@ -11773,10 +11804,10 @@ function pReportCircle(){
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:8px">⚠️ Reportar comportamiento</div>'
-    +'<p style="font-size:12px;color:var(--ink4);margin-bottom:14px;line-height:1.5">¿Qué está pasando en "'+_escHtml(circleName)+'"?</p>'
+    +'<p style="font-size:14px;color:var(--ink4);margin-bottom:14px;line-height:1.5">¿Qué está pasando en "'+_escHtml(circleName)+'"?</p>'
     +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'
     +['Mensaje agresivo o hiriente','Discurso de odio','Spam o autopromoción','Consejo médico inapropiado','Otro'].map(function(r){
-      return '<label style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink3);cursor:pointer"><input type="radio" name="rpt" value="'+r+'" style="accent-color:var(--sage2)"> '+r+'</label>';
+      return '<label style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink3);cursor:pointer"><input type="radio" name="rpt" value="'+r+'" style="accent-color:var(--sage2)"> '+r+'</label>';
     }).join('')
     +'</div>'
     +'<textarea class="p-textarea" id="rptDetail" rows="2" placeholder="Detalles adicionales (opcional)" style="margin-bottom:12px"></textarea>'
@@ -11871,7 +11902,7 @@ function _reviewCardHtml(r, myId, proId){
     ? '<button onclick="pDeleteReview(\''+_escHtml(String(r.id||''))+'\',this.closest(\'.p-review-card\'))" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink5);padding:0 0 0 8px;line-height:1;flex-shrink:0" title="Eliminar reseña">🗑️</button>'
     : '';
   var replyBtn = canReply
-    ? '<button onclick="pOpenReviewReply(\''+_escHtml(String(r.id||''))+'\',\''+_escHtml(String(r.user_id||''))+'\',this.closest(\'.p-review-card\'))" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--sage);padding:0 0 0 8px;line-height:1;flex-shrink:0;font-family:\'Jost\',sans-serif;font-weight:600" title="Responder a esta reseña">💬 Responder</button>'
+    ? '<button onclick="pOpenReviewReply(\''+_escHtml(String(r.id||''))+'\',\''+_escHtml(String(r.user_id||''))+'\',this.closest(\'.p-review-card\'))" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--sage);padding:0 0 0 8px;line-height:1;flex-shrink:0;font-family:\'Jost\',sans-serif;font-weight:600" title="Responder a esta reseña">💬 Responder</button>'
     : '';
   var replyHtml = r.reply
     ? '<div class="rv-reply-block">'
@@ -11881,11 +11912,11 @@ function _reviewCardHtml(r, myId, proId){
     : '';
   return '<div class="p-review-card" style="margin-bottom:10px">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
-    +'<span style="font-size:13px">'+'⭐'.repeat(Math.min(5,r.stars||5))+'</span>'
+    +'<span style="font-size:15px">'+'⭐'.repeat(Math.min(5,r.stars||5))+'</span>'
     +'<div style="display:flex;align-items:center">'+replyBtn+delBtn+'</div>'
     +'</div>'
     +(r.texto ? '<p class="p-rv-txt" style="margin:0 0 4px">&#8220;'+_escHtml(r.texto)+'&#8221;</p>' : '')
-    +'<div style="font-size:11px;color:var(--ink5)">— '+_escHtml(r.reviewer_name||'Anónimo')+'</div>'
+    +'<div style="font-size:13px;color:var(--ink5)">— '+_escHtml(r.reviewer_name||'Anónimo')+'</div>'
     +replyHtml
     +'</div>';
 }
@@ -11898,11 +11929,11 @@ function pOpenReviewReply(reviewId, reviewerUserId, cardEl){
   ov.style.cssText = 'position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.65);display:flex;flex-direction:column;justify-content:flex-end';
   ov.innerHTML = '<div style="background:'+(isDark?'rgba(8,22,14,.97)':'rgba(255,255,255,.98)')+';border-radius:22px 22px 0 0;padding:20px 18px max(20px,env(safe-area-inset-bottom));border-top:2px solid rgba(116,198,157,.45)">'
     +'<div style="width:36px;height:4px;background:rgba(128,128,128,.25);border-radius:2px;margin:0 auto 16px"></div>'
-    +'<div style="font-size:12px;font-weight:700;color:var(--sage);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">💬 Responder a la reseña</div>'
-    +'<textarea id="reviewReplyTA" placeholder="Escribí tu respuesta (gracias, aclaración...)" maxlength="400" style="width:100%;box-sizing:border-box;background:'+(isDark?'rgba(255,255,255,.07)':'rgba(0,0,0,.04)')+';border:1.5px solid rgba(116,198,157,.35);border-radius:14px;padding:10px 12px;color:var(--ink);font-size:13px;font-family:\'Jost\',sans-serif;resize:none;min-height:88px;outline:none;line-height:1.5" rows="4"></textarea>'
+    +'<div style="font-size:14px;font-weight:700;color:var(--sage);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">💬 Responder a la reseña</div>'
+    +'<textarea id="reviewReplyTA" placeholder="Escribí tu respuesta (gracias, aclaración...)" maxlength="400" style="width:100%;box-sizing:border-box;background:'+(isDark?'rgba(255,255,255,.07)':'rgba(0,0,0,.04)')+';border:1.5px solid rgba(116,198,157,.35);border-radius:14px;padding:10px 12px;color:var(--ink);font-size:15px;font-family:\'Jost\',sans-serif;resize:none;min-height:88px;outline:none;line-height:1.5" rows="4"></textarea>'
     +'<div style="display:flex;gap:10px;margin-top:12px">'
-    +'<button onclick="document.getElementById(\'reviewReplyOv\').remove()" style="flex:1;padding:12px;border-radius:14px;border:1.5px solid var(--border);background:transparent;color:var(--ink3);font-size:13px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
-    +'<button onclick="pSubmitReviewReply(\''+_escHtml(String(reviewId))+'\',\''+_escHtml(String(reviewerUserId||''))+'\')" style="flex:2;padding:12px;border-radius:14px;border:1.5px solid rgba(116,198,157,.55);background:rgba(116,198,157,.18);color:var(--sage);font-size:13px;font-weight:800;cursor:pointer;font-family:\'Jost\',sans-serif">Enviar respuesta 💚</button>'
+    +'<button onclick="document.getElementById(\'reviewReplyOv\').remove()" style="flex:1;padding:12px;border-radius:14px;border:1.5px solid var(--border);background:transparent;color:var(--ink3);font-size:15px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
+    +'<button onclick="pSubmitReviewReply(\''+_escHtml(String(reviewId))+'\',\''+_escHtml(String(reviewerUserId||''))+'\')" style="flex:2;padding:12px;border-radius:14px;border:1.5px solid rgba(116,198,157,.55);background:rgba(116,198,157,.18);color:var(--sage);font-size:15px;font-weight:800;cursor:pointer;font-family:\'Jost\',sans-serif">Enviar respuesta 💚</button>'
     +'</div>'
     +'</div>';
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
@@ -11956,7 +11987,7 @@ function _renderReviewsList(revs, myId, proId){
     html += '<div id="'+moreId+'" style="display:none">'
       + rest.map(function(r){ return _reviewCardHtml(r, myId, proId); }).join('')
       +'</div>'
-      +'<button onclick="var m=document.getElementById(\''+moreId+'\');if(!m)return;var open=m.style.display!==\'none\';m.style.display=open?\'none\':\'block\';this.textContent=open?\'Ver más ('+(rest.length)+') ↓\':\'Ver menos ↑\';" style="background:none;border:none;color:var(--sage);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>';
+      +'<button onclick="var m=document.getElementById(\''+moreId+'\');if(!m)return;var open=m.style.display!==\'none\';m.style.display=open?\'none\':\'block\';this.textContent=open?\'Ver más ('+(rest.length)+') ↓\':\'Ver menos ↑\';" style="background:none;border:none;color:var(--sage);font-size:14px;font-weight:600;cursor:pointer;padding:4px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>';
   }
   return html;
 }
@@ -12095,7 +12126,7 @@ async function pRenderHappy(){
   } else if(_hCachedFresh && _hCachedFresh.length){
     _renderAllHappy(list, _hCachedFresh);
   } else {
-    list.innerHTML = '<div style="text-align:center;padding:30px;font-size:12px;color:var(--ink4)">Cargando ☀️…</div>';
+    list.innerHTML = '<div style="text-align:center;padding:30px;font-size:14px;color:var(--ink4)">Cargando ☀️…</div>';
   }
 
   // Load from Supabase (shared wall) or fall back to localStorage
@@ -12270,19 +12301,19 @@ function _renderMyHappy(list, posts, queue, myId){
   if(mine.length){
     html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'
       +'<span style="font-size:18px">📌</span>'
-      +'<span style="font-size:12px;font-weight:700;color:var(--sage);letter-spacing:.3px">Tus publicaciones activas</span>'
-      +'<span style="font-size:10px;color:var(--ink5);margin-left:auto">'+mine.length+' activa'+(mine.length>1?'s':(mine.length===1?'':'')+'')+' · desaparecen a las 24h</span>'
+      +'<span style="font-size:14px;font-weight:700;color:var(--sage);letter-spacing:.3px">Tus publicaciones activas</span>'
+      +'<span style="font-size:12px;color:var(--ink5);margin-left:auto">'+mine.length+' activa'+(mine.length>1?'s':(mine.length===1?'':'')+'')+' · desaparecen a las 24h</span>'
       +'</div>';
     mine.forEach(function(p){ html += _happyPostCard(p, true); html += '<div style="height:10px"></div>'; });
   }
   myQueued.forEach(function(p){
     html += '<div class="happy-card" style="border:1.5px dashed rgba(255,200,50,.4);opacity:.8;margin-top:12px">'
-      +'<div style="font-size:11px;font-weight:700;color:rgba(255,180,30,.8);margin-bottom:8px;display:flex;align-items:center;gap:6px">⏳ En lista de espera</div>'
+      +'<div style="font-size:13px;font-weight:700;color:rgba(255,180,30,.8);margin-bottom:8px;display:flex;align-items:center;gap:6px">⏳ En lista de espera</div>'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
       +'<div style="font-size:26px;width:42px;height:42px;border-radius:13px;background:var(--sun3);display:flex;align-items:center;justify-content:center">'+p.emoji+'</div>'
-      +'<div><div style="font-size:13px;font-weight:600;color:var(--ink)">'+_escHtml(p.name)+'</div>'
-      +'<div style="font-size:10px;color:var(--ink5)">Enviado '+_happyRelTime(p.ts)+'</div></div></div>'
-      +'<p style="font-size:13px;color:var(--ink3);line-height:1.6;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(p.text)+'"</p>'
+      +'<div><div style="font-size:15px;font-weight:600;color:var(--ink)">'+_escHtml(p.name)+'</div>'
+      +'<div style="font-size:12px;color:var(--ink5)">Enviado '+_happyRelTime(p.ts)+'</div></div></div>'
+      +'<p style="font-size:15px;color:var(--ink3);line-height:1.6;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(p.text)+'"</p>'
       +'</div>';
   });
   list.innerHTML = html;
@@ -12325,7 +12356,7 @@ async function _renderHappyHistory(list, wallPosts, wallMyId){
   var sbEmail = safeLS('get','velo_user_email')||'';
   _initSupabase();
   if((sbUid||sbEmail) && sbClient){
-    if(!history.length) list.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Sincronizando historial…</div>';
+    if(!history.length) list.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:15px">Sincronizando historial…</div>';
     try{
       // Use UUID when available, fall back to email — no .or() to avoid PostgREST parse errors
       var _hUidFilter = sbUid || sbEmail;
@@ -12362,7 +12393,7 @@ async function _renderHappyHistory(list, wallPosts, wallMyId){
     list.innerHTML = '<div class="p-empty" style="grid-column:1/-1"><span class="p-empty-emoji">📅</span>'
       +'<div class="p-empty-title">Tu historial está vacío</div>'
       +'<div class="p-empty-sub">'+(_noUid ? 'Iniciá sesión para sincronizar tu historial entre dispositivos 🔑' : 'Cuando publiques algo en el Muro, quedará guardado aquí para siempre 🌟')+'</div>'
-      +'<div style="font-size:10px;color:var(--ink5);margin-top:8px;opacity:.5">'+_dbgSb+'</div></div>';
+      +'<div style="font-size:12px;color:var(--ink5);margin-top:8px;opacity:.5">'+_dbgSb+'</div></div>';
     return;
   }
 
@@ -12389,7 +12420,7 @@ async function _renderHappyHistory(list, wallPosts, wallMyId){
   });
 
   var clearBtn = '<div style="text-align:right;margin-bottom:16px">'
-    +'<button onclick="pClearHappyHistory()" style="padding:6px 14px;background:rgba(220,60,60,.06);border:1px solid rgba(220,60,60,.18);border-radius:100px;font-size:12px;color:rgba(200,60,60,.7);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">🗑️ Borrar historial</button>'
+    +'<button onclick="pClearHappyHistory()" style="padding:6px 14px;background:rgba(220,60,60,.06);border:1px solid rgba(220,60,60,.18);border-radius:100px;font-size:14px;color:rgba(200,60,60,.7);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">🗑️ Borrar historial</button>'
     +'</div>';
 
   var html = clearBtn;
@@ -12400,13 +12431,13 @@ async function _renderHappyHistory(list, wallPosts, wallMyId){
     html += '<details'+(isFirst?' open':'')+' style="margin-bottom:10px;border-radius:14px;overflow:hidden;'
       +'background:rgba(255,255,255,.55);border:1.5px solid rgba(255,200,50,.2);backdrop-filter:blur(4px)">'
       +'<summary style="list-style:none;cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:10px;user-select:none;'
-      +'font-size:13px;font-weight:700;color:var(--ink2)">'
+      +'font-size:15px;font-weight:700;color:var(--ink2)">'
       +'<span style="font-size:16px">📅</span>'
       +'<span style="flex:1">'+_escHtml(g.label)+'</span>'
-      +'<span style="font-size:11px;font-weight:600;color:var(--sage2);background:rgba(116,198,157,.15);'
+      +'<span style="font-size:13px;font-weight:600;color:var(--sage2);background:rgba(116,198,157,.15);'
       +'border:1px solid rgba(116,198,157,.3);border-radius:100px;padding:2px 9px;flex-shrink:0">'
       +count+' publicación'+(count>1?'es':'')+'</span>'
-      +'<span class="hist-chevron" style="font-size:12px;color:var(--ink4);flex-shrink:0;transition:transform .2s">▼</span>'
+      +'<span class="hist-chevron" style="font-size:14px;color:var(--ink4);flex-shrink:0;transition:transform .2s">▼</span>'
       +'</summary>'
       +'<div style="padding:0 12px 12px;display:flex;flex-direction:column;gap:8px">';
 
@@ -12419,11 +12450,11 @@ async function _renderHappyHistory(list, wallPosts, wallMyId){
         +'<div style="font-size:22px;width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,rgba(255,224,102,.3),rgba(253,233,244,.5));'
         +'display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:10px;color:var(--ink4);margin-bottom:1px">'+timeStr+'</div>'
-        +(h.hasPhoto ? '<div style="font-size:10px;color:var(--sage2);font-weight:600">📷 Incluyó foto</div>' : '')
+        +'<div style="font-size:12px;color:var(--ink4);margin-bottom:1px">'+timeStr+'</div>'
+        +(h.hasPhoto ? '<div style="font-size:12px;color:var(--sage2);font-weight:600">📷 Incluyó foto</div>' : '')
         +'</div>'
-        +(rxTotal>0 ? '<span style="font-size:10px;background:rgba(255,224,102,.25);border-radius:100px;padding:2px 8px;font-weight:600;color:rgba(140,100,0,.8);flex-shrink:0">💛 '+rxTotal+'</span>' : '')
-        +(h.commentCount>0 ? '<span style="font-size:10px;background:rgba(116,198,157,.15);border-radius:100px;padding:2px 8px;font-weight:600;color:var(--sage);flex-shrink:0;margin-left:4px">💬 '+h.commentCount+'</span>' : '')
+        +(rxTotal>0 ? '<span style="font-size:12px;background:rgba(255,224,102,.25);border-radius:100px;padding:2px 8px;font-weight:600;color:rgba(140,100,0,.8);flex-shrink:0">💛 '+rxTotal+'</span>' : '')
+        +(h.commentCount>0 ? '<span style="font-size:12px;background:rgba(116,198,157,.15);border-radius:100px;padding:2px 8px;font-weight:600;color:var(--sage);flex-shrink:0;margin-left:4px">💬 '+h.commentCount+'</span>' : '')
         +'</div>'
         +(h.text ? '<p style="font-size:14px;color:var(--ink2);line-height:1.65;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500">"'+_escHtml(h.text)+'"</p>' : '')
         +'</div>';
@@ -12463,7 +12494,7 @@ function _happyPostCard(h, isOwn){
   var rxBar = _happyReactEmojis.map(function(e){
     var cnt = (h.reactions && h.reactions[e]) || 0;
     var active = myReacted === e;
-    return '<button onclick="pHappyReact(\''+h.id+'\',\''+e+'\')" style="padding:5px 12px;background:'+(active?'rgba(222,162,36,.45)':'rgba(222,162,36,.11)')+';border:1.5px solid '+(active?'rgba(222,162,36,.80)':'rgba(222,162,36,.30)')+';border-radius:100px;font-size:13px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s;box-shadow:'+(active?'0 2px 14px rgba(222,162,36,.32)':'none')+'">'+e+(cnt?' <span style="font-size:11px;color:rgba(255,218,70,.90)">'+cnt+'</span>':'')+'</button>';
+    return '<button onclick="pHappyReact(\''+h.id+'\',\''+e+'\')" style="padding:5px 12px;background:'+(active?'rgba(222,162,36,.45)':'rgba(222,162,36,.11)')+';border:1.5px solid '+(active?'rgba(222,162,36,.80)':'rgba(222,162,36,.30)')+';border-radius:100px;font-size:15px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s;box-shadow:'+(active?'0 2px 14px rgba(222,162,36,.32)':'none')+'">'+e+(cnt?' <span style="font-size:13px;color:rgba(255,218,70,.90)">'+cnt+'</span>':'')+'</button>';
   }).join('');
 
   // Comments
@@ -12476,24 +12507,24 @@ function _happyPostCard(h, isOwn){
   var commHtml = '';
   if(commCount > 0){
     commHtml = '<div style="margin-bottom:10px">';
-    commHtml += '<div style="font-size:11px;font-weight:700;color:var(--ink4);margin-bottom:8px;display:flex;align-items:center;gap:5px"><span>💬</span><span>'+commCount+' comentario'+(commCount>1?'s':'')+'</span></div>';
+    commHtml += '<div style="font-size:13px;font-weight:700;color:var(--ink4);margin-bottom:8px;display:flex;align-items:center;gap:5px"><span>💬</span><span>'+commCount+' comentario'+(commCount>1?'s':'')+'</span></div>';
     shownComments.forEach(function(c){
       var cAnon = !c.userId || c.name === 'Usuario Anónimo' || c.name === 'Anónimo';
       var cClickAttr = !cAnon
         ? ' onclick="pQuickProfile('+_jsAttr(c.name||'Usuario')+','+_jsAttr(c.av||'🧑')+',\'\',\'\','+_jsAttr(c.userId)+')"'
         : '';
       var avHtml = cAnon
-        ? '<div style="font-size:13px;width:26px;height:26px;border-radius:50%;background:var(--cream2);display:flex;align-items:center;justify-content:center;flex-shrink:0">👤</div>'
+        ? '<div style="font-size:15px;width:26px;height:26px;border-radius:50%;background:var(--cream2);display:flex;align-items:center;justify-content:center;flex-shrink:0">👤</div>'
         : '<div style="flex-shrink:0;cursor:pointer"'+cClickAttr+'>'+_avInline(c.av||'🧑',26)+'</div>';
       commHtml += '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">'
         + avHtml
         +'<div style="background:rgba(222,162,36,.10);border-radius:0 12px 12px 12px;padding:7px 11px;flex:1;min-width:0;border-left:2px solid rgba(222,162,36,.42)">'
-        +'<div class="happy-cmt-name" style="font-size:11px;font-weight:700;color:'+_cmtNameCol+';margin-bottom:2px'+(cAnon?'':';cursor:pointer')+'"'+cClickAttr+'>'+_escHtml(c.name||'Usuario')+'</div>'
-        +'<div class="happy-cmt-text" style="font-size:12px;color:'+_cmtTextCol+';line-height:1.45;word-break:break-word">'+_escHtml(c.text)+'</div>'
+        +'<div class="happy-cmt-name" style="font-size:13px;font-weight:700;color:'+_cmtNameCol+';margin-bottom:2px'+(cAnon?'':';cursor:pointer')+'"'+cClickAttr+'>'+_escHtml(c.name||'Usuario')+'</div>'
+        +'<div class="happy-cmt-text" style="font-size:14px;color:'+_cmtTextCol+';line-height:1.45;word-break:break-word">'+_escHtml(c.text)+'</div>'
         +'</div></div>';
     });
     if(!isOwn && commCount > 5){
-      commHtml += '<div style="font-size:11px;color:var(--sage);text-align:center;padding:4px 0;font-weight:600">+ '+(commCount-5)+' comentarios más</div>';
+      commHtml += '<div style="font-size:13px;color:var(--sage);text-align:center;padding:4px 0;font-weight:600">+ '+(commCount-5)+' comentarios más</div>';
     }
     commHtml += '</div>';
   }
@@ -12511,7 +12542,7 @@ function _happyPostCard(h, isOwn){
   } else if(hasEmojiAv){
     avatarHtml = '<div style="position:relative;font-size:26px;width:44px;height:44px;border-radius:12px;background:rgba(255,224,102,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0">'
       +h.av
-      +'<span style="position:absolute;bottom:-3px;right:-3px;font-size:12px;line-height:1">'+h.emoji+'</span>'
+      +'<span style="position:absolute;bottom:-3px;right:-3px;font-size:14px;line-height:1">'+h.emoji+'</span>'
       +'</div>';
   } else {
     avatarHtml = '<div style="font-size:26px;width:44px;height:44px;border-radius:12px;background:var(--sun3);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+h.emoji+'</div>';
@@ -12524,21 +12555,21 @@ function _happyPostCard(h, isOwn){
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
     +'<div'+authorClick+'>'+avatarHtml+'</div>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:13px;font-weight:600;color:var(--ink)'+(canClick?';cursor:pointer':'')+'"'+(canClick?' onclick="pQuickProfile('+_jsAttr(h.name||'Usuario')+','+_jsAttr(h.av||'')+',\'\',\'\','+_jsAttr(h.userId||'')+')"':'')+'>'+_escHtml(h.name||'Usuario Anónimo')+'</div>'
+    +'<div style="font-size:15px;font-weight:600;color:var(--ink)'+(canClick?';cursor:pointer':'')+'"'+(canClick?' onclick="pQuickProfile('+_jsAttr(h.name||'Usuario')+','+_jsAttr(h.av||'')+',\'\',\'\','+_jsAttr(h.userId||'')+')"':'')+'>'+_escHtml(h.name||'Usuario Anónimo')+'</div>'
     +(!h.anon && h.userId && h.userId!=='anon' ? _uAt(h.userId) : '')
-    +'<div style="font-size:10px;color:var(--ink5);margin-top:1px">'+relTime+(isOwn?' · <strong style="color:var(--sage)">Tuya</strong>':'')+'</div>'
+    +'<div style="font-size:12px;color:var(--ink5);margin-top:1px">'+relTime+(isOwn?' · <strong style="color:var(--sage)">Tuya</strong>':'')+'</div>'
     +'</div>'
     +(isOwn
-      ? '<button onclick="pDeleteHappyPost(\''+h.id+'\')" style="padding:5px 10px;background:rgba(255,80,80,.07);border:1px solid rgba(255,80,80,.18);border-radius:100px;color:rgba(200,60,60,.7);font-size:11px;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0" title="Eliminar publicación">🗑️</button>'
-      : '<button onclick="pReportContent(\'happy\','+_jsAttr(h.id)+','+_jsAttr((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(180,50,50,.88);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0">🚩</button>')
-    +(timeLeft ? '<span style="font-size:10px;color:'+expColor+';font-weight:600;white-space:nowrap;flex-shrink:0">⏳ '+timeLeft+'</span>' : '')
+      ? '<button onclick="pDeleteHappyPost(\''+h.id+'\')" style="padding:5px 10px;background:rgba(255,80,80,.07);border:1px solid rgba(255,80,80,.18);border-radius:100px;color:rgba(200,60,60,.7);font-size:13px;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0" title="Eliminar publicación">🗑️</button>'
+      : '<button onclick="pReportContent(\'happy\','+_jsAttr(h.id)+','+_jsAttr((h.text||'').slice(0,80))+')" style="padding:4px 9px;background:rgba(200,50,50,.12);border:1px solid rgba(200,50,50,.25);border-radius:100px;color:rgba(180,50,50,.88);font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;flex-shrink:0">🚩</button>')
+    +(timeLeft ? '<span style="font-size:12px;color:'+expColor+';font-weight:600;white-space:nowrap;flex-shrink:0">⏳ '+timeLeft+'</span>' : '')
     +'</div>'
     // photo with tap-to-zoom hint overlay
     +(h.photo
       ? '<div style="position:relative;margin-bottom:14px;border-radius:12px;overflow:hidden">'
         +'<img src="'+_escHtml(h.photo)+'" onclick="pZoomPhoto(this.src)" style="width:100%;max-height:260px;object-fit:cover;display:block;cursor:zoom-in">'
         +'<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.50));padding:18px 12px 8px;pointer-events:none;display:flex;align-items:center;justify-content:center">'
-        +'<span style="background:rgba(0,0,0,.42);color:rgba(255,255,255,.82);font-size:9.5px;font-weight:700;letter-spacing:.4px;border-radius:100px;padding:3px 11px;font-family:Jost,sans-serif;backdrop-filter:blur(6px)">🔍 Toca para ampliar</span>'
+        +'<span style="background:rgba(0,0,0,.42);color:rgba(255,255,255,.82);font-size:11px;font-weight:700;letter-spacing:.4px;border-radius:100px;padding:3px 11px;font-family:Jost,sans-serif;backdrop-filter:blur(6px)">🔍 Toca para ampliar</span>'
         +'</div>'
         +'</div>'
       : '')
@@ -12550,10 +12581,10 @@ function _happyPostCard(h, isOwn){
     +(commHtml ? '<div style="border-top:1px solid var(--border2);padding-top:12px;margin-bottom:12px">'+commHtml+'</div>' : '<div style="border-top:1px solid var(--border2);margin-bottom:12px"></div>')
     // comment input
     +'<div style="display:flex;gap:8px;align-items:center">'
-    +'<input id="cmt-'+h.id+'" class="p-input" style="flex:1;font-size:12px;padding:7px 12px;height:auto;border-radius:100px" placeholder="Dejar un comentario…" maxlength="120" onkeydown="if(event.key===\'Enter\')pHappyComment(\''+h.id+'\')">'
-    +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:7px 14px;background:linear-gradient(135deg,rgba(222,162,36,.48),rgba(200,136,16,.36));border:1.5px solid rgba(222,162,36,.72);border-radius:100px;font-size:12px;cursor:pointer;color:rgba(255,228,82,.97);font-family:\'Jost\',sans-serif;font-weight:700;flex-shrink:0;white-space:nowrap;box-shadow:0 2px 14px rgba(222,162,36,.24)">Enviar ✨</button>'
+    +'<input id="cmt-'+h.id+'" class="p-input" style="flex:1;font-size:14px;padding:7px 12px;height:auto;border-radius:100px" placeholder="Dejar un comentario…" maxlength="120" onkeydown="if(event.key===\'Enter\')pHappyComment(\''+h.id+'\')">'
+    +'<button onclick="pHappyComment(\''+h.id+'\')" style="padding:7px 14px;background:linear-gradient(135deg,rgba(222,162,36,.48),rgba(200,136,16,.36));border:1.5px solid rgba(222,162,36,.72);border-radius:100px;font-size:14px;cursor:pointer;color:rgba(255,228,82,.97);font-family:\'Jost\',sans-serif;font-weight:700;flex-shrink:0;white-space:nowrap;box-shadow:0 2px 14px rgba(222,162,36,.24)">Enviar ✨</button>'
     +'</div>'
-    +(safeLS('get','velo_incognito')==='true' ? '<div style="font-size:10.5px;color:var(--ink5);line-height:1.5;margin-top:6px;font-style:italic">En tu perfil tenés activo el modo incógnito. Si querés comentar con tu perfil público, desactivá esa opción.</div>' : '')
+    +(safeLS('get','velo_incognito')==='true' ? '<div style="font-size:12px;color:var(--ink5);line-height:1.5;margin-top:6px;font-style:italic">En tu perfil tenés activo el modo incógnito. Si querés comentar con tu perfil público, desactivá esa opción.</div>' : '')
     +'</div>';
 }
 
@@ -12615,8 +12646,8 @@ function pToggleHappyProfile(tog){
       var avHtml = (av.startsWith('data:') || av.startsWith('http'))
         ? '<img src="'+av+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;display:block">'
         : '<span style="font-size:26px;line-height:1">'+av+'</span>';
-      profileAvRow.innerHTML = avHtml + '<span style="font-size:12px;font-weight:600;color:var(--ink2)">'+_escHtml(name)+'</span>'
-        + '<span style="font-size:10px;color:var(--sage2);margin-left:auto;font-weight:600">Perfil visible</span>';
+      profileAvRow.innerHTML = avHtml + '<span style="font-size:14px;font-weight:600;color:var(--ink2)">'+_escHtml(name)+'</span>'
+        + '<span style="font-size:12px;color:var(--sage2);margin-left:auto;font-weight:600">Perfil visible</span>';
       if(emojiRow && emojiRow.parentNode) emojiRow.parentNode.insertBefore(profileAvRow, emojiRow);
     } else {
       profileAvRow.style.display = 'flex';
@@ -12905,14 +12936,14 @@ function _renderUserDashboard(){
   el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'
     +'<div class="mini-dash-card" onclick="switchProfileTab(\'logros\',document.querySelector(\'[onclick*=logros]\'))">'
     +'<div style="font-size:28px;margin-bottom:4px">'+badge.icon+'</div>'
-    +'<div style="font-size:11px;font-weight:800;color:var(--ink)">'+badge.name+'</div>'
-    +'<div style="font-size:10px;color:var(--ink4)">Nivel</div>'
+    +'<div style="font-size:13px;font-weight:800;color:var(--ink)">'+badge.name+'</div>'
+    +'<div style="font-size:12px;color:var(--ink4)">Nivel</div>'
     +'</div>'
-    +'<div class="mini-dash-card"><div style="font-size:24px;font-weight:800;color:var(--sage);margin-bottom:2px">'+helped+'</div><div style="font-size:11px;color:var(--ink3)">Ayudé</div></div>'
-    +'<div class="mini-dash-card"><div style="font-size:24px;font-weight:800;color:var(--sage);margin-bottom:2px">'+helpedMe+'</div><div style="font-size:11px;color:var(--ink3)">Me ayudaron</div></div>'
+    +'<div class="mini-dash-card"><div style="font-size:24px;font-weight:800;color:var(--sage);margin-bottom:2px">'+helped+'</div><div style="font-size:13px;color:var(--ink3)">Ayudé</div></div>'
+    +'<div class="mini-dash-card"><div style="font-size:24px;font-weight:800;color:var(--sage);margin-bottom:2px">'+helpedMe+'</div><div style="font-size:13px;color:var(--ink3)">Me ayudaron</div></div>'
     +'<div class="mini-dash-card" onclick="switchProfileTab(\'reseñas\',document.querySelector(\'[onclick*=reseñas]\'))">'
     +'<div id="miniDashReviewCount" style="font-size:24px;font-weight:800;color:var(--sage);margin-bottom:2px">…</div>'
-    +'<div style="font-size:11px;color:var(--ink3)">Reseñas</div>'
+    +'<div style="font-size:13px;color:var(--ink3)">Reseñas</div>'
     +'</div>'
     +'</div>';
   // Load real count from Supabase (localStorage key was never written)
@@ -13285,11 +13316,11 @@ function pLoadProfile(){
           var dateStr='';
           try{ var d=new Date(p.created_at); dateStr=d.toLocaleDateString('es',{day:'numeric',month:'short',year:'numeric'}); }catch(e){}
           return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
-            +(p.titulo?'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
-            +'<div style="font-size:11.5px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
+            +(p.titulo?'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
+            +'<div style="font-size:13px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
             +'<div style="display:flex;align-items:center;justify-content:space-between">'
-              +'<span style="font-size:9px;font-weight:700;color:'+col+';border-radius:20px;padding:2px 8px;background:var(--sage7);border:1px solid var(--border)">'+lbl+'</span>'
-              +(dateStr?'<span style="font-size:10px;color:var(--ink5)">'+dateStr+'</span>':'')
+              +'<span style="font-size:11px;font-weight:700;color:'+col+';border-radius:20px;padding:2px 8px;background:var(--sage7);border:1px solid var(--border)">'+lbl+'</span>'
+              +(dateStr?'<span style="font-size:12px;color:var(--ink5)">'+dateStr+'</span>':'')
             +'</div>'
             +'</div>';
         };
@@ -13300,7 +13331,7 @@ function pLoadProfile(){
         if(rest.length){
           html+='<div id="'+moreId+'" style="display:none">'+rest.map(_mkCard).join('')+'</div>'
             +'<button onclick="var m=document.getElementById(\''+moreId+'\');if(!m)return;var op=m.style.display!==\'none\';m.style.display=op?\'none\':\'block\';this.textContent=op?\'Ver más ('+rest.length+') ↓\':\'Ver menos ↑\';" '
-            +'style="background:none;border:none;color:var(--sage);font-size:12px;font-weight:600;cursor:pointer;padding:4px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>';
+            +'style="background:none;border:none;color:var(--sage);font-size:14px;font-weight:600;cursor:pointer;padding:4px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>';
         }
         btFeed.innerHTML=html;
       }).catch(function(){ btFeed.innerHTML='<p class="p-sm p-muted">Error cargando publicaciones.</p>'; });
@@ -13438,10 +13469,10 @@ async function pShowPublicProfile(){
 
   var statusHtml = '';
   if(!isInc && (music || book || film || phrase)){
-    statusHtml = '<div style="background:var(--sage7);border-radius:12px;padding:12px;margin-top:12px;font-size:13px;color:var(--ink3);line-height:1.9;text-align:left">';
-    if(music)  statusHtml += '<div><span style="color:var(--ink4);font-size:12px">🎵 Música</span> · '+_escHtml(music)+'</div>';
-    if(book)   statusHtml += '<div><span style="color:var(--ink4);font-size:12px">📚 Libro</span> · '+_escHtml(book)+'</div>';
-    if(film)   statusHtml += '<div><span style="color:var(--ink4);font-size:12px">🎬 Película</span> · '+_escHtml(film)+'</div>';
+    statusHtml = '<div style="background:var(--sage7);border-radius:12px;padding:12px;margin-top:12px;font-size:15px;color:var(--ink3);line-height:1.9;text-align:left">';
+    if(music)  statusHtml += '<div><span style="color:var(--ink4);font-size:14px">🎵 Música</span> · '+_escHtml(music)+'</div>';
+    if(book)   statusHtml += '<div><span style="color:var(--ink4);font-size:14px">📚 Libro</span> · '+_escHtml(book)+'</div>';
+    if(film)   statusHtml += '<div><span style="color:var(--ink4);font-size:14px">🎬 Película</span> · '+_escHtml(film)+'</div>';
     if(phrase) statusHtml += '<div style="font-style:italic;margin-top:4px;color:var(--sage2)">✨ &ldquo;'+_escHtml(phrase)+'&rdquo;</div>';
     statusHtml += '</div>';
   }
@@ -13456,10 +13487,10 @@ async function pShowPublicProfile(){
     +'<div style="text-align:center;padding:8px 0 16px">'
     +'<div style="font-size:64px;margin-bottom:10px;display:flex;justify-content:center">'+_avInline(displayAv,72)+'</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:4px">'+displayName+'</div>'
-    +'<div style="font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:10px">'+_escHtml(motto)+'</div>'
-    +'<span style="font-size:22px">'+badge.icon+'</span> <span style="font-size:12px;color:var(--ink4)">Guardián '+badge.name+'</span>'
+    +'<div style="font-size:15px;color:var(--ink4);font-style:italic;margin-bottom:10px">'+_escHtml(motto)+'</div>'
+    +'<span style="font-size:22px">'+badge.icon+'</span> <span style="font-size:14px;color:var(--ink4)">Guardián '+badge.name+'</span>'
     +statusHtml
-    +(isInc ? '<div style="margin-top:12px;font-size:12px;color:var(--ink4);background:var(--cream2);border-radius:10px;padding:10px">🎭 Modo incógnito · tu nombre y avatar están ocultos</div>' : '')
+    +(isInc ? '<div style="margin-top:12px;font-size:14px;color:var(--ink4);background:var(--cream2);border-radius:10px;padding:10px">🎭 Modo incógnito · tu nombre y avatar están ocultos</div>' : '')
     +'</div>'
     +'<div id="pubProfStats" style="margin:0 0 8px"></div>'
     +'<div id="pubProfReviews" style="margin:0 0 8px"></div>'
@@ -13492,10 +13523,10 @@ async function pShowPublicProfile(){
       el.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:8px">'
         +'<div style="flex:1;background:rgba(116,198,157,.08);border-radius:10px;padding:10px;text-align:center">'
         +'<div style="font-size:20px;font-weight:700;color:var(--sage2)">'+st.helped+'</div>'
-        +'<div style="font-size:10px;color:var(--ink4);margin-top:2px">personas acompañadas</div></div>'
+        +'<div style="font-size:12px;color:var(--ink4);margin-top:2px">personas acompañadas</div></div>'
         +'<div style="flex:1;background:rgba(116,198,157,.08);border-radius:10px;padding:10px;text-align:center">'
         +'<div style="font-size:20px;font-weight:700;color:var(--sage2)">'+st.received+'</div>'
-        +'<div style="font-size:10px;color:var(--ink4);margin-top:2px">veces que me apoyaron</div></div>'
+        +'<div style="font-size:12px;color:var(--ink4);margin-top:2px">veces que me apoyaron</div></div>'
         +'</div>';
     }
   }).catch(function(){});
@@ -13504,7 +13535,7 @@ async function pShowPublicProfile(){
     var rvEl = document.getElementById('pubProfReviews');
     if(!rvEl) return;
     if(!revs.length) return;
-    rvEl.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS ('+revs.length+')</div>'
+    rvEl.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS ('+revs.length+')</div>'
       +'<div style="max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-right:2px">'
       + _renderReviewsList(revs, myId, myId)
       +'</div>';
@@ -13531,17 +13562,17 @@ async function pShowPublicProfile(){
           var _pc=_btCleanContenido(p.contenido); var prev=_pc.slice(0,90)+(_pc.length>90?'…':'');
           return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\');document.getElementById(\'publicProfileOv\').remove()" '
             +'style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
-            +(p.titulo?'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
-            +'<div style="font-size:11.5px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
-            +'<span style="font-size:9px;font-weight:700;color:'+col+';background:rgba(255,255,255,.06);border-radius:20px;padding:2px 8px">'+lbl+'</span>'
+            +(p.titulo?'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
+            +'<div style="font-size:13px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
+            +'<span style="font-size:11px;font-weight:700;color:'+col+';background:rgba(255,255,255,.06);border-radius:20px;padding:2px 8px">'+lbl+'</span>'
             +'</div>';
         };
         btEl.innerHTML = '<div style="text-align:left">'
-          +'<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">📖 EN BITÁCORA ('+btRes.data.length+')</div>'
+          +'<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">📖 EN BITÁCORA ('+btRes.data.length+')</div>'
           +shown.map(_mkBtCard).join('')
           +(rest.length
             ? '<div id="'+_moreId+'" style="display:none">'+rest.map(_mkBtCard).join('')+'</div>'
-              +'<button onclick="var m=document.getElementById(\''+_moreId+'\');if(!m)return;var op=m.style.display!==\'none\';m.style.display=op?\'none\':\'block\';this.textContent=op?\'Ver más ('+rest.length+') ↓\':\'Ver menos ↑\';" style="background:none;border:none;color:var(--sage);font-size:12px;font-weight:600;cursor:pointer;padding:2px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>'
+              +'<button onclick="var m=document.getElementById(\''+_moreId+'\');if(!m)return;var op=m.style.display!==\'none\';m.style.display=op?\'none\':\'block\';this.textContent=op?\'Ver más ('+rest.length+') ↓\':\'Ver menos ↑\';" style="background:none;border:none;color:var(--sage);font-size:14px;font-weight:600;cursor:pointer;padding:2px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>'
             : '')
           +'</div>';
       }catch(e){}
@@ -13585,29 +13616,29 @@ function _renderBadgesGrid(){
     return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)">'
       +'<span style="font-size:22px;opacity:'+(reached?1:.35)+'">'+t.icon+'</span>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:12px;font-weight:700;color:'+(reached?'var(--ink)':'var(--ink5)')+'">'+t.name
-      +(isCurrent?' <span style="font-size:10px;background:var(--sage6);color:var(--sage);border-radius:100px;padding:1px 7px;margin-left:4px">Actual</span>':'')
-      +(minLabel?'  <span style="font-size:10px;color:var(--ink5)">'+minLabel+'</span>':'')+'</div>'
-      +'<div style="font-size:11px;color:'+(reached?'var(--ink3)':'var(--ink5)')+'">'+t.unlock+'</div>'
+      +'<div style="font-size:14px;font-weight:700;color:'+(reached?'var(--ink)':'var(--ink5)')+'">'+t.name
+      +(isCurrent?' <span style="font-size:12px;background:var(--sage6);color:var(--sage);border-radius:100px;padding:1px 7px;margin-left:4px">Actual</span>':'')
+      +(minLabel?'  <span style="font-size:12px;color:var(--ink5)">'+minLabel+'</span>':'')+'</div>'
+      +'<div style="font-size:13px;color:'+(reached?'var(--ink3)':'var(--ink5)')+'">'+t.unlock+'</div>'
       +'</div>'
-      +(reached?'<span style="font-size:14px;color:var(--sage)">✅</span>':'<span style="font-size:12px;color:var(--ink5)">🔒</span>')
+      +(reached?'<span style="font-size:14px;color:var(--sage)">✅</span>':'<span style="font-size:14px;color:var(--ink5)">🔒</span>')
       +'</div>';
   }).join('');
 
   var guardianSection = '<div class="guardian-badge-card" style="margin-bottom:16px">'
-    +'<div style="font-size:12px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Mi nivel de Guardián</div>'
+    +'<div style="font-size:14px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Mi nivel de Guardián</div>'
     +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">'
     +'<span style="font-size:44px">'+badge.icon+'</span>'
     +'<div style="flex:1">'
     +'<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:2px">Guardián '+badge.name+'</div>'
-    +'<div style="font-size:12px;color:var(--ink4);margin-bottom:8px">'+convs+' conversaciones completadas</div>'
+    +'<div style="font-size:14px;color:var(--ink4);margin-bottom:8px">'+convs+' conversaciones completadas</div>'
     +'<div class="guardian-badge-prog"><div class="guardian-badge-prog-fill" style="width:'+progFill+'%"></div></div>'
     +(badge.next
-      ? '<div style="font-size:11px;color:var(--ink5);margin-top:4px">'+badge.needed+(badge.visitBased?' días':' conv.')+' más para <strong style="color:var(--sage2)">'+badge.next+'</strong></div>'
-      : '<div style="font-size:11px;color:var(--sage);margin-top:4px">✨ Nivel máximo alcanzado</div>')
+      ? '<div style="font-size:13px;color:var(--ink5);margin-top:4px">'+badge.needed+(badge.visitBased?' días':' conv.')+' más para <strong style="color:var(--sage2)">'+badge.next+'</strong></div>'
+      : '<div style="font-size:13px;color:var(--sage);margin-top:4px">✨ Nivel máximo alcanzado</div>')
     +'</div>'
     +'</div>'
-    +'<div style="font-size:11px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Qué desbloquea cada nivel</div>'
+    +'<div style="font-size:13px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Qué desbloquea cada nivel</div>'
     +tierRows
     +'</div>';
 
@@ -13651,7 +13682,7 @@ function _renderBadgesGrid(){
   ];
   el.innerHTML = guardianSection + badges.map(function(b){
     var progPct = b.done ? 100 : (b.prog != null ? b.prog : 0);
-    return '<div class="p-badge-row" style="opacity:'+(b.done?1:(progPct>0?.75:.45))+'"><div class="p-badge-ic" style="background:'+(b.done?'var(--sage7)':'var(--cream2)')+'">'+b.icon+'</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+b.name+'</div><div style="font-size:11px;color:var(--ink4)">'+b.desc+'</div><div class="p-badge-prog-track"><div class="p-badge-prog-fill" style="width:'+progPct+'%;background:'+(b.done?'var(--sage2)':'var(--sage4)')+'"></div></div></div>'+(b.done?'<span style="font-size:16px">✅</span>':'<span style="font-size:14px;color:var(--ink5)">🔒</span>')+'</div>';
+    return '<div class="p-badge-row" style="opacity:'+(b.done?1:(progPct>0?.75:.45))+'"><div class="p-badge-ic" style="background:'+(b.done?'var(--sage7)':'var(--cream2)')+'">'+b.icon+'</div><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:var(--ink)">'+b.name+'</div><div style="font-size:13px;color:var(--ink4)">'+b.desc+'</div><div class="p-badge-prog-track"><div class="p-badge-prog-fill" style="width:'+progPct+'%;background:'+(b.done?'var(--sage2)':'var(--sage4)')+'"></div></div></div>'+(b.done?'<span style="font-size:16px">✅</span>':'<span style="font-size:14px;color:var(--ink5)">🔒</span>')+'</div>';
   }).join('');
 }
 
@@ -13707,24 +13738,24 @@ function _updateEditPushUI(){
     if(perm === 'unavailable'){
       status.textContent = 'Agregá Velo a tu pantalla de inicio para activar notificaciones';
       btn.textContent = '¿Cómo?'; btn.disabled = false;
-      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(116,198,157,.15);color:rgba(80,160,110,.9)';
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(116,198,157,.15);color:rgba(80,160,110,.9)';
     } else if(perm === 'denied'){
       status.textContent = 'Bloqueadas — activálas en ajustes del navegador';
       btn.textContent = '—'; btn.disabled = true;
-      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:not-allowed;background:rgba(128,128,128,.12);color:var(--ink4)';
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:not-allowed;background:rgba(128,128,128,.12);color:var(--ink4)';
     } else if(perm === 'granted' && hasSub){
       status.textContent = 'Activadas — recibís un aviso por día ✓';
       btn.textContent = 'Desactivar'; btn.disabled = false;
-      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(220,80,80,.12);color:rgba(200,60,60,.9)';
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(220,80,80,.12);color:rgba(200,60,60,.9)';
     } else if(perm === 'granted' && !hasSub){
       status.textContent = 'Permiso concedido — tocá Activar para recibirlas';
       btn.textContent = 'Activar'; btn.disabled = false;
       btn.onclick = function(){ _tryRecoverPushSub(); };
-      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
     } else {
       status.textContent = 'No activadas — te avisamos 3 veces al día';
       btn.textContent = 'Activar'; btn.disabled = false;
-      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
+      btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:linear-gradient(135deg,rgba(116,198,157,.25),rgba(74,160,110,.30));color:rgba(80,160,110,.95)';
     }
   });
 }
@@ -13779,14 +13810,14 @@ function _showPushFixModal(reason, err){
   if(err && reason !== 'denied'){
     var _eName = (err.name || 'Error');
     var _eMsg  = (err.message || '').slice(0, 200);
-    errInfo = '<div style="margin-top:14px;padding:10px 12px;background:rgba(0,0,0,.45);border-radius:10px;border:1px solid rgba(255,200,100,.25);font-size:12px;color:rgba(255,210,120,.9);word-break:break-all;font-family:monospace;line-height:1.6"><strong style="color:rgba(255,200,80,1)">Error técnico (mandá foto):</strong><br>'+_escHtml(_eName)+'<br>'+_escHtml(_eMsg)+'</div>';
+    errInfo = '<div style="margin-top:14px;padding:10px 12px;background:rgba(0,0,0,.45);border-radius:10px;border:1px solid rgba(255,200,100,.25);font-size:14px;color:rgba(255,210,120,.9);word-break:break-all;font-family:monospace;line-height:1.6"><strong style="color:rgba(255,200,80,1)">Error técnico (mandá foto):</strong><br>'+_escHtml(_eName)+'<br>'+_escHtml(_eMsg)+'</div>';
   }
   var ov = document.createElement('div');
   ov.id = 'pushFixOv';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99990;display:flex;align-items:flex-end;justify-content:center;padding:0';
   ov.innerHTML = '<div style="background:#0e1f14;border-radius:20px 20px 0 0;padding:24px 20px calc(28px + env(safe-area-inset-bottom,0px));width:100%;max-width:480px;font-family:Jost,sans-serif;border-top:1.5px solid rgba(116,198,157,.22)">'
     +'<div style="font-size:17px;font-weight:700;color:#d8eed8;text-align:center;margin-bottom:12px">'+title+'</div>'
-    +'<div style="font-size:13px;color:rgba(200,230,210,.8);line-height:1.9;margin-bottom:18px;text-align:left">'+steps+errInfo+'</div>'
+    +'<div style="font-size:15px;color:rgba(200,230,210,.8);line-height:1.9;margin-bottom:18px;text-align:left">'+steps+errInfo+'</div>'
     +(reason !== 'denied' ? '<button onclick="window.location.reload()" style="width:100%;padding:13px;border-radius:100px;border:none;background:rgba(116,198,157,.9);color:#0e1f14;font-family:Jost,sans-serif;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px">🔄 Reiniciar Velo ahora</button>' : '')
     +'<button onclick="document.getElementById(\'pushFixOv\').remove()" style="width:100%;padding:12px;border-radius:100px;border:1.5px solid rgba(116,198,157,.25);background:none;color:rgba(180,220,180,.7);font-family:Jost,sans-serif;font-size:14px;cursor:pointer">Cerrar</button>'
     +'</div>';
@@ -14115,7 +14146,7 @@ function pOpenUserSearch(){
     +' style="width:100%;box-sizing:border-box;padding:10px 12px 10px 36px;border:1.5px solid var(--border2);border-radius:12px;font-size:14px;font-family:\'Jost\',sans-serif;background:var(--cream);color:var(--ink);outline:none;-webkit-appearance:none"'
     +' oninput="pUserSearchInput(this.value)">'
     +'</div>'
-    +'<div id="userSearchResults"><div style="text-align:center;padding:24px 0;color:var(--ink5);font-size:13px">Escribí al menos 2 caracteres para buscar ✨</div></div>'
+    +'<div id="userSearchResults"><div style="text-align:center;padding:24px 0;color:var(--ink5);font-size:15px">Escribí al menos 2 caracteres para buscar ✨</div></div>'
     +'<div style="height:6px"></div>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'userSearchOv\').remove()">Cerrar</button>'
     +'</div>'
@@ -14135,17 +14166,17 @@ function pUserSearchInput(val){
   var res = document.getElementById('userSearchResults');
   if(!res) return;
   if(q.length < 2){
-    res.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--ink5);font-size:13px">'
+    res.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--ink5);font-size:15px">'
       +(q.length===0 ? 'Escribí al menos 2 caracteres para buscar ✨' : 'Seguí escribiendo…')+'</div>';
     return;
   }
-  res.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--ink5);font-size:13px">Buscando…</div>';
+  res.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--ink5);font-size:15px">Buscando…</div>';
   _usrSearchTimer = setTimeout(async function(){
     var users = await pSearchUsers(q);
     var el = document.getElementById('userSearchResults');
     if(!el) return;
     if(!users.length){
-      el.innerHTML = '<div style="text-align:center;padding:28px 0;color:var(--ink5);font-size:13px">No se encontraron usuarios con <strong>"'+_escHtml(q)+'"</strong></div>';
+      el.innerHTML = '<div style="text-align:center;padding:28px 0;color:var(--ink5);font-size:15px">No se encontraron usuarios con <strong>"'+_escHtml(q)+'"</strong></div>';
       return;
     }
     var myId = _myUserId ? _myUserId() : (safeLS('get','velo_user_id')||'');
@@ -14159,7 +14190,7 @@ function pUserSearchInput(val){
       return '<div class="usr-search-card" onclick="pOpenFoundUserProfile('+_jsAttr(u.id)+','+_jsAttr(u.nombre||'Usuario')+','+_jsAttr(u.avatar||'🌿')+')">'
         +'<div class="usr-search-av">'+avHtml+'</div>'
         +'<div class="usr-search-info">'
-        +'<div class="usr-search-name">'+nameTxt+(isMe?' <span style="font-size:10px;background:var(--sage7);color:var(--sage2);padding:1px 6px;border-radius:6px;font-weight:700;vertical-align:middle">yo</span>':'')+'</div>'
+        +'<div class="usr-search-name">'+nameTxt+(isMe?' <span style="font-size:12px;background:var(--sage7);color:var(--sage2);padding:1px 6px;border-radius:6px;font-weight:700;vertical-align:middle">yo</span>':'')+'</div>'
         +(handleTxt?'<div class="usr-search-handle">'+handleTxt+'</div>':'')
         +(mottoTxt?'<div class="usr-search-motto">'+_escHtml(mottoTxt)+'</div>':'')
         +'</div>'
@@ -14298,7 +14329,7 @@ function pRenderInbox(){
       if(inboxEl){
         _strip = document.createElement('div');
         _strip.id = '_inboxSyncStrip';
-        _strip.style.cssText = 'font-size:10px;color:var(--ink5);text-align:center;padding:4px 0 8px;letter-spacing:.02em';
+        _strip.style.cssText = 'font-size:12px;color:var(--ink5);text-align:center;padding:4px 0 8px;letter-spacing:.02em';
         inboxEl.parentNode.insertBefore(_strip, inboxEl);
       }
     }
@@ -14359,7 +14390,7 @@ function pRenderInbox(){
         ? '<div class="p-inbox-ic" style="cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_avInline(senderAv,32)+'</div>'
         : '<div class="p-inbox-ic">'+_escHtml(b.icon||'📢')+'</div>';
       var senderRow = (senderId && senderName)
-        ? '<div style="font-size:11px;color:rgba(116,198,157,.90);font-weight:700;margin-bottom:2px;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_escHtml(senderName)+' ›</div>'
+        ? '<div style="font-size:13px;color:rgba(116,198,157,.90);font-weight:700;margin-bottom:2px;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv)+',\'\',\'\','+_jsAttr(senderId)+')">'+_escHtml(senderName)+' ›</div>'
         : '';
       var isAlreadyRead = !!safeLS('get',readKey);
       var _xBtn = '<button onclick="event.stopPropagation();pDeleteInboxMsg(\'bc_'+b.id+'\',this)" style="'+_delBtnStyle+'">×</button>';
@@ -14373,9 +14404,9 @@ function pRenderInbox(){
           +'<div style="display:flex;flex-shrink:0">'+(isAlreadyRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
           +'<div class="p-inbox-ic" style="background:rgba(200,158,56,.14);font-size:18px">📋</div>'
           +'<div style="flex:1;min-width:0">'
-          +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">Tu resumen semanal — '+wrDay+'</div>'
-          +'<div style="font-size:11px;color:var(--ink4);line-height:1.45">Ánimos, racha, tendencia y recomendaciones personalizadas de tu semana.</div>'
-          +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:rgba(200,158,56,.85)">Ver mi semana →</span>')+'</div>'
+          +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">Tu resumen semanal — '+wrDay+'</div>'
+          +'<div style="font-size:13px;color:var(--ink4);line-height:1.45">Ánimos, racha, tendencia y recomendaciones personalizadas de tu semana.</div>'
+          +'<div style="font-size:12px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:rgba(200,158,56,.85)">Ver mi semana →</span>')+'</div>'
           +'</div>'+_xBtn+'</div>';
       }
       if(b.body && b.body.indexOf('__MONTHLY_REPORT__')===0){
@@ -14387,9 +14418,9 @@ function pRenderInbox(){
           +'<div style="display:flex;flex-shrink:0">'+(isAlreadyRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
           +'<div class="p-inbox-ic" style="background:rgba(180,140,220,.14);font-size:18px">📊</div>'
           +'<div style="flex:1;min-width:0">'
-          +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">Tu resumen de '+rpMName+'</div>'
-          +'<div style="font-size:11px;color:var(--ink4);line-height:1.45">Velo preparó un resumen personalizado de tu mes: ánimos, diario y más.</div>'
-          +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:rgba(180,140,220,.85)">Ver mi resumen →</span>')+'</div>'
+          +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">Tu resumen de '+rpMName+'</div>'
+          +'<div style="font-size:13px;color:var(--ink4);line-height:1.45">Velo preparó un resumen personalizado de tu mes: ánimos, diario y más.</div>'
+          +'<div style="font-size:12px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:rgba(180,140,220,.85)">Ver mi resumen →</span>')+'</div>'
           +'</div>'+_xBtn+'</div>';
       }
       return '<div class="p-inbox-msg'+(isAlreadyRead?'':' unread')+'" data-mid="bc_'+b.id+'" style="cursor:pointer" onclick="pOpenBroadcastMsg('+_jsAttr(readKey)+','+_jsAttr(b.subject||'')+','+_jsAttr(b.body||'')+','+_jsAttr(senderName||'')+','+_jsAttr(fecha||'')+',this,'+_jsAttr(senderId||'')+','+_jsAttr(senderAv||'')+','+_jsAttr(senderUsername||'')+')">'
@@ -14397,9 +14428,9 @@ function pRenderInbox(){
         +iconHtml
         +'<div style="flex:1;min-width:0">'
         +senderRow
-        +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(b.subject)+'</div>'
-        +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(b.body||'')+'</div>'
-        +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:var(--sage)">Toca para leer →</span>')+'</div>'
+        +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(b.subject)+'</div>'
+        +'<div style="font-size:13px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(b.body||'')+'</div>'
+        +'<div style="font-size:12px;color:var(--ink5);margin-top:4px">'+fecha+(isAlreadyRead?'':' · <span style="color:var(--sage)">Toca para leer →</span>')+'</div>'
         +'</div>'+_xBtn+'</div>';
     }).join('');
     // Prepend broadcasts before existing inbox items, after contact banner
@@ -14439,10 +14470,10 @@ function pRenderInbox(){
           +'<div style="display:flex;flex-shrink:0">'+(isRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
           +'<div class="p-inbox-ic" style="background:rgba(200,165,100,.12)">💌</div>'
           +'<div style="flex:1;min-width:0">'
-          +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Re: '+_escHtml(r.topic||'Consulta')+'</div>'
-          +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml((r.reply||'').slice(0,120))+'</div>'
-          +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+fecha+' · Equipo Velo</div>'
-          +(isRead?'':'<div style="font-size:10px;color:#C8A560;margin-top:4px">Toca para leer →</div>')
+          +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Re: '+_escHtml(r.topic||'Consulta')+'</div>'
+          +'<div style="font-size:13px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml((r.reply||'').slice(0,120))+'</div>'
+          +'<div style="font-size:12px;color:var(--ink5);margin-top:4px">'+fecha+' · Equipo Velo</div>'
+          +(isRead?'':'<div style="font-size:12px;color:#C8A560;margin-top:4px">Toca para leer →</div>')
           +'</div>'+_xBtnRp(r.id)+'</div>';
       }).join('');
       if(replyMsgs){
@@ -14461,15 +14492,15 @@ function pRenderInbox(){
   }
   var contactBanner = '<div onclick="pGoTo(\'contact\')" style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.07);border:1.5px solid rgba(116,198,157,.18);border-radius:14px;padding:12px 14px;margin-bottom:12px;cursor:pointer">'
     +'<div style="font-size:22px">✉️</div>'
-    +'<div><div style="font-size:13px;font-weight:700;color:var(--ink)">Escribinos a Velo</div>'
-    +'<div style="font-size:11px;color:var(--ink4)">Sugerencias, consultas o reportar un problema</div></div>'
+    +'<div><div style="font-size:15px;font-weight:700;color:var(--ink)">Escribinos a Velo</div>'
+    +'<div style="font-size:13px;color:var(--ink4)">Sugerencias, consultas o reportar un problema</div></div>'
     +'<div style="margin-left:auto;color:var(--ink5);font-size:16px">›</div>'
     +'</div>';
 
   el.innerHTML = contactBanner + all.map(function(m){
     var actionBtn = '';
     if(m.accion && !m.leido){
-      actionBtn = '<button onclick="event.stopPropagation();(function(){var ms=[];try{ms=JSON.parse(safeLS(\'get\',\'velo_inbox\')||\'[]\');}catch(e){}safeLS(\'set\',\'velo_inbox\',JSON.stringify(ms.map(function(x){return x.id===\''+m.id+'\'?Object.assign({},x,{leido:true}):x;})));})();safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');this.closest(\'.p-inbox-msg\').classList.remove(\'unread\');var d=this.closest(\'.p-inbox-msg\').querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();'+m.accion+'" style="margin-top:6px;font-size:11px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
+      actionBtn = '<button onclick="event.stopPropagation();(function(){var ms=[];try{ms=JSON.parse(safeLS(\'get\',\'velo_inbox\')||\'[]\');}catch(e){}safeLS(\'set\',\'velo_inbox\',JSON.stringify(ms.map(function(x){return x.id===\''+m.id+'\'?Object.assign({},x,{leido:true}):x;})));})();safeLS(\'set\',\'velo_read_'+m.id+'\',\'1\');this.closest(\'.p-inbox-msg\').classList.remove(\'unread\');var d=this.closest(\'.p-inbox-msg\').querySelector(\'.p-inbox-dot\');if(d)d.remove();_updateHomeBell();'+m.accion+'" style="margin-top:6px;font-size:13px;padding:4px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;color:var(--sage);font-family:\'Jost\',sans-serif;font-weight:700;cursor:pointer">Completar encuesta →</button>';
     }
     var hasCuerpo = !!(m.cuerpo);
     var readKey = 'velo_read_'+m.id;
@@ -14481,9 +14512,9 @@ function pRenderInbox(){
       +'<div style="display:flex;flex-shrink:0">'+(isRead?'':'<div class="p-inbox-dot"></div>')+'</div>'
       +'<div class="p-inbox-ic" style="background:'+(m.tipo==='encuesta'?'rgba(116,198,157,.12)':'var(--sage7)')+'">'+m.icon+'</div>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m.asunto+'</div>'
-      +'<div style="font-size:11px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+m.extracto+'</div>'
-      +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+m.fecha+(hasCuerpo&&!isRead?' · <span style="color:var(--sage)">Toca para leer →</span>':'')+'</div>'
+      +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m.asunto+'</div>'
+      +'<div style="font-size:13px;color:var(--ink4);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+m.extracto+'</div>'
+      +'<div style="font-size:12px;color:var(--ink5);margin-top:4px">'+m.fecha+(hasCuerpo&&!isRead?' · <span style="color:var(--sage)">Toca para leer →</span>':'')+'</div>'
       +actionBtn
       +'</div>'+_xBtnL+'</div>';
   }).join('');
@@ -14685,17 +14716,17 @@ function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl, sen
       +'</div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;margin-bottom:2px" onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv||'🧑')+',\'\',\'\','+_jsAttr(senderId)+')">'+_escHtml(senderName)+'</div>'
-      +(uname ? '<div style="font-size:11px;color:var(--sage3);font-weight:600">'+_escHtml(uname)+'</div>' : '')
-      +'<div style="font-size:10px;color:var(--ink5);margin-top:2px">'+_escHtml(fecha||'')+'</div>'
+      +(uname ? '<div style="font-size:13px;color:var(--sage3);font-weight:600">'+_escHtml(uname)+'</div>' : '')
+      +'<div style="font-size:12px;color:var(--ink5);margin-top:2px">'+_escHtml(fecha||'')+'</div>'
       +'</div>'
       +'<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-      +'<button onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv||'🧑')+',\'\',\'\','+_jsAttr(senderId)+')" style="padding:5px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;font-size:11px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">Ver perfil</button>'
-      +'<button id="bcFavBtn" onclick="'+(isFav?'pRemoveFav(\''+_escHtml(senderId)+'\')':'pAddFav('+_jsAttr(senderId)+','+_jsAttr(senderName)+','+_jsAttr(senderAv||'🧑')+')')+';this.textContent=\''+(isFav?'☆ Favorito':'⭐ Guardado')+'\';pToast(\''+(isFav?'☆':'⭐')+'\',\''+(isFav?'Quitado de favoritos':'¡Guardado como favorito!')+'\')" style="padding:5px 10px;background:rgba(255,200,50,'+(isFav?'.18':'.08')+');border:1.5px solid rgba(255,200,50,'+(isFav?'.45':'.25')+');border-radius:100px;font-size:11px;font-weight:700;color:'+(isFav?'#c8a040':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">'+(isFav?'⭐ Guardado':'☆ Favorito')+'</button>'
+      +'<button onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(senderAv||'🧑')+',\'\',\'\','+_jsAttr(senderId)+')" style="padding:5px 10px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:100px;font-size:13px;font-weight:700;color:var(--sage);cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">Ver perfil</button>'
+      +'<button id="bcFavBtn" onclick="'+(isFav?'pRemoveFav(\''+_escHtml(senderId)+'\')':'pAddFav('+_jsAttr(senderId)+','+_jsAttr(senderName)+','+_jsAttr(senderAv||'🧑')+')')+';this.textContent=\''+(isFav?'☆ Favorito':'⭐ Guardado')+'\';pToast(\''+(isFav?'☆':'⭐')+'\',\''+(isFav?'Quitado de favoritos':'¡Guardado como favorito!')+'\')" style="padding:5px 10px;background:rgba(255,200,50,'+(isFav?'.18':'.08')+');border:1.5px solid rgba(255,200,50,'+(isFav?'.45':'.25')+');border-radius:100px;font-size:13px;font-weight:700;color:'+(isFav?'#c8a040':'var(--ink4)')+';cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">'+(isFav?'⭐ Guardado':'☆ Favorito')+'</button>'
       +'</div></div>'
     : '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
       +'<div style="font-size:30px;width:46px;height:46px;border-radius:14px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0">🌊</div>'
-      +'<div><div style="font-size:12px;font-weight:700;color:var(--sage)">Alguien de la comunidad</div>'
-      +'<div style="font-size:11px;color:var(--ink5)">'+_escHtml(fecha||'')+'</div></div>'
+      +'<div><div style="font-size:14px;font-weight:700;color:var(--sage)">Alguien de la comunidad</div>'
+      +'<div style="font-size:13px;color:var(--ink5)">'+_escHtml(fecha||'')+'</div></div>'
       +'</div>';
 
   var replyBtn = isIdentified
@@ -14713,7 +14744,7 @@ function pOpenBroadcastMsg(readKey, subject, body, senderName, fecha, rowEl, sen
     // Velo logo signature — always shown on official broadcasts
     +'<div style="display:flex;align-items:center;gap:10px;border-top:1px solid var(--border2);padding-top:14px;margin-bottom:18px">'
     +'<div style="height:28px;width:72px;background:url(\'assets/logo.png\') left center / contain no-repeat;opacity:.55" class="r-velo-sig-logo"></div>'
-    +'<div style="font-size:11px;color:var(--ink5);line-height:1.4">Velo · Acompañamiento emocional entre pares<br><span style="font-size:10px;opacity:.6">Mensaje oficial del equipo de Velo</span></div>'
+    +'<div style="font-size:13px;color:var(--ink5);line-height:1.4">Velo · Acompañamiento emocional entre pares<br><span style="font-size:12px;opacity:.6">Mensaje oficial del equipo de Velo</span></div>'
     +'</div>'
     +replyBtn
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'inboxBcOv\').remove()">Cerrar</button>'
@@ -14749,8 +14780,8 @@ function pOpenInboxMsg(msgId, rowEl){
     +'<div class="p-sheet-handle"></div>'
     +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
     +'<div style="font-size:30px;width:46px;height:46px;border-radius:14px;background:var(--sage7);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+msg.icon+'</div>'
-    +'<div><div style="font-size:12px;font-weight:700;color:var(--sage)">'+_escHtml(msg.remitente||'Velo')+'</div>'
-    +'<div style="font-size:11px;color:var(--ink5)">'+_escHtml(msg.fecha||'')+'</div></div>'
+    +'<div><div style="font-size:14px;font-weight:700;color:var(--sage)">'+_escHtml(msg.remitente||'Velo')+'</div>'
+    +'<div style="font-size:13px;color:var(--ink5)">'+_escHtml(msg.fecha||'')+'</div></div>'
     +'</div>'
     +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);margin-bottom:16px;line-height:1.3">'+_escHtml(msg.asunto)+'</h2>'
     +(msg.cuerpo ? '<div style="font-size:14px;color:var(--ink3);line-height:1.85;white-space:pre-line;background:var(--cream2);border-radius:12px;padding:16px;margin-bottom:20px">'+_escHtml(msg.cuerpo)+'</div>' : '')
@@ -14774,12 +14805,12 @@ function pOpenInboxAdminReply(contactId, topic, originalMsg, replyText, allowRep
     +'<div class="p-sheet-handle"></div>'
     +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
     +'<div style="font-size:30px;width:46px;height:46px;border-radius:14px;background:rgba(200,165,100,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">💌</div>'
-    +'<div><div style="font-size:12px;font-weight:700;color:#C8A560">Equipo Velo</div>'
-    +'<div style="font-size:11px;color:var(--ink5)">'+_escHtml(fecha||'')+'</div></div>'
+    +'<div><div style="font-size:14px;font-weight:700;color:#C8A560">Equipo Velo</div>'
+    +'<div style="font-size:13px;color:var(--ink5)">'+_escHtml(fecha||'')+'</div></div>'
     +'</div>'
     +'<h2 style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);margin-bottom:16px;line-height:1.3">Re: '+_escHtml(topic||'')+'</h2>'
     +'<div style="font-size:14px;color:var(--ink3);line-height:1.85;white-space:pre-line;background:var(--cream2);border-radius:12px;padding:16px;margin-bottom:16px">'+_escHtml(replyText||'')+'</div>'
-    +(originalMsg ? '<details style="margin-bottom:20px"><summary style="font-size:11px;color:var(--ink5);cursor:pointer">Ver mensaje original</summary><div style="font-size:12px;color:var(--ink4);line-height:1.7;white-space:pre-line;margin-top:8px;padding:10px;background:var(--cream2);border-radius:10px">'+_escHtml(originalMsg)+'</div></details>' : '')
+    +(originalMsg ? '<details style="margin-bottom:20px"><summary style="font-size:13px;color:var(--ink5);cursor:pointer">Ver mensaje original</summary><div style="font-size:14px;color:var(--ink4);line-height:1.7;white-space:pre-line;margin-top:8px;padding:10px;background:var(--cream2);border-radius:10px">'+_escHtml(originalMsg)+'</div></details>' : '')
     +(allowReply ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" style="margin-bottom:8px" onclick="document.getElementById(\'inboxAdminReplyOv\').remove();pReplyToAdmin('+_jsAttr(topic||'')+')">💬 Responder</button>' : '')
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'inboxAdminReplyOv\').remove()">Cerrar</button>'
     +'</div>';
@@ -14794,7 +14825,7 @@ function pReplyToAdmin(originalTopic){
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:4px">Responder a Velo</div>'
-    +'<p style="font-size:12px;color:var(--ink4);margin-bottom:14px">Tu respuesta llegará al equipo. Asunto: <strong>Re: '+_escHtml(originalTopic)+'</strong></p>'
+    +'<p style="font-size:14px;color:var(--ink4);margin-bottom:14px">Tu respuesta llegará al equipo. Asunto: <strong>Re: '+_escHtml(originalTopic)+'</strong></p>'
     +'<textarea class="p-textarea" id="replyToAdminTa" rows="4" placeholder="Escribí tu respuesta..."></textarea>'
     +'<div style="height:12px"></div>'
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSendReplyToAdmin(\''+_escHtml(originalTopic).replace(/'/g,"\\'")+'\')">Enviar 💌</button>'
@@ -14839,7 +14870,7 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   ov.id = 'quickProfileOv';
   ov.innerHTML = '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
     +'<div class="p-sheet-handle"></div>'
-    +'<div id="qpBody" style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Cargando perfil…</div>'
+    +'<div id="qpBody" style="text-align:center;padding:30px 0;color:var(--ink5);font-size:15px">Cargando perfil…</div>'
     +'</div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
@@ -14903,29 +14934,29 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
   // Status block — same format as "Como me ven"
   var statusLines = '';
   if(prof && !isAnon){
-    if(prof.status_music)  statusLines += '<div><span style="color:var(--ink4);font-size:12px">🎵 Música</span> · '+_escHtml(prof.status_music)+'</div>';
-    if(prof.status_book)   statusLines += '<div><span style="color:var(--ink4);font-size:12px">📚 Libro</span> · '+_escHtml(prof.status_book)+'</div>';
-    if(prof.status_film)   statusLines += '<div><span style="color:var(--ink4);font-size:12px">🎬 Película</span> · '+_escHtml(prof.status_film)+'</div>';
+    if(prof.status_music)  statusLines += '<div><span style="color:var(--ink4);font-size:14px">🎵 Música</span> · '+_escHtml(prof.status_music)+'</div>';
+    if(prof.status_book)   statusLines += '<div><span style="color:var(--ink4);font-size:14px">📚 Libro</span> · '+_escHtml(prof.status_book)+'</div>';
+    if(prof.status_film)   statusLines += '<div><span style="color:var(--ink4);font-size:14px">🎬 Película</span> · '+_escHtml(prof.status_film)+'</div>';
     if(prof.status_phrase) statusLines += '<div style="font-style:italic;margin-top:4px;color:var(--sage2)">✨ &ldquo;'+_escHtml(prof.status_phrase)+'&rdquo;</div>';
   }
   var likes = statusLines
-    ? '<div style="background:var(--sage7);border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;color:var(--ink3);line-height:1.9;text-align:left">'+statusLines+'</div>'
+    ? '<div style="background:var(--sage7);border-radius:12px;padding:12px;margin-bottom:12px;font-size:15px;color:var(--ink3);line-height:1.9;text-align:left">'+statusLines+'</div>'
     : '';
 
   var counters = (!isAnon && prof)
     ? '<div style="display:flex;gap:8px;margin-bottom:12px">'
       +'<div style="flex:1;background:rgba(116,198,157,.08);border-radius:10px;padding:10px;text-align:center">'
       +'<div style="font-size:20px;font-weight:700;color:var(--sage2)">'+helped+'</div>'
-      +'<div style="font-size:10px;color:var(--ink4);margin-top:2px">personas acompañadas</div></div>'
+      +'<div style="font-size:12px;color:var(--ink4);margin-top:2px">personas acompañadas</div></div>'
       +'<div style="flex:1;background:rgba(116,198,157,.08);border-radius:10px;padding:10px;text-align:center">'
       +'<div style="font-size:20px;font-weight:700;color:var(--sage2)">'+received+'</div>'
-      +'<div style="font-size:10px;color:var(--ink4);margin-top:2px">veces que lo/la apoyaron</div></div>'
+      +'<div style="font-size:12px;color:var(--ink4);margin-top:2px">veces que lo/la apoyaron</div></div>'
       +'</div>'
     : '';
   var _qpMyId = _myUserId();
   var revHtml = reviews.length
     ? '<div style="text-align:left;margin-bottom:12px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS ('+reviews.length+')</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">⭐ RESEÑAS ('+reviews.length+')</div>'
       +'<div style="max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-right:2px">'
       + _renderReviewsList(reviews, _qpMyId, userId||'')
       +'</div>'
@@ -14941,10 +14972,10 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
     +(presence ? '<span style="position:absolute;bottom:3px;right:3px;width:15px;height:15px;border-radius:50%;background:'+presence.color+';border:2.5px solid var(--cream)"></span>' : '')
     +'</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:2px">'+_escHtml(dispName)+'</div>'
-    +(dispUsername ? '<div style="font-size:12px;color:var(--ink4);margin-bottom:6px;font-family:Jost,sans-serif;letter-spacing:.2px">@'+_escHtml(dispUsername)+'</div>' : '')
-    +(motto ? '<div style="font-size:13px;color:var(--ink4);font-style:italic;margin-bottom:10px">'+_escHtml(motto)+'</div>' : '')
-    +(!isAnon ? '<div><span style="font-size:20px">'+badge.icon+'</span> <span style="font-size:12px;color:var(--ink4)">Guardián '+badge.name+'</span></div>' : '')
-    +(presence ? '<div style="font-size:11px;color:'+(presence.on?presence.color:'var(--ink5)')+';margin-top:6px">● '+presence.label+'</div>' : '')
+    +(dispUsername ? '<div style="font-size:14px;color:var(--ink4);margin-bottom:6px;font-family:Jost,sans-serif;letter-spacing:.2px">@'+_escHtml(dispUsername)+'</div>' : '')
+    +(motto ? '<div style="font-size:15px;color:var(--ink4);font-style:italic;margin-bottom:10px">'+_escHtml(motto)+'</div>' : '')
+    +(!isAnon ? '<div><span style="font-size:20px">'+badge.icon+'</span> <span style="font-size:14px;color:var(--ink4)">Guardián '+badge.name+'</span></div>' : '')
+    +(presence ? '<div style="font-size:13px;color:'+(presence.on?presence.color:'var(--ink5)')+';margin-top:6px">● '+presence.label+'</div>' : '')
     +'</div>'
     + likes + counters + revHtml
     // ── Bitácora posts section ────────────────────────────────────
@@ -14959,17 +14990,17 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
         var lbl = _btCatLabel[p.categoria]||p.categoria||'';
         var _pc2=_btCleanContenido(p.contenido); var prev = _pc2.slice(0,90)+(_pc2.length>90?'…':'');
         return '<div onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\');document.getElementById(\'quickProfileOv\').remove()" style="cursor:pointer;background:var(--sage7);border:1px solid var(--border);border-left:3px solid '+col+';border-radius:10px;padding:10px 12px;margin-bottom:6px">'
-          +(p.titulo?'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
-          +'<div style="font-size:11.5px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
-          +'<span style="font-size:9px;font-weight:700;color:'+col+';background:rgba(255,255,255,.06);border-radius:20px;padding:2px 8px">'+lbl+'</span>'
+          +(p.titulo?'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:3px">'+_escHtml(p.titulo)+'</div>':'')
+          +'<div style="font-size:13px;color:var(--ink3);font-style:italic;line-height:1.5;margin-bottom:5px">'+_escHtml(prev)+'</div>'
+          +'<span style="font-size:11px;font-weight:700;color:'+col+';background:rgba(255,255,255,.06);border-radius:20px;padding:2px 8px">'+lbl+'</span>'
           +'</div>';
       };
       return '<div style="text-align:left;margin-bottom:14px">'
-        +'<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">📖 EN BITÁCORA ('+_qpBtPosts.length+')</div>'
+        +'<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink4);margin-bottom:8px">📖 EN BITÁCORA ('+_qpBtPosts.length+')</div>'
         +shown.map(_makeCard).join('')
         +(rest.length
           ? '<div id="'+_moreId+'" style="display:none">'+rest.map(_makeCard).join('')+'</div>'
-            +'<button onclick="var m=document.getElementById(\''+_moreId+'\');if(!m)return;var op=m.style.display!==\'none\';m.style.display=op?\'none\':\'block\';this.textContent=op?\'Ver más ('+rest.length+') ↓\':\'Ver menos ↑\';" style="background:none;border:none;color:var(--sage);font-size:12px;font-weight:600;cursor:pointer;padding:2px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>'
+            +'<button onclick="var m=document.getElementById(\''+_moreId+'\');if(!m)return;var op=m.style.display!==\'none\';m.style.display=op?\'none\':\'block\';this.textContent=op?\'Ver más ('+rest.length+') ↓\':\'Ver menos ↑\';" style="background:none;border:none;color:var(--sage);font-size:14px;font-weight:600;cursor:pointer;padding:2px 0;font-family:\'Jost\',sans-serif">Ver más ('+rest.length+') ↓</button>'
           : '')
         +'</div>';
     })() : '')
@@ -15202,12 +15233,12 @@ function _contactCard(id, name, av, uname, pInfo, unread, opts){
     +'</div>'
     +'<div style="flex:1;min-width:0">'
     +'<div class="vcc-name" style="font-size:15.5px;font-weight:800;font-family:Jost,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.1px">'+_escHtml(name||'Usuario')+'</div>'
-    +(uname?'<div style="font-size:11px;font-weight:600;margin-bottom:3px;font-family:Jost,sans-serif;color:'+accent.replace(/[\d.]+\)$/,'0.78)')+'">'+_escHtml(uname)+'</div>':'')
+    +(uname?'<div style="font-size:13px;font-weight:600;margin-bottom:3px;font-family:Jost,sans-serif;color:'+accent.replace(/[\d.]+\)$/,'0.78)')+'">'+_escHtml(uname)+'</div>':'')
     +'<div style="display:inline-flex;align-items:center;gap:4px;background:'+onlineBg+';border-radius:100px;padding:2px 8px 2px 5px;margin-top:2px">'
     +'<span style="width:6px;height:6px;border-radius:50%;background:'+onlineColor+';flex-shrink:0"></span>'
-    +'<span style="font-size:9.5px;font-weight:700;color:'+onlineColor+';font-family:Jost,sans-serif;letter-spacing:.2px">'+pInfo.label+'</span>'
+    +'<span style="font-size:11px;font-weight:700;color:'+onlineColor+';font-family:Jost,sans-serif;letter-spacing:.2px">'+pInfo.label+'</span>'
     +'</div>'
-    +(opts.motto?'<p class="vcc-motto" style="font-size:10.5px;line-height:1.4;margin:5px 0 0;font-family:\'Cormorant Garamond\',serif;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml(opts.motto)+'"</p>':'')
+    +(opts.motto?'<p class="vcc-motto" style="font-size:12px;line-height:1.4;margin:5px 0 0;font-family:\'Cormorant Garamond\',serif;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml(opts.motto)+'"</p>':'')
     +'</div>'
     +'<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;justify-content:center;padding-left:4px">'
     +(canChat
@@ -15310,7 +15341,7 @@ async function pRenderContacts(){
   var tabsHtml = '<div class="r-contacts-tabs">'
     +tabs.map(function(t,i){
       return '<button class="r-ctab'+(i===0?' active':'')+'" id="ctab-'+t.id+'" onclick="pContactsTab(\''+t.id+'\')">'
-        +(t.id==='online'?'<span style="color:#5BBF87;font-size:11px">●</span> Online':'')
+        +(t.id==='online'?'<span style="color:#5BBF87;font-size:13px">●</span> Online':'')
         +(t.id!=='online'?t.label:'')
         +'<span class="r-ctab-count">'+t.count+'</span>'
         +'</button>';
@@ -15361,13 +15392,13 @@ async function pRenderContacts(){
   var blockedHtml = '<div id="contacts-blocked" style="display:none">'
     +(!blockedList.length
       ? '<div class="p-empty"><span class="p-empty-emoji">🚫</span><div class="p-empty-title">Sin usuarios bloqueados</div><div class="p-empty-sub">Cuando bloqueés a alguien aparecerá aquí y podrás desbloquearlo.</div></div>'
-      : '<div style="font-size:11px;color:var(--ink5);margin-bottom:12px;font-style:italic">Podés desbloquear a cualquier persona en cualquier momento.</div>'
+      : '<div style="font-size:13px;color:var(--ink5);margin-bottom:12px;font-style:italic">Podés desbloquear a cualquier persona en cualquier momento.</div>'
         +blockedList.map(function(b){
           return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--cream);border-radius:14px;margin-bottom:8px;border:1.5px solid rgba(200,50,50,.15);opacity:.75">'
             +'<div style="flex-shrink:0;filter:grayscale(1);opacity:.7">'+_avInline(b.av||'🧑',36)+'</div>'
-            +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+_escHtml(b.name||'Usuario')+'</div>'
-            +'<div style="font-size:11px;color:var(--ink5)">Bloqueado/a</div></div>'
-            +'<button onclick="pUnblockUser('+_jsAttr(b.id)+')" style="padding:6px 12px;background:rgba(116,198,157,.12);border:1.5px solid rgba(116,198,157,.35);border-radius:10px;font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;flex-shrink:0">Desbloquear</button>'
+            +'<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:var(--ink)">'+_escHtml(b.name||'Usuario')+'</div>'
+            +'<div style="font-size:13px;color:var(--ink5)">Bloqueado/a</div></div>'
+            +'<button onclick="pUnblockUser('+_jsAttr(b.id)+')" style="padding:6px 12px;background:rgba(116,198,157,.12);border:1.5px solid rgba(116,198,157,.35);border-radius:10px;font-size:14px;font-weight:700;color:var(--sage);cursor:pointer;flex-shrink:0">Desbloquear</button>'
             +'</div>';
         }).join('')
     )
@@ -15377,7 +15408,7 @@ async function pRenderContacts(){
   } catch(e) {
     console.error('[pRenderContacts]', e);
     var elFb = document.getElementById('contactsContent');
-    if(elFb) elFb.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">⚠️</span><div class="p-empty-title">Error al cargar</div><div class="p-empty-sub" style="margin-top:8px"><button onclick="pRenderContacts()" style="padding:8px 18px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:13px;font-weight:700;color:var(--sage);cursor:pointer">Reintentar</button></div></div>';
+    if(elFb) elFb.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">⚠️</span><div class="p-empty-title">Error al cargar</div><div class="p-empty-sub" style="margin-top:8px"><button onclick="pRenderContacts()" style="padding:8px 18px;background:var(--sage7);border:1.5px solid var(--sage4);border-radius:10px;font-size:15px;font-weight:700;color:var(--sage);cursor:pointer">Reintentar</button></div></div>';
   }
 }
 
@@ -15411,7 +15442,7 @@ function pLeaveOfflineMsg(toId, toName, toAv){
     +'<div style="text-align:center;padding:4px 0 16px">'
     +'<div style="font-size:36px;margin-bottom:8px">'+_avInline(toAv||'🧑',48)+'</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:19px;color:var(--ink);margin-bottom:4px">Mensaje para '+_escHtml(toName||'Usuario')+'</div>'
-    +'<p style="font-size:12px;color:var(--ink4);margin:0 0 14px;line-height:1.5">Le llegará en su Buzón Velo cuando esté disponible.</p>'
+    +'<p style="font-size:14px;color:var(--ink4);margin:0 0 14px;line-height:1.5">Le llegará en su Buzón Velo cuando esté disponible.</p>'
     +'</div>'
     +'<textarea id="offlineMsgTa" class="feed-textarea" rows="4" placeholder="Escribí tu mensaje…" style="width:100%;box-sizing:border-box;border-radius:12px;padding:12px;font-size:14px;border:1.5px solid var(--border2);background:var(--cream2);font-family:\'Jost\',sans-serif;resize:none;margin-bottom:12px"></textarea>'
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="_sendOfflineMsg('+_jsAttr(toId)+','+_jsAttr(toName)+','+_jsAttr(toAv||'🧑')+')">📬 Enviar mensaje</button>'
@@ -15486,7 +15517,7 @@ async function _renderFavWidget(containerId){
   }
 
   el.innerHTML = '<div style="margin-bottom:14px">'
-    +'<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--sage3);text-transform:uppercase;margin-bottom:8px">'+label+'</div>'
+    +'<div style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--sage3);text-transform:uppercase;margin-bottom:8px">'+label+'</div>'
     +'<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-ms-overflow-style:none">'
     +shownFavs.map(function(f){
       var isOnline = !!onlineIds[f.id];
@@ -15496,11 +15527,11 @@ async function _renderFavWidget(containerId){
         +_avInline(f.av||'🧑', 38)
         +'<span style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:'+(isOnline?'var(--st-on)':'rgba(150,150,150,.35)')+';border:2px solid var(--cream)"></span>'
         +'</div>'
-        +'<div style="font-size:10px;color:var(--ink3);font-weight:600;max-width:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(displayName.split(' ')[0])+'</div>'
+        +'<div style="font-size:12px;color:var(--ink3);font-weight:600;max-width:48px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(displayName.split(' ')[0])+'</div>'
         +'</div>';
     }).join('')
     +'</div>'
-    +'<button onclick="pGoTo(\'contacts\')" style="width:100%;margin-top:8px;padding:10px 16px;background:linear-gradient(135deg,rgba(116,198,157,.13),rgba(116,198,157,.07));border:1.5px solid rgba(116,198,157,.28);border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:\'Jost\',sans-serif;font-size:11.5px;font-weight:700;color:var(--sage3);letter-spacing:.3px;transition:all .18s" onmouseenter="this.style.background=\'linear-gradient(135deg,rgba(116,198,157,.20),rgba(116,198,157,.12))\'" onmouseleave="this.style.background=\'linear-gradient(135deg,rgba(116,198,157,.13),rgba(116,198,157,.07))\'"><span style="font-size:14px">👥</span> Ver todos mis contactos</button>'
+    +'<button onclick="pGoTo(\'contacts\')" style="width:100%;margin-top:8px;padding:10px 16px;background:linear-gradient(135deg,rgba(116,198,157,.13),rgba(116,198,157,.07));border:1.5px solid rgba(116,198,157,.28);border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:\'Jost\',sans-serif;font-size:13px;font-weight:700;color:var(--sage3);letter-spacing:.3px;transition:all .18s" onmouseenter="this.style.background=\'linear-gradient(135deg,rgba(116,198,157,.20),rgba(116,198,157,.12))\'" onmouseleave="this.style.background=\'linear-gradient(135deg,rgba(116,198,157,.13),rgba(116,198,157,.07))\'"><span style="font-size:14px">👥</span> Ver todos mis contactos</button>'
     +'</div>';
 }
 
@@ -15559,7 +15590,7 @@ function pClearDMChat(){
   _pConfirm('¿Borrar toda la conversación con '+_dmPeer.name+'? Esta acción es permanente.', function(){
     var myId = safeLS('get','velo_user_id')||'';
     var el = document.getElementById('dmMessages');
-    if(el) el.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:13px">Conversación eliminada</div>';
+    if(el) el.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--ink5);font-size:15px">Conversación eliminada</div>';
     _initSupabase();
     if(sbClient && myId && _dmPeer){
       sbClient.from('direct_messages').delete()
@@ -15595,8 +15626,8 @@ function _showDMSenderWaiting(toId, toName){
   ov.innerHTML = '<div style="background:var(--cream);border-radius:20px;padding:28px 24px;max-width:320px;width:90%;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,.3)">'
     +'<div style="font-size:36px;margin-bottom:12px">💬</div>'
     +'<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px">Solicitud enviada</div>'
-    +'<div style="font-size:13px;color:var(--ink4);line-height:1.5;margin-bottom:20px">Esperando que <strong>'+_escHtml(toName)+'</strong> acepte tu invitación a chatear…</div>'
-    +'<button onclick="_cancelDMRequest(\''+toId+'\')" style="width:100%;padding:12px;background:rgba(255,80,80,.1);border:1.5px solid rgba(255,80,80,.3);border-radius:12px;color:rgba(220,60,60,.85);font-size:13px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar solicitud</button>'
+    +'<div style="font-size:15px;color:var(--ink4);line-height:1.5;margin-bottom:20px">Esperando que <strong>'+_escHtml(toName)+'</strong> acepte tu invitación a chatear…</div>'
+    +'<button onclick="_cancelDMRequest(\''+toId+'\')" style="width:100%;padding:12px;background:rgba(255,80,80,.1);border:1.5px solid rgba(255,80,80,.3);border-radius:12px;color:rgba(220,60,60,.85);font-size:15px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar solicitud</button>'
     +'</div>';
   document.body.appendChild(ov);
 }
@@ -15715,7 +15746,7 @@ async function _renderDMThread(){
         el.innerHTML = '<div class="dm-empty-state" style="text-align:center;padding:40px 16px 20px">'
           +'<div style="margin-bottom:12px">'+_avInline((_dmPeer&&_dmPeer.av)||'🧑',56)+'</div>'
           +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;color:var(--ink);margin-bottom:8px">'+_escHtml((_dmPeer&&_dmPeer.name)||'Usuario')+'</div>'
-          +'<div style="font-size:12px;color:var(--ink5);line-height:1.6">Tu conversación es privada 🔒<br>Solo vos y '+_escHtml(((_dmPeer&&_dmPeer.name)||'esta persona').split(' ')[0])+' pueden leer estos mensajes.</div>'
+          +'<div style="font-size:14px;color:var(--ink5);line-height:1.6">Tu conversación es privada 🔒<br>Solo vos y '+_escHtml(((_dmPeer&&_dmPeer.name)||'esta persona').split(' ')[0])+' pueden leer estos mensajes.</div>'
           +'</div>';
         _dmLastMsgId = null;
       }
@@ -15885,7 +15916,7 @@ function _showDMChatRequest(fromId, fromName, fromAv){
     +'<div style="text-align:center;padding:8px 0 16px">'
     +'<div style="font-size:50px;margin-bottom:10px">'+_avInline(fromAv||'🧑',56)+'</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:6px">'+_escHtml(fromName)+'</div>'
-    +'<p style="font-size:13px;color:var(--ink3);margin:0 0 20px;line-height:1.5">quiere iniciar un chat privado contigo.<br>¿Querés aceptar?</p>'
+    +'<p style="font-size:15px;color:var(--ink3);margin:0 0 20px;line-height:1.5">quiere iniciar un chat privado contigo.<br>¿Querés aceptar?</p>'
     +'</div>'
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="_acceptDMRequest('+_jsAttr(fromId)+','+_jsAttr(fromName)+','+_jsAttr(fromAv||'🧑')+');document.getElementById(\'dmChatReqOv\').remove()" style="margin-bottom:8px">💬 Aceptar y chatear</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="_rejectDMRequest('+_jsAttr(fromId)+','+_jsAttr(fromName)+');document.getElementById(\'dmChatReqOv\').remove()">No por ahora</button>'
@@ -16124,8 +16155,8 @@ function _showDMToast(fromId, fromName, fromAv, text){
   banner.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--bg-card,#1a2e1a);border-radius:18px;box-shadow:0 4px 24px rgba(0,0,0,.35);padding:12px 16px;display:flex;align-items:center;gap:12px;max-width:340px;width:calc(100% - 32px);cursor:pointer;border:1.5px solid var(--border2);animation:slideDown .25s ease';
   banner.innerHTML = '<div style="font-size:32px;flex-shrink:0">'+_avInline(fromAv,38)+'</div>'
     +'<div style="flex:1;min-width:0">'
-    +'<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(fromName)+' te escribió 💬</div>'
-    +'<div style="font-size:12px;color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(text.slice(0,60))+'</div>'
+    +'<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:2px">'+_escHtml(fromName)+' te escribió 💬</div>'
+    +'<div style="font-size:14px;color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(text.slice(0,60))+'</div>'
     +'</div>'
     +'<button onclick="event.stopPropagation();var _dtb=document.getElementById(\'dmToastBanner\');if(_dtb)_dtb.remove();" style="font-size:16px;background:none;border:none;cursor:pointer;color:var(--ink4);padding:4px;flex-shrink:0">✕</button>';
   banner.onclick = function(){
@@ -16234,7 +16265,7 @@ function pInitDonation(){
   if(!grid) return;
   var amts = ['5','10','15','25'];
   grid.innerHTML = amts.map(function(a){
-    return '<div class="amt-opt'+(a==='10'?' selected':'')+'" onclick="pSelAmt(this,\''+a+'\')"><div style="font-family:\'Cormorant Garamond\',serif;font-size:28px;font-weight:700;color:var(--sage)">$'+a+'</div><div style="font-size:11px;color:var(--ink4)">USD</div></div>';
+    return '<div class="amt-opt'+(a==='10'?' selected':'')+'" onclick="pSelAmt(this,\''+a+'\')"><div style="font-family:\'Cormorant Garamond\',serif;font-size:28px;font-weight:700;color:var(--sage)">$'+a+'</div><div style="font-size:13px;color:var(--ink4)">USD</div></div>';
   }).join('');
 }
 
@@ -16305,17 +16336,17 @@ function pShowDailyLimitModal(type){
     +'<div style="text-align:center;padding:8px 4px 4px">'
     +'<div style="font-size:44px;margin-bottom:10px">'+l.icon+'</div>'
     +'<div style="font-family:\'Cormorant Garamond\',\'Crimson Pro\',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:10px;line-height:1.2">¡Llegaste al límite de hoy!</div>'
-    +'<p style="font-size:13.5px;color:var(--ink3);margin:0 0 6px;line-height:1.65;padding:0 8px">'
+    +'<p style="font-size:15px;color:var(--ink3);margin:0 0 6px;line-height:1.65;padding:0 8px">'
     +'Se acabaron tus <strong>'+l.limit+' '+l.name+'</strong> gratis de hoy.'
     +'</p>'
-    +'<p style="font-size:13px;color:var(--ink4);margin:0 0 22px;line-height:1.6;padding:0 8px">'
+    +'<p style="font-size:15px;color:var(--ink4);margin:0 0 22px;line-height:1.6;padding:0 8px">'
     +'Volvé mañana para continuar, o suscribite a <strong>Velo Plus</strong> para acceso ilimitado a todo.'
     +'</p>'
     +'<div style="display:flex;flex-direction:column;gap:10px">'
     +'<button onclick="document.getElementById(\'dailyLimitOv\').remove();pShowPlusModal()" '
     +'style="padding:13px;background:linear-gradient(135deg,#C8A560,#A07840);border:none;border-radius:14px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Jost\',sans-serif;width:100%;letter-spacing:.02em">⭐ Suscribirme a Velo Plus</button>'
     +'<button onclick="document.getElementById(\'dailyLimitOv\').remove()" '
-    +'style="padding:12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:14px;font-size:13px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Volver mañana 👋</button>'
+    +'style="padding:12px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:14px;font-size:15px;font-weight:600;color:var(--ink3);cursor:pointer;font-family:\'Jost\',sans-serif;width:100%">Volver mañana 👋</button>'
     +'</div></div></div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
@@ -16332,12 +16363,12 @@ function pShowPlusModal(){
     +'<div style="text-align:center;margin-bottom:18px">'
     +'<div style="font-size:36px;margin-bottom:8px">⭐</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:var(--ink);margin-bottom:6px">Suscripción a Velo Plus</div>'
-    +'<div style="font-size:13px;color:var(--ink4);line-height:1.5">Al suscribirte recibís acceso completo a todo Velo por <strong>$2.99 USD/mes</strong>.<br>El pago se procesa por PayPal. Cancelá cuando quieras.</div>'
+    +'<div style="font-size:15px;color:var(--ink4);line-height:1.5">Al suscribirte recibís acceso completo a todo Velo por <strong>$2.99 USD/mes</strong>.<br>El pago se procesa por PayPal. Cancelá cuando quieras.</div>'
     +'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
     +'<div style="background:var(--cream2);border-radius:14px;padding:13px;border:1.5px solid var(--border2)">'
-    +'<div style="font-size:11px;font-weight:700;color:var(--ink4);margin-bottom:10px;letter-spacing:.5px">ACTUAL · GRATUITO</div>'
-    +'<ul style="font-size:12px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
+    +'<div style="font-size:13px;font-weight:700;color:var(--ink4);margin-bottom:10px;letter-spacing:.5px">ACTUAL · GRATUITO</div>'
+    +'<ul style="font-size:14px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
     +'<li>✅ Diario emocional</li>'
     +'<li>✅ Muro de la Felicidad</li>'
     +'<li>✅ 4 mensajes al Mar/día</li>'
@@ -16348,8 +16379,8 @@ function pShowPlusModal(){
     +'<li style="color:var(--ink5)">❌ Insignia dorada</li>'
     +'</ul></div>'
     +'<div style="background:linear-gradient(135deg,rgba(200,165,100,.18),rgba(200,165,100,.08));border-radius:14px;padding:13px;border:1.5px solid rgba(200,165,100,.4)">'
-    +'<div style="font-size:11px;font-weight:700;color:#C8A560;margin-bottom:10px;letter-spacing:.5px">CON PLUS · $2.99/mes</div>'
-    +'<ul style="font-size:12px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
+    +'<div style="font-size:13px;font-weight:700;color:#C8A560;margin-bottom:10px;letter-spacing:.5px">CON PLUS · $2.99/mes</div>'
+    +'<ul style="font-size:14px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
     +'<li>✅ Todo lo gratuito</li>'
     +'<li>✅ Ilimitado en todo</li>'
     +'<li>✅ Círculos de Paz</li>'
@@ -16360,7 +16391,7 @@ function pShowPlusModal(){
     +'</ul></div>'
     +'</div>'
     +'<div style="background:var(--sage7);border-radius:12px;padding:12px 14px;margin-bottom:18px;border:1px solid var(--border2)">'
-    +'<p style="font-size:12px;color:var(--ink4);margin:0;line-height:1.6">💳 <strong>Pago seguro vía PayPal</strong> · $2.99 USD/mes · Se renueva automáticamente. Tu suscripción ayuda a mantener Velo gratuito y subsidia sesiones solidarias para quienes más lo necesitan.</p>'
+    +'<p style="font-size:14px;color:var(--ink4);margin:0;line-height:1.6">💳 <strong>Pago seguro vía PayPal</strong> · $2.99 USD/mes · Se renueva automáticamente. Tu suscripción ayuda a mantener Velo gratuito y subsidia sesiones solidarias para quienes más lo necesitan.</p>'
     +'</div>'
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove();pOpenPayPalPlus()" style="background:linear-gradient(135deg,#C8A560,#A07840);margin-bottom:10px">⭐ Suscribirme por $2.99/mes · PayPal</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove()">Ahora no</button>'
@@ -16490,7 +16521,7 @@ function pInitProPanel(){
       ov.style.cssText = 'position:fixed;inset:0;background:rgba(5,20,12,.97);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px';
       ov.innerHTML = '<div style="font-size:60px;margin-bottom:16px">⏰</div>'
         +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:#fff;margin-bottom:10px">Tu período de prueba expiró</div>'
-        +'<div style="font-size:14px;color:rgba(255,255,255,.6);margin-bottom:28px;max-width:320px;line-height:1.7">Para seguir usando el panel profesional de Velo, activá tu suscripción mensual.<br><br><span style="font-size:13px;color:rgba(116,198,157,.7)">Suscripción mensual · USD 15/mes</span></div>'
+        +'<div style="font-size:14px;color:rgba(255,255,255,.6);margin-bottom:28px;max-width:320px;line-height:1.7">Para seguir usando el panel profesional de Velo, activá tu suscripción mensual.<br><br><span style="font-size:15px;color:rgba(116,198,157,.7)">Suscripción mensual · USD 15/mes</span></div>'
         +'<a href="mailto:consultas@heyvelo.app?subject=Quiero suscribirme a Velo Profesional&body=Hola, quiero activar mi suscripción profesional.%0A%0ANombre: '+encodeURIComponent(safeLS('get','velo_pro_name')||'')+'%0AEmail: '+encodeURIComponent(safeLS('get','velo_user_email')||'')+'" style="display:block;padding:14px 28px;background:rgba(116,198,157,.9);border:none;border-radius:14px;color:#0D2B1C;font-family:\'Jost\',sans-serif;font-size:15px;font-weight:800;cursor:pointer;text-decoration:none;margin-bottom:12px">💳 Suscribirme</a>'
         +'<button onclick="pSignOut()" style="padding:12px 24px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:rgba(255,255,255,.7);font-family:\'Jost\',sans-serif;font-size:14px;font-weight:600;cursor:pointer">↩️ Salir</button>';
       document.body.appendChild(ov);
@@ -16509,8 +16540,8 @@ function pInitProPanel(){
       var panelInner = document.querySelector('#pg-pro-panel .p-page-inner');
       if(panelInner) panelInner.insertBefore(banner, panelInner.firstChild);
     }
-    banner.innerHTML = '<div style="font-size:12px;color:rgba(116,198,157,.9);font-weight:700">🩺 Período de prueba gratuita · <strong>'+daysLeft+' día'+(daysLeft!==1?'s':'')+' restante'+(daysLeft!==1?'s':'')+'</strong></div>'
-      +'<a href="mailto:consultas@heyvelo.app?subject=Quiero suscribirme a Velo Profesional" style="font-size:11px;padding:5px 12px;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.4);border-radius:8px;color:rgba(116,198,157,.9);text-decoration:none;font-family:\'Jost\',sans-serif;font-weight:700;white-space:nowrap">Activar suscripción →</a>';
+    banner.innerHTML = '<div style="font-size:14px;color:rgba(116,198,157,.9);font-weight:700">🩺 Período de prueba gratuita · <strong>'+daysLeft+' día'+(daysLeft!==1?'s':'')+' restante'+(daysLeft!==1?'s':'')+'</strong></div>'
+      +'<a href="mailto:consultas@heyvelo.app?subject=Quiero suscribirme a Velo Profesional" style="font-size:13px;padding:5px 12px;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.4);border-radius:8px;color:rgba(116,198,157,.9);text-decoration:none;font-family:\'Jost\',sans-serif;font-weight:700;white-space:nowrap">Activar suscripción →</a>';
   }
 }
 
@@ -16528,11 +16559,11 @@ function pRenderProAgenda(){
 
   var html = '<div class="p-card" style="padding:18px;margin-bottom:14px">'
     +'<div class="p-label p-label-sage" style="margin-bottom:4px">Disponibilidad semanal</div>'
-    +'<p style="font-size:12px;color:var(--ink5);margin-bottom:14px;line-height:1.5">Seleccioná los días y horarios disponibles. Los usuarios los verán al reservar.</p>'
+    +'<p style="font-size:14px;color:var(--ink5);margin-bottom:14px;line-height:1.5">Seleccioná los días y horarios disponibles. Los usuarios los verán al reservar.</p>'
     +'<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px">'
     +[0,1,2,3,4,5,6].map(function(d){
       var active = _proAvailEditing[d] && _proAvailEditing[d].length > 0;
-      return '<button id="proDay-'+d+'" onclick="pTogProDay('+d+',this)" style="padding:8px 13px;border-radius:100px;border:2px solid '+(active?'var(--sage2)':'var(--border2)')+';background:'+(active?'var(--sage7)':'rgba(255,255,255,.7)')+';color:'+(active?'var(--sage)':'var(--ink4)')+';font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'+_CAL_DAY_NAMES[d]+'</button>';
+      return '<button id="proDay-'+d+'" onclick="pTogProDay('+d+',this)" style="padding:8px 13px;border-radius:100px;border:2px solid '+(active?'var(--sage2)':'var(--border2)')+';background:'+(active?'var(--sage7)':'rgba(255,255,255,.7)')+';color:'+(active?'var(--sage)':'var(--ink4)')+';font-size:14px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'+_CAL_DAY_NAMES[d]+'</button>';
     }).join('')
     +'</div>'
     +'<div id="proSlotEditor">'+_buildProSlotEditor()+'</div>'
@@ -16548,13 +16579,13 @@ function pRenderProAgenda(){
       return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">'
         +'<div style="width:44px;height:44px;background:var(--sage7);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">'
         +'<div style="font-size:18px;font-weight:800;color:var(--sage);line-height:1">'+d.getDate()+'</div>'
-        +'<div style="font-size:9px;color:var(--sage3);font-weight:700;text-transform:uppercase">'+_CAL_MONTH_SHORT[d.getMonth()]+'</div>'
+        +'<div style="font-size:11px;color:var(--sage3);font-weight:700;text-transform:uppercase">'+_CAL_MONTH_SHORT[d.getMonth()]+'</div>'
         +'</div>'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:13px;font-weight:700;color:var(--ink)">'+_escHtml(b.userName||'Usuario')+'</div>'
-        +'<div style="font-size:11px;color:var(--ink4)">'+_CAL_DAY_NAMES_LONG[d.getDay()]+' · '+b.time+' hs</div>'
+        +'<div style="font-size:15px;font-weight:700;color:var(--ink)">'+_escHtml(b.userName||'Usuario')+'</div>'
+        +'<div style="font-size:13px;color:var(--ink4)">'+_CAL_DAY_NAMES_LONG[d.getDay()]+' · '+b.time+' hs</div>'
         +'</div>'
-        +'<button onclick="pCancelProBooking(\''+b.id+'\',\''+proId+'\')" style="padding:5px 10px;background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.2);border-radius:8px;font-size:11px;color:rgba(200,60,60,.9);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">Cancelar</button>'
+        +'<button onclick="pCancelProBooking(\''+b.id+'\',\''+proId+'\')" style="padding:5px 10px;background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.2);border-radius:8px;font-size:13px;color:rgba(200,60,60,.9);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">Cancelar</button>'
         +'</div>';
     }).join('');
   }
@@ -16564,15 +16595,15 @@ function pRenderProAgenda(){
 
 function _buildProSlotEditor(){
   var activeDays = [0,1,2,3,4,5,6].filter(function(d){ return _proAvailEditing[d] && _proAvailEditing[d].length > 0; });
-  if(!activeDays.length) return '<p style="font-size:12px;color:var(--ink5);font-style:italic">Seleccioná al menos un día para elegir los horarios.</p>';
+  if(!activeDays.length) return '<p style="font-size:14px;color:var(--ink5);font-style:italic">Seleccioná al menos un día para elegir los horarios.</p>';
   return activeDays.map(function(d){
     var slots = _proAvailEditing[d] || [];
     return '<div style="margin-bottom:12px">'
-      +'<div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:7px">'+_CAL_DAY_NAMES_LONG[d]+'</div>'
+      +'<div style="font-size:14px;font-weight:700;color:var(--ink3);margin-bottom:7px">'+_CAL_DAY_NAMES_LONG[d]+'</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
       +_BOOKING_HOURS.map(function(h){
         var active = slots.indexOf(h) > -1;
-        return '<button id="slot-'+d+'-'+h.replace(':','')+'" onclick="pTogProSlot('+d+',\''+h+'\',this)" style="padding:5px 11px;border-radius:8px;border:1.5px solid '+(active?'var(--sage2)':'var(--border2)')+';background:'+(active?'var(--sage7)':'rgba(255,255,255,.7)')+';color:'+(active?'var(--sage)':'var(--ink4)')+';font-size:12px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'+h+'</button>';
+        return '<button id="slot-'+d+'-'+h.replace(':','')+'" onclick="pTogProSlot('+d+',\''+h+'\',this)" style="padding:5px 11px;border-radius:8px;border:1.5px solid '+(active?'var(--sage2)':'var(--border2)')+';background:'+(active?'var(--sage7)':'rgba(255,255,255,.7)')+';color:'+(active?'var(--sage)':'var(--ink4)')+';font-size:14px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'+h+'</button>';
       }).join('')
       +'</div></div>';
   }).join('');
@@ -16675,9 +16706,9 @@ function pOpenBookPro(proId){
     var a = dy.hasAvail;
     return '<div id="bkday-'+dy.dateStr+'" onclick="'+(a?'pSelectBookDate(\''+dy.dateStr+'\')':'')+'" '
       +'style="flex-shrink:0;width:54px;text-align:center;padding:10px 6px;border-radius:14px;border:1.5px solid '+(a?'var(--border2)':'var(--border)')+';background:rgba(255,255,255,'+(a?'.9':'.4')+');cursor:'+(a?'pointer':'default')+';opacity:'+(a?'1':'.45')+';transition:all .15s">'
-      +'<div style="font-size:10px;font-weight:600;color:var(--ink5);text-transform:uppercase;margin-bottom:4px">'+_CAL_DAY_NAMES[dy.dow]+'</div>'
+      +'<div style="font-size:12px;font-weight:600;color:var(--ink5);text-transform:uppercase;margin-bottom:4px">'+_CAL_DAY_NAMES[dy.dow]+'</div>'
       +'<div style="font-size:18px;font-weight:800;color:'+(a?'var(--ink)':'var(--ink5)')+'">'+dy.d.getDate()+'</div>'
-      +'<div style="font-size:9px;color:var(--ink5);margin-top:2px">'+_CAL_MONTH_SHORT[dy.d.getMonth()]+'</div>'
+      +'<div style="font-size:11px;color:var(--ink5);margin-top:2px">'+_CAL_MONTH_SHORT[dy.d.getMonth()]+'</div>'
       +(a?'<div style="width:6px;height:6px;border-radius:50%;background:var(--sage2);margin:4px auto 0"></div>':'')
       +'</div>';
   }).join('');
@@ -16685,11 +16716,11 @@ function pOpenBookPro(proId){
   body.innerHTML = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">'
     +'<div style="font-size:44px;flex-shrink:0">'+pro.av+'</div>'
     +'<div><div style="font-size:16px;font-weight:700;color:var(--ink)">'+_escHtml(pro.name)+'</div>'
-    +'<div style="font-size:12px;color:var(--sage3);font-weight:600">'+_escHtml(pro.spec)+'</div>'
-    +'<div style="font-size:12px;color:var(--ink4);margin-top:2px">$'+pro.rate+' '+pro.currency+' · sesión 1h</div></div></div>'
+    +'<div style="font-size:14px;color:var(--sage3);font-weight:600">'+_escHtml(pro.spec)+'</div>'
+    +'<div style="font-size:14px;color:var(--ink4);margin-top:2px">$'+pro.rate+' '+pro.currency+' · sesión 1h</div></div></div>'
     +'<div class="p-label p-label-sage" style="margin-bottom:10px">Elegí un día disponible</div>'
     +'<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:20px;-webkit-overflow-scrolling:touch">'+calStrip+'</div>'
-    +'<div id="proBookSlots"><p style="font-size:13px;color:var(--ink4);text-align:center;padding:16px 0;font-style:italic">↑ Seleccioná un día para ver los horarios</p></div>'
+    +'<div id="proBookSlots"><p style="font-size:15px;color:var(--ink4);text-align:center;padding:16px 0;font-style:italic">↑ Seleccioná un día para ver los horarios</p></div>'
     +'<div id="proBookConfirmArea" style="display:none;margin-top:16px">'
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pConfirmBookSlot()">Confirmar reserva ✅</button>'
     +'</div>';
@@ -16716,14 +16747,14 @@ function pSelectBookDate(dateStr){
   var slotsEl = document.getElementById('proBookSlots');
   if(!slotsEl) return;
   if(!dy || !dy.freeSlots.length){
-    slotsEl.innerHTML='<p style="font-size:13px;color:var(--ink4);text-align:center;padding:16px 0">No hay horarios disponibles este día</p>';
+    slotsEl.innerHTML='<p style="font-size:15px;color:var(--ink4);text-align:center;padding:16px 0">No hay horarios disponibles este día</p>';
     return;
   }
   var dateLabel = _CAL_DAY_NAMES_LONG[dy.d.getDay()]+' '+dy.d.getDate()+' de '+_CAL_MONTH_LONG[dy.d.getMonth()];
-  slotsEl.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--ink4);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">'+dateLabel+'</div>'
+  slotsEl.innerHTML = '<div style="font-size:13px;font-weight:600;color:var(--ink4);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">'+dateLabel+'</div>'
     +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
     +dy.freeSlots.map(function(s){
-      return '<button id="bkslot-'+s.replace(':','')+'" onclick="pSelectBookSlot(\''+s+'\')" style="padding:9px 15px;border-radius:10px;border:1.5px solid var(--border2);background:rgba(255,255,255,.9);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'+s+'</button>';
+      return '<button id="bkslot-'+s.replace(':','')+'" onclick="pSelectBookSlot(\''+s+'\')" style="padding:9px 15px;border-radius:10px;border:1.5px solid var(--border2);background:rgba(255,255,255,.9);color:var(--ink);font-size:15px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif;transition:all .15s">'+s+'</button>';
     }).join('')
     +'</div>';
   var ca = document.getElementById('proBookConfirmArea');
@@ -16792,7 +16823,7 @@ function switchProPanel(panel, btn){
     finanzas: '<div class="metric-cards"><div class="metric-card"><div class="metric-n">$0</div><div class="metric-l">Pendiente</div></div><div class="metric-card"><div class="metric-n">$0</div><div class="metric-l">Total recibido</div></div><div class="metric-card"><div class="metric-n">0</div><div class="metric-l">Sesiones pagadas</div></div></div><div class="p-card" style="padding:18px;margin-top:14px"><p class="p-sm p-muted">Los pagos se procesan automáticamente por Stripe. Comisión Velo: 20%.</p></div>',
     mensajes: _renderProMessages(),
     solidario: _renderProSolidarity(),
-    perfil: '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Mi perfil profesional</div><div class="p-field"><label class="p-field-label">Estado</label><div style="display:flex;gap:8px">'+[{v:'disponible',l:'🟢 Disponible'},{v:'ocupado',l:'🟡 Ocupado'},{v:'vacaciones',l:'🏖️ Vacaciones'}].map(function(s){ return '<button style="padding:7px 12px;border-radius:100px;border:1.5px solid var(--border2);background:rgba(255,255,255,.7);font-size:12px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pToast(\'✅\',\'Estado: '+s.l+'\')">'+s.l+'</button>'; }).join('')+'</div></div><button class="p-btn p-btn--secondary p-btn--md" onclick="pSignOut()">↩️ Cerrar sesión</button></div>'
+    perfil: '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Mi perfil profesional</div><div class="p-field"><label class="p-field-label">Estado</label><div style="display:flex;gap:8px">'+[{v:'disponible',l:'🟢 Disponible'},{v:'ocupado',l:'🟡 Ocupado'},{v:'vacaciones',l:'🏖️ Vacaciones'}].map(function(s){ return '<button style="padding:7px 12px;border-radius:100px;border:1.5px solid var(--border2);background:rgba(255,255,255,.7);font-size:14px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pToast(\'✅\',\'Estado: '+s.l+'\')">'+s.l+'</button>'; }).join('')+'</div></div><button class="p-btn p-btn--secondary p-btn--md" onclick="pSignOut()">↩️ Cerrar sesión</button></div>'
   };
   content.innerHTML = panels[panel] || '<p class="p-sm p-muted">Sección en desarrollo 🌿</p>';
   if(panel === 'inicio') pInitProPanel();
@@ -16817,9 +16848,9 @@ function _renderPatientList(){
     return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="pOpenPatientNotes(\''+t.userId+'\',\''+_escHtml(t.userName || 'Usuario')+'\')">'
       +'<div style="font-size:30px">🧑</div>'
       +'<div style="flex:1;min-width:0"><div style="font-weight:700;color:var(--ink);font-size:14px">'+(t.userName||'Usuario')+'</div>'
-      +'<div style="font-size:11px;color:var(--ink5)">Última sesión · '+new Date(t.ts).toLocaleDateString('es')+'</div>'
-      +'<div style="font-size:11px;color:var(--sage3);margin-top:2px">'+notes.length+' nota'+(notes.length!==1?'s':'')+'</div></div>'
-      +'<div style="font-size:11px;font-weight:700;color:var(--sage3);white-space:nowrap">Ver notas →</div></div>';
+      +'<div style="font-size:13px;color:var(--ink5)">Última sesión · '+new Date(t.ts).toLocaleDateString('es')+'</div>'
+      +'<div style="font-size:13px;color:var(--sage3);margin-top:2px">'+notes.length+' nota'+(notes.length!==1?'s':'')+'</div></div>'
+      +'<div style="font-size:13px;font-weight:700;color:var(--sage3);white-space:nowrap">Ver notas →</div></div>';
   }).join('');
   return '<div class="p-card" style="padding:18px"><div class="p-label p-label-sage" style="margin-bottom:12px">Mis pacientes</div>'
     + rows
@@ -16837,14 +16868,14 @@ function pOpenPatientNotes(userId, userName){
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
     +'<button style="font-size:18px;background:none;border:none;cursor:pointer" onclick="document.getElementById(\'patientNotePanel\').style.display=\'none\'">←</button>'
     +'<div class="p-label p-label-sage" style="margin:0">Notas privadas · '+(userName||userId)+'</div></div>'
-    +'<p style="font-size:11px;color:var(--ink5);margin-bottom:14px;line-height:1.5">🔒 Solo vos podés ver estas notas. No son visibles para el usuario ni para Velo.</p>'
+    +'<p style="font-size:13px;color:var(--ink5);margin-bottom:14px;line-height:1.5">🔒 Solo vos podés ver estas notas. No son visibles para el usuario ni para Velo.</p>'
     +'<textarea class="p-textarea" id="patientNoteTa" rows="4" placeholder="Escribí una nota clínica o de seguimiento para este paciente…"></textarea>'
     +'<div style="height:10px"></div>'
     +'<button class="p-btn p-btn--primary p-btn--md" onclick="pSavePatientNote(\''+userId+'\',\''+_escHtml(userName || 'Usuario')+'\')">💾 Guardar nota</button>'
     +'<div style="margin-top:16px" id="patientNotesList">'
     +(notes.length ? notes.map(function(n,i){
-        return '<div style="background:var(--cream2);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px;color:var(--ink2);line-height:1.5;position:relative">'
-          +'<div style="font-size:10px;color:var(--ink5);margin-bottom:4px">'+new Date(n.ts).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})+'</div>'
+        return '<div style="background:var(--cream2);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:15px;color:var(--ink2);line-height:1.5;position:relative">'
+          +'<div style="font-size:12px;color:var(--ink5);margin-bottom:4px">'+new Date(n.ts).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})+'</div>'
           +_escHtml(n.text)
           +'<button onclick="pDeletePatientNote(\''+userId+'\',\''+_escHtml(userName||'Usuario')+'\','+i+')" style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:14px;cursor:pointer;color:var(--ink5)" title="Eliminar">🗑️</button>'
           +'</div>';
@@ -16911,8 +16942,8 @@ function _renderProMessages(){
         + patients.map(function(t){
           return '<button style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;cursor:pointer;text-align:left;font-family:\'Jost\',sans-serif" onclick="pProComposeMsg(\''+_escHtml(t.userId)+'\',\''+_escHtml(t.userName||'Usuario')+'\')">'
             +'<span style="font-size:22px">🧑</span>'
-            +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--ink)">'+(t.userName||'Usuario')+'</div>'
-            +'<div style="font-size:11px;color:var(--ink5)">Enviar mensaje interno</div></div>'
+            +'<div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--ink)">'+(t.userName||'Usuario')+'</div>'
+            +'<div style="font-size:13px;color:var(--ink5)">Enviar mensaje interno</div></div>'
             +'<span style="color:var(--sage3);font-size:16px">✉️</span></button>';
         }).join('')
         +'</div>'
@@ -16927,9 +16958,9 @@ function _renderProMessages(){
           return '<div class="p-inbox-msg'+readCls+'" style="cursor:default">'
             +'<div class="p-inbox-ic">💬</div>'
             +'<div style="flex:1;min-width:0">'
-            +'<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px">'+(r.userName||'Paciente')+'</div>'
-            +'<div style="font-size:12px;color:var(--ink3);line-height:1.5;white-space:pre-line">'+_escHtml(r.texto)+'</div>'
-            +'<div style="font-size:10px;color:var(--ink5);margin-top:4px">'+r.fecha+'</div>'
+            +'<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px">'+(r.userName||'Paciente')+'</div>'
+            +'<div style="font-size:14px;color:var(--ink3);line-height:1.5;white-space:pre-line">'+_escHtml(r.texto)+'</div>'
+            +'<div style="font-size:12px;color:var(--ink5);margin-top:4px">'+r.fecha+'</div>'
             +'</div></div>';
         }).join('')
       : '<p class="p-sm p-muted">Las respuestas de tus pacientes aparecerán aquí.</p>')
@@ -16945,7 +16976,7 @@ function pProComposeMsg(userId, userName){
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:4px">Mensaje para '+_escHtml(userName)+'</div>'
-    +'<p style="font-size:12px;color:var(--ink4);margin-bottom:14px">El usuario lo recibirá en su buzón de Velo y podrá responderle.</p>'
+    +'<p style="font-size:14px;color:var(--ink4);margin-bottom:14px">El usuario lo recibirá en su buzón de Velo y podrá responderle.</p>'
     +'<textarea class="p-textarea" id="proComposeTa" rows="5" placeholder="Escribí tu mensaje..."></textarea>'
     +'<div style="height:12px"></div>'
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pProSendMsg(\''+_escHtml(userId)+'\',\''+_escHtml(userName)+'\')">Enviar mensaje 💌</button>'
@@ -16990,7 +17021,7 @@ function pReplyToProMsg(proId, proName, userName){
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);margin-bottom:4px">Responder a '+_escHtml(proName)+'</div>'
-    +'<p style="font-size:12px;color:var(--ink4);margin-bottom:14px">Tu respuesta llegará al buzón del profesional.</p>'
+    +'<p style="font-size:14px;color:var(--ink4);margin-bottom:14px">Tu respuesta llegará al buzón del profesional.</p>'
     +'<textarea class="p-textarea" id="proReplyTa" rows="4" placeholder="Escribí tu respuesta..."></textarea>'
     +'<div style="height:12px"></div>'
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSendProReply(\''+_escHtml(proId)+'\',\''+_escHtml(proName)+'\')">Enviar respuesta 💌</button>'
@@ -17037,7 +17068,7 @@ function pJoinWaitlist(){
     +'<div style="text-align:center;margin-bottom:16px">'
     +'<div style="font-size:44px;margin-bottom:8px">💙</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:6px">Lista de espera solidaria</div>'
-    +'<p style="font-size:13px;color:var(--ink4);line-height:1.6">Profesionales Solidarios/as donan 1 sesión gratuita por mes. Te avisaremos por buzón cuando haya un lugar disponible para vos.</p>'
+    +'<p style="font-size:15px;color:var(--ink4);line-height:1.6">Profesionales Solidarios/as donan 1 sesión gratuita por mes. Te avisaremos por buzón cuando haya un lugar disponible para vos.</p>'
     +'</div>'
     +'<div class="p-field"><label class="p-field-label">¿En qué área necesitás ayuda? (opcional)</label>'
     +'<input id="waitlistArea" class="p-input" type="text" placeholder="Ej: ansiedad, estrés laboral, duelo..."></div>'
@@ -17080,7 +17111,7 @@ function _renderProSolidarity(){
   if(!solidarity){
     return '<div class="p-card" style="padding:18px">'
       +'<div class="p-label p-label-sage" style="margin-bottom:12px">Programa Solidario</div>'
-      +'<p style="font-size:13px;color:var(--ink4);line-height:1.6;margin-bottom:14px">¿Querés donar 1 sesión gratuita por mes para alguien que lo necesita? Obtenés la insignia 💙 Profesional Solidario/a.</p>'
+      +'<p style="font-size:15px;color:var(--ink4);line-height:1.6;margin-bottom:14px">¿Querés donar 1 sesión gratuita por mes para alguien que lo necesita? Obtenés la insignia 💙 Profesional Solidario/a.</p>'
       +'<button class="p-btn p-btn--primary p-btn--md p-btn--full" onclick="pTogProSolidarity(true)">💙 Unirme al programa solidario</button>'
       +'</div>';
   }
@@ -17088,18 +17119,18 @@ function _renderProSolidarity(){
   var assigned = waitlist[0];
   return '<div class="p-card" style="padding:18px">'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
-    +'<span style="font-size:11px;font-weight:700;color:#3a7bd5;background:rgba(58,123,213,.1);border:1px solid rgba(58,123,213,.2);border-radius:100px;padding:4px 12px">💙 Profesional Solidario/a</span>'
-    +'<button style="margin-left:auto;font-size:11px;color:var(--ink5);background:none;border:none;cursor:pointer" onclick="pTogProSolidarity(false)">Salir del programa</button>'
+    +'<span style="font-size:13px;font-weight:700;color:#3a7bd5;background:rgba(58,123,213,.1);border:1px solid rgba(58,123,213,.2);border-radius:100px;padding:4px 12px">💙 Profesional Solidario/a</span>'
+    +'<button style="margin-left:auto;font-size:13px;color:var(--ink5);background:none;border:none;cursor:pointer" onclick="pTogProSolidarity(false)">Salir del programa</button>'
     +'</div>'
     +(assigned
       ? '<div style="background:rgba(58,123,213,.07);border:1.5px solid rgba(58,123,213,.2);border-radius:12px;padding:14px;margin-bottom:14px">'
-        +'<div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px">👤 '+_escHtml(assigned.userName)+'</div>'
-        +(assigned.area ? '<div style="font-size:12px;color:var(--ink4);margin-bottom:10px">Área: '+_escHtml(assigned.area)+'</div>' : '<div style="height:6px"></div>')
-        +'<div style="font-size:11px;color:var(--ink5);margin-bottom:10px">En lista desde '+new Date(assigned.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
+        +'<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px">👤 '+_escHtml(assigned.userName)+'</div>'
+        +(assigned.area ? '<div style="font-size:14px;color:var(--ink4);margin-bottom:10px">Área: '+_escHtml(assigned.area)+'</div>' : '<div style="height:6px"></div>')
+        +'<div style="font-size:13px;color:var(--ink5);margin-bottom:10px">En lista desde '+new Date(assigned.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
         +'<button class="p-btn p-btn--primary p-btn--sm" onclick="pAssignSolidarity(\''+assigned.id+'\',\''+_escHtml(assigned.userName)+'\')">💙 Contactar y asignar sesión</button>'
         +'</div>'
       : '<p class="p-sm p-muted">No hay usuarios en lista de espera en este momento.</p>')
-    +'<p style="font-size:11px;color:var(--ink5);line-height:1.5">La sesión solidaria se asigna manualmente. Velo coordina el contacto por buzón interno.</p>'
+    +'<p style="font-size:13px;color:var(--ink5);line-height:1.5">La sesión solidaria se asigna manualmente. Velo coordina el contacto por buzón interno.</p>'
     +'</div>';
 }
 
@@ -17345,7 +17376,7 @@ async function _renderAdmin(){
   var content = document.getElementById('adminContent');
 
   // Show loading skeleton while Supabase queries run
-  if(metrics) metrics.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:18px;font-size:12px;color:rgba(255,255,255,.35)">Cargando datos en tiempo real…</div>';
+  if(metrics) metrics.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:18px;font-size:14px;color:rgba(255,255,255,.35)">Cargando datos en tiempo real…</div>';
 
   // ── Live Supabase queries ──────────────────────────────────
   _initSupabase();
@@ -17449,8 +17480,8 @@ async function _renderAdmin(){
       return '<div class="a-card" style="position:relative">'
         +'<div style="font-size:20px;margin-bottom:2px">'+d.icon+'</div>'
         +'<div class="a-card-n" style="color:'+d.color+';font-size:22px">'+d.value+'</div>'
-        +'<div class="a-card-l" style="font-size:10px;line-height:1.3">'+d.label+'</div>'
-        +'<div style="position:absolute;top:6px;right:8px;font-size:8px;color:rgba(255,255,255,.2);font-weight:600">'+d.note+'</div>'
+        +'<div class="a-card-l" style="font-size:12px;line-height:1.3">'+d.label+'</div>'
+        +'<div style="position:absolute;top:6px;right:8px;font-size:10px;color:rgba(255,255,255,.2);font-weight:600">'+d.note+'</div>'
         +'</div>';
     }).join('');
 
@@ -17460,25 +17491,25 @@ async function _renderAdmin(){
     if(recentReg.length){
       var recentHtml = '<div id="adminRecentRegs" style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:14px;margin-bottom:14px;overflow:hidden">'
         +'<button onclick="var b=this.nextElementSibling;var open=b.style.display!==\'none\';b.style.display=open?\'none\':\'\';this.querySelector(\'.arr\').textContent=open?\'▶\':\'▼\';" style="width:100%;padding:12px 14px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:\'Jost\',sans-serif">'
-        +'<span style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7)">🆕 ÚLTIMOS REGISTROS ('+recentReg.length+')</span>'
-        +'<span class="arr" style="font-size:10px;color:rgba(116,198,157,.5)">▶</span>'
+        +'<span style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7)">🆕 ÚLTIMOS REGISTROS ('+recentReg.length+')</span>'
+        +'<span class="arr" style="font-size:12px;color:rgba(116,198,157,.5)">▶</span>'
         +'</button>'
         +'<div style="display:none;padding:0 14px 14px">'
         +'<div style="display:flex;justify-content:flex-end;margin-bottom:8px">'
-        +'<button onclick="_switchAdminTab(\'usuarios\')" style="font-size:10px;padding:4px 10px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.3);border-radius:8px;color:rgba(116,198,157,.85);cursor:pointer;font-family:\'Jost\',sans-serif">🔍 Ver todos →</button>'
+        +'<button onclick="_switchAdminTab(\'usuarios\')" style="font-size:12px;padding:4px 10px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.3);border-radius:8px;color:rgba(116,198,157,.85);cursor:pointer;font-family:\'Jost\',sans-serif">🔍 Ver todos →</button>'
         +'</div>'
         + recentReg.slice(0,8).map(function(p){
             var fecha = p.created_at ? new Date(p.created_at).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
-            var roleBadge = p.role==='pro' ? '<span style="font-size:9px;color:#74c6d0;border:1px solid rgba(116,198,210,.3);border-radius:4px;padding:1px 5px">PRO</span>'
-                          : p.role==='plus' ? '<span style="font-size:9px;color:#c8a23e;border:1px solid rgba(200,162,62,.3);border-radius:4px;padding:1px 5px">PLUS</span>'
+            var roleBadge = p.role==='pro' ? '<span style="font-size:11px;color:#74c6d0;border:1px solid rgba(116,198,210,.3);border-radius:4px;padding:1px 5px">PRO</span>'
+                          : p.role==='plus' ? '<span style="font-size:11px;color:#c8a23e;border:1px solid rgba(200,162,62,.3);border-radius:4px;padding:1px 5px">PLUS</span>'
                           : '';
             return '<div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:8px">'
               +'<div style="flex:1;min-width:0">'
-              +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(p.nombre||p.email||'Usuario')+'</div>'
-              +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+_escHtml(p.email||'')+'</div>'
+              +'<div style="font-size:14px;font-weight:600;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(p.nombre||p.email||'Usuario')+'</div>'
+              +'<div style="font-size:12px;color:rgba(255,255,255,.3)">'+_escHtml(p.email||'')+'</div>'
               +'</div>'
               +roleBadge
-              +'<div style="font-size:10px;color:rgba(255,255,255,.25);white-space:nowrap;flex-shrink:0">'+fecha+'</div>'
+              +'<div style="font-size:12px;color:rgba(255,255,255,.25);white-space:nowrap;flex-shrink:0">'+fecha+'</div>'
               +'</div>';
           }).join('')
         +'</div>'
@@ -17500,20 +17531,20 @@ async function _renderAdmin(){
         .then(function(res){
           if(!res.data || !res.data.length) return;
           var alertsHtml = '<div style="background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.2);border-radius:12px;padding:14px;margin-bottom:14px">'
-            +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,100,100,.8);margin-bottom:10px">🚨 ALERTAS DE MODERACIÓN IA ('+res.data.length+')</div>'
+            +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,100,100,.8);margin-bottom:10px">🚨 ALERTAS DE MODERACIÓN IA ('+res.data.length+')</div>'
             + res.data.map(function(f){
                 var t = new Date(f.created_at).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
                 var isPro = (f.section||'').indexOf('pro') > -1 || (f.section||'').indexOf('profesional') > -1;
                 var targetLabel = isPro ? 'profesional' : 'usuario';
                 return '<div id="modflag-'+f.id+'" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
-                  +'<div style="font-size:11px;font-weight:700;color:rgba(255,150,150,.9)">'+_escHtml(f.tipo||'abuso')+' · '+_escHtml(f.section||'')+'</div>'
-                  +'<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">"'+_escHtml((f.content||'').slice(0,100))+'"</div>'
-                  +'<div style="font-size:10px;color:rgba(255,255,255,.25);margin-top:2px">'+t+(f.user_id?' · uid:'+String(f.user_id).slice(0,8):'')+'</div>'
+                  +'<div style="font-size:13px;font-weight:700;color:rgba(255,150,150,.9)">'+_escHtml(f.tipo||'abuso')+' · '+_escHtml(f.section||'')+'</div>'
+                  +'<div style="font-size:13px;color:rgba(255,255,255,.45);margin-top:2px">"'+_escHtml((f.content||'').slice(0,100))+'"</div>'
+                  +'<div style="font-size:12px;color:rgba(255,255,255,.25);margin-top:2px">'+t+(f.user_id?' · uid:'+String(f.user_id).slice(0,8):'')+'</div>'
                   +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">'
-                  +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'accept\')" style="font-size:10px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Aceptar</button>'
-                  +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'alert\')" style="font-size:10px;padding:4px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:6px;color:rgba(240,200,90,.9);cursor:pointer">⚠️ Alertar '+targetLabel+'</button>'
-                  +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'delete\')" style="font-size:10px;padding:4px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);border-radius:6px;color:rgba(231,120,110,.9);cursor:pointer">🗑️ Eliminar</button>'
-                  +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'alertdelete\')" style="font-size:10px;padding:4px 9px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.25);border-radius:6px;color:rgba(231,120,110,.75);cursor:pointer">⚠️+🗑️</button>'
+                  +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'accept\')" style="font-size:12px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Aceptar</button>'
+                  +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'alert\')" style="font-size:12px;padding:4px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:6px;color:rgba(240,200,90,.9);cursor:pointer">⚠️ Alertar '+targetLabel+'</button>'
+                  +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'delete\')" style="font-size:12px;padding:4px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);border-radius:6px;color:rgba(231,120,110,.9);cursor:pointer">🗑️ Eliminar</button>'
+                  +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'alertdelete\')" style="font-size:12px;padding:4px 9px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.25);border-radius:6px;color:rgba(231,120,110,.75);cursor:pointer">⚠️+🗑️</button>'
                   +'</div>'
                   +'</div>';
               }).join('')
@@ -17543,7 +17574,7 @@ function _adminTabBarHtml(){
   return '<div id="adminTabBar" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.1)">'
     + tabs.map(function(t){
         var active = _adminActiveTab === t.id;
-        return '<button class="admin-tab-btn" data-tab="'+t.id+'" onclick="_switchAdminTab(\''+t.id+'\')" style="font-size:11px;padding:6px 13px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;white-space:nowrap;transition:all .18s;'
+        return '<button class="admin-tab-btn" data-tab="'+t.id+'" onclick="_switchAdminTab(\''+t.id+'\')" style="font-size:13px;padding:6px 13px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;white-space:nowrap;transition:all .18s;'
           +(active
             ? 'background:rgba(116,198,157,.22);border:1.5px solid rgba(116,198,157,.48);color:rgba(255,255,255,.9)'
             : 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4)')
@@ -17562,7 +17593,7 @@ function _switchAdminTab(tab){
   });
   var panel = document.getElementById('adminTabPanel');
   if(!panel) return;
-  panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando…</div>';
+  panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:14px;color:rgba(255,255,255,.25)">Cargando…</div>';
   var map = {
     moderacion:    _adminTabModeracion,
     consultas:     _adminTabConsultas,
@@ -17628,7 +17659,7 @@ function _proCategory(spec){
 
 async function _adminTabProfesionales(panel){
   _initSupabase();
-  panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando profesionales…</div>';
+  panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:14px;color:rgba(255,255,255,.25)">Cargando profesionales…</div>';
   var pros = [], solidaryPros = [], pendingReqs = [], assignedReqs = [], completedReqs = [];
   if(sbClient){
     try{
@@ -17654,7 +17685,7 @@ async function _adminTabProfesionales(panel){
 
   // ── PROGRAMA SOLIDARIO ─────────────────────────────────────────
   var solidaryHtml = '<div style="background:rgba(58,123,213,.07);border:1px solid rgba(58,123,213,.2);border-radius:14px;padding:14px;margin-bottom:14px">'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(100,170,230,.8);margin-bottom:10px">💙 PROGRAMA SOLIDARIO</div>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(100,170,230,.8);margin-bottom:10px">💙 PROGRAMA SOLIDARIO</div>'
     +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px">'
     +'<div class="a-card"><div style="font-size:20px">💙</div><div class="a-card-n" style="color:rgba(100,170,230,.9)">'+solidaryPros.length+'</div><div class="a-card-l">Profesionales solidarios</div></div>'
     +'<div class="a-card"><div style="font-size:20px">✅</div><div class="a-card-n" style="color:'+(disponibles>0?'rgba(116,198,157,.9)':'rgba(200,80,80,.8)')+'">'+disponibles+'</div><div class="a-card-l">Disponibles para asignar</div></div>'
@@ -17663,22 +17694,22 @@ async function _adminTabProfesionales(panel){
     +'</div>';
 
   if(solidaryPros.length){
-    solidaryHtml += '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(100,170,230,.55);margin-bottom:8px">Profesionales inscriptos</div>';
+    solidaryHtml += '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(100,170,230,.55);margin-bottom:8px">Profesionales inscriptos</div>';
     solidaryHtml += solidaryPros.map(function(p){
       return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82)">'+_escHtml(p.nombre||p.email||'Sin nombre')+'</div>'
-        +'<div style="font-size:10px;color:rgba(255,255,255,.35)">'+_escHtml(p.pro_spec||'')+(p.pro_verified?' · <span style="color:rgba(116,198,157,.75)">✓ verificado</span>':'')+'</div>'
+        +'<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.82)">'+_escHtml(p.nombre||p.email||'Sin nombre')+'</div>'
+        +'<div style="font-size:12px;color:rgba(255,255,255,.35)">'+_escHtml(p.pro_spec||'')+(p.pro_verified?' · <span style="color:rgba(116,198,157,.75)">✓ verificado</span>':'')+'</div>'
         +'</div>'
-        +'<span style="font-size:9px;background:rgba(58,123,213,.2);border:1px solid rgba(58,123,213,.35);border-radius:4px;padding:2px 8px;color:rgba(100,170,230,.9);font-weight:700;white-space:nowrap">💙 Solidario</span>'
+        +'<span style="font-size:11px;background:rgba(58,123,213,.2);border:1px solid rgba(58,123,213,.35);border-radius:4px;padding:2px 8px;color:rgba(100,170,230,.9);font-weight:700;white-space:nowrap">💙 Solidario</span>'
         +'</div>';
     }).join('');
   } else {
-    solidaryHtml += '<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">Ningún profesional inscripto en el programa aún.</div>';
+    solidaryHtml += '<div style="font-size:13px;color:rgba(255,255,255,.3);padding:6px 0">Ningún profesional inscripto en el programa aún.</div>';
   }
 
   if(pendingReqs.length){
-    solidaryHtml += '<div style="margin-top:12px;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(240,200,90,.55);margin-bottom:8px">Solicitudes pendientes de asignación</div>';
+    solidaryHtml += '<div style="margin-top:12px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(240,200,90,.55);margin-bottom:8px">Solicitudes pendientes de asignación</div>';
     solidaryHtml += pendingReqs.slice(0,10).map(function(req){
       var urgColor = req.urgencia==='alto'?'rgba(220,80,80,.8)':req.urgencia==='medio'?'rgba(240,200,90,.8)':'rgba(116,198,157,.7)';
       var horariosArr = []; try{ horariosArr = JSON.parse(req.horarios||'[]'); }catch(e){}
@@ -17687,19 +17718,19 @@ async function _adminTabProfesionales(panel){
       return '<div id="sreq-'+_escHtml(String(req.id))+'" style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
         +'<div style="display:flex;align-items:flex-start;gap:8px">'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82)">'+_escHtml(req.user_name||req.email||'Usuario')+'</div>'
-        +'<div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:1px">'
+        +'<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.82)">'+_escHtml(req.user_name||req.email||'Usuario')+'</div>'
+        +'<div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:1px">'
         +_escHtml(req.tipo||'')+(req.espec?' · '+_escHtml(req.espec):'')+' · <span style="color:'+urgColor+'">Urgencia: '+(req.urgencia||'—')+'</span>'
         +(hs?' · '+hs:'')
         +'</div>'
-        +(req.description?'<div style="font-size:10px;color:rgba(255,255,255,.3);font-style:italic;margin-top:2px">"'+_escHtml(req.description.slice(0,90))+'"</div>':'')
-        +'<div style="font-size:9px;color:rgba(255,255,255,.22);margin-top:2px">hace '+dias+' día'+(dias!==1?'s':'')+'</div>'
+        +(req.description?'<div style="font-size:12px;color:rgba(255,255,255,.3);font-style:italic;margin-top:2px">"'+_escHtml(req.description.slice(0,90))+'"</div>':'')
+        +'<div style="font-size:11px;color:rgba(255,255,255,.22);margin-top:2px">hace '+dias+' día'+(dias!==1?'s':'')+'</div>'
         +'</div>'
-        +'<button onclick="_adminAssignSolidarityReq(\''+_escHtml(String(req.id))+'\',\''+_escHtml(req.user_name||'Usuario')+'\',this)" style="flex-shrink:0;padding:5px 10px;background:rgba(58,123,213,.2);border:1px solid rgba(58,123,213,.4);border-radius:7px;color:rgba(100,170,230,.9);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">💙 Asignar</button>'
+        +'<button onclick="_adminAssignSolidarityReq(\''+_escHtml(String(req.id))+'\',\''+_escHtml(req.user_name||'Usuario')+'\',this)" style="flex-shrink:0;padding:5px 10px;background:rgba(58,123,213,.2);border:1px solid rgba(58,123,213,.4);border-radius:7px;color:rgba(100,170,230,.9);font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">💙 Asignar</button>'
         +'</div></div>';
     }).join('');
   } else if(solidaryPros.length){
-    solidaryHtml += '<div style="margin-top:8px;font-size:11px;color:rgba(116,198,157,.7);padding:4px 0">✅ Sin solicitudes pendientes.</div>';
+    solidaryHtml += '<div style="margin-top:8px;font-size:13px;color:rgba(116,198,157,.7);padding:4px 0">✅ Sin solicitudes pendientes.</div>';
   }
   solidaryHtml += '</div>';
 
@@ -17708,33 +17739,33 @@ async function _adminTabProfesionales(panel){
   var pendingProHtml = '';
   if(pendingPros.length){
     pendingProHtml = '<div style="background:rgba(240,160,50,.06);border:1px solid rgba(240,160,50,.25);border-radius:14px;padding:14px;margin-bottom:14px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(240,180,80,.85);margin-bottom:4px">⏳ PENDIENTES DE APROBACIÓN ('+pendingPros.length+')</div>'
-      +'<div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:12px">Revisá la documentación antes de aprobar</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(240,180,80,.85);margin-bottom:4px">⏳ PENDIENTES DE APROBACIÓN ('+pendingPros.length+')</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:12px">Revisá la documentación antes de aprobar</div>'
       + pendingPros.map(function(p){
           var certLink = p.pro_cert_url
-            ? '<a href="'+_escHtml(p.pro_cert_url)+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#fff;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.45);border-radius:10px;padding:8px 14px;text-decoration:none">📎 Ver documento / certificado</a>'
-            : '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,100,100,.7);background:rgba(220,60,60,.1);border:1px solid rgba(220,60,60,.25);border-radius:8px;padding:6px 10px">⚠️ Sin documento adjunto</span>';
+            ? '<a href="'+_escHtml(p.pro_cert_url)+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#fff;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.45);border-radius:10px;padding:8px 14px;text-decoration:none">📎 Ver documento / certificado</a>'
+            : '<span style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:rgba(255,100,100,.7);background:rgba(220,60,60,.1);border:1px solid rgba(220,60,60,.25);border-radius:8px;padding:6px 10px">⚠️ Sin documento adjunto</span>';
           var regDate = p.created_at ? new Date(p.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
           var diasEspera = p.created_at ? Math.floor((Date.now()-new Date(p.created_at).getTime())/86400000) : 0;
           return '<div style="background:rgba(240,160,50,.05);border:1px solid rgba(240,160,50,.15);border-radius:12px;padding:14px;margin-bottom:10px">'
             +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px">'
             +'<div>'
             +'<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:2px">'+_escHtml(p.nombre||'Sin nombre')+'</div>'
-            +'<div style="font-size:12px;color:rgba(255,255,255,.55)">'+_escHtml(p.pro_spec||'Sin especialidad')+'</div>'
-            +'<div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">'+_escHtml(p.email||'')+'</div>'
+            +'<div style="font-size:14px;color:rgba(255,255,255,.55)">'+_escHtml(p.pro_spec||'Sin especialidad')+'</div>'
+            +'<div style="font-size:13px;color:rgba(255,255,255,.35);margin-top:2px">'+_escHtml(p.email||'')+'</div>'
             +'</div>'
             +'<div style="text-align:right;flex-shrink:0">'
-            +'<span style="font-size:9px;background:rgba(240,160,50,.15);border:1px solid rgba(240,160,50,.3);border-radius:4px;padding:2px 7px;color:rgba(240,180,80,.9);font-weight:700;display:block;margin-bottom:3px">⏳ PENDIENTE</span>'
-            +'<span style="font-size:9px;color:rgba(255,255,255,.25)">Reg. '+regDate+'</span>'
-            +(diasEspera>7?'<br><span style="font-size:9px;color:rgba(240,120,80,.7)">'+diasEspera+'d en espera</span>':'')
+            +'<span style="font-size:11px;background:rgba(240,160,50,.15);border:1px solid rgba(240,160,50,.3);border-radius:4px;padding:2px 7px;color:rgba(240,180,80,.9);font-weight:700;display:block;margin-bottom:3px">⏳ PENDIENTE</span>'
+            +'<span style="font-size:11px;color:rgba(255,255,255,.25)">Reg. '+regDate+'</span>'
+            +(diasEspera>7?'<br><span style="font-size:11px;color:rgba(240,120,80,.7)">'+diasEspera+'d en espera</span>':'')
             +'</div>'
             +'</div>'
             +'<div style="margin-bottom:12px">'+certLink+'</div>'
             +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
-            +'<button onclick="_adminProVerify(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:8px 16px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:10px;cursor:pointer;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.45);color:rgba(116,198,157,.95)">✅ Aprobar</button>'
-            +'<button onclick="_adminProReject(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:8px 16px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:10px;cursor:pointer;background:rgba(220,60,60,.15);border:1px solid rgba(220,60,60,.35);color:rgba(240,100,100,.9)">❌ Rechazar</button>'
-            +'<button onclick="_adminProMoreInfo(\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(116,198,200,.1);border:1px solid rgba(116,198,200,.25);color:rgba(116,198,200,.8)">📧 Pedir más info</button>'
-            +'<button onclick="_adminProDelete(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(220,60,60,.1);border:1px solid rgba(220,60,60,.25);color:rgba(220,80,80,.8)">🗑️ Eliminar</button>'
+            +'<button onclick="_adminProVerify(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:8px 16px;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:10px;cursor:pointer;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.45);color:rgba(116,198,157,.95)">✅ Aprobar</button>'
+            +'<button onclick="_adminProReject(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:8px 16px;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:10px;cursor:pointer;background:rgba(220,60,60,.15);border:1px solid rgba(220,60,60,.35);color:rgba(240,100,100,.9)">❌ Rechazar</button>'
+            +'<button onclick="_adminProMoreInfo(\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(116,198,200,.1);border:1px solid rgba(116,198,200,.25);color:rgba(116,198,200,.8)">📧 Pedir más info</button>'
+            +'<button onclick="_adminProDelete(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(220,60,60,.1);border:1px solid rgba(220,60,60,.25);color:rgba(220,80,80,.8)">🗑️ Eliminar</button>'
             +'</div>'
             +'</div>';
         }).join('')
@@ -17756,38 +17787,38 @@ async function _adminTabProfesionales(panel){
       Object.keys(catMap).filter(function(c){ return catOrder.indexOf(c)<0; })
     );
     approvedHtml = '<div style="background:rgba(116,198,157,.05);border:1px solid rgba(116,198,157,.18);border-radius:14px;padding:14px;margin-bottom:14px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:12px">✅ PROFESIONALES AUTORIZADOS ('+approvedPros.length+')</div>';
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:12px">✅ PROFESIONALES AUTORIZADOS ('+approvedPros.length+')</div>';
     catKeys.forEach(function(cat){
       var catPros = catMap[cat];
       approvedHtml += '<div style="margin-bottom:14px">'
-        +'<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6);background:rgba(255,255,255,.06);border-radius:8px;padding:5px 10px;margin-bottom:8px;display:inline-block">'+cat+' ('+catPros.length+')</div>';
+        +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);background:rgba(255,255,255,.06);border-radius:8px;padding:5px 10px;margin-bottom:8px;display:inline-block">'+cat+' ('+catPros.length+')</div>';
       catPros.forEach(function(p){
         var now2 = Date.now();
         var trialExp = p.pro_trial_expires_at ? new Date(p.pro_trial_expires_at).getTime() : 0;
         var subExp   = p.pro_subscription_expires_at ? new Date(p.pro_subscription_expires_at).getTime() : 0;
         var accessBadge = (trialExp > now2 || subExp > now2)
-          ? '<span style="font-size:9px;color:rgba(116,198,200,.8);border:1px solid rgba(116,198,200,.3);border-radius:4px;padding:2px 7px">Acceso activo</span>'
-          : '<span style="font-size:9px;color:rgba(220,80,80,.7);border:1px solid rgba(220,80,80,.25);border-radius:4px;padding:2px 7px">Sin acceso</span>';
+          ? '<span style="font-size:11px;color:rgba(116,198,200,.8);border:1px solid rgba(116,198,200,.3);border-radius:4px;padding:2px 7px">Acceso activo</span>'
+          : '<span style="font-size:11px;color:rgba(220,80,80,.7);border:1px solid rgba(220,80,80,.25);border-radius:4px;padding:2px 7px">Sin acceso</span>';
         var regDate = p.created_at ? new Date(p.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
         approvedHtml += '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;margin-bottom:7px">'
           +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">'
           +'<div>'
-          +'<div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:1px">'+_escHtml(p.nombre||'Sin nombre')+'</div>'
-          +'<div style="font-size:11px;color:rgba(255,255,255,.45)">'+_escHtml(p.pro_spec||'')+'</div>'
-          +'<div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:1px">'+_escHtml(p.email||'')+'</div>'
+          +'<div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:1px">'+_escHtml(p.nombre||'Sin nombre')+'</div>'
+          +'<div style="font-size:13px;color:rgba(255,255,255,.45)">'+_escHtml(p.pro_spec||'')+'</div>'
+          +'<div style="font-size:12px;color:rgba(255,255,255,.3);margin-top:1px">'+_escHtml(p.email||'')+'</div>'
           +'</div>'
           +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">'
           +accessBadge
-          +'<span style="font-size:9px;color:rgba(255,255,255,.2)">Reg. '+regDate+'</span>'
-          +(p.pro_solidarity?'<span style="font-size:9px;color:rgba(100,170,230,.7)">💙 Solidario</span>':'')
+          +'<span style="font-size:11px;color:rgba(255,255,255,.2)">Reg. '+regDate+'</span>'
+          +(p.pro_solidarity?'<span style="font-size:11px;color:rgba(100,170,230,.7)">💙 Solidario</span>':'')
           +'</div>'
           +'</div>'
-          +(p.pro_cert_url?'<div style="margin-bottom:8px"><a href="'+_escHtml(p.pro_cert_url)+'" target="_blank" rel="noopener" style="font-size:10px;color:rgba(116,198,157,.7);text-decoration:none">📎 Ver documento</a></div>':'')
+          +(p.pro_cert_url?'<div style="margin-bottom:8px"><a href="'+_escHtml(p.pro_cert_url)+'" target="_blank" rel="noopener" style="font-size:12px;color:rgba(116,198,157,.7);text-decoration:none">📎 Ver documento</a></div>':'')
           +'<div style="display:flex;gap:5px;flex-wrap:wrap">'
-          +'<button onclick="_adminProRevoke(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:10px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(220,162,0,.1);border:1px solid rgba(220,162,0,.25);color:rgba(220,162,0,.75)">↩️ Revocar</button>'
-          +'<button onclick="_adminProMoreInfo(\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:10px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(116,198,200,.1);border:1px solid rgba(116,198,200,.2);color:rgba(116,198,200,.75)">📧 Contactar</button>'
-          +'<button onclick="_adminProWarn(\''+_escHtml(p.id)+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:10px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(220,120,0,.08);border:1px solid rgba(220,120,0,.2);color:rgba(220,120,0,.75)">⚠️ Advertir</button>'
-          +'<button onclick="_adminProDelete(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:10px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(220,60,60,.08);border:1px solid rgba(220,60,60,.2);color:rgba(220,80,80,.7)">🗑️ Eliminar</button>'
+          +'<button onclick="_adminProRevoke(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(220,162,0,.1);border:1px solid rgba(220,162,0,.25);color:rgba(220,162,0,.75)">↩️ Revocar</button>'
+          +'<button onclick="_adminProMoreInfo(\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(116,198,200,.1);border:1px solid rgba(116,198,200,.2);color:rgba(116,198,200,.75)">📧 Contactar</button>'
+          +'<button onclick="_adminProWarn(\''+_escHtml(p.id)+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(220,120,0,.08);border:1px solid rgba(220,120,0,.2);color:rgba(220,120,0,.75)">⚠️ Advertir</button>'
+          +'<button onclick="_adminProDelete(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(220,60,60,.08);border:1px solid rgba(220,60,60,.2);color:rgba(220,80,80,.7)">🗑️ Eliminar</button>'
           +'</div>'
           +'</div>';
       });
@@ -17795,7 +17826,7 @@ async function _adminTabProfesionales(panel){
     });
     approvedHtml += '</div>';
   } else {
-    approvedHtml = '<div style="font-size:12px;color:rgba(255,255,255,.3);padding:10px 0">No hay profesionales verificados aún.</div>';
+    approvedHtml = '<div style="font-size:14px;color:rgba(255,255,255,.3);padding:10px 0">No hay profesionales verificados aún.</div>';
   }
 
   panel.innerHTML = solidaryHtml + pendingProHtml + approvedHtml;
@@ -17930,110 +17961,110 @@ async function _adminTabModeracion(panel){
 
   if(flags.length){
     html += '<div style="background:rgba(220,50,50,.07);border:1px solid rgba(220,50,50,.2);border-radius:14px;padding:14px;margin-bottom:14px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,100,100,.85);margin-bottom:10px">🤖 ALERTAS IA ('+flags.length+')</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,100,100,.85);margin-bottom:10px">🤖 ALERTAS IA ('+flags.length+')</div>'
       + flags.map(function(f){
           var t = new Date(f.created_at).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
           var uid = _escHtml(f.user_id||'');
           return '<div id="modflag-'+f.id+'" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
-            +'<div style="font-size:11px;font-weight:700;color:rgba(255,150,150,.9)">'+_escHtml(f.tipo||'abuso')+' · '+_escHtml(f.section||'')+'</div>'
-            +'<div style="font-size:11px;color:rgba(255,255,255,.5);margin:3px 0;font-style:italic">"'+_escHtml((f.content||'').slice(0,180))+'"</div>'
-            +'<div style="font-size:10px;color:rgba(255,255,255,.25)">'+t+(uid?' · uid:'+uid.slice(0,8):'')+'</div>'
+            +'<div style="font-size:13px;font-weight:700;color:rgba(255,150,150,.9)">'+_escHtml(f.tipo||'abuso')+' · '+_escHtml(f.section||'')+'</div>'
+            +'<div style="font-size:13px;color:rgba(255,255,255,.5);margin:3px 0;font-style:italic">"'+_escHtml((f.content||'').slice(0,180))+'"</div>'
+            +'<div style="font-size:12px;color:rgba(255,255,255,.25)">'+t+(uid?' · uid:'+uid.slice(0,8):'')+'</div>'
             +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">'
-            +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'accept\')" style="font-size:10px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Resolver</button>'
-            +(uid?'<button onclick="pAdminWarnUser(\''+uid+'\',\'\')" style="font-size:10px;padding:4px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:6px;color:rgba(240,200,90,.9);cursor:pointer">⚠️ Advertir</button>':'')
-            +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'delete\')" style="font-size:10px;padding:4px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);border-radius:6px;color:rgba(231,120,110,.9);cursor:pointer">🗑️ Eliminar</button>'
-            +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'alertdelete\')" style="font-size:10px;padding:4px 9px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.25);border-radius:6px;color:rgba(231,120,110,.75);cursor:pointer">⚠️+🗑️</button>'
+            +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'accept\')" style="font-size:12px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Resolver</button>'
+            +(uid?'<button onclick="pAdminWarnUser(\''+uid+'\',\'\')" style="font-size:12px;padding:4px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:6px;color:rgba(240,200,90,.9);cursor:pointer">⚠️ Advertir</button>':'')
+            +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'delete\')" style="font-size:12px;padding:4px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);border-radius:6px;color:rgba(231,120,110,.9);cursor:pointer">🗑️ Eliminar</button>'
+            +'<button onclick="pAdminModerateFlag(\''+f.id+'\',\'alertdelete\')" style="font-size:12px;padding:4px 9px;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.25);border-radius:6px;color:rgba(231,120,110,.75);cursor:pointer">⚠️+🗑️</button>'
             +'</div></div>';
         }).join('')+'</div>';
   }
 
   if(reports.length){
     html += '<div style="background:rgba(230,130,40,.07);border:1px solid rgba(230,130,40,.2);border-radius:14px;padding:14px;margin-bottom:14px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(240,160,80,.85);margin-bottom:10px">🚩 REPORTADOS POR USUARIOS ('+reports.length+')</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(240,160,80,.85);margin-bottom:10px">🚩 REPORTADOS POR USUARIOS ('+reports.length+')</div>'
       + reports.map(function(r){
           var t = new Date(r.created_at||r.fecha||Date.now()).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
           var ruid = _escHtml(r.reported_user_id||r.user_id||'');
           var cid  = _escHtml(r.content_id||'');
           var ctype= _escHtml(r.content_type||r.categoria||'');
           var rsrc = _escHtml(r._src||'reportes');
-          var srcBadge = r._src==='content_reports' ? '<span style="font-size:9px;background:rgba(100,170,230,.15);border:1px solid rgba(100,170,230,.25);border-radius:4px;padding:1px 5px;color:rgba(100,170,230,.8);margin-left:5px">DQ</span>'
-                       : r._src==='bitacora_reports' ? '<span style="font-size:9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.25);border-radius:4px;padding:1px 5px;color:rgba(116,198,157,.8);margin-left:5px">Bitácora</span>'
+          var srcBadge = r._src==='content_reports' ? '<span style="font-size:11px;background:rgba(100,170,230,.15);border:1px solid rgba(100,170,230,.25);border-radius:4px;padding:1px 5px;color:rgba(100,170,230,.8);margin-left:5px">DQ</span>'
+                       : r._src==='bitacora_reports' ? '<span style="font-size:11px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.25);border-radius:4px;padding:1px 5px;color:rgba(116,198,157,.8);margin-left:5px">Bitácora</span>'
                        : '';
           var isBtRep = r._src === 'bitacora_reports';
           return '<div id="report-'+r.id+'" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
-            +'<div style="font-size:11px;font-weight:700;color:rgba(255,190,100,.9)">'+_escHtml(r.categoria||r.tipo||'reporte')+srcBadge+'</div>'
-            +'<div style="font-size:11px;color:rgba(255,255,255,.5);margin:3px 0">'+_escHtml((r.descripcion||r.motivo||r.texto||'').slice(0,180))+'</div>'
-            +'<div style="font-size:10px;color:rgba(255,255,255,.25)">'+t+(ruid?' · reportante uid:'+ruid.slice(0,8):'')+(cid?' · post:'+cid.slice(0,8):'')+'</div>'
+            +'<div style="font-size:13px;font-weight:700;color:rgba(255,190,100,.9)">'+_escHtml(r.categoria||r.tipo||'reporte')+srcBadge+'</div>'
+            +'<div style="font-size:13px;color:rgba(255,255,255,.5);margin:3px 0">'+_escHtml((r.descripcion||r.motivo||r.texto||'').slice(0,180))+'</div>'
+            +'<div style="font-size:12px;color:rgba(255,255,255,.25)">'+t+(ruid?' · reportante uid:'+ruid.slice(0,8):'')+(cid?' · post:'+cid.slice(0,8):'')+'</div>'
             +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">'
             +(isBtRep
-              ? (r._bt_is_post&&cid?'<button onclick="_btOpenDetail(\''+cid+'\')" style="font-size:10px;padding:5px 10px;background:rgba(100,170,230,.12);border:1px solid rgba(100,170,230,.30);border-radius:7px;color:rgba(120,185,245,.90);cursor:pointer;font-weight:700">👁️ Ver post</button>':'')
-              +(cid?'<button onclick="pAdminResolveBitacoraReport(\''+r.id+'\',\''+cid+'\',\''+ruid+'\',\'valido\')" style="font-size:10px;padding:5px 10px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);border-radius:7px;color:rgba(255,120,100,.95);cursor:pointer;font-weight:700">✓ Reporte válido — remover</button>':'')
-              +(cid?'<button onclick="pAdminResolveBitacoraReport(\''+r.id+'\',\''+cid+'\',\''+ruid+'\',\'invalido\')" style="font-size:10px;padding:5px 10px;background:rgba(116,198,157,.13);border:1px solid rgba(116,198,157,.30);border-radius:7px;color:rgba(116,198,157,.90);cursor:pointer;font-weight:700">✗ No válido</button>':'')
-              : '<button onclick="pAdminResolveReport(\''+r.id+'\',\''+rsrc+'\')" style="font-size:10px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Resolver</button>'
-              +(ruid?'<button onclick="pAdminWarnUser(\''+ruid+'\',\'\')" style="font-size:10px;padding:4px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:6px;color:rgba(240,200,90,.9);cursor:pointer">⚠️ Advertir</button>':'')
-              +(cid?'<button onclick="pAdminDeleteContent(\''+cid+'\',\''+ctype+'\')" style="font-size:10px;padding:4px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);border-radius:6px;color:rgba(231,120,110,.9);cursor:pointer">🗑️ Eliminar</button>':''))
+              ? (r._bt_is_post&&cid?'<button onclick="_btOpenDetail(\''+cid+'\')" style="font-size:12px;padding:5px 10px;background:rgba(100,170,230,.12);border:1px solid rgba(100,170,230,.30);border-radius:7px;color:rgba(120,185,245,.90);cursor:pointer;font-weight:700">👁️ Ver post</button>':'')
+              +(cid?'<button onclick="pAdminResolveBitacoraReport(\''+r.id+'\',\''+cid+'\',\''+ruid+'\',\'valido\')" style="font-size:12px;padding:5px 10px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);border-radius:7px;color:rgba(255,120,100,.95);cursor:pointer;font-weight:700">✓ Reporte válido — remover</button>':'')
+              +(cid?'<button onclick="pAdminResolveBitacoraReport(\''+r.id+'\',\''+cid+'\',\''+ruid+'\',\'invalido\')" style="font-size:12px;padding:5px 10px;background:rgba(116,198,157,.13);border:1px solid rgba(116,198,157,.30);border-radius:7px;color:rgba(116,198,157,.90);cursor:pointer;font-weight:700">✗ No válido</button>':'')
+              : '<button onclick="pAdminResolveReport(\''+r.id+'\',\''+rsrc+'\')" style="font-size:12px;padding:4px 9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer">✓ Resolver</button>'
+              +(ruid?'<button onclick="pAdminWarnUser(\''+ruid+'\',\'\')" style="font-size:12px;padding:4px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:6px;color:rgba(240,200,90,.9);cursor:pointer">⚠️ Advertir</button>':'')
+              +(cid?'<button onclick="pAdminDeleteContent(\''+cid+'\',\''+ctype+'\')" style="font-size:12px;padding:4px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);border-radius:6px;color:rgba(231,120,110,.9);cursor:pointer">🗑️ Eliminar</button>':''))
             +'</div></div>';
         }).join('')+'</div>';
   }
 
   if(!flags.length && !reports.length){
-    html += '<div style="text-align:center;padding:28px;font-size:13px;color:rgba(116,198,157,.7)">✅ Sin alertas ni reportes pendientes</div>';
+    html += '<div style="text-align:center;padding:28px;font-size:15px;color:rgba(116,198,157,.7)">✅ Sin alertas ni reportes pendientes</div>';
   }
 
-  html += '<div id="adminCrisisSupabase" style="margin-bottom:14px"><p style="font-size:11px;color:rgba(255,255,255,.3)">Cargando alertas de crisis…</p></div>';
+  html += '<div id="adminCrisisSupabase" style="margin-bottom:14px"><p style="font-size:13px;color:rgba(255,255,255,.3)">Cargando alertas de crisis…</p></div>';
 
   if(crisisLocal.length){
-    html += '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,80,80,.85);margin-bottom:10px">🆘 CRISIS (local)</div>'
+    html += '<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,80,80,.85);margin-bottom:10px">🆘 CRISIS (local)</div>'
       + crisisLocal.slice(0,10).map(function(a,i){
           var ds = new Date(a.ts).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
           var nc = a.nivel==='alto'?'#ff4444':'#ffbb33';
           return '<div style="background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.25);border-radius:10px;padding:12px;margin-bottom:8px">'
             +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
-            +'<span style="font-size:11px;font-weight:700;color:'+nc+'">'+(a.nivel==='alto'?'🔴 ALTO':'🟡 MEDIO')+'</span>'
-            +'<span style="font-size:10px;color:rgba(255,255,255,.3)">'+ds+'</span></div>'
-            +(a.motivo?'<div style="font-size:11px;color:rgba(255,255,255,.55);margin-bottom:4px">'+_escHtml(a.motivo)+'</div>':'')
-            +(a.detail?'<div style="font-size:11px;color:rgba(255,255,255,.35);font-style:italic;margin-bottom:8px">"'+_escHtml(a.detail)+'"</div>':'')
-            +(a.resolved?'<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓ Atendida</span>'
-              :'<button onclick="pResolveCrisis('+i+')" style="font-size:10px;padding:4px 10px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.85);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Marcar atendida</button>')
+            +'<span style="font-size:13px;font-weight:700;color:'+nc+'">'+(a.nivel==='alto'?'🔴 ALTO':'🟡 MEDIO')+'</span>'
+            +'<span style="font-size:12px;color:rgba(255,255,255,.3)">'+ds+'</span></div>'
+            +(a.motivo?'<div style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:4px">'+_escHtml(a.motivo)+'</div>':'')
+            +(a.detail?'<div style="font-size:13px;color:rgba(255,255,255,.35);font-style:italic;margin-bottom:8px">"'+_escHtml(a.detail)+'"</div>':'')
+            +(a.resolved?'<span style="font-size:12px;color:rgba(116,198,157,.7);font-weight:700">✓ Atendida</span>'
+              :'<button onclick="pResolveCrisis('+i+')" style="font-size:12px;padding:4px 10px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.85);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Marcar atendida</button>')
             +'</div>';
         }).join('');
   }
 
   if(audit.length){
-    html += '<div style="margin-top:14px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,80,80,.7);margin-bottom:10px">🛡️ AUDITORÍA IA</div>'
+    html += '<div style="margin-top:14px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,80,80,.7);margin-bottom:10px">🛡️ AUDITORÍA IA</div>'
       + audit.slice(0,30).map(function(a,i){
           var typeLabel = {report_circle:'Reporte en círculo',ban_user:'Usuario baneado',abuse_detect:'Detección IA',flag_bottle:'Botella reportada',flag_help:'Ayuda reportada',admin_moderation:'Moderación admin'}[a.tipo]||_escHtml(a.tipo||'');
           var ds = new Date(a.ts).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
           return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
             +'<div style="font-size:18px;flex-shrink:0">'+(a.tipo==='report_circle'?'⚠️':a.tipo==='abuse_detect'?'🤖':'🚩')+'</div>'
-            +'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82)">'+typeLabel+'</div>'
-            +(a.motivo?'<div style="font-size:11px;color:rgba(255,255,255,.38)">'+_escHtml(a.motivo)+'</div>':'')
-            +(a.detail?'<div style="font-size:11px;color:rgba(255,255,255,.3);font-style:italic">'+_escHtml(a.detail)+'</div>':'')
-            +'<div style="font-size:10px;color:rgba(255,255,255,.28)">'+ds+'</div></div>'
-            +'<div>'+(a.resolved?'<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓</span>'
-              :'<button onclick="pResolveAudit('+i+')" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.8);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Resolver</button>')
+            +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.82)">'+typeLabel+'</div>'
+            +(a.motivo?'<div style="font-size:13px;color:rgba(255,255,255,.38)">'+_escHtml(a.motivo)+'</div>':'')
+            +(a.detail?'<div style="font-size:13px;color:rgba(255,255,255,.3);font-style:italic">'+_escHtml(a.detail)+'</div>':'')
+            +'<div style="font-size:12px;color:rgba(255,255,255,.28)">'+ds+'</div></div>'
+            +'<div>'+(a.resolved?'<span style="font-size:12px;color:rgba(116,198,157,.7);font-weight:700">✓</span>'
+              :'<button onclick="pResolveAudit('+i+')" style="font-size:12px;padding:3px 8px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.8);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Resolver</button>')
             +'</div></div>';
         }).join('');
   }
 
   html += '<div style="margin-top:14px;background:rgba(100,170,230,.07);border:1px solid rgba(100,170,230,.18);border-radius:14px;padding:14px;margin-bottom:14px">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(100,170,230,.85)">🫂 GRUPOS DE USUARIOS</div>'
-    +'<button onclick="_adminLoadUserCircles()" style="font-size:10px;padding:3px 8px;background:rgba(100,170,230,.1);border:1px solid rgba(100,170,230,.25);border-radius:6px;color:rgba(100,170,230,.75);cursor:pointer;font-family:\'Jost\',sans-serif">↻</button>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(100,170,230,.85)">🫂 GRUPOS DE USUARIOS</div>'
+    +'<button onclick="_adminLoadUserCircles()" style="font-size:12px;padding:3px 8px;background:rgba(100,170,230,.1);border:1px solid rgba(100,170,230,.25);border-radius:6px;color:rgba(100,170,230,.75);cursor:pointer;font-family:\'Jost\',sans-serif">↻</button>'
     +'</div>'
-    +'<div id="adminCirclesList"><p style="font-size:11px;color:rgba(255,255,255,.3)">Cargando grupos…</p></div>'
+    +'<div id="adminCirclesList"><p style="font-size:13px;color:rgba(255,255,255,.3)">Cargando grupos…</p></div>'
     +'</div>';
 
   html += '<div style="margin-top:14px;background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.2);border-radius:14px;padding:14px">'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">🤖 HERRAMIENTAS IA</div>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">🤖 HERRAMIENTAS IA</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
-    +'<button onclick="pRunAiScan()" style="padding:10px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:10px;color:rgba(116,198,157,.8);font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">🔍 Escanear</button>'
-    +'<button onclick="pViewPatterns()" style="padding:10px;background:rgba(200,150,80,.1);border:1px solid rgba(200,150,80,.2);border-radius:10px;color:rgba(200,150,80,.8);font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">📊 Patrones</button>'
+    +'<button onclick="pRunAiScan()" style="padding:10px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);border-radius:10px;color:rgba(116,198,157,.8);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">🔍 Escanear</button>'
+    +'<button onclick="pViewPatterns()" style="padding:10px;background:rgba(200,150,80,.1);border:1px solid rgba(200,150,80,.2);border-radius:10px;color:rgba(200,150,80,.8);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">📊 Patrones</button>'
     +'</div>'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-    +'<div><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7)">🧠 Análisis de situación</div>'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.35)">Velo IA revisa el estado general</div></div>'
-    +'<button id="adminSituationBtn" onclick="pAdminAiSituationAnalysis()" style="padding:7px 13px;background:rgba(180,140,220,.2);border:1px solid rgba(180,140,220,.35);border-radius:9px;color:rgba(180,140,220,.95);font-size:11px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">Analizar</button>'
+    +'<div><div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.7)">🧠 Análisis de situación</div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.35)">Velo IA revisa el estado general</div></div>'
+    +'<button id="adminSituationBtn" onclick="pAdminAiSituationAnalysis()" style="padding:7px 13px;background:rgba(180,140,220,.2);border:1px solid rgba(180,140,220,.35);border-radius:9px;color:rgba(180,140,220,.95);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">Analizar</button>'
     +'</div><div id="adminSituationResult"></div></div>';
 
   panel.innerHTML = html;
@@ -18043,18 +18074,18 @@ async function _adminTabModeracion(panel){
 
 // ── TAB: CONSULTAS PROGRAMADAS ────────────────────────────────────────
 async function _adminTabConsultas(panel){
-  panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando consultas…</div>';
+  panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:14px;color:rgba(255,255,255,.25)">Cargando consultas…</div>';
   _initSupabase();
-  if(!sbClient){ panel.innerHTML='<div style="padding:20px;text-align:center;font-size:12px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  if(!sbClient){ panel.innerHTML='<div style="padding:20px;text-align:center;font-size:14px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
   try{
     var sRes = await sbClient.from('sessions').select('*').order('booking_date',{ascending:false}).order('booking_time',{ascending:false}).limit(300);
     if(sRes.error && sRes.error.code==='42P01'){
       // Table doesn't exist — show SQL migration instructions
       panel.innerHTML = '<div style="background:rgba(230,180,40,.07);border:1px solid rgba(230,180,40,.2);border-radius:14px;padding:20px">'
-        +'<div style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(240,200,90,.8);margin-bottom:10px">⚠️ TABLA NO CREADA</div>'
-        +'<p style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:14px">Para activar el historial de consultas, ejecutá este SQL en Supabase → Editor SQL:</p>'
-        +'<pre style="background:rgba(0,0,0,.4);border-radius:10px;padding:14px;font-size:10px;color:rgba(116,198,157,.9);overflow-x:auto;white-space:pre-wrap;line-height:1.5">CREATE TABLE IF NOT EXISTS public.sessions (\n  id TEXT PRIMARY KEY,\n  pro_id TEXT,\n  pro_name TEXT,\n  user_id TEXT,\n  user_name TEXT,\n  booking_date DATE,\n  booking_time TEXT,\n  status TEXT DEFAULT \'confirmed\',\n  amount NUMERIC(10,2) DEFAULT 0,\n  created_at TIMESTAMPTZ DEFAULT NOW(),\n  updated_at TIMESTAMPTZ DEFAULT NOW()\n);\nALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "admin_all" ON public.sessions FOR ALL USING (true);</pre>'
-        +'<button onclick="_switchAdminTab(\'consultas\')" style="margin-top:12px;padding:9px 18px;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.3);border-radius:10px;color:rgba(116,198,157,.9);font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">↻ Reintentar</button>'
+        +'<div style="font-size:12px;font-weight:700;letter-spacing:2px;color:rgba(240,200,90,.8);margin-bottom:10px">⚠️ TABLA NO CREADA</div>'
+        +'<p style="font-size:14px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:14px">Para activar el historial de consultas, ejecutá este SQL en Supabase → Editor SQL:</p>'
+        +'<pre style="background:rgba(0,0,0,.4);border-radius:10px;padding:14px;font-size:12px;color:rgba(116,198,157,.9);overflow-x:auto;white-space:pre-wrap;line-height:1.5">CREATE TABLE IF NOT EXISTS public.sessions (\n  id TEXT PRIMARY KEY,\n  pro_id TEXT,\n  pro_name TEXT,\n  user_id TEXT,\n  user_name TEXT,\n  booking_date DATE,\n  booking_time TEXT,\n  status TEXT DEFAULT \'confirmed\',\n  amount NUMERIC(10,2) DEFAULT 0,\n  created_at TIMESTAMPTZ DEFAULT NOW(),\n  updated_at TIMESTAMPTZ DEFAULT NOW()\n);\nALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "admin_all" ON public.sessions FOR ALL USING (true);</pre>'
+        +'<button onclick="_switchAdminTab(\'consultas\')" style="margin-top:12px;padding:9px 18px;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.3);border-radius:10px;color:rgba(116,198,157,.9);font-size:14px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">↻ Reintentar</button>'
         +'</div>';
       return;
     }
@@ -18086,7 +18117,7 @@ async function _adminTabConsultas(panel){
     if(missed.length){
       html += '<div style="background:rgba(231,120,110,.07);border:1px solid rgba(231,120,110,.2);border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px">'
         +'<span style="font-size:18px">⚠️</span>'
-        +'<span style="font-size:11px;color:rgba(231,120,110,.85);font-weight:700">'+missed.length+' consulta'+(missed.length!==1?'s':'')+' confirmada'+(missed.length!==1?'s':'')+' con fecha pasada sin marcar como completada o cancelada</span>'
+        +'<span style="font-size:13px;color:rgba(231,120,110,.85);font-weight:700">'+missed.length+' consulta'+(missed.length!==1?'s':'')+' confirmada'+(missed.length!==1?'s':'')+' con fecha pasada sin marcar como completada o cancelada</span>'
         +'</div>';
     }
 
@@ -18094,7 +18125,7 @@ async function _adminTabConsultas(panel){
     html += '<div id="admConsFilter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'
       +['todas','confirmed','completed','cancelled'].map(function(f){
         var lbl = {todas:'Todas',confirmed:'Pendientes',completed:'Completadas',cancelled:'Canceladas'}[f]||f;
-        return '<button onclick="_admConsFilter(\''+f+'\')" data-cf="'+f+'" style="font-size:11px;padding:5px 12px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;'
+        return '<button onclick="_admConsFilter(\''+f+'\')" data-cf="'+f+'" style="font-size:13px;padding:5px 12px;border-radius:100px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;'
           +(f==='todas'?'background:rgba(116,198,157,.22);border:1.5px solid rgba(116,198,157,.48);color:rgba(255,255,255,.9)':'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4)')
           +'">'+lbl+'</button>';
       }).join('')
@@ -18103,7 +18134,7 @@ async function _adminTabConsultas(panel){
     // Session list
     html += '<div id="admConsList">';
     if(!sessions.length){
-      html += '<div style="text-align:center;padding:28px;font-size:12px;color:rgba(255,255,255,.3)">Aún no hay consultas registradas.<br><span style="font-size:11px;opacity:.7">Se registrarán automáticamente cuando los usuarios reserven con un profesional.</span></div>';
+      html += '<div style="text-align:center;padding:28px;font-size:14px;color:rgba(255,255,255,.3)">Aún no hay consultas registradas.<br><span style="font-size:13px;opacity:.7">Se registrarán automáticamente cuando los usuarios reserven con un profesional.</span></div>';
     } else {
       html += sessions.map(function(s){
         var sColor = {confirmed:'rgba(100,170,230,.8)',completed:'rgba(116,198,157,.8)',cancelled:'rgba(220,80,80,.7)','no-show':'rgba(220,180,60,.75)'}[s.status]||'rgba(255,255,255,.4)';
@@ -18114,18 +18145,18 @@ async function _adminTabConsultas(panel){
           +'<div style="display:flex;align-items:flex-start;gap:10px">'
           +'<div style="flex:1;min-width:0">'
           +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'
-          +'<span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.88)">'+_escHtml(s.user_name||s.user_id||'Usuario')+'</span>'
-          +'<span style="font-size:10px;color:rgba(255,255,255,.35)">→</span>'
-          +'<span style="font-size:12px;font-weight:700;color:rgba(116,198,200,.85)">'+_escHtml(s.pro_name||s.pro_id||'Profesional')+'</span>'
+          +'<span style="font-size:14px;font-weight:700;color:rgba(255,255,255,.88)">'+_escHtml(s.user_name||s.user_id||'Usuario')+'</span>'
+          +'<span style="font-size:12px;color:rgba(255,255,255,.35)">→</span>'
+          +'<span style="font-size:14px;font-weight:700;color:rgba(116,198,200,.85)">'+_escHtml(s.pro_name||s.pro_id||'Profesional')+'</span>'
           +'</div>'
-          +'<div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:2px">📅 '+_escHtml(dateStr)+(s.booking_time?' · 🕐 '+_escHtml(s.booking_time)+' hs':'')+'</div>'
-          +(s.amount?'<div style="font-size:10px;color:rgba(200,162,0,.7)">💲 $'+parseFloat(s.amount||0).toFixed(2)+'</div>':'')
-          +(isPast&&s.status==='confirmed'?'<div style="font-size:10px;color:rgba(231,120,110,.7);margin-top:2px;font-weight:700">⚠️ Fecha pasada — sin confirmar estado</div>':'')
+          +'<div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:2px">📅 '+_escHtml(dateStr)+(s.booking_time?' · 🕐 '+_escHtml(s.booking_time)+' hs':'')+'</div>'
+          +(s.amount?'<div style="font-size:12px;color:rgba(200,162,0,.7)">💲 $'+parseFloat(s.amount||0).toFixed(2)+'</div>':'')
+          +(isPast&&s.status==='confirmed'?'<div style="font-size:12px;color:rgba(231,120,110,.7);margin-top:2px;font-weight:700">⚠️ Fecha pasada — sin confirmar estado</div>':'')
           +'</div>'
           +'<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">'
-          +'<span style="font-size:9px;font-weight:700;border:1px solid;border-radius:4px;padding:2px 7px;color:'+sColor+';border-color:'+sColor+'">'+sLabel+'</span>'
-          +(s.status==='confirmed'?'<button onclick="_adminMarkSession(\''+_escHtml(String(s.id))+'\',\'completed\',this)" style="font-size:9px;padding:3px 7px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer;font-family:\'Jost\',sans-serif">✅ Completada</button>':'')
-          +(s.status==='confirmed'?'<button onclick="_adminMarkSession(\''+_escHtml(String(s.id))+'\',\'no-show\',this)" style="font-size:9px;padding:3px 7px;background:rgba(220,180,60,.12);border:1px solid rgba(220,180,60,.25);border-radius:6px;color:rgba(220,180,60,.8);cursor:pointer;font-family:\'Jost\',sans-serif">👻 No asistió</button>':'')
+          +'<span style="font-size:11px;font-weight:700;border:1px solid;border-radius:4px;padding:2px 7px;color:'+sColor+';border-color:'+sColor+'">'+sLabel+'</span>'
+          +(s.status==='confirmed'?'<button onclick="_adminMarkSession(\''+_escHtml(String(s.id))+'\',\'completed\',this)" style="font-size:11px;padding:3px 7px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:6px;color:rgba(116,198,157,.85);cursor:pointer;font-family:\'Jost\',sans-serif">✅ Completada</button>':'')
+          +(s.status==='confirmed'?'<button onclick="_adminMarkSession(\''+_escHtml(String(s.id))+'\',\'no-show\',this)" style="font-size:11px;padding:3px 7px;background:rgba(220,180,60,.12);border:1px solid rgba(220,180,60,.25);border-radius:6px;color:rgba(220,180,60,.8);cursor:pointer;font-family:\'Jost\',sans-serif">👻 No asistió</button>':'')
           +'</div>'
           +'</div></div>';
       }).join('');
@@ -18134,7 +18165,7 @@ async function _adminTabConsultas(panel){
     panel.innerHTML = html;
     panel._sessions = sessions;
   }catch(e){
-    panel.innerHTML='<div style="padding:20px;font-size:12px;color:rgba(255,100,100,.5)">Error: '+_escHtml(e.message)+'</div>';
+    panel.innerHTML='<div style="padding:20px;font-size:14px;color:rgba(255,100,100,.5)">Error: '+_escHtml(e.message)+'</div>';
   }
 }
 
@@ -18169,9 +18200,9 @@ async function _adminMarkSession(sessionId, newStatus, btn){
 
 // ── TAB: CÍRCULOS DE PAZ ──────────────────────────────────────────────
 async function _adminTabCirculos(panel){
-  panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.25)">Cargando círculos…</div>';
+  panel.innerHTML = '<div style="text-align:center;padding:20px;font-size:14px;color:rgba(255,255,255,.25)">Cargando círculos…</div>';
   _initSupabase();
-  if(!sbClient){ panel.innerHTML='<div style="padding:20px;text-align:center;font-size:12px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  if(!sbClient){ panel.innerHTML='<div style="padding:20px;text-align:center;font-size:14px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
   try{
     // Seed _circlesData into Supabase as official circles (upsert by id — safe to run every time)
     if(_circlesData && _circlesData.length){
@@ -18222,14 +18253,14 @@ async function _adminTabCirculos(panel){
       var creatorShort = c.creator_id ? _escHtml(c.creator_id.slice(0,8))+'…' : '—';
       var fecha = c.created_at ? new Date(c.created_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'2-digit'}) : '—';
       var btns = '';
-      if(!isOfficial) btns += '<button onclick="_adminAlertCircleCreator(\''+cid+'\',\''+_escHtml(c.creator_id||'')+'\',\''+cname+'\')" style="flex-shrink:0;padding:5px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:7px;color:rgba(240,200,90,.9);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">‼️</button>';
-      btns += '<button onclick="_adminDelCirc(\''+cid+'\',\''+_escHtml(c.creator_id||'')+'\',\''+cname+'\',this)" style="flex-shrink:0;padding:5px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);border-radius:7px;color:rgba(231,120,110,.9);font-size:10px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️</button>';
+      if(!isOfficial) btns += '<button onclick="_adminAlertCircleCreator(\''+cid+'\',\''+_escHtml(c.creator_id||'')+'\',\''+cname+'\')" style="flex-shrink:0;padding:5px 9px;background:rgba(230,180,40,.15);border:1px solid rgba(230,180,40,.3);border-radius:7px;color:rgba(240,200,90,.9);font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">‼️</button>';
+      btns += '<button onclick="_adminDelCirc(\''+cid+'\',\''+_escHtml(c.creator_id||'')+'\',\''+cname+'\',this)" style="flex-shrink:0;padding:5px 9px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);border-radius:7px;color:rgba(231,120,110,.9);font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️</button>';
       return '<div id="admc-'+cid+'" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
         +'<div style="display:flex;align-items:flex-start;gap:8px">'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.88)">'+(c.emoji||'🕊️')+' '+cname+'</div>'
-        +(c.descripcion?'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:1px">'+_escHtml(c.descripcion.slice(0,80))+'</div>':'')
-        +'<div style="font-size:10px;margin-top:3px;display:flex;flex-wrap:wrap;gap:6px">'
+        +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.88)">'+(c.emoji||'🕊️')+' '+cname+'</div>'
+        +(c.descripcion?'<div style="font-size:13px;color:rgba(255,255,255,.4);margin-top:1px">'+_escHtml(c.descripcion.slice(0,80))+'</div>':'')
+        +'<div style="font-size:12px;margin-top:3px;display:flex;flex-wrap:wrap;gap:6px">'
         +'<span style="color:rgba(255,255,255,.35)">👥 '+members+'</span>'
         +'<span style="color:'+actColor+'">⏱ '+actLabel+'</span>'
         +(!isOfficial?'<span style="color:rgba(255,255,255,.28)">🙋 '+creatorShort+'</span>':'<span style="color:rgba(116,198,157,.5)">👑 OFICIAL</span>')
@@ -18247,37 +18278,37 @@ async function _adminTabCirculos(panel){
       +'<div class="a-card"><div style="font-size:20px">🗑️</div><div class="a-card-n" style="color:rgba(180,180,180,.6)">'+deletedCount+'</div><div class="a-card-l">Eliminados</div></div>'
       +'</div>';
     html += '<div style="background:rgba(231,120,110,.07);border:1px solid rgba(231,120,110,.2);border-radius:12px;padding:12px;margin-bottom:12px;display:flex;align-items:center;gap:10px">'
-      +'<div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(231,120,110,.85)">🧹 Limpieza automática</div>'
-      +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Elimina salas sin actividad en 30+ días y avisa al creador por Buzón. <span style="color:rgba(231,120,110,.75);font-weight:700">'+inactiveCount+' detectadas</span></div></div>'
-      +'<button onclick="_adminCleanupInactiveCircles(this)" style="padding:8px 12px;background:rgba(231,76,60,.2);border:1.5px solid rgba(231,76,60,.4);border-radius:9px;color:rgba(231,120,110,.9);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">Limpiar ('+inactiveCount+')</button>'
+      +'<div style="flex:1"><div style="font-size:14px;font-weight:700;color:rgba(231,120,110,.85)">🧹 Limpieza automática</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.4);margin-top:2px">Elimina salas sin actividad en 30+ días y avisa al creador por Buzón. <span style="color:rgba(231,120,110,.75);font-weight:700">'+inactiveCount+' detectadas</span></div></div>'
+      +'<button onclick="_adminCleanupInactiveCircles(this)" style="padding:8px 12px;background:rgba(231,76,60,.2);border:1.5px solid rgba(231,76,60,.4);border-radius:9px;color:rgba(231,120,110,.9);font-size:13px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">Limpiar ('+inactiveCount+')</button>'
       +'</div>';
     html += '<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:14px;padding:14px;margin-bottom:12px">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7)">👑 CÍRCULOS OFICIALES VELO ('+officialCircles.length+')</div>'
-      +'<button onclick="_adminShowCreateOfficialCircle()" style="font-size:10px;padding:4px 10px;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.35);border-radius:7px;color:rgba(116,198,157,.9);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">+ Crear</button>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7)">👑 CÍRCULOS OFICIALES VELO ('+officialCircles.length+')</div>'
+      +'<button onclick="_adminShowCreateOfficialCircle()" style="font-size:12px;padding:4px 10px;background:rgba(116,198,157,.18);border:1px solid rgba(116,198,157,.35);border-radius:7px;color:rgba(116,198,157,.9);cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700">+ Crear</button>'
       +'</div>'
       +'<div id="adminCreateOfficialCircleForm" style="display:none;background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:10px;padding:12px;margin-bottom:10px">'
       +'<input id="adminOfficialCircleName" class="p-input" type="text" placeholder="Nombre del círculo" maxlength="40" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;margin-bottom:8px;width:100%;box-sizing:border-box">'
       +'<textarea id="adminOfficialCircleDesc" class="p-input" placeholder="Descripción (opcional)" maxlength="120" rows="2" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;margin-bottom:8px;width:100%;box-sizing:border-box;resize:none"></textarea>'
       +'<input id="adminOfficialCircleEmoji" class="p-input" type="text" placeholder="Emoji (ej: 🕊️)" maxlength="4" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff;margin-bottom:8px;width:100%;box-sizing:border-box">'
       +'<div style="display:flex;gap:8px">'
-      +'<button onclick="pAdminCreateOfficialCircle()" style="flex:1;padding:9px;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.4);border-radius:8px;color:rgba(116,198,157,.9);font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">✓ Crear oficial</button>'
-      +'<button onclick="document.getElementById(\'adminCreateOfficialCircleForm\').style.display=\'none\'" style="flex:1;padding:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
+      +'<button onclick="pAdminCreateOfficialCircle()" style="flex:1;padding:9px;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.4);border-radius:8px;color:rgba(116,198,157,.9);font-size:14px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">✓ Crear oficial</button>'
+      +'<button onclick="document.getElementById(\'adminCreateOfficialCircleForm\').style.display=\'none\'" style="flex:1;padding:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(255,255,255,.4);font-size:14px;cursor:pointer;font-family:\'Jost\',sans-serif">Cancelar</button>'
       +'</div></div>';
     if(officialCircles.length) html += officialCircles.map(function(c){ return circleRow(c,true); }).join('');
-    else html += '<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">No hay círculos oficiales todavía.</div>';
+    else html += '<div style="font-size:13px;color:rgba(255,255,255,.3);padding:6px 0">No hay círculos oficiales todavía.</div>';
     html += '</div>';
     html += '<div style="background:rgba(100,170,230,.07);border:1px solid rgba(100,170,230,.18);border-radius:14px;padding:14px">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(100,170,230,.8)">🫂 SALAS DE USUARIOS ('+userCircles.length+')</div>'
-      +'<button onclick="_switchAdminTab(\'circulos\')" style="font-size:10px;padding:3px 8px;background:rgba(100,170,230,.1);border:1px solid rgba(100,170,230,.25);border-radius:6px;color:rgba(100,170,230,.7);cursor:pointer;font-family:\'Jost\',sans-serif">↻</button>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(100,170,230,.8)">🫂 SALAS DE USUARIOS ('+userCircles.length+')</div>'
+      +'<button onclick="_switchAdminTab(\'circulos\')" style="font-size:12px;padding:3px 8px;background:rgba(100,170,230,.1);border:1px solid rgba(100,170,230,.25);border-radius:6px;color:rgba(100,170,230,.7);cursor:pointer;font-family:\'Jost\',sans-serif">↻</button>'
       +'</div>';
     if(userCircles.length) html += userCircles.map(function(c){ return circleRow(c,false); }).join('');
-    else html += '<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">No hay salas creadas por usuarios.</div>';
+    else html += '<div style="font-size:13px;color:rgba(255,255,255,.3);padding:6px 0">No hay salas creadas por usuarios.</div>';
     html += '</div>';
     panel.innerHTML = html;
   }catch(e){
-    panel.innerHTML='<div style="padding:20px;font-size:12px;color:rgba(255,100,100,.5)">Error: '+_escHtml(e.message)+'</div>';
+    panel.innerHTML='<div style="padding:20px;font-size:14px;color:rgba(255,100,100,.5)">Error: '+_escHtml(e.message)+'</div>';
   }
 }
 
@@ -18414,7 +18445,7 @@ async function _adminLoadUserCircles(){
   var el = document.getElementById('adminCirclesList');
   if(!el) return;
   _initSupabase();
-  if(!sbClient){ el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  if(!sbClient){ el.innerHTML='<div style="font-size:13px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
   try{
     var r = await sbClient.from('circles')
       .select('*')
@@ -18422,7 +18453,7 @@ async function _adminLoadUserCircles(){
       .order('created_at', {ascending:false})
       .limit(100);
     if(!r.data || !r.data.length){
-      el.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">No hay grupos creados por usuarios.</div>';
+      el.innerHTML='<div style="font-size:13px;color:rgba(255,255,255,.3);padding:6px 0">No hay grupos creados por usuarios.</div>';
       return;
     }
     // Get member counts for each circle
@@ -18440,19 +18471,19 @@ async function _adminLoadUserCircles(){
       return '<div id="admCirc-'+_escHtml(String(c.id))+'" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
         +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.88)">'+(c.emoji||'🫂')+' '+_escHtml(c.name||'Sin nombre')+'</div>'
-        +(c.descripcion?'<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">'+_escHtml(c.descripcion.slice(0,100))+'</div>':'')
-        +'<div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">'
+        +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.88)">'+(c.emoji||'🫂')+' '+_escHtml(c.name||'Sin nombre')+'</div>'
+        +(c.descripcion?'<div style="font-size:13px;color:rgba(255,255,255,.45);margin-top:2px">'+_escHtml(c.descripcion.slice(0,100))+'</div>':'')
+        +'<div style="font-size:12px;color:rgba(255,255,255,.3);margin-top:3px">'
         +'👥 '+members+' miembro'+(members!==1?'s':'')+' · '+capLabel+' · '+fecha
         +(c.creator_id?'<br>creador: <span style="color:rgba(255,255,255,.4)">'+_escHtml(c.creator_id.slice(0,8))+'…</span>':'')
         +'</div>'
         +'</div>'
-        +'<button onclick="_adminDeleteCircle(\''+_escHtml(String(c.id))+'\',\''+_escHtml(c.creator_id||'')+'\',this)" style="flex-shrink:0;padding:6px 11px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);border-radius:8px;color:rgba(231,120,110,.9);font-size:11px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️ Eliminar</button>'
+        +'<button onclick="_adminDeleteCircle(\''+_escHtml(String(c.id))+'\',\''+_escHtml(c.creator_id||'')+'\',this)" style="flex-shrink:0;padding:6px 11px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.35);border-radius:8px;color:rgba(231,120,110,.9);font-size:13px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️ Eliminar</button>'
         +'</div>'
         +'</div>';
     }).join('');
   }catch(e){
-    el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Error al cargar grupos.</div>';
+    el.innerHTML='<div style="font-size:13px;color:rgba(255,100,100,.5)">Error al cargar grupos.</div>';
   }
 }
 
@@ -18491,34 +18522,34 @@ async function _adminDeleteCircle(circleId, creatorId, btn){
 // ── TAB: MENSAJES ─────────────────────────────────────────────────────
 function _adminTabMensajes(panel){
   var broadcasts = []; try{ broadcasts = JSON.parse(safeLS('get','velo_broadcasts')||'[]'); }catch(e){}
-  panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">🔑 CONTRASEÑAS PROVISIONALES</div>'
+  panel.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">🔑 CONTRASEÑAS PROVISIONALES</div>'
     +'<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:14px;margin-bottom:16px">'
-    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Contraseña temporal para usuario que no puede recuperar su cuenta. Válida 72 horas.</p>'
+    +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Contraseña temporal para usuario que no puede recuperar su cuenta. Válida 72 horas.</p>'
     +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'
     +'<input class="p-input" id="adminProvEmail" type="email" placeholder="correo@usuario.com" style="flex:1;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" />'
-    +'<button onclick="pCreateProvisionalPass()" style="padding:8px 14px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;white-space:nowrap">Crear</button>'
-    +'</div><div id="adminProvResult" style="font-size:12px;color:rgba(116,198,157,.8)"></div></div>'
+    +'<button onclick="pCreateProvisionalPass()" style="padding:8px 14px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700;white-space:nowrap">Crear</button>'
+    +'</div><div id="adminProvResult" style="font-size:14px;color:rgba(116,198,157,.8)"></div></div>'
 
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6)">💌 MENSAJES DE CONTACTO</div>'
-    +'<button onclick="sbLoadContacts().then(function(d){ _renderAdminContactsList(d||[]); })" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:6px;color:rgba(116,198,157,.6);cursor:pointer;font-family:\'Jost\',sans-serif">↻ Actualizar</button>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6)">💌 MENSAJES DE CONTACTO</div>'
+    +'<button onclick="sbLoadContacts().then(function(d){ _renderAdminContactsList(d||[]); })" style="font-size:12px;padding:3px 8px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:6px;color:rgba(116,198,157,.6);cursor:pointer;font-family:\'Jost\',sans-serif">↻ Actualizar</button>'
     +'</div>'
-    +'<div id="adminContactsList"><p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Cargando mensajes…</p></div>'
+    +'<div id="adminContactsList"><p style="font-size:14px;color:rgba(255,255,255,.3);padding:12px 0">Cargando mensajes…</p></div>'
 
-    +'<div style="margin-top:20px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📢 MENSAJES MASIVOS</div>'
+    +'<div style="margin-top:20px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📢 MENSAJES MASIVOS</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
-    +'<button onclick="pAdminMassMessage(\'users\')" style="padding:14px;background:rgba(116,198,157,.1);border:1.5px solid rgba(116,198,157,.25);border-radius:14px;color:rgba(116,198,157,.9);font-family:\'Jost\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:24px">👥</span>Usuarios</button>'
-    +'<button onclick="pAdminMassMessage(\'pros\')" style="padding:14px;background:rgba(200,162,0,.08);border:1.5px solid rgba(200,162,0,.2);border-radius:14px;color:rgba(200,162,0,.9);font-family:\'Jost\',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:24px">🩺</span>Profesionales</button>'
+    +'<button onclick="pAdminMassMessage(\'users\')" style="padding:14px;background:rgba(116,198,157,.1);border:1.5px solid rgba(116,198,157,.25);border-radius:14px;color:rgba(116,198,157,.9);font-family:\'Jost\',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:24px">👥</span>Usuarios</button>'
+    +'<button onclick="pAdminMassMessage(\'pros\')" style="padding:14px;background:rgba(200,162,0,.08);border:1.5px solid rgba(200,162,0,.2);border-radius:14px;color:rgba(200,162,0,.9);font-family:\'Jost\',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-size:24px">🩺</span>Profesionales</button>'
     +'</div>'
     +(broadcasts.length
-      ? '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:8px">HISTORIAL</div>'
+      ? '<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:8px">HISTORIAL</div>'
         + broadcasts.slice(0,8).map(function(b){
             var ds = new Date(b.ts).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
             var imgTag = b.imageUrl ? '<img src="'+_escHtml(b.imageUrl)+'" style="width:100%;max-height:80px;object-fit:cover;border-radius:6px;margin-top:4px" onerror="this.remove()">' : '';
             return '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
               +'<div style="display:flex;align-items:flex-start;gap:8px"><span style="font-size:16px;flex-shrink:0">'+(b.target==='pros'?'🩺':'👥')+'</span>'
-              +'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(b.subject)+'</div>'
-              +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+ds+' · '+(b.target==='pros'?'Profesionales':'Usuarios')+'</div>'
+              +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(b.subject)+'</div>'
+              +'<div style="font-size:12px;color:rgba(255,255,255,.3)">'+ds+' · '+(b.target==='pros'?'Profesionales':'Usuarios')+'</div>'
               +imgTag+'</div></div></div>';
           }).join('')
       : '');
@@ -18531,7 +18562,7 @@ function _adminTabMensajes(panel){
 
 // ── TAB: USUARIOS ────────────────────────────────────────────────────
 async function _adminTabUsuarios(panel){
-  panel.innerHTML = '<p style="font-size:11px;color:rgba(255,255,255,.3);padding:10px 0">Cargando registros…</p>';
+  panel.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3);padding:10px 0">Cargando registros…</p>';
   _initSupabase();
   var allProfiles = [], deletedCount = 0;
   if(sbClient){
@@ -18545,19 +18576,19 @@ async function _adminTabUsuarios(panel){
     var fecha = p.created_at?new Date(p.created_at).toLocaleString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
     var tc = p.terms_accepted_at?new Date(p.terms_accepted_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'}):'—';
     var em = (p.email||'').replace(/'/g,"\\'");
-    var roleBadge = p.role==='pro'?'<span style="font-size:9px;color:#74c6d0;border:1px solid rgba(116,198,210,.35);border-radius:4px;padding:1px 5px">PRO</span>'
-                  :p.role==='plus'?'<span style="font-size:9px;color:#c8a23e;border:1px solid rgba(200,162,62,.35);border-radius:4px;padding:1px 5px">PLUS</span>'
-                  :'<span style="font-size:9px;color:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:1px 5px">USER</span>';
+    var roleBadge = p.role==='pro'?'<span style="font-size:11px;color:#74c6d0;border:1px solid rgba(116,198,210,.35);border-radius:4px;padding:1px 5px">PRO</span>'
+                  :p.role==='plus'?'<span style="font-size:11px;color:#c8a23e;border:1px solid rgba(200,162,62,.35);border-radius:4px;padding:1px 5px">PLUS</span>'
+                  :'<span style="font-size:11px;color:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:1px 5px">USER</span>';
     return '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
       +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div style="flex:1;min-width:0">'
-      +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.8)">'+_escHtml(p.nombre||p.email||'—')+'</div>'
-      +'<div style="font-size:10px;color:rgba(255,255,255,.35)">@'+_escHtml(p.username||'—')+' · '+_escHtml(p.email||'')+'</div>'
-      +'<div style="font-size:9px;color:rgba(255,255,255,.22);margin-top:1px">Registro: '+fecha+' · 📜 T&C: '+tc+'</div>'
+      +'<div style="font-size:14px;font-weight:600;color:rgba(255,255,255,.8)">'+_escHtml(p.nombre||p.email||'—')+'</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.35)">@'+_escHtml(p.username||'—')+' · '+_escHtml(p.email||'')+'</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.22);margin-top:1px">Registro: '+fecha+' · 📜 T&C: '+tc+'</div>'
       +'</div>'+roleBadge+'</div>'
       +'<div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">'
-      +(p.email?'<button onclick="pAdminSendPasswordReset(\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.8);border-radius:5px;cursor:pointer">🔑 Reset</button>':'')
-      +(p.id?'<button onclick="pAdminWarnUser(\''+p.id+'\',\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(230,180,40,.12);border:1px solid rgba(230,180,40,.25);color:rgba(240,200,90,.8);border-radius:5px;cursor:pointer">⚠️ Advertir</button>':'')
-      +(p.id?'<button onclick="pAdminDeleteUser(\''+p.id+'\',\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.25);color:rgba(231,120,110,.85);border-radius:5px;cursor:pointer">🗑️ Eliminar</button>':'')
+      +(p.email?'<button onclick="pAdminSendPasswordReset(\''+em+'\')" style="font-size:11px;padding:2px 7px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.8);border-radius:5px;cursor:pointer">🔑 Reset</button>':'')
+      +(p.id?'<button onclick="pAdminWarnUser(\''+p.id+'\',\''+em+'\')" style="font-size:11px;padding:2px 7px;background:rgba(230,180,40,.12);border:1px solid rgba(230,180,40,.25);color:rgba(240,200,90,.8);border-radius:5px;cursor:pointer">⚠️ Advertir</button>':'')
+      +(p.id?'<button onclick="pAdminDeleteUser(\''+p.id+'\',\''+em+'\')" style="font-size:11px;padding:2px 7px;background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.25);color:rgba(231,120,110,.85);border-radius:5px;cursor:pointer">🗑️ Eliminar</button>':'')
       +'</div></div>';
   }
 
@@ -18568,24 +18599,24 @@ async function _adminTabUsuarios(panel){
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 12px">'
     +'<span style="font-size:15px">🔍</span>'
-    +'<input id="userSearch" type="text" placeholder="Buscar por nombre, @usuario o email…" oninput="_filterUserList(this.value)" style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:12px;font-family:\'Jost\',sans-serif" />'
+    +'<input id="userSearch" type="text" placeholder="Buscar por nombre, @usuario o email…" oninput="_filterUserList(this.value)" style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:14px;font-family:\'Jost\',sans-serif" />'
     +'</div>'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:8px">👥 USUARIOS ('+users.length+')</div>'
-    +'<div id="adminUserList">'+(users.length?users.map(profileRow).join(''):'<p style="font-size:12px;color:rgba(255,255,255,.3);font-style:italic">Sin usuarios</p>')+'</div>'
-    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,200,.7);margin-bottom:8px">🩺 PROFESIONALES ('+pros.length+')</div>'
-    +'<div id="adminProList">'+(pros.length?pros.map(profileRow).join(''):'<p style="font-size:12px;color:rgba(255,255,255,.3);font-style:italic">Sin profesionales</p>')+'</div>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:8px">👥 USUARIOS ('+users.length+')</div>'
+    +'<div id="adminUserList">'+(users.length?users.map(profileRow).join(''):'<p style="font-size:14px;color:rgba(255,255,255,.3);font-style:italic">Sin usuarios</p>')+'</div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,200,.7);margin-bottom:8px">🩺 PROFESIONALES ('+pros.length+')</div>'
+    +'<div id="adminProList">'+(pros.length?pros.map(profileRow).join(''):'<p style="font-size:14px;color:rgba(255,255,255,.3);font-style:italic">Sin profesionales</p>')+'</div>'
     +'<div style="margin-top:20px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6)">📜 ACEPTACIÓN DE TÉRMINOS</div>'
-    +'<button onclick="pAdminLoadConsent()" style="font-size:10px;padding:3px 8px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:6px;color:rgba(116,198,157,.6);cursor:pointer;font-family:\'Jost\',sans-serif">↻ Actualizar</button>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6)">📜 ACEPTACIÓN DE TÉRMINOS</div>'
+    +'<button onclick="pAdminLoadConsent()" style="font-size:12px;padding:3px 8px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:6px;color:rgba(116,198,157,.6);cursor:pointer;font-family:\'Jost\',sans-serif">↻ Actualizar</button>'
     +'</div>'
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px 12px">'
     +'<span style="font-size:15px">🔍</span>'
-    +'<input id="consentSearch" type="text" placeholder="Buscar por nombre o email…" oninput="_filterConsentLog(this.value)" style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:12px;font-family:\'Jost\',sans-serif" />'
+    +'<input id="consentSearch" type="text" placeholder="Buscar por nombre o email…" oninput="_filterConsentLog(this.value)" style="flex:1;background:none;border:none;outline:none;color:#fff;font-size:14px;font-family:\'Jost\',sans-serif" />'
     +'</div>'
-    +'<div id="adminConsentLog"><p style="font-size:12px;color:rgba(255,255,255,.3)">Cargando registros…</p></div>'
+    +'<div id="adminConsentLog"><p style="font-size:14px;color:rgba(255,255,255,.3)">Cargando registros…</p></div>'
     +'</div>'
     +'<div style="margin-top:16px;text-align:center">'
-    +'<button onclick="_switchAdminTab(\'privacidad\')" style="padding:10px 18px;background:rgba(180,140,220,.15);border:1.5px solid rgba(180,140,220,.3);border-radius:12px;color:rgba(180,140,220,.9);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">🔒 Solicitudes GDPR / Ley 25.326 →</button>'
+    +'<button onclick="_switchAdminTab(\'privacidad\')" style="padding:10px 18px;background:rgba(180,140,220,.15);border:1.5px solid rgba(180,140,220,.3);border-radius:12px;color:rgba(180,140,220,.9);font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">🔒 Solicitudes GDPR / Ley 25.326 →</button>'
     +'</div>';
 
   panel.innerHTML = html;
@@ -18604,20 +18635,20 @@ function _filterUserList(q){
     var tc = p.terms_accepted_at?new Date(p.terms_accepted_at).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'}):'—';
     var em = (p.email||'').replace(/'/g,"\\'");
     return '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
-      +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.8)">'+_escHtml(p.nombre||p.email||'—')+'</div>'
-      +'<div style="font-size:10px;color:rgba(255,255,255,.35)">@'+_escHtml(p.username||'—')+' · '+_escHtml(p.email||'')+'</div>'
-      +'<div style="font-size:9px;color:rgba(255,255,255,.22)">Registro: '+fecha+' · 📜 T&C: '+tc+'</div>'
+      +'<div style="font-size:14px;font-weight:600;color:rgba(255,255,255,.8)">'+_escHtml(p.nombre||p.email||'—')+'</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.35)">@'+_escHtml(p.username||'—')+' · '+_escHtml(p.email||'')+'</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.22)">Registro: '+fecha+' · 📜 T&C: '+tc+'</div>'
       +'<div style="display:flex;gap:5px;margin-top:5px">'
-      +(p.email?'<button onclick="pAdminSendPasswordReset(\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.8);border-radius:5px;cursor:pointer">🔑 Reset</button>':'')
-      +(p.id?'<button onclick="pAdminWarnUser(\''+p.id+'\',\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(230,180,40,.12);border:1px solid rgba(230,180,40,.25);color:rgba(240,200,90,.8);border-radius:5px;cursor:pointer">⚠️ Advertir</button>':'')
-      +(p.id?'<button onclick="pAdminDeleteUser(\''+p.id+'\',\''+em+'\')" style="font-size:9px;padding:2px 7px;background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.25);color:rgba(231,120,110,.85);border-radius:5px;cursor:pointer">🗑️ Eliminar</button>':'')
+      +(p.email?'<button onclick="pAdminSendPasswordReset(\''+em+'\')" style="font-size:11px;padding:2px 7px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.8);border-radius:5px;cursor:pointer">🔑 Reset</button>':'')
+      +(p.id?'<button onclick="pAdminWarnUser(\''+p.id+'\',\''+em+'\')" style="font-size:11px;padding:2px 7px;background:rgba(230,180,40,.12);border:1px solid rgba(230,180,40,.25);color:rgba(240,200,90,.8);border-radius:5px;cursor:pointer">⚠️ Advertir</button>':'')
+      +(p.id?'<button onclick="pAdminDeleteUser(\''+p.id+'\',\''+em+'\')" style="font-size:11px;padding:2px 7px;background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.25);color:rgba(231,120,110,.85);border-radius:5px;cursor:pointer">🗑️ Eliminar</button>':'')
       +'</div></div>';
   }
   var users = all.filter(function(p){ return p.role!=='pro' && match(p); });
   var pros  = all.filter(function(p){ return p.role==='pro'  && match(p); });
   var uEl=document.getElementById('adminUserList'); var pEl=document.getElementById('adminProList');
-  if(uEl) uEl.innerHTML=users.length?users.map(row).join(''):'<p style="font-size:12px;color:rgba(255,255,255,.3);font-style:italic">Sin resultados</p>';
-  if(pEl) pEl.innerHTML=pros.length ?pros.map(row).join(''):'<p style="font-size:12px;color:rgba(255,255,255,.3);font-style:italic">Sin resultados</p>';
+  if(uEl) uEl.innerHTML=users.length?users.map(row).join(''):'<p style="font-size:14px;color:rgba(255,255,255,.3);font-style:italic">Sin resultados</p>';
+  if(pEl) pEl.innerHTML=pros.length ?pros.map(row).join(''):'<p style="font-size:14px;color:rgba(255,255,255,.3);font-style:italic">Sin resultados</p>';
 }
 
 // ── TAB: FINANZAS ────────────────────────────────────────────────────
@@ -18631,10 +18662,10 @@ function _adminPageViewStats(){
   };
   var entries = Object.keys(data).filter(function(k){ return k !== '__total' && k !== '__lastSeen'; });
   entries.sort(function(a,b){ return (data[b]||0)-(data[a]||0); });
-  if(!entries.length) return '<p style="font-size:11px;color:rgba(255,255,255,.3)">Sin datos aún — los registros se acumulan con el uso de la app.</p>';
+  if(!entries.length) return '<p style="font-size:13px;color:rgba(255,255,255,.3)">Sin datos aún — los registros se acumulan con el uso de la app.</p>';
   var total = data.__total || 1;
   var lastSeen = data.__lastSeen ? new Date(data.__lastSeen).toLocaleString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
-  return '<div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:10px">Última actividad: '+lastSeen+' · Total navegaciones: '+total+'</div>'
+  return '<div style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:10px">Última actividad: '+lastSeen+' · Total navegaciones: '+total+'</div>'
     +'<div style="display:flex;flex-direction:column;gap:6px">'
     +entries.map(function(k){
       var v = data[k]||0;
@@ -18642,8 +18673,8 @@ function _adminPageViewStats(){
       var label = labels[k]||k;
       return '<div style="background:rgba(255,255,255,.04);border-radius:10px;padding:8px 12px">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
-        +'<span style="font-size:12px;color:rgba(255,255,255,.7)">'+label+'</span>'
-        +'<span style="font-size:12px;font-weight:700;color:rgba(116,198,157,.9)">'+v+' <span style="font-size:10px;color:rgba(255,255,255,.3)">('+pct+'%)</span></span>'
+        +'<span style="font-size:14px;color:rgba(255,255,255,.7)">'+label+'</span>'
+        +'<span style="font-size:14px;font-weight:700;color:rgba(116,198,157,.9)">'+v+' <span style="font-size:12px;color:rgba(255,255,255,.3)">('+pct+'%)</span></span>'
         +'</div>'
         +'<div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px">'
         +'<div style="height:4px;background:rgba(116,198,157,.6);border-radius:2px;width:'+Math.min(pct,100)+'%"></div>'
@@ -18653,28 +18684,28 @@ function _adminPageViewStats(){
 }
 
 function _adminTabFinanzas(panel){
-  panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:10px">📊 TRÁFICO WEB · VERCEL ANALYTICS</div>'
+  panel.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:10px">📊 TRÁFICO WEB · VERCEL ANALYTICS</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'
     +'<a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" style="display:block;padding:12px 14px;background:rgba(0,0,0,.4);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;text-decoration:none;text-align:center">'
     +'<div style="font-size:20px;margin-bottom:4px">📈</div>'
-    +'<div style="font-size:11px;font-weight:700">Ver Analytics</div>'
-    +'<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px">Visitas · Países · Dispositivos</div>'
+    +'<div style="font-size:13px;font-weight:700">Ver Analytics</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Visitas · Países · Dispositivos</div>'
     +'</a>'
     +'<a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" style="display:block;padding:12px 14px;background:rgba(0,0,0,.4);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;text-decoration:none;text-align:center">'
     +'<div style="font-size:20px;margin-bottom:4px">⚡</div>'
-    +'<div style="font-size:11px;font-weight:700">Speed Insights</div>'
-    +'<div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:2px">Core Web Vitals · LCP · CLS</div>'
+    +'<div style="font-size:13px;font-weight:700">Speed Insights</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Core Web Vitals · LCP · CLS</div>'
     +'</a>'
     +'</div>'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:10px">🗺️ SECCIONES MÁS VISITADAS (este dispositivo)</div>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:10px">🗺️ SECCIONES MÁS VISITADAS (este dispositivo)</div>'
     +'<div id="adminPageStats">'+_adminPageViewStats()+'</div>'
-    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💰 INGRESOS Y DONACIONES</div>'
-    +'<div id="adminDonations"><p style="font-size:11px;color:rgba(255,255,255,.3);padding:8px 0">Cargando…</p></div>'
-    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💳 TRANSFERENCIAS PENDIENTES</div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💰 INGRESOS Y DONACIONES</div>'
+    +'<div id="adminDonations"><p style="font-size:13px;color:rgba(255,255,255,.3);padding:8px 0">Cargando…</p></div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💳 TRANSFERENCIAS PENDIENTES</div>'
     +'<div id="adminTransferList">'+_adminTransferHtml()+'</div>'
     +'<div style="margin-top:18px">'+_adminMonthlyReportTracker()+'</div>'
-    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📊 ENCUESTAS DE SATISFACCIÓN</div>'
-    +'<div id="adminSurveyResults"><p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando respuestas…</p></div>';
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📊 ENCUESTAS DE SATISFACCIÓN</div>'
+    +'<div id="adminSurveyResults"><p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando respuestas…</p></div>';
   _adminLoadSurveys();
   _renderAdminDonations();
 }
@@ -18682,18 +18713,18 @@ function _adminTabFinanzas(panel){
 function _adminTransferHtml(){
   var transfers=[]; try{transfers=JSON.parse(safeLS('get','velo_pending_transfers')||'[]');}catch(e){}
   var pending=transfers.filter(function(t){ return t.ended&&!t.paid; });
-  if(!pending.length) return '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">Sin transferencias pendientes.</p>';
+  if(!pending.length) return '<p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">Sin transferencias pendientes.</p>';
   return pending.map(function(t,i){
     var pro=_proData.find(function(p){ return p.id===t.proId; });
     var proAmt=Math.round((t.amount||0)*0.8*100)/100;
     var veloAmt=Math.round((t.amount||0)*0.2*100)/100;
     return '<div style="background:rgba(200,162,0,.07);border:1px solid rgba(200,162,0,.2);border-radius:12px;padding:14px;margin-bottom:8px">'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="font-size:22px">'+(pro?pro.av:'🩺')+'</div>'
-      +'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.82)">'+(pro?pro.name:'Profesional')+'</div>'
-      +'<div style="font-size:11px;color:rgba(255,255,255,.4)">'+new Date(t.ts).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+'</div></div>'
+      +'<div style="flex:1"><div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.82)">'+(pro?pro.name:'Profesional')+'</div>'
+      +'<div style="font-size:13px;color:rgba(255,255,255,.4)">'+new Date(t.ts).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+'</div></div>'
       +'<div style="text-align:right"><div style="font-size:16px;font-weight:800;color:rgba(200,162,0,.9)">$'+t.amount+' '+(t.currency||'USD')+'</div>'
-      +'<div style="font-size:10px;color:rgba(255,255,255,.3)">Pro: $'+proAmt+' · Velo: $'+veloAmt+'</div></div></div>'
-      +'<button onclick="pApproveTransfer('+i+')" style="width:100%;padding:8px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700">✅ Aprobar transferencia</button></div>';
+      +'<div style="font-size:12px;color:rgba(255,255,255,.3)">Pro: $'+proAmt+' · Velo: $'+veloAmt+'</div></div></div>'
+      +'<button onclick="pApproveTransfer('+i+')" style="width:100%;padding:8px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700">✅ Aprobar transferencia</button></div>';
   }).join('');
 }
 
@@ -18707,16 +18738,16 @@ function _adminMonthlyReportTracker(){
     var sent=history.find(function(r){ return r.month===key; });
     months.push({key:key,label:d.toLocaleString('es',{month:'long',year:'numeric'}),sent:sent});
   }
-  return '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📅 INFORME MENSUAL — HISTORIAL</div>'
-    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">El resumen mensual se envía el 1° de cada mes. Marcá manualmente cuando lo enviaste.</p>'
+  return '<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📅 INFORME MENSUAL — HISTORIAL</div>'
+    +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">El resumen mensual se envía el 1° de cada mes. Marcá manualmente cuando lo enviaste.</p>'
     +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">'
     +months.map(function(m){
         return '<div style="background:'+(m.sent?'rgba(116,198,157,.1)':'rgba(255,255,255,.04)')+';border:1px solid '+(m.sent?'rgba(116,198,157,.3)':'rgba(255,255,255,.1)')+';border-radius:10px;padding:10px;display:flex;align-items:center;justify-content:space-between">'
-          +'<div><div style="font-size:11px;font-weight:600;color:rgba(255,255,255,'+(m.sent?'.8':'.45')+')">'+m.label+'</div>'
-          +(m.sent?'<div style="font-size:9px;color:rgba(116,198,157,.6)">✓ Enviado '+new Date(m.sent.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
-            :'<div style="font-size:9px;color:rgba(255,255,255,.25)">Pendiente</div>')+'</div>'
+          +'<div><div style="font-size:13px;font-weight:600;color:rgba(255,255,255,'+(m.sent?'.8':'.45')+')">'+m.label+'</div>'
+          +(m.sent?'<div style="font-size:11px;color:rgba(116,198,157,.6)">✓ Enviado '+new Date(m.sent.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
+            :'<div style="font-size:11px;color:rgba(255,255,255,.25)">Pendiente</div>')+'</div>'
           +(m.sent?'<span style="font-size:16px">✅</span>'
-            :'<button onclick="pAdminMarkMonthlyReport(\''+m.key+'\')" style="font-size:9px;padding:3px 7px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.75);border-radius:5px;cursor:pointer">Marcar OK</button>')
+            :'<button onclick="pAdminMarkMonthlyReport(\''+m.key+'\')" style="font-size:11px;padding:3px 7px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.75);border-radius:5px;cursor:pointer">Marcar OK</button>')
           +'</div>';
       }).join('')+'</div>';
 }
@@ -18834,16 +18865,16 @@ async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
 
 // ── TAB: PRIVACIDAD (GDPR / Ley 25.326) ──────────────────────────────
 function _adminTabPrivacidad(panel){
-  panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.85);margin-bottom:12px">🔒 SOLICITUDES DE DATOS PERSONALES</div>'
-    +'<p style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.6">Cuando un usuario pide sus datos (Ley 25.326 / GDPR), Velo IA prepara el informe. Lo revisás antes de confirmar el envío.</p>'
+  panel.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.85);margin-bottom:12px">🔒 SOLICITUDES DE DATOS PERSONALES</div>'
+    +'<p style="font-size:14px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.6">Cuando un usuario pide sus datos (Ley 25.326 / GDPR), Velo IA prepara el informe. Lo revisás antes de confirmar el envío.</p>'
     +'<div style="background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.2);border-radius:14px;padding:14px;margin-bottom:16px">'
-    +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);display:block;margin-bottom:6px">CORREO DEL USUARIO SOLICITANTE</label>'
+    +'<label style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);display:block;margin-bottom:6px">CORREO DEL USUARIO SOLICITANTE</label>'
     +'<div style="display:flex;gap:8px">'
-    +'<input type="email" id="gdprEmail" placeholder="usuario@email.com" style="flex:1;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;box-sizing:border-box">'
-    +'<button onclick="pAdminPrepareGDPR()" id="gdprBtn" style="padding:10px 16px;background:rgba(180,140,220,.2);border:1.5px solid rgba(180,140,220,.35);border-radius:12px;color:rgba(180,140,220,.95);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0">🔍 Preparar informe</button>'
+    +'<input type="email" id="gdprEmail" placeholder="usuario@email.com" style="flex:1;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:15px;font-family:\'Jost\',sans-serif;box-sizing:border-box">'
+    +'<button onclick="pAdminPrepareGDPR()" id="gdprBtn" style="padding:10px 16px;background:rgba(180,140,220,.2);border:1.5px solid rgba(180,140,220,.35);border-radius:12px;color:rgba(180,140,220,.95);font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0">🔍 Preparar informe</button>'
     +'</div></div>'
     +'<div id="gdprResult"></div>'
-    +'<div style="margin-top:20px"><div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px">📋 HISTORIAL DE SOLICITUDES</div>'
+    +'<div style="margin-top:20px"><div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px">📋 HISTORIAL DE SOLICITUDES</div>'
     +'<div id="gdprHistory">'+_renderGDPRHistory()+'</div></div>';
 }
 
@@ -18853,7 +18884,7 @@ async function pAdminPrepareGDPR(){
   var email=emailEl.value.trim().toLowerCase();
   var btn=document.getElementById('gdprBtn'); var resultEl=document.getElementById('gdprResult');
   if(btn){btn.disabled=true;btn.textContent='🔍 Preparando…';}
-  if(resultEl) resultEl.innerHTML='<p style="font-size:11px;color:rgba(255,255,255,.4);font-style:italic;padding:8px 0">Velo IA está preparando el informe…</p>';
+  if(resultEl) resultEl.innerHTML='<p style="font-size:13px;color:rgba(255,255,255,.4);font-style:italic;padding:8px 0">Velo IA está preparando el informe…</p>';
 
   _initSupabase();
   var userData={email:email,perfil:null,diarioCount:0,estadosCount:0};
@@ -18885,17 +18916,17 @@ async function pAdminPrepareGDPR(){
 
   var report=await _geminiCall(prompt,{maxOutputTokens:600});
   if(btn){btn.disabled=false;btn.textContent='🔍 Preparar informe';}
-  if(!report){ if(resultEl) resultEl.innerHTML='<p style="font-size:11px;color:rgba(255,100,100,.6);padding:6px 0">No se pudo preparar. Verificá la conexión.</p>'; return; }
+  if(!report){ if(resultEl) resultEl.innerHTML='<p style="font-size:13px;color:rgba(255,100,100,.6);padding:6px 0">No se pudo preparar. Verificá la conexión.</p>'; return; }
 
   if(resultEl){
     var encoded=encodeURIComponent(report).slice(0,2000);
     resultEl.innerHTML='<div style="background:rgba(180,140,220,.07);border:1.5px solid rgba(180,140,220,.3);border-radius:14px;padding:16px;margin-top:8px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.8);margin-bottom:10px">📋 INFORME — REVISÁ ANTES DE CONFIRMAR</div>'
-      +'<div style="font-size:12px;color:rgba(255,255,255,.8);line-height:1.7;white-space:pre-line;max-height:300px;overflow-y:auto;margin-bottom:14px;padding-right:4px">'+_escHtml(report)+'</div>'
-      +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px">⚠️ Enviá este informe manualmente al usuario: <strong>'+_escHtml(email)+'</strong></p>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.8);margin-bottom:10px">📋 INFORME — REVISÁ ANTES DE CONFIRMAR</div>'
+      +'<div style="font-size:14px;color:rgba(255,255,255,.8);line-height:1.7;white-space:pre-line;max-height:300px;overflow-y:auto;margin-bottom:14px;padding-right:4px">'+_escHtml(report)+'</div>'
+      +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:12px">⚠️ Enviá este informe manualmente al usuario: <strong>'+_escHtml(email)+'</strong></p>'
       +'<div style="display:flex;gap:8px">'
-      +'<button onclick="pAdminConfirmGDPR(\''+_escHtml(email)+'\',\''+encoded+'\')" style="flex:1;padding:10px;background:rgba(116,198,157,.2);border:1.5px solid rgba(116,198,157,.4);border-radius:12px;color:#fff;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">✅ Confirmar — registrar envío</button>'
-      +'<button onclick="document.getElementById(\'gdprResult\').innerHTML=\'\'" style="padding:10px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:rgba(255,255,255,.6);font-size:12px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
+      +'<button onclick="pAdminConfirmGDPR(\''+_escHtml(email)+'\',\''+encoded+'\')" style="flex:1;padding:10px;background:rgba(116,198,157,.2);border:1.5px solid rgba(116,198,157,.4);border-radius:12px;color:#fff;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">✅ Confirmar — registrar envío</button>'
+      +'<button onclick="document.getElementById(\'gdprResult\').innerHTML=\'\'" style="padding:10px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:rgba(255,255,255,.6);font-size:14px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
       +'</div></div>';
   }
 }
@@ -18908,7 +18939,7 @@ async function pAdminConfirmGDPR(email, encoded){
   history.unshift({email:email,ts:Date.now(),sentBy:_ADMIN_EMAIL||'admin'});
   safeLS('set','velo_gdpr_requests',JSON.stringify(history.slice(0,100)));
   var resultEl=document.getElementById('gdprResult');
-  if(resultEl) resultEl.innerHTML='<div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;padding:12px;font-size:12px;color:rgba(116,198,157,.9)">✅ Registrado. Enviá el informe manualmente a: <strong>'+_escHtml(email)+'</strong></div>';
+  if(resultEl) resultEl.innerHTML='<div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;padding:12px;font-size:14px;color:rgba(116,198,157,.9)">✅ Registrado. Enviá el informe manualmente a: <strong>'+_escHtml(email)+'</strong></div>';
   var histEl=document.getElementById('gdprHistory');
   if(histEl) histEl.innerHTML=_renderGDPRHistory();
   pToast('🔒','Solicitud GDPR registrada');
@@ -18916,38 +18947,38 @@ async function pAdminConfirmGDPR(email, encoded){
 
 function _renderGDPRHistory(){
   var history=[]; try{history=JSON.parse(safeLS('get','velo_gdpr_requests')||'[]');}catch(e){}
-  if(!history.length) return '<p style="font-size:11px;color:rgba(255,255,255,.25);font-style:italic">Sin solicitudes previas</p>';
+  if(!history.length) return '<p style="font-size:13px;color:rgba(255,255,255,.25);font-style:italic">Sin solicitudes previas</p>';
   return history.slice(0,20).map(function(r){
     var d=new Date(r.ts).toLocaleString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
     return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
       +'<span style="font-size:15px">📤</span>'
-      +'<div style="flex:1"><div style="font-size:12px;color:rgba(255,255,255,.65)">'+_escHtml(r.email)+'</div>'
-      +'<div style="font-size:10px;color:rgba(255,255,255,.25)">'+d+'</div></div>'
-      +'<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓ Enviado</span></div>';
+      +'<div style="flex:1"><div style="font-size:14px;color:rgba(255,255,255,.65)">'+_escHtml(r.email)+'</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.25)">'+d+'</div></div>'
+      +'<span style="font-size:12px;color:rgba(116,198,157,.7);font-weight:700">✓ Enviado</span></div>';
   }).join('');
 }
 
 // ── TAB: GESTIÓN ─────────────────────────────────────────────────────
 function _adminTabGestion(panel){
-  panel.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📋 TAREAS PENDIENTES</div>'
-    +'<div id="adminAITasks"><div style="font-size:12px;color:rgba(255,255,255,.3);padding:10px 0">Velo IA está revisando las tareas…</div></div>'
-    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,200,.8);margin-bottom:10px">⚕️ SUSCRIPCIÓN PROFESIONAL</div>'
+  panel.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📋 TAREAS PENDIENTES</div>'
+    +'<div id="adminAITasks"><div style="font-size:14px;color:rgba(255,255,255,.3);padding:10px 0">Velo IA está revisando las tareas…</div></div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,200,.8);margin-bottom:10px">⚕️ SUSCRIPCIÓN PROFESIONAL</div>'
     +'<div style="background:rgba(116,198,200,.06);border:1px solid rgba(116,198,200,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
-    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Activá o extendé la suscripción de un profesional (30 o 90 días).</p>'
+    +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Activá o extendé la suscripción de un profesional (30 o 90 días).</p>'
     +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">'
     +'<input class="p-input" id="adminGrantProEmail" type="email" placeholder="correo@profesional.com" style="flex:1;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" />'
-    +'<select id="adminGrantProDays" style="padding:8px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-family:\'Jost\',sans-serif;font-size:12px">'
+    +'<select id="adminGrantProDays" style="padding:8px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-family:\'Jost\',sans-serif;font-size:14px">'
     +'<option value="30">30 días</option>'
     +'<option value="90">90 días</option>'
     +'</select>'
-    +'<button onclick="pAdminGrantProSubscription()" style="padding:8px 14px;background:rgba(116,198,200,.2);border:1px solid rgba(116,198,200,.35);color:rgba(116,198,200,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;white-space:nowrap">⚕️ Activar</button>'
-    +'</div><div id="adminGrantProResult" style="font-size:11px;color:rgba(116,198,157,.8)"></div></div>'
-    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">⭐ ACTIVAR VELO PLUS GRATIS (30 DÍAS)</div>'
+    +'<button onclick="pAdminGrantProSubscription()" style="padding:8px 14px;background:rgba(116,198,200,.2);border:1px solid rgba(116,198,200,.35);color:rgba(116,198,200,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700;white-space:nowrap">⚕️ Activar</button>'
+    +'</div><div id="adminGrantProResult" style="font-size:13px;color:rgba(116,198,157,.8)"></div></div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">⭐ ACTIVAR VELO PLUS GRATIS (30 DÍAS)</div>'
     +'<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
-    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Activá Velo Plus 30 días para un usuario.</p>'
+    +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Activá Velo Plus 30 días para un usuario.</p>'
     +'<div style="display:flex;gap:8px;align-items:center">'
     +'<input class="p-input" id="adminGrantPlusEmail" type="email" placeholder="correo@usuario.com" style="flex:1;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:#fff" />'
-    +'<button onclick="pAdminGrantPlus()" style="padding:8px 14px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;white-space:nowrap">⭐ Activar Plus</button>'
+    +'<button onclick="pAdminGrantPlus()" style="padding:8px 14px;background:rgba(200,162,0,.2);border:1px solid rgba(200,162,0,.35);color:rgba(200,162,0,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700;white-space:nowrap">⭐ Activar Plus</button>'
     +'</div></div>'
     +(function(){
         var d=new Date(); var mn=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -18956,46 +18987,46 @@ function _adminTabGestion(panel){
         var sentThis=history.find(function(r){ return r.month===(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); });
         var todayStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
         var isSunday = d.getDay()===0;
-        return '<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,158,56,.7);margin-bottom:10px">📋 RESUMEN SEMANAL IA</div>'
+        return '<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,158,56,.7);margin-bottom:10px">📋 RESUMEN SEMANAL IA</div>'
           +'<div style="background:rgba(200,158,56,.06);border:1px solid rgba(200,158,56,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
-          +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">Cada usuario ve sus propios ánimos y estadísticas de la semana al abrir el mensaje. Enviá siempre los domingos.</p>'
-          +'<button onclick="pAdminSendWeeklyReport()" style="width:100%;padding:10px;background:rgba(200,158,56,.15);border:1px solid rgba(200,158,56,.3);color:rgba(200,158,56,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;margin-bottom:8px">📋 Enviar resumen semanal de hoy ('+(isSunday?'domingo ✓':'hoy — recomendado domingos')+') a todos</button>'
+          +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">Cada usuario ve sus propios ánimos y estadísticas de la semana al abrir el mensaje. Enviá siempre los domingos.</p>'
+          +'<button onclick="pAdminSendWeeklyReport()" style="width:100%;padding:10px;background:rgba(200,158,56,.15);border:1px solid rgba(200,158,56,.3);color:rgba(200,158,56,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px">📋 Enviar resumen semanal de hoy ('+(isSunday?'domingo ✓':'hoy — recomendado domingos')+') a todos</button>'
           +'</div>'
-          +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">📊 RESUMEN MENSUAL IA</div>'
+          +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.7);margin-bottom:10px">📊 RESUMEN MENSUAL IA</div>'
           +'<div style="background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
-          +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">Velo IA genera un resumen personalizado para cada usuario con sus propios estados de ánimo y diario del mes. Cada uno ve el suyo en su buzón.</p>'
+          +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">Velo IA genera un resumen personalizado para cada usuario con sus propios estados de ánimo y diario del mes. Cada uno ve el suyo en su buzón.</p>'
           +(sentThis
-            ? '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;font-size:11px;color:rgba(116,198,157,.85)">✅ Resumen de '+mLabel+' ya enviado el '+new Date(sentThis.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
-            : '<button onclick="pAdminSendMonthlyReport()" style="width:100%;padding:10px;background:rgba(180,140,220,.15);border:1px solid rgba(180,140,220,.3);color:rgba(180,140,220,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700">📊 Enviar resumen de '+mLabel+' a todos los usuarios</button>')
+            ? '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;font-size:13px;color:rgba(116,198,157,.85)">✅ Resumen de '+mLabel+' ya enviado el '+new Date(sentThis.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
+            : '<button onclick="pAdminSendMonthlyReport()" style="width:100%;padding:10px;background:rgba(180,140,220,.15);border:1px solid rgba(180,140,220,.3);color:rgba(180,140,220,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700">📊 Enviar resumen de '+mLabel+' a todos los usuarios</button>')
           +'</div>';
       }())
-    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(123,104,238,.7);margin-bottom:10px">💎 RECOMPENSAS DIAMANTE — PLUS AUTOMÁTICO</div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(123,104,238,.7);margin-bottom:10px">💎 RECOMPENSAS DIAMANTE — PLUS AUTOMÁTICO</div>'
     +'<div style="background:rgba(123,104,238,.06);border:1px solid rgba(123,104,238,.2);border-radius:12px;padding:14px;margin-bottom:18px">'
-    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Usuarios que ganaron 3 meses de Velo Plus al alcanzar el nivel Diamante (100 conversaciones).</p>'
-    +'<div id="adminDiamanteList"><div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando…</div></div>'
+    +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Usuarios que ganaron 3 meses de Velo Plus al alcanzar el nivel Diamante (100 conversaciones).</p>'
+    +'<div id="adminDiamanteList"><div style="font-size:13px;color:rgba(255,255,255,.3)">Cargando…</div></div>'
     +'</div>'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📰 NOTICIAS MANUALES</div>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📰 NOTICIAS MANUALES</div>'
     +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:14px;margin-bottom:18px">'
-    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Publicá noticias con título, resumen y link.</p>'
-    +'<button onclick="pOpenAdminNews()" style="width:100%;padding:9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:12px;font-weight:700;margin-bottom:10px">+ Publicar noticia</button>'
-    +'<label style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:12px">'
+    +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Publicá noticias con título, resumen y link.</p>'
+    +'<button onclick="pOpenAdminNews()" style="width:100%;padding:9px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.9);border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">+ Publicar noticia</button>'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:12px">'
     +'<input type="checkbox" id="adminNewsOnlyToggle" '+(safeLS('get','velo_admin_news_only')==='1'?'checked':'')+' onchange="pAdminToggleNewsOnly(this.checked)" style="width:15px;height:15px;cursor:pointer">'
     +'Mostrar solo noticias manuales hoy</label>'
     +'<div id="adminNewsList"></div></div>'
-    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(58,123,213,.8);margin-bottom:10px">🕯️ SOLICITUDES VELA POR TI</div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(58,123,213,.8);margin-bottom:10px">🕯️ SOLICITUDES VELA POR TI</div>'
     +'<div style="background:rgba(58,123,213,.06);border:1px solid rgba(58,123,213,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
-    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Solicitudes de conexión con profesionales solidarios enviadas por usuarios.</p>'
-    +'<div id="adminSolidarityList"><div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando…</div></div>'
+    +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Solicitudes de conexión con profesionales solidarios enviadas por usuarios.</p>'
+    +'<div id="adminSolidarityList"><div style="font-size:13px;color:rgba(255,255,255,.3)">Cargando…</div></div>'
     +'</div>'
-    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📅 USUARIOS ACTIVOS POR DÍA</div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📅 USUARIOS ACTIVOS POR DÍA</div>'
     +'<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:14px;margin-bottom:18px">'
-    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Usuarios que se conectaron a la app cada día (últimos 14 días).</p>'
-    +'<div id="adminDailyUsersChart"><div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando…</div></div>'
+    +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5">Usuarios que se conectaron a la app cada día (últimos 14 días).</p>'
+    +'<div id="adminDailyUsersChart"><div style="font-size:13px;color:rgba(255,255,255,.3)">Cargando…</div></div>'
     +'</div>'
-    +'<div style="margin-top:18px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(231,76,60,.7);margin-bottom:10px">🧹 LIMPIAR CHATS DE SALAS</div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(231,76,60,.7);margin-bottom:10px">🧹 LIMPIAR CHATS DE SALAS</div>'
     +'<div style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
-    +'<p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">Eliminá todos los mensajes de una sala de chat. Esta acción no se puede deshacer.</p>'
-    +'<div id="adminCircleChatList"><div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando salas…</div></div>'
+    +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">Eliminá todos los mensajes de una sala de chat. Esta acción no se puede deshacer.</p>'
+    +'<div id="adminCircleChatList"><div style="font-size:13px;color:rgba(255,255,255,.3)">Cargando salas…</div></div>'
     +'</div>';
   pAdminRenderNewsList();
   _renderAdminAITasks();
@@ -19009,7 +19040,7 @@ async function _adminLoadDiamanteRewards(){
   var el = document.getElementById('adminDiamanteList');
   if(!el) return;
   _initSupabase();
-  if(!sbClient){ el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  if(!sbClient){ el.innerHTML='<div style="font-size:13px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
   try{
     var r = await sbClient.from('profiles')
       .select('email,nombre,plus_expires_at,diamante_plus_granted_at,role')
@@ -19017,7 +19048,7 @@ async function _adminLoadDiamanteRewards(){
       .order('diamante_plus_granted_at',{ascending:false})
       .limit(100);
     if(!r.data || !r.data.length){
-      el.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">Ningún usuario ha alcanzado Diamante aún.</div>';
+      el.innerHTML='<div style="font-size:13px;color:rgba(255,255,255,.3);padding:6px 0">Ningún usuario ha alcanzado Diamante aún.</div>';
       return;
     }
     el.innerHTML = r.data.map(function(p){
@@ -19028,14 +19059,14 @@ async function _adminLoadDiamanteRewards(){
       var statusLabel = active ? '✅ Plus activo hasta '+expiresDate : (p.plus_expires_at ? '🔒 Expiró '+expiresDate : '⏳ Pendiente');
       return '<div style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
         +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'
-        +'<div style="font-size:12px;color:rgba(255,255,255,.82);font-weight:600">'+_escHtml(p.nombre||p.email||'—')+'</div>'
-        +'<span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;'+statusStyle+'">'+statusLabel+'</span>'
+        +'<div style="font-size:14px;color:rgba(255,255,255,.82);font-weight:600">'+_escHtml(p.nombre||p.email||'—')+'</div>'
+        +'<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;'+statusStyle+'">'+statusLabel+'</span>'
         +'</div>'
-        +'<div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">'+_escHtml(p.email||'')+(grantedDate!=='—'?' · Ganado: '+grantedDate:'')+'</div>'
+        +'<div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:2px">'+_escHtml(p.email||'')+(grantedDate!=='—'?' · Ganado: '+grantedDate:'')+'</div>'
         +'</div>';
     }).join('');
   }catch(e){
-    el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Error al cargar datos.</div>';
+    el.innerHTML='<div style="font-size:13px;color:rgba(255,100,100,.5)">Error al cargar datos.</div>';
   }
 }
 
@@ -19043,14 +19074,14 @@ async function _adminLoadSolidarityRequests(){
   var el = document.getElementById('adminSolidarityList');
   if(!el) return;
   _initSupabase();
-  if(!sbClient){ el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  if(!sbClient){ el.innerHTML='<div style="font-size:13px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
   try{
     var r = await sbClient.from('solidarity_requests')
       .select('*')
       .order('created_at',{ascending:false})
       .limit(100);
     if(!r.data || !r.data.length){
-      el.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.3);padding:6px 0">No hay solicitudes aún.</div>';
+      el.innerHTML='<div style="font-size:13px;color:rgba(255,255,255,.3);padding:6px 0">No hay solicitudes aún.</div>';
       return;
     }
     var statusColors = { pending:'rgba(200,162,0,.85)', assigned:'rgba(58,123,213,.85)', completed:'rgba(116,198,157,.85)', cancelled:'rgba(200,100,100,.7)' };
@@ -19062,26 +19093,26 @@ async function _adminLoadSolidarityRequests(){
       var horList = Array.isArray(req.horarios) ? req.horarios.join(', ') : (req.horarios||'');
       return '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
         +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px">'
-        +'<div style="font-size:12px;color:rgba(255,255,255,.82);font-weight:600">'+_escHtml(req.user_name||req.email||'Anónimo')+'</div>'
-        +'<span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;color:'+sc+';border:1px solid '+sc+';white-space:nowrap">'+sl+'</span>'
+        +'<div style="font-size:14px;color:rgba(255,255,255,.82);font-weight:600">'+_escHtml(req.user_name||req.email||'Anónimo')+'</div>'
+        +'<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;color:'+sc+';border:1px solid '+sc+';white-space:nowrap">'+sl+'</span>'
         +'</div>'
-        +'<div style="font-size:10px;color:rgba(255,255,255,.45);line-height:1.6">'
+        +'<div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6">'
         +(req.tipo?'<span>🩺 '+_escHtml(req.tipo)+'</span> · ':'')
         +(req.espec?'<span>'+_escHtml(req.espec)+'</span> · ':'')
         +(req.urgencia?'<span style="color:rgba(230,160,60,.8)">'+_escHtml(req.urgencia)+'</span>':'')
         +'</div>'
-        +(horList?'<div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">🕐 '+_escHtml(horList)+'</div>':'')
-        +(req.description?'<div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:4px;font-style:italic">'+_escHtml(req.description.slice(0,120))+(req.description.length>120?'…':'')+'</div>':'')
+        +(horList?'<div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:2px">🕐 '+_escHtml(horList)+'</div>':'')
+        +(req.description?'<div style="font-size:13px;color:rgba(255,255,255,.55);margin-top:4px;font-style:italic">'+_escHtml(req.description.slice(0,120))+(req.description.length>120?'…':'')+'</div>':'')
         +'<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">'
         +['pending','assigned','completed','cancelled'].filter(function(s){ return s!==req.status; }).map(function(s){
-          return '<button onclick="_adminSetSolidarityStatus(\''+_escHtml(String(req.id))+'\',\''+s+'\',this)" style="font-size:9px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.55);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">→ '+(statusLabels[s]||s)+'</button>';
+          return '<button onclick="_adminSetSolidarityStatus(\''+_escHtml(String(req.id))+'\',\''+s+'\',this)" style="font-size:11px;padding:3px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.55);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">→ '+(statusLabels[s]||s)+'</button>';
         }).join('')
         +'</div>'
-        +'<div style="font-size:9px;color:rgba(255,255,255,.2);margin-top:4px">'+fecha+(req.email?' · '+_escHtml(req.email):'')+'</div>'
+        +'<div style="font-size:11px;color:rgba(255,255,255,.2);margin-top:4px">'+fecha+(req.email?' · '+_escHtml(req.email):'')+'</div>'
         +'</div>';
     }).join('');
   }catch(e){
-    el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Error al cargar solicitudes.</div>';
+    el.innerHTML='<div style="font-size:13px;color:rgba(255,100,100,.5)">Error al cargar solicitudes.</div>';
   }
 }
 
@@ -19101,7 +19132,7 @@ async function _adminLoadDailyActiveUsers(){
   var el = document.getElementById('adminDailyUsersChart');
   if(!el) return;
   _initSupabase();
-  if(!sbClient){ el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  if(!sbClient){ el.innerHTML='<div style="font-size:13px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
   try{
     var cutoff = new Date(Date.now() - 14*24*3600*1000).toISOString();
     var r = await sbClient.from('guardian_presence')
@@ -19109,7 +19140,7 @@ async function _adminLoadDailyActiveUsers(){
       .gte('last_seen', cutoff)
       .order('last_seen',{ascending:false});
     if(!r.data || !r.data.length){
-      el.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.3)">Sin datos de actividad reciente.</div>';
+      el.innerHTML='<div style="font-size:13px;color:rgba(255,255,255,.3)">Sin datos de actividad reciente.</div>';
       return;
     }
     // Group by date
@@ -19140,16 +19171,16 @@ async function _adminLoadDailyActiveUsers(){
       +'</div>'
       +'<div style="display:flex;gap:4px">'
       + days.map(function(d){
-          return '<div style="flex:1;font-size:8px;color:rgba(255,255,255,.3);text-align:center;overflow:hidden;white-space:nowrap">'+d.label+'</div>';
+          return '<div style="flex:1;font-size:10px;color:rgba(255,255,255,.3);text-align:center;overflow:hidden;white-space:nowrap">'+d.label+'</div>';
         }).join('')
       +'</div>'
       +'<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">'
       + days.slice().reverse().slice(0,7).map(function(d){
-          return '<div style="font-size:10px;color:rgba(255,255,255,.55)">'+d.label+': <strong style="color:rgba(116,198,157,.85)">'+d.count+'</strong></div>';
+          return '<div style="font-size:12px;color:rgba(255,255,255,.55)">'+d.label+': <strong style="color:rgba(116,198,157,.85)">'+d.count+'</strong></div>';
         }).join('')
       +'</div>';
   }catch(e){
-    el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Error al cargar datos.</div>';
+    el.innerHTML='<div style="font-size:13px;color:rgba(255,100,100,.5)">Error al cargar datos.</div>';
   }
 }
 
@@ -19166,7 +19197,7 @@ async function _adminLoadCircleChats(){
   var el = document.getElementById('adminCircleChatList');
   if(!el) return;
   _initSupabase();
-  if(!sbClient){ el.innerHTML='<div style="font-size:11px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
+  if(!sbClient){ el.innerHTML='<div style="font-size:13px;color:rgba(255,100,100,.5)">Sin conexión a Supabase</div>'; return; }
 
   // Count messages per circle for official ones
   var officialRows = _officialCircles.map(function(c){ return {id:c.id,name:c.name,emoji:c.emoji,official:true,count:null}; });
@@ -19186,33 +19217,33 @@ async function _adminLoadCircleChats(){
     }catch(e){ c.count = '?'; }
   }));
 
-  var _btnStyle = 'font-size:10px;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;white-space:nowrap;';
+  var _btnStyle = 'font-size:12px;padding:5px 12px;border-radius:8px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;white-space:nowrap;';
 
-  el.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:8px">🛡️ SALAS OFICIALES</div>'
+  el.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:8px">🛡️ SALAS OFICIALES</div>'
     + officialRows.map(function(c){
         return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
           +'<span style="font-size:18px">'+c.emoji+'</span>'
           +'<div style="flex:1;min-width:0">'
-          +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(c.name)+'</div>'
-          +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+c.count+' mensaje'+(c.count!==1?'s':'')+'</div>'
+          +'<div style="font-size:14px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(c.name)+'</div>'
+          +'<div style="font-size:12px;color:rgba(255,255,255,.3)">'+c.count+' mensaje'+(c.count!==1?'s':'')+'</div>'
           +'</div>'
           +(c.count > 0
             ? '<button onclick="pAdminClearCircleChat(\''+c.id+'\',\''+_escHtml(c.name)+'\')" style="'+_btnStyle+'background:rgba(231,76,60,.18);border:1px solid rgba(231,76,60,.35);color:rgba(255,130,130,.9)">🗑️ Limpiar</button>'
-            : '<span style="font-size:10px;color:rgba(255,255,255,.2)">Vacío</span>')
+            : '<span style="font-size:12px;color:rgba(255,255,255,.2)">Vacío</span>')
           +'</div>';
       }).join('')
     + (userCircles.length
-        ? '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin:14px 0 8px">👥 CÍRCULOS DE USUARIOS</div>'
+        ? '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin:14px 0 8px">👥 CÍRCULOS DE USUARIOS</div>'
           + userCircles.map(function(c){
               return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
                 +'<span style="font-size:18px">'+c.emoji+'</span>'
                 +'<div style="flex:1;min-width:0">'
-                +'<div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(c.name)+'</div>'
-                +'<div style="font-size:10px;color:rgba(255,255,255,.3)">'+c.count+' mensaje'+(c.count!==1?'s':'')+'</div>'
+                +'<div style="font-size:14px;font-weight:600;color:rgba(255,255,255,.75)">'+_escHtml(c.name)+'</div>'
+                +'<div style="font-size:12px;color:rgba(255,255,255,.3)">'+c.count+' mensaje'+(c.count!==1?'s':'')+'</div>'
                 +'</div>'
                 +(c.count > 0
                   ? '<button onclick="pAdminClearCircleChat(\''+c.id+'\',\''+_escHtml(c.name)+'\')" style="'+_btnStyle+'background:rgba(231,76,60,.18);border:1px solid rgba(231,76,60,.35);color:rgba(255,130,130,.9)">🗑️ Limpiar</button>'
-                  : '<span style="font-size:10px;color:rgba(255,255,255,.2)">Vacío</span>')
+                  : '<span style="font-size:12px;color:rgba(255,255,255,.2)">Vacío</span>')
                 +'</div>';
             }).join('')
         : '')
@@ -19259,20 +19290,20 @@ function pAdminWarnUser(userId, email){
   ov.innerHTML='<div class="p-sheet p-sheet-dark" style="background:#0F2016 !important;color:#fff;border:1px solid rgba(230,180,40,.2);overflow-y:auto;max-height:90vh">'
     +'<div style="font-size:28px;margin-bottom:8px">⚠️</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;margin-bottom:6px">Advertencia formal</div>'
-    +'<p style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.5">El mensaje llegará al buzón del usuario como advertencia oficial de Velo.</p>'
-    +(email?'<p style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:12px">Usuario: '+_escHtml(email)+'</p>':'')
-    +'<div style="margin-bottom:12px"><label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);display:block;margin-bottom:6px">MOTIVO</label>'
-    +'<select id="warnReason" style="width:100%;padding:9px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif">'
+    +'<p style="font-size:14px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.5">El mensaje llegará al buzón del usuario como advertencia oficial de Velo.</p>'
+    +(email?'<p style="font-size:13px;color:rgba(255,255,255,.3);margin-bottom:12px">Usuario: '+_escHtml(email)+'</p>':'')
+    +'<div style="margin-bottom:12px"><label style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);display:block;margin-bottom:6px">MOTIVO</label>'
+    +'<select id="warnReason" style="width:100%;padding:9px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:15px;font-family:\'Jost\',sans-serif">'
     +'<option value="acoso">Acoso o bullying hacia otro usuario</option>'
     +'<option value="spam">Spam o autopromocción</option>'
     +'<option value="lenguaje">Lenguaje agresivo o inapropiado</option>'
     +'<option value="contenido">Contenido dañino o inapropiado</option>'
     +'<option value="otro">Otro</option></select></div>'
-    +'<div style="margin-bottom:14px"><label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);display:block;margin-bottom:6px">MENSAJE ADICIONAL (opcional)</label>'
-    +'<textarea id="warnMessage" rows="3" placeholder="Detalle adicional…" maxlength="400" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;resize:vertical;box-sizing:border-box"></textarea></div>'
+    +'<div style="margin-bottom:14px"><label style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);display:block;margin-bottom:6px">MENSAJE ADICIONAL (opcional)</label>'
+    +'<textarea id="warnMessage" rows="3" placeholder="Detalle adicional…" maxlength="400" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:15px;font-family:\'Jost\',sans-serif;resize:vertical;box-sizing:border-box"></textarea></div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button onclick="pAdminSendWarning(\''+_escHtml(userId||'')+'\',\''+_escHtml(email||'')+'\')" style="flex:1;padding:11px;background:rgba(230,180,40,.2);border:1.5px solid rgba(230,180,40,.4);border-radius:14px;color:#fff;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">⚠️ Enviar advertencia</button>'
-    +'<button onclick="document.getElementById(\'adminWarnOv\').remove()" style="padding:11px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:rgba(255,255,255,.6);font-size:13px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
+    +'<button onclick="pAdminSendWarning(\''+_escHtml(userId||'')+'\',\''+_escHtml(email||'')+'\')" style="flex:1;padding:11px;background:rgba(230,180,40,.2);border:1.5px solid rgba(230,180,40,.4);border-radius:14px;color:#fff;font-size:15px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">⚠️ Enviar advertencia</button>'
+    +'<button onclick="document.getElementById(\'adminWarnOv\').remove()" style="padding:11px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:rgba(255,255,255,.6);font-size:15px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
     +'</div></div>';
   document.body.appendChild(ov);
 }
@@ -19367,7 +19398,7 @@ function pCreateProvisionalPass(){
   var key = 'velo_prov_'+email.replace(/[^a-z0-9]/g,'_');
   try{ localStorage.setItem(key, JSON.stringify({pass:pass, expiry:expiry})); }catch(e){}
   var resEl = document.getElementById('adminProvResult');
-  if(resEl) resEl.innerHTML = '✅ Contraseña provisional: <code style="background:rgba(255,255,255,.12);padding:2px 8px;border-radius:4px;font-family:monospace;letter-spacing:1px">'+pass+'</code><br><span style="color:rgba(255,255,255,.4);font-size:10px">Válida 72 horas · Compartila de forma segura con el usuario</span>';
+  if(resEl) resEl.innerHTML = '✅ Contraseña provisional: <code style="background:rgba(255,255,255,.12);padding:2px 8px;border-radius:4px;font-family:monospace;letter-spacing:1px">'+pass+'</code><br><span style="color:rgba(255,255,255,.4);font-size:12px">Válida 72 horas · Compartila de forma segura con el usuario</span>';
   pToast('🔑','Contraseña provisional creada');
 }
 
@@ -19394,7 +19425,7 @@ function _renderAdminContactsList(msgs){
   var tabsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'
     + tabs.map(function(t){
         var active = _adminContactFilter === t.id;
-        return '<button onclick="pAdminFilterContacts(\''+t.id+'\')" style="font-size:10px;padding:4px 10px;border-radius:20px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s;'
+        return '<button onclick="pAdminFilterContacts(\''+t.id+'\')" style="font-size:12px;padding:4px 10px;border-radius:20px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:700;transition:all .15s;'
           +(active ? 'background:rgba(116,198,157,.25);border:1.5px solid rgba(116,198,157,.5);color:rgba(116,198,157,.9)'
                    : 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.45)')
           +'">'+t.label+(t.count ? ' <span style="opacity:.7">('+t.count+')</span>' : '')+'</button>';
@@ -19409,7 +19440,7 @@ function _renderAdminContactsList(msgs){
   });
 
   if(!filtered.length){
-    el.innerHTML = tabsHtml + '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:12px 0">Sin mensajes en esta categoría.</p>';
+    el.innerHTML = tabsHtml + '<p style="font-size:14px;color:rgba(255,255,255,.3);padding:12px 0">Sin mensajes en esta categoría.</p>';
     return;
   }
 
@@ -19423,8 +19454,8 @@ function _renderAdminContactsList(msgs){
     var hasEmail = email && email !== 'anónimo';
     var isPreLogin = m.source === 'pre-login';
     var sourceBadge = isPreLogin
-      ? '<span style="font-size:9px;padding:2px 6px;background:rgba(200,162,0,.15);border:1px solid rgba(200,162,0,.3);border-radius:20px;color:rgba(200,162,0,.8);font-weight:700">Pre-login</span>'
-      : '<span style="font-size:9px;padding:2px 6px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);border-radius:20px;color:rgba(116,198,157,.7);font-weight:700">Usuario</span>';
+      ? '<span style="font-size:11px;padding:2px 6px;background:rgba(200,162,0,.15);border:1px solid rgba(200,162,0,.3);border-radius:20px;color:rgba(200,162,0,.8);font-weight:700">Pre-login</span>'
+      : '<span style="font-size:11px;padding:2px 6px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);border-radius:20px;color:rgba(116,198,157,.7);font-weight:700">Usuario</span>';
 
     return '<div class="a-row" style="flex-direction:column;align-items:flex-start;gap:8px;border-left:3px solid '+(m.leido?'rgba(255,255,255,.06)':'rgba(116,198,157,.5)')+';padding-left:10px;margin-bottom:2px">'
       // Header row
@@ -19432,26 +19463,26 @@ function _renderAdminContactsList(msgs){
       +'<div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">'+(m.leido?'✉️':'📬')+'</div>'
       +'<div style="flex:1;min-width:0">'
         +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'
-          +'<span style="font-size:13px;font-weight:700;color:rgba(255,255,255,.9)">'+_escHtml(name || email.split('@')[0] || 'Sin nombre')+'</span>'
+          +'<span style="font-size:15px;font-weight:700;color:rgba(255,255,255,.9)">'+_escHtml(name || email.split('@')[0] || 'Sin nombre')+'</span>'
           + sourceBadge
-          +(m.leido ? '' : '<span style="font-size:9px;padding:2px 6px;background:rgba(255,160,50,.15);border:1px solid rgba(255,160,50,.3);border-radius:20px;color:rgba(255,180,80,.9);font-weight:700">NUEVO</span>')
+          +(m.leido ? '' : '<span style="font-size:11px;padding:2px 6px;background:rgba(255,160,50,.15);border:1px solid rgba(255,160,50,.3);border-radius:20px;color:rgba(255,180,80,.9);font-weight:700">NUEVO</span>')
         +'</div>'
-        +(hasEmail ? '<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:2px">📧 '+_escHtml(email)+'</div>' : '')
+        +(hasEmail ? '<div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:2px">📧 '+_escHtml(email)+'</div>' : '')
         +'<div style="display:flex;align-items:center;gap:8px">'
-          +'<span style="font-size:11px;font-weight:700;color:rgba(180,150,255,.7)">'+_escHtml(m.topic||'Consulta')+'</span>'
-          +'<span style="font-size:10px;color:rgba(255,255,255,.25)">'+fecha+'</span>'
+          +'<span style="font-size:13px;font-weight:700;color:rgba(180,150,255,.7)">'+_escHtml(m.topic||'Consulta')+'</span>'
+          +'<span style="font-size:12px;color:rgba(255,255,255,.25)">'+fecha+'</span>'
         +'</div>'
       +'</div>'
       +'</div>'
       // Message preview
-      +(texto ? '<div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.55;padding:9px 12px;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid rgba(255,255,255,.06);width:100%;box-sizing:border-box">'+_escHtml(texto.slice(0,300))+(texto.length>300?'…':'')+'</div>' : '')
+      +(texto ? '<div style="font-size:14px;color:rgba(255,255,255,.55);line-height:1.55;padding:9px 12px;background:rgba(255,255,255,.03);border-radius:8px;border:1px solid rgba(255,255,255,.06);width:100%;box-sizing:border-box">'+_escHtml(texto.slice(0,300))+(texto.length>300?'…':'')+'</div>' : '')
       // Admin reply preview
-      +(m.reply ? '<div style="font-size:11px;color:rgba(116,198,157,.7);padding:7px 10px;background:rgba(116,198,157,.06);border-radius:8px;width:100%;box-sizing:border-box"><strong>Tu respuesta:</strong> '+_escHtml(m.reply.slice(0,150))+'</div>' : '')
+      +(m.reply ? '<div style="font-size:13px;color:rgba(116,198,157,.7);padding:7px 10px;background:rgba(116,198,157,.06);border-radius:8px;width:100%;box-sizing:border-box"><strong>Tu respuesta:</strong> '+_escHtml(m.reply.slice(0,150))+'</div>' : '')
       // Action buttons
       +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
-      +(!m.leido ? '<button onclick="pAdminMarkContactRead(\''+mid+'\')" style="font-size:10px;padding:4px 9px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);color:rgba(116,198,157,.7);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">✓ Marcar leído</button>' : '')
-      +(hasEmail ? '<button onclick="pAdminOpenReply('+realIdx+')" style="font-size:10px;padding:4px 9px;background:rgba(200,162,0,.12);border:1px solid rgba(200,162,0,.25);color:rgba(220,185,60,.85);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">📧 Responder</button>' : '<span style="font-size:10px;color:rgba(255,255,255,.2);padding:4px 0">Sin email de respuesta</span>')
-      +'<button onclick="pAdminDeleteContact(\''+mid+'\')" style="font-size:10px;padding:4px 9px;background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.18);color:rgba(220,100,100,.7);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️</button>'
+      +(!m.leido ? '<button onclick="pAdminMarkContactRead(\''+mid+'\')" style="font-size:12px;padding:4px 9px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.2);color:rgba(116,198,157,.7);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">✓ Marcar leído</button>' : '')
+      +(hasEmail ? '<button onclick="pAdminOpenReply('+realIdx+')" style="font-size:12px;padding:4px 9px;background:rgba(200,162,0,.12);border:1px solid rgba(200,162,0,.25);color:rgba(220,185,60,.85);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif;font-weight:600">📧 Responder</button>' : '<span style="font-size:12px;color:rgba(255,255,255,.2);padding:4px 0">Sin email de respuesta</span>')
+      +'<button onclick="pAdminDeleteContact(\''+mid+'\')" style="font-size:12px;padding:4px 9px;background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.18);color:rgba(220,100,100,.7);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">🗑️</button>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -19486,10 +19517,10 @@ function pAdminOpenReply(idx){
   if(preview) preview.innerHTML =
     '<div style="margin-bottom:6px"><strong style="color:var(--ink)">Destinatario:</strong> '
       +_escHtml(name ? name+' &lt;'+email+'&gt;' : email)
-      +' <span style="font-size:10px;background:'+(isPreLogin?'rgba(200,162,0,.15)':'rgba(116,198,157,.12)')+';border-radius:10px;padding:2px 6px;color:'+(isPreLogin?'#b8920a':'var(--sage)')+';">'+(isPreLogin?'Pre-login':'Usuario')+'</span></div>'
+      +' <span style="font-size:12px;background:'+(isPreLogin?'rgba(200,162,0,.15)':'rgba(116,198,157,.12)')+';border-radius:10px;padding:2px 6px;color:'+(isPreLogin?'#b8920a':'var(--sage)')+';">'+(isPreLogin?'Pre-login':'Usuario')+'</span></div>'
     +'<div style="margin-bottom:6px"><strong style="color:var(--ink)">Asunto:</strong> '+_escHtml(m.topic||'Consulta')+'</div>'
-    +'<div style="border-top:1px solid var(--border2);padding-top:8px;margin-top:6px"><em style="font-size:11px;color:var(--ink4)">Mensaje original:</em><br>'
-      +'<span style="font-size:12px;color:var(--ink3)">'+_escHtml((m.mensaje||m.msg||'').slice(0,300))+'</span></div>';
+    +'<div style="border-top:1px solid var(--border2);padding-top:8px;margin-top:6px"><em style="font-size:13px;color:var(--ink4)">Mensaje original:</em><br>'
+      +'<span style="font-size:14px;color:var(--ink3)">'+_escHtml((m.mensaje||m.msg||'').slice(0,300))+'</span></div>';
   if(txt)    txt.value = name ? 'Hola '+name+',\n\n' : '';
   if(toggle) toggle.checked = false;
   openModal('adminReplyOv');
@@ -19549,15 +19580,15 @@ async function pAdminLoadConsent(){
   _initSupabase();
   var el = document.getElementById('adminConsentLog');
   if(!el) return;
-  if(!sbClient){ el.innerHTML = '<p style="font-size:12px;color:rgba(255,80,80,.5)">Sin conexión a Supabase.</p>'; return; }
-  el.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,.3)">Cargando…</p>';
+  if(!sbClient){ el.innerHTML = '<p style="font-size:14px;color:rgba(255,80,80,.5)">Sin conexión a Supabase.</p>'; return; }
+  el.innerHTML = '<p style="font-size:14px;color:rgba(255,255,255,.3)">Cargando…</p>';
   try{
     var res = await sbClient.from('terms_acceptance').select('*').order('accepted_at',{ascending:false}).limit(500);
     _consentAllRecords = res.data || [];
     var inp = document.getElementById('consentSearch');
     _filterConsentLog(inp ? inp.value : '');
   }catch(e){
-    el.innerHTML = '<p style="font-size:12px;color:rgba(255,80,80,.5)">Error al cargar: '+_escHtml(String(e))+'</p>';
+    el.innerHTML = '<p style="font-size:14px;color:rgba(255,80,80,.5)">Error al cargar: '+_escHtml(String(e))+'</p>';
   }
 }
 
@@ -19571,11 +19602,11 @@ function _filterConsentLog(query){
       })
     : _consentAllRecords;
   if(!rows.length){
-    el.innerHTML = '<p style="font-size:12px;color:rgba(255,255,255,.3);padding:8px 0">'+(q?'Sin resultados para "'+_escHtml(q)+'"':'Sin registros aún.')+'</p>';
+    el.innerHTML = '<p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">'+(q?'Sin resultados para "'+_escHtml(q)+'"':'Sin registros aún.')+'</p>';
     return;
   }
   var rolColor = { pro:'rgba(116,198,210,.8)', plus:'#c8a23e', user:'rgba(255,255,255,.3)' };
-  el.innerHTML = '<div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:8px">'+rows.length+' registro'+(rows.length!==1?'s':'')+'</div>'
+  el.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:8px">'+rows.length+' registro'+(rows.length!==1?'s':'')+'</div>'
     + rows.map(function(r){
       var d   = r.accepted_at ? new Date(r.accepted_at) : null;
       var dateStr = d ? (d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')
@@ -19584,13 +19615,13 @@ function _filterConsentLog(query){
       var ver = r.version||'TOS-v1';
       return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:11px 13px;margin-bottom:7px">'
         +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
-        +'<span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.8);flex:1">'+_escHtml(r.nombre||'—')+'</span>'
-        +'<span style="font-size:9px;border:1px solid;border-radius:5px;padding:1px 6px;color:'+(rolColor[rol]||rolColor.user)+';border-color:'+(rolColor[rol]||rolColor.user)+'">'+rol.toUpperCase()+'</span>'
-        +'<span style="font-size:9px;background:rgba(116,198,157,.1);color:rgba(116,198,157,.7);border-radius:5px;padding:1px 6px">'+ver+'</span>'
-        +'<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700">✓</span>'
+        +'<span style="font-size:14px;font-weight:700;color:rgba(255,255,255,.8);flex:1">'+_escHtml(r.nombre||'—')+'</span>'
+        +'<span style="font-size:11px;border:1px solid;border-radius:5px;padding:1px 6px;color:'+(rolColor[rol]||rolColor.user)+';border-color:'+(rolColor[rol]||rolColor.user)+'">'+rol.toUpperCase()+'</span>'
+        +'<span style="font-size:11px;background:rgba(116,198,157,.1);color:rgba(116,198,157,.7);border-radius:5px;padding:1px 6px">'+ver+'</span>'
+        +'<span style="font-size:12px;color:rgba(116,198,157,.7);font-weight:700">✓</span>'
         +'</div>'
-        +'<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:3px">✉ '+_escHtml(r.email||'—')+'</div>'
-        +'<div style="font-size:10px;color:rgba(255,255,255,.22);font-family:monospace">🕐 '+dateStr+'</div>'
+        +'<div style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:3px">✉ '+_escHtml(r.email||'—')+'</div>'
+        +'<div style="font-size:12px;color:rgba(255,255,255,.22);font-family:monospace">🕐 '+dateStr+'</div>'
         +'</div>';
     }).join('');
 }
@@ -19668,19 +19699,19 @@ async function _loadAdminCrisisFromSupabase(){
     el.innerHTML = '';
     return;
   }
-  el.innerHTML = '<div style="font-size:10px;color:rgba(255,180,80,.7);margin-bottom:8px;font-weight:600">📡 Desde servidor (todas las sesiones):</div>'
+  el.innerHTML = '<div style="font-size:12px;color:rgba(255,180,80,.7);margin-bottom:8px;font-weight:600">📡 Desde servidor (todas las sesiones):</div>'
     + events.map(function(e){
         var date = new Date(e.created_at);
         var dateStr = date.toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
         var isOpen = e.estado === 'abierto';
         return '<div style="background:rgba(220,50,50,.06);border:1px solid rgba(220,50,50,.2);border-radius:8px;padding:10px;margin-bottom:6px">'
           +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
-          +'<span style="font-size:10px;font-weight:700;color:'+(e.categoria==='crisis_alto'?'#ff4444':'#ffbb33')+'">'+e.categoria.replace('_',' ').toUpperCase()+'</span>'
-          +'<span style="font-size:10px;color:rgba(255,255,255,.3)">'+dateStr+'</span>'
+          +'<span style="font-size:12px;font-weight:700;color:'+(e.categoria==='crisis_alto'?'#ff4444':'#ffbb33')+'">'+e.categoria.replace('_',' ').toUpperCase()+'</span>'
+          +'<span style="font-size:12px;color:rgba(255,255,255,.3)">'+dateStr+'</span>'
           +'</div>'
-          +'<div style="font-size:11px;color:rgba(255,255,255,.5);line-height:1.45">'+_escHtml((e.mensaje||'').slice(0,150))+'</div>'
-          +(isOpen ? '<button onclick="pSbResolveCrisis(\''+e.id+'\')" style="margin-top:8px;font-size:10px;padding:3px 10px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.85);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Marcar atendida</button>'
-            : '<span style="font-size:10px;color:rgba(116,198,157,.7);font-weight:700;display:block;margin-top:6px">✓ Atendida</span>')
+          +'<div style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.45">'+_escHtml((e.mensaje||'').slice(0,150))+'</div>'
+          +(isOpen ? '<button onclick="pSbResolveCrisis(\''+e.id+'\')" style="margin-top:8px;font-size:12px;padding:3px 10px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);color:rgba(116,198,157,.85);border-radius:6px;cursor:pointer;font-family:\'Jost\',sans-serif">Marcar atendida</button>'
+            : '<span style="font-size:12px;color:rgba(116,198,157,.7);font-weight:700;display:block;margin-top:6px">✓ Atendida</span>')
           +'</div>';
       }).join('');
 }
@@ -19781,41 +19812,41 @@ function pAdminMassMessage(target){
     +'<div class="p-sheet-handle" style="background:rgba(116,198,157,.3)"></div>'
     +'<div style="font-size:28px;margin-bottom:8px">'+icon+'</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;margin-bottom:6px">Mensaje masivo — '+label+'</div>'
-    +'<p style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.5">Este mensaje llegará al buzón interno de todos los '+label+' registrados.</p>'
+    +'<p style="font-size:14px;color:rgba(255,255,255,.45);margin-bottom:16px;line-height:1.5">Este mensaje llegará al buzón interno de todos los '+label+' registrados.</p>'
     // ── AI generator block ──
     +'<div style="background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.2);border-radius:14px;padding:14px;margin-bottom:16px">'
-    +'<div style="font-size:11px;font-weight:700;color:rgba(180,140,220,.85);letter-spacing:.5px;margin-bottom:8px">✨ GENERAR CON GEMINI IA</div>'
-    +'<input type="text" id="massAiDesc" placeholder="Describí en una línea lo que querés comunicar…" maxlength="200" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.07);border:1px solid rgba(180,140,220,.25);border-radius:10px;color:#fff;font-size:12px;font-family:\'Jost\',sans-serif;box-sizing:border-box;margin-bottom:8px">'
-    +'<button id="massAiBtn" onclick="pAdminGenerateMassMessage(\''+target+'\')" style="width:100%;padding:9px;background:rgba(180,140,220,.18);border:1px solid rgba(180,140,220,.3);border-radius:10px;color:rgba(180,140,220,.95);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">✨ Generar asunto + mensaje con IA</button>'
-    +'<button id="massAiImgBtn" onclick="pAdminGenerateBcastImage()" style="width:100%;padding:9px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.25);border-radius:10px;color:rgba(116,198,157,.9);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;margin-top:6px">🎨 Generar imagen con IA (opcional)</button>'
+    +'<div style="font-size:13px;font-weight:700;color:rgba(180,140,220,.85);letter-spacing:.5px;margin-bottom:8px">✨ GENERAR CON GEMINI IA</div>'
+    +'<input type="text" id="massAiDesc" placeholder="Describí en una línea lo que querés comunicar…" maxlength="200" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.07);border:1px solid rgba(180,140,220,.25);border-radius:10px;color:#fff;font-size:14px;font-family:\'Jost\',sans-serif;box-sizing:border-box;margin-bottom:8px">'
+    +'<button id="massAiBtn" onclick="pAdminGenerateMassMessage(\''+target+'\')" style="width:100%;padding:9px;background:rgba(180,140,220,.18);border:1px solid rgba(180,140,220,.3);border-radius:10px;color:rgba(180,140,220,.95);font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">✨ Generar asunto + mensaje con IA</button>'
+    +'<button id="massAiImgBtn" onclick="pAdminGenerateBcastImage()" style="width:100%;padding:9px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.25);border-radius:10px;color:rgba(116,198,157,.9);font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;margin-top:6px">🎨 Generar imagen con IA (opcional)</button>'
     +'</div>'
     // ── Manual fields ──
     +'<div style="margin-bottom:10px">'
-    +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">ASUNTO</label>'
-    +'<input type="text" id="massSubject" placeholder="Asunto del mensaje…" maxlength="80" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;box-sizing:border-box">'
+    +'<label style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">ASUNTO</label>'
+    +'<input type="text" id="massSubject" placeholder="Asunto del mensaje…" maxlength="80" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:15px;font-family:\'Jost\',sans-serif;box-sizing:border-box">'
     +'</div>'
     +'<div style="margin-bottom:10px">'
-    +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">IMAGEN (opcional)</label>'
+    +'<label style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">IMAGEN (opcional)</label>'
     +'<div style="display:flex;gap:8px;align-items:center">'
-    +'<input type="url" id="massImageUrl" placeholder="https://… (URL de imagen)" style="flex:1;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;box-sizing:border-box" oninput="_previewMassImage()">'
-    +'<label for="massBcastImgFile" style="padding:9px 12px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:10px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(116,198,157,.9);white-space:nowrap;font-family:\'Jost\',sans-serif">📎 Subir foto</label>'
+    +'<input type="url" id="massImageUrl" placeholder="https://… (URL de imagen)" style="flex:1;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:15px;font-family:\'Jost\',sans-serif;box-sizing:border-box" oninput="_previewMassImage()">'
+    +'<label for="massBcastImgFile" style="padding:9px 12px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;color:rgba(116,198,157,.9);white-space:nowrap;font-family:\'Jost\',sans-serif">📎 Subir foto</label>'
     +'<input type="file" id="massBcastImgFile" accept="image/*" style="display:none" onchange="_onBcastImgPick(this)">'
     +'</div>'
-    +'<div id="massImgUploadStatus" style="font-size:10px;color:rgba(116,198,157,.7);margin-top:4px;display:none"></div>'
+    +'<div id="massImgUploadStatus" style="font-size:12px;color:rgba(116,198,157,.7);margin-top:4px;display:none"></div>'
     +'<div id="massImgPreview" style="margin-top:6px"></div>'
     +'</div>'
     +'<div style="margin-bottom:14px">'
-    +'<label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">MENSAJE</label>'
-    +'<textarea id="massBody" rows="5" placeholder="Escribí tu mensaje aquí…" maxlength="2000" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:13px;font-family:\'Jost\',sans-serif;resize:vertical;box-sizing:border-box"></textarea>'
+    +'<label style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.5px;display:block;margin-bottom:6px">MENSAJE</label>'
+    +'<textarea id="massBody" rows="5" placeholder="Escribí tu mensaje aquí…" maxlength="2000" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;font-size:15px;font-family:\'Jost\',sans-serif;resize:vertical;box-sizing:border-box"></textarea>'
     +'</div>'
     // Signature preview — shown always
     +'<div style="display:flex;align-items:center;gap:10px;border-top:1px solid rgba(255,255,255,.1);padding:10px 0;margin-bottom:14px;opacity:.7">'
     +'<div style="height:22px;width:60px;background:url(\'assets/logo-dark.png\') left center / contain no-repeat;flex-shrink:0"></div>'
-    +'<div style="font-size:10px;color:rgba(255,255,255,.5);line-height:1.4">Velo · Acompañamiento emocional entre pares<br><span style="font-size:9px;opacity:.7">Firma automática incluida en todos los mensajes</span></div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.4">Velo · Acompañamiento emocional entre pares<br><span style="font-size:11px;opacity:.7">Firma automática incluida en todos los mensajes</span></div>'
     +'</div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button onclick="pSendMassMessage(\''+target+'\')" style="flex:1;padding:11px;background:var(--sage2);border:none;border-radius:14px;color:#fff;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">📤 Enviar a todos los '+label+'</button>'
-    +'<button onclick="document.getElementById(\'massMessageOv\').remove()" style="padding:11px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:rgba(255,255,255,.6);font-size:13px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
+    +'<button onclick="pSendMassMessage(\''+target+'\')" style="flex:1;padding:11px;background:var(--sage2);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">📤 Enviar a todos los '+label+'</button>'
+    +'<button onclick="document.getElementById(\'massMessageOv\').remove()" style="padding:11px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:rgba(255,255,255,.6);font-size:15px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
@@ -19833,11 +19864,11 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
   var name=safeLS('get','velo_user_name')||''; var firstName=name.split(' ')[0]||'';
   var ov=document.createElement('div'); ov.className='p-modal-ov show'; ov.id='monthlyReportOv'; ov.style.zIndex='9999';
   ov.innerHTML='<div class="p-sheet p-sheet-dark" style="-webkit-overflow-scrolling:touch;overflow-y:scroll;max-height:92vh;touch-action:pan-y;padding-bottom:32px">'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(180,140,220,.75);margin-bottom:6px">📊 RESUMEN MENSUAL VELO</div>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(180,140,220,.75);margin-bottom:6px">📊 RESUMEN MENSUAL VELO</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:#fff;font-weight:300;margin-bottom:4px">Tu '+mName+' '+year+(firstName?' — '+firstName:'')+'</div>'
     +'<div style="height:1px;background:rgba(255,255,255,.08);margin:12px 0"></div>'
-    +'<div id="monthlyReportBody"><div style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.35);font-size:12px;padding:20px 0"><span class="live-dot" style="background:rgba(180,140,220,.8)"></span>Velo IA está analizando tu mes…</div></div>'
-    +'<button onclick="document.getElementById(\'monthlyReportOv\').remove();_syncBodyScroll()" style="width:100%;padding:11px;background:rgba(180,140,220,.15);border:1.5px solid rgba(180,140,220,.3);border-radius:14px;color:rgba(180,140,220,.9);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;margin-top:8px">Cerrar</button>'
+    +'<div id="monthlyReportBody"><div style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.35);font-size:14px;padding:20px 0"><span class="live-dot" style="background:rgba(180,140,220,.8)"></span>Velo IA está analizando tu mes…</div></div>'
+    +'<button onclick="document.getElementById(\'monthlyReportOv\').remove();_syncBodyScroll()" style="width:100%;padding:11px;background:rgba(180,140,220,.15);border:1.5px solid rgba(180,140,220,.3);border-radius:14px;color:rgba(180,140,220,.9);font-size:15px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;margin-top:8px">Cerrar</button>'
     +'</div>';
   document.body.appendChild(ov); _syncBodyScroll();
   var data=await _generateMonthlySummary(month,mName,year);
@@ -19850,7 +19881,7 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
   if(data.celebration){
     html+='<div style="background:linear-gradient(135deg,rgba(116,198,157,.13),rgba(180,140,220,.09));border:1.5px solid rgba(116,198,157,.35);border-radius:16px;padding:18px;margin-bottom:18px;text-align:center">'
       +'<div style="font-size:30px;margin-bottom:8px">🎉</div>'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:rgba(116,198,157,.85);margin-bottom:9px">TU LOGRO DE '+mName.toUpperCase()+'</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:rgba(116,198,157,.85);margin-bottom:9px">TU LOGRO DE '+mName.toUpperCase()+'</div>'
       +'<div style="font-size:14px;color:rgba(255,255,255,.88);line-height:1.7;font-weight:500">'+_escHtml(data.celebration)+'</div>'
       +'</div>';
   }
@@ -19860,7 +19891,7 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
     var total=data.happy+data.neutral+data.sad;
     var pHappy=Math.round(data.happy/total*100); var pNeutral=Math.round(data.neutral/total*100); var pSad=100-pHappy-pNeutral;
     html+='<div style="margin-bottom:18px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:10px">😊 TUS ÁNIMOS EN '+mName.toUpperCase()+'</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:10px">😊 TUS ÁNIMOS EN '+mName.toUpperCase()+'</div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">'
       +_mrStatCard('☀️','Días felices',data.happy,'positivos')
       +_mrStatCard('🌤️','Días tranquilos',data.neutral,'neutrales')
@@ -19871,7 +19902,7 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
       +(data.neutral?'<div style="width:'+pNeutral+'%;background:rgba(200,162,56,.5);transition:width .8s"></div>':'')
       +(pSad>0?'<div style="flex:1;background:rgba(180,140,220,.4);transition:width .8s"></div>':'')
       +'</div>'
-      +'<div style="display:flex;gap:12px;margin-top:5px;font-size:9px;color:rgba(255,255,255,.35)">'
+      +'<div style="display:flex;gap:12px;margin-top:5px;font-size:11px;color:rgba(255,255,255,.35)">'
       +'<span>■ Feliz</span><span style="color:rgba(200,162,56,.7)">■ Tranquilo</span><span style="color:rgba(180,140,220,.7)">■ Difícil</span>'
       +'</div>'
       +'</div>';
@@ -19880,15 +19911,15 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
   // ── 3-month trend ──
   if(data.trend3 && data.trend3.length > 1){
     html+='<div style="margin-bottom:18px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:12px">📈 TENDENCIA DE 3 MESES — DÍAS POSITIVOS</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:12px">📈 TENDENCIA DE 3 MESES — DÍAS POSITIVOS</div>'
       +'<div style="display:flex;gap:10px;align-items:flex-end;height:90px">';
     data.trend3.forEach(function(t){
       var barH=Math.max(8,Math.round(t.happyPct*60/100));
       var isCur=!!t.current;
       html+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">'
-        +'<div style="font-size:11px;color:rgba(255,255,255,'+(isCur?'.85':'.45')+');font-weight:'+(isCur?'700':'400')+'">'+t.happyPct+'%</div>'
+        +'<div style="font-size:13px;color:rgba(255,255,255,'+(isCur?'.85':'.45')+');font-weight:'+(isCur?'700':'400')+'">'+t.happyPct+'%</div>'
         +'<div style="width:100%;background:rgba(116,198,157,'+(isCur?'.75':'.3')+');border-radius:6px 6px 0 0;height:'+barH+'px"></div>'
-        +'<div style="font-size:10px;color:rgba(255,255,255,'+(isCur?'.8':'.35')+');font-weight:'+(isCur?'700':'400')+'">'+t.month+'</div>'
+        +'<div style="font-size:12px;color:rgba(255,255,255,'+(isCur?'.8':'.35')+');font-weight:'+(isCur?'700':'400')+'">'+t.month+'</div>'
         +'</div>';
     });
     html+='</div></div>';
@@ -19899,8 +19930,8 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
     html+='<div style="background:rgba(116,198,157,.07);border:1px solid rgba(116,198,157,.18);border-radius:14px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:14px">'
       +'<span style="font-size:26px;flex-shrink:0;line-height:1">📅</span>'
       +'<div>'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:5px">TU PATRÓN SEMANAL</div>'
-      +'<div style="font-size:13px;color:rgba(255,255,255,.82);line-height:1.6">Tu mejor día fue el <strong>'+_escHtml(data.weekPattern.bestDay)+'</strong>. Los <strong>'+_escHtml(data.weekPattern.worstDay)+'</strong> tendieron a ser más desafiantes.</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:5px">TU PATRÓN SEMANAL</div>'
+      +'<div style="font-size:15px;color:rgba(255,255,255,.82);line-height:1.6">Tu mejor día fue el <strong>'+_escHtml(data.weekPattern.bestDay)+'</strong>. Los <strong>'+_escHtml(data.weekPattern.worstDay)+'</strong> tendieron a ser más desafiantes.</div>'
       +'</div>'
       +'</div>';
   }
@@ -19924,7 +19955,7 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
   // ── Personal message from Velo ──
   if(data.personal_message){
     html+='<div style="background:rgba(180,140,220,.1);border:1.5px solid rgba(180,140,220,.32);border-radius:16px;padding:18px;margin-bottom:18px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:rgba(180,140,220,.85);margin-bottom:10px">💌 MENSAJE PERSONAL DE VELO</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:rgba(180,140,220,.85);margin-bottom:10px">💌 MENSAJE PERSONAL DE VELO</div>'
       +'<div style="font-size:14px;color:rgba(255,255,255,.84);line-height:1.85;font-style:italic">'+_escHtml(data.personal_message)+'</div>'
       +'</div>';
   }
@@ -19932,9 +19963,9 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
   // ── Tu momento del mes (user's own words) ──
   if(data.momentoNote){
     html+='<div style="border-left:3px solid rgba(200,162,56,.5);padding:14px 16px;margin-bottom:18px;background:rgba(200,162,56,.04);border-radius:0 12px 12px 0">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,56,.85);margin-bottom:8px">✨ TU MOMENTO DE '+mName.toUpperCase()+'</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,56,.85);margin-bottom:8px">✨ TU MOMENTO DE '+mName.toUpperCase()+'</div>'
       +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-style:italic;color:rgba(255,255,255,.88);line-height:1.65">"'+_escHtml(data.momentoNote)+'"</div>'
-      +'<div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:8px">Lo escribiste vos, en tus propias palabras.</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.3);margin-top:8px">Lo escribiste vos, en tus propias palabras.</div>'
       +'</div>';
   }
 
@@ -19945,14 +19976,14 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
   if(data.affirmation){
     html+='<div style="text-align:center;padding:18px 12px;margin-bottom:18px;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)">'
       +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(255,255,255,.78);font-style:italic;line-height:1.45">"'+_escHtml(data.affirmation)+'"</div>'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.28);margin-top:8px;text-transform:uppercase">Tu frase de '+mName+'</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.28);margin-top:8px;text-transform:uppercase">Tu frase de '+mName+'</div>'
       +'</div>';
   }
 
   // ── Carta a tu yo futuro ──
   if(data.letter){
     html+='<div style="background:rgba(180,140,220,.08);border:1.5px solid rgba(180,140,220,.25);border-radius:16px;padding:18px;margin-bottom:18px">'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:rgba(180,140,220,.85);margin-bottom:10px">📮 CARTA A TU YO DE '+(nextMName?nextMName.toUpperCase():'EL MES QUE VIENE')+'</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:rgba(180,140,220,.85);margin-bottom:10px">📮 CARTA A TU YO DE '+(nextMName?nextMName.toUpperCase():'EL MES QUE VIENE')+'</div>'
       +'<div style="font-size:14px;color:rgba(255,255,255,.82);line-height:1.85;font-style:italic;white-space:pre-line">'+_escHtml(data.letter)+'</div>'
       +'</div>';
   }
@@ -19962,20 +19993,20 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
     html+='<div style="background:rgba(116,198,157,.08);border:1.5px solid rgba(116,198,157,.25);border-radius:14px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:14px">'
       +'<span style="font-size:28px;flex-shrink:0;line-height:1">'+(data.challenge.icon||'🎯')+'</span>'
       +'<div>'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:4px">🎯 TU DESAFÍO PARA '+(nextMName?nextMName.toUpperCase():mName.toUpperCase())+'</div>'
-      +'<div style="font-size:13px;color:rgba(255,255,255,.82);line-height:1.55">'+_escHtml(data.challenge.text)+'</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:4px">🎯 TU DESAFÍO PARA '+(nextMName?nextMName.toUpperCase():mName.toUpperCase())+'</div>'
+      +'<div style="font-size:15px;color:rgba(255,255,255,.82);line-height:1.55">'+_escHtml(data.challenge.text)+'</div>'
       +'</div>'
       +'</div>';
   }
 
   // ── Recommendations ──
   if(data.recs && data.recs.length){
-    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.75);margin-bottom:10px">✨ PARA '+(nextMName?nextMName.toUpperCase():'ESTE MES')+'</div>';
+    html+='<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.75);margin-bottom:10px">✨ PARA '+(nextMName?nextMName.toUpperCase():'ESTE MES')+'</div>';
     html+='<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px">';
     data.recs.forEach(function(r){
       html+='<div style="display:flex;align-items:flex-start;gap:10px;background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.15);border-radius:12px;padding:10px 12px">'
         +'<span style="font-size:20px;flex-shrink:0;line-height:1.2">'+(r.icon||'✨')+'</span>'
-        +'<span style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.55">'+_escHtml(r.text||'')+'</span>'
+        +'<span style="font-size:15px;color:rgba(255,255,255,.75);line-height:1.55">'+_escHtml(r.text||'')+'</span>'
         +'</div>';
     });
     html+='</div>';
@@ -19983,13 +20014,13 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
 
   // ── Books ──
   if(data.books && data.books.length){
-    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,56,.8);margin-bottom:10px">📚 LECTURAS RECOMENDADAS</div>';
+    html+='<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,56,.8);margin-bottom:10px">📚 LECTURAS RECOMENDADAS</div>';
     html+='<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px">';
     data.books.forEach(function(b){
       html+='<div style="background:rgba(200,162,56,.06);border:1px solid rgba(200,162,56,.2);border-radius:12px;padding:10px 14px">'
-        +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85)">📖 '+_escHtml(b.title||'')+'</div>'
-        +'<div style="font-size:11px;color:rgba(200,162,56,.8);margin-top:2px">'+_escHtml(b.author||'')+'</div>'
-        +(b.why?'<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:4px;line-height:1.5">'+_escHtml(b.why)+'</div>':'')
+        +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.85)">📖 '+_escHtml(b.title||'')+'</div>'
+        +'<div style="font-size:13px;color:rgba(200,162,56,.8);margin-top:2px">'+_escHtml(b.author||'')+'</div>'
+        +(b.why?'<div style="font-size:13px;color:rgba(255,255,255,.45);margin-top:4px;line-height:1.5">'+_escHtml(b.why)+'</div>':'')
         +'</div>';
     });
     html+='</div>';
@@ -19997,13 +20028,13 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
 
   // ── Movies ──
   if(data.movies && data.movies.length){
-    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.75);margin-bottom:10px">🎬 PELÍCULAS PARA ESTE MOMENTO</div>';
+    html+='<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(180,140,220,.75);margin-bottom:10px">🎬 PELÍCULAS PARA ESTE MOMENTO</div>';
     html+='<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px">';
     data.movies.forEach(function(mv){
       html+='<div style="background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.18);border-radius:12px;padding:10px 14px">'
-        +'<div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.85)">🎬 '+_escHtml(mv.title||'')+'</div>'
-        +'<div style="font-size:11px;color:rgba(180,140,220,.7);margin-top:2px">'+_escHtml(mv.director||'')+'</div>'
-        +(mv.why?'<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:4px;line-height:1.5">'+_escHtml(mv.why)+'</div>':'')
+        +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.85)">🎬 '+_escHtml(mv.title||'')+'</div>'
+        +'<div style="font-size:13px;color:rgba(180,140,220,.7);margin-top:2px">'+_escHtml(mv.director||'')+'</div>'
+        +(mv.why?'<div style="font-size:13px;color:rgba(255,255,255,.45);margin-top:4px;line-height:1.5">'+_escHtml(mv.why)+'</div>':'')
         +'</div>';
     });
     html+='</div>';
@@ -20014,24 +20045,24 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
     html+='<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.2);border-radius:14px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:flex-start;gap:14px">'
       +'<span style="font-size:32px;flex-shrink:0;line-height:1;margin-top:2px">🎵</span>'
       +'<div>'
-      +'<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:6px">CANCIÓN DEL MES</div>'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.8);margin-bottom:6px">CANCIÓN DEL MES</div>'
       +'<div style="font-size:15px;font-weight:700;color:#fff;line-height:1.3">'+_escHtml(data.song.title)+'</div>'
-      +'<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:3px">'+_escHtml(data.song.artist||'')+'</div>'
-      +(data.song.why?'<div style="font-size:12px;color:rgba(255,255,255,.48);margin-top:7px;line-height:1.55">'+_escHtml(data.song.why)+'</div>':'')
+      +'<div style="font-size:14px;color:rgba(255,255,255,.5);margin-top:3px">'+_escHtml(data.song.artist||'')+'</div>'
+      +(data.song.why?'<div style="font-size:14px;color:rgba(255,255,255,.48);margin-top:7px;line-height:1.55">'+_escHtml(data.song.why)+'</div>':'')
       +'</div>'
       +'</div>';
   }
 
   // ── Reviews ──
   if(data.reviews && data.reviews.length){
-    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.8);margin-bottom:10px">⭐ LO QUE LA COMUNIDAD DICE DE VOS'+(data.totalReviews?' ('+data.totalReviews+' reseñas)':'')+'</div>';
+    html+='<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.8);margin-bottom:10px">⭐ LO QUE LA COMUNIDAD DICE DE VOS'+(data.totalReviews?' ('+data.totalReviews+' reseñas)':'')+'</div>';
     data.reviews.forEach(function(r){
       html+='<div style="background:rgba(200,162,0,.07);border:1px solid rgba(200,162,0,.18);border-radius:12px;padding:12px 14px;margin-bottom:8px">'
         +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">'
-        +'<span style="font-size:12px;letter-spacing:1px">'+'⭐'.repeat(Math.min(r.stars||5,5))+'</span>'
-        +'<span style="font-size:11px;color:rgba(255,255,255,.35)">'+_escHtml(r.reviewer_name||'Usuario')+'</span>'
+        +'<span style="font-size:14px;letter-spacing:1px">'+'⭐'.repeat(Math.min(r.stars||5,5))+'</span>'
+        +'<span style="font-size:13px;color:rgba(255,255,255,.35)">'+_escHtml(r.reviewer_name||'Usuario')+'</span>'
         +'</div>'
-        +(r.texto?'<div style="font-size:13px;color:rgba(255,255,255,.78);line-height:1.6;font-style:italic">"'+_escHtml(r.texto)+'"</div>':'')
+        +(r.texto?'<div style="font-size:15px;color:rgba(255,255,255,.78);line-height:1.6;font-style:italic">"'+_escHtml(r.texto)+'"</div>':'')
         +'</div>';
     });
     html+='<div style="height:1px;background:rgba(255,255,255,.06);margin:4px 0 18px"></div>';
@@ -20039,9 +20070,9 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
 
   // ── Medals ──
   if(data.medals && data.medals.length){
-    html+='<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:8px">🏅 MEDALLAS GANADAS</div>';
+    html+='<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:8px">🏅 MEDALLAS GANADAS</div>';
     html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px">'
-      +data.medals.map(function(m){ return '<span style="padding:5px 12px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.25);border-radius:20px;font-size:12px;color:rgba(116,198,157,.9)">'+_escHtml(m.name||m.label||'🏅')+'</span>'; }).join('')
+      +data.medals.map(function(m){ return '<span style="padding:5px 12px;background:rgba(116,198,157,.1);border:1px solid rgba(116,198,157,.25);border-radius:20px;font-size:14px;color:rgba(116,198,157,.9)">'+_escHtml(m.name||m.label||'🏅')+'</span>'; }).join('')
       +'</div>';
   }
 
@@ -20049,8 +20080,8 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
   if(data.help_hint){
     html+='<div style="background:rgba(116,198,157,.07);border:1.5px solid rgba(116,198,157,.25);border-radius:14px;padding:14px;margin-bottom:14px">'
       +'<div style="font-size:14px;font-weight:700;color:rgba(116,198,157,.9);margin-bottom:6px">💚 Un espacio para vos</div>'
-      +'<div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.65">'+_escHtml(data.help_hint)+'</div>'
-      +'<button onclick="document.getElementById(\'monthlyReportOv\').remove();_syncBodyScroll();pGoTo(\'guardianes\')" style="margin-top:10px;padding:8px 16px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:10px;color:rgba(116,198,157,.9);font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">Hablar con alguien →</button>'
+      +'<div style="font-size:15px;color:rgba(255,255,255,.7);line-height:1.65">'+_escHtml(data.help_hint)+'</div>'
+      +'<button onclick="document.getElementById(\'monthlyReportOv\').remove();_syncBodyScroll();pGoTo(\'guardianes\')" style="margin-top:10px;padding:8px 16px;background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.3);border-radius:10px;color:rgba(116,198,157,.9);font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">Hablar con alguien →</button>'
       +'</div>';
   }
 
@@ -20058,12 +20089,12 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
   html+='<div style="background:rgba(180,140,220,.07);border:1px solid rgba(180,140,220,.15);border-radius:14px;padding:16px;text-align:center">'
     +'<div style="font-size:22px;margin-bottom:8px">💜</div>'
     +'<div style="font-size:14px;font-weight:600;color:rgba(255,255,255,.75);margin-bottom:6px">Gracias por ser parte de Velo</div>'
-    +'<div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6">Tu presencia en esta comunidad importa y hace la diferencia para alguien que todavía no lo sabe. Nos vemos el próximo mes. 🌱</div>'
+    +'<div style="font-size:14px;color:rgba(255,255,255,.45);line-height:1.6">Tu presencia en esta comunidad importa y hace la diferencia para alguien que todavía no lo sabe. Nos vemos el próximo mes. 🌱</div>'
     +'</div>'
   // ── Velo logo watermark ──
   +'<div style="margin-top:22px;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:.35">'
   +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:300;letter-spacing:3px;color:#fff">VELO</div>'
-  +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.6)">Bienestar colectivo</div>'
+  +'<div style="font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.6)">Bienestar colectivo</div>'
   +'</div>';
 
   bodyEl.innerHTML=html;
@@ -20073,8 +20104,8 @@ function _mrStatCard(icon, label, value, sub){
   return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px;text-align:center">'
     +'<div style="font-size:20px;margin-bottom:4px">'+icon+'</div>'
     +'<div style="font-size:26px;font-weight:800;color:#fff;line-height:1">'+value+'</div>'
-    +'<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.55);margin-top:3px">'+label+'</div>'
-    +'<div style="font-size:9px;color:rgba(255,255,255,.28);margin-top:1px">'+sub+'</div>'
+    +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.55);margin-top:3px">'+label+'</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.28);margin-top:1px">'+sub+'</div>'
     +'</div>';
 }
 
@@ -20287,7 +20318,7 @@ async function pAdminAiSituationAnalysis(){
   var btn = document.getElementById('adminSituationBtn');
   var resultEl = document.getElementById('adminSituationResult');
   if(btn){ btn.disabled = true; btn.textContent = '🧠 Analizando…'; }
-  if(resultEl) resultEl.innerHTML = '<p style="font-size:11px;color:rgba(255,255,255,.4);padding:6px 0;font-style:italic">Velo IA está revisando la situación de la plataforma…</p>';
+  if(resultEl) resultEl.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.4);padding:6px 0;font-style:italic">Velo IA está revisando la situación de la plataforma…</p>';
 
   var audit = []; try{ audit = JSON.parse(safeLS('get','velo_audit_log')||'[]'); }catch(e){}
   var contacts = []; try{ contacts = JSON.parse(safeLS('get','velo_admin_contacts')||'[]'); }catch(e){}
@@ -20323,8 +20354,8 @@ async function pAdminAiSituationAnalysis(){
 
   if(resultEl){
     resultEl.innerHTML = result
-      ? '<div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.7;padding:12px;background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.18);border-radius:10px;margin-top:8px;white-space:pre-line">'+_escHtml(result)+'</div>'
-      : '<p style="font-size:11px;color:rgba(255,100,100,.6);padding:6px 0">No se pudo conectar con Gemini. Revisá tu conexión.</p>';
+      ? '<div style="font-size:14px;color:rgba(255,255,255,.75);line-height:1.7;padding:12px;background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.18);border-radius:10px;margin-top:8px;white-space:pre-line">'+_escHtml(result)+'</div>'
+      : '<p style="font-size:13px;color:rgba(255,100,100,.6);padding:6px 0">No se pudo conectar con Gemini. Revisá tu conexión.</p>';
   }
 }
 
@@ -20380,7 +20411,7 @@ async function _renderAdminAITasks(){
   el.innerHTML = lines.map(function(line){
     var bg     = line.startsWith('🔴') ? 'rgba(220,50,50,.12)'     : line.startsWith('🟡') ? 'rgba(230,160,20,.1)'   : 'rgba(116,198,157,.08)';
     var border = line.startsWith('🔴') ? 'rgba(220,50,50,.3)'      : line.startsWith('🟡') ? 'rgba(230,160,20,.22)'  : 'rgba(116,198,157,.18)';
-    return '<div style="background:'+bg+';border:1px solid '+border+';border-radius:9px;padding:10px 13px;margin-bottom:7px;font-size:13px;color:rgba(255,255,255,.85);line-height:1.45">'+_escHtml(line)+'</div>';
+    return '<div style="background:'+bg+';border:1px solid '+border+';border-radius:9px;padding:10px 13px;margin-bottom:7px;font-size:15px;color:rgba(255,255,255,.85);line-height:1.45">'+_escHtml(line)+'</div>';
   }).join('');
 }
 
@@ -20443,12 +20474,12 @@ async function pAdminGenerateBcastImage(){
     var ov2 = document.createElement('div');
     ov2.id = 'bcastImgDescOv';
     ov2.style.cssText = 'position:fixed;inset:0;background:rgba(5,18,10,.97);z-index:10001;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;box-sizing:border-box';
-    ov2.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:2px;color:rgba(116,198,157,.7);margin-bottom:12px">🎨 GENERAR IMAGEN CON IA</div>'
-      +'<p style="font-size:13px;color:rgba(255,255,255,.65);text-align:center;margin-bottom:16px;line-height:1.5;max-width:300px">Describí brevemente qué querés que represente la imagen:</p>'
+    ov2.innerHTML = '<div style="font-size:13px;font-weight:700;letter-spacing:2px;color:rgba(116,198,157,.7);margin-bottom:12px">🎨 GENERAR IMAGEN CON IA</div>'
+      +'<p style="font-size:15px;color:rgba(255,255,255,.65);text-align:center;margin-bottom:16px;line-height:1.5;max-width:300px">Describí brevemente qué querés que represente la imagen:</p>'
       +'<textarea id="bcastImgDescInput" rows="3" placeholder="Ej: personas acompañándose, naturaleza serena, manos entrelazadas…" maxlength="200" style="width:100%;max-width:340px;padding:12px 14px;background:rgba(255,255,255,.09);border:1.5px solid rgba(116,198,157,.3);border-radius:12px;color:#fff;font-size:16px;font-family:\'Jost\',sans-serif;resize:none;box-sizing:border-box;margin-bottom:14px"></textarea>'
       +'<div style="display:flex;gap:10px;width:100%;max-width:340px">'
-      +'<button onclick="pAdminGenerateBcastImageWithDesc()" style="flex:1;padding:12px;background:rgba(180,140,220,.2);border:1.5px solid rgba(180,140,220,.4);border-radius:12px;color:rgba(180,140,220,.95);font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">🎨 Generar</button>'
-      +'<button onclick="document.getElementById(\'bcastImgDescOv\').remove()" style="padding:12px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:rgba(255,255,255,.5);font-size:13px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
+      +'<button onclick="pAdminGenerateBcastImageWithDesc()" style="flex:1;padding:12px;background:rgba(180,140,220,.2);border:1.5px solid rgba(180,140,220,.4);border-radius:12px;color:rgba(180,140,220,.95);font-size:15px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">🎨 Generar</button>'
+      +'<button onclick="document.getElementById(\'bcastImgDescOv\').remove()" style="padding:12px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:rgba(255,255,255,.5);font-size:15px;font-family:\'Jost\',sans-serif;cursor:pointer">Cancelar</button>'
       +'</div>';
     document.body.appendChild(ov2);
     setTimeout(function(){ var t=document.getElementById('bcastImgDescInput'); if(t) t.focus(); }, 100);
@@ -20495,12 +20526,12 @@ async function _doGenerateBcastImage(desc){
     var ov = document.createElement('div');
     ov.id = 'bcastImgPreviewOv';
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(5,18,10,.96);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;box-sizing:border-box';
-    ov.innerHTML = '<div style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(116,198,157,.7);margin-bottom:14px">IMAGEN GENERADA CON IA</div>'
+    ov.innerHTML = '<div style="font-size:12px;font-weight:700;letter-spacing:2px;color:rgba(116,198,157,.7);margin-bottom:14px">IMAGEN GENERADA CON IA</div>'
       +'<img src="data:'+mime+';base64,'+base64+'" style="max-width:100%;max-height:55vh;border-radius:16px;border:2px solid rgba(116,198,157,.3);box-shadow:0 8px 40px rgba(0,0,0,.6);object-fit:contain">'
-      +'<p style="font-size:12px;color:rgba(255,255,255,.5);margin:14px 0 18px;text-align:center;line-height:1.5">¿Querés usar esta imagen en el mensaje?</p>'
+      +'<p style="font-size:14px;color:rgba(255,255,255,.5);margin:14px 0 18px;text-align:center;line-height:1.5">¿Querés usar esta imagen en el mensaje?</p>'
       +'<div style="display:flex;gap:12px;width:100%;max-width:320px">'
-      +'<button onclick="pBcastImgConfirm()" style="flex:1;padding:13px;background:var(--sage2);border:none;border-radius:14px;color:#fff;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">✅ Usar esta imagen</button>'
-      +'<button onclick="pBcastImgDiscard()" style="padding:13px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:rgba(255,255,255,.6);font-size:13px;font-family:\'Jost\',sans-serif;cursor:pointer">🗑️ Descartar</button>'
+      +'<button onclick="pBcastImgConfirm()" style="flex:1;padding:13px;background:var(--sage2);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer">✅ Usar esta imagen</button>'
+      +'<button onclick="pBcastImgDiscard()" style="padding:13px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:rgba(255,255,255,.6);font-size:15px;font-family:\'Jost\',sans-serif;cursor:pointer">🗑️ Descartar</button>'
       +'</div>';
     document.body.appendChild(ov);
     if(statusEl){ statusEl.textContent=''; statusEl.style.display='none'; }
@@ -20513,7 +20544,7 @@ async function _doGenerateBcastImage(desc){
 
 async function pBcastImgConfirm(){
   var ov = document.getElementById('bcastImgPreviewOv');
-  if(ov) ov.innerHTML = '<div style="color:#fff;font-size:13px">⏳ Subiendo imagen…</div>';
+  if(ov) ov.innerHTML = '<div style="color:#fff;font-size:15px">⏳ Subiendo imagen…</div>';
   var pending = _pendingBcastImg;
   _pendingBcastImg = null;
   try{
@@ -20553,7 +20584,7 @@ function _previewMassImage(){
   var prev=document.getElementById('massImgPreview');
   if(!prev) return;
   var url=(el&&el.value.trim())||'';
-  prev.innerHTML=url?'<img src="'+_escHtml(url)+'" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.1)" onerror="this.parentElement.innerHTML=\'<span style=font-size:11px;color:rgba(255,100,100,.6)>URL de imagen no válida</span>\'">':'';
+  prev.innerHTML=url?'<img src="'+_escHtml(url)+'" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.1)" onerror="this.parentElement.innerHTML=\'<span style=font-size:13px;color:rgba(255,100,100,.6)>URL de imagen no válida</span>\'">':'';
 }
 
 async function _onBcastImgPick(input){
@@ -20889,18 +20920,18 @@ async function pAdminPublishNews(){
 async function pAdminRenderNewsList(){
   var el = document.getElementById('adminNewsList');
   if(!el) return;
-  el.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,.3)">Cargando...</div>';
+  el.innerHTML = '<div style="font-size:13px;color:rgba(255,255,255,.3)">Cargando...</div>';
   _initSupabase();
   var items = await sbLoadAdminNews();
-  if(!items.length){ el.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,.3);font-style:italic">Sin noticias publicadas aún.</div>'; return; }
+  if(!items.length){ el.innerHTML = '<div style="font-size:13px;color:rgba(255,255,255,.3);font-style:italic">Sin noticias publicadas aún.</div>'; return; }
   el.innerHTML = items.map(function(n){
     return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px">'
       +'<div style="font-size:20px;flex-shrink:0">'+_escHtml(n.emoji||'📰')+'</div>'
       +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.8);margin-bottom:2px">'+_escHtml(n.titulo)+'</div>'
-      +(n.source_url?'<a href="'+_escHtml(n.source_url)+'" target="_blank" style="font-size:10px;color:rgba(116,198,157,.8)">'+_escHtml(n.source_name||n.source_url)+'</a>':'')
+      +'<div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.8);margin-bottom:2px">'+_escHtml(n.titulo)+'</div>'
+      +(n.source_url?'<a href="'+_escHtml(n.source_url)+'" target="_blank" style="font-size:12px;color:rgba(116,198,157,.8)">'+_escHtml(n.source_name||n.source_url)+'</a>':'')
       +'</div>'
-      +'<button onclick="pAdminDeleteNews(\''+n.id+'\')" style="font-size:11px;padding:3px 8px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);color:rgba(231,120,110,.9);border-radius:6px;cursor:pointer;flex-shrink:0">🗑️</button>'
+      +'<button onclick="pAdminDeleteNews(\''+n.id+'\')" style="font-size:13px;padding:3px 8px;background:rgba(231,76,60,.15);border:1px solid rgba(231,76,60,.3);color:rgba(231,120,110,.9);border-radius:6px;cursor:pointer;flex-shrink:0">🗑️</button>'
       +'</div>';
   }).join('');
 }
@@ -20916,7 +20947,7 @@ function pAdminDeleteNews(id){
 function _adminFinCard(label, value){
   return '<div style="background:rgba(200,162,0,.06);border:1px solid rgba(200,162,0,.18);border-radius:10px;padding:10px 12px">'
     +'<div style="font-size:18px;font-weight:800;color:rgba(200,162,0,.95)">'+value+'</div>'
-    +'<div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px">'+label+'</div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:2px">'+label+'</div>'
     +'</div>';
 }
 
@@ -20924,7 +20955,7 @@ async function _renderAdminDonations(){
   var el = document.getElementById('adminDonations');
   if(!el) return;
   _initSupabase();
-  if(!sbClient){ el.innerHTML = '<p style="font-size:11px;color:rgba(255,255,255,.3)">Sin conexión</p>'; return; }
+  if(!sbClient){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Sin conexión</p>'; return; }
   try{
     var res = await sbClient.from('donations').select('*').order('created_at',{ascending:false}).limit(200);
     var data = res.data || [];
@@ -20953,20 +20984,20 @@ async function _renderAdminDonations(){
       + _adminFinCard('💰 Ingreso total', '$'+grand.toFixed(2))
       +'</div>'
       + (data.length
-        ? '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:6px">ÚLTIMOS MOVIMIENTOS</div>'
+        ? '<div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1px;margin-bottom:6px">ÚLTIMOS MOVIMIENTOS</div>'
           + data.slice(0,10).map(function(d){
               var fecha = d.created_at ? new Date(d.created_at).toLocaleDateString('es',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
               var icon = d.tipo==='plus'?'⭐':d.tipo==='pro-sub'?'🩺':'💚';
               return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
                 +'<span style="font-size:15px">'+icon+'</span>'
-                +'<div style="flex:1;min-width:0"><div style="font-size:11px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(d.user_email||'anónimo')+'</div>'
-                +'<div style="font-size:9px;color:rgba(255,255,255,.25)">'+fecha+'</div></div>'
-                +'<span style="font-size:12px;font-weight:700;color:rgba(200,162,0,.9)">$'+(parseFloat(d.amount)||0).toFixed(2)+'</span>'
+                +'<div style="flex:1;min-width:0"><div style="font-size:13px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_escHtml(d.user_email||'anónimo')+'</div>'
+                +'<div style="font-size:11px;color:rgba(255,255,255,.25)">'+fecha+'</div></div>'
+                +'<span style="font-size:14px;font-weight:700;color:rgba(200,162,0,.9)">$'+(parseFloat(d.amount)||0).toFixed(2)+'</span>'
                 +'</div>';
             }).join('')
-        : '<p style="font-size:11px;color:rgba(255,255,255,.3);font-style:italic">Sin movimientos aún. Se registran automáticamente con cada donación o suscripción.</p>');
+        : '<p style="font-size:13px;color:rgba(255,255,255,.3);font-style:italic">Sin movimientos aún. Se registran automáticamente con cada donación o suscripción.</p>');
   }catch(e){
-    el.innerHTML = '<p style="font-size:11px;color:rgba(255,255,255,.3)">Sin datos — ¿corriste el SQL de Fase 2?</p>';
+    el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Sin datos — ¿corriste el SQL de Fase 2?</p>';
   }
 }
 
@@ -21149,7 +21180,7 @@ function pInitSessionRoom(){
 
   // Tips
   _setEl('srTips',
-    '<ul style="font-size:13px;color:var(--ink4);line-height:2;padding-left:18px">'
+    '<ul style="font-size:15px;color:var(--ink4);line-height:2;padding-left:18px">'
     +'<li>Usá <strong>auriculares</strong> para mejor audio</li>'
     +'<li>Buscá un espacio <strong>tranquilo y privado</strong></li>'
     +'<li>La sala es <strong>privada</strong> — solo vos y tu profesional</li>'
@@ -21208,7 +21239,7 @@ async function _renderHomeWeekMoodGraph(){
       var cls   = 'mood-day-circle'+(d.mood?'':' mood-day-empty')+(d.isToday?' mood-day-today':'');
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;cursor:pointer" onclick="pGoTo(\'mood\')" title="'+(d.mood?d.mood.label:(d.isToday?'Registrá tu ánimo de hoy':'Sin registro'))+'">'
         +'<div class="'+cls+'" style="width:40px;height:40px;border-radius:50%;'+ring+shadow+'background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+emojiSz+'px;transition:.2s;'+todayEmptyStyle+'">'+emoji+'</div>'
-        +'<span style="font-size:8.5px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
+        +'<span style="font-size:10px;font-weight:700;letter-spacing:.3px;color:var(--ink4);opacity:'+(d.isToday?'1':'.55')+'">'+d.dayName+'</span>'
         +'</div>';
     }).join('');
   }
@@ -21227,9 +21258,9 @@ async function _renderHomeWeekMoodGraph(){
       if(_sm && _sm.emoji) loggedCount++;
       if(!streakBroken){ if(_sm && _sm.emoji) streak++; else if(_si > 0) streakBroken = true; }
     }
-    if(!loggedCount) return '<div style="text-align:center;padding:4px 0 2px;font-size:10.5px;color:rgba(255,255,255,.38);font-family:Jost,sans-serif;font-style:italic">Registrá cómo te sentís para ver tu historial</div>';
+    if(!loggedCount) return '<div style="text-align:center;padding:4px 0 2px;font-size:12px;color:rgba(255,255,255,.38);font-family:Jost,sans-serif;font-style:italic">Registrá cómo te sentís para ver tu historial</div>';
     var _msg = streak >= 5 ? '🔥 '+streak+' días seguidos — ¡imparable!' : streak >= 3 ? '🔥 '+streak+' días seguidos' : streak >= 2 ? '✨ '+streak+' días seguidos esta semana' : loggedCount >= 3 ? '💚 '+loggedCount+' días registrados esta semana' : '💚 Registraste '+loggedCount+' día'+(loggedCount>1?'s':'')+' esta semana';
-    return '<div style="text-align:center;padding:5px 0 2px;font-size:10.5px;font-weight:700;color:rgba(116,198,157,.80);font-family:Jost,sans-serif;letter-spacing:.2px">'+_msg+'</div>';
+    return '<div style="text-align:center;padding:5px 0 2px;font-size:12px;font-weight:700;color:rgba(116,198,157,.80);font-family:Jost,sans-serif;letter-spacing:.2px">'+_msg+'</div>';
   }
 
   // Render immediately from localStorage (instant, no waiting)
@@ -21555,7 +21586,7 @@ function pShowWeeklySummary(data){
     var ring = d.isToday ? 'box-shadow:0 0 0 2.5px '+col+',0 0 12px '+col+'55;' : '';
     return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1">'
       +'<div style="width:36px;height:36px;border-radius:50%;border:2px solid '+col+';background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:'+(d.mood?'18':'8')+'px;'+ring+'">'+(d.mood?d.mood.emoji:'·')+'</div>'
-      +'<span style="font-size:8px;font-weight:700;letter-spacing:.3px;color:rgba(255,255,255,.5)">'+d.dayName+'</span>'
+      +'<span style="font-size:10px;font-weight:700;letter-spacing:.3px;color:rgba(255,255,255,.5)">'+d.dayName+'</span>'
       +'</div>';
   }).join('');
 
@@ -21572,14 +21603,14 @@ function pShowWeeklySummary(data){
   // AI text or fallback
   var aiParagraph = data.aiText
     ? '<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.7;text-align:center;margin:20px 0;padding:0 4px">'+_escHtml(data.aiText)+'</div>'
-    : '<div style="font-size:13px;color:rgba(255,255,255,.55);text-align:center;margin:18px 0;font-style:italic">¡Cada registro es un acto de cuidado hacia vos. Seguí así! 🌱</div>';
+    : '<div style="font-size:15px;color:rgba(255,255,255,.55);text-align:center;margin:18px 0;font-style:italic">¡Cada registro es un acto de cuidado hacia vos. Seguí así! 🌱</div>';
 
   // Literary quote matched to dominant mood
   var _wq = _pickWeeklyQuote(data.dominantMood);
   var quoteHtml = _wq
     ? '<div style="margin:2px 0 18px;padding:14px 16px;border-left:2px solid rgba(233,185,73,.38);background:rgba(233,185,73,.05);border-radius:0 12px 12px 0">'
-      +'<div style="font-size:13px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.72);line-height:1.65;margin-bottom:7px">&#10077; '+_escHtml(_wq.q)+'</div>'
-      +'<div style="font-size:9.5px;font-weight:700;color:rgba(200,158,56,.7);letter-spacing:.4px">&#8212; '+_escHtml(_wq.a)+(_wq.b?', <em style="font-weight:400;opacity:.8">'+_escHtml(_wq.b)+'</em>':'')+'</div>'
+      +'<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.72);line-height:1.65;margin-bottom:7px">&#10077; '+_escHtml(_wq.q)+'</div>'
+      +'<div style="font-size:11px;font-weight:700;color:rgba(200,158,56,.7);letter-spacing:.4px">&#8212; '+_escHtml(_wq.a)+(_wq.b?', <em style="font-weight:400;opacity:.8">'+_escHtml(_wq.b)+'</em>':'')+'</div>'
       +'</div>'
     : '';
 
@@ -21587,27 +21618,27 @@ function pShowWeeklySummary(data){
     // Header
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
     +'<div>'
-    +'<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(200,158,56,.8);margin-bottom:4px">✨ RESUMEN SEMANAL</div>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(200,158,56,.8);margin-bottom:4px">✨ RESUMEN SEMANAL</div>'
     +'<div style="font-size:26px;font-weight:700;font-family:\'Cormorant Garamond\',serif;color:#fff;line-height:1">Tu semana</div>'
     +'</div>'
-    +(data.dominantMood?'<div style="text-align:center"><div style="font-size:44px;line-height:1">'+data.dominantMood+'</div><div style="font-size:9px;color:rgba(255,255,255,.4);margin-top:3px">más frecuente</div></div>':'')
+    +(data.dominantMood?'<div style="text-align:center"><div style="font-size:44px;line-height:1">'+data.dominantMood+'</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px">más frecuente</div></div>':'')
     +'</div>'
     // Timeline
     +'<div style="display:flex;gap:4px;margin-bottom:6px">'+timelineHtml+'</div>'
     // Trend
-    +'<div style="display:flex;justify-content:center;margin-bottom:4px"><span style="font-size:11px;font-weight:700;color:'+trendColor+';letter-spacing:.5px">'+trend+' '+trendLabel+'</span></div>'
+    +'<div style="display:flex;justify-content:center;margin-bottom:4px"><span style="font-size:13px;font-weight:700;color:'+trendColor+';letter-spacing:.5px">'+trend+' '+trendLabel+'</span></div>'
     // AI paragraph
     + aiParagraph
     // Literary quote
     + quoteHtml
     // Stats row
     +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:22px">'
-    +'<div style="text-align:center;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.2);border-radius:14px;padding:14px 8px"><div style="font-size:26px;font-weight:800;color:#74c69d">'+data.checkIns+'</div><div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Registros</div></div>'
-    +'<div style="text-align:center;background:rgba(200,146,10,.1);border:1px solid rgba(200,146,10,.18);border-radius:14px;padding:14px 8px"><div style="font-size:26px;font-weight:800;color:#e9b949">'+data.diaryEntries+'</div><div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Diario</div></div>'
-    +'<div style="text-align:center;background:rgba(116,165,210,.1);border:1px solid rgba(116,165,210,.18);border-radius:14px;padding:14px 8px"><div style="font-size:26px;font-weight:800;color:#7ab4d8">'+data.streak+'</div><div style="font-size:9px;color:rgba(255,255,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Días racha</div></div>'
+    +'<div style="text-align:center;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.2);border-radius:14px;padding:14px 8px"><div style="font-size:26px;font-weight:800;color:#74c69d">'+data.checkIns+'</div><div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Registros</div></div>'
+    +'<div style="text-align:center;background:rgba(200,146,10,.1);border:1px solid rgba(200,146,10,.18);border-radius:14px;padding:14px 8px"><div style="font-size:26px;font-weight:800;color:#e9b949">'+data.diaryEntries+'</div><div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Diario</div></div>'
+    +'<div style="text-align:center;background:rgba(116,165,210,.1);border:1px solid rgba(116,165,210,.18);border-radius:14px;padding:14px 8px"><div style="font-size:26px;font-weight:800;color:#7ab4d8">'+data.streak+'</div><div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.5px">Días racha</div></div>'
     +'</div>'
     // Footer note
-    +'<div style="text-align:center;font-size:10px;color:rgba(255,255,255,.3);margin-bottom:18px">El 1° de cada mes recibís un análisis completo del mes 📋</div>'
+    +'<div style="text-align:center;font-size:12px;color:rgba(255,255,255,.3);margin-bottom:18px">El 1° de cada mes recibís un análisis completo del mes 📋</div>'
     // CTA
     +'<button onclick="pCloseWeeklySummary()" style="width:100%;padding:14px;background:rgba(116,198,157,.22);border:1px solid rgba(116,198,157,.45);border-radius:14px;color:#74c69d;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px">¡Hasta el próximo domingo! 🌱</button>';
   }catch(e){ cnt.innerHTML = '<div style="color:#74c69d;text-align:center;padding:20px">Tu semana en Velo 🌱<br><br><button onclick="pCloseWeeklySummary()" style="margin-top:12px;padding:12px 24px;background:rgba(116,198,157,.22);border:1px solid rgba(116,198,157,.45);border-radius:14px;color:#74c69d;font-size:14px;font-weight:700;cursor:pointer">Cerrar</button></div>'; }
@@ -21859,13 +21890,13 @@ function pInitMeditacion(){
       +'</div>'
       +'<div style="flex:1;padding:15px 16px 13px;min-width:0">'
       +'<div style="display:inline-flex;align-items:center;background:'+m.tagCol+';border-radius:20px;padding:3px 9px;margin-bottom:8px">'
-      +'<span style="font-size:9px;font-weight:800;letter-spacing:1px;color:'+m.tagTxt+';text-transform:uppercase;font-family:\'Jost\',sans-serif">'+m.tag+'</span>'
+      +'<span style="font-size:11px;font-weight:800;letter-spacing:1px;color:'+m.tagTxt+';text-transform:uppercase;font-family:\'Jost\',sans-serif">'+m.tag+'</span>'
       +'</div>'
       +'<div style="font-size:15px;font-weight:800;color:'+c.label+';font-family:\'Cormorant Garamond\',serif;font-style:italic;margin-bottom:4px;line-height:1.25">'+m.title+'</div>'
-      +'<div style="font-size:11px;color:'+lblSub+';font-family:\'Jost\',sans-serif;font-weight:500;margin-bottom:10px;line-height:1.3">'+m.sub+'</div>'
+      +'<div style="font-size:13px;color:'+lblSub+';font-family:\'Jost\',sans-serif;font-weight:500;margin-bottom:10px;line-height:1.3">'+m.sub+'</div>'
       +'<div style="display:flex;align-items:center;justify-content:space-between">'
-      +'<span style="font-size:10px;color:'+lblMeta+';font-weight:600;font-family:\'Jost\',sans-serif">⏱ '+m.duration+' · guiada en español</span>'
-      +'<div style="width:32px;height:32px;border-radius:50%;background:'+c.border+';display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:rgba(255,255,255,.92);box-shadow:0 2px 10px '+c.glow+'">▶</div>'
+      +'<span style="font-size:12px;color:'+lblMeta+';font-weight:600;font-family:\'Jost\',sans-serif">⏱ '+m.duration+' · guiada en español</span>'
+      +'<div style="width:32px;height:32px;border-radius:50%;background:'+c.border+';display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;color:rgba(255,255,255,.92);box-shadow:0 2px 10px '+c.glow+'">▶</div>'
       +'</div>'
       +'</div>'
       +'</div>';
@@ -22239,7 +22270,7 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     if(showMineOnly){
       feed.innerHTML='<div style="text-align:center;padding:22px 8px">'
         +'<span style="font-size:36px;display:block;margin-bottom:10px">✨</span>'
-        +'<div style="font-size:12.5px;color:rgba(255,255,255,.4);line-height:1.5">Todavía no publicaste ningún momento hoy</div>'
+        +'<div style="font-size:14px;color:rgba(255,255,255,.4);line-height:1.5">Todavía no publicaste ningún momento hoy</div>'
         +'</div>';
       return;
     }
@@ -22266,20 +22297,20 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       feed.innerHTML='<div onclick="pFocusMomentoInput()" style="cursor:pointer;border-radius:16px;padding:20px 18px 18px;background:'+_esBg+';border:1.5px dashed '+_esBorder+';text-align:center;margin-bottom:4px">'
         +'<div style="font-size:36px;line-height:1;margin-bottom:12px">'+_p.emoji+'</div>'
         +'<div style="font-size:15px;font-weight:700;color:'+_esTxt+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.4;margin-bottom:8px">'+_p.q+'</div>'
-        +'<div style="font-size:12px;color:'+_esSub+';line-height:1.5;margin-bottom:16px">'+_p.sub+'</div>'
-        +'<div style="display:inline-flex;align-items:center;gap:6px;padding:9px 20px;background:'+_esBtnBg+';border:1.5px solid '+_esBorder+';border-radius:100px;font-size:12.5px;font-weight:700;color:'+_esBtnTxt+';font-family:Jost,sans-serif">✏️ Compartir momento</div>'
+        +'<div style="font-size:14px;color:'+_esSub+';line-height:1.5;margin-bottom:16px">'+_p.sub+'</div>'
+        +'<div style="display:inline-flex;align-items:center;gap:6px;padding:9px 20px;background:'+_esBtnBg+';border:1.5px solid '+_esBorder+';border-radius:100px;font-size:14px;font-weight:700;color:'+_esBtnTxt+';font-family:Jost,sans-serif">✏️ Compartir momento</div>'
         +'</div>';
     } else {
       feed.innerHTML='<div style="text-align:center;padding:22px 8px">'
         +'<span style="font-size:36px;display:block;margin-bottom:10px">💭</span>'
-        +'<div style="font-size:12.5px;color:rgba(255,255,255,.4);line-height:1.5">¡Sé el primero en compartir un momento hoy! ✨</div>'
+        +'<div style="font-size:14px;color:rgba(255,255,255,.4);line-height:1.5">¡Sé el primero en compartir un momento hoy! ✨</div>'
         +'</div>';
     }
     return;
   }
   var cards = momentos.filter(function(m){ return !reported[m.id]; });
   if(!cards.length){
-    feed.innerHTML='<div style="text-align:center;padding:22px 8px"><span style="font-size:36px;display:block;margin-bottom:10px">💭</span><div style="font-size:12.5px;color:rgba(255,255,255,.4)">No hay momentos disponibles ✨</div></div>';
+    feed.innerHTML='<div style="text-align:center;padding:22px 8px"><span style="font-size:36px;display:block;margin-bottom:10px">💭</span><div style="font-size:14px;color:rgba(255,255,255,.4)">No hay momentos disponibles ✨</div></div>';
     return;
   }
   feed.innerHTML=cards.map(function(m){
@@ -22300,9 +22331,9 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
     var authorAvHtml = hasImgAv ? '<img src="'+_escHtml(_mav)+'" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px;flex-shrink:0;border:1.5px solid '+col.border+'">'
       : hasEmojiAv ? '<span style="font-size:14px;vertical-align:middle;margin-right:4px">'+_escHtml(_mav)+'</span>' : '';
     var stripInner = hasImgAv
-      ? '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><img src="'+_escHtml(_mav)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2.5px solid '+col.border+';display:block"><span style="font-size:13px;line-height:1">'+_escHtml(m.emoji||'💭')+'</span></div>'
+      ? '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px"><img src="'+_escHtml(_mav)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2.5px solid '+col.border+';display:block"><span style="font-size:15px;line-height:1">'+_escHtml(m.emoji||'💭')+'</span></div>'
       : hasEmojiAv
-        ? '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid '+col.border+';display:flex;align-items:center;justify-content:center;font-size:20px">'+_escHtml(_mav)+'</div><span style="font-size:12px;line-height:1">'+_escHtml(m.emoji||'💭')+'</span></div>'
+        ? '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px"><div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid '+col.border+';display:flex;align-items:center;justify-content:center;font-size:20px">'+_escHtml(_mav)+'</div><span style="font-size:14px;line-height:1">'+_escHtml(m.emoji||'💭')+'</span></div>'
         : '<span style="font-size:'+emojiSz+';line-height:1">'+_escHtml(m.emoji||'💭')+'</span>';
     return '<div class="home-mc"'+(isTappable?' onclick="pOpenMomentoSheet(\''+_escHtml(String(m.id))+'\')"':'')+' style="background:'+col.bg+';box-shadow:0 3px 20px '+col.glow+',inset 0 0 0 1px '+col.border.replace(',1)',',0.30)')+';border-left:3.5px solid '+col.border+(isTappable?';cursor:pointer':'')+'">'
       // Absolute strip fills full card height on all platforms (no iOS Safari flex gap)
@@ -22312,18 +22343,18 @@ function _renderMomentoCards(momentos, feedId, showMineOnly){
       +'<div style="flex:1;min-width:0;padding:11px 10px 11px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
       +(authorAvHtml ? '<span style="display:inline-flex;align-items:center">'+authorAvHtml+'</span>' : '')
-      +'<span style="font-size:10.5px;font-style:italic;font-weight:700;color:'+col.label+'">'+_escHtml(authorName)+'</span>'
-      +'<span style="font-size:9px;color:'+col.subtext+'">· '+_momentoAgo(m.created_at)+'</span>'
-      +(mine?'<span style="font-size:8px;font-weight:700;padding:1px 6px;border-radius:5px;background:'+col.badge+';color:'+col.label+'">tuyo</span>':'')
+      +'<span style="font-size:12px;font-style:italic;font-weight:700;color:'+col.label+'">'+_escHtml(authorName)+'</span>'
+      +'<span style="font-size:11px;color:'+col.subtext+'">· '+_momentoAgo(m.created_at)+'</span>'
+      +(mine?'<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;background:'+col.badge+';color:'+col.label+'">tuyo</span>':'')
       +'</div>'
       +'<div style="font-size:'+txtSz+';line-height:1.55;color:'+col.text+';word-break:break-word">'+_escHtml(m.text||'')+'</div>'
-      +(isTappable?'<div style="margin-top:6px;font-size:9.5px;color:'+col.faint+';font-family:\'Jost\',sans-serif;letter-spacing:.2px">💬 comentar</div>':'')
+      +(isTappable?'<div style="margin-top:6px;font-size:11px;color:'+col.faint+';font-family:\'Jost\',sans-serif;letter-spacing:.2px">💬 comentar</div>':'')
       +'</div>'
       // Heart + report
       +'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;padding:10px 11px 10px 4px">'
       +'<button onclick="event.stopPropagation();pHeartMomento(\''+_escHtml(m.id)+'\',this)" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:4px">'
       +'<span style="font-size:20px;line-height:1">'+(liked?'❤️':'🤍')+'</span>'
-      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:10px;color:'+col.count+';font-family:Jost,sans-serif">'+heartCount+'</span>'
+      +'<span id="mheart-'+_escHtml(m.id)+'" style="font-size:12px;color:'+col.count+';font-family:Jost,sans-serif">'+heartCount+'</span>'
       +'</button>'
       +(mine ? '<button onclick="event.stopPropagation();pDeleteMomento(\''+_escHtml(m.id)+'\',this)" title="Borrar" style="background:none;border:none;cursor:pointer;padding:3px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,100,100,.72)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg><span style="font-size:7px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:rgba(255,100,100,.60)">Borrar</span></button>'
         : !isHome ? '<button onclick="pReportMomento(\''+_escHtml(m.id)+'\',this)" title="Reportar" class="mc-report" style="background:none;border:none;cursor:pointer;padding:3px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span style="font-size:7px;font-weight:700;letter-spacing:.3px;text-transform:uppercase">Reportar</span></button>' : '')
@@ -22368,7 +22399,7 @@ function _renderMomentoComments(comments,col,lightMode){
     return '<div style="text-align:center;padding:28px 8px 20px;font-family:\'Jost\',sans-serif">'
       +'<div style="font-size:36px;margin-bottom:10px;opacity:.60">💬</div>'
       +'<div style="font-size:14px;font-weight:700;color:'+(lightMode?'rgba(60,80,60,.55)':'rgba(255,255,255,.50)')+';margin-bottom:4px">Todavía no hay comentarios</div>'
-      +'<div style="font-size:12px;color:'+(lightMode?'rgba(60,80,60,.32)':'rgba(255,255,255,.28)')+'">Sé el primero en sumar algo 🌿</div>'
+      +'<div style="font-size:14px;color:'+(lightMode?'rgba(60,80,60,.32)':'rgba(255,255,255,.28)')+'">Sé el primero en sumar algo 🌿</div>'
       +'</div>';
   }
   return comments.map(function(c){
@@ -22381,10 +22412,10 @@ function _renderMomentoComments(comments,col,lightMode){
       +avHtml
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:5px">'
-      +'<span style="font-size:12px;font-weight:800;color:'+nameLbl+';font-family:\'Jost\',sans-serif">'+_escHtml(name)+'</span>'
-      +'<span style="font-size:10px;color:'+textDim+';font-family:\'Jost\',sans-serif">'+_momentoAgo(c.created_at)+'</span>'
+      +'<span style="font-size:14px;font-weight:800;color:'+nameLbl+';font-family:\'Jost\',sans-serif">'+_escHtml(name)+'</span>'
+      +'<span style="font-size:12px;color:'+textDim+';font-family:\'Jost\',sans-serif">'+_momentoAgo(c.created_at)+'</span>'
       +'</div>'
-      +'<div style="background:'+bubbleBg+';border:1px solid '+bubbleBdr+';border-left:3px solid '+bubbleLeft+';border-radius:0 14px 14px 14px;padding:10px 14px;font-size:13.5px;color:'+textColor+';line-height:1.55;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
+      +'<div style="background:'+bubbleBg+';border:1px solid '+bubbleBdr+';border-left:3px solid '+bubbleLeft+';border-radius:0 14px 14px 14px;padding:10px 14px;font-size:15px;color:'+textColor+';line-height:1.55;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -22479,7 +22510,7 @@ async function pOpenMomentoSheet(momentoId){
     // emoji
     +'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">'
     +'<span id="mds-emoji" style="font-size:76px;line-height:1;display:block">'+m.emoji+'</span>'
-    +'<div style="background:'+ca(col.border,'.22')+';border:1px solid '+ca(col.border,'.50')+';border-radius:100px;padding:3px 10px;font-size:10px;font-weight:800;color:'+col.label+';font-family:\'Jost\',sans-serif;letter-spacing:.5px;white-space:nowrap">⏱ '+timeLeft+'h</div>'
+    +'<div style="background:'+ca(col.border,'.22')+';border:1px solid '+ca(col.border,'.50')+';border-radius:100px;padding:3px 10px;font-size:12px;font-weight:800;color:'+col.label+';font-family:\'Jost\',sans-serif;letter-spacing:.5px;white-space:nowrap">⏱ '+timeLeft+'h</div>'
     +'</div>'
     // author info
     +'<div style="flex:1;min-width:0;padding-bottom:4px">'
@@ -22492,7 +22523,7 @@ async function pOpenMomentoSheet(momentoId){
     +'</div>'
     +'<div style="flex:1;min-width:0">'
     +'<div style="font-size:15px;font-weight:800;color:#fff;font-family:\'Jost\',sans-serif;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(canSeeProfile?'<span style="cursor:pointer"'+avClick+'>':'')+_escHtml(authorName)+(canSeeProfile?'</span>':'')+'</div>'
-    +'<div style="font-size:11px;color:rgba(255,255,255,.50);font-family:\'Jost\',sans-serif;margin-top:3px">'+_momentoAgo(m.created_at||'')+'</div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.50);font-family:\'Jost\',sans-serif;margin-top:3px">'+_momentoAgo(m.created_at||'')+'</div>'
     +'</div>'
     +(m.user_hash===_momentoUserHash()?'<button onclick="pDeleteMomento(\''+mId+'\',null,true)" title="Borrar" style="width:34px;height:34px;border-radius:50%;background:rgba(220,50,50,.14);border:1.5px solid rgba(255,80,80,.32);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:15px;transition:background .15s">🗑️</button>':'')
     +'</div>'
@@ -22516,21 +22547,21 @@ async function pOpenMomentoSheet(momentoId){
     // Comments header
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
     +'<div style="background:'+ca(col.strip,'.22')+';border:1px solid '+ca(col.border,'.45')+';border-radius:100px;padding:5px 14px;display:flex;align-items:center;gap:6px">'
-    +'<span style="font-size:13px">💬</span>'
-    +'<span style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:'+col.label+';font-family:\'Jost\',sans-serif">Comentarios</span>'
+    +'<span style="font-size:15px">💬</span>'
+    +'<span style="font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:'+col.label+';font-family:\'Jost\',sans-serif">Comentarios</span>'
     +'</div>'
     +'<div style="flex:1;height:1px;background:'+ca(col.border,'.25')+'"></div>'
     +'</div>'
-    +'<div id="momentoCommentFeed"><div style="text-align:center;padding:18px 8px;font-size:13px;color:rgba(255,255,255,.28);font-family:\'Jost\',sans-serif;font-style:italic">Cargando...</div></div>'
+    +'<div id="momentoCommentFeed"><div style="text-align:center;padding:18px 8px;font-size:15px;color:rgba(255,255,255,.28);font-family:\'Jost\',sans-serif;font-style:italic">Cargando...</div></div>'
     // Comment input
     +'<div style="display:flex;align-items:flex-end;gap:10px;margin-top:16px;padding-bottom:18px;background:rgba(8,10,18,1);position:sticky;bottom:0;padding-top:10px">'
-    +'<textarea id="momentoCommentInput" placeholder="Sumate a la conversación..." rows="2" style="flex:1;background:rgba(255,255,255,.07);border:1.5px solid '+ca(col.border,'.35')+';border-radius:16px;padding:12px 15px;font-size:13.5px;color:rgba(255,255,255,.94);font-family:\'Jost\',sans-serif;resize:none;line-height:1.45;transition:border-color .2s"></textarea>'
-    +'<button id="momentoCommentBtn" onclick="pPostMomentoComment(\''+mId+'\')" style="padding:12px 20px;background:linear-gradient(135deg,'+ca(col.border,'.85')+','+ca(col.strip,'.90')+');border:none;border-radius:16px;color:#fff;font-size:13px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;flex-shrink:0;align-self:flex-end;letter-spacing:.3px;box-shadow:0 4px 16px '+ca(col.glow,'.45')+'">✈️ Enviar</button>'
+    +'<textarea id="momentoCommentInput" placeholder="Sumate a la conversación..." rows="2" style="flex:1;background:rgba(255,255,255,.07);border:1.5px solid '+ca(col.border,'.35')+';border-radius:16px;padding:12px 15px;font-size:15px;color:rgba(255,255,255,.94);font-family:\'Jost\',sans-serif;resize:none;line-height:1.45;transition:border-color .2s"></textarea>'
+    +'<button id="momentoCommentBtn" onclick="pPostMomentoComment(\''+mId+'\')" style="padding:12px 20px;background:linear-gradient(135deg,'+ca(col.border,'.85')+','+ca(col.strip,'.90')+');border:none;border-radius:16px;color:#fff;font-size:15px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;flex-shrink:0;align-self:flex-end;letter-spacing:.3px;box-shadow:0 4px 16px '+ca(col.glow,'.45')+'">✈️ Enviar</button>'
     +'</div>'
     +'</div>'
     // ── Close bar ──
     +'<div style="padding:8px 18px 20px;flex-shrink:0">'
-    +'<button onclick="document.getElementById(\'momentoDetailSheetOv\').remove()" style="width:100%;padding:14px;background:'+ca(col.strip,'.16')+';border:1.5px solid '+ca(col.border,'.35')+';border-radius:16px;color:'+col.label+';font-size:13.5px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px;transition:background .15s">Listo ✓</button>'
+    +'<button onclick="document.getElementById(\'momentoDetailSheetOv\').remove()" style="width:100%;padding:14px;background:'+ca(col.strip,'.16')+';border:1.5px solid '+ca(col.border,'.35')+';border-radius:16px;color:'+col.label+';font-size:15px;font-weight:700;font-family:\'Jost\',sans-serif;cursor:pointer;letter-spacing:.3px;transition:background .15s">Listo ✓</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
@@ -22640,7 +22671,7 @@ function pOpenHappyHomeSheet(postId){
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:10px 14px;background:linear-gradient(135deg,rgba(222,162,36,.28) 0%,rgba(200,138,18,.14) 100%);border-radius:14px;border:1.5px solid rgba(222,162,36,.42)">'
     +'<div style="width:34px;height:34px;border-radius:10px;background:rgba(222,162,36,.28);border:1.5px solid rgba(222,162,36,.60);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0">☀️</div>'
     +'<div><div style="font-size:15px;font-weight:700;color:rgba(255,228,82,.95);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1">Muro Feliz</div>'
-    +'<div style="font-size:9.5px;color:rgba(255,210,55,.50);font-weight:700;letter-spacing:.6px;font-family:Jost,sans-serif;margin-top:2px">PUBLICACIÓN</div></div>'
+    +'<div style="font-size:11px;color:rgba(255,210,55,.50);font-weight:700;letter-spacing:.6px;font-family:Jost,sans-serif;margin-top:2px">PUBLICACIÓN</div></div>'
     +'<button onclick="_closeHappyHomeSheet()" style="margin-left:auto;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.55);font-size:16px;cursor:pointer;line-height:1;padding:4px 9px;border-radius:8px">×</button>'
     +'</div>'
     + _happyPostCard(h, isOwn)
@@ -22683,8 +22714,8 @@ async function _loadHomeHappyFeed(){
       ? '<img src="'+_escHtml(h.av)+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid '+_hc.avBorder+'">'
       : '<div style="width:36px;height:36px;border-radius:50%;background:'+_hc.avBg+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:2px solid '+_hc.avBorder+'">'+(h.anon?'☀️':_escHtml(h.av||'☀️'))+'</div>';
     var nameHtml = h.anon
-      ? '<em style="color:'+_hc.anonName+';font-style:italic;font-size:11px">Anónimo/a</em>'
-      : '<span style="color:'+_hc.name+';font-weight:700;font-size:11px">'+_escHtml(h.name||'Alguien')+'</span>';
+      ? '<em style="color:'+_hc.anonName+';font-style:italic;font-size:13px">Anónimo/a</em>'
+      : '<span style="color:'+_hc.name+';font-weight:700;font-size:13px">'+_escHtml(h.name||'Alguien')+'</span>';
     var totalR=0;
     if(h.reactions){ try{ var rv=typeof h.reactions==='string'?JSON.parse(h.reactions):h.reactions; Object.values(rv).forEach(function(a){ totalR+=Array.isArray(a)?a.length:0; }); }catch(e){} }
     var commCount = h.comments ? h.comments.length : 0;
@@ -22696,23 +22727,23 @@ async function _loadHomeHappyFeed(){
       +'<div style="flex:1;min-width:0;padding:10px 10px 8px 12px">'
       +'<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">'
       +nameHtml
-      +'<span style="font-size:9px;color:'+_hc.time+'">· '+relTime+'</span>'
-      +(totalR>0?'<span style="margin-left:auto;font-size:9.5px;color:'+_hc.react+'">'+totalR+' ❤️</span>':'')
+      +'<span style="font-size:11px;color:'+_hc.time+'">· '+relTime+'</span>'
+      +(totalR>0?'<span style="margin-left:auto;font-size:11px;color:'+_hc.react+'">'+totalR+' ❤️</span>':'')
       +'</div>'
-      +'<div style="font-size:13px;color:'+_hc.text+';line-height:1.5;word-break:break-word;margin-bottom:'+(h.photo?'6px':'8px')+'">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
+      +'<div style="font-size:15px;color:'+_hc.text+';line-height:1.5;word-break:break-word;margin-bottom:'+(h.photo?'6px':'8px')+'">'+(h.emoji?h.emoji+' ':'')+_escHtml(h.text||'')+'</div>'
       +(h.photo?'<div style="margin-bottom:8px;border-radius:8px;overflow:hidden;cursor:pointer" onclick="pOpenHappyHomeSheet(\''+_escHtml(String(h.id))+'\')">'
         +'<img src="'+_escHtml(h.photo)+'" style="width:100%;height:70px;object-fit:cover;display:block">'
-        +'<div style="text-align:center;font-size:9px;font-weight:700;letter-spacing:.3px;color:'+_hc.photoText+';font-family:Jost,sans-serif;padding:3px 0;background:'+_hc.photoBg+'">📷 Ver foto</div>'
+        +'<div style="text-align:center;font-size:11px;font-weight:700;letter-spacing:.3px;color:'+_hc.photoText+';font-family:Jost,sans-serif;padding:3px 0;background:'+_hc.photoBg+'">📷 Ver foto</div>'
         +'</div>':'')
       +'<div style="display:flex;align-items:center;gap:6px;padding-top:6px;border-top:1px solid '+_hc.sep+'">'
-      +'<button onclick="pOpenHappyHomeSheet(\''+_escHtml(String(h.id))+'\')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:'+_hc.btn+';border:1.5px solid '+_hc.btnBorder+';border-radius:20px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:800;color:'+_hc.btnText+';font-family:Jost,sans-serif;letter-spacing:.3px">Ver publicación →</button>'
-      +(commCount > 0?'<span style="font-size:10px;color:'+_hc.comm+';font-family:Jost,sans-serif;flex-shrink:0">💬 '+commCount+'</span>':'')
+      +'<button onclick="pOpenHappyHomeSheet(\''+_escHtml(String(h.id))+'\')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:'+_hc.btn+';border:1.5px solid '+_hc.btnBorder+';border-radius:20px;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:800;color:'+_hc.btnText+';font-family:Jost,sans-serif;letter-spacing:.3px">Ver publicación →</button>'
+      +(commCount > 0?'<span style="font-size:12px;color:'+_hc.comm+';font-family:Jost,sans-serif;flex-shrink:0">💬 '+commCount+'</span>':'')
       +'</div>'
       +'</div>'
       +'</div></div>';
   }
 
-  var _emptyState='<div style="text-align:center;padding:22px 8px"><span style="font-size:32px;display:block;margin-bottom:8px">🌞</span><div style="font-size:12px;color:rgba(200,158,56,.5);line-height:1.5">¡Sé el primero en iluminar el muro hoy!</div></div>';
+  var _emptyState='<div style="text-align:center;padding:22px 8px"><span style="font-size:32px;display:block;margin-bottom:8px">🌞</span><div style="font-size:14px;color:rgba(200,158,56,.5);line-height:1.5">¡Sé el primero en iluminar el muro hoy!</div></div>';
 
   // Show cached posts immediately while refreshing
   var _hwCutoff = Date.now() - 24*60*60*1000;
@@ -22778,7 +22809,7 @@ async function pPostHappyHome(){
 async function _loadMomentoPageFeed(){
   var feed=document.getElementById('momentoFullFeed');
   var note=document.getElementById('momentoMigrationNote');
-  if(feed) feed.innerHTML='<div style="text-align:center;padding:20px;font-size:12px;color:var(--ink4)">Cargando…</div>';
+  if(feed) feed.innerHTML='<div style="text-align:center;padding:20px;font-size:14px;color:var(--ink4)">Cargando…</div>';
   var momentos=await _fetchMomentos(30);
   if(momentos===null){
     if(feed) feed.innerHTML='';
@@ -22919,7 +22950,7 @@ function _switchMomentoTab(tab, btn){
 async function _loadMisMomentos(){
   var feed = document.getElementById('momentoMiosFeed');
   if(!feed) return;
-  feed.innerHTML='<div style="text-align:center;padding:20px;font-size:12px;color:rgba(255,255,255,.35)">Cargando…</div>';
+  feed.innerHTML='<div style="text-align:center;padding:20px;font-size:14px;color:rgba(255,255,255,.35)">Cargando…</div>';
   _initSupabase(); if(!sbClient){ feed.innerHTML=''; return; }
   var myHash = _momentoUserHash();
   try{
@@ -22932,7 +22963,7 @@ async function _loadMisMomentos(){
       feed.innerHTML='<div style="text-align:center;padding:28px 16px">'
         +'<div style="font-size:28px;margin-bottom:10px">✨</div>'
         +'<div style="font-size:14px;color:rgba(255,255,255,.55);margin-bottom:6px">Todavía no publicaste ningún momento hoy</div>'
-        +'<div style="font-size:11px;color:rgba(255,255,255,.30)">Compartí algo con la comunidad → aparecerá aquí con sus reacciones</div>'
+        +'<div style="font-size:13px;color:rgba(255,255,255,.30)">Compartí algo con la comunidad → aparecerá aquí con sus reacciones</div>'
         +'</div>';
       return;
     }
@@ -22946,17 +22977,17 @@ async function _loadMisMomentos(){
         +'<div style="display:flex;align-items:flex-start;gap:9px">'
         +'<span style="font-size:22px;flex-shrink:0;line-height:1;margin-top:1px">'+(m.emoji||'💭')+'</span>'
         +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:13px;color:rgba(255,255,255,.88);line-height:1.55;margin-bottom:6px">'+_escHtml(m.text||'')+'</div>'
+        +'<div style="font-size:15px;color:rgba(255,255,255,.88);line-height:1.55;margin-bottom:6px">'+_escHtml(m.text||'')+'</div>'
         +'<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">'
-        +'<span style="font-size:9px;color:rgba(116,198,157,.6);font-style:italic">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
-        +'<span style="font-size:9px;color:rgba(255,255,255,.28)">'+_momentoAgo(m.created_at)+'</span>'
-        +'<span style="font-size:9px;color:rgba(255,255,255,.22)">⏱ '+timeLeft+'h</span>'
+        +'<span style="font-size:11px;color:rgba(116,198,157,.6);font-style:italic">'+_escHtml(m.anon_label||'Anónimo/a')+'</span>'
+        +'<span style="font-size:11px;color:rgba(255,255,255,.28)">'+_momentoAgo(m.created_at)+'</span>'
+        +'<span style="font-size:11px;color:rgba(255,255,255,.22)">⏱ '+timeLeft+'h</span>'
         +'</div>'
         +'</div>'
         // Reaction count highlight
         +'<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;background:rgba(224,68,106,.12);border:1px solid rgba(224,68,106,.25);border-radius:10px;padding:6px 9px;min-width:38px">'
         +'<span style="font-size:16px">❤️</span>'
-        +'<span style="font-size:13px;font-weight:700;color:'+(hearts>0?'#e0446a':'rgba(255,255,255,.35)')+'">'+hearts+'</span>'
+        +'<span style="font-size:15px;font-weight:700;color:'+(hearts>0?'#e0446a':'rgba(255,255,255,.35)')+'">'+hearts+'</span>'
         +'</div>'
         +'</div>'
         +'</div>';
@@ -23240,17 +23271,17 @@ function pReportContent(type, id, preview){
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-size:28px;text-align:center;margin-bottom:8px">⚠️</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);text-align:center;margin-bottom:8px">Reportar contenido</div>'
-    +(preview ? '<div style="font-size:12px;color:var(--ink4);background:var(--cream2);border-radius:10px;padding:10px;margin-bottom:14px;font-style:italic;line-height:1.5">'+_escHtml(preview.slice(0,120))+(preview.length>120?'…':'')+'</div>' : '')
-    +'<div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:8px">¿Por qué lo reportás?</div>'
+    +(preview ? '<div style="font-size:14px;color:var(--ink4);background:var(--cream2);border-radius:10px;padding:10px;margin-bottom:14px;font-style:italic;line-height:1.5">'+_escHtml(preview.slice(0,120))+(preview.length>120?'…':'')+'</div>' : '')
+    +'<div style="font-size:14px;font-weight:700;color:var(--ink3);margin-bottom:8px">¿Por qué lo reportás?</div>'
     +'<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px" id="rptGlobalReasons">'
     +reasons.map(function(r,i){
-      return '<label style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink3);cursor:pointer;padding:8px;border-radius:10px;border:1.5px solid var(--border);transition:border-color .15s" onclick="this.style.borderColor=\'var(--sage3)\'">'
+      return '<label style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink3);cursor:pointer;padding:8px;border-radius:10px;border:1.5px solid var(--border);transition:border-color .15s" onclick="this.style.borderColor=\'var(--sage3)\'">'
         +'<input type="radio" name="rptGlobal" value="'+r+'" style="accent-color:var(--sage2)"> '+r+'</label>';
     }).join('')
     +'</div>'
     +'<textarea class="p-textarea" id="rptGlobalDetail" rows="2" placeholder="Descripción adicional (opcional)" style="margin-bottom:12px"></textarea>'
     +'<div style="display:flex;gap:8px">'
-    +'<button class="p-btn p-btn--md p-btn--full" style="background:var(--sos);border-color:var(--sos);color:#fff;font-family:\'Jost\',sans-serif;font-size:13px;font-weight:700;padding:11px;border-radius:14px;cursor:pointer" onclick="pSubmitGlobalReport(\''+type+'\',\''+id+'\')">Enviar reporte</button>'
+    +'<button class="p-btn p-btn--md p-btn--full" style="background:var(--sos);border-color:var(--sos);color:#fff;font-family:\'Jost\',sans-serif;font-size:15px;font-weight:700;padding:11px;border-radius:14px;cursor:pointer" onclick="pSubmitGlobalReport(\''+type+'\',\''+id+'\')">Enviar reporte</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'globalReportOv\').remove()">Cancelar</button>'
     +'</div>'
     +'</div>';
@@ -23347,7 +23378,7 @@ function pDeleteAccount(){
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-size:36px;text-align:center;margin-bottom:10px">🗑️</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:'+inkC+';text-align:center;margin-bottom:8px;font-weight:700">¿Eliminar tu cuenta?</div>'
-    +'<p style="font-size:13px;color:'+sub+';text-align:center;line-height:1.6;margin-bottom:18px">Esta acción es <strong>irreversible</strong>. Se eliminarán tu perfil, mensajes, publicaciones y presencia de los contactos de otros usuarios.<br><br>Si querés volver a usar Velo con el mismo correo, podés registrarte de nuevo como usuario nuevo.</p>'
+    +'<p style="font-size:15px;color:'+sub+';text-align:center;line-height:1.6;margin-bottom:18px">Esta acción es <strong>irreversible</strong>. Se eliminarán tu perfil, mensajes, publicaciones y presencia de los contactos de otros usuarios.<br><br>Si querés volver a usar Velo con el mismo correo, podés registrarte de nuevo como usuario nuevo.</p>'
     +'<div class="p-field" style="margin-bottom:14px">'
     +'<label class="p-field-label" style="color:'+inkC+'">¿Por qué te vas? <span style="color:'+sub+';font-weight:400">(opcional)</span></label>'
     +'<textarea class="p-textarea" id="deleteReasonInput" rows="3" placeholder="Contanos el motivo para mejorar Velo…" style="'+inp+';resize:none;width:100%;box-sizing:border-box"></textarea></div>'
@@ -23383,10 +23414,10 @@ function _showDeleteErrorAlert(msg, isWarning){
   var title = isWarning ? '⚠️ Errores al eliminar — copiá esto' : '❌ No se pudo eliminar la cuenta';
   ov.innerHTML = '<div style="background:#1a0a0a;border:2px solid #c0312a;border-radius:16px;padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto">'
     +'<div style="font-size:15px;font-weight:700;color:#ff6b6b;margin-bottom:12px">'+title+'</div>'
-    +'<pre id="_delErrPre" style="font-size:11px;color:#ffb3b3;white-space:pre-wrap;word-break:break-all;background:rgba(255,255,255,.06);border-radius:8px;padding:12px;margin:0 0 16px;line-height:1.6">'+_escHtml(msg)+'</pre>'
+    +'<pre id="_delErrPre" style="font-size:13px;color:#ffb3b3;white-space:pre-wrap;word-break:break-all;background:rgba(255,255,255,.06);border-radius:8px;padding:12px;margin:0 0 16px;line-height:1.6">'+_escHtml(msg)+'</pre>'
     +'<div style="display:flex;gap:8px">'
-    +'<button id="_delErrCopy" style="flex:1;padding:10px;background:rgba(255,107,107,.15);border:1px solid #ff6b6b;border-radius:10px;color:#ff6b6b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">📋 Copiar error</button>'
-    +'<button id="_delErrClose" style="flex:1;padding:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:rgba(255,255,255,.7);font-size:13px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">Cerrar</button>'
+    +'<button id="_delErrCopy" style="flex:1;padding:10px;background:rgba(255,107,107,.15);border:1px solid #ff6b6b;border-radius:10px;color:#ff6b6b;font-size:15px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">📋 Copiar error</button>'
+    +'<button id="_delErrClose" style="flex:1;padding:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:10px;color:rgba(255,255,255,.7);font-size:15px;font-weight:600;cursor:pointer;font-family:\'Jost\',sans-serif">Cerrar</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
@@ -23470,7 +23501,7 @@ function pCancelSubscription(){
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-size:32px;text-align:center;margin-bottom:10px">⭐</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:var(--ink);text-align:center;margin-bottom:10px">Cancelar Velo Plus</div>'
-    +'<p style="font-size:13px;color:var(--ink4);text-align:center;line-height:1.6;margin-bottom:18px">¿Seguro/a? Perderás acceso a las funciones Plus al final del período de facturación.</p>'
+    +'<p style="font-size:15px;color:var(--ink4);text-align:center;line-height:1.6;margin-bottom:18px">¿Seguro/a? Perderás acceso a las funciones Plus al final del período de facturación.</p>'
     +'<div style="display:flex;gap:8px">'
     +'<button class="p-btn p-btn--md p-btn--full" style="background:#c87a3e;border-color:#c87a3e;color:#fff;font-family:\'Jost\',sans-serif;font-weight:700;padding:11px;border-radius:14px;cursor:pointer" onclick="pConfirmCancelSub(this.closest(\'.p-modal-ov\'))">Sí, cancelar</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove()">Mantener Plus</button>'
@@ -23497,9 +23528,9 @@ function pContactUs(){
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--ink);margin-bottom:8px">Contactanos 💚</div>'
-    +'<p style="font-size:12px;color:var(--ink4);margin-bottom:16px;line-height:1.6">¿Tenés alguna pregunta, sugerencia o problema técnico? Escribinos y te respondemos a la brevedad.</p>'
+    +'<p style="font-size:14px;color:var(--ink4);margin-bottom:16px;line-height:1.6">¿Tenés alguna pregunta, sugerencia o problema técnico? Escribinos y te respondemos a la brevedad.</p>'
     +(userName && userEmail
-      ? '<div style="font-size:12px;color:var(--ink3);background:var(--cream2);border-radius:10px;padding:8px 12px;margin-bottom:12px">👤 <strong>'+_escHtml(userName)+'</strong> · 📧 '+_escHtml(userEmail)+'</div>'
+      ? '<div style="font-size:14px;color:var(--ink3);background:var(--cream2);border-radius:10px;padding:8px 12px;margin-bottom:12px">👤 <strong>'+_escHtml(userName)+'</strong> · 📧 '+_escHtml(userEmail)+'</div>'
       : '<div class="p-field"><label class="p-field-label">Tu nombre <span style="color:var(--sos)">*</span></label><input class="p-input" type="text" data-cus-name placeholder="¿Cómo te llamás?" maxlength="60"></div>'
         +'<div class="p-field"><label class="p-field-label">Tu correo <span style="color:var(--sos)">*</span></label><input class="p-input" type="email" data-cus-email placeholder="para enviarte la respuesta"></div>')
     +'<div class="p-field"><label class="p-field-label">Asunto</label>'
@@ -23513,7 +23544,7 @@ function pContactUs(){
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="this.closest(\'.p-modal-ov\').remove()">Cancelar</button>'
     +'</div>'
     +'<div style="height:8px"></div>'
-    +'<p style="font-size:11px;color:var(--ink5);text-align:center">También podés escribirnos a <strong>consultas@heyvelo.app</strong></p>'
+    +'<p style="font-size:13px;color:var(--ink5);text-align:center">También podés escribirnos a <strong>consultas@heyvelo.app</strong></p>'
     +'</div>';
   document.body.appendChild(ov);
 }
@@ -23833,10 +23864,10 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
       : '';
     // Never look up the real username for anonymous senders — the UID would expose their identity.
     var _sUname = (!_isAnonSender && senderId) ? _uLook(senderId) : '';
-    var _sUnameTag = _sUname ? '<span style="font-size:9px;display:block;color:var(--ink5);font-weight:500;margin-top:0px;line-height:1.2">@'+_escHtml(_sUname)+'</span>' : '';
+    var _sUnameTag = _sUname ? '<span style="font-size:11px;display:block;color:var(--ink5);font-weight:500;margin-top:0px;line-height:1.2">@'+_escHtml(_sUname)+'</span>' : '';
     var senderHtml = canProfile
-      ? '<div class="feed-sender" style="font-size:11px;color:var(--ink4);cursor:pointer;line-height:1.2" onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(av||'🌿')+',\'\',\'\','+_jsAttr(senderId||'')+')">'+_escHtml(senderName)+_sUnameTag+'</div>'
-      : '<div class="feed-sender" style="font-size:11px;color:var(--ink4)">'+(senderName||'')+'</div>';
+      ? '<div class="feed-sender" style="font-size:13px;color:var(--ink4);cursor:pointer;line-height:1.2" onclick="pQuickProfile('+_jsAttr(senderName)+','+_jsAttr(av||'🌿')+',\'\',\'\','+_jsAttr(senderId||'')+')">'+_escHtml(senderName)+_sUnameTag+'</div>'
+      : '<div class="feed-sender" style="font-size:13px;color:var(--ink4)">'+(senderName||'')+'</div>';
     return '<div class="feed-msg" id="'+id+'"'+sbAttr+' style="position:relative">'
       +'<div class="feed-av"'+avClickAttr+'>'+_avInline(av||'🌿',36)+'</div>'
       +'<div>'+senderHtml
@@ -23859,13 +23890,13 @@ function _btGenCatRxHtml(postId,category,rx,c){
     var _dA=[{key:'apoyo_te',emoji:'🫂',label:'Te apoyo'},{key:'entiendo',emoji:'💙',label:'Te entiendo'},{key:'abrazo',emoji:'🤗',label:'Te abrazo'},{key:'acompano',emoji:'🕊️',label:'Te acompaño'}];
     return '<div id="btCatRx_'+postId+'" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">'
       +_dA.map(function(rd){ var act=rx.mine_rx===rd.key; var n=rx[rd.key]||0;
-        return '<button onclick="_btReact(\''+postId+'\',\''+rd.key+'\')" style="padding:7px 8px;border-radius:10px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.70':'.22)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent;touch-action:manipulation"><span style="font-size:16px;line-height:1;flex-shrink:0">'+rd.emoji+'</span><span style="font-size:11px;font-weight:700;flex:1;text-align:left">'+rd.label+'</span>'+(n>0?'<span style="font-size:9.5px;opacity:.60;flex-shrink:0">'+n+'</span>':'')+'</button>';
+        return '<button onclick="_btReact(\''+postId+'\',\''+rd.key+'\')" style="padding:7px 8px;border-radius:10px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.70':'.22)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent;touch-action:manipulation"><span style="font-size:16px;line-height:1;flex-shrink:0">'+rd.emoji+'</span><span style="font-size:13px;font-weight:700;flex:1;text-align:left">'+rd.label+'</span>'+(n>0?'<span style="font-size:11px;opacity:.60;flex-shrink:0">'+n+'</span>':'')+'</button>';
       }).join('')+'</div>';
   }
   var _dS=[{key:'resuena',emoji:'✨',label:'Resuena'},{key:'inspiro',emoji:'🌟',label:'Me inspiró'},{key:'cambio',emoji:'💡',label:'Me cambió'}];
   return '<div id="btCatRx_'+postId+'" style="display:flex;gap:6px;margin-bottom:14px">'
     +_dS.map(function(rd){ var act=rx.mine_rx===rd.key; var n=rx[rd.key]||0;
-      return '<button onclick="_btReact(\''+postId+'\',\''+rd.key+'\')" style="flex:1;padding:7px 4px;border-radius:10px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.65':'.22)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;-webkit-tap-highlight-color:transparent;touch-action:manipulation"><span style="font-size:15px;line-height:1">'+rd.emoji+'</span><span style="font-size:11px;font-weight:700">'+rd.label+'</span>'+(n>0?'<span style="font-size:9px;opacity:.65"> '+n+'</span>':'')+'</button>';
+      return '<button onclick="_btReact(\''+postId+'\',\''+rd.key+'\')" style="flex:1;padding:7px 4px;border-radius:10px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.65':'.22)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;-webkit-tap-highlight-color:transparent;touch-action:manipulation"><span style="font-size:15px;line-height:1">'+rd.emoji+'</span><span style="font-size:13px;font-weight:700">'+rd.label+'</span>'+(n>0?'<span style="font-size:11px;opacity:.65"> '+n+'</span>':'')+'</button>';
     }).join('')+'</div>';
 }
 // Global postura card builder — used by _btOpenDetail and _btReact inline refresh
@@ -23878,19 +23909,19 @@ function _btMkPosturaCard(postId,key,label,desc,pct,active,c){
   var voteTxt=voteCount===0?'Sin votos':voteCount+(voteCount===1?' persona':' personas');
   return '<div onclick="_btReact(\''+postId+'\',\''+key+'\')" style="flex:1;border:1.5px solid '+bord+';border-radius:14px;background:'+bg+';cursor:pointer;overflow:hidden">'
     +'<div style="padding:10px 12px 8px">'
-      +'<div style="font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.50);font-family:Jost,sans-serif;margin-bottom:5px">'+label+'</div>'
-      +(desc?'<div style="font-size:12px;color:rgba(255,255,255,.92);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.4;margin-bottom:8px">'+_escHtml(desc)+'</div>':'')
+      +'<div style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.50);font-family:Jost,sans-serif;margin-bottom:5px">'+label+'</div>'
+      +(desc?'<div style="font-size:14px;color:rgba(255,255,255,.92);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.4;margin-bottom:8px">'+_escHtml(desc)+'</div>':'')
       +'<div style="display:flex;align-items:center;justify-content:space-between">'
         +'<div style="height:4px;flex:1;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden;margin-right:8px">'
           +'<div style="height:100%;width:'+pct+'%;background:'+c.strip+';border-radius:2px"></div>'
         +'</div>'
-        +'<span style="font-size:11px;font-weight:800;color:rgba(255,255,255,.90);font-family:Jost,sans-serif">'+pct+'%</span>'
+        +'<span style="font-size:13px;font-weight:800;color:rgba(255,255,255,.90);font-family:Jost,sans-serif">'+pct+'%</span>'
       +'</div>'
-      +'<div style="font-size:9.5px;color:rgba(255,255,255,.38);font-family:Jost,sans-serif;margin-top:4px">'+voteTxt+'</div>'
+      +'<div style="font-size:11px;color:rgba(255,255,255,.38);font-family:Jost,sans-serif;margin-top:4px">'+voteTxt+'</div>'
     +'</div>'
     +(active
-      ?'<div style="background:'+c.strip+';padding:4px 12px;text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.95);font-family:Jost,sans-serif">✓ Tu voto</div>'
-      :(hasVoted?'':'<div style="padding:4px 12px;text-align:center;font-size:9.5px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif">Toca para votar</div>')
+      ?'<div style="background:'+c.strip+';padding:4px 12px;text-align:center;font-size:12px;font-weight:700;color:rgba(255,255,255,.95);font-family:Jost,sans-serif">✓ Tu voto</div>'
+      :(hasVoted?'':'<div style="padding:4px 12px;text-align:center;font-size:11px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif">Toca para votar</div>')
     )
   +'</div>';
 }
@@ -23991,7 +24022,7 @@ function _btUpdateTemaFilter(){
     var bg=isAct?(isLight?c.strip.replace(/[\d.]+\)$/,'.35)'):c.strip.replace(/[\d.]+\)$/,'.55)')):offBg;
     var bd=isAct?c.border:offBd;
     var cl=isAct?c.label:offCl;
-    return '<button onclick="_btSetTemaFilter(\''+t+'\')" style="padding:5px 11px;border-radius:20px;border:1.5px solid '+bd+';background:'+bg+';color:'+cl+';font-size:11px;font-weight:'+(isAct?'700':'500')+';font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .15s">'+t+'</button>';
+    return '<button onclick="_btSetTemaFilter(\''+t+'\')" style="padding:5px 11px;border-radius:20px;border:1.5px solid '+bd+';background:'+bg+';color:'+cl+';font-size:13px;font-weight:'+(isAct?'700':'500')+';font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .15s">'+t+'</button>';
   }).join('');
 }
 function _btSetTemaFilter(t){
@@ -24039,7 +24070,7 @@ function _btApplyFilters(){
       return aTitle-bTitle;
     });
     if(!matched.length){
-      feed.innerHTML='<div style="text-align:center;padding:50px 0"><div style="font-size:13px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;line-height:1.5">Sin resultados para ese filtro.</div></div>';
+      feed.innerHTML='<div style="text-align:center;padding:50px 0"><div style="font-size:15px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;line-height:1.5">Sin resultados para ese filtro.</div></div>';
       return;
     }
     feed.innerHTML=matched.map(function(p,i){ return _btCard(p,i,uid); }).join('');
@@ -24083,22 +24114,22 @@ function _btRenderShell(){
         +'<div><div class="p-label">Comunidad</div><h2 class="p-title">Bitácora</h2></div>'
       +'</div>'
       +'<div style="display:flex;flex-direction:column;align-items:stretch;gap:6px">'
-        +'<button onclick="_btOpenCompose(null)" style="background:'+_pubBg+';border:1.5px solid '+_pubBd+';color:'+_pubCl+';font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:20px;padding:7px 15px;cursor:pointer;letter-spacing:.3px;text-align:center">✦ Publicar</button>'
-        +'<button id="btSortBtn" onclick="_btToggleSort()" style="padding:7px 15px;border-radius:20px;border:1.5px solid '+_srtBd+';background:'+_srtBg+';color:'+_srtCl+';font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .2s;text-align:center;letter-spacing:.3px">🕐 Recientes</button>'
+        +'<button onclick="_btOpenCompose(null)" style="background:'+_pubBg+';border:1.5px solid '+_pubBd+';color:'+_pubCl+';font-size:14px;font-weight:800;font-family:Jost,sans-serif;border-radius:20px;padding:7px 15px;cursor:pointer;letter-spacing:.3px;text-align:center">✦ Publicar</button>'
+        +'<button id="btSortBtn" onclick="_btToggleSort()" style="padding:7px 15px;border-radius:20px;border:1.5px solid '+_srtBd+';background:'+_srtBg+';color:'+_srtCl+';font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .2s;text-align:center;letter-spacing:.3px">🕐 Recientes</button>'
       +'</div>'
     +'</div>'
-    +'<p style="font-size:12px;color:rgba(180,200,190,.55);font-family:Jost,sans-serif;line-height:1.5;margin:0 0 14px;font-style:italic">Historias reales · desde el corazón · para quien necesita leerlas</p>'
+    +'<p style="font-size:14px;color:rgba(180,200,190,.55);font-family:Jost,sans-serif;line-height:1.5;margin:0 0 14px;font-style:italic">Historias reales · desde el corazón · para quien necesita leerlas</p>'
     +'<div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;scrollbar-width:none">'
       +_btTabBtn('apoyo','🫂 Apoyo')
       +_btTabBtn('superacion','⭐ Superación')
       +_btTabBtn('debate','💬 Debate')
-      +'<button id="btTab-guardados" onclick="_btSwitchTab(\'guardados\')" style="flex-shrink:0;padding:9px 12px;border-radius:14px;border:1.5px solid rgba(180,150,255,.55);background:rgba(60,30,90,.92);color:rgba(210,180,255,.95);font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:.50;transition:opacity .2s,box-shadow .2s,transform .2s;white-space:nowrap">📌 Guardados</button>'
+      +'<button id="btTab-guardados" onclick="_btSwitchTab(\'guardados\')" style="flex-shrink:0;padding:9px 12px;border-radius:14px;border:1.5px solid rgba(180,150,255,.55);background:rgba(60,30,90,.92);color:rgba(210,180,255,.95);font-size:13px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:.50;transition:opacity .2s,box-shadow .2s,transform .2s;white-space:nowrap">📌 Guardados</button>'
       +_btTabBtn('mio','📝 Mis posts')
     +'</div>'
-    +'<div id="btTabDesc" style="font-size:11.5px;font-family:Jost,sans-serif;line-height:1.5;margin-bottom:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(180,210,195,.70)"></div>'
+    +'<div id="btTabDesc" style="font-size:13px;font-family:Jost,sans-serif;line-height:1.5;margin-bottom:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(180,210,195,.70)"></div>'
     +'<div id="btTemaFilter" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>'
     +'<div style="margin-bottom:12px">'
-      +'<input id="btSearch" oninput="_btApplyFilters()" placeholder="🔍 Buscar en Bitácora..." maxlength="100" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.10);border-radius:14px;padding:10px 14px;color:rgba(255,255,255,.85);font-size:12.5px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;caret-color:rgba(255,255,255,.70)">'
+      +'<input id="btSearch" oninput="_btApplyFilters()" placeholder="🔍 Buscar en Bitácora..." maxlength="100" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.10);border-radius:14px;padding:10px 14px;color:rgba(255,255,255,.85);font-size:14px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;caret-color:rgba(255,255,255,.70)">'
     +'</div>'
     +'<div id="btFeed" style="display:flex;flex-direction:column;gap:12px"></div>';
 }
@@ -24106,7 +24137,7 @@ function _btRenderShell(){
 function _btTabBtn(type,label){
   var isLight=!document.body.classList.contains('r-dark');
   var c=isLight?(_btColorsLight[type]||_btColorsLight.apoyo):(_btColors[type]||_btColors.apoyo);
-  return '<button id="btTab-'+type+'" onclick="_btSwitchTab(\''+type+'\')" style="flex-shrink:0;padding:9px 12px;border-radius:14px;border:1.5px solid '+c.border+';background:'+c.bg+';color:'+c.label+';font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:.50;transition:opacity .2s,box-shadow .2s,transform .2s;white-space:nowrap">'+label+'</button>';
+  return '<button id="btTab-'+type+'" onclick="_btSwitchTab(\''+type+'\')" style="flex-shrink:0;padding:9px 12px;border-radius:14px;border:1.5px solid '+c.border+';background:'+c.bg+';color:'+c.label+';font-size:13px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:.50;transition:opacity .2s,box-shadow .2s,transform .2s;white-space:nowrap">'+label+'</button>';
 }
 
 var _btTabDescs = {
@@ -24156,7 +24187,7 @@ function _btLoadTab(type,refresh){
   if(_btPosts[type]&&_btPosts[type].length){
     if(_btCurrentTab===type) _btRenderFeed(type);
   } else if(!_btLoading&&feed&&_btCurrentTab===type){
-    feed.innerHTML='<div style="text-align:center;padding:40px 0;color:rgba(180,200,190,.40);font-family:Jost,sans-serif;font-size:13px">Cargando...</div>';
+    feed.innerHTML='<div style="text-align:center;padding:40px 0;color:rgba(180,200,190,.40);font-family:Jost,sans-serif;font-size:15px">Cargando...</div>';
   }
   if(_btLoading){ return; }
   _btLoading=true;
@@ -24242,8 +24273,8 @@ function _btRenderFeed(type){
     var c0=_btColors[type]||_btColors.apoyo;
     feed.innerHTML='<div style="text-align:center;padding:50px 0">'
       +'<div style="font-size:36px;margin-bottom:12px">'+c0.emoji+'</div>'
-      +'<div style="font-size:13px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;line-height:1.5">'+(_btSearchQ||_btTemaFilter?'Sin resultados para ese filtro.':'Aún no hay historias aquí.<br>¡Sé el primero en compartir!')+'</div>'
-      +(!_btSearchQ&&!_btTemaFilter?'<button onclick="_btOpenCompose(\''+type+'\')" style="margin-top:16px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.30);color:rgba(175,245,210,.88);font-size:12px;font-weight:700;font-family:Jost,sans-serif;border-radius:20px;padding:8px 20px;cursor:pointer">✦ Publicar</button>':'')
+      +'<div style="font-size:15px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;line-height:1.5">'+(_btSearchQ||_btTemaFilter?'Sin resultados para ese filtro.':'Aún no hay historias aquí.<br>¡Sé el primero en compartir!')+'</div>'
+      +(!_btSearchQ&&!_btTemaFilter?'<button onclick="_btOpenCompose(\''+type+'\')" style="margin-top:16px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.30);color:rgba(175,245,210,.88);font-size:14px;font-weight:700;font-family:Jost,sans-serif;border-radius:20px;padding:8px 20px;cursor:pointer">✦ Publicar</button>':'')
       +'</div>';
     return;
   }
@@ -24264,7 +24295,7 @@ function _btRenderGuardados(){
   var saved = allPosts.filter(function(p){ return _btSavedIds.indexOf(String(p.id)) >= 0; });
   if(!saved.length){
     // Posts not loaded yet — show loading message and load apoyo first
-    feed.innerHTML = '<div style="text-align:center;padding:32px;color:rgba(100,100,120,.55);font-size:13px">Cargando publicaciones seguidas...</div>';
+    feed.innerHTML = '<div style="text-align:center;padding:32px;color:rgba(100,100,120,.55);font-size:15px">Cargando publicaciones seguidas...</div>';
     return;
   }
   var _myUidBt=safeLS('get','velo_user_id');
@@ -24315,19 +24346,19 @@ function _btCard(p,idx,uid){
     var _pBox='border:1px solid '+c.border.replace(/[\d.]+\)$/,'.28)')+';border-radius:10px;padding:7px 9px;flex:1;min-width:0';
     debBar='<div style="margin:8px 0 4px;display:flex;gap:7px">'
       +'<div style="'+_pBox+'">'
-        +'<div style="font-size:8.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;margin-bottom:3px">Postura A</div>'
-        +(_pA?'<div style="font-size:11px;color:'+bodyColor+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.35;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(_pA)+'</div>':'')
+        +'<div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;margin-bottom:3px">Postura A</div>'
+        +(_pA?'<div style="font-size:13px;color:'+bodyColor+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.35;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(_pA)+'</div>':'')
         +'<div style="display:flex;align-items:center;gap:4px">'
           +'<div style="flex:1;height:3px;border-radius:2px;background:'+debTrackColor+';overflow:hidden"><div style="height:100%;width:'+pA+'%;background:'+c.strip+';border-radius:2px;transition:width .4s"></div></div>'
-          +'<span style="font-size:9.5px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif">'+pA+'%</span>'
+          +'<span style="font-size:11px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif">'+pA+'%</span>'
         +'</div>'
       +'</div>'
       +'<div style="'+_pBox+'">'
-        +'<div style="font-size:8.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;margin-bottom:3px">Postura B</div>'
-        +(_pB?'<div style="font-size:11px;color:'+bodyColor+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.35;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(_pB)+'</div>':'')
+        +'<div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:'+c.label.replace(/[\d.]+\)$/,'.55)')+';font-family:Jost,sans-serif;margin-bottom:3px">Postura B</div>'
+        +(_pB?'<div style="font-size:13px;color:'+bodyColor+';font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.35;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(_pB)+'</div>':'')
         +'<div style="display:flex;align-items:center;gap:4px">'
           +'<div style="flex:1;height:3px;border-radius:2px;background:'+debTrackColor+';overflow:hidden"><div style="height:100%;width:'+pB+'%;background:'+c.strip+';border-radius:2px;transition:width .4s"></div></div>'
-          +'<span style="font-size:9.5px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif">'+pB+'%</span>'
+          +'<span style="font-size:11px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif">'+pB+'%</span>'
         +'</div>'
       +'</div>'
     +'</div>';
@@ -24337,21 +24368,21 @@ function _btCard(p,idx,uid){
     +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">'
       +(_btCanClick ? '<div onclick="'+_btProfileClick+'" style="cursor:pointer;flex-shrink:0">'+avHtml+'</div>' : '<div style="flex-shrink:0">'+avHtml+'</div>')
       +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:11.5px;font-weight:800;color:'+c.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'+(_btCanClick?';cursor:pointer':'')+'"'
+        +'<div style="font-size:13px;font-weight:800;color:'+c.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'+(_btCanClick?';cursor:pointer':'')+'"'
           +(_btCanClick?' onclick="'+_btProfileClick+'"':'')+'>'+_escHtml(name)+'</div>'
-        +(_btUname ? '<div style="font-size:9.5px;color:'+c.label.replace(/[\d.]+\)$/,'.52)')+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:1px'+(_btCanClick?';cursor:pointer':'')+'"'
+        +(_btUname ? '<div style="font-size:11px;color:'+c.label.replace(/[\d.]+\)$/,'.52)')+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:1px'+(_btCanClick?';cursor:pointer':'')+'"'
           +(_btCanClick?' onclick="'+_btProfileClick+'"':'')+'>@'+_escHtml(_btUname)+'</div>' : '')
-        +'<div style="font-size:10px;color:'+c.label.replace(/[\d.]+\)$/,'.45)')+';font-family:Jost,sans-serif">'+_momentoAgo(p.created_at||'')+(p.is_anon?' · 👤':'')+'</div>'
+        +'<div style="font-size:12px;color:'+c.label.replace(/[\d.]+\)$/,'.45)')+';font-family:Jost,sans-serif">'+_momentoAgo(p.created_at||'')+(p.is_anon?' · 👤':'')+'</div>'
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
-        +(isOwn?'<button onclick="event.stopPropagation();_btDeletePost(\''+_escHtml(String(p.id))+'\',\''+p.categoria+'\')" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);color:rgba(200,40,40,.80);font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 7px;cursor:pointer">🗑</button>':'')
-+(function(){ var _isSaved=_btSavedIds.indexOf(String(p.id))>=0; return '<button id="btSave-'+_escHtml(String(p.id))+'" onclick="_btToggleSave(\''+_escHtml(String(p.id))+'\',event)" style="'+(_isSaved?'background:rgba(80,110,230,.85);color:#fff;border:none;':'background:transparent;color:rgba(80,110,230,.9);border:1.5px solid rgba(80,110,230,.5);')+'border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:Jost,sans-serif">'+(_isSaved?'✓ Siguiendo':'+ Seguir')+'</button>'; })()
-        +'<button onclick="event.stopPropagation();_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';color:'+c.label+';font-size:10px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 8px;cursor:pointer">💬 Comentar</button>'
-        +(!isOwn?'<button onclick="event.stopPropagation();_btReport(\''+_escHtml(String(p.id))+'\',null)" style="background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.22);color:rgba(255,100,100,.75);font-size:10px;border-radius:10px;padding:3px 7px;cursor:pointer" title="Reportar contenido">🚩</button>':'')
+        +(isOwn?'<button onclick="event.stopPropagation();_btDeletePost(\''+_escHtml(String(p.id))+'\',\''+p.categoria+'\')" style="background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.25);color:rgba(200,40,40,.80);font-size:12px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 7px;cursor:pointer">🗑</button>':'')
++(function(){ var _isSaved=_btSavedIds.indexOf(String(p.id))>=0; return '<button id="btSave-'+_escHtml(String(p.id))+'" onclick="_btToggleSave(\''+_escHtml(String(p.id))+'\',event)" style="'+(_isSaved?'background:rgba(80,110,230,.85);color:#fff;border:none;':'background:transparent;color:rgba(80,110,230,.9);border:1.5px solid rgba(80,110,230,.5);')+'border-radius:20px;padding:4px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:Jost,sans-serif">'+(_isSaved?'✓ Siguiendo':'+ Seguir')+'</button>'; })()
+        +'<button onclick="event.stopPropagation();_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';color:'+c.label+';font-size:12px;font-weight:700;font-family:Jost,sans-serif;border-radius:10px;padding:3px 8px;cursor:pointer">💬 Comentar</button>'
+        +(!isOwn?'<button onclick="event.stopPropagation();_btReport(\''+_escHtml(String(p.id))+'\',null)" style="background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.22);color:rgba(255,100,100,.75);font-size:12px;border-radius:10px;padding:3px 7px;cursor:pointer" title="Reportar contenido">🚩</button>':'')
       +'</div>'
     +'</div>'
     +(p.titulo?'<div style="font-size:15px;font-weight:700;color:'+titleColor+';font-family:Jost,sans-serif;margin-bottom:6px;line-height:1.3">'+_escHtml(p.titulo)+'</div>':'')
-    +'<div style="font-size:13.5px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+bodyColor+';line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px">'+_escHtml(_btCleanContenido(p.contenido))+'</div>'
+    +'<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+bodyColor+';line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px">'+_escHtml(_btCleanContenido(p.contenido))+'</div>'
     +debBar
     +(function(){
       var _em={apoyo_te:'🫂',entiendo:'💙',abrazo:'🤗',acompano:'🕊️',resuena:'✨',inspiro:'🌟',cambio:'💡',concuerdo:'👍',no_concuerdo:'👎',neutral:'🫥',ayudo:'🙏'};
@@ -24362,11 +24393,11 @@ function _btCard(p,idx,uid){
       var _rxStr=_rxArr.slice(0,5).join('  ');
       return '<div style="display:flex;align-items:center;gap:6px;border-top:1px solid '+c.border.replace(/[\d.]+\)$/,'.15)')+';padding-top:8px;margin-top:'+(debBar?'8':'0')+'px">'
         +'<div style="flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-          +'<span style="font-size:12px;color:'+c.label.replace(/[\d.]+\)$/,'.80)')+';font-family:Jost,sans-serif;letter-spacing:.2px">'+(_rxStr||((rx.mine_postura||rx.mine_rx)?'✓':'')||'—')+'</span>'
-          +'<span style="font-size:11px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+cmtCount+' 💬</span>'
+          +'<span style="font-size:14px;color:'+c.label.replace(/[\d.]+\)$/,'.80)')+';font-family:Jost,sans-serif;letter-spacing:.2px">'+(_rxStr||((rx.mine_postura||rx.mine_rx)?'✓':'')||'—')+'</span>'
+          +'<span style="font-size:13px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+cmtCount+' 💬</span>'
         +'</div>'
-        +'<button onclick="event.stopPropagation();_btSharePost(\''+_escHtml(String(p.id))+'\',event)" style="background:transparent;border:1px solid '+c.border.replace(/[\d.]+\)$/,'.25)')+';color:'+c.label.replace(/[\d.]+\)$/,'.60)')+';font-size:10px;border-radius:10px;padding:3px 8px;cursor:pointer;font-family:Jost,sans-serif" title="Compartir">📤</button>'
-        +'<span style="font-size:10px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';border-radius:20px;padding:3px 10px">'+(p.categoria==='debate'?'🗳 Debatir':'✨ Reaccionar')+'</span>'
+        +'<button onclick="event.stopPropagation();_btSharePost(\''+_escHtml(String(p.id))+'\',event)" style="background:transparent;border:1px solid '+c.border.replace(/[\d.]+\)$/,'.25)')+';color:'+c.label.replace(/[\d.]+\)$/,'.60)')+';font-size:12px;border-radius:10px;padding:3px 8px;cursor:pointer;font-family:Jost,sans-serif" title="Compartir">📤</button>'
+        +'<span style="font-size:12px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.badge+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.30)')+';border-radius:20px;padding:3px 10px">'+(p.categoria==='debate'?'🗳 Debatir':'✨ Reaccionar')+'</span>'
       +'</div>';
     })()
   +'</div>';
@@ -24468,8 +24499,8 @@ function _btGenRxHtml(id, rx, c){
       return '<button onclick="_btReact(\''+id+'\',\''+d.key+'\')" '
         +'style="flex:1;min-width:80px;padding:7px 8px;border-radius:10px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.65':'.20)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px">'
         +'<span style="font-size:16px;line-height:1;flex-shrink:0">'+d.emoji+'</span>'
-        +'<span style="font-size:11px;font-weight:700;flex:1;text-align:left">'+d.label+'</span>'
-        +(n>0?'<span style="font-size:10px;opacity:.65;flex-shrink:0">'+n+'</span>':'')
+        +'<span style="font-size:13px;font-weight:700;flex:1;text-align:left">'+d.label+'</span>'
+        +(n>0?'<span style="font-size:12px;opacity:.65;flex-shrink:0">'+n+'</span>':'')
         +'</button>';
     }).join('')
     +'</div>';
@@ -24553,7 +24584,7 @@ function _btOpenDetail(id){
     var pB=100-pA;
     var _mkPosturaCard=function(key,label,desc,pct,active){ return _btMkPosturaCard(id,key,label,desc,pct,active,c); };
     rxHtml='<div style="margin-bottom:16px">'
-      +'<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.45);font-family:Jost,sans-serif;margin-bottom:10px">¿CON QUÉ POSTURA TE IDENTIFICÁS?</div>'
+      +'<div style="font-size:12px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.45);font-family:Jost,sans-serif;margin-bottom:10px">¿CON QUÉ POSTURA TE IDENTIFICÁS?</div>'
       +'<div id="btPCards_'+id+'" style="display:flex;gap:10px">'
         +_mkPosturaCard('apoyo_a','Postura A',_dpA,pA,rx.mine_postura==='apoyo_a')
         +_mkPosturaCard('apoyo_b','Postura B',_dpB,pB,rx.mine_postura==='apoyo_b')
@@ -24573,9 +24604,9 @@ function _btOpenDetail(id){
   var _detUid=safeLS('get','velo_user_id');
   var _detIsOwn=_detUid&&post.user_id&&String(post.user_id)===String(_detUid);
   sh+='<div style="padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between">';
-  sh+='<div style="font-size:10px;font-weight:800;letter-spacing:2px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+(typeLabel[post.categoria]||'')+'</div>';
+  sh+='<div style="font-size:12px;font-weight:800;letter-spacing:2px;color:'+c.label.replace(/[\d.]+\)$/,'.65)')+';font-family:Jost,sans-serif">'+(typeLabel[post.categoria]||'')+'</div>';
   sh+='<div style="display:flex;align-items:center;gap:7px">'
-    +(!_detIsOwn?'<button onclick="document.getElementById(\'btDetailOv\').remove();if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e){}_btDetailChannel=null;};_btReport(\''+_escHtml(String(post.id))+'\',null)" style="background:rgba(220,60,60,.12);border:1.5px solid rgba(220,60,60,.22);color:rgba(255,120,120,.80);font-size:11px;font-weight:700;font-family:Jost,sans-serif;border-radius:20px;padding:4px 10px;cursor:pointer">🚩 Reportar</button>':'')
+    +(!_detIsOwn?'<button onclick="document.getElementById(\'btDetailOv\').remove();if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e){}_btDetailChannel=null;};_btReport(\''+_escHtml(String(post.id))+'\',null)" style="background:rgba(220,60,60,.12);border:1.5px solid rgba(220,60,60,.22);color:rgba(255,120,120,.80);font-size:13px;font-weight:700;font-family:Jost,sans-serif;border-radius:20px;padding:4px 10px;cursor:pointer">🚩 Reportar</button>':'')
     +'<button onclick="document.getElementById(\'btDetailOv\').remove();if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e){}_btDetailChannel=null;}" style="background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.70);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>'
   +'</div>';
   sh+='</div><div style="padding:14px 18px 0">';
@@ -24595,11 +24626,11 @@ function _btOpenDetail(id){
     sh+='<div style="width:36px;height:36px;border-radius:50%;background:'+c.strip+';border:2px solid '+c.border+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">'+c.emoji+'</div>';
   }
   sh+='<div style="flex:1;min-width:0">';
-  sh+='<div style="font-size:12px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'+(_dCanClick?';cursor:pointer':'')+'"'
+  sh+='<div style="font-size:14px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'+(_dCanClick?';cursor:pointer':'')+'"'
     +(_dCanClick?' onclick="'+_dClick+'"':'')+'>'+_escHtml(authorName)+'</div>';
-  if(_dUname) sh+='<div style="font-size:10px;color:'+c.label.replace(/[\d.]+\)$/,'.52)')+';font-family:Jost,sans-serif'+(_dCanClick?';cursor:pointer':'')+'"'
+  if(_dUname) sh+='<div style="font-size:12px;color:'+c.label.replace(/[\d.]+\)$/,'.52)')+';font-family:Jost,sans-serif'+(_dCanClick?';cursor:pointer':'')+'"'
     +(_dCanClick?' onclick="'+_dClick+'"':'')+'>@'+_escHtml(_dUname)+'</div>';
-  sh+='<div style="font-size:10px;color:'+c.label.replace(/[\d.]+\)$/,'.40)')+';font-family:Jost,sans-serif">'+_momentoAgo(post.created_at||'')+'</div>';
+  sh+='<div style="font-size:12px;color:'+c.label.replace(/[\d.]+\)$/,'.40)')+';font-family:Jost,sans-serif">'+_momentoAgo(post.created_at||'')+'</div>';
   sh+='</div></div>';
   if(post.titulo) sh+='<div style="font-size:18px;font-weight:800;color:rgba(255,255,255,.97);font-family:Jost,sans-serif;line-height:1.3;margin-bottom:12px">'+_escHtml(post.titulo)+'</div>';
   sh+='<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(255,255,255,.88);line-height:1.65;margin-bottom:18px;white-space:pre-wrap">'+_escHtml(_btCleanContenido(post.contenido))+'</div>';
@@ -24608,17 +24639,17 @@ function _btOpenDetail(id){
   sh+='<div onclick="_btSharePost(\''+_escHtml(String(post.id))+'\',event)" style="cursor:pointer;margin:6px 0 16px;background:'+c.strip.replace(/[\d.]+\)$/,'.18)')+';border:1.5px solid '+c.border.replace(/[\d.]+\)$/,'.38)')+';border-radius:16px;padding:11px 14px;display:flex;align-items:center;gap:12px;transition:opacity .15s" onmouseover="this.style.opacity=\'.8\'" onmouseout="this.style.opacity=\'1\'">'
     +'<div style="font-size:22px;flex-shrink:0">📤</div>'
     +'<div style="flex:1;min-width:0">'
-      +'<div style="font-size:12px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;line-height:1.3">¿Querés que más gente lo vea?</div>'
-      +'<div style="font-size:10.5px;color:'+c.label.replace(/[\d.]+\)$/,'.52)')+';font-family:Jost,sans-serif;margin-top:1px">Compartilo para que más personas reaccionen o comenten</div>'
+      +'<div style="font-size:14px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;line-height:1.3">¿Querés que más gente lo vea?</div>'
+      +'<div style="font-size:12px;color:'+c.label.replace(/[\d.]+\)$/,'.52)')+';font-family:Jost,sans-serif;margin-top:1px">Compartilo para que más personas reaccionen o comenten</div>'
     +'</div>'
-    +'<div style="font-size:11px;font-weight:800;color:'+c.label+';font-family:Jost,sans-serif;white-space:nowrap">Compartir →</div>'
+    +'<div style="font-size:13px;font-weight:800;color:'+c.label+';font-family:Jost,sans-serif;white-space:nowrap">Compartir →</div>'
   +'</div>';
   sh+='<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px">';
-  sh+='<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:12px">COMENTARIOS</div>';
-  sh+='<div id="btCommentsWrap" style="margin-bottom:14px"><div style="text-align:center;padding:20px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif">Cargando...</div></div>';
+  sh+='<div style="font-size:12px;font-weight:800;letter-spacing:1.5px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;margin-bottom:12px">COMENTARIOS</div>';
+  sh+='<div id="btCommentsWrap" style="margin-bottom:14px"><div style="text-align:center;padding:20px 0;color:rgba(180,200,190,.35);font-size:14px;font-family:Jost,sans-serif">Cargando...</div></div>';
   sh+='<div style="display:flex;gap:8px;align-items:flex-end">';
-  sh+='<textarea id="btCommentInput" placeholder="Escribí tu comentario..." style="flex:1;background:rgba(255,255,255,.13);border:1.5px solid '+c.border.replace(/[\d.]+\)$/,'.50)')+';border-radius:14px;padding:10px 12px;color:rgba(255,255,255,.95);font-size:13px;font-family:Jost,sans-serif;resize:none;min-height:44px;max-height:120px;outline:none;box-sizing:border-box;box-shadow:inset 0 1px 4px rgba(0,0,0,.18)" rows="1"></textarea>';
-  sh+='<button onclick="_btSendComment(\''+_escHtml(String(post.id))+'\')" style="background:'+c.strip+';border:1.5px solid '+c.border.replace(/[\d.]+\)$/,'.60)')+';color:'+c.label+';font-size:12px;font-weight:800;font-family:Jost,sans-serif;border-radius:14px;padding:10px 14px;cursor:pointer;flex-shrink:0">Enviar</button>';
+  sh+='<textarea id="btCommentInput" placeholder="Escribí tu comentario..." style="flex:1;background:rgba(255,255,255,.13);border:1.5px solid '+c.border.replace(/[\d.]+\)$/,'.50)')+';border-radius:14px;padding:10px 12px;color:rgba(255,255,255,.95);font-size:15px;font-family:Jost,sans-serif;resize:none;min-height:44px;max-height:120px;outline:none;box-sizing:border-box;box-shadow:inset 0 1px 4px rgba(0,0,0,.18)" rows="1"></textarea>';
+  sh+='<button onclick="_btSendComment(\''+_escHtml(String(post.id))+'\')" style="background:'+c.strip+';border:1.5px solid '+c.border.replace(/[\d.]+\)$/,'.60)')+';color:'+c.label+';font-size:14px;font-weight:800;font-family:Jost,sans-serif;border-radius:14px;padding:10px 14px;cursor:pointer;flex-shrink:0">Enviar</button>';
   sh+='</div></div></div></div>';
   ov.innerHTML=sh;
   document.body.appendChild(ov);
@@ -24655,7 +24686,7 @@ function _btLoadComments(postId){
       var wrap=document.getElementById('btCommentsWrap');
       if(!wrap) return;
       if(res.error||!res.data||!res.data.length){
-        wrap.innerHTML='<div style="text-align:center;padding:12px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif">Sin comentarios aún. ¡Sé el primero!</div>';
+        wrap.innerHTML='<div style="text-align:center;padding:12px 0;color:rgba(180,200,190,.35);font-size:14px;font-family:Jost,sans-serif">Sin comentarios aún. ¡Sé el primero!</div>';
         return;
       }
       var comments=res.data;
@@ -24695,8 +24726,8 @@ function _btRenderComments(comments,rxData,postId,uid,wrap){
       :'<div '+avClickAttr+' style="'+ringStyle+'background:rgba(116,198,157,.20);display:flex;align-items:center;justify-content:center;font-size:20px">'+avEmoji+'</div>';
     // Name: clickable if not anon
     var nmHtml=canClick
-      ?'<span onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer;font-size:12.5px;font-weight:700;color:rgba(10,60,30,.90);font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(nm)+'</span>'
-      :'<span style="font-size:12.5px;font-weight:700;color:rgba(10,60,30,.90);font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(nm)+'</span>';
+      ?'<span onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer;font-size:14px;font-weight:700;color:rgba(10,60,30,.90);font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(nm)+'</span>'
+      :'<span style="font-size:14px;font-weight:700;color:rgba(10,60,30,.90);font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(nm)+'</span>';
     // Reaction buttons — dark text on white bubble
     var cmRx=rxMap[String(cm.id)]||{};
     var cmIdStr=String(cm.id);
@@ -24709,7 +24740,7 @@ function _btRenderComments(comments,rxData,postId,uid,wrap){
         return '<button type="button" onclick="event.stopPropagation();_btCmReact(\''+cmIdStr+'\',\''+e.k+'\',\''+String(postId)+'\')" '
           +'style="display:inline-flex;align-items:center;gap:4px;background:'+rxBg+';border:1.5px solid '+rxBorder+';border-radius:20px;padding:4px 10px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:background .15s">'
           +'<span style="font-size:15px;line-height:1">'+e.i+'</span>'
-          +'<span style="font-size:11px;font-weight:700;color:'+rxTxt+';font-family:Jost,sans-serif">'+(r.count>0?r.count:'')+'</span>'
+          +'<span style="font-size:13px;font-weight:700;color:'+rxTxt+';font-family:Jost,sans-serif">'+(r.count>0?r.count:'')+'</span>'
           +'</button>';
       }).join('')
       +'</div>';
@@ -24720,12 +24751,12 @@ function _btRenderComments(comments,rxData,postId,uid,wrap){
         +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px">'
           +nmHtml
           +'<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">'
-            +'<span style="font-size:10px;color:rgba(0,0,0,.38);font-family:Jost,sans-serif">'+_momentoAgo(cm.created_at||'')+'</span>'
-            +(own?'<button type="button" onclick="_btDeleteComment(\''+_escHtml(cmIdStr)+'\',\''+_escHtml(String(postId))+'\')" style="background:none;border:none;color:rgba(200,60,60,.65);font-size:12px;cursor:pointer;padding:0 2px;line-height:1">🗑</button>':'')
-            +(!own?'<button type="button" onclick="_btReport(null,\''+_escHtml(cmIdStr)+'\')" style="background:none;border:none;color:rgba(180,60,60,.55);font-size:11px;cursor:pointer;padding:0 2px;line-height:1">🚩</button>':'')
+            +'<span style="font-size:12px;color:rgba(0,0,0,.38);font-family:Jost,sans-serif">'+_momentoAgo(cm.created_at||'')+'</span>'
+            +(own?'<button type="button" onclick="_btDeleteComment(\''+_escHtml(cmIdStr)+'\',\''+_escHtml(String(postId))+'\')" style="background:none;border:none;color:rgba(200,60,60,.65);font-size:14px;cursor:pointer;padding:0 2px;line-height:1">🗑</button>':'')
+            +(!own?'<button type="button" onclick="_btReport(null,\''+_escHtml(cmIdStr)+'\')" style="background:none;border:none;color:rgba(180,60,60,.55);font-size:13px;cursor:pointer;padding:0 2px;line-height:1">🚩</button>':'')
           +'</div>'
         +'</div>'
-        +'<div style="font-size:13px;color:rgba(10,10,10,.82);font-family:Jost,sans-serif;line-height:1.5;word-break:break-word">'+_escHtml(cm.content)+'</div>'
+        +'<div style="font-size:15px;color:rgba(10,10,10,.82);font-family:Jost,sans-serif;line-height:1.5;word-break:break-word">'+_escHtml(cm.content)+'</div>'
         +rxHtml
       +'</div>'
     +'</div>';
@@ -24894,42 +24925,42 @@ function _btBuildComposeInner(type,tema){
   var h='<div style="background:linear-gradient(180deg,#0e1b2a,#080f18);border-radius:28px 28px 0 0;max-height:92vh;overflow-y:auto;padding:0 0 max(28px,env(safe-area-inset-bottom))">';
   h+='<div style="display:flex;justify-content:center;padding:12px 0 0"><div style="width:36px;height:4px;background:rgba(255,255,255,.18);border-radius:2px"></div></div>';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px 0">';
-  h+='<div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(255,255,255,.30);font-family:Jost,sans-serif">NUEVA PUBLICACIÓN</div>';
+  h+='<div style="font-size:12px;font-weight:800;letter-spacing:1.4px;color:rgba(255,255,255,.30);font-family:Jost,sans-serif">NUEVA PUBLICACIÓN</div>';
   h+='<button onclick="document.getElementById(\'btComposeOv\').remove()" style="background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.14);border-radius:50%;width:30px;height:30px;color:rgba(255,255,255,.60);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>';
   h+='</div>';
   h+='<div id="btCmpHeader" style="margin:10px 18px 0;border-radius:18px;padding:15px 16px;background:'+ac.header+';border:1.5px solid '+ac.border.replace(/[\d.]+\)$/,'.32)')+';">';
   h+='<div style="display:flex;align-items:center;gap:12px"><div style="font-size:30px;line-height:1;flex-shrink:0">'+si.emoji+'</div>';
   h+='<div><div style="font-size:16px;font-weight:800;color:rgba(255,255,255,.96);font-family:Jost,sans-serif">'+si.name+'</div>';
-  h+='<div style="font-size:11px;color:rgba(255,255,255,.52);font-family:Jost,sans-serif;margin-top:2px">'+si.sub+'</div></div></div></div>';
+  h+='<div style="font-size:13px;color:rgba(255,255,255,.52);font-family:Jost,sans-serif;margin-top:2px">'+si.sub+'</div></div></div></div>';
   h+='<div style="padding:12px 18px 0">';
-  h+='<div style="font-size:9.5px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif;margin-bottom:7px">SECCIÓN</div>';
+  h+='<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif;margin-bottom:7px">SECCIÓN</div>';
   h+='<div style="display:flex;gap:7px;margin-bottom:14px">';
   [['apoyo','🫂 Apoyo'],['superacion','⭐ Superación'],['debate','💬 Debate']].forEach(function(t){
     var ac2=_btCmpAccent[t[0]]||_btCmpAccent.apoyo; var isAct=type===t[0];
-    h+='<button id="btCmpType-'+t[0]+'" onclick="_btSetComposeType(\''+t[0]+'\')" style="flex:1;padding:8px 4px;border-radius:13px;border:1.5px solid '+(isAct?ac2.pillBorder:'rgba(255,255,255,.12)')+';background:'+(isAct?ac2.pill:'rgba(255,255,255,.06)')+';color:'+(isAct?'rgba(255,255,255,.94)':'rgba(255,255,255,.36)')+';font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">'+t[1]+'</button>';
+    h+='<button id="btCmpType-'+t[0]+'" onclick="_btSetComposeType(\''+t[0]+'\')" style="flex:1;padding:8px 4px;border-radius:13px;border:1.5px solid '+(isAct?ac2.pillBorder:'rgba(255,255,255,.12)')+';background:'+(isAct?ac2.pill:'rgba(255,255,255,.06)')+';color:'+(isAct?'rgba(255,255,255,.94)':'rgba(255,255,255,.36)')+';font-size:13px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">'+t[1]+'</button>';
   });
   h+='</div>';
-  h+='<div style="font-size:9.5px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif;margin-bottom:7px">TEMA <span style="font-weight:400;letter-spacing:0;font-size:9px;opacity:.7">(opcional)</span></div>';
+  h+='<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif;margin-bottom:7px">TEMA <span style="font-weight:400;letter-spacing:0;font-size:11px;opacity:.7">(opcional)</span></div>';
   h+='<div id="btCmpTemas" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px">';
   temas.forEach(function(t){
     var isT=tema===t;
-    h+='<button onclick="_btToggleTema(\''+t+'\')" data-tema="'+t+'" style="padding:5px 11px;border-radius:20px;border:1px solid '+(isT?ac.pillBorder:'rgba(255,255,255,.14)')+';background:'+(isT?ac.pill:'rgba(255,255,255,.05)')+';color:'+(isT?'rgba(255,255,255,.92)':'rgba(255,255,255,.38)')+';font-size:11px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">'+t+'</button>';
+    h+='<button onclick="_btToggleTema(\''+t+'\')" data-tema="'+t+'" style="padding:5px 11px;border-radius:20px;border:1px solid '+(isT?ac.pillBorder:'rgba(255,255,255,.14)')+';background:'+(isT?ac.pill:'rgba(255,255,255,.05)')+';color:'+(isT?'rgba(255,255,255,.92)':'rgba(255,255,255,.38)')+';font-size:13px;font-weight:600;font-family:Jost,sans-serif;cursor:pointer">'+t+'</button>';
   });
   h+='</div>';
   h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:11px 13px;background:rgba(255,255,255,.06);border-radius:14px;border:1px solid rgba(255,255,255,.09)">';
   h+='<div style="font-size:18px">👤</div>';
-  h+='<div style="flex:1"><div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.82);font-family:Jost,sans-serif">Publicar anónimo</div>';
-  h+='<div style="font-size:10.5px;color:rgba(255,255,255,.32);font-family:Jost,sans-serif">Tu nombre no será visible</div></div>';
+  h+='<div style="flex:1"><div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.82);font-family:Jost,sans-serif">Publicar anónimo</div>';
+  h+='<div style="font-size:12px;color:rgba(255,255,255,.32);font-family:Jost,sans-serif">Tu nombre no será visible</div></div>';
   h+='<input type="checkbox" id="btCmpAnon" style="width:20px;height:20px;cursor:pointer;accent-color:'+ac.pillBorder+'">';
   h+='</div>';
-  h+='<input id="btCmpTitle" placeholder="Título (opcional)" maxlength="100" style="width:100%;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 14px;color:rgba(255,255,255,.92);font-size:13px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px">';
+  h+='<input id="btCmpTitle" placeholder="Título (opcional)" maxlength="100" style="width:100%;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 14px;color:rgba(255,255,255,.92);font-size:15px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px">';
   h+='<textarea id="btCmpContent" placeholder="Contá tu historia..." maxlength="2000" oninput="_btCmpCounter(this)" style="width:100%;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 14px;color:rgba(255,255,255,.92);font-size:14px;font-family:\'Cormorant Garamond\',serif;box-sizing:border-box;outline:none;resize:none;min-height:130px;line-height:1.6" rows="5"></textarea>';
-  h+='<div id="btCmpCharCount" style="text-align:right;font-size:10px;color:rgba(255,255,255,.22);font-family:Jost,sans-serif;margin-top:3px;margin-bottom:10px">0 / 2000</div>';
+  h+='<div id="btCmpCharCount" style="text-align:right;font-size:12px;color:rgba(255,255,255,.22);font-family:Jost,sans-serif;margin-top:3px;margin-bottom:10px">0 / 2000</div>';
   h+='<div id="btCmpDebateFields" style="display:'+(type==='debate'?'block':'none')+';margin-bottom:12px">';
-  h+='<div style="font-size:9.5px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif;margin-bottom:7px">POSTURAS DEL DEBATE</div>';
+  h+='<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,.28);font-family:Jost,sans-serif;margin-bottom:7px">POSTURAS DEL DEBATE</div>';
   h+='<div style="display:flex;gap:7px">';
-  h+='<input id="btCmpPosturaA" placeholder="Postura A (ej: Sí)" maxlength="150" style="flex:1;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:13px;padding:10px 12px;color:rgba(255,255,255,.90);font-size:12px;font-family:Jost,sans-serif;outline:none">';
-  h+='<input id="btCmpPosturaB" placeholder="Postura B (ej: No)" maxlength="150" style="flex:1;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:13px;padding:10px 12px;color:rgba(255,255,255,.90);font-size:12px;font-family:Jost,sans-serif;outline:none">';
+  h+='<input id="btCmpPosturaA" placeholder="Postura A (ej: Sí)" maxlength="150" style="flex:1;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:13px;padding:10px 12px;color:rgba(255,255,255,.90);font-size:14px;font-family:Jost,sans-serif;outline:none">';
+  h+='<input id="btCmpPosturaB" placeholder="Postura B (ej: No)" maxlength="150" style="flex:1;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:13px;padding:10px 12px;color:rgba(255,255,255,.90);font-size:14px;font-family:Jost,sans-serif;outline:none">';
   h+='</div></div>';
   h+='<button id="btCmpSubmitBtn" onclick="_btSubmitCompose()" style="width:100%;padding:15px;background:'+ac.btn+';border:none;color:rgba(255,255,255,.97);font-size:15px;font-weight:800;font-family:Jost,sans-serif;border-radius:16px;cursor:pointer;letter-spacing:.4px;box-shadow:0 4px 24px rgba(0,0,0,.30)">✦ Publicar</button>';
   h+='</div></div>';
@@ -25040,7 +25071,7 @@ function _renderHomeBitacoraWidget(){
   posts.sort(function(a,b){ return (b.created_at||'')>(a.created_at||'')?1:-1; });
   posts=posts.slice(0,3);
   if(!posts.length){
-    el.innerHTML='<div style="text-align:center;padding:10px 0;color:rgba(180,200,190,.35);font-size:12px;font-family:Jost,sans-serif;font-style:italic">Aún no hay historias publicadas. ¡Sé el primero!</div>';
+    el.innerHTML='<div style="text-align:center;padding:10px 0;color:rgba(180,200,190,.35);font-size:14px;font-family:Jost,sans-serif;font-style:italic">Aún no hay historias publicadas. ¡Sé el primero!</div>';
     if(sbClient){
       sbClient.from('bitacora_posts_full').select('*').order('created_at',{ascending:false}).limit(3).then(function(res){
         if(!res.data||!res.data.length) return;
@@ -25060,14 +25091,14 @@ function _renderHomeBitacoraWidget(){
     var _catLabels={apoyo:'🫂 Apoyo',superacion:'⭐ Superación',debate:'💬 Debate'};
     var _catBadge=_catLabels[p.categoria]||'';
     return '<div class="home-mc home-bt-card" onclick="_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:'+c.bg+';border:1px solid '+c.border.replace(/[\d.]+\)$/,'.28)')+';border-left:3px solid '+c.border+';border-radius:12px;padding:11px 13px;cursor:pointer;box-shadow:0 2px 10px '+c.glow+'">'
-      +(_catBadge?'<div style="margin-bottom:7px"><span style="font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.strip+';border-radius:20px;padding:3px 9px">'+_catBadge+'</span></div>':'')
+      +(_catBadge?'<div style="margin-bottom:7px"><span style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:'+c.label+';font-family:Jost,sans-serif;background:'+c.strip+';border-radius:20px;padding:3px 9px">'+_catBadge+'</span></div>':'')
       +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">'
         +'<span style="font-size:14px">'+c.emoji+'</span>'
-        +'<span style="font-size:10.5px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(nm)+'</span>'
-        +'<span style="font-size:9.5px;color:'+c.label.replace(/[\d.]+\)$/,'.50)')+';font-family:Jost,sans-serif">'+_momentoAgo(p.created_at||'')+'</span>'
+        +'<span style="font-size:12px;font-weight:700;color:'+c.label+';font-family:Jost,sans-serif;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(nm)+'</span>'
+        +'<span style="font-size:11px;color:'+c.label.replace(/[\d.]+\)$/,'.50)')+';font-family:Jost,sans-serif">'+_momentoAgo(p.created_at||'')+'</span>'
       +'</div>'
-      +(p.titulo?'<div style="font-size:12.5px;font-weight:700;color:'+titleColor+';font-family:Jost,sans-serif;margin-bottom:4px">'+_escHtml(p.titulo)+'</div>':'')
-      +'<div style="font-size:12px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+prevColor+';line-height:1.45">'+_escHtml(prev)+'</div>'
+      +(p.titulo?'<div style="font-size:14px;font-weight:700;color:'+titleColor+';font-family:Jost,sans-serif;margin-bottom:4px">'+_escHtml(p.titulo)+'</div>':'')
+      +'<div style="font-size:14px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+prevColor+';line-height:1.45">'+_escHtml(prev)+'</div>'
     +'</div>';
   }).join('');
 }
@@ -25099,7 +25130,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1195;
+    var _BUILT_V = 1196;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

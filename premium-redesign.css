@@ -14206,6 +14206,22 @@ body:not(.r-dark) #homeDailyQuote {
 }
 
 /* ══════════════════════════════════════════════════════════════════
+   v1196 — Global text scale +2px for readability (JS atomic bump covers inline styles)
+   CSS overrides cover class-driven text
+   ══════════════════════════════════════════════════════════════════ */
+html { font-size: 17px !important; }
+.p-label { font-size: 11px !important; letter-spacing: 1.6px !important; }
+.p-card-sub { font-size: 14px !important; }
+.p-card-title { font-size: 20px !important; }
+.p-btn--sm { font-size: 13px !important; }
+.p-btn--md { font-size: 15px !important; }
+.p-btn--lg { font-size: 16px !important; }
+.p-input, textarea, input[type="text"], input[type="email"], input[type="password"] { font-size: 16px !important; }
+.land-feat-quote { font-size: 15.5px !important; line-height: 1.62 !important; }
+.land-body { font-size: 16px !important; }
+#pg-landing .land-feat-card .p-body { font-size: 15px !important; }
+
+/* ══════════════════════════════════════════════════════════════════
    v1193 — Contact cards: theme-aware via CSS cascade (auto-switches)
    Per-user accent color (border-left strip, avatar ring) set in JS via _userColor
    ══════════════════════════════════════════════════════════════════ */
