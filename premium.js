@@ -23777,15 +23777,15 @@ function _btIsGenRx(t){ return t==='concuerdo'||t==='no_concuerdo'||t==='neutral
 function _btGenCatRxHtml(postId,category,rx,c){
   if(category==='apoyo'){
     var _dA=[{key:'apoyo_te',emoji:'🫂',label:'Te apoyo'},{key:'entiendo',emoji:'💙',label:'Te entiendo'},{key:'abrazo',emoji:'🤗',label:'Te abrazo'},{key:'acompano',emoji:'🕊️',label:'Te acompaño'}];
-    return '<div id="btCatRx_'+postId+'" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">'
+    return '<div id="btCatRx_'+postId+'" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">'
       +_dA.map(function(rd){ var act=rx.mine_rx===rd.key; var n=rx[rd.key]||0;
-        return '<button onclick="_btReact(\''+postId+'\',\''+rd.key+'\')" style="padding:10px 6px;border-radius:13px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.70':'.25)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px"><span style="font-size:22px;line-height:1">'+rd.emoji+'</span><span style="font-size:11px;font-weight:700">'+rd.label+'</span>'+(n>0?'<span style="font-size:9.5px;opacity:.60">'+n+'</span>':'')+'</button>';
+        return '<button onclick="_btReact(\''+postId+'\',\''+rd.key+'\')" style="padding:7px 8px;border-radius:10px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.70':'.22)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent;touch-action:manipulation"><span style="font-size:16px;line-height:1;flex-shrink:0">'+rd.emoji+'</span><span style="font-size:11px;font-weight:700;flex:1;text-align:left">'+rd.label+'</span>'+(n>0?'<span style="font-size:9.5px;opacity:.60;flex-shrink:0">'+n+'</span>':'')+'</button>';
       }).join('')+'</div>';
   }
   var _dS=[{key:'resuena',emoji:'✨',label:'Resuena'},{key:'inspiro',emoji:'🌟',label:'Me inspiró'},{key:'cambio',emoji:'💡',label:'Me cambió'}];
-  return '<div id="btCatRx_'+postId+'" style="display:flex;gap:8px;margin-bottom:16px">'
+  return '<div id="btCatRx_'+postId+'" style="display:flex;gap:6px;margin-bottom:14px">'
     +_dS.map(function(rd){ var act=rx.mine_rx===rd.key; var n=rx[rd.key]||0;
-      return '<button onclick="_btReact(\''+postId+'\',\''+rd.key+'\')" style="flex:1;padding:10px 4px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.65':'.25)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px"><span style="font-size:20px;line-height:1">'+rd.emoji+'</span><span style="font-size:11px;font-weight:700">'+rd.label+'</span><span style="font-size:10px;opacity:.65">'+n+'</span></button>';
+      return '<button onclick="_btReact(\''+postId+'\',\''+rd.key+'\')" style="flex:1;padding:7px 4px;border-radius:10px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.65':'.22)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;-webkit-tap-highlight-color:transparent;touch-action:manipulation"><span style="font-size:15px;line-height:1">'+rd.emoji+'</span><span style="font-size:11px;font-weight:700">'+rd.label+'</span>'+(n>0?'<span style="font-size:9px;opacity:.65"> '+n+'</span>':'')+'</button>';
     }).join('')+'</div>';
 }
 // Global postura card builder — used by _btOpenDetail and _btReact inline refresh
@@ -24377,15 +24377,15 @@ function _btGenRxHtml(id, rx, c){
     {key:'neutral',     emoji:'🫥', label:'Neutral'},
     {key:'no_concuerdo',emoji:'👎', label:'No concuerdo'},
   ];
-  return '<div id="btGenRx_'+id+'" style="display:flex;gap:8px;margin-bottom:16px">'
+  return '<div id="btGenRx_'+id+'" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">'
     +defs.map(function(d){
       var act=rx.mine_gen===d.key;
       var n=rx[d.key]||0;
       return '<button onclick="_btReact(\''+id+'\',\''+d.key+'\')" '
-        +'style="flex:1;padding:10px 4px;border-radius:12px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.65':'.20)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px">'
-        +'<span style="font-size:22px;line-height:1">'+d.emoji+'</span>'
-        +'<span style="font-size:11px;font-weight:700">'+d.label+'</span>'
-        +'<span style="font-size:10px;opacity:.65">'+n+'</span>'
+        +'style="flex:1;min-width:80px;padding:7px 8px;border-radius:10px;border:1.5px solid '+c.border.replace(/[\d.]+\)$/,(act?'.65':'.20)'))+';background:'+(act?c.strip:'rgba(255,255,255,.05)')+';color:'+c.label+';font-family:Jost,sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px">'
+        +'<span style="font-size:16px;line-height:1;flex-shrink:0">'+d.emoji+'</span>'
+        +'<span style="font-size:11px;font-weight:700;flex:1;text-align:left">'+d.label+'</span>'
+        +(n>0?'<span style="font-size:10px;opacity:.65;flex-shrink:0">'+n+'</span>':'')
         +'</button>';
     }).join('')
     +'</div>';
@@ -24598,6 +24598,9 @@ function _btRenderComments(comments,rxData,postId,uid,wrap){
   wrap.innerHTML=comments.map(function(cm){
     var nm=cm.is_anon?'Anónimo/a':(cm.author_name||'Alguien');
     var own=uid&&cm.user_id&&String(cm.user_id)===String(uid)&&!cm.is_anon;
+    var nmHtml=(!cm.is_anon&&cm.user_id)
+      ?'<span onclick="pQuickProfile(\''+_jsAttr(nm)+'\',\''+_jsAttr(cm.avatar_url||cm.av||'')+'\',\'\',\'\',\''+_jsAttr(String(cm.user_id))+'\')" style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px">'+_escHtml(nm)+'</span>'
+      :'<span>'+_escHtml(nm)+'</span>';
     var cmRx=rxMap[String(cm.id)]||{};
     var rxHtml='<div style="display:flex;gap:5px;margin-top:7px;flex-wrap:wrap">'
       +EMOJIS.map(function(e){
@@ -24612,7 +24615,7 @@ function _btRenderComments(comments,rxData,postId,uid,wrap){
       +'</div>';
     return '<div style="background:rgba(255,255,255,.05);border-radius:12px;padding:10px 12px">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">'
-        +'<span style="font-size:10.5px;font-weight:700;color:rgba(180,220,200,.80);font-family:Jost,sans-serif">'+_escHtml(nm)+'</span>'
+        +'<span style="font-size:10.5px;font-weight:700;color:rgba(180,220,200,.80);font-family:Jost,sans-serif">'+nmHtml+'</span>'
         +'<div style="display:flex;gap:4px">'
           +(own?'<button onclick="_btDeleteComment(\''+_escHtml(String(cm.id))+'\',\''+_escHtml(String(postId))+'\')" style="background:rgba(255,80,80,.10);border:1px solid rgba(255,80,80,.22);color:rgba(255,120,120,.72);font-size:9px;font-weight:700;font-family:Jost,sans-serif;border-radius:8px;padding:2px 6px;cursor:pointer">🗑</button>':'')
           +(!own?'<button onclick="_btReport(null,\''+_escHtml(String(cm.id))+'\')" style="background:rgba(220,60,60,.10);border:1px solid rgba(220,60,60,.18);color:rgba(255,110,110,.65);font-size:9px;font-family:Jost,sans-serif;border-radius:6px;padding:2px 6px;cursor:pointer">🚩</button>':'')
@@ -24992,7 +24995,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1162;
+    var _BUILT_V = 1163;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
