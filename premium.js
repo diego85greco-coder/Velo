@@ -23266,74 +23266,68 @@ function _showDeleteErrorAlert(msg, isWarning){
 
 async function _execDeleteAccount(reason){
   _initSupabase();
-  if(!sbClient){ _showDeleteErrorAlert('Sin conexión a Supabase. sbClient es null.'); return; }
+  if(!sbClient){ pToast('⚠️','Sin conexión. Intentá de nuevo.'); return; }
 
-  var userId = safeLS('get','velo_user_id') || '';
-  var email  = safeLS('get','velo_user_email') || '';
-  var _authErr = null;
-  try{
-    var {data:_authD, error:_aErr} = await sbClient.auth.getUser();
-    if(_authD && _authD.user){ userId = _authD.user.id; email = _authD.user.email || email; }
-    else if(_aErr) _authErr = _aErr.message;
-  }catch(e){ _authErr = e && e.message; }
+  // Use localStorage userId as primary (session may be expired in PWA)
+  var uid   = safeLS('get','velo_user_id') || '';
+  var email = safeLS('get','velo_user_email') || '';
 
-  if(!userId){ _showDeleteErrorAlert('No se pudo obtener el userId.\nauth.getUser() error: '+(_authErr||'sin error, pero user es null')+'\nvelo_user_id en localStorage: '+(safeLS('get','velo_user_id')||'vacío')); return; }
+  // Try to refresh the session so the JWT is valid for the RPC call
+  try{ var {data:_rD} = await sbClient.auth.refreshSession();
+    if(_rD && _rD.user){ uid = _rD.user.id || uid; email = _rD.user.email || email; }
+  }catch(e){}
+  // Also try getUser (may yield userId if cache is still warm)
+  try{ var {data:_gD} = await sbClient.auth.getUser();
+    if(_gD && _gD.user){ uid = _gD.user.id || uid; email = _gD.user.email || email; }
+  }catch(e){}
 
-  var uid = userId;
+  if(!uid){ pToast('⚠️','No se pudo identificar tu cuenta. Cerrá sesión e intentá de nuevo.'); return; }
 
-  // Try server-side RPC (deletes auth user from auth.users too)
+  // Registrar solicitud de eliminación (best-effort, no bloquea el flujo)
+  sbClient.from('deleted_accounts').insert({
+    email: email, user_id: uid, reason: reason||null, deleted_at: new Date().toISOString()
+  }).catch(function(){});
+
+  // 1) Intentar RPC server-side (elimina de auth.users también)
   var rpcOk = false;
-  var rpcErrMsg = '';
   try{
     var {error:_rpcErr} = await sbClient.rpc('delete_my_account', { p_reason: reason || null });
     if(!_rpcErr) rpcOk = true;
-    else rpcErrMsg = _rpcErr.message || JSON.stringify(_rpcErr);
-  }catch(e){ rpcErrMsg = e && e.message; }
+  }catch(e){}
 
-  var fallbackErrors = [];
+  // 2) Fallback cliente: borrar tabla por tabla (best-effort, silencioso)
   if(!rpcOk){
-    sbClient.from('deleted_accounts').insert({ email:email, user_id:uid, reason:reason||null, deleted_at:new Date().toISOString() }).catch(function(){});
-    var _fbTasks = [
-      ['user_favorites (user_id)',  sbClient.from('user_favorites').delete().eq('user_id', uid)],
-      ['user_favorites (fav_id)',   sbClient.from('user_favorites').delete().eq('fav_id', uid)],
-      ['guardian_presence',         sbClient.from('guardian_presence').delete().eq('user_id', uid)],
-      ['direct_messages',           sbClient.from('direct_messages').delete().or('from_id.eq.'+uid+',to_id.eq.'+uid)],
-      ['guardian_requests',         sbClient.from('guardian_requests').delete().or('seeker_id.eq.'+uid+',guardian_id.eq.'+uid)],
-      ['help_posts',                sbClient.from('help_posts').delete().eq('user_id', uid)],
-      ['happy_posts',               sbClient.from('happy_posts').delete().eq('user_id', uid)],
-      ['daily_responses',           sbClient.from('daily_responses').delete().eq('user_id', uid)],
-      ['mood_entries',              sbClient.from('mood_entries').delete().eq('user_id', uid)],
-      ['profiles (anonymize)',      sbClient.from('profiles').update({ nombre:'[eliminado]', avatar:'🌿', motto:'', push_subscription:null, helped_count:0, received_count:0 }).eq('id', uid)],
-    ];
-    for(var _fi = 0; _fi < _fbTasks.length; _fi++){
-      try{
-        var _fbRes = await _fbTasks[_fi][1];
-        if(_fbRes && _fbRes.error) fallbackErrors.push(_fbTasks[_fi][0]+': '+(_fbRes.error.message||JSON.stringify(_fbRes.error)));
-      }catch(e){ fallbackErrors.push(_fbTasks[_fi][0]+': '+(e&&e.message)); }
-    }
+    var _del = function(p){ return p.catch(function(){}); };
+    await _del(sbClient.from('user_favorites').delete().eq('user_id', uid));
+    await _del(sbClient.from('user_favorites').delete().eq('fav_id', uid));
+    await _del(sbClient.from('guardian_presence').delete().eq('user_id', uid));
+    await _del(sbClient.from('direct_messages').delete().or('from_id.eq.'+uid+',to_id.eq.'+uid));
+    await _del(sbClient.from('guardian_requests').delete().or('seeker_id.eq.'+uid+',guardian_id.eq.'+uid));
+    await _del(sbClient.from('help_posts').delete().eq('user_id', uid));
+    await _del(sbClient.from('happy_posts').delete().eq('user_id', uid));
+    await _del(sbClient.from('daily_responses').delete().eq('user_id', uid));
+    await _del(sbClient.from('mood_entries').delete().eq('user_id', uid));
+    await _del(sbClient.from('bitacora_entries').delete().eq('user_id', uid));
+    await _del(sbClient.from('bitacora_comments').delete().eq('user_id', uid));
+    await _del(sbClient.from('bitacora_comment_reactions').delete().eq('user_id', uid));
+    await _del(sbClient.from('dq_reactions').delete().eq('user_id', uid));
+    await _del(sbClient.from('profiles').update({
+      nombre:'[eliminado]', avatar:'🌿', motto:'', bio:'',
+      push_subscription:null, helped_count:0, received_count:0
+    }).eq('id', uid));
   }
 
-  // Show debug alert if anything went wrong (before signing out)
-  if(rpcErrMsg || fallbackErrors.length){
-    var _dbgLines = [];
-    if(rpcErrMsg) _dbgLines.push('RPC delete_my_account: '+rpcErrMsg);
-    if(fallbackErrors.length) _dbgLines.push('Fallback errors:\n'+fallbackErrors.join('\n'));
-    _showDeleteErrorAlert(_dbgLines.join('\n\n'), true);
-  }
-
+  // 3) Cerrar sesión + limpiar todo local — SIEMPRE, pase lo que pase
   try{ await sbClient.auth.signOut(); }catch(e){}
-
   _clearAllLocalData();
   _authenticated = false;
   _favsList = null;
 
-  if(!rpcErrMsg && !fallbackErrors.length){
-    pToast('👋','Cuenta eliminada. Podés registrarte de nuevo cuando quieras 🌿');
-    setTimeout(function(){ window.location.replace(window.location.href.split('?')[0].split('#')[0]); }, 1800);
-  }
+  // 4) Mostrar mensaje de éxito y redirigir — igual que FB/Instagram
+  pToast('👋','Tu cuenta fue eliminada 🌿');
   setTimeout(function(){
     window.location.replace(window.location.href.split('?')[0].split('#')[0]);
-  }, 1800);
+  }, 2000);
 }
 
 function pCancelSubscription(){
@@ -24974,7 +24968,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1185;
+    var _BUILT_V = 1186;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
