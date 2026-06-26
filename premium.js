@@ -4159,29 +4159,16 @@ function _updateMoodChip(){
   var today = _dateKey ? _dateKey() : '';
   var emoji = null; var label = '';
   if(today){ try{ var _cm=JSON.parse(safeLS('get','velo_mood_'+today)||'null'); if(_cm){emoji=_cm.emoji||null;label=_cm.label||'';} }catch(e){} }
-  var isDark = document.body.classList.contains('r-dark');
   var hasEntry = !!emoji;
-  var bg = isDark
-    ? (hasEntry ? 'linear-gradient(145deg,rgba(18,72,40,.94),rgba(10,48,26,.92))' : 'linear-gradient(145deg,rgba(14,58,32,.92),rgba(8,38,20,.90))')
-    : (hasEntry ? 'linear-gradient(145deg,rgba(255,255,255,.96),rgba(240,252,245,.94))' : 'linear-gradient(145deg,rgba(255,255,255,.94),rgba(238,252,244,.92))');
-  var border = isDark ? 'rgba(116,198,157,.65)' : 'rgba(74,160,110,.55)';
-  var textColor = isDark ? 'rgba(230,255,240,.98)' : 'rgba(8,52,24,.92)';
-  var subColor = isDark ? 'rgba(116,198,157,.95)' : 'rgba(38,120,70,.80)';
-  var shadow = isDark ? '0 4px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(116,198,157,.12)' : '0 4px 18px rgba(74,160,110,.18),inset 0 1px 0 rgba(255,255,255,.80)';
-  var emojiRing = isDark ? 'rgba(116,198,157,.22)' : 'rgba(74,160,110,.14)';
-  var glow = isDark ? 'rgba(116,198,157,.25)' : 'rgba(74,160,110,.18)';
   chip.innerHTML =
-    '<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:'+bg+';border:1.5px solid '+border+';border-radius:20px;box-shadow:'+shadow+';position:relative;overflow:hidden">'
-    +'<div style="position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:64px;height:64px;border-radius:50%;background:radial-gradient(circle,'+glow+' 0%,transparent 70%);pointer-events:none"></div>'
-    +'<div style="position:relative;z-index:1;width:48px;height:48px;border-radius:16px;background:'+emojiRing+';border:1.5px solid '+border+';display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;box-shadow:0 2px 12px '+glow+'">'+(emoji||'💚')+'</div>'
-    +'<div style="position:relative;z-index:1;flex:1;min-width:0">'
-    +'<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:'+subColor+';font-family:Jost,sans-serif;margin-bottom:5px">✦ Registrá tus ánimos</div>'
-    +(hasEntry
-      ? '<div style="font-size:17px;font-weight:800;color:'+textColor+';font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(label||'Registrado hoy')+'</div>'
-      : '<div style="font-size:17px;font-weight:800;color:'+textColor+';font-family:Jost,sans-serif;line-height:1.2">¿Cómo te sentís hoy?</div>'
-    )
+    '<div class="mcc-wrap'+(hasEntry?' mcc-has-entry':'')+'">'
+    +'<div class="mcc-glow"></div>'
+    +'<div class="mcc-icon">'+(emoji||'💚')+'</div>'
+    +'<div class="mcc-text">'
+    +'<div class="mcc-label">✦ Registrá tus ánimos</div>'
+    +'<div class="mcc-main">'+(hasEntry?_escHtml(label||'Registrado hoy'):'¿Cómo te sentís hoy?')+'</div>'
     +'</div>'
-    +'<span style="position:relative;z-index:1;font-size:24px;font-weight:300;color:'+subColor+';flex-shrink:0;line-height:1">›</span>'
+    +'<span class="mcc-arrow">›</span>'
     +'</div>';
 }
 
@@ -4461,24 +4448,24 @@ function _buildDqCards(list){
     var avEmoji = r.user_avatar && !r.user_avatar.startsWith('http') ? r.user_avatar : '';
     var avLetter = (r.user_name||'A')[0].toUpperCase();
     var avInner = avUrl
-      ? '<img src="'+_escHtml(avUrl)+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid '+col.border+'">'
-      : '<div style="width:40px;height:40px;border-radius:50%;flex-shrink:0;background:'+col.badge+';border:2px solid '+col.border+';display:flex;align-items:center;justify-content:center;font-size:'+(avEmoji?'20':'14')+'px;font-weight:700;color:'+col.label+'">'+(avEmoji||avLetter)+'</div>';
+      ? '<img src="'+_escHtml(avUrl)+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid '+col.border+'">'
+      : '<div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;background:'+col.badge+';border:1.5px solid '+col.border+';display:flex;align-items:center;justify-content:center;font-size:'+(avEmoji?'18':'13')+'px;font-weight:700;color:'+col.label+'">'+(avEmoji||avLetter)+'</div>';
     return '<div class="dq-feed-card home-mc" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
-      +' style="display:flex;align-items:flex-start;gap:12px;background:'+col.bg+';border:1.5px solid '+col.border+';border-radius:16px;cursor:pointer;flex-shrink:0;width:100%;box-sizing:border-box;box-shadow:0 3px 16px '+col.glow+'">'
+      +' style="display:flex;align-items:flex-start;gap:10px;background:'+col.bg+';border:1.5px solid '+col.border+';border-radius:14px;cursor:pointer;flex-shrink:0;width:100%;box-sizing:border-box;box-shadow:0 2px 12px '+col.glow+'">'
       +avInner
       +'<div style="flex:1;min-width:0;overflow:hidden">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:5px">'
-          +'<span style="font-size:15px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.user_name||'Alguien')+'</span>'
-          +'<span style="font-size:12px;color:'+col.label+';opacity:.55;font-family:Jost,sans-serif;flex-shrink:0;margin-right:6px">'+_momentoAgo(r.created_at||'')+'</span>'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:4px">'
+          +'<span style="font-size:13px;font-weight:700;color:'+col.label+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.user_name||'Alguien')+'</span>'
+          +'<span style="font-size:11px;color:'+col.label+';opacity:.50;font-family:Jost,sans-serif;flex-shrink:0;margin-right:4px">'+_momentoAgo(r.created_at||'')+'</span>'
         +'</div>'
         +(r.response_text
-          ? '<div style="background:'+col.badge+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.28)')+';border-radius:10px 10px 10px 2px;padding:7px 10px;margin-bottom:4px">'
-            +'<div style="font-size:15px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+col.label+';line-height:1.44;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(r.mood_emoji||'💭')+' '+_escHtml(r.response_text)+'</div>'
+          ? '<div style="background:'+col.badge+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.25)')+';border-radius:8px 8px 8px 2px;padding:5px 8px;margin-bottom:3px">'
+            +'<div style="font-size:13px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:'+col.label+';line-height:1.40;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+_escHtml(r.mood_emoji||'💭')+' '+_escHtml(r.response_text)+'</div>'
             +'</div>'
-            +'<div style="font-size:11px;color:'+col.label.replace(/[\d.]+\)$/,'0.42)')+';font-family:Jost,sans-serif;letter-spacing:.2px;margin-bottom:5px">💬 Toca para comentar o reaccionar</div>'
-          : '<div style="font-size:24px;margin-bottom:7px">'+_escHtml(r.mood_emoji||'💭')+'</div>')
-        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
-          +'<span class="dq-rx-meta" style="font-size:12px;font-weight:700;color:'+col.border+';font-family:Jost,sans-serif;flex-shrink:0;white-space:nowrap">'+(_totalRx>0?'💚 '+_totalRx+' · ':'')+'Ver →</span>'
+            +'<div style="font-size:10px;color:'+col.label.replace(/[\d.]+\)$/,'0.38)')+';font-family:Jost,sans-serif;letter-spacing:.1px;margin-bottom:4px">💬 Toca para comentar</div>'
+          : '<div style="font-size:20px;margin-bottom:5px">'+_escHtml(r.mood_emoji||'💭')+'</div>')
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:4px">'
+          +'<span class="dq-rx-meta" style="font-size:11px;font-weight:700;color:'+col.border+';font-family:Jost,sans-serif;flex-shrink:0;white-space:nowrap">'+(_totalRx>0?'💚 '+_totalRx+' · ':'')+'Ver →</span>'
           +actionBtn
         +'</div>'
       +'</div>'
@@ -4522,18 +4509,18 @@ async function pOpenDqResponseSheet(responseId){
   var rxHtml = rxDefs.map(function(rx){
     var rd = _m[rx.key] || {count:0,mine:false};
     var rc = _rxColors[rx.key];
-    var bg = rd.mine ? rc.activeBg : 'rgba(255,255,255,.95)';
-    var bdr = rd.mine ? rc.border : 'rgba(0,0,0,.10)';
-    var txtCol = rd.mine ? rc.txt : 'rgba(30,30,30,.75)';
-    var glow = rd.mine ? '0 0 20px '+rc.glow+',0 2px 8px '+rc.glow : 'none';
-    var emojiScale = rd.mine ? 'transform:scale(1.18);filter:drop-shadow(0 0 8px '+rc.glow+')' : '';
+    var bg = rd.mine ? rc.activeBg : 'rgba(255,255,255,.08)';
+    var bdr = rd.mine ? rc.border : col.border.replace(/[\d.]+\)$/,'0.22)');
+    var txtCol = rd.mine ? rc.txt : _labelDim;
+    var glow = rd.mine ? '0 0 14px '+rc.glow+',0 2px 6px '+rc.glow : 'none';
+    var emojiScale = rd.mine ? 'transform:scale(1.12);filter:drop-shadow(0 0 6px '+rc.glow+')' : '';
     return '<button class="dq-reaction-btn" onclick="pToggleDqReaction(\''+responseId+'\',\''+rx.key+'\',this)" '
       +'data-rid="'+responseId+'" data-rtype="'+rx.key+'" data-active="'+rd.mine+'" '
-      +'style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px 6px 14px;background:'+bg+';border:1.5px solid '+bdr+';border-radius:22px;cursor:pointer;transition:all .22s;box-shadow:'+glow+';font-family:Jost,sans-serif;box-sizing:border-box">'
-      +'<span style="font-size:30px;line-height:1;display:block;transition:all .22s;'+emojiScale+'">'+rx.emoji+'</span>'
-      +'<span class="rx-txt" style="font-size:12px;font-weight:700;color:'+txtCol+';text-align:center;letter-spacing:.3px;transition:color .22s;line-height:1.3">'+rx.label+'</span>'
+      +'style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:9px 5px 8px;background:'+bg+';border:1px solid '+bdr+';border-radius:14px;cursor:pointer;transition:all .22s;box-shadow:'+glow+';font-family:Jost,sans-serif;box-sizing:border-box">'
+      +'<span style="font-size:20px;line-height:1;display:block;transition:all .22s;'+emojiScale+'">'+rx.emoji+'</span>'
+      +'<span class="rx-txt" style="font-size:10.5px;font-weight:700;color:'+txtCol+';text-align:center;letter-spacing:.2px;transition:color .22s;line-height:1.25">'+rx.label+'</span>'
       +(rd.count>0
-        ? '<span class="rx-cnt" style="font-size:11px;font-weight:800;color:'+txtCol+';opacity:.65;min-height:13px">'+rd.count+'</span>'
+        ? '<span class="rx-cnt" style="font-size:10px;font-weight:800;color:'+txtCol+';opacity:.65;min-height:12px">'+rd.count+'</span>'
         : '<span class="rx-cnt" style="display:none"></span>')
       +'</button>';
   }).join('');
@@ -4571,10 +4558,10 @@ async function pOpenDqResponseSheet(responseId){
     // Body
     +'<div style="padding:18px 18px calc(max(20px, env(safe-area-inset-bottom, 20px)) + 8px);text-align:center">'
     +(r.response_text
-      ? '<div style="margin-bottom:18px;padding:22px 20px 26px;background:rgba(255,252,240,.97);border-radius:20px;border:1.5px solid '+col.border.replace(/[\d.]+\)$/,'0.40)')+';position:relative;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.22)">'
-        +'<div style="position:absolute;top:0;left:0;width:4px;height:100%;background:'+col.strip.replace(/[\d.]+\)$/,'0.82)')+'"></div>'
-        +'<div style="font-size:72px;font-family:\'Cormorant Garamond\',serif;color:'+col.border.replace(/[\d.]+\)$/,'0.22)')+';line-height:.65;margin-bottom:10px;user-select:none;padding-left:18px;text-align:left">❝</div>'
-        +'<div style="font-size:24px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:rgba(25,35,28,.88);line-height:1.58;padding:0 8px 0 20px;letter-spacing:.3px;text-align:left">'+_escHtml(r.response_text)+'</div>'
+      ? '<div style="margin-bottom:16px;padding:18px 18px 20px;background:rgba(255,255,255,.08);border-radius:18px;border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.28)')+';position:relative;overflow:hidden;box-shadow:0 2px 18px rgba(0,0,0,.18)">'
+        +'<div style="position:absolute;top:0;left:0;width:3px;height:100%;background:'+col.strip.replace(/[\d.]+\)$/,'0.80)')+'"></div>'
+        +'<div style="font-size:48px;font-family:\'Cormorant Garamond\',serif;color:'+col.border.replace(/[\d.]+\)$/,'0.28)')+';line-height:.60;margin-bottom:8px;user-select:none;padding-left:14px;text-align:left">❝</div>'
+        +'<div style="font-size:20px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:600;color:'+_labelFull+';line-height:1.55;padding:0 6px 0 16px;letter-spacing:.2px;text-align:left">'+_escHtml(r.response_text)+'</div>'
         +'</div>'
       : '')
     +_zenDiv
@@ -25132,7 +25119,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1204;
+    var _BUILT_V = 1205;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
