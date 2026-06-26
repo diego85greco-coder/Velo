@@ -12004,11 +12004,11 @@ body.velo-t-noche.r-dark #homeGreetSub {
   flex-shrink: 0 !important;
   width: 83% !important;
   scroll-snap-align: none !important;
-  height: 185px !important;
-  padding: 13px 14px !important;
+  height: auto !important;
+  padding: 12px 13px !important;
   border-radius: 16px !important;
   box-sizing: border-box !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   position: relative !important;
   /* background/border/shadow set inline per card via _userColorDark/Light */
 }
