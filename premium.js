@@ -23512,12 +23512,22 @@ async function _execDeleteAccount(reason){
           email: email, user_id: uid, reason: reason||null, deleted_at: new Date().toISOString()
         }).catch(function(){}); }catch(e){}
 
-        // 1) Intentar RPC server-side (elimina de auth.users también)
-        var rpcOk = false;
+        // 0) Intentar Edge Function `delete-account` (service-role → borra auth.users → libera email)
+        //    Si la function no está deployada todavía, sigue al RPC + fallback (no rompe nada).
+        var edgeOk = false;
         try{
-          var {error:_rpcErr} = await sbClient.rpc('delete_my_account', { p_reason: reason || null });
-          if(!_rpcErr) rpcOk = true;
+          var _fnRes = await sbClient.functions.invoke('delete-account', { body:{ reason: reason||null } });
+          if(_fnRes && !_fnRes.error) edgeOk = true;
         }catch(e){}
+
+        // 1) Intentar RPC server-side (elimina de auth.users también)
+        var rpcOk = edgeOk; // si Edge Function ya borró auth.users, no necesitamos el RPC
+        if(!edgeOk){
+          try{
+            var {error:_rpcErr} = await sbClient.rpc('delete_my_account', { p_reason: reason || null });
+            if(!_rpcErr) rpcOk = true;
+          }catch(e){}
+        }
 
         // 2) Fallback cliente: borrar tabla por tabla (best-effort, silencioso)
         if(!rpcOk){
