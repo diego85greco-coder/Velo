@@ -23796,7 +23796,10 @@ function _btGenCatRxHtml(postId,category,rx,c){
 function _btMkPosturaCard(postId,key,label,desc,pct,active,c){
   var bord=c.border.replace(/[\d.]+\)$/,(active?'.65':'.25)'));
   var bg=active?c.strip:'rgba(255,255,255,.05)';
-  var hasVoted=(_btReactMap[postId]||_btEmptyRx()).mine_postura;
+  var rxData=_btReactMap[postId]||_btEmptyRx();
+  var hasVoted=rxData.mine_postura;
+  var voteCount=rxData[key]||0;
+  var voteTxt=voteCount===0?'Sin votos':voteCount+(voteCount===1?' persona':' personas');
   return '<div onclick="_btReact(\''+postId+'\',\''+key+'\')" style="flex:1;border:1.5px solid '+bord+';border-radius:14px;background:'+bg+';cursor:pointer;overflow:hidden">'
     +'<div style="padding:10px 12px 8px">'
       +'<div style="font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.50);font-family:Jost,sans-serif;margin-bottom:5px">'+label+'</div>'
@@ -23807,6 +23810,7 @@ function _btMkPosturaCard(postId,key,label,desc,pct,active,c){
         +'</div>'
         +'<span style="font-size:11px;font-weight:800;color:rgba(255,255,255,.90);font-family:Jost,sans-serif">'+pct+'%</span>'
       +'</div>'
+      +'<div style="font-size:9.5px;color:rgba(255,255,255,.38);font-family:Jost,sans-serif;margin-top:4px">'+voteTxt+'</div>'
     +'</div>'
     +(active
       ?'<div style="background:'+c.strip+';padding:4px 12px;text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.95);font-family:Jost,sans-serif">✓ Tu voto</div>'
@@ -24649,15 +24653,15 @@ function _btCmReact(commentId,emoji,postId){
   if(!sbClient) return;
   sbClient.from('bitacora_comment_reactions').select('id').eq('comment_id',commentId).eq('user_id',uid).eq('emoji',emoji).limit(1)
     .then(function(res){
-      if(res.error) return;
+      if(res.error){ pToast('⚠️ '+res.error.message); return; }
       if(res.data&&res.data.length){
         sbClient.from('bitacora_comment_reactions').delete().eq('id',res.data[0].id)
-          .then(function(){ _btLoadComments(postId); });
+          .then(function(r){ if(r&&r.error) pToast('⚠️ '+r.error.message); else _btLoadComments(postId); });
       } else {
         sbClient.from('bitacora_comment_reactions').insert({comment_id:commentId,user_id:uid,emoji:emoji})
-          .then(function(r){ if(!r.error) _btLoadComments(postId); });
+          .then(function(r){ if(r&&r.error) pToast('⚠️ '+r.error.message); else _btLoadComments(postId); });
       }
-    }).catch(function(){});
+    }).catch(function(e2){ pToast('⚠️ '+(e2&&e2.message||'Error al reaccionar')); });
 }
 
 function _btSendComment(postId){
@@ -25010,7 +25014,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1171;
+    var _BUILT_V = 1172;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
