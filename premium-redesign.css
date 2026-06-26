@@ -178,15 +178,10 @@ body::after {
 }
 .r-time-icon svg, .r-time-icon img {
   width: 48px; height: 48px;
-  animation: rTimeFloat 14s ease-in-out infinite;
   filter: drop-shadow(0 3px 8px rgba(255, 217, 102, .18));
 }
 .r-time-icon.is-afternoon svg, .r-time-icon.is-afternoon img { filter: drop-shadow(0 3px 8px rgba(244, 142, 60, .18)); }
 .r-time-icon.is-night svg,     .r-time-icon.is-night img     { filter: drop-shadow(0 3px 8px rgba(232, 200, 121, .15)); }
-@keyframes rTimeFloat {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-3px); }
-}
 
 /* ── 4. Greeting bar (avatar + mood + mi estado) ────────────────── */
 .home-greeting {
@@ -8617,7 +8612,7 @@ input.p-input, textarea.p-textarea, .p-input, .p-textarea {
   justify-content: center !important;
   width: 190px !important;
   height: 190px !important;
-  animation: rTimeFloat 5s ease-in-out infinite !important;
+  animation: none !important;
 }
 .weather-hero-emoji {
   font-size: 130px !important;
