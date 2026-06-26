@@ -4233,9 +4233,11 @@ function _initDqThemeObserver(){
   _dqThemeObserverSet = true;
   var _dqThemeTimer = null;
   var obs = new MutationObserver(function(){
-    if(!_dqAllResponses || !_dqAllResponses.length) return;
     clearTimeout(_dqThemeTimer);
-    _dqThemeTimer = setTimeout(function(){ _renderDailyFeed(_dqAllResponses); }, 60);
+    _dqThemeTimer = setTimeout(function(){
+      _updateMoodChip();
+      if(_dqAllResponses && _dqAllResponses.length) _renderDailyFeed(_dqAllResponses);
+    }, 60);
   });
   obs.observe(document.body, {attributes:true, attributeFilter:['class']});
 }
@@ -25130,7 +25132,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1201;
+    var _BUILT_V = 1202;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
