@@ -4342,7 +4342,7 @@ function _buildDqCards(list){
       ? '<img src="'+_escHtml(avUrl)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid rgba(116,198,157,.40)">'
       : '<div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.32);display:flex;align-items:center;justify-content:center;font-size:'+(avEmoji?'19':'14')+'px;font-weight:700;color:rgba(180,240,210,.85)">'+(avEmoji||avLetter)+'</div>';
     return '<div class="dq-feed-card home-mc" data-response-id="'+_escHtml(String(r.id))+'" onclick="pOpenDqResponseSheet(\''+_escHtml(String(r.id))+'\')"'
-      +' style="display:flex;align-items:flex-start;gap:11px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:13px 14px;cursor:pointer;scroll-snap-align:start;flex-shrink:0;width:100%;box-sizing:border-box">'
+      +' style="display:flex;align-items:flex-start;gap:11px;background:rgba(255,255,255,.11);border-radius:14px;padding:13px 14px;cursor:pointer;scroll-snap-align:start;flex-shrink:0;width:100%;box-sizing:border-box">'
       +avInner
       +'<div style="flex:1;min-width:0">'
         +'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-bottom:5px">'
@@ -24965,7 +24965,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1180;
+    var _BUILT_V = 1181;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
