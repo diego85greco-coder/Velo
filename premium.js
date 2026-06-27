@@ -25036,10 +25036,12 @@ function _btRenderComments(comments,rxData,postId,uid,wrap){
   });
   var EMOJIS=[{k:'heart',i:'❤️'},{k:'clap',i:'🙌'},{k:'hug',i:'🫂'}];
   wrap.innerHTML=comments.map(function(cm){
-    var nm=cm.is_anon?'Anónimo/a':(cm.author_name||'Alguien');
     var own=uid&&cm.user_id&&String(cm.user_id)===String(uid)&&!cm.is_anon;
+    // Si el comentario es del usuario actual y viene sin nombre/avatar, usar localStorage
+    var nm = cm.is_anon ? 'Anónimo/a'
+                       : (cm.author_name || (own ? (safeLS('get','velo_user_name')||'Alguien') : 'Alguien'));
     var canClick=!cm.is_anon;
-    var avUrl=cm.avatar_url||cm.av||'';
+    var avUrl = cm.avatar_url || cm.av || (own && !cm.is_anon ? (safeLS('get','velo_user_av')||'') : '');
     var profileArgs='\''+_jsAttr(nm)+'\',\''+_jsAttr(avUrl)+'\',\'\',\'\',\''+_jsAttr(String(cm.user_id||''))+'\'';
     var avClickAttr=canClick?'onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer;flex-shrink:0"':'style="cursor:default;flex-shrink:0"';
     // Avatar: 40px circle with ring glow
@@ -25105,7 +25107,7 @@ function _btCmReact(commentId,emoji,postId){
     }).catch(function(e2){ pToast('⚠️ '+(e2&&e2.message||'Error al reaccionar')); });
 }
 
-function _btSendComment(postId){
+async function _btSendComment(postId){
   var input=document.getElementById('btCommentInput');
   if(!input) return;
   var text=(input.value||'').trim();
@@ -25116,6 +25118,23 @@ function _btSendComment(postId){
   input.disabled=true;
   var anonChk = document.getElementById('btCommentAnon');
   var _btAnon = !!(anonChk && anonChk.checked);
+  // Si NO es anónimo, garantizar que profile.nombre/avatar estén poblados con
+  // los valores actuales del usuario — sino la vista bitacora_comments_full
+  // devuelve nombre/avatar vacíos y el comentario queda como Alguien + 🌿
+  if(!_btAnon){
+    var localName = safeLS('get','velo_user_name') || '';
+    var localAv   = safeLS('get','velo_user_av') || '';
+    if(localName || localAv){
+      try{
+        var update = {};
+        if(localName && localName !== 'Anónimo' && localName !== 'Alguien') update.nombre = localName;
+        if(localAv && !localAv.startsWith('data:')) update.avatar = localAv;
+        if(Object.keys(update).length){
+          await sbClient.from('profiles').update(update).eq('id', uid);
+        }
+      }catch(e){}
+    }
+  }
   sbClient.from('bitacora_comments').insert({post_id:postId,user_id:uid,content:text,is_anon:_btAnon}).then(function(res){
     if(input) input.disabled=false;
     if(res.error){ pToast('Error al enviar'); return; }
@@ -25457,7 +25476,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1218;
+    var _BUILT_V = 1219;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
