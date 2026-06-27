@@ -4022,9 +4022,13 @@ async function _fetchDailyFeed(qId){
   if(!_dqRtCh && sbClient){
     var _dqToday = today;
     _dqRtCh = _sbSub('velo:dq:'+_dqToday, 'daily_responses', function(payload){
-      // Handle INSERT (payload.new) and DELETE (payload.old)
+      // Handle INSERT (payload.new), UPDATE (payload.new) and DELETE (payload.old)
       var _evDate = (payload.new && payload.new.question_date) || (payload.old && payload.old.question_date);
-      if(_evDate === _dqToday){ _fetchDailyFeed(qId); }
+      if(_evDate !== _dqToday) return;
+      // Re-fetch feed (renders new card), pulse count, and community pulse bar in parallel
+      _fetchDailyFeed(qId);
+      try{ _fetchDailyCount(); }catch(e){}
+      try{ if(typeof _loadCommunityPulse === 'function') _loadCommunityPulse(); }catch(e){}
     });
   }
   // Subscribe to real-time reaction counts — updates cards surgically, no carousel rebuild
@@ -4048,22 +4052,28 @@ async function _fetchDailyFeed(qId){
       if(rid) _updateDqCardReactions(String(rid));
     });
   }
-  // 30s feed poll — reliable fallback when Supabase RT subscription misses inserts
+  // 15s feed poll — reliable fallback when Supabase RT subscription misses inserts
   if(!_dqFeedPollTmr && sbClient){
     var _pollQId = qId;
     _dqFeedPollTmr = setInterval(function(){
       if(document.hidden) return;
       _fetchDailyFeed(_pollQId);
-    }, 30000);
+      try{ _fetchDailyCount(); }catch(e){}
+    }, 15000);
   }
   // 20s poll + visibility-change handler: reliable fallback for Supabase RLS gaps
   _startDqReactPoll();
   if(!_dqVisHandler){
     _dqVisHandler = async function(){
-      if(document.hidden || !_dqAllResponses.length || !sbClient) return;
-      var ids = _dqAllResponses.map(function(r){ return r.id; });
-      await _loadDqReactions(ids);
-      ids.forEach(function(id){ _updateDqCardReactions(String(id)); });
+      if(document.hidden || !sbClient) return;
+      // On return-to-tab, refresh everything: feed, count, and reactions
+      try{ _fetchDailyFeed(qId); }catch(e){}
+      try{ _fetchDailyCount(); }catch(e){}
+      if(_dqAllResponses && _dqAllResponses.length){
+        var ids = _dqAllResponses.map(function(r){ return r.id; });
+        await _loadDqReactions(ids);
+        ids.forEach(function(id){ _updateDqCardReactions(String(id)); });
+      }
     };
     document.addEventListener('visibilitychange', _dqVisHandler);
   }
@@ -4337,24 +4347,22 @@ function _renderDailyFeed(responses){
   var _dqHidden = []; try{ _dqHidden = JSON.parse(safeLS('get','velo_dq_hidden')||'[]'); }catch(e){}
   var myUid2 = safeLS('get','velo_user_id')||'';
   var myResp2 = responses.find(function(r){ return r.user_id === myUid2; });
-  // Update "Tu respuesta" badge
+  // Update "Tu respuesta" badge — pills inline para que sea un solo chip orgánico
   var myBadge2 = document.getElementById('homeDailyQMyResp');
   if(myBadge2 && myResp2){
-    var _myText2 = 'Tu respuesta: '+(myResp2.mood_emoji||'')+( myResp2.response_text?' · '+myResp2.response_text.slice(0,30)+(myResp2.response_text.length>30?'…':''):'');
-    myBadge2.textContent = _myText2;
+    var _bText = (myResp2.mood_emoji||'')+(myResp2.response_text?' · '+myResp2.response_text.slice(0,28)+(myResp2.response_text.length>28?'…':''):'');
+    var _rxMapInline = _dqReactMap[myResp2.id] || {};
+    var _rxInline = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
+      .filter(function(rx){ return _rxMapInline[rx.k]&&_rxMapInline[rx.k].count>0; })
+      .map(function(rx){ return '<span style="margin-left:8px;display:inline-flex;align-items:center;gap:3px;font-size:12px;color:rgba(255,220,90,.95);font-weight:700">'+rx.e+'<span style="font-size:11px">'+_rxMapInline[rx.k].count+'</span></span>'; })
+      .join('');
+    myBadge2.innerHTML = '<span style="opacity:.78">Tu respuesta:</span>&nbsp;'+_escHtml(_bText)+_rxInline;
     myBadge2.style.display = 'flex';
     myBadge2.style.alignItems = 'center';
   }
+  // Ocultar la fila separada de pills — ahora viven dentro de "Tu respuesta"
   var _rxPillsEl2 = document.getElementById('homeDailyQMyRxPills');
-  if(_rxPillsEl2 && myResp2){
-    var _rxMap2 = _dqReactMap[myResp2.id] || {};
-    var _rxHtml2 = [{k:'identifico',e:'💚',lbl:'Me identificaron'},{k:'abrazo',e:'🫂',lbl:'Te abrazaron'},{k:'entiendo',e:'💙',lbl:'Te entendieron'}]
-      .filter(function(rx){ return _rxMap2[rx.k]&&_rxMap2[rx.k].count>0; })
-      .map(function(rx){ return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(200,158,56,.12);border:1px solid rgba(200,158,56,.28);border-radius:20px;padding:4px 11px;font-size:14px">'+rx.e+'<span style="font-size:12px;font-weight:700;color:rgba(200,155,40,.90);font-family:Jost,sans-serif">'+_rxMap2[rx.k].count+'</span></span>'; })
-      .join('');
-    _rxPillsEl2.innerHTML = _rxHtml2;
-    _rxPillsEl2.style.display = _rxHtml2 ? 'flex' : 'none';
-  }
+  if(_rxPillsEl2){ _rxPillsEl2.style.display = 'none'; _rxPillsEl2.innerHTML = ''; }
   // Update count from actual data — avoids stale "Sé el primero" text
   var _totalCount = responses.length;
   var _countTxt = _totalCount === 0 ? 'Sé el primero en responder ✨'
@@ -22679,12 +22687,15 @@ function _renderMomentoComments(comments,col,lightMode){
   var strip=col?col.strip:'rgba(116,198,157,1)';
   var bg=col?col.bg:'rgba(6,28,18,.92)';
   var ca=function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
-  var textColor=lightMode?'rgba(20,25,20,.88)':'rgba(255,255,255,.92)';
-  var textDim=lightMode?'rgba(60,70,60,.42)':'rgba(255,255,255,.32)';
-  var nameLbl=lightMode?'rgba(20,60,30,.90)':ca(lbl,'.95');
-  var bubbleBg=lightMode?'rgba(255,249,220,.97)':ca(strip,'.14');
-  var bubbleBdr=lightMode?'rgba(0,0,0,.09)':ca(brd,'.28');
-  var bubbleLeft=lightMode?ca(brd,'.55'):ca(brd,'.70');
+  // Bubble (cream cuando lightMode) — el TEXTO ADENTRO es oscuro contra crema
+  var textColor=lightMode?'rgba(20,25,20,.92)':'rgba(255,255,255,.92)';
+  // NOMBRE y FECHA viven FUERA del bubble — sobre el sheet OSCURO siempre,
+  // entonces tienen que ser CLAROS aunque el bubble sea crema
+  var nameLbl=ca(lbl,'.96');
+  var textDim='rgba(255,255,255,.50)';
+  var bubbleBg=lightMode?'rgba(255,249,220,.98)':ca(strip,'.14');
+  var bubbleBdr=lightMode?'rgba(200,170,80,.45)':ca(brd,'.28');
+  var bubbleLeft=lightMode?'rgba(220,170,40,.85)':ca(brd,'.70');
   if(!comments||!comments.length){
     return '<div style="text-align:center;padding:28px 8px 20px;font-family:\'Jost\',sans-serif">'
       +'<div style="font-size:36px;margin-bottom:10px;opacity:.60">💬</div>'
@@ -22695,14 +22706,24 @@ function _renderMomentoComments(comments,col,lightMode){
   return comments.map(function(c){
     var av=c.user_avatar||''; var isImg=av&&av.startsWith('http');
     var name=c.user_name||'Anónimo/a';
+    var isAnon = (name === 'Anónimo' || name === 'Anónimo/a' || name === 'anónimo');
+    // Avatar fill — para Anónimo usamos 🕊️ (paloma) que es el icono asociado; default 🌿
+    var avEmoji = av || (isAnon ? '🕊️' : '🌿');
+    // Solid bg (no gradient that swallows the emoji) + tamaño 40px con emoji 22px
+    var avBg = isAnon
+      ? (lightMode ? 'rgba(180,210,245,.95)' : 'rgba(60,100,170,.45)')
+      : ca(strip,'.55');
+    var avBdr = isAnon
+      ? (lightMode ? 'rgba(95,140,210,.65)' : ca(brd,'.65'))
+      : ca(brd,'.65');
     var avHtml=isImg
-      ?'<img src="'+_escHtml(av)+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid '+ca(brd,'.55')+';flex-shrink:0">'
-      :'<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,'+ca(strip,'.40')+','+ca(bg,'1')+');display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;border:2px solid '+ca(brd,'.50')+'">'+_escHtml(av||'🌿')+'</div>';
-    return '<div style="display:flex;gap:10px;margin-bottom:14px;align-items:flex-start">'
+      ?'<img src="'+_escHtml(av)+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid '+ca(brd,'.60')+';flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.18)">'
+      :'<div style="width:40px;height:40px;border-radius:50%;background:'+avBg+';display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;flex-shrink:0;border:2px solid '+avBdr+';box-shadow:0 2px 8px rgba(0,0,0,.20)">'+_escHtml(avEmoji)+'</div>';
+    return '<div style="display:flex;gap:11px;margin-bottom:14px;align-items:flex-start">'
       +avHtml
       +'<div style="flex:1;min-width:0">'
       +'<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:5px">'
-      +'<span style="font-size:14px;font-weight:800;color:'+nameLbl+';font-family:\'Jost\',sans-serif">'+_escHtml(name)+'</span>'
+      +'<span style="font-size:14px;font-weight:800;color:'+nameLbl+';font-family:\'Jost\',sans-serif;letter-spacing:.1px">'+_escHtml(name)+'</span>'
       +'<span style="font-size:12px;color:'+textDim+';font-family:\'Jost\',sans-serif">'+_momentoAgo(c.created_at)+'</span>'
       +'</div>'
       +'<div style="background:'+bubbleBg+';border:1px solid '+bubbleBdr+';border-left:3px solid '+bubbleLeft+';border-radius:0 14px 14px 14px;padding:10px 14px;font-size:15px;color:'+textColor+';line-height:1.55;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
@@ -25436,7 +25457,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1217;
+    var _BUILT_V = 1218;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
