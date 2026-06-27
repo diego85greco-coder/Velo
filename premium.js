@@ -4719,7 +4719,30 @@ async function _loadDqComments(responseId){
       .order('created_at', {ascending: true})
       .limit(50);
     if(res.error) return [];
-    return res.data || [];
+    var comments = res.data || [];
+    // Hidratar username/avatar/nombre desde profiles para usuarios NO anónimos
+    var nonAnonUids = comments
+      .filter(function(c){ return c.user_id && c.user_name !== 'Anónimo'; })
+      .map(function(c){ return c.user_id; });
+    var uniqUids = nonAnonUids.filter(function(u,i,a){ return a.indexOf(u) === i; });
+    if(uniqUids.length){
+      try{
+        var pr = await sbClient.from('profiles').select('id,username,nombre,avatar').in('id', uniqUids);
+        if(pr && pr.data){
+          var pmap = {};
+          pr.data.forEach(function(p){ pmap[p.id] = p; });
+          comments.forEach(function(c){
+            var p = pmap[c.user_id];
+            if(p){
+              if(p.username) c.username = p.username;
+              if(!c.user_avatar && p.avatar) c.user_avatar = p.avatar;
+              if((!c.user_name || c.user_name === 'Alguien') && p.nombre) c.user_name = p.nombre;
+            }
+          });
+        }
+      }catch(e){}
+    }
+    return comments;
   }catch(e){ return []; }
 }
 
@@ -22687,15 +22710,15 @@ function _renderMomentoComments(comments,col,lightMode){
   var strip=col?col.strip:'rgba(116,198,157,1)';
   var bg=col?col.bg:'rgba(6,28,18,.92)';
   var ca=function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
-  // Bubble (cream cuando lightMode) — el TEXTO ADENTRO es oscuro contra crema
-  var textColor=lightMode?'rgba(20,25,20,.92)':'rgba(255,255,255,.92)';
+  // Bubble — cream-amarillo más saturado para contraste fuerte vs sheet oscuro
+  var textColor=lightMode?'rgba(20,25,20,.94)':'rgba(255,255,255,.94)';
   // NOMBRE y FECHA viven FUERA del bubble — sobre el sheet OSCURO siempre,
   // entonces tienen que ser CLAROS aunque el bubble sea crema
   var nameLbl=ca(lbl,'.96');
   var textDim='rgba(255,255,255,.50)';
-  var bubbleBg=lightMode?'rgba(255,249,220,.98)':ca(strip,'.14');
-  var bubbleBdr=lightMode?'rgba(200,170,80,.45)':ca(brd,'.28');
-  var bubbleLeft=lightMode?'rgba(220,170,40,.85)':ca(brd,'.70');
+  var bubbleBg=lightMode?'rgba(255,238,170,.98)':ca(strip,'.20');
+  var bubbleBdr=lightMode?'rgba(220,170,40,.65)':ca(brd,'.40');
+  var bubbleLeft=lightMode?'rgba(220,140,20,.95)':ca(brd,'.80');
   if(!comments||!comments.length){
     return '<div style="text-align:center;padding:28px 8px 20px;font-family:\'Jost\',sans-serif">'
       +'<div style="font-size:36px;margin-bottom:10px;opacity:.60">💬</div>'
@@ -22716,17 +22739,27 @@ function _renderMomentoComments(comments,col,lightMode){
     var avBdr = isAnon
       ? (lightMode ? 'rgba(95,140,210,.65)' : ca(brd,'.65'))
       : ca(brd,'.65');
+    // Clickable profile when NOT anon and user_id is present → abre pQuickProfile
+    var canClick = !isAnon && c.user_id;
+    var profileArgs = '\''+_jsAttr(name)+'\',\''+_jsAttr(av)+'\',\'\',\''+_jsAttr(c.username||'')+'\',\''+_jsAttr(String(c.user_id||''))+'\'';
+    var clickAttr = canClick ? ' onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer"' : '';
+    var avClickStyle = canClick ? 'cursor:pointer;' : '';
     var avHtml=isImg
-      ?'<img src="'+_escHtml(av)+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid '+ca(brd,'.60')+';flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.18)">'
-      :'<div style="width:40px;height:40px;border-radius:50%;background:'+avBg+';display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;flex-shrink:0;border:2px solid '+avBdr+';box-shadow:0 2px 8px rgba(0,0,0,.20)">'+_escHtml(avEmoji)+'</div>';
+      ?'<img src="'+_escHtml(av)+'"'+(canClick?' onclick="pQuickProfile('+profileArgs+')"':'')+' style="'+avClickStyle+'width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid '+ca(brd,'.60')+';flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.18)">'
+      :'<div'+(canClick?' onclick="pQuickProfile('+profileArgs+')"':'')+' style="'+avClickStyle+'width:40px;height:40px;border-radius:50%;background:'+avBg+';display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;flex-shrink:0;border:2px solid '+avBdr+';box-shadow:0 2px 8px rgba(0,0,0,.20)">'+_escHtml(avEmoji)+'</div>';
+    // Username @ debajo del nombre (solo no-anon y si profile tiene username)
+    var unameLine = (canClick && c.username)
+      ? '<div style="font-size:11.5px;font-weight:600;color:'+textDim+';font-family:Jost,sans-serif;line-height:1;margin-top:1px">@'+_escHtml(c.username)+'</div>'
+      : '';
+    var nameClickAttr = canClick ? ' onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer"' : '';
     return '<div style="display:flex;gap:11px;margin-bottom:14px;align-items:flex-start">'
       +avHtml
       +'<div style="flex:1;min-width:0">'
-      +'<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:5px">'
-      +'<span style="font-size:14px;font-weight:800;color:'+nameLbl+';font-family:\'Jost\',sans-serif;letter-spacing:.1px">'+_escHtml(name)+'</span>'
-      +'<span style="font-size:12px;color:'+textDim+';font-family:\'Jost\',sans-serif">'+_momentoAgo(c.created_at)+'</span>'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px">'
+      +'<div style="min-width:0"><span'+nameClickAttr+' style="font-size:14px;font-weight:800;color:'+nameLbl+';font-family:\'Jost\',sans-serif;letter-spacing:.1px'+(canClick?';cursor:pointer':'')+'">'+_escHtml(name)+'</span>'+unameLine+'</div>'
+      +'<span style="font-size:12px;color:'+textDim+';font-family:\'Jost\',sans-serif;flex-shrink:0">'+_momentoAgo(c.created_at)+'</span>'
       +'</div>'
-      +'<div style="background:'+bubbleBg+';border:1px solid '+bubbleBdr+';border-left:3px solid '+bubbleLeft+';border-radius:0 14px 14px 14px;padding:10px 14px;font-size:15px;color:'+textColor+';line-height:1.55;word-break:break-word">'+_escHtml(c.text||'')+'</div>'
+      +'<div style="background:'+bubbleBg+';border:1.5px solid '+bubbleBdr+';border-left:3px solid '+bubbleLeft+';border-radius:0 14px 14px 14px;padding:10px 14px;font-size:15px;color:'+textColor+';line-height:1.55;word-break:break-word;box-shadow:0 2px 8px rgba(0,0,0,.12)">'+_escHtml(c.text||'')+'</div>'
       +'</div>'
       +'</div>';
   }).join('');
@@ -25004,9 +25037,9 @@ function _btOpenDetail(id){
   }
 }
 
-function _btLoadComments(postId){
+async function _btLoadComments(postId){
   if(!sbClient) return;
-  sbClient.from('bitacora_comments_full').select('*').eq('post_id',postId).order('created_at',{ascending:true}).limit(50)
+  await sbClient.from('bitacora_comments_full').select('*').eq('post_id',postId).order('created_at',{ascending:true}).limit(50)
     .then(function(res){
       var wrap=document.getElementById('btCommentsWrap');
       if(!wrap) return;
@@ -25017,10 +25050,33 @@ function _btLoadComments(postId){
       var comments=res.data;
       var ids=comments.map(function(c){ return c.id; });
       var uid=safeLS('get','velo_user_id');
-      sbClient.from('bitacora_comment_reactions').select('comment_id,emoji,user_id').in('comment_id',ids)
-        .then(function(rxRes){
-          _btRenderComments(comments,(rxRes.error||!rxRes.data)?[]:rxRes.data,postId,uid,wrap);
-        }).catch(function(){ _btRenderComments(comments,[],postId,uid,wrap); });
+      // Hidratar username/avatar/nombre desde profiles para no-anónimos
+      var nonAnonUids = comments
+        .filter(function(c){ return c.user_id && !c.is_anon; })
+        .map(function(c){ return c.user_id; });
+      var uniqUids = nonAnonUids.filter(function(u,i,a){ return a.indexOf(u) === i; });
+      var hydratePromise = uniqUids.length
+        ? sbClient.from('profiles').select('id,username,nombre,avatar').in('id', uniqUids).then(function(pr){
+            if(pr && pr.data){
+              var pmap = {};
+              pr.data.forEach(function(p){ pmap[p.id] = p; });
+              comments.forEach(function(c){
+                var p = pmap[c.user_id];
+                if(p && !c.is_anon){
+                  if(p.username) c.username = p.username;
+                  if(!c.avatar_url && p.avatar) c.avatar_url = p.avatar;
+                  if((!c.author_name || c.author_name === 'Alguien') && p.nombre) c.author_name = p.nombre;
+                }
+              });
+            }
+          }).catch(function(){})
+        : Promise.resolve();
+      hydratePromise.then(function(){
+        sbClient.from('bitacora_comment_reactions').select('comment_id,emoji,user_id').in('comment_id',ids)
+          .then(function(rxRes){
+            _btRenderComments(comments,(rxRes.error||!rxRes.data)?[]:rxRes.data,postId,uid,wrap);
+          }).catch(function(){ _btRenderComments(comments,[],postId,uid,wrap); });
+      });
     });
 }
 
@@ -25040,21 +25096,25 @@ function _btRenderComments(comments,rxData,postId,uid,wrap){
     // Si el comentario es del usuario actual y viene sin nombre/avatar, usar localStorage
     var nm = cm.is_anon ? 'Anónimo/a'
                        : (cm.author_name || (own ? (safeLS('get','velo_user_name')||'Alguien') : 'Alguien'));
-    var canClick=!cm.is_anon;
+    var canClick=!cm.is_anon && cm.user_id;
     var avUrl = cm.avatar_url || cm.av || (own && !cm.is_anon ? (safeLS('get','velo_user_av')||'') : '');
-    var profileArgs='\''+_jsAttr(nm)+'\',\''+_jsAttr(avUrl)+'\',\'\',\'\',\''+_jsAttr(String(cm.user_id||''))+'\'';
+    var uname = cm.username || (own ? (safeLS('get','velo_username')||'') : '');
+    var profileArgs='\''+_jsAttr(nm)+'\',\''+_jsAttr(avUrl)+'\',\'\',\''+_jsAttr(uname||'')+'\',\''+_jsAttr(String(cm.user_id||''))+'\'';
     var avClickAttr=canClick?'onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer;flex-shrink:0"':'style="cursor:default;flex-shrink:0"';
     // Avatar: 40px circle with ring glow
     var ringStyle='width:40px;height:40px;border-radius:50%;flex-shrink:0;border:2px solid rgba(116,198,157,.65);box-shadow:0 0 0 3px rgba(116,198,157,.15),0 2px 8px rgba(0,0,0,.22);';
     var avIsUrl=avUrl&&(avUrl.startsWith('http')||avUrl.startsWith('data:'));
-    var avEmoji=!avIsUrl&&avUrl?avUrl:(cm.is_anon?'👤':'🌿');
+    var avEmoji=!avIsUrl&&avUrl?avUrl:(cm.is_anon?'🕊️':'🌿');
     var avHtml=avIsUrl
       ?'<img src="'+_jsAttr(avUrl)+'" '+avClickAttr+' style="'+ringStyle+'object-fit:cover;" />'
       :'<div '+avClickAttr+' style="'+ringStyle+'background:rgba(116,198,157,.20);display:flex;align-items:center;justify-content:center;font-size:20px">'+avEmoji+'</div>';
-    // Name: clickable if not anon
+    // Name + @username clickable cuando no es anon
+    var unameLine = (canClick && uname)
+      ? '<div style="font-size:11.5px;font-weight:600;color:rgba(10,60,30,.55);font-family:Jost,sans-serif;line-height:1;margin-top:2px">@'+_escHtml(uname)+'</div>'
+      : '';
     var nmHtml=canClick
-      ?'<span onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer;font-size:14px;font-weight:700;color:rgba(10,60,30,.90);font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(nm)+'</span>'
-      :'<span style="font-size:14px;font-weight:700;color:rgba(10,60,30,.90);font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(nm)+'</span>';
+      ?'<div onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer;min-width:0"><span style="font-size:14px;font-weight:700;color:rgba(10,60,30,.90);font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(nm)+'</span>'+unameLine+'</div>'
+      :'<div style="min-width:0"><span style="font-size:14px;font-weight:700;color:rgba(10,60,30,.90);font-family:Jost,sans-serif;line-height:1.2">'+_escHtml(nm)+'</span></div>';
     // Reaction buttons — dark text on white bubble
     var cmRx=rxMap[String(cm.id)]||{};
     var cmIdStr=String(cm.id);
@@ -25476,7 +25536,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1219;
+    var _BUILT_V = 1220;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
