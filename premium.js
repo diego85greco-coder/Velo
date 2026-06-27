@@ -4099,9 +4099,22 @@ function _updateDqCardReactions(rid){
   var card = document.querySelector('.dq-feed-card[data-response-id="'+rid+'"]');
   if(card){
     var _m = _dqReactMap[rid]||{};
-    var _totalRx = ['identifico','abrazo','entiendo'].reduce(function(s,k){ return s+((_m[k]&&_m[k].count)||0); },0);
     var metaEl = card.querySelector('.dq-rx-meta');
-    if(metaEl) metaEl.textContent = (_totalRx>0?'💚 '+_totalRx+' · ':'')+'Ver →';
+    if(metaEl){
+      // Reconstrueimos las pills por emoji + 'Ver →'
+      var r0 = (_dqAllResponses||[]).find(function(x){ return String(x.id)===rid; });
+      var col0 = r0 ? (document.body.classList.contains('r-dark')
+        ? _userColor(r0.user_id||r0.user_name)
+        : _userColorLight(r0.user_id||r0.user_name)) : null;
+      var badge = col0 ? col0.badge : 'rgba(116,198,157,.14)';
+      var bord  = col0 ? col0.border.replace(/[\d.]+\)$/,'0.32)') : 'rgba(116,198,157,.32)';
+      var labl  = col0 ? col0.label : 'rgba(255,255,255,.92)';
+      var rxPillsLive = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
+        .filter(function(rx){ return _m[rx.k]&&_m[rx.k].count>0; })
+        .map(function(rx){ return '<span style="display:inline-flex;align-items:center;gap:2px;background:'+badge+';border:1px solid '+bord+';border-radius:100px;padding:2px 7px;font-size:11px;font-weight:700">'+rx.e+'<span style="font-size:10px;font-weight:700;color:'+labl+';opacity:.92">'+_m[rx.k].count+'</span></span>'; })
+        .join('');
+      metaEl.innerHTML = rxPillsLive + '<span style="opacity:.78">Ver →</span>';
+    }
   }
   // Update "Tu respuesta" badge
   var myUid = safeLS('get','velo_user_id')||'';
@@ -4554,9 +4567,17 @@ function _buildDqCards(list){
             +'</div>'
             +'<div style="font-size:10px;color:'+col.label.replace(/[\d.]+\)$/,'0.38)')+';font-family:Jost,sans-serif;letter-spacing:.1px;margin-bottom:4px">💬 Toca para comentar</div>'
           : '<div style="font-size:20px;margin-bottom:5px">'+_escHtml(r.mood_emoji||'💭')+'</div>')
-        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:4px">'
-          +'<span class="dq-rx-meta" style="font-size:11px;font-weight:700;color:'+col.border+';font-family:Jost,sans-serif;flex-shrink:0;white-space:nowrap">'+(_totalRx>0?'💚 '+_totalRx+' · ':'')+'Ver →</span>'
-          +actionBtn
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">'
+          +'<span class="dq-rx-meta" style="font-size:11px;font-weight:700;color:'+col.border+';font-family:Jost,sans-serif;flex-shrink:0;white-space:nowrap;display:inline-flex;align-items:center;gap:6px">'
+            + (function(){
+              var rxPillsHome = [{k:'identifico',e:'💚'},{k:'abrazo',e:'🫂'},{k:'entiendo',e:'💙'}]
+                .filter(function(rx){ return _m[rx.k]&&_m[rx.k].count>0; })
+                .map(function(rx){ return '<span style="display:inline-flex;align-items:center;gap:2px;background:'+col.badge+';border:1px solid '+col.border.replace(/[\d.]+\)$/,'0.32)')+';border-radius:100px;padding:2px 7px;font-size:11px;font-weight:700">'+rx.e+'<span style="font-size:10px;font-weight:700;color:'+col.label+';opacity:.92">'+_m[rx.k].count+'</span></span>'; })
+                .join('');
+              return (rxPillsHome || '') + '<span style="opacity:.78">Ver →</span>';
+            })()
+          + '</span>'
+          + actionBtn
         +'</div>'
       +'</div>'
     +'</div>';
@@ -25415,7 +25436,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1216;
+    var _BUILT_V = 1217;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
