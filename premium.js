@@ -22860,11 +22860,15 @@ function _renderMomentoComments(comments,col,lightMode){
       +'<div style="font-size:14px;color:'+(lightMode?'rgba(60,80,60,.32)':'rgba(255,255,255,.28)')+'">Sé el primero en sumar algo 🌿</div>'
       +'</div>';
   }
+  var _curUid = safeLS('get','velo_user_id') || '';
+  var _curUname = safeLS('get','velo_username') || '';
   return comments.map(function(c){
-    var av=c.user_avatar||''; var isImg=av&&av.startsWith('http');
     var name=c.user_name||'Anónimo/a';
     var isAnon = (name === 'Anónimo' || name === 'Anónimo/a' || name === 'anónimo');
-    // Avatar fill — para Anónimo usamos 🕊️ (paloma) que es el icono asociado; default 🌿
+    // Para Anónimo SIEMPRE ignoramos el avatar guardado (comentarios viejos pueden traer el avatar real del usuario)
+    var av = isAnon ? '' : (c.user_avatar||'');
+    var isImg=av&&av.startsWith('http');
+    // Avatar fill — para Anónimo usamos 🕊️ (paloma); default 🌿
     var avEmoji = av || (isAnon ? '🕊️' : '🌿');
     // Solid bg (no gradient that swallows the emoji) + tamaño 40px con emoji 22px
     var avBg = isAnon
@@ -22875,15 +22879,17 @@ function _renderMomentoComments(comments,col,lightMode){
       : ca(brd,'.65');
     // Clickable profile when NOT anon and user_id is present → abre pQuickProfile
     var canClick = !isAnon && c.user_id;
-    var profileArgs = '\''+_jsAttr(name)+'\',\''+_jsAttr(av)+'\',\'\',\''+_jsAttr(c.username||'')+'\',\''+_jsAttr(String(c.user_id||''))+'\'';
+    // Username fallback — si es del usuario actual y la hidratación no trajo nada, usar localStorage
+    var unameVal = c.username || (canClick && _curUid && String(c.user_id) === String(_curUid) ? _curUname : '');
+    var profileArgs = '\''+_jsAttr(name)+'\',\''+_jsAttr(av)+'\',\'\',\''+_jsAttr(unameVal||'')+'\',\''+_jsAttr(String(c.user_id||''))+'\'';
     var clickAttr = canClick ? ' onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer"' : '';
     var avClickStyle = canClick ? 'cursor:pointer;' : '';
     var avHtml=isImg
       ?'<img src="'+_escHtml(av)+'"'+(canClick?' onclick="pQuickProfile('+profileArgs+')"':'')+' style="'+avClickStyle+'width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid '+ca(brd,'.60')+';flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.18)">'
       :'<div'+(canClick?' onclick="pQuickProfile('+profileArgs+')"':'')+' style="'+avClickStyle+'width:40px;height:40px;border-radius:50%;background:'+avBg+';display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;flex-shrink:0;border:2px solid '+avBdr+';box-shadow:0 2px 8px rgba(0,0,0,.20)">'+_escHtml(avEmoji)+'</div>';
     // Username @ debajo del nombre (solo no-anon y si profile tiene username)
-    var unameLine = (canClick && c.username)
-      ? '<div style="font-size:11.5px;font-weight:600;color:'+textDim+';font-family:Jost,sans-serif;line-height:1;margin-top:1px">@'+_escHtml(c.username)+'</div>'
+    var unameLine = (canClick && unameVal)
+      ? '<div style="font-size:11.5px;font-weight:600;color:'+textDim+';font-family:Jost,sans-serif;line-height:1;margin-top:1px">@'+_escHtml(unameVal)+'</div>'
       : '';
     var nameClickAttr = canClick ? ' onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer"' : '';
     return '<div style="display:flex;gap:11px;margin-bottom:14px;align-items:flex-start">'
@@ -25670,7 +25676,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1221;
+    var _BUILT_V = 1222;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
