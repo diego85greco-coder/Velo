@@ -4661,6 +4661,10 @@ async function pOpenDqResponseSheet(responseId){
     +'<div style="text-align:left;margin-bottom:18px">'
     +'<div style="font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:rgba(220,240,228,.80);font-family:Jost,sans-serif;margin-bottom:12px">💬 Hilo de comentarios</div>'
     +'<div id="dqCommentFeed" style="margin-bottom:14px;background:rgba(255,251,232,.97);border-radius:16px;padding:12px 10px;min-height:60px"><div style="text-align:center;padding:20px 8px;font-size:14px;color:rgba(80,70,40,.50);font-family:Jost,sans-serif">Cargando…</div></div>'
+    +'<label for="dqCommentAnon" style="display:flex;align-items:center;gap:8px;padding:9px 12px;margin-bottom:8px;background:rgba(255,251,232,.18);border:1px solid rgba(255,220,140,.30);border-radius:12px;cursor:pointer;font-family:Jost,sans-serif">'
+      +'<input type="checkbox" id="dqCommentAnon" style="width:16px;height:16px;accent-color:'+col.label+';cursor:pointer;flex-shrink:0">'
+      +'<span style="font-size:12px;color:rgba(255,250,225,.92);line-height:1.35"><strong>🕊️ Comentar como anónimo/a</strong> <span style="opacity:.62">— sin marcar, mostrás tu perfil.</span></span>'
+    +'</label>'
     +'<div style="display:flex;gap:8px;align-items:flex-end">'
     +'<textarea id="dqCommentInput" rows="2" placeholder="Sumar algo al hilo…" style="flex:1;background:rgba(255,252,240,.97);border:1.5px solid rgba(0,0,0,.12);border-radius:14px;color:rgba(20,25,20,.90);font-size:15px;font-family:\'Jost\',sans-serif;padding:10px 12px;resize:none;outline:none;line-height:1.4"></textarea>'
     +'<button id="dqCommentBtn" onclick="pPostDqComment(\''+responseId+'\')" style="background:'+col.strip+';border:none;border-radius:12px;color:rgba(255,255,255,.92);font-size:14px;font-weight:800;font-family:\'Jost\',sans-serif;cursor:pointer;padding:10px 14px;flex-shrink:0;height:44px;min-width:60px;box-shadow:0 2px 10px '+col.glow+'">Enviar</button>'
@@ -4700,9 +4704,16 @@ async function pPostDqComment(responseId){
   _initSupabase();
   if(!sbClient){ pToast('⚠️','Sin conexión'); if(btn){ btn.disabled = false; btn.textContent = 'Enviar'; } return; }
   var data = { response_id: String(responseId), text: text, user_hash: _momentoUserHash(), created_at: new Date().toISOString() };
+  var anonChkC = document.getElementById('dqCommentAnon');
+  var _cIsAnon = !!(anonChkC && anonChkC.checked);
   var pn = safeLS('get','velo_user_name'); var pav = safeLS('get','velo_user_av'); var uid = safeLS('get','velo_user_id');
-  if(pn) data.user_name = pn;
-  if(pav) data.user_avatar = pav;
+  if(_cIsAnon){
+    data.user_name = 'Anónimo';
+    // omit avatar so renderer falls back to letter "A" o ícono anónimo
+  } else {
+    if(pn) data.user_name = pn;
+    if(pav) data.user_avatar = pav;
+  }
   if(uid) data.user_id = uid;
   var res = await sbClient.from('dq_comments').insert(data);
   if(res.error){
@@ -25404,7 +25415,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1215;
+    var _BUILT_V = 1216;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
