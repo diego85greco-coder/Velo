@@ -4951,6 +4951,9 @@ function pOpenDailyResponse(){
   var tx = document.getElementById('dailyResponseText');
   if(tw) tw.style.display = 'none';
   if(tx) tx.value = '';
+  // Reset anon checkbox — default explícito = perfil visible (no anónimo)
+  var anonChkReset = document.getElementById('dqAnonChk');
+  if(anonChkReset) anonChkReset.checked = false;
   openModal('dailyResponseOv');
 }
 
@@ -4997,17 +5000,29 @@ async function pSubmitDailyResponse(){
   var dateKey = _dateKey();
   var anonChk = document.getElementById('dqAnonChk');
   var isAnon = !!(anonChk && anonChk.checked);
-  var name  = isAnon ? 'Anónimo' : (safeLS('get','velo_user_name') || 'Alguien');
-  var av    = isAnon ? '' : (safeLS('get','velo_user_av') || '');
-  var avSafe = (av && !av.startsWith('data:')) ? av : '';
   // Always use auth.getUser() so the stored user_id matches what RLS checks (auth.uid())
   var uid = safeLS('get','velo_user_id');
+  var name = isAnon ? 'Anónimo' : (safeLS('get','velo_user_name') || '');
+  var av   = isAnon ? '' : (safeLS('get','velo_user_av') || '');
   if(sbClient){
     try{
       var {data:_authSub} = await sbClient.auth.getUser();
       if(_authSub && _authSub.user) uid = _authSub.user.id;
     }catch(e){}
+    // Si no es anónimo y el nombre local está vacío o quedó como "Anónimo" de un envío
+    // previo, traer el nombre real desde profiles para no terminar publicando como Anónimo
+    if(!isAnon && (!name || name === 'Anónimo') && uid){
+      try{
+        var _pr = await sbClient.from('profiles').select('nombre,avatar').eq('id', uid).maybeSingle();
+        if(_pr && _pr.data){
+          if(_pr.data.nombre) { name = _pr.data.nombre; safeLS('set','velo_user_name', _pr.data.nombre); }
+          if(!av && _pr.data.avatar) av = _pr.data.avatar;
+        }
+      }catch(e){}
+    }
   }
+  if(!name) name = 'Alguien';
+  var avSafe = (av && !av.startsWith('data:')) ? av : '';
   if(!uid){ _restoreBtn(); return; }
   safeLS('set','velo_daily_resp_'+dateKey, JSON.stringify({emoji:_dailySelectedEmoji,text:text,uid:uid,anon:isAnon}));
   if(sbClient){
@@ -25389,7 +25404,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1214;
+    var _BUILT_V = 1215;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
