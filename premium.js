@@ -1488,13 +1488,147 @@ function pVerMiMesCompleto(){
     var ov = document.getElementById('moodChipSheetOv');
     if(ov && typeof pCloseMoodChipSheet === 'function'){
       pCloseMoodChipSheet();
-      setTimeout(function(){
-        if(typeof pOpenMoodQuickView === 'function') pOpenMoodQuickView();
-      }, 240);
+      setTimeout(function(){ pOpenMonthlyMoodGraph(); }, 240);
       return;
     }
   }catch(e){}
-  if(typeof pOpenMoodQuickView === 'function') pOpenMoodQuickView();
+  pOpenMonthlyMoodGraph();
+}
+
+// Vista gráfica del mes — línea de evolución emocional + stats
+// (distinta del calendario que abre pOpenMoodQuickView)
+async function pOpenMonthlyMoodGraph(){
+  var ex = document.getElementById('monthlyGraphOv');
+  if(ex) ex.remove();
+  var now = new Date();
+  var year = now.getFullYear();
+  var month = now.getMonth();
+  var daysInMonth = new Date(year, month+1, 0).getDate();
+  var monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var moodMap = {};
+  for(var _d=1; _d<=daysInMonth; _d++){
+    var _dk = year+'-'+String(month+1).padStart(2,'0')+'-'+String(_d).padStart(2,'0');
+    var _st = safeLS('get','velo_mood_'+_dk);
+    if(_st){ try{ var _ms=JSON.parse(_st); if(_ms.emoji) moodMap[_dk]=_ms; }catch(e){} }
+  }
+  _initSupabase();
+  if(sbClient){
+    try{
+      var sbM = await sbLoadAllMoods(year, month+1);
+      if(sbM) sbM.forEach(function(e){ if(e.emoji && !moodMap[e.date_key]) moodMap[e.date_key] = e; });
+    }catch(e){}
+  }
+  var moodScore = {'😄':5,'😊':4.5,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🥺':2.5,'😞':2,'😔':2,'😰':1.8,'😤':2.2,'😢':1};
+  var moodColor = {'😄':'#5fcc8a','😊':'#74c69d','😌':'#7ed4a5','💪':'#5fcc8a','🌟':'#e6c450','😐':'#c8b070','🥺':'#d59a8a','😞':'#b87060','😔':'#a85040','😰':'#c98a30','😤':'#c97040','😢':'#a04030'};
+  var pts = [];
+  var allEmojis = {};
+  for(var d=1; d<=daysInMonth; d++){
+    var dk = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var entry = moodMap[dk];
+    if(entry && entry.emoji){
+      var sc = moodScore[entry.emoji] || 3;
+      pts.push({day:d, score:sc, emoji:entry.emoji, label:entry.label||''});
+      allEmojis[entry.emoji] = (allEmojis[entry.emoji]||0)+1;
+    }
+  }
+  var nReg = pts.length;
+  var avgScore = nReg ? (pts.reduce(function(s,p){return s+p.score;},0)/nReg).toFixed(1) : 0;
+  var bestDay = nReg ? pts.reduce(function(a,b){return b.score>a.score?b:a;}) : null;
+  var worstDay = nReg ? pts.reduce(function(a,b){return b.score<a.score?b:a;}) : null;
+  var domEmoji = '', domCount = 0;
+  Object.keys(allEmojis).forEach(function(k){ if(allEmojis[k]>domCount){domCount=allEmojis[k]; domEmoji=k;} });
+  var W = 320, H = 150, padX = 22, padY = 18;
+  var xStep = (W - padX*2) / Math.max(1, daysInMonth-1);
+  var yScale = function(s){ return padY + (H - padY*2) * (1 - (s-1)/4); };
+  var svgPathD = '';
+  var svgFillD = '';
+  if(pts.length >= 2){
+    pts.forEach(function(p, i){
+      var x = padX + (p.day-1) * xStep;
+      var y = yScale(p.score);
+      if(i===0){ svgPathD = 'M '+x.toFixed(1)+' '+y.toFixed(1); svgFillD = 'M '+x.toFixed(1)+' '+(H-padY)+' L '+x.toFixed(1)+' '+y.toFixed(1); }
+      else {
+        var prevP = pts[i-1];
+        var prevX = padX + (prevP.day-1) * xStep;
+        var prevY = yScale(prevP.score);
+        var midX = (prevX + x)/2;
+        svgPathD += ' Q '+midX.toFixed(1)+' '+prevY.toFixed(1)+' '+midX.toFixed(1)+' '+((prevY+y)/2).toFixed(1)+' T '+x.toFixed(1)+' '+y.toFixed(1);
+        svgFillD += ' Q '+midX.toFixed(1)+' '+prevY.toFixed(1)+' '+midX.toFixed(1)+' '+((prevY+y)/2).toFixed(1)+' T '+x.toFixed(1)+' '+y.toFixed(1);
+      }
+    });
+    var lastX = padX + (pts[pts.length-1].day-1) * xStep;
+    svgFillD += ' L '+lastX.toFixed(1)+' '+(H-padY)+' Z';
+  } else if(pts.length === 1){
+    var p0 = pts[0];
+    svgPathD = 'M '+(padX+(p0.day-1)*xStep).toFixed(1)+' '+yScale(p0.score).toFixed(1)+' L '+(padX+(p0.day-1)*xStep).toFixed(1)+' '+yScale(p0.score).toFixed(1);
+  }
+  var dotsHtml = pts.map(function(p){
+    var x = padX + (p.day-1) * xStep;
+    var y = yScale(p.score);
+    var col = moodColor[p.emoji] || '#74c69d';
+    return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" fill="'+col+'" stroke="white" stroke-width="1.5"></circle>';
+  }).join('');
+  var xLabels = '';
+  for(var dd=1; dd<=daysInMonth; dd+=5){
+    var xL = padX + (dd-1) * xStep;
+    xLabels += '<text x="'+xL.toFixed(1)+'" y="'+(H-2)+'" font-size="8" fill="rgba(255,255,255,.45)" text-anchor="middle">'+dd+'</text>';
+  }
+  var grid = '';
+  for(var gi=1; gi<=5; gi++){
+    var gy = yScale(gi);
+    grid += '<line x1="'+padX+'" y1="'+gy.toFixed(1)+'" x2="'+(W-padX)+'" y2="'+gy.toFixed(1)+'" stroke="rgba(255,255,255,.06)" stroke-width="1"/>';
+  }
+  var svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;max-width:560px;display:block;margin:0 auto" preserveAspectRatio="xMidYMid meet">'
+    + '<defs>'
+      + '<linearGradient id="moodFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">'
+        + '<stop offset="0%" stop-color="rgba(116,198,157,.40)"/>'
+        + '<stop offset="100%" stop-color="rgba(116,198,157,.02)"/>'
+      + '</linearGradient>'
+      + '<linearGradient id="moodLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">'
+        + '<stop offset="0%" stop-color="rgba(116,198,157,.95)"/>'
+        + '<stop offset="100%" stop-color="rgba(160,210,180,1)"/>'
+      + '</linearGradient>'
+    + '</defs>'
+    + grid
+    + (svgFillD ? '<path d="'+svgFillD+'" fill="url(#moodFillGrad)" stroke="none"/>' : '')
+    + (svgPathD ? '<path d="'+svgPathD+'" fill="none" stroke="url(#moodLineGrad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' : '')
+    + dotsHtml
+    + xLabels
+    + '</svg>';
+  var distEntries = Object.keys(allEmojis).map(function(e){ return {e:e, n:allEmojis[e]}; }).sort(function(a,b){return b.n-a.n;}).slice(0,5);
+  var distHtml = distEntries.length
+    ? '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px">'
+        + distEntries.map(function(d){
+          return '<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.30);border-radius:100px;padding:4px 11px;font-size:13px"><span style="font-size:16px">'+d.e+'</span><span style="font-size:12px;font-weight:700;color:rgba(180,235,210,.95);font-family:Jost,sans-serif">×'+d.n+'</span></span>';
+        }).join('')
+      + '</div>'
+    : '';
+  var statsHtml = nReg ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">'
+    + '<div style="background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.25);border-radius:14px;padding:10px 12px"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(160,210,180,.65);text-transform:uppercase;margin-bottom:4px">Promedio</div><div style="font-size:20px;font-weight:800;color:rgba(220,255,235,.96);font-family:Jost,sans-serif">'+avgScore+'/5</div></div>'
+    + '<div style="background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.25);border-radius:14px;padding:10px 12px"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(160,210,180,.65);text-transform:uppercase;margin-bottom:4px">Registros</div><div style="font-size:20px;font-weight:800;color:rgba(220,255,235,.96);font-family:Jost,sans-serif">'+nReg+'/'+daysInMonth+'</div></div>'
+    + (bestDay?'<div style="background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.25);border-radius:14px;padding:10px 12px"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(160,210,180,.65);text-transform:uppercase;margin-bottom:4px">Mejor día</div><div style="font-size:14px;font-weight:700;color:rgba(220,255,235,.96);font-family:Jost,sans-serif"><span style="font-size:18px;margin-right:6px">'+bestDay.emoji+'</span>Día '+bestDay.day+'</div></div>':'')
+    + (worstDay && worstDay.day!==bestDay.day?'<div style="background:rgba(200,140,80,.10);border:1px solid rgba(200,140,80,.25);border-radius:14px;padding:10px 12px"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(220,180,120,.65);text-transform:uppercase;margin-bottom:4px">Más difícil</div><div style="font-size:14px;font-weight:700;color:rgba(255,235,210,.96);font-family:Jost,sans-serif"><span style="font-size:18px;margin-right:6px">'+worstDay.emoji+'</span>Día '+worstDay.day+'</div></div>':'')
+    + '</div>'
+    : '<div style="text-align:center;padding:24px;color:rgba(255,255,255,.55);font-size:14px;font-family:Jost,sans-serif">Sin registros este mes — empezá hoy 🌿</div>';
+  var ov2 = document.createElement('div');
+  ov2.id = 'monthlyGraphOv';
+  ov2.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.78);display:flex;align-items:flex-end;justify-content:center';
+  ov2.onclick = function(e){ if(e.target===ov2){ ov2.remove(); if(typeof _syncBodyScroll==='function') _syncBodyScroll(); } };
+  ov2.innerHTML = '<div style="background:linear-gradient(150deg,rgba(10,28,18,.98),rgba(6,18,12,.97));border-radius:28px 28px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:16px 18px max(20px,env(safe-area-inset-bottom));border-top:2px solid rgba(116,198,157,.30)">'
+    + '<div style="display:flex;justify-content:center;padding:0 0 14px"><div style="width:36px;height:4px;background:rgba(116,198,157,.32);border-radius:2px"></div></div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      + '<div><div style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.70);font-family:Jost,sans-serif">📈 Tu mes emocional</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(225,255,235,.96)">'+monthNames[month]+' '+year+'</div></div>'
+      + '<button onclick="document.getElementById(\'monthlyGraphOv\').remove();if(typeof _syncBodyScroll===\'function\')_syncBodyScroll()" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:22px;cursor:pointer;padding:4px 10px">✕</button>'
+    + '</div>'
+    + '<div style="background:rgba(0,0,0,.22);border:1px solid rgba(116,198,157,.12);border-radius:16px;padding:14px 8px 6px;margin-top:14px">'+svg+'</div>'
+    + distHtml
+    + statsHtml
+    + '<button onclick="document.getElementById(\'monthlyGraphOv\').remove();if(typeof _syncBodyScroll===\'function\')_syncBodyScroll();setTimeout(function(){if(typeof pOpenMoodQuickView===\'function\')pOpenMoodQuickView();},180)" style="width:100%;margin-top:14px;padding:13px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.50);border-radius:14px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px">📅 Ver calendario completo →</button>'
+    + '<button onclick="document.getElementById(\'monthlyGraphOv\').remove();if(typeof _syncBodyScroll===\'function\')_syncBodyScroll()" style="width:100%;margin-top:8px;padding:11px;background:none;border:1px solid rgba(255,255,255,.10);border-radius:14px;color:rgba(255,255,255,.55);font-size:13px;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button>'
+    + '</div>';
+  document.body.appendChild(ov2);
+  if(typeof _syncBodyScroll==='function') _syncBodyScroll();
 }
 
 // Manual replay from menu hamburguesa — reinicia el flag y arranca el tour desde home
@@ -25536,7 +25670,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1220;
+    var _BUILT_V = 1221;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
