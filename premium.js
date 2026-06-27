@@ -1482,6 +1482,21 @@ function _showOnboarding(){
   document.body.appendChild(ov);
 }
 
+// Cierra el sheet 'Mi estado de hoy' si está abierto y abre el calendario mensual
+function pVerMiMesCompleto(){
+  try{
+    var ov = document.getElementById('moodChipSheetOv');
+    if(ov && typeof pCloseMoodChipSheet === 'function'){
+      pCloseMoodChipSheet();
+      setTimeout(function(){
+        if(typeof pOpenMoodQuickView === 'function') pOpenMoodQuickView();
+      }, 240);
+      return;
+    }
+  }catch(e){}
+  if(typeof pOpenMoodQuickView === 'function') pOpenMoodQuickView();
+}
+
 // Manual replay from menu hamburguesa — reinicia el flag y arranca el tour desde home
 function pReplayHomeTour(){
   safeLS('del','velo_tour_done');
@@ -4952,6 +4967,32 @@ async function pSubmitDailyResponse(){
   var txEl  = document.getElementById('dailyResponseText');
   var text  = txEl ? txEl.value.trim().slice(0,120) : '';
   if(!text){ pToast('✏️','Escribí algo sobre cómo te sentís con esta pregunta'); if(txEl) txEl.focus(); return; }
+
+  // ── Feedback inmediato: bloquear botón + mostrar 'Publicando…' antes de los awaits ──
+  var submitBtn = document.querySelector('#dailyResponseOv button[onclick*="pSubmitDailyResponse"]');
+  var origBtnHtml = null;
+  if(submitBtn && !submitBtn.disabled){
+    origBtnHtml = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '.78';
+    submitBtn.style.cursor = 'wait';
+    submitBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:dqSpin .8s linear infinite;vertical-align:middle;margin-right:8px"></span>Publicando…';
+    if(!document.getElementById('_dqSpinKf')){
+      var _kf = document.createElement('style'); _kf.id='_dqSpinKf';
+      _kf.textContent = '@keyframes dqSpin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(_kf);
+    }
+  }
+
+  function _restoreBtn(){
+    if(submitBtn && origBtnHtml !== null){
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '';
+      submitBtn.style.cursor = '';
+      submitBtn.innerHTML = origBtnHtml;
+    }
+  }
+
   var q     = _getDailyQuestion();
   var dateKey = _dateKey();
   var anonChk = document.getElementById('dqAnonChk');
@@ -4967,7 +5008,7 @@ async function pSubmitDailyResponse(){
       if(_authSub && _authSub.user) uid = _authSub.user.id;
     }catch(e){}
   }
-  if(!uid) return;
+  if(!uid){ _restoreBtn(); return; }
   safeLS('set','velo_daily_resp_'+dateKey, JSON.stringify({emoji:_dailySelectedEmoji,text:text,uid:uid,anon:isAnon}));
   if(sbClient){
     try{
@@ -4979,6 +5020,7 @@ async function pSubmitDailyResponse(){
     }catch(e){ console.warn('[dailyQ save]',e); }
   }
   closeModal('dailyResponseOv');
+  _restoreBtn();
   pToast('💚','¡Gracias por compartir!');
   var lockedEl = document.getElementById('homeDailyQLocked');
   var openEl   = document.getElementById('homeDailyQOpen');
@@ -21454,8 +21496,8 @@ async function _renderHomeWeekMoodGraph(){
     if(insights.length){
       html += '<div style="text-align:center;margin-top:8px;font-size:11.5px;color:var(--ink3);font-family:Jost,sans-serif;line-height:1.55">'+insights.join(' &nbsp;·&nbsp; ')+'</div>';
     }
-    // CTA "Ver mi mes" — cierra el sheet si está abierto, luego abre el quick view mensual
-    html += '<div style="text-align:center;margin-top:9px"><button onclick="if(typeof pCloseMoodChipSheet===\'function\'&&_moodChipSheetOpen){pCloseMoodChipSheet();setTimeout(pOpenMoodQuickView,250);}else{pOpenMoodQuickView();}" style="background:rgba(116,198,157,.16);border:1px solid rgba(116,198,157,.42);color:rgba(116,198,157,.95);font-size:11.5px;font-weight:800;font-family:Jost,sans-serif;padding:6px 14px;border-radius:100px;letter-spacing:.4px;cursor:pointer;transition:all .15s">Ver mi mes completo →</button></div>';
+    // CTA "Ver mi mes" — usa helper que cierra el sheet si está abierto
+    html += '<div style="text-align:center;margin-top:9px"><button onclick="pVerMiMesCompleto()" style="background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.55);color:rgba(170,235,200,.98);font-size:12px;font-weight:800;font-family:Jost,sans-serif;padding:8px 18px;border-radius:100px;letter-spacing:.4px;cursor:pointer;transition:all .15s;box-shadow:0 2px 10px rgba(116,198,157,.18)">Ver mi mes completo →</button></div>';
     return html;
   }
 
@@ -25347,7 +25389,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1213;
+    var _BUILT_V = 1214;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
