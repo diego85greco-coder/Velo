@@ -1652,8 +1652,8 @@ function pReplayHomeTour(){
 }
 
 function _startHomeTour(){
-  // v1232: tip positioning + Reflexión separated from DQ
-  if(safeLS('get','velo_tour_done') === 'v1232') return;
+  // v1234: tip positioning + Reflexión separated from DQ
+  if(safeLS('get','velo_tour_done') === 'v1234') return;
 
   if(!document.getElementById('_tourStyle')){
     var _ts = document.createElement('style');
@@ -1677,6 +1677,10 @@ function _startHomeTour(){
     {sel:'#homeReflexionPart',                                e:'✨',  t:'Reflexión del día',     d:'Una frase especial cada mañana — para empezar con calma, presencia y un poco de luz.'},
     {sel:'#homeDailyQ',                                       e:'💬',  t:'Pregunta del día',      d:'Respondé en anónimo o con tu perfil y descubrí qué sienten los demás hoy.'},
     {sel:'#homeAmbientPanel',                                 e:'🌧️', t:'Sonidos Ambientales',   d:'Lluvia, bosque, fuego, mar. Ponete uno de fondo mientras escribís o respirás.'},
+    {sel:'#homeBreathingBtn',                                 e:'🌬️', t:'Ejercicio de respiración', d:'Un guiado de respiración 4-7-8 para calmar la ansiedad en 2 minutos. Simple y efectivo.'},
+    {sel:'#quickBtn-search',                                  e:'🔍',  t:'Buscar usuarios',      d:'Encontrá a personas de la comunidad por nombre o @username. Empezá conexiones nuevas.'},
+    {sel:'#quickBtn-buzon',                                   e:'💌',  t:'Buzón Velo',           d:'Tu correo dentro de Velo — resumen semanal, análisis mensual, respuestas del equipo y más.'},
+    {sel:'#quickBtn-contact',                                 e:'✉️',  t:'Contáctanos',          d:'¿Sugerencias, consultas o querés reportar algo? Escribinos y te responde el equipo.'},
     {sel:'#tileContacts',                                     e:'⭐',  t:'Contactos Favoritos',   d:'Tus personas de confianza. Vé quién está activo y mandales un mensaje cuando los necesités.'},
     {sel:'#tileCalmAi',                                       e:'🤖',  t:'Calma IA',              d:'Un chatbot empático listo para escucharte 24/7. No reemplaza atención profesional — sí te abraza.'},
     {sel:'#tilePros',                                         e:'👨‍⚕️', t:'Profesionales',        d:'Especialistas verificados en bienestar emocional. Si necesitás apoyo profesional, están ahí.'},
@@ -1687,6 +1691,7 @@ function _startHomeTour(){
     {sel:'.p-bn-item[data-screen="profile"]',                 e:'👤',  t:'Barra: Perfil',         d:'Tu perfil, reseñas, publicaciones y configuraciones — todo desde acá.'},
     {sel:'#topbarEstiloBtn',                                  e:'🌛',  t:'Modo Estilo',           d:'Cambiá entre claro y oscuro cuando quieras. Mirá ↓', fx:'theme'},
     {sel:'#topbarDonateBtn, #topbarPlusBtn',                  e:'💛',  t:'Apoyá a Velo',          d:'Velo es 100% donaciones. Si te ayudó, podés donar o suscribirte a Plus — opcional, pero hace toda la diferencia 💛'},
+    {sel:null,                                                e:'🌿',  t:'¡Bienvenido/a a Velo!', d:'Ya conocés todo el espacio. Esperamos que Velo te acompañe en los días buenos y en los difíciles — este es tu lugar seguro. Registrá tus ánimos cada día, escribí lo que necesites, apoyá a otros. Nos vemos por acá 💚'},
   ];
 
   var step = 0;
@@ -1701,7 +1706,7 @@ function _startHomeTour(){
   document.body.appendChild(tip);
 
   function _done(){
-    safeLS('set','velo_tour_done','v1232');
+    safeLS('set','velo_tour_done','v1234');
     spot.style.transition = 'opacity .3s'; tip.style.transition = 'opacity .3s';
     spot.style.opacity = '0'; tip.style.opacity = '0';
     setTimeout(function(){ if(spot.parentNode) spot.remove(); if(tip.parentNode) tip.remove(); }, 340);
@@ -25957,7 +25962,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1233;
+    var _BUILT_V = 1234;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1233">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1233">
+  <link rel="stylesheet" href="premium.css?v=20260626-1234">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1234">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1515,7 +1515,7 @@
               <div id="homeQuickAccess" class="r-home-quick-panel" style="margin:0 0 12px;box-sizing:border-box;width:100%">
                 <div class="r-home-quick-label">ACCESOS RÁPIDOS</div>
                 <div class="r-home-quick-row">
-                  <button class="r-home-quick-btn" onclick="pOpenUserSearch()">
+                  <button id="quickBtn-search" class="r-home-quick-btn" onclick="pOpenUserSearch()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     <span>Buscar usuarios</span>
                   </button>
@@ -1524,7 +1524,7 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg>
                     <span>Buzón Velo</span>
                   </button>
-                  <button class="r-home-quick-btn" onclick="pContactUs()">
+                  <button id="quickBtn-contact" class="r-home-quick-btn" onclick="pContactUs()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     <span>Contáctanos</span>
                   </button>
@@ -1544,7 +1544,7 @@
                   <span style="font-size:11px;color:rgba(180,220,180,.8);font-family:Jost,sans-serif;line-height:1.4">Verificá que tu dispositivo no esté en <strong style="color:rgba(200,230,200,.95)">modo silencio</strong> para poder escuchar los sonidos.</span>
                 </div>
                 <div class="r-home-quick-divider" style="margin-top:10px"></div>
-                <button class="r-home-quick-btn r-home-quick-btn--resp" onclick="pGoTo('respira')">
+                <button id="homeBreathingBtn" class="r-home-quick-btn r-home-quick-btn--resp" onclick="pGoTo('respira')">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2"/><path d="M10.59 19.41A2 2 0 1 0 14 16H2"/><path d="M15.73 3.73A2.5 2.5 0 1 1 19.5 12H2"/></svg>
                   <span>Ejercicio de respiración</span>
                 </button>
@@ -4300,8 +4300,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1233"></script>
-<script src="premium-redesign.js?v=20260626-1233"></script>
+<script src="premium.js?v=20260626-1234"></script>
+<script src="premium-redesign.js?v=20260626-1234"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
