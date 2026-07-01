@@ -4512,8 +4512,26 @@ function _updateMoodChip(){
   var lblCol   = isDark ? 'rgba(116,198,157,.90)' : 'rgba(38,120,70,.85)';
   var mainCol  = isDark ? 'rgba(230,255,240,.98)' : 'rgba(8,52,24,.92)';
   var arrowCol = isDark ? 'rgba(116,198,157,.90)' : 'rgba(38,120,70,.75)';
+  // Streak visible con 🔥 cuando llegás a 2+ días — motiva a mantener el ritual diario
+  var streak = 0;
+  try{ streak = _getMoodStreak(); }catch(e){}
+  var streakBadge = '';
+  if(streak >= 2){
+    var streakGlow = streak >= 7 ? '0 0 16px rgba(255,150,60,.55)' : streak >= 4 ? '0 0 10px rgba(255,180,80,.42)' : '0 0 6px rgba(255,180,80,.30)';
+    var streakBg = isDark ? 'linear-gradient(140deg,rgba(255,140,50,.32),rgba(220,90,20,.24))' : 'linear-gradient(140deg,rgba(255,180,80,.35),rgba(230,110,30,.24))';
+    var streakBdr = isDark ? 'rgba(255,170,80,.75)' : 'rgba(230,130,40,.75)';
+    var streakTxt = isDark ? 'rgba(255,230,180,.98)' : 'rgba(120,50,0,.94)';
+    streakBadge = '<span class="mcc-streak" style="position:absolute;top:-8px;right:-8px;z-index:2;display:inline-flex;align-items:center;gap:3px;background:'+streakBg+';border:1.5px solid '+streakBdr+';border-radius:100px;padding:3px 10px 3px 7px;font-size:12px;font-weight:800;color:'+streakTxt+';font-family:Jost,sans-serif;box-shadow:'+streakGlow+';animation:mccStreakPulse 2.4s ease-in-out infinite"><span style="font-size:14px;line-height:1;animation:mccFlicker 1.4s ease-in-out infinite">🔥</span>'+streak+'</span>';
+    // Inyectar keyframes si aún no están
+    if(!document.getElementById('_mccStreakKf')){
+      var _kf = document.createElement('style'); _kf.id='_mccStreakKf';
+      _kf.textContent = '@keyframes mccStreakPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}@keyframes mccFlicker{0%,100%{transform:scale(1) rotate(-2deg);filter:drop-shadow(0 0 3px rgba(255,180,60,.6))}50%{transform:scale(1.12) rotate(3deg);filter:drop-shadow(0 0 6px rgba(255,150,40,.9))}}';
+      document.head.appendChild(_kf);
+    }
+  }
   chip.innerHTML =
-    '<div class="mcc-wrap'+(hasEntry?' mcc-has-entry':'')+'" style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:'+wrapBg+';border:1.5px solid '+wrapBdr+';border-radius:20px;box-shadow:'+wrapShd+';position:relative;overflow:hidden">'
+    '<div class="mcc-wrap'+(hasEntry?' mcc-has-entry':'')+'" style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:'+wrapBg+';border:1.5px solid '+wrapBdr+';border-radius:20px;box-shadow:'+wrapShd+';position:relative;overflow:visible">'
+    + streakBadge
     +'<div class="mcc-glow" style="position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:64px;height:64px;border-radius:50%;background:'+glowBg+';pointer-events:none"></div>'
     +'<div class="mcc-icon" style="position:relative;z-index:1;width:46px;height:46px;border-radius:15px;background:'+iconBg+';border:1.5px solid '+iconBdr+';display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:'+iconShd+'">'+(emoji||'💚')+'</div>'
     +'<div class="mcc-text" style="position:relative;z-index:1;flex:1;min-width:0">'
@@ -4959,6 +4977,8 @@ async function _loadDqComments(responseId){
       .limit(50);
     if(res.error) return [];
     var comments = res.data || [];
+    // Filtrar comentarios de usuarios bloqueados (excepto anónimos)
+    comments = comments.filter(function(c){ return c.user_name === 'Anónimo' || !_isBlocked(c.user_id); });
     // Hidratar username/avatar/nombre desde profiles para usuarios NO anónimos
     var nonAnonUids = comments
       .filter(function(c){ return c.user_id && c.user_name !== 'Anónimo'; })
@@ -23144,6 +23164,10 @@ function _initMomentoProfileToggle(){
 function _renderMomentoCards(momentos, feedId, showMineOnly){
   var feed=document.getElementById(feedId);
   if(!feed) return;
+  // Filtrar usuarios bloqueados
+  if(momentos && momentos.length){
+    momentos = momentos.filter(function(m){ return !_isBlocked(m.user_id); });
+  }
   var _prevL = feed.scrollLeft; // remember carousel position across re-renders
   var myHash=_momentoUserHash();
   var isHome = feedId === 'homeMomentoFeed';
@@ -23744,6 +23768,19 @@ async function pPostMomento(){
     pToast('🌿','Este mensaje no respeta las normas de la comunidad. Por favor revisalo antes de publicar.');
     return;
   }
+  // Rate limit visual: max 5 momentos por hora
+  try{
+    var recent = JSON.parse(safeLS('get','velo_momento_ts')||'[]');
+    var oneHourAgo = Date.now() - 3600000;
+    recent = recent.filter(function(ts){ return ts > oneHourAgo; });
+    if(recent.length >= 5){
+      var mins = Math.ceil((recent[0] + 3600000 - Date.now())/60000);
+      pToast('⏳','Publicaste bastante en la última hora. Descansá '+mins+' min antes de compartir de nuevo 🌿');
+      return;
+    }
+    recent.push(Date.now());
+    safeLS('set','velo_momento_ts', JSON.stringify(recent));
+  }catch(e){}
   var emoji=emojiSel?emojiSel.value:'💭';
   var id='mo-'+Date.now()+'-'+Math.random().toString(36).slice(2,6);
   var now=new Date();
@@ -25175,6 +25212,8 @@ function _btRenderFeed(type){
   var posts=_btPosts[type]||[];
   var uid=safeLS('get','velo_user_id');
   posts=posts.filter(function(p){ return !_btHiddenIds.has(String(p.id))||String(p.user_id)===String(uid); });
+  // Filtrar usuarios bloqueados
+  posts=posts.filter(function(p){ return !_isBlocked(p.user_id); });
   // Apply tema filter
   if(_btTemaFilter){
     posts=posts.filter(function(p){
@@ -25651,6 +25690,8 @@ async function _btLoadComments(postId){
 }
 
 function _btRenderComments(comments,rxData,postId,uid,wrap){
+  // Filtrar comentarios de usuarios bloqueados (excepto anónimos)
+  comments = (comments||[]).filter(function(c){ return c.is_anon || !_isBlocked(c.user_id); });
   var rxMap={};
   rxData.forEach(function(rx){
     var cid=String(rx.comment_id);
@@ -25991,6 +26032,19 @@ function _btSubmitCompose(){
   var uid=safeLS('get','velo_user_id');
   if(!uid){ pToast('Debés iniciar sesión'); return; }
   if(!sbClient){ pToast('Conectando...'); return; }
+  // Rate limit: max 3 historias por día en Bitácora
+  try{
+    var _btRecent = JSON.parse(safeLS('get','velo_bt_post_ts')||'[]');
+    var oneDayAgo = Date.now() - 86400000;
+    _btRecent = _btRecent.filter(function(ts){ return ts > oneDayAgo; });
+    if(_btRecent.length >= 3){
+      var hrs = Math.ceil((_btRecent[0] + 86400000 - Date.now())/3600000);
+      pToast('⏳','Ya publicaste 3 historias hoy. Esperá '+hrs+'h para compartir otra 🌿');
+      return;
+    }
+    _btRecent.push(Date.now());
+    safeLS('set','velo_bt_post_ts', JSON.stringify(_btRecent));
+  }catch(e){}
   var btn=ov.querySelector('button[onclick*="_btSubmitCompose"]');
   if(btn){ btn.disabled=true; btn.textContent='Publicando...'; }
 
@@ -26107,7 +26161,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1235;
+    var _BUILT_V = 1236;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
