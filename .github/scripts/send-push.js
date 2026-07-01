@@ -26,23 +26,20 @@ function localHour(tz) {
 
 const FORCE_SEND = process.env.GITHUB_EVENT_NAME === 'workflow_dispatch';
 
+// Slot elegido por HORA LOCAL del usuario (no UTC).
+// Así los usuarios en Portugal / Europa reciben su push en su horario local,
+// no al mediodía o a las 3 AM. Dedup por slot+día evita duplicados si dos cron
+// hits caen dentro de la misma ventana local del usuario.
+//   morning   → local 6-11
+//   afternoon → local 13-19
+//   night     → local 20-23 o 0-3
 function getSlot(tz) {
-  const utcH = new Date().getUTCHours();
-  // Wide windows handle GitHub cron drift + transition between old/new schedule:
-  //   morning   → UTC 5-13  (old cron was 6, new is 12)
-  //   afternoon → UTC 14-19 (old cron was 14, new is 17)
-  //   night     → UTC 1-3 or 19-22 (old cron was 19, new is 2)
-  if (utcH >= 5  && utcH <= 13) return 'morning';
-  if (utcH >= 14 && utcH <= 18) return 'afternoon';
-  if ((utcH >= 19 && utcH <= 22) || (utcH >= 1 && utcH <= 3)) return 'night';
-  // Manual dispatch always sends, using user's local time for label
-  if (FORCE_SEND) {
-    const h = localHour(tz);
-    if (h >= 6  && h < 13) return 'morning';
-    if (h >= 13 && h < 20) return 'afternoon';
-    return 'night';
-  }
-  return null;
+  const h = localHour(tz);
+  if (h < 0) return null; // tz inválida
+  if (h >= 6  && h < 12) return 'morning';
+  if (h >= 13 && h < 20) return 'afternoon';
+  if (h >= 20 || h <= 3) return 'night';
+  return null; // hora "muerta" (mediodía 12 o 4-5 AM) — no molestar
 }
 
 // Static fallbacks — used if Gemini is unavailable
@@ -197,9 +194,11 @@ Reglas de estilo:
 async function sendMonthlyWrapped(users) {
   const now = new Date();
   if (now.getUTCDate() !== 1) return { sent: 0 };
-  // Solo corremos en la ventana morning para no duplicar 3 veces el día 1
+  // Corremos en las 2 ventanas de "mañana" globales (7 UTC = EU mañana, 12 UTC = LATAM mañana).
+  // El filtro por hora local del usuario + dedup por mes garantiza que cada persona reciba
+  // la notif en su mañana local, una sola vez.
   const utcH = now.getUTCHours();
-  if (!(utcH >= 5 && utcH <= 13)) return { sent: 0 };
+  if (utcH !== 7 && utcH !== 12) return { sent: 0 };
 
   // Mes anterior
   const prev = new Date(now); prev.setUTCMonth(prev.getUTCMonth() - 1);
@@ -250,12 +249,16 @@ async function sendMonthlyWrapped(users) {
   await Promise.allSettled(activeIds.map(async (uid) => {
     const u = usersById[uid];
     if (!u || !u.push_subscription) return;
-    let parsedFull, rawSub;
+    let parsedFull, rawSub, tz;
     try {
       parsedFull = JSON.parse(u.push_subscription);
       rawSub = parsedFull.sub && parsedFull.sub.endpoint ? parsedFull.sub : parsedFull;
       if (!parsedFull.sub) parsedFull = { sub: rawSub };
+      tz = parsedFull.tz || 'America/Argentina/Buenos_Aires';
     } catch { return; }
+    // Solo mandamos si es mañana local del usuario (6-11)
+    const h = localHour(tz);
+    if (h < 6 || h >= 12) return;
     // Dedup por mes
     if (parsedFull.lastWrapped === monthKey) return;
     try {

@@ -2,9 +2,12 @@ name: Daily Push Notifications
 
 on:
   schedule:
-    - cron: '0 12 * * *'   # 9am Argentina (UTC-3) / 10am Uruguay / 8am Chile
-    - cron: '0 17 * * *'   # 2pm Argentina / 3pm Uruguay / 1pm Chile
-    - cron: '0 2 * * *'    # 11pm Argentina / midnight Uruguay / 10pm Chile
+    # Cada slot filtra por TZ del usuario — solo dispara si es su hora local correcta
+    - cron: '0 7 * * *'    # EU mañana → 8am Portugal verano / 7am invierno
+    - cron: '0 12 * * *'   # LATAM mañana → 9am ARG / 10am UY / 8am CL
+    - cron: '0 17 * * *'   # LATAM tarde → 2pm ARG / 6pm Portugal verano
+    - cron: '0 22 * * *'   # EU noche → 23:00 Portugal verano / 22:00 invierno
+    - cron: '0 2 * * *'    # LATAM noche → 11pm ARG (Portugal 3am filtrado por TZ)
   workflow_dispatch: # permite correrlo manualmente para probar
 
 jobs:
