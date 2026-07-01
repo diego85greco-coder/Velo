@@ -3719,10 +3719,19 @@ function _loadHomeData(){
 
 // ── HOME NAV TILES ────────────────────────────────────────────
 // ── STRIP DE CTAs GRANDES arriba del saludo: Wrapped + Invitar + Buddy ──
+var _ctaStripBuilding = false;
 async function _initHomeQuickCtaStrip(){
+  // Defensive cleanup: si por bug previo hay N strips, dejamos solo una
+  var existing = document.querySelectorAll('#homeQuickCtaStrip');
+  if(existing.length > 1){
+    for(var _i=1; _i<existing.length; _i++) existing[_i].remove();
+  }
+  // Guardas sync antes del await, evitan que dos llamadas simultáneas dupliquen
   if(document.getElementById('homeQuickCtaStrip')) return;
+  if(_ctaStripBuilding) return;
+  _ctaStripBuilding = true;
   var host = document.querySelector('.r-hero-left');
-  if(!host) return;
+  if(!host){ _ctaStripBuilding = false; return; }
   var strip = document.createElement('div');
   strip.id = 'homeQuickCtaStrip';
   strip.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%;box-sizing:border-box;margin:0 0 14px;order:-2';
@@ -3757,7 +3766,10 @@ async function _initHomeQuickCtaStrip(){
     tile('🌸','Mi Wrapped','del mes','linear-gradient(140deg,rgba(228,178,80,.28),rgba(180,120,40,.20))','rgba(228,178,80,.55)','pOpenMonthlyWrapped()')
     + tile('💌','Invitar','+30d Plus','linear-gradient(140deg,rgba(116,198,157,.30),rgba(74,160,110,.22))','rgba(116,198,157,.60)','pOpenInviteFriends()')
     + buddyTile;
+  // Re-check: si otra invocación ya insertó una strip mientras esperábamos el await, no dupliques
+  if(document.getElementById('homeQuickCtaStrip')){ _ctaStripBuilding = false; return; }
   host.insertAdjacentElement('afterbegin', strip);
+  _ctaStripBuilding = false;
 }
 
 function _initHomeNavTiles(){
@@ -27085,7 +27097,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1245;
+    var _BUILT_V = 1246;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
