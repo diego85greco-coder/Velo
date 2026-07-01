@@ -1980,6 +1980,31 @@ function pRemoveBuddy(){
   });
 }
 
+// ── BUDDY EXPIRY — banner en home cuando cumple 30 días ──────────
+async function _checkBuddyExpiry(){
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid) return;
+  _initSupabase(); if(!sbClient) return;
+  try{
+    var me = await sbClient.from('profiles').select('buddy_id,buddy_name,buddy_started_at').eq('id',uid).maybeSingle();
+    if(!me || !me.data || !me.data.buddy_id || !me.data.buddy_started_at) return;
+    var startedTs = new Date(me.data.buddy_started_at).getTime();
+    var days = Math.floor((Date.now() - startedTs) / 86400000);
+    if(days < 30) return; // aún no cumplió el ciclo
+    // Dedup: no mostrar más de una vez por semana
+    var dedupKey = 'velo_buddy_expiry_ack_'+Math.floor(days/7);
+    if(safeLS('get', dedupKey) === '1') return;
+    var host = document.querySelector('.r-hero-left');
+    if(!host || document.getElementById('buddyExpiryBanner')) return;
+    var name = (me.data.buddy_name||'compañero/a').split(' ')[0];
+    var banner = document.createElement('div');
+    banner.id = 'buddyExpiryBanner';
+    banner.style.cssText = 'width:100%;box-sizing:border-box;margin:0 0 12px;order:-1';
+    banner.innerHTML = '<div style="background:linear-gradient(140deg,rgba(155,120,220,.22),rgba(116,88,180,.18));border:1.5px solid rgba(155,120,220,.55);border-radius:18px;padding:14px 16px;position:relative;box-shadow:0 4px 22px rgba(155,120,220,.20)"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:26px;line-height:1;flex-shrink:0">⏰</div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:rgba(235,225,255,.98);font-family:Jost,sans-serif;line-height:1.25;margin-bottom:2px">Tu ciclo con '+_escHtml(name)+' cumplió 30 días</div><div style="font-size:11.5px;color:rgba(210,200,240,.78);font-family:Jost,sans-serif;line-height:1.35">Pueden renovar 30 días más o cerrar el acompañamiento.</div></div><button onclick="pRenewBuddy();var b=document.getElementById(\'buddyExpiryBanner\');if(b)b.remove()" style="flex-shrink:0;padding:8px 14px;background:linear-gradient(135deg,rgba(155,120,220,.90),rgba(116,88,180,.95));border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px;box-shadow:0 3px 10px rgba(155,120,220,.35)">Renovar</button><button onclick="safeLS(\'set\',\''+dedupKey+'\',\'1\');var b=document.getElementById(\'buddyExpiryBanner\');if(b)b.remove()" style="position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(255,255,255,.35);font-size:15px;cursor:pointer;padding:2px 4px;line-height:1">×</button></div></div>';
+    host.insertAdjacentElement('afterbegin', banner);
+  }catch(e){}
+}
+
 // ── GRACIAS AL GUARDIÁN post-chat ────────────────────────────────────
 function pThankGuardian(){
   var g = null;
@@ -3534,6 +3559,7 @@ function _loadHomeData(){
   try{ setTimeout(function(){ _renderSundayRitualBanner(); }, 400); }catch(e){}
   try{ setTimeout(function(){ _checkEmotionalAnniversary(); }, 800); }catch(e){}
   try{ setTimeout(function(){ _checkReferralQualification(); }, 1200); }catch(e){}
+  try{ setTimeout(function(){ _checkBuddyExpiry(); }, 1600); }catch(e){}
   // v1228: mensual NO se dispara automático. Solo desde admin (pAdminSendMonthlyReport).
   // _checkMonthlyMoodReport();
   var d = new Date();
@@ -3693,7 +3719,7 @@ function _loadHomeData(){
 
 // ── HOME NAV TILES ────────────────────────────────────────────
 // ── STRIP DE CTAs GRANDES arriba del saludo: Wrapped + Invitar + Buddy ──
-function _initHomeQuickCtaStrip(){
+async function _initHomeQuickCtaStrip(){
   if(document.getElementById('homeQuickCtaStrip')) return;
   var host = document.querySelector('.r-hero-left');
   if(!host) return;
@@ -3701,16 +3727,36 @@ function _initHomeQuickCtaStrip(){
   strip.id = 'homeQuickCtaStrip';
   strip.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%;box-sizing:border-box;margin:0 0 14px;order:-2';
   var tile = function(icon, label, sub, bg, bdr, action){
-    return '<button onclick="'+action+'" style="cursor:pointer;background:'+bg+';border:1.5px solid '+bdr+';border-radius:16px;padding:11px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 4px 14px rgba(0,0,0,.22);-webkit-tap-highlight-color:transparent;touch-action:manipulation;font-family:Jost,sans-serif;text-align:center" onmousedown="this.style.transform=\'scale(.94)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'" ontouchstart="this.style.transform=\'scale(.94)\'" ontouchend="this.style.transform=\'\'">'
+    return '<button onclick="'+action+'" style="cursor:pointer;background:'+bg+';border:1.5px solid '+bdr+';border-radius:16px;padding:11px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 4px 14px rgba(0,0,0,.22);-webkit-tap-highlight-color:transparent;touch-action:manipulation;font-family:Jost,sans-serif;text-align:center;position:relative" onmousedown="this.style.transform=\'scale(.94)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'" ontouchstart="this.style.transform=\'scale(.94)\'" ontouchend="this.style.transform=\'\'">'
       +'<div style="font-size:24px;line-height:1">'+icon+'</div>'
       +'<div style="font-size:11.5px;font-weight:800;color:rgba(255,255,255,.94);letter-spacing:.1px;line-height:1.15">'+label+'</div>'
       +'<div style="font-size:9.5px;color:rgba(255,255,255,.55);line-height:1.15;margin-top:1px">'+sub+'</div>'
       +'</button>';
   };
+  // Chequeo si tiene buddy para adaptar la tile
+  var buddyTile = tile('🤝','Compañero','de bienestar','linear-gradient(140deg,rgba(155,120,220,.30),rgba(116,88,180,.22))','rgba(155,120,220,.55)','pOpenBuddyModal()');
+  try{
+    var uid = safeLS('get','velo_user_id') || '';
+    _initSupabase();
+    if(uid && sbClient){
+      var me = await sbClient.from('profiles').select('buddy_id,buddy_name,buddy_started_at,buddy_available_at').eq('id',uid).maybeSingle();
+      if(me && me.data && me.data.buddy_id){
+        var shortName = (me.data.buddy_name||'').split(' ')[0] || 'compañero/a';
+        var startedTs = me.data.buddy_started_at ? new Date(me.data.buddy_started_at).getTime() : Date.now();
+        var daysLeft = Math.max(0, 30 - Math.floor((Date.now() - startedTs) / 86400000));
+        var subLbl = daysLeft === 0 ? '¡renová!' : daysLeft <= 5 ? 'faltan '+daysLeft+'d' : shortName.slice(0,10);
+        var action = 'pOpenDM(\''+_jsAttr(me.data.buddy_id)+'\',\''+_jsAttr(me.data.buddy_name||'Compañero/a')+'\',\'🌿\')';
+        buddyTile = tile('💬','Chat con', subLbl, 'linear-gradient(140deg,rgba(155,120,220,.34),rgba(116,88,180,.26))','rgba(155,120,220,.65)', action);
+      } else if(me && me.data && me.data.buddy_available_at){
+        // Anotado como disponible, sin match aún
+        buddyTile = tile('🌿','Anotado/a','esperando match','linear-gradient(140deg,rgba(155,120,220,.34),rgba(116,88,180,.26))','rgba(155,120,220,.65)','pOpenBuddyModal()');
+      }
+    }
+  }catch(e){}
   strip.innerHTML =
     tile('🌸','Mi Wrapped','del mes','linear-gradient(140deg,rgba(228,178,80,.28),rgba(180,120,40,.20))','rgba(228,178,80,.55)','pOpenMonthlyWrapped()')
     + tile('💌','Invitar','+30d Plus','linear-gradient(140deg,rgba(116,198,157,.30),rgba(74,160,110,.22))','rgba(116,198,157,.60)','pOpenInviteFriends()')
-    + tile('🤝','Compañero','de bienestar','linear-gradient(140deg,rgba(155,120,220,.30),rgba(116,88,180,.22))','rgba(155,120,220,.55)','pOpenBuddyModal()');
+    + buddyTile;
   host.insertAdjacentElement('afterbegin', strip);
 }
 
@@ -27039,7 +27085,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1244;
+    var _BUILT_V = 1245;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
