@@ -1483,6 +1483,246 @@ function _showOnboarding(){
 }
 
 // ── FONT SIZE SCALE (accesibilidad) ──────────────────────────────────
+// ── REFERRAL SYSTEM (invitar amigos → ambos ganan 30 días de Plus) ──────
+(function _detectReferrerOnBoot(){
+  try{
+    var params = new URLSearchParams(window.location.search);
+    var ref = params.get('ref');
+    if(ref && /^[a-zA-Z0-9\-]{6,50}$/.test(ref) && !safeLS('get','velo_ref_from')){
+      safeLS('set','velo_ref_from', ref);
+      safeLS('set','velo_ref_from_ts', String(Date.now()));
+    }
+  }catch(e){}
+})();
+
+// Se llama al confirmar signup — otorga Plus al nuevo user y al referrer
+async function _applyReferralIfAny(newUserId){
+  var refFrom = safeLS('get','velo_ref_from');
+  if(!refFrom || !newUserId || refFrom === newUserId) return;
+  // Solo se aplica dentro de las primeras 24h del click
+  var refTs = parseInt(safeLS('get','velo_ref_from_ts')||'0');
+  if(refTs && (Date.now() - refTs > 24*3600000)){ safeLS('del','velo_ref_from'); return; }
+  _initSupabase(); if(!sbClient) return;
+  var plusExpires = new Date(Date.now() + 30*86400000).toISOString();
+  try{
+    // Nuevo user → Plus 30 días
+    await sbClient.from('profiles').update({ plus_expires_at: plusExpires }).eq('id', newUserId);
+    safeLS('set','velo_plan','plus');
+    // Referrer → +30 días encima de su expiración actual (o desde hoy si no tiene)
+    var refProfile = await sbClient.from('profiles').select('plus_expires_at').eq('id', refFrom).maybeSingle();
+    var refBaseTs = Date.now();
+    if(refProfile && refProfile.data && refProfile.data.plus_expires_at){
+      var existing = new Date(refProfile.data.plus_expires_at).getTime();
+      if(existing > refBaseTs) refBaseTs = existing;
+    }
+    var refExpires = new Date(refBaseTs + 30*86400000).toISOString();
+    await sbClient.from('profiles').update({ plus_expires_at: refExpires }).eq('id', refFrom);
+    // Broadcast notification al referrer
+    try{
+      await sbClient.from('broadcasts').insert({
+        target: 'user:'+refFrom,
+        subject: '🎉 Alguien se unió con tu enlace',
+        body: 'Un amigo/a se sumó a Velo usando tu invitación. Ganaste 30 días de Velo Plus. ¡Gracias por hacer crecer la comunidad! 💚',
+        icon: '💚',
+        sender: 'Velo — Comunidad'
+      });
+    }catch(e){}
+    safeLS('del','velo_ref_from');
+    safeLS('del','velo_ref_from_ts');
+    pToast('🎁','¡Ganaste 30 días de Velo Plus por venir invitado/a!');
+  }catch(e){ console.warn('[referral]', e); }
+}
+
+// UI: abrir modal de invitar amigos
+function pOpenInviteFriends(){
+  var uid = safeLS('get','velo_user_id')||'';
+  if(!uid){ pToast('⚠️','Iniciá sesión primero'); return; }
+  var link = 'https://heyvelo.app?ref='+encodeURIComponent(uid);
+  var ex = document.getElementById('inviteFriendsOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'inviteFriendsOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.78);display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div style="background:linear-gradient(150deg,rgba(10,28,18,.98),rgba(6,18,12,.97));border-radius:28px 28px 0 0;width:100%;max-width:520px;padding:16px 20px max(24px,env(safe-area-inset-bottom));border-top:2px solid rgba(116,198,157,.30)">'
+    +'<div style="display:flex;justify-content:center;padding:0 0 14px"><div style="width:36px;height:4px;background:rgba(116,198,157,.32);border-radius:2px"></div></div>'
+    +'<div style="text-align:center;margin-bottom:20px">'
+      +'<div style="font-size:52px;line-height:1;margin-bottom:8px">💚</div>'
+      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:rgba(225,255,235,.96);line-height:1.2;margin-bottom:6px">Invitá a un amigo/a</div>'
+      +'<div style="font-size:13.5px;color:rgba(180,220,195,.72);line-height:1.55;font-family:Jost,sans-serif">Compartí Velo con alguien que necesite apoyo. <strong style="color:rgba(220,255,235,.92)">Ambos reciben 30 días de Velo Plus gratis.</strong></div>'
+    +'</div>'
+    +'<div style="background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.32);border-radius:16px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px">'
+      +'<div style="font-size:11px;flex:1;min-width:0;color:rgba(190,235,215,.88);font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.2px">'+link+'</div>'
+      +'<button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+link+'\').then(function(){pToast(\'📋\',\'Enlace copiado\')})" style="flex-shrink:0;background:rgba(116,198,157,.28);border:1px solid rgba(116,198,157,.55);border-radius:10px;padding:6px 12px;color:rgba(220,255,235,.96);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">Copiar</button>'
+    +'</div>'
+    +'<button onclick="pShareInviteLink(\''+link+'\')" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.90),rgba(74,160,110,.95));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;margin-bottom:8px">📤 Compartir enlace</button>'
+    +'<button onclick="document.getElementById(\'inviteFriendsOv\').remove()" style="width:100%;padding:12px;background:none;border:1px solid rgba(255,255,255,.10);border-radius:14px;color:rgba(255,255,255,.55);font-size:13px;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
+function pShareInviteLink(link){
+  var text = '💚 Te invito a Velo — un espacio de apoyo emocional que me está ayudando. Unite con este enlace y ambos recibimos 30 días de Velo Plus gratis:\n\n'+link;
+  if(navigator.share){
+    navigator.share({ title:'Vení a Velo', text:text, url:link }).catch(function(){});
+  } else {
+    if(navigator.clipboard) navigator.clipboard.writeText(text).then(function(){ pToast('📋','Mensaje copiado — pegalo donde quieras'); });
+  }
+}
+
+// ── GRACIAS AL GUARDIÁN post-chat ────────────────────────────────────
+function pThankGuardian(){
+  var g = null;
+  try{ var raw = safeLS('get','velo_postchat_guardian'); if(raw) g = JSON.parse(raw); }catch(e){}
+  if(!g || !g.id){ pToast('⚠️','No pude encontrar al guardián/a'); return; }
+  var ex = document.getElementById('thankGuardOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'thankGuardOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.80);display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div style="background:linear-gradient(155deg,rgba(12,32,20,.98),rgba(6,20,12,.97));border-radius:24px;max-width:440px;width:100%;padding:26px 22px;border:1.5px solid rgba(116,198,157,.35)">'
+    +'<div style="text-align:center;margin-bottom:18px">'
+      +'<div style="font-size:52px;line-height:1;margin-bottom:10px">💚</div>'
+      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(225,255,235,.96);line-height:1.2">Gracias a '+_escHtml(g.name||'este guardián')+'</div>'
+      +'<div style="font-size:12.5px;color:rgba(180,220,195,.68);margin-top:6px;font-family:Jost,sans-serif">Mandale un mensaje breve. Le va a llegar como aviso 🌿</div>'
+    +'</div>'
+    +'<textarea id="thankGuardTxt" rows="3" maxlength="280" placeholder="Gracias por tu tiempo y tu escucha 💚" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(116,198,157,.30);border-radius:14px;padding:12px 14px;color:rgba(230,255,240,.94);font-size:14px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;resize:none;line-height:1.55;margin-bottom:14px"></textarea>'
+    +'<div style="display:flex;gap:8px">'
+      +'<button onclick="document.getElementById(\'thankGuardOv\').remove()" style="flex:1;padding:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:rgba(255,255,255,.60);font-size:13px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button>'
+      +'<button onclick="pSendGuardianThanks(\''+_jsAttr(g.id)+'\',\''+_jsAttr(g.name||'')+'\')" style="flex:2;padding:12px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">Enviar gracias 💚</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){ var t = document.getElementById('thankGuardTxt'); if(t) t.focus(); }, 200);
+}
+async function pSendGuardianThanks(gid, gname){
+  var ta = document.getElementById('thankGuardTxt');
+  var msg = ta ? (ta.value.trim() || 'Gracias por tu tiempo y tu escucha 💚') : 'Gracias por tu tiempo y tu escucha 💚';
+  msg = msg.slice(0,280);
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  try{
+    var myUid = safeLS('get','velo_user_id') || '';
+    var myName = safeLS('get','velo_user_name') || 'Alguien';
+    // Crear notificación in-app
+    if(typeof _createVeloNotif === 'function'){
+      _createVeloNotif(gid, 'guardian_thanks', myName+' te agradeció 💚', msg, myUid);
+    }
+    // Broadcast al inbox del guardián (más visible)
+    try{
+      await sbClient.from('broadcasts').insert({
+        target: 'user:'+gid,
+        subject: '💚 '+myName+' te agradeció',
+        body: msg,
+        icon: '💚',
+        sender: 'Velo — Comunidad'
+      });
+    }catch(e){}
+    var ov = document.getElementById('thankGuardOv'); if(ov) ov.remove();
+    pToast('💚','Le llegó tu gracias. Eso hace la diferencia 🌿');
+    safeLS('del','velo_postchat_guardian');
+  }catch(e){ pToast('⚠️','No pude enviar el mensaje'); }
+}
+
+// ── WRAPPED MENSUAL — resumen visual compartible tipo Spotify Wrapped ──
+async function pOpenMonthlyWrapped(){
+  var ex = document.getElementById('wrappedOv'); if(ex) ex.remove();
+  var now = new Date();
+  // Wrapped = mes anterior si estamos en el 1º semana, sino mes actual
+  var target = new Date(now);
+  if(now.getDate() <= 7){ target.setMonth(target.getMonth()-1); }
+  var yr = target.getFullYear(), mo = target.getMonth();
+  var mNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var daysInMonth = new Date(yr, mo+1, 0).getDate();
+  // Cargar moods del mes
+  var moodMap = {};
+  for(var _d=1; _d<=daysInMonth; _d++){
+    var dk = yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(_d).padStart(2,'0');
+    var st = safeLS('get','velo_mood_'+dk);
+    if(st){ try{ var ms=JSON.parse(st); if(ms.emoji) moodMap[dk] = ms; }catch(e){} }
+  }
+  _initSupabase();
+  if(sbClient){
+    try{
+      var sbM = await sbLoadAllMoods(yr, mo+1);
+      if(sbM) sbM.forEach(function(e){ if(e.emoji && !moodMap[e.date_key]) moodMap[e.date_key] = e; });
+    }catch(e){}
+  }
+  var moodEntries = Object.keys(moodMap).map(function(k){ return {date:k, emoji:moodMap[k].emoji, label:moodMap[k].label||''}; });
+  var moodScore = {'😄':5,'😊':4.5,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🥺':2.5,'😞':2,'😔':2,'😰':1.8,'😤':2.2,'😢':1};
+  var counts = {};
+  moodEntries.forEach(function(e){ counts[e.emoji] = (counts[e.emoji]||0)+1; });
+  var domEmoji = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; })[0] || '🌿';
+  var domLabel = { '😄':'genial','😊':'bien','😌':'en paz','💪':'con fuerza','🌟':'radiante','😐':'neutro','🥺':'sensible','😞':'bajo','😔':'triste','😰':'ansioso/a','😤':'frustrado/a','😢':'difícil' }[domEmoji] || 'presente';
+  var nReg = moodEntries.length;
+  var avgScore = nReg ? (moodEntries.reduce(function(s,e){ return s + (moodScore[e.emoji]||3); },0)/nReg) : 0;
+  var scoreLabel = avgScore >= 4 ? 'un mes luminoso ✨' : avgScore >= 3 ? 'un mes equilibrado 🌿' : avgScore >= 2 ? 'un mes con altibajos 💫' : 'un mes que necesitó cuidado 💚';
+  var streak = _getMoodStreak();
+  var monthTitle = mNames[mo]+' '+yr;
+  // Community stats
+  var uid = safeLS('get','velo_user_id') || '';
+  var comm = { btPosts:0, momentos:0, helped:0, dqAnswered:0 };
+  if(sbClient && uid){
+    try{
+      var monthStart = new Date(yr, mo, 1).toISOString();
+      var monthEnd = new Date(yr, mo+1, 0, 23,59,59).toISOString();
+      var _btP = await sbClient.from('bitacora_posts').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd); if(!_btP.error) comm.btPosts = _btP.count||0;
+      var _mo = await sbClient.from('momentos').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd); if(!_mo.error) comm.momentos = _mo.count||0;
+      var _dq = await sbClient.from('daily_responses').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd); if(!_dq.error) comm.dqAnswered = _dq.count||0;
+      try{ var _gr = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('guardian_id',uid).gte('created_at',monthStart); if(!_gr.error) comm.helped = _gr.count||0; }catch(e){}
+    }catch(e){}
+  }
+  var isDark = document.body.classList.contains('r-dark');
+  var slideBg = 'linear-gradient(160deg,#0a1f16 0%,#0d2e1e 40%,#0b1c14 100%)';
+  var uName = (safeLS('get','velo_user_name')||'').split(' ')[0] || 'vos';
+  // Slides: array of {bg, title, big, sub, small}
+  var slides = [
+    {bg:'linear-gradient(150deg,#0e2818,#0a1f14)', kicker:'TU MES EMOCIONAL', title:'Wrapped', big:monthTitle, sub:'Un año de '+monthTitle.split(' ')[0]+', '+uName, small:'Deslizá para ver tu resumen →'},
+    {bg:'linear-gradient(150deg,#1a3a26,#0a1f14)', kicker:'TU ÁNIMO DOMINANTE', title:domEmoji, big:'"'+domLabel+'"', sub:'fue tu emoción más frecuente', small:counts[domEmoji]+' de '+nReg+' días registrados'},
+    {bg:'linear-gradient(150deg,#0e2830,#0a1f2a)', kicker:'TU CONSTANCIA', title:'🔥', big:nReg+' días', sub:'registraste tu ánimo en '+monthTitle, small:'Tu racha actual: '+streak+' días seguidos'},
+    {bg:'linear-gradient(150deg,#301e2c,#180e18)', kicker:'TUS APORTES A LA COMUNIDAD', title:'💚', big:(comm.btPosts+comm.momentos+comm.helped)+' gestos', sub:'compartiste y acompañaste', small:comm.btPosts+' historias · '+comm.momentos+' momentos · '+comm.helped+' personas acompañadas'},
+    {bg:'linear-gradient(150deg,#2a2410,#1a1408)', kicker:'EN RESUMEN', title:'✨', big:scoreLabel, sub:'Y sos parte de una comunidad que se cuida.', small:'Gracias por seguir apareciendo. Nos vemos en '+mNames[(mo+1)%12]+'. 💚'},
+  ];
+  var slideHtml = slides.map(function(s,i){
+    return '<div class="wrapped-slide" data-i="'+i+'" style="min-width:100%;scroll-snap-align:center;background:'+s.bg+';border-radius:24px;padding:32px 24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:460px;position:relative">'
+      + '<div style="font-size:10.5px;font-weight:800;letter-spacing:3px;color:rgba(255,255,255,.55);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:14px">'+s.kicker+'</div>'
+      + '<div style="font-size:56px;line-height:1;margin-bottom:14px">'+s.title+'</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:34px;color:#fff;line-height:1.15;margin-bottom:10px;font-style:italic">'+s.big+'</div>'
+      + '<div style="font-size:15px;color:rgba(255,255,255,.72);line-height:1.5;margin-bottom:12px;font-family:Jost,sans-serif;padding:0 8px">'+s.sub+'</div>'
+      + '<div style="font-size:12px;color:rgba(255,255,255,.42);font-family:Jost,sans-serif;line-height:1.5;padding:0 4px">'+s.small+'</div>'
+      + '<div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:9.5px;color:rgba(255,255,255,.28);letter-spacing:1.5px;font-family:Jost,sans-serif">✧ Velo · heyvelo.app ✧</div>'
+      + '</div>';
+  }).join('');
+  var dotsHtml = slides.map(function(_,i){ return '<span class="wrapped-dot" data-i="'+i+'" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25);transition:all .3s"></span>'; }).join('');
+  var ov = document.createElement('div');
+  ov.id = 'wrappedOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.90);display:flex;flex-direction:column';
+  ov.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;color:#fff;flex-shrink:0">'
+    + '<span style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.60);font-family:Jost,sans-serif">✨ WRAPPED — '+monthTitle+'</span>'
+    + '<button onclick="document.getElementById(\'wrappedOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.50);font-size:26px;cursor:pointer;padding:4px 10px">×</button>'
+    + '</div>'
+    + '<div id="wrappedSlider" style="flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:8px;padding:8px 16px;box-sizing:border-box">'+slideHtml+'</div>'
+    + '<div style="display:flex;justify-content:center;gap:5px;padding:12px 0;flex-shrink:0">'+dotsHtml+'</div>'
+    + '<div style="display:flex;gap:8px;padding:0 16px 16px;flex-shrink:0"><button onclick="pShareWrapped(\''+monthTitle+'\',\''+domEmoji+'\',\''+domLabel+'\','+nReg+','+streak+','+(comm.btPosts+comm.momentos+comm.helped)+')" style="flex:1;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.90),rgba(74,160,110,.95));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">📤 Compartir</button><button onclick="document.getElementById(\'wrappedOv\').remove()" style="flex:1;padding:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;color:rgba(255,255,255,.72);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button></div>';
+  document.body.appendChild(ov);
+  // Dots syncing con scroll
+  var slider = document.getElementById('wrappedSlider');
+  if(slider){
+    var dots = ov.querySelectorAll('.wrapped-dot');
+    if(dots[0]){ dots[0].style.background='rgba(255,255,255,.85)'; dots[0].style.transform='scale(1.4)'; }
+    slider.addEventListener('scroll', function(){
+      var idx = Math.round(slider.scrollLeft / slider.clientWidth);
+      dots.forEach(function(d,i){ d.style.background = (i===idx?'rgba(255,255,255,.85)':'rgba(255,255,255,.25)'); d.style.transform = (i===idx?'scale(1.4)':'scale(1)'); });
+    });
+  }
+}
+function pShareWrapped(month, emoji, label, days, streak, gestures){
+  var text = '✨ Mi Wrapped de '+month+' en @VeloApp:\n\n'+emoji+' Ánimo dominante: '+label+'\n📅 '+days+' días registrados\n🔥 Racha: '+streak+' días\n💚 '+gestures+' gestos hacia la comunidad\n\nUnite gratis en heyvelo.app';
+  if(navigator.share){
+    navigator.share({ title:'Mi Wrapped Velo', text:text, url:'https://heyvelo.app' }).catch(function(){});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){ pToast('📋','Mensaje copiado — pegalo donde quieras'); });
+  }
+}
+
 function pApplyFontScale(scale){
   var s = parseFloat(scale);
   if(!(s > 0.5 && s < 2)) s = 1.0;
@@ -21461,6 +21701,8 @@ async function sbSignUp(email, password, nombre){
   var {data, error} = await sbClient.auth.signUp({ email:email, password:password, options:{data:{nombre:nombre, role:'user'}} });
   if(!error && data.user){
     try{ await sbClient.from('profiles').insert({ id:data.user.id, nombre:nombre, email:email, role:'user', created_at:new Date().toISOString() }); }catch(e){}
+    // Aplicar referral si el usuario llegó con ?ref=UID
+    try{ await _applyReferralIfAny(data.user.id); }catch(e){}
   }
   return {data, error};
 }
@@ -26161,7 +26403,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1236;
+    var _BUILT_V = 1237;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
