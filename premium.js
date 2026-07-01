@@ -2264,7 +2264,7 @@ async function pOpenMonthlyWrapped(){
     + '</div>'
     + '<div id="wrappedSlider" style="flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:8px;padding:8px 16px;box-sizing:border-box">'+slideHtml+'</div>'
     + '<div style="display:flex;justify-content:center;gap:5px;padding:12px 0;flex-shrink:0">'+dotsHtml+'</div>'
-    + '<div style="display:flex;gap:8px;padding:0 16px 16px;flex-shrink:0"><button onclick="pShareWrapped(\''+monthTitle+'\',\''+domEmoji+'\',\''+domLabel+'\','+nReg+','+streak+','+(comm.btPosts+comm.momentos+comm.helped)+')" style="flex:1;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.90),rgba(74,160,110,.95));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">📤 Compartir</button><button onclick="document.getElementById(\'wrappedOv\').remove()" style="flex:1;padding:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;color:rgba(255,255,255,.72);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button></div>';
+    + '<div style="display:flex;gap:8px;padding:0 16px 16px;flex-shrink:0"><button onclick="pShareWrapped(\''+monthTitle+'\',\''+domEmoji+'\',\''+domLabel+'\','+nReg+','+streak+','+(comm.btPosts+comm.momentos+comm.helped)+','+avgScore.toFixed(2)+',\''+_jsAttr(uName)+'\')" style="flex:1;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.90),rgba(74,160,110,.95));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">📤 Compartir en Stories</button><button onclick="document.getElementById(\'wrappedOv\').remove()" style="flex:1;padding:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;color:rgba(255,255,255,.72);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button></div>';
   document.body.appendChild(ov);
   // Dots syncing con scroll
   var slider = document.getElementById('wrappedSlider');
@@ -2277,13 +2277,131 @@ async function pOpenMonthlyWrapped(){
     });
   }
 }
-function pShareWrapped(month, emoji, label, days, streak, gestures){
+// ── SHARE WRAPPED — genera un póster 1080×1920 (Instagram Stories) y lo comparte
+async function pShareWrapped(month, emoji, label, days, streak, gestures, avgScore, userName){
   var text = '✨ Mi Wrapped de '+month+' en @VeloApp:\n\n'+emoji+' Ánimo dominante: '+label+'\n📅 '+days+' días registrados\n🔥 Racha: '+streak+' días\n💚 '+gestures+' gestos hacia la comunidad\n\nUnite gratis en heyvelo.app';
+  var uName = (userName || (safeLS('get','velo_user_name')||'').split(' ')[0] || 'vos');
+  var score = parseFloat(avgScore) || 0;
+  // Intento 1: canvas → File → navigator.share con files (Instagram Stories flow)
+  try{
+    var canvas = _renderWrappedPoster({
+      monthLabel: month, userName: uName, domEmoji: emoji, domLabel: label,
+      nReg: parseInt(days)||0, streak: parseInt(streak)||0,
+      totalGestures: parseInt(gestures)||0, avgScore: score
+    });
+    var blob = await new Promise(function(res){ canvas.toBlob(res, 'image/png', 0.95); });
+    if(blob){
+      var fileName = 'wrapped-'+String(month).toLowerCase().replace(/\s+/g,'-')+'.png';
+      var file = new File([blob], fileName, { type: 'image/png' });
+      if(navigator.canShare && navigator.canShare({ files: [file] })){
+        await navigator.share({ title:'Mi Wrapped Velo', text: '✨ Mi Wrapped en Velo — heyvelo.app', files: [file] });
+        pToast('✨','Elegí Instagram Stories para postearlo 💚');
+        return;
+      }
+      // Sin support de files → ofrecer descargar la imagen
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a'); a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      pToast('📥','Se descargó tu Wrapped — subilo a tu Story');
+      return;
+    }
+  }catch(e){ console.warn('[wrapped-share]', e); }
+  // Fallback: texto plano
   if(navigator.share){
-    navigator.share({ title:'Mi Wrapped Velo', text:text, url:'https://heyvelo.app' }).catch(function(){});
-  } else if(navigator.clipboard){
+    try{ await navigator.share({ title:'Mi Wrapped Velo', text:text, url:'https://heyvelo.app' }); return; }catch(e){}
+  }
+  if(navigator.clipboard){
     navigator.clipboard.writeText(text).then(function(){ pToast('📋','Mensaje copiado — pegalo donde quieras'); });
   }
+}
+
+// Dibuja un póster de 1080×1920 con las stats del mes — apto para Stories
+function _renderWrappedPoster(d){
+  var W = 1080, H = 1920;
+  var canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+  // 1) Fondo gradient verde-oscuro Velo
+  var bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#1a4d2e');
+  bg.addColorStop(0.55, '#0f2818');
+  bg.addColorStop(1, '#0a1f14');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  // 2) Sparkles decorativos
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.font = '42px sans-serif';
+  ctx.fillStyle = 'rgba(180,255,220,.32)';
+  ctx.fillText('✧', 80, 160);
+  ctx.fillText('✦', W - 140, 240);
+  ctx.fillText('✧', 100, H - 320);
+  ctx.fillText('✦', W - 130, H - 460);
+  ctx.fillText('✧', 60, H/2 - 40);
+  ctx.fillText('✦', W - 90, H/2 + 80);
+  // 3) Encabezado
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(180,255,220,.72)';
+  ctx.font = '800 30px "Jost", system-ui, sans-serif';
+  ctx.fillText('✨ MI WRAPPED — ' + String(d.monthLabel||'').toUpperCase(), W/2, 230);
+  // 4) Título "Wrapped"
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 168px "Cormorant Garamond","Times New Roman",serif';
+  ctx.fillText('Wrapped', W/2, 380);
+  // 5) Separador
+  ctx.fillStyle = 'rgba(180,255,220,.55)';
+  ctx.font = '700 32px "Jost", sans-serif';
+  ctx.fillText('◆ ◆ ◆', W/2, 470);
+  // 6) Nombre
+  ctx.fillStyle = 'rgba(255,255,255,.94)';
+  ctx.font = 'italic 76px "Cormorant Garamond","Times New Roman",serif';
+  ctx.fillText(String(d.userName||'vos'), W/2, 560);
+  // 7) Emoji dominante GRANDE
+  ctx.font = '260px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  ctx.fillText(String(d.domEmoji||'🌿'), W/2, 830);
+  // 8) Label del ánimo
+  ctx.fillStyle = 'rgba(255,255,255,.95)';
+  ctx.font = 'italic 62px "Cormorant Garamond","Times New Roman",serif';
+  ctx.fillText(String(d.domLabel||''), W/2, 1010);
+  // 9) Grid 2x2 de stats
+  var cardH = 220, gap = 32;
+  var cardW = (W - 160 - gap) / 2;
+  var leftX = 80, rightX = leftX + cardW + gap;
+  var topY = 1130, botY = topY + cardH + gap;
+  function _rr(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r); ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h); ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r); ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+  function card(x, y, num, label, color){
+    ctx.fillStyle = 'rgba(255,255,255,.05)';
+    _rr(x, y, cardW, cardH, 26); ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+    _rr(x, y, cardW, cardH, 26); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.font = '800 104px "Jost", system-ui, sans-serif';
+    ctx.fillText(String(num), x + cardW/2, y + cardH/2 - 20);
+    ctx.fillStyle = 'rgba(255,255,255,.72)';
+    ctx.font = '800 24px "Jost", sans-serif';
+    ctx.fillText(String(label).toUpperCase(), x + cardW/2, y + cardH - 40);
+  }
+  card(leftX,  topY, d.nReg,           '📅 días registrados', 'rgba(180,255,220,.95)');
+  card(rightX, topY, d.streak,         '🔥 racha',            'rgba(255,220,120,.95)');
+  card(leftX,  botY, d.totalGestures,  '💚 aportes',           'rgba(220,190,240,.95)');
+  card(rightX, botY, (d.avgScore||0).toFixed(1), '💫 ánimo prom.', 'rgba(180,220,240,.95)');
+  // 10) Footer brand
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = 'rgba(180,255,220,.85)';
+  ctx.font = '800 34px "Jost", sans-serif';
+  ctx.fillText('✧ heyvelo.app ✧', W/2, H - 100);
+  ctx.fillStyle = 'rgba(180,255,220,.50)';
+  ctx.font = '500 22px "Jost", sans-serif';
+  ctx.fillText('Espacio de apoyo emocional', W/2, H - 60);
+  return canvas;
 }
 
 function pApplyFontScale(scale){
@@ -27097,7 +27215,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1246;
+    var _BUILT_V = 1247;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
