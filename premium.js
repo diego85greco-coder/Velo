@@ -12252,7 +12252,7 @@ function _reviewCardHtml(r, myId, proId){
     ? '<button onclick="pDeleteReview(\''+_escHtml(String(r.id||''))+'\',this.closest(\'.p-review-card\'))" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink5);padding:0 0 0 8px;line-height:1;flex-shrink:0" title="Eliminar reseña">🗑️</button>'
     : '';
   var replyBtn = canReply
-    ? '<button onclick="pOpenReviewReply(\''+_escHtml(String(r.id||''))+'\',\''+_escHtml(String(r.user_id||''))+'\',this.closest(\'.p-review-card\'))" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--sage);padding:0 0 0 8px;line-height:1;flex-shrink:0;font-family:\'Jost\',sans-serif;font-weight:600" title="Responder a esta reseña">💬 Responder</button>'
+    ? '<button onclick="pOpenReviewReply(\''+_escHtml(String(r.id||''))+'\',\''+_escHtml(String(r.user_id||''))+'\',this.closest(\'.p-review-card\'))" style="background:rgba(116,198,157,.22);border:1.5px solid rgba(116,198,157,.65);cursor:pointer;font-size:12.5px;color:rgba(180,235,210,.98);padding:6px 12px;line-height:1;flex-shrink:0;font-family:\'Jost\',sans-serif;font-weight:800;border-radius:100px;letter-spacing:.2px;display:inline-flex;align-items:center;gap:4px" title="Responder a esta reseña">💬 Responder</button>'
     : '';
   var replyHtml = r.reply
     ? '<div class="rv-reply-block">'
@@ -25946,7 +25946,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1230;
+    var _BUILT_V = 1231;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
