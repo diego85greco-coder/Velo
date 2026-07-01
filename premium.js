@@ -19110,10 +19110,80 @@ function _adminTabFinanzas(panel){
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💳 TRANSFERENCIAS PENDIENTES</div>'
     +'<div id="adminTransferList">'+_adminTransferHtml()+'</div>'
     +'<div style="margin-top:18px">'+_adminMonthlyReportTracker()+'</div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:10px">🌿 ACTIVIDAD REAL DE LA COMUNIDAD</div>'
+    +'<div id="adminUsageStats"><p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando actividad…</p></div>'
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📊 ENCUESTAS DE SATISFACCIÓN</div>'
     +'<div id="adminSurveyResults"><p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando respuestas…</p></div>';
   _adminLoadSurveys();
+  _adminLoadUsageStats();
   _renderAdminDonations();
+}
+
+async function _adminLoadUsageStats(){
+  var el = document.getElementById('adminUsageStats');
+  if(!el) return;
+  _initSupabase();
+  if(!sbClient){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Sin conexión</p>'; return; }
+  var stats = { users:0, moods:0, btPosts:0, btComments:0, helpPosts:0, dqResponses:0, dqComments:0, momentos:0, momentoComments:0, dmMessages:0 };
+  var qs = [
+    ['profiles', 'users'],
+    ['mood_entries', 'moods'],
+    ['bitacora_posts', 'btPosts'],
+    ['bitacora_comments', 'btComments'],
+    ['help_posts', 'helpPosts'],
+    ['daily_responses', 'dqResponses'],
+    ['dq_comments', 'dqComments'],
+    ['momentos', 'momentos'],
+    ['momento_comments', 'momentoComments'],
+    ['direct_messages', 'dmMessages'],
+  ];
+  await Promise.all(qs.map(async function(t){
+    try{
+      var r = await sbClient.from(t[0]).select('id',{count:'exact',head:true});
+      if(!r.error) stats[t[1]] = r.count || 0;
+    }catch(e){}
+  }));
+  // Última semana
+  var weekAgoISO = new Date(Date.now() - 7*86400000).toISOString();
+  var week = { moods:0, btPosts:0, helpPosts:0, dqResponses:0, momentos:0 };
+  var wqs = [
+    ['mood_entries', 'moods'],
+    ['bitacora_posts', 'btPosts'],
+    ['help_posts', 'helpPosts'],
+    ['daily_responses', 'dqResponses'],
+    ['momentos', 'momentos'],
+  ];
+  await Promise.all(wqs.map(async function(t){
+    try{
+      var r = await sbClient.from(t[0]).select('id',{count:'exact',head:true}).gte('created_at', weekAgoISO);
+      if(!r.error) week[t[1]] = r.count || 0;
+    }catch(e){}
+  }));
+  // Render
+  var card = function(icon, label, value, weekVal, colHex){
+    var wk = weekVal!==undefined ? '<div style="font-size:10.5px;color:'+colHex+';opacity:.72;margin-top:3px">+'+weekVal+' esta semana</div>' : '';
+    return '<div style="background:rgba(255,255,255,.03);border:1px solid '+colHex+'22;border-left:3px solid '+colHex+';border-radius:10px;padding:11px 12px;display:flex;align-items:center;gap:10px">'
+      +'<div style="font-size:22px;flex-shrink:0">'+icon+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:10.5px;font-weight:700;letter-spacing:.9px;color:rgba(255,255,255,.42);text-transform:uppercase">'+label+'</div>'
+      +'<div style="font-size:20px;font-weight:800;color:'+colHex+';font-family:Jost,sans-serif;line-height:1;margin-top:3px">'+value.toLocaleString('es')+'</div>'
+      +wk
+      +'</div></div>';
+  };
+  el.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    + card('👥','Usuarios totales', stats.users, undefined, '#74c69d')
+    + card('💚','Ánimos registrados', stats.moods, week.moods, '#95d5b2')
+    + card('📖','Historias Bitácora', stats.btPosts, week.btPosts, '#a790e0')
+    + card('💬','Comentarios Bitácora', stats.btComments, undefined, '#c7b8f0')
+    + card('🆘','Pedidos Sala Ayuda', stats.helpPosts, week.helpPosts, '#e07a5f')
+    + card('❓','Respuestas DQ', stats.dqResponses, week.dqResponses, '#e9b949')
+    + card('✨','Comentarios DQ', stats.dqComments, undefined, '#f2c95f')
+    + card('🌸','Momentos', stats.momentos, week.momentos, '#f0a8c8')
+    + card('💌','Comentarios Momentos', stats.momentoComments, undefined, '#f3b8d0')
+    + card('📩','Mensajes directos', stats.dmMessages, undefined, '#7ab4d8')
+    + '</div>'
+    + '<p style="font-size:11px;color:rgba(255,255,255,.28);margin-top:10px;line-height:1.5">Data en vivo desde Supabase. Los stats de encuestas más abajo son solo de usuarios que respondieron la encuesta trimestral.</p>';
 }
 
 function _adminTransferHtml(){
@@ -25867,7 +25937,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1226;
+    var _BUILT_V = 1227;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
