@@ -281,6 +281,110 @@ async function sendMonthlyWrapped(users) {
   return { sent };
 }
 
+// ── BUDDY LOW MOOD ALERT ─────────────────────────────────────────────
+// Si un usuario con compañero/a registró ánimo bajo 2 días seguidos,
+// avisa suave al buddy. Solo dispara al START de la racha (no todos los días).
+// Corre en la ventana morning (12 UTC) para no acumular con las otras notifs.
+async function sendBuddyLowMoodAlerts(users) {
+  const utcH = new Date().getUTCHours();
+  if (utcH !== 12) return { sent: 0 };
+
+  // Emojis considerados "bajo" (score <= 2.5)
+  const LOW = new Set(['🥺', '😞', '😔', '😰', '😤', '😢']);
+
+  // Buscar todas las parejas activas (buddy_id set + buddy_started_at set)
+  const { data: pairs, error: pairErr } = await supabase
+    .from('profiles')
+    .select('id, buddy_id, buddy_name, buddy_started_at')
+    .not('buddy_id', 'is', null);
+
+  if (pairErr) { console.warn('[buddy-alert] err:', pairErr.message); return { sent: 0 }; }
+  if (!pairs || !pairs.length) return { sent: 0 };
+
+  const usersById = {};
+  (users || []).forEach(u => { usersById[u.id] = u; });
+
+  let sent = 0, checked = 0;
+
+  // Nombres para el broadcast (opcional — el buddy_name ya lo tenemos guardado)
+  const nameMap = {};
+  try {
+    const { data: nd } = await supabase.from('profiles').select('id,nombre,username').in('id', pairs.map(p => p.id));
+    (nd || []).forEach(p => { nameMap[p.id] = p.nombre || (p.username ? '@' + p.username : 'Tu compañero/a'); });
+  } catch (e) {}
+
+  for (const p of pairs) {
+    checked++;
+    try {
+      // Últimos 3 date_keys del user con ánimo registrado
+      const { data: moods } = await supabase
+        .from('mood_entries')
+        .select('date_key,emoji')
+        .eq('user_id', p.id)
+        .order('date_key', { ascending: false })
+        .limit(3);
+      if (!moods || moods.length < 2) continue;
+
+      // Los 2 más recientes deben ser fechas consecutivas y ambos bajos
+      const d0 = moods[0].date_key, d1 = moods[1].date_key;
+      const dt0 = new Date(d0 + 'T00:00:00Z').getTime();
+      const dt1 = new Date(d1 + 'T00:00:00Z').getTime();
+      const daysBetween = Math.round((dt0 - dt1) / 86400000);
+      if (daysBetween !== 1) continue; // no son consecutivos
+      if (!LOW.has(moods[0].emoji) || !LOW.has(moods[1].emoji)) continue;
+
+      // Solo alertar si el streak recién empezó → el 3º (si existe) NO es bajo
+      if (moods.length >= 3 && LOW.has(moods[2].emoji)) {
+        // Racha larga en curso — ya se alertó al start, no volver a spammear
+        continue;
+      }
+
+      // Insertar broadcast al buddy (siempre — para que quede en la campana)
+      const alertKey = `${p.id}:${d0}`;
+      const buddyName = nameMap[p.id] || 'Tu compañero/a';
+      await supabase.from('broadcasts').insert({
+        target: `user:${p.buddy_id}`,
+        subject: '🕊️ Un mensaje puede ayudar',
+        body: `${buddyName} viene con días difíciles. Nada urgente — solo por si querés escribirle algo cálido 💚`,
+        icon: '🕊️',
+        sender: 'Velo — Compañeros de bienestar',
+      });
+
+      // Push notification al buddy si tiene sub — respeta hora local del buddy (morning only)
+      const buddyU = usersById[p.buddy_id];
+      if (!buddyU || !buddyU.push_subscription) { sent++; continue; }
+      let parsedFull, rawSub, tz;
+      try {
+        parsedFull = JSON.parse(buddyU.push_subscription);
+        rawSub = parsedFull.sub && parsedFull.sub.endpoint ? parsedFull.sub : parsedFull;
+        if (!parsedFull.sub) parsedFull = { sub: rawSub };
+        tz = parsedFull.tz || 'America/Argentina/Buenos_Aires';
+      } catch { continue; }
+      const h = localHour(tz);
+      if (h < 6 || h >= 12) { sent++; continue; } // no es su mañana local — broadcast alcanza
+      if (parsedFull.lastBuddyAlert === alertKey) { sent++; continue; } // dedup por streak
+
+      try {
+        await webpush.sendNotification(rawSub, JSON.stringify({
+          title: '🕊️ Un mensaje puede ayudar',
+          body: `${buddyName} viene con días difíciles. Escribirle algo cálido puede sumar 💚`,
+          icon: '/assets/icon-192.png', badge: '/assets/icon-72.png',
+          tag: 'velo-buddy-alert', url: '/',
+        }));
+        const updated = { ...parsedFull, lastBuddyAlert: alertKey };
+        await supabase.from('profiles').update({ push_subscription: JSON.stringify(updated) }).eq('id', p.buddy_id);
+        sent++;
+      } catch (err) {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          await supabase.from('profiles').update({ push_subscription: null }).eq('id', p.buddy_id);
+        }
+      }
+    } catch (e) { console.warn('[buddy-alert] pair err:', e.message); }
+  }
+  console.log(`[buddy-alert] checked=${checked}, alerts_sent=${sent}`);
+  return { sent };
+}
+
 async function main() {
   const { data: users, error } = await supabase
     .from('profiles')
@@ -293,6 +397,9 @@ async function main() {
 
   // Wrapped mensual (día 1 en ventana morning UTC)
   try { await sendMonthlyWrapped(users); } catch (e) { console.warn('[wrapped] failed:', e.message); }
+
+  // Aviso a buddies con racha baja de 2 días
+  try { await sendBuddyLowMoodAlerts(users); } catch (e) { console.warn('[buddy-alert] failed:', e.message); }
 
   // Group users by slot so we call Gemini once per slot, not once per user
   const slotUsers = { morning: [], afternoon: [], night: [] };
