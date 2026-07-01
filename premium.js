@@ -1652,8 +1652,8 @@ function pReplayHomeTour(){
 }
 
 function _startHomeTour(){
-  // v1212: tip positioning + Reflexión separated from DQ
-  if(safeLS('get','velo_tour_done') === 'v1212') return;
+  // v1229: tip positioning + Reflexión separated from DQ
+  if(safeLS('get','velo_tour_done') === 'v1229') return;
 
   if(!document.getElementById('_tourStyle')){
     var _ts = document.createElement('style');
@@ -1694,7 +1694,7 @@ function _startHomeTour(){
   document.body.appendChild(tip);
 
   function _done(){
-    safeLS('set','velo_tour_done','v1212');
+    safeLS('set','velo_tour_done','v1229');
     spot.style.transition = 'opacity .3s'; tip.style.transition = 'opacity .3s';
     spot.style.opacity = '0'; tip.style.opacity = '0';
     setTimeout(function(){ if(spot.parentNode) spot.remove(); if(tip.parentNode) tip.remove(); }, 340);
@@ -1759,29 +1759,19 @@ function _startHomeTour(){
       tip.innerHTML = _buildTipHtml(s, idx);
 
       if(elVisible){
-        var r = els.length > 1 ? _unionRect(els) : firstEl.getBoundingClientRect();
         var pad = 8;
         var tipH = 200;
         var tipW = 320;
         var winH = window.innerHeight;
         var winW = window.innerWidth;
-        // Encuentra el scroller real: el .p-page-scroll de la página activa (o document como fallback)
-        var scroller = firstEl.closest('.p-page-scroll') || firstEl.closest('.p-page') || document.scrollingElement || document.documentElement;
-        // Position del elemento RELATIVO al scroller
-        var sRect = (scroller === document.scrollingElement || scroller === document.documentElement)
-          ? {top: 0}
-          : scroller.getBoundingClientRect();
-        var elAbsTop = (scroller.scrollTop||0) + (r.top - sRect.top);
-        var elH = r.height;
-        // Queremos el elemento a ~16% del viewport visible del scroller
-        var visibleH = (scroller === document.scrollingElement || scroller === document.documentElement) ? winH : scroller.clientHeight;
-        var desiredScroll = elAbsTop - visibleH * 0.16;
-        if(elH > visibleH * 0.5){
-          desiredScroll = elAbsTop - visibleH * 0.08;
+        // Usar el estándar scrollIntoView — el browser encuentra el scroller correcto solo
+        // block:'center' centra el elemento verticalmente en el viewport visible
+        try{
+          firstEl.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
+        }catch(e){
+          firstEl.scrollIntoView(true);
         }
-        try{ scroller.scrollTo({top: Math.max(0, desiredScroll), behavior:'smooth'}); }
-        catch(e){ scroller.scrollTop = Math.max(0, desiredScroll); }
-        // Recompute rect after scroll
+        // Wait for scroll to settle, then compute rect + render spotlight and tip
         setTimeout(function(){
           var r2 = els.length > 1 ? _unionRect(els) : firstEl.getBoundingClientRect();
           spot.style.cssText = 'position:fixed;z-index:9996;pointer-events:none'
@@ -1790,25 +1780,22 @@ function _startHomeTour(){
             +';border-radius:18px;border:2.5px solid rgba(116,198,157,.85)'
             +';animation:_tourPulse 2s ease-in-out infinite'
             +';transition:left .35s cubic-bezier(.4,0,.2,1),top .35s cubic-bezier(.4,0,.2,1),width .35s cubic-bezier(.4,0,.2,1),height .35s cubic-bezier(.4,0,.2,1);opacity:1';
-          // Place tip: PREFER below; if no room, ABOVE; if still no room, ABSOLUTE bottom
-          var tipTop, tipPlace = 'below';
+          // Place tip: PREFER below; if no room, ABOVE; if still no room, pin to bottom
+          var tipTop;
           var roomBelow = winH - (r2.bottom + pad + 14);
           var roomAbove = r2.top - pad - 14;
           if(roomBelow >= tipH + 10){
             tipTop = r2.bottom + pad + 14;
           } else if(roomAbove >= tipH + 10){
             tipTop = r2.top - pad - tipH - 14;
-            tipPlace = 'above';
           } else {
-            // No room either side — pin to bottom of viewport
             tipTop = Math.max(10, winH - tipH - 14);
-            tipPlace = 'pinned';
           }
           var tipLeft = Math.max(14, Math.min(r2.left, winW - tipW - 14));
           tip.style.left = tipLeft+'px';
           tip.style.top  = tipTop+'px';
           tip.style.opacity = '1';
-        }, 300);
+        }, 500);
       } else {
         spot.style.cssText = 'position:fixed;z-index:9996;pointer-events:none;inset:0;background:rgba(0,0,0,.72);opacity:1';
         tip.style.left = Math.max(14, (window.innerWidth - 320)/2)+'px';
@@ -25952,7 +25939,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1228;
+    var _BUILT_V = 1229;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
