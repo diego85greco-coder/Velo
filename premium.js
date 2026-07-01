@@ -2660,7 +2660,8 @@ function _loadHomeData(){
   _initDqThemeObserver();
   _initMoodChip();
   _checkVeloNotifs();
-  _checkMonthlyMoodReport(); // runs only if today is day 1 and not sent yet
+  // v1228: mensual NO se dispara automático. Solo desde admin (pAdminSendMonthlyReport).
+  // _checkMonthlyMoodReport();
   var d = new Date();
   var h = d.getHours();
   var greet = (h < 6 || h >= 20) ? 'Buenas noches' : h < 12 ? 'Buenos días' : 'Buenas tardes';
@@ -10733,9 +10734,8 @@ async function pSaveMood(){
   _loadTodayMoodHome();
   _renderHomeWeekMoodGraph().catch(function(){});
   _updateHomeStreak();
-
-  // Check if 1st of month — send monthly analysis
-  _checkMonthlyMoodReport();
+  // v1228: mensual NO se auto-envía. Solo desde admin (pAdminSendMonthlyReport).
+  // _checkMonthlyMoodReport();
 }
 
 // ── MOOD QUICK VIEW MODAL ─────────────────────────────────────
@@ -14603,6 +14603,21 @@ function pRenderInbox(){
   var msgs = []; try{ msgs = JSON.parse(safeLS('get','velo_inbox')||'[]'); }catch(e){}
   var _delSet = []; try{ _delSet = JSON.parse(safeLS('get','velo_inbox_deleted')||'[]'); }catch(e){}
   msgs = msgs.filter(function(m){ return _delSet.indexOf(m.id) < 0; });
+  // v1228: dedup de items locales con mismo asunto (reportes mensuales viejos duplicados
+  // creados por _checkMonthlyMoodReport corriendo múltiples veces). Solo dejamos el más reciente.
+  var _seenLocalSubj = {};
+  msgs = msgs.filter(function(m){
+    if(!m.asunto) return true;
+    var isReport = m.asunto.indexOf('Tu resumen de') === 0 || m.asunto.indexOf('Tu resumen semanal') === 0;
+    if(!isReport) return true;
+    if(_seenLocalSubj[m.asunto]){
+      // Duplicado → marcar como eliminado
+      if(_delSet.indexOf(m.id) < 0){ _delSet.push(m.id); safeLS('set','velo_inbox_deleted', JSON.stringify(_delSet)); }
+      return false;
+    }
+    _seenLocalSubj[m.asunto] = true;
+    return true;
+  });
   // Only show welcome (m1) to genuinely new users — if they have a username or visit history, they're returning
   var _isNewUser = !safeLS('get','velo_username') && !safeLS('get','velo_visit_days');
   var mockMsgs = [
@@ -25937,7 +25952,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1227;
+    var _BUILT_V = 1228;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
