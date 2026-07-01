@@ -1752,9 +1752,18 @@ async function pOpenBuddyModal(){
   if(!uid){ pToast('⚠️','Iniciá sesión primero'); return; }
   _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
   var myBuddy = null;
+  var iAmAvailable = false;
+  var availableCount = 0;
   try{
-    var me = await sbClient.from('profiles').select('buddy_id,buddy_name').eq('id',uid).maybeSingle();
-    if(me && me.data && me.data.buddy_id) myBuddy = {id:me.data.buddy_id, name:me.data.buddy_name||'tu compañero/a'};
+    var me = await sbClient.from('profiles').select('buddy_id,buddy_name,buddy_available_at').eq('id',uid).maybeSingle();
+    if(me && me.data){
+      if(me.data.buddy_id) myBuddy = {id:me.data.buddy_id, name:me.data.buddy_name||'tu compañero/a'};
+      if(me.data.buddy_available_at) iAmAvailable = true;
+    }
+    // Cuántos hay disponibles ahora mismo
+    var avc = await sbClient.from('profiles').select('id',{count:'exact',head:true})
+      .not('buddy_available_at','is',null).is('buddy_id',null).neq('id', uid);
+    if(!avc.error) availableCount = avc.count || 0;
   }catch(e){}
   var body = '';
   if(myBuddy){
@@ -1767,20 +1776,44 @@ async function pOpenBuddyModal(){
       + '<button onclick="pRemoveBuddy()" style="width:100%;padding:10px;background:none;border:1px solid rgba(255,120,120,.30);border-radius:12px;color:rgba(255,150,150,.75);font-size:12px;font-family:Jost,sans-serif;cursor:pointer">Terminar acompañamiento</button>'
       + '</div>';
   } else {
-    body = '<div>'
-      + '<div style="text-align:center;margin-bottom:16px">'
-        + '<div style="font-size:52px;margin-bottom:10px">🤝</div>'
-        + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:rgba(255,255,255,.96);line-height:1.15">Un compañero/a de bienestar</div>'
-      + '</div>'
-      + '<div style="background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.24);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:rgba(215,200,240,.78);line-height:1.55;font-family:Jost,sans-serif">'
-        + '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(200,180,240,.72);margin-bottom:6px">¿CÓMO FUNCIONA?</div>'
-        + '<div style="display:flex;gap:8px;margin-bottom:6px"><span style="color:rgba(220,200,255,.95);font-weight:800">1.</span><span>Velo elige al azar a un usuario/a de la comunidad que <strong>también se anotó</strong> como disponible.</span></div>'
-        + '<div style="display:flex;gap:8px;margin-bottom:6px"><span style="color:rgba(220,200,255,.95);font-weight:800">2.</span><span>Al aceptar, ambos quedan emparejados: pueden mandarse mensajes privados directos.</span></div>'
-        + '<div style="display:flex;gap:8px"><span style="color:rgba(220,200,255,.95);font-weight:800">3.</span><span>Tu compañero/a aparece en <strong style="color:rgba(220,255,235,.92)">Contactos favoritos</strong> del inicio y en la campana cuando te escriba.</span></div>'
-      + '</div>'
-      + '<div style="background:rgba(255,180,100,.06);border:1px solid rgba(255,180,100,.18);border-radius:12px;padding:9px 12px;margin-bottom:14px;font-size:11.5px;color:rgba(255,220,180,.72);line-height:1.5;font-family:Jost,sans-serif">⚠️ <strong>No es</strong> un profesional ni un guardián — es alguien de la comunidad como vos, que quiere acompañar. Podés terminar el acompañamiento cuando quieras.</div>'
-      + '<button onclick="pFindBuddy()" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">🔍 Buscar compañero/a al azar</button>'
-      + '</div>';
+    // Panel explicativo común
+    var explainHtml = '<div style="background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.24);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:rgba(215,200,240,.78);line-height:1.55;font-family:Jost,sans-serif">'
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(200,180,240,.72);margin-bottom:6px">¿CÓMO FUNCIONA?</div>'
+      + '<div style="display:flex;gap:8px;margin-bottom:6px"><span style="color:rgba(220,200,255,.95);font-weight:800">1.</span><span><strong>Te anotás</strong> como disponible → tu perfil entra a la lista de gente que quiere acompañar.</span></div>'
+      + '<div style="display:flex;gap:8px;margin-bottom:6px"><span style="color:rgba(220,200,255,.95);font-weight:800">2.</span><span>Cuando alguien elige, se hace un match al azar entre los anotados. También podés vos <strong>elegir a alguien de la lista</strong>.</span></div>'
+      + '<div style="display:flex;gap:8px"><span style="color:rgba(220,200,255,.95);font-weight:800">3.</span><span>Al emparejarse aparecen en <strong style="color:rgba(220,255,235,.92)">Contactos favoritos</strong> y en la campana cuando se escriban.</span></div>'
+    + '</div>'
+    + '<div style="background:rgba(255,180,100,.06);border:1px solid rgba(255,180,100,.18);border-radius:12px;padding:9px 12px;margin-bottom:14px;font-size:11.5px;color:rgba(255,220,180,.72);line-height:1.5;font-family:Jost,sans-serif">⚠️ <strong>No es</strong> un profesional ni un guardián — es alguien de la comunidad como vos, que quiere acompañar. Podés terminar el acompañamiento cuando quieras.</div>';
+    var availableBadge = '<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.32);border-radius:100px;padding:5px 12px;font-size:11.5px;font-weight:700;color:rgba(180,235,210,.92);font-family:Jost,sans-serif;margin-bottom:14px">🟢 '+availableCount+' persona'+(availableCount===1?'':'s')+' disponible'+(availableCount===1?'':'s')+' ahora</div>';
+    if(iAmAvailable){
+      // Estado: ya se anotó como disponible pero sin match aún
+      body = '<div>'
+        + '<div style="text-align:center;margin-bottom:14px">'
+          + '<div style="font-size:48px;margin-bottom:8px">🌿</div>'
+          + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(255,255,255,.96);line-height:1.15;margin-bottom:4px">Estás en la lista ✓</div>'
+          + '<div style="font-size:12.5px;color:rgba(180,220,195,.72);font-family:Jost,sans-serif;line-height:1.5">Otros usuarios pueden elegirte, o podés vos hacer el match desde acá.</div>'
+        + '</div>'
+        + '<div style="text-align:center">'+availableBadge+'</div>'
+        + explainHtml
+        + '<button onclick="pFindBuddy()" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;margin-bottom:8px">🔍 Buscar compañero/a entre los disponibles</button>'
+        + '<button onclick="pRemoveBuddyAvailability()" style="width:100%;padding:10px;background:none;border:1px solid rgba(255,120,120,.30);border-radius:12px;color:rgba(255,150,150,.72);font-size:12px;font-family:Jost,sans-serif;cursor:pointer">Quitarme de la lista de disponibles</button>'
+        + '</div>';
+    } else {
+      // Estado: no se anotó todavía
+      body = '<div>'
+        + '<div style="text-align:center;margin-bottom:14px">'
+          + '<div style="font-size:52px;margin-bottom:10px">🤝</div>'
+          + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:rgba(255,255,255,.96);line-height:1.15">Un compañero/a de bienestar</div>'
+        + '</div>'
+        + '<div style="text-align:center">'+availableBadge+'</div>'
+        + explainHtml
+        + '<button onclick="pMakeBuddyAvailable()" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(155,120,220,.92),rgba(116,88,180,.98));border:none;border-radius:14px;color:#fff;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;margin-bottom:8px">✋ Anotarme como disponible</button>'
+        + (availableCount > 0
+            ? '<button onclick="pFindBuddy()" style="width:100%;padding:12px;background:rgba(116,198,157,.14);border:1.5px solid rgba(116,198,157,.42);border-radius:14px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px">🔍 Elegir a alguien de la lista</button>'
+            : '<div style="text-align:center;font-size:12px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif;font-style:italic;padding:8px">Todavía no hay disponibles — anotate y esperá que otros se sumen 🌿</div>'
+          )
+        + '</div>';
+    }
   }
   var ov = document.createElement('div');
   ov.id = 'buddyOv';
@@ -1789,36 +1822,70 @@ async function pOpenBuddyModal(){
   ov.innerHTML = '<div style="background:linear-gradient(155deg,rgba(12,32,20,.98),rgba(6,20,12,.97));border-radius:24px;max-width:440px;width:100%;padding:24px;border:1.5px solid rgba(116,198,157,.35)">'+body+'<button onclick="document.getElementById(\'buddyOv\').remove()" style="width:100%;padding:11px;background:none;border:1px solid rgba(255,255,255,.10);border-radius:12px;color:rgba(255,255,255,.55);font-size:12.5px;font-family:Jost,sans-serif;cursor:pointer;margin-top:8px">Cerrar</button></div>';
   document.body.appendChild(ov);
 }
+async function pMakeBuddyAvailable(){
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid) return;
+  var btn = event && event.target; if(btn){ btn.disabled = true; btn.textContent = 'Anotando…'; }
+  try{
+    var r = await sbClient.from('profiles').update({ buddy_available_at: new Date().toISOString() }).eq('id', uid);
+    if(r.error){
+      pToast('⚠️','Falta la columna buddy_available_at — correr el SQL');
+      if(btn){ btn.disabled = false; btn.textContent = '✋ Anotarme como disponible'; }
+      return;
+    }
+    pToast('🌿','Ya estás en la lista — te avisamos cuando alguien te elija');
+    var b = document.getElementById('buddyOv'); if(b) b.remove();
+    setTimeout(pOpenBuddyModal, 250);
+  }catch(e){
+    if(btn){ btn.disabled = false; btn.textContent = '✋ Anotarme como disponible'; }
+    pToast('⚠️','No se pudo anotar');
+  }
+}
+async function pRemoveBuddyAvailability(){
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid) return;
+  _pConfirm('¿Quitarte de la lista? No te van a poder elegir hasta que te anotes de nuevo.', async function(){
+    try{
+      await sbClient.from('profiles').update({ buddy_available_at: null }).eq('id', uid);
+      pToast('🌿','Ya no estás en la lista');
+      var b = document.getElementById('buddyOv'); if(b) b.remove();
+      setTimeout(pOpenBuddyModal, 250);
+    }catch(e){ pToast('⚠️','Error'); }
+  });
+}
 async function pFindBuddy(){
   _initSupabase(); if(!sbClient) return;
   var uid = safeLS('get','velo_user_id') || '';
   if(!uid) return;
   var btn = event && event.target; if(btn){ btn.disabled = true; btn.textContent = 'Buscando…'; }
   try{
-    var since = new Date(Date.now() - 21*86400000).toISOString();
+    // Solo entre los que se anotaron explícitamente como disponibles (opt-in)
     var res = await sbClient.from('profiles')
-      .select('id,nombre,username,created_at')
-      .gte('created_at', since).is('buddy_id', null).neq('id', uid).limit(50);
+      .select('id,nombre,username,buddy_available_at')
+      .not('buddy_available_at','is',null).is('buddy_id', null).neq('id', uid).limit(50);
     if(res.error){
-      pToast('⚠️','La columna buddy_id no existe en la DB — hay que crearla');
+      pToast('⚠️','Falta la columna buddy_available_at — correr el SQL');
       if(btn){ btn.disabled = false; btn.textContent = '🔍 Buscar compañero/a'; }
       return;
     }
     var candidates = (res.data||[]).filter(function(p){ return p.nombre && p.nombre !== 'Anónimo' && p.nombre !== 'Alguien'; });
     if(!candidates.length){
-      pToast('🌿','No hay compañeros disponibles ahora. Volvé en unos días.');
+      pToast('🌿','No hay compañeros disponibles ahora. Anotate y esperá que otros se sumen.');
       if(btn){ btn.disabled = false; btn.textContent = '🔍 Buscar compañero/a'; }
       return;
     }
     var pick = candidates[Math.floor(Math.random() * Math.min(10, candidates.length))];
     var myName = safeLS('get','velo_user_name') || 'Alguien';
-    await sbClient.from('profiles').update({ buddy_id: pick.id, buddy_name: pick.nombre }).eq('id', uid);
-    await sbClient.from('profiles').update({ buddy_id: uid, buddy_name: myName }).eq('id', pick.id);
+    // Emparejar + limpiar buddy_available_at de ambos (ya no están disponibles)
+    await sbClient.from('profiles').update({ buddy_id: pick.id, buddy_name: pick.nombre, buddy_available_at: null }).eq('id', uid);
+    await sbClient.from('profiles').update({ buddy_id: uid, buddy_name: myName, buddy_available_at: null }).eq('id', pick.id);
     try{
       await sbClient.from('broadcasts').insert({
         target: 'user:'+pick.id,
-        subject: '🤝 Tenés un compañero de bienestar',
-        body: myName+' te eligió como compañero/a. Pueden mandarse mensajes cuando lo necesiten 💚',
+        subject: '🤝 Tenés un compañero/a de bienestar',
+        body: myName+' te eligió como compañero/a — vos te habías anotado como disponible. Pueden mandarse mensajes cuando lo necesiten 💚',
         icon: '🤝',
         sender: 'Velo — Comunidad'
       });
@@ -26906,7 +26973,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1241;
+    var _BUILT_V = 1242;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
