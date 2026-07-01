@@ -1709,24 +1709,28 @@ function _startHomeTour(){
   }
 
   function _buildTipHtml(s, idx){
-    var dots = STEPS.map(function(_,i){
-      return '<div style="width:'+(i===idx?'16':'6')+'px;height:6px;border-radius:3px;background:'
-        +(i===idx?'rgba(116,198,157,.9)':'rgba(255,255,255,.22)')+';transition:width .25s"></div>';
-    }).join('');
+    // Con muchos pasos (22+), en vez de dots individuales usamos progress bar + contador
+    // (evita overflow en el footer del tip)
+    var pct = Math.round(((idx+1) / STEPS.length) * 100);
+    var progressBar = '<div style="height:4px;background:rgba(255,255,255,.10);border-radius:2px;overflow:hidden;margin-bottom:10px">'
+      +'<div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(116,198,157,.85),rgba(160,210,180,.95));border-radius:2px;transition:width .3s"></div>'
+      +'</div>';
+    var counter = '<span style="font-size:11px;font-weight:700;color:rgba(180,220,195,.55);font-family:Jost,sans-serif;letter-spacing:.4px">'+(idx+1)+' / '+STEPS.length+'</span>';
     var isLast = idx === STEPS.length - 1;
     var nextBtn = isLast
-      ? '<button onclick="window._tourNext()" style="background:rgba(116,198,157,.92);border:none;color:#071409;font-size:14px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;padding:9px 20px;border-radius:12px;letter-spacing:.2px">¡Listo! ✨</button>'
-      : '<button onclick="window._tourNext()" style="background:rgba(116,198,157,.92);border:none;color:#071409;font-size:14px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;padding:9px 20px;border-radius:12px;letter-spacing:.2px">Siguiente →</button>';
-    return '<div style="background:linear-gradient(145deg,rgba(10,26,18,.98),rgba(6,18,12,.97));border:1.5px solid rgba(116,198,157,.50);border-radius:20px;padding:18px 18px 14px;box-shadow:0 14px 60px rgba(0,0,0,.75),0 0 0 1px rgba(116,198,157,.10)">'
+      ? '<button onclick="window._tourNext()" style="background:rgba(116,198,157,.92);border:none;color:#071409;font-size:13.5px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;padding:9px 18px;border-radius:12px;letter-spacing:.2px;white-space:nowrap">¡Listo! ✨</button>'
+      : '<button onclick="window._tourNext()" style="background:rgba(116,198,157,.92);border:none;color:#071409;font-size:13.5px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;padding:9px 18px;border-radius:12px;letter-spacing:.2px;white-space:nowrap">Siguiente →</button>';
+    return '<div style="background:linear-gradient(145deg,rgba(10,26,18,.98),rgba(6,18,12,.97));border:1.5px solid rgba(116,198,157,.50);border-radius:20px;padding:16px 16px 14px;box-shadow:0 14px 60px rgba(0,0,0,.75),0 0 0 1px rgba(116,198,157,.10);box-sizing:border-box">'
       +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">'
-      +'<span style="font-size:26px;line-height:1">'+s.e+'</span>'
-      +'<span style="font-size:14.5px;font-weight:800;color:rgba(222,250,232,.96);font-family:Jost,sans-serif">'+s.t+'</span>'
+      +'<span style="font-size:24px;line-height:1;flex-shrink:0">'+s.e+'</span>'
+      +'<span style="font-size:14.5px;font-weight:800;color:rgba(222,250,232,.96);font-family:Jost,sans-serif;flex:1;min-width:0">'+s.t+'</span>'
       +'</div>'
-      +'<p style="font-size:14px;color:rgba(180,220,195,.72);margin:0 0 13px;line-height:1.62;font-family:Jost,sans-serif">'+s.d+'</p>'
+      +'<p style="font-size:14px;color:rgba(180,220,195,.72);margin:0 0 12px;line-height:1.58;font-family:Jost,sans-serif">'+s.d+'</p>'
+      + progressBar
       +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
-      +'<div style="display:flex;gap:4px;align-items:center">'+dots+'</div>'
-      +'<div style="display:flex;gap:8px;align-items:center">'
-      +'<button onclick="window._tourDone()" style="background:none;border:none;color:rgba(255,255,255,.28);font-size:13px;cursor:pointer;font-family:Jost,sans-serif;padding:6px 8px">Saltar</button>'
+      +counter
+      +'<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">'
+      +'<button onclick="window._tourDone()" style="background:none;border:none;color:rgba(255,255,255,.35);font-size:12.5px;cursor:pointer;font-family:Jost,sans-serif;padding:6px 8px">Saltar</button>'
       +nextBtn
       +'</div></div></div>';
   }
@@ -25953,7 +25957,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1232;
+    var _BUILT_V = 1233;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
