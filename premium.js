@@ -1652,8 +1652,8 @@ function pReplayHomeTour(){
 }
 
 function _startHomeTour(){
-  // v1230: tip positioning + Reflexión separated from DQ
-  if(safeLS('get','velo_tour_done') === 'v1230') return;
+  // v1232: tip positioning + Reflexión separated from DQ
+  if(safeLS('get','velo_tour_done') === 'v1232') return;
 
   if(!document.getElementById('_tourStyle')){
     var _ts = document.createElement('style');
@@ -1665,21 +1665,28 @@ function _startHomeTour(){
   // Steps: sel = CSS selector to spotlight; fx = special effect to run on enter
   var STEPS = [
     {sel:'#homeReflexionPart',                                e:'✨', t:'Reflexión del día',     d:'Una frase especial cada mañana — para empezar con calma, presencia y un poco de luz.'},
-    {sel:'#homeMoodChip',                                     e:'💚', t:'Registrá tus ánimos',   d:'Tomate 5 segundos para anotar cómo te sentís hoy. Velo crea tu mapa emocional con eso.'},
-    {sel:'#homeDailyQ',                                       e:'💬', t:'Pregunta del día',      d:'Respondé en anónimo o con tu perfil y descubrí qué sienten los demás hoy.'},
-    {sel:'#hgGuardians',                                      e:'🛡️', t:'Apoyo Guardianes',      d:'Personas reales disponibles para escucharte sin juicios — sin necesidad de ser profesionales.'},
-    {sel:'#hgHelp',                                           e:'🤝', t:'Sala de Ayuda',         d:'Publicá lo que te pasa y cualquier persona de la comunidad puede acompañarte en tiempo real.'},
-    {sel:'#hgBottle',                                         e:'🌊', t:'Al Mar',                d:'Escribí lo que sentís y lanzalo en una botella. Alguien la encontrará y te dejará amor.'},
-    {sel:'#hgCircles',                                        e:'☮️', t:'Círculos de Paz',       d:'Grupos temáticos: ansiedad, duelo, relaciones, soledad. Compartir es sanar.'},
-    {sel:'#homeVeloIACard',                                   e:'🤖', t:'Acompañante IA',        d:'Un chatbot empático listo para escucharte 24/7. No reemplaza atención profesional — sí te abraza.'},
-    {sel:'#hgNews',                                           e:'🌞', t:'Buenas Noticias',       d:'Historias reales que dan esperanza. Una dosis de luz cuando el mundo se siente pesado.'},
-    {sel:'#homeBitacoraWidget',                               e:'📖', t:'Bitácora',              d:'Historias anónimas de la comunidad. Leé, escribí y conectate con quienes vivieron lo mismo.'},
-    {sel:'#hgDiary',                                          e:'📔', t:'Diario Íntimo',         d:'Tu espacio totalmente privado. Solo vos podés leer lo que escribís acá.'},
-    {sel:'#hgMusic',                                          e:'🎵', t:'Música y Relajación',   d:'Tracks originales para acompañar tu calma, tu enojo, tu llanto. La música también abraza.'},
+    {sel:'#homeMoodChip',                                     e:'💚',  t:'Registrá tus ánimos',   d:'Tomate 5 segundos para anotar cómo te sentís hoy. Velo crea tu mapa emocional con eso.'},
+    {sel:'#tileGuardians, #hgGuardians',                      e:'🛡️', t:'Apoyo Guardianes',      d:'Personas reales disponibles para escucharte sin juicios — sin necesidad de ser profesionales.'},
+    {sel:'#tileBitacora, #homeBitacoraWidget',                e:'📖',  t:'Bitácora',              d:'Historias anónimas de la comunidad. Leé, escribí y conectate con quienes vivieron lo mismo.'},
+    {sel:'#tileBottle, #hgBottle',                            e:'🌊',  t:'Al Mar',                d:'Escribí lo que sentís y lanzalo en una botella. Alguien la encontrará y te dejará amor.'},
+    {sel:'#tileCircles, #hgCircles',                          e:'☮️', t:'Círculos de Paz',       d:'Grupos temáticos: ansiedad, duelo, relaciones, soledad. Compartir es sanar.'},
+    {sel:'#tileHelp, #hgHelp',                                e:'🤝',  t:'Sala de Ayuda',         d:'Publicá lo que te pasa y cualquier persona de la comunidad puede acompañarte en tiempo real.'},
+    {sel:'#tileDiary, #hgDiary',                              e:'📔',  t:'Diario Íntimo',         d:'Tu espacio totalmente privado. Solo vos podés leer lo que escribís acá.'},
+    {sel:'#tileNews, #hgNews',                                e:'🌞',  t:'Buenas Noticias',       d:'Historias reales que dan esperanza. Una dosis de luz cuando el mundo se siente pesado.'},
+    {sel:'#tileMusic, #hgMusic',                              e:'🎵',  t:'Música y Relajación',   d:'Tracks originales para acompañar tu calma, tu enojo, tu llanto. La música también abraza.'},
+    {sel:'#homeReflexionPart',                                e:'✨',  t:'Reflexión del día',     d:'Una frase especial cada mañana — para empezar con calma, presencia y un poco de luz.'},
+    {sel:'#homeDailyQ',                                       e:'💬',  t:'Pregunta del día',      d:'Respondé en anónimo o con tu perfil y descubrí qué sienten los demás hoy.'},
     {sel:'#homeAmbientPanel',                                 e:'🌧️', t:'Sonidos Ambientales',   d:'Lluvia, bosque, fuego, mar. Ponete uno de fondo mientras escribís o respirás.'},
-    {sel:'#hgContacts',                                       e:'⭐', t:'Contactos Favoritos',   d:'Tus personas de confianza. Vé quién está activo y mandales un mensaje cuando los necesités.'},
-    {sel:'#topbarEstiloBtn',                                  e:'🌛', t:'Modo Estilo',           d:'Cambiá entre claro y oscuro cuando quieras. Mirá ↓', fx:'theme'},
-    {sel:'#topbarDonateBtn, #topbarPlusBtn',                  e:'💛', t:'Apoyá a Velo',          d:'Velo es 100% donaciones. Si te ayudó, podés donar o suscribirte a Plus — opcional, pero hace toda la diferencia 💛'},
+    {sel:'#tileContacts',                                     e:'⭐',  t:'Contactos Favoritos',   d:'Tus personas de confianza. Vé quién está activo y mandales un mensaje cuando los necesités.'},
+    {sel:'#tileCalmAi',                                       e:'🤖',  t:'Calma IA',              d:'Un chatbot empático listo para escucharte 24/7. No reemplaza atención profesional — sí te abraza.'},
+    {sel:'#tilePros',                                         e:'👨‍⚕️', t:'Profesionales',        d:'Especialistas verificados en bienestar emocional. Si necesitás apoyo profesional, están ahí.'},
+    {sel:'#tileVela',                                         e:'🙏',  t:'Velo Vela por Ti',      d:'Un espacio íntimo con encendido de vela — para meditar, recordar, honrar.'},
+    {sel:'.p-bn-item.p-bn-sos, .p-sos-pill',                  e:'🆘',  t:'Botón SOS',             d:'Acceso rápido a tu red de apoyo y contactos de emergencia. Siempre visible abajo.'},
+    {sel:'.p-bn-item[data-screen="contacts"]',                e:'⭐',  t:'Barra: Contactos',      d:'Desde acá vas rapidísimo a tus contactos favoritos, en cualquier momento.'},
+    {sel:'.p-bn-item[data-screen="diary"]',                   e:'📔',  t:'Barra: Diario',         d:'Acceso rápido a tu diario íntimo desde la barra inferior — siempre a un toque.'},
+    {sel:'.p-bn-item[data-screen="profile"]',                 e:'👤',  t:'Barra: Perfil',         d:'Tu perfil, reseñas, publicaciones y configuraciones — todo desde acá.'},
+    {sel:'#topbarEstiloBtn',                                  e:'🌛',  t:'Modo Estilo',           d:'Cambiá entre claro y oscuro cuando quieras. Mirá ↓', fx:'theme'},
+    {sel:'#topbarDonateBtn, #topbarPlusBtn',                  e:'💛',  t:'Apoyá a Velo',          d:'Velo es 100% donaciones. Si te ayudó, podés donar o suscribirte a Plus — opcional, pero hace toda la diferencia 💛'},
   ];
 
   var step = 0;
@@ -1694,7 +1701,7 @@ function _startHomeTour(){
   document.body.appendChild(tip);
 
   function _done(){
-    safeLS('set','velo_tour_done','v1230');
+    safeLS('set','velo_tour_done','v1232');
     spot.style.transition = 'opacity .3s'; tip.style.transition = 'opacity .3s';
     spot.style.opacity = '0'; tip.style.opacity = '0';
     setTimeout(function(){ if(spot.parentNode) spot.remove(); if(tip.parentNode) tip.remove(); }, 340);
@@ -2819,13 +2826,13 @@ function _initHomeNavTiles(){
 
   // ── TOP 4: compact strip ABOVE the greeting (order 0) ──────
   var topFour = [
-    { icon:'🤝', title:'Apoyo',      sub:'Guardianes', bg:'rgba(80,185,140,.18)',  border:'rgba(80,185,140,.50)',  glow:'rgba(80,185,140,.12)',  action:"pGoTo('guardians')" },
-    { icon:'📖', title:'Bitácora',   sub:'Historias', bg:'rgba(100,145,240,.18)', border:'rgba(100,145,240,.48)', glow:'rgba(100,145,240,.12)', action:"pGoTo('bitacora')" },
-    { icon:'🌊', title:'Al Mar',     sub:'Lanzá un mensaje', bg:'rgba(50,135,220,.18)',  border:'rgba(50,135,220,.48)',  glow:'rgba(50,135,220,.12)',  action:"pGoTo('bottle')" },
-    { icon:'☮️', title:'Círculos',   sub:'Grupos de chat',   bg:'rgba(165,105,235,.18)', border:'rgba(165,105,235,.48)', glow:'rgba(165,105,235,.12)', action:"pGoTo('circles')" },
+    { id:'tileGuardians', icon:'🤝', title:'Apoyo',      sub:'Guardianes', bg:'rgba(80,185,140,.18)',  border:'rgba(80,185,140,.50)',  glow:'rgba(80,185,140,.12)',  action:"pGoTo('guardians')" },
+    { id:'tileBitacora',  icon:'📖', title:'Bitácora',   sub:'Historias', bg:'rgba(100,145,240,.18)', border:'rgba(100,145,240,.48)', glow:'rgba(100,145,240,.12)', action:"pGoTo('bitacora')" },
+    { id:'tileBottle',    icon:'🌊', title:'Al Mar',     sub:'Lanzá un mensaje', bg:'rgba(50,135,220,.18)',  border:'rgba(50,135,220,.48)',  glow:'rgba(50,135,220,.12)',  action:"pGoTo('bottle')" },
+    { id:'tileCircles',   icon:'☮️', title:'Círculos',   sub:'Grupos de chat',   bg:'rgba(165,105,235,.18)', border:'rgba(165,105,235,.48)', glow:'rgba(165,105,235,.12)', action:"pGoTo('circles')" },
   ];
   var stripHtml = topFour.map(function(t){
-    return '<div onclick="'+t.action+'" class="home-nav-top-tile"'
+    return '<div id="'+t.id+'" onclick="'+t.action+'" class="home-nav-top-tile"'
       +' style="flex:1;cursor:pointer;background:'+t.bg+';border:1.5px solid '+t.border+';border-radius:16px;padding:12px 6px 11px;display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:0 4px 14px '+t.glow+';-webkit-tap-highlight-color:transparent;touch-action:manipulation"'
       +' onmousedown="this.style.transform=\'scale(.94)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'"'
       +' ontouchstart="this.style.transform=\'scale(.94)\'" ontouchend="this.style.transform=\'\'">'
@@ -2842,13 +2849,13 @@ function _initHomeNavTiles(){
 
   // ── SECOND ROW 4: compact strip ABOVE frase del día (order 25) ──
   var midFour = [
-    { icon:'💬', title:'Sala de Ayuda',       sub:'Apoyo en tiempo real', bg:'rgba(80,190,140,.18)',  border:'rgba(80,190,140,.50)',  glow:'rgba(80,190,140,.12)',  action:"pGoTo('help')" },
-    { icon:'📔', title:'Diario Íntimo',        sub:'Tu espacio privado',   bg:'rgba(175,130,230,.18)', border:'rgba(175,130,230,.50)', glow:'rgba(175,130,230,.12)', action:"pGoTo('diary')" },
-    { icon:'☀️', title:'Buenas Noticias',      sub:'Historias que suman',  bg:'rgba(240,175,45,.18)',  border:'rgba(240,175,45,.50)',  glow:'rgba(240,175,45,.12)',  action:"pGoTo('news')" },
-    { icon:'🎶', title:'Música y Relajación',  sub:'Sonidos y meditación', bg:'rgba(70,155,210,.18)',  border:'rgba(70,155,210,.50)',  glow:'rgba(70,155,210,.12)',  action:"pGoTo('meditacion')" },
+    { id:'tileHelp',   icon:'💬', title:'Sala de Ayuda',       sub:'Apoyo en tiempo real', bg:'rgba(80,190,140,.18)',  border:'rgba(80,190,140,.50)',  glow:'rgba(80,190,140,.12)',  action:"pGoTo('help')" },
+    { id:'tileDiary',  icon:'📔', title:'Diario Íntimo',        sub:'Tu espacio privado',   bg:'rgba(175,130,230,.18)', border:'rgba(175,130,230,.50)', glow:'rgba(175,130,230,.12)', action:"pGoTo('diary')" },
+    { id:'tileNews',   icon:'☀️', title:'Buenas Noticias',      sub:'Historias que suman',  bg:'rgba(240,175,45,.18)',  border:'rgba(240,175,45,.50)',  glow:'rgba(240,175,45,.12)',  action:"pGoTo('news')" },
+    { id:'tileMusic',  icon:'🎶', title:'Música y Relajación',  sub:'Sonidos y meditación', bg:'rgba(70,155,210,.18)',  border:'rgba(70,155,210,.50)',  glow:'rgba(70,155,210,.12)',  action:"pGoTo('meditacion')" },
   ];
   var stripHtml2 = midFour.map(function(t){
-    return '<div onclick="'+t.action+'" class="home-nav-top-tile"'
+    return '<div id="'+t.id+'" onclick="'+t.action+'" class="home-nav-top-tile"'
       +' style="flex:1;cursor:pointer;background:'+t.bg+';border:1.5px solid '+t.border+';border-radius:16px;padding:12px 6px 11px;display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:0 4px 14px '+t.glow+';-webkit-tap-highlight-color:transparent;touch-action:manipulation"'
       +' onmousedown="this.style.transform=\'scale(.94)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'"'
       +' ontouchstart="this.style.transform=\'scale(.94)\'" ontouchend="this.style.transform=\'\'">'
@@ -2865,13 +2872,13 @@ function _initHomeNavTiles(){
 
   // ── REMAINING 6: 2-column grid below frase del día (order 4) ──
   var gridSix = [
-    { icon:'⭐', title:'Contactos favoritos', sub:'Tus personas de confianza',    bg:'linear-gradient(135deg,rgba(198,148,38,.20),rgba(168,118,18,.14))',  border:'rgba(218,173,68,.38)', action:"pGoTo('contacts')" },
-    { icon:'🤖', title:'Calma IA',         sub:'Tu asistente de bienestar',    bg:'linear-gradient(135deg,rgba(70,178,160,.20),rgba(50,148,130,.14))',  border:'rgba(90,208,185,.38)', action:"pGoTo('calm-ai')" },
-    { icon:'👨‍⚕️', title:'Profesionales',  sub:'Especialistas en bienestar emocional', bg:'linear-gradient(135deg,rgba(50,118,200,.20),rgba(30,88,168,.14))',  border:'rgba(80,148,230,.38)', action:"pGoTo('professionals')" },
-    { icon:'🙏', title:'Velo Vela por Ti', sub:'Tu espacio personal',          bg:'linear-gradient(135deg,rgba(198,148,38,.20),rgba(168,118,18,.14))',  border:'rgba(218,173,68,.38)', action:"pGoTo('vela')" },
+    { id:'tileContacts', icon:'⭐', title:'Contactos favoritos', sub:'Tus personas de confianza',    bg:'linear-gradient(135deg,rgba(198,148,38,.20),rgba(168,118,18,.14))',  border:'rgba(218,173,68,.38)', action:"pGoTo('contacts')" },
+    { id:'tileCalmAi',   icon:'🤖', title:'Calma IA',         sub:'Tu asistente de bienestar',    bg:'linear-gradient(135deg,rgba(70,178,160,.20),rgba(50,148,130,.14))',  border:'rgba(90,208,185,.38)', action:"pGoTo('calm-ai')" },
+    { id:'tilePros',     icon:'👨‍⚕️', title:'Profesionales',  sub:'Especialistas en bienestar emocional', bg:'linear-gradient(135deg,rgba(50,118,200,.20),rgba(30,88,168,.14))',  border:'rgba(80,148,230,.38)', action:"pGoTo('professionals')" },
+    { id:'tileVela',     icon:'🙏', title:'Velo Vela por Ti', sub:'Tu espacio personal',          bg:'linear-gradient(135deg,rgba(198,148,38,.20),rgba(168,118,18,.14))',  border:'rgba(218,173,68,.38)', action:"pGoTo('vela')" },
   ];
   var gridHtml = gridSix.map(function(t){
-    return '<div onclick="'+t.action+'" class="home-nav-tile"'
+    return '<div id="'+t.id+'" onclick="'+t.action+'" class="home-nav-tile"'
       +' style="cursor:pointer;background:'+t.bg+';border:1.5px solid '+t.border+';border-radius:18px;padding:16px 14px 15px;display:flex;flex-direction:column;gap:7px;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;box-shadow:0 4px 16px rgba(0,0,0,.25)"'
       +' onmousedown="this.style.transform=\'scale(.96)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'"'
       +' ontouchstart="this.style.transform=\'scale(.96)\'" ontouchend="this.style.transform=\'\'">'
@@ -25946,7 +25953,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1231;
+    var _BUILT_V = 1232;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
