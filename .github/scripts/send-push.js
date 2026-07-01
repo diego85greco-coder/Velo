@@ -191,6 +191,93 @@ Reglas de estilo:
   return null;
 }
 
+// ── WRAPPED MENSUAL — se dispara el día 1 de cada mes ─────────────────
+// Manda broadcast al inbox + push notif a todos los usuarios que tuvieron
+// actividad de mood en el mes anterior. Dedup por mes en push_subscription.
+async function sendMonthlyWrapped(users) {
+  const now = new Date();
+  if (now.getUTCDate() !== 1) return { sent: 0 };
+  // Solo corremos en la ventana morning para no duplicar 3 veces el día 1
+  const utcH = now.getUTCHours();
+  if (!(utcH >= 5 && utcH <= 13)) return { sent: 0 };
+
+  // Mes anterior
+  const prev = new Date(now); prev.setUTCMonth(prev.getUTCMonth() - 1);
+  const yr = prev.getUTCFullYear();
+  const mo = prev.getUTCMonth() + 1;
+  const monthKey = `${yr}-${String(mo).padStart(2, '0')}`;
+  const mNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const monthLabel = mNames[mo - 1];
+
+  console.log(`[wrapped] Día 1 del mes — buscando actividad de ${monthLabel} ${yr}`);
+
+  // Usuarios con al menos 1 mood en el mes anterior
+  const { data: moods, error: moodErr } = await supabase
+    .from('mood_entries')
+    .select('user_id')
+    .like('date_key', `${monthKey}-%`);
+  if (moodErr) { console.error('[wrapped] mood_entries error:', moodErr); return { sent: 0 }; }
+
+  const activeIds = [...new Set((moods || []).map(m => m.user_id))];
+  console.log(`[wrapped] ${activeIds.length} usuarios con actividad en ${monthLabel}`);
+  if (!activeIds.length) return { sent: 0 };
+
+  const title = `🌸 Tu Wrapped de ${monthLabel} está listo`;
+  const body = `Descubrí cómo fue tu mes emocional. Deslizá para ver tu resumen ✨`;
+
+  // 1) Broadcast al inbox (uno por usuario para que quede en la campana)
+  const brRows = activeIds.map(uid => ({
+    target: `user:${uid}`,
+    subject: title,
+    body: `${body}\n\nAbrí Velo y andá al menú → "Mi Wrapped mensual" 🌿`,
+    icon: '🌸',
+    sender: 'Velo — Wrapped mensual',
+  }));
+  try {
+    // insert en batches de 100 para no romper el payload
+    for (let i = 0; i < brRows.length; i += 100) {
+      const chunk = brRows.slice(i, i + 100);
+      const { error: brErr } = await supabase.from('broadcasts').insert(chunk);
+      if (brErr) console.warn('[wrapped] broadcast batch err:', brErr);
+    }
+  } catch (e) { console.warn('[wrapped] broadcast err:', e.message); }
+
+  // 2) Push notif — solo a los que tienen push_subscription y no recibieron este mes
+  let sent = 0, failed = 0;
+  const usersById = {};
+  (users || []).forEach(u => { usersById[u.id] = u; });
+
+  await Promise.allSettled(activeIds.map(async (uid) => {
+    const u = usersById[uid];
+    if (!u || !u.push_subscription) return;
+    let parsedFull, rawSub;
+    try {
+      parsedFull = JSON.parse(u.push_subscription);
+      rawSub = parsedFull.sub && parsedFull.sub.endpoint ? parsedFull.sub : parsedFull;
+      if (!parsedFull.sub) parsedFull = { sub: rawSub };
+    } catch { return; }
+    // Dedup por mes
+    if (parsedFull.lastWrapped === monthKey) return;
+    try {
+      await webpush.sendNotification(rawSub, JSON.stringify({
+        title, body,
+        icon: '/assets/icon-192.png', badge: '/assets/icon-72.png',
+        tag: `velo-wrapped-${monthKey}`, url: '/',
+      }));
+      sent++;
+      const updated = { ...parsedFull, lastWrapped: monthKey };
+      await supabase.from('profiles').update({ push_subscription: JSON.stringify(updated) }).eq('id', uid);
+    } catch (err) {
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        await supabase.from('profiles').update({ push_subscription: null }).eq('id', uid);
+      }
+      failed++;
+    }
+  }));
+  console.log(`[wrapped] broadcasts=${brRows.length}, push_sent=${sent}, push_failed=${failed}`);
+  return { sent };
+}
+
 async function main() {
   const { data: users, error } = await supabase
     .from('profiles')
@@ -200,6 +287,9 @@ async function main() {
   if (error) { console.error('Supabase error:', error); process.exit(1); }
 
   console.log(`Found ${users?.length || 0} users with push_subscription in DB`);
+
+  // Wrapped mensual (día 1 en ventana morning UTC)
+  try { await sendMonthlyWrapped(users); } catch (e) { console.warn('[wrapped] failed:', e.message); }
 
   // Group users by slot so we call Gemini once per slot, not once per user
   const slotUsers = { morning: [], afternoon: [], night: [] };
