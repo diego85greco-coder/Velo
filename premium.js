@@ -1495,7 +1495,7 @@ function _showOnboarding(){
   }catch(e){}
 })();
 
-// Se llama al confirmar signup — otorga Plus al nuevo user y al referrer
+// Se llama al confirmar signup — registra la referral (Plus se gana cuando 5 invitados usen la app 3 días seguidos)
 async function _applyReferralIfAny(newUserId){
   var refFrom = safeLS('get','velo_ref_from');
   if(!refFrom || !newUserId || refFrom === newUserId) return;
@@ -1503,53 +1503,136 @@ async function _applyReferralIfAny(newUserId){
   var refTs = parseInt(safeLS('get','velo_ref_from_ts')||'0');
   if(refTs && (Date.now() - refTs > 24*3600000)){ safeLS('del','velo_ref_from'); return; }
   _initSupabase(); if(!sbClient) return;
-  var plusExpires = new Date(Date.now() + 30*86400000).toISOString();
   try{
-    // Nuevo user → Plus 30 días
-    await sbClient.from('profiles').update({ plus_expires_at: plusExpires }).eq('id', newUserId);
-    safeLS('set','velo_plan','plus');
-    // Referrer → +30 días encima de su expiración actual (o desde hoy si no tiene)
-    var refProfile = await sbClient.from('profiles').select('plus_expires_at').eq('id', refFrom).maybeSingle();
-    var refBaseTs = Date.now();
-    if(refProfile && refProfile.data && refProfile.data.plus_expires_at){
-      var existing = new Date(refProfile.data.plus_expires_at).getTime();
-      if(existing > refBaseTs) refBaseTs = existing;
-    }
-    var refExpires = new Date(refBaseTs + 30*86400000).toISOString();
-    await sbClient.from('profiles').update({ plus_expires_at: refExpires }).eq('id', refFrom);
-    // Broadcast notification al referrer
+    // Registrar la referral (unique(referred_id) — falla silenciosa si duplicado)
+    await sbClient.from('referrals').insert({ referrer_id: refFrom, referred_id: newUserId });
+    // Aviso al referrer: alguien aceptó
     try{
       await sbClient.from('broadcasts').insert({
         target: 'user:'+refFrom,
-        subject: '🎉 Alguien se unió con tu enlace',
-        body: 'Un amigo/a se sumó a Velo usando tu invitación. Ganaste 30 días de Velo Plus. ¡Gracias por hacer crecer la comunidad! 💚',
-        icon: '💚',
+        subject: '🌱 Alguien aceptó tu invitación',
+        body: 'Un amigo/a creó su cuenta con tu enlace. Tu invitación cuenta como válida cuando use Velo 3 días seguidos. Con 5 invitaciones válidas ganás 30 días de Velo Plus 💚',
+        icon: '🌱',
         sender: 'Velo — Comunidad'
       });
     }catch(e){}
     safeLS('del','velo_ref_from');
     safeLS('del','velo_ref_from_ts');
-    pToast('🎁','¡Ganaste 30 días de Velo Plus por venir invitado/a!');
+    pToast('💚','Bienvenido/a — te está esperando quien te invitó 🌿');
   }catch(e){ console.warn('[referral]', e); }
 }
 
+// Se ejecuta al iniciar app: si soy referred_id y tengo 3+ días de racha, marco qualified.
+// Si el referrer llega a 5 qualified NUEVOS (no premiados), le doy +30 días Plus.
+async function _checkReferralQualification(){
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid) return;
+  var streak = (typeof _getMoodStreak==='function') ? _getMoodStreak() : 0;
+  if(streak < 3) return;
+  _initSupabase(); if(!sbClient) return;
+  try{
+    var myRef = await sbClient.from('referrals')
+      .select('id,referrer_id,qualified_at').eq('referred_id', uid).maybeSingle();
+    if(!myRef || !myRef.data || myRef.data.qualified_at) return;
+    var refrId = myRef.data.referrer_id;
+    await sbClient.from('referrals').update({ qualified_at: new Date().toISOString() }).eq('id', myRef.data.id);
+    // Contar cuántas qualified sin premiar tiene el referrer
+    var pend = await sbClient.from('referrals')
+      .select('id',{count:'exact',head:true})
+      .eq('referrer_id', refrId).not('qualified_at','is',null).is('reward_granted_at', null);
+    var pendCount = pend.count || 0;
+    // Aviso de progreso
+    try{
+      var falta = Math.max(0, 5 - (pendCount % 5));
+      var msgBody = pendCount >= 5
+        ? '¡Ganaste 30 días de Velo Plus! Alguien que invitaste ya usó Velo 3 días seguidos. 5 invitaciones válidas cumplidas 🎉'
+        : 'Alguien que invitaste ya usó Velo 3 días seguidos. Llevás '+pendCount+'/5 invitaciones válidas — te faltan '+falta+' para ganar +30 días de Plus 💚';
+      await sbClient.from('broadcasts').insert({
+        target: 'user:'+refrId,
+        subject: pendCount >= 5 ? '🎉 ¡Ganaste Velo Plus!' : '✨ Otra invitación válida',
+        body: msgBody,
+        icon: pendCount >= 5 ? '🎉' : '💚',
+        sender: 'Velo — Comunidad'
+      });
+    }catch(e){}
+    // Si llegó a 5+ qualified sin premiar, otorgar Plus y marcar 5 como reward_granted
+    if(pendCount >= 5){
+      var rounds = Math.floor(pendCount / 5);
+      // Sumar rounds*30 días al referrer
+      var pref = await sbClient.from('profiles').select('plus_expires_at').eq('id', refrId).maybeSingle();
+      var base = Date.now();
+      if(pref && pref.data && pref.data.plus_expires_at){
+        var exi = new Date(pref.data.plus_expires_at).getTime();
+        if(exi > base) base = exi;
+      }
+      var newExp = new Date(base + rounds*30*86400000).toISOString();
+      await sbClient.from('profiles').update({ plus_expires_at: newExp }).eq('id', refrId);
+      // Marcar las (rounds*5) qualified más antiguas como premiadas
+      var rows = await sbClient.from('referrals')
+        .select('id').eq('referrer_id', refrId).not('qualified_at','is',null).is('reward_granted_at', null)
+        .order('qualified_at', {ascending: true}).limit(rounds * 5);
+      if(rows && rows.data && rows.data.length){
+        var ids = rows.data.map(function(r){ return r.id; });
+        await sbClient.from('referrals').update({ reward_granted_at: new Date().toISOString() }).in('id', ids);
+      }
+    }
+  }catch(e){ console.warn('[ref-check]', e); }
+}
+
 // UI: abrir modal de invitar amigos
-function pOpenInviteFriends(){
+async function pOpenInviteFriends(){
   var uid = safeLS('get','velo_user_id')||'';
   if(!uid){ pToast('⚠️','Iniciá sesión primero'); return; }
   var link = 'https://heyvelo.app?ref='+encodeURIComponent(uid);
+  // Cargar stats
+  var totalInv = 0, validInv = 0, statsErr = false;
+  _initSupabase();
+  if(sbClient){
+    try{
+      var _t = await sbClient.from('referrals').select('id',{count:'exact',head:true}).eq('referrer_id', uid);
+      if(_t.error) statsErr = true; else totalInv = _t.count || 0;
+      var _v = await sbClient.from('referrals').select('id',{count:'exact',head:true}).eq('referrer_id', uid).not('qualified_at','is',null);
+      if(_v.error) statsErr = true; else validInv = _v.count || 0;
+    }catch(e){ statsErr = true; }
+  }
+  var pendingInGroup = validInv % 5;
+  var falta = pendingInGroup === 0 && validInv > 0 ? 0 : (5 - pendingInGroup);
+  var rewardsEarned = Math.floor(validInv / 5);
+  var progressPct = Math.max(0, Math.min(100, (pendingInGroup / 5) * 100));
+  var statsCard = statsErr
+    ? ''
+    : '<div style="background:linear-gradient(140deg,rgba(155,120,220,.14),rgba(116,198,157,.10));border:1.5px solid rgba(155,120,220,.32);border-radius:16px;padding:14px 15px;margin-bottom:14px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+        + '<div style="font-size:11.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(215,195,240,.72);font-family:Jost,sans-serif">Tu progreso hacia Plus</div>'
+        + (rewardsEarned>0 ? '<div style="font-size:10.5px;font-weight:800;color:rgba(255,220,120,.92);font-family:Jost,sans-serif">🏆 '+rewardsEarned+' ganado'+(rewardsEarned>1?'s':'')+'</div>' : '')
+      + '</div>'
+      + '<div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:8px">'
+        + '<div style="font-size:34px;font-weight:800;color:rgba(230,215,255,.98);font-family:Jost,sans-serif;line-height:1">'+pendingInGroup+'</div>'
+        + '<div style="font-size:14px;color:rgba(200,180,240,.65);font-family:Jost,sans-serif;line-height:1.6">/ 5 invitaciones válidas</div>'
+      + '</div>'
+      + '<div style="height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;margin-bottom:8px"><div style="height:100%;width:'+progressPct+'%;background:linear-gradient(90deg,rgba(155,120,220,.90),rgba(116,198,157,.95));border-radius:4px;transition:width .5s"></div></div>'
+      + '<div style="font-size:11.5px;color:rgba(200,180,240,.68);font-family:Jost,sans-serif;line-height:1.5">'
+        + (totalInv === 0
+            ? 'Nadie aceptó todavía. Compartí tu enlace 💚'
+            : validInv === 0
+              ? totalInv+' persona'+(totalInv>1?'s':'')+' aceptaron y crearon cuenta. Falta que usen la app 3 días seguidos para que cuenten.'
+              : 'Aceptaron: <strong style="color:rgba(230,215,255,.95)">'+totalInv+'</strong> · Válidas (3 días activos): <strong style="color:rgba(180,255,220,.95)">'+validInv+'</strong> · Faltan <strong style="color:rgba(255,220,120,.95)">'+falta+'</strong> para +30 días Plus'
+          )
+      + '</div>'
+    + '</div>';
   var ex = document.getElementById('inviteFriendsOv'); if(ex) ex.remove();
   var ov = document.createElement('div');
   ov.id = 'inviteFriendsOv';
   ov.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.78);display:flex;align-items:flex-end;justify-content:center';
   ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
-  ov.innerHTML = '<div style="background:linear-gradient(150deg,rgba(10,28,18,.98),rgba(6,18,12,.97));border-radius:28px 28px 0 0;width:100%;max-width:520px;padding:16px 20px max(24px,env(safe-area-inset-bottom));border-top:2px solid rgba(116,198,157,.30)">'
+  ov.innerHTML = '<div style="background:linear-gradient(150deg,rgba(10,28,18,.98),rgba(6,18,12,.97));border-radius:28px 28px 0 0;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;padding:16px 20px max(24px,env(safe-area-inset-bottom));border-top:2px solid rgba(116,198,157,.30)">'
     +'<div style="display:flex;justify-content:center;padding:0 0 14px"><div style="width:36px;height:4px;background:rgba(116,198,157,.32);border-radius:2px"></div></div>'
-    +'<div style="text-align:center;margin-bottom:20px">'
+    +'<div style="text-align:center;margin-bottom:18px">'
       +'<div style="font-size:52px;line-height:1;margin-bottom:8px">💚</div>'
-      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:rgba(225,255,235,.96);line-height:1.2;margin-bottom:6px">Invitá a un amigo/a</div>'
-      +'<div style="font-size:13.5px;color:rgba(180,220,195,.72);line-height:1.55;font-family:Jost,sans-serif">Compartí Velo con alguien que necesite apoyo. <strong style="color:rgba(220,255,235,.92)">Ambos reciben 30 días de Velo Plus gratis.</strong></div>'
+      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;color:rgba(225,255,235,.96);line-height:1.2;margin-bottom:6px">Invitá amigos a Velo</div>'
+      +'<div style="font-size:13px;color:rgba(180,220,195,.72);line-height:1.55;font-family:Jost,sans-serif">Cuando <strong style="color:rgba(220,255,235,.92)">5 personas distintas</strong> creen cuenta con tu enlace y usen la app <strong style="color:rgba(220,255,235,.92)">3 días seguidos</strong>, ganás <strong style="color:rgba(255,220,140,.95)">30 días de Velo Plus</strong>.</div>'
     +'</div>'
+    + statsCard
     +'<div style="background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.32);border-radius:16px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px">'
       +'<div style="font-size:11px;flex:1;min-width:0;color:rgba(190,235,215,.88);font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.2px">'+link+'</div>'
       +'<button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+link+'\').then(function(){pToast(\'📋\',\'Enlace copiado\')})" style="flex-shrink:0;background:rgba(116,198,157,.28);border:1px solid rgba(116,198,157,.55);border-radius:10px;padding:6px 12px;color:rgba(220,255,235,.96);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">Copiar</button>'
@@ -1560,7 +1643,7 @@ function pOpenInviteFriends(){
   document.body.appendChild(ov);
 }
 function pShareInviteLink(link){
-  var text = '💚 Te invito a Velo — un espacio de apoyo emocional que me está ayudando. Unite con este enlace y ambos recibimos 30 días de Velo Plus gratis:\n\n'+link;
+  var text = '💚 Te invito a Velo — un espacio de apoyo emocional que me está ayudando. Unite con este enlace, te espero adentro 🌿:\n\n'+link;
   if(navigator.share){
     navigator.share({ title:'Vení a Velo', text:text, url:link }).catch(function(){});
   } else {
@@ -1675,9 +1758,29 @@ async function pOpenBuddyModal(){
   }catch(e){}
   var body = '';
   if(myBuddy){
-    body = '<div style="text-align:center;padding:14px 0"><div style="font-size:52px;margin-bottom:8px">🤝</div><div style="font-size:14px;color:rgba(220,255,235,.90);font-family:Jost,sans-serif;margin-bottom:6px">Tu compañero/a de bienestar es</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(255,255,255,.98);margin-bottom:14px">'+_escHtml(myBuddy.name)+'</div><button onclick="pOpenDM(\''+_jsAttr(myBuddy.id)+'\',\''+_jsAttr(myBuddy.name)+'\',\'🌿\');document.getElementById(\'buddyOv\').remove()" style="width:100%;padding:12px;background:rgba(116,198,157,.20);border:1.5px solid rgba(116,198,157,.55);border-radius:12px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;margin-bottom:8px">💬 Enviarle mensaje</button><button onclick="pRemoveBuddy()" style="width:100%;padding:10px;background:none;border:1px solid rgba(255,120,120,.30);border-radius:12px;color:rgba(255,150,150,.75);font-size:12px;font-family:Jost,sans-serif;cursor:pointer">Terminar acompañamiento</button></div>';
+    body = '<div style="text-align:center;padding:8px 0">'
+      + '<div style="font-size:52px;margin-bottom:8px">🤝</div>'
+      + '<div style="font-size:14px;color:rgba(220,255,235,.90);font-family:Jost,sans-serif;margin-bottom:6px">Tu compañero/a de bienestar es</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(255,255,255,.98);margin-bottom:14px">'+_escHtml(myBuddy.name)+'</div>'
+      + '<div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.22);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:rgba(180,220,195,.75);line-height:1.5;font-family:Jost,sans-serif;text-align:left">💡 Los mensajes que se manden aparecen en <strong style="color:rgba(220,255,235,.92)">Contactos favoritos</strong> y en la campana de notificaciones.</div>'
+      + '<button onclick="pOpenDM(\''+_jsAttr(myBuddy.id)+'\',\''+_jsAttr(myBuddy.name)+'\',\'🌿\');document.getElementById(\'buddyOv\').remove()" style="width:100%;padding:12px;background:rgba(116,198,157,.20);border:1.5px solid rgba(116,198,157,.55);border-radius:12px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;margin-bottom:8px">💬 Enviarle mensaje</button>'
+      + '<button onclick="pRemoveBuddy()" style="width:100%;padding:10px;background:none;border:1px solid rgba(255,120,120,.30);border-radius:12px;color:rgba(255,150,150,.75);font-size:12px;font-family:Jost,sans-serif;cursor:pointer">Terminar acompañamiento</button>'
+      + '</div>';
   } else {
-    body = '<div style="text-align:center"><div style="font-size:52px;margin-bottom:10px">🤝</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(255,255,255,.96);margin-bottom:8px">Buscá un compañero/a</div><div style="font-size:13px;color:rgba(180,220,195,.72);line-height:1.55;font-family:Jost,sans-serif;margin-bottom:18px">Un buddy es alguien de la comunidad que quiere acompañarte esta etapa. Pueden mandarse mensajes cuando lo necesiten.</div><button onclick="pFindBuddy()" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">🔍 Buscar compañero/a</button></div>';
+    body = '<div>'
+      + '<div style="text-align:center;margin-bottom:16px">'
+        + '<div style="font-size:52px;margin-bottom:10px">🤝</div>'
+        + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:rgba(255,255,255,.96);line-height:1.15">Un compañero/a de bienestar</div>'
+      + '</div>'
+      + '<div style="background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.24);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:rgba(215,200,240,.78);line-height:1.55;font-family:Jost,sans-serif">'
+        + '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(200,180,240,.72);margin-bottom:6px">¿CÓMO FUNCIONA?</div>'
+        + '<div style="display:flex;gap:8px;margin-bottom:6px"><span style="color:rgba(220,200,255,.95);font-weight:800">1.</span><span>Velo elige al azar a un usuario/a de la comunidad que <strong>también se anotó</strong> como disponible.</span></div>'
+        + '<div style="display:flex;gap:8px;margin-bottom:6px"><span style="color:rgba(220,200,255,.95);font-weight:800">2.</span><span>Al aceptar, ambos quedan emparejados: pueden mandarse mensajes privados directos.</span></div>'
+        + '<div style="display:flex;gap:8px"><span style="color:rgba(220,200,255,.95);font-weight:800">3.</span><span>Tu compañero/a aparece en <strong style="color:rgba(220,255,235,.92)">Contactos favoritos</strong> del inicio y en la campana cuando te escriba.</span></div>'
+      + '</div>'
+      + '<div style="background:rgba(255,180,100,.06);border:1px solid rgba(255,180,100,.18);border-radius:12px;padding:9px 12px;margin-bottom:14px;font-size:11.5px;color:rgba(255,220,180,.72);line-height:1.5;font-family:Jost,sans-serif">⚠️ <strong>No es</strong> un profesional ni un guardián — es alguien de la comunidad como vos, que quiere acompañar. Podés terminar el acompañamiento cuando quieras.</div>'
+      + '<button onclick="pFindBuddy()" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">🔍 Buscar compañero/a al azar</button>'
+      + '</div>';
   }
   var ov = document.createElement('div');
   ov.id = 'buddyOv';
@@ -1823,6 +1926,44 @@ async function pOpenMonthlyWrapped(){
     }catch(e){}
   }
   var moodEntries = Object.keys(moodMap).map(function(k){ return {date:k, emoji:moodMap[k].emoji, label:moodMap[k].label||''}; });
+  // ─── EMPTY STATE: si no hay registros del mes, mostrar teaser motivador ───
+  if(moodEntries.length === 0){
+    var monthNameEmpty = mNames[mo]+' '+yr;
+    var uNameEmpty = (safeLS('get','velo_user_name')||'').split(' ')[0] || 'vos';
+    var mkOv = document.createElement('div');
+    mkOv.id = 'wrappedOv';
+    mkOv.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.90);display:flex;flex-direction:column';
+    mkOv.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;color:#fff;flex-shrink:0">'
+      + '<span style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.60);font-family:Jost,sans-serif">🌸 WRAPPED — '+monthNameEmpty+'</span>'
+      + '<button onclick="document.getElementById(\'wrappedOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.50);font-size:26px;cursor:pointer;padding:4px 10px">×</button>'
+      + '</div>'
+      + '<div style="flex:1;overflow-y:auto;padding:8px 16px 16px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">'
+        + '<div style="width:100%;max-width:520px;background:linear-gradient(155deg,#1a4d2e 0%,#0f2818 45%,#0a1f14 100%);border-radius:26px;padding:44px 24px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08);position:relative;overflow:hidden">'
+          + '<div style="position:absolute;top:24px;left:26px;font-size:14px;opacity:.42">🌿</div>'
+          + '<div style="position:absolute;top:60px;right:32px;font-size:11px;opacity:.35">🌱</div>'
+          + '<div style="position:absolute;bottom:90px;left:36px;font-size:13px;opacity:.38">🌿</div>'
+          + '<div style="position:absolute;bottom:140px;right:24px;font-size:16px;opacity:.32">🍃</div>'
+          + '<div style="font-size:11.5px;font-weight:800;letter-spacing:4px;color:rgba(180,255,220,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:14px">🌸 TU WRAPPED DE '+monthNameEmpty.toUpperCase()+'</div>'
+          + '<div style="font-size:78px;line-height:1;margin-bottom:18px;filter:drop-shadow(0 4px 22px rgba(116,198,157,.35))">🌱</div>'
+          + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:32px;color:#fff;line-height:1.15;margin-bottom:14px;font-style:italic">Todavía estás<br>empezando</div>'
+          + '<div style="font-size:14px;color:rgba(200,240,215,.78);line-height:1.6;font-family:Jost,sans-serif;padding:0 8px;margin-bottom:22px">'+_escHtml(uNameEmpty)+', tu Wrapped de '+monthNameEmpty+' se irá armando a medida que registres tu ánimo. <strong style="color:rgba(220,255,235,.95)">Cuando termine el mes vas a ver acá tu historia emocional completa.</strong></div>'
+          + '<div style="width:100%;max-width:340px;margin:0 auto 20px auto;padding:14px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(180,255,220,.24);border-radius:16px;text-align:left">'
+            + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(180,255,220,.72);text-transform:uppercase;margin-bottom:8px">👀 QUÉ VAS A VER</div>'
+            + '<div style="font-size:12.5px;color:rgba(220,255,235,.82);line-height:1.7;font-family:Jost,sans-serif">'
+              + '📅 Cuántos días te registraste<br>'
+              + '🔥 Tu racha más larga<br>'
+              + '💫 Tu emoción más frecuente<br>'
+              + '🌟 Tu mejor y peor día<br>'
+              + '💚 Todo lo que aportaste a la comunidad'
+            + '</div>'
+          + '</div>'
+          + '<button onclick="document.getElementById(\'wrappedOv\').remove();pOpenMoodQuickView&&pOpenMoodQuickView()" style="padding:13px 28px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:100px;color:#071409;font-size:13.5px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px;box-shadow:0 4px 18px rgba(116,198,157,.35)">🌿 Registrar mi ánimo de hoy</button>'
+        + '</div>'
+      + '</div>';
+    document.body.appendChild(mkOv);
+    return;
+  }
   var moodScore = {'😄':5,'😊':4.5,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🥺':2.5,'😞':2,'😔':2,'😰':1.8,'😤':2.2,'😢':1};
   var counts = {};
   moodEntries.forEach(function(e){ counts[e.emoji] = (counts[e.emoji]||0)+1; });
@@ -3259,6 +3400,7 @@ function _loadHomeData(){
   // Banners contextuales (ritual dominical + aniversario emocional)
   try{ setTimeout(function(){ _renderSundayRitualBanner(); }, 400); }catch(e){}
   try{ setTimeout(function(){ _checkEmotionalAnniversary(); }, 800); }catch(e){}
+  try{ setTimeout(function(){ _checkReferralQualification(); }, 1200); }catch(e){}
   // v1228: mensual NO se dispara automático. Solo desde admin (pAdminSendMonthlyReport).
   // _checkMonthlyMoodReport();
   var d = new Date();
@@ -3433,7 +3575,7 @@ function _initHomeQuickCtaStrip(){
       +'</button>';
   };
   strip.innerHTML =
-    tile('✨','Mi Wrapped','del mes','linear-gradient(140deg,rgba(228,178,80,.28),rgba(180,120,40,.20))','rgba(228,178,80,.55)','pOpenMonthlyWrapped()')
+    tile('🌸','Mi Wrapped','del mes','linear-gradient(140deg,rgba(228,178,80,.28),rgba(180,120,40,.20))','rgba(228,178,80,.55)','pOpenMonthlyWrapped()')
     + tile('💌','Invitar','+30d Plus','linear-gradient(140deg,rgba(116,198,157,.30),rgba(74,160,110,.22))','rgba(116,198,157,.60)','pOpenInviteFriends()')
     + tile('🤝','Compañero','de bienestar','linear-gradient(140deg,rgba(155,120,220,.30),rgba(116,88,180,.22))','rgba(155,120,220,.55)','pOpenBuddyModal()');
   host.insertAdjacentElement('afterbegin', strip);
@@ -19809,27 +19951,66 @@ async function _adminLoadReferralStats(){
   _initSupabase();
   if(!sbClient){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Sin conexión</p>'; return; }
   try{
-    // Cuenta users con plus_expires_at futuro (activos)
     var nowISO = new Date().toISOString();
+    // Stats top
     var plusRes = await sbClient.from('profiles').select('id',{count:'exact',head:true}).gt('plus_expires_at', nowISO);
     var plusActive = plusRes.count || 0;
-    // Cuenta users con buddy_id (buddy activos)
     var buddyRes = await sbClient.from('profiles').select('id',{count:'exact',head:true}).not('buddy_id','is',null);
     var buddyActive = buddyRes.count || 0;
+    // Cargar todas las referrals
+    var refsRes = await sbClient.from('referrals').select('referrer_id,referred_id,created_at,qualified_at,reward_granted_at').order('created_at',{ascending:false}).limit(500);
+    if(refsRes.error){
+      el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        + '<div style="background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.25);border-left:3px solid rgba(155,120,220,.85);border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;font-weight:700;letter-spacing:1px;color:rgba(200,180,240,.60);text-transform:uppercase">Plus activos</div><div style="font-size:22px;font-weight:800;color:rgba(200,180,240,.98);font-family:Jost,sans-serif;line-height:1;margin-top:4px">'+plusActive+'</div></div>'
+        + '<div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.25);border-left:3px solid rgba(116,198,157,.85);border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;font-weight:700;letter-spacing:1px;color:rgba(180,220,195,.60);text-transform:uppercase">Buddies activos</div><div style="font-size:22px;font-weight:800;color:rgba(180,235,210,.98);font-family:Jost,sans-serif;line-height:1;margin-top:4px">'+buddyActive+'</div></div>'
+        + '</div><p style="font-size:11.5px;color:rgba(255,180,120,.65);margin-top:10px">⚠️ Falta la tabla <code>referrals</code>. Correr el SQL de referrals para ver el detalle de invitaciones.</p>';
+      return;
+    }
+    var refs = refsRes.data || [];
+    // Agrupar por referrer
+    var byRefr = {};
+    refs.forEach(function(r){
+      if(!byRefr[r.referrer_id]) byRefr[r.referrer_id] = { total:0, qualified:0, rewarded:0, last:r.created_at };
+      byRefr[r.referrer_id].total++;
+      if(r.qualified_at) byRefr[r.referrer_id].qualified++;
+      if(r.reward_granted_at) byRefr[r.referrer_id].rewarded++;
+    });
+    var refrIds = Object.keys(byRefr);
+    var totalRefs = refs.length;
+    var totalQual = refs.filter(function(r){ return r.qualified_at; }).length;
+    var totalRewarded = refs.filter(function(r){ return r.reward_granted_at; }).length;
+    // Nombres de los referrers
+    var nameMap = {};
+    if(refrIds.length){
+      try{
+        var pd = await sbClient.from('profiles').select('id,nombre,username,email').in('id', refrIds);
+        (pd.data||[]).forEach(function(p){ nameMap[p.id] = p.nombre || (p.username?'@'+p.username:'') || (p.email||'').split('@')[0] || 'Sin nombre'; });
+      }catch(e){}
+    }
+    var rows = refrIds.map(function(id){ return {id:id, name:nameMap[id]||'?', s:byRefr[id]}; })
+      .sort(function(a,b){ return b.s.qualified - a.s.qualified || b.s.total - a.s.total; }).slice(0,20);
+    var tableHtml = rows.length
+      ? '<div style="margin-top:12px;background:rgba(0,0,0,.20);border:1px solid rgba(155,120,220,.20);border-radius:10px;overflow:hidden">'
+        + '<div style="display:grid;grid-template-columns:2.2fr .8fr .8fr .8fr;gap:6px;padding:9px 12px;background:rgba(155,120,220,.10);font-size:10.5px;font-weight:800;letter-spacing:1px;color:rgba(215,195,240,.72);text-transform:uppercase;font-family:Jost,sans-serif"><div>QUIÉN INVITÓ</div><div style="text-align:center">ACEPT.</div><div style="text-align:center">VÁLID.</div><div style="text-align:center">PLUS</div></div>'
+        + rows.map(function(r){
+          return '<div style="display:grid;grid-template-columns:2.2fr .8fr .8fr .8fr;gap:6px;padding:8px 12px;border-top:1px solid rgba(255,255,255,.05);font-size:12px;font-family:Jost,sans-serif">'
+            + '<div style="color:rgba(230,215,255,.92);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(r.name)+'</div>'
+            + '<div style="text-align:center;color:rgba(255,255,255,.72);font-weight:700">'+r.s.total+'</div>'
+            + '<div style="text-align:center;color:rgba(180,255,220,.90);font-weight:800">'+r.s.qualified+'</div>'
+            + '<div style="text-align:center;color:rgba(255,220,120,.92);font-weight:800">'+Math.floor(r.s.qualified/5)+'</div>'
+          + '</div>';
+        }).join('')
+        + '</div>'
+      : '<p style="margin-top:10px;font-size:11.5px;color:rgba(255,255,255,.35);font-style:italic">Nadie usó su enlace de invitación todavía 🌿</p>';
     el.innerHTML =
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-      + '<div style="background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.25);border-left:3px solid rgba(155,120,220,.85);border-radius:10px;padding:12px 14px">'
-        + '<div style="font-size:10.5px;font-weight:700;letter-spacing:1px;color:rgba(200,180,240,.60);text-transform:uppercase">Plus activos</div>'
-        + '<div style="font-size:22px;font-weight:800;color:rgba(200,180,240,.98);font-family:Jost,sans-serif;line-height:1;margin-top:4px">'+plusActive+'</div>'
-        + '<div style="font-size:10.5px;color:rgba(200,180,240,.50);margin-top:3px">Usuarios con Plus vigente</div>'
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">'
+      + '<div style="background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.25);border-left:3px solid rgba(155,120,220,.85);border-radius:10px;padding:10px 12px"><div style="font-size:9.5px;font-weight:700;letter-spacing:.8px;color:rgba(200,180,240,.60);text-transform:uppercase">Plus vigentes</div><div style="font-size:20px;font-weight:800;color:rgba(200,180,240,.98);font-family:Jost,sans-serif;line-height:1;margin-top:3px">'+plusActive+'</div></div>'
+      + '<div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.25);border-left:3px solid rgba(116,198,157,.85);border-radius:10px;padding:10px 12px"><div style="font-size:9.5px;font-weight:700;letter-spacing:.8px;color:rgba(180,220,195,.60);text-transform:uppercase">Buddies</div><div style="font-size:20px;font-weight:800;color:rgba(180,235,210,.98);font-family:Jost,sans-serif;line-height:1;margin-top:3px">'+buddyActive+'</div></div>'
+      + '<div style="background:rgba(100,180,240,.08);border:1px solid rgba(100,180,240,.25);border-left:3px solid rgba(100,180,240,.85);border-radius:10px;padding:10px 12px"><div style="font-size:9.5px;font-weight:700;letter-spacing:.8px;color:rgba(180,220,250,.60);text-transform:uppercase">Invitaciones</div><div style="font-size:20px;font-weight:800;color:rgba(200,230,255,.98);font-family:Jost,sans-serif;line-height:1;margin-top:3px">'+totalRefs+'</div><div style="font-size:9.5px;color:rgba(180,220,250,.55);margin-top:2px">'+totalQual+' válidas · '+totalRewarded+' premiadas</div></div>'
+      + '<div style="background:rgba(255,220,120,.08);border:1px solid rgba(255,220,120,.25);border-left:3px solid rgba(255,220,120,.85);border-radius:10px;padding:10px 12px"><div style="font-size:9.5px;font-weight:700;letter-spacing:.8px;color:rgba(240,220,180,.60);text-transform:uppercase">Referrers</div><div style="font-size:20px;font-weight:800;color:rgba(255,232,180,.98);font-family:Jost,sans-serif;line-height:1;margin-top:3px">'+refrIds.length+'</div><div style="font-size:9.5px;color:rgba(240,220,180,.55);margin-top:2px">Personas invitando</div></div>'
       + '</div>'
-      + '<div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.25);border-left:3px solid rgba(116,198,157,.85);border-radius:10px;padding:12px 14px">'
-        + '<div style="font-size:10.5px;font-weight:700;letter-spacing:1px;color:rgba(180,220,195,.60);text-transform:uppercase">Buddies activos</div>'
-        + '<div style="font-size:22px;font-weight:800;color:rgba(180,235,210,.98);font-family:Jost,sans-serif;line-height:1;margin-top:4px">'+buddyActive+'</div>'
-        + '<div style="font-size:10.5px;color:rgba(180,220,195,.50);margin-top:3px">Usuarios con compañero/a</div>'
-      + '</div>'
-      + '</div>';
-  }catch(e){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Error cargando referrals — puede que falten columnas buddy_id/plus_expires_at en profiles</p>'; }
+      + tableHtml;
+  }catch(e){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Error cargando referrals — revisá consola</p>'; console.warn('[admin-ref]', e); }
 }
 
 async function _adminLoadModerationStats(){
@@ -26725,7 +26906,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1238;
+    var _BUILT_V = 1239;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
