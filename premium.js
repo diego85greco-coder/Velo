@@ -1568,6 +1568,182 @@ function pShareInviteLink(link){
   }
 }
 
+// ── RITUAL DOMINICAL SINCRONIZADO ────────────────────────────────────
+async function _checkSundayRitual(){
+  var now = new Date();
+  if(now.getDay() !== 0) return null;
+  var h = now.getHours();
+  if(h < 19 || h >= 22) return null;
+  var dateKey = _dateKey ? _dateKey() : (now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'));
+  if(safeLS('get','velo_ritual_done_'+dateKey) === '1') return null;
+  if(safeLS('get','velo_ritual_dismiss_'+dateKey) === '1') return null;
+  return { window: h < 20 ? 'early' : 'peak', dateKey: dateKey };
+}
+function _renderSundayRitualBanner(){
+  var host = document.querySelector('.r-hero-left');
+  if(!host || document.getElementById('sundayRitualBanner')) return;
+  _checkSundayRitual().then(function(info){
+    if(!info) return;
+    var banner = document.createElement('div');
+    banner.id = 'sundayRitualBanner';
+    banner.style.cssText = 'width:100%;box-sizing:border-box;margin:0 0 12px;order:-1';
+    var titleTxt = info.window === 'peak' ? '🌟 Es el momento — check-in semanal' : '🌟 Empieza el ritual dominical';
+    var subTxt = info.window === 'peak' ? 'Muchas personas están cerrando su semana ahora. Sumate 💚' : 'Cerrá la semana registrando cómo la viviste.';
+    banner.innerHTML = '<div style="background:linear-gradient(140deg,rgba(155,88,228,.22),rgba(74,160,110,.18));border:1.5px solid rgba(155,120,220,.55);border-radius:18px;padding:14px 16px;position:relative;overflow:hidden;box-shadow:0 4px 22px rgba(120,88,200,.20)"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:26px;line-height:1;flex-shrink:0;animation:sundayRitualPulse 2.6s ease-in-out infinite">🌟</div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:rgba(235,225,255,.98);font-family:Jost,sans-serif;letter-spacing:.2px;line-height:1.25;margin-bottom:2px">'+titleTxt+'</div><div style="font-size:11.5px;color:rgba(210,200,240,.75);font-family:Jost,sans-serif;line-height:1.35">'+subTxt+'</div></div><button onclick="pDoSundayRitual()" style="flex-shrink:0;padding:8px 14px;background:linear-gradient(135deg,rgba(155,120,220,.90),rgba(116,88,180,.95));border:none;border-radius:100px;color:#fff;font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px;box-shadow:0 3px 10px rgba(155,120,220,.35)">Sumarme</button><button onclick="_dismissSundayRitual()" style="position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(255,255,255,.35);font-size:15px;cursor:pointer;padding:2px 4px;line-height:1">×</button></div></div>';
+    if(!document.getElementById('_sundayRitualKf')){
+      var kf = document.createElement('style'); kf.id = '_sundayRitualKf';
+      kf.textContent = '@keyframes sundayRitualPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 4px rgba(255,200,120,.45))}50%{transform:scale(1.12);filter:drop-shadow(0 0 10px rgba(255,180,60,.75))}}';
+      document.head.appendChild(kf);
+    }
+    host.insertAdjacentElement('afterbegin', banner);
+  });
+}
+function _dismissSundayRitual(){
+  var now = new Date();
+  var dateKey = _dateKey ? _dateKey() : (now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'));
+  safeLS('set','velo_ritual_dismiss_'+dateKey,'1');
+  var b = document.getElementById('sundayRitualBanner'); if(b) b.remove();
+}
+function pDoSundayRitual(){
+  var now = new Date();
+  var dateKey = _dateKey ? _dateKey() : (now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'));
+  safeLS('set','velo_ritual_done_'+dateKey,'1');
+  var b = document.getElementById('sundayRitualBanner'); if(b) b.remove();
+  if(typeof pOpenMoodChipSheet === 'function') pOpenMoodChipSheet();
+  else if(typeof pQuickMood === 'function') pQuickMood();
+}
+
+// ── ANIVERSARIO EMOCIONAL 30/60/90 días ──────────────────────────────
+async function _checkEmotionalAnniversary(){
+  var host = document.querySelector('.r-hero-left');
+  if(!host || document.getElementById('anniversaryBanner')) return;
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!sbClient || !uid) return;
+  var checkedKey = 'velo_ann_checked_'+_dateKey();
+  if(safeLS('get', checkedKey) === '1') return;
+  safeLS('set', checkedKey, '1');
+  try{
+    var candidates = [];
+    var days = [30, 60, 90];
+    for(var i=0; i<days.length; i++){
+      var d = days[i];
+      var since = new Date(Date.now() - (d+1)*86400000).toISOString();
+      var until = new Date(Date.now() - (d-1)*86400000).toISOString();
+      var res = await sbClient.from('bitacora_posts').select('id,titulo,contenido,created_at')
+        .eq('user_id', uid).gte('created_at', since).lte('created_at', until)
+        .order('created_at',{ascending:false}).limit(1);
+      if(!res.error && res.data && res.data.length){
+        var p = res.data[0];
+        if(safeLS('get','velo_ann_shown_'+p.id) === '1') continue;
+        candidates.push({days:d, post:p});
+        break;
+      }
+    }
+    if(!candidates.length) return;
+    var pick = candidates[0];
+    var post = pick.post;
+    var title = post.titulo || (post.contenido||'').slice(0,60)+'...';
+    var banner = document.createElement('div');
+    banner.id = 'anniversaryBanner';
+    banner.style.cssText = 'width:100%;box-sizing:border-box;margin:0 0 12px;order:-1';
+    banner.innerHTML = '<div style="background:linear-gradient(140deg,rgba(228,178,80,.20),rgba(180,120,40,.16));border:1.5px solid rgba(228,178,80,.55);border-radius:18px;padding:14px 16px;position:relative"><div style="display:flex;align-items:flex-start;gap:11px"><div style="font-size:24px;line-height:1;flex-shrink:0;margin-top:2px">📖</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:rgba(255,225,150,.75);font-family:Jost,sans-serif;margin-bottom:4px">Hace '+pick.days+' días</div><div style="font-size:13.5px;font-weight:700;color:rgba(255,240,215,.94);font-family:Jost,sans-serif;line-height:1.35;margin-bottom:4px">"'+_escHtml(title.slice(0,90))+'"</div><div style="font-size:12px;color:rgba(255,225,180,.68);font-family:Jost,sans-serif;line-height:1.4">¿Cómo estás con eso hoy? Puede ser un buen momento para cerrar el proceso 🌿</div></div><button onclick="_dismissAnniversary(\''+_escHtml(String(post.id))+'\')" style="position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(255,255,255,.35);font-size:15px;cursor:pointer;padding:2px 4px;line-height:1">×</button></div><button onclick="_openAnnPost(\''+_escHtml(String(post.id))+'\')" style="width:100%;margin-top:11px;padding:9px;background:rgba(228,178,80,.25);border:1px solid rgba(228,178,80,.55);border-radius:12px;color:rgba(255,238,200,.98);font-size:12.5px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px">Ver mi post →</button></div>';
+    host.insertAdjacentElement('afterbegin', banner);
+  }catch(e){}
+}
+function _dismissAnniversary(postId){
+  safeLS('set','velo_ann_shown_'+postId,'1');
+  var b = document.getElementById('anniversaryBanner'); if(b) b.remove();
+}
+function _openAnnPost(postId){
+  safeLS('set','velo_ann_shown_'+postId,'1');
+  var b = document.getElementById('anniversaryBanner'); if(b) b.remove();
+  if(typeof _btOpenDetail === 'function') _btOpenDetail(postId);
+  else pGoTo('bitacora');
+}
+
+// ── BUDDY SYSTEM opt-in ──────────────────────────────────────────────
+async function pOpenBuddyModal(){
+  var ex = document.getElementById('buddyOv'); if(ex) ex.remove();
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid){ pToast('⚠️','Iniciá sesión primero'); return; }
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var myBuddy = null;
+  try{
+    var me = await sbClient.from('profiles').select('buddy_id,buddy_name').eq('id',uid).maybeSingle();
+    if(me && me.data && me.data.buddy_id) myBuddy = {id:me.data.buddy_id, name:me.data.buddy_name||'tu compañero/a'};
+  }catch(e){}
+  var body = '';
+  if(myBuddy){
+    body = '<div style="text-align:center;padding:14px 0"><div style="font-size:52px;margin-bottom:8px">🤝</div><div style="font-size:14px;color:rgba(220,255,235,.90);font-family:Jost,sans-serif;margin-bottom:6px">Tu compañero/a de bienestar es</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(255,255,255,.98);margin-bottom:14px">'+_escHtml(myBuddy.name)+'</div><button onclick="pOpenDM(\''+_jsAttr(myBuddy.id)+'\',\''+_jsAttr(myBuddy.name)+'\',\'🌿\');document.getElementById(\'buddyOv\').remove()" style="width:100%;padding:12px;background:rgba(116,198,157,.20);border:1.5px solid rgba(116,198,157,.55);border-radius:12px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;margin-bottom:8px">💬 Enviarle mensaje</button><button onclick="pRemoveBuddy()" style="width:100%;padding:10px;background:none;border:1px solid rgba(255,120,120,.30);border-radius:12px;color:rgba(255,150,150,.75);font-size:12px;font-family:Jost,sans-serif;cursor:pointer">Terminar acompañamiento</button></div>';
+  } else {
+    body = '<div style="text-align:center"><div style="font-size:52px;margin-bottom:10px">🤝</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(255,255,255,.96);margin-bottom:8px">Buscá un compañero/a</div><div style="font-size:13px;color:rgba(180,220,195,.72);line-height:1.55;font-family:Jost,sans-serif;margin-bottom:18px">Un buddy es alguien de la comunidad que quiere acompañarte esta etapa. Pueden mandarse mensajes cuando lo necesiten.</div><button onclick="pFindBuddy()" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px">🔍 Buscar compañero/a</button></div>';
+  }
+  var ov = document.createElement('div');
+  ov.id = 'buddyOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div style="background:linear-gradient(155deg,rgba(12,32,20,.98),rgba(6,20,12,.97));border-radius:24px;max-width:440px;width:100%;padding:24px;border:1.5px solid rgba(116,198,157,.35)">'+body+'<button onclick="document.getElementById(\'buddyOv\').remove()" style="width:100%;padding:11px;background:none;border:1px solid rgba(255,255,255,.10);border-radius:12px;color:rgba(255,255,255,.55);font-size:12.5px;font-family:Jost,sans-serif;cursor:pointer;margin-top:8px">Cerrar</button></div>';
+  document.body.appendChild(ov);
+}
+async function pFindBuddy(){
+  _initSupabase(); if(!sbClient) return;
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid) return;
+  var btn = event && event.target; if(btn){ btn.disabled = true; btn.textContent = 'Buscando…'; }
+  try{
+    var since = new Date(Date.now() - 21*86400000).toISOString();
+    var res = await sbClient.from('profiles')
+      .select('id,nombre,username,created_at')
+      .gte('created_at', since).is('buddy_id', null).neq('id', uid).limit(50);
+    if(res.error){
+      pToast('⚠️','La columna buddy_id no existe en la DB — hay que crearla');
+      if(btn){ btn.disabled = false; btn.textContent = '🔍 Buscar compañero/a'; }
+      return;
+    }
+    var candidates = (res.data||[]).filter(function(p){ return p.nombre && p.nombre !== 'Anónimo' && p.nombre !== 'Alguien'; });
+    if(!candidates.length){
+      pToast('🌿','No hay compañeros disponibles ahora. Volvé en unos días.');
+      if(btn){ btn.disabled = false; btn.textContent = '🔍 Buscar compañero/a'; }
+      return;
+    }
+    var pick = candidates[Math.floor(Math.random() * Math.min(10, candidates.length))];
+    var myName = safeLS('get','velo_user_name') || 'Alguien';
+    await sbClient.from('profiles').update({ buddy_id: pick.id, buddy_name: pick.nombre }).eq('id', uid);
+    await sbClient.from('profiles').update({ buddy_id: uid, buddy_name: myName }).eq('id', pick.id);
+    try{
+      await sbClient.from('broadcasts').insert({
+        target: 'user:'+pick.id,
+        subject: '🤝 Tenés un compañero de bienestar',
+        body: myName+' te eligió como compañero/a. Pueden mandarse mensajes cuando lo necesiten 💚',
+        icon: '🤝',
+        sender: 'Velo — Comunidad'
+      });
+    }catch(e){}
+    pToast('🤝','Ya tenés compañero/a: '+pick.nombre);
+    var b = document.getElementById('buddyOv'); if(b) b.remove();
+    setTimeout(pOpenBuddyModal, 300);
+  }catch(e){
+    pToast('⚠️','Error buscando');
+    if(btn){ btn.disabled = false; btn.textContent = '🔍 Buscar compañero/a'; }
+  }
+}
+function pRemoveBuddy(){
+  _pConfirm('¿Terminar el acompañamiento? Podés buscar otro/a después.', async function(){
+    _initSupabase(); if(!sbClient) return;
+    var uid = safeLS('get','velo_user_id') || '';
+    if(!uid) return;
+    try{
+      var me = await sbClient.from('profiles').select('buddy_id').eq('id',uid).maybeSingle();
+      var otherUid = me && me.data ? me.data.buddy_id : null;
+      await sbClient.from('profiles').update({ buddy_id: null, buddy_name: null }).eq('id', uid);
+      if(otherUid) await sbClient.from('profiles').update({ buddy_id: null, buddy_name: null }).eq('id', otherUid);
+      pToast('🌿','Terminaste el acompañamiento');
+      var b = document.getElementById('buddyOv'); if(b) b.remove();
+    }catch(e){}
+  });
+}
+
 // ── GRACIAS AL GUARDIÁN post-chat ────────────────────────────────────
 function pThankGuardian(){
   var g = null;
@@ -1670,25 +1846,113 @@ async function pOpenMonthlyWrapped(){
       try{ var _gr = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('guardian_id',uid).gte('created_at',monthStart); if(!_gr.error) comm.helped = _gr.count||0; }catch(e){}
     }catch(e){}
   }
-  var isDark = document.body.classList.contains('r-dark');
-  var slideBg = 'linear-gradient(160deg,#0a1f16 0%,#0d2e1e 40%,#0b1c14 100%)';
   var uName = (safeLS('get','velo_user_name')||'').split(' ')[0] || 'vos';
-  // Slides: array of {bg, title, big, sub, small}
-  var slides = [
-    {bg:'linear-gradient(150deg,#0e2818,#0a1f14)', kicker:'TU MES EMOCIONAL', title:'Wrapped', big:monthTitle, sub:'Un año de '+monthTitle.split(' ')[0]+', '+uName, small:'Deslizá para ver tu resumen →'},
-    {bg:'linear-gradient(150deg,#1a3a26,#0a1f14)', kicker:'TU ÁNIMO DOMINANTE', title:domEmoji, big:'"'+domLabel+'"', sub:'fue tu emoción más frecuente', small:counts[domEmoji]+' de '+nReg+' días registrados'},
-    {bg:'linear-gradient(150deg,#0e2830,#0a1f2a)', kicker:'TU CONSTANCIA', title:'🔥', big:nReg+' días', sub:'registraste tu ánimo en '+monthTitle, small:'Tu racha actual: '+streak+' días seguidos'},
-    {bg:'linear-gradient(150deg,#301e2c,#180e18)', kicker:'TUS APORTES A LA COMUNIDAD', title:'💚', big:(comm.btPosts+comm.momentos+comm.helped)+' gestos', sub:'compartiste y acompañaste', small:comm.btPosts+' historias · '+comm.momentos+' momentos · '+comm.helped+' personas acompañadas'},
-    {bg:'linear-gradient(150deg,#2a2410,#1a1408)', kicker:'EN RESUMEN', title:'✨', big:scoreLabel, sub:'Y sos parte de una comunidad que se cuida.', small:'Gracias por seguir apareciendo. Nos vemos en '+mNames[(mo+1)%12]+'. 💚'},
-  ];
-  var slideHtml = slides.map(function(s,i){
-    return '<div class="wrapped-slide" data-i="'+i+'" style="min-width:100%;scroll-snap-align:center;background:'+s.bg+';border-radius:24px;padding:32px 24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:460px;position:relative">'
-      + '<div style="font-size:10.5px;font-weight:800;letter-spacing:3px;color:rgba(255,255,255,.55);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:14px">'+s.kicker+'</div>'
-      + '<div style="font-size:56px;line-height:1;margin-bottom:14px">'+s.title+'</div>'
-      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:34px;color:#fff;line-height:1.15;margin-bottom:10px;font-style:italic">'+s.big+'</div>'
-      + '<div style="font-size:15px;color:rgba(255,255,255,.72);line-height:1.5;margin-bottom:12px;font-family:Jost,sans-serif;padding:0 8px">'+s.sub+'</div>'
-      + '<div style="font-size:12px;color:rgba(255,255,255,.42);font-family:Jost,sans-serif;line-height:1.5;padding:0 4px">'+s.small+'</div>'
-      + '<div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:9.5px;color:rgba(255,255,255,.28);letter-spacing:1.5px;font-family:Jost,sans-serif">✧ Velo · heyvelo.app ✧</div>'
+  var totalGestures = comm.btPosts + comm.momentos + comm.helped + comm.dqAnswered;
+  // Top 3 emotions
+  var topEmotions = Object.keys(counts).map(function(e){ return {e:e, n:counts[e]}; }).sort(function(a,b){ return b.n - a.n; }).slice(0,3);
+  var emotionLabel = { '😄':'genial','😊':'bien','😌':'en paz','💪':'con fuerza','🌟':'radiante','😐':'neutro','🥺':'sensible','😞':'bajo','😔':'triste','😰':'ansioso','😤':'frustrado','😢':'difícil' };
+  // Best/worst days
+  var moodScoresList = moodEntries.map(function(e){ return {date:e.date, sc:(moodScore[e.emoji]||3), emoji:e.emoji}; });
+  var bestDay = moodScoresList.reduce(function(a,b){ return !a || b.sc>a.sc ? b : a; }, null);
+  var worstDay = moodScoresList.reduce(function(a,b){ return !a || b.sc<a.sc ? b : a; }, null);
+  var dayNameLong = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  function _dayLabel(dateStr){
+    if(!dateStr) return '';
+    var p = dateStr.split('-');
+    if(p.length<3) return '';
+    var d = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+    return dayNameLong[d.getDay()]+' '+p[2];
+  }
+  // Sparkle helper — decoración de las slides
+  var sparkles = '<div style="position:absolute;top:20px;left:24px;font-size:14px;opacity:.55">✧</div><div style="position:absolute;top:60px;right:32px;font-size:10px;opacity:.42">✦</div><div style="position:absolute;bottom:80px;left:36px;font-size:12px;opacity:.48">✧</div><div style="position:absolute;bottom:120px;right:24px;font-size:16px;opacity:.42">✦</div><div style="position:absolute;top:40%;left:18px;font-size:9px;opacity:.35">✧</div><div style="position:absolute;top:35%;right:22px;font-size:11px;opacity:.38">✦</div>';
+  // Slides — cada una más rica, con datos extras
+  var slides = [];
+  // 1. PORTADA
+  slides.push({
+    bg:'linear-gradient(155deg,#1a4d2e 0%,#0f2818 45%,#0a1f14 100%)',
+    accent:'rgba(180,255,220,.85)',
+    html:
+      sparkles
+      + '<div style="font-size:11.5px;font-weight:800;letter-spacing:4px;color:rgba(180,255,220,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:14px">✨ TU MES EMOCIONAL</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:78px;color:#fff;line-height:.95;font-weight:600;letter-spacing:-2px;margin-bottom:8px;text-shadow:0 2px 24px rgba(116,198,157,.35)">Wrapped</div>'
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(180,255,220,.55);font-family:Jost,sans-serif;margin-bottom:36px">◆ ◆ ◆</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:36px;font-style:italic;color:rgba(255,255,255,.95);line-height:1.15;margin-bottom:8px">'+monthTitle+'</div>'
+      + '<div style="font-size:15px;color:rgba(200,240,215,.75);font-family:Jost,sans-serif;letter-spacing:.2px;margin-bottom:32px">Un mes en la vida de <strong style="color:rgba(220,255,235,.98);font-weight:700">'+_escHtml(uName)+'</strong></div>'
+      + '<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(180,255,220,.10);border:1px solid rgba(180,255,220,.30);border-radius:100px;padding:8px 16px;font-size:12px;color:rgba(200,240,215,.90);font-family:Jost,sans-serif;font-weight:700;letter-spacing:.4px">Deslizá para ver tu resumen →</div>'
+  });
+  // 2. RESUMEN EN NÚMEROS (grid stats)
+  slides.push({
+    bg:'linear-gradient(155deg,#0a2d1a 0%,#0d3524 40%,#0a1f14 100%)',
+    html:
+      sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(180,255,220,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:24px">TU MES EN NÚMEROS</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:340px;margin-bottom:20px">'
+        + '<div style="background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.35);border-radius:16px;padding:16px 12px;text-align:center"><div style="font-size:36px;font-weight:800;color:rgba(220,255,235,.98);font-family:Jost,sans-serif;line-height:1">'+nReg+'</div><div style="font-size:10.5px;font-weight:700;color:rgba(180,240,215,.68);text-transform:uppercase;letter-spacing:1px;margin-top:5px">Días registrados</div></div>'
+        + '<div style="background:rgba(255,178,80,.15);border:1px solid rgba(255,178,80,.35);border-radius:16px;padding:16px 12px;text-align:center"><div style="font-size:36px;font-weight:800;color:rgba(255,232,180,.98);font-family:Jost,sans-serif;line-height:1">'+streak+'</div><div style="font-size:10.5px;font-weight:700;color:rgba(255,220,160,.68);text-transform:uppercase;letter-spacing:1px;margin-top:5px">🔥 Racha</div></div>'
+        + '<div style="background:rgba(155,120,220,.15);border:1px solid rgba(155,120,220,.35);border-radius:16px;padding:16px 12px;text-align:center"><div style="font-size:36px;font-weight:800;color:rgba(230,215,255,.98);font-family:Jost,sans-serif;line-height:1">'+totalGestures+'</div><div style="font-size:10.5px;font-weight:700;color:rgba(215,200,240,.68);text-transform:uppercase;letter-spacing:1px;margin-top:5px">Aportes</div></div>'
+        + '<div style="background:rgba(100,180,240,.15);border:1px solid rgba(100,180,240,.35);border-radius:16px;padding:16px 12px;text-align:center"><div style="font-size:36px;font-weight:800;color:rgba(200,230,255,.98);font-family:Jost,sans-serif;line-height:1">'+avgScore.toFixed(1)+'</div><div style="font-size:10.5px;font-weight:700;color:rgba(180,220,250,.68);text-transform:uppercase;letter-spacing:1px;margin-top:5px">Ánimo promedio</div></div>'
+      + '</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:19px;color:rgba(255,255,255,.85);line-height:1.4;text-align:center;padding:0 20px">"'+scoreLabel+'"</div>'
+  });
+  // 3. TU ÁNIMO DOMINANTE + TOP 3
+  var top3Html = topEmotions.map(function(t, idx){
+    var pct = Math.round((t.n/nReg)*100);
+    var barW = pct;
+    var accents = ['rgba(255,220,120,.95)','rgba(180,220,240,.85)','rgba(220,190,240,.80)'];
+    return '<div style="margin-bottom:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:18px">'+t.e+' '+(emotionLabel[t.e]||'')+'</span><span style="font-size:12px;font-weight:800;color:'+accents[idx]+';font-family:Jost,sans-serif">'+t.n+' días</span></div><div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+barW+'%;background:'+accents[idx]+';border-radius:3px"></div></div></div>';
+  }).join('');
+  slides.push({
+    bg:'linear-gradient(155deg,#3d2810 0%,#2a1c0a 45%,#180f04 100%)',
+    html:
+      sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(255,220,120,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:20px">TU EMOCIÓN MÁS FRECUENTE</div>'
+      + '<div style="font-size:110px;line-height:1;margin-bottom:14px;filter:drop-shadow(0 4px 24px rgba(255,200,80,.45))">'+domEmoji+'</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:38px;color:#fff;line-height:1.15;margin-bottom:6px">'+domLabel+'</div>'
+      + '<div style="font-size:13.5px;color:rgba(255,225,180,.72);font-family:Jost,sans-serif;margin-bottom:22px">apareció <strong style="color:rgba(255,232,180,.98);font-weight:800">'+counts[domEmoji]+' de '+nReg+' días</strong> ('+Math.round((counts[domEmoji]/nReg)*100)+'%)</div>'
+      + (topEmotions.length > 1 ? '<div style="width:100%;max-width:320px;text-align:left"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;color:rgba(255,220,120,.55);text-transform:uppercase;margin-bottom:12px;text-align:center">TU TOP 3</div>'+top3Html+'</div>' : '')
+  });
+  // 4. TU MEJOR / MÁS DIFÍCIL DÍA
+  slides.push({
+    bg:'linear-gradient(155deg,#0e2436 0%,#0a1c2a 40%,#08101c 100%)',
+    html:
+      sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(180,220,240,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:26px">TUS DÍAS QUE MARCARON EL MES</div>'
+      + (bestDay ? '<div style="width:100%;max-width:340px;background:linear-gradient(140deg,rgba(180,255,180,.14),rgba(100,180,140,.08));border:1.5px solid rgba(180,255,180,.30);border-radius:20px;padding:22px 18px;margin-bottom:14px"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;color:rgba(180,255,180,.68);text-transform:uppercase;margin-bottom:8px">MEJOR DÍA</div><div style="font-size:52px;line-height:1;margin-bottom:8px">'+bestDay.emoji+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:22px;color:#fff;line-height:1.2">'+_dayLabel(bestDay.date)+'</div></div>' : '')
+      + (worstDay && worstDay.date !== (bestDay&&bestDay.date) ? '<div style="width:100%;max-width:340px;background:linear-gradient(140deg,rgba(255,180,120,.10),rgba(180,90,60,.08));border:1.5px solid rgba(255,180,120,.30);border-radius:20px;padding:22px 18px"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;color:rgba(255,180,120,.68);text-transform:uppercase;margin-bottom:8px">MÁS DIFÍCIL</div><div style="font-size:52px;line-height:1;margin-bottom:8px">'+worstDay.emoji+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:22px;color:#fff;line-height:1.2">'+_dayLabel(worstDay.date)+'</div><div style="font-size:12px;color:rgba(255,220,180,.62);font-family:Jost,sans-serif;margin-top:8px;line-height:1.4">Y aun así llegaste hasta acá 💪</div></div>' : '')
+  });
+  // 5. TUS APORTES A LA COMUNIDAD
+  var communityItems = [];
+  if(comm.btPosts > 0) communityItems.push({e:'📖', n:comm.btPosts, lbl:'historia'+(comm.btPosts>1?'s':'')+' en Bitácora', col:'rgba(180,155,240,.90)'});
+  if(comm.momentos > 0) communityItems.push({e:'🌸', n:comm.momentos, lbl:'momento'+(comm.momentos>1?'s':'')+' compartido'+(comm.momentos>1?'s':''), col:'rgba(255,180,220,.90)'});
+  if(comm.helped > 0) communityItems.push({e:'🤝', n:comm.helped, lbl:'persona'+(comm.helped>1?'s':'')+' acompañada'+(comm.helped>1?'s':''), col:'rgba(180,255,220,.90)'});
+  if(comm.dqAnswered > 0) communityItems.push({e:'💬', n:comm.dqAnswered, lbl:'respuesta'+(comm.dqAnswered>1?'s':'')+' a la Pregunta del Día', col:'rgba(255,220,120,.90)'});
+  var commItemsHtml = communityItems.length
+    ? communityItems.map(function(c){ return '<div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.04);border-left:3px solid '+c.col+';border-radius:0 12px 12px 0;padding:11px 14px;margin-bottom:9px"><span style="font-size:26px;flex-shrink:0">'+c.e+'</span><div style="flex:1;text-align:left"><div style="font-size:22px;font-weight:800;color:'+c.col+';font-family:Jost,sans-serif;line-height:1">'+c.n+'</div><div style="font-size:12.5px;color:rgba(255,255,255,.75);font-family:Jost,sans-serif;line-height:1.35;margin-top:2px">'+c.lbl+'</div></div></div>'; }).join('')
+    : '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:17px;color:rgba(255,255,255,.60);line-height:1.5;text-align:center;padding:20px">Este mes cuidaste tu propio jardín 🌿<br><span style="font-size:13px;opacity:.75;font-style:normal">La próxima podés animarte a compartir algo con la comunidad.</span></div>';
+  slides.push({
+    bg:'linear-gradient(155deg,#2a1030 0%,#1e0824 45%,#100416 100%)',
+    html:
+      sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(220,180,240,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:18px">TUS APORTES A LA COMUNIDAD</div>'
+      + '<div style="font-size:56px;line-height:1;margin-bottom:10px">💚</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:26px;color:#fff;line-height:1.2;margin-bottom:22px">'+(totalGestures>0?totalGestures+' gestos':'Tu presencia también cuenta')+'</div>'
+      + '<div style="width:100%;max-width:340px">'+commItemsHtml+'</div>'
+  });
+  // 6. CIERRE motivador
+  slides.push({
+    bg:'linear-gradient(155deg,#1a3d2c 0%,#0d2818 40%,#0a1f14 100%)',
+    html:
+      sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(180,255,220,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:26px">EN RESUMEN</div>'
+      + '<div style="font-size:72px;line-height:1;margin-bottom:16px;filter:drop-shadow(0 4px 20px rgba(116,198,157,.40))">✨</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:32px;color:#fff;line-height:1.2;margin-bottom:14px;padding:0 12px">Fue '+scoreLabel+'</div>'
+      + '<div style="font-size:14px;color:rgba(200,240,215,.72);line-height:1.6;font-family:Jost,sans-serif;padding:0 12px;margin-bottom:26px">'+_escHtml(uName)+', apareciste, registraste, compartiste. Este mes también fuiste vos cuidándote 💚</div>'
+      + '<div style="width:100%;max-width:320px;padding:14px 18px;background:rgba(180,255,220,.10);border:1px solid rgba(180,255,220,.28);border-radius:16px"><div style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(180,255,220,.72);text-transform:uppercase;margin-bottom:6px">Próximo capítulo</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:18px;color:#fff;line-height:1.35">Nos vemos en '+mNames[(mo+1)%12]+' 🌿</div></div>'
+  });
+  var slideHtml = slides.map(function(s, i){
+    return '<div class="wrapped-slide" data-i="'+i+'" style="min-width:calc(100% - 16px);scroll-snap-align:center;background:'+s.bg+';border-radius:26px;padding:44px 24px 60px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:560px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08)">'
+      + s.html
+      + '<div style="position:absolute;bottom:18px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,.32);letter-spacing:2px;font-family:Jost,sans-serif;font-weight:600">✧ Velo · heyvelo.app ✧</div>'
       + '</div>';
   }).join('');
   var dotsHtml = slides.map(function(_,i){ return '<span class="wrapped-dot" data-i="'+i+'" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25);transition:all .3s"></span>'; }).join('');
@@ -2991,6 +3255,10 @@ function _loadHomeData(){
   _initDqThemeObserver();
   _initMoodChip();
   _checkVeloNotifs();
+  _initHomeQuickCtaStrip();
+  // Banners contextuales (ritual dominical + aniversario emocional)
+  try{ setTimeout(function(){ _renderSundayRitualBanner(); }, 400); }catch(e){}
+  try{ setTimeout(function(){ _checkEmotionalAnniversary(); }, 800); }catch(e){}
   // v1228: mensual NO se dispara automático. Solo desde admin (pAdminSendMonthlyReport).
   // _checkMonthlyMoodReport();
   var d = new Date();
@@ -3149,6 +3417,28 @@ function _loadHomeData(){
 }
 
 // ── HOME NAV TILES ────────────────────────────────────────────
+// ── STRIP DE CTAs GRANDES arriba del saludo: Wrapped + Invitar + Buddy ──
+function _initHomeQuickCtaStrip(){
+  if(document.getElementById('homeQuickCtaStrip')) return;
+  var host = document.querySelector('.r-hero-left');
+  if(!host) return;
+  var strip = document.createElement('div');
+  strip.id = 'homeQuickCtaStrip';
+  strip.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%;box-sizing:border-box;margin:0 0 14px;order:-2';
+  var tile = function(icon, label, sub, bg, bdr, action){
+    return '<button onclick="'+action+'" style="cursor:pointer;background:'+bg+';border:1.5px solid '+bdr+';border-radius:16px;padding:11px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 4px 14px rgba(0,0,0,.22);-webkit-tap-highlight-color:transparent;touch-action:manipulation;font-family:Jost,sans-serif;text-align:center" onmousedown="this.style.transform=\'scale(.94)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'" ontouchstart="this.style.transform=\'scale(.94)\'" ontouchend="this.style.transform=\'\'">'
+      +'<div style="font-size:24px;line-height:1">'+icon+'</div>'
+      +'<div style="font-size:11.5px;font-weight:800;color:rgba(255,255,255,.94);letter-spacing:.1px;line-height:1.15">'+label+'</div>'
+      +'<div style="font-size:9.5px;color:rgba(255,255,255,.55);line-height:1.15;margin-top:1px">'+sub+'</div>'
+      +'</button>';
+  };
+  strip.innerHTML =
+    tile('✨','Mi Wrapped','del mes','linear-gradient(140deg,rgba(228,178,80,.28),rgba(180,120,40,.20))','rgba(228,178,80,.55)','pOpenMonthlyWrapped()')
+    + tile('💌','Invitar','+30d Plus','linear-gradient(140deg,rgba(116,198,157,.30),rgba(74,160,110,.22))','rgba(116,198,157,.60)','pOpenInviteFriends()')
+    + tile('🤝','Compañero','de bienestar','linear-gradient(140deg,rgba(155,120,220,.30),rgba(116,88,180,.22))','rgba(155,120,220,.55)','pOpenBuddyModal()');
+  host.insertAdjacentElement('afterbegin', strip);
+}
+
 function _initHomeNavTiles(){
   if(document.getElementById('homeNavTopStrip')) return;
   var heroLeft = document.querySelector('.r-hero-left');
@@ -19498,6 +19788,8 @@ function _adminTabFinanzas(panel){
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💳 TRANSFERENCIAS PENDIENTES</div>'
     +'<div id="adminTransferList">'+_adminTransferHtml()+'</div>'
     +'<div style="margin-top:18px">'+_adminMonthlyReportTracker()+'</div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(155,120,220,.75);margin-bottom:10px">💌 REFERRALS — INVITACIONES</div>'
+    +'<div id="adminReferralStats"><p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando referrals…</p></div>'
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,120,120,.75);margin-bottom:10px">🛡️ MODERACIÓN — CONTENIDO REPORTADO</div>'
     +'<div id="adminModerationStats"><p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando reportes…</p></div>'
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:10px">🌿 ACTIVIDAD REAL DE LA COMUNIDAD</div>'
@@ -19507,7 +19799,37 @@ function _adminTabFinanzas(panel){
   _adminLoadSurveys();
   _adminLoadUsageStats();
   _adminLoadModerationStats();
+  _adminLoadReferralStats();
   _renderAdminDonations();
+}
+
+async function _adminLoadReferralStats(){
+  var el = document.getElementById('adminReferralStats');
+  if(!el) return;
+  _initSupabase();
+  if(!sbClient){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Sin conexión</p>'; return; }
+  try{
+    // Cuenta users con plus_expires_at futuro (activos)
+    var nowISO = new Date().toISOString();
+    var plusRes = await sbClient.from('profiles').select('id',{count:'exact',head:true}).gt('plus_expires_at', nowISO);
+    var plusActive = plusRes.count || 0;
+    // Cuenta users con buddy_id (buddy activos)
+    var buddyRes = await sbClient.from('profiles').select('id',{count:'exact',head:true}).not('buddy_id','is',null);
+    var buddyActive = buddyRes.count || 0;
+    el.innerHTML =
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+      + '<div style="background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.25);border-left:3px solid rgba(155,120,220,.85);border-radius:10px;padding:12px 14px">'
+        + '<div style="font-size:10.5px;font-weight:700;letter-spacing:1px;color:rgba(200,180,240,.60);text-transform:uppercase">Plus activos</div>'
+        + '<div style="font-size:22px;font-weight:800;color:rgba(200,180,240,.98);font-family:Jost,sans-serif;line-height:1;margin-top:4px">'+plusActive+'</div>'
+        + '<div style="font-size:10.5px;color:rgba(200,180,240,.50);margin-top:3px">Usuarios con Plus vigente</div>'
+      + '</div>'
+      + '<div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.25);border-left:3px solid rgba(116,198,157,.85);border-radius:10px;padding:12px 14px">'
+        + '<div style="font-size:10.5px;font-weight:700;letter-spacing:1px;color:rgba(180,220,195,.60);text-transform:uppercase">Buddies activos</div>'
+        + '<div style="font-size:22px;font-weight:800;color:rgba(180,235,210,.98);font-family:Jost,sans-serif;line-height:1;margin-top:4px">'+buddyActive+'</div>'
+        + '<div style="font-size:10.5px;color:rgba(180,220,195,.50);margin-top:3px">Usuarios con compañero/a</div>'
+      + '</div>'
+      + '</div>';
+  }catch(e){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Error cargando referrals — puede que falten columnas buddy_id/plus_expires_at en profiles</p>'; }
 }
 
 async function _adminLoadModerationStats(){
@@ -26403,7 +26725,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1237;
+    var _BUILT_V = 1238;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
