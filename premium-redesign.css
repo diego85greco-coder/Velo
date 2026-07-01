@@ -14228,7 +14228,7 @@ body:not(.r-dark) #homeDailyQuote {
    v1196 — Global text scale +2px for readability (JS atomic bump covers inline styles)
    CSS overrides cover class-driven text
    ══════════════════════════════════════════════════════════════════ */
-html { font-size: 17px !important; }
+html { font-size: calc(17px * var(--velo-font-scale, 1)) !important; }
 .p-label { font-size: 11px !important; letter-spacing: 1.6px !important; }
 .p-card-sub { font-size: 14px !important; }
 .p-card-title { font-size: 20px !important; }

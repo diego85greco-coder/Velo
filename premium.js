@@ -1482,6 +1482,87 @@ function _showOnboarding(){
   document.body.appendChild(ov);
 }
 
+// ── FONT SIZE SCALE (accesibilidad) ──────────────────────────────────
+function pApplyFontScale(scale){
+  var s = parseFloat(scale);
+  if(!(s > 0.5 && s < 2)) s = 1.0;
+  document.documentElement.style.setProperty('--velo-font-scale', String(s));
+  try{ safeLS('set','velo_font_scale', String(s)); }catch(e){}
+}
+(function _initFontScale(){
+  try{
+    var stored = safeLS && safeLS('get','velo_font_scale');
+    if(stored) document.documentElement.style.setProperty('--velo-font-scale', stored);
+  }catch(e){}
+})();
+
+// ── BLOQUEO DE USUARIOS (client-side, filtra feeds antes de renderizar) ──
+function _getBlockedUids(){
+  try{ return JSON.parse(safeLS('get','velo_blocked_uids')||'[]'); }catch(e){ return []; }
+}
+function _isBlocked(uid){
+  if(!uid) return false;
+  return _getBlockedUids().indexOf(String(uid)) >= 0;
+}
+function pBlockUser(uid, name){
+  if(!uid) return;
+  _pConfirm('¿Bloquear a '+(name||'este usuario')+'? No verás más su contenido en ninguna sección.', function(){
+    var list = _getBlockedUids();
+    if(list.indexOf(String(uid)) < 0){
+      list.push(String(uid));
+      safeLS('set','velo_blocked_uids', JSON.stringify(list));
+      pToast('🚫','Bloqueaste a '+(name||'este usuario'));
+      var qp = document.getElementById('quickProfileOv'); if(qp) qp.remove();
+    }
+  });
+}
+function pUnblockUser(uid){
+  var list = _getBlockedUids().filter(function(x){ return x !== String(uid); });
+  safeLS('set','velo_blocked_uids', JSON.stringify(list));
+  pToast('✓','Desbloqueaste al usuario');
+}
+
+// ── PREFERENCIAS (tamaño fuente, bloqueos, etc.) ──────────────────────
+function pOpenPreferences(){
+  var ex = document.getElementById('prefsOv');
+  if(ex) ex.remove();
+  var currentScale = parseFloat(safeLS('get','velo_font_scale')||'1');
+  var blocked = _getBlockedUids();
+  var blockedHtml = blocked.length
+    ? '<div style="margin-top:10px">'+blocked.map(function(uid){
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);border-radius:10px;margin-bottom:6px"><span style="font-size:12px;color:rgba(255,255,255,.68);font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🚫 '+_escHtml(String(uid).slice(0,20))+'…</span><button onclick="pUnblockUser(\''+_escHtml(uid)+'\');pOpenPreferences()" style="background:rgba(116,198,157,.20);border:1px solid rgba(116,198,157,.42);color:rgba(180,235,210,.95);font-size:11.5px;font-weight:700;font-family:Jost,sans-serif;border-radius:8px;padding:5px 11px;cursor:pointer">Desbloquear</button></div>';
+      }).join('')+'</div>'
+    : '<div style="padding:12px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.10);border-radius:10px;text-align:center;font-size:12px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif;font-style:italic">No bloqueaste a nadie 🌿</div>';
+  var ov = document.createElement('div');
+  ov.id = 'prefsOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.78);display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div style="background:linear-gradient(150deg,rgba(10,28,18,.98),rgba(6,18,12,.97));border-radius:28px 28px 0 0;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;padding:16px 18px max(20px,env(safe-area-inset-bottom));border-top:2px solid rgba(116,198,157,.30)">'
+    + '<div style="display:flex;justify-content:center;padding:0 0 14px"><div style="width:36px;height:4px;background:rgba(116,198,157,.32);border-radius:2px"></div></div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
+      + '<div><div style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.70);font-family:Jost,sans-serif">⚙️ Preferencias</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(225,255,235,.96);margin-top:2px">Tu experiencia</div></div>'
+      + '<button onclick="document.getElementById(\'prefsOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:22px;cursor:pointer;padding:4px 10px">✕</button>'
+    + '</div>'
+    // Font size slider
+    + '<div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.20);border-radius:14px;padding:14px 15px;margin-bottom:12px">'
+      + '<div style="font-size:13px;font-weight:800;color:rgba(220,255,235,.94);font-family:Jost,sans-serif;margin-bottom:4px">Tamaño de texto</div>'
+      + '<div style="font-size:11.5px;color:rgba(180,220,195,.55);font-family:Jost,sans-serif;margin-bottom:12px">Aumentá o reducí el tamaño de toda la app</div>'
+      + '<input type="range" id="prefsFontRange" min="0.85" max="1.30" step="0.05" value="'+currentScale+'" oninput="pApplyFontScale(this.value);document.getElementById(\'prefsFontPreview\').style.fontSize=(15*this.value)+\'px\'" style="width:100%;accent-color:rgba(116,198,157,.95)">'
+      + '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:rgba(180,220,195,.48);font-family:Jost,sans-serif;margin-top:4px"><span>A</span><span style="font-size:14px">A</span></div>'
+      + '<div id="prefsFontPreview" style="margin-top:14px;padding:12px 14px;background:rgba(0,0,0,.20);border-radius:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(200,240,215,.92);line-height:1.5;font-size:'+(15*currentScale)+'px">"Cada emoción es válida. Nuestro trabajo es escuchar sin juzgar."</div>'
+    + '</div>'
+    // Blocked users
+    + '<div style="background:rgba(220,120,120,.06);border:1px solid rgba(220,120,120,.20);border-radius:14px;padding:14px 15px">'
+      + '<div style="font-size:13px;font-weight:800;color:rgba(255,220,220,.94);font-family:Jost,sans-serif;margin-bottom:4px">Usuarios bloqueados</div>'
+      + '<div style="font-size:11.5px;color:rgba(255,220,220,.55);font-family:Jost,sans-serif;margin-bottom:8px">No verás su contenido en ninguna sección</div>'
+      + blockedHtml
+    + '</div>'
+    + '<button onclick="document.getElementById(\'prefsOv\').remove()" style="width:100%;margin-top:14px;padding:12px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.50);border-radius:14px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px">Cerrar</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+}
+
 // Cierra el sheet 'Mi estado de hoy' si está abierto y abre el calendario mensual
 function pVerMiMesCompleto(){
   try{
@@ -1652,8 +1733,8 @@ function pReplayHomeTour(){
 }
 
 function _startHomeTour(){
-  // v1234: tip positioning + Reflexión separated from DQ
-  if(safeLS('get','velo_tour_done') === 'v1234') return;
+  // v1235: tip positioning + Reflexión separated from DQ
+  if(safeLS('get','velo_tour_done') === 'v1235') return;
 
   if(!document.getElementById('_tourStyle')){
     var _ts = document.createElement('style');
@@ -1684,7 +1765,7 @@ function _startHomeTour(){
     {sel:'#tileContacts',                                     e:'⭐',  t:'Contactos Favoritos',   d:'Tus personas de confianza. Vé quién está activo y mandales un mensaje cuando los necesités.'},
     {sel:'#tileCalmAi',                                       e:'🤖',  t:'Calma IA',              d:'Un chatbot empático listo para escucharte 24/7. No reemplaza atención profesional — sí te abraza.'},
     {sel:'#tilePros',                                         e:'👨‍⚕️', t:'Profesionales',        d:'Especialistas verificados en bienestar emocional. Si necesitás apoyo profesional, están ahí.'},
-    {sel:'#tileVela',                                         e:'🙏',  t:'Velo Vela por Ti',      d:'Un espacio íntimo con encendido de vela — para meditar, recordar, honrar.'},
+    {sel:'#tileVela',                                         e:'🙏',  t:'Velo Vela por Ti',      d:'Solicitá sesiones donadas por profesionales o anotate en la lista de espera. Apoyo real, sin costo.'},
     {sel:'.p-bn-item.p-bn-sos, .p-sos-pill',                  e:'🆘',  t:'Botón SOS',             d:'Acceso rápido a tu red de apoyo y contactos de emergencia. Siempre visible abajo.'},
     {sel:'.p-bn-item[data-screen="contacts"]',                e:'⭐',  t:'Barra: Contactos',      d:'Desde acá vas rapidísimo a tus contactos favoritos, en cualquier momento.'},
     {sel:'.p-bn-item[data-screen="diary"]',                   e:'📔',  t:'Barra: Diario',         d:'Acceso rápido a tu diario íntimo desde la barra inferior — siempre a un toque.'},
@@ -1706,7 +1787,7 @@ function _startHomeTour(){
   document.body.appendChild(tip);
 
   function _done(){
-    safeLS('set','velo_tour_done','v1234');
+    safeLS('set','velo_tour_done','v1235');
     spot.style.transition = 'opacity .3s'; tip.style.transition = 'opacity .3s';
     spot.style.opacity = '0'; tip.style.opacity = '0';
     setTimeout(function(){ if(spot.parentNode) spot.remove(); if(tip.parentNode) tip.remove(); }, 340);
@@ -4536,7 +4617,7 @@ function _renderDailyFeed(responses){
   if(!feedEl) return;
   // Exclude own response from home feed (already shown in badge above)
   var others = responses.filter(function(r){
-    return r.user_id !== myUid2 && _dqHidden.indexOf(String(r.id)) === -1;
+    return r.user_id !== myUid2 && _dqHidden.indexOf(String(r.id)) === -1 && !_isBlocked(r.user_id);
   });
   if(!others.length){
     feedEl.innerHTML = '<div style="text-align:center;padding:12px 0;font-size:14px;color:rgba(255,255,255,.30);font-family:Jost,sans-serif;font-style:italic">La comunidad aún no compartió hoy 🌱</div>';
@@ -5085,6 +5166,7 @@ function pReportDqResponse(responseId, responseUserId){
     safeLS('set','velo_dq_hidden', JSON.stringify(_h));
     _renderDailyFeed(_dqAllResponses);
     pToast('🚩','Respuesta reportada y ocultada');
+    _addReportAckToInbox('respuesta de la Pregunta del Día');
     if(!sbClient) return;
     var _ruid = safeLS('get','velo_user_id');
     if(_ruid){
@@ -5099,6 +5181,26 @@ function pReportDqResponse(responseId, responseUserId){
       }).catch(function(){});
     }
   });
+}
+
+// Confirmación al reporter de que su reporte fue recibido — inbox local
+function _addReportAckToInbox(contentType){
+  try{
+    var inbox = JSON.parse(safeLS('get','velo_inbox')||'[]');
+    inbox.unshift({
+      id: 'rep-ack-'+Date.now(),
+      tipo: 'sistema',
+      icon: '🛡️',
+      remitente: 'Velo — Moderación',
+      asunto: 'Recibimos tu reporte 💚',
+      extracto: 'Gracias por reportar '+contentType+'. Nuestro equipo lo va a revisar en breve. Tu ayuda mantiene a Velo un espacio seguro.',
+      cuerpo: 'Gracias por avisarnos. Todos los reportes se revisan manualmente por el equipo de moderación. Si se confirma la violación de nuestras pautas, tomaremos acción. Mientras tanto, ya no verás ese contenido en tu feed.\n\nEsto es lo que hace fuerte a la comunidad: gente que ayuda a cuidar el espacio. 💚',
+      leido: false,
+      fecha: new Date().toLocaleDateString('es',{day:'2-digit',month:'short'})
+    });
+    safeLS('set','velo_inbox', JSON.stringify(inbox.slice(0,100)));
+    if(typeof _updateInboxDot === 'function') _updateInboxDot();
+  }catch(e){}
 }
 
 async function pDeleteMyDqToday(){
@@ -15439,6 +15541,7 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
     +(guardianId&&!isAnon ? '<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'quickProfileOv\').remove();pOpenGuardian('+_jsAttr(guardianId)+')">Solicitar acompañamiento 💚</button><div style="height:8px"></div>' : '')
     +(!isAnon && uid ? '<button class="p-btn p-btn--secondary p-btn--sm p-btn--full" onclick="pOpenDM('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+');document.getElementById(\'quickProfileOv\').remove()">💬 Enviar mensaje</button><div style="height:8px"></div>' : '')
     +(_showFavBtn ? '<button id="qpFavBtn" class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pToggleFavFromProfile('+_jsAttr(uid)+','+_jsAttr(dispName)+','+_jsAttr(dispAv)+')" style="background:'+(isFav?'rgba(255,200,50,.18)':'')+';">'+(isFav?'⭐ En favoritos':'☆ Agregar a favoritos')+'</button><div style="height:8px"></div>' : '')
+    +(!isAnon && uid && uid !== _qpMyId ? '<button class="p-btn p-btn--secondary p-btn--sm p-btn--full" onclick="pBlockUser('+_jsAttr(uid)+','+_jsAttr(dispName)+')" style="color:rgba(220,120,120,.85);border-color:rgba(220,120,120,.30);background:rgba(220,120,120,.06)">🚫 Bloquear usuario</button><div style="height:8px"></div>' : '')
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'quickProfileOv\').remove()">Cerrar</button>';
 }
 
@@ -19135,13 +19238,54 @@ function _adminTabFinanzas(panel){
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,162,0,.7);margin-bottom:10px">💳 TRANSFERENCIAS PENDIENTES</div>'
     +'<div id="adminTransferList">'+_adminTransferHtml()+'</div>'
     +'<div style="margin-top:18px">'+_adminMonthlyReportTracker()+'</div>'
+    +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(220,120,120,.75);margin-bottom:10px">🛡️ MODERACIÓN — CONTENIDO REPORTADO</div>'
+    +'<div id="adminModerationStats"><p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando reportes…</p></div>'
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:10px">🌿 ACTIVIDAD REAL DE LA COMUNIDAD</div>'
     +'<div id="adminUsageStats"><p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando actividad…</p></div>'
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📊 ENCUESTAS DE SATISFACCIÓN</div>'
     +'<div id="adminSurveyResults"><p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando respuestas…</p></div>';
   _adminLoadSurveys();
   _adminLoadUsageStats();
+  _adminLoadModerationStats();
   _renderAdminDonations();
+}
+
+async function _adminLoadModerationStats(){
+  var el = document.getElementById('adminModerationStats');
+  if(!el) return;
+  _initSupabase();
+  if(!sbClient){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Sin conexión</p>'; return; }
+  try{
+    // Total pendientes
+    var pendRes = await sbClient.from('content_reports').select('id',{count:'exact',head:true}).eq('resolved', false);
+    var totalPending = pendRes.count || 0;
+    // Los 5 usuarios más reportados
+    var topRes = await sbClient.from('content_reports')
+      .select('response_user_id').eq('resolved', false).not('response_user_id','is',null).limit(500);
+    var counts = {};
+    (topRes.data||[]).forEach(function(r){
+      if(r.response_user_id){ counts[r.response_user_id] = (counts[r.response_user_id]||0) + 1; }
+    });
+    var top = Object.keys(counts).map(function(uid){ return {uid:uid, n:counts[uid]}; })
+      .sort(function(a,b){ return b.n - a.n; }).slice(0,5);
+    var pmap = {};
+    if(top.length){
+      var uids = top.map(function(t){ return t.uid; });
+      var pr = await sbClient.from('profiles').select('id,nombre,username').in('id', uids);
+      if(pr && pr.data) pr.data.forEach(function(p){ pmap[p.id] = p; });
+    }
+    var topHtml = top.length
+      ? top.map(function(t){
+          var p = pmap[t.uid] || {};
+          var nm = p.nombre || (t.uid.slice(0,10)+'…');
+          var un = p.username ? ' @'+p.username : '';
+          return '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(220,120,120,.05);border:1px solid rgba(220,120,120,.18);border-radius:10px;padding:9px 12px;margin-bottom:5px"><span style="font-size:13px;color:rgba(255,220,220,.88);font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><strong>'+_escHtml(nm)+'</strong><span style="opacity:.55">'+_escHtml(un)+'</span></span><span style="font-size:13px;font-weight:800;color:rgba(255,150,150,.95);font-family:Jost,sans-serif;flex-shrink:0">🚩 '+t.n+'</span></div>';
+        }).join('')
+      : '<div style="padding:12px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.10);border-radius:10px;text-align:center;font-size:12px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif;font-style:italic">Sin usuarios reportados 🌿</div>';
+    el.innerHTML = '<div style="background:rgba(220,120,120,.08);border:1px solid rgba(220,120,120,.20);border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:rgba(255,180,180,.75);text-transform:uppercase">Reportes pendientes</div><div style="font-size:24px;font-weight:800;color:rgba(255,150,150,.98);font-family:Jost,sans-serif">'+totalPending+'</div></div><div style="font-size:38px;opacity:.55">🚩</div></div>'
+      + '<div style="font-size:11px;font-weight:700;letter-spacing:1.4px;color:rgba(255,220,220,.55);text-transform:uppercase;margin:12px 0 6px">Top usuarios reportados</div>'
+      + topHtml;
+  }catch(e){ el.innerHTML = '<p style="font-size:13px;color:rgba(255,255,255,.3)">Error cargando reportes</p>'; }
 }
 
 async function _adminLoadUsageStats(){
@@ -25785,6 +25929,7 @@ function _btBuildComposeInner(type,tema){
   h+='<div style="font-size:12px;color:rgba(255,255,255,.32);font-family:Jost,sans-serif">Tu nombre no será visible</div></div>';
   h+='<input type="checkbox" id="btCmpAnon" style="width:20px;height:20px;cursor:pointer;accent-color:'+ac.pillBorder+'">';
   h+='</div>';
+  h+='<div style="background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.22);border-radius:11px;padding:9px 12px;margin-bottom:12px;font-size:11.5px;color:rgba(180,220,195,.75);font-family:Jost,sans-serif;line-height:1.5"><strong style="color:rgba(180,220,195,.95)">🌿 Pautas de la comunidad:</strong> sin datos personales, sin promoción, con respeto. Si contás algo íntimo tuyo o de otros, considerá si es apropiado.</div>';
   h+='<input id="btCmpTitle" placeholder="Título (opcional)" maxlength="100" style="width:100%;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 14px;color:rgba(255,255,255,.92);font-size:15px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px">';
   h+='<textarea id="btCmpContent" placeholder="Contá tu historia..." maxlength="2000" oninput="_btCmpCounter(this)" style="width:100%;background:rgba(255,255,255,.11);border:1.5px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 14px;color:rgba(255,255,255,.92);font-size:14px;font-family:\'Cormorant Garamond\',serif;box-sizing:border-box;outline:none;resize:none;min-height:130px;line-height:1.6" rows="5"></textarea>';
   h+='<div id="btCmpCharCount" style="text-align:right;font-size:12px;color:rgba(255,255,255,.22);font-family:Jost,sans-serif;margin-top:3px;margin-bottom:10px">0 / 2000</div>';
@@ -25962,7 +26107,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1234;
+    var _BUILT_V = 1235;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
