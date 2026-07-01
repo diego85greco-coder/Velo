@@ -1652,8 +1652,8 @@ function pReplayHomeTour(){
 }
 
 function _startHomeTour(){
-  // v1229: tip positioning + Reflexión separated from DQ
-  if(safeLS('get','velo_tour_done') === 'v1229') return;
+  // v1230: tip positioning + Reflexión separated from DQ
+  if(safeLS('get','velo_tour_done') === 'v1230') return;
 
   if(!document.getElementById('_tourStyle')){
     var _ts = document.createElement('style');
@@ -1694,7 +1694,7 @@ function _startHomeTour(){
   document.body.appendChild(tip);
 
   function _done(){
-    safeLS('set','velo_tour_done','v1229');
+    safeLS('set','velo_tour_done','v1230');
     spot.style.transition = 'opacity .3s'; tip.style.transition = 'opacity .3s';
     spot.style.opacity = '0'; tip.style.opacity = '0';
     setTimeout(function(){ if(spot.parentNode) spot.remove(); if(tip.parentNode) tip.remove(); }, 340);
@@ -1739,7 +1739,14 @@ function _startHomeTour(){
   function _place(idx){
     var s = STEPS[idx];
     var els = s.sel ? Array.prototype.slice.call(document.querySelectorAll(s.sel)) : [];
-    els = els.filter(function(e){ return e && e.offsetParent !== null; });
+    // Filter: solo aceptar elementos con dimensiones reales (no display:none)
+    // offsetParent puede ser null en Safari incluso para elementos visibles con position:fixed ancestors,
+    // entonces usamos getBoundingClientRect().width/height como check más confiable
+    els = els.filter(function(e){
+      if(!e) return false;
+      var r = e.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    });
     var firstEl = els[0] || null;
     var elVisible = !!firstEl;
 
@@ -25939,7 +25946,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1229;
+    var _BUILT_V = 1230;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
