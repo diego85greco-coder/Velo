@@ -19134,26 +19134,33 @@ function _adminTransferHtml(){
   }).join('');
 }
 
+// Fecha en que se lanzó Velo — meses anteriores no aparecen en el historial admin
+var _VELO_LAUNCH = {year:2026, month:5}; // Mayo 2026
 function _adminMonthlyReportTracker(){
   var history=[]; try{history=JSON.parse(safeLS('get','velo_monthly_reports')||'[]');}catch(e){}
   var now=new Date();
   var months=[];
-  for(var i=0;i<12;i++){
+  for(var i=0;i<24;i++){
     var d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    // Cortar antes del launch de la app (mayo 2026)
+    if(d.getFullYear() < _VELO_LAUNCH.year) break;
+    if(d.getFullYear() === _VELO_LAUNCH.year && (d.getMonth()+1) < _VELO_LAUNCH.month) break;
     var key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
     var sent=history.find(function(r){ return r.month===key; });
     months.push({key:key,label:d.toLocaleString('es',{month:'long',year:'numeric'}),sent:sent});
   }
   return '<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📅 INFORME MENSUAL — HISTORIAL</div>'
-    +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">El resumen mensual se envía el 1° de cada mes. Marcá manualmente cuando lo enviaste.</p>'
+    +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.5">Enviá el resumen personalizado de cada mes. Se envía a todos los usuarios y cada uno ve sus propios datos. Meses ya enviados aparecen con ✅.</p>'
     +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">'
     +months.map(function(m){
-        return '<div style="background:'+(m.sent?'rgba(116,198,157,.1)':'rgba(255,255,255,.04)')+';border:1px solid '+(m.sent?'rgba(116,198,157,.3)':'rgba(255,255,255,.1)')+';border-radius:10px;padding:10px;display:flex;align-items:center;justify-content:space-between">'
-          +'<div><div style="font-size:13px;font-weight:600;color:rgba(255,255,255,'+(m.sent?'.8':'.45')+')">'+m.label+'</div>'
-          +(m.sent?'<div style="font-size:11px;color:rgba(116,198,157,.6)">✓ Enviado '+new Date(m.sent.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
-            :'<div style="font-size:11px;color:rgba(255,255,255,.25)">Pendiente</div>')+'</div>'
-          +(m.sent?'<span style="font-size:16px">✅</span>'
-            :'<button onclick="pAdminMarkMonthlyReport(\''+m.key+'\')" style="font-size:11px;padding:3px 7px;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.25);color:rgba(116,198,157,.75);border-radius:5px;cursor:pointer">Marcar OK</button>')
+        return '<div style="background:'+(m.sent?'rgba(116,198,157,.1)':'rgba(180,140,220,.05)')+';border:1px solid '+(m.sent?'rgba(116,198,157,.3)':'rgba(180,140,220,.20)')+';border-radius:10px;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:8px">'
+          +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:rgba(255,255,255,'+(m.sent?'.85':'.75')+')">'+m.label+'</div>'
+          +(m.sent
+            ? '<div style="font-size:11px;color:rgba(116,198,157,.6)">✓ '+new Date(m.sent.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
+            : '<div style="font-size:11px;color:rgba(180,140,220,.55)">Pendiente</div>')+'</div>'
+          +(m.sent
+            ? '<button onclick="if(confirm(\'¿Re-enviar el resumen de '+m.label.replace(/[\\\']/g,' ')+'? Los usuarios que ya lo leyeron pueden recibirlo otra vez.\')) pAdminSendMonthlyReport(\''+m.key+'\')" style="flex-shrink:0;font-size:11px;padding:4px 8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.55);border-radius:6px;cursor:pointer;font-family:Jost,sans-serif">↻ Re-enviar</button>'
+            : '<button onclick="pAdminSendMonthlyReport(\''+m.key+'\')" style="flex-shrink:0;font-size:11px;padding:5px 10px;background:rgba(180,140,220,.20);border:1px solid rgba(180,140,220,.45);color:rgba(210,180,240,.95);border-radius:6px;cursor:pointer;font-family:Jost,sans-serif;font-weight:700">📤 Enviar</button>')
           +'</div>';
       }).join('')+'</div>';
 }
@@ -19492,28 +19499,9 @@ function _adminTabGestion(panel){
           +'<div style="background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
           +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">Velo IA genera un resumen personalizado para cada usuario con sus propios estados de ánimo y diario del mes. Cada uno ve el suyo en su buzón.</p>'
           +(sentThis
-            ? '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;font-size:13px;color:rgba(116,198,157,.85);margin-bottom:10px">✅ Resumen de '+mLabel+' ya enviado el '+new Date(sentThis.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
-            : '<button onclick="pAdminSendMonthlyReport()" style="width:100%;padding:10px;background:rgba(180,140,220,.15);border:1px solid rgba(180,140,220,.3);color:rgba(180,140,220,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">📊 Enviar resumen de '+mLabel+' a todos los usuarios</button>')
-          // Selector para enviar cualquier mes (para envíos atrasados o retro-envíos)
-          + (function(){
-              var _now = new Date();
-              var _opts = [];
-              for(var _bi=1; _bi<=12; _bi++){
-                var _bd = new Date(_now.getFullYear(), _now.getMonth()-_bi, 1);
-                var _bk = _bd.getFullYear()+'-'+String(_bd.getMonth()+1).padStart(2,'0');
-                var _bl = mn[_bd.getMonth()]+' '+_bd.getFullYear();
-                var _alreadySent = history.find(function(r){ return r.month===_bk; });
-                _opts.push('<option value="'+_bk+'">'+_bl+(_alreadySent?' ✅':'')+'</option>');
-              }
-              return '<div style="border-top:1px dashed rgba(180,140,220,.25);padding-top:12px;margin-top:8px">'
-                +'<label style="font-size:11px;font-weight:700;letter-spacing:1.4px;color:rgba(180,140,220,.75);text-transform:uppercase;display:block;margin-bottom:8px">Enviar mes anterior (atrasado)</label>'
-                +'<div style="display:flex;gap:8px">'
-                +'<select id="adminMonthlyPast" style="flex:1;padding:9px 12px;background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.28);color:rgba(255,255,255,.90);border-radius:10px;font-family:Jost,sans-serif;font-size:13px">'+_opts.join('')+'</select>'
-                +'<button onclick="var s=document.getElementById(\'adminMonthlyPast\');if(s&&s.value)pAdminSendMonthlyReport(s.value)" style="flex-shrink:0;padding:9px 14px;background:rgba(180,140,220,.18);border:1px solid rgba(180,140,220,.42);color:rgba(200,175,240,.95);border-radius:10px;font-family:Jost,sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">📤 Enviar</button>'
-                +'</div>'
-                +'<p style="font-size:11px;color:rgba(255,255,255,.35);margin-top:8px;line-height:1.5">Elegí un mes pasado si te olvidaste de enviarlo el 1°. Ya enviados aparecen con ✅.</p>'
-                +'</div>';
-            })()
+            ? '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;font-size:13px;color:rgba(116,198,157,.85)">✅ Resumen de '+mLabel+' ya enviado el '+new Date(sentThis.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
+            : '<button onclick="pAdminSendMonthlyReport()" style="width:100%;padding:10px;background:rgba(180,140,220,.15);border:1px solid rgba(180,140,220,.3);color:rgba(180,140,220,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700">📊 Enviar resumen de '+mLabel+' a todos los usuarios</button>')
+          +'<p style="font-size:11px;color:rgba(255,255,255,.35);margin-top:10px;line-height:1.5">Para enviar meses anteriores, usá los botones 📤 en el HISTORIAL más abajo.</p>'
           +'</div>';
       }())
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(123,104,238,.7);margin-bottom:10px">💎 RECOMPENSAS DIAMANTE — PLUS AUTOMÁTICO</div>'
@@ -25879,7 +25867,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1225;
+    var _BUILT_V = 1226;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
