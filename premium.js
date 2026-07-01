@@ -19168,11 +19168,19 @@ function pAdminMarkMonthlyReport(monthKey){
   _switchAdminTab('finanzas');
 }
 
-async function pAdminSendMonthlyReport(){
-  var d = new Date();
-  var month = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+async function pAdminSendMonthlyReport(overrideMonth){
   var mn = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  var mLabel = mn[d.getMonth()]+' '+d.getFullYear();
+  var month, mLabel;
+  if(overrideMonth && /^\d{4}-\d{2}$/.test(overrideMonth)){
+    month = overrideMonth;
+    var _yr = parseInt(month.split('-')[0]);
+    var _mo = parseInt(month.split('-')[1]) - 1;
+    mLabel = mn[_mo]+' '+_yr;
+  } else {
+    var d = new Date();
+    month = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    mLabel = mn[d.getMonth()]+' '+d.getFullYear();
+  }
   if(!confirm('¿Enviar el resumen personalizado de '+mLabel+' a todos los usuarios?\n\nCada usuario recibirá un análisis individual en su buzón generado con sus propios datos.')) return;
   _initSupabase();
   var saved = await sbSaveBroadcast('users','📊 Tu resumen de '+mLabel,'__MONTHLY_REPORT__'+month,'📊','Velo — Resumen Mensual','');
@@ -19183,6 +19191,14 @@ async function pAdminSendMonthlyReport(){
   }
   pToast('📊', saved ? 'Resumen de '+mLabel+' enviado a todos los usuarios ✅' : 'Guardado localmente (sin conexión)');
   _switchAdminTab('gestion');
+}
+
+// Wrapper para enviar el mes ANTERIOR (para admins que se olvidan el 1°)
+function pAdminSendPreviousMonthReport(){
+  var d = new Date();
+  d.setDate(1); d.setMonth(d.getMonth()-1); // primer día del mes anterior
+  var prevKey = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  pAdminSendMonthlyReport(prevKey);
 }
 
 async function pAdminSendWeeklyReport(){
@@ -19476,8 +19492,28 @@ function _adminTabGestion(panel){
           +'<div style="background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.18);border-radius:12px;padding:14px;margin-bottom:18px">'
           +'<p style="font-size:13px;color:rgba(255,255,255,.4);margin-bottom:12px;line-height:1.6">Velo IA genera un resumen personalizado para cada usuario con sus propios estados de ánimo y diario del mes. Cada uno ve el suyo en su buzón.</p>'
           +(sentThis
-            ? '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;font-size:13px;color:rgba(116,198,157,.85)">✅ Resumen de '+mLabel+' ya enviado el '+new Date(sentThis.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
-            : '<button onclick="pAdminSendMonthlyReport()" style="width:100%;padding:10px;background:rgba(180,140,220,.15);border:1px solid rgba(180,140,220,.3);color:rgba(180,140,220,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700">📊 Enviar resumen de '+mLabel+' a todos los usuarios</button>')
+            ? '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.2);border-radius:10px;font-size:13px;color:rgba(116,198,157,.85);margin-bottom:10px">✅ Resumen de '+mLabel+' ya enviado el '+new Date(sentThis.ts).toLocaleDateString('es',{day:'2-digit',month:'short'})+'</div>'
+            : '<button onclick="pAdminSendMonthlyReport()" style="width:100%;padding:10px;background:rgba(180,140,220,.15);border:1px solid rgba(180,140,220,.3);color:rgba(180,140,220,.9);border-radius:10px;cursor:pointer;font-family:\'Jost\',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px">📊 Enviar resumen de '+mLabel+' a todos los usuarios</button>')
+          // Selector para enviar cualquier mes (para envíos atrasados o retro-envíos)
+          + (function(){
+              var _now = new Date();
+              var _opts = [];
+              for(var _bi=1; _bi<=12; _bi++){
+                var _bd = new Date(_now.getFullYear(), _now.getMonth()-_bi, 1);
+                var _bk = _bd.getFullYear()+'-'+String(_bd.getMonth()+1).padStart(2,'0');
+                var _bl = mn[_bd.getMonth()]+' '+_bd.getFullYear();
+                var _alreadySent = history.find(function(r){ return r.month===_bk; });
+                _opts.push('<option value="'+_bk+'">'+_bl+(_alreadySent?' ✅':'')+'</option>');
+              }
+              return '<div style="border-top:1px dashed rgba(180,140,220,.25);padding-top:12px;margin-top:8px">'
+                +'<label style="font-size:11px;font-weight:700;letter-spacing:1.4px;color:rgba(180,140,220,.75);text-transform:uppercase;display:block;margin-bottom:8px">Enviar mes anterior (atrasado)</label>'
+                +'<div style="display:flex;gap:8px">'
+                +'<select id="adminMonthlyPast" style="flex:1;padding:9px 12px;background:rgba(180,140,220,.06);border:1px solid rgba(180,140,220,.28);color:rgba(255,255,255,.90);border-radius:10px;font-family:Jost,sans-serif;font-size:13px">'+_opts.join('')+'</select>'
+                +'<button onclick="var s=document.getElementById(\'adminMonthlyPast\');if(s&&s.value)pAdminSendMonthlyReport(s.value)" style="flex-shrink:0;padding:9px 14px;background:rgba(180,140,220,.18);border:1px solid rgba(180,140,220,.42);color:rgba(200,175,240,.95);border-radius:10px;font-family:Jost,sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">📤 Enviar</button>'
+                +'</div>'
+                +'<p style="font-size:11px;color:rgba(255,255,255,.35);margin-top:8px;line-height:1.5">Elegí un mes pasado si te olvidaste de enviarlo el 1°. Ya enviados aparecen con ✅.</p>'
+                +'</div>';
+            })()
           +'</div>';
       }())
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(123,104,238,.7);margin-bottom:10px">💎 RECOMPENSAS DIAMANTE — PLUS AUTOMÁTICO</div>'
@@ -25843,7 +25879,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1224;
+    var _BUILT_V = 1225;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
