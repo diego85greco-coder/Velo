@@ -1497,7 +1497,7 @@ function pVerMiMesCompleto(){
 
 // Vista gráfica del mes — línea de evolución emocional + stats
 // (distinta del calendario que abre pOpenMoodQuickView)
-async function pOpenMonthlyMoodGraph(){
+function pOpenMonthlyMoodGraph(){
   var ex = document.getElementById('monthlyGraphOv');
   if(ex) ex.remove();
   var now = new Date();
@@ -1505,21 +1505,49 @@ async function pOpenMonthlyMoodGraph(){
   var month = now.getMonth();
   var daysInMonth = new Date(year, month+1, 0).getDate();
   var monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var moodScore = {'😄':5,'😊':4.5,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🥺':2.5,'😞':2,'😔':2,'😰':1.8,'😤':2.2,'😢':1};
+  var moodColor = {'😄':'#5fcc8a','😊':'#74c69d','😌':'#7ed4a5','💪':'#5fcc8a','🌟':'#e6c450','😐':'#c8b070','🥺':'#d59a8a','😞':'#b87060','😔':'#a85040','😰':'#c98a30','😤':'#c97040','😢':'#a04030'};
+  // Load localStorage instantly — modal renderiza inmediato
   var moodMap = {};
   for(var _d=1; _d<=daysInMonth; _d++){
     var _dk = year+'-'+String(month+1).padStart(2,'0')+'-'+String(_d).padStart(2,'0');
     var _st = safeLS('get','velo_mood_'+_dk);
     if(_st){ try{ var _ms=JSON.parse(_st); if(_ms.emoji) moodMap[_dk]=_ms; }catch(e){} }
   }
+  // Trigger Supabase merge en background — cuando llega, re-renderiza el body
   _initSupabase();
-  if(sbClient){
-    try{
-      var sbM = await sbLoadAllMoods(year, month+1);
-      if(sbM) sbM.forEach(function(e){ if(e.emoji && !moodMap[e.date_key]) moodMap[e.date_key] = e; });
-    }catch(e){}
+  if(sbClient && typeof sbLoadAllMoods === 'function'){
+    sbLoadAllMoods(year, month+1).then(function(sbM){
+      if(!sbM) return;
+      var changed = false;
+      sbM.forEach(function(e){ if(e.emoji && !moodMap[e.date_key]){ moodMap[e.date_key] = e; changed = true; } });
+      if(changed){
+        var bodyEl = document.getElementById('monthlyGraphBody');
+        if(bodyEl) bodyEl.innerHTML = _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, moodColor);
+      }
+    }).catch(function(){});
   }
-  var moodScore = {'😄':5,'😊':4.5,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🥺':2.5,'😞':2,'😔':2,'😰':1.8,'😤':2.2,'😢':1};
-  var moodColor = {'😄':'#5fcc8a','😊':'#74c69d','😌':'#7ed4a5','💪':'#5fcc8a','🌟':'#e6c450','😐':'#c8b070','🥺':'#d59a8a','😞':'#b87060','😔':'#a85040','😰':'#c98a30','😤':'#c97040','😢':'#a04030'};
+  var bodyHtml = _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, moodColor);
+  var ov2 = document.createElement('div');
+  ov2.id = 'monthlyGraphOv';
+  ov2.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.78);display:flex;align-items:flex-end;justify-content:center';
+  ov2.onclick = function(e){ if(e.target===ov2){ ov2.remove(); if(typeof _syncBodyScroll==='function') _syncBodyScroll(); } };
+  ov2.innerHTML = '<div style="background:linear-gradient(150deg,rgba(10,28,18,.98),rgba(6,18,12,.97));border-radius:28px 28px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:16px 18px max(20px,env(safe-area-inset-bottom));border-top:2px solid rgba(116,198,157,.30)">'
+    + '<div style="display:flex;justify-content:center;padding:0 0 14px"><div style="width:36px;height:4px;background:rgba(116,198,157,.32);border-radius:2px"></div></div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      + '<div><div style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.70);font-family:Jost,sans-serif">📈 Tu mes emocional</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(225,255,235,.96)">'+monthNames[month]+' '+year+'</div></div>'
+      + '<button onclick="document.getElementById(\'monthlyGraphOv\').remove();if(typeof _syncBodyScroll===\'function\')_syncBodyScroll()" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:22px;cursor:pointer;padding:4px 10px">✕</button>'
+    + '</div>'
+    + '<div id="monthlyGraphBody">'+bodyHtml+'</div>'
+    + '<button onclick="document.getElementById(\'monthlyGraphOv\').remove();if(typeof _syncBodyScroll===\'function\')_syncBodyScroll();setTimeout(function(){if(typeof pOpenMoodQuickView===\'function\')pOpenMoodQuickView();},180)" style="width:100%;margin-top:14px;padding:13px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.50);border-radius:14px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px">📅 Ver calendario completo →</button>'
+    + '<button onclick="document.getElementById(\'monthlyGraphOv\').remove();if(typeof _syncBodyScroll===\'function\')_syncBodyScroll()" style="width:100%;margin-top:8px;padding:11px;background:none;border:1px solid rgba(255,255,255,.10);border-radius:14px;color:rgba(255,255,255,.55);font-size:13px;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button>'
+    + '</div>';
+  document.body.appendChild(ov2);
+  if(typeof _syncBodyScroll==='function') _syncBodyScroll();
+}
+
+function _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, moodColor){
   var pts = [];
   var allEmojis = {};
   for(var d=1; d<=daysInMonth; d++){
@@ -1535,8 +1563,6 @@ async function pOpenMonthlyMoodGraph(){
   var avgScore = nReg ? (pts.reduce(function(s,p){return s+p.score;},0)/nReg).toFixed(1) : 0;
   var bestDay = nReg ? pts.reduce(function(a,b){return b.score>a.score?b:a;}) : null;
   var worstDay = nReg ? pts.reduce(function(a,b){return b.score<a.score?b:a;}) : null;
-  var domEmoji = '', domCount = 0;
-  Object.keys(allEmojis).forEach(function(k){ if(allEmojis[k]>domCount){domCount=allEmojis[k]; domEmoji=k;} });
   var W = 320, H = 150, padX = 22, padY = 18;
   var xStep = (W - padX*2) / Math.max(1, daysInMonth-1);
   var yScale = function(s){ return padY + (H - padY*2) * (1 - (s-1)/4); };
@@ -1598,8 +1624,8 @@ async function pOpenMonthlyMoodGraph(){
   var distEntries = Object.keys(allEmojis).map(function(e){ return {e:e, n:allEmojis[e]}; }).sort(function(a,b){return b.n-a.n;}).slice(0,5);
   var distHtml = distEntries.length
     ? '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px">'
-        + distEntries.map(function(d){
-          return '<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.30);border-radius:100px;padding:4px 11px;font-size:13px"><span style="font-size:16px">'+d.e+'</span><span style="font-size:12px;font-weight:700;color:rgba(180,235,210,.95);font-family:Jost,sans-serif">×'+d.n+'</span></span>';
+        + distEntries.map(function(dm){
+          return '<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.30);border-radius:100px;padding:4px 11px;font-size:13px"><span style="font-size:16px">'+dm.e+'</span><span style="font-size:12px;font-weight:700;color:rgba(180,235,210,.95);font-family:Jost,sans-serif">×'+dm.n+'</span></span>';
         }).join('')
       + '</div>'
     : '';
@@ -1607,28 +1633,10 @@ async function pOpenMonthlyMoodGraph(){
     + '<div style="background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.25);border-radius:14px;padding:10px 12px"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(160,210,180,.65);text-transform:uppercase;margin-bottom:4px">Promedio</div><div style="font-size:20px;font-weight:800;color:rgba(220,255,235,.96);font-family:Jost,sans-serif">'+avgScore+'/5</div></div>'
     + '<div style="background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.25);border-radius:14px;padding:10px 12px"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(160,210,180,.65);text-transform:uppercase;margin-bottom:4px">Registros</div><div style="font-size:20px;font-weight:800;color:rgba(220,255,235,.96);font-family:Jost,sans-serif">'+nReg+'/'+daysInMonth+'</div></div>'
     + (bestDay?'<div style="background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.25);border-radius:14px;padding:10px 12px"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(160,210,180,.65);text-transform:uppercase;margin-bottom:4px">Mejor día</div><div style="font-size:14px;font-weight:700;color:rgba(220,255,235,.96);font-family:Jost,sans-serif"><span style="font-size:18px;margin-right:6px">'+bestDay.emoji+'</span>Día '+bestDay.day+'</div></div>':'')
-    + (worstDay && worstDay.day!==bestDay.day?'<div style="background:rgba(200,140,80,.10);border:1px solid rgba(200,140,80,.25);border-radius:14px;padding:10px 12px"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(220,180,120,.65);text-transform:uppercase;margin-bottom:4px">Más difícil</div><div style="font-size:14px;font-weight:700;color:rgba(255,235,210,.96);font-family:Jost,sans-serif"><span style="font-size:18px;margin-right:6px">'+worstDay.emoji+'</span>Día '+worstDay.day+'</div></div>':'')
+    + (worstDay && bestDay && worstDay.day!==bestDay.day?'<div style="background:rgba(200,140,80,.10);border:1px solid rgba(200,140,80,.25);border-radius:14px;padding:10px 12px"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(220,180,120,.65);text-transform:uppercase;margin-bottom:4px">Más difícil</div><div style="font-size:14px;font-weight:700;color:rgba(255,235,210,.96);font-family:Jost,sans-serif"><span style="font-size:18px;margin-right:6px">'+worstDay.emoji+'</span>Día '+worstDay.day+'</div></div>':'')
     + '</div>'
     : '<div style="text-align:center;padding:24px;color:rgba(255,255,255,.55);font-size:14px;font-family:Jost,sans-serif">Sin registros este mes — empezá hoy 🌿</div>';
-  var ov2 = document.createElement('div');
-  ov2.id = 'monthlyGraphOv';
-  ov2.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.78);display:flex;align-items:flex-end;justify-content:center';
-  ov2.onclick = function(e){ if(e.target===ov2){ ov2.remove(); if(typeof _syncBodyScroll==='function') _syncBodyScroll(); } };
-  ov2.innerHTML = '<div style="background:linear-gradient(150deg,rgba(10,28,18,.98),rgba(6,18,12,.97));border-radius:28px 28px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:16px 18px max(20px,env(safe-area-inset-bottom));border-top:2px solid rgba(116,198,157,.30)">'
-    + '<div style="display:flex;justify-content:center;padding:0 0 14px"><div style="width:36px;height:4px;background:rgba(116,198,157,.32);border-radius:2px"></div></div>'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
-      + '<div><div style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.70);font-family:Jost,sans-serif">📈 Tu mes emocional</div>'
-      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(225,255,235,.96)">'+monthNames[month]+' '+year+'</div></div>'
-      + '<button onclick="document.getElementById(\'monthlyGraphOv\').remove();if(typeof _syncBodyScroll===\'function\')_syncBodyScroll()" style="background:none;border:none;color:rgba(255,255,255,.45);font-size:22px;cursor:pointer;padding:4px 10px">✕</button>'
-    + '</div>'
-    + '<div style="background:rgba(0,0,0,.22);border:1px solid rgba(116,198,157,.12);border-radius:16px;padding:14px 8px 6px;margin-top:14px">'+svg+'</div>'
-    + distHtml
-    + statsHtml
-    + '<button onclick="document.getElementById(\'monthlyGraphOv\').remove();if(typeof _syncBodyScroll===\'function\')_syncBodyScroll();setTimeout(function(){if(typeof pOpenMoodQuickView===\'function\')pOpenMoodQuickView();},180)" style="width:100%;margin-top:14px;padding:13px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.50);border-radius:14px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px">📅 Ver calendario completo →</button>'
-    + '<button onclick="document.getElementById(\'monthlyGraphOv\').remove();if(typeof _syncBodyScroll===\'function\')_syncBodyScroll()" style="width:100%;margin-top:8px;padding:11px;background:none;border:1px solid rgba(255,255,255,.10);border-radius:14px;color:rgba(255,255,255,.55);font-size:13px;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button>'
-    + '</div>';
-  document.body.appendChild(ov2);
-  if(typeof _syncBodyScroll==='function') _syncBodyScroll();
+  return '<div style="background:rgba(0,0,0,.22);border:1px solid rgba(116,198,157,.12);border-radius:16px;padding:14px 8px 6px;margin-top:14px">'+svg+'</div>'+distHtml+statsHtml;
 }
 
 // Manual replay from menu hamburguesa — reinicia el flag y arranca el tour desde home
@@ -1757,17 +1765,22 @@ function _startHomeTour(){
         var tipW = 320;
         var winH = window.innerHeight;
         var winW = window.innerWidth;
-        // Pre-scroll so the element sits in the TOP third of the viewport — tip cabe abajo
-        var scroller = document.scrollingElement || document.documentElement;
-        var elAbsTop = (scroller.scrollTop||0) + r.top;
+        // Encuentra el scroller real: el .p-page-scroll de la página activa (o document como fallback)
+        var scroller = firstEl.closest('.p-page-scroll') || firstEl.closest('.p-page') || document.scrollingElement || document.documentElement;
+        // Position del elemento RELATIVO al scroller
+        var sRect = (scroller === document.scrollingElement || scroller === document.documentElement)
+          ? {top: 0}
+          : scroller.getBoundingClientRect();
+        var elAbsTop = (scroller.scrollTop||0) + (r.top - sRect.top);
         var elH = r.height;
-        // Want element top at ~16% of viewport so tip (200px) cabe debajo con margen
-        var desiredScroll = elAbsTop - winH * 0.16;
-        if(elH > winH * 0.5){
-          // Elemento más grande que media pantalla: scrolleamos para que su tope quede a 8% del viewport
-          desiredScroll = elAbsTop - winH * 0.08;
+        // Queremos el elemento a ~16% del viewport visible del scroller
+        var visibleH = (scroller === document.scrollingElement || scroller === document.documentElement) ? winH : scroller.clientHeight;
+        var desiredScroll = elAbsTop - visibleH * 0.16;
+        if(elH > visibleH * 0.5){
+          desiredScroll = elAbsTop - visibleH * 0.08;
         }
-        scroller.scrollTo({top: Math.max(0, desiredScroll), behavior:'smooth'});
+        try{ scroller.scrollTo({top: Math.max(0, desiredScroll), behavior:'smooth'}); }
+        catch(e){ scroller.scrollTop = Math.max(0, desiredScroll); }
         // Recompute rect after scroll
         setTimeout(function(){
           var r2 = els.length > 1 ? _unionRect(els) : firstEl.getBoundingClientRect();
@@ -4917,7 +4930,8 @@ async function pPostDqComment(responseId){
   pToast('💬','Comentario publicado');
   var _dqRespOwner = _dqAllResponses && _dqAllResponses.find(function(x){ return String(x.id)===String(responseId); });
   if(_dqRespOwner && _dqRespOwner.user_id){
-    _createVeloNotif(_dqRespOwner.user_id,'dq_comment',(safeLS('get','velo_user_name')||'Alguien')+' comentó tu respuesta del día',text.slice(0,80),responseId);
+    var _notifName = _cIsAnon ? 'Anónimo' : (safeLS('get','velo_user_name')||'Alguien');
+    _createVeloNotif(_dqRespOwner.user_id,'dq_comment',_notifName+' comentó tu respuesta del día',text.slice(0,80),responseId);
   }
   var feedEl = document.getElementById('dqCommentFeed');
   if(feedEl){
@@ -22844,12 +22858,12 @@ function _renderMomentoComments(comments,col,lightMode){
   var strip=col?col.strip:'rgba(116,198,157,1)';
   var bg=col?col.bg:'rgba(6,28,18,.92)';
   var ca=function(c,a){ return c.replace(/,[\d.]+\)$/,','+a+')'); };
-  // Bubble — cream-amarillo más saturado para contraste fuerte vs sheet oscuro
+  // El contenedor #dqCommentFeed tiene fondo cream cuando lightMode=true.
+  // Por eso NOMBRE, FECHA y TEXTO deben ser OSCUROS sobre cream, o CLAROS sobre el sheet oscuro.
   var textColor=lightMode?'rgba(20,25,20,.94)':'rgba(255,255,255,.94)';
-  // NOMBRE y FECHA viven FUERA del bubble — sobre el sheet OSCURO siempre,
-  // entonces tienen que ser CLAROS aunque el bubble sea crema
-  var nameLbl=ca(lbl,'.96');
-  var textDim='rgba(255,255,255,.50)';
+  var nameLbl=lightMode?'rgba(10,55,30,.96)':ca(lbl,'.96');
+  var textDim=lightMode?'rgba(60,80,60,.55)':'rgba(255,255,255,.50)';
+  var unameCol=lightMode?'rgba(60,90,55,.65)':'rgba(255,255,255,.45)';
   var bubbleBg=lightMode?'rgba(255,238,170,.98)':ca(strip,'.20');
   var bubbleBdr=lightMode?'rgba(220,170,40,.65)':ca(brd,'.40');
   var bubbleLeft=lightMode?'rgba(220,140,20,.95)':ca(brd,'.80');
@@ -22889,7 +22903,7 @@ function _renderMomentoComments(comments,col,lightMode){
       :'<div'+(canClick?' onclick="pQuickProfile('+profileArgs+')"':'')+' style="'+avClickStyle+'width:40px;height:40px;border-radius:50%;background:'+avBg+';display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;flex-shrink:0;border:2px solid '+avBdr+';box-shadow:0 2px 8px rgba(0,0,0,.20)">'+_escHtml(avEmoji)+'</div>';
     // Username @ debajo del nombre (solo no-anon y si profile tiene username)
     var unameLine = (canClick && unameVal)
-      ? '<div style="font-size:11.5px;font-weight:600;color:'+textDim+';font-family:Jost,sans-serif;line-height:1;margin-top:1px">@'+_escHtml(unameVal)+'</div>'
+      ? '<div style="font-size:11.5px;font-weight:600;color:'+unameCol+';font-family:Jost,sans-serif;line-height:1;margin-top:2px">@'+_escHtml(unameVal)+'</div>'
       : '';
     var nameClickAttr = canClick ? ' onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer"' : '';
     return '<div style="display:flex;gap:11px;margin-bottom:14px;align-items:flex-start">'
@@ -25676,7 +25690,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1222;
+    var _BUILT_V = 1223;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
