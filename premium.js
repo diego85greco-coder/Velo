@@ -11075,12 +11075,13 @@ async function _loadBottleStats(){
     var replies = (results[1] && !results[1].error && results[1].count != null) ? results[1].count : 0;
     var reacts  = (results[2] && !results[2].error && results[2].count != null) ? results[2].count : 0;
     var isLight = !document.body.classList.contains('r-dark');
-    var pillBg  = isLight ? 'rgba(65,155,222,.10)'  : 'rgba(140,205,255,.14)';
-    var pillBrd = isLight ? 'rgba(65,155,222,.28)'  : 'rgba(140,205,255,.35)';
-    var textCol = isLight ? 'rgba(30,90,128,.90)'   : 'rgba(220,240,255,.94)';
-    var strongCol = isLight ? 'rgba(12,58,138,.96)' : 'rgba(255,255,255,.98)';
-    var sepCol  = isLight ? 'rgba(30,90,128,.30)'   : 'rgba(220,240,255,.30)';
-    el.innerHTML = '<span style="display:inline-flex;gap:14px;padding:9px 18px;background:'+pillBg+';border:1.5px solid '+pillBrd+';border-radius:100px;font-weight:700;font-family:Jost,sans-serif;font-size:12.5px;color:'+textCol+';align-items:center;box-shadow:0 2px 12px rgba(65,155,222,.10)">'
+    // Fondos sólidos para leer bien sobre imagen de fondo (light mode) o dark
+    var pillBg  = isLight ? 'rgba(255,255,255,.92)' : 'rgba(20,45,72,.90)';
+    var pillBrd = isLight ? 'rgba(65,155,222,.55)'  : 'rgba(140,205,255,.55)';
+    var textCol = isLight ? 'rgba(12,58,138,.94)'   : 'rgba(220,240,255,.96)';
+    var strongCol = isLight ? 'rgba(8,32,88,1)'     : 'rgba(255,255,255,1)';
+    var sepCol  = isLight ? 'rgba(30,90,128,.35)'   : 'rgba(220,240,255,.30)';
+    el.innerHTML = '<span style="display:inline-flex;gap:14px;padding:9px 18px;background:'+pillBg+';border:1.5px solid '+pillBrd+';border-radius:100px;font-weight:800;font-family:Jost,sans-serif;font-size:12.5px;color:'+textCol+';align-items:center;box-shadow:0 4px 16px rgba(65,155,222,.20);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">'
       + '<span>🌊 <strong style="color:'+strongCol+'">'+bottles+'</strong> hoy</span>'
       + '<span style="color:'+sepCol+'">·</span>'
       + '<span>💌 <strong style="color:'+strongCol+'">'+replies+'</strong> respuestas</span>'
@@ -11277,19 +11278,19 @@ async function pRenderBottle(){
 
   // ── FILTROS por emoción — colores adaptados al tema ──
   var isLightBottle = !document.body.classList.contains('r-dark');
-  // Colores activos vs inactivos según tema
-  var _chipActiveBg    = isLightBottle ? 'rgba(65,155,222,.28)'  : 'rgba(140,205,255,.32)';
-  var _chipActiveBrd   = isLightBottle ? 'rgba(65,155,222,.72)'  : 'rgba(180,220,255,.85)';
-  var _chipActiveCol   = isLightBottle ? 'rgba(12,58,138,.98)'   : 'rgba(255,255,255,.98)';
-  var _chipInactiveBg  = isLightBottle ? 'rgba(65,155,222,.08)'  : 'rgba(140,205,255,.10)';
-  var _chipInactiveBrd = isLightBottle ? 'rgba(65,155,222,.24)'  : 'rgba(180,220,255,.30)';
-  var _chipInactiveCol = isLightBottle ? 'rgba(30,90,128,.85)'   : 'rgba(220,240,255,.88)';
+  // Fondos sólidos con blur para leer bien sobre imagen de fondo
+  var _chipActiveBg    = isLightBottle ? 'rgba(65,155,222,.92)'  : 'rgba(140,205,255,.85)';
+  var _chipActiveBrd   = isLightBottle ? 'rgba(30,90,138,1)'     : 'rgba(220,240,255,1)';
+  var _chipActiveCol   = isLightBottle ? 'rgba(255,255,255,1)'   : 'rgba(12,42,88,1)';
+  var _chipInactiveBg  = isLightBottle ? 'rgba(255,255,255,.85)' : 'rgba(20,45,72,.75)';
+  var _chipInactiveBrd = isLightBottle ? 'rgba(65,155,222,.55)'  : 'rgba(180,220,255,.55)';
+  var _chipInactiveCol = isLightBottle ? 'rgba(12,58,138,.94)'   : 'rgba(220,240,255,.94)';
   // Detectar emojis presentes para armar chips dinámicos
   var moodSet = {};
   allBottles.forEach(function(b){ if(b.mood) moodSet[b.mood] = (moodSet[b.mood]||0)+1; });
   var topMoods = Object.keys(moodSet).sort(function(a,b){ return moodSet[b] - moodSet[a]; }).slice(0,7);
   function _chipStyle(active){
-    return 'flex-shrink:0;padding:7px 14px;background:'+(active?_chipActiveBg:_chipInactiveBg)+';border:1.5px solid '+(active?_chipActiveBrd:_chipInactiveBrd)+';border-radius:100px;color:'+(active?_chipActiveCol:_chipInactiveCol)+';font-size:13px;font-weight:'+(active?'800':'700')+';cursor:pointer;font-family:Jost,sans-serif;letter-spacing:.2px';
+    return 'flex-shrink:0;padding:7px 14px;background:'+(active?_chipActiveBg:_chipInactiveBg)+';border:1.5px solid '+(active?_chipActiveBrd:_chipInactiveBrd)+';border-radius:100px;color:'+(active?_chipActiveCol:_chipInactiveCol)+';font-size:13px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;letter-spacing:.2px;box-shadow:0 2px 8px rgba(65,155,222,'+(active?'.25':'.15')+');backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)';
   }
   var filterChipsHtml = '<div id="bottleFilterChips" style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none">'
     + '<button data-filter="" onclick="pFilterBottleFeed(\'\',this)" style="'+_chipStyle(_bottleFilter==='')+'">Todos</button>'
@@ -11380,16 +11381,26 @@ async function pRenderBottle(){
     var bodyTextColor = isLight?bCol.label:'rgba(255,255,255,.93)';
     var avCircleBg = isLight?'rgba(0,0,0,.06)':'rgba(255,255,255,.10)';
     var cardBorder = isLight?bCol.border.replace(/[\d.]+\)$/,'.30)'):'rgba(255,255,255,.07)';
-    var authorNameHtml = isOwn
-      ? '<span style="font-size:13px;font-weight:700;color:'+bCol.label+'">'+(myName||'Tú')+'</span>'
-      : showAuthor
-        ? (bAvHasImg
-            ? '<img src="'+_escHtml(_bav)+'" style="width:15px;height:15px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:3px;border:1px solid '+bCol.border+'">'
-            : (bAvIsEmoji ? '<span style="font-size:14px;vertical-align:middle;margin-right:3px">'+_escHtml(_bav)+'</span>' : ''))
-          +'<span style="font-size:13px;font-weight:700;color:'+bCol.label+';cursor:pointer" onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')">'
-          +_escHtml(b.userName)+'</span>'
-          +(_uAt(b.userId||''))
-        : '<span style="font-size:13px;font-weight:700;color:'+anonColor+';letter-spacing:.2px">Anónimo/a</span>';
+    var authorNameHtml;
+    if(isOwn){
+      if(b.anon){
+        // Publiqué anónimo → dejar CLARO que otros me ven como Anónimo/a,
+        // y que este nombre visible ES solo para mí
+        authorNameHtml = '<span style="font-size:13px;font-weight:800;color:'+anonColor+';letter-spacing:.2px">Anónimo/a</span>'
+          + '<span style="font-size:10.5px;font-weight:700;color:rgba(180,255,180,.75);background:rgba(80,185,140,.14);border:1px solid rgba(80,185,140,.35);border-radius:100px;padding:2px 8px;margin-left:6px;letter-spacing:.3px">🔒 Solo vos lo ves como Tuyo</span>';
+      } else {
+        authorNameHtml = '<span style="font-size:13px;font-weight:700;color:'+bCol.label+'">'+(myName||'Tú')+'</span>';
+      }
+    } else if(showAuthor){
+      authorNameHtml = (bAvHasImg
+        ? '<img src="'+_escHtml(_bav)+'" style="width:15px;height:15px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:3px;border:1px solid '+bCol.border+'">'
+        : (bAvIsEmoji ? '<span style="font-size:14px;vertical-align:middle;margin-right:3px">'+_escHtml(_bav)+'</span>' : ''))
+        + '<span style="font-size:13px;font-weight:700;color:'+bCol.label+';cursor:pointer" onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')">'
+        + _escHtml(b.userName)+'</span>'
+        + (_uAt(b.userId||''));
+    } else {
+      authorNameHtml = '<span style="font-size:13px;font-weight:700;color:'+anonColor+';letter-spacing:.2px">Anónimo/a</span>';
+    }
     var stripInnerB = bAvHasImg
       ? '<img src="'+_escHtml(_bav)+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2.5px solid '+bCol.border+';display:block;box-shadow:0 2px 12px '+bCol.glow+'">'
       : bAvIsEmoji
@@ -11418,8 +11429,8 @@ async function pRenderBottle(){
       : '';
     return '<div class="dark-bottle'+(alreadyReplied?' bottle-already-replied':'')+'" id="bottle-'+b.id+'"'
       +' style="animation-delay:'+i*.08+'s;position:relative;background:'+bCol.bg+';border:1.5px solid '+cardBorder+';border-radius:18px;box-shadow:0 4px 22px '+bCol.glow+',inset 0 0 0 1px '+bCol.border.replace(/[\d.]+\)$/,'0.18)')+';overflow:hidden;margin:0 0 10px;padding:0">'
-      +'<div style="position:absolute;left:0;top:0;bottom:0;width:64px;background:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center;'+(isOwn||showAuthor?'cursor:pointer;':'')+'" '
-      +(isOwn ? 'onclick="pQuickProfile('+_jsAttr(myName||b.userName||'Tú')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(myId)+')"'
+      +'<div style="position:absolute;left:0;top:0;bottom:0;width:64px;background:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center;'+((isOwn && !b.anon)||showAuthor?'cursor:pointer;':'')+'" '
+      +((isOwn && !b.anon) ? 'onclick="pQuickProfile('+_jsAttr(myName||b.userName||'Tú')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(myId)+')"'
         : showAuthor ? 'onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')"'
         : '')
       +'>'
@@ -27446,7 +27457,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1252;
+    var _BUILT_V = 1253;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
