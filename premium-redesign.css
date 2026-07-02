@@ -12432,50 +12432,53 @@ body.r-dark .diary-write {
   padding-left: 56px !important;
 }
 
-/* Entry cards */
+/* Entry cards — v1298: contraste alto sobre fondo lavanda del hero */
 .diary-row {
-  background: var(--cream);
-  border: 1px solid rgba(116,198,157,.15);
-  border-left: 3.5px solid rgba(116,198,157,.55);
+  background: #fffcf4;
+  border: 1.5px solid rgba(40,110,75,.28);
+  border-left: 4px solid rgba(20,110,70,.75);
   border-radius: 14px;
   padding: 12px 14px;
   margin-bottom: 8px;
   transition: all .15s;
   animation: fadeSlideUp .3s ease both;
+  box-shadow: 0 2px 8px rgba(60,40,90,.10);
 }
 .diary-row:hover {
-  background: rgba(116,198,157,.06);
-  border-left-color: rgba(116,198,157,.90);
+  background: #fff;
+  border-left-color: #0e6538;
   transform: translateX(2px);
 }
 body.r-dark .diary-row {
-  background: rgba(255,255,255,.04) !important;
-  border-color: rgba(116,198,157,.18) !important;
-  border-left-color: rgba(116,198,157,.45) !important;
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(116,198,157,.30) !important;
+  border-left-color: rgba(116,198,157,.75) !important;
 }
 body.r-dark .diary-row:hover {
-  background: rgba(116,198,157,.10) !important;
-  border-left-color: rgba(116,198,157,.80) !important;
+  background: rgba(116,198,157,.12) !important;
+  border-left-color: rgba(140,220,180,.95) !important;
 }
 .diary-row-date {
-  font-size: 11px;
-  font-weight: 700;
-  color: rgba(116,198,157,.85);
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #0e5030;
   font-family: 'Jost', sans-serif;
-  letter-spacing: .3px;
+  letter-spacing: .4px;
+  text-transform: uppercase;
 }
-body.r-dark .diary-row-date { color: rgba(116,198,157,.80) !important; }
+body.r-dark .diary-row-date { color: rgba(140,220,180,.98) !important; }
 .diary-row-preview {
-  font-size: 12.5px;
-  color: var(--ink4);
+  font-size: 13px;
+  color: #2a2418;
   font-style: italic;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   font-family: 'Cormorant Garamond', serif;
   margin-top: 2px;
+  font-weight: 500;
 }
-body.r-dark .diary-row-preview { color: rgba(255,255,255,.50) !important; }
+body.r-dark .diary-row-preview { color: rgba(255,250,235,.85) !important; }
 
 /* ═══════════════════════════════════════════════════════════════════
    v975 — Estilos del día: rediseño visual completo

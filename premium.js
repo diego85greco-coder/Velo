@@ -12982,16 +12982,18 @@ function _renderDiaryEntryList(el, entries){
     var isDarkList = document.body.classList.contains('r-dark');
     var badges = '';
     if(hasAudio){
-      var audioColor = isDarkList ? 'rgba(240,220,150,.98)' : 'rgba(140,90,10,.95)';
-      var audioBg = isDarkList ? 'rgba(220,180,80,.18)' : 'rgba(220,180,80,.28)';
-      var audioBrd = isDarkList ? 'rgba(220,180,80,.45)' : 'rgba(200,140,30,.60)';
-      badges += '<span title="Tiene audio" style="display:inline-flex;align-items:center;gap:3px;background:'+audioBg+';border:1px solid '+audioBrd+';border-radius:100px;padding:2px 8px;font-size:10.5px;font-weight:800;color:'+audioColor+';font-family:Jost,sans-serif;letter-spacing:.3px">🎙️ audio</span>';
+      // Alto contraste sobre cream/dark: ámbar sólido oscuro (light) / ámbar claro (dark)
+      var audioColor = isDarkList ? '#ffe28a' : '#5c3d10';
+      var audioBg    = isDarkList ? 'rgba(220,180,80,.28)' : 'rgba(220,180,80,.45)';
+      var audioBrd   = isDarkList ? 'rgba(255,220,120,.60)' : 'rgba(140,90,10,.75)';
+      badges += '<span title="Tiene audio" style="display:inline-flex;align-items:center;gap:3px;background:'+audioBg+';border:1.5px solid '+audioBrd+';border-radius:100px;padding:3px 9px;font-size:11px;font-weight:800;color:'+audioColor+';font-family:Jost,sans-serif;letter-spacing:.3px">🎙️ Audio</span>';
     }
     if(hasImage){
-      var imageColor = isDarkList ? 'rgba(215,200,255,.98)' : 'rgba(80,50,150,.95)';
-      var imageBg = isDarkList ? 'rgba(180,155,240,.18)' : 'rgba(180,155,240,.28)';
-      var imageBrd = isDarkList ? 'rgba(180,155,240,.45)' : 'rgba(140,100,220,.60)';
-      badges += (badges?'<span style="width:4px"></span>':'')+'<span title="Tiene foto" style="display:inline-flex;align-items:center;gap:3px;background:'+imageBg+';border:1px solid '+imageBrd+';border-radius:100px;padding:2px 8px;font-size:10.5px;font-weight:800;color:'+imageColor+';font-family:Jost,sans-serif;letter-spacing:.3px">📷 foto</span>';
+      // Violeta sólido oscuro (light) / violeta claro (dark) — más saturado
+      var imageColor = isDarkList ? '#e8dcff' : '#3d1f7a';
+      var imageBg    = isDarkList ? 'rgba(180,155,240,.28)' : 'rgba(180,155,240,.42)';
+      var imageBrd   = isDarkList ? 'rgba(200,180,255,.60)' : 'rgba(90,60,180,.75)';
+      badges += (badges?'<span style="width:6px;display:inline-block"></span>':'')+'<span title="Tiene foto" style="display:inline-flex;align-items:center;gap:3px;background:'+imageBg+';border:1.5px solid '+imageBrd+';border-radius:100px;padding:3px 9px;font-size:11px;font-weight:800;color:'+imageColor+';font-family:Jost,sans-serif;letter-spacing:.3px">📷 Foto</span>';
     }
     // Border-left color según tipo predominante: audio → dorado, imagen → violeta, texto → default
     var leftBorder = '';
@@ -30698,7 +30700,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1297;
+    var _BUILT_V = 1298;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
