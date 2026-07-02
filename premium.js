@@ -2121,6 +2121,170 @@ function _showWellbeingBanner(){
   }, 12000);
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// VELO ANIMATION HELPERS (v1262)
+// ═══════════════════════════════════════════════════════════════════
+
+// Genera N partículas 🌿 subiendo desde un punto — éxito emocional
+function veloParticleBloom(anchorEl, opts){
+  if(!anchorEl || !anchorEl.getBoundingClientRect) return;
+  opts = opts || {};
+  var count = opts.count || 6;
+  var emojis = opts.emojis || ['🌿','💚','✨'];
+  var rect = anchorEl.getBoundingClientRect();
+  var cx = rect.left + rect.width/2;
+  var cy = rect.top + rect.height/2;
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:'+cx+'px;top:'+cy+'px;pointer-events:none;z-index:10005';
+  document.body.appendChild(wrap);
+  for(var i=0; i<count; i++){
+    var p = document.createElement('span');
+    p.className = 'velo-particle';
+    p.textContent = emojis[i % emojis.length];
+    // Ángulo aleatorio hacia arriba (± 40°)
+    var ang = -Math.PI/2 + (Math.random()-.5) * (Math.PI*0.45);
+    var dist = 50 + Math.random()*40;
+    p.style.setProperty('--vx', (Math.cos(ang)*dist).toFixed(1)+'px');
+    p.style.setProperty('--vy', Math.max(40, Math.abs(Math.sin(ang)*dist)).toFixed(1)+'px');
+    p.style.animationDelay = (i*40)+'ms';
+    wrap.appendChild(p);
+  }
+  setTimeout(function(){ if(wrap.parentNode) wrap.remove(); }, 1400);
+}
+
+// Contador animado 0 → N
+function veloCountUp(el, target, duration){
+  if(!el) return;
+  target = parseInt(target)||0;
+  duration = duration || 550;
+  var start = 0;
+  var t0 = performance.now();
+  function tick(now){
+    var t = Math.min(1, (now - t0) / duration);
+    var eased = 1 - Math.pow(1-t, 2.6);
+    var v = Math.round(start + (target-start) * eased);
+    el.textContent = String(v);
+    if(t < 1) requestAnimationFrame(tick);
+    else el.textContent = String(target);
+  }
+  requestAnimationFrame(tick);
+}
+
+// Aplica stagger fade-in a los hijos de un contenedor (una sola vez)
+function veloApplyStagger(container){
+  if(!container || container.dataset.veloStaggered === '1') return;
+  container.dataset.veloStaggered = '1';
+  container.classList.add('velo-stagger');
+}
+
+// Corazón/emoji que flota hacia arriba desde un botón (para reacciones)
+function veloHeartFloat(anchorEl, emoji){
+  if(!anchorEl) return;
+  var parent = anchorEl;
+  // asegurar position relative en el parent inmediato
+  var cs = window.getComputedStyle(parent);
+  if(cs.position === 'static'){ parent.style.position = 'relative'; }
+  var span = document.createElement('span');
+  span.className = 'velo-heart-float';
+  span.textContent = emoji || '💚';
+  span.style.left = '50%';
+  span.style.top = '-6px';
+  parent.appendChild(span);
+  setTimeout(function(){ if(span.parentNode) span.remove(); }, 950);
+}
+
+// Barra de progreso de lectura para páginas de Bitácora / lecturas largas
+function veloAttachReadingProgress(scrollContainer){
+  var ex = document.getElementById('veloReadingProgress');
+  if(ex) ex.remove();
+  var bar = document.createElement('div');
+  bar.id = 'veloReadingProgress';
+  bar.style.width = '0%';
+  document.body.appendChild(bar);
+  var onScroll = function(){
+    var el = scrollContainer || document.scrollingElement || document.documentElement;
+    var max = Math.max(1, el.scrollHeight - el.clientHeight);
+    var pct = Math.min(100, Math.max(0, (el.scrollTop / max) * 100));
+    bar.style.width = pct.toFixed(1) + '%';
+  };
+  var target = scrollContainer || window;
+  target.addEventListener('scroll', onScroll, { passive:true });
+  onScroll();
+  // return detach fn
+  return function(){ target.removeEventListener('scroll', onScroll); if(bar.parentNode) bar.remove(); };
+}
+
+// Breathing widget compacto — devuelve HTML del orb + label. Al tocar → modal grande.
+function veloBreathingWidgetHtml(){
+  return '<button id="veloBreathBtn" onclick="veloOpenBreathingModal()" style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.32);border-radius:14px;cursor:pointer;font-family:Jost,sans-serif;width:100%;text-align:left;-webkit-tap-highlight-color:transparent">'
+    + '<span class="velo-breath-orb" style="width:38px;height:38px;flex-shrink:0"></span>'
+    + '<span style="flex:1"><span style="display:block;font-size:12.5px;font-weight:800;color:var(--sage3);letter-spacing:.5px;text-transform:uppercase">Respiración 4·7·8</span>'
+    + '<span style="display:block;font-size:11.5px;color:rgba(255,255,255,.55);margin-top:1px">Un minuto para volver al cuerpo 🌿</span></span>'
+    + '<span style="color:var(--sage3);font-size:18px">›</span>'
+    + '</button>';
+}
+
+// Modal grande de respiración guiada (4·7·8)
+function veloOpenBreathingModal(){
+  var ex = document.getElementById('veloBreathOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'veloBreathOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10005;background:radial-gradient(circle at 50% 40%, rgba(15,50,32,.92), rgba(4,20,12,.98));display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;color:#fff;font-family:Jost,sans-serif';
+  ov.innerHTML =
+      '<button onclick="var o=document.getElementById(\'veloBreathOv\');if(o)o.remove()" style="position:absolute;top:18px;right:18px;background:none;border:none;color:rgba(255,255,255,.55);font-size:26px;cursor:pointer">×</button>'
+    + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:rgba(180,255,220,.72);margin-bottom:14px">RESPIRÁ 4·7·8</div>'
+    + '<div id="veloBreathPhase" style="font-family:\'Cormorant Garamond\',serif;font-size:32px;color:rgba(230,255,240,.98);margin-bottom:20px;letter-spacing:.5px">Preparate…</div>'
+    + '<div id="veloBreathOrbBig" style="width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 35% 35%, rgba(180,255,220,.90), rgba(116,198,157,.50) 55%, rgba(60,140,95,.20) 90%);box-shadow:0 0 60px rgba(116,198,157,.50);transition: transform 1s ease-in-out"></div>'
+    + '<div id="veloBreathCount" style="font-size:52px;font-weight:800;margin-top:22px;color:rgba(230,255,240,.98);letter-spacing:.5px;min-height:60px">·</div>'
+    + '<div style="margin-top:8px;font-size:13px;color:rgba(180,255,220,.60);letter-spacing:1px;text-align:center;max-width:280px;line-height:1.5">Inhalá 4 · Retené 7 · Exhalá 8. Vamos 4 ciclos, si querés seguí después 🌿</div>';
+  document.body.appendChild(ov);
+  var orb = document.getElementById('veloBreathOrbBig');
+  var phaseEl = document.getElementById('veloBreathPhase');
+  var countEl = document.getElementById('veloBreathCount');
+  var _cycles = 0, MAX_CYCLES = 4, cancelled = false;
+  ov.addEventListener('click', function(e){ if(e.target === ov){ cancelled = true; ov.remove(); }});
+  function phase(name, secs, scale){
+    if(cancelled) return;
+    phaseEl.textContent = name;
+    if(orb) orb.style.transform = 'scale('+scale+')';
+    var left = secs;
+    countEl.textContent = String(left);
+    var iv = setInterval(function(){
+      if(cancelled){ clearInterval(iv); return; }
+      left--;
+      if(left <= 0){ clearInterval(iv); return; }
+      countEl.textContent = String(left);
+    }, 1000);
+  }
+  setTimeout(function(){ if(cancelled) return; runCycle(); }, 1400);
+  function runCycle(){
+    if(cancelled) return;
+    if(_cycles >= MAX_CYCLES){
+      phaseEl.textContent = '¡Terminado! 🌿';
+      countEl.textContent = '';
+      if(orb) orb.style.transform = 'scale(.90)';
+      return;
+    }
+    _cycles++;
+    phase('Inhalá', 4, 1.15);
+    setTimeout(function(){ phase('Retené', 7, 1.15); }, 4000);
+    setTimeout(function(){ phase('Exhalá', 8, .78); }, 11000);
+    setTimeout(function(){ runCycle(); }, 19000);
+  }
+}
+
+// Inserta el widget de respiración en el home, después del bloque del saludo
+function _renderBreathingWidgetOnHome(){
+  if(document.getElementById('veloBreathBtn')) return;
+  var block = document.getElementById('homeGreetBlock');
+  if(!block || !block.parentElement) return;
+  var wrap = document.createElement('div');
+  wrap.id = 'veloBreathWidget';
+  wrap.style.cssText = 'margin-top:12px;order:2';
+  wrap.innerHTML = veloBreathingWidgetHtml();
+  block.parentElement.appendChild(wrap);
+}
+
 // ── COMMUNITY PULSE — línea sutil dentro del saludo, no card ────────
 async function _renderCommunityPulseBanner(){
   // Sacar cualquier versión vieja del banner
@@ -3872,6 +4036,7 @@ function _loadHomeData(){
   try{ setTimeout(function(){ _checkReferralQualification(); }, 1200); }catch(e){}
   try{ setTimeout(function(){ _checkBuddyExpiry(); }, 1600); }catch(e){}
   try{ setTimeout(function(){ _renderCommunityPulseBanner(); }, 2000); }catch(e){}
+  try{ setTimeout(function(){ _renderBreathingWidgetOnHome(); }, 2400); }catch(e){}
   try{ _startInAppNotifPolling(); }catch(e){}
   try{ _scheduleWellbeingCheck(); }catch(e){}
   // v1228: mensual NO se dispara automático. Solo desde admin (pAdminSendMonthlyReport).
@@ -4280,6 +4445,11 @@ function pSaveQuickMood(){
   _renderHomeWeekMoodGraph().catch(function(){});
   pToast(_selectedQuickMoodEmoji, 'Estado de ánimo guardado 💚');
   _showStreakCelebration();
+  // Success bloom — partículas floreciendo desde el chip
+  try{
+    var _anchor = document.getElementById('homeMoodChip') || document.querySelector('.r-hero-left');
+    if(_anchor) setTimeout(function(){ veloParticleBloom(_anchor, { emojis: [_selectedQuickMoodEmoji, '💚', '🌿', '✨'] }); }, 100);
+  }catch(e){}
 }
 
 // ── MI ESTADO VISIBLE ──────────────────────────────────────────
@@ -5718,6 +5888,9 @@ function _updateMoodChip(){
   var emoji = null; var label = '';
   if(today){ try{ var _cm=JSON.parse(safeLS('get','velo_mood_'+today)||'null'); if(_cm){emoji=_cm.emoji||null;label=_cm.label||'';} }catch(e){} }
   var hasEntry = !!emoji;
+  // Pulse ambient si no registró hoy — llama sin gritar
+  if(hasEntry) chip.classList.remove('velo-pulse-glow');
+  else chip.classList.add('velo-pulse-glow');
   var isDark = document.body.classList.contains('r-dark');
   var wrapBg   = isDark ? 'linear-gradient(145deg,rgba(14,58,32,.92),rgba(8,38,20,.90))' : 'linear-gradient(145deg,rgba(255,255,255,.96),rgba(238,252,244,.94))';
   var wrapBdr  = isDark ? 'rgba(116,198,157,.65)' : 'rgba(74,160,110,.55)';
@@ -5738,7 +5911,7 @@ function _updateMoodChip(){
     var streakBg = isDark ? 'linear-gradient(140deg,rgba(255,140,50,.32),rgba(220,90,20,.24))' : 'linear-gradient(140deg,rgba(255,180,80,.35),rgba(230,110,30,.24))';
     var streakBdr = isDark ? 'rgba(255,170,80,.75)' : 'rgba(230,130,40,.75)';
     var streakTxt = isDark ? 'rgba(255,230,180,.98)' : 'rgba(120,50,0,.94)';
-    streakBadge = '<span class="mcc-streak" style="position:absolute;top:-8px;right:-8px;z-index:2;display:inline-flex;align-items:center;gap:3px;background:'+streakBg+';border:1.5px solid '+streakBdr+';border-radius:100px;padding:3px 10px 3px 7px;font-size:12px;font-weight:800;color:'+streakTxt+';font-family:Jost,sans-serif;box-shadow:'+streakGlow+';animation:mccStreakPulse 2.4s ease-in-out infinite"><span style="font-size:14px;line-height:1;animation:mccFlicker 1.4s ease-in-out infinite">🔥</span>'+streak+'</span>';
+    streakBadge = '<span class="mcc-streak" style="position:absolute;top:-8px;right:-8px;z-index:2;display:inline-flex;align-items:center;gap:3px;background:'+streakBg+';border:1.5px solid '+streakBdr+';border-radius:100px;padding:3px 10px 3px 7px;font-size:12px;font-weight:800;color:'+streakTxt+';font-family:Jost,sans-serif;box-shadow:'+streakGlow+';animation:mccStreakPulse 2.4s ease-in-out infinite"><span class="velo-flicker-fire" style="font-size:14px;line-height:1">🔥</span>'+streak+'</span>';
     // Inyectar keyframes si aún no están
     if(!document.getElementById('_mccStreakKf')){
       var _kf = document.createElement('style'); _kf.id='_mccStreakKf';
@@ -11429,6 +11602,17 @@ async function pReactBottle(bottleId, reaction){
   var uid = safeLS('get','velo_user_id') || '';
   if(!uid){ pToast('⚠️','Iniciá sesión para reaccionar'); return; }
   if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  // Feedback visual inmediato (antes del server round-trip)
+  try{
+    var _srcBtn = event && event.currentTarget;
+    if(_srcBtn){
+      _srcBtn.classList.remove('velo-bounce-tap');
+      void _srcBtn.offsetWidth; // reflow
+      _srcBtn.classList.add('velo-bounce-tap');
+      var em = _BOTTLE_REACTIONS.find(function(r){ return r.k===reaction; });
+      if(em) veloHeartFloat(_srcBtn, em.e);
+    }
+  }catch(e){}
   try{
     var ex = await sbClient.from('bottle_reactions')
       .select('id').eq('bottle_id', bottleId).eq('user_id', uid).eq('reaction', reaction).maybeSingle();
@@ -11437,8 +11621,8 @@ async function pReactBottle(bottleId, reaction){
     } else {
       var ins = await sbClient.from('bottle_reactions').insert({ bottle_id: bottleId, user_id: uid, reaction: reaction });
       if(ins.error){ pToast('⚠️','Falta la tabla bottle_reactions — correr el SQL'); return; }
-      var em = _BOTTLE_REACTIONS.find(function(r){ return r.k===reaction; });
-      pToast(em ? em.e : '💚', '¡'+(em?em.lbl:'reacción')+' enviado!');
+      var em2 = _BOTTLE_REACTIONS.find(function(r){ return r.k===reaction; });
+      pToast(em2 ? em2.e : '💚', '¡'+(em2?em2.lbl:'reacción')+' enviado!');
     }
     pRenderBottle();
   }catch(e){ console.warn('[bottle-react]', e); }
@@ -11648,7 +11832,7 @@ async function pRenderBottle(){
       : '';
     return '<div class="dark-bottle'+(alreadyReplied?' bottle-already-replied':'')+'" id="bottle-'+b.id+'"'
       +' style="animation-delay:'+i*.08+'s;position:relative;background:'+bCol.bg+';border:1.5px solid '+cardBorder+';border-radius:18px;box-shadow:0 4px 22px '+bCol.glow+',inset 0 0 0 1px '+bCol.border.replace(/[\d.]+\)$/,'0.18)')+';overflow:hidden;margin:0 0 10px;padding:0">'
-      +'<div style="position:absolute;left:0;top:0;bottom:0;width:64px;background:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center;'+((isOwn && !b.anon)||showAuthor?'cursor:pointer;':'')+'" '
+      +'<div class="velo-wave-strip" style="position:absolute;left:0;top:0;bottom:0;width:64px;background-color:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center;'+((isOwn && !b.anon)||showAuthor?'cursor:pointer;':'')+'" '
       +((isOwn && !b.anon) ? 'onclick="pQuickProfile('+_jsAttr(myName||b.userName||'Tú')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(myId)+')"'
         : showAuthor ? 'onclick="pQuickProfile('+_jsAttr(b.userName||'Usuario')+','+_jsAttr(b.userAv||'🧑')+',\'\',\'\','+_jsAttr(b.userId||'')+')"'
         : '')
@@ -27290,7 +27474,16 @@ function _btOpenDetail(id){
   sh+='</div></div></div></div>';
   ov.innerHTML=sh;
   document.body.appendChild(ov);
-  ov.addEventListener('click',function(e){ if(e.target===ov){ ov.remove(); if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e2){}_btDetailChannel=null;} } });
+  // Reading progress bar sobre el sheet scroll
+  try{
+    var _sheet = document.getElementById('btDetailSheet');
+    if(_sheet && typeof veloAttachReadingProgress === 'function'){
+      var _detachProgress = veloAttachReadingProgress(_sheet);
+      ov.dataset.detachProgressBound = '1';
+      ov.__detachProgress = _detachProgress;
+    }
+  }catch(e){}
+  ov.addEventListener('click',function(e){ if(e.target===ov){ if(ov.__detachProgress) try{ov.__detachProgress();}catch(_){}; ov.remove(); if(_btDetailChannel){try{sbClient.removeChannel(_btDetailChannel);}catch(e2){}_btDetailChannel=null;} } });
   _btSubscribeDetail(id);
   _btLoadComments(post.id);
   // For debate: async-fetch fresh posturas from base table (bypasses stale view/schema cache)
@@ -27839,7 +28032,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1261;
+    var _BUILT_V = 1262;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
