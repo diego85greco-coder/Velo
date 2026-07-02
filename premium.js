@@ -2333,6 +2333,162 @@ async function _renderCommunityPulseBanner(){
   _pulseLineBuilding = false;
 }
 
+// ── STREAK RECOVERY — si te olvidaste ayer, dejarte recuperar la racha ─
+async function _checkStreakRecovery(){
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid) return;
+  var streak = (typeof _getMoodStreak === 'function') ? _getMoodStreak() : 0;
+  if(streak < 3) return; // solo vale la pena para rachas ≥3
+  var today = new Date();
+  var yesterday = new Date(today.getTime() - 86400000);
+  var yestKey = yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
+  // Si ayer ya registró, no hay nada que recuperar
+  if(safeLS('get','velo_mood_'+yestKey)) return;
+  // Dedup: solo una oferta por semana
+  var weekKey = 'velo_streak_rec_ack_'+Math.floor(Date.now()/(7*86400000));
+  if(safeLS('get', weekKey) === '1') return;
+  // Solo hoy hasta las 20h para que no reemplace el registro de hoy
+  var h = today.getHours(); if(h < 6 || h > 22) return;
+  var host = document.querySelector('.r-hero-left');
+  if(!host || document.getElementById('streakRecoveryBanner')) return;
+  var banner = document.createElement('div');
+  banner.id = 'streakRecoveryBanner';
+  banner.style.cssText = 'width:100%;box-sizing:border-box;margin:0 0 12px;order:-1';
+  banner.innerHTML = '<div style="background:linear-gradient(140deg,rgba(255,178,80,.22),rgba(220,140,50,.16));border:1.5px solid rgba(255,178,80,.55);border-radius:18px;padding:14px 16px;position:relative;box-shadow:0 4px 22px rgba(255,178,80,.18)"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:26px;line-height:1;flex-shrink:0" class="velo-flicker-fire">🔥</div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:rgba(255,240,220,.98);font-family:Jost,sans-serif;line-height:1.25;margin-bottom:2px">Ayer no registraste tu ánimo</div><div style="font-size:11.5px;color:rgba(255,220,180,.78);font-family:Jost,sans-serif;line-height:1.35">Tenés '+streak+' días de racha. Marcá cómo estuviste ayer para que no se corte 🌿</div></div><button onclick="pRecoverStreak(\''+_escHtml(yestKey)+'\');document.getElementById(\'streakRecoveryBanner\').remove()" style="flex-shrink:0;padding:8px 14px;background:linear-gradient(135deg,rgba(255,178,80,.90),rgba(220,140,50,.95));border:none;border-radius:100px;color:#331808;font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px;box-shadow:0 3px 10px rgba(255,178,80,.35)">Recuperar</button><button onclick="safeLS(\'set\',\''+weekKey+'\',\'1\');var b=document.getElementById(\'streakRecoveryBanner\');if(b)b.remove()" style="position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(255,255,255,.35);font-size:15px;cursor:pointer;padding:2px 4px;line-height:1">×</button></div></div>';
+  host.insertAdjacentElement('afterbegin', banner);
+}
+// Abre el sheet de ánimo forzando ese date_key en el LS
+function pRecoverStreak(dateKey){
+  window._recoveryTargetDate = dateKey;
+  if(typeof pOpenMoodQuickView === 'function') pOpenMoodQuickView();
+  else if(typeof pOpenQuickMood === 'function') pOpenQuickMood();
+  pToast('🔥','Registrá cómo estuvo el día de ayer');
+}
+
+// ── ACHIEVEMENTS SYSTEM ────────────────────────────────────────────
+var VELO_ACHIEVEMENTS = [
+  {k:'first_mood',    n:'Primer registro',           d:'Registraste tu primer ánimo', e:'🌱', c:function(s){return s.moodCount>=1;}},
+  {k:'streak_7',      n:'Una semana de racha',       d:'7 días consecutivos registrando', e:'🌿', c:function(s){return s.maxStreak>=7;}},
+  {k:'streak_30',     n:'Un mes de racha',           d:'30 días consecutivos — increíble',  e:'🔥', c:function(s){return s.maxStreak>=30;}},
+  {k:'streak_90',     n:'Trimestre completo',        d:'90 días seguidos registrando',  e:'💫', c:function(s){return s.maxStreak>=90;}},
+  {k:'moods_100',     n:'100 registros',             d:'Cien veces que te miraste',     e:'💚', c:function(s){return s.moodCount>=100;}},
+  {k:'moods_365',     n:'Un año registrando',        d:'365 registros de ánimo',        e:'🎊', c:function(s){return s.moodCount>=365;}},
+  {k:'first_bt',      n:'Primer post en Bitácora',   d:'Compartiste tu primera historia', e:'📖', c:function(s){return s.btPosts>=1;}},
+  {k:'first_bottle',  n:'Primer mensaje al mar',     d:'Lanzaste una botella al océano',  e:'🌊', c:function(s){return s.bottles>=1;}},
+  {k:'first_help',    n:'Primer acompañamiento',     d:'Ayudaste a alguien de la comunidad', e:'🤝', c:function(s){return s.helped>=1;}},
+  {k:'helper_10',     n:'Acompañaste a 10 personas', d:'10 personas contuvieron el corazón por vos', e:'✨', c:function(s){return s.helped>=10;}},
+  {k:'six_months',    n:'6 meses en Velo',           d:'Medio año caminando con nosotros', e:'🌸', c:function(s){return s.daysInVelo>=180;}},
+  {k:'one_year',      n:'1 año en Velo',             d:'Un año completo confiando en Velo', e:'🎉', c:function(s){return s.daysInVelo>=365;}},
+  {k:'buddy_matched', n:'Con compañero/a de bienestar', d:'Encontraste un/a buddy', e:'🕊️', c:function(s){return s.hasBuddy;}},
+  {k:'referrer',      n:'Sembraste una invitación',  d:'Alguien se sumó a Velo con tu enlace', e:'💌', c:function(s){return s.referralsAccepted>=1;}},
+];
+function _getUnlockedAchievements(){
+  try{ return JSON.parse(safeLS('get','velo_achievements')||'{}'); }catch(e){ return {}; }
+}
+function _saveUnlockedAchievements(obj){
+  try{ safeLS('set','velo_achievements', JSON.stringify(obj)); }catch(e){}
+  // Sync a Supabase (opcional — solo si existe columna)
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(sbClient && uid){
+    sbClient.from('profiles').update({ achievements_json: JSON.stringify(obj) }).eq('id', uid).then(function(){}).catch(function(){});
+  }
+}
+async function _computeAchievementStats(uid){
+  var stats = { moodCount:0, maxStreak:0, btPosts:0, bottles:0, helped:0, daysInVelo:0, hasBuddy:false, referralsAccepted:0 };
+  // Moods (desde LS)
+  Object.keys(localStorage).forEach(function(k){
+    if(k.indexOf('velo_mood_') === 0 && /^\d{4}-\d{2}-\d{2}$/.test(k.slice(10))) stats.moodCount++;
+  });
+  stats.maxStreak = _getMoodStreak() || 0;
+  // Buscar max historial de racha
+  try{
+    var moodDates = Object.keys(localStorage).filter(function(k){ return k.indexOf('velo_mood_')===0 && /^\d{4}-\d{2}-\d{2}$/.test(k.slice(10)); }).map(function(k){ return k.slice(10); }).sort();
+    var maxS=0, curS=0, lastT=null;
+    moodDates.forEach(function(d){ var t=new Date(d).getTime(); if(lastT!==null && (t-lastT)===86400000) curS++; else curS=1; if(curS>maxS) maxS=curS; lastT=t; });
+    if(maxS > stats.maxStreak) stats.maxStreak = maxS;
+  }catch(e){}
+  if(!sbClient) _initSupabase();
+  if(sbClient && uid){
+    try{
+      var p = await sbClient.from('profiles').select('created_at,buddy_id,helped_count').eq('id', uid).maybeSingle();
+      if(p && p.data){
+        if(p.data.created_at){
+          stats.daysInVelo = Math.max(0, Math.floor((Date.now() - new Date(p.data.created_at).getTime())/86400000));
+        }
+        if(p.data.buddy_id) stats.hasBuddy = true;
+        if(p.data.helped_count) stats.helped = parseInt(p.data.helped_count,10)||0;
+      }
+      try{ var _bt = await sbClient.from('bitacora_posts').select('id',{count:'exact',head:true}).eq('user_id',uid); if(!_bt.error) stats.btPosts = _bt.count||0; }catch(_){}
+      try{ var _bo = await sbClient.from('bottles').select('id',{count:'exact',head:true}).eq('user_id',uid); if(!_bo.error) stats.bottles = _bo.count||0; }catch(_){}
+      try{ var _rf = await sbClient.from('referrals').select('id',{count:'exact',head:true}).eq('referrer_id',uid); if(!_rf.error) stats.referralsAccepted = _rf.count||0; }catch(_){}
+    }catch(e){}
+  }
+  return stats;
+}
+async function _checkAchievements(){
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid) return;
+  var stats = await _computeAchievementStats(uid);
+  var unlocked = _getUnlockedAchievements();
+  var newOnes = [];
+  VELO_ACHIEVEMENTS.forEach(function(a){
+    if(unlocked[a.k]) return;
+    try{ if(a.c(stats)){ unlocked[a.k] = { at: Date.now() }; newOnes.push(a); } }catch(e){}
+  });
+  if(newOnes.length){
+    _saveUnlockedAchievements(unlocked);
+    // Mostrar una a la vez, con delay
+    newOnes.forEach(function(a, i){
+      setTimeout(function(){ _showAchievementUnlockedModal(a); }, i*1400);
+    });
+  }
+}
+function _showAchievementUnlockedModal(ach){
+  var ex = document.getElementById('achievementUnlockedOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'achievementUnlockedOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10005;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:24px;color:#fff;font-family:Jost,sans-serif';
+  ov.innerHTML = '<div style="background:linear-gradient(155deg,rgba(30,60,42,.98),rgba(14,32,20,.98));border:1.5px solid rgba(220,180,80,.55);border-radius:26px;padding:38px 26px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 6px rgba(220,180,80,.14);position:relative;overflow:hidden">'
+    + '<div style="position:absolute;top:14px;left:20px;font-size:16px;opacity:.55">✦</div>'
+    + '<div style="position:absolute;top:40px;right:24px;font-size:12px;opacity:.42">✧</div>'
+    + '<div style="position:absolute;bottom:30px;left:26px;font-size:14px;opacity:.48">✧</div>'
+    + '<div style="position:absolute;bottom:60px;right:20px;font-size:18px;opacity:.42">✦</div>'
+    + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:rgba(220,180,80,.85);margin-bottom:18px">🏆 LOGRO DESBLOQUEADO</div>'
+    + '<div style="font-size:96px;line-height:1;margin-bottom:18px;filter:drop-shadow(0 6px 20px rgba(220,180,80,.55))">'+ach.e+'</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:32px;color:rgba(255,240,220,.98);line-height:1.15;margin-bottom:8px">'+_escHtml(ach.n)+'</div>'
+    + '<div style="font-size:13px;color:rgba(220,240,220,.72);line-height:1.55;margin-bottom:26px;padding:0 8px">'+_escHtml(ach.d)+'</div>'
+    + '<button onclick="document.getElementById(\'achievementUnlockedOv\').remove()" style="padding:13px 28px;background:linear-gradient(135deg,rgba(220,180,80,.90),rgba(180,140,50,.95));border:none;border-radius:100px;color:#331808;font-size:13.5px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px;box-shadow:0 4px 18px rgba(220,180,80,.35)">Sigo caminando 🌿</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+  // Partículas doradas de celebración
+  try{ setTimeout(function(){ var anch = ov.querySelector('div'); if(anch && typeof veloParticleBloom === 'function') veloParticleBloom(anch, { emojis:['🌟','✨','🎊','🏆'], count:10 }); }, 120); }catch(e){}
+}
+// Abre el modal de todos los logros (para el menú)
+function pOpenAchievementsModal(){
+  var ex = document.getElementById('achievementsListOv'); if(ex) ex.remove();
+  var unlocked = _getUnlockedAchievements();
+  var ov = document.createElement('div');
+  ov.id = 'achievementsListOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10004;background:rgba(0,0,0,.86);display:flex;align-items:flex-end;justify-content:center;padding:0';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  var items = VELO_ACHIEVEMENTS.map(function(a){
+    var got = !!unlocked[a.k];
+    return '<div style="display:flex;align-items:center;gap:12px;background:'+(got?'rgba(220,180,80,.12)':'rgba(255,255,255,.03)')+';border:1px solid '+(got?'rgba(220,180,80,.35)':'rgba(255,255,255,.08)')+';border-radius:14px;padding:12px 14px;margin-bottom:8px"><div style="font-size:32px;line-height:1;flex-shrink:0;opacity:'+(got?1:.35)+'">'+a.e+'</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:800;color:rgba(255,'+(got?'240,220':'255,255')+','+(got?.98:.62)+');font-family:Jost,sans-serif">'+a.n+'</div><div style="font-size:11.5px;color:rgba(200,220,205,'+(got?.75:.42)+');font-family:Jost,sans-serif;margin-top:2px;line-height:1.4">'+a.d+'</div>'+(got?'<div style="font-size:10.5px;color:rgba(220,180,80,.72);font-family:Jost,sans-serif;margin-top:3px;letter-spacing:.5px">✓ Desbloqueado</div>':'')+'</div></div>';
+  }).join('');
+  var gotCount = Object.keys(unlocked).length;
+  ov.innerHTML = '<div style="background:linear-gradient(150deg,rgba(10,28,18,.98),rgba(6,18,12,.98));border-radius:28px 28px 0 0;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;padding:14px 18px max(20px,env(safe-area-inset-bottom));border-top:2px solid rgba(220,180,80,.42)">'
+    + '<div style="display:flex;justify-content:center;padding:0 0 12px"><div style="width:40px;height:4px;background:rgba(220,180,80,.35);border-radius:2px"></div></div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+      + '<div><div style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(220,180,80,.72);font-family:Jost,sans-serif">🏆 TUS LOGROS</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(255,240,220,.98);margin-top:2px">'+gotCount+' de '+VELO_ACHIEVEMENTS.length+'</div></div>'
+      + '<button onclick="document.getElementById(\'achievementsListOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.50);font-size:22px;cursor:pointer;padding:4px 10px">✕</button>'
+    + '</div>'
+    + items
+    + '</div>';
+  document.body.appendChild(ov);
+}
+
 // ── BUDDY EXPIRY — banner en home cuando cumple 30 días ──────────
 async function _checkBuddyExpiry(){
   var uid = safeLS('get','velo_user_id') || '';
@@ -4477,6 +4633,8 @@ function _loadHomeData(){
   try{ setTimeout(function(){ _checkReferralQualification(); }, 1200); }catch(e){}
   try{ setTimeout(function(){ _checkBuddyExpiry(); }, 1600); }catch(e){}
   try{ setTimeout(function(){ _renderCommunityPulseBanner(); }, 2000); }catch(e){}
+  try{ setTimeout(function(){ _checkStreakRecovery(); }, 2400); }catch(e){}
+  try{ setTimeout(function(){ _checkAchievements(); }, 3000); }catch(e){}
   // Widget de respiración removido del home a pedido del user (ocupaba mucho).
   // Sigue accesible desde el menú hamburguesa.
   try{ var _br = document.getElementById('veloBreathWidget'); if(_br) _br.remove(); }catch(e){}
@@ -28703,7 +28861,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1269;
+    var _BUILT_V = 1270;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
