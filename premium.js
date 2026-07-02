@@ -13825,6 +13825,120 @@ function _veloScheduleI18n(){
   setTimeout(function(){ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }, 100);
   setTimeout(function(){ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }, 800);
   setTimeout(function(){ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }, 2000);
+  // Auto-traducir strings desconocidas via Gemini (async, cachea en LS)
+  setTimeout(function(){ if(typeof _veloAutoTranslateDOM === 'function') _veloAutoTranslateDOM(); }, 3000);
+}
+
+// Auto-traducción con Gemini + caché en LS
+async function _veloAutoTranslateDOM(){
+  var lang = safeLS('get','velo_lang') || 'es';
+  if(lang === 'es' || typeof _geminiCall !== 'function') return;
+  var dict = VELO_I18N[lang] || {};
+  var cacheKey = 'velo_i18n_ai_cache_' + lang;
+  var cache = {};
+  try{ cache = JSON.parse(safeLS('get', cacheKey) || '{}'); }catch(e){}
+  // Cargar caché en dict combinado (efectivo)
+  var effDict = Object.assign({}, cache, dict);
+  // Recorrer text nodes y encontrar strings NO cubiertas
+  var untranslated = {};
+  try{
+    var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(node){
+        var p = node.parentElement;
+        if(!p) return NodeFilter.FILTER_REJECT;
+        var tag = p.tagName;
+        if(tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'CODE') return NodeFilter.FILTER_REJECT;
+        var v = String(node.nodeValue||'').trim();
+        // Solo texto sustancial en español (min 5 chars, con letras)
+        if(v.length < 5 || v.length > 400) return NodeFilter.FILTER_REJECT;
+        if(!/[a-záéíóúñü]/i.test(v)) return NodeFilter.FILTER_REJECT;
+        if(effDict[v]) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var n;
+    while((n = walker.nextNode())){
+      var v = String(n.nodeValue||'').trim();
+      untranslated[v] = true;
+    }
+  }catch(e){ console.warn('[i18n-auto]', e); return; }
+  var texts = Object.keys(untranslated).slice(0, 30); // max 30 por batch
+  if(!texts.length) return;
+  var langLabel = lang === 'pt' ? 'português (Portugal)' : lang;
+  var prompt = 'Traduce estos textos de UI de una app de bienestar emocional al '+langLabel+'. '
+    + 'Mantén el tono cálido, empático y natural. NO traduzcas nombres propios (Velo, Bitácora si es marca). '
+    + 'Responde EXCLUSIVAMENTE con JSON válido: {"1":"tradução","2":"tradução",...}\n\n'
+    + texts.map(function(t,i){ return (i+1)+'. '+t; }).join('\n');
+  try{
+    var result = await _geminiCall(prompt, { temperature:0.2, maxOutputTokens:2000 });
+    if(!result) return;
+    var m = result.match(/\{[\s\S]*\}/);
+    if(!m) return;
+    var parsed = JSON.parse(m[0]);
+    Object.keys(parsed).forEach(function(k){
+      var idx = parseInt(k)-1;
+      if(texts[idx] && parsed[k] && typeof parsed[k] === 'string'){
+        cache[texts[idx]] = parsed[k];
+        dict[texts[idx]] = parsed[k];
+      }
+    });
+    try{ safeLS('set', cacheKey, JSON.stringify(cache)); }catch(e){}
+    // Re-aplicar con nuevas traducciones
+    _veloApplyI18n();
+    console.log('[i18n-auto] traducidos', Object.keys(parsed).length, 'strings via IA');
+  }catch(e){ console.warn('[i18n-auto]', e); }
+}
+
+// Cargar caché IA en el diccionario al bootear
+(function _veloLoadI18nCache(){
+  try{
+    var lang = safeLS('get','velo_lang') || 'es';
+    if(lang === 'es' || !VELO_I18N[lang]) return;
+    var cache = JSON.parse(safeLS('get','velo_i18n_ai_cache_' + lang) || '{}');
+    VELO_I18N[lang] = Object.assign({}, cache, VELO_I18N[lang]);
+  }catch(e){}
+})();
+
+// ── TRANSLATE ON DEMAND — botón "Traduzir" para contenido de usuarios ─
+// Cache: velo_content_translations_<lang> = { 'texto original': 'traducción' }
+async function pTranslateUserContent(elementId, originalText){
+  var el = document.getElementById(elementId);
+  if(!el) return;
+  var lang = safeLS('get','velo_lang') || 'es';
+  var cacheKey = 'velo_content_translations_' + lang;
+  var cache = {};
+  try{ cache = JSON.parse(safeLS('get', cacheKey) || '{}'); }catch(e){}
+  var cached = cache[originalText];
+  var showTranslation = function(txt){
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-top:8px;padding:10px 12px;background:rgba(80,150,220,.10);border:1px solid rgba(80,150,220,.25);border-left:3px solid rgba(80,150,220,.85);border-radius:0 10px 10px 0;font-family:Jost,sans-serif';
+    var flag = lang==='pt'?'🇵🇹':'🇪🇸';
+    wrap.innerHTML = '<div style="font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:rgba(80,150,220,.75);margin-bottom:4px">'+flag+' TRADUÇÃO</div>'
+      + '<div style="font-size:14px;color:rgba(220,240,255,.94);line-height:1.55;font-family:\'Cormorant Garamond\',serif;font-style:italic">'+_escHtml(txt)+'</div>';
+    el.parentNode.insertBefore(wrap, el.nextSibling);
+  };
+  if(cached){ showTranslation(cached); return; }
+  pToast('🌐', lang==='pt' ? 'Traduzindo…' : 'Traduciendo…');
+  var langLabel = lang === 'pt' ? 'português (Portugal)' : 'espanhol';
+  var prompt = 'Traduz este texto ao '+langLabel+' mantendo o tom original (empático, cálido). '
+    + 'Responde APENAS com a tradução, sem aspas nem explicações:\n\n' + originalText;
+  try{
+    var translated = await _geminiCall(prompt, { temperature:0.3, maxOutputTokens:800 });
+    if(!translated){ pToast('⚠️','No pude traducir'); return; }
+    translated = translated.replace(/^["']|["']$/g,'').trim();
+    cache[originalText] = translated;
+    try{ safeLS('set', cacheKey, JSON.stringify(cache)); }catch(e){}
+    showTranslation(translated);
+  }catch(e){ pToast('⚠️','Error al traducir'); }
+}
+// Función global para renderizar el botón traducir con datos dinámicos
+function _veloTranslateBtnHtml(originalText, targetElementId){
+  var lang = safeLS('get','velo_lang') || 'es';
+  if(lang === 'es') return ''; // solo mostrar cuando el user tiene otra lang
+  if(!originalText || originalText.length < 10) return '';
+  var safeTs = 'tx' + Math.random().toString(36).slice(2,8);
+  var escaped = String(originalText).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');
+  return '<button onclick="pTranslateUserContent(\''+targetElementId+'\',\''+escaped+'\')" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(80,150,220,.10);border:1px solid rgba(80,150,220,.32);border-radius:100px;color:rgba(140,190,240,.92);font-size:11px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;margin-left:6px" title="Traduzir">🌐 '+ (lang==='pt'?'Traduzir':'Traducir') +'</button>';
 }
 
 // ── BACKUP / EXPORT — descargar todos mis datos como JSON ──────────
@@ -29933,7 +30047,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1285;
+    var _BUILT_V = 1286;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
