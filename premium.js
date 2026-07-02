@@ -1980,6 +1980,147 @@ function pRemoveBuddy(){
   });
 }
 
+// ── IN-APP NOTIF TOAST (A) — cuando llega broadcast con la app abierta ──
+var _lastBcCheckAt = null;
+var _inAppPollTimer = null;
+function _startInAppNotifPolling(){
+  if(_inAppPollTimer) return; // ya arranco
+  _lastBcCheckAt = new Date().toISOString();
+  // Track última interacción del usuario para E (digital wellbeing)
+  ['click','touchstart','keydown'].forEach(function(evt){
+    document.addEventListener(evt, function(){ window._lastInteract = Date.now(); }, {passive:true});
+  });
+  _inAppPollTimer = setInterval(_pollInAppBroadcasts, 45000);
+  setTimeout(_pollInAppBroadcasts, 8000);
+}
+async function _pollInAppBroadcasts(){
+  _initSupabase(); if(!sbClient) return;
+  var uid = safeLS('get','velo_user_id') || ''; if(!uid) return;
+  // No mostrar si el usuario tiene un modal grande abierto (evitamos ruido)
+  if(document.getElementById('bottleRepliesOv') || document.getElementById('wrappedOv') ||
+     document.getElementById('bottleFormOv') || document.getElementById('crisisNudgeOv')) return;
+  try{
+    var since = _lastBcCheckAt || new Date().toISOString();
+    var res = await sbClient.from('broadcasts')
+      .select('id,subject,body,icon,sender,sent_at')
+      .eq('target', 'user:'+uid)
+      .gt('sent_at', since)
+      .order('sent_at', {ascending: false})
+      .limit(3);
+    _lastBcCheckAt = new Date().toISOString();
+    if(!res.data || !res.data.length) return;
+    _showInAppNotifToast(res.data[0], res.data.length);
+  }catch(e){}
+}
+function _showInAppNotifToast(bc, extraCount){
+  var ex = document.getElementById('inAppNotifToast'); if(ex) ex.remove();
+  var subject = String(bc.subject||'Nueva notificación').slice(0, 60);
+  var body = String(bc.body||'').replace(/\[bid:[^\]]+\]/g,'').trim().slice(0, 100);
+  var icon = bc.icon || '💬';
+  var moreLbl = extraCount > 1 ? ' <span style="font-size:10px;font-weight:800;background:rgba(116,198,157,.24);border:1px solid rgba(116,198,157,.45);border-radius:100px;padding:1px 7px;margin-left:5px">+'+(extraCount-1)+'</span>' : '';
+  var toast = document.createElement('div');
+  toast.id = 'inAppNotifToast';
+  toast.style.cssText = 'position:fixed;top:16px;right:16px;left:16px;max-width:400px;margin-left:auto;z-index:10004;background:linear-gradient(150deg,rgba(12,32,20,.98),rgba(6,20,12,.98));border:1.5px solid rgba(116,198,157,.55);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.60);padding:12px 14px;display:flex;align-items:flex-start;gap:11px;cursor:pointer;font-family:Jost,sans-serif;transform:translateY(-120%);transition:transform .32s cubic-bezier(.2,.9,.35,1.05)';
+  toast.innerHTML = '<div style="font-size:22px;line-height:1;flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(116,198,157,.35))">'+_escHtml(icon)+'</div>'
+    + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:13px;font-weight:800;color:rgba(230,255,240,.98);line-height:1.25;margin-bottom:2px">'+_escHtml(subject)+moreLbl+'</div>'
+      + (body ? '<div style="font-size:12px;color:rgba(180,220,195,.75);line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+_escHtml(body)+'</div>' : '')
+    + '</div>'
+    + '<button onclick="event.stopPropagation();var t=document.getElementById(\'inAppNotifToast\');if(t)t.remove()" style="background:none;border:none;color:rgba(255,255,255,.35);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0">×</button>';
+  toast.onclick = function(){ toast.remove(); pOpenInboxSheet && pOpenInboxSheet(); };
+  document.body.appendChild(toast);
+  requestAnimationFrame(function(){ toast.style.transform = 'translateY(0)'; });
+  setTimeout(function(){
+    if(!toast.parentNode) return;
+    toast.style.transform = 'translateY(-120%)';
+    setTimeout(function(){ if(toast.parentNode) toast.remove(); }, 350);
+  }, 6500);
+}
+
+// ── FEATURE HINT TOOLTIP (B) — onboarding cuando el user descubre algo nuevo ─
+function _showFeatureHint(featureKey, targetSelector, msg, color){
+  var storageKey = 'velo_hint_seen_' + featureKey;
+  try{ if(safeLS('get', storageKey) === '1') return; }catch(e){ return; }
+  var target = document.querySelector(targetSelector);
+  if(!target || !target.getBoundingClientRect) return;
+  var rect = target.getBoundingClientRect();
+  if(rect.width < 8 || rect.height < 8) return; // no visible
+  var col = color || 'rgba(116,198,157';
+  var tip = document.createElement('div');
+  tip.id = 'featureHint_' + featureKey;
+  tip.style.cssText = 'position:fixed;z-index:10005;background:linear-gradient(150deg,'+col+',.96),'+col+',.90));border:1.5px solid '+col+',.65);border-radius:14px;padding:11px 14px;box-shadow:0 8px 26px rgba(0,0,0,.55),0 0 0 3px '+col+',.20);color:#fff;font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;line-height:1.4;max-width:280px;transform:scale(.85);opacity:0;transition:all .28s cubic-bezier(.2,.9,.35,1.05);cursor:pointer';
+  tip.innerHTML = '<div style="display:flex;align-items:flex-start;gap:8px"><span style="font-size:16px;flex-shrink:0">🎉</span><span>'+msg+'</span></div>';
+  // Posicionar debajo del target
+  var top = Math.min(rect.bottom + 8, window.innerHeight - 100);
+  var leftAttempt = rect.left + rect.width/2 - 140;
+  var left = Math.max(12, Math.min(leftAttempt, window.innerWidth - 292));
+  tip.style.top = top + 'px';
+  tip.style.left = left + 'px';
+  document.body.appendChild(tip);
+  requestAnimationFrame(function(){ tip.style.transform = 'scale(1)'; tip.style.opacity = '1'; });
+  var dismiss = function(){
+    try{ safeLS('set', storageKey, '1'); }catch(e){}
+    tip.style.opacity = '0';
+    tip.style.transform = 'scale(.85)';
+    setTimeout(function(){ if(tip.parentNode) tip.remove(); }, 300);
+  };
+  tip.onclick = dismiss;
+  setTimeout(dismiss, 7500);
+}
+// Dispara hints según el contexto (para llamar desde cada página al montar)
+function _maybeShowFeatureHints(context){
+  setTimeout(function(){
+    if(context === 'bottle'){
+      // 1. Reacciones rápidas
+      _showFeatureHint('bottle_reactions', '#bottleList .dark-bottle button[onclick*="pReactBottle"]',
+        '¡Nuevo! Dejá amor sin escribir — 💛 abrazo, 🌿 con vos, 🕊️ paz', 'rgba(65,155,222');
+    } else if(context === 'wrapped'){
+      _showFeatureHint('wrapped_share_stories', '#wrappedOv button[onclick*="pShareWrapped"]',
+        '¡Nuevo! Compartilo como imagen en Instagram Stories 🌸', 'rgba(228,178,80');
+    } else if(context === 'buddy'){
+      _showFeatureHint('buddy_rules', '#buddyOv',
+        'Nuevas reglas: 1 compañero/a a la vez, ciclo 30d renovable 🤝', 'rgba(155,120,220');
+    }
+  }, 600);
+}
+
+// ── DIGITAL WELLBEING (E) — banner suave a los 30 min de uso continuo ────
+var _sessionStartMs = Date.now();
+var _wellbeingCheckScheduled = false;
+function _scheduleWellbeingCheck(){
+  if(_wellbeingCheckScheduled) return;
+  _wellbeingCheckScheduled = true;
+  var dismissedUntil = parseInt(safeLS('get','velo_wellbeing_dismiss_until')||'0');
+  if(dismissedUntil > Date.now()) return; // usuario descartó hace poco
+  setTimeout(function(){
+    // Solo mostrar si tuvo interacción reciente (dentro de los últimos 5 min)
+    var lastInt = window._lastInteract || _sessionStartMs;
+    if(Date.now() - lastInt > 300000) return;
+    _showWellbeingBanner();
+  }, 30 * 60 * 1000); // 30 min
+}
+function _showWellbeingBanner(){
+  var ex = document.getElementById('wellbeingBanner'); if(ex) ex.remove();
+  var banner = document.createElement('div');
+  banner.id = 'wellbeingBanner';
+  banner.style.cssText = 'position:fixed;bottom:80px;left:16px;right:16px;max-width:440px;margin:0 auto;z-index:10004;background:linear-gradient(155deg,rgba(50,80,45,.96),rgba(30,55,32,.98));border:1.5px solid rgba(180,220,150,.55);border-radius:18px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,.55);font-family:Jost,sans-serif;transform:translateY(120%);transition:transform .38s cubic-bezier(.2,.9,.35,1.05)';
+  banner.innerHTML = '<div style="display:flex;align-items:flex-start;gap:12px"><span style="font-size:28px;line-height:1;flex-shrink:0;filter:drop-shadow(0 2px 6px rgba(180,220,150,.45))">🌿</span>'
+    +'<div style="flex:1;min-width:0"><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:rgba(240,255,220,.98);line-height:1.15;margin-bottom:4px">Un respiro también es cuidarse</div>'
+    +'<div style="font-size:12px;color:rgba(200,230,180,.72);line-height:1.45">Ya llevás un rato en Velo. Cerrar la app un rato está bien 💚</div></div></div>'
+    +'<div style="display:flex;gap:8px;margin-top:12px">'
+      +'<button onclick="document.getElementById(\'wellbeingBanner\').remove();safeLS(\'set\',\'velo_wellbeing_dismiss_until\',String(Date.now()+45*60*1000))" style="flex:1;padding:10px;background:rgba(180,220,150,.90);border:none;border-radius:12px;color:#132411;font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">🌱 Me tomo un aire</button>'
+      +'<button onclick="document.getElementById(\'wellbeingBanner\').remove();safeLS(\'set\',\'velo_wellbeing_dismiss_until\',String(Date.now()+90*60*1000))" style="flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,.20);border-radius:12px;color:rgba(255,255,255,.60);font-size:12.5px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Sigo un rato más</button>'
+    +'</div>';
+  document.body.appendChild(banner);
+  requestAnimationFrame(function(){ banner.style.transform = 'translateY(0)'; });
+  // Auto-hide después de 12s si no responde
+  setTimeout(function(){
+    if(!banner.parentNode) return;
+    banner.style.transform = 'translateY(120%)';
+    setTimeout(function(){ if(banner.parentNode) banner.remove(); }, 400);
+  }, 12000);
+}
+
 // ── COMMUNITY PULSE — chip en home con actividad de la comunidad hoy ─
 async function _renderCommunityPulseBanner(){
   var host = document.querySelector('.r-hero-left');
@@ -2304,6 +2445,7 @@ async function pOpenMonthlyWrapped(){
     + '<div style="display:flex;justify-content:center;gap:5px;padding:12px 0;flex-shrink:0">'+dotsHtml+'</div>'
     + '<div style="display:flex;gap:8px;padding:0 16px 16px;flex-shrink:0"><button onclick="pShareWrapped('+_jsAttr(monthTitle)+','+_jsAttr(domEmoji)+','+_jsAttr(domLabel)+','+nReg+','+streak+','+(comm.btPosts+comm.momentos+comm.helped)+','+avgScore.toFixed(2)+','+_jsAttr(uName)+')" style="flex:1;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.90),rgba(74,160,110,.95));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">📤 Compartir en Stories</button><button onclick="document.getElementById(\'wrappedOv\').remove()" style="flex:1;padding:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;color:rgba(255,255,255,.72);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button></div>';
   document.body.appendChild(ov);
+  try{ setTimeout(function(){ _maybeShowFeatureHints('wrapped'); }, 800); }catch(e){}
   // Dots syncing con scroll
   var slider = document.getElementById('wrappedSlider');
   if(slider){
@@ -3733,6 +3875,8 @@ function _loadHomeData(){
   try{ setTimeout(function(){ _checkReferralQualification(); }, 1200); }catch(e){}
   try{ setTimeout(function(){ _checkBuddyExpiry(); }, 1600); }catch(e){}
   try{ setTimeout(function(){ _renderCommunityPulseBanner(); }, 2000); }catch(e){}
+  try{ _startInAppNotifPolling(); }catch(e){}
+  try{ _scheduleWellbeingCheck(); }catch(e){}
   // v1228: mensual NO se dispara automático. Solo desde admin (pAdminSendMonthlyReport).
   // _checkMonthlyMoodReport();
   var d = new Date();
@@ -26116,6 +26260,7 @@ function _onPageEnter(id){
       _initSupabase();
       if(sbClient && !_bottleRtCh) _bottleRtCh = _sbSub('velo:bottles', 'bottles', function(){ pRenderBottle(); });
       pRenderBottle();
+      try{ setTimeout(function(){ _maybeShowFeatureHints('bottle'); }, 1400); }catch(e){}
       break;
     case 'diary':       pInitDiary(); break;
     case 'momento':     _loadMomentoPageFeed(); _initMomentoPage(); break;
@@ -27698,7 +27843,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1259;
+    var _BUILT_V = 1260;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
