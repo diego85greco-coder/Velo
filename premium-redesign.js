@@ -453,71 +453,116 @@
         Para clear-night dibujamos la luna con fase real, halo y colores
         cream. Otras condiciones siguen usando emoji. ── */
   function _buildMoonSvg(size) {
-    size = size || 130;
-    // Fase actual (0..1) — misma referencia que _getMoonPhase
+    size = size || 200;
+    // Fase real
     var ref = 947182440000;
     var syn = 29.530589 * 86400000;
     var age = ((Date.now() - ref) % syn + syn) % syn;
     var phase = age / syn;
     var theta = 2 * Math.PI * phase;
-    var R = size * 0.35;         // radio del disco lunar (deja lugar para halo)
+    // Disco grande — dominante
+    var R = size * 0.42;
     var cx = size / 2, cy = size / 2;
-    // Terminador: semi-eje horizontal del elipse (0 en cuarto, ±R en llena/nueva)
     var ex = Math.abs(R * Math.cos(theta));
     var waxing = phase < 0.5;
-    var illum = (1 - Math.cos(theta)) / 2; // 0..1 fracción iluminada
+    var illum = (1 - Math.cos(theta)) / 2;
     var isGibbous = illum > 0.5;
-    // Path de la sombra (parte NO iluminada). Semicírculo + elipse.
-    // waxing: sombra a la izquierda (arco por la izquierda del disco)
-    // waning: sombra a la derecha
-    var semiSweep = waxing ? 0 : 1;
-    var ellipseSweep = isGibbous ? semiSweep : (1 - semiSweep);
+    // Phase mask correcta:
+    //  Waxing crescent  (waxing, !gib):  semi=0, ellipse=0
+    //  Waxing gibbous   (waxing,  gib):  semi=0, ellipse=1
+    //  Waning gibbous  (!waxing, gib):  semi=1, ellipse=0
+    //  Waning crescent (!waxing,!gib):  semi=1, ellipse=1
+    var semiSweep    = waxing ? 0 : 1;
+    var ellipseSweep = (waxing === isGibbous) ? 1 : 0;
     var yTop = cy - R, yBot = cy + R;
     var shadowPath = 'M ' + cx + ' ' + yTop
                    + ' A ' + R + ' ' + R + ' 0 0 ' + semiSweep + ' ' + cx + ' ' + yBot
                    + ' A ' + ex + ' ' + R + ' 0 0 ' + ellipseSweep + ' ' + cx + ' ' + yTop
                    + ' Z';
-    var uid = 'm' + Math.floor(phase * 1e6);
-    // Craters — posiciones fijas, sutiles
+    var uid = 'vm' + Math.floor(phase * 1e6);
+    // Mare (mares lunares) — posiciones anatómicamente reales sobre el disco
+    //  Coord normalizadas al radio R, con signos: +x derecha, +y abajo
+    var mare = [
+      { x:-.18, y:-.30, rx:.22, ry:.17, rot: -12, o:.22 }, // Mare Imbrium
+      { x: .10, y:-.14, rx:.20, ry:.18, rot:   8, o:.24 }, // Mare Serenitatis
+      { x: .28, y: .02, rx:.16, ry:.14, rot:  25, o:.20 }, // Mare Tranquillitatis
+      { x: .18, y: .28, rx:.14, ry:.10, rot: -18, o:.18 }, // Mare Nectaris
+      { x:-.28, y: .20, rx:.22, ry:.16, rot:  20, o:.24 }, // Mare Nubium/Humorum
+      { x:-.38, y:-.08, rx:.10, ry:.14, rot: -35, o:.18 }, // Oceanus Procellarum edge
+      { x: .35, y:-.25, rx:.08, ry:.06, rot:   0, o:.16 }  // Mare Crisium
+    ];
+    var mareEls = mare.map(function(m){
+      var mx = cx + m.x * R, my = cy + m.y * R;
+      return '<ellipse cx="' + mx + '" cy="' + my + '" rx="' + (m.rx * R) + '" ry="' + (m.ry * R) + '" transform="rotate(' + m.rot + ' ' + mx + ' ' + my + ')" fill="url(#' + uid + 'mare)" opacity="' + m.o + '"/>';
+    }).join('');
+    // Craters — variados en tamaño con highlight lunar
     var craters = [
-      { x:-.32, y:-.28, r:.10, o:.14 },
-      { x: .18, y:-.35, r:.06, o:.10 },
-      { x: .28, y: .18, r:.09, o:.12 },
-      { x:-.10, y: .38, r:.13, o:.11 },
-      { x: .40, y:-.05, r:.05, o:.09 },
-      { x:-.42, y: .12, r:.07, o:.10 }
+      { x:-.05, y:-.42, r:.055 },   // Tycho analog
+      { x: .32, y: .28, r:.045 },
+      { x:-.42, y:-.32, r:.040 },
+      { x: .22, y:-.48, r:.030 },
+      { x:-.28, y: .42, r:.035 },
+      { x: .45, y: .12, r:.028 },
+      { x: .08, y: .45, r:.038 },
+      { x:-.15, y: .05, r:.024 }
     ];
     var craterEls = craters.map(function(c){
-      return '<circle cx="' + (cx + c.x * R) + '" cy="' + (cy + c.y * R) + '" r="' + (c.r * R) + '" fill="rgba(60,42,20,' + c.o + ')"/>';
+      var kx = cx + c.x * R, ky = cy + c.y * R, kr = c.r * R;
+      // Sombra + highlight = cráter volumétrico
+      return '<circle cx="' + kx + '" cy="' + ky + '" r="' + kr + '" fill="rgba(78,60,32,.28)"/>'
+           + '<circle cx="' + (kx - kr*0.35) + '" cy="' + (ky - kr*0.35) + '" r="' + (kr*0.72) + '" fill="rgba(255,245,215,.14)"/>';
     }).join('');
-    return '<svg viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="velo-moon-svg" style="overflow:visible;display:block">'
+    return '<svg viewBox="0 0 ' + size + ' ' + size + '" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="velo-moon-svg" style="overflow:visible;display:block">'
       + '<defs>'
-        + '<radialGradient id="' + uid + 'surf" cx="38%" cy="34%" r="70%">'
-          + '<stop offset="0%" stop-color="#fffaf0"/>'
-          + '<stop offset="55%" stop-color="#f2e5c8"/>'
-          + '<stop offset="100%" stop-color="#c4b085"/>'
+        // Superficie: cream con sutil variación lateral (fake shading)
+        + '<radialGradient id="' + uid + 'surf" cx="40%" cy="36%" r="68%">'
+          + '<stop offset="0%"  stop-color="#fff8e4"/>'
+          + '<stop offset="35%" stop-color="#f3e6c4"/>'
+          + '<stop offset="72%" stop-color="#dcc79a"/>'
+          + '<stop offset="100%" stop-color="#a8905c"/>'
         + '</radialGradient>'
+        // Mare: gris-azulado semi transparente para pintar sobre la superficie
+        + '<radialGradient id="' + uid + 'mare" cx="50%" cy="50%" r="60%">'
+          + '<stop offset="0%"  stop-color="#7a6a4a"/>'
+          + '<stop offset="70%" stop-color="#8a785a"/>'
+          + '<stop offset="100%" stop-color="rgba(140,120,90,0)"/>'
+        + '</radialGradient>'
+        // Halo tibio alrededor
         + '<radialGradient id="' + uid + 'halo" cx="50%" cy="50%" r="50%">'
-          + '<stop offset="42%" stop-color="rgba(255,242,205,.42)"/>'
-          + '<stop offset="72%" stop-color="rgba(255,232,180,.12)"/>'
-          + '<stop offset="100%" stop-color="rgba(255,220,150,0)"/>'
+          + '<stop offset="42%" stop-color="rgba(255,245,215,.55)"/>'
+          + '<stop offset="70%" stop-color="rgba(255,235,190,.18)"/>'
+          + '<stop offset="100%" stop-color="rgba(255,225,170,0)"/>'
         + '</radialGradient>'
-        + '<radialGradient id="' + uid + 'shadow" cx="50%" cy="50%" r="50%">'
-          + '<stop offset="0%" stop-color="rgba(15,10,4,.72)"/>'
-          + '<stop offset="100%" stop-color="rgba(6,4,2,.94)"/>'
+        // Terminador: gradiente suave para difuminar la línea de sombra
+        + '<radialGradient id="' + uid + 'shadow" cx="50%" cy="50%" r="55%">'
+          + '<stop offset="0%"  stop-color="rgba(8,6,3,.94)"/>'
+          + '<stop offset="88%" stop-color="rgba(12,9,5,.92)"/>'
+          + '<stop offset="100%" stop-color="rgba(30,22,12,.75)"/>'
         + '</radialGradient>'
-        + '<filter id="' + uid + 'softblur"><feGaussianBlur stdDeviation="0.6"/></filter>'
+        + '<filter id="' + uid + 'softblur" x="-10%" y="-10%" width="120%" height="120%">'
+          + '<feGaussianBlur stdDeviation="0.6"/>'
+        + '</filter>'
+        + '<filter id="' + uid + 'edgesoft" x="-10%" y="-10%" width="120%" height="120%">'
+          + '<feGaussianBlur stdDeviation="1.3"/>'
+        + '</filter>'
+        // Máscara circular para que mare y craters no salgan del disco
+        + '<clipPath id="' + uid + 'disc">'
+          + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '"/>'
+        + '</clipPath>'
       + '</defs>'
-      // Halo suave alrededor
-      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + (size * 0.48) + '" fill="url(#' + uid + 'halo)"/>'
-      // Disco lunar (siempre cream, no amarillo saturado)
+      // Halo tibio (glow externo)
+      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + (size * 0.48) + '" fill="url(#' + uid + 'halo)" class="velo-moon-halo"/>'
+      // Disco lunar cream
       + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="url(#' + uid + 'surf)"/>'
-      // Craters sutiles sobre el disco iluminado
-      + '<g filter="url(#' + uid + 'softblur)">' + craterEls + '</g>'
-      // Sombra de fase (encima de craters)
-      + '<path d="' + shadowPath + '" fill="url(#' + uid + 'shadow)"/>'
-      // Borde interno sutil para definir el círculo
-      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="rgba(80,60,30,.14)" stroke-width="0.8"/>'
+      // Mare y craters (recortados al disco)
+      + '<g clip-path="url(#' + uid + 'disc)">'
+        + '<g filter="url(#' + uid + 'edgesoft)">' + mareEls + '</g>'
+        + '<g filter="url(#' + uid + 'softblur)">' + craterEls + '</g>'
+      + '</g>'
+      // Sombra de fase — encima de todo, recortada al disco
+      + '<path d="' + shadowPath + '" fill="url(#' + uid + 'shadow)" clip-path="url(#' + uid + 'disc)"/>'
+      // Borde interno sutil
+      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="rgba(60,42,20,.32)" stroke-width="1"/>'
       + '</svg>';
   }
   function _weatherAnimSvg(period, type) {

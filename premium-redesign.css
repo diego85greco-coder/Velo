@@ -14798,15 +14798,33 @@ body.r-dark .diary-toolbar-btn--danger{
   color:#ffc8c8;
 }
 
-/* v1300 — Stylized SVG moon (replaces iOS-bitmap emoji) */
+/* v1301 — Stylized SVG moon: bigger, realistic mare + craters, beautiful glow */
 .weather-hero-moon {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 130px !important;
-  height: 130px !important;
-  animation: rTimeFloat 14s ease-in-out infinite !important;
-  filter: drop-shadow(0 8px 24px rgba(180,150,90,.25))
-          drop-shadow(0 0 40px rgba(255,235,180,.18)) !important;
+  width: 200px !important;
+  height: 200px !important;
+  animation: veloMoonFloat 16s ease-in-out infinite !important;
+  filter: drop-shadow(0 14px 34px rgba(180,150,90,.35))
+          drop-shadow(0 0 56px rgba(255,235,180,.28)) !important;
+  will-change: transform;
+}
+.weather-hero-moon .velo-moon-svg { width: 100%; height: 100%; display:block; }
+.weather-hero-moon .velo-moon-halo {
+  transform-origin: center;
+  animation: veloMoonHaloPulse 6.5s ease-in-out infinite;
+}
+@keyframes veloMoonFloat {
+  0%, 100% { transform: translate3d(0,0,0) rotate(-0.4deg); }
+  50%      { transform: translate3d(0,-10px,0) rotate(0.4deg); }
+}
+@keyframes veloMoonHaloPulse {
+  0%, 100% { opacity: .82; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.08); }
+}
+/* Mobile: un poco más chica */
+@media (max-width: 480px) {
+  .weather-hero-moon { width: 172px !important; height: 172px !important; }
 }
 .weather-hero-moon .velo-moon-svg { width: 100%; height: 100%; }
