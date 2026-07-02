@@ -13687,33 +13687,28 @@ function veloI18n(key){
     safeLS('set','velo_lang_available', isPtCandidate ? 'pt' : '');
   }catch(e){}
 })();
-// Cambiar idioma (con warning) — robusto para iOS PWA
+// Cambiar idioma — aplicación directa sin reload (más confiable en iOS PWA)
 function pSetVeloLang(lang){
-  var applyLang = function(newLang, msg){
-    try{ safeLS('set','velo_lang', newLang); }catch(e){}
-    // Cerrar todos los modales para evitar bloqueos
-    ['prefsOv','crisisNudgeOv'].forEach(function(id){ var o=document.getElementById(id); if(o) o.remove(); });
-    // Mostrar overlay de "actualizando" para feedback claro
-    var loader = document.createElement('div');
-    loader.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.90);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:Jost,sans-serif';
-    loader.innerHTML = '<div style="font-size:44px;margin-bottom:16px">🌍</div><div style="font-size:15px;letter-spacing:.5px">'+msg+'</div>';
-    document.body.appendChild(loader);
-    // Reload con fallback
-    setTimeout(function(){
-      try{ window.location.reload(); }
-      catch(e){
-        try{ window.location.href = window.location.pathname + '?_r=' + Date.now(); }
-        catch(e2){ window.location.href = '/'; }
-      }
-    }, 500);
-  };
+  try{ safeLS('set','velo_lang', lang); }catch(e){}
+  // Aplicar traducción inmediata al DOM
+  try{ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }catch(e){}
+  // Cerrar preferencias para que el usuario vea el efecto
+  var ov = document.getElementById('prefsOv'); if(ov) ov.remove();
   if(lang === 'pt'){
-    _pConfirm('⚠️ A app está principalmente em espanhol. Você verá conteúdo em ambos os idiomas — mas a interface passará ao português. Ativar?', function(){
-      applyLang('pt', 'Atualizando para português…');
-    });
+    pToast('🇵🇹','Idioma alterado para português — o conteúdo permanece em espanhol');
   } else {
-    applyLang('es', 'Cambiando a español…');
+    pToast('🇪🇸','Idioma en español');
   }
+  // Después de 1.5s, hacer un reload suave para que las secciones dinámicas también actualicen
+  setTimeout(function(){
+    try{
+      // Hard reload con cache-bust
+      var url = window.location.pathname + (window.location.search ? window.location.search + '&' : '?') + '_i18n=' + Date.now();
+      window.location.replace(url);
+    }catch(e){
+      try{ window.location.href = '/'; }catch(e2){}
+    }
+  }, 1500);
 }
 // Aplicar traducciones al DOM al bootear (para elementos con data-i18n o texto en el diccionario)
 function _veloApplyI18n(){
@@ -29849,7 +29844,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1282;
+    var _BUILT_V = 1283;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
