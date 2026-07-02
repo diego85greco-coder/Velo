@@ -188,6 +188,92 @@ Reglas de estilo:
   return null;
 }
 
+// ── WRAPPED ANUAL — se dispara el 20 de diciembre ────────────────────
+// Manda broadcast al buzón de cada usuario que tuvo actividad en el año
+async function sendAnnualWrapped(users) {
+  const now = new Date();
+  if (now.getUTCMonth() !== 11 || now.getUTCDate() !== 20) return { sent: 0 };
+  const utcH = now.getUTCHours();
+  // Solo en las 2 ventanas de mañana (7 UTC EU / 12 UTC LATAM)
+  if (utcH !== 7 && utcH !== 12) return { sent: 0 };
+
+  const year = now.getUTCFullYear();
+  const yearStart = new Date(Date.UTC(year, 0, 1)).toISOString();
+  const yearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59)).toISOString();
+
+  console.log(`[wrapped-annual] 20 dic — buscando actividad de ${year}`);
+
+  // Usuarios con al menos 1 mood en el año
+  const { data: moods, error: moodErr } = await supabase
+    .from('mood_entries')
+    .select('user_id')
+    .like('date_key', `${year}-%`);
+  if (moodErr) { console.error('[wrapped-annual] mood_entries error:', moodErr); return { sent: 0 }; }
+
+  const activeIds = [...new Set((moods || []).map(m => m.user_id))];
+  console.log(`[wrapped-annual] ${activeIds.length} usuarios activos en ${year}`);
+  if (!activeIds.length) return { sent: 0 };
+
+  const title = `🎊 Tu Wrapped anual ${year} está listo`;
+  const body = `Un resumen completo del año — evolución mes a mes, tu día favorito, tu personalidad emocional analizada por IA. Deslizá para verlo ✨`;
+
+  const brRows = activeIds.map(uid => ({
+    target: `user:${uid}`,
+    subject: title,
+    body: `${body}\n\nAbrí Velo y andá al menú → "Mi Wrapped anual" 🌿`,
+    icon: '🎊',
+    sender: 'Velo — Wrapped anual',
+  }));
+  try {
+    for (let i = 0; i < brRows.length; i += 100) {
+      const chunk = brRows.slice(i, i + 100);
+      const { error: brErr } = await supabase.from('broadcasts').insert(chunk);
+      if (brErr) console.warn('[wrapped-annual] broadcast batch err:', brErr);
+    }
+  } catch (e) { console.warn('[wrapped-annual] broadcast err:', e.message); }
+
+  // Push notif con dedup por año
+  let sent = 0, failed = 0;
+  const usersById = {};
+  (users || []).forEach(u => { usersById[u.id] = u; });
+
+  await Promise.allSettled(activeIds.map(async (uid) => {
+    const u = usersById[uid];
+    if (!u || !u.push_subscription) return;
+    let parsedFull, rawSub, tz;
+    try {
+      parsedFull = JSON.parse(u.push_subscription);
+      rawSub = parsedFull.sub && parsedFull.sub.endpoint ? parsedFull.sub : parsedFull;
+      if (!parsedFull.sub) parsedFull = { sub: rawSub };
+      tz = parsedFull.tz || 'America/Argentina/Buenos_Aires';
+    } catch { return; }
+    const h = localHour(tz);
+    if (h < 6 || h >= 12) return;
+    if (parsedFull.lastAnnualWrapped === String(year)) return;
+    try {
+      await webpush.sendNotification(rawSub, JSON.stringify({
+        title, body,
+        icon: '/assets/icon-192.png', badge: '/assets/icon-72.png',
+        tag: `velo-wrapped-annual-${year}`, url: '/?open=wrapped-annual',
+        actions: [
+          { action: 'open-wrapped', title: '🎊 Ver mi año', url: '/?open=wrapped-annual' },
+          { action: 'later', title: 'Después' }
+        ],
+      }));
+      sent++;
+      const updated = { ...parsedFull, lastAnnualWrapped: String(year) };
+      await supabase.from('profiles').update({ push_subscription: JSON.stringify(updated) }).eq('id', uid);
+    } catch (err) {
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        await supabase.from('profiles').update({ push_subscription: null }).eq('id', uid);
+      }
+      failed++;
+    }
+  }));
+  console.log(`[wrapped-annual] broadcasts=${brRows.length}, push_sent=${sent}, push_failed=${failed}`);
+  return { sent };
+}
+
 // ── WRAPPED MENSUAL — se dispara el día 1 de cada mes ─────────────────
 // Manda broadcast al inbox + push notif a todos los usuarios que tuvieron
 // actividad de mood en el mes anterior. Dedup por mes en push_subscription.
@@ -405,6 +491,9 @@ async function main() {
 
   // Wrapped mensual (día 1 en ventana morning UTC)
   try { await sendMonthlyWrapped(users); } catch (e) { console.warn('[wrapped] failed:', e.message); }
+
+  // Wrapped anual (20 de diciembre en ventana morning UTC)
+  try { await sendAnnualWrapped(users); } catch (e) { console.warn('[wrapped-annual] failed:', e.message); }
 
   // Aviso a buddies con racha baja de 2 días
   try { await sendBuddyLowMoodAlerts(users); } catch (e) { console.warn('[buddy-alert] failed:', e.message); }

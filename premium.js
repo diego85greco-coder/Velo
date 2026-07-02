@@ -2590,7 +2590,51 @@ async function pOpenMonthlyWrapped(){
       + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:26px;color:#fff;line-height:1.2;margin-bottom:22px">'+(totalGestures>0?totalGestures+' gestos':'Tu presencia también cuenta')+'</div>'
       + '<div style="width:100%;max-width:340px">'+commItemsHtml+'</div>'
   });
-  // 6. CIERRE motivador
+  // 6 y 7. ANÁLISIS IA — personalidad del mes + reflexión
+  var monthlyAiPersonality = null, monthlyAiReflection = null;
+  try{
+    if(typeof _geminiCall === 'function' && totalReg >= 3){
+      var topEmoStr = topEmotions.map(function(t){ return t.e+' '+(emotionLabel[t.e]||''); }).join(', ');
+      var pMoP = 'Sos un analista empático de Velo, una app de apoyo emocional en español rioplatense (vos, no tú). '
+        + 'A partir de estos datos del mes de '+monthTitle+' de '+uName+', escribí 2-3 oraciones cálidas sobre su TIPO DE PERSONALIDAD emocional este mes. '
+        + 'Datos:\n- '+nReg+' de '+daysInMonth+' días registrados (consistencia)\n- Ánimo dominante: '+domEmoji+' '+domLabel+'\n- Top: '+topEmoStr+'\n- Racha máxima del mes: '+streak+' días\n- '+totalGestures+' aportes a la comunidad\n\n'
+        + 'Reglas: empezá con "Este mes fuiste alguien que…" o similar (sin nombrarla). NO menciones números crudos. Tono cálido, sin clichés. Máx 60 palabras.';
+      monthlyAiPersonality = await _geminiCall(pMoP, { temperature:0.9, maxOutputTokens:150 });
+      var pMoR = 'Sos un acompañante empático de Velo. Escribí 2-3 oraciones sobre lo que se puede APRENDER de cómo pasó su mes de '+monthTitle+'. '
+        + 'Su emoción dominante fue '+domLabel+', mejor día '+((bestDay && bestDay.emoji)||'—')+', más difícil '+((worstDay && worstDay.emoji)||'—')+'. '
+        + 'Reglas: empezá con una observación humana, sin cursilería. Cerrá con una invitación breve para el mes siguiente. Máx 60 palabras.';
+      monthlyAiReflection = await _geminiCall(pMoR, { temperature:0.9, maxOutputTokens:150 });
+    }
+  }catch(e){}
+  // 6. PERSONALIDAD DEL MES (IA)
+  slides.push({
+    bg:'linear-gradient(155deg,#2a1830 0%,#180c20 45%,#0c0410 100%)',
+    html:
+      sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(220,180,240,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:20px">TU PERSONALIDAD ESTE MES</div>'
+      + '<div style="font-size:60px;line-height:1;margin-bottom:16px">✨</div>'
+      + '<div style="width:100%;max-width:340px;background:rgba(220,180,240,.10);border:1px solid rgba(220,180,240,.30);border-radius:20px;padding:20px 18px">'
+        + (monthlyAiPersonality
+          ? '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:20px;color:rgba(255,240,255,.96);line-height:1.55">'+_escHtml(monthlyAiPersonality)+'</div>'
+          : '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:18px;color:rgba(255,240,255,.85);line-height:1.5">Este mes fuiste alguien que se dio el gesto de mirar hacia adentro. Ese solo hecho ya dice mucho de tu forma de estar en la vida 💚</div>'
+        )
+      + '</div>'
+  });
+  // 7. REFLEXIÓN DEL MES (IA)
+  slides.push({
+    bg:'linear-gradient(155deg,#0e2438 0%,#0a1c2a 45%,#08101c 100%)',
+    html:
+      sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(180,220,240,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:20px">UNA MIRADA DE TU MES</div>'
+      + '<div style="font-size:60px;line-height:1;margin-bottom:16px">🌱</div>'
+      + '<div style="width:100%;max-width:340px;background:rgba(140,200,240,.10);border:1px solid rgba(140,200,240,.30);border-radius:20px;padding:20px 18px">'
+        + (monthlyAiReflection
+          ? '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:20px;color:rgba(240,250,255,.96);line-height:1.55">'+_escHtml(monthlyAiReflection)+'</div>'
+          : '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:18px;color:rgba(240,250,255,.85);line-height:1.5">Cada registro fue una foto de cómo estabas. Que la próxima semana te encuentre eligiendo cuidarte igual 🌿</div>'
+        )
+      + '</div>'
+  });
+  // 8. CIERRE motivador
   slides.push({
     bg:'linear-gradient(155deg,#1a3d2c 0%,#0d2818 40%,#0a1f14 100%)',
     html:
@@ -2635,13 +2679,44 @@ async function pOpenMonthlyWrapped(){
 async function pOpenAnnualWrapped(){
   var ex = document.getElementById('wrappedOv'); if(ex) ex.remove();
   var now = new Date();
-  // Si estamos en enero, resumimos el año PASADO. Si no, año actual.
-  var year = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  // Gate: solo disponible desde el 20 de diciembre hasta fin de enero del año siguiente
+  var mo = now.getMonth();
+  var day = now.getDate();
+  var availableNow = (mo === 11 && day >= 20) || (mo === 0);
+  if(!availableNow){
+    var lockOv = document.createElement('div');
+    lockOv.id = 'wrappedOv';
+    lockOv.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;color:#fff;font-family:Jost,sans-serif';
+    var yearNow = now.getFullYear();
+    var releaseDate = new Date(yearNow, 11, 20);
+    var daysLeft = Math.max(1, Math.ceil((releaseDate - now) / 86400000));
+    lockOv.innerHTML = '<button onclick="var o=document.getElementById(\'wrappedOv\');if(o)o.remove()" style="position:absolute;top:18px;right:18px;background:none;border:none;color:rgba(255,255,255,.55);font-size:26px;cursor:pointer">×</button>'
+      + '<div style="max-width:440px;text-align:center;background:linear-gradient(155deg,#1a4d2e,#0a1f14);border-radius:26px;padding:44px 24px;border:1.5px solid rgba(220,180,80,.35)">'
+        + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(220,180,80,.72);text-transform:uppercase;margin-bottom:18px">🎊 WRAPPED ANUAL '+yearNow+'</div>'
+        + '<div style="font-size:78px;line-height:1;margin-bottom:20px;filter:drop-shadow(0 4px 24px rgba(220,180,80,.35))">🎁</div>'
+        + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:30px;color:rgba(255,255,255,.98);line-height:1.15;margin-bottom:14px">Estará disponible<br>el 20 de diciembre</div>'
+        + '<div style="font-size:13.5px;color:rgba(200,240,215,.75);line-height:1.6;padding:0 8px;margin-bottom:22px">Esperamos a que termine el año para armarte un resumen completo con todos tus registros, tu evolución mes a mes y análisis con IA de tu personalidad emocional.</div>'
+        + '<div style="width:100%;padding:14px 18px;background:rgba(220,180,80,.10);border:1px solid rgba(220,180,80,.28);border-radius:16px"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;color:rgba(240,220,180,.72);text-transform:uppercase;margin-bottom:6px">Falta</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:26px;color:#fff;line-height:1.35">'+daysLeft+' día'+(daysLeft===1?'':'s')+' 🌿</div><div style="font-size:11.5px;color:rgba(240,220,180,.60);margin-top:8px;font-family:Jost,sans-serif">Te vamos a avisar por la campanita 💌</div></div>'
+      + '</div>';
+    document.body.appendChild(lockOv);
+    return;
+  }
+  var year = mo === 0 ? now.getFullYear() - 1 : now.getFullYear();
   var mNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  // Cargar moods del año — usar sbLoadAllMoods por mes
+  var mNamesShort = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var dayNamesLong = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  // Loading modal
+  var loadOv = document.createElement('div');
+  loadOv.id = 'wrappedOv';
+  loadOv.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:Jost,sans-serif';
+  loadOv.innerHTML = '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(220,180,80,.72);text-transform:uppercase;margin-bottom:16px">🎊 WRAPPED ANUAL — '+year+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:26px;color:rgba(255,255,255,.90);margin-bottom:24px">Armando tu año…</div><div class="velo-breath-orb" style="width:100px;height:100px"></div><div style="margin-top:20px;font-size:12px;color:rgba(200,240,215,.55);letter-spacing:1px;max-width:280px;text-align:center;line-height:1.5">Recorriendo tus 12 meses<br>+ análisis con IA</div>';
+  document.body.appendChild(loadOv);
   _initSupabase();
-  var moodByMonth = {}; // {monthIdx: [entries]}
+  var moodByMonth = {};
   var allMoods = [];
+  var moodByDayOfWeek = [0,0,0,0,0,0,0]; // Do, Lu, Ma, Mi, Ju, Vi, Sa
+  var moodByHour = {};
+  var notes = [];
   for(var _mi=0; _mi<12; _mi++) moodByMonth[_mi] = [];
   // Del LS
   for(var _d=0; _d<366; _d++){
@@ -2649,7 +2724,13 @@ async function pOpenAnnualWrapped(){
     if(_dt.getFullYear() !== year) break;
     var _dk = year+'-'+String(_dt.getMonth()+1).padStart(2,'0')+'-'+String(_dt.getDate()).padStart(2,'0');
     var st = safeLS('get','velo_mood_'+_dk);
-    if(st){ try{ var ms=JSON.parse(st); if(ms && ms.emoji){ moodByMonth[_dt.getMonth()].push(ms); allMoods.push({...ms, monthIdx:_dt.getMonth(), dateKey:_dk}); } }catch(e){} }
+    if(st){ try{ var ms=JSON.parse(st); if(ms && ms.emoji){
+      moodByMonth[_dt.getMonth()].push(ms);
+      allMoods.push({...ms, monthIdx:_dt.getMonth(), dateKey:_dk});
+      moodByDayOfWeek[_dt.getDay()]++;
+      if(ms.ts){ var h = new Date(parseInt(ms.ts)).getHours(); moodByHour[h] = (moodByHour[h]||0)+1; }
+      if(ms.note) notes.push(String(ms.note));
+    } }catch(e){} }
   }
   // De Supabase — merge (LS gana si ya hay)
   if(sbClient){
@@ -2659,7 +2740,12 @@ async function pOpenAnnualWrapped(){
         if(sbM) sbM.forEach(function(e){
           if(!e.emoji || !e.date_key) return;
           var already = moodByMonth[_mo].some(function(x){ return x.date_key === e.date_key; });
-          if(!already){ moodByMonth[_mo].push(e); allMoods.push({...e, monthIdx:_mo, dateKey:e.date_key}); }
+          if(!already){
+            moodByMonth[_mo].push(e);
+            allMoods.push({...e, monthIdx:_mo, dateKey:e.date_key});
+            try{ var _dj = new Date(e.date_key); moodByDayOfWeek[_dj.getDay()]++; }catch(_){}
+            if(e.note) notes.push(String(e.note));
+          }
         });
       }
     }catch(e){}
@@ -2705,6 +2791,68 @@ async function pOpenAnnualWrapped(){
   });
   var uName = (safeLS('get','velo_user_name')||'').split(' ')[0] || 'vos';
   var sparkles = '<div style="position:absolute;top:20px;left:24px;font-size:14px;opacity:.55">✧</div><div style="position:absolute;top:60px;right:32px;font-size:10px;opacity:.42">✦</div><div style="position:absolute;bottom:80px;left:36px;font-size:12px;opacity:.48">✧</div><div style="position:absolute;bottom:120px;right:24px;font-size:16px;opacity:.42">✦</div>';
+  // ── Datos extra para slides profundas ────────────────
+  // Día de semana más registrado
+  var favDayIdx = moodByDayOfWeek.reduce(function(bi,v,i,arr){ return v > arr[bi] ? i : bi; }, 0);
+  var favDayCount = moodByDayOfWeek[favDayIdx];
+  var favDay = dayNamesLong[favDayIdx];
+  // Franja horaria más activa
+  var hourSlots = { morning:0, afternoon:0, night:0 };
+  Object.keys(moodByHour).forEach(function(h){
+    h = parseInt(h);
+    if(h >= 6 && h < 12) hourSlots.morning += moodByHour[h];
+    else if(h >= 12 && h < 20) hourSlots.afternoon += moodByHour[h];
+    else hourSlots.night += moodByHour[h];
+  });
+  var favSlot = Object.keys(hourSlots).sort(function(a,b){ return hourSlots[b] - hourSlots[a]; })[0];
+  var slotMap = { morning:{lbl:'Mañana', emoji:'🌅', desc:'6 AM — 12 PM'}, afternoon:{lbl:'Tarde', emoji:'🌤️', desc:'12 PM — 8 PM'}, night:{lbl:'Noche', emoji:'🌙', desc:'8 PM — 6 AM'} };
+  // Temas / palabras clave de las notas
+  var STOP = 'el la los las un una unos unas de del al en y o pero mas más muy que como para por con sin es era son fue ser estar tener me te se lo si no ni yo tu él ella nosotros vosotros ellos ellas mi tu su este esta ese esa aquel aquella algo alguien porque cuando donde qué cuál también solo sólo hoy ayer mañana hace todo toda todos todas ha había hay habia dia día días vez veces cosa cosas siempre nunca casi bien mal bueno buena buenos buenas'.split(' ');
+  var wordFreq = {};
+  notes.forEach(function(n){
+    n.toLowerCase().replace(/[^a-záéíóúñü\s]/gi,' ').split(/\s+/).forEach(function(w){
+      if(w.length < 4) return;
+      if(STOP.indexOf(w) >= 0) return;
+      wordFreq[w] = (wordFreq[w]||0) + 1;
+    });
+  });
+  var topWords = Object.keys(wordFreq).map(function(w){ return {w:w, n:wordFreq[w]}; }).sort(function(a,b){ return b.n - a.n; }).slice(0,5);
+  // Comunidad — actividad del año
+  var comm = { btPosts:0, momentos:0, helped:0, dqAnswered:0, bottles:0 };
+  var uid = safeLS('get','velo_user_id') || '';
+  if(sbClient && uid){
+    try{
+      var yStart = new Date(year,0,1).toISOString();
+      var yEnd = new Date(year,11,31,23,59,59).toISOString();
+      var _btP = await sbClient.from('bitacora_posts').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',yStart).lte('created_at',yEnd); if(!_btP.error) comm.btPosts = _btP.count||0;
+      try{ var _mo2 = await sbClient.from('momentos').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',yStart).lte('created_at',yEnd); if(!_mo2.error) comm.momentos = _mo2.count||0; }catch(_){}
+      try{ var _gr = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('guardian_id',uid).gte('created_at',yStart); if(!_gr.error) comm.helped = _gr.count||0; }catch(_){}
+      try{ var _dq = await sbClient.from('daily_responses').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',yStart).lte('created_at',yEnd); if(!_dq.error) comm.dqAnswered = _dq.count||0; }catch(_){}
+      try{ var _bo = await sbClient.from('bottles').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',yStart).lte('created_at',yEnd); if(!_bo.error) comm.bottles = _bo.count||0; }catch(_){}
+    }catch(e){}
+  }
+  var totalGestures = comm.btPosts + comm.momentos + comm.helped + comm.dqAnswered + comm.bottles;
+  // ── IA — 2 análisis (personalidad + insight de crecimiento) ─────────
+  var aiPersonality = null, aiGrowth = null;
+  try{
+    if(typeof _geminiCall === 'function'){
+      var monthTrend = mNamesShort.map(function(nm,i){ var mA = monthAvgs.find(function(x){ return x.m===i; }); return nm+':'+(mA?mA.avg.toFixed(1):'-'); }).join(' ');
+      var topTopicsStr = topWords.length ? topWords.map(function(w){ return w.w; }).slice(0,4).join(', ') : 'sin datos';
+      var p1 = 'Sos un analista empático de Velo, una app de apoyo emocional en español rioplatense (vos, no tú). '
+        + 'A partir de estos datos anuales de '+uName+' durante '+year+', escribí 3-4 oraciones cálidas describiendo su PERSONALIDAD EMOCIONAL. '
+        + 'Datos:\n- Total registros: '+totalRegs+'\n- Ánimo dominante: '+domEmoji+' '+domLabel+'\n- Ánimo promedio: '+avgScore.toFixed(2)+'\n- Racha máxima: '+maxStreak+' días\n- Día favorito para conectar: '+favDay+'\n- Franja horaria: '+(slotMap[favSlot]?slotMap[favSlot].lbl:'')+'\n- Temas recurrentes: '+topTopicsStr+'\n- Meses activos: '+monthAvgs.length+' de 12\n\n'
+        + 'Reglas: NO menciones números directamente. Empezá con una observación humana, tipo "Sos alguien que…". Tono cálido, sin clichés, sin usar la palabra "salud mental". Máx 90 palabras.';
+      aiPersonality = await _geminiCall(p1, { temperature:0.90, maxOutputTokens:180 });
+      var p2 = 'Sos un analista empático de Velo. Escribí 3 oraciones sobre el CRECIMIENTO Y APRENDIZAJE emocional de '+uName+' durante '+year+', apoyándote en su evolución mes a mes. '
+        + 'Trend mensual (promedio de ánimo 1-5): '+monthTrend+'\n'
+        + 'Mejor mes: '+(bestMonth?mNames[bestMonth.m]:'—')+' | Más difícil: '+(worstMonth?mNames[worstMonth.m]:'—')+'\n'
+        + 'Aportes a la comunidad: '+totalGestures+' gestos\n\n'
+        + 'Reglas: empezá con "Este año…". Tono real, sin cursilería. Reconocé los momentos duros como parte del crecimiento. Cerrá con una invitación breve para el año que viene. Máx 90 palabras.';
+      aiGrowth = await _geminiCall(p2, { temperature:0.90, maxOutputTokens:180 });
+    }
+  }catch(e){}
+  // Sacar loading
+  var lo = document.getElementById('wrappedOv'); if(lo) lo.remove();
   // Slides
   var slides = [];
   // 1. PORTADA
@@ -2748,7 +2896,105 @@ async function pOpenAnnualWrapped(){
       + (bestMonth ? '<div style="width:100%;max-width:340px;background:linear-gradient(140deg,rgba(180,255,180,.14),rgba(100,180,140,.08));border:1.5px solid rgba(180,255,180,.30);border-radius:20px;padding:22px 18px;margin-bottom:14px"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;color:rgba(180,255,180,.68);text-transform:uppercase;margin-bottom:8px">MEJOR MES</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:36px;color:#fff;line-height:1.15">'+mNames[bestMonth.m]+'</div><div style="font-size:12.5px;color:rgba(200,255,215,.68);margin-top:6px">'+bestMonth.count+' registros · promedio '+bestMonth.avg.toFixed(1)+'</div></div>' : '')
       + (worstMonth && worstMonth.m !== (bestMonth&&bestMonth.m) ? '<div style="width:100%;max-width:340px;background:linear-gradient(140deg,rgba(255,180,120,.10),rgba(180,90,60,.08));border:1.5px solid rgba(255,180,120,.30);border-radius:20px;padding:22px 18px"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;color:rgba(255,180,120,.68);text-transform:uppercase;margin-bottom:8px">MÁS DIFÍCIL</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:36px;color:#fff;line-height:1.15">'+mNames[worstMonth.m]+'</div><div style="font-size:12.5px;color:rgba(255,225,200,.65);margin-top:6px">'+worstMonth.count+' registros · promedio '+worstMonth.avg.toFixed(1)+'</div><div style="font-size:12px;color:rgba(255,220,180,.62);font-family:Jost,sans-serif;margin-top:10px;line-height:1.4">Y aun así atravesaste el año 💪</div></div>' : '')
   });
-  // 5. CIERRE
+  // 5. TIMELINE — 12 meses con emoji dominante y color por promedio
+  var timelineHtml = mNamesShort.map(function(nm,i){
+    var mData = monthAvgs.find(function(x){ return x.m===i; });
+    var mMoodsForI = moodByMonth[i]||[];
+    var monthCountsE = {}; mMoodsForI.forEach(function(m){ monthCountsE[m.emoji] = (monthCountsE[m.emoji]||0)+1; });
+    var monthDom = Object.keys(monthCountsE).sort(function(a,b){ return monthCountsE[b]-monthCountsE[a]; })[0] || '·';
+    var opacity = mData ? Math.min(1, .35 + mData.avg/8) : .12;
+    return '<div style="background:rgba(180,220,240,'+opacity+');border:1px solid rgba(180,220,240,'+(mData?.42:.14)+');border-radius:12px;padding:10px 4px;text-align:center"><div style="font-size:26px;line-height:1;margin-bottom:4px">'+monthDom+'</div><div style="font-size:9.5px;font-weight:800;letter-spacing:1px;color:rgba(220,240,255,'+(mData?.90:.35)+');font-family:Jost,sans-serif;text-transform:uppercase">'+nm+'</div>'+(mData?'<div style="font-size:9px;color:rgba(220,240,255,.55);margin-top:2px">'+mData.count+'</div>':'')+'</div>';
+  }).join('');
+  slides.push({
+    bg:'linear-gradient(155deg,#0f2438,#0a1c2a 45%,#08101c)',
+    html: sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(180,220,240,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:22px">TUS 12 MESES</div>'
+      + '<div style="font-size:56px;line-height:1;margin-bottom:14px">🗓️</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:26px;color:#fff;line-height:1.2;margin-bottom:22px;padding:0 20px">Tu paso por cada mes</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;max-width:340px">'+timelineHtml+'</div>'
+  });
+  // 6. DÍA DE LA SEMANA FAVORITO
+  var dayBarsHtml = dayNamesLong.map(function(dn,i){
+    var pct = favDayCount ? Math.round((moodByDayOfWeek[i]/favDayCount)*100) : 0;
+    var active = i === favDayIdx;
+    return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12.5px;font-weight:'+(active?'800':'600')+';color:'+(active?'rgba(255,220,120,.98)':'rgba(255,255,255,.70)')+';font-family:Jost,sans-serif">'+dn+'</span><span style="font-size:11px;color:rgba(255,255,255,.55);font-family:Jost,sans-serif">'+moodByDayOfWeek[i]+'</span></div><div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+(active?'rgba(255,220,120,.90)':'rgba(180,220,240,.55)')+';border-radius:3px"></div></div></div>';
+  }).join('');
+  slides.push({
+    bg:'linear-gradient(155deg,#2d1f08,#1c1404 45%,#0e0a02)',
+    html: sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(255,220,120,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:20px">TU DÍA FAVORITO</div>'
+      + '<div style="font-size:72px;line-height:1;margin-bottom:16px">🌸</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:38px;color:#fff;line-height:1.15;margin-bottom:6px">'+favDay+'</div>'
+      + '<div style="font-size:12.5px;color:rgba(255,225,180,.72);font-family:Jost,sans-serif;margin-bottom:22px">'+favDayCount+' veces conectaste con Velo un '+favDay.toLowerCase()+'</div>'
+      + '<div style="width:100%;max-width:320px">'+dayBarsHtml+'</div>'
+  });
+  // 7. FRANJA HORARIA
+  var slotObj = slotMap[favSlot] || slotMap.morning;
+  var slotsSum = hourSlots.morning + hourSlots.afternoon + hourSlots.night;
+  slides.push({
+    bg:'linear-gradient(155deg,#1a3844,#0e2432 45%,#08141c)',
+    html: sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(140,200,240,.72);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:22px">TU HORA EMOCIONAL</div>'
+      + '<div style="font-size:110px;line-height:1;margin-bottom:16px;filter:drop-shadow(0 4px 24px rgba(140,200,240,.35))">'+slotObj.emoji+'</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:38px;color:#fff;line-height:1.15;margin-bottom:6px">Sos de '+slotObj.lbl.toLowerCase()+'</div>'
+      + '<div style="font-size:12.5px;color:rgba(180,220,240,.72);font-family:Jost,sans-serif;margin-bottom:26px">La mayoría de tus registros son entre '+slotObj.desc+'</div>'
+      + (slotsSum > 0 ? '<div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px">'
+        + '<div><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;color:rgba(255,255,255,.75);font-family:Jost,sans-serif;font-weight:'+(favSlot==='morning'?'800':'600')+'">🌅 Mañana</span><span style="font-size:11px;color:rgba(255,255,255,.55)">'+Math.round((hourSlots.morning/slotsSum)*100)+'%</span></div><div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+Math.round((hourSlots.morning/slotsSum)*100)+'%;background:rgba(255,215,120,.85);border-radius:3px"></div></div></div>'
+        + '<div><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;color:rgba(255,255,255,.75);font-family:Jost,sans-serif;font-weight:'+(favSlot==='afternoon'?'800':'600')+'">🌤️ Tarde</span><span style="font-size:11px;color:rgba(255,255,255,.55)">'+Math.round((hourSlots.afternoon/slotsSum)*100)+'%</span></div><div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+Math.round((hourSlots.afternoon/slotsSum)*100)+'%;background:rgba(180,220,255,.85);border-radius:3px"></div></div></div>'
+        + '<div><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px;color:rgba(255,255,255,.75);font-family:Jost,sans-serif;font-weight:'+(favSlot==='night'?'800':'600')+'">🌙 Noche</span><span style="font-size:11px;color:rgba(255,255,255,.55)">'+Math.round((hourSlots.night/slotsSum)*100)+'%</span></div><div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+Math.round((hourSlots.night/slotsSum)*100)+'%;background:rgba(155,150,220,.85);border-radius:3px"></div></div></div>'
+        + '</div>' : '')
+  });
+  // 8. APORTES A LA COMUNIDAD
+  var commItems = [];
+  if(comm.btPosts>0) commItems.push({e:'📖', n:comm.btPosts, lbl:'historia'+(comm.btPosts>1?'s':'')+' en Bitácora', col:'rgba(180,155,240,.90)'});
+  if(comm.momentos>0) commItems.push({e:'🌸', n:comm.momentos, lbl:'momento'+(comm.momentos>1?'s':'')+' compartido'+(comm.momentos>1?'s':''), col:'rgba(255,180,220,.90)'});
+  if(comm.helped>0) commItems.push({e:'🤝', n:comm.helped, lbl:'persona'+(comm.helped>1?'s':'')+' acompañada'+(comm.helped>1?'s':''), col:'rgba(180,255,220,.90)'});
+  if(comm.dqAnswered>0) commItems.push({e:'💬', n:comm.dqAnswered, lbl:'respuesta'+(comm.dqAnswered>1?'s':'')+' a Pregunta del Día', col:'rgba(255,220,120,.90)'});
+  if(comm.bottles>0) commItems.push({e:'🌊', n:comm.bottles, lbl:'mensaje'+(comm.bottles>1?'s':'')+' al mar', col:'rgba(140,220,255,.90)'});
+  slides.push({
+    bg:'linear-gradient(155deg,#2a1030,#1e0824 45%,#100416)',
+    html: sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(220,180,240,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:18px">TUS APORTES A LA COMUNIDAD</div>'
+      + '<div style="font-size:66px;line-height:1;margin-bottom:12px">💚</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:32px;color:#fff;line-height:1.2;margin-bottom:20px">'+(totalGestures>0 ? totalGestures+' gestos' : 'Tu presencia también cuenta')+'</div>'
+      + (commItems.length ? '<div style="width:100%;max-width:340px">'+commItems.map(function(c){ return '<div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.05);border-left:3px solid '+c.col+';border-radius:0 12px 12px 0;padding:10px 14px;margin-bottom:8px"><span style="font-size:24px;flex-shrink:0">'+c.e+'</span><div style="flex:1;text-align:left"><div style="font-size:22px;font-weight:800;color:'+c.col+';font-family:Jost,sans-serif;line-height:1">'+c.n+'</div><div style="font-size:12px;color:rgba(255,255,255,.72);font-family:Jost,sans-serif;line-height:1.3;margin-top:2px">'+c.lbl+'</div></div></div>'; }).join('')+'</div>' : '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:17px;color:rgba(255,255,255,.60);line-height:1.5;text-align:center;padding:20px">Este año cuidaste tu propio jardín 🌿</div>')
+  });
+  // 9. TEMAS DE INTERÉS — palabras más recurrentes
+  slides.push({
+    bg:'linear-gradient(155deg,#1e3820,#0e2410 45%,#081408)',
+    html: sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(180,220,150,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:22px">TUS TEMAS DEL AÑO</div>'
+      + '<div style="font-size:66px;line-height:1;margin-bottom:14px">🌱</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:26px;color:#fff;line-height:1.2;margin-bottom:22px;padding:0 20px">'+(topWords.length ? 'Lo que más apareció en tus notas' : 'Este año no dejaste notas — quizás en '+(year+1)+' 🌿')+'</div>'
+      + (topWords.length ? '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:340px">'+topWords.map(function(w,i){ var sizes=[26,22,19,17,15]; return '<span style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:'+sizes[i]+'px;color:rgba(180,255,180,'+(1-i*.12)+');padding:6px 12px;background:rgba(180,255,180,'+(0.14-i*.02)+');border:1px solid rgba(180,255,180,.20);border-radius:100px">'+_escHtml(w.w)+'</span>'; }).join('')+'</div>' : '')
+  });
+  // 10. PERSONALIDAD EMOCIONAL — IA
+  slides.push({
+    bg:'linear-gradient(155deg,#2a1820,#180c14 45%,#0c0408)',
+    html: sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(255,180,200,.72);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:20px">TU PERSONALIDAD EMOCIONAL</div>'
+      + '<div style="font-size:60px;line-height:1;margin-bottom:16px">✨</div>'
+      + '<div style="width:100%;max-width:340px;background:rgba(255,180,200,.08);border:1px solid rgba(255,180,200,.28);border-radius:20px;padding:20px 18px">'
+        + (aiPersonality
+          ? '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:19px;color:rgba(255,240,245,.96);line-height:1.55">'+_escHtml(aiPersonality)+'</div>'
+          : '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:18px;color:rgba(255,240,245,.85);line-height:1.5">Sos alguien que se toma el tiempo de mirar cómo está. Ese gesto, repetido durante el año, ya dice mucho de tu forma de habitar la vida 💚</div>'
+        )
+      + '</div>'
+  });
+  // 11. CRECIMIENTO Y APRENDIZAJE — IA
+  slides.push({
+    bg:'linear-gradient(155deg,#1a2838,#0e1c2a 45%,#08121c)',
+    html: sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(180,220,240,.72);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:20px">TU CRECIMIENTO DEL AÑO</div>'
+      + '<div style="font-size:60px;line-height:1;margin-bottom:16px">🌳</div>'
+      + '<div style="width:100%;max-width:340px;background:rgba(140,200,240,.08);border:1px solid rgba(140,200,240,.28);border-radius:20px;padding:20px 18px">'
+        + (aiGrowth
+          ? '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:19px;color:rgba(240,250,255,.96);line-height:1.55">'+_escHtml(aiGrowth)+'</div>'
+          : '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:18px;color:rgba(240,250,255,.85);line-height:1.5">Este año atravesaste momentos altos y bajos, y en cada uno elegiste registrar. Volver a Velo, aún los días difíciles, es una forma silenciosa de cuidarte. Que '+(year+1)+' te encuentre con más momentos livianos 🌿</div>'
+        )
+      + '</div>'
+  });
+  // 12. CIERRE
   slides.push({
     bg:'linear-gradient(155deg,#2a1030 0%,#1e0824 45%,#100416 100%)',
     html: sparkles
@@ -5326,6 +5572,8 @@ if('serviceWorker' in navigator && 'PushManager' in window){
       setTimeout(function(){
         if(action === 'open-wrapped' && typeof pOpenMonthlyWrapped === 'function'){
           try{ pOpenMonthlyWrapped(); }catch(_){}
+        } else if(action === 'open-wrapped-annual' && typeof pOpenAnnualWrapped === 'function'){
+          try{ pOpenAnnualWrapped(); }catch(_){}
         } else if(action === 'open-buddy' && typeof pOpenBuddyModal === 'function'){
           try{ pOpenBuddyModal(); }catch(_){}
         } else if(action === 'open-mood'){
@@ -5347,6 +5595,7 @@ if('serviceWorker' in navigator && 'PushManager' in window){
     try{ history.replaceState(null, '', window.location.pathname); }catch(e){}
     var trigger = function(){
       if(openIntent === 'wrapped' && typeof pOpenMonthlyWrapped === 'function'){ try{ pOpenMonthlyWrapped(); }catch(_){} }
+      else if(openIntent === 'wrapped-annual' && typeof pOpenAnnualWrapped === 'function'){ try{ pOpenAnnualWrapped(); }catch(_){} }
       else if(openIntent === 'buddy' && typeof pOpenBuddyModal === 'function'){ try{ pOpenBuddyModal(); }catch(_){} }
       else if(openIntent === 'mood'){
         if(typeof pOpenMoodQuickView === 'function'){ try{ pOpenMoodQuickView(); }catch(_){} }
@@ -28454,7 +28703,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1268;
+    var _BUILT_V = 1269;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

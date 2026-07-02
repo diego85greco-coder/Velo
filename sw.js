@@ -120,7 +120,13 @@ self.addEventListener('push', function(event){
       return { action: a.action || 'open', title: a.title || 'Ver' };
     }).slice(0, 2); // spec: máx 2 acciones visibles
   } else if(data.tag){
-    if(data.tag.indexOf('velo-wrapped-') === 0){
+    if(data.tag.indexOf('velo-wrapped-annual') === 0){
+      defaultActions = [
+        {action:'open-wrapped-annual', title:'🎊 Ver mi año'},
+        {action:'later', title:'Después'}
+      ];
+      actionMeta['open-wrapped-annual'] = '/?open=wrapped-annual';
+    } else if(data.tag.indexOf('velo-wrapped-') === 0){
       defaultActions = [
         {action:'open-wrapped', title:'🌸 Ver Wrapped'},
         {action:'later', title:'Después'}
