@@ -14864,13 +14864,68 @@ function pExportDiaryToPdf(){
     + htmlEntries
     + '<div class="footer">✧ Velo — heyvelo.app · '+new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})+' ✧</div>'
     + '</body></html>';
-  try{
-    var w = window.open('', '_blank');
-    if(!w){ pToast('⚠️','Habilitá popups para exportar'); return; }
-    w.document.write(html);
-    w.document.close();
-    setTimeout(function(){ try{ w.focus(); w.print(); }catch(e){} }, 600);
-  }catch(e){ pToast('⚠️','No se pudo abrir la vista de exportación'); }
+  // Renderizar en modal in-app (window.open en iOS PWA reemplaza la ventana
+  // sin darle al usuario forma de volver — lo hacemos con iframe + botón cerrar)
+  var ex = document.getElementById('diaryPdfOv'); if(ex) ex.remove();
+  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var ov = document.createElement('div');
+  ov.id = 'diaryPdfOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10010;background:#fdfaf0;display:flex;flex-direction:column';
+  // Toolbar superior con Cerrar + Imprimir/Compartir
+  var bar = document.createElement('div');
+  bar.style.cssText = 'flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 14px;background:linear-gradient(180deg,rgba(139,106,32,.96),rgba(107,80,20,.98));border-bottom:1.5px solid rgba(60,40,10,.35);box-shadow:0 2px 12px rgba(0,0,0,.15);padding-top:calc(10px + env(safe-area-inset-top,0px))';
+  var closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label','Cerrar');
+  closeBtn.style.cssText = 'flex-shrink:0;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.35);color:#fff8e0;border-radius:100px;padding:8px 14px;font-family:Jost,sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;display:inline-flex;align-items:center;gap:6px';
+  closeBtn.innerHTML = '<span style="font-size:18px;line-height:1">←</span> Cerrar';
+  closeBtn.onclick = function(){
+    try{ URL.revokeObjectURL(url); }catch(e){}
+    ov.remove();
+  };
+  var title = document.createElement('div');
+  title.style.cssText = 'flex:1;text-align:center;font-family:\'Cormorant Garamond\',serif;font-size:17px;color:#fff8e0;font-style:italic;letter-spacing:.5px';
+  title.textContent = 'Mi Diario';
+  var printBtn = document.createElement('button');
+  printBtn.type = 'button';
+  printBtn.setAttribute('aria-label','Imprimir o guardar PDF');
+  printBtn.style.cssText = 'flex-shrink:0;background:rgba(255,255,255,.28);border:1.5px solid rgba(255,255,255,.60);color:#fff8e0;border-radius:100px;padding:8px 14px;font-family:Jost,sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;display:inline-flex;align-items:center;gap:6px';
+  printBtn.innerHTML = '🖨️ Imprimir / PDF';
+  printBtn.onclick = function(){
+    var iframe = document.getElementById('diaryPdfIframe');
+    try{
+      if(iframe && iframe.contentWindow){
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } else {
+        window.print();
+      }
+    }catch(e){
+      pToast('⚠️','No pude abrir la impresión — usá "Compartir" en el navegador');
+    }
+  };
+  bar.appendChild(closeBtn);
+  bar.appendChild(title);
+  bar.appendChild(printBtn);
+  ov.appendChild(bar);
+  // Iframe con el HTML del diario
+  var iframe = document.createElement('iframe');
+  iframe.id = 'diaryPdfIframe';
+  iframe.style.cssText = 'flex:1;width:100%;border:none;background:#fdfaf0';
+  iframe.setAttribute('sandbox','allow-same-origin allow-modals');
+  iframe.src = url;
+  ov.appendChild(iframe);
+  document.body.appendChild(ov);
+  // Cerrar con back del navegador si se pulsa
+  var backHandler = function(){
+    if(document.getElementById('diaryPdfOv')){
+      try{ URL.revokeObjectURL(url); }catch(e){}
+      ov.remove();
+    }
+    window.removeEventListener('popstate', backHandler);
+  };
+  try{ history.pushState({diaryPdf:1},''); window.addEventListener('popstate', backHandler); }catch(e){}
 }
 
 async function pDeleteDiary(ts){
@@ -30579,7 +30634,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1293;
+    var _BUILT_V = 1294;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
