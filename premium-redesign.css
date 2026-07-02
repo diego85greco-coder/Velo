@@ -14764,3 +14764,33 @@ body.r-dark::before {
   z-index:0;
   opacity:.55;
 }
+
+/* v1296 — Diary toolbar buttons (Exportar / Borrar todo) adaptive light+dark */
+.diary-toolbar-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  font-family:'Jost',sans-serif;font-size:11.5px;font-weight:800;
+  padding:6px 12px;border-radius:100px;letter-spacing:.3px;
+  white-space:nowrap;cursor:pointer;line-height:1;
+}
+/* Light mode — dark text on solid pastel fill */
+.diary-toolbar-btn--export{
+  background:rgba(60,140,95,.22);
+  border:1.5px solid rgba(30,110,70,.65);
+  color:#0e5030;
+}
+.diary-toolbar-btn--danger{
+  background:rgba(220,70,70,.22);
+  border:1.5px solid rgba(180,40,40,.62);
+  color:#8a1a1a;
+}
+/* Dark mode — light text on translucent fill */
+body.r-dark .diary-toolbar-btn--export{
+  background:rgba(80,180,120,.22);
+  border:1.5px solid rgba(120,220,160,.55);
+  color:#a8f0c8;
+}
+body.r-dark .diary-toolbar-btn--danger{
+  background:rgba(220,90,90,.22);
+  border:1.5px solid rgba(255,130,130,.55);
+  color:#ffc8c8;
+}

@@ -13831,10 +13831,48 @@ function _resizeImageToBase64(file, maxSide){
 }
 function _showDiaryImagePreview(b64){
   var ex = document.getElementById('diaryImagePreview'); if(ex) ex.remove();
+  var isDark = document.body.classList.contains('r-dark');
+  // Paleta adaptativa — texto oscuro sobre lavanda claro, texto lavanda claro sobre negro
+  var bg     = isDark ? 'rgba(120,90,220,.24)'  : 'rgba(180,155,240,.28)';
+  var brd    = isDark ? 'rgba(180,155,240,.60)' : 'rgba(90,60,180,.55)';
+  var mainTx = isDark ? '#e8dcff'               : '#3d1f7a';
+  var subTx  = isDark ? '#c9b8f5'               : '#5a3fa8';
+  var delBg  = isDark ? 'rgba(220,80,80,.28)'   : 'rgba(220,60,60,.20)';
+  var delBrd = isDark ? 'rgba(255,140,140,.55)' : 'rgba(180,40,40,.55)';
+  var delTx  = isDark ? '#ffcccc'               : '#a02020';
   var wrap = document.createElement('div');
   wrap.id = 'diaryImagePreview';
-  wrap.style.cssText = 'background:rgba(180,155,240,.28);border:1.5px solid rgba(90,60,180,.55);border-radius:14px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;gap:10px';
-  wrap.innerHTML = '<img src="'+b64+'" style="width:56px;height:56px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1.5px solid rgba(90,60,180,.40)"><div style="flex:1;font-size:13px;font-weight:800;color:#3d1f7a;font-family:Jost,sans-serif;line-height:1.4">Imagen adjuntada<br><span style="font-size:11.5px;color:#5a3fa8;font-weight:600">Se guarda cuando termines la entrada</span></div><button onclick="_deleteDiaryImage()" title="Descartar" style="background:rgba(220,60,60,.20);border:1.5px solid rgba(180,40,40,.55);color:#a02020;border-radius:8px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer">🗑️</button>';
+  wrap.style.cssText = 'background:'+bg+';border:1.5px solid '+brd+';border-radius:14px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;gap:10px';
+  // Thumbnail via DOM API + blob URL (iOS Safari falla con data URL grandes en <img>)
+  var thumb = document.createElement('img');
+  thumb.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1.5px solid '+brd+';background:'+bg;
+  thumb.alt = 'Preview';
+  try{
+    if(typeof b64 === 'string' && b64.indexOf('data:') === 0){
+      var arr = b64.split(',');
+      var mimeMatch = arr[0].match(/:(.*?);/);
+      var mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+      var bstr = atob(arr[1] || '');
+      var u8 = new Uint8Array(bstr.length);
+      for(var _i=0; _i<bstr.length; _i++) u8[_i] = bstr.charCodeAt(_i);
+      var blob = new Blob([u8], { type: mime });
+      thumb.src = URL.createObjectURL(blob);
+    } else {
+      thumb.src = b64;
+    }
+  }catch(e){ thumb.src = b64; }
+  var body = document.createElement('div');
+  body.style.cssText = 'flex:1;font-size:13px;font-weight:800;color:'+mainTx+';font-family:Jost,sans-serif;line-height:1.4';
+  body.innerHTML = 'Imagen adjuntada<br><span style="font-size:11.5px;color:'+subTx+';font-weight:600">Se guarda cuando termines la entrada</span>';
+  var delBtn = document.createElement('button');
+  delBtn.type = 'button';
+  delBtn.title = 'Descartar';
+  delBtn.style.cssText = 'background:'+delBg+';border:1.5px solid '+delBrd+';color:'+delTx+';border-radius:8px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer';
+  delBtn.textContent = '🗑️';
+  delBtn.onclick = function(){ _deleteDiaryImage(); };
+  wrap.appendChild(thumb);
+  wrap.appendChild(body);
+  wrap.appendChild(delBtn);
   var ta = document.getElementById('diaryTa');
   if(ta && ta.parentNode) ta.parentNode.insertBefore(wrap, ta.nextSibling);
 }
@@ -14827,10 +14865,19 @@ function pExportDiaryToPdf(){
     var text = (e.text||'').split(/\n\n+/).map(function(p){
       return '<p>'+p.split('\n').map(_escHtml).join('<br>')+'</p>';
     }).join('');
+    // Foto adjunta (si existe) — embebida como data URL en el HTML para que imprima igual
+    var imgHtml = '';
+    if(e.image && typeof e.image === 'string' && e.image.indexOf('data:') === 0){
+      imgHtml = '<figure class="photo"><img src="'+e.image+'" alt="Foto adjunta"/></figure>';
+    }
+    // Marca de audio (los PDFs no reproducen audio, pero dejamos constancia)
+    var audioNote = e.audio ? '<div class="audio-note">🎙️ Esta entrada tiene una nota de voz — se reproduce sólo en la app.</div>' : '';
     return '<article class="entry">'
       + '<header><span class="date">'+dateFmt+'</span>'+(emoji?'<span class="emoji">'+emoji+'</span>':'')+'</header>'
       + (title?'<h2>'+_escHtml(title)+'</h2>':'')
       + '<div class="body">'+text+'</div>'
+      + imgHtml
+      + audioNote
       + '</article>';
   }).join('');
   var html = '<!doctype html><html lang="es"><head><meta charset="utf-8">'
@@ -14851,6 +14898,9 @@ function pExportDiaryToPdf(){
     + '.entry h2 { font-size: 26px; font-style: italic; color:#3d2810; margin: 4px 0 12px; }'
     + '.entry .body { font-size: 16px; color: #2c1e0a; }'
     + '.entry .body p { margin: 0 0 12px; }'
+    + '.entry .photo { margin: 14px 0 6px; text-align: center; page-break-inside: avoid; }'
+    + '.entry .photo img { max-width: 100%; max-height: 380px; border-radius: 8px; border: 1px solid rgba(140,100,20,.28); box-shadow: 0 3px 12px rgba(60,40,10,.15); display: inline-block; }'
+    + '.entry .audio-note { margin-top: 12px; padding: 10px 14px; background: rgba(200,158,56,.14); border-left: 3px solid rgba(200,158,56,.72); border-radius: 6px; font-family: Jost,sans-serif; font-size: 12px; font-style: italic; color: #6c4d20; }'
     + '@media print { body { background: white; } .cover { padding-top: 60px; } }'
     + '.footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(140,100,20,.20); font-family: Jost,sans-serif; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: rgba(140,100,20,.55); }'
     + '</style></head><body>'
@@ -30625,7 +30675,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1295;
+    var _BUILT_V = 1296;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
