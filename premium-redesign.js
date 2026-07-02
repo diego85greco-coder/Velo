@@ -448,22 +448,93 @@
     return                        { emoji: '🌙', period: 'night',      type: 'clear-night' };
   }
 
-  /* ── Hero weather: usar el emoji de fase lunar real cuando es noche clara,
-        en lugar del 🌕 fijo (que iOS renderiza fotorrealista). Las demás
-        condiciones siguen con su emoji característico. ── */
+  /* ── Hero weather: SVG stylized moon (emoji lunar en iOS Safari renders
+        como bitmap fotorrealista amarillo saturado que queda "pegoteado").
+        Para clear-night dibujamos la luna con fase real, halo y colores
+        cream. Otras condiciones siguen usando emoji. ── */
+  function _buildMoonSvg(size) {
+    size = size || 130;
+    // Fase actual (0..1) — misma referencia que _getMoonPhase
+    var ref = 947182440000;
+    var syn = 29.530589 * 86400000;
+    var age = ((Date.now() - ref) % syn + syn) % syn;
+    var phase = age / syn;
+    var theta = 2 * Math.PI * phase;
+    var R = size * 0.35;         // radio del disco lunar (deja lugar para halo)
+    var cx = size / 2, cy = size / 2;
+    // Terminador: semi-eje horizontal del elipse (0 en cuarto, ±R en llena/nueva)
+    var ex = Math.abs(R * Math.cos(theta));
+    var waxing = phase < 0.5;
+    var illum = (1 - Math.cos(theta)) / 2; // 0..1 fracción iluminada
+    var isGibbous = illum > 0.5;
+    // Path de la sombra (parte NO iluminada). Semicírculo + elipse.
+    // waxing: sombra a la izquierda (arco por la izquierda del disco)
+    // waning: sombra a la derecha
+    var semiSweep = waxing ? 0 : 1;
+    var ellipseSweep = isGibbous ? semiSweep : (1 - semiSweep);
+    var yTop = cy - R, yBot = cy + R;
+    var shadowPath = 'M ' + cx + ' ' + yTop
+                   + ' A ' + R + ' ' + R + ' 0 0 ' + semiSweep + ' ' + cx + ' ' + yBot
+                   + ' A ' + ex + ' ' + R + ' 0 0 ' + ellipseSweep + ' ' + cx + ' ' + yTop
+                   + ' Z';
+    var uid = 'm' + Math.floor(phase * 1e6);
+    // Craters — posiciones fijas, sutiles
+    var craters = [
+      { x:-.32, y:-.28, r:.10, o:.14 },
+      { x: .18, y:-.35, r:.06, o:.10 },
+      { x: .28, y: .18, r:.09, o:.12 },
+      { x:-.10, y: .38, r:.13, o:.11 },
+      { x: .40, y:-.05, r:.05, o:.09 },
+      { x:-.42, y: .12, r:.07, o:.10 }
+    ];
+    var craterEls = craters.map(function(c){
+      return '<circle cx="' + (cx + c.x * R) + '" cy="' + (cy + c.y * R) + '" r="' + (c.r * R) + '" fill="rgba(60,42,20,' + c.o + ')"/>';
+    }).join('');
+    return '<svg viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="velo-moon-svg" style="overflow:visible;display:block">'
+      + '<defs>'
+        + '<radialGradient id="' + uid + 'surf" cx="38%" cy="34%" r="70%">'
+          + '<stop offset="0%" stop-color="#fffaf0"/>'
+          + '<stop offset="55%" stop-color="#f2e5c8"/>'
+          + '<stop offset="100%" stop-color="#c4b085"/>'
+        + '</radialGradient>'
+        + '<radialGradient id="' + uid + 'halo" cx="50%" cy="50%" r="50%">'
+          + '<stop offset="42%" stop-color="rgba(255,242,205,.42)"/>'
+          + '<stop offset="72%" stop-color="rgba(255,232,180,.12)"/>'
+          + '<stop offset="100%" stop-color="rgba(255,220,150,0)"/>'
+        + '</radialGradient>'
+        + '<radialGradient id="' + uid + 'shadow" cx="50%" cy="50%" r="50%">'
+          + '<stop offset="0%" stop-color="rgba(15,10,4,.72)"/>'
+          + '<stop offset="100%" stop-color="rgba(6,4,2,.94)"/>'
+        + '</radialGradient>'
+        + '<filter id="' + uid + 'softblur"><feGaussianBlur stdDeviation="0.6"/></filter>'
+      + '</defs>'
+      // Halo suave alrededor
+      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + (size * 0.48) + '" fill="url(#' + uid + 'halo)"/>'
+      // Disco lunar (siempre cream, no amarillo saturado)
+      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="url(#' + uid + 'surf)"/>'
+      // Craters sutiles sobre el disco iluminado
+      + '<g filter="url(#' + uid + 'softblur)">' + craterEls + '</g>'
+      // Sombra de fase (encima de craters)
+      + '<path d="' + shadowPath + '" fill="url(#' + uid + 'shadow)"/>'
+      // Borde interno sutil para definir el círculo
+      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="rgba(80,60,30,.14)" stroke-width="0.8"/>'
+      + '</svg>';
+  }
   function _weatherAnimSvg(period, type) {
     var moonNow = _getMoonPhase();
+    // Para noche clara Y para "moon-cloud" con nube, usamos el SVG stylized
+    if (type === 'clear-night' || type === 'moon-cloud' || (!type && period === 'night')) {
+      return '<span class="weather-hero-img weather-hero-moon" data-period="' + period + '" data-type="' + type + '" title="' + moonNow.name + '">' + _buildMoonSvg(130) + '</span>';
+    }
     var map = {
       'clear-day':   '☀️',
-      'clear-night': moonNow.emoji, // 🌑/🌒/🌓/🌔/🌕/🌖/🌗/🌘 según fase real
       'sun-cloud':   '⛅',
-      'moon-cloud':  moonNow.emoji, // misma fase con nube debajo
       'overcast':    '☁️',
       'rain':        '🌧️',
       'storm':       '⛈️',
       'snow':        '🌨️'
     };
-    var emoji = map[type] || (period === 'night' ? moonNow.emoji : '☀️');
+    var emoji = map[type] || '☀️';
     return '<span class="weather-hero-img weather-hero-emoji" data-period="' + period + '" data-type="' + type + '">' + emoji + '</span>';
   }
 
