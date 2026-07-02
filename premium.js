@@ -13600,34 +13600,66 @@ async function _attachVoiceToEntry(entry){
 // ── I18N — soporte PORTUGUÉS gated a usuarios detectados como PT/BR ───
 var VELO_I18N = {
   pt: {
-    // Nav principal
-    'Al Mar': 'Ao Mar',
-    'Bitácora': 'Diário Coletivo',
-    'Bitácora — Historias': 'Diário — Histórias',
-    'Guardianes': 'Guardiões',
-    'Sala de Ayuda': 'Sala de Ajuda',
-    'Círculos': 'Círculos',
-    'Buenas Noticias': 'Boas Notícias',
-    'Diario Íntimo': 'Diário Íntimo',
-    'Música y Relajación': 'Música e Relaxamento',
-    'Tu espacio privado': 'Seu espaço privado',
-    'Contactos favoritos': 'Contatos favoritos',
-    // Home
-    'Registrá tus ánimos': 'Registre seus ânimos',
-    '¿Cómo te sentís hoy?': 'Como você se sente hoje?',
+    // ── Home & saludo
+    'Inicio': 'Início',
+    'INICIO': 'INÍCIO',
     'Buenos días': 'Bom dia',
     'Buenas tardes': 'Boa tarde',
     'Buenas noches': 'Boa noite',
     '¡Acompañemos emociones!': 'Vamos acompanhar emoções!',
     'Hoy en Velo:': 'Hoje no Velo:',
+    'Hoy en Velo': 'Hoje no Velo',
+    'Registrá tus ánimos': 'Registre seus ânimos',
+    '¿Cómo te sentís hoy?': 'Como você se sente hoje?',
     'ánimo': 'ânimo',
     'ánimos': 'ânimos',
-    // CTAs top
+    'días seguidos': 'dias seguidos',
+    'guardadas': 'guardadas',
+    'privado': 'privado',
+    // ── Nav + secciones
+    'Perfil': 'Perfil',
+    'Mi Perfil': 'Meu Perfil',
+    'PERFIL': 'PERFIL',
+    'Al Mar': 'Ao Mar',
+    'Bitácora': 'Diário Coletivo',
+    'Guardianes': 'Guardiões',
+    'Sala de Ayuda': 'Sala de Ajuda',
+    'Sala de': 'Sala de',
+    'Ayuda': 'Ajuda',
+    'Círculos': 'Círculos',
+    'Grupos de chat': 'Grupos de chat',
+    'Buenas Noticias': 'Boas Notícias',
+    'Historias que suman': 'Histórias que somam',
+    'Diario Íntimo': 'Diário Íntimo',
+    'Diario': 'Diário',
+    'Música y Relajación': 'Música e Relaxamento',
+    'Sonidos y meditación': 'Sons e meditação',
+    'Tu espacio privado': 'Seu espaço privado',
+    'Contactos favoritos': 'Contatos favoritos',
+    'CONTACTOS FAVORITOS': 'CONTATOS FAVORITOS',
+    'CONTACTOS': 'CONTATOS',
+    'FAVORITOS': 'FAVORITOS',
+    'TU DIARIO': 'SEU DIÁRIO',
+    'TU DIARIO ÍNTIMO': 'SEU DIÁRIO ÍNTIMO',
+    'ÍNTIMO': 'ÍNTIMO',
+    'Apoyo': 'Apoio',
+    'Guardianes disponibles': 'Guardiões disponíveis',
+    'Lanzá un mensaje': 'Lance uma mensagem',
+    'Historias': 'Histórias',
+    'Contactos': 'Contatos',
+    'Profesionales': 'Profissionais',
+    'Contactos favoritos': 'Contatos favoritos',
+    'Mensajes': 'Mensagens',
+    'Contacto': 'Contato',
+    'Respira': 'Respire',
+    'Vela por Ti': 'Vela por Você',
+    'Velo IA': 'Velo IA',
+    // ── CTAs / menú hamburguesa
     'Wrapped': 'Wrapped',
     'Invitar': 'Convidar',
     'Compañero': 'Companheiro',
     'Anotado/a': 'Inscrito',
-    // Menú
+    'del mes': 'do mês',
     'Tour guiado': 'Tour guiado',
     'Mi Wrapped mensual': 'Meu Wrapped mensal',
     'Mi Wrapped anual': 'Meu Wrapped anual',
@@ -13639,10 +13671,12 @@ var VELO_I18N = {
     'Mi trayectoria emocional': 'Minha trajetória emocional',
     'Embajadores de Velo': 'Embaixadores do Velo',
     'Descargar mis datos': 'Baixar meus dados',
+    'Buscar en Velo': 'Buscar no Velo',
     'Cerrar sesión': 'Sair',
-    'Mensajes': 'Mensagens',
-    'Contacto': 'Contato',
-    // Preferencias
+    'TU ESPACIO': 'SEU ESPAÇO',
+    'COMUNIDAD': 'COMUNIDADE',
+    'CUENTA': 'CONTA',
+    // ── Preferencias
     'Tu experiencia': 'Sua experiência',
     'Tamaño de texto': 'Tamanho do texto',
     'Aumentá o reducí el tamaño de toda la app': 'Aumente ou reduza o tamanho de todo o app',
@@ -13650,7 +13684,11 @@ var VELO_I18N = {
     'No verás su contenido en ninguna sección': 'Você não verá o conteúdo deles em nenhuma seção',
     'No bloqueaste a nadie': 'Você não bloqueou ninguém',
     '✓ Guardar y cerrar': '✓ Salvar e fechar',
-    // Botones comunes
+    'Idioma': 'Idioma',
+    'Español': 'Espanhol',
+    'Português': 'Português',
+    'Detectamos que sos de Portugal/Brasil. La app está principalmente en español, pero podés cambiar la interfaz.': 'Detectamos que você é de Portugal/Brasil. O app está principalmente em espanhol, mas você pode mudar a interface.',
+    // ── Botones comunes
     'Cerrar': 'Fechar',
     'Cancelar': 'Cancelar',
     'Guardar': 'Salvar',
@@ -13659,17 +13697,32 @@ var VELO_I18N = {
     'Ver todos mis contactos': 'Ver todos meus contatos',
     'Responder': 'Responder',
     'Reportar': 'Reportar',
-    // Al Mar
-    'Lanzá un mensaje': 'Lance uma mensagem',
+    'Aceptar': 'Aceitar',
+    'Rechazar': 'Recusar',
+    'Guardar entrada': 'Salvar entrada',
+    'Escribí libremente...': 'Escreva livremente...',
+    'Nueva entrada': 'Nova entrada',
+    'Título (opcional)…': 'Título (opcional)…',
+    'Estado de ánimo:': 'Estado de ânimo:',
+    'Del día': 'Do dia',
+    'Gratitud': 'Gratidão',
+    'Reflexión': 'Reflexão',
+    'Sueño': 'Sonho',
+    'Grabar audio': 'Gravar áudio',
+    'Adjuntar foto': 'Anexar foto',
+    'MIS ENTRADAS': 'MINHAS ENTRADAS',
+    'Buscar en mis entradas...': 'Buscar em minhas entradas...',
+    'Exportar': 'Exportar',
+    'Borrar todo': 'Apagar tudo',
+    // ── Al Mar
     'Mensajes al Mar': 'Mensagens ao Mar',
     'Lanzar mi mensaje': 'Lançar minha mensagem',
     'Del mar': 'Do mar',
     'Mis respuestas': 'Minhas respostas',
-    // Bottom nav
-    'INICIO': 'INÍCIO',
-    'CONTACTOS FAVORITOS': 'CONTATOS FAVORITOS',
-    'TU DIARIO ÍNTIMO': 'SEU DIÁRIO ÍNTIMO',
-    'PERFIL': 'PERFIL',
+    '¿Qué es esta sección?': 'O que é esta seção?',
+    'Solo tuyo, completamente privado': 'Só seu, completamente privado',
+    'Escribí, grabá audio o adjuntá una foto': 'Escreva, grave áudio ou anexe uma foto',
+    'Se sincroniza entre tus dispositivos': 'Sincroniza entre seus dispositivos',
   }
 };
 function veloI18n(key){
@@ -13693,7 +13746,7 @@ function veloI18n(key){
 function pSetVeloLang(lang){
   try{ safeLS('set','velo_lang', lang); }catch(e){}
   // Aplicar traducción inmediata al DOM
-  try{ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }catch(e){}
+  try{ if(typeof _veloScheduleI18n === 'function') _veloScheduleI18n(); }catch(e){}
   // Cerrar preferencias para que el usuario vea el efecto
   var ov = document.getElementById('prefsOv'); if(ov) ov.remove();
   if(lang === 'pt'){
@@ -13712,21 +13765,66 @@ function pSetVeloLang(lang){
     }
   }, 1500);
 }
-// Aplicar traducciones al DOM al bootear (para elementos con data-i18n o texto en el diccionario)
+// Aplicar traducciones al DOM — scan agresivo de nodos texto
 function _veloApplyI18n(){
   var lang = safeLS('get','velo_lang') || 'es';
   if(lang === 'es' || !VELO_I18N[lang]) return;
   var dict = VELO_I18N[lang];
-  // Traducir elementos con data-i18n
+  // Ordenar keys por longitud desc para evitar solapamiento (ej: "Al Mar" antes que "Mar")
+  var sortedKeys = Object.keys(dict).sort(function(a,b){ return b.length - a.length; });
+  // 1) Elementos con data-i18n
   document.querySelectorAll('[data-i18n]').forEach(function(el){
     var key = el.getAttribute('data-i18n');
     if(dict[key]) el.textContent = dict[key];
   });
-  // Traducir botones de menú por su texto (fallback)
-  document.querySelectorAll('.p-mobile-nav-item').forEach(function(btn){
-    var txt = btn.textContent.trim();
-    Object.keys(dict).forEach(function(k){ if(txt.indexOf(k) >= 0){ btn.innerHTML = btn.innerHTML.replace(k, dict[k]); } });
+  // 2) Scan agresivo de todos los text nodes en el body
+  try{
+    var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(node){
+        var p = node.parentElement;
+        if(!p) return NodeFilter.FILTER_REJECT;
+        var tag = p.tagName;
+        // Skip script, style, textarea, input, code
+        if(tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'CODE') return NodeFilter.FILTER_REJECT;
+        // Skip nodos ya traducidos
+        if(p.dataset && p.dataset.i18nDone === '1') return NodeFilter.FILTER_REJECT;
+        var v = String(node.nodeValue||'').trim();
+        if(v.length < 2) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var nodes = [];
+    var n;
+    while((n = walker.nextNode())) nodes.push(n);
+    nodes.forEach(function(node){
+      var original = node.nodeValue;
+      var translated = original;
+      var changed = false;
+      sortedKeys.forEach(function(k){
+        if(translated.indexOf(k) >= 0){
+          translated = translated.split(k).join(dict[k]);
+          changed = true;
+        }
+      });
+      if(changed){
+        node.nodeValue = translated;
+        if(node.parentElement){ node.parentElement.dataset.i18nDone = '1'; }
+      }
+    });
+  }catch(e){ console.warn('[i18n] walker error:', e); }
+  // 3) Placeholders de inputs / textareas
+  document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(function(el){
+    var ph = el.getAttribute('placeholder') || '';
+    var newPh = ph;
+    sortedKeys.forEach(function(k){ if(newPh.indexOf(k) >= 0) newPh = newPh.split(k).join(dict[k]); });
+    if(newPh !== ph) el.setAttribute('placeholder', newPh);
   });
+}
+// Re-aplicar i18n cada vez que el DOM cambia significativamente (page mount)
+function _veloScheduleI18n(){
+  setTimeout(function(){ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }, 100);
+  setTimeout(function(){ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }, 800);
+  setTimeout(function(){ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }, 2000);
 }
 
 // ── BACKUP / EXPORT — descargar todos mis datos como JSON ──────────
@@ -29811,7 +29909,7 @@ document.addEventListener('DOMContentLoaded', function(){
   _initSupabase();
   _initMsgActions();
   _botGuardStartListeners();
-  try{ setTimeout(function(){ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }, 200); }catch(e){}
+  try{ if(typeof _veloScheduleI18n === 'function') _veloScheduleI18n(); }catch(e){}
   setTimeout(_restoreSeekerSubscription, 2000);
   // Fix: when keyboard opens on iOS/Android, scroll the focused input into view
   // within its .p-sheet scroll container (avoids bounce/unreachable-field issue)
@@ -29835,7 +29933,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1284;
+    var _BUILT_V = 1285;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
