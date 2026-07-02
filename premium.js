@@ -20989,7 +20989,8 @@ async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
     helpPosted:0, helpOffered:0,
     dqAnswered:0, dqComments:0,
     momentosPosted:0,
-    prevWeekReg:0, prevAvgScore:0, thisAvgScore:0
+    prevWeekReg:0, prevAvgScore:0, thisAvgScore:0,
+    hasBuddy:false, buddyName:'', buddyDaysTogether:0, buddyDmsSent:0, buddyDmsReceived:0
   };
   if(sbClient && _myUidWk){
     try{
@@ -21032,6 +21033,24 @@ async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
       try{
         var _mo = await sbClient.from('momentos').select('id',{count:'exact',head:true}).eq('user_id',_myUidWk).gte('created_at', weekISO);
         if(!_mo.error) activity.momentosPosted = _mo.count || 0;
+      }catch(e){}
+      // Buddy — mi compañero/a de bienestar (si tengo)
+      try{
+        var _bdMe = await sbClient.from('profiles').select('buddy_id,buddy_name,buddy_started_at').eq('id',_myUidWk).maybeSingle();
+        if(_bdMe && _bdMe.data && _bdMe.data.buddy_id){
+          activity.hasBuddy = true;
+          activity.buddyName = (_bdMe.data.buddy_name||'').split(' ')[0] || 'tu compañero/a';
+          if(_bdMe.data.buddy_started_at){
+            activity.buddyDaysTogether = Math.max(0, Math.floor((refTs - new Date(_bdMe.data.buddy_started_at).getTime()) / 86400000));
+          }
+          var _bdId = _bdMe.data.buddy_id;
+          // DMs enviados por mí al buddy esta semana (filtrar sentinels internos)
+          var _dmS = await sbClient.from('direct_messages').select('id,text').eq('from_id',_myUidWk).eq('to_id',_bdId).gte('created_at', weekISO);
+          if(!_dmS.error && _dmS.data) activity.buddyDmsSent = _dmS.data.filter(function(m){ return m.text && m.text.indexOf('__velo_')!==0; }).length;
+          // DMs recibidos del buddy esta semana
+          var _dmR = await sbClient.from('direct_messages').select('id,text').eq('from_id',_bdId).eq('to_id',_myUidWk).gte('created_at', weekISO);
+          if(!_dmR.error && _dmR.data) activity.buddyDmsReceived = _dmR.data.filter(function(m){ return m.text && m.text.indexOf('__velo_')!==0; }).length;
+        }
       }catch(e){}
       // Comparación con semana anterior
       var _prevMoodsRaw = await sbLoadAllMoods(new Date(prevWeekStartTs).getFullYear(), new Date(prevWeekStartTs).getMonth()+1);
@@ -23820,6 +23839,15 @@ async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns
       if(activity.dqAnswered>0) lines.push('Respondió la Pregunta del Día '+activity.dqAnswered+' vez'+(activity.dqAnswered>1?'ces':''));
       if(activity.dqComments>0) lines.push('Dejó '+activity.dqComments+' comentario'+(activity.dqComments>1?'s':'')+' en respuestas de la comunidad');
       if(activity.momentosPosted>0) lines.push('Compartió '+activity.momentosPosted+' momento'+(activity.momentosPosted>1?'s':''));
+      // Buddy
+      if(activity.hasBuddy){
+        var bTotal = activity.buddyDmsSent + activity.buddyDmsReceived;
+        if(bTotal>0){
+          lines.push('Intercambió '+bTotal+' mensaje'+(bTotal>1?'s':'')+' con su compañero/a de bienestar '+activity.buddyName+' esta semana ('+activity.buddyDmsSent+' enviado'+(activity.buddyDmsSent!==1?'s':'')+', '+activity.buddyDmsReceived+' recibido'+(activity.buddyDmsReceived!==1?'s':'')+')');
+        } else if(activity.buddyDaysTogether >= 3){
+          lines.push('Tiene un/a compañero/a de bienestar ('+activity.buddyName+') hace '+activity.buddyDaysTogether+' día'+(activity.buddyDaysTogether>1?'s':'')+' pero esta semana no se escribieron');
+        }
+      }
       if(lines.length) activityLines = '\nActividad en la comunidad:\n' + lines.map(function(l){return '• '+l;}).join('\n') + '\n';
       // Comparación con semana anterior
       if(activity.prevAvgScore>0 && activity.thisAvgScore>0){
@@ -23970,6 +23998,15 @@ function pShowWeeklySummary(data){
         if(a.dqAnswered>0) chips.push({e:'💭',lbl:a.dqAnswered+' respuesta'+(a.dqAnswered>1?'s':'')+' a la Pregunta del Día', col:'#e9b949'});
         if(a.dqComments>0) chips.push({e:'✨',lbl:a.dqComments+' comentario'+(a.dqComments>1?'s':'')+' a la comunidad', col:'#e9b949'});
         if(a.momentosPosted>0) chips.push({e:'🌸',lbl:a.momentosPosted+' momento'+(a.momentosPosted>1?'s':'')+' compartido'+(a.momentosPosted>1?'s':''), col:'#f0a8c8'});
+        // Buddy — compañero/a de bienestar
+        if(a.hasBuddy){
+          var _bTot = (a.buddyDmsSent||0) + (a.buddyDmsReceived||0);
+          if(_bTot > 0){
+            chips.push({e:'🤝',lbl:_bTot+' mensaje'+(_bTot>1?'s':'')+' con '+(a.buddyName||'tu compañero/a')+' (día '+a.buddyDaysTogether+' de 30)', col:'#9b78dc'});
+          } else if(a.buddyDaysTogether >= 3){
+            chips.push({e:'🕊️',lbl:'Día '+a.buddyDaysTogether+' con '+(a.buddyName||'tu compañero/a')+' · sin mensajes esta semana', col:'#9b78dc'});
+          }
+        }
         if(!chips.length) return '';
         var body = '<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,158,56,.72);margin:14px 0 10px;text-align:center">🌿 EN LA COMUNIDAD</div>'
           + '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px">'
@@ -27620,7 +27657,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1256;
+    var _BUILT_V = 1257;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
