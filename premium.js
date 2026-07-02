@@ -2631,6 +2631,159 @@ async function pOpenMonthlyWrapped(){
     });
   }
 }
+// ── WRAPPED ANUAL — resumen del año completo ─────────────────────────
+async function pOpenAnnualWrapped(){
+  var ex = document.getElementById('wrappedOv'); if(ex) ex.remove();
+  var now = new Date();
+  // Si estamos en enero, resumimos el año PASADO. Si no, año actual.
+  var year = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  var mNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  // Cargar moods del año — usar sbLoadAllMoods por mes
+  _initSupabase();
+  var moodByMonth = {}; // {monthIdx: [entries]}
+  var allMoods = [];
+  for(var _mi=0; _mi<12; _mi++) moodByMonth[_mi] = [];
+  // Del LS
+  for(var _d=0; _d<366; _d++){
+    var _dt = new Date(year, 0, 1 + _d);
+    if(_dt.getFullYear() !== year) break;
+    var _dk = year+'-'+String(_dt.getMonth()+1).padStart(2,'0')+'-'+String(_dt.getDate()).padStart(2,'0');
+    var st = safeLS('get','velo_mood_'+_dk);
+    if(st){ try{ var ms=JSON.parse(st); if(ms && ms.emoji){ moodByMonth[_dt.getMonth()].push(ms); allMoods.push({...ms, monthIdx:_dt.getMonth(), dateKey:_dk}); } }catch(e){} }
+  }
+  // De Supabase — merge (LS gana si ya hay)
+  if(sbClient){
+    try{
+      for(var _mo=0; _mo<12; _mo++){
+        var sbM = await sbLoadAllMoods(year, _mo+1);
+        if(sbM) sbM.forEach(function(e){
+          if(!e.emoji || !e.date_key) return;
+          var already = moodByMonth[_mo].some(function(x){ return x.date_key === e.date_key; });
+          if(!already){ moodByMonth[_mo].push(e); allMoods.push({...e, monthIdx:_mo, dateKey:e.date_key}); }
+        });
+      }
+    }catch(e){}
+  }
+  var totalRegs = allMoods.length;
+  if(totalRegs === 0){
+    var mkOv = document.createElement('div');
+    mkOv.id = 'wrappedOv';
+    mkOv.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.92);display:flex;flex-direction:column';
+    mkOv.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;color:#fff"><span style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.60);font-family:Jost,sans-serif">🎊 WRAPPED ANUAL — '+year+'</span><button onclick="document.getElementById(\'wrappedOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.50);font-size:26px;cursor:pointer">×</button></div>'
+      + '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px"><div style="max-width:480px;background:linear-gradient(155deg,#1a4d2e,#0a1f14);border-radius:26px;padding:44px 24px;text-align:center"><div style="font-size:72px;margin-bottom:16px">🌱</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:28px;color:#fff;margin-bottom:12px">Todavía no registraste ánimos este año</div><div style="font-size:13.5px;color:rgba(200,240,215,.78);line-height:1.6;font-family:Jost,sans-serif;padding:0 12px">Cuando registres estados de ánimo durante el año, acá vas a ver un resumen completo de <strong>'+year+'</strong> 💚</div></div></div>';
+    document.body.appendChild(mkOv); return;
+  }
+  // Stats globales
+  var moodScore = {'😄':5,'😊':4.5,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🥺':2.5,'😞':2,'😔':2,'😰':1.8,'😤':2.2,'😢':1};
+  var moodLabel = { '😄':'genial','😊':'bien','😌':'en paz','💪':'con fuerza','🌟':'radiante','😐':'neutro','🥺':'sensible','😞':'bajo','😔':'triste','😰':'ansioso/a','😤':'frustrado/a','😢':'difícil' };
+  var counts = {};
+  allMoods.forEach(function(m){ counts[m.emoji] = (counts[m.emoji]||0)+1; });
+  var domEmoji = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; })[0] || '🌿';
+  var domLabel = moodLabel[domEmoji] || 'presente';
+  var avgScore = allMoods.reduce(function(s,e){ return s + (moodScore[e.emoji]||3); },0) / allMoods.length;
+  // Mejor y peor mes
+  var monthAvgs = [];
+  for(var _mm=0; _mm<12; _mm++){
+    var ml = moodByMonth[_mm];
+    if(ml.length){
+      var avg = ml.reduce(function(s,e){ return s + (moodScore[e.emoji]||3); },0) / ml.length;
+      monthAvgs.push({ m:_mm, avg:avg, count:ml.length });
+    }
+  }
+  var bestMonth = monthAvgs.slice().sort(function(a,b){ return b.avg-a.avg; })[0];
+  var worstMonth = monthAvgs.slice().sort(function(a,b){ return a.avg-b.avg; })[0];
+  // Top 3 emociones
+  var topEmotions = Object.keys(counts).map(function(e){ return {e:e, n:counts[e]}; }).sort(function(a,b){ return b.n-a.n; }).slice(0,3);
+  // Racha más larga del año
+  var maxStreak = 0, curStreak = 0, lastTs = null;
+  allMoods.slice().sort(function(a,b){ return a.dateKey.localeCompare(b.dateKey); }).forEach(function(m){
+    var ts = new Date(m.dateKey).getTime();
+    if(lastTs !== null && (ts - lastTs) === 86400000) curStreak++;
+    else curStreak = 1;
+    if(curStreak > maxStreak) maxStreak = curStreak;
+    lastTs = ts;
+  });
+  var uName = (safeLS('get','velo_user_name')||'').split(' ')[0] || 'vos';
+  var sparkles = '<div style="position:absolute;top:20px;left:24px;font-size:14px;opacity:.55">✧</div><div style="position:absolute;top:60px;right:32px;font-size:10px;opacity:.42">✦</div><div style="position:absolute;bottom:80px;left:36px;font-size:12px;opacity:.48">✧</div><div style="position:absolute;bottom:120px;right:24px;font-size:16px;opacity:.42">✦</div>';
+  // Slides
+  var slides = [];
+  // 1. PORTADA
+  slides.push({
+    bg:'linear-gradient(155deg,#1a4d2e 0%,#0f2818 45%,#0a1f14 100%)',
+    html: sparkles
+      + '<div style="font-size:11.5px;font-weight:800;letter-spacing:4px;color:rgba(220,180,80,.72);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:14px">🎊 TU AÑO EMOCIONAL</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:110px;color:#fff;line-height:.95;font-weight:600;letter-spacing:-2px;margin-bottom:8px;text-shadow:0 2px 24px rgba(220,180,80,.35)">'+year+'</div>'
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(220,180,80,.55);font-family:Jost,sans-serif;margin-bottom:36px">◆ ◆ ◆</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:34px;font-style:italic;color:rgba(255,255,255,.95);line-height:1.15;margin-bottom:8px">Un año en la vida de</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:38px;color:rgba(255,255,255,.98);line-height:1.15;margin-bottom:32px">'+_escHtml(uName)+'</div>'
+      + '<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(220,180,80,.14);border:1px solid rgba(220,180,80,.35);border-radius:100px;padding:8px 16px;font-size:12px;color:rgba(240,220,180,.90);font-family:Jost,sans-serif;font-weight:700;letter-spacing:.4px">Deslizá →</div>'
+  });
+  // 2. NÚMEROS GRANDES
+  slides.push({
+    bg:'linear-gradient(155deg,#0a2d1a,#0d3524 40%,#0a1f14)',
+    html: sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(220,180,80,.72);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:28px">TU AÑO EN NÚMEROS</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:340px;margin-bottom:22px">'
+        + '<div style="background:rgba(116,198,157,.15);border:1px solid rgba(116,198,157,.35);border-radius:16px;padding:20px 12px;text-align:center"><div style="font-size:44px;font-weight:800;color:rgba(220,255,235,.98);font-family:Jost,sans-serif;line-height:1">'+totalRegs+'</div><div style="font-size:10.5px;font-weight:700;color:rgba(180,240,215,.68);text-transform:uppercase;letter-spacing:1px;margin-top:6px">Registros</div></div>'
+        + '<div style="background:rgba(255,178,80,.15);border:1px solid rgba(255,178,80,.35);border-radius:16px;padding:20px 12px;text-align:center"><div style="font-size:44px;font-weight:800;color:rgba(255,232,180,.98);font-family:Jost,sans-serif;line-height:1">'+maxStreak+'</div><div style="font-size:10.5px;font-weight:700;color:rgba(255,220,160,.68);text-transform:uppercase;letter-spacing:1px;margin-top:6px">🔥 Racha máx</div></div>'
+        + '<div style="background:rgba(155,120,220,.15);border:1px solid rgba(155,120,220,.35);border-radius:16px;padding:20px 12px;text-align:center"><div style="font-size:44px;font-weight:800;color:rgba(230,215,255,.98);font-family:Jost,sans-serif;line-height:1">'+monthAvgs.length+'</div><div style="font-size:10.5px;font-weight:700;color:rgba(215,200,240,.68);text-transform:uppercase;letter-spacing:1px;margin-top:6px">Meses activos</div></div>'
+        + '<div style="background:rgba(100,180,240,.15);border:1px solid rgba(100,180,240,.35);border-radius:16px;padding:20px 12px;text-align:center"><div style="font-size:44px;font-weight:800;color:rgba(200,230,255,.98);font-family:Jost,sans-serif;line-height:1">'+avgScore.toFixed(1)+'</div><div style="font-size:10.5px;font-weight:700;color:rgba(180,220,250,.68);text-transform:uppercase;letter-spacing:1px;margin-top:6px">Ánimo prom.</div></div>'
+      + '</div>'
+  });
+  // 3. EMOCIÓN DOMINANTE
+  slides.push({
+    bg:'linear-gradient(155deg,#3d2810 0%,#2a1c0a 45%,#180f04 100%)',
+    html: sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(255,220,120,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:22px">TU EMOCIÓN DEL AÑO</div>'
+      + '<div style="font-size:140px;line-height:1;margin-bottom:20px;filter:drop-shadow(0 4px 30px rgba(255,200,80,.55))">'+domEmoji+'</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:42px;color:#fff;line-height:1.15;margin-bottom:10px">'+domLabel+'</div>'
+      + '<div style="font-size:14px;color:rgba(255,225,180,.72);font-family:Jost,sans-serif;margin-bottom:22px">apareció <strong style="color:rgba(255,232,180,.98);font-weight:800">'+counts[domEmoji]+' de '+totalRegs+' días</strong></div>'
+      + (topEmotions.length > 1 ? '<div style="width:100%;max-width:320px;text-align:left"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;color:rgba(255,220,120,.55);text-transform:uppercase;margin-bottom:12px;text-align:center">TU TOP 3</div>'+topEmotions.map(function(t,i){ var pct=Math.round((t.n/totalRegs)*100); var cols=['rgba(255,220,120,.95)','rgba(180,220,240,.85)','rgba(220,190,240,.80)']; return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:18px">'+t.e+' '+(moodLabel[t.e]||'')+'</span><span style="font-size:12px;font-weight:800;color:'+cols[i]+';font-family:Jost,sans-serif">'+pct+'%</span></div><div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+cols[i]+';border-radius:3px"></div></div></div>'; }).join('')+'</div>' : '')
+  });
+  // 4. MEJOR / PEOR MES
+  slides.push({
+    bg:'linear-gradient(155deg,#0e2436 0%,#0a1c2a 40%,#08101c 100%)',
+    html: sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(180,220,240,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:26px">MESES QUE MARCARON EL AÑO</div>'
+      + (bestMonth ? '<div style="width:100%;max-width:340px;background:linear-gradient(140deg,rgba(180,255,180,.14),rgba(100,180,140,.08));border:1.5px solid rgba(180,255,180,.30);border-radius:20px;padding:22px 18px;margin-bottom:14px"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;color:rgba(180,255,180,.68);text-transform:uppercase;margin-bottom:8px">MEJOR MES</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:36px;color:#fff;line-height:1.15">'+mNames[bestMonth.m]+'</div><div style="font-size:12.5px;color:rgba(200,255,215,.68);margin-top:6px">'+bestMonth.count+' registros · promedio '+bestMonth.avg.toFixed(1)+'</div></div>' : '')
+      + (worstMonth && worstMonth.m !== (bestMonth&&bestMonth.m) ? '<div style="width:100%;max-width:340px;background:linear-gradient(140deg,rgba(255,180,120,.10),rgba(180,90,60,.08));border:1.5px solid rgba(255,180,120,.30);border-radius:20px;padding:22px 18px"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;color:rgba(255,180,120,.68);text-transform:uppercase;margin-bottom:8px">MÁS DIFÍCIL</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:36px;color:#fff;line-height:1.15">'+mNames[worstMonth.m]+'</div><div style="font-size:12.5px;color:rgba(255,225,200,.65);margin-top:6px">'+worstMonth.count+' registros · promedio '+worstMonth.avg.toFixed(1)+'</div><div style="font-size:12px;color:rgba(255,220,180,.62);font-family:Jost,sans-serif;margin-top:10px;line-height:1.4">Y aun así atravesaste el año 💪</div></div>' : '')
+  });
+  // 5. CIERRE
+  slides.push({
+    bg:'linear-gradient(155deg,#2a1030 0%,#1e0824 45%,#100416 100%)',
+    html: sparkles
+      + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(220,180,240,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:26px">EN RESUMEN</div>'
+      + '<div style="font-size:82px;line-height:1;margin-bottom:20px;filter:drop-shadow(0 4px 20px rgba(220,180,80,.45))">🎊</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:36px;color:#fff;line-height:1.15;margin-bottom:18px;padding:0 12px">Un año caminando con vos</div>'
+      + '<div style="font-size:14.5px;color:rgba(220,215,240,.75);line-height:1.6;font-family:Jost,sans-serif;padding:0 12px;margin-bottom:30px">'+_escHtml(uName)+', gracias por confiarle a Velo tus emociones durante '+year+'. Cada registro fue un gesto de cuidarte 💚</div>'
+      + '<div style="width:100%;max-width:320px;padding:14px 18px;background:rgba(220,180,80,.10);border:1px solid rgba(220,180,80,.28);border-radius:16px"><div style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(240,220,180,.72);text-transform:uppercase;margin-bottom:6px">Próximo capítulo</div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:20px;color:#fff;line-height:1.35">Nos vemos en '+(year+1)+' 🌿</div></div>'
+  });
+  var slideHtml = slides.map(function(s){
+    return '<div class="wrapped-slide" style="min-width:calc(100% - 16px);scroll-snap-align:center;background:'+s.bg+';border-radius:26px;padding:44px 24px 60px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:560px;position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.55)">'
+      + s.html
+      + '<div style="position:absolute;bottom:18px;left:0;right:0;text-align:center;font-size:10px;color:rgba(255,255,255,.32);letter-spacing:2px;font-family:Jost,sans-serif;font-weight:600">✧ Velo · heyvelo.app ✧</div>'
+      + '</div>';
+  }).join('');
+  var dotsHtml = slides.map(function(_,i){ return '<span class="wrapped-dot" data-i="'+i+'" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25);transition:all .3s"></span>'; }).join('');
+  var ov = document.createElement('div');
+  ov.id = 'wrappedOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.92);display:flex;flex-direction:column';
+  ov.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;color:#fff;flex-shrink:0"><span style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.60);font-family:Jost,sans-serif">🎊 WRAPPED ANUAL — '+year+'</span><button onclick="document.getElementById(\'wrappedOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.50);font-size:26px;cursor:pointer;padding:4px 10px">×</button></div>'
+    + '<div id="wrappedSlider" style="flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:8px;padding:8px 16px;box-sizing:border-box">'+slideHtml+'</div>'
+    + '<div style="display:flex;justify-content:center;gap:5px;padding:12px 0;flex-shrink:0">'+dotsHtml+'</div>'
+    + '<div style="display:flex;gap:8px;padding:0 16px 16px;flex-shrink:0"><button onclick="document.getElementById(\'wrappedOv\').remove()" style="flex:1;padding:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;color:rgba(255,255,255,.72);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button></div>';
+  document.body.appendChild(ov);
+  var slider = document.getElementById('wrappedSlider');
+  if(slider){
+    var dots = ov.querySelectorAll('.wrapped-dot');
+    if(dots[0]){ dots[0].style.background='rgba(255,255,255,.85)'; dots[0].style.transform='scale(1.4)'; }
+    slider.addEventListener('scroll', function(){
+      var idx = Math.round(slider.scrollLeft / slider.clientWidth);
+      dots.forEach(function(d,i){ d.style.background = (i===idx?'rgba(255,255,255,.85)':'rgba(255,255,255,.25)'); d.style.transform = (i===idx?'scale(1.4)':'scale(1)'); });
+    });
+  }
+}
+
 // ── SHARE WRAPPED — genera un póster 1080×1920 (Instagram Stories) y lo comparte
 async function pShareWrapped(month, emoji, label, days, streak, gestures, avgScore, userName){
   pToast('✨','Preparando tu Wrapped…');
@@ -2843,6 +2996,20 @@ function pOpenPreferences(){
       + '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:rgba(180,220,195,.48);font-family:Jost,sans-serif;margin-top:4px"><span>A</span><span style="font-size:14px">A</span></div>'
       + '<div id="prefsFontPreview" style="margin-top:14px;padding:12px 14px;background:rgba(0,0,0,.20);border-radius:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(200,240,215,.92);line-height:1.5;font-size:'+(15*currentScale)+'px">"Cada emoción es válida. Nuestro trabajo es escuchar sin juzgar."</div>'
     + '</div>'
+    // Especialidades del Guardián (solo se muestran si el user es guardián)
+    + (safeLS('get','velo_is_guardian') === 'true' ? (function(){
+        var curr = safeLS('get','velo_guardian_specialties')||'';
+        var arr = curr.split(',').filter(Boolean);
+        var chips = _VELO_SPECIALTIES.map(function(s){
+          var active = arr.indexOf(s.k) >= 0;
+          return '<button onclick="pToggleGuardianSpecialty(\''+s.k+'\')" style="padding:6px 12px;background:'+(active?'rgba(116,198,157,.32)':'rgba(255,255,255,.05)')+';border:1.5px solid '+(active?'rgba(116,198,157,.62)':'rgba(255,255,255,.14)')+';border-radius:100px;color:'+(active?'rgba(180,255,220,.96)':'rgba(255,255,255,.65)')+';font-size:12px;font-weight:'+(active?'800':'700')+';cursor:pointer;font-family:Jost,sans-serif">'+s.e+' '+s.n+'</button>';
+        }).join('');
+        return '<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.20);border-radius:14px;padding:14px 15px;margin-bottom:12px">'
+          + '<div style="font-size:13px;font-weight:800;color:rgba(220,255,235,.94);font-family:Jost,sans-serif;margin-bottom:4px">🛡️ Tus especialidades como Guardián</div>'
+          + '<div style="font-size:11.5px;color:rgba(180,220,195,.60);font-family:Jost,sans-serif;margin-bottom:10px">Elegí hasta 4 temas en los que te sentís cómodo/a acompañando</div>'
+          + '<div style="display:flex;flex-wrap:wrap;gap:6px">'+chips+'</div>'
+        + '</div>';
+      })() : '')
     // Blocked users
     + '<div style="background:rgba(220,120,120,.06);border:1px solid rgba(220,120,120,.20);border-radius:14px;padding:14px 15px">'
       + '<div style="font-size:13px;font-weight:800;color:rgba(255,220,220,.94);font-family:Jost,sans-serif;margin-bottom:4px">Usuarios bloqueados</div>'
@@ -7514,6 +7681,38 @@ var _guardianProfiles = [
 
 var _curGuardian = null;
 var _guardianFilter = 'all';
+var _guardianSpecialtyFilter = '';
+var _VELO_SPECIALTIES = [
+  {k:'ansiedad',    n:'Ansiedad',    e:'🌫️'},
+  {k:'duelo',       n:'Duelo',       e:'🕊️'},
+  {k:'relaciones',  n:'Relaciones',  e:'💞'},
+  {k:'soledad',     n:'Soledad',     e:'🌑'},
+  {k:'autoestima',  n:'Autoestima',  e:'🌟'},
+  {k:'familia',     n:'Familia',     e:'🏡'},
+  {k:'trabajo',     n:'Trabajo',     e:'💼'},
+];
+function pFilterGuardianSpecialty(spec){
+  _guardianSpecialtyFilter = (spec === _guardianSpecialtyFilter) ? '' : spec;
+  pRenderGuardians();
+}
+function pToggleGuardianSpecialty(k){
+  var curr = safeLS('get','velo_guardian_specialties')||'';
+  var arr = curr.split(',').filter(Boolean);
+  var idx = arr.indexOf(k);
+  if(idx >= 0) arr.splice(idx, 1);
+  else if(arr.length < 4) arr.push(k);
+  else { pToast('⚠️','Máximo 4 especialidades'); return; }
+  var newVal = arr.join(',');
+  safeLS('set','velo_guardian_specialties', newVal);
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(sbClient && uid){
+    sbClient.from('profiles').update({ guardian_specialties: newVal || null }).eq('id', uid).then(function(){}).catch(function(){});
+  }
+  // Re-render preferences
+  var ex = document.getElementById('prefsOv');
+  if(ex){ ex.remove(); if(typeof pOpenPreferences === 'function') pOpenPreferences(); }
+}
 var _myGuardianStatus = safeLS('get','velo_guardian_status') || 'disponible'; // disponible/ocupado/incognito
 var _guardianHeartbeatTimer = null;
 var _lastGuardianListKey = ''; // dedup key to skip re-render when list didn't change
@@ -7974,12 +8173,14 @@ async function pRenderGuardians(){
           .filter(function(r){ return r.is_guardian !== false; });
         var gIds = filtered0.map(function(r){ return r.user_id; });
         var uMap = {}, mottoMap = {};
+        var specMap = {};
         try{
-          var uRes = await sbClient.from('profiles').select('id,username,motto').in('id', gIds);
+          var uRes = await sbClient.from('profiles').select('id,username,motto,guardian_specialties').in('id', gIds);
           if(uRes.data) uRes.data.forEach(function(p){
             if(p.id){
               if(p.username){ uMap[p.id] = p.username; _uFill(p.id, p.username); }
               if(p.motto) mottoMap[p.id] = p.motto;
+              if(p.guardian_specialties) specMap[p.id] = p.guardian_specialties;
             }
           });
         }catch(e){}
@@ -7989,6 +8190,7 @@ async function pRenderGuardians(){
             motto: _rIsAnon ? '' : (mottoMap[r.user_id] || ''),
             tags: Array.isArray(r.tags)?r.tags:[], status: r.status,
             convs: r.convs||0, rating: r.rating||5.0, reviews:[], recommend: r.convs||0,
+            specialties: _rIsAnon ? '' : (specMap[r.user_id] || ''),
             username: _rIsAnon ? '' : (uMap[r.user_id] || '') };
         });
         _liveGuardians = liveGuardians;
@@ -8004,8 +8206,18 @@ async function pRenderGuardians(){
     var _base = _st.startsWith('incognito_') ? _st.replace('incognito_','') : (_st === 'incognito' ? 'disponible' : _st);
     if(_guardianFilter === 'disponible') return _base === 'disponible';
     if(_guardianFilter === 'ocupado') return _base === 'ocupado';
+    if(_guardianSpecialtyFilter && !(g.specialties||'').toLowerCase().includes(_guardianSpecialtyFilter)) return false;
     return true;
   });
+  // Chips de especialidad
+  var specialties = _VELO_SPECIALTIES;
+  var specChipsHtml = '<div id="guardianSpecialtyChips" style="display:flex;gap:6px;overflow-x:auto;padding:0 0 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:6px">'
+    + '<button data-spec="" onclick="pFilterGuardianSpecialty(\'\')" style="flex-shrink:0;padding:6px 12px;background:'+(_guardianSpecialtyFilter===''?'rgba(116,198,157,.30)':'rgba(116,198,157,.08)')+';border:1px solid '+(_guardianSpecialtyFilter===''?'rgba(116,198,157,.55)':'rgba(116,198,157,.22)')+';border-radius:100px;color:var(--sage2);font-size:12px;font-weight:'+(_guardianSpecialtyFilter===''?'800':'700')+';cursor:pointer;font-family:Jost,sans-serif;letter-spacing:.2px">Todas</button>'
+    + specialties.map(function(s){
+        var active = _guardianSpecialtyFilter === s.k;
+        return '<button data-spec="'+s.k+'" onclick="pFilterGuardianSpecialty(\''+s.k+'\')" style="flex-shrink:0;padding:6px 12px;background:'+(active?'rgba(116,198,157,.30)':'rgba(116,198,157,.08)')+';border:1px solid '+(active?'rgba(116,198,157,.55)':'rgba(116,198,157,.22)')+';border-radius:100px;color:var(--sage2);font-size:12px;font-weight:'+(active?'800':'700')+';cursor:pointer;font-family:Jost,sans-serif;letter-spacing:.2px">'+s.e+' '+s.n+'</button>';
+      }).join('')
+    + '</div>';
   var selfBanner = '';
   if(safeLS('get','velo_is_guardian') === 'true'){
     selfBanner = '<div style="background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.45);border-radius:14px;padding:11px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">'
@@ -8020,10 +8232,10 @@ async function pRenderGuardians(){
       : _iAmGuardian
         ? '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">Sos el único guardián activo ahora</div><div class="p-empty-sub">Otros usuarios que buscan acompañamiento te verán aquí.</div></div>'
         : '<div class="p-empty"><span class="p-empty-emoji">🛡️</span><div class="p-empty-title">No hay guardianes conectados ahora</div><div class="p-empty-sub">¡Sé el primero! Activá tu estado como Disponible arriba para aparecer aquí.</div></div>';
-    list.innerHTML = selfBanner + emptyMsg;
+    list.innerHTML = specChipsHtml + selfBanner + emptyMsg;
     return;
   }
-  var _newHtml = selfBanner + filtered.map(function(g){
+  var _newHtml = specChipsHtml + selfBanner + filtered.map(function(g){
     var badge = _getBadge(g.convs||0);
     var gVerified = (badge.name==='Plata'||badge.name==='Oro'||badge.name==='Diamante');
     var isAnon = g.status === 'incognito' || (g.status && g.status.startsWith('incognito_'));
@@ -8038,7 +8250,14 @@ async function pRenderGuardians(){
     var gVavBadge = gVerified && !isAnon ? '<span style="position:absolute;bottom:-2px;left:-2px;width:14px;height:14px;border-radius:50%;background:#1d9bf0;border:2px solid var(--bg-main,#fff);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1">✓</span>' : '';
     var gUsername = (!isAnon && g.username) ? ('<div class="gc-username">@'+_escHtml(g.username)+'</div>') : '';
     var gMotto = !isAnon ? (g.motto || g.bio || '') : '';
-    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span>'+gVavBadge+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.2">'+(isAnon?'Guardián Anónimo':_escHtml(g.name||'—'))+'</span>'+gVbadge+'<span style="font-size:14px">'+badge.icon+'</span></div>'+gUsername+'<div style="font-size:14px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div>'+(gMotto?'<p style="font-size:14px;color:var(--ink4);line-height:1.5;margin:0;font-style:italic">"'+_escHtml(gMotto)+'"</p>':'')+'</div>'
+    // Especialidades del guardián — chips pequeños
+    var _gSpecs = !isAnon && g.specialties ? String(g.specialties).split(',').filter(Boolean) : [];
+    var specChipsRowInCard = _gSpecs.length ? '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">'+ _gSpecs.map(function(sk){
+      var meta = _VELO_SPECIALTIES.find(function(x){ return x.k===sk; });
+      if(!meta) return '';
+      return '<span style="font-size:10.5px;font-weight:700;background:rgba(116,198,157,.12);border:1px solid rgba(116,198,157,.30);border-radius:100px;padding:2px 8px;color:var(--sage3);font-family:Jost,sans-serif;letter-spacing:.2px">'+meta.e+' '+meta.n+'</span>';
+    }).join('') +'</div>' : '';
+    return '<div class="p-guardian-card" onclick="'+(isAnon?'pToast(\'👤\',\'Este guardián está en modo anónimo\')':'pOpenGuardian(\''+g.id+'\')')+'"><div style="display:flex;align-items:center;gap:14px"><div style="position:relative;font-size:38px;flex-shrink:0">'+(isAnon?'👤':g.av)+'<span style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;border-radius:50%;background:'+statusColor+';border:2px solid #fff;box-shadow:0 0 4px '+statusColor+'"></span>'+gVavBadge+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.2">'+(isAnon?'Guardián Anónimo':_escHtml(g.name||'—'))+'</span>'+gVbadge+'<span style="font-size:14px">'+badge.icon+'</span></div>'+gUsername+'<div style="font-size:14px;color:var(--sage3);font-weight:600;margin-bottom:4px">'+statusLabel+' · '+g.convs+' conversaciones</div>'+(gMotto?'<p style="font-size:14px;color:var(--ink4);line-height:1.5;margin:0;font-style:italic">"'+_escHtml(gMotto)+'"</p>':'')+specChipsRowInCard+'</div>'
       +'<div style="display:flex;gap:6px;align-items:center">'
       +(!isAnon ? '<button onclick="event.stopPropagation();'+(isFav?'pRemoveFav':'pAddFav')+'('+_jsAttr(rawId)+','+_jsAttr(g.name)+','+_jsAttr(g.av||'🌿')+');pRenderGuardians()" style="padding:6px 8px;background:'+(isFav?'rgba(255,200,50,.18)':'rgba(255,200,50,.07)')+';border:1px solid rgba(255,200,50,'+(isFav?'.4':'.2')+');border-radius:10px;font-size:15px;cursor:pointer" title="'+(isFav?'Quitar favorito':'Guardar favorito')+'">'+(isFav?'⭐':'☆')+'</button>' : '')
       +'<button class="p-btn p-btn--primary p-btn--sm" onclick="event.stopPropagation();'+(realSt==='ocupado'?'pToast(\'🟡\','+_jsAttr((isAnon?'Este guardián':''+g.name)+' está ocupado/a ahora')+')':'pOpenGuardian('+_jsAttr(g.id)+')')+'">'+(realSt==='ocupado'?'Ocupado/a':'Solicitar')+'</button>'
@@ -12377,6 +12596,71 @@ function pOpenDiaryEntry(ts){
   }
   if(delBtn)  delBtn.onclick = function(){ closeModal('diaryEntryOv'); pDeleteDiary(ts); };
   openModal('diaryEntryOv');
+}
+
+// ── EXPORT DIARY TO PDF (I) — abre en ventana nueva y dispara print ─
+function pExportDiaryToPdf(){
+  var entries = [];
+  try{ entries = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
+  if(!entries.length){ pToast('📭','Todavía no hay entradas para exportar'); return; }
+  pToast('📄','Preparando tu libro personal…');
+  var userName = (safeLS('get','velo_user_name')||'').split(' ')[0] || 'Vos';
+  var totalEntries = entries.length;
+  // Ordenar de más viejas a más nuevas para lectura tipo diario
+  var sorted = entries.slice().sort(function(a,b){ return Number(a.ts) - Number(b.ts); });
+  var firstDate = new Date(Number(sorted[0].ts)).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
+  var lastDate = new Date(Number(sorted[sorted.length-1].ts)).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
+  var htmlEntries = sorted.map(function(e){
+    var dateFmt = new Date(Number(e.ts)).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    var emoji = e.emoji || '';
+    var title = e.title || '';
+    var text = (e.text||'').split(/\n\n+/).map(function(p){
+      return '<p>'+p.split('\n').map(_escHtml).join('<br>')+'</p>';
+    }).join('');
+    return '<article class="entry">'
+      + '<header><span class="date">'+dateFmt+'</span>'+(emoji?'<span class="emoji">'+emoji+'</span>':'')+'</header>'
+      + (title?'<h2>'+_escHtml(title)+'</h2>':'')
+      + '<div class="body">'+text+'</div>'
+      + '</article>';
+  }).join('');
+  var html = '<!doctype html><html lang="es"><head><meta charset="utf-8">'
+    + '<title>Diario Íntimo — '+_escHtml(userName)+'</title>'
+    + '<style>'
+    + '@page { size: A4; margin: 22mm 20mm; }'
+    + 'body { font-family: "Cormorant Garamond","Times New Roman",serif; color: #2a1e0a; margin:0; padding:20px; line-height:1.55; background: #fdfaf0; }'
+    + '.cover { text-align:center; padding: 80px 30px 60px; page-break-after: always; }'
+    + '.cover .kicker { font-family: Jost,sans-serif; font-size: 12px; font-weight:800; letter-spacing: 6px; text-transform: uppercase; color: #8b6a20; margin-bottom: 22px; }'
+    + '.cover .title { font-size: 72px; font-style: italic; color:#3d2810; letter-spacing: -1px; margin: 0 0 8px; }'
+    + '.cover .name { font-size: 42px; font-style: italic; color: #5c4020; margin: 0 0 40px; }'
+    + '.cover .meta { font-family: Jost,sans-serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #8b6a20; margin-bottom: 10px; }'
+    + '.cover .range { font-size: 20px; color: #6c4d20; font-style: italic; }'
+    + '.entry { page-break-inside: avoid; margin-bottom: 48px; padding-bottom: 28px; border-bottom: 1px dashed rgba(140,100,20,.30); }'
+    + '.entry header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(140,100,20,.20); }'
+    + '.entry .date { font-family: Jost,sans-serif; font-size: 11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color: #8b6a20; }'
+    + '.entry .emoji { font-size: 26px; }'
+    + '.entry h2 { font-size: 26px; font-style: italic; color:#3d2810; margin: 4px 0 12px; }'
+    + '.entry .body { font-size: 16px; color: #2c1e0a; }'
+    + '.entry .body p { margin: 0 0 12px; }'
+    + '@media print { body { background: white; } .cover { padding-top: 60px; } }'
+    + '.footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(140,100,20,.20); font-family: Jost,sans-serif; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: rgba(140,100,20,.55); }'
+    + '</style></head><body>'
+    + '<div class="cover">'
+      + '<div class="kicker">✧ Diario Íntimo ✧</div>'
+      + '<div class="title">Mi Diario</div>'
+      + '<div class="name">de '+_escHtml(userName)+'</div>'
+      + '<div class="meta">'+totalEntries+' Entradas</div>'
+      + '<div class="range">'+_escHtml(firstDate)+' → '+_escHtml(lastDate)+'</div>'
+    + '</div>'
+    + htmlEntries
+    + '<div class="footer">✧ Velo — heyvelo.app · '+new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})+' ✧</div>'
+    + '</body></html>';
+  try{
+    var w = window.open('', '_blank');
+    if(!w){ pToast('⚠️','Habilitá popups para exportar'); return; }
+    w.document.write(html);
+    w.document.close();
+    setTimeout(function(){ try{ w.focus(); w.print(); }catch(e){} }, 600);
+  }catch(e){ pToast('⚠️','No se pudo abrir la vista de exportación'); }
 }
 
 async function pDeleteDiary(ts){
@@ -17142,15 +17426,26 @@ async function pQuickProfile(name, av, bio, guardianId, userId){
     ? '<div style="background:var(--sage7);border-radius:12px;padding:12px;margin-bottom:12px;font-size:15px;color:var(--ink3);line-height:1.9;text-align:left">'+statusLines+'</div>'
     : '';
 
+  // Días en Velo desde created_at
+  var _daysInVelo = 0;
+  if(prof && prof.created_at){
+    try{ _daysInVelo = Math.max(1, Math.floor((Date.now() - new Date(prof.created_at).getTime()) / 86400000)); }catch(e){}
+  }
+  // Gesto preferido — inferir del ratio dominante
+  var _totalActs = helped + received + (_qpBtPosts||[]).length;
+  var _gestoPref = '', _gestoIcon = '🌿';
+  if(_totalActs >= 5){
+    if(helped >= received && helped >= (_qpBtPosts||[]).length){ _gestoPref = 'acompañar'; _gestoIcon = '🤝'; }
+    else if((_qpBtPosts||[]).length >= received){ _gestoPref = 'compartir historias'; _gestoIcon = '📖'; }
+    else { _gestoPref = 'recibir apoyo'; _gestoIcon = '💚'; }
+  }
   var counters = (!isAnon && prof)
-    ? '<div style="display:flex;gap:8px;margin-bottom:12px">'
-      +'<div style="flex:1;background:rgba(116,198,157,.08);border-radius:10px;padding:10px;text-align:center">'
-      +'<div style="font-size:20px;font-weight:700;color:var(--sage2)">'+helped+'</div>'
-      +'<div style="font-size:12px;color:var(--ink4);margin-top:2px">personas acompañadas</div></div>'
-      +'<div style="flex:1;background:rgba(116,198,157,.08);border-radius:10px;padding:10px;text-align:center">'
-      +'<div style="font-size:20px;font-weight:700;color:var(--sage2)">'+received+'</div>'
-      +'<div style="font-size:12px;color:var(--ink4);margin-top:2px">veces que lo/la apoyaron</div></div>'
+    ? '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">'
+      +(_daysInVelo>0 ? '<div style="background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.22);border-radius:12px;padding:10px 6px;text-align:center"><div style="font-size:20px;font-weight:800;color:rgba(200,158,56,.98);font-family:Jost,sans-serif;line-height:1">'+_daysInVelo+'</div><div style="font-size:10.5px;color:var(--ink4);margin-top:3px;letter-spacing:.3px">día'+(_daysInVelo===1?'':'s')+' en Velo</div></div>' : '')
+      +'<div style="background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.22);border-radius:12px;padding:10px 6px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--sage2);font-family:Jost,sans-serif;line-height:1">'+helped+'</div><div style="font-size:10.5px;color:var(--ink4);margin-top:3px;letter-spacing:.3px">🤝 acompañó</div></div>'
+      +'<div style="background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.22);border-radius:12px;padding:10px 6px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--sage2);font-family:Jost,sans-serif;line-height:1">'+received+'</div><div style="font-size:10.5px;color:var(--ink4);margin-top:3px;letter-spacing:.3px">💚 fue apoyado</div></div>'
       +'</div>'
+      + (_gestoPref ? '<div style="background:rgba(155,120,220,.06);border:1px solid rgba(155,120,220,.20);border-left:3px solid rgba(155,120,220,.70);border-radius:0 10px 10px 0;padding:8px 12px;margin-bottom:12px;font-size:12.5px;color:var(--ink3);font-family:Jost,sans-serif;letter-spacing:.2px">'+_gestoIcon+' <strong>Gesto preferido:</strong> '+_gestoPref+'</div>' : '')
     : '';
   var _qpMyId = _myUserId();
   var revHtml = reviews.length
@@ -28047,7 +28342,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1264;
+    var _BUILT_V = 1265;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
