@@ -6439,7 +6439,8 @@ body:not(.r-dark) .r-hs-icon { color: rgba(27, 94, 58, 0.75) !important; filter:
     justify-content: center !important;
     margin-bottom: 6px !important;
   }
-  #homeTimeIcon .r-time-icon svg { width: 68px !important; height: 68px !important; }
+  /* v1302: excluir la luna SVG — tiene su propio tamaño grande via .weather-hero-moon */
+  #homeTimeIcon .r-time-icon svg:not(.velo-moon-svg) { width: 68px !important; height: 68px !important; }
   #homeGreetBlock { text-align: center !important; }
   .r-hero-v2 h1.p-title {
     text-align: center !important;
@@ -14798,33 +14799,37 @@ body.r-dark .diary-toolbar-btn--danger{
   color:#ffc8c8;
 }
 
-/* v1301 — Stylized SVG moon: bigger, realistic mare + craters, beautiful glow */
+/* v1302 — Realistic hero moon: bitmap-emoji size (~280px), mare + craters,
+   halo pulse + slow float. Beats iOS's photorealistic-yellow emoji. */
 .weather-hero-moon {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 200px !important;
-  height: 200px !important;
-  animation: veloMoonFloat 16s ease-in-out infinite !important;
-  filter: drop-shadow(0 14px 34px rgba(180,150,90,.35))
-          drop-shadow(0 0 56px rgba(255,235,180,.28)) !important;
+  width: 288px !important;
+  height: 288px !important;
+  animation: veloMoonFloat 18s ease-in-out infinite !important;
+  filter: drop-shadow(0 18px 46px rgba(180,150,90,.42))
+          drop-shadow(0 0 72px rgba(255,235,180,.32)) !important;
   will-change: transform;
 }
-.weather-hero-moon .velo-moon-svg { width: 100%; height: 100%; display:block; }
+.weather-hero-moon .velo-moon-svg { width: 100% !important; height: 100% !important; display:block; }
 .weather-hero-moon .velo-moon-halo {
   transform-origin: center;
   animation: veloMoonHaloPulse 6.5s ease-in-out infinite;
 }
 @keyframes veloMoonFloat {
-  0%, 100% { transform: translate3d(0,0,0) rotate(-0.4deg); }
-  50%      { transform: translate3d(0,-10px,0) rotate(0.4deg); }
+  0%, 100% { transform: translate3d(0,0,0) rotate(-0.5deg); }
+  50%      { transform: translate3d(0,-14px,0) rotate(0.5deg); }
 }
 @keyframes veloMoonHaloPulse {
-  0%, 100% { opacity: .82; transform: scale(1); }
-  50%      { opacity: 1;   transform: scale(1.08); }
+  0%, 100% { opacity: .78; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.10); }
 }
-/* Mobile: un poco más chica */
+/* Mobile smaller screens */
 @media (max-width: 480px) {
-  .weather-hero-moon { width: 172px !important; height: 172px !important; }
+  .weather-hero-moon { width: 240px !important; height: 240px !important; }
+}
+@media (max-width: 380px) {
+  .weather-hero-moon { width: 200px !important; height: 200px !important; }
 }
 .weather-hero-moon .velo-moon-svg { width: 100%; height: 100%; }

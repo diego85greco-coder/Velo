@@ -2318,16 +2318,18 @@ async function _renderCommunityPulseBanner(){
     // Re-check post-await: si otra invocación ya insertó, no dupliques
     if(document.getElementById('communityPulseLine')){ _pulseLineBuilding = false; return; }
     var isLight = !document.body.classList.contains('r-dark');
-    var col = isLight ? 'rgba(140,110,20,.72)' : 'rgba(220,180,80,.75)';
-    var sepCol = isLight ? 'rgba(140,110,20,.35)' : 'rgba(220,180,80,.35)';
-    var labelCol = isLight ? 'rgba(140,110,20,.55)' : 'rgba(220,180,80,.55)';
+    // Alto contraste en dark mode: gold saturado casi opaco
+    var col      = isLight ? 'rgba(140,110,20,.88)'   : 'rgba(255,220,120,.98)';
+    var sepCol   = isLight ? 'rgba(140,110,20,.50)'   : 'rgba(255,220,120,.60)';
+    var labelCol = isLight ? 'rgba(120,90,10,.78)'    : 'rgba(255,230,150,.82)';
     var line = document.createElement('div');
     line.id = 'communityPulseLine';
     var parts = [];
     parts.push('💚 '+m+' ánimo'+(m===1?'':'s'));
     if(b>0) parts.push('📖 '+b);
     if(w>0) parts.push('🌊 '+w);
-    line.style.cssText = 'text-align:center;font-family:Jost,sans-serif;font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:'+col+';margin-top:8px;opacity:0;transition:opacity .5s';
+    var shadow = isLight ? '0 1px 2px rgba(255,255,255,.55)' : '0 1px 8px rgba(0,0,0,.55), 0 0 2px rgba(0,0,0,.7)';
+    line.style.cssText = 'text-align:center;font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:'+col+';margin-top:8px;opacity:0;transition:opacity .5s;text-shadow:'+shadow;
     line.innerHTML = '<span style="color:'+labelCol+';font-weight:600">Hoy en Velo:</span> ' + parts.join(' <span style="color:'+sepCol+';font-weight:400">·</span> ');
     block.appendChild(line);
     requestAnimationFrame(function(){ line.style.opacity = '1'; });
@@ -30733,7 +30735,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1301;
+    var _BUILT_V = 1302;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
