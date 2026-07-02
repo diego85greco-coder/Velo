@@ -11125,6 +11125,84 @@ function pFilterBottleFeed(emoji, btn){
   _bottleFilter = (emoji===_bottleFilter) ? '' : emoji; // toggle
   pRenderBottle(); // re-render aplica el estilo activo con colores adaptados
 }
+// Modal para ver todas las respuestas recibidas en una botella mía
+async function pViewMyBottleReplies(bottleId){
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid || !sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var ex = document.getElementById('bottleRepliesOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'bottleRepliesOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.82);display:flex;align-items:flex-end;justify-content:center;padding:0';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div style="background:linear-gradient(155deg,rgba(10,28,48,.98),rgba(6,18,32,.98));border-radius:28px 28px 0 0;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;padding:14px 18px max(20px,env(safe-area-inset-bottom));border-top:2px solid rgba(65,155,222,.42)">'
+    + '<div style="display:flex;justify-content:center;padding:0 0 12px"><div style="width:40px;height:4px;background:rgba(140,205,255,.32);border-radius:2px"></div></div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+      + '<div><div style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(140,205,255,.72);font-family:Jost,sans-serif">🌊 RESPUESTAS AL MAR</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(230,245,255,.98);margin-top:2px">Palabras para vos</div></div>'
+      + '<button onclick="document.getElementById(\'bottleRepliesOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.50);font-size:22px;cursor:pointer;padding:4px 10px">✕</button>'
+    + '</div>'
+    + '<div id="bottleRepliesList" style="min-height:120px"><p style="text-align:center;color:rgba(180,220,240,.55);font-family:Jost,sans-serif;padding:24px 0">Cargando respuestas…</p></div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  try{
+    // Buscar broadcasts con el marker [bid:XXX] de esta botella
+    var res = await sbClient.from('broadcasts')
+      .select('id,body,sender,sent_at,created_at,read_at')
+      .eq('target', 'user:'+uid)
+      .ilike('body', '%[bid:'+bottleId+']%')
+      .order('created_at', {ascending: false})
+      .limit(100);
+    var listEl = document.getElementById('bottleRepliesList');
+    if(!listEl) return;
+    if(res.error || !res.data || !res.data.length){
+      listEl.innerHTML = '<div style="text-align:center;padding:36px 20px"><div style="font-size:42px;margin-bottom:10px">🌿</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:rgba(230,245,255,.85);margin-bottom:6px">Todavía sin respuestas</div><div style="font-size:12.5px;color:rgba(180,220,240,.55);font-family:Jost,sans-serif;line-height:1.5">Las respuestas aparecen acá cuando alguien te escribe.<br>Las viejas respuestas quedan en tu buzón 💌</div></div>';
+      return;
+    }
+    listEl.innerHTML = res.data.map(function(r){
+      // Extraer texto de respuesta del body: entre '💬 Respuesta:\n"..."'
+      var replyText = '';
+      var m = String(r.body||'').match(/💬 Respuesta:\s*\n?"([^"]+)"/);
+      if(m) replyText = m[1];
+      else replyText = String(r.body||'').replace(/\[bid:[^\]]+\]/,'').trim();
+      // Extraer sender info
+      var senderName = 'Anónimo', senderAv = '🌊';
+      try{
+        if(r.sender && r.sender.startsWith('{')){
+          var s = JSON.parse(r.sender);
+          senderName = s.n || 'Anónimo';
+          senderAv = s.a || '🌊';
+        }
+      }catch(e){}
+      var ts = r.sent_at || r.created_at;
+      var relTime = '';
+      if(ts){
+        var diff = Date.now() - new Date(ts).getTime();
+        var m2 = Math.floor(diff/60000);
+        if(m2 < 60) relTime = 'hace '+m2+' min';
+        else if(m2 < 1440) relTime = 'hace '+Math.floor(m2/60)+'h';
+        else relTime = 'hace '+Math.floor(m2/1440)+'d';
+      }
+      var avHtml = senderAv.startsWith('http') || senderAv.startsWith('data:')
+        ? '<img src="'+_escHtml(senderAv)+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid rgba(65,155,222,.45)">'
+        : '<div style="width:34px;height:34px;border-radius:50%;background:rgba(65,155,222,.18);border:1.5px solid rgba(65,155,222,.45);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+_escHtml(senderAv)+'</div>';
+      return '<div style="background:rgba(65,155,222,.10);border:1px solid rgba(65,155,222,.24);border-left:3px solid rgba(140,205,255,.65);border-radius:14px;padding:12px 14px;margin-bottom:10px">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+          + avHtml
+          + '<div style="flex:1;min-width:0">'
+            + '<div style="font-size:13px;font-weight:800;color:rgba(220,240,255,.94);font-family:Jost,sans-serif">'+_escHtml(senderName)+'</div>'
+            + '<div style="font-size:11px;color:rgba(180,220,240,.55);font-family:Jost,sans-serif">'+relTime+'</div>'
+          + '</div>'
+        + '</div>'
+        + '<p style="font-size:14px;color:rgba(220,240,255,.90);line-height:1.55;margin:0;font-family:\'Cormorant Garamond\',serif;font-style:italic">"'+_escHtml(replyText)+'"</p>'
+      + '</div>';
+    }).join('');
+  }catch(e){
+    var lel = document.getElementById('bottleRepliesList');
+    if(lel) lel.innerHTML = '<p style="text-align:center;color:rgba(255,180,180,.85);font-family:Jost,sans-serif;padding:24px 0">Error cargando las respuestas</p>';
+  }
+}
+
 async function pReactBottle(bottleId, reaction){
   _initSupabase();
   var uid = safeLS('get','velo_user_id') || '';
@@ -11274,8 +11352,13 @@ async function pRenderBottle(){
     var _delBtnColor=_isLightBottle?'rgba(180,20,20,.85)':'rgba(255,140,140,.90)';
     var _replyTextColor=_isLightBottle?'rgba(12,58,138,.90)':'rgba(160,215,255,.96)';
     if(isOwn){
-      actions = '<div style="display:flex;gap:7px;align-items:center">'
+      var _myReplyCount = repliesByBottle[b.id] || 0;
+      var _seeReplyBtn = _myReplyCount > 0
+        ? '<button style="padding:5px 12px;background:rgba(65,155,222,.20);border:1.5px solid rgba(65,155,222,.55);border-radius:100px;color:'+_replyTextColor+';font-size:13px;font-weight:800;cursor:pointer;font-family:\'Jost\',sans-serif;box-shadow:0 2px 10px rgba(65,155,222,.20)" onclick="pViewMyBottleReplies(\''+b.id+'\')">💬 Ver '+_myReplyCount+' respuesta'+(_myReplyCount===1?'':'s')+'</button>'
+        : '';
+      actions = '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end">'
         +'<span style="font-size:13px;color:'+_ownMsgColor+';font-style:italic;font-family:\'Jost\',sans-serif">Tu mensaje 🌊</span>'
+        +_seeReplyBtn
         +'<button data-del-btn="1" style="padding:4px 10px;background:rgba(220,50,50,.14);border:1.5px solid rgba(220,50,50,.32);border-radius:100px;color:'+_delBtnColor+';font-size:13px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif" onclick="pDeleteBottle(\''+b.id+'\')">🗑️</button>'
         +'</div>';
     } else {
@@ -11493,7 +11576,8 @@ function pSendBottleReply(){
     sbClient.from('broadcasts').insert({
       target: 'user:'+_curBottleUserId,
       subject: '¡Tu mensaje en el mar recibió una respuesta!',
-      body: (_curBottleReplyText ? '🌊 Tu mensaje:\n"'+_curBottleReplyText+'"\n\n' : '')+'💬 Respuesta:\n"'+replyText+'"',
+      // Marker [bid:XXX] al final del body → sirve para agrupar respuestas por botella
+      body: (_curBottleReplyText ? '🌊 Tu mensaje:\n"'+_curBottleReplyText+'"\n\n' : '')+'💬 Respuesta:\n"'+replyText+'"\n\n[bid:'+_curBottleReplyId+']',
       icon: '🌊',
       sender: _rid ? JSON.stringify({ n:_rName, i:_rid, a:_rAv, u:safeLS('get','velo_username')||'' }) : 'Velo — Al Mar',
       sent_at: new Date().toISOString()
@@ -27362,7 +27446,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1251;
+    var _BUILT_V = 1252;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1251">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1251">
+  <link rel="stylesheet" href="premium.css?v=20260626-1252">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1252">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -2158,7 +2158,17 @@
           <div class="p-sheet p-sheet-dark">
             <div class="p-sheet-handle" style="background:rgba(200,165,100,.3)"></div>
             <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:#fff;margin-bottom:6px">Tu mensaje al mundo</div>
-            <p style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:16px">Por defecto anónimo. Podés publicar con tu perfil visible.</p>
+            <p style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:14px">Por defecto anónimo. Podés publicar con tu perfil visible.</p>
+            <!-- Guidelines antes de lanzar -->
+            <div style="background:rgba(65,155,222,.08);border:1px solid rgba(65,155,222,.22);border-radius:14px;padding:11px 13px;margin-bottom:14px;font-family:Jost,sans-serif">
+              <div style="font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(140,205,255,.72);margin-bottom:8px">💡 Antes de lanzar</div>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:12.5px;line-height:1.5;color:rgba(220,240,255,.82)">
+                <div style="display:flex;gap:8px"><span style="flex-shrink:0">✅</span><span>Compartí lo que necesitás soltar: pena, alegría, duda, pedido de apoyo.</span></div>
+                <div style="display:flex;gap:8px"><span style="flex-shrink:0">🕊️</span><span>Respeto siempre — nada de insultos, agresión ni contenido sexual.</span></div>
+                <div style="display:flex;gap:8px"><span style="flex-shrink:0">🔒</span><span>No compartas datos personales (teléfono, dirección, contraseñas).</span></div>
+                <div style="display:flex;gap:8px"><span style="flex-shrink:0;color:rgba(255,180,120,.90)">⚠️</span><span style="color:rgba(255,220,180,.85)"><strong>Si es una urgencia,</strong> mejor andá a <strong>Sala de Ayuda</strong> o a tus <strong>Guardianes</strong>.</span></div>
+              </div>
+            </div>
             <div id="bottleEmojiSection" style="margin-bottom:12px">
               <div style="font-size:10px;font-weight:700;color:rgba(200,165,100,.7);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px">Elegí un emoji para tu mensaje <span style="color:rgba(255,100,100,.8)">*</span></div>
               <div id="bottleMoodRow" style="display:flex;gap:7px;flex-wrap:wrap"></div>
@@ -4338,8 +4348,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1251"></script>
-<script src="premium-redesign.js?v=20260626-1251"></script>
+<script src="premium.js?v=20260626-1252"></script>
+<script src="premium-redesign.js?v=20260626-1252"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
