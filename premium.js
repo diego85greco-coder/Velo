@@ -12937,33 +12937,27 @@ async function pSaveDiary(){
   newEntry = await _attachImageToEntry(newEntry);
   // Enviar a Supabase PRIMERO (con audio/imagen completos)
   sbSaveDiaryEntry(text, dateLabel, ts, title, newEntry.audio, newEntry.image);
-  // Para localStorage: si audio o imagen son muy grandes (>2MB combinados), guardar
-  // versión ligera SIN los blobs — Supabase los tiene, se cargarán al abrir en cualquier device
-  var lsEntry = Object.assign({}, newEntry);
-  var totalSize = (lsEntry.audio ? lsEntry.audio.length : 0) + (lsEntry.image ? lsEntry.image.length : 0);
-  var LS_BLOB_LIMIT = 2 * 1024 * 1024; // 2MB combined en LS
-  if(totalSize > LS_BLOB_LIMIT){
-    // Marcar que hay blobs en Supabase pero no en LS
-    if(lsEntry.audio){ lsEntry.audioInSupabase = true; delete lsEntry.audio; }
-    if(lsEntry.image){ lsEntry.imageInSupabase = true; delete lsEntry.image; }
-    console.log('[diary] Entry con blobs >2MB — LS guarda solo metadatos, blobs quedan en Supabase');
-  }
-  entries.unshift(lsEntry);
+  // En memoria: la entry queda COMPLETA (con audio/imagen)
+  entries.unshift(newEntry);
+  _diaryEntries = entries.slice();  // actualizar módulo state para la lista
+  // Para localStorage: comprimir si el total serializado supera cap iOS
+  var LS_BLOB_LIMIT = 2 * 1024 * 1024;
   var lsOk = false;
   try{
     var serialized = JSON.stringify(entries.slice(0,200));
+    if(serialized.length > 4 * 1024 * 1024){ throw new Error('too big for LS'); }
     safeLS('set','velo_diary', serialized);
     lsOk = true;
   }catch(e){
-    console.warn('[diary] LS quota exceeded, saving compact version:', e);
-    // Fallback: guardar SIN blobs en LS
+    console.warn('[diary] LS quota — guardando versión compacta sin blobs:', e && e.message);
+    // Fallback: guardar SIN blobs en LS (Supabase los tiene)
     var compactEntries = entries.slice(0,200).map(function(en){
       var c = Object.assign({}, en);
       if(c.audio){ c.audioInSupabase = true; delete c.audio; }
       if(c.image){ c.imageInSupabase = true; delete c.image; }
       return c;
     });
-    try{ safeLS('set','velo_diary', JSON.stringify(compactEntries)); lsOk = true; }catch(e2){}
+    try{ safeLS('set','velo_diary', JSON.stringify(compactEntries)); lsOk = true; }catch(e2){ console.error('[diary] LS falló totalmente:', e2); }
   }
   ta.value = '';
   if(titleEl) titleEl.value = '';
@@ -13035,11 +13029,26 @@ async function _loadDiaryEntries(){
   // Render from localStorage immediately — instant, no Supabase wait
   _diaryEntries = local.slice();
   _renderDiaryEntryList(el, _diaryEntries);
-  // Supabase for cross-device sync — only add entries not already in local
+  // Supabase for cross-device sync — merge blobs faltantes + entries nuevas
   var sbEntries = await sbLoadDiaryEntries();
   if(!document.getElementById('diaryEntries')) return;
   var entries = local.slice();
   if(sbEntries && sbEntries.length){
+    var sbMap = {};
+    sbEntries.forEach(function(se){ sbMap[String(se.ts)] = se; });
+    // Merge: si la LS entry tiene flag inSupabase pero no el blob, traerlo de SB
+    entries = entries.map(function(le){
+      var se = sbMap[String(le.ts)];
+      if(!se) return le;
+      var merged = Object.assign({}, le);
+      if(le.audioInSupabase && !le.audio && se.audio){ merged.audio = se.audio; delete merged.audioInSupabase; }
+      if(le.imageInSupabase && !le.image && se.image){ merged.image = se.image; delete merged.imageInSupabase; }
+      // También traer si LS no tiene el campo audio/image
+      if(!le.audio && se.audio) merged.audio = se.audio;
+      if(!le.image && se.image) merged.image = se.image;
+      return merged;
+    });
+    // Agregar entries de SB que no están en LS
     sbEntries.forEach(function(se){
       var k = String(se.ts);
       if(!localMap[k]){
@@ -29713,7 +29722,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1280;
+    var _BUILT_V = 1281;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
