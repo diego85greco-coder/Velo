@@ -7924,7 +7924,13 @@ function pShowGuardianSetupModal(){
   ov.id = 'guardianSetupOv';
   var savedBio  = safeLS('get','velo_guardian_bio')  || '';
   var savedTags = safeLS('get','velo_guardian_tags') || '';
-  ov.innerHTML = '<div class="p-sheet">'
+  var savedSpecs = safeLS('get','velo_guardian_specialties') || '';
+  var savedSpecsArr = savedSpecs.split(',').filter(Boolean);
+  var specialtiesChipsHtml = _VELO_SPECIALTIES.map(function(s){
+    var active = savedSpecsArr.indexOf(s.k) >= 0;
+    return '<button type="button" data-spec="'+s.k+'" onclick="_toggleGuardianSetupSpec(this)" style="padding:7px 13px;background:'+(active?'rgba(116,198,157,.28)':'rgba(116,198,157,.06)')+';border:1.5px solid '+(active?'rgba(80,185,140,.65)':'rgba(116,198,157,.24)')+';border-radius:100px;color:var(--sage2);font-size:12.5px;font-weight:'+(active?'800':'700')+';cursor:pointer;font-family:Jost,sans-serif;letter-spacing:.2px" data-active="'+(active?'1':'0')+'">'+s.e+' '+s.n+'</button>';
+  }).join('');
+  ov.innerHTML = '<div class="p-sheet" style="max-height:88vh;overflow-y:auto">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
     +'<span style="font-size:26px">🛡️</span>'
@@ -7935,8 +7941,11 @@ function pShowGuardianSetupModal(){
     +'</div>'
     +'<div style="font-size:12px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">Tu mensaje de bienvenida</div>'
     +'<textarea id="guardianSetupBio" rows="4" placeholder="¿Desde qué experiencia querés acompañar?" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:12px;font-size:15px;color:var(--ink);font-family:\'Jost\',sans-serif;resize:none;box-sizing:border-box;margin-bottom:14px">'+_escHtml(savedBio)+'</textarea>'
-    +'<div style="font-size:12px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">Temas (separados por coma)</div>'
-    +'<input id="guardianSetupTags" type="text" placeholder="ej: ansiedad, duelo, soledad" value="'+_escHtml(savedTags)+'" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:12px;font-size:15px;color:var(--ink);font-family:\'Jost\',sans-serif;box-sizing:border-box;margin-bottom:20px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">🎯 En qué temas te sentís cómodo/a</div>'
+    +'<div style="font-size:12px;color:var(--ink4);margin-bottom:10px;line-height:1.5">Elegí hasta 4. Los usuarios pueden filtrar por estos temas para encontrarte.</div>'
+    +'<div id="guardianSetupSpecialties" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">'+specialtiesChipsHtml+'</div>'
+    +'<div style="font-size:12px;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">Palabras clave extra (opcional)</div>'
+    +'<input id="guardianSetupTags" type="text" placeholder="ej: música, jardín, meditación" value="'+_escHtml(savedTags)+'" style="width:100%;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;padding:12px;font-size:15px;color:var(--ink);font-family:\'Jost\',sans-serif;box-sizing:border-box;margin-bottom:20px">'
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSaveGuardianSetup()" style="margin-bottom:10px">Guardar perfil de guardián</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'guardianSetupOv\').remove()">Cancelar</button>'
     +'</div>';
@@ -7945,11 +7954,44 @@ function pShowGuardianSetupModal(){
   setTimeout(function(){ var t = document.getElementById('guardianSetupBio'); if(t) t.focus(); }, 200);
 }
 
+// Toggle de chip de especialidad en el guardian setup modal (max 4)
+function _toggleGuardianSetupSpec(btn){
+  if(!btn) return;
+  var isActive = btn.dataset.active === '1';
+  var wrap = document.getElementById('guardianSetupSpecialties');
+  if(!isActive){
+    // Chequear límite de 4
+    var currActive = wrap ? wrap.querySelectorAll('[data-active="1"]').length : 0;
+    if(currActive >= 4){ pToast('⚠️','Máximo 4 especialidades'); return; }
+    btn.dataset.active = '1';
+    btn.style.background = 'rgba(116,198,157,.28)';
+    btn.style.borderColor = 'rgba(80,185,140,.65)';
+    btn.style.fontWeight = '800';
+  } else {
+    btn.dataset.active = '0';
+    btn.style.background = 'rgba(116,198,157,.06)';
+    btn.style.borderColor = 'rgba(116,198,157,.24)';
+    btn.style.fontWeight = '700';
+  }
+}
 function pSaveGuardianSetup(){
   var bio  = (document.getElementById('guardianSetupBio')  || {}).value || '';
   var tags = (document.getElementById('guardianSetupTags') || {}).value || '';
+  var wrap = document.getElementById('guardianSetupSpecialties');
+  var specsArr = [];
+  if(wrap){
+    wrap.querySelectorAll('[data-active="1"]').forEach(function(b){ if(b.dataset.spec) specsArr.push(b.dataset.spec); });
+  }
+  var specsVal = specsArr.join(',');
   safeLS('set','velo_guardian_bio',  bio.trim());
   safeLS('set','velo_guardian_tags', tags.trim());
+  safeLS('set','velo_guardian_specialties', specsVal);
+  // Persistir en profiles.guardian_specialties
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(sbClient && uid){
+    sbClient.from('profiles').update({ guardian_specialties: specsVal || null }).eq('id', uid).then(function(){}).catch(function(){});
+  }
   // Mark setup as done so the modal never appears again (even if bio was left blank)
   safeLS('set','velo_guardian_setup_done', '1');
   var existing = document.getElementById('guardianSetupOv');
@@ -28342,7 +28384,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1265;
+    var _BUILT_V = 1266;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
