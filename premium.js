@@ -12913,11 +12913,18 @@ function _setDiaryEmoji(emoji){
 
 async function pSaveDiary(){
   var ta = document.getElementById('diaryTa');
-  if(!ta || !ta.value.trim()){ pToast('✍️','Escribí algo primero'); return; }
+  var hasText = !!(ta && ta.value.trim());
+  var hasAudio = !!_veloRecordedBlob;
+  var hasImage = !!_veloDiaryImageBase64;
+  // Aceptar la entrada si tiene AL MENOS UNA de las 3 cosas
+  if(!hasText && !hasAudio && !hasImage){
+    pToast('✍️','Agregá texto, audio o foto antes de guardar');
+    return;
+  }
   var titleEl = document.getElementById('diaryTitleInput');
   var title = titleEl ? titleEl.value.trim() : '';
   var emoji = _selectedDiaryEmoji || '';
-  var rawText = ta.value.trim();
+  var rawText = (ta && ta.value) ? ta.value.trim() : '';
   // Legacy combined text for sbSaveDiaryEntry compatibility
   var text = (emoji ? emoji+' ' : '') + rawText;
   var ts = Date.now();
@@ -13419,13 +13426,14 @@ function _showVoiceNotePreview(blob){
   wrap.innerHTML = '<span style="font-size:22px">🎙️</span><audio id="voicePreviewAudio" controls preload="metadata" src="'+url+'" style="flex:1;height:32px"></audio><span style="font-size:10.5px;color:rgba(220,180,80,.70);font-family:Jost,sans-serif;font-weight:700;letter-spacing:.3px;flex-shrink:0">'+sizeKb+' KB</span><button onclick="_deleteVoiceNote()" title="Descartar" style="background:rgba(220,60,60,.14);border:1px solid rgba(220,60,60,.32);color:rgba(255,150,150,.85);border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer">🗑️</button>';
   var ta = document.getElementById('diaryTa');
   if(ta && ta.parentNode) ta.parentNode.insertBefore(wrap, ta.nextSibling);
-  // Verificar si el audio se puede reproducir; si no, avisar
+  // Verificar si el audio se puede reproducir; si no, avisar de forma tranquila
   setTimeout(function(){
     var au = document.getElementById('voicePreviewAudio');
     if(au && au.error){
-      pToast('⚠️','El navegador no puede reproducir este formato — se guardará igual');
+      // No molestar con toast — el audio se guarda igual, solo no se puede escuchar la preview
+      console.warn('[voice-preview] audio format no reproducible en este browser (se guardará igual)');
     }
-  }, 400);
+  }, 600);
 }
 function _deleteVoiceNote(){
   _veloRecordedBlob = null;
@@ -29668,7 +29676,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1278;
+    var _BUILT_V = 1279;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
