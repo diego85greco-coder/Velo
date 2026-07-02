@@ -13833,8 +13833,8 @@ function _showDiaryImagePreview(b64){
   var ex = document.getElementById('diaryImagePreview'); if(ex) ex.remove();
   var wrap = document.createElement('div');
   wrap.id = 'diaryImagePreview';
-  wrap.style.cssText = 'background:rgba(180,155,240,.10);border:1.5px solid rgba(180,155,240,.35);border-radius:14px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;gap:10px';
-  wrap.innerHTML = '<img src="'+b64+'" style="width:56px;height:56px;object-fit:cover;border-radius:10px;flex-shrink:0"><div style="flex:1;font-size:12.5px;font-weight:700;color:rgba(215,200,255,.90);font-family:Jost,sans-serif;line-height:1.4">Imagen adjuntada<br><span style="font-size:11px;color:rgba(200,180,240,.60);font-weight:400">Se guarda cuando termines la entrada</span></div><button onclick="_deleteDiaryImage()" title="Descartar" style="background:rgba(220,60,60,.14);border:1px solid rgba(220,60,60,.32);color:rgba(255,150,150,.85);border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer">🗑️</button>';
+  wrap.style.cssText = 'background:rgba(180,155,240,.28);border:1.5px solid rgba(90,60,180,.55);border-radius:14px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;gap:10px';
+  wrap.innerHTML = '<img src="'+b64+'" style="width:56px;height:56px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1.5px solid rgba(90,60,180,.40)"><div style="flex:1;font-size:13px;font-weight:800;color:#3d1f7a;font-family:Jost,sans-serif;line-height:1.4">Imagen adjuntada<br><span style="font-size:11.5px;color:#5a3fa8;font-weight:600">Se guarda cuando termines la entrada</span></div><button onclick="_deleteDiaryImage()" title="Descartar" style="background:rgba(220,60,60,.20);border:1.5px solid rgba(180,40,40,.55);color:#a02020;border-radius:8px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer">🗑️</button>';
   var ta = document.getElementById('diaryTa');
   if(ta && ta.parentNode) ta.parentNode.insertBefore(wrap, ta.nextSibling);
 }
@@ -30579,7 +30579,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1292;
+    var _BUILT_V = 1293;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
