@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1273">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1273">
+  <link rel="stylesheet" href="premium.css?v=20260626-1274">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1274">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -2235,7 +2235,10 @@
                 <span class="diary-stat-lbl">privado</span>
               </div>
               <div class="diary-stat-sep"></div>
-              <button onclick="pExportDiaryToPdf()" title="Exportar todas mis entradas como PDF" style="background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.35);border-radius:12px;padding:6px 10px;color:rgba(200,158,56,.95);font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2">📄 <span style="font-size:9.5px">PDF</span></button>
+              <button id="diaryVoiceBtnTop" onclick="pStartVoiceNote()" title="Grabar audio (max 60s)" style="background:rgba(220,180,80,.10);border:1px solid rgba(220,180,80,.35);border-radius:12px;padding:6px 10px;color:rgba(220,180,80,.95);font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2">🎙️<span style="font-size:9.5px">audio</span></button>
+              <button id="diaryImageBtn" onclick="pAttachDiaryImage()" title="Adjuntar imagen" style="background:rgba(180,155,240,.10);border:1px solid rgba(180,155,240,.35);border-radius:12px;padding:6px 10px;color:rgba(200,180,255,.95);font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2">📷<span style="font-size:9.5px">foto</span></button>
+              <button onclick="pExportDiaryToPdf()" title="Exportar todas mis entradas como PDF" style="background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.35);border-radius:12px;padding:6px 10px;color:rgba(200,158,56,.95);font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2">📄<span style="font-size:9.5px">PDF</span></button>
+              <input type="file" id="diaryImageInput" accept="image/*" style="display:none" onchange="_handleDiaryImageInput(this)">
             </div>
 
             <div class="diary-grid">
@@ -2273,7 +2276,6 @@
                     <button class="diary-tpl-btn" onclick="_injectDiaryTemplate('reflexion')">🌙 Reflexión</button>
                     <button class="diary-tpl-btn" onclick="_injectDiaryTemplate('sueno')">💭 Sueño</button>
                     <button class="diary-tpl-btn" onclick="pInjectDiaryPrompt()">✨ Del día</button>
-                    <button class="diary-tpl-btn" id="diaryVoiceBtn" onclick="pStartVoiceNote()" style="background:rgba(220,180,80,.10)">🎙️ Grabar audio</button>
                   </div>
 
                   <textarea class="p-textarea diary-ta" id="diaryTa" rows="7" placeholder="¿Cómo te sentís hoy? Escribí libremente..."></textarea>
@@ -4358,8 +4360,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1273"></script>
-<script src="premium-redesign.js?v=20260626-1273"></script>
+<script src="premium.js?v=20260626-1274"></script>
+<script src="premium-redesign.js?v=20260626-1274"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

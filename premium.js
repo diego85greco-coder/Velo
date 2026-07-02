@@ -12925,8 +12925,9 @@ async function pSaveDiary(){
   // Local storage
   var entries = []; try{ entries = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
   var newEntry = { title:title, emoji:emoji, text:rawText, dateLabel:dateLabel, ts:ts };
-  // Adjuntar audio si hay uno grabado
+  // Adjuntar audio y/o imagen si hay adjuntos pendientes
   newEntry = await _attachVoiceToEntry(newEntry);
+  newEntry = await _attachImageToEntry(newEntry);
   entries.unshift(newEntry);
   safeLS('set','velo_diary', JSON.stringify(entries.slice(0,200)));
   // Supabase (include title so it syncs across devices)
@@ -12952,14 +12953,37 @@ function _renderDiaryEntryList(el, entries){
     var rawLabel = e.dateLabel || '';
     var dateOnly = rawLabel ? rawLabel.split('·')[0].trim() : new Date(Number(e.ts)).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
     var emo = e.emoji || '📜';
-    var preview = e.title ? e.title : (e.text ? e.text.replace(/\n/g,' ').slice(0,72) : '');
+    var hasAudio = !!e.audio;
+    var hasImage = !!e.image;
+    var hasText = !!(e.text && e.text.trim());
+    // Preview: si es solo audio, decir "Nota de voz"; si es solo imagen, "Imagen"; si tiene texto, mostrar preview
+    var preview;
+    if(hasText){ preview = e.title ? e.title : e.text.replace(/\n/g,' ').slice(0,72); }
+    else if(hasAudio && hasImage){ preview = '🎙️ Audio + 📷 Imagen'; }
+    else if(hasAudio){ preview = '🎙️ Nota de voz'; }
+    else if(hasImage){ preview = '📷 Imagen'; }
+    else { preview = ''; }
     var previewHtml = preview ? '<div class="diary-row-preview">'+_escHtml(preview)+'</div>' : '';
-    return '<div class="diary-row" onclick="pOpenDiaryEntry('+e.ts+')" style="animation-delay:'+i*.04+'s;cursor:pointer">'
+    // Badges de tipo: audio + imagen
+    var badges = '';
+    if(hasAudio) badges += '<span title="Tiene audio" style="display:inline-flex;align-items:center;gap:3px;background:rgba(220,180,80,.18);border:1px solid rgba(220,180,80,.45);border-radius:100px;padding:2px 8px;font-size:10.5px;font-weight:800;color:rgba(240,220,150,.98);font-family:Jost,sans-serif;letter-spacing:.3px">🎙️ audio</span>';
+    if(hasImage) badges += (badges?'<span style="width:4px"></span>':'')+'<span title="Tiene foto" style="display:inline-flex;align-items:center;gap:3px;background:rgba(180,155,240,.18);border:1px solid rgba(180,155,240,.45);border-radius:100px;padding:2px 8px;font-size:10.5px;font-weight:800;color:rgba(215,200,255,.98);font-family:Jost,sans-serif;letter-spacing:.3px">📷 foto</span>';
+    // Border-left color según tipo predominante: audio → dorado, imagen → violeta, texto → default
+    var leftBorder = '';
+    if(hasAudio && !hasText && !hasImage) leftBorder = 'border-left:3px solid rgba(220,180,80,.65);padding-left:12px';
+    else if(hasImage && !hasText && !hasAudio) leftBorder = 'border-left:3px solid rgba(180,155,240,.65);padding-left:12px';
+    else if(hasAudio || hasImage) leftBorder = 'border-left:3px solid rgba(180,220,240,.42);padding-left:12px';
+    // Thumbnail de imagen si hay
+    var thumbHtml = hasImage
+      ? '<img src="'+e.image+'" style="width:44px;height:44px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1.5px solid rgba(180,155,240,.35)">'
+      : '<span style="font-size:22px;flex-shrink:0;line-height:1;width:44px;text-align:center">'+emo+'</span>';
+    return '<div class="diary-row" onclick="pOpenDiaryEntry('+e.ts+')" style="animation-delay:'+i*.04+'s;cursor:pointer;'+leftBorder+'">'
       +'<div style="display:flex;align-items:center;gap:10px">'
-      +'<span style="font-size:22px;flex-shrink:0;line-height:1">'+emo+'</span>'
+      + thumbHtml
       +'<div style="flex:1;min-width:0">'
       +'<div class="diary-row-date">'+_escHtml(dateOnly)+'</div>'
       +previewHtml
+      + (badges ? '<div style="margin-top:4px;display:flex;align-items:center">'+badges+'</div>' : '')
       +'</div>'
       +'<button onclick="event.stopPropagation();pDeleteDiary('+e.ts+')" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink4);opacity:.5;padding:4px 6px;flex-shrink:0">🗑️</button>'
       +'</div>'
@@ -13186,22 +13210,86 @@ async function _runGlobalSearch(q){
 var _veloRecorder = null;
 var _veloRecordedBlob = null;
 var _veloRecordChunks = [];
+function _setVoiceBtnState(recording){
+  var btnTop = document.getElementById('diaryVoiceBtnTop');
+  if(btnTop){
+    btnTop.innerHTML = recording ? '⏹️<span style="font-size:9.5px">stop</span>' : '🎙️<span style="font-size:9.5px">audio</span>';
+    btnTop.style.background = recording ? 'rgba(255,80,80,.22)' : 'rgba(220,180,80,.10)';
+    btnTop.style.borderColor = recording ? 'rgba(255,80,80,.65)' : 'rgba(220,180,80,.35)';
+    btnTop.style.color = recording ? 'rgba(255,180,140,.98)' : 'rgba(220,180,80,.95)';
+  }
+}
+// Detecta el MIME type de audio compatible con este navegador (iOS Safari, Chrome, Firefox)
+function _getSupportedAudioMime(){
+  if(!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+  var candidates = ['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/mp4;codecs=mp4a','audio/ogg;codecs=opus','audio/ogg'];
+  for(var i=0;i<candidates.length;i++){
+    try{ if(MediaRecorder.isTypeSupported(candidates[i])) return candidates[i]; }catch(e){}
+  }
+  return '';
+}
+var _recTimerInterval = null;
+var _recStartTs = 0;
+var _veloRecordMime = '';
+function _showRecordingIndicator(){
+  var ex = document.getElementById('veloRecIndicator'); if(ex) ex.remove();
+  _recStartTs = Date.now();
+  var el = document.createElement('div');
+  el.id = 'veloRecIndicator';
+  el.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:10005;background:linear-gradient(135deg,rgba(230,60,60,.95),rgba(190,40,40,.98));color:#fff;padding:10px 18px;border-radius:100px;font-family:Jost,sans-serif;font-size:13px;font-weight:800;letter-spacing:1px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(220,60,60,.40);animation:velo-rec-pulse 1.6s ease-in-out infinite';
+  el.innerHTML = '<span style="width:10px;height:10px;background:#fff;border-radius:50%;animation:velo-rec-blink 1s infinite;flex-shrink:0"></span><span>REC</span><span id="veloRecTimer" style="font-family:Jost,monospace;letter-spacing:.3px;color:rgba(255,240,235,.98)">0:00</span><span style="opacity:.55;font-size:11px;font-weight:700;margin-left:2px">/ 1:00</span>';
+  document.body.appendChild(el);
+  if(!document.getElementById('_veloRecKf')){
+    var kf = document.createElement('style'); kf.id='_veloRecKf';
+    kf.textContent = '@keyframes velo-rec-pulse{0%,100%{box-shadow:0 8px 24px rgba(220,60,60,.40),0 0 0 0 rgba(220,60,60,.4)}50%{box-shadow:0 8px 24px rgba(220,60,60,.55),0 0 0 12px rgba(220,60,60,0)}}@keyframes velo-rec-blink{0%,49%{opacity:1}50%,100%{opacity:.30}}';
+    document.head.appendChild(kf);
+  }
+  _recTimerInterval = setInterval(function(){
+    var elapsed = Math.floor((Date.now() - _recStartTs)/1000);
+    var m = Math.floor(elapsed/60);
+    var s = elapsed % 60;
+    var t = document.getElementById('veloRecTimer');
+    if(t) t.textContent = m + ':' + String(s).padStart(2,'0');
+  }, 500);
+}
+function _hideRecordingIndicator(){
+  if(_recTimerInterval){ clearInterval(_recTimerInterval); _recTimerInterval = null; }
+  var el = document.getElementById('veloRecIndicator'); if(el) el.remove();
+}
 async function pStartVoiceNote(){
-  var btn = document.getElementById('diaryVoiceBtn');
   if(_veloRecorder && _veloRecorder.state === 'recording'){
     _veloRecorder.stop();
-    if(btn){ btn.textContent = '🎙️ Grabar audio'; btn.style.background = 'rgba(220,180,80,.10)'; }
+    _setVoiceBtnState(false);
+    _hideRecordingIndicator();
+    return;
+  }
+  if(!navigator.mediaDevices || !window.MediaRecorder){
+    pToast('⚠️','Tu navegador no soporta grabar audio. Probá con Chrome o Safari actualizado.');
     return;
   }
   try{
     var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     _veloRecordChunks = [];
-    _veloRecorder = new MediaRecorder(stream);
+    var mime = _getSupportedAudioMime();
+    try{
+      _veloRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    }catch(mimeErr){
+      // Fallback sin especificar mimeType
+      _veloRecorder = new MediaRecorder(stream);
+    }
+    _veloRecordMime = (_veloRecorder.mimeType || mime || 'audio/webm').split(';')[0];
     _veloRecorder.ondataavailable = function(e){ if(e.data && e.data.size > 0) _veloRecordChunks.push(e.data); };
+    _veloRecorder.onerror = function(e){
+      pToast('⚠️','Error al grabar — probá de nuevo');
+      _hideRecordingIndicator();
+      _setVoiceBtnState(false);
+      try{ stream.getTracks().forEach(function(t){ t.stop(); }); }catch(_){}
+    };
     _veloRecorder.onstop = function(){
-      _veloRecordedBlob = new Blob(_veloRecordChunks, { type: 'audio/webm' });
-      stream.getTracks().forEach(function(t){ t.stop(); });
-      // Verificar tamaño (máx 500KB)
+      _veloRecordedBlob = new Blob(_veloRecordChunks, { type: _veloRecordMime });
+      try{ stream.getTracks().forEach(function(t){ t.stop(); }); }catch(_){}
+      _hideRecordingIndicator();
+      if(!_veloRecordedBlob.size){ pToast('⚠️','La grabación quedó vacía — probá de nuevo'); _veloRecordedBlob=null; return; }
       if(_veloRecordedBlob.size > 500 * 1024){
         pToast('⚠️','Grabación muy larga (>500KB). Grabá algo más corto.');
         _veloRecordedBlob = null;
@@ -13210,14 +13298,81 @@ async function pStartVoiceNote(){
       _showVoiceNotePreview(_veloRecordedBlob);
     };
     _veloRecorder.start();
-    if(btn){ btn.textContent = '⏹️ Detener'; btn.style.background = 'rgba(255,120,80,.20)'; }
-    pToast('🎙️','Grabando… tocá "Detener" cuando termines');
-    // Auto-stop a los 60s
-    setTimeout(function(){ if(_veloRecorder && _veloRecorder.state === 'recording'){ _veloRecorder.stop(); if(btn){ btn.textContent = '🎙️ Grabar audio'; btn.style.background = 'rgba(220,180,80,.10)'; } pToast('⏱️','Grabación máxima 60 segundos'); } }, 60000);
+    _setVoiceBtnState(true);
+    _showRecordingIndicator();
+    pToast('🎙️','Grabando… tocá STOP cuando termines');
+    setTimeout(function(){ if(_veloRecorder && _veloRecorder.state === 'recording'){ _veloRecorder.stop(); _setVoiceBtnState(false); pToast('⏱️','Grabación máxima 60 segundos'); } }, 60000);
   }catch(e){
-    pToast('⚠️','No pude acceder al micrófono — revisá permisos');
+    var msg = 'No pude acceder al micrófono — revisá permisos';
+    if(e && e.name === 'NotAllowedError') msg = 'Bloqueaste el micrófono. Revisá permisos del navegador.';
+    else if(e && e.name === 'NotFoundError') msg = 'No hay micrófono disponible';
+    pToast('⚠️', msg);
     console.warn('[voice-note]', e);
   }
+}
+// ── Adjuntar imagen a la entrada del diario ──────────────────────
+var _veloDiaryImageBase64 = null;
+function pAttachDiaryImage(){
+  var inp = document.getElementById('diaryImageInput');
+  if(inp){ inp.value = ''; inp.click(); }
+}
+async function _handleDiaryImageInput(input){
+  if(!input || !input.files || !input.files[0]) return;
+  var f = input.files[0];
+  if(!f.type.startsWith('image/')){ pToast('⚠️','Solo imágenes'); return; }
+  if(f.size > 3 * 1024 * 1024){ pToast('⚠️','Imagen muy grande (>3MB). Elegí otra o comprimila.'); return; }
+  pToast('📷','Procesando imagen…');
+  try{
+    // Resize + comprimir a max 1200px de lado más largo
+    var b64 = await _resizeImageToBase64(f, 1200);
+    _veloDiaryImageBase64 = b64;
+    _showDiaryImagePreview(b64);
+    pToast('✓','Imagen lista para adjuntar');
+  }catch(e){ pToast('⚠️','No pude procesar la imagen'); console.warn('[diary-img]', e); }
+}
+function _resizeImageToBase64(file, maxSide){
+  return new Promise(function(res, rej){
+    var img = new Image();
+    var reader = new FileReader();
+    reader.onload = function(){
+      img.onload = function(){
+        var w = img.width, h = img.height;
+        if(w > h && w > maxSide){ h = h * (maxSide / w); w = maxSide; }
+        else if(h > maxSide){ w = w * (maxSide / h); h = maxSide; }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        var dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        res(dataUrl);
+      };
+      img.onerror = rej;
+      img.src = reader.result;
+    };
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}
+function _showDiaryImagePreview(b64){
+  var ex = document.getElementById('diaryImagePreview'); if(ex) ex.remove();
+  var wrap = document.createElement('div');
+  wrap.id = 'diaryImagePreview';
+  wrap.style.cssText = 'background:rgba(180,155,240,.10);border:1.5px solid rgba(180,155,240,.35);border-radius:14px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;gap:10px';
+  wrap.innerHTML = '<img src="'+b64+'" style="width:56px;height:56px;object-fit:cover;border-radius:10px;flex-shrink:0"><div style="flex:1;font-size:12.5px;font-weight:700;color:rgba(215,200,255,.90);font-family:Jost,sans-serif;line-height:1.4">Imagen adjuntada<br><span style="font-size:11px;color:rgba(200,180,240,.60);font-weight:400">Se guarda cuando termines la entrada</span></div><button onclick="_deleteDiaryImage()" title="Descartar" style="background:rgba(220,60,60,.14);border:1px solid rgba(220,60,60,.32);color:rgba(255,150,150,.85);border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer">🗑️</button>';
+  var ta = document.getElementById('diaryTa');
+  if(ta && ta.parentNode) ta.parentNode.insertBefore(wrap, ta.nextSibling);
+}
+function _deleteDiaryImage(){
+  _veloDiaryImageBase64 = null;
+  var wrap = document.getElementById('diaryImagePreview'); if(wrap) wrap.remove();
+  pToast('🗑️','Imagen descartada');
+}
+async function _attachImageToEntry(entry){
+  if(!_veloDiaryImageBase64) return entry;
+  entry.image = _veloDiaryImageBase64;
+  _veloDiaryImageBase64 = null;
+  var wrap = document.getElementById('diaryImagePreview'); if(wrap) wrap.remove();
+  return entry;
 }
 function _showVoiceNotePreview(blob){
   var ex = document.getElementById('voiceNotePreview'); if(ex) ex.remove();
@@ -13225,9 +13380,18 @@ function _showVoiceNotePreview(blob){
   var wrap = document.createElement('div');
   wrap.id = 'voiceNotePreview';
   wrap.style.cssText = 'background:rgba(220,180,80,.10);border:1.5px solid rgba(220,180,80,.35);border-radius:14px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;gap:10px';
-  wrap.innerHTML = '<span style="font-size:22px">🎙️</span><audio controls src="'+url+'" style="flex:1;height:32px"></audio><button onclick="_deleteVoiceNote()" title="Descartar" style="background:rgba(220,60,60,.14);border:1px solid rgba(220,60,60,.32);color:rgba(255,150,150,.85);border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer">🗑️</button>';
+  // Duración leída del blob
+  var sizeKb = Math.round(blob.size / 1024);
+  wrap.innerHTML = '<span style="font-size:22px">🎙️</span><audio id="voicePreviewAudio" controls preload="metadata" src="'+url+'" style="flex:1;height:32px"></audio><span style="font-size:10.5px;color:rgba(220,180,80,.70);font-family:Jost,sans-serif;font-weight:700;letter-spacing:.3px;flex-shrink:0">'+sizeKb+' KB</span><button onclick="_deleteVoiceNote()" title="Descartar" style="background:rgba(220,60,60,.14);border:1px solid rgba(220,60,60,.32);color:rgba(255,150,150,.85);border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer">🗑️</button>';
   var ta = document.getElementById('diaryTa');
   if(ta && ta.parentNode) ta.parentNode.insertBefore(wrap, ta.nextSibling);
+  // Verificar si el audio se puede reproducir; si no, avisar
+  setTimeout(function(){
+    var au = document.getElementById('voicePreviewAudio');
+    if(au && au.error){
+      pToast('⚠️','El navegador no puede reproducir este formato — se guardará igual');
+    }
+  }, 400);
 }
 function _deleteVoiceNote(){
   _veloRecordedBlob = null;
@@ -13687,9 +13851,14 @@ function pOpenDiaryEntry(ts){
     textEl.innerHTML = rawTxt.split(/\n\n+/).map(function(p){
       return '<p>'+p.split('\n').map(function(l){ return _escHtml(l); }).join('<br>')+'</p>';
     }).join('');
+    // Adjuntar imagen si el entry tiene una (arriba del audio)
+    if(entry.image){
+      var imgHtml = '<div style="margin-top:14px;text-align:center"><img src="'+entry.image+'" style="max-width:100%;max-height:400px;border-radius:14px;border:1.5px solid rgba(180,155,240,.30);box-shadow:0 6px 20px rgba(0,0,0,.20)"></div>';
+      textEl.innerHTML += imgHtml;
+    }
     // Adjuntar audio si el entry tiene uno
     if(entry.audio){
-      var audioHtml = '<div style="margin-top:14px;padding:10px 12px;background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.35);border-radius:12px;display:flex;align-items:center;gap:10px"><span style="font-size:20px">🎙️</span><audio controls src="'+entry.audio+'" style="flex:1;height:32px"></audio></div>';
+      var audioHtml = '<div style="margin-top:14px;padding:10px 12px;background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.35);border-radius:12px;display:flex;align-items:center;gap:10px"><span style="font-size:20px">🎙️</span><audio controls preload="metadata" src="'+entry.audio+'" style="flex:1;height:32px"></audio></div>';
       textEl.innerHTML += audioHtml;
     }
   }
@@ -29442,7 +29611,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1273;
+    var _BUILT_V = 1274;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
