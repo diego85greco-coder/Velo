@@ -13015,9 +13015,8 @@ function _renderDiaryEntryList(el, entries){
     if(hasAudio && !hasText && !hasImage) leftBorder = 'border-left:3px solid rgba(220,180,80,.65);padding-left:12px';
     else if(hasImage && !hasText && !hasAudio) leftBorder = 'border-left:3px solid rgba(180,155,240,.65);padding-left:12px';
     else if(hasAudio || hasImage) leftBorder = 'border-left:3px solid rgba(180,220,240,.42);padding-left:12px';
-    // Thumbnail de imagen si hay y es válida
-    var hasValidImage = hasImage && String(e.image).indexOf('data:image') === 0 && e.image.length > 100;
-    var thumbHtml = hasValidImage
+    // Thumbnail de imagen: renderizar si hay y hacer fallback en onerror
+    var thumbHtml = hasImage
       ? '<img src="'+e.image+'" onerror="this.outerHTML=\'<span style=&quot;font-size:22px;line-height:1;width:44px;text-align:center;display:inline-block&quot;>'+emo+'</span>\'" style="width:44px;height:44px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1.5px solid rgba(180,155,240,.35)">'
       : '<span style="font-size:22px;flex-shrink:0;line-height:1;width:44px;text-align:center">'+emo+'</span>';
     return '<div class="diary-row" onclick="pOpenDiaryEntry('+e.ts+')" style="animation-delay:'+i*.04+'s;cursor:pointer;'+leftBorder+'">'
@@ -13270,9 +13269,12 @@ var _veloActiveAudioSource = null;
 var _veloActiveAudioTs = null;
 async function pToggleVeloAudio(ts, btn){
   ts = String(ts);
-  var wrap = document.getElementById('veloAudioPlayer_' + ts);
-  if(!wrap) return;
-  var audioData = wrap.dataset.audio;
+  var audioData = (window._veloEntryAudios || {})[ts];
+  if(!audioData){
+    // Fallback: buscar en _diaryEntries
+    var entry = (_diaryEntries||[]).find(function(e){ return String(e.ts) === ts; });
+    audioData = entry && entry.audio;
+  }
   if(!audioData){ pToast('⚠️','Audio no disponible'); return; }
   var statusEl = document.getElementById('veloAudioStatus_' + ts);
   // Si ya está sonando este audio → detenerlo
@@ -14036,37 +14038,26 @@ function pOpenDiaryEntry(ts){
     textEl.innerHTML = rawTxt.split(/\n\n+/).map(function(p){
       return '<p>'+p.split('\n').map(function(l){ return _escHtml(l); }).join('<br>')+'</p>';
     }).join('');
-    // Adjuntar imagen si el entry tiene una (arriba del audio)
+    // Registrar audio en cache global para el player
+    if(entry.audio){ try{ window._veloEntryAudios = window._veloEntryAudios || {}; window._veloEntryAudios[String(entry.ts)] = entry.audio; }catch(e){} }
+    // Adjuntar imagen: renderizado directo, sin gates
     if(entry.image){
-      // Verificar que el data URL sea válido
-      if(String(entry.image).indexOf('data:image') === 0 && entry.image.length > 100){
-        var imgId = 'diaryImg_'+entry.ts;
-        var imgHtml = '<div style="margin-top:14px;text-align:center"><img id="'+imgId+'" src="'+entry.image+'" onerror="this.parentElement.innerHTML=\'<div style=&quot;padding:14px;background:rgba(180,155,240,.10);border:1px dashed rgba(180,155,240,.35);border-radius:12px;color:rgba(200,180,255,.75);font-size:13px;font-family:Jost,sans-serif&quot;>📷 Imagen guardada — no se puede mostrar en este navegador</div>\'" style="max-width:100%;max-height:400px;border-radius:14px;border:1.5px solid rgba(180,155,240,.30);box-shadow:0 6px 20px rgba(0,0,0,.20);display:block;margin:0 auto"></div>';
-        textEl.innerHTML += imgHtml;
-      } else {
-        textEl.innerHTML += '<div style="margin-top:14px;padding:14px;background:rgba(180,155,240,.10);border:1px dashed rgba(180,155,240,.35);border-radius:12px;color:rgba(200,180,255,.75);font-size:13px;font-family:Jost,sans-serif;text-align:center">📷 Imagen guardada (no disponible en este dispositivo)</div>';
-      }
+      var imgHtml = '<div style="margin-top:14px;text-align:center"><img src="'+entry.image+'" style="max-width:100%;max-height:400px;border-radius:14px;border:1.5px solid rgba(180,155,240,.30);box-shadow:0 6px 20px rgba(0,0,0,.20);display:block;margin:0 auto"></div>';
+      textEl.innerHTML += imgHtml;
     }
-    // Adjuntar audio si el entry tiene uno — player custom con Web Audio API (compat iOS Safari)
+    // Adjuntar audio: usar player Web Audio + fallback audio nativo
     if(entry.audio){
-      if(String(entry.audio).indexOf('data:audio') === 0 && entry.audio.length > 100){
-        var playerId = 'veloAudioPlayer_' + entry.ts;
-        var audioHtml = '<div id="'+playerId+'" style="margin-top:14px;padding:12px 14px;background:rgba(200,158,56,.12);border:1.5px solid rgba(200,158,56,.42);border-radius:14px;display:flex;align-items:center;gap:12px">'
+      var audioHtml = '<div style="margin-top:14px;padding:12px 14px;background:rgba(200,158,56,.12);border:1.5px solid rgba(200,158,56,.42);border-radius:14px">'
+        + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'
           + '<button onclick="pToggleVeloAudio(\''+entry.ts+'\',this)" style="width:44px;height:44px;border-radius:50%;background:rgba(200,158,56,.30);border:1.5px solid rgba(200,158,56,.65);color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0" title="Reproducir">▶️</button>'
           + '<div style="flex:1;min-width:0">'
             + '<div style="font-size:12.5px;font-weight:800;color:rgba(200,158,56,.98);font-family:Jost,sans-serif;letter-spacing:.3px;text-transform:uppercase">🎙️ Nota de voz</div>'
             + '<div id="veloAudioStatus_'+entry.ts+'" style="font-size:11.5px;color:rgba(200,158,56,.68);font-family:Jost,sans-serif;margin-top:2px">Tocá play para escuchar</div>'
           + '</div>'
-        + '</div>';
-        textEl.innerHTML += audioHtml;
-        // Guardar la data URL en un data-attr para el player
-        setTimeout(function(){
-          var wrap = document.getElementById(playerId);
-          if(wrap) wrap.dataset.audio = entry.audio;
-        }, 50);
-      } else {
-        textEl.innerHTML += '<div style="margin-top:14px;padding:14px;background:rgba(200,158,56,.10);border:1px dashed rgba(200,158,56,.35);border-radius:12px;color:rgba(200,158,56,.85);font-size:13px;font-family:Jost,sans-serif;text-align:center">🎙️ Audio guardado (no disponible en este dispositivo)</div>';
-      }
+        + '</div>'
+        + '<audio controls preload="metadata" src="'+entry.audio+'" style="width:100%;height:36px;display:block" onerror="this.style.display=\'none\'"></audio>'
+      + '</div>';
+      textEl.innerHTML += audioHtml;
     }
   }
   if(delBtn)  delBtn.onclick = function(){ closeModal('diaryEntryOv'); pDeleteDiary(ts); };
@@ -29844,7 +29835,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1283;
+    var _BUILT_V = 1284;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
