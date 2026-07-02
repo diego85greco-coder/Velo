@@ -1980,6 +1980,44 @@ function pRemoveBuddy(){
   });
 }
 
+// ── COMMUNITY PULSE — chip en home con actividad de la comunidad hoy ─
+async function _renderCommunityPulseBanner(){
+  var host = document.querySelector('.r-hero-left');
+  if(!host || document.getElementById('communityPulseChip')) return;
+  _initSupabase(); if(!sbClient) return;
+  var isLight = !document.body.classList.contains('r-dark');
+  // Placeholder mientras carga
+  var chip = document.createElement('div');
+  chip.id = 'communityPulseChip';
+  chip.style.cssText = 'width:100%;box-sizing:border-box;margin:0 0 10px;order:-1;text-align:center';
+  host.insertAdjacentElement('afterbegin', chip);
+  try{
+    var since = new Date(Date.now() - 24*3600000).toISOString();
+    var results = await Promise.all([
+      sbClient.from('mood_entries').select('id',{count:'exact',head:true}).gte('created_at', since),
+      sbClient.from('bitacora_posts').select('id',{count:'exact',head:true}).gte('created_at', since),
+      sbClient.from('bottles').select('id',{count:'exact',head:true}).gte('created_at', since),
+    ]);
+    var m = (results[0] && results[0].count != null) ? results[0].count : 0;
+    var b = (results[1] && results[1].count != null) ? results[1].count : 0;
+    var w = (results[2] && results[2].count != null) ? results[2].count : 0;
+    // Solo mostrar si hay algo de actividad (evita "0 · 0 · 0" desanimante)
+    if(m + b + w === 0){ chip.remove(); return; }
+    var pillBg  = isLight ? 'rgba(116,198,157,.14)' : 'rgba(120,200,160,.18)';
+    var pillBrd = isLight ? 'rgba(80,185,140,.45)'  : 'rgba(140,220,180,.42)';
+    var textCol = isLight ? 'rgba(8,72,40,.92)'     : 'rgba(190,255,215,.92)';
+    var strongCol = isLight ? 'rgba(8,72,40,1)'     : 'rgba(255,255,255,1)';
+    var sepCol  = isLight ? 'rgba(8,72,40,.30)'     : 'rgba(190,255,215,.30)';
+    chip.innerHTML = '<span style="display:inline-flex;gap:12px;align-items:center;padding:8px 16px;background:'+pillBg+';border:1.5px solid '+pillBrd+';border-radius:100px;font-weight:800;font-family:Jost,sans-serif;font-size:12px;color:'+textCol+';box-shadow:0 3px 12px rgba(80,185,140,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)">'
+      + '<span style="font-size:14px">🌿</span>'
+      + '<span>Hoy en Velo:</span>'
+      + '<span>💚 <strong style="color:'+strongCol+'">'+m+'</strong> ánimos</span>'
+      + (b>0 ? '<span style="color:'+sepCol+'">·</span><span>📖 <strong style="color:'+strongCol+'">'+b+'</strong></span>' : '')
+      + (w>0 ? '<span style="color:'+sepCol+'">·</span><span>🌊 <strong style="color:'+strongCol+'">'+w+'</strong></span>' : '')
+      + '</span>';
+  }catch(e){ if(chip) chip.remove(); }
+}
+
 // ── BUDDY EXPIRY — banner en home cuando cumple 30 días ──────────
 async function _checkBuddyExpiry(){
   var uid = safeLS('get','velo_user_id') || '';
@@ -3694,6 +3732,7 @@ function _loadHomeData(){
   try{ setTimeout(function(){ _checkEmotionalAnniversary(); }, 800); }catch(e){}
   try{ setTimeout(function(){ _checkReferralQualification(); }, 1200); }catch(e){}
   try{ setTimeout(function(){ _checkBuddyExpiry(); }, 1600); }catch(e){}
+  try{ setTimeout(function(){ _renderCommunityPulseBanner(); }, 2000); }catch(e){}
   // v1228: mensual NO se dispara automático. Solo desde admin (pAdminSendMonthlyReport).
   // _checkMonthlyMoodReport();
   var d = new Date();
@@ -27581,7 +27620,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1255;
+    var _BUILT_V = 1256;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
