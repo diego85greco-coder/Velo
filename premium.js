@@ -3000,14 +3000,28 @@ function pOpenPreferences(){
     + (safeLS('get','velo_is_guardian') === 'true' ? (function(){
         var curr = safeLS('get','velo_guardian_specialties')||'';
         var arr = curr.split(',').filter(Boolean);
+        // Predefinidas
+        var predefKeys = _VELO_SPECIALTIES.map(function(s){ return s.k; });
+        var customTopics = arr.filter(function(k){ return predefKeys.indexOf(k) < 0; });
         var chips = _VELO_SPECIALTIES.map(function(s){
           var active = arr.indexOf(s.k) >= 0;
           return '<button onclick="pToggleGuardianSpecialty(\''+s.k+'\')" style="padding:6px 12px;background:'+(active?'rgba(116,198,157,.32)':'rgba(255,255,255,.05)')+';border:1.5px solid '+(active?'rgba(116,198,157,.62)':'rgba(255,255,255,.14)')+';border-radius:100px;color:'+(active?'rgba(180,255,220,.96)':'rgba(255,255,255,.65)')+';font-size:12px;font-weight:'+(active?'800':'700')+';cursor:pointer;font-family:Jost,sans-serif">'+s.e+' '+s.n+'</button>';
         }).join('');
+        // Custom
+        var customChips = customTopics.map(function(t){
+          return '<span style="display:inline-flex;align-items:center;gap:5px;padding:6px 10px 6px 12px;background:rgba(220,180,80,.16);border:1.5px solid rgba(220,180,80,.42);border-radius:100px;color:rgba(240,220,180,.96);font-size:12px;font-weight:800;font-family:Jost,sans-serif">✍️ '+_escHtml(t)+'<button onclick="pRemoveGuardianCustomTopic(\''+_escHtml(t.replace(/\'/g,""))+'\')" title="Quitar" style="background:none;border:none;color:rgba(255,220,180,.60);font-size:15px;cursor:pointer;padding:0 2px;line-height:1">×</button></span>';
+        }).join('');
         return '<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.20);border-radius:14px;padding:14px 15px;margin-bottom:12px">'
           + '<div style="font-size:13px;font-weight:800;color:rgba(220,255,235,.94);font-family:Jost,sans-serif;margin-bottom:4px">🛡️ Tus especialidades como Guardián</div>'
           + '<div style="font-size:11.5px;color:rgba(180,220,195,.60);font-family:Jost,sans-serif;margin-bottom:10px">Elegí hasta 4 temas en los que te sentís cómodo/a acompañando</div>'
-          + '<div style="display:flex;flex-wrap:wrap;gap:6px">'+chips+'</div>'
+          + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">'+chips+'</div>'
+          // Custom input
+          + '<div style="font-size:11.5px;color:rgba(180,220,195,.55);font-family:Jost,sans-serif;margin-bottom:6px;letter-spacing:.3px">✍️ Otro tema (no listado)</div>'
+          + '<div style="display:flex;gap:6px;margin-bottom:8px">'
+            + '<input id="prefsGuardianCustomInput" type="text" placeholder="ej: adopción, meditación, música…" maxlength="30" style="flex:1;background:rgba(0,0,0,.20);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:9px 12px;color:rgba(240,255,245,.96);font-size:13px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none" onkeydown="if(event.key===\'Enter\'){event.preventDefault();pAddGuardianCustomTopic();}">'
+            + '<button onclick="pAddGuardianCustomTopic()" style="background:rgba(116,198,157,.20);border:1.5px solid rgba(116,198,157,.55);border-radius:10px;padding:9px 14px;color:rgba(180,235,210,.98);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;flex-shrink:0">+ Agregar</button>'
+          + '</div>'
+          + (customChips ? '<div style="display:flex;flex-wrap:wrap;gap:6px">'+customChips+'</div>' : '')
         + '</div>';
       })() : '')
     // Blocked users
@@ -3016,7 +3030,7 @@ function pOpenPreferences(){
       + '<div style="font-size:11.5px;color:rgba(255,220,220,.55);font-family:Jost,sans-serif;margin-bottom:8px">No verás su contenido en ninguna sección</div>'
       + blockedHtml
     + '</div>'
-    + '<button onclick="document.getElementById(\'prefsOv\').remove()" style="width:100%;margin-top:14px;padding:12px;background:rgba(116,198,157,.18);border:1.5px solid rgba(116,198,157,.50);border-radius:14px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px">Cerrar</button>'
+    + '<button onclick="pToast(\'✓\',\'Cambios guardados\');document.getElementById(\'prefsOv\').remove()" style="width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.85),rgba(74,160,110,.95));border:1.5px solid rgba(116,198,157,.65);border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px">✓ Guardar y cerrar</button>'
     + '</div>';
   document.body.appendChild(ov);
 }
@@ -7699,9 +7713,10 @@ function pToggleGuardianSpecialty(k){
   var curr = safeLS('get','velo_guardian_specialties')||'';
   var arr = curr.split(',').filter(Boolean);
   var idx = arr.indexOf(k);
+  var added = false;
   if(idx >= 0) arr.splice(idx, 1);
-  else if(arr.length < 4) arr.push(k);
-  else { pToast('⚠️','Máximo 4 especialidades'); return; }
+  else if(arr.length < 4){ arr.push(k); added = true; }
+  else { pToast('⚠️','Máximo 4 temas — quitá uno primero'); return; }
   var newVal = arr.join(',');
   safeLS('set','velo_guardian_specialties', newVal);
   _initSupabase();
@@ -7709,7 +7724,49 @@ function pToggleGuardianSpecialty(k){
   if(sbClient && uid){
     sbClient.from('profiles').update({ guardian_specialties: newVal || null }).eq('id', uid).then(function(){}).catch(function(){});
   }
+  pToast(added ? '✓' : '🌿', added ? 'Especialidad agregada' : 'Especialidad quitada');
   // Re-render preferences
+  var ex = document.getElementById('prefsOv');
+  if(ex){ ex.remove(); if(typeof pOpenPreferences === 'function') pOpenPreferences(); }
+}
+// Agrega un tema custom escrito por el user (se guarda junto con las specialties predefinidas)
+function pAddGuardianCustomTopic(){
+  var inp = document.getElementById('prefsGuardianCustomInput');
+  if(!inp) return;
+  var val = (inp.value||'').trim().toLowerCase();
+  if(!val){ pToast('✍️','Escribí un tema primero'); return; }
+  if(val.length > 30){ pToast('⚠️','Máximo 30 caracteres'); return; }
+  // Sanitizar — solo letras/números/espacios/tilde/ñ
+  val = val.replace(/[^a-záéíóúñü0-9\s]/gi,'').replace(/\s+/g,' ').trim();
+  if(!val){ pToast('⚠️','Usá solo letras'); return; }
+  var curr = safeLS('get','velo_guardian_specialties')||'';
+  var arr = curr.split(',').filter(Boolean);
+  if(arr.indexOf(val) >= 0){ pToast('🌿','Ese tema ya está'); return; }
+  if(arr.length >= 4){ pToast('⚠️','Máximo 4 temas — quitá uno primero'); return; }
+  arr.push(val);
+  var newVal = arr.join(',');
+  safeLS('set','velo_guardian_specialties', newVal);
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(sbClient && uid){
+    sbClient.from('profiles').update({ guardian_specialties: newVal || null }).eq('id', uid).then(function(){}).catch(function(){});
+  }
+  pToast('✓','Tema "'+val+'" agregado');
+  var ex = document.getElementById('prefsOv');
+  if(ex){ ex.remove(); if(typeof pOpenPreferences === 'function') pOpenPreferences(); }
+}
+function pRemoveGuardianCustomTopic(topic){
+  if(!topic) return;
+  var curr = safeLS('get','velo_guardian_specialties')||'';
+  var arr = curr.split(',').filter(Boolean).filter(function(x){ return x !== topic; });
+  var newVal = arr.join(',');
+  safeLS('set','velo_guardian_specialties', newVal);
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id');
+  if(sbClient && uid){
+    sbClient.from('profiles').update({ guardian_specialties: newVal || null }).eq('id', uid).then(function(){}).catch(function(){});
+  }
+  pToast('🌿','Tema quitado');
   var ex = document.getElementById('prefsOv');
   if(ex){ ex.remove(); if(typeof pOpenPreferences === 'function') pOpenPreferences(); }
 }
@@ -28384,7 +28441,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1266;
+    var _BUILT_V = 1267;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
