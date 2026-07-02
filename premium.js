@@ -14953,13 +14953,36 @@ function pExportDiaryToPdf(){
   bar.appendChild(title);
   bar.appendChild(printBtn);
   ov.appendChild(bar);
-  // Iframe con srcdoc — inyecta el HTML directo, funciona en iOS Safari
-  // (blob: URLs + sandbox tienen problemas de origen opaco en WebKit)
+  // Iframe about:blank + document.write — inyecta el HTML tras load. Es el
+  // path más confiable para HTML pesado con data URLs de imagen grandes:
+  // srcdoc tiene problemas de tamaño/rendimiento en iOS Safari con base64
+  // multi-MB, blob:+sandbox da opaque origin. about:blank hereda el origen
+  // del parent, así que fetch/relativos funcionan.
   var iframe = document.createElement('iframe');
   iframe.id = 'diaryPdfIframe';
   iframe.style.cssText = 'flex:1;width:100%;border:none;background:#fdfaf0;-webkit-overflow-scrolling:touch';
-  iframe.srcdoc = html;
+  iframe.setAttribute('src','about:blank');
   ov.appendChild(iframe);
+  // Escribir el HTML después del load — algunos iOS necesitan un tick
+  var writeDoc = function(){
+    try{
+      var d = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+      if(!d) return;
+      d.open();
+      d.write(html);
+      d.close();
+    }catch(e){ console.warn('[diary-pdf] write failed', e); }
+  };
+  if(iframe.contentDocument && iframe.contentDocument.readyState === 'complete'){
+    setTimeout(writeDoc, 20);
+  } else {
+    iframe.addEventListener('load', function once(){
+      iframe.removeEventListener('load', once);
+      writeDoc();
+    });
+    // Fallback si el load nunca dispara
+    setTimeout(function(){ if(iframe.contentDocument && !iframe.contentDocument.querySelector('article.entry')) writeDoc(); }, 500);
+  }
   document.body.appendChild(ov);
   // Cerrar con back del navegador si se pulsa
   var backHandler = function(){
@@ -30675,7 +30698,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1296;
+    var _BUILT_V = 1297;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
