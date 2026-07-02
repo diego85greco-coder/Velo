@@ -2264,7 +2264,7 @@ async function pOpenMonthlyWrapped(){
     + '</div>'
     + '<div id="wrappedSlider" style="flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;gap:8px;padding:8px 16px;box-sizing:border-box">'+slideHtml+'</div>'
     + '<div style="display:flex;justify-content:center;gap:5px;padding:12px 0;flex-shrink:0">'+dotsHtml+'</div>'
-    + '<div style="display:flex;gap:8px;padding:0 16px 16px;flex-shrink:0"><button onclick="pShareWrapped(\''+monthTitle+'\',\''+domEmoji+'\',\''+domLabel+'\','+nReg+','+streak+','+(comm.btPosts+comm.momentos+comm.helped)+','+avgScore.toFixed(2)+',\''+_jsAttr(uName)+'\')" style="flex:1;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.90),rgba(74,160,110,.95));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">📤 Compartir en Stories</button><button onclick="document.getElementById(\'wrappedOv\').remove()" style="flex:1;padding:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;color:rgba(255,255,255,.72);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button></div>';
+    + '<div style="display:flex;gap:8px;padding:0 16px 16px;flex-shrink:0"><button onclick="pShareWrapped('+_jsAttr(monthTitle)+','+_jsAttr(domEmoji)+','+_jsAttr(domLabel)+','+nReg+','+streak+','+(comm.btPosts+comm.momentos+comm.helped)+','+avgScore.toFixed(2)+','+_jsAttr(uName)+')" style="flex:1;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.90),rgba(74,160,110,.95));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">📤 Compartir en Stories</button><button onclick="document.getElementById(\'wrappedOv\').remove()" style="flex:1;padding:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;color:rgba(255,255,255,.72);font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button></div>';
   document.body.appendChild(ov);
   // Dots syncing con scroll
   var slider = document.getElementById('wrappedSlider');
@@ -2279,41 +2279,57 @@ async function pOpenMonthlyWrapped(){
 }
 // ── SHARE WRAPPED — genera un póster 1080×1920 (Instagram Stories) y lo comparte
 async function pShareWrapped(month, emoji, label, days, streak, gestures, avgScore, userName){
+  pToast('✨','Preparando tu Wrapped…');
   var text = '✨ Mi Wrapped de '+month+' en @VeloApp:\n\n'+emoji+' Ánimo dominante: '+label+'\n📅 '+days+' días registrados\n🔥 Racha: '+streak+' días\n💚 '+gestures+' gestos hacia la comunidad\n\nUnite gratis en heyvelo.app';
   var uName = (userName || (safeLS('get','velo_user_name')||'').split(' ')[0] || 'vos');
   var score = parseFloat(avgScore) || 0;
-  // Intento 1: canvas → File → navigator.share con files (Instagram Stories flow)
+  var canvas, blob, file, fileName;
+  // Intento 1: renderizar + convertir a blob (sync + toBlob async corto)
   try{
-    var canvas = _renderWrappedPoster({
+    canvas = _renderWrappedPoster({
       monthLabel: month, userName: uName, domEmoji: emoji, domLabel: label,
       nReg: parseInt(days)||0, streak: parseInt(streak)||0,
       totalGestures: parseInt(gestures)||0, avgScore: score
     });
-    var blob = await new Promise(function(res){ canvas.toBlob(res, 'image/png', 0.95); });
-    if(blob){
-      var fileName = 'wrapped-'+String(month).toLowerCase().replace(/\s+/g,'-')+'.png';
-      var file = new File([blob], fileName, { type: 'image/png' });
+    blob = await new Promise(function(res, rej){
+      try{ canvas.toBlob(function(b){ b ? res(b) : rej(new Error('toBlob null')); }, 'image/png', 0.95); }
+      catch(e){ rej(e); }
+    });
+  }catch(e){ console.warn('[wrapped-canvas]', e); }
+  fileName = 'wrapped-'+String(month).toLowerCase().replace(/\s+/g,'-')+'.png';
+  // Intento 2: si hay blob y browser acepta files → share sheet nativo (Instagram Stories)
+  if(blob){
+    try{
+      file = new File([blob], fileName, { type: 'image/png' });
       if(navigator.canShare && navigator.canShare({ files: [file] })){
         await navigator.share({ title:'Mi Wrapped Velo', text: '✨ Mi Wrapped en Velo — heyvelo.app', files: [file] });
         pToast('✨','Elegí Instagram Stories para postearlo 💚');
         return;
       }
-      // Sin support de files → ofrecer descargar la imagen
+    }catch(e){
+      // usuario canceló share → no seguir con fallback
+      if(e && e.name === 'AbortError') return;
+      console.warn('[wrapped-share-files]', e);
+    }
+    // Intento 3: no acepta files → descargar la imagen
+    try{
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a'); a.href = url; a.download = fileName;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
       pToast('📥','Se descargó tu Wrapped — subilo a tu Story');
       return;
-    }
-  }catch(e){ console.warn('[wrapped-share]', e); }
-  // Fallback: texto plano
+    }catch(e){ console.warn('[wrapped-download]', e); }
+  }
+  // Fallback final: texto plano
   if(navigator.share){
-    try{ await navigator.share({ title:'Mi Wrapped Velo', text:text, url:'https://heyvelo.app' }); return; }catch(e){}
+    try{ await navigator.share({ title:'Mi Wrapped Velo', text:text, url:'https://heyvelo.app' }); return; }
+    catch(e){ if(e && e.name === 'AbortError') return; }
   }
   if(navigator.clipboard){
-    navigator.clipboard.writeText(text).then(function(){ pToast('📋','Mensaje copiado — pegalo donde quieras'); });
+    try{ await navigator.clipboard.writeText(text); pToast('📋','Mensaje copiado — pegalo donde quieras'); return; }catch(e){}
   }
+  pToast('⚠️','No se pudo compartir en este navegador');
 }
 
 // Dibuja un póster de 1080×1920 con las stats del mes — apto para Stories
@@ -27215,7 +27231,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1247;
+    var _BUILT_V = 1248;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
