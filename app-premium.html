@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1272">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1272">
+  <link rel="stylesheet" href="premium.css?v=20260626-1273">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1273">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -217,6 +217,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <button class="p-mobile-nav-item" onclick="pOpenMonthlyWrapped();toggleMobileMenu()"><span class="p-mobile-nav-icon">🌸</span> Mi Wrapped mensual</button>
   <button class="p-mobile-nav-item" onclick="pOpenAnnualWrapped();toggleMobileMenu()"><span class="p-mobile-nav-icon">🎊</span> Mi Wrapped anual</button>
+  <button class="p-mobile-nav-item" onclick="pOpenGlobalSearch();toggleMobileMenu()"><span class="p-mobile-nav-icon">🔍</span> Buscar en Velo</button>
   <button class="p-mobile-nav-item" onclick="pOpenAchievementsModal();toggleMobileMenu()"><span class="p-mobile-nav-icon">🏆</span> Mis logros</button>
   <button class="p-mobile-nav-item" onclick="pOpenEmotionalTrajectory();toggleMobileMenu()"><span class="p-mobile-nav-icon">📈</span> Mi trayectoria emocional</button>
   <button class="p-mobile-nav-item" onclick="pOpenReferralLeaderboard();toggleMobileMenu()"><span class="p-mobile-nav-icon">🌱</span> Embajadores de Velo</button>
@@ -2272,6 +2273,7 @@
                     <button class="diary-tpl-btn" onclick="_injectDiaryTemplate('reflexion')">🌙 Reflexión</button>
                     <button class="diary-tpl-btn" onclick="_injectDiaryTemplate('sueno')">💭 Sueño</button>
                     <button class="diary-tpl-btn" onclick="pInjectDiaryPrompt()">✨ Del día</button>
+                    <button class="diary-tpl-btn" id="diaryVoiceBtn" onclick="pStartVoiceNote()" style="background:rgba(220,180,80,.10)">🎙️ Grabar audio</button>
                   </div>
 
                   <textarea class="p-textarea diary-ta" id="diaryTa" rows="7" placeholder="¿Cómo te sentís hoy? Escribí libremente..."></textarea>
@@ -4356,8 +4358,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1272"></script>
-<script src="premium-redesign.js?v=20260626-1272"></script>
+<script src="premium.js?v=20260626-1273"></script>
+<script src="premium-redesign.js?v=20260626-1273"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

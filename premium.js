@@ -12924,7 +12924,10 @@ async function pSaveDiary(){
   var dateLabel = _fmtDate(ts);
   // Local storage
   var entries = []; try{ entries = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
-  entries.unshift({ title:title, emoji:emoji, text:rawText, dateLabel:dateLabel, ts:ts });
+  var newEntry = { title:title, emoji:emoji, text:rawText, dateLabel:dateLabel, ts:ts };
+  // Adjuntar audio si hay uno grabado
+  newEntry = await _attachVoiceToEntry(newEntry);
+  entries.unshift(newEntry);
   safeLS('set','velo_diary', JSON.stringify(entries.slice(0,200)));
   // Supabase (include title so it syncs across devices)
   sbSaveDiaryEntry(text, dateLabel, ts, title);
@@ -13065,6 +13068,191 @@ function _updateDiaryStats(entries){
   var ec = document.getElementById('diaryEntryCountEl');
   if(sv) sv.textContent = streak;
   if(ec) ec.textContent = entries ? entries.length : 0;
+}
+
+// ── BÚSQUEDA GLOBAL — busca en Bitácora, Guardianes, usuarios, DMs ────
+var _veloSearchTimer = null;
+function pOpenGlobalSearch(){
+  var ex = document.getElementById('veloSearchOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'veloSearchOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10004;background:rgba(0,0,0,.88);display:flex;flex-direction:column;color:#fff;font-family:Jost,sans-serif';
+  ov.innerHTML = '<div style="padding:14px 18px 10px;flex-shrink:0"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px;flex-shrink:0">🔍</span><input id="veloSearchInput" type="text" placeholder="Buscar en Velo…" autocomplete="off" style="flex:1;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.20);border-radius:100px;padding:11px 18px;color:rgba(255,255,255,.98);font-size:15px;font-family:Jost,sans-serif;outline:none"><button onclick="document.getElementById(\'veloSearchOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.55);font-size:26px;cursor:pointer;padding:0 6px;flex-shrink:0">×</button></div><div style="display:flex;gap:6px;margin-top:12px;overflow-x:auto;scrollbar-width:none"><button data-tab="all" onclick="pSetSearchTab(\'all\')" style="flex-shrink:0;padding:6px 14px;background:rgba(116,198,157,.28);border:1px solid rgba(116,198,157,.55);border-radius:100px;color:rgba(180,255,220,.96);font-size:12px;font-weight:800;cursor:pointer">Todo</button><button data-tab="bitacora" onclick="pSetSearchTab(\'bitacora\')" style="flex-shrink:0;padding:6px 14px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.24);border-radius:100px;color:rgba(180,220,195,.72);font-size:12px;font-weight:700;cursor:pointer">📖 Bitácora</button><button data-tab="guardians" onclick="pSetSearchTab(\'guardians\')" style="flex-shrink:0;padding:6px 14px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.24);border-radius:100px;color:rgba(180,220,195,.72);font-size:12px;font-weight:700;cursor:pointer">🛡️ Guardianes</button><button data-tab="users" onclick="pSetSearchTab(\'users\')" style="flex-shrink:0;padding:6px 14px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.24);border-radius:100px;color:rgba(180,220,195,.72);font-size:12px;font-weight:700;cursor:pointer">👤 Personas</button></div></div><div id="veloSearchResults" style="flex:1;overflow-y:auto;padding:8px 18px 20px"><div style="text-align:center;color:rgba(200,220,215,.45);padding:60px 20px"><div style="font-size:48px;margin-bottom:14px;opacity:.55">🔍</div><div style="font-size:14px;line-height:1.5">Escribí algo para buscar en toda la app</div><div style="font-size:11.5px;margin-top:6px;color:rgba(200,220,215,.35)">historias, guardianes, personas…</div></div></div>';
+  document.body.appendChild(ov);
+  var inp = document.getElementById('veloSearchInput');
+  if(inp){
+    inp.focus();
+    inp.oninput = function(){
+      clearTimeout(_veloSearchTimer);
+      var q = inp.value.trim();
+      if(!q){
+        document.getElementById('veloSearchResults').innerHTML = '<div style="text-align:center;color:rgba(200,220,215,.45);padding:60px 20px"><div style="font-size:48px;margin-bottom:14px;opacity:.55">🔍</div><div style="font-size:14px">Escribí algo para buscar</div></div>';
+        return;
+      }
+      _veloSearchTimer = setTimeout(function(){ _runGlobalSearch(q); }, 350);
+    };
+  }
+  window._veloSearchTab = 'all';
+  window._veloSearchLastQuery = '';
+}
+function pSetSearchTab(tab){
+  window._veloSearchTab = tab;
+  document.querySelectorAll('#veloSearchOv button[data-tab]').forEach(function(b){
+    var active = b.dataset.tab === tab;
+    b.style.background = active ? 'rgba(116,198,157,.28)' : 'rgba(116,198,157,.10)';
+    b.style.borderColor = active ? 'rgba(116,198,157,.55)' : 'rgba(116,198,157,.24)';
+    b.style.color = active ? 'rgba(180,255,220,.96)' : 'rgba(180,220,195,.72)';
+    b.style.fontWeight = active ? '800' : '700';
+  });
+  if(window._veloSearchLastQuery) _runGlobalSearch(window._veloSearchLastQuery);
+}
+async function _runGlobalSearch(q){
+  window._veloSearchLastQuery = q;
+  var wrap = document.getElementById('veloSearchResults');
+  if(!wrap) return;
+  wrap.innerHTML = '<p style="text-align:center;color:rgba(200,220,215,.55);padding:32px 0">Buscando…</p>';
+  var tab = window._veloSearchTab || 'all';
+  _initSupabase();
+  var htmlParts = [];
+  var totalCount = 0;
+  // 1) Bitácora
+  if(tab === 'all' || tab === 'bitacora'){
+    if(sbClient){
+      try{
+        var bt = await sbClient.from('bitacora_posts_full')
+          .select('id,titulo,contenido,categoria,is_anon,user_id,user_name,user_av,created_at')
+          .or('titulo.ilike.%'+q+'%,contenido.ilike.%'+q+'%')
+          .order('created_at',{ascending:false}).limit(15);
+        if(!bt.error && bt.data && bt.data.length){
+          totalCount += bt.data.length;
+          var catCol = {apoyo:'#a790e0',superacion:'#e9b949',debate:'#7ab4d8',mio:'#95d5b2'};
+          htmlParts.push('<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(180,155,240,.75);margin:14px 0 8px">📖 BITÁCORA · '+bt.data.length+'</div>');
+          htmlParts.push(bt.data.map(function(p){
+            var preview = String(p.contenido||'').replace(/[\n\r]+/g,' ').slice(0,120);
+            var senderName = p.is_anon ? 'Anónimo/a' : (p.user_name || 'Usuario');
+            return '<div onclick="document.getElementById(\'veloSearchOv\').remove();if(typeof _btOpenDetail===\'function\')_btOpenDetail(\''+_escHtml(String(p.id))+'\')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);border-left:3px solid '+(catCol[p.categoria]||'#95d5b2')+';border-radius:0 12px 12px 0;padding:10px 14px;margin-bottom:8px;cursor:pointer"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:12px;font-weight:800;color:rgba(255,255,255,.85);font-family:Jost,sans-serif">'+_escHtml(senderName)+'</span><span style="font-size:10px;color:rgba(255,255,255,.40);text-transform:uppercase;letter-spacing:.8px">· '+(p.categoria||'apoyo')+'</span></div>'+(p.titulo?'<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;color:rgba(255,255,255,.94);line-height:1.25;margin-bottom:2px">'+_escHtml(p.titulo)+'</div>':'')+'<div style="font-size:12.5px;color:rgba(255,255,255,.65);line-height:1.45;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+_escHtml(preview)+'</div></div>';
+          }).join(''));
+        }
+      }catch(e){ console.warn('[search-bt]', e); }
+    }
+  }
+  // 2) Guardianes disponibles
+  if(tab === 'all' || tab === 'guardians'){
+    if(sbClient){
+      try{
+        var cutoff = new Date(Date.now() - 10*60*1000).toISOString();
+        var g = await sbClient.from('guardian_presence').select('*').neq('status','offline').gte('last_seen', cutoff);
+        var filtered = (g.data||[]).filter(function(r){
+          var n = String(r.name||'').toLowerCase();
+          var b = String(r.bio||'').toLowerCase();
+          return n.indexOf(q.toLowerCase()) >= 0 || b.indexOf(q.toLowerCase()) >= 0;
+        }).slice(0,10);
+        if(filtered.length){
+          totalCount += filtered.length;
+          htmlParts.push('<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(180,255,220,.75);margin:14px 0 8px">🛡️ GUARDIANES · '+filtered.length+'</div>');
+          htmlParts.push(filtered.map(function(gr){
+            return '<div onclick="document.getElementById(\'veloSearchOv\').remove();if(typeof pOpenGuardian===\'function\')pOpenGuardian(\'live_'+_escHtml(gr.user_id)+'\')" style="display:flex;align-items:center;gap:12px;background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.22);border-radius:12px;padding:10px 14px;margin-bottom:8px;cursor:pointer"><div style="font-size:28px;flex-shrink:0">'+_escHtml(gr.avatar||'🌿')+'</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:800;color:rgba(255,255,255,.94);font-family:Jost,sans-serif">'+_escHtml(gr.name||'Guardián')+'</div>'+(gr.bio?'<div style="font-size:12px;color:rgba(200,240,215,.68);font-style:italic;margin-top:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.35">'+_escHtml(gr.bio)+'</div>':'')+'</div></div>';
+          }).join(''));
+        }
+      }catch(e){ console.warn('[search-g]', e); }
+    }
+  }
+  // 3) Usuarios por nombre/username
+  if(tab === 'all' || tab === 'users'){
+    if(sbClient){
+      try{
+        var u = await sbClient.from('profiles').select('id,nombre,username,avatar,motto').or('nombre.ilike.%'+q+'%,username.ilike.%'+q+'%,motto.ilike.%'+q+'%').limit(10);
+        if(!u.error && u.data && u.data.length){
+          totalCount += u.data.length;
+          htmlParts.push('<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(140,200,240,.75);margin:14px 0 8px">👤 PERSONAS · '+u.data.length+'</div>');
+          htmlParts.push(u.data.map(function(pr){
+            var avHtml = (pr.avatar && (pr.avatar.startsWith('http')||pr.avatar.startsWith('data:')))
+              ? '<img src="'+_escHtml(pr.avatar)+'" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0">'
+              : '<div style="width:38px;height:38px;border-radius:50%;background:rgba(140,200,240,.18);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">'+_escHtml(pr.avatar||'🧑')+'</div>';
+            return '<div onclick="document.getElementById(\'veloSearchOv\').remove();if(typeof pQuickProfile===\'function\')pQuickProfile(\''+_escHtml(pr.nombre||'')+'\',\''+_escHtml(pr.avatar||'🧑')+'\',\'\',\'\',\''+_escHtml(pr.id)+'\')" style="display:flex;align-items:center;gap:12px;background:rgba(140,200,240,.06);border:1px solid rgba(140,200,240,.22);border-radius:12px;padding:10px 14px;margin-bottom:8px;cursor:pointer">'+avHtml+'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:800;color:rgba(255,255,255,.94);font-family:Jost,sans-serif">'+_escHtml(pr.nombre||'Sin nombre')+'</div>'+(pr.username?'<div style="font-size:11.5px;color:rgba(180,220,240,.68);font-family:Jost,sans-serif">@'+_escHtml(pr.username)+'</div>':'')+(pr.motto?'<div style="font-size:11.5px;color:rgba(200,220,240,.55);font-style:italic;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">"'+_escHtml(pr.motto)+'"</div>':'')+'</div></div>';
+          }).join(''));
+        }
+      }catch(e){ console.warn('[search-u]', e); }
+    }
+  }
+  if(totalCount === 0){
+    wrap.innerHTML = '<div style="text-align:center;color:rgba(200,220,215,.55);padding:48px 20px"><div style="font-size:44px;margin-bottom:14px;opacity:.42">🌿</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;color:rgba(220,240,225,.75);margin-bottom:6px">Nada apareció para "'+_escHtml(q)+'"</div><div style="font-size:12px;color:rgba(200,220,215,.42);line-height:1.5">Probá otra palabra o probá con otra pestaña</div></div>';
+  } else {
+    wrap.innerHTML = htmlParts.join('');
+  }
+}
+
+// ── VOICE NOTES en Diario Íntimo ─────────────────────────────────────
+var _veloRecorder = null;
+var _veloRecordedBlob = null;
+var _veloRecordChunks = [];
+async function pStartVoiceNote(){
+  var btn = document.getElementById('diaryVoiceBtn');
+  if(_veloRecorder && _veloRecorder.state === 'recording'){
+    _veloRecorder.stop();
+    if(btn){ btn.textContent = '🎙️ Grabar audio'; btn.style.background = 'rgba(220,180,80,.10)'; }
+    return;
+  }
+  try{
+    var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _veloRecordChunks = [];
+    _veloRecorder = new MediaRecorder(stream);
+    _veloRecorder.ondataavailable = function(e){ if(e.data && e.data.size > 0) _veloRecordChunks.push(e.data); };
+    _veloRecorder.onstop = function(){
+      _veloRecordedBlob = new Blob(_veloRecordChunks, { type: 'audio/webm' });
+      stream.getTracks().forEach(function(t){ t.stop(); });
+      // Verificar tamaño (máx 500KB)
+      if(_veloRecordedBlob.size > 500 * 1024){
+        pToast('⚠️','Grabación muy larga (>500KB). Grabá algo más corto.');
+        _veloRecordedBlob = null;
+        return;
+      }
+      _showVoiceNotePreview(_veloRecordedBlob);
+    };
+    _veloRecorder.start();
+    if(btn){ btn.textContent = '⏹️ Detener'; btn.style.background = 'rgba(255,120,80,.20)'; }
+    pToast('🎙️','Grabando… tocá "Detener" cuando termines');
+    // Auto-stop a los 60s
+    setTimeout(function(){ if(_veloRecorder && _veloRecorder.state === 'recording'){ _veloRecorder.stop(); if(btn){ btn.textContent = '🎙️ Grabar audio'; btn.style.background = 'rgba(220,180,80,.10)'; } pToast('⏱️','Grabación máxima 60 segundos'); } }, 60000);
+  }catch(e){
+    pToast('⚠️','No pude acceder al micrófono — revisá permisos');
+    console.warn('[voice-note]', e);
+  }
+}
+function _showVoiceNotePreview(blob){
+  var ex = document.getElementById('voiceNotePreview'); if(ex) ex.remove();
+  var url = URL.createObjectURL(blob);
+  var wrap = document.createElement('div');
+  wrap.id = 'voiceNotePreview';
+  wrap.style.cssText = 'background:rgba(220,180,80,.10);border:1.5px solid rgba(220,180,80,.35);border-radius:14px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;gap:10px';
+  wrap.innerHTML = '<span style="font-size:22px">🎙️</span><audio controls src="'+url+'" style="flex:1;height:32px"></audio><button onclick="_deleteVoiceNote()" title="Descartar" style="background:rgba(220,60,60,.14);border:1px solid rgba(220,60,60,.32);color:rgba(255,150,150,.85);border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer">🗑️</button>';
+  var ta = document.getElementById('diaryTa');
+  if(ta && ta.parentNode) ta.parentNode.insertBefore(wrap, ta.nextSibling);
+}
+function _deleteVoiceNote(){
+  _veloRecordedBlob = null;
+  var wrap = document.getElementById('voiceNotePreview'); if(wrap) wrap.remove();
+  pToast('🗑️','Nota de voz descartada');
+}
+// Convertir blob a base64 para guardar en el entry
+function _blobToBase64(blob){
+  return new Promise(function(res, rej){
+    var r = new FileReader();
+    r.onload = function(){ res(r.result); };
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+// Hook al guardar: si hay _veloRecordedBlob, se convierte a base64 y se agrega al entry
+async function _attachVoiceToEntry(entry){
+  if(!_veloRecordedBlob) return entry;
+  try{
+    var b64 = await _blobToBase64(_veloRecordedBlob);
+    entry.audio = b64;
+    _veloRecordedBlob = null;
+    var wrap = document.getElementById('voiceNotePreview'); if(wrap) wrap.remove();
+  }catch(e){}
+  return entry;
 }
 
 // ── I18N — soporte PORTUGUÉS gated a usuarios detectados como PT/BR ───
@@ -13499,6 +13687,11 @@ function pOpenDiaryEntry(ts){
     textEl.innerHTML = rawTxt.split(/\n\n+/).map(function(p){
       return '<p>'+p.split('\n').map(function(l){ return _escHtml(l); }).join('<br>')+'</p>';
     }).join('');
+    // Adjuntar audio si el entry tiene uno
+    if(entry.audio){
+      var audioHtml = '<div style="margin-top:14px;padding:10px 12px;background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.35);border-radius:12px;display:flex;align-items:center;gap:10px"><span style="font-size:20px">🎙️</span><audio controls src="'+entry.audio+'" style="flex:1;height:32px"></audio></div>';
+      textEl.innerHTML += audioHtml;
+    }
   }
   if(delBtn)  delBtn.onclick = function(){ closeModal('diaryEntryOv'); pDeleteDiary(ts); };
   openModal('diaryEntryOv');
@@ -29249,7 +29442,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1272;
+    var _BUILT_V = 1273;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
