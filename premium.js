@@ -11072,15 +11072,20 @@ async function _loadBottleStats(){
       sbClient.from('bottle_reactions').select('id', {count:'exact',head:true}).gte('created_at', since),
     ]);
     var bottles = (results[0] && results[0].count != null) ? results[0].count : 0;
-    // Fallback si no existen las tablas nuevas — muestra cero
     var replies = (results[1] && !results[1].error && results[1].count != null) ? results[1].count : 0;
     var reacts  = (results[2] && !results[2].error && results[2].count != null) ? results[2].count : 0;
-    el.innerHTML = '<span style="display:inline-flex;gap:12px;padding:8px 16px;background:rgba(65,155,222,.10);border:1px solid rgba(65,155,222,.22);border-radius:100px;font-weight:700;font-family:Jost,sans-serif;font-size:12px;color:rgba(30,90,128,.90);align-items:center">'
-      + '<span>🌊 <strong>'+bottles+'</strong> hoy</span>'
-      + '<span style="opacity:.35">·</span>'
-      + '<span>💌 <strong>'+replies+'</strong> respuestas</span>'
-      + '<span style="opacity:.35">·</span>'
-      + '<span>💛 <strong>'+reacts+'</strong> abrazos</span>'
+    var isLight = !document.body.classList.contains('r-dark');
+    var pillBg  = isLight ? 'rgba(65,155,222,.10)'  : 'rgba(140,205,255,.14)';
+    var pillBrd = isLight ? 'rgba(65,155,222,.28)'  : 'rgba(140,205,255,.35)';
+    var textCol = isLight ? 'rgba(30,90,128,.90)'   : 'rgba(220,240,255,.94)';
+    var strongCol = isLight ? 'rgba(12,58,138,.96)' : 'rgba(255,255,255,.98)';
+    var sepCol  = isLight ? 'rgba(30,90,128,.30)'   : 'rgba(220,240,255,.30)';
+    el.innerHTML = '<span style="display:inline-flex;gap:14px;padding:9px 18px;background:'+pillBg+';border:1.5px solid '+pillBrd+';border-radius:100px;font-weight:700;font-family:Jost,sans-serif;font-size:12.5px;color:'+textCol+';align-items:center;box-shadow:0 2px 12px rgba(65,155,222,.10)">'
+      + '<span>🌊 <strong style="color:'+strongCol+'">'+bottles+'</strong> hoy</span>'
+      + '<span style="color:'+sepCol+'">·</span>'
+      + '<span>💌 <strong style="color:'+strongCol+'">'+replies+'</strong> respuestas</span>'
+      + '<span style="color:'+sepCol+'">·</span>'
+      + '<span>💛 <strong style="color:'+strongCol+'">'+reacts+'</strong> abrazos</span>'
       + '</span>';
     el.style.display = 'block';
     el.style.textAlign = 'center';
@@ -11118,15 +11123,7 @@ var _BOTTLE_REACTIONS = [
 ];
 function pFilterBottleFeed(emoji, btn){
   _bottleFilter = (emoji===_bottleFilter) ? '' : emoji; // toggle
-  var row = document.getElementById('bottleFilterChips');
-  if(row) row.querySelectorAll('button').forEach(function(b){
-    var mine = b.dataset.filter === _bottleFilter;
-    b.style.background   = mine ? 'rgba(65,155,222,.28)' : 'rgba(65,155,222,.08)';
-    b.style.borderColor  = mine ? 'rgba(65,155,222,.72)' : 'rgba(65,155,222,.24)';
-    b.style.color        = mine ? 'rgba(20,58,120,.95)'  : 'rgba(30,90,128,.72)';
-    b.style.fontWeight   = mine ? '800' : '700';
-  });
-  pRenderBottle();
+  pRenderBottle(); // re-render aplica el estilo activo con colores adaptados
 }
 async function pReactBottle(bottleId, reaction){
   _initSupabase();
@@ -11200,16 +11197,27 @@ async function pRenderBottle(){
   // Batch-fetch usernames for non-anon bottle authors not yet cached
   if(sbClient){ var _bUnknown = allBottles.filter(function(b){ return !b.anon && b.userId && !_uLook(b.userId); }).map(function(b){ return b.userId; }); if(_bUnknown.length){ try{ var _br = await sbClient.from('profiles').select('id,username').in('id',_bUnknown); if(_br.data) _br.data.forEach(function(p){ _uFill(p.id,p.username); }); }catch(e){} } }
 
-  // ── FILTROS por emoción ──────────────────────────────
+  // ── FILTROS por emoción — colores adaptados al tema ──
+  var isLightBottle = !document.body.classList.contains('r-dark');
+  // Colores activos vs inactivos según tema
+  var _chipActiveBg    = isLightBottle ? 'rgba(65,155,222,.28)'  : 'rgba(140,205,255,.32)';
+  var _chipActiveBrd   = isLightBottle ? 'rgba(65,155,222,.72)'  : 'rgba(180,220,255,.85)';
+  var _chipActiveCol   = isLightBottle ? 'rgba(12,58,138,.98)'   : 'rgba(255,255,255,.98)';
+  var _chipInactiveBg  = isLightBottle ? 'rgba(65,155,222,.08)'  : 'rgba(140,205,255,.10)';
+  var _chipInactiveBrd = isLightBottle ? 'rgba(65,155,222,.24)'  : 'rgba(180,220,255,.30)';
+  var _chipInactiveCol = isLightBottle ? 'rgba(30,90,128,.85)'   : 'rgba(220,240,255,.88)';
   // Detectar emojis presentes para armar chips dinámicos
   var moodSet = {};
   allBottles.forEach(function(b){ if(b.mood) moodSet[b.mood] = (moodSet[b.mood]||0)+1; });
   var topMoods = Object.keys(moodSet).sort(function(a,b){ return moodSet[b] - moodSet[a]; }).slice(0,7);
+  function _chipStyle(active){
+    return 'flex-shrink:0;padding:7px 14px;background:'+(active?_chipActiveBg:_chipInactiveBg)+';border:1.5px solid '+(active?_chipActiveBrd:_chipInactiveBrd)+';border-radius:100px;color:'+(active?_chipActiveCol:_chipInactiveCol)+';font-size:13px;font-weight:'+(active?'800':'700')+';cursor:pointer;font-family:Jost,sans-serif;letter-spacing:.2px';
+  }
   var filterChipsHtml = '<div id="bottleFilterChips" style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none">'
-    + '<button data-filter="" onclick="pFilterBottleFeed(\'\',this)" style="flex-shrink:0;padding:6px 14px;background:'+(_bottleFilter===''?'rgba(65,155,222,.28)':'rgba(65,155,222,.08)')+';border:1.5px solid '+(_bottleFilter===''?'rgba(65,155,222,.72)':'rgba(65,155,222,.24)')+';border-radius:100px;color:'+(_bottleFilter===''?'rgba(20,58,120,.95)':'rgba(30,90,128,.72)')+';font-size:12.5px;font-weight:'+(_bottleFilter===''?'800':'700')+';cursor:pointer;font-family:Jost,sans-serif">Todos</button>'
+    + '<button data-filter="" onclick="pFilterBottleFeed(\'\',this)" style="'+_chipStyle(_bottleFilter==='')+'">Todos</button>'
     + topMoods.map(function(em){
         var active = _bottleFilter === em;
-        return '<button data-filter="'+em+'" onclick="pFilterBottleFeed(\''+em+'\',this)" style="flex-shrink:0;padding:6px 13px;background:'+(active?'rgba(65,155,222,.28)':'rgba(65,155,222,.08)')+';border:1.5px solid '+(active?'rgba(65,155,222,.72)':'rgba(65,155,222,.24)')+';border-radius:100px;color:'+(active?'rgba(20,58,120,.95)':'rgba(30,90,128,.72)')+';font-size:13px;font-weight:'+(active?'800':'700')+';cursor:pointer;font-family:Jost,sans-serif">'+em+' <span style="font-size:11px;opacity:.72">'+moodSet[em]+'</span></button>';
+        return '<button data-filter="'+em+'" onclick="pFilterBottleFeed(\''+em+'\',this)" style="'+_chipStyle(active)+'">'+em+' <span style="font-size:11.5px;opacity:.72;font-weight:700">'+moodSet[em]+'</span></button>';
       }).join('')
     + '</div>';
 
@@ -11308,10 +11316,18 @@ async function pRenderBottle(){
     var bReacts = reactionsByBottle[b.id] || {};
     var reactionsBar = _BOTTLE_REACTIONS.map(function(rDef){
       var d = bReacts[rDef.k] || {count:0, mine:false};
-      var pillBg  = d.mine ? 'rgba(255,220,120,.22)' : 'rgba(255,255,255,.06)';
-      var pillBrd = d.mine ? 'rgba(255,200,80,.55)'  : 'rgba(255,255,255,.14)';
-      var pillCol = d.mine ? 'rgba(255,220,120,.95)' : (isLight ? 'rgba(30,90,128,.72)' : 'rgba(255,255,255,.70)');
-      return '<button onclick="pReactBottle(\''+b.id+'\',\''+rDef.k+'\')" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:'+pillBg+';border:1.5px solid '+pillBrd+';border-radius:100px;font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;color:'+pillCol+';cursor:pointer;transition:all .18s;-webkit-tap-highlight-color:transparent" onmousedown="this.style.transform=\'scale(.92)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'" ontouchstart="this.style.transform=\'scale(.92)\'" ontouchend="this.style.transform=\'\'"><span style="font-size:14px;line-height:1">'+rDef.e+'</span>'+(d.count>0?'<span>'+d.count+'</span>':'')+'</button>';
+      // Colores adaptados al fondo de la card (que ya es dark en dark-mode y warm en light)
+      var pillBg, pillBrd, pillCol;
+      if(d.mine){
+        pillBg  = 'rgba(255,215,110,.28)';
+        pillBrd = 'rgba(255,205,80,.75)';
+        pillCol = isLight ? 'rgba(120,80,0,.95)' : 'rgba(255,230,140,.98)';
+      } else {
+        pillBg  = isLight ? 'rgba(0,0,0,.05)'       : 'rgba(255,255,255,.10)';
+        pillBrd = isLight ? 'rgba(0,0,0,.14)'       : 'rgba(255,255,255,.22)';
+        pillCol = isLight ? 'rgba(0,0,0,.72)'       : 'rgba(255,255,255,.88)';
+      }
+      return '<button onclick="pReactBottle(\''+b.id+'\',\''+rDef.k+'\')" style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:'+pillBg+';border:1.5px solid '+pillBrd+';border-radius:100px;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;color:'+pillCol+';cursor:pointer;transition:all .18s;-webkit-tap-highlight-color:transparent" onmousedown="this.style.transform=\'scale(.92)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'" ontouchstart="this.style.transform=\'scale(.92)\'" ontouchend="this.style.transform=\'\'"><span style="font-size:14px;line-height:1">'+rDef.e+'</span>'+(d.count>0?'<span>'+d.count+'</span>':'')+'</button>';
     }).join(' ');
     var replyCount = repliesByBottle[b.id] || 0;
     var replyCountHtml = replyCount > 0
@@ -27346,7 +27362,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1250;
+    var _BUILT_V = 1251;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
