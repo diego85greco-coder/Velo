@@ -13384,7 +13384,14 @@ function _hideRecordingIndicator(){
   if(_recTimerInterval){ clearInterval(_recTimerInterval); _recTimerInterval = null; }
   var el = document.getElementById('veloRecIndicator'); if(el) el.remove();
 }
-// ── WAV RECORDER usando Web Audio API — compatible con iOS Safari PWA ──
+// ── RECORDER — MediaRecorder primero (mp4/AAC en iOS, webm/opus en Chrome) ──
+// Fallback: WAV via Web Audio API si MediaRecorder no está disponible.
+var _mrRec = null;
+var _mrStream = null;
+var _mrChunks = [];
+var _mrMime = '';
+var _mrAutoStopTimer = null;
+// WAV fallback state
 var _wavStream = null;
 var _wavCtx = null;
 var _wavSource = null;
@@ -13399,7 +13406,6 @@ function _encodeWav(chunks, sampleRate){
   var samples = new Float32Array(total);
   var offset = 0;
   for(var j=0;j<chunks.length;j++){ samples.set(chunks[j], offset); offset += chunks[j].length; }
-  // PCM Int16
   var pcm = new Int16Array(samples.length);
   for(var k=0;k<samples.length;k++){
     var s = Math.max(-1, Math.min(1, samples[k]));
@@ -13431,27 +13437,69 @@ function _stopWavRecording(){
   _wavCtx = null;
   if(_wavAutoStopTimer){ clearTimeout(_wavAutoStopTimer); _wavAutoStopTimer = null; }
 }
+function _stopMediaRecorder(){
+  try{ if(_mrRec && _mrRec.state !== 'inactive') _mrRec.stop(); }catch(e){}
+  try{ if(_mrStream){ _mrStream.getTracks().forEach(function(t){ t.stop(); }); } }catch(e){}
+  if(_mrAutoStopTimer){ clearTimeout(_mrAutoStopTimer); _mrAutoStopTimer = null; }
+}
+// MIME que iOS Safari + Chrome + Firefox pueden REPRODUCIR y GRABAR
+function _pickRecorderMime(){
+  if(!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+  // Orden: mp4/AAC (iOS Safari nativo), luego webm/opus (Chrome/Firefox)
+  var candidates = [
+    'audio/mp4;codecs=mp4a.40.2', // AAC-LC en MP4 — reproducible en TODOS los navegadores
+    'audio/mp4',
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus'
+  ];
+  for(var i=0;i<candidates.length;i++){
+    try{ if(MediaRecorder.isTypeSupported(candidates[i])) return candidates[i]; }catch(e){}
+  }
+  return '';
+}
 async function pStartVoiceNote(){
-  // Si ya está grabando → detener
+  // Si ya está grabando (MediaRecorder) → detener
+  if(_mrRec && _mrRec.state !== 'inactive'){
+    _setVoiceBtnState(false);
+    _hideRecordingIndicator();
+    // El onstop finaliza el blob
+    return new Promise(function(res){
+      _mrRec.onstop = function(){
+        try{
+          var blob = new Blob(_mrChunks, { type: _mrMime || 'audio/mp4' });
+          _stopMediaRecorder();
+          if(!blob || blob.size < 500){ pToast('⚠️','La grabación quedó vacía — probá de nuevo'); return res(); }
+          if(blob.size > 5 * 1024 * 1024){ pToast('⚠️','Grabación muy grande — grabá algo más corto'); return res(); }
+          _veloRecordedBlob = blob;
+          _showVoiceNotePreview(blob);
+          res();
+        }catch(e){ console.warn('[mr-stop]', e); res(); }
+      };
+      try{ _mrRec.stop(); }catch(e){ res(); }
+    });
+  }
+  // Si ya está grabando (WAV fallback) → detener y encode
   if(_wavProcessor){
-    var blob = null;
-    try{ blob = _encodeWav(_wavChunks, _wavSampleRate); }catch(e){ console.warn('[wav-encode]', e); }
+    var wavBlob = null;
+    try{ wavBlob = _encodeWav(_wavChunks, _wavSampleRate); }catch(e){ console.warn('[wav-encode]', e); }
     _stopWavRecording();
     _setVoiceBtnState(false);
     _hideRecordingIndicator();
-    if(!blob || blob.size < 1000){ pToast('⚠️','La grabación quedó vacía — probá de nuevo'); return; }
-    if(blob.size > 5 * 1024 * 1024){ pToast('⚠️','Grabación muy grande — grabá algo más corto'); return; }
-    _veloRecordedBlob = blob;
-    _showVoiceNotePreview(blob);
+    if(!wavBlob || wavBlob.size < 1000){ pToast('⚠️','La grabación quedó vacía — probá de nuevo'); return; }
+    if(wavBlob.size > 5 * 1024 * 1024){ pToast('⚠️','Grabación muy grande — grabá algo más corto'); return; }
+    _veloRecordedBlob = wavBlob;
+    _showVoiceNotePreview(wavBlob);
     return;
   }
   if(!navigator.mediaDevices){
     pToast('⚠️','Tu navegador no soporta grabar audio');
     return;
   }
+  // Intentar MediaRecorder primero (path óptimo, nativo iOS Safari con mp4/AAC)
+  var recMime = _pickRecorderMime();
   try{
-    _wavChunks = [];
-    _wavStream = await navigator.mediaDevices.getUserMedia({
+    var stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         channelCount: 1,
         echoCancellation: true,
@@ -13459,18 +13507,55 @@ async function pStartVoiceNote(){
         autoGainControl: true,
       }
     });
+    if(window.MediaRecorder && recMime){
+      _mrStream = stream;
+      _mrChunks = [];
+      _mrMime = recMime;
+      var opts = { mimeType: recMime };
+      try{ _mrRec = new MediaRecorder(stream, opts); }
+      catch(mrErr){
+        console.warn('[mr-new]', mrErr);
+        _mrRec = null;
+        _mrStream = null;
+        try{ stream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){}
+      }
+      if(_mrRec){
+        _mrRec.ondataavailable = function(e){ if(e.data && e.data.size > 0) _mrChunks.push(e.data); };
+        _mrRec.onerror = function(e){ console.warn('[mr-error]', e && e.error); };
+        try{
+          _mrRec.start(1000); // slice cada 1s
+        }catch(startErr){
+          console.warn('[mr-start]', startErr);
+          _mrRec = null;
+          try{ stream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){}
+          _mrStream = null;
+        }
+        if(_mrRec){
+          _setVoiceBtnState(true);
+          _showRecordingIndicator();
+          pToast('🎙️','Grabando… tocá STOP cuando termines');
+          _mrAutoStopTimer = setTimeout(function(){
+            if(_mrRec && _mrRec.state !== 'inactive'){ pStartVoiceNote(); pToast('⏱️','Grabación máxima 60 segundos'); }
+          }, 60000);
+          return;
+        }
+      }
+    }
+    // Fallback: WAV via Web Audio API
+    _wavStream = stream;
+    _wavChunks = [];
     var AC = window.AudioContext || window.webkitAudioContext;
-    if(!AC){ pToast('⚠️','Tu navegador no soporta Web Audio'); _stopWavRecording(); return; }
+    if(!AC){
+      try{ stream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){}
+      pToast('⚠️','Tu navegador no soporta grabar audio'); return;
+    }
     _wavCtx = new AC();
     _wavSampleRate = _wavCtx.sampleRate || 44100;
-    // Bajar a 16kHz si el ctx acepta (algunos browsers ignoran esto)
     _wavSource = _wavCtx.createMediaStreamSource(_wavStream);
-    // ScriptProcessor sigue funcionando en todos los browsers, incluso deprecated
     var bufSize = 4096;
     _wavProcessor = (_wavCtx.createScriptProcessor || _wavCtx.createJavaScriptNode).call(_wavCtx, bufSize, 1, 1);
     _wavProcessor.onaudioprocess = function(e){
       var input = e.inputBuffer.getChannelData(0);
-      // Copiar el buffer (input es reusado por Web Audio)
       _wavChunks.push(new Float32Array(input));
     };
     _wavSource.connect(_wavProcessor);
@@ -13482,7 +13567,8 @@ async function pStartVoiceNote(){
       if(_wavProcessor){ pStartVoiceNote(); pToast('⏱️','Grabación máxima 60 segundos'); }
     }, 60000);
   }catch(e){
-    console.warn('[voice-note-wav]', e);
+    console.warn('[voice-note]', e);
+    _stopMediaRecorder();
     _stopWavRecording();
     _setVoiceBtnState(false);
     _hideRecordingIndicator();
@@ -14493,17 +14579,37 @@ function pOpenDiaryEntry(ts){
         textEl.appendChild(p);
       });
     }
-    // 2) Imagen — DOM API, sin innerHTML fragil
+    // 2) Imagen — data URL → blob URL (más confiable en iOS Safari con blobs grandes)
     if(entry.image){
       var imgWrap = document.createElement('div');
       imgWrap.style.cssText = 'margin-top:14px;text-align:center';
       var img = document.createElement('img');
       img.style.cssText = 'max-width:100%;max-height:400px;border-radius:14px;border:1.5px solid rgba(180,155,240,.30);box-shadow:0 6px 20px rgba(0,0,0,.20);display:block;margin:0 auto';
+      img.alt = 'Adjunto';
+      // Convertir data URL a blob URL (fix iOS Safari data-URL en <img>)
+      var imgBlobUrl = null;
+      try{
+        if(typeof entry.image === 'string' && entry.image.indexOf('data:') === 0){
+          var iArr = entry.image.split(',');
+          var iMimeMatch = iArr[0].match(/:(.*?);/);
+          var iMime = iMimeMatch ? iMimeMatch[1] : 'image/jpeg';
+          var iBstr = atob(iArr[1] || '');
+          var iU8 = new Uint8Array(iBstr.length);
+          for(var _ii=0; _ii<iBstr.length; _ii++) iU8[_ii] = iBstr.charCodeAt(_ii);
+          var iBlob = new Blob([iU8], { type: iMime });
+          imgBlobUrl = URL.createObjectURL(iBlob);
+          img.src = imgBlobUrl;
+        } else {
+          img.src = entry.image;
+        }
+      }catch(imgErr){
+        console.warn('[diary-img] blob-convert failed', imgErr);
+        img.src = entry.image;
+      }
       img.onerror = function(){
+        console.warn('[diary-img] load failed', img.src && img.src.slice(0,40));
         imgWrap.innerHTML = '<div style="padding:16px;background:rgba(180,155,240,.10);border:1.5px dashed rgba(180,155,240,.40);border-radius:14px;color:rgba(180,155,240,.85);font-family:Jost,sans-serif;font-size:13px">📷 Imagen no disponible en este dispositivo</div>';
       };
-      img.src = entry.image;
-      img.alt = 'Adjunto';
       imgWrap.appendChild(img);
       textEl.appendChild(imgWrap);
     }
@@ -14518,6 +14624,8 @@ function pOpenDiaryEntry(ts){
       var audioEl = document.createElement('audio');
       audioEl.controls = true;
       audioEl.preload = 'metadata';
+      audioEl.setAttribute('playsinline', '');
+      audioEl.setAttribute('webkit-playsinline', '');
       audioEl.style.cssText = 'width:100%;height:40px;display:block';
       // Convertir data URL a blob URL para máxima compatibilidad iOS Safari
       try{
@@ -30325,7 +30433,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1290;
+    var _BUILT_V = 1291;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
