@@ -13384,6 +13384,182 @@ function _hideRecordingIndicator(){
   if(_recTimerInterval){ clearInterval(_recTimerInterval); _recTimerInterval = null; }
   var el = document.getElementById('veloRecIndicator'); if(el) el.remove();
 }
+// ── AUDIO PLAYER robusto — WebAudio decodeAudioData con fallback a <audio> ──
+// En iOS Safari, MediaRecorder produce fragmented MP4 que <audio src="blob:...">
+// NO puede reproducir (requiere MSE). Pero AudioContext.decodeAudioData SÍ lo
+// decodifica nativamente. Este player usa WebAudio como primario y <audio>
+// como fallback, con colores legibles sobre el fondo beige del modal.
+var _veloPlayerState = {}; // ts → {ctx, buffer, source, playing, startedAt, offset, duration, statusEl, btn}
+function _renderVeloAudioPlayer(container, ts, audioData){
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'margin-top:14px;padding:14px 16px;background:rgba(200,158,56,.15);border:1.5px solid rgba(200,158,56,.50);border-radius:14px';
+  // Header legible: dark brown sobre beige (alto contraste)
+  var lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:12px;font-weight:800;color:#5c3d10;font-family:Jost,sans-serif;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px';
+  lbl.textContent = '🎙️ Nota de voz';
+  wrap.appendChild(lbl);
+  // Row con botón play + status
+  var row = document.createElement('div');
+  row.style.cssText = 'display:flex;align-items:center;gap:12px';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.style.cssText = 'width:48px;height:48px;border-radius:50%;background:#8b6314;border:2px solid #5c3d10;color:#fff8e0;font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 3px 10px rgba(92,61,16,.30)';
+  btn.textContent = '▶';
+  btn.setAttribute('aria-label','Reproducir');
+  var status = document.createElement('div');
+  status.style.cssText = 'flex:1;min-width:0;font-size:13px;font-weight:600;color:#5c3d10;font-family:Jost,sans-serif';
+  status.textContent = 'Cargando…';
+  row.appendChild(btn);
+  row.appendChild(status);
+  wrap.appendChild(row);
+  container.appendChild(wrap);
+  var state = { ctx:null, buffer:null, source:null, playing:false, startedAt:0, offset:0, duration:0, statusEl:status, btn:btn, ready:false, decoded:false };
+  _veloPlayerState[String(ts)] = state;
+  // Decodificar audio (async) — funciona con mp4/AAC fragmentado de iOS MediaRecorder
+  (async function _decode(){
+    try{
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC){ throw new Error('no-audiocontext'); }
+      state.ctx = new AC();
+      // Convertir data URL a ArrayBuffer
+      var arrayBuffer;
+      if(typeof audioData === 'string' && audioData.indexOf('data:') === 0){
+        var arr = audioData.split(',');
+        var bstr = atob(arr[1] || '');
+        var u8 = new Uint8Array(bstr.length);
+        for(var _i=0; _i<bstr.length; _i++) u8[_i] = bstr.charCodeAt(_i);
+        arrayBuffer = u8.buffer;
+      } else {
+        var res = await fetch(audioData);
+        arrayBuffer = await res.arrayBuffer();
+      }
+      // decodeAudioData con Promise (algunos iOS antiguos requieren callback)
+      state.buffer = await new Promise(function(resolve, reject){
+        try{
+          var p = state.ctx.decodeAudioData(arrayBuffer.slice(0), resolve, reject);
+          if(p && typeof p.then === 'function') p.then(resolve, reject);
+        }catch(err){ reject(err); }
+      });
+      state.duration = state.buffer.duration;
+      state.decoded = true;
+      state.ready = true;
+      var mm = Math.floor(state.duration/60), ss = Math.floor(state.duration%60);
+      status.textContent = '0:00 / ' + mm + ':' + String(ss).padStart(2,'0');
+    }catch(e){
+      console.warn('[velo-audio] decodeAudioData failed:', e && e.message, 'audio prefix:', (audioData||'').slice(0,32));
+      // Fallback a <audio> nativo con blob URL (algunos browsers no-Safari)
+      _fallbackNativeAudio(wrap, row, ts, audioData, state);
+    }
+  })();
+  btn.onclick = function(){
+    if(!state.decoded){
+      status.textContent = 'Todavía cargando el audio…';
+      return;
+    }
+    if(state.playing){
+      _stopVeloAudio(ts);
+    } else {
+      _playVeloAudio(ts);
+    }
+  };
+}
+function _playVeloAudio(ts){
+  var state = _veloPlayerState[String(ts)];
+  if(!state || !state.buffer || !state.ctx) return;
+  // Parar cualquier otro audio activo
+  Object.keys(_veloPlayerState).forEach(function(k){
+    if(k !== String(ts) && _veloPlayerState[k] && _veloPlayerState[k].playing){
+      _stopVeloAudio(k);
+    }
+  });
+  try{
+    if(state.ctx.state === 'suspended') state.ctx.resume();
+    var src = state.ctx.createBufferSource();
+    src.buffer = state.buffer;
+    src.connect(state.ctx.destination);
+    src.start(0, state.offset || 0);
+    state.source = src;
+    state.playing = true;
+    state.startedAt = state.ctx.currentTime - (state.offset || 0);
+    state.btn.textContent = '⏸';
+    state.btn.setAttribute('aria-label','Pausar');
+    var mm = Math.floor(state.duration/60), ss = Math.floor(state.duration%60);
+    var tick = function(){
+      if(!state.playing) return;
+      var elapsed = state.ctx.currentTime - state.startedAt;
+      if(elapsed >= state.duration){ _stopVeloAudio(ts, true); return; }
+      var em = Math.floor(elapsed/60), es = Math.floor(elapsed%60);
+      state.statusEl.textContent = em + ':' + String(es).padStart(2,'0') + ' / ' + mm + ':' + String(ss).padStart(2,'0');
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    src.onended = function(){ if(state.playing) _stopVeloAudio(ts, true); };
+  }catch(e){
+    console.warn('[velo-audio] play failed:', e && e.message);
+    state.statusEl.textContent = 'No se pudo reproducir';
+  }
+}
+function _stopVeloAudio(ts, atEnd){
+  var state = _veloPlayerState[String(ts)];
+  if(!state) return;
+  try{ if(state.source) state.source.stop(0); }catch(e){}
+  if(!atEnd){
+    state.offset = state.ctx ? (state.ctx.currentTime - state.startedAt) : 0;
+    if(state.offset < 0 || state.offset >= state.duration) state.offset = 0;
+  } else {
+    state.offset = 0;
+  }
+  state.playing = false;
+  state.source = null;
+  state.btn.textContent = '▶';
+  state.btn.setAttribute('aria-label','Reproducir');
+  var mm = Math.floor(state.duration/60), ss = Math.floor(state.duration%60);
+  var em = Math.floor(state.offset/60), es = Math.floor(state.offset%60);
+  state.statusEl.textContent = em + ':' + String(es).padStart(2,'0') + ' / ' + mm + ':' + String(ss).padStart(2,'0');
+}
+function _fallbackNativeAudio(wrap, row, ts, audioData, state){
+  // WebAudio falló — probar <audio> nativo con blob URL
+  try{ row.remove(); }catch(e){}
+  var audioEl = document.createElement('audio');
+  audioEl.controls = true;
+  audioEl.preload = 'metadata';
+  audioEl.setAttribute('playsinline', '');
+  audioEl.setAttribute('webkit-playsinline', '');
+  audioEl.style.cssText = 'width:100%;height:40px;display:block';
+  try{
+    if(typeof audioData === 'string' && audioData.indexOf('data:') === 0){
+      var arr = audioData.split(',');
+      var mimeMatch = arr[0].match(/:(.*?);/);
+      var mime = mimeMatch ? mimeMatch[1] : 'audio/mp4';
+      var bstr = atob(arr[1] || '');
+      var u8 = new Uint8Array(bstr.length);
+      for(var _i=0; _i<bstr.length; _i++) u8[_i] = bstr.charCodeAt(_i);
+      var blob = new Blob([u8], { type: mime });
+      audioEl.src = URL.createObjectURL(blob);
+    } else {
+      audioEl.src = audioData;
+    }
+  }catch(e){ audioEl.src = audioData; }
+  var errShown = false;
+  audioEl.onerror = function(){
+    if(errShown) return; errShown = true;
+    var errMsg = document.createElement('div');
+    errMsg.style.cssText = 'margin-top:10px;padding:10px 12px;background:rgba(180,80,30,.15);border:1.5px solid rgba(180,80,30,.42);border-radius:10px;font-size:12.5px;font-weight:600;color:#7a3010;font-family:Jost,sans-serif';
+    errMsg.textContent = 'No se pudo cargar este audio. Probá desde otro dispositivo o navegador.';
+    wrap.appendChild(errMsg);
+  };
+  wrap.appendChild(audioEl);
+}
+// Limpiar players al cerrar modal
+function _cleanupVeloAudioPlayers(){
+  Object.keys(_veloPlayerState).forEach(function(k){
+    var st = _veloPlayerState[k];
+    try{ if(st.source) st.source.stop(0); }catch(e){}
+    try{ if(st.ctx && st.ctx.close) st.ctx.close(); }catch(e){}
+  });
+  _veloPlayerState = {};
+}
+
 // ── RECORDER — MediaRecorder primero (mp4/AAC en iOS, webm/opus en Chrome) ──
 // Fallback: WAV via Web Audio API si MediaRecorder no está disponible.
 var _mrRec = null;
@@ -13674,25 +13850,33 @@ async function _attachImageToEntry(entry){
   var wrap = document.getElementById('diaryImagePreview'); if(wrap) wrap.remove();
   return entry;
 }
-function _showVoiceNotePreview(blob){
+async function _showVoiceNotePreview(blob){
   var ex = document.getElementById('voiceNotePreview'); if(ex) ex.remove();
-  var url = URL.createObjectURL(blob);
   var wrap = document.createElement('div');
   wrap.id = 'voiceNotePreview';
-  wrap.style.cssText = 'background:rgba(220,180,80,.10);border:1.5px solid rgba(220,180,80,.35);border-radius:14px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;gap:10px';
-  // Duración leída del blob
+  wrap.style.cssText = 'background:rgba(220,180,80,.14);border:1.5px solid rgba(180,130,30,.50);border-radius:14px;padding:12px 14px;margin-top:10px;display:flex;align-items:center;gap:12px';
   var sizeKb = Math.round(blob.size / 1024);
-  wrap.innerHTML = '<span style="font-size:22px">🎙️</span><audio id="voicePreviewAudio" controls preload="metadata" src="'+url+'" style="flex:1;height:32px"></audio><span style="font-size:10.5px;color:rgba(220,180,80,.70);font-family:Jost,sans-serif;font-weight:700;letter-spacing:.3px;flex-shrink:0">'+sizeKb+' KB</span><button onclick="_deleteVoiceNote()" title="Descartar" style="background:rgba(220,60,60,.14);border:1px solid rgba(220,60,60,.32);color:rgba(255,150,150,.85);border-radius:8px;padding:5px 10px;font-size:14px;cursor:pointer">🗑️</button>';
+  // Convertir blob a data URL para reusar el player robusto
+  var dataUrl = await new Promise(function(res){ var r = new FileReader(); r.onload = function(){ res(r.result); }; r.readAsDataURL(blob); });
+  // Contenedor donde el player renderiza
+  var playerCol = document.createElement('div');
+  playerCol.style.cssText = 'flex:1;min-width:0';
+  wrap.appendChild(playerCol);
+  var sizeSpan = document.createElement('span');
+  sizeSpan.style.cssText = 'font-size:11px;color:#7a5020;font-family:Jost,sans-serif;font-weight:800;letter-spacing:.3px;flex-shrink:0';
+  sizeSpan.textContent = sizeKb + ' KB';
+  wrap.appendChild(sizeSpan);
+  var delBtn = document.createElement('button');
+  delBtn.type = 'button';
+  delBtn.onclick = function(){ _deleteVoiceNote(); };
+  delBtn.title = 'Descartar';
+  delBtn.style.cssText = 'background:rgba(220,60,60,.14);border:1px solid rgba(220,60,60,.42);color:#a02020;border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;flex-shrink:0';
+  delBtn.textContent = '🗑️';
+  wrap.appendChild(delBtn);
   var ta = document.getElementById('diaryTa');
   if(ta && ta.parentNode) ta.parentNode.insertBefore(wrap, ta.nextSibling);
-  // Verificar si el audio se puede reproducir; si no, avisar de forma tranquila
-  setTimeout(function(){
-    var au = document.getElementById('voicePreviewAudio');
-    if(au && au.error){
-      // No molestar con toast — el audio se guarda igual, solo no se puede escuchar la preview
-      console.warn('[voice-preview] audio format no reproducible en este browser (se guardará igual)');
-    }
-  }, 600);
+  // Renderizar el player robusto (WebAudio decode)
+  _renderVeloAudioPlayer(playerCol, 'preview', dataUrl);
 }
 function _deleteVoiceNote(){
   _veloRecordedBlob = null;
@@ -14613,49 +14797,11 @@ function pOpenDiaryEntry(ts){
       imgWrap.appendChild(img);
       textEl.appendChild(imgWrap);
     }
-    // 3) Audio — usar SOLO el player nativo con blob URL (más confiable que data URL en iOS)
+    // 3) Audio — WebAudio decodeAudioData player (funciona con fMP4 de iOS MediaRecorder)
+    //    En iOS Safari el <audio> nativo con blob URL falla porque MediaRecorder produce
+    //    fragmented MP4 que solo se puede reproducir con MSE — pero decodeAudioData sí lo maneja.
     if(entry.audio){
-      var audioWrap = document.createElement('div');
-      audioWrap.style.cssText = 'margin-top:14px;padding:12px 14px;background:rgba(200,158,56,.12);border:1.5px solid rgba(200,158,56,.42);border-radius:14px';
-      var lbl = document.createElement('div');
-      lbl.style.cssText = 'font-size:12.5px;font-weight:800;color:rgba(200,158,56,.98);font-family:Jost,sans-serif;letter-spacing:.3px;text-transform:uppercase;margin-bottom:8px';
-      lbl.textContent = '🎙️ Nota de voz';
-      audioWrap.appendChild(lbl);
-      var audioEl = document.createElement('audio');
-      audioEl.controls = true;
-      audioEl.preload = 'metadata';
-      audioEl.setAttribute('playsinline', '');
-      audioEl.setAttribute('webkit-playsinline', '');
-      audioEl.style.cssText = 'width:100%;height:40px;display:block';
-      // Convertir data URL a blob URL para máxima compatibilidad iOS Safari
-      try{
-        if(typeof entry.audio === 'string' && entry.audio.indexOf('data:') === 0){
-          var arr = entry.audio.split(',');
-          var mimeMatch = arr[0].match(/:(.*?);/);
-          var mime = mimeMatch ? mimeMatch[1] : 'audio/wav';
-          var bstr = atob(arr[1] || '');
-          var u8 = new Uint8Array(bstr.length);
-          for(var _i=0; _i<bstr.length; _i++) u8[_i] = bstr.charCodeAt(_i);
-          var blob = new Blob([u8], { type: mime });
-          audioEl.src = URL.createObjectURL(blob);
-        } else {
-          audioEl.src = entry.audio;
-        }
-      }catch(errBlob){
-        console.warn('[diary-audio] blob-convert failed', errBlob);
-        audioEl.src = entry.audio;
-      }
-      var errShown = false;
-      audioEl.onerror = function(){
-        if(errShown) return; errShown = true;
-        console.warn('[diary-audio] element error', audioEl.error && audioEl.error.code, audioEl.error && audioEl.error.message);
-        var errMsg = document.createElement('div');
-        errMsg.style.cssText = 'margin-top:8px;font-size:11.5px;color:rgba(255,180,120,.85);font-family:Jost,sans-serif';
-        errMsg.textContent = 'No se pudo cargar el audio en este navegador.';
-        audioWrap.appendChild(errMsg);
-      };
-      audioWrap.appendChild(audioEl);
-      textEl.appendChild(audioWrap);
+      _renderVeloAudioPlayer(textEl, entry.ts, entry.audio);
     }
   }
   if(delBtn)  delBtn.onclick = function(){ closeModal('diaryEntryOv'); pDeleteDiary(ts); };
@@ -30433,7 +30579,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1291;
+    var _BUILT_V = 1292;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
