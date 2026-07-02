@@ -2286,13 +2286,22 @@ function _renderBreathingWidgetOnHome(){
 }
 
 // ── COMMUNITY PULSE — línea sutil dentro del saludo, no card ────────
+var _pulseLineBuilding = false;
 async function _renderCommunityPulseBanner(){
-  // Sacar cualquier versión vieja del banner
+  // Cleanup defensivo: si por bug previo hay N líneas o pill, dejar solo la primera
   var _oldChip = document.getElementById('communityPulseChip');
   if(_oldChip) _oldChip.remove();
+  var existing = document.querySelectorAll('#communityPulseLine');
+  if(existing.length > 1){
+    for(var _i=1; _i<existing.length; _i++) existing[_i].remove();
+  }
+  if(document.getElementById('communityPulseLine')) return;
+  if(_pulseLineBuilding) return;
+  _pulseLineBuilding = true;
   var block = document.getElementById('homeGreetBlock');
-  if(!block || document.getElementById('communityPulseLine')) return;
-  _initSupabase(); if(!sbClient) return;
+  if(!block){ _pulseLineBuilding = false; return; }
+  _initSupabase();
+  if(!sbClient){ _pulseLineBuilding = false; return; }
   try{
     var since = new Date(Date.now() - 24*3600000).toISOString();
     var results = await Promise.all([
@@ -2303,10 +2312,13 @@ async function _renderCommunityPulseBanner(){
     var m = (results[0] && results[0].count != null) ? results[0].count : 0;
     var b = (results[1] && results[1].count != null) ? results[1].count : 0;
     var w = (results[2] && results[2].count != null) ? results[2].count : 0;
-    if(m + b + w === 0) return;
+    if(m + b + w === 0){ _pulseLineBuilding = false; return; }
+    // Re-check post-await: si otra invocación ya insertó, no dupliques
+    if(document.getElementById('communityPulseLine')){ _pulseLineBuilding = false; return; }
     var isLight = !document.body.classList.contains('r-dark');
     var col = isLight ? 'rgba(140,110,20,.72)' : 'rgba(220,180,80,.75)';
     var sepCol = isLight ? 'rgba(140,110,20,.35)' : 'rgba(220,180,80,.35)';
+    var labelCol = isLight ? 'rgba(140,110,20,.55)' : 'rgba(220,180,80,.55)';
     var line = document.createElement('div');
     line.id = 'communityPulseLine';
     var parts = [];
@@ -2314,10 +2326,11 @@ async function _renderCommunityPulseBanner(){
     if(b>0) parts.push('📖 '+b);
     if(w>0) parts.push('🌊 '+w);
     line.style.cssText = 'text-align:center;font-family:Jost,sans-serif;font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:'+col+';margin-top:8px;opacity:0;transition:opacity .5s';
-    line.innerHTML = parts.join(' <span style="color:'+sepCol+';font-weight:400">·</span> ');
+    line.innerHTML = '<span style="color:'+labelCol+';font-weight:600">Hoy en Velo:</span> ' + parts.join(' <span style="color:'+sepCol+';font-weight:400">·</span> ');
     block.appendChild(line);
     requestAnimationFrame(function(){ line.style.opacity = '1'; });
   }catch(e){}
+  _pulseLineBuilding = false;
 }
 
 // ── BUDDY EXPIRY — banner en home cuando cumple 30 días ──────────
@@ -28032,7 +28045,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1262;
+    var _BUILT_V = 1263;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
