@@ -2996,8 +2996,9 @@ function pOpenPreferences(){
       + '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:rgba(180,220,195,.48);font-family:Jost,sans-serif;margin-top:4px"><span>A</span><span style="font-size:14px">A</span></div>'
       + '<div id="prefsFontPreview" style="margin-top:14px;padding:12px 14px;background:rgba(0,0,0,.20);border-radius:10px;font-family:\'Cormorant Garamond\',serif;font-style:italic;color:rgba(200,240,215,.92);line-height:1.5;font-size:'+(15*currentScale)+'px">"Cada emoción es válida. Nuestro trabajo es escuchar sin juzgar."</div>'
     + '</div>'
-    // Especialidades del Guardián (solo se muestran si el user es guardián)
-    + (safeLS('get','velo_is_guardian') === 'true' ? (function(){
+    // Especialidades del Guardián (siempre visibles — se aplican cuando activás modo guardián)
+    + (function(){
+        var _isG = safeLS('get','velo_is_guardian') === 'true';
         var curr = safeLS('get','velo_guardian_specialties')||'';
         var arr = curr.split(',').filter(Boolean);
         // Predefinidas
@@ -3013,7 +3014,7 @@ function pOpenPreferences(){
         }).join('');
         return '<div style="background:rgba(116,198,157,.06);border:1px solid rgba(116,198,157,.20);border-radius:14px;padding:14px 15px;margin-bottom:12px">'
           + '<div style="font-size:13px;font-weight:800;color:rgba(220,255,235,.94);font-family:Jost,sans-serif;margin-bottom:4px">🛡️ Tus especialidades como Guardián</div>'
-          + '<div style="font-size:11.5px;color:rgba(180,220,195,.60);font-family:Jost,sans-serif;margin-bottom:10px">Elegí hasta 4 temas en los que te sentís cómodo/a acompañando</div>'
+          + '<div style="font-size:11.5px;color:rgba(180,220,195,.60);font-family:Jost,sans-serif;margin-bottom:10px">Elegí hasta 4 temas en los que te sentís cómodo/a acompañando'+(_isG ? '' : ' <span style="color:rgba(220,180,80,.85);font-weight:800">· se aplican cuando actives modo Guardián</span>')+'</div>'
           + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">'+chips+'</div>'
           // Custom input
           + '<div style="font-size:11.5px;color:rgba(180,220,195,.55);font-family:Jost,sans-serif;margin-bottom:6px;letter-spacing:.3px">✍️ Otro tema (no listado)</div>'
@@ -3023,7 +3024,7 @@ function pOpenPreferences(){
           + '</div>'
           + (customChips ? '<div style="display:flex;flex-wrap:wrap;gap:6px">'+customChips+'</div>' : '')
         + '</div>';
-      })() : '')
+      })()
     // Blocked users
     + '<div style="background:rgba(220,120,120,.06);border:1px solid rgba(220,120,120,.20);border-radius:14px;padding:14px 15px">'
       + '<div style="font-size:13px;font-weight:800;color:rgba(255,220,220,.94);font-family:Jost,sans-serif;margin-bottom:4px">Usuarios bloqueados</div>'
@@ -8221,6 +8222,18 @@ function _renderMyStatusBar(){
     +'</div>'
     +'</div>'
     +'<div style="height:1px;background:'+dvLine+';margin:0 16px"></div>'
+    // Botón directo a editar temas de guardián
+    + (function(){
+        var currSpecs = safeLS('get','velo_guardian_specialties')||'';
+        var arr = currSpecs.split(',').filter(Boolean);
+        var chipsPreview = arr.length ? arr.slice(0,3).map(function(k){
+          var meta = _VELO_SPECIALTIES.find(function(x){ return x.k===k; });
+          return meta ? meta.e+' '+meta.n : '✍️ '+k.slice(0,10);
+        }).join(' · ') + (arr.length>3?' +'+(arr.length-3):'') : '';
+        var lblCol = isDark ? 'rgba(220,255,235,.92)' : 'rgba(15,60,35,.92)';
+        var subCol = isDark ? 'rgba(180,220,195,.55)' : 'rgba(45,90,55,.55)';
+        return '<button onclick="pOpenPreferences()" style="width:calc(100% - 32px);margin:12px 16px 0;display:flex;align-items:center;gap:10px;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.22);border-radius:14px;padding:10px 14px;cursor:pointer;font-family:Jost,sans-serif;text-align:left"><span style="font-size:20px;flex-shrink:0">🎯</span><div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:800;color:'+lblCol+';letter-spacing:.3px">Mis temas como Guardián</div><div style="font-size:11px;color:'+subCol+';margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(chipsPreview || 'Elegí en qué temas te sentís cómodo/a acompañando')+'</div></div><span style="color:'+subCol+';font-size:16px;flex-shrink:0">›</span></button>';
+      })()
     // Toggles incógnito + guardián
     +'<div style="padding:12px 16px 15px;display:flex;align-items:stretch">'
     +'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">'
@@ -28441,7 +28454,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1267;
+    var _BUILT_V = 1268;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
