@@ -12965,16 +12965,20 @@ async function pSaveDiary(){
   var chosenEl = document.getElementById('diaryEmojiChosen');
   if(chosenEl) chosenEl.textContent = '';
   pToast('📔','Entrada guardada 💚');
-  _loadDiaryEntries();
+  // Re-render con _diaryEntries en memoria (que TIENE los blobs completos)
+  // NO llamar _loadDiaryEntries porque resetearía desde LS (que puede estar compactado)
+  var elList = document.getElementById('diaryEntries');
+  if(elList) _renderDiaryEntryList(elList, _diaryEntries);
+  _updateDiaryStats(_diaryEntries);
 }
 
 function _renderDiaryEntryList(el, entries){
+  // Actualizar stats SIEMPRE (aún cuando la lista queda vacía tras borrar)
+  _updateDiaryStats(entries || []);
   if(!entries || !entries.length){
     el.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">📔</span><div class="p-empty-title">Aún no tenés entradas</div><div class="p-empty-sub">Empezá hoy — es tu espacio seguro 🌙</div></div>';
     return;
   }
-  // Update stats whenever we render
-  _updateDiaryStats(entries);
   var sorted = entries.slice().sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
   el.innerHTML = sorted.map(function(e, i){
     var rawLabel = e.dateLabel || '';
@@ -12991,10 +12995,21 @@ function _renderDiaryEntryList(el, entries){
     else if(hasImage){ preview = '📷 Imagen'; }
     else { preview = ''; }
     var previewHtml = preview ? '<div class="diary-row-preview">'+_escHtml(preview)+'</div>' : '';
-    // Badges de tipo: audio + imagen
+    // Badges de tipo: audio + imagen (theme-aware para modo claro y oscuro)
+    var isDarkList = document.body.classList.contains('r-dark');
     var badges = '';
-    if(hasAudio) badges += '<span title="Tiene audio" style="display:inline-flex;align-items:center;gap:3px;background:rgba(220,180,80,.18);border:1px solid rgba(220,180,80,.45);border-radius:100px;padding:2px 8px;font-size:10.5px;font-weight:800;color:rgba(240,220,150,.98);font-family:Jost,sans-serif;letter-spacing:.3px">🎙️ audio</span>';
-    if(hasImage) badges += (badges?'<span style="width:4px"></span>':'')+'<span title="Tiene foto" style="display:inline-flex;align-items:center;gap:3px;background:rgba(180,155,240,.18);border:1px solid rgba(180,155,240,.45);border-radius:100px;padding:2px 8px;font-size:10.5px;font-weight:800;color:rgba(215,200,255,.98);font-family:Jost,sans-serif;letter-spacing:.3px">📷 foto</span>';
+    if(hasAudio){
+      var audioColor = isDarkList ? 'rgba(240,220,150,.98)' : 'rgba(140,90,10,.95)';
+      var audioBg = isDarkList ? 'rgba(220,180,80,.18)' : 'rgba(220,180,80,.28)';
+      var audioBrd = isDarkList ? 'rgba(220,180,80,.45)' : 'rgba(200,140,30,.60)';
+      badges += '<span title="Tiene audio" style="display:inline-flex;align-items:center;gap:3px;background:'+audioBg+';border:1px solid '+audioBrd+';border-radius:100px;padding:2px 8px;font-size:10.5px;font-weight:800;color:'+audioColor+';font-family:Jost,sans-serif;letter-spacing:.3px">🎙️ audio</span>';
+    }
+    if(hasImage){
+      var imageColor = isDarkList ? 'rgba(215,200,255,.98)' : 'rgba(80,50,150,.95)';
+      var imageBg = isDarkList ? 'rgba(180,155,240,.18)' : 'rgba(180,155,240,.28)';
+      var imageBrd = isDarkList ? 'rgba(180,155,240,.45)' : 'rgba(140,100,220,.60)';
+      badges += (badges?'<span style="width:4px"></span>':'')+'<span title="Tiene foto" style="display:inline-flex;align-items:center;gap:3px;background:'+imageBg+';border:1px solid '+imageBrd+';border-radius:100px;padding:2px 8px;font-size:10.5px;font-weight:800;color:'+imageColor+';font-family:Jost,sans-serif;letter-spacing:.3px">📷 foto</span>';
+    }
     // Border-left color según tipo predominante: audio → dorado, imagen → violeta, texto → default
     var leftBorder = '';
     if(hasAudio && !hasText && !hasImage) leftBorder = 'border-left:3px solid rgba(220,180,80,.65);padding-left:12px';
@@ -13246,6 +13261,89 @@ async function _runGlobalSearch(q){
     wrap.innerHTML = '<div style="text-align:center;color:rgba(200,220,215,.55);padding:48px 20px"><div style="font-size:44px;margin-bottom:14px;opacity:.42">🌿</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;color:rgba(220,240,225,.75);margin-bottom:6px">Nada apareció para "'+_escHtml(q)+'"</div><div style="font-size:12px;color:rgba(200,220,215,.42);line-height:1.5">Probá otra palabra o probá con otra pestaña</div></div>';
   } else {
     wrap.innerHTML = htmlParts.join('');
+  }
+}
+
+// ── VELO CUSTOM AUDIO PLAYER (Web Audio API, funciona en iOS Safari PWA) ──
+var _veloAudioCtx = null;
+var _veloActiveAudioSource = null;
+var _veloActiveAudioTs = null;
+async function pToggleVeloAudio(ts, btn){
+  ts = String(ts);
+  var wrap = document.getElementById('veloAudioPlayer_' + ts);
+  if(!wrap) return;
+  var audioData = wrap.dataset.audio;
+  if(!audioData){ pToast('⚠️','Audio no disponible'); return; }
+  var statusEl = document.getElementById('veloAudioStatus_' + ts);
+  // Si ya está sonando este audio → detenerlo
+  if(_veloActiveAudioSource && _veloActiveAudioTs === ts){
+    try{ _veloActiveAudioSource.stop(); }catch(e){}
+    _veloActiveAudioSource = null;
+    _veloActiveAudioTs = null;
+    if(btn) btn.innerHTML = '▶️';
+    if(statusEl) statusEl.textContent = 'Pausado';
+    return;
+  }
+  // Si hay otro reproduciendo → detenerlo
+  if(_veloActiveAudioSource){
+    try{ _veloActiveAudioSource.stop(); }catch(e){}
+    // Reset botón del anterior
+    var prevBtn = document.querySelector('#veloAudioPlayer_' + _veloActiveAudioTs + ' button');
+    if(prevBtn) prevBtn.innerHTML = '▶️';
+  }
+  try{
+    if(!_veloAudioCtx){
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC){ pToast('⚠️','Tu navegador no soporta reproducir audio'); return; }
+      _veloAudioCtx = new AC();
+    }
+    if(_veloAudioCtx.state === 'suspended'){ try{ await _veloAudioCtx.resume(); }catch(e){} }
+    if(btn) btn.innerHTML = '⏳';
+    if(statusEl) statusEl.textContent = 'Decodificando…';
+    // Fetch data URL como ArrayBuffer
+    var response = await fetch(audioData);
+    var arrayBuffer = await response.arrayBuffer();
+    // Decodificar (soporta mp4/AAC en iOS Safari)
+    var audioBuffer = await new Promise(function(res, rej){
+      try{
+        _veloAudioCtx.decodeAudioData(arrayBuffer.slice(0), res, rej);
+      }catch(e){ rej(e); }
+    });
+    var source = _veloAudioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(_veloAudioCtx.destination);
+    _veloActiveAudioSource = source;
+    _veloActiveAudioTs = ts;
+    var startTs = Date.now();
+    var duration = audioBuffer.duration;
+    source.onended = function(){
+      if(_veloActiveAudioTs === ts){
+        _veloActiveAudioSource = null;
+        _veloActiveAudioTs = null;
+        if(btn) btn.innerHTML = '▶️';
+        if(statusEl) statusEl.textContent = 'Terminado — tocá play para escuchar de nuevo';
+      }
+    };
+    source.start(0);
+    if(btn) btn.innerHTML = '⏹️';
+    if(statusEl){
+      var total = Math.floor(duration);
+      var mm = Math.floor(total/60), ss = total%60;
+      statusEl.textContent = '▶️ Reproduciendo · '+mm+':'+String(ss).padStart(2,'0');
+      // Actualizar el tiempo cada 300ms
+      var interval = setInterval(function(){
+        if(_veloActiveAudioTs !== ts){ clearInterval(interval); return; }
+        var elapsed = Math.floor((Date.now() - startTs)/1000);
+        if(elapsed >= total){ clearInterval(interval); return; }
+        var em = Math.floor(elapsed/60), es = elapsed%60;
+        statusEl.textContent = '▶️ '+em+':'+String(es).padStart(2,'0')+' / '+mm+':'+String(ss).padStart(2,'0');
+      }, 300);
+    }
+  }catch(e){
+    console.warn('[velo-audio]', e);
+    if(btn) btn.innerHTML = '▶️';
+    if(statusEl) statusEl.textContent = 'No se pudo reproducir — audio guardado pero formato no compatible';
+    pToast('⚠️','No pude reproducir — probá desde otro navegador');
   }
 }
 
@@ -13589,18 +13687,32 @@ function veloI18n(key){
     safeLS('set','velo_lang_available', isPtCandidate ? 'pt' : '');
   }catch(e){}
 })();
-// Cambiar idioma (con warning)
+// Cambiar idioma (con warning) — robusto para iOS PWA
 function pSetVeloLang(lang){
+  var applyLang = function(newLang, msg){
+    try{ safeLS('set','velo_lang', newLang); }catch(e){}
+    // Cerrar todos los modales para evitar bloqueos
+    ['prefsOv','crisisNudgeOv'].forEach(function(id){ var o=document.getElementById(id); if(o) o.remove(); });
+    // Mostrar overlay de "actualizando" para feedback claro
+    var loader = document.createElement('div');
+    loader.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.90);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:Jost,sans-serif';
+    loader.innerHTML = '<div style="font-size:44px;margin-bottom:16px">🌍</div><div style="font-size:15px;letter-spacing:.5px">'+msg+'</div>';
+    document.body.appendChild(loader);
+    // Reload con fallback
+    setTimeout(function(){
+      try{ window.location.reload(); }
+      catch(e){
+        try{ window.location.href = window.location.pathname + '?_r=' + Date.now(); }
+        catch(e2){ window.location.href = '/'; }
+      }
+    }, 500);
+  };
   if(lang === 'pt'){
     _pConfirm('⚠️ A app está principalmente em espanhol. Você verá conteúdo em ambos os idiomas — mas a interface passará ao português. Ativar?', function(){
-      safeLS('set','velo_lang', 'pt');
-      pToast('🇵🇹','Idioma alterado para português');
-      setTimeout(function(){ window.location.reload(); }, 800);
+      applyLang('pt', 'Atualizando para português…');
     });
   } else {
-    safeLS('set','velo_lang', 'es');
-    pToast('🇪🇸','Idioma en español');
-    setTimeout(function(){ window.location.reload(); }, 800);
+    applyLang('es', 'Cambiando a español…');
   }
 }
 // Aplicar traducciones al DOM al bootear (para elementos con data-i18n o texto en el diccionario)
@@ -13940,11 +14052,23 @@ function pOpenDiaryEntry(ts){
         textEl.innerHTML += '<div style="margin-top:14px;padding:14px;background:rgba(180,155,240,.10);border:1px dashed rgba(180,155,240,.35);border-radius:12px;color:rgba(200,180,255,.75);font-size:13px;font-family:Jost,sans-serif;text-align:center">📷 Imagen guardada (no disponible en este dispositivo)</div>';
       }
     }
-    // Adjuntar audio si el entry tiene uno
+    // Adjuntar audio si el entry tiene uno — player custom con Web Audio API (compat iOS Safari)
     if(entry.audio){
       if(String(entry.audio).indexOf('data:audio') === 0 && entry.audio.length > 100){
-        var audioHtml = '<div style="margin-top:14px;padding:10px 12px;background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.35);border-radius:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:20px">🎙️</span><audio controls preload="metadata" src="'+entry.audio+'" onerror="this.parentElement.innerHTML=\'<span style=&quot;font-size:20px&quot;>🎙️</span><div style=&quot;flex:1;color:rgba(200,158,56,.85);font-size:12px;font-family:Jost,sans-serif;line-height:1.5&quot;>Audio grabado — no reproducible en este navegador. Probá desde Chrome o Windows/Mac.</div>\'" style="flex:1;min-width:200px;height:32px"></audio></div>';
+        var playerId = 'veloAudioPlayer_' + entry.ts;
+        var audioHtml = '<div id="'+playerId+'" style="margin-top:14px;padding:12px 14px;background:rgba(200,158,56,.12);border:1.5px solid rgba(200,158,56,.42);border-radius:14px;display:flex;align-items:center;gap:12px">'
+          + '<button onclick="pToggleVeloAudio(\''+entry.ts+'\',this)" style="width:44px;height:44px;border-radius:50%;background:rgba(200,158,56,.30);border:1.5px solid rgba(200,158,56,.65);color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0" title="Reproducir">▶️</button>'
+          + '<div style="flex:1;min-width:0">'
+            + '<div style="font-size:12.5px;font-weight:800;color:rgba(200,158,56,.98);font-family:Jost,sans-serif;letter-spacing:.3px;text-transform:uppercase">🎙️ Nota de voz</div>'
+            + '<div id="veloAudioStatus_'+entry.ts+'" style="font-size:11.5px;color:rgba(200,158,56,.68);font-family:Jost,sans-serif;margin-top:2px">Tocá play para escuchar</div>'
+          + '</div>'
+        + '</div>';
         textEl.innerHTML += audioHtml;
+        // Guardar la data URL en un data-attr para el player
+        setTimeout(function(){
+          var wrap = document.getElementById(playerId);
+          if(wrap) wrap.dataset.audio = entry.audio;
+        }, 50);
       } else {
         textEl.innerHTML += '<div style="margin-top:14px;padding:14px;background:rgba(200,158,56,.10);border:1px dashed rgba(200,158,56,.35);border-radius:12px;color:rgba(200,158,56,.85);font-size:13px;font-family:Jost,sans-serif;text-align:center">🎙️ Audio guardado (no disponible en este dispositivo)</div>';
       }
@@ -14022,10 +14146,13 @@ function pExportDiaryToPdf(){
 async function pDeleteDiary(ts){
   var entries = []; try{ entries = JSON.parse(safeLS('get','velo_diary')||'[]'); }catch(e){}
   entries = entries.filter(function(e){ return Number(e.ts) !== Number(ts); });
-  safeLS('set','velo_diary', JSON.stringify(entries));
+  try{ safeLS('set','velo_diary', JSON.stringify(entries)); }catch(e){}
   sbDeleteDiaryEntry(ts);
+  // Actualizar memoria inmediatamente
+  _diaryEntries = (_diaryEntries||[]).filter(function(e){ return Number(e.ts) !== Number(ts); });
+  var el = document.getElementById('diaryEntries');
+  if(el) _renderDiaryEntryList(el, _diaryEntries);
   pToast('🗑️','Entrada eliminada');
-  _loadDiaryEntries();
 }
 
 function pClearAllDiary(){
@@ -29722,7 +29849,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1281;
+    var _BUILT_V = 1282;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
