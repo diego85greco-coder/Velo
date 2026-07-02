@@ -13401,58 +13401,112 @@ function _hideRecordingIndicator(){
   if(_recTimerInterval){ clearInterval(_recTimerInterval); _recTimerInterval = null; }
   var el = document.getElementById('veloRecIndicator'); if(el) el.remove();
 }
+// ── WAV RECORDER usando Web Audio API — compatible con iOS Safari PWA ──
+var _wavStream = null;
+var _wavCtx = null;
+var _wavSource = null;
+var _wavProcessor = null;
+var _wavChunks = [];
+var _wavSampleRate = 16000;
+var _wavAutoStopTimer = null;
+function _encodeWav(chunks, sampleRate){
+  var total = 0;
+  for(var i=0;i<chunks.length;i++) total += chunks[i].length;
+  if(!total) return null;
+  var samples = new Float32Array(total);
+  var offset = 0;
+  for(var j=0;j<chunks.length;j++){ samples.set(chunks[j], offset); offset += chunks[j].length; }
+  // PCM Int16
+  var pcm = new Int16Array(samples.length);
+  for(var k=0;k<samples.length;k++){
+    var s = Math.max(-1, Math.min(1, samples[k]));
+    pcm[k] = s < 0 ? Math.round(s * 0x8000) : Math.round(s * 0x7FFF);
+  }
+  var buf = new ArrayBuffer(44 + pcm.byteLength);
+  var view = new DataView(buf);
+  function wStr(off, str){ for(var i=0;i<str.length;i++) view.setUint8(off+i, str.charCodeAt(i)); }
+  wStr(0,'RIFF');
+  view.setUint32(4, 36 + pcm.byteLength, true);
+  wStr(8,'WAVE'); wStr(12,'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  wStr(36,'data');
+  view.setUint32(40, pcm.byteLength, true);
+  new Int16Array(buf, 44).set(pcm);
+  return new Blob([buf], { type: 'audio/wav' });
+}
+function _stopWavRecording(){
+  try{ if(_wavProcessor){ _wavProcessor.disconnect(); _wavProcessor.onaudioprocess = null; _wavProcessor = null; } }catch(e){}
+  try{ if(_wavSource){ _wavSource.disconnect(); _wavSource = null; } }catch(e){}
+  try{ if(_wavStream){ _wavStream.getTracks().forEach(function(t){ t.stop(); }); _wavStream = null; } }catch(e){}
+  try{ if(_wavCtx && _wavCtx.close){ _wavCtx.close(); } }catch(e){}
+  _wavCtx = null;
+  if(_wavAutoStopTimer){ clearTimeout(_wavAutoStopTimer); _wavAutoStopTimer = null; }
+}
 async function pStartVoiceNote(){
-  if(_veloRecorder && _veloRecorder.state === 'recording'){
-    _veloRecorder.stop();
+  // Si ya está grabando → detener
+  if(_wavProcessor){
+    var blob = null;
+    try{ blob = _encodeWav(_wavChunks, _wavSampleRate); }catch(e){ console.warn('[wav-encode]', e); }
+    _stopWavRecording();
     _setVoiceBtnState(false);
     _hideRecordingIndicator();
+    if(!blob || blob.size < 1000){ pToast('⚠️','La grabación quedó vacía — probá de nuevo'); return; }
+    if(blob.size > 5 * 1024 * 1024){ pToast('⚠️','Grabación muy grande — grabá algo más corto'); return; }
+    _veloRecordedBlob = blob;
+    _showVoiceNotePreview(blob);
     return;
   }
-  if(!navigator.mediaDevices || !window.MediaRecorder){
-    pToast('⚠️','Tu navegador no soporta grabar audio. Probá con Chrome o Safari actualizado.');
+  if(!navigator.mediaDevices){
+    pToast('⚠️','Tu navegador no soporta grabar audio');
     return;
   }
   try{
-    var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    _veloRecordChunks = [];
-    var mime = _getSupportedAudioMime();
-    try{
-      _veloRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
-    }catch(mimeErr){
-      // Fallback sin especificar mimeType
-      _veloRecorder = new MediaRecorder(stream);
-    }
-    _veloRecordMime = (_veloRecorder.mimeType || mime || 'audio/webm').split(';')[0];
-    _veloRecorder.ondataavailable = function(e){ if(e.data && e.data.size > 0) _veloRecordChunks.push(e.data); };
-    _veloRecorder.onerror = function(e){
-      pToast('⚠️','Error al grabar — probá de nuevo');
-      _hideRecordingIndicator();
-      _setVoiceBtnState(false);
-      try{ stream.getTracks().forEach(function(t){ t.stop(); }); }catch(_){}
-    };
-    _veloRecorder.onstop = function(){
-      _veloRecordedBlob = new Blob(_veloRecordChunks, { type: _veloRecordMime });
-      try{ stream.getTracks().forEach(function(t){ t.stop(); }); }catch(_){}
-      _hideRecordingIndicator();
-      if(!_veloRecordedBlob.size){ pToast('⚠️','La grabación quedó vacía — probá de nuevo'); _veloRecordedBlob=null; return; }
-      if(_veloRecordedBlob.size > 3 * 1024 * 1024){
-        pToast('⚠️','Grabación muy grande (>3MB). Grabá algo más corto.');
-        _veloRecordedBlob = null;
-        return;
+    _wavChunks = [];
+    _wavStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
       }
-      _showVoiceNotePreview(_veloRecordedBlob);
+    });
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC){ pToast('⚠️','Tu navegador no soporta Web Audio'); _stopWavRecording(); return; }
+    _wavCtx = new AC();
+    _wavSampleRate = _wavCtx.sampleRate || 44100;
+    // Bajar a 16kHz si el ctx acepta (algunos browsers ignoran esto)
+    _wavSource = _wavCtx.createMediaStreamSource(_wavStream);
+    // ScriptProcessor sigue funcionando en todos los browsers, incluso deprecated
+    var bufSize = 4096;
+    _wavProcessor = (_wavCtx.createScriptProcessor || _wavCtx.createJavaScriptNode).call(_wavCtx, bufSize, 1, 1);
+    _wavProcessor.onaudioprocess = function(e){
+      var input = e.inputBuffer.getChannelData(0);
+      // Copiar el buffer (input es reusado por Web Audio)
+      _wavChunks.push(new Float32Array(input));
     };
-    _veloRecorder.start();
+    _wavSource.connect(_wavProcessor);
+    _wavProcessor.connect(_wavCtx.destination);
     _setVoiceBtnState(true);
     _showRecordingIndicator();
     pToast('🎙️','Grabando… tocá STOP cuando termines');
-    setTimeout(function(){ if(_veloRecorder && _veloRecorder.state === 'recording'){ _veloRecorder.stop(); _setVoiceBtnState(false); pToast('⏱️','Grabación máxima 60 segundos'); } }, 60000);
+    _wavAutoStopTimer = setTimeout(function(){
+      if(_wavProcessor){ pStartVoiceNote(); pToast('⏱️','Grabación máxima 60 segundos'); }
+    }, 60000);
   }catch(e){
+    console.warn('[voice-note-wav]', e);
+    _stopWavRecording();
+    _setVoiceBtnState(false);
+    _hideRecordingIndicator();
     var msg = 'No pude acceder al micrófono — revisá permisos';
     if(e && e.name === 'NotAllowedError') msg = 'Bloqueaste el micrófono. Revisá permisos del navegador.';
     else if(e && e.name === 'NotFoundError') msg = 'No hay micrófono disponible';
     pToast('⚠️', msg);
-    console.warn('[voice-note]', e);
   }
 }
 // ── Adjuntar imagen a la entrada del diario ──────────────────────
@@ -30047,7 +30101,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1286;
+    var _BUILT_V = 1287;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
