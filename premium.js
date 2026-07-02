@@ -11494,6 +11494,17 @@ async function pSendBottle(){
   if(!showProfile && !_selectedBottleMood){
     pToast('😊','Elegí un emoji para tu mensaje anónimo'); return;
   }
+  // Nudge suave si detecta crisis — antes del rate limit para no perder el texto
+  if(_detectCrisisContent(ta.value) && !window._crisisNudgeSkipped_bottle){
+    closeModal('bottleFormOv');
+    _openCrisisNudge(function(){
+      window._crisisNudgeSkipped_bottle = true;
+      openModal('bottleFormOv');
+      // el textarea sigue con su contenido
+      setTimeout(function(){ pSendBottle(); }, 250);
+    });
+    return;
+  }
   if(!_checkDailyLimit('bottle')){
     closeModal('bottleFormOv');
     pShowDailyLimitModal('bottle');
@@ -20487,12 +20498,118 @@ function _adminTabFinanzas(panel){
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.7);margin-bottom:10px">🌿 ACTIVIDAD REAL DE LA COMUNIDAD</div>'
     +'<div id="adminUsageStats"><p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando actividad…</p></div>'
     +'<div style="margin-top:18px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(116,198,157,.6);margin-bottom:10px">📊 ENCUESTAS DE SATISFACCIÓN</div>'
-    +'<div id="adminSurveyResults"><p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando respuestas…</p></div>';
+    +'<div id="adminSurveyResults"><p style="font-size:14px;color:rgba(255,255,255,.3);padding:8px 0">⏳ Cargando respuestas…</p></div>'
+    +'<div style="margin-top:22px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(100,180,240,.75);margin-bottom:10px">📥 EXPORTAR DATOS (CSV)</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+      +'<button onclick="pAdminExportCsv(\'referrals\')" style="padding:11px 14px;background:rgba(155,120,220,.14);border:1.5px solid rgba(155,120,220,.42);border-radius:12px;color:rgba(215,195,240,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;text-align:left;letter-spacing:.2px">💌 Exportar referrals — quién invitó a quién</button>'
+      +'<button onclick="pAdminExportCsv(\'mood_entries\')" style="padding:11px 14px;background:rgba(116,198,157,.14);border:1.5px solid rgba(116,198,157,.42);border-radius:12px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;text-align:left;letter-spacing:.2px">🌿 Exportar mood_entries (últimos 90 días)</button>'
+      +'<button onclick="pAdminExportCsv(\'profiles\')" style="padding:11px 14px;background:rgba(220,178,80,.14);border:1.5px solid rgba(220,178,80,.42);border-radius:12px;color:rgba(255,220,140,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;text-align:left;letter-spacing:.2px">👤 Exportar profiles — signups + Plus + buddy</button>'
+    +'</div>';
   _adminLoadSurveys();
   _adminLoadUsageStats();
   _adminLoadModerationStats();
   _adminLoadReferralStats();
   _renderAdminDonations();
+}
+
+// ── DETECCIÓN DE CONTENIDO EN CRISIS ─────────────────────────────────
+// Detecta patrones de crisis en el texto para ofrecer Sala de Ayuda antes de publicar
+function _detectCrisisContent(text){
+  var t = (text||'').toLowerCase();
+  if(t.length < 3) return false;
+  var patterns = [
+    /\bsuicid/,
+    /\bmatarme?\b/,
+    /\bno quiero (vivir|seguir)\b/,
+    /\bquiero (morir|morirme|desaparecer)\b/,
+    /\bquisiera (morir|morirme|desaparecer)\b/,
+    /\bmerezco morir\b/,
+    /\bacabar con todo\b/,
+    /\bno (puedo|aguanto|doy) m[aá]s\b/,
+    /\bcortarme\b/,
+    /\blastimarme\b/,
+    /\btirarme\b/,
+    /\bno vale la pena (vivir|seguir)\b/,
+    /\bno hay salida\b/,
+  ];
+  return patterns.some(function(re){ return re.test(t); });
+}
+// Modal suave que ofrece Sala de Ayuda antes de publicar. onContinue = publicar igual
+function _openCrisisNudge(onContinue){
+  var ex = document.getElementById('crisisNudgeOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'crisisNudgeOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = '<div style="background:linear-gradient(155deg,rgba(12,32,20,.98),rgba(6,20,12,.97));border-radius:24px;max-width:460px;width:100%;padding:26px 22px;border:1.5px solid rgba(116,198,157,.42);box-shadow:0 12px 40px rgba(0,0,0,.6)">'
+    + '<div style="text-align:center;margin-bottom:16px">'
+      + '<div style="font-size:52px;line-height:1;margin-bottom:12px;filter:drop-shadow(0 4px 16px rgba(116,198,157,.45))">🕊️</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:rgba(225,255,235,.98);line-height:1.2;margin-bottom:6px">Te leemos</div>'
+      + '<div style="font-size:13.5px;color:rgba(180,220,195,.85);line-height:1.6;font-family:Jost,sans-serif;padding:0 6px">Lo que escribiste refleja un momento muy difícil. Antes de publicar, ¿querés hablar con alguien de la comunidad <strong style="color:rgba(220,255,235,.95)">ahora mismo</strong>?</div>'
+    + '</div>'
+    + '<div style="background:rgba(255,180,120,.08);border:1px solid rgba(255,180,120,.28);border-radius:14px;padding:11px 13px;margin-bottom:16px">'
+      + '<div style="font-size:11.5px;color:rgba(255,220,180,.92);line-height:1.55;font-family:Jost,sans-serif"><strong>Si es una urgencia grave:</strong>'
+      + '<br>🇦🇷 Argentina — <strong>135</strong> (Buenos Aires) · <strong>0800-345-1435</strong>'
+      + '<br>🇺🇾 Uruguay — <strong>0800 0767</strong>'
+      + '<br>🇨🇱 Chile — <strong>*4141</strong>'
+      + '<br>🇪🇸 España — <strong>024</strong>'
+      + '</div>'
+    + '</div>'
+    + '<button onclick="document.getElementById(\'crisisNudgeOv\').remove();pGoTo(\'help\')" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;margin-bottom:8px">🤝 Ir a Sala de Ayuda ahora</button>'
+    + '<button id="crisisNudgeContinue" style="width:100%;padding:11px;background:none;border:1px solid rgba(255,255,255,.12);border-radius:12px;color:rgba(255,255,255,.55);font-size:12.5px;font-family:Jost,sans-serif;cursor:pointer">Publicar de todas formas</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+  var btn = document.getElementById('crisisNudgeContinue');
+  if(btn) btn.onclick = function(){
+    ov.remove();
+    if(typeof onContinue === 'function') onContinue();
+  };
+}
+
+// Exporta datos de admin a CSV (client-side, corre solo la query, no expone credenciales)
+async function pAdminExportCsv(kind){
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  pToast('📥','Preparando '+kind+'…');
+  var rows = [];
+  try{
+    if(kind === 'referrals'){
+      var refRes = await sbClient.from('referrals').select('*').order('created_at', {ascending:false}).limit(5000);
+      if(refRes.error) throw refRes.error;
+      rows = refRes.data || [];
+    } else if(kind === 'mood_entries'){
+      var since90 = new Date(Date.now() - 90*86400000).toISOString().slice(0,10);
+      var moodRes = await sbClient.from('mood_entries').select('user_id,date_key,emoji,label,note').gte('date_key', since90).order('date_key', {ascending:false}).limit(20000);
+      if(moodRes.error) throw moodRes.error;
+      rows = moodRes.data || [];
+    } else if(kind === 'profiles'){
+      var profRes = await sbClient.from('profiles').select('id,nombre,username,email,created_at,plus_expires_at,buddy_id,buddy_name,buddy_started_at,buddy_available_at').order('created_at', {ascending:false}).limit(5000);
+      if(profRes.error) throw profRes.error;
+      rows = profRes.data || [];
+    }
+    if(!rows.length){ pToast('🌿','No hay datos para exportar'); return; }
+    // Convertir a CSV
+    var cols = Object.keys(rows[0]);
+    var esc = function(v){
+      if(v == null) return '';
+      var s = String(v);
+      if(s.indexOf('"') >= 0 || s.indexOf(',') >= 0 || s.indexOf('\n') >= 0) return '"'+s.replace(/"/g,'""')+'"';
+      return s;
+    };
+    var csv = cols.join(',') + '\n'
+      + rows.map(function(r){ return cols.map(function(c){ return esc(r[c]); }).join(','); }).join('\n');
+    // BOM para Excel entienda UTF-8
+    var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var ts = new Date().toISOString().slice(0,10);
+    var fn = 'velo-'+kind+'-'+ts+'.csv';
+    var a = document.createElement('a'); a.href = url; a.download = fn;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    pToast('📥','Se descargó '+fn+' ('+rows.length+' filas)');
+  }catch(e){
+    console.warn('[admin-csv]', e);
+    pToast('⚠️','Error exportando '+kind);
+  }
 }
 
 async function _adminLoadReferralStats(){
@@ -27327,6 +27444,14 @@ function _btSubmitCompose(){
   var uid=safeLS('get','velo_user_id');
   if(!uid){ pToast('Debés iniciar sesión'); return; }
   if(!sbClient){ pToast('Conectando...'); return; }
+  // Nudge suave si detecta crisis — ofrece Sala de Ayuda antes de publicar
+  if(_detectCrisisContent(title+' '+content) && !window._crisisNudgeSkipped_bt){
+    _openCrisisNudge(function(){
+      window._crisisNudgeSkipped_bt = true;
+      _btSubmitCompose(); // reintentar con flag
+    });
+    return;
+  }
   // Rate limit: max 3 historias por día en Bitácora
   try{
     var _btRecent = JSON.parse(safeLS('get','velo_bt_post_ts')||'[]');
@@ -27456,7 +27581,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1254;
+    var _BUILT_V = 1255;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
