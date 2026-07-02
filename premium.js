@@ -12935,10 +12935,36 @@ async function pSaveDiary(){
   // Adjuntar audio y/o imagen si hay adjuntos pendientes
   newEntry = await _attachVoiceToEntry(newEntry);
   newEntry = await _attachImageToEntry(newEntry);
-  entries.unshift(newEntry);
-  safeLS('set','velo_diary', JSON.stringify(entries.slice(0,200)));
-  // Supabase (include title + audio/image para sync cross-device)
+  // Enviar a Supabase PRIMERO (con audio/imagen completos)
   sbSaveDiaryEntry(text, dateLabel, ts, title, newEntry.audio, newEntry.image);
+  // Para localStorage: si audio o imagen son muy grandes (>2MB combinados), guardar
+  // versión ligera SIN los blobs — Supabase los tiene, se cargarán al abrir en cualquier device
+  var lsEntry = Object.assign({}, newEntry);
+  var totalSize = (lsEntry.audio ? lsEntry.audio.length : 0) + (lsEntry.image ? lsEntry.image.length : 0);
+  var LS_BLOB_LIMIT = 2 * 1024 * 1024; // 2MB combined en LS
+  if(totalSize > LS_BLOB_LIMIT){
+    // Marcar que hay blobs en Supabase pero no en LS
+    if(lsEntry.audio){ lsEntry.audioInSupabase = true; delete lsEntry.audio; }
+    if(lsEntry.image){ lsEntry.imageInSupabase = true; delete lsEntry.image; }
+    console.log('[diary] Entry con blobs >2MB — LS guarda solo metadatos, blobs quedan en Supabase');
+  }
+  entries.unshift(lsEntry);
+  var lsOk = false;
+  try{
+    var serialized = JSON.stringify(entries.slice(0,200));
+    safeLS('set','velo_diary', serialized);
+    lsOk = true;
+  }catch(e){
+    console.warn('[diary] LS quota exceeded, saving compact version:', e);
+    // Fallback: guardar SIN blobs en LS
+    var compactEntries = entries.slice(0,200).map(function(en){
+      var c = Object.assign({}, en);
+      if(c.audio){ c.audioInSupabase = true; delete c.audio; }
+      if(c.image){ c.imageInSupabase = true; delete c.image; }
+      return c;
+    });
+    try{ safeLS('set','velo_diary', JSON.stringify(compactEntries)); lsOk = true; }catch(e2){}
+  }
   ta.value = '';
   if(titleEl) titleEl.value = '';
   _selectedDiaryEmoji = '';
@@ -12980,9 +13006,10 @@ function _renderDiaryEntryList(el, entries){
     if(hasAudio && !hasText && !hasImage) leftBorder = 'border-left:3px solid rgba(220,180,80,.65);padding-left:12px';
     else if(hasImage && !hasText && !hasAudio) leftBorder = 'border-left:3px solid rgba(180,155,240,.65);padding-left:12px';
     else if(hasAudio || hasImage) leftBorder = 'border-left:3px solid rgba(180,220,240,.42);padding-left:12px';
-    // Thumbnail de imagen si hay
-    var thumbHtml = hasImage
-      ? '<img src="'+e.image+'" style="width:44px;height:44px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1.5px solid rgba(180,155,240,.35)">'
+    // Thumbnail de imagen si hay y es válida
+    var hasValidImage = hasImage && String(e.image).indexOf('data:image') === 0 && e.image.length > 100;
+    var thumbHtml = hasValidImage
+      ? '<img src="'+e.image+'" onerror="this.outerHTML=\'<span style=&quot;font-size:22px;line-height:1;width:44px;text-align:center;display:inline-block&quot;>'+emo+'</span>\'" style="width:44px;height:44px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1.5px solid rgba(180,155,240,.35)">'
       : '<span style="font-size:22px;flex-shrink:0;line-height:1;width:44px;text-align:center">'+emo+'</span>';
     return '<div class="diary-row" onclick="pOpenDiaryEntry('+e.ts+')" style="animation-delay:'+i*.04+'s;cursor:pointer;'+leftBorder+'">'
       +'<div style="display:flex;align-items:center;gap:10px">'
@@ -13895,13 +13922,23 @@ function pOpenDiaryEntry(ts){
     }).join('');
     // Adjuntar imagen si el entry tiene una (arriba del audio)
     if(entry.image){
-      var imgHtml = '<div style="margin-top:14px;text-align:center"><img src="'+entry.image+'" style="max-width:100%;max-height:400px;border-radius:14px;border:1.5px solid rgba(180,155,240,.30);box-shadow:0 6px 20px rgba(0,0,0,.20)"></div>';
-      textEl.innerHTML += imgHtml;
+      // Verificar que el data URL sea válido
+      if(String(entry.image).indexOf('data:image') === 0 && entry.image.length > 100){
+        var imgId = 'diaryImg_'+entry.ts;
+        var imgHtml = '<div style="margin-top:14px;text-align:center"><img id="'+imgId+'" src="'+entry.image+'" onerror="this.parentElement.innerHTML=\'<div style=&quot;padding:14px;background:rgba(180,155,240,.10);border:1px dashed rgba(180,155,240,.35);border-radius:12px;color:rgba(200,180,255,.75);font-size:13px;font-family:Jost,sans-serif&quot;>📷 Imagen guardada — no se puede mostrar en este navegador</div>\'" style="max-width:100%;max-height:400px;border-radius:14px;border:1.5px solid rgba(180,155,240,.30);box-shadow:0 6px 20px rgba(0,0,0,.20);display:block;margin:0 auto"></div>';
+        textEl.innerHTML += imgHtml;
+      } else {
+        textEl.innerHTML += '<div style="margin-top:14px;padding:14px;background:rgba(180,155,240,.10);border:1px dashed rgba(180,155,240,.35);border-radius:12px;color:rgba(200,180,255,.75);font-size:13px;font-family:Jost,sans-serif;text-align:center">📷 Imagen guardada (no disponible en este dispositivo)</div>';
+      }
     }
     // Adjuntar audio si el entry tiene uno
     if(entry.audio){
-      var audioHtml = '<div style="margin-top:14px;padding:10px 12px;background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.35);border-radius:12px;display:flex;align-items:center;gap:10px"><span style="font-size:20px">🎙️</span><audio controls preload="metadata" src="'+entry.audio+'" style="flex:1;height:32px"></audio></div>';
-      textEl.innerHTML += audioHtml;
+      if(String(entry.audio).indexOf('data:audio') === 0 && entry.audio.length > 100){
+        var audioHtml = '<div style="margin-top:14px;padding:10px 12px;background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.35);border-radius:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:20px">🎙️</span><audio controls preload="metadata" src="'+entry.audio+'" onerror="this.parentElement.innerHTML=\'<span style=&quot;font-size:20px&quot;>🎙️</span><div style=&quot;flex:1;color:rgba(200,158,56,.85);font-size:12px;font-family:Jost,sans-serif;line-height:1.5&quot;>Audio grabado — no reproducible en este navegador. Probá desde Chrome o Windows/Mac.</div>\'" style="flex:1;min-width:200px;height:32px"></audio></div>';
+        textEl.innerHTML += audioHtml;
+      } else {
+        textEl.innerHTML += '<div style="margin-top:14px;padding:14px;background:rgba(200,158,56,.10);border:1px dashed rgba(200,158,56,.35);border-radius:12px;color:rgba(200,158,56,.85);font-size:13px;font-family:Jost,sans-serif;text-align:center">🎙️ Audio guardado (no disponible en este dispositivo)</div>';
+      }
     }
   }
   if(delBtn)  delBtn.onclick = function(){ closeModal('diaryEntryOv'); pDeleteDiary(ts); };
@@ -29676,7 +29713,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1279;
+    var _BUILT_V = 1280;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
