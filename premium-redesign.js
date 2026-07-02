@@ -453,14 +453,13 @@
         Para clear-night dibujamos la luna con fase real, halo y colores
         cream. Otras condiciones siguen usando emoji. ── */
   function _buildMoonSvg(size) {
-    size = size || 288;
+    size = size || 210;
     var ref = 947182440000;
     var syn = 29.530589 * 86400000;
     var age = ((Date.now() - ref) % syn + syn) % syn;
     var phase = age / syn;
     var theta = 2 * Math.PI * phase;
-    // Disco grande dominante — 44% del container deja lugar para halo + drop-shadow
-    var R = size * 0.44;
+    var R = size * 0.42;
     var cx = size / 2, cy = size / 2;
     var ex = Math.abs(R * Math.cos(theta));
     var waxing = phase < 0.5;
@@ -474,113 +473,127 @@
                    + ' A ' + ex + ' ' + R + ' 0 0 ' + ellipseSweep + ' ' + cx + ' ' + yTop
                    + ' Z';
     var uid = 'vm' + Math.floor(phase * 1e6);
-    // Mare — posiciones inspiradas en la topografía real (near side)
+    // Mare — near side reales (topografía correcta), en tono azul-gris (silver moon)
     var mare = [
-      { x:-.20, y:-.30, rx:.24, ry:.19, rot: -12, o:.32 }, // Imbrium
-      { x: .08, y:-.16, rx:.22, ry:.19, rot:   8, o:.34 }, // Serenitatis
-      { x: .28, y:-.02, rx:.17, ry:.15, rot:  25, o:.30 }, // Tranquillitatis
-      { x: .22, y: .26, rx:.15, ry:.12, rot: -18, o:.28 }, // Nectaris
-      { x:-.30, y: .20, rx:.24, ry:.17, rot:  20, o:.32 }, // Nubium
-      { x:-.40, y:-.06, rx:.12, ry:.16, rot: -35, o:.28 }, // Procellarum
-      { x: .36, y:-.24, rx:.09, ry:.07, rot:   0, o:.28 }, // Crisium
-      { x:-.08, y:-.06, rx:.06, ry:.05, rot:  10, o:.22 }  // Vaporum
+      { x:-.20, y:-.30, rx:.26, ry:.20, rot: -12, o:.42 }, // Imbrium
+      { x: .06, y:-.16, rx:.22, ry:.20, rot:   8, o:.44 }, // Serenitatis
+      { x: .28, y:-.02, rx:.17, ry:.15, rot:  25, o:.40 }, // Tranquillitatis
+      { x: .22, y: .26, rx:.15, ry:.12, rot: -18, o:.36 }, // Nectaris
+      { x:-.32, y: .18, rx:.24, ry:.18, rot:  20, o:.42 }, // Nubium
+      { x:-.42, y:-.06, rx:.13, ry:.18, rot: -35, o:.36 }, // Procellarum
+      { x: .36, y:-.24, rx:.10, ry:.08, rot:   0, o:.36 }, // Crisium
+      { x:-.06, y:-.04, rx:.07, ry:.05, rot:  10, o:.28 }  // Vaporum
     ];
     var mareEls = mare.map(function(m){
       var mx = cx + m.x * R, my = cy + m.y * R;
-      return '<ellipse cx="' + mx + '" cy="' + my + '" rx="' + (m.rx * R) + '" ry="' + (m.ry * R) + '" transform="rotate(' + m.rot + ' ' + mx + ' ' + my + ')" fill="url(#' + uid + 'mare)" opacity="' + m.o + '"/>';
+      return '<ellipse cx="' + mx + '" cy="' + my + '" rx="' + (m.rx * R) + '" ry="' + (m.ry * R) + '" transform="rotate(' + m.rot + ' ' + mx + ' ' + my + ')" fill="url(#' + uid + 'mare)"/>';
     }).join('');
-    // Craters — tamaños variados, con highlight (rebote de luz)
+    // Craters — ampliada con la mayor concentración en el hemisferio sur
     var craters = [
-      { x:-.02, y:-.42, r:.062 },   // Copernicus-ish
-      { x: .34, y: .28, r:.048 },
-      { x:-.44, y:-.32, r:.042 },
-      { x: .22, y:-.50, r:.032 },
-      { x:-.30, y: .44, r:.038 },
-      { x: .48, y: .10, r:.028 },
-      { x: .08, y: .48, r:.040 },
-      { x:-.18, y: .06, r:.026 },
-      { x:-.05, y:-.20, r:.020 },
-      { x: .18, y: .10, r:.022 },
-      { x:-.36, y: .35, r:.024 },
-      { x: .28, y:-.35, r:.028 }
+      { x:-.02, y:-.42, r:.055 },
+      { x: .32, y: .32, r:.045 },
+      { x:-.44, y:-.30, r:.040 },
+      { x: .22, y:-.50, r:.030 },
+      { x:-.28, y: .44, r:.038 },
+      { x: .46, y: .10, r:.026 },
+      { x: .10, y: .48, r:.036 },
+      { x:-.18, y: .08, r:.024 },
+      { x:-.05, y:-.22, r:.018 },
+      { x: .16, y: .12, r:.020 },
+      { x:-.36, y: .36, r:.022 },
+      { x: .28, y:-.34, r:.026 },
+      { x: .04, y:-.06, r:.015 },
+      { x:-.24, y:-.12, r:.020 },
+      { x: .40, y:-.10, r:.018 }
     ];
     var craterEls = craters.map(function(c){
       var kx = cx + c.x * R, ky = cy + c.y * R, kr = c.r * R;
-      return '<circle cx="' + kx + '" cy="' + ky + '" r="' + kr + '" fill="rgba(60,44,22,.36)"/>'
-           + '<circle cx="' + (kx - kr*0.32) + '" cy="' + (ky - kr*0.32) + '" r="' + (kr*0.68) + '" fill="rgba(255,246,220,.20)"/>';
+      // Cráter volumétrico: sombra oscura + highlight (borde iluminado en dirección al sol)
+      return '<circle cx="' + kx + '" cy="' + ky + '" r="' + kr + '" fill="rgba(30,36,50,.42)"/>'
+           + '<circle cx="' + (kx - kr*0.28) + '" cy="' + (ky - kr*0.28) + '" r="' + (kr*0.62) + '" fill="rgba(240,244,252,.20)"/>';
     }).join('');
-    // Rays de Tycho (crater sur con rayos radiantes) — puntos brillantes sutiles
-    var tychoRays = '';
-    var tychoX = cx + (-.02) * R, tychoY = cy + (.42) * R;
-    for(var _r=0; _r<10; _r++){
-      var ang = _r * 36 * Math.PI/180;
-      var ry1 = R * 0.15, ry2 = R * 0.55;
-      var x1 = tychoX + Math.cos(ang) * ry1, y1 = tychoY + Math.sin(ang) * ry1;
-      var x2 = tychoX + Math.cos(ang) * ry2, y2 = tychoY + Math.sin(ang) * ry2;
-      tychoRays += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="rgba(255,248,225,.09)" stroke-width="' + (R*0.014) + '" stroke-linecap="round"/>';
-    }
     return '<svg viewBox="0 0 ' + size + ' ' + size + '" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="velo-moon-svg" style="overflow:visible;display:block">'
       + '<defs>'
-        // Superficie principal
-        + '<radialGradient id="' + uid + 'surf" cx="38%" cy="34%" r="72%">'
-          + '<stop offset="0%"  stop-color="#fffaea"/>'
-          + '<stop offset="30%" stop-color="#f6ecd0"/>'
-          + '<stop offset="68%" stop-color="#dcc79a"/>'
-          + '<stop offset="100%" stop-color="#987f4e"/>'
+        // Superficie: silver moon — plateado con leve tinte cálido en el centro (sunlight reflejado)
+        + '<radialGradient id="' + uid + 'surf" cx="40%" cy="34%" r="72%">'
+          + '<stop offset="0%"  stop-color="#f5f4ec"/>'
+          + '<stop offset="35%" stop-color="#dcdcda"/>'
+          + '<stop offset="72%" stop-color="#a8adb2"/>'
+          + '<stop offset="100%" stop-color="#5c6470"/>'
         + '</radialGradient>'
-        // Limb darkening — círculo con gradient radial reverso (más oscuro en los bordes)
-        + '<radialGradient id="' + uid + 'limb" cx="50%" cy="50%" r="50%">'
-          + '<stop offset="70%" stop-color="rgba(0,0,0,0)"/>'
-          + '<stop offset="92%" stop-color="rgba(50,32,10,.28)"/>'
-          + '<stop offset="100%" stop-color="rgba(30,18,4,.55)"/>'
-        + '</radialGradient>'
-        // Mare — plomizo-marrón oscuro semi-transparente
+        // Mare: azul-gris oscuro (plateado sombrío, no marrón)
         + '<radialGradient id="' + uid + 'mare" cx="50%" cy="50%" r="65%">'
-          + '<stop offset="0%"  stop-color="#5f5236"/>'
-          + '<stop offset="70%" stop-color="#77694a"/>'
-          + '<stop offset="100%" stop-color="rgba(120,105,74,0)"/>'
+          + '<stop offset="0%"  stop-color="#4a5460"/>'
+          + '<stop offset="65%" stop-color="#5e6874"/>'
+          + '<stop offset="100%" stop-color="rgba(80,90,105,0)"/>'
         + '</radialGradient>'
-        // Halo cálido (glow externo)
+        // Halo frío — plata con leve calor por el rim
         + '<radialGradient id="' + uid + 'halo" cx="50%" cy="50%" r="50%">'
-          + '<stop offset="42%" stop-color="rgba(255,245,215,.55)"/>'
-          + '<stop offset="70%" stop-color="rgba(255,232,180,.18)"/>'
-          + '<stop offset="100%" stop-color="rgba(255,222,168,0)"/>'
+          + '<stop offset="42%" stop-color="rgba(220,232,255,.40)"/>'
+          + '<stop offset="72%" stop-color="rgba(200,220,250,.12)"/>'
+          + '<stop offset="100%" stop-color="rgba(200,220,250,0)"/>'
         + '</radialGradient>'
         // Sombra de fase
         + '<radialGradient id="' + uid + 'shadow" cx="50%" cy="50%" r="55%">'
-          + '<stop offset="0%"  stop-color="rgba(6,4,2,.94)"/>'
-          + '<stop offset="85%" stop-color="rgba(10,7,3,.92)"/>'
-          + '<stop offset="100%" stop-color="rgba(28,20,10,.78)"/>'
+          + '<stop offset="0%"  stop-color="rgba(4,6,10,.96)"/>'
+          + '<stop offset="86%" stop-color="rgba(8,10,15,.94)"/>'
+          + '<stop offset="100%" stop-color="rgba(30,35,45,.82)"/>'
         + '</radialGradient>'
+        // Limb darkening — para efecto esférico realista
+        + '<radialGradient id="' + uid + 'limb" cx="50%" cy="50%" r="50%">'
+          + '<stop offset="68%" stop-color="rgba(0,0,0,0)"/>'
+          + '<stop offset="90%" stop-color="rgba(15,20,30,.30)"/>'
+          + '<stop offset="100%" stop-color="rgba(8,12,20,.62)"/>'
+        + '</radialGradient>'
+        // Rim light — un arco delgado más claro donde da el sol (sólo lado iluminado)
+        + '<radialGradient id="' + uid + 'rim" cx="' + (waxing ? '76%' : '24%') + '" cy="50%" r="55%">'
+          + '<stop offset="82%" stop-color="rgba(255,252,240,0)"/>'
+          + '<stop offset="95%" stop-color="rgba(255,252,240,.22)"/>'
+          + '<stop offset="100%" stop-color="rgba(255,252,240,0)"/>'
+        + '</radialGradient>'
+        // Turbulence: ruido fractal para textura procedural de superficie
+        + '<filter id="' + uid + 'noise" x="0%" y="0%" width="100%" height="100%">'
+          + '<feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="3" seed="7" result="n"/>'
+          + '<feColorMatrix in="n" type="matrix" values="0 0 0 0 0.62  0 0 0 0 0.65  0 0 0 0 0.70  0 0 0 0.18 0"/>'
+        + '</filter>'
+        // Turbulence más gruesa para variación de albedo
+        + '<filter id="' + uid + 'grain" x="0%" y="0%" width="100%" height="100%">'
+          + '<feTurbulence type="fractalNoise" baseFrequency="0.28" numOctaves="2" seed="3" result="g"/>'
+          + '<feColorMatrix in="g" type="matrix" values="0 0 0 0 0.42  0 0 0 0 0.46  0 0 0 0 0.52  0 0 0 0.28 0"/>'
+        + '</filter>'
         + '<filter id="' + uid + 'softblur" x="-10%" y="-10%" width="120%" height="120%">'
-          + '<feGaussianBlur stdDeviation="0.7"/>'
+          + '<feGaussianBlur stdDeviation="0.5"/>'
         + '</filter>'
         + '<filter id="' + uid + 'mareblur" x="-10%" y="-10%" width="120%" height="120%">'
-          + '<feGaussianBlur stdDeviation="1.8"/>'
+          + '<feGaussianBlur stdDeviation="2.4"/>'
         + '</filter>'
         + '<clipPath id="' + uid + 'disc">'
           + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '"/>'
         + '</clipPath>'
       + '</defs>'
       // Halo suave alrededor
-      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + (size * 0.485) + '" fill="url(#' + uid + 'halo)" class="velo-moon-halo"/>'
-      // Disco lunar base
+      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + (size * 0.48) + '" fill="url(#' + uid + 'halo)" class="velo-moon-halo"/>'
+      // Disco lunar base plateado
       + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="url(#' + uid + 'surf)"/>'
       // Contenido del disco (clipped)
       + '<g clip-path="url(#' + uid + 'disc)">'
-        // Mare — capa suave difuminada
+        // Variación de albedo procedural (grandes manchas suaves)
+        + '<rect x="' + (cx-R) + '" y="' + (cy-R) + '" width="' + (2*R) + '" height="' + (2*R) + '" filter="url(#' + uid + 'grain)" opacity=".55"/>'
+        // Mare — planicies oscuras
         + '<g filter="url(#' + uid + 'mareblur)">' + mareEls + '</g>'
-        // Rayos de Tycho
-        + '<g>' + tychoRays + '</g>'
         // Craters
         + '<g filter="url(#' + uid + 'softblur)">' + craterEls + '</g>'
-        // Limb darkening (border shading)
+        // Ruido fino sobre todo (textura de superficie)
+        + '<rect x="' + (cx-R) + '" y="' + (cy-R) + '" width="' + (2*R) + '" height="' + (2*R) + '" filter="url(#' + uid + 'noise)" opacity=".38"/>'
+        // Rim light (arco de luz en el borde iluminado)
+        + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="url(#' + uid + 'rim)"/>'
+        // Limb darkening
         + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="url(#' + uid + 'limb)"/>'
       + '</g>'
-      // Sombra de fase
+      // Sombra de fase (encima de todo)
       + '<path d="' + shadowPath + '" fill="url(#' + uid + 'shadow)" clip-path="url(#' + uid + 'disc)"/>'
-      // Borde
-      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="rgba(50,34,12,.42)" stroke-width="1.2"/>'
+      // Contorno sutil
+      + '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="rgba(20,30,50,.35)" stroke-width="0.8"/>'
       + '</svg>';
   }
   function _weatherAnimSvg(period, type) {
