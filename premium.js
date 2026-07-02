@@ -6515,7 +6515,7 @@ function _updateMoodChip(){
     var streakBg = isDark ? 'linear-gradient(140deg,rgba(255,140,50,.32),rgba(220,90,20,.24))' : 'linear-gradient(140deg,rgba(255,180,80,.35),rgba(230,110,30,.24))';
     var streakBdr = isDark ? 'rgba(255,170,80,.75)' : 'rgba(230,130,40,.75)';
     var streakTxt = isDark ? 'rgba(255,230,180,.98)' : 'rgba(120,50,0,.94)';
-    streakBadge = '<span class="mcc-streak" style="position:absolute;top:-8px;right:-8px;z-index:2;display:inline-flex;align-items:center;gap:3px;background:'+streakBg+';border:1.5px solid '+streakBdr+';border-radius:100px;padding:3px 10px 3px 7px;font-size:12px;font-weight:800;color:'+streakTxt+';font-family:Jost,sans-serif;box-shadow:'+streakGlow+';animation:mccStreakPulse 2.4s ease-in-out infinite"><span class="velo-flicker-fire" style="font-size:14px;line-height:1">🔥</span>'+streak+'</span>';
+    streakBadge = '<span class="mcc-streak" style="position:absolute;top:8px;right:10px;z-index:2;display:inline-flex;align-items:center;gap:3px;background:'+streakBg+';border:1.5px solid '+streakBdr+';border-radius:100px;padding:3px 9px 3px 7px;font-size:11.5px;font-weight:800;color:'+streakTxt+';font-family:Jost,sans-serif;box-shadow:'+streakGlow+';animation:mccStreakPulse 2.4s ease-in-out infinite;line-height:1;white-space:nowrap"><span class="velo-flicker-fire" style="font-size:13px;line-height:1;display:inline-block">🔥</span>'+streak+'</span>';
     // Inyectar keyframes si aún no están
     if(!document.getElementById('_mccStreakKf')){
       var _kf = document.createElement('style'); _kf.id='_mccStreakKf';
@@ -13052,6 +13052,257 @@ function _updateDiaryStats(entries){
   var ec = document.getElementById('diaryEntryCountEl');
   if(sv) sv.textContent = streak;
   if(ec) ec.textContent = entries ? entries.length : 0;
+}
+
+// ── BACKUP / EXPORT — descargar todos mis datos como JSON ──────────
+async function pBackupMyData(){
+  pToast('📦','Preparando tu backup…');
+  var uid = safeLS('get','velo_user_id') || '';
+  var userName = safeLS('get','velo_user_name') || 'Usuario';
+  var payload = { velo_backup_version: 1, exported_at: new Date().toISOString(), user_id: uid, user_name: userName };
+  // Del LS
+  try{
+    payload.local_storage = {};
+    Object.keys(localStorage).forEach(function(k){
+      if(k.indexOf('velo_') === 0){
+        payload.local_storage[k] = localStorage.getItem(k);
+      }
+    });
+  }catch(e){}
+  // De Supabase
+  _initSupabase();
+  if(sbClient && uid){
+    payload.supabase = {};
+    try{
+      var pr = await sbClient.from('profiles').select('*').eq('id', uid).maybeSingle();
+      if(pr && pr.data) payload.supabase.profile = pr.data;
+    }catch(e){}
+    try{
+      var mr = await sbClient.from('mood_entries').select('*').eq('user_id', uid).order('date_key',{ascending:false}).limit(2000);
+      if(mr && !mr.error) payload.supabase.mood_entries = mr.data;
+    }catch(e){}
+    try{
+      var br = await sbClient.from('bitacora_posts').select('*').eq('user_id', uid).order('created_at',{ascending:false}).limit(500);
+      if(br && !br.error) payload.supabase.bitacora_posts = br.data;
+    }catch(e){}
+    try{
+      var dr = await sbClient.from('diary_entries').select('*').eq('user_id', uid).order('ts',{ascending:false}).limit(2000);
+      if(dr && !dr.error) payload.supabase.diary_entries = dr.data;
+    }catch(e){}
+    try{
+      var refR = await sbClient.from('referrals').select('*').or('referrer_id.eq.'+uid+',referred_id.eq.'+uid);
+      if(refR && !refR.error) payload.supabase.referrals = refR.data;
+    }catch(e){}
+  }
+  var json = JSON.stringify(payload, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'velo-backup-'+userName.split(' ')[0].toLowerCase()+'-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  pToast('✓','Backup descargado — guardalo en un lugar seguro 🌿');
+}
+
+// ── REFERRAL LEADERBOARD — top usuarios que más invitaron ──────────
+async function pOpenReferralLeaderboard(){
+  var ex = document.getElementById('refLeaderOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'refLeaderOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10004;background:rgba(0,0,0,.86);display:flex;align-items:flex-end;justify-content:center;padding:0';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div style="background:linear-gradient(150deg,rgba(10,28,18,.98),rgba(6,18,12,.98));border-radius:28px 28px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;padding:14px 18px max(20px,env(safe-area-inset-bottom));border-top:2px solid rgba(155,120,220,.42)">'
+    + '<div style="display:flex;justify-content:center;padding:0 0 12px"><div style="width:40px;height:4px;background:rgba(155,120,220,.35);border-radius:2px"></div></div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+      + '<div><div style="font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(155,120,220,.72);font-family:Jost,sans-serif">🌱 EMBAJADORES DE VELO</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(235,225,255,.98);margin-top:2px">Quienes hacen crecer la comunidad</div></div>'
+      + '<button onclick="document.getElementById(\'refLeaderOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.50);font-size:22px;cursor:pointer;padding:4px 10px">✕</button>'
+    + '</div>'
+    + '<div id="refLeaderBody"><p style="text-align:center;color:rgba(180,220,240,.55);padding:24px 0;font-family:Jost,sans-serif">Cargando…</p></div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  _initSupabase();
+  if(!sbClient){ document.getElementById('refLeaderBody').innerHTML = '<p style="text-align:center;color:rgba(255,180,180,.65);padding:24px 0">Sin conexión</p>'; return; }
+  try{
+    var res = await sbClient.from('referrals').select('referrer_id,qualified_at').limit(2000);
+    if(res.error) throw res.error;
+    // Agrupar por referrer
+    var byRefr = {};
+    (res.data||[]).forEach(function(r){
+      if(!byRefr[r.referrer_id]) byRefr[r.referrer_id] = { total:0, qualified:0 };
+      byRefr[r.referrer_id].total++;
+      if(r.qualified_at) byRefr[r.referrer_id].qualified++;
+    });
+    var refrIds = Object.keys(byRefr);
+    if(!refrIds.length){
+      document.getElementById('refLeaderBody').innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:44px;margin-bottom:12px;opacity:.55">🌱</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:rgba(220,215,255,.85);margin-bottom:6px">Nadie invitó a nadie todavía</div><div style="font-size:12.5px;color:rgba(180,190,220,.55);font-family:Jost,sans-serif;line-height:1.55">Sé el/la primero/a — con 5 invitaciones válidas ganás 30 días de Plus 💚</div></div>';
+      return;
+    }
+    // Nombres
+    var nameMap = {};
+    try{
+      var pd = await sbClient.from('profiles').select('id,nombre,username,avatar').in('id', refrIds);
+      (pd.data||[]).forEach(function(p){ nameMap[p.id] = { n:(p.nombre||p.username||'Anónimo'), a:p.avatar||'🧑' }; });
+    }catch(e){}
+    var rows = refrIds.map(function(id){ return { id:id, ...nameMap[id]||{n:'?',a:'🧑'}, s:byRefr[id] }; })
+      .sort(function(a,b){ return b.s.qualified - a.s.qualified || b.s.total - a.s.total; }).slice(0,20);
+    var uid = safeLS('get','velo_user_id') || '';
+    var itemsHtml = rows.map(function(r,i){
+      var medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
+      var isMe = r.id === uid;
+      var avHtml = r.a && (r.a.startsWith('http')||r.a.startsWith('data:'))
+        ? '<img src="'+_escHtml(r.a)+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0">'
+        : '<div style="width:36px;height:36px;border-radius:50%;background:rgba(155,120,220,.20);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">'+_escHtml(r.a||'🧑')+'</div>';
+      return '<div style="display:flex;align-items:center;gap:12px;background:'+(isMe?'rgba(155,120,220,.22)':'rgba(155,120,220,.06)')+';border:1px solid '+(isMe?'rgba(155,120,220,.55)':'rgba(155,120,220,.20)')+';border-radius:14px;padding:10px 14px;margin-bottom:8px"><div style="font-size:'+(i<3?'26px':'14px')+';font-weight:800;color:'+(i<3?'':'rgba(200,180,240,.65)')+';font-family:Jost,sans-serif;width:40px;text-align:center;flex-shrink:0">'+medal+'</div>'+avHtml+'<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:rgba(235,225,255,.98);font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(r.n)+(isMe?' <span style="font-size:10px;color:rgba(220,180,80,.85);letter-spacing:.5px">· VOS</span>':'')+'</div><div style="font-size:11.5px;color:rgba(200,180,240,.65);font-family:Jost,sans-serif;margin-top:2px">'+r.s.qualified+' válidas · '+r.s.total+' aceptaron</div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:22px;font-weight:800;color:rgba(220,180,80,.98);font-family:Jost,sans-serif;line-height:1">'+Math.floor(r.s.qualified/5)+'</div><div style="font-size:9.5px;color:rgba(240,220,180,.60);letter-spacing:.8px;text-transform:uppercase;margin-top:2px">🏆 Plus ganados</div></div></div>';
+    }).join('');
+    document.getElementById('refLeaderBody').innerHTML = itemsHtml;
+  }catch(e){
+    document.getElementById('refLeaderBody').innerHTML = '<p style="text-align:center;color:rgba(255,180,180,.65);padding:24px 0">Error cargando</p>';
+  }
+}
+
+// ── EMOTIONAL TRAJECTORY — evolución 6/12 meses ────────────────────
+async function pOpenEmotionalTrajectory(){
+  var ex = document.getElementById('trajectoryOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'trajectoryOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10004;background:rgba(0,0,0,.90);display:flex;flex-direction:column;color:#fff;font-family:Jost,sans-serif';
+  ov.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;flex-shrink:0"><span style="font-size:11px;font-weight:800;letter-spacing:2.5px;color:rgba(180,220,240,.72);text-transform:uppercase">📈 TU TRAYECTORIA EMOCIONAL</span><button onclick="document.getElementById(\'trajectoryOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.60);font-size:26px;cursor:pointer">×</button></div>'
+    + '<div style="display:flex;gap:6px;padding:0 18px 14px;flex-shrink:0">'
+      + '<button id="trajRng3" onclick="_renderTrajectory(3)" style="flex:1;padding:8px;background:rgba(140,200,240,.10);border:1px solid rgba(140,200,240,.30);border-radius:100px;color:rgba(220,240,255,.80);font-size:12px;font-weight:700;cursor:pointer">3 meses</button>'
+      + '<button id="trajRng6" onclick="_renderTrajectory(6)" style="flex:1;padding:8px;background:rgba(140,200,240,.28);border:1px solid rgba(140,200,240,.60);border-radius:100px;color:rgba(240,250,255,.95);font-size:12px;font-weight:800;cursor:pointer">6 meses</button>'
+      + '<button id="trajRng12" onclick="_renderTrajectory(12)" style="flex:1;padding:8px;background:rgba(140,200,240,.10);border:1px solid rgba(140,200,240,.30);border-radius:100px;color:rgba(220,240,255,.80);font-size:12px;font-weight:700;cursor:pointer">12 meses</button>'
+    + '</div>'
+    + '<div id="trajBody" style="flex:1;overflow-y:auto;padding:0 18px 20px"><p style="text-align:center;color:rgba(180,220,240,.55);padding:32px 0">Cargando…</p></div>';
+  document.body.appendChild(ov);
+  _renderTrajectory(6);
+}
+async function _renderTrajectory(months){
+  var body = document.getElementById('trajBody');
+  if(!body) return;
+  // Update button active state
+  ['3','6','12'].forEach(function(n){ var b = document.getElementById('trajRng'+n); if(!b) return; var active = String(months) === n; b.style.background = active?'rgba(140,200,240,.28)':'rgba(140,200,240,.10)'; b.style.borderColor = active?'rgba(140,200,240,.60)':'rgba(140,200,240,.30)'; b.style.color = active?'rgba(240,250,255,.95)':'rgba(220,240,255,.80)'; b.style.fontWeight = active?'800':'700'; });
+  _initSupabase();
+  var now = new Date();
+  var monthData = []; // {year, month, avg, count, dom}
+  var moodScore = {'😄':5,'😊':4.5,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🥺':2.5,'😞':2,'😔':2,'😰':1.8,'😤':2.2,'😢':1};
+  var mNamesShort = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  for(var i = months-1; i>=0; i--){
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var yr = d.getFullYear(), mo = d.getMonth();
+    var moods = [];
+    // Del LS
+    var daysInMonth = new Date(yr, mo+1, 0).getDate();
+    for(var _d=1; _d<=daysInMonth; _d++){
+      var _dk = yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(_d).padStart(2,'0');
+      var st = safeLS('get','velo_mood_'+_dk);
+      if(st){ try{ var ms=JSON.parse(st); if(ms.emoji) moods.push(ms); }catch(e){} }
+    }
+    // De Supabase
+    if(sbClient){
+      try{
+        var sbM = await sbLoadAllMoods(yr, mo+1);
+        if(sbM) sbM.forEach(function(e){ if(e.emoji && !moods.some(function(x){ return x.date_key === e.date_key; })) moods.push(e); });
+      }catch(e){}
+    }
+    var avg = moods.length ? moods.reduce(function(s,m){ return s + (moodScore[m.emoji]||3); },0) / moods.length : 0;
+    var countsE = {}; moods.forEach(function(m){ countsE[m.emoji] = (countsE[m.emoji]||0)+1; });
+    var dom = Object.keys(countsE).sort(function(a,b){ return countsE[b]-countsE[a]; })[0] || '·';
+    monthData.push({ year:yr, month:mo, avg:avg, count:moods.length, dom:dom, label:mNamesShort[mo]+(months>12||i===months-1?' \''+String(yr).slice(2):'') });
+  }
+  var maxCount = Math.max(1, ...monthData.map(function(m){ return m.count; }));
+  // SVG chart
+  var W = 320, H = 180, pad = 20;
+  var xStep = (W - 2*pad) / Math.max(1, monthData.length-1);
+  var points = monthData.map(function(m,i){
+    var x = pad + i*xStep;
+    var y = m.avg > 0 ? H - pad - ((m.avg - 1) / 4) * (H - 2*pad) : H - pad;
+    return { x:x.toFixed(1), y:y.toFixed(1), m:m };
+  });
+  var pathD = points.filter(function(p){ return p.m.count > 0; }).map(function(p,i){ return (i===0?'M':'L')+p.x+' '+p.y; }).join(' ');
+  var chartHtml = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block;margin-bottom:14px">'
+    + '<defs><linearGradient id="trajGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(140,200,240,.55)"/><stop offset="100%" stop-color="rgba(140,200,240,0)"/></linearGradient></defs>'
+    // Grid
+    + [1,2,3,4,5].map(function(v){ var y = H - pad - ((v - 1) / 4) * (H - 2*pad); return '<line x1="'+pad+'" y1="'+y+'" x2="'+(W-pad)+'" y2="'+y+'" stroke="rgba(255,255,255,.06)" stroke-width="1"/>'; }).join('')
+    // Área
+    + (pathD ? '<path d="'+pathD+' L'+points[points.length-1].x+' '+(H-pad)+' L'+points[0].x+' '+(H-pad)+' Z" fill="url(#trajGrad)"/>' : '')
+    // Línea
+    + (pathD ? '<path d="'+pathD+'" stroke="rgba(180,220,255,.90)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' : '')
+    // Puntos
+    + points.map(function(p){ if(p.m.count === 0) return ''; return '<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="rgba(220,240,255,.95)" stroke="rgba(60,120,180,.90)" stroke-width="1.5"/>'; }).join('')
+    // Labels de mes debajo
+    + monthData.map(function(m,i){ var x = pad + i*xStep; return '<text x="'+x+'" y="'+(H - 4)+'" text-anchor="middle" fill="rgba(200,230,250,.65)" font-size="9" font-family="Jost,sans-serif" font-weight="600">'+m.label+'</text>'; }).join('')
+    + '</svg>';
+  // Grid de emojis dominantes por mes
+  var monthEmojis = '<div style="display:grid;grid-template-columns:repeat('+Math.min(6,monthData.length)+',1fr);gap:8px;margin-bottom:16px">'
+    + monthData.map(function(m){
+      return '<div style="text-align:center;background:rgba(140,200,240,.08);border:1px solid rgba(140,200,240,.20);border-radius:12px;padding:10px 4px"><div style="font-size:26px;line-height:1;margin-bottom:4px;opacity:'+(m.count>0?1:.3)+'">'+m.dom+'</div><div style="font-size:9px;font-weight:800;color:rgba(200,230,250,.72);letter-spacing:.8px;text-transform:uppercase">'+m.label+'</div><div style="font-size:9px;color:rgba(200,230,250,.50);margin-top:2px">'+m.count+' reg</div></div>';
+    }).join('')
+    + '</div>';
+  // Stats overall
+  var withData = monthData.filter(function(m){ return m.count > 0; });
+  var overallAvg = withData.length ? withData.reduce(function(s,m){ return s+m.avg; },0)/withData.length : 0;
+  var trendVal = 0;
+  if(withData.length >= 2){
+    var half = Math.ceil(withData.length/2);
+    var f = withData.slice(0,half).reduce(function(s,m){ return s+m.avg; },0)/half;
+    var l = withData.slice(-half).reduce(function(s,m){ return s+m.avg; },0)/half;
+    trendVal = l - f;
+  }
+  var trendTxt = trendVal > 0.3 ? '↗ tu ánimo promedio mejoró' : trendVal < -0.3 ? '↘ tu ánimo promedio bajó' : '→ se mantuvo estable';
+  var trendCol = trendVal > 0.3 ? 'rgba(180,255,180,.85)' : trendVal < -0.3 ? 'rgba(255,180,120,.85)' : 'rgba(200,220,240,.85)';
+  var summary = '<div style="background:rgba(140,200,240,.08);border:1px solid rgba(140,200,240,.24);border-radius:14px;padding:14px 16px;margin-bottom:12px">'
+    + '<div style="display:flex;gap:14px;justify-content:space-around;text-align:center">'
+      + '<div><div style="font-size:22px;font-weight:800;color:rgba(240,250,255,.98);font-family:Jost,sans-serif;line-height:1">'+overallAvg.toFixed(1)+'</div><div style="font-size:10px;color:rgba(180,220,240,.60);letter-spacing:1px;text-transform:uppercase;margin-top:3px">Prom. gral</div></div>'
+      + '<div><div style="font-size:22px;font-weight:800;color:rgba(240,250,255,.98);font-family:Jost,sans-serif;line-height:1">'+monthData.reduce(function(s,m){ return s+m.count; },0)+'</div><div style="font-size:10px;color:rgba(180,220,240,.60);letter-spacing:1px;text-transform:uppercase;margin-top:3px">Registros</div></div>'
+      + '<div><div style="font-size:22px;font-weight:800;color:rgba(240,250,255,.98);font-family:Jost,sans-serif;line-height:1">'+withData.length+'</div><div style="font-size:10px;color:rgba(180,220,240,.60);letter-spacing:1px;text-transform:uppercase;margin-top:3px">Meses activos</div></div>'
+    + '</div>'
+    + '<div style="margin-top:10px;text-align:center;font-size:13px;color:'+trendCol+';font-family:Jost,sans-serif;font-weight:700">'+trendTxt+'</div>'
+  + '</div>';
+  body.innerHTML = summary + chartHtml + monthEmojis;
+}
+
+// ── JOURNALING PROMPTS — pregunta rotativa del día ────────────────
+var VELO_DIARY_PROMPTS = [
+  '¿Qué te sorprendió hoy — para bien o para mal?',
+  '¿A quién extrañás y por qué?',
+  '¿Qué te enseñó esta semana?',
+  'Escribí sobre algo pequeño que te alegró hoy.',
+  '¿Qué necesitás soltar esta noche?',
+  '¿Cuál fue el momento más presente que tuviste hoy?',
+  '¿Qué te llevó a estar exactamente donde estás ahora?',
+  '¿Qué le dirías al vos de hace un año?',
+  '¿Cuándo te sentiste más vos mismo/a hoy?',
+  '¿Qué está pidiendo tu cuerpo esta noche?',
+  '¿Qué emoción tuviste hoy que no supiste nombrar?',
+  '¿Cuál fue tu primer pensamiento al despertar?',
+  'Describí un lugar en el que te sentirías en paz.',
+  '¿Qué te está costando aceptar hoy?',
+  '¿Qué le agradecés a alguien pero nunca se lo dijiste?',
+  '¿Cuál fue la última vez que reíste con ganas?',
+  '¿Qué querías creer sobre vos hoy?',
+  '¿Qué te gustaría que alguien te dijera ahora?',
+  '¿Qué elección de hoy te sentís orgulloso/a?',
+  '¿Qué está cambiando en vos en este momento?',
+  '¿Qué sonido de hoy se te quedó grabado?',
+  '¿Qué te distrajo cuando querías estar presente?',
+  '¿Cuál es el sentimiento que más se repite últimamente?',
+  '¿Qué te gustaría dejar de posponer?',
+];
+function pInjectDiaryPrompt(){
+  var ta = document.getElementById('diaryTa');
+  if(!ta) return;
+  // Prompt del día — misma pregunta durante 24h, cambia cada día
+  var todayIdx = Math.floor(Date.now() / 86400000);
+  var prompt = VELO_DIARY_PROMPTS[todayIdx % VELO_DIARY_PROMPTS.length];
+  var text = '✨ ' + prompt + '\n\n';
+  ta.value = text;
+  ta.focus();
+  ta.setSelectionRange(text.length, text.length);
+  var cc = document.getElementById('diaryCharCount');
+  if(cc) cc.textContent = ta.value.length;
+  pToast('✨','Pregunta del día');
 }
 
 function _injectDiaryTemplate(type){
@@ -28861,7 +29112,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1270;
+    var _BUILT_V = 1271;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
