@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1276">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1276">
+  <link rel="stylesheet" href="premium.css?v=20260626-1277">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1277">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -2241,10 +2241,36 @@
                 <span class="diary-stat-lbl">privado</span>
               </div>
               <div class="diary-stat-sep"></div>
-              <button id="diaryVoiceBtnTop" onclick="pStartVoiceNote()" title="Grabar audio (max 60s)" style="background:rgba(220,180,80,.10);border:1px solid rgba(220,180,80,.35);border-radius:12px;padding:6px 10px;color:rgba(220,180,80,.95);font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2">🎙️<span style="font-size:9.5px">audio</span></button>
-              <button id="diaryImageBtn" onclick="pAttachDiaryImage()" title="Adjuntar imagen" style="background:rgba(180,155,240,.10);border:1px solid rgba(180,155,240,.35);border-radius:12px;padding:6px 10px;color:rgba(200,180,255,.95);font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2">📷<span style="font-size:9.5px">foto</span></button>
               <button onclick="pExportDiaryToPdf()" title="Exportar todas mis entradas como PDF" style="background:rgba(200,158,56,.10);border:1px solid rgba(200,158,56,.35);border-radius:12px;padding:6px 10px;color:rgba(200,158,56,.95);font-family:Jost,sans-serif;font-size:11px;font-weight:800;letter-spacing:.4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2">📄<span style="font-size:9.5px">PDF</span></button>
               <input type="file" id="diaryImageInput" accept="image/*" style="display:none" onchange="_handleDiaryImageInput(this)">
+            </div>
+
+            <!-- Section info card: qué es Diario Íntimo -->
+            <div class="section-info-card" style="margin:0 0 14px">
+              <div class="sic-label">¿Qué es esta sección?</div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <span style="font-size:20px;flex-shrink:0;line-height:1.2">🔒</span>
+                  <div>
+                    <div class="sic-heading">Solo tuyo, completamente privado</div>
+                    <div class="sic-body">Nadie más ve estas entradas — ni Velo, ni la comunidad. Es tu espacio íntimo para escribir lo que necesites, sin filtros.</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <span style="font-size:20px;flex-shrink:0;line-height:1.2">✍️</span>
+                  <div>
+                    <div class="sic-heading">Escribí, grabá audio o adjuntá una foto</div>
+                    <div class="sic-body">Elegí un estado de ánimo, usá una plantilla si querés (Gratitud, Reflexión, Sueño, Del día), y agregá una <strong>nota de voz</strong> o una <strong>imagen</strong> desde el compositor.</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <span style="font-size:20px;flex-shrink:0;line-height:1.2">🌍</span>
+                  <div>
+                    <div class="sic-heading">Se sincroniza entre tus dispositivos</div>
+                    <div class="sic-body">Al iniciar sesión desde otro celular o PC, ves tus entradas — con texto, audio y fotos — todo desde tu cuenta. También podés <strong>exportarlas a PDF</strong> como un libro personal.</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="diary-grid">
@@ -2282,6 +2308,11 @@
                     <button class="diary-tpl-btn" onclick="_injectDiaryTemplate('reflexion')">🌙 Reflexión</button>
                     <button class="diary-tpl-btn" onclick="_injectDiaryTemplate('sueno')">💭 Sueño</button>
                     <button class="diary-tpl-btn" onclick="pInjectDiaryPrompt()">✨ Del día</button>
+                  </div>
+                  <!-- Adjuntar audio o foto — misma row, estilo pill discreto -->
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;margin-bottom:4px">
+                    <button id="diaryVoiceBtnTop" onclick="pStartVoiceNote()" title="Grabar audio (max 60s)" style="background:rgba(220,180,80,.08);border:1px solid rgba(220,180,80,.28);border-radius:100px;padding:7px 14px;color:rgba(160,120,20,.92);font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px">🎙️ Grabar audio</button>
+                    <button id="diaryImageBtn" onclick="pAttachDiaryImage()" title="Adjuntar foto" style="background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.28);border-radius:100px;padding:7px 14px;color:rgba(90,60,160,.92);font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px">📷 Adjuntar foto</button>
                   </div>
 
                   <textarea class="p-textarea diary-ta" id="diaryTa" rows="7" placeholder="¿Cómo te sentís hoy? Escribí libremente..."></textarea>
@@ -4366,8 +4397,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1276"></script>
-<script src="premium-redesign.js?v=20260626-1276"></script>
+<script src="premium.js?v=20260626-1277"></script>
+<script src="premium-redesign.js?v=20260626-1277"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

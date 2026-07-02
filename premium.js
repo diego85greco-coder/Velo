@@ -13213,10 +13213,10 @@ var _veloRecordChunks = [];
 function _setVoiceBtnState(recording){
   var btnTop = document.getElementById('diaryVoiceBtnTop');
   if(btnTop){
-    btnTop.innerHTML = recording ? '⏹️<span style="font-size:9.5px">stop</span>' : '🎙️<span style="font-size:9.5px">audio</span>';
-    btnTop.style.background = recording ? 'rgba(255,80,80,.22)' : 'rgba(220,180,80,.10)';
-    btnTop.style.borderColor = recording ? 'rgba(255,80,80,.65)' : 'rgba(220,180,80,.35)';
-    btnTop.style.color = recording ? 'rgba(255,180,140,.98)' : 'rgba(220,180,80,.95)';
+    btnTop.innerHTML = recording ? '⏹️ Detener grabación' : '🎙️ Grabar audio';
+    btnTop.style.background = recording ? 'rgba(255,80,80,.14)' : 'rgba(220,180,80,.08)';
+    btnTop.style.borderColor = recording ? 'rgba(255,80,80,.55)' : 'rgba(220,180,80,.28)';
+    btnTop.style.color = recording ? 'rgba(200,50,50,.95)' : 'rgba(160,120,20,.92)';
   }
 }
 // Detecta el MIME type de audio compatible con este navegador (iOS Safari, Chrome, Firefox)
@@ -29634,7 +29634,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1276;
+    var _BUILT_V = 1277;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
