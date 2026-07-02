@@ -411,6 +411,8 @@ function pGoTo(id){
   // Per-page init
   _onPageEnter(id);
   _trackPageView(id);
+  // Re-aplicar i18n al entrar a la página (contenido dinámico puede haberse renderizado)
+  try{ if(typeof _veloRequestI18nApply === 'function') _veloRequestI18nApply(); }catch(e){}
 }
 
 function _showReturnToChatBadge(pageId){
@@ -13758,6 +13760,178 @@ var VELO_I18N = {
     'Solo tuyo, completamente privado': 'Só seu, completamente privado',
     'Escribí, grabá audio o adjuntá una foto': 'Escreva, grave áudio ou anexe uma foto',
     'Se sincroniza entre tus dispositivos': 'Sincroniza entre seus dispositivos',
+    // ── Sala de Ayuda / posts
+    'Cargando...': 'Carregando...',
+    'Cargando…': 'Carregando…',
+    'Nuevo post': 'Nova publicação',
+    'Publicar': 'Publicar',
+    'Comentar': 'Comentar',
+    'Comentarios': 'Comentários',
+    'ver comentarios': 'ver comentários',
+    'Ver comentarios': 'Ver comentários',
+    'Nuevo comentario': 'Novo comentário',
+    'Escribí un comentario…': 'Escreva um comentário…',
+    'Escribí un comentario...': 'Escreva um comentário...',
+    'Escribí tu mensaje…': 'Escreva sua mensagem…',
+    'Escribí tu mensaje...': 'Escreva sua mensagem...',
+    'Escribí tu respuesta…': 'Escreva sua resposta…',
+    'Escribí tu respuesta...': 'Escreva sua resposta...',
+    'Hace unos segundos': 'Há alguns segundos',
+    'hace unos segundos': 'há alguns segundos',
+    'hace un momento': 'há um momento',
+    'Ahora': 'Agora',
+    'hoy': 'hoje',
+    'ayer': 'ontem',
+    'hace': 'há',
+    'min': 'min',
+    'hora': 'hora',
+    'horas': 'horas',
+    'día': 'dia',
+    'días': 'dias',
+    'semana': 'semana',
+    'semanas': 'semanas',
+    'mes': 'mês',
+    'meses': 'meses',
+    'año': 'ano',
+    'años': 'anos',
+    // ── Botones y acciones
+    'Cancelar': 'Cancelar',
+    'Aceptar': 'Aceitar',
+    'Continuar': 'Continuar',
+    'Volver': 'Voltar',
+    'Atrás': 'Voltar',
+    'Siguiente': 'Próximo',
+    'Confirmar': 'Confirmar',
+    'Eliminar': 'Excluir',
+    'Borrar': 'Apagar',
+    'Editar': 'Editar',
+    'Ver más': 'Ver mais',
+    'Ver todos': 'Ver todos',
+    'Ver todo': 'Ver tudo',
+    'Ver todos →': 'Ver todos →',
+    'Cargar más': 'Carregar mais',
+    'Actualizar': 'Atualizar',
+    'Guardado': 'Salvo',
+    'Enviado': 'Enviado',
+    'Añadir': 'Adicionar',
+    'Agregar': 'Adicionar',
+    'Salir': 'Sair',
+    'Entrar': 'Entrar',
+    'Ingresar': 'Entrar',
+    'Registrarse': 'Cadastrar-se',
+    'Buscar': 'Buscar',
+    'Buscar...': 'Buscar...',
+    'Buscar…': 'Buscar…',
+    // ── Comunidad / Momentos
+    'Momentos': 'Momentos',
+    'Muro Feliz': 'Mural Feliz',
+    'Compartí un momento': 'Compartilhe um momento',
+    'Compartí algo que te hizo feliz': 'Compartilhe algo que te fez feliz',
+    '¿Qué querés compartir?': 'O que você quer compartilhar?',
+    '¿Cómo estás?': 'Como você está?',
+    'Publicar momento': 'Publicar momento',
+    'Recientes': 'Recentes',
+    'Populares': 'Populares',
+    'Nadie ha publicado aún': 'Ninguém publicou ainda',
+    'Sé el primero en compartir': 'Seja o primeiro a compartilhar',
+    // ── Diario Íntimo
+    'Sin entradas aún': 'Sem entradas ainda',
+    'Tu primera entrada': 'Sua primeira entrada',
+    'Escribí lo que sientas': 'Escreva o que sente',
+    'Sin título': 'Sem título',
+    'Entrada guardada': 'Entrada salva',
+    'Entrada eliminada': 'Entrada excluída',
+    '¿Eliminar esta entrada?': 'Excluir esta entrada?',
+    'Grabando…': 'Gravando…',
+    'Detener grabación': 'Parar gravação',
+    'Reproducir': 'Reproduzir',
+    'Pausar': 'Pausar',
+    // ── Ánimo / mood
+    'Registrar ánimo': 'Registrar ânimo',
+    '¿Cómo te sentís?': 'Como você se sente?',
+    'Muy bien': 'Muito bem',
+    'Bien': 'Bem',
+    'Regular': 'Regular',
+    'Mal': 'Mal',
+    'Muy mal': 'Muito mal',
+    'Nota (opcional)': 'Nota (opcional)',
+    'Mi mes': 'Meu mês',
+    'Mi semana': 'Minha semana',
+    'Mi trayectoria': 'Minha trajetória',
+    'Racha': 'Sequência',
+    'Racha actual': 'Sequência atual',
+    'Mejor racha': 'Melhor sequência',
+    'Total de entradas': 'Total de entradas',
+    // ── Guardianes / Ayuda
+    'Necesito ayuda': 'Preciso de ajuda',
+    'Ofrecer apoyo': 'Oferecer apoio',
+    'Guardián disponible': 'Guardião disponível',
+    'Guardianes disponibles': 'Guardiões disponíveis',
+    'Iniciar conversación': 'Iniciar conversa',
+    'Terminar conversación': 'Terminar conversa',
+    'Modo Guardián': 'Modo Guardião',
+    'Activar modo Guardián': 'Ativar modo Guardião',
+    'Desactivar modo Guardián': 'Desativar modo Guardião',
+    'Estás disponible': 'Você está disponível',
+    'No estás disponible': 'Você não está disponível',
+    // ── Chat / mensajes
+    'Escribí un mensaje…': 'Escreva uma mensagem…',
+    'Escribí un mensaje...': 'Escreva uma mensagem...',
+    'En línea': 'Online',
+    'Escribiendo…': 'Digitando…',
+    'Visto': 'Visto',
+    'Enviando…': 'Enviando…',
+    'Responder al mensaje': 'Responder à mensagem',
+    'Copiar': 'Copiar',
+    'Reaccionar': 'Reagir',
+    // ── Notificaciones / permisos
+    'Notificaciones': 'Notificações',
+    'Activar notificaciones': 'Ativar notificações',
+    'Recibí recordatorios diarios': 'Receba lembretes diários',
+    'Permitir': 'Permitir',
+    'Más tarde': 'Mais tarde',
+    'No, gracias': 'Não, obrigado',
+    // ── Perfil / cuenta
+    'Editar perfil': 'Editar perfil',
+    'Nombre': 'Nome',
+    'Correo': 'E-mail',
+    'Email': 'E-mail',
+    'Contraseña': 'Senha',
+    'Cambiar contraseña': 'Alterar senha',
+    'Foto de perfil': 'Foto de perfil',
+    'Avatar': 'Avatar',
+    'Estado': 'Status',
+    'Biografía': 'Biografia',
+    // ── Genéricos
+    'Todo': 'Tudo',
+    'Nada': 'Nada',
+    'Ninguno': 'Nenhum',
+    'Ninguna': 'Nenhuma',
+    'Sí': 'Sim',
+    'No': 'Não',
+    'Opcional': 'Opcional',
+    'Obligatorio': 'Obrigatório',
+    'Requerido': 'Obrigatório',
+    'Error': 'Erro',
+    'Éxito': 'Sucesso',
+    'Aviso': 'Aviso',
+    'Ocurrió un error': 'Ocorreu um erro',
+    'Intenta de nuevo': 'Tente novamente',
+    'Reintentar': 'Tentar novamente',
+    'Sin conexión': 'Sem conexão',
+    'Conectando…': 'Conectando…',
+    'Anónimo': 'Anônimo',
+    'anónimo': 'anônimo',
+    'Anónima': 'Anônima',
+    'Publicar anónimo': 'Publicar anônimo',
+    // ── Frases contextuales
+    'Preguntas del día': 'Perguntas do dia',
+    'Pregunta del día': 'Pergunta do dia',
+    'Frase del día': 'Frase do dia',
+    'Reflexión del día': 'Reflexão do dia',
+    'Momento del día': 'Momento do dia',
+    'Consejo del día': 'Conselho do dia',
+    'Meta del día': 'Meta do dia',
   }
 };
 function veloI18n(key){
@@ -13777,54 +13951,55 @@ function veloI18n(key){
     safeLS('set','velo_lang_available', isPtCandidate ? 'pt' : '');
   }catch(e){}
 })();
-// Cambiar idioma — aplicación directa sin reload (más confiable en iOS PWA)
+// Cambiar idioma — hard reload inmediato para que TODA la app se pinte en el nuevo idioma
+// (los feeds/modales dinámicos NO se re-renderizan sin reload)
 function pSetVeloLang(lang){
   try{ safeLS('set','velo_lang', lang); }catch(e){}
-  // Aplicar traducción inmediata al DOM
-  try{ if(typeof _veloScheduleI18n === 'function') _veloScheduleI18n(); }catch(e){}
-  // Cerrar preferencias para que el usuario vea el efecto
   var ov = document.getElementById('prefsOv'); if(ov) ov.remove();
-  if(lang === 'pt'){
-    pToast('🇵🇹','Idioma alterado para português — o conteúdo permanece em espanhol');
-  } else {
-    pToast('🇪🇸','Idioma en español');
+  // Reload inmediato — el toast lo ve después del reload (no perder tiempo)
+  try{
+    var url = window.location.pathname + (window.location.search ? window.location.search + '&' : '?') + '_i18n=' + Date.now();
+    window.location.replace(url);
+  }catch(e){
+    try{ window.location.reload(); }catch(e2){}
   }
-  // Después de 1.5s, hacer un reload suave para que las secciones dinámicas también actualicen
-  setTimeout(function(){
-    try{
-      // Hard reload con cache-bust
-      var url = window.location.pathname + (window.location.search ? window.location.search + '&' : '?') + '_i18n=' + Date.now();
-      window.location.replace(url);
-    }catch(e){
-      try{ window.location.href = '/'; }catch(e2){}
-    }
-  }, 1500);
 }
 // Aplicar traducciones al DOM — scan agresivo de nodos texto
+// NOTA: NO usar flag "i18nDone" en padres — el contenido de los hijos se
+// reemplaza dinámicamente al navegar y el flag congelaría el español para siempre.
+// En su lugar guardamos el traducido en el propio text node.
+var _veloI18nSortedKeysCache = null;
+var _veloI18nDictHash = '';
+function _veloGetSortedKeys(dict){
+  var hash = Object.keys(dict).length + '_' + (dict.__firstKey || Object.keys(dict)[0] || '');
+  if(_veloI18nSortedKeysCache && _veloI18nDictHash === hash) return _veloI18nSortedKeysCache;
+  _veloI18nSortedKeysCache = Object.keys(dict).sort(function(a,b){ return b.length - a.length; });
+  _veloI18nDictHash = hash;
+  return _veloI18nSortedKeysCache;
+}
 function _veloApplyI18n(){
   var lang = safeLS('get','velo_lang') || 'es';
   if(lang === 'es' || !VELO_I18N[lang]) return;
   var dict = VELO_I18N[lang];
-  // Ordenar keys por longitud desc para evitar solapamiento (ej: "Al Mar" antes que "Mar")
-  var sortedKeys = Object.keys(dict).sort(function(a,b){ return b.length - a.length; });
+  var sortedKeys = _veloGetSortedKeys(dict);
   // 1) Elementos con data-i18n
   document.querySelectorAll('[data-i18n]').forEach(function(el){
     var key = el.getAttribute('data-i18n');
     if(dict[key]) el.textContent = dict[key];
   });
-  // 2) Scan agresivo de todos los text nodes en el body
+  // 2) Scan de text nodes — cada nodo lleva su "última versión traducida" en __veloI18nAppliedTo
+  //    para poder detectar reemplazos y no re-traducir un texto que ya está traducido.
   try{
     var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
       acceptNode: function(node){
         var p = node.parentElement;
         if(!p) return NodeFilter.FILTER_REJECT;
         var tag = p.tagName;
-        // Skip script, style, textarea, input, code
         if(tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'CODE') return NodeFilter.FILTER_REJECT;
-        // Skip nodos ya traducidos
-        if(p.dataset && p.dataset.i18nDone === '1') return NodeFilter.FILTER_REJECT;
         var v = String(node.nodeValue||'').trim();
         if(v.length < 2) return NodeFilter.FILTER_REJECT;
+        // Si el nodo ya fue traducido a este valor exacto, saltar
+        if(node.__veloI18nAppliedTo === node.nodeValue) return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       }
     });
@@ -13843,25 +14018,62 @@ function _veloApplyI18n(){
       });
       if(changed){
         node.nodeValue = translated;
-        if(node.parentElement){ node.parentElement.dataset.i18nDone = '1'; }
+        node.__veloI18nAppliedTo = translated;
+      } else {
+        // Marcar como scaneado para no re-escanear estático que no matchea
+        node.__veloI18nAppliedTo = original;
       }
     });
   }catch(e){ console.warn('[i18n] walker error:', e); }
   // 3) Placeholders de inputs / textareas
   document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(function(el){
     var ph = el.getAttribute('placeholder') || '';
+    if(el.__veloI18nPh === ph) return;
     var newPh = ph;
     sortedKeys.forEach(function(k){ if(newPh.indexOf(k) >= 0) newPh = newPh.split(k).join(dict[k]); });
-    if(newPh !== ph) el.setAttribute('placeholder', newPh);
+    if(newPh !== ph){ el.setAttribute('placeholder', newPh); el.__veloI18nPh = newPh; }
+    else { el.__veloI18nPh = ph; }
+  });
+  // 4) Titles / aria-labels
+  document.querySelectorAll('[title], [aria-label]').forEach(function(el){
+    ['title','aria-label'].forEach(function(attr){
+      var v = el.getAttribute(attr);
+      if(!v) return;
+      var newV = v;
+      sortedKeys.forEach(function(k){ if(newV.indexOf(k) >= 0) newV = newV.split(k).join(dict[k]); });
+      if(newV !== v) el.setAttribute(attr, newV);
+    });
   });
 }
-// Re-aplicar i18n cada vez que el DOM cambia significativamente (page mount)
+// Re-aplicar i18n periódicamente + observer para contenido dinámico
+var _veloI18nObserver = null;
+var _veloI18nApplyPending = false;
+function _veloRequestI18nApply(){
+  if(_veloI18nApplyPending) return;
+  _veloI18nApplyPending = true;
+  setTimeout(function(){ _veloI18nApplyPending = false; _veloApplyI18n(); }, 60);
+}
 function _veloScheduleI18n(){
-  setTimeout(function(){ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }, 100);
-  setTimeout(function(){ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }, 800);
-  setTimeout(function(){ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }, 2000);
+  var lang = safeLS('get','velo_lang') || 'es';
+  if(lang === 'es' || !VELO_I18N[lang]) return;
+  setTimeout(function(){ _veloApplyI18n(); }, 40);
+  setTimeout(function(){ _veloApplyI18n(); }, 400);
+  setTimeout(function(){ _veloApplyI18n(); }, 1200);
+  setTimeout(function(){ _veloApplyI18n(); }, 3000);
+  // MutationObserver — re-aplica en cualquier inserción de nodos (páginas, modales, feeds)
+  if(!_veloI18nObserver && typeof MutationObserver === 'function'){
+    _veloI18nObserver = new MutationObserver(function(mutations){
+      for(var i=0; i<mutations.length; i++){
+        if(mutations[i].addedNodes && mutations[i].addedNodes.length > 0){
+          _veloRequestI18nApply();
+          return;
+        }
+      }
+    });
+    try{ _veloI18nObserver.observe(document.body, { childList:true, subtree:true }); }catch(e){}
+  }
   // Auto-traducir strings desconocidas via Gemini (async, cachea en LS)
-  setTimeout(function(){ if(typeof _veloAutoTranslateDOM === 'function') _veloAutoTranslateDOM(); }, 3000);
+  setTimeout(function(){ if(typeof _veloAutoTranslateDOM === 'function') _veloAutoTranslateDOM(); }, 2500);
 }
 
 // Auto-traducción con Gemini + caché en LS
@@ -14263,35 +14475,79 @@ function pOpenDiaryEntry(ts){
   if(dateEl)  dateEl.textContent  = fullDate;
   if(emojiEl){ emojiEl.textContent = entry.emoji || ''; emojiEl.style.display = entry.emoji ? '' : 'none'; }
   if(titleEl){ titleEl.textContent = entry.title || ''; titleEl.style.display = entry.title ? '' : 'none'; }
-  // Format text as styled paragraphs
+  // Format text as styled paragraphs — DOM API (no innerHTML+=)
   if(textEl){
+    try{ console.log('[diary-open] ts:', entry.ts, 'hasText:', !!entry.text, 'hasImage:', !!entry.image, 'imgLen:', (entry.image||'').length, 'hasAudio:', !!entry.audio, 'audioLen:', (entry.audio||'').length, 'audioPrefix:', (entry.audio||'').slice(0,32)); }catch(e){}
+    // Limpiar contenedor
+    while(textEl.firstChild) textEl.removeChild(textEl.firstChild);
+    // 1) Texto
     var rawTxt = entry.text || '';
-    var paras = rawTxt.split(/\n\n+/).map(function(p){ return p.replace(/\n/g,'<br>'); });
-    textEl.innerHTML = paras.map(function(p){ return '<p>'+_escHtml(p).replace(/\n/g,'<br>')+'</p>'; }).join('');
-    // _escHtml already encoded the text; split then rejoin for paragraph structure
-    textEl.innerHTML = rawTxt.split(/\n\n+/).map(function(p){
-      return '<p>'+p.split('\n').map(function(l){ return _escHtml(l); }).join('<br>')+'</p>';
-    }).join('');
-    // Registrar audio en cache global para el player
-    if(entry.audio){ try{ window._veloEntryAudios = window._veloEntryAudios || {}; window._veloEntryAudios[String(entry.ts)] = entry.audio; }catch(e){} }
-    // Adjuntar imagen: renderizado directo, sin gates
-    if(entry.image){
-      var imgHtml = '<div style="margin-top:14px;text-align:center"><img src="'+entry.image+'" style="max-width:100%;max-height:400px;border-radius:14px;border:1.5px solid rgba(180,155,240,.30);box-shadow:0 6px 20px rgba(0,0,0,.20);display:block;margin:0 auto"></div>';
-      textEl.innerHTML += imgHtml;
+    if(rawTxt){
+      rawTxt.split(/\n\n+/).forEach(function(paragraph){
+        var p = document.createElement('p');
+        var lines = paragraph.split('\n');
+        lines.forEach(function(line, idx){
+          p.appendChild(document.createTextNode(line));
+          if(idx < lines.length - 1) p.appendChild(document.createElement('br'));
+        });
+        textEl.appendChild(p);
+      });
     }
-    // Adjuntar audio: usar player Web Audio + fallback audio nativo
+    // 2) Imagen — DOM API, sin innerHTML fragil
+    if(entry.image){
+      var imgWrap = document.createElement('div');
+      imgWrap.style.cssText = 'margin-top:14px;text-align:center';
+      var img = document.createElement('img');
+      img.style.cssText = 'max-width:100%;max-height:400px;border-radius:14px;border:1.5px solid rgba(180,155,240,.30);box-shadow:0 6px 20px rgba(0,0,0,.20);display:block;margin:0 auto';
+      img.onerror = function(){
+        imgWrap.innerHTML = '<div style="padding:16px;background:rgba(180,155,240,.10);border:1.5px dashed rgba(180,155,240,.40);border-radius:14px;color:rgba(180,155,240,.85);font-family:Jost,sans-serif;font-size:13px">📷 Imagen no disponible en este dispositivo</div>';
+      };
+      img.src = entry.image;
+      img.alt = 'Adjunto';
+      imgWrap.appendChild(img);
+      textEl.appendChild(imgWrap);
+    }
+    // 3) Audio — usar SOLO el player nativo con blob URL (más confiable que data URL en iOS)
     if(entry.audio){
-      var audioHtml = '<div style="margin-top:14px;padding:12px 14px;background:rgba(200,158,56,.12);border:1.5px solid rgba(200,158,56,.42);border-radius:14px">'
-        + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'
-          + '<button onclick="pToggleVeloAudio(\''+entry.ts+'\',this)" style="width:44px;height:44px;border-radius:50%;background:rgba(200,158,56,.30);border:1.5px solid rgba(200,158,56,.65);color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0" title="Reproducir">▶️</button>'
-          + '<div style="flex:1;min-width:0">'
-            + '<div style="font-size:12.5px;font-weight:800;color:rgba(200,158,56,.98);font-family:Jost,sans-serif;letter-spacing:.3px;text-transform:uppercase">🎙️ Nota de voz</div>'
-            + '<div id="veloAudioStatus_'+entry.ts+'" style="font-size:11.5px;color:rgba(200,158,56,.68);font-family:Jost,sans-serif;margin-top:2px">Tocá play para escuchar</div>'
-          + '</div>'
-        + '</div>'
-        + '<audio controls preload="metadata" src="'+entry.audio+'" style="width:100%;height:36px;display:block" onerror="this.style.display=\'none\'"></audio>'
-      + '</div>';
-      textEl.innerHTML += audioHtml;
+      var audioWrap = document.createElement('div');
+      audioWrap.style.cssText = 'margin-top:14px;padding:12px 14px;background:rgba(200,158,56,.12);border:1.5px solid rgba(200,158,56,.42);border-radius:14px';
+      var lbl = document.createElement('div');
+      lbl.style.cssText = 'font-size:12.5px;font-weight:800;color:rgba(200,158,56,.98);font-family:Jost,sans-serif;letter-spacing:.3px;text-transform:uppercase;margin-bottom:8px';
+      lbl.textContent = '🎙️ Nota de voz';
+      audioWrap.appendChild(lbl);
+      var audioEl = document.createElement('audio');
+      audioEl.controls = true;
+      audioEl.preload = 'metadata';
+      audioEl.style.cssText = 'width:100%;height:40px;display:block';
+      // Convertir data URL a blob URL para máxima compatibilidad iOS Safari
+      try{
+        if(typeof entry.audio === 'string' && entry.audio.indexOf('data:') === 0){
+          var arr = entry.audio.split(',');
+          var mimeMatch = arr[0].match(/:(.*?);/);
+          var mime = mimeMatch ? mimeMatch[1] : 'audio/wav';
+          var bstr = atob(arr[1] || '');
+          var u8 = new Uint8Array(bstr.length);
+          for(var _i=0; _i<bstr.length; _i++) u8[_i] = bstr.charCodeAt(_i);
+          var blob = new Blob([u8], { type: mime });
+          audioEl.src = URL.createObjectURL(blob);
+        } else {
+          audioEl.src = entry.audio;
+        }
+      }catch(errBlob){
+        console.warn('[diary-audio] blob-convert failed', errBlob);
+        audioEl.src = entry.audio;
+      }
+      var errShown = false;
+      audioEl.onerror = function(){
+        if(errShown) return; errShown = true;
+        console.warn('[diary-audio] element error', audioEl.error && audioEl.error.code, audioEl.error && audioEl.error.message);
+        var errMsg = document.createElement('div');
+        errMsg.style.cssText = 'margin-top:8px;font-size:11.5px;color:rgba(255,180,120,.85);font-family:Jost,sans-serif';
+        errMsg.textContent = 'No se pudo cargar el audio en este navegador.';
+        audioWrap.appendChild(errMsg);
+      };
+      audioWrap.appendChild(audioEl);
+      textEl.appendChild(audioWrap);
     }
   }
   if(delBtn)  delBtn.onclick = function(){ closeModal('diaryEntryOv'); pDeleteDiary(ts); };
@@ -30069,7 +30325,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1289;
+    var _BUILT_V = 1290;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
