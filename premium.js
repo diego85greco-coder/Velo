@@ -2121,17 +2121,14 @@ function _showWellbeingBanner(){
   }, 12000);
 }
 
-// ── COMMUNITY PULSE — chip en home con actividad de la comunidad hoy ─
+// ── COMMUNITY PULSE — línea sutil dentro del saludo, no card ────────
 async function _renderCommunityPulseBanner(){
-  var host = document.querySelector('.r-hero-left');
-  if(!host || document.getElementById('communityPulseChip')) return;
+  // Sacar cualquier versión vieja del banner
+  var _oldChip = document.getElementById('communityPulseChip');
+  if(_oldChip) _oldChip.remove();
+  var block = document.getElementById('homeGreetBlock');
+  if(!block || document.getElementById('communityPulseLine')) return;
   _initSupabase(); if(!sbClient) return;
-  var isLight = !document.body.classList.contains('r-dark');
-  // Placeholder mientras carga
-  var chip = document.createElement('div');
-  chip.id = 'communityPulseChip';
-  chip.style.cssText = 'width:100%;box-sizing:border-box;margin:0 0 10px;order:-3;text-align:center';
-  host.insertAdjacentElement('afterbegin', chip);
   try{
     var since = new Date(Date.now() - 24*3600000).toISOString();
     var results = await Promise.all([
@@ -2142,21 +2139,21 @@ async function _renderCommunityPulseBanner(){
     var m = (results[0] && results[0].count != null) ? results[0].count : 0;
     var b = (results[1] && results[1].count != null) ? results[1].count : 0;
     var w = (results[2] && results[2].count != null) ? results[2].count : 0;
-    // Solo mostrar si hay algo de actividad (evita "0 · 0 · 0" desanimante)
-    if(m + b + w === 0){ chip.remove(); return; }
-    var pillBg  = isLight ? 'rgba(116,198,157,.14)' : 'rgba(120,200,160,.18)';
-    var pillBrd = isLight ? 'rgba(80,185,140,.45)'  : 'rgba(140,220,180,.42)';
-    var textCol = isLight ? 'rgba(8,72,40,.92)'     : 'rgba(190,255,215,.92)';
-    var strongCol = isLight ? 'rgba(8,72,40,1)'     : 'rgba(255,255,255,1)';
-    var sepCol  = isLight ? 'rgba(8,72,40,.30)'     : 'rgba(190,255,215,.30)';
-    chip.innerHTML = '<span style="display:inline-flex;gap:12px;align-items:center;padding:8px 16px;background:'+pillBg+';border:1.5px solid '+pillBrd+';border-radius:100px;font-weight:800;font-family:Jost,sans-serif;font-size:12px;color:'+textCol+';box-shadow:0 3px 12px rgba(80,185,140,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)">'
-      + '<span style="font-size:14px">🌿</span>'
-      + '<span>Hoy en Velo:</span>'
-      + '<span>💚 <strong style="color:'+strongCol+'">'+m+'</strong> ánimos</span>'
-      + (b>0 ? '<span style="color:'+sepCol+'">·</span><span>📖 <strong style="color:'+strongCol+'">'+b+'</strong></span>' : '')
-      + (w>0 ? '<span style="color:'+sepCol+'">·</span><span>🌊 <strong style="color:'+strongCol+'">'+w+'</strong></span>' : '')
-      + '</span>';
-  }catch(e){ if(chip) chip.remove(); }
+    if(m + b + w === 0) return;
+    var isLight = !document.body.classList.contains('r-dark');
+    var col = isLight ? 'rgba(140,110,20,.72)' : 'rgba(220,180,80,.75)';
+    var sepCol = isLight ? 'rgba(140,110,20,.35)' : 'rgba(220,180,80,.35)';
+    var line = document.createElement('div');
+    line.id = 'communityPulseLine';
+    var parts = [];
+    parts.push('💚 '+m+' ánimo'+(m===1?'':'s'));
+    if(b>0) parts.push('📖 '+b);
+    if(w>0) parts.push('🌊 '+w);
+    line.style.cssText = 'text-align:center;font-family:Jost,sans-serif;font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:'+col+';margin-top:8px;opacity:0;transition:opacity .5s';
+    line.innerHTML = parts.join(' <span style="color:'+sepCol+';font-weight:400">·</span> ');
+    block.appendChild(line);
+    requestAnimationFrame(function(){ line.style.opacity = '1'; });
+  }catch(e){}
 }
 
 // ── BUDDY EXPIRY — banner en home cuando cumple 30 días ──────────
@@ -4051,16 +4048,16 @@ async function _initHomeQuickCtaStrip(){
   if(!host){ _ctaStripBuilding = false; return; }
   var strip = document.createElement('div');
   strip.id = 'homeQuickCtaStrip';
-  strip.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%;box-sizing:border-box;margin:0 0 14px;order:-2';
+  strip.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%;box-sizing:border-box;margin:0 0 10px;order:-2';
+  // Tiles compactas: solo icon + label, sin subtitle. Height ~50-55px.
   var tile = function(icon, label, sub, bg, bdr, action){
-    return '<button onclick="'+action+'" style="cursor:pointer;background:'+bg+';border:1.5px solid '+bdr+';border-radius:16px;padding:11px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 4px 14px rgba(0,0,0,.22);-webkit-tap-highlight-color:transparent;touch-action:manipulation;font-family:Jost,sans-serif;text-align:center;position:relative" onmousedown="this.style.transform=\'scale(.94)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'" ontouchstart="this.style.transform=\'scale(.94)\'" ontouchend="this.style.transform=\'\'">'
-      +'<div style="font-size:24px;line-height:1">'+icon+'</div>'
-      +'<div style="font-size:11.5px;font-weight:800;color:rgba(255,255,255,.94);letter-spacing:.1px;line-height:1.15">'+label+'</div>'
-      +'<div style="font-size:9.5px;color:rgba(255,255,255,.55);line-height:1.15;margin-top:1px">'+sub+'</div>'
+    return '<button onclick="'+action+'" style="cursor:pointer;background:'+bg+';border:1px solid '+bdr+';border-radius:12px;padding:8px 6px;display:flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;font-family:Jost,sans-serif;text-align:center" onmousedown="this.style.transform=\'scale(.94)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'" ontouchstart="this.style.transform=\'scale(.94)\'" ontouchend="this.style.transform=\'\'">'
+      +'<span style="font-size:16px;line-height:1">'+icon+'</span>'
+      +'<span style="font-size:11.5px;font-weight:800;color:rgba(255,255,255,.92);letter-spacing:.1px;line-height:1.1;white-space:nowrap">'+label+'</span>'
       +'</button>';
   };
   // Chequeo si tiene buddy para adaptar la tile
-  var buddyTile = tile('🤝','Compañero','de bienestar','linear-gradient(140deg,rgba(155,120,220,.30),rgba(116,88,180,.22))','rgba(155,120,220,.55)','pOpenBuddyModal()');
+  var buddyTile = tile('🤝','Compañero','','rgba(155,120,220,.14)','rgba(155,120,220,.42)','pOpenBuddyModal()');
   try{
     var uid = safeLS('get','velo_user_id') || '';
     _initSupabase();
@@ -4070,18 +4067,17 @@ async function _initHomeQuickCtaStrip(){
         var shortName = (me.data.buddy_name||'').split(' ')[0] || 'compañero/a';
         var startedTs = me.data.buddy_started_at ? new Date(me.data.buddy_started_at).getTime() : Date.now();
         var daysLeft = Math.max(0, 30 - Math.floor((Date.now() - startedTs) / 86400000));
-        var subLbl = daysLeft === 0 ? '¡renová!' : daysLeft <= 5 ? 'faltan '+daysLeft+'d' : shortName.slice(0,10);
+        var lbl = daysLeft === 0 ? '¡renová!' : shortName.slice(0,10);
         var action = 'pOpenDM(\''+_jsAttr(me.data.buddy_id)+'\',\''+_jsAttr(me.data.buddy_name||'Compañero/a')+'\',\'🌿\')';
-        buddyTile = tile('💬','Chat con', subLbl, 'linear-gradient(140deg,rgba(155,120,220,.34),rgba(116,88,180,.26))','rgba(155,120,220,.65)', action);
+        buddyTile = tile('💬', lbl, '', 'rgba(155,120,220,.18)','rgba(155,120,220,.52)', action);
       } else if(me && me.data && me.data.buddy_available_at){
-        // Anotado como disponible, sin match aún
-        buddyTile = tile('🌿','Anotado/a','esperando match','linear-gradient(140deg,rgba(155,120,220,.34),rgba(116,88,180,.26))','rgba(155,120,220,.65)','pOpenBuddyModal()');
+        buddyTile = tile('🌿','Anotado/a','','rgba(155,120,220,.18)','rgba(155,120,220,.52)','pOpenBuddyModal()');
       }
     }
   }catch(e){}
   strip.innerHTML =
-    tile('🌸','Mi Wrapped','del mes','linear-gradient(140deg,rgba(228,178,80,.28),rgba(180,120,40,.20))','rgba(228,178,80,.55)','pOpenMonthlyWrapped()')
-    + tile('💌','Invitar','+30d Plus','linear-gradient(140deg,rgba(116,198,157,.30),rgba(74,160,110,.22))','rgba(116,198,157,.60)','pOpenInviteFriends()')
+    tile('🌸','Wrapped','','rgba(228,178,80,.14)','rgba(228,178,80,.40)','pOpenMonthlyWrapped()')
+    + tile('💌','Invitar','','rgba(116,198,157,.14)','rgba(116,198,157,.42)','pOpenInviteFriends()')
     + buddyTile;
   // Re-check: si otra invocación ya insertó una strip mientras esperábamos el await, no dupliques
   if(document.getElementById('homeQuickCtaStrip')){ _ctaStripBuilding = false; return; }
@@ -27843,7 +27839,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1260;
+    var _BUILT_V = 1261;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
