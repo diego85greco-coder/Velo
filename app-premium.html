@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1263">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1263">
+  <link rel="stylesheet" href="premium.css?v=20260626-1264">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1264">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -218,6 +218,7 @@
   <button class="p-mobile-nav-item" onclick="pOpenMonthlyWrapped();toggleMobileMenu()"><span class="p-mobile-nav-icon">🌸</span> Mi Wrapped mensual</button>
   <button class="p-mobile-nav-item" onclick="pOpenBuddyModal();toggleMobileMenu()"><span class="p-mobile-nav-icon">🤝</span> Compañero/a de bienestar</button>
   <button class="p-mobile-nav-item" onclick="pOpenInviteFriends();toggleMobileMenu()"><span class="p-mobile-nav-icon">💌</span> Invitar amigos <span style="font-size:9px;font-weight:800;background:rgba(116,198,157,.25);border:1px solid rgba(116,198,157,.55);color:rgba(180,235,210,.98);border-radius:100px;padding:2px 7px;margin-left:6px;letter-spacing:.3px">+30d Plus</span></button>
+  <button class="p-mobile-nav-item" onclick="veloOpenBreathingModal();toggleMobileMenu()"><span class="p-mobile-nav-icon">🌱</span> Respiración guiada 4·7·8</button>
   <button class="p-mobile-nav-item" onclick="pOpenPreferences();toggleMobileMenu()"><span class="p-mobile-nav-icon">⚙️</span> Preferencias</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
@@ -4348,8 +4349,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1263"></script>
-<script src="premium-redesign.js?v=20260626-1263"></script>
+<script src="premium.js?v=20260626-1264"></script>
+<script src="premium-redesign.js?v=20260626-1264"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

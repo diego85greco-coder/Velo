@@ -4049,7 +4049,9 @@ function _loadHomeData(){
   try{ setTimeout(function(){ _checkReferralQualification(); }, 1200); }catch(e){}
   try{ setTimeout(function(){ _checkBuddyExpiry(); }, 1600); }catch(e){}
   try{ setTimeout(function(){ _renderCommunityPulseBanner(); }, 2000); }catch(e){}
-  try{ setTimeout(function(){ _renderBreathingWidgetOnHome(); }, 2400); }catch(e){}
+  // Widget de respiración removido del home a pedido del user (ocupaba mucho).
+  // Sigue accesible desde el menú hamburguesa.
+  try{ var _br = document.getElementById('veloBreathWidget'); if(_br) _br.remove(); }catch(e){}
   try{ _startInAppNotifPolling(); }catch(e){}
   try{ _scheduleWellbeingCheck(); }catch(e){}
   // v1228: mensual NO se dispara automático. Solo desde admin (pAdminSendMonthlyReport).
@@ -28045,7 +28047,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1263;
+    var _BUILT_V = 1264;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
