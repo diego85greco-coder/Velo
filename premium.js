@@ -14867,12 +14867,9 @@ function pExportDiaryToPdf(){
   // Renderizar en modal in-app (window.open en iOS PWA reemplaza la ventana
   // sin darle al usuario forma de volver — lo hacemos con iframe + botón cerrar)
   var ex = document.getElementById('diaryPdfOv'); if(ex) ex.remove();
-  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-  var url = URL.createObjectURL(blob);
   var ov = document.createElement('div');
   ov.id = 'diaryPdfOv';
   ov.style.cssText = 'position:fixed;inset:0;z-index:10010;background:#fdfaf0;display:flex;flex-direction:column';
-  // Toolbar superior con Cerrar + Imprimir/Compartir
   var bar = document.createElement('div');
   bar.style.cssText = 'flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 14px;background:linear-gradient(180deg,rgba(139,106,32,.96),rgba(107,80,20,.98));border-bottom:1.5px solid rgba(60,40,10,.35);box-shadow:0 2px 12px rgba(0,0,0,.15);padding-top:calc(10px + env(safe-area-inset-top,0px))';
   var closeBtn = document.createElement('button');
@@ -14880,10 +14877,7 @@ function pExportDiaryToPdf(){
   closeBtn.setAttribute('aria-label','Cerrar');
   closeBtn.style.cssText = 'flex-shrink:0;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.35);color:#fff8e0;border-radius:100px;padding:8px 14px;font-family:Jost,sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;display:inline-flex;align-items:center;gap:6px';
   closeBtn.innerHTML = '<span style="font-size:18px;line-height:1">←</span> Cerrar';
-  closeBtn.onclick = function(){
-    try{ URL.revokeObjectURL(url); }catch(e){}
-    ov.remove();
-  };
+  closeBtn.onclick = function(){ ov.remove(); };
   var title = document.createElement('div');
   title.style.cssText = 'flex:1;text-align:center;font-family:\'Cormorant Garamond\',serif;font-size:17px;color:#fff8e0;font-style:italic;letter-spacing:.5px';
   title.textContent = 'Mi Diario';
@@ -14909,20 +14903,17 @@ function pExportDiaryToPdf(){
   bar.appendChild(title);
   bar.appendChild(printBtn);
   ov.appendChild(bar);
-  // Iframe con el HTML del diario
+  // Iframe con srcdoc — inyecta el HTML directo, funciona en iOS Safari
+  // (blob: URLs + sandbox tienen problemas de origen opaco en WebKit)
   var iframe = document.createElement('iframe');
   iframe.id = 'diaryPdfIframe';
-  iframe.style.cssText = 'flex:1;width:100%;border:none;background:#fdfaf0';
-  iframe.setAttribute('sandbox','allow-same-origin allow-modals');
-  iframe.src = url;
+  iframe.style.cssText = 'flex:1;width:100%;border:none;background:#fdfaf0;-webkit-overflow-scrolling:touch';
+  iframe.srcdoc = html;
   ov.appendChild(iframe);
   document.body.appendChild(ov);
   // Cerrar con back del navegador si se pulsa
   var backHandler = function(){
-    if(document.getElementById('diaryPdfOv')){
-      try{ URL.revokeObjectURL(url); }catch(e){}
-      ov.remove();
-    }
+    if(document.getElementById('diaryPdfOv')){ ov.remove(); }
     window.removeEventListener('popstate', backHandler);
   };
   try{ history.pushState({diaryPdf:1},''); window.addEventListener('popstate', backHandler); }catch(e){}
@@ -30634,7 +30625,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1294;
+    var _BUILT_V = 1295;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
