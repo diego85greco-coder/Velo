@@ -11384,10 +11384,9 @@ async function pRenderBottle(){
     var authorNameHtml;
     if(isOwn){
       if(b.anon){
-        // Publiqué anónimo → dejar CLARO que otros me ven como Anónimo/a,
-        // y que este nombre visible ES solo para mí
-        authorNameHtml = '<span style="font-size:13px;font-weight:800;color:'+anonColor+';letter-spacing:.2px">Anónimo/a</span>'
-          + '<span style="font-size:10.5px;font-weight:700;color:rgba(180,255,180,.75);background:rgba(80,185,140,.14);border:1px solid rgba(80,185,140,.35);border-radius:100px;padding:2px 8px;margin-left:6px;letter-spacing:.3px">🔒 Solo vos lo ves como Tuyo</span>';
+        // Publiqué anónimo → mismo texto que otros ven ('Anónimo/a').
+        // La ownership ya está clara por el 'Tu mensaje 🌊' y el 🗑️ abajo.
+        authorNameHtml = '<span style="font-size:13px;font-weight:800;color:'+anonColor+';letter-spacing:.2px">Anónimo/a</span>';
       } else {
         authorNameHtml = '<span style="font-size:13px;font-weight:700;color:'+bCol.label+'">'+(myName||'Tú')+'</span>';
       }
@@ -27457,7 +27456,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1253;
+    var _BUILT_V = 1254;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
