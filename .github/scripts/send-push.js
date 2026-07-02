@@ -265,7 +265,11 @@ async function sendMonthlyWrapped(users) {
       await webpush.sendNotification(rawSub, JSON.stringify({
         title, body,
         icon: '/assets/icon-192.png', badge: '/assets/icon-72.png',
-        tag: `velo-wrapped-${monthKey}`, url: '/',
+        tag: `velo-wrapped-${monthKey}`, url: '/?open=wrapped',
+        actions: [
+          { action: 'open-wrapped', title: '🌸 Ver Wrapped', url: '/?open=wrapped' },
+          { action: 'later', title: 'Después' }
+        ],
       }));
       sent++;
       const updated = { ...parsedFull, lastWrapped: monthKey };
@@ -369,7 +373,11 @@ async function sendBuddyLowMoodAlerts(users) {
           title: '🕊️ Un mensaje puede ayudar',
           body: `${buddyName} viene con días difíciles. Escribirle algo cálido puede sumar 💚`,
           icon: '/assets/icon-192.png', badge: '/assets/icon-72.png',
-          tag: 'velo-buddy-alert', url: '/',
+          tag: 'velo-buddy-alert', url: '/?open=buddy',
+          actions: [
+            { action: 'open-buddy', title: '💬 Ir al buddy', url: '/?open=buddy' },
+            { action: 'later', title: 'Después' }
+          ],
         }));
         const updated = { ...parsedFull, lastBuddyAlert: alertKey };
         await supabase.from('profiles').update({ push_subscription: JSON.stringify(updated) }).eq('id', p.buddy_id);
@@ -447,11 +455,20 @@ async function main() {
     if (!notif) continue;
     await Promise.allSettled(slotUsers[slot].map(async ({ id, sub, tz, parsedFull }) => {
       try {
-        await webpush.sendNotification(sub, JSON.stringify({
+        // Sumar action inteligente según el slot
+        let payload = {
           title: notif.title, body: notif.body,
           icon: '/assets/icon-192.png', badge: '/assets/icon-72.png',
           tag: notif.tag, url: '/'
-        }));
+        };
+        if (slot === 'morning') {
+          payload.url = '/?open=mood';
+          payload.actions = [
+            { action: 'open-mood', title: '🌿 Registrar ánimo', url: '/?open=mood' },
+            { action: 'later', title: 'Después' }
+          ];
+        }
+        await webpush.sendNotification(sub, JSON.stringify(payload));
         sent++;
         // Record that this slot was sent today to prevent duplicate sends
         const updatedSub = { ...parsedFull, lastSent: { ...(parsedFull.lastSent || {}), [slot]: today } };

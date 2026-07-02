@@ -4800,15 +4800,56 @@ if('serviceWorker' in navigator && 'PushManager' in window){
   // When the browser rotates the push endpoint (pushsubscriptionchange in SW),
   // the SW sends us the new subscription via postMessage — save it immediately.
   navigator.serviceWorker.addEventListener('message', function(e){
-    if(!e.data || e.data.type !== 'PUSH_SUB_CHANGED') return;
-    try{
-      var newSub = JSON.parse(e.data.sub);
-      safeLS('set','velo_push_sub', JSON.stringify(newSub));
-      _savePushSubscriptionToSupabase(newSub).catch(function(){});
-      console.log('[push] subscription rotated by browser — saved new endpoint');
-    }catch(_me){}
+    if(!e.data) return;
+    // 1) Subscripción rotada por el browser
+    if(e.data.type === 'PUSH_SUB_CHANGED'){
+      try{
+        var newSub = JSON.parse(e.data.sub);
+        safeLS('set','velo_push_sub', JSON.stringify(newSub));
+        _savePushSubscriptionToSupabase(newSub).catch(function(){});
+        console.log('[push] subscription rotated by browser — saved new endpoint');
+      }catch(_me){}
+      return;
+    }
+    // 2) Usuario tapeó una acción de una push notification
+    if(e.data.type === 'NOTIF_ACTION'){
+      var action = e.data.action || 'open';
+      var url = e.data.url || '/';
+      // Diferir para que la app termine de bootear
+      setTimeout(function(){
+        if(action === 'open-wrapped' && typeof pOpenMonthlyWrapped === 'function'){
+          try{ pOpenMonthlyWrapped(); }catch(_){}
+        } else if(action === 'open-buddy' && typeof pOpenBuddyModal === 'function'){
+          try{ pOpenBuddyModal(); }catch(_){}
+        } else if(action === 'open-mood'){
+          if(typeof pOpenMoodQuickView === 'function'){ try{ pOpenMoodQuickView(); }catch(_){} }
+          else if(typeof _openMoodChipSheet === 'function'){ try{ _openMoodChipSheet(); }catch(_){} }
+        }
+      }, 350);
+      return;
+    }
   });
 }
+// Handle ?open=xxx query param → dispara el intent desde una notif clickada
+(function _handleNotifOpenQuery(){
+  try{
+    var params = new URLSearchParams(window.location.search);
+    var openIntent = params.get('open');
+    if(!openIntent) return;
+    // Limpiar la URL para que no persista en un refresh
+    try{ history.replaceState(null, '', window.location.pathname); }catch(e){}
+    var trigger = function(){
+      if(openIntent === 'wrapped' && typeof pOpenMonthlyWrapped === 'function'){ try{ pOpenMonthlyWrapped(); }catch(_){} }
+      else if(openIntent === 'buddy' && typeof pOpenBuddyModal === 'function'){ try{ pOpenBuddyModal(); }catch(_){} }
+      else if(openIntent === 'mood'){
+        if(typeof pOpenMoodQuickView === 'function'){ try{ pOpenMoodQuickView(); }catch(_){} }
+        else if(typeof _openMoodChipSheet === 'function'){ try{ _openMoodChipSheet(); }catch(_){} }
+      }
+    };
+    if(document.readyState === 'complete') setTimeout(trigger, 900);
+    else window.addEventListener('load', function(){ setTimeout(trigger, 900); });
+  }catch(e){}
+})();
 
 function _urlBase64ToUint8Array(base64String){
   var padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -27657,7 +27698,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1257;
+    var _BUILT_V = 1258;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

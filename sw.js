@@ -1,10 +1,26 @@
-/* Velo Service Worker — always-fresh strategy for app-premium.html */
-var CACHE = 'velo-v14';
+/* Velo Service Worker v15 — always-fresh HTML + smart notifs + pre-cache */
+var CACHE = 'velo-v15';
 var APP_HTML = '/app-premium.html';
 var VERSION_URL = '/version.json';
 
+// Recursos a pre-cachear en install para arranque instantáneo aún sin red
+var PRECACHE = [
+  APP_HTML,
+  '/assets/icon-192.png',
+  '/assets/icon-72.png',
+];
+
 self.addEventListener('install', function(e){
-  self.skipWaiting();
+  // Pre-cache paralelo (best-effort, no bloquea skipWaiting)
+  e.waitUntil(
+    caches.open(CACHE).then(function(c){
+      return Promise.all(PRECACHE.map(function(url){
+        return fetch(url, {cache:'no-store'}).then(function(res){
+          if(res && res.ok) return c.put(url, res.clone());
+        }).catch(function(){});
+      }));
+    }).then(function(){ return self.skipWaiting(); })
+  );
 });
 
 self.addEventListener('activate', function(e){
@@ -17,6 +33,12 @@ self.addEventListener('activate', function(e){
       );
     }).then(function(){ return self.clients.claim(); })
   );
+});
+
+// Permite al cliente activar un SW nuevo sin recargar toda la app
+self.addEventListener('message', function(e){
+  if(!e.data) return;
+  if(e.data.type === 'SKIP_WAITING'){ self.skipWaiting(); }
 });
 
 self.addEventListener('fetch', function(e){
@@ -80,25 +102,85 @@ self.addEventListener('fetch', function(e){
   );
 });
 
+// ── PUSH NOTIFICATIONS con acciones inteligentes ──────────────
+// Payload esperado (send-push.js):
+//   { title, body, icon, badge, tag, url, actions?: [{action:'open', title:'💌 Ver'}, {action:'later', title:'Después'}] }
 self.addEventListener('push', function(event){
   var data = {};
-  try{ data = event.data ? event.data.json() : {}; }catch(e){ data = {title:'Velo',body:event.data?event.data.text():''}; }
+  try{ data = event.data ? event.data.json() : {}; }
+  catch(e){ data = {title:'Velo', body: event.data ? event.data.text() : ''}; }
   var title = data.title || '💚 Velo';
+  // Actions por defecto según tag — cada uno con un URL de deep-link
+  var defaultActions = [{action:'open', title:'Abrir Velo'}];
+  var actionMeta = {}; // action_id → url override
+  if(data.actions && Array.isArray(data.actions)){
+    // Formato custom: array de {action,title,url}
+    defaultActions = data.actions.map(function(a){
+      if(a && a.url) actionMeta[a.action] = a.url;
+      return { action: a.action || 'open', title: a.title || 'Ver' };
+    }).slice(0, 2); // spec: máx 2 acciones visibles
+  } else if(data.tag){
+    if(data.tag.indexOf('velo-wrapped-') === 0){
+      defaultActions = [
+        {action:'open-wrapped', title:'🌸 Ver Wrapped'},
+        {action:'later', title:'Después'}
+      ];
+      actionMeta['open-wrapped'] = '/?open=wrapped';
+    } else if(data.tag === 'velo-buddy-alert'){
+      defaultActions = [
+        {action:'open-buddy', title:'💬 Ir al buddy'},
+        {action:'later', title:'Después'}
+      ];
+      actionMeta['open-buddy'] = '/?open=buddy';
+    } else if(data.tag && data.tag.indexOf('velo-') === 0){
+      // Daily notifs — action de "Registrar ánimo" en morning slot
+      if(data.tag === 'velo-morning'){
+        defaultActions = [
+          {action:'open-mood', title:'🌿 Registrar ánimo'},
+          {action:'later', title:'Después'}
+        ];
+        actionMeta['open-mood'] = '/?open=mood';
+      }
+    }
+  }
   var options = {
     body: data.body || '¿Cómo te sentís hoy?',
     icon: data.icon || '/assets/icon-192.png',
     badge: '/assets/icon-72.png',
     tag: data.tag || 'velo-daily',
-    requireInteraction: false,
-    data: { url: data.url || '/' }
+    renotify: false,
+    requireInteraction: !!data.requireInteraction,
+    actions: defaultActions,
+    data: {
+      url: data.url || '/',
+      actionMeta: actionMeta,
+    }
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', function(event){
   event.notification.close();
-  var url = (event.notification.data && event.notification.data.url) || '/';
-  event.waitUntil(clients.openWindow(url));
+  var d = event.notification.data || {};
+  var target = d.url || '/';
+  if(event.action && d.actionMeta && d.actionMeta[event.action]){
+    target = d.actionMeta[event.action];
+  } else if(event.action === 'later'){
+    return; // el usuario descarta, no abrimos nada
+  }
+  event.waitUntil(
+    self.clients.matchAll({ type:'window', includeUncontrolled:true }).then(function(list){
+      // Si ya hay una ventana abierta, foco + mandarle un mensaje con el intent
+      for(var i=0; i<list.length; i++){
+        var c = list[i];
+        if(c.url.indexOf(self.location.origin) === 0){
+          c.postMessage({ type:'NOTIF_ACTION', action: event.action || 'open', url: target });
+          if('focus' in c) return c.focus();
+        }
+      }
+      return self.clients.openWindow(target);
+    })
+  );
 });
 
 self.addEventListener('pushsubscriptionchange', function(event){
