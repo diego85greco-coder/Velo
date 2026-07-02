@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1248">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1248">
+  <link rel="stylesheet" href="premium.css?v=20260626-1249">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1249">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -2091,10 +2091,41 @@
             <button id="bottleHdrSendBtn" class="p-btn" style="background:rgba(80,150,200,.15);border:1px solid rgba(80,150,200,.3);color:#1E5A80;font-size:12px;font-weight:700;padding:7px 13px;border-radius:100px" onclick="pOpenBottleForm()">+ Enviar</button>
           </div>
           <div style="padding:16px">
+            <!-- Resumen de sección — patrón section-info-card -->
+            <div class="section-info-card" style="margin:0 0 14px">
+              <div class="sic-label">¿Qué es esta sección?</div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <span style="font-size:20px;flex-shrink:0;line-height:1.2">🌊</span>
+                  <div>
+                    <div class="sic-heading">Lanzá un mensaje al mar</div>
+                    <div class="sic-body">Escribí lo que necesitás soltar — pena, alegría, duda, pedido de apoyo. Podés hacerlo <strong>anónimo</strong> o con tu perfil visible.</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <span style="font-size:20px;flex-shrink:0;line-height:1.2">💌</span>
+                  <div>
+                    <div class="sic-heading">Cualquiera puede responderte</div>
+                    <div class="sic-body">Otras personas de la comunidad ven tu mensaje y pueden dejarte palabras de aliento. Cada respuesta llega a <strong>tu buzón Velo</strong>. Un usuario puede responder solo una vez por mensaje.</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <span style="font-size:20px;flex-shrink:0;line-height:1.2">⏳</span>
+                  <div>
+                    <div class="sic-heading">Duran 24 horas</div>
+                    <div class="sic-body">Los mensajes se borran automáticamente a las 24hs desde que fueron lanzados. Es un espacio efímero — como una botella que la corriente se lleva.</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <span style="font-size:20px;flex-shrink:0;line-height:1.2">🕊️</span>
+                  <div>
+                    <div class="sic-heading">Espacio de cuidado</div>
+                    <div class="sic-body">No es un lugar para urgencias — si estás en crisis, andá a <strong>Sala de Ayuda</strong> o a tus <strong>Guardianes</strong>. Acá se comparte lo que uno necesita soltar, con respeto y sin juicios.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div class="dark-hero-card" style="background:rgba(255,255,255,.65);border-color:rgba(80,150,200,.2)">
-              <div class="dark-label" style="color:rgba(30,90,128,.7)">MENSAJE EN BOTELLA</div>
-              <h2 class="dark-title" style="color:var(--ink)">Lanzá un mensaje al mundo</h2>
-              <p class="dark-sub" style="color:var(--ink4)">Anónimo o con tu perfil visible · Varios usuarios pueden responderte · Cada respuesta llega a tu buzón Velo · Los mensajes se borran automáticamente a las 24hs · Cada usuario solo puede responder una vez por mensaje</p>
               <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pOpenBottleForm()">🌊 Lanzar mi mensaje</button>
             </div>
             <div id="bottleStatsBar" style="text-align:center;font-size:11px;color:var(--ink4);padding:6px 0 10px;letter-spacing:.5px;display:none"></div>
@@ -4307,8 +4338,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1248"></script>
-<script src="premium-redesign.js?v=20260626-1248"></script>
+<script src="premium.js?v=20260626-1249"></script>
+<script src="premium-redesign.js?v=20260626-1249"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
