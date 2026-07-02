@@ -1989,7 +1989,7 @@ async function _renderCommunityPulseBanner(){
   // Placeholder mientras carga
   var chip = document.createElement('div');
   chip.id = 'communityPulseChip';
-  chip.style.cssText = 'width:100%;box-sizing:border-box;margin:0 0 10px;order:-1;text-align:center';
+  chip.style.cssText = 'width:100%;box-sizing:border-box;margin:0 0 10px;order:-3;text-align:center';
   host.insertAdjacentElement('afterbegin', chip);
   try{
     var since = new Date(Date.now() - 24*3600000).toISOString();
@@ -27698,7 +27698,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1258;
+    var _BUILT_V = 1259;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
