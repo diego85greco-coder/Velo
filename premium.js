@@ -3343,29 +3343,10 @@ function pApplyFontScale(scale){
 })();
 
 // ── BLOQUEO DE USUARIOS (client-side, filtra feeds antes de renderizar) ──
+// pBlockUser / pUnblockUser / _isBlocked están definidos más abajo (~19400)
+// usando la clave velo_blocked (compartida con velo_blocked_data para el UI).
 function _getBlockedUids(){
-  try{ return JSON.parse(safeLS('get','velo_blocked_uids')||'[]'); }catch(e){ return []; }
-}
-function _isBlocked(uid){
-  if(!uid) return false;
-  return _getBlockedUids().indexOf(String(uid)) >= 0;
-}
-function pBlockUser(uid, name){
-  if(!uid) return;
-  _pConfirm('¿Bloquear a '+(name||'este usuario')+'? No verás más su contenido en ninguna sección.', function(){
-    var list = _getBlockedUids();
-    if(list.indexOf(String(uid)) < 0){
-      list.push(String(uid));
-      safeLS('set','velo_blocked_uids', JSON.stringify(list));
-      pToast('🚫','Bloqueaste a '+(name||'este usuario'));
-      var qp = document.getElementById('quickProfileOv'); if(qp) qp.remove();
-    }
-  });
-}
-function pUnblockUser(uid){
-  var list = _getBlockedUids().filter(function(x){ return x !== String(uid); });
-  safeLS('set','velo_blocked_uids', JSON.stringify(list));
-  pToast('✓','Desbloqueaste al usuario');
+  try{ return JSON.parse(safeLS('get','velo_blocked')||'[]'); }catch(e){ return []; }
 }
 
 // ── PREFERENCIAS (tamaño fuente, bloqueos, etc.) ──────────────────────
@@ -14231,20 +14212,7 @@ var VELO_DIARY_PROMPTS = [
   '¿Cuál es el sentimiento que más se repite últimamente?',
   '¿Qué te gustaría dejar de posponer?',
 ];
-function pInjectDiaryPrompt(){
-  var ta = document.getElementById('diaryTa');
-  if(!ta) return;
-  // Prompt del día — misma pregunta durante 24h, cambia cada día
-  var todayIdx = Math.floor(Date.now() / 86400000);
-  var prompt = VELO_DIARY_PROMPTS[todayIdx % VELO_DIARY_PROMPTS.length];
-  var text = '✨ ' + prompt + '\n\n';
-  ta.value = text;
-  ta.focus();
-  ta.setSelectionRange(text.length, text.length);
-  var cc = document.getElementById('diaryCharCount');
-  if(cc) cc.textContent = ta.value.length;
-  pToast('✨','Pregunta del día');
-}
+// pInjectDiaryPrompt está definida más abajo (~26080) usando _getDiaryPrompt
 
 function _injectDiaryTemplate(type){
   var ta = document.getElementById('diaryTa');
@@ -21081,7 +21049,7 @@ function _renderPatientList(){
   var rows = patients.map(function(t){
     var notesKey = 'velo_pro_notes_'+proId+'_'+t.userId;
     var notes = []; try{ notes = JSON.parse(safeLS('get',notesKey)||'[]'); }catch(e){}
-    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="pOpenPatientNotes(\''+t.userId+'\',\''+_escHtml(t.userName || 'Usuario')+'\')">'
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="pOpenPatientNotes('+_jsAttr(t.userId)+','+_jsAttr(t.userName || 'Usuario')+')">'
       +'<div style="font-size:30px">🧑</div>'
       +'<div style="flex:1;min-width:0"><div style="font-weight:700;color:var(--ink);font-size:14px">'+(t.userName||'Usuario')+'</div>'
       +'<div style="font-size:13px;color:var(--ink5)">Última sesión · '+new Date(t.ts).toLocaleDateString('es')+'</div>'
@@ -21107,13 +21075,13 @@ function pOpenPatientNotes(userId, userName){
     +'<p style="font-size:13px;color:var(--ink5);margin-bottom:14px;line-height:1.5">🔒 Solo vos podés ver estas notas. No son visibles para el usuario ni para Velo.</p>'
     +'<textarea class="p-textarea" id="patientNoteTa" rows="4" placeholder="Escribí una nota clínica o de seguimiento para este paciente…"></textarea>'
     +'<div style="height:10px"></div>'
-    +'<button class="p-btn p-btn--primary p-btn--md" onclick="pSavePatientNote(\''+userId+'\',\''+_escHtml(userName || 'Usuario')+'\')">💾 Guardar nota</button>'
+    +'<button class="p-btn p-btn--primary p-btn--md" onclick="pSavePatientNote('+_jsAttr(userId)+','+_jsAttr(userName || 'Usuario')+')">💾 Guardar nota</button>'
     +'<div style="margin-top:16px" id="patientNotesList">'
     +(notes.length ? notes.map(function(n,i){
         return '<div style="background:var(--cream2);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:15px;color:var(--ink2);line-height:1.5;position:relative">'
           +'<div style="font-size:12px;color:var(--ink5);margin-bottom:4px">'+new Date(n.ts).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})+'</div>'
           +_escHtml(n.text)
-          +'<button onclick="pDeletePatientNote(\''+userId+'\',\''+_escHtml(userName||'Usuario')+'\','+i+')" style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:14px;cursor:pointer;color:var(--ink5)" title="Eliminar">🗑️</button>'
+          +'<button onclick="pDeletePatientNote('+_jsAttr(userId)+','+_jsAttr(userName||'Usuario')+','+i+')" style="position:absolute;top:8px;right:8px;background:none;border:none;font-size:14px;cursor:pointer;color:var(--ink5)" title="Eliminar">🗑️</button>'
           +'</div>';
       }).join('')
     : '<p class="p-sm p-muted">Sin notas para este paciente aún.</p>')
@@ -21176,7 +21144,7 @@ function _renderProMessages(){
     +(patients.length
       ? '<div style="display:flex;flex-direction:column;gap:8px">'
         + patients.map(function(t){
-          return '<button style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;cursor:pointer;text-align:left;font-family:\'Jost\',sans-serif" onclick="pProComposeMsg(\''+_escHtml(t.userId)+'\',\''+_escHtml(t.userName||'Usuario')+'\')">'
+          return '<button style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--cream2);border:1.5px solid var(--border2);border-radius:12px;cursor:pointer;text-align:left;font-family:\'Jost\',sans-serif" onclick="pProComposeMsg('+_jsAttr(t.userId)+','+_jsAttr(t.userName||'Usuario')+')">'
             +'<span style="font-size:22px">🧑</span>'
             +'<div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--ink)">'+(t.userName||'Usuario')+'</div>'
             +'<div style="font-size:13px;color:var(--ink5)">Enviar mensaje interno</div></div>'
@@ -21215,7 +21183,7 @@ function pProComposeMsg(userId, userName){
     +'<p style="font-size:14px;color:var(--ink4);margin-bottom:14px">El usuario lo recibirá en su buzón de Velo y podrá responderle.</p>'
     +'<textarea class="p-textarea" id="proComposeTa" rows="5" placeholder="Escribí tu mensaje..."></textarea>'
     +'<div style="height:12px"></div>'
-    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pProSendMsg(\''+_escHtml(userId)+'\',\''+_escHtml(userName)+'\')">Enviar mensaje 💌</button>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pProSendMsg('+_jsAttr(userId)+','+_jsAttr(userName)+')">Enviar mensaje 💌</button>'
     +'<div style="height:8px"></div>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'proComposeMsgOv\').remove()">Cancelar</button>'
     +'</div>';
@@ -21260,7 +21228,7 @@ function pReplyToProMsg(proId, proName, userName){
     +'<p style="font-size:14px;color:var(--ink4);margin-bottom:14px">Tu respuesta llegará al buzón del profesional.</p>'
     +'<textarea class="p-textarea" id="proReplyTa" rows="4" placeholder="Escribí tu respuesta..."></textarea>'
     +'<div style="height:12px"></div>'
-    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSendProReply(\''+_escHtml(proId)+'\',\''+_escHtml(proName)+'\')">Enviar respuesta 💌</button>'
+    +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSendProReply('+_jsAttr(proId)+','+_jsAttr(proName)+')">Enviar respuesta 💌</button>'
     +'<div style="height:8px"></div>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'proReplyMsgOv\').remove()">Cancelar</button>'
     +'</div>';
@@ -21962,7 +21930,7 @@ async function _adminTabProfesionales(panel){
         +(req.description?'<div style="font-size:12px;color:rgba(255,255,255,.3);font-style:italic;margin-top:2px">"'+_escHtml(req.description.slice(0,90))+'"</div>':'')
         +'<div style="font-size:11px;color:rgba(255,255,255,.22);margin-top:2px">hace '+dias+' día'+(dias!==1?'s':'')+'</div>'
         +'</div>'
-        +'<button onclick="_adminAssignSolidarityReq(\''+_escHtml(String(req.id))+'\',\''+_escHtml(req.user_name||'Usuario')+'\',this)" style="flex-shrink:0;padding:5px 10px;background:rgba(58,123,213,.2);border:1px solid rgba(58,123,213,.4);border-radius:7px;color:rgba(100,170,230,.9);font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">💙 Asignar</button>'
+        +'<button onclick="_adminAssignSolidarityReq('+_jsAttr(String(req.id))+','+_jsAttr(req.user_name||'Usuario')+',this)" style="flex-shrink:0;padding:5px 10px;background:rgba(58,123,213,.2);border:1px solid rgba(58,123,213,.4);border-radius:7px;color:rgba(100,170,230,.9);font-size:12px;font-weight:700;cursor:pointer;font-family:\'Jost\',sans-serif;white-space:nowrap">💙 Asignar</button>'
         +'</div></div>';
     }).join('');
   } else if(solidaryPros.length){
@@ -21998,9 +21966,9 @@ async function _adminTabProfesionales(panel){
             +'</div>'
             +'<div style="margin-bottom:12px">'+certLink+'</div>'
             +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
-            +'<button onclick="_adminProVerify(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:8px 16px;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:10px;cursor:pointer;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.45);color:rgba(116,198,157,.95)">✅ Aprobar</button>'
-            +'<button onclick="_adminProReject(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:8px 16px;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:10px;cursor:pointer;background:rgba(220,60,60,.15);border:1px solid rgba(220,60,60,.35);color:rgba(240,100,100,.9)">❌ Rechazar</button>'
-            +'<button onclick="_adminProMoreInfo(\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(116,198,200,.1);border:1px solid rgba(116,198,200,.25);color:rgba(116,198,200,.8)">📧 Pedir más info</button>'
+            +'<button onclick="_adminProVerify('+_jsAttr(p.id)+','+_jsAttr(p.email||'')+','+_jsAttr(p.nombre||'')+')" style="padding:8px 16px;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:10px;cursor:pointer;background:rgba(116,198,157,.2);border:1px solid rgba(116,198,157,.45);color:rgba(116,198,157,.95)">✅ Aprobar</button>'
+            +'<button onclick="_adminProReject('+_jsAttr(p.id)+','+_jsAttr(p.email||'')+','+_jsAttr(p.nombre||'')+')" style="padding:8px 16px;font-size:14px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:10px;cursor:pointer;background:rgba(220,60,60,.15);border:1px solid rgba(220,60,60,.35);color:rgba(240,100,100,.9)">❌ Rechazar</button>'
+            +'<button onclick="_adminProMoreInfo('+_jsAttr(p.email||'')+','+_jsAttr(p.nombre||'')+')" style="padding:6px 12px;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(116,198,200,.1);border:1px solid rgba(116,198,200,.25);color:rgba(116,198,200,.8)">📧 Pedir más info</button>'
             +'<button onclick="_adminProDelete(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:6px 12px;font-size:13px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:8px;cursor:pointer;background:rgba(220,60,60,.1);border:1px solid rgba(220,60,60,.25);color:rgba(220,80,80,.8)">🗑️ Eliminar</button>'
             +'</div>'
             +'</div>';
@@ -22052,7 +22020,7 @@ async function _adminTabProfesionales(panel){
           +(p.pro_cert_url?'<div style="margin-bottom:8px"><a href="'+_escHtml(p.pro_cert_url)+'" target="_blank" rel="noopener" style="font-size:12px;color:rgba(116,198,157,.7);text-decoration:none">📎 Ver documento</a></div>':'')
           +'<div style="display:flex;gap:5px;flex-wrap:wrap">'
           +'<button onclick="_adminProRevoke(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(220,162,0,.1);border:1px solid rgba(220,162,0,.25);color:rgba(220,162,0,.75)">↩️ Revocar</button>'
-          +'<button onclick="_adminProMoreInfo(\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(116,198,200,.1);border:1px solid rgba(116,198,200,.2);color:rgba(116,198,200,.75)">📧 Contactar</button>'
+          +'<button onclick="_adminProMoreInfo('+_jsAttr(p.email||'')+','+_jsAttr(p.nombre||'')+')" style="padding:5px 10px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(116,198,200,.1);border:1px solid rgba(116,198,200,.2);color:rgba(116,198,200,.75)">📧 Contactar</button>'
           +'<button onclick="_adminProWarn(\''+_escHtml(p.id)+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(220,120,0,.08);border:1px solid rgba(220,120,0,.2);color:rgba(220,120,0,.75)">⚠️ Advertir</button>'
           +'<button onclick="_adminProDelete(\''+_escHtml(p.id)+'\',\''+_escHtml(p.email||'')+'\',\''+_escHtml(p.nombre||'')+'\')" style="padding:5px 10px;font-size:12px;font-weight:700;font-family:\'Jost\',sans-serif;border-radius:7px;cursor:pointer;background:rgba(220,60,60,.08);border:1px solid rgba(220,60,60,.2);color:rgba(220,80,80,.7)">🗑️ Eliminar</button>'
           +'</div>'
@@ -28562,7 +28530,7 @@ function _setEl(id, html){
   if(el) el.innerHTML = html;
 }
 function _escHtml(str){
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 // ── INIT ON LOAD ──────────────────────────────────────────────
@@ -30101,7 +30069,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1288;
+    var _BUILT_V = 1289;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
