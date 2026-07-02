@@ -15689,16 +15689,46 @@ async function _loadMoodCalendar(){
     if(local && !moodMap[key]){ try{ var lo = JSON.parse(local); moodMap[key] = lo; }catch(e){} }
   }
   var html = '';
+  var todayDay = now.getDate();
+  var missingPast = 0; // días pasados sin registro en el mes vigente
   for(var dd = 1; dd <= daysInMonth; dd++){
     var k = year+'-'+String(month).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
     var entry = moodMap[k];
-    var isToday2 = dd === now.getDate();
-    html += '<div style="aspect-ratio:1;background:'+(entry?'rgba(116,198,157,.18)':'rgba(0,0,0,.04)')+';border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+(isToday2?'outline:2px solid var(--sage);outline-offset:1px;':'')+'" title="'+k+'">'
-      +'<span style="font-size:11px;color:'+(entry?'var(--sage3)':'var(--ink5)')+';font-weight:700;line-height:1">'+dd+'</span>'
-      +(entry?'<span style="font-size:14px;line-height:1">'+entry.emoji+'</span>':'')
-      +'</div>';
+    var isToday2 = dd === todayDay;
+    var isPast = dd < todayDay; // días anteriores clickeables para backfill
+    var isFuture = dd > todayDay;
+    if(isPast && !entry) missingPast++;
+    var clickable = (isPast && !entry) || isToday2;
+    var cursor = clickable ? 'cursor:pointer;' : '';
+    var onClick = clickable ? ' onclick="pOpenBackfillMood(\''+k+'\')"' : '';
+    var titleTxt = entry
+      ? k+' · '+(entry.label||entry.emoji)+(entry.note?' — '+String(entry.note).replace(/"/g,'&quot;'):'')
+      : (isFuture ? k+' · aún no llegó' : (isToday2 ? k+' · Registrá tu ánimo de hoy' : k+' · Registrar ánimo de este día'));
+    html += '<div'+onClick+' style="aspect-ratio:1;background:'+(entry?'rgba(116,198,157,.18)':(isFuture?'rgba(0,0,0,.02)':'rgba(0,0,0,.04)'))+';border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+cursor+(isToday2?'outline:2px solid var(--sage);outline-offset:1px;':'')+(isPast && !entry?'border:1.5px dashed rgba(116,198,157,.42);':'')+'" title="'+titleTxt+'">'
+      +'<span style="font-size:11px;color:'+(entry?'var(--sage3)':(isFuture?'var(--ink6,#c8c8c0)':'var(--ink5)'))+';font-weight:700;line-height:1">'+dd+'</span>'
+      +(entry
+          ? '<span style="font-size:14px;line-height:1">'+entry.emoji+'</span>'
+          : (isPast ? '<span style="font-size:9px;line-height:1;color:rgba(116,198,157,.55);font-weight:700">＋</span>' : ''));
+    html += '</div>';
   }
   cal.innerHTML = html;
+  // Aviso proactivo si hay 2+ días atrás sin registrar en el mes vigente
+  var missBanner = document.getElementById('moodMissBanner');
+  if(missingPast >= 2){
+    if(!missBanner){
+      missBanner = document.createElement('div');
+      missBanner.id = 'moodMissBanner';
+      missBanner.style.cssText = 'margin:10px 0 14px;padding:12px 14px;background:rgba(116,198,157,.14);border:1.5px solid rgba(116,198,157,.42);border-radius:14px;display:flex;align-items:center;gap:10px;font-family:Jost,sans-serif;font-size:13px;color:var(--ink2);cursor:pointer';
+      missBanner.onclick = function(){ pOpenMonthlyMissed(); };
+      if(cal.parentNode) cal.parentNode.insertBefore(missBanner, cal);
+    }
+    missBanner.innerHTML = '<span style="font-size:22px;flex-shrink:0">🌿</span>'
+      +'<div style="flex:1;min-width:0"><div style="font-weight:800;color:var(--sage3);margin-bottom:2px">Tenés '+missingPast+' día'+(missingPast===1?'':'s')+' sin registrar este mes</div>'
+      +'<div style="font-size:11.5px;color:var(--ink5);line-height:1.4">Tocá un día del calendario o acá para recuperar cómo te sentiste</div></div>'
+      +'<span style="font-size:16px;color:var(--sage3);flex-shrink:0">›</span>';
+  } else if(missBanner){
+    missBanner.remove();
+  }
   // History list
   if(hist){
     var entries = Object.keys(moodMap).sort().reverse().slice(0,10);
@@ -15748,6 +15778,106 @@ async function pClearAllMoods(){
     _renderHomeWeekMoodGraph().catch(function(){});
     _updateHomeStreak();
   });
+}
+
+// ── Backfill de días anteriores de ánimo ─────────────────────────────
+// Sheet para registrar mood de una fecha pasada específica
+function pOpenBackfillMood(dateKey){
+  if(!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return;
+  var ex = document.getElementById('moodBackfillOv'); if(ex) ex.remove();
+  var d = new Date(dateKey+'T12:00:00');
+  var todayKey = _dateKey ? _dateKey() : (function(){ var t=new Date(); return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); })();
+  if(dateKey > todayKey){ pToast('⏳','Ese día aún no llegó'); return; }
+  var isToday = dateKey === todayKey;
+  var fmtDate = d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  var existing = null;
+  try{ var _st = safeLS('get','velo_mood_'+dateKey); if(_st) existing = JSON.parse(_st); }catch(e){}
+  var ov = document.createElement('div');
+  ov.id = 'moodBackfillOv';
+  ov.className = 'p-modal-ov show';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10010;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center';
+  var orbsHtml = _moodOpts.map(function(m){
+    var sel = existing && existing.emoji === m.emoji;
+    return '<button type="button" data-emoji="'+m.emoji+'" data-label="'+m.label+'" onclick="pSelBackfillMood(this)" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 8px;background:'+(sel?'rgba(116,198,157,.28)':'rgba(116,198,157,.08)')+';border:1.5px solid '+(sel?'rgba(116,198,157,.75)':'rgba(116,198,157,.28)')+';border-radius:14px;cursor:pointer;font-family:Jost,sans-serif;color:var(--ink2)"><span style="font-size:28px;line-height:1">'+m.emoji+'</span><span style="font-size:11px;font-weight:700;letter-spacing:.2px">'+m.label+'</span></button>';
+  }).join('');
+  ov.innerHTML = '<div class="p-sheet" style="max-width:520px;width:100%;padding:20px 20px 28px">'
+    + '<div class="p-sheet-handle"></div>'
+    + '<div style="text-align:center;margin-bottom:6px"><span style="display:inline-block;padding:4px 12px;background:rgba(116,198,157,.16);border:1px solid rgba(116,198,157,.42);border-radius:100px;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--sage3)">'+(isToday?'📅 HOY':'📅 REGISTRO RETROSPECTIVO')+'</span></div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-style:italic;color:var(--ink);text-align:center;margin:8px 0 4px;text-transform:capitalize">'+_escHtml(fmtDate)+'</div>'
+    + '<div style="text-align:center;font-size:12.5px;color:var(--ink5);margin-bottom:16px;line-height:1.5">¿Cómo te sentiste ese día? Podés reflexionar y anotarlo ahora.</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">'+orbsHtml+'</div>'
+    + '<textarea id="moodBackfillNote" placeholder="Nota (opcional)…" rows="3" style="width:100%;padding:11px 13px;background:var(--cream2);border:1.5px solid var(--border);border-radius:12px;font-family:Jost,sans-serif;font-size:14px;color:var(--ink);resize:vertical;box-sizing:border-box;outline:none">'+_escHtml(existing && existing.note ? existing.note : '')+'</textarea>'
+    + '<div style="display:flex;gap:8px;margin-top:14px">'
+      + '<button onclick="document.getElementById(\'moodBackfillOv\').remove()" style="flex:1;padding:12px;background:rgba(0,0,0,.06);border:1.5px solid var(--border);border-radius:12px;color:var(--ink4);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Cancelar</button>'
+      + '<button onclick="pSaveBackfillMood(\''+dateKey+'\')" style="flex:2;padding:12px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-family:Jost,sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px">💚 Guardar</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+  window._selBackfillMood = existing ? { emoji: existing.emoji, label: existing.label } : null;
+}
+function pSelBackfillMood(el){
+  window._selBackfillMood = { emoji: el.dataset.emoji, label: el.dataset.label };
+  var ov = document.getElementById('moodBackfillOv');
+  if(!ov) return;
+  ov.querySelectorAll('button[data-emoji]').forEach(function(b){
+    var sel = b === el;
+    b.style.background = sel ? 'rgba(116,198,157,.28)' : 'rgba(116,198,157,.08)';
+    b.style.borderColor = sel ? 'rgba(116,198,157,.75)' : 'rgba(116,198,157,.28)';
+  });
+}
+async function pSaveBackfillMood(dateKey){
+  var sel = window._selBackfillMood;
+  if(!sel){ pToast('🌈','Elegí cómo te sentiste'); return; }
+  var noteEl = document.getElementById('moodBackfillNote');
+  var noteVal = noteEl ? noteEl.value.trim() : '';
+  var data = { emoji: sel.emoji, label: sel.label, note: noteVal, ts: Date.now(), backfilled: true };
+  safeLS('set', 'velo_mood_'+dateKey, JSON.stringify(data));
+  // Log
+  var _mLog = []; try{ _mLog = JSON.parse(safeLS('get','velo_mood_log')||'[]'); }catch(e){}
+  _mLog = _mLog.filter(function(m){ return m.dateKey !== dateKey; });
+  _mLog.unshift(Object.assign({}, data, { dateKey: dateKey }));
+  safeLS('set', 'velo_mood_log', JSON.stringify(_mLog.slice(0,120)));
+  // Supabase
+  try{ sbSaveMoodEntry(dateKey, sel.emoji, sel.label, noteVal); }catch(e){}
+  var ov = document.getElementById('moodBackfillOv'); if(ov) ov.remove();
+  window._selBackfillMood = null;
+  pToast(sel.emoji, 'Registrado 💚');
+  _loadMoodCalendar();
+  try{ _renderHomeWeekMoodGraph && _renderHomeWeekMoodGraph(); }catch(e){}
+  try{ _updateHomeStreak && _updateHomeStreak(); }catch(e){}
+}
+// Sheet con la lista de días sin registro del mes vigente
+function pOpenMonthlyMissed(){
+  var ex = document.getElementById('moodMissedOv'); if(ex) ex.remove();
+  var now = new Date();
+  var year = now.getFullYear(), month = now.getMonth()+1;
+  var todayD = now.getDate();
+  var rows = [];
+  for(var d=1; d<todayD; d++){
+    var k = year+'-'+String(month).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    if(safeLS('get','velo_mood_'+k)) continue;
+    var dt = new Date(k+'T12:00:00');
+    rows.push({ key: k, label: dt.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}) });
+  }
+  if(!rows.length){ pToast('🌿','No hay días pendientes'); return; }
+  var listHtml = rows.reverse().map(function(r){
+    return '<button type="button" onclick="document.getElementById(\'moodMissedOv\').remove();pOpenBackfillMood(\''+r.key+'\')" style="width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(116,198,157,.06);border:1.5px dashed rgba(116,198,157,.42);border-radius:12px;margin-bottom:8px;cursor:pointer;font-family:Jost,sans-serif;text-align:left;color:var(--ink2)"><span style="font-size:18px;flex-shrink:0">📅</span><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;text-transform:capitalize">'+_escHtml(r.label)+'</div><div style="font-size:11.5px;color:var(--ink5);margin-top:2px">Sin registro · tocá para completar</div></div><span style="font-size:18px;color:var(--sage3);flex-shrink:0">›</span></button>';
+  }).join('');
+  var ov = document.createElement('div');
+  ov.id = 'moodMissedOv';
+  ov.className = 'p-modal-ov show';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10009;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML = '<div class="p-sheet" style="max-width:520px;width:100%;padding:20px 20px 28px;max-height:80vh;overflow-y:auto">'
+    + '<div class="p-sheet-handle"></div>'
+    + '<div style="text-align:center;margin-bottom:14px"><span style="display:inline-block;padding:4px 12px;background:rgba(116,198,157,.16);border:1px solid rgba(116,198,157,.42);border-radius:100px;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--sage3)">🌿 DÍAS SIN REGISTRAR</span></div>'
+    + '<div style="text-align:center;font-family:\'Cormorant Garamond\',serif;font-size:22px;font-style:italic;color:var(--ink);margin-bottom:4px">Recuperá tus días</div>'
+    + '<div style="text-align:center;font-size:12.5px;color:var(--ink5);margin-bottom:18px;line-height:1.5">Tenés '+rows.length+' día'+(rows.length===1?'':'s')+' sin registro este mes. Tocá cualquiera para completarlo.</div>'
+    + listHtml
+    + '<button onclick="document.getElementById(\'moodMissedOv\').remove()" style="width:100%;margin-top:10px;padding:12px;background:rgba(0,0,0,.06);border:1.5px solid var(--border);border-radius:12px;color:var(--ink4);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Cerrar</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 }
 
 function pDeleteMood(dateKey){
@@ -30735,7 +30865,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1304;
+    var _BUILT_V = 1305;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
