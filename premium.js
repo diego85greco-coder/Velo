@@ -12930,8 +12930,8 @@ async function pSaveDiary(){
   newEntry = await _attachImageToEntry(newEntry);
   entries.unshift(newEntry);
   safeLS('set','velo_diary', JSON.stringify(entries.slice(0,200)));
-  // Supabase (include title so it syncs across devices)
-  sbSaveDiaryEntry(text, dateLabel, ts, title);
+  // Supabase (include title + audio/image para sync cross-device)
+  sbSaveDiaryEntry(text, dateLabel, ts, title, newEntry.audio, newEntry.image);
   ta.value = '';
   if(titleEl) titleEl.value = '';
   _selectedDiaryEmoji = '';
@@ -24913,16 +24913,30 @@ async function _retryDiarySync(){
 
 window.addEventListener('online', function(){ setTimeout(_retryDiarySync, 1500); });
 
-async function sbSaveDiaryEntry(text, dateLabel, ts, title){
-  if(!sbClient){ _queueDiarySync({text:text,dateLabel:dateLabel,ts:ts,title:title}); return; }
+async function sbSaveDiaryEntry(text, dateLabel, ts, title, audio, image){
+  var payload = {text:text,dateLabel:dateLabel,ts:ts,title:title,audio:audio,image:image};
+  if(!sbClient){ _queueDiarySync(payload); return; }
   try{
     var ok = await _ensureSbSession();
-    if(!ok){ _queueDiarySync({text:text,dateLabel:dateLabel,ts:ts,title:title}); return; }
+    if(!ok){ _queueDiarySync(payload); return; }
     var uid = safeLS('get','velo_user_id');
-    if(!uid){ _queueDiarySync({text:text,dateLabel:dateLabel,ts:ts,title:title}); return; }
-    var res = await sbClient.from('diary_entries').insert({ user_id:uid, text:text, date_label:dateLabel, ts:ts, title:title||'' });
-    if(res.error) _queueDiarySync({text:text,dateLabel:dateLabel,ts:ts,title:title});
-  }catch(e){ _queueDiarySync({text:text,dateLabel:dateLabel,ts:ts,title:title}); }
+    if(!uid){ _queueDiarySync(payload); return; }
+    var row = { user_id:uid, text:text, date_label:dateLabel, ts:ts, title:title||'' };
+    if(audio) row.audio = audio;
+    if(image) row.image = image;
+    var res = await sbClient.from('diary_entries').insert(row);
+    // Si falla por columna faltante, reintentar solo con text/title (para no perder la entrada)
+    if(res.error){
+      var msg = String(res.error.message||'');
+      if(msg.indexOf('audio')>=0 || msg.indexOf('image')>=0 || msg.indexOf('column')>=0){
+        var res2 = await sbClient.from('diary_entries').insert({ user_id:uid, text:text, date_label:dateLabel, ts:ts, title:title||'' });
+        if(res2.error) _queueDiarySync(payload);
+        else console.warn('[diary] audio/image no se sincronizó — falta correr SQL');
+      } else {
+        _queueDiarySync(payload);
+      }
+    }
+  }catch(e){ _queueDiarySync(payload); }
 }
 
 async function sbDeleteDiaryEntry(ts){
@@ -24943,8 +24957,17 @@ async function sbLoadDiaryEntries(){
     if(!ok) return null;
     var {data:ud} = await sbClient.auth.getUser();
     if(!ud || !ud.user) return null;
-    var {data, error} = await sbClient.from('diary_entries').select('text,date_label,ts,title').eq('user_id', ud.user.id).order('ts',{ascending:false}).limit(200);
-    return error ? null : data;
+    var res = await sbClient.from('diary_entries').select('text,date_label,ts,title,audio,image').eq('user_id', ud.user.id).order('ts',{ascending:false}).limit(200);
+    // Si falla por columnas faltantes → retry sin audio/image
+    if(res.error){
+      var msg = String(res.error.message||'');
+      if(msg.indexOf('audio')>=0 || msg.indexOf('image')>=0 || msg.indexOf('column')>=0){
+        var res2 = await sbClient.from('diary_entries').select('text,date_label,ts,title').eq('user_id', ud.user.id).order('ts',{ascending:false}).limit(200);
+        return res2.error ? null : res2.data;
+      }
+      return null;
+    }
+    return res.data;
   }catch(e){ return null; }
 }
 
@@ -29611,7 +29634,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1274;
+    var _BUILT_V = 1275;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
