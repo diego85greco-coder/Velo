@@ -11065,15 +11065,26 @@ async function _loadBottleStats(){
   var el = document.getElementById('bottleStatsBar');
   if(!el || !sbClient) return;
   try{
-    var [r1, r2] = await Promise.all([
-      sbClient.from('bottles').select('id', {count:'exact',head:true}),
-      sbClient.from('bottles').select('id', {count:'exact',head:true}).eq('replied',true)
+    var since = new Date(Date.now() - 24*3600*1000).toISOString();
+    var results = await Promise.all([
+      sbClient.from('bottles').select('id', {count:'exact',head:true}).gte('created_at', since),
+      sbClient.from('bottle_replies').select('id', {count:'exact',head:true}).gte('created_at', since),
+      sbClient.from('bottle_reactions').select('id', {count:'exact',head:true}).gte('created_at', since),
     ]);
-    var total    = (r1 && r1.count != null) ? r1.count : '—';
-    var replied  = (r2 && r2.count != null) ? r2.count : '—';
-    el.textContent = '🌊 '+total+' mensajes enviados al mar  ·  💌 '+replied+' respondidos';
+    var bottles = (results[0] && results[0].count != null) ? results[0].count : 0;
+    // Fallback si no existen las tablas nuevas — muestra cero
+    var replies = (results[1] && !results[1].error && results[1].count != null) ? results[1].count : 0;
+    var reacts  = (results[2] && !results[2].error && results[2].count != null) ? results[2].count : 0;
+    el.innerHTML = '<span style="display:inline-flex;gap:12px;padding:8px 16px;background:rgba(65,155,222,.10);border:1px solid rgba(65,155,222,.22);border-radius:100px;font-weight:700;font-family:Jost,sans-serif;font-size:12px;color:rgba(30,90,128,.90);align-items:center">'
+      + '<span>🌊 <strong>'+bottles+'</strong> hoy</span>'
+      + '<span style="opacity:.35">·</span>'
+      + '<span>💌 <strong>'+replies+'</strong> respuestas</span>'
+      + '<span style="opacity:.35">·</span>'
+      + '<span>💛 <strong>'+reacts+'</strong> abrazos</span>'
+      + '</span>';
     el.style.display = 'block';
-    el.style.color = 'var(--ink4)';
+    el.style.textAlign = 'center';
+    el.style.padding = '0 0 12px';
   }catch(e){}
 }
 
@@ -11096,6 +11107,45 @@ function _bottleEmojiColorLight(mood){
   if(anx.indexOf(mood)>=0)  return {bg:'rgba(248,220,255,.97)',border:'rgba(170,65,185,.55)',glow:'rgba(170,65,185,.16)',strip:'rgba(170,65,185,.22)',label:'rgba(88,18,108,.90)'};
   if(mood==='🌊')           return {bg:'rgba(218,238,255,.97)',border:'rgba(48,142,215,.55)',glow:'rgba(48,142,215,.16)',strip:'rgba(48,142,215,.22)',label:'rgba(12,58,138,.90)'};
   return                          {bg:'rgba(212,248,232,.97)',border:'rgba(50,168,112,.55)',glow:'rgba(50,168,112,.16)',strip:'rgba(50,168,112,.22)',label:'rgba(8,72,40,.90)'};
+}
+
+// Filtro activo del feed de Al Mar
+var _bottleFilter = '';
+var _BOTTLE_REACTIONS = [
+  {k:'heart', e:'💛', lbl:'abrazo'},
+  {k:'olive', e:'🌿', lbl:'con vos'},
+  {k:'dove',  e:'🕊️', lbl:'paz'},
+];
+function pFilterBottleFeed(emoji, btn){
+  _bottleFilter = (emoji===_bottleFilter) ? '' : emoji; // toggle
+  var row = document.getElementById('bottleFilterChips');
+  if(row) row.querySelectorAll('button').forEach(function(b){
+    var mine = b.dataset.filter === _bottleFilter;
+    b.style.background   = mine ? 'rgba(65,155,222,.28)' : 'rgba(65,155,222,.08)';
+    b.style.borderColor  = mine ? 'rgba(65,155,222,.72)' : 'rgba(65,155,222,.24)';
+    b.style.color        = mine ? 'rgba(20,58,120,.95)'  : 'rgba(30,90,128,.72)';
+    b.style.fontWeight   = mine ? '800' : '700';
+  });
+  pRenderBottle();
+}
+async function pReactBottle(bottleId, reaction){
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid){ pToast('⚠️','Iniciá sesión para reaccionar'); return; }
+  if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  try{
+    var ex = await sbClient.from('bottle_reactions')
+      .select('id').eq('bottle_id', bottleId).eq('user_id', uid).eq('reaction', reaction).maybeSingle();
+    if(ex && ex.data){
+      await sbClient.from('bottle_reactions').delete().eq('id', ex.data.id);
+    } else {
+      var ins = await sbClient.from('bottle_reactions').insert({ bottle_id: bottleId, user_id: uid, reaction: reaction });
+      if(ins.error){ pToast('⚠️','Falta la tabla bottle_reactions — correr el SQL'); return; }
+      var em = _BOTTLE_REACTIONS.find(function(r){ return r.k===reaction; });
+      pToast(em ? em.e : '💚', '¡'+(em?em.lbl:'reacción')+' enviado!');
+    }
+    pRenderBottle();
+  }catch(e){ console.warn('[bottle-react]', e); }
 }
 
 async function pRenderBottle(){
@@ -11150,12 +11200,56 @@ async function pRenderBottle(){
   // Batch-fetch usernames for non-anon bottle authors not yet cached
   if(sbClient){ var _bUnknown = allBottles.filter(function(b){ return !b.anon && b.userId && !_uLook(b.userId); }).map(function(b){ return b.userId; }); if(_bUnknown.length){ try{ var _br = await sbClient.from('profiles').select('id,username').in('id',_bUnknown); if(_br.data) _br.data.forEach(function(p){ _uFill(p.id,p.username); }); }catch(e){} } }
 
-  if(!allBottles.length){
-    list.innerHTML = '<div class="p-empty"><span class="p-empty-emoji">🌊</span><div class="p-empty-title">El mar está tranquilo</div><div class="p-empty-sub">Sé el primero en lanzar un mensaje</div></div>';
+  // ── FILTROS por emoción ──────────────────────────────
+  // Detectar emojis presentes para armar chips dinámicos
+  var moodSet = {};
+  allBottles.forEach(function(b){ if(b.mood) moodSet[b.mood] = (moodSet[b.mood]||0)+1; });
+  var topMoods = Object.keys(moodSet).sort(function(a,b){ return moodSet[b] - moodSet[a]; }).slice(0,7);
+  var filterChipsHtml = '<div id="bottleFilterChips" style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none">'
+    + '<button data-filter="" onclick="pFilterBottleFeed(\'\',this)" style="flex-shrink:0;padding:6px 14px;background:'+(_bottleFilter===''?'rgba(65,155,222,.28)':'rgba(65,155,222,.08)')+';border:1.5px solid '+(_bottleFilter===''?'rgba(65,155,222,.72)':'rgba(65,155,222,.24)')+';border-radius:100px;color:'+(_bottleFilter===''?'rgba(20,58,120,.95)':'rgba(30,90,128,.72)')+';font-size:12.5px;font-weight:'+(_bottleFilter===''?'800':'700')+';cursor:pointer;font-family:Jost,sans-serif">Todos</button>'
+    + topMoods.map(function(em){
+        var active = _bottleFilter === em;
+        return '<button data-filter="'+em+'" onclick="pFilterBottleFeed(\''+em+'\',this)" style="flex-shrink:0;padding:6px 13px;background:'+(active?'rgba(65,155,222,.28)':'rgba(65,155,222,.08)')+';border:1.5px solid '+(active?'rgba(65,155,222,.72)':'rgba(65,155,222,.24)')+';border-radius:100px;color:'+(active?'rgba(20,58,120,.95)':'rgba(30,90,128,.72)')+';font-size:13px;font-weight:'+(active?'800':'700')+';cursor:pointer;font-family:Jost,sans-serif">'+em+' <span style="font-size:11px;opacity:.72">'+moodSet[em]+'</span></button>';
+      }).join('')
+    + '</div>';
+
+  // Aplicar filtro (después de armar los chips para que muestren todos los emojis, no solo los filtrados)
+  var filteredBottles = _bottleFilter ? allBottles.filter(function(b){ return b.mood === _bottleFilter; }) : allBottles;
+
+  if(!filteredBottles.length){
+    var emptyMsg = _bottleFilter
+      ? '<div class="p-empty"><span class="p-empty-emoji">'+_bottleFilter+'</span><div class="p-empty-title">Nada acá todavía</div><div class="p-empty-sub">Probá otro filtro o dejalo en Todos</div></div>'
+      : '<div class="p-empty"><span class="p-empty-emoji">🌊</span><div class="p-empty-title">El mar está tranquilo</div><div class="p-empty-sub">Sé el primero en lanzar un mensaje</div></div>';
+    list.innerHTML = filterChipsHtml + emptyMsg;
     return;
   }
 
-  list.innerHTML = allBottles.map(function(b, i){
+  // ── REACCIONES y RESPUESTAS: batch fetch para todas las botellas visibles ─
+  var reactionsByBottle = {}; // { bottleId: { heart:{count:N,mine:bool}, olive:{...}, dove:{...} } }
+  var repliesByBottle = {}; // { bottleId: count }
+  if(sbClient && filteredBottles.length){
+    try{
+      var bIds = filteredBottles.map(function(b){ return b.id; }).filter(Boolean);
+      var myUid = safeLS('get','velo_user_id') || '';
+      var [reactRes, replyRes] = await Promise.all([
+        sbClient.from('bottle_reactions').select('bottle_id,reaction,user_id').in('bottle_id', bIds),
+        sbClient.from('bottle_replies').select('bottle_id').in('bottle_id', bIds),
+      ]);
+      if(reactRes && !reactRes.error && reactRes.data){
+        reactRes.data.forEach(function(r){
+          if(!reactionsByBottle[r.bottle_id]) reactionsByBottle[r.bottle_id] = {};
+          if(!reactionsByBottle[r.bottle_id][r.reaction]) reactionsByBottle[r.bottle_id][r.reaction] = {count:0, mine:false};
+          reactionsByBottle[r.bottle_id][r.reaction].count++;
+          if(r.user_id === myUid) reactionsByBottle[r.bottle_id][r.reaction].mine = true;
+        });
+      }
+      if(replyRes && !replyRes.error && replyRes.data){
+        replyRes.data.forEach(function(r){ repliesByBottle[r.bottle_id] = (repliesByBottle[r.bottle_id]||0) + 1; });
+      }
+    }catch(e){ console.warn('[bottle-reactions-fetch]', e); }
+  }
+
+  list.innerHTML = filterChipsHtml + filteredBottles.map(function(b, i){
     var relTime = b.ts ? (function(){
       var tl = b.ts + 24*3600*1000 - Date.now();
       if(tl <= 0) return 'expirado';
@@ -11210,6 +11304,19 @@ async function pRenderBottle(){
       : bAvIsEmoji
         ? '<div style="width:40px;height:40px;border-radius:50%;background:'+avCircleBg+';border:2px solid '+bCol.border+';display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 12px '+bCol.glow+'">'+_escHtml(_bav)+'</div>'
         : '<span style="font-size:30px;line-height:1;filter:drop-shadow(0 0 8px '+bCol.glow+')">'+_escHtml(b.mood||'🌊')+'</span>';
+    // Reacciones de esta botella
+    var bReacts = reactionsByBottle[b.id] || {};
+    var reactionsBar = _BOTTLE_REACTIONS.map(function(rDef){
+      var d = bReacts[rDef.k] || {count:0, mine:false};
+      var pillBg  = d.mine ? 'rgba(255,220,120,.22)' : 'rgba(255,255,255,.06)';
+      var pillBrd = d.mine ? 'rgba(255,200,80,.55)'  : 'rgba(255,255,255,.14)';
+      var pillCol = d.mine ? 'rgba(255,220,120,.95)' : (isLight ? 'rgba(30,90,128,.72)' : 'rgba(255,255,255,.70)');
+      return '<button onclick="pReactBottle(\''+b.id+'\',\''+rDef.k+'\')" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:'+pillBg+';border:1.5px solid '+pillBrd+';border-radius:100px;font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;color:'+pillCol+';cursor:pointer;transition:all .18s;-webkit-tap-highlight-color:transparent" onmousedown="this.style.transform=\'scale(.92)\'" onmouseup="this.style.transform=\'\'" onmouseleave="this.style.transform=\'\'" ontouchstart="this.style.transform=\'scale(.92)\'" ontouchend="this.style.transform=\'\'"><span style="font-size:14px;line-height:1">'+rDef.e+'</span>'+(d.count>0?'<span>'+d.count+'</span>':'')+'</button>';
+    }).join(' ');
+    var replyCount = repliesByBottle[b.id] || 0;
+    var replyCountHtml = replyCount > 0
+      ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:'+(isLight?'rgba(30,90,128,.62)':'rgba(180,220,240,.72)')+';font-family:Jost,sans-serif;letter-spacing:.2px;margin-left:6px">💌 '+replyCount+(replyCount===1?' persona respondió':' personas respondieron')+'</span>'
+      : '';
     return '<div class="dark-bottle'+(alreadyReplied?' bottle-already-replied':'')+'" id="bottle-'+b.id+'"'
       +' style="animation-delay:'+i*.08+'s;position:relative;background:'+bCol.bg+';border:1.5px solid '+cardBorder+';border-radius:18px;box-shadow:0 4px 22px '+bCol.glow+',inset 0 0 0 1px '+bCol.border.replace(/[\d.]+\)$/,'0.18)')+';overflow:hidden;margin:0 0 10px;padding:0">'
       +'<div style="position:absolute;left:0;top:0;bottom:0;width:64px;background:'+bCol.strip+';border-right:1.5px solid '+bCol.border.replace(/[\d.]+\)$/,'0.45)')+';display:flex;align-items:center;justify-content:center;'+(isOwn||showAuthor?'cursor:pointer;':'')+'" '
@@ -11226,6 +11333,8 @@ async function pRenderBottle(){
         :'<span style="margin-left:auto;font-size:11px;font-weight:700;color:'+bCol.label.replace(/[\d.]+\)$/,'0.60)')+';font-family:\'Jost\',sans-serif">'+relTime+'</span>')
       +'</div>'
       +'<p style="font-size:15px;color:'+bodyTextColor+';line-height:1.55;margin:0 0 9px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-weight:500;letter-spacing:.01em">"'+_escHtml(b.text)+'"</p>'
+      // Barra de reacciones rápidas + contador de respuestas
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">'+reactionsBar+replyCountHtml+'</div>'
       +'<div style="display:flex;align-items:center;justify-content:flex-end">'+actions+'</div>'
       +'</div></div>';
   }).join('');
@@ -11352,6 +11461,12 @@ function pSendBottleReply(){
   if(sbClient && _curBottleReplyId){
     sbClient.from('bottles').update({ replied:true, replied_by: safeLS('get','velo_user_id')||'' })
       .eq('id', _curBottleReplyId).then(function(){}).catch(function(){});
+    // Registrar en bottle_replies para el contador público "X personas respondieron"
+    var _myUid = safeLS('get','velo_user_id')||'';
+    if(_myUid){
+      sbClient.from('bottle_replies').insert({ bottle_id: _curBottleReplyId, user_id: _myUid })
+        .then(function(){}).catch(function(){});
+    }
   }
 
   // 2. Deliver to the bottle author's inbox via Supabase broadcasts
@@ -27231,7 +27346,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1249;
+    var _BUILT_V = 1250;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
