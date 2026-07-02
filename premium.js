@@ -3427,6 +3427,19 @@ function pOpenPreferences(){
           + (customChips ? '<div style="display:flex;flex-wrap:wrap;gap:6px">'+customChips+'</div>' : '')
         + '</div>';
       })()
+    // Idioma (solo aparece si detectamos PT/BR)
+    + (safeLS('get','velo_lang_available') === 'pt' ? (function(){
+        var curr = safeLS('get','velo_lang') || 'es';
+        var isEs = curr !== 'pt';
+        return '<div style="background:rgba(80,150,220,.06);border:1px solid rgba(80,150,220,.22);border-radius:14px;padding:14px 15px;margin-bottom:12px">'
+          + '<div style="font-size:13px;font-weight:800;color:rgba(220,240,255,.94);font-family:Jost,sans-serif;margin-bottom:4px">🌐 Idioma / Idioma</div>'
+          + '<div style="font-size:11.5px;color:rgba(180,220,255,.60);font-family:Jost,sans-serif;margin-bottom:10px">Detectamos que sos de Portugal/Brasil. La app está principalmente en español, pero podés cambiar la interfaz.</div>'
+          + '<div style="display:flex;gap:6px">'
+            + '<button onclick="pSetVeloLang(\'es\')" style="flex:1;padding:10px;background:'+(isEs?'rgba(116,198,157,.28)':'rgba(255,255,255,.04)')+';border:1.5px solid '+(isEs?'rgba(116,198,157,.60)':'rgba(255,255,255,.14)')+';border-radius:12px;color:'+(isEs?'rgba(180,255,220,.98)':'rgba(255,255,255,.60)')+';font-size:13px;font-weight:'+(isEs?'800':'700')+';font-family:Jost,sans-serif;cursor:pointer">🇪🇸 Español</button>'
+            + '<button onclick="pSetVeloLang(\'pt\')" style="flex:1;padding:10px;background:'+(!isEs?'rgba(80,150,220,.28)':'rgba(255,255,255,.04)')+';border:1.5px solid '+(!isEs?'rgba(80,150,220,.60)':'rgba(255,255,255,.14)')+';border-radius:12px;color:'+(!isEs?'rgba(180,220,255,.98)':'rgba(255,255,255,.60)')+';font-size:13px;font-weight:'+(!isEs?'800':'700')+';font-family:Jost,sans-serif;cursor:pointer">🇵🇹 Português</button>'
+          + '</div>'
+        + '</div>';
+      })() : '')
     // Blocked users
     + '<div style="background:rgba(220,120,120,.06);border:1px solid rgba(220,120,120,.20);border-radius:14px;padding:14px 15px">'
       + '<div style="font-size:13px;font-weight:800;color:rgba(255,220,220,.94);font-family:Jost,sans-serif;margin-bottom:4px">Usuarios bloqueados</div>'
@@ -13052,6 +13065,129 @@ function _updateDiaryStats(entries){
   var ec = document.getElementById('diaryEntryCountEl');
   if(sv) sv.textContent = streak;
   if(ec) ec.textContent = entries ? entries.length : 0;
+}
+
+// ── I18N — soporte PORTUGUÉS gated a usuarios detectados como PT/BR ───
+var VELO_I18N = {
+  pt: {
+    // Nav principal
+    'Al Mar': 'Ao Mar',
+    'Bitácora': 'Diário Coletivo',
+    'Bitácora — Historias': 'Diário — Histórias',
+    'Guardianes': 'Guardiões',
+    'Sala de Ayuda': 'Sala de Ajuda',
+    'Círculos': 'Círculos',
+    'Buenas Noticias': 'Boas Notícias',
+    'Diario Íntimo': 'Diário Íntimo',
+    'Música y Relajación': 'Música e Relaxamento',
+    'Tu espacio privado': 'Seu espaço privado',
+    'Contactos favoritos': 'Contatos favoritos',
+    // Home
+    'Registrá tus ánimos': 'Registre seus ânimos',
+    '¿Cómo te sentís hoy?': 'Como você se sente hoje?',
+    'Buenos días': 'Bom dia',
+    'Buenas tardes': 'Boa tarde',
+    'Buenas noches': 'Boa noite',
+    '¡Acompañemos emociones!': 'Vamos acompanhar emoções!',
+    'Hoy en Velo:': 'Hoje no Velo:',
+    'ánimo': 'ânimo',
+    'ánimos': 'ânimos',
+    // CTAs top
+    'Wrapped': 'Wrapped',
+    'Invitar': 'Convidar',
+    'Compañero': 'Companheiro',
+    'Anotado/a': 'Inscrito',
+    // Menú
+    'Tour guiado': 'Tour guiado',
+    'Mi Wrapped mensual': 'Meu Wrapped mensal',
+    'Mi Wrapped anual': 'Meu Wrapped anual',
+    'Compañero/a de bienestar': 'Companheiro/a de bem-estar',
+    'Invitar amigos': 'Convidar amigos',
+    'Respiración guiada 4·7·8': 'Respiração guiada 4·7·8',
+    'Preferencias': 'Preferências',
+    'Mis logros': 'Minhas conquistas',
+    'Mi trayectoria emocional': 'Minha trajetória emocional',
+    'Embajadores de Velo': 'Embaixadores do Velo',
+    'Descargar mis datos': 'Baixar meus dados',
+    'Cerrar sesión': 'Sair',
+    'Mensajes': 'Mensagens',
+    'Contacto': 'Contato',
+    // Preferencias
+    'Tu experiencia': 'Sua experiência',
+    'Tamaño de texto': 'Tamanho do texto',
+    'Aumentá o reducí el tamaño de toda la app': 'Aumente ou reduza o tamanho de todo o app',
+    'Usuarios bloqueados': 'Usuários bloqueados',
+    'No verás su contenido en ninguna sección': 'Você não verá o conteúdo deles em nenhuma seção',
+    'No bloqueaste a nadie': 'Você não bloqueou ninguém',
+    '✓ Guardar y cerrar': '✓ Salvar e fechar',
+    // Botones comunes
+    'Cerrar': 'Fechar',
+    'Cancelar': 'Cancelar',
+    'Guardar': 'Salvar',
+    'Enviar': 'Enviar',
+    'Compartir': 'Compartilhar',
+    'Ver todos mis contactos': 'Ver todos meus contatos',
+    'Responder': 'Responder',
+    'Reportar': 'Reportar',
+    // Al Mar
+    'Lanzá un mensaje': 'Lance uma mensagem',
+    'Mensajes al Mar': 'Mensagens ao Mar',
+    'Lanzar mi mensaje': 'Lançar minha mensagem',
+    'Del mar': 'Do mar',
+    'Mis respuestas': 'Minhas respostas',
+    // Bottom nav
+    'INICIO': 'INÍCIO',
+    'CONTACTOS FAVORITOS': 'CONTATOS FAVORITOS',
+    'TU DIARIO ÍNTIMO': 'SEU DIÁRIO ÍNTIMO',
+    'PERFIL': 'PERFIL',
+  }
+};
+function veloI18n(key){
+  var lang = safeLS('get','velo_lang') || 'es';
+  if(lang === 'es' || !VELO_I18N[lang]) return key;
+  return VELO_I18N[lang][key] || key;
+}
+// Detección al boot
+(function _veloDetectLang(){
+  try{
+    var browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
+    var ptBrowserMatch = browserLang.indexOf('pt') === 0;
+    var tzStr = '';
+    try{ tzStr = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; }catch(e){}
+    var ptTzMatch = /Lisbon|Portugal|Azores|Madeira|Sao_Paulo|Bahia|Fortaleza|Manaus|Recife|Belem|Rio_Branco|Maceio|Araguaina|Cuiaba|Campo_Grande|Boa_Vista|Porto_Velho|Noronha|Santarem/i.test(tzStr);
+    var isPtCandidate = ptBrowserMatch || ptTzMatch;
+    safeLS('set','velo_lang_available', isPtCandidate ? 'pt' : '');
+  }catch(e){}
+})();
+// Cambiar idioma (con warning)
+function pSetVeloLang(lang){
+  if(lang === 'pt'){
+    _pConfirm('⚠️ A app está principalmente em espanhol. Você verá conteúdo em ambos os idiomas — mas a interface passará ao português. Ativar?', function(){
+      safeLS('set','velo_lang', 'pt');
+      pToast('🇵🇹','Idioma alterado para português');
+      setTimeout(function(){ window.location.reload(); }, 800);
+    });
+  } else {
+    safeLS('set','velo_lang', 'es');
+    pToast('🇪🇸','Idioma en español');
+    setTimeout(function(){ window.location.reload(); }, 800);
+  }
+}
+// Aplicar traducciones al DOM al bootear (para elementos con data-i18n o texto en el diccionario)
+function _veloApplyI18n(){
+  var lang = safeLS('get','velo_lang') || 'es';
+  if(lang === 'es' || !VELO_I18N[lang]) return;
+  var dict = VELO_I18N[lang];
+  // Traducir elementos con data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(function(el){
+    var key = el.getAttribute('data-i18n');
+    if(dict[key]) el.textContent = dict[key];
+  });
+  // Traducir botones de menú por su texto (fallback)
+  document.querySelectorAll('.p-mobile-nav-item').forEach(function(btn){
+    var txt = btn.textContent.trim();
+    Object.keys(dict).forEach(function(k){ if(txt.indexOf(k) >= 0){ btn.innerHTML = btn.innerHTML.replace(k, dict[k]); } });
+  });
 }
 
 // ── BACKUP / EXPORT — descargar todos mis datos como JSON ──────────
@@ -29089,6 +29225,7 @@ document.addEventListener('DOMContentLoaded', function(){
   _initSupabase();
   _initMsgActions();
   _botGuardStartListeners();
+  try{ setTimeout(function(){ if(typeof _veloApplyI18n === 'function') _veloApplyI18n(); }, 200); }catch(e){}
   setTimeout(_restoreSeekerSubscription, 2000);
   // Fix: when keyboard opens on iOS/Android, scroll the focused input into view
   // within its .p-sheet scroll container (avoids bounce/unreachable-field issue)
@@ -29112,7 +29249,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1271;
+    var _BUILT_V = 1272;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
