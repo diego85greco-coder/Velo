@@ -13234,10 +13234,12 @@ var _veloRecordMime = '';
 function _showRecordingIndicator(){
   var ex = document.getElementById('veloRecIndicator'); if(ex) ex.remove();
   _recStartTs = Date.now();
-  var el = document.createElement('div');
+  var el = document.createElement('button');
   el.id = 'veloRecIndicator';
-  el.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:10005;background:linear-gradient(135deg,rgba(230,60,60,.95),rgba(190,40,40,.98));color:#fff;padding:10px 18px;border-radius:100px;font-family:Jost,sans-serif;font-size:13px;font-weight:800;letter-spacing:1px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(220,60,60,.40);animation:velo-rec-pulse 1.6s ease-in-out infinite';
-  el.innerHTML = '<span style="width:10px;height:10px;background:#fff;border-radius:50%;animation:velo-rec-blink 1s infinite;flex-shrink:0"></span><span>REC</span><span id="veloRecTimer" style="font-family:Jost,monospace;letter-spacing:.3px;color:rgba(255,240,235,.98)">0:00</span><span style="opacity:.55;font-size:11px;font-weight:700;margin-left:2px">/ 1:00</span>';
+  el.type = 'button';
+  el.onclick = function(){ pStartVoiceNote(); };
+  el.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:10005;background:linear-gradient(135deg,rgba(230,60,60,.98),rgba(190,40,40,1));color:#fff;padding:12px 20px;border-radius:100px;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;letter-spacing:.6px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 26px rgba(220,60,60,.45);animation:velo-rec-pulse 1.6s ease-in-out infinite;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent';
+  el.innerHTML = '<span style="width:10px;height:10px;background:#fff;border-radius:50%;animation:velo-rec-blink 1s infinite;flex-shrink:0"></span><span style="text-transform:uppercase">REC</span><span id="veloRecTimer" style="font-family:Jost,monospace;letter-spacing:.3px;color:rgba(255,240,235,1);min-width:36px;text-align:left">0:00</span><span style="opacity:.55;font-size:10.5px;font-weight:700;margin-left:-4px">/ 1:00</span><span style="width:1.5px;height:16px;background:rgba(255,255,255,.35);margin:0 2px"></span><span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.20);border:1px solid rgba(255,255,255,.35);border-radius:100px;padding:5px 11px 5px 9px;font-size:12px;font-weight:800;letter-spacing:.4px">⏹️ Detener</span>';
   document.body.appendChild(el);
   if(!document.getElementById('_veloRecKf')){
     var kf = document.createElement('style'); kf.id='_veloRecKf';
@@ -13290,8 +13292,8 @@ async function pStartVoiceNote(){
       try{ stream.getTracks().forEach(function(t){ t.stop(); }); }catch(_){}
       _hideRecordingIndicator();
       if(!_veloRecordedBlob.size){ pToast('⚠️','La grabación quedó vacía — probá de nuevo'); _veloRecordedBlob=null; return; }
-      if(_veloRecordedBlob.size > 500 * 1024){
-        pToast('⚠️','Grabación muy larga (>500KB). Grabá algo más corto.');
+      if(_veloRecordedBlob.size > 3 * 1024 * 1024){
+        pToast('⚠️','Grabación muy grande (>3MB). Grabá algo más corto.');
         _veloRecordedBlob = null;
         return;
       }
@@ -13319,38 +13321,70 @@ function pAttachDiaryImage(){
 async function _handleDiaryImageInput(input){
   if(!input || !input.files || !input.files[0]) return;
   var f = input.files[0];
+  console.log('[diary-img] file:', f.name, f.type, f.size);
   if(!f.type.startsWith('image/')){ pToast('⚠️','Solo imágenes'); return; }
-  if(f.size > 3 * 1024 * 1024){ pToast('⚠️','Imagen muy grande (>3MB). Elegí otra o comprimila.'); return; }
+  if(f.size > 12 * 1024 * 1024){ pToast('⚠️','Imagen muy grande (>12MB). Elegí otra.'); return; }
+  // Detectar HEIC/HEIF (default iPhone) — no soportado por canvas
+  if(/heic|heif/i.test(f.type||'') || /\.(heic|heif)$/i.test(f.name||'')){
+    pToast('⚠️','Formato HEIC no soportado — cambiá formato en Ajustes iOS o convertí la foto a JPG.');
+    return;
+  }
   pToast('📷','Procesando imagen…');
   try{
-    // Resize + comprimir a max 1200px de lado más largo
     var b64 = await _resizeImageToBase64(f, 1200);
     _veloDiaryImageBase64 = b64;
     _showDiaryImagePreview(b64);
     pToast('✓','Imagen lista para adjuntar');
-  }catch(e){ pToast('⚠️','No pude procesar la imagen'); console.warn('[diary-img]', e); }
+  }catch(e){
+    console.warn('[diary-img]', e);
+    var msg = 'No pude procesar la imagen';
+    if(e && e.message) msg = e.message;
+    pToast('⚠️', msg);
+  }
 }
 function _resizeImageToBase64(file, maxSide){
   return new Promise(function(res, rej){
     var img = new Image();
-    var reader = new FileReader();
-    reader.onload = function(){
-      img.onload = function(){
-        var w = img.width, h = img.height;
-        if(w > h && w > maxSide){ h = h * (maxSide / w); w = maxSide; }
-        else if(h > maxSide){ w = w * (maxSide / h); h = maxSide; }
+    var objectUrl = null;
+    try{ objectUrl = URL.createObjectURL(file); }
+    catch(e){ rej(new Error('No pude leer el archivo')); return; }
+    var done = false;
+    var timeout = setTimeout(function(){
+      if(done) return; done = true;
+      try{ URL.revokeObjectURL(objectUrl); }catch(_){}
+      rej(new Error('La imagen tardó demasiado — probá con otra'));
+    }, 20000);
+    img.onload = function(){
+      if(done) return; done = true;
+      clearTimeout(timeout);
+      try{
+        var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+        if(!w || !h){ try{URL.revokeObjectURL(objectUrl);}catch(_){}; rej(new Error('Imagen sin dimensiones válidas')); return; }
+        if(w > h && w > maxSide){ h = Math.round(h * (maxSide / w)); w = maxSide; }
+        else if(h > maxSide){ w = Math.round(w * (maxSide / h)); h = maxSide; }
         var canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
         var ctx = canvas.getContext('2d');
+        if(!ctx){ try{URL.revokeObjectURL(objectUrl);}catch(_){}; rej(new Error('Canvas no disponible')); return; }
         ctx.drawImage(img, 0, 0, w, h);
-        var dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        try{ URL.revokeObjectURL(objectUrl); }catch(_){}
+        var dataUrl;
+        try{ dataUrl = canvas.toDataURL('image/jpeg', 0.82); }
+        catch(e){ rej(new Error('El navegador bloqueó la conversión (formato raro)')); return; }
+        if(!dataUrl || dataUrl.length < 100){ rej(new Error('La imagen quedó vacía después de procesarla')); return; }
         res(dataUrl);
-      };
-      img.onerror = rej;
-      img.src = reader.result;
+      }catch(e){
+        try{ URL.revokeObjectURL(objectUrl); }catch(_){}
+        rej(new Error(e && e.message ? e.message : 'Error inesperado'));
+      }
     };
-    reader.onerror = rej;
-    reader.readAsDataURL(file);
+    img.onerror = function(){
+      if(done) return; done = true;
+      clearTimeout(timeout);
+      try{ URL.revokeObjectURL(objectUrl); }catch(_){}
+      rej(new Error('Formato no compatible — probá con JPG o PNG'));
+    };
+    img.src = objectUrl;
   });
 }
 function _showDiaryImagePreview(b64){
@@ -29634,7 +29668,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1277;
+    var _BUILT_V = 1278;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
