@@ -14860,6 +14860,11 @@ function pExportDiaryToPdf(){
   var sorted = entries.slice().sort(function(a,b){ return Number(a.ts) - Number(b.ts); });
   var firstDate = new Date(Number(sorted[0].ts)).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
   var lastDate = new Date(Number(sorted[sorted.length-1].ts)).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
+  // Coleccionar las imágenes por índice — inyectamos placeholders y luego
+  // desde el parent seteamos img.src a un blob URL (iOS Safari no carga
+  // <img src="data:..."> grande dentro de iframes, ni con srcdoc ni con
+  // document.write)
+  var photoBlobs = [];
   var htmlEntries = sorted.map(function(e){
     var dateFmt = new Date(Number(e.ts)).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
     var emoji = e.emoji || '';
@@ -14867,12 +14872,22 @@ function pExportDiaryToPdf(){
     var text = (e.text||'').split(/\n\n+/).map(function(p){
       return '<p>'+p.split('\n').map(_escHtml).join('<br>')+'</p>';
     }).join('');
-    // Foto adjunta (si existe) — embebida como data URL en el HTML para que imprima igual
     var imgHtml = '';
     if(e.image && typeof e.image === 'string' && e.image.indexOf('data:') === 0){
-      imgHtml = '<figure class="photo"><img src="'+e.image+'" alt="Foto adjunta"/></figure>';
+      try{
+        var arr = e.image.split(',');
+        var mimeMatch = arr[0].match(/:(.*?);/);
+        var mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+        var bstr = atob(arr[1] || '');
+        var u8 = new Uint8Array(bstr.length);
+        for(var _bi=0; _bi<bstr.length; _bi++) u8[_bi] = bstr.charCodeAt(_bi);
+        var blob = new Blob([u8], { type: mime });
+        var idx = photoBlobs.length;
+        photoBlobs.push(blob);
+        // Placeholder — el src se setea desde el parent tras document.write
+        imgHtml = '<figure class="photo"><img data-photo-idx="'+idx+'" alt="Foto adjunta"/></figure>';
+      }catch(errB){ console.warn('[diary-pdf] photo blob', errB); }
     }
-    // Marca de audio (los PDFs no reproducen audio, pero dejamos constancia)
     var audioNote = e.audio ? '<div class="audio-note">🎙️ Esta entrada tiene una nota de voz — se reproduce sólo en la app.</div>' : '';
     return '<article class="entry">'
       + '<header><span class="date">'+dateFmt+'</span>'+(emoji?'<span class="emoji">'+emoji+'</span>':'')+'</header>'
@@ -14929,7 +14944,10 @@ function pExportDiaryToPdf(){
   closeBtn.setAttribute('aria-label','Cerrar');
   closeBtn.style.cssText = 'flex-shrink:0;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.35);color:#fff8e0;border-radius:100px;padding:8px 14px;font-family:Jost,sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;display:inline-flex;align-items:center;gap:6px';
   closeBtn.innerHTML = '<span style="font-size:18px;line-height:1">←</span> Cerrar';
-  closeBtn.onclick = function(){ ov.remove(); };
+  var releaseBlobs = function(){
+    try{ photoBlobUrls.forEach(function(u){ URL.revokeObjectURL(u); }); }catch(e){}
+  };
+  closeBtn.onclick = function(){ releaseBlobs(); ov.remove(); };
   var title = document.createElement('div');
   title.style.cssText = 'flex:1;text-align:center;font-family:\'Cormorant Garamond\',serif;font-size:17px;color:#fff8e0;font-style:italic;letter-spacing:.5px';
   title.textContent = 'Mi Diario';
@@ -14965,6 +14983,9 @@ function pExportDiaryToPdf(){
   iframe.style.cssText = 'flex:1;width:100%;border:none;background:#fdfaf0;-webkit-overflow-scrolling:touch';
   iframe.setAttribute('src','about:blank');
   ov.appendChild(iframe);
+  // Blob URLs de fotos creados en el parent (mismo origen que about:blank iframe,
+  // así se resuelven). Los liberamos al cerrar.
+  var photoBlobUrls = photoBlobs.map(function(b){ return URL.createObjectURL(b); });
   // Escribir el HTML después del load — algunos iOS necesitan un tick
   var writeDoc = function(){
     try{
@@ -14973,6 +14994,18 @@ function pExportDiaryToPdf(){
       d.open();
       d.write(html);
       d.close();
+      // Setear src de cada foto via blob URL (no data URL, iOS falla con esos)
+      setTimeout(function(){
+        try{
+          var imgs = d.querySelectorAll('img[data-photo-idx]');
+          for(var _pi=0; _pi<imgs.length; _pi++){
+            var idx = parseInt(imgs[_pi].getAttribute('data-photo-idx'),10);
+            if(!isNaN(idx) && photoBlobUrls[idx]){
+              imgs[_pi].src = photoBlobUrls[idx];
+            }
+          }
+        }catch(errImg){ console.warn('[diary-pdf] img swap', errImg); }
+      }, 30);
     }catch(e){ console.warn('[diary-pdf] write failed', e); }
   };
   if(iframe.contentDocument && iframe.contentDocument.readyState === 'complete'){
@@ -14988,7 +15021,7 @@ function pExportDiaryToPdf(){
   document.body.appendChild(ov);
   // Cerrar con back del navegador si se pulsa
   var backHandler = function(){
-    if(document.getElementById('diaryPdfOv')){ ov.remove(); }
+    if(document.getElementById('diaryPdfOv')){ releaseBlobs(); ov.remove(); }
     window.removeEventListener('popstate', backHandler);
   };
   try{ history.pushState({diaryPdf:1},''); window.addEventListener('popstate', backHandler); }catch(e){}
@@ -30700,7 +30733,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1298;
+    var _BUILT_V = 1299;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
