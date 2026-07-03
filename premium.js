@@ -8283,12 +8283,25 @@ function _presenceInfo(userId){
   if(p && p.last_seen && (Date.now() - new Date(p.last_seen).getTime()) < 5*60*1000 && p.status !== 'offline'){
     // Incognito users are completely invisible — show as offline to contacts and favorites
     if(p.status === 'incognito' || (p.status && p.status.startsWith('incognito_'))){
-      return { color:'rgba(150,150,150,.45)', label:'Desconectado', on:false };
+      return { color:'rgba(150,150,150,.45)', label:'Desconectado', on:false, lastSeen:p.last_seen };
     }
-    if(p.status === 'ocupado') return { color:'#E0A92E', label:'Ocupado/a', on:true };
-    return { color:'#5BBF87', label:'En línea', on:true };
+    if(p.status === 'ocupado') return { color:'#E0A92E', label:'Ocupado/a', on:true, lastSeen:p.last_seen };
+    return { color:'#5BBF87', label:'En línea', on:true, lastSeen:p.last_seen };
   }
-  return { color:'rgba(150,150,150,.45)', label:'Desconectado', on:false };
+  return { color:'rgba(150,150,150,.45)', label:'Desconectado', on:false, lastSeen:(p && p.last_seen) || null };
+}
+// Etiqueta "hace X" en base a last_seen (para "Últ. vez hace 5m")
+function _lastSeenLabel(lastSeenIso){
+  if(!lastSeenIso) return '';
+  var d = Date.now() - new Date(lastSeenIso).getTime();
+  if(d < 60000) return 'hace un momento';
+  if(d < 3600000) return 'hace '+Math.floor(d/60000)+' min';
+  if(d < 86400000) return 'hace '+Math.floor(d/3600000)+' h';
+  var days = Math.floor(d/86400000);
+  if(days === 1) return 'ayer';
+  if(days < 7) return 'hace '+days+' días';
+  var dd = new Date(lastSeenIso);
+  return dd.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
 }
 // Returns a small presence-dot HTML span. Empty string when no userId (anonymous).
 function _presenceDot(userId, size){
@@ -20297,9 +20310,11 @@ function _contactCard(id, name, av, uname, pInfo, unread, opts){
     var uCount = Number(unread) > 99 ? '99+' : String(unread);
     unreadBadge = '<span title="'+uCount+' sin leer" style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:22px;background:#e74c3c;color:#fff;font-size:11px;font-weight:800;font-family:Jost,sans-serif;box-shadow:0 2px 8px rgba(231,76,60,.55);flex-shrink:0">'+uCount+'</span>';
   }
-  var showChatBtn = canChat && !chatMode; // en chatMode el card entero es tap-to-chat
+  // En chatMode: el row entero es tap-to-chat (independiente de canChat — como IG,
+  // podés escribirle aunque esté offline; el mensaje queda guardado en Supabase).
+  var showChatBtn = canChat && !chatMode;
   var rowClick = chatMode
-    ? ' onclick="pOpenDM('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" style="cursor:pointer;"'
+    ? ' onclick="pOpenDM('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')"'
     : '';
   return '<div class="vcc-card'+(chatMode?' vcc-card--chat':'')+'" data-fav-name="'+_escHtml(name||'')+'" data-fav-uname="'+_escHtml(uname||'')+'"'+rowClick
     +' data-flex="display:flex;align-items:stretch;border-left:4px solid '+accentStrip+';border-radius:18px;margin-bottom:9px;overflow:hidden"'
@@ -20803,16 +20818,63 @@ function _enterDMChat(toId, toName, toAv){
   }
   pGoTo('dm-chat');
   setTimeout(function(){ _renderDMThread(); _subscribeToDMThread(); }, 100);
+  // Header con presencia
+  _startDMPresenceRefresh();
+}
+
+// ── Presence en header del DM ─────────────────────────────
+var _dmPresenceTmr = null;
+function _updateDMPeerPresenceHeader(){
+  if(!_dmPeer) return;
+  var el = document.getElementById('dmPeerPresence');
+  if(!el) return;
+  var info = _presenceInfo(_dmPeer.id);
+  var color = info.on ? info.color : 'rgba(200,220,210,.55)';
+  var dot = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+color+(info.on && info.label==='En línea'?';box-shadow:0 0 6px rgba(91,191,135,.75)':'')+';flex-shrink:0"></span>';
+  var label;
+  if(info.on){
+    label = info.label; // "En línea" o "Ocupado/a"
+  } else if(info.lastSeen){
+    label = 'Últ. vez ' + _lastSeenLabel(info.lastSeen);
+  } else {
+    label = 'Desconectado';
+  }
+  el.style.display = 'inline-flex';
+  el.style.color = info.on && info.label==='En línea' ? 'rgba(91,191,135,.98)' : 'rgba(200,220,210,.78)';
+  el.innerHTML = dot + '<span>'+_escHtml(label)+'</span>';
+}
+function _startDMPresenceRefresh(){
+  if(_dmPresenceTmr){ clearInterval(_dmPresenceTmr); _dmPresenceTmr = null; }
+  _refreshPresenceCache().then(_updateDMPeerPresenceHeader);
+  _dmPresenceTmr = setInterval(function(){
+    if(!_dmPeer){ _stopDMPresenceRefresh(); return; }
+    _refreshPresenceCache().then(_updateDMPeerPresenceHeader);
+  }, 30000);
+}
+function _stopDMPresenceRefresh(){
+  if(_dmPresenceTmr){ clearInterval(_dmPresenceTmr); _dmPresenceTmr = null; }
+  var el = document.getElementById('dmPeerPresence');
+  if(el){ el.style.display = 'none'; el.innerHTML = ''; }
 }
 
 function pOpenDM(toId, toName, toAv){
-  // Block if target user is currently busy in another chat
+  // Estilo Instagram: si la persona ya es MI favorita, entro directo (sin request
+  // y sin importar si está online, ocupada u offline). El mensaje queda esperando
+  // en direct_messages y le llega cuando abra la app. El chat request queda solo
+  // para primer contacto con extraños (quick profile → DM).
+  var isMyFav = false;
+  try{ isMyFav = pIsFav(toId); }catch(e){}
+  if(isMyFav){
+    _enterDMChat(toId, toName, toAv);
+    return;
+  }
+  // Block if target user is currently busy in another chat (extraños)
   var tp = _presenceCache[toId];
   if(tp && tp.status === 'ocupado' && tp.last_seen && (Date.now() - new Date(tp.last_seen).getTime()) < 5*60*1000){
     pToast('⏳', (toName||'Este usuario') + ' está ocupado/a en otro chat, intentá más tarde');
     return;
   }
-  // Always send a fresh chat request — never bypass (flag cleared on leave but may be stale after refresh)
+  // Non-fav: chat request (flujo original)
   var myId   = safeLS('get','velo_user_id')||'';
   var myName = safeLS('get','velo_user_name')||'';
   var myAv   = safeLS('get','velo_user_av')||'🧑';
@@ -20822,7 +20884,6 @@ function pOpenDM(toId, toName, toAv){
       from_id:myId, from_name:myName, from_av:myAv, to_id:toId, text:'__velo_chat_req__'
     }).then(function(){}).catch(function(){});
   }
-  // Show sender a waiting banner — don't enter chat until recipient accepts
   _showDMSenderWaiting(toId, toName||'Usuario');
 }
 
@@ -20962,6 +21023,7 @@ function pLeaveDM(){
   }
   if(_dmRtCh && sbClient){ try{ sbClient.removeChannel(_dmRtCh); }catch(e){} _dmRtCh = null; }
   if(_dmReactPollTmr){ clearInterval(_dmReactPollTmr); _dmReactPollTmr = null; }
+  _stopDMPresenceRefresh();
   // Clear accepted flag so a new session requires a fresh chat request
   if(_dmPeer && _dmPeer.id) safeLS('del', 'velo_dm_accepted_'+_dmPeer.id);
   _dmPeer = null;
@@ -30975,7 +31037,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1306;
+    var _BUILT_V = 1307;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
