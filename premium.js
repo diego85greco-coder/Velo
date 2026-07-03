@@ -21036,10 +21036,252 @@ function pLeaveDM(){
   pGoTo('contacts');
 }
 
+// ── DM audio/foto attachments (estilo IG) ──────────────────
+var _dmRec = null, _dmRecStream = null, _dmRecChunks = [], _dmRecMime = '';
+var _dmRecordedBlob = null, _dmPendingImage = null, _dmRecTimerHandle = null, _dmRecStartTs = 0;
+var _dmAttachAudioState = {}; // key → { ctx, buffer, source, playing, offset, startedAt, duration, btn, statusEl }
+
+// Player para audios embebidos en bubbles (usa WebAudio decodeAudioData —
+// resuelve el fMP4 de iOS Safari MediaRecorder que <audio> no puede reproducir).
+async function _dmPlayAttachAudio(btn){
+  var wrap = btn.closest('.dm-attach--audio');
+  if(!wrap) return;
+  var key = wrap.getAttribute('data-attach-ts') || 'k'+Date.now();
+  var statusEl = wrap.querySelector('.dm-attach-status');
+  var dataUrl = wrap.getAttribute('data-attach-audio');
+  if(!dataUrl) return;
+  // Toggle si ya está en curso
+  var st = _dmAttachAudioState[key];
+  if(st && st.playing){
+    try{ if(st.source) st.source.stop(0); }catch(e){}
+    st.playing = false;
+    btn.textContent = '▶';
+    if(statusEl) statusEl.textContent = 'Pausado';
+    return;
+  }
+  // Parar cualquier otro audio
+  Object.keys(_dmAttachAudioState).forEach(function(k){
+    var s = _dmAttachAudioState[k];
+    if(s && s.playing){ try{ s.source.stop(0); }catch(e){} s.playing = false; if(s.btn) s.btn.textContent='▶'; }
+  });
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC){ pToast('⚠️','Tu navegador no soporta reproducir audio'); return; }
+    if(!st || !st.buffer){
+      if(!st){ st = { playing:false, offset:0, btn:btn, statusEl:statusEl }; _dmAttachAudioState[key] = st; }
+      st.ctx = new AC();
+      if(statusEl) statusEl.textContent = 'Cargando…';
+      var arr = dataUrl.split(','); var bstr = atob(arr[1]||'');
+      var u8 = new Uint8Array(bstr.length);
+      for(var _i=0; _i<bstr.length; _i++) u8[_i] = bstr.charCodeAt(_i);
+      st.buffer = await new Promise(function(resolve, reject){
+        try{
+          var p = st.ctx.decodeAudioData(u8.buffer.slice(0), resolve, reject);
+          if(p && typeof p.then === 'function') p.then(resolve, reject);
+        }catch(err){ reject(err); }
+      });
+      st.duration = st.buffer.duration;
+    }
+    if(st.ctx.state === 'suspended') try{ await st.ctx.resume(); }catch(e){}
+    var src = st.ctx.createBufferSource();
+    src.buffer = st.buffer;
+    src.connect(st.ctx.destination);
+    src.start(0, st.offset || 0);
+    st.source = src;
+    st.playing = true;
+    st.startedAt = st.ctx.currentTime - (st.offset || 0);
+    btn.textContent = '⏸';
+    var mm = Math.floor(st.duration/60), ss = Math.floor(st.duration%60);
+    var tick = function(){
+      if(!st.playing) return;
+      var elapsed = st.ctx.currentTime - st.startedAt;
+      if(elapsed >= st.duration){ st.playing = false; btn.textContent='▶'; st.offset = 0; if(statusEl) statusEl.textContent = mm+':'+String(ss).padStart(2,'0')+' / '+mm+':'+String(ss).padStart(2,'0'); return; }
+      var em = Math.floor(elapsed/60), es = Math.floor(elapsed%60);
+      if(statusEl) statusEl.textContent = em+':'+String(es).padStart(2,'0')+' / '+mm+':'+String(ss).padStart(2,'0');
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    src.onended = function(){ if(st.playing){ st.playing=false; btn.textContent='▶'; st.offset = 0; } };
+  }catch(e){
+    console.warn('[dm-audio-play]', e && e.message);
+    if(statusEl) statusEl.textContent = 'No se pudo reproducir';
+    btn.textContent = '▶';
+  }
+}
+
+// Menú ⋮ del chat DM (Bloquear / Quitar fav / Borrar conversación / Reportar)
+function pDMOpenMenu(){
+  if(!_dmPeer) return;
+  var ex = document.getElementById('dmMenuOv'); if(ex){ ex.remove(); return; }
+  var isFav = false; try{ isFav = pIsFav(_dmPeer.id); }catch(e){}
+  var peerName = _dmPeer.name || 'Contacto';
+  var peerAv = _dmPeer.av || '🧑';
+  var peerId = _dmPeer.id;
+  var ov = document.createElement('div');
+  ov.id = 'dmMenuOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10011;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  var itemBase = 'width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;background:none;border:none;font-family:Jost,sans-serif;font-size:14.5px;font-weight:700;cursor:pointer;text-align:left;border-radius:12px;color:var(--ink2)';
+  ov.innerHTML = '<div class="p-sheet" style="max-width:520px;width:100%;padding:14px 16px 22px">'
+    + '<div class="p-sheet-handle"></div>'
+    + '<div style="text-align:center;padding:4px 0 14px;border-bottom:1px solid var(--border);margin-bottom:8px">'
+      + '<div style="font-size:36px;margin-bottom:4px">'+_avInline(peerAv,44)+'</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:19px;color:var(--ink)">'+_escHtml(peerName)+'</div>'
+    + '</div>'
+    + '<button onclick="document.getElementById(\'dmMenuOv\').remove();pQuickProfile('+_jsAttr(peerName)+','+_jsAttr(peerAv)+',\'\',\'\','+_jsAttr(peerId)+')" style="'+itemBase+'"><span style="font-size:18px">👤</span><span>Ver perfil</span></button>'
+    + '<button onclick="document.getElementById(\'dmMenuOv\').remove();' + (isFav ? 'pRemoveFav(\''+peerId+'\');pToast(\'⭐\',\'Quitado de favoritos\');' : 'pAddFav(\''+peerId+'\',' + _jsAttr(peerName) + ',' + _jsAttr(peerAv) + ');pToast(\'⭐\',\'Agregado a favoritos\');') + '" style="'+itemBase+'"><span style="font-size:18px">'+(isFav?'⭐':'☆')+'</span><span>'+(isFav?'Quitar de favoritos':'Agregar a favoritos')+'</span></button>'
+    + '<button onclick="document.getElementById(\'dmMenuOv\').remove();pClearDMChat()" style="'+itemBase+'"><span style="font-size:18px">🗑️</span><span>Borrar conversación</span></button>'
+    + '<button onclick="document.getElementById(\'dmMenuOv\').remove();pReportDMChat()" style="'+itemBase+';color:rgba(215,120,60,.95)"><span style="font-size:18px">⚠️</span><span>Reportar</span></button>'
+    + '<button onclick="document.getElementById(\'dmMenuOv\').remove();pBlockUser('+_jsAttr(peerId)+','+_jsAttr(peerName)+','+_jsAttr(peerAv)+');pLeaveDM();" style="'+itemBase+';color:rgba(220,80,80,.95)"><span style="font-size:18px">🚫</span><span>Bloquear a '+_escHtml(peerName.split(' ')[0])+'</span></button>'
+    + '<div style="height:6px"></div>'
+    + '<button onclick="document.getElementById(\'dmMenuOv\').remove()" style="'+itemBase+';justify-content:center;background:rgba(0,0,0,.05);color:var(--ink5)"><span>Cancelar</span></button>'
+    + '</div>';
+  document.body.appendChild(ov);
+}
+
+// Lightbox simple para fotos DM
+function pOpenImageLightbox(src){
+  if(!src) return;
+  var ex = document.getElementById('imgLightboxOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'imgLightboxOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10012;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+  ov.onclick = function(){ ov.remove(); };
+  ov.innerHTML = '<img src="'+_escHtml(src)+'" style="max-width:96vw;max-height:94vh;object-fit:contain;border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,.6)"><button onclick="event.stopPropagation();document.getElementById(\'imgLightboxOv\').remove()" style="position:absolute;top:14px;right:14px;padding:8px 14px;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.30);color:#fff;border-radius:100px;font-family:Jost,sans-serif;font-size:14px;font-weight:800;cursor:pointer">✕</button>';
+  document.body.appendChild(ov);
+}
+
+async function pDMToggleVoiceRec(){
+  if(!_dmPeer){ return; }
+  if(_dmRec && _dmRec.state !== 'inactive'){
+    try{ _dmRec.stop(); }catch(e){}
+    return;
+  }
+  if(!navigator.mediaDevices){ pToast('⚠️','Grabación no soportada'); return; }
+  try{
+    _dmRecStream = await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    var mime = _pickRecorderMime && _pickRecorderMime();
+    if(!mime){ pToast('⚠️','MediaRecorder no soportado'); try{_dmRecStream.getTracks().forEach(function(t){t.stop();});}catch(e){} _dmRecStream=null; return; }
+    _dmRecMime = mime; _dmRecChunks = [];
+    _dmRec = new MediaRecorder(_dmRecStream, { mimeType: mime });
+    _dmRec.ondataavailable = function(e){ if(e.data && e.data.size > 0) _dmRecChunks.push(e.data); };
+    _dmRec.onstop = function(){
+      var blob = new Blob(_dmRecChunks, { type: _dmRecMime || 'audio/mp4' });
+      try{ _dmRecStream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){}
+      _dmRecStream = null;
+      _dmSetMicBtnState(false);
+      if(_dmRecTimerHandle){ clearTimeout(_dmRecTimerHandle); _dmRecTimerHandle = null; }
+      if(!blob || blob.size < 500){ pToast('⚠️','Grabación muy corta'); _dmRecordedBlob = null; return; }
+      if(blob.size > 3 * 1024 * 1024){ pToast('⚠️','Audio muy largo (máx ~1 min)'); _dmRecordedBlob = null; return; }
+      _dmRecordedBlob = blob;
+      _dmShowVoicePreview(blob);
+    };
+    _dmRec.onerror = function(err){ console.warn('[dm-rec]', err); };
+    _dmRec.start(1000);
+    _dmRecStartTs = Date.now();
+    _dmSetMicBtnState(true);
+    pToast('🎙️','Grabando… tocá stop cuando termines');
+    _dmRecTimerHandle = setTimeout(function(){
+      if(_dmRec && _dmRec.state !== 'inactive'){ try{ _dmRec.stop(); }catch(e){} pToast('⏱️','Máximo 60 s'); }
+    }, 60000);
+  }catch(e){
+    console.warn('[dm-rec-start]', e);
+    if(e && e.name === 'NotAllowedError') pToast('⚠️','Bloqueaste el micrófono — revisá permisos');
+    else pToast('⚠️','No pude acceder al micrófono');
+    _dmSetMicBtnState(false);
+  }
+}
+function _dmSetMicBtnState(recording){
+  var btn = document.getElementById('dmMicBtn');
+  if(!btn) return;
+  btn.textContent = recording ? '⏹' : '🎙';
+  btn.style.background = recording ? 'rgba(220,60,60,.32)' : 'transparent';
+  btn.style.color = recording ? '#fff' : '';
+  btn.title = recording ? 'Detener grabación' : 'Grabar audio';
+}
+function _dmShowVoicePreview(blob){
+  var container = document.querySelector('#pg-dm-chat .feed-input-area');
+  if(!container || !container.parentNode) return;
+  var ex = document.getElementById('dmVoicePreview'); if(ex) ex.remove();
+  var sizeKb = Math.round(blob.size/1024);
+  var dur = Math.round((Date.now() - _dmRecStartTs)/1000);
+  var wrap = document.createElement('div');
+  wrap.id = 'dmVoicePreview';
+  wrap.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(200,158,56,.14);border-top:1.5px solid rgba(200,158,56,.42);font-family:Jost,sans-serif;font-size:13px;color:var(--ink2);flex-shrink:0';
+  wrap.innerHTML = '<span style="font-size:18px">🎙️</span>'
+    + '<span style="flex:1;font-weight:700">Audio listo · '+dur+'s · '+sizeKb+' KB</span>'
+    + '<button onclick="_dmDeleteVoice()" title="Descartar" style="background:rgba(220,60,60,.20);border:1.5px solid rgba(220,60,60,.42);color:#a02020;border-radius:8px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer">🗑️</button>';
+  container.parentNode.insertBefore(wrap, container);
+}
+function _dmDeleteVoice(){
+  _dmRecordedBlob = null;
+  var ex = document.getElementById('dmVoicePreview'); if(ex) ex.remove();
+}
+
+// Foto attach
+function pDMAttachImage(){
+  var inp = document.getElementById('dmImageInput');
+  if(inp){ inp.value = ''; inp.click(); }
+}
+async function _dmHandleImageInput(input){
+  if(!_dmPeer){ return; }
+  if(!input || !input.files || !input.files[0]) return;
+  var f = input.files[0];
+  if(!f.type.startsWith('image/')){ pToast('⚠️','Solo imágenes'); return; }
+  if(/heic|heif/i.test(f.type||'') || /\.(heic|heif)$/i.test(f.name||'')){
+    pToast('⚠️','Formato HEIC no soportado — convertí a JPG en Ajustes iOS');
+    return;
+  }
+  if(f.size > 12*1024*1024){ pToast('⚠️','Imagen muy grande (>12 MB)'); return; }
+  pToast('📷','Procesando imagen…');
+  try{
+    var b64 = await _resizeImageToBase64(f, 1200);
+    _dmPendingImage = b64;
+    _dmShowImagePreview(b64);
+    pToast('✓','Foto lista');
+  }catch(e){ pToast('⚠️', (e && e.message) || 'No pude procesar la imagen'); }
+}
+function _dmShowImagePreview(b64){
+  var container = document.querySelector('#pg-dm-chat .feed-input-area');
+  if(!container || !container.parentNode) return;
+  var ex = document.getElementById('dmImgPreview'); if(ex) ex.remove();
+  var wrap = document.createElement('div');
+  wrap.id = 'dmImgPreview';
+  wrap.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(180,155,240,.14);border-top:1.5px solid rgba(180,155,240,.42);font-family:Jost,sans-serif;font-size:13px;color:var(--ink2);flex-shrink:0';
+  var thumb = document.createElement('img');
+  thumb.style.cssText = 'width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0';
+  // Blob URL (iOS Safari falla con data URL inline grande)
+  try{
+    var arr = b64.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
+    var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
+    for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
+    thumb.src = URL.createObjectURL(new Blob([u8],{type:mime}));
+  }catch(e){ thumb.src = b64; }
+  wrap.appendChild(thumb);
+  var lbl = document.createElement('span');
+  lbl.style.cssText = 'flex:1;font-weight:700';
+  lbl.textContent = 'Foto lista para enviar';
+  wrap.appendChild(lbl);
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.onclick = function(){ _dmDeleteImage(); };
+  btn.style.cssText = 'background:rgba(220,60,60,.20);border:1.5px solid rgba(220,60,60,.42);color:#a02020;border-radius:8px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer';
+  btn.textContent = '🗑️';
+  wrap.appendChild(btn);
+  container.parentNode.insertBefore(wrap, container);
+}
+function _dmDeleteImage(){
+  _dmPendingImage = null;
+  var ex = document.getElementById('dmImgPreview'); if(ex) ex.remove();
+}
+
 async function pSendDM(){
   var ta = document.getElementById('dmInput');
-  if(!ta || !ta.value.trim() || !_dmPeer) return;
-  var text = ta.value.trim();
+  if(!_dmPeer) return;
+  var text = ta ? ta.value.trim() : '';
+  var hasAudio = !!_dmRecordedBlob;
+  var hasImage = !!_dmPendingImage;
+  if(!text && !hasAudio && !hasImage) return;
   if(text.length > 2000){ pToast('⚠️','Mensaje demasiado largo (máx 2000 caracteres)'); return; }
   ta.value = '';
   var dmQuote = _getReplyQuote('dmReplyBar');
@@ -21047,31 +21289,54 @@ async function pSendDM(){
   var myId   = safeLS('get','velo_user_id')||'';
   var myName = safeLS('get','velo_user_name')||'';
   var myAv   = safeLS('get','velo_user_av')||'';
-  var fullText = dmQuote ? '↩ "'+dmQuote.slice(0,60)+(dmQuote.length>60?'…':'')+'"  \n'+text : text;
-  // Optimistic render
-  var el = document.getElementById('dmMessages');
-  var _dmLastBubble = null;
-  if(el){
-    var div = document.createElement('div');
-    div.innerHTML = _buildMsgBubble(text, true, '', '', 'dmInput', 'dmReplyBar', dmQuote);
-    var _dmChild = div.firstElementChild;
-    if(_dmChild){ el.appendChild(_dmChild); _dmLastBubble = _dmChild; }
-    el.scrollTop = el.scrollHeight;
+  // Si hay audio o foto pendiente, se manda como PRIMERO (message aparte)
+  // con marker en text. El texto adicional (si lo hay) va como segundo msg.
+  async function _dmInsertOne(bodyText, cachePreview){
+    var fullText = dmQuote ? '↩ "'+dmQuote.slice(0,60)+(dmQuote.length>60?'…':'')+'"  \n'+bodyText : bodyText;
+    var el = document.getElementById('dmMessages');
+    var _dmLastBubble = null;
+    if(el){
+      var div = document.createElement('div');
+      div.innerHTML = _buildMsgBubble(bodyText, true, '', '', 'dmInput', 'dmReplyBar', dmQuote);
+      var _dmChild = div.firstElementChild;
+      if(_dmChild){ el.appendChild(_dmChild); _dmLastBubble = _dmChild; }
+      el.scrollTop = el.scrollHeight;
+    }
+    if(sbClient){
+      try{
+        var r = await sbClient.from('direct_messages').insert({
+          from_id:myId, from_name:myName, from_av:myAv, to_id:_dmPeer.id, text:fullText
+        }).select('id');
+        if(r && r.data && r.data[0]){
+          _dmLastMsgId = r.data[0].id;
+          if(_dmLastBubble) _dmLastBubble.setAttribute('data-sb-id', 'direct_messages:'+r.data[0].id);
+        }
+      }catch(e){}
+    }
+    if(cachePreview){ _dmCacheSet(_dmPeer.id, cachePreview, true); }
   }
   _initSupabase();
-  if(sbClient){
-    sbClient.from('direct_messages').insert({
-      from_id:myId, from_name:myName, from_av:myAv, to_id:_dmPeer.id, text:fullText
-    }).select('id').then(function(r){
-      if(r&&r.data&&r.data[0]){
-        _dmLastMsgId = r.data[0].id;
-        // Stamp data-sb-id on the optimistic bubble so reactions can find it
-        if(_dmLastBubble) _dmLastBubble.setAttribute('data-sb-id', 'direct_messages:'+r.data[0].id);
-      }
-    }).catch(function(){});
+  // 1) Audio adjunto (si lo hay)
+  if(hasAudio){
+    try{
+      var b64a = await _blobToBase64(_dmRecordedBlob);
+      await _dmInsertOne('__velo_dm_audio__:v=1|' + b64a, '🎙️ Nota de voz');
+    }catch(e){ pToast('⚠️','No pude enviar el audio'); }
+    _dmRecordedBlob = null;
+    var vpEl = document.getElementById('dmVoicePreview'); if(vpEl) vpEl.remove();
   }
-  // Actualizar cache de "último mensaje por peer" para la lista IG DM
-  if(text.indexOf('__velo_') !== 0){ _dmCacheSet(_dmPeer.id, text, true); }
+  // 2) Foto adjunta (si la hay)
+  if(hasImage){
+    try{
+      await _dmInsertOne('__velo_dm_image__:v=1|' + _dmPendingImage, '📷 Foto');
+    }catch(e){ pToast('⚠️','No pude enviar la foto'); }
+    _dmPendingImage = null;
+    var ipEl = document.getElementById('dmImgPreview'); if(ipEl) ipEl.remove();
+  }
+  // 3) Texto (si lo hay)
+  if(text){
+    await _dmInsertOne(text, text.indexOf('__velo_')===0 ? '' : text);
+  }
 }
 
 function _showDMChatRequest(fromId, fromName, fromAv){
@@ -29659,7 +29924,41 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
   var t   = new Date();
   var ts  = t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes();
   var quotePart = quoteText ? '<div class="reply-quote">'+_escHtml(quoteText.slice(0,80)+(quoteText.length>80?'…':''))+'</div>' : '';
-  var actionBtn = '<button class="msg-action-btn" onclick="pShowMsgActions(this,'+_jsAttr(id)+','+_jsAttr(text)+','+_jsAttr(inputId)+','+_jsAttr(replyBarId)+','+_jsAttr(isUser?'':senderName||'')+',\'\')" aria-label="Acciones">•••</button>';
+  // Detección de attachments de DM (audio / foto embebidos como marker + dataURL)
+  // Se renderiza el contenido especial en vez del texto plano. El wrap normal
+  // (avatar, timestamp, acciones, reacciones) se conserva.
+  var attachHtml = '';
+  var isAudioAttach = false, isImageAttach = false;
+  if(typeof text === 'string'){
+    var _audIdx = text.indexOf('__velo_dm_audio__:');
+    var _imgIdx = text.indexOf('__velo_dm_image__:');
+    if(_audIdx >= 0){
+      var _audPipe = text.indexOf('|', _audIdx);
+      var _audData = _audPipe >= 0 ? text.slice(_audPipe+1) : '';
+      if(_audData){
+        isAudioAttach = true;
+        attachHtml = '<div class="dm-attach dm-attach--audio" data-attach-audio="'+_escHtml(_audData)+'" data-attach-ts="'+id+'"><div style="display:flex;align-items:center;gap:10px;padding:10px 12px;min-width:180px"><button type="button" onclick="_dmPlayAttachAudio(this)" style="width:38px;height:38px;border-radius:50%;background:rgba(200,158,56,.30);border:1.5px solid rgba(200,158,56,.60);color:#fff8e0;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0">▶</button><div style="flex:1;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;color:#5c3d10;letter-spacing:.3px">🎙️ Nota de voz<div class="dm-attach-status" style="font-size:11px;font-weight:600;color:#7a5020;margin-top:2px">Tocá play para escuchar</div></div></div></div>';
+      }
+    } else if(_imgIdx >= 0){
+      var _imgPipe = text.indexOf('|', _imgIdx);
+      var _imgData = _imgPipe >= 0 ? text.slice(_imgPipe+1) : '';
+      if(_imgData){
+        isImageAttach = true;
+        // Convertimos data URL → blob URL (iOS Safari)
+        var _iBlobUrl = '';
+        try{
+          var _ia = _imgData.split(','); var _im = _ia[0].match(/:(.*?);/); var _imime = _im?_im[1]:'image/jpeg';
+          var _ib = atob(_ia[1]||''); var _iu8 = new Uint8Array(_ib.length);
+          for(var _ii=0;_ii<_ib.length;_ii++) _iu8[_ii] = _ib.charCodeAt(_ii);
+          _iBlobUrl = URL.createObjectURL(new Blob([_iu8],{type:_imime}));
+        }catch(e){}
+        attachHtml = '<div class="dm-attach dm-attach--img"><img src="'+_escHtml(_iBlobUrl || _imgData)+'" onclick="pOpenImageLightbox(this.src)" style="max-width:220px;max-height:280px;border-radius:12px;display:block;cursor:zoom-in;border:1.5px solid rgba(180,155,240,.45)"></div>';
+      }
+    }
+  }
+  var bodyContent = attachHtml || _highlightMentions(text);
+  var actionText = (isAudioAttach || isImageAttach) ? (isAudioAttach ? '🎙️ Nota de voz' : '📷 Foto') : text;
+  var actionBtn = '<button class="msg-action-btn" onclick="pShowMsgActions(this,'+_jsAttr(id)+','+_jsAttr(actionText)+','+_jsAttr(inputId)+','+_jsAttr(replyBarId)+','+_jsAttr(isUser?'':senderName||'')+',\'\')" aria-label="Acciones">•••</button>';
   var sbAttr = sbId ? ' data-sb-id="'+sbId+'"' : '';
   var rxHtml = '';
   if(reactions && typeof reactions === 'object'){
@@ -29674,7 +29973,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
     return '<div class="feed-msg feed-msg--own" id="'+id+'"'+sbAttr+' style="position:relative">'
       +'<div class="msg-wrap">'
       +actionBtn
-      +'<div class="feed-bubble feed-bubble--own">'+quotePart+_highlightMentions(text)+'<span class="feed-time">'+ts+'</span></div>'
+      +'<div class="feed-bubble feed-bubble--own">'+quotePart+bodyContent+'<span class="feed-time">'+ts+'</span></div>'
       +'</div>'+rxHtml+'</div>';
   } else {
     var _isAnonSender = !senderName || senderName === 'Usuario Anónimo' || senderName === 'Anónimo' || senderName === 'Guardián Anónimo';
@@ -29692,7 +29991,7 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
       +'<div class="feed-av"'+avClickAttr+'>'+_avInline(av||'🌿',36)+'</div>'
       +'<div>'+senderHtml
       +'<div class="msg-wrap">'
-      +'<div class="feed-bubble">'+quotePart+_highlightMentions(text)+'<span class="feed-time">'+ts+'</span></div>'
+      +'<div class="feed-bubble">'+quotePart+bodyContent+'<span class="feed-time">'+ts+'</span></div>'
       +actionBtn
       +'</div>'+rxHtml+'</div></div>';
   }
@@ -31038,7 +31337,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1308;
+    var _BUILT_V = 1309;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
