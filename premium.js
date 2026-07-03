@@ -18176,6 +18176,8 @@ async function _syncAvatarToSb(av){
 }
 
 function pLoadProfile(){
+  // Cargar historial + actividad de Vibes al final (no bloquea el render)
+  try{ setTimeout(function(){ _renderProfileVibes(); }, 250); }catch(_){}
   var name  = safeLS('get','velo_user_name') || 'Usuario';
   var av    = safeLS('get','velo_user_av') || '🧑';
   var motto = safeLS('get','velo_user_motto') || 'Mi camino, mi ritmo.';
@@ -19944,6 +19946,114 @@ function _refreshVibeCard(vibeId){
       }
     }
   }).catch(function(){});
+}
+
+// ── Historial + Actividad de Vibes en el perfil (v1316) ──────────
+// Se llama desde pLoadProfile al final para no bloquear el render principal
+async function _renderProfileVibes(){
+  _initSupabase(); if(!sbClient) return;
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId) return;
+  // 1) Historial (mis vibes con archived=true)
+  var histCard = document.getElementById('profileVibesHistoryCard');
+  var histList = document.getElementById('profileVibesHistoryList');
+  try{
+    var hist = await sbClient.from('vibes').select('id,media_url,caption,created_at,group_id,instant_scope').eq('user_id', myId).eq('archived', true).order('created_at',{ascending:false}).limit(40);
+    if(histCard && histList){
+      var hArr = (hist && hist.data) || [];
+      if(hArr.length){
+        histCard.style.display = 'block';
+        histList.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' + hArr.map(function(v){
+          var kind = v.group_id ? '' : (v.instant_scope === 'private' ? '🔒' : '🌟');
+          var d = new Date(v.created_at);
+          var label = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+          return '<button onclick="'+(v.group_id?'pOpenVibeGroup(\''+v.group_id+'\')':'pOpenInstantVibe(\''+v.id+'\')')+'" style="background:none;border:none;padding:0;cursor:pointer;position:relative"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1.5px solid var(--border);display:block"><div style="position:absolute;bottom:4px;left:5px;right:5px;padding:2px 4px;background:rgba(0,0,0,.62);color:#fff;border-radius:5px;font-family:Jost,sans-serif;font-size:9.5px;font-weight:800;letter-spacing:.4px;text-align:left">'+kind+' '+label+'</div></button>';
+        }).join('') + '</div>';
+        // Hidratar data URL → blob URL
+        histList.querySelectorAll('img[data-vibe-src]').forEach(function(img){
+          var src = img.getAttribute('data-vibe-src'); if(!src) return;
+          try{
+            if(src.indexOf('data:') === 0){
+              var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
+              var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
+              for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
+              img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
+            } else { img.src = src; }
+          }catch(e){ img.src = src; }
+        });
+      } else {
+        histCard.style.display = 'none';
+      }
+    }
+  }catch(e){}
+  // 2) Actividad — mis vibes recientes y quién les reaccionó
+  var actCard = document.getElementById('profileVibesActivityCard');
+  var actFilter = document.getElementById('profileVibesActivityFilter');
+  var actList = document.getElementById('profileVibesActivityList');
+  try{
+    var myVibes = await sbClient.from('vibes').select('id,caption,created_at,media_url').eq('user_id', myId).order('created_at',{ascending:false}).limit(50);
+    var myVibeIds = ((myVibes && myVibes.data) || []).map(function(v){ return v.id; });
+    if(!myVibeIds.length){
+      if(actCard) actCard.style.display = 'none';
+      return;
+    }
+    var rx = await sbClient.from('vibe_reactions').select('vibe_id,user_id,reaction,created_at').in('vibe_id', myVibeIds).order('created_at',{ascending:false}).limit(120);
+    var rxArr = (rx && rx.data) || [];
+    if(!rxArr.length){
+      if(actCard) actCard.style.display = 'none';
+      return;
+    }
+    if(actCard) actCard.style.display = 'block';
+    // Resolver nombres de quienes reaccionaron
+    var uidSet = {}; rxArr.forEach(function(r){ if(r.user_id !== myId) uidSet[r.user_id] = 1; });
+    var userIds = Object.keys(uidSet);
+    var profileMap = {};
+    if(userIds.length){
+      try{
+        var pRes = await sbClient.from('profiles').select('id,nombre,username,avatar').in('id', userIds);
+        (pRes.data||[]).forEach(function(p){ profileMap[p.id] = { name: p.nombre || (p.username?'@'+p.username:''), av: p.avatar||'🧑' }; });
+      }catch(e){}
+    }
+    var vibeMap = {}; ((myVibes.data)||[]).forEach(function(v){ vibeMap[v.id] = v; });
+    window._vibeActivityRaw = { rxArr: rxArr, profileMap: profileMap, vibeMap: vibeMap };
+    window._vibeActivityFilter = '';
+    // Renderizar filtro (chips)
+    if(actFilter){
+      actFilter.innerHTML = '<button onclick="pVibeActivityFilter(\'\')" data-rx="" style="padding:5px 10px;background:rgba(116,198,157,.32);border:1.5px solid rgba(116,198,157,.62);border-radius:100px;color:#0e1f14;font-family:Jost,sans-serif;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.3px">Todas</button>'
+        + VIBE_REACTIONS.map(function(rc){
+            return '<button onclick="pVibeActivityFilter(\''+rc.key+'\')" data-rx="'+rc.key+'" style="padding:5px 10px;background:rgba(255,255,255,.05);border:1.5px solid rgba(180,220,195,.28);border-radius:100px;color:var(--ink3);font-family:Jost,sans-serif;font-size:12.5px;cursor:pointer;line-height:1">'+rc.emoji+'</button>';
+          }).join('');
+    }
+    pVibeActivityFilter('');
+  }catch(e){ console.warn('[activity]', e); }
+}
+function pVibeActivityFilter(reactionKey){
+  var raw = window._vibeActivityRaw; if(!raw) return;
+  window._vibeActivityFilter = reactionKey;
+  // Highlight chip activo
+  var filter = document.getElementById('profileVibesActivityFilter');
+  if(filter){
+    filter.querySelectorAll('button').forEach(function(btn){
+      var isActive = btn.getAttribute('data-rx') === reactionKey;
+      btn.style.background = isActive ? 'rgba(116,198,157,.32)' : 'rgba(255,255,255,.05)';
+      btn.style.borderColor = isActive ? 'rgba(116,198,157,.62)' : 'rgba(180,220,195,.28)';
+      btn.style.color = isActive ? '#0e1f14' : 'var(--ink3)';
+      btn.style.fontWeight = isActive ? '800' : '400';
+    });
+  }
+  var list = document.getElementById('profileVibesActivityList'); if(!list) return;
+  var items = raw.rxArr.filter(function(r){ return !reactionKey || r.reaction === reactionKey; }).slice(0, 40);
+  if(!items.length){ list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--ink5);font-family:Jost,sans-serif;font-size:12.5px;font-style:italic">Nadie reaccionó con ese emoji todavía</div>'; return; }
+  list.innerHTML = items.map(function(r){
+    var profile = raw.profileMap[r.user_id] || { name: 'Usuario', av: '🧑' };
+    var vibe = raw.vibeMap[r.vibe_id] || {};
+    var reactionMeta = VIBE_REACTIONS.find(function(x){ return x.key === r.reaction; });
+    var emoji = reactionMeta ? reactionMeta.emoji : '💚';
+    var label = reactionMeta ? reactionMeta.label : 'reaccionó';
+    var when = _timeAgoDM ? _timeAgoDM(new Date(r.created_at).getTime()) : '';
+    var caption = vibe.caption ? '"'+vibe.caption.slice(0,60)+(vibe.caption.length>60?'…':'')+'"' : 'tu momento';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--border)"><span style="font-size:24px;flex-shrink:0">'+_avInline(profile.av||'🧑',36)+'</span><div style="flex:1;min-width:0;font-family:Jost,sans-serif;font-size:13px;color:var(--ink2);line-height:1.4"><div><span style="font-weight:800">'+_escHtml(profile.name)+'</span> sintió <span style="font-weight:800">'+label+' '+emoji+'</span></div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;color:var(--ink4);font-size:12.5px;margin-top:2px">'+_escHtml(caption)+'</div></div><div style="font-size:10.5px;color:var(--ink5);flex-shrink:0;font-family:Jost,sans-serif;font-weight:700">'+when+'</div></div>';
+  }).join('');
 }
 
 // ── INBOX ──────────────────────────────────────────────────────
@@ -32596,7 +32706,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1315;
+    var _BUILT_V = 1316;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
