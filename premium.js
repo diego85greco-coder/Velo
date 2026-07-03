@@ -20289,8 +20289,9 @@ function _contactCard(id, name, av, uname, pInfo, unread, opts){
   var onlineColor = pInfo.on ? (pInfo.label==='En línea'||pInfo.label==='Disponible'?'#4DD988':'#D9A940') : 'rgba(128,135,130,.55)';
   var onlineBg = pInfo.on ? (pInfo.label==='En línea'||pInfo.label==='Disponible'?'rgba(38,120,75,.18)':'rgba(160,118,28,.15)') : 'rgba(120,128,124,.08)';
   var bs = 'width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0';
-  // Instagram-DM row: si hay lastMsg armamos preview + tiempo + badge de no-leídos
-  var chatMode = !!(opts.chatMode && (opts.lastMsg || unread > 0));
+  // Instagram-DM row: siempre en modo chat cuando se pide (aunque no haya
+  // conversación aún — el tap tiene que abrir el DM igual, como IG).
+  var chatMode = !!opts.chatMode;
   var previewLine = '';
   if(chatMode && opts.lastMsg){
     var lm = opts.lastMsg;
@@ -31037,7 +31038,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1307;
+    var _BUILT_V = 1308;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
