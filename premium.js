@@ -21193,11 +21193,64 @@ async function pDMToggleVoiceRec(){
 }
 function _dmSetMicBtnState(recording){
   var btn = document.getElementById('dmMicBtn');
-  if(!btn) return;
-  btn.textContent = recording ? '⏹' : '🎙';
-  btn.style.background = recording ? 'rgba(220,60,60,.32)' : 'transparent';
-  btn.style.color = recording ? '#fff' : '';
-  btn.title = recording ? 'Detener grabación' : 'Grabar audio';
+  if(btn){
+    btn.textContent = recording ? '⏹' : '🎙';
+    btn.style.background = recording ? 'rgba(220,60,60,.32)' : 'transparent';
+    btn.style.color = recording ? '#fff' : '';
+    btn.title = recording ? 'Detener grabación' : 'Grabar audio';
+  }
+  // Indicador visible encima del input mientras se está grabando (rec dot pulsante + timer)
+  if(recording){
+    _dmShowRecIndicator();
+  } else {
+    _dmHideRecIndicator();
+  }
+}
+var _dmRecIndicatorTmr = null;
+function _dmShowRecIndicator(){
+  _dmHideRecIndicator();
+  var container = document.querySelector('#pg-dm-chat .feed-input-area');
+  if(!container || !container.parentNode) return;
+  var wrap = document.createElement('div');
+  wrap.id = 'dmRecIndicator';
+  wrap.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(90deg,rgba(220,60,60,.20),rgba(190,40,40,.15));border-top:1.5px solid rgba(220,60,60,.55);font-family:Jost,sans-serif;font-size:13px;color:#e83a3a;font-weight:800;letter-spacing:.4px;flex-shrink:0';
+  wrap.innerHTML = '<span id="dmRecDot" style="width:10px;height:10px;border-radius:50%;background:#e83a3a;box-shadow:0 0 10px rgba(220,60,60,.75);flex-shrink:0;animation:dmRecBlink 1s infinite"></span>'
+    + '<span style="text-transform:uppercase">Grabando</span>'
+    + '<span id="dmRecTime" style="margin-left:auto;font-family:Jost,monospace;font-variant-numeric:tabular-nums;color:#f0a0a0;font-weight:700">0:00 / 1:00</span>'
+    + '<button onclick="_dmCancelRec()" title="Cancelar" style="background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.20);color:#fff;border-radius:8px;padding:5px 10px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;flex-shrink:0">Cancelar</button>';
+  container.parentNode.insertBefore(wrap, container);
+  // Inject keyframes una sola vez
+  if(!document.getElementById('_dmRecKf')){
+    var kf = document.createElement('style'); kf.id = '_dmRecKf';
+    kf.textContent = '@keyframes dmRecBlink{0%,50%{opacity:1}51%,100%{opacity:.35}}';
+    document.head.appendChild(kf);
+  }
+  _dmRecIndicatorTmr = setInterval(function(){
+    var el = document.getElementById('dmRecTime');
+    if(!el || !_dmRecStartTs) return;
+    var elapsed = Math.floor((Date.now() - _dmRecStartTs)/1000);
+    var m = Math.floor(elapsed/60), s = elapsed % 60;
+    el.textContent = m+':'+String(s).padStart(2,'0')+' / 1:00';
+  }, 300);
+}
+function _dmHideRecIndicator(){
+  if(_dmRecIndicatorTmr){ clearInterval(_dmRecIndicatorTmr); _dmRecIndicatorTmr = null; }
+  var el = document.getElementById('dmRecIndicator'); if(el) el.remove();
+}
+function _dmCancelRec(){
+  // Descarta el audio en curso sin previsualizar/enviar
+  try{
+    if(_dmRec && _dmRec.state !== 'inactive'){
+      _dmRec.onstop = function(){ try{ _dmRecStream && _dmRecStream.getTracks().forEach(function(t){t.stop();}); }catch(e){} _dmRecStream=null; };
+      _dmRec.stop();
+    } else {
+      if(_dmRecStream){ try{ _dmRecStream.getTracks().forEach(function(t){t.stop();}); }catch(e){} _dmRecStream=null; }
+    }
+  }catch(e){}
+  _dmRecordedBlob = null;
+  _dmSetMicBtnState(false);
+  if(_dmRecTimerHandle){ clearTimeout(_dmRecTimerHandle); _dmRecTimerHandle = null; }
+  pToast('🗑️','Grabación cancelada');
 }
 function _dmShowVoicePreview(blob){
   var container = document.querySelector('#pg-dm-chat .feed-input-area');
@@ -21549,6 +21602,9 @@ function _startGlobalDMListener(){
       if(curId === 'pg-help-chat' && _curHelpPost && _curHelpPost.userId === m.from_id) return; // already in help chat
       // Show floating notification
       _showDMToast(m.from_id, m.from_name||'Usuario', m.from_av||'🧑', m.text||'');
+      // System notification si la tab está oculta (funciona en PWA background —
+      // no cuando la PWA está cerrada, para eso se necesita push del servidor)
+      _dmMaybeShowSystemNotif(m);
       // Update unread count
       var unread = {}; try{ unread = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
       unread[m.from_id] = (unread[m.from_id]||0)+1;
@@ -21556,8 +21612,40 @@ function _startGlobalDMListener(){
       _updateFavBadge();
       // Actualizar cache "último mensaje" para el hub de mensajes tipo IG
       if(m.text && String(m.text).indexOf('__velo_') !== 0){
-        _dmCacheSet(m.from_id, m.text, false, m.created_at ? new Date(m.created_at).getTime() : Date.now());
+        var _prevText = String(m.text);
+        var _cachePrev = _prevText.indexOf('__velo_dm_audio__')===0 ? '🎙️ Nota de voz'
+                       : _prevText.indexOf('__velo_dm_image__')===0 ? '📷 Foto'
+                       : _prevText;
+        _dmCacheSet(m.from_id, _cachePrev, false, m.created_at ? new Date(m.created_at).getTime() : Date.now());
       }
+  }
+  // Notif local cuando la app está abierta pero no en primer plano
+  function _dmMaybeShowSystemNotif(m){
+    try{
+      if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+      if(!navigator.serviceWorker) return;
+      // Si la app está en primer plano Y estoy en el chat con este peer, no molestar
+      var curId = document.querySelector('.p-page.active');
+      curId = curId ? curId.id : '';
+      var isInThisChat = curId === 'pg-dm-chat' && _dmPeer && _dmPeer.id === m.from_id;
+      if(!document.hidden && isInThisChat) return;
+      var body = '';
+      var raw = String(m.text||'');
+      if(raw.indexOf('__velo_dm_audio__')===0) body = '🎙️ Te envió una nota de voz';
+      else if(raw.indexOf('__velo_dm_image__')===0) body = '📷 Te envió una foto';
+      else body = raw.slice(0, 120);
+      navigator.serviceWorker.getRegistration().then(function(reg){
+        if(!reg) return;
+        reg.showNotification((m.from_name||'Nuevo mensaje') + ' 💬', {
+          body: body,
+          icon: '/assets/icon-192.png',
+          badge: '/assets/icon-72.png',
+          tag: 'velo-dm-' + m.from_id,
+          renotify: false,
+          data: { url: '/?open=dm&peer=' + encodeURIComponent(m.from_id || '') },
+        });
+      });
+    }catch(e){}
   }
 
   _dmInboxCh = sbClient.channel('velo:dm:inbox:'+myId)
@@ -29783,7 +29871,8 @@ function _initMsgActions(){
     return '<button onclick="_msgReact(\''+e+'\')" title="'+e+'">'+e+'</button>';
   }).join('')
     +'<span class="msg-actions-divider"></span>'
-    +'<button class="msg-reply-btn" onclick="_msgReplyAct()">↩ Responder</button>';
+    +'<button class="msg-reply-btn" onclick="_msgReplyAct()">↩ Responder</button>'
+    +'<button class="msg-del-btn" onclick="_msgDeleteAct()" title="Borrar mensaje" style="display:none;background:none;border:none;color:rgba(220,80,80,.92);font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;padding:6px 10px;cursor:pointer;border-radius:8px">🗑️ Borrar</button>';
   document.body.appendChild(pop);
   document.addEventListener('click', function(e){
     if(!e.target.closest('#msgActionsPopup') && !e.target.closest('.msg-action-btn')){
@@ -29791,12 +29880,69 @@ function _initMsgActions(){
     }
   });
 }
+// Borrar mensaje mío del chat (borra para ambos vía DELETE en Supabase)
+async function _msgDeleteAct(){
+  var pop = document.getElementById('msgActionsPopup');
+  if(pop) pop.style.display = 'none';
+  var data = _msgPopupData; _msgPopupData = null;
+  if(!data || !data.msgId) return;
+  var msgEl = document.getElementById(data.msgId);
+  if(!msgEl) return;
+  var sbId = msgEl.getAttribute('data-sb-id') || '';
+  // Confirmar (excepto para el propio flujo en curso)
+  if(!confirm('¿Borrar este mensaje? Se elimina para vos y para tu contacto.')) return;
+  // UI optimista
+  msgEl.style.transition = 'opacity .18s';
+  msgEl.style.opacity = '.35';
+  // DELETE en Supabase — RLS solo deja borrar los propios
+  if(sbId && sbClient){
+    var parts = sbId.split(':');
+    var table = parts[0], id = parts[1];
+    if(table && id){
+      try{
+        var r = await sbClient.from(table).delete().eq('id', id);
+        if(r && r.error){
+          msgEl.style.opacity = '1';
+          pToast('⚠️','No se pudo borrar — sólo podés borrar los mensajes que enviaste');
+          return;
+        }
+      }catch(e){
+        msgEl.style.opacity = '1';
+        pToast('⚠️','Sin conexión');
+        return;
+      }
+    }
+  }
+  // Quitar del DOM + refrescar cache del preview
+  msgEl.remove();
+  if(_dmPeer && _dmPeer.id){
+    // Refrescar el último mensaje de la cache leyendo el último bubble visible
+    var msgs = document.querySelectorAll('#dmMessages [data-sb-id]');
+    if(msgs.length){
+      var last = msgs[msgs.length-1];
+      var lastBubble = last.querySelector('.feed-bubble');
+      var lastTxt = lastBubble ? (lastBubble.textContent||'').replace(/\s+\d{1,2}:\d{2}\s*$/,'').trim().slice(0,140) : '';
+      var isOwn = last.classList.contains('feed-msg--own');
+      _dmCacheSet(_dmPeer.id, lastTxt || '(vacío)', isOwn);
+    } else {
+      // No queda ningún mensaje — limpiar cache
+      var cache = _dmCacheGet(); delete cache[_dmPeer.id];
+      try{ safeLS('set','velo_dm_last_msgs', JSON.stringify(cache)); }catch(e){}
+    }
+  }
+  pToast('🗑️','Mensaje eliminado');
+}
 
 function pShowMsgActions(btn, msgId, text, inputId, replyBarId, senderName){
   _initMsgActions();
   _msgPopupData = { msgId:msgId, text:text, inputId:inputId, replyBarId:replyBarId, senderName:senderName||'' };
   var pop = document.getElementById('msgActionsPopup');
   if(!pop) return;
+  // Mostrar "Borrar" solo si el mensaje es mío (feed-msg--own)
+  var msgEl = document.getElementById(msgId);
+  var isOwn = msgEl && msgEl.classList.contains('feed-msg--own');
+  var delBtn = pop.querySelector('.msg-del-btn');
+  if(delBtn) delBtn.style.display = isOwn ? 'inline-flex' : 'none';
   pop.style.display = 'flex';
   var rect = btn.getBoundingClientRect();
   var top  = rect.top - 58;
@@ -29937,7 +30083,12 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
       var _audData = _audPipe >= 0 ? text.slice(_audPipe+1) : '';
       if(_audData){
         isAudioAttach = true;
-        attachHtml = '<div class="dm-attach dm-attach--audio" data-attach-audio="'+_escHtml(_audData)+'" data-attach-ts="'+id+'"><div style="display:flex;align-items:center;gap:10px;padding:10px 12px;min-width:180px"><button type="button" onclick="_dmPlayAttachAudio(this)" style="width:38px;height:38px;border-radius:50%;background:rgba(200,158,56,.30);border:1.5px solid rgba(200,158,56,.60);color:#fff8e0;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0">▶</button><div style="flex:1;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;color:#5c3d10;letter-spacing:.3px">🎙️ Nota de voz<div class="dm-attach-status" style="font-size:11px;font-weight:600;color:#7a5020;margin-top:2px">Tocá play para escuchar</div></div></div></div>';
+        // Colores según lado del mensaje: own (verde) → texto cream, otro (dark) → texto ámbar
+        var _lblCol = isUser ? '#fff8dc' : '#f0d798';
+        var _subCol = isUser ? 'rgba(255,240,200,.85)' : 'rgba(240,215,155,.75)';
+        var _btnBg  = isUser ? 'rgba(255,220,120,.30)' : 'rgba(200,158,56,.32)';
+        var _btnBrd = isUser ? 'rgba(255,240,180,.65)' : 'rgba(255,220,120,.55)';
+        attachHtml = '<div class="dm-attach dm-attach--audio" data-attach-audio="'+_escHtml(_audData)+'" data-attach-ts="'+id+'"><div style="display:flex;align-items:center;gap:10px;padding:8px 4px;min-width:180px"><button type="button" onclick="_dmPlayAttachAudio(this)" style="width:38px;height:38px;border-radius:50%;background:'+_btnBg+';border:1.5px solid '+_btnBrd+';color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0">▶</button><div style="flex:1;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;color:'+_lblCol+';letter-spacing:.3px">🎙️ Nota de voz<div class="dm-attach-status" style="font-size:11px;font-weight:600;color:'+_subCol+';margin-top:2px">Tocá play para escuchar</div></div></div></div>';
       }
     } else if(_imgIdx >= 0){
       var _imgPipe = text.indexOf('|', _imgIdx);
@@ -31337,7 +31488,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1309;
+    var _BUILT_V = 1310;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
