@@ -19378,17 +19378,34 @@ async function pRenderVibesHome(){
     var pub      = g.data.filter(function(x){ return x.kind === 'public'; });
     var priv     = g.data.filter(function(x){ return x.kind === 'private' && (x.owner_id === myId || _vibesGroupsCache.some(function(){return true;})); });
     var section = function(titleTxt, subtitle, groups, kind){
+      // Vacío: CTA distinto por tipo — invita a crear/participar en lugar de "nada por ahora"
       if(!groups.length){
+        var emptyCta = '';
+        if(kind === 'public'){
+          emptyCta = '<button onclick="pCreateGroupPrompt(\'public\')" style="width:100%;padding:18px;background:linear-gradient(135deg,rgba(200,158,56,.22),rgba(180,140,40,.18));border:1.5px dashed rgba(200,158,56,.62);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.4">🌊 Creá el primer grupo público<br><span style="font-size:11px;font-weight:600;color:rgba(230,215,140,.75)">Un tema donde otros puedan sumar sus momentos</span></button>';
+        } else if(kind === 'private'){
+          emptyCta = '<button onclick="pCreateGroupPrompt(\'private\')" style="width:100%;padding:18px;background:linear-gradient(135deg,rgba(155,120,220,.20),rgba(120,90,180,.18));border:1.5px dashed rgba(155,120,220,.62);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.4">🔮 Creá tu primer grupo privado<br><span style="font-size:11px;font-weight:600;color:rgba(215,200,255,.75)">Invitá a tus favoritos a compartir con vos</span></button>';
+        } else {
+          emptyCta = '<div style="padding:18px;background:rgba(255,255,255,.03);border:1px dashed rgba(180,220,195,.20);border-radius:14px;text-align:center;font-size:12.5px;color:rgba(200,230,215,.55);font-style:italic">Nada por ahora</div>';
+        }
         return '<div style="margin-bottom:22px">'
           + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(180,230,200,.72);margin-bottom:4px">'+titleTxt+'</div>'
           + '<div style="font-size:11.5px;color:rgba(180,220,195,.50);margin-bottom:10px;font-style:italic">'+subtitle+'</div>'
-          + '<div style="padding:18px;background:rgba(255,255,255,.03);border:1px dashed rgba(180,220,195,.20);border-radius:14px;text-align:center;font-size:12.5px;color:rgba(200,230,215,.55);font-style:italic">Nada por ahora</div>'
+          + emptyCta
           + '</div>';
+      }
+      // Con contenido: cards + "Creá uno nuevo" al final para public/private
+      var newCta = '';
+      if(kind === 'public'){
+        newCta = '<button onclick="pCreateGroupPrompt(\'public\')" style="width:100%;padding:12px;background:rgba(200,158,56,.10);border:1.5px dashed rgba(200,158,56,.45);border-radius:14px;color:rgba(230,215,140,.85);font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;margin-top:4px">➕ Creá un nuevo grupo público</button>';
+      } else if(kind === 'private'){
+        newCta = '<button onclick="pCreateGroupPrompt(\'private\')" style="width:100%;padding:12px;background:rgba(155,120,220,.10);border:1.5px dashed rgba(155,120,220,.45);border-radius:14px;color:rgba(215,200,255,.85);font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;margin-top:4px">➕ Creá un nuevo grupo privado</button>';
       }
       return '<div style="margin-bottom:22px">'
         + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(180,230,200,.72);margin-bottom:4px">'+titleTxt+'</div>'
         + '<div style="font-size:11.5px;color:rgba(180,220,195,.50);margin-bottom:10px;font-style:italic">'+subtitle+'</div>'
         + groups.map(function(gr){ return _vibeGroupCard(gr, counts[gr.id]||0); }).join('')
+        + newCta
         + '</div>';
     };
     // Sección de instantáneos (grid horizontal de miniaturas)
@@ -19437,16 +19454,24 @@ function _vibeGroupCard(gr, count){
   var accentBrd  = isPrivate ? 'rgba(155,120,220,.60)' : isOfficial ? 'rgba(116,198,157,.55)' : 'rgba(200,180,80,.50)';
   var accentBg   = isPrivate ? 'rgba(80,50,150,.16)'   : isOfficial ? 'rgba(60,140,95,.16)'    : 'rgba(180,150,50,.14)';
   var accentGlow = isPrivate ? 'rgba(155,120,220,.28)' : isOfficial ? 'rgba(116,198,157,.28)'  : 'rgba(200,180,80,.24)';
+  var accentText = isPrivate ? 'rgba(215,200,255,.85)' : isOfficial ? 'rgba(180,230,200,.85)' : 'rgba(230,215,140,.85)';
   var verifiedBadge = isOfficial ? '<span title="Grupo oficial de Velo" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:#4dd988;border-radius:50%;color:#0a1810;font-size:10px;font-weight:800;margin-left:6px">✓</span>' : '';
   var privateBadge  = isPrivate ? '<span style="display:inline-block;padding:2px 8px;background:rgba(155,120,220,.28);border:1px solid rgba(155,120,220,.55);border-radius:100px;color:#e0d0ff;font-size:9.5px;font-weight:800;letter-spacing:1px;margin-left:8px">🔒 PRIVADO</span>' : '';
+  var joinHint = isOfficial
+    ? '👉 Sumá tu momento a este grupo'
+    : (isPrivate ? '👉 Compartí con tu círculo' : '👉 Sumate y compartí');
   return '<button onclick="pOpenVibeGroup(\''+gr.id+'\')" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 16px;background:'+accentBg+';border:1.5px solid '+accentBrd+';border-radius:18px;margin-bottom:8px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;box-shadow:0 4px 18px '+accentGlow+'">'
     + '<div style="width:52px;height:52px;border-radius:14px;background:rgba(0,0,0,.24);border:1.5px solid '+accentBrd+';display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">'+_escHtml(gr.emoji||'🌊')+'</div>'
     + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;flex-wrap:wrap">'+_escHtml(gr.title||'')+verifiedBadge+privateBadge+'</div>'
       + (gr.description ? '<div style="font-size:11.5px;color:rgba(200,230,215,.68);margin-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(gr.description)+'</div>' : '')
-      + '<div style="font-size:10.5px;font-weight:700;color:rgba(180,220,195,.60);margin-top:5px;letter-spacing:.4px">'+(count>0?count+' momento'+(count===1?'':'s')+' hoy':'Sin historias aún')+'</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">'
+        + '<div style="font-size:10.5px;font-weight:800;color:'+accentText+';letter-spacing:.4px">'+joinHint+'</div>'
+        + '<div style="font-size:10.5px;font-weight:600;color:rgba(180,220,195,.50);letter-spacing:.3px">·</div>'
+        + '<div style="font-size:10.5px;font-weight:700;color:rgba(180,220,195,.60);letter-spacing:.3px">'+(count>0?count+' hoy':'sin historias')+'</div>'
+      + '</div>'
     + '</div>'
-    + '<span style="font-size:18px;color:rgba(180,220,195,.55);flex-shrink:0">›</span>'
+    + '<span style="font-size:18px;color:'+accentText+';flex-shrink:0">›</span>'
   + '</button>';
 }
 // Menú para crear vibe: instantáneo o dentro de un grupo
@@ -19734,7 +19759,12 @@ async function pOpenVibeGroup(groupId){
     var list = document.getElementById('vibeGroupList');
     if(!list) return;
     if(!res || !res.data || !res.data.length){
-      list.innerHTML = '<div style="text-align:center;padding:80px 20px;color:rgba(200,230,215,.55);font-family:Jost,sans-serif"><div style="font-size:50px;margin-bottom:14px;opacity:.55">🌱</div><div style="font-size:15px;font-weight:800">Todavía sin historias</div><div style="font-size:12.5px;margin-top:6px;line-height:1.55">Sé el primero — tocá el ＋ para compartir un momento</div></div>';
+      list.innerHTML = '<div style="text-align:center;padding:40px 20px 12px;color:rgba(200,230,215,.65);font-family:Jost,sans-serif">'
+        + '<div style="font-size:50px;margin-bottom:14px;opacity:.55">🌱</div>'
+        + '<div style="font-size:16px;font-weight:800;color:#fff">Todavía sin historias</div>'
+        + '<div style="font-size:12.5px;margin-top:6px;line-height:1.55;color:rgba(200,230,215,.65)">Sé el primero en compartir un momento acá</div>'
+        + '</div>'
+        + '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-top:8px;padding:18px 20px;background:linear-gradient(135deg,rgba(116,198,157,.85),rgba(74,160,110,.98));border:none;border-radius:18px;color:#0e1f14;font-family:Jost,sans-serif;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.4px;box-shadow:0 8px 26px rgba(80,180,120,.35),0 2px 8px rgba(60,140,90,.25);line-height:1.35">👉 Sumate al momento<br><span style="font-size:12px;font-weight:700;color:rgba(20,50,32,.78);letter-spacing:.3px">Tocá acá para subir tu historia</span></button>';
       return;
     }
     // Cargar reacciones de todas las vibes de una — bulk
@@ -32706,7 +32736,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1316;
+    var _BUILT_V = 1317;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
