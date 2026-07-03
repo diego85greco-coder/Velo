@@ -5735,6 +5735,17 @@ if('serviceWorker' in navigator && 'PushManager' in window){
         } else if(action === 'open-mood'){
           if(typeof pOpenMoodQuickView === 'function'){ try{ pOpenMoodQuickView(); }catch(_){} }
           else if(typeof _openMoodChipSheet === 'function'){ try{ _openMoodChipSheet(); }catch(_){} }
+        } else if(action === 'open-dm'){
+          // Deep-link a un chat DM específico. url viene como '/?open=dm&peer=<id>'
+          try{
+            var m = /peer=([^&]+)/.exec(url||'');
+            if(m && m[1] && typeof pOpenDM === 'function'){
+              var pid = decodeURIComponent(m[1]);
+              // Buscar nombre/av en favs para no abrir con "Usuario"
+              var f = null; try{ f = pGetFavs().find(function(x){ return x.id === pid; }); }catch(_){}
+              pOpenDM(pid, (f && f.name) || 'Contacto', (f && f.av) || '🧑');
+            }
+          }catch(_){}
         }
       }, 350);
       return;
@@ -5756,6 +5767,15 @@ if('serviceWorker' in navigator && 'PushManager' in window){
       else if(openIntent === 'mood'){
         if(typeof pOpenMoodQuickView === 'function'){ try{ pOpenMoodQuickView(); }catch(_){} }
         else if(typeof _openMoodChipSheet === 'function'){ try{ _openMoodChipSheet(); }catch(_){} }
+      }
+      else if(openIntent === 'dm'){
+        try{
+          var peer = params.get('peer');
+          if(peer && typeof pOpenDM === 'function'){
+            var f = null; try{ f = pGetFavs().find(function(x){ return x.id === peer; }); }catch(_){}
+            pOpenDM(peer, (f && f.name) || 'Contacto', (f && f.av) || '🧑');
+          }
+        }catch(_){}
       }
     };
     if(document.readyState === 'complete') setTimeout(trigger, 900);
@@ -20818,9 +20838,127 @@ function _enterDMChat(toId, toName, toAv){
     }
   }
   pGoTo('dm-chat');
-  setTimeout(function(){ _renderDMThread(); _subscribeToDMThread(); }, 100);
+  setTimeout(function(){
+    _renderDMThread();
+    _subscribeToDMThread();
+    _dmMarkAsRead(toId);
+    _dmSubscribeToTyping(toId);
+    _dmSubscribeToReadReceipts(toId);
+  }, 100);
   // Header con presencia
   _startDMPresenceRefresh();
+}
+// ── Read receipts: marca los DMs recibidos como leídos ────────────
+async function _dmMarkAsRead(peerId){
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId || !peerId || !sbClient) return;
+  try{
+    await sbClient.from('direct_messages')
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('to_id', myId).eq('from_id', peerId).eq('read', false);
+  }catch(e){}
+}
+// Suscripción a UPDATE en mis mensajes salientes — cuando el peer los lee,
+// aparece "Visto HH:MM" abajo del último bubble mío
+var _dmReadCh = null;
+function _dmSubscribeToReadReceipts(peerId){
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId || !peerId || !sbClient) return;
+  if(_dmReadCh){ try{ sbClient.removeChannel(_dmReadCh); }catch(e){} _dmReadCh = null; }
+  _dmReadCh = sbClient.channel('velo:dm:read:'+myId+':'+peerId)
+    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'direct_messages' }, function(payload){
+      var m = payload.new || {};
+      if(m.from_id !== myId || m.to_id !== peerId) return;
+      if(m.read){ _dmUpdateReadIndicators(); }
+    })
+    .subscribe();
+}
+// Recorre las bubbles mías y marca la última leída con "Visto"
+async function _dmUpdateReadIndicators(){
+  if(!_dmPeer) return;
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId || !sbClient) return;
+  try{
+    var res = await sbClient.from('direct_messages')
+      .select('id,read,read_at,created_at')
+      .eq('from_id', myId).eq('to_id', _dmPeer.id).eq('read', true)
+      .order('created_at',{ascending:false}).limit(1);
+    if(!res || !res.data || !res.data[0]) return;
+    var lastReadId = 'direct_messages:'+res.data[0].id;
+    var readAt = res.data[0].read_at ? new Date(res.data[0].read_at) : null;
+    // Quitar indicadores anteriores
+    document.querySelectorAll('#dmMessages .dm-read-indicator').forEach(function(el){ el.remove(); });
+    var bubble = document.querySelector('#dmMessages [data-sb-id="'+lastReadId+'"]');
+    if(!bubble) return;
+    var ind = document.createElement('div');
+    ind.className = 'dm-read-indicator';
+    ind.style.cssText = 'text-align:right;font-family:Jost,sans-serif;font-size:10.5px;font-weight:700;color:rgba(116,198,157,.85);margin:2px 6px 6px;letter-spacing:.3px';
+    ind.innerHTML = '✓✓ Visto'+(readAt?' · '+String(readAt.getHours()).padStart(2,'0')+':'+String(readAt.getMinutes()).padStart(2,'0'):'');
+    bubble.appendChild(ind);
+  }catch(e){}
+}
+
+// ── Typing indicator ─────────────────────────────────
+var _dmTypingSendCh = null, _dmTypingRecvCh = null, _dmTypingThrottle = 0, _dmTypingHideTmr = null;
+function _dmSignalTyping(){
+  if(!_dmPeer || !sbClient) return;
+  var now = Date.now();
+  if(now - _dmTypingThrottle < 2000) return;
+  _dmTypingThrottle = now;
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId) return;
+  if(!_dmTypingSendCh){
+    _dmTypingSendCh = sbClient.channel('velo:dm:typing:'+myId);
+    _dmTypingSendCh.subscribe();
+  }
+  try{
+    _dmTypingSendCh.send({ type:'broadcast', event:'typing', payload:{ from: myId, to: _dmPeer.id, ts: now } });
+  }catch(e){}
+}
+function _dmSubscribeToTyping(peerId){
+  if(!sbClient) return;
+  if(_dmTypingRecvCh){ try{ sbClient.removeChannel(_dmTypingRecvCh); }catch(e){} _dmTypingRecvCh = null; }
+  var myId = safeLS('get','velo_user_id')||'';
+  _dmTypingRecvCh = sbClient.channel('velo:dm:typing:'+peerId)
+    .on('broadcast', { event:'typing' }, function(msg){
+      var p = msg.payload || {};
+      if(p.to === myId){ _dmShowTypingBubble(); }
+    })
+    .subscribe();
+}
+function _dmShowTypingBubble(){
+  var container = document.getElementById('dmMessages');
+  if(!container || !_dmPeer) return;
+  var ex = document.getElementById('dmTypingBubble');
+  if(!ex){
+    var bubble = document.createElement('div');
+    bubble.id = 'dmTypingBubble';
+    bubble.className = 'feed-msg';
+    bubble.style.cssText = 'display:flex;gap:8px;padding:6px 8px';
+    bubble.innerHTML = '<div class="feed-av" style="flex-shrink:0">'+_avInline(_dmPeer.av||'🧑',30)+'</div>'
+      + '<div class="feed-bubble" style="display:inline-flex;align-items:center;gap:5px;padding:10px 14px;background:rgba(100,120,110,.28);border-radius:18px;max-width:min-content">'
+      + '<span class="dm-typing-dot"></span><span class="dm-typing-dot"></span><span class="dm-typing-dot"></span>'
+      + '</div>';
+    container.appendChild(bubble);
+    container.scrollTop = container.scrollHeight;
+    if(!document.getElementById('_dmTypingKf')){
+      var kf = document.createElement('style'); kf.id = '_dmTypingKf';
+      kf.textContent = '.dm-typing-dot{width:6px;height:6px;border-radius:50%;background:rgba(180,220,195,.85);display:inline-block;animation:dmTypingBlink 1.2s infinite ease-in-out}.dm-typing-dot:nth-child(2){animation-delay:.15s}.dm-typing-dot:nth-child(3){animation-delay:.3s}@keyframes dmTypingBlink{0%,80%,100%{opacity:.3;transform:scale(.85)}40%{opacity:1;transform:scale(1.1)}}';
+      document.head.appendChild(kf);
+    }
+  }
+  if(_dmTypingHideTmr) clearTimeout(_dmTypingHideTmr);
+  _dmTypingHideTmr = setTimeout(function(){
+    var el = document.getElementById('dmTypingBubble'); if(el) el.remove();
+    _dmTypingHideTmr = null;
+  }, 3200);
+}
+function _dmStopTypingChannels(){
+  if(_dmTypingSendCh && sbClient){ try{ sbClient.removeChannel(_dmTypingSendCh); }catch(e){} _dmTypingSendCh = null; }
+  if(_dmTypingRecvCh && sbClient){ try{ sbClient.removeChannel(_dmTypingRecvCh); }catch(e){} _dmTypingRecvCh = null; }
+  if(_dmReadCh && sbClient){ try{ sbClient.removeChannel(_dmReadCh); }catch(e){} _dmReadCh = null; }
+  if(_dmTypingHideTmr){ clearTimeout(_dmTypingHideTmr); _dmTypingHideTmr = null; }
+  var el = document.getElementById('dmTypingBubble'); if(el) el.remove();
 }
 
 // ── Presence en header del DM ─────────────────────────────
@@ -20950,6 +21088,8 @@ async function _renderDMThread(){
     _dmLastMsgId = lastId;
     _dmReactHash = reactHash;
     if(wasAtBottom) el.scrollTop = el.scrollHeight;
+    // Refrescar "Visto" en la última bubble mía leída
+    try{ _dmUpdateReadIndicators(); }catch(e){}
   }catch(e){ el.innerHTML = '<div class="p-empty" style="padding:30px 0">Error al cargar mensajes</div>'; }
 }
 
@@ -21025,6 +21165,7 @@ function pLeaveDM(){
   if(_dmRtCh && sbClient){ try{ sbClient.removeChannel(_dmRtCh); }catch(e){} _dmRtCh = null; }
   if(_dmReactPollTmr){ clearInterval(_dmReactPollTmr); _dmReactPollTmr = null; }
   _stopDMPresenceRefresh();
+  _dmStopTypingChannels();
   // Clear accepted flag so a new session requires a fresh chat request
   if(_dmPeer && _dmPeer.id) safeLS('del', 'velo_dm_accepted_'+_dmPeer.id);
   _dmPeer = null;
@@ -21597,7 +21738,11 @@ function _startGlobalDMListener(){
         }
         return;
       }
-      if(curId === 'pg-dm-chat' && _dmPeer && _dmPeer.id === m.from_id) return; // already in DM chat
+      if(curId === 'pg-dm-chat' && _dmPeer && _dmPeer.id === m.from_id){
+        // Estoy en el chat con este peer — marcar el nuevo como leído
+        try{ _dmMarkAsRead(m.from_id); }catch(_){}
+        return;
+      }
       if(curId === 'pg-guardian-chat' && _gcPeer && _gcPeer.id === m.from_id) return; // already in guardian chat
       if(curId === 'pg-help-chat' && _curHelpPost && _curHelpPost.userId === m.from_id) return; // already in help chat
       // Show floating notification
@@ -31488,7 +31633,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1310;
+    var _BUILT_V = 1311;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

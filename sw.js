@@ -138,6 +138,13 @@ self.addEventListener('push', function(event){
         {action:'later', title:'Después'}
       ];
       actionMeta['open-buddy'] = '/?open=buddy';
+    } else if(data.tag && data.tag.indexOf('velo-dm-') === 0){
+      // DM notification: deep link con peer ID (viene en data.url)
+      defaultActions = [
+        {action:'open-dm', title:'💬 Ver mensaje'},
+        {action:'later', title:'Después'}
+      ];
+      actionMeta['open-dm'] = data.url || '/';
     } else if(data.tag && data.tag.indexOf('velo-') === 0){
       // Daily notifs — action de "Registrar ánimo" en morning slot
       if(data.tag === 'velo-morning'){
