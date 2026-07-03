@@ -19389,10 +19389,41 @@ async function pRenderVibesHome(){
         + groups.map(function(gr){ return _vibeGroupCard(gr, counts[gr.id]||0); }).join('')
         + '</div>';
     };
+    // Sección de instantáneos (grid horizontal de miniaturas)
+    var instantHtml = '';
+    try{
+      var instRes = await sbClient.from('vibes').select('id,user_id,user_name,user_av,media_url,caption,instant_scope,created_at,expires_at').is('group_id', null).gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(20);
+      var inst = (instRes && instRes.data) || [];
+      if(inst.length){
+        var minis = inst.map(function(v){
+          var isPriv = v.instant_scope === 'private';
+          var brd = isPriv ? 'rgba(155,120,220,.72)' : 'rgba(255,220,120,.70)';
+          return '<button onclick="pOpenInstantVibe(\''+v.id+'\')" style="flex-shrink:0;width:96px;padding:0;background:rgba(0,0,0,.45);border:2px solid '+brd+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;height:120px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:#fff;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(isPriv?'🔒 ':'')+_escHtml(v.user_name||'Usuario')+'</div></button>';
+        }).join('');
+        instantHtml = '<div style="margin-bottom:22px">'
+          + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,220,120,.85);margin-bottom:4px">✨ INSTANTÁNEOS</div>'
+          + '<div style="font-size:11.5px;color:rgba(220,200,140,.60);margin-bottom:10px;font-style:italic">Momentos sueltos de la comunidad · 24 h</div>'
+          + '<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none">'+minis+'</div>'
+        + '</div>';
+      }
+    }catch(e){}
     body.innerHTML = ''
+      + instantHtml
       + section('🌱 GRUPOS DE VELO', 'Permanentes · verificados', official, 'official')
       + section('🌊 DE LA COMUNIDAD', 'Creados por usuarios · caducan a 24 h', pub, 'public')
       + section('🔮 TUS CÍRCULOS PRIVADOS', 'Solo para vos e invitados', priv, 'private');
+    // Hidratar imágenes de instantáneos (data URL → blob URL, iOS)
+    body.querySelectorAll('img[data-vibe-src]').forEach(function(img){
+      var src = img.getAttribute('data-vibe-src'); if(!src) return;
+      try{
+        if(src.indexOf('data:') === 0){
+          var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
+          var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
+          for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
+          img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
+        } else { img.src = src; }
+      }catch(e){ img.src = src; }
+    });
   }catch(e){
     console.warn('[vibes-home]', e);
     body.innerHTML = '<div style="text-align:center;padding:50px 20px;color:rgba(220,120,120,.75);font-family:Jost,sans-serif">Error cargando Vibes</div>';
@@ -19416,7 +19447,7 @@ function _vibeGroupCard(gr, count){
     + '<span style="font-size:18px;color:rgba(180,220,195,.55);flex-shrink:0">›</span>'
   + '</button>';
 }
-// Menú para crear vibe: pide grupo primero (oficial o crear uno nuevo público/privado)
+// Menú para crear vibe: instantáneo o dentro de un grupo
 function pCreateVibeMenu(){
   var ex = document.getElementById('vibeCreateMenuOv'); if(ex) ex.remove();
   if(!_vibesGroupsCache){ pToast('⏳','Cargando grupos…'); return; }
@@ -19429,67 +19460,151 @@ function pCreateVibeMenu(){
   var officialItems = official.map(function(gr){
     return '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove();pStartCreateVibe(\''+gr.id+'\')" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.32);border-radius:14px;margin-bottom:6px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;color:#fff"><span style="font-size:22px;flex-shrink:0">'+_escHtml(gr.emoji||'🌊')+'</span><span style="flex:1;font-size:13.5px;font-weight:700">'+_escHtml(gr.title||'')+'</span><span style="font-size:9.5px;color:#4dd988;font-weight:800;letter-spacing:1px">✓ VELO</span></button>';
   }).join('');
-  ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px 26px;background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.98));border:1.5px solid rgba(116,198,157,.35);max-height:82vh;overflow-y:auto">'
+  ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px 26px;background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.98));border:1.5px solid rgba(116,198,157,.35);max-height:88vh;overflow-y:auto">'
     + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
-    + '<div style="text-align:center;padding:6px 0 14px"><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic">Compartí un momento</div><div style="font-size:12px;color:rgba(200,230,215,.65);margin-top:4px;line-height:1.5">Elegí a qué grupo va</div></div>'
-    + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(180,230,200,.72);margin-bottom:8px">🌱 GRUPOS OFICIALES</div>'
+    + '<div style="text-align:center;padding:6px 0 14px"><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic">Compartí un momento</div></div>'
+    // Momento instantáneo (nuevo v1315)
+    + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(180,230,200,.72);margin-bottom:8px">✨ MOMENTO INSTANTÁNEO</div>'
+    + '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove();pStartCreateVibe(null,\'public\')" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,220,120,.14);border:1.5px solid rgba(255,200,80,.48);border-radius:14px;margin-bottom:6px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;color:#fff"><span style="font-size:22px">🌟</span><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Instantáneo público</div><div style="font-size:11px;color:rgba(255,220,140,.72);margin-top:2px">Un solo momento visible para toda la comunidad — 24 h</div></div></button>'
+    + '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove();pStartCreateVibe(null,\'private\')" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(155,120,220,.14);border:1.5px solid rgba(155,120,220,.55);border-radius:14px;margin-bottom:6px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;color:#fff"><span style="font-size:22px">🔒</span><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Instantáneo privado</div><div style="font-size:11px;color:rgba(215,200,255,.72);margin-top:2px">Elegís qué contactos favoritos lo ven</div></div></button>'
+    + '<div style="height:16px"></div>'
+    // Grupos oficiales
+    + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(180,230,200,.72);margin-bottom:8px">🌱 GRUPOS OFICIALES DE VELO</div>'
     + officialItems
-    + '<div style="height:14px"></div>'
-    + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(180,230,200,.72);margin-bottom:8px">➕ O CREÁ UN GRUPO</div>'
+    + '<div style="height:16px"></div>'
+    // Crear grupo de usuario
+    + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(180,230,200,.72);margin-bottom:8px">➕ O CREÁ UN GRUPO NUEVO</div>'
     + '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove();pCreateGroupPrompt(\'public\')" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(200,158,56,.12);border:1.5px solid rgba(200,158,56,.42);border-radius:14px;margin-bottom:6px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;color:#fff"><span style="font-size:22px">🌊</span><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Grupo público</div><div style="font-size:11px;color:rgba(220,200,140,.70);margin-top:2px">Cualquiera puede sumar historias — caduca en 24 h</div></div></button>'
-    + '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove();pCreateGroupPrompt(\'private\')" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(155,120,220,.14);border:1.5px solid rgba(155,120,220,.55);border-radius:14px;margin-bottom:6px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;color:#fff"><span style="font-size:22px">🔒</span><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Grupo privado con favoritos</div><div style="font-size:11px;color:rgba(215,200,255,.70);margin-top:2px">Solo tus contactos favoritos elegidos lo ven</div></div></button>'
+    + '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove();pCreateGroupPrompt(\'private\')" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(155,120,220,.14);border:1.5px solid rgba(155,120,220,.55);border-radius:14px;margin-bottom:6px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;color:#fff"><span style="font-size:22px">🔮</span><div style="flex:1"><div style="font-size:13.5px;font-weight:700">Grupo privado con favoritos</div><div style="font-size:11px;color:rgba(215,200,255,.70);margin-top:2px">Elegí qué contactos ven este grupo</div></div></button>'
     + '<button onclick="document.getElementById(\'vibeCreateMenuOv\').remove()" style="width:100%;margin-top:10px;padding:11px;background:rgba(0,0,0,.28);border:1.5px solid rgba(180,220,195,.20);border-radius:12px;color:rgba(200,230,215,.68);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">Cancelar</button>'
   + '</div>';
   document.body.appendChild(ov);
 }
-async function pCreateGroupPrompt(kind){
-  var title = prompt(kind === 'private' ? 'Nombre del grupo privado (ej: "mi cumple")' : 'Nombre del grupo público (ej: "verano en Mendoza")');
-  if(!title || !title.trim()) return;
-  title = title.trim().slice(0, 80);
+// UI para crear grupo (título + emoji + para privados: checklist de favs)
+function pCreateGroupPrompt(kind){
+  var ex = document.getElementById('vibeGroupCreateOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'vibeGroupCreateOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10011;background:rgba(0,0,0,.86);display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  var isPrivate = kind === 'private';
+  var accent = isPrivate ? 'rgba(155,120,220,.55)' : 'rgba(200,158,56,.55)';
+  var accentBg = isPrivate ? 'rgba(155,120,220,.14)' : 'rgba(200,158,56,.14)';
+  var favs = isPrivate ? pGetFavs().filter(function(f){ return f.id && f.id !== (safeLS('get','velo_user_id')||''); }) : [];
+  var inviteHtml = '';
+  if(isPrivate){
+    if(!favs.length){
+      inviteHtml = '<div style="padding:12px 14px;background:rgba(220,120,120,.10);border:1px solid rgba(220,120,120,.30);border-radius:12px;color:rgba(255,180,180,.85);font-family:Jost,sans-serif;font-size:12.5px;margin-bottom:12px;line-height:1.5">Agregá contactos favoritos primero para invitarlos al grupo</div>';
+    } else {
+      inviteHtml = '<div style="margin-bottom:14px">'
+        + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(215,200,255,.75);margin-bottom:8px">👥 INVITÁ A ESTE GRUPO</div>'
+        + '<div style="display:flex;gap:6px;margin-bottom:8px">'
+          + '<button onclick="_vibeGroupToggleAll(true)" style="flex:1;padding:8px;background:rgba(155,120,220,.20);border:1.5px solid rgba(155,120,220,.55);border-radius:100px;color:#e0d0ff;font-family:Jost,sans-serif;font-size:11.5px;font-weight:800;cursor:pointer">Todos</button>'
+          + '<button onclick="_vibeGroupToggleAll(false)" style="flex:1;padding:8px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.16);border-radius:100px;color:rgba(200,230,215,.72);font-family:Jost,sans-serif;font-size:11.5px;font-weight:700;cursor:pointer">Ninguno</button>'
+        + '</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
+          + favs.map(function(f){
+              return '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.28);border-radius:10px;cursor:pointer;font-family:Jost,sans-serif;font-size:12.5px;color:#fff"><input type="checkbox" class="vibe-group-cb" data-uid="'+f.id+'" style="accent-color:#9b78dc;width:16px;height:16px;cursor:pointer"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(f.name||'Usuario')+'</span></label>';
+            }).join('')
+        + '</div>'
+      + '</div>';
+    }
+  }
+  ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px 26px;background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.98));border:1.5px solid '+accent+';max-height:92vh;overflow-y:auto">'
+    + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
+    + '<div style="text-align:center;padding:4px 0 14px"><div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:rgba(180,230,200,.72);text-transform:uppercase">'+(isPrivate?'🔒 GRUPO PRIVADO':'🌊 GRUPO PÚBLICO')+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic;margin-top:4px">Nombre del grupo</div></div>'
+    + '<input id="vibeGroupTitleInput" type="text" placeholder="'+(isPrivate?'"mi cumple"':'"verano en Mendoza"')+'" maxlength="80" style="width:100%;padding:13px 14px;background:'+accentBg+';border:1.5px solid '+accent+';border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:15px;font-weight:700;box-sizing:border-box;outline:none;margin-bottom:12px">'
+    + '<input id="vibeGroupEmojiInput" type="text" placeholder="'+(isPrivate?'🔒':'🌊')+' emoji" maxlength="4" style="width:100%;padding:11px 14px;background:rgba(0,0,0,.32);border:1.5px solid rgba(180,220,195,.24);border-radius:12px;color:#fff;font-family:Jost,sans-serif;font-size:15px;box-sizing:border-box;outline:none;margin-bottom:14px">'
+    + inviteHtml
+    + '<div style="display:flex;gap:8px">'
+      + '<button onclick="document.getElementById(\'vibeGroupCreateOv\').remove()" style="flex:1;padding:13px;background:rgba(0,0,0,.28);border:1.5px solid rgba(180,220,195,.20);border-radius:12px;color:rgba(200,230,215,.68);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Cancelar</button>'
+      + '<button onclick="_vibeCreateGroupConfirm(\''+kind+'\')" style="flex:2;padding:13px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-family:Jost,sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px">Crear</button>'
+    + '</div>'
+  + '</div>';
+  document.body.appendChild(ov);
+}
+function _vibeGroupToggleAll(checked){
+  document.querySelectorAll('.vibe-group-cb').forEach(function(cb){ cb.checked = checked; });
+}
+async function _vibeCreateGroupConfirm(kind){
+  var titleEl = document.getElementById('vibeGroupTitleInput');
+  var emojiEl = document.getElementById('vibeGroupEmojiInput');
+  var title = titleEl ? titleEl.value.trim().slice(0,80) : '';
+  if(!title){ pToast('✍️','Ponéle un nombre'); return; }
+  var emoji = emojiEl && emojiEl.value.trim() ? emojiEl.value.trim().slice(0,4) : (kind==='private'?'🔒':'🌊');
   var memberIds = [];
   if(kind === 'private'){
-    // Elegir favoritos como invitados
-    var favs = pGetFavs().filter(function(f){ return f.id && f.id !== (safeLS('get','velo_user_id')||''); });
-    if(!favs.length){ pToast('⚠️','Agregá contactos favoritos primero para invitarlos'); return; }
-    // UI simple con confirm por cada fav — MVP; en v1315 armo checkbox list bonita
-    var chosen = confirm('¿Invitar a TODOS tus contactos favoritos ('+favs.length+')?\n\nPodés armar invitaciones más finas en la próxima versión.');
-    if(chosen) memberIds = favs.map(function(f){ return f.id; });
-    else return;
+    document.querySelectorAll('.vibe-group-cb:checked').forEach(function(cb){ memberIds.push(cb.getAttribute('data-uid')); });
+    if(!memberIds.length){ pToast('👥','Elegí al menos un contacto para invitar'); return; }
   }
   _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
   var myId = safeLS('get','velo_user_id')||'';
-  if(!myId){ pToast('⚠️','Iniciá sesión primero'); return; }
+  if(!myId){ pToast('⚠️','Iniciá sesión'); return; }
   try{
     var r = await sbClient.from('vibe_groups').insert({
-      kind: kind, title: title, owner_id: myId, member_ids: memberIds,
-      emoji: kind === 'private' ? '🔒' : '🌊',
+      kind: kind, title: title, emoji: emoji, owner_id: myId, member_ids: memberIds,
       expires_at: new Date(Date.now() + 24*3600*1000).toISOString()
     }).select('id').single();
     if(r && r.data && r.data.id){
       pToast('✓','Grupo creado');
+      var ov = document.getElementById('vibeGroupCreateOv'); if(ov) ov.remove();
       pStartCreateVibe(r.data.id);
-    } else { pToast('⚠️','No se pudo crear el grupo'); }
-  }catch(e){ console.warn('[create-group]', e); pToast('⚠️','Error al crear grupo'); }
+    } else { pToast('⚠️','No se pudo crear'); }
+  }catch(e){ console.warn('[create-group]', e); pToast('⚠️','Error al crear'); }
 }
 // Modal para elegir foto + escribir caption + guardar en historial
+// Signaturas soportadas:
+//   pStartCreateVibe(groupId)                       → vibe en grupo
+//   pStartCreateVibe(null, 'public'|'private')      → instantáneo
 var _vibePendingImage = null;
 var _vibeTargetGroupId = null;
-function pStartCreateVibe(groupId){
-  _vibeTargetGroupId = groupId;
+var _vibeInstantScope = null;         // 'public' | 'private' | null
+var _vibeInstantMemberIds = [];       // solo si scope='private'
+function pStartCreateVibe(groupId, instantScope){
+  _vibeTargetGroupId = groupId || null;
+  _vibeInstantScope = instantScope || null;
+  _vibeInstantMemberIds = [];
   _vibePendingImage = null;
+  var isInstant = !groupId && !!instantScope;
   var ex = document.getElementById('vibeCreateOv'); if(ex) ex.remove();
   var ov = document.createElement('div');
   ov.id = 'vibeCreateOv';
   ov.style.cssText = 'position:fixed;inset:0;z-index:10011;background:rgba(0,0,0,.86);display:flex;align-items:flex-end;justify-content:center';
   ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
-  var grName = '';
-  try{ var g = (_vibesGroupsCache||[]).find(function(x){ return x.id === groupId; }); if(g) grName = g.emoji+' '+g.title; }catch(e){}
+  var header = '';
+  if(isInstant){
+    header = (instantScope === 'private' ? '🔒 INSTANTÁNEO PRIVADO' : '🌟 INSTANTÁNEO PÚBLICO');
+  } else {
+    try{ var g = (_vibesGroupsCache||[]).find(function(x){ return x.id === groupId; }); if(g) header = g.emoji+' '+g.title; }catch(e){}
+  }
+  // Si es privado (instantáneo o grupo), UI para elegir invitados
+  var inviteBlock = '';
+  if(isInstant && instantScope === 'private'){
+    var favs = pGetFavs().filter(function(f){ return f.id && f.id !== (safeLS('get','velo_user_id')||''); });
+    if(!favs.length){
+      inviteBlock = '<div style="padding:12px 14px;background:rgba(220,120,120,.10);border:1px solid rgba(220,120,120,.30);border-radius:12px;color:rgba(255,180,180,.85);font-family:Jost,sans-serif;font-size:12.5px;margin-bottom:12px;line-height:1.5">Agregá contactos favoritos primero para invitarlos</div>';
+    } else {
+      inviteBlock = '<div style="margin-bottom:14px">'
+        + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(215,200,255,.75);margin-bottom:8px">👥 INVITÁ A QUIÉN LO VE</div>'
+        + '<div style="display:flex;gap:6px;margin-bottom:8px">'
+          + '<button onclick="_vibeToggleAllInvites(true)" style="flex:1;padding:8px;background:rgba(155,120,220,.20);border:1.5px solid rgba(155,120,220,.55);border-radius:100px;color:#e0d0ff;font-family:Jost,sans-serif;font-size:11.5px;font-weight:800;cursor:pointer">Todos</button>'
+          + '<button onclick="_vibeToggleAllInvites(false)" style="flex:1;padding:8px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.16);border-radius:100px;color:rgba(200,230,215,.72);font-family:Jost,sans-serif;font-size:11.5px;font-weight:700;cursor:pointer">Ninguno</button>'
+        + '</div>'
+        + '<div id="vibeInviteList" style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
+          + favs.map(function(f){
+              return '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.28);border-radius:10px;cursor:pointer;font-family:Jost,sans-serif;font-size:12.5px;color:#fff"><input type="checkbox" class="vibe-invite-cb" data-uid="'+f.id+'" onchange="_vibeSyncInvites()" style="accent-color:#9b78dc;width:16px;height:16px;cursor:pointer"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(f.name||'Usuario')+'</span></label>';
+            }).join('')
+        + '</div>'
+      + '</div>';
+    }
+  }
   ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px 26px;background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.98));border:1.5px solid rgba(116,198,157,.35);max-height:92vh;overflow-y:auto">'
     + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
-    + '<div style="text-align:center;padding:4px 0 12px"><div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:rgba(180,230,200,.72);text-transform:uppercase">'+_escHtml(grName)+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic;margin-top:4px">Compartí tu momento</div></div>'
+    + '<div style="text-align:center;padding:4px 0 12px"><div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:rgba(180,230,200,.72);text-transform:uppercase">'+_escHtml(header)+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic;margin-top:4px">Compartí tu momento</div></div>'
     + '<div id="vibeImgArea" style="margin-bottom:14px"><button onclick="document.getElementById(\'vibeFileInput\').click()" style="width:100%;padding:32px 20px;background:rgba(116,198,157,.10);border:2px dashed rgba(116,198,157,.42);border-radius:16px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">📷 Elegí una foto</button></div>'
     + '<input type="file" id="vibeFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="_vibeHandleImageInput(this)">'
     + '<textarea id="vibeCaptionInput" placeholder="Contá qué pasa en la foto (opcional)…" rows="3" style="width:100%;padding:12px 14px;background:rgba(0,0,0,.32);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.5"></textarea>'
+    + inviteBlock
     + '<label style="display:flex;align-items:center;gap:10px;padding:12px 14px;margin-top:10px;background:rgba(255,255,255,.04);border:1px solid rgba(180,220,195,.20);border-radius:12px;cursor:pointer;font-family:Jost,sans-serif;font-size:13px;color:rgba(200,230,215,.85)"><input type="checkbox" id="vibeArchiveCheck" style="width:18px;height:18px;accent-color:#5bbf87;cursor:pointer"><span>Guardar en mi historial personal (además de los 24 h)</span></label>'
     + '<div style="display:flex;gap:8px;margin-top:16px">'
       + '<button onclick="document.getElementById(\'vibeCreateOv\').remove()" style="flex:1;padding:13px;background:rgba(0,0,0,.28);border:1.5px solid rgba(180,220,195,.20);border-radius:12px;color:rgba(200,230,215,.68);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Cancelar</button>'
@@ -19497,6 +19612,15 @@ function pStartCreateVibe(groupId){
     + '</div>'
   + '</div>';
   document.body.appendChild(ov);
+}
+function _vibeToggleAllInvites(checked){
+  document.querySelectorAll('.vibe-invite-cb').forEach(function(cb){ cb.checked = checked; });
+  _vibeSyncInvites();
+}
+function _vibeSyncInvites(){
+  var ids = [];
+  document.querySelectorAll('.vibe-invite-cb:checked').forEach(function(cb){ ids.push(cb.getAttribute('data-uid')); });
+  _vibeInstantMemberIds = ids;
 }
 async function _vibeHandleImageInput(input){
   if(!input || !input.files || !input.files[0]) return;
@@ -19521,9 +19645,30 @@ async function _vibeHandleImageInput(input){
   }catch(e){ pToast('⚠️', (e && e.message) || 'No pude procesar la imagen'); }
 }
 function _vibeChangeImage(){ document.getElementById('vibeFileInput').click(); }
+// Sube el data URL a Storage bucket 'vibes' bajo <user_id>/<ts>.jpg
+// Devuelve la URL pública. Si falla (bucket no configurado, etc), devuelve
+// el data URL original así el vibe se guarda igual (fallback).
+async function _vibeUploadToStorage(dataUrl, userId){
+  if(!sbClient || !sbClient.storage) return dataUrl;
+  try{
+    var arr = dataUrl.split(','); var mm = arr[0].match(/:(.*?);/);
+    var mime = mm ? mm[1] : 'image/jpeg';
+    var ext = (mime.indexOf('png') > 0 ? 'png' : mime.indexOf('webp') > 0 ? 'webp' : 'jpg');
+    var bstr = atob(arr[1] || '');
+    var u8 = new Uint8Array(bstr.length);
+    for(var i=0; i<bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+    var blob = new Blob([u8], { type: mime });
+    var path = userId + '/' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + '.' + ext;
+    var up = await sbClient.storage.from('vibes').upload(path, blob, { cacheControl: '86400', upsert: false, contentType: mime });
+    if(up && up.error){ console.warn('[vibes-upload]', up.error); return dataUrl; }
+    var pub = sbClient.storage.from('vibes').getPublicUrl(path);
+    return (pub && pub.data && pub.data.publicUrl) ? pub.data.publicUrl : dataUrl;
+  }catch(e){ console.warn('[vibes-upload]', e); return dataUrl; }
+}
 async function pSaveVibe(){
   if(!_vibePendingImage){ pToast('📷','Elegí una foto primero'); return; }
-  if(!_vibeTargetGroupId){ pToast('⚠️','Sin grupo seleccionado'); return; }
+  var isInstant = !_vibeTargetGroupId && !!_vibeInstantScope;
+  if(!_vibeTargetGroupId && !isInstant){ pToast('⚠️','Sin destino'); return; }
   _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
   var myId = safeLS('get','velo_user_id')||'';
   if(!myId){ pToast('⚠️','Iniciá sesión primero'); return; }
@@ -19537,19 +19682,30 @@ async function pSaveVibe(){
   var btn = ov ? ov.querySelector('button[onclick="pSaveVibe()"]') : null;
   if(btn){ btn.disabled = true; btn.textContent = 'Subiendo…'; }
   try{
-    var r = await sbClient.from('vibes').insert({
-      group_id: _vibeTargetGroupId,
+    var mediaUrl = await _vibeUploadToStorage(_vibePendingImage, myId);
+    var payload = {
       user_id: myId, user_name: myName, user_av: myAv,
-      media_url: _vibePendingImage,
+      media_url: mediaUrl,
       caption: caption,
       archived: archive
-    }).select('id').single();
+    };
+    if(isInstant){
+      payload.instant_scope = _vibeInstantScope;
+      payload.instant_member_ids = _vibeInstantMemberIds || [];
+    } else {
+      payload.group_id = _vibeTargetGroupId;
+    }
+    var r = await sbClient.from('vibes').insert(payload).select('id,group_id').single();
     if(r && r.data && r.data.id){
       pToast('🌊','Compartido');
       if(ov) ov.remove();
+      var toOpen = r.data.group_id || _vibeTargetGroupId;
       _vibePendingImage = null;
       _vibeTargetGroupId = null;
-      pOpenVibeGroup(r.data.group_id || _vibeTargetGroupId);
+      _vibeInstantScope = null;
+      _vibeInstantMemberIds = [];
+      if(toOpen) pOpenVibeGroup(toOpen);
+      else pRenderVibesHome(); // instantáneo → refrescar home Vibes
     } else {
       if(btn){ btn.disabled = false; btn.textContent = '🌊 Compartir'; }
       pToast('⚠️', (r && r.error && r.error.message) || 'No se pudo subir');
@@ -19593,7 +19749,9 @@ async function pOpenVibeGroup(groupId){
         });
       }
     }catch(e){}
-    list.innerHTML = res.data.map(_vibeCardHtml).join('');
+    // CTA "¿Querés participar?" arriba de las cards
+    var ctaHtml = '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-bottom:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(116,198,157,.28),rgba(74,160,110,.22));border:1.5px dashed rgba(116,198,157,.65);border-radius:16px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.4">👉 ¿Querés participar de este momento?<br><span style="font-size:11.5px;font-weight:700;color:rgba(180,230,200,.85);letter-spacing:.4px">Tocá acá para subir tu historia</span></button>';
+    list.innerHTML = ctaHtml + res.data.map(_vibeCardHtml).join('');
     // Convertir data URLs a blob URLs (iOS Safari) — post-render
     list.querySelectorAll('img[data-vibe-src]').forEach(function(img){
       var src = img.getAttribute('data-vibe-src'); if(!src) return;
@@ -19611,6 +19769,47 @@ async function pOpenVibeGroup(groupId){
     var l = document.getElementById('vibeGroupList');
     if(l) l.innerHTML = '<div style="text-align:center;padding:80px 20px;color:rgba(220,120,120,.75)">Error cargando historias</div>';
   }
+}
+// Ver una historia instantánea en modal (misma card que en grupo, solita)
+async function pOpenInstantVibe(vibeId){
+  _initSupabase(); if(!sbClient) return;
+  try{
+    var res = await sbClient.from('vibes').select('*').eq('id', vibeId).single();
+    if(!res || !res.data) return;
+    var v = res.data;
+    // Cargar reacciones
+    _vibeReactionAgg[v.id] = {};
+    _vibeMyReactions[v.id] = null;
+    try{
+      var myId = safeLS('get','velo_user_id')||'';
+      var rRes = await sbClient.from('vibe_reactions').select('user_id,reaction').eq('vibe_id', v.id);
+      (rRes.data||[]).forEach(function(r){
+        _vibeReactionAgg[v.id][r.reaction] = (_vibeReactionAgg[v.id][r.reaction]||0)+1;
+        if(myId && r.user_id === myId) _vibeMyReactions[v.id] = r.reaction;
+      });
+    }catch(e){}
+    var ov = document.createElement('div');
+    ov.id = 'vibeInstantOv';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10014;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+    ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+    ov.innerHTML = '<div style="max-width:520px;width:100%;position:relative"><button onclick="document.getElementById(\'vibeInstantOv\').remove()" style="position:absolute;top:-40px;right:0;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.30);color:#fff;border-radius:100px;padding:6px 14px;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer">✕ Cerrar</button>'
+      + _vibeCardHtml(v)
+    + '</div>';
+    document.body.appendChild(ov);
+    // Hidratar imagen
+    var img = ov.querySelector('img[data-vibe-src]');
+    if(img){
+      var src = img.getAttribute('data-vibe-src');
+      try{
+        if(src && src.indexOf('data:') === 0){
+          var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
+          var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
+          for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
+          img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
+        } else if(src){ img.src = src; }
+      }catch(e){}
+    }
+  }catch(e){ console.warn('[open-instant]', e); }
 }
 function _vibeTimeLeft(expiresAtIso){
   var d = new Date(expiresAtIso).getTime() - Date.now();
@@ -32397,7 +32596,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1314;
+    var _BUILT_V = 1315;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
