@@ -7097,11 +7097,36 @@ async function _markVeloNotifsRead(){
   try{ await sbClient.from('velo_notifications').update({is_read:true}).eq('user_id',uid).eq('is_read',false); }catch(e){}
 }
 
+// Suma de DMs no leídos (excluye peer con el que estoy chateando ahora)
+function _dmUnreadTotal(){
+  var m = {}; try{ m = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
+  var currentPeer = (_dmPeer && _dmPeer.id) || null;
+  var curPage = document.querySelector('.p-page.active');
+  var isInDm = curPage && curPage.id === 'pg-dm-chat' && currentPeer;
+  return Object.keys(m).reduce(function(acc, k){
+    if(isInDm && k === currentPeer) return acc; // no cuento el chat en el que estoy
+    return acc + (Number(m[k])||0);
+  }, 0);
+}
 function _updateVeloNotifBadge(count){
   var b=document.getElementById('veloNotifBadge');
-  if(!b) return;
-  b.textContent=count>9?'9+':String(count);
-  b.style.display=count>0?'inline-block':'none';
+  var dmSum = _dmUnreadTotal();
+  var total = (Number(count)||0) + dmSum;
+  if(b){
+    b.textContent=total>9?'9+':String(total);
+    b.style.display=total>0?'inline-block':'none';
+  }
+  // Badge en el ⭐ del bottom nav (Contactos Favoritos)
+  var cb = document.getElementById('contactsDMBadge');
+  if(cb){
+    cb.textContent = dmSum > 9 ? '9+' : String(dmSum);
+    cb.style.display = dmSum > 0 ? 'inline-block' : 'none';
+  }
+}
+// Recalcula badges leyendo el count actual de velo_notifications (o 0 si no está cacheado)
+function _refreshChatBadges(){
+  var cached = parseInt(safeLS('get','velo_notif_unread_cached')||'0', 10);
+  _updateVeloNotifBadge(isNaN(cached)?0:cached);
 }
 
 async function _checkVeloNotifs(){
@@ -7113,6 +7138,7 @@ async function _checkVeloNotifs(){
       .eq('user_id',uid)
       .eq('is_read',false);
     if(res.error) return;
+    try{ safeLS('set','velo_notif_unread_cached', String(res.count||0)); }catch(_){}
     _updateVeloNotifBadge(res.count||0);
   }catch(e){}
 }
@@ -9655,11 +9681,43 @@ function _gcSubscribe(){
   }, 6000);
 }
 
-function pSendGuardianMsg(){
+async function pSendGuardianMsg(){
   var ta = document.getElementById('gcInput');
-  if(!ta || !ta.value.trim() || !_gcPeer) return;
-  var text = ta.value.trim();
+  if(!_gcPeer) return;
+  var text = ta ? ta.value.trim() : '';
+  var _gcSt = _chatSt('gc');
+  var hasAttach = !!(_gcSt.blob || _gcSt.image);
+  if(!text && !hasAttach) return;
   if(text.length > 2000){ pToast('⚠️','Mensaje demasiado largo (máx 2000 caracteres)'); return; }
+  // Insert helper reutilizable (para adjuntos y texto)
+  var _gcMyId = _myUserId();
+  var _gcSendIsAnon2 = safeLS('get','velo_incognito')==='true' || (safeLS('get','velo_guardian_status')||'').startsWith('incognito');
+  var _gcMyName = _gcSendIsAnon2 ? 'Guardián Anónimo' : (safeLS('get','velo_user_name')||'Usuario');
+  var _gcMyAv = _gcSendIsAnon2 ? '🌿' : (safeLS('get','velo_user_av')||'🌿');
+  async function _gcInsertOne(bodyText){
+    var el2 = document.getElementById('gcMessages');
+    var lastB = null;
+    if(el2){
+      var ph2 = document.getElementById('gcPlaceholder'); if(ph2) ph2.remove();
+      var d2 = document.createElement('div');
+      d2.innerHTML = _buildMsgBubble(bodyText, true, '', '', 'gcInput', 'gcReplyBar', '');
+      var ch2 = d2.firstElementChild;
+      if(ch2){ el2.appendChild(ch2); el2.scrollTop = el2.scrollHeight; lastB = ch2; }
+    }
+    _initSupabase();
+    if(sbClient){
+      try{
+        var r = await sbClient.from('direct_messages').insert({
+          from_id:_gcMyId, from_name:_gcMyName, from_av:_gcMyAv, to_id:_gcPeer.id, text:bodyText
+        }).select('id').single();
+        if(r && r.data && r.data.id && lastB){ lastB.setAttribute('data-sb-id', 'direct_messages:'+r.data.id); _gcLastMsgId = r.data.id; }
+      }catch(e){}
+    }
+  }
+  // 1) Adjuntos primero
+  await _chatConsumeAttachments('gc', _gcInsertOne);
+  // 2) Texto
+  if(!text) return;
   ta.value = ''; ta.style.height = '';
   _geminiModerateContent(text, 'guardian-chat');
   var quote = _getReplyQuote('gcReplyBar');
@@ -10501,10 +10559,34 @@ function pHelpChatTyping(){
   }).then(function(){}).catch(function(){});
 }
 
-function pSendHelpChatMsg(){
+async function pSendHelpChatMsg(){
   var ta = document.getElementById('helpChatInput');
-  if(!ta || !ta.value.trim()) return;
-  var text = ta.value.trim();
+  var text = ta ? ta.value.trim() : '';
+  var _hSt = _chatSt('help');
+  var hasAttach = !!(_hSt.blob || _hSt.image);
+  if(!text && !hasAttach) return;
+  // Helper para insertar attach: reutiliza pipeline básico sin gemini
+  async function _helpInsertOne(bodyText){
+    _initSupabase();
+    if(sbClient && _curHelpPost && _curHelpPost.userId){
+      var _myId = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'';
+      var _myN = safeLS('get','velo_user_name')||'';
+      var _myA = safeLS('get','velo_user_av')||'💚';
+      var el3 = document.getElementById('helpChatMessages');
+      if(el3){
+        var d3 = document.createElement('div');
+        d3.innerHTML = _buildMsgBubble(bodyText, true, '', '', 'helpChatInput', 'helpChatReplyBar', '');
+        var ch3 = d3.firstElementChild; if(ch3){ el3.appendChild(ch3); el3.scrollTop = el3.scrollHeight; }
+      }
+      try{
+        await sbClient.from('direct_messages').insert({
+          from_id:_myId, from_name:_myN, from_av:_myA, to_id:_curHelpPost.userId, text:bodyText
+        });
+      }catch(e){}
+    }
+  }
+  await _chatConsumeAttachments('help', _helpInsertOne);
+  if(!text) return;
   ta.value = '';
   ta.style.height = '';
   _geminiModerateContent(text, 'sala-de-ayuda-chat');
@@ -16539,11 +16621,43 @@ async function _renderCircleMessagesInner(){
   }
 }
 
-function pSendCircleMsg(){
+async function pSendCircleMsg(){
   var ta = document.getElementById('feedInput');
-  if(!ta || !ta.value.trim() || !_curCircle) return;
-  var text = ta.value.trim();
+  if(!_curCircle) return;
+  var text = ta ? ta.value.trim() : '';
+  var _cSt = _chatSt('circle');
+  var hasAttach = !!(_cSt.blob || _cSt.image);
+  if(!text && !hasAttach) return;
   if(text.length > 2000){ pToast('⚠️','Mensaje demasiado largo (máx 2000 caracteres)'); return; }
+  // Adjuntos van a la LS del círculo + optimistic bubble; sync a Supabase después
+  async function _circleInsertOne(bodyText){
+    var msgs2 = []; try{ msgs2 = JSON.parse(safeLS('get','velo_circle_'+_curCircle.id)||'[]'); }catch(e){}
+    var name2 = safeLS('get','velo_user_name') || 'Vos';
+    var av2   = safeLS('get','velo_user_av')   || '🧑';
+    var _uc2 = parseInt(safeLS('get','velo_guardian_convs')||'0', 10);
+    var badge2 = _getBadge(_uc2);
+    var _myId2 = safeLS('get','velo_user_id')||safeLS('get','velo_user_email')||'anon';
+    var _ts2 = Date.now();
+    msgs2.push({ id:'m'+_ts2, av:av2, name:name2+' '+badge2.icon, text:bodyText, ts:_ts2, own:true, userId:_myId2 });
+    safeLS('set','velo_circle_'+_curCircle.id, JSON.stringify(msgs2.slice(-100)));
+    var el4 = document.getElementById('feedMessages');
+    if(el4){
+      var em4 = el4.querySelector('.p-empty'); if(em4) em4.remove();
+      var d4 = document.createElement('div');
+      d4.innerHTML = _buildMsgBubble(bodyText, true, av2, name2+' '+badge2.icon, 'feedInput', 'feedReplyBar', '');
+      var ch4 = d4.firstElementChild; if(ch4){ el4.appendChild(ch4); el4.scrollTop = el4.scrollHeight; }
+    }
+    _initSupabase();
+    if(sbClient){
+      try{
+        await sbClient.from('circle_messages').insert({
+          circle_id:_curCircle.id, user_id:_myId2, user_name:name2+' '+badge2.icon, user_av:av2, text:bodyText
+        });
+      }catch(e){}
+    }
+  }
+  await _chatConsumeAttachments('circle', _circleInsertOne);
+  if(!text) return;
   ta.value = '';
   ta.style.height = '';
   var emojiPanel = document.getElementById('feedEmojiPanel');
@@ -20802,6 +20916,7 @@ function _enterDMChat(toId, toName, toAv){
   delete unread[toId];
   safeLS('set','velo_dm_unread', JSON.stringify(unread));
   _updateFavBadge();
+  try{ _refreshChatBadges(); }catch(_){}
   // Clean up stale state from any previous session
   var oldBanner = document.getElementById('dmExitBanner');
   if(oldBanner) oldBanner.remove();
@@ -21175,6 +21290,212 @@ function pLeaveDM(){
   _updateGuardianPresence(_prevChatStatus || _presenceStatus());
   _prevChatStatus = null;
   pGoTo('contacts');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUDIO + FOTO GENÉRICOS para CUALQUIER CHAT (help / guardian / círculo / DM)
+// ═══════════════════════════════════════════════════════════════
+// Config por chat — key: prefijo canónico | ids de elementos HTML
+var CHAT_ATTACH_CONFIGS = {
+  dm:     { textareaId:'dmInput',       micBtnId:'dmMicBtn',       imgInputId:'dmImageInput',       voicePrevId:'dmVoicePreview',       recIndId:'dmRecIndicator',       imgPrevId:'dmImgPreview' },
+  help:   { textareaId:'helpChatInput', micBtnId:'helpChatMicBtn', imgInputId:'helpChatImageInput', voicePrevId:'helpChatVoicePreview', recIndId:'helpChatRecIndicator', imgPrevId:'helpChatImgPreview' },
+  gc:     { textareaId:'gcInput',       micBtnId:'gcMicBtn',       imgInputId:'gcImageInput',       voicePrevId:'gcVoicePreview',       recIndId:'gcRecIndicator',       imgPrevId:'gcImgPreview' },
+  circle: { textareaId:'feedInput',     micBtnId:'circleMicBtn',   imgInputId:'circleImageInput',   voicePrevId:'circleVoicePreview',   recIndId:'circleRecIndicator',   imgPrevId:'circleImgPreview' }
+};
+var _chatAttachStates = {};
+function _chatSt(key){ if(!_chatAttachStates[key]) _chatAttachStates[key] = {}; return _chatAttachStates[key]; }
+function _chatFindArea(key){
+  var cfg = CHAT_ATTACH_CONFIGS[key]; if(!cfg) return null;
+  var ta = document.getElementById(cfg.textareaId);
+  return ta ? ta.closest('.feed-input-area') : null;
+}
+function _chatSetMicBtnUI(key, recording){
+  var cfg = CHAT_ATTACH_CONFIGS[key]; if(!cfg) return;
+  var btn = document.getElementById(cfg.micBtnId);
+  if(!btn) return;
+  btn.textContent = recording ? '⏹' : '🎙';
+  btn.style.background = recording ? 'rgba(220,60,60,.32)' : 'transparent';
+  btn.style.color = recording ? '#fff' : '';
+  btn.title = recording ? 'Detener grabación' : 'Grabar audio';
+}
+async function pChatToggleVoiceRec(key){
+  var cfg = CHAT_ATTACH_CONFIGS[key]; if(!cfg) return;
+  var st = _chatSt(key);
+  if(st.rec && st.rec.state !== 'inactive'){ try{ st.rec.stop(); }catch(e){} return; }
+  if(!navigator.mediaDevices){ pToast('⚠️','Grabación no soportada'); return; }
+  try{
+    st.stream = await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    st.mime = _pickRecorderMime && _pickRecorderMime();
+    if(!st.mime){ pToast('⚠️','MediaRecorder no soportado'); try{st.stream.getTracks().forEach(function(t){t.stop();});}catch(e){} st.stream=null; return; }
+    st.chunks = [];
+    st.rec = new MediaRecorder(st.stream, { mimeType: st.mime });
+    st.rec.ondataavailable = function(e){ if(e.data && e.data.size > 0) st.chunks.push(e.data); };
+    st.rec.onstop = function(){
+      var blob = new Blob(st.chunks, { type: st.mime || 'audio/mp4' });
+      try{ st.stream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){}
+      st.stream = null;
+      _chatSetMicBtnUI(key, false);
+      _chatHideRecIndicator(key);
+      if(st.timerHandle){ clearTimeout(st.timerHandle); st.timerHandle = null; }
+      if(!blob || blob.size < 500){ pToast('⚠️','Grabación muy corta'); st.blob = null; return; }
+      if(blob.size > 3 * 1024 * 1024){ pToast('⚠️','Audio muy largo (máx ~1 min)'); st.blob = null; return; }
+      st.blob = blob;
+      _chatShowVoicePreview(key, blob);
+    };
+    st.rec.start(1000);
+    st.startTs = Date.now();
+    _chatSetMicBtnUI(key, true);
+    pToast('🎙️','Grabando… tocá stop cuando termines');
+    st.timerHandle = setTimeout(function(){
+      if(st.rec && st.rec.state !== 'inactive'){ try{ st.rec.stop(); }catch(e){} pToast('⏱️','Máx 60 s'); }
+    }, 60000);
+    _chatShowRecIndicator(key);
+  }catch(e){
+    console.warn('[chat-rec]', e);
+    if(e && e.name === 'NotAllowedError') pToast('⚠️','Bloqueaste el micrófono');
+    else pToast('⚠️','No pude acceder al micrófono');
+    _chatSetMicBtnUI(key, false);
+  }
+}
+function _chatShowVoicePreview(key, blob){
+  var cfg = CHAT_ATTACH_CONFIGS[key];
+  var area = _chatFindArea(key); if(!area || !area.parentNode) return;
+  var ex = document.getElementById(cfg.voicePrevId); if(ex) ex.remove();
+  var st = _chatSt(key);
+  var sizeKb = Math.round(blob.size/1024);
+  var dur = Math.round((Date.now() - (st.startTs||Date.now()))/1000);
+  var wrap = document.createElement('div');
+  wrap.id = cfg.voicePrevId;
+  wrap.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(200,158,56,.14);border-top:1.5px solid rgba(200,158,56,.42);font-family:Jost,sans-serif;font-size:13px;color:var(--ink2);flex-shrink:0';
+  wrap.innerHTML = '<span style="font-size:18px">🎙️</span><span style="flex:1;font-weight:700">Audio listo · '+dur+'s · '+sizeKb+' KB</span><button onclick="_chatDeleteVoice(\''+key+'\')" title="Descartar" style="background:rgba(220,60,60,.20);border:1.5px solid rgba(220,60,60,.42);color:#a02020;border-radius:8px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer">🗑️</button>';
+  area.parentNode.insertBefore(wrap, area);
+}
+function _chatDeleteVoice(key){
+  var cfg = CHAT_ATTACH_CONFIGS[key];
+  _chatSt(key).blob = null;
+  var ex = document.getElementById(cfg.voicePrevId); if(ex) ex.remove();
+}
+function _chatShowRecIndicator(key){
+  var cfg = CHAT_ATTACH_CONFIGS[key];
+  _chatHideRecIndicator(key);
+  var area = _chatFindArea(key); if(!area || !area.parentNode) return;
+  var st = _chatSt(key);
+  var wrap = document.createElement('div');
+  wrap.id = cfg.recIndId;
+  wrap.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(90deg,rgba(220,60,60,.20),rgba(190,40,40,.15));border-top:1.5px solid rgba(220,60,60,.55);font-family:Jost,sans-serif;font-size:13px;color:#e83a3a;font-weight:800;letter-spacing:.4px;flex-shrink:0';
+  wrap.innerHTML = '<span style="width:10px;height:10px;border-radius:50%;background:#e83a3a;box-shadow:0 0 10px rgba(220,60,60,.75);flex-shrink:0;animation:dmRecBlink 1s infinite"></span>'
+    + '<span style="text-transform:uppercase">Grabando</span>'
+    + '<span class="chat-rec-time" style="margin-left:auto;font-family:Jost,monospace;color:#f0a0a0;font-weight:700">0:00 / 1:00</span>'
+    + '<button onclick="_chatCancelRec(\''+key+'\')" title="Cancelar" style="background:rgba(0,0,0,.15);border:1px solid rgba(255,255,255,.20);color:#fff;border-radius:8px;padding:5px 10px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:Jost,sans-serif;flex-shrink:0">Cancelar</button>';
+  area.parentNode.insertBefore(wrap, area);
+  if(!document.getElementById('_dmRecKf')){
+    var kf = document.createElement('style'); kf.id = '_dmRecKf';
+    kf.textContent = '@keyframes dmRecBlink{0%,50%{opacity:1}51%,100%{opacity:.35}}';
+    document.head.appendChild(kf);
+  }
+  st.indicatorTmr = setInterval(function(){
+    var el = document.getElementById(cfg.recIndId); if(!el) return;
+    var timeEl = el.querySelector('.chat-rec-time');
+    if(!timeEl || !st.startTs) return;
+    var elapsed = Math.floor((Date.now() - st.startTs)/1000);
+    var m = Math.floor(elapsed/60), s = elapsed % 60;
+    timeEl.textContent = m+':'+String(s).padStart(2,'0')+' / 1:00';
+  }, 300);
+}
+function _chatHideRecIndicator(key){
+  var cfg = CHAT_ATTACH_CONFIGS[key];
+  var st = _chatSt(key);
+  if(st.indicatorTmr){ clearInterval(st.indicatorTmr); st.indicatorTmr = null; }
+  var el = document.getElementById(cfg.recIndId); if(el) el.remove();
+}
+function _chatCancelRec(key){
+  var st = _chatSt(key);
+  try{
+    if(st.rec && st.rec.state !== 'inactive'){
+      st.rec.onstop = function(){ try{ st.stream && st.stream.getTracks().forEach(function(t){t.stop();}); }catch(e){} st.stream=null; };
+      st.rec.stop();
+    } else if(st.stream){ try{ st.stream.getTracks().forEach(function(t){t.stop();}); }catch(e){} st.stream=null; }
+  }catch(e){}
+  st.blob = null;
+  _chatSetMicBtnUI(key, false);
+  _chatHideRecIndicator(key);
+  if(st.timerHandle){ clearTimeout(st.timerHandle); st.timerHandle = null; }
+  pToast('🗑️','Grabación cancelada');
+}
+function pChatAttachImage(key){
+  var cfg = CHAT_ATTACH_CONFIGS[key]; if(!cfg) return;
+  var inp = document.getElementById(cfg.imgInputId);
+  if(inp){ inp.value = ''; inp.click(); }
+}
+async function _chatHandleImageInput(key, input){
+  if(!input || !input.files || !input.files[0]) return;
+  var f = input.files[0];
+  if(!f.type.startsWith('image/')){ pToast('⚠️','Solo imágenes'); return; }
+  if(/heic|heif/i.test(f.type||'') || /\.(heic|heif)$/i.test(f.name||'')){
+    pToast('⚠️','HEIC no soportado — convertí a JPG en Ajustes iOS'); return;
+  }
+  if(f.size > 12*1024*1024){ pToast('⚠️','Imagen muy grande (>12 MB)'); return; }
+  pToast('📷','Procesando imagen…');
+  try{
+    var b64 = await _resizeImageToBase64(f, 1200);
+    _chatSt(key).image = b64;
+    _chatShowImagePreview(key, b64);
+    pToast('✓','Foto lista');
+  }catch(e){ pToast('⚠️', (e && e.message) || 'No pude procesar la imagen'); }
+}
+function _chatShowImagePreview(key, b64){
+  var cfg = CHAT_ATTACH_CONFIGS[key];
+  var area = _chatFindArea(key); if(!area || !area.parentNode) return;
+  var ex = document.getElementById(cfg.imgPrevId); if(ex) ex.remove();
+  var wrap = document.createElement('div');
+  wrap.id = cfg.imgPrevId;
+  wrap.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(180,155,240,.14);border-top:1.5px solid rgba(180,155,240,.42);font-family:Jost,sans-serif;font-size:13px;color:var(--ink2);flex-shrink:0';
+  var thumb = document.createElement('img');
+  thumb.style.cssText = 'width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0';
+  try{
+    var arr = b64.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
+    var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
+    for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
+    thumb.src = URL.createObjectURL(new Blob([u8],{type:mime}));
+  }catch(e){ thumb.src = b64; }
+  wrap.appendChild(thumb);
+  var lbl = document.createElement('span');
+  lbl.style.cssText = 'flex:1;font-weight:700';
+  lbl.textContent = 'Foto lista para enviar';
+  wrap.appendChild(lbl);
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.onclick = function(){ _chatDeleteImage(key); };
+  btn.style.cssText = 'background:rgba(220,60,60,.20);border:1.5px solid rgba(220,60,60,.42);color:#a02020;border-radius:8px;padding:6px 10px;font-size:14px;font-weight:800;cursor:pointer';
+  btn.textContent = '🗑️';
+  wrap.appendChild(btn);
+  area.parentNode.insertBefore(wrap, area);
+}
+function _chatDeleteImage(key){
+  var cfg = CHAT_ATTACH_CONFIGS[key];
+  _chatSt(key).image = null;
+  var ex = document.getElementById(cfg.imgPrevId); if(ex) ex.remove();
+}
+// Consume audio/foto pendientes y llama insertFn(text) por cada uno.
+// insertFn debe ser async y persistir el mensaje en la tabla correcta.
+async function _chatConsumeAttachments(key, insertFn){
+  var cfg = CHAT_ATTACH_CONFIGS[key];
+  var st = _chatSt(key);
+  if(st.blob){
+    try{
+      var b64 = await _blobToBase64(st.blob);
+      await insertFn('__velo_dm_audio__:v=1|' + b64);
+    }catch(e){ pToast('⚠️','No pude enviar el audio'); }
+    st.blob = null;
+    var vp = document.getElementById(cfg.voicePrevId); if(vp) vp.remove();
+  }
+  if(st.image){
+    try{
+      await insertFn('__velo_dm_image__:v=1|' + st.image);
+    }catch(e){ pToast('⚠️','No pude enviar la foto'); }
+    st.image = null;
+    var ip = document.getElementById(cfg.imgPrevId); if(ip) ip.remove();
+  }
 }
 
 // ── DM audio/foto attachments (estilo IG) ──────────────────
@@ -21755,6 +22076,7 @@ function _startGlobalDMListener(){
       unread[m.from_id] = (unread[m.from_id]||0)+1;
       safeLS('set','velo_dm_unread', JSON.stringify(unread));
       _updateFavBadge();
+      try{ _refreshChatBadges(); }catch(_){}
       // Actualizar cache "último mensaje" para el hub de mensajes tipo IG
       if(m.text && String(m.text).indexOf('__velo_') !== 0){
         var _prevText = String(m.text);
@@ -31633,7 +31955,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1311;
+    var _BUILT_V = 1312;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

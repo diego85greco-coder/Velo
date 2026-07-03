@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1311">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1311">
+  <link rel="stylesheet" href="premium.css?v=20260626-1312">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1312">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -2088,6 +2088,9 @@
         <div id="helpChatEmojiPanel" class="feed-emoji-panel"></div>
         <div class="feed-input-area" style="background:rgba(8,20,10,.9);border-top:1px solid rgba(116,198,157,.12)">
           <button type="button" class="feed-emoji-toggle" onclick="pToggleChatEmojis('helpChatEmojiPanel','helpChatInput')" title="Emojis">😊</button>
+          <button type="button" id="helpChatMicBtn" onclick="pChatToggleVoiceRec('help')" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px 6px;flex-shrink:0;border-radius:10px" title="Grabar audio">🎙</button>
+          <button type="button" onclick="pChatAttachImage('help')" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px 6px;flex-shrink:0" title="Enviar foto">📷</button>
+          <input type="file" id="helpChatImageInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="_chatHandleImageInput('help', this)">
           <textarea id="helpChatInput" class="feed-input" placeholder="Escribí con amor y presencia…" rows="1" style="background:rgba(255,255,255,.06);color:#fff;border-color:rgba(116,198,157,.2)"
             oninput="pHelpChatTyping()"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendHelpChatMsg()}"></textarea>
@@ -2733,6 +2736,9 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         <div id="feedEmojiPanel" style="display:none;flex-wrap:wrap;gap:4px;padding:8px 12px;background:var(--cream2);border-top:1px solid var(--border2);flex-shrink:0"></div>
         <div class="feed-input-area">
           <button type="button" onclick="pToggleCircleEmojis()" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px 6px;flex-shrink:0" title="Emojis">😊</button>
+          <button type="button" id="circleMicBtn" onclick="pChatToggleVoiceRec('circle')" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px 6px;flex-shrink:0;border-radius:10px" title="Grabar audio">🎙</button>
+          <button type="button" onclick="pChatAttachImage('circle')" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px 6px;flex-shrink:0" title="Enviar foto">📷</button>
+          <input type="file" id="circleImageInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="_chatHandleImageInput('circle', this)">
           <textarea id="feedInput" class="feed-input" placeholder="Escribí algo con amor..." rows="1"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendCircleMsg()}"></textarea>
           <button class="feed-send-btn" onclick="pSendCircleMsg()">↑</button>
@@ -3099,6 +3105,9 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         <div id="gcEmojiPanel" class="feed-emoji-panel"></div>
         <div class="feed-input-area">
           <button type="button" class="feed-emoji-toggle" onclick="pToggleChatEmojis('gcEmojiPanel','gcInput')" title="Emojis">😊</button>
+          <button type="button" id="gcMicBtn" onclick="pChatToggleVoiceRec('gc')" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px 6px;flex-shrink:0;border-radius:10px" title="Grabar audio">🎙</button>
+          <button type="button" onclick="pChatAttachImage('gc')" style="background:none;border:none;font-size:22px;cursor:pointer;padding:4px 6px;flex-shrink:0" title="Enviar foto">📷</button>
+          <input type="file" id="gcImageInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="_chatHandleImageInput('gc', this)">
           <textarea id="gcInput" class="feed-input" placeholder="Escribí lo que sentís..." rows="1"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pSendGuardianMsg()}"></textarea>
           <button class="feed-send-btn" onclick="pSendGuardianMsg()">↑</button>
@@ -3595,11 +3604,12 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
         </span>
         <span class="p-bn-label">Inicio</span>
       </button>
-      <button class="p-bn-item p-bn-fav" data-screen="contacts" onclick="pGoTo('contacts')">
-        <span class="p-bn-icon">
+      <button class="p-bn-item p-bn-fav" data-screen="contacts" onclick="pGoTo('contacts')" style="position:relative">
+        <span class="p-bn-icon" style="position:relative">
           <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
           </svg>
+          <span id="contactsDMBadge" style="display:none;position:absolute;top:-4px;right:-6px;background:#e63946;color:#fff;font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:8px;line-height:15px;text-align:center;padding:0 3px;font-family:'Jost',sans-serif;box-shadow:0 1px 4px rgba(230,57,70,.55)"></span>
         </span>
         <span class="p-bn-label" style="line-height:1.2">Contactos<br>Favoritos</span>
       </button>
@@ -4400,8 +4410,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1311"></script>
-<script src="premium-redesign.js?v=20260626-1311"></script>
+<script src="premium.js?v=20260626-1312"></script>
+<script src="premium-redesign.js?v=20260626-1312"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
