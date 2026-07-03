@@ -20213,7 +20213,59 @@ function _updateFavBadge(){
 
 // ── CONTACTS PAGE ─────────────────────────────────────────────
 
+// ── DM last-message cache (estilo IG DM row) ──
+// Estructura: {peerId: {text, ts, fromMe}} en LS 'velo_dm_last_msgs'
+function _dmCacheGet(){
+  try{ return JSON.parse(safeLS('get','velo_dm_last_msgs')||'{}'); }catch(e){ return {}; }
+}
+function _dmCacheSet(peerId, text, fromMe, ts){
+  if(!peerId) return;
+  var cache = _dmCacheGet();
+  var t = String(text||'').replace(/\s+/g,' ').trim();
+  if(t.length > 140) t = t.slice(0,140) + '…';
+  cache[peerId] = { text: t, ts: ts || Date.now(), fromMe: !!fromMe };
+  try{ safeLS('set','velo_dm_last_msgs', JSON.stringify(cache)); }catch(e){}
+}
+function _timeAgoDM(ts){
+  if(!ts) return '';
+  var d = Date.now() - Number(ts);
+  if(d < 60000) return 'ahora';
+  if(d < 3600000) return Math.floor(d/60000)+'m';
+  if(d < 86400000) return Math.floor(d/3600000)+'h';
+  var days = Math.floor(d/86400000);
+  if(days === 1) return 'ayer';
+  if(days < 7) return days+'d';
+  var dd = new Date(Number(ts));
+  return String(dd.getDate()).padStart(2,'0')+'/'+String(dd.getMonth()+1).padStart(2,'0');
+}
+// Cargar último mensaje por peer desde Supabase — bootstrapea la cache al abrir Contactos
+async function _hydrateDMLastMsgs(peerIds){
+  if(!sbClient || !Array.isArray(peerIds) || !peerIds.length) return;
+  var myId = safeLS('get','velo_user_id') || '';
+  if(!myId) return;
+  try{
+    // RLS solo devuelve mis DMs. Traigo los últimos 200 y reduzco a último por peer.
+    var res = await sbClient.from('direct_messages')
+      .select('from_id,to_id,text,created_at')
+      .or('from_id.eq.'+myId+',to_id.eq.'+myId)
+      .order('created_at',{ascending:false}).limit(200);
+    if(!res || !res.data) return;
+    var seen = {};
+    res.data.forEach(function(m){
+      var peer = m.from_id === myId ? m.to_id : m.from_id;
+      if(!peer || seen[peer]) return;
+      if(peerIds.indexOf(peer) < 0) return;
+      seen[peer] = true;
+      // No mostrar sentinels internos como último mensaje
+      var txt = String(m.text||'');
+      if(txt.indexOf('__velo_') === 0) return;
+      _dmCacheSet(peer, txt, m.from_id === myId, new Date(m.created_at).getTime());
+    });
+  }catch(e){}
+}
+
 function _contactCard(id, name, av, uname, pInfo, unread, opts){
+  opts = opts || {};
   var canChat = pInfo.on && pInfo.label !== 'Ocupado/a';
   var sz = opts.small ? 44 : 52;
   var _uc = _userColor(id || name);
@@ -20224,32 +20276,65 @@ function _contactCard(id, name, av, uname, pInfo, unread, opts){
   var onlineColor = pInfo.on ? (pInfo.label==='En línea'||pInfo.label==='Disponible'?'#4DD988':'#D9A940') : 'rgba(128,135,130,.55)';
   var onlineBg = pInfo.on ? (pInfo.label==='En línea'||pInfo.label==='Disponible'?'rgba(38,120,75,.18)':'rgba(160,118,28,.15)') : 'rgba(120,128,124,.08)';
   var bs = 'width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0';
-  return '<div class="vcc-card" data-fav-name="'+_escHtml(name||'')+'" data-fav-uname="'+_escHtml(uname||'')+'" '
-    +'style="display:flex;align-items:stretch;border-left:4px solid '+accentStrip+';border-radius:18px;margin-bottom:9px;overflow:hidden">'
+  // Instagram-DM row: si hay lastMsg armamos preview + tiempo + badge de no-leídos
+  var chatMode = !!(opts.chatMode && (opts.lastMsg || unread > 0));
+  var previewLine = '';
+  if(chatMode && opts.lastMsg){
+    var lm = opts.lastMsg;
+    var prefix = lm.fromMe ? 'Vos: ' : '';
+    var previewTxt = _escHtml((prefix + (lm.text||'')).slice(0, 120));
+    var timeLbl = _timeAgoDM(lm.ts);
+    var previewColor = unread > 0 ? 'var(--ink)' : 'var(--ink5)';
+    var previewWeight = unread > 0 ? '700' : '500';
+    previewLine = '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;min-width:0">'
+      +'<span style="font-size:12.5px;color:'+previewColor+';font-weight:'+previewWeight+';font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">'+previewTxt+'</span>'
+      +(timeLbl?'<span style="font-size:10.5px;color:var(--ink5);flex-shrink:0;font-family:Jost,sans-serif;font-weight:600">· '+timeLbl+'</span>':'')
+      +'</div>';
+  }
+  // Badge de no-leídos (rojo, estilo IG) — visible en cualquier modo si unread>0
+  var unreadBadge = '';
+  if(unread && Number(unread) > 0){
+    var uCount = Number(unread) > 99 ? '99+' : String(unread);
+    unreadBadge = '<span title="'+uCount+' sin leer" style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:22px;background:#e74c3c;color:#fff;font-size:11px;font-weight:800;font-family:Jost,sans-serif;box-shadow:0 2px 8px rgba(231,76,60,.55);flex-shrink:0">'+uCount+'</span>';
+  }
+  var showChatBtn = canChat && !chatMode; // en chatMode el card entero es tap-to-chat
+  var rowClick = chatMode
+    ? ' onclick="pOpenDM('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" style="cursor:pointer;"'
+    : '';
+  return '<div class="vcc-card'+(chatMode?' vcc-card--chat':'')+'" data-fav-name="'+_escHtml(name||'')+'" data-fav-uname="'+_escHtml(uname||'')+'"'+rowClick
+    +' data-flex="display:flex;align-items:stretch;border-left:4px solid '+accentStrip+';border-radius:18px;margin-bottom:9px;overflow:hidden"'
+    +' style="display:flex;align-items:stretch;border-left:4px solid '+accentStrip+';border-radius:18px;margin-bottom:9px;overflow:hidden'+(chatMode?';cursor:pointer':'')+'">'
     +'<div style="display:flex;align-items:center;gap:12px;padding:12px 12px 12px 10px;flex:1;min-width:0">'
-    +'<div style="position:relative;flex-shrink:0;cursor:pointer" onclick="pQuickProfile('+_jsAttr(name||'Usuario')+','+_jsAttr(av||'🧑')+',\'\',\'\','+_jsAttr(id)+')">'
+    +'<div style="position:relative;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();pQuickProfile('+_jsAttr(name||'Usuario')+','+_jsAttr(av||'🧑')+',\'\',\'\','+_jsAttr(id)+')">'
     +'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;border:2.5px solid '+accent+';overflow:hidden;display:flex;align-items:center;justify-content:center;background:'+accentBg+';box-shadow:0 0 14px '+accentGlow+'">'+_avInline(av||'🧑', sz)+'</div>'
-    +'<span style="position:absolute;bottom:0;right:0;width:13px;height:13px;border-radius:50%;background:'+onlineColor+';border:2.5px solid white"></span>'
+    +'<span style="position:absolute;bottom:0;right:0;width:13px;height:13px;border-radius:50%;background:'+onlineColor+';border:2.5px solid white'+(pInfo.on && (pInfo.label==='En línea'||pInfo.label==='Disponible')?';box-shadow:0 0 8px rgba(77,217,136,.55)':'')+'"></span>'
     +'</div>'
     +'<div style="flex:1;min-width:0">'
     +'<div class="vcc-name" style="font-size:15.5px;font-weight:800;font-family:Jost,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.1px">'+_escHtml(name||'Usuario')+'</div>'
     +(uname?'<div style="font-size:13px;font-weight:600;margin-bottom:3px;font-family:Jost,sans-serif;color:'+accent.replace(/[\d.]+\)$/,'0.78)')+'">'+_escHtml(uname)+'</div>':'')
-    +'<div style="display:inline-flex;align-items:center;gap:4px;background:'+onlineBg+';border-radius:100px;padding:2px 8px 2px 5px;margin-top:2px">'
-    +'<span style="width:6px;height:6px;border-radius:50%;background:'+onlineColor+';flex-shrink:0"></span>'
-    +'<span style="font-size:11px;font-weight:700;color:'+onlineColor+';font-family:Jost,sans-serif;letter-spacing:.2px">'+pInfo.label+'</span>'
+    +(chatMode
+        ? previewLine  // en modo chat: preview + tiempo
+        : '<div style="display:inline-flex;align-items:center;gap:4px;background:'+onlineBg+';border-radius:100px;padding:2px 8px 2px 5px;margin-top:2px">'
+          +'<span style="width:6px;height:6px;border-radius:50%;background:'+onlineColor+';flex-shrink:0"></span>'
+          +'<span style="font-size:11px;font-weight:700;color:'+onlineColor+';font-family:Jost,sans-serif;letter-spacing:.2px">'+pInfo.label+'</span>'
+          +'</div>'
+      )
+    +(opts.motto && !chatMode?'<p class="vcc-motto" style="font-size:12px;line-height:1.4;margin:5px 0 0;font-family:\'Cormorant Garamond\',serif;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml(opts.motto)+'"</p>':'')
     +'</div>'
-    +(opts.motto?'<p class="vcc-motto" style="font-size:12px;line-height:1.4;margin:5px 0 0;font-family:\'Cormorant Garamond\',serif;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"'+_escHtml(opts.motto)+'"</p>':'')
-    +'</div>'
-    +'<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;justify-content:center;padding-left:4px">'
-    +(canChat
+    // Columna derecha: badge no-leídos + botones
+    +'<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;justify-content:center;padding-left:4px;align-items:flex-end" onclick="event.stopPropagation()">'
+    +(unreadBadge || '')
+    +(showChatBtn
       ?'<button onclick="pOpenDM('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Chat" style="'+bs+';background:'+accentBg+';border:1.5px solid '+accent+';box-shadow:0 2px 10px '+accentGlow+'">💬</button>'
-      :'<button disabled title="No disponible para chat" style="'+bs+';background:rgba(130,130,130,.13);border:1.5px solid rgba(130,130,130,.30);cursor:not-allowed;filter:grayscale(1);opacity:.52">💬</button>')
-    +'<div style="display:flex;gap:4px">'
-    +(opts.showMail?'<button onclick="pLeaveOfflineMsg('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Buzón" style="'+bs+';width:auto;padding:0 8px;background:rgba(200,158,50,.12);border:1px solid rgba(215,168,55,.34)">✉️</button>':'')
-    +(opts.showRemove?'<button onclick="pRemoveFav(\''+id+'\');pRenderContacts()" title="Quitar fav" style="'+bs+';width:auto;padding:0 8px;background:rgba(232,182,36,.12);border:1px solid rgba(232,182,36,.36)">⭐</button>':'')
-    +(opts.showBlock?'<button onclick="pBlockUser('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" title="Bloquear" style="'+bs+';width:auto;padding:0 8px;background:rgba(192,38,38,.08);border:1px solid rgba(192,38,38,.26)">🚫</button>':'')
-    +(opts.showAddFav?'<button onclick="pAddFav('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" title="Agregar fav" style="'+bs+';width:auto;padding:0 8px;background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.38)">⭐</button>':'')
-    +'</div>'
+      :(!chatMode && !canChat ?'<button disabled title="No disponible para chat" style="'+bs+';background:rgba(130,130,130,.13);border:1.5px solid rgba(130,130,130,.30);cursor:not-allowed;filter:grayscale(1);opacity:.52">💬</button>':''))
+    +(!chatMode || opts.forceButtons
+      ? '<div style="display:flex;gap:4px">'
+        +(opts.showMail?'<button onclick="pLeaveOfflineMsg('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av)+')" title="Buzón" style="'+bs+';width:auto;padding:0 8px;background:rgba(200,158,50,.12);border:1px solid rgba(215,168,55,.34)">✉️</button>':'')
+        +(opts.showRemove?'<button onclick="pRemoveFav(\''+id+'\');pRenderContacts()" title="Quitar fav" style="'+bs+';width:auto;padding:0 8px;background:rgba(232,182,36,.12);border:1px solid rgba(232,182,36,.36)">⭐</button>':'')
+        +(opts.showBlock?'<button onclick="pBlockUser('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" title="Bloquear" style="'+bs+';width:auto;padding:0 8px;background:rgba(192,38,38,.08);border:1px solid rgba(192,38,38,.26)">🚫</button>':'')
+        +(opts.showAddFav?'<button onclick="pAddFav('+_jsAttr(id)+','+_jsAttr(name)+','+_jsAttr(av||'🧑')+');pRenderContacts()" title="Agregar fav" style="'+bs+';width:auto;padding:0 8px;background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.38)">⭐</button>':'')
+        +'</div>'
+      : '')
     +'</div>'
     +'</div></div>';
 }
@@ -20318,6 +20403,20 @@ async function pRenderContacts(){
   if(_navToken !== _tok) return;
 
   var unreadIds = {}; try{ unreadIds = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
+  // Hidratar cache de últimos mensajes desde Supabase (bootstrap para primera carga)
+  try{ await _hydrateDMLastMsgs(favs.map(function(f){ return f.id; })); }catch(e){}
+  if(_navToken !== _tok || !document.getElementById('contactsContent')) return;
+  var dmLast = _dmCacheGet();
+  // Ordenar favs por actividad: los que tienen último mensaje más reciente arriba
+  favs.sort(function(a,b){
+    var ta = (dmLast[a.id] && dmLast[a.id].ts) || 0;
+    var tb = (dmLast[b.id] && dmLast[b.id].ts) || 0;
+    if(tb !== ta) return tb - ta;
+    // Empate: los que tienen unread arriba
+    var ua = unreadIds[a.id]||0, ub = unreadIds[b.id]||0;
+    if(ub !== ua) return ub - ua;
+    return 0;
+  });
 
   // Build online list (favs + fans, deduped, only online)
   var _onlineMap = {};
@@ -20360,7 +20459,12 @@ async function pRenderContacts(){
           var dAv   = prof.av || f.av || '🧑';
           // Silently update local cache with the real name so widget also benefits
           if(prof.name && prof.name !== 'Usuario' && f.name !== prof.name){ f.name = prof.name; f.av = dAv; _favsList = pGetFavs(); safeLS('set','velo_favs',JSON.stringify(_favsList.slice(0,100))); }
-          return _contactCard(f.id,dName,dAv,uname,pi,unreadIds[f.id]||0,{showMail:true,showRemove:true,showBlock:true,motto:prof.motto||''});
+          return _contactCard(f.id,dName,dAv,uname,pi,unreadIds[f.id]||0,{
+            showMail:false, showRemove:false, showBlock:false,
+            motto: prof.motto||'',
+            chatMode: true,
+            lastMsg: dmLast[f.id] || null
+          });
         }).join(''))
     +'</div>';
 
@@ -20903,6 +21007,8 @@ async function pSendDM(){
       }
     }).catch(function(){});
   }
+  // Actualizar cache de "último mensaje por peer" para la lista IG DM
+  if(text.indexOf('__velo_') !== 0){ _dmCacheSet(_dmPeer.id, text, true); }
 }
 
 function _showDMChatRequest(fromId, fromName, fromAv){
@@ -21120,6 +21226,10 @@ function _startGlobalDMListener(){
       unread[m.from_id] = (unread[m.from_id]||0)+1;
       safeLS('set','velo_dm_unread', JSON.stringify(unread));
       _updateFavBadge();
+      // Actualizar cache "último mensaje" para el hub de mensajes tipo IG
+      if(m.text && String(m.text).indexOf('__velo_') !== 0){
+        _dmCacheSet(m.from_id, m.text, false, m.created_at ? new Date(m.created_at).getTime() : Date.now());
+      }
   }
 
   _dmInboxCh = sbClient.channel('velo:dm:inbox:'+myId)
@@ -30865,7 +30975,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1305;
+    var _BUILT_V = 1306;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
