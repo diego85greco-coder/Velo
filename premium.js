@@ -19579,6 +19579,20 @@ async function pOpenVibeGroup(groupId){
       list.innerHTML = '<div style="text-align:center;padding:80px 20px;color:rgba(200,230,215,.55);font-family:Jost,sans-serif"><div style="font-size:50px;margin-bottom:14px;opacity:.55">🌱</div><div style="font-size:15px;font-weight:800">Todavía sin historias</div><div style="font-size:12.5px;margin-top:6px;line-height:1.55">Sé el primero — tocá el ＋ para compartir un momento</div></div>';
       return;
     }
+    // Cargar reacciones de todas las vibes de una — bulk
+    _vibeReactionAgg = {}; _vibeMyReactions = {};
+    try{
+      var myId2 = safeLS('get','velo_user_id')||'';
+      var vibeIds = res.data.map(function(x){ return x.id; });
+      if(vibeIds.length){
+        var rRes = await sbClient.from('vibe_reactions').select('vibe_id,user_id,reaction').in('vibe_id', vibeIds);
+        (rRes.data||[]).forEach(function(r){
+          if(!_vibeReactionAgg[r.vibe_id]) _vibeReactionAgg[r.vibe_id] = {};
+          _vibeReactionAgg[r.vibe_id][r.reaction] = (_vibeReactionAgg[r.vibe_id][r.reaction]||0)+1;
+          if(myId2 && r.user_id === myId2) _vibeMyReactions[r.vibe_id] = r.reaction;
+        });
+      }
+    }catch(e){}
     list.innerHTML = res.data.map(_vibeCardHtml).join('');
     // Convertir data URLs a blob URLs (iOS Safari) — post-render
     list.querySelectorAll('img[data-vibe-src]').forEach(function(img){
@@ -19604,15 +19618,133 @@ function _vibeTimeLeft(expiresAtIso){
   if(d < 3600000) return Math.max(1, Math.floor(d/60000)) + ' min';
   return Math.floor(d/3600000) + ' h';
 }
+// Aggregado de reacciones para el grupo actualmente abierto: {vibeId: {reactionKey: count}}
+var _vibeReactionAgg = {};
+// Mi reacción para cada vibe: {vibeId: reactionKey}
+var _vibeMyReactions = {};
+// Calcula el tint RGB pesado según reacciones recibidas
+function _vibeTintFromReactions(counts){
+  if(!counts) return null;
+  var r=0,g=0,b=0,total=0;
+  VIBE_REACTIONS.forEach(function(reaction){
+    var c = counts[reaction.key]||0;
+    if(!c) return;
+    var hex = reaction.tint; // '#f5c76a'
+    r += parseInt(hex.slice(1,3),16) * c;
+    g += parseInt(hex.slice(3,5),16) * c;
+    b += parseInt(hex.slice(5,7),16) * c;
+    total += c;
+  });
+  if(!total) return null;
+  return { r:Math.round(r/total), g:Math.round(g/total), b:Math.round(b/total), total:total };
+}
+// Frase resumen sin números
+function _vibeSummaryPhrase(counts){
+  if(!counts) return '';
+  var total = 0, dominant = null, dmax = 0, distinct = 0;
+  VIBE_REACTIONS.forEach(function(reaction){
+    var c = counts[reaction.key]||0;
+    if(c > 0){ total += c; distinct++; if(c > dmax){ dmax = c; dominant = reaction.key; } }
+  });
+  if(total === 0) return '';
+  if(distinct >= 5) return 'Recibió mucho amor 💚';
+  var phrase = {
+    alegria: 'Recibió mucha alegría 🌞',
+    abrazo: 'Muchos abrazos 🤗',
+    acompano: 'Encontraron calma acá 🕊️',
+    fuerzas: 'Muchas fuerzas 💪',
+    gracias: 'Muchas gracias por compartir 🙏',
+    me_hace_bien: 'Le hizo bien a muchos ✨',
+    animos: 'Muchos ánimos 💚',
+    me_inspira: 'Inspiró a muchos 🌱'
+  }[dominant] || '';
+  return phrase;
+}
 function _vibeCardHtml(v){
   var ago = _timeAgoDM ? _timeAgoDM(new Date(v.created_at).getTime()) : '';
   var left = _vibeTimeLeft(v.expires_at);
-  return '<div class="vibe-card" data-vibe-id="'+v.id+'" style="background:linear-gradient(180deg,rgba(20,40,26,.90),rgba(10,26,18,.94));border:1.5px solid rgba(116,198,157,.32);border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:0 8px 26px rgba(0,0,0,.35),0 2px 8px rgba(60,140,90,.14);transition:box-shadow .35s">'
+  // Tint dinámico basado en reacciones actuales
+  var counts = _vibeReactionAgg[v.id] || {};
+  var tint = _vibeTintFromReactions(counts);
+  var borderColor = tint ? 'rgba('+tint.r+','+tint.g+','+tint.b+',.65)' : 'rgba(116,198,157,.32)';
+  var glow = tint ? '0 12px 32px rgba('+tint.r+','+tint.g+','+tint.b+',.30), 0 3px 10px rgba('+tint.r+','+tint.g+','+tint.b+',.22)' : '0 8px 26px rgba(0,0,0,.35), 0 2px 8px rgba(60,140,90,.14)';
+  var mine = _vibeMyReactions[v.id] || '';
+  var summary = _vibeSummaryPhrase(counts);
+  var reactionPicker = '<div class="vibe-rx-row" style="display:flex;align-items:center;gap:4px;padding:10px 12px;flex-wrap:wrap;background:rgba(0,0,0,.22);border-top:1px solid rgba(116,198,157,.12)">'
+    + VIBE_REACTIONS.map(function(reaction){
+        var sel = mine === reaction.key;
+        return '<button type="button" onclick="pVibeReact(\''+v.id+'\',\''+reaction.key+'\',this)" title="'+_escHtml(reaction.label)+'" style="background:'+(sel?'rgba('+parseInt(reaction.tint.slice(1,3),16)+','+parseInt(reaction.tint.slice(3,5),16)+','+parseInt(reaction.tint.slice(5,7),16)+',.32)':'rgba(255,255,255,.04)')+';border:1.5px solid '+(sel?reaction.tint:'rgba(255,255,255,.12)')+';border-radius:100px;padding:6px 10px;font-size:16px;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;line-height:1">'+reaction.emoji+'</button>';
+      }).join('')
+    + '</div>';
+  var summaryChip = summary
+    ? '<div style="padding:10px 16px 12px;font-family:Jost,sans-serif;font-size:12px;font-weight:800;letter-spacing:.4px;color:'+(tint?'rgba('+tint.r+','+tint.g+','+tint.b+',.98)':'rgba(180,220,195,.75)')+';text-transform:uppercase">'+_escHtml(summary)+'</div>'
+    : '';
+  return '<div class="vibe-card" data-vibe-id="'+v.id+'" style="background:linear-gradient(180deg,rgba(20,40,26,.92),rgba(10,26,18,.95));border:1.5px solid '+borderColor+';border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:'+glow+';transition:box-shadow .5s, border-color .5s">'
     + '<div style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div><div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:1px">'+ago+' · caduca en '+left+'</div></div></div>'
     + '<img data-vibe-src="'+_escHtml(v.media_url||'')+'" alt="momento" style="width:100%;max-height:520px;object-fit:cover;display:block;background:rgba(0,0,0,.35)" onerror="this.style.opacity=\'.35\'">'
     + (v.caption ? '<div style="padding:12px 16px 14px;font-family:\'Cormorant Garamond\',serif;font-size:15.5px;font-style:italic;color:rgba(240,250,240,.95);line-height:1.5">"'+_escHtml(v.caption)+'"</div>' : '')
-    + '<div style="padding:10px 14px 14px;font-family:Jost,sans-serif;font-size:11.5px;color:rgba(180,220,195,.60);font-weight:600;letter-spacing:.3px">Las reacciones llegan en la próxima versión ✨</div>'
+    + summaryChip
+    + reactionPicker
   + '</div>';
+}
+// UPSERT de reacción (toggle si es la misma, replace si es distinta)
+async function pVibeReact(vibeId, reactionKey, btnEl){
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId){ pToast('⚠️','Iniciá sesión'); return; }
+  var prev = _vibeMyReactions[vibeId];
+  var counts = _vibeReactionAgg[vibeId] || {};
+  try{
+    if(prev === reactionKey){
+      // Toggle off — borrar mi reacción
+      await sbClient.from('vibe_reactions').delete().eq('vibe_id', vibeId).eq('user_id', myId);
+      counts[reactionKey] = Math.max(0, (counts[reactionKey]||1)-1);
+      delete _vibeMyReactions[vibeId];
+    } else {
+      // Reemplazar o crear
+      if(prev){ counts[prev] = Math.max(0, (counts[prev]||1)-1); }
+      counts[reactionKey] = (counts[reactionKey]||0)+1;
+      _vibeMyReactions[vibeId] = reactionKey;
+      await sbClient.from('vibe_reactions').upsert({ vibe_id: vibeId, user_id: myId, reaction: reactionKey }, { onConflict: 'vibe_id,user_id' });
+    }
+    _vibeReactionAgg[vibeId] = counts;
+    // Refrescar la card en el DOM sin re-fetchear todo el grupo
+    _refreshVibeCard(vibeId);
+  }catch(e){
+    console.warn('[vibe-react]', e);
+    pToast('⚠️','No se pudo reaccionar');
+  }
+}
+function _refreshVibeCard(vibeId){
+  var cardEl = document.querySelector('.vibe-card[data-vibe-id="'+vibeId+'"]');
+  if(!cardEl) return;
+  // Encontrar la vibe en el cache de la lista abierta y re-render sólo esa card
+  var listEl = document.getElementById('vibeGroupList'); if(!listEl) return;
+  // Extraer datos del DOM (avatar, nombre, tiempo, image src, caption)
+  // Más simple: re-fetchear la vibe una vez y volver a pintar
+  _initSupabase(); if(!sbClient) return;
+  sbClient.from('vibes').select('*').eq('id', vibeId).single().then(function(res){
+    if(!res || !res.data){ return; }
+    var newHtml = _vibeCardHtml(res.data);
+    var tmp = document.createElement('div'); tmp.innerHTML = newHtml;
+    var newCard = tmp.firstElementChild;
+    if(newCard){
+      cardEl.replaceWith(newCard);
+      // Rehidratar img data-vibe-src → blob URL (iOS)
+      var img = newCard.querySelector('img[data-vibe-src]');
+      if(img){
+        var src = img.getAttribute('data-vibe-src');
+        try{
+          if(src && src.indexOf('data:') === 0){
+            var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
+            var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
+            for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
+            img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
+          } else { img.src = src; }
+        }catch(e){ img.src = src; }
+      }
+    }
+  }).catch(function(){});
 }
 
 // ── INBOX ──────────────────────────────────────────────────────
@@ -32265,7 +32397,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1313;
+    var _BUILT_V = 1314;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
