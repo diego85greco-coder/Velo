@@ -9711,6 +9711,7 @@ async function pSendGuardianMsg(){
           from_id:_gcMyId, from_name:_gcMyName, from_av:_gcMyAv, to_id:_gcPeer.id, text:bodyText
         }).select('id').single();
         if(r && r.data && r.data.id && lastB){ lastB.setAttribute('data-sb-id', 'direct_messages:'+r.data.id); _gcLastMsgId = r.data.id; }
+        _triggerDMPushNotif({ from_id:_gcMyId, from_name:_gcMyName, from_av:_gcMyAv, to_id:_gcPeer.id, text:bodyText });
       }catch(e){}
     }
   }
@@ -9748,6 +9749,7 @@ async function pSendGuardianMsg(){
         _gcLastMsgId = res.data.id; // prevent poll from re-appending this message
       }
     }).catch(function(){});
+    _triggerDMPushNotif({ from_id:myId, from_name:myName, from_av:myAv, to_id:_gcPeer.id, text:fullText });
   }
 }
 
@@ -10582,6 +10584,7 @@ async function pSendHelpChatMsg(){
         await sbClient.from('direct_messages').insert({
           from_id:_myId, from_name:_myN, from_av:_myA, to_id:_curHelpPost.userId, text:bodyText
         });
+        _triggerDMPushNotif({ from_id:_myId, from_name:_myN, from_av:_myA, to_id:_curHelpPost.userId, text:bodyText });
       }catch(e){}
     }
   }
@@ -10618,6 +10621,7 @@ async function pSendHelpChatMsg(){
         _hLastBubble.setAttribute('data-sb-id', 'direct_messages:'+res.data.id);
       }
     }).catch(function(){});
+    _triggerDMPushNotif({ from_id:myId, from_name:myName, from_av:myAv, to_id:_curHelpPost.userId, text:fullText });
   }
 }
 
@@ -22606,10 +22610,43 @@ async function pSendDM(){
           _dmLastMsgId = r.data[0].id;
           if(_dmLastBubble) _dmLastBubble.setAttribute('data-sb-id', 'direct_messages:'+r.data[0].id);
         }
+        // Disparar push notification (Camino 3: client → Edge Function)
+        _triggerDMPushNotif({ from_id:myId, from_name:myName, from_av:myAv, to_id:_dmPeer.id, text:fullText });
       }catch(e){}
     }
     if(cachePreview){ _dmCacheSet(_dmPeer.id, cachePreview, true); }
   }
+// Llama send-dm-push (Edge Function) para que el destinatario reciba una
+// Web Push notification cuando su app está cerrada. Sin trigger de DB —
+// el cliente invoca la function directo después del insert.
+// Fire-and-forget: no bloqueamos el UI si tarda o falla.
+function _triggerDMPushNotif(record){
+  if(!record || !sbClient || !sbClient.functions) return;
+  try{
+    var txt = String(record.text || '');
+    // Comprimir markers para no mandar el base64 gigante por la red
+    var trimmed = txt;
+    if(txt.indexOf('__velo_dm_audio__') === 0) trimmed = '__velo_dm_audio__';
+    else if(txt.indexOf('__velo_dm_image__') === 0) trimmed = '__velo_dm_image__';
+    else if(txt.length > 200) trimmed = txt.slice(0, 200);
+    // No mandar sentinels internos (chat req/acc/rej/busy/bye)
+    if(trimmed.indexOf('__velo_chat_') === 0) return;
+    if(trimmed.indexOf('__velo_guardian_') === 0) return;
+    if(trimmed.indexOf('__velo_help_') === 0) return;
+    if(trimmed.indexOf('__velo_dm_bye__') === 0) return;
+    sbClient.functions.invoke('send-dm-push', {
+      body: {
+        record: {
+          from_id: record.from_id,
+          from_name: record.from_name,
+          from_av: record.from_av,
+          to_id: record.to_id,
+          text: trimmed
+        }
+      }
+    }).catch(function(e){ console.warn('[dm-push]', e && e.message); });
+  }catch(e){}
+}
   _initSupabase();
   // 1) Audio adjunto (si lo hay)
   if(hasAudio){
@@ -32736,7 +32773,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1317;
+    var _BUILT_V = 1318;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
