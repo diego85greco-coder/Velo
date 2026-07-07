@@ -25,7 +25,7 @@ if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
   process.exit(1);
 }
 
-console.log(`[vapid] subject="${VAPID_SUBJECT}" public_key_prefix="${VAPID_PUBLIC_KEY.slice(0, 12)}..." private_key_len=${VAPID_PRIVATE_KEY.length}`);
+console.log(`[vapid] subject="${VAPID_SUBJECT}" public_key_FULL="${VAPID_PUBLIC_KEY}" private_key_len=${VAPID_PRIVATE_KEY.length}`);
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
