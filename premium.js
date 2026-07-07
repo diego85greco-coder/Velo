@@ -5746,6 +5746,10 @@ if('serviceWorker' in navigator && 'PushManager' in window){
               pOpenDM(pid, (f && f.name) || 'Contacto', (f && f.av) || '🧑');
             }
           }catch(_){}
+        } else if(action === 'open-weekly-summary'){
+          // Forzar el overlay del resumen semanal aunque ya se haya visto hoy
+          try{ safeLS('del','velo_last_weekly_summary'); }catch(_){}
+          if(typeof _checkWeeklySummary === 'function'){ try{ _checkWeeklySummary(); }catch(_){} }
         }
       }, 350);
       return;
@@ -5776,6 +5780,10 @@ if('serviceWorker' in navigator && 'PushManager' in window){
             pOpenDM(peer, (f && f.name) || 'Contacto', (f && f.av) || '🧑');
           }
         }catch(_){}
+      }
+      else if(openIntent === 'weekly-summary'){
+        try{ safeLS('del','velo_last_weekly_summary'); }catch(_){}
+        if(typeof _checkWeeklySummary === 'function'){ try{ _checkWeeklySummary(); }catch(_){} }
       }
     };
     if(document.readyState === 'complete') setTimeout(trigger, 900);
@@ -32773,7 +32781,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1318;
+    var _BUILT_V = 1319;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

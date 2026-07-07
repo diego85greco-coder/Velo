@@ -1,5 +1,5 @@
 /* Velo Service Worker v15 — always-fresh HTML + smart notifs + pre-cache */
-var CACHE = 'velo-v16';
+var CACHE = 'velo-v17';
 var APP_HTML = '/app-premium.html';
 var VERSION_URL = '/version.json';
 
@@ -145,6 +145,13 @@ self.addEventListener('push', function(event){
         {action:'later', title:'Después'}
       ];
       actionMeta['open-dm'] = data.url || '/';
+    } else if(data.tag && data.tag.indexOf('velo-weekly-') === 0){
+      // Resumen semanal — deep-link al overlay del resumen
+      defaultActions = [
+        {action:'open-weekly-summary', title:'🌸 Ver mi semana'},
+        {action:'later', title:'Después'}
+      ];
+      actionMeta['open-weekly-summary'] = '/?open=weekly-summary';
     } else if(data.tag && data.tag.indexOf('velo-') === 0){
       // Daily notifs — action de "Registrar ánimo" en morning slot
       if(data.tag === 'velo-morning'){

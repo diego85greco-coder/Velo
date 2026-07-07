@@ -277,6 +277,81 @@ async function sendAnnualWrapped(users) {
 // ── WRAPPED MENSUAL — se dispara el día 1 de cada mes ─────────────────
 // Manda broadcast al inbox + push notif a todos los usuarios que tuvieron
 // actividad de mood en el mes anterior. Dedup por mes en push_subscription.
+// ── Resumen semanal (domingos, ventana de mañana local) ────────────
+// Corre solo los domingos en las ventanas cron 7 UTC y 12 UTC. Filtra por
+// hora local del usuario (6-11) + dedup por semana con lastWeekly. Manda
+// push que al tocarla abre la app — el client-side _checkWeeklySummary
+// arma el overlay real con las moods de los últimos 7 días.
+async function sendWeeklySummary(users) {
+  const now = new Date();
+  if (now.getUTCDay() !== 0) return { sent: 0 }; // 0 = Domingo UTC
+  const utcH = now.getUTCHours();
+  if (utcH !== 7 && utcH !== 12) return { sent: 0 };
+
+  // Clave de la semana = fecha del domingo (YYYY-MM-DD UTC)
+  const weekKey = now.toISOString().slice(0, 10);
+  console.log(`[weekly] Domingo ${weekKey} — enviando resumen semanal`);
+
+  // Users con al menos 1 mood en los últimos 7 días (evitamos molestar a inactivos)
+  const weekAgo = new Date(now); weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);
+  const weekAgoKey = weekAgo.toISOString().slice(0, 10);
+  const { data: moods, error: moodErr } = await supabase
+    .from('mood_entries')
+    .select('user_id')
+    .gte('date_key', weekAgoKey);
+  if (moodErr) { console.error('[weekly] mood_entries error:', moodErr); return { sent: 0 }; }
+
+  const activeIds = [...new Set((moods || []).map(m => m.user_id))];
+  console.log(`[weekly] ${activeIds.length} usuarios con moods en la semana`);
+  if (!activeIds.length) return { sent: 0 };
+
+  const title = `🌸 Tu semana en Velo`;
+  const body = `Un resumen de cómo estuviste esta semana emocionalmente. Tocá para verlo ✨`;
+
+  let sent = 0, failed = 0;
+  const usersById = {};
+  (users || []).forEach(u => { usersById[u.id] = u; });
+
+  await Promise.allSettled(activeIds.map(async (uid) => {
+    const u = usersById[uid];
+    if (!u || !u.push_subscription) return;
+    let parsedFull, rawSub, tz;
+    try {
+      parsedFull = JSON.parse(u.push_subscription);
+      rawSub = parsedFull.sub && parsedFull.sub.endpoint ? parsedFull.sub : parsedFull;
+      if (!parsedFull.sub) parsedFull = { sub: rawSub };
+      tz = parsedFull.tz || 'America/Argentina/Buenos_Aires';
+    } catch { return; }
+    // Solo mandamos si es mañana local del usuario (6-11)
+    const h = localHour(tz);
+    if (h < 6 || h >= 12) return;
+    // Dedup por semana
+    if (parsedFull.lastWeekly === weekKey) return;
+    try {
+      await webpush.sendNotification(rawSub, JSON.stringify({
+        title, body,
+        icon: '/assets/icon-192.png', badge: '/assets/icon-72.png',
+        tag: `velo-weekly-${weekKey}`, url: '/?open=weekly-summary',
+        actions: [
+          { action: 'open-weekly-summary', title: '🌸 Ver mi semana', url: '/?open=weekly-summary' },
+          { action: 'later', title: 'Después' }
+        ],
+      }));
+      sent++;
+      const updated = { ...parsedFull, lastWeekly: weekKey };
+      await supabase.from('profiles').update({ push_subscription: JSON.stringify(updated) }).eq('id', uid);
+    } catch (err) {
+      if (err.statusCode === 410 || err.statusCode === 404) {
+        await supabase.from('profiles').update({ push_subscription: null }).eq('id', uid);
+      }
+      failed++;
+    }
+  }));
+
+  console.log(`[weekly] sent=${sent}, failed=${failed}`);
+  return { sent, failed };
+}
+
 async function sendMonthlyWrapped(users) {
   const now = new Date();
   if (now.getUTCDate() !== 1) return { sent: 0 };
@@ -494,6 +569,9 @@ async function main() {
 
   // Wrapped anual (20 de diciembre en ventana morning UTC)
   try { await sendAnnualWrapped(users); } catch (e) { console.warn('[wrapped-annual] failed:', e.message); }
+
+  // Resumen semanal (domingos en ventana morning UTC)
+  try { await sendWeeklySummary(users); } catch (e) { console.warn('[weekly] failed:', e.message); }
 
   // Aviso a buddies con racha baja de 2 días
   try { await sendBuddyLowMoodAlerts(users); } catch (e) { console.warn('[buddy-alert] failed:', e.message); }
