@@ -670,7 +670,8 @@ async function main() {
         await supabase.from('profiles').update({ push_subscription: JSON.stringify(updatedSub) }).eq('id', id);
       } catch (err) {
         const body = (err.body || err.message || '').toString();
-        console.warn(`[push-err] user=${id} slot=${slot} status=${err.statusCode||'??'} body=${body.slice(0, 300)}`);
+        const epTail = (sub && sub.endpoint || '').slice(-30);
+        console.warn(`[push-err] user=${id} slot=${slot} status=${err.statusCode||'??'} endpoint_tail=...${epTail} body=${body.slice(0, 300)}`);
         // Limpiar sub si expiró (410/404) o si hay VAPID mismatch (403 BadJwtToken).
         // En ambos casos el cliente tiene que re-suscribirse abriendo la app.
         const isExpired = err.statusCode === 410 || err.statusCode === 404;

@@ -5877,13 +5877,32 @@ async function _syncPushSubOnStartup(){
               try{ await _ensureSbSession(); }catch(_se){}
               await _savePushSubscriptionToSupabase(_newSub);
             }
+            // Si el endpoint no cambió: iOS/WebKit cacheó la sub por endpoint
+            // → hay que desregistrar el SW y recargar (última opción). Solo lo
+            // hacemos una vez por sesión para no entrar en un loop de recarga.
+            if(_sameEp && !safeLS('get','velo_push_reset_tried')){
+              safeLS('set','velo_push_reset_tried','1');
+              try{ if(typeof pToast === 'function') pToast('🔧','Reseteando SW (iOS retuvo la sub)…'); }catch(_tj){}
+              try{
+                var _regs = await navigator.serviceWorker.getRegistrations();
+                for(var i=0;i<_regs.length;i++){ try{ await _regs[i].unregister(); }catch(_ug){} }
+              }catch(_gg){}
+              // Recarga en 1200ms para que el toast se vea. Al arrancar el SW
+              // se re-registra automáticamente y subscribe() devuelve una sub
+              // nueva sin caché.
+              setTimeout(function(){ try{ location.reload(); }catch(_rl){} }, 1200);
+              return;
+            }
             try{
               if(typeof pToast === 'function'){
-                if(_sameEp) pToast('⚠️','Sub cacheada por iOS (' + _newEndpoint.slice(-10) + ')');
-                else pToast('🔔','Notificaciones actualizadas ✓');
+                if(_sameEp) pToast('⚠️','Sub cacheada por iOS ('+_newEndpoint.slice(-10)+') — cerrá y abrí de nuevo');
+                else {
+                  pToast('🔔','Notificaciones actualizadas ✓');
+                  safeLS('remove','velo_push_reset_tried');
+                }
               }
-            }catch(_tj){}
-            console.log('[push sync startup] sub rotada a nueva VAPID key OK. build=1323');
+            }catch(_tk){}
+            console.log('[push sync startup] sub rotada a nueva VAPID key OK. build=1324');
           }
         }catch(_re){
           console.warn('[push sync startup] no pude re-suscribir', _re && _re.message);
@@ -32849,7 +32868,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1323;
+    var _BUILT_V = 1324;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
