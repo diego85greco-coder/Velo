@@ -618,7 +618,10 @@ async function main() {
       else { rawSub = parsedFull; parsedFull = { sub: rawSub }; tz = 'America/Argentina/Buenos_Aires'; }
     } catch { skipped++; continue; }
     const slot = getSlot(tz);
-    console.log(`  user ${user.id}: tz=${tz} h=${localHour(tz)} slot=${slot||'none'}`);
+    const clientPub = (parsedFull.clientPubKey || '').slice(0, 12);
+    const buildV = parsedFull.buildV || '?';
+    const pubMatch = parsedFull.clientPubKey === VAPID_PUBLIC_KEY;
+    console.log(`  user ${user.id}: tz=${tz} h=${localHour(tz)} slot=${slot||'none'} buildV=${buildV} clientPub=${clientPub}... match=${pubMatch}`);
     if (!slot) { skipped++; continue; }
     // Dedup: skip if this slot was already sent today
     if (parsedFull.lastSent && parsedFull.lastSent[slot] === today) {

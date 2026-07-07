@@ -5809,12 +5809,19 @@ async function _savePushSubscriptionToSupabase(sub){
   // Session may be expired (iOS PWA backgrounded) — refresh before the UPDATE or RLS will block it silently
   try{ await _ensureSbSession(); }catch(e){}
   try{
-    // Wrap subscription with timezone so server can send at the right local time per region
+    // Wrap subscription with timezone so server can send at the right local time per region.
+    // También agregamos clientPubKey + buildV para que el server pueda detectar si la sub
+    // fue creada con la pub key actual o con una vieja (diagnóstico VAPID mismatch).
     var _tz = (typeof Intl !== 'undefined' && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone : '';
-    var _payload = JSON.stringify({ sub: sub, tz: _tz || 'America/Argentina/Buenos_Aires' });
+    var _payload = JSON.stringify({
+      sub: sub,
+      tz: _tz || 'America/Argentina/Buenos_Aires',
+      clientPubKey: _VAPID_PUBLIC_KEY,
+      buildV: 1325,
+    });
     var {error:_pErr} = await sbClient.from('profiles').update({ push_subscription: _payload }).eq('id', _uid);
     if(_pErr) console.warn('[push sub save]', _pErr.message);
-    else console.log('[push sub save] OK for uid', _uid, 'tz:', _tz);
+    else console.log('[push sub save] OK for uid', _uid, 'tz:', _tz, 'buildV:1325');
   }catch(e){ console.warn('[push sub save]', e && e.message); }
 }
 
@@ -32868,7 +32875,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1324;
+    var _BUILT_V = 1325;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
