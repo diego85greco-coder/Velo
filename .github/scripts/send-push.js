@@ -641,6 +641,7 @@ async function main() {
         const updatedSub = { ...parsedFull, lastSent: { ...(parsedFull.lastSent || {}), [slot]: today } };
         await supabase.from('profiles').update({ push_subscription: JSON.stringify(updatedSub) }).eq('id', id);
       } catch (err) {
+        console.warn(`[push-err] user=${id} slot=${slot} status=${err.statusCode||'??'} body=${(err.body||err.message||'').toString().slice(0, 300)}`);
         if (err.statusCode === 410 || err.statusCode === 404) {
           await supabase.from('profiles').update({ push_subscription: null }).eq('id', id);
           console.log(`Removed expired sub for user ${id}`);
