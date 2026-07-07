@@ -5854,14 +5854,22 @@ async function _syncPushSubOnStartup(){
       if(_direct === false) _mismatch = true;                     // browser expone la key vieja
       else if(_direct === null && _lsKey !== _VAPID_PUBLIC_KEY) _mismatch = true; // Safari fallback: mismatch si LS está vacía o distinta
       if(_mismatch){
-        console.log('[push sync startup] VAPID key mismatch — auto-resuscribiendo');
+        var _oldEndpoint = (_browserSub && _browserSub.endpoint) || '(none)';
+        console.log('[push sync startup] VAPID key mismatch — auto-resuscribiendo. old endpoint:', _oldEndpoint);
+        try{ if(typeof pToast === 'function') pToast('🔄','Reactivando notificaciones…'); }catch(_ti){}
         try{ await _browserSub.unsubscribe(); }catch(_ue){}
+        // Pequeño delay: Safari iOS a veces sirve la sub vieja si subscribe() se llama
+        // inmediatamente después de unsubscribe() (cache interno de WebKit)
+        await new Promise(function(r){ setTimeout(r, 500); });
         try{
           var _newSub = await _reg.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: _urlBase64ToUint8Array(_VAPID_PUBLIC_KEY)
           });
           if(_newSub){
+            var _newEndpoint = _newSub.endpoint || '(none)';
+            var _sameEp = _newEndpoint === _oldEndpoint;
+            console.log('[push sync startup] new endpoint:', _newEndpoint, 'sameAsOld?', _sameEp);
             safeLS('set','velo_push_sub', JSON.stringify(_newSub));
             safeLS('set','velo_push_sub_key', _VAPID_PUBLIC_KEY);
             _initSupabase();
@@ -5869,9 +5877,18 @@ async function _syncPushSubOnStartup(){
               try{ await _ensureSbSession(); }catch(_se){}
               await _savePushSubscriptionToSupabase(_newSub);
             }
-            console.log('[push sync startup] sub rotada a nueva VAPID key OK');
+            try{
+              if(typeof pToast === 'function'){
+                if(_sameEp) pToast('⚠️','Sub cacheada por iOS (' + _newEndpoint.slice(-10) + ')');
+                else pToast('🔔','Notificaciones actualizadas ✓');
+              }
+            }catch(_tj){}
+            console.log('[push sync startup] sub rotada a nueva VAPID key OK. build=1323');
           }
-        }catch(_re){ console.warn('[push sync startup] no pude re-suscribir', _re && _re.message); }
+        }catch(_re){
+          console.warn('[push sync startup] no pude re-suscribir', _re && _re.message);
+          try{ if(typeof pToast === 'function') pToast('⚠️','No pude reactivar push: ' + (_re && _re.message || 'error')); }catch(_tk){}
+        }
         return;
       }
       // Sub válida — sync a Supabase por si el endpoint rotó silenciosamente
@@ -32832,7 +32849,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1322;
+    var _BUILT_V = 1323;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
