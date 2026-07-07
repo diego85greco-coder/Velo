@@ -5715,6 +5715,7 @@ if('serviceWorker' in navigator && 'PushManager' in window){
       try{
         var newSub = JSON.parse(e.data.sub);
         safeLS('set','velo_push_sub', JSON.stringify(newSub));
+        safeLS('set','velo_push_sub_key', _VAPID_PUBLIC_KEY);
         _savePushSubscriptionToSupabase(newSub).catch(function(){});
         console.log('[push] subscription rotated by browser — saved new endpoint');
       }catch(_me){}
@@ -5817,20 +5818,65 @@ async function _savePushSubscriptionToSupabase(sub){
   }catch(e){ console.warn('[push sub save]', e && e.message); }
 }
 
+// Compara el applicationServerKey de una sub con la _VAPID_PUBLIC_KEY actual.
+// Devuelve true si claramente coinciden, false si claramente difieren, null si no se puede saber.
+function _subKeyMatchesCurrent(sub){
+  try{
+    var raw = sub && sub.options && sub.options.applicationServerKey;
+    if(!raw) return null; // Safari iOS a veces devuelve null — no podemos comparar
+    var bytes = new Uint8Array(raw);
+    // Convertir bytes → base64url (formato en el que _VAPID_PUBLIC_KEY vive)
+    var bin = '';
+    for(var i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
+    var b64 = btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    return b64 === _VAPID_PUBLIC_KEY;
+  }catch(_e){ return null; }
+}
+
 // On startup, sync any existing localStorage push subscription to Supabase.
 // Handles users who subscribed before the DB-save worked, or who cleared cache on one device.
+// Además: si el applicationServerKey de la sub actual NO coincide con _VAPID_PUBLIC_KEY
+// (por ejemplo, se rotó el par VAPID en el server), la re-crea silenciosamente sin
+// requerir intervención del usuario. Fallback para navegadores donde no podemos leer
+// el applicationServerKey: usar velo_push_sub_key en LS como source of truth.
 async function _syncPushSubOnStartup(){
   var _uid = safeLS('get','velo_user_id');
   if(!_uid) return;
   if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   try{
-    // Use pushManager.getSubscription() as the authoritative source —
-    // the browser may have silently rotated the endpoint since we last saved it.
     var _reg = await navigator.serviceWorker.ready;
     var _browserSub = await _reg.pushManager.getSubscription();
     if(_browserSub){
-      // Always update LS with the real browser sub (endpoint may have rotated)
+      // ── Chequeo de mismatch ──────────────────────────────────────────────
+      var _direct = _subKeyMatchesCurrent(_browserSub);           // true / false / null
+      var _lsKey  = safeLS('get','velo_push_sub_key');
+      var _mismatch = false;
+      if(_direct === false) _mismatch = true;                     // browser expone la key vieja
+      else if(_direct === null && _lsKey && _lsKey !== _VAPID_PUBLIC_KEY) _mismatch = true; // Safari fallback
+      if(_mismatch){
+        console.log('[push sync startup] VAPID key mismatch — auto-resuscribiendo');
+        try{ await _browserSub.unsubscribe(); }catch(_ue){}
+        try{
+          var _newSub = await _reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: _urlBase64ToUint8Array(_VAPID_PUBLIC_KEY)
+          });
+          if(_newSub){
+            safeLS('set','velo_push_sub', JSON.stringify(_newSub));
+            safeLS('set','velo_push_sub_key', _VAPID_PUBLIC_KEY);
+            _initSupabase();
+            if(sbClient){
+              try{ await _ensureSbSession(); }catch(_se){}
+              await _savePushSubscriptionToSupabase(_newSub);
+            }
+            console.log('[push sync startup] sub rotada a nueva VAPID key OK');
+          }
+        }catch(_re){ console.warn('[push sync startup] no pude re-suscribir', _re && _re.message); }
+        return;
+      }
+      // Sub válida — sync a Supabase por si el endpoint rotó silenciosamente
       safeLS('set','velo_push_sub', JSON.stringify(_browserSub));
+      safeLS('set','velo_push_sub_key', _VAPID_PUBLIC_KEY);
       _initSupabase();
       if(!sbClient) return;
       try{ await _ensureSbSession(); }catch(e){}
@@ -5839,6 +5885,7 @@ async function _syncPushSubOnStartup(){
     } else {
       // No active browser subscription — clear stale LS entry
       safeLS('remove','velo_push_sub');
+      safeLS('remove','velo_push_sub_key');
     }
   }catch(e){ console.warn('[push sync startup]', e && e.message); }
 }
@@ -5867,6 +5914,7 @@ async function pRequestPushPermission(){
     }).then(function(sub){
       if(!sub) return;
       safeLS('set','velo_push_sub', JSON.stringify(sub));
+      safeLS('set','velo_push_sub_key', _VAPID_PUBLIC_KEY);
       _savePushSubscriptionToSupabase(sub).catch(function(){});
       pToast('🔔','¡Notificaciones activadas! 💚');
       _updateEditPushUI();
@@ -5877,6 +5925,7 @@ async function pRequestPushPermission(){
       var reg = await navigator.serviceWorker.ready;
       var sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
       safeLS('set','velo_push_sub', JSON.stringify(sub));
+      safeLS('set','velo_push_sub_key', _VAPID_PUBLIC_KEY);
       _savePushSubscriptionToSupabase(sub).catch(function(){});
       pToast('🔔','¡Notificaciones activadas! 💚');
       _updateEditPushUI();
@@ -18869,6 +18918,7 @@ function _tryRecoverPushSub(){
       }).then(function(_sub){
         if(!_sub){ pToast('⚠️','No se pudo crear la suscripción'); return; }
         safeLS('set','velo_push_sub', JSON.stringify(_sub));
+        safeLS('set','velo_push_sub_key', _VAPID_PUBLIC_KEY);
         _updateEditPushUI();
         _savePushSubscriptionToSupabase(_sub).catch(function(){});
         try{ _renderHomePushBanner(); }catch(_be){}
@@ -18941,6 +18991,7 @@ async function _doPushSubscribe(){
     var _sub = await _reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:_urlBase64ToUint8Array(_VAPID_PUBLIC_KEY) });
     if(!_sub) throw new Error('no subscription returned');
     safeLS('set','velo_push_sub', JSON.stringify(_sub));
+    safeLS('set','velo_push_sub_key', _VAPID_PUBLIC_KEY);
     await _savePushSubscriptionToSupabase(_sub);
     pToast('🔔','¡Notificaciones activadas! 💚');
   }catch(e){
@@ -32781,7 +32832,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1320;
+    var _BUILT_V = 1321;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

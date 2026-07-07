@@ -2,7 +2,11 @@ const webpush = require('web-push');
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
 
-const VAPID_PUBLIC_KEY  = (process.env.VAPID_PUBLIC_KEY  || '').trim();
+// Pub key hardcoded — la vive en el cliente igual (viaja en applicationServerKey).
+// Hardcodearla acá elimina el modo de falla en que el env var quedaba desactualizado
+// respecto a la del cliente y todos los pushes devolvían 403 BadJwtToken.
+// El único secret real es la private key: esa sigue viniendo por env var.
+const VAPID_PUBLIC_KEY  = 'BDArqGzq2k2topSo3dg0XJC0-vsUrn466S0RRvwbHc2BYV61mSGfk9E5CenvUJKrXbsJGVqgC8Nvxq6nn20-0u0';
 const VAPID_PRIVATE_KEY = (process.env.VAPID_PRIVATE_KEY || '').trim();
 const SUPABASE_URL      = (process.env.SUPABASE_URL      || '').trim();
 const SUPABASE_KEY      = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
@@ -20,7 +24,7 @@ function normalizeVapidSubject(raw) {
 }
 const VAPID_SUBJECT = normalizeVapidSubject(process.env.VAPID_SUBJECT);
 
-if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
+if (!VAPID_PRIVATE_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Missing required environment variables');
   process.exit(1);
 }
