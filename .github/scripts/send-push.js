@@ -4,16 +4,28 @@ const fetch = require('node-fetch');
 
 const VAPID_PUBLIC_KEY  = (process.env.VAPID_PUBLIC_KEY  || '').trim();
 const VAPID_PRIVATE_KEY = (process.env.VAPID_PRIVATE_KEY || '').trim();
-const VAPID_SUBJECT     = (process.env.VAPID_SUBJECT     || 'mailto:diego85greco@gmail.com').trim();
 const SUPABASE_URL      = (process.env.SUPABASE_URL      || '').trim();
 const SUPABASE_KEY      = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 const GEMINI_KEY        = (process.env.GEMINI_API_KEY    || '').trim();
+
+// Normalizar VAPID_SUBJECT — Apple es muy estricto: debe ser mailto:<email>
+// o https://<domain>. Si no arranca así, forzamos el prefijo. Un subject
+// mal formado devuelve 403 BadJwtToken de web.push.apple.com.
+function normalizeVapidSubject(raw) {
+  const s = (raw || '').trim().replace(/\s+/g, '');
+  if (!s) return 'mailto:diego85greco@gmail.com';
+  if (s.startsWith('mailto:') || s.startsWith('https://')) return s;
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return 'mailto:' + s;
+  return 'mailto:diego85greco@gmail.com';
+}
+const VAPID_SUBJECT = normalizeVapidSubject(process.env.VAPID_SUBJECT);
 
 if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Missing required environment variables');
   process.exit(1);
 }
 
+console.log(`[vapid] subject="${VAPID_SUBJECT}" public_key_prefix="${VAPID_PUBLIC_KEY.slice(0, 12)}..." private_key_len=${VAPID_PRIVATE_KEY.length}`);
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
