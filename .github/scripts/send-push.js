@@ -1,6 +1,7 @@
 const webpush = require('web-push');
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
+const crypto = require('crypto');
 
 // Pub key hardcoded — la vive en el cliente igual (viaja en applicationServerKey).
 // Hardcodearla acá elimina el modo de falla en que el env var quedaba desactualizado
@@ -29,7 +30,16 @@ if (!VAPID_PRIVATE_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
   process.exit(1);
 }
 
-console.log(`[vapid] subject="${VAPID_SUBJECT}" public_key_prefix="${VAPID_PUBLIC_KEY.slice(0, 12)}..." private_key_len=${VAPID_PRIVATE_KEY.length}`);
+// Fingerprint de la private key (sin exponer la key). Comparar con:
+//   priv esperada = RYeGjvTCv_ozjj54pSlTS_Qra_oD9363jIChSR-rZWg
+//   Prefix: RYeGjvTC, Tail: rZWg, Len: 43, SHA256 prefix: 9b488d2f053ab8d1
+const _privPrefix = VAPID_PRIVATE_KEY.slice(0, 8);
+const _privTail   = VAPID_PRIVATE_KEY.slice(-4);
+const _privHash   = crypto.createHash('sha256').update(VAPID_PRIVATE_KEY).digest('hex').slice(0, 16);
+console.log(`[vapid] subject="${VAPID_SUBJECT}" public_key_prefix="${VAPID_PUBLIC_KEY.slice(0, 12)}..." private_key_len=${VAPID_PRIVATE_KEY.length} priv_prefix="${_privPrefix}" priv_tail="${_privTail}" priv_hash=${_privHash}`);
+if (_privHash !== '9b488d2f053ab8d1') {
+  console.warn(`[vapid] ⚠️ PRIVATE KEY MISMATCH — el secret VAPID_PRIVATE_KEY NO es RYeGjvT...rZWg`);
+}
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
