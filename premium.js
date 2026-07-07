@@ -5852,7 +5852,7 @@ async function _syncPushSubOnStartup(){
       var _lsKey  = safeLS('get','velo_push_sub_key');
       var _mismatch = false;
       if(_direct === false) _mismatch = true;                     // browser expone la key vieja
-      else if(_direct === null && _lsKey && _lsKey !== _VAPID_PUBLIC_KEY) _mismatch = true; // Safari fallback
+      else if(_direct === null && _lsKey !== _VAPID_PUBLIC_KEY) _mismatch = true; // Safari fallback: mismatch si LS está vacía o distinta
       if(_mismatch){
         console.log('[push sync startup] VAPID key mismatch — auto-resuscribiendo');
         try{ await _browserSub.unsubscribe(); }catch(_ue){}
@@ -32832,7 +32832,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1321;
+    var _BUILT_V = 1322;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
