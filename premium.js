@@ -5693,7 +5693,7 @@ function _loadHomeMemoryCard(){
 }
 
 // ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────────
-var _VAPID_PUBLIC_KEY = 'BLeG-4oCRXZUawLsttyqasVMamrlg5eMfwUOtDdAzcOj5tOl2jD-1HDboNFainVzjdq6UNED1FA-FrBV14AIJn0';
+var _VAPID_PUBLIC_KEY = 'BDArqGzq2k2topSo3dg0XJC0-vsUrn466S0RRvwbHc2BYV61mSGfk9E5CenvUJKrXbsJGVqgC8Nvxq6nn20-0u0';
 // Pre-warm SW registration so subscribe() can be called synchronously from user gesture
 var _swReg = null;
 if('serviceWorker' in navigator && 'PushManager' in window){
@@ -32781,7 +32781,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1319;
+    var _BUILT_V = 1320;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

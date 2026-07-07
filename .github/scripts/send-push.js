@@ -25,7 +25,7 @@ if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
   process.exit(1);
 }
 
-console.log(`[vapid] subject="${VAPID_SUBJECT}" public_key_FULL="${VAPID_PUBLIC_KEY}" private_key_len=${VAPID_PRIVATE_KEY.length}`);
+console.log(`[vapid] subject="${VAPID_SUBJECT}" public_key_prefix="${VAPID_PUBLIC_KEY.slice(0, 12)}..." private_key_len=${VAPID_PRIVATE_KEY.length}`);
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -276,7 +276,10 @@ async function sendAnnualWrapped(users) {
       const updated = { ...parsedFull, lastAnnualWrapped: String(year) };
       await supabase.from('profiles').update({ push_subscription: JSON.stringify(updated) }).eq('id', uid);
     } catch (err) {
-      if (err.statusCode === 410 || err.statusCode === 404) {
+      const body = (err.body || err.message || '').toString();
+      const isExpired = err.statusCode === 410 || err.statusCode === 404;
+      const isVapidMismatch = err.statusCode === 403 && /BadJwtToken|Unauthorized|VapidPk/i.test(body);
+      if (isExpired || isVapidMismatch) {
         await supabase.from('profiles').update({ push_subscription: null }).eq('id', uid);
       }
       failed++;
@@ -353,7 +356,10 @@ async function sendWeeklySummary(users) {
       const updated = { ...parsedFull, lastWeekly: weekKey };
       await supabase.from('profiles').update({ push_subscription: JSON.stringify(updated) }).eq('id', uid);
     } catch (err) {
-      if (err.statusCode === 410 || err.statusCode === 404) {
+      const body = (err.body || err.message || '').toString();
+      const isExpired = err.statusCode === 410 || err.statusCode === 404;
+      const isVapidMismatch = err.statusCode === 403 && /BadJwtToken|Unauthorized|VapidPk/i.test(body);
+      if (isExpired || isVapidMismatch) {
         await supabase.from('profiles').update({ push_subscription: null }).eq('id', uid);
       }
       failed++;
@@ -448,7 +454,10 @@ async function sendMonthlyWrapped(users) {
       const updated = { ...parsedFull, lastWrapped: monthKey };
       await supabase.from('profiles').update({ push_subscription: JSON.stringify(updated) }).eq('id', uid);
     } catch (err) {
-      if (err.statusCode === 410 || err.statusCode === 404) {
+      const body = (err.body || err.message || '').toString();
+      const isExpired = err.statusCode === 410 || err.statusCode === 404;
+      const isVapidMismatch = err.statusCode === 403 && /BadJwtToken|Unauthorized|VapidPk/i.test(body);
+      if (isExpired || isVapidMismatch) {
         await supabase.from('profiles').update({ push_subscription: null }).eq('id', uid);
       }
       failed++;
@@ -556,7 +565,10 @@ async function sendBuddyLowMoodAlerts(users) {
         await supabase.from('profiles').update({ push_subscription: JSON.stringify(updated) }).eq('id', p.buddy_id);
         sent++;
       } catch (err) {
-        if (err.statusCode === 410 || err.statusCode === 404) {
+        const body = (err.body || err.message || '').toString();
+        const isExpired = err.statusCode === 410 || err.statusCode === 404;
+        const isVapidMismatch = err.statusCode === 403 && /BadJwtToken|Unauthorized|VapidPk/i.test(body);
+        if (isExpired || isVapidMismatch) {
           await supabase.from('profiles').update({ push_subscription: null }).eq('id', p.buddy_id);
         }
       }
@@ -653,10 +665,15 @@ async function main() {
         const updatedSub = { ...parsedFull, lastSent: { ...(parsedFull.lastSent || {}), [slot]: today } };
         await supabase.from('profiles').update({ push_subscription: JSON.stringify(updatedSub) }).eq('id', id);
       } catch (err) {
-        console.warn(`[push-err] user=${id} slot=${slot} status=${err.statusCode||'??'} body=${(err.body||err.message||'').toString().slice(0, 300)}`);
-        if (err.statusCode === 410 || err.statusCode === 404) {
+        const body = (err.body || err.message || '').toString();
+        console.warn(`[push-err] user=${id} slot=${slot} status=${err.statusCode||'??'} body=${body.slice(0, 300)}`);
+        // Limpiar sub si expiró (410/404) o si hay VAPID mismatch (403 BadJwtToken).
+        // En ambos casos el cliente tiene que re-suscribirse abriendo la app.
+        const isExpired = err.statusCode === 410 || err.statusCode === 404;
+        const isVapidMismatch = err.statusCode === 403 && /BadJwtToken|Unauthorized|VapidPk/i.test(body);
+        if (isExpired || isVapidMismatch) {
           await supabase.from('profiles').update({ push_subscription: null }).eq('id', id);
-          console.log(`Removed expired sub for user ${id}`);
+          console.log(`Removed stale sub for user ${id} (${isExpired ? 'expired' : 'vapid-mismatch'})`);
         }
         failed++;
       }
