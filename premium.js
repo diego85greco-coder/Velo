@@ -19644,15 +19644,20 @@ function pCreateGroupPrompt(kind){
     if(!favs.length){
       inviteHtml = '<div style="padding:12px 14px;background:rgba(220,120,120,.10);border:1px solid rgba(220,120,120,.30);border-radius:12px;color:rgba(255,180,180,.85);font-family:Jost,sans-serif;font-size:12.5px;margin-bottom:12px;line-height:1.5">Agregá contactos favoritos primero para invitarlos al grupo</div>';
     } else {
+      var showSearch = favs.length > 5;
+      var searchHtml = showSearch
+        ? '<input id="vibeGroupSearchInput" type="text" placeholder="🔍 Buscar contacto…" oninput="_vibeGroupFilterInvites(this.value)" style="width:100%;padding:9px 12px;margin-bottom:8px;background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.28);border-radius:10px;color:#fff;font-family:Jost,sans-serif;font-size:13px;box-sizing:border-box;outline:none">'
+        : '';
       inviteHtml = '<div style="margin-bottom:14px">'
         + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(215,200,255,.75);margin-bottom:8px">👥 INVITÁ A ESTE GRUPO</div>'
         + '<div style="display:flex;gap:6px;margin-bottom:8px">'
           + '<button onclick="_vibeGroupToggleAll(true)" style="flex:1;padding:8px;background:rgba(155,120,220,.20);border:1.5px solid rgba(155,120,220,.55);border-radius:100px;color:#e0d0ff;font-family:Jost,sans-serif;font-size:11.5px;font-weight:800;cursor:pointer">Todos</button>'
           + '<button onclick="_vibeGroupToggleAll(false)" style="flex:1;padding:8px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.16);border-radius:100px;color:rgba(200,230,215,.72);font-family:Jost,sans-serif;font-size:11.5px;font-weight:700;cursor:pointer">Ninguno</button>'
         + '</div>'
-        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
+        + searchHtml
+        + '<div id="vibeGroupInviteList" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:200px;overflow-y:auto">'
           + favs.map(function(f){
-              return '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.28);border-radius:10px;cursor:pointer;font-family:Jost,sans-serif;font-size:12.5px;color:#fff"><input type="checkbox" class="vibe-group-cb" data-uid="'+f.id+'" style="accent-color:#9b78dc;width:16px;height:16px;cursor:pointer"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(f.name||'Usuario')+'</span></label>';
+              return '<label data-name="'+_escHtml((f.name||'').toLowerCase())+'" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.28);border-radius:10px;cursor:pointer;font-family:Jost,sans-serif;font-size:12.5px;color:#fff"><input type="checkbox" class="vibe-group-cb" data-uid="'+f.id+'" style="accent-color:#9b78dc;width:16px;height:16px;cursor:pointer"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(f.name||'Usuario')+'</span></label>';
             }).join('')
         + '</div>'
       + '</div>';
@@ -19673,6 +19678,15 @@ function pCreateGroupPrompt(kind){
 }
 function _vibeGroupToggleAll(checked){
   document.querySelectorAll('.vibe-group-cb').forEach(function(cb){ cb.checked = checked; });
+}
+function _vibeGroupFilterInvites(q){
+  var query = (q||'').trim().toLowerCase();
+  var list = document.getElementById('vibeGroupInviteList');
+  if(!list) return;
+  list.querySelectorAll('label[data-name]').forEach(function(l){
+    var name = l.getAttribute('data-name') || '';
+    l.style.display = (!query || name.indexOf(query) >= 0) ? '' : 'none';
+  });
 }
 async function _vibeCreateGroupConfirm(kind){
   var titleEl = document.getElementById('vibeGroupTitleInput');
@@ -32948,7 +32962,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1335;
+    var _BUILT_V = 1336;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

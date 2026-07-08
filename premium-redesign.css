@@ -14930,3 +14930,22 @@ body:not(.r-dark) #vibesBody button[onclick^="pOpenVibeGroup"] > div:first-child
   background: rgba(255,255,255,.75) !important;
   border-color: rgba(80,160,110,.45) !important;
 }
+
+/* v1336 — CTAs "Creá el primer grupo público/privado" en light mode eran
+   ilegibles (texto blanco sobre fondos pastel muy claros). */
+body:not(.r-dark) #vibesBody button[onclick*="pCreateGroupPrompt('public')"] {
+  background: linear-gradient(135deg,rgba(200,158,56,.35),rgba(180,130,30,.28)) !important;
+  border-color: rgba(180,130,30,.75) !important;
+  color: #5a3a08 !important;
+}
+body:not(.r-dark) #vibesBody button[onclick*="pCreateGroupPrompt('public')"] span {
+  color: rgba(120,80,10,.85) !important;
+}
+body:not(.r-dark) #vibesBody button[onclick*="pCreateGroupPrompt('private')"] {
+  background: linear-gradient(135deg,rgba(155,120,220,.28),rgba(120,90,200,.24)) !important;
+  border-color: rgba(120,90,200,.72) !important;
+  color: #3a1a70 !important;
+}
+body:not(.r-dark) #vibesBody button[onclick*="pCreateGroupPrompt('private')"] span {
+  color: rgba(80,50,150,.85) !important;
+}
