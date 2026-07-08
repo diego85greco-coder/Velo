@@ -19469,9 +19469,8 @@ var _vibesGroupCounts = {}; // groupId → count de vibes hoy
 function pOpenVibes(){ pGoTo('vibes'); }
 // Renderiza la card de entrada arriba del home (llamada tras cargar el home)
 async function _renderHomeVibesCard(){
-  // v1350 — mini-portadas POR GRUPO. Cada card muestra el grupo con su count
-  // de historias activas + una "Instantáneas" con el count de sueltas.
-  // Ordenadas por el timestamp del vibe más reciente (los con actividad primero).
+  // v1352 — vuelve al estilo de portadas REALES (fotos de los últimos momentos).
+  // Rail horizontal con las últimas 5 fotos + botón "Ver todos". Publicá abajo.
   var wrap = document.getElementById('homeVibesCardTop') || document.getElementById('homeVibesCard');
   if(!wrap) return;
   var oldWrap = document.getElementById('homeVibesCard');
@@ -19480,111 +19479,46 @@ async function _renderHomeVibesCard(){
   if(!sbClient){ wrap.style.display = 'none'; return; }
   try{
     var myId = safeLS('get','velo_user_id')||'';
-    // Cargar grupos: official + public (visibles) + privados donde soy miembro/owner
-    var gRes = await sbClient.from('vibe_groups').select('id,kind,slug,emoji,title,owner_id,member_ids').order('created_at',{ascending:false}).limit(80);
-    var groups = ((gRes && gRes.data)||[]).filter(function(g){
-      if(g.kind === 'official' || g.kind === 'public') return true;
-      if(g.kind === 'private' && (g.owner_id === myId || (g.member_ids||[]).indexOf(myId) >= 0)) return true;
-      return false;
-    });
-    // Cargar vibes activos (no expirados) para contar por grupo + timestamp más reciente
-    var vRes = await sbClient.from('vibes').select('id,group_id,created_at,media_url').gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(300);
+    // Últimos 6 momentos con foto (más nuevos primero) + info del grupo para
+    // marcar los privados con contorno violeta.
+    var vRes = await sbClient.from('vibes').select('id,media_url,group_id,instant_scope,created_at,user_name').gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(6);
     var vibes = (vRes && vRes.data)||[];
-    // Agrupar
-    var byGroup = {};        // groupId → {count, latest, coverUrl}
-    var instantVibes = [];   // instantáneos (group_id null)
-    vibes.forEach(function(v){
-      if(v.group_id){
-        var g = byGroup[v.group_id] || (byGroup[v.group_id] = {count:0, latest:0, coverUrl:''});
-        g.count++;
-        var t = new Date(v.created_at).getTime();
-        if(t > g.latest){ g.latest = t; g.coverUrl = v.media_url; }
-      } else {
-        instantVibes.push(v);
-      }
-    });
-    // Armar lista de portadas: 1 por grupo con actividad + 1 "Instantáneas" si hay
-    var tiles = [];
-    groups.forEach(function(g){
-      var stats = byGroup[g.id] || {count:0, latest:0, coverUrl:''};
-      // Mostrar: oficiales siempre, otros solo si tienen actividad
-      var isInvited = g.kind === 'private' && g.owner_id !== myId && (g.member_ids||[]).indexOf(myId) >= 0;
-      if(stats.count > 0 || g.kind === 'official' || isInvited){
-        tiles.push({
-          id: g.id, kind: g.kind, emoji: g.emoji || '🌊', title: g.title || 'Grupo',
-          count: stats.count, latest: stats.latest, coverUrl: stats.coverUrl,
-          isGroup: true, isInvited: isInvited
-        });
-      }
-    });
-    if(instantVibes.length){
-      var latestInstant = instantVibes[0].created_at ? new Date(instantVibes[0].created_at).getTime() : 0;
-      tiles.push({
-        id: 'instant', kind: 'instant', emoji: '✨', title: 'Instantáneas',
-        count: instantVibes.length, latest: latestInstant, coverUrl: instantVibes[0].media_url,
-        isInstant: true, allInstants: instantVibes
-      });
+    // Traer info de grupos de las vibes para saber kind (private/public/official)
+    var groupKinds = {};
+    var gIds = vibes.map(function(v){ return v.group_id; }).filter(Boolean);
+    if(gIds.length){
+      try{
+        var gRes = await sbClient.from('vibe_groups').select('id,kind').in('id', gIds);
+        (gRes.data||[]).forEach(function(g){ groupKinds[g.id] = g.kind; });
+      }catch(_){}
     }
-    // Ordenar por latest DESC (con actividad primero), oficiales sin actividad al final
-    tiles.sort(function(a,b){
-      if(a.count === 0 && b.count > 0) return 1;
-      if(a.count > 0 && b.count === 0) return -1;
-      return b.latest - a.latest;
-    });
-    // Fallback si no hay NADA
+    // Vistos → grayscale
+    var _seen = {};
+    try{ _seen = JSON.parse(safeLS('get','velo_vibes_seen_instant')||'{}'); }catch(_){}
     var thumbsHtml;
-    if(!tiles.length){
-      thumbsHtml = '<div style="padding:16px;background:rgba(255,235,180,.25);border:1.5px dashed rgba(200,150,60,.55);border-radius:14px;color:rgba(120,80,20,.85);font-family:Jost,sans-serif;font-size:12.5px;text-align:center;font-style:italic;flex:1">Sin momentos por ahora — publicá el primero ✨</div>';
+    if(!vibes.length){
+      thumbsHtml = '<div style="flex:1;padding:22px 16px;background:linear-gradient(135deg,rgba(255,235,180,.35),rgba(255,215,140,.25));border:1.5px dashed rgba(200,150,60,.55);border-radius:14px;color:rgba(120,80,20,.85);font-family:Jost,sans-serif;font-size:12.5px;text-align:center;font-style:italic">Aún nadie publicó momentos hoy — sé el primero ✨</div>';
     } else {
-      // Mostrar los 5 más recientes/relevantes + tile "Ver todos" si hay más
-      var MAX_TILES = 5;
-      var visibleTiles = tiles.slice(0, MAX_TILES);
-      thumbsHtml = visibleTiles.map(function(t){
-        var isEmpty = t.count === 0;
-        var hasCover = t.coverUrl && !isEmpty;
-        // Contorno violeta y más grueso para PRIVADOS
-        var borderCol = t.isInstant ? 'rgba(220,170,60,.85)' : (t.kind==='private' ? 'rgba(155,120,220,.95)' : 'rgba(116,198,157,.75)');
-        var borderWidth = t.kind==='private' ? '2.5px' : '2px';
-        // Background: para no-cover, usar un tint según kind
-        var bgStyle;
-        if(hasCover){
-          bgStyle = 'background:#0a1810';
-        } else if(t.isInstant){
-          bgStyle = 'background:linear-gradient(140deg,#ffd670 0%,#f0a860 100%)';
-        } else if(t.kind==='private'){
-          bgStyle = 'background:linear-gradient(140deg,#c8a8ff 0%,#a888dc 100%)';
-        } else {
-          bgStyle = 'background:linear-gradient(140deg,#a8dfb9 0%,#7ac6a0 100%)';
-        }
-        var privateBadge = t.isInvited
-          ? '<span style="position:absolute;top:3px;right:3px;background:rgba(155,120,220,.98);color:#fff;font-family:Jost,sans-serif;font-size:8px;font-weight:800;padding:1px 5px;border-radius:100px;box-shadow:0 2px 4px rgba(0,0,0,.35);z-index:3;letter-spacing:.2px">INVITADO</span>'
-          : (t.kind==='private' ? '<span style="position:absolute;top:3px;right:3px;background:rgba(155,120,220,.98);color:#fff;font-family:Jost,sans-serif;font-size:11px;padding:1px 4px;border-radius:100px;box-shadow:0 2px 4px rgba(0,0,0,.35);z-index:3">🔒</span>' : '');
-        var coverInner = hasCover
-          ? '<img data-vibe-src="'+_escHtml(t.coverUrl)+'" style="width:100%;height:100%;object-fit:cover;display:block;opacity:.65">'
-          : '';
-        var onclickAction = t.isInstant ? ('pOpenInstantVibe(\''+_escHtml(instantVibes[0].id)+'\')') : ('pOpenVibeGroup(\''+_escHtml(t.id)+'\')');
-        var countTxt = t.count > 0 ? (t.count + (t.isInstant ? ' publicad'+(t.count===1?'a':'as') : ' historia'+(t.count===1?'':'s'))) : 'Nuevo';
-        return '<button onclick="'+onclickAction+'" style="flex:0 0 84px;padding:0;'+bgStyle+';border:'+borderWidth+' solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:104px;display:flex;flex-direction:column;box-shadow:0 3px 10px rgba(60,140,90,.16)">'
+      thumbsHtml = vibes.map(function(v){
+        var isSeen = !!_seen[v.id];
+        var kind = v.group_id ? (groupKinds[v.group_id]||'public') : (v.instant_scope === 'private' ? 'private' : 'instant');
+        var isPrivate = kind === 'private';
+        var borderCol = isPrivate ? 'rgba(155,120,220,.95)' : (kind==='instant' ? 'rgba(220,170,60,.85)' : 'rgba(116,198,157,.72)');
+        var borderWidth = isPrivate ? '3px' : '2px';
+        var opa = isSeen ? '.55' : '1';
+        var filt = isSeen ? 'grayscale(.85)' : 'none';
+        var privateBadge = isPrivate ? '<span style="position:absolute;top:4px;right:4px;background:rgba(155,120,220,.95);color:#fff;font-family:Jost,sans-serif;font-size:10px;padding:2px 5px;border-radius:100px;box-shadow:0 2px 5px rgba(0,0,0,.4);z-index:2">🔒</span>' : '';
+        var onclickAction = v.group_id ? ('pOpenVibeGroup(\''+_escHtml(v.group_id)+'\')') : ('pOpenInstantVibe(\''+_escHtml(v.id)+'\')');
+        return '<button onclick="'+onclickAction+'" style="flex:0 0 82px;padding:0;background:#0a1810;border:'+borderWidth+' solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:98px;opacity:'+opa+';filter:'+filt+';box-shadow:0 3px 10px rgba(0,0,0,.14)">'
           + privateBadge
-          + '<div style="flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">'
-            + coverInner
-            + '<span style="'+(hasCover?'position:absolute;':'position:static;')+'font-size:34px;text-shadow:0 2px 6px rgba(0,0,0,.35)">'+_escHtml(t.emoji)+'</span>'
-          + '</div>'
-          + '<div style="padding:4px 3px 5px;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.55));text-align:center">'
-            + '<div style="font-family:Jost,sans-serif;font-size:9px;font-weight:800;color:#fff;letter-spacing:.2px;line-height:1.15;text-shadow:0 1px 2px rgba(0,0,0,.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px">'+_escHtml(t.title)+'</div>'
-            + '<div style="font-family:Jost,sans-serif;font-size:8.5px;font-weight:700;color:rgba(255,255,255,.85);margin-top:1px;letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.75)">'+_escHtml(countTxt)+'</div>'
-          + '</div>'
+          + '<img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;height:100%;object-fit:cover;display:block">'
         + '</button>';
       }).join('');
-      // Tile final: "Ver todos" si hay más de MAX_TILES
-      if(tiles.length > MAX_TILES){
-        var moreCount = tiles.length - MAX_TILES;
-        thumbsHtml += '<button onclick="pOpenVibes()" style="flex:0 0 74px;padding:0;background:linear-gradient(140deg,rgba(116,198,157,.28),rgba(80,160,110,.20));border:2px dashed rgba(116,198,157,.70);border-radius:14px;cursor:pointer;height:104px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-family:Jost,sans-serif;color:rgba(30,110,70,.98);font-size:10.5px;font-weight:800;line-height:1.15;text-align:center">'
-          + '<span style="font-size:22px">→</span>'
-          + '<span>Ver todos</span>'
-          + '<span style="font-size:9px;font-weight:700;color:rgba(60,140,90,.75)">+'+moreCount+'</span>'
-        + '</button>';
-      }
+      // Tile final: "Ver todos →" si hay más momentos disponibles
+      thumbsHtml += '<button onclick="pOpenVibes()" style="flex:0 0 68px;padding:0;background:linear-gradient(140deg,rgba(116,198,157,.28),rgba(80,160,110,.20));border:2px dashed rgba(116,198,157,.70);border-radius:14px;cursor:pointer;height:98px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:Jost,sans-serif;color:rgba(30,110,70,.98);font-size:9.5px;font-weight:800;line-height:1.15;text-align:center;padding:6px 4px">'
+        + '<span style="font-size:20px">→</span>'
+        + '<span>Ver<br>todos</span>'
+      + '</button>';
     }
     wrap.style.display = 'block';
     wrap.innerHTML = '<div class="home-vibes-widget" style="padding:14px 14px 12px;background:linear-gradient(150deg,rgba(255,255,255,.85),rgba(240,250,244,.75));border:1.5px solid rgba(116,198,157,.45);border-radius:20px;box-shadow:0 4px 16px rgba(60,140,90,.10);font-family:Jost,sans-serif">'
@@ -33640,7 +33574,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1351;
+    var _BUILT_V = 1352;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
