@@ -19564,11 +19564,11 @@ async function _renderHomeVibesCard(){
         var emptyCls = isPrivate ? 'vibes-tile-empty--private' : (t.isInstant ? 'vibes-tile-empty--instant' : 'vibes-tile-empty--group');
         visual = '<div class="vibes-tile-empty '+emptyCls+'" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:38px">'+_escHtml(t.emoji)+'</div>';
       }
-      return '<button onclick="'+onclickAction+'" style="flex:0 0 96px;padding:0;background:#000;border:'+borderWidth+' solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:120px;opacity:'+opa+';filter:'+filt+';box-shadow:0 4px 12px rgba(0,0,0,.25);display:flex;flex-direction:column">'
+      return '<button class="vibes-tile" onclick="'+onclickAction+'" style="flex:0 0 96px;padding:0;background:#000;border:'+borderWidth+' solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:120px;opacity:'+opa+';filter:'+filt+';box-shadow:0 4px 12px rgba(0,0,0,.25);display:flex;flex-direction:column">'
         + badge
-        + '<div style="flex:1;position:relative;overflow:hidden;min-height:0">'+visual+'</div>'
-        + '<div style="padding:6px 4px 7px;background:rgba(0,0,0,.92);border-top:1px solid rgba(255,255,255,.14);text-align:center">'
-          + '<span style="font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;color:#ffffff;letter-spacing:.25px;line-height:1.15;text-shadow:0 1px 3px rgba(0,0,0,.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;padding:0 3px">'+_escHtml(t.title)+'</span>'
+        + '<div class="vibes-tile__visual" style="flex:1;position:relative;overflow:hidden;min-height:0">'+visual+'</div>'
+        + '<div class="vibes-tile__label">'
+          + '<div class="vibes-tile__label-text">'+_escHtml(t.title)+'</div>'
         + '</div>'
       + '</button>';
     }).join('');
@@ -19582,27 +19582,19 @@ async function _renderHomeVibesCard(){
       + '</button>';
     }
     wrap.style.display = 'block';
-    // v1361 — Widget con estilos inline forzados para asegurar la visualización
-    // correcta en ambos temas (algunos overrides silenciosos rompían el header y labels).
-    var isDarkTheme = document.body.classList.contains('r-dark');
-    var wBg = isDarkTheme
-      ? 'background:linear-gradient(155deg,#0d2418 0%,#123020 55%,#0a1e13 100%);border:1.5px solid rgba(116,198,157,.32);box-shadow:0 8px 32px rgba(0,0,0,.42),0 1px 0 rgba(116,198,157,.15) inset'
-      : 'background:linear-gradient(155deg,#ffffff 0%,#f0f5ea 55%,#dcead0 100%);border:1.5px solid rgba(60,130,90,.42);box-shadow:0 8px 28px rgba(60,130,90,.14),0 1px 0 rgba(255,255,255,1) inset';
-    var wTitleColor = isDarkTheme ? '#e4f5e9' : '#0e3a1e';
-    var wCtaBg = isDarkTheme
-      ? 'background:linear-gradient(135deg,#52c48c 0%,#3aa06e 100%);color:#071409'
-      : 'background:linear-gradient(135deg,#4a7a52 0%,#2e5f3e 100%);color:#ffffff';
-    wrap.innerHTML = '<div style="padding:14px 14px 12px;border-radius:22px;font-family:Jost,sans-serif;position:relative;'+wBg+'">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
-        + '<button onclick="pOpenVibes()" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:Jost,sans-serif">'
-          + '<span style="font-size:21px;line-height:1">🌊</span>'
-          + '<span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-style:italic;font-weight:700;letter-spacing:.3px;color:'+wTitleColor+';text-shadow:'+(isDarkTheme?'0 1px 4px rgba(0,0,0,.35)':'none')+'">Vibes de hoy</span>'
+    // v1362 — Volver a estructura con clases CSS (como v1355 que se veía bien).
+    // Los overrides de CSS bien definidos garantizan light y dark mode consistentes.
+    wrap.innerHTML = '<div class="home-vibes-widget">'
+      + '<div class="home-vibes-widget__header">'
+        + '<button onclick="pOpenVibes()" class="home-vibes-widget__title-btn">'
+          + '<span class="home-vibes-widget__icon">🌊</span>'
+          + '<span class="home-vibes-widget__title">Vibes de hoy</span>'
         + '</button>'
-        + '<button onclick="pOpenVibes()" style="background:'+(isDarkTheme?'rgba(116,198,157,.24)':'rgba(80,160,110,.20)')+';border:1px solid '+(isDarkTheme?'rgba(116,198,157,.62)':'rgba(80,160,110,.55)')+';border-radius:100px;padding:6px 14px;color:'+(isDarkTheme?'#b8e8ca':'#1a5a30')+';font-size:11px;font-weight:800;font-family:Jost,sans-serif;letter-spacing:.4px;cursor:pointer">Ver todos →</button>'
+        + '<button onclick="pOpenVibes()" class="home-vibes-widget__all">Ver todos →</button>'
       + '</div>'
-      + '<div style="display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px 2px;margin-bottom:12px;-webkit-overflow-scrolling:touch">'+thumbsHtml+'</div>'
-      + '<button onclick="pStartCreateVibe(null,\'public\')" style="width:100%;padding:12px 14px;border:none;border-radius:14px;font-family:Jost,sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:8px;'+wCtaBg+';box-shadow:0 5px 18px rgba(60,140,90,.28),0 1px 0 rgba(255,255,255,.22) inset">'
-        + '<span style="font-size:18px;font-weight:900">＋</span><span>Publicá tu momento</span>'
+      + '<div class="home-vibes-widget__rail">'+thumbsHtml+'</div>'
+      + '<button onclick="pStartCreateVibe(null,\'public\')" class="home-vibes-widget__cta">'
+        + '<span class="home-vibes-widget__cta-plus">＋</span><span>Publicá tu momento</span>'
       + '</button>'
     + '</div>';
     // Hidratar data URLs a blob URLs (iOS)
@@ -33661,7 +33653,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1361;
+    var _BUILT_V = 1362;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
