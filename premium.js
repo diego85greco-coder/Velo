@@ -19548,17 +19548,17 @@ async function _renderHomeVibesCard(){
       + '</button>';
     }
     wrap.style.display = 'block';
-    wrap.innerHTML = '<div class="home-vibes-widget" style="padding:14px 14px 12px;background:linear-gradient(150deg,rgba(255,255,255,.85),rgba(240,250,244,.75));border:1.5px solid rgba(116,198,157,.45);border-radius:20px;box-shadow:0 4px 16px rgba(60,140,90,.10);font-family:Jost,sans-serif">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-        + '<button onclick="pOpenVibes()" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:Jost,sans-serif">'
-          + '<span style="font-size:20px">🌊</span>'
-          + '<span style="font-family:\'Cormorant Garamond\',serif;font-size:19px;font-style:italic;color:var(--ink);letter-spacing:.3px">Vibes de hoy</span>'
+    wrap.innerHTML = '<div class="home-vibes-widget">'
+      + '<div class="home-vibes-widget__header">'
+        + '<button onclick="pOpenVibes()" class="home-vibes-widget__title-btn">'
+          + '<span class="home-vibes-widget__icon">🌊</span>'
+          + '<span class="home-vibes-widget__title">Vibes de hoy</span>'
         + '</button>'
-        + '<button onclick="pOpenVibes()" style="background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.42);border-radius:100px;padding:5px 12px;color:rgba(30,110,70,.98);font-size:11px;font-weight:800;font-family:Jost,sans-serif;letter-spacing:.4px;cursor:pointer">Ver todos →</button>'
+        + '<button onclick="pOpenVibes()" class="home-vibes-widget__all">Ver todos →</button>'
       + '</div>'
-      + '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;margin-bottom:10px">'+thumbsHtml+'</div>'
-      + '<button onclick="pStartCreateVibe(null,\'public\')" style="width:100%;padding:11px 12px;background:linear-gradient(135deg,rgba(116,198,157,.90),rgba(74,160,110,.98));border:none;border-radius:14px;color:#071409;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 14px rgba(60,140,90,.24);display:flex;align-items:center;justify-content:center;gap:8px">'
-        + '<span style="font-size:16px">＋</span><span>Publicá tu momento</span>'
+      + '<div class="home-vibes-widget__rail">'+thumbsHtml+'</div>'
+      + '<button onclick="pStartCreateVibe(null,\'public\')" class="home-vibes-widget__cta">'
+        + '<span class="home-vibes-widget__cta-plus">＋</span><span>Publicá tu momento</span>'
       + '</button>'
     + '</div>';
     // Hidratar data URLs a blob URLs (iOS)
@@ -20058,7 +20058,7 @@ async function pOpenVibeGroup(groupId){
   ov.id = 'vibeGroupOv';
   ov.dataset.prevHtmlBg = _prevHtmlBg;
   ov.style.cssText = 'position:fixed;inset:0;z-index:10012;background:linear-gradient(180deg,#0a1810,#050f08);display:flex;flex-direction:column;overflow:hidden;color:#fff';
-  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.94);border-bottom:1px solid rgba(116,198,157,.14);flex-shrink:0"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.20);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:22px">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:19px;font-style:italic">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11px;color:rgba(180,220,195,.65);margin-top:2px;font-family:Jost,sans-serif">'+_escHtml((gr&&gr.description)||'')+'</div></div><button onclick="_closeVibeGroup();pStartCreateVibe(\''+groupId+'\')" style="background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;color:#0e1f14;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;padding:8px 14px;border-radius:100px;cursor:pointer;letter-spacing:.3px">＋</button></div>';
+  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.98);border-bottom:1px solid rgba(116,198,157,.22);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.30)"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:26px;flex-shrink:0">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;font-style:italic;color:#fff;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11.5px;color:rgba(200,235,215,.85);margin-top:3px;font-family:Jost,sans-serif;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.description)||'')+'</div></div><button onclick="_closeVibeGroup();pStartCreateVibe(\''+groupId+'\')" style="background:linear-gradient(135deg,rgba(116,198,157,.98),rgba(74,160,110,1));border:none;color:#0e1f14;font-family:Jost,sans-serif;font-size:14px;font-weight:900;padding:9px 14px;border-radius:100px;cursor:pointer;letter-spacing:.3px;flex-shrink:0;box-shadow:0 3px 10px rgba(60,140,90,.35)">＋</button></div>';
   // Layout: header fijo + zona fija (CTA + banner de nuevos) + carrusel horizontal
   // scroll-snap con cada card 100% ancho + indicador de posición debajo.
   ov.innerHTML = header
@@ -20307,8 +20307,24 @@ function _vibeCardHtml(v){
   var summaryChip = summary
     ? '<div style="padding:10px 16px 12px;font-family:Jost,sans-serif;font-size:12px;font-weight:800;letter-spacing:.4px;color:'+(tint?'rgba('+tint.r+','+tint.g+','+tint.b+',.98)':'rgba(180,220,195,.75)')+';text-transform:uppercase">'+_escHtml(summary)+'</div>'
     : '';
+  // Chip del grupo — muestra dónde está publicado el momento (junto al emoji)
+  var groupChip = '';
+  try{
+    var _grInfo = null;
+    if(v.group_id){
+      _grInfo = (_vibesGroupsCache||[]).find(function(g){ return g.id === v.group_id; });
+    }
+    if(_grInfo){
+      var _grName = _grInfo.title || 'Grupo';
+      var _grEmoji = (_grInfo.emoji||'').trim() || (_grInfo.slug && _VIBE_SLUG_EMOJIS[_grInfo.slug]) || '🌊';
+      groupChip = '<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(116,198,157,.16);border:1px solid rgba(116,198,157,.42);border-radius:100px;font-family:Jost,sans-serif;font-size:10.5px;font-weight:700;color:rgba(180,235,205,.98);letter-spacing:.2px;margin-top:4px;max-width:100%"><span style="font-size:12px;flex-shrink:0">'+_escHtml(_grEmoji)+'</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">en '+_escHtml(_grName)+'</span></div>';
+    } else if(v.instant_scope){
+      var _instLbl = v.instant_scope === 'private' ? '🔒 Instantáneo privado' : '✨ Instantáneo';
+      groupChip = '<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(220,170,60,.20);border:1px solid rgba(220,170,60,.55);border-radius:100px;font-family:Jost,sans-serif;font-size:10.5px;font-weight:700;color:rgba(255,225,150,.98);letter-spacing:.2px;margin-top:4px">'+_escHtml(_instLbl)+'</div>';
+    }
+  }catch(_grE){}
   return '<div class="vibe-card" data-vibe-id="'+v.id+'" style="background:linear-gradient(180deg,rgba(20,40,26,.92),rgba(10,26,18,.95));border:1.5px solid '+borderColor+';border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:'+glow+';transition:box-shadow .5s, border-color .5s">'
-    + '<div onclick="_vibeOpenUserProfile(\''+(v.user_id||'')+'\',\''+_jsAttr(v.user_name||'Usuario')+'\',\''+_jsAttr(v.user_av||'🧑')+'\')" style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;cursor:pointer" title="Ver perfil de '+_escHtml(v.user_name||'Usuario')+'"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div><div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:1px">'+ago+' · caduca en '+left+'</div></div><span style="font-size:14px;color:rgba(180,220,195,.55);flex-shrink:0" title="Ver perfil">›</span></div>'
+    + '<div onclick="_vibeOpenUserProfile(\''+(v.user_id||'')+'\',\''+_jsAttr(v.user_name||'Usuario')+'\',\''+_jsAttr(v.user_av||'🧑')+'\')" style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;cursor:pointer" title="Ver perfil de '+_escHtml(v.user_name||'Usuario')+'"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div>'+groupChip+'<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:3px">'+ago+' · caduca en '+left+'</div></div><span style="font-size:14px;color:rgba(180,220,195,.55);flex-shrink:0" title="Ver perfil">›</span></div>'
     + '<img data-vibe-src="'+_escHtml(v.media_url||'')+'" alt="momento" style="width:100%;max-height:520px;object-fit:cover;display:block;background:rgba(0,0,0,.35)" onerror="this.style.opacity=\'.35\'">'
     + (v.caption ? '<div style="padding:12px 16px 14px;font-family:\'Cormorant Garamond\',serif;font-size:15.5px;font-style:italic;color:rgba(240,250,240,.95);line-height:1.5">"'+_escHtml(v.caption)+'"</div>' : '')
     + summaryChip
@@ -33601,7 +33617,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1353;
+    var _BUILT_V = 1354;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

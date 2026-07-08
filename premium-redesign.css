@@ -15028,3 +15028,116 @@ body:not(.r-dark) #vibeGroupCreateOv > div button[onclick*="_vibeCreateGroupConf
 body:not(.r-dark) #vibeCommentsOv > div button[onclick*="pSendVibeComment"] {
   color: #071409 !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v1354 — Widget "Vibes de hoy" premium en LIGHT y DARK mode
+   ══════════════════════════════════════════════════════════════════ */
+.home-vibes-widget {
+  padding: 14px 14px 12px;
+  border-radius: 22px;
+  font-family: 'Jost', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+/* Light mode: fondo cream sutil con acento verde */
+body:not(.r-dark) .home-vibes-widget {
+  background: linear-gradient(155deg, #fdfcf6 0%, #f4f7f0 55%, #eaf2e3 100%);
+  border: 1.5px solid rgba(80, 160, 110, 0.32);
+  box-shadow:
+    0 6px 24px rgba(60, 140, 90, 0.09),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 0 0 3px rgba(255, 255, 255, 0.4) inset;
+}
+body:not(.r-dark) .home-vibes-widget::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent 8%, rgba(116, 198, 157, 0.75) 30%, rgba(116, 198, 157, 0.75) 70%, transparent 92%);
+}
+/* Dark mode: fondo verde profundo con brillo tenue */
+body.r-dark .home-vibes-widget {
+  background: linear-gradient(155deg, #0d2418 0%, #123020 55%, #0a1e13 100%);
+  border: 1.5px solid rgba(116, 198, 157, 0.32);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.42),
+    0 1px 0 rgba(116, 198, 157, 0.15) inset,
+    0 0 40px rgba(60, 180, 120, 0.05) inset;
+}
+body.r-dark .home-vibes-widget::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent 8%, rgba(116, 198, 157, 0.55) 30%, rgba(116, 198, 157, 0.55) 70%, transparent 92%);
+}
+/* Header (título + ver todos) */
+.home-vibes-widget__header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+}
+.home-vibes-widget__title-btn {
+  background: none; border: none; padding: 0; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; font-family: 'Jost', sans-serif;
+}
+.home-vibes-widget__icon { font-size: 21px; line-height: 1; }
+.home-vibes-widget__title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+body:not(.r-dark) .home-vibes-widget__title { color: #1a3a25; }
+body.r-dark .home-vibes-widget__title { color: #e4f5e9; text-shadow: 0 1px 4px rgba(0,0,0,0.35); }
+/* Botón "Ver todos" */
+.home-vibes-widget__all {
+  border-radius: 100px; padding: 6px 14px;
+  font-size: 11px; font-weight: 800;
+  font-family: 'Jost', sans-serif;
+  letter-spacing: 0.4px; cursor: pointer;
+  transition: transform 0.15s;
+}
+.home-vibes-widget__all:active { transform: scale(0.96); }
+body:not(.r-dark) .home-vibes-widget__all {
+  background: linear-gradient(135deg, rgba(116, 198, 157, 0.20), rgba(80, 160, 110, 0.15));
+  border: 1px solid rgba(80, 160, 110, 0.55);
+  color: #1a5a30;
+}
+body.r-dark .home-vibes-widget__all {
+  background: linear-gradient(135deg, rgba(116, 198, 157, 0.24), rgba(80, 160, 110, 0.18));
+  border: 1px solid rgba(116, 198, 157, 0.62);
+  color: #b8e8ca;
+}
+/* Rail de miniaturas */
+.home-vibes-widget__rail {
+  display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px 2px;
+  scrollbar-width: none; margin-bottom: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+.home-vibes-widget__rail::-webkit-scrollbar { display: none; }
+/* CTA principal — publicá tu momento */
+.home-vibes-widget__cta {
+  width: 100%; padding: 12px 14px; border: none; border-radius: 14px;
+  font-family: 'Jost', sans-serif; font-size: 14px; font-weight: 800;
+  cursor: pointer; letter-spacing: 0.3px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.home-vibes-widget__cta:active { transform: scale(0.98); }
+.home-vibes-widget__cta-plus { font-size: 18px; font-weight: 900; }
+body:not(.r-dark) .home-vibes-widget__cta {
+  background: linear-gradient(135deg, #4dbb84 0%, #3a9d6a 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(60, 140, 90, 0.30), 0 1px 0 rgba(255,255,255,0.28) inset;
+}
+body.r-dark .home-vibes-widget__cta {
+  background: linear-gradient(135deg, #52c48c 0%, #3aa06e 100%);
+  color: #071409;
+  box-shadow: 0 6px 20px rgba(60, 180, 120, 0.35), 0 1px 0 rgba(255,255,255,0.20) inset;
+}
+
+/* Header del overlay del grupo Vibes — nombre del grupo debe leerse bien */
+body.r-dark #vibeGroupOv .feed-header .feed-header-info > div:first-child,
+body:not(.r-dark) #vibeGroupOv .feed-header .feed-header-info > div:first-child {
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+}
