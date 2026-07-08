@@ -693,11 +693,12 @@ async function main() {
         const epHost = epUrl ? (new URL(epUrl)).host : '(none)';
         const epTail = epUrl.slice(-30);
         console.warn(`[push-err] user=${id} slot=${slot} status=${err.statusCode||'??'} endpoint_host=${epHost} endpoint_tail=...${epTail} body=${body.slice(0, 300)}`);
-        // TEMP: cleanup deshabilitado para debug — mantener sub aunque falle
+        // Limpiar sub si expiró (410/404) o si hay VAPID mismatch (403 BadJwtToken)
         const isExpired = err.statusCode === 410 || err.statusCode === 404;
-        if (isExpired) {
+        const isVapidMismatch = err.statusCode === 403 && /BadJwtToken|Unauthorized|VapidPk/i.test(body);
+        if (isExpired || isVapidMismatch) {
           await supabase.from('profiles').update({ push_subscription: null }).eq('id', id);
-          console.log(`Removed stale sub for user ${id} (expired)`);
+          console.log(`Removed stale sub for user ${id} (${isExpired ? 'expired' : 'vapid-mismatch'})`);
         }
         failed++;
       }
