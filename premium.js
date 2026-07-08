@@ -19529,23 +19529,25 @@ async function pRenderVibesHome(){
         + newCta
         + '</div>';
     };
-    // Sección de instantáneos (grid horizontal de miniaturas)
+    // Sección de instantáneos (grid horizontal de miniaturas). Ahora SIEMPRE
+    // aparece — arriba de los grupos oficiales. Si no hay contenido, muestra
+    // un CTA para crear el primero.
     var instantHtml = '';
     try{
       var instRes = await sbClient.from('vibes').select('id,user_id,user_name,user_av,media_url,caption,instant_scope,created_at,expires_at').is('group_id', null).gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(20);
       var inst = (instRes && instRes.data) || [];
-      if(inst.length){
-        var minis = inst.map(function(v){
-          var isPriv = v.instant_scope === 'private';
-          var brd = isPriv ? 'rgba(155,120,220,.72)' : 'rgba(255,220,120,.70)';
-          return '<button onclick="pOpenInstantVibe(\''+v.id+'\')" style="flex-shrink:0;width:96px;padding:0;background:rgba(0,0,0,.45);border:2px solid '+brd+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;height:120px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:#fff;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(isPriv?'🔒 ':'')+_escHtml(v.user_name||'Usuario')+'</div></button>';
-        }).join('');
-        instantHtml = '<div style="margin-bottom:22px">'
-          + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,220,120,.85);margin-bottom:4px">✨ INSTANTÁNEOS</div>'
-          + '<div style="font-size:11.5px;color:rgba(220,200,140,.60);margin-bottom:10px;font-style:italic">Momentos sueltos de la comunidad · 24 h</div>'
-          + '<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none">'+minis+'</div>'
-        + '</div>';
-      }
+      // CTA "Compartí un instantáneo" siempre visible al inicio del rail
+      var ctaMini = '<button onclick="pStartCreateVibe(null,\'public\')" style="flex-shrink:0;width:96px;padding:0;background:linear-gradient(135deg,rgba(255,220,120,.30),rgba(255,180,60,.22));border:2px dashed rgba(255,220,120,.80);border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-family:Jost,sans-serif;color:rgba(255,240,180,.95);font-size:10px;font-weight:800;line-height:1.2;text-align:center;padding:8px"><span style="font-size:24px">＋</span><span>Compartí un instantáneo</span></button>';
+      var minis = inst.map(function(v){
+        var isPriv = v.instant_scope === 'private';
+        var brd = isPriv ? 'rgba(155,120,220,.72)' : 'rgba(255,220,120,.70)';
+        return '<button onclick="pOpenInstantVibe(\''+v.id+'\')" style="flex-shrink:0;width:96px;padding:0;background:rgba(0,0,0,.45);border:2px solid '+brd+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;height:120px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:#fff;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(isPriv?'🔒 ':'')+_escHtml(v.user_name||'Usuario')+'</div></button>';
+      }).join('');
+      instantHtml = '<div style="margin-bottom:22px">'
+        + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,220,120,.85);margin-bottom:4px">✨ INSTANTÁNEOS</div>'
+        + '<div style="font-size:11.5px;color:rgba(220,200,140,.60);margin-bottom:10px;font-style:italic">'+(inst.length?'Momentos sueltos de la comunidad · 24 h':'Compartí un momento suelto — dura 24 h')+'</div>'
+        + '<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none">'+ctaMini+minis+'</div>'
+      + '</div>';
     }catch(e){}
     body.innerHTML = ''
       + instantHtml
@@ -19687,7 +19689,7 @@ function pCreateGroupPrompt(kind){
     if(!favs.length){
       inviteHtml = '<div style="padding:12px 14px;background:rgba(220,120,120,.10);border:1px solid rgba(220,120,120,.30);border-radius:12px;color:rgba(255,180,180,.85);font-family:Jost,sans-serif;font-size:12.5px;margin-bottom:12px;line-height:1.5">Agregá contactos favoritos primero para invitarlos al grupo</div>';
     } else {
-      var showSearch = favs.length > 5;
+      var showSearch = favs.length >= 3;
       var searchHtml = showSearch
         ? '<input id="vibeGroupSearchInput" type="text" placeholder="🔍 Buscar contacto…" oninput="_vibeGroupFilterInvites(this.value)" style="width:100%;padding:9px 12px;margin-bottom:8px;background:rgba(155,120,220,.08);border:1px solid rgba(155,120,220,.28);border-radius:10px;color:#fff;font-family:Jost,sans-serif;font-size:13px;box-sizing:border-box;outline:none">'
         : '';
@@ -20171,7 +20173,7 @@ function _vibeCardHtml(v){
     ? '<div style="padding:10px 16px 12px;font-family:Jost,sans-serif;font-size:12px;font-weight:800;letter-spacing:.4px;color:'+(tint?'rgba('+tint.r+','+tint.g+','+tint.b+',.98)':'rgba(180,220,195,.75)')+';text-transform:uppercase">'+_escHtml(summary)+'</div>'
     : '';
   return '<div class="vibe-card" data-vibe-id="'+v.id+'" style="background:linear-gradient(180deg,rgba(20,40,26,.92),rgba(10,26,18,.95));border:1.5px solid '+borderColor+';border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:'+glow+';transition:box-shadow .5s, border-color .5s">'
-    + '<div style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div><div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:1px">'+ago+' · caduca en '+left+'</div></div></div>'
+    + '<div onclick="_vibeOpenUserProfile(\''+(v.user_id||'')+'\',\''+_jsAttr(v.user_name||'Usuario')+'\',\''+_jsAttr(v.user_av||'🧑')+'\')" style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;cursor:pointer" title="Ver perfil de '+_escHtml(v.user_name||'Usuario')+'"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div><div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:1px">'+ago+' · caduca en '+left+'</div></div><span style="font-size:14px;color:rgba(180,220,195,.55);flex-shrink:0" title="Ver perfil">›</span></div>'
     + '<img data-vibe-src="'+_escHtml(v.media_url||'')+'" alt="momento" style="width:100%;max-height:520px;object-fit:cover;display:block;background:rgba(0,0,0,.35)" onerror="this.style.opacity=\'.35\'">'
     + (v.caption ? '<div style="padding:12px 16px 14px;font-family:\'Cormorant Garamond\',serif;font-size:15.5px;font-style:italic;color:rgba(240,250,240,.95);line-height:1.5">"'+_escHtml(v.caption)+'"</div>' : '')
     + summaryChip
@@ -20255,6 +20257,14 @@ async function _openSavedVibe(vibeId){
       }catch(e){ img.src = src; }
     });
   }
+}
+
+// Abre el perfil público de un user desde una vibe. Reusa pQuickProfile que ya
+// incluye botón "Agregar a favoritos" cuando el user no es un fav propio.
+function _vibeOpenUserProfile(userId, userName, userAv){
+  if(!userId || userId === (safeLS('get','velo_user_id')||'')) return;
+  try{ pQuickProfile(userName||'Usuario', userAv||'🧑', '', '', userId); }
+  catch(e){ console.warn('[vibe-user-profile]', e); }
 }
 
 // Cierra el overlay del grupo de vibes y restaura el html background al color
@@ -33215,7 +33225,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1343;
+    var _BUILT_V = 1344;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
