@@ -14825,3 +14825,11 @@ body.r-dark #pg-help-chat .feed-input::placeholder,
 body.r-dark #pg-partner-chat .feed-input::placeholder {
   color: rgba(255,255,255,.35) !important;
 }
+
+/* v1328 — evitar white flash abajo del bottom nav cuando iOS abre el teclado.
+   Cuando el textarea recibe foco, iOS scrollea temporalmente el body para
+   asegurar visibilidad. Ese scroll deja el <html> visible por unos px, y
+   como <html> no tenía background definido salía blanco default. Pintamos
+   el html con el mismo color base del theme (light/dark). */
+html { background-color: #fef8ea; }
+html:has(body.r-dark) { background-color: #0f1a14; }
