@@ -20165,6 +20165,44 @@ function _vibeCardHtml(v){
     + reactionPicker
   + '</div>';
 }
+// ✨ Animación de burst de emojis al reaccionar — 20 emojis del mismo tipo
+// flotan desde el fondo hacia arriba con drift y rotación, se auto-destruyen.
+function _vibeReactBurst(emoji){
+  try{
+    // Contenedor lo pinta por 2.6 seg y desaparece
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:10030;overflow:hidden';
+    var count = 22;
+    for(var i=0;i<count;i++){
+      var el = document.createElement('div');
+      var startX = 5 + Math.random()*90;              // 5-95vw
+      var endX = startX + (Math.random()*40 - 20);    // drift ±20vw
+      var size = 24 + Math.random()*32;               // 24-56 px
+      var dur = 1.6 + Math.random()*1.0;              // 1.6-2.6 s
+      var delay = Math.random()*0.35;                 // stagger 0-350ms
+      var rotate = (Math.random()*720 - 360)|0;       // rotation
+      el.textContent = emoji;
+      el.style.cssText =
+        'position:absolute;left:'+startX+'vw;bottom:-60px;font-size:'+size+'px;'+
+        'transform:translateX(0) translateY(0) rotate(0deg);opacity:0;'+
+        'will-change:transform,opacity;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))';
+      wrap.appendChild(el);
+      // Trigger animation on next frame
+      (function(node, ex, sx, r, d, delayMs){
+        setTimeout(function(){
+          node.style.transition = 'transform '+d+'s cubic-bezier(.2,.7,.4,1), opacity '+d+'s ease-out';
+          node.style.transform = 'translateX('+((ex-sx))+'vw) translateY(-110vh) rotate('+r+'deg)';
+          node.style.opacity = '1';
+          // Fade out en la segunda mitad
+          setTimeout(function(){ node.style.opacity = '0'; }, d*700);
+        }, delayMs);
+      })(el, endX, startX, rotate, dur, delay*1000);
+    }
+    document.body.appendChild(wrap);
+    setTimeout(function(){ try{ wrap.remove(); }catch(_){} }, 3200);
+  }catch(_){}
+}
+
 // Abre un momento guardado en overlay full-screen (individual)
 async function _openSavedVibe(vibeId){
   _initSupabase(); if(!sbClient) return;
@@ -20261,6 +20299,8 @@ async function pVibeReact(vibeId, reactionKey, btnEl){
           me_inspira:  ['🌱','Le dijiste que te inspira']
         }[reactionKey] || ['💚','Enviaste tu reacción'];
         pToast(_sent[0], _sent[1]);
+        // Burst animado por toda la pantalla
+        _vibeReactBurst(_sent[0]);
       }catch(_){}
     }
     _vibeReactionAgg[vibeId] = counts;
@@ -33152,7 +33192,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1340;
+    var _BUILT_V = 1341;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
