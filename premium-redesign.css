@@ -14852,3 +14852,13 @@ html:has(body.r-dark) { background-color: #0f1a14; }
 .feed-input-area {
   padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
 }
+
+/* v1331 — eliminar el .p-bottomnav::after de 50px blanco que aparece debajo
+   del bottom nav. Era un workaround viejo para un gap del Safari legacy que
+   ya no existe. En iOS PWA moderno queda como una banda visible que no
+   corresponde. Lo colapsamos completamente. */
+.p-bottomnav::after {
+  height: 0 !important;
+  background: transparent !important;
+  display: none !important;
+}
