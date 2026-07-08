@@ -19469,28 +19469,66 @@ var _vibesGroupCounts = {}; // groupId → count de vibes hoy
 function pOpenVibes(){ pGoTo('vibes'); }
 // Renderiza la card de entrada arriba del home (llamada tras cargar el home)
 async function _renderHomeVibesCard(){
-  var wrap = document.getElementById('homeVibesCard');
+  // v1348 — el widget se mueve a homeVibesCardTop (arriba del saludo). Si no
+  // existe ese slot, fallback al viejo homeVibesCard.
+  var wrap = document.getElementById('homeVibesCardTop') || document.getElementById('homeVibesCard');
   if(!wrap) return;
+  var oldWrap = document.getElementById('homeVibesCard');
+  if(oldWrap && oldWrap !== wrap) oldWrap.style.display = 'none';
   _initSupabase();
   if(!sbClient){ wrap.style.display = 'none'; return; }
   try{
-    // 3 grupos oficiales aleatorios con conteo total de vibes activas
-    var g = await sbClient.from('vibe_groups').select('id,emoji,title').eq('kind','official').limit(3);
-    if(!g || !g.data || !g.data.length){ wrap.style.display = 'none'; return; }
-    var picks = g.data.slice().sort(function(){ return Math.random()-.5; }).slice(0,3);
-    var minisHtml = picks.map(function(gr){
-      return '<div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,rgba(116,198,157,.28),rgba(80,160,110,.35));border:1.5px solid rgba(116,198,157,.45);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;box-shadow:0 4px 14px rgba(80,160,110,.22)" title="'+_escHtml(gr.title||'')+'">'+_escHtml(gr.emoji||'🌊')+'</div>';
-    }).join('');
+    // 6 momentos recientes con portada real (más nuevos primero)
+    var vRes = await sbClient.from('vibes').select('id,media_url,user_name,user_av,caption,created_at').gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(6);
+    var vibes = (vRes && vRes.data) || [];
+    // Portadas: si no hay vibes reales, mostrar placeholders con emoji del grupo
+    var _seen = {};
+    try{ _seen = JSON.parse(safeLS('get','velo_vibes_seen_instant')||'{}'); }catch(_){}
+    var thumbsHtml = '';
+    if(vibes.length){
+      thumbsHtml = vibes.map(function(v){
+        var isSeen = !!_seen[v.id];
+        var opa = isSeen ? '.55' : '1';
+        var filt = isSeen ? 'grayscale(.75)' : 'none';
+        // Usa pOpenInstantVibe si el v es instantáneo (group_id=null), sino abre Vibes home
+        return '<button onclick="pOpenInstantVibe(\''+v.id+'\')" style="flex:0 0 68px;padding:0;background:rgba(0,0,0,.24);border:2px solid rgba(116,198,157,.60);border-radius:14px;overflow:hidden;cursor:pointer;position:relative;opacity:'+opa+';filter:'+filt+';height:80px"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;height:100%;object-fit:cover;display:block"></button>';
+      }).join('');
+    } else {
+      // Sin momentos aún — placeholder con emojis de grupos oficiales
+      var g = await sbClient.from('vibe_groups').select('id,emoji,title').eq('kind','official').limit(4);
+      var picks = ((g && g.data)||[]).slice(0,4);
+      if(!picks.length) picks = [{emoji:'🌞'},{emoji:'🐾'},{emoji:'📖'},{emoji:'💪'}];
+      thumbsHtml = picks.map(function(gr){
+        return '<div style="flex:0 0 68px;height:80px;padding:0;background:linear-gradient(135deg,rgba(255,235,180,.35),rgba(255,215,140,.28));border:2px solid rgba(200,150,60,.55);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:30px">'+_escHtml(gr.emoji||'🌊')+'</div>';
+      }).join('');
+    }
     wrap.style.display = 'block';
-    wrap.innerHTML = '<button onclick="pOpenVibes()" style="width:100%;padding:16px 18px;background:linear-gradient(135deg,rgba(20,80,50,.68),rgba(35,110,70,.60));border:1.5px solid rgba(116,198,157,.55);border-radius:22px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;box-shadow:0 6px 22px rgba(60,140,90,.18);position:relative;overflow:hidden">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
-        + '<span style="font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(180,230,200,.85)">🌊 VIBES DE HOY</span>'
-        + '<span style="font-size:17px;color:rgba(180,230,200,.85);font-weight:800">→</span>'
+    wrap.innerHTML = '<div class="home-vibes-widget" style="padding:14px 14px 12px;background:linear-gradient(150deg,rgba(255,255,255,.85),rgba(240,250,244,.75));border:1.5px solid rgba(116,198,157,.45);border-radius:20px;box-shadow:0 4px 16px rgba(60,140,90,.10);font-family:Jost,sans-serif">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+        + '<button onclick="pOpenVibes()" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:Jost,sans-serif">'
+          + '<span style="font-size:20px">🌊</span>'
+          + '<span style="font-family:\'Cormorant Garamond\',serif;font-size:19px;font-style:italic;color:var(--ink);letter-spacing:.3px">Vibes de hoy</span>'
+        + '</button>'
+        + '<button onclick="pOpenVibes()" style="background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.42);border-radius:100px;padding:5px 12px;color:rgba(30,110,70,.98);font-size:11px;font-weight:800;font-family:Jost,sans-serif;letter-spacing:.4px;cursor:pointer">Ver todos →</button>'
       + '</div>'
-      + '<div style="display:flex;align-items:center;gap:10px">'+minisHtml+'</div>'
-      + '<div style="margin-top:12px;font-size:12.5px;color:rgba(200,235,215,.85);line-height:1.45">Explorá momentos de la comunidad y sumá el tuyo. Duran 24 h.</div>'
-    + '</button>';
-  }catch(e){ wrap.style.display = 'none'; }
+      + '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;margin-bottom:10px">'+thumbsHtml+'</div>'
+      + '<button onclick="pStartCreateVibe(null,\'public\')" style="width:100%;padding:11px 12px;background:linear-gradient(135deg,rgba(116,198,157,.90),rgba(74,160,110,.98));border:none;border-radius:14px;color:#071409;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 14px rgba(60,140,90,.24);display:flex;align-items:center;justify-content:center;gap:8px">'
+        + '<span style="font-size:16px">＋</span><span>Publicá tu momento</span>'
+      + '</button>'
+    + '</div>';
+    // Hidratar data URLs a blob URLs (iOS)
+    wrap.querySelectorAll('img[data-vibe-src]').forEach(function(img){
+      var src = img.getAttribute('data-vibe-src'); if(!src) return;
+      try{
+        if(src.indexOf('data:') === 0){
+          var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
+          var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
+          for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
+          img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
+        } else { img.src = src; }
+      }catch(e){ img.src = src; }
+    });
+  }catch(e){ console.warn('[home-vibes-card]', e); wrap.style.display = 'none'; }
 }
 // Render de la home de Vibes con las 3 secciones
 async function pRenderVibesHome(){
@@ -33504,7 +33542,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1347;
+    var _BUILT_V = 1348;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
