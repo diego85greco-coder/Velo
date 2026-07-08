@@ -18920,7 +18920,7 @@ function _updateEditPushUI(){
       btn.textContent = '—'; btn.disabled = true;
       btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:not-allowed;background:rgba(128,128,128,.12);color:var(--ink4)';
     } else if(perm === 'granted' && hasSub){
-      status.textContent = 'Activadas — recibís un aviso por día ✓';
+      status.textContent = 'Activadas — recibís 3 avisos por día ✓';
       btn.textContent = 'Desactivar'; btn.disabled = false;
       btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:10px;border:none;font-size:14px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;background:rgba(220,80,80,.12);color:rgba(200,60,60,.9)';
     } else if(perm === 'granted' && !hasSub){
@@ -32875,7 +32875,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1325;
+    var _BUILT_V = 1326;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
