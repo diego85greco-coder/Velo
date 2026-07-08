@@ -20178,7 +20178,81 @@ function _vibeCardHtml(v){
     + (v.caption ? '<div style="padding:12px 16px 14px;font-family:\'Cormorant Garamond\',serif;font-size:15.5px;font-style:italic;color:rgba(240,250,240,.95);line-height:1.5">"'+_escHtml(v.caption)+'"</div>' : '')
     + summaryChip
     + reactionPicker
+    // Botón de comentar + preview de comentarios
+    + '<div style="padding:8px 14px 12px;border-top:1px solid rgba(116,198,157,.10)">'
+      + '<button onclick="pOpenVibeComments(\''+v.id+'\')" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(180,220,195,.22);border-radius:12px;color:rgba(220,240,225,.85);font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;letter-spacing:.3px">💬 <span data-vibe-comment-count="'+v.id+'">Ver comentarios</span></button>'
+    + '</div>'
   + '</div>';
+}
+// Abrir modal de comentarios de una vibe. Carga los últimos y permite escribir uno.
+async function pOpenVibeComments(vibeId){
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var ov = document.getElementById('vibeCommentsOv'); if(ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'vibeCommentsOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10030;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px calc(20px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.99));border:1.5px solid rgba(116,198,157,.35);border-radius:22px 22px 0 0;max-height:88vh;display:flex;flex-direction:column">'
+    + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
+    + '<div style="text-align:center;padding:4px 0 8px">'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic">💬 Comentarios</div>'
+    + '</div>'
+    + '<div style="background:linear-gradient(135deg,rgba(255,180,80,.14),rgba(220,140,60,.10));border:1.5px solid rgba(255,180,80,.32);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-family:Jost,sans-serif;font-size:11.5px;color:rgba(255,220,170,.90);line-height:1.5">🌿 <strong>La consigna:</strong> mensajes de apoyo, agradecimiento o afecto. Si vas a dejar otro tipo de mensaje, mejor no comentar.</div>'
+    + '<div id="vibeCommentsList" style="flex:1;overflow-y:auto;margin-bottom:12px;min-height:80px">Cargando…</div>'
+    + '<textarea id="vibeCommentInput" placeholder="Un mensaje de apoyo, agradecimiento o afecto…" rows="2" maxlength="500" style="width:100%;padding:11px 12px;background:rgba(0,0,0,.32);border:1.5px solid rgba(116,198,157,.28);border-radius:12px;color:#fff;font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.4;margin-bottom:8px"></textarea>'
+    + '<div style="display:flex;gap:8px">'
+      + '<button onclick="document.getElementById(\'vibeCommentsOv\').remove()" style="flex:1;padding:11px;background:rgba(0,0,0,.28);border:1.5px solid rgba(180,220,195,.20);border-radius:12px;color:rgba(200,230,215,.68);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">Cerrar</button>'
+      + '<button onclick="pSendVibeComment(\''+vibeId+'\')" style="flex:2;padding:11px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;cursor:pointer">💬 Enviar</button>'
+    + '</div>'
+  + '</div>';
+  document.body.appendChild(ov);
+  // Cargar comentarios existentes
+  try{
+    var res = await sbClient.from('vibe_comments').select('id,user_id,user_name,user_av,text,created_at').eq('vibe_id', vibeId).order('created_at',{ascending:false}).limit(60);
+    var listEl = document.getElementById('vibeCommentsList');
+    if(!listEl) return;
+    var data = (res && res.data) || [];
+    if(!data.length){
+      listEl.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(200,230,215,.55);font-family:Jost,sans-serif;font-size:12.5px;font-style:italic">Sin comentarios · sé el primero en dejar un mensaje 🌱</div>';
+    } else {
+      listEl.innerHTML = data.map(function(c){
+        var when = c.created_at ? _timeAgoDM(new Date(c.created_at).getTime()) : '';
+        return '<div style="padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(180,220,195,.14);border-radius:12px;margin-bottom:6px;font-family:Jost,sans-serif">'
+          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+            + '<span style="font-size:18px;flex-shrink:0">'+_avInline(c.user_av||'🧑', 22)+'</span>'
+            + '<span style="font-size:12.5px;font-weight:800;color:rgba(220,240,225,.95)">'+_escHtml(c.user_name||'Usuario')+'</span>'
+            + '<span style="font-size:10px;color:rgba(180,220,195,.55);margin-left:auto">'+when+'</span>'
+          + '</div>'
+          + '<div style="font-size:13px;color:rgba(230,245,235,.90);line-height:1.5;padding-left:30px">'+_escHtml(c.text||'')+'</div>'
+        + '</div>';
+      }).join('');
+    }
+  }catch(e){ console.warn('[vibe-comments load]', e); }
+}
+async function pSendVibeComment(vibeId){
+  _initSupabase(); if(!sbClient) return;
+  var inp = document.getElementById('vibeCommentInput');
+  var text = (inp && inp.value || '').trim().slice(0, 500);
+  if(!text){ pToast('✍️','Escribí algo primero'); return; }
+  var myId = safeLS('get','velo_user_id')||'';
+  var myName = safeLS('get','velo_user_name')||'Usuario';
+  var myAv = safeLS('get','velo_user_av')||'🧑';
+  if(!myId){ pToast('⚠️','Iniciá sesión'); return; }
+  // Moderación blanda con Gemini (async — no bloquea el envío, pero borra si es tóxico)
+  try{ _geminiModerateContent(text, 'vibe-comment'); }catch(_){}
+  try{
+    var r = await sbClient.from('vibe_comments').insert({
+      vibe_id: vibeId, user_id: myId, user_name: myName, user_av: myAv, text: text
+    }).select('id,user_id,user_name,user_av,text,created_at').single();
+    if(r && r.data){
+      inp.value = '';
+      pToast('💚','Comentario enviado');
+      // Recargar la lista
+      pOpenVibeComments(vibeId);
+    } else {
+      pToast('⚠️','No se pudo enviar');
+    }
+  }catch(e){ console.warn('[vibe-comment insert]', e); pToast('⚠️','Error al enviar'); }
 }
 // ✨ Animación de burst de emojis al reaccionar — 20 emojis del mismo tipo
 // flotan desde el fondo hacia arriba con drift y rotación, se auto-destruyen.
@@ -33225,7 +33299,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1344;
+    var _BUILT_V = 1345;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
