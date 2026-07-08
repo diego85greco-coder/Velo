@@ -19552,6 +19552,35 @@ async function pRenderVibesHome(){
       + section('🌱 GRUPOS DE VELO', 'Permanentes · verificados', official, 'official')
       + section('🌊 DE LA COMUNIDAD', 'Creados por usuarios · caducan a 24 h', pub, 'public')
       + section('🔮 TUS CÍRCULOS PRIVADOS', 'Solo para vos e invitados', priv, 'private');
+
+    // ── MIS MOMENTOS GUARDADOS ─────────────────────────────────────
+    // Momentos que compartí y marqué "Guardar en mi historial personal"
+    try{
+      if(myId){
+        var savedRes = await sbClient.from('vibes').select('id,media_url,caption,created_at,group_id').eq('user_id', myId).eq('archived', true).order('created_at',{ascending:false}).limit(30);
+        var saved = (savedRes && savedRes.data) || [];
+        var savedHtml = '';
+        if(saved.length){
+          var savedThumbs = saved.map(function(v){
+            var t = new Date(v.created_at); var tStr = t.toLocaleDateString('es', {day:'numeric',month:'short'});
+            return '<button onclick="_openSavedVibe(\''+v.id+'\')" style="flex-shrink:0;width:110px;padding:0;background:rgba(0,0,0,.35);border:2px solid rgba(200,158,56,.62);border-radius:14px;overflow:hidden;cursor:pointer;position:relative"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;height:130px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:rgba(255,240,180,.98);font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px">'+_escHtml(tStr)+'</div></button>';
+          }).join('');
+          savedHtml = '<div style="margin-bottom:22px">'
+            + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,215,80,.85);margin-bottom:4px">🌟 MIS MOMENTOS GUARDADOS</div>'
+            + '<div style="font-size:11.5px;color:rgba(230,210,140,.62);margin-bottom:10px;font-style:italic">'+saved.length+' momento'+(saved.length!==1?'s':'')+' en mi historial personal · no caducan</div>'
+            + '<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none">'+savedThumbs+'</div>'
+          + '</div>';
+        } else {
+          savedHtml = '<div style="margin-bottom:22px">'
+            + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,215,80,.70);margin-bottom:4px">🌟 MIS MOMENTOS GUARDADOS</div>'
+            + '<div style="font-size:11.5px;color:rgba(230,210,140,.55);margin-bottom:10px;font-style:italic">Cuando subas un momento, marcá "Guardar en mi historial" para verlo acá</div>'
+            + '<div style="padding:20px;background:rgba(255,215,80,.06);border:1px dashed rgba(255,215,80,.28);border-radius:14px;text-align:center;font-size:12.5px;color:rgba(230,210,140,.62);font-style:italic">Sin momentos guardados todavía</div>'
+          + '</div>';
+        }
+        body.insertAdjacentHTML('beforeend', savedHtml);
+      }
+    }catch(_savedE){ console.warn('[vibes saved]', _savedE); }
+
     // Hidratar imágenes de instantáneos (data URL → blob URL, iOS)
     body.querySelectorAll('img[data-vibe-src]').forEach(function(img){
       var src = img.getAttribute('data-vibe-src'); if(!src) return;
@@ -20088,6 +20117,47 @@ function _vibeCardHtml(v){
     + reactionPicker
   + '</div>';
 }
+// Abre un momento guardado en overlay full-screen (individual)
+async function _openSavedVibe(vibeId){
+  _initSupabase(); if(!sbClient) return;
+  var res = await sbClient.from('vibes').select('*').eq('id', vibeId).single().catch(function(){ return null; });
+  if(!res || !res.data){ pToast('⚠️','No se pudo cargar el momento'); return; }
+  var v = res.data;
+  // Cargar reacciones para este vibe
+  _vibeReactionAgg = _vibeReactionAgg || {};
+  try{
+    var rRes = await sbClient.from('vibe_reactions').select('user_id,reaction').eq('vibe_id', vibeId);
+    _vibeReactionAgg[vibeId] = {};
+    (rRes.data||[]).forEach(function(r){
+      _vibeReactionAgg[vibeId][r.reaction] = (_vibeReactionAgg[vibeId][r.reaction]||0)+1;
+      var myId = safeLS('get','velo_user_id')||'';
+      if(myId && r.user_id === myId) _vibeMyReactions[vibeId] = r.reaction;
+    });
+  }catch(_){}
+  var ov = document.getElementById('savedVibeOv'); if(ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'savedVibeOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10018;background:linear-gradient(180deg,#0a1810,#050f08);display:flex;flex-direction:column;overflow:hidden;color:#fff';
+  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.94);border-bottom:1px solid rgba(255,215,80,.20);flex-shrink:0"><button onclick="document.getElementById(\'savedVibeOv\').remove()" style="background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.20);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800">←</button><div style="flex:1;min-width:0"><div style="font-family:\'Cormorant Garamond\',serif;font-size:19px;font-style:italic;color:rgba(255,240,180,.98)">🌟 Momento guardado</div><div style="font-size:11px;color:rgba(230,210,140,.65);margin-top:2px;font-family:Jost,sans-serif">De mi historial personal</div></div></div>';
+  ov.innerHTML = header + '<div id="savedVibeBody" style="flex:1;overflow-y:auto;padding:14px 16px 30px"></div>';
+  document.body.appendChild(ov);
+  var container = document.getElementById('savedVibeBody');
+  if(container){
+    container.innerHTML = _vibeCardHtml(v);
+    container.querySelectorAll('img[data-vibe-src]').forEach(function(img){
+      var src = img.getAttribute('data-vibe-src'); if(!src) return;
+      try{
+        if(src.indexOf('data:') === 0){
+          var arr = src.split(','); var mm = arr[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
+          var bstr = atob(arr[1]||''); var u8 = new Uint8Array(bstr.length);
+          for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
+          img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
+        } else { img.src = src; }
+      }catch(e){ img.src = src; }
+    });
+  }
+}
+
 // Scrollea al primer momento nuevo (el más antiguo entre los no vistos) con highlight suave
 function _vibeJumpToNew(firstNewId){
   var list = document.getElementById('vibeGroupList');
@@ -33026,7 +33096,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1338;
+    var _BUILT_V = 1339;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
