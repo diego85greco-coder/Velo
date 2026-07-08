@@ -14799,3 +14799,29 @@ body.r-dark .diary-toolbar-btn--danger{
 }
 
 /* v1304 — Luna SVG revertida: volvió el emoji bitmap fotorrealista de iOS */
+
+/* v1327 — fix: safe-area del iPhone en input area de los chats DM/help/partner.
+   El home indicator dejaba una banda gris debajo del compose. Absorbemos ese
+   espacio con env(safe-area-inset-bottom) y el mismo color de fondo del compose.
+   Además, apply del theming dark que sólo existía para #pg-feed. */
+.feed-input-area {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+}
+body.r-dark #pg-dm-chat .feed-input-area,
+body.r-dark #pg-help-chat .feed-input-area,
+body.r-dark #pg-partner-chat .feed-input-area {
+  background: #0e1e14 !important;
+  border-top: 1px solid rgba(80,160,80,.20) !important;
+}
+body.r-dark #pg-dm-chat .feed-input,
+body.r-dark #pg-help-chat .feed-input,
+body.r-dark #pg-partner-chat .feed-input {
+  background: rgba(20,50,30,.90) !important;
+  color: rgba(255,255,255,.90) !important;
+  border-color: rgba(80,160,80,.30) !important;
+}
+body.r-dark #pg-dm-chat .feed-input::placeholder,
+body.r-dark #pg-help-chat .feed-input::placeholder,
+body.r-dark #pg-partner-chat .feed-input::placeholder {
+  color: rgba(255,255,255,.35) !important;
+}
