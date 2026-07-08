@@ -20153,9 +20153,12 @@ async function pOpenInstantVibe(vibeId){
     }catch(e){}
     var ov = document.createElement('div');
     ov.id = 'vibeInstantOv';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:10014;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+    // Scroll natural del overlay + padding top = statusbar+notch para que el
+    // botón Cerrar quede visible, y align-items:flex-start para poder scrollear.
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10014;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:calc(env(safe-area-inset-top,0px) + 56px) 16px calc(env(safe-area-inset-bottom,0px) + 20px);overflow-y:auto;-webkit-overflow-scrolling:touch';
     ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
-    ov.innerHTML = '<div style="max-width:520px;width:100%;position:relative"><button onclick="document.getElementById(\'vibeInstantOv\').remove()" style="position:absolute;top:-40px;right:0;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.30);color:#fff;border-radius:100px;padding:6px 14px;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer">✕ Cerrar</button>'
+    ov.innerHTML = '<button onclick="document.getElementById(\'vibeInstantOv\').remove()" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.40);color:#fff;border-radius:100px;padding:8px 16px;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer;z-index:10;box-shadow:0 4px 14px rgba(0,0,0,.35)">✕ Cerrar</button>'
+      + '<div style="max-width:520px;width:100%">'
       + _vibeCardHtml(v)
     + '</div>';
     document.body.appendChild(ov);
@@ -33542,7 +33545,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1348;
+    var _BUILT_V = 1349;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
