@@ -74,34 +74,34 @@ function getSlot(tz) {
   return null; // hora "muerta" (mediodía 12 o 4-5 AM) — no molestar
 }
 
-// Static fallbacks — used if Gemini is unavailable
-// Mañana: siempre invitar a registrar el ánimo + saludo cálido
-// Tarde: validar el día tal como está (bueno o difícil) + sugerencia específica de la app
-// Noche: mensaje de ánimo fuerte 💪 + cierre íntimo
+// Static fallbacks — español neutro (universal), sin voseo ni "acá/che".
+// Mañana: invitar a registrar el ánimo + saludo cálido
+// Tarde: validar el día tal como está + sugerencia de la app
+// Noche: mensaje de ánimo + cierre íntimo
 const FALLBACK = {
   morning: [
-    { title: '🌅 ¡Buenos días!', body: 'Empezá el día registrando cómo te sentís 💚 Es el primer gesto de cuidarte hoy.' },
-    { title: '☀️ ¡Hola! Buen día', body: 'Tu ánimo importa 🌿 Tocá acá y anotá cómo estás llegando hoy.' },
-    { title: '🌱 Buenos días', body: 'Cada mañana es una hoja en blanco 💛 ¿Cómo te sentís hoy? Registralo en un toque.' },
-    { title: '🌤️ ¡Arrancamos!', body: 'Registrá tu ánimo antes de arrancar el día 💚 Aunque sea de paso.' },
-    { title: '🌸 Buen día para vos', body: 'Che, ¿cómo llegás hoy? 🌿 Un registro de 5 segundos hace toda la diferencia.' },
+    { title: '🌅 ¡Buenos días!', body: 'Empieza el día registrando cómo te sientes 💚 Es el primer gesto de cuidarte hoy.' },
+    { title: '☀️ Hola, buen día', body: 'Tu ánimo importa 🌿 Toca aquí y anota cómo estás llegando hoy.' },
+    { title: '🌱 Buenos días', body: 'Cada mañana es una hoja en blanco 💛 ¿Cómo te sientes hoy? Regístralo en un toque.' },
+    { title: '🌤️ ¡A comenzar!', body: 'Registra tu ánimo antes de comenzar el día 💚 Aunque sea de paso.' },
+    { title: '🌸 Buen día para ti', body: '¿Cómo llegas hoy? 🌿 Un registro de 5 segundos hace toda la diferencia.' },
   ],
   afternoon: [
-    { title: '🌤️ ¿Cómo va tu día?', body: 'Si viene lindo, celebralo. Si viene difícil, no estás solo/a 💚 Escribí algo en Bitácora.' },
-    { title: '💛 Pausa para vos', body: 'La Sala de Ayuda tiene gente esperando escucharte. No hace falta que aguantes solo/a 🌿' },
-    { title: '🌊 ¿Necesitás soltar algo?', body: 'Lanzalo Al Mar. Alguien lo va a encontrar y te dejará amor 💙' },
-    { title: '☮️ Círculos de Paz', body: 'Hoy hay conversación en Círculos — sobre ansiedad, duelo, soledad. Sumate si necesitás 🌿' },
-    { title: '🤝 ¿Mal momento?', body: 'Está bien no estar bien 💚 Contá con Bitácora o Sala de Ayuda cuando lo necesités.' },
-    { title: '✨ Te acordamos', body: '¿Cómo va la tarde? Si hay algo pesándote, lanzalo Al Mar 🌊 o escribilo en Bitácora 📖' },
-    { title: '💙 Un poco de aire', body: 'Respirá. Si necesitás hablar, hay guardianes disponibles en Sala de Ayuda. No estás solo/a 🌿' },
+    { title: '🌤️ ¿Cómo va tu día?', body: 'Si viene bien, celébralo. Si viene difícil, no estás solo/a 💚 Escribe algo en Bitácora.' },
+    { title: '💛 Pausa para ti', body: 'La Sala de Ayuda tiene gente esperando escucharte. No hace falta que aguantes solo/a 🌿' },
+    { title: '🌊 ¿Necesitas soltar algo?', body: 'Lánzalo Al Mar. Alguien lo va a encontrar y te dejará amor 💙' },
+    { title: '☮️ Círculos de Paz', body: 'Hoy hay conversación en Círculos — sobre ansiedad, duelo, soledad. Únete si necesitas 🌿' },
+    { title: '🤝 ¿Mal momento?', body: 'Está bien no estar bien 💚 Cuenta con Bitácora o Sala de Ayuda cuando lo necesites.' },
+    { title: '✨ Te recordamos', body: '¿Cómo va la tarde? Si hay algo pesándote, lánzalo Al Mar 🌊 o escríbelo en Bitácora 📖' },
+    { title: '💙 Un poco de aire', body: 'Respira. Si necesitas hablar, hay guardianes disponibles en Sala de Ayuda. No estás solo/a 🌿' },
   ],
   night: [
-    { title: '🌙 Buenas noches', body: 'Llegaste hasta acá. Eso solo ya es mucho 💪 Descansá bien. Nos vemos mañana.' },
-    { title: '🌙 Cerrá el día', body: 'Sea como sea que estuvo, hoy diste lo que pudiste 💚 Descansá. Sos más fuerte de lo que creés.' },
+    { title: '🌙 Buenas noches', body: 'Llegaste hasta aquí. Eso solo ya es mucho 💪 Descansa bien. Nos vemos mañana.' },
+    { title: '🌙 Cierra el día', body: 'Sea como sea que estuvo, hoy diste lo que pudiste 💚 Descansa. Eres más fuerte de lo que crees.' },
     { title: '💪 Buenas noches', body: 'Los días difíciles también cuentan. Mañana es otra oportunidad 🌿 Nos vemos.' },
-    { title: '🌙 Ya está', body: 'Soltá el día. Lo que quedó pendiente, mañana. Descansá tranquilo/a 💚' },
-    { title: '💙 Cierre suave', body: 'Sea como sea que hoy te sentiste, es válido. Descansá 💪 Mañana te esperamos.' },
-    { title: '🌙 Descanso', body: 'Gracias por seguir apareciendo en Velo. Eso ya dice mucho de vos 💚 Buenas noches.' },
+    { title: '🌙 Ya está', body: 'Suelta el día. Lo que quedó pendiente, mañana. Descansa tranquilo/a 💚' },
+    { title: '💙 Cierre suave', body: 'Sea como sea que hoy te sentiste, es válido. Descansa 💪 Mañana te esperamos.' },
+    { title: '🌙 Descanso', body: 'Gracias por seguir apareciendo en Velo. Eso ya dice mucho de ti 💚 Buenas noches.' },
   ],
 };
 
@@ -146,7 +146,7 @@ async function generateNotification(slot) {
 
   let prompt = '';
   if (slot === 'morning') {
-    prompt = `Sos el asistente empático de Velo, una app de apoyo emocional en español rioplatense (vos, no tú).
+    prompt = `Eres el asistente empático de Velo, una app de apoyo emocional en español neutro/universal (tú, no vos — evitar argentinismos como "acá", "che", "pinta", "sos", "podés").
 Generá una notificación push de BUENOS DÍAS. Objetivos, en orden:
 1. Saludo cálido de mañana, corto, humano, NO corporativo
 2. INVITAR EXPLÍCITAMENTE a registrar cómo se siente hoy en la app (es el ritual matutino más importante)
@@ -155,8 +155,8 @@ Generá una notificación push de BUENOS DÍAS. Objetivos, en orden:
 Reglas de estilo:
 - Título máx 42 caracteres, empezá con 1 emoji cálido (🌅 ☀️ 🌱 🌤️ 🌸)
 - Cuerpo máx 100 caracteres, tono íntimo, como amigo cercano
-- Mencioná el registro de ánimo de forma sutil pero clara ('registrá cómo estás', 'anotá tu ánimo', '¿cómo te sentís hoy?')
-- Podés usar 1-2 emojis totales, no más
+- Mencioná el registro de ánimo de forma sutil pero clara ('registra cómo estás', 'anota tu ánimo', '¿cómo te sientes hoy?')
+- Puedes usar 1-2 emojis totales, no más
 - NO uses 'salud mental', NO uses hashtags, NO uses listas
 - Respondé SOLO JSON: {"title":"...","body":"..."}`;
   } else if (slot === 'afternoon') {
@@ -164,22 +164,22 @@ Reglas de estilo:
     // Alternar entre modo empático (validar mal momento) y modo activo (invitar a hacer)
     const useEmpathic = Math.random() < 0.65;
     if (useEmpathic) {
-      prompt = `Sos el asistente empático de Velo, una app de apoyo emocional en español rioplatense (vos, no tú).
+      prompt = `Eres el asistente empático de Velo, una app de apoyo emocional en español neutro/universal (tú, no vos — evitar argentinismos como "acá", "che", "pinta", "sos", "podés").
 Generá una notificación push de la TARDE. La persona puede estar pasando un momento difícil O uno bueno — validá AMBOS posibles.
 Objetivos:
-1. Reconocer que la tarde puede venir bien o difícil ('si viene bien, celebralo', 'si viene difícil, no estás solo/a')
+1. Reconocer que la tarde puede venir bien o difícil ('si viene bien, celébralo', 'si viene difícil, no estás solo/a')
 2. Recordar sutilmente que la app está ahí para acompañar el mal momento — mencioná específicamente: ${feature}
 3. Tono empático, NO forzado positivo, honesto
 
 Reglas de estilo:
 - Título máx 42 caracteres, empezá con 1 emoji suave (💛 🌿 💙 🤝 ✨ 🌤️)
 - Cuerpo máx 110 caracteres, tono cálido, como un amigo que sabe validar
-- Frases que sirven: 'está bien no estar bien', 'no estás solo/a', 'si necesitás soltar algo'
+- Frases que sirven: 'está bien no estar bien', 'no estás solo/a', 'si necesitas soltar algo'
 - Máx 2 emojis totales
 - NO uses 'salud mental', NO uses hashtags
 - Respondé SOLO JSON: {"title":"...","body":"..."}`;
     } else {
-      prompt = `Sos el asistente de Velo, una app de apoyo emocional en español rioplatense (vos, no tú).
+      prompt = `Eres el asistente de Velo, una app de apoyo emocional en español neutro/universal (tú, no vos — evitar argentinismos como "acá", "che", "pinta", "sos", "podés").
 Generá una notificación push de la TARDE con una INVITACIÓN CONCRETA a usar la app.
 Objetivo: invitar sutilmente a usar ${feature}. La invitación debe sentirse útil, no promocional.
 
@@ -192,18 +192,18 @@ Reglas de estilo:
     }
   } else {
     // Noche — mensaje de ánimo fuerte, cierre íntimo, validar el día tal como fue
-    prompt = `Sos el asistente empático de Velo, una app de apoyo emocional en español rioplatense (vos, no tú).
+    prompt = `Eres el asistente empático de Velo, una app de apoyo emocional en español neutro/universal (tú, no vos — evitar argentinismos como "acá", "che", "pinta", "sos", "podés").
 Generá una notificación push de BUENAS NOCHES con MENSAJE DE ÁNIMO FUERTE.
 Objetivos, en orden:
 1. Validar que el día pudo ser difícil O bueno, sin asumir
-2. Dar un mensaje de fortaleza REAL, no cursi ('llegaste hasta acá y eso ya es mucho', 'sos más fuerte de lo que creés', 'los días difíciles también cuentan')
+2. Dar un mensaje de fortaleza REAL, no cursi ('llegaste hasta aquí y eso ya es mucho', 'eres más fuerte de lo que crees', 'los días difíciles también cuentan')
 3. Cierre íntimo con buenas noches
 4. NO recomendar features de la app — es momento de bajar la actividad
 
 Reglas de estilo:
 - Título máx 42 caracteres, empezá con 🌙 o 💪 o 💙
 - Cuerpo máx 110 caracteres, tono íntimo, como abrazo verbal
-- Frases fuertes ok: 'sos más fuerte de lo que creés', 'llegaste hasta acá', 'diste lo que pudiste'
+- Frases fuertes ok: 'eres más fuerte de lo que crees', 'llegaste hasta aquí', 'diste lo que pudiste'
 - Máx 2 emojis totales
 - NO uses 'salud mental', NO cursilería, honesto y cálido
 - Respondé SOLO JSON: {"title":"...","body":"..."}`;
@@ -362,7 +362,7 @@ async function sendWeeklySummary(users) {
   if (!activeIds.length) return { sent: 0 };
 
   const title = `🌸 Tu semana en Velo`;
-  const body = `Un resumen de cómo estuviste esta semana emocionalmente. Tocá para verlo ✨`;
+  const body = `Un resumen de cómo estuviste esta semana emocionalmente. Toca para verlo ✨`;
 
   let sent = 0, failed = 0;
   const usersById = {};
