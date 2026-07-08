@@ -19918,13 +19918,35 @@ async function pOpenVibeGroup(groupId){
     }catch(e){}
     // CTA "¿Querés participar?" arriba de las cards
     var ctaHtml = '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-bottom:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(116,198,157,.28),rgba(74,160,110,.22));border:1.5px dashed rgba(116,198,157,.65);border-radius:16px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.4">👉 ¿Querés participar de este momento?<br><span style="font-size:11.5px;font-weight:700;color:rgba(180,230,200,.85);letter-spacing:.4px">Tocá acá para subir tu historia</span></button>';
+    // "Existen momentos nuevos" — comparar contra velo_vibes_lastseen_<groupId>
+    // Devuelve momento más antiguo aún NO visto para poder scrollear ahí
+    var _lsKey = 'velo_vibes_lastseen_'+groupId;
+    var lastSeen = 0;
+    try{ lastSeen = parseInt(safeLS('get',_lsKey)||'0', 10) || 0; }catch(_){}
+    // res.data está ordenado desc por created_at — los más nuevos primero
+    var newVibes = res.data.filter(function(v){ return new Date(v.created_at).getTime() > lastSeen; });
+    var newBanner = '';
+    if(lastSeen > 0 && newVibes.length > 0){
+      var firstNewId = newVibes[newVibes.length - 1].id; // el más antiguo entre los nuevos
+      newBanner = '<button onclick="_vibeJumpToNew(\''+firstNewId+'\')" style="width:100%;margin-bottom:12px;padding:14px 16px;background:linear-gradient(135deg,rgba(255,215,80,.28),rgba(240,180,50,.22));border:1.5px solid rgba(255,200,60,.68);border-radius:16px;color:#fff9d0;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;text-align:left;letter-spacing:.3px;line-height:1.4;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(255,200,60,.24)">'
+        + '<span style="font-size:22px;flex-shrink:0">🌟</span>'
+        + '<span style="flex:1"><span style="color:#fffbe0">Hay '+newVibes.length+' momento'+(newVibes.length>1?'s':'')+' nuevo'+(newVibes.length>1?'s':'')+'</span><br><span style="font-size:11.5px;font-weight:700;color:rgba(255,240,180,.75)">Tocá para ver desde el último visto</span></span>'
+        + '<span style="font-size:16px;color:rgba(255,240,180,.85);flex-shrink:0">›</span>'
+      + '</button>';
+    }
     // Hint "desliza para ver más" cuando hay más de un momento
     var scrollHint = '';
     if(res.data.length > 1){
-      scrollHint = '<div style="text-align:center;padding:6px 12px 10px;font-family:Jost,sans-serif;font-size:11.5px;font-weight:700;color:rgba(180,220,195,.75);letter-spacing:.4px;animation:vibeHintPulse 2.2s ease-in-out infinite">👇 Deslizá para ver los '+res.data.length+' momentos</div>'
+      scrollHint = '<div style="text-align:center;padding:6px 12px 10px;font-family:Jost,sans-serif;font-size:11.5px;font-weight:700;color:rgba(180,220,195,.75);letter-spacing:.4px;animation:vibeHintPulse 2.2s ease-in-out infinite">👇 Deslizá para ver los '+res.data.length+' momentos (desliza para atrás también)</div>'
         + '<style>@keyframes vibeHintPulse{0%,100%{opacity:.55}50%{opacity:1}}</style>';
     }
-    list.innerHTML = ctaHtml + scrollHint + res.data.map(_vibeCardHtml).join('');
+    list.innerHTML = ctaHtml + newBanner + scrollHint + res.data.map(_vibeCardHtml).join('');
+    // Guardar timestamp del más nuevo como "último visto" al ABRIR el grupo
+    // Se guarda el más reciente para que la próxima visita muestre banner solo si hay MÁS nuevos.
+    try{
+      var newest = new Date(res.data[0].created_at).getTime();
+      if(newest > lastSeen) safeLS('set', _lsKey, String(newest));
+    }catch(_){}
     // Convertir data URLs a blob URLs (iOS Safari) — post-render
     list.querySelectorAll('img[data-vibe-src]').forEach(function(img){
       var src = img.getAttribute('data-vibe-src'); if(!src) return;
@@ -20066,6 +20088,20 @@ function _vibeCardHtml(v){
     + reactionPicker
   + '</div>';
 }
+// Scrollea al primer momento nuevo (el más antiguo entre los no vistos) con highlight suave
+function _vibeJumpToNew(firstNewId){
+  var list = document.getElementById('vibeGroupList');
+  if(!list) return;
+  var card = list.querySelector('.vibe-card[data-vibe-id="'+firstNewId+'"]');
+  if(!card){ return; }
+  try{ card.scrollIntoView({behavior:'smooth', block:'start'}); }catch(_){ card.scrollIntoView(); }
+  // Highlight glow 2 seg
+  var prev = card.style.boxShadow;
+  card.style.transition = 'box-shadow .5s';
+  card.style.boxShadow = '0 0 0 3px rgba(255,215,80,.85), 0 12px 40px rgba(255,200,60,.55)';
+  setTimeout(function(){ card.style.boxShadow = prev; }, 2400);
+}
+
 // UPSERT de reacción (toggle si es la misma, replace si es distinta)
 async function pVibeReact(vibeId, reactionKey, btnEl){
   _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
@@ -32990,7 +33026,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1337;
+    var _BUILT_V = 1338;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
