@@ -14862,3 +14862,13 @@ html:has(body.r-dark) { background-color: #0f1a14; }
   background: transparent !important;
   display: none !important;
 }
+
+/* v1332 — bottom nav no cubría hasta el borde del display porque tenía
+   height:fixed con box-sizing:border-box. En iPhone con safe-area de 34pt,
+   el padding-bottom quedaba dentro de los 64px totales, así el nav terminaba
+   más arriba del borde real del display y se veía el html (cream) por debajo.
+   Cambio height→min-height: ahora el padding-bottom se AGREGA al alto natural. */
+.p-bottomnav {
+  height: auto !important;
+  min-height: var(--bottomnav-h) !important;
+}
