@@ -14949,3 +14949,12 @@ body:not(.r-dark) #vibesBody button[onclick*="pCreateGroupPrompt('private')"] {
 body:not(.r-dark) #vibesBody button[onclick*="pCreateGroupPrompt('private')"] span {
   color: rgba(80,50,150,.85) !important;
 }
+
+/* v1337 — thumbnail del emoji en light mode: fondo pastel con emoji grande y visible.
+   Antes se veía como cuadrado blanco vacío. */
+body:not(.r-dark) #vibesBody button[onclick^="pOpenVibeGroup"] > div:first-child {
+  background: linear-gradient(135deg,rgba(255,235,180,.65),rgba(255,215,140,.55)) !important;
+  border: 1.5px solid rgba(200,150,60,.55) !important;
+  font-size: 30px !important;
+  box-shadow: 0 3px 10px rgba(200,150,60,.22) !important;
+}

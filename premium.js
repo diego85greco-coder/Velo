@@ -19918,7 +19918,13 @@ async function pOpenVibeGroup(groupId){
     }catch(e){}
     // CTA "¿Querés participar?" arriba de las cards
     var ctaHtml = '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-bottom:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(116,198,157,.28),rgba(74,160,110,.22));border:1.5px dashed rgba(116,198,157,.65);border-radius:16px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.4">👉 ¿Querés participar de este momento?<br><span style="font-size:11.5px;font-weight:700;color:rgba(180,230,200,.85);letter-spacing:.4px">Tocá acá para subir tu historia</span></button>';
-    list.innerHTML = ctaHtml + res.data.map(_vibeCardHtml).join('');
+    // Hint "desliza para ver más" cuando hay más de un momento
+    var scrollHint = '';
+    if(res.data.length > 1){
+      scrollHint = '<div style="text-align:center;padding:6px 12px 10px;font-family:Jost,sans-serif;font-size:11.5px;font-weight:700;color:rgba(180,220,195,.75);letter-spacing:.4px;animation:vibeHintPulse 2.2s ease-in-out infinite">👇 Deslizá para ver los '+res.data.length+' momentos</div>'
+        + '<style>@keyframes vibeHintPulse{0%,100%{opacity:.55}50%{opacity:1}}</style>';
+    }
+    list.innerHTML = ctaHtml + scrollHint + res.data.map(_vibeCardHtml).join('');
     // Convertir data URLs a blob URLs (iOS Safari) — post-render
     list.querySelectorAll('img[data-vibe-src]').forEach(function(img){
       var src = img.getAttribute('data-vibe-src'); if(!src) return;
@@ -20036,10 +20042,17 @@ function _vibeCardHtml(v){
   var glow = tint ? '0 12px 32px rgba('+tint.r+','+tint.g+','+tint.b+',.30), 0 3px 10px rgba('+tint.r+','+tint.g+','+tint.b+',.22)' : '0 8px 26px rgba(0,0,0,.35), 0 2px 8px rgba(60,140,90,.14)';
   var mine = _vibeMyReactions[v.id] || '';
   var summary = _vibeSummaryPhrase(counts);
-  var reactionPicker = '<div class="vibe-rx-row" style="display:flex;align-items:center;gap:4px;padding:10px 12px;flex-wrap:wrap;background:rgba(0,0,0,.22);border-top:1px solid rgba(116,198,157,.12)">'
+  // Reacciones ahora muestran EMOJI + LABEL debajo, y glow del tint cuando están seleccionadas
+  var reactionPicker = '<div class="vibe-rx-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 12px 12px;background:rgba(0,0,0,.22);border-top:1px solid rgba(116,198,157,.12)">'
     + VIBE_REACTIONS.map(function(reaction){
         var sel = mine === reaction.key;
-        return '<button type="button" onclick="pVibeReact(\''+v.id+'\',\''+reaction.key+'\',this)" title="'+_escHtml(reaction.label)+'" style="background:'+(sel?'rgba('+parseInt(reaction.tint.slice(1,3),16)+','+parseInt(reaction.tint.slice(3,5),16)+','+parseInt(reaction.tint.slice(5,7),16)+',.32)':'rgba(255,255,255,.04)')+';border:1.5px solid '+(sel?reaction.tint:'rgba(255,255,255,.12)')+';border-radius:100px;padding:6px 10px;font-size:16px;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;line-height:1">'+reaction.emoji+'</button>';
+        var r = parseInt(reaction.tint.slice(1,3),16);
+        var g = parseInt(reaction.tint.slice(3,5),16);
+        var b = parseInt(reaction.tint.slice(5,7),16);
+        var bg = sel ? 'rgba('+r+','+g+','+b+',.28)' : 'rgba(255,255,255,.04)';
+        var brd = sel ? reaction.tint : 'rgba(255,255,255,.12)';
+        var shadow = sel ? 'box-shadow:0 0 18px rgba('+r+','+g+','+b+',.55), inset 0 0 12px rgba('+r+','+g+','+b+',.18);' : '';
+        return '<button type="button" onclick="pVibeReact(\''+v.id+'\',\''+reaction.key+'\',this)" title="'+_escHtml(reaction.label)+'" style="background:'+bg+';border:1.5px solid '+brd+';border-radius:12px;padding:8px 4px 6px;cursor:pointer;transition:all .25s;display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1;'+shadow+'"><span style="font-size:19px">'+reaction.emoji+'</span><span style="font-family:Jost,sans-serif;font-size:9.5px;font-weight:700;color:'+(sel?reaction.tint:'rgba(220,240,225,.65)')+';letter-spacing:.2px;text-align:center;line-height:1.15">'+_escHtml(reaction.label)+'</span></button>';
       }).join('')
     + '</div>';
   var summaryChip = summary
@@ -20066,12 +20079,27 @@ async function pVibeReact(vibeId, reactionKey, btnEl){
       await sbClient.from('vibe_reactions').delete().eq('vibe_id', vibeId).eq('user_id', myId);
       counts[reactionKey] = Math.max(0, (counts[reactionKey]||1)-1);
       delete _vibeMyReactions[vibeId];
+      try{ pToast('↩️','Quitaste tu reacción'); }catch(_){}
     } else {
       // Reemplazar o crear
       if(prev){ counts[prev] = Math.max(0, (counts[prev]||1)-1); }
       counts[reactionKey] = (counts[reactionKey]||0)+1;
       _vibeMyReactions[vibeId] = reactionKey;
       await sbClient.from('vibe_reactions').upsert({ vibe_id: vibeId, user_id: myId, reaction: reactionKey }, { onConflict: 'vibe_id,user_id' });
+      // Toast personalizado según reacción — "Enviaste un abrazo", etc.
+      try{
+        var _sent = {
+          alegria:     ['🌞','Enviaste alegría'],
+          abrazo:      ['🤗','Enviaste un abrazo'],
+          acompano:    ['🕊️','Le dijiste "te acompaño"'],
+          fuerzas:     ['💪','Le mandaste fuerzas'],
+          gracias:     ['🙏','Le agradeciste por compartir'],
+          me_hace_bien:['✨','Le dijiste que te hace bien'],
+          animos:      ['💚','Le mandaste ánimos'],
+          me_inspira:  ['🌱','Le dijiste que te inspira']
+        }[reactionKey] || ['💚','Enviaste tu reacción'];
+        pToast(_sent[0], _sent[1]);
+      }catch(_){}
     }
     _vibeReactionAgg[vibeId] = counts;
     // Refrescar la card en el DOM sin re-fetchear todo el grupo
@@ -32962,7 +32990,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1336;
+    var _BUILT_V = 1337;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
