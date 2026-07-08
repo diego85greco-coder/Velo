@@ -19479,42 +19479,69 @@ async function _renderHomeVibesCard(){
   if(!sbClient){ wrap.style.display = 'none'; return; }
   try{
     var myId = safeLS('get','velo_user_id')||'';
-    // Últimos 6 momentos con foto (más nuevos primero) + info del grupo para
-    // marcar los privados con contorno violeta.
-    var vRes = await sbClient.from('vibes').select('id,media_url,group_id,instant_scope,created_at,user_name').gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(6);
+    var TARGET = 6; // total de tiles antes del "Ver todos"
+    // 1) Últimos momentos con foto (más nuevos primero)
+    var vRes = await sbClient.from('vibes').select('id,media_url,group_id,instant_scope,created_at,user_name').gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(TARGET);
     var vibes = (vRes && vRes.data)||[];
-    // Traer info de grupos de las vibes para saber kind (private/public/official)
-    var groupKinds = {};
+    // 2) Grupos oficiales con emoji/logo (para rellenar cuando faltan momentos)
+    var gRes = await sbClient.from('vibe_groups').select('id,kind,slug,emoji,title').eq('kind','official').limit(20);
+    var officialGroups = (gRes && gRes.data)||[];
+    // Info de grupo para las vibes (kind → contorno)
+    var groupInfo = {};
     var gIds = vibes.map(function(v){ return v.group_id; }).filter(Boolean);
-    if(gIds.length){
+    var allGIds = gIds.concat(officialGroups.map(function(g){ return g.id; }));
+    if(allGIds.length){
       try{
-        var gRes = await sbClient.from('vibe_groups').select('id,kind').in('id', gIds);
-        (gRes.data||[]).forEach(function(g){ groupKinds[g.id] = g.kind; });
+        var giRes = await sbClient.from('vibe_groups').select('id,kind,slug,emoji,title').in('id', allGIds);
+        (giRes.data||[]).forEach(function(g){ groupInfo[g.id] = g; });
       }catch(_){}
     }
+    // Grupos con momentos activos (para NO duplicarlos en el fill)
+    var groupsWithVibes = {};
+    vibes.forEach(function(v){ if(v.group_id) groupsWithVibes[v.group_id] = true; });
     // Vistos → grayscale
     var _seen = {};
     try{ _seen = JSON.parse(safeLS('get','velo_vibes_seen_instant')||'{}'); }catch(_){}
-    var thumbsHtml;
-    if(!vibes.length){
-      thumbsHtml = '<div style="flex:1;padding:22px 16px;background:linear-gradient(135deg,rgba(255,235,180,.35),rgba(255,215,140,.25));border:1.5px dashed rgba(200,150,60,.55);border-radius:14px;color:rgba(120,80,20,.85);font-family:Jost,sans-serif;font-size:12.5px;text-align:center;font-style:italic">Aún nadie publicó momentos hoy — sé el primero ✨</div>';
-    } else {
-      thumbsHtml = vibes.map(function(v){
-        var isSeen = !!_seen[v.id];
-        var kind = v.group_id ? (groupKinds[v.group_id]||'public') : (v.instant_scope === 'private' ? 'private' : 'instant');
-        var isPrivate = kind === 'private';
-        var borderCol = isPrivate ? 'rgba(155,120,220,.95)' : (kind==='instant' ? 'rgba(220,170,60,.85)' : 'rgba(116,198,157,.72)');
-        var borderWidth = isPrivate ? '3px' : '2px';
-        var opa = isSeen ? '.55' : '1';
-        var filt = isSeen ? 'grayscale(.85)' : 'none';
-        var privateBadge = isPrivate ? '<span style="position:absolute;top:4px;right:4px;background:rgba(155,120,220,.95);color:#fff;font-family:Jost,sans-serif;font-size:10px;padding:2px 5px;border-radius:100px;box-shadow:0 2px 5px rgba(0,0,0,.4);z-index:2">🔒</span>' : '';
-        var onclickAction = v.group_id ? ('pOpenVibeGroup(\''+_escHtml(v.group_id)+'\')') : ('pOpenInstantVibe(\''+_escHtml(v.id)+'\')');
-        return '<button onclick="'+onclickAction+'" style="flex:0 0 82px;padding:0;background:#0a1810;border:'+borderWidth+' solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:98px;opacity:'+opa+';filter:'+filt+';box-shadow:0 3px 10px rgba(0,0,0,.14)">'
-          + privateBadge
-          + '<img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;height:100%;object-fit:cover;display:block">'
+
+    var thumbsHtml = '';
+    // Renderizar los momentos publicados (con foto)
+    thumbsHtml += vibes.map(function(v){
+      var isSeen = !!_seen[v.id];
+      var gInfo = v.group_id ? groupInfo[v.group_id] : null;
+      var kind = gInfo ? gInfo.kind : (v.instant_scope === 'private' ? 'private' : 'instant');
+      var isPrivate = kind === 'private';
+      var borderCol = isPrivate ? 'rgba(155,120,220,.95)' : (kind==='instant' ? 'rgba(220,170,60,.85)' : 'rgba(116,198,157,.72)');
+      var borderWidth = isPrivate ? '3px' : '2px';
+      var opa = isSeen ? '.55' : '1';
+      var filt = isSeen ? 'grayscale(.85)' : 'none';
+      var privateBadge = isPrivate ? '<span style="position:absolute;top:4px;right:4px;background:rgba(155,120,220,.95);color:#fff;font-family:Jost,sans-serif;font-size:10px;padding:2px 5px;border-radius:100px;box-shadow:0 2px 5px rgba(0,0,0,.4);z-index:2">🔒</span>' : '';
+      var onclickAction = v.group_id ? ('pOpenVibeGroup(\''+_escHtml(v.group_id)+'\')') : ('pOpenInstantVibe(\''+_escHtml(v.id)+'\')');
+      return '<button onclick="'+onclickAction+'" style="flex:0 0 82px;padding:0;background:#0a1810;border:'+borderWidth+' solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:98px;opacity:'+opa+';filter:'+filt+';box-shadow:0 3px 10px rgba(0,0,0,.14)">'
+        + privateBadge
+        + '<img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;height:100%;object-fit:cover;display:block">'
+      + '</button>';
+    }).join('');
+    // Rellenar con GRUPOS oficiales VACÍOS hasta llegar a TARGET
+    var slotsLeft = TARGET - vibes.length;
+    if(slotsLeft > 0){
+      var emptyGroups = officialGroups.filter(function(g){ return !groupsWithVibes[g.id]; }).slice(0, slotsLeft);
+      thumbsHtml += emptyGroups.map(function(g){
+        var emoji = (g.emoji||'').trim();
+        if(!emoji && g.slug && _VIBE_SLUG_EMOJIS[g.slug]) emoji = _VIBE_SLUG_EMOJIS[g.slug];
+        if(!emoji) emoji = '🌱';
+        return '<button onclick="pOpenVibeGroup(\''+_escHtml(g.id)+'\')" style="flex:0 0 82px;padding:0;background:linear-gradient(140deg,#a8dfb9 0%,#7ac6a0 100%);border:2px solid rgba(116,198,157,.75);border-radius:14px;cursor:pointer;height:98px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;box-shadow:0 3px 10px rgba(60,140,90,.16)">'
+          + '<span style="font-size:34px;text-shadow:0 2px 6px rgba(0,0,0,.35);line-height:1">'+_escHtml(emoji)+'</span>'
+          + '<div style="position:absolute;bottom:0;left:0;right:0;padding:3px 3px 5px;background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.55));text-align:center">'
+            + '<div style="font-family:Jost,sans-serif;font-size:8.5px;font-weight:800;color:#fff;letter-spacing:.2px;line-height:1.15;text-shadow:0 1px 2px rgba(0,0,0,.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px">'+_escHtml(g.title||'Grupo')+'</div>'
+          + '</div>'
         + '</button>';
       }).join('');
-      // Tile final: "Ver todos →" si hay más momentos disponibles
+    }
+    // Si no hay ni momentos ni grupos, mostrar mensaje amable
+    if(!thumbsHtml){
+      thumbsHtml = '<div style="flex:1;padding:22px 16px;background:linear-gradient(135deg,rgba(255,235,180,.35),rgba(255,215,140,.25));border:1.5px dashed rgba(200,150,60,.55);border-radius:14px;color:rgba(120,80,20,.85);font-family:Jost,sans-serif;font-size:12.5px;text-align:center;font-style:italic">Aún nadie publicó momentos hoy — sé el primero ✨</div>';
+    } else {
+      // Tile final: "Ver todos →"
       thumbsHtml += '<button onclick="pOpenVibes()" style="flex:0 0 68px;padding:0;background:linear-gradient(140deg,rgba(116,198,157,.28),rgba(80,160,110,.20));border:2px dashed rgba(116,198,157,.70);border-radius:14px;cursor:pointer;height:98px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:Jost,sans-serif;color:rgba(30,110,70,.98);font-size:9.5px;font-weight:800;line-height:1.15;text-align:center;padding:6px 4px">'
         + '<span style="font-size:20px">→</span>'
         + '<span>Ver<br>todos</span>'
@@ -33574,7 +33601,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1352;
+    var _BUILT_V = 1353;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
