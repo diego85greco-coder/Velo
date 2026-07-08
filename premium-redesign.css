@@ -14873,12 +14873,8 @@ html:has(body.r-dark) { background-color: #0f1a14; }
   min-height: var(--bottomnav-h) !important;
 }
 
-/* v1333 — fix definitivo del espacio abajo:
-   Usamos --vh CSS custom property que se setea vía JS con window.innerHeight.
-   iOS PWA a veces deja el body con 100dvh desincronizado del viewport visible.
-   window.innerHeight sí devuelve la altura correcta. Ver premium.js:_syncVh. */
-body { height: calc(var(--vh, 1vh) * 100) !important; }
-.p-app-shell { height: calc(var(--vh, 1vh) * 100) !important; }
+/* v1333 --vh reverted en v1334 — window.innerHeight excluía safe-area en iOS PWA
+   y el body quedaba más corto que la pantalla. Volvemos a 100dvh estándar. */
 
 /* v1333 — rules banner de DM chat en LIGHT MODE era ilegible (texto claro
    sobre header verde pastel). Alto contraste. */
@@ -14887,4 +14883,50 @@ body:not(.r-dark) #pg-help-chat #dmRulesBanner {
   background: rgba(80,160,110,.18) !important;
   color: rgba(20,60,35,.92) !important;
   border-bottom-color: rgba(80,160,110,.35) !important;
+}
+
+/* v1334 — Vibes: los inline styles están todos hardcoded para dark mode (texto
+   claro, backgrounds transparentes). En light mode todo era ilegible.
+   Override completo para light mode con !important para vencer inline styles. */
+body:not(.r-dark) #pg-vibes {
+  background: linear-gradient(180deg,#fef8ea,#f5efe0) !important;
+}
+body:not(.r-dark) #pg-vibes .feed-header {
+  background: rgba(255,255,255,.92) !important;
+  border-bottom: 1px solid rgba(80,160,110,.20) !important;
+}
+body:not(.r-dark) #pg-vibes .feed-header .feed-header-info > div:first-child {
+  color: #1a3a25 !important;
+}
+body:not(.r-dark) #pg-vibes .feed-header .feed-header-info > div:nth-child(2) {
+  color: rgba(30,80,45,.70) !important;
+}
+/* Section titles ("GRUPOS DE VELO", "DE LA COMUNIDAD", etc.) */
+body:not(.r-dark) #vibesBody > div > div:first-child {
+  color: rgba(20,60,35,.85) !important;
+}
+body:not(.r-dark) #vibesBody > div > div:nth-child(2) {
+  color: rgba(40,90,55,.65) !important;
+}
+/* Group cards — override inline text colors */
+body:not(.r-dark) #vibesBody button[onclick^="pOpenVibeGroup"] {
+  background: rgba(255,255,255,.85) !important;
+  border-color: rgba(80,160,110,.42) !important;
+  box-shadow: 0 4px 18px rgba(80,160,110,.14) !important;
+}
+body:not(.r-dark) #vibesBody button[onclick^="pOpenVibeGroup"] > div:nth-child(2) > div:first-child {
+  color: #1a3a25 !important;
+}
+body:not(.r-dark) #vibesBody button[onclick^="pOpenVibeGroup"] > div:nth-child(2) > div:nth-child(2) {
+  color: rgba(40,80,50,.75) !important;
+}
+body:not(.r-dark) #vibesBody button[onclick^="pOpenVibeGroup"] > div:nth-child(2) > div:nth-child(3) > div {
+  color: rgba(30,90,50,.85) !important;
+}
+body:not(.r-dark) #vibesBody button[onclick^="pOpenVibeGroup"] > span:last-child {
+  color: rgba(30,90,50,.85) !important;
+}
+body:not(.r-dark) #vibesBody button[onclick^="pOpenVibeGroup"] > div:first-child {
+  background: rgba(255,255,255,.75) !important;
+  border-color: rgba(80,160,110,.45) !important;
 }
