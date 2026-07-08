@@ -15206,16 +15206,16 @@ body.r-dark .vibes-tile-empty--instant { background: linear-gradient(140deg, #ff
 body.r-dark .vibes-tile-empty          { text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
 /* Tiles vacíos con emoji — LIGHT: pasteles suaves tierra/cream */
 body:not(.r-dark) .vibes-tile-empty--group {
-  background: linear-gradient(140deg, #f4efdf 0%, #e0d8c0 100%);
-  box-shadow: inset 0 0 0 1px rgba(180, 160, 100, 0.28);
+  background: linear-gradient(140deg, #b8e0c5 0%, #85c29e 100%);
+  box-shadow: inset 0 0 0 1px rgba(60, 130, 80, 0.45);
 }
 body:not(.r-dark) .vibes-tile-empty--private {
-  background: linear-gradient(140deg, #ede4f5 0%, #d5c5e8 100%);
-  box-shadow: inset 0 0 0 1px rgba(155, 120, 200, 0.28);
+  background: linear-gradient(140deg, #d5c1f0 0%, #b39aec 100%);
+  box-shadow: inset 0 0 0 1px rgba(120, 90, 200, 0.55);
 }
 body:not(.r-dark) .vibes-tile-empty--instant {
-  background: linear-gradient(140deg, #fbeecd 0%, #ebd6a0 100%);
-  box-shadow: inset 0 0 0 1px rgba(200, 150, 60, 0.35);
+  background: linear-gradient(140deg, #ffd888 0%, #f0b555 100%);
+  box-shadow: inset 0 0 0 1px rgba(180, 120, 30, 0.55);
 }
 body:not(.r-dark) .vibes-tile-empty {
   text-shadow: 0 2px 6px rgba(80, 60, 20, 0.22);
@@ -15308,4 +15308,27 @@ body:not(.r-dark) #vibeCreateMenuOv button[onclick*="pCreateGroupPrompt('private
 }
 body:not(.r-dark) #vibeCreateMenuOv button[onclick*="pCreateGroupPrompt('private')"] * {
   color: #3a1a70 !important;
+}
+
+/* v1360 — FORZAR el label del tile del widget a fondo dark + texto blanco
+   Algún override lo estaba pintando verde oscuro sobre verde oscuro. */
+.home-vibes-widget__rail > button > div:last-child {
+  background: #0a1810 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.10) !important;
+}
+.home-vibes-widget__rail > button > div:last-child > div {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65) !important;
+}
+/* En light mode también forzar el fondo del widget para asegurar contraste */
+body:not(.r-dark) .home-vibes-widget {
+  background: linear-gradient(155deg, #ffffff 0%, #f0f5ea 55%, #dcead0 100%) !important;
+  border: 1.5px solid rgba(60, 130, 90, 0.42) !important;
+  box-shadow:
+    0 8px 28px rgba(60, 130, 90, 0.14),
+    0 1px 0 rgba(255, 255, 255, 1) inset !important;
+}
+body:not(.r-dark) .home-vibes-widget__title {
+  color: #0e3a1e !important;
+  font-weight: 700 !important;
 }
