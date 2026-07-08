@@ -19947,12 +19947,20 @@ async function pOpenVibeGroup(groupId){
     var list = document.getElementById('vibeGroupList');
     if(!list) return;
     if(!res || !res.data || !res.data.length){
-      list.innerHTML = '<div style="text-align:center;padding:40px 20px 12px;color:rgba(200,230,215,.65);font-family:Jost,sans-serif">'
-        + '<div style="font-size:50px;margin-bottom:14px;opacity:.55">🌱</div>'
-        + '<div style="font-size:16px;font-weight:800;color:#fff">Todavía sin historias</div>'
-        + '<div style="font-size:12.5px;margin-top:6px;line-height:1.55;color:rgba(200,230,215,.65)">Sé el primero en compartir un momento acá</div>'
-        + '</div>'
-        + '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-top:8px;padding:18px 20px;background:linear-gradient(135deg,rgba(116,198,157,.85),rgba(74,160,110,.98));border:none;border-radius:18px;color:#0e1f14;font-family:Jost,sans-serif;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.4px;box-shadow:0 8px 26px rgba(80,180,120,.35),0 2px 8px rgba(60,140,90,.25);line-height:1.35">👉 Sumate al momento<br><span style="font-size:12px;font-weight:700;color:rgba(20,50,32,.78);letter-spacing:.3px">Tocá acá para subir tu historia</span></button>';
+      // Empty state: NO usar el carrusel — poner todo en el div fijo y ocultar
+      // el list y los dots para que no aparezca el layout raro con 1 slide.
+      var fixedEmpty = document.getElementById('vibeGroupFixed');
+      if(fixedEmpty){
+        fixedEmpty.innerHTML = '<div style="text-align:center;padding:40px 20px 12px;color:rgba(200,230,215,.65);font-family:Jost,sans-serif">'
+          + '<div style="font-size:50px;margin-bottom:14px;opacity:.55">🌱</div>'
+          + '<div style="font-size:16px;font-weight:800;color:#fff">Todavía sin historias</div>'
+          + '<div style="font-size:12.5px;margin-top:6px;line-height:1.55;color:rgba(200,230,215,.65)">Sé el primero en compartir un momento acá</div>'
+          + '</div>'
+          + '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-top:8px;padding:18px 20px;background:linear-gradient(135deg,rgba(116,198,157,.85),rgba(74,160,110,.98));border:none;border-radius:18px;color:#0e1f14;font-family:Jost,sans-serif;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.4px;box-shadow:0 8px 26px rgba(80,180,120,.35),0 2px 8px rgba(60,140,90,.25);line-height:1.35">👉 Sumate al momento<br><span style="font-size:12px;font-weight:700;color:rgba(20,50,32,.78);letter-spacing:.3px">Tocá acá para subir tu historia</span></button>';
+      }
+      list.style.display = 'none';
+      var dotsEmpty = document.getElementById('vibeGroupDots');
+      if(dotsEmpty) dotsEmpty.style.display = 'none';
       return;
     }
     // Cargar reacciones de todas las vibes de una — bulk
@@ -33207,7 +33215,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1342;
+    var _BUILT_V = 1343;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
