@@ -20092,7 +20092,7 @@ async function pOpenVibeGroup(groupId){
   ov.id = 'vibeGroupOv';
   ov.dataset.prevHtmlBg = _prevHtmlBg;
   ov.style.cssText = 'position:fixed;inset:0;z-index:10012;background:linear-gradient(180deg,#0a1810,#050f08);display:flex;flex-direction:column;overflow:hidden;color:#fff';
-  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.98);border-bottom:1px solid rgba(116,198,157,.22);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.30)"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:26px;flex-shrink:0">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;font-style:italic;color:#fff;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11.5px;color:rgba(200,235,215,.85);margin-top:3px;font-family:Jost,sans-serif;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.description)||'')+'</div></div><button onclick="_closeVibeGroup();pStartCreateVibe(\''+groupId+'\')" style="background:linear-gradient(135deg,rgba(116,198,157,.98),rgba(74,160,110,1));border:none;color:#0e1f14;font-family:Jost,sans-serif;font-size:14px;font-weight:900;padding:9px 14px;border-radius:100px;cursor:pointer;letter-spacing:.3px;flex-shrink:0;box-shadow:0 3px 10px rgba(60,140,90,.35)">＋</button></div>';
+  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.98);border-bottom:1px solid rgba(116,198,157,.22);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.30)"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:26px;flex-shrink:0">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;font-style:italic;color:#fff;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11.5px;color:rgba(200,235,215,.85);margin-top:3px;font-family:Jost,sans-serif;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.description)||'')+'</div></div><button onclick="_closeVibeGroup();pStartCreateVibe(\''+groupId+'\')" title="Publicar tu momento en este grupo" style="background:linear-gradient(135deg,#5bd090,#3aa06a);border:2px solid #ffffff;color:#ffffff;font-family:Jost,sans-serif;font-size:20px;font-weight:900;width:44px;height:44px;padding:0;border-radius:50%;cursor:pointer;flex-shrink:0;box-shadow:0 4px 14px rgba(60,180,120,.55),0 0 0 3px rgba(116,198,157,.35);display:flex;align-items:center;justify-content:center;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.35)">＋</button></div>';
   // Layout: header fijo + zona fija (CTA + banner de nuevos) + carrusel horizontal
   // scroll-snap con cada card 100% ancho + indicador de posición debajo.
   ov.innerHTML = header
@@ -20158,8 +20158,8 @@ async function pOpenVibeGroup(groupId){
     // Hint deslizá (solo si hay más de uno)
     var scrollHint = '';
     if(res.data.length > 1){
-      scrollHint = '<div style="text-align:center;padding:2px 12px 8px;font-family:Jost,sans-serif;font-size:11px;font-weight:700;color:rgba(180,220,195,.72);letter-spacing:.4px;animation:vibeHintPulse 2.2s ease-in-out infinite">👉 Deslizá horizontalmente para ver los '+res.data.length+' momentos</div>'
-        + '<style>@keyframes vibeHintPulse{0%,100%{opacity:.55}50%{opacity:1}}</style>';
+      scrollHint = '<div style="text-align:center;padding:4px 12px 10px;font-family:Jost,sans-serif;font-size:11.5px;font-weight:800;color:rgba(220,240,225,.98);letter-spacing:.4px;animation:vibeHintPulse 2.2s ease-in-out infinite;text-shadow:0 1px 3px rgba(0,0,0,.45)">👉 Deslizá horizontalmente para ver los '+res.data.length+' momentos</div>'
+        + '<style>@keyframes vibeHintPulse{0%,100%{opacity:.75}50%{opacity:1}}</style>';
     }
     var fixedEl = document.getElementById('vibeGroupFixed');
     if(fixedEl) fixedEl.innerHTML = ctaHtml + newBanner + scrollHint;
@@ -33651,7 +33651,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1357;
+    var _BUILT_V = 1358;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

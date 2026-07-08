@@ -15242,3 +15242,70 @@ body:not(.r-dark) .home-vibes-widget__see-all {
   color: #ffffff !important;
   box-shadow: 0 3px 10px rgba(80, 130, 90, 0.22) !important;
 }
+
+/* v1358 — Modal de crear momento (Compartí un momento) en LIGHT mode.
+   Todos los textos estaban en blanco pensados para dark; en light se perdían. */
+body:not(.r-dark) #vibeCreateMenuOv > div,
+body:not(.r-dark) #vibeCreateMenuOv .p-sheet {
+  background: linear-gradient(180deg, #fefaf0 0%, #f5efdd 100%) !important;
+  border-color: rgba(80, 160, 110, 0.42) !important;
+  color: #1a3a25 !important;
+}
+body:not(.r-dark) #vibeCreateMenuOv > div * {
+  color: #1a3a25 !important;
+}
+/* Título "Compartí un momento" */
+body:not(.r-dark) #vibeCreateMenuOv > div div[style*="Cormorant"] {
+  color: #1a3a25 !important;
+}
+/* Labels de sección (MOMENTO INSTANTÁNEO, GRUPOS OFICIALES DE VELO, etc.) */
+body:not(.r-dark) #vibeCreateMenuOv > div div[style*="letter-spacing:1.5px"],
+body:not(.r-dark) #vibeCreateMenuOv > div div[style*="letter-spacing: 1.5px"],
+body:not(.r-dark) #vibeCreateMenuOv > div div[style*="text-transform:uppercase"] {
+  color: rgba(30, 90, 55, 0.85) !important;
+  font-weight: 800 !important;
+}
+/* Card Instantáneo público (dorado) */
+body:not(.r-dark) #vibeCreateMenuOv button[onclick*="'public'"] {
+  background: linear-gradient(135deg, rgba(255, 190, 80, 0.18), rgba(240, 165, 45, 0.14)) !important;
+  border: 1.5px solid rgba(200, 140, 30, 0.55) !important;
+  color: #5a3a08 !important;
+}
+body:not(.r-dark) #vibeCreateMenuOv button[onclick*="'public'"] * {
+  color: #5a3a08 !important;
+}
+/* Card Instantáneo privado (lila) */
+body:not(.r-dark) #vibeCreateMenuOv button[onclick*="'private'"] {
+  background: linear-gradient(135deg, rgba(180, 140, 235, 0.22), rgba(140, 105, 200, 0.16)) !important;
+  border: 1.5px solid rgba(130, 90, 200, 0.62) !important;
+  color: #3a1a70 !important;
+}
+body:not(.r-dark) #vibeCreateMenuOv button[onclick*="'private'"] * {
+  color: #3a1a70 !important;
+}
+/* Cards de grupos oficiales (verde) */
+body:not(.r-dark) #vibeCreateMenuOv button[onclick*="pStartCreateVibe"]:not([onclick*="'public'"]):not([onclick*="'private'"]) {
+  background: linear-gradient(135deg, rgba(116, 198, 157, 0.22), rgba(80, 160, 110, 0.16)) !important;
+  border: 1.5px solid rgba(80, 160, 110, 0.55) !important;
+  color: #0e3a1e !important;
+}
+body:not(.r-dark) #vibeCreateMenuOv button[onclick*="pStartCreateVibe"]:not([onclick*="'public'"]):not([onclick*="'private'"]) * {
+  color: #0e3a1e !important;
+}
+/* Cards de crear grupo público/privado nuevo */
+body:not(.r-dark) #vibeCreateMenuOv button[onclick*="pCreateGroupPrompt('public')"] {
+  background: linear-gradient(135deg, rgba(200, 158, 56, 0.20), rgba(180, 130, 30, 0.14)) !important;
+  border: 1.5px dashed rgba(150, 100, 25, 0.72) !important;
+  color: #5a3a08 !important;
+}
+body:not(.r-dark) #vibeCreateMenuOv button[onclick*="pCreateGroupPrompt('public')"] * {
+  color: #5a3a08 !important;
+}
+body:not(.r-dark) #vibeCreateMenuOv button[onclick*="pCreateGroupPrompt('private')"] {
+  background: linear-gradient(135deg, rgba(155, 120, 220, 0.20), rgba(120, 90, 180, 0.14)) !important;
+  border: 1.5px dashed rgba(120, 80, 190, 0.72) !important;
+  color: #3a1a70 !important;
+}
+body:not(.r-dark) #vibeCreateMenuOv button[onclick*="pCreateGroupPrompt('private')"] * {
+  color: #3a1a70 !important;
+}
