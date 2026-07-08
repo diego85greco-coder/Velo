@@ -19598,9 +19598,23 @@ async function pRenderVibesHome(){
     body.innerHTML = '<div style="text-align:center;padding:50px 20px;color:rgba(220,120,120,.75);font-family:Jost,sans-serif">Error cargando Vibes</div>';
   }
 }
+// Fallback de emoji por slug si el grupo oficial no tiene emoji guardado en DB
+var _VIBE_SLUG_EMOJIS = {
+  felicidad:       '🌞',
+  mascotas:        '🐾',
+  lectura:         '📖',
+  ejercicio:       '💪',
+  entretenimiento: '🎭',
+  conciertos:      '🎵',
+  comidas:         '🍽️'
+};
 function _vibeGroupCard(gr, count){
   var isPrivate = gr.kind === 'private';
   var isOfficial = gr.kind === 'official';
+  // Emoji: 1) el guardado en DB; 2) fallback por slug (para grupos oficiales); 3) 🌊
+  var groupEmoji = (gr.emoji || '').trim();
+  if(!groupEmoji && gr.slug && _VIBE_SLUG_EMOJIS[gr.slug]) groupEmoji = _VIBE_SLUG_EMOJIS[gr.slug];
+  if(!groupEmoji) groupEmoji = isPrivate ? '🔒' : isOfficial ? '🌱' : '🌊';
   var accentBrd  = isPrivate ? 'rgba(155,120,220,.60)' : isOfficial ? 'rgba(116,198,157,.55)' : 'rgba(200,180,80,.50)';
   var accentBg   = isPrivate ? 'rgba(80,50,150,.16)'   : isOfficial ? 'rgba(60,140,95,.16)'    : 'rgba(180,150,50,.14)';
   var accentGlow = isPrivate ? 'rgba(155,120,220,.28)' : isOfficial ? 'rgba(116,198,157,.28)'  : 'rgba(200,180,80,.24)';
@@ -19611,7 +19625,7 @@ function _vibeGroupCard(gr, count){
     ? '👉 Sumá tu momento a este grupo'
     : (isPrivate ? '👉 Compartí con tu círculo' : '👉 Sumate y compartí');
   return '<button onclick="pOpenVibeGroup(\''+gr.id+'\')" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 16px;background:'+accentBg+';border:1.5px solid '+accentBrd+';border-radius:18px;margin-bottom:8px;cursor:pointer;text-align:left;font-family:Jost,sans-serif;box-shadow:0 4px 18px '+accentGlow+'">'
-    + '<div style="width:52px;height:52px;border-radius:14px;background:rgba(0,0,0,.24);border:1.5px solid '+accentBrd+';display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">'+_escHtml(gr.emoji||'🌊')+'</div>'
+    + '<div style="width:52px;height:52px;border-radius:14px;background:rgba(0,0,0,.24);border:1.5px solid '+accentBrd+';display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;line-height:1">'+_escHtml(groupEmoji)+'</div>'
     + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;flex-wrap:wrap">'+_escHtml(gr.title||'')+verifiedBadge+privateBadge+'</div>'
       + (gr.description ? '<div style="font-size:11.5px;color:rgba(200,230,215,.68);margin-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml(gr.description)+'</div>' : '')
@@ -19916,7 +19930,12 @@ async function pOpenVibeGroup(groupId){
   ov.id = 'vibeGroupOv';
   ov.style.cssText = 'position:fixed;inset:0;z-index:10012;background:linear-gradient(180deg,#0a1810,#050f08);display:flex;flex-direction:column;overflow:hidden;color:#fff';
   var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.94);border-bottom:1px solid rgba(116,198,157,.14);flex-shrink:0"><button onclick="document.getElementById(\'vibeGroupOv\').remove()" style="background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.20);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:22px">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:19px;font-style:italic">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11px;color:rgba(180,220,195,.65);margin-top:2px;font-family:Jost,sans-serif">'+_escHtml((gr&&gr.description)||'')+'</div></div><button onclick="document.getElementById(\'vibeGroupOv\').remove();pStartCreateVibe(\''+groupId+'\')" style="background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;color:#0e1f14;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;padding:8px 14px;border-radius:100px;cursor:pointer;letter-spacing:.3px">＋</button></div>';
-  ov.innerHTML = header + '<div id="vibeGroupList" style="flex:1;overflow-y:auto;padding:14px 16px 30px">Cargando…</div>';
+  // Layout: header fijo + zona fija (CTA + banner de nuevos) + carrusel horizontal
+  // scroll-snap con cada card 100% ancho + indicador de posición debajo.
+  ov.innerHTML = header
+    + '<div id="vibeGroupFixed" style="padding:14px 16px 0;flex-shrink:0"></div>'
+    + '<div id="vibeGroupList" style="flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px 0 6px">Cargando…</div>'
+    + '<div id="vibeGroupDots" style="display:flex;gap:6px;justify-content:center;padding:6px 12px 14px;flex-shrink:0"></div>';
   document.body.appendChild(ov);
   try{
     var res = await sbClient.from('vibes').select('*').eq('group_id', groupId).gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(80);
@@ -19945,31 +19964,60 @@ async function pOpenVibeGroup(groupId){
         });
       }
     }catch(e){}
-    // CTA "¿Querés participar?" arriba de las cards
-    var ctaHtml = '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-bottom:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(116,198,157,.28),rgba(74,160,110,.22));border:1.5px dashed rgba(116,198,157,.65);border-radius:16px;color:#fff;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.4">👉 ¿Querés participar de este momento?<br><span style="font-size:11.5px;font-weight:700;color:rgba(180,230,200,.85);letter-spacing:.4px">Tocá acá para subir tu historia</span></button>';
-    // "Existen momentos nuevos" — comparar contra velo_vibes_lastseen_<groupId>
-    // Devuelve momento más antiguo aún NO visto para poder scrollear ahí
+    // Zona fija arriba: CTA "¿Querés participar?" + banner "hay nuevos"
+    var ctaHtml = '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-bottom:10px;padding:11px 14px;background:linear-gradient(135deg,rgba(116,198,157,.28),rgba(74,160,110,.22));border:1.5px dashed rgba(116,198,157,.65);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.3">👉 ¿Querés participar? · Tocá para subir tu momento</button>';
+    // "Existen momentos nuevos"
     var _lsKey = 'velo_vibes_lastseen_'+groupId;
     var lastSeen = 0;
     try{ lastSeen = parseInt(safeLS('get',_lsKey)||'0', 10) || 0; }catch(_){}
-    // res.data está ordenado desc por created_at — los más nuevos primero
+    // res.data está ordenado desc — los más nuevos primero. Para el carrusel
+    // reverse: mostramos los más viejos primero (izq) y los más nuevos al final (der)
+    // igual que Instagram Stories. El "nuevo" queda a la derecha.
+    var carouselData = res.data.slice().reverse();
     var newVibes = res.data.filter(function(v){ return new Date(v.created_at).getTime() > lastSeen; });
     var newBanner = '';
     if(lastSeen > 0 && newVibes.length > 0){
-      var firstNewId = newVibes[newVibes.length - 1].id; // el más antiguo entre los nuevos
-      newBanner = '<button onclick="_vibeJumpToNew(\''+firstNewId+'\')" style="width:100%;margin-bottom:12px;padding:14px 16px;background:linear-gradient(135deg,rgba(255,215,80,.28),rgba(240,180,50,.22));border:1.5px solid rgba(255,200,60,.68);border-radius:16px;color:#fff9d0;font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;cursor:pointer;text-align:left;letter-spacing:.3px;line-height:1.4;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(255,200,60,.24)">'
-        + '<span style="font-size:22px;flex-shrink:0">🌟</span>'
-        + '<span style="flex:1"><span style="color:#fffbe0">Hay '+newVibes.length+' momento'+(newVibes.length>1?'s':'')+' nuevo'+(newVibes.length>1?'s':'')+'</span><br><span style="font-size:11.5px;font-weight:700;color:rgba(255,240,180,.75)">Tocá para ver desde el último visto</span></span>'
-        + '<span style="font-size:16px;color:rgba(255,240,180,.85);flex-shrink:0">›</span>'
+      var firstNewId = newVibes[newVibes.length - 1].id;
+      newBanner = '<button onclick="_vibeJumpToNew(\''+firstNewId+'\')" style="width:100%;margin-bottom:10px;padding:11px 14px;background:linear-gradient(135deg,rgba(255,215,80,.28),rgba(240,180,50,.22));border:1.5px solid rgba(255,200,60,.68);border-radius:14px;color:#fff9d0;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;text-align:left;letter-spacing:.3px;display:flex;align-items:center;gap:10px">'
+        + '<span style="font-size:18px;flex-shrink:0">🌟</span>'
+        + '<span style="flex:1;line-height:1.3"><span style="color:#fffbe0">Hay '+newVibes.length+' momento'+(newVibes.length>1?'s':'')+' nuevo'+(newVibes.length>1?'s':'')+'</span><br><span style="font-size:10.5px;font-weight:700;color:rgba(255,240,180,.75)">Tocá para ir al último visto</span></span>'
+        + '<span style="font-size:14px;color:rgba(255,240,180,.85);flex-shrink:0">›</span>'
       + '</button>';
     }
-    // Hint "desliza para ver más" cuando hay más de un momento
+    // Hint deslizá (solo si hay más de uno)
     var scrollHint = '';
     if(res.data.length > 1){
-      scrollHint = '<div style="text-align:center;padding:6px 12px 10px;font-family:Jost,sans-serif;font-size:11.5px;font-weight:700;color:rgba(180,220,195,.75);letter-spacing:.4px;animation:vibeHintPulse 2.2s ease-in-out infinite">👇 Deslizá para ver los '+res.data.length+' momentos (desliza para atrás también)</div>'
+      scrollHint = '<div style="text-align:center;padding:2px 12px 8px;font-family:Jost,sans-serif;font-size:11px;font-weight:700;color:rgba(180,220,195,.72);letter-spacing:.4px;animation:vibeHintPulse 2.2s ease-in-out infinite">👉 Deslizá horizontalmente para ver los '+res.data.length+' momentos</div>'
         + '<style>@keyframes vibeHintPulse{0%,100%{opacity:.55}50%{opacity:1}}</style>';
     }
-    list.innerHTML = ctaHtml + newBanner + scrollHint + res.data.map(_vibeCardHtml).join('');
+    var fixedEl = document.getElementById('vibeGroupFixed');
+    if(fixedEl) fixedEl.innerHTML = ctaHtml + newBanner + scrollHint;
+    // Carrusel: cada card ocupa el 100% del ancho del contenedor con scroll-snap
+    list.innerHTML = carouselData.map(function(v){
+      return '<div class="vibe-slide" style="flex:0 0 100%;width:100%;scroll-snap-align:center;padding:0 12px;box-sizing:border-box;overflow-y:auto">'+_vibeCardHtml(v)+'</div>';
+    }).join('');
+    // Dots indicators
+    var dotsEl = document.getElementById('vibeGroupDots');
+    if(dotsEl && carouselData.length > 1){
+      dotsEl.innerHTML = carouselData.map(function(v,i){
+        return '<span class="vibe-dot" data-idx="'+i+'" style="width:'+(i===carouselData.length-1?'20px':'7px')+';height:7px;border-radius:100px;background:'+(i===carouselData.length-1?'rgba(116,198,157,.92)':'rgba(180,220,195,.30)')+';transition:all .3s"></span>';
+      }).join('');
+    }
+    // Scrollear al último (más reciente) por default y sync dots on scroll
+    setTimeout(function(){
+      try{ list.scrollTo({ left: list.scrollWidth, behavior:'auto' }); }catch(_){ list.scrollLeft = list.scrollWidth; }
+    }, 30);
+    list.addEventListener('scroll', function(){
+      var w = list.clientWidth; if(!w) return;
+      var idx = Math.round(list.scrollLeft / w);
+      idx = Math.max(0, Math.min(carouselData.length - 1, idx));
+      var dots = list.parentElement.querySelectorAll('#vibeGroupDots .vibe-dot');
+      dots.forEach(function(d, di){
+        var active = di === idx;
+        d.style.width = active ? '20px' : '7px';
+        d.style.background = active ? 'rgba(116,198,157,.92)' : 'rgba(180,220,195,.30)';
+      });
+    });
     // Guardar timestamp del más nuevo como "último visto" al ABRIR el grupo
     // Se guarda el más reciente para que la próxima visita muestre banner solo si hay MÁS nuevos.
     try{
@@ -20158,14 +20206,22 @@ async function _openSavedVibe(vibeId){
   }
 }
 
-// Scrollea al primer momento nuevo (el más antiguo entre los no vistos) con highlight suave
+// Scrollea al primer momento nuevo (el más antiguo entre los no vistos) con highlight suave.
+// El carrusel es horizontal, así que buscamos el slide y hacemos scrollLeft.
 function _vibeJumpToNew(firstNewId){
   var list = document.getElementById('vibeGroupList');
   if(!list) return;
   var card = list.querySelector('.vibe-card[data-vibe-id="'+firstNewId+'"]');
   if(!card){ return; }
-  try{ card.scrollIntoView({behavior:'smooth', block:'start'}); }catch(_){ card.scrollIntoView(); }
-  // Highlight glow 2 seg
+  var slide = card.closest('.vibe-slide');
+  if(slide){
+    try{
+      var idx = Array.from(list.children).indexOf(slide);
+      list.scrollTo({ left: idx * list.clientWidth, behavior:'smooth' });
+    }catch(_){ slide.scrollIntoView({behavior:'smooth', inline:'center'}); }
+  } else {
+    try{ card.scrollIntoView({behavior:'smooth', block:'start'}); }catch(_){ card.scrollIntoView(); }
+  }
   var prev = card.style.boxShadow;
   card.style.transition = 'box-shadow .5s';
   card.style.boxShadow = '0 0 0 3px rgba(255,215,80,.85), 0 12px 40px rgba(255,200,60,.55)';
@@ -33096,7 +33152,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1339;
+    var _BUILT_V = 1340;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
