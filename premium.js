@@ -19507,13 +19507,13 @@ async function _renderHomeVibesCard(){
     var tiles = [];
     groups.forEach(function(g){
       var stats = byGroup[g.id] || {count:0, latest:0, coverUrl:''};
-      // Solo mostrar grupos con al menos 1 historia hoy (los vacíos van a Vibes home)
-      // O si son oficiales, mostrarlos igual con "publicá el primero"
-      if(stats.count > 0 || g.kind === 'official'){
+      // Mostrar: oficiales siempre, otros solo si tienen actividad
+      var isInvited = g.kind === 'private' && g.owner_id !== myId && (g.member_ids||[]).indexOf(myId) >= 0;
+      if(stats.count > 0 || g.kind === 'official' || isInvited){
         tiles.push({
           id: g.id, kind: g.kind, emoji: g.emoji || '🌊', title: g.title || 'Grupo',
           count: stats.count, latest: stats.latest, coverUrl: stats.coverUrl,
-          isGroup: true
+          isGroup: true, isInvited: isInvited
         });
       }
     });
@@ -19536,29 +19536,55 @@ async function _renderHomeVibesCard(){
     if(!tiles.length){
       thumbsHtml = '<div style="padding:16px;background:rgba(255,235,180,.25);border:1.5px dashed rgba(200,150,60,.55);border-radius:14px;color:rgba(120,80,20,.85);font-family:Jost,sans-serif;font-size:12.5px;text-align:center;font-style:italic;flex:1">Sin momentos por ahora — publicá el primero ✨</div>';
     } else {
-      thumbsHtml = tiles.slice(0, 10).map(function(t){
+      // Mostrar los 5 más recientes/relevantes + tile "Ver todos" si hay más
+      var MAX_TILES = 5;
+      var visibleTiles = tiles.slice(0, MAX_TILES);
+      thumbsHtml = visibleTiles.map(function(t){
         var isEmpty = t.count === 0;
-        // Cover: si hay imagen usar imagen; sino gradient con emoji grande
-        var coverStyle = (t.coverUrl && !isEmpty)
-          ? 'background:#000'
-          : (t.isInstant ? 'background:linear-gradient(135deg,rgba(255,215,120,.35),rgba(220,170,60,.28))' : 'background:linear-gradient(135deg,rgba(255,235,180,.55),rgba(255,210,130,.45))');
-        var borderCol = t.isInstant ? 'rgba(220,170,60,.72)' : (t.kind==='private' ? 'rgba(155,120,220,.65)' : 'rgba(116,198,157,.62)');
-        var coverInner = (t.coverUrl && !isEmpty)
-          ? '<img data-vibe-src="'+_escHtml(t.coverUrl)+'" style="width:100%;height:100%;object-fit:cover;display:block;opacity:.55">'
+        var hasCover = t.coverUrl && !isEmpty;
+        // Contorno violeta y más grueso para PRIVADOS
+        var borderCol = t.isInstant ? 'rgba(220,170,60,.85)' : (t.kind==='private' ? 'rgba(155,120,220,.95)' : 'rgba(116,198,157,.75)');
+        var borderWidth = t.kind==='private' ? '2.5px' : '2px';
+        // Background: para no-cover, usar un tint según kind
+        var bgStyle;
+        if(hasCover){
+          bgStyle = 'background:#0a1810';
+        } else if(t.isInstant){
+          bgStyle = 'background:linear-gradient(140deg,#ffd670 0%,#f0a860 100%)';
+        } else if(t.kind==='private'){
+          bgStyle = 'background:linear-gradient(140deg,#c8a8ff 0%,#a888dc 100%)';
+        } else {
+          bgStyle = 'background:linear-gradient(140deg,#a8dfb9 0%,#7ac6a0 100%)';
+        }
+        var privateBadge = t.isInvited
+          ? '<span style="position:absolute;top:3px;right:3px;background:rgba(155,120,220,.98);color:#fff;font-family:Jost,sans-serif;font-size:8px;font-weight:800;padding:1px 5px;border-radius:100px;box-shadow:0 2px 4px rgba(0,0,0,.35);z-index:3;letter-spacing:.2px">INVITADO</span>'
+          : (t.kind==='private' ? '<span style="position:absolute;top:3px;right:3px;background:rgba(155,120,220,.98);color:#fff;font-family:Jost,sans-serif;font-size:11px;padding:1px 4px;border-radius:100px;box-shadow:0 2px 4px rgba(0,0,0,.35);z-index:3">🔒</span>' : '');
+        var coverInner = hasCover
+          ? '<img data-vibe-src="'+_escHtml(t.coverUrl)+'" style="width:100%;height:100%;object-fit:cover;display:block;opacity:.65">'
           : '';
         var onclickAction = t.isInstant ? ('pOpenInstantVibe(\''+_escHtml(instantVibes[0].id)+'\')') : ('pOpenVibeGroup(\''+_escHtml(t.id)+'\')');
-        var countTxt = t.count > 0 ? (t.count + (t.isInstant ? ' publicad'+(t.count===1?'a':'as') : ' historia'+(t.count===1?'':'s'))) : 'Publicá el primero';
-        return '<button onclick="'+onclickAction+'" style="flex:0 0 96px;padding:0;'+coverStyle+';border:2px solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:110px;display:flex;flex-direction:column;box-shadow:0 3px 12px rgba(60,140,90,.14)">'
+        var countTxt = t.count > 0 ? (t.count + (t.isInstant ? ' publicad'+(t.count===1?'a':'as') : ' historia'+(t.count===1?'':'s'))) : 'Nuevo';
+        return '<button onclick="'+onclickAction+'" style="flex:0 0 84px;padding:0;'+bgStyle+';border:'+borderWidth+' solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:104px;display:flex;flex-direction:column;box-shadow:0 3px 10px rgba(60,140,90,.16)">'
+          + privateBadge
           + '<div style="flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">'
             + coverInner
-            + '<span style="position:'+(t.coverUrl && !isEmpty?'absolute':'static')+';font-size:32px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))">'+_escHtml(t.emoji)+'</span>'
+            + '<span style="'+(hasCover?'position:absolute;':'position:static;')+'font-size:34px;text-shadow:0 2px 6px rgba(0,0,0,.35)">'+_escHtml(t.emoji)+'</span>'
           + '</div>'
-          + '<div style="padding:5px 4px;background:linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.20));text-align:center">'
-            + '<div style="font-family:Jost,sans-serif;font-size:9.5px;font-weight:800;color:#fff;letter-spacing:.3px;line-height:1.15;text-shadow:0 1px 2px rgba(0,0,0,.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 3px">'+_escHtml(t.title)+'</div>'
-            + '<div style="font-family:Jost,sans-serif;font-size:9px;font-weight:700;color:'+(isEmpty?'rgba(255,240,180,.85)':'rgba(180,255,210,.95)')+';margin-top:1px;letter-spacing:.3px;text-shadow:0 1px 2px rgba(0,0,0,.55)">'+_escHtml(countTxt)+'</div>'
+          + '<div style="padding:4px 3px 5px;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.55));text-align:center">'
+            + '<div style="font-family:Jost,sans-serif;font-size:9px;font-weight:800;color:#fff;letter-spacing:.2px;line-height:1.15;text-shadow:0 1px 2px rgba(0,0,0,.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px">'+_escHtml(t.title)+'</div>'
+            + '<div style="font-family:Jost,sans-serif;font-size:8.5px;font-weight:700;color:rgba(255,255,255,.85);margin-top:1px;letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.75)">'+_escHtml(countTxt)+'</div>'
           + '</div>'
         + '</button>';
       }).join('');
+      // Tile final: "Ver todos" si hay más de MAX_TILES
+      if(tiles.length > MAX_TILES){
+        var moreCount = tiles.length - MAX_TILES;
+        thumbsHtml += '<button onclick="pOpenVibes()" style="flex:0 0 74px;padding:0;background:linear-gradient(140deg,rgba(116,198,157,.28),rgba(80,160,110,.20));border:2px dashed rgba(116,198,157,.70);border-radius:14px;cursor:pointer;height:104px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-family:Jost,sans-serif;color:rgba(30,110,70,.98);font-size:10.5px;font-weight:800;line-height:1.15;text-align:center">'
+          + '<span style="font-size:22px">→</span>'
+          + '<span>Ver todos</span>'
+          + '<span style="font-size:9px;font-weight:700;color:rgba(60,140,90,.75)">+'+moreCount+'</span>'
+        + '</button>';
+      }
     }
     wrap.style.display = 'block';
     wrap.innerHTML = '<div class="home-vibes-widget" style="padding:14px 14px 12px;background:linear-gradient(150deg,rgba(255,255,255,.85),rgba(240,250,244,.75));border:1.5px solid rgba(116,198,157,.45);border-radius:20px;box-shadow:0 4px 16px rgba(60,140,90,.10);font-family:Jost,sans-serif">'
@@ -19612,7 +19638,11 @@ async function pRenderVibesHome(){
     var myId = safeLS('get','velo_user_id')||'';
     var official = g.data.filter(function(x){ return x.kind === 'official'; });
     var pub      = g.data.filter(function(x){ return x.kind === 'public'; });
-    var priv     = g.data.filter(function(x){ return x.kind === 'private' && (x.owner_id === myId || _vibesGroupsCache.some(function(){return true;})); });
+    // Círculos privados donde soy owner (los CREÉ yo)
+    var privMine    = g.data.filter(function(x){ return x.kind === 'private' && x.owner_id === myId; });
+    // Círculos privados donde me INVITARON (soy miembro pero no owner)
+    var privInvited = g.data.filter(function(x){ return x.kind === 'private' && x.owner_id !== myId && (x.member_ids||[]).indexOf(myId) >= 0; });
+    var priv = privMine; // compat: la sección viejita muestra los míos
     var section = function(titleTxt, subtitle, groups, kind){
       // Vacío: CTA distinto por tipo — invita a crear/participar en lugar de "nada por ahora"
       if(!groups.length){
@@ -19677,7 +19707,14 @@ async function pRenderVibesHome(){
       + instantHtml
       + section('🌱 GRUPOS DE VELO', 'Permanentes · verificados', official, 'official')
       + section('🌊 DE LA COMUNIDAD', 'Creados por usuarios · caducan a 24 h', pub, 'public')
-      + section('🔮 TUS CÍRCULOS PRIVADOS', 'Solo para vos e invitados', priv, 'private');
+      + section('🔮 CÍRCULOS QUE CREASTE', 'Grupos privados que armaste tú', privMine, 'private')
+      + (privInvited.length
+        ? '<div style="margin-bottom:22px">'
+          + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(215,180,255,.90);margin-bottom:4px;display:flex;align-items:center;gap:6px">💜 TE INVITARON A ESTOS <span style="background:rgba(215,180,255,.28);border:1px solid rgba(215,180,255,.55);color:rgba(240,220,255,.98);padding:1px 8px;border-radius:100px;font-size:9.5px;letter-spacing:.3px">'+privInvited.length+'</span></div>'
+          + '<div style="font-size:11.5px;color:rgba(215,180,255,.60);margin-bottom:10px;font-style:italic">Círculos privados donde otros usuarios te invitaron</div>'
+          + privInvited.map(function(gr){ return _vibeGroupCard(gr, counts[gr.id]||0); }).join('')
+        + '</div>'
+        : '');
 
     // ── MIS MOMENTOS GUARDADOS ─────────────────────────────────────
     // Momentos que compartí y marqué "Guardar en mi historial personal"
@@ -33603,7 +33640,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1350;
+    var _BUILT_V = 1351;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
