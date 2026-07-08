@@ -13,6 +13,30 @@
   });
 })();
 
+// ── VIEWPORT HEIGHT SYNC ────────────────────────────────────
+// iOS PWA a veces deja 100dvh / 100vh desincronizado con lo visible cuando
+// el teclado abre/cierra o después de scroll. Sincronizamos --vh con
+// window.innerHeight (que sí devuelve la altura real). El CSS usa
+// height: calc(var(--vh) * 100). Ver premium-redesign.css (v1333).
+(function(){
+  function _syncVh(){
+    try {
+      var h = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', h + 'px');
+    } catch(e) {}
+  }
+  _syncVh();
+  window.addEventListener('resize', _syncVh);
+  window.addEventListener('orientationchange', _syncVh);
+  // Cuando el teclado se cierra, iOS a veces no dispara resize inmediato
+  window.addEventListener('focusout', function(){ setTimeout(_syncVh, 100); });
+  // visualViewport: más preciso en iOS PWA
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', _syncVh);
+    window.visualViewport.addEventListener('scroll', _syncVh);
+  }
+})();
+
 // ── GEMINI AI CONFIG ────────────────────────────────────────
 // Key kept as fallback for non-Vercel environments (e.g. local dev / GitHub Pages)
 var GEMINI_KEY    = ''; // key removed — use Vercel proxy only (set GEMINI_KEY in Vercel env vars)
@@ -32945,7 +32969,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1332;
+    var _BUILT_V = 1333;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

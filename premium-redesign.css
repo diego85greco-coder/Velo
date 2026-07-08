@@ -14872,3 +14872,19 @@ html:has(body.r-dark) { background-color: #0f1a14; }
   height: auto !important;
   min-height: var(--bottomnav-h) !important;
 }
+
+/* v1333 — fix definitivo del espacio abajo:
+   Usamos --vh CSS custom property que se setea vía JS con window.innerHeight.
+   iOS PWA a veces deja el body con 100dvh desincronizado del viewport visible.
+   window.innerHeight sí devuelve la altura correcta. Ver premium.js:_syncVh. */
+body { height: calc(var(--vh, 1vh) * 100) !important; }
+.p-app-shell { height: calc(var(--vh, 1vh) * 100) !important; }
+
+/* v1333 — rules banner de DM chat en LIGHT MODE era ilegible (texto claro
+   sobre header verde pastel). Alto contraste. */
+body:not(.r-dark) #pg-dm-chat #dmRulesBanner,
+body:not(.r-dark) #pg-help-chat #dmRulesBanner {
+  background: rgba(80,160,110,.18) !important;
+  color: rgba(20,60,35,.92) !important;
+  border-bottom-color: rgba(80,160,110,.35) !important;
+}
