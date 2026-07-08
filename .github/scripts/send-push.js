@@ -13,17 +13,11 @@ const SUPABASE_URL      = (process.env.SUPABASE_URL      || '').trim();
 const SUPABASE_KEY      = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 const GEMINI_KEY        = (process.env.GEMINI_API_KEY    || '').trim();
 
-// Normalizar VAPID_SUBJECT — Apple es muy estricto: debe ser mailto:<email>
-// o https://<domain>. Si no arranca así, forzamos el prefijo. Un subject
-// mal formado devuelve 403 BadJwtToken de web.push.apple.com.
-function normalizeVapidSubject(raw) {
-  const s = (raw || '').trim().replace(/\s+/g, '');
-  if (!s) return 'mailto:diego85greco@gmail.com';
-  if (s.startsWith('mailto:') || s.startsWith('https://')) return s;
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return 'mailto:' + s;
-  return 'mailto:diego85greco@gmail.com';
-}
-const VAPID_SUBJECT = normalizeVapidSubject(process.env.VAPID_SUBJECT);
+// VAPID_SUBJECT hardcoded — Apple rechaza cualquier variación con BadJwtToken.
+// El env var quedaba con formato incorrecto (espacios, comillas, encoding raro)
+// y no había forma de diagnosticarlo por el masking de secrets en logs.
+// Hardcodear el subject elimina esa clase de bug entera.
+const VAPID_SUBJECT = 'mailto:diego85greco@gmail.com';
 
 if (!VAPID_PRIVATE_KEY || !SUPABASE_URL || !SUPABASE_KEY) {
   console.error('Missing required environment variables');
@@ -42,6 +36,18 @@ if (_privHash !== '9b488d2f053ab8d1') {
 }
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Decodificar y loguear un JWT de prueba para verificar aud/exp/sub
+try {
+  const _testHdrs = webpush.getVapidHeaders('https://web.push.apple.com', VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, 'aes128gcm', 3600);
+  const _m = _testHdrs.Authorization.match(/t=([^,]+),\s*k=(.+)/);
+  if (_m) {
+    const [_h, _p] = _m[1].split('.');
+    const _hdr = JSON.parse(Buffer.from(_h, 'base64').toString());
+    const _pl  = JSON.parse(Buffer.from(_p, 'base64').toString());
+    console.log(`[jwt-test] header=${JSON.stringify(_hdr)} payload=${JSON.stringify(_pl)} k_matches_pub=${_m[2] === VAPID_PUBLIC_KEY}`);
+  }
+} catch (e) { console.warn('[jwt-test] err:', e.message); }
 
 // Returns the local hour (0-23) for a given IANA timezone at the current moment
 function localHour(tz) {
