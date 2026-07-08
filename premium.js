@@ -19560,8 +19560,9 @@ async function _renderHomeVibesCard(){
       if(hasCover){
         visual = '<img data-vibe-src="'+_escHtml(t.coverUrl)+'" style="width:100%;height:100%;object-fit:cover;display:block">';
       } else {
-        var bgGrad = isPrivate ? 'linear-gradient(140deg,#c8a8ff 0%,#8f6cc8 100%)' : (t.isInstant ? 'linear-gradient(140deg,#ffd670 0%,#eab547 100%)' : 'linear-gradient(140deg,#a8dfb9 0%,#7ac6a0 100%)');
-        visual = '<div style="width:100%;height:100%;background:'+bgGrad+';display:flex;align-items:center;justify-content:center;font-size:38px;text-shadow:0 2px 8px rgba(0,0,0,.35)">'+_escHtml(t.emoji)+'</div>';
+        // Colores del fondo del tile según el tema (light/dark) — se resuelven via CSS
+        var emptyCls = isPrivate ? 'vibes-tile-empty--private' : (t.isInstant ? 'vibes-tile-empty--instant' : 'vibes-tile-empty--group');
+        visual = '<div class="vibes-tile-empty '+emptyCls+'" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:38px">'+_escHtml(t.emoji)+'</div>';
       }
       return '<button onclick="'+onclickAction+'" style="flex:0 0 96px;padding:0;background:#0a1810;border:'+borderWidth+' solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:120px;opacity:'+opa+';filter:'+filt+';box-shadow:0 4px 12px rgba(0,0,0,.20);display:flex;flex-direction:column">'
         + badge
@@ -33650,7 +33651,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1355;
+    var _BUILT_V = 1356;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
