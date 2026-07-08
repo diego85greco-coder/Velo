@@ -9509,6 +9509,12 @@ function _openGuardianChat(peerId, peerName, peerAv, reqId, role){
   _gcLastMsgId = null; // reset so first render is a clean full load
   _gcReactHash = '';
   pGoTo('guardian-chat');
+  // Read receipts — mismo sistema que DM. Corre después del pGoTo para
+  // que el container gcMessages ya esté visible cuando busquemos las bubbles.
+  setTimeout(function(){
+    _initSupabase();
+    if(sbClient && peerId) _chatSetupReadReceipts(peerId, 'gcMessages');
+  }, 500);
 }
 
 function _gcInit(){
@@ -10495,6 +10501,11 @@ function _openHelpChat(post){
   _resetHelpInactivity();
   _subscribeHelpChat(post);
   _loadHelpChatHistory(post);
+  // Read receipts — mismo sistema que DM
+  setTimeout(function(){
+    _initSupabase();
+    if(sbClient && post && post.userId) _chatSetupReadReceipts(post.userId, 'helpChatMessages');
+  }, 500);
 }
 
 function _subscribeHelpChat(post){
@@ -10727,6 +10738,7 @@ async function pSendHelpChatMsg(){
 
 function pLeaveHelpChat(){
   if(_helpChatInactivityTimer){ clearTimeout(_helpChatInactivityTimer); _helpChatInactivityTimer = null; }
+  try{ _chatTeardownReadReceipts('helpChatMessages'); }catch(_){}
   // Notify peer with exit sentinel before disconnecting
   var _hPost = _curHelpPost;
   if(sbClient && _hPost && _hPost.userId){
@@ -21849,6 +21861,64 @@ function _enterDMChat(toId, toName, toAv){
   // Header con presencia
   _startDMPresenceRefresh();
 }
+// ── Read receipts genéricos — usados por DM, Guardián chat y Sala de Ayuda.
+// Los 3 chats usan la misma tabla `direct_messages`, así que la lógica es
+// idéntica; solo cambia el container DOM donde va el "✓✓ Visto" y el peerId.
+var _chatReadChannels = {}; // { containerId → channel }
+async function _chatShowVistoIndicator(peerId, containerId){
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId || !peerId || !sbClient) return;
+  var el = document.getElementById(containerId);
+  if(!el) return;
+  try{
+    var res = await sbClient.from('direct_messages')
+      .select('id,read,read_at,created_at')
+      .eq('from_id', myId).eq('to_id', peerId).eq('read', true)
+      .order('created_at',{ascending:false}).limit(1);
+    if(!res || !res.data || !res.data[0]) return;
+    var lastReadId = 'direct_messages:'+res.data[0].id;
+    var readAt = res.data[0].read_at ? new Date(res.data[0].read_at) : null;
+    el.querySelectorAll('.dm-read-indicator').forEach(function(x){ x.remove(); });
+    var bubble = el.querySelector('[data-sb-id="'+lastReadId+'"]');
+    if(!bubble) return;
+    var ind = document.createElement('div');
+    ind.className = 'dm-read-indicator';
+    ind.style.cssText = 'text-align:right;font-family:Jost,sans-serif;font-size:10.5px;font-weight:700;color:rgba(116,198,157,.85);margin:2px 6px 6px;letter-spacing:.3px';
+    ind.innerHTML = '✓✓ Visto'+(readAt?' · '+String(readAt.getHours()).padStart(2,'0')+':'+String(readAt.getMinutes()).padStart(2,'0'):'');
+    bubble.appendChild(ind);
+  }catch(e){}
+}
+function _chatSetupReadReceipts(peerId, containerId){
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId || !peerId || !sbClient) return;
+  // 1) Marcar todos los mensajes del peer como leídos
+  sbClient.from('direct_messages')
+    .update({ read: true, read_at: new Date().toISOString() })
+    .eq('to_id', myId).eq('from_id', peerId).eq('read', false)
+    .then(function(){}).catch(function(){});
+  // 2) Suscribirse a UPDATE de mis mensajes salientes → actualiza "✓✓ Visto"
+  if(_chatReadChannels[containerId]){
+    try{ sbClient.removeChannel(_chatReadChannels[containerId]); }catch(e){}
+    delete _chatReadChannels[containerId];
+  }
+  var ch = sbClient.channel('velo:read:'+myId+':'+peerId+':'+containerId)
+    .on('postgres_changes', { event:'UPDATE', schema:'public', table:'direct_messages' }, function(payload){
+      var m = payload.new || {};
+      if(m.from_id !== myId || m.to_id !== peerId) return;
+      if(m.read){ _chatShowVistoIndicator(peerId, containerId); }
+    })
+    .subscribe();
+  _chatReadChannels[containerId] = ch;
+  // 3) Render inmediato si ya había mensajes leídos
+  setTimeout(function(){ _chatShowVistoIndicator(peerId, containerId); }, 400);
+}
+function _chatTeardownReadReceipts(containerId){
+  if(_chatReadChannels[containerId] && sbClient){
+    try{ sbClient.removeChannel(_chatReadChannels[containerId]); }catch(e){}
+    delete _chatReadChannels[containerId];
+  }
+}
+
 // ── Read receipts: marca los DMs recibidos como leídos ────────────
 async function _dmMarkAsRead(peerId){
   var myId = safeLS('get','velo_user_id')||'';
@@ -32875,7 +32945,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1328;
+    var _BUILT_V = 1329;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

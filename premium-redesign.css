@@ -14833,3 +14833,19 @@ body.r-dark #pg-partner-chat .feed-input::placeholder {
    el html con el mismo color base del theme (light/dark). */
 html { background-color: #fef8ea; }
 html:has(body.r-dark) { background-color: #0f1a14; }
+
+/* v1329 — 2 fixes visuales en chats DM/help/guardian:
+   (a) header pisaba la statusbar del iPhone (Dynamic Island / notch area).
+       Falta padding-top: env(safe-area-inset-top) en el .feed-header.
+   (b) banda gris grande abajo — el env(safe-area-inset-bottom) que sumamos
+       en v1327 duplicó espacio. Ahora sólo aplica en chats DM (que abren
+       teclado directo), no en TODAS las .feed-input-area. */
+#pg-dm-chat .feed-header,
+#pg-help-chat .feed-header,
+#pg-guardian-chat .feed-header {
+  padding-top: calc(14px + env(safe-area-inset-top, 0px)) !important;
+}
+/* Undo padding-bottom sobre-agregado en v1327 */
+.feed-input-area {
+  padding-bottom: 16px !important;
+}
