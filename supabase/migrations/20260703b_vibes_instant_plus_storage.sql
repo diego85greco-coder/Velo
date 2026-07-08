@@ -1,6 +1,9 @@
 -- Vibes v1315: momentos INSTANTÁNEOS (sin grupo) + bucket de Storage
 --
 -- Correr DESPUÉS de 20260703_vibes_schema.sql
+--
+-- Nota: profiles.id es text (no uuid), así que instant_member_ids es text[]
+-- y las comparaciones con auth.uid() usan cast ::text.
 
 begin;
 
@@ -12,7 +15,7 @@ alter table public.vibes
   alter column group_id drop not null,
   add column if not exists instant_scope text
     check (instant_scope in ('public','private')),
-  add column if not exists instant_member_ids uuid[] default '{}';
+  add column if not exists instant_member_ids text[] default '{}';
 
 -- Constraint: o pertenece a un grupo, o es instantáneo con scope
 alter table public.vibes drop constraint if exists vibes_target_check;
@@ -33,23 +36,23 @@ for select using (
     where g.id = vibes.group_id
       and (
         g.kind in ('official','public')
-        or auth.uid() = g.owner_id
-        or auth.uid() = any(g.member_ids)
+        or auth.uid()::text = g.owner_id
+        or auth.uid()::text = any(g.member_ids)
       )
   ))
   -- Vibe instantáneo público: cualquier authenticated user
   or (vibes.group_id is null and vibes.instant_scope = 'public')
   -- Vibe instantáneo privado: sólo el autor o los invitados
   or (vibes.group_id is null and vibes.instant_scope = 'private' and (
-        auth.uid() = vibes.user_id
-        or auth.uid() = any(vibes.instant_member_ids)
+        auth.uid()::text = vibes.user_id
+        or auth.uid()::text = any(vibes.instant_member_ids)
       ))
 );
 
 drop policy if exists vibes_insert on public.vibes;
 create policy vibes_insert on public.vibes
 for insert with check (
-  auth.uid() = user_id
+  auth.uid()::text = user_id
   and (
     -- Insert en grupo: podés postear si podés ver el grupo
     (group_id is not null and exists (
@@ -57,8 +60,8 @@ for insert with check (
       where g.id = group_id
         and (
           g.kind in ('official','public')
-          or auth.uid() = g.owner_id
-          or auth.uid() = any(g.member_ids)
+          or auth.uid()::text = g.owner_id
+          or auth.uid()::text = any(g.member_ids)
         )
     ))
     -- Insert instantáneo: OK siempre (el scope ya está en el check)

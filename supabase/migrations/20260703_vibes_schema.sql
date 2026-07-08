@@ -10,6 +10,10 @@
 --
 -- El cliente resuelve todo con RLS. Un cron edge function (o pg_cron)
 -- deletea las vibes expiradas y los grupos public/private expirados.
+--
+-- Nota: profiles.id es de tipo text (no uuid), así que todas las FK a
+-- profiles(id) usan text. En las policies casteamos auth.uid()::text para
+-- comparar con las columnas.
 
 begin;
 
@@ -21,8 +25,8 @@ create table if not exists public.vibe_groups (
   title         text not null,
   emoji         text default '🌊',
   description   text,
-  owner_id      uuid references public.profiles(id) on delete cascade, -- null para official
-  member_ids    uuid[] default '{}',     -- lista de invitados para private
+  owner_id      text references public.profiles(id) on delete cascade, -- null para official
+  member_ids    text[] default '{}',     -- lista de invitados para private
   created_at    timestamptz not null default now(),
   expires_at    timestamptz              -- null = permanente (official)
 );
@@ -38,30 +42,30 @@ drop policy if exists vibe_groups_select on public.vibe_groups;
 create policy vibe_groups_select on public.vibe_groups
 for select using (
   kind in ('official','public')
-  or auth.uid() = owner_id
-  or auth.uid() = any(member_ids)
+  or auth.uid()::text = owner_id
+  or auth.uid()::text = any(member_ids)
 );
 -- Crear: sólo public/private, y quedan con owner = uid del creador
 drop policy if exists vibe_groups_insert on public.vibe_groups;
 create policy vibe_groups_insert on public.vibe_groups
 for insert with check (
-  kind in ('public','private') and auth.uid() = owner_id
+  kind in ('public','private') and auth.uid()::text = owner_id
 );
 -- Update: sólo el owner
 drop policy if exists vibe_groups_update on public.vibe_groups;
 create policy vibe_groups_update on public.vibe_groups
-for update using (auth.uid() = owner_id);
+for update using (auth.uid()::text = owner_id);
 -- Delete: sólo owner (los official los borra un admin manualmente)
 drop policy if exists vibe_groups_delete on public.vibe_groups;
 create policy vibe_groups_delete on public.vibe_groups
-for delete using (auth.uid() = owner_id);
+for delete using (auth.uid()::text = owner_id);
 
 
 -- ── Historias individuales ───────────────────────────────────────
 create table if not exists public.vibes (
   id            uuid primary key default gen_random_uuid(),
   group_id      uuid not null references public.vibe_groups(id) on delete cascade,
-  user_id       uuid not null references public.profiles(id) on delete cascade,
+  user_id       text not null references public.profiles(id) on delete cascade,
   user_name     text,
   user_av       text,
   media_url     text not null,            -- data URL o Supabase Storage URL
@@ -88,8 +92,8 @@ for select using (
     where g.id = vibes.group_id
       and (
         g.kind in ('official','public')
-        or auth.uid() = g.owner_id
-        or auth.uid() = any(g.member_ids)
+        or auth.uid()::text = g.owner_id
+        or auth.uid()::text = any(g.member_ids)
       )
   )
 );
@@ -97,29 +101,29 @@ for select using (
 drop policy if exists vibes_insert on public.vibes;
 create policy vibes_insert on public.vibes
 for insert with check (
-  auth.uid() = user_id
+  auth.uid()::text = user_id
   and exists (
     select 1 from public.vibe_groups g
     where g.id = group_id
       and (
         g.kind in ('official','public')
-        or auth.uid() = g.owner_id
-        or auth.uid() = any(g.member_ids)
+        or auth.uid()::text = g.owner_id
+        or auth.uid()::text = any(g.member_ids)
       )
   )
 );
 -- Update: sólo mis propias vibes (para archived = true, futuro edit caption).
 drop policy if exists vibes_update on public.vibes;
 create policy vibes_update on public.vibes
-for update using (auth.uid() = user_id);
+for update using (auth.uid()::text = user_id);
 -- Delete: el autor puede borrar, o el owner del grupo puede curar.
 drop policy if exists vibes_delete on public.vibes;
 create policy vibes_delete on public.vibes
 for delete using (
-  auth.uid() = user_id
+  auth.uid()::text = user_id
   or exists (
     select 1 from public.vibe_groups g
-    where g.id = vibes.group_id and g.owner_id = auth.uid()
+    where g.id = vibes.group_id and g.owner_id = auth.uid()::text
   )
 );
 
@@ -128,7 +132,7 @@ for delete using (
 -- Una reacción por par (vibe, user). Cambiable con UPSERT.
 create table if not exists public.vibe_reactions (
   vibe_id       uuid not null references public.vibes(id) on delete cascade,
-  user_id       uuid not null references public.profiles(id) on delete cascade,
+  user_id       text not null references public.profiles(id) on delete cascade,
   reaction      text not null check (reaction in (
     'alegria','abrazo','acompano','fuerzas','gracias','me_hace_bien','animos','me_inspira'
   )),
@@ -150,21 +154,21 @@ for select using (
     where v.id = vibe_reactions.vibe_id
       and (
         g.kind in ('official','public')
-        or auth.uid() = g.owner_id
-        or auth.uid() = any(g.member_ids)
+        or auth.uid()::text = g.owner_id
+        or auth.uid()::text = any(g.member_ids)
       )
   )
 );
 -- Insert/Upsert: solo mi propia reacción.
 drop policy if exists vibe_reactions_insert on public.vibe_reactions;
 create policy vibe_reactions_insert on public.vibe_reactions
-for insert with check (auth.uid() = user_id);
+for insert with check (auth.uid()::text = user_id);
 drop policy if exists vibe_reactions_update on public.vibe_reactions;
 create policy vibe_reactions_update on public.vibe_reactions
-for update using (auth.uid() = user_id);
+for update using (auth.uid()::text = user_id);
 drop policy if exists vibe_reactions_delete on public.vibe_reactions;
 create policy vibe_reactions_delete on public.vibe_reactions
-for delete using (auth.uid() = user_id);
+for delete using (auth.uid()::text = user_id);
 
 
 -- ── Seed de grupos oficiales de Velo ────────────────────────────
