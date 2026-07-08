@@ -14958,3 +14958,10 @@ body:not(.r-dark) #vibesBody button[onclick^="pOpenVibeGroup"] > div:first-child
   font-size: 30px !important;
   box-shadow: 0 3px 10px rgba(200,150,60,.22) !important;
 }
+
+/* v1347 — cuando el teclado iOS está abierto, ocultamos el bottom nav para
+   que no flote arriba del teclado dejando espacio blanco visible. */
+body.keyboard-open .p-bottomnav,
+body.keyboard-open .p-bottomnav::after {
+  display: none !important;
+}

@@ -13,8 +13,27 @@
   });
 })();
 
-// v1333 --vh reverted en v1334 — causaba body más corto que la pantalla en
-// iOS PWA (window.innerHeight excluye safe area). Volvemos a 100dvh estándar.
+// v1347 — Fix del espacio blanco cuando iOS abre el teclado en PWA:
+// 1) Cuando visualViewport se achica (teclado abierto), agregar body.keyboard-open
+// 2) El CSS oculta el bottom nav mientras keyboard-open (evita que quede flotando)
+// 3) También setea min-height al app-shell = visualViewport.height para que el
+//    layout siga la altura real y no deje espacio abajo.
+(function(){
+  if(!window.visualViewport) return;
+  var vv = window.visualViewport;
+  function onVvChange(){
+    try{
+      var isKeyboardOpen = vv.height < window.innerHeight * 0.82;
+      document.body.classList.toggle('keyboard-open', isKeyboardOpen);
+      // Setear altura del app-shell dinámicamente
+      var shell = document.querySelector('.p-app-shell');
+      if(shell) shell.style.height = vv.height + 'px';
+    }catch(e){}
+  }
+  vv.addEventListener('resize', onVvChange);
+  vv.addEventListener('scroll', onVvChange);
+  onVvChange();
+})();
 
 // ── GEMINI AI CONFIG ────────────────────────────────────────
 // Key kept as fallback for non-Vercel environments (e.g. local dev / GitHub Pages)
@@ -23016,6 +23035,57 @@ async function _dmPlayAttachAudio(btn){
 }
 
 // Menú ⋮ del chat DM (Bloquear / Quitar fav / Borrar conversación / Reportar)
+// Mensaje de aliento al buzón privado del peer — llega como carta al Buzón Velo
+// del destinatario aunque no esté online. Ideal cuando no responden en el chat.
+function pSendKindMessageToInbox(peerId, peerName, peerAv){
+  if(!peerId) return;
+  var ex = document.getElementById('kindMsgOv'); if(ex) ex.remove();
+  var myName = safeLS('get','velo_user_name')||'Un contacto';
+  var myAv = safeLS('get','velo_user_av')||'🧑';
+  var ov = document.createElement('div');
+  ov.id = 'kindMsgOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10030;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div class="p-sheet" style="max-width:520px;width:100%;padding:16px 18px calc(22px + env(safe-area-inset-bottom,0px));background:var(--cream);border-radius:22px 22px 0 0;border:1.5px solid rgba(116,198,157,.30)">'
+    + '<div class="p-sheet-handle"></div>'
+    + '<div style="text-align:center;padding:4px 0 12px">'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:21px;color:var(--ink);font-style:italic">💌 Mensaje al Buzón Velo</div>'
+      + '<div style="font-size:12.5px;color:var(--ink4);margin-top:4px;font-family:Jost,sans-serif;line-height:1.5">Cuando <strong>'+_escHtml(peerName||'este contacto')+'</strong> no está disponible, podés dejarle un mensaje de aliento acá.<br>Le llega a su buzón privado para leerlo cuando pueda.</div>'
+    + '</div>'
+    + '<textarea id="kindMsgInput" placeholder="Un mensaje de cariño, apoyo, agradecimiento…" rows="4" maxlength="600" style="width:100%;padding:12px 14px;background:#fff;border:1.5px solid var(--border);border-radius:14px;color:var(--ink);font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.5;margin-bottom:12px"></textarea>'
+    + '<div style="display:flex;gap:8px">'
+      + '<button onclick="document.getElementById(\'kindMsgOv\').remove()" style="flex:1;padding:12px;background:rgba(0,0,0,.05);border:1.5px solid var(--border);border-radius:12px;color:var(--ink4);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer">Cancelar</button>'
+      + '<button onclick="_doSendKindMsg('+_jsAttr(peerId)+','+_jsAttr(peerName||'')+','+_jsAttr(myName)+','+_jsAttr(myAv)+')" style="flex:2;padding:12px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-family:Jost,sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px">💌 Enviar al Buzón</button>'
+    + '</div>'
+  + '</div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){ var ta = document.getElementById('kindMsgInput'); if(ta) ta.focus(); }, 150);
+}
+async function _doSendKindMsg(peerId, peerName, myName, myAv){
+  var inp = document.getElementById('kindMsgInput');
+  var text = (inp && inp.value || '').trim().slice(0, 600);
+  if(!text){ pToast('✍️','Escribí algo primero'); return; }
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  try{
+    // Moderación blanda con Gemini (async)
+    try{ _geminiModerateContent(text, 'kind-inbox-msg'); }catch(_){}
+    var subject = '💌 Un mensaje de ' + (myName || 'un contacto');
+    var body = text;
+    var {error} = await sbClient.from('broadcasts').insert({
+      target: 'user:' + peerId,
+      subject: subject,
+      body: body,
+      icon: '💌',
+      sender: myName || 'Un contacto',
+      sent_at: new Date().toISOString(),
+    });
+    if(error){ pToast('⚠️', error.message.slice(0,60)); return; }
+    var ov = document.getElementById('kindMsgOv'); if(ov) ov.remove();
+    pToast('💚', 'Mensaje enviado al Buzón de ' + (peerName || 'tu contacto'));
+  }catch(e){ console.warn('[kind-inbox]', e); pToast('⚠️','Error al enviar'); }
+}
+
 function pDMOpenMenu(){
   if(!_dmPeer) return;
   var ex = document.getElementById('dmMenuOv'); if(ex){ ex.remove(); return; }
@@ -23036,6 +23106,7 @@ function pDMOpenMenu(){
     + '</div>'
     + '<button onclick="document.getElementById(\'dmMenuOv\').remove();pQuickProfile('+_jsAttr(peerName)+','+_jsAttr(peerAv)+',\'\',\'\','+_jsAttr(peerId)+')" style="'+itemBase+'"><span style="font-size:18px">👤</span><span>Ver perfil</span></button>'
     + '<button onclick="document.getElementById(\'dmMenuOv\').remove();' + (isFav ? 'pRemoveFav(\''+peerId+'\');pToast(\'⭐\',\'Quitado de favoritos\');' : 'pAddFav(\''+peerId+'\',' + _jsAttr(peerName) + ',' + _jsAttr(peerAv) + ');pToast(\'⭐\',\'Agregado a favoritos\');') + '" style="'+itemBase+'"><span style="font-size:18px">'+(isFav?'⭐':'☆')+'</span><span>'+(isFav?'Quitar de favoritos':'Agregar a favoritos')+'</span></button>'
+    + '<button onclick="document.getElementById(\'dmMenuOv\').remove();pSendKindMessageToInbox('+_jsAttr(peerId)+','+_jsAttr(peerName)+','+_jsAttr(peerAv)+')" style="'+itemBase+'"><span style="font-size:18px">💌</span><span>Mandar mensaje al Buzón Velo</span></button>'
     + '<button onclick="document.getElementById(\'dmMenuOv\').remove();pClearDMChat()" style="'+itemBase+'"><span style="font-size:18px">🗑️</span><span>Borrar conversación</span></button>'
     + '<button onclick="document.getElementById(\'dmMenuOv\').remove();pReportDMChat()" style="'+itemBase+';color:rgba(215,120,60,.95)"><span style="font-size:18px">⚠️</span><span>Reportar</span></button>'
     + '<button onclick="document.getElementById(\'dmMenuOv\').remove();pBlockUser('+_jsAttr(peerId)+','+_jsAttr(peerName)+','+_jsAttr(peerAv)+');pLeaveDM();" style="'+itemBase+';color:rgba(220,80,80,.95)"><span style="font-size:18px">🚫</span><span>Bloquear a '+_escHtml(peerName.split(' ')[0])+'</span></button>'
@@ -33433,7 +33504,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1346;
+    var _BUILT_V = 1347;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

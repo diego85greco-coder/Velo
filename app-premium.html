@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1346">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1346">
+  <link rel="stylesheet" href="premium.css?v=20260626-1347">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1347">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -1203,6 +1203,15 @@
                   <div id="homePushBannerText" style="font-size:12px;font-weight:600;color:var(--ink);line-height:1.5"></div>
                   <button id="homePushBannerBtn" onclick="_homePushBannerAction()" style="margin-top:8px;padding:6px 16px;border-radius:10px;border:1.5px solid rgba(116,198,157,.6);background:rgba(116,198,157,.28);color:var(--ink);font-size:12px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap"></button>
                 </div>
+              </div>
+              <!-- v1347: Portadas de secciones (shortcuts) arriba del saludo -->
+              <div id="homeShortcutsRow" style="display:flex;gap:10px;overflow-x:auto;padding:6px 4px 12px;scrollbar-width:none;margin-bottom:14px">
+                <button onclick="pGoTo('vibes')" class="p-home-shortcut" style="flex:0 0 88px;padding:12px 8px;background:linear-gradient(135deg,rgba(116,198,157,.22),rgba(74,160,110,.16));border:1.5px solid rgba(116,198,157,.55);border-radius:16px;cursor:pointer;font-family:'Jost',sans-serif;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--ink);font-size:11px;font-weight:800;line-height:1.2;text-align:center"><span style="font-size:28px">🌊</span><span>Vibes</span></button>
+                <button onclick="pGoTo('bitacora')" class="p-home-shortcut" style="flex:0 0 88px;padding:12px 8px;background:linear-gradient(135deg,rgba(155,120,220,.20),rgba(120,90,200,.16));border:1.5px solid rgba(155,120,220,.55);border-radius:16px;cursor:pointer;font-family:'Jost',sans-serif;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--ink);font-size:11px;font-weight:800;line-height:1.2;text-align:center"><span style="font-size:28px">📖</span><span>Bitácora</span></button>
+                <button onclick="pGoTo('help')" class="p-home-shortcut" style="flex:0 0 88px;padding:12px 8px;background:linear-gradient(135deg,rgba(255,190,120,.22),rgba(240,160,80,.16));border:1.5px solid rgba(240,160,80,.55);border-radius:16px;cursor:pointer;font-family:'Jost',sans-serif;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--ink);font-size:11px;font-weight:800;line-height:1.2;text-align:center"><span style="font-size:28px">💚</span><span>Sala de Ayuda</span></button>
+                <button onclick="pGoTo('circles')" class="p-home-shortcut" style="flex:0 0 88px;padding:12px 8px;background:linear-gradient(135deg,rgba(120,180,220,.22),rgba(80,140,200,.16));border:1.5px solid rgba(80,140,200,.55);border-radius:16px;cursor:pointer;font-family:'Jost',sans-serif;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--ink);font-size:11px;font-weight:800;line-height:1.2;text-align:center"><span style="font-size:28px">☮️</span><span>Círculos</span></button>
+                <button onclick="pGoTo('bottles')" class="p-home-shortcut" style="flex:0 0 88px;padding:12px 8px;background:linear-gradient(135deg,rgba(120,200,220,.22),rgba(80,170,220,.16));border:1.5px solid rgba(80,170,220,.55);border-radius:16px;cursor:pointer;font-family:'Jost',sans-serif;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--ink);font-size:11px;font-weight:800;line-height:1.2;text-align:center"><span style="font-size:28px">🌊</span><span>Al Mar</span></button>
+                <button onclick="pGoTo('diary')" class="p-home-shortcut" style="flex:0 0 88px;padding:12px 8px;background:linear-gradient(135deg,rgba(220,180,140,.22),rgba(200,160,110,.16));border:1.5px solid rgba(200,160,110,.55);border-radius:16px;cursor:pointer;font-family:'Jost',sans-serif;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--ink);font-size:11px;font-weight:800;line-height:1.2;text-align:center"><span style="font-size:28px">📔</span><span>Mi Diario</span></button>
               </div>
               <div id="homeGreetWrapper" style="position:relative">
                 <div id="homeGreetBlock">
@@ -4441,8 +4450,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1346"></script>
-<script src="premium-redesign.js?v=20260626-1346"></script>
+<script src="premium.js?v=20260626-1347"></script>
+<script src="premium-redesign.js?v=20260626-1347"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
