@@ -19538,10 +19538,19 @@ async function pRenderVibesHome(){
       var inst = (instRes && instRes.data) || [];
       // CTA "Compartí un instantáneo" siempre visible al inicio del rail
       var ctaMini = '<button onclick="pStartCreateVibe(null,\'public\')" style="flex-shrink:0;width:96px;padding:0;background:linear-gradient(135deg,rgba(255,220,120,.30),rgba(255,180,60,.22));border:2px dashed rgba(255,220,120,.80);border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-family:Jost,sans-serif;color:rgba(255,240,180,.95);font-size:10px;font-weight:800;line-height:1.2;text-align:center;padding:8px"><span style="font-size:24px">＋</span><span>Compartí un instantáneo</span></button>';
-      var minis = inst.map(function(v){
+      // Ordenar por VISTO/NO VISTO — los no-vistos primero (más nuevos), luego
+      // los ya vistos en gris al final (como Instagram Stories).
+      var _seen = {};
+      try{ _seen = JSON.parse(safeLS('get','velo_vibes_seen_instant')||'{}'); }catch(_){}
+      var unseen = [], seen = [];
+      inst.forEach(function(v){ (_seen[v.id] ? seen : unseen).push(v); });
+      var ordered = unseen.concat(seen);
+      var minis = ordered.map(function(v){
         var isPriv = v.instant_scope === 'private';
-        var brd = isPriv ? 'rgba(155,120,220,.72)' : 'rgba(255,220,120,.70)';
-        return '<button onclick="pOpenInstantVibe(\''+v.id+'\')" style="flex-shrink:0;width:96px;padding:0;background:rgba(0,0,0,.45);border:2px solid '+brd+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;height:120px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:#fff;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(isPriv?'🔒 ':'')+_escHtml(v.user_name||'Usuario')+'</div></button>';
+        var isSeen = !!_seen[v.id];
+        var brd = isSeen ? 'rgba(140,140,140,.55)' : (isPriv ? 'rgba(155,120,220,.72)' : 'rgba(255,220,120,.70)');
+        var opa = isSeen ? '.55' : '1';
+        return '<button onclick="pOpenInstantVibe(\''+v.id+'\')" style="flex-shrink:0;width:96px;padding:0;background:rgba(0,0,0,.45);border:2px solid '+brd+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;opacity:'+opa+';filter:'+(isSeen?'grayscale(.85)':'none')+'"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;height:120px;object-fit:cover;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:6px 8px 8px;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent);color:#fff;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;text-align:left;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(isPriv?'🔒 ':'')+_escHtml(v.user_name||'Usuario')+'</div></button>';
       }).join('');
       instantHtml = '<div style="margin-bottom:22px">'
         + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,220,120,.85);margin-bottom:4px">✨ INSTANTÁNEOS</div>'
@@ -20060,6 +20069,16 @@ async function pOpenVibeGroup(groupId){
 // Ver una historia instantánea en modal (misma card que en grupo, solita)
 async function pOpenInstantVibe(vibeId){
   _initSupabase(); if(!sbClient) return;
+  // Marcar como visto (Instagram Stories style)
+  try{
+    var _seen = {};
+    try{ _seen = JSON.parse(safeLS('get','velo_vibes_seen_instant')||'{}'); }catch(_){}
+    _seen[vibeId] = Date.now();
+    // Limpiar entradas más viejas que 48h (los instantáneos duran 24h, +margen)
+    var cutoff = Date.now() - 48*3600*1000;
+    Object.keys(_seen).forEach(function(k){ if(_seen[k] < cutoff) delete _seen[k]; });
+    safeLS('set','velo_vibes_seen_instant', JSON.stringify(_seen));
+  }catch(_){}
   try{
     var res = await sbClient.from('vibes').select('*').eq('id', vibeId).single();
     if(!res || !res.data) return;
@@ -20294,10 +20313,17 @@ function _vibeReactBurst(emoji){
 
 // Abre un momento guardado en overlay full-screen (individual)
 async function _openSavedVibe(vibeId){
-  _initSupabase(); if(!sbClient) return;
-  var res = await sbClient.from('vibes').select('*').eq('id', vibeId).single().catch(function(){ return null; });
-  if(!res || !res.data){ pToast('⚠️','No se pudo cargar el momento'); return; }
-  var v = res.data;
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  if(!vibeId){ pToast('⚠️','ID de momento inválido'); return; }
+  console.log('[saved-vibe] opening', vibeId);
+  var v = null;
+  try{
+    var res = await sbClient.from('vibes').select('*').eq('id', vibeId).limit(1);
+    if(res && res.data && res.data[0]) v = res.data[0];
+    else if(res && res.error) console.warn('[saved-vibe query]', res.error.message);
+  }catch(e){ console.warn('[saved-vibe fetch]', e && e.message); }
+  if(!v){ pToast('⚠️','No se pudo cargar el momento'); return; }
   // Cargar reacciones para este vibe
   _vibeReactionAgg = _vibeReactionAgg || {};
   try{
@@ -21741,6 +21767,105 @@ function _contactCard(id, name, av, uname, pInfo, unread, opts){
     +'</div></div>';
 }
 
+// ── Compañer@ de apoyo del mes ────────────────────────────────
+// Sistema simétrico de "match": cada mes, cada par (yo, partner) debe confirmar
+// para renovarse como compañer@s de apoyo. Guardamos un registro por lado
+// en support_matches — así puedo tener mi respuesta INDEPENDIENTE de la de él.
+// Match confirmado = ambos aceptaron.
+function _supportMonthKey(){
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+async function _loadSupportMatches(favIds){
+  _initSupabase(); if(!sbClient) return { mine:{}, theirs:{} };
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId || !favIds || !favIds.length) return { mine:{}, theirs:{} };
+  var monthKey = _supportMonthKey();
+  var mine = {}, theirs = {};
+  try{
+    // Mis respuestas hacia cada partner
+    var meRes = await sbClient.from('support_matches')
+      .select('partner_id,my_answer')
+      .eq('user_id', myId).eq('month_key', monthKey).in('partner_id', favIds);
+    (meRes.data||[]).forEach(function(r){ mine[r.partner_id] = r.my_answer; });
+    // Respuestas de cada partner hacia mí
+    var thRes = await sbClient.from('support_matches')
+      .select('user_id,my_answer')
+      .eq('partner_id', myId).eq('month_key', monthKey).in('user_id', favIds);
+    (thRes.data||[]).forEach(function(r){ theirs[r.user_id] = r.my_answer; });
+  }catch(e){ console.warn('[support-match load]', e); }
+  return { mine: mine, theirs: theirs };
+}
+async function pSupportRespond(partnerId, answer, partnerName){
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId){ pToast('⚠️','Iniciá sesión'); return; }
+  var monthKey = _supportMonthKey();
+  try{
+    var r = await sbClient.from('support_matches').upsert({
+      user_id: myId, partner_id: partnerId, month_key: monthKey,
+      my_answer: answer, updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id,partner_id,month_key' });
+    if(r && r.error){ pToast('⚠️', r.error.message.slice(0,60)); return; }
+    if(answer === 'accepted') pToast('🌱','Confirmaste el match con '+(partnerName||'tu contacto'));
+    else pToast('💛','No renovaste este mes');
+    // Re-render
+    if(typeof pRenderContacts === 'function') pRenderContacts();
+  }catch(e){ console.warn('[support-match respond]', e); pToast('⚠️','Error al guardar'); }
+}
+// Devuelve el HTML de la sección "Compañer@s de apoyo del mes".
+// Prioriza mostrar matches ya confirmados y los que están pendientes de MI respuesta.
+function _supportRenderSection(favs, matches){
+  if(!favs || !favs.length) return '';
+  var myAnswers = matches.mine || {};
+  var theirAnswers = matches.theirs || {};
+  var confirmed = [];   // ambos aceptaron
+  var pending = [];     // mi respuesta pendiente
+  var declined = [];    // uno declinó
+  favs.forEach(function(f){
+    var mine = myAnswers[f.id];
+    var theirs = theirAnswers[f.id];
+    if(mine === 'accepted' && theirs === 'accepted') confirmed.push(f);
+    else if(mine === 'declined' || theirs === 'declined') declined.push({fav:f, whoDeclined: mine==='declined'?'me':'them'});
+    else if(!mine || mine === 'pending') pending.push({fav:f, theirs: theirs});
+  });
+  if(!confirmed.length && !pending.length && !declined.length) return '';
+  var confirmedHtml = confirmed.length
+    ? confirmed.map(function(f){
+        return '<button onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name||'')+','+_jsAttr(f.av||'🧑')+')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:linear-gradient(135deg,rgba(120,220,150,.16),rgba(60,180,100,.10));border:1.5px solid rgba(120,220,150,.55);border-radius:14px;cursor:pointer;font-family:Jost,sans-serif;text-align:left;box-shadow:0 4px 14px rgba(80,180,120,.18)">'
+          + '<span style="font-size:26px;flex-shrink:0">'+_avInline(f.av||'🧑',30)+'</span>'
+          + '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:var(--ink)">'+_escHtml(f.name||'Usuario')+'</div><div style="font-size:10.5px;font-weight:800;letter-spacing:.4px;color:rgba(60,150,90,.95)">🌱 COMPAÑER@ DEL MES</div></div>'
+        + '</button>';
+      }).join('')
+    : '';
+  var pendingHtml = pending.length
+    ? pending.map(function(p){
+        var f = p.fav;
+        var theirLbl = p.theirs === 'accepted' ? '✓ Ya te dijo que sí — falta tu respuesta' : (p.theirs === 'declined' ? 'No confirmó este mes' : 'Esperando la respuesta de ambos');
+        var showBtns = p.theirs !== 'declined';
+        return '<div style="padding:12px 14px;background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.42);border-radius:14px;font-family:Jost,sans-serif">'
+          + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(showBtns?'10px':'0')+'"><span style="font-size:26px;flex-shrink:0">'+_avInline(f.av||'🧑',30)+'</span><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:var(--ink)">'+_escHtml(f.name||'Usuario')+'</div><div style="font-size:11px;color:var(--ink4);margin-top:1px">'+_escHtml(theirLbl)+'</div></div></div>'
+          + (showBtns ? '<div style="display:flex;gap:6px"><button onclick="pSupportRespond('+_jsAttr(f.id)+',\'accepted\','+_jsAttr(f.name||'')+')" style="flex:1;padding:8px;background:rgba(80,180,120,.24);border:1.5px solid rgba(80,180,120,.55);border-radius:10px;color:rgba(20,80,40,.95);font-family:Jost,sans-serif;font-size:12px;font-weight:800;cursor:pointer">🌱 Sí, este mes</button><button onclick="pSupportRespond('+_jsAttr(f.id)+',\'declined\','+_jsAttr(f.name||'')+')" style="flex:1;padding:8px;background:rgba(220,120,120,.12);border:1.5px solid rgba(220,120,120,.35);border-radius:10px;color:rgba(150,50,50,.9);font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer">Este mes no</button></div>' : '')
+        + '</div>';
+      }).join('')
+    : '';
+  var declinedHtml = declined.length
+    ? declined.map(function(d){
+        var f = d.fav;
+        var msg = d.whoDeclined === 'me' ? 'No renovaste este mes' : _escHtml(f.name||'Tu contacto')+' no confirmó este mes';
+        return '<div style="padding:10px 12px;background:rgba(180,180,180,.08);border:1px solid rgba(180,180,180,.24);border-radius:12px;font-family:Jost,sans-serif;font-size:11.5px;color:var(--ink4);font-style:italic;display:flex;align-items:center;gap:8px"><span style="font-size:18px">💛</span><span>'+msg+'</span></div>';
+      }).join('')
+    : '';
+  return '<div style="margin-bottom:18px">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:20px">🌱</span><div><div style="font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--ink2)">Compañer@ de apoyo del mes</div><div style="font-size:11px;color:var(--ink4);margin-top:1px">Ambos tienen que confirmar cada mes</div></div></div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">'
+      + confirmedHtml
+      + pendingHtml
+      + declinedHtml
+    + '</div>'
+  + '</div>';
+}
+
 async function pRenderContacts(){
   var _tok = _navToken;
   var el = document.getElementById('contactsContent');
@@ -21910,7 +22035,16 @@ async function pRenderContacts(){
     )
     +'</div>';
 
-  el.innerHTML = tabsHtml + favsHtml + onlineHtml + fansHtml + blockedHtml;
+  // Compañer@ de apoyo del mes — cargar matches y renderizar sección arriba de las tabs
+  var supportHtml = '';
+  try{
+    var _favIds = favs.map(function(f){ return f.id; }).filter(Boolean);
+    if(_favIds.length){
+      var matches = await _loadSupportMatches(_favIds);
+      if(_navToken === _tok) supportHtml = _supportRenderSection(favs, matches);
+    }
+  }catch(_supE){ console.warn('[support-section]', _supE); }
+  el.innerHTML = supportHtml + tabsHtml + favsHtml + onlineHtml + fansHtml + blockedHtml;
   } catch(e) {
     console.error('[pRenderContacts]', e);
     var elFb = document.getElementById('contactsContent');
@@ -33299,7 +33433,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1345;
+    var _BUILT_V = 1346;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
