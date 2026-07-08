@@ -15354,3 +15354,16 @@ body:not(.r-dark) .home-vibes-widget__title {
   white-space: nowrap !important;
   padding: 0 3px !important;
 }
+
+/* v1363 — Label DEBAJO del tile (afuera) — estilo Instagram Stories.
+   Color según el tema del widget. */
+body:not(.r-dark) .home-vibes-widget .vibes-tile-label {
+  color: #0e3a1e !important;
+  text-shadow: none !important;
+}
+body.r-dark .home-vibes-widget .vibes-tile-label {
+  color: #e4f5e9 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45) !important;
+}
+/* También ajustar el "Ver todos" para que se vea bien sin label externo */
+.home-vibes-widget__see-all + .vibes-tile-label { display: none; }

@@ -19564,22 +19564,24 @@ async function _renderHomeVibesCard(){
         var emptyCls = isPrivate ? 'vibes-tile-empty--private' : (t.isInstant ? 'vibes-tile-empty--instant' : 'vibes-tile-empty--group');
         visual = '<div class="vibes-tile-empty '+emptyCls+'" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:38px">'+_escHtml(t.emoji)+'</div>';
       }
-      return '<button class="vibes-tile" onclick="'+onclickAction+'" style="flex:0 0 96px;padding:0;background:#000;border:'+borderWidth+' solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:120px;opacity:'+opa+';filter:'+filt+';box-shadow:0 4px 12px rgba(0,0,0,.25);display:flex;flex-direction:column">'
-        + badge
-        + '<div class="vibes-tile__visual" style="flex:1;position:relative;overflow:hidden;min-height:0">'+visual+'</div>'
-        + '<div class="vibes-tile__label">'
-          + '<div class="vibes-tile__label-text">'+_escHtml(t.title)+'</div>'
-        + '</div>'
-      + '</button>';
+      return '<div class="vibes-tile-wrap" style="flex:0 0 82px;display:flex;flex-direction:column;align-items:stretch;gap:5px">'
+        + '<button onclick="'+onclickAction+'" style="width:82px;height:98px;padding:0;background:#000;border:'+borderWidth+' solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;opacity:'+opa+';filter:'+filt+';box-shadow:0 3px 10px rgba(0,0,0,.20);display:block">'
+          + badge
+          + visual
+        + '</button>'
+        + '<div class="vibes-tile-label" style="text-align:center;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;line-height:1.15;letter-spacing:.15px;padding:0 2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-height:26px">'+_escHtml(t.title)+'</div>'
+      + '</div>';
     }).join('');
     // Fallback: sin ni un grupo (raro)
     if(!thumbsHtml){
       thumbsHtml = '<div style="flex:1;padding:22px 16px;background:linear-gradient(135deg,rgba(255,235,180,.35),rgba(255,215,140,.25));border:1.5px dashed rgba(200,150,60,.55);border-radius:14px;color:rgba(120,80,20,.85);font-family:Jost,sans-serif;font-size:12.5px;text-align:center;font-style:italic">Aún nadie publicó momentos hoy — sé el primero ✨</div>';
     } else {
-      thumbsHtml += '<button onclick="pOpenVibes()" class="home-vibes-widget__see-all" style="flex:0 0 76px;padding:0;border-radius:14px;cursor:pointer;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;line-height:1.15;text-align:center">'
-        + '<span style="font-size:24px">→</span>'
-        + '<span>Ver<br>todos</span>'
-      + '</button>';
+      thumbsHtml += '<div class="vibes-tile-wrap" style="flex:0 0 60px;display:flex;flex-direction:column;align-items:stretch;gap:5px">'
+        + '<button onclick="pOpenVibes()" class="home-vibes-widget__see-all" style="width:60px;height:98px;padding:0;border-radius:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Jost,sans-serif;font-size:22px;font-weight:900">'
+          + '→'
+        + '</button>'
+        + '<div class="vibes-tile-label" style="text-align:center;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;line-height:1.15;padding:0 2px;max-height:26px">Ver todos</div>'
+      + '</div>';
     }
     wrap.style.display = 'block';
     // v1362 — Volver a estructura con clases CSS (como v1355 que se veía bien).
@@ -33653,7 +33655,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1362;
+    var _BUILT_V = 1363;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
