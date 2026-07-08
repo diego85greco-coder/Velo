@@ -327,6 +327,27 @@ async function sendWeeklySummary(users) {
   const weekKey = now.toISOString().slice(0, 10);
   console.log(`[weekly] Domingo ${weekKey} — enviando resumen semanal`);
 
+  // Insert automático del broadcast al buzón — solo una vez por domingo (por eso
+  // solo lo hacemos en el slot de las 7 UTC, no en el de las 12).
+  // El cliente detecta el body "__WEEKLY_REPORT__YYYY-MM-DD" y arma el resumen
+  // personalizado desde los datos locales del user. Con la dedup por body, si
+  // el workflow se re-ejecuta el mismo domingo, no se duplica.
+  if (utcH === 7) {
+    try {
+      const bcast = {
+        target: 'users',
+        subject: '📊 Tu resumen semanal — ' + weekKey,
+        body: '__WEEKLY_REPORT__' + weekKey,
+        icon: '📊',
+        sender: 'Velo — Resumen Semanal',
+        sent_at: new Date().toISOString(),
+      };
+      const { error: bcErr } = await supabase.from('broadcasts').insert(bcast);
+      if (bcErr) console.warn('[weekly-broadcast]', bcErr.message);
+      else console.log('[weekly-broadcast] resumen semanal insertado en broadcasts para', weekKey);
+    } catch (e) { console.warn('[weekly-broadcast]', e && e.message); }
+  }
+
   // Users con al menos 1 mood en los últimos 7 días (evitamos molestar a inactivos)
   const weekAgo = new Date(now); weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);
   const weekAgoKey = weekAgo.toISOString().slice(0, 10);
