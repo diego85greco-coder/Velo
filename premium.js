@@ -19717,7 +19717,7 @@ function pStartCreateVibe(groupId, instantScope){
   var ex = document.getElementById('vibeCreateOv'); if(ex) ex.remove();
   var ov = document.createElement('div');
   ov.id = 'vibeCreateOv';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:10011;background:rgba(0,0,0,.86);display:flex;align-items:flex-end;justify-content:center';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10025;background:rgba(0,0,0,.86);display:flex;align-items:flex-end;justify-content:center';
   ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
   var header = '';
   if(isInstant){
@@ -19872,7 +19872,7 @@ async function pOpenVibeGroup(groupId){
   ov = document.createElement('div');
   ov.id = 'vibeGroupOv';
   ov.style.cssText = 'position:fixed;inset:0;z-index:10012;background:linear-gradient(180deg,#0a1810,#050f08);display:flex;flex-direction:column;overflow:hidden;color:#fff';
-  var header = '<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(4,10,7,.94);border-bottom:1px solid rgba(116,198,157,.14);flex-shrink:0"><button onclick="document.getElementById(\'vibeGroupOv\').remove()" style="background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.20);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:22px">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:19px;font-style:italic">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11px;color:rgba(180,220,195,.65);margin-top:2px;font-family:Jost,sans-serif">'+_escHtml((gr&&gr.description)||'')+'</div></div><button onclick="document.getElementById(\'vibeGroupOv\').remove();pStartCreateVibe(\''+groupId+'\')" style="background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;color:#0e1f14;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;padding:8px 14px;border-radius:100px;cursor:pointer;letter-spacing:.3px">＋</button></div>';
+  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.94);border-bottom:1px solid rgba(116,198,157,.14);flex-shrink:0"><button onclick="document.getElementById(\'vibeGroupOv\').remove()" style="background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.20);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:22px">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:19px;font-style:italic">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11px;color:rgba(180,220,195,.65);margin-top:2px;font-family:Jost,sans-serif">'+_escHtml((gr&&gr.description)||'')+'</div></div><button onclick="document.getElementById(\'vibeGroupOv\').remove();pStartCreateVibe(\''+groupId+'\')" style="background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;color:#0e1f14;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;padding:8px 14px;border-radius:100px;cursor:pointer;letter-spacing:.3px">＋</button></div>';
   ov.innerHTML = header + '<div id="vibeGroupList" style="flex:1;overflow-y:auto;padding:14px 16px 30px">Cargando…</div>';
   document.body.appendChild(ov);
   try{
@@ -32948,7 +32948,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1334;
+    var _BUILT_V = 1335;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
