@@ -19926,16 +19926,21 @@ async function pOpenVibeGroup(groupId){
   var ov = document.getElementById('vibeGroupOv'); if(ov) ov.remove();
   _initSupabase();
   var gr = (_vibesGroupsCache||[]).find(function(x){ return x.id === groupId; });
+  // Pintar html dark mientras el overlay está abierto — evita ver cream por el
+  // safe-area del home indicator del iPhone. Restaurar al cerrar.
+  var _prevHtmlBg = document.documentElement.style.backgroundColor;
+  document.documentElement.style.backgroundColor = '#050f08';
   ov = document.createElement('div');
   ov.id = 'vibeGroupOv';
+  ov.dataset.prevHtmlBg = _prevHtmlBg;
   ov.style.cssText = 'position:fixed;inset:0;z-index:10012;background:linear-gradient(180deg,#0a1810,#050f08);display:flex;flex-direction:column;overflow:hidden;color:#fff';
-  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.94);border-bottom:1px solid rgba(116,198,157,.14);flex-shrink:0"><button onclick="document.getElementById(\'vibeGroupOv\').remove()" style="background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.20);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:22px">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:19px;font-style:italic">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11px;color:rgba(180,220,195,.65);margin-top:2px;font-family:Jost,sans-serif">'+_escHtml((gr&&gr.description)||'')+'</div></div><button onclick="document.getElementById(\'vibeGroupOv\').remove();pStartCreateVibe(\''+groupId+'\')" style="background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;color:#0e1f14;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;padding:8px 14px;border-radius:100px;cursor:pointer;letter-spacing:.3px">＋</button></div>';
+  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.94);border-bottom:1px solid rgba(116,198,157,.14);flex-shrink:0"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.20);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:22px">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:19px;font-style:italic">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11px;color:rgba(180,220,195,.65);margin-top:2px;font-family:Jost,sans-serif">'+_escHtml((gr&&gr.description)||'')+'</div></div><button onclick="_closeVibeGroup();pStartCreateVibe(\''+groupId+'\')" style="background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;color:#0e1f14;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;padding:8px 14px;border-radius:100px;cursor:pointer;letter-spacing:.3px">＋</button></div>';
   // Layout: header fijo + zona fija (CTA + banner de nuevos) + carrusel horizontal
   // scroll-snap con cada card 100% ancho + indicador de posición debajo.
   ov.innerHTML = header
     + '<div id="vibeGroupFixed" style="padding:14px 16px 0;flex-shrink:0"></div>'
     + '<div id="vibeGroupList" style="flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px 0 6px">Cargando…</div>'
-    + '<div id="vibeGroupDots" style="display:flex;gap:6px;justify-content:center;padding:6px 12px 14px;flex-shrink:0"></div>';
+    + '<div id="vibeGroupDots" style="display:flex;gap:6px;justify-content:center;padding:6px 12px calc(14px + env(safe-area-inset-bottom,0px));flex-shrink:0;background:linear-gradient(180deg,transparent,rgba(5,15,8,.98))"></div>';
   document.body.appendChild(ov);
   try{
     var res = await sbClient.from('vibes').select('*').eq('group_id', groupId).gte('expires_at', new Date().toISOString()).order('created_at',{ascending:false}).limit(80);
@@ -20242,6 +20247,16 @@ async function _openSavedVibe(vibeId){
       }catch(e){ img.src = src; }
     });
   }
+}
+
+// Cierra el overlay del grupo de vibes y restaura el html background al color
+// previo (que fue guardado en dataset.prevHtmlBg al abrir).
+function _closeVibeGroup(){
+  var ov = document.getElementById('vibeGroupOv');
+  if(!ov) return;
+  var prev = ov.dataset.prevHtmlBg || '';
+  document.documentElement.style.backgroundColor = prev;
+  ov.remove();
 }
 
 // Scrollea al primer momento nuevo (el más antiguo entre los no vistos) con highlight suave.
@@ -33192,7 +33207,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1341;
+    var _BUILT_V = 1342;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
