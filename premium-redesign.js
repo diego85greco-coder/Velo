@@ -735,6 +735,9 @@
     // Actualizar theme-color del navegador/PWA
     var tm = document.querySelector('meta[name="theme-color"]');
     if (tm) tm.setAttribute('content', dark ? '#0f1a14' : '#1B5E3A');
+    // Setear background del <html> vía JS (no depende de :has() — funciona en iOS 15+).
+    // Evita el "flash gris" abajo del compose en PWA cuando iOS scrollea el body.
+    try { document.documentElement.style.backgroundColor = dark ? '#0f1a14' : '#fef8ea'; } catch(e){}
 
     // Label del toggle: muestra el próximo estado al que irá
     var saved = null;

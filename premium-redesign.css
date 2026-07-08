@@ -14845,7 +14845,10 @@ html:has(body.r-dark) { background-color: #0f1a14; }
 #pg-guardian-chat .feed-header {
   padding-top: calc(14px + env(safe-area-inset-top, 0px)) !important;
 }
-/* Undo padding-bottom sobre-agregado en v1327 */
+/* Padding-bottom del input area = max(16px, safe-area-inset-bottom).
+   Así el fondo del compose absorbe el safe area del home indicator (evita
+   que se vea el html detrás), sin duplicar padding en dispositivos sin
+   safe area (Android, desktop). */
 .feed-input-area {
-  padding-bottom: 16px !important;
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
 }
