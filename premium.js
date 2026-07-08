@@ -19562,13 +19562,13 @@ async function _renderHomeVibesCard(){
       } else {
         // Colores del fondo del tile según el tema (light/dark) — se resuelven via CSS
         var emptyCls = isPrivate ? 'vibes-tile-empty--private' : (t.isInstant ? 'vibes-tile-empty--instant' : 'vibes-tile-empty--group');
-        visual = '<div class="vibes-tile-empty '+emptyCls+'" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:38px">'+_escHtml(t.emoji)+'</div>';
+        visual = '<div class="vibes-tile-empty '+emptyCls+'" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px">'+_escHtml(t.emoji)+'</div>';
       }
-      return '<button onclick="'+onclickAction+'" style="flex:0 0 96px;padding:0;background:#0a1810;border:'+borderWidth+' solid '+borderCol+';border-radius:14px;overflow:hidden;cursor:pointer;position:relative;height:120px;opacity:'+opa+';filter:'+filt+';box-shadow:0 4px 12px rgba(0,0,0,.20);display:flex;flex-direction:column">'
+      return '<button onclick="'+onclickAction+'" style="flex:0 0 72px;padding:0;background:#0a1810;border:'+borderWidth+' solid '+borderCol+';border-radius:12px;overflow:hidden;cursor:pointer;position:relative;height:94px;opacity:'+opa+';filter:'+filt+';box-shadow:0 3px 9px rgba(0,0,0,.18);display:flex;flex-direction:column">'
         + badge
         + '<div style="flex:1;position:relative;overflow:hidden;min-height:0">'+visual+'</div>'
-        + '<div style="padding:6px 4px 7px;background:#0a1810;border-top:1px solid rgba(255,255,255,.08);text-align:center">'
-          + '<div style="font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;color:#fff;letter-spacing:.2px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 3px">'+_escHtml(t.title)+'</div>'
+        + '<div style="padding:4px 3px 5px;background:#0a1810;border-top:1px solid rgba(255,255,255,.08);text-align:center">'
+          + '<div style="font-family:Jost,sans-serif;font-size:9px;font-weight:800;color:#fff;letter-spacing:.15px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px">'+_escHtml(t.title)+'</div>'
         + '</div>'
       + '</button>';
     }).join('');
@@ -19576,8 +19576,8 @@ async function _renderHomeVibesCard(){
     if(!thumbsHtml){
       thumbsHtml = '<div style="flex:1;padding:22px 16px;background:linear-gradient(135deg,rgba(255,235,180,.35),rgba(255,215,140,.25));border:1.5px dashed rgba(200,150,60,.55);border-radius:14px;color:rgba(120,80,20,.85);font-family:Jost,sans-serif;font-size:12.5px;text-align:center;font-style:italic">Aún nadie publicó momentos hoy — sé el primero ✨</div>';
     } else {
-      thumbsHtml += '<button onclick="pOpenVibes()" class="home-vibes-widget__see-all" style="flex:0 0 76px;padding:0;border-radius:14px;cursor:pointer;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-family:Jost,sans-serif;font-size:10.5px;font-weight:800;line-height:1.15;text-align:center">'
-        + '<span style="font-size:24px">→</span>'
+      thumbsHtml += '<button onclick="pOpenVibes()" class="home-vibes-widget__see-all" style="flex:0 0 58px;padding:0;border-radius:12px;cursor:pointer;height:94px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-family:Jost,sans-serif;font-size:9px;font-weight:800;line-height:1.1;text-align:center">'
+        + '<span style="font-size:18px">→</span>'
         + '<span>Ver<br>todos</span>'
       + '</button>';
     }
@@ -33651,7 +33651,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1356;
+    var _BUILT_V = 1357;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
