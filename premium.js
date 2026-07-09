@@ -2045,9 +2045,14 @@ async function pOpenBuddyModal(){
   }
   var ov = document.createElement('div');
   ov.id = 'buddyOv';
-  ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:20px';
+  // v1385: el overlay entero scrollea (con margin:auto en el hijo para
+  // centrarlo cuando entra, y dejarlo scrolleable desde arriba cuando no).
+  // align-items:center + max-height:86vh dejaba el botón "Cerrar" debajo del
+  // borde inferior sin forma clara de llegar a él en iOS. Padding inferior con
+  // safe-area para que la barra de navegación no tape el botón.
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.82);display:flex;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 20px calc(28px + env(safe-area-inset-bottom,0px))';
   ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
-  ov.innerHTML = '<div style="background:linear-gradient(155deg,rgba(12,32,20,.98),rgba(6,20,12,.97));border-radius:24px;max-width:440px;width:100%;max-height:86vh;overflow-y:auto;box-sizing:border-box;padding:24px;border:1.5px solid rgba(116,198,157,.35)">'+body+'<button onclick="document.getElementById(\'buddyOv\').remove()" style="width:100%;padding:11px;background:none;border:1px solid rgba(255,255,255,.10);border-radius:12px;color:rgba(255,255,255,.55);font-size:12.5px;font-family:Jost,sans-serif;cursor:pointer;margin-top:8px">Cerrar</button></div>';
+  ov.innerHTML = '<div style="background:linear-gradient(155deg,rgba(12,32,20,.98),rgba(6,20,12,.97));border-radius:24px;max-width:440px;width:100%;margin:auto;box-sizing:border-box;padding:24px;border:1.5px solid rgba(116,198,157,.35)">'+body+'<button onclick="document.getElementById(\'buddyOv\').remove()" style="width:100%;padding:13px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:12px;color:rgba(255,255,255,.62);font-size:13px;font-family:Jost,sans-serif;cursor:pointer;margin-top:10px">Cerrar</button></div>';
   document.body.appendChild(ov);
 }
 async function pMakeBuddyAvailable(){
@@ -34517,7 +34522,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1384;
+    var _BUILT_V = 1385;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
