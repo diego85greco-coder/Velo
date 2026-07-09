@@ -55,10 +55,14 @@ serve(async (req: Request): Promise<Response> => {
   //   Trigger PL/pgSQL custom:   { record:{...} }
   const rec = payload.record || payload;
   if (!rec || !rec.to_id || !rec.from_id) {
+    console.log("[send-dm-push] no target (payload sin to_id/from_id)");
     return new Response("no target", { status: 200 });
   }
 
+  console.log(`[send-dm-push] invocación: from=${rec.from_id} to=${rec.to_id}`);
+
   if (!VAPID_PRIVATE) {
+    console.error("[send-dm-push] vapid not configured");
     return new Response("vapid not configured", { status: 200 });
   }
 
@@ -68,6 +72,7 @@ serve(async (req: Request): Promise<Response> => {
   if (txt.startsWith("__velo_") &&
       !txt.startsWith("__velo_dm_audio__") &&
       !txt.startsWith("__velo_dm_image__")) {
+    console.log(`[send-dm-push] sentinel skip (${txt.slice(0, 24)})`);
     return new Response("sentinel skip", { status: 200 });
   }
 
@@ -79,12 +84,13 @@ serve(async (req: Request): Promise<Response> => {
   const rows = await profRes.json().catch(() => []);
   const row = Array.isArray(rows) ? rows[0] : null;
   if (!row || !row.push_subscription) {
+    console.log(`[send-dm-push] NO SUB — el destinatario ${rec.to_id} no tiene push_subscription guardada (no instaló la PWA / no dio permiso de notificaciones)`);
     return new Response("no sub", { status: 200 });
   }
 
   let sub: any = row.push_subscription;
   if (typeof sub === "string") {
-    try { sub = JSON.parse(sub); } catch (_) { return new Response("bad sub", { status: 200 }); }
+    try { sub = JSON.parse(sub); } catch (_) { console.error("[send-dm-push] bad sub JSON"); return new Response("bad sub", { status: 200 }); }
   }
   // El cliente guarda { sub: {...}, tz, clientPubKey, buildV } desde v1325 —
   // desenvolver si viene en ese formato envuelto.
@@ -112,6 +118,7 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     await webPush.sendNotification(rawSub, notifPayload, { TTL: 60 * 60 * 24 });
+    console.log(`[send-dm-push] ✅ SENT — push entregado al servicio para ${rec.to_id}`);
     return new Response("sent", { status: 200 });
   } catch (e: any) {
     const errBody = String(e?.body || e?.message || "");
