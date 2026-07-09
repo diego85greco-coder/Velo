@@ -4521,9 +4521,34 @@ async function _pushMissingMoodsToSb(){
   }catch(e){}
 }
 
+// El banner se puede cerrar con la cruz; queda oculto hasta el día siguiente (v1368)
+function pDismissPushBanner(){
+  var banner = document.getElementById('homePushBanner');
+  if(banner) banner.style.display = 'none';
+  try{ safeLS('set','velo_push_banner_dismissed', new Date().toISOString().slice(0,10)); }catch(_){}
+}
 function _renderHomePushBanner(){
   var banner = document.getElementById('homePushBanner');
   if(!banner) return;
+  // Cerrado hoy con la cruz → no volver a mostrar hasta mañana
+  try{
+    if(safeLS('get','velo_push_banner_dismissed') === new Date().toISOString().slice(0,10)){
+      banner.style.display = 'none'; return;
+    }
+  }catch(_){}
+  // Inyectar la cruz de cierre una sola vez (esquina superior derecha del banner)
+  if(!document.getElementById('homePushBannerClose')){
+    try{
+      banner.style.position = 'relative';
+      var xBtn = document.createElement('button');
+      xBtn.id = 'homePushBannerClose';
+      xBtn.setAttribute('aria-label','Cerrar');
+      xBtn.textContent = '✕';
+      xBtn.style.cssText = 'position:absolute;top:6px;right:8px;background:rgba(0,0,0,.14);border:none;border-radius:100px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:inherit;cursor:pointer;line-height:1;padding:0;opacity:.75;z-index:2';
+      xBtn.onclick = function(e){ e.stopPropagation(); pDismissPushBanner(); };
+      banner.appendChild(xBtn);
+    }catch(_){}
+  }
   var ua = navigator.userAgent;
   var isIOS = /iPhone|iPad|iPod/.test(ua);
   var isAndroid = /Android/.test(ua);
@@ -19471,6 +19496,60 @@ function _vibesSeenKey(){
 function _vibesLastSeenKey(groupId){
   return 'velo_vibes_lastseen_' + (safeLS('get','velo_user_id')||'anon') + '_' + groupId;
 }
+// ── Sync de "vistos" con Supabase (v1368) ─────────────────────────
+// LS es el cache rápido; profiles.vibes_seen es la fuente cross-device.
+// Al abrir Vibes se baja y mergea (una vez por sesión); al marcar visto se sube.
+var _vibesSeenSynced = false;
+async function _vibesSeenSyncFromCloud(){
+  if(_vibesSeenSynced) return;
+  _initSupabase(); if(!sbClient) return;
+  var uid = safeLS('get','velo_user_id')||'';
+  if(!uid) return;
+  _vibesSeenSynced = true;
+  try{
+    var r = await sbClient.from('profiles').select('vibes_seen').eq('id', uid).maybeSingle();
+    var cloud = (r && r.data && r.data.vibes_seen) || {};
+    // Merge instantáneos: cloud → LS (gana el timestamp mayor)
+    var ls = {}; try{ ls = JSON.parse(safeLS('get',_vibesSeenKey())||'{}'); }catch(_){}
+    var changed = false;
+    Object.keys(cloud.instant||{}).forEach(function(k){
+      if(!ls[k] || cloud.instant[k] > ls[k]){ ls[k] = cloud.instant[k]; changed = true; }
+    });
+    if(changed) safeLS('set',_vibesSeenKey(), JSON.stringify(ls));
+    // Merge grupos: cloud → LS
+    Object.keys(cloud.groups||{}).forEach(function(gid){
+      var lk = _vibesLastSeenKey(gid);
+      var cur = parseInt(safeLS('get',lk)||'0',10)||0;
+      if(cloud.groups[gid] > cur) safeLS('set', lk, String(cloud.groups[gid]));
+    });
+  }catch(e){ console.warn('[vibes-seen sync]', e && e.message); }
+}
+function _vibesSeenPushToCloud(){
+  _initSupabase(); if(!sbClient) return;
+  var uid = safeLS('get','velo_user_id')||'';
+  if(!uid) return;
+  try{
+    var cutoff = Date.now() - 48*3600*1000;
+    // Instantáneos desde LS (podados a 48h)
+    var inst = {}; try{ inst = JSON.parse(safeLS('get',_vibesSeenKey())||'{}'); }catch(_){}
+    Object.keys(inst).forEach(function(k){ if(inst[k] < cutoff) delete inst[k]; });
+    // Grupos: escanear localStorage por el prefijo del usuario
+    var groups = {};
+    var prefix = 'velo_vibes_lastseen_' + uid + '_';
+    try{
+      for(var i=0;i<localStorage.length;i++){
+        var key = localStorage.key(i);
+        if(key && key.indexOf(prefix) === 0){
+          var gid = key.slice(prefix.length);
+          var ts = parseInt(localStorage.getItem(key)||'0',10)||0;
+          if(ts > 0) groups[gid] = ts;
+        }
+      }
+    }catch(_){}
+    sbClient.from('profiles').update({ vibes_seen: { instant: inst, groups: groups } })
+      .eq('id', uid).then(function(){}).catch(function(){});
+  }catch(e){}
+}
 // Cache de grupos y de vibes por grupo (para no re-fetchear entre renders)
 var _vibesGroupsCache = null;
 var _vibesGroupCounts = {}; // groupId → count de vibes hoy
@@ -19486,6 +19565,7 @@ async function _renderHomeVibesCard(){
   if(oldWrap && oldWrap !== wrap) oldWrap.style.display = 'none';
   _initSupabase();
   if(!sbClient){ wrap.style.display = 'none'; return; }
+  try{ await _vibesSeenSyncFromCloud(); }catch(_){}
   try{
     var myId = safeLS('get','velo_user_id')||'';
     var TARGET = 6; // total de tiles antes del "Ver todos"
@@ -19604,7 +19684,7 @@ async function _renderHomeVibesCard(){
         + '<button onclick="pOpenVibes()" class="home-vibes-widget__all">Ver todos →</button>'
       + '</div>'
       + '<div class="home-vibes-widget__rail">'+thumbsHtml+'</div>'
-      + '<div class="home-vibes-widget__hint">👆 Para publicar en un grupo, tocá su portada</div>'
+      + '<div class="home-vibes-widget__hint">👆 Tocá una portada para ver y publicar en ese grupo · o tocá "Ver todos"</div>'
       + '<button onclick="pStartCreateVibe(null,\'public\')" class="home-vibes-widget__cta">'
         + '<span class="home-vibes-widget__cta-plus">＋</span><span>Publicá un momento instantáneo</span>'
       + '</button>'
@@ -20207,7 +20287,7 @@ async function pOpenVibeGroup(groupId){
     // Se guarda el más reciente para que la próxima visita muestre banner solo si hay MÁS nuevos.
     try{
       var newest = new Date(res.data[0].created_at).getTime();
-      if(newest > lastSeen) safeLS('set', _lsKey, String(newest));
+      if(newest > lastSeen){ safeLS('set', _lsKey, String(newest)); _vibesSeenPushToCloud(); }
     }catch(_){}
     // Convertir data URLs a blob URLs (iOS Safari) — post-render
     list.querySelectorAll('img[data-vibe-src]').forEach(function(img){
@@ -20239,6 +20319,7 @@ async function pOpenInstantVibe(vibeId){
     var cutoff = Date.now() - 48*3600*1000;
     Object.keys(_seen).forEach(function(k){ if(_seen[k] < cutoff) delete _seen[k]; });
     safeLS('set',_vibesSeenKey(), JSON.stringify(_seen));
+    _vibesSeenPushToCloud(); // sync cross-device
   }catch(_){}
   try{
     var res = await sbClient.from('vibes').select('*').eq('id', vibeId).single();
@@ -33692,7 +33773,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1367;
+    var _BUILT_V = 1368;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
