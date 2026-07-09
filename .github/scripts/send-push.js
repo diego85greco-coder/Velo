@@ -716,6 +716,57 @@ async function sendBuddyWeeklyCheckin(users) {
   return { sent };
 }
 
+// ── CICLO DE 30 DÍAS de compañeros: recordatorio día 28 + expiración día 30 ──
+// "2 días antes de cumplir los 30 debe decidir si renueva; si no renueva,
+// al día 30 se anula solo." Renovar resetea buddy_started_at (pRenewBuddy),
+// así que las parejas renovadas nunca llegan a 30.
+async function buddyCycleMaintenance() {
+  const utcH = new Date().getUTCHours();
+  if (utcH !== 12) return { expired: 0, reminded: 0 };
+  const { data: pairs, error } = await supabase
+    .from('profiles')
+    .select('id, buddy_id, buddy_name, buddy_started_at')
+    .not('buddy_id', 'is', null)
+    .not('buddy_started_at', 'is', null);
+  if (error || !pairs || !pairs.length) return { expired: 0, reminded: 0 };
+
+  const now = Date.now();
+  const cleared = new Set();
+  let expired = 0, reminded = 0;
+
+  for (const p of pairs) {
+    try {
+      const days = Math.floor((now - new Date(p.buddy_started_at).getTime()) / 86400000);
+      if (days >= 30) {
+        if (cleared.has(p.id)) continue;
+        cleared.add(p.id); if (p.buddy_id) cleared.add(p.buddy_id);
+        await supabase.from('profiles').update({ buddy_id: null, buddy_name: null, buddy_started_at: null }).eq('id', p.id);
+        if (p.buddy_id) await supabase.from('profiles').update({ buddy_id: null, buddy_name: null, buddy_started_at: null }).eq('id', p.buddy_id);
+        for (const uid of [p.id, p.buddy_id].filter(Boolean)) {
+          await supabase.from('broadcasts').insert({
+            target: `user:${uid}`,
+            subject: '🌿 El ciclo de 30 días llegó a su fin',
+            body: 'Su acompañamiento cumplió los 30 días y se cerró. Gracias por acompañarse 💚 Pueden anotarse de nuevo cuando quieran.',
+            icon: '🌿', sender: 'Velo — Compañeros de bienestar',
+          });
+        }
+        expired++;
+      } else if (days === 28) {
+        // Cada fila cubre a su propio dueño (hay una fila por lado de la pareja)
+        await supabase.from('broadcasts').insert({
+          target: `user:${p.id}`,
+          subject: '⏰ Tu ciclo de compañeros termina en 2 días',
+          body: `El acompañamiento con ${p.buddy_name || 'tu compañero/a'} cumple 30 días en 2 días. Si quieren seguir, entrá a Compañer@ y tocá "Renovar 30 días más" — si no, se cierra solo al día 30.`,
+          icon: '⏰', sender: 'Velo — Compañeros de bienestar',
+        });
+        reminded++;
+      }
+    } catch (e) { console.warn('[buddy-cycle] pair err:', e.message); }
+  }
+  console.log(`[buddy-cycle] expired=${expired}, reminded=${reminded}`);
+  return { expired, reminded };
+}
+
 // ── LIMPIEZA de media caducada del bucket 'vibes' ─────────────────────
 // Los vibes expiran a las 24h (el cron SQL borra las filas), pero los
 // archivos (fotos y desde v1383 VIDEOS de hasta 35MB) quedaban en Storage
@@ -783,6 +834,9 @@ async function main() {
 
   // Check-in semanal de compañeros que no se escriben (día 7/14/21/28 del ciclo)
   try { await sendBuddyWeeklyCheckin(users); } catch (e) { console.warn('[buddy-checkin] failed:', e.message); }
+
+  // Ciclo 30 días: recordatorio de renovación (día 28) + expiración automática (día 30)
+  try { await buddyCycleMaintenance(); } catch (e) { console.warn('[buddy-cycle] failed:', e.message); }
 
   // Limpieza diaria de fotos/videos caducados del bucket 'vibes' (3 UTC)
   try { await cleanupVibesStorage(); } catch (e) { console.warn('[vibes-cleanup] failed:', e.message); }

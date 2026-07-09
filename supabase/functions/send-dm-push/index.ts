@@ -68,8 +68,23 @@ serve(async (req: Request): Promise<Response> => {
 
   const txt = String(rec.text || "");
 
-  // Skippear sentinels internos (chat req/acc/rej/busy/bye, guardian, help)
-  if (txt.startsWith("__velo_") &&
+  // v1400: los pedidos de chat SÍ generan push (guardián con la app cerrada
+  // se entera de que alguien necesita acompañamiento; lo mismo un pedido de
+  // chat directo). El resto de los sentinels internos se sigue salteando.
+  let sentinelPush: { title: string; body: string; tag: string } | null = null;
+  if (txt.startsWith("__velo_guardian_req__")) {
+    sentinelPush = {
+      title: "🛡️ Alguien necesita acompañamiento",
+      body: `${rec.from_name || "Alguien"} te pide un chat de apoyo. Entrá a Velo para aceptar — si no podés ahora, se le avisa que no estás disponible.`,
+      tag: "velo-guardian-req",
+    };
+  } else if (txt === "__velo_chat_req__") {
+    sentinelPush = {
+      title: `${rec.from_name || "Alguien"} quiere chatear 💬`,
+      body: "Te llegó una solicitud de chat. Entrá a Velo para aceptarla o rechazarla.",
+      tag: `velo-dm-${rec.from_id}`,
+    };
+  } else if (txt.startsWith("__velo_") &&
       !txt.startsWith("__velo_dm_audio__") &&
       !txt.startsWith("__velo_dm_image__")) {
     console.log(`[send-dm-push] sentinel skip (${txt.slice(0, 24)})`);
@@ -102,7 +117,19 @@ serve(async (req: Request): Promise<Response> => {
   else if (txt.startsWith("__velo_dm_image__")) body = "📷 Te envió una foto";
   else if (txt.length > 100) body = txt.slice(0, 100) + "…";
 
-  const notifPayload = JSON.stringify({
+  const notifPayload = JSON.stringify(sentinelPush ? {
+    title: sentinelPush.title,
+    body: sentinelPush.body,
+    icon: "/assets/icon-192.png",
+    badge: "/assets/icon-72.png",
+    tag: sentinelPush.tag,
+    url: "/",
+    requireInteraction: true,
+    actions: [
+      { action: "open", title: "💬 Abrir Velo", url: "/" },
+      { action: "later", title: "Ahora no" }
+    ]
+  } : {
     title: `${rec.from_name || "Alguien"} 💬`,
     body,
     icon: "/assets/icon-192.png",

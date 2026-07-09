@@ -1,0 +1,15 @@
+{
+  "name": "Velo — Acompañamos emociones",
+  "short_name": "Velo",
+  "description": "Comunidad de apoyo emocional entre pares. Nunca más atravieses un mal momento en soledad.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1a14",
+  "theme_color": "#0f1a14",
+  "icons": [
+    { "src": "/assets/logo-dark.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/logo-dark.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

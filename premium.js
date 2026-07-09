@@ -1956,16 +1956,18 @@ async function pOpenBuddyModal(){
         + '<div style="display:flex;gap:6px;margin-bottom:4px"><span>📞</span><span>Los mensajes aparecen en <strong style="color:rgba(220,255,235,.92)">Contactos favoritos</strong> del inicio y en la campana.</span></div>'
         + '<div style="display:flex;gap:6px"><span>🕊️</span><span>Si registrás ánimo bajo 2 días seguidos, tu compañero/a recibe un aviso suave.</span></div>'
       + '</div>'
-      + (canRenew
-          ? '<div style="background:rgba(255,180,100,.08);border:1px solid rgba(255,180,100,.28);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:11.5px;color:rgba(255,220,180,.78);line-height:1.5;font-family:Jost,sans-serif">⏰ <strong>Se termina el ciclo pronto.</strong> Al cumplirse los 30 días pueden renovar 30 más o cerrar el acompañamiento.</div>'
-          : ''
+      // v1400: ventana de renovación desde 2 días antes del cierre. Si no
+      // renuevan, al día 30 el ciclo se anula solo (cleanup diario del server).
+      + (daysLeft <= 2
+          ? '<div style="background:rgba(255,180,100,.08);border:1px solid rgba(255,180,100,.28);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:11.5px;color:rgba(255,220,180,.78);line-height:1.5;font-family:Jost,sans-serif">⏰ <strong>'+(daysLeft===0?'El ciclo termina HOY.':'El ciclo termina en '+daysLeft+' día'+(daysLeft===1?'':'s')+'.')+'</strong> Si no renuevan, al cumplirse los 30 días se cierra solo.</div>'
+          : (canRenew ? '<div style="background:rgba(255,180,100,.08);border:1px solid rgba(255,180,100,.28);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:11.5px;color:rgba(255,220,180,.78);line-height:1.5;font-family:Jost,sans-serif">⏰ <strong>Se termina el ciclo pronto.</strong> Desde 2 días antes van a poder renovar 30 días más.</div>' : '')
         )
       + '<button onclick="pOpenDM('+_jsAttr(myBuddy.id)+','+_jsAttr(myBuddy.name)+',\'🌿\');document.getElementById(\'buddyOv\').remove()" style="width:100%;padding:12px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-size:13.5px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;margin-bottom:8px;letter-spacing:.3px">💬 Enviarle mensaje</button>'
-      + (daysLeft === 0
+      + (daysLeft <= 2
           ? '<button onclick="pRenewBuddy()" style="width:100%;padding:11px;background:rgba(155,120,220,.20);border:1.5px solid rgba(155,120,220,.55);border-radius:12px;color:rgba(220,200,255,.95);font-size:12.5px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;margin-bottom:8px">🔄 Renovar 30 días más</button>'
           : ''
         )
-      + '<button onclick="pRemoveBuddy()" style="width:100%;padding:10px;background:none;border:1px solid rgba(255,120,120,.30);border-radius:12px;color:rgba(255,150,150,.72);font-size:12px;font-family:Jost,sans-serif;cursor:pointer">Terminar acompañamiento</button>'
+      + '<button onclick="pRemoveBuddy()" style="width:100%;padding:11px;background:rgba(255,120,120,.08);border:1.5px solid rgba(255,120,120,.40);border-radius:12px;color:#e88a8a;font-size:13px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">✕ Cancelar el acompañamiento</button>'
       + '</div>';
   } else {
     // Panel explicativo completo: reglas del sistema
@@ -2290,8 +2292,24 @@ function pRemoveBuddy(){
       var otherUid = me && me.data ? me.data.buddy_id : null;
       await sbClient.from('profiles').update({ buddy_id: null, buddy_name: null, buddy_started_at: null }).eq('id', uid);
       if(otherUid) await sbClient.from('profiles').update({ buddy_id: null, buddy_name: null, buddy_started_at: null }).eq('id', otherUid);
+      // v1400: avisarle al otro lado que se terminó el acompañamiento
+      // (Buzón + campana de Actividad). Antes se cortaba en silencio.
+      if(otherUid){
+        var myName = safeLS('get','velo_user_name') || 'Tu compañero/a';
+        try{
+          await sbClient.from('broadcasts').insert({
+            target: 'user:'+otherUid,
+            subject: '🌿 Se terminó el acompañamiento',
+            body: myName+' cerró el ciclo de compañeros de bienestar. Gracias por acompañar 💚 Podés anotarte de nuevo cuando quieras.',
+            icon: '🌿', sender: 'Velo — Comunidad'
+          });
+        }catch(_){}
+        try{ _createVeloNotif(otherUid, 'buddy_ended', myName+' terminó el acompañamiento', 'Podés anotarte de nuevo cuando quieras 🌿', ''); }catch(_){}
+      }
       pToast('🌿','Terminaste el acompañamiento');
       var b = document.getElementById('buddyOv'); if(b) b.remove();
+      // Limpiar la marca de festejo para el próximo match
+      try{ if(otherUid) safeLS('del','velo_buddy_celebrated_'+otherUid); }catch(_){}
     }catch(e){}
   });
 }
@@ -34575,7 +34593,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1399;
+    var _BUILT_V = 1400;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
