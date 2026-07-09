@@ -2836,6 +2836,11 @@ body:has(#pg-admin.active) #pBottomnav { display: none !important; }
 }
 .feed-msg:hover .msg-action-btn,
 .feed-msg:focus-within .msg-action-btn { opacity: 1; }
+/* v1404 — en touch no existe hover: el ••• era INVISIBLE en el teléfono,
+   así que nadie encontraba Responder/Borrar/reaccionar. Siempre visible. */
+@media (hover: none) {
+  .msg-action-btn { opacity: .6; }
+}
 .feed-msg--own .msg-action-btn { right: calc(100% + 6px); left: auto; }
 .feed-msg:not(.feed-msg--own) .msg-action-btn { left: calc(100% + 6px); right: auto; }
 

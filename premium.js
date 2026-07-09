@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1403',
+      'Velo v1404',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -6165,12 +6165,7 @@ if('serviceWorker' in navigator && 'PushManager' in window){
           // Deep-link a un chat DM específico. url viene como '/?open=dm&peer=<id>'
           try{
             var m = /peer=([^&]+)/.exec(url||'');
-            if(m && m[1] && typeof pOpenDM === 'function'){
-              var pid = decodeURIComponent(m[1]);
-              // Buscar nombre/av en favs para no abrir con "Usuario"
-              var f = null; try{ f = pGetFavs().find(function(x){ return x.id === pid; }); }catch(_){}
-              pOpenDM(pid, (f && f.name) || 'Contacto', (f && f.av) || '🧑');
-            }
+            if(m && m[1]) _openDMFromDeepLink(decodeURIComponent(m[1]));
           }catch(_){}
         } else if(action === 'open-weekly-summary'){
           // Forzar el overlay del resumen semanal aunque ya se haya visto hoy
@@ -6181,6 +6176,30 @@ if('serviceWorker' in navigator && 'PushManager' in window){
       return;
     }
   });
+}
+// v1404 — Abrir un DM desde un deep-link de notificación SIN chat fantasma.
+// Antes: si el peer no estaba en favoritos locales (p.ej. tras reinstalar,
+// localStorage vacío), abría un chat con "Contacto" 🧑 genérico y VACÍO, y
+// pOpenDM lo trataba como extraño (mandaba una solicitud de chat en vez de
+// abrir la conversación). Ahora se resuelve el nombre/avatar reales desde la
+// base y se entra directo con _enterDMChat; si el perfil no existe, se va a
+// Contactos en vez de abrir una pantalla muerta.
+async function _openDMFromDeepLink(pid){
+  if(!pid) return;
+  var name = '', av = '🧑';
+  var f = null; try{ f = pGetFavs().find(function(x){ return x.id === pid; }); }catch(_){}
+  if(f){ name = f.name || ''; av = f.av || av; }
+  if(!name || name === 'Usuario' || name === 'Contacto'){
+    _initSupabase();
+    if(sbClient){
+      try{
+        var r = await sbClient.from('profiles').select('nombre,avatar').eq('id', pid).maybeSingle();
+        if(r && r.data){ name = r.data.nombre || name; av = r.data.avatar || av; }
+      }catch(_){}
+    }
+  }
+  if(!name){ pGoTo('contacts'); return; }
+  try{ _enterDMChat(pid, name, av); }catch(_){ pGoTo('contacts'); }
 }
 // Handle ?open=xxx query param → dispara el intent desde una notif clickada
 (function _handleNotifOpenQuery(){
@@ -6201,10 +6220,7 @@ if('serviceWorker' in navigator && 'PushManager' in window){
       else if(openIntent === 'dm'){
         try{
           var peer = params.get('peer');
-          if(peer && typeof pOpenDM === 'function'){
-            var f = null; try{ f = pGetFavs().find(function(x){ return x.id === peer; }); }catch(_){}
-            pOpenDM(peer, (f && f.name) || 'Contacto', (f && f.av) || '🧑');
-          }
+          if(peer) _openDMFromDeepLink(peer);
         }catch(_){}
       }
       else if(openIntent === 'weekly-summary'){
@@ -23869,11 +23885,11 @@ async function pChatToggleVoiceRec(key){
       _chatHideRecIndicator(key);
       if(st.timerHandle){ clearTimeout(st.timerHandle); st.timerHandle = null; }
       if(!blob || blob.size < 500){ pToast('⚠️','Grabación muy corta'); st.blob = null; return; }
-      if(blob.size > 3 * 1024 * 1024){ pToast('⚠️','Audio muy largo (máx ~1 min)'); st.blob = null; return; }
+      if(blob.size > 10 * 1024 * 1024){ pToast('⚠️','Audio muy largo (máx ~1 min)'); st.blob = null; return; }
       st.blob = blob;
       _chatShowVoicePreview(key, blob);
     };
-    st.rec.start(1000);
+    st.rec.start(); // v1404: sin timeslice — iOS fMP4 fragmentado solo decodificaba ~1er fragmento (audio "cortado")
     st.startTs = Date.now();
     _chatSetMicBtnUI(key, true);
     pToast('🎙️','Grabando… tocá stop cuando termines');
@@ -24007,6 +24023,33 @@ function _chatDeleteImage(key){
   _chatSt(key).image = null;
   var ex = document.getElementById(cfg.imgPrevId); if(ex) ex.remove();
 }
+// v1404 — Sube el blob de audio a Storage (bucket 'vibes', carpeta del uid) y
+// devuelve la URL pública, o null si falla. Meter el audio como base64 en la
+// fila del mensaje rompía con audios largos (fila gigante → insert que falla,
+// realtime que lo trunca) — con URL el tamaño deja de importar.
+async function _chatUploadAudioToStorage(blob){
+  try{
+    if(!sbClient || !sbClient.storage) return null;
+    var uid = safeLS('get','velo_user_id') || 'anon';
+    var mime = blob.type || 'audio/mp4';
+    var ext = mime.indexOf('webm') >= 0 ? 'webm' : (mime.indexOf('ogg') >= 0 ? 'ogg' : 'mp4');
+    var path = uid + '/audio-' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + '.' + ext;
+    var up = await sbClient.storage.from('vibes').upload(path, blob, { cacheControl: '86400', upsert: false, contentType: mime });
+    if(up && up.error){ console.warn('[chat-audio-upload]', up.error.message); return null; }
+    var pub = sbClient.storage.from('vibes').getPublicUrl(path);
+    return (pub && pub.data && pub.data.publicUrl) ? pub.data.publicUrl : null;
+  }catch(e){ console.warn('[chat-audio-upload]', e && e.message); return null; }
+}
+// Prepara el payload de un audio: intenta Storage (v=2|url); si falla y el
+// audio es chico, cae a base64 embebido (v=1|dataURL); si es grande, null.
+async function _chatAudioPayload(blob){
+  var url = await _chatUploadAudioToStorage(blob);
+  if(url) return '__velo_dm_audio__:v=2|' + url;
+  if(blob.size <= 700*1024){
+    try{ return '__velo_dm_audio__:v=1|' + (await _blobToBase64(blob)); }catch(_){ return null; }
+  }
+  return null;
+}
 // Consume audio/foto pendientes y llama insertFn(text) por cada uno.
 // insertFn debe ser async y persistir el mensaje en la tabla correcta.
 async function _chatConsumeAttachments(key, insertFn){
@@ -24014,9 +24057,10 @@ async function _chatConsumeAttachments(key, insertFn){
   var st = _chatSt(key);
   if(st.blob){
     try{
-      var b64 = await _blobToBase64(st.blob);
-      await insertFn('__velo_dm_audio__:v=1|' + b64);
-    }catch(e){ pToast('⚠️','No pude enviar el audio'); }
+      var payload = await _chatAudioPayload(st.blob);
+      if(payload) await insertFn(payload);
+      else pToast('⚠️','No pude subir el audio — probá de nuevo');
+    }catch(e){ console.warn('[chat-audio]', e && e.message); pToast('⚠️','No pude enviar el audio'); }
     st.blob = null;
     var vp = document.getElementById(cfg.voicePrevId); if(vp) vp.remove();
   }
@@ -24064,12 +24108,21 @@ async function _dmPlayAttachAudio(btn){
       if(!st){ st = { playing:false, offset:0, btn:btn, statusEl:statusEl }; _dmAttachAudioState[key] = st; }
       st.ctx = new AC();
       if(statusEl) statusEl.textContent = 'Cargando…';
-      var arr = dataUrl.split(','); var bstr = atob(arr[1]||'');
-      var u8 = new Uint8Array(bstr.length);
-      for(var _i=0; _i<bstr.length; _i++) u8[_i] = bstr.charCodeAt(_i);
+      // v1404: soporta ambos formatos — v=2 (URL de Storage) y v=1 (data URL)
+      var _rawBuf;
+      if(dataUrl.indexOf('http') === 0){
+        var _resp = await fetch(dataUrl);
+        if(!_resp.ok) throw new Error('audio fetch '+_resp.status);
+        _rawBuf = await _resp.arrayBuffer();
+      } else {
+        var arr = dataUrl.split(','); var bstr = atob(arr[1]||'');
+        var u8 = new Uint8Array(bstr.length);
+        for(var _i=0; _i<bstr.length; _i++) u8[_i] = bstr.charCodeAt(_i);
+        _rawBuf = u8.buffer.slice(0);
+      }
       st.buffer = await new Promise(function(resolve, reject){
         try{
-          var p = st.ctx.decodeAudioData(u8.buffer.slice(0), resolve, reject);
+          var p = st.ctx.decodeAudioData(_rawBuf, resolve, reject);
           if(p && typeof p.then === 'function') p.then(resolve, reject);
         }catch(err){ reject(err); }
       });
@@ -24217,12 +24270,12 @@ async function pDMToggleVoiceRec(){
       _dmSetMicBtnState(false);
       if(_dmRecTimerHandle){ clearTimeout(_dmRecTimerHandle); _dmRecTimerHandle = null; }
       if(!blob || blob.size < 500){ pToast('⚠️','Grabación muy corta'); _dmRecordedBlob = null; return; }
-      if(blob.size > 3 * 1024 * 1024){ pToast('⚠️','Audio muy largo (máx ~1 min)'); _dmRecordedBlob = null; return; }
+      if(blob.size > 10 * 1024 * 1024){ pToast('⚠️','Audio muy largo (máx ~1 min)'); _dmRecordedBlob = null; return; }
       _dmRecordedBlob = blob;
       _dmShowVoicePreview(blob);
     };
     _dmRec.onerror = function(err){ console.warn('[dm-rec]', err); };
-    _dmRec.start(1000);
+    _dmRec.start(); // v1404: sin timeslice (fix audio cortado iOS)
     _dmRecStartTs = Date.now();
     _dmSetMicBtnState(true);
     pToast('🎙️','Grabando… tocá stop cuando termines');
@@ -24447,12 +24500,13 @@ function _triggerDMPushNotif(record){
   }catch(e){}
 }
   _initSupabase();
-  // 1) Audio adjunto (si lo hay)
+  // 1) Audio adjunto (si lo hay) — v1404: via Storage (sin límite de tamaño)
   if(hasAudio){
     try{
-      var b64a = await _blobToBase64(_dmRecordedBlob);
-      await _dmInsertOne('__velo_dm_audio__:v=1|' + b64a, '🎙️ Nota de voz');
-    }catch(e){ pToast('⚠️','No pude enviar el audio'); }
+      var _audPayload = await _chatAudioPayload(_dmRecordedBlob);
+      if(_audPayload) await _dmInsertOne(_audPayload, '🎙️ Nota de voz');
+      else pToast('⚠️','No pude subir el audio — probá de nuevo');
+    }catch(e){ console.warn('[dm-audio]', e && e.message); pToast('⚠️','No pude enviar el audio'); }
     _dmRecordedBlob = null;
     var vpEl = document.getElementById('dmVoicePreview'); if(vpEl) vpEl.remove();
   }
@@ -34660,7 +34714,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1403;
+    var _BUILT_V = 1404;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
