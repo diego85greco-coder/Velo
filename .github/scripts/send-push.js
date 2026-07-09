@@ -619,6 +619,49 @@ async function sendBuddyLowMoodAlerts(users) {
   return { sent };
 }
 
+// ── LIMPIEZA de media caducada del bucket 'vibes' ─────────────────────
+// Los vibes expiran a las 24h (el cron SQL borra las filas), pero los
+// archivos (fotos y desde v1383 VIDEOS de hasta 35MB) quedaban en Storage
+// para siempre. Corre una vez al día (3 UTC): borra archivos con más de
+// 48h de antigüedad — todo vibe expira a las 24h, así que >48h es basura
+// segura (los vibes "archivados" guardan la media aparte via archived=true
+// en la fila; si la fila con esa URL sigue viva, la salteamos).
+async function cleanupVibesStorage() {
+  const utcH = new Date().getUTCHours();
+  if (utcH !== 3) return { deleted: 0 };
+  const cutoff = Date.now() - 48 * 3600 * 1000;
+  let deleted = 0;
+  try {
+    // URLs todavía referenciadas por filas vivas (archivados o no expirados)
+    const { data: liveRows } = await supabase.from('vibes').select('media_url').limit(2000);
+    const liveUrls = new Set((liveRows || []).map(r => r.media_url).filter(Boolean));
+    const { data: folders, error: fErr } = await supabase.storage.from('vibes').list('', { limit: 500 });
+    if (fErr) { console.warn('[vibes-cleanup] list root:', fErr.message); return { deleted }; }
+    for (const folder of (folders || [])) {
+      if (!folder.name || folder.id) continue; // solo carpetas (id null en folders)
+      const { data: files, error: lErr } = await supabase.storage.from('vibes').list(folder.name, { limit: 1000 });
+      if (lErr || !files) continue;
+      const toDelete = [];
+      for (const f of files) {
+        const ts = f.created_at ? new Date(f.created_at).getTime() : 0;
+        if (!ts || ts > cutoff) continue;
+        const path = folder.name + '/' + f.name;
+        // ¿Alguna fila viva referencia este archivo? (URL pública termina en el path)
+        let referenced = false;
+        for (const u of liveUrls) { if (u && u.endsWith('/' + path)) { referenced = true; break; } }
+        if (!referenced) toDelete.push(path);
+      }
+      if (toDelete.length) {
+        const { error: dErr } = await supabase.storage.from('vibes').remove(toDelete);
+        if (dErr) console.warn('[vibes-cleanup] remove err:', dErr.message);
+        else deleted += toDelete.length;
+      }
+    }
+  } catch (e) { console.warn('[vibes-cleanup]', e.message); }
+  console.log(`[vibes-cleanup] deleted=${deleted}`);
+  return { deleted };
+}
+
 async function main() {
   const { data: users, error } = await supabase
     .from('profiles')
@@ -640,6 +683,9 @@ async function main() {
 
   // Aviso a buddies con racha baja de 2 días
   try { await sendBuddyLowMoodAlerts(users); } catch (e) { console.warn('[buddy-alert] failed:', e.message); }
+
+  // Limpieza diaria de fotos/videos caducados del bucket 'vibes' (3 UTC)
+  try { await cleanupVibesStorage(); } catch (e) { console.warn('[vibes-cleanup] failed:', e.message); }
 
   // Group users by slot so we call Gemini once per slot, not once per user
   const slotUsers = { morning: [], afternoon: [], night: [] };
