@@ -90,6 +90,8 @@ var _dmRtCh      = null;   // realtime channel direct_messages (per-thread)
 var _dmInboxCh   = null;   // realtime channel direct_messages (global inbox listener)
 var _dmPollTmr   = null;   // polling fallback for global DM inbox
 var _buzónRtCh   = null;   // realtime channel broadcasts (personal buzón alerts)
+var _homeVibesRtCh  = null;   // realtime channel vibes (home widget auto-refresh)
+var _homeVibesRtTmr = null;   // debounce timer for the above
 var _dmLastMsgId    = null;   // last rendered DM message DB id (prevents flicker)
 var _dmReactHash    = '';     // hash of all DM message reactions — detects UPDATE-only changes
 var _dmReactPollTmr = null;   // poll timer for DM reactions fallback
@@ -2649,9 +2651,12 @@ async function pSendGuardianThanks(gid, gname){
 async function pOpenMonthlyWrapped(){
   var ex = document.getElementById('wrappedOv'); if(ex) ex.remove();
   var now = new Date();
-  // Wrapped = mes anterior si estamos en el 1º semana, sino mes actual
+  // v1374: Wrapped = SIEMPRE mes anterior (el mes en curso todavía no
+  // terminó, mostrar sus stats a mitad de mes es un resumen incompleto y
+  // engañoso). Coincide con la notificación del día 1 en send-push.js,
+  // que también arma el Wrapped del mes anterior.
   var target = new Date(now);
-  if(now.getDate() <= 7){ target.setMonth(target.getMonth()-1); }
+  target.setMonth(target.getMonth()-1);
   var yr = target.getFullYear(), mo = target.getMonth();
   var mNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var daysInMonth = new Date(yr, mo+1, 0).getDate();
@@ -32188,14 +32193,29 @@ function _initReveal(){
 
 // ── PER-PAGE INIT DISPATCHER ──────────────────────────────────
 function _onPageEnter(id){
-  if(id !== 'home') _stopHomeRefresh(); // stop live refresh when leaving home
+  if(id !== 'home'){
+    _stopHomeRefresh(); // stop live refresh when leaving home
+    if(_homeVibesRtCh){ _sbUnsub(_homeVibesRtCh); _homeVibesRtCh = null; }
+  }
   if(id !== 'meditacion') pCloseMeditation(); // stop audio/timers when leaving meditation
   if(id !== 'guardians' && _guardianListPollTmr){ clearInterval(_guardianListPollTmr); _guardianListPollTmr = null; }
   switch(id){
     case 'landing':     _initReveal(); break;
     case 'register':    _botGuardInit(); break;
     case 'pro-reg':     _botGuardInit(); break;
-    case 'home':        _loadHomeData(); _startHomeRefresh(); try{ _renderHomeVibesCard(); }catch(_){} break;
+    case 'home':
+      _loadHomeData(); _startHomeRefresh(); try{ _renderHomeVibesCard(); }catch(_){}
+      _initSupabase();
+      if(_homeVibesRtCh){ _sbUnsub(_homeVibesRtCh); _homeVibesRtCh = null; }
+      if(sbClient) _homeVibesRtCh = _sbSub('velo:home:vibes', 'vibes', function(){
+        // v1374: real-time — si alguien publica un vibe mientras estoy en el
+        // home, el widget "Vibes de hoy" se actualiza solo, sin necesitar
+        // cambiar de sección. Debounce corto por si llegan varios INSERTs juntos.
+        if(_curPage !== 'home') return;
+        if(_homeVibesRtTmr) clearTimeout(_homeVibesRtTmr);
+        _homeVibesRtTmr = setTimeout(function(){ try{ _renderHomeVibesCard(); }catch(_){} }, 600);
+      });
+      break;
     case 'guardians':
       _initSupabase();
       // Always re-subscribe so a stale/dropped channel doesn't silently miss re-activation events.
@@ -33915,7 +33935,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1373;
+    var _BUILT_V = 1374;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
