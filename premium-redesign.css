@@ -15123,23 +15123,46 @@ body.r-dark .home-vibes-widget__all {
 .home-vibes-widget__rail::-webkit-scrollbar { display: none; }
 /* CTA principal — publicá tu momento */
 .home-vibes-widget__cta {
-  width: 100%; padding: 12px 14px; border: none; border-radius: 14px;
-  font-family: 'Jost', sans-serif; font-size: 14px; font-weight: 800;
+  width: 100%; padding: 14px 16px; border: none; border-radius: 16px;
+  font-family: 'Jost', sans-serif; font-size: 14.5px; font-weight: 800;
   cursor: pointer; letter-spacing: 0.3px;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: transform 0.15s, box-shadow 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+  position: relative; overflow: hidden;
 }
-.home-vibes-widget__cta:active { transform: scale(0.98); }
-.home-vibes-widget__cta-plus { font-size: 18px; font-weight: 900; }
+.home-vibes-widget__cta:active { transform: scale(0.97); }
+/* Brillo diagonal que barre el botón (sutil, en loop lento) — v1388 */
+.home-vibes-widget__cta::before {
+  content: ''; position: absolute; top: 0; left: -60%; width: 45%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.32), transparent);
+  transform: skewX(-18deg); pointer-events: none;
+  animation: veloCtaSheen 4.5s ease-in-out infinite;
+}
+@keyframes veloCtaSheen {
+  0%, 62% { left: -60%; }
+  86%, 100% { left: 130%; }
+}
+/* El "+" pasa a ser un chip circular */
+.home-vibes-widget__cta-plus {
+  font-size: 16px; font-weight: 900; line-height: 1;
+  width: 24px; height: 24px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.22); flex-shrink: 0;
+}
+body.r-dark .home-vibes-widget__cta-plus { background: rgba(7,20,9,0.18); }
 body:not(.r-dark) .home-vibes-widget__cta {
   background: linear-gradient(135deg, #4dbb84 0%, #3a9d6a 100%);
   color: #ffffff;
   box-shadow: 0 4px 14px rgba(60, 140, 90, 0.30), 0 1px 0 rgba(255,255,255,0.28) inset;
 }
 body.r-dark .home-vibes-widget__cta {
-  background: linear-gradient(135deg, #52c48c 0%, #3aa06e 100%);
+  background: linear-gradient(135deg, #5fd49a 0%, #43b57e 52%, #34a06e 100%);
   color: #071409;
-  box-shadow: 0 6px 20px rgba(60, 180, 120, 0.35), 0 1px 0 rgba(255,255,255,0.20) inset;
+  box-shadow:
+    0 8px 24px rgba(70, 200, 135, 0.42),
+    0 2px 6px rgba(50, 160, 110, 0.32),
+    0 1px 0 rgba(255,255,255,0.22) inset;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.15);
 }
 
 /* Header del overlay del grupo Vibes — nombre del grupo debe leerse bien */
@@ -15228,18 +15251,24 @@ body:not(.r-dark) .vibes-tile-empty {
   text-shadow: 0 2px 6px rgba(80, 60, 20, 0.22);
 }
 
-/* CTA "Publicá tu momento" — LIGHT: verde bosque profundo elegante (no chillón).
-   Nota: el override anterior en v1354 usaba #4dbb84 que rompía la armonía cream. */
+/* CTA "Publicá tu momento" — LIGHT: esmeralda vivo con profundidad y glow.
+   v1388: gradiente más fresco + halo verde para que "llame" sin romper el cream. */
 body:not(.r-dark) .home-vibes-widget__cta {
-  background: linear-gradient(135deg, #4a7a52 0%, #2e5f3e 100%) !important;
+  background: linear-gradient(135deg, #46b678 0%, #349a63 52%, #2b8353 100%) !important;
   color: #ffffff !important;
   box-shadow:
-    0 5px 18px rgba(60, 100, 70, 0.25),
-    0 1px 0 rgba(255, 255, 255, 0.20) inset !important;
+    0 8px 22px rgba(52, 154, 99, 0.38),
+    0 2px 6px rgba(43, 131, 83, 0.30),
+    0 1px 0 rgba(255, 255, 255, 0.32) inset !important;
   border: none !important;
+  text-shadow: 0 1px 3px rgba(20, 70, 45, 0.35);
 }
 body:not(.r-dark) .home-vibes-widget__cta:hover {
-  filter: brightness(1.05);
+  filter: brightness(1.06);
+  box-shadow:
+    0 10px 28px rgba(52, 154, 99, 0.46),
+    0 2px 6px rgba(43, 131, 83, 0.32),
+    0 1px 0 rgba(255, 255, 255, 0.36) inset !important;
 }
 
 /* Botón "Ver todos" del rail en LIGHT mode — más armónico */

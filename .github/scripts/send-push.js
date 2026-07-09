@@ -619,6 +619,103 @@ async function sendBuddyLowMoodAlerts(users) {
   return { sent };
 }
 
+// ── CHECK-IN SEMANAL de compañeros de bienestar ───────────────────────
+// Durante el ciclo de 30 días, una vez por semana (día 7, 14, 21, 28) si la
+// pareja NO se escribió en los últimos 7 días, se les manda un empujoncito
+// suave para que se pregunten cómo están. Se procesa una fila por usuario
+// (profiles tiene A→B y B→A), así que ambos lados reciben su propio aviso.
+async function sendBuddyWeeklyCheckin(users) {
+  const utcH = new Date().getUTCHours();
+  if (utcH !== 12) return { sent: 0 }; // ventana mañana LATAM, 1 vez al día
+
+  const { data: pairs, error } = await supabase
+    .from('profiles')
+    .select('id, buddy_id, buddy_name, buddy_started_at')
+    .not('buddy_id', 'is', null);
+  if (error || !pairs || !pairs.length) return { sent: 0 };
+
+  const usersById = {};
+  (users || []).forEach(u => { usersById[u.id] = u; });
+
+  const now = Date.now();
+  let sent = 0, checked = 0;
+
+  for (const p of pairs) {
+    checked++;
+    try {
+      if (!p.buddy_started_at) continue;
+      const startTs = new Date(p.buddy_started_at).getTime();
+      const daysSince = Math.floor((now - startTs) / 86400000);
+      // Solo dentro del ciclo, en los hitos semanales (7/14/21/28)
+      if (daysSince < 7 || daysSince >= 30) continue;
+      if (daysSince % 7 !== 0) continue;
+      const weekNum = Math.floor(daysSince / 7);
+
+      // ¿Hablaron en los últimos 7 días? Si sí, no molestar.
+      const sinceIso = new Date(now - 7 * 86400000).toISOString();
+      const { data: msgs } = await supabase
+        .from('direct_messages')
+        .select('id')
+        .or(`and(from_id.eq.${p.id},to_id.eq.${p.buddy_id}),and(from_id.eq.${p.buddy_id},to_id.eq.${p.id})`)
+        .gte('created_at', sinceIso)
+        .limit(1);
+      if (msgs && msgs.length) continue;
+
+      const buddyName = p.buddy_name || 'tu compañero/a';
+      const checkinKey = `${p.id}:w${weekNum}`;
+
+      // Broadcast al Buzón (siempre queda en la campana)
+      await supabase.from('broadcasts').insert({
+        target: `user:${p.id}`,
+        subject: '🌱 ¿Cómo van con tu compañero/a?',
+        body: `Hace unos días que no se escriben con ${buddyName}. ¿Cómo están? Un "hola, ¿cómo andás?" puede alegrarle el día 💚`,
+        icon: '🌱',
+        sender: 'Velo — Compañeros de bienestar',
+      });
+
+      // Push si tiene sub y es su mañana local
+      const u = usersById[p.id];
+      if (!u || !u.push_subscription) { sent++; continue; }
+      let parsedFull, rawSub, tz;
+      try {
+        parsedFull = JSON.parse(u.push_subscription);
+        rawSub = parsedFull.sub && parsedFull.sub.endpoint ? parsedFull.sub : parsedFull;
+        if (!parsedFull.sub) parsedFull = { sub: rawSub };
+        tz = parsedFull.tz || 'America/Argentina/Buenos_Aires';
+      } catch { continue; }
+      const h = localHour(tz);
+      if (h < 6 || h >= 12) { sent++; continue; } // no es su mañana — broadcast alcanza
+      if (parsedFull.lastBuddyCheckin === checkinKey) { sent++; continue; } // dedup por semana
+
+      try {
+        await webpush.sendNotification(rawSub, JSON.stringify({
+          title: '🌱 ¿Cómo van con tu compañero/a?',
+          body: `Hace unos días que no se escriben con ${buddyName}. Un mensajito puede sumar 💚`,
+          icon: '/assets/icon-192.png', badge: '/assets/icon-72.png',
+          tag: 'velo-buddy-checkin', url: '/?open=buddy',
+          actions: [
+            { action: 'open-buddy', title: '💬 Escribirle', url: '/?open=buddy' },
+            { action: 'later', title: 'Después' }
+          ],
+        }));
+        await supabase.from('profiles').update({
+          push_subscription: JSON.stringify({ ...parsedFull, lastBuddyCheckin: checkinKey })
+        }).eq('id', p.id);
+        sent++;
+      } catch (err) {
+        const body = (err.body || err.message || '').toString();
+        const isExpired = err.statusCode === 410 || err.statusCode === 404;
+        const isVapidMismatch = err.statusCode === 403 && /BadJwtToken|Unauthorized|VapidPk/i.test(body);
+        if (isExpired || isVapidMismatch) {
+          await supabase.from('profiles').update({ push_subscription: null }).eq('id', p.id);
+        }
+      }
+    } catch (e) { console.warn('[buddy-checkin] pair err:', e.message); }
+  }
+  console.log(`[buddy-checkin] checked=${checked}, sent=${sent}`);
+  return { sent };
+}
+
 // ── LIMPIEZA de media caducada del bucket 'vibes' ─────────────────────
 // Los vibes expiran a las 24h (el cron SQL borra las filas), pero los
 // archivos (fotos y desde v1383 VIDEOS de hasta 35MB) quedaban en Storage
@@ -683,6 +780,9 @@ async function main() {
 
   // Aviso a buddies con racha baja de 2 días
   try { await sendBuddyLowMoodAlerts(users); } catch (e) { console.warn('[buddy-alert] failed:', e.message); }
+
+  // Check-in semanal de compañeros que no se escriben (día 7/14/21/28 del ciclo)
+  try { await sendBuddyWeeklyCheckin(users); } catch (e) { console.warn('[buddy-checkin] failed:', e.message); }
 
   // Limpieza diaria de fotos/videos caducados del bucket 'vibes' (3 UTC)
   try { await cleanupVibesStorage(); } catch (e) { console.warn('[vibes-cleanup] failed:', e.message); }
