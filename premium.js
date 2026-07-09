@@ -22679,7 +22679,7 @@ function _contactCard(id, name, av, uname, pInfo, unread, opts){
   var previewLine = '';
   if(chatMode && opts.lastMsg){
     var lm = opts.lastMsg;
-    var prefix = lm.fromMe ? 'Vos: ' : '';
+    var prefix = lm.fromMe ? 'Tú: ' : '';
     var previewTxt = _escHtml((prefix + (lm.text||'')).slice(0, 120));
     var timeLbl = _timeAgoDM(lm.ts);
     var previewColor = unread > 0 ? 'var(--ink)' : 'var(--ink5)';
@@ -34565,7 +34565,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1393;
+    var _BUILT_V = 1394;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
