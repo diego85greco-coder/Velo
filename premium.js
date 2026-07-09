@@ -13,62 +13,60 @@
   });
 })();
 
-// v1347 — Fix del espacio blanco cuando iOS abre el teclado en PWA:
-// 1) Cuando visualViewport se achica (teclado abierto), agregar body.keyboard-open
-// 2) El CSS oculta el bottom nav mientras keyboard-open (evita que quede flotando)
-// 3) Mientras el teclado está abierto, pinnear la altura del app-shell a
-//    visualViewport.height para que el layout siga la altura real.
-// v1378 — Fix de la banda muerta que quedaba DEBAJO del bottom nav al cerrar
-// el teclado: iOS scrollea la ventana (layout viewport) para mostrar el input
-// enfocado, y al cerrar el teclado NO deshace ese scroll — como el shell es
-// 100dvh anclado al tope del documento, todo queda corrido hacia arriba y
-// abajo se ve el fondo vacío. Además el handler viejo dejaba la altura del
-// shell pinneada en px para siempre (si la última lectura era corta, el shell
-// quedaba más chico que la pantalla). Ahora: la altura solo se pinnea con el
-// teclado abierto (al cerrar vuelve al 100dvh del CSS) y al cerrar se fuerza
-// window.scrollTo(0,0) — seguro porque el scroll del contenido vive en
-// .p-page-scroll, no en la ventana.
+// ── FIX DEFINITIVO banda muerta bajo la barra al cerrar el teclado (iOS PWA) ──
+// v1389 — HISTORIA: v1347 pinneaba shell.style.height = visualViewport.height
+// mientras el teclado estaba abierto; v1378 intentó restaurarlo al cerrar. Ese
+// enfoque es la CAUSA del bug: al cerrar, la altura quedaba fijada en un valor
+// chico (o el restore corría contra la animación de iOS), dejando el app-shell
+// más corto que la pantalla → la barra de navegación quedaba flotando en el
+// medio con fondo vacío abajo.
+//
+// AHORA: NO se toca nunca la altura del shell. El CSS usa 100dvh, que iOS
+// recalcula solo (el teclado es un "interactive widget" que NO achica el dvh),
+// así el shell SIEMPRE ocupa la pantalla completa y la barra queda pegada
+// abajo. Lo único que hacemos por JS es:
+//   1) toggle body.keyboard-open (el CSS esconde la barra mientras se escribe),
+//   2) forzar window.scrollTo(0,0) cuando el teclado se cierra — iOS scrollea
+//      la ventana para revelar el input y no lo deshace; el scroll real del
+//      contenido vive en .p-page-scroll, así que resetear la ventana es seguro.
 (function(){
   if(!window.visualViewport) return;
   var vv = window.visualViewport;
   var kbWasOpen = false;
   function _resetWindowScroll(){
     try{
-      if(window.scrollY || document.documentElement.scrollTop || document.body.scrollTop){
-        window.scrollTo(0, 0);
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-      }
+      window.scrollTo(0, 0);
+      if(document.documentElement) document.documentElement.scrollTop = 0;
+      if(document.body) document.body.scrollTop = 0;
     }catch(_){}
   }
   function onVvChange(){
     try{
       var isKeyboardOpen = vv.height < window.innerHeight * 0.82;
       document.body.classList.toggle('keyboard-open', isKeyboardOpen);
-      var shell = document.querySelector('.p-app-shell');
       if(isKeyboardOpen){
         kbWasOpen = true;
-        if(shell) shell.style.height = vv.height + 'px';
-      } else {
-        if(shell) shell.style.height = '';
-        if(kbWasOpen){
-          kbWasOpen = false;
-          // Doble intento: uno inmediato y otro cuando termina la animación
-          // del teclado (iOS puede re-aplicar el offset durante la animación).
-          setTimeout(_resetWindowScroll, 60);
-          setTimeout(_resetWindowScroll, 420);
-        }
+      } else if(kbWasOpen){
+        kbWasOpen = false;
+        // iOS puede re-aplicar el offset durante la animación de cierre — varios
+        // intentos escalonados cubren toda la ventana de la animación.
+        _resetWindowScroll();
+        setTimeout(_resetWindowScroll, 80);
+        setTimeout(_resetWindowScroll, 250);
+        setTimeout(_resetWindowScroll, 500);
       }
     }catch(e){}
   }
   vv.addEventListener('resize', onVvChange);
   vv.addEventListener('scroll', onVvChange);
-  // Fallback: si un input pierde foco sin que el resize dispare (pasa en
-  // algunas versiones de iOS PWA), corregir el scroll igual.
+  // Fallback: al perder foco un input (a veces el resize no dispara en iOS PWA)
   document.addEventListener('focusout', function(){
     setTimeout(function(){
-      if(!document.body.classList.contains('keyboard-open')) _resetWindowScroll();
-    }, 300);
+      if(!document.body.classList.contains('keyboard-open')){
+        _resetWindowScroll();
+        setTimeout(_resetWindowScroll, 250);
+      }
+    }, 200);
   }, true);
   onVvChange();
 })();
@@ -34528,7 +34526,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1388;
+    var _BUILT_V = 1389;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
