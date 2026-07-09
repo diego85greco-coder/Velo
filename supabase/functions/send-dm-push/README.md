@@ -6,17 +6,22 @@ Database Webhook (o un trigger PL/pgSQL) de la tabla `direct_messages`.
 ## Deploy (una sola vez)
 
 ```bash
-# 1) Setear secrets (usá las mismas VAPID keys que ya usa el workflow diario)
-supabase secrets set \
-  VAPID_PUBLIC_KEY="<tu VAPID_PUBLIC_KEY>" \
-  VAPID_PRIVATE_KEY="<tu VAPID_PRIVATE_KEY>" \
-  VAPID_SUBJECT="mailto:hey@heyvelo.app"
+# 1) Setear el secret — SOLO la private key (la pub key está hardcodeada
+#    en index.ts, igual que en .github/scripts/send-push.js, para eliminar
+#    el modo de falla en que este secret quedaba desalineado con la del
+#    cliente y el push fallaba en silencio con 403 BadJwtToken)
+supabase secrets set VAPID_PRIVATE_KEY="RYeGjvTCv_ozjj54pSlTS_Qra_oD9363jIChSR-rZWg"
 
 # 2) Deploy de la function
 supabase functions deploy send-dm-push --no-verify-jwt
 ```
 
 `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` los inyecta Supabase automáticamente.
+
+Si el secret `VAPID_PRIVATE_KEY` ya estaba seteado con un valor VIEJO,
+sobreescribilo con el comando de arriba y volvé a deployar — `supabase
+secrets set` no dispara un redeploy automático de las functions ya
+desplegadas.
 
 ## Habilitar el trigger (dos opciones — elegí UNA)
 
