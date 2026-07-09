@@ -7607,7 +7607,7 @@ function _navToNotif(type, relatedId){
     // Navigate home so cache is populated, then open the sheet
     pGoTo('home');
     setTimeout(function(){ pOpenMomentoSheet(relatedId); }, 900);
-  } else if(type === 'vibe_comment' || type === 'vibe_reaction'){
+  } else if(type === 'vibe_comment' || type === 'vibe_reaction' || type === 'vibe_comment_like'){
     _openVibeFromNotif(relatedId);
   }
 }
@@ -7631,8 +7631,8 @@ function _veloNotifsEmptyState(){
     +'</div>';
 }
 function _renderVeloNotifs(notifs){
-  var typeIcon={dq_comment:'💬',momento_comment:'💬',reaction:'💚',vibe_comment:'💬',vibe_reaction:'🌊'};
-  var typeNavigable={dq_comment:true, momento_comment:true, vibe_comment:true, vibe_reaction:true};
+  var typeIcon={dq_comment:'💬',momento_comment:'💬',reaction:'💚',vibe_comment:'💬',vibe_reaction:'🌊',vibe_comment_like:'❤️'};
+  var typeNavigable={dq_comment:true, momento_comment:true, vibe_comment:true, vibe_reaction:true, vibe_comment_like:true};
   if(!notifs||!notifs.length) return '';
   return notifs.map(function(n){
     var icon=typeIcon[n.type]||'🔔';
@@ -20940,7 +20940,10 @@ async function pOpenVibeComments(vibeId){
           + '</div>'
           + '<div style="font-size:13px;color:rgba(230,245,235,.90);line-height:1.5;padding-left:30px;margin-bottom:6px">'+_escHtml(c.text||'')+'</div>'
           + '<div style="display:flex;align-items:center;gap:12px;padding-left:30px">'
-            + '<button onclick="pToggleVibeCommentHeart('+_jsAttr(c.id)+','+_jsAttr(vibeId)+')" style="background:none;border:none;color:'+(hMine?'#ff6b9d':'rgba(200,230,215,.45)')+';font-size:12px;font-family:Jost,sans-serif;cursor:pointer;padding:2px 4px;display:flex;align-items:center;gap:3px">'+(hMine?'❤️':'🤍')+(hCount>0?' '+hCount:'')+'</button>'
+            // v1381: estado sin corazón usa ♡ (glifo de texto, toma color CSS)
+            // en vez del emoji 🤍 que quedaba blanco-invisible sobre el fondo
+            // cream del modo claro (los emojis ignoran la propiedad color).
+            + '<button onclick="pToggleVibeCommentHeart('+_jsAttr(c.id)+','+_jsAttr(vibeId)+')" style="background:none;border:none;color:'+(hMine?'#ff6b9d':'rgba(200,230,215,.80)')+';font-size:'+(hMine?'12px':'17px')+';font-family:Jost,sans-serif;cursor:pointer;padding:2px 4px;display:flex;align-items:center;gap:3px;line-height:1">'+(hMine?'❤️':'♡')+(hCount>0?'<span style="font-size:12px">'+hCount+'</span>':'')+'</button>'
             + actionBtn
           + '</div>'
         + '</div>';
@@ -21010,6 +21013,14 @@ async function pToggleVibeCommentHeart(commentId, vibeId){
     } else {
       var insRes = await sbClient.from('vibe_comment_reactions').insert({ comment_id: commentId, user_id: myId });
       if(insRes.error){ pToast('⚠️', insRes.error.message.slice(0,60)); return; }
+      // v1381: avisarle al autor del comentario (Actividad) — "le gustó tu comentario"
+      try{
+        var cRow = await sbClient.from('vibe_comments').select('user_id,text').eq('id', commentId).maybeSingle();
+        if(cRow && cRow.data && cRow.data.user_id){
+          var myName = safeLS('get','velo_user_name')||'Alguien';
+          _createVeloNotif(cRow.data.user_id, 'vibe_comment_like', 'A '+myName+' le gustó tu comentario', (cRow.data.text||'').slice(0,80), vibeId);
+        }
+      }catch(_){}
     }
     pOpenVibeComments(vibeId);
   }catch(e){ pToast('⚠️','Error'); }
@@ -34345,7 +34356,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1380;
+    var _BUILT_V = 1381;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
