@@ -14966,38 +14966,45 @@ body.keyboard-open .p-bottomnav::after {
   display: none !important;
 }
 
-/* v1348 — Modo claro para overlay del grupo Vibes y momento guardado.
-   Todo estaba hardcoded dark; en light mode quedaba ilegible. */
+/* v1348/v1373 — Modo claro para overlay del grupo Vibes, instantáneos y
+   momento guardado. Todo estaba hardcoded dark; en light mode quedaba ilegible. */
 body:not(.r-dark) #vibeGroupOv,
+body:not(.r-dark) #vibeInstantOv,
 body:not(.r-dark) #savedVibeOv {
   background: linear-gradient(180deg,#fef8ea,#f5efe0) !important;
   color: var(--ink) !important;
 }
 body:not(.r-dark) #vibeGroupOv .feed-header,
+body:not(.r-dark) #vibeInstantOv > div:first-child,
 body:not(.r-dark) #savedVibeOv > div:first-child {
   background: rgba(255,255,255,.94) !important;
   border-bottom: 1px solid rgba(80,160,110,.28) !important;
   color: var(--ink) !important;
 }
 body:not(.r-dark) #vibeGroupOv .feed-header *,
+body:not(.r-dark) #vibeInstantOv > div:first-child *,
 body:not(.r-dark) #savedVibeOv > div:first-child * {
   color: var(--ink) !important;
 }
 body:not(.r-dark) #vibeGroupOv .vibe-card,
+body:not(.r-dark) #vibeInstantOv .vibe-card,
 body:not(.r-dark) #savedVibeOv .vibe-card {
   background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(245,240,225,.95)) !important;
   color: var(--ink) !important;
 }
 body:not(.r-dark) #vibeGroupOv .vibe-card *,
+body:not(.r-dark) #vibeInstantOv .vibe-card *,
 body:not(.r-dark) #savedVibeOv .vibe-card * {
   color: var(--ink) !important;
 }
 body:not(.r-dark) #vibeGroupOv .vibe-card button,
+body:not(.r-dark) #vibeInstantOv .vibe-card button,
 body:not(.r-dark) #savedVibeOv .vibe-card button {
   background: rgba(116,198,157,.10) !important;
   border-color: rgba(116,198,157,.40) !important;
 }
 body:not(.r-dark) #vibeGroupOv .vibe-card .vibe-rx-row,
+body:not(.r-dark) #vibeInstantOv .vibe-card .vibe-rx-row,
 body:not(.r-dark) #savedVibeOv .vibe-card .vibe-rx-row {
   background: rgba(80,160,110,.06) !important;
   border-top-color: rgba(80,160,110,.25) !important;
