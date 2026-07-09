@@ -23487,6 +23487,26 @@ function pLeaveDM(){
   var _dmMyAv   = safeLS('get','velo_user_av')   || '🧑';
   var _dmMyId   = safeLS('get','velo_user_id') || '';
   _initSupabase();
+  // v1382: el DM con un FAVORITO es persistente (estilo Instagram) — "Salir"
+  // solo cierra la pantalla. El comportamiento viejo (sentinel bye + DELETE de
+  // TODA la conversación para ambos lados) era del flujo efímero con extraños
+  // y acá destruía el historial completo con solo tocar Salir.
+  var _dmIsFav = false;
+  try{ _dmIsFav = !!(_dmPeer && _dmPeer.id && pIsFav(_dmPeer.id)); }catch(_){}
+  if(_dmIsFav){
+    if(_dmRtCh && sbClient){ try{ sbClient.removeChannel(_dmRtCh); }catch(e){} _dmRtCh = null; }
+    if(_dmReactPollTmr){ clearInterval(_dmReactPollTmr); _dmReactPollTmr = null; }
+    _stopDMPresenceRefresh();
+    _dmStopTypingChannels();
+    _dmPeer = null;
+    _dmLastMsgId = null;
+    _dmReactHash = '';
+    _inActiveChat = false;
+    _updateGuardianPresence(_prevChatStatus || _presenceStatus());
+    _prevChatStatus = null;
+    pGoTo('contacts');
+    return;
+  }
   // Insert bye sentinel, then delete all OTHER messages (exclude bye so recipient receives it)
   if(sbClient && _dmMyId && _dmPeer && _dmPeer.id){
     var _delToId = _dmPeer.id;
@@ -34356,7 +34376,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1381;
+    var _BUILT_V = 1382;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
