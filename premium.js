@@ -7567,7 +7567,17 @@ async function _loadVeloNotifs(){
 // items propios arriba de la lista.
 async function _loadDmActivityItems(){
   var m = {}; try{ m = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
-  var ids = Object.keys(m).filter(function(id){ return (Number(m[id])||0) > 0; });
+  // v1395: respetar la marca "leído hasta" — si ya abriste el chat de ese peer
+  // después de que llegó su último mensaje, NO mostrarlo como no-leído en la
+  // campana (aunque el contador velo_dm_unread haya quedado desincronizado).
+  var readUntil = {}; try{ readUntil = JSON.parse(safeLS('get','velo_dm_read_until')||'{}'); }catch(_){}
+  var cache0 = _dmCacheGet();
+  var ids = Object.keys(m).filter(function(id){
+    if((Number(m[id])||0) <= 0) return false;
+    var lastTs = (cache0[id] && cache0[id].ts) || 0;
+    if(readUntil[id] && lastTs && lastTs <= readUntil[id] + 2000) return false;
+    return true;
+  });
   if(!ids.length) return [];
   _initSupabase(); if(!sbClient) return [];
   var cache = _dmCacheGet();
@@ -34565,7 +34575,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1394;
+    var _BUILT_V = 1395;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

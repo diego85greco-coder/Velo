@@ -403,7 +403,14 @@ a { text-decoration: none; color: inherit; }
 .p-page-scroll::-webkit-scrollbar-thumb { background: var(--sage5); border-radius: 3px; }
 .p-page-inner { max-width: var(--content-max); margin: 0 auto; padding: 28px 32px 40px; }
 @media (max-width: 1023px) { .p-page-inner { padding: 22px 22px 36px; } }
-@media (max-width: 767px) { .p-page-inner { padding: 16px 16px 100px; } }
+@media (max-width: 767px) { .p-page-inner { padding: 16px 16px 24px; } }
+/* v1395 — la barra de navegación es position:fixed, así que TODO el scroll
+   (el home usa .p-page-scroll directo, sin .p-page-inner) tiene que reservar
+   su altura (70px) + el home indicator (safe-area) para que el contenido no
+   quede tapado detrás de ella. */
+@media (max-width: 767px) {
+  .p-page-scroll { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+}
 
 /* ── 9. BOTTOM NAV (mobile only) ──────────────────────────────────── */
 /* v1392 — la barra va CLAVADA al borde inferior de la pantalla con
@@ -1971,7 +1978,7 @@ body:has(#pg-admin.active) #pBottomnav { display: none !important; }
 
 /* ── 55. RESPONSIVE TWEAKS ────────────────────────────────────────── */
 @media (max-width: 420px) {
-  .p-page-inner { padding: 14px 14px 100px; }
+  .p-page-inner { padding: 14px 14px 24px; }
   .p-btn--xl { padding: 15px 28px; font-size: 14px; }
   .land-hero { padding: 60px 20px 40px; }
 }
