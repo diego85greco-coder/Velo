@@ -1396,6 +1396,35 @@ async function pChangePassword(){
   setTimeout(function(){ _loginAndGo(); }, 1400);
 }
 
+// v1372: onboarding y tour sincronizados cross-device via profiles.onboarding_flags.
+// Antes eran flags SOLO locales — en un dispositivo/navegador nuevo (o tras
+// reinstalar la PWA) el localStorage arranca vacío y el tour de 28 pasos +
+// el onboarding volvían a mostrarse aunque el usuario ya los hubiera visto.
+var _onboardingFlagsSynced = false;
+async function _syncOnboardingFlagsFromCloud(){
+  if(_onboardingFlagsSynced) return;
+  _initSupabase(); if(!sbClient) return;
+  var uid = safeLS('get','velo_user_id');
+  if(!uid) return;
+  _onboardingFlagsSynced = true;
+  try{
+    var r = await sbClient.from('profiles').select('onboarding_flags').eq('id', uid).maybeSingle();
+    var f = (r && r.data && r.data.onboarding_flags) || {};
+    if(f.home_onboarding_done) safeLS('set','velo_home_onboarding_done','1');
+    if(f.tour_done) safeLS('set','velo_tour_done', f.tour_done);
+  }catch(e){ console.warn('[onboarding sync]', e && e.message); }
+}
+function _pushOnboardingFlagToCloud(patch){
+  _initSupabase(); if(!sbClient) return;
+  var uid = safeLS('get','velo_user_id');
+  if(!uid) return;
+  sbClient.from('profiles').select('onboarding_flags').eq('id', uid).maybeSingle().then(function(r){
+    var cur = (r && r.data && r.data.onboarding_flags) || {};
+    var merged = Object.assign({}, cur, patch);
+    return sbClient.from('profiles').update({ onboarding_flags: merged }).eq('id', uid);
+  }).catch(function(){});
+}
+
 function _showOnboarding(){
   if(safeLS('get','velo_home_onboarding_done')) return;
   var step = 0;
@@ -1407,6 +1436,7 @@ function _showOnboarding(){
 
   function _done(){
     safeLS('set','velo_home_onboarding_done','1');
+    _pushOnboardingFlagToCloud({ home_onboarding_done: true });
     ov.style.transition = 'opacity .35s';
     ov.style.opacity = '0';
     setTimeout(function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); setTimeout(_startHomeTour, 250); }, 370);
@@ -2420,6 +2450,26 @@ function _saveUnlockedAchievements(obj){
     sbClient.from('profiles').update({ achievements_json: JSON.stringify(obj) }).eq('id', uid).then(function(){}).catch(function(){});
   }
 }
+// v1372: hidratar logros desde Supabase ANTES de chequear cuáles son nuevos.
+// _saveUnlockedAchievements solo escribía a la nube — nunca se leía de vuelta.
+// En un dispositivo nuevo (o tras reinstalar la PWA) localStorage arranca vacío,
+// _checkAchievements no encontraba nada desbloqueado y re-mostraba el mismo
+// logro que el usuario ya había ganado antes.
+var _achievementsSynced = false;
+async function _syncAchievementsFromCloud(){
+  if(_achievementsSynced) return;
+  _initSupabase(); if(!sbClient) return;
+  var uid = safeLS('get','velo_user_id');
+  if(!uid) return;
+  _achievementsSynced = true;
+  try{
+    var r = await sbClient.from('profiles').select('achievements_json').eq('id', uid).maybeSingle();
+    var cloud = {}; try{ cloud = JSON.parse((r && r.data && r.data.achievements_json)||'{}'); }catch(_){}
+    var local = _getUnlockedAchievements();
+    var merged = Object.assign({}, cloud, local); // local gana si hay conflicto (más reciente)
+    safeLS('set','velo_achievements', JSON.stringify(merged));
+  }catch(e){ console.warn('[achievements sync]', e && e.message); }
+}
 async function _computeAchievementStats(uid){
   var stats = { moodCount:0, maxStreak:0, btPosts:0, bottles:0, helped:0, daysInVelo:0, hasBuddy:false, referralsAccepted:0 };
   // Moods (desde LS)
@@ -2455,6 +2505,7 @@ async function _computeAchievementStats(uid){
 async function _checkAchievements(){
   var uid = safeLS('get','velo_user_id') || '';
   if(!uid) return;
+  try{ await _syncAchievementsFromCloud(); }catch(_){}
   var stats = await _computeAchievementStats(uid);
   var unlocked = _getUnlockedAchievements();
   var newOnes = [];
@@ -3683,6 +3734,7 @@ function _startHomeTour(){
 
   function _done(){
     safeLS('set','velo_tour_done','v1235');
+    _pushOnboardingFlagToCloud({ tour_done: 'v1235' });
     spot.style.transition = 'opacity .3s'; tip.style.transition = 'opacity .3s';
     spot.style.opacity = '0'; tip.style.opacity = '0';
     setTimeout(function(){ if(spot.parentNode) spot.remove(); if(tip.parentNode) tip.remove(); }, 340);
@@ -3891,6 +3943,7 @@ async function _loginAndGo(){
       // Page not in DOM or existing user → fall through to home
     }
     pGoTo('home');
+    try{ await _syncOnboardingFlagsFromCloud(); }catch(_){}
     setTimeout(function(){
       _loadHomeData();
       _updateSidebarUser();
@@ -20655,7 +20708,14 @@ async function _vibeFillUsernames(rootEl){
 // Abre el perfil público de un user desde una vibe. Reusa pQuickProfile que ya
 // incluye botón "Agregar a favoritos" cuando el user no es un fav propio.
 function _vibeOpenUserProfile(userId, userName, userAv){
-  if(!userId || userId === (safeLS('get','velo_user_id')||'')) return;
+  if(!userId) return;
+  // v1372: antes retornaba en silencio si era mi propio momento — el usuario
+  // interpretaba eso como "no hace nada" y re-tocaba, a veces impactando el
+  // CTA "¿Querés participar?" que está arriba de la card. Ahora damos feedback.
+  if(userId === (safeLS('get','velo_user_id')||'')){
+    try{ pToast('🪞','Este es tu propio momento'); }catch(_){}
+    return;
+  }
   try{ pQuickProfile(userName||'Usuario', userAv||'🧑', '', '', userId); }
   catch(e){ console.warn('[vibe-user-profile]', e); }
 }
@@ -22912,8 +22972,10 @@ async function _renderDMThread(){
     var msgs = (data||[]).filter(function(m){
       var t=m.text||'';
       if(sentinels.indexOf(t)>=0||t.startsWith('__velo_guardian_req__:')||t.startsWith('__velo_guardian_acc__:')||t.startsWith('__velo_guardian_rej__:')||t.startsWith('__velo_guardian_bye__:')||t.startsWith('__velo_dm_bye__:')||t.startsWith('__velo_help_bye__:')) return false;
-      // Only show messages from this session onward (hides old chat history)
-      if(_dmSessionStart && m.created_at && m.created_at < _dmSessionStart) return false;
+      // v1372: NO filtrar por _dmSessionStart — el DM de favoritos es persistente
+      // (estilo Instagram), no una sesión efímera. Filtrar por sesión ocultaba
+      // TODO el historial anterior, incluido el mensaje recién recibido que
+      // disparó la apertura del chat (bug: "no veo el mensaje que me enviaron").
       return true;
     });
     if(!msgs.length){
@@ -33806,7 +33868,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1371;
+    var _BUILT_V = 1372;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
