@@ -9,9 +9,16 @@ html { scroll-behavior: smooth; font-size: 16px; }
 body {
   font-family: 'Jost', sans-serif;
   color: var(--ink);
+  /* v1391 — FIX DEFINITIVO del espacio vacío al abrir el teclado en iOS PWA:
+     body anclado con position:fixed. Así iOS NO puede scrollear la ventana
+     para revelar el input (que es lo que empujaba todo hacia arriba y dejaba
+     la banda vacía abajo de la barra). Con la ventana bloqueada, iOS mete el
+     scroll DENTRO de .p-page-scroll (el único contenedor scrolleable), y la
+     barra de navegación queda clavada abajo sin importar el teclado. */
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
   overflow: hidden;
-  height: 100vh;
-  height: 100dvh;
+  overscroll-behavior: none;
   /* Nature background — golden sunrise landscape */
   background:
     linear-gradient(rgba(253,251,246,.62), rgba(245,248,244,.68)),
@@ -129,9 +136,11 @@ a { text-decoration: none; color: inherit; }
 /* ── 4. APP SHELL ────────────────────────────────────────────────── */
 .p-app-shell {
   display: flex;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
+  /* v1391 — anclado al viewport (position:fixed inset:0) junto con el body
+     fixed: la barra de navegación no se despega nunca del borde inferior. */
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%;
   overflow: hidden;
   background: transparent; /* body image shows through */
 }

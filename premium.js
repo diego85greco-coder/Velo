@@ -23236,6 +23236,15 @@ function _enterDMChat(toId, toName, toAv){
   var unread = {}; try{ unread = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
   delete unread[toId];
   safeLS('set','velo_dm_unread', JSON.stringify(unread));
+  // v1391: marca local "leí hasta ahora" para ESTE peer. _dmBackfillUnread la
+  // respeta: aunque el UPDATE read=true de la base no se haya persistido
+  // (sesión expirada, race), el badge no vuelve a aparecer porque el usuario
+  // YA abrió el chat. Antes el backfill recontaba read=false y revivía el "1".
+  try{
+    var _ru = JSON.parse(safeLS('get','velo_dm_read_until')||'{}');
+    _ru[toId] = Date.now();
+    safeLS('set','velo_dm_read_until', JSON.stringify(_ru));
+  }catch(_){}
   _updateFavBadge();
   try{ _refreshChatBadges(); }catch(_){}
   // Clean up stale state from any previous session
@@ -24465,11 +24474,15 @@ async function _dmBackfillUnread(){
     var curPeer = (_dmPeer && _dmPeer.id) || null;
     var curPage = document.querySelector('.p-page.active');
     var inThisChat = curPage && curPage.id === 'pg-dm-chat' && curPeer;
+    var readUntil = {}; try{ readUntil = JSON.parse(safeLS('get','velo_dm_read_until')||'{}'); }catch(_){}
     (res.data||[]).forEach(function(m){
       var txt = String(m.text||'');
       // Sentinels internos no cuentan como mensajes (excepto audio/foto)
       if(txt.indexOf('__velo_') === 0 && txt.indexOf('__velo_dm_audio__') !== 0 && txt.indexOf('__velo_dm_image__') !== 0) return;
       if(inThisChat && m.from_id === curPeer) return; // lo estoy viendo ahora
+      // v1391: ya abrí el chat de este peer después de que llegó el mensaje → leído
+      var mts = m.created_at ? new Date(m.created_at).getTime() : 0;
+      if(readUntil[m.from_id] && mts && mts <= readUntil[m.from_id] + 2000) return;
       unread[m.from_id] = (unread[m.from_id]||0)+1;
       // Poblar cache de "último mensaje" si está vacía para este peer
       var cache = _dmCacheGet();
@@ -34548,7 +34561,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1390;
+    var _BUILT_V = 1391;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
