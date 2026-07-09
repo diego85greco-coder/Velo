@@ -4544,9 +4544,10 @@ function _renderHomePushBanner(){
       xBtn.id = 'homePushBannerClose';
       xBtn.setAttribute('aria-label','Cerrar');
       xBtn.textContent = '✕';
-      xBtn.style.cssText = 'position:absolute;top:6px;right:8px;background:rgba(0,0,0,.14);border:none;border-radius:100px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:inherit;cursor:pointer;line-height:1;padding:0;opacity:.75;z-index:2';
+      xBtn.style.cssText = 'position:absolute;top:8px;right:8px;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.35);border-radius:100px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:inherit;cursor:pointer;line-height:1;padding:0;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,.25)';
       xBtn.onclick = function(e){ e.stopPropagation(); pDismissPushBanner(); };
       banner.appendChild(xBtn);
+      banner.style.paddingRight = '44px'; // que el texto no quede debajo de la cruz
     }catch(_){}
   }
   var ua = navigator.userAgent;
@@ -19681,9 +19682,9 @@ async function _renderHomeVibesCard(){
           + '<span class="home-vibes-widget__icon">🌊</span>'
           + '<span class="home-vibes-widget__title">Vibes de hoy</span>'
         + '</button>'
-        + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">'
+        + '<div style="display:flex;align-items:center;gap:6px;min-width:0">'
           + '<span class="home-vibes-widget__hint-top">Para publicar en más grupos 👉</span>'
-          + '<button onclick="pOpenVibes()" class="home-vibes-widget__all">Ver todos →</button>'
+          + '<button onclick="pOpenVibes()" class="home-vibes-widget__all" style="flex-shrink:0">Ver todos →</button>'
         + '</div>'
       + '</div>'
       + '<div class="home-vibes-widget__rail">'+thumbsHtml+'</div>'
@@ -33775,7 +33776,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1369;
+    var _BUILT_V = 1370;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
