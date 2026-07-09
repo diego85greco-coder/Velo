@@ -1848,6 +1848,29 @@ function _openAnnPost(postId){
 // a alguien al azar de los anotados (o elegís vos de la lista) → eso
 // manda una SOLICITUD → recién sos compañer@ del mes cuando el otro
 // lado la acepta. buddy_requests guarda esas solicitudes pendientes.
+// Banner de festejo cuando se confirma un match — v1384
+function _showBuddyMatchBanner(partnerId, partnerName, partnerAv){
+  var ex = document.getElementById('buddyMatchOv'); if(ex) ex.remove();
+  var b = document.getElementById('buddyOv'); if(b) b.remove();
+  var ov = document.createElement('div');
+  ov.id = 'buddyMatchOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10060;background:radial-gradient(circle at 50% 28%,rgba(30,72,46,.98),rgba(6,16,10,.99));display:flex;align-items:center;justify-content:center;padding:24px';
+  ov.innerHTML = '<div style="max-width:420px;width:100%;text-align:center;font-family:Jost,sans-serif">'
+    + '<div style="font-size:60px;margin-bottom:8px">🌱🤝🌱</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:27px;color:#fff;font-style:italic;margin-bottom:8px;line-height:1.25">¡Ya son compañer@s del mes!</div>'
+    + '<div style="font-size:14.5px;color:rgba(200,240,215,.85);margin-bottom:22px;line-height:1.5">Vos y <strong style="color:#fff">'+_escHtml(partnerName||'tu compañero/a')+'</strong> se van a acompañar este ciclo de 30 días 💚</div>'
+    + '<div style="text-align:left;background:rgba(116,198,157,.08);border:1px solid rgba(116,198,157,.24);border-radius:16px;padding:15px 17px;margin-bottom:22px;font-size:13px;color:rgba(210,240,220,.85);line-height:1.85">'
+      + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(180,220,195,.65);margin-bottom:8px">💡 CÓMO SE USA</div>'
+      + '💬 Escribile cuando lo necesites, sin presión de responder rápido.<br>'
+      + '📞 Lo vas a ver siempre en Contactos favoritos.<br>'
+      + '🕊️ Si alguno registra ánimo bajo 2 días seguidos, el otro recibe un aviso suave.'
+    + '</div>'
+    + '<div style="font-size:14px;color:rgba(255,225,180,.85);font-style:italic;margin-bottom:24px">Que lo disfruten y se hagan bien mutuamente ✨</div>'
+    + '<button onclick="document.getElementById(\'buddyMatchOv\').remove();pOpenDM('+_jsAttr(partnerId)+','+_jsAttr(partnerName||'')+','+_jsAttr(partnerAv||'🧑')+')" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:14px;color:#071409;font-size:14.5px;font-weight:800;cursor:pointer;margin-bottom:10px;letter-spacing:.3px">💬 Escribirle ahora</button>'
+    + '<button onclick="document.getElementById(\'buddyMatchOv\').remove()" style="width:100%;padding:11px;background:none;border:1px solid rgba(255,255,255,.15);border-radius:12px;color:rgba(255,255,255,.55);font-size:13px;cursor:pointer">Cerrar</button>'
+  + '</div>';
+  document.body.appendChild(ov);
+}
 async function pOpenBuddyModal(){
   var ex = document.getElementById('buddyOv'); if(ex) ex.remove();
   var uid = safeLS('get','velo_user_id') || '';
@@ -1891,6 +1914,19 @@ async function pOpenBuddyModal(){
       }
     }
   }catch(e){}
+  // v1384: primera vez que abro el modal ya emparejado (recién aceptaron mi
+  // solicitud, o acabo de aceptar la de otro sin pasar por pBuddyRequestRespond
+  // — ej. deep-link del push) → banner de festejo en vez del modal normal.
+  if(myBuddy){
+    var _celKey = 'velo_buddy_celebrated_'+myBuddy.id;
+    if(!safeLS('get', _celKey)){
+      safeLS('set', _celKey, '1');
+      var _celAv = '🧑';
+      try{ var _celP = await sbClient.from('profiles').select('avatar').eq('id',myBuddy.id).maybeSingle(); if(_celP && _celP.data) _celAv = _celP.data.avatar || _celAv; }catch(_){}
+      _showBuddyMatchBanner(myBuddy.id, myBuddy.name, _celAv);
+      return;
+    }
+  }
   var body = '';
   if(myBuddy){
     // Calcular días transcurridos + días restantes (30d ciclo)
@@ -2068,22 +2104,26 @@ async function pFindBuddy(){
   var uid = safeLS('get','velo_user_id') || '';
   if(!uid) return;
   var btn = event && event.target; if(btn){ btn.disabled = true; btn.textContent = 'Buscando…'; }
+  // v1384: antes, si pBuddyRequestSend fallaba (insert rechazado por RLS o
+  // tabla faltante), tragaba el error con su propio toast y devolvía sin
+  // avisar al que llama — el botón se quedaba en "Buscando…" para siempre
+  // (reportado como "la búsqueda no funciona"). finally garantiza el reset
+  // pase lo que pase, sin importar en qué punto retornó/tiró la cadena.
   try{
     var candidates = await _buddyCandidates(uid);
     if(candidates === null){
-      pToast('⚠️','Falta la columna buddy_available_at — correr el SQL');
-      if(btn){ btn.disabled = false; btn.textContent = '🎲 Sugerime a alguien al azar'; }
+      pToast('⚠️','Falta la tabla buddy_requests o la columna buddy_available_at — correr el SQL');
       return;
     }
     if(!candidates.length){
       pToast('🌿','No hay compañeros disponibles ahora. Anotate y esperá que otros se sumen.');
-      if(btn){ btn.disabled = false; btn.textContent = '🎲 Sugerime a alguien al azar'; }
       return;
     }
     var pick = candidates[Math.floor(Math.random() * candidates.length)];
     await pBuddyRequestSend(pick.id, pick.nombre);
   }catch(e){
     pToast('⚠️','Error buscando');
+  }finally{
     if(btn){ btn.disabled = false; btn.textContent = '🎲 Sugerime a alguien al azar'; }
   }
 }
@@ -2133,7 +2173,13 @@ async function pBuddyRequestSend(toId, toName){
   if(!uid || !toId || toId === uid) return;
   try{
     var r = await sbClient.from('buddy_requests').insert({ from_id: uid, to_id: toId, status: 'pending' });
-    if(r.error){ pToast('⚠️', r.error.message.slice(0,60)); return; }
+    // v1384: mensaje explícito si falta la tabla (SQL no corrido) — antes
+    // mostraba el error crudo de Postgres, difícil de diagnosticar a ojo.
+    if(r.error){
+      if(r.error.code === '42P01') pToast('⚠️','Falta la tabla buddy_requests — correr el SQL');
+      else pToast('⚠️', r.error.message.slice(0,70));
+      return;
+    }
     var myName = safeLS('get','velo_user_name') || 'Alguien';
     try{
       await sbClient.from('broadcasts').insert({
@@ -2143,6 +2189,8 @@ async function pBuddyRequestSend(toId, toName){
         icon: '🌱', sender: 'Velo — Comunidad'
       });
     }catch(_){}
+    // Notif en Actividad (🔔) además del Buzón — v1384
+    try{ _createVeloNotif(toId, 'buddy_request', myName+' quiere ser tu compañer@ del mes', '', ''); }catch(_){}
     pToast('🌱','Le enviamos una solicitud a '+(toName||'esa persona'));
     var b = document.getElementById('buddyOv'); if(b) b.remove();
     var l = document.getElementById('buddyListOv'); if(l) l.remove();
@@ -2173,7 +2221,15 @@ async function pBuddyRequestRespond(reqId, fromId, fromName, accept){
           icon: '🤝', sender: 'Velo — Comunidad'
         });
       }catch(_){}
-      pToast('🤝','Ya tenés compañero/a: '+(fromName||'tu contacto'));
+      // Notif en Actividad para quien mandó la solicitud — v1384
+      try{ _createVeloNotif(fromId, 'buddy_matched', myName+' aceptó tu solicitud 🌱', 'Ya son compañer@s del mes', ''); }catch(_){}
+      // Ya lo vi acá — que no me lo vuelva a mostrar la próxima vez que abra el modal
+      try{ safeLS('set', 'velo_buddy_celebrated_'+fromId, '1'); }catch(_){}
+      var _accAv = '🧑';
+      try{ var _accP = await sbClient.from('profiles').select('avatar').eq('id',fromId).maybeSingle(); if(_accP && _accP.data) _accAv = _accP.data.avatar || _accAv; }catch(_){}
+      if(typeof pRenderContacts === 'function') pRenderContacts();
+      _showBuddyMatchBanner(fromId, fromName, _accAv);
+      return;
     } else {
       await sbClient.from('buddy_requests').update({ status: 'declined', updated_at: new Date().toISOString() }).eq('id', reqId);
       pToast('💛','Solicitud rechazada');
@@ -7600,6 +7656,11 @@ async function _checkVeloNotifs(){
 function _navToNotif(type, relatedId){
   var shOv = document.getElementById('veloNotifsSheetOv');
   if(shOv) shOv.remove();
+  // Los tipos de buddy no llevan relatedId (van al modal, no a un post puntual)
+  if(type === 'buddy_request' || type === 'buddy_matched'){
+    pOpenBuddyModal();
+    return;
+  }
   if(!relatedId) return;
   if(type === 'dq_comment'){
     pOpenDqResponseSheet(relatedId);
@@ -7631,13 +7692,14 @@ function _veloNotifsEmptyState(){
     +'</div>';
 }
 function _renderVeloNotifs(notifs){
-  var typeIcon={dq_comment:'💬',momento_comment:'💬',reaction:'💚',vibe_comment:'💬',vibe_reaction:'🌊',vibe_comment_like:'❤️'};
-  var typeNavigable={dq_comment:true, momento_comment:true, vibe_comment:true, vibe_reaction:true, vibe_comment_like:true};
+  var typeIcon={dq_comment:'💬',momento_comment:'💬',reaction:'💚',vibe_comment:'💬',vibe_reaction:'🌊',vibe_comment_like:'❤️',buddy_request:'🌱',buddy_matched:'🤝'};
+  var typeNavigable={dq_comment:true, momento_comment:true, vibe_comment:true, vibe_reaction:true, vibe_comment_like:true, buddy_request:true, buddy_matched:true};
   if(!notifs||!notifs.length) return '';
   return notifs.map(function(n){
     var icon=typeIcon[n.type]||'🔔';
     var unread=!n.is_read;
-    var canNav=typeNavigable[n.type]&&n.related_id;
+    var _buddyType = (n.type === 'buddy_request' || n.type === 'buddy_matched');
+    var canNav=typeNavigable[n.type]&&(n.related_id||_buddyType);
     var dot=unread
       ?'<span style="width:8px;height:8px;border-radius:50%;background:rgba(116,198,157,.90);flex-shrink:0;margin-top:5px;box-shadow:0 0 6px rgba(116,198,157,.50)"></span>'
       :'<span style="width:8px;flex-shrink:0"></span>';
@@ -34455,7 +34517,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1383;
+    var _BUILT_V = 1384;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
