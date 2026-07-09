@@ -19595,8 +19595,9 @@ async function _renderHomeVibesCard(){
         + '<button onclick="pOpenVibes()" class="home-vibes-widget__all">Ver todos →</button>'
       + '</div>'
       + '<div class="home-vibes-widget__rail">'+thumbsHtml+'</div>'
+      + '<div class="home-vibes-widget__hint">👆 Para publicar en un grupo, tocá su portada</div>'
       + '<button onclick="pStartCreateVibe(null,\'public\')" class="home-vibes-widget__cta">'
-        + '<span class="home-vibes-widget__cta-plus">＋</span><span>Publicá tu momento</span>'
+        + '<span class="home-vibes-widget__cta-plus">＋</span><span>Publicá un momento instantáneo</span>'
       + '</button>'
     + '</div>';
     // Hidratar data URLs a blob URLs (iOS)
@@ -33655,7 +33656,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1365;
+    var _BUILT_V = 1366;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
