@@ -23278,6 +23278,7 @@ function _enterDMChat(toId, toName, toAv){
     _renderDMThread();
     _subscribeToDMThread();
     _dmMarkAsRead(toId);
+    _dmSetupTypingSend();
     _dmSubscribeToTyping(toId);
     _dmSubscribeToReadReceipts(toId);
   }, 100);
@@ -23355,6 +23356,7 @@ async function _dmMarkAsRead(peerId){
 // Suscripción a UPDATE en mis mensajes salientes — cuando el peer los lee,
 // aparece "Visto HH:MM" abajo del último bubble mío
 var _dmReadCh = null;
+var _dmReadPollTmr = null;
 function _dmSubscribeToReadReceipts(peerId){
   var myId = safeLS('get','velo_user_id')||'';
   if(!myId || !peerId || !sbClient) return;
@@ -23366,6 +23368,16 @@ function _dmSubscribeToReadReceipts(peerId){
       if(m.read){ _dmUpdateReadIndicators(); }
     })
     .subscribe();
+  // v1389: chequeo inicial (si el peer ya había leído antes de abrir el chat)
+  // + poll liviano cada 6s — así el "Visto" funciona aunque la replicación de
+  // UPDATE de direct_messages no esté habilitada en Realtime (solo INSERT).
+  setTimeout(_dmUpdateReadIndicators, 500);
+  if(_dmReadPollTmr) clearInterval(_dmReadPollTmr);
+  _dmReadPollTmr = setInterval(function(){
+    var cur = document.querySelector('.p-page.active');
+    if(!cur || cur.id !== 'pg-dm-chat' || !_dmPeer){ clearInterval(_dmReadPollTmr); _dmReadPollTmr = null; return; }
+    _dmUpdateReadIndicators();
+  }, 6000);
 }
 // Recorre las bubbles mías y marca la última leída con "Visto"
 async function _dmUpdateReadIndicators(){
@@ -23394,6 +23406,18 @@ async function _dmUpdateReadIndicators(){
 
 // ── Typing indicator ─────────────────────────────────
 var _dmTypingSendCh = null, _dmTypingRecvCh = null, _dmTypingThrottle = 0, _dmTypingHideTmr = null;
+// v1389: suscribir el canal de ENVÍO de "escribiendo" al entrar al chat, para
+// que ya esté listo cuando llegue la primera tecla (antes se creaba recién en
+// el primer keystroke y Supabase descartaba ese primer send porque el canal
+// no había terminado de suscribirse — el indicador "arrancaba tarde").
+function _dmSetupTypingSend(){
+  if(!sbClient) return;
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId) return;
+  if(_dmTypingSendCh){ try{ sbClient.removeChannel(_dmTypingSendCh); }catch(e){} _dmTypingSendCh = null; }
+  _dmTypingSendCh = sbClient.channel('velo:dm:typing:'+myId);
+  _dmTypingSendCh.subscribe();
+}
 function _dmSignalTyping(){
   if(!_dmPeer || !sbClient) return;
   var now = Date.now();
@@ -23401,10 +23425,7 @@ function _dmSignalTyping(){
   _dmTypingThrottle = now;
   var myId = safeLS('get','velo_user_id')||'';
   if(!myId) return;
-  if(!_dmTypingSendCh){
-    _dmTypingSendCh = sbClient.channel('velo:dm:typing:'+myId);
-    _dmTypingSendCh.subscribe();
-  }
+  if(!_dmTypingSendCh) _dmSetupTypingSend();
   try{
     _dmTypingSendCh.send({ type:'broadcast', event:'typing', payload:{ from: myId, to: _dmPeer.id, ts: now } });
   }catch(e){}
@@ -23451,6 +23472,7 @@ function _dmStopTypingChannels(){
   if(_dmTypingSendCh && sbClient){ try{ sbClient.removeChannel(_dmTypingSendCh); }catch(e){} _dmTypingSendCh = null; }
   if(_dmTypingRecvCh && sbClient){ try{ sbClient.removeChannel(_dmTypingRecvCh); }catch(e){} _dmTypingRecvCh = null; }
   if(_dmReadCh && sbClient){ try{ sbClient.removeChannel(_dmReadCh); }catch(e){} _dmReadCh = null; }
+  if(_dmReadPollTmr){ clearInterval(_dmReadPollTmr); _dmReadPollTmr = null; }
   if(_dmTypingHideTmr){ clearTimeout(_dmTypingHideTmr); _dmTypingHideTmr = null; }
   var el = document.getElementById('dmTypingBubble'); if(el) el.remove();
 }
@@ -34526,7 +34548,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1389;
+    var _BUILT_V = 1390;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
