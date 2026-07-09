@@ -5195,12 +5195,15 @@ async function _initHomeQuickCtaStrip(){
     if(uid && sbClient){
       var me = await sbClient.from('profiles').select('buddy_id,buddy_name,buddy_started_at,buddy_available_at').eq('id',uid).maybeSingle();
       if(me && me.data && me.data.buddy_id){
-        var shortName = (me.data.buddy_name||'').split(' ')[0] || 'compañero/a';
+        // v1386: el tile mostraba solo el nombre ("💬 Dieguito") — fuera de
+        // contexto parecía un atajo de chat cualquiera. Ahora al tocarlo abre
+        // el panel de Compañero (que dice "Tu compañero/a de bienestar es X"
+        // con el ciclo, cómo se usa y el botón de mensaje), y la etiqueta lleva
+        // "Compañer@" para que se entienda qué es de un vistazo.
         var startedTs = me.data.buddy_started_at ? new Date(me.data.buddy_started_at).getTime() : Date.now();
         var daysLeft = Math.max(0, 30 - Math.floor((Date.now() - startedTs) / 86400000));
-        var lbl = daysLeft === 0 ? '¡renová!' : shortName.slice(0,10);
-        var action = 'pOpenDM('+_jsAttr(me.data.buddy_id)+','+_jsAttr(me.data.buddy_name||'Compañero/a')+',\'🌿\')';
-        buddyTile = tile('💬', lbl, '', 'rgba(155,120,220,.18)','rgba(155,120,220,.52)', action);
+        var lbl = daysLeft === 0 ? '¡renová!' : 'Compañer@';
+        buddyTile = tile('🤝', lbl, '', 'rgba(155,120,220,.18)','rgba(155,120,220,.52)', 'pOpenBuddyModal()');
       } else if(me && me.data && me.data.buddy_available_at){
         buddyTile = tile('🌿','Anotado/a','','rgba(155,120,220,.18)','rgba(155,120,220,.52)','pOpenBuddyModal()');
       }
@@ -34525,7 +34528,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1386;
+    var _BUILT_V = 1387;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
