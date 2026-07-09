@@ -1973,7 +1973,7 @@ async function pOpenBuddyModal(){
   ov.id = 'buddyOv';
   ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:20px';
   ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
-  ov.innerHTML = '<div style="background:linear-gradient(155deg,rgba(12,32,20,.98),rgba(6,20,12,.97));border-radius:24px;max-width:440px;width:100%;padding:24px;border:1.5px solid rgba(116,198,157,.35)">'+body+'<button onclick="document.getElementById(\'buddyOv\').remove()" style="width:100%;padding:11px;background:none;border:1px solid rgba(255,255,255,.10);border-radius:12px;color:rgba(255,255,255,.55);font-size:12.5px;font-family:Jost,sans-serif;cursor:pointer;margin-top:8px">Cerrar</button></div>';
+  ov.innerHTML = '<div style="background:linear-gradient(155deg,rgba(12,32,20,.98),rgba(6,20,12,.97));border-radius:24px;max-width:440px;width:100%;max-height:86vh;overflow-y:auto;box-sizing:border-box;padding:24px;border:1.5px solid rgba(116,198,157,.35)">'+body+'<button onclick="document.getElementById(\'buddyOv\').remove()" style="width:100%;padding:11px;background:none;border:1px solid rgba(255,255,255,.10);border-radius:12px;color:rgba(255,255,255,.55);font-size:12.5px;font-family:Jost,sans-serif;cursor:pointer;margin-top:8px">Cerrar</button></div>';
   document.body.appendChild(ov);
 }
 async function pMakeBuddyAvailable(){
@@ -20809,6 +20809,12 @@ function pVibeCardMenu(vibeId, isMine){
   var ov = document.createElement('div');
   ov.id = 'vibeCardMenuOv';
   ov.className = 'p-modal-ov show';
+  // v1376: .p-modal-ov trae z-index:800 por CSS — muy por debajo de los
+  // overlays de vibes (#vibeGroupOv/#vibeInstantOv usan 10014, los
+  // comentarios 10030). Sin este override el menú se creaba pero quedaba
+  // tapado y sin recibir toques hasta cerrar la foto (que sacaba el overlay
+  // de encima y "revelaba" este menú).
+  ov.style.zIndex = '10040';
   ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
   var opts = isMine
     ? '<button onclick="document.getElementById(\'vibeCardMenuOv\').remove();pDeleteVibe('+_jsAttr(vibeId)+')" style="width:100%;padding:13px;background:none;border:none;border-bottom:1px solid var(--border);color:var(--sos);font-family:Jost,sans-serif;font-size:15px;font-weight:700;cursor:pointer;text-align:left">🗑️ Borrar momento</button>'
@@ -21179,8 +21185,12 @@ async function pVibeReact(vibeId, reactionKey, btnEl){
 function _refreshVibeCard(vibeId){
   var cardEl = document.querySelector('.vibe-card[data-vibe-id="'+vibeId+'"]');
   if(!cardEl) return;
-  // Encontrar la vibe en el cache de la lista abierta y re-render sólo esa card
-  var listEl = document.getElementById('vibeGroupList'); if(!listEl) return;
+  // v1376: antes exigía #vibeGroupList para refrescar, pero el overlay de
+  // Instantáneos (pOpenInstantVibe, desde v1373) usa #vibeInstantList — esa
+  // guarda hacía que reaccionar ahí guardara la reacción en la base pero
+  // NUNCA se viera reflejada en la card (botón sin resaltar, contador sin
+  // actualizar), leyéndose como "no puedo reaccionar". cardEl ya confirma
+  // que la card está en el DOM, no hace falta ningún contenedor específico.
   // Extraer datos del DOM (avatar, nombre, tiempo, image src, caption)
   // Más simple: re-fetchear la vibe una vez y volver a pintar
   _initSupabase(); if(!sbClient) return;
@@ -34232,7 +34242,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1375;
+    var _BUILT_V = 1376;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
