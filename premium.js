@@ -34575,7 +34575,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1395;
+    var _BUILT_V = 1396;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
@@ -34587,14 +34587,40 @@ window.addEventListener('load', function(){
       });
     }
     // Poll version.json every 90s; reload if version changed
+    // v1396 — auto-update BLINDADO: al detectar versión nueva, además de
+    // recargar, se PURGAN todos los caches del SW desde la página (la Cache
+    // API es accesible desde window). Así, aunque el SW viejo tuviera assets
+    // stale bajo las mismas keys, la recarga baja TODO fresco — ningún
+    // usuario tiene que reinstalar ni borrar nada a mano, nunca.
+    var _updReloading = false;
+    function _forceFreshReload(){
+      if(_updReloading) return;
+      _updReloading = true;
+      var _doReload = function(){ try{ window.location.reload(); }catch(_){ } };
+      try{
+        if(window.caches && caches.keys){
+          caches.keys().then(function(keys){
+            return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+          }).then(_doReload).catch(_doReload);
+          // Failsafe por si la purga se cuelga
+          setTimeout(_doReload, 3000);
+        } else { _doReload(); }
+      }catch(_){ _doReload(); }
+    }
     function _pollVersion(){
       fetch('/version.json?_=' + Date.now(), {cache:'no-store'})
         .then(function(r){ return r.json(); })
         .then(function(d){
           var v = d && d.v;
-          if(v && v > _BUILT_V){ window.location.reload(); }
+          if(v && v > _BUILT_V){ _forceFreshReload(); }
         }).catch(function(){});
     }
+    // Chequear también cada vez que la app vuelve a primer plano — el
+    // usuario que la deja en background días recibe la versión nueva al
+    // instante de reabrirla, sin esperar el ciclo de 90s.
+    document.addEventListener('visibilitychange', function(){
+      if(document.visibilityState === 'visible') _pollVersion();
+    });
     setTimeout(_pollVersion, 5000);
     setInterval(_pollVersion, 90000);
   })();

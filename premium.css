@@ -445,13 +445,14 @@ a { text-decoration: none; color: inherit; }
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(116,198,157,.4), transparent);
 }
-/* Fill any gap between nav bar and browser chrome on iOS Safari */
+/* v1396 — el tramo del safe-area (home indicator) se ve como PARTE de la
+   barra: mismo fondo que la barra (inherit), sin mezcla con el body detrás. */
 .p-bottomnav::after {
   content: '';
   position: absolute;
   top: 100%; left: 0; right: 0;
-  height: 50px;
-  background: var(--glass-1);
+  height: 60px;
+  background: inherit;
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   pointer-events: none;
