@@ -15549,3 +15549,22 @@ body.r-dark .p-bottomnav.p-bottomnav::after {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   v1399 — Íconos de la barra BAJADOS al espacio del safe-area.
+   La barra reservaba el safe-area completo (~34px) DEBAJO de los
+   íconos, dejando esa franja "vacía" y robando pantalla. Ahora los
+   íconos bajan a ocupar esa zona (quedan justo encima del home
+   indicator, estilo Instagram) y la barra total es ~30px más baja →
+   el contenido gana ese espacio.
+   ══════════════════════════════════════════════════════════════════ */
+body .p-bottomnav.p-bottomnav {
+  min-height: 54px !important;
+  height: auto !important;
+  padding-top: 4px !important;
+  padding-bottom: max(calc(env(safe-area-inset-bottom, 0px) - 16px), 4px) !important;
+}
+body .p-bottomnav.p-bottomnav .p-bn-item {
+  padding: 4px 10px !important;
+  gap: 2px !important;
+}
