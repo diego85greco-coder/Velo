@@ -15367,3 +15367,40 @@ body.r-dark .home-vibes-widget .vibes-tile-label {
 }
 /* También ajustar el "Ver todos" para que se vea bien sin label externo */
 .home-vibes-widget__see-all + .vibes-tile-label { display: none; }
+
+/* v1365 — FIX OVERFLOW: el widget se desbordaba del viewport porque el rail
+   (flex con hijos no-shrink) empujaba el ancho del contenedor en vez de
+   scrollear internamente. En flex containers, min-width:auto de los hijos
+   permite que crezcan más que el padre. Forzamos constraint de ancho en toda
+   la cadena: slot → widget → rail. */
+#homeVibesCardTop,
+#homeVibesCard {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+.home-vibes-widget {
+  max-width: 100% !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+.home-vibes-widget__rail {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+.home-vibes-widget__header {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+.home-vibes-widget__cta {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
