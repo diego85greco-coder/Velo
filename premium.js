@@ -20961,10 +20961,17 @@ async function pToggleVibeCommentHeart(commentId, vibeId){
   if(!myId){ pToast('⚠️','Iniciá sesión'); return; }
   try{
     var ex = await sbClient.from('vibe_comment_reactions').select('id').eq('comment_id',commentId).eq('user_id',myId).maybeSingle();
+    // v1377: antes ignoraba .error de cada llamada — si faltaba la tabla
+    // (SQL no corrido) o la RLS rechazaba el insert, el corazón "no hacía
+    // nada" sin ningún aviso (reportado como "no deja marcar y no es
+    // predecible"). Ahora se revisa cada error y se avisa.
+    if(ex && ex.error){ pToast('⚠️','Falta la tabla vibe_comment_reactions — correr el SQL'); return; }
     if(ex && ex.data){
-      await sbClient.from('vibe_comment_reactions').delete().eq('id', ex.data.id);
+      var delRes = await sbClient.from('vibe_comment_reactions').delete().eq('id', ex.data.id);
+      if(delRes.error){ pToast('⚠️', delRes.error.message.slice(0,60)); return; }
     } else {
-      await sbClient.from('vibe_comment_reactions').insert({ comment_id: commentId, user_id: myId });
+      var insRes = await sbClient.from('vibe_comment_reactions').insert({ comment_id: commentId, user_id: myId });
+      if(insRes.error){ pToast('⚠️', insRes.error.message.slice(0,60)); return; }
     }
     pOpenVibeComments(vibeId);
   }catch(e){ pToast('⚠️','Error'); }
@@ -32161,6 +32168,11 @@ function pReportContent(type, id, preview){
   var ov = document.createElement('div');
   ov.className = 'p-modal-ov show';
   ov.id = 'globalReportOv';
+  // v1377: igual bug que el menú "⋯" de vibes — .p-modal-ov trae
+  // z-index:800, muy por debajo de los overlays de vibes/comentarios
+  // (10014/10030). Sin este override el modal de reporte se creaba pero
+  // quedaba tapado y sin recibir toques cuando se abría desde ahí.
+  ov.style.zIndex = '10050';
   ov.innerHTML = '<div class="p-sheet">'
     +'<div class="p-sheet-handle"></div>'
     +'<div style="font-size:28px;text-align:center;margin-bottom:8px">⚠️</div>'
@@ -34242,7 +34254,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1376;
+    var _BUILT_V = 1377;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
