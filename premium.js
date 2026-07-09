@@ -20264,6 +20264,7 @@ async function pOpenVibeGroup(groupId){
     list.innerHTML = carouselData.map(function(v){
       return '<div class="vibe-slide" style="flex:0 0 100%;width:100%;scroll-snap-align:center;padding:0 12px;box-sizing:border-box;overflow-y:auto">'+_vibeCardHtml(v)+'</div>';
     }).join('');
+    _vibeFillUsernames(list);
     // Dots indicators
     var dotsEl = document.getElementById('vibeGroupDots');
     if(dotsEl && carouselData.length > 1){
@@ -20350,6 +20351,7 @@ async function pOpenInstantVibe(vibeId){
       + _vibeCardHtml(v)
     + '</div>';
     document.body.appendChild(ov);
+    _vibeFillUsernames(ov);
     // Hidratar imagen
     var img = ov.querySelector('img[data-vibe-src]');
     if(img){
@@ -20456,7 +20458,7 @@ function _vibeCardHtml(v){
     }
   }catch(_grE){}
   return '<div class="vibe-card" data-vibe-id="'+v.id+'" style="background:linear-gradient(180deg,rgba(20,40,26,.92),rgba(10,26,18,.95));border:1.5px solid '+borderColor+';border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:'+glow+';transition:box-shadow .5s, border-color .5s">'
-    + '<div onclick="_vibeOpenUserProfile(\''+(v.user_id||'')+'\',\''+_jsAttr(v.user_name||'Usuario')+'\',\''+_jsAttr(v.user_av||'🧑')+'\')" style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;cursor:pointer" title="Ver perfil de '+_escHtml(v.user_name||'Usuario')+'"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div>'+groupChip+'<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:3px">'+ago+' · caduca en '+left+'</div></div><span style="font-size:14px;color:rgba(180,220,195,.55);flex-shrink:0" title="Ver perfil">›</span></div>'
+    + '<div onclick="_vibeOpenUserProfile('+_jsAttr(v.user_id||'')+','+_jsAttr(v.user_name||'Usuario')+','+_jsAttr(v.user_av||'🧑')+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;cursor:pointer" title="Ver perfil de '+_escHtml(v.user_name||'Usuario')+'"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div><div class="vibe-uname" data-vibe-uname="'+_escHtml(v.user_id||'')+'" style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.80);font-weight:700;letter-spacing:.2px">'+(function(){ try{ var _u=_uLook(v.user_id); return _u?'@'+_escHtml(_u):''; }catch(_){ return ''; } })()+'</div>'+groupChip+'<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:3px">'+ago+' · caduca en '+left+'</div></div><span style="font-size:14px;color:rgba(180,220,195,.55);flex-shrink:0" title="Ver perfil">›</span></div>'
     + '<img data-vibe-src="'+_escHtml(v.media_url||'')+'" alt="momento" style="width:100%;max-height:520px;object-fit:cover;display:block;background:rgba(0,0,0,.35)" onerror="this.style.opacity=\'.35\'">'
     + (v.caption ? '<div style="padding:12px 16px 14px;font-family:\'Cormorant Garamond\',serif;font-size:15.5px;font-style:italic;color:rgba(240,250,240,.95);line-height:1.5">"'+_escHtml(v.caption)+'"</div>' : '')
     + summaryChip
@@ -20609,6 +20611,7 @@ async function _openSavedVibe(vibeId){
   var container = document.getElementById('savedVibeBody');
   if(container){
     container.innerHTML = _vibeCardHtml(v);
+    _vibeFillUsernames(container);
     container.querySelectorAll('img[data-vibe-src]').forEach(function(img){
       var src = img.getAttribute('data-vibe-src'); if(!src) return;
       try{
@@ -20621,6 +20624,32 @@ async function _openSavedVibe(vibeId){
       }catch(e){ img.src = src; }
     });
   }
+}
+
+// Rellena los @username de las cards de vibes (batch, con cache _uLook/_uFill)
+async function _vibeFillUsernames(rootEl){
+  try{
+    var root = rootEl || document;
+    var spans = root.querySelectorAll('[data-vibe-uname]');
+    if(!spans.length) return;
+    var need = [];
+    spans.forEach(function(s){
+      var uid = s.getAttribute('data-vibe-uname');
+      if(!uid) return;
+      var cached = null; try{ cached = _uLook(uid); }catch(_){}
+      if(cached){ s.textContent = '@'+cached; }
+      else if(need.indexOf(uid) < 0) need.push(uid);
+    });
+    if(!need.length || !sbClient) return;
+    var r = await sbClient.from('profiles').select('id,username').in('id', need);
+    ((r && r.data)||[]).forEach(function(p){
+      if(!p.username) return;
+      try{ _uFill(p.id, p.username); }catch(_){}
+      root.querySelectorAll('[data-vibe-uname="'+p.id+'"]').forEach(function(s){
+        s.textContent = '@'+p.username;
+      });
+    });
+  }catch(e){}
 }
 
 // Abre el perfil público de un user desde una vibe. Reusa pQuickProfile que ya
@@ -20723,6 +20752,7 @@ function _refreshVibeCard(vibeId){
     var newCard = tmp.firstElementChild;
     if(newCard){
       cardEl.replaceWith(newCard);
+      _vibeFillUsernames(newCard);
       // Rehidratar img data-vibe-src → blob URL (iOS)
       var img = newCard.querySelector('img[data-vibe-src]');
       if(img){
@@ -33776,7 +33806,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1370;
+    var _BUILT_V = 1371;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
