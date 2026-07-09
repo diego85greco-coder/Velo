@@ -16,22 +16,60 @@
 // v1347 — Fix del espacio blanco cuando iOS abre el teclado en PWA:
 // 1) Cuando visualViewport se achica (teclado abierto), agregar body.keyboard-open
 // 2) El CSS oculta el bottom nav mientras keyboard-open (evita que quede flotando)
-// 3) También setea min-height al app-shell = visualViewport.height para que el
-//    layout siga la altura real y no deje espacio abajo.
+// 3) Mientras el teclado está abierto, pinnear la altura del app-shell a
+//    visualViewport.height para que el layout siga la altura real.
+// v1378 — Fix de la banda muerta que quedaba DEBAJO del bottom nav al cerrar
+// el teclado: iOS scrollea la ventana (layout viewport) para mostrar el input
+// enfocado, y al cerrar el teclado NO deshace ese scroll — como el shell es
+// 100dvh anclado al tope del documento, todo queda corrido hacia arriba y
+// abajo se ve el fondo vacío. Además el handler viejo dejaba la altura del
+// shell pinneada en px para siempre (si la última lectura era corta, el shell
+// quedaba más chico que la pantalla). Ahora: la altura solo se pinnea con el
+// teclado abierto (al cerrar vuelve al 100dvh del CSS) y al cerrar se fuerza
+// window.scrollTo(0,0) — seguro porque el scroll del contenido vive en
+// .p-page-scroll, no en la ventana.
 (function(){
   if(!window.visualViewport) return;
   var vv = window.visualViewport;
+  var kbWasOpen = false;
+  function _resetWindowScroll(){
+    try{
+      if(window.scrollY || document.documentElement.scrollTop || document.body.scrollTop){
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
+    }catch(_){}
+  }
   function onVvChange(){
     try{
       var isKeyboardOpen = vv.height < window.innerHeight * 0.82;
       document.body.classList.toggle('keyboard-open', isKeyboardOpen);
-      // Setear altura del app-shell dinámicamente
       var shell = document.querySelector('.p-app-shell');
-      if(shell) shell.style.height = vv.height + 'px';
+      if(isKeyboardOpen){
+        kbWasOpen = true;
+        if(shell) shell.style.height = vv.height + 'px';
+      } else {
+        if(shell) shell.style.height = '';
+        if(kbWasOpen){
+          kbWasOpen = false;
+          // Doble intento: uno inmediato y otro cuando termina la animación
+          // del teclado (iOS puede re-aplicar el offset durante la animación).
+          setTimeout(_resetWindowScroll, 60);
+          setTimeout(_resetWindowScroll, 420);
+        }
+      }
     }catch(e){}
   }
   vv.addEventListener('resize', onVvChange);
   vv.addEventListener('scroll', onVvChange);
+  // Fallback: si un input pierde foco sin que el resize dispare (pasa en
+  // algunas versiones de iOS PWA), corregir el scroll igual.
+  document.addEventListener('focusout', function(){
+    setTimeout(function(){
+      if(!document.body.classList.contains('keyboard-open')) _resetWindowScroll();
+    }, 300);
+  }, true);
   onVvChange();
 })();
 
@@ -34254,7 +34292,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1377;
+    var _BUILT_V = 1378;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
