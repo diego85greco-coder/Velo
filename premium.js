@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1402',
+      'Velo v1403',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -23378,6 +23378,13 @@ async function _chatShowVistoIndicator(peerId, containerId){
       .select('id,read,read_at,created_at')
       .eq('from_id', myId).eq('to_id', peerId).eq('read', true)
       .order('created_at',{ascending:false}).limit(1);
+    // v1403: si read_at no existe como columna, reintentar sin ella
+    if(res && res.error){
+      res = await sbClient.from('direct_messages')
+        .select('id,read,created_at')
+        .eq('from_id', myId).eq('to_id', peerId).eq('read', true)
+        .order('created_at',{ascending:false}).limit(1);
+    }
     if(!res || !res.data || !res.data[0]) return;
     var lastReadId = 'direct_messages:'+res.data[0].id;
     var readAt = res.data[0].read_at ? new Date(res.data[0].read_at) : null;
@@ -23391,14 +23398,31 @@ async function _chatShowVistoIndicator(peerId, containerId){
     bubble.appendChild(ind);
   }catch(e){}
 }
+// v1403: BUG RAÍZ de "sigue apareciendo como no leído" + "no aparece el Visto":
+// direct_messages NO tiene columna read_at en la DB — el UPDATE con
+// {read, read_at} fallaba en silencio SIEMPRE, así que ningún mensaje quedaba
+// marcado como leído en la base (el badge revivía en cada reinstalación y el
+// ✓✓ Visto jamás se mostraba). Este helper intenta con read_at y, si la
+// columna falta, reintenta solo con {read:true} — que es lo que importa.
+function _dmMarkReadInDB(myId, peerId){
+  return sbClient.from('direct_messages')
+    .update({ read: true, read_at: new Date().toISOString() })
+    .eq('to_id', myId).eq('from_id', peerId).eq('read', false)
+    .then(function(r){
+      if(r && r.error){
+        console.warn('[dm mark-read] retry sin read_at:', r.error.message);
+        return sbClient.from('direct_messages')
+          .update({ read: true })
+          .eq('to_id', myId).eq('from_id', peerId).eq('read', false);
+      }
+      return r;
+    });
+}
 function _chatSetupReadReceipts(peerId, containerId){
   var myId = safeLS('get','velo_user_id')||'';
   if(!myId || !peerId || !sbClient) return;
   // 1) Marcar todos los mensajes del peer como leídos
-  sbClient.from('direct_messages')
-    .update({ read: true, read_at: new Date().toISOString() })
-    .eq('to_id', myId).eq('from_id', peerId).eq('read', false)
-    .then(function(){}).catch(function(){});
+  _dmMarkReadInDB(myId, peerId).then(function(){}).catch(function(){});
   // 2) Suscribirse a UPDATE de mis mensajes salientes → actualiza "✓✓ Visto"
   if(_chatReadChannels[containerId]){
     try{ sbClient.removeChannel(_chatReadChannels[containerId]); }catch(e){}
@@ -23427,9 +23451,7 @@ async function _dmMarkAsRead(peerId){
   var myId = safeLS('get','velo_user_id')||'';
   if(!myId || !peerId || !sbClient) return;
   try{
-    await sbClient.from('direct_messages')
-      .update({ read: true, read_at: new Date().toISOString() })
-      .eq('to_id', myId).eq('from_id', peerId).eq('read', false);
+    await _dmMarkReadInDB(myId, peerId); // v1403: con retry sin read_at
   }catch(e){}
 }
 // Suscripción a UPDATE en mis mensajes salientes — cuando el peer los lee,
@@ -23468,6 +23490,13 @@ async function _dmUpdateReadIndicators(){
       .select('id,read,read_at,created_at')
       .eq('from_id', myId).eq('to_id', _dmPeer.id).eq('read', true)
       .order('created_at',{ascending:false}).limit(1);
+    // v1403: si read_at no existe como columna, reintentar sin ella
+    if(res && res.error){
+      res = await sbClient.from('direct_messages')
+        .select('id,read,created_at')
+        .eq('from_id', myId).eq('to_id', _dmPeer.id).eq('read', true)
+        .order('created_at',{ascending:false}).limit(1);
+    }
     if(!res || !res.data || !res.data[0]) return;
     var lastReadId = 'direct_messages:'+res.data[0].id;
     var readAt = res.data[0].read_at ? new Date(res.data[0].read_at) : null;
@@ -34631,7 +34660,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1402;
+    var _BUILT_V = 1403;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
