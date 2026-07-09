@@ -71,6 +71,44 @@
   onVvChange();
 })();
 
+// ── DIAGNÓSTICO DE LAYOUT (v1401) — tocar la versión en el menú ☰ ─────
+// Muestra las medidas reales del viewport y de la barra para diagnosticar
+// el espacio bajo la barra en el dispositivo del usuario, sin adivinar.
+function _veloLayoutDiag(){
+  try{
+    var nav = document.querySelector('.p-bottomnav');
+    var shell = document.querySelector('.p-app-shell');
+    var nr = nav ? nav.getBoundingClientRect() : null;
+    var sr = shell ? shell.getBoundingClientRect() : null;
+    var cs = nav ? getComputedStyle(nav) : null;
+    // Probe de safe-area
+    var probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;bottom:0;padding-bottom:env(safe-area-inset-bottom,0px);visibility:hidden';
+    document.body.appendChild(probe);
+    var safeB = getComputedStyle(probe).paddingBottom;
+    probe.remove();
+    var lines = [
+      'Velo v1401',
+      'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
+      'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
+      'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
+      'safe-area-bottom: ' + safeB,
+      nav ? ('NAV → position:' + cs.position + ' · display:' + cs.display) : 'NAV: no encontrada',
+      nr ? ('NAV rect → top:' + Math.round(nr.top) + ' bottom:' + Math.round(nr.bottom) + ' h:' + Math.round(nr.height)) : '',
+      nr ? ('GAP bajo la barra: ' + Math.round(window.innerHeight - nr.bottom) + 'px') : '',
+      cs ? ('NAV min-h:' + cs.minHeight + ' · pad-b:' + cs.paddingBottom) : '',
+      sr ? ('SHELL bottom:' + Math.round(sr.bottom) + ' (innerH ' + window.innerHeight + ')') : ''
+    ].filter(Boolean);
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:24px';
+    ov.onclick = function(){ ov.remove(); };
+    ov.innerHTML = '<div style="background:#0e1f14;border:1px solid rgba(116,198,157,.4);border-radius:16px;padding:20px;font-family:monospace;font-size:13px;line-height:1.9;color:#c8f0d8;max-width:360px;word-break:break-all">'
+      + lines.map(function(l){ return '<div>'+l+'</div>'; }).join('')
+      + '<div style="margin-top:12px;font-family:Jost,sans-serif;font-size:11px;color:rgba(200,240,216,.55)">Sacale captura y mandala · tocá para cerrar</div></div>';
+    document.body.appendChild(ov);
+  }catch(e){ try{ alert('diag err: '+e.message); }catch(_){} }
+}
+
 // ── GEMINI AI CONFIG ────────────────────────────────────────
 // Key kept as fallback for non-Vercel environments (e.g. local dev / GitHub Pages)
 var GEMINI_KEY    = ''; // key removed — use Vercel proxy only (set GEMINI_KEY in Vercel env vars)
@@ -34593,7 +34631,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1400;
+    var _BUILT_V = 1401;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
