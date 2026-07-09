@@ -24238,11 +24238,60 @@ function _startProfileSync(userId){
     .subscribe();
 }
 
+// v1379: reconstruir los no-leídos desde la base al abrir la app. El contador
+// velo_dm_unread solo lo incrementaba el listener realtime / el polling de
+// mensajes recientes (últimos 30s) — un DM que llegaba con la app CERRADA
+// mandaba el push, pero al abrir la app no aparecía ningún badge en Contactos
+// favoritos ni en Actividad porque nadie re-consultaba los read=false viejos.
+// Esta función es idempotente: REEMPLAZA el contador con la verdad de la DB.
+async function _dmBackfillUnread(){
+  _initSupabase(); if(!sbClient) return;
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId) return;
+  try{
+    var res = await sbClient.from('direct_messages')
+      .select('from_id,text,created_at')
+      .eq('to_id', myId).eq('read', false)
+      .order('created_at',{ascending:false}).limit(200);
+    if(!res || res.error) return;
+    var unread = {};
+    var curPeer = (_dmPeer && _dmPeer.id) || null;
+    var curPage = document.querySelector('.p-page.active');
+    var inThisChat = curPage && curPage.id === 'pg-dm-chat' && curPeer;
+    (res.data||[]).forEach(function(m){
+      var txt = String(m.text||'');
+      // Sentinels internos no cuentan como mensajes (excepto audio/foto)
+      if(txt.indexOf('__velo_') === 0 && txt.indexOf('__velo_dm_audio__') !== 0 && txt.indexOf('__velo_dm_image__') !== 0) return;
+      if(inThisChat && m.from_id === curPeer) return; // lo estoy viendo ahora
+      unread[m.from_id] = (unread[m.from_id]||0)+1;
+      // Poblar cache de "último mensaje" si está vacía para este peer
+      var cache = _dmCacheGet();
+      if(!cache[m.from_id]){
+        var prev = txt.indexOf('__velo_dm_audio__')===0 ? '🎙️ Nota de voz'
+                 : txt.indexOf('__velo_dm_image__')===0 ? '📷 Foto' : txt;
+        _dmCacheSet(m.from_id, prev, false, m.created_at ? new Date(m.created_at).getTime() : Date.now());
+      }
+    });
+    safeLS('set','velo_dm_unread', JSON.stringify(unread));
+    _updateFavBadge();
+    try{ _refreshChatBadges(); }catch(_){}
+  }catch(e){ console.warn('[dm backfill]', e); }
+}
+
 function _startGlobalDMListener(){
   if(_dmInboxCh) return; // already subscribed
   var myId = safeLS('get','velo_user_id')||'';
   if(!myId || !sbClient) return;
   _dmLastChecked = new Date().toISOString();
+  // Backfill inicial + al volver del background (iOS congela el JS y el
+  // realtime se pierde los INSERTs mientras la PWA está en segundo plano)
+  try{ _dmBackfillUnread(); }catch(_){}
+  if(!window._dmBackfillVisBound){
+    window._dmBackfillVisBound = true;
+    document.addEventListener('visibilitychange', function(){
+      if(document.visibilityState === 'visible'){ try{ _dmBackfillUnread(); }catch(_){} }
+    });
+  }
 
   function _handleDMPayload(m, myId){
       if(m.to_id !== myId) return;
@@ -34292,7 +34341,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1378;
+    var _BUILT_V = 1379;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
