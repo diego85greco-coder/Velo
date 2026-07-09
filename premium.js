@@ -19681,10 +19681,12 @@ async function _renderHomeVibesCard(){
           + '<span class="home-vibes-widget__icon">🌊</span>'
           + '<span class="home-vibes-widget__title">Vibes de hoy</span>'
         + '</button>'
-        + '<button onclick="pOpenVibes()" class="home-vibes-widget__all">Ver todos →</button>'
+        + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">'
+          + '<span class="home-vibes-widget__hint-top">Para publicar en más grupos 👉</span>'
+          + '<button onclick="pOpenVibes()" class="home-vibes-widget__all">Ver todos →</button>'
+        + '</div>'
       + '</div>'
       + '<div class="home-vibes-widget__rail">'+thumbsHtml+'</div>'
-      + '<div class="home-vibes-widget__hint">👆 Tocá una portada para ver y publicar en ese grupo · o tocá "Ver todos"</div>'
       + '<button onclick="pStartCreateVibe(null,\'public\')" class="home-vibes-widget__cta">'
         + '<span class="home-vibes-widget__cta-plus">＋</span><span>Publicá un momento instantáneo</span>'
       + '</button>'
@@ -33773,7 +33775,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1368;
+    var _BUILT_V = 1369;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

@@ -15426,3 +15426,16 @@ body.r-dark .home-vibes-widget__cta span {
 }
 body:not(.r-dark) .home-vibes-widget__hint { color: rgba(30, 90, 55, 0.75); }
 body.r-dark .home-vibes-widget__hint { color: rgba(200, 235, 215, 0.70); }
+
+/* v1369 — caption "Para publicar en más grupos 👉" arriba del botón Ver todos */
+.home-vibes-widget__hint-top {
+  font-family: 'Jost', sans-serif;
+  font-size: 9.5px;
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0.3px;
+  line-height: 1;
+  white-space: nowrap;
+}
+body:not(.r-dark) .home-vibes-widget__hint-top { color: rgba(30, 90, 55, 0.78); }
+body.r-dark .home-vibes-widget__hint-top { color: rgba(200, 235, 215, 0.75); }
