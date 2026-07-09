@@ -21211,11 +21211,15 @@ async function pVibeReact(vibeId, reactionKey, btnEl){
         _vibeReactBurst(_sent[0]);
       }catch(_){}
       // Avisarle al dueño del momento (Actividad) — v1375
+      // v1380: incluir CUÁL fue la reacción (emoji + label) en la notif
       try{
         var vOwn = await sbClient.from('vibes').select('user_id').eq('id', vibeId).maybeSingle();
         if(vOwn && vOwn.data && vOwn.data.user_id){
           var myName = safeLS('get','velo_user_name')||'Alguien';
-          _createVeloNotif(vOwn.data.user_id, 'vibe_reaction', myName+' reaccionó a tu momento', '', vibeId);
+          var rxDef = null;
+          try{ rxDef = VIBE_REACTIONS.find(function(r){ return r.key === reactionKey; }); }catch(_){}
+          var rxBody = rxDef ? (rxDef.emoji+' '+rxDef.label) : '';
+          _createVeloNotif(vOwn.data.user_id, 'vibe_reaction', myName+' reaccionó a tu momento', rxBody, vibeId);
         }
       }catch(_){}
     }
@@ -34341,7 +34345,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1379;
+    var _BUILT_V = 1380;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
