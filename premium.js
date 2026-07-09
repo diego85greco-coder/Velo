@@ -1802,6 +1802,14 @@ function _openAnnPost(postId){
 }
 
 // ── BUDDY SYSTEM opt-in ──────────────────────────────────────────────
+// v1375: rediseño del match. Antes "Buscar compañero/a" emparejaba al
+// azar de forma INSTANTÁNEA (sin que el otro lado confirme nada) y por
+// separado existía un sistema roto en Contactos Favoritos que preguntaba
+// "¿sí o no?" a TODOS los favoritos por igual, sin relación con la gente
+// anotada. Ahora es un único flujo: te anotás → el sistema te sugiere
+// a alguien al azar de los anotados (o elegís vos de la lista) → eso
+// manda una SOLICITUD → recién sos compañer@ del mes cuando el otro
+// lado la acepta. buddy_requests guarda esas solicitudes pendientes.
 async function pOpenBuddyModal(){
   var ex = document.getElementById('buddyOv'); if(ex) ex.remove();
   var uid = safeLS('get','velo_user_id') || '';
@@ -1810,6 +1818,8 @@ async function pOpenBuddyModal(){
   var myBuddy = null;
   var iAmAvailable = false;
   var availableCount = 0;
+  var incomingReqs = [];
+  var outgoingReq = null;
   try{
     var me = await sbClient.from('profiles').select('buddy_id,buddy_name,buddy_available_at,buddy_started_at').eq('id',uid).maybeSingle();
     if(me && me.data){
@@ -1820,6 +1830,28 @@ async function pOpenBuddyModal(){
     var avc = await sbClient.from('profiles').select('id',{count:'exact',head:true})
       .not('buddy_available_at','is',null).is('buddy_id',null).neq('id', uid);
     if(!avc.error) availableCount = avc.count || 0;
+    if(!myBuddy){
+      // Solicitudes que me mandaron y todavía no respondí
+      var inc = await sbClient.from('buddy_requests').select('id,from_id').eq('to_id',uid).eq('status','pending').order('created_at',{ascending:false}).limit(5);
+      var incRows = (inc && inc.data) || [];
+      if(incRows.length){
+        var fromIds = incRows.map(function(r){ return r.from_id; });
+        var fromProfs = {};
+        try{
+          var fp = await sbClient.from('profiles').select('id,nombre').in('id', fromIds);
+          (fp.data||[]).forEach(function(p){ fromProfs[p.id] = p.nombre || 'Usuario'; });
+        }catch(_){}
+        incomingReqs = incRows.map(function(r){ return { id:r.id, fromId:r.from_id, fromName: fromProfs[r.from_id]||'Usuario' }; });
+      }
+      // Mi solicitud saliente más reciente, si hay
+      var out = await sbClient.from('buddy_requests').select('id,to_id').eq('from_id',uid).eq('status','pending').order('created_at',{ascending:false}).limit(1);
+      var outRow = out && out.data && out.data[0];
+      if(outRow){
+        var toName = 'esa persona';
+        try{ var tp = await sbClient.from('profiles').select('nombre').eq('id',outRow.to_id).maybeSingle(); if(tp && tp.data && tp.data.nombre) toName = tp.data.nombre; }catch(_){}
+        outgoingReq = { id: outRow.id, toId: outRow.to_id, toName: toName };
+      }
+    }
   }catch(e){}
   var body = '';
   if(myBuddy){
@@ -1856,7 +1888,7 @@ async function pOpenBuddyModal(){
           ? '<div style="background:rgba(255,180,100,.08);border:1px solid rgba(255,180,100,.28);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:11.5px;color:rgba(255,220,180,.78);line-height:1.5;font-family:Jost,sans-serif">⏰ <strong>Se termina el ciclo pronto.</strong> Al cumplirse los 30 días pueden renovar 30 más o cerrar el acompañamiento.</div>'
           : ''
         )
-      + '<button onclick="pOpenDM(\''+_jsAttr(myBuddy.id)+'\',\''+_jsAttr(myBuddy.name)+'\',\'🌿\');document.getElementById(\'buddyOv\').remove()" style="width:100%;padding:12px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-size:13.5px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;margin-bottom:8px;letter-spacing:.3px">💬 Enviarle mensaje</button>'
+      + '<button onclick="pOpenDM('+_jsAttr(myBuddy.id)+','+_jsAttr(myBuddy.name)+',\'🌿\');document.getElementById(\'buddyOv\').remove()" style="width:100%;padding:12px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-size:13.5px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;margin-bottom:8px;letter-spacing:.3px">💬 Enviarle mensaje</button>'
       + (daysLeft === 0
           ? '<button onclick="pRenewBuddy()" style="width:100%;padding:11px;background:rgba(155,120,220,.20);border:1.5px solid rgba(155,120,220,.55);border-radius:12px;color:rgba(220,200,255,.95);font-size:12.5px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;margin-bottom:8px">🔄 Renovar 30 días más</button>'
           : ''
@@ -1879,7 +1911,34 @@ async function pOpenBuddyModal(){
     + '</div>'
     + '<div style="background:rgba(255,180,100,.06);border:1px solid rgba(255,180,100,.18);border-radius:12px;padding:9px 12px;margin-bottom:14px;font-size:11.5px;color:rgba(255,220,180,.72);line-height:1.5;font-family:Jost,sans-serif">⚠️ <strong>Qué NO es:</strong> no es un profesional ni un guardián. No reemplaza terapia. Es alguien de la comunidad como vos que quiere acompañar 🌿</div>';
     var availableBadge = '<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(116,198,157,.14);border:1px solid rgba(116,198,157,.32);border-radius:100px;padding:5px 12px;font-size:11.5px;font-weight:700;color:rgba(180,235,210,.92);font-family:Jost,sans-serif;margin-bottom:14px">🟢 '+availableCount+' persona'+(availableCount===1?'':'s')+' disponible'+(availableCount===1?'':'s')+' ahora</div>';
-    if(iAmAvailable){
+    if(incomingReqs.length){
+      // Estado: alguien (o varios) te mandó una solicitud — responder tiene prioridad
+      body = '<div>'
+        + '<div style="text-align:center;margin-bottom:14px">'
+          + '<div style="font-size:48px;margin-bottom:8px">🌱</div>'
+          + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(255,255,255,.96);line-height:1.15;margin-bottom:4px">Tenés '+(incomingReqs.length===1?'una solicitud':incomingReqs.length+' solicitudes')+'</div>'
+        + '</div>'
+        + incomingReqs.map(function(r){
+            return '<div style="background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.42);border-radius:14px;padding:12px 14px;margin-bottom:10px;font-family:Jost,sans-serif">'
+              + '<div style="font-size:13.5px;color:rgba(255,240,215,.92);margin-bottom:10px"><strong>'+_escHtml(r.fromName)+'</strong> quiere ser tu compañer@ de apoyo del mes</div>'
+              + '<div style="display:flex;gap:6px">'
+                + '<button onclick="pBuddyRequestRespond('+_jsAttr(r.id)+','+_jsAttr(r.fromId)+','+_jsAttr(r.fromName)+',true)" style="flex:1;padding:10px;background:rgba(80,180,120,.24);border:1.5px solid rgba(80,180,120,.55);border-radius:10px;color:rgba(180,255,210,.95);font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer">🌱 Aceptar</button>'
+                + '<button onclick="pBuddyRequestRespond('+_jsAttr(r.id)+','+_jsAttr(r.fromId)+','+_jsAttr(r.fromName)+',false)" style="flex:1;padding:10px;background:rgba(220,120,120,.12);border:1.5px solid rgba(220,120,120,.35);border-radius:10px;color:rgba(255,180,180,.85);font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer">Rechazar</button>'
+              + '</div>'
+            + '</div>';
+          }).join('')
+        + '</div>';
+    } else if(outgoingReq){
+      // Estado: le mandaste una solicitud a alguien, esperando respuesta
+      body = '<div>'
+        + '<div style="text-align:center;margin-bottom:14px">'
+          + '<div style="font-size:48px;margin-bottom:8px">🌱</div>'
+          + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:rgba(255,255,255,.96);line-height:1.15;margin-bottom:4px">Esperando respuesta</div>'
+          + '<div style="font-size:12.5px;color:rgba(180,220,195,.72);font-family:Jost,sans-serif;line-height:1.5">Le mandaste una solicitud a <strong>'+_escHtml(outgoingReq.toName)+'</strong>. Te avisamos cuando responda.</div>'
+        + '</div>'
+        + '<button onclick="pBuddyCancelRequest('+_jsAttr(outgoingReq.id)+')" style="width:100%;padding:10px;background:none;border:1px solid rgba(255,120,120,.30);border-radius:12px;color:rgba(255,150,150,.72);font-size:12px;font-family:Jost,sans-serif;cursor:pointer">Cancelar solicitud</button>'
+        + '</div>';
+    } else if(iAmAvailable){
       // Estado: ya se anotó como disponible pero sin match aún
       body = '<div>'
         + '<div style="text-align:center;margin-bottom:14px">'
@@ -1889,7 +1948,8 @@ async function pOpenBuddyModal(){
         + '</div>'
         + '<div style="text-align:center">'+availableBadge+'</div>'
         + explainHtml
-        + '<button onclick="pFindBuddy()" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;margin-bottom:8px">🔍 Buscar compañero/a entre los disponibles</button>'
+        + '<button onclick="pFindBuddy()" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;margin-bottom:8px">🎲 Sugerime a alguien al azar</button>'
+        + (availableCount > 0 ? '<button onclick="pOpenBuddyList()" style="width:100%;padding:12px;background:rgba(116,198,157,.14);border:1.5px solid rgba(116,198,157,.42);border-radius:14px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px;margin-bottom:8px">👀 Ver toda la lista</button>' : '')
         + '<button onclick="pRemoveBuddyAvailability()" style="width:100%;padding:10px;background:none;border:1px solid rgba(255,120,120,.30);border-radius:12px;color:rgba(255,150,150,.72);font-size:12px;font-family:Jost,sans-serif;cursor:pointer">Quitarme de la lista de disponibles</button>'
         + '</div>';
     } else {
@@ -1903,7 +1963,7 @@ async function pOpenBuddyModal(){
         + explainHtml
         + '<button onclick="pMakeBuddyAvailable()" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(155,120,220,.92),rgba(116,88,180,.98));border:none;border-radius:14px;color:#fff;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;margin-bottom:8px">✋ Anotarme como disponible</button>'
         + (availableCount > 0
-            ? '<button onclick="pFindBuddy()" style="width:100%;padding:12px;background:rgba(116,198,157,.14);border:1.5px solid rgba(116,198,157,.42);border-radius:14px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px">🔍 Elegir a alguien de la lista</button>'
+            ? '<button onclick="pOpenBuddyList()" style="width:100%;padding:12px;background:rgba(116,198,157,.14);border:1.5px solid rgba(116,198,157,.42);border-radius:14px;color:rgba(180,235,210,.95);font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.2px">🔍 Elegir a alguien de la lista</button>'
             : '<div style="text-align:center;font-size:12px;color:rgba(255,255,255,.35);font-family:Jost,sans-serif;font-style:italic;padding:8px">Todavía no hay disponibles — anotate y esperá que otros se sumen 🌿</div>'
           )
         + '</div>';
@@ -1949,49 +2009,151 @@ async function pRemoveBuddyAvailability(){
     }catch(e){ pToast('⚠️','Error'); }
   });
 }
+// Candidatos válidos para sugerir/listar: anotados, sin compañero,
+// que no sean yo, y con los que no tenga ya una solicitud pendiente
+// (en cualquiera de los dos sentidos).
+async function _buddyCandidates(uid){
+  var res = await sbClient.from('profiles')
+    .select('id,nombre,username,avatar,buddy_available_at')
+    .not('buddy_available_at','is',null).is('buddy_id', null).neq('id', uid)
+    .order('buddy_available_at',{ascending:false}).limit(60);
+  if(res.error) return null;
+  var candidates = (res.data||[]).filter(function(p){ return p.nombre && p.nombre !== 'Anónimo' && p.nombre !== 'Alguien'; });
+  if(!candidates.length) return candidates;
+  var pend = await sbClient.from('buddy_requests').select('from_id,to_id').or('from_id.eq.'+uid+',to_id.eq.'+uid).eq('status','pending');
+  var excluded = {};
+  ((pend && pend.data)||[]).forEach(function(r){ excluded[r.from_id===uid?r.to_id:r.from_id] = 1; });
+  return candidates.filter(function(c){ return !excluded[c.id]; });
+}
 async function pFindBuddy(){
   _initSupabase(); if(!sbClient) return;
   var uid = safeLS('get','velo_user_id') || '';
   if(!uid) return;
   var btn = event && event.target; if(btn){ btn.disabled = true; btn.textContent = 'Buscando…'; }
   try{
-    // Solo entre los que se anotaron explícitamente como disponibles (opt-in)
-    var res = await sbClient.from('profiles')
-      .select('id,nombre,username,buddy_available_at')
-      .not('buddy_available_at','is',null).is('buddy_id', null).neq('id', uid).limit(50);
-    if(res.error){
+    var candidates = await _buddyCandidates(uid);
+    if(candidates === null){
       pToast('⚠️','Falta la columna buddy_available_at — correr el SQL');
-      if(btn){ btn.disabled = false; btn.textContent = '🔍 Buscar compañero/a'; }
+      if(btn){ btn.disabled = false; btn.textContent = '🎲 Sugerime a alguien al azar'; }
       return;
     }
-    var candidates = (res.data||[]).filter(function(p){ return p.nombre && p.nombre !== 'Anónimo' && p.nombre !== 'Alguien'; });
     if(!candidates.length){
       pToast('🌿','No hay compañeros disponibles ahora. Anotate y esperá que otros se sumen.');
-      if(btn){ btn.disabled = false; btn.textContent = '🔍 Buscar compañero/a'; }
+      if(btn){ btn.disabled = false; btn.textContent = '🎲 Sugerime a alguien al azar'; }
       return;
     }
-    var pick = candidates[Math.floor(Math.random() * Math.min(10, candidates.length))];
-    var myName = safeLS('get','velo_user_name') || 'Alguien';
-    var startedAt = new Date().toISOString();
-    // Emparejar: setear buddy_id, buddy_name, buddy_started_at + limpiar available
-    await sbClient.from('profiles').update({ buddy_id: pick.id, buddy_name: pick.nombre, buddy_started_at: startedAt, buddy_available_at: null }).eq('id', uid);
-    await sbClient.from('profiles').update({ buddy_id: uid, buddy_name: myName, buddy_started_at: startedAt, buddy_available_at: null }).eq('id', pick.id);
-    try{
-      await sbClient.from('broadcasts').insert({
-        target: 'user:'+pick.id,
-        subject: '🤝 Tenés un compañero/a de bienestar',
-        body: myName+' te eligió como compañero/a — vos te habías anotado como disponible. Pueden mandarse mensajes cuando lo necesiten 💚',
-        icon: '🤝',
-        sender: 'Velo — Comunidad'
-      });
-    }catch(e){}
-    pToast('🤝','Ya tenés compañero/a: '+pick.nombre);
-    var b = document.getElementById('buddyOv'); if(b) b.remove();
-    setTimeout(pOpenBuddyModal, 300);
+    var pick = candidates[Math.floor(Math.random() * candidates.length)];
+    await pBuddyRequestSend(pick.id, pick.nombre);
   }catch(e){
     pToast('⚠️','Error buscando');
-    if(btn){ btn.disabled = false; btn.textContent = '🔍 Buscar compañero/a'; }
+    if(btn){ btn.disabled = false; btn.textContent = '🎲 Sugerime a alguien al azar'; }
   }
+}
+// Muestra la lista completa de anotados para elegir a mano en vez de al azar.
+async function pOpenBuddyList(){
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid) return;
+  var ex = document.getElementById('buddyOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'buddyListOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML = '<div style="background:linear-gradient(155deg,rgba(12,32,20,.98),rgba(6,20,12,.97));border-radius:24px;max-width:440px;width:100%;max-height:78vh;display:flex;flex-direction:column;border:1.5px solid rgba(116,198,157,.35)">'
+    + '<div style="padding:20px 20px 12px;flex-shrink:0;text-align:center"><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:#fff">Elegí a alguien 🌿</div></div>'
+    + '<div id="buddyListBody" style="flex:1;overflow-y:auto;padding:0 16px 16px"><div style="text-align:center;padding:30px 0;color:rgba(255,255,255,.4);font-family:Jost,sans-serif;font-size:13px">Cargando…</div></div>'
+    + '<div style="padding:12px 16px;flex-shrink:0"><button onclick="document.getElementById(\'buddyListOv\').remove();pOpenBuddyModal()" style="width:100%;padding:11px;background:none;border:1px solid rgba(255,255,255,.10);border-radius:12px;color:rgba(255,255,255,.55);font-size:12.5px;font-family:Jost,sans-serif;cursor:pointer">← Volver</button></div>'
+  + '</div>';
+  document.body.appendChild(ov);
+  try{
+    var candidates = await _buddyCandidates(uid);
+    var body = document.getElementById('buddyListBody');
+    if(!body) return;
+    if(candidates === null){
+      body.innerHTML = '<div style="text-align:center;padding:20px 0;color:rgba(255,180,120,.75);font-size:13px;font-family:Jost,sans-serif">Falta la columna buddy_available_at — correr el SQL</div>';
+      return;
+    }
+    if(!candidates.length){
+      body.innerHTML = '<div style="text-align:center;padding:20px 0;color:rgba(255,255,255,.45);font-size:13px;font-family:Jost,sans-serif">No hay nadie disponible para elegir ahora 🌿</div>';
+      return;
+    }
+    body.innerHTML = candidates.map(function(c){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;margin-bottom:8px">'
+        + '<span style="font-size:24px;flex-shrink:0">'+_avInline(c.avatar||'🧑',28)+'</span>'
+        + '<div style="flex:1;min-width:0;font-size:13.5px;font-weight:700;color:#fff;font-family:Jost,sans-serif">'+_escHtml(c.nombre||'Usuario')+'</div>'
+        + '<button onclick="pBuddyRequestSend('+_jsAttr(c.id)+','+_jsAttr(c.nombre||'')+')" style="padding:8px 12px;background:rgba(116,198,157,.85);border:none;border-radius:10px;color:#071409;font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;flex-shrink:0;white-space:nowrap">🌱 Enviar solicitud</button>'
+      + '</div>';
+    }).join('');
+  }catch(e){
+    var body2 = document.getElementById('buddyListBody');
+    if(body2) body2.innerHTML = '<div style="text-align:center;padding:20px 0;color:rgba(255,150,150,.7);font-size:13px;font-family:Jost,sans-serif">Error al cargar</div>';
+  }
+}
+async function pBuddyRequestSend(toId, toName){
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid || !toId || toId === uid) return;
+  try{
+    var r = await sbClient.from('buddy_requests').insert({ from_id: uid, to_id: toId, status: 'pending' });
+    if(r.error){ pToast('⚠️', r.error.message.slice(0,60)); return; }
+    var myName = safeLS('get','velo_user_name') || 'Alguien';
+    try{
+      await sbClient.from('broadcasts').insert({
+        target: 'user:'+toId,
+        subject: '🌱 Solicitud de compañero/a de apoyo',
+        body: myName+' quiere ser tu compañero/a de bienestar este mes. Abrí Velo → Contactos favoritos para responder.',
+        icon: '🌱', sender: 'Velo — Comunidad'
+      });
+    }catch(_){}
+    pToast('🌱','Le enviamos una solicitud a '+(toName||'esa persona'));
+    var b = document.getElementById('buddyOv'); if(b) b.remove();
+    var l = document.getElementById('buddyListOv'); if(l) l.remove();
+    setTimeout(pOpenBuddyModal, 250);
+  }catch(e){ pToast('⚠️','Error al enviar'); }
+}
+async function pBuddyRequestRespond(reqId, fromId, fromName, accept){
+  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!uid) return;
+  try{
+    if(accept){
+      var startedAt = new Date().toISOString();
+      var myName = safeLS('get','velo_user_name') || 'Alguien';
+      await sbClient.from('profiles').update({ buddy_id: fromId, buddy_name: fromName, buddy_started_at: startedAt, buddy_available_at: null }).eq('id', uid);
+      await sbClient.from('profiles').update({ buddy_id: uid, buddy_name: myName, buddy_started_at: startedAt, buddy_available_at: null }).eq('id', fromId);
+      await sbClient.from('buddy_requests').update({ status: 'accepted', updated_at: new Date().toISOString() }).eq('id', reqId);
+      try{
+        // Limpiar cualquier otra solicitud pendiente de cualquiera de los dos lados
+        await sbClient.from('buddy_requests').update({ status: 'cancelled' }).eq('to_id', uid).eq('status','pending').neq('id', reqId);
+        await sbClient.from('buddy_requests').update({ status: 'cancelled' }).eq('from_id', uid).eq('status','pending');
+      }catch(_){}
+      try{
+        await sbClient.from('broadcasts').insert({
+          target: 'user:'+fromId,
+          subject: '🎉 Tenés un compañero/a de bienestar',
+          body: myName+' aceptó tu solicitud — ya son compañeros/as del mes 🌱',
+          icon: '🤝', sender: 'Velo — Comunidad'
+        });
+      }catch(_){}
+      pToast('🤝','Ya tenés compañero/a: '+(fromName||'tu contacto'));
+    } else {
+      await sbClient.from('buddy_requests').update({ status: 'declined', updated_at: new Date().toISOString() }).eq('id', reqId);
+      pToast('💛','Solicitud rechazada');
+    }
+    if(typeof pRenderContacts === 'function') pRenderContacts();
+    var b = document.getElementById('buddyOv'); if(b) b.remove();
+  }catch(e){ pToast('⚠️','Error'); }
+}
+function pBuddyCancelRequest(reqId){
+  _initSupabase(); if(!sbClient) return;
+  try{
+    sbClient.from('buddy_requests').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', reqId).then(function(){
+      pToast('🌱','Solicitud cancelada');
+      var b = document.getElementById('buddyOv'); if(b) b.remove();
+      setTimeout(pOpenBuddyModal, 200);
+      if(typeof pRenderContacts === 'function') pRenderContacts();
+    });
+  }catch(e){}
 }
 async function pRenewBuddy(){
   _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
@@ -2612,7 +2774,7 @@ function pThankGuardian(){
     +'<textarea id="thankGuardTxt" rows="3" maxlength="280" placeholder="Gracias por tu tiempo y tu escucha 💚" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(116,198,157,.30);border-radius:14px;padding:12px 14px;color:rgba(230,255,240,.94);font-size:14px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;resize:none;line-height:1.55;margin-bottom:14px"></textarea>'
     +'<div style="display:flex;gap:8px">'
       +'<button onclick="document.getElementById(\'thankGuardOv\').remove()" style="flex:1;padding:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:rgba(255,255,255,.60);font-size:13px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button>'
-      +'<button onclick="pSendGuardianThanks(\''+_jsAttr(g.id)+'\',\''+_jsAttr(g.name||'')+'\')" style="flex:2;padding:12px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">Enviar gracias 💚</button>'
+      +'<button onclick="pSendGuardianThanks('+_jsAttr(g.id)+','+_jsAttr(g.name||'')+')" style="flex:2;padding:12px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:12px;color:#071409;font-size:13px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">Enviar gracias 💚</button>'
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
@@ -4938,7 +5100,7 @@ async function _initHomeQuickCtaStrip(){
         var startedTs = me.data.buddy_started_at ? new Date(me.data.buddy_started_at).getTime() : Date.now();
         var daysLeft = Math.max(0, 30 - Math.floor((Date.now() - startedTs) / 86400000));
         var lbl = daysLeft === 0 ? '¡renová!' : shortName.slice(0,10);
-        var action = 'pOpenDM(\''+_jsAttr(me.data.buddy_id)+'\',\''+_jsAttr(me.data.buddy_name||'Compañero/a')+'\',\'🌿\')';
+        var action = 'pOpenDM('+_jsAttr(me.data.buddy_id)+','+_jsAttr(me.data.buddy_name||'Compañero/a')+',\'🌿\')';
         buddyTile = tile('💬', lbl, '', 'rgba(155,120,220,.18)','rgba(155,120,220,.52)', action);
       } else if(me && me.data && me.data.buddy_available_at){
         buddyTile = tile('🌿','Anotado/a','','rgba(155,120,220,.18)','rgba(155,120,220,.52)','pOpenBuddyModal()');
@@ -7297,6 +7459,54 @@ async function _loadVeloNotifs(){
   }catch(e){ return []; }
 }
 
+// v1375: la campana de Actividad sumaba los DMs no leídos al contador
+// (_updateVeloNotifBadge incluye _dmUnreadTotal()) pero la hoja solo
+// listaba velo_notifications (comentarios/reacciones) — el badge decía
+// "2" y adentro no había nada. Ahora los DMs no leídos aparecen como
+// items propios arriba de la lista.
+async function _loadDmActivityItems(){
+  var m = {}; try{ m = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
+  var ids = Object.keys(m).filter(function(id){ return (Number(m[id])||0) > 0; });
+  if(!ids.length) return [];
+  _initSupabase(); if(!sbClient) return [];
+  var cache = _dmCacheGet();
+  var profs = {};
+  try{
+    var r = await sbClient.from('profiles').select('id,nombre,avatar').in('id', ids);
+    (r.data||[]).forEach(function(p){ profs[p.id] = p; });
+  }catch(e){}
+  return ids.map(function(id){
+    var p = profs[id] || {};
+    var c = cache[id] || {};
+    return {
+      id: id,
+      name: p.nombre || 'Usuario',
+      av: p.avatar || '🧑',
+      text: c.text || 'Nuevo mensaje',
+      ts: c.ts || Date.now()
+    };
+  }).sort(function(a,b){ return b.ts - a.ts; });
+}
+function _renderDmActivityItems(items){
+  if(!items || !items.length) return '';
+  return items.map(function(it){
+    return '<div onclick="_navToDmActivity('+_jsAttr(it.id)+','+_jsAttr(it.name)+','+_jsAttr(it.av)+')" style="display:flex;gap:10px;align-items:flex-start;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;border-radius:12px;background:rgba(116,198,157,.05)">'
+      +'<span style="width:8px;height:8px;border-radius:50%;background:rgba(116,198,157,.90);flex-shrink:0;margin-top:5px;box-shadow:0 0 6px rgba(116,198,157,.50)"></span>'
+      +'<span style="font-size:22px;flex-shrink:0;line-height:1.25">'+_avInline(it.av,22)+'</span>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,.90);font-family:Jost,sans-serif;line-height:1.35;margin-bottom:3px">'+_escHtml(it.name)+' te escribió</div>'
+      +'<div style="font-size:14px;color:rgba(255,255,255,.40);font-family:\'Cormorant Garamond\',serif;font-style:italic;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml('"'+it.text+'"')+'</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.25);font-family:Jost,sans-serif;margin-top:4px">'+_momentoAgo(it.ts)+'<span style="margin-left:8px;color:rgba(116,198,157,.55);font-size:11px">Ver →</span></div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+function _navToDmActivity(id, name, av){
+  var shOv = document.getElementById('veloNotifsSheetOv');
+  if(shOv) shOv.remove();
+  pOpenDM(id, name, av);
+}
+
 async function _markVeloNotifsRead(){
   _initSupabase(); if(!sbClient) return;
   var uid=safeLS('get','velo_user_id'); if(!uid) return;
@@ -7359,19 +7569,33 @@ function _navToNotif(type, relatedId){
     // Navigate home so cache is populated, then open the sheet
     pGoTo('home');
     setTimeout(function(){ pOpenMomentoSheet(relatedId); }, 900);
+  } else if(type === 'vibe_comment' || type === 'vibe_reaction'){
+    _openVibeFromNotif(relatedId);
   }
 }
+// Abre el momento correspondiente desde una notificación de Actividad —
+// distingue si es instantáneo o de un grupo. v1375
+async function _openVibeFromNotif(vibeId){
+  _initSupabase(); if(!sbClient) return;
+  try{
+    var r = await sbClient.from('vibes').select('id,group_id').eq('id', vibeId).maybeSingle();
+    if(!r || !r.data){ pToast('🌱','Ese momento ya no está disponible'); return; }
+    if(r.data.group_id) pOpenVibeGroup(r.data.group_id);
+    else pOpenInstantVibe(vibeId);
+  }catch(e){ console.warn('[open-vibe-from-notif]', e); }
+}
 
+function _veloNotifsEmptyState(){
+  return '<div style="text-align:center;padding:40px 16px">'
+    +'<div style="font-size:44px;margin-bottom:14px;opacity:.40">💬</div>'
+    +'<div style="font-size:17px;font-weight:700;color:rgba(255,255,255,.45);font-family:Jost,sans-serif">Todo al día</div>'
+    +'<div style="font-size:14px;color:rgba(255,255,255,.25);margin-top:8px;line-height:1.55;font-family:Jost,sans-serif">Cuando alguien te escriba, comente o reaccione a tus publicaciones aparecerá acá</div>'
+    +'</div>';
+}
 function _renderVeloNotifs(notifs){
-  var typeIcon={dq_comment:'💬',momento_comment:'💬',reaction:'💚'};
-  var typeNavigable={dq_comment:true, momento_comment:true};
-  if(!notifs||!notifs.length){
-    return '<div style="text-align:center;padding:40px 16px">'
-      +'<div style="font-size:44px;margin-bottom:14px;opacity:.40">💬</div>'
-      +'<div style="font-size:17px;font-weight:700;color:rgba(255,255,255,.45);font-family:Jost,sans-serif">Todo al día</div>'
-      +'<div style="font-size:14px;color:rgba(255,255,255,.25);margin-top:8px;line-height:1.55;font-family:Jost,sans-serif">Cuando alguien comente o reaccione a tus publicaciones aparecerá acá</div>'
-      +'</div>';
-  }
+  var typeIcon={dq_comment:'💬',momento_comment:'💬',reaction:'💚',vibe_comment:'💬',vibe_reaction:'🌊'};
+  var typeNavigable={dq_comment:true, momento_comment:true, vibe_comment:true, vibe_reaction:true};
+  if(!notifs||!notifs.length) return '';
   return notifs.map(function(n){
     var icon=typeIcon[n.type]||'🔔';
     var unread=!n.is_read;
@@ -7414,9 +7638,12 @@ async function pOpenVeloNotifsSheet(){
     +'</div>'
     +'</div>';
   document.body.appendChild(ov);
-  var notifs=await _loadVeloNotifs();
+  var _dmItems=[], notifs=[];
+  try{ _dmItems = await _loadDmActivityItems(); }catch(_){}
+  try{ notifs = await _loadVeloNotifs(); }catch(_){}
   var body=document.getElementById('veloNotifsBody');
-  if(body) body.innerHTML=_renderVeloNotifs(notifs);
+  var combinedHtml = _renderDmActivityItems(_dmItems) + _renderVeloNotifs(notifs);
+  if(body) body.innerHTML = combinedHtml || _veloNotifsEmptyState();
   _markVeloNotifsRead().then(function(){ _updateVeloNotifBadge(0); });
 }
 
@@ -20562,8 +20789,10 @@ function _vibeCardHtml(v){
       groupChip = '<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(220,170,60,.20);border:1px solid rgba(220,170,60,.55);border-radius:100px;font-family:Jost,sans-serif;font-size:10.5px;font-weight:700;color:rgba(255,225,150,.98);letter-spacing:.2px;margin-top:4px">'+_escHtml(_instLbl)+'</div>';
     }
   }catch(_grE){}
+  var _isMineVibe = v.user_id && v.user_id === (safeLS('get','velo_user_id')||'');
+  var vibeMenuBtn = '<button onclick="event.stopPropagation();pVibeCardMenu('+_jsAttr(v.id)+','+(_isMineVibe?'true':'false')+')" style="background:none;border:none;color:rgba(200,230,215,.55);font-size:18px;cursor:pointer;padding:4px 6px;flex-shrink:0;line-height:1">⋯</button>';
   return '<div class="vibe-card" data-vibe-id="'+v.id+'" style="background:linear-gradient(180deg,rgba(20,40,26,.92),rgba(10,26,18,.95));border:1.5px solid '+borderColor+';border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:'+glow+';transition:box-shadow .5s, border-color .5s">'
-    + '<div onclick="_vibeOpenUserProfile('+_jsAttr(v.user_id||'')+','+_jsAttr(v.user_name||'Usuario')+','+_jsAttr(v.user_av||'🧑')+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;cursor:pointer" title="Ver perfil de '+_escHtml(v.user_name||'Usuario')+'"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div><div class="vibe-uname" data-vibe-uname="'+_escHtml(v.user_id||'')+'" style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.80);font-weight:700;letter-spacing:.2px">'+(function(){ try{ var _u=_uLook(v.user_id); return _u?'@'+_escHtml(_u):''; }catch(_){ return ''; } })()+'</div>'+groupChip+'<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:3px">'+ago+' · caduca en '+left+'</div></div><span style="font-size:14px;color:rgba(180,220,195,.55);flex-shrink:0" title="Ver perfil">›</span></div>'
+    + '<div onclick="_vibeOpenUserProfile('+_jsAttr(v.user_id||'')+','+_jsAttr(v.user_name||'Usuario')+','+_jsAttr(v.user_av||'🧑')+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;cursor:pointer" title="Ver perfil de '+_escHtml(v.user_name||'Usuario')+'"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div><div class="vibe-uname" data-vibe-uname="'+_escHtml(v.user_id||'')+'" style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.80);font-weight:700;letter-spacing:.2px">'+(function(){ try{ var _u=_uLook(v.user_id); return _u?'@'+_escHtml(_u):''; }catch(_){ return ''; } })()+'</div>'+groupChip+'<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:3px">'+ago+' · caduca en '+left+'</div></div>'+vibeMenuBtn+'</div>'
     + '<img data-vibe-src="'+_escHtml(v.media_url||'')+'" alt="momento" style="width:100%;max-height:520px;object-fit:cover;display:block;background:rgba(0,0,0,.35)" onerror="this.style.opacity=\'.35\'">'
     + (v.caption ? '<div style="padding:12px 16px 14px;font-family:\'Cormorant Garamond\',serif;font-size:15.5px;font-style:italic;color:rgba(240,250,240,.95);line-height:1.5">"'+_escHtml(v.caption)+'"</div>' : '')
     + summaryChip
@@ -20573,6 +20802,39 @@ function _vibeCardHtml(v){
       + '<button onclick="pOpenVibeComments(\''+v.id+'\')" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(180,220,195,.22);border-radius:12px;color:rgba(220,240,225,.85);font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;letter-spacing:.3px">💬 <span data-vibe-comment-count="'+v.id+'">Ver comentarios</span></button>'
     + '</div>'
   + '</div>';
+}
+// Menú "⋯" de un momento: borrar (si es mío) o reportar (si es de otro) — v1375
+function pVibeCardMenu(vibeId, isMine){
+  var ex = document.getElementById('vibeCardMenuOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'vibeCardMenuOv';
+  ov.className = 'p-modal-ov show';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  var opts = isMine
+    ? '<button onclick="document.getElementById(\'vibeCardMenuOv\').remove();pDeleteVibe('+_jsAttr(vibeId)+')" style="width:100%;padding:13px;background:none;border:none;border-bottom:1px solid var(--border);color:var(--sos);font-family:Jost,sans-serif;font-size:15px;font-weight:700;cursor:pointer;text-align:left">🗑️ Borrar momento</button>'
+    : '<button onclick="document.getElementById(\'vibeCardMenuOv\').remove();pReportVibe('+_jsAttr(vibeId)+')" style="width:100%;padding:13px;background:none;border:none;border-bottom:1px solid var(--border);color:var(--ink3);font-family:Jost,sans-serif;font-size:15px;font-weight:700;cursor:pointer;text-align:left">⚠️ Reportar momento</button>';
+  opts += '<button onclick="document.getElementById(\'vibeCardMenuOv\').remove()" style="width:100%;padding:13px;background:none;border:none;color:var(--ink4);font-family:Jost,sans-serif;font-size:14px;cursor:pointer;text-align:left">Cancelar</button>';
+  ov.innerHTML = '<div class="p-sheet" style="max-width:420px;margin:auto">'+opts+'</div>';
+  document.body.appendChild(ov);
+}
+function pDeleteVibe(vibeId){
+  _pConfirm('¿Borrar este momento? No se puede deshacer.', async function(){
+    _initSupabase(); if(!sbClient) return;
+    try{
+      var r = await sbClient.from('vibes').delete().eq('id', vibeId);
+      if(r.error){ pToast('⚠️','Error al borrar'); return; }
+      pToast('🗑️','Momento borrado');
+      var card = document.querySelector('.vibe-card[data-vibe-id="'+vibeId+'"]');
+      if(card){ card.style.transition='opacity .3s'; card.style.opacity='0'; setTimeout(function(){ card.remove(); }, 320); }
+      try{ _renderHomeVibesCard(); }catch(_){}
+    }catch(e){ pToast('⚠️','Error al borrar'); }
+  });
+}
+async function pReportVibe(vibeId){
+  _initSupabase(); if(!sbClient) return;
+  var preview = 'Momento (vibe)';
+  try{ var r = await sbClient.from('vibes').select('caption').eq('id',vibeId).maybeSingle(); if(r && r.data && r.data.caption) preview = r.data.caption; }catch(_){}
+  pReportContent('vibe', vibeId, preview);
 }
 // Abrir modal de comentarios de una vibe. Carga los últimos y permite escribir uno.
 async function pOpenVibeComments(vibeId){
@@ -20602,18 +20864,41 @@ async function pOpenVibeComments(vibeId){
     var listEl = document.getElementById('vibeCommentsList');
     if(!listEl) return;
     var data = (res && res.data) || [];
+    var myId = safeLS('get','velo_user_id')||'';
+    // Corazones por comentario (batch) — quién y cuántos
+    var heartCounts = {}, myHearts = {};
+    if(data.length){
+      try{
+        var cIds = data.map(function(c){ return c.id; });
+        var hRes = await sbClient.from('vibe_comment_reactions').select('comment_id,user_id').in('comment_id', cIds);
+        (hRes.data||[]).forEach(function(h){
+          heartCounts[h.comment_id] = (heartCounts[h.comment_id]||0)+1;
+          if(h.user_id === myId) myHearts[h.comment_id] = true;
+        });
+      }catch(_){}
+    }
     if(!data.length){
       listEl.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(200,230,215,.55);font-family:Jost,sans-serif;font-size:12.5px;font-style:italic">Sin comentarios · sé el primero en dejar un mensaje 🌱</div>';
     } else {
       listEl.innerHTML = data.map(function(c){
         var when = c.created_at ? _timeAgoDM(new Date(c.created_at).getTime()) : '';
-        return '<div style="padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(180,220,195,.14);border-radius:12px;margin-bottom:6px;font-family:Jost,sans-serif">'
+        var isMine = !!(myId && c.user_id === myId);
+        var hCount = heartCounts[c.id] || 0;
+        var hMine = !!myHearts[c.id];
+        var actionBtn = isMine
+          ? '<button onclick="pDeleteVibeComment('+_jsAttr(c.id)+','+_jsAttr(vibeId)+')" style="background:none;border:none;color:rgba(255,140,140,.65);font-size:11px;font-family:Jost,sans-serif;cursor:pointer;padding:2px 4px">🗑️ Borrar</button>'
+          : '<button onclick="pReportVibeComment('+_jsAttr(c.id)+','+_jsAttr(c.text||'')+')" style="background:none;border:none;color:rgba(200,230,215,.40);font-size:11px;font-family:Jost,sans-serif;cursor:pointer;padding:2px 4px">⚠️ Reportar</button>';
+        return '<div data-comment-id="'+_escHtml(c.id)+'" style="padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(180,220,195,.14);border-radius:12px;margin-bottom:6px;font-family:Jost,sans-serif">'
           + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
             + '<span style="font-size:18px;flex-shrink:0">'+_avInline(c.user_av||'🧑', 22)+'</span>'
             + '<span style="font-size:12.5px;font-weight:800;color:rgba(220,240,225,.95)">'+_escHtml(c.user_name||'Usuario')+'</span>'
             + '<span style="font-size:10px;color:rgba(180,220,195,.55);margin-left:auto">'+when+'</span>'
           + '</div>'
-          + '<div style="font-size:13px;color:rgba(230,245,235,.90);line-height:1.5;padding-left:30px">'+_escHtml(c.text||'')+'</div>'
+          + '<div style="font-size:13px;color:rgba(230,245,235,.90);line-height:1.5;padding-left:30px;margin-bottom:6px">'+_escHtml(c.text||'')+'</div>'
+          + '<div style="display:flex;align-items:center;gap:12px;padding-left:30px">'
+            + '<button onclick="pToggleVibeCommentHeart('+_jsAttr(c.id)+','+_jsAttr(vibeId)+')" style="background:none;border:none;color:'+(hMine?'#ff6b9d':'rgba(200,230,215,.45)')+';font-size:12px;font-family:Jost,sans-serif;cursor:pointer;padding:2px 4px;display:flex;align-items:center;gap:3px">'+(hMine?'❤️':'🤍')+(hCount>0?' '+hCount:'')+'</button>'
+            + actionBtn
+          + '</div>'
         + '</div>';
       }).join('');
     }
@@ -20639,10 +20924,44 @@ async function pSendVibeComment(vibeId){
       pToast('💚','Comentario enviado');
       // Recargar la lista
       pOpenVibeComments(vibeId);
+      // Avisarle al dueño del momento (Actividad) — v1375
+      try{
+        var vOwn = await sbClient.from('vibes').select('user_id').eq('id', vibeId).maybeSingle();
+        if(vOwn && vOwn.data && vOwn.data.user_id){
+          _createVeloNotif(vOwn.data.user_id, 'vibe_comment', myName+' comentó tu momento', text.slice(0,80), vibeId);
+        }
+      }catch(_){}
     } else {
       pToast('⚠️','No se pudo enviar');
     }
   }catch(e){ console.warn('[vibe-comment insert]', e); pToast('⚠️','Error al enviar'); }
+}
+function pDeleteVibeComment(commentId, vibeId){
+  _pConfirm('¿Borrar tu comentario?', async function(){
+    _initSupabase(); if(!sbClient) return;
+    try{
+      await sbClient.from('vibe_comments').delete().eq('id', commentId);
+      pToast('🗑️','Comentario borrado');
+      pOpenVibeComments(vibeId);
+    }catch(e){ pToast('⚠️','Error al borrar'); }
+  });
+}
+function pReportVibeComment(commentId, text){
+  pReportContent('vibe_comment', commentId, text||'');
+}
+async function pToggleVibeCommentHeart(commentId, vibeId){
+  _initSupabase(); if(!sbClient) return;
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId){ pToast('⚠️','Iniciá sesión'); return; }
+  try{
+    var ex = await sbClient.from('vibe_comment_reactions').select('id').eq('comment_id',commentId).eq('user_id',myId).maybeSingle();
+    if(ex && ex.data){
+      await sbClient.from('vibe_comment_reactions').delete().eq('id', ex.data.id);
+    } else {
+      await sbClient.from('vibe_comment_reactions').insert({ comment_id: commentId, user_id: myId });
+    }
+    pOpenVibeComments(vibeId);
+  }catch(e){ pToast('⚠️','Error'); }
 }
 // ✨ Animación de burst de emojis al reaccionar — 20 emojis del mismo tipo
 // flotan desde el fondo hacia arriba con drift y rotación, se auto-destruyen.
@@ -20839,6 +21158,14 @@ async function pVibeReact(vibeId, reactionKey, btnEl){
         pToast(_sent[0], _sent[1]);
         // Burst animado por toda la pantalla
         _vibeReactBurst(_sent[0]);
+      }catch(_){}
+      // Avisarle al dueño del momento (Actividad) — v1375
+      try{
+        var vOwn = await sbClient.from('vibes').select('user_id').eq('id', vibeId).maybeSingle();
+        if(vOwn && vOwn.data && vOwn.data.user_id){
+          var myName = safeLS('get','velo_user_name')||'Alguien';
+          _createVeloNotif(vOwn.data.user_id, 'vibe_reaction', myName+' reaccionó a tu momento', '', vibeId);
+        }
       }catch(_){}
     }
     _vibeReactionAgg[vibeId] = counts;
@@ -22192,102 +22519,69 @@ function _contactCard(id, name, av, uname, pInfo, unread, opts){
 }
 
 // ── Compañer@ de apoyo del mes ────────────────────────────────
-// Sistema simétrico de "match": cada mes, cada par (yo, partner) debe confirmar
-// para renovarse como compañer@s de apoyo. Guardamos un registro por lado
-// en support_matches — así puedo tener mi respuesta INDEPENDIENTE de la de él.
-// Match confirmado = ambos aceptaron.
-function _supportMonthKey(){
-  var d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-}
-async function _loadSupportMatches(favIds){
-  _initSupabase(); if(!sbClient) return { mine:{}, theirs:{} };
-  var myId = safeLS('get','velo_user_id')||'';
-  if(!myId || !favIds || !favIds.length) return { mine:{}, theirs:{} };
-  var monthKey = _supportMonthKey();
-  var mine = {}, theirs = {};
+// v1375: antes esta sección preguntaba "¿sí o no?" a TODOS los favoritos
+// por igual (tabla support_matches), sin ninguna relación con el sistema
+// real de match aleatorio/anotados (buddy_id + buddy_requests). Ahora
+// muestra solo lo que corresponde a MI estado real: mi compañer@ actual,
+// o solicitudes puntuales pendientes (entrantes/salientes) — nunca la
+// lista completa de favoritos.
+async function _buddyStatusCard(){
+  _initSupabase(); if(!sbClient) return '';
+  var uid = safeLS('get','velo_user_id')||'';
+  if(!uid) return '';
+  var header = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:20px">🌱</span><div style="font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--ink2)">Compañer@ de apoyo del mes</div></div>';
   try{
-    // Mis respuestas hacia cada partner
-    var meRes = await sbClient.from('support_matches')
-      .select('partner_id,my_answer')
-      .eq('user_id', myId).eq('month_key', monthKey).in('partner_id', favIds);
-    (meRes.data||[]).forEach(function(r){ mine[r.partner_id] = r.my_answer; });
-    // Respuestas de cada partner hacia mí
-    var thRes = await sbClient.from('support_matches')
-      .select('user_id,my_answer')
-      .eq('partner_id', myId).eq('month_key', monthKey).in('user_id', favIds);
-    (thRes.data||[]).forEach(function(r){ theirs[r.user_id] = r.my_answer; });
-  }catch(e){ console.warn('[support-match load]', e); }
-  return { mine: mine, theirs: theirs };
-}
-async function pSupportRespond(partnerId, answer, partnerName){
-  _initSupabase(); if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
-  var myId = safeLS('get','velo_user_id')||'';
-  if(!myId){ pToast('⚠️','Iniciá sesión'); return; }
-  var monthKey = _supportMonthKey();
-  try{
-    var r = await sbClient.from('support_matches').upsert({
-      user_id: myId, partner_id: partnerId, month_key: monthKey,
-      my_answer: answer, updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id,partner_id,month_key' });
-    if(r && r.error){ pToast('⚠️', r.error.message.slice(0,60)); return; }
-    if(answer === 'accepted') pToast('🌱','Confirmaste el match con '+(partnerName||'tu contacto'));
-    else pToast('💛','No renovaste este mes');
-    // Re-render
-    if(typeof pRenderContacts === 'function') pRenderContacts();
-  }catch(e){ console.warn('[support-match respond]', e); pToast('⚠️','Error al guardar'); }
-}
-// Devuelve el HTML de la sección "Compañer@s de apoyo del mes".
-// Prioriza mostrar matches ya confirmados y los que están pendientes de MI respuesta.
-function _supportRenderSection(favs, matches){
-  if(!favs || !favs.length) return '';
-  var myAnswers = matches.mine || {};
-  var theirAnswers = matches.theirs || {};
-  var confirmed = [];   // ambos aceptaron
-  var pending = [];     // mi respuesta pendiente
-  var declined = [];    // uno declinó
-  favs.forEach(function(f){
-    var mine = myAnswers[f.id];
-    var theirs = theirAnswers[f.id];
-    if(mine === 'accepted' && theirs === 'accepted') confirmed.push(f);
-    else if(mine === 'declined' || theirs === 'declined') declined.push({fav:f, whoDeclined: mine==='declined'?'me':'them'});
-    else if(!mine || mine === 'pending') pending.push({fav:f, theirs: theirs});
-  });
-  if(!confirmed.length && !pending.length && !declined.length) return '';
-  var confirmedHtml = confirmed.length
-    ? confirmed.map(function(f){
-        return '<button onclick="pOpenDM('+_jsAttr(f.id)+','+_jsAttr(f.name||'')+','+_jsAttr(f.av||'🧑')+')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:linear-gradient(135deg,rgba(120,220,150,.16),rgba(60,180,100,.10));border:1.5px solid rgba(120,220,150,.55);border-radius:14px;cursor:pointer;font-family:Jost,sans-serif;text-align:left;box-shadow:0 4px 14px rgba(80,180,120,.18)">'
-          + '<span style="font-size:26px;flex-shrink:0">'+_avInline(f.av||'🧑',30)+'</span>'
-          + '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:var(--ink)">'+_escHtml(f.name||'Usuario')+'</div><div style="font-size:10.5px;font-weight:800;letter-spacing:.4px;color:rgba(60,150,90,.95)">🌱 COMPAÑER@ DEL MES</div></div>'
-        + '</button>';
-      }).join('')
-    : '';
-  var pendingHtml = pending.length
-    ? pending.map(function(p){
-        var f = p.fav;
-        var theirLbl = p.theirs === 'accepted' ? '✓ Ya te dijo que sí — falta tu respuesta' : (p.theirs === 'declined' ? 'No confirmó este mes' : 'Esperando la respuesta de ambos');
-        var showBtns = p.theirs !== 'declined';
+    var me = await sbClient.from('profiles').select('buddy_id,buddy_name').eq('id',uid).maybeSingle();
+    var buddyId = me && me.data && me.data.buddy_id;
+    var buddyName = me && me.data && me.data.buddy_name;
+    if(buddyId){
+      var av = '🧑';
+      try{ var p = await sbClient.from('profiles').select('avatar').eq('id',buddyId).maybeSingle(); if(p && p.data) av = p.data.avatar || av; }catch(_){}
+      return '<div style="margin-bottom:18px">' + header
+        + '<button onclick="pOpenDM('+_jsAttr(buddyId)+','+_jsAttr(buddyName||'')+','+_jsAttr(av)+')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;width:100%;background:linear-gradient(135deg,rgba(120,220,150,.16),rgba(60,180,100,.10));border:1.5px solid rgba(120,220,150,.55);border-radius:14px;cursor:pointer;font-family:Jost,sans-serif;text-align:left;box-shadow:0 4px 14px rgba(80,180,120,.18)">'
+          + '<span style="font-size:26px;flex-shrink:0">'+_avInline(av,30)+'</span>'
+          + '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:var(--ink)">'+_escHtml(buddyName||'Usuario')+'</div><div style="font-size:10.5px;font-weight:800;letter-spacing:.4px;color:rgba(60,150,90,.95)">🌱 TU COMPAÑER@ DEL MES</div></div>'
+        + '</button>'
+      + '</div>';
+    }
+    // Solicitudes entrantes pendientes — prioridad sobre la saliente
+    var inc = await sbClient.from('buddy_requests').select('id,from_id').eq('to_id',uid).eq('status','pending').order('created_at',{ascending:false}).limit(5);
+    var incRows = (inc && inc.data) || [];
+    if(incRows.length){
+      var ids = incRows.map(function(r){ return r.from_id; });
+      var profs = {};
+      try{
+        var pr = await sbClient.from('profiles').select('id,nombre,avatar').in('id', ids);
+        (pr.data||[]).forEach(function(pp){ profs[pp.id] = pp; });
+      }catch(_){}
+      var cardsHtml = incRows.map(function(r){
+        var pp = profs[r.from_id] || {};
+        var nm = pp.nombre || 'Usuario';
+        var av2 = pp.avatar || '🧑';
         return '<div style="padding:12px 14px;background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.42);border-radius:14px;font-family:Jost,sans-serif">'
-          + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(showBtns?'10px':'0')+'"><span style="font-size:26px;flex-shrink:0">'+_avInline(f.av||'🧑',30)+'</span><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:var(--ink)">'+_escHtml(f.name||'Usuario')+'</div><div style="font-size:11px;color:var(--ink4);margin-top:1px">'+_escHtml(theirLbl)+'</div></div></div>'
-          + (showBtns ? '<div style="display:flex;gap:6px"><button onclick="pSupportRespond('+_jsAttr(f.id)+',\'accepted\','+_jsAttr(f.name||'')+')" style="flex:1;padding:8px;background:rgba(80,180,120,.24);border:1.5px solid rgba(80,180,120,.55);border-radius:10px;color:rgba(20,80,40,.95);font-family:Jost,sans-serif;font-size:12px;font-weight:800;cursor:pointer">🌱 Sí, este mes</button><button onclick="pSupportRespond('+_jsAttr(f.id)+',\'declined\','+_jsAttr(f.name||'')+')" style="flex:1;padding:8px;background:rgba(220,120,120,.12);border:1.5px solid rgba(220,120,120,.35);border-radius:10px;color:rgba(150,50,50,.9);font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer">Este mes no</button></div>' : '')
+          + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:26px;flex-shrink:0">'+_avInline(av2,30)+'</span><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:var(--ink)">'+_escHtml(nm)+'</div><div style="font-size:11px;color:var(--ink4);margin-top:1px">Quiere ser tu compañer@ del mes</div></div></div>'
+          + '<div style="display:flex;gap:6px">'
+            + '<button onclick="pBuddyRequestRespond('+_jsAttr(r.id)+','+_jsAttr(r.from_id)+','+_jsAttr(nm)+',true)" style="flex:1;padding:8px;background:rgba(80,180,120,.24);border:1.5px solid rgba(80,180,120,.55);border-radius:10px;color:rgba(20,80,40,.95);font-family:Jost,sans-serif;font-size:12px;font-weight:800;cursor:pointer">🌱 Aceptar</button>'
+            + '<button onclick="pBuddyRequestRespond('+_jsAttr(r.id)+','+_jsAttr(r.from_id)+','+_jsAttr(nm)+',false)" style="flex:1;padding:8px;background:rgba(220,120,120,.12);border:1.5px solid rgba(220,120,120,.35);border-radius:10px;color:rgba(150,50,50,.9);font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer">Rechazar</button>'
+          + '</div>'
         + '</div>';
-      }).join('')
-    : '';
-  var declinedHtml = declined.length
-    ? declined.map(function(d){
-        var f = d.fav;
-        var msg = d.whoDeclined === 'me' ? 'No renovaste este mes' : _escHtml(f.name||'Tu contacto')+' no confirmó este mes';
-        return '<div style="padding:10px 12px;background:rgba(180,180,180,.08);border:1px solid rgba(180,180,180,.24);border-radius:12px;font-family:Jost,sans-serif;font-size:11.5px;color:var(--ink4);font-style:italic;display:flex;align-items:center;gap:8px"><span style="font-size:18px">💛</span><span>'+msg+'</span></div>';
-      }).join('')
-    : '';
-  return '<div style="margin-bottom:18px">'
-    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:20px">🌱</span><div><div style="font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--ink2)">Compañer@ de apoyo del mes</div><div style="font-size:11px;color:var(--ink4);margin-top:1px">Ambos tienen que confirmar cada mes</div></div></div>'
-    + '<div style="display:flex;flex-direction:column;gap:8px">'
-      + confirmedHtml
-      + pendingHtml
-      + declinedHtml
-    + '</div>'
-  + '</div>';
+      }).join('');
+      return '<div style="margin-bottom:18px">' + header
+        + '<div style="display:flex;flex-direction:column;gap:8px">'+cardsHtml+'</div>'
+      + '</div>';
+    }
+    // Solicitud saliente pendiente
+    var out = await sbClient.from('buddy_requests').select('id,to_id').eq('from_id',uid).eq('status','pending').order('created_at',{ascending:false}).limit(1);
+    var outRow = out && out.data && out.data[0];
+    if(outRow){
+      var toProf = {};
+      try{ var tp = await sbClient.from('profiles').select('nombre').eq('id',outRow.to_id).maybeSingle(); if(tp && tp.data) toProf = tp.data; }catch(_){}
+      return '<div style="margin-bottom:18px">' + header
+        + '<div style="padding:10px 12px;background:rgba(180,180,180,.08);border:1px solid rgba(180,180,180,.24);border-radius:12px;font-family:Jost,sans-serif;font-size:11.5px;color:var(--ink4);display:flex;align-items:center;gap:8px"><span style="font-size:18px">🌱</span><span>Esperando respuesta de '+_escHtml(toProf.nombre||'esa persona')+'</span></div>'
+      + '</div>';
+    }
+    return '';
+  }catch(e){ console.warn('[buddy-status-card]', e); return ''; }
 }
 
 async function pRenderContacts(){
@@ -22459,14 +22753,11 @@ async function pRenderContacts(){
     )
     +'</div>';
 
-  // Compañer@ de apoyo del mes — cargar matches y renderizar sección arriba de las tabs
+  // Compañer@ de apoyo del mes — mi estado real (buddy_id / solicitudes pendientes)
   var supportHtml = '';
   try{
-    var _favIds = favs.map(function(f){ return f.id; }).filter(Boolean);
-    if(_favIds.length){
-      var matches = await _loadSupportMatches(_favIds);
-      if(_navToken === _tok) supportHtml = _supportRenderSection(favs, matches);
-    }
+    supportHtml = await _buddyStatusCard();
+    if(_navToken !== _tok) return;
   }catch(_supE){ console.warn('[support-section]', _supE); }
   el.innerHTML = supportHtml + tabsHtml + favsHtml + onlineHtml + fansHtml + blockedHtml;
   } catch(e) {
@@ -30977,7 +31268,7 @@ function _renderMomentoComments(comments,col,lightMode){
     var canClick = !isAnon && c.user_id;
     // Username fallback — si es del usuario actual y la hidratación no trajo nada, usar localStorage
     var unameVal = c.username || (canClick && _curUid && String(c.user_id) === String(_curUid) ? _curUname : '');
-    var profileArgs = '\''+_jsAttr(name)+'\',\''+_jsAttr(av)+'\',\'\',\''+_jsAttr(unameVal||'')+'\',\''+_jsAttr(String(c.user_id||''))+'\'';
+    var profileArgs = _jsAttr(name)+','+_jsAttr(av)+',\'\','+_jsAttr(unameVal||'')+','+_jsAttr(String(c.user_id||''));
     var clickAttr = canClick ? ' onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer"' : '';
     var avClickStyle = canClick ? 'cursor:pointer;' : '';
     var avHtml=isImg
@@ -31912,6 +32203,12 @@ function pSubmitGlobalReport(type, id){
   } else if(type === 'help'){
     var helpCard = document.getElementById('help-'+id) || document.querySelector('[data-id="'+id+'"]');
     if(helpCard){ helpCard.style.transition='opacity .35s'; helpCard.style.opacity='0'; setTimeout(function(){ helpCard.remove(); }, 380); }
+  } else if(type === 'vibe'){
+    var vCard = document.querySelector('.vibe-card[data-vibe-id="'+id+'"]');
+    if(vCard){ vCard.style.transition='opacity .35s'; vCard.style.opacity='0'; setTimeout(function(){ vCard.remove(); }, 380); }
+  } else if(type === 'vibe_comment'){
+    var vcEl = document.querySelector('[data-comment-id="'+id+'"]');
+    if(vcEl){ vcEl.style.transition='opacity .35s'; vcEl.style.opacity='0'; setTimeout(function(){ vcEl.remove(); }, 380); }
   }
 
   pToast('✅','Reporte enviado. El contenido quedó oculto hasta que lo revise el equipo de Velo 🙏');
@@ -33475,7 +33772,7 @@ function _btRenderComments(comments,rxData,postId,uid,wrap){
     var canClick=!cm.is_anon && cm.user_id;
     var avUrl = cm.avatar_url || cm.av || (own && !cm.is_anon ? (safeLS('get','velo_user_av')||'') : '');
     var uname = cm.username || (own ? (safeLS('get','velo_username')||'') : '');
-    var profileArgs='\''+_jsAttr(nm)+'\',\''+_jsAttr(avUrl)+'\',\'\',\''+_jsAttr(uname||'')+'\',\''+_jsAttr(String(cm.user_id||''))+'\'';
+    var profileArgs=_jsAttr(nm)+','+_jsAttr(avUrl)+',\'\','+_jsAttr(uname||'')+','+_jsAttr(String(cm.user_id||''));
     var avClickAttr=canClick?'onclick="pQuickProfile('+profileArgs+')" style="cursor:pointer;flex-shrink:0"':'style="cursor:default;flex-shrink:0"';
     // Avatar: 40px circle with ring glow
     var ringStyle='width:40px;height:40px;border-radius:50%;flex-shrink:0;border:2px solid rgba(116,198,157,.65);box-shadow:0 0 0 3px rgba(116,198,157,.15),0 2px 8px rgba(0,0,0,.22);';
@@ -33935,7 +34232,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1374;
+    var _BUILT_V = 1375;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
