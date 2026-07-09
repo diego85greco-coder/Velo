@@ -2061,7 +2061,8 @@ async function pMakeBuddyAvailable(){
   try{
     var r = await sbClient.from('profiles').update({ buddy_available_at: new Date().toISOString() }).eq('id', uid);
     if(r.error){
-      pToast('⚠️','Falta la columna buddy_available_at — correr el SQL');
+      console.warn('[buddy] make-available error:', r.error.message);
+      pToast('🌿','No pudimos anotarte ahora — probá en un ratito');
       if(btn){ btn.disabled = false; btn.textContent = '✋ Anotarme como disponible'; }
       return;
     }
@@ -2115,7 +2116,7 @@ async function pFindBuddy(){
   try{
     var candidates = await _buddyCandidates(uid);
     if(candidates === null){
-      pToast('⚠️','Falta la tabla buddy_requests o la columna buddy_available_at — correr el SQL');
+      pToast('🌿','El emparejamiento no está disponible ahora — probá más tarde');
       return;
     }
     if(!candidates.length){
@@ -2151,7 +2152,7 @@ async function pOpenBuddyList(){
     var body = document.getElementById('buddyListBody');
     if(!body) return;
     if(candidates === null){
-      body.innerHTML = '<div style="text-align:center;padding:20px 0;color:rgba(255,180,120,.75);font-size:13px;font-family:Jost,sans-serif">Falta la columna buddy_available_at — correr el SQL</div>';
+      body.innerHTML = '<div style="text-align:center;padding:20px 0;color:rgba(200,230,215,.6);font-size:13px;font-family:Jost,sans-serif">El emparejamiento no está disponible ahora 🌿</div>';
       return;
     }
     if(!candidates.length){
@@ -2179,8 +2180,8 @@ async function pBuddyRequestSend(toId, toName){
     // v1384: mensaje explícito si falta la tabla (SQL no corrido) — antes
     // mostraba el error crudo de Postgres, difícil de diagnosticar a ojo.
     if(r.error){
-      if(r.error.code === '42P01') pToast('⚠️','Falta la tabla buddy_requests — correr el SQL');
-      else pToast('⚠️', r.error.message.slice(0,70));
+      console.warn('[buddy] request-send error:', r.error.code, r.error.message);
+      pToast('🌿','No pudimos enviar la solicitud ahora — probá de nuevo');
       return;
     }
     var myName = safeLS('get','velo_user_name') || 'Alguien';
@@ -20624,7 +20625,8 @@ async function pSaveVibe(){
       else pRenderVibesHome(); // instantáneo → refrescar home Vibes
     } else {
       if(btn){ btn.disabled = false; btn.textContent = '🌊 Compartir'; }
-      pToast('⚠️', (r && r.error && r.error.message) || 'No se pudo subir');
+      if(r && r.error) console.warn('[save-vibe]', r.error.message);
+      pToast('🌊','No se pudo compartir ahora — probá de nuevo');
     }
   }catch(e){
     console.warn('[save-vibe]', e);
@@ -21153,13 +21155,15 @@ async function pToggleVibeCommentHeart(commentId, vibeId){
     // (SQL no corrido) o la RLS rechazaba el insert, el corazón "no hacía
     // nada" sin ningún aviso (reportado como "no deja marcar y no es
     // predecible"). Ahora se revisa cada error y se avisa.
-    if(ex && ex.error){ pToast('⚠️','Falta la tabla vibe_comment_reactions — correr el SQL'); return; }
+    // v1392: si la tabla/query falla, degradar en silencio (un corazón que no
+    // guarda no debe naggear al usuario con un error técnico) — solo console.warn.
+    if(ex && ex.error){ console.warn('[vibe-heart] select error:', ex.error.message); return; }
     if(ex && ex.data){
       var delRes = await sbClient.from('vibe_comment_reactions').delete().eq('id', ex.data.id);
-      if(delRes.error){ pToast('⚠️', delRes.error.message.slice(0,60)); return; }
+      if(delRes.error){ console.warn('[vibe-heart] delete error:', delRes.error.message); return; }
     } else {
       var insRes = await sbClient.from('vibe_comment_reactions').insert({ comment_id: commentId, user_id: myId });
-      if(insRes.error){ pToast('⚠️', insRes.error.message.slice(0,60)); return; }
+      if(insRes.error){ console.warn('[vibe-heart] insert error:', insRes.error.message); return; }
       // v1381: avisarle al autor del comentario (Actividad) — "le gustó tu comentario"
       try{
         var cRow = await sbClient.from('vibe_comments').select('user_id,text').eq('id', commentId).maybeSingle();
@@ -34561,7 +34565,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1391;
+    var _BUILT_V = 1392;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

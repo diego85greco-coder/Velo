@@ -406,9 +406,20 @@ a { text-decoration: none; color: inherit; }
 @media (max-width: 767px) { .p-page-inner { padding: 16px 16px 100px; } }
 
 /* ── 9. BOTTOM NAV (mobile only) ──────────────────────────────────── */
+/* v1392 — la barra va CLAVADA al borde inferior de la pantalla con
+   position:fixed; bottom:0. Antes iba dentro del flujo de .p-main-content y,
+   si la altura del contenedor no llegaba justo al fondo (safe-area, 100dvh vs
+   pantalla real), quedaba un espacio oscuro debajo. Fija a bottom:0 no puede
+   pasar eso: el fondo de la barra llega SIEMPRE hasta el borde, y su
+   padding-bottom con safe-area sube los botones arriba del home indicator.
+   El contenido no queda tapado porque .p-page-inner ya reserva 100px abajo. */
 .p-bottomnav {
   display: none;
-  height: var(--bottomnav-h);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  min-height: var(--bottomnav-h);
   background: var(--glass-1);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
@@ -417,7 +428,6 @@ a { text-decoration: none; color: inherit; }
   justify-content: space-around;
   padding: 0 4px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  flex-shrink: 0;
   z-index: 100;
   box-shadow: 0 -4px 20px rgba(45,106,79,.07);
 }
