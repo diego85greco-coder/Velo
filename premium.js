@@ -19462,6 +19462,15 @@ var VIBE_REACTIONS = [
   { key:'animos',       emoji:'💚', label:'Aquí dándote ánimos', tint:'#a5d9be' },
   { key:'me_inspira',   emoji:'🌱', label:'Me inspira',          tint:'#8ecb8c' }
 ];
+// Claves de LS de "vistos" NAMESPACEADAS POR USUARIO — localStorage se comparte
+// entre cuentas en el mismo navegador; sin el namespace, un usuario nuevo
+// heredaba los "vistos" del perfil anterior (v1367).
+function _vibesSeenKey(){
+  return 'velo_vibes_seen_instant_' + (safeLS('get','velo_user_id')||'anon');
+}
+function _vibesLastSeenKey(groupId){
+  return 'velo_vibes_lastseen_' + (safeLS('get','velo_user_id')||'anon') + '_' + groupId;
+}
 // Cache de grupos y de vibes por grupo (para no re-fetchear entre renders)
 var _vibesGroupsCache = null;
 var _vibesGroupCounts = {}; // groupId → count de vibes hoy
@@ -19506,7 +19515,7 @@ async function _renderHomeVibesCard(){
     });
     // Vistos → grayscale
     var _seen = {};
-    try{ _seen = JSON.parse(safeLS('get','velo_vibes_seen_instant')||'{}'); }catch(_){}
+    try{ _seen = JSON.parse(safeLS('get',_vibesSeenKey())||'{}'); }catch(_){}
     // 3) Armar tiles: 1 por grupo (con foto si tiene, o emoji si no) + 1 "Instantáneos" si hay
     var tiles = [];
     allGroups.forEach(function(g){
@@ -19686,7 +19695,7 @@ async function pRenderVibesHome(){
       // Ordenar por VISTO/NO VISTO — los no-vistos primero (más nuevos), luego
       // los ya vistos en gris al final (como Instagram Stories).
       var _seen = {};
-      try{ _seen = JSON.parse(safeLS('get','velo_vibes_seen_instant')||'{}'); }catch(_){}
+      try{ _seen = JSON.parse(safeLS('get',_vibesSeenKey())||'{}'); }catch(_){}
       var unseen = [], seen = [];
       inst.forEach(function(v){ (_seen[v.id] ? seen : unseen).push(v); });
       var ordered = unseen.concat(seen);
@@ -20143,7 +20152,7 @@ async function pOpenVibeGroup(groupId){
     // Zona fija arriba: CTA "¿Querés participar?" + banner "hay nuevos"
     var ctaHtml = '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-bottom:10px;padding:11px 14px;background:linear-gradient(135deg,rgba(116,198,157,.28),rgba(74,160,110,.22));border:1.5px dashed rgba(116,198,157,.65);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.3">👉 ¿Querés participar? · Tocá para subir tu momento</button>';
     // "Existen momentos nuevos"
-    var _lsKey = 'velo_vibes_lastseen_'+groupId;
+    var _lsKey = _vibesLastSeenKey(groupId);
     var lastSeen = 0;
     try{ lastSeen = parseInt(safeLS('get',_lsKey)||'0', 10) || 0; }catch(_){}
     // res.data está ordenado desc — los más nuevos primero. Para el carrusel
@@ -20224,12 +20233,12 @@ async function pOpenInstantVibe(vibeId){
   // Marcar como visto (Instagram Stories style)
   try{
     var _seen = {};
-    try{ _seen = JSON.parse(safeLS('get','velo_vibes_seen_instant')||'{}'); }catch(_){}
+    try{ _seen = JSON.parse(safeLS('get',_vibesSeenKey())||'{}'); }catch(_){}
     _seen[vibeId] = Date.now();
     // Limpiar entradas más viejas que 48h (los instantáneos duran 24h, +margen)
     var cutoff = Date.now() - 48*3600*1000;
     Object.keys(_seen).forEach(function(k){ if(_seen[k] < cutoff) delete _seen[k]; });
-    safeLS('set','velo_vibes_seen_instant', JSON.stringify(_seen));
+    safeLS('set',_vibesSeenKey(), JSON.stringify(_seen));
   }catch(_){}
   try{
     var res = await sbClient.from('vibes').select('*').eq('id', vibeId).single();
@@ -20911,12 +20920,30 @@ function pRenderInbox(){
       }
       return false;
     }
+    // v1367: reporte PREMATURO — un resumen mensual del mes EN CURSO (o futuro)
+    // no corresponde: el mes todavía no terminó. Sólo se muestra a partir del
+    // 1° del mes siguiente. Protege contra envíos accidentales desde el admin.
+    function _reportIsPremature(b){
+      if(b.body && b.body.indexOf('__MONTHLY_REPORT__') === 0){
+        var rpYM2 = b.body.slice('__MONTHLY_REPORT__'.length); // "YYYY-MM"
+        var now2 = new Date();
+        var curYM = now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0');
+        return rpYM2 >= curYM; // mes en curso o futuro → prematuro
+      }
+      if(b.body && b.body.indexOf('__WEEKLY_REPORT__') === 0){
+        var wkDay2 = b.body.slice('__WEEKLY_REPORT__'.length); // "YYYY-MM-DD"
+        var todayKey = new Date().toISOString().slice(0,10);
+        return wkDay2 > todayKey; // semana futura → prematuro
+      }
+      return false;
+    }
     newBcs = newBcs.filter(function(b){
       if(_del2.indexOf('bc_'+b.id) >= 0) return false;
       if(safeLS('get','velo_bcast_read_'+b.id)) return false;
       if(_syncedReadIds[b.id]) return false;
       if(_clearedAt && b.sent_at && new Date(b.sent_at).getTime() <= _clearedAt) return false;
       if(_reportCoversBeforeSignup(b)) return false; // new user → no resúmenes de periodos previos
+      if(_reportIsPremature(b)) return false;        // resumen de un mes que aún no terminó
       return true;
     });
     // Dedup por body para reportes __MONTHLY_REPORT__YYYY-MM y __WEEKLY_REPORT__YYYY-MM-DD:
@@ -26759,9 +26786,18 @@ async function pAdminSendMonthlyReport(overrideMonth){
     var _mo = parseInt(month.split('-')[1]) - 1;
     mLabel = mn[_mo]+' '+_yr;
   } else {
-    var d = new Date();
+    // Default: el mes ANTERIOR (el resumen es del mes que terminó, no del que corre).
+    // Bug previo: usaba el mes en curso → el 1 de julio mandaba "julio".
+    var d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-1);
     month = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
     mLabel = mn[d.getMonth()]+' '+d.getFullYear();
+  }
+  // Guard duro: nunca permitir enviar el resumen de un mes que aún no terminó
+  var _nowG = new Date();
+  var _curYM = _nowG.getFullYear()+'-'+String(_nowG.getMonth()+1).padStart(2,'0');
+  if(month >= _curYM){
+    pToast('⚠️','No podés enviar el resumen de '+mLabel+' — el mes todavía no terminó');
+    return;
   }
   if(!confirm('¿Enviar el resumen personalizado de '+mLabel+' a todos los usuarios?\n\nCada usuario recibirá un análisis individual en su buzón generado con sus propios datos.')) return;
   _initSupabase();
@@ -33656,7 +33692,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1366;
+    var _BUILT_V = 1367;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
