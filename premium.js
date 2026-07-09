@@ -22776,9 +22776,12 @@ async function _buddyStatusCard(){
         var av2 = pp.avatar || '🧑';
         return '<div style="padding:12px 14px;background:rgba(200,158,56,.10);border:1.5px solid rgba(200,158,56,.42);border-radius:14px;font-family:Jost,sans-serif">'
           + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:26px;flex-shrink:0">'+_avInline(av2,30)+'</span><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:var(--ink)">'+_escHtml(nm)+'</div><div style="font-size:11px;color:var(--ink4);margin-top:1px">Quiere ser tu compañer@ del mes</div></div></div>'
+          // v1385: "Aceptar" = fill verde brillante con texto oscuro (legible
+          // en claro Y oscuro); "Rechazar" = texto rojo brillante. Antes usaban
+          // texto verde/rojo OSCURO sobre fondo translúcido — invisible en dark.
           + '<div style="display:flex;gap:6px">'
-            + '<button onclick="pBuddyRequestRespond('+_jsAttr(r.id)+','+_jsAttr(r.from_id)+','+_jsAttr(nm)+',true)" style="flex:1;padding:8px;background:rgba(80,180,120,.24);border:1.5px solid rgba(80,180,120,.55);border-radius:10px;color:rgba(20,80,40,.95);font-family:Jost,sans-serif;font-size:12px;font-weight:800;cursor:pointer">🌱 Aceptar</button>'
-            + '<button onclick="pBuddyRequestRespond('+_jsAttr(r.id)+','+_jsAttr(r.from_id)+','+_jsAttr(nm)+',false)" style="flex:1;padding:8px;background:rgba(220,120,120,.12);border:1.5px solid rgba(220,120,120,.35);border-radius:10px;color:rgba(150,50,50,.9);font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer">Rechazar</button>'
+            + '<button onclick="pBuddyRequestRespond('+_jsAttr(r.id)+','+_jsAttr(r.from_id)+','+_jsAttr(nm)+',true)" style="flex:1;padding:10px;background:linear-gradient(135deg,rgba(116,198,157,.95),rgba(74,160,110,1));border:none;border-radius:10px;color:#071409;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.2px">🌱 Aceptar</button>'
+            + '<button onclick="pBuddyRequestRespond('+_jsAttr(r.id)+','+_jsAttr(r.from_id)+','+_jsAttr(nm)+',false)" style="flex:1;padding:10px;background:rgba(220,110,110,.14);border:1.5px solid rgba(230,120,120,.55);border-radius:10px;color:#e88a8a;font-family:Jost,sans-serif;font-size:13px;font-weight:700;cursor:pointer">Rechazar</button>'
           + '</div>'
         + '</div>';
       }).join('');
@@ -34522,7 +34525,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1385;
+    var _BUILT_V = 1386;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
