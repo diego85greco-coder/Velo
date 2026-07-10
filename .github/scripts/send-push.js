@@ -12,6 +12,10 @@ const VAPID_PRIVATE_KEY = (process.env.VAPID_PRIVATE_KEY || '').trim();
 const SUPABASE_URL      = (process.env.SUPABASE_URL      || '').trim();
 const SUPABASE_KEY      = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 const GEMINI_KEY        = (process.env.GEMINI_API_KEY    || '').trim();
+// Cloudinary — cloud name es público; key/secret vienen por GitHub Secrets.
+const CLOUDINARY_CLOUD  = 'rsk22wnd';
+const CLOUDINARY_KEY    = (process.env.CLOUDINARY_API_KEY    || '').trim();
+const CLOUDINARY_SECRET = (process.env.CLOUDINARY_API_SECRET || '').trim();
 
 // VAPID_SUBJECT hardcoded — Apple rechaza cualquier variación con BadJwtToken.
 // El env var quedaba con formato incorrecto (espacios, comillas, encoding raro)
@@ -885,6 +889,56 @@ async function cleanupVibesStorage() {
   return { deleted };
 }
 
+// Extrae el public_id de una URL de video de Cloudinary para poder borrarlo.
+// https://res.cloudinary.com/<cloud>/video/upload/[transf/]v123/carpeta/nombre.mp4
+function _cloudinaryPublicId(url) {
+  const m = String(url || '').match(/\/video\/upload\/(.+)$/);
+  if (!m) return null;
+  let rest = m[1].replace(/^v\d+\//, '');   // quitar versión vXXXX/
+  rest = rest.replace(/\.[a-z0-9]+$/i, ''); // quitar extensión
+  return rest || null;
+}
+async function _cloudinaryDestroy(publicId) {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const toSign = `public_id=${publicId}&timestamp=${timestamp}`;
+  const signature = crypto.createHash('sha1').update(toSign + CLOUDINARY_SECRET).digest('hex');
+  const form = new URLSearchParams();
+  form.append('public_id', publicId);
+  form.append('timestamp', String(timestamp));
+  form.append('api_key', CLOUDINARY_KEY);
+  form.append('signature', signature);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/video/destroy`, { method: 'POST', body: form });
+  const j = await res.json().catch(() => ({}));
+  return j && (j.result === 'ok' || j.result === 'not found');
+}
+// Borra de Cloudinary los videos de vibes YA expiradas (>24h) y NO archivadas,
+// y elimina la fila. Los archivados (guardados en historial) se conservan.
+async function cleanupCloudinaryVideos() {
+  const utcH = new Date().getUTCHours();
+  if (utcH !== 3) return { deleted: 0 };
+  if (!CLOUDINARY_KEY || !CLOUDINARY_SECRET) { console.log('[cloudinary-cleanup] sin credenciales (agregá CLOUDINARY_API_KEY/SECRET) — skip'); return { deleted: 0 }; }
+  let deleted = 0;
+  try {
+    const cutoff = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const { data, error } = await supabase.from('vibes')
+      .select('id,media_url,archived,expires_at')
+      .lt('expires_at', cutoff)
+      .or('archived.is.null,archived.eq.false')
+      .limit(500);
+    if (error) { console.warn('[cloudinary-cleanup] query:', error.message); return { deleted }; }
+    const vids = (data || []).filter(r => r.media_url && r.media_url.includes('/video/upload/'));
+    for (const r of vids) {
+      const pid = _cloudinaryPublicId(r.media_url);
+      if (!pid) continue;
+      const ok = await _cloudinaryDestroy(pid);
+      if (ok) { await supabase.from('vibes').delete().eq('id', r.id); deleted++; }
+      else console.warn('[cloudinary-cleanup] destroy falló para', pid);
+    }
+  } catch (e) { console.warn('[cloudinary-cleanup]', e.message); }
+  console.log(`[cloudinary-cleanup] deleted=${deleted}`);
+  return { deleted };
+}
+
 async function main() {
   const { data: users, error } = await supabase
     .from('profiles')
@@ -913,8 +967,11 @@ async function main() {
   // Ciclo 30 días: recordatorio de renovación (día 28) + expiración automática (día 30)
   try { await buddyCycleMaintenance(); } catch (e) { console.warn('[buddy-cycle] failed:', e.message); }
 
-  // Limpieza diaria de fotos/videos caducados del bucket 'vibes' (3 UTC)
+  // Limpieza diaria de fotos caducadas del bucket 'vibes' de Supabase (3 UTC)
   try { await cleanupVibesStorage(); } catch (e) { console.warn('[vibes-cleanup] failed:', e.message); }
+
+  // Limpieza diaria de videos caducados de Cloudinary (3 UTC) — libera espacio
+  try { await cleanupCloudinaryVideos(); } catch (e) { console.warn('[cloudinary-cleanup] failed:', e.message); }
 
   // Group users by slot so we call Gemini once per slot, not once per user
   const slotUsers = { morning: [], afternoon: [], night: [] };
