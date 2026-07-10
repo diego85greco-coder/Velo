@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1424',
+      'Velo v1425',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20700,7 +20700,7 @@ async function _vibeCreateGroupConfirm(kind){
 //   pStartCreateVibe(groupId)                       → vibe en grupo
 //   pStartCreateVibe(null, 'public'|'private')      → instantáneo
 var _vibePendingImage = null;
-var _vibePendingVideo = null;         // File del video elegido (máx 30s / 35MB) — v1383
+var _vibePendingVideo = null;         // File del video elegido (máx 60s / 70MB) — v1424
 var _vibeTargetGroupId = null;
 var _vibeInstantScope = null;         // 'public' | 'private' | null
 var _vibeInstantMemberIds = [];       // solo si scope='private'
@@ -20746,7 +20746,7 @@ function pStartCreateVibe(groupId, instantScope){
   ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px 26px;background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.98));border:1.5px solid rgba(116,198,157,.35);max-height:92vh;overflow-y:auto">'
     + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
     + '<div style="text-align:center;padding:4px 0 12px"><div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:rgba(180,230,200,.72);text-transform:uppercase">'+_escHtml(header)+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic;margin-top:4px">Compartí tu momento</div></div>'
-    + '<div id="vibeImgArea" style="margin-bottom:14px"><button onclick="document.getElementById(\'vibeFileInput\').click()" style="width:100%;padding:32px 20px;background:rgba(116,198,157,.10);border:2px dashed rgba(116,198,157,.42);border-radius:16px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">📷 Elegí una foto o video<br><span style="font-size:11px;font-weight:600;color:rgba(200,230,215,.55)">video: máx 30 segundos</span></button></div>'
+    + '<div id="vibeImgArea" style="margin-bottom:14px"><button onclick="document.getElementById(\'vibeFileInput\').click()" style="width:100%;padding:32px 20px;background:rgba(116,198,157,.10);border:2px dashed rgba(116,198,157,.42);border-radius:16px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">📷 Elegí una foto o video<br><span style="font-size:11px;font-weight:600;color:rgba(200,230,215,.55)">video: máx 60 segundos</span></button></div>'
     + '<input type="file" id="vibeFileInput" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" style="display:none" onchange="_vibeHandleImageInput(this)">'
     + '<textarea id="vibeCaptionInput" placeholder="Contá qué pasa en tu momento (opcional)…" rows="3" style="width:100%;padding:12px 14px;background:rgba(0,0,0,.32);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.5"></textarea>'
     + inviteBlock
@@ -20767,11 +20767,11 @@ function _vibeSyncInvites(){
   document.querySelectorAll('.vibe-invite-cb:checked').forEach(function(cb){ ids.push(cb.getAttribute('data-uid')); });
   _vibeInstantMemberIds = ids;
 }
-// v1383: videos de hasta 30 segundos / 35 MB. No se pueden re-comprimir en el
+// v1424: videos de hasta 60 segundos / 70 MB. No se pueden re-comprimir en el
 // navegador (Safari PWA no tiene API de re-encodeo), así que validamos duración
 // (metadata) y tamaño ANTES de subir el archivo tal cual.
-var VIBE_VIDEO_MAX_SECS = 30;
-var VIBE_VIDEO_MAX_MB   = 35;
+var VIBE_VIDEO_MAX_SECS = 60;
+var VIBE_VIDEO_MAX_MB   = 70;
 function _vibeReadVideoDuration(file){
   return new Promise(function(resolve){
     var done = false;
@@ -20869,7 +20869,7 @@ async function _vibeUploadToStorage(dataUrl, userId){
     return (pub && pub.data && pub.data.publicUrl) ? pub.data.publicUrl : dataUrl;
   }catch(e){ console.warn('[vibes-upload]', e); return dataUrl; }
 }
-// Sube el File de video directo a Storage (sin base64 — 35MB en memoria como
+// Sube el File de video directo a Storage (sin base64 — 70MB en memoria como
 // data URL rompería iOS). SIN fallback a data URL: un video no entra en una
 // fila de la DB, si Storage falla se aborta con error.
 async function _vibeUploadVideoToStorage(file, userId){
@@ -20901,7 +20901,7 @@ async function pSaveVibe(){
   var myAv = safeLS('get','velo_user_av') || '🧑';
   var ov = document.getElementById('vibeCreateOv');
   var btn = ov ? ov.querySelector('button[onclick="pSaveVibe()"]') : null;
-  if(btn){ btn.disabled = true; btn.textContent = 'Subiendo…'; }
+  if(btn){ btn.disabled = true; btn.textContent = _vibePendingVideo ? 'Subiendo video…' : 'Subiendo…'; }
   try{
     var mediaUrl;
     if(_vibePendingVideo){
@@ -35191,7 +35191,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1424;
+    var _BUILT_V = 1425;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
