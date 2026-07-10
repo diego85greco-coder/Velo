@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1433',
+      'Velo v1434',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -409,7 +409,9 @@ var _userType   = 'user'; // 'user' | 'pro' | 'admin'
 
 var P_NO_NAV = ['landing','login','register','register-type','onboarding',
                 'pro-reg','pro-onboarding','admin-login','admin','pro-pending','verify-email','pick-username',
-                'dm-chat'];
+                // v1434: TODOS los chats ocultan la barra inferior (antes solo dm-chat),
+                // si no el nav tapaba el campo de escribir en guardián/ayuda/círculos.
+                'dm-chat','guardian-chat','help-chat','feed','session-room','post-chat'];
 var P_DARK   = ['help','bottle','respira'];
 var P_FADE   = ['landing','onboarding','register-type','donation-exit',
                 'session-room','post-chat','donate-cta','pro-pending','admin-login','calm-ai','guardian-chat','verify-email','pick-username'];
@@ -1709,6 +1711,27 @@ async function _checkReferralQualification(){
   }catch(e){ console.warn('[ref-check]', e); }
 }
 
+// Copiar el enlace de invitación con fallback robusto (iOS PWA a veces bloquea
+// navigator.clipboard sin gesto / contexto seguro → usamos textarea + execCommand).
+function pCopyInviteLink(link){
+  function ok(){ pToast('📋','Enlace copiado — ¡compartilo!'); }
+  function fallback(){
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = link; ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try{ ta.setSelectionRange(0, link.length); }catch(_){}
+      var done = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if(done) ok(); else pToast('⚠️','Mantené presionado el enlace de arriba para copiarlo');
+    }catch(e){ pToast('⚠️','Mantené presionado el enlace de arriba para copiarlo'); }
+  }
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(link).then(ok).catch(fallback);
+    } else { fallback(); }
+  }catch(e){ fallback(); }
+}
 // UI: abrir modal de invitar amigos
 async function pOpenInviteFriends(){
   var uid = safeLS('get','velo_user_id')||'';
@@ -1765,7 +1788,7 @@ async function pOpenInviteFriends(){
     + statsCard
     +'<div style="background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.32);border-radius:16px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px">'
       +'<div style="font-size:11px;flex:1;min-width:0;color:rgba(190,235,215,.88);font-family:Jost,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.2px">'+link+'</div>'
-      +'<button onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+link+'\').then(function(){pToast(\'📋\',\'Enlace copiado\')})" style="flex-shrink:0;background:rgba(116,198,157,.28);border:1px solid rgba(116,198,157,.55);border-radius:10px;padding:6px 12px;color:rgba(220,255,235,.96);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">Copiar</button>'
+      +'<button onclick="pCopyInviteLink('+_jsAttr(link)+')" style="flex-shrink:0;background:rgba(116,198,157,.28);border:1px solid rgba(116,198,157,.55);border-radius:10px;padding:6px 12px;color:rgba(220,255,235,.96);font-size:12px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer">Copiar</button>'
     +'</div>'
     +'<button onclick="pShareInviteLink(\''+link+'\')" style="width:100%;padding:14px;background:linear-gradient(135deg,rgba(116,198,157,.90),rgba(74,160,110,.95));border:none;border-radius:14px;color:#071409;font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.3px;margin-bottom:8px">📤 Compartir enlace</button>'
     +'<button onclick="document.getElementById(\'inviteFriendsOv\').remove()" style="width:100%;padding:12px;background:none;border:1px solid rgba(255,255,255,.10);border-radius:14px;color:rgba(255,255,255,.55);font-size:13px;font-family:Jost,sans-serif;cursor:pointer">Cerrar</button>'
@@ -35562,7 +35585,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1433;
+    var _BUILT_V = 1434;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
