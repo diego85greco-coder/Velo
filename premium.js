@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1420',
+      'Velo v1421',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -3032,22 +3032,35 @@ async function pOpenMonthlyWrapped(){
   var monthTitle = mNames[mo]+' '+yr;
   // Community stats
   var uid = safeLS('get','velo_user_id') || '';
-  var comm = { btPosts:0, momentos:0, helped:0, dqAnswered:0 };
+  var comm = { btPosts:0, momentos:0, helped:0, dqAnswered:0, vibes:0, vibeRx:0, btRx:0 };
   if(sbClient && uid){
     try{
       var monthStart = new Date(yr, mo, 1).toISOString();
       var monthEnd = new Date(yr, mo+1, 0, 23,59,59).toISOString();
-      var _btP = await sbClient.from('bitacora_posts').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd); if(!_btP.error) comm.btPosts = _btP.count||0;
+      var _btP = await sbClient.from('bitacora_posts').select('id').eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd);
+      if(!_btP.error && _btP.data){ comm.btPosts = _btP.data.length;
+        var _btIds = _btP.data.map(function(p){return p.id;});
+        if(_btIds.length){ try{ var _btRx = await sbClient.from('bitacora_reactions').select('id').in('post_id',_btIds); if(!_btRx.error && _btRx.data) comm.btRx = _btRx.data.length; }catch(e){} }
+      }
       var _mo = await sbClient.from('momentos').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd); if(!_mo.error) comm.momentos = _mo.count||0;
       var _dq = await sbClient.from('daily_responses').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd); if(!_dq.error) comm.dqAnswered = _dq.count||0;
       try{ var _gr = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('guardian_id',uid).gte('created_at',monthStart); if(!_gr.error) comm.helped = _gr.count||0; }catch(e){}
+      // Vibes de hoy (grupos + instantáneos) + reacciones recibidas
+      try{
+        var _vb = await sbClient.from('vibes').select('id').eq('user_id',uid).gte('created_at',monthStart).lte('created_at',monthEnd);
+        if(!_vb.error && _vb.data){ comm.vibes = _vb.data.length;
+          var _vbIds = _vb.data.map(function(v){return v.id;});
+          if(_vbIds.length){ var _vRx = await sbClient.from('vibe_reactions').select('id').in('vibe_id',_vbIds); if(!_vRx.error && _vRx.data) comm.vibeRx = _vRx.data.length; }
+        }
+      }catch(e){}
     }catch(e){}
   }
   var uName = (safeLS('get','velo_user_name')||'').split(' ')[0] || 'vos';
-  var totalGestures = comm.btPosts + comm.momentos + comm.helped + comm.dqAnswered;
+  var totalGestures = comm.btPosts + comm.momentos + comm.helped + comm.dqAnswered + comm.vibes;
   // Top 3 emotions
   var topEmotions = Object.keys(counts).map(function(e){ return {e:e, n:counts[e]}; }).sort(function(a,b){ return b.n - a.n; }).slice(0,3);
-  var emotionLabel = { '😄':'genial','😊':'bien','😌':'en paz','💪':'con fuerza','🌟':'radiante','😐':'neutro','🥺':'sensible','😞':'bajo','😔':'triste','😰':'ansioso','😤':'frustrado','😢':'difícil' };
+  // v1421: paleta completa de 18 emociones (antes 12 → las nuevas sin etiqueta)
+  var emotionLabel = {}; Object.keys(_VELO_MOOD_LABEL).forEach(function(e){ emotionLabel[e] = (_VELO_MOOD_LABEL[e]||'').toLowerCase(); });
   // Best/worst days
   var moodScoresList = moodEntries.map(function(e){ return {date:e.date, sc:(moodScore[e.emoji]||3), emoji:e.emoji}; });
   var bestDay = moodScoresList.reduce(function(a,b){ return !a || b.sc>a.sc ? b : a; }, null);
@@ -3108,6 +3121,23 @@ async function pOpenMonthlyWrapped(){
       + '<div style="font-size:13.5px;color:rgba(255,225,180,.72);font-family:Jost,sans-serif;margin-bottom:22px">apareció <strong style="color:rgba(255,232,180,.98);font-weight:800">'+counts[domEmoji]+' de '+nReg+' días</strong> ('+Math.round((counts[domEmoji]/nReg)*100)+'%)</div>'
       + (topEmotions.length > 1 ? '<div style="width:100%;max-width:320px;text-align:left"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;color:rgba(255,220,120,.55);text-transform:uppercase;margin-bottom:12px;text-align:center">TU TOP 3</div>'+top3Html+'</div>' : '')
   });
+  // 3b. TU PALETA EMOCIONAL — todas las emociones del mes (v1421)
+  var paletteList = Object.keys(counts).map(function(e){ return {e:e, n:counts[e]}; }).sort(function(a,b){ return b.n - a.n; });
+  if(paletteList.length >= 2){
+    var paletteChips = paletteList.map(function(p){
+      var col = (typeof _VELO_MOOD_COLOR!=='undefined' && _VELO_MOOD_COLOR[p.e]) || '#74c69d';
+      return '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;background:rgba(255,255,255,.05);border:1px solid '+col+'55;border-radius:14px;padding:9px 6px;min-width:58px"><span style="font-size:26px;line-height:1">'+p.e+'</span><span style="font-size:11px;font-weight:800;color:'+col+';font-family:Jost,sans-serif">×'+p.n+'</span><span style="font-size:8.5px;color:rgba(255,255,255,.55);font-family:Jost,sans-serif;line-height:1.1;text-align:center">'+(emotionLabel[p.e]||'')+'</span></div>';
+    }).join('');
+    slides.push({
+      bg:'linear-gradient(155deg,#14243d 0%,#0d1a2e 45%,#080f1c 100%)',
+      html:
+        sparkles
+        + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(160,200,255,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:10px">TU PALETA EMOCIONAL</div>'
+        + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:26px;color:#fff;line-height:1.2;margin-bottom:8px">'+paletteList.length+' emociones distintas</div>'
+        + '<div style="font-size:13px;color:rgba(200,220,255,.68);font-family:Jost,sans-serif;margin-bottom:22px;padding:0 14px;line-height:1.5">Te permitiste sentir de muchas formas este mes. Cada matiz cuenta 💫</div>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:100%;max-width:360px">'+paletteChips+'</div>'
+    });
+  }
   // 4. TU MEJOR / MÁS DIFÍCIL DÍA
   slides.push({
     bg:'linear-gradient(155deg,#0e2436 0%,#0a1c2a 40%,#08101c 100%)',
@@ -3119,8 +3149,11 @@ async function pOpenMonthlyWrapped(){
   });
   // 5. TUS APORTES A LA COMUNIDAD
   var communityItems = [];
-  if(comm.btPosts > 0) communityItems.push({e:'📖', n:comm.btPosts, lbl:'historia'+(comm.btPosts>1?'s':'')+' en Bitácora', col:'rgba(180,155,240,.90)'});
+  if(comm.vibes > 0) communityItems.push({e:'✨', n:comm.vibes, lbl:'vibe'+(comm.vibes>1?'s':'')+' de hoy compartido'+(comm.vibes>1?'s':''), col:'rgba(255,215,110,.92)'});
+  if(comm.vibeRx > 0) communityItems.push({e:'💚', n:comm.vibeRx, lbl:'reacción'+(comm.vibeRx>1?'es':'')+' en tus vibes', col:'rgba(150,230,180,.92)'});
   if(comm.momentos > 0) communityItems.push({e:'🌸', n:comm.momentos, lbl:'momento'+(comm.momentos>1?'s':'')+' compartido'+(comm.momentos>1?'s':''), col:'rgba(255,180,220,.90)'});
+  if(comm.btPosts > 0) communityItems.push({e:'📖', n:comm.btPosts, lbl:'historia'+(comm.btPosts>1?'s':'')+' en Bitácora', col:'rgba(180,155,240,.90)'});
+  if(comm.btRx > 0) communityItems.push({e:'❤️', n:comm.btRx, lbl:'reacción'+(comm.btRx>1?'es':'')+' en tus historias', col:'rgba(240,150,180,.90)'});
   if(comm.helped > 0) communityItems.push({e:'🤝', n:comm.helped, lbl:'persona'+(comm.helped>1?'s':'')+' acompañada'+(comm.helped>1?'s':''), col:'rgba(180,255,220,.90)'});
   if(comm.dqAnswered > 0) communityItems.push({e:'💬', n:comm.dqAnswered, lbl:'respuesta'+(comm.dqAnswered>1?'s':'')+' a la Pregunta del Día', col:'rgba(255,220,120,.90)'});
   var commItemsHtml = communityItems.length
@@ -3138,7 +3171,7 @@ async function pOpenMonthlyWrapped(){
   // 6 y 7. ANÁLISIS IA — personalidad del mes + reflexión
   var monthlyAiPersonality = null, monthlyAiReflection = null;
   try{
-    if(typeof _geminiCall === 'function' && totalReg >= 3){
+    if(typeof _geminiCall === 'function' && nReg >= 3){
       var topEmoStr = topEmotions.map(function(t){ return t.e+' '+(emotionLabel[t.e]||''); }).join(', ');
       var pMoP = 'Sos un analista empático de Velo, una app de apoyo emocional en español rioplatense (vos, no tú). '
         + 'A partir de estos datos del mes de '+monthTitle+' de '+uName+', escribí 2-3 oraciones cálidas sobre su TIPO DE PERSONALIDAD emocional este mes. '
@@ -3363,20 +3396,31 @@ async function pOpenAnnualWrapped(){
   });
   var topWords = Object.keys(wordFreq).map(function(w){ return {w:w, n:wordFreq[w]}; }).sort(function(a,b){ return b.n - a.n; }).slice(0,5);
   // Comunidad — actividad del año
-  var comm = { btPosts:0, momentos:0, helped:0, dqAnswered:0, bottles:0 };
+  var comm = { btPosts:0, momentos:0, helped:0, dqAnswered:0, bottles:0, vibes:0, vibeRx:0, btRx:0 };
   var uid = safeLS('get','velo_user_id') || '';
   if(sbClient && uid){
     try{
       var yStart = new Date(year,0,1).toISOString();
       var yEnd = new Date(year,11,31,23,59,59).toISOString();
-      var _btP = await sbClient.from('bitacora_posts').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',yStart).lte('created_at',yEnd); if(!_btP.error) comm.btPosts = _btP.count||0;
+      var _btP = await sbClient.from('bitacora_posts').select('id').eq('user_id',uid).gte('created_at',yStart).lte('created_at',yEnd);
+      if(!_btP.error && _btP.data){ comm.btPosts = _btP.data.length;
+        var _btIds = _btP.data.map(function(p){return p.id;});
+        if(_btIds.length){ try{ var _btRx = await sbClient.from('bitacora_reactions').select('id').in('post_id',_btIds); if(!_btRx.error && _btRx.data) comm.btRx = _btRx.data.length; }catch(_){} }
+      }
       try{ var _mo2 = await sbClient.from('momentos').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',yStart).lte('created_at',yEnd); if(!_mo2.error) comm.momentos = _mo2.count||0; }catch(_){}
       try{ var _gr = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('guardian_id',uid).gte('created_at',yStart); if(!_gr.error) comm.helped = _gr.count||0; }catch(_){}
       try{ var _dq = await sbClient.from('daily_responses').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',yStart).lte('created_at',yEnd); if(!_dq.error) comm.dqAnswered = _dq.count||0; }catch(_){}
       try{ var _bo = await sbClient.from('bottles').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at',yStart).lte('created_at',yEnd); if(!_bo.error) comm.bottles = _bo.count||0; }catch(_){}
+      try{
+        var _vb = await sbClient.from('vibes').select('id').eq('user_id',uid).gte('created_at',yStart).lte('created_at',yEnd);
+        if(!_vb.error && _vb.data){ comm.vibes = _vb.data.length;
+          var _vbIds = _vb.data.map(function(v){return v.id;});
+          if(_vbIds.length){ var _vRx = await sbClient.from('vibe_reactions').select('id').in('vibe_id',_vbIds); if(!_vRx.error && _vRx.data) comm.vibeRx = _vRx.data.length; }
+        }
+      }catch(_){}
     }catch(e){}
   }
-  var totalGestures = comm.btPosts + comm.momentos + comm.helped + comm.dqAnswered + comm.bottles;
+  var totalGestures = comm.btPosts + comm.momentos + comm.helped + comm.dqAnswered + comm.bottles + comm.vibes;
   // ── IA — 2 análisis (personalidad + insight de crecimiento) ─────────
   var aiPersonality = null, aiGrowth = null;
   try{
@@ -3433,6 +3477,22 @@ async function pOpenAnnualWrapped(){
       + '<div style="font-size:14px;color:rgba(255,225,180,.72);font-family:Jost,sans-serif;margin-bottom:22px">apareció <strong style="color:rgba(255,232,180,.98);font-weight:800">'+counts[domEmoji]+' de '+totalRegs+' días</strong></div>'
       + (topEmotions.length > 1 ? '<div style="width:100%;max-width:320px;text-align:left"><div style="font-size:10.5px;font-weight:800;letter-spacing:2px;color:rgba(255,220,120,.55);text-transform:uppercase;margin-bottom:12px;text-align:center">TU TOP 3</div>'+topEmotions.map(function(t,i){ var pct=Math.round((t.n/totalRegs)*100); var cols=['rgba(255,220,120,.95)','rgba(180,220,240,.85)','rgba(220,190,240,.80)']; return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:18px">'+t.e+' '+(moodLabel[t.e]||'')+'</span><span style="font-size:12px;font-weight:800;color:'+cols[i]+';font-family:Jost,sans-serif">'+pct+'%</span></div><div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+cols[i]+';border-radius:3px"></div></div></div>'; }).join('')+'</div>' : '')
   });
+  // 3b. PALETA EMOCIONAL DEL AÑO (v1421) — todas las emociones registradas
+  var yPalette = Object.keys(counts).map(function(e){ return {e:e, n:counts[e]}; }).sort(function(a,b){ return b.n - a.n; });
+  if(yPalette.length >= 3){
+    var yPalChips = yPalette.map(function(p){
+      var col = (typeof _VELO_MOOD_COLOR!=='undefined' && _VELO_MOOD_COLOR[p.e]) || '#74c69d';
+      return '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;background:rgba(255,255,255,.05);border:1px solid '+col+'55;border-radius:14px;padding:8px 6px;min-width:56px"><span style="font-size:24px;line-height:1">'+p.e+'</span><span style="font-size:11px;font-weight:800;color:'+col+';font-family:Jost,sans-serif">×'+p.n+'</span><span style="font-size:8.5px;color:rgba(255,255,255,.55);font-family:Jost,sans-serif;line-height:1.1;text-align:center">'+(moodLabel[p.e]||'')+'</span></div>';
+    }).join('');
+    slides.push({
+      bg:'linear-gradient(155deg,#14243d 0%,#0d1a2e 45%,#080f1c 100%)',
+      html: sparkles
+        + '<div style="font-size:11px;font-weight:800;letter-spacing:3px;color:rgba(160,200,255,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:10px">TU PALETA EMOCIONAL DEL AÑO</div>'
+        + '<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:28px;color:#fff;line-height:1.2;margin-bottom:8px">'+yPalette.length+' emociones distintas</div>'
+        + '<div style="font-size:13px;color:rgba(200,220,255,.68);font-family:Jost,sans-serif;margin-bottom:20px;padding:0 14px;line-height:1.5">Todo un año permitiéndote sentir en todos sus matices 💫</div>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center;width:100%;max-width:370px;max-height:260px;overflow-y:auto">'+yPalChips+'</div>'
+    });
+  }
   // 4. MEJOR / PEOR MES
   slides.push({
     bg:'linear-gradient(155deg,#0e2436 0%,#0a1c2a 40%,#08101c 100%)',
@@ -3491,8 +3551,11 @@ async function pOpenAnnualWrapped(){
   });
   // 8. APORTES A LA COMUNIDAD
   var commItems = [];
-  if(comm.btPosts>0) commItems.push({e:'📖', n:comm.btPosts, lbl:'historia'+(comm.btPosts>1?'s':'')+' en Bitácora', col:'rgba(180,155,240,.90)'});
+  if(comm.vibes>0) commItems.push({e:'✨', n:comm.vibes, lbl:'vibe'+(comm.vibes>1?'s':'')+' de hoy compartido'+(comm.vibes>1?'s':''), col:'rgba(255,215,110,.92)'});
+  if(comm.vibeRx>0) commItems.push({e:'💚', n:comm.vibeRx, lbl:'reacción'+(comm.vibeRx>1?'es':'')+' en tus vibes', col:'rgba(150,230,180,.92)'});
   if(comm.momentos>0) commItems.push({e:'🌸', n:comm.momentos, lbl:'momento'+(comm.momentos>1?'s':'')+' compartido'+(comm.momentos>1?'s':''), col:'rgba(255,180,220,.90)'});
+  if(comm.btPosts>0) commItems.push({e:'📖', n:comm.btPosts, lbl:'historia'+(comm.btPosts>1?'s':'')+' en Bitácora', col:'rgba(180,155,240,.90)'});
+  if(comm.btRx>0) commItems.push({e:'❤️', n:comm.btRx, lbl:'reacción'+(comm.btRx>1?'es':'')+' en tus historias', col:'rgba(240,150,180,.90)'});
   if(comm.helped>0) commItems.push({e:'🤝', n:comm.helped, lbl:'persona'+(comm.helped>1?'s':'')+' acompañada'+(comm.helped>1?'s':''), col:'rgba(180,255,220,.90)'});
   if(comm.dqAnswered>0) commItems.push({e:'💬', n:comm.dqAnswered, lbl:'respuesta'+(comm.dqAnswered>1?'s':'')+' a Pregunta del Día', col:'rgba(255,220,120,.90)'});
   if(comm.bottles>0) commItems.push({e:'🌊', n:comm.bottles, lbl:'mensaje'+(comm.bottles>1?'s':'')+' al mar', col:'rgba(140,220,255,.90)'});
@@ -35036,7 +35099,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1420;
+    var _BUILT_V = 1421;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
