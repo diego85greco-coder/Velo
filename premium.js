@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1428',
+      'Velo v1429',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20746,7 +20746,7 @@ function pStartCreateVibe(groupId, instantScope){
   ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px 26px;background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.98));border:1.5px solid rgba(116,198,157,.35);max-height:92vh;overflow-y:auto">'
     + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
     + '<div style="text-align:center;padding:4px 0 12px"><div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:rgba(180,230,200,.72);text-transform:uppercase">'+_escHtml(header)+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic;margin-top:4px">Compartí tu momento</div></div>'
-    + '<div id="vibeImgArea" style="margin-bottom:14px"><button onclick="document.getElementById(\'vibeFileInput\').click()" style="width:100%;padding:32px 20px;background:rgba(116,198,157,.10);border:2px dashed rgba(116,198,157,.42);border-radius:16px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">📷 Elegí una foto o video<br><span style="font-size:11px;font-weight:600;color:rgba(200,230,215,.55)">video: máx 60 s · 48 MB (grabá en 1080p, no 4K)</span></button></div>'
+    + '<div id="vibeImgArea" style="margin-bottom:14px"><button onclick="document.getElementById(\'vibeFileInput\').click()" style="width:100%;padding:32px 20px;background:rgba(116,198,157,.10);border:2px dashed rgba(116,198,157,.42);border-radius:16px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">📷 Elegí una foto o video<br><span style="font-size:11px;font-weight:600;color:rgba(200,230,215,.55)">video: máx 60 s · si pesa mucho lo optimizamos solos</span></button></div>'
     + '<input type="file" id="vibeFileInput" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" style="display:none" onchange="_vibeHandleImageInput(this)">'
     + '<textarea id="vibeCaptionInput" placeholder="Contá qué pasa en tu momento (opcional)…" rows="3" style="width:100%;padding:12px 14px;background:rgba(0,0,0,.32);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.5"></textarea>'
     + inviteBlock
@@ -20804,10 +20804,78 @@ function _vibeShowMediaError(msg){
     + '<button onclick="_vibeChangeImage()" style="padding:9px 20px;background:rgba(116,198,157,.9);border:none;border-radius:100px;color:#0a2417;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer">Elegir otro</button>'
     + '</div>';
 }
+var _vibeCompressLastPct = -1;
+function _vibeShowCompressProgress(pct){
+  if(pct === _vibeCompressLastPct) return; _vibeCompressLastPct = pct;
+  var area = document.getElementById('vibeImgArea'); if(!area) return;
+  area.innerHTML = '<div style="text-align:center;padding:30px 18px;font-family:Jost,sans-serif;color:rgba(200,235,215,.9)">'
+    + '<div style="font-size:34px;margin-bottom:10px">🎬</div>'
+    + '<div style="font-size:14px;font-weight:800;margin-bottom:4px">Optimizando tu video… '+pct+'%</div>'
+    + '<div style="font-size:11.5px;color:rgba(200,235,215,.62);margin-bottom:12px;line-height:1.4">Lo achicamos para que entre — puede tardar hasta ~1 min. No cierres esta ventana.</div>'
+    + '<div style="height:9px;border-radius:100px;background:rgba(116,198,157,.20);overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#63d99a,#3aa06a);border-radius:100px;transition:width .3s"></div></div>'
+    + '</div>';
+}
+// Re-codifica un video a menor resolución/bitrate para que entre en targetMB.
+// Best-effort: si el dispositivo no soporta MediaRecorder/captureStream o iOS
+// bloquea la reproducción, devuelve null y el llamador cae al mensaje de error.
+function _vibeCompressVideo(file, targetMB, durHint){
+  return new Promise(function(resolve){
+    var settled = false, ac = null, vid = null, url = '';
+    function done(val){ if(settled) return; settled = true; try{ if(url) URL.revokeObjectURL(url); }catch(_){}; try{ if(ac) ac.close(); }catch(_){}; try{ if(vid && vid.parentNode) vid.parentNode.removeChild(vid); }catch(_){}; resolve(val); }
+    try{
+      if(typeof MediaRecorder === 'undefined' || !HTMLCanvasElement.prototype.captureStream){ done(null); return; }
+      url = URL.createObjectURL(file);
+      vid = document.createElement('video');
+      vid.src = url; vid.playsInline = true; vid.setAttribute('playsinline',''); vid.muted = false; vid.preload = 'auto';
+      // iOS necesita el <video> en el DOM (no display:none) para reproducir.
+      vid.style.cssText = 'position:fixed;width:2px;height:2px;opacity:.01;pointer-events:none;left:-10px;bottom:-10px;z-index:-1';
+      document.body.appendChild(vid);
+      vid.onerror = function(){ done(null); };
+      vid.onloadedmetadata = function(){
+        try{
+          var dur = durHint || vid.duration || 30;
+          var vw = vid.videoWidth||1280, vh = vid.videoHeight||720;
+          var scale = Math.min(1, 1280/Math.max(vw,vh));
+          var ow = Math.max(2, Math.round(vw*scale/2)*2), oh = Math.max(2, Math.round(vh*scale/2)*2);
+          var vbits = Math.floor((targetMB*8*1048576/dur) - 150000);
+          vbits = Math.max(700000, Math.min(vbits, 3800000));
+          var canvas = document.createElement('canvas'); canvas.width = ow; canvas.height = oh;
+          var ctx = canvas.getContext('2d');
+          var stream; try{ stream = canvas.captureStream(30); }catch(e){ done(null); return; }
+          try{
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if(AC){
+              ac = new AC(); if(ac.state === 'suspended'){ try{ ac.resume(); }catch(_){} }
+              var srcNode = ac.createMediaElementSource(vid);
+              var destN = ac.createMediaStreamDestination();
+              srcNode.connect(destN);
+              destN.stream.getAudioTracks().forEach(function(t){ stream.addTrack(t); });
+            }
+          }catch(_){}
+          var mime = '';
+          ['video/mp4','video/mp4;codecs=h264','video/webm;codecs=vp8','video/webm'].some(function(m){ if(MediaRecorder.isTypeSupported(m)){ mime=m; return true; } return false; });
+          var opts = { videoBitsPerSecond: vbits, audioBitsPerSecond: 128000 };
+          if(mime) opts.mimeType = mime;
+          var rec; try{ rec = new MediaRecorder(stream, opts); }catch(e){ try{ rec = new MediaRecorder(stream); }catch(e2){ done(null); return; } }
+          var chunks = [];
+          rec.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
+          rec.onstop = function(){ var outType = (rec.mimeType||mime||'video/mp4').split(';')[0]; done(chunks.length ? new Blob(chunks,{type:outType}) : null); };
+          function loop(){ if(settled) return; if(vid.ended || vid.paused){ return; } try{ ctx.drawImage(vid,0,0,ow,oh); }catch(_){}; _vibeShowCompressProgress(Math.min(99, Math.round((vid.currentTime/dur)*100))); requestAnimationFrame(loop); }
+          try{ rec.start(1000); }catch(e){ done(null); return; }
+          vid.onended = function(){ try{ if(rec.state!=='inactive') rec.stop(); }catch(_){} };
+          _vibeCompressLastPct = -1; _vibeShowCompressProgress(0);
+          vid.play().then(function(){ requestAnimationFrame(loop); }).catch(function(){ done(null); });
+          setTimeout(function(){ if(!settled){ try{ if(rec.state!=='inactive') rec.stop(); }catch(_){}; if(!chunks.length) done(null); } }, (dur+25)*1000);
+        }catch(e){ done(null); }
+      };
+    }catch(e){ done(null); }
+  });
+}
 async function _vibeHandleVideoInput(f){
   var area = document.getElementById('vibeImgArea');
-  if(f.size > VIBE_VIDEO_MAX_MB*1024*1024){
-    _vibeShowMediaError('Ese video pesa '+(f.size/1048576).toFixed(0)+' MB y el máximo es '+VIBE_VIDEO_MAX_MB+' MB. Probá con un clip más corto, o grabá en 720p/1080p en vez de 4K (Ajustes → Cámara → Grabar video).');
+  // Tope duro para no intentar comprimir archivos gigantes (riesgo de crash iOS).
+  if(f.size > 400*1024*1024){
+    _vibeShowMediaError('Ese video pesa '+(f.size/1048576).toFixed(0)+' MB — es demasiado grande para procesar en el teléfono. Grabá en 1080p (no 4K) o un clip más corto.');
     return;
   }
   // Estado "procesando" visible mientras leemos la duración
@@ -20817,13 +20885,28 @@ async function _vibeHandleVideoInput(f){
     _vibeShowMediaError('El video dura '+Math.round(dur)+'s y el máximo es '+VIBE_VIDEO_MAX_SECS+' segundos. Recortalo o elegí uno más corto.');
     return;
   }
-  _vibePendingVideo = f;
+  // Si supera el límite de tamaño → intentar comprimirlo antes de rechazarlo.
+  var useFile = f;
+  if(f.size > VIBE_VIDEO_MAX_MB*1024*1024){
+    var compressed = await _vibeCompressVideo(f, VIBE_VIDEO_MAX_MB - 4, dur);
+    if(compressed && compressed.size > 0 && compressed.size <= VIBE_VIDEO_MAX_MB*1024*1024){
+      useFile = compressed;
+      pToast('✓','Video optimizado ('+(compressed.size/1048576).toFixed(0)+' MB)');
+    } else if(compressed && compressed.size > VIBE_VIDEO_MAX_MB*1024*1024){
+      _vibeShowMediaError('Reduje el video pero quedó en '+(compressed.size/1048576).toFixed(0)+' MB (máximo '+VIBE_VIDEO_MAX_MB+' MB). Probá con un clip más corto.');
+      return;
+    } else {
+      _vibeShowMediaError('Ese video pesa '+(f.size/1048576).toFixed(0)+' MB y el máximo es '+VIBE_VIDEO_MAX_MB+' MB. No pude optimizarlo en este dispositivo — grabá en 1080p (no 4K) o un clip más corto.');
+      return;
+    }
+  }
+  _vibePendingVideo = useFile;
   _vibePendingImage = null;
   if(!area) area = document.getElementById('vibeImgArea');
   if(!area) return;
   var vUrl = '';
-  try{ vUrl = URL.createObjectURL(f); }catch(_){}
-  var _mb = (f.size/1048576).toFixed(0);
+  try{ vUrl = URL.createObjectURL(useFile); }catch(_){}
+  var _mb = (useFile.size/1048576).toFixed(0);
   _vibeVideoPreviewMeta = (dur>0?Math.round(dur)+'s · ':'') + _mb + ' MB';
   area.innerHTML = '<div style="position:relative"><video src="'+vUrl+'" controls playsinline muted preload="metadata" onerror="_vibeVideoPreviewError(this)" style="width:100%;max-height:360px;border-radius:16px;border:1.5px solid rgba(116,198,157,.35);display:block;background:#000"></video><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:6px 12px;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.30);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer;z-index:2">Cambiar</button></div>';
   pToast('✓', dur>0 ? 'Video listo ('+Math.round(dur)+'s)' : 'Video listo');
@@ -35305,7 +35388,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1428;
+    var _BUILT_V = 1429;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
