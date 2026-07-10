@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1405',
+      'Velo v1406',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -15804,6 +15804,8 @@ var _selMood = null;
 function pInitMood(){
   var orbs = document.getElementById('moodOrbs');
   if(!orbs) return;
+  // v1406: al entrar a la vista, el calendario arranca en el mes actual
+  _moodCalYear = null; _moodCalMonth = null;
   orbs.innerHTML = _moodOpts.map(function(m){
     return '<div class="mood-orb" onclick="pSelMood(this,\''+m.emoji+'\',\''+m.label+'\')" data-emoji="'+m.emoji+'"><span class="mood-orb-emoji">'+m.emoji+'</span><span class="mood-orb-lbl">'+m.label+'</span></div>';
   }).join('');
@@ -16413,14 +16415,34 @@ async function _checkMonthlyMoodReport(){
   setTimeout(function(){ pToast('📊','Recibiste tu resumen de '+monthName+' en el buzón 💚'); }, 3000);
 }
 
+// v1406: mes que se está viendo en el calendario (para navegar a meses
+// anteriores y completar días viejos). null = mes actual.
+var _moodCalYear = null, _moodCalMonth = null;
+function pMoodCalNav(delta){
+  var now = new Date();
+  var y = _moodCalYear || now.getFullYear();
+  var m = (_moodCalMonth || (now.getMonth()+1)) + delta;
+  if(m < 1){ m = 12; y--; }
+  else if(m > 12){ m = 1; y++; }
+  // No permitir navegar al futuro más allá del mes actual
+  if(y > now.getFullYear() || (y === now.getFullYear() && m > now.getMonth()+1)) return;
+  _moodCalYear = y; _moodCalMonth = m;
+  _loadMoodCalendar();
+}
 async function _loadMoodCalendar(){
   var cal = document.getElementById('moodCalendar');
   var hist = document.getElementById('moodHistory');
   if(!cal) return;
   var _tok = _navToken;
   var now = new Date();
-  var year = now.getFullYear();
-  var month = now.getMonth() + 1;
+  var year = _moodCalYear || now.getFullYear();
+  var month = _moodCalMonth || (now.getMonth() + 1);
+  var isCurrentMonth = (year === now.getFullYear() && month === now.getMonth()+1);
+  // Título del mes + deshabilitar "siguiente" si ya estamos en el mes actual
+  var _calTitle = document.getElementById('moodCalTitle');
+  if(_calTitle){ _calTitle.textContent = new Date(year, month-1, 1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}); }
+  var _nextBtn = document.getElementById('moodCalNextBtn');
+  if(_nextBtn){ _nextBtn.style.visibility = isCurrentMonth ? 'hidden' : 'visible'; }
   var daysInMonth = new Date(year, month, 0).getDate();
   var sbData = await sbLoadAllMoods(year, month);
   if(_navToken !== _tok || !document.getElementById('moodCalendar')) return;
@@ -16433,12 +16455,14 @@ async function _loadMoodCalendar(){
     if(local && !moodMap[key]){ try{ var lo = JSON.parse(local); moodMap[key] = lo; }catch(e){} }
   }
   var html = '';
-  var todayDay = now.getDate();
-  var missingPast = 0; // días pasados sin registro en el mes vigente
+  // En meses pasados TODOS los días son "pasados" y completables; en el mes
+  // actual, solo hasta hoy.
+  var todayDay = isCurrentMonth ? now.getDate() : (daysInMonth + 1);
+  var missingPast = 0; // días pasados sin registro en el mes visible
   for(var dd = 1; dd <= daysInMonth; dd++){
     var k = year+'-'+String(month).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
     var entry = moodMap[k];
-    var isToday2 = dd === todayDay;
+    var isToday2 = isCurrentMonth && dd === todayDay;
     var isPast = dd < todayDay; // días anteriores clickeables para backfill
     var isFuture = dd > todayDay;
     if(isPast && !entry) missingPast++;
@@ -16463,11 +16487,12 @@ async function _loadMoodCalendar(){
       missBanner = document.createElement('div');
       missBanner.id = 'moodMissBanner';
       missBanner.style.cssText = 'margin:10px 0 14px;padding:12px 14px;background:rgba(116,198,157,.14);border:1.5px solid rgba(116,198,157,.42);border-radius:14px;display:flex;align-items:center;gap:10px;font-family:Jost,sans-serif;font-size:13px;color:var(--ink2);cursor:pointer';
-      missBanner.onclick = function(){ pOpenMonthlyMissed(); };
+      missBanner.onclick = function(){ pOpenMonthlyMissed(year, month); };
       if(cal.parentNode) cal.parentNode.insertBefore(missBanner, cal);
     }
+    missBanner.onclick = function(){ pOpenMonthlyMissed(year, month); };
     missBanner.innerHTML = '<span style="font-size:22px;flex-shrink:0">🌿</span>'
-      +'<div style="flex:1;min-width:0"><div style="font-weight:800;color:var(--sage3);margin-bottom:2px">Tenés '+missingPast+' día'+(missingPast===1?'':'s')+' sin registrar este mes</div>'
+      +'<div style="flex:1;min-width:0"><div style="font-weight:800;color:var(--sage3);margin-bottom:2px">Tenés '+missingPast+' día'+(missingPast===1?'':'s')+' sin registrar '+(isCurrentMonth?'este mes':'en '+new Date(year,month-1,1).toLocaleDateString('es-AR',{month:'long'}))+'</div>'
       +'<div style="font-size:11.5px;color:var(--ink5);line-height:1.4">Tocá un día del calendario o acá para recuperar cómo te sentiste</div></div>'
       +'<span style="font-size:16px;color:var(--sage3);flex-shrink:0">›</span>';
   } else if(missBanner){
@@ -16591,12 +16616,14 @@ async function pSaveBackfillMood(dateKey){
   try{ _renderHomeWeekMoodGraph && _renderHomeWeekMoodGraph(); }catch(e){}
   try{ _updateHomeStreak && _updateHomeStreak(); }catch(e){}
 }
-// Sheet con la lista de días sin registro del mes vigente
-function pOpenMonthlyMissed(){
+// Sheet con la lista de días sin registro de un mes (v1406: mes parametrizable)
+function pOpenMonthlyMissed(argYear, argMonth){
   var ex = document.getElementById('moodMissedOv'); if(ex) ex.remove();
   var now = new Date();
-  var year = now.getFullYear(), month = now.getMonth()+1;
-  var todayD = now.getDate();
+  var year = argYear || now.getFullYear(), month = argMonth || (now.getMonth()+1);
+  var isCurMonth = (year === now.getFullYear() && month === now.getMonth()+1);
+  // Mes pasado → todos los días; mes actual → hasta ayer
+  var todayD = isCurMonth ? now.getDate() : (new Date(year, month, 0).getDate() + 1);
   var rows = [];
   for(var d=1; d<todayD; d++){
     var k = year+'-'+String(month).padStart(2,'0')+'-'+String(d).padStart(2,'0');
@@ -34713,7 +34740,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1405;
+    var _BUILT_V = 1406;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
