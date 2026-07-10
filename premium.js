@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1440',
+      'Velo v1441',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -11007,30 +11007,45 @@ function _sendLeaveMessage(postId){
   setTimeout(function(){ pGoTo('help'); }, 1200);
 }
 
+var _seekerShownReqIds = {}; // reqId → ts, para no re-mostrar el mismo pedido
 function _subscribeSeekerToGuardianRequest(postId){
   _initSupabase();
-  if(!sbClient || !postId) return;
+  if(!sbClient) return;
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId) return;
   if(_seekerGrCh) try{ sbClient.removeChannel(_seekerGrCh); }catch(e){}
   if(_seekerGrPollTmr){ clearInterval(_seekerGrPollTmr); _seekerGrPollTmr = null; }
-  _seekerGrCh = sbClient.channel('velo:seeker:'+postId)
+  // v1441: suscribir por seeker_id (MI usuario), no por un único post_id. Antes se
+  // usaba velo_my_help_post_id (un solo post), que se pisaba al postear de nuevo →
+  // si tenías 2 pedidos, las ofertas al más viejo NO llegaban (parecía "anónimo no
+  // funciona", pero era "solo el último pedido"). Ahora recibe ofertas de TODOS mis
+  // pedidos activos, sin importar público/anónimo.
+  function _maybeShow(r){
+    if(!r || String(r.seeker_id) !== String(myId)) return;
+    if(r.status && r.status !== 'pending') return;
+    if(!r.id) return;
+    if(_seekerShownReqIds[r.id]) return; // ya mostrado
+    _seekerShownReqIds[r.id] = Date.now();
+    if(document.getElementById('seekerGuardianOv')) return; // ya hay un popup abierto
+    _showSeekerGuardianPopup(r.post_id||postId, r);
+  }
+  _seekerGrCh = sbClient.channel('velo:seeker:'+myId)
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'guardian_requests'}, function(payload){
-      var r = payload.new||{};
-      if(String(r.post_id) !== String(postId)) return;
-      _showSeekerGuardianPopup(postId, r);
+      _maybeShow(payload.new||{});
     })
     .subscribe(function(status, err){
       if(status !== 'SUBSCRIBED') console.warn('[seeker gr listener] status:', status, err||'');
     });
-  // Polling fallback every 10s — catches offers if Realtime drops
+  // Polling fallback cada 6s — ofertas pendientes RECIENTES (últimos 3 min) a
+  // cualquiera de mis pedidos, por si el realtime se cae.
   _seekerGrPollTmr = setInterval(function(){
     if(!sbClient) return;
-    if(document.getElementById('seekerGuardianOv')) return; // already showing popup
+    if(document.getElementById('seekerGuardianOv')) return;
+    var _sinceIso = new Date(Date.now() - 3*60*1000).toISOString();
     sbClient.from('guardian_requests').select('*')
-      .eq('post_id', postId).eq('status','pending').order('created_at',{ascending:false}).limit(1)
-      .then(function(res){
-        if(res && res.data && res.data.length) _showSeekerGuardianPopup(postId, res.data[0]);
-      }).catch(function(){});
-  }, 10000);
+      .eq('seeker_id', myId).eq('status','pending').gte('created_at', _sinceIso).order('created_at',{ascending:false}).limit(1)
+      .then(function(res){ if(res && res.data && res.data.length) _maybeShow(res.data[0]); }).catch(function(){});
+  }, 6000);
 }
 
 function _showSeekerGuardianPopup(postId, row){
@@ -33920,7 +33935,10 @@ function _onPageEnter(id){
       if(sbClient) _helpRtCh = _sbSub('velo:help', 'help_posts', function(){ pRenderHelp(); });
       // Re-suscribir al seeker a SU pedido pendiente para recibir ofertas de
       // guardián en vivo aunque haya navegado y vuelto (incluye pedidos anónimos).
-      try{ var _myHp = safeLS('get','velo_my_help_post_id'); if(sbClient && _myHp) _subscribeSeekerToGuardianRequest(_myHp); }catch(_){}
+      // v1441: suscribir SIEMPRE (por seeker_id) — así recibís ofertas de guardián
+      // de cualquiera de tus pedidos activos, aunque los hayas hecho en otro momento
+      // o dispositivo, y sin importar si fueron públicos o anónimos.
+      try{ if(sbClient) _subscribeSeekerToGuardianRequest(safeLS('get','velo_my_help_post_id')||''); }catch(_){}
       pRenderHelp();
       _checkPendingSupportMessages();
       break;
@@ -35628,7 +35646,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1440;
+    var _BUILT_V = 1441;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
