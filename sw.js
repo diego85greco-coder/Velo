@@ -1,5 +1,5 @@
 /* Velo Service Worker v15 — always-fresh HTML + smart notifs + pre-cache */
-var CACHE = 'velo-v37';
+var CACHE = 'velo-v38';
 var APP_HTML = '/app-premium.html';
 var VERSION_URL = '/version.json';
 
@@ -105,11 +105,25 @@ self.addEventListener('fetch', function(e){
 // ── PUSH NOTIFICATIONS con acciones inteligentes ──────────────
 // Payload esperado (send-push.js):
 //   { title, body, icon, badge, tag, url, actions?: [{action:'open', title:'💌 Ver'}, {action:'later', title:'Después'}] }
+// Dedup de notificaciones duplicadas (p.ej. si hay 2 webhooks/triggers en la DB
+// disparando el mismo push): suprime un push idéntico que llega dentro de 7s.
+var _veloRecentPush = {};
+function _veloIsDupPush(key){
+  var now = Date.now();
+  // limpiar viejos
+  Object.keys(_veloRecentPush).forEach(function(k){ if(now - _veloRecentPush[k] > 15000) delete _veloRecentPush[k]; });
+  if(_veloRecentPush[key] && (now - _veloRecentPush[key]) < 7000) return true;
+  _veloRecentPush[key] = now;
+  return false;
+}
 self.addEventListener('push', function(event){
   var data = {};
   try{ data = event.data ? event.data.json() : {}; }
   catch(e){ data = {title:'Velo', body: event.data ? event.data.text() : ''}; }
   var title = data.title || '💚 Velo';
+  // Si un push idéntico (mismo tag+título+cuerpo) ya se mostró hace <7s, saltarlo.
+  var _dupKey = (data.tag||'') + '|' + title + '|' + (data.body||'');
+  if(_veloIsDupPush(_dupKey)){ return; }
   // Actions por defecto según tag — cada uno con un URL de deep-link
   var defaultActions = [{action:'open', title:'Abrir Velo'}];
   var actionMeta = {}; // action_id → url override

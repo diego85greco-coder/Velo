@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1435',
+      'Velo v1436',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -32288,8 +32288,17 @@ function _momentoUserHash(){
 }
 
 function _momentoAgo(ts){
-  var m=Math.floor((Date.now()-new Date(ts).getTime())/60000);
-  if(m<1) return 'ahora'; if(m<60) return m+'m'; return Math.floor(m/60)+'h';
+  var t = new Date(ts).getTime();
+  var m = Math.floor((Date.now()-t)/60000);
+  if(m<1) return 'ahora';
+  if(m<60) return m+'m';
+  var h = Math.floor(m/60);
+  if(h<24) return h+'h';
+  // v1436: pasadas las 24 h mostramos la FECHA de publicación (no "72h").
+  var d = new Date(t);
+  var _mes = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  var _yr = (d.getFullYear() !== new Date().getFullYear()) ? (' '+d.getFullYear()) : '';
+  return d.getDate()+' '+_mes[d.getMonth()]+_yr;
 }
 
 async function _fetchMomentos(limit){
@@ -35591,7 +35600,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1435;
+    var _BUILT_V = 1436;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

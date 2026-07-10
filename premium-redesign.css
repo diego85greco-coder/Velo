@@ -15586,3 +15586,30 @@ body .p-bottomnav.p-bottomnav .p-bn-item {
   padding: 4px 10px !important;
   gap: 2px !important;
 }
+
+/* v1436 — Popup de acciones de mensajes (reacciones/responder/borrar) en TODOS
+   los chats. El popup es blanco fijo, pero en modo oscuro var(--sage) es verde
+   CLARO → el texto "Responder" quedaba ilegible sobre blanco. En modo oscuro
+   hacemos el popup oscuro con texto claro. */
+body.r-dark .msg-actions-popup {
+  background: #14261b !important;
+  box-shadow: 0 8px 34px rgba(0,0,0,.55) !important;
+}
+body.r-dark .msg-actions-popup .msg-reply-btn {
+  background: rgba(116,198,157,.20) !important;
+  color: #c3f2d8 !important;
+}
+body.r-dark .msg-actions-popup .msg-del-btn {
+  background: rgba(220,80,80,.20) !important;
+  color: #ff9c93 !important;
+}
+body.r-dark .msg-actions-popup .msg-actions-divider {
+  background: rgba(255,255,255,.14) !important;
+}
+body.r-dark .msg-actions-popup button:active { background: rgba(255,255,255,.10) !important; }
+/* En modo claro, forzar el texto de "Responder" a verde OSCURO (no depender de
+   var(--sage) por si algún override lo aclara). */
+body:not(.r-dark) .msg-actions-popup .msg-reply-btn {
+  color: #1B5E3A !important;
+  background: rgba(116,198,157,.16) !important;
+}
