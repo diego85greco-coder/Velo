@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1409',
+      'Velo v1410',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -3951,6 +3951,13 @@ function _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, mo
     var gy = yScale(gi);
     grid += '<line x1="'+padX+'" y1="'+gy.toFixed(1)+'" x2="'+(W-padX)+'" y2="'+gy.toFixed(1)+'" stroke="rgba(255,255,255,.06)" stroke-width="1"/>';
   }
+  // v1410: referencias del eje Y — emojis a la izquierda (arriba=mejor ánimo,
+  // abajo=peor) para que la altura del gráfico sea entendible de un vistazo.
+  var yAxis = '';
+  [[5,'😄'],[4,'🙂'],[3,'😐'],[2,'🥺'],[1,'😢']].forEach(function(pair){
+    var yy = yScale(pair[0]);
+    yAxis += '<text x="2" y="'+(yy+3.5).toFixed(1)+'" font-size="9">'+pair[1]+'</text>';
+  });
   var svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;max-width:560px;display:block;margin:0 auto" preserveAspectRatio="xMidYMid meet">'
     + '<defs>'
       + '<linearGradient id="moodFillGrad" x1="0%" y1="0%" x2="0%" y2="100%">'
@@ -3963,6 +3970,7 @@ function _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, mo
       + '</linearGradient>'
     + '</defs>'
     + grid
+    + yAxis
     + (svgFillD ? '<path d="'+svgFillD+'" fill="url(#moodFillGrad)" stroke="none"/>' : '')
     + (svgPathD ? '<path d="'+svgPathD+'" fill="none" stroke="url(#moodLineGrad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' : '')
     + dotsHtml
@@ -3983,7 +3991,11 @@ function _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, mo
     + (worstDay && bestDay && worstDay.day!==bestDay.day?'<div style="background:rgba(200,140,80,.10);border:1px solid rgba(200,140,80,.25);border-radius:14px;padding:10px 12px"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(220,180,120,.65);text-transform:uppercase;margin-bottom:4px">Más difícil</div><div style="font-size:14px;font-weight:700;color:rgba(255,235,210,.96);font-family:Jost,sans-serif"><span style="font-size:18px;margin-right:6px">'+worstDay.emoji+'</span>Día '+worstDay.day+'</div></div>':'')
     + '</div>'
     : '<div style="text-align:center;padding:24px;color:rgba(255,255,255,.55);font-size:14px;font-family:Jost,sans-serif">Sin registros este mes — empezá hoy 🌿</div>';
-  return '<div style="background:rgba(0,0,0,.22);border:1px solid rgba(116,198,157,.12);border-radius:16px;padding:14px 8px 6px;margin-top:14px">'+svg+'</div>'+distHtml+statsHtml;
+  // v1410: leyenda que explica cómo leer el gráfico
+  var legendHtml = nReg ? '<div style="text-align:center;margin-top:8px;font-family:Jost,sans-serif;font-size:11px;color:rgba(180,220,195,.62);line-height:1.5;padding:0 6px">'
+    + '📈 <strong style="color:rgba(200,240,215,.85)">Cada punto es un día que registraste.</strong> Cuanto más arriba, mejor estuvo tu ánimo. El color va del verde (buen día) al rojo (día difícil). Los días sin registro no aparecen en la línea.'
+    + '</div>' : '';
+  return '<div style="background:rgba(0,0,0,.22);border:1px solid rgba(116,198,157,.12);border-radius:16px;padding:14px 8px 6px;margin-top:14px">'+svg+'</div>'+legendHtml+distHtml+statsHtml;
 }
 
 // Manual replay from menu hamburguesa — reinicia el flag y arranca el tour desde home
@@ -34760,7 +34772,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1409;
+    var _BUILT_V = 1410;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
