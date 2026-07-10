@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1406',
+      'Velo v1407',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -16455,6 +16455,14 @@ async function _loadMoodCalendar(){
     if(local && !moodMap[key]){ try{ var lo = JSON.parse(local); moodMap[key] = lo; }catch(e){} }
   }
   var html = '';
+  // v1406: encabezados de días + offset del 1er día para que cada fecha caiga
+  // bajo su día de la semana real (antes se amontonaban sin alinear).
+  ['L','M','M','J','V','S','D'].forEach(function(wd){
+    html += '<div style="text-align:center;font-size:11px;font-weight:800;color:var(--ink5);padding:2px 0 4px;letter-spacing:.5px">'+wd+'</div>';
+  });
+  var _firstDow = new Date(year, month-1, 1).getDay(); // 0=Dom
+  _firstDow = _firstDow === 0 ? 6 : _firstDow - 1;     // semana arranca en Lun
+  for(var _o=0; _o<_firstDow; _o++) html += '<div></div>';
   // En meses pasados TODOS los días son "pasados" y completables; en el mes
   // actual, solo hasta hoy.
   var todayDay = isCurrentMonth ? now.getDate() : (daysInMonth + 1);
@@ -16472,11 +16480,15 @@ async function _loadMoodCalendar(){
     var titleTxt = entry
       ? k+' · '+(entry.label||entry.emoji)+(entry.note?' — '+String(entry.note).replace(/"/g,'&quot;'):'')
       : (isFuture ? k+' · aún no llegó' : (isToday2 ? k+' · Registrá tu ánimo de hoy' : k+' · Registrar ánimo de este día'));
-    html += '<div'+onClick+' style="aspect-ratio:1;background:'+(entry?'rgba(116,198,157,.18)':(isFuture?'rgba(0,0,0,.02)':'rgba(0,0,0,.04)'))+';border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;'+cursor+(isToday2?'outline:2px solid var(--sage);outline-offset:1px;':'')+(isPast && !entry?'border:1.5px dashed rgba(116,198,157,.42);':'')+'" title="'+titleTxt+'">'
-      +'<span style="font-size:11px;color:'+(entry?'var(--sage3)':(isFuture?'var(--ink6,#c8c8c0)':'var(--ink5)'))+';font-weight:700;line-height:1">'+dd+'</span>'
+    // Fondo legible por estado: registrado (verde tenue), completable
+    // (punteado verde), futuro (muy tenue).
+    var _bg = entry ? 'rgba(116,198,157,.22)' : (clickable ? 'rgba(116,198,157,.06)' : 'rgba(255,255,255,.03)');
+    var _numCol = entry ? 'var(--sage3)' : (isFuture ? 'rgba(150,160,150,.45)' : 'var(--ink3)');
+    html += '<div'+onClick+' style="aspect-ratio:1;background:'+_bg+';border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;'+cursor+(isToday2?'outline:2px solid var(--sage);outline-offset:1px;':'')+(clickable && !entry?'border:1.5px dashed rgba(116,198,157,.55);':'')+'" title="'+titleTxt+'">'
+      +'<span style="font-size:12.5px;color:'+_numCol+';font-weight:800;line-height:1">'+dd+'</span>'
       +(entry
-          ? '<span style="font-size:14px;line-height:1">'+entry.emoji+'</span>'
-          : (isPast ? '<span style="font-size:9px;line-height:1;color:rgba(116,198,157,.55);font-weight:700">＋</span>' : ''));
+          ? '<span style="font-size:17px;line-height:1">'+entry.emoji+'</span>'
+          : (clickable ? '<span style="font-size:13px;line-height:1;color:rgba(116,198,157,.85);font-weight:800">＋</span>' : ''));
     html += '</div>';
   }
   cal.innerHTML = html;
@@ -34740,7 +34752,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1406;
+    var _BUILT_V = 1407;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
