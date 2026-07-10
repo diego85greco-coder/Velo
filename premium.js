@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1434',
+      'Velo v1435',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -33877,7 +33877,13 @@ function _onPageEnter(id){
     case 'professionals': pRenderProfessionals(); break;
     case 'help':
       _initSupabase();
-      if(sbClient && !_helpRtCh) _helpRtCh = _sbSub('velo:help', 'help_posts', function(){ pRenderHelp(); });
+      // v1434: SIEMPRE re-suscribir (un canal viejo/caído dejaba de traer los
+      // pedidos nuevos en vivo → solo aparecían al refrescar).
+      if(_helpRtCh){ _sbUnsub(_helpRtCh); _helpRtCh = null; }
+      if(sbClient) _helpRtCh = _sbSub('velo:help', 'help_posts', function(){ pRenderHelp(); });
+      // Re-suscribir al seeker a SU pedido pendiente para recibir ofertas de
+      // guardián en vivo aunque haya navegado y vuelto (incluye pedidos anónimos).
+      try{ var _myHp = safeLS('get','velo_my_help_post_id'); if(sbClient && _myHp) _subscribeSeekerToGuardianRequest(_myHp); }catch(_){}
       pRenderHelp();
       _checkPendingSupportMessages();
       break;
@@ -35585,7 +35591,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1434;
+    var _BUILT_V = 1435;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
