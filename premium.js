@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1419',
+      'Velo v1420',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -3306,7 +3306,7 @@ async function pOpenAnnualWrapped(){
   }
   // Stats globales
   var moodScore = {'😄':5,'😊':4.5,'😍':5,'🥰':4.7,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🤔':2.8,'🥺':2.5,'🤒':2.2,'😞':2,'😔':2,'💔':1.5,'😰':1.8,'😬':2.3,'😨':1.7,'😤':2.2,'😡':1.6,'😴':2.6,'😢':1.4};
-  var moodLabel = { '😄':'genial','😊':'bien','😌':'en paz','💪':'con fuerza','🌟':'radiante','😐':'neutro','🥺':'sensible','😞':'bajo','😔':'triste','😰':'ansioso/a','😤':'frustrado/a','😢':'difícil' };
+  var moodLabel = {}; Object.keys(_VELO_MOOD_LABEL).forEach(function(e){ moodLabel[e] = (_VELO_MOOD_LABEL[e]||'').toLowerCase(); });
   var counts = {};
   allMoods.forEach(function(m){ counts[m.emoji] = (counts[m.emoji]||0)+1; });
   var domEmoji = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; })[0] || '🌿';
@@ -3910,7 +3910,7 @@ function _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, mo
   var avgScore = nReg ? (pts.reduce(function(s,p){return s+p.score;},0)/nReg).toFixed(1) : 0;
   var bestDay = nReg ? pts.reduce(function(a,b){return b.score>a.score?b:a;}) : null;
   var worstDay = nReg ? pts.reduce(function(a,b){return b.score<a.score?b:a;}) : null;
-  var W = 320, H = 150, padX = 22, padY = 18;
+  var W = 320, H = 150, padX = 34, padY = 18;
   var xStep = (W - padX*2) / Math.max(1, daysInMonth-1);
   var yScale = function(s){ return padY + (H - padY*2) * (1 - (s-1)/4); };
   var svgPathD = '';
@@ -3954,12 +3954,13 @@ function _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, mo
     var gy = yScale(gi);
     grid += '<line x1="'+padX+'" y1="'+gy.toFixed(1)+'" x2="'+(W-padX)+'" y2="'+gy.toFixed(1)+'" stroke="rgba(255,255,255,.06)" stroke-width="1"/>';
   }
-  // v1410: referencias del eje Y — emojis a la izquierda (arriba=mejor ánimo,
+  // v1420: referencias del eje Y — caritas a la izquierda (arriba=mejor ánimo,
   // abajo=peor) para que la altura del gráfico sea entendible de un vistazo.
+  // Más grandes (font 13) y con más padX para que se vean bien en la escala.
   var yAxis = '';
-  [[5,'😄'],[4,'🙂'],[3,'😐'],[2,'🥺'],[1,'😢']].forEach(function(pair){
+  [[5,'😄'],[4,'🙂'],[3,'😐'],[2,'😟'],[1,'😢']].forEach(function(pair){
     var yy = yScale(pair[0]);
-    yAxis += '<text x="2" y="'+(yy+3.5).toFixed(1)+'" font-size="9">'+pair[1]+'</text>';
+    yAxis += '<text x="4" y="'+(yy+4.5).toFixed(1)+'" font-size="13">'+pair[1]+'</text>';
   });
   var svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;max-width:560px;display:block;margin:0 auto" preserveAspectRatio="xMidYMid meet">'
     + '<defs>'
@@ -15834,6 +15835,18 @@ var _moodOpts = [
   { emoji:'😬', label:'Nervioso/a' },   { emoji:'😨', label:'Con miedo' },    { emoji:'😤', label:'Enojado/a' },   { emoji:'😡', label:'Con bronca' },
   { emoji:'😴', label:'Agotado/a' },    { emoji:'🤒', label:'Enfermo/a' }
 ];
+// v1420: fuente ÚNICA de verdad para score (1–5) y etiqueta de cada emoción.
+// Antes los resúmenes semanal/mensual usaban un mapa de solo 5 emojis, así que
+// las emociones nuevas caían a "Neutro" y no se contemplaban. Reutilizar estos
+// dos objetos en todo el código de resúmenes/análisis.
+var _VELO_MOOD_SCORE = {'😄':5,'😊':4.5,'😍':5,'🥰':4.7,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🤔':2.8,'🥺':2.5,'🤒':2.2,'😞':2,'😔':2,'💔':1.5,'😰':1.8,'😬':2.3,'😨':1.7,'😤':2.2,'😡':1.6,'😴':2.6,'😢':1.4};
+var _VELO_MOOD_LABEL = {};
+_moodOpts.forEach(function(o){ _VELO_MOOD_LABEL[o.emoji] = (o.label||'').replace('/a',''); });
+// Emojis legacy que pueden venir de registros viejos y no están en _moodOpts:
+if(!_VELO_MOOD_LABEL['💪']) _VELO_MOOD_LABEL['💪'] = 'Con energía';
+if(!_VELO_MOOD_LABEL['🌟']) _VELO_MOOD_LABEL['🌟'] = 'Radiante';
+if(!_VELO_MOOD_LABEL['🥺']) _VELO_MOOD_LABEL['🥺'] = 'Sensible';
+var _VELO_MOOD_COLOR = {'😄':'#5fcc8a','😊':'#74c69d','😍':'#5fcc8a','🥰':'#74c69d','😌':'#7ed4a5','💪':'#5fcc8a','🌟':'#e6c450','😐':'#c8b070','🤔':'#c0a878','🥺':'#d59a8a','🤒':'#c98a60','😞':'#b87060','😔':'#a85040','💔':'#a83848','😰':'#c98a30','😬':'#c99045','😨':'#c97838','😤':'#c97040','😡':'#c23838','😴':'#b09068','😢':'#a04030'};
 var _selMood = null;
 
 function pInitMood(){
@@ -20301,7 +20314,7 @@ async function pRenderVibesHome(){
     }catch(e){}
     _vibesGroupCounts = counts;
     var myId = safeLS('get','velo_user_id')||'';
-    var official = g.data.filter(function(x){ return x.kind === 'official'; });
+    var official = _sortOfficialGroups(g.data.filter(function(x){ return x.kind === 'official'; }));
     var pub      = g.data.filter(function(x){ return x.kind === 'public'; });
     // Círculos privados donde soy owner (los CREÉ yo)
     var privMine    = g.data.filter(function(x){ return x.kind === 'private' && x.owner_id === myId; });
@@ -20439,6 +20452,17 @@ var _VIBE_SLUG_EMOJIS = {
   dificiles:       '🫂',
   solidaridad:     '🤝'
 };
+// Orden canónico de los grupos oficiales de Velo (v1420). Los que no estén
+// listados van al final, respetando su orden de llegada.
+var _VIBE_OFFICIAL_ORDER = ['felicidad','mascotas','orgullo','dificiles','lectura','ejercicio','entretenimiento','conciertos','comidas','solidaridad'];
+function _sortOfficialGroups(arr){
+  var ord = _VIBE_OFFICIAL_ORDER;
+  return (arr||[]).slice().sort(function(a,b){
+    var ia = ord.indexOf(a.slug||''); var ib = ord.indexOf(b.slug||'');
+    if(ia < 0) ia = 999; if(ib < 0) ib = 999;
+    return ia - ib;
+  });
+}
 function _vibeGroupCard(gr, count){
   var isPrivate = gr.kind === 'private';
   var isOfficial = gr.kind === 'official';
@@ -20473,7 +20497,7 @@ function _vibeGroupCard(gr, count){
 function pCreateVibeMenu(){
   var ex = document.getElementById('vibeCreateMenuOv'); if(ex) ex.remove();
   if(!_vibesGroupsCache){ pToast('⏳','Cargando grupos…'); return; }
-  var official = _vibesGroupsCache.filter(function(x){ return x.kind === 'official'; });
+  var official = _sortOfficialGroups(_vibesGroupsCache.filter(function(x){ return x.kind === 'official'; }));
   var ov = document.createElement('div');
   ov.id = 'vibeCreateMenuOv';
   ov.className = 'p-modal-ov show';
@@ -27950,8 +27974,8 @@ async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
 
   // Collect 7-day timeline + stats
   var dayNamesShort = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
-  var _moodScore = {'😄':5,'😊':4,'😐':3,'😞':2,'😢':1};
-  var _moodLbl   = {'😄':'Genial','😊':'Bien','😐':'Neutro','😞':'Bajo','😢':'Difícil'};
+  var _moodScore = _VELO_MOOD_SCORE;
+  var _moodLbl   = _VELO_MOOD_LABEL;
   var dayNamesLong = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   var timeline = [], weekMoods = [];
   for(var _j=6; _j>=0; _j--){
@@ -27986,7 +28010,7 @@ async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
     btReactionsGiven:0, btCommentsGiven:0,
     helpPosted:0, helpOffered:0,
     dqAnswered:0, dqComments:0,
-    momentosPosted:0,
+    momentosPosted:0, vibesPosted:0, vibeReactionsReceived:0,
     prevWeekReg:0, prevAvgScore:0, thisAvgScore:0,
     hasBuddy:false, buddyName:'', buddyDaysTogether:0, buddyDmsSent:0, buddyDmsReceived:0
   };
@@ -28031,6 +28055,18 @@ async function pOpenWeeklyReportBroadcast(dateStr, readKey, cardEl){
       try{
         var _mo = await sbClient.from('momentos').select('id',{count:'exact',head:true}).eq('user_id',_myUidWk).gte('created_at', weekISO);
         if(!_mo.error) activity.momentosPosted = _mo.count || 0;
+      }catch(e){}
+      // Vibes de hoy publicadas + reacciones recibidas
+      try{
+        var _vb = await sbClient.from('vibes').select('id').eq('user_id',_myUidWk).gte('created_at', weekISO);
+        if(!_vb.error && _vb.data){
+          activity.vibesPosted = _vb.data.length;
+          var _vbIds = _vb.data.map(function(v){return v.id;});
+          if(_vbIds.length){
+            var _vRx = await sbClient.from('vibe_reactions').select('id').in('vibe_id',_vbIds).gte('created_at', weekISO);
+            if(!_vRx.error && _vRx.data) activity.vibeReactionsReceived = _vRx.data.length;
+          }
+        }
       }catch(e){}
       // Buddy — mi compañero/a de bienestar (si tengo)
       try{
@@ -29173,6 +29209,20 @@ async function pOpenMonthlyReport(month, readKey, cardEl){
     html+='</div>';
   }
 
+  // ── Actividad en la comunidad: momentos, vibes, bitácora (v1420) ──
+  if(data.monthAct && (data.monthAct.momentos||data.monthAct.vibes||data.monthAct.btPosted||data.monthAct.vibeRx||data.monthAct.btRxRecv)){
+    var _ma=data.monthAct;
+    html+='<div style="margin-bottom:18px">'
+      +'<div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:10px">🌱 TU ACTIVIDAD EN LA COMUNIDAD</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">';
+    if(_ma.momentos) html+=_mrStatCard('🌸','Momentos compartidos',_ma.momentos,'en la comunidad');
+    if(_ma.vibes)    html+=_mrStatCard('✨','Vibes de hoy',_ma.vibes,'grupos e instantáneos');
+    if(_ma.vibeRx)   html+=_mrStatCard('💚','Reacciones en tus vibes',_ma.vibeRx,'de la comunidad');
+    if(_ma.btPosted) html+=_mrStatCard('📓','Historias en Bitácora',_ma.btPosted,'publicadas');
+    if(_ma.btRxRecv) html+=_mrStatCard('❤️','Reacciones en tus historias',_ma.btRxRecv,'recibidas');
+    html+='</div></div>';
+  }
+
   // ── Diary & streak mini-stats ──
   if(data.diaryCount || data.streak > 1){
     html+='<div style="display:flex;gap:8px;margin-bottom:18px">';
@@ -29358,13 +29408,21 @@ async function _generateMonthlySummary(month, mName, year){
     var moodLog=[]; try{moodLog=JSON.parse(safeLS('get','velo_mood_log')||'[]');}catch(e){}
     monthMoods=moodLog.filter(function(m){ var d=new Date(m.ts||0); return d.getFullYear()===yr&&d.getMonth()===(mon-1); });
   }
+  // v1420: clasificación por score (cubre las 18 emociones). Sets legacy solo
+  // como respaldo para emojis viejos que no están en _VELO_MOOD_SCORE.
   var positiveSet={'😊':1,'😄':1,'🥰':1,'😎':1,'🌈':1,'☀️':1,'🔥':1,'✨':1,'🌻':1};
   var negativeSet={'😔':1,'😢':1,'😰':1,'😤':1,'🌧️':1,'😞':1,'😟':1,'😭':1,'😣':1};
+  function _moodBucket(emoji){
+    var sc = _VELO_MOOD_SCORE[emoji];
+    if(sc === undefined){ if(positiveSet[emoji]) return 'happy'; if(negativeSet[emoji]) return 'sad'; return 'neutral'; }
+    if(sc >= 3.7) return 'happy';
+    if(sc <= 2.5) return 'sad';
+    return 'neutral';
+  }
   var happy=0,sad=0,neutral=0;
   monthMoods.forEach(function(m){
-    if(positiveSet[m.emoji]) happy++;
-    else if(negativeSet[m.emoji]) sad++;
-    else neutral++;
+    var b=_moodBucket(m.emoji);
+    if(b==='happy') happy++; else if(b==='sad') sad++; else neutral++;
   });
 
   // ── Medals ──
@@ -29388,6 +29446,22 @@ async function _generateMonthlySummary(month, mName, year){
     }catch(e){}
     try{ var gh=await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('guardian_id',myId).eq('status','ended').gte('created_at',cutStart).lte('created_at',cutEnd); helpedOthers=gh.count||0; }catch(e){}
     try{ var gs=await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('seeker_id',myId).eq('status','ended').gte('created_at',cutStart).lte('created_at',cutEnd); helpReceived=gs.count||0; }catch(e){}
+  }
+
+  // ── Actividad del mes en la comunidad (momentos, vibes, bitácora) ──
+  var monthAct={ momentos:0, vibes:0, vibeRx:0, btPosted:0, btRxRecv:0 };
+  if(sbClient&&myId&&myId!=='guest'){
+    try{ var _mm=await sbClient.from('momentos').select('id',{count:'exact',head:true}).eq('user_id',myId).gte('created_at',cutStart).lte('created_at',cutEnd); monthAct.momentos=_mm.count||0; }catch(e){}
+    try{
+      var _mv=await sbClient.from('vibes').select('id').eq('user_id',myId).gte('created_at',cutStart).lte('created_at',cutEnd);
+      if(_mv.data){ monthAct.vibes=_mv.data.length; var _mvIds=_mv.data.map(function(v){return v.id;});
+        if(_mvIds.length){ var _mvRx=await sbClient.from('vibe_reactions').select('id').in('vibe_id',_mvIds); if(_mvRx.data) monthAct.vibeRx=_mvRx.data.length; } }
+    }catch(e){}
+    try{
+      var _mb=await sbClient.from('bitacora_posts').select('id').eq('user_id',myId).gte('created_at',cutStart).lte('created_at',cutEnd);
+      if(_mb.data){ monthAct.btPosted=_mb.data.length; var _mbIds=_mb.data.map(function(p){return p.id;});
+        if(_mbIds.length){ var _mbRx=await sbClient.from('bitacora_reactions').select('id').in('post_id',_mbIds); if(_mbRx.data) monthAct.btRxRecv=_mbRx.data.length; } }
+    }catch(e){}
   }
 
   var sadPct=monthMoods.length?Math.round(sad/monthMoods.length*100):0;
@@ -29425,8 +29499,9 @@ async function _generateMonthlySummary(month, mName, year){
     var d=new Date(m.ts||0).getDay();
     if(!_dayGroups[d]) _dayGroups[d]={happy:0,sad:0,total:0,name:_dayNames[d]};
     _dayGroups[d].total++;
-    if(positiveSet[m.emoji]) _dayGroups[d].happy++;
-    else if(negativeSet[m.emoji]) _dayGroups[d].sad++;
+    var _b=_moodBucket(m.emoji);
+    if(_b==='happy') _dayGroups[d].happy++;
+    else if(_b==='sad') _dayGroups[d].sad++;
   });
   var _validDays=Object.values(_dayGroups).filter(function(d){ return d.total>=2; });
   var weekPattern=null;
@@ -29456,7 +29531,10 @@ async function _generateMonthlySummary(month, mName, year){
     +'- Emoción predominante: '+(dominantEmoji||'variada')+'\n'
     +(prevCmp?'- Tendencia vs mes anterior: '+prevCmp+'\n':'')
     +'\n':'';
-  var actCtx=(helpedOthers?'- Acompañó a '+helpedOthers+' personas como guardián/a\n':'')+(helpReceived?'- Recibió apoyo en '+helpReceived+' ocasiones\n':'');
+  var actCtx=(helpedOthers?'- Acompañó a '+helpedOthers+' personas como guardián/a\n':'')+(helpReceived?'- Recibió apoyo en '+helpReceived+' ocasiones\n':'')
+    +(monthAct.momentos?'- Compartió '+monthAct.momentos+' momento'+(monthAct.momentos>1?'s':'')+' en la comunidad\n':'')
+    +(monthAct.vibes?'- Subió '+monthAct.vibes+' vibe'+(monthAct.vibes>1?'s':'')+' de hoy'+(monthAct.vibeRx?' (recibió '+monthAct.vibeRx+' reacciones)':'')+'\n':'')
+    +(monthAct.btPosted?'- Publicó '+monthAct.btPosted+' historia'+(monthAct.btPosted>1?'s':'')+' en Bitácora'+(monthAct.btRxRecv?' (recibió '+monthAct.btRxRecv+' reacciones)':'')+'\n':'');
   var rvCtx=totalReviews?'- Recibió '+totalReviews+' reseña'+(totalReviews>1?'s':'')+' de la comunidad\n':'';
   var medalCtx=monthMedals.length?'- Medallas: '+monthMedals.map(function(m){return m.name||m.label||'🏅';}).join(', ')+'\n':'';
   var extraCtx=(diaryCount?'- Escribió '+diaryCount+' entrada'+(diaryCount>1?'s':'')+' en su diario\n':'')
@@ -29537,6 +29615,7 @@ async function _generateMonthlySummary(month, mName, year){
     weekPattern:weekPattern,
     momentoNote:momentoNote,
     trend3:trend3,
+    monthAct:monthAct,
     mName:mName
   };
   safeLS('set',cacheKey,JSON.stringify(result));
@@ -30470,10 +30549,12 @@ async function _renderHomeWeekMoodGraph(){
   var today = new Date();
   var dayNames = ['D','L','M','M','J','V','S'];
   var dayFullNames = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  var moodColors = {'😄':'rgba(116,198,157,.9)','😊':'rgba(116,198,157,.65)','😐':'rgba(200,160,80,.7)','😞':'rgba(180,90,90,.7)','😢':'rgba(160,70,70,.8)'};
-  var moodBgs    = {'😄':'rgba(116,198,157,.22)','😊':'rgba(116,198,157,.14)','😐':'rgba(200,160,80,.14)','😞':'rgba(180,90,90,.11)','😢':'rgba(160,70,70,.14)'};
+  // v1420: todas las emociones (18) — antes solo 5, las nuevas se salteaban de
+  // la curva y caían a color por defecto. Colores derivados del hex global.
+  var moodColors = {}, moodBgs = {};
+  Object.keys(_VELO_MOOD_COLOR).forEach(function(e){ moodColors[e] = _VELO_MOOD_COLOR[e]; moodBgs[e] = _VELO_MOOD_COLOR[e]+'26'; });
   // Score per mood for the "best day" insight + curva emocional
-  var moodScore  = {'😄':5,'😊':4,'😐':3,'😞':2,'😢':1};
+  var moodScore  = _VELO_MOOD_SCORE;
 
   function _buildDays(sbMap){
     var days = [];
@@ -30680,6 +30761,130 @@ function _initDiaryPromptPreview(){
   if(el) el.textContent = _getDiaryPrompt();
 }
 
+// ── ACTIVIDAD SEMANAL EN LA COMUNIDAD (v1420) ─────────────────
+// Cuenta momentos/vibes, reacciones, bitácora, ayuda, DQ, buddy de la semana.
+// Reutilizada por el resumen automático y el interactivo.
+async function _buildWeekActivity(refTs, moodScoreMap){
+  var activity = {
+    btPosted:0, btReactionsReceived:0, btCommentsReceived:0,
+    btReactionsGiven:0, btCommentsGiven:0,
+    helpPosted:0, helpOffered:0,
+    dqAnswered:0, dqComments:0,
+    momentosPosted:0, vibesPosted:0, vibeReactionsReceived:0,
+    prevWeekReg:0, prevAvgScore:0, thisAvgScore:0,
+    hasBuddy:false, buddyName:'', buddyDaysTogether:0, buddyDmsSent:0, buddyDmsReceived:0
+  };
+  _initSupabase();
+  var uid = safeLS('get','velo_user_id') || '';
+  if(!sbClient || !uid) return activity;
+  var weekStartTs = refTs - 7*86400000;
+  var weekISO = new Date(weekStartTs).toISOString();
+  var refISO  = new Date(refTs).toISOString();
+  try{
+    // Bitácora — mis posts + reacciones/comentarios recibidos
+    var _btP = await sbClient.from('bitacora_posts').select('id').eq('user_id',uid).gte('created_at', weekISO).lte('created_at', refISO);
+    if(!_btP.error && _btP.data){
+      activity.btPosted = _btP.data.length;
+      var _btIds = _btP.data.map(function(p){return p.id;});
+      if(_btIds.length){
+        var _btRxR = await sbClient.from('bitacora_reactions').select('id').in('post_id',_btIds).gte('created_at', weekISO);
+        if(!_btRxR.error && _btRxR.data) activity.btReactionsReceived = _btRxR.data.length;
+        var _btCmR = await sbClient.from('bitacora_comments').select('id').in('post_id',_btIds).gte('created_at', weekISO);
+        if(!_btCmR.error && _btCmR.data) activity.btCommentsReceived = _btCmR.data.length;
+      }
+    }
+    var _btRxG = await sbClient.from('bitacora_reactions').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
+    if(!_btRxG.error) activity.btReactionsGiven = _btRxG.count || 0;
+    var _btCmG = await sbClient.from('bitacora_comments').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
+    if(!_btCmG.error) activity.btCommentsGiven = _btCmG.count || 0;
+    // Sala de Ayuda
+    var _hp = await sbClient.from('help_posts').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
+    if(!_hp.error) activity.helpPosted = _hp.count || 0;
+    try{
+      var _gr = await sbClient.from('guardian_requests').select('id',{count:'exact',head:true}).eq('guardian_id',uid).gte('created_at', weekISO);
+      if(!_gr.error) activity.helpOffered = _gr.count || 0;
+    }catch(e){}
+    // Pregunta del día
+    var _dqR = await sbClient.from('daily_responses').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
+    if(!_dqR.error) activity.dqAnswered = _dqR.count || 0;
+    try{
+      var _dqC = await sbClient.from('dq_comments').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
+      if(!_dqC.error) activity.dqComments = _dqC.count || 0;
+    }catch(e){}
+    // Momentos (Muro Feliz / comunidad)
+    try{
+      var _mo = await sbClient.from('momentos').select('id',{count:'exact',head:true}).eq('user_id',uid).gte('created_at', weekISO);
+      if(!_mo.error) activity.momentosPosted = _mo.count || 0;
+    }catch(e){}
+    // Vibes de hoy (grupos + instantáneos) que publiqué + reacciones recibidas
+    try{
+      var _vb = await sbClient.from('vibes').select('id').eq('user_id',uid).gte('created_at', weekISO);
+      if(!_vb.error && _vb.data){
+        activity.vibesPosted = _vb.data.length;
+        var _vbIds = _vb.data.map(function(v){return v.id;});
+        if(_vbIds.length){
+          var _vRx = await sbClient.from('vibe_reactions').select('id').in('vibe_id',_vbIds).gte('created_at', weekISO);
+          if(!_vRx.error && _vRx.data) activity.vibeReactionsReceived = _vRx.data.length;
+        }
+      }
+    }catch(e){}
+    // Buddy / compañero de bienestar
+    try{
+      var _bdMe = await sbClient.from('profiles').select('buddy_id,buddy_name,buddy_started_at').eq('id',uid).maybeSingle();
+      if(_bdMe && _bdMe.data && _bdMe.data.buddy_id){
+        activity.hasBuddy = true;
+        activity.buddyName = (_bdMe.data.buddy_name||'').split(' ')[0] || 'tu compañero/a';
+        if(_bdMe.data.buddy_started_at){
+          activity.buddyDaysTogether = Math.max(0, Math.floor((refTs - new Date(_bdMe.data.buddy_started_at).getTime()) / 86400000));
+        }
+        var _bdId = _bdMe.data.buddy_id;
+        var _dmS = await sbClient.from('direct_messages').select('id,text').eq('from_id',uid).eq('to_id',_bdId).gte('created_at', weekISO);
+        if(!_dmS.error && _dmS.data) activity.buddyDmsSent = _dmS.data.filter(function(m){ return m.text && m.text.indexOf('__velo_')!==0; }).length;
+        var _dmR = await sbClient.from('direct_messages').select('id,text').eq('from_id',_bdId).eq('to_id',uid).gte('created_at', weekISO);
+        if(!_dmR.error && _dmR.data) activity.buddyDmsReceived = _dmR.data.filter(function(m){ return m.text && m.text.indexOf('__velo_')!==0; }).length;
+      }
+    }catch(e){}
+    // Comparación con la semana anterior (promedio de ánimo)
+    var prevWeekStartTs = weekStartTs - 7*86400000;
+    var _prevMoodsRaw = await sbLoadAllMoods(new Date(prevWeekStartTs).getFullYear(), new Date(prevWeekStartTs).getMonth()+1);
+    if(_prevMoodsRaw){
+      var _prevScores = [];
+      _prevMoodsRaw.forEach(function(m){
+        if(!m.emoji || !m.date_key) return;
+        var _mdKey = new Date(m.date_key).getTime();
+        if(_mdKey >= prevWeekStartTs && _mdKey < weekStartTs){
+          _prevScores.push((moodScoreMap&&moodScoreMap[m.emoji])||3);
+          activity.prevWeekReg++;
+        }
+      });
+      if(_prevScores.length) activity.prevAvgScore = _prevScores.reduce(function(a,b){return a+b;},0)/_prevScores.length;
+    }
+  }catch(e){ console.warn('[weekly] activity fetch error:', e); }
+  return activity;
+}
+
+// Convierte el objeto activity en líneas de texto para el resumen del Buzón.
+function _weekActivityText(a){
+  if(!a) return '';
+  var L = [];
+  if(a.momentosPosted>0) L.push('🌸 Compartiste '+a.momentosPosted+' momento'+(a.momentosPosted!==1?'s':'')+' en la comunidad');
+  if(a.vibesPosted>0) L.push('✨ Subiste '+a.vibesPosted+' vibe'+(a.vibesPosted!==1?'s':'')+' de hoy (grupos e instantáneos)');
+  if(a.vibeReactionsReceived>0) L.push('💚 Recibiste '+a.vibeReactionsReceived+' reacción'+(a.vibeReactionsReceived!==1?'es':'')+' en tus vibes');
+  if(a.btPosted>0) L.push('📓 Publicaste '+a.btPosted+' historia'+(a.btPosted!==1?'s':'')+' en Bitácora');
+  if(a.btReactionsReceived>0) L.push('❤️ Recibiste '+a.btReactionsReceived+' reacción'+(a.btReactionsReceived!==1?'es':'')+' en tus historias');
+  if(a.btCommentsReceived>0) L.push('💬 Recibiste '+a.btCommentsReceived+' comentario'+(a.btCommentsReceived!==1?'s':'')+' en tus historias');
+  if((a.btReactionsGiven+a.btCommentsGiven)>0) L.push('🤝 Apoyaste a otros con '+(a.btReactionsGiven+a.btCommentsGiven)+' interaccion'+((a.btReactionsGiven+a.btCommentsGiven)!==1?'es':'')+' en Bitácora');
+  if(a.helpPosted>0) L.push('🆘 Pediste acompañamiento '+a.helpPosted+' vez'+(a.helpPosted!==1?'ces':'')+' en la Sala de Ayuda');
+  if(a.helpOffered>0) L.push('🛡️ Acompañaste a '+a.helpOffered+' persona'+(a.helpOffered!==1?'s':'')+' como Guardián');
+  if(a.dqAnswered>0) L.push('🌤️ Respondiste la Pregunta del Día '+a.dqAnswered+' vez'+(a.dqAnswered!==1?'ces':''));
+  if(a.dqComments>0) L.push('🗨️ Dejaste '+a.dqComments+' comentario'+(a.dqComments!==1?'s':'')+' en respuestas de la comunidad');
+  if(a.hasBuddy){
+    var bTot = a.buddyDmsSent + a.buddyDmsReceived;
+    if(bTot>0) L.push('🌿 Intercambiaste '+bTot+' mensaje'+(bTot!==1?'s':'')+' con '+a.buddyName);
+  }
+  return L.length ? L.map(function(l){ return '  '+l; }).join('\n')+'\n' : '';
+}
+
 // ── WEEKLY SUMMARY ────────────────────────────────────────────
 async function _checkWeeklySummary(){
   var lastKey = safeLS('get','velo_last_weekly_summary')||'';
@@ -30744,8 +30949,8 @@ async function _checkWeeklySummary(){
   var alreadySent = inbox.find(function(m){ return m.id==='weekly-'+todayKey; }) || _syncedReadIds['weekly-'+todayKey];
 
   // ── Compute rich weekly stats ──────────────────────────────
-  var _moodScore = {'😄':5,'😊':4,'😐':3,'😞':2,'😢':1};
-  var _moodLabel = {'😄':'Genial','😊':'Bien','😐':'Neutro','😞':'Bajo','😢':'Difícil'};
+  var _moodScore = _VELO_MOOD_SCORE;
+  var _moodLabel = _VELO_MOOD_LABEL;
   var moodDistrib = {}; // emoji → count
   weekMoods.forEach(function(m){ if(m&&m.emoji){ moodDistrib[m.emoji]=(moodDistrib[m.emoji]||0)+1; } });
   var totalReg = weekMoods.length;
@@ -30799,7 +31004,12 @@ async function _checkWeeklySummary(){
 
   // Generate AI analysis and send to Buzón
   setTimeout(async function(){
-    var aiText = await _generateWeeklySummaryAI(timeline, dominantMood, streak, totalReg, weekDiary.length, userName, distribLines, trendTxt, bestDay, worstDay);
+    // v1420: actividad de la semana (momentos/vibes, reacciones, bitácora, ayuda…)
+    var activity = await _buildWeekActivity(Date.now(), _moodScore);
+    var scoresW = timeline.filter(function(d){ return d.mood; }).map(function(d){ return _moodScore[d.mood.emoji]||3; });
+    if(scoresW.length) activity.thisAvgScore = scoresW.reduce(function(a,b){return a+b;},0)/scoresW.length;
+    var actTxt = _weekActivityText(activity);
+    var aiText = await _generateWeeklySummaryAI(timeline, dominantMood, streak, totalReg, weekDiary.length, userName, distribLines, trendTxt, bestDay, worstDay, activity);
     if(!alreadySent){
       var _inbox2=[]; try{_inbox2=JSON.parse(safeLS('get','velo_inbox')||'[]');}catch(e){}
       var _wqB = _pickWeeklyQuote(dominantMood);
@@ -30826,6 +31036,7 @@ async function _checkWeeklySummary(){
             +'Escribiste '+weekDiary.length+' entrada'+(weekDiary.length!==1?'s':'')+' esta semana'
             +(diaryDays.length?' ('+diaryDays.join(', ')+')':'')+'\n\n'
           : '')
+        +(actTxt ? '🌱 TU ACTIVIDAD EN LA COMUNIDAD\n'+actTxt+'\n' : '')
         +'📅 RACHA\n'
         +streak+' día'+(streak!==1?'s':'')+' seguidos en Velo'
         +(streak>=7?' 🔥 ¡Una semana completa!':streak>=3?' 💪 ¡Excelente ritmo!':'')+'\n\n'
@@ -30842,7 +31053,7 @@ async function _checkWeeklySummary(){
 
 async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns, diaryCount, userName, distribLines, trendTxt, bestDay, worstDay, activity){
   try{
-    var _moodLabel = {'😄':'Genial','😊':'Bien','😐':'Neutro','😞':'Bajo','😢':'Difícil'};
+    var _moodLabel = _VELO_MOOD_LABEL;
     var dayNamesLong = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     var dayNamesShort = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
     var moodLines = timeline.map(function(d){
@@ -30860,6 +31071,8 @@ async function _generateWeeklySummaryAI(timeline, dominantMood, streak, checkIns
       if(activity.dqAnswered>0) lines.push('Respondió la Pregunta del Día '+activity.dqAnswered+' vez'+(activity.dqAnswered>1?'ces':''));
       if(activity.dqComments>0) lines.push('Dejó '+activity.dqComments+' comentario'+(activity.dqComments>1?'s':'')+' en respuestas de la comunidad');
       if(activity.momentosPosted>0) lines.push('Compartió '+activity.momentosPosted+' momento'+(activity.momentosPosted>1?'s':''));
+      if(activity.vibesPosted>0) lines.push('Subió '+activity.vibesPosted+' vibe'+(activity.vibesPosted>1?'s':'')+' de hoy (grupos/instantáneos)');
+      if(activity.vibeReactionsReceived>0) lines.push('Recibió '+activity.vibeReactionsReceived+' reacciones en sus vibes');
       // Buddy
       if(activity.hasBuddy){
         var bTotal = activity.buddyDmsSent + activity.buddyDmsReceived;
@@ -30959,7 +31172,7 @@ function pShowWeeklySummary(data){
   }).join('');
 
   // Trend arrow
-  var moods7 = (data.timeline||[]).map(function(d){ return d.mood?{'😄':5,'😊':4,'😐':3,'😞':2,'😢':1}[d.mood.emoji]||3:null; });
+  var moods7 = (data.timeline||[]).map(function(d){ return d.mood?(_VELO_MOOD_SCORE[d.mood.emoji]||3):null; });
   var filled = moods7.filter(function(v){ return v!==null; });
   var firstHalf = filled.slice(0, Math.ceil(filled.length/2));
   var secondHalf = filled.slice(Math.ceil(filled.length/2));
@@ -31019,6 +31232,8 @@ function pShowWeeklySummary(data){
         if(a.dqAnswered>0) chips.push({e:'💭',lbl:a.dqAnswered+' respuesta'+(a.dqAnswered>1?'s':'')+' a la Pregunta del Día', col:'#e9b949'});
         if(a.dqComments>0) chips.push({e:'✨',lbl:a.dqComments+' comentario'+(a.dqComments>1?'s':'')+' a la comunidad', col:'#e9b949'});
         if(a.momentosPosted>0) chips.push({e:'🌸',lbl:a.momentosPosted+' momento'+(a.momentosPosted>1?'s':'')+' compartido'+(a.momentosPosted>1?'s':''), col:'#f0a8c8'});
+        if(a.vibesPosted>0) chips.push({e:'✨',lbl:a.vibesPosted+' vibe'+(a.vibesPosted>1?'s':'')+' de hoy compartido'+(a.vibesPosted>1?'s':''), col:'#f0c85c'});
+        if(a.vibeReactionsReceived>0) chips.push({e:'💚',lbl:a.vibeReactionsReceived+' reacción'+(a.vibeReactionsReceived>1?'es':'')+' en tus vibes', col:'#74c69d'});
         // Buddy — compañero/a de bienestar
         if(a.hasBuddy){
           var _bTot = (a.buddyDmsSent||0) + (a.buddyDmsReceived||0);
@@ -34821,7 +35036,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1419;
+    var _BUILT_V = 1420;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
