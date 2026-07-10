@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1430',
+      'Velo v1431',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20959,6 +20959,22 @@ function _vibeSetUploadPct(pct){
   if(lbl){ lbl.textContent = '⬆️ Subiendo tu video… ' + pct + '% (no cierres esto)'; }
 }
 function _vibeHideUploadBar(){ var b = document.getElementById('vibeUploadBar'); if(b) b.remove(); }
+// Animación de éxito clara al compartir un video (el toast pasa desapercibido y
+// como el video no tiene preview, no queda intuitivo que se subió bien).
+function _vibeShowShareSuccess(){
+  var ex = document.getElementById('vibeShareOk'); if(ex) ex.remove();
+  var el = document.createElement('div');
+  el.id = 'vibeShareOk';
+  el.style.cssText = 'position:fixed;inset:0;z-index:10060;display:flex;align-items:center;justify-content:center;background:rgba(5,15,8,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:vibeOkFade .3s ease';
+  el.innerHTML = '<div style="text-align:center;font-family:Jost,sans-serif;color:#fff;transform:scale(.4);animation:vibeOkPop .45s cubic-bezier(.2,1.3,.4,1) forwards">'
+    + '<div style="width:96px;height:96px;margin:0 auto 16px;border-radius:50%;background:linear-gradient(135deg,#63d99a,#3aa06a);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 40px rgba(60,180,120,.55)"><span style="font-size:52px;line-height:1">✓</span></div>'
+    + '<div style="font-size:20px;font-weight:900;letter-spacing:.3px">¡Video compartido!</div>'
+    + '<div style="font-size:13px;color:rgba(200,240,215,.8);margin-top:5px">Ya está en el grupo 🌊</div>'
+    + '</div>'
+    + '<style>@keyframes vibeOkFade{from{opacity:0}to{opacity:1}}@keyframes vibeOkPop{to{transform:scale(1)}}</style>';
+  document.body.appendChild(el);
+  setTimeout(function(){ try{ el.style.transition='opacity .3s'; el.style.opacity='0'; setTimeout(function(){ el.remove(); }, 300); }catch(_){} }, 1300);
+}
 function _vibeChangeImage(){ document.getElementById('vibeFileInput').click(); }
 // Sube el data URL a Storage bucket 'vibes' bajo <user_id>/<ts>.jpg
 // Devuelve la URL pública. Si falla (bucket no configurado, etc), devuelve
@@ -21112,7 +21128,9 @@ async function pSaveVibe(){
     }
     var r = await sbClient.from('vibes').insert(payload).select('id,group_id').single();
     if(r && r.data && r.data.id){
+      var _wasVideo = !!_vibePendingVideo;
       pToast('🌊','Compartido');
+      if(_wasVideo){ try{ _vibeShowShareSuccess(); }catch(_){} }
       if(ov) ov.remove();
       var toOpen = r.data.group_id || _vibeTargetGroupId;
       _vibePendingImage = null;
@@ -35431,7 +35449,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1430;
+    var _BUILT_V = 1431;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
