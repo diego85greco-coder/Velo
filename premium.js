@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1438',
+      'Velo v1439',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -35609,7 +35609,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1438;
+    var _BUILT_V = 1439;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
@@ -35833,63 +35833,22 @@ window.addEventListener('load', function(){
     }
   });
 
-  // Detect tab/window hidden (phone locked, minimized, other tab) — mark ocupado automatically
-  // _guardianVisibilityTimer is module-level so pToggleGuardianMode can cancel it on re-activation.
+  // v1439: al minimizar/bloquear/perder foco YA NO marcamos "ocupado". El estado
+  // "ocupado" ahora es SOLO cuando el guardián está dentro de un chat activo
+  // (_inActiveChat). Si no, marcar ocupado al cerrar la app hacía que no le
+  // llegaran pedidos con la app cerrada — que es justo lo que debe funcionar.
   document.addEventListener('visibilitychange', function(){
     if(!document.hidden && _authenticated){
-      // Re-sync favorites when user returns to the tab (picks up cross-device changes)
+      // Al volver a la app: re-sync favoritos y refrescar presencia real.
       _syncFavsFromSupabase();
+      if(safeLS('get','velo_is_guardian') === 'true'){
+        _updateGuardianPresence(_inActiveChat ? 'ocupado' : _presenceStatus());
+      }
     }
-    if(safeLS('get','velo_is_guardian') !== 'true') return;
-    if(document.hidden){
-      // 5s grace period — prevents false "ocupado" when briefly switching tabs during testing
-      _guardianVisibilityTimer = setTimeout(function(){
-        _guardianVisibilityTimer = null;
-        if(safeLS('get','velo_is_guardian') !== 'true') return;
-        _updateGuardianPresence('ocupado');
-      }, 5000);
-    } else {
-      if(_guardianVisibilityTimer){ clearTimeout(_guardianVisibilityTimer); _guardianVisibilityTimer = null; }
-      _updateGuardianPresence(_presenceStatus());
-    }
-  });
-
-  // Detect window blur (PC screen lock, Alt+Tab to another app on Windows)
-  // visibilitychange alone doesn't fire on Windows lock screen — blur does
-  // _guardianBlurTimer is module-level so pToggleGuardianMode can cancel it on re-activation.
-  window.addEventListener('blur', function(){
-    if(safeLS('get','velo_is_guardian') !== 'true') return;
-    // 4s grace period so focus loss from dialog/DevTools doesn't falsely trigger
-    _guardianBlurTimer = setTimeout(function(){
-      _guardianBlurTimer = null;
-      if(safeLS('get','velo_is_guardian') !== 'true') return;
-      _updateGuardianPresence('ocupado');
-    }, 4000);
   });
   window.addEventListener('focus', function(){
-    if(_guardianBlurTimer){ clearTimeout(_guardianBlurTimer); _guardianBlurTimer = null; }
     if(safeLS('get','velo_is_guardian') !== 'true') return;
-    _updateGuardianPresence(_presenceStatus());
-  });
-
-  // Inactivity detection — 5 min without any user gesture → mark ocupado
-  var _guardianInactTimer = null;
-  var _guardianWasInactive = false;
-  function _resetGuardianInactivity(){
-    if(_guardianInactTimer){ clearTimeout(_guardianInactTimer); }
-    if(safeLS('get','velo_is_guardian') !== 'true') return;
-    if(_guardianWasInactive){
-      _guardianWasInactive = false;
-      _updateGuardianPresence(_presenceStatus());
-    }
-    _guardianInactTimer = setTimeout(function(){
-      if(safeLS('get','velo_is_guardian') !== 'true') return;
-      _guardianWasInactive = true;
-      _updateGuardianPresence('ocupado');
-    }, 5 * 60 * 1000);
-  }
-  ['mousemove','mousedown','keydown','touchstart','touchmove','scroll'].forEach(function(ev){
-    document.addEventListener(ev, _resetGuardianInactivity, { passive: true });
+    _updateGuardianPresence(_inActiveChat ? 'ocupado' : _presenceStatus());
   });
 
   // Register timestamp
