@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1414',
+      'Velo v1415',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -15949,6 +15949,13 @@ async function pSaveMood(){
   _loadTodayMoodHome();
   _renderHomeWeekMoodGraph().catch(function(){});
   _updateHomeStreak();
+  // v1414: tras registrar, llevar al resumen "Mi estado de hoy" (más
+  // intuitivo — cierra el ciclo mostrando la semana + racha). Delay corto
+  // para que se vea el toast/celebración de racha primero.
+  setTimeout(function(){
+    try{ if(_curPage !== 'home') pGoTo('home'); }catch(_){}
+    setTimeout(function(){ try{ pOpenMoodChipSheet(); }catch(_){} }, 650);
+  }, 1200);
   // v1228: mensual NO se auto-envía. Solo desde admin (pAdminSendMonthlyReport).
   // _checkMonthlyMoodReport();
 }
@@ -34810,7 +34817,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1414;
+    var _BUILT_V = 1415;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
