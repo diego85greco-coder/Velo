@@ -180,7 +180,10 @@ values
   ('official','ejercicio',   'Momentos de ejercicio',       '💪', 'Movimiento, cuerpos, respiración',                        null),
   ('official','entretenimiento','Momentos de entretenimiento','🎭', 'Series, películas, juegos que nos absorben',            null),
   ('official','conciertos',  'Momentos de conciertos',      '🎵', 'Música en vivo, escenarios, energía compartida',          null),
-  ('official','comidas',     'Nuestras comidas preferidas', '🍽️', 'Platos, momentos y sabores que celebramos',              null)
+  ('official','comidas',     'Nuestras comidas preferidas', '🍽️', 'Platos, momentos y sabores que celebramos',              null),
+  ('official','orgullo',     'Orgullo de ser',              '🏳️‍🌈', 'Un espacio para celebrar quién sos. Comunidad LGBTQ+ y aliades.', null),
+  ('official','dificiles',   'Momentos difíciles',          '🫂', 'Contá lo que te pesa. Acá recibís mensajes lindos y aliento.',   null),
+  ('official','solidaridad', 'Ser solidarios',              '🤝', 'Compartí una causa o un gesto que ayude a otros.',              null)
 on conflict (slug) do update set
   title = excluded.title,
   emoji = excluded.emoji,

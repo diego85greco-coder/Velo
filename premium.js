@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1418',
+      'Velo v1419',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20434,7 +20434,10 @@ var _VIBE_SLUG_EMOJIS = {
   ejercicio:       '💪',
   entretenimiento: '🎭',
   conciertos:      '🎵',
-  comidas:         '🍽️'
+  comidas:         '🍽️',
+  orgullo:         '🏳️‍🌈',
+  dificiles:       '🫂',
+  solidaridad:     '🤝'
 };
 function _vibeGroupCard(gr, count){
   var isPrivate = gr.kind === 'private';
@@ -34818,7 +34821,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1418;
+    var _BUILT_V = 1419;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
