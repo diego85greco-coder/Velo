@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1429',
+      'Velo v1430',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20746,7 +20746,7 @@ function pStartCreateVibe(groupId, instantScope){
   ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px 26px;background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.98));border:1.5px solid rgba(116,198,157,.35);max-height:92vh;overflow-y:auto">'
     + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
     + '<div style="text-align:center;padding:4px 0 12px"><div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:rgba(180,230,200,.72);text-transform:uppercase">'+_escHtml(header)+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic;margin-top:4px">Compartí tu momento</div></div>'
-    + '<div id="vibeImgArea" style="margin-bottom:14px"><button onclick="document.getElementById(\'vibeFileInput\').click()" style="width:100%;padding:32px 20px;background:rgba(116,198,157,.10);border:2px dashed rgba(116,198,157,.42);border-radius:16px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">📷 Elegí una foto o video<br><span style="font-size:11px;font-weight:600;color:rgba(200,230,215,.55)">video: máx 60 s · si pesa mucho lo optimizamos solos</span></button></div>'
+    + '<div id="vibeImgArea" style="margin-bottom:14px"><button onclick="document.getElementById(\'vibeFileInput\').click()" style="width:100%;padding:32px 20px;background:rgba(116,198,157,.10);border:2px dashed rgba(116,198,157,.42);border-radius:16px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">📷 Elegí una foto o video<br><span style="font-size:11px;font-weight:600;color:rgba(200,230,215,.55)">video: máx 60 s · lo optimizamos al subir</span></button></div>'
     + '<input type="file" id="vibeFileInput" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" style="display:none" onchange="_vibeHandleImageInput(this)">'
     + '<textarea id="vibeCaptionInput" placeholder="Contá qué pasa en tu momento (opcional)…" rows="3" style="width:100%;padding:12px 14px;background:rgba(0,0,0,.32);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.5"></textarea>'
     + inviteBlock
@@ -20767,13 +20767,11 @@ function _vibeSyncInvites(){
   document.querySelectorAll('.vibe-invite-cb:checked').forEach(function(cb){ ids.push(cb.getAttribute('data-uid')); });
   _vibeInstantMemberIds = ids;
 }
-// v1427: videos de hasta 60 segundos / 48 MB. El plan gratuito de Supabase topea
-// las subidas a 50 MB (no se puede subir sin pagar), así que 48 MB es el máximo
-// real para que el archivo suba de verdad en vez de colgarse. No se pueden
-// re-comprimir en el navegador (Safari PWA no tiene API de re-encodeo);
-// validamos duración y tamaño ANTES de subir tal cual.
+// v1430: videos de hasta 60 segundos / 100 MB. Ahora los videos van a Cloudinary
+// (no a Supabase Storage), que transcodifica del lado del servidor — el free tier
+// admite hasta 100 MB por archivo. Validamos duración y tamaño antes de subir.
 var VIBE_VIDEO_MAX_SECS = 60;
-var VIBE_VIDEO_MAX_MB   = 48;
+var VIBE_VIDEO_MAX_MB   = 100;
 function _vibeReadVideoDuration(file){
   return new Promise(function(resolve){
     var done = false;
@@ -20885,21 +20883,13 @@ async function _vibeHandleVideoInput(f){
     _vibeShowMediaError('El video dura '+Math.round(dur)+'s y el máximo es '+VIBE_VIDEO_MAX_SECS+' segundos. Recortalo o elegí uno más corto.');
     return;
   }
-  // Si supera el límite de tamaño → intentar comprimirlo antes de rechazarlo.
-  var useFile = f;
+  // Cloudinary comprime del lado del servidor, así que NO re-codificamos en el
+  // teléfono. Solo validamos un tope generoso para que la subida sea viable.
   if(f.size > VIBE_VIDEO_MAX_MB*1024*1024){
-    var compressed = await _vibeCompressVideo(f, VIBE_VIDEO_MAX_MB - 4, dur);
-    if(compressed && compressed.size > 0 && compressed.size <= VIBE_VIDEO_MAX_MB*1024*1024){
-      useFile = compressed;
-      pToast('✓','Video optimizado ('+(compressed.size/1048576).toFixed(0)+' MB)');
-    } else if(compressed && compressed.size > VIBE_VIDEO_MAX_MB*1024*1024){
-      _vibeShowMediaError('Reduje el video pero quedó en '+(compressed.size/1048576).toFixed(0)+' MB (máximo '+VIBE_VIDEO_MAX_MB+' MB). Probá con un clip más corto.');
-      return;
-    } else {
-      _vibeShowMediaError('Ese video pesa '+(f.size/1048576).toFixed(0)+' MB y el máximo es '+VIBE_VIDEO_MAX_MB+' MB. No pude optimizarlo en este dispositivo — grabá en 1080p (no 4K) o un clip más corto.');
-      return;
-    }
+    _vibeShowMediaError('Ese video pesa '+(f.size/1048576).toFixed(0)+' MB y el máximo es '+VIBE_VIDEO_MAX_MB+' MB. Grabá un clip más corto o en 1080p (no 4K).');
+    return;
   }
+  var useFile = f;
   _vibePendingVideo = useFile;
   _vibePendingImage = null;
   if(!area) area = document.getElementById('vibeImgArea');
@@ -20956,10 +20946,17 @@ function _vibeShowUploadBar(){
   var bar = document.createElement('div');
   bar.id = 'vibeUploadBar';
   bar.style.cssText = 'margin-top:10px;text-align:center;font-family:Jost,sans-serif';
-  bar.innerHTML = '<div style="font-size:12.5px;font-weight:800;color:var(--sage2,#2D6A4F);margin-bottom:7px">⬆️ Subiendo tu video… no cierres esta ventana</div>'
-    + '<div style="height:8px;border-radius:100px;background:rgba(116,198,157,.20);overflow:hidden;position:relative"><div style="position:absolute;top:0;left:-40%;width:40%;height:100%;border-radius:100px;background:linear-gradient(90deg,rgba(116,198,157,.4),#3aa06a,rgba(116,198,157,.4));animation:vibeUpBar 1.1s ease-in-out infinite"></div></div>'
+  bar.innerHTML = '<div id="vibeUploadBarLbl" style="font-size:12.5px;font-weight:800;color:var(--sage2,#2D6A4F);margin-bottom:7px">⬆️ Subiendo tu video… no cierres esta ventana</div>'
+    + '<div style="height:9px;border-radius:100px;background:rgba(116,198,157,.20);overflow:hidden;position:relative"><div id="vibeUploadBarFill" style="position:absolute;top:0;left:-40%;width:40%;height:100%;border-radius:100px;background:linear-gradient(90deg,rgba(116,198,157,.4),#3aa06a,rgba(116,198,157,.4));animation:vibeUpBar 1.1s ease-in-out infinite"></div></div>'
     + '<style>@keyframes vibeUpBar{0%{left:-40%}100%{left:100%}}</style>';
   area.parentNode.insertBefore(bar, area.nextSibling);
+}
+// Progreso real (0-100). Convierte la barra indeterminada en determinada.
+function _vibeSetUploadPct(pct){
+  var fill = document.getElementById('vibeUploadBarFill');
+  var lbl = document.getElementById('vibeUploadBarLbl');
+  if(fill){ fill.style.animation = 'none'; fill.style.left = '0'; fill.style.width = pct + '%'; fill.style.transition = 'width .25s'; }
+  if(lbl){ lbl.textContent = '⬆️ Subiendo tu video… ' + pct + '% (no cierres esto)'; }
 }
 function _vibeHideUploadBar(){ var b = document.getElementById('vibeUploadBar'); if(b) b.remove(); }
 function _vibeChangeImage(){ document.getElementById('vibeFileInput').click(); }
@@ -21015,9 +21012,54 @@ async function _vibeUploadVideoToStorage(file, userId){
     return null;
   }
 }
-// ¿La media_url es un video? (solo URLs de Storage — las data URLs siempre son fotos)
+// ── Subida de videos a Cloudinary (v1430) ────────────────────────────
+// Supabase free topea 50MB/archivo y no re-comprime; Cloudinary transcodifica
+// en SU servidor (quality auto) y tiene 25GB gratis. Se sube UNSIGNED desde el
+// navegador: cloud name (público) + preset unsigned, sin API secret.
+var VIBE_CLOUDINARY_CLOUD  = 'rsk22wnd';
+var VIBE_CLOUDINARY_PRESET = 'velo_vibes'; // crear como Unsigned en Cloudinary
+function _vibeUploadVideoToCloudinary(file, onProgress){
+  return new Promise(function(resolve){
+    _vibeUploadErr = '';
+    try{
+      var fd = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', VIBE_CLOUDINARY_PRESET);
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', 'https://api.cloudinary.com/v1_1/'+VIBE_CLOUDINARY_CLOUD+'/video/upload');
+      xhr.timeout = 300000; // 5 min para videos pesados en redes lentas
+      xhr.upload.onprogress = function(e){ if(e.lengthComputable && typeof onProgress==='function'){ onProgress(Math.min(99, Math.round(e.loaded/e.total*100))); } };
+      xhr.onload = function(){
+        if(xhr.status >= 200 && xhr.status < 300){
+          try{
+            var d = JSON.parse(xhr.responseText);
+            var s = d.secure_url || d.url;
+            if(s){
+              // q_auto → Cloudinary sirve una versión optimizada por dispositivo
+              resolve(s.replace('/video/upload/', '/video/upload/q_auto/'));
+              return;
+            }
+          }catch(_){}
+          _vibeUploadErr = 'other'; resolve(null);
+        } else {
+          var t = xhr.responseText || '';
+          console.warn('[cloudinary]', xhr.status, t);
+          if(xhr.status === 413 || /file size too large|too large/i.test(t)) _vibeUploadErr = 'size';
+          else if(/preset|not found|Upload preset must/i.test(t)) _vibeUploadErr = 'preset';
+          else _vibeUploadErr = 'other';
+          resolve(null);
+        }
+      };
+      xhr.onerror = function(){ _vibeUploadErr = 'network'; resolve(null); };
+      xhr.ontimeout = function(){ _vibeUploadErr = 'timeout'; resolve(null); };
+      xhr.send(fd);
+    }catch(e){ console.warn('[cloudinary]', e && e.message); _vibeUploadErr = 'other'; resolve(null); }
+  });
+}
+// ¿La media_url es un video? Storage (.mp4/.mov/.webm) o Cloudinary (/video/upload/).
 function _vibeIsVideoUrl(u){
-  return /\.(mp4|mov|webm)(\?|$)/i.test(String(u||''));
+  var s = String(u||'');
+  return /\.(mp4|mov|webm)(\?|$)/i.test(s) || /\/video\/upload\//.test(s);
 }
 async function pSaveVibe(){
   if(!_vibePendingImage && !_vibePendingVideo){ pToast('📷','Elegí una foto o video primero'); return; }
@@ -21035,18 +21077,19 @@ async function pSaveVibe(){
   var ov = document.getElementById('vibeCreateOv');
   var btn = ov ? ov.querySelector('button[onclick="pSaveVibe()"]') : null;
   if(btn){ btn.disabled = true; btn.textContent = _vibePendingVideo ? 'Subiendo video…' : 'Subiendo…'; }
-  // Barra de progreso indeterminada mientras sube el video (Storage no expone
-  // progreso real, así que mostramos una animación para que no parezca colgado).
+  // Barra con progreso REAL mientras sube el video a Cloudinary.
   if(_vibePendingVideo){ try{ _vibeShowUploadBar(); }catch(_){} }
   try{
     var mediaUrl;
     if(_vibePendingVideo){
-      mediaUrl = await _vibeUploadVideoToStorage(_vibePendingVideo, myId);
+      mediaUrl = await _vibeUploadVideoToCloudinary(_vibePendingVideo, function(pct){ try{ _vibeSetUploadPct(pct); }catch(_){} });
       try{ _vibeHideUploadBar(); }catch(_){}
       if(!mediaUrl){
         if(btn){ btn.disabled = false; btn.textContent = '🌊 Compartir'; }
-        var _msg = _vibeUploadErr === 'timeout' ? 'La subida tardó demasiado (conexión lenta o video muy pesado). Probá con WiFi o un video más corto.'
-          : _vibeUploadErr === 'size' ? 'El video supera el límite de tu almacenamiento. Grabá uno más corto o de menor calidad.'
+        var _msg = _vibeUploadErr === 'timeout' ? 'La subida tardó demasiado (conexión lenta). Probá con WiFi.'
+          : _vibeUploadErr === 'size' ? 'El video es demasiado pesado incluso para Cloudinary — grabá un clip más corto.'
+          : _vibeUploadErr === 'preset' ? 'Falta crear el preset "velo_vibes" (Unsigned) en Cloudinary. Avisale al admin.'
+          : _vibeUploadErr === 'network' ? 'Se cortó la conexión durante la subida. Probá de nuevo con buena señal.'
           : 'No se pudo subir el video — probá de nuevo.';
         _vibeShowMediaError(_msg);
         pToast('⚠️','No se pudo subir el video');
@@ -35388,7 +35431,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1429;
+    var _BUILT_V = 1430;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
