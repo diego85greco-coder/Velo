@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1444',
+      'Velo v1445',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -21466,9 +21466,16 @@ async function pOpenVibeGroup(groupId){
         return '<span class="vibe-dot" data-idx="'+i+'" style="width:'+(i===carouselData.length-1?'20px':'7px')+';height:7px;border-radius:100px;background:'+(i===carouselData.length-1?'rgba(116,198,157,.92)':'rgba(180,220,195,.30)')+';transition:all .3s"></span>';
       }).join('');
     }
-    // Scrollear al último (más reciente) por default y sync dots on scroll
+    // Scrollear a la última HISTORIA REAL (la más reciente / última vista), NO al
+    // slide de transición que quedó al final. Antes usábamos scrollWidth y con la
+    // transición agregada caía en la portada del siguiente grupo. v1445
     setTimeout(function(){
-      try{ list.scrollTo({ left: list.scrollWidth, behavior:'auto' }); }catch(_){ list.scrollLeft = list.scrollWidth; }
+      try{
+        var _w = list.clientWidth || 0;
+        var _lastReal = Math.max(0, carouselData.length - 1);
+        var _left = _w ? (_lastReal * _w) : (list.scrollWidth - (_transitionSlide ? 2 : 1) * list.clientWidth);
+        list.scrollTo({ left: _left, behavior:'auto' });
+      }catch(_){ try{ list.scrollLeft = Math.max(0, carouselData.length-1) * list.clientWidth; }catch(__){} }
     }, 30);
     list.addEventListener('scroll', function(){
       var w = list.clientWidth; if(!w) return;
@@ -35701,7 +35708,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1444;
+    var _BUILT_V = 1445;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
