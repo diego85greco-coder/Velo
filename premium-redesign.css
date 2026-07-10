@@ -15201,6 +15201,21 @@ body:not(.r-dark) #vibeGroupOv button[onclick*="pStartCreateVibe"] {
 body:not(.r-dark) #vibeGroupOv button[onclick*="pStartCreateVibe"] * {
   color: #0a3a1e !important;
 }
+/* v1426 — El botón "＋ Subir" del header vive SIEMPRE sobre el header oscuro,
+   así que debe ser el pill verde sólido con texto oscuro en AMBOS temas.
+   (La regla genérica de arriba lo dejaba translúcido/ilegible en light mode
+   porque su onclick también contiene pStartCreateVibe.) */
+#vibeGroupOv .vibe-hdr-upload,
+body:not(.r-dark) #vibeGroupOv .vibe-hdr-upload,
+body.r-dark #vibeGroupOv .vibe-hdr-upload {
+  background: linear-gradient(135deg,#63d99a,#3aa06a) !important;
+  border: 2px solid #ffffff !important;
+  color: #0a2417 !important;
+  box-shadow: 0 4px 16px rgba(60,180,120,.60) !important;
+}
+#vibeGroupOv .vibe-hdr-upload * {
+  color: #0a2417 !important;
+}
 body:not(.r-dark) #vibeGroupOv button[onclick^="_vibeJumpToNew"] {
   background: linear-gradient(135deg, rgba(255,180,60,0.42), rgba(240,160,50,0.32)) !important;
   border: 1.5px solid rgba(200,140,30,0.85) !important;

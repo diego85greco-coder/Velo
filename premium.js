@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1426',
+      'Velo v1427',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20822,8 +20822,24 @@ async function _vibeHandleVideoInput(f){
   if(!area) return;
   var vUrl = '';
   try{ vUrl = URL.createObjectURL(f); }catch(_){}
-  area.innerHTML = '<div style="position:relative"><video src="'+vUrl+'" controls playsinline muted preload="metadata" style="width:100%;max-height:360px;border-radius:16px;border:1.5px solid rgba(116,198,157,.35);display:block;background:#000"></video><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:6px 12px;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.30);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer;z-index:2">Cambiar</button></div>';
+  var _mb = (f.size/1048576).toFixed(0);
+  _vibeVideoPreviewMeta = (dur>0?Math.round(dur)+'s · ':'') + _mb + ' MB';
+  area.innerHTML = '<div style="position:relative"><video src="'+vUrl+'" controls playsinline muted preload="metadata" onerror="_vibeVideoPreviewError(this)" style="width:100%;max-height:360px;border-radius:16px;border:1.5px solid rgba(116,198,157,.35);display:block;background:#000"></video><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:6px 12px;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.30);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer;z-index:2">Cambiar</button></div>';
   pToast('✓', dur>0 ? 'Video listo ('+Math.round(dur)+'s)' : 'Video listo');
+}
+var _vibeVideoPreviewMeta = '';
+// Si el <video> no puede reproducirse inline (HEVC de iPhone es lo típico), el
+// archivo IGUAL se sube perfecto — solo mostramos un tile en vez del reproductor
+// roto, para que el usuario sepa que quedó seleccionado.
+function _vibeVideoPreviewError(videoEl){
+  try{
+    var area = document.getElementById('vibeImgArea'); if(!area) return;
+    area.innerHTML = '<div style="position:relative"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;height:200px;border-radius:16px;border:1.5px solid rgba(116,198,157,.35);background:linear-gradient(160deg,rgba(16,40,26,.98),rgba(8,22,14,.98));color:#eafff2;font-family:Jost,sans-serif">'
+      + '<div style="font-size:40px">🎬</div>'
+      + '<div style="font-size:14px;font-weight:800">Video listo para compartir</div>'
+      + '<div style="font-size:11.5px;color:rgba(206,240,222,.72)">'+_escHtml(_vibeVideoPreviewMeta)+' · no se previsualiza acá, pero se sube bien</div>'
+      + '</div><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:6px 12px;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.30);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer;z-index:2">Cambiar</button></div>';
+  }catch(_){}
 }
 async function _vibeHandleImageInput(input){
   if(!input || !input.files || !input.files[0]) return;
@@ -20849,6 +20865,19 @@ async function _vibeHandleImageInput(input){
     pToast('✓','Foto lista');
   }catch(e){ pToast('⚠️', (e && e.message) || 'No pude procesar la imagen'); }
 }
+// Barra de progreso indeterminada durante la subida del video.
+function _vibeShowUploadBar(){
+  var area = document.getElementById('vibeImgArea'); if(!area) return;
+  if(document.getElementById('vibeUploadBar')) return;
+  var bar = document.createElement('div');
+  bar.id = 'vibeUploadBar';
+  bar.style.cssText = 'margin-top:10px;text-align:center;font-family:Jost,sans-serif';
+  bar.innerHTML = '<div style="font-size:12.5px;font-weight:800;color:var(--sage2,#2D6A4F);margin-bottom:7px">⬆️ Subiendo tu video… no cierres esta ventana</div>'
+    + '<div style="height:8px;border-radius:100px;background:rgba(116,198,157,.20);overflow:hidden;position:relative"><div style="position:absolute;top:0;left:-40%;width:40%;height:100%;border-radius:100px;background:linear-gradient(90deg,rgba(116,198,157,.4),#3aa06a,rgba(116,198,157,.4));animation:vibeUpBar 1.1s ease-in-out infinite"></div></div>'
+    + '<style>@keyframes vibeUpBar{0%{left:-40%}100%{left:100%}}</style>';
+  area.parentNode.insertBefore(bar, area.nextSibling);
+}
+function _vibeHideUploadBar(){ var b = document.getElementById('vibeUploadBar'); if(b) b.remove(); }
 function _vibeChangeImage(){ document.getElementById('vibeFileInput').click(); }
 // Sube el data URL a Storage bucket 'vibes' bajo <user_id>/<ts>.jpg
 // Devuelve la URL pública. Si falla (bucket no configurado, etc), devuelve
@@ -20873,15 +20902,34 @@ async function _vibeUploadToStorage(dataUrl, userId){
 // Sube el File de video directo a Storage (sin base64 — un video de 150MB en
 // memoria como data URL rompería iOS). SIN fallback a data URL: no entra en una
 // fila de la DB, si Storage falla se aborta con error.
+var _vibeUploadErr = '';
 async function _vibeUploadVideoToStorage(file, userId){
+  _vibeUploadErr = '';
   if(!sbClient || !sbClient.storage) return null;
   var mime = file.type || 'video/mp4';
   var ext = mime.indexOf('webm') >= 0 ? 'webm' : (mime.indexOf('quicktime') >= 0 ? 'mov' : 'mp4');
   var path = userId + '/' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + '.' + ext;
-  var up = await sbClient.storage.from('vibes').upload(path, file, { cacheControl: '86400', upsert: false, contentType: mime });
-  if(up && up.error){ console.warn('[vibes-video-upload]', up.error); return null; }
-  var pub = sbClient.storage.from('vibes').getPublicUrl(path);
-  return (pub && pub.data && pub.data.publicUrl) ? pub.data.publicUrl : null;
+  try{
+    // Timeout de 120s: si la subida se cuelga (red lenta / límite de Storage),
+    // no dejamos el botón congelado para siempre.
+    var uploadP = sbClient.storage.from('vibes').upload(path, file, { cacheControl: '86400', upsert: false, contentType: mime });
+    var timeoutP = new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('timeout')); }, 120000); });
+    var up = await Promise.race([uploadP, timeoutP]);
+    if(up && up.error){
+      var em = String(up.error.message||up.error||'');
+      console.warn('[vibes-video-upload]', up.error);
+      if(/exceeded the maximum allowed size|payload too large|413|maximum allowed/i.test(em)) _vibeUploadErr = 'size';
+      else _vibeUploadErr = 'other';
+      return null;
+    }
+    var pub = sbClient.storage.from('vibes').getPublicUrl(path);
+    return (pub && pub.data && pub.data.publicUrl) ? pub.data.publicUrl : null;
+  }catch(e){
+    var msg = String((e && e.message)||e||'');
+    console.warn('[vibes-video-upload]', msg);
+    _vibeUploadErr = msg === 'timeout' ? 'timeout' : 'other';
+    return null;
+  }
 }
 // ¿La media_url es un video? (solo URLs de Storage — las data URLs siempre son fotos)
 function _vibeIsVideoUrl(u){
@@ -20903,13 +20951,21 @@ async function pSaveVibe(){
   var ov = document.getElementById('vibeCreateOv');
   var btn = ov ? ov.querySelector('button[onclick="pSaveVibe()"]') : null;
   if(btn){ btn.disabled = true; btn.textContent = _vibePendingVideo ? 'Subiendo video…' : 'Subiendo…'; }
+  // Barra de progreso indeterminada mientras sube el video (Storage no expone
+  // progreso real, así que mostramos una animación para que no parezca colgado).
+  if(_vibePendingVideo){ try{ _vibeShowUploadBar(); }catch(_){} }
   try{
     var mediaUrl;
     if(_vibePendingVideo){
       mediaUrl = await _vibeUploadVideoToStorage(_vibePendingVideo, myId);
+      try{ _vibeHideUploadBar(); }catch(_){}
       if(!mediaUrl){
         if(btn){ btn.disabled = false; btn.textContent = '🌊 Compartir'; }
-        pToast('⚠️','No se pudo subir el video — probá de nuevo');
+        var _msg = _vibeUploadErr === 'timeout' ? 'La subida tardó demasiado (conexión lenta o video muy pesado). Probá con WiFi o un video más corto.'
+          : _vibeUploadErr === 'size' ? 'El video supera el límite de tu almacenamiento. Grabá uno más corto o de menor calidad.'
+          : 'No se pudo subir el video — probá de nuevo.';
+        _vibeShowMediaError(_msg);
+        pToast('⚠️','No se pudo subir el video');
         return;
       }
     } else {
@@ -20967,7 +21023,7 @@ async function pOpenVibeGroup(groupId){
   ov.id = 'vibeGroupOv';
   ov.dataset.prevHtmlBg = _prevHtmlBg;
   ov.style.cssText = 'position:fixed;inset:0;z-index:10012;background:linear-gradient(180deg,#0a1810,#050f08);display:flex;flex-direction:column;overflow:hidden;color:#fff';
-  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.98);border-bottom:1px solid rgba(116,198,157,.22);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.30)"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:26px;flex-shrink:0">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;font-style:italic;color:#fff;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11.5px;color:rgba(200,235,215,.85);margin-top:3px;font-family:Jost,sans-serif;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.description)||'')+'</div></div><button onclick="_closeVibeGroup();pStartCreateVibe(\''+groupId+'\')" title="Publicar tu momento en este grupo" aria-label="Subir tu momento" style="background:linear-gradient(135deg,#63d99a,#3aa06a);border:2px solid #ffffff;color:#0a2417;font-family:Jost,sans-serif;font-size:14px;font-weight:900;height:40px;padding:0 15px 0 12px;border-radius:100px;cursor:pointer;flex-shrink:0;box-shadow:0 4px 16px rgba(60,180,120,.60);display:inline-flex;align-items:center;gap:5px;line-height:1;letter-spacing:.3px"><span style="font-size:20px;font-weight:900;line-height:1">+</span>Subir</button></div>';
+  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.98);border-bottom:1px solid rgba(116,198,157,.22);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.30)"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:26px;flex-shrink:0">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;font-style:italic;color:#fff;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11.5px;color:rgba(200,235,215,.85);margin-top:3px;font-family:Jost,sans-serif;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.description)||'')+'</div></div><button class="vibe-hdr-upload" onclick="_closeVibeGroup();pStartCreateVibe(\''+groupId+'\')" title="Publicar tu momento en este grupo" aria-label="Subir tu momento" style="background:linear-gradient(135deg,#63d99a,#3aa06a);border:2px solid #ffffff;color:#0a2417;font-family:Jost,sans-serif;font-size:14px;font-weight:900;height:40px;padding:0 15px 0 12px;border-radius:100px;cursor:pointer;flex-shrink:0;box-shadow:0 4px 16px rgba(60,180,120,.60);display:inline-flex;align-items:center;gap:5px;line-height:1;letter-spacing:.3px"><span style="font-size:20px;font-weight:900;line-height:1">+</span>Subir</button></div>';
   // Layout: header fijo + zona fija (CTA + banner de nuevos) + carrusel horizontal
   // scroll-snap con cada card 100% ancho + indicador de posición debajo.
   ov.innerHTML = header
@@ -20984,10 +21040,13 @@ async function pOpenVibeGroup(groupId){
       // el list y los dots para que no aparezca el layout raro con 1 slide.
       var fixedEmpty = document.getElementById('vibeGroupFixed');
       if(fixedEmpty){
-        fixedEmpty.innerHTML = '<div style="text-align:center;padding:40px 20px 12px;color:rgba(206,240,222,.78);font-family:Jost,sans-serif">'
-          + '<div style="font-size:50px;margin-bottom:14px;opacity:.75">🌱</div>'
-          + '<div style="font-size:16px;font-weight:800;color:#eafff2;text-shadow:0 1px 3px rgba(0,0,0,.4)">Todavía sin historias</div>'
-          + '<div style="font-size:12.5px;margin-top:6px;line-height:1.55;color:rgba(206,240,222,.78)">Sé el primero en compartir un momento acá</div>'
+        // Contenedor oscuro propio: el fondo del overlay puede verse claro u
+        // oscuro según el tema, así que el texto va sobre su propia card para
+        // ser legible siempre.
+        fixedEmpty.innerHTML = '<div style="text-align:center;padding:34px 20px 26px;margin-bottom:10px;background:linear-gradient(160deg,rgba(12,32,20,.96),rgba(8,22,14,.98));border:1px solid rgba(116,198,157,.28);border-radius:20px;font-family:Jost,sans-serif;box-shadow:0 8px 26px rgba(0,0,0,.35)">'
+          + '<div style="font-size:50px;margin-bottom:14px">🌱</div>'
+          + '<div style="font-size:17px;font-weight:800;color:#eafff2">Todavía sin historias</div>'
+          + '<div style="font-size:13px;margin-top:6px;line-height:1.55;color:rgba(206,240,222,.82)">Sé el primero en compartir un momento acá</div>'
           + '</div>'
           + '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-top:8px;padding:18px 20px;background:linear-gradient(135deg,rgba(116,198,157,.85),rgba(74,160,110,.98));border:none;border-radius:18px;color:#0e1f14;font-family:Jost,sans-serif;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.4px;box-shadow:0 8px 26px rgba(80,180,120,.35),0 2px 8px rgba(60,140,90,.25);line-height:1.35">👉 Sumate al momento<br><span style="font-size:12px;font-weight:700;color:rgba(20,50,32,.78);letter-spacing:.3px">Tocá acá para subir tu historia</span></button>';
       }
@@ -21624,6 +21683,59 @@ async function _openSavedVibe(vibeId){
   }
 }
 
+// Carrusel de TODOS mis vibes guardados (archived=true) — se abre desde el
+// perfil al tocar una miniatura y permite deslizar entre todos. v1426
+async function _openSavedVibesCarousel(startId){
+  _initSupabase();
+  if(!sbClient){ pToast('⚠️','Sin conexión'); return; }
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!myId){ pToast('⚠️','Iniciá sesión'); return; }
+  var res = await sbClient.from('vibes').select('*').eq('user_id',myId).eq('archived',true).order('created_at',{ascending:false}).limit(40);
+  var arr = (res && res.data) || [];
+  if(!arr.length){ pToast('🌟','No tenés momentos guardados todavía'); return; }
+  // Reacciones en bulk
+  _vibeReactionAgg = _vibeReactionAgg || {}; _vibeMyReactions = _vibeMyReactions || {};
+  try{
+    var ids = arr.map(function(v){ return v.id; });
+    var rRes = await sbClient.from('vibe_reactions').select('vibe_id,user_id,reaction').in('vibe_id', ids);
+    (rRes.data||[]).forEach(function(r){
+      if(!_vibeReactionAgg[r.vibe_id]) _vibeReactionAgg[r.vibe_id] = {};
+      _vibeReactionAgg[r.vibe_id][r.reaction] = (_vibeReactionAgg[r.vibe_id][r.reaction]||0)+1;
+      if(r.user_id === myId) _vibeMyReactions[r.vibe_id] = r.reaction;
+    });
+  }catch(_){}
+  var ov = document.getElementById('savedVibeOv'); if(ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'savedVibeOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10018;background:linear-gradient(180deg,#0a1810,#050f08);display:flex;flex-direction:column;overflow:hidden;color:#fff';
+  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.94);border-bottom:1px solid rgba(255,215,80,.20);flex-shrink:0"><button onclick="var o=document.getElementById(\'savedVibeOv\');if(o)o.remove()" style="background:rgba(255,255,255,.10);border:1.5px solid rgba(255,255,255,.20);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="font-family:\'Cormorant Garamond\',serif;font-size:19px;font-style:italic;color:rgba(255,240,180,.98)">🔖 Mis momentos guardados</div><div style="font-size:11px;color:rgba(230,210,140,.68);margin-top:2px;font-family:Jost,sans-serif">'+arr.length+' guardado'+(arr.length!==1?'s':'')+(arr.length>1?' · deslizá para verlos →':'')+'</div></div></div>';
+  var slides = arr.map(function(v){
+    return '<div class="vibe-slide" style="flex:0 0 100%;width:100%;scroll-snap-align:center;padding:0 12px;box-sizing:border-box;overflow-y:auto">'+_vibeCardHtml(v)+'</div>';
+  }).join('');
+  ov.innerHTML = header
+    + '<div id="savedVibeCarousel" style="flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px 0 6px">'+slides+'</div>';
+  document.body.appendChild(ov);
+  var listEl = document.getElementById('savedVibeCarousel');
+  if(listEl){
+    _vibeFillUsernames(listEl);
+    listEl.querySelectorAll('img[data-vibe-src]').forEach(function(img){
+      var src = img.getAttribute('data-vibe-src'); if(!src) return;
+      try{
+        if(src.indexOf('data:') === 0){
+          var a2 = src.split(','); var mm = a2[0].match(/:(.*?);/); var mime = mm?mm[1]:'image/jpeg';
+          var bstr = atob(a2[1]||''); var u8 = new Uint8Array(bstr.length);
+          for(var _i=0;_i<bstr.length;_i++) u8[_i] = bstr.charCodeAt(_i);
+          img.src = URL.createObjectURL(new Blob([u8],{type:mime}));
+        } else { img.src = src; }
+      }catch(e){ img.src = src; }
+    });
+    // Arrancar en la miniatura tocada
+    var idx = 0;
+    if(startId){ for(var k=0;k<arr.length;k++){ if(arr[k].id===startId){ idx=k; break; } } }
+    if(idx>0){ setTimeout(function(){ try{ listEl.scrollLeft = idx * listEl.clientWidth; }catch(_){} }, 80); }
+  }
+}
+
 // Rellena los @username de las cards de vibes (batch, con cache _uLook/_uFill)
 async function _vibeFillUsernames(rootEl){
   try{
@@ -21810,7 +21922,7 @@ async function _renderProfileVibes(){
           var kind = v.group_id ? '' : (v.instant_scope === 'private' ? '🔒' : '🌟');
           var d = new Date(v.created_at);
           var label = String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
-          return '<button onclick="'+(v.group_id?'pOpenVibeGroup(\''+v.group_id+'\')':'pOpenInstantVibe(\''+v.id+'\')')+'" style="background:none;border:none;padding:0;cursor:pointer;position:relative"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1.5px solid var(--border);display:block"><div style="position:absolute;bottom:4px;left:5px;right:5px;padding:2px 4px;background:rgba(0,0,0,.62);color:#fff;border-radius:5px;font-family:Jost,sans-serif;font-size:9.5px;font-weight:800;letter-spacing:.4px;text-align:left">'+kind+' '+label+'</div></button>';
+          return '<button onclick="_openSavedVibesCarousel(\''+v.id+'\')" style="background:none;border:none;padding:0;cursor:pointer;position:relative"><img data-vibe-src="'+_escHtml(v.media_url||'')+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;border:1.5px solid var(--border);display:block"><div style="position:absolute;bottom:4px;left:5px;right:5px;padding:2px 4px;background:rgba(0,0,0,.62);color:#fff;border-radius:5px;font-family:Jost,sans-serif;font-size:9.5px;font-weight:800;letter-spacing:.4px;text-align:left">'+kind+' '+label+'</div></button>';
         }).join('') + '</div>';
         // Hidratar data URL → blob URL
         histList.querySelectorAll('img[data-vibe-src]').forEach(function(img){
@@ -35192,7 +35304,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1426;
+    var _BUILT_V = 1427;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
