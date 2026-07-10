@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1443',
+      'Velo v1444',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20286,6 +20286,7 @@ function _vibesSeenPushToCloud(){
 // Cache de grupos y de vibes por grupo (para no re-fetchear entre renders)
 var _vibesGroupsCache = null;
 var _vibesGroupCounts = {}; // groupId → count de vibes hoy
+var _vibesOpenChain = [];   // v1444: orden de grupos con contenido para encadenar el carrusel
 // Entrada al Vibes desde el home
 function pOpenVibes(){ pGoTo('vibes'); }
 // Renderiza la card de entrada arriba del home (llamada tras cargar el home)
@@ -20367,6 +20368,9 @@ async function _renderHomeVibesCard(){
     });
     // 5) Renderizar hasta TARGET tiles con foto+nombre O emoji+nombre
     var visibleTiles = tiles.slice(0, TARGET);
+    // v1444: cadena de grupos CON contenido, en orden — para encadenar el carrusel
+    // (al terminar las historias de un grupo, seguir con el siguiente).
+    try{ _vibesOpenChain = visibleTiles.filter(function(t){ return t.isGroup && t.count > 0; }).map(function(t){ return {id:t.id, title:t.title, emoji:t.emoji}; }); }catch(_){ _vibesOpenChain = []; }
     var thumbsHtml = visibleTiles.map(function(t){
       var isSeen = t.coverVibeId ? !!_seen[t.coverVibeId] : false;
       var hasCover = !!t.coverUrl;
@@ -21435,9 +21439,25 @@ async function pOpenVibeGroup(groupId){
     var fixedEl = document.getElementById('vibeGroupFixed');
     if(fixedEl) fixedEl.innerHTML = ctaHtml + newBanner + scrollHint;
     // Carrusel: cada card ocupa el 100% del ancho del contenedor con scroll-snap
+    // v1444: si este grupo es parte de una cadena (venís del widget del home) y
+    // hay un grupo siguiente CON contenido, agregamos un slide de transición al
+    // final → al deslizar más allá de la última historia, pasás al próximo grupo.
+    var _chainIdx = -1;
+    try{ _chainIdx = (_vibesOpenChain||[]).findIndex(function(g){ return g.id === groupId; }); }catch(_){}
+    var _nextGroup = (_chainIdx >= 0 && _chainIdx < (_vibesOpenChain||[]).length - 1) ? _vibesOpenChain[_chainIdx+1] : null;
+    var _transitionSlide = _nextGroup
+      ? '<div class="vibe-slide vibe-next-slide" style="flex:0 0 100%;width:100%;scroll-snap-align:center;padding:0 12px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">'
+        + '<div onclick="_closeVibeGroup();pOpenVibeGroup(\''+_escHtml(_nextGroup.id)+'\')" style="cursor:pointer;text-align:center;width:100%;max-width:340px;padding:40px 24px;background:linear-gradient(160deg,rgba(16,40,26,.96),rgba(8,22,14,.98));border:1.5px solid rgba(116,198,157,.3);border-radius:24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">'
+        + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(160,220,185,.7);font-family:Jost,sans-serif;margin-bottom:16px">✓ Viste todo este grupo</div>'
+        + '<div style="font-size:12px;color:rgba(200,235,215,.7);font-family:Jost,sans-serif;margin-bottom:8px">Siguiente grupo</div>'
+        + '<div style="font-size:64px;line-height:1;margin-bottom:12px">'+_escHtml(_nextGroup.emoji||'🌊')+'</div>'
+        + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;font-style:italic;color:#fff;line-height:1.2;margin-bottom:22px">'+_escHtml(_nextGroup.title||'Grupo')+'</div>'
+        + '<div style="display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:linear-gradient(135deg,#63d99a,#3aa06a);border-radius:100px;color:#0a2417;font-family:Jost,sans-serif;font-size:14.5px;font-weight:900;letter-spacing:.3px">Ver este grupo →</div>'
+        + '</div></div>'
+      : '';
     list.innerHTML = carouselData.map(function(v){
       return '<div class="vibe-slide" style="flex:0 0 100%;width:100%;scroll-snap-align:center;padding:0 12px;box-sizing:border-box;overflow-y:auto">'+_vibeCardHtml(v)+'</div>';
-    }).join('');
+    }).join('') + _transitionSlide;
     _vibeFillUsernames(list);
     // Dots indicators
     var dotsEl = document.getElementById('vibeGroupDots');
@@ -35681,7 +35701,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1443;
+    var _BUILT_V = 1444;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
