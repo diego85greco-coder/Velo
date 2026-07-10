@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1425',
+      'Velo v1426',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20767,11 +20767,12 @@ function _vibeSyncInvites(){
   document.querySelectorAll('.vibe-invite-cb:checked').forEach(function(cb){ ids.push(cb.getAttribute('data-uid')); });
   _vibeInstantMemberIds = ids;
 }
-// v1424: videos de hasta 60 segundos / 70 MB. No se pueden re-comprimir en el
-// navegador (Safari PWA no tiene API de re-encodeo), así que validamos duración
-// (metadata) y tamaño ANTES de subir el archivo tal cual.
+// v1425: videos de hasta 60 segundos / 150 MB. Un video de 60s en 1080p desde
+// el iPhone pesa fácil 80-130 MB, así que el tope de MB tiene que ser generoso.
+// No se pueden re-comprimir en el navegador (Safari PWA no tiene API de
+// re-encodeo), validamos duración (metadata) y tamaño ANTES de subir tal cual.
 var VIBE_VIDEO_MAX_SECS = 60;
-var VIBE_VIDEO_MAX_MB   = 70;
+var VIBE_VIDEO_MAX_MB   = 150;
 function _vibeReadVideoDuration(file){
   return new Promise(function(resolve){
     var done = false;
@@ -20869,8 +20870,8 @@ async function _vibeUploadToStorage(dataUrl, userId){
     return (pub && pub.data && pub.data.publicUrl) ? pub.data.publicUrl : dataUrl;
   }catch(e){ console.warn('[vibes-upload]', e); return dataUrl; }
 }
-// Sube el File de video directo a Storage (sin base64 — 70MB en memoria como
-// data URL rompería iOS). SIN fallback a data URL: un video no entra en una
+// Sube el File de video directo a Storage (sin base64 — un video de 150MB en
+// memoria como data URL rompería iOS). SIN fallback a data URL: no entra en una
 // fila de la DB, si Storage falla se aborta con error.
 async function _vibeUploadVideoToStorage(file, userId){
   if(!sbClient || !sbClient.storage) return null;
@@ -21286,7 +21287,7 @@ function _vibeCardHtml(v){
   // el momento después de publicado (por si olvidé tildar "guardar" al subir).
   var _arch = !!v.archived;
   var vibeSaveBtn = _isMineVibe
-    ? '<button onclick="event.stopPropagation();pVibeToggleArchive('+_jsAttr(v.id)+',this)" data-vibe-archived="'+(_arch?'1':'0')+'" title="'+(_arch?'Guardado en tu historial · tocá para quitar':'Guardar en mi historial personal')+'" style="background:'+(_arch?'rgba(240,200,92,.18)':'none')+';border:1.5px solid '+(_arch?'rgba(240,200,92,.55)':'rgba(200,230,215,.28)')+';border-radius:100px;color:'+(_arch?'#f0c85c':'rgba(200,230,215,.72)')+';font-size:15px;cursor:pointer;padding:5px 9px;flex-shrink:0;line-height:1;display:inline-flex;align-items:center;gap:3px"><span style="font-size:15px">🔖</span></button>'
+    ? '<button onclick="event.stopPropagation();pVibeToggleArchive('+_jsAttr(v.id)+',this)" data-vibe-archived="'+(_arch?'1':'0')+'" title="Guardá este momento en tu historial personal — lo ves siempre en tu perfil, aunque pasen las 24 h" style="background:'+(_arch?'rgba(240,200,92,.20)':'rgba(255,255,255,.06)')+';border:1.5px solid '+(_arch?'rgba(240,200,92,.60)':'rgba(200,230,215,.30)')+';border-radius:100px;color:'+(_arch?'#f0c85c':'rgba(210,235,220,.88)')+';font-family:Jost,sans-serif;font-size:11px;font-weight:800;cursor:pointer;padding:6px 11px;flex-shrink:0;line-height:1;display:inline-flex;align-items:center;gap:4px;letter-spacing:.2px"><span style="font-size:13px">🔖</span><span data-vibe-arch-lbl>'+(_arch?'Guardado':'Guardar')+'</span></button>'
     : '';
   var vibeMenuBtn = '<button onclick="event.stopPropagation();pVibeCardMenu('+_jsAttr(v.id)+','+(_isMineVibe?'true':'false')+')" style="background:none;border:none;color:rgba(200,230,215,.55);font-size:18px;cursor:pointer;padding:4px 6px;flex-shrink:0;line-height:1">⋯</button>';
   return '<div class="vibe-card" data-vibe-id="'+v.id+'" style="background:linear-gradient(180deg,rgba(20,40,26,.92),rgba(10,26,18,.95));border:1.5px solid '+borderColor+';border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:'+glow+';transition:box-shadow .5s, border-color .5s">'
@@ -21305,37 +21306,37 @@ function _vibeCardHtml(v){
 }
 // Guardar/quitar un momento propio de "mi historial personal" (campo archived).
 // Permite marcarlo DESPUÉS de publicado, por si se olvidó tildar al subir. v1424
+function _vibeArchStyle(btn, on){
+  if(!btn) return;
+  btn.setAttribute('data-vibe-archived', on?'1':'0');
+  btn.style.background = on ? 'rgba(240,200,92,.20)' : 'rgba(255,255,255,.06)';
+  btn.style.borderColor = on ? 'rgba(240,200,92,.60)' : 'rgba(200,230,215,.30)';
+  btn.style.color = on ? '#f0c85c' : 'rgba(210,235,220,.88)';
+  var lbl = btn.querySelector('[data-vibe-arch-lbl]');
+  if(lbl) lbl.textContent = on ? 'Guardado' : 'Guardar';
+}
 async function pVibeToggleArchive(vibeId, btn){
   _initSupabase();
   var myId = safeLS('get','velo_user_id')||'';
   if(!sbClient || !myId){ pToast('⚠️','Necesitás estar conectado'); return; }
   var wasArch = btn && btn.getAttribute('data-vibe-archived') === '1';
   var next = !wasArch;
-  // Feedback optimista inmediato
-  if(btn){
-    btn.setAttribute('data-vibe-archived', next?'1':'0');
-    btn.style.background = next ? 'rgba(240,200,92,.18)' : 'none';
-    btn.style.borderColor = next ? 'rgba(240,200,92,.55)' : 'rgba(200,230,215,.28)';
-    btn.style.color = next ? '#f0c85c' : 'rgba(200,230,215,.72)';
-    btn.title = next ? 'Guardado en tu historial · tocá para quitar' : 'Guardar en mi historial personal';
-  }
+  _vibeArchStyle(btn, next); // feedback optimista
   try{
-    var r = await sbClient.from('vibes').update({ archived: next }).eq('id', vibeId).eq('user_id', myId).select('id').single();
+    try{ if(typeof _ensureSbSession === 'function') await _ensureSbSession(); }catch(_){}
+    var r = await sbClient.from('vibes').update({ archived: next }).eq('id', vibeId).eq('user_id', myId).select('id').maybeSingle();
+    if(r && r.error) throw r.error;
     if(r && r.data){
-      pToast(next?'🔖':'✓', next?'Guardado en tu historial personal':'Quitado de tu historial');
+      if(next) pToast('🔖','Guardado en tu perfil → “Mis momentos guardados”');
+      else pToast('✓','Quitado de tu historial');
     } else {
-      throw new Error('no row');
+      // 0 filas: sin sesión válida / no es tu momento
+      throw new Error('sin permiso o sin sesión');
     }
   }catch(e){
-    // Revertir feedback si falló
-    if(btn){
-      btn.setAttribute('data-vibe-archived', wasArch?'1':'0');
-      btn.style.background = wasArch ? 'rgba(240,200,92,.18)' : 'none';
-      btn.style.borderColor = wasArch ? 'rgba(240,200,92,.55)' : 'rgba(200,230,215,.28)';
-      btn.style.color = wasArch ? '#f0c85c' : 'rgba(200,230,215,.72)';
-    }
-    pToast('⚠️','No se pudo guardar — probá de nuevo');
-    console.warn('[vibe-archive]', e && e.message);
+    _vibeArchStyle(btn, wasArch); // revertir
+    pToast('⚠️','No se pudo guardar — recargá e intentá de nuevo');
+    console.warn('[vibe-archive]', e && (e.message||e));
   }
 }
 // Menú "⋯" de un momento: borrar (si es mío) o reportar (si es de otro) — v1375
@@ -35191,7 +35192,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1425;
+    var _BUILT_V = 1426;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
