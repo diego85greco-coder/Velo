@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1413',
+      'Velo v1414',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -7042,7 +7042,14 @@ function _initMoodChip(){
   if(document.getElementById('homeMoodChip')) return;
   var chip = document.createElement('div');
   chip.id = 'homeMoodChip';
-  chip.onclick = function(){ pOpenMoodChipSheet(); };
+  // v1414: si el día de hoy NO está registrado, ir DIRECTO al selector de
+  // emociones (página de ánimo). Solo si ya está completo mostrar el resumen
+  // "Mi estado de hoy".
+  chip.onclick = function(){
+    var _hoy = (typeof _dateKey === 'function') ? _dateKey() : '';
+    if(_hoy && !safeLS('get','velo_mood_'+_hoy)){ try{ pGoTo('mood'); return; }catch(_){} }
+    pOpenMoodChipSheet();
+  };
   chip.style.cssText = 'order:0;width:100%;box-sizing:border-box;margin-bottom:10px;cursor:pointer;flex-shrink:0';
   var greetEl = document.getElementById('homeGreetWrapper');
   if(greetEl && greetEl.parentElement) {
@@ -16604,7 +16611,7 @@ function pOpenBackfillMood(dateKey){
   ov.style.cssText = 'position:fixed;inset:0;z-index:10010;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center';
   var orbsHtml = _moodOpts.map(function(m){
     var sel = existing && existing.emoji === m.emoji;
-    return '<button type="button" data-emoji="'+m.emoji+'" data-label="'+m.label+'" onclick="pSelBackfillMood(this)" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 8px;background:'+(sel?'rgba(116,198,157,.28)':'rgba(116,198,157,.08)')+';border:1.5px solid '+(sel?'rgba(116,198,157,.75)':'rgba(116,198,157,.28)')+';border-radius:14px;cursor:pointer;font-family:Jost,sans-serif;color:var(--ink2)"><span style="font-size:28px;line-height:1">'+m.emoji+'</span><span style="font-size:11px;font-weight:700;letter-spacing:.2px">'+m.label+'</span></button>';
+    return '<button type="button" data-emoji="'+m.emoji+'" data-label="'+m.label+'" onclick="pSelBackfillMood(this)" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;padding:9px 4px;background:'+(sel?'rgba(116,198,157,.28)':'rgba(116,198,157,.08)')+';border:1.5px solid '+(sel?'rgba(116,198,157,.75)':'rgba(116,198,157,.28)')+';border-radius:13px;cursor:pointer;font-family:Jost,sans-serif;color:var(--ink2)"><span style="font-size:24px;line-height:1">'+m.emoji+'</span><span style="font-size:9.5px;font-weight:700;letter-spacing:.1px;line-height:1.15;text-align:center">'+m.label+'</span></button>';
   }).join('');
   ov.innerHTML = '<div class="p-sheet" style="max-width:520px;width:100%;padding:20px 20px 28px">'
     + '<div class="p-sheet-handle"></div>'
@@ -34803,7 +34810,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1413;
+    var _BUILT_V = 1414;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
