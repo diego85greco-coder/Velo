@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1421',
+      'Velo v1422',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -2986,12 +2986,17 @@ async function pOpenMonthlyWrapped(){
   if(moodEntries.length === 0){
     var monthNameEmpty = mNames[mo]+' '+yr;
     var uNameEmpty = (safeLS('get','velo_user_name')||'').split(' ')[0] || 'vos';
+    // v1422: mensaje claro para usuarios nuevos — el Wrapped se arma con un mes
+    // COMPLETO de registros. Como el mes anterior no tiene datos, invitamos a
+    // registrar el mes EN CURSO para tener el Wrapped el 1° del próximo mes.
+    var _curMonthName = mNames[now.getMonth()];
+    var _nextMonthName = mNames[(now.getMonth()+1)%12];
     var mkOv = document.createElement('div');
     mkOv.id = 'wrappedOv';
     mkOv.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.90);display:flex;flex-direction:column';
     mkOv.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;color:#fff;flex-shrink:0">'
-      + '<span style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.60);font-family:Jost,sans-serif">🌸 WRAPPED — '+monthNameEmpty+'</span>'
+      + '<span style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.60);font-family:Jost,sans-serif">🌸 TU PRIMER WRAPPED</span>'
       + '<button onclick="document.getElementById(\'wrappedOv\').remove()" style="background:none;border:none;color:rgba(255,255,255,.50);font-size:26px;cursor:pointer;padding:4px 10px">×</button>'
       + '</div>'
       + '<div style="flex:1;overflow-y:auto;padding:8px 16px 16px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">'
@@ -3000,18 +3005,21 @@ async function pOpenMonthlyWrapped(){
           + '<div style="position:absolute;top:60px;right:32px;font-size:11px;opacity:.35">🌱</div>'
           + '<div style="position:absolute;bottom:90px;left:36px;font-size:13px;opacity:.38">🌿</div>'
           + '<div style="position:absolute;bottom:140px;right:24px;font-size:16px;opacity:.32">🍃</div>'
-          + '<div style="font-size:11.5px;font-weight:800;letter-spacing:4px;color:rgba(180,255,220,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:14px">🌸 TU WRAPPED DE '+monthNameEmpty.toUpperCase()+'</div>'
+          + '<div style="font-size:11.5px;font-weight:800;letter-spacing:4px;color:rgba(180,255,220,.68);text-transform:uppercase;font-family:Jost,sans-serif;margin-bottom:14px">🌸 TU WRAPPED SE ESTÁ GESTANDO</div>'
           + '<div style="font-size:78px;line-height:1;margin-bottom:18px;filter:drop-shadow(0 4px 22px rgba(116,198,157,.35))">🌱</div>'
           + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:32px;color:#fff;line-height:1.15;margin-bottom:14px;font-style:italic">Todavía estás<br>empezando</div>'
-          + '<div style="font-size:14px;color:rgba(200,240,215,.78);line-height:1.6;font-family:Jost,sans-serif;padding:0 8px;margin-bottom:22px">'+_escHtml(uNameEmpty)+', tu Wrapped de '+monthNameEmpty+' se irá armando a medida que registres tu ánimo. <strong style="color:rgba(220,255,235,.95)">Cuando termine el mes vas a ver acá tu historia emocional completa.</strong></div>'
+          + '<div style="font-size:14px;color:rgba(200,240,215,.80);line-height:1.65;font-family:Jost,sans-serif;padding:0 8px;margin-bottom:18px">'+_escHtml(uNameEmpty)+', el Wrapped resume <strong style="color:rgba(220,255,235,.95)">un mes entero</strong> de emociones. Todavía no hay registros de '+monthNameEmpty+', pero podés empezar hoy 🌿</div>'
+          + '<div style="width:100%;max-width:360px;margin:0 auto 20px auto;padding:15px 16px;background:linear-gradient(140deg,rgba(180,255,220,.12),rgba(116,198,157,.06));border:1px solid rgba(180,255,220,.32);border-radius:16px">'
+            + '<div style="font-size:13.5px;color:rgba(225,255,238,.92);line-height:1.65;font-family:Jost,sans-serif">Registrá cómo te sentís cada día de <strong>'+_curMonthName+'</strong> y el <strong>1° de '+_nextMonthName+'</strong> vas a encontrar acá tu historia emocional completa de '+_curMonthName+'. ✨</div>'
+          + '</div>'
           + '<div style="width:100%;max-width:340px;margin:0 auto 20px auto;padding:14px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(180,255,220,.24);border-radius:16px;text-align:left">'
             + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;color:rgba(180,255,220,.72);text-transform:uppercase;margin-bottom:8px">👀 QUÉ VAS A VER</div>'
             + '<div style="font-size:12.5px;color:rgba(220,255,235,.82);line-height:1.7;font-family:Jost,sans-serif">'
               + '📅 Cuántos días te registraste<br>'
               + '🔥 Tu racha más larga<br>'
-              + '💫 Tu emoción más frecuente<br>'
+              + '💫 Tu emoción más frecuente · 🎨 tu paleta emocional<br>'
               + '🌟 Tu mejor y peor día<br>'
-              + '💚 Todo lo que aportaste a la comunidad'
+              + '💚 Vibes, momentos y todo lo que aportaste a la comunidad'
             + '</div>'
           + '</div>'
           + '<button onclick="document.getElementById(\'wrappedOv\').remove();pOpenMoodQuickView&&pOpenMoodQuickView()" style="padding:13px 28px;background:linear-gradient(135deg,rgba(116,198,157,.92),rgba(74,160,110,.98));border:none;border-radius:100px;color:#071409;font-size:13.5px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.4px;box-shadow:0 4px 18px rgba(116,198,157,.35)">🌿 Registrar mi ánimo de hoy</button>'
@@ -35099,7 +35107,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1421;
+    var _BUILT_V = 1422;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

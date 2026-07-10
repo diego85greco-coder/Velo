@@ -1,5 +1,5 @@
 /* Velo Service Worker v15 — always-fresh HTML + smart notifs + pre-cache */
-var CACHE = 'velo-v23';
+var CACHE = 'velo-v24';
 var APP_HTML = '/app-premium.html';
 var VERSION_URL = '/version.json';
 
