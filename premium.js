@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1442',
+      'Velo v1443',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -7888,6 +7888,10 @@ function _navToNotif(type, relatedId){
     setTimeout(function(){ pOpenMomentoSheet(relatedId); }, 900);
   } else if(type === 'vibe_comment' || type === 'vibe_reaction' || type === 'vibe_comment_like'){
     _openVibeFromNotif(relatedId);
+  } else if(type === 'bt_comment' || type === 'bt_reaction'){
+    // Abrir el post de Bitácora — navegar primero para que cargue la página
+    pGoTo('bitacora');
+    setTimeout(function(){ try{ if(typeof _btOpenDetail === 'function') _btOpenDetail(relatedId); }catch(_){} }, 700);
   }
 }
 // Abre el momento correspondiente desde una notificación de Actividad —
@@ -7910,8 +7914,8 @@ function _veloNotifsEmptyState(){
     +'</div>';
 }
 function _renderVeloNotifs(notifs){
-  var typeIcon={dq_comment:'💬',momento_comment:'💬',reaction:'💚',vibe_comment:'💬',vibe_reaction:'🌊',vibe_comment_like:'❤️',buddy_request:'🌱',buddy_matched:'🤝'};
-  var typeNavigable={dq_comment:true, momento_comment:true, vibe_comment:true, vibe_reaction:true, vibe_comment_like:true, buddy_request:true, buddy_matched:true};
+  var typeIcon={dq_comment:'💬',momento_comment:'💬',reaction:'💚',vibe_comment:'💬',vibe_reaction:'🌊',vibe_comment_like:'❤️',buddy_request:'🌱',buddy_matched:'🤝',bt_comment:'📓',bt_reaction:'💚'};
+  var typeNavigable={dq_comment:true, momento_comment:true, vibe_comment:true, vibe_reaction:true, vibe_comment_like:true, buddy_request:true, buddy_matched:true, bt_comment:true, bt_reaction:true};
   if(!notifs||!notifs.length) return '';
   return notifs.map(function(n){
     var icon=typeIcon[n.type]||'🔔';
@@ -35304,6 +35308,15 @@ async function _btSendComment(postId){
     _btCommentCounts[postId]=(_btCommentCounts[postId]||0)+1;
     _btRefreshCard(postId);
     _btLoadComments(postId);
+    // v1443: notificar al autor del post (actividad) — respeta el anónimo del comentario
+    try{
+      sbClient.from('bitacora_posts').select('user_id').eq('id',postId).maybeSingle().then(function(pw){
+        if(pw && pw.data && pw.data.user_id){
+          var _nm = _btAnon ? 'Alguien' : (safeLS('get','velo_user_name')||'Alguien');
+          _createVeloNotif(pw.data.user_id, 'bt_comment', _nm+' comentó tu historia en Bitácora', text.slice(0,80), postId);
+        }
+      }).catch(function(){});
+    }catch(_){}
   }).catch(function(){ if(input) input.disabled=false; pToast('⚠️','Error de conexión'); });
 }
 
@@ -35417,6 +35430,15 @@ function _btReact(postId,type){
           if(typeof m2[type]==='number') m2[type]++; else m2[type]=1;
           _setMine(m2,type); _btReactMap[postId]=m2;
           _refreshDetail();
+          // v1443: notificar al autor del post que alguien reaccionó (actividad)
+          try{
+            sbClient.from('bitacora_posts').select('user_id').eq('id',postId).maybeSingle().then(function(pw){
+              if(pw && pw.data && pw.data.user_id){
+                var _nm = safeLS('get','velo_user_name')||'Alguien';
+                _createVeloNotif(pw.data.user_id, 'bt_reaction', _nm+' reaccionó a tu historia en Bitácora', '', postId);
+              }
+            }).catch(function(){});
+          }catch(_){}
         }).catch(function(){ pToast('Error de conexión'); });
     }).catch(function(){ pToast('Error de conexión'); });
 }
@@ -35659,7 +35681,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1442;
+    var _BUILT_V = 1443;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
