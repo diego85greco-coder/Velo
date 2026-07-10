@@ -2844,22 +2844,30 @@ body:has(#pg-admin.active) #pBottomnav { display: none !important; }
 .feed-msg--own .msg-action-btn { right: calc(100% + 6px); left: auto; }
 .feed-msg:not(.feed-msg--own) .msg-action-btn { left: calc(100% + 6px); right: auto; }
 
+/* v1405 — popup de acciones: se centra en pantalla y NUNCA se sale del
+   borde. Emojis en fila que envuelve + Responder/Borrar como botones
+   claros debajo. Antes era una fila horizontal fija más ancha que el
+   viewport → "Res…" y 🗑️ Borrar quedaban cortados fuera de pantalla. */
 .msg-actions-popup {
-  position: fixed; z-index: 9999; background: #fff; border-radius: 24px;
-  box-shadow: 0 6px 28px rgba(0,0,0,.18); padding: 8px 12px;
-  display: none; gap: 4px; align-items: center;
+  position: fixed; z-index: 9999; background: #fff; border-radius: 20px;
+  box-shadow: 0 8px 34px rgba(0,0,0,.28); padding: 12px 14px;
+  display: none; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center;
+  width: min(92vw, 340px); box-sizing: border-box;
 }
 .msg-actions-popup button {
-  background: none; border: none; cursor: pointer; font-size: 22px;
-  padding: 5px; border-radius: 10px; line-height: 1; transition: background .1s;
+  background: none; border: none; cursor: pointer; font-size: 24px;
+  padding: 6px; border-radius: 10px; line-height: 1; transition: background .1s;
 }
 .msg-actions-popup button:active { background: var(--cream2); }
-.msg-actions-divider { width: 1px; height: 22px; background: var(--border2); margin: 0 2px; }
-.msg-reply-btn {
-  font-size: 12px !important; background: var(--sage7) !important;
-  color: var(--sage) !important; border-radius: 10px !important;
-  padding: 5px 10px !important; font-weight: 700; font-family: 'Jost', sans-serif;
+.msg-actions-divider { flex-basis: 100%; height: 1px; background: var(--border2); margin: 4px 0; }
+.msg-reply-btn, .msg-del-btn {
+  flex: 1 1 44%;
+  font-size: 13.5px !important; border-radius: 12px !important;
+  padding: 11px 10px !important; font-weight: 800; font-family: 'Jost', sans-serif;
+  display: inline-flex !important; align-items: center; justify-content: center; gap: 5px;
 }
+.msg-reply-btn { background: var(--sage7) !important; color: var(--sage) !important; }
+.msg-del-btn { background: rgba(220,80,80,.12) !important; color: rgba(200,50,50,.95) !important; }
 
 .msg-rx-bar { display: flex; flex-wrap: wrap; margin-top: 5px; gap: 4px; }
 .msg-reaction {

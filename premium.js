@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1404',
+      'Velo v1405',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -1950,19 +1950,10 @@ async function pOpenBuddyModal(){
       }
     }
   }catch(e){}
-  // v1384: primera vez que abro el modal ya emparejado (recién aceptaron mi
-  // solicitud, o acabo de aceptar la de otro sin pasar por pBuddyRequestRespond
-  // — ej. deep-link del push) → banner de festejo en vez del modal normal.
-  if(myBuddy){
-    var _celKey = 'velo_buddy_celebrated_'+myBuddy.id;
-    if(!safeLS('get', _celKey)){
-      safeLS('set', _celKey, '1');
-      var _celAv = '🧑';
-      try{ var _celP = await sbClient.from('profiles').select('avatar').eq('id',myBuddy.id).maybeSingle(); if(_celP && _celP.data) _celAv = _celP.data.avatar || _celAv; }catch(_){}
-      _showBuddyMatchBanner(myBuddy.id, myBuddy.name, _celAv);
-      return;
-    }
-  }
+  // v1405: el festejo YA se muestra explícitamente al aceptar
+  // (pBuddyRequestRespond) — abrir el tile debe ir SIEMPRE al panel completo,
+  // que es donde está "✕ Cancelar el acompañamiento". Antes la primera
+  // apertura mostraba el festejo y tapaba el botón de cancelar.
   var body = '';
   if(myBuddy){
     // Calcular días transcurridos + días restantes (30d ciclo)
@@ -33170,11 +33161,15 @@ function pShowMsgActions(btn, msgId, text, inputId, replyBarId, senderName){
   var delBtn = pop.querySelector('.msg-del-btn');
   if(delBtn) delBtn.style.display = isOwn ? 'inline-flex' : 'none';
   pop.style.display = 'flex';
+  // v1405: clampear con el ANCHO/ALTO REAL del popup (ya visible) para que
+  // nunca se salga de la pantalla en ningún eje.
   var rect = btn.getBoundingClientRect();
-  var top  = rect.top - 58;
-  if(top < 8) top = rect.bottom + 8;
-  var left = Math.max(8, Math.min(window.innerWidth - 280, rect.left - 80));
-  pop.style.top  = top + 'px';
+  var pw = pop.offsetWidth || 320, ph = pop.offsetHeight || 120;
+  var left = rect.left + rect.width/2 - pw/2;
+  left = Math.max(8, Math.min(window.innerWidth - pw - 8, left));
+  var top = rect.top - ph - 8;
+  if(top < 8) top = Math.min(rect.bottom + 8, window.innerHeight - ph - 8);
+  pop.style.top  = Math.max(8, top) + 'px';
   pop.style.left = left + 'px';
 }
 
@@ -33310,8 +33305,12 @@ function _buildMsgBubble(text, isUser, av, senderName, inputId, replyBarId, quot
       if(_audData){
         isAudioAttach = true;
         // Colores según lado del mensaje: own (verde) → texto cream, otro (dark) → texto ámbar
-        var _lblCol = isUser ? '#fff8dc' : '#f0d798';
-        var _subCol = isUser ? 'rgba(255,240,200,.85)' : 'rgba(240,215,155,.75)';
+        // v1405: color legible según TEMA (no según lado). En claro el fondo
+        // de la burbuja es blanco/verde pálido → ámbar oscuro; en oscuro →
+        // ámbar claro. Antes usaba ámbar claro siempre → invisible en claro.
+        var _isDarkTheme = document.body.classList.contains('r-dark');
+        var _lblCol = _isDarkTheme ? '#f0d798' : '#8a5a08';
+        var _subCol = _isDarkTheme ? 'rgba(240,215,155,.75)' : 'rgba(120,80,15,.90)';
         var _btnBg  = isUser ? 'rgba(255,220,120,.30)' : 'rgba(200,158,56,.32)';
         var _btnBrd = isUser ? 'rgba(255,240,180,.65)' : 'rgba(255,220,120,.55)';
         attachHtml = '<div class="dm-attach dm-attach--audio" data-attach-audio="'+_escHtml(_audData)+'" data-attach-ts="'+id+'"><div style="display:flex;align-items:center;gap:10px;padding:8px 4px;min-width:180px"><button type="button" onclick="_dmPlayAttachAudio(this)" style="width:38px;height:38px;border-radius:50%;background:'+_btnBg+';border:1.5px solid '+_btnBrd+';color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0">▶</button><div style="flex:1;font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;color:'+_lblCol+';letter-spacing:.3px">🎙️ Nota de voz<div class="dm-attach-status" style="font-size:11px;font-weight:600;color:'+_subCol+';margin-top:2px">Tocá play para escuchar</div></div></div></div>';
@@ -34714,7 +34713,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1404;
+    var _BUILT_V = 1405;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
