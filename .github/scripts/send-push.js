@@ -505,7 +505,82 @@ async function sendMonthlyWrapped(users) {
     }
   }));
   console.log(`[wrapped] broadcasts=${brRows.length}, push_sent=${sent}, push_failed=${failed}`);
-  return { sent };
+
+  // ── Cohorte "no completaron el mes" ────────────────────────────────
+  // Usuarios con push que NO registraron ningún ánimo el mes pasado. En vez de
+  // dejarlos sin nada, los invitamos a empezar ESTE mes para tener su Wrapped
+  // el 1° del próximo. Excluimos cuentas creadas este mes (no vivieron el mes
+  // anterior, no tiene sentido decirles que "no lo completaron").
+  const activeSet = new Set(activeIds);
+  const curMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).getTime();
+  const curMonthLabel = mNames[now.getUTCMonth()];
+  const nextMonthLabel = mNames[(now.getUTCMonth() + 1) % 12];
+  const inviteUsers = (users || []).filter(u => {
+    if (!u || activeSet.has(u.id) || !u.push_subscription) return false;
+    const created = u.created_at ? new Date(u.created_at).getTime() : 0;
+    if (created && created >= curMonthStart) return false; // cuenta nueva de este mes
+    return true;
+  });
+  console.log(`[wrapped-invite] ${inviteUsers.length} usuarios sin actividad en ${monthLabel} para invitar`);
+
+  const invTitle = `🌱 Tu Wrapped te espera`;
+  const invBody = `No llegaste a registrar ${monthLabel}, ¡pero este mes es una nueva oportunidad! Registrá cómo te sentís en ${curMonthLabel} y el 1° de ${nextMonthLabel} vas a tener tu Wrapped completo ✨`;
+
+  // 1) Broadcast al inbox
+  try {
+    const invRows = inviteUsers.map(u => ({
+      target: `user:${u.id}`,
+      subject: invTitle,
+      body: invBody,
+      icon: '🌱',
+      sender: 'Velo — Tu mes emocional',
+    }));
+    for (let i = 0; i < invRows.length; i += 100) {
+      const chunk = invRows.slice(i, i + 100);
+      if (!chunk.length) break;
+      const { error: brErr } = await supabase.from('broadcasts').insert(chunk);
+      if (brErr) console.warn('[wrapped-invite] broadcast batch err:', brErr);
+    }
+  } catch (e) { console.warn('[wrapped-invite] broadcast err:', e.message); }
+
+  // 2) Push (mañana local + dedup por mes con clave propia)
+  let invSent = 0, invFailed = 0;
+  await Promise.allSettled(inviteUsers.map(async (u) => {
+    let parsedFull, rawSub, tz;
+    try {
+      parsedFull = JSON.parse(u.push_subscription);
+      rawSub = parsedFull.sub && parsedFull.sub.endpoint ? parsedFull.sub : parsedFull;
+      if (!parsedFull.sub) parsedFull = { sub: rawSub };
+      tz = parsedFull.tz || 'America/Argentina/Buenos_Aires';
+    } catch { return; }
+    const h = localHour(tz);
+    if (h < 6 || h >= 12) return;
+    if (parsedFull.lastWrappedInvite === monthKey) return; // dedup
+    try {
+      await webpush.sendNotification(rawSub, JSON.stringify({
+        title: invTitle, body: invBody,
+        icon: '/assets/icon-192.png', badge: '/assets/icon-72.png',
+        tag: `velo-wrapped-invite-${monthKey}`, url: '/?open=mood',
+        actions: [
+          { action: 'open-mood', title: '🌿 Registrar hoy', url: '/?open=mood' },
+          { action: 'later', title: 'Después' }
+        ],
+      }));
+      invSent++;
+      const updated = { ...parsedFull, lastWrappedInvite: monthKey };
+      await supabase.from('profiles').update({ push_subscription: JSON.stringify(updated) }).eq('id', u.id);
+    } catch (err) {
+      const eb = (err.body || err.message || '').toString();
+      const isExpired = err.statusCode === 410 || err.statusCode === 404;
+      const isVapidMismatch = err.statusCode === 403 && /BadJwtToken|Unauthorized|VapidPk/i.test(eb);
+      if (isExpired || isVapidMismatch) {
+        await supabase.from('profiles').update({ push_subscription: null }).eq('id', u.id);
+      }
+      invFailed++;
+    }
+  }));
+  console.log(`[wrapped-invite] push_sent=${invSent}, push_failed=${invFailed}`);
+  return { sent: sent + invSent };
 }
 
 // ── BUDDY LOW MOOD ALERT ─────────────────────────────────────────────
@@ -813,7 +888,7 @@ async function cleanupVibesStorage() {
 async function main() {
   const { data: users, error } = await supabase
     .from('profiles')
-    .select('id, push_subscription')
+    .select('id, push_subscription, created_at')
     .not('push_subscription', 'is', null);
 
   if (error) { console.error('Supabase error:', error); process.exit(1); }

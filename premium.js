@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1423',
+      'Velo v1424',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -21282,9 +21282,15 @@ function _vibeCardHtml(v){
     }
   }catch(_grE){}
   var _isMineVibe = v.user_id && v.user_id === (safeLS('get','velo_user_id')||'');
+  // Banderita "guardar en mi historial" — solo en MIS momentos. Permite archivar
+  // el momento después de publicado (por si olvidé tildar "guardar" al subir).
+  var _arch = !!v.archived;
+  var vibeSaveBtn = _isMineVibe
+    ? '<button onclick="event.stopPropagation();pVibeToggleArchive('+_jsAttr(v.id)+',this)" data-vibe-archived="'+(_arch?'1':'0')+'" title="'+(_arch?'Guardado en tu historial · tocá para quitar':'Guardar en mi historial personal')+'" style="background:'+(_arch?'rgba(240,200,92,.18)':'none')+';border:1.5px solid '+(_arch?'rgba(240,200,92,.55)':'rgba(200,230,215,.28)')+';border-radius:100px;color:'+(_arch?'#f0c85c':'rgba(200,230,215,.72)')+';font-size:15px;cursor:pointer;padding:5px 9px;flex-shrink:0;line-height:1;display:inline-flex;align-items:center;gap:3px"><span style="font-size:15px">🔖</span></button>'
+    : '';
   var vibeMenuBtn = '<button onclick="event.stopPropagation();pVibeCardMenu('+_jsAttr(v.id)+','+(_isMineVibe?'true':'false')+')" style="background:none;border:none;color:rgba(200,230,215,.55);font-size:18px;cursor:pointer;padding:4px 6px;flex-shrink:0;line-height:1">⋯</button>';
   return '<div class="vibe-card" data-vibe-id="'+v.id+'" style="background:linear-gradient(180deg,rgba(20,40,26,.92),rgba(10,26,18,.95));border:1.5px solid '+borderColor+';border-radius:22px;overflow:hidden;margin-bottom:14px;box-shadow:'+glow+';transition:box-shadow .5s, border-color .5s">'
-    + '<div onclick="_vibeOpenUserProfile('+_jsAttr(v.user_id||'')+','+_jsAttr(v.user_name||'Usuario')+','+_jsAttr(v.user_av||'🧑')+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;cursor:pointer" title="Ver perfil de '+_escHtml(v.user_name||'Usuario')+'"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div><div class="vibe-uname" data-vibe-uname="'+_escHtml(v.user_id||'')+'" style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.80);font-weight:700;letter-spacing:.2px">'+(function(){ try{ var _u=_uLook(v.user_id); return _u?'@'+_escHtml(_u):''; }catch(_){ return ''; } })()+'</div>'+groupChip+'<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:3px">'+ago+' · caduca en '+left+'</div></div>'+vibeMenuBtn+'</div>'
+    + '<div onclick="_vibeOpenUserProfile('+_jsAttr(v.user_id||'')+','+_jsAttr(v.user_name||'Usuario')+','+_jsAttr(v.user_av||'🧑')+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px 8px;cursor:pointer" title="Ver perfil de '+_escHtml(v.user_name||'Usuario')+'"><span style="font-size:28px;flex-shrink:0">'+_avInline(v.user_av||'🧑', 36)+'</span><div style="flex:1;min-width:0"><div style="font-family:Jost,sans-serif;font-size:13.5px;font-weight:800;color:#fff">'+_escHtml(v.user_name||'Usuario')+'</div><div class="vibe-uname" data-vibe-uname="'+_escHtml(v.user_id||'')+'" style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.80);font-weight:700;letter-spacing:.2px">'+(function(){ try{ var _u=_uLook(v.user_id); return _u?'@'+_escHtml(_u):''; }catch(_){ return ''; } })()+'</div>'+groupChip+'<div style="font-family:Jost,sans-serif;font-size:10.5px;color:rgba(180,220,195,.62);font-weight:600;letter-spacing:.4px;margin-top:3px">'+ago+' · caduca en '+left+'</div></div>'+vibeSaveBtn+vibeMenuBtn+'</div>'
     + (_vibeIsVideoUrl(v.media_url)
         ? '<video src="'+_escHtml(v.media_url||'')+'" controls playsinline preload="metadata" style="width:100%;max-height:520px;display:block;background:#000"></video>'
         : '<img data-vibe-src="'+_escHtml(v.media_url||'')+'" alt="momento" style="width:100%;max-height:520px;object-fit:cover;display:block;background:rgba(0,0,0,.35)" onerror="this.style.opacity=\'.35\'">')
@@ -21296,6 +21302,41 @@ function _vibeCardHtml(v){
       + '<button onclick="pOpenVibeComments(\''+v.id+'\')" style="width:100%;padding:9px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(180,220,195,.22);border-radius:12px;color:rgba(220,240,225,.85);font-family:Jost,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;letter-spacing:.3px">💬 <span data-vibe-comment-count="'+v.id+'">Ver comentarios</span></button>'
     + '</div>'
   + '</div>';
+}
+// Guardar/quitar un momento propio de "mi historial personal" (campo archived).
+// Permite marcarlo DESPUÉS de publicado, por si se olvidó tildar al subir. v1424
+async function pVibeToggleArchive(vibeId, btn){
+  _initSupabase();
+  var myId = safeLS('get','velo_user_id')||'';
+  if(!sbClient || !myId){ pToast('⚠️','Necesitás estar conectado'); return; }
+  var wasArch = btn && btn.getAttribute('data-vibe-archived') === '1';
+  var next = !wasArch;
+  // Feedback optimista inmediato
+  if(btn){
+    btn.setAttribute('data-vibe-archived', next?'1':'0');
+    btn.style.background = next ? 'rgba(240,200,92,.18)' : 'none';
+    btn.style.borderColor = next ? 'rgba(240,200,92,.55)' : 'rgba(200,230,215,.28)';
+    btn.style.color = next ? '#f0c85c' : 'rgba(200,230,215,.72)';
+    btn.title = next ? 'Guardado en tu historial · tocá para quitar' : 'Guardar en mi historial personal';
+  }
+  try{
+    var r = await sbClient.from('vibes').update({ archived: next }).eq('id', vibeId).eq('user_id', myId).select('id').single();
+    if(r && r.data){
+      pToast(next?'🔖':'✓', next?'Guardado en tu historial personal':'Quitado de tu historial');
+    } else {
+      throw new Error('no row');
+    }
+  }catch(e){
+    // Revertir feedback si falló
+    if(btn){
+      btn.setAttribute('data-vibe-archived', wasArch?'1':'0');
+      btn.style.background = wasArch ? 'rgba(240,200,92,.18)' : 'none';
+      btn.style.borderColor = wasArch ? 'rgba(240,200,92,.55)' : 'rgba(200,230,215,.28)';
+      btn.style.color = wasArch ? '#f0c85c' : 'rgba(200,230,215,.72)';
+    }
+    pToast('⚠️','No se pudo guardar — probá de nuevo');
+    console.warn('[vibe-archive]', e && e.message);
+  }
 }
 // Menú "⋯" de un momento: borrar (si es mío) o reportar (si es de otro) — v1375
 function pVibeCardMenu(vibeId, isMine){
@@ -35150,7 +35191,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1423;
+    var _BUILT_V = 1424;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
