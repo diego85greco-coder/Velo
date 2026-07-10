@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1412',
+      'Velo v1413',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -16688,12 +16688,38 @@ function pOpenMonthlyMissed(argYear, argMonth){
   ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
 }
 
+// v1413: borra el registro de un día TAMBIÉN de Supabase. Antes solo lo
+// sacaba de localStorage, así que al recargar el calendario sbLoadAllMoods
+// lo volvía a traer de la base y "reaparecía" (y la racha se recalculaba raro).
+async function sbDeleteMoodEntry(dateKey){
+  if(!sbClient) return false;
+  try{
+    var ok = await _ensureSbSession(); if(!ok) return false;
+    var {data:ud} = await sbClient.auth.getUser();
+    if(!ud || !ud.user) return false;
+    var r = await sbClient.from('mood_entries').delete().eq('user_id', ud.user.id).eq('date_key', dateKey).select('date_key');
+    if(r && r.error){ console.warn('[del-mood]', r.error.message); return false; }
+    // Si no borró filas, la política DELETE puede faltar en la DB
+    if(r && Array.isArray(r.data) && r.data.length === 0){ console.warn('[del-mood] 0 filas borradas — revisar policy mood_delete_own'); return false; }
+    return true;
+  }catch(e){ console.warn('[del-mood]', e && e.message); return false; }
+}
 function pDeleteMood(dateKey){
-  _pConfirm('¿Eliminar el registro del '+dateKey+'?', function(){
+  _pConfirm('¿Eliminar el registro del '+dateKey+'?', async function(){
     localStorage.removeItem('velo_mood_'+dateKey);
     localStorage.removeItem('velo_daily_status_'+dateKey);
-    pToast('🗑️','Registro eliminado');
+    // Log local de ánimos (usado por gráficos/racha) — quitar la fecha
+    try{
+      var _mLog = JSON.parse(safeLS('get','velo_mood_log')||'[]');
+      _mLog = _mLog.filter(function(m){ return m.dateKey !== dateKey; });
+      safeLS('set','velo_mood_log', JSON.stringify(_mLog));
+    }catch(_){}
+    _initSupabase();
+    var okDb = await sbDeleteMoodEntry(dateKey);
+    pToast('🗑️', okDb ? 'Registro eliminado' : 'Eliminado (se sincroniza al reconectar)');
     _loadMoodCalendar();
+    try{ _renderHomeWeekMoodGraph && _renderHomeWeekMoodGraph(); }catch(e){}
+    try{ _updateHomeStreak && _updateHomeStreak(); }catch(e){}
   });
 }
 
@@ -34777,7 +34803,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1412;
+    var _BUILT_V = 1413;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
