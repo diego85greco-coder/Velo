@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1408',
+      'Velo v1409',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -3830,6 +3830,16 @@ function pVerMiMesCompleto(){
     var ov2 = document.getElementById('moodQuickOv'); if(ov2) ov2.remove();
   }catch(e){}
   setTimeout(function(){ try{ pGoTo('mood'); }catch(_){ pOpenMonthlyMoodGraph(); } }, 200);
+}
+// v1409: "🤗 Mis Registros" ahora abre el GRÁFICO de evolución emocional
+// (antes abría el calendario de Seguimiento — el calendario ya está en
+// "Ver mi mes completo", así cada botón muestra una vista distinta).
+function pVerMisRegistros(){
+  try{
+    var ov = document.getElementById('moodChipSheetOv');
+    if(ov && typeof pCloseMoodChipSheet === 'function'){ pCloseMoodChipSheet(); }
+  }catch(e){}
+  setTimeout(function(){ try{ pOpenMonthlyMoodGraph(); }catch(_){ } }, 200);
 }
 
 // Vista gráfica del mes — línea de evolución emocional + stats
@@ -34750,7 +34760,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1408;
+    var _BUILT_V = 1409;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
