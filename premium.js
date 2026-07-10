@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1441',
+      'Velo v1442',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -21329,6 +21329,19 @@ async function pOpenVibeGroup(groupId){
   var ov = document.getElementById('vibeGroupOv'); if(ov) ov.remove();
   _initSupabase();
   var gr = (_vibesGroupsCache||[]).find(function(x){ return x.id === groupId; });
+  // v1442: si venís del widget del home (sin haber entrado a la página de Vibes),
+  // el cache está vacío → el header salía como "Grupo" genérico. Buscamos los
+  // datos del grupo en la DB y los guardamos en el cache.
+  if(!gr && sbClient){
+    try{
+      var _grRes = await sbClient.from('vibe_groups').select('id,kind,slug,title,emoji,description,owner_id,member_ids').eq('id', groupId).maybeSingle();
+      if(_grRes && _grRes.data){
+        gr = _grRes.data;
+        if(!_vibesGroupsCache) _vibesGroupsCache = [];
+        if(!_vibesGroupsCache.find(function(x){ return x.id === gr.id; })) _vibesGroupsCache.push(gr);
+      }
+    }catch(_){}
+  }
   // Pintar html dark mientras el overlay está abierto — evita ver cream por el
   // safe-area del home indicator del iPhone. Restaurar al cerrar.
   var _prevHtmlBg = document.documentElement.style.backgroundColor;
@@ -35646,7 +35659,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1441;
+    var _BUILT_V = 1442;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
