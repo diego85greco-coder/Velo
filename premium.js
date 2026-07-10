@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1422',
+      'Velo v1423',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -4006,15 +4006,25 @@ function _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, mo
     var p0 = pts[0];
     svgPathD = 'M '+(padX+(p0.day-1)*xStep).toFixed(1)+' '+yScale(p0.score).toFixed(1)+' L '+(padX+(p0.day-1)*xStep).toFixed(1)+' '+yScale(p0.score).toFixed(1);
   }
-  // v1418: la línea vuelve a puntos LIMPIOS de color (los emojis encima se
-  // encimaban y quedaba confuso con muchos días juntos). Las emociones día a
-  // día se muestran ordenadas en la tira horizontal de abajo.
-  var dotsHtml = pts.map(function(p){
+  // v1422: cada punto muestra el EMOJI REAL del día (no un punto abstracto), con
+  // anti-colisión: si dos días quedan muy juntos horizontalmente, el segundo se
+  // dibuja como punto de color para no encimar emojis. Así el gráfico refleja las
+  // emociones reales (no una escala de 5) y sigue siendo legible.
+  var dotsHtml = '';
+  var _lastEmojiX = -999;
+  pts.forEach(function(p){
     var x = padX + (p.day-1) * xStep;
     var y = yScale(p.score);
     var col = moodColor[p.emoji] || '#74c69d';
-    return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4" fill="'+col+'" stroke="white" stroke-width="1.5"></circle>';
-  }).join('');
+    if(x - _lastEmojiX >= 16){
+      _lastEmojiX = x;
+      dotsHtml += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="9" fill="'+col+'" opacity="0.30"></circle>'
+        + '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="9" fill="none" stroke="'+col+'" stroke-width="1.2" opacity="0.85"></circle>'
+        + '<text x="'+x.toFixed(1)+'" y="'+(y+5).toFixed(1)+'" font-size="14" text-anchor="middle">'+p.emoji+'</text>';
+    } else {
+      dotsHtml += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4" fill="'+col+'" stroke="white" stroke-width="1.5"></circle>';
+    }
+  });
   var xLabels = '';
   for(var dd=1; dd<=daysInMonth; dd+=5){
     var xL = padX + (dd-1) * xStep;
@@ -4051,11 +4061,13 @@ function _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, mo
     + dotsHtml
     + xLabels
     + '</svg>';
-  var distEntries = Object.keys(allEmojis).map(function(e){ return {e:e, n:allEmojis[e]}; }).sort(function(a,b){return b.n-a.n;}).slice(0,5);
+  var distEntries = Object.keys(allEmojis).map(function(e){ return {e:e, n:allEmojis[e]}; }).sort(function(a,b){return b.n-a.n;}).slice(0,8);
+  var _distLbl = (typeof _VELO_MOOD_LABEL !== 'undefined') ? _VELO_MOOD_LABEL : {};
   var distHtml = distEntries.length
-    ? '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px">'
+    ? '<div style="text-align:center;margin-top:12px;font-size:10px;font-weight:800;letter-spacing:1.4px;color:rgba(160,210,180,.6);text-transform:uppercase">Tus emociones del mes</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:8px">'
         + distEntries.map(function(dm){
-          return '<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.30);border-radius:100px;padding:4px 11px;font-size:13px"><span style="font-size:16px">'+dm.e+'</span><span style="font-size:12px;font-weight:700;color:rgba(180,235,210,.95);font-family:Jost,sans-serif">×'+dm.n+'</span></span>';
+          return '<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(116,198,157,.10);border:1px solid rgba(116,198,157,.30);border-radius:100px;padding:4px 11px;font-size:13px"><span style="font-size:16px">'+dm.e+'</span><span style="font-size:11.5px;font-weight:700;color:rgba(190,235,212,.95);font-family:Jost,sans-serif">'+(_distLbl[dm.e]||'')+' ×'+dm.n+'</span></span>';
         }).join('')
       + '</div>'
     : '';
@@ -4068,7 +4080,7 @@ function _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, mo
     : '<div style="text-align:center;padding:24px;color:rgba(255,255,255,.55);font-size:14px;font-family:Jost,sans-serif">Sin registros este mes — empezá hoy 🌿</div>';
   // v1410: leyenda que explica cómo leer el gráfico
   var legendHtml = nReg ? '<div style="text-align:center;margin-top:8px;font-family:Jost,sans-serif;font-size:11px;color:rgba(180,220,195,.62);line-height:1.5;padding:0 6px">'
-    + '📈 <strong style="color:rgba(200,240,215,.85)">Cada punto es un día que registraste.</strong> Cuanto más arriba, mejor estuvo tu ánimo. El color va del verde (bien) al rojo (bajón). Los días sin registrar no aparecen en la línea.'
+    + '📈 <strong style="color:rgba(200,240,215,.85)">Cada emoji es tu emoción de ese día.</strong> Cuanto más arriba, mejor estuvo tu ánimo. Las caritas de la izquierda son solo una guía de la escala. Abajo tenés el detalle de cuántas veces sentiste cada emoción.'
     + '</div>' : '';
   return '<div style="background:rgba(0,0,0,.22);border:1px solid rgba(116,198,157,.12);border-radius:16px;padding:14px 8px 6px;margin-top:14px">'+svg+'</div>'+legendHtml+distHtml+statsHtml;
 }
@@ -20762,28 +20774,55 @@ var VIBE_VIDEO_MAX_SECS = 30;
 var VIBE_VIDEO_MAX_MB   = 35;
 function _vibeReadVideoDuration(file){
   return new Promise(function(resolve){
+    var done = false;
+    var url = '';
+    function finish(d){ if(done) return; done = true; try{ if(url) URL.revokeObjectURL(url); }catch(_){}; resolve(isFinite(d) && d>0 ? d : 0); }
     try{
-      var url = URL.createObjectURL(file);
+      url = URL.createObjectURL(file);
       var v = document.createElement('video');
       v.preload = 'metadata';
-      v.onloadedmetadata = function(){ var d = v.duration; URL.revokeObjectURL(url); resolve(isFinite(d) ? d : 0); };
-      v.onerror = function(){ URL.revokeObjectURL(url); resolve(0); };
+      v.muted = true; v.playsInline = true;
+      v.onloadedmetadata = function(){ finish(v.duration); };
+      v.ondurationchange = function(){ if(v.duration && isFinite(v.duration)) finish(v.duration); };
+      v.onerror = function(){ finish(0); };
       v.src = url;
-    }catch(_){ resolve(0); }
+      // iOS a veces no dispara ningún evento con ciertos formatos — no colgar:
+      // a los 7s asumimos que no se pudo leer la duración (0 = permitir subir).
+      setTimeout(function(){ finish(0); }, 7000);
+    }catch(_){ finish(0); }
   });
 }
+// Muestra un error claro DENTRO del área de compose (no solo un toast que se pierde).
+function _vibeShowMediaError(msg){
+  var area = document.getElementById('vibeImgArea');
+  if(!area){ pToast('⚠️', msg); return; }
+  area.innerHTML = '<div style="text-align:center;padding:26px 18px;background:rgba(200,90,70,.12);border:1.5px dashed rgba(220,110,90,.6);border-radius:16px">'
+    + '<div style="font-size:34px;margin-bottom:8px">🎬</div>'
+    + '<div style="font-size:14px;font-weight:800;color:#e88;font-family:Jost,sans-serif;line-height:1.4;margin-bottom:10px">'+_escHtml(msg)+'</div>'
+    + '<button onclick="_vibeChangeImage()" style="padding:9px 20px;background:rgba(116,198,157,.9);border:none;border-radius:100px;color:#0a2417;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer">Elegir otro</button>'
+    + '</div>';
+}
 async function _vibeHandleVideoInput(f){
-  if(f.size > VIBE_VIDEO_MAX_MB*1024*1024){ pToast('⚠️','Video muy pesado (máx '+VIBE_VIDEO_MAX_MB+' MB) — grabá más corto'); return; }
-  pToast('🎬','Procesando…');
+  var area = document.getElementById('vibeImgArea');
+  if(f.size > VIBE_VIDEO_MAX_MB*1024*1024){
+    _vibeShowMediaError('Ese video pesa '+(f.size/1048576).toFixed(0)+' MB (máximo '+VIBE_VIDEO_MAX_MB+' MB). Grabá uno más corto o de menor calidad.');
+    return;
+  }
+  // Estado "procesando" visible mientras leemos la duración
+  if(area) area.innerHTML = '<div style="text-align:center;padding:30px 18px;color:rgba(200,235,215,.8);font-family:Jost,sans-serif"><div style="font-size:30px;margin-bottom:8px">🎬</div><div style="font-size:13.5px;font-weight:700">Procesando video…</div></div>';
   var dur = await _vibeReadVideoDuration(f);
-  if(dur > VIBE_VIDEO_MAX_SECS + 1){ pToast('⚠️','El video dura '+Math.round(dur)+'s — máximo '+VIBE_VIDEO_MAX_SECS+' segundos'); return; }
+  if(dur > VIBE_VIDEO_MAX_SECS + 1){
+    _vibeShowMediaError('El video dura '+Math.round(dur)+'s y el máximo es '+VIBE_VIDEO_MAX_SECS+' segundos. Recortalo o elegí uno más corto.');
+    return;
+  }
   _vibePendingVideo = f;
   _vibePendingImage = null;
-  var area = document.getElementById('vibeImgArea'); if(!area) return;
+  if(!area) area = document.getElementById('vibeImgArea');
+  if(!area) return;
   var vUrl = '';
   try{ vUrl = URL.createObjectURL(f); }catch(_){}
-  area.innerHTML = '<div style="position:relative"><video src="'+vUrl+'" controls playsinline muted style="width:100%;max-height:360px;border-radius:16px;border:1.5px solid rgba(116,198,157,.35);display:block;background:#000"></video><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:6px 12px;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.30);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer;z-index:2">Cambiar</button></div>';
-  pToast('✓','Video listo ('+Math.round(dur)+'s)');
+  area.innerHTML = '<div style="position:relative"><video src="'+vUrl+'" controls playsinline muted preload="metadata" style="width:100%;max-height:360px;border-radius:16px;border:1.5px solid rgba(116,198,157,.35);display:block;background:#000"></video><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:6px 12px;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.30);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer;z-index:2">Cambiar</button></div>';
+  pToast('✓', dur>0 ? 'Video listo ('+Math.round(dur)+'s)' : 'Video listo');
 }
 async function _vibeHandleImageInput(input){
   if(!input || !input.files || !input.files[0]) return;
@@ -20897,6 +20936,10 @@ async function pSaveVibe(){
       _vibeTargetGroupId = null;
       _vibeInstantScope = null;
       _vibeInstantMemberIds = [];
+      // Refrescar SIEMPRE el widget "Vibes de hoy" del home para que el nuevo
+      // momento aparezca al instante (no depende de la replicación realtime).
+      try{ if(typeof _renderHomeVibesCard==='function') _renderHomeVibesCard(); }catch(_){}
+      try{ _vibesGroupsCache = null; }catch(_){}
       if(toOpen) pOpenVibeGroup(toOpen);
       else pRenderVibesHome(); // instantáneo → refrescar home Vibes
     } else {
@@ -20923,7 +20966,7 @@ async function pOpenVibeGroup(groupId){
   ov.id = 'vibeGroupOv';
   ov.dataset.prevHtmlBg = _prevHtmlBg;
   ov.style.cssText = 'position:fixed;inset:0;z-index:10012;background:linear-gradient(180deg,#0a1810,#050f08);display:flex;flex-direction:column;overflow:hidden;color:#fff';
-  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.98);border-bottom:1px solid rgba(116,198,157,.22);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.30)"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:26px;flex-shrink:0">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;font-style:italic;color:#fff;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11.5px;color:rgba(200,235,215,.85);margin-top:3px;font-family:Jost,sans-serif;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.description)||'')+'</div></div><button onclick="_closeVibeGroup();pStartCreateVibe(\''+groupId+'\')" title="Publicar tu momento en este grupo" style="background:linear-gradient(135deg,#5bd090,#3aa06a);border:2px solid #ffffff;color:#ffffff;font-family:Jost,sans-serif;font-size:20px;font-weight:900;width:44px;height:44px;padding:0;border-radius:50%;cursor:pointer;flex-shrink:0;box-shadow:0 4px 14px rgba(60,180,120,.55),0 0 0 3px rgba(116,198,157,.35);display:flex;align-items:center;justify-content:center;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.35)">＋</button></div>';
+  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.98);border-bottom:1px solid rgba(116,198,157,.22);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.30)"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:26px;flex-shrink:0">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;font-style:italic;color:#fff;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11.5px;color:rgba(200,235,215,.85);margin-top:3px;font-family:Jost,sans-serif;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.description)||'')+'</div></div><button onclick="_closeVibeGroup();pStartCreateVibe(\''+groupId+'\')" title="Publicar tu momento en este grupo" aria-label="Subir tu momento" style="background:linear-gradient(135deg,#63d99a,#3aa06a);border:2px solid #ffffff;color:#0a2417;font-family:Jost,sans-serif;font-size:14px;font-weight:900;height:40px;padding:0 15px 0 12px;border-radius:100px;cursor:pointer;flex-shrink:0;box-shadow:0 4px 16px rgba(60,180,120,.60);display:inline-flex;align-items:center;gap:5px;line-height:1;letter-spacing:.3px"><span style="font-size:20px;font-weight:900;line-height:1">+</span>Subir</button></div>';
   // Layout: header fijo + zona fija (CTA + banner de nuevos) + carrusel horizontal
   // scroll-snap con cada card 100% ancho + indicador de posición debajo.
   ov.innerHTML = header
@@ -20940,10 +20983,10 @@ async function pOpenVibeGroup(groupId){
       // el list y los dots para que no aparezca el layout raro con 1 slide.
       var fixedEmpty = document.getElementById('vibeGroupFixed');
       if(fixedEmpty){
-        fixedEmpty.innerHTML = '<div style="text-align:center;padding:40px 20px 12px;color:var(--ink3);font-family:Jost,sans-serif">'
-          + '<div style="font-size:50px;margin-bottom:14px;opacity:.6">🌱</div>'
-          + '<div style="font-size:16px;font-weight:800;color:var(--ink)">Todavía sin historias</div>'
-          + '<div style="font-size:12.5px;margin-top:6px;line-height:1.55;color:var(--ink3)">Sé el primero en compartir un momento acá</div>'
+        fixedEmpty.innerHTML = '<div style="text-align:center;padding:40px 20px 12px;color:rgba(206,240,222,.78);font-family:Jost,sans-serif">'
+          + '<div style="font-size:50px;margin-bottom:14px;opacity:.75">🌱</div>'
+          + '<div style="font-size:16px;font-weight:800;color:#eafff2;text-shadow:0 1px 3px rgba(0,0,0,.4)">Todavía sin historias</div>'
+          + '<div style="font-size:12.5px;margin-top:6px;line-height:1.55;color:rgba(206,240,222,.78)">Sé el primero en compartir un momento acá</div>'
           + '</div>'
           + '<button onclick="pStartCreateVibe(\''+groupId+'\')" style="width:100%;margin-top:8px;padding:18px 20px;background:linear-gradient(135deg,rgba(116,198,157,.85),rgba(74,160,110,.98));border:none;border-radius:18px;color:#0e1f14;font-family:Jost,sans-serif;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.4px;box-shadow:0 8px 26px rgba(80,180,120,.35),0 2px 8px rgba(60,140,90,.25);line-height:1.35">👉 Sumate al momento<br><span style="font-size:12px;font-weight:700;color:rgba(20,50,32,.78);letter-spacing:.3px">Tocá acá para subir tu historia</span></button>';
       }
@@ -35107,7 +35150,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1422;
+    var _BUILT_V = 1423;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
