@@ -15193,27 +15193,30 @@ body.r-dark .home-vibes-widget__see-all {
 /* v1355 — CTA "¿Querés participar?" + hint "Deslizá horizontalmente" +
    CTA "Compartí un instantáneo" ahora legibles en LIGHT MODE.
    Estaban con texto blanco sobre fondo dark — en light se perdía. */
-body:not(.r-dark) #vibeGroupOv button[onclick*="pStartCreateVibe"] {
+/* La CTA "¿Querés participar?" — EXCLUYE el botón del header (.vibe-hdr-upload),
+   que aunque tiene pStartCreateVibe en el onclick necesita otro estilo. */
+body:not(.r-dark) #vibeGroupOv button[onclick*="pStartCreateVibe"]:not(.vibe-hdr-upload) {
   background: linear-gradient(135deg, rgba(80, 180, 120, 0.32), rgba(60, 140, 90, 0.24)) !important;
   border: 1.5px dashed rgba(30, 110, 70, 0.75) !important;
   color: #0a3a1e !important;
 }
-body:not(.r-dark) #vibeGroupOv button[onclick*="pStartCreateVibe"] * {
+body:not(.r-dark) #vibeGroupOv button[onclick*="pStartCreateVibe"]:not(.vibe-hdr-upload) * {
   color: #0a3a1e !important;
 }
-/* v1426 — El botón "＋ Subir" del header vive SIEMPRE sobre el header oscuro,
+/* v1431 — El botón "＋ Subir" del header vive SIEMPRE sobre el header oscuro,
    así que debe ser el pill verde sólido con texto oscuro en AMBOS temas.
-   (La regla genérica de arriba lo dejaba translúcido/ilegible en light mode
-   porque su onclick también contiene pStartCreateVibe.) */
-#vibeGroupOv .vibe-hdr-upload,
-body:not(.r-dark) #vibeGroupOv .vibe-hdr-upload,
-body.r-dark #vibeGroupOv .vibe-hdr-upload {
+   Selector con alta especificidad (button.clase[onclick]) para ganarle a
+   cualquier regla genérica. */
+#vibeGroupOv button.vibe-hdr-upload[onclick],
+body:not(.r-dark) #vibeGroupOv button.vibe-hdr-upload[onclick],
+body.r-dark #vibeGroupOv button.vibe-hdr-upload[onclick] {
   background: linear-gradient(135deg,#63d99a,#3aa06a) !important;
   border: 2px solid #ffffff !important;
   color: #0a2417 !important;
   box-shadow: 0 4px 16px rgba(60,180,120,.60) !important;
+  opacity: 1 !important;
 }
-#vibeGroupOv .vibe-hdr-upload * {
+#vibeGroupOv button.vibe-hdr-upload[onclick] * {
   color: #0a2417 !important;
 }
 body:not(.r-dark) #vibeGroupOv button[onclick^="_vibeJumpToNew"] {

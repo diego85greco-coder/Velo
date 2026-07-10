@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1431',
+      'Velo v1432',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20908,11 +20908,13 @@ var _vibeVideoPreviewMeta = '';
 function _vibeVideoPreviewError(videoEl){
   try{
     var area = document.getElementById('vibeImgArea'); if(!area) return;
-    area.innerHTML = '<div style="position:relative"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;height:200px;border-radius:16px;border:1.5px solid rgba(116,198,157,.35);background:linear-gradient(160deg,rgba(16,40,26,.98),rgba(8,22,14,.98));color:#eafff2;font-family:Jost,sans-serif">'
+    // color !important porque en modo claro una regla de #vibeCreateOv fuerza
+    // el texto a oscuro, y este tile tiene fondo oscuro siempre.
+    area.innerHTML = '<div style="position:relative"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;height:200px;border-radius:16px;border:1.5px solid rgba(116,198,157,.45);background:linear-gradient(160deg,rgba(16,40,26,.99),rgba(8,22,14,1));font-family:Jost,sans-serif">'
       + '<div style="font-size:40px">🎬</div>'
-      + '<div style="font-size:14px;font-weight:800">Video listo para compartir</div>'
-      + '<div style="font-size:11.5px;color:rgba(206,240,222,.72)">'+_escHtml(_vibeVideoPreviewMeta)+' · no se previsualiza acá, pero se sube bien</div>'
-      + '</div><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:6px 12px;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.30);border-radius:100px;color:#fff;font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer;z-index:2">Cambiar</button></div>';
+      + '<div style="font-size:14.5px;font-weight:800;color:#eafff2 !important">✅ Video listo para compartir</div>'
+      + '<div style="font-size:11.5px;color:#bfe6d1 !important;text-align:center;padding:0 16px">'+_escHtml(_vibeVideoPreviewMeta)+' · no se ve acá, pero se sube perfecto</div>'
+      + '</div><button onclick="_vibeChangeImage()" style="position:absolute;bottom:10px;right:10px;padding:6px 12px;background:rgba(0,0,0,.8);border:1px solid rgba(255,255,255,.35);border-radius:100px;color:#fff !important;font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer;z-index:2">Cambiar</button></div>';
   }catch(_){}
 }
 async function _vibeHandleImageInput(input){
@@ -21051,8 +21053,11 @@ function _vibeUploadVideoToCloudinary(file, onProgress){
             var d = JSON.parse(xhr.responseText);
             var s = d.secure_url || d.url;
             if(s){
-              // q_auto → Cloudinary sirve una versión optimizada por dispositivo
-              resolve(s.replace('/video/upload/', '/video/upload/q_auto/'));
+              // Servimos el original (sin transformación) para que reproduzca al
+              // instante. Con q_auto, Cloudinary transcodifica en el primer play
+              // y el video "queda cargando" hasta que termina. La optimización se
+              // puede activar después vía eager transform en el preset.
+              resolve(s);
               return;
             }
           }catch(_){}
@@ -21141,7 +21146,6 @@ async function pSaveVibe(){
       // Refrescar SIEMPRE el widget "Vibes de hoy" del home para que el nuevo
       // momento aparezca al instante (no depende de la replicación realtime).
       try{ if(typeof _renderHomeVibesCard==='function') _renderHomeVibesCard(); }catch(_){}
-      try{ _vibesGroupsCache = null; }catch(_){}
       if(toOpen) pOpenVibeGroup(toOpen);
       else pRenderVibesHome(); // instantáneo → refrescar home Vibes
     } else {
@@ -35449,7 +35453,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1431;
+    var _BUILT_V = 1432;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
