@@ -15613,3 +15613,18 @@ body:not(.r-dark) .msg-actions-popup .msg-reply-btn {
   color: #1B5E3A !important;
   background: rgba(116,198,157,.16) !important;
 }
+
+/* v1437 — En escritorio, el carrusel de historias de los grupos ocupaba TODO el
+   ancho → imágenes gigantes/estiradas. Lo centramos y limitamos a ancho tipo
+   teléfono para que las fotos se vean bien (no afecta mobile). */
+@media (min-width: 768px) {
+  #vibeGroupList, #savedVibeCarousel,
+  #vibeGroupFixed, #vibeGroupDots {
+    max-width: 540px;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  #vibeInstantOv .vibe-card { max-width: 540px; margin-left: auto; margin-right: auto; }
+}
