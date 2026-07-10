@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1432',
+      'Velo v1433',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20686,7 +20686,9 @@ async function _vibeCreateGroupConfirm(kind){
   try{
     var r = await sbClient.from('vibe_groups').insert({
       kind: kind, title: title, emoji: emoji, owner_id: myId, member_ids: memberIds,
-      expires_at: new Date(Date.now() + 24*3600*1000).toISOString()
+      // v1433: los grupos PRIVADOS son permanentes (hasta que el dueño los borre);
+      // las historias adentro sí caducan a 24h. Los públicos siguen caducando.
+      expires_at: kind === 'private' ? null : new Date(Date.now() + 24*3600*1000).toISOString()
     }).select('id').single();
     if(r && r.data && r.data.id){
       pToast('✓','Grupo creado');
@@ -20694,6 +20696,107 @@ async function _vibeCreateGroupConfirm(kind){
       pStartCreateVibe(r.data.id);
     } else { pToast('⚠️','No se pudo crear'); }
   }catch(e){ console.warn('[create-group]', e); pToast('⚠️','Error al crear'); }
+}
+// ── GESTIÓN DE GRUPOS PRIVADOS (v1433) ───────────────────────────────
+// Menú de opciones del grupo: dueño (administrar/eliminar) o miembro (abandonar).
+function pVibeGroupManage(groupId, isOwner){
+  var ex = document.getElementById('vibeGroupManageOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'vibeGroupManageOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  var C = "document.getElementById('vibeGroupManageOv').remove();";
+  var btn = function(txt, onclick, col){
+    return '<button onclick="'+C+onclick+'" style="width:100%;padding:15px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;margin-bottom:8px;color:'+(col||'#eafff2')+';font-family:Jost,sans-serif;font-size:15px;font-weight:700;cursor:pointer;text-align:left">'+txt+'</button>';
+  };
+  var opts = isOwner
+    ? btn('👥 Administrar miembros', "pVibeGroupMembers('"+groupId+"')")
+      + btn('🗑️ Eliminar este grupo', "pDeleteVibeGroup('"+groupId+"')", '#ff8a80')
+    : btn('🚪 Abandonar el grupo', "pLeaveVibeGroup('"+groupId+"')", '#ff8a80');
+  ov.innerHTML = '<div style="width:100%;max-width:520px;background:linear-gradient(180deg,rgba(18,36,24,.99),rgba(8,20,13,.99));border:1.5px solid rgba(116,198,157,.30);border-radius:24px 24px 0 0;padding:16px 16px calc(24px + env(safe-area-inset-bottom,0px))">'
+    + '<div style="display:flex;justify-content:center;padding:2px 0 14px"><div style="width:36px;height:4px;background:rgba(180,220,195,.35);border-radius:2px"></div></div>'
+    + '<div style="text-align:center;font-family:\'Cormorant Garamond\',serif;font-size:19px;font-style:italic;color:#fff;margin-bottom:14px">Opciones del grupo</div>'
+    + opts
+    + '<button onclick="'+C+'" style="width:100%;padding:13px;background:none;border:none;color:rgba(200,230,215,.6);font-family:Jost,sans-serif;font-size:14px;cursor:pointer;margin-top:2px">Cancelar</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+}
+// El DUEÑO borra el grupo (para todos). RLS: delete solo owner.
+async function pDeleteVibeGroup(groupId){
+  if(!confirm('¿Eliminar este grupo privado?\n\nSe borra para todos sus miembros y no se puede deshacer.')) return;
+  _initSupabase(); var myId = safeLS('get','velo_user_id')||'';
+  try{
+    var r = await sbClient.from('vibe_groups').delete().eq('id', groupId).eq('owner_id', myId).select('id');
+    if(r && !r.error){
+      pToast('🗑️','Grupo eliminado');
+      _vibesGroupsCache = null;
+      try{ _closeVibeGroup(); }catch(_){}
+      try{ pRenderVibesHome(); }catch(_){}
+    } else { throw (r && r.error) || new Error('fail'); }
+  }catch(e){ console.warn('[del-group]', e); pToast('⚠️','No se pudo eliminar — probá de nuevo'); }
+}
+// Un MIEMBRO abandona el grupo. Vía RPC (la RLS de update es solo-owner).
+async function pLeaveVibeGroup(groupId){
+  if(!confirm('¿Abandonar este grupo?\n\nDejarás de verlo y de recibir sus momentos. El dueño puede volver a invitarte más adelante.')) return;
+  _initSupabase();
+  try{
+    var r = await sbClient.rpc('leave_vibe_group', { gid: groupId });
+    if(r && r.error) throw r.error;
+    pToast('🚪','Abandonaste el grupo');
+    _vibesGroupsCache = null;
+    try{ _closeVibeGroup(); }catch(_){}
+    try{ pRenderVibesHome(); }catch(_){}
+  }catch(e){ console.warn('[leave-group]', e); pToast('⚠️','No se pudo abandonar — probá de nuevo'); }
+}
+// El DUEÑO administra miembros: lista con botón para quitar a cada uno.
+async function pVibeGroupMembers(groupId){
+  _initSupabase(); var myId = safeLS('get','velo_user_id')||'';
+  var g = null;
+  try{ var gr = await sbClient.from('vibe_groups').select('member_ids,owner_id,title').eq('id',groupId).single(); g = gr && gr.data; }catch(_){}
+  if(!g){ pToast('⚠️','No se pudo cargar'); return; }
+  var members = (g.member_ids||[]).filter(Boolean);
+  var profs = {};
+  if(members.length){
+    try{ var pr = await sbClient.from('profiles').select('id,nombre,avatar').in('id', members); (pr.data||[]).forEach(function(p){ profs[p.id]=p; }); }catch(_){}
+  }
+  var ex = document.getElementById('vibeGroupMembersOv'); if(ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'vibeGroupMembersOv';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:10052;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  var rows = members.length ? members.map(function(uid){
+    var p = profs[uid] || {};
+    var nm = _escHtml((p.nombre||'Usuario'));
+    var av = _escHtml(p.avatar||'🧑');
+    return '<div style="display:flex;align-items:center;gap:11px;padding:11px 4px;border-bottom:1px solid rgba(255,255,255,.07)">'
+      + '<span style="font-size:26px;flex-shrink:0">'+_avInline(av,34)+'</span>'
+      + '<span style="flex:1;font-family:Jost,sans-serif;font-size:14px;font-weight:700;color:#eafff2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nm+'</span>'
+      + '<button onclick="_vibeGroupRemoveMember(\''+groupId+'\',\''+uid+'\',this)" style="background:rgba(255,120,110,.14);border:1px solid rgba(255,120,110,.45);color:#ff9c93;border-radius:100px;padding:6px 14px;font-family:Jost,sans-serif;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">Quitar</button>'
+      + '</div>';
+  }).join('') : '<div style="text-align:center;padding:24px;color:rgba(200,230,215,.6);font-family:Jost,sans-serif;font-size:13.5px">Este grupo no tiene otros miembros todavía.</div>';
+  ov.innerHTML = '<div style="width:100%;max-width:520px;background:linear-gradient(180deg,rgba(18,36,24,.99),rgba(8,20,13,.99));border:1.5px solid rgba(116,198,157,.30);border-radius:24px 24px 0 0;padding:16px 18px calc(24px + env(safe-area-inset-bottom,0px));max-height:80vh;overflow-y:auto">'
+    + '<div style="display:flex;justify-content:center;padding:2px 0 12px"><div style="width:36px;height:4px;background:rgba(180,220,195,.35);border-radius:2px"></div></div>'
+    + '<div style="text-align:center;font-family:\'Cormorant Garamond\',serif;font-size:19px;font-style:italic;color:#fff;margin-bottom:4px">Miembros de «'+_escHtml(g.title||'')+'»</div>'
+    + '<div style="text-align:center;font-size:11.5px;color:rgba(180,220,195,.6);margin-bottom:14px;font-family:Jost,sans-serif">Tocá "Quitar" para sacar a alguien del grupo</div>'
+    + '<div id="vibeGroupMembersList">'+rows+'</div>'
+    + '<button onclick="document.getElementById(\'vibeGroupMembersOv\').remove()" style="width:100%;margin-top:14px;padding:13px;background:rgba(116,198,157,.15);border:1.5px solid rgba(116,198,157,.4);border-radius:14px;color:rgba(180,235,210,.95);font-family:Jost,sans-serif;font-size:14px;font-weight:800;cursor:pointer">Listo</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+}
+// El DUEÑO quita a un miembro (RLS de update lo permite porque soy owner).
+async function _vibeGroupRemoveMember(groupId, uid, btnEl){
+  _initSupabase(); var myId = safeLS('get','velo_user_id')||'';
+  if(btnEl){ btnEl.disabled = true; btnEl.textContent = '…'; }
+  try{
+    var gr = await sbClient.from('vibe_groups').select('member_ids').eq('id',groupId).single();
+    var next = ((gr.data && gr.data.member_ids)||[]).filter(function(x){ return x !== uid; });
+    var r = await sbClient.from('vibe_groups').update({ member_ids: next }).eq('id',groupId).eq('owner_id',myId).select('id');
+    if(r && !r.error && r.data && r.data.length){
+      pToast('✓','Miembro quitado');
+      _vibesGroupsCache = null;
+      if(btnEl && btnEl.parentNode){ btnEl.parentNode.style.opacity='.4'; btnEl.textContent='Quitado'; }
+    } else { throw (r && r.error) || new Error('fail'); }
+  }catch(e){ console.warn('[rm-member]', e); pToast('⚠️','No se pudo quitar'); if(btnEl){ btnEl.disabled=false; btnEl.textContent='Quitar'; } }
 }
 // Modal para elegir foto + escribir caption + guardar en historial
 // Signaturas soportadas:
@@ -21172,7 +21275,13 @@ async function pOpenVibeGroup(groupId){
   ov.id = 'vibeGroupOv';
   ov.dataset.prevHtmlBg = _prevHtmlBg;
   ov.style.cssText = 'position:fixed;inset:0;z-index:10012;background:linear-gradient(180deg,#0a1810,#050f08);display:flex;flex-direction:column;overflow:hidden;color:#fff';
-  var header = '<div style="display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.98);border-bottom:1px solid rgba(116,198,157,.22);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.30)"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:26px;flex-shrink:0">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;font-style:italic;color:#fff;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11.5px;color:rgba(200,235,215,.85);margin-top:3px;font-family:Jost,sans-serif;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.description)||'')+'</div></div><button class="vibe-hdr-upload" onclick="_closeVibeGroup();pStartCreateVibe(\''+groupId+'\')" title="Publicar tu momento en este grupo" aria-label="Subir tu momento" style="background:linear-gradient(135deg,#63d99a,#3aa06a);border:2px solid #ffffff;color:#0a2417;font-family:Jost,sans-serif;font-size:14px;font-weight:900;height:40px;padding:0 15px 0 12px;border-radius:100px;cursor:pointer;flex-shrink:0;box-shadow:0 4px 16px rgba(60,180,120,.60);display:inline-flex;align-items:center;gap:5px;line-height:1;letter-spacing:.3px"><span style="font-size:20px;font-weight:900;line-height:1">+</span>Subir</button></div>';
+  // Menú de opciones (⋯) solo para grupos privados: borrar (dueño) o abandonar (miembro).
+  var _grMyUid = safeLS('get','velo_user_id')||'';
+  var _grIsOwner = !!(gr && gr.owner_id === _grMyUid);
+  var _grMenuBtn = (gr && gr.kind === 'private')
+    ? '<button onclick="pVibeGroupManage(\''+groupId+'\','+(_grIsOwner?'true':'false')+')" aria-label="Opciones del grupo" style="background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;width:38px;height:38px;padding:0;font-size:18px;cursor:pointer;font-weight:800;flex-shrink:0;line-height:1">⋯</button>'
+    : '';
+  var header = '<div style="display:flex;align-items:center;gap:10px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;background:rgba(4,10,7,.98);border-bottom:1px solid rgba(116,198,157,.22);flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.30)"><button onclick="_closeVibeGroup()" style="background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.28);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;cursor:pointer;font-weight:800;flex-shrink:0">←</button><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:26px;flex-shrink:0">'+_escHtml((gr&&gr.emoji)||'🌊')+'</span><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;font-style:italic;color:#fff;letter-spacing:.4px;text-shadow:0 1px 3px rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.title)||'Grupo')+'</span></div><div style="font-size:11.5px;color:rgba(200,235,215,.85);margin-top:3px;font-family:Jost,sans-serif;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_escHtml((gr&&gr.description)||'')+'</div></div>'+_grMenuBtn+'<button class="vibe-hdr-upload" onclick="_closeVibeGroup();pStartCreateVibe(\''+groupId+'\')" title="Publicar tu momento en este grupo" aria-label="Subir tu momento" style="background:linear-gradient(135deg,#63d99a,#3aa06a);border:2px solid #ffffff;color:#0a2417;font-family:Jost,sans-serif;font-size:14px;font-weight:900;height:40px;padding:0 15px 0 12px;border-radius:100px;cursor:pointer;flex-shrink:0;box-shadow:0 4px 16px rgba(60,180,120,.60);display:inline-flex;align-items:center;gap:5px;line-height:1;letter-spacing:.3px"><span style="font-size:20px;font-weight:900;line-height:1">+</span>Subir</button></div>';
   // Layout: header fijo + zona fija (CTA + banner de nuevos) + carrusel horizontal
   // scroll-snap con cada card 100% ancho + indicador de posición debajo.
   ov.innerHTML = header
@@ -35453,7 +35562,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1432;
+    var _BUILT_V = 1433;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
