@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1439',
+      'Velo v1440',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -10210,7 +10210,7 @@ async function _gcRender(){
       .gte('created_at', _gcSince)
       .order('created_at',{ascending:true}).limit(120);
     var data = res.data || [];
-    var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
+    var sentinels = ['__velo_chat_req__','__velo_accompany_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
     var msgs = data.filter(function(m){ var t=m.text||''; return sentinels.indexOf(t)<0&&!t.startsWith('__velo_guardian_req__:')&&!t.startsWith('__velo_guardian_acc__:')&&!t.startsWith('__velo_guardian_rej__:')&&!t.startsWith('__velo_guardian_bye__:')&&!t.startsWith('__velo_dm_bye__:')&&!t.startsWith('__velo_help_bye__:'); });
     if(!msgs.length){
       if(!document.getElementById('gcPlaceholder')){
@@ -10838,6 +10838,21 @@ async function _guardianSendRequest(post){
     pToast('⚠️','No se pudo enviar la solicitud. Verificá tu conexión.');
     return;
   }
+  // v1440: PUSH al que pidió ayuda (aunque sea anónimo) para que se entere con la
+  // app cerrada de que alguien quiere acompañarlo. El popup in-app ya le llega por
+  // la suscripción a guardian_requests; esto agrega la notificación push.
+  // Sentinel dedicado que el cliente IGNORA (no crea chat) y que la Edge Function
+  // convierte en push "💚 Alguien quiere acompañarte".
+  if(post.userId && post.userId !== myId){
+    try{
+      var _accRes = await sbClient.from('direct_messages').insert({
+        from_id: myId, from_name: myName, from_av: myAv,
+        to_id: post.userId, text: '__velo_accompany_req__'
+      }).select('id').single();
+      var _accId = _accRes && _accRes.data && _accRes.data.id;
+      if(_accId) setTimeout(function(){ if(sbClient) sbClient.from('direct_messages').delete().eq('id',_accId).then(function(){}).catch(function(){}); }, 60000);
+    }catch(_){}
+  }
   // Show waiting overlay with 60s countdown
   _showGuardianWaitOverlay(post, myName);
   // Subscribe to guardian_requests changes for this row
@@ -11234,7 +11249,7 @@ async function _loadHelpChatHistory(post){
       .gte('created_at', since)
       .order('created_at',{ascending:true}).limit(100);
     if(data && data.length){
-      var _sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__'];
+      var _sentinels = ['__velo_chat_req__','__velo_accompany_req__','__velo_chat_acc__','__velo_chat_rej__'];
       data.forEach(function(m){
         var t = m.text||'';
         if(_sentinels.indexOf(t)>=0||t.startsWith('__velo_help_bye__:')) return;
@@ -11249,7 +11264,7 @@ async function _loadHelpChatHistory(post){
 function _renderHelpChatMsg(m, isOwn){
   var msgEl = document.getElementById('helpChatMessages');
   if(!msgEl) return;
-  var _sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
+  var _sentinels = ['__velo_chat_req__','__velo_accompany_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
   var _t=m.text||'';
   if(_t.startsWith('__velo_typing__:') && !isOwn){ _showHelpTypingIndicator(_t.slice('__velo_typing__:'.length)); return; }
   if(_t.startsWith('__velo_typing__:')||_sentinels.indexOf(_t)>=0||_t.startsWith('__velo_guardian_req__:')||_t.startsWith('__velo_guardian_acc__:')||_t.startsWith('__velo_guardian_rej__:')||_t.startsWith('__velo_guardian_bye__:')||_t.startsWith('__velo_dm_bye__:')||_t.startsWith('__velo_help_bye__:')) return;
@@ -24358,7 +24373,7 @@ async function _renderDMThread(){
       .select('*')
       .or('and(from_id.eq.'+myId+',to_id.eq.'+_dmPeer.id+'),and(from_id.eq.'+_dmPeer.id+',to_id.eq.'+myId+')')
       .order('created_at',{ascending:true}).limit(100);
-    var sentinels = ['__velo_chat_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
+    var sentinels = ['__velo_chat_req__','__velo_accompany_req__','__velo_chat_acc__','__velo_chat_rej__','__velo_chat_busy__'];
     var msgs = (data||[]).filter(function(m){
       var t=m.text||'';
       if(sentinels.indexOf(t)>=0||t.startsWith('__velo_guardian_req__:')||t.startsWith('__velo_guardian_acc__:')||t.startsWith('__velo_guardian_rej__:')||t.startsWith('__velo_guardian_bye__:')||t.startsWith('__velo_dm_bye__:')||t.startsWith('__velo_help_bye__:')) return false;
@@ -25351,6 +25366,10 @@ function _startGlobalDMListener(){
       if(m.to_id !== myId) return;
       var curPage = document.querySelector('.p-page.active');
       var curId = curPage ? curPage.id : '';
+      // v1440: sentinel de oferta de acompañamiento — solo sirve para disparar el
+      // push (Edge Function). El popup real llega por guardian_requests, así que
+      // acá lo ignoramos por completo (no crear chat ni popup de DM).
+      if(m.text === '__velo_accompany_req__') return;
       // Handle sentinel messages
       if(m.text === '__velo_chat_req__'){
         // Auto-reject if current user is in another active chat
@@ -35609,7 +35628,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1439;
+    var _BUILT_V = 1440;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){

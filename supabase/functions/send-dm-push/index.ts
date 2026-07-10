@@ -84,6 +84,12 @@ serve(async (req: Request): Promise<Response> => {
       body: "Te llegó una solicitud de chat. Entrá a Velo para aceptarla o rechazarla.",
       tag: `velo-dm-${rec.from_id}`,
     };
+  } else if (txt === "__velo_accompany_req__") {
+    sentinelPush = {
+      title: "💚 Alguien quiere acompañarte",
+      body: "Un guardián vio tu mensaje en la Sala de Ayuda y quiere acompañarte. Entrá a Velo para responder.",
+      tag: "velo-accompany-req",
+    };
   } else if (txt.startsWith("__velo_") &&
       !txt.startsWith("__velo_dm_audio__") &&
       !txt.startsWith("__velo_dm_image__")) {
