@@ -855,7 +855,7 @@ async function buddyCycleMaintenance() {
 // en la fila; si la fila con esa URL sigue viva, la salteamos).
 async function cleanupVibesStorage() {
   const utcH = new Date().getUTCHours();
-  if (utcH !== 3) return { deleted: 0 };
+  if (utcH !== 2) return { deleted: 0 }; // corre en el cron de las 2 UTC (antes era 3, que no existe en el schedule → nunca corría)
   const cutoff = Date.now() - 48 * 3600 * 1000;
   let deleted = 0;
   try {
@@ -915,7 +915,7 @@ async function _cloudinaryDestroy(publicId) {
 // y elimina la fila. Los archivados (guardados en historial) se conservan.
 async function cleanupCloudinaryVideos() {
   const utcH = new Date().getUTCHours();
-  if (utcH !== 3) return { deleted: 0 };
+  if (utcH !== 2) return { deleted: 0 }; // corre en el cron de las 2 UTC (noche)
   if (!CLOUDINARY_KEY || !CLOUDINARY_SECRET) { console.log('[cloudinary-cleanup] sin credenciales (agregá CLOUDINARY_API_KEY/SECRET) — skip'); return { deleted: 0 }; }
   let deleted = 0;
   try {
