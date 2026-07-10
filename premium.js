@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1437',
+      'Velo v1438',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -150,6 +150,7 @@ var _sbVerifiedMoodCount = -1; // Supabase-confirmed mood count; -1 = not yet fe
 var _liveGuardians = [];    // cached live guardian rows from Supabase
 var _grReqCh        = null;   // guardian_requests realtime channel (guardian side)
 var _seekerGrCh     = null;   // guardian_requests realtime channel (seeker side)
+var _guardianReqExtraChs = []; // canales secundarios del listener de pedidos (para limpiarlos al re-suscribir y no leakear)
 var _guardianListPollTmr = null; // polling fallback for guardians list (15s)
 var _homeRefreshTmr = null;   // home page live-content auto-refresh (60s)
 var _seekerGrPollTmr= null;   // polling fallback for seeker waiting for guardian offer
@@ -9136,6 +9137,10 @@ function _startGuardianHeartbeat(){
   var beat = function(){
     // Self-heal: re-create both channels if they were CLOSED since the last tick.
     _createGuardianBcastCh();
+    // v1438: además de null, detectar canal CAÍDO (state != joined/joining) —
+    // un WebSocket que muere sin disparar CLOSED dejaba de recibir pedidos en vivo.
+    var _grStale = _guardianReqCh && _guardianReqCh.state && _guardianReqCh.state !== 'joined' && _guardianReqCh.state !== 'joining';
+    if(_grStale){ try{ _sbUnsub(_guardianReqCh); }catch(_){} _guardianReqCh = null; }
     if(!_guardianReqCh) _startGuardianReqListener();
     _updateGuardianPresence(_inActiveChat ? 'ocupado' : _presenceStatus());
     _refreshPresenceCache().then(function(){
@@ -10008,6 +10013,9 @@ function _startGuardianReqListener(){
   // Primary channel: Realtime BROADCAST (no RLS, pure WebSocket pub-sub)
   // The seeker sends the full request object here immediately after INSERT.
   if(!_guardianReqCh){
+    // Limpiar canales secundarios de una suscripción previa (evita fugas al re-suscribir).
+    try{ _guardianReqExtraChs.forEach(function(ch){ try{ _sbUnsub(ch); }catch(_){} }); }catch(_){}
+    _guardianReqExtraChs = [];
     _guardianReqCh = sbClient.channel('velo:gnotify:'+myId);
     _guardianReqCh
       .on('broadcast', { event: 'guardian_request' }, function(msg){
@@ -10025,31 +10033,32 @@ function _startGuardianReqListener(){
     // Also subscribe on email key in case presence row used email as user_id
     if(myEmail && myEmail !== myId){
       try{
-        sbClient.channel('velo:gnotify:'+myEmail)
+        var _emCh = sbClient.channel('velo:gnotify:'+myEmail)
           .on('broadcast', { event: 'guardian_request' }, function(msg){
             var r = msg.payload || {};
             if(r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
-          })
-          .subscribe();
+          });
+        _emCh.subscribe();
+        _guardianReqExtraChs.push(_emCh);
       }catch(e){}
     }
     // Secondary: postgres_changes (requires table replication enabled in Supabase)
     try{
-      sbClient.channel('velo:gdreq:' + myId + ':' + Date.now())
+      var _pgCh = sbClient.channel('velo:gdreq:' + myId + ':' + Date.now())
         .on('postgres_changes',{
           event:'INSERT', schema:'public', table:'guardian_requests',
           filter: 'guardian_id=eq.'+myId
         }, function(payload){
           var r = payload.new||{};
           if(r.kind === 'direct' && r.status === 'pending') _showGuardianRequest(r);
-        })
-        .subscribe();
+        });
+      _pgCh.subscribe();
+      _guardianReqExtraChs.push(_pgCh);
     }catch(e){}
   }
-  // Polling fallback every 5s — primary delivery mechanism since Realtime
-  // requires the table to have replication enabled in Supabase dashboard
+  // Polling fallback cada 3s — red de seguridad si el broadcast/realtime se cae.
   if(!_guardianPollTimer){
-    _guardianPollTimer = setInterval(_checkPendingGuardianRequests, 5000);
+    _guardianPollTimer = setInterval(_checkPendingGuardianRequests, 3000);
   }
 }
 
@@ -35600,7 +35609,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1437;
+    var _BUILT_V = 1438;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
