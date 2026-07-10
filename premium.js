@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1427',
+      'Velo v1428',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20746,7 +20746,7 @@ function pStartCreateVibe(groupId, instantScope){
   ov.innerHTML = '<div class="p-sheet" style="max-width:560px;width:100%;padding:18px 18px 26px;background:linear-gradient(180deg,rgba(20,40,26,.98),rgba(10,26,18,.98));border:1.5px solid rgba(116,198,157,.35);max-height:92vh;overflow-y:auto">'
     + '<div class="p-sheet-handle" style="background:rgba(180,220,195,.35)"></div>'
     + '<div style="text-align:center;padding:4px 0 12px"><div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:rgba(180,230,200,.72);text-transform:uppercase">'+_escHtml(header)+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;color:#fff;font-style:italic;margin-top:4px">Compartí tu momento</div></div>'
-    + '<div id="vibeImgArea" style="margin-bottom:14px"><button onclick="document.getElementById(\'vibeFileInput\').click()" style="width:100%;padding:32px 20px;background:rgba(116,198,157,.10);border:2px dashed rgba(116,198,157,.42);border-radius:16px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">📷 Elegí una foto o video<br><span style="font-size:11px;font-weight:600;color:rgba(200,230,215,.55)">video: máx 60 segundos</span></button></div>'
+    + '<div id="vibeImgArea" style="margin-bottom:14px"><button onclick="document.getElementById(\'vibeFileInput\').click()" style="width:100%;padding:32px 20px;background:rgba(116,198,157,.10);border:2px dashed rgba(116,198,157,.42);border-radius:16px;color:rgba(200,230,215,.75);font-family:Jost,sans-serif;font-size:13.5px;font-weight:700;cursor:pointer">📷 Elegí una foto o video<br><span style="font-size:11px;font-weight:600;color:rgba(200,230,215,.55)">video: máx 60 s · 48 MB (grabá en 1080p, no 4K)</span></button></div>'
     + '<input type="file" id="vibeFileInput" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" style="display:none" onchange="_vibeHandleImageInput(this)">'
     + '<textarea id="vibeCaptionInput" placeholder="Contá qué pasa en tu momento (opcional)…" rows="3" style="width:100%;padding:12px 14px;background:rgba(0,0,0,.32);border:1.5px solid rgba(116,198,157,.22);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;line-height:1.5"></textarea>'
     + inviteBlock
@@ -20767,12 +20767,13 @@ function _vibeSyncInvites(){
   document.querySelectorAll('.vibe-invite-cb:checked').forEach(function(cb){ ids.push(cb.getAttribute('data-uid')); });
   _vibeInstantMemberIds = ids;
 }
-// v1425: videos de hasta 60 segundos / 150 MB. Un video de 60s en 1080p desde
-// el iPhone pesa fácil 80-130 MB, así que el tope de MB tiene que ser generoso.
-// No se pueden re-comprimir en el navegador (Safari PWA no tiene API de
-// re-encodeo), validamos duración (metadata) y tamaño ANTES de subir tal cual.
+// v1427: videos de hasta 60 segundos / 48 MB. El plan gratuito de Supabase topea
+// las subidas a 50 MB (no se puede subir sin pagar), así que 48 MB es el máximo
+// real para que el archivo suba de verdad en vez de colgarse. No se pueden
+// re-comprimir en el navegador (Safari PWA no tiene API de re-encodeo);
+// validamos duración y tamaño ANTES de subir tal cual.
 var VIBE_VIDEO_MAX_SECS = 60;
-var VIBE_VIDEO_MAX_MB   = 150;
+var VIBE_VIDEO_MAX_MB   = 48;
 function _vibeReadVideoDuration(file){
   return new Promise(function(resolve){
     var done = false;
@@ -20806,7 +20807,7 @@ function _vibeShowMediaError(msg){
 async function _vibeHandleVideoInput(f){
   var area = document.getElementById('vibeImgArea');
   if(f.size > VIBE_VIDEO_MAX_MB*1024*1024){
-    _vibeShowMediaError('Ese video pesa '+(f.size/1048576).toFixed(0)+' MB (máximo '+VIBE_VIDEO_MAX_MB+' MB). Grabá uno más corto o de menor calidad.');
+    _vibeShowMediaError('Ese video pesa '+(f.size/1048576).toFixed(0)+' MB y el máximo es '+VIBE_VIDEO_MAX_MB+' MB. Probá con un clip más corto, o grabá en 720p/1080p en vez de 4K (Ajustes → Cámara → Grabar video).');
     return;
   }
   // Estado "procesando" visible mientras leemos la duración
@@ -35304,7 +35305,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1427;
+    var _BUILT_V = 1428;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
