@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1411',
+      'Velo v1412',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -3020,11 +3020,11 @@ async function pOpenMonthlyWrapped(){
     document.body.appendChild(mkOv);
     return;
   }
-  var moodScore = {'😄':5,'😊':4.5,'😍':5,'🥰':4.7,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🤔':2.8,'🥺':2.5,'🤒':2.2,'😞':2,'😔':2,'💔':1.5,'😰':1.8,'😨':1.7,'😤':2.2,'😡':1.6,'😴':2.6,'😢':1.4};
+  var moodScore = {'😄':5,'😊':4.5,'😍':5,'🥰':4.7,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🤔':2.8,'🥺':2.5,'🤒':2.2,'😞':2,'😔':2,'💔':1.5,'😰':1.8,'😬':2.3,'😨':1.7,'😤':2.2,'😡':1.6,'😴':2.6,'😢':1.4};
   var counts = {};
   moodEntries.forEach(function(e){ counts[e.emoji] = (counts[e.emoji]||0)+1; });
   var domEmoji = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; })[0] || '🌿';
-  var domLabel = { '😄':'genial','😊':'bien','😍':'enamorado/a','🥰':'agradecido/a','😌':'en paz','💪':'con fuerza','🌟':'radiante','😐':'neutro','🤔':'pensativo/a','🥺':'sensible','🤒':'enfermo/a','😞':'bajo','😔':'triste','💔':'desamorado/a','😰':'ansioso/a','😨':'con miedo','😤':'frustrado/a','😡':'con bronca','😴':'agotado/a','😢':'difícil' }[domEmoji] || 'presente';
+  var domLabel = { '😄':'genial','😊':'bien','😍':'enamorado/a','🥰':'agradecido/a','😌':'en paz','💪':'con fuerza','🌟':'radiante','😐':'neutro','🤔':'pensativo/a','🥺':'sensible','🤒':'enfermo/a','😞':'bajo','😔':'triste','💔':'desamorado/a','😰':'ansioso/a','😬':'nervioso/a','😨':'con miedo','😤':'frustrado/a','😡':'con bronca','😴':'agotado/a','😢':'difícil' }[domEmoji] || 'presente';
   var nReg = moodEntries.length;
   var avgScore = nReg ? (moodEntries.reduce(function(s,e){ return s + (moodScore[e.emoji]||3); },0)/nReg) : 0;
   var scoreLabel = avgScore >= 4 ? 'un mes luminoso ✨' : avgScore >= 3 ? 'un mes equilibrado 🌿' : avgScore >= 2 ? 'un mes con altibajos 💫' : 'un mes que necesitó cuidado 💚';
@@ -3305,7 +3305,7 @@ async function pOpenAnnualWrapped(){
     document.body.appendChild(mkOv); return;
   }
   // Stats globales
-  var moodScore = {'😄':5,'😊':4.5,'😍':5,'🥰':4.7,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🤔':2.8,'🥺':2.5,'🤒':2.2,'😞':2,'😔':2,'💔':1.5,'😰':1.8,'😨':1.7,'😤':2.2,'😡':1.6,'😴':2.6,'😢':1.4};
+  var moodScore = {'😄':5,'😊':4.5,'😍':5,'🥰':4.7,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🤔':2.8,'🥺':2.5,'🤒':2.2,'😞':2,'😔':2,'💔':1.5,'😰':1.8,'😬':2.3,'😨':1.7,'😤':2.2,'😡':1.6,'😴':2.6,'😢':1.4};
   var moodLabel = { '😄':'genial','😊':'bien','😌':'en paz','💪':'con fuerza','🌟':'radiante','😐':'neutro','🥺':'sensible','😞':'bajo','😔':'triste','😰':'ansioso/a','😤':'frustrado/a','😢':'difícil' };
   var counts = {};
   allMoods.forEach(function(m){ counts[m.emoji] = (counts[m.emoji]||0)+1; });
@@ -3852,8 +3852,8 @@ function pOpenMonthlyMoodGraph(){
   var month = now.getMonth();
   var daysInMonth = new Date(year, month+1, 0).getDate();
   var monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  var moodScore = {'😄':5,'😊':4.5,'😍':5,'🥰':4.7,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🤔':2.8,'🥺':2.5,'🤒':2.2,'😞':2,'😔':2,'💔':1.5,'😰':1.8,'😨':1.7,'😤':2.2,'😡':1.6,'😴':2.6,'😢':1.4};
-  var moodColor = {'😄':'#5fcc8a','😊':'#74c69d','😍':'#5fcc8a','🥰':'#74c69d','😌':'#7ed4a5','💪':'#5fcc8a','🌟':'#e6c450','😐':'#c8b070','🤔':'#c0a878','🥺':'#d59a8a','🤒':'#c98a60','😞':'#b87060','😔':'#a85040','💔':'#a83848','😰':'#c98a30','😨':'#c97838','😤':'#c97040','😡':'#c23838','😴':'#b09068','😢':'#a04030'};
+  var moodScore = {'😄':5,'😊':4.5,'😍':5,'🥰':4.7,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🤔':2.8,'🥺':2.5,'🤒':2.2,'😞':2,'😔':2,'💔':1.5,'😰':1.8,'😬':2.3,'😨':1.7,'😤':2.2,'😡':1.6,'😴':2.6,'😢':1.4};
+  var moodColor = {'😄':'#5fcc8a','😊':'#74c69d','😍':'#5fcc8a','🥰':'#74c69d','😌':'#7ed4a5','💪':'#5fcc8a','🌟':'#e6c450','😐':'#c8b070','🤔':'#c0a878','🥺':'#d59a8a','🤒':'#c98a60','😞':'#b87060','😔':'#a85040','💔':'#a83848','😰':'#c98a30','😬':'#c99045','😨':'#c97838','😤':'#c97040','😡':'#c23838','😴':'#b09068','😢':'#a04030'};
   // Load localStorage instantly — modal renderiza inmediato
   var moodMap = {};
   for(var _d=1; _d<=daysInMonth; _d++){
@@ -8294,7 +8294,7 @@ async function pOpenShareCard(){
       var _raw3=safeLS('get','velo_mood_'+_md3.toISOString().slice(0,10));
       if(_raw3){ try{ var _obj3=JSON.parse(_raw3); var _e3=_obj3.emoji||_obj3||''; if(_e3) _mc[_e3]=(_mc[_e3]||0)+1; }catch(e3){} }
     }
-    var _moodLbl2={'😄':'Excelente','😊':'Bien','😐':'Regular','😔':'Melancólico/a','😰':'Ansioso/a','😤':'Frustrado/a','😌':'En paz','🥺':'Sensible','💪':'Con fuerza','😢':'Angustiado/a','😞':'Desanimado/a','🤩':'Emocionado/a','🙂':'Tranquilo/a','😃':'Con energía','😍':'Enamorado/a','🥰':'Agradecido/a','💔':'Desamorado/a','😨':'Con miedo','😡':'Con bronca','😴':'Agotado/a','🤒':'Enfermo/a','🤔':'Confundido/a'};
+    var _moodLbl2={'😄':'Excelente','😊':'Bien','😐':'Regular','😔':'Melancólico/a','😰':'Ansioso/a','😤':'Frustrado/a','😌':'En paz','🥺':'Sensible','💪':'Con fuerza','😢':'Angustiado/a','😞':'Desanimado/a','🤩':'Emocionado/a','🙂':'Tranquilo/a','😃':'Con energía','😍':'Enamorado/a','🥰':'Agradecido/a','💔':'Desamorado/a','😬':'Nervioso/a','😨':'Con miedo','😡':'Con bronca','😴':'Agotado/a','🤒':'Enfermo/a','🤔':'Confundido/a'};
     var _sortedE2=Object.keys(_mc).sort(function(a,b){return _mc[b]-_mc[a];});
     var _domL=_sortedE2.length>0?(_moodLbl2[_sortedE2[0]]||'variado'):'sin registros';
     var _dRec=_sortedE2.reduce(function(s,k){return s+_mc[k];},0);
@@ -8440,7 +8440,7 @@ function _renderShareCard(canvas, logoImg){
   var _sortedMoods=Object.keys(moodCounts).sort(function(a,b){return moodCounts[b]-moodCounts[a];});
   // Only call it "dominant" if one emoji strictly leads (no tie)
   var dominantEmoji=(_sortedMoods.length>0 && (_sortedMoods.length===1 || moodCounts[_sortedMoods[1]]<moodCounts[_sortedMoods[0]])) ? _sortedMoods[0] : '';
-  var _moodLabel={'😄':'Excelente','😊':'Bien','😐':'Regular','😔':'Melancólico/a','😰':'Ansioso/a','😤':'Frustrado/a','😌':'En paz','🥺':'Sensible','💪':'Con fuerza','😢':'Angustiado/a','😞':'Desanimado/a','🤩':'Emocionado/a','🙂':'Tranquilo/a','😃':'Con energía','😍':'Enamorado/a','🥰':'Agradecido/a','💔':'Desamorado/a','😨':'Con miedo','😡':'Con bronca','😴':'Agotado/a','🤒':'Enfermo/a','🤔':'Confundido/a'};
+  var _moodLabel={'😄':'Excelente','😊':'Bien','😐':'Regular','😔':'Melancólico/a','😰':'Ansioso/a','😤':'Frustrado/a','😌':'En paz','🥺':'Sensible','💪':'Con fuerza','😢':'Angustiado/a','😞':'Desanimado/a','🤩':'Emocionado/a','🙂':'Tranquilo/a','😃':'Con energía','😍':'Enamorado/a','🥰':'Agradecido/a','💔':'Desamorado/a','😬':'Nervioso/a','😨':'Con miedo','😡':'Con bronca','😴':'Agotado/a','🤒':'Enfermo/a','🤔':'Confundido/a'};
   var _moodColor={'😄':'rgba(218,160,30,.32)','😊':'rgba(218,160,30,.28)','😌':'rgba(72,185,128,.28)','😐':'rgba(200,160,80,.22)','😔':'rgba(140,100,210,.28)','😰':'rgba(200,140,70,.26)','😤':'rgba(200,80,80,.26)','🥺':'rgba(180,120,200,.26)','💪':'rgba(100,150,220,.26)','😢':'rgba(140,100,210,.28)','😞':'rgba(140,100,210,.24)','🤩':'rgba(218,160,30,.32)','🙂':'rgba(72,185,128,.24)','😃':'rgba(218,160,30,.30)'};
   var _moodBorder={'😄':'rgba(218,160,30,.65)','😊':'rgba(218,160,30,.55)','😌':'rgba(72,185,128,.60)','😐':'rgba(200,160,80,.45)','😔':'rgba(140,100,210,.60)','😰':'rgba(200,140,70,.55)','😤':'rgba(200,80,80,.60)','🥺':'rgba(180,120,200,.55)','💪':'rgba(100,150,220,.60)','😢':'rgba(140,100,210,.60)','😞':'rgba(140,100,210,.50)','🤩':'rgba(218,160,30,.65)','🙂':'rgba(72,185,128,.50)','😃':'rgba(218,160,30,.60)'};
   var _moodCellBg={'😄':'rgba(218,160,30,.13)','😊':'rgba(218,160,30,.10)','😌':'rgba(72,185,128,.12)','😐':'rgba(200,160,80,.09)','😔':'rgba(140,100,210,.12)','😰':'rgba(200,140,70,.11)','😤':'rgba(200,80,80,.12)','🥺':'rgba(180,120,200,.11)','💪':'rgba(100,150,220,.12)','😢':'rgba(140,100,210,.12)','😞':'rgba(140,100,210,.10)','🤩':'rgba(218,160,30,.13)','🙂':'rgba(72,185,128,.10)','😃':'rgba(218,160,30,.11)'};
@@ -15396,7 +15396,7 @@ async function _renderTrajectory(months){
   _initSupabase();
   var now = new Date();
   var monthData = []; // {year, month, avg, count, dom}
-  var moodScore = {'😄':5,'😊':4.5,'😍':5,'🥰':4.7,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🤔':2.8,'🥺':2.5,'🤒':2.2,'😞':2,'😔':2,'💔':1.5,'😰':1.8,'😨':1.7,'😤':2.2,'😡':1.6,'😴':2.6,'😢':1.4};
+  var moodScore = {'😄':5,'😊':4.5,'😍':5,'🥰':4.7,'😌':4,'💪':4,'🌟':4.5,'😐':3,'🤔':2.8,'🥺':2.5,'🤒':2.2,'😞':2,'😔':2,'💔':1.5,'😰':1.8,'😬':2.3,'😨':1.7,'😤':2.2,'😡':1.6,'😴':2.6,'😢':1.4};
   var mNamesShort = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   for(var i = months-1; i>=0; i--){
     var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -15818,10 +15818,11 @@ function pClearAllDiary(){
 // bronca, etc.). Cada emoji nuevo también está en los mapas de puntaje/color/
 // etiqueta más abajo para que el gráfico y el Wrapped lo entiendan.
 var _moodOpts = [
-  { emoji:'😄', label:'Excelente' },   { emoji:'😊', label:'Bien' },       { emoji:'😍', label:'Enamorado/a' }, { emoji:'🥰', label:'Agradecido/a' },
-  { emoji:'😌', label:'En paz' },      { emoji:'😐', label:'Regular' },     { emoji:'🤔', label:'Confundido/a' }, { emoji:'😔', label:'Triste' },
-  { emoji:'😢', label:'Angustiado/a' },{ emoji:'💔', label:'Desamorado/a' },{ emoji:'😰', label:'Ansioso/a' },   { emoji:'😨', label:'Con miedo' },
-  { emoji:'😤', label:'Enojado/a' },   { emoji:'😡', label:'Con bronca' },  { emoji:'😴', label:'Agotado/a' },   { emoji:'🤒', label:'Enfermo/a' }
+  { emoji:'😄', label:'Excelente' },    { emoji:'😊', label:'Bien' },        { emoji:'😍', label:'Enamorado/a' }, { emoji:'🥰', label:'Agradecido/a' },
+  { emoji:'😌', label:'En paz' },       { emoji:'😐', label:'Regular' },      { emoji:'🤔', label:'Confundido/a' },{ emoji:'😞', label:'Desanimado/a' },
+  { emoji:'😔', label:'Triste' },       { emoji:'😢', label:'Angustiado/a' }, { emoji:'💔', label:'Desamorado/a' },{ emoji:'😰', label:'Ansioso/a' },
+  { emoji:'😬', label:'Nervioso/a' },   { emoji:'😨', label:'Con miedo' },    { emoji:'😤', label:'Enojado/a' },   { emoji:'😡', label:'Con bronca' },
+  { emoji:'😴', label:'Agotado/a' },    { emoji:'🤒', label:'Enfermo/a' }
 ];
 var _selMood = null;
 
@@ -34776,7 +34777,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1411;
+    var _BUILT_V = 1412;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
