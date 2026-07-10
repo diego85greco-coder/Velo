@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1416',
+      'Velo v1417',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -3935,11 +3935,21 @@ function _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, mo
     var p0 = pts[0];
     svgPathD = 'M '+(padX+(p0.day-1)*xStep).toFixed(1)+' '+yScale(p0.score).toFixed(1)+' L '+(padX+(p0.day-1)*xStep).toFixed(1)+' '+yScale(p0.score).toFixed(1);
   }
-  var dotsHtml = pts.map(function(p){
+  // v1416: cada punto muestra el EMOJI real de ese día (antes eran círculos
+  // de color y no se distinguían las 18 emociones). Círculo de fondo con el
+  // color del ánimo + el emoji encima. Se alternan arriba/abajo cuando hay
+  // puntos muy juntos para que no se encimen los emojis.
+  var dotsHtml = pts.map(function(p, i){
     var x = padX + (p.day-1) * xStep;
     var y = yScale(p.score);
     var col = moodColor[p.emoji] || '#74c69d';
-    return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5" fill="'+col+'" stroke="white" stroke-width="1.5"></circle>';
+    // Offset del emoji: arriba/abajo alternado para reducir superposición
+    var closePrev = i>0 && (p.day - pts[i-1].day) <= 1;
+    var eyOff = closePrev && (i%2===0) ? 13 : -10;
+    var ey = y + eyOff;
+    if(ey < 12) ey = y + 13; if(ey > H-6) ey = y - 10;
+    return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4" fill="'+col+'" stroke="white" stroke-width="1.5"></circle>'
+      + '<text x="'+x.toFixed(1)+'" y="'+ey.toFixed(1)+'" font-size="12" text-anchor="middle">'+p.emoji+'</text>';
   }).join('');
   var xLabels = '';
   for(var dd=1; dd<=daysInMonth; dd+=5){
@@ -3993,7 +4003,7 @@ function _buildMonthlyGraphBody(moodMap, year, month, daysInMonth, moodScore, mo
     : '<div style="text-align:center;padding:24px;color:rgba(255,255,255,.55);font-size:14px;font-family:Jost,sans-serif">Sin registros este mes — empezá hoy 🌿</div>';
   // v1410: leyenda que explica cómo leer el gráfico
   var legendHtml = nReg ? '<div style="text-align:center;margin-top:8px;font-family:Jost,sans-serif;font-size:11px;color:rgba(180,220,195,.62);line-height:1.5;padding:0 6px">'
-    + '📈 <strong style="color:rgba(200,240,215,.85)">Cada punto es un día que registraste.</strong> Cuanto más arriba, mejor estuvo tu ánimo. El color va del verde (buen día) al rojo (día difícil). Los días sin registro no aparecen en la línea.'
+    + '📈 <strong style="color:rgba(200,240,215,.85)">Cada punto muestra la emoción de ese día.</strong> Cuanto más arriba, mejor estuvo tu ánimo. Los días sin registrar no aparecen en la línea.'
     + '</div>' : '';
   return '<div style="background:rgba(0,0,0,.22);border:1px solid rgba(116,198,157,.12);border-radius:16px;padding:14px 8px 6px;margin-top:14px">'+svg+'</div>'+legendHtml+distHtml+statsHtml;
 }
@@ -34815,7 +34825,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1416;
+    var _BUILT_V = 1417;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
