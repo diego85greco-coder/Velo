@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1467">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1467">
+  <link rel="stylesheet" href="premium.css?v=20260626-1468">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1468">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -236,7 +236,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
-  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1467</div>
+  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1468</div>
 </div>
 
 <!-- APP SHELL -->
@@ -813,12 +813,12 @@
                 <div class="land-plan-price">$0</div>
                 <div class="land-plan-period">para siempre</div>
                 <ul class="land-plan-features">
-                  <li>Diario emocional</li>
-                  <li>Vibes: momentos y comunidad</li>
-                  <li>Sala de Ayuda (4/día)</li>
-                  <li>Bitácora y Pregunta del día</li>
-                  <li>Acompañante IA</li>
-                  <li>4 sesiones guardián/día</li>
+                  <li>Diario, ánimos y resúmenes</li>
+                  <li>Vibes, Bitácora, Momentos y Pregunta del día</li>
+                  <li>Sala de Ayuda y guardianes (4/día)</li>
+                  <li>Guardá hasta 5 momentos</li>
+                  <li>Velo IA · 25 mensajes/día</li>
+                  <li class="land-feat-no">Sin grupos privados en Vibes</li>
                   <li class="land-feat-no">Sin crear Círculos de Paz</li>
                 </ul>
                 <button class="p-btn p-btn--secondary p-btn--lg p-btn--full" onclick="pSetType('user')">Empezar gratis</button>
@@ -830,12 +830,15 @@
                 <div class="land-plan-price">$2.99</div>
                 <div class="land-plan-period">por mes</div>
                 <ul class="land-plan-features">
-                  <li>Todo lo gratuito +</li>
-                  <li>Ilimitado en todo</li>
-                  <li>Crear Círculos de Paz</li>
+                  <li>Todo lo gratuito, y además:</li>
+                  <li>Velo IA sin límite</li>
+                  <li>Grupos privados en Vibes</li>
+                  <li>Guardá momentos sin límite</li>
+                  <li>Sin topes diarios</li>
+                  <li>Crear tus Círculos de Paz</li>
                   <li>Guardianes prioritarios ∞</li>
-                  <li>Insignia dorada ✨</li>
-                  <li>Prioridad en lista</li>
+                  <li>Perfil destacado ✨</li>
+                  <li>Insignia dorada</li>
                   <li>Apoyás la comunidad 💚</li>
                 </ul>
                 <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSetType('user')">Comenzar con Plus</button>
@@ -4450,8 +4453,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1467"></script>
-<script src="premium-redesign.js?v=20260626-1467"></script>
+<script src="premium.js?v=20260626-1468"></script>
+<script src="premium-redesign.js?v=20260626-1468"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

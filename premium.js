@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1467',
+      'Velo v1468',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -23850,36 +23850,26 @@ async function pRenderContacts(){
     }catch(e){}
   }
 
-  // Batch-fetch real usernames + names + avatars for all contacts
+  // v1467: perfiles (nombres/avatares) + filtro de bloqueos son independientes →
+  // en paralelo (antes eran 2 round-trips secuenciales antes del primer render).
   var usernameMap = {};
   var profileMap  = {};  // id → {name, av}
   if(sbClient){
-    var _allIds = favs.map(function(f){ return f.id; }).concat(favMeRows.map(function(r){ return r.user_id; })).filter(Boolean);
-    var _uniqIds = _allIds.filter(function(id,i){ return _allIds.indexOf(id)===i; });
-    if(_uniqIds.length){
-      try{
-        var profRes = await sbClient.from('profiles').select('id,username,nombre,avatar,motto').in('id', _uniqIds);
-        if(_navToken !== _tok) return;
-        (profRes.data||[]).forEach(function(p){
-          if(p.id && p.username){ usernameMap[p.id] = p.username; _uFill(p.id, p.username); }
-          if(p.id) profileMap[p.id] = { name: p.nombre || (p.username ? '@'+p.username : ''), av: p.avatar||'', motto: p.motto||'' };
-        });
-      }catch(e){}
+    var _allIds = favs.map(function(f){ return f.id; }).concat(favMeRows.map(function(r){ return r.user_id; })).filter(function(id,i,a){ return id&&a.indexOf(id)===i; });
+    if(_allIds.length){
+      var _profP = sbClient.from('profiles').select('id,username,nombre,avatar,motto').in('id', _allIds);
+      var _blP = (myId ? sbClient.from('user_blocks').select('blocker_id').eq('blocked_id', myId).in('blocker_id', _allIds) : Promise.resolve({data:[]}));
+      var _pr = {data:[]}, _br = {data:[]};
+      try{ var _both = await Promise.all([_profP, _blP]); _pr = _both[0]||{data:[]}; _br = _both[1]||{data:[]}; }catch(e){}
+      if(_navToken !== _tok) return;
+      (_pr.data||[]).forEach(function(p){
+        if(p.id && p.username){ usernameMap[p.id] = p.username; _uFill(p.id, p.username); }
+        if(p.id) profileMap[p.id] = { name: p.nombre || (p.username ? '@'+p.username : ''), av: p.avatar||'', motto: p.motto||'' };
+      });
+      var _hid = {}; (_br.data||[]).forEach(function(r){ _hid[r.blocker_id]=1; });
+      favs = favs.filter(function(f){ return !_hid[f.id]; });
+      favMeRows = favMeRows.filter(function(r){ return !_hid[r.user_id]; });
     }
-  }
-
-  // Cross-user block filter — silently hide contacts who have blocked me
-  if(sbClient && myId && (favs.length || favMeRows.length)){
-    try{
-      var _cIds = favs.map(function(f){ return f.id; }).concat(favMeRows.map(function(r){ return r.user_id; })).filter(function(id,i,a){ return id&&a.indexOf(id)===i; });
-      if(_cIds.length){
-        var blRes = await sbClient.from('user_blocks').select('blocker_id').eq('blocked_id', myId).in('blocker_id', _cIds);
-        if(_navToken !== _tok) return;
-        var _hid = {}; (blRes.data||[]).forEach(function(r){ _hid[r.blocker_id]=1; });
-        favs = favs.filter(function(f){ return !_hid[f.id]; });
-        favMeRows = favMeRows.filter(function(r){ return !_hid[r.user_id]; });
-      }
-    }catch(e){}
   }
 
   var unreadIds = {}; try{ unreadIds = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
@@ -35919,7 +35909,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1467;
+    var _BUILT_V = 1468;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
