@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1469',
+      'Velo v1470',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -26011,7 +26011,7 @@ function pShowPlusModal(){
     +'<div style="text-align:center;margin-bottom:18px">'
     +'<div style="font-size:36px;margin-bottom:8px">⭐</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:var(--ink);margin-bottom:6px">Suscripción a Velo Plus</div>'
-    +'<div style="font-size:15px;color:var(--ink4);line-height:1.5">Seguís teniendo <strong>todo lo del plan gratuito</strong> y sumás más contenido y beneficios, por <strong>$2.99 USD/mes</strong>.<br>Pago por PayPal · cancelás cuando quieras.</div>'
+    +'<div style="font-size:15px;color:var(--ink4);line-height:1.5">Seguís teniendo <strong>todo lo del plan gratuito</strong> y sumás más contenido y beneficios, por <strong>$2.99 USD</strong>.<br>Pago seguro por PayPal.</div>'
     +'</div>'
     +'<div style="margin-bottom:16px">'
     // ── Bloque GRATIS ──
@@ -26041,7 +26041,7 @@ function pShowPlusModal(){
     +'</ul></div>'
     +'</div>'
     +'<div style="background:var(--sage7);border-radius:12px;padding:12px 14px;margin-bottom:18px;border:1px solid var(--border2)">'
-    +'<p style="font-size:14px;color:var(--ink4);margin:0;line-height:1.6">💳 <strong>Pago seguro vía PayPal</strong> · $2.99 USD/mes · Se renueva automáticamente. Tu suscripción ayuda a mantener Velo gratuito y accesible para todas las personas que lo necesitan 💚</p>'
+    +'<p style="font-size:14px;color:var(--ink4);margin:0;line-height:1.6">💳 <strong>Pago seguro vía PayPal</strong> · $2.99 USD. Tu aporte ayuda a mantener Velo gratuito y accesible para todas las personas que lo necesitan 💚</p>'
     +'</div>'
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove();pOpenPayPalPlus()" style="background:linear-gradient(135deg,#C8A560,#A07840);margin-bottom:10px">⭐ Suscribirme por $2.99/mes · PayPal</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove()">Ahora no</button>'
@@ -26054,10 +26054,13 @@ function pOpenPayPalPlus(){
   var email = safeLS('get','velo_user_email');
   var returnUrl = window.location.origin + window.location.pathname + '?pp=plus';
   var cancelUrl = window.location.origin + window.location.pathname + '?pp=cancel';
-  // v1469: /subscribe daba 404 — no es un endpoint válido. El botón de
-  // suscripción clásico de PayPal usa webscr con cmd=_xclick-subscribe.
+  // v1470: PayPal discontinuó los botones de suscripción por URL
+  // (_xclick-subscribe → 404). Usamos un pago ÚNICO mensual con _xclick (el
+  // mismo cmd que sí funciona en donaciones). El usuario paga 1 mes de Plus y,
+  // por ahora, lo renueva manualmente. (Para auto-renovación real hace falta un
+  // botón "hosted" o la Subscriptions API — ver nota al equipo.)
   var baseURL = 'https://www.paypal.com/cgi-bin/webscr';
-  var params = '?cmd=_xclick-subscribe&business='+PAYPAL_EMAIL+'&item_name='+encodeURIComponent('Velo Plus — Membresía Mensual')+'&currency_code=USD&a3=2.99&p3=1&t3=M&src=1&sra=1&no_shipping=1';
+  var params = '?cmd=_xclick&business='+PAYPAL_EMAIL+'&item_name='+encodeURIComponent('Velo Plus')+'&currency_code=USD&amount=2.99&no_shipping=1';
   if(email) params += '&custom='+encodeURIComponent(email);
   params += '&return='+encodeURIComponent(returnUrl);
   params += '&cancel_return='+encodeURIComponent(cancelUrl);
@@ -26068,7 +26071,7 @@ function pOpenPayPalPlus(){
 
 function pOpenPayPalPro(){
   var baseURL = 'https://www.paypal.com/cgi-bin/webscr';
-  var params = '?cmd=_xclick-subscribe&business='+PAYPAL_EMAIL+'&item_name='+encodeURIComponent('Velo Profesional — Registro mensual')+'&currency_code=USD&a3=15&p3=1&t3=M&src=1&sra=1&no_shipping=1';
+  var params = '?cmd=_xclick&business='+PAYPAL_EMAIL+'&item_name='+encodeURIComponent('Velo Profesional — 1 mes')+'&currency_code=USD&amount=15&no_shipping=1';
   window.open(baseURL+params, '_blank');
   safeLS('set','velo_pp_pending', JSON.stringify({ type:'pro', ts:Date.now() }));
   pToast('🩺','Completá el pago y volvé para continuar tu registro 🌿');
@@ -35919,7 +35922,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1469;
+    var _BUILT_V = 1470;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
