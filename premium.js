@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1472',
+      'Velo v1473',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -26088,7 +26088,14 @@ function pOpenPayPalPlus(){
   // pasamos custom (email) y return para activar Plus al volver.
   var baseURL = 'https://www.paypal.com/cgi-bin/webscr';
   var params = '?cmd=_s-xclick&hosted_button_id=S2PWNCUMCNU9G';
-  if(email) params += '&custom='+encodeURIComponent(email);
+  // v1473: en `custom` mandamos el ID de Velo + el email, para que el webhook
+  // (paypal-ipn) mapee el pago a la cuenta EXACTA — aunque paguen con tarjeta o
+  // con el PayPal de otra persona. PayPal devuelve este `custom` en cada IPN.
+  var uid = safeLS('get','velo_user_id') || '';
+  var customVal = uid + (email ? ('|'+email) : '');
+  if(customVal) params += '&custom='+encodeURIComponent(customVal);
+  // El webhook recibe los avisos de pago/renovación/cancelación acá:
+  params += '&notify_url='+encodeURIComponent('https://yuravtnjvvztsxdtggod.supabase.co/functions/v1/paypal-ipn');
   params += '&return='+encodeURIComponent(returnUrl);
   params += '&cancel_return='+encodeURIComponent(cancelUrl);
   safeLS('set','velo_pp_pending', JSON.stringify({ type:'plus', ts:Date.now() }));
@@ -35949,7 +35956,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1472;
+    var _BUILT_V = 1473;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
