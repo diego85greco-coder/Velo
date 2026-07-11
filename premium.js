@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1454',
+      'Velo v1455',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -4137,15 +4137,13 @@ function _startHomeTour(){
     {sel:'#homeReflexionPart',                                e:'✨', t:'Reflexión del día',     d:'Una frase especial cada mañana — para empezar con calma, presencia y un poco de luz.'},
     {sel:'#homeMoodChip',                                     e:'💚',  t:'Registrá tus ánimos',   d:'Tomate 5 segundos para anotar cómo te sentís hoy. Velo crea tu mapa emocional con eso.'},
     {sel:'#tileGuardians, #hgGuardians',                      e:'🛡️', t:'Apoyo Guardianes',      d:'Personas reales disponibles para escucharte sin juicios — sin necesidad de ser profesionales.'},
+    {sel:'#tileHelp, #hgHelp',                                e:'💬',  t:'Sala de Ayuda',         d:'Publicá lo que te pasa y cualquier persona de la comunidad puede acompañarte en tiempo real.'},
     {sel:'#tileBitacora, #homeBitacoraWidget',                e:'📖',  t:'Bitácora',              d:'Historias anónimas de la comunidad. Leé, escribí y conectate con quienes vivieron lo mismo.'},
-    {sel:'#tileBottle, #hgBottle',                            e:'🌊',  t:'Al Mar',                d:'Escribí lo que sentís y lanzalo en una botella. Alguien la encontrará y te dejará amor.'},
-    {sel:'#tileCircles, #hgCircles',                          e:'☮️', t:'Círculos de Paz',       d:'Grupos temáticos: ansiedad, duelo, relaciones, soledad. Compartir es sanar.'},
-    {sel:'#tileHelp, #hgHelp',                                e:'🤝',  t:'Sala de Ayuda',         d:'Publicá lo que te pasa y cualquier persona de la comunidad puede acompañarte en tiempo real.'},
-    {sel:'#tileDiary, #hgDiary',                              e:'📔',  t:'Diario Íntimo',         d:'Tu espacio totalmente privado. Solo vos podés leer lo que escribís acá.'},
     {sel:'#tileNews, #hgNews',                                e:'🌞',  t:'Buenas Noticias',       d:'Historias reales que dan esperanza. Una dosis de luz cuando el mundo se siente pesado.'},
-    {sel:'#tileMusic, #hgMusic',                              e:'🎵',  t:'Música y Relajación',   d:'Tracks originales para acompañar tu calma, tu enojo, tu llanto. La música también abraza.'},
-    {sel:'#homeReflexionPart',                                e:'✨',  t:'Reflexión del día',     d:'Una frase especial cada mañana — para empezar con calma, presencia y un poco de luz.'},
-    {sel:'#homeDailyQ',                                       e:'💬',  t:'Pregunta del día',      d:'Respondé en anónimo o con tu perfil y descubrí qué sienten los demás hoy.'},
+    {sel:'#tileDiary, #hgDiary',                              e:'📔',  t:'Diario Íntimo',         d:'Tu espacio totalmente privado. Solo vos podés leer lo que escribís acá.'},
+    {sel:'#tileCircles, #hgCircles',                          e:'☮️', t:'Círculos de Paz',       d:'Grupos temáticos: ansiedad, duelo, relaciones, soledad. Compartir es sanar.'},
+    {sel:'#homeVibesCard, #homeMomentoSection',               e:'✨',  t:'Vibes',                 d:'Momentos del día en foto o video. Compartí el tuyo, reaccioná a los demás y guardá tus favoritos en el perfil.'},
+    {sel:'#homeDailyQ',                                       e:'💭',  t:'Pregunta del día',      d:'Respondé en anónimo o con tu perfil y descubrí qué sienten los demás hoy.'},
     {sel:'#homeAmbientPanel',                                 e:'🌧️', t:'Sonidos Ambientales',   d:'Lluvia, bosque, fuego, mar. Ponete uno de fondo mientras escribís o respirás.'},
     {sel:'#homeBreathingBtn',                                 e:'🌬️', t:'Ejercicio de respiración', d:'Un guiado de respiración 4-7-8 para calmar la ansiedad en 2 minutos. Simple y efectivo.'},
     {sel:'#quickBtn-search',                                  e:'🔍',  t:'Buscar usuarios',      d:'Encontrá a personas de la comunidad por nombre o @username. Empezá conexiones nuevas.'},
@@ -35756,7 +35754,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1454;
+    var _BUILT_V = 1455;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
