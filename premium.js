@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1463',
+      'Velo v1464',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20165,10 +20165,17 @@ async function pSearchUsers(query){
   try{
     var q = query.replace(/^@+/,'');
     var r = await sbClient.from('profiles')
-      .select('id,nombre,avatar,username,motto')
+      .select('id,nombre,avatar,username,motto,role')
       .or('username.ilike.'+q+'%,nombre.ilike.'+q+'%')
       .limit(12);
-    return r.data || [];
+    var list = r.data || [];
+    // v1464: "Perfil destacado" (Velo Plus) — los usuarios Plus aparecen primero.
+    list.sort(function(a,b){
+      var ap = a && a.role === 'plus' ? 0 : 1;
+      var bp = b && b.role === 'plus' ? 0 : 1;
+      return ap - bp;
+    });
+    return list;
   }catch(e){ return []; }
 }
 
@@ -20227,14 +20234,16 @@ function pUserSearchInput(val){
     el.innerHTML = users.map(function(u){
       var isMe = u.id === myId;
       var isFav = !isMe && pIsFav(u.id);
+      var isPlus = u.role === 'plus'; // v1464: perfil destacado
       var avHtml = _avInline(u.avatar||'🌿', 42);
       var nameTxt = _escHtml(u.nombre||'Usuario');
       var handleTxt = u.username ? '@'+_escHtml(u.username) : '';
       var mottoTxt = (u.motto||'').slice(0,60)+(u.motto&&u.motto.length>60?'…':'');
+      var plusChip = isPlus ? ' <span style="font-size:10px;background:linear-gradient(135deg,#e6c86a,#c8a03e);color:#3a2c00;padding:1px 7px;border-radius:8px;font-weight:800;vertical-align:middle;letter-spacing:.3px">⭐ Plus</span>' : '';
       return '<div class="usr-search-card" onclick="pOpenFoundUserProfile('+_jsAttr(u.id)+','+_jsAttr(u.nombre||'Usuario')+','+_jsAttr(u.avatar||'🌿')+')">'
-        +'<div class="usr-search-av">'+avHtml+'</div>'
+        +'<div class="usr-search-av"'+(isPlus?' style="box-shadow:0 0 0 2px #c8a03e,0 0 10px rgba(200,160,62,.45);border-radius:50%"':'')+'>'+avHtml+'</div>'
         +'<div class="usr-search-info">'
-        +'<div class="usr-search-name">'+nameTxt+(isMe?' <span style="font-size:12px;background:var(--sage7);color:var(--sage2);padding:1px 6px;border-radius:6px;font-weight:700;vertical-align:middle">yo</span>':'')+'</div>'
+        +'<div class="usr-search-name">'+nameTxt+plusChip+(isMe?' <span style="font-size:12px;background:var(--sage7);color:var(--sage2);padding:1px 6px;border-radius:6px;font-weight:700;vertical-align:middle">yo</span>':'')+'</div>'
         +(handleTxt?'<div class="usr-search-handle">'+handleTxt+'</div>':'')
         +(mottoTxt?'<div class="usr-search-motto">'+_escHtml(mottoTxt)+'</div>':'')
         +'</div>'
@@ -20541,6 +20550,7 @@ async function pRenderVibesHome(){
     }catch(e){}
     _vibesGroupCounts = counts;
     var myId = safeLS('get','velo_user_id')||'';
+    var _vibePlus = false; try{ _vibePlus = _isPremium(); }catch(_){}
     var official = _sortOfficialGroups(g.data.filter(function(x){ return x.kind === 'official'; }));
     var pub      = g.data.filter(function(x){ return x.kind === 'public'; });
     // Círculos privados donde soy owner (los CREÉ yo)
@@ -20555,7 +20565,9 @@ async function pRenderVibesHome(){
         if(kind === 'public'){
           emptyCta = '<button onclick="pCreateGroupPrompt(\'public\')" style="width:100%;padding:18px;background:linear-gradient(135deg,rgba(200,158,56,.22),rgba(180,140,40,.18));border:1.5px dashed rgba(200,158,56,.62);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.4">🌊 Creá el primer grupo público<br><span style="font-size:11px;font-weight:600;color:rgba(230,215,140,.75)">Un tema donde otros puedan sumar sus momentos</span></button>';
         } else if(kind === 'private'){
-          emptyCta = '<button onclick="pCreateGroupPrompt(\'private\')" style="width:100%;padding:18px;background:linear-gradient(135deg,rgba(155,120,220,.20),rgba(120,90,180,.18));border:1.5px dashed rgba(155,120,220,.62);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.4">🔮 Creá tu primer grupo privado<br><span style="font-size:11px;font-weight:600;color:rgba(215,200,255,.75)">Invitá a tus favoritos a compartir con vos</span></button>';
+          emptyCta = _vibePlus
+            ? '<button onclick="pCreateGroupPrompt(\'private\')" style="width:100%;padding:18px;background:linear-gradient(135deg,rgba(155,120,220,.20),rgba(120,90,180,.18));border:1.5px dashed rgba(155,120,220,.62);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.4">🔮 Creá tu primer grupo privado<br><span style="font-size:11px;font-weight:600;color:rgba(215,200,255,.75)">Invitá a tus favoritos a compartir con vos</span></button>'
+            : '<button onclick="pShowPlusModal()" style="width:100%;padding:18px;background:linear-gradient(135deg,rgba(200,165,100,.20),rgba(155,120,220,.16));border:1.5px solid rgba(200,165,100,.55);border-radius:14px;color:#fff;font-family:Jost,sans-serif;font-size:13px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;line-height:1.5">🔒 Grupos privados · Velo Plus ⭐<br><span style="font-size:11px;font-weight:600;color:rgba(235,220,180,.82)">Armá círculos privados e invitá a tus favoritos — desbloqueá con Plus</span></button>';
         } else {
           emptyCta = '<div style="padding:18px;background:rgba(255,255,255,.03);border:1px dashed rgba(180,220,195,.20);border-radius:14px;text-align:center;font-size:12.5px;color:rgba(200,230,215,.55);font-style:italic">Nada por ahora</div>';
         }
@@ -20570,7 +20582,9 @@ async function pRenderVibesHome(){
       if(kind === 'public'){
         newCta = '<button onclick="pCreateGroupPrompt(\'public\')" style="width:100%;padding:12px;background:rgba(200,158,56,.10);border:1.5px dashed rgba(200,158,56,.45);border-radius:14px;color:rgba(230,215,140,.85);font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;margin-top:4px">➕ Creá un nuevo grupo público</button>';
       } else if(kind === 'private'){
-        newCta = '<button onclick="pCreateGroupPrompt(\'private\')" style="width:100%;padding:12px;background:rgba(155,120,220,.10);border:1.5px dashed rgba(155,120,220,.45);border-radius:14px;color:rgba(215,200,255,.85);font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;margin-top:4px">➕ Creá un nuevo grupo privado</button>';
+        newCta = _vibePlus
+          ? '<button onclick="pCreateGroupPrompt(\'private\')" style="width:100%;padding:12px;background:rgba(155,120,220,.10);border:1.5px dashed rgba(155,120,220,.45);border-radius:14px;color:rgba(215,200,255,.85);font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;margin-top:4px">➕ Creá un nuevo grupo privado</button>'
+          : '<button onclick="pShowPlusModal()" style="width:100%;padding:12px;background:rgba(200,165,100,.12);border:1.5px solid rgba(200,165,100,.50);border-radius:14px;color:rgba(235,220,180,.92);font-family:Jost,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;text-align:center;letter-spacing:.3px;margin-top:4px">🔒 Nuevo grupo privado · Velo Plus ⭐</button>';
       }
       return '<div style="margin-bottom:22px">'
         + '<div style="font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(180,230,200,.72);margin-bottom:4px">'+titleTxt+'</div>'
@@ -20755,6 +20769,8 @@ function pCreateVibeMenu(){
 }
 // UI para crear grupo (título + emoji + para privados: checklist de favs)
 function pCreateGroupPrompt(kind){
+  // v1464: crear grupos privados en Vibes es una función de Velo Plus.
+  if(kind === 'private' && !_isPremium()){ try{ pShowPlusModal(); }catch(_){} return; }
   var ex = document.getElementById('vibeGroupCreateOv'); if(ex) ex.remove();
   var ov = document.createElement('div');
   ov.id = 'vibeGroupCreateOv';
@@ -21812,12 +21828,26 @@ function _vibeArchStyle(btn, on){
   var lbl = btn.querySelector('[data-vibe-arch-lbl]');
   if(lbl) lbl.textContent = on ? 'Guardado' : 'Guardar';
 }
+var VIBE_FREE_SAVE_LIMIT = 5; // momentos guardados gratis; Plus = ilimitado
 async function pVibeToggleArchive(vibeId, btn){
   _initSupabase();
   var myId = safeLS('get','velo_user_id')||'';
   if(!sbClient || !myId){ pToast('⚠️','Necesitás estar conectado'); return; }
   var wasArch = btn && btn.getAttribute('data-vibe-archived') === '1';
   var next = !wasArch;
+  // v1464: guardar en "Mis momentos guardados" es ilimitado con Velo Plus; en el
+  // plan gratuito hasta VIBE_FREE_SAVE_LIMIT. Si querés guardar uno más, ofrecemos Plus.
+  if(next && !_isPremium()){
+    try{
+      var cRes = await sbClient.from('vibes').select('id', { count:'exact', head:true }).eq('user_id', myId).eq('archived', true);
+      var savedCount = (cRes && typeof cRes.count === 'number') ? cRes.count : 0;
+      if(savedCount >= VIBE_FREE_SAVE_LIMIT){
+        pToast('🔒','Llegaste al máximo de '+VIBE_FREE_SAVE_LIMIT+' momentos guardados (plan gratuito)');
+        try{ setTimeout(pShowPlusModal, 600); }catch(_){}
+        return;
+      }
+    }catch(_){}
+  }
   _vibeArchStyle(btn, next); // feedback optimista
   try{
     try{ if(typeof _ensureSbSession === 'function') await _ensureSbSession(); }catch(_){}
@@ -25922,30 +25952,31 @@ function pShowPlusModal(){
     +'<div style="text-align:center;margin-bottom:18px">'
     +'<div style="font-size:36px;margin-bottom:8px">⭐</div>'
     +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;color:var(--ink);margin-bottom:6px">Suscripción a Velo Plus</div>'
-    +'<div style="font-size:15px;color:var(--ink4);line-height:1.5">Al suscribirte recibís acceso completo a todo Velo por <strong>$2.99 USD/mes</strong>.<br>El pago se procesa por PayPal. Cancelá cuando quieras.</div>'
+    +'<div style="font-size:15px;color:var(--ink4);line-height:1.5">Seguís teniendo <strong>todo lo del plan gratuito</strong> y sumás más contenido y beneficios, por <strong>$2.99 USD/mes</strong>.<br>Pago por PayPal · cancelás cuando quieras.</div>'
     +'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
-    +'<div style="background:var(--cream2);border-radius:14px;padding:13px;border:1.5px solid var(--border2)">'
-    +'<div style="font-size:13px;font-weight:700;color:var(--ink4);margin-bottom:10px;letter-spacing:.5px">ACTUAL · GRATUITO</div>'
-    +'<ul style="font-size:14px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
+    +'<div style="margin-bottom:16px">'
+    // ── Bloque GRATIS ──
+    +'<div style="background:var(--cream2);border-radius:14px;padding:14px 15px;border:1.5px solid var(--border2);margin-bottom:12px">'
+    +'<div style="font-size:12.5px;font-weight:800;color:var(--ink4);margin-bottom:10px;letter-spacing:1px">🌿 GRATIS · PARA SIEMPRE</div>'
+    +'<ul style="font-size:14px;color:var(--ink3);line-height:1.9;list-style:none;padding:0;margin:0">'
     +'<li>✅ Diario, ánimos y resúmenes</li>'
-    +'<li>✅ Vibes, Bitácora y Momentos</li>'
-    +'<li>✅ Pregunta del día</li>'
-    +'<li>✅ Sala de Ayuda (4/día)</li>'
-    +'<li>✅ 4 sesiones guardián/día</li>'
-    +'<li style="color:var(--ink5)">❌ Crear Círculos de Paz</li>'
-    +'<li style="color:var(--ink5)">❌ Guardianes prioritarios</li>'
-    +'<li style="color:var(--ink5)">❌ Insignia dorada</li>'
+    +'<li>✅ Vibes, Bitácora, Momentos y Pregunta del día</li>'
+    +'<li>✅ Sala de Ayuda y guardianes (4 por día)</li>'
+    +'<li>✅ Guardá hasta 5 momentos en tu historial</li>'
     +'</ul></div>'
-    +'<div style="background:linear-gradient(135deg,rgba(200,165,100,.18),rgba(200,165,100,.08));border-radius:14px;padding:13px;border:1.5px solid rgba(200,165,100,.4)">'
-    +'<div style="font-size:13px;font-weight:700;color:#C8A560;margin-bottom:10px;letter-spacing:.5px">CON PLUS · $2.99/mes</div>'
-    +'<ul style="font-size:14px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
-    +'<li>✅ Todo lo gratuito</li>'
-    +'<li>✅ Sin límites diarios</li>'
-    +'<li>✅ Crear tus Círculos de Paz</li>'
-    +'<li>✅ Guardianes prioritarios ∞</li>'
-    +'<li style="color:#C8A560">✅ Insignia dorada ✨</li>'
-    +'<li style="color:var(--sage2)">✅ Apoyás la comunidad 💚</li>'
+    // ── Bloque PLUS (todo lo gratis + extras) ──
+    +'<div style="background:linear-gradient(135deg,rgba(200,165,100,.22),rgba(200,165,100,.07));border-radius:14px;padding:14px 15px;border:1.5px solid rgba(200,165,100,.55);box-shadow:0 4px 18px rgba(200,165,100,.12)">'
+    +'<div style="font-size:12.5px;font-weight:800;color:#C8A560;margin-bottom:6px;letter-spacing:1px">⭐ CON PLUS · $2.99/MES</div>'
+    +'<div style="font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:11px">Todo lo del plan gratuito, y además:</div>'
+    +'<ul style="font-size:14px;color:var(--ink3);line-height:1.9;list-style:none;padding:0;margin:0">'
+    +'<li>✨ Grupos privados en Vibes</li>'
+    +'<li>✨ Guardá momentos <strong>sin límite</strong></li>'
+    +'<li>✨ <strong>Sin topes diarios</strong> en Sala de Ayuda y guardianes</li>'
+    +'<li>✨ Crear tus propios Círculos de Paz</li>'
+    +'<li>✨ Guardianes prioritarios ∞</li>'
+    +'<li>✨ Perfil destacado en la comunidad</li>'
+    +'<li>✨ Insignia dorada</li>'
+    +'<li>💚 Apoyás a la comunidad y mantenés Velo gratis para otros</li>'
     +'</ul></div>'
     +'</div>'
     +'<div style="background:var(--sage7);border-radius:12px;padding:12px 14px;margin-bottom:18px;border:1px solid var(--border2)">'
@@ -35825,7 +35856,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1463;
+    var _BUILT_V = 1464;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
