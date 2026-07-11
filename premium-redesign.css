@@ -15628,3 +15628,17 @@ body:not(.r-dark) .msg-actions-popup .msg-reply-btn {
   }
   #vibeInstantOv .vibe-card { max-width: 540px; margin-left: auto; margin-right: auto; }
 }
+
+/* v1449 — Botón "Responder" de las reseñas recibidas: en modo claro el verde
+   claro no se leía sobre la tarjeta blanca. Forzamos verde oscuro en light y
+   claro en dark. */
+body:not(.r-dark) .review-reply-btn {
+  color: #1B5E3A !important;
+  background: rgba(116,198,157,.20) !important;
+  border-color: rgba(60,140,90,.55) !important;
+}
+body.r-dark .review-reply-btn {
+  color: #bff0d4 !important;
+  background: rgba(116,198,157,.20) !important;
+  border-color: rgba(116,198,157,.60) !important;
+}
