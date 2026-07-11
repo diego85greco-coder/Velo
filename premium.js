@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1449',
+      'Velo v1450',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -6929,8 +6929,10 @@ async function _fetchDailyFeed(qId){
         .catch(function(){});
     }
   }catch(e){ _renderDailyFeed([]); }
-  // Subscribe to real-time new responses (one subscription per session)
-  if(!_dqRtCh && sbClient){
+  // Subscribe to real-time new responses.
+  // v1450: SIEMPRE re-suscribir (canal viejo/caído dejaba de traer respuestas nuevas en vivo).
+  if(_dqRtCh){ _sbUnsub(_dqRtCh); _dqRtCh = null; }
+  if(sbClient){
     var _dqToday = today;
     _dqRtCh = _sbSub('velo:dq:'+_dqToday, 'daily_responses', function(payload){
       // Handle INSERT (payload.new), UPDATE (payload.new) and DELETE (payload.old)
@@ -6943,7 +6945,9 @@ async function _fetchDailyFeed(qId){
     });
   }
   // Subscribe to real-time reaction counts — updates cards surgically, no carousel rebuild
-  if(!_dqReactRtCh && sbClient){
+  // v1450: SIEMPRE re-suscribir (canal viejo/caído dejaba de traer reacciones nuevas en vivo).
+  if(_dqReactRtCh){ _sbUnsub(_dqReactRtCh); _dqReactRtCh = null; }
+  if(sbClient){
     _dqReactRtCh = _sbSub('velo:dq-react', 'dq_reactions', function(payload){
       var myUid = safeLS('get','velo_user_id')||'';
       var ev = payload.eventType; var row = payload.new||{}; var del = payload.old||{};
@@ -17255,12 +17259,12 @@ function pRenderCircles(){
   _initSupabase();
   if(!sbClient) return;
 
-  // Subscribe once to circle_members for live count updates
-  if(!_circleMembersCh){
-    _circleMembersCh = _sbSub('velo:circle_members', 'circle_members', function(){
-      _refreshCircleMemberCounts();
-    });
-  }
+  // Subscribe to circle_members for live count updates.
+  // v1450: SIEMPRE re-suscribir (canal viejo/caído dejaba de traer altas/bajas en vivo).
+  if(_circleMembersCh){ _sbUnsub(_circleMembersCh); _circleMembersCh = null; }
+  _circleMembersCh = _sbSub('velo:circle_members', 'circle_members', function(){
+    _refreshCircleMemberCounts();
+  });
 
   // Load user-created circles from Supabase (non-official)
   sbClient.from('circles').select('*').eq('official', false).order('created_at',{ascending:false}).limit(50)
@@ -34007,7 +34011,10 @@ function _onPageEnter(id){
     case 'help-chat':   /* initialized by pAccompanyHelp */ break;
     case 'bottle':
       _initSupabase();
-      if(sbClient && !_bottleRtCh) _bottleRtCh = _sbSub('velo:bottles', 'bottles', function(){ pRenderBottle(); });
+      // v1450: SIEMPRE re-suscribir — un canal viejo/caído dejaba de traer
+      // botellas nuevas en vivo (solo aparecían al refrescar).
+      if(_bottleRtCh){ _sbUnsub(_bottleRtCh); _bottleRtCh = null; }
+      if(sbClient) _bottleRtCh = _sbSub('velo:bottles', 'bottles', function(){ pRenderBottle(); });
       pRenderBottle();
       try{ setTimeout(function(){ _maybeShowFeatureHints('bottle'); }, 1400); }catch(e){}
       break;
@@ -34022,7 +34029,9 @@ function _onPageEnter(id){
     case 'feed':        _renderCircleMessages(); break;
     case 'happy':
       _initSupabase();
-      if(sbClient && !_happyRtCh) _happyRtCh = _sbSub('velo:happy', 'happy_posts', function(){ pRenderHappy(); });
+      // v1450: SIEMPRE re-suscribir (canal viejo/caído dejaba de traer posts en vivo).
+      if(_happyRtCh){ _sbUnsub(_happyRtCh); _happyRtCh = null; }
+      if(sbClient) _happyRtCh = _sbSub('velo:happy', 'happy_posts', function(){ pRenderHappy(); });
       pRenderHappy();
       break;
     case 'profile':
@@ -34571,7 +34580,9 @@ function _btApplyFilters(){
 
 function pInitBitacora(){
   _initSupabase();
-  if(sbClient && !_btRtCh){
+  // v1450: SIEMPRE re-suscribir (canal viejo/caído dejaba de traer posts nuevos en vivo).
+  if(_btRtCh){ _sbUnsub(_btRtCh); _btRtCh = null; }
+  if(sbClient){
     _btRtCh = _sbSub('velo:bitacora','bitacora_posts',function(){ _btLoadTab(_btCurrentTab,true); });
   }
   // Load globally-hidden post IDs (reported but not yet resolved)
@@ -35726,7 +35737,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1449;
+    var _BUILT_V = 1450;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
