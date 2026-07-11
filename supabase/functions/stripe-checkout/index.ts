@@ -26,31 +26,35 @@ Deno.serve(async (req) => {
       })
     }
 
-    const label = sessionType === 'solidaria'
-      ? 'Sesión solidaria · Velo'
-      : `Sesión con ${proName || 'profesional'} · Velo`
+    const isDonation = sessionType === 'donation'
+    const label = isDonation
+      ? 'Apoyo a Velo 💚'
+      : sessionType === 'solidaria'
+        ? 'Sesión solidaria · Velo'
+        : `Sesión con ${proName || 'profesional'} · Velo`
+    const desc = isDonation
+      ? 'Aporte voluntario para mantener Velo gratuito y accesible para todos.'
+      : 'El pago queda retenido hasta confirmar la sesión. Velo retiene 20% de comisión.'
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
         price_data: {
           currency: 'usd',
-          product_data: {
-            name: label,
-            description: 'El pago queda retenido hasta confirmar la sesión. Velo retiene 20% de comisión.',
-          },
+          product_data: { name: label, description: desc },
           unit_amount: Math.round(parseFloat(amount) * 100),
         },
         quantity: 1,
       }],
       mode: 'payment',
+      submit_type: isDonation ? 'donate' : 'pay',
       success_url: (returnUrl || 'https://velo.app') + '?stripe=ok&session_id={CHECKOUT_SESSION_ID}',
       cancel_url:  (cancelUrl  || 'https://velo.app') + '?stripe=cancel',
       metadata: {
         proName:     proName     || '',
         sessionType: sessionType || 'paid',
         platform:    'velo',
-        commission:  '20',
+        commission:  isDonation ? '0' : '20',
       },
     })
 

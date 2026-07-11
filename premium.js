@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1477',
+      'Velo v1478',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -25923,7 +25923,48 @@ function pSelAmt(el, amt){
 
 function pDonate(){
   var amt = _selectedDonAmt || '10';
-  pOpenPayPalDonate(amt, false, 'Apoyo a Velo');
+  pStripeDonate(amt);
+}
+
+// v1478: aportes con Stripe Checkout — tarjeta de cualquier país, sin cuenta.
+// Reutiliza la Edge Function stripe-checkout (ya usada para sesiones pro).
+async function pStripeDonate(amtUSD){
+  var amt = parseFloat(amtUSD);
+  if(isNaN(amt) || amt < 1){ pToast('⚠️','Monto inválido'); return; }
+  try{ pToast('💳','Preparando el pago seguro…'); }catch(_){}
+  try{
+    var baseUrl = window.location.origin + window.location.pathname;
+    var resp = await fetch(SUPABASE_URL + '/functions/v1/stripe-checkout', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPABASE_ANON, 'Authorization':'Bearer '+SUPABASE_ANON },
+      body: JSON.stringify({ amount: amt, sessionType:'donation', returnUrl: baseUrl, cancelUrl: baseUrl })
+    });
+    var data = await resp.json().catch(function(){ return {}; });
+    if(data && data.url){
+      safeLS('set','velo_stripe_pending', JSON.stringify({ amt: amt, type:'donation', ts:Date.now() }));
+      window.location.href = data.url;
+    } else {
+      pToast('⚠️', (data && data.error) || 'No se pudo iniciar el pago');
+    }
+  }catch(e){ pToast('⚠️','Error de conexión, probá de nuevo'); }
+}
+
+function _checkStripeReturn(){
+  try{
+    var params = new URLSearchParams(window.location.search);
+    var status = params.get('stripe');
+    if(!status) return;
+    var pending = null; try{ pending = JSON.parse(safeLS('get','velo_stripe_pending')||'null'); }catch(e){}
+    if(status === 'ok'){
+      pToast('💚','¡Gracias por apoyar a Velo! 🌿');
+      try{ if(pending && pending.amt) _recordDonation('donation', pending.amt); }catch(_){}
+      safeLS('del','velo_stripe_pending');
+    } else if(status === 'cancel'){
+      pToast('↩️','Pago cancelado. No se te cobró nada.');
+      safeLS('del','velo_stripe_pending');
+    }
+    try{ history.replaceState(null,'',window.location.pathname); }catch(e){}
+  }catch(e){}
 }
 
 function pSetDonateAmt(n){
@@ -25947,9 +25988,9 @@ function pDonateCTA(){
       return;
     }
     if(errEl) errEl.style.display = 'none';
-    pOpenPayPalDonate(amt.toFixed(2), false, 'Apoyo a Velo');
+    pStripeDonate(amt.toFixed(2));
   } else {
-    pOpenPayPalDonate('10', false, 'Apoyo a Velo');
+    pStripeDonate('10');
   }
 }
 
@@ -36030,10 +36071,11 @@ window.addEventListener('load', function(){
   _initSupabase();
   _checkStripeReturn();
   _checkPayPalReturn();
+  try{ _checkStripeReturn(); }catch(_){}
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1477;
+    var _BUILT_V = 1478;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
