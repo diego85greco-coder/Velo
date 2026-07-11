@@ -7332,7 +7332,8 @@ function _renderDailyFeed(responses){
     return r.user_id !== myUid2 && _dqHidden.indexOf(String(r.id)) === -1 && !_isBlocked(r.user_id);
   });
   if(!others.length){
-    feedEl.innerHTML = '<div style="text-align:center;padding:12px 0;font-size:14px;color:rgba(255,255,255,.30);font-family:Jost,sans-serif;font-style:italic">La comunidad aún no compartió hoy 🌱</div>';
+    var _dqEmCl=!document.body.classList.contains('r-dark')?'rgba(40,75,55,.55)':'rgba(255,255,255,.30)';
+    feedEl.innerHTML = '<div style="text-align:center;padding:12px 0;font-size:14px;color:'+_dqEmCl+';font-family:Jost,sans-serif;font-style:italic">La comunidad aún no compartió hoy 🌱</div>';
     if(btnEl) btnEl.innerHTML = '';
     return;
   }
@@ -33072,7 +33073,8 @@ async function _loadHomeHappyFeed(){
       +'</div></div>';
   }
 
-  var _emptyState='<div style="text-align:center;padding:22px 8px"><span style="font-size:32px;display:block;margin-bottom:8px">🌞</span><div style="font-size:14px;color:rgba(200,158,56,.5);line-height:1.5">¡Sé el primero en iluminar el muro hoy!</div></div>';
+  var _hwEmCl=!document.body.classList.contains('r-dark')?'rgba(160,110,20,.75)':'rgba(200,158,56,.5)';
+  var _emptyState='<div style="text-align:center;padding:22px 8px"><span style="font-size:32px;display:block;margin-bottom:8px">🌞</span><div style="font-size:14px;color:'+_hwEmCl+';line-height:1.5">¡Sé el primero en iluminar el muro hoy!</div></div>';
 
   // Show cached posts immediately while refreshing
   var _hwCutoff = Date.now() - 24*60*60*1000;
@@ -34569,7 +34571,8 @@ function _btApplyFilters(){
       return aTitle-bTitle;
     });
     if(!matched.length){
-      feed.innerHTML='<div style="text-align:center;padding:50px 0"><div style="font-size:15px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;line-height:1.5">Sin resultados para ese filtro.</div></div>';
+      var _emCl=!document.body.classList.contains('r-dark')?'rgba(40,75,55,.60)':'rgba(180,200,190,.50)';
+      feed.innerHTML='<div style="text-align:center;padding:50px 0"><div style="font-size:15px;color:'+_emCl+';font-family:Jost,sans-serif;line-height:1.5">Sin resultados para ese filtro.</div></div>';
       return;
     }
     feed.innerHTML=matched.map(function(p,i){ return _btCard(p,i,uid); }).join('');
@@ -34608,6 +34611,15 @@ function _btRenderShell(){
   var _srtBg=isLight?'rgba(50,80,60,.10)':'rgba(255,255,255,.07)';
   var _srtBd=isLight?'rgba(50,80,60,.28)':'rgba(255,255,255,.14)';
   var _srtCl=isLight?'rgba(30,60,40,.70)':'rgba(200,210,205,.65)';
+  // v1450: textos de página legibles en modo claro (antes hardcodeados en sage-gris claro → invisibles sobre fondo blanco)
+  var _subCl=isLight?'rgba(40,75,55,.62)':'rgba(180,200,190,.55)';
+  var _tdBg=isLight?'rgba(40,90,64,.06)':'rgba(255,255,255,.04)';
+  var _tdBd=isLight?'rgba(40,90,64,.16)':'rgba(255,255,255,.07)';
+  var _tdCl=isLight?'rgba(35,70,52,.80)':'rgba(180,210,195,.70)';
+  var _inBg=isLight?'rgba(40,90,64,.05)':'rgba(255,255,255,.06)';
+  var _inBd=isLight?'rgba(40,90,64,.22)':'rgba(255,255,255,.10)';
+  var _inCl=isLight?'rgba(28,46,34,.90)':'rgba(255,255,255,.85)';
+  var _inCaret=isLight?'rgba(40,90,64,.70)':'rgba(255,255,255,.70)';
   inner.innerHTML = ''
     +'<div class="p-page-hdr">'
       +'<div class="p-page-hdr-back">'
@@ -34619,7 +34631,7 @@ function _btRenderShell(){
         +'<button id="btSortBtn" onclick="_btToggleSort()" style="padding:7px 15px;border-radius:20px;border:1.5px solid '+_srtBd+';background:'+_srtBg+';color:'+_srtCl+';font-size:14px;font-weight:800;font-family:Jost,sans-serif;cursor:pointer;white-space:nowrap;transition:all .2s;text-align:center;letter-spacing:.3px">🕐 Recientes</button>'
       +'</div>'
     +'</div>'
-    +'<p style="font-size:14px;color:rgba(180,200,190,.55);font-family:Jost,sans-serif;line-height:1.5;margin:0 0 14px;font-style:italic">Historias reales · desde el corazón · para quien necesita leerlas</p>'
+    +'<p style="font-size:14px;color:'+_subCl+';font-family:Jost,sans-serif;line-height:1.5;margin:0 0 14px;font-style:italic">Historias reales · desde el corazón · para quien necesita leerlas</p>'
     +'<div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;scrollbar-width:none">'
       +_btTabBtn('apoyo','🫂 Apoyo')
       +_btTabBtn('superacion','⭐ Superación')
@@ -34627,10 +34639,10 @@ function _btRenderShell(){
       +'<button id="btTab-guardados" onclick="_btSwitchTab(\'guardados\')" style="flex-shrink:0;padding:9px 12px;border-radius:14px;border:1.5px solid rgba(180,150,255,.55);background:rgba(60,30,90,.92);color:rgba(210,180,255,.95);font-size:13px;font-weight:700;font-family:Jost,sans-serif;cursor:pointer;opacity:.50;transition:opacity .2s,box-shadow .2s,transform .2s;white-space:nowrap">📌 Guardados</button>'
       +_btTabBtn('mio','📝 Mis posts')
     +'</div>'
-    +'<div id="btTabDesc" style="font-size:13px;font-family:Jost,sans-serif;line-height:1.5;margin-bottom:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(180,210,195,.70)"></div>'
+    +'<div id="btTabDesc" style="font-size:13px;font-family:Jost,sans-serif;line-height:1.5;margin-bottom:10px;padding:10px 12px;border-radius:12px;background:'+_tdBg+';border:1px solid '+_tdBd+';color:'+_tdCl+'"></div>'
     +'<div id="btTemaFilter" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>'
     +'<div style="margin-bottom:12px">'
-      +'<input id="btSearch" oninput="_btApplyFilters()" placeholder="🔍 Buscar en Bitácora..." maxlength="100" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.10);border-radius:14px;padding:10px 14px;color:rgba(255,255,255,.85);font-size:14px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;caret-color:rgba(255,255,255,.70)">'
+      +'<input id="btSearch" oninput="_btApplyFilters()" placeholder="🔍 Buscar en Bitácora..." maxlength="100" style="width:100%;background:'+_inBg+';border:1.5px solid '+_inBd+';border-radius:14px;padding:10px 14px;color:'+_inCl+';font-size:14px;font-family:Jost,sans-serif;box-sizing:border-box;outline:none;caret-color:'+_inCaret+'">'
     +'</div>'
     +'<div id="btFeed" style="display:flex;flex-direction:column;gap:12px"></div>';
 }
@@ -34688,7 +34700,8 @@ function _btLoadTab(type,refresh){
   if(_btPosts[type]&&_btPosts[type].length){
     if(_btCurrentTab===type) _btRenderFeed(type);
   } else if(!_btLoading&&feed&&_btCurrentTab===type){
-    feed.innerHTML='<div style="text-align:center;padding:40px 0;color:rgba(180,200,190,.40);font-family:Jost,sans-serif;font-size:15px">Cargando...</div>';
+    var _ldCl=!document.body.classList.contains('r-dark')?'rgba(40,75,55,.50)':'rgba(180,200,190,.40)';
+    feed.innerHTML='<div style="text-align:center;padding:40px 0;color:'+_ldCl+';font-family:Jost,sans-serif;font-size:15px">Cargando...</div>';
   }
   if(_btLoading){ return; }
   _btLoading=true;
@@ -34774,9 +34787,10 @@ function _btRenderFeed(type){
   }
   if(!posts.length){
     var c0=_btColors[type]||_btColors.apoyo;
+    var _esCl=!document.body.classList.contains('r-dark')?'rgba(40,75,55,.60)':'rgba(180,200,190,.50)';
     feed.innerHTML='<div style="text-align:center;padding:50px 0">'
       +'<div style="font-size:36px;margin-bottom:12px">'+c0.emoji+'</div>'
-      +'<div style="font-size:15px;color:rgba(180,200,190,.50);font-family:Jost,sans-serif;line-height:1.5">'+(_btSearchQ||_btTemaFilter?'Sin resultados para ese filtro.':'Aún no hay historias aquí.<br>¡Sé el primero en compartir!')+'</div>'
+      +'<div style="font-size:15px;color:'+_esCl+';font-family:Jost,sans-serif;line-height:1.5">'+(_btSearchQ||_btTemaFilter?'Sin resultados para ese filtro.':'Aún no hay historias aquí.<br>¡Sé el primero en compartir!')+'</div>'
       +(!_btSearchQ&&!_btTemaFilter?'<button onclick="_btOpenCompose(\''+type+'\')" style="margin-top:16px;background:rgba(116,198,157,.10);border:1.5px solid rgba(116,198,157,.30);color:rgba(175,245,210,.88);font-size:14px;font-weight:700;font-family:Jost,sans-serif;border-radius:20px;padding:8px 20px;cursor:pointer">✦ Publicar</button>':'')
       +'</div>';
     return;
@@ -35677,7 +35691,8 @@ function _renderHomeBitacoraWidget(){
   posts.sort(function(a,b){ return (b.created_at||'')>(a.created_at||'')?1:-1; });
   posts=posts.slice(0,3);
   if(!posts.length){
-    el.innerHTML='<div style="text-align:center;padding:10px 0;color:rgba(180,200,190,.35);font-size:14px;font-family:Jost,sans-serif;font-style:italic">Aún no hay historias publicadas. ¡Sé el primero!</div>';
+    var _hbCl=!document.body.classList.contains('r-dark')?'rgba(40,75,55,.55)':'rgba(180,200,190,.35)';
+    el.innerHTML='<div style="text-align:center;padding:10px 0;color:'+_hbCl+';font-size:14px;font-family:Jost,sans-serif;font-style:italic">Aún no hay historias publicadas. ¡Sé el primero!</div>';
     if(sbClient){
       sbClient.from('bitacora_posts_full').select('*').order('created_at',{ascending:false}).limit(3).then(function(res){
         if(!res.data||!res.data.length) return;
