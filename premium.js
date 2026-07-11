@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1446',
+      'Velo v1447',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -22370,8 +22370,18 @@ function pVibeActivityFilter(reactionKey){
     var emoji = reactionMeta ? reactionMeta.emoji : '💚';
     var label = reactionMeta ? reactionMeta.label : 'reaccionó';
     var when = _timeAgoDM ? _timeAgoDM(new Date(r.created_at).getTime()) : '';
-    var momentTxt = vibe.caption ? 'En tu momento: "'+vibe.caption.slice(0,55)+(vibe.caption.length>55?'…':'')+'"' : 'En uno de tus momentos que compartiste';
-    return '<div style="display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--border)"><span style="font-size:24px;flex-shrink:0">'+_avInline(profile.av||'🧑',36)+'</span><div style="flex:1;min-width:0;font-family:Jost,sans-serif;font-size:13px;color:var(--ink2);line-height:1.45"><div><span style="font-weight:800">'+_escHtml(profile.name)+'</span> reaccionó con <span style="font-weight:800;white-space:nowrap">'+emoji+' '+_escHtml(label)+'</span></div><div style="color:var(--ink4);font-size:12px;margin-top:3px">'+_escHtml(momentTxt)+'</div></div><div style="font-size:10.5px;color:var(--ink5);flex-shrink:0;font-family:Jost,sans-serif;font-weight:700">'+when+'</div></div>';
+    var momentTxt = vibe.caption ? '"'+vibe.caption.slice(0,50)+(vibe.caption.length>50?'…':'')+'"' : 'Un momento que compartiste';
+    // Miniatura del momento (foto o video) para reconocerlo de un vistazo.
+    var mu = vibe.media_url || '';
+    var thumb;
+    if(mu && _vibeIsVideoUrl(mu)){
+      thumb = '<div onclick="_openVibeFromNotif(\''+_escHtml(r.vibe_id)+'\')" style="width:46px;height:46px;border-radius:9px;flex-shrink:0;background:#000;overflow:hidden;position:relative;cursor:pointer;border:1px solid var(--border)"><video src="'+_escHtml(mu)+'#t=0.1" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;pointer-events:none"></video><span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:13px;text-shadow:0 1px 3px rgba(0,0,0,.7)">▶</span></div>';
+    } else if(mu){
+      thumb = '<img onclick="_openVibeFromNotif(\''+_escHtml(r.vibe_id)+'\')" src="'+_escHtml(mu)+'" style="width:46px;height:46px;border-radius:9px;object-fit:cover;flex-shrink:0;cursor:pointer;background:rgba(0,0,0,.15);border:1px solid var(--border)">';
+    } else {
+      thumb = '<div style="width:46px;height:46px;border-radius:9px;flex-shrink:0;background:var(--sage7);display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid var(--border)">🌊</div>';
+    }
+    return '<div style="display:flex;align-items:center;gap:11px;padding:11px 4px;border-bottom:1px solid var(--border)"><span style="font-size:24px;flex-shrink:0">'+_avInline(profile.av||'🧑',34)+'</span><div style="flex:1;min-width:0;font-family:Jost,sans-serif;font-size:13px;color:var(--ink2);line-height:1.45"><div><span style="font-weight:800">'+_escHtml(profile.name)+'</span> reaccionó con <span style="font-weight:800;white-space:nowrap">'+emoji+' '+_escHtml(label)+'</span></div><div style="color:var(--ink4);font-size:11.5px;margin-top:2px">En tu momento: <span style="font-style:italic">'+_escHtml(momentTxt)+'</span> · '+when+'</div></div>'+thumb+'</div>';
   }).join('');
 }
 
@@ -35708,7 +35718,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1446;
+    var _BUILT_V = 1447;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
