@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1468',
+      'Velo v1469',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -25948,12 +25948,20 @@ function pDonateCTA(){
 }
 
 function pOpenPayPalDonate(amount, monthly, description){
+  // v1469: el flujo /donate/ exige que la cuenta esté inscripta en "PayPal
+  // Donations" (por eso daba "esta organización no puede aceptar donativos").
+  // Usamos el endpoint clásico webscr, que funciona con cualquier cuenta que
+  // reciba pagos: _xclick (único) o _xclick-subscribe (mensual).
   var returnUrl = window.location.origin + window.location.pathname + '?pp=donation';
-  var baseURL = 'https://www.paypal.com/donate/?business='+PAYPAL_EMAIL;
-  var params = '&currency_code=USD&amount='+amount;
+  var name = encodeURIComponent(description || 'Apoyo a Velo 💚');
+  var baseURL = 'https://www.paypal.com/cgi-bin/webscr';
+  var params;
+  if(monthly){
+    params = '?cmd=_xclick-subscribe&business='+PAYPAL_EMAIL+'&item_name='+name+'&currency_code=USD&a3='+amount+'&p3=1&t3=M&src=1&sra=1&no_shipping=1';
+  } else {
+    params = '?cmd=_xclick&business='+PAYPAL_EMAIL+'&item_name='+name+'&currency_code=USD&amount='+amount+'&no_shipping=1';
+  }
   params += '&return='+encodeURIComponent(returnUrl);
-  if(description) params += '&item_name='+encodeURIComponent(description);
-  if(monthly) params += '&no_recurring=0';
   safeLS('set','velo_pp_pending', JSON.stringify({ type:'donation', amount:amount, ts:Date.now() }));
   window.open(baseURL+params, '_blank');
 }
@@ -26046,8 +26054,10 @@ function pOpenPayPalPlus(){
   var email = safeLS('get','velo_user_email');
   var returnUrl = window.location.origin + window.location.pathname + '?pp=plus';
   var cancelUrl = window.location.origin + window.location.pathname + '?pp=cancel';
-  var baseURL = 'https://www.paypal.com/subscribe';
-  var params = '?business='+PAYPAL_EMAIL+'&item_name='+encodeURIComponent('Velo Plus — Membresía Mensual')+'&currency_code=USD&a3=2.99&p3=1&t3=M&no_shipping=1';
+  // v1469: /subscribe daba 404 — no es un endpoint válido. El botón de
+  // suscripción clásico de PayPal usa webscr con cmd=_xclick-subscribe.
+  var baseURL = 'https://www.paypal.com/cgi-bin/webscr';
+  var params = '?cmd=_xclick-subscribe&business='+PAYPAL_EMAIL+'&item_name='+encodeURIComponent('Velo Plus — Membresía Mensual')+'&currency_code=USD&a3=2.99&p3=1&t3=M&src=1&sra=1&no_shipping=1';
   if(email) params += '&custom='+encodeURIComponent(email);
   params += '&return='+encodeURIComponent(returnUrl);
   params += '&cancel_return='+encodeURIComponent(cancelUrl);
@@ -26057,8 +26067,8 @@ function pOpenPayPalPlus(){
 }
 
 function pOpenPayPalPro(){
-  var baseURL = 'https://www.paypal.com/subscribe';
-  var params = '?business='+PAYPAL_EMAIL+'&item_name='+encodeURIComponent('Velo Profesional — Registro mensual')+'&currency_code=USD&a3=15&p3=1&t3=M&no_shipping=1';
+  var baseURL = 'https://www.paypal.com/cgi-bin/webscr';
+  var params = '?cmd=_xclick-subscribe&business='+PAYPAL_EMAIL+'&item_name='+encodeURIComponent('Velo Profesional — Registro mensual')+'&currency_code=USD&a3=15&p3=1&t3=M&src=1&sra=1&no_shipping=1';
   window.open(baseURL+params, '_blank');
   safeLS('set','velo_pp_pending', JSON.stringify({ type:'pro', ts:Date.now() }));
   pToast('🩺','Completá el pago y volvé para continuar tu registro 🌿');
@@ -35909,7 +35919,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1468;
+    var _BUILT_V = 1469;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
