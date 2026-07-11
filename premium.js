@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1445',
+      'Velo v1446',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -22370,8 +22370,8 @@ function pVibeActivityFilter(reactionKey){
     var emoji = reactionMeta ? reactionMeta.emoji : '💚';
     var label = reactionMeta ? reactionMeta.label : 'reaccionó';
     var when = _timeAgoDM ? _timeAgoDM(new Date(r.created_at).getTime()) : '';
-    var caption = vibe.caption ? '"'+vibe.caption.slice(0,60)+(vibe.caption.length>60?'…':'')+'"' : 'tu momento';
-    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--border)"><span style="font-size:24px;flex-shrink:0">'+_avInline(profile.av||'🧑',36)+'</span><div style="flex:1;min-width:0;font-family:Jost,sans-serif;font-size:13px;color:var(--ink2);line-height:1.4"><div><span style="font-weight:800">'+_escHtml(profile.name)+'</span> sintió <span style="font-weight:800">'+label+' '+emoji+'</span></div><div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;color:var(--ink4);font-size:12.5px;margin-top:2px">'+_escHtml(caption)+'</div></div><div style="font-size:10.5px;color:var(--ink5);flex-shrink:0;font-family:Jost,sans-serif;font-weight:700">'+when+'</div></div>';
+    var momentTxt = vibe.caption ? 'En tu momento: "'+vibe.caption.slice(0,55)+(vibe.caption.length>55?'…':'')+'"' : 'En uno de tus momentos que compartiste';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--border)"><span style="font-size:24px;flex-shrink:0">'+_avInline(profile.av||'🧑',36)+'</span><div style="flex:1;min-width:0;font-family:Jost,sans-serif;font-size:13px;color:var(--ink2);line-height:1.45"><div><span style="font-weight:800">'+_escHtml(profile.name)+'</span> reaccionó con <span style="font-weight:800;white-space:nowrap">'+emoji+' '+_escHtml(label)+'</span></div><div style="color:var(--ink4);font-size:12px;margin-top:3px">'+_escHtml(momentTxt)+'</div></div><div style="font-size:10.5px;color:var(--ink5);flex-shrink:0;font-family:Jost,sans-serif;font-weight:700">'+when+'</div></div>';
   }).join('');
 }
 
@@ -35708,7 +35708,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1445;
+    var _BUILT_V = 1446;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
