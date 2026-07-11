@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1453">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1453">
+  <link rel="stylesheet" href="premium.css?v=20260626-1454">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1454">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -236,7 +236,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
-  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1453</div>
+  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1454</div>
 </div>
 
 <!-- APP SHELL -->
@@ -399,7 +399,7 @@
               <p class="r-lhero-italic"><em>Un espacio donde acompañarse es posible.</em></p>
               <p class="land-hero-sub">Un espacio donde la comunidad se une para acompañarse. Guardianes, círculos, mensajes al mar y más — gratis, sin juicios, siempre disponible.</p>
               <div class="land-hero-btns">
-                <button class="p-btn p-btn--primary p-btn--xl" onclick="pGoTo('register-type')">Registrate ✨</button>
+                <button class="p-btn p-btn--primary p-btn--xl" onclick="pSetType('user')">Registrate ✨</button>
                 <button class="p-btn p-btn--secondary p-btn--xl" onclick="pGoTo('login')">Ya tengo cuenta</button>
               </div>
               <div style="margin-top:18px">
@@ -510,7 +510,7 @@
                 <div class="land-whom-title">Guardianes de la comunidad</div>
                 <div class="land-whom-desc">Personas que ya atravesaron momentos difíciles y eligieron dar el paso de acompañar a otros. Activás el modo Guardián en tu perfil, estás disponible cuando podés, y escuchás sin juzgar. Sin obligación ni horario fijo.</div>
               </div>
-              <div class="land-whom-card reveal" data-delay="4">
+              <div class="land-whom-card reveal" data-delay="4" style="display:none">
                 <div class="land-whom-av">🩺</div>
                 <div class="land-whom-title">Profesionales de la salud</div>
                 <div class="land-whom-desc">Psicólogos, terapeutas y coaches que quieren ofrecer acompañamiento en la comunidad.</div>
@@ -533,10 +533,10 @@
                 </div>
               </div>
               <div class="land-usecase-card reveal" data-delay="2">
-                <div class="land-usecase-ico">🌊</div>
+                <div class="land-usecase-ico">✨</div>
                 <div>
-                  <div class="land-usecase-title">Querés soltar algo sin que te identifiquen</div>
-                  <div class="land-usecase-desc">Mensajes al Mar te permite lanzar lo que sentís de forma anónima.</div>
+                  <div class="land-usecase-title">Querés compartir un momento de tu día</div>
+                  <div class="land-usecase-desc">En Vibes publicás un momento en foto o video y la comunidad te acompaña con sus reacciones.</div>
                 </div>
               </div>
               <div class="land-usecase-card reveal" data-delay="3">
@@ -561,10 +561,10 @@
                 </div>
               </div>
               <div class="land-usecase-card reveal" data-delay="3">
-                <div class="land-usecase-ico">🌸</div>
+                <div class="land-usecase-ico">💭</div>
                 <div>
-                  <div class="land-usecase-title">Querés construir un hábito de bienestar</div>
-                  <div class="land-usecase-desc">Seguí tu estado emocional y celebrá tus avances en el Muro de la Felicidad.</div>
+                  <div class="land-usecase-title">Querés conocerte un poco más</div>
+                  <div class="land-usecase-desc">La pregunta del día te invita a reflexionar y, si querés, compartir con la comunidad.</div>
                 </div>
               </div>
             </div>
@@ -602,9 +602,9 @@
           <section class="land-features" style="padding-top:0">
             <div class="land-features-grid">
               <div class="land-feat-card reveal" data-delay="1">
-                <div class="land-feat-icon" style="background:linear-gradient(135deg,#0d1f3a,#1a3560)">🧘</div>
-                <h3 class="p-title" style="font-size:20px;margin-bottom:8px">Meditaciones y Sonidos</h3>
-                <p class="p-body">Sesiones guiadas de respiración, meditaciones en español y sonidos de naturaleza. Calma la ansiedad y encontrá equilibrio en cualquier momento del día.</p>
+                <div class="land-feat-icon" style="background:linear-gradient(135deg,#0d1f3a,#1a3560)">🌬️</div>
+                <h3 class="p-title" style="font-size:20px;margin-bottom:8px">Sonidos y Respiración</h3>
+                <p class="p-body">Sonidos ambientales de naturaleza y ejercicios de respiración guiada 4·7·8. Calmá la ansiedad y encontrá equilibrio en cualquier momento del día.</p>
                 <p class="land-feat-quote">"Los ejercicios de respiración me cambiaron la forma de manejar el estrés."</p>
               </div>
               <div class="land-feat-card reveal" data-delay="2">
@@ -613,10 +613,10 @@
                 <p class="p-body">Un espacio para compartir historias reales. Apoyo, superación y debates respetuosos — publicá de forma anónima y conectá con quienes entienden lo que vivís.</p>
                 <p class="land-feat-quote">"Leer lo que otros vivieron me hizo sentir que no estaba solo/a."</p>
               </div>
-              <div class="land-feat-card reveal" data-delay="3" style="display:none">
-                <div class="land-feat-icon" style="background:linear-gradient(135deg,#3a1a4a,#5a2d70)">💭</div>
-                <h3 class="p-title" style="font-size:20px;margin-bottom:8px">Momentos y Comunidad</h3>
-                <p class="p-body">Compartí pequeños momentos del día, publicá en el Muro de la Felicidad o lanzá un mensaje al mar. La comunidad está ahí para recibirlos.</p>
+              <div class="land-feat-card reveal" data-delay="3">
+                <div class="land-feat-icon" style="background:linear-gradient(135deg,#3a1a4a,#5a2d70)">✨</div>
+                <h3 class="p-title" style="font-size:20px;margin-bottom:8px">Vibes y Comunidad</h3>
+                <p class="p-body">Compartí momentos del día en foto o video y descubrí los de la comunidad. Sumate a los Círculos de Paz, respondé la pregunta del día y leé Buenas Noticias que elevan el ánimo.</p>
                 <p class="land-feat-quote">"Un momento compartido puede iluminarle el día a alguien."</p>
               </div>
             </div>
@@ -637,9 +637,9 @@
               </div>
               <div class="land-sec-card reveal" data-delay="2">
                 <div class="land-sec-ico">📄</div>
-                <div class="land-sec-title">DPA con profesionales</div>
-                <div class="land-sec-desc">Acuerdo de Tratamiento de Datos firmado con cada profesional (Art. 28 RGPD).</div>
-                <div class="land-sec-badge">Art. 28</div>
+                <div class="land-sec-title">Controlás tus datos</div>
+                <div class="land-sec-desc">Podés descargar o eliminar toda tu información cuando quieras, desde tu perfil.</div>
+                <div class="land-sec-badge">RGPD</div>
               </div>
               <div class="land-sec-card reveal" data-delay="3">
                 <div class="land-sec-ico">👤</div>
@@ -741,7 +741,7 @@
               </div>
               <div class="land-faq-item">
                 <button class="land-faq-q" onclick="pToggleFaq(this)">¿Quiénes son los Guardianes? <span class="land-faq-q-icon">+</span></button>
-                <div class="land-faq-a">Los Guardianes son miembros de la comunidad VELO que, desde su experiencia vivida, eligieron acompañar a otros. No son profesionales certificados (salvo quienes se registran como tales), pero sí personas comprometidas con la escucha activa, el respeto y la compasión.</div>
+                <div class="land-faq-a">Los Guardianes son miembros de la comunidad VELO que, desde su experiencia vivida, eligieron acompañar a otros. No son profesionales certificados, pero sí personas comprometidas con la escucha activa, el respeto y la compasión.</div>
               </div>
               <div class="land-faq-item">
                 <button class="land-faq-q" onclick="pToggleFaq(this)">¿Puedo usar VELO si estoy en crisis? <span class="land-faq-q-icon">+</span></button>
@@ -814,15 +814,14 @@
                 <div class="land-plan-period">para siempre</div>
                 <ul class="land-plan-features">
                   <li>Diario emocional</li>
-                  <li>Muro de la Felicidad</li>
+                  <li>Vibes: momentos y comunidad</li>
                   <li>Sala de Ayuda (4/día)</li>
-                  <li>Mensajes al Mar (4/día)</li>
+                  <li>Bitácora y Pregunta del día</li>
                   <li>Acompañante IA</li>
                   <li>4 sesiones guardián/día</li>
-                  <li class="land-feat-no">Sin Círculos de Paz</li>
-                  <li class="land-feat-no">Sin sesiones con profesionales</li>
+                  <li class="land-feat-no">Sin crear Círculos de Paz</li>
                 </ul>
-                <button class="p-btn p-btn--secondary p-btn--lg p-btn--full" onclick="pGoTo('register-type')">Empezar gratis</button>
+                <button class="p-btn p-btn--secondary p-btn--lg p-btn--full" onclick="pSetType('user')">Empezar gratis</button>
               </div>
               <div class="land-plan land-plan--featured reveal" data-delay="2">
                 <div class="land-plan-badge">⭐ Más popular</div>
@@ -834,13 +833,12 @@
                   <li>Todo lo gratuito +</li>
                   <li>Ilimitado en todo</li>
                   <li>Crear Círculos de Paz</li>
-                  <li>Sesiones con profesionales</li>
                   <li>Guardianes prioritarios ∞</li>
                   <li>Insignia dorada ✨</li>
                   <li>Prioridad en lista</li>
                   <li>Apoyás la comunidad 💚</li>
                 </ul>
-                <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pGoTo('register-type')">Comenzar con Plus</button>
+                <button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="pSetType('user')">Comenzar con Plus</button>
               </div>
             </div>
           </section>
@@ -851,8 +849,7 @@
               <h2 class="land-cta-title reveal">Tu bienestar<br><em>importa</em></h2>
               <p class="land-cta-sub reveal" data-delay="1">Unite a miles de personas que ya encontraron apoyo en Velo.</p>
               <div class="land-cta-btns reveal" data-delay="2">
-                <button class="p-btn p-btn--dark-white p-btn--xl" onclick="pGoTo('register-type')">Registrate gratis ✨</button>
-                <button class="p-btn p-btn--ghost p-btn--xl" onclick="pGoTo('pro-reg')">Soy profesional</button>
+                <button class="p-btn p-btn--dark-white p-btn--xl" onclick="pSetType('user')">Registrate gratis ✨</button>
               </div>
               <div class="reveal" data-delay="3" style="margin-top:16px">
                 <button class="p-btn p-btn--ghost p-btn--md" onclick="pGoTo('contact')" style="font-size:13px;opacity:.8">✉️ Contáctanos</button>
@@ -908,7 +905,7 @@
             <div style="margin-bottom:28px">
               <div class="p-label p-label-sage">Bienvenido/a de nuevo</div>
               <h2 class="p-title">Iniciá sesión</h2>
-              <p class="p-sm" style="margin-top:6px">¿No tenés cuenta? <span style="color:var(--sage2);font-weight:600;cursor:pointer" onclick="pGoTo('register-type')">Registrate gratis</span></p>
+              <p class="p-sm" style="margin-top:6px">¿No tenés cuenta? <span style="color:var(--sage2);font-weight:600;cursor:pointer" onclick="pSetType('user')">Registrate gratis</span></p>
             </div>
             <div class="p-field">
               <label class="p-field-label">Correo electrónico</label>
@@ -926,8 +923,6 @@
             <button class="p-btn p-btn--primary p-btn--lg p-btn--full" id="loginBtn" onclick="pSignIn()">
               <span id="loginBtnTxt">Ingresar</span>
             </button>
-            <div class="p-divider"><div class="p-div-line"></div><span class="p-div-txt">o</span><div class="p-div-line"></div></div>
-            <button class="p-btn p-btn--google p-btn--lg p-btn--full" onclick="pSetType('pro')">👩‍⚕️ Soy profesional de salud</button>
             <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
               <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('landing')" style="font-size:12px">← Volver al inicio</button>
             </div>
@@ -1022,7 +1017,7 @@
               <span id="regBtnTxt">Crear mi cuenta ✨</span>
             </button>
             <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-              <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('register-type')" style="font-size:12px">← Volver</button>
+              <button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="pGoTo('landing')" style="font-size:12px">← Volver</button>
             </div>
           </div>
         </div>
@@ -1043,11 +1038,11 @@
                 <div style="font-size:40px;flex-shrink:0;width:56px;height:56px;background:var(--sage7);border-radius:14px;display:flex;align-items:center;justify-content:center">🌱</div>
                 <div>
                   <div class="reg-type-title" style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">Busco apoyo emocional</div>
-                  <div class="reg-type-desc" style="font-size:12px;color:var(--ink4);line-height:1.5">Guardianes, Sala de Ayuda, diario emocional, Muro de la Felicidad y más herramientas de bienestar.</div>
+                  <div class="reg-type-desc" style="font-size:12px;color:var(--ink4);line-height:1.5">Guardianes, Sala de Ayuda, Vibes, Bitácora, diario íntimo y más herramientas de bienestar.</div>
                 </div>
               </div>
-              <!-- Pro card -->
-              <div class="reg-type-card reg-type-card--pro" onclick="pSetType('pro')" style="background:linear-gradient(135deg,rgba(200,165,100,.1),rgba(200,165,100,.04));border:2px solid rgba(200,165,100,.3);border-radius:18px;padding:22px 20px;cursor:pointer;transition:border-color .2s,box-shadow .2s;display:flex;align-items:center;gap:16px" onmouseover="this.style.borderColor='rgba(200,165,100,.7)';this.style.boxShadow='0 4px 20px rgba(200,165,100,.15)'" onmouseout="this.style.borderColor='rgba(200,165,100,.3)';this.style.boxShadow='none'">
+              <!-- Pro card — oculto v1454 (registro profesional desactivado por ahora) -->
+              <div class="reg-type-card reg-type-card--pro" onclick="pSetType('pro')" style="display:none;background:linear-gradient(135deg,rgba(200,165,100,.1),rgba(200,165,100,.04));border:2px solid rgba(200,165,100,.3);border-radius:18px;padding:22px 20px;cursor:pointer;transition:border-color .2s,box-shadow .2s;align-items:center;gap:16px" onmouseover="this.style.borderColor='rgba(200,165,100,.7)';this.style.boxShadow='0 4px 20px rgba(200,165,100,.15)'" onmouseout="this.style.borderColor='rgba(200,165,100,.3)';this.style.boxShadow='none'">
                 <div style="font-size:40px;flex-shrink:0;width:56px;height:56px;background:rgba(200,165,100,.15);border-radius:14px;display:flex;align-items:center;justify-content:center">🩺</div>
                 <div>
                   <div class="reg-type-title" style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">Soy profesional de salud <span style="font-size:11px;background:rgba(200,165,100,.2);color:#C8A560;border-radius:6px;padding:2px 7px;font-weight:600;vertical-align:middle">PRO</span></div>
@@ -4455,8 +4450,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1453"></script>
-<script src="premium-redesign.js?v=20260626-1453"></script>
+<script src="premium.js?v=20260626-1454"></script>
+<script src="premium-redesign.js?v=20260626-1454"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered

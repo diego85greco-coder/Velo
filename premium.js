@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1453',
+      'Velo v1454',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -4647,27 +4647,27 @@ var _obDataUser = [
   },
   {
     emoji: '🛡️',
-    tag: 'GUARDIANES',
+    tag: 'GUARDIANES Y SALA DE AYUDA',
     title: 'Personas reales que escuchan',
-    sub: 'Los Guardianes son miembros de la comunidad con experiencia de vida. Están disponibles para charlar cuando más lo necesitás.',
-    features: ['Disponibles hoy mismo', 'Sin turnos ni esperas', 'Totalmente gratuito'],
+    sub: 'Guardianes con experiencia de vida y una Sala de Ayuda para pedir acompañamiento cuando lo necesitás — en tiempo real, sin turnos.',
+    features: ['Guardianes disponibles hoy', 'Sala de Ayuda en tiempo real', 'Sin turnos ni esperas', 'Totalmente gratuito'],
     accent: 'rgba(116,165,210,.20)'
   },
   {
-    emoji: '📔',
-    tag: 'TU DIARIO',
-    title: 'Un espacio solo tuyo',
-    sub: 'Escribí, reflexioná y conocete mejor. Tu diario íntimo es privado — nadie más puede verlo.',
-    features: ['Diario íntimo privado', 'Registro diario de ánimo', 'Preguntas del día para reflexionar', 'Resúmenes semanales y mensuales'],
-    accent: 'rgba(200,158,56,.18)'
+    emoji: '✨',
+    tag: 'VIBES',
+    title: 'Momentos que se comparten',
+    sub: 'Compartí un momento de tu día en foto o video y descubrí los de la comunidad. Reaccioná, acompañá y sentite parte.',
+    features: ['Momentos en foto y video', 'Grupos: felicidad, mascotas, lectura y más', 'Reacciones y comentarios cálidos', 'Guardá tus favoritos en tu perfil'],
+    accent: 'rgba(116,198,157,.20)'
   },
   {
-    emoji: '🧘',
-    tag: 'MEDITACIONES Y SONIDOS',
-    title: 'Calma cuando más la necesitás',
-    sub: 'Sesiones guiadas de respiración, meditación y sonidos ambientales para bajar la ansiedad y encontrar equilibrio.',
-    features: ['Meditaciones guiadas en español', 'Sonidos de naturaleza y relajación', 'Técnicas de respiración para la ansiedad', 'Disponibles sin conexión'],
-    accent: 'rgba(100,140,220,.20)'
+    emoji: '💭',
+    tag: 'CADA DÍA',
+    title: 'Conocete un poco más',
+    sub: 'Una pregunta nueva cada día para reflexionar, tu diario íntimo privado y el registro de tu ánimo. Velo arma tus resúmenes.',
+    features: ['Pregunta del día para reflexionar', 'Diario íntimo 100% privado', 'Registro diario de ánimo', 'Resúmenes semanales y mensuales'],
+    accent: 'rgba(200,158,56,.18)'
   },
   {
     emoji: '📖',
@@ -4676,6 +4676,14 @@ var _obDataUser = [
     sub: 'Compartí tu historia o leé la de otros. Apoyo, superación y debates — desde el corazón, sin juicios.',
     features: ['Apoyo entre pares anónimo', 'Historias de superación', 'Debates respetuosos', 'Reacciones y comentarios'],
     accent: 'rgba(80,160,120,.20)'
+  },
+  {
+    emoji: '☀️',
+    tag: 'COMUNIDAD',
+    title: 'Un espacio que suma',
+    sub: 'Buenas noticias que elevan el ánimo, Círculos de Paz para conversar y sonidos + respiración para encontrar calma.',
+    features: ['Buenas Noticias reales', 'Círculos de Paz temáticos', 'Sonidos ambientales', 'Respiración guiada 4·7·8'],
+    accent: 'rgba(100,140,220,.20)'
   },
   {
     emoji: '✨',
@@ -35748,7 +35756,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1453;
+    var _BUILT_V = 1454;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
