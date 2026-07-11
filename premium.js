@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1457',
+      'Velo v1458',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -14357,6 +14357,70 @@ function _hideRecordingIndicator(){
 // NO puede reproducir (requiere MSE). Pero AudioContext.decodeAudioData SÍ lo
 // decodifica nativamente. Este player usa WebAudio como primario y <audio>
 // como fallback, con colores legibles sobre el fondo beige del modal.
+// ── "Unmute" iOS (reproducir aunque el teléfono esté en silencio 🔕) ───────
+// En iOS un AudioContext usa por defecto la categoría de sesión "ambient", que
+// respeta el interruptor de silencio. Si ruteamos un <audio> silencioso a
+// través del contexto (createMediaElementSource) mientras suena, la sesión pasa
+// a categoría "playback", que IGNORA el silencio — y entonces la nota de voz se
+// escucha igual. Un único contexto compartido para TODOS los reproductores de
+// audio (todos los chats). Solo mantenemos el <audio> silencioso sonando
+// MIENTRAS se reproduce una nota de voz, para no interrumpir de fondo la música
+// del usuario el resto del tiempo.
+var _veloSharedAudioCtx = null;
+var _veloUnmuteTag = null;
+function _veloGetAudioCtx(){
+  if(!_veloSharedAudioCtx){
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(AC){ try{ _veloSharedAudioCtx = new AC(); }catch(e){} }
+  }
+  return _veloSharedAudioCtx;
+}
+function _veloSilentWavUri(){
+  // WAV silencioso ~0.2s, 8-bit mono 8kHz, generado en runtime (sin base64 fijo)
+  var sr=8000, n=Math.floor(sr*0.2), bytes=44+n, buf=new ArrayBuffer(bytes), dv=new DataView(buf);
+  function wr(o,s){ for(var i=0;i<s.length;i++) dv.setUint8(o+i, s.charCodeAt(i)); }
+  wr(0,'RIFF'); dv.setUint32(4,bytes-8,true); wr(8,'WAVE'); wr(12,'fmt ');
+  dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+  dv.setUint32(24,sr,true); dv.setUint32(28,sr,true); dv.setUint16(32,1,true); dv.setUint16(34,8,true);
+  wr(36,'data'); dv.setUint32(40,n,true);
+  for(var i=0;i<n;i++) dv.setUint8(44+i,128); // 128 = silencio en 8-bit unsigned
+  var u8=new Uint8Array(buf), bin=''; for(var j=0;j<u8.length;j++) bin+=String.fromCharCode(u8[j]);
+  return 'data:audio/wav;base64,'+btoa(bin);
+}
+function _veloUnmuteSetup(){
+  var ctx = _veloGetAudioCtx();
+  if(!ctx) return null;
+  try{ if(ctx.state === 'suspended') ctx.resume(); }catch(e){}
+  if(!_veloUnmuteTag){
+    try{
+      var tag = document.createElement('audio');
+      tag.setAttribute('playsinline',''); tag.setAttribute('webkit-playsinline','');
+      tag.loop = true; tag.src = _veloSilentWavUri();
+      var src = ctx.createMediaElementSource(tag);
+      var g = ctx.createGain(); g.gain.value = 0; // inaudible: solo activa la sesión "playback"
+      src.connect(g); g.connect(ctx.destination);
+      _veloUnmuteTag = tag;
+    }catch(e){ _veloUnmuteTag = null; }
+  }
+  return _veloUnmuteTag;
+}
+function _veloUnmuteStart(){
+  var tag = _veloUnmuteSetup();
+  if(tag){ try{ var p = tag.play(); if(p && p.catch) p.catch(function(){}); }catch(e){} }
+}
+function _veloUnmuteStop(){
+  if(_veloUnmuteTag){ try{ _veloUnmuteTag.pause(); }catch(e){} }
+}
+// Prime del contexto/tag en el primer gesto del usuario (autoplay iOS), sin
+// sonar todavía — así al tocar ▶ ya está todo listo para el bypass del silencio.
+(function(){
+  function _prime(){
+    try{ _veloUnmuteSetup(); }catch(e){}
+    if(_veloUnmuteTag){ ['touchend','click','pointerdown'].forEach(function(ev){ document.removeEventListener(ev, _prime); }); }
+  }
+  try{ ['touchend','click','pointerdown'].forEach(function(ev){ document.addEventListener(ev, _prime, { passive:true }); }); }catch(e){}
+})();
+
 var _veloPlayerState = {}; // ts → {ctx, buffer, source, playing, startedAt, offset, duration, statusEl, btn}
 function _renderVeloAudioPlayer(container, ts, audioData){
   var wrap = document.createElement('div');
@@ -14386,9 +14450,8 @@ function _renderVeloAudioPlayer(container, ts, audioData){
   // Decodificar audio (async) — funciona con mp4/AAC fragmentado de iOS MediaRecorder
   (async function _decode(){
     try{
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if(!AC){ throw new Error('no-audiocontext'); }
-      state.ctx = new AC();
+      state.ctx = _veloGetAudioCtx();
+      if(!state.ctx){ throw new Error('no-audiocontext'); }
       // Convertir data URL a ArrayBuffer
       var arrayBuffer;
       if(typeof audioData === 'string' && audioData.indexOf('data:') === 0){
@@ -14441,6 +14504,9 @@ function _playVeloAudio(ts){
     }
   });
   try{
+    // Bypass del interruptor de silencio 🔕: activar el <audio> silencioso que
+    // rutea la sesión a categoría "playback" antes de arrancar la nota de voz.
+    _veloUnmuteStart();
     if(state.ctx.state === 'suspended') state.ctx.resume();
     var src = state.ctx.createBufferSource();
     src.buffer = state.buffer;
@@ -14479,6 +14545,7 @@ function _stopVeloAudio(ts, atEnd){
   }
   state.playing = false;
   state.source = null;
+  _veloUnmuteStop(); // soltar la sesión "playback" para no interrumpir música de fondo
   state.btn.textContent = '▶';
   state.btn.setAttribute('aria-label','Reproducir');
   var mm = Math.floor(state.duration/60), ss = Math.floor(state.duration%60);
@@ -14523,8 +14590,10 @@ function _cleanupVeloAudioPlayers(){
   Object.keys(_veloPlayerState).forEach(function(k){
     var st = _veloPlayerState[k];
     try{ if(st.source) st.source.stop(0); }catch(e){}
-    try{ if(st.ctx && st.ctx.close) st.ctx.close(); }catch(e){}
+    // NO cerramos st.ctx: ahora es el AudioContext COMPARTIDO (_veloSharedAudioCtx)
+    // que usan todos los reproductores. Cerrarlo rompería los demás.
   });
+  _veloUnmuteStop();
   _veloPlayerState = {};
 }
 
@@ -35778,7 +35847,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1457;
+    var _BUILT_V = 1458;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
