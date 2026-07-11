@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1466',
+      'Velo v1467',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -20590,8 +20590,13 @@ async function pRenderVibesHome(){
   var body = document.getElementById('vibesBody');
   if(!body) return;
   _initSupabase();
-  if(!sbClient){ body.innerHTML = '<div style="text-align:center;padding:50px 20px;color:rgba(200,230,215,.55);font-family:Jost,sans-serif;font-size:13px">Sin conexión</div>'; return; }
-  body.innerHTML = '<div style="text-align:center;padding:40px 20px;color:rgba(200,230,215,.55);font-family:Jost,sans-serif;font-size:13px">Cargando…</div>';
+  if(!sbClient){ if(body.getAttribute('data-vibes-loaded')!=='1'){ body.innerHTML = '<div style="text-align:center;padding:50px 20px;color:rgba(200,230,215,.55);font-family:Jost,sans-serif;font-size:13px">Sin conexión</div>'; } return; }
+  // v1467: solo mostramos "Cargando…" la PRIMERA vez. Después mantenemos el
+  // contenido anterior visible mientras refrescamos en segundo plano → al volver
+  // a Vibes ya no parpadea ni "se pausa".
+  if(body.getAttribute('data-vibes-loaded')!=='1'){
+    body.innerHTML = '<div style="text-align:center;padding:40px 20px;color:rgba(200,230,215,.55);font-family:Jost,sans-serif;font-size:13px">Cargando…</div>';
+  }
   try{
     var g = await sbClient.from('vibe_groups').select('id,kind,slug,title,emoji,description,owner_id,expires_at,created_at').order('created_at',{ascending:false}).limit(200);
     if(!g || !g.data){ body.innerHTML = '<div style="text-align:center;padding:50px 20px;color:rgba(220,120,120,.65)">Error cargando grupos</div>'; return; }
@@ -20691,6 +20696,7 @@ async function pRenderVibesHome(){
           + privInvited.map(function(gr){ return _vibeGroupCard(gr, counts[gr.id]||0); }).join('')
         + '</div>'
         : '');
+    body.setAttribute('data-vibes-loaded','1'); // v1467: ya hay contenido → no volver a mostrar "Cargando…"
 
     // ── MIS MOMENTOS GUARDADOS ─────────────────────────────────────
     // Momentos que compartí y marqué "Guardar en mi historial personal"
@@ -23876,12 +23882,10 @@ async function pRenderContacts(){
     }catch(e){}
   }
 
-  await _refreshPresenceCache();
-  if(_navToken !== _tok) return;
-
   var unreadIds = {}; try{ unreadIds = JSON.parse(safeLS('get','velo_dm_unread')||'{}'); }catch(e){}
-  // Hidratar cache de últimos mensajes desde Supabase (bootstrap para primera carga)
-  try{ await _hydrateDMLastMsgs(favs.map(function(f){ return f.id; })); }catch(e){}
+  // v1467: presencia + hidratación de últimos DMs son independientes → en paralelo
+  // (antes eran 2 round-trips secuenciales que retrasaban el primer render).
+  try{ await Promise.all([ _refreshPresenceCache(), _hydrateDMLastMsgs(favs.map(function(f){ return f.id; })) ]); }catch(e){}
   if(_navToken !== _tok || !document.getElementById('contactsContent')) return;
   var dmLast = _dmCacheGet();
   // Ordenar favs por actividad: los que tienen último mensaje más reciente arriba
@@ -35915,7 +35919,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1466;
+    var _BUILT_V = 1467;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
