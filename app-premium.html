@@ -31,8 +31,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="premium.css?v=20260626-1451">
-  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1451">
+  <link rel="stylesheet" href="premium.css?v=20260626-1452">
+  <link rel="stylesheet" href="premium-redesign.css?v=20260626-1452">
   <!-- v648: critical layout overrides inlined to survive stale CSS cache -->
   <style>
     /* Home page flex order — r-hero-left is display:flex;flex-direction:column */
@@ -217,7 +217,7 @@
   <!-- ── Secciones de la comunidad y contenido ── -->
   <div style="font-size:9.5px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(116,198,157,.55);padding:14px 16px 6px;font-family:Jost,sans-serif">🌿 COMUNIDAD</div>
   <button class="p-mobile-nav-item" onclick="pGoTo('guardians');toggleMobileMenu()"><span class="p-mobile-nav-icon">🛡️</span> Guardianes</button>
-  <button class="p-mobile-nav-item" onclick="pGoTo('help');toggleMobileMenu()"><span class="p-mobile-nav-icon">🆘</span> Sala de Ayuda</button>
+  <button class="p-mobile-nav-item" onclick="pGoTo('help');toggleMobileMenu()"><span class="p-mobile-nav-icon">💬</span> Sala de Ayuda</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('bottle');toggleMobileMenu()" style="display:none"><span class="p-mobile-nav-icon">🌊</span> Al Mar</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('contacts');toggleMobileMenu()"><span class="p-mobile-nav-icon">⭐</span> Contactos favoritos</button>
   <button class="p-mobile-nav-item" onclick="pGoTo('professionals');toggleMobileMenu()"><span class="p-mobile-nav-icon">🩺</span> Profesionales</button>
@@ -236,7 +236,7 @@
   <button class="p-mobile-nav-item" onclick="toggleMobileMenu();if(typeof pReplayHomeTour==='function'){pReplayHomeTour();}else{location.reload();}"><span class="p-mobile-nav-icon">✨</span> Tour guiado</button>
   <div style="flex:1"></div>
   <button class="p-mobile-nav-item" onclick="pSignOut();toggleMobileMenu()" style="color:rgba(255,100,100,.85)"><span class="p-mobile-nav-icon">↩️</span> Cerrar sesión</button>
-  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1451</div>
+  <div id="veloVersionLabel" onclick="if(typeof _veloLayoutDiag==='function')_veloLayoutDiag()" style="text-align:center;padding:14px 0 6px;font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.45;cursor:pointer">Velo v1452</div>
 </div>
 
 <!-- APP SHELL -->
@@ -4455,8 +4455,8 @@ CREATE POLICY "update_hearts" ON momentos FOR UPDATE USING (true);</pre>
   </div>
 </div>
 
-<script src="premium.js?v=20260626-1451"></script>
-<script src="premium-redesign.js?v=20260626-1451"></script>
+<script src="premium.js?v=20260626-1452"></script>
+<script src="premium-redesign.js?v=20260626-1452"></script>
 <script>
   var y=document.getElementById('footerYear');if(y)y.textContent=new Date().getFullYear();
   // Cookie banner — show if not yet answered
