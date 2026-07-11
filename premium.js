@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1460',
+      'Velo v1461',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -14401,6 +14401,11 @@ function _renderVeloAudioPlayer(container, ts, audioData){
   row.appendChild(btn);
   row.appendChild(status);
   wrap.appendChild(row);
+  // Aviso: en iOS el audio web respeta el interruptor de silencio del teléfono.
+  var hint = document.createElement('div');
+  hint.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:11px;padding-top:10px;border-top:1px solid rgba(92,61,16,.18);font-size:11.5px;font-weight:600;color:rgba(92,61,16,.72);font-family:Jost,sans-serif;line-height:1.35';
+  hint.innerHTML = '<span style="font-size:13px;flex-shrink:0">🔕</span><span>Para escucharla, verificá que tu teléfono no esté en silencio.</span>';
+  wrap.appendChild(hint);
   container.appendChild(wrap);
   var state = { ctx:null, buffer:null, source:null, playing:false, startedAt:0, offset:0, duration:0, statusEl:status, btn:btn, ready:false, decoded:false };
   _veloPlayerState[String(ts)] = state;
@@ -35807,7 +35812,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1460;
+    var _BUILT_V = 1461;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
