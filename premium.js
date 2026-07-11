@@ -88,7 +88,7 @@ function _veloLayoutDiag(){
     var safeB = getComputedStyle(probe).paddingBottom;
     probe.remove();
     var lines = [
-      'Velo v1456',
+      'Velo v1457',
       'standalone: ' + (navigator.standalone === true ? 'SÍ (app instalada)' : (navigator.standalone === false ? 'NO (Safari)' : 'desconocido')),
       'innerH: ' + window.innerHeight + ' · screenH: ' + (screen && screen.height),
       'vv.height: ' + (window.visualViewport ? Math.round(window.visualViewport.height) : '—'),
@@ -12813,20 +12813,23 @@ function pOpenGuide(){
   var existing=document.getElementById('veloGuideOv');
   if(existing){ existing.remove(); _syncBodyScroll(); return; }
   var sections=[
-    {icon:'🛡️',name:'Guardianes',desc:'Al activar "Modo Guardián" aparecés en la lista de guardianes disponibles. Si alguien necesita apoyo puede pedirte ayuda para iniciar un chat contigo en tiempo real.'},
-    {icon:'🤝',name:'Sala de Ayuda',desc:'Las personas publican con lo que necesitan ayuda. Podés acompañarlas sin necesitar estar en modo guardián. Si la persona está online puede aceptar el chat, o bien podés dejarle un mensaje de aliento. Las publicaciones se eliminan automáticamente a las 24 hs.'},
-    {icon:'☮️',name:'Círculos de Paz',desc:'Grupos de chat comunitarios creados por Velo donde podés hablar y debatir sobre distintos temas. Con insignia dorada o plan Plus podés crear tu propio grupo de chat.'},
-    {icon:'🌞',name:'Buenas Noticias',desc:'Noticias positivas que pasan en el mundo 🌍. Un canal para leer y descubrir buenas noticias reales que elevan el ánimo.'},
-    {icon:'📔',name:'Diario',desc:'Tu espacio privado de escritura. Anotá pensamientos, emociones y reflexiones personales. Solo vos podés leerlo — nunca se comparte.'},
-    {icon:'🤖',name:'Velo IA (Chatbot Calma)',desc:'Un acompañante emocional disponible 24/7 entrenado en técnicas de psicología humanista. Podés hablar de lo que sentís, explorar emociones y recibir apoyo empático en cualquier momento.'},
+    {icon:'🛡️',name:'Guardianes',desc:'Activá el "Modo Guardián" para aparecer en la lista de personas disponibles para escuchar. Si alguien necesita apoyo, puede pedirte un chat de acompañamiento en tiempo real. También podés pedir ayuda a un guardián cuando la necesités.'},
+    {icon:'💬',name:'Sala de Ayuda',desc:'Publicá lo que estás necesitando y cualquier persona de la comunidad puede acompañarte — no hace falta ser guardián. Si estás en línea podés aceptar el chat; si no, te dejan un mensaje de aliento. Las publicaciones se borran solas a las 24 hs.'},
+    {icon:'📖',name:'Bitácora',desc:'Historias reales de la comunidad: apoyo, superación y debate — todo anónimo. Publicá la tuya o leé las de otros, reaccioná, comentá, seguí publicaciones, filtrá por tema y buscá por palabras clave.'},
+    {icon:'✨',name:'Vibes',desc:'Compartí momentos de tu día en foto o video. Se organizan en grupos temáticos (felicidad, mascotas, lectura y más) y desaparecen a las 24 hs. Reaccioná y comentá los de la comunidad, y guardá tus favoritos en el perfil para que no se borren.'},
+    {icon:'🌱',name:'Momentos',desc:'Micro-momentos de tu día en el feed de la comunidad del inicio: un pensamiento, algo que te alegró, una frase. Rápido de compartir y de recibir cariño.'},
+    {icon:'🌞',name:'Buenas Noticias',desc:'Un canal de noticias positivas reales que pasan en el mundo 🌍. Para leer, descubrir y elevar el ánimo cuando el día pesa.'},
+    {icon:'☮️',name:'Círculos de Paz',desc:'Grupos de chat comunitarios para hablar y debatir sobre distintos temas, sin likes ni juicios. Con insignia dorada o plan Plus podés crear tu propio grupo.'},
+    {icon:'📔',name:'Diario Íntimo',desc:'Tu espacio privado de escritura. Anotá pensamientos, emociones y reflexiones. Solo vos podés leerlo — nunca se comparte.'},
+    {icon:'😊',name:'Estado de Ánimo',desc:'Registrá cómo te sentís cada día con un emoji y una nota. Velo arma tu mapa emocional y tus resúmenes semanales y mensuales.'},
+    {icon:'💭',name:'Pregunta del Día',desc:'Cada día una pregunta nueva para reflexionar sobre vos. Respondela en privado o compartila con la comunidad y descubrí qué sienten los demás. Podés reaccionar y comentar las respuestas.'},
+    {icon:'💌',name:'Buzón Velo',desc:'Tu correo dentro de Velo: resumen semanal, análisis mensual, respuestas del equipo y avisos importantes — todo en un solo lugar.'},
+    {icon:'🤖',name:'Velo IA (Calma)',desc:'Un acompañante emocional disponible 24/7, entrenado en técnicas de psicología humanista. Hablá de lo que sentís y recibí apoyo empático en cualquier momento. No reemplaza la atención profesional.'},
+    {icon:'⭐',name:'Contactos Favoritos',desc:'Tus personas de confianza de la comunidad, guardadas para conectarte rápido. Mirá quién está en línea y escribiles cuando los necesités.'},
+    {icon:'🤝',name:'Compañero/a de bienestar',desc:'Emparejate con otra persona por un mes para acompañarse mutuamente. Un vínculo de a uno, renovable, para no sentirte solo/a en el proceso.'},
+    {icon:'🌬️',name:'Respiración',desc:'Ejercicios guiados de respiración 4·7·8 y mindfulness para calmar la ansiedad y bajar el estrés en los momentos difíciles.'},
+    {icon:'🎵',name:'Sonidos de Ambiente',desc:'Lluvia, bosque, fuego y mar para concentrarte, descansar o simplemente estar. Suenan de fondo mientras usás el resto de la app.'},
     {icon:'🆘',name:'SOS',desc:'Acceso rápido a recursos de crisis emocional: líneas de ayuda, información de emergencia y contacto inmediato. Para cuando el momento es urgente.'},
-    {icon:'🌬️',name:'Respiración',desc:'Ejercicios guiados de respiración y técnicas de mindfulness para calmar la ansiedad y bajar el estrés en momentos difíciles.'},
-    {icon:'⭐',name:'Contactos Favoritos',desc:'Tus usuarios favoritos de la comunidad guardados en un lugar de fácil acceso. Para conectarte rápido con las personas que te importan.'},
-    {icon:'😊',name:'Estado de Ánimo',desc:'Registrá cómo te sentís cada día con un emoji y una nota. Velo genera tu resumen mensual personalizado basado en tus registros.'},
-    {icon:'✨',name:'Momentos',desc:'Compartí micro-momentos de tu día: un pensamiento, algo que te alegró, una imagen que te emocionó. Aparecen en el feed de la comunidad y en el widget del inicio.'},
-    {icon:'💭',name:'Pregunta del Día',desc:'Cada día una nueva pregunta para reflexionar sobre vos mismo/a. Podés responderla de forma privada en tu diario o compartirla con la comunidad. Una forma simple de conocerte mejor.'},
-    {icon:'📖',name:'Bitácora',desc:'Espacio comunitario de historias reales: apoyo, superación y debate. Todo es anónimo. Podés seguir publicaciones, filtrar por tema, guardarlas y buscar por palabras clave.'},
-    {icon:'🎵',name:'Sonidos de Ambiente',desc:'Sonidos relajantes para concentrarte, descansar o simplemente estar. Lluvia, bosque, fuego y mar. Suenan en segundo plano mientras usás el resto de la app.'},
   ];
   var cards=sections.map(function(s){
     return '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px">'
@@ -25891,29 +25894,28 @@ function pShowPlusModal(){
     +'<div style="background:var(--cream2);border-radius:14px;padding:13px;border:1.5px solid var(--border2)">'
     +'<div style="font-size:13px;font-weight:700;color:var(--ink4);margin-bottom:10px;letter-spacing:.5px">ACTUAL · GRATUITO</div>'
     +'<ul style="font-size:14px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
-    +'<li>✅ Diario emocional</li>'
-    +'<li>✅ Muro de la Felicidad</li>'
-    +'<li>✅ 4 mensajes al Mar/día</li>'
-    +'<li>✅ 4 pedidos de ayuda/día</li>'
+    +'<li>✅ Diario, ánimos y resúmenes</li>'
+    +'<li>✅ Vibes, Bitácora y Momentos</li>'
+    +'<li>✅ Pregunta del día</li>'
+    +'<li>✅ Sala de Ayuda (4/día)</li>'
     +'<li>✅ 4 sesiones guardián/día</li>'
-    +'<li style="color:var(--ink5)">❌ Círculos de Paz</li>'
-    +'<li style="color:var(--ink5)">❌ Sesiones profesionales</li>'
+    +'<li style="color:var(--ink5)">❌ Crear Círculos de Paz</li>'
+    +'<li style="color:var(--ink5)">❌ Guardianes prioritarios</li>'
     +'<li style="color:var(--ink5)">❌ Insignia dorada</li>'
     +'</ul></div>'
     +'<div style="background:linear-gradient(135deg,rgba(200,165,100,.18),rgba(200,165,100,.08));border-radius:14px;padding:13px;border:1.5px solid rgba(200,165,100,.4)">'
     +'<div style="font-size:13px;font-weight:700;color:#C8A560;margin-bottom:10px;letter-spacing:.5px">CON PLUS · $2.99/mes</div>'
     +'<ul style="font-size:14px;color:var(--ink3);line-height:2;list-style:none;padding:0;margin:0">'
     +'<li>✅ Todo lo gratuito</li>'
-    +'<li>✅ Ilimitado en todo</li>'
-    +'<li>✅ Círculos de Paz</li>'
-    +'<li>✅ Sesiones profesionales</li>'
-    +'<li style="color:#C8A560">✅ Insignia dorada ✨</li>'
+    +'<li>✅ Sin límites diarios</li>'
+    +'<li>✅ Crear tus Círculos de Paz</li>'
     +'<li>✅ Guardianes prioritarios ∞</li>'
+    +'<li style="color:#C8A560">✅ Insignia dorada ✨</li>'
     +'<li style="color:var(--sage2)">✅ Apoyás la comunidad 💚</li>'
     +'</ul></div>'
     +'</div>'
     +'<div style="background:var(--sage7);border-radius:12px;padding:12px 14px;margin-bottom:18px;border:1px solid var(--border2)">'
-    +'<p style="font-size:14px;color:var(--ink4);margin:0;line-height:1.6">💳 <strong>Pago seguro vía PayPal</strong> · $2.99 USD/mes · Se renueva automáticamente. Tu suscripción ayuda a mantener Velo gratuito y subsidia sesiones solidarias para quienes más lo necesitan.</p>'
+    +'<p style="font-size:14px;color:var(--ink4);margin:0;line-height:1.6">💳 <strong>Pago seguro vía PayPal</strong> · $2.99 USD/mes · Se renueva automáticamente. Tu suscripción ayuda a mantener Velo gratuito y accesible para todas las personas que lo necesitan 💚</p>'
     +'</div>'
     +'<button class="p-btn p-btn--primary p-btn--lg p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove();pOpenPayPalPlus()" style="background:linear-gradient(135deg,#C8A560,#A07840);margin-bottom:10px">⭐ Suscribirme por $2.99/mes · PayPal</button>'
     +'<button class="p-btn p-btn--secondary p-btn--md p-btn--full" onclick="document.getElementById(\'plusCompareOv\').remove()">Ahora no</button>'
@@ -35776,7 +35778,7 @@ window.addEventListener('load', function(){
 
   // Force SW update check + auto-reload on new version
   (function(){
-    var _BUILT_V = 1456;
+    var _BUILT_V = 1457;
     // Trigger SW to check for updates immediately
     if(navigator.serviceWorker){
       navigator.serviceWorker.getRegistrations().then(function(regs){
